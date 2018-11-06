@@ -39,6 +39,8 @@ mod node_header;
 mod node_codec;
 mod trie_stream;
 
+const ETH_CHILD_STORAGE_KEY_PREFIX: &'static [u8] = b":child_storage:eth:";
+
 use hash_db::Hasher;
 /// Our `NodeCodec`-specific error.
 pub use error::Error;
@@ -133,61 +135,77 @@ pub fn is_child_trie_key_valid<H: Hasher>(_storage_key: &[u8]) -> bool {
 }
 
 /// Determine the default child trie root.
-pub fn default_child_trie_root<H: Hasher>(_storage_key: &[u8]) -> Vec<u8> {
-	let mut db = MemoryDB::default();
-	let mut root = H::Out::default();
-	let mut empty = TrieDBMut::<H>::new(&mut db, &mut root);
-	empty.commit();
-	empty.root().as_ref().to_vec()
+pub fn default_child_trie_root<H: Hasher>(storage_key: &[u8]) -> Vec<u8> {
+	if storage_key.starts_with(ETH_CHILD_STORAGE_KEY_PREFIX) {
+		unimplemented!()
+	} else {
+		let mut db = MemoryDB::default();
+		let mut root = H::Out::default();
+		let mut empty = TrieDBMut::<H>::new(&mut db, &mut root);
+		empty.commit();
+		empty.root().as_ref().to_vec()
+	}
 }
 
 /// Determine a child trie root given its ordered contents, closed form. H is the default hasher, but a generic
 /// implementation may ignore this type parameter and use other hashers.
-pub fn child_trie_root<H: Hasher, I, A, B>(_storage_key: &[u8], input: I) -> Vec<u8> where
+pub fn child_trie_root<H: Hasher, I, A, B>(storage_key: &[u8], input: I) -> Vec<u8> where
 	I: IntoIterator<Item = (A, B)>,
 	A: AsRef<[u8]> + Ord,
 	B: AsRef<[u8]>,
 {
-	trie_root::<H, _, _, _>(input).as_ref().iter().cloned().collect()
+	if storage_key.starts_with(ETH_CHILD_STORAGE_KEY_PREFIX) {
+		unimplemented!()
+	} else {
+		trie_root::<H, _, _, _>(input).as_ref().iter().cloned().collect()
+	}
 }
 
 /// Determine a child trie root given a hash DB and delta values. H is the default hasher, but a generic implementation may ignore this type parameter and use other hashers.
-pub fn child_delta_trie_root<H: Hasher, I, A, B>(_storage_key: &[u8], db: &mut HashDB<H>, root_vec: Vec<u8>, delta: I) -> Result<Vec<u8>, Box<TrieError<H::Out>>> where
+pub fn child_delta_trie_root<H: Hasher, I, A, B>(storage_key: &[u8], db: &mut HashDB<H>, root_vec: Vec<u8>, delta: I) -> Result<Vec<u8>, Box<TrieError<H::Out>>> where
 	I: IntoIterator<Item = (A, Option<B>)>,
 	A: AsRef<[u8]> + Ord,
 	B: AsRef<[u8]>,
 {
-	let mut root = H::Out::default();
-	root.as_mut().copy_from_slice(&root_vec); // root is fetched from DB, not writable by runtime, so it's always valid.
+	if storage_key.starts_with(ETH_CHILD_STORAGE_KEY_PREFIX) {
+		unimplemented!()
+	} else {
+		let mut root = H::Out::default();
+		root.as_mut().copy_from_slice(&root_vec); // root is fetched from DB, not writable by runtime, so it's always valid.
 
-	{
-		let mut trie = TrieDBMut::<H>::from_existing(db, &mut root)?;
+		{
+			let mut trie = TrieDBMut::<H>::from_existing(db, &mut root)?;
 
-		for (key, change) in delta {
-			match change {
-				Some(val) => trie.insert(key.as_ref(), val.as_ref())?,
-				None => trie.remove(key.as_ref())?, // TODO: archive mode
-			};
+			for (key, change) in delta {
+				match change {
+					Some(val) => trie.insert(key.as_ref(), val.as_ref())?,
+					None => trie.remove(key.as_ref())?, // TODO: archive mode
+				};
+			}
 		}
-	}
 
-	Ok(root.as_ref().to_vec())
+		Ok(root.as_ref().to_vec())
+	}
 }
 
 /// Call `f` for all keys in a child trie.
-pub fn for_keys_in_child_trie<H: Hasher, F: FnMut(&[u8])>(_storage_key: &[u8], db: &HashDB<H>, root_slice: &[u8], mut f: F) -> Result<(), Box<TrieError<H::Out>>> {
-	let mut root = H::Out::default();
-	root.as_mut().copy_from_slice(root_slice); // root is fetched from DB, not writable by runtime, so it's always valid.
+pub fn for_keys_in_child_trie<H: Hasher, F: FnMut(&[u8])>(storage_key: &[u8], db: &HashDB<H>, root_slice: &[u8], mut f: F) -> Result<(), Box<TrieError<H::Out>>> {
+	if storage_key.starts_with(ETH_CHILD_STORAGE_KEY_PREFIX) {
+		unimplemented!()
+	} else {
+		let mut root = H::Out::default();
+		root.as_mut().copy_from_slice(root_slice); // root is fetched from DB, not writable by runtime, so it's always valid.
 
-	let trie = TrieDB::<H>::new(db, &root)?;
-	let iter = trie.iter()?;
+		let trie = TrieDB::<H>::new(db, &root)?;
+		let iter = trie.iter()?;
 
-	for x in iter {
-		let (key, _) = x?;
-		f(&key);
+		for x in iter {
+			let (key, _) = x?;
+			f(&key);
+		}
+
+		Ok(())
 	}
-
-	Ok(())
 }
 
 /// Record all keys for a given root.
@@ -208,19 +226,27 @@ pub fn record_all_keys<H: Hasher>(db: &HashDB<H>, root: &H::Out, recorder: &mut 
 }
 
 /// Read a value from the child trie.
-pub fn read_child_trie_value<H: Hasher>(_storage_key: &[u8], db: &HashDB<H>, root_slice: &[u8], key: &[u8]) -> Result<Option<Vec<u8>>, Box<TrieError<H::Out>>> {
-	let mut root = H::Out::default();
-	root.as_mut().copy_from_slice(root_slice); // root is fetched from DB, not writable by runtime, so it's always valid.
+pub fn read_child_trie_value<H: Hasher>(storage_key: &[u8], db: &HashDB<H>, root_slice: &[u8], key: &[u8]) -> Result<Option<Vec<u8>>, Box<TrieError<H::Out>>> {
+	if storage_key.starts_with(ETH_CHILD_STORAGE_KEY_PREFIX) {
+		unimplemented!()
+	} else {
+		let mut root = H::Out::default();
+		root.as_mut().copy_from_slice(root_slice); // root is fetched from DB, not writable by runtime, so it's always valid.
 
-	Ok(TrieDB::<H>::new(db, &root)?.get(key).map(|x| x.map(|val| val.to_vec()))?)
+		Ok(TrieDB::<H>::new(db, &root)?.get(key).map(|x| x.map(|val| val.to_vec()))?)
+	}
 }
 
 /// Read a value from the child trie with given query.
-pub fn read_child_trie_value_with<H: Hasher, Q: Query<H, Item=DBValue>>(_storage_key: &[u8], db: &HashDB<H>, root_slice: &[u8], key: &[u8], query: Q) -> Result<Option<Vec<u8>>, Box<TrieError<H::Out>>> {
-	let mut root = H::Out::default();
-	root.as_mut().copy_from_slice(root_slice); // root is fetched from DB, not writable by runtime, so it's always valid.
+pub fn read_child_trie_value_with<H: Hasher, Q: Query<H, Item=DBValue>>(storage_key: &[u8], db: &HashDB<H>, root_slice: &[u8], key: &[u8], query: Q) -> Result<Option<Vec<u8>>, Box<TrieError<H::Out>>> {
+	if storage_key.starts_with(ETH_CHILD_STORAGE_KEY_PREFIX) {
+		unimplemented!()
+	} else {
+		let mut root = H::Out::default();
+		root.as_mut().copy_from_slice(root_slice); // root is fetched from DB, not writable by runtime, so it's always valid.
 
-	Ok(TrieDB::<H>::new(db, &root)?.get_with(key, query).map(|x| x.map(|val| val.to_vec()))?)
+		Ok(TrieDB::<H>::new(db, &root)?.get_with(key, query).map(|x| x.map(|val| val.to_vec()))?)
+	}
 }
 
 // Utilities (not exported):

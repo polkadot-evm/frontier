@@ -18,7 +18,7 @@ trie-root = { git = "https://github.com/paritytech/trie", default-features = fal
 memory-db = { git = "https://github.com/paritytech/trie", optional = true }
 
 [dev-dependencies]
-substrate-primitives = { path = "../primitives" }
+substrate-primitives = { git = "https://github.com/paritytech/substrate" }
 trie-bench = { git = "https://github.com/paritytech/trie" }
 trie-standardmap = { git = "https://github.com/paritytech/trie" }
 keccak-hasher = { git = "https://github.com/paritytech/trie" }
