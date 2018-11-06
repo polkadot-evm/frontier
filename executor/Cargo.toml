@@ -1,0 +1,31 @@
+[package]
+name = "node-executor"
+version = "0.1.0"
+authors = ["Parity Technologies <admin@parity.io>"]
+description = "Substrate node implementation in Rust."
+
+[dependencies]
+hex-literal = "0.1"
+trie-root = { git = "https://github.com/paritytech/trie" }
+parity-codec = "2.1"
+sr-io = { git = "https://github.com/paritytech/substrate" }
+substrate-state-machine = { git = "https://github.com/paritytech/substrate" }
+substrate-executor = { git = "https://github.com/paritytech/substrate" }
+substrate-primitives = { git = "https://github.com/paritytech/substrate" }
+substrate-trie = { git = "https://github.com/paritytech/substrate" }
+node-primitives = { path = "../primitives" }
+node-runtime = { path = "../runtime" }
+
+[dev-dependencies]
+substrate-keyring = { git = "https://github.com/paritytech/substrate" }
+sr-primitives = { git = "https://github.com/paritytech/substrate" }
+srml-support = { git = "https://github.com/paritytech/substrate" }
+srml-balances = { git = "https://github.com/paritytech/substrate" }
+srml-session = { git = "https://github.com/paritytech/substrate" }
+srml-staking = { git = "https://github.com/paritytech/substrate" }
+srml-system = { git = "https://github.com/paritytech/substrate" }
+srml-consensus = { git = "https://github.com/paritytech/substrate" }
+srml-timestamp = { git = "https://github.com/paritytech/substrate" }
+srml-treasury = { git = "https://github.com/paritytech/substrate" }
+srml-contract = { git = "https://github.com/paritytech/substrate" }
+wabt = "0.4"

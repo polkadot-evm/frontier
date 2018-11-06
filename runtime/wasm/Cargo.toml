@@ -1,0 +1,65 @@
+[package]
+name = "node-runtime"
+version = "0.1.0"
+authors = ["Parity Technologies <admin@parity.io>"]
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+integer-sqrt = { version = "0.1.2" }
+safe-mix = { version = "1.0", default-features = false}
+parity-codec-derive = { version = "2.1" }
+parity-codec = { version = "2.1", default-features = false }
+substrate-primitives = { git = "https://github.com/paritytech/substrate", default-features = false }
+sr-api = { git = "https://github.com/paritytech/substrate", default-features = false }
+sr-std = { git = "https://github.com/paritytech/substrate", default-features = false }
+srml-support = { git = "https://github.com/paritytech/substrate", default-features = false }
+srml-balances = { git = "https://github.com/paritytech/substrate", default-features = false }
+srml-consensus = { git = "https://github.com/paritytech/substrate", default-features = false }
+srml-contract = { git = "https://github.com/paritytech/substrate", default-features = false }
+srml-council = { git = "https://github.com/paritytech/substrate", default-features = false }
+srml-democracy = { git = "https://github.com/paritytech/substrate", default-features = false }
+srml-executive = { git = "https://github.com/paritytech/substrate", default-features = false }
+sr-primitives = { git = "https://github.com/paritytech/substrate", default-features = false }
+srml-session = { git = "https://github.com/paritytech/substrate", default-features = false }
+srml-staking = { git = "https://github.com/paritytech/substrate", default-features = false }
+srml-system = { git = "https://github.com/paritytech/substrate", default-features = false }
+srml-timestamp = { git = "https://github.com/paritytech/substrate", default-features = false }
+srml-treasury = { git = "https://github.com/paritytech/substrate", default-features = false }
+srml-upgrade-key = { git = "https://github.com/paritytech/substrate", default-features = false }
+sr-version = { git = "https://github.com/paritytech/substrate", default-features = false }
+node-primitives = { path = "../../primitives", default-features = false }
+
+[features]
+default = []
+std = [
+	"safe-mix/std",
+	"parity-codec/std",
+	"substrate-primitives/std",
+	"sr-api/std",
+	"sr-std/std",
+	"srml-support/std",
+	"srml-balances/std",
+	"srml-consensus/std",
+	"srml-contract/std",
+	"srml-council/std",
+	"srml-democracy/std",
+	"srml-executive/std",
+	"sr-primitives/std",
+	"srml-session/std",
+	"srml-staking/std",
+	"srml-system/std",
+	"srml-timestamp/std",
+	"srml-treasury/std",
+	"srml-upgrade-key/std",
+	"sr-version/std",
+	"node-primitives/std",
+]
+
+[profile.release]
+panic = "abort"
+lto = true
+
+[workspace]
+members = []

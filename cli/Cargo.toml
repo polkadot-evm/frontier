@@ -1,0 +1,29 @@
+[package]
+name = "node-cli"
+version = "0.1.0"
+authors = ["Parity Technologies <admin@parity.io>"]
+description = "Substrate node implementation in Rust."
+
+[dependencies]
+log = "0.4"
+tokio = "0.1.7"
+exit-future = "0.1"
+substrate-cli = { git = "https://github.com/paritytech/substrate" }
+parity-codec = { version = "2.1" }
+parking_lot = "0.4"
+slog = "^2"
+sr-io = { git = "https://github.com/paritytech/substrate" }
+substrate-client = { git = "https://github.com/paritytech/substrate" }
+substrate-primitives = { git = "https://github.com/paritytech/substrate" }
+node-runtime = { path = "../runtime" }
+node-primitives = { path = "../primitives" }
+hex-literal = "0.1"
+substrate-service = { git = "https://github.com/paritytech/substrate" }
+substrate-transaction-pool = { git = "https://github.com/paritytech/substrate" }
+substrate-network = { git = "https://github.com/paritytech/substrate" }
+substrate-consensus-aura = { git = "https://github.com/paritytech/substrate" }
+sr-primitives = { git = "https://github.com/paritytech/substrate" }
+node-executor = { path = "../executor" }
+
+[dev-dependencies]
+substrate-service-test = { git = "https://github.com/paritytech/substrate" }
