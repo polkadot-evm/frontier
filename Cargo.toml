@@ -13,6 +13,9 @@ ctrlc = { version = "3.0", features = ["termination"] }
 [build-dependencies]
 vergen = "2"
 
+[patch.'https://github.com/paritytech/substrate']
+substrate-trie = { path = "trie", default-features = false }
+
 [workspace]
 members = [
 	"cli",

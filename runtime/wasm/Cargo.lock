@@ -548,7 +548,7 @@ dependencies = [
  "sr-std 0.1.0 (git+https://github.com/paritytech/substrate)",
  "substrate-primitives 0.1.0 (git+https://github.com/paritytech/substrate)",
  "substrate-state-machine 0.1.0 (git+https://github.com/paritytech/substrate)",
- "substrate-trie 0.4.0 (git+https://github.com/paritytech/substrate)",
+ "substrate-trie 0.4.0",
 ]
 
 [[package]]
@@ -918,7 +918,7 @@ dependencies = [
  "parity-codec 2.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "parking_lot 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "substrate-primitives 0.1.0 (git+https://github.com/paritytech/substrate)",
- "substrate-trie 0.4.0 (git+https://github.com/paritytech/substrate)",
+ "substrate-trie 0.4.0",
  "trie-db 0.9.0 (git+https://github.com/paritytech/trie)",
  "trie-root 0.9.0 (git+https://github.com/paritytech/trie)",
 ]
@@ -926,7 +926,6 @@ dependencies = [
 [[package]]
 name = "substrate-trie"
 version = "0.4.0"
-source = "git+https://github.com/paritytech/substrate#c4d52314333e8cefee46fb24b9ba9a802005a31c"
 dependencies = [
  "hash-db 0.9.0 (git+https://github.com/paritytech/trie)",
  "memory-db 0.9.0 (git+https://github.com/paritytech/trie)",
@@ -1140,7 +1139,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum substrate-metadata 0.1.0 (git+https://github.com/paritytech/substrate)" = "<none>"
 "checksum substrate-primitives 0.1.0 (git+https://github.com/paritytech/substrate)" = "<none>"
 "checksum substrate-state-machine 0.1.0 (git+https://github.com/paritytech/substrate)" = "<none>"
-"checksum substrate-trie 0.4.0 (git+https://github.com/paritytech/substrate)" = "<none>"
 "checksum syn 0.14.9 (registry+https://github.com/rust-lang/crates.io-index)" = "261ae9ecaa397c42b960649561949d69311f08eeaea86a65696e6e46517cf741"
 "checksum syn 0.15.6 (registry+https://github.com/rust-lang/crates.io-index)" = "854b08a640fc8f54728fb95321e3ec485b365a97fe47609797c671addd1dde69"
 "checksum trie-db 0.9.0 (git+https://github.com/paritytech/trie)" = "<none>"
