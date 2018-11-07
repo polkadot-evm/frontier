@@ -25,9 +25,10 @@ extern crate parity_codec as codec;
 extern crate trie_db;
 extern crate hash_db;
 extern crate memory_db;
-
-#[cfg(test)]
+extern crate rlp;
 extern crate substrate_primitives;
+extern crate keccak_hasher;
+
 #[cfg(test)]
 extern crate trie_standardmap;
 #[cfg(test)]
@@ -38,6 +39,7 @@ mod error;
 mod node_header;
 mod node_codec;
 mod trie_stream;
+pub mod eth;
 
 const ETH_CHILD_STORAGE_KEY_PREFIX: &'static [u8] = b":child_storage:eth:";
 

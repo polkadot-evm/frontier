@@ -12,16 +12,17 @@ harness = false
 
 [dependencies]
 parity-codec = { version = "2.1" }
+substrate-primitives = { git = "https://github.com/paritytech/substrate" }
+rlp = { path = "../util/rlp", default-features = false }
 hash-db = { git = "https://github.com/paritytech/trie", default-features = false }
+keccak-hasher = { path = "../util/keccak-hasher", optional = true }
 trie-db = { git = "https://github.com/paritytech/trie", optional = true }
 trie-root = { git = "https://github.com/paritytech/trie", default-features = false }
 memory-db = { git = "https://github.com/paritytech/trie", optional = true }
 
 [dev-dependencies]
-substrate-primitives = { git = "https://github.com/paritytech/substrate" }
 trie-bench = { git = "https://github.com/paritytech/trie" }
 trie-standardmap = { git = "https://github.com/paritytech/trie" }
-keccak-hasher = { git = "https://github.com/paritytech/trie" }
 criterion = "0.1.2"
 hex-literal = "0.1.0"
 
@@ -29,7 +30,10 @@ hex-literal = "0.1.0"
 default = ["std"]
 std = [
 	"hash-db/std",
+	"substrate-primitives/std",
 	"memory-db",
+	"keccak-hasher",
 	"trie-db",
-	"trie-root/std"
+	"trie-root/std",
+	"rlp/std",
 ]
