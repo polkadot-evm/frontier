@@ -22,6 +22,9 @@ members = [
 	"executor",
 	"primitives",
 	"runtime",
+	"trie",
+	"util/keccak-hasher",
+	"util/rlp",
 ]
 exclude = [
 	"runtime/wasm",
