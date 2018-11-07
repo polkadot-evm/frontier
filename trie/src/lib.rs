@@ -39,9 +39,10 @@ mod error;
 mod node_header;
 mod node_codec;
 mod trie_stream;
-pub mod eth;
+mod eth;
 
-const ETH_CHILD_STORAGE_KEY_PREFIX: &'static [u8] = b":child_storage:eth:";
+pub const ETH_CHILD_STORAGE_KEY_PREFIX: &'static [u8] = b":child_storage:eth:";
+pub use eth::EthereumCodec;
 
 use hash_db::Hasher;
 /// Our `NodeCodec`-specific error.
