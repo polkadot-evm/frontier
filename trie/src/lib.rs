@@ -41,10 +41,16 @@ mod node_codec;
 mod trie_stream;
 mod eth;
 
+use hash_db::Hasher;
+use keccak_hasher::KeccakHasher;
+use substrate_primitives::H256;
+use eth::{BridgedHashDB, BridgedHashDBMut, BridgedQuery};
+
+/// Ethereum RLP-codec trie storage key prefix.
 pub const ETH_CHILD_STORAGE_KEY_PREFIX: &'static [u8] = b":child_storage:eth:";
+/// Ethereum trie codec.
 pub use eth::EthereumCodec;
 
-use hash_db::Hasher;
 /// Our `NodeCodec`-specific error.
 pub use error::Error;
 /// The Substrate format implementation of `TrieStream`.
@@ -66,10 +72,46 @@ pub type MemoryDB<H> = memory_db::MemoryDB<H, trie_db::DBValue>;
 
 /// Persistent trie database read-access interface for the a given hasher.
 pub type TrieDB<'a, H> = trie_db::TrieDB<'a, H, NodeCodec<H>>;
+/// Ethereum persistent trie database read-access interface.
+pub type EthereumTrieDB<'a> = trie_db::TrieDB<'a, KeccakHasher, EthereumCodec>;
 /// Persistent trie database write-access interface for the a given hasher.
 pub type TrieDBMut<'a, H> = trie_db::TrieDBMut<'a, H, NodeCodec<H>>;
+/// Ethereum persistent trie database write-access interface.
+pub type EthereumTrieDBMut<'a> = trie_db::TrieDBMut<'a, KeccakHasher, EthereumCodec>;
 /// Querying interface, as in `trie_db` but less generic.
 pub type Lookup<'a, H, Q> = trie_db::Lookup<'a, H, NodeCodec<H>, Q>;
+/// Ethereum querying interface.
+pub type EthereumLookup<'a, Q> = trie_db::Lookup<'a, KeccakHasher, EthereumCodec, Q>;
+
+macro_rules! try_trie {
+	( $t: expr, $e: expr ) => {
+		match $e {
+			Ok(val) => val,
+			Err(e) => {
+				return Err(match e.as_ref() {
+					trie_db::TrieError::InvalidStateRoot(t) => {
+						let mut v = $t;
+						v.as_mut().copy_from_slice(t.as_ref());
+
+						Box::new(trie_db::TrieError::InvalidStateRoot(v))
+					},
+					trie_db::TrieError::IncompleteDatabase(t) => {
+						let mut v = $t;
+						v.as_mut().copy_from_slice(t.as_ref());
+
+						Box::new(trie_db::TrieError::IncompleteDatabase(v))
+					},
+					trie_db::TrieError::DecoderError(t, _) => {
+						let mut v = $t;
+						v.as_mut().copy_from_slice(t.as_ref());
+
+						Box::new(trie_db::TrieError::DecoderError(v, Error::BadFormat))
+					},
+				})
+			}
+		}
+	}
+}
 
 /// Determine a trie root given its ordered contents, closed form.
 pub fn trie_root<H: Hasher, I, A, B>(input: I) -> H::Out where
@@ -140,7 +182,11 @@ pub fn is_child_trie_key_valid<H: Hasher>(_storage_key: &[u8]) -> bool {
 /// Determine the default child trie root.
 pub fn default_child_trie_root<H: Hasher>(storage_key: &[u8]) -> Vec<u8> {
 	if storage_key.starts_with(ETH_CHILD_STORAGE_KEY_PREFIX) {
-		unimplemented!()
+		let mut db = MemoryDB::default();
+		let mut root = H256::default();
+		let mut empty = EthereumTrieDBMut::new(&mut db, &mut root);
+		empty.commit();
+		empty.root().to_vec()
 	} else {
 		let mut db = MemoryDB::default();
 		let mut root = H::Out::default();
@@ -158,7 +204,14 @@ pub fn child_trie_root<H: Hasher, I, A, B>(storage_key: &[u8], input: I) -> Vec<
 	B: AsRef<[u8]>,
 {
 	if storage_key.starts_with(ETH_CHILD_STORAGE_KEY_PREFIX) {
-		unimplemented!()
+		let mut db = MemoryDB::default();
+		let mut root = H256::default();
+		let mut trie = EthereumTrieDBMut::new(&mut db, &mut root);
+		for (key, val) in input {
+			trie.insert(key.as_ref(), val.as_ref()).expect("In memory trie cannot fail");
+		}
+		trie.commit();
+		trie.root().to_vec()
 	} else {
 		trie_root::<H, _, _, _>(input).as_ref().iter().cloned().collect()
 	}
@@ -171,7 +224,23 @@ pub fn child_delta_trie_root<H: Hasher, I, A, B>(storage_key: &[u8], db: &mut Ha
 	B: AsRef<[u8]>,
 {
 	if storage_key.starts_with(ETH_CHILD_STORAGE_KEY_PREFIX) {
-		unimplemented!()
+		let mut db = BridgedHashDBMut::new(db);
+
+		let mut root = H256::default();
+		root.as_mut().copy_from_slice(&root_vec); // root is fetched from DB, not writable by runtime, so it's always valid.
+
+		{
+			let mut trie = try_trie!(H::Out::default(), EthereumTrieDBMut::from_existing(&mut db, &mut root));
+
+			for (key, change) in delta {
+				match change {
+					Some(val) => try_trie!(H::Out::default(), trie.insert(key.as_ref(), val.as_ref())),
+					None => try_trie!(H::Out::default(), trie.remove(key.as_ref())), // TODO: archive mode
+				};
+			}
+		}
+
+		Ok(root.to_vec())
 	} else {
 		let mut root = H::Out::default();
 		root.as_mut().copy_from_slice(&root_vec); // root is fetched from DB, not writable by runtime, so it's always valid.
@@ -194,7 +263,20 @@ pub fn child_delta_trie_root<H: Hasher, I, A, B>(storage_key: &[u8], db: &mut Ha
 /// Call `f` for all keys in a child trie.
 pub fn for_keys_in_child_trie<H: Hasher, F: FnMut(&[u8])>(storage_key: &[u8], db: &HashDB<H>, root_slice: &[u8], mut f: F) -> Result<(), Box<TrieError<H::Out>>> {
 	if storage_key.starts_with(ETH_CHILD_STORAGE_KEY_PREFIX) {
-		unimplemented!()
+		let db = BridgedHashDB::new(db);
+
+		let mut root = H256::default();
+		root.as_mut().copy_from_slice(root_slice); // root is fetched from DB, not writable by runtime, so it's always valid.
+
+		let trie = try_trie!(H::Out::default(), EthereumTrieDB::new(&db, &root));
+		let iter = try_trie!(H::Out::default(), trie.iter());
+
+		for x in iter {
+			let (key, _) = try_trie!(H::Out::default(), x);
+			f(&key);
+		}
+
+		Ok(())
 	} else {
 		let mut root = H::Out::default();
 		root.as_mut().copy_from_slice(root_slice); // root is fetched from DB, not writable by runtime, so it's always valid.
@@ -231,7 +313,12 @@ pub fn record_all_keys<H: Hasher>(db: &HashDB<H>, root: &H::Out, recorder: &mut 
 /// Read a value from the child trie.
 pub fn read_child_trie_value<H: Hasher>(storage_key: &[u8], db: &HashDB<H>, root_slice: &[u8], key: &[u8]) -> Result<Option<Vec<u8>>, Box<TrieError<H::Out>>> {
 	if storage_key.starts_with(ETH_CHILD_STORAGE_KEY_PREFIX) {
-		unimplemented!()
+		let db = BridgedHashDB::new(db);
+
+		let mut root = H256::default();
+		root.as_mut().copy_from_slice(root_slice); // root is fetched from DB, not writable by runtime, so it's always valid.
+
+		Ok(try_trie!(H::Out::default(), try_trie!(H::Out::default(), EthereumTrieDB::new(&db, &root)).get(key).map(|x| x.map(|val| val.to_vec()))))
 	} else {
 		let mut root = H::Out::default();
 		root.as_mut().copy_from_slice(root_slice); // root is fetched from DB, not writable by runtime, so it's always valid.
@@ -243,7 +330,14 @@ pub fn read_child_trie_value<H: Hasher>(storage_key: &[u8], db: &HashDB<H>, root
 /// Read a value from the child trie with given query.
 pub fn read_child_trie_value_with<H: Hasher, Q: Query<H, Item=DBValue>>(storage_key: &[u8], db: &HashDB<H>, root_slice: &[u8], key: &[u8], query: Q) -> Result<Option<Vec<u8>>, Box<TrieError<H::Out>>> {
 	if storage_key.starts_with(ETH_CHILD_STORAGE_KEY_PREFIX) {
-		unimplemented!()
+		let db = BridgedHashDB::new(db);
+
+		let mut root = H256::default();
+		root.as_mut().copy_from_slice(root_slice); // root is fetched from DB, not writable by runtime, so it's always valid.
+
+		let query = BridgedQuery::new(query);
+
+		Ok(try_trie!(H::Out::default(), try_trie!(H::Out::default(), EthereumTrieDB::new(&db, &root)).get_with(key, query).map(|x| x.map(|val| val.to_vec()))))
 	} else {
 		let mut root = H::Out::default();
 		root.as_mut().copy_from_slice(root_slice); // root is fetched from DB, not writable by runtime, so it's always valid.

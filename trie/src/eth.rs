@@ -18,9 +18,157 @@
 
 use substrate_primitives::H256;
 use keccak_hasher::KeccakHasher;
-use hash_db::Hasher;
-use trie_db::{self, DBValue, NibbleSlice, node::Node, ChildReference};
+use hash_db::{Hasher, HashDB, AsHashDB};
+use std::collections::HashMap;
+use std::marker::PhantomData;
+use trie_db::{self, DBValue, NibbleSlice, node::Node, ChildReference, Query};
 use rlp::{DecoderError, RlpStream, Rlp, Prototype};
+
+pub struct BridgedQuery<H: Hasher, I, Q: Query<H, Item=I>> {
+	query: Q,
+	_marker: PhantomData<(H, I)>,
+}
+
+impl<H: Hasher, I, Q: Query<H, Item=I>> BridgedQuery<H, I, Q> {
+	pub fn new(query: Q) -> Self {
+		Self {
+			query,
+			_marker: PhantomData,
+		}
+	}
+}
+
+impl<H: Hasher, I, Q: Query<H, Item=I>> Query<KeccakHasher> for BridgedQuery<H, I, Q> {
+	type Item = Q::Item;
+
+	fn decode(self, data: &[u8]) -> Self::Item {
+		self.query.decode(data)
+	}
+
+	fn record(&mut self, hash: &H256, data: &[u8], depth: u32) {
+		let mut ohash = H::Out::default();
+		ohash.as_mut().copy_from_slice(hash.as_ref());
+
+		self.query.record(&ohash, data, depth)
+	}
+}
+
+pub struct BridgedHashDB<'a, HS: Hasher + 'a> {
+	db: &'a HashDB<HS, trie_db::DBValue>,
+	_marker: PhantomData<HS>,
+}
+
+impl<'a, HS: Hasher> BridgedHashDB<'a, HS> {
+	pub fn new(db: &'a HashDB<HS, trie_db::DBValue>) -> Self {
+		BridgedHashDB {
+			db,
+			_marker: PhantomData,
+		}
+	}
+}
+
+impl<'a, HS: Hasher> AsHashDB<KeccakHasher, trie_db::DBValue> for BridgedHashDB<'a, HS> {
+	fn as_hash_db<'b>(&'b self) -> &'b (hash_db::HashDB<KeccakHasher, trie_db::DBValue> + 'b) { self }
+	fn as_hash_db_mut<'b>(&'b mut self) -> &'b mut (hash_db::HashDB<KeccakHasher, trie_db::DBValue> + 'b) { self }
+}
+
+impl<'a, HS: Hasher> HashDB<KeccakHasher, trie_db::DBValue> for BridgedHashDB<'a, HS> {
+	fn keys(&self) -> HashMap<H256, i32> {
+		self.db.keys().into_iter()
+			.map(|(k, c)| (H256::from(k.as_ref()), c))
+			.collect()
+	}
+
+	fn get(&self, key: &H256) -> Option<trie_db::DBValue> {
+		let mut okey = HS::Out::default();
+		okey.as_mut().copy_from_slice(key.as_ref());
+
+		self.db.get(&okey)
+	}
+
+	fn contains(&self, key: &H256) -> bool {
+		let mut okey = HS::Out::default();
+		okey.as_mut().copy_from_slice(key.as_ref());
+
+		self.db.contains(&okey)
+	}
+
+	fn insert(&mut self, _value: &[u8]) -> H256 {
+		panic!("Impossible to invoke");
+	}
+
+	fn emplace(&mut self, _key: H256, _value: trie_db::DBValue) {
+		panic!("Impossible to invoke");
+	}
+
+	fn remove(&mut self, _key: &H256) {
+		panic!("Impossible to invoke");
+	}
+}
+
+pub struct BridgedHashDBMut<'a, HS: Hasher + 'a> {
+	db: &'a mut HashDB<HS, trie_db::DBValue>,
+	_marker: PhantomData<HS>,
+}
+
+impl<'a, HS: Hasher> BridgedHashDBMut<'a, HS> {
+	pub fn new(db: &'a mut HashDB<HS, trie_db::DBValue>) -> Self {
+		BridgedHashDBMut {
+			db,
+			_marker: PhantomData,
+		}
+	}
+}
+
+impl<'a, HS: Hasher> AsHashDB<KeccakHasher, trie_db::DBValue> for BridgedHashDBMut<'a, HS> {
+	fn as_hash_db<'b>(&'b self) -> &'b (hash_db::HashDB<KeccakHasher, trie_db::DBValue> + 'b) { self }
+	fn as_hash_db_mut<'b>(&'b mut self) -> &'b mut (hash_db::HashDB<KeccakHasher, trie_db::DBValue> + 'b) { self }
+}
+
+impl<'a, HS: Hasher> HashDB<KeccakHasher, trie_db::DBValue> for BridgedHashDBMut<'a, HS> {
+	fn keys(&self) -> HashMap<H256, i32> {
+		self.db.keys().into_iter()
+			.map(|(k, c)| (H256::from(k.as_ref()), c))
+			.collect()
+	}
+
+	fn get(&self, key: &H256) -> Option<trie_db::DBValue> {
+		let mut okey = HS::Out::default();
+		okey.as_mut().copy_from_slice(key.as_ref());
+
+		self.db.get(&okey)
+	}
+
+	fn contains(&self, key: &H256) -> bool {
+		let mut okey = HS::Out::default();
+		okey.as_mut().copy_from_slice(key.as_ref());
+
+		self.db.contains(&okey)
+	}
+
+	fn insert(&mut self, value: &[u8]) -> H256 {
+		let key = KeccakHasher::hash(value);
+		let mut okey = HS::Out::default();
+		okey.as_mut().copy_from_slice(key.as_ref());
+
+		self.db.emplace(okey, value.into());
+		key
+	}
+
+	fn emplace(&mut self, key: H256, value: trie_db::DBValue) {
+		let mut okey = HS::Out::default();
+		okey.as_mut().copy_from_slice(key.as_ref());
+
+		self.db.emplace(okey, value)
+	}
+
+	fn remove(&mut self, key: &H256) {
+		let mut okey = HS::Out::default();
+		okey.as_mut().copy_from_slice(key.as_ref());
+
+		self.db.remove(&okey)
+	}
+}
 
 #[derive(Default, Clone)]
 pub struct EthereumCodec;
