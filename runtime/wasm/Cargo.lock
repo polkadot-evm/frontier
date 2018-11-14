@@ -137,12 +137,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "hash-db"
 version = "0.9.0"
-source = "git+https://github.com/paritytech/trie#99c1ca58ae26c8dec59ab0a0c957dd5e1f3243a0"
+source = "git+https://github.com/paritytech/trie#9244f0683d71bb1deb1cbc5827e45da00728eb5c"
 
 [[package]]
 name = "hash256-std-hasher"
 version = "0.9.0"
-source = "git+https://github.com/paritytech/trie#99c1ca58ae26c8dec59ab0a0c957dd5e1f3243a0"
+source = "git+https://github.com/paritytech/trie#9244f0683d71bb1deb1cbc5827e45da00728eb5c"
 dependencies = [
  "crunchy 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -246,7 +246,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "memory-db"
 version = "0.9.0"
-source = "git+https://github.com/paritytech/trie#99c1ca58ae26c8dec59ab0a0c957dd5e1f3243a0"
+source = "git+https://github.com/paritytech/trie#9244f0683d71bb1deb1cbc5827e45da00728eb5c"
 dependencies = [
  "hash-db 0.9.0 (git+https://github.com/paritytech/trie)",
  "heapsize 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -556,7 +556,7 @@ dependencies = [
 [[package]]
 name = "sr-api"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/substrate#26a501d119f35d31f0b98e38f2e4b734b4123c40"
+source = "git+https://github.com/paritytech/substrate#2d4464829304dfb5017febc81401d21cbd5e0f4e"
 dependencies = [
  "parity-codec 2.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "sr-primitives 0.1.0 (git+https://github.com/paritytech/substrate)",
@@ -567,7 +567,7 @@ dependencies = [
 [[package]]
 name = "sr-io"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/substrate#26a501d119f35d31f0b98e38f2e4b734b4123c40"
+source = "git+https://github.com/paritytech/substrate#2d4464829304dfb5017febc81401d21cbd5e0f4e"
 dependencies = [
  "environmental 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "hash-db 0.9.0 (git+https://github.com/paritytech/trie)",
@@ -582,7 +582,7 @@ dependencies = [
 [[package]]
 name = "sr-primitives"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/substrate#26a501d119f35d31f0b98e38f2e4b734b4123c40"
+source = "git+https://github.com/paritytech/substrate#2d4464829304dfb5017febc81401d21cbd5e0f4e"
 dependencies = [
  "integer-sqrt 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.5 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -599,7 +599,7 @@ dependencies = [
 [[package]]
 name = "sr-sandbox"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/substrate#26a501d119f35d31f0b98e38f2e4b734b4123c40"
+source = "git+https://github.com/paritytech/substrate#2d4464829304dfb5017febc81401d21cbd5e0f4e"
 dependencies = [
  "parity-codec 2.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustc_version 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -611,7 +611,7 @@ dependencies = [
 [[package]]
 name = "sr-std"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/substrate#26a501d119f35d31f0b98e38f2e4b734b4123c40"
+source = "git+https://github.com/paritytech/substrate#2d4464829304dfb5017febc81401d21cbd5e0f4e"
 dependencies = [
  "rustc_version 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -619,7 +619,7 @@ dependencies = [
 [[package]]
 name = "sr-version"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/substrate#26a501d119f35d31f0b98e38f2e4b734b4123c40"
+source = "git+https://github.com/paritytech/substrate#2d4464829304dfb5017febc81401d21cbd5e0f4e"
 dependencies = [
  "parity-codec 2.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-codec-derive 2.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -632,7 +632,7 @@ dependencies = [
 [[package]]
 name = "srml-balances"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/substrate#26a501d119f35d31f0b98e38f2e4b734b4123c40"
+source = "git+https://github.com/paritytech/substrate#2d4464829304dfb5017febc81401d21cbd5e0f4e"
 dependencies = [
  "hex-literal 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-codec 2.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -652,7 +652,7 @@ dependencies = [
 [[package]]
 name = "srml-consensus"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/substrate#26a501d119f35d31f0b98e38f2e4b734b4123c40"
+source = "git+https://github.com/paritytech/substrate#2d4464829304dfb5017febc81401d21cbd5e0f4e"
 dependencies = [
  "hex-literal 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-codec 2.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -670,7 +670,7 @@ dependencies = [
 [[package]]
 name = "srml-contract"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/substrate#26a501d119f35d31f0b98e38f2e4b734b4123c40"
+source = "git+https://github.com/paritytech/substrate#2d4464829304dfb5017febc81401d21cbd5e0f4e"
 dependencies = [
  "parity-codec 2.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-codec-derive 2.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -691,7 +691,7 @@ dependencies = [
 [[package]]
 name = "srml-council"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/substrate#26a501d119f35d31f0b98e38f2e4b734b4123c40"
+source = "git+https://github.com/paritytech/substrate#2d4464829304dfb5017febc81401d21cbd5e0f4e"
 dependencies = [
  "hex-literal 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-codec 2.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -712,7 +712,7 @@ dependencies = [
 [[package]]
 name = "srml-democracy"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/substrate#26a501d119f35d31f0b98e38f2e4b734b4123c40"
+source = "git+https://github.com/paritytech/substrate#2d4464829304dfb5017febc81401d21cbd5e0f4e"
 dependencies = [
  "hex-literal 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-codec 2.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -732,7 +732,7 @@ dependencies = [
 [[package]]
 name = "srml-executive"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/substrate#26a501d119f35d31f0b98e38f2e4b734b4123c40"
+source = "git+https://github.com/paritytech/substrate#2d4464829304dfb5017febc81401d21cbd5e0f4e"
 dependencies = [
  "hex-literal 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-codec 2.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -749,7 +749,7 @@ dependencies = [
 [[package]]
 name = "srml-session"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/substrate#26a501d119f35d31f0b98e38f2e4b734b4123c40"
+source = "git+https://github.com/paritytech/substrate#2d4464829304dfb5017febc81401d21cbd5e0f4e"
 dependencies = [
  "hex-literal 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-codec 2.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -770,7 +770,7 @@ dependencies = [
 [[package]]
 name = "srml-staking"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/substrate#26a501d119f35d31f0b98e38f2e4b734b4123c40"
+source = "git+https://github.com/paritytech/substrate#2d4464829304dfb5017febc81401d21cbd5e0f4e"
 dependencies = [
  "hex-literal 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-codec 2.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -794,7 +794,7 @@ dependencies = [
 [[package]]
 name = "srml-support"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/substrate#26a501d119f35d31f0b98e38f2e4b734b4123c40"
+source = "git+https://github.com/paritytech/substrate#2d4464829304dfb5017febc81401d21cbd5e0f4e"
 dependencies = [
  "hex-literal 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "mashup 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -810,7 +810,7 @@ dependencies = [
 [[package]]
 name = "srml-system"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/substrate#26a501d119f35d31f0b98e38f2e4b734b4123c40"
+source = "git+https://github.com/paritytech/substrate#2d4464829304dfb5017febc81401d21cbd5e0f4e"
 dependencies = [
  "hex-literal 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-codec 2.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -828,7 +828,7 @@ dependencies = [
 [[package]]
 name = "srml-timestamp"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/substrate#26a501d119f35d31f0b98e38f2e4b734b4123c40"
+source = "git+https://github.com/paritytech/substrate#2d4464829304dfb5017febc81401d21cbd5e0f4e"
 dependencies = [
  "hex-literal 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-codec 2.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -847,7 +847,7 @@ dependencies = [
 [[package]]
 name = "srml-treasury"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/substrate#26a501d119f35d31f0b98e38f2e4b734b4123c40"
+source = "git+https://github.com/paritytech/substrate#2d4464829304dfb5017febc81401d21cbd5e0f4e"
 dependencies = [
  "hex-literal 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-codec 2.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -866,7 +866,7 @@ dependencies = [
 [[package]]
 name = "srml-upgrade-key"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/substrate#26a501d119f35d31f0b98e38f2e4b734b4123c40"
+source = "git+https://github.com/paritytech/substrate#2d4464829304dfb5017febc81401d21cbd5e0f4e"
 dependencies = [
  "hex-literal 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-codec 2.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -895,7 +895,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "substrate-keyring"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/substrate#26a501d119f35d31f0b98e38f2e4b734b4123c40"
+source = "git+https://github.com/paritytech/substrate#2d4464829304dfb5017febc81401d21cbd5e0f4e"
 dependencies = [
  "hex-literal 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -905,7 +905,7 @@ dependencies = [
 [[package]]
 name = "substrate-metadata"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/substrate#26a501d119f35d31f0b98e38f2e4b734b4123c40"
+source = "git+https://github.com/paritytech/substrate#2d4464829304dfb5017febc81401d21cbd5e0f4e"
 dependencies = [
  "parity-codec 2.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-codec-derive 2.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -916,7 +916,7 @@ dependencies = [
 [[package]]
 name = "substrate-primitives"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/substrate#26a501d119f35d31f0b98e38f2e4b734b4123c40"
+source = "git+https://github.com/paritytech/substrate#2d4464829304dfb5017febc81401d21cbd5e0f4e"
 dependencies = [
  "base58 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "blake2-rfc 0.2.18 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -942,7 +942,7 @@ dependencies = [
 [[package]]
 name = "substrate-state-machine"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/substrate#26a501d119f35d31f0b98e38f2e4b734b4123c40"
+source = "git+https://github.com/paritytech/substrate#2d4464829304dfb5017febc81401d21cbd5e0f4e"
 dependencies = [
  "hash-db 0.9.0 (git+https://github.com/paritytech/trie)",
  "heapsize 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1001,7 +1001,7 @@ dependencies = [
 [[package]]
 name = "trie-db"
 version = "0.9.0"
-source = "git+https://github.com/paritytech/trie#99c1ca58ae26c8dec59ab0a0c957dd5e1f3243a0"
+source = "git+https://github.com/paritytech/trie#9244f0683d71bb1deb1cbc5827e45da00728eb5c"
 dependencies = [
  "elastic-array 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "hash-db 0.9.0 (git+https://github.com/paritytech/trie)",
@@ -1012,7 +1012,7 @@ dependencies = [
 [[package]]
 name = "trie-root"
 version = "0.9.0"
-source = "git+https://github.com/paritytech/trie#99c1ca58ae26c8dec59ab0a0c957dd5e1f3243a0"
+source = "git+https://github.com/paritytech/trie#9244f0683d71bb1deb1cbc5827e45da00728eb5c"
 dependencies = [
  "hash-db 0.9.0 (git+https://github.com/paritytech/trie)",
 ]
