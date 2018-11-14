@@ -185,7 +185,7 @@ mod ethereum_traits {
 		($name: ident) => {
 			impl Encodable for $name {
 				fn rlp_append(&self, s: &mut RlpStream) {
-					s.encoder().encode_value(self);
+					s.encoder().encode_value(self.as_ref());
 				}
 			}
 		}
@@ -201,7 +201,7 @@ mod ethereum_traits {
 						cmp::Ordering::Equal => {
 							let mut t = [0u8; $size];
 							t.copy_from_slice(bytes);
-							Ok($name(t))
+							Ok($name::from(t))
 						}
 					})
 				}

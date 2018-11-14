@@ -75,7 +75,7 @@ impl<'a, HS: Hasher> AsHashDB<KeccakHasher, trie_db::DBValue> for BridgedHashDB<
 impl<'a, HS: Hasher> HashDB<KeccakHasher, trie_db::DBValue> for BridgedHashDB<'a, HS> {
 	fn keys(&self) -> HashMap<H256, i32> {
 		self.db.keys().into_iter()
-			.map(|(k, c)| (H256::from(k.as_ref()), c))
+			.map(|(k, c)| (H256::from_slice(k.as_ref()), c))
 			.collect()
 	}
 
@@ -128,7 +128,7 @@ impl<'a, HS: Hasher> AsHashDB<KeccakHasher, trie_db::DBValue> for BridgedHashDBM
 impl<'a, HS: Hasher> HashDB<KeccakHasher, trie_db::DBValue> for BridgedHashDBMut<'a, HS> {
 	fn keys(&self) -> HashMap<H256, i32> {
 		self.db.keys().into_iter()
-			.map(|(k, c)| (H256::from(k.as_ref()), c))
+			.map(|(k, c)| (H256::from_slice(k.as_ref()), c))
 			.collect()
 	}
 
@@ -177,7 +177,7 @@ impl trie_db::NodeCodec<KeccakHasher> for EthereumCodec {
 	type Error = DecoderError;
 
 	fn hashed_null_node() -> H256 {
-		H256(
+		H256::from(
 			[0x56, 0xe8, 0x1f, 0x17,
 			 0x1b, 0xcc, 0x55, 0xa6,
 			 0xff, 0x83, 0x45, 0xe6,
