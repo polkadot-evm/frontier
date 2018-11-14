@@ -18,7 +18,7 @@
 
 use substrate_primitives::H256;
 use keccak_hasher::KeccakHasher;
-use hash_db::{Hasher, HashDB, AsHashDB};
+use hash_db::{Hasher, HashDB, HashDBRef, AsHashDB};
 use std::collections::HashMap;
 use std::marker::PhantomData;
 use trie_db::{self, DBValue, NibbleSlice, node::Node, ChildReference, Query};
@@ -54,12 +54,12 @@ impl<H: Hasher, I, Q: Query<H, Item=I>> Query<KeccakHasher> for BridgedQuery<H, 
 }
 
 pub struct BridgedHashDB<'a, HS: Hasher + 'a> {
-	db: &'a HashDB<HS, trie_db::DBValue>,
+	db: &'a HashDBRef<HS, trie_db::DBValue>,
 	_marker: PhantomData<HS>,
 }
 
 impl<'a, HS: Hasher> BridgedHashDB<'a, HS> {
-	pub fn new(db: &'a HashDB<HS, trie_db::DBValue>) -> Self {
+	pub fn new(db: &'a HashDBRef<HS, trie_db::DBValue>) -> Self {
 		BridgedHashDB {
 			db,
 			_marker: PhantomData,
@@ -67,12 +67,7 @@ impl<'a, HS: Hasher> BridgedHashDB<'a, HS> {
 	}
 }
 
-impl<'a, HS: Hasher> AsHashDB<KeccakHasher, trie_db::DBValue> for BridgedHashDB<'a, HS> {
-	fn as_hash_db<'b>(&'b self) -> &'b (hash_db::HashDB<KeccakHasher, trie_db::DBValue> + 'b) { self }
-	fn as_hash_db_mut<'b>(&'b mut self) -> &'b mut (hash_db::HashDB<KeccakHasher, trie_db::DBValue> + 'b) { self }
-}
-
-impl<'a, HS: Hasher> HashDB<KeccakHasher, trie_db::DBValue> for BridgedHashDB<'a, HS> {
+impl<'a, 'b, HS: Hasher> HashDBRef<KeccakHasher, trie_db::DBValue> for BridgedHashDB<'a, HS> {
 	fn keys(&self) -> HashMap<H256, i32> {
 		self.db.keys().into_iter()
 			.map(|(k, c)| (H256::from_slice(k.as_ref()), c))
@@ -91,18 +86,6 @@ impl<'a, HS: Hasher> HashDB<KeccakHasher, trie_db::DBValue> for BridgedHashDB<'a
 		okey.as_mut().copy_from_slice(key.as_ref());
 
 		self.db.contains(&okey)
-	}
-
-	fn insert(&mut self, _value: &[u8]) -> H256 {
-		panic!("Impossible to invoke");
-	}
-
-	fn emplace(&mut self, _key: H256, _value: trie_db::DBValue) {
-		panic!("Impossible to invoke");
-	}
-
-	fn remove(&mut self, _key: &H256) {
-		panic!("Impossible to invoke");
 	}
 }
 

@@ -150,7 +150,7 @@ pub fn delta_trie_root<H: Hasher, I, A, B, DB>(
 }
 
 /// Read a value from the trie.
-pub fn read_trie_value<H: Hasher, DB: hash_db::HashDB<H, trie_db::DBValue>>(
+pub fn read_trie_value<H: Hasher, DB: hash_db::HashDBRef<H, trie_db::DBValue>>(
 	db: &DB,
 	root: &H::Out,
 	key: &[u8]
@@ -159,8 +159,8 @@ pub fn read_trie_value<H: Hasher, DB: hash_db::HashDB<H, trie_db::DBValue>>(
 }
 
 /// Read a value from the trie with given Query.
-pub fn read_trie_value_with<H: Hasher, Q: Query<H, Item=DBValue>, DB: hash_db::HashDB<H, trie_db::DBValue>>(
-	db: &HashDB<H>,
+pub fn read_trie_value_with<H: Hasher, Q: Query<H, Item=DBValue>, DB: hash_db::HashDBRef<H, trie_db::DBValue>>(
+	db: &DB,
 	root: &H::Out,
 	key: &[u8],
 	query: Q
@@ -285,11 +285,11 @@ pub fn child_delta_trie_root<H: Hasher, I, A, B, DB>(
 /// Call `f` for all keys in a child trie.
 pub fn for_keys_in_child_trie<H: Hasher, F: FnMut(&[u8]), DB>(
 	storage_key: &[u8],
-	db: &HashDB<H>,
+	db: &DB,
 	root_slice: &[u8],
 	mut f: F
 ) -> Result<(), Box<TrieError<H::Out>>> where
-	DB: hash_db::HashDB<H, trie_db::DBValue> + hash_db::PlainDB<H::Out, trie_db::DBValue>,
+	DB: hash_db::HashDBRef<H, trie_db::DBValue> + hash_db::PlainDBRef<H::Out, trie_db::DBValue>,
 {
 	if storage_key.starts_with(ETH_CHILD_STORAGE_KEY_PREFIX) {
 		let db = BridgedHashDB::new(db);
@@ -328,7 +328,7 @@ pub fn record_all_keys<H: Hasher, DB>(
 	root: &H::Out,
 	recorder: &mut Recorder<H::Out>
 ) -> Result<(), Box<TrieError<H::Out>>> where
-	DB: hash_db::HashDB<H, trie_db::DBValue>
+	DB: hash_db::HashDBRef<H, trie_db::DBValue>
 {
 	let trie = TrieDB::<H>::new(db, root)?;
 	let iter = trie.iter()?;
@@ -352,7 +352,7 @@ pub fn read_child_trie_value<H: Hasher, DB>(
 	root_slice: &[u8],
 	key: &[u8]
 ) -> Result<Option<Vec<u8>>, Box<TrieError<H::Out>>> where
-	DB: hash_db::HashDB<H, trie_db::DBValue> + hash_db::PlainDB<H::Out, trie_db::DBValue>,
+	DB: hash_db::HashDBRef<H, trie_db::DBValue> + hash_db::PlainDBRef<H::Out, trie_db::DBValue>,
 {
 	if storage_key.starts_with(ETH_CHILD_STORAGE_KEY_PREFIX) {
 		let db = BridgedHashDB::new(db);
@@ -377,7 +377,7 @@ pub fn read_child_trie_value_with<H: Hasher, Q: Query<H, Item=DBValue>, DB>(
 	key: &[u8],
 	query: Q
 ) -> Result<Option<Vec<u8>>, Box<TrieError<H::Out>>> where
-	DB: hash_db::HashDB<H, trie_db::DBValue> + hash_db::PlainDB<H::Out, trie_db::DBValue>,
+	DB: hash_db::HashDBRef<H, trie_db::DBValue> + hash_db::PlainDBRef<H::Out, trie_db::DBValue>,
 {
 	if storage_key.starts_with(ETH_CHILD_STORAGE_KEY_PREFIX) {
 		let db = BridgedHashDB::new(db);
