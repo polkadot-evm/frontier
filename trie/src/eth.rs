@@ -19,7 +19,6 @@
 use substrate_primitives::H256;
 use keccak_hasher::KeccakHasher;
 use hash_db::{Hasher, HashDB, HashDBRef, AsHashDB};
-use std::collections::HashMap;
 use std::marker::PhantomData;
 use trie_db::{self, DBValue, NibbleSlice, node::Node, ChildReference, Query};
 use rlp::{DecoderError, RlpStream, Rlp, Prototype};
@@ -46,9 +45,7 @@ impl<H: Hasher, I, Q: Query<H, Item=I>> Query<KeccakHasher> for BridgedQuery<H, 
 	}
 
 	fn record(&mut self, hash: &H256, data: &[u8], depth: u32) {
-		let mut ohash = H::Out::default();
-		ohash.as_mut().copy_from_slice(hash.as_ref());
-
+		let ohash = H::hash(hash.as_ref());
 		self.query.record(&ohash, data, depth)
 	}
 }
@@ -68,23 +65,13 @@ impl<'a, HS: Hasher> BridgedHashDB<'a, HS> {
 }
 
 impl<'a, 'b, HS: Hasher> HashDBRef<KeccakHasher, trie_db::DBValue> for BridgedHashDB<'a, HS> {
-	fn keys(&self) -> HashMap<H256, i32> {
-		self.db.keys().into_iter()
-			.map(|(k, c)| (H256::from_slice(k.as_ref()), c))
-			.collect()
-	}
-
 	fn get(&self, key: &H256) -> Option<trie_db::DBValue> {
-		let mut okey = HS::Out::default();
-		okey.as_mut().copy_from_slice(key.as_ref());
-
+		let okey = HS::hash(key.as_ref());
 		self.db.get(&okey)
 	}
 
 	fn contains(&self, key: &H256) -> bool {
-		let mut okey = HS::Out::default();
-		okey.as_mut().copy_from_slice(key.as_ref());
-
+		let okey = HS::hash(key.as_ref());
 		self.db.contains(&okey)
 	}
 }
@@ -109,46 +96,29 @@ impl<'a, HS: Hasher> AsHashDB<KeccakHasher, trie_db::DBValue> for BridgedHashDBM
 }
 
 impl<'a, HS: Hasher> HashDB<KeccakHasher, trie_db::DBValue> for BridgedHashDBMut<'a, HS> {
-	fn keys(&self) -> HashMap<H256, i32> {
-		self.db.keys().into_iter()
-			.map(|(k, c)| (H256::from_slice(k.as_ref()), c))
-			.collect()
-	}
-
 	fn get(&self, key: &H256) -> Option<trie_db::DBValue> {
-		let mut okey = HS::Out::default();
-		okey.as_mut().copy_from_slice(key.as_ref());
-
+		let okey = HS::hash(key.as_ref());
 		self.db.get(&okey)
 	}
 
 	fn contains(&self, key: &H256) -> bool {
-		let mut okey = HS::Out::default();
-		okey.as_mut().copy_from_slice(key.as_ref());
-
+		let okey = HS::hash(key.as_ref());
 		self.db.contains(&okey)
 	}
 
 	fn insert(&mut self, value: &[u8]) -> H256 {
 		let key = KeccakHasher::hash(value);
-		let mut okey = HS::Out::default();
-		okey.as_mut().copy_from_slice(key.as_ref());
-
-		self.db.emplace(okey, value.into());
+		self.emplace(key, value.into());
 		key
 	}
 
 	fn emplace(&mut self, key: H256, value: trie_db::DBValue) {
-		let mut okey = HS::Out::default();
-		okey.as_mut().copy_from_slice(key.as_ref());
-
+		let okey = HS::hash(key.as_ref());
 		self.db.emplace(okey, value)
 	}
 
 	fn remove(&mut self, key: &H256) {
-		let mut okey = HS::Out::default();
-		okey.as_mut().copy_from_slice(key.as_ref());
-
+		let okey = HS::hash(key.as_ref());
 		self.db.remove(&okey)
 	}
 }
