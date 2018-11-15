@@ -1694,7 +1694,6 @@ name = "node-cli"
 version = "0.1.0"
 dependencies = [
  "exit-future 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "hex-literal 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "node-executor 0.1.0",
  "node-primitives 0.1.0",

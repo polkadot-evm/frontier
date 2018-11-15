@@ -25,8 +25,6 @@ extern crate substrate_cli as cli;
 extern crate substrate_primitives as primitives;
 extern crate node_runtime;
 extern crate exit_future;
-#[macro_use]
-extern crate hex_literal;
 #[cfg(test)]
 extern crate substrate_service_test as service_test;
 extern crate substrate_transaction_pool as transaction_pool;
@@ -56,29 +54,21 @@ pub enum ChainSpec {
 	Development,
 	/// Whatever the current runtime is, with simple Alice/Bob auths.
 	LocalTestnet,
-	/// The BBQ Birch testnet.
-	BbqBirch,
-	/// Whatever the current runtime is with the "global testnet" defaults.
-	StagingTestnet,
 }
 
 /// Get a chain config from a spec setting.
 impl ChainSpec {
 	pub(crate) fn load(self) -> Result<chain_spec::ChainSpec, String> {
 		Ok(match self {
-			ChainSpec::BbqBirch => chain_spec::bbq_birch_config()?,
 			ChainSpec::Development => chain_spec::development_config(),
 			ChainSpec::LocalTestnet => chain_spec::local_testnet_config(),
-			ChainSpec::StagingTestnet => chain_spec::staging_testnet_config(),
 		})
 	}
 
 	pub(crate) fn from(s: &str) -> Option<Self> {
 		match s {
 			"dev" => Some(ChainSpec::Development),
-			"local" => Some(ChainSpec::LocalTestnet),
-			"" | "bbq-birch" => Some(ChainSpec::BbqBirch),
-			"staging" => Some(ChainSpec::StagingTestnet),
+			"" | "local" => Some(ChainSpec::LocalTestnet),
 			_ => None,
 		}
 	}

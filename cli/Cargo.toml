@@ -17,7 +17,6 @@ substrate-client = { git = "https://github.com/paritytech/substrate" }
 substrate-primitives = { git = "https://github.com/paritytech/substrate" }
 node-runtime = { path = "../runtime" }
 node-primitives = { path = "../primitives" }
-hex-literal = "0.1"
 substrate-service = { git = "https://github.com/paritytech/substrate" }
 substrate-transaction-pool = { git = "https://github.com/paritytech/substrate" }
 substrate-network = { git = "https://github.com/paritytech/substrate" }
