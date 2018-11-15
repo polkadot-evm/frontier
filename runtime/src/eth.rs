@@ -1,4 +1,5 @@
 use system;
+use runtime_primitives;
 
 pub trait Trait: system::Trait { }
 
