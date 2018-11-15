@@ -48,6 +48,8 @@ extern crate srml_upgrade_key as upgrade_key;
 extern crate sr_version as version;
 extern crate node_primitives;
 
+mod eth;
+
 use rstd::prelude::*;
 use node_primitives::{AccountId, BlockNumber, Hash, Index, SessionKey, Signature};
 use runtime_api::{runtime::*, id::*};
@@ -136,6 +138,8 @@ impl upgrade_key::Trait for Runtime {
 	type Event = Event;
 }
 
+impl eth::Trait for Runtime { }
+
 construct_runtime!(
 	pub enum Runtime with Log(InternalLog: DigestItem<Hash, SessionKey>) where
 		Block = Block,
@@ -146,6 +150,7 @@ construct_runtime!(
 		Consensus: consensus::{Module, Call, Storage, Config<T>, Log(AuthoritiesChange), Inherent},
 		Session: session,
 		UpgradeKey: upgrade_key,
+		Ethereum: eth::{Module, Call, Storage},
 	}
 );
 
