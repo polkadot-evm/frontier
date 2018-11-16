@@ -6,9 +6,12 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use std::borrow::Borrow;
+use core::borrow::Borrow;
 use byteorder::{ByteOrder, BigEndian};
 use traits::Encodable;
+
+#[cfg(not(feature = "std"))]
+use alloc::prelude::*;
 
 #[derive(Debug, Copy, Clone)]
 struct ListInfo {

@@ -32,6 +32,15 @@
 //! * You want to get view onto rlp-slice.
 //! * You don't want to decode whole rlp at once.
 
+#![cfg_attr(not(feature = "std"), no_std)]
+#![cfg_attr(not(feature = "std"), feature(alloc))]
+
+#[cfg(not(feature = "std"))]
+extern crate alloc;
+
+#[cfg(feature = "std")]
+extern crate core;
+
 extern crate byteorder;
 #[cfg(feature = "ethereum")]
 extern crate substrate_primitives;
@@ -46,7 +55,9 @@ mod rlpin;
 mod stream;
 mod impls;
 
-use std::borrow::Borrow;
+use core::borrow::Borrow;
+#[cfg(not(feature = "std"))]
+use alloc::vec::Vec;
 
 pub use error::DecoderError;
 pub use traits::{Decodable, Encodable};

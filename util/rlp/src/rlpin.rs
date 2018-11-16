@@ -6,11 +6,16 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use std::cell::Cell;
+use core::cell::Cell;
+#[cfg(feature = "std")]
 use std::fmt;
+#[cfg(feature = "std")]
 use rustc_hex::ToHex;
 use impls::decode_usize;
 use {Decodable, DecoderError};
+
+#[cfg(not(feature = "std"))]
+use alloc::prelude::*;
 
 /// rlp offset
 #[derive(Copy, Clone, Debug)]
@@ -108,6 +113,7 @@ pub struct Rlp<'a> {
 	count_cache: Cell<Option<usize>>,
 }
 
+#[cfg(feature = "std")]
 impl<'a> fmt::Display for Rlp<'a> {
 	fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
 		match self.prototype() {

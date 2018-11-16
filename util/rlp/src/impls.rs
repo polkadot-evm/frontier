@@ -6,12 +6,20 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use std::{mem, str};
-use std::iter::{once, empty};
+use core::mem;
+use core::iter::{once, empty};
 use byteorder::{ByteOrder, BigEndian};
 use traits::{Encodable, Decodable};
 use stream::RlpStream;
 use {Rlp, DecoderError};
+
+#[cfg(not(feature = "std"))]
+use alloc::prelude::*;
+
+#[cfg(feature = "std")]
+use std::str::from_utf8;
+#[cfg(not(feature = "std"))]
+use alloc::str::from_utf8;
 
 pub fn decode_usize(bytes: &[u8]) -> Result<usize, DecoderError> {
 	match bytes.len() {
@@ -178,7 +186,7 @@ impl Decodable for usize {
 #[cfg(feature = "ethereum")]
 mod ethereum_traits {
 	use super::*;
-	use std::cmp;
+	use core::cmp;
 	use substrate_primitives::{U256, H160, H256, H512};
 
 	macro_rules! impl_encodable_for_hash {
@@ -267,7 +275,7 @@ impl Encodable for String {
 impl Decodable for String {
 	fn decode(rlp: &Rlp) -> Result<Self, DecoderError> {
 		rlp.decoder().decode_value(|bytes| {
-			match str::from_utf8(bytes) {
+			match from_utf8(bytes) {
 				Ok(s) => Ok(s.to_owned()),
 				// consider better error type here
 				Err(_err) => Err(DecoderError::RlpExpectedToBeData),

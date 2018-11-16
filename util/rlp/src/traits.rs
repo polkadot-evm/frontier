@@ -9,6 +9,9 @@
 //! Common RLP traits
 use {DecoderError, Rlp, RlpStream};
 
+#[cfg(not(feature = "std"))]
+use alloc::prelude::*;
+
 /// RLP decodable trait
 pub trait Decodable: Sized {
 	/// Decode a value from RLP bytes
