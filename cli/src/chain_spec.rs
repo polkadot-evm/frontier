@@ -16,10 +16,12 @@
 
 //! Substrate chain configurations.
 
+use std::marker::PhantomData;
 use primitives::{AuthorityId, ed25519};
 use node_primitives::AccountId;
 use node_runtime::{
 	GenesisConfig, ConsensusConfig, SessionConfig, TimestampConfig, UpgradeKeyConfig,
+	SystemConfig, EthereumConfig
 };
 use substrate_service;
 
@@ -32,7 +34,13 @@ fn testnet_genesis(initial_authorities: Vec<AuthorityId>, upgrade_key: AccountId
 			code: include_bytes!("../../runtime/wasm/target/wasm32-unknown-unknown/release/node_runtime.compact.wasm").to_vec(),
 			authorities: initial_authorities.clone(),
 		}),
-		system: None,
+		system: Some(SystemConfig {
+			_phantom: PhantomData,
+			changes_trie_config: None,
+		}),
+		ethereum: Some(EthereumConfig {
+			_phantom: PhantomData,
+		}),
 		session: Some(SessionConfig {
 			validators: initial_authorities.iter().cloned().map(Into::into).collect(),
 			session_length: 10,

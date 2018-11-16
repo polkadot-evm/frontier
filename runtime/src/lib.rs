@@ -48,7 +48,7 @@ extern crate srml_upgrade_key as upgrade_key;
 extern crate sr_version as version;
 extern crate node_primitives;
 
-mod eth;
+mod ethereum;
 
 use rstd::prelude::*;
 use node_primitives::{AccountId, BlockNumber, Hash, Index, SessionKey, Signature};
@@ -138,7 +138,7 @@ impl upgrade_key::Trait for Runtime {
 	type Event = Event;
 }
 
-impl eth::Trait for Runtime { }
+impl ethereum::Trait for Runtime { }
 
 construct_runtime!(
 	pub enum Runtime with Log(InternalLog: DigestItem<Hash, SessionKey>) where
@@ -146,11 +146,11 @@ construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic
 	{
 		System: system::{default, Log(ChangesTrieRoot)},
+		Ethereum: ethereum::{Module, Call, Storage, Config<T>},
 		Timestamp: timestamp::{Module, Call, Storage, Config<T>, Inherent},
 		Consensus: consensus::{Module, Call, Storage, Config<T>, Log(AuthoritiesChange), Inherent},
 		Session: session,
 		UpgradeKey: upgrade_key,
-		Ethereum: eth::{Module, Call, Storage},
 	}
 );
 
