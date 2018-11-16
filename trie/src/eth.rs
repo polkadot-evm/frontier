@@ -18,7 +18,7 @@
 
 use substrate_primitives::H256;
 use keccak_hasher::KeccakHasher;
-use hash_db::{Hasher, HashDB, HashDBRef, AsHashDB};
+use hash_db::{Hasher, HashDB, PlainDB, HashDBRef, AsHashDB};
 use std::marker::PhantomData;
 use trie_db::{self, DBValue, NibbleSlice, node::Node, ChildReference, Query};
 use rlp::{DecoderError, RlpStream, Rlp, Prototype};
@@ -77,14 +77,18 @@ impl<'a, 'b, HS: Hasher> HashDBRef<KeccakHasher, trie_db::DBValue> for BridgedHa
 }
 
 pub struct BridgedHashDBMut<'a, HS: Hasher + 'a> {
-	db: &'a mut HashDB<HS, trie_db::DBValue>,
+	db: &'a mut PlainDB<HS::Out, trie_db::DBValue>,
+	hashed_null_node: H256,
+	null_node_data: trie_db::DBValue,
 	_marker: PhantomData<HS>,
 }
 
 impl<'a, HS: Hasher> BridgedHashDBMut<'a, HS> {
-	pub fn new(db: &'a mut HashDB<HS, trie_db::DBValue>) -> Self {
+	pub fn new(db: &'a mut PlainDB<HS::Out, trie_db::DBValue>) -> Self {
 		BridgedHashDBMut {
 			db,
+			hashed_null_node: KeccakHasher::hash(&[128u8][..]),
+			null_node_data: trie_db::DBValue::from(&[128u8][..]),
 			_marker: PhantomData,
 		}
 	}
@@ -97,27 +101,47 @@ impl<'a, HS: Hasher> AsHashDB<KeccakHasher, trie_db::DBValue> for BridgedHashDBM
 
 impl<'a, HS: Hasher> HashDB<KeccakHasher, trie_db::DBValue> for BridgedHashDBMut<'a, HS> {
 	fn get(&self, key: &H256) -> Option<trie_db::DBValue> {
+		if key == &self.hashed_null_node {
+			return Some(self.null_node_data.clone());
+		}
+
 		let okey = HS::hash(key.as_ref());
 		self.db.get(&okey)
 	}
 
 	fn contains(&self, key: &H256) -> bool {
+		if key == &self.hashed_null_node {
+			return true;
+		}
+
 		let okey = HS::hash(key.as_ref());
 		self.db.contains(&okey)
 	}
 
 	fn insert(&mut self, value: &[u8]) -> H256 {
+		if trie_db::DBValue::from(value) == self.null_node_data {
+			return self.hashed_null_node.clone();
+		}
+
 		let key = KeccakHasher::hash(value);
 		self.emplace(key, value.into());
 		key
 	}
 
 	fn emplace(&mut self, key: H256, value: trie_db::DBValue) {
+		if value == self.null_node_data {
+			return;
+		}
+
 		let okey = HS::hash(key.as_ref());
 		self.db.emplace(okey, value)
 	}
 
 	fn remove(&mut self, key: &H256) {
+		if key == &self.hashed_null_node {
+			return;
+		}
+
 		let okey = HS::hash(key.as_ref());
 		self.db.remove(&okey)
 	}

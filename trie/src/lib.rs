@@ -246,7 +246,7 @@ pub fn child_delta_trie_root<H: Hasher, I, A, B, DB>(
 	DB: hash_db::HashDB<H, trie_db::DBValue> + hash_db::PlainDB<H::Out, trie_db::DBValue>,
 {
 	if storage_key.starts_with(ETH_CHILD_STORAGE_KEY_PREFIX) {
-		let mut db = BridgedHashDBMut::new(db);
+		let mut db = BridgedHashDBMut::<H>::new(db);
 
 		let mut root = H256::default();
 		root.as_mut().copy_from_slice(&root_vec); // root is fetched from DB, not writable by runtime, so it's always valid.
@@ -601,7 +601,7 @@ mod tests {
 
 	#[test]
 	fn random_should_work() {
-		let mut seed = <Blake2Hasher as Hasher>::Out::new();
+		let mut seed = <Blake2Hasher as Hasher>::Out::default();
 		for test_i in 0..10000 {
 			if test_i % 50 == 0 {
 				println!("{:?} of 10000 stress tests done", test_i);
@@ -612,7 +612,7 @@ mod tests {
 				journal_key: 0,
 				value_mode: ValueMode::Index,
 				count: 100,
-			}.make_with(&mut seed.0);
+			}.make_with(seed.as_fixed_bytes_mut());
 
 			let real = trie_root::<Blake2Hasher,_, _, _>(x.clone());
 			let mut memdb = MemoryDB::default();
