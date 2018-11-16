@@ -31,12 +31,16 @@ extern crate parity_codec_derive;
 extern crate sr_std as rstd;
 extern crate sr_primitives as runtime_primitives;
 extern crate substrate_primitives as primitives;
+extern crate ethereum_types;
 
 use rstd::prelude::*;
 use runtime_primitives::generic;
 #[cfg(feature = "std")]
 use primitives::bytes;
 use runtime_primitives::traits::{BlakeTwo256, self};
+
+pub use primitives::{H256, H160, U256};
+pub use ethereum_types::{H64, H520, Bloom};
 
 /// An index to a block.
 pub type BlockNumber = u64;

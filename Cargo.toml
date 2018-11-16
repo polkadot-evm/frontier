@@ -23,6 +23,7 @@ members = [
 	"primitives",
 	"runtime",
 	"trie",
+	"json",
 	"util/keccak-hasher",
 	"util/rlp",
 ]
