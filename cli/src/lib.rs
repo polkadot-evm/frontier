@@ -35,6 +35,7 @@ extern crate node_primitives;
 #[macro_use]
 extern crate substrate_service;
 extern crate node_executor;
+extern crate ethjson;
 
 #[macro_use]
 extern crate log;

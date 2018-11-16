@@ -51,7 +51,10 @@ extern crate rlp;
 #[macro_use]
 extern crate rlp_derive;
 
-mod ethereum;
+#[cfg(feature = "std")]
+extern crate keccak_hasher;
+
+pub mod ethereum;
 
 use rstd::prelude::*;
 use node_primitives::{AccountId, BlockNumber, Hash, Index, SessionKey, Signature};

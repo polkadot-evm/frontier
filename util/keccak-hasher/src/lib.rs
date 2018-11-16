@@ -32,7 +32,7 @@ impl Hasher for KeccakHasher {
 	const LENGTH: usize = 32;
 
 	fn hash(x: &[u8]) -> Self::Out {
-		let mut out = [0;32];
+		let mut out = [0; 32];
 		Keccak::keccak256(x, &mut out);
 		out.into()
 	}

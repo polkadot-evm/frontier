@@ -18,17 +18,41 @@
 
 use std::marker::PhantomData;
 use primitives::{AuthorityId, ed25519};
-use node_primitives::AccountId;
+use node_primitives::{AccountId, H256, H160, U256};
 use node_runtime::{
 	GenesisConfig, ConsensusConfig, SessionConfig, TimestampConfig, UpgradeKeyConfig,
-	SystemConfig, EthereumConfig
+	SystemConfig, EthereumConfig,
 };
+use node_runtime::ethereum::BasicAccount;
 use substrate_service;
+use ethjson::spec::Spec;
+use std::collections::BTreeMap;
 
 /// Specialised `ChainSpec`.
 pub type ChainSpec = substrate_service::ChainSpec<GenesisConfig>;
 
 fn testnet_genesis(initial_authorities: Vec<AuthorityId>, upgrade_key: AccountId) -> GenesisConfig {
+	let keccak_empty = H256::from([0xc5, 0xd2, 0x46, 0x01, 0x86, 0xf7, 0x23, 0x3c, 0x92, 0x7e, 0x7d, 0xb2, 0xdc, 0xc7, 0x03, 0xc0, 0xe5, 0x00, 0xb6, 0x53, 0xca, 0x82, 0x27, 0x3b, 0x7b, 0xfa, 0xd8, 0x04, 0x5d, 0x85, 0xa4, 0x70]);
+	let keccak_null_rlp = H256::from([0x56, 0xe8, 0x1f, 0x17, 0x1b, 0xcc, 0x55, 0xa6, 0xff, 0x83, 0x45, 0xe6, 0x92, 0xc0, 0xf8, 0x6e, 0x5b, 0x48, 0xe0, 0x1b, 0x99, 0x6c, 0xad, 0xc0, 0x01, 0x62, 0x2f, 0xb5, 0xe3, 0x63, 0xb4, 0x21]);
+
+	let ethspec = Spec::load(include_bytes!("../res/foundation.json").as_ref()).unwrap();
+	let mut accounts: BTreeMap<H160, BasicAccount> = BTreeMap::default();
+
+	for (address, account) in ethspec.accounts {
+		if account.builtin.is_some() {
+			continue
+		}
+
+		let address = H160::from(address);
+		let account = BasicAccount {
+			nonce: U256::zero(),
+			balance: account.balance.unwrap().into(),
+			storage_root: keccak_null_rlp,
+			code_hash: keccak_empty,
+		};
+		accounts.insert(address, account);
+	}
+
 	GenesisConfig {
 		consensus: Some(ConsensusConfig {
 			code: include_bytes!("../../runtime/wasm/target/wasm32-unknown-unknown/release/node_runtime.compact.wasm").to_vec(),
@@ -39,6 +63,7 @@ fn testnet_genesis(initial_authorities: Vec<AuthorityId>, upgrade_key: AccountId
 			changes_trie_config: None,
 		}),
 		ethereum: Some(EthereumConfig {
+			accounts: accounts,
 			_phantom: PhantomData,
 		}),
 		session: Some(SessionConfig {

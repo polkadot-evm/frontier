@@ -12,6 +12,7 @@ substrate-cli = { git = "https://github.com/paritytech/substrate" }
 parity-codec = { version = "2.1" }
 parking_lot = "0.4"
 slog = "^2"
+ethjson = { path = "../json" }
 sr-io = { git = "https://github.com/paritytech/substrate" }
 substrate-client = { git = "https://github.com/paritytech/substrate" }
 substrate-primitives = { git = "https://github.com/paritytech/substrate" }

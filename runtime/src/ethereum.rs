@@ -1,9 +1,16 @@
 use system;
+use substrate_primitives::Hasher;
 use runtime_primitives;
-use node_primitives::{U256, H256};
+use node_primitives::{H160, U256, H256};
+use rstd::collections::btree_map::BTreeMap;
+use rlp;
+
+#[cfg(feature = "std")]
+use keccak_hasher::KeccakHasher;
 
 /// Basic account type.
 #[derive(Debug, Clone, PartialEq, Eq, RlpEncodable, RlpDecodable)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct BasicAccount {
 	/// Nonce of the account.
 	pub nonce: U256,
@@ -27,20 +34,17 @@ decl_storage! {
 	trait Store for Module<T: Trait> as Ethereum { }
 
 	add_extra_genesis {
+		config(accounts): BTreeMap<H160, BasicAccount>;
 		config(_phantom): ::std::marker::PhantomData<T>;
 		build(|storage: &mut runtime_primitives::StorageMap, children_storage: &mut runtime_primitives::ChildrenStorageMap, config: &GenesisConfig<T>| {
 			let mut accounts = runtime_primitives::StorageMap::default();
-			accounts.insert(b"do".to_vec(), b"verb".to_vec());
-			accounts.insert(b"ether".to_vec(), b"wookiedoo".to_vec());
-			accounts.insert(b"horse".to_vec(), b"stallion".to_vec());
-			accounts.insert(b"shaman".to_vec(), b"horse".to_vec());
-			accounts.insert(b"doge".to_vec(), b"coin".to_vec());
-			accounts.insert(b"ether".to_vec(), vec![]);
-			accounts.insert(b"dog".to_vec(), b"puppy".to_vec());
-			accounts.insert(b"shaman".to_vec(), vec![]);
+
+			for (address, account) in &config.accounts {
+				accounts.insert(KeccakHasher::hash(address.as_ref()).as_ref().to_vec(),
+								rlp::encode(account));
+			}
 
 			children_storage.insert(b":child_storage:eth:accounts".to_vec(), accounts);
-			storage.insert(vec![0x00, 0x00], vec![0x01, 0x01]);
 		});
 	}
 }

@@ -1735,6 +1735,7 @@ dependencies = [
 name = "node-cli"
 version = "0.1.0"
 dependencies = [
+ "ethjson 0.1.0",
  "exit-future 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "node-executor 0.1.0",
@@ -1805,6 +1806,7 @@ name = "node-runtime"
 version = "0.1.0"
 dependencies = [
  "hex-literal 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "keccak-hasher 0.1.1",
  "node-primitives 0.1.0",
  "parity-codec 2.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-codec-derive 2.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
