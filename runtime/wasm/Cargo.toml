@@ -11,6 +11,8 @@ integer-sqrt = { version = "0.1.2" }
 safe-mix = { version = "1.0", default-features = false}
 parity-codec-derive = { version = "2.1" }
 parity-codec = { version = "2.1", default-features = false }
+rlp = { path = "../../util/rlp", default-features = false, features = ["ethereum"] }
+rlp-derive = { path = "../../util/rlp-derive" }
 substrate-primitives = { git = "https://github.com/paritytech/substrate", default-features = false }
 sr-api = { git = "https://github.com/paritytech/substrate", default-features = false }
 sr-std = { git = "https://github.com/paritytech/substrate", default-features = false }
@@ -42,6 +44,7 @@ std = [
 	"substrate-primitives/std",
 	"sr-api/std",
 	"sr-std/std",
+	"rlp/std",
 	"srml-support/std",
 	"srml-balances/std",
 	"srml-consensus/std",

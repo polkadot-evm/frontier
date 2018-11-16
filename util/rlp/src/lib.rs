@@ -44,6 +44,7 @@ extern crate core;
 extern crate byteorder;
 #[cfg(feature = "ethereum")]
 extern crate substrate_primitives;
+#[cfg(feature = "std")]
 extern crate rustc_hex;
 #[cfg(test)]
 #[macro_use]

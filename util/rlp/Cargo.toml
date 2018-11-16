@@ -9,7 +9,7 @@ authors = ["Parity Technologies <admin@parity.io>"]
 [dependencies]
 byteorder = { version = "1.0", default-features = false }
 substrate-primitives = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true }
-rustc-hex = { version = "2.0", default-features = false }
+rustc-hex = { version = "2.0", default-features = false, optional = true }
 
 [dev-dependencies]
 hex-literal = "0.1"
@@ -19,6 +19,7 @@ default = ["ethereum", "std"]
 std = [
 	"substrate-primitives/std",
 	"byteorder/std",
+	"rustc-hex",
 	"rustc-hex/std",
 ]
 ethereum = ["substrate-primitives"]

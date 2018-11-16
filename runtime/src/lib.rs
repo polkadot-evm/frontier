@@ -47,6 +47,9 @@ extern crate srml_upgrade_key as upgrade_key;
 #[macro_use]
 extern crate sr_version as version;
 extern crate node_primitives;
+extern crate rlp;
+#[macro_use]
+extern crate rlp_derive;
 
 mod ethereum;
 
