@@ -15,6 +15,7 @@ rlp = { path = "../util/rlp", default-features = false }
 rlp-derive = { path = "../util/rlp-derive" }
 sr-api = { git = "https://github.com/paritytech/substrate", default-features = false }
 sr-std = { git = "https://github.com/paritytech/substrate" }
+sr-io = { git = "https://github.com/paritytech/substrate", default-features = false }
 srml-support = { git = "https://github.com/paritytech/substrate" }
 substrate-primitives = { git = "https://github.com/paritytech/substrate" }
 substrate-keyring = { git = "https://github.com/paritytech/substrate" }
@@ -35,6 +36,7 @@ std = [
 	"substrate-primitives/std",
 	"sr-api/std",
 	"sr-std/std",
+	"sr-io/std",
 	"rlp/std",
 	"srml-support/std",
 	"srml-consensus/std",

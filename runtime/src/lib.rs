@@ -39,6 +39,7 @@ extern crate substrate_primitives;
 extern crate parity_codec_derive;
 
 extern crate sr_std as rstd;
+extern crate sr_io as runtime_io;
 extern crate srml_consensus as consensus;
 extern crate srml_session as session;
 extern crate srml_system as system;
