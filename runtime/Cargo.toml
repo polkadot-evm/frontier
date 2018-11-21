@@ -26,7 +26,7 @@ srml-timestamp = { git = "https://github.com/paritytech/substrate" }
 srml-upgrade-key = { git = "https://github.com/paritytech/substrate" }
 sr-version = { git = "https://github.com/paritytech/substrate" }
 node-primitives = { path = "../primitives" }
-keccak-hasher = { path = "../util/keccak-hasher", optional = true }
+keccak-hasher = { path = "../util/keccak-hasher", default-features = false }
 
 [features]
 default = ["std"]
@@ -48,5 +48,5 @@ std = [
 	"serde_derive",
 	"serde/std",
 	"safe-mix/std",
-	"keccak-hasher",
+	"keccak-hasher/std",
 ]

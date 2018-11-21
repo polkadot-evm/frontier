@@ -1,3 +1,5 @@
+mod state;
+
 use system;
 use substrate_primitives::Hasher;
 use runtime_primitives;
@@ -5,22 +7,9 @@ use node_primitives::{H160, U256, H256};
 use rstd::collections::btree_map::BTreeMap;
 use rlp;
 
-#[cfg(feature = "std")]
-use keccak_hasher::KeccakHasher;
+pub use self::state::BasicAccount;
 
-/// Basic account type.
-#[derive(Debug, Clone, PartialEq, Eq, RlpEncodable, RlpDecodable)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-pub struct BasicAccount {
-	/// Nonce of the account.
-	pub nonce: U256,
-	/// Balance of the account.
-	pub balance: U256,
-	/// Storage root of the account.
-	pub storage_root: H256,
-	/// Code hash of the account.
-	pub code_hash: H256,
-}
+use keccak_hasher::KeccakHasher;
 
 pub trait Trait: system::Trait { }
 

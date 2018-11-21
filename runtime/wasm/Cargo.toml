@@ -32,6 +32,7 @@ srml-treasury = { git = "https://github.com/paritytech/substrate", default-featu
 srml-upgrade-key = { git = "https://github.com/paritytech/substrate", default-features = false }
 sr-version = { git = "https://github.com/paritytech/substrate", default-features = false }
 node-primitives = { path = "../../primitives", default-features = false }
+keccak-hasher = { path = "../../util/keccak-hasher", default-features = false }
 
 [patch.'https://github.com/paritytech/substrate']
 substrate-trie = { path = "../../trie", default-features = false }
@@ -61,6 +62,7 @@ std = [
 	"srml-upgrade-key/std",
 	"sr-version/std",
 	"node-primitives/std",
+	"keccak-hasher/std",
 ]
 
 [profile.release]
