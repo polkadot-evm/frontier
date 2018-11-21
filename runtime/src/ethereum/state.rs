@@ -4,6 +4,7 @@ use node_primitives::{H160, U256, H256};
 use runtime_io;
 
 pub const ACCOUNT_KEY: &[u8] = b":child_storage:eth:accounts";
+pub const ACCOUNT_CODE_KEY: &[u8] = b":child_storage:eth:codes";
 pub const ACCOUNT_STORAGE_KEY_PREFIX: &[u8] = b":child_storage:eth:storage:";
 
 /// Basic account type.
@@ -101,4 +102,16 @@ fn account_storage_root(address: H160) -> H256 {
 	let root_raw = runtime_io::child_storage_root(&key).expect("Child storage always exists by current trie rule; qed");
 	assert!(root_raw.len() == 32, "Account storage is under child storage by keccak256; hash is always 32 bytes; qed");
 	H256::from_slice(&root_raw[..])
+}
+
+fn read_account_code(hash: H256) -> Option<Vec<u8>> {
+	if hash == H256::from(&KECCAK_EMPTY) {
+		Some(Vec::new())
+	} else {
+		runtime_io::child_storage(ACCOUNT_CODE_KEY, &hash.as_ref())
+	}
+}
+
+fn note_account_code(code: Vec<u8>) {
+	runtime_io::set_child_storage(ACCOUNT_CODE_KEY, &KeccakHasher::hash(&code).as_ref(), &code)
 }
