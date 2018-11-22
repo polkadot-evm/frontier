@@ -115,4 +115,17 @@ impl State {
 		let index = self.overlays.len() - 1;
 		self.overlay_account_mut(index, address)
 	}
+
+	pub fn commit(&mut self) {
+		while self.overlays.len() > 1 {
+			self.discard_checkpoint();
+		}
+
+		for (address, account) in &mut self.overlays[0] {
+			match account {
+				Some(account) => account.commit(),
+				None => Account::kill(&address),
+			}
+		}
+	}
 }
