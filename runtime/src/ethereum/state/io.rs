@@ -8,7 +8,7 @@ pub const ACCOUNT_KEY: &[u8] = b":child_storage:eth:accounts";
 pub const ACCOUNT_CODE_KEY: &[u8] = b":child_storage:eth:codes";
 pub const ACCOUNT_STORAGE_KEY_PREFIX: &[u8] = b":child_storage:eth:storage:";
 
-pub fn read_account(address: H160) -> Option<BasicAccount> {
+pub fn read_account(address: &H160) -> Option<BasicAccount> {
 	runtime_io::child_storage(ACCOUNT_KEY, &KeccakHasher::hash(address.as_ref()).as_ref())
 		.map(|val| rlp::decode(&val).expect("Non-corrupt database always have valid BasicAccount encodings; qed"))
 }
@@ -26,7 +26,7 @@ pub fn write_account(address: H160, account: Option<BasicAccount>) {
 	}
 }
 
-pub fn read_account_storage(address: H160, storage: H256) -> Option<H256> {
+pub fn read_account_storage(address: &H160, storage: &H256) -> Option<H256> {
 	let key = ACCOUNT_STORAGE_KEY_PREFIX
 		.iter()
 		.cloned()
@@ -40,7 +40,7 @@ pub fn read_account_storage(address: H160, storage: H256) -> Option<H256> {
 		})
 }
 
-pub fn write_account_storage(address: H160, storage: H256, value: Option<H256>) {
+pub fn write_account_storage(address: &H160, storage: H256, value: Option<H256>) {
 	let key = ACCOUNT_STORAGE_KEY_PREFIX
 		.iter()
 		.cloned()
@@ -58,7 +58,7 @@ pub fn write_account_storage(address: H160, storage: H256, value: Option<H256>) 
 	}
 }
 
-pub fn kill_account_storage(address: H160) {
+pub fn kill_account_storage(address: &H160) {
 	let key = ACCOUNT_STORAGE_KEY_PREFIX
 		.iter()
 		.cloned()
@@ -68,7 +68,7 @@ pub fn kill_account_storage(address: H160) {
 	runtime_io::kill_child_storage(&key)
 }
 
-pub fn account_storage_root(address: H160) -> H256 {
+pub fn account_storage_root(address: &H160) -> H256 {
 	let key = ACCOUNT_STORAGE_KEY_PREFIX
 		.iter()
 		.cloned()
@@ -80,14 +80,14 @@ pub fn account_storage_root(address: H160) -> H256 {
 	H256::from_slice(&root_raw[..])
 }
 
-pub fn read_account_code(hash: H256) -> Option<Vec<u8>> {
-	if hash == H256::from(&KECCAK_EMPTY) {
+pub fn read_account_code(hash: &H256) -> Option<Vec<u8>> {
+	if hash == &H256::from(&KECCAK_EMPTY) {
 		Some(Vec::new())
 	} else {
 		runtime_io::child_storage(ACCOUNT_CODE_KEY, &hash.as_ref())
 	}
 }
 
-pub fn note_account_code(code: Vec<u8>) {
-	runtime_io::set_child_storage(ACCOUNT_CODE_KEY, &KeccakHasher::hash(&code).as_ref(), &code)
+pub fn note_account_code(hash: &H256, code: &[u8]) {
+	runtime_io::set_child_storage(ACCOUNT_CODE_KEY, &hash.as_ref(), &code)
 }

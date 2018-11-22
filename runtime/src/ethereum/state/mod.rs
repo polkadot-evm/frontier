@@ -106,4 +106,13 @@ impl State {
 
 		self.overlays[index].get_mut(address).expect("Account already exists or has just been inserted; qed")
 	}
+
+	pub fn account(&self, address: &H160) -> CowLike<Option<Account>, Option<Account>> {
+		self.overlay_account(self.overlays.len() - 1, address)
+	}
+
+	pub fn account_mut(&mut self, address: &H160) -> &mut Option<Account> {
+		let index = self.overlays.len() - 1;
+		self.overlay_account_mut(index, address)
+	}
 }
