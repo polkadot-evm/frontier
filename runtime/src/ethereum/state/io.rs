@@ -1,3 +1,4 @@
+use super::BasicAccount;
 use keccak_hasher::{KeccakHasher, KECCAK_EMPTY, KECCAK_NULL_RLP};
 use substrate_primitives::Hasher;
 use node_primitives::{H160, U256, H256};
@@ -7,37 +8,12 @@ pub const ACCOUNT_KEY: &[u8] = b":child_storage:eth:accounts";
 pub const ACCOUNT_CODE_KEY: &[u8] = b":child_storage:eth:codes";
 pub const ACCOUNT_STORAGE_KEY_PREFIX: &[u8] = b":child_storage:eth:storage:";
 
-/// Basic account type.
-#[derive(Debug, Clone, PartialEq, Eq, RlpEncodable, RlpDecodable)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-pub struct BasicAccount {
-	/// Nonce of the account.
-	pub nonce: U256,
-	/// Balance of the account.
-	pub balance: U256,
-	/// Storage root of the account.
-	pub storage_root: H256,
-	/// Code hash of the account.
-	pub code_hash: H256,
-}
-
-impl Default for BasicAccount {
-	fn default() -> Self {
-		Self {
-			nonce: U256::zero(),
-			balance: U256::zero(),
-			storage_root: H256::from(&KECCAK_NULL_RLP),
-			code_hash: H256::from(&KECCAK_EMPTY),
-		}
-	}
-}
-
-fn read_account(address: H160) -> Option<BasicAccount> {
+pub fn read_account(address: H160) -> Option<BasicAccount> {
 	runtime_io::child_storage(ACCOUNT_KEY, &KeccakHasher::hash(address.as_ref()).as_ref())
 		.map(|val| rlp::decode(&val).expect("Non-corrupt database always have valid BasicAccount encodings; qed"))
 }
 
-fn write_account(address: H160, account: Option<BasicAccount>) {
+pub fn write_account(address: H160, account: Option<BasicAccount>) {
 	let key = KeccakHasher::hash(address.as_ref());
 
 	match account {
@@ -50,7 +26,7 @@ fn write_account(address: H160, account: Option<BasicAccount>) {
 	}
 }
 
-fn read_account_storage(address: H160, storage: H256) -> Option<H256> {
+pub fn read_account_storage(address: H160, storage: H256) -> Option<H256> {
 	let key = ACCOUNT_STORAGE_KEY_PREFIX
 		.iter()
 		.cloned()
@@ -64,7 +40,7 @@ fn read_account_storage(address: H160, storage: H256) -> Option<H256> {
 		})
 }
 
-fn write_account_storage(address: H160, storage: H256, value: Option<H256>) {
+pub fn write_account_storage(address: H160, storage: H256, value: Option<H256>) {
 	let key = ACCOUNT_STORAGE_KEY_PREFIX
 		.iter()
 		.cloned()
@@ -82,7 +58,7 @@ fn write_account_storage(address: H160, storage: H256, value: Option<H256>) {
 	}
 }
 
-fn kill_account_storage(address: H160) {
+pub fn kill_account_storage(address: H160) {
 	let key = ACCOUNT_STORAGE_KEY_PREFIX
 		.iter()
 		.cloned()
@@ -92,7 +68,7 @@ fn kill_account_storage(address: H160) {
 	runtime_io::kill_child_storage(&key)
 }
 
-fn account_storage_root(address: H160) -> H256 {
+pub fn account_storage_root(address: H160) -> H256 {
 	let key = ACCOUNT_STORAGE_KEY_PREFIX
 		.iter()
 		.cloned()
@@ -104,7 +80,7 @@ fn account_storage_root(address: H160) -> H256 {
 	H256::from_slice(&root_raw[..])
 }
 
-fn read_account_code(hash: H256) -> Option<Vec<u8>> {
+pub fn read_account_code(hash: H256) -> Option<Vec<u8>> {
 	if hash == H256::from(&KECCAK_EMPTY) {
 		Some(Vec::new())
 	} else {
@@ -112,6 +88,6 @@ fn read_account_code(hash: H256) -> Option<Vec<u8>> {
 	}
 }
 
-fn note_account_code(code: Vec<u8>) {
+pub fn note_account_code(code: Vec<u8>) {
 	runtime_io::set_child_storage(ACCOUNT_CODE_KEY, &KeccakHasher::hash(&code).as_ref(), &code)
 }

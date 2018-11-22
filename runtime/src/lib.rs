@@ -52,6 +52,7 @@ extern crate rlp;
 #[macro_use]
 extern crate rlp_derive;
 extern crate keccak_hasher;
+extern crate cow_like;
 
 pub mod ethereum;
 

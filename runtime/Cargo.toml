@@ -28,6 +28,7 @@ srml-upgrade-key = { git = "https://github.com/paritytech/substrate" }
 sr-version = { git = "https://github.com/paritytech/substrate" }
 node-primitives = { path = "../primitives" }
 keccak-hasher = { path = "../util/keccak-hasher", default-features = false }
+cow-like = { path = "../util/cow-like" }
 
 [features]
 default = ["std"]

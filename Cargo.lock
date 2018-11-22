@@ -334,6 +334,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "cow-like"
+version = "0.1.0"
+
+[[package]]
 name = "criterion"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1805,6 +1809,7 @@ dependencies = [
 name = "node-runtime"
 version = "0.1.0"
 dependencies = [
+ "cow-like 0.1.0",
  "hex-literal 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "keccak-hasher 0.1.1",
  "node-primitives 0.1.0",
