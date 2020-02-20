@@ -1,6 +1,0 @@
-[package]
-name = "cow-like"
-version = "0.1.0"
-authors = ["Wei Tang <hi@that.world>"]
-
-[dependencies]
