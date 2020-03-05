@@ -16,3 +16,8 @@ node/runtime/wasm/target/
 polkadot.*
 .DS_Store
 .idea/
+
+
+#Added by cargo
+
+/target

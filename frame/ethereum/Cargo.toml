@@ -1,0 +1,33 @@
+[package]
+name = "pallet-ethereum"
+version = "0.1.0"
+authors = ["Parity Technologies <admin@parity.io>"]
+edition = "2018"
+description = "Ethereum compatibility full block processing emulation pallet for Substrate."
+license = "GPL-3.0"
+
+[dependencies]
+serde = { version = "1.0.101", optional = true }
+codec = { package = "parity-scale-codec", version = "1.0.0", default-features = false }
+frame-support = { version = "2.0.0-alpha.2", default-features = false, git = "https://github.com/paritytech/substrate" }
+frame-system = { version = "2.0.0-alpha.2", default-features = false, git = "https://github.com/paritytech/substrate" }
+pallet-balances = { version = "2.0.0-alpha.2", default-features = false, git = "https://github.com/paritytech/substrate" }
+sp-runtime = { version = "2.0.0-alpha.2", default-features = false, git = "https://github.com/paritytech/substrate" }
+sp-std = { version = "2.0.0-alpha.2", default-features = false, git = "https://github.com/paritytech/substrate" }
+sp-io = { version = "2.0.0-alpha.2", default-features = false, git = "https://github.com/paritytech/substrate" }
+
+[dev-dependencies]
+sp-core = { version = "2.0.0-alpha.2", git = "https://github.com/paritytech/substrate" }
+
+[features]
+default = ["std"]
+std = [
+	"serde",
+	"codec/std",
+	"sp-runtime/std",
+	"frame-support/std",
+	"frame-system/std",
+	"pallet-balances/std",
+	"sp-io/std",
+	"sp-std/std"
+]
