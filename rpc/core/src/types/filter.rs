@@ -15,15 +15,11 @@
 // along with Open Ethereum.  If not, see <http://www.gnu.org/licenses/>.
 
 use ethereum_types::{H160, H256};
-use jsonrpc_core::{Error as RpcError};
 use serde::de::{Error, DeserializeOwned};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::{Value, from_value};
-use types::filter::Filter as EthFilter;
-use types::ids::BlockId;
 
-use v1::types::{BlockNumber, Log};
-use v1::helpers::errors::invalid_params;
+use crate::types::{BlockNumber, Log};
 
 /// Variadic value
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
@@ -75,52 +71,6 @@ pub struct Filter {
 	pub limit: Option<usize>,
 }
 
-impl Filter {
-	pub fn try_into(self) -> Result<EthFilter, RpcError> {
-		if self.block_hash.is_some() && (self.from_block.is_some() || self.to_block.is_some()) {
-			return Err(invalid_params("blockHash", "blockHash is mutually exclusive with fromBlock/toBlock"));
-		}
-
-		let num_to_id = |num| match num {
-			BlockNumber::Hash { hash, .. } => BlockId::Hash(hash),
-			BlockNumber::Num(n) => BlockId::Number(n),
-			BlockNumber::Earliest => BlockId::Earliest,
-			BlockNumber::Latest | BlockNumber::Pending => BlockId::Latest,
-		};
-
-		let (from_block, to_block) = match self.block_hash {
-			Some(hash) => (BlockId::Hash(hash), BlockId::Hash(hash)),
-			None =>
-				(self.from_block.map_or_else(|| BlockId::Latest, &num_to_id),
-				 self.to_block.map_or_else(|| BlockId::Latest, &num_to_id)),
-		};
-
-		Ok(EthFilter {
-			from_block, to_block,
-			address: self.address.and_then(|address| match address {
-				VariadicValue::Null => None,
-				VariadicValue::Single(a) => Some(vec![a]),
-				VariadicValue::Multiple(a) => Some(a)
-			}),
-			topics: {
-				let mut iter = self.topics.map_or_else(Vec::new, |topics| topics.into_iter().take(4).map(|topic| match topic {
-					VariadicValue::Null => None,
-					VariadicValue::Single(t) => Some(vec![t]),
-					VariadicValue::Multiple(t) => Some(t)
-				}).collect()).into_iter();
-
-				vec![
-					iter.next().unwrap_or(None),
-					iter.next().unwrap_or(None),
-					iter.next().unwrap_or(None),
-					iter.next().unwrap_or(None)
-				]
-			},
-			limit: self.limit,
-		})
-	}
-}
-
 /// Results of the filter_changes RPC.
 #[derive(Debug, PartialEq)]
 pub enum FilterChanges {
@@ -139,74 +89,5 @@ impl Serialize for FilterChanges {
 			FilterChanges::Hashes(ref hashes) => hashes.serialize(s),
 			FilterChanges::Empty => (&[] as &[Value]).serialize(s),
 		}
-	}
-}
-
-#[cfg(test)]
-mod tests {
-	use serde_json;
-	use std::str::FromStr;
-	use ethereum_types::H256;
-	use super::{VariadicValue, Topic, Filter};
-	use v1::types::BlockNumber;
-	use types::filter::Filter as EthFilter;
-	use types::ids::BlockId;
-
-	#[test]
-	fn topic_deserialization() {
-		let s = r#"["0x000000000000000000000000a94f5374fce5edbc8e2a8697c15331677e6ebf0b", null, ["0x000000000000000000000000a94f5374fce5edbc8e2a8697c15331677e6ebf0b", "0x0000000000000000000000000aff3454fce5edbc8cca8697c15331677e6ebccc"]]"#;
-		let deserialized: Vec<Topic> = serde_json::from_str(s).unwrap();
-		assert_eq!(deserialized, vec![
-				   VariadicValue::Single(H256::from_str("000000000000000000000000a94f5374fce5edbc8e2a8697c15331677e6ebf0b").unwrap().into()),
-				   VariadicValue::Null,
-				   VariadicValue::Multiple(vec![
-								   H256::from_str("000000000000000000000000a94f5374fce5edbc8e2a8697c15331677e6ebf0b").unwrap().into(),
-								   H256::from_str("0000000000000000000000000aff3454fce5edbc8cca8697c15331677e6ebccc").unwrap().into(),
-				   ])
-		]);
-	}
-
-	#[test]
-	fn filter_deserialization() {
-		let s = r#"{"fromBlock":"earliest","toBlock":"latest"}"#;
-		let deserialized: Filter = serde_json::from_str(s).unwrap();
-		assert_eq!(deserialized, Filter {
-			from_block: Some(BlockNumber::Earliest),
-			to_block: Some(BlockNumber::Latest),
-			block_hash: None,
-			address: None,
-			topics: None,
-			limit: None,
-		});
-	}
-
-	#[test]
-	fn filter_conversion() {
-		let filter = Filter {
-			from_block: Some(BlockNumber::Earliest),
-			to_block: Some(BlockNumber::Latest),
-			block_hash: None,
-			address: Some(VariadicValue::Multiple(vec![])),
-			topics: Some(vec![
-				VariadicValue::Null,
-				VariadicValue::Single(H256::from_str("000000000000000000000000a94f5374fce5edbc8e2a8697c15331677e6ebf0b").unwrap()),
-				VariadicValue::Null,
-			]),
-			limit: None,
-		};
-
-		let eth_filter: EthFilter = filter.try_into().unwrap();
-		assert_eq!(eth_filter, EthFilter {
-			from_block: BlockId::Earliest,
-			to_block: BlockId::Latest,
-			address: Some(vec![]),
-			topics: vec![
-				None,
-				Some(vec![H256::from_str("000000000000000000000000a94f5374fce5edbc8e2a8697c15331677e6ebf0b").unwrap()]),
-				None,
-				None,
-			],
-			limit: None,
-		});
 	}
 }

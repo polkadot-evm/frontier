@@ -19,11 +19,11 @@ use ethereum_types::H256;
 use jsonrpc_core::Result;
 use jsonrpc_derive::rpc;
 
-use v1::types::Bytes;
+use crate::types::Bytes;
 
 /// Web3 rpc interface.
 #[rpc(server)]
-pub trait Web3 {
+pub trait Web3Api {
 	/// Returns current client version.
 	#[rpc(name = "web3_clientVersion")]
 	fn client_version(&self) -> Result<String>;

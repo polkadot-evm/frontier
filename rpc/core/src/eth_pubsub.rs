@@ -20,11 +20,11 @@ use jsonrpc_core::Result;
 use jsonrpc_derive::rpc;
 use jsonrpc_pubsub::{typed, SubscriptionId};
 
-use v1::types::pubsub;
+use crate::types::pubsub;
 
 /// Eth PUB-SUB rpc interface.
 #[rpc(server)]
-pub trait EthPubSub {
+pub trait EthPubSubApi {
 	/// RPC Metadata
 	type Metadata;
 

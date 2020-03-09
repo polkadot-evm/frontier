@@ -19,12 +19,14 @@ use jsonrpc_core::{Result, BoxFuture};
 use jsonrpc_derive::rpc;
 use ethereum_types::{H64, H160, H256, U64, U256};
 
-use v1::types::{RichBlock, BlockNumber, Bytes, CallRequest, Filter, FilterChanges, Index, EthAccount};
-use v1::types::{Log, Receipt, SyncStatus, Transaction, Work};
+use crate::types::{
+	RichBlock, BlockNumber, Bytes, CallRequest, Filter, FilterChanges, Index, EthAccount,
+	Log, Receipt, SyncStatus, Transaction, Work
+};
 
 /// Eth rpc interface.
-#[rpc]
-pub trait Eth {
+#[rpc(server)]
+pub trait EthApi {
 	/// RPC Metadata
 	type Metadata;
 
@@ -190,7 +192,7 @@ pub trait Eth {
 /// Eth filters rpc api (polling).
 // TODO: do filters api properly
 #[rpc(server)]
-pub trait EthFilter {
+pub trait EthFilterApi {
 	/// Returns id of new filter.
 	#[rpc(name = "eth_newFilter")]
 	fn new_filter(&self, _: Filter) -> Result<U256>;

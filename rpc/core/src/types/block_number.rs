@@ -19,20 +19,6 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde::de::{Error, Visitor, MapAccess};
 use ethereum_types::H256;
 
-/// Uniquely identifies block.
-#[derive(Debug, PartialEq, Copy, Clone, Hash, Eq)]
-pub enum BlockId {
-	/// Block's sha3.
-	/// Querying by hash is always faster.
-	Hash(H256),
-	/// Block number within canon blockchain.
-	Number(BlockNumber),
-	/// Earliest block (genesis).
-	Earliest,
-	/// Latest mined block.
-	Latest,
-}
-
 /// Represents rpc api block number param.
 #[derive(Debug, PartialEq, Clone, Hash, Eq)]
 pub enum BlockNumber {
@@ -71,32 +57,6 @@ impl BlockNumber {
 		match *self {
 			BlockNumber::Num(ref x) => Some(*x),
 			_ => None,
-		}
-	}
-}
-
-/// BlockNumber to BlockId conversion
-///
-/// NOTE use only for light clients.
-pub trait LightBlockNumber {
-	/// Convert block number to block id.
-	fn to_block_id(self) -> BlockId;
-}
-
-impl LightBlockNumber for BlockNumber {
-	fn to_block_id(self) -> BlockId {
-		// NOTE Here we treat `Pending` as `Latest`.
-		// Since light clients don't produce pending blocks
-		// (they don't have state) we can safely fallback to `Latest`.
-		match self {
-			BlockNumber::Hash { hash, .. } => BlockId::Hash(hash),
-			BlockNumber::Num(n) => BlockId::Number(n),
-			BlockNumber::Earliest => BlockId::Earliest,
-			BlockNumber::Latest => BlockId::Latest,
-			BlockNumber::Pending => {
-				warn!("`Pending` is deprecated and may be removed in future versions. Falling back to `Latest`");
-				BlockId::Latest
-			}
 		}
 	}
 }
@@ -188,71 +148,5 @@ impl<'a> Visitor<'a> for BlockNumberVisitor {
 
 	fn visit_string<E>(self, value: String) -> Result<Self::Value, E> where E: Error {
 		self.visit_str(value.as_ref())
-	}
-}
-
-/// Converts `BlockNumber` to `BlockId`, panics on `BlockNumber::Pending`
-pub fn block_number_to_id(number: BlockNumber) -> BlockId {
-	match number {
-		BlockNumber::Hash { hash, .. } => BlockId::Hash(hash),
-		BlockNumber::Num(num) => BlockId::Number(num),
-		BlockNumber::Earliest => BlockId::Earliest,
-		BlockNumber::Latest => BlockId::Latest,
-		BlockNumber::Pending => panic!("`BlockNumber::Pending` should be handled manually")
-	}
-}
-
-#[cfg(test)]
-mod tests {
-	use types::ids::BlockId;
-	use super::*;
-	use std::str::FromStr;
-	use serde_json;
-
-	#[test]
-	fn block_number_deserialization() {
-		let s = r#"[
-			"0xa",
-			"latest",
-			"earliest",
-			"pending",
-			{"blockNumber": "0xa"},
-			{"blockHash": "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347"},
-			{"blockHash": "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347", "requireCanonical": true}
-		]"#;
-		let deserialized: Vec<BlockNumber> = serde_json::from_str(s).unwrap();
-
-		assert_eq!(
-			deserialized,
-			vec![
-				BlockNumber::Num(10),
-				BlockNumber::Latest,
-				BlockNumber::Earliest,
-				BlockNumber::Pending,
-				BlockNumber::Num(10),
-				BlockNumber::Hash { hash: H256::from_str("1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347").unwrap(), require_canonical: false },
-				BlockNumber::Hash { hash: H256::from_str("1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347").unwrap(), require_canonical: true }
-			]
-		)
-	}
-
-	#[test]
-	fn should_not_deserialize() {
-		let s = r#"[{}, "10"]"#;
-		assert!(serde_json::from_str::<Vec<BlockNumber>>(s).is_err());
-	}
-
-	#[test]
-	fn normal_block_number_to_id() {
-		assert_eq!(block_number_to_id(BlockNumber::Num(100)), BlockId::Number(100));
-		assert_eq!(block_number_to_id(BlockNumber::Earliest), BlockId::Earliest);
-		assert_eq!(block_number_to_id(BlockNumber::Latest), BlockId::Latest);
-	}
-
-	#[test]
-	#[should_panic]
-	fn pending_block_number_to_id() {
-		// Since this function is not allowed to be called in such way, panic should happen
-		block_number_to_id(BlockNumber::Pending);
 	}
 }

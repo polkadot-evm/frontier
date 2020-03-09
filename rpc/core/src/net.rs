@@ -20,7 +20,7 @@ use jsonrpc_derive::rpc;
 
 /// Net rpc interface.
 #[rpc(server)]
-pub trait Net {
+pub trait NetApi {
 	/// Returns protocol version.
 	#[rpc(name = "net_version")]
 	fn version(&self) -> Result<String>;

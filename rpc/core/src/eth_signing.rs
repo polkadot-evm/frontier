@@ -20,11 +20,11 @@ use jsonrpc_core::BoxFuture;
 use jsonrpc_derive::rpc;
 
 use ethereum_types::{H160, H256, H520};
-use v1::types::{Bytes, TransactionRequest, RichRawTransaction};
+use crate::types::{Bytes, TransactionRequest, RichRawTransaction};
 
 /// Signing methods implementation relying on unlocked accounts.
 #[rpc(server)]
-pub trait EthSigning {
+pub trait EthSigningApi {
 	/// RPC Metadata
 	type Metadata;
 
