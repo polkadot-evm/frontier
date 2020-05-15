@@ -332,10 +332,34 @@ dependencies = [
 ]
 
 [[package]]
+name = "ethbloom"
+version = "0.9.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "befe713756981dbbda28e23f5c65c85de512915db695284342cc2ee36b7a184f"
+dependencies = [
+ "crunchy",
+ "fixed-hash 0.6.1",
+ "impl-rlp",
+ "tiny-keccak 2.0.1",
+]
+
+[[package]]
+name = "ethereum"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3db51ea54d923ebaa92660b4e1adb90af11960e7ab2e981118107036442237e7"
+dependencies = [
+ "ethereum-types 0.9.1",
+ "rlp",
+ "rlp-derive",
+ "sha3",
+]
+
+[[package]]
 name = "ethereum-rpc"
 version = "0.1.0"
 dependencies = [
- "ethereum-types",
+ "ethereum-types 0.8.0",
  "jsonrpc-core",
  "jsonrpc-core-client",
  "jsonrpc-derive",
@@ -351,11 +375,24 @@ version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ba744248e3553a393143d5ebb68939fc3a4ec0c22a269682535f5ffe7fed728c"
 dependencies = [
- "ethbloom",
+ "ethbloom 0.8.1",
  "fixed-hash 0.5.2",
  "impl-rlp",
  "impl-serde 0.2.3",
  "primitive-types 0.6.2",
+ "uint",
+]
+
+[[package]]
+name = "ethereum-types"
+version = "0.9.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8616dc6a7bc7d81ab8a6425635299ee3582975d4ddeb9312b8b0b8ea54dfecf8"
+dependencies = [
+ "ethbloom 0.9.1",
+ "fixed-hash 0.6.1",
+ "impl-rlp",
+ "primitive-types 0.7.1",
  "uint",
 ]
 
@@ -1083,6 +1120,7 @@ dependencies = [
 name = "pallet-ethereum"
 version = "0.1.0"
 dependencies = [
+ "ethereum",
  "frame-support",
  "frame-system",
  "pallet-balances",
@@ -1291,6 +1329,7 @@ checksum = "d3dedac218327b6b55fff5ef05f63ce5127024e1a36342836da7e92cbfac4531"
 dependencies = [
  "fixed-hash 0.6.1",
  "impl-codec",
+ "impl-rlp",
  "impl-serde 0.3.0",
  "uint",
 ]
@@ -1584,6 +1623,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "rlp-derive"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e33d7b2abe0c340d8797fe2907d3f20d3b5ea5908683618bfe80df7f621f672a"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "rustc-demangle"
 version = "0.1.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1695,6 +1745,19 @@ dependencies = [
  "block-buffer",
  "digest",
  "fake-simd",
+ "opaque-debug",
+]
+
+[[package]]
+name = "sha3"
+version = "0.8.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dd26bc0e7a2e3a7c959bc494caf58b72ee0c71d67704e9520f736ca7e4853ecf"
+dependencies = [
+ "block-buffer",
+ "byte-tools",
+ "digest",
+ "keccak",
  "opaque-debug",
 ]
 
