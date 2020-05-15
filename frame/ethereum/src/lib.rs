@@ -25,12 +25,15 @@
 use sp_std::marker::PhantomData;
 use frame_support::{
 	dispatch::DispatchResult, decl_module, decl_storage, decl_event,
-	weights::{SimpleDispatchInfo, DispatchInfo, DispatchClass, ClassifyDispatch, WeighData, Weight, PaysFee},
+	weights::{DispatchClass, ClassifyDispatch, WeighData, Weight, PaysFee, Pays},
 };
+use sp_std::prelude::*;
 use frame_system::{self as system, ensure_signed, ensure_root};
 use codec::{Encode, Decode};
 use sp_runtime::{
-	traits::{SignedExtension, Bounded, SaturatedConversion},
+	traits::{
+		SignedExtension, Bounded, SaturatedConversion, DispatchInfoOf,
+	},
 	transaction_validity::{
 		ValidTransaction, TransactionValidityError, InvalidTransaction, TransactionValidity,
 	},
@@ -71,8 +74,8 @@ impl<T: pallet_balances::Trait> ClassifyDispatch<(&BalanceOf<T>,)> for WeightFor
 }
 
 impl<T: pallet_balances::Trait> PaysFee<(&BalanceOf<T>,)> for WeightForSetDummy<T> {
-	fn pays_fee(&self, _target: (&BalanceOf<T>,)) -> bool {
-		true
+	fn pays_fee(&self, _target: (&BalanceOf<T>,)) -> Pays {
+		Pays::Yes
 	}
 }
 
@@ -93,7 +96,11 @@ decl_storage! {
 	// A macro for the Storage trait, and its implementation, for this pallet.
 	// This allows for type-safe usage of the Substrate storage database, so you can
 	// keep things around between blocks.
-	trait Store for Module<T: Trait> as Ethereum {
+	//
+	// It is important to update your storage name so that your pallet's
+	// storage items are isolated from other pallets.
+	// ---------------------------------vvvvvvv
+	trait Store for Module<T: Trait> as Example {
 		// Any storage declarations of the form:
 		//   `pub? Name get(fn getter_name)? [config()|config(myname)] [build(|_| {...})] : <type> (= <new_default_value>)?;`
 		// where `<type>` is either:
@@ -108,7 +115,7 @@ decl_storage! {
 		//   - `Foo::put(1); Foo::get()` returns `1`;
 		//   - `Foo::kill(); Foo::get()` returns `0` (u32::default()).
 		// e.g. Foo: u32;
-		// e.g. pub Bar get(fn bar): map hasher(blake2_256) T::AccountId => Vec<(T::Balance, u64)>;
+		// e.g. pub Bar get(fn bar): map hasher(blake2_128_concat) T::AccountId => Vec<(T::Balance, u64)>;
 		//
 		// For basic value items, you'll get a type which implements
 		// `frame_support::StorageValue`. For map items, you'll get a type which
@@ -120,7 +127,7 @@ decl_storage! {
 		Dummy get(fn dummy) config(): Option<T::Balance>;
 
 		// A map that has enumerable entries.
-		Bar get(fn bar) config(): linked_map hasher(blake2_256) T::AccountId => T::Balance;
+		Bar get(fn bar) config(): map hasher(blake2_128_concat) T::AccountId => T::Balance;
 
 		// this one uses the default, we'll demonstrate the usage of 'mutate' API.
 		Foo get(fn foo) config(): T::Balance;
@@ -228,7 +235,7 @@ decl_module! {
 		// weight (a numeric representation of pure execution time and difficulty) of the
 		// transaction and the latter demonstrates the [`DispatchClass`] of the call. A higher
 		// weight means a larger transaction (less of which can be placed in a single block).
-		#[weight = SimpleDispatchInfo::FixedNormal(10_000)]
+		#[weight = 0]
 		fn accumulate_dummy(origin, increase_by: T::Balance) -> DispatchResult {
 			// This is a public call, so we ensure that the origin is some signed account.
 			let _sender = ensure_signed(origin)?;
@@ -277,16 +284,15 @@ decl_module! {
 
 		// The signature could also look like: `fn on_initialize()`.
 		// This function could also very well have a weight annotation, similar to any other. The
-		// only difference being that if it is not annotated, the default is
-		// `SimpleDispatchInfo::zero()`, which resolves into no weight.
-		#[weight = SimpleDispatchInfo::FixedNormal(1000)]
-		fn on_initialize(_n: T::BlockNumber) {
+		// only difference is that it mut be returned, not annotated.
+		fn on_initialize(_n: T::BlockNumber) -> Weight {
 			// Anything that needs to be done at the start of the block.
 			// We don't do anything here.
+
+			0
 		}
 
 		// The signature could also look like: `fn on_finalize()`
-		#[weight = SimpleDispatchInfo::FixedNormal(2000)]
 		fn on_finalize(_n: T::BlockNumber) {
 			// Anything that needs to be done at the end of the block.
 			// We just kill our dummy storage item.
@@ -380,7 +386,6 @@ impl<T: Trait + Send + Sync> SignedExtension for WatchDummy<T> {
 	// other pallets.
 	type Call = Call<T>;
 	type AdditionalSigned = ();
-	type DispatchInfo = DispatchInfo;
 	type Pre = ();
 
 	fn additional_signed(&self) -> sp_std::result::Result<(), TransactionValidityError> { Ok(()) }
@@ -389,7 +394,7 @@ impl<T: Trait + Send + Sync> SignedExtension for WatchDummy<T> {
 		&self,
 		_who: &Self::AccountId,
 		call: &Self::Call,
-		_info: Self::DispatchInfo,
+		_info: &DispatchInfoOf<Self::Call>,
 		len: usize,
 	) -> TransactionValidity {
 		// if the transaction is too big, just drop it.
