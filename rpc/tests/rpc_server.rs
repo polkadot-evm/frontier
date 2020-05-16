@@ -1,7 +1,6 @@
 use jsonrpc_core::IoHandler;
 
-extern crate sc_ethereum_rpc;
-use sc_ethereum_rpc::{EthApiServer, EthRpcImpl};
+use frontier_rpc::{EthApiServer, EthRpcImpl};
 
 mod eth_rpc_server {
 	use super::*;
