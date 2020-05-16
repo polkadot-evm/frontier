@@ -15,3 +15,13 @@ It consists of the following components:
   EVM execution engine for Substrate.
 * **pallet-ethereum**: Emulation of full Ethereum block processing.
 * **rpc-ethereum**: Compatibility layer for web3 RPC methods.
+
+## Development notes
+
+Frontier is still work-in-progress. Below are some notes about the development.
+
+## Vendor folder
+
+The vendor folder contains dependencies that contains changes that has not yet
+been upstreamed. Once the upstreaming process is finished, the corresponding
+submodule should be removed from vendor folder, and directly use upstream.

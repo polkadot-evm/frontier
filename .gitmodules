@@ -1,0 +1,9 @@
+[submodule "vendor/parity-common"]
+	path = vendor/parity-common
+	url = https://github.com/paritytech/parity-common
+[submodule "vendor/ethereum"]
+	path = vendor/ethereum
+	url = https://github.com/rust-blockchain/ethereum
+[submodule "vendor/substrate"]
+	path = vendor/substrate
+	url = https://github.com/paritytech/substrate
