@@ -30,15 +30,16 @@ use frame_support::{
 use sp_std::prelude::*;
 use frame_system::{self as system, ensure_signed, ensure_root};
 use codec::{Encode, Decode};
-use ethereum_types::{H160, H64, H256, U256};
+use ethereum_types::{H160, H64, H256, U256, Bloom};
 use sp_runtime::{
 	traits::{
-		SignedExtension, Bounded, SaturatedConversion, DispatchInfoOf,
+		SignedExtension, Bounded, SaturatedConversion, DispatchInfoOf, UniqueSaturatedInto,
 	},
 	transaction_validity::{
 		ValidTransaction, TransactionValidityError, InvalidTransaction, TransactionValidity,
 	},
 };
+use sha3::{Digest, Keccak256};
 
 // A custom weight calculator tailored for the dispatch call `set_dummy()`. This actually examines
 // the arguments and makes a decision based upon them.
@@ -88,7 +89,7 @@ type BalanceOf<T> = <T as pallet_balances::Trait>::Balance;
 /// should be added to our implied traits list.
 ///
 /// `frame_system::Trait` should always be included in our implied traits.
-pub trait Trait: frame_system::Trait<Hash=H256> + pallet_balances::Trait {
+pub trait Trait: frame_system::Trait<Hash=H256> + pallet_balances::Trait + pallet_timestamp::Trait {
 	/// The overarching event type.
 	type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
 }
@@ -176,20 +177,33 @@ decl_module! {
 			let transactions_and_receipts = PendingTransactionsAndReceipts::take();
 			let (transactions, receipts): (Vec<_>, Vec<_>) =
 				transactions_and_receipts.into_iter().unzip();
+			let ommers = Vec::<ethereum::Header>::new();
 
 			let header = ethereum::Header {
-				parent_hash: frame_system::Module::<T>::parent_hash(), // Take from Substrate directly.
-				ommers_hash: unimplemented!(), // Set this to empty RLP list.
+				parent_hash: frame_system::Module::<T>::parent_hash(),
+				ommers_hash: H256::from_slice(
+					Keccak256::digest(&rlp::encode_list(&ommers)[..]).as_slice(),
+				), // TODO: check ommers hash.
 				beneficiary: H160::default(),
-				state_root: unimplemented!(), // Take from Substrate directly.
-				transactions_root: unimplemented!(), // Set this to pending transactions root.
-				receipts_root: unimplemented!(), // Set this to pending receipts root.
-				logs_bloom: unimplemented!(), // Gather the logs bloom from receipts.
+				state_root: H256::default(), // TODO: figure out if there's better way to get a sort-of-valid state root.
+				transactions_root: H256::from_slice(
+					Keccak256::digest(&rlp::encode_list(&transactions)[..]).as_slice(),
+				), // TODO: check transactions hash.
+				receipts_root: H256::from_slice(
+					Keccak256::digest(&rlp::encode_list(&receipts)[..]).as_slice(),
+				), // TODO: check receipts hash.
+				logs_bloom: Bloom::default(), // TODO: gather the logs bloom from receipts.
 				difficulty: U256::zero(),
-				number: unimplemented!(), // Take from Substrate directly.
-				gas_limit: U256::zero(), // TODO: Set this using Ethereum's gas limit change algorithm.
-				gas_used: unimplemented!(), // Get this from receipts.
-				timestamp: unimplemented!(), // Take this from timestamp module.
+				number: U256::from(
+					UniqueSaturatedInto::<u128>::unique_saturated_into(
+						frame_system::Module::<T>::block_number()
+					)
+				),
+				gas_limit: U256::zero(), // TODO: set this using Ethereum's gas limit change algorithm.
+				gas_used: U256::zero(), // TODO: get this from receipts.
+				timestamp: UniqueSaturatedInto::<u64>::unique_saturated_into(
+					pallet_timestamp::Module::<T>::get()
+				),
 				extra_data: H256::default(),
 				mix_hash: H256::default(),
 				nonce: H64::default(),
@@ -198,7 +212,7 @@ decl_module! {
 			let block = ethereum::Block {
 				header,
 				transactions,
-				ommers: Vec::new(),
+				ommers,
 			};
 
 			BlocksAndReceipts::<T>::insert(n, (block, receipts));
