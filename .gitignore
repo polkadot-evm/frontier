@@ -17,7 +17,9 @@ polkadot.*
 .DS_Store
 .idea/
 
-
-#Added by cargo
-
+# Added by cargo
 /target
+
+# NixOS development environment
+.envrc
+shell.nix
