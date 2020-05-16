@@ -25,3 +25,7 @@ Frontier is still work-in-progress. Below are some notes about the development.
 The vendor folder contains dependencies that contains changes that has not yet
 been upstreamed. Once the upstreaming process is finished, the corresponding
 submodule should be removed from vendor folder, and directly use upstream.
+
+The `substrate` submodule contains a large quantity of dependencies, so they
+should directly use `path` directive in dependency declarations. For other
+dependencies, they should use Cargo's patch feature in workspace declaration.

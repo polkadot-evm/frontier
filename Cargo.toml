@@ -4,3 +4,11 @@ members = [
 	"rpc",
 	"rpc/core",
 ]
+exclude = ["vendor"]
+
+[patch.crates-io]
+ethereum = { path = "vendor/ethereum" }
+ethereum-types = { path = "vendor/parity-common/ethereum-types" }
+primitive-types = { path = "vendor/parity-common/primitive-types" }
+ethbloom = { path = "vendor/parity-common/ethbloom" }
+rlp = { path = "vendor/parity-common/rlp" }
