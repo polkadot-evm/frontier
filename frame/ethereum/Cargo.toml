@@ -13,6 +13,7 @@ frame-support = { version = "2.0.0-dev", default-features = false, path = "../..
 frame-system = { version = "2.0.0-dev", default-features = false, path = "../../vendor/substrate/frame/system" }
 pallet-balances = { version = "2.0.0-dev", default-features = false, path = "../../vendor/substrate/frame/balances" }
 pallet-timestamp = { version = "2.0.0-dev", default-features = false, path = "../../vendor/substrate/frame/timestamp" }
+pallet-evm = { version = "2.0.0-dev", default-features = false, path = "../../vendor/substrate/frame/evm" }
 sp-runtime = { version = "2.0.0-dev", default-features = false, path = "../../vendor/substrate/primitives/runtime" }
 sp-std = { version = "2.0.0-dev", default-features = false, path = "../../vendor/substrate/primitives/std" }
 sp-io = { version = "2.0.0-dev", default-features = false, path = "../../vendor/substrate/primitives/io" }
@@ -34,6 +35,7 @@ std = [
 	"frame-system/std",
 	"pallet-balances/std",
 	"pallet-timestamp/std",
+	"pallet-evm/std",
 	"sp-io/std",
 	"sp-std/std",
 	"ethereum/std",
