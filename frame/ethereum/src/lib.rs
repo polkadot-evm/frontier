@@ -242,7 +242,7 @@ impl<T: Trait> Module<T> {
 				pallet_evm::Module::<T>::execute_call(
 					source,
 					target,
-					transaction.input,
+					transaction.input.clone(),
 					transaction.value,
 					transaction.gas_limit.low_u32(),
 					transaction.gas_price,
@@ -252,7 +252,7 @@ impl<T: Trait> Module<T> {
 			ethereum::TransactionAction::Create => {
 				pallet_evm::Module::<T>::execute_create(
 					source,
-					transaction.input,
+					transaction.input.clone(),
 					transaction.value,
 					transaction.gas_limit.low_u32(),
 					transaction.gas_price,
@@ -260,6 +260,15 @@ impl<T: Trait> Module<T> {
 				).unwrap(); // TODO: handle error
 			},
 		}
+
+		let receipt = ethereum::Receipt {
+			state_root: H256::default(), // TODO: should be okay / error status.
+			used_gas: U256::default(), // TODO: set this.
+			logs_bloom: Bloom::default(), // TODO: set this.
+			logs: Vec::new(), // TODO: set this.
+		};
+
+		PendingTransactionsAndReceipts::append((transaction, receipt));
 	}
 }
 
