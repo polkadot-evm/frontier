@@ -89,7 +89,7 @@ type BalanceOf<T> = <T as pallet_balances::Trait>::Balance;
 /// should be added to our implied traits list.
 ///
 /// `frame_system::Trait` should always be included in our implied traits.
-pub trait Trait: frame_system::Trait<Hash=H256> + pallet_balances::Trait + pallet_timestamp::Trait {
+pub trait Trait: frame_system::Trait<Hash=H256> + pallet_balances::Trait + pallet_timestamp::Trait + pallet_evm::Trait {
 	/// The overarching event type.
 	type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
 }
@@ -235,7 +235,32 @@ decl_module! {
 // functions that do not write to storage and operation functions that do.
 // - Private functions. These are your usual private utilities unavailable to other pallets.
 impl<T: Trait> Module<T> {
-
+	/// Execute an Ethereum transaction, ignoring transaction signatures.
+	pub fn execute(source: H160, transaction: ethereum::Transaction) {
+		match transaction.action {
+			ethereum::TransactionAction::Call(target) => {
+				pallet_evm::Module::<T>::execute_call(
+					source,
+					target,
+					transaction.input,
+					transaction.value,
+					transaction.gas_limit.low_u32(),
+					transaction.gas_price,
+					Some(transaction.nonce),
+				).unwrap(); // TODO: handle error
+			},
+			ethereum::TransactionAction::Create => {
+				pallet_evm::Module::<T>::execute_create(
+					source,
+					transaction.input,
+					transaction.value,
+					transaction.gas_limit.low_u32(),
+					transaction.gas_price,
+					Some(transaction.nonce),
+				).unwrap(); // TODO: handle error
+			},
+		}
+	}
 }
 
 // Similar to other FRAME pallets, your pallet can also define a signed extension and perform some
