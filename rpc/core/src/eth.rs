@@ -15,21 +15,20 @@
 // along with Open Ethereum.  If not, see <http://www.gnu.org/licenses/>.
 
 //! Eth rpc interface.
-use jsonrpc_core::{Result, BoxFuture};
+
+use ethereum_types::{H160, H256, H64, U256, U64};
+use jsonrpc_core::{BoxFuture, Result};
 use jsonrpc_derive::rpc;
-use ethereum_types::{H64, H160, H256, U64, U256};
 
 use crate::types::{
-	RichBlock, BlockNumber, Bytes, CallRequest, Filter, FilterChanges, Index, EthAccount,
-	Log, Receipt, SyncStatus, Transaction, Work
+	BlockNumber, Bytes, CallRequest, EthAccount, Filter, FilterChanges, Index, Log, Receipt,
+	RichBlock, SyncStatus, Transaction, Work,
 };
+pub use rpc_impl_EthApi::gen_server::EthApi as EthApiServer;
 
 /// Eth rpc interface.
 #[rpc(server)]
 pub trait EthApi {
-	/// RPC Metadata
-	type Metadata;
-
 	/// Returns protocol version encoded as a string (quotes are necessary).
 	#[rpc(name = "eth_protocolVersion")]
 	fn protocol_version(&self) -> Result<String>;
@@ -134,11 +133,19 @@ pub trait EthApi {
 
 	/// Returns transaction at given block hash and index.
 	#[rpc(name = "eth_getTransactionByBlockHashAndIndex")]
-	fn transaction_by_block_hash_and_index(&self, _: H256, _: Index) -> BoxFuture<Option<Transaction>>;
+	fn transaction_by_block_hash_and_index(
+		&self,
+		_: H256,
+		_: Index,
+	) -> BoxFuture<Option<Transaction>>;
 
 	/// Returns transaction by given block number and index.
 	#[rpc(name = "eth_getTransactionByBlockNumberAndIndex")]
-	fn transaction_by_block_number_and_index(&self, _: BlockNumber, _: Index) -> BoxFuture<Option<Transaction>>;
+	fn transaction_by_block_number_and_index(
+		&self,
+		_: BlockNumber,
+		_: Index,
+	) -> BoxFuture<Option<Transaction>>;
 
 	/// Returns transaction receipt by transaction hash.
 	#[rpc(name = "eth_getTransactionReceipt")]
@@ -150,7 +157,11 @@ pub trait EthApi {
 
 	/// Returns an uncles at given block and index.
 	#[rpc(name = "eth_getUncleByBlockNumberAndIndex")]
-	fn uncle_by_block_number_and_index(&self, _: BlockNumber, _: Index) -> BoxFuture<Option<RichBlock>>;
+	fn uncle_by_block_number_and_index(
+		&self,
+		_: BlockNumber,
+		_: Index,
+	) -> BoxFuture<Option<RichBlock>>;
 
 	/// Returns available compilers.
 	/// @deprecated
