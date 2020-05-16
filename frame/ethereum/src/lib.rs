@@ -88,7 +88,7 @@ type BalanceOf<T> = <T as pallet_balances::Trait>::Balance;
 /// should be added to our implied traits list.
 ///
 /// `frame_system::Trait` should always be included in our implied traits.
-pub trait Trait: pallet_balances::Trait {
+pub trait Trait: frame_system::Trait<Hash=H256> + pallet_balances::Trait {
 	/// The overarching event type.
 	type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
 }
@@ -178,7 +178,7 @@ decl_module! {
 				transactions_and_receipts.into_iter().unzip();
 
 			let header = ethereum::Header {
-				parent_hash: unimplemented!(), // Take from Substrate directly.
+				parent_hash: frame_system::Module::<T>::parent_hash(), // Take from Substrate directly.
 				ommers_hash: unimplemented!(), // Set this to empty RLP list.
 				beneficiary: H160::default(),
 				state_root: unimplemented!(), // Take from Substrate directly.

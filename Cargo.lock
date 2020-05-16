@@ -435,18 +435,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "fixed-hash"
-version = "0.6.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "11498d382790b7a8f2fd211780bec78619bba81cdad3a283997c0c41f836759c"
-dependencies = [
- "byteorder",
- "rand 0.7.3",
- "rustc-hex",
- "static_assertions",
-]
-
-[[package]]
 name = "frame-benchmarking"
 version = "2.0.0-dev"
 source = "git+https://github.com/paritytech/substrate#3f71d1ea54a653f78c2f6e1186204fb33f907520"
@@ -794,6 +782,13 @@ name = "impl-serde"
 version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "58e3cae7e99c7ff5a995da2cf78dd0a5383740eda71d98cf7b1910c301ac69b8"
+dependencies = [
+ "serde",
+]
+
+[[package]]
+name = "impl-serde"
+version = "0.3.1"
 dependencies = [
  "serde",
 ]
@@ -1186,7 +1181,7 @@ dependencies = [
  "impl-trait-for-tuples",
  "parity-util-mem-derive",
  "parking_lot",
- "primitive-types 0.7.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "primitive-types 0.7.2",
  "winapi",
 ]
 
@@ -1310,7 +1305,7 @@ dependencies = [
  "fixed-hash 0.5.2",
  "impl-codec 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "impl-rlp 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "impl-serde 0.3.1",
+ "impl-serde 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "uint 0.8.3 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -1321,19 +1316,8 @@ dependencies = [
  "fixed-hash 0.6.1",
  "impl-codec 0.4.2",
  "impl-rlp 0.2.1",
- "uint 0.8.3",
-]
-
-[[package]]
-name = "primitive-types"
-version = "0.7.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c55c21c64d0eaa4d7ed885d959ef2d62d9e488c27c0e02d9aa5ce6c877b7d5f8"
-dependencies = [
- "fixed-hash 0.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "impl-codec 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "impl-serde 0.3.1",
- "uint 0.8.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "uint 0.8.3",
 ]
 
 [[package]]
@@ -1791,7 +1775,7 @@ dependencies = [
  "integer-sqrt",
  "num-traits",
  "parity-scale-codec",
- "primitive-types 0.7.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "primitive-types 0.7.2",
  "serde",
  "sp-debug-derive",
  "sp-std",
@@ -1811,7 +1795,7 @@ dependencies = [
  "hash-db",
  "hash256-std-hasher",
  "hex",
- "impl-serde 0.3.1",
+ "impl-serde 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static",
  "libsecp256k1",
  "log",
@@ -1820,7 +1804,7 @@ dependencies = [
  "parity-scale-codec",
  "parity-util-mem",
  "parking_lot",
- "primitive-types 0.7.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "primitive-types 0.7.2",
  "rand 0.7.3",
  "regex",
  "schnorrkel",
@@ -1928,7 +1912,7 @@ version = "2.0.0-dev"
 source = "git+https://github.com/paritytech/substrate#3f71d1ea54a653f78c2f6e1186204fb33f907520"
 dependencies = [
  "parity-scale-codec",
- "primitive-types 0.7.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "primitive-types 0.7.2",
  "sp-externalities",
  "sp-runtime-interface-proc-macro",
  "sp-std",
