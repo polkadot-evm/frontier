@@ -30,6 +30,7 @@ use frame_support::{
 use sp_std::prelude::*;
 use frame_system::{self as system, ensure_signed, ensure_root};
 use codec::{Encode, Decode};
+use ethereum_types::{H160, H64, H256, U256};
 use sp_runtime::{
 	traits::{
 		SignedExtension, Bounded, SaturatedConversion, DispatchInfoOf,
@@ -102,6 +103,7 @@ decl_storage! {
 	// ---------------------------------vvvvvvv
 	trait Store for Module<T: Trait> as Example {
 		BlocksAndReceipts: map hasher(blake2_128_concat) T::Hash => Option<(ethereum::Block, Vec<ethereum::Receipt>)>;
+		PendingTransactionsAndReceipts: Vec<(ethereum::Transaction, ethereum::Receipt)>;
 	}
 }
 
@@ -171,7 +173,25 @@ decl_module! {
 
 		// The signature could also look like: `fn on_finalize()`
 		fn on_finalize(_n: T::BlockNumber) {
+			let header = ethereum::Header {
+				parent_hash: unimplemented!(), // Take from Substrate directly.
+				ommers_hash: unimplemented!(), // Set this to empty RLP list.
+				beneficiary: H160::default(),
+				state_root: unimplemented!(), // Take from Substrate directly.
+				transactions_root: unimplemented!(), // Set this to pending transactions root.
+				receipts_root: unimplemented!(), // Set this to pending receipts root.
+				logs_bloom: unimplemented!(), // Gather the logs bloom from receipts.
+				difficulty: U256::zero(),
+				number: unimplemented!(), // Take from Substrate directly.
+				gas_limit: U256::zero(), // TODO: Set this using Ethereum's gas limit change algorithm.
+				gas_used: unimplemented!(), // Get this from receipts.
+				timestamp: unimplemented!(), // Take this from timestamp module.
+				extra_data: H256::default(),
+				mix_hash: H256::default(),
+				nonce: H64::default(),
+			};
 
+			unimplemented!()
 		}
 
 		// A runtime code run after every block and have access to extended set of APIs.

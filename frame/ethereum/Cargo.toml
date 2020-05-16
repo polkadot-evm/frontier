@@ -16,6 +16,7 @@ sp-runtime = { version = "2.0.0-alpha.2", default-features = false, git = "https
 sp-std = { version = "2.0.0-alpha.2", default-features = false, git = "https://github.com/paritytech/substrate" }
 sp-io = { version = "2.0.0-alpha.2", default-features = false, git = "https://github.com/paritytech/substrate" }
 ethereum = { version = "0.2", default-features = false }
+ethereum-types = { version = "0.9", default-features = false }
 
 [dev-dependencies]
 sp-core = { version = "2.0.0-alpha.2", git = "https://github.com/paritytech/substrate" }
@@ -32,4 +33,5 @@ std = [
 	"sp-io/std",
 	"sp-std/std",
 	"ethereum/std",
+	"ethereum-types/std",
 ]
