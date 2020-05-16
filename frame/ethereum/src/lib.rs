@@ -102,7 +102,7 @@ decl_storage! {
 	// storage items are isolated from other pallets.
 	// ---------------------------------vvvvvvv
 	trait Store for Module<T: Trait> as Example {
-		BlocksAndReceipts: map hasher(blake2_128_concat) T::Hash => Option<(ethereum::Block, Vec<ethereum::Receipt>)>;
+		BlocksAndReceipts: map hasher(blake2_128_concat) T::BlockNumber => Option<(ethereum::Block, Vec<ethereum::Receipt>)>;
 		PendingTransactionsAndReceipts: Vec<(ethereum::Transaction, ethereum::Receipt)>;
 	}
 }
@@ -172,7 +172,11 @@ decl_module! {
 		}
 
 		// The signature could also look like: `fn on_finalize()`
-		fn on_finalize(_n: T::BlockNumber) {
+		fn on_finalize(n: T::BlockNumber) {
+			let transactions_and_receipts = PendingTransactionsAndReceipts::take();
+			let (transactions, receipts): (Vec<_>, Vec<_>) =
+				transactions_and_receipts.into_iter().unzip();
+
 			let header = ethereum::Header {
 				parent_hash: unimplemented!(), // Take from Substrate directly.
 				ommers_hash: unimplemented!(), // Set this to empty RLP list.
@@ -191,7 +195,13 @@ decl_module! {
 				nonce: H64::default(),
 			};
 
-			unimplemented!()
+			let block = ethereum::Block {
+				header,
+				transactions,
+				ommers: Vec::new(),
+			};
+
+			BlocksAndReceipts::<T>::insert(n, (block, receipts));
 		}
 
 		// A runtime code run after every block and have access to extended set of APIs.
