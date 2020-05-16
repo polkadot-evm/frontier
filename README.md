@@ -20,7 +20,7 @@ It consists of the following components:
 
 Frontier is still work-in-progress. Below are some notes about the development.
 
-## Vendor folder
+### Vendor folder
 
 The vendor folder contains dependencies that contains changes that has not yet
 been upstreamed. Once the upstreaming process is finished, the corresponding
