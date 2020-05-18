@@ -28,7 +28,7 @@ use frame_support::{
 	weights::{DispatchClass, ClassifyDispatch, WeighData, Weight, PaysFee, Pays},
 };
 use sp_std::prelude::*;
-use frame_system::{self as system, ensure_signed, ensure_root};
+use frame_system::{self as system, ensure_none, ensure_signed, ensure_root};
 use codec::{Encode, Decode};
 use ethereum_types::{H160, H64, H256, U256, Bloom};
 use sp_runtime::{
@@ -161,6 +161,15 @@ decl_module! {
 		/// For non-generic events, the generic parameter just needs to be dropped, so that it
 		/// looks like: `fn deposit_event() = default;`.
 		fn deposit_event() = default;
+
+		/// Transact an Ethereum transaction.
+		#[weight = 0]
+		fn transact(origin, transaction: ethereum::Transaction) {
+			ensure_none(origin)?;
+
+			let source = H160::default(); // TODO: recover sender address from transaction.
+			Self::execute(source, transaction);
+		}
 
 		// The signature could also look like: `fn on_initialize()`.
 		// This function could also very well have a weight annotation, similar to any other. The
