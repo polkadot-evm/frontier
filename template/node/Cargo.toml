@@ -1,0 +1,42 @@
+[package]
+name = "frontier-template-node"
+version = "2.0.0-dev"
+authors = ["Anonymous"]
+description = "Substrate Node template"
+edition = "2018"
+license = "Unlicense"
+build = "build.rs"
+homepage = "https://substrate.dev"
+repository = "https://github.com/paritytech/substrate/"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+futures = "0.3.4"
+log = "0.4.8"
+structopt = "0.3.8"
+parking_lot = "0.10.0"
+
+sc-cli = { version = "0.8.0-dev", path = "../../vendor/substrate/client/cli" }
+sp-core = { version = "2.0.0-dev", path = "../../vendor/substrate/primitives/core" }
+sc-executor = { version = "0.8.0-dev", path = "../../vendor/substrate/client/executor" }
+sc-service = { version = "0.8.0-dev", path = "../../vendor/substrate/client/service" }
+sp-inherents = { version = "2.0.0-dev", path = "../../vendor/substrate/primitives/inherents" }
+sc-transaction-pool = { version = "2.0.0-dev", path = "../../vendor/substrate/client/transaction-pool" }
+sp-transaction-pool = { version = "2.0.0-dev", path = "../../vendor/substrate/primitives/transaction-pool" }
+sc-network = { version = "0.8.0-dev", path = "../../vendor/substrate/client/network" }
+sc-consensus-aura = { version = "0.8.0-dev", path = "../../vendor/substrate/client/consensus/aura" }
+sp-consensus-aura = { version = "0.8.0-dev", path = "../../vendor/substrate/primitives/consensus/aura" }
+sp-consensus = { version = "0.8.0-dev", path = "../../vendor/substrate/primitives/consensus/common" }
+sc-consensus = { version = "0.8.0-dev", path = "../../vendor/substrate/client/consensus/common" }
+sc-finality-grandpa = { version = "0.8.0-dev", path = "../../vendor/substrate/client/finality-grandpa" }
+sp-finality-grandpa = { version = "2.0.0-dev", path = "../../vendor/substrate/primitives/finality-grandpa" }
+sc-client-api = { version = "2.0.0-dev", path = "../../vendor/substrate/client/api" }
+sp-runtime = { version = "2.0.0-dev", path = "../../vendor/substrate/primitives/runtime" }
+sc-basic-authorship = { path = "../../vendor/substrate/client/basic-authorship" }
+
+frontier-template-runtime = { version = "2.0.0-dev", path = "../runtime" }
+
+[build-dependencies]
+substrate-build-script-utils = { version = "2.0.0-dev", path = "../../vendor/substrate/utils/build-script-utils" }
