@@ -341,20 +341,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ethereum-rpc"
-version = "0.1.0"
-dependencies = [
- "ethereum-types",
- "jsonrpc-core",
- "jsonrpc-core-client",
- "jsonrpc-derive",
- "jsonrpc-pubsub",
- "rustc-hex",
- "serde",
- "serde_json",
-]
-
-[[package]]
 name = "ethereum-types"
 version = "0.9.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -553,11 +539,32 @@ dependencies = [
 name = "frontier-rpc"
 version = "0.1.0"
 dependencies = [
- "ethereum-rpc",
+ "ethereum-types",
+ "frontier-rpc-core",
+ "jsonrpc-core",
+ "jsonrpc-core-client",
+ "jsonrpc-derive",
+]
+
+[[package]]
+name = "frontier-rpc-core"
+version = "0.1.0"
+dependencies = [
  "ethereum-types",
  "jsonrpc-core",
  "jsonrpc-core-client",
  "jsonrpc-derive",
+ "jsonrpc-pubsub",
+ "rustc-hex",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "frontier-rpc-primitives"
+version = "0.1.0"
+dependencies = [
+ "sp-api",
 ]
 
 [[package]]

@@ -1,0 +1,16 @@
+[package]
+name = "frontier-rpc-primitives"
+version = "0.1.0"
+authors = ["Parity Technologies <admin@parity.io"]
+edition = "2018"
+description = "Runtime primitives for Ethereum RPC (web3) compatibility layer for Substrate."
+license = "GPL-3.0"
+
+[dependencies]
+sp-api = { version = "2.0.0-dev", default-features = false, path = "../../vendor/substrate/primitives/api" }
+
+[features]
+default = ["std"]
+std = [
+	"sp-api/std",
+]

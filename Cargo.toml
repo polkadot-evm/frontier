@@ -3,6 +3,7 @@ members = [
 	"frame/ethereum",
 	"rpc",
 	"rpc/core",
+	"rpc/primitives",
 ]
 exclude = ["vendor"]
 

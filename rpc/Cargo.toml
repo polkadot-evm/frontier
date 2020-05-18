@@ -11,4 +11,4 @@ jsonrpc-core = "14.0.3"
 jsonrpc-derive = "14.0.3"
 jsonrpc-core-client = "14.0.3"
 ethereum-types = "0.9.0"
-eth_rpc_core = { package = "ethereum-rpc", path = "./core" }
+frontier-rpc-core = { path = "./core" }
