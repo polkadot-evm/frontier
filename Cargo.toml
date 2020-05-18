@@ -4,6 +4,8 @@ members = [
 	"rpc",
 	"rpc/core",
 	"rpc/primitives",
+	"template/node",
+	"template/runtime",
 ]
 exclude = ["vendor"]
 
