@@ -1,13 +1,13 @@
-use eth_rpc_core::EthApi;
 use ethereum_types::{H160, H256, H64, U256, U64};
 use jsonrpc_core::{BoxFuture, Result};
 
-use eth_rpc_core::types::{
+use frontier_rpc_core::EthApi;
+use frontier_rpc_core::types::{
 	BlockNumber, Bytes, CallRequest, EthAccount, Filter, Index, Log, Receipt, RichBlock,
 	SyncStatus, Transaction, Work,
 };
 
-pub use eth_rpc_core::EthApiServer;
+pub use frontier_rpc_core::EthApiServer;
 
 pub struct EthRpcImpl;
 
