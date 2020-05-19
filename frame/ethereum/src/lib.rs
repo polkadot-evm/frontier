@@ -41,46 +41,6 @@ use sp_runtime::{
 };
 use sha3::{Digest, Keccak256};
 
-// A custom weight calculator tailored for the dispatch call `set_dummy()`. This actually examines
-// the arguments and makes a decision based upon them.
-//
-// The `WeightData<T>` trait has access to the arguments of the dispatch that it wants to assign a
-// weight to. Nonetheless, the trait itself can not make any assumptions about what the generic type
-// of the arguments (`T`) is. Based on our needs, we could replace `T` with a more concrete type
-// while implementing the trait. The `decl_module!` expects whatever implements `WeighData<T>` to
-// replace `T` with a tuple of the dispatch arguments. This is exactly how we will craft the
-// implementation below.
-//
-// The rules of `WeightForSetDummy` are as follows:
-// - The final weight of each dispatch is calculated as the argument of the call multiplied by the
-//   parameter given to the `WeightForSetDummy`'s constructor.
-// - assigns a dispatch class `operational` if the argument of the call is more than 1000.
-struct WeightForSetDummy<T: pallet_balances::Trait>(BalanceOf<T>);
-
-impl<T: pallet_balances::Trait> WeighData<(&BalanceOf<T>,)> for WeightForSetDummy<T>
-{
-	fn weigh_data(&self, target: (&BalanceOf<T>,)) -> Weight {
-		let multiplier = self.0;
-		(*target.0 * multiplier).saturated_into::<Weight>()
-	}
-}
-
-impl<T: pallet_balances::Trait> ClassifyDispatch<(&BalanceOf<T>,)> for WeightForSetDummy<T> {
-	fn classify_dispatch(&self, target: (&BalanceOf<T>,)) -> DispatchClass {
-		if *target.0 > <BalanceOf<T>>::from(1000u32) {
-			DispatchClass::Operational
-		} else {
-			DispatchClass::Normal
-		}
-	}
-}
-
-impl<T: pallet_balances::Trait> PaysFee<(&BalanceOf<T>,)> for WeightForSetDummy<T> {
-	fn pays_fee(&self, _target: (&BalanceOf<T>,)) -> Pays {
-		Pays::Yes
-	}
-}
-
 /// A type alias for the balance type from this pallet's point of view.
 type BalanceOf<T> = <T as pallet_balances::Trait>::Balance;
 
