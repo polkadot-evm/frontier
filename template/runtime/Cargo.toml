@@ -23,6 +23,7 @@ system = { version = "2.0.0-dev", default-features = false, package = "frame-sys
 timestamp = { version = "2.0.0-dev", default-features = false, package = "pallet-timestamp", path = "../../vendor/substrate/frame/timestamp" }
 transaction-payment = { version = "2.0.0-dev", default-features = false, package = "pallet-transaction-payment", path = "../../vendor/substrate/frame/transaction-payment" }
 ethereum = { version = "0.1.0", default-features = false, package = "pallet-ethereum", path = "../../frame/ethereum" }
+evm = { version = "2.0.0-dev", default-features = false, package = "pallet-evm", path = "../../vendor/substrate/frame/evm" }
 frame-executive = { version = "2.0.0-dev", default-features = false, path = "../../vendor/substrate/frame/executive" }
 serde = { version = "1.0.101", optional = true, features = ["derive"] }
 sp-api = { version = "2.0.0-dev", default-features = false, path = "../../vendor/substrate/primitives/api" }
@@ -69,4 +70,5 @@ std = [
 	"timestamp/std",
 	"transaction-payment/std",
 	"ethereum/std",
+	"evm/std",
 ]
