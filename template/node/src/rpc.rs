@@ -71,8 +71,8 @@ pub fn create_full<C, P, M, SC>(
 	let FullDeps {
 		client,
 		pool,
-		select_chain,
-		deny_unsafe,
+		select_chain: _,
+		deny_unsafe: _,
 	} = deps;
 
 	io.extend_with(

@@ -22,27 +22,15 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use sp_std::marker::PhantomData;
-use frame_support::{
-	dispatch::DispatchResult, decl_module, decl_storage, decl_event,
-	weights::{DispatchClass, ClassifyDispatch, WeighData, Weight, PaysFee, Pays},
-};
+use frame_support::{decl_module, decl_storage, decl_event, weights::Weight};
 use sp_std::prelude::*;
-use frame_system::{self as system, ensure_none, ensure_signed, ensure_root};
-use codec::{Encode, Decode};
+use frame_system::{self as system, ensure_none};
 use ethereum_types::{H160, H64, H256, U256, Bloom};
-use sp_runtime::{
-	traits::{
-		SignedExtension, Bounded, SaturatedConversion, DispatchInfoOf, UniqueSaturatedInto,
-	},
-	transaction_validity::{
-		ValidTransaction, TransactionValidityError, InvalidTransaction, TransactionValidity,
-	},
-};
+use sp_runtime::traits::UniqueSaturatedInto;
 use sha3::{Digest, Keccak256};
 
 /// A type alias for the balance type from this pallet's point of view.
-type BalanceOf<T> = <T as pallet_balances::Trait>::Balance;
+pub type BalanceOf<T> = <T as pallet_balances::Trait>::Balance;
 
 /// Our pallet's configuration trait. All our types and constants go in here. If the
 /// pallet is dependent on specific other pallets, then their configuration traits
