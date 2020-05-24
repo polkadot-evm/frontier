@@ -38,6 +38,8 @@ sp-session = { version = "2.0.0-dev", default-features = false, path = "../../ve
 sp-std = { version = "2.0.0-dev", default-features = false, path = "../../vendor/substrate/primitives/std" }
 sp-transaction-pool = { version = "2.0.0-dev", default-features = false, path = "../../vendor/substrate/primitives/transaction-pool" }
 sp-version = { version = "2.0.0-dev", default-features = false, path = "../../vendor/substrate/primitives/version" }
+frame-system-rpc-runtime-api = { version = "2.0.0-dev", default-features = false, path = "../../vendor/substrate/frame/system/rpc/runtime-api/" }
+pallet-transaction-payment-rpc-runtime-api = { version = "2.0.0-dev", default-features = false, path = "../../vendor/substrate/frame/transaction-payment/rpc/runtime-api/" }
 
 [build-dependencies]
 wasm-builder-runner = { version = "1.0.5", package = "substrate-wasm-builder-runner", path = "../../vendor/substrate/utils/wasm-builder-runner" }
@@ -71,4 +73,6 @@ std = [
 	"transaction-payment/std",
 	"ethereum/std",
 	"evm/std",
+	"frame-system-rpc-runtime-api/std",
+	"pallet-transaction-payment-rpc-runtime-api/std",
 ]
