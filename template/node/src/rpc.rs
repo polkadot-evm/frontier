@@ -66,6 +66,7 @@ pub fn create_full<C, P, M, SC>(
 {
 	use substrate_frame_rpc_system::{FullSystem, SystemApi};
 	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApi};
+	use frontier_rpc::{EthApi, EthApiServer};
 
 	let mut io = jsonrpc_core::IoHandler::default();
 	let FullDeps {
@@ -80,6 +81,9 @@ pub fn create_full<C, P, M, SC>(
 	);
 	io.extend_with(
 		TransactionPaymentApi::to_delegate(TransactionPayment::new(client.clone()))
+	);
+	io.extend_with(
+		EthApiServer::to_delegate(EthApi)
 	);
 
 	io

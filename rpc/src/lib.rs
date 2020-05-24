@@ -17,7 +17,7 @@
 use ethereum_types::{H160, H256, H64, U256, U64};
 use jsonrpc_core::{BoxFuture, Result};
 
-use frontier_rpc_core::EthApi;
+use frontier_rpc_core::EthApi as EthApiT;
 use frontier_rpc_core::types::{
 	BlockNumber, Bytes, CallRequest, EthAccount, Filter, Index, Log, Receipt, RichBlock,
 	SyncStatus, Transaction, Work,
@@ -25,9 +25,9 @@ use frontier_rpc_core::types::{
 
 pub use frontier_rpc_core::EthApiServer;
 
-pub struct EthRpcImpl;
+pub struct EthApi;
 
-impl EthApi for EthRpcImpl {
+impl EthApiT for EthApi {
 	/// Returns protocol version encoded as a string (quotes are necessary).
 	fn protocol_version(&self) -> Result<String> {
 		return Ok("0x54".to_string());
