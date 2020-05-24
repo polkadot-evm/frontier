@@ -15,7 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use sp_core::{Pair, Public, sr25519};
+use sp_core::{U256, Pair, Public, sr25519};
 use evm::{ConvertAccountId, HashTruncateConvertAccountId};
 use frontier_template_runtime::{
 	AccountId, AuraConfig, BalancesConfig, EVMAccount, EVMConfig, GenesisConfig, GrandpaConfig,
@@ -23,7 +23,6 @@ use frontier_template_runtime::{
 };
 use sc_service::ChainType;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_core::{sr25519, Pair, Public, U256};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::traits::{BlakeTwo256, IdentifyAccount, Verify};
 use std::collections::BTreeMap;
