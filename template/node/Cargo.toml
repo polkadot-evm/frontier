@@ -1,10 +1,10 @@
 [package]
 name = "frontier-template-node"
 version = "2.0.0-dev"
-authors = ["Anonymous"]
+authors = ["Parity Technologies <admin@parity.io>"]
 description = "Substrate Node template"
 edition = "2018"
-license = "Unlicense"
+license = "Apache-2.0"
 build = "build.rs"
 homepage = "https://substrate.dev"
 repository = "https://github.com/paritytech/substrate/"
