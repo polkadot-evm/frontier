@@ -29,7 +29,7 @@ use grandpa::fg_primitives;
 use grandpa::{AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList};
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_core::{crypto::KeyTypeId, OpaqueMetadata, U256};
+use sp_core::{crypto::KeyTypeId, OpaqueMetadata, U256, H160};
 use sp_runtime::traits::{
 	BlakeTwo256, Block as BlockT, IdentifyAccount, IdentityLookup, NumberFor, Saturating, Verify,
 };
@@ -422,6 +422,10 @@ impl_runtime_apis! {
 	impl frontier_rpc_primitives::EthereumRuntimeApi<Block> for Runtime {
 		fn chain_id() -> u64 {
 			sp_io::misc::chain_id()
+		}
+
+		fn account_basic(address: H160) -> EVMAccount {
+			evm::Module::<Runtime>::accounts(address)
 		}
 	}
 

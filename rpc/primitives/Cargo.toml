@@ -7,10 +7,14 @@ description = "Runtime primitives for Ethereum RPC (web3) compatibility layer fo
 license = "GPL-3.0"
 
 [dependencies]
+sp-core = { version = "2.0.0-dev", default-features = false, path = "../../vendor/substrate/primitives/core" }
 sp-api = { version = "2.0.0-dev", default-features = false, path = "../../vendor/substrate/primitives/api" }
+pallet-evm = { version = "2.0.0-dev", default-features = false, path = "../../vendor/substrate/frame/evm" }
 
 [features]
 default = ["std"]
 std = [
+	"sp-core/std",
 	"sp-api/std",
+	"pallet-evm/std",
 ]

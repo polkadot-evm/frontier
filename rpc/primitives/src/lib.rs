@@ -16,9 +16,12 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use sp_core::H160;
+
 sp_api::decl_runtime_apis! {
 	/// API necessary for Ethereum-compatibility layer.
 	pub trait EthereumRuntimeApi {
 		fn chain_id() -> u64;
+		fn account_basic(address: H160) -> pallet_evm::Account;
 	}
 }
