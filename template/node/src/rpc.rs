@@ -61,7 +61,7 @@ pub fn create_full<C, P, M, SC>(
 	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance, UncheckedExtrinsic>,
 	C::Api: frontier_rpc_primitives::EthereumRuntimeApi<Block>,
 	<C::Api as sp_api::ApiErrorExt>::Error: fmt::Debug,
-	P: TransactionPool + 'static,
+	P: TransactionPool<Block=Block> + 'static,
 	M: jsonrpc_core::Metadata + Default,
 	SC: SelectChain<Block> +'static,
 {
@@ -78,13 +78,18 @@ pub fn create_full<C, P, M, SC>(
 	} = deps;
 
 	io.extend_with(
-		SystemApi::to_delegate(FullSystem::new(client.clone(), pool))
+		SystemApi::to_delegate(FullSystem::new(client.clone(), pool.clone()))
 	);
 	io.extend_with(
 		TransactionPaymentApi::to_delegate(TransactionPayment::new(client.clone()))
 	);
 	io.extend_with(
-		EthApiServer::to_delegate(EthApi::new(client.clone(), select_chain))
+		EthApiServer::to_delegate(EthApi::new(
+			client.clone(),
+			select_chain,
+			pool.clone(),
+			frontier_template_runtime::TransactionConverter,
+		))
 	);
 
 	io

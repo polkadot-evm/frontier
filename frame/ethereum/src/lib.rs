@@ -26,8 +26,13 @@ use frame_support::{decl_module, decl_storage, decl_event, weights::Weight};
 use sp_std::prelude::*;
 use frame_system::{self as system, ensure_none};
 use ethereum_types::{H160, H64, H256, U256, Bloom};
-use sp_runtime::traits::UniqueSaturatedInto;
+use sp_runtime::{
+	traits::UniqueSaturatedInto,
+	transaction_validity::{TransactionValidity, TransactionSource, ValidTransaction}
+};
 use sha3::{Digest, Keccak256};
+
+pub use ethereum::Transaction;
 
 /// A type alias for the balance type from this pallet's point of view.
 pub type BalanceOf<T> = <T as pallet_balances::Trait>::Balance;
@@ -183,6 +188,16 @@ decl_module! {
 			// but we could dispatch extrinsic (transaction/unsigned/inherent) using
 			// sp_io::submit_extrinsic
 		}
+	}
+}
+
+impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
+	type Call = Call<T>;
+
+	fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
+		ValidTransaction::with_tag_prefix("Ethereum")
+			.and_provides(call)
+			.build()
 	}
 }
 

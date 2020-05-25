@@ -16,3 +16,9 @@ frontier-rpc-primitives = { path = "primitives" }
 sp-runtime = { path = "../vendor/substrate/primitives/runtime" }
 sp-api = { path = "../vendor/substrate/primitives/api" }
 sp-consensus = { path = "../vendor/substrate/primitives/consensus/common" }
+sp-transaction-pool = { path = "../vendor/substrate/primitives/transaction-pool" }
+ethereum = { version = "0.2", features = ["codec"] }
+codec = { package = "parity-scale-codec", version = "1.0.0" }
+rlp = "0.4"
+pallet-ethereum = "0.1"
+futures = { version = "0.3.1", features = ["compat"] }

@@ -1079,15 +1079,21 @@ dependencies = [
 name = "frontier-rpc"
 version = "0.1.0"
 dependencies = [
+ "ethereum",
  "ethereum-types",
  "frontier-rpc-core",
  "frontier-rpc-primitives",
+ "futures 0.3.5",
  "jsonrpc-core",
  "jsonrpc-core-client",
  "jsonrpc-derive",
+ "pallet-ethereum 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "parity-scale-codec",
+ "rlp",
  "sp-api",
  "sp-consensus",
  "sp-runtime",
+ "sp-transaction-pool",
 ]
 
 [[package]]
@@ -1108,6 +1114,7 @@ dependencies = [
 name = "frontier-rpc-primitives"
 version = "0.1.0"
 dependencies = [
+ "ethereum",
  "pallet-evm",
  "sp-api",
  "sp-core",
@@ -1162,7 +1169,7 @@ dependencies = [
  "frontier-rpc-primitives",
  "pallet-aura",
  "pallet-balances",
- "pallet-ethereum",
+ "pallet-ethereum 0.1.0",
  "pallet-evm",
  "pallet-grandpa",
  "pallet-randomness-collective-flip",
@@ -2915,6 +2922,12 @@ dependencies = [
  "sp-runtime",
  "sp-std",
 ]
+
+[[package]]
+name = "pallet-ethereum"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bd4556fb64842e71bb6e2f98b7541c0d310069eb607d432c6ac9bdaecbfd3118"
 
 [[package]]
 name = "pallet-evm"
