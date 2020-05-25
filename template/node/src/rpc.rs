@@ -59,6 +59,7 @@ pub fn create_full<C, P, M, SC>(
 	C: Send + Sync + 'static,
 	C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Index>,
 	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance, UncheckedExtrinsic>,
+	C::Api: frontier_rpc_primitives::EthereumRuntimeApi<Block>,
 	<C::Api as sp_api::ApiErrorExt>::Error: fmt::Debug,
 	P: TransactionPool + 'static,
 	M: jsonrpc_core::Metadata + Default,
@@ -83,7 +84,7 @@ pub fn create_full<C, P, M, SC>(
 		TransactionPaymentApi::to_delegate(TransactionPayment::new(client.clone()))
 	);
 	io.extend_with(
-		EthApiServer::to_delegate(EthApi)
+		EthApiServer::to_delegate(EthApi::new(client.clone()))
 	);
 
 	io

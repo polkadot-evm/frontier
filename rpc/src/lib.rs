@@ -14,23 +14,41 @@
 // You should have received a copy of the GNU General Public License
 // along with Substrate.  If not, see <http://www.gnu.org/licenses/>.
 
+use std::{marker::PhantomData, sync::Arc};
 use ethereum_types::{H160, H256, H64, U256, U64};
 use jsonrpc_core::{BoxFuture, Result};
+use sp_runtime::traits::Block as BlockT;
+use sp_api::ProvideRuntimeApi;
 
 use frontier_rpc_core::EthApi as EthApiT;
 use frontier_rpc_core::types::{
 	BlockNumber, Bytes, CallRequest, EthAccount, Filter, Index, Log, Receipt, RichBlock,
 	SyncStatus, Transaction, Work,
 };
+use frontier_rpc_primitives::EthereumRuntimeApi;
 
 pub use frontier_rpc_core::EthApiServer;
 
-pub struct EthApi;
+pub struct EthApi<B: BlockT, C> {
+	client: Arc<C>,
+	_marker: PhantomData<B>,
+}
 
-impl EthApiT for EthApi {
+impl<B: BlockT, C> EthApi<B, C> {
+	pub fn new(client: Arc<C>) -> Self {
+		Self { client, _marker: PhantomData }
+	}
+}
+
+impl<B, C> EthApiT for EthApi<B, C> where
+	C: ProvideRuntimeApi<B>,
+	C::Api: EthereumRuntimeApi<B>,
+	B: BlockT + Send + Sync + 'static,
+	C: Send + Sync + 'static,
+{
 	/// Returns protocol version encoded as a string (quotes are necessary).
 	fn protocol_version(&self) -> Result<String> {
-		return Ok("0x54".to_string());
+		unimplemented!("protocol version");
 	}
 
 	fn syncing(&self) -> Result<SyncStatus> {

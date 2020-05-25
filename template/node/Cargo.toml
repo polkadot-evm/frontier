@@ -45,6 +45,7 @@ sc-basic-authorship = { path = "../../vendor/substrate/client/basic-authorship" 
 
 frontier-template-runtime = { version = "2.0.0-dev", path = "../runtime" }
 frontier-rpc = { version = "0.1.0", path = "../../rpc" }
+frontier-rpc-primitives = { version = "0.1.0", path = "../../rpc/primitives" }
 
 [build-dependencies]
 substrate-build-script-utils = { version = "2.0.0-dev", path = "../../vendor/substrate/utils/build-script-utils" }

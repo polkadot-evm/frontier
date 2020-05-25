@@ -1081,9 +1081,12 @@ version = "0.1.0"
 dependencies = [
  "ethereum-types",
  "frontier-rpc-core",
+ "frontier-rpc-primitives",
  "jsonrpc-core",
  "jsonrpc-core-client",
  "jsonrpc-derive",
+ "sp-api",
+ "sp-runtime",
 ]
 
 [[package]]
@@ -1112,6 +1115,7 @@ name = "frontier-template-node"
 version = "2.0.0-dev"
 dependencies = [
  "frontier-rpc",
+ "frontier-rpc-primitives",
  "frontier-template-runtime",
  "futures 0.3.5",
  "jsonrpc-core",
@@ -1152,6 +1156,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "frame-system-rpc-runtime-api",
+ "frontier-rpc-primitives",
  "pallet-aura",
  "pallet-balances",
  "pallet-ethereum",

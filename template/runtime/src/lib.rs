@@ -419,6 +419,10 @@ impl_runtime_apis! {
 		}
 	}
 
+	impl frontier_rpc_primitives::EthereumRuntimeApi<Block> for Runtime {
+
+	}
+
 	impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi<
 		Block,
 		Balance,

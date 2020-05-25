@@ -40,6 +40,7 @@ sp-transaction-pool = { version = "2.0.0-dev", default-features = false, path = 
 sp-version = { version = "2.0.0-dev", default-features = false, path = "../../vendor/substrate/primitives/version" }
 frame-system-rpc-runtime-api = { version = "2.0.0-dev", default-features = false, path = "../../vendor/substrate/frame/system/rpc/runtime-api/" }
 pallet-transaction-payment-rpc-runtime-api = { version = "2.0.0-dev", default-features = false, path = "../../vendor/substrate/frame/transaction-payment/rpc/runtime-api/" }
+frontier-rpc-primitives = { default-features = false, path = "../../rpc/primitives" }
 
 [build-dependencies]
 wasm-builder-runner = { version = "1.0.5", package = "substrate-wasm-builder-runner", path = "../../vendor/substrate/utils/wasm-builder-runner" }
@@ -75,4 +76,5 @@ std = [
 	"evm/std",
 	"frame-system-rpc-runtime-api/std",
 	"pallet-transaction-payment-rpc-runtime-api/std",
+	"frontier-rpc-primitives/std",
 ]
