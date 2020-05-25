@@ -1096,7 +1096,10 @@ dependencies = [
 name = "frontier-rpc-primitives"
 version = "0.1.0"
 dependencies = [
+ "ethereum",
+ "ethereum-types",
  "sp-api",
+ "sp-std",
 ]
 
 [[package]]
