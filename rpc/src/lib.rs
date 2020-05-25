@@ -16,17 +16,20 @@
 
 use std::{marker::PhantomData, sync::Arc};
 use ethereum_types::{H160, H256, H64, U256, U64};
-use jsonrpc_core::{BoxFuture, Result, ErrorCode, Error};
+use jsonrpc_core::{BoxFuture, Result, ErrorCode, Error, futures::future::{self, Future}};
+use futures::future::TryFutureExt;
 use sp_runtime::traits::{Block as BlockT, Header as _};
+use sp_runtime::transaction_validity::TransactionSource;
 use sp_api::{ProvideRuntimeApi, BlockId};
 use sp_consensus::SelectChain;
+use sp_transaction_pool::TransactionPool;
 
 use frontier_rpc_core::EthApi as EthApiT;
 use frontier_rpc_core::types::{
 	BlockNumber, Bytes, CallRequest, EthAccount, Filter, Index, Log, Receipt, RichBlock,
 	SyncStatus, Transaction, Work,
 };
-use frontier_rpc_primitives::EthereumRuntimeApi;
+use frontier_rpc_primitives::{EthereumRuntimeApi, ConvertTransaction};
 
 pub use frontier_rpc_core::EthApiServer;
 
@@ -38,24 +41,33 @@ fn internal_err(message: &str) -> Error {
 	}
 }
 
-pub struct EthApi<B: BlockT, C, SC> {
+pub struct EthApi<B: BlockT, C, SC, P, CT> {
+	pool: Arc<P>,
 	client: Arc<C>,
 	select_chain: SC,
+	convert_transaction: CT,
 	_marker: PhantomData<B>,
 }
 
-impl<B: BlockT, C, SC> EthApi<B, C, SC> {
-	pub fn new(client: Arc<C>, select_chain: SC) -> Self {
-		Self { client, select_chain, _marker: PhantomData }
+impl<B: BlockT, C, SC, P, CT> EthApi<B, C, SC, P, CT> {
+	pub fn new(
+		client: Arc<C>,
+		select_chain: SC,
+		pool: Arc<P>,
+		convert_transaction: CT,
+	) -> Self {
+		Self { client, select_chain, pool, convert_transaction, _marker: PhantomData }
 	}
 }
 
-impl<B, C, SC> EthApiT for EthApi<B, C, SC> where
+impl<B, C, SC, P, CT> EthApiT for EthApi<B, C, SC, P, CT> where
 	C: ProvideRuntimeApi<B>,
 	C::Api: EthereumRuntimeApi<B>,
 	B: BlockT + Send + Sync + 'static,
 	C: Send + Sync + 'static,
 	SC: SelectChain<B> + Clone + 'static,
+	P: TransactionPool<Block=B> + Send + Sync + 'static,
+	CT: ConvertTransaction<<B as BlockT>::Extrinsic> + Send + Sync + 'static,
 {
 	/// Returns protocol version encoded as a string (quotes are necessary).
 	fn protocol_version(&self) -> Result<String> {
@@ -150,8 +162,31 @@ impl<B, C, SC> EthApiT for EthApi<B, C, SC> where
 		unimplemented!("code_at");
 	}
 
-	fn send_raw_transaction(&self, _: Bytes) -> Result<H256> {
-		unimplemented!("send_raw_transaction");
+	fn send_raw_transaction(&self, bytes: Bytes) -> BoxFuture<H256> {
+		let transaction = match rlp::decode::<ethereum::Transaction>(&bytes.0[..]) {
+			Ok(transaction) => transaction,
+			Err(_) => return Box::new(
+				future::result(Err(internal_err("decode transaction failed")))
+			),
+		};
+		let header = match self.select_chain.best_chain() {
+			Ok(header) => header,
+			Err(_) => return Box::new(
+				future::result(Err(internal_err("fetch header failed")))
+			),
+		};
+		let best_block_hash = header.hash();
+		Box::new(
+			self.pool
+				.submit_one(
+					&BlockId::hash(best_block_hash),
+					TransactionSource::Local,
+					self.convert_transaction.convert_transaction(transaction),
+				)
+				.compat()
+				.map(|_| H256::default())
+				.map_err(|_| internal_err("submit transaction to pool failed"))
+		)
 	}
 
 	fn submit_transaction(&self, _: Bytes) -> Result<H256> {

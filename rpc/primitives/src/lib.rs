@@ -25,3 +25,7 @@ sp_api::decl_runtime_apis! {
 		fn account_basic(address: H160) -> pallet_evm::Account;
 	}
 }
+
+pub trait ConvertTransaction<E> {
+	fn convert_transaction(&self, transaction: ethereum::Transaction) -> E;
+}

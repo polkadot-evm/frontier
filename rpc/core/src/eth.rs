@@ -113,7 +113,7 @@ pub trait EthApi {
 
 	/// Sends signed transaction, returning its hash.
 	#[rpc(name = "eth_sendRawTransaction")]
-	fn send_raw_transaction(&self, _: Bytes) -> Result<H256>;
+	fn send_raw_transaction(&self, _: Bytes) -> BoxFuture<H256>;
 
 	/// @alias of `eth_sendRawTransaction`.
 	#[rpc(name = "eth_submitTransaction")]
@@ -149,7 +149,7 @@ pub trait EthApi {
 
 	/// Returns transaction receipt by transaction hash.
 	#[rpc(name = "eth_getTransactionReceipt")]
-	fn transaction_receipt(&self, _: H256) -> BoxFuture<Option<Receipt>>;
+	fn transaction_receipt(&self, _: H256) -> Result<Option<Receipt>>;
 
 	/// Returns an uncles at given block and index.
 	#[rpc(name = "eth_getUncleByBlockHashAndIndex")]
