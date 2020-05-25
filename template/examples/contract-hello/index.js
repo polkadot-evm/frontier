@@ -17,7 +17,7 @@ const main = async () => {
 	console.log(createTransaction);
 
 	const createReceipt = await web3.eth.sendSignedTransaction(createTransaction.rawTransaction);
-	console.log(createReceipt);
+	console.log("Contract deployed at address", createReceipt.contractAddress);
 };
 
 main();
