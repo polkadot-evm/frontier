@@ -23,6 +23,7 @@ use sp_runtime::transaction_validity::TransactionSource;
 use sp_api::{ProvideRuntimeApi, BlockId};
 use sp_consensus::SelectChain;
 use sp_transaction_pool::TransactionPool;
+use sha3::{Keccak256, Digest};
 
 use frontier_rpc_core::EthApi as EthApiT;
 use frontier_rpc_core::types::{
@@ -169,6 +170,9 @@ impl<B, C, SC, P, CT> EthApiT for EthApi<B, C, SC, P, CT> where
 				future::result(Err(internal_err("decode transaction failed")))
 			),
 		};
+		let transaction_hash = H256::from_slice(
+			Keccak256::digest(&rlp::encode(&transaction)).as_slice()
+		);
 		let header = match self.select_chain.best_chain() {
 			Ok(header) => header,
 			Err(_) => return Box::new(
@@ -184,7 +188,7 @@ impl<B, C, SC, P, CT> EthApiT for EthApi<B, C, SC, P, CT> where
 					self.convert_transaction.convert_transaction(transaction),
 				)
 				.compat()
-				.map(|_| H256::default())
+				.map(move |_| transaction_hash)
 				.map_err(|_| internal_err("submit transaction to pool failed"))
 		)
 	}
@@ -221,8 +225,31 @@ impl<B, C, SC, P, CT> EthApiT for EthApi<B, C, SC, P, CT> where
 		unimplemented!("transaction_by_block_number_and_index");
 	}
 
-	fn transaction_receipt(&self, _: H256) -> BoxFuture<Option<Receipt>> {
-		unimplemented!("transaction_receipt");
+	fn transaction_receipt(&self, hash: H256) -> Result<Option<Receipt>> {
+		let header = self.select_chain.best_chain()
+			.map_err(|_| internal_err("fetch header failed"))?;
+		let status = self.client.runtime_api()
+			.transaction_status(&BlockId::Hash(header.hash()), hash)
+			.map_err(|_| internal_err("fetch runtime transaction status failed"))?;
+		let receipt = status.map(|status| {
+			Receipt {
+				transaction_hash: Some(status.transaction_hash),
+				transaction_index: Some(status.transaction_index.into()),
+				block_hash: Some(Default::default()),
+				from: Some(status.from),
+				to: status.to,
+				block_number: Some(Default::default()),
+				cumulative_gas_used: Default::default(),
+				gas_used: Some(Default::default()),
+				contract_address: status.contract_address,
+				logs: Vec::new(),
+				state_root: None,
+				logs_bloom: Default::default(),
+				status_code: None,
+			}
+		});
+
+		Ok(receipt)
 	}
 
 	fn uncle_by_block_hash_and_index(&self, _: H256, _: Index) -> BoxFuture<Option<RichBlock>> {

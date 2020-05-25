@@ -32,7 +32,8 @@ use sp_runtime::{
 };
 use sha3::{Digest, Keccak256};
 
-pub use ethereum::Transaction;
+pub use frontier_rpc_primitives::TransactionStatus;
+pub use ethereum::{Transaction, Log};
 
 /// A type alias for the balance type from this pallet's point of view.
 pub type BalanceOf<T> = <T as pallet_balances::Trait>::Balance;
@@ -58,6 +59,7 @@ decl_storage! {
 	trait Store for Module<T: Trait> as Example {
 		BlocksAndReceipts: map hasher(blake2_128_concat) T::BlockNumber => Option<(ethereum::Block, Vec<ethereum::Receipt>)>;
 		PendingTransactionsAndReceipts: Vec<(ethereum::Transaction, ethereum::Receipt)>;
+		TransactionStatuses: map hasher(blake2_128_concat) H256 => Option<TransactionStatus>;
 	}
 }
 
@@ -217,9 +219,18 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
 // functions that do not write to storage and operation functions that do.
 // - Private functions. These are your usual private utilities unavailable to other pallets.
 impl<T: Trait> Module<T> {
+	pub fn transaction_status(hash: H256) -> Option<TransactionStatus> {
+		TransactionStatuses::get(hash)
+	}
+
 	/// Execute an Ethereum transaction, ignoring transaction signatures.
 	pub fn execute(source: H160, transaction: ethereum::Transaction) {
-		match transaction.action {
+		let transaction_hash = H256::from_slice(
+			Keccak256::digest(&rlp::encode(&transaction)).as_slice()
+		);
+		let transaction_index = PendingTransactionsAndReceipts::get().len() as u32;
+
+		let status = match transaction.action {
 			ethereum::TransactionAction::Call(target) => {
 				pallet_evm::Module::<T>::execute_call(
 					source,
@@ -230,9 +241,19 @@ impl<T: Trait> Module<T> {
 					transaction.gas_price,
 					Some(transaction.nonce),
 				).unwrap(); // TODO: handle error
+
+				TransactionStatus {
+					transaction_hash,
+					transaction_index,
+					from: source,
+					to: Some(target),
+					contract_address: None,
+					logs: Vec::new(), // TODO: feed in logs.
+					logs_bloom: Bloom::default(), // TODO: feed in bloom.
+				}
 			},
 			ethereum::TransactionAction::Create => {
-				pallet_evm::Module::<T>::execute_create(
+				let contract_address = pallet_evm::Module::<T>::execute_create(
 					source,
 					transaction.input.clone(),
 					transaction.value,
@@ -240,8 +261,20 @@ impl<T: Trait> Module<T> {
 					transaction.gas_price,
 					Some(transaction.nonce),
 				).unwrap(); // TODO: handle error
+
+				TransactionStatus {
+					transaction_hash,
+					transaction_index,
+					from: source,
+					to: None,
+					contract_address: Some(contract_address),
+					logs: Vec::new(), // TODO: feed in logs.
+					logs_bloom: Bloom::default(), // TODO: feed in bloom.
+				}
 			},
-		}
+		};
+
+		TransactionStatuses::insert(transaction_hash, status);
 
 		let receipt = ethereum::Receipt {
 			state_root: H256::default(), // TODO: should be okay / error status.

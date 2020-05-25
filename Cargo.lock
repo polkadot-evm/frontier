@@ -1090,6 +1090,7 @@ dependencies = [
  "pallet-ethereum 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec",
  "rlp",
+ "sha3",
  "sp-api",
  "sp-consensus",
  "sp-runtime",
@@ -1115,9 +1116,13 @@ name = "frontier-rpc-primitives"
 version = "0.1.0"
 dependencies = [
  "ethereum",
+ "ethereum-types",
  "pallet-evm",
+ "parity-scale-codec",
  "sp-api",
  "sp-core",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
@@ -2910,6 +2915,7 @@ dependencies = [
  "ethereum-types",
  "frame-support",
  "frame-system",
+ "frontier-rpc-primitives",
  "pallet-balances",
  "pallet-evm",
  "pallet-timestamp",

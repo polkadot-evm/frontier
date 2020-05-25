@@ -30,7 +30,7 @@ use grandpa::{AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList};
 use codec::{Encode, Decode};
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_core::{crypto::KeyTypeId, OpaqueMetadata, U256, H160};
+use sp_core::{crypto::KeyTypeId, OpaqueMetadata, U256, H160, H256};
 use sp_runtime::traits::{
 	BlakeTwo256, Block as BlockT, IdentifyAccount, IdentityLookup, NumberFor, Saturating, Verify,
 };
@@ -443,6 +443,10 @@ impl_runtime_apis! {
 
 		fn account_basic(address: H160) -> EVMAccount {
 			evm::Module::<Runtime>::accounts(address)
+		}
+
+		fn transaction_status(hash: H256) -> Option<ethereum::TransactionStatus> {
+			ethereum::Module::<Runtime>::transaction_status(hash)
 		}
 	}
 

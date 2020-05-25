@@ -16,13 +16,29 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use sp_core::H160;
+use sp_core::{H160, H256};
+use ethereum::Log;
+use ethereum_types::Bloom;
+use codec::{Encode, Decode};
+use sp_std::vec::Vec;
+
+#[derive(Eq, PartialEq, Clone, Encode, Decode, sp_runtime::RuntimeDebug)]
+pub struct TransactionStatus {
+	pub transaction_hash: H256,
+	pub transaction_index: u32,
+	pub from: H160,
+	pub to: Option<H160>,
+	pub contract_address: Option<H160>,
+	pub logs: Vec<Log>,
+	pub logs_bloom: Bloom,
+}
 
 sp_api::decl_runtime_apis! {
 	/// API necessary for Ethereum-compatibility layer.
 	pub trait EthereumRuntimeApi {
 		fn chain_id() -> u64;
 		fn account_basic(address: H160) -> pallet_evm::Account;
+		fn transaction_status(hash: H256) -> Option<TransactionStatus>;
 	}
 }
 
