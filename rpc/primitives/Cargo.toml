@@ -6,11 +6,20 @@ edition = "2018"
 description = "Runtime primitives for Ethereum RPC (web3) compatibility layer for Substrate."
 license = "GPL-3.0"
 
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
 [dependencies]
+ethereum = { version = "0.2", default-features = false}
+ethereum-types = { version = "0.9", default-features = false}
 sp-api = { version = "2.0.0-dev", default-features = false, path = "../../vendor/substrate/primitives/api" }
+sp-std = { version = "2.0.0-dev", default-features = false, path = "../../vendor/substrate/primitives/std" }
 
 [features]
 default = ["std"]
 std = [
+	"ethereum/std",
+	"ethereum-types/std",
 	"sp-api/std",
+	"sp-std/std",
 ]
