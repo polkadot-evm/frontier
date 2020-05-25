@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Substrate.  If not, see <http://www.gnu.org/licenses/>.
 
+#![cfg_attr(not(feature = "std"), no_std)]
+
 sp_api::decl_runtime_apis! {
 	/// API necessary for Ethereum-compatibility layer.
 	pub trait EthereumRuntimeApi {
