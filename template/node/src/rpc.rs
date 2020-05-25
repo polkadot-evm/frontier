@@ -73,7 +73,7 @@ pub fn create_full<C, P, M, SC>(
 	let FullDeps {
 		client,
 		pool,
-		select_chain: _,
+		select_chain,
 		deny_unsafe: _,
 	} = deps;
 
@@ -84,7 +84,7 @@ pub fn create_full<C, P, M, SC>(
 		TransactionPaymentApi::to_delegate(TransactionPayment::new(client.clone()))
 	);
 	io.extend_with(
-		EthApiServer::to_delegate(EthApi::new(client.clone()))
+		EthApiServer::to_delegate(EthApi::new(client.clone(), select_chain))
 	);
 
 	io
