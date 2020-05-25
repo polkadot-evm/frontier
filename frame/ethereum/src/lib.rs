@@ -120,7 +120,17 @@ decl_module! {
 		fn transact(origin, transaction: ethereum::Transaction) {
 			ensure_none(origin)?;
 
-			let source = H160::default(); // TODO: recover sender address from transaction.
+			let mut sig = [0u8; 65];
+			let mut msg = [0u8; 32];
+			sig[0..32].copy_from_slice(&transaction.signature.r()[..]);
+			sig[32..64].copy_from_slice(&transaction.signature.s()[..]);
+			sig[64] = transaction.signature.standard_v();
+			msg.copy_from_slice(&transaction.message_hash(Some(sp_io::misc::chain_id()))[..]);
+
+			let pubkey = sp_io::crypto::secp256k1_ecdsa_recover(&sig, &msg)
+				.map_err(|_| "Recover public key failed")?;
+			let source = H160::from(H256::from_slice(Keccak256::digest(&pubkey).as_slice()));
+
 			Self::execute(source, transaction);
 		}
 
