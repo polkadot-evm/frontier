@@ -1073,9 +1073,13 @@ version = "0.1.0"
 dependencies = [
  "ethereum-types",
  "frontier-rpc-core",
+ "frontier-rpc-primitives",
  "jsonrpc-core",
  "jsonrpc-core-client",
  "jsonrpc-derive",
+ "sp-api",
+ "sp-blockchain",
+ "sp-runtime",
 ]
 
 [[package]]

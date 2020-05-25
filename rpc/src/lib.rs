@@ -11,7 +11,18 @@ use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::{Block as BlockT}};
 use sp_api::ProvideRuntimeApi;
 use ethereum_types::{H160, H256, H64, U256, U64};
-use jsonrpc_core::{Result,BoxFuture};
+use jsonrpc_core::{
+	Result,
+    BoxFuture, 
+    futures::future::Future, 
+    futures::prelude::*, 
+    types::{
+        error::{
+            ErrorCode, 
+            Error as RpcError
+        }
+    }
+};
 
 
 pub use frontier_rpc_core::EthApi;
@@ -31,6 +42,41 @@ impl<C, P> EthHandler<C, P> {
 	pub fn new(client: Arc<C>) -> Self {
 		EthHandler { client, _marker: Default::default() }
 	}
+}
+
+pub enum Error {
+	DecodeError,
+	RuntimeError,
+}
+
+impl From<Error> for i64 {
+	fn from(e: Error) -> i64 {
+		match e {
+			Error::RuntimeError => 1,
+			Error::DecodeError => 2,
+		}
+	}
+}
+
+#[derive(Debug,Copy,Clone)]
+pub struct DispatchFutureResult<T> {
+    result: T
+}
+
+impl<T> DispatchFutureResult<T> {
+    pub fn new(result: T) -> DispatchFutureResult<T> {
+        DispatchFutureResult::<T> { result }
+    }
+}
+
+impl<T: Clone> Future for DispatchFutureResult<T> {
+    type Item = T;
+    type Error = RpcError;
+
+    fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
+		// TODO
+        Ok(Async::Ready(self.result.clone()))
+    }
 }
 
 impl<C, Block> EthApi
@@ -65,7 +111,15 @@ where
 	}
 	/// client.runtime.api.min_gas_price
 	fn gas_price(&self) -> BoxFuture<U256> {
-		unimplemented!("gas_price");
+		// Example of a boxed future using the result of a runtime api call.
+		let api = self.client.runtime_api();
+		let at = BlockId::hash(self.client.info().best_hash);
+		let res: U256 = api.min_gas_price(&at).map_err(|e| RpcError {
+			code: ErrorCode::ServerError(Error::RuntimeError.into()),
+			message: "Unable to query dispatch info.".into(),
+			data: Some(format!("{:?}", e).into()),
+		}).unwrap();
+		Box::new(<DispatchFutureResult<U256>>::new(res))
 	}
 
 	/// client.runtime.api.evm_accounts
