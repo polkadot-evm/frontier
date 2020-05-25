@@ -1108,7 +1108,9 @@ dependencies = [
 name = "frontier-rpc-primitives"
 version = "0.1.0"
 dependencies = [
+ "pallet-evm",
  "sp-api",
+ "sp-core",
 ]
 
 [[package]]
