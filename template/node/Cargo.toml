@@ -13,12 +13,14 @@ repository = "https://github.com/paritytech/substrate/"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
+jsonrpc-core = "14.0.3"
 futures = "0.3.4"
 log = "0.4.8"
 structopt = "0.3.8"
 parking_lot = "0.10.0"
 
 sc-cli = { version = "0.8.0-dev", path = "../../vendor/substrate/client/cli" }
+sc-rpc = { version = "2.0.0-dev", path = "../../vendor/substrate/client/rpc" }
 sp-core = { version = "2.0.0-dev", path = "../../vendor/substrate/primitives/core" }
 sc-executor = { version = "0.8.0-dev", path = "../../vendor/substrate/client/executor" }
 sc-service = { version = "0.8.0-dev", path = "../../vendor/substrate/client/service" }
@@ -38,6 +40,7 @@ sp-runtime = { version = "2.0.0-dev", path = "../../vendor/substrate/primitives/
 sc-basic-authorship = { path = "../../vendor/substrate/client/basic-authorship" }
 
 frontier-template-runtime = { version = "2.0.0-dev", path = "../runtime" }
+frontier-rpc = { version = "0.1.0", path = "../../rpc" }
 
 [build-dependencies]
 substrate-build-script-utils = { version = "2.0.0-dev", path = "../../vendor/substrate/utils/build-script-utils" }
