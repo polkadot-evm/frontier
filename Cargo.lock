@@ -1068,6 +1068,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "frame-system-rpc-runtime-api"
+version = "2.0.0-dev"
+dependencies = [
+ "parity-scale-codec",
+ "sp-api",
+]
+
+[[package]]
 name = "frontier-rpc"
 version = "0.1.0"
 dependencies = [
@@ -1116,6 +1124,7 @@ dependencies = [
  "jsonrpc-core",
  "log",
  "pallet-evm",
+ "pallet-transaction-payment-rpc",
  "parking_lot 0.10.2",
  "sc-basic-authorship",
  "sc-cli",
@@ -1126,8 +1135,11 @@ dependencies = [
  "sc-finality-grandpa",
  "sc-network",
  "sc-rpc",
+ "sc-rpc-api",
  "sc-service",
  "sc-transaction-pool",
+ "sp-api",
+ "sp-blockchain",
  "sp-consensus",
  "sp-consensus-aura",
  "sp-core",
@@ -1137,6 +1149,7 @@ dependencies = [
  "sp-transaction-pool",
  "structopt",
  "substrate-build-script-utils",
+ "substrate-frame-rpc-system",
 ]
 
 [[package]]
@@ -1146,6 +1159,7 @@ dependencies = [
  "frame-executive",
  "frame-support",
  "frame-system",
+ "frame-system-rpc-runtime-api",
  "frontier-rpc-primitives",
  "pallet-aura",
  "pallet-balances",
@@ -1156,6 +1170,7 @@ dependencies = [
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
+ "pallet-transaction-payment-rpc-runtime-api",
  "parity-scale-codec",
  "serde",
  "sp-api",
@@ -3028,6 +3043,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-transaction-payment-rpc"
+version = "2.0.0-dev"
+dependencies = [
+ "jsonrpc-core",
+ "jsonrpc-core-client",
+ "jsonrpc-derive",
+ "pallet-transaction-payment-rpc-runtime-api",
+ "parity-scale-codec",
+ "serde",
+ "sp-api",
+ "sp-blockchain",
+ "sp-core",
+ "sp-rpc",
+ "sp-runtime",
+]
+
+[[package]]
 name = "pallet-transaction-payment-rpc-runtime-api"
 version = "2.0.0-dev"
 dependencies = [
@@ -4015,7 +4047,6 @@ dependencies = [
  "app_dirs",
  "atty",
  "chrono",
- "clap",
  "derive_more",
  "env_logger",
  "fdlimit",
@@ -4979,7 +5010,6 @@ dependencies = [
  "integer-sqrt",
  "num-traits 0.2.11",
  "parity-scale-codec",
- "primitive-types",
  "serde",
  "sp-debug-derive",
  "sp-std",
@@ -5500,6 +5530,26 @@ name = "substrate-build-script-utils"
 version = "2.0.0-dev"
 dependencies = [
  "platforms",
+]
+
+[[package]]
+name = "substrate-frame-rpc-system"
+version = "2.0.0-dev"
+dependencies = [
+ "frame-system-rpc-runtime-api",
+ "futures 0.3.5",
+ "jsonrpc-core",
+ "jsonrpc-core-client",
+ "jsonrpc-derive",
+ "log",
+ "parity-scale-codec",
+ "sc-client-api",
+ "serde",
+ "sp-api",
+ "sp-blockchain",
+ "sp-core",
+ "sp-runtime",
+ "sp-transaction-pool",
 ]
 
 [[package]]

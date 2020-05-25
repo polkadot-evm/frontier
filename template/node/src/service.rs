@@ -1,3 +1,20 @@
+// This file is part of Frontier.
+
+// Copyright (C) 2019-2020 Parity Technologies (UK) Ltd.
+// SPDX-License-Identifier: Apache-2.0
+
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// 	http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 //! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 
 use std::sync::Arc;
@@ -29,8 +46,6 @@ macro_rules! new_full_start {
 	($config:expr) => {{
 		use std::sync::Arc;
 		use sp_consensus_aura::sr25519::AuthorityPair as AuraPair;
-
-		type RpcExtension = jsonrpc_core::IoHandler<sc_rpc::Metadata>;
 
 		let mut import_setup = None;
 		let inherent_data_providers = sp_inherents::InherentDataProviders::new();
@@ -81,17 +96,22 @@ macro_rules! new_full_start {
 
 				Ok(import_queue)
 			})?
-			.with_rpc_extensions(|builder| -> Result<RpcExtension, _> {
+			.with_rpc_extensions_builder(|builder| {
+				let client = builder.client().clone();
+				let pool = builder.pool().clone();
+				let select_chain = builder.select_chain().cloned()
+					.expect("SelectChain is present for full services or set up failed; qed.");
 
-				use frontier_rpc::{EthHandler, EthApi};
+				Ok(move |deny_unsafe| {
+					let deps = crate::rpc::FullDeps {
+						client: client.clone(),
+						pool: pool.clone(),
+						select_chain: select_chain.clone(),
+						deny_unsafe,
+					};
 
-				let mut io = jsonrpc_core::IoHandler::default();
-				
-				io.extend_with(
-					EthApi::to_delegate(EthHandler::new(builder.client().clone()))
-				);
-
-				Ok(io)
+					crate::rpc::create_full(deps)
+				})
 			})?;
 
 		(builder, import_setup, inherent_data_providers)
@@ -263,6 +283,21 @@ pub fn new_light(config: Configuration) -> Result<impl AbstractService, ServiceE
 			// GenesisAuthoritySetProvider is implemented for StorageAndProofProvider
 			let provider = client as Arc<dyn StorageAndProofProvider<_, _>>;
 			Ok(Arc::new(GrandpaFinalityProofProvider::new(backend, provider)) as _)
+		})?
+		.with_rpc_extensions(|builder| {
+			let fetcher = builder.fetcher()
+				.ok_or_else(|| "Trying to start node RPC without active fetcher")?;
+			let remote_blockchain = builder.remote_backend()
+				.ok_or_else(|| "Trying to start node RPC without active remote blockchain")?;
+
+			let light_deps = crate::rpc::LightDeps {
+				remote_blockchain,
+				fetcher,
+				client: builder.client().clone(),
+				pool: builder.pool(),
+			};
+
+			Ok(crate::rpc::create_light(light_deps))
 		})?
 		.build()
 }

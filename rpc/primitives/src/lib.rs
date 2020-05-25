@@ -3,7 +3,7 @@
 use sp_std::prelude::*;
 use ethereum_types::{H160, H256, U256};
 
-use ethereum::{Block as EthBlock, Account as EthAccount};
+// use ethereum::{Block as EthBlock, Account as EthAccount};
 
 sp_api::decl_runtime_apis! {
 	/// API necessary for Ethereum-compatibility layer.

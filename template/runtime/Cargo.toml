@@ -1,9 +1,9 @@
 [package]
 name = "frontier-template-runtime"
 version = "2.0.0-dev"
-authors = ["Anonymous"]
+authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2018"
-license = "Unlicense"
+license = "Apache-2.0"
 homepage = "https://substrate.dev"
 repository = "https://github.com/paritytech/substrate/"
 
@@ -38,6 +38,8 @@ sp-session = { version = "2.0.0-dev", default-features = false, path = "../../ve
 sp-std = { version = "2.0.0-dev", default-features = false, path = "../../vendor/substrate/primitives/std" }
 sp-transaction-pool = { version = "2.0.0-dev", default-features = false, path = "../../vendor/substrate/primitives/transaction-pool" }
 sp-version = { version = "2.0.0-dev", default-features = false, path = "../../vendor/substrate/primitives/version" }
+frame-system-rpc-runtime-api = { version = "2.0.0-dev", default-features = false, path = "../../vendor/substrate/frame/system/rpc/runtime-api/" }
+pallet-transaction-payment-rpc-runtime-api = { version = "2.0.0-dev", default-features = false, path = "../../vendor/substrate/frame/transaction-payment/rpc/runtime-api/" }
 
 frontier-rpc-primitives = { version = "0.1.0", default-features = false, path = "../../rpc/primitives" }
 
@@ -73,5 +75,7 @@ std = [
 	"transaction-payment/std",
 	"ethereum/std",
 	"evm/std",
+	"frame-system-rpc-runtime-api/std",
+	"pallet-transaction-payment-rpc-runtime-api/std",
 	"frontier-rpc-primitives/std",
 ]

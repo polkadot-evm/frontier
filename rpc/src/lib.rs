@@ -1,3 +1,19 @@
+// Copyright 2017-2020 Parity Technologies (UK) Ltd.
+// This file is part of Frontier.
+
+// Substrate is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// Substrate is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with Substrate.  If not, see <http://www.gnu.org/licenses/>.
+
 /// EthApi service handler.
 /// 
 /// All calls to client.runtime.api expect a block hash reference parameter.
@@ -6,6 +22,7 @@
 /// 	let api = self.client.runtime_api();
 /// 	let at = BlockId::hash(self.client.info().best_hash);
 /// 	api.min_gas_price(&at).map_err(...)
+
 use std::sync::Arc;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::{Block as BlockT}};
@@ -31,7 +48,6 @@ use frontier_rpc_core::types::{
 	BlockNumber, Bytes, CallRequest, EthAccount, Filter, Index, Log, Receipt, RichBlock,
 	SyncStatus, Transaction, Work,
 };
-pub use frontier_rpc_core::EthApiServer;
 
 pub struct EthHandler<C, P> {
 	client: Arc<C>,
