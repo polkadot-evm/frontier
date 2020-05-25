@@ -1146,6 +1146,7 @@ dependencies = [
  "frame-executive",
  "frame-support",
  "frame-system",
+ "frontier-rpc-primitives",
  "pallet-aura",
  "pallet-balances",
  "pallet-ethereum",

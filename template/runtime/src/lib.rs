@@ -12,7 +12,7 @@ use grandpa::fg_primitives;
 use grandpa::{AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList};
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_core::{crypto::KeyTypeId, OpaqueMetadata, U256};
+use sp_core::{crypto::KeyTypeId, OpaqueMetadata, H160, H256, U256};
 use sp_runtime::traits::{
 	BlakeTwo256, Block as BlockT, IdentifyAccount, IdentityLookup, NumberFor, Saturating, Verify,
 };
@@ -431,6 +431,44 @@ impl_runtime_apis! {
 			// defined our key owner proof type as a bottom type (i.e. a type
 			// with no values).
 			None
+		}
+	}
+
+	impl frontier_rpc_primitives::EthRuntimeApi<Block> for Runtime {
+		fn min_gas_price() -> U256 {
+			U256::zero()
+		}
+
+		fn evm_accounts() -> Vec<H160> {
+			vec![H160::zero()]
+		}
+
+		fn current_block_number() -> u32 {
+			0 as u32
+		}
+
+		fn account_balance(_: H160) -> U256 {
+			U256::zero()
+		}
+
+		fn address_transaction_count(_: H160, _: u32) -> U256 {
+			U256::zero()
+		}
+
+		fn transaction_count_by_hash(_: H160) -> U256 {
+			U256::zero()
+		}
+
+		fn transaction_count_by_number(_: u32) -> U256 {
+			U256::zero()
+		}
+
+		fn bytecode_from_address(_: H160, _: u32) -> Vec<u8> {
+			vec![0 as u8]
+		}
+
+		fn execute(_: Vec<u8>) -> H256 {
+			H256::zero()
 		}
 	}
 }
