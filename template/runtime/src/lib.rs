@@ -420,7 +420,9 @@ impl_runtime_apis! {
 	}
 
 	impl frontier_rpc_primitives::EthereumRuntimeApi<Block> for Runtime {
-
+		fn chain_id() -> u64 {
+			sp_io::misc::chain_id()
+		}
 	}
 
 	impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi<

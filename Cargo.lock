@@ -1086,6 +1086,7 @@ dependencies = [
  "jsonrpc-core-client",
  "jsonrpc-derive",
  "sp-api",
+ "sp-consensus",
  "sp-runtime",
 ]
 

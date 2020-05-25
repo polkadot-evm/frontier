@@ -16,9 +16,10 @@
 
 use std::{marker::PhantomData, sync::Arc};
 use ethereum_types::{H160, H256, H64, U256, U64};
-use jsonrpc_core::{BoxFuture, Result};
-use sp_runtime::traits::Block as BlockT;
-use sp_api::ProvideRuntimeApi;
+use jsonrpc_core::{BoxFuture, Result, ErrorCode, Error};
+use sp_runtime::traits::{Block as BlockT, Header as _};
+use sp_api::{ProvideRuntimeApi, BlockId};
+use sp_consensus::SelectChain;
 
 use frontier_rpc_core::EthApi as EthApiT;
 use frontier_rpc_core::types::{
@@ -29,22 +30,32 @@ use frontier_rpc_primitives::EthereumRuntimeApi;
 
 pub use frontier_rpc_core::EthApiServer;
 
-pub struct EthApi<B: BlockT, C> {
-	client: Arc<C>,
-	_marker: PhantomData<B>,
-}
-
-impl<B: BlockT, C> EthApi<B, C> {
-	pub fn new(client: Arc<C>) -> Self {
-		Self { client, _marker: PhantomData }
+fn internal_err(message: &str) -> Error {
+	Error {
+		code: ErrorCode::InternalError,
+		message: message.to_string(),
+		data: None
 	}
 }
 
-impl<B, C> EthApiT for EthApi<B, C> where
+pub struct EthApi<B: BlockT, C, SC> {
+	client: Arc<C>,
+	select_chain: SC,
+	_marker: PhantomData<B>,
+}
+
+impl<B: BlockT, C, SC> EthApi<B, C, SC> {
+	pub fn new(client: Arc<C>, select_chain: SC) -> Self {
+		Self { client, select_chain, _marker: PhantomData }
+	}
+}
+
+impl<B, C, SC> EthApiT for EthApi<B, C, SC> where
 	C: ProvideRuntimeApi<B>,
 	C::Api: EthereumRuntimeApi<B>,
 	B: BlockT + Send + Sync + 'static,
 	C: Send + Sync + 'static,
+	SC: SelectChain<B> + Clone + 'static,
 {
 	/// Returns protocol version encoded as a string (quotes are necessary).
 	fn protocol_version(&self) -> Result<String> {
@@ -68,7 +79,10 @@ impl<B, C> EthApiT for EthApi<B, C> where
 	}
 
 	fn chain_id(&self) -> Result<Option<U64>> {
-		unimplemented!("chain_id");
+		let header = self.select_chain.best_chain()
+			.map_err(|_| internal_err("fetch header failed"))?;
+		Ok(Some(self.client.runtime_api().chain_id(&BlockId::Hash(header.hash()))
+				.map_err(|_| internal_err("fetch runtime chain id failed"))?.into()))
 	}
 
 	fn gas_price(&self) -> BoxFuture<U256> {

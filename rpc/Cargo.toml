@@ -15,3 +15,4 @@ frontier-rpc-core = { path = "core" }
 frontier-rpc-primitives = { path = "primitives" }
 sp-runtime = { path = "../vendor/substrate/primitives/runtime" }
 sp-api = { path = "../vendor/substrate/primitives/api" }
+sp-consensus = { path = "../vendor/substrate/primitives/consensus/common" }
