@@ -1,5 +1,5 @@
 // Copyright 2015-2020 Parity Technologies (UK) Ltd.
-// This file is part of Open Ethereum.
+// This file is part of Frontier.
 
 // Open Ethereum is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -89,7 +89,7 @@ pub trait EthApi {
 
 	/// Returns the number of transactions sent from given address at given time (block number).
 	#[rpc(name = "eth_getTransactionCount")]
-	fn transaction_count(&self, _: H160, _: Option<BlockNumber>) -> BoxFuture<U256>;
+	fn transaction_count(&self, _: H160, _: Option<BlockNumber>) -> Result<U256>;
 
 	/// Returns the number of transactions in a block with given hash.
 	#[rpc(name = "eth_getBlockTransactionCountByHash")]
@@ -113,7 +113,7 @@ pub trait EthApi {
 
 	/// Sends signed transaction, returning its hash.
 	#[rpc(name = "eth_sendRawTransaction")]
-	fn send_raw_transaction(&self, _: Bytes) -> Result<H256>;
+	fn send_raw_transaction(&self, _: Bytes) -> BoxFuture<H256>;
 
 	/// @alias of `eth_sendRawTransaction`.
 	#[rpc(name = "eth_submitTransaction")]
@@ -149,7 +149,7 @@ pub trait EthApi {
 
 	/// Returns transaction receipt by transaction hash.
 	#[rpc(name = "eth_getTransactionReceipt")]
-	fn transaction_receipt(&self, _: H256) -> BoxFuture<Option<Receipt>>;
+	fn transaction_receipt(&self, _: H256) -> Result<Option<Receipt>>;
 
 	/// Returns an uncles at given block and index.
 	#[rpc(name = "eth_getUncleByBlockHashAndIndex")]

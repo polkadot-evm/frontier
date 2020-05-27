@@ -1,5 +1,5 @@
 // Copyright 2017-2020 Parity Technologies (UK) Ltd.
-// This file is part of Substrate.
+// This file is part of Frontier.
 
 // Substrate is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,27 +22,21 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use sp_std::marker::PhantomData;
-use frame_support::{
-	dispatch::DispatchResult, decl_module, decl_storage, decl_event,
-	weights::{DispatchClass, ClassifyDispatch, WeighData, Weight, PaysFee, Pays},
-};
+use frame_support::{decl_module, decl_storage, decl_event, weights::Weight};
 use sp_std::prelude::*;
-use frame_system::{self as system, ensure_none, ensure_signed, ensure_root};
-use codec::{Encode, Decode};
+use frame_system::{self as system, ensure_none};
 use ethereum_types::{H160, H64, H256, U256, Bloom};
 use sp_runtime::{
-	traits::{
-		SignedExtension, Bounded, SaturatedConversion, DispatchInfoOf, UniqueSaturatedInto,
-	},
-	transaction_validity::{
-		ValidTransaction, TransactionValidityError, InvalidTransaction, TransactionValidity,
-	},
+	traits::UniqueSaturatedInto,
+	transaction_validity::{TransactionValidity, TransactionSource, ValidTransaction}
 };
 use sha3::{Digest, Keccak256};
 
+pub use frontier_rpc_primitives::TransactionStatus;
+pub use ethereum::{Transaction, Log};
+
 /// A type alias for the balance type from this pallet's point of view.
-type BalanceOf<T> = <T as pallet_balances::Trait>::Balance;
+pub type BalanceOf<T> = <T as pallet_balances::Trait>::Balance;
 
 /// Our pallet's configuration trait. All our types and constants go in here. If the
 /// pallet is dependent on specific other pallets, then their configuration traits
@@ -65,6 +59,7 @@ decl_storage! {
 	trait Store for Module<T: Trait> as Example {
 		BlocksAndReceipts: map hasher(blake2_128_concat) T::BlockNumber => Option<(ethereum::Block, Vec<ethereum::Receipt>)>;
 		PendingTransactionsAndReceipts: Vec<(ethereum::Transaction, ethereum::Receipt)>;
+		TransactionStatuses: map hasher(blake2_128_concat) H256 => Option<TransactionStatus>;
 	}
 }
 
@@ -127,7 +122,17 @@ decl_module! {
 		fn transact(origin, transaction: ethereum::Transaction) {
 			ensure_none(origin)?;
 
-			let source = H160::default(); // TODO: recover sender address from transaction.
+			let mut sig = [0u8; 65];
+			let mut msg = [0u8; 32];
+			sig[0..32].copy_from_slice(&transaction.signature.r()[..]);
+			sig[32..64].copy_from_slice(&transaction.signature.s()[..]);
+			sig[64] = transaction.signature.standard_v();
+			msg.copy_from_slice(&transaction.message_hash(Some(sp_io::misc::chain_id()))[..]);
+
+			let pubkey = sp_io::crypto::secp256k1_ecdsa_recover(&sig, &msg)
+				.map_err(|_| "Recover public key failed")?;
+			let source = H160::from(H256::from_slice(Keccak256::digest(&pubkey).as_slice()));
+
 			Self::execute(source, transaction);
 		}
 
@@ -198,15 +203,34 @@ decl_module! {
 	}
 }
 
+impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
+	type Call = Call<T>;
+
+	fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
+		ValidTransaction::with_tag_prefix("Ethereum")
+			.and_provides(call)
+			.build()
+	}
+}
+
 // The main implementation block for the pallet. Functions here fall into three broad
 // categories:
 // - Public interface. These are functions that are `pub` and generally fall into inspector
 // functions that do not write to storage and operation functions that do.
 // - Private functions. These are your usual private utilities unavailable to other pallets.
 impl<T: Trait> Module<T> {
+	pub fn transaction_status(hash: H256) -> Option<TransactionStatus> {
+		TransactionStatuses::get(hash)
+	}
+
 	/// Execute an Ethereum transaction, ignoring transaction signatures.
 	pub fn execute(source: H160, transaction: ethereum::Transaction) {
-		match transaction.action {
+		let transaction_hash = H256::from_slice(
+			Keccak256::digest(&rlp::encode(&transaction)).as_slice()
+		);
+		let transaction_index = PendingTransactionsAndReceipts::get().len() as u32;
+
+		let status = match transaction.action {
 			ethereum::TransactionAction::Call(target) => {
 				pallet_evm::Module::<T>::execute_call(
 					source,
@@ -217,9 +241,19 @@ impl<T: Trait> Module<T> {
 					transaction.gas_price,
 					Some(transaction.nonce),
 				).unwrap(); // TODO: handle error
+
+				TransactionStatus {
+					transaction_hash,
+					transaction_index,
+					from: source,
+					to: Some(target),
+					contract_address: None,
+					logs: Vec::new(), // TODO: feed in logs.
+					logs_bloom: Bloom::default(), // TODO: feed in bloom.
+				}
 			},
 			ethereum::TransactionAction::Create => {
-				pallet_evm::Module::<T>::execute_create(
+				let contract_address = pallet_evm::Module::<T>::execute_create(
 					source,
 					transaction.input.clone(),
 					transaction.value,
@@ -227,8 +261,20 @@ impl<T: Trait> Module<T> {
 					transaction.gas_price,
 					Some(transaction.nonce),
 				).unwrap(); // TODO: handle error
+
+				TransactionStatus {
+					transaction_hash,
+					transaction_index,
+					from: source,
+					to: None,
+					contract_address: Some(contract_address),
+					logs: Vec::new(), // TODO: feed in logs.
+					logs_bloom: Bloom::default(), // TODO: feed in bloom.
+				}
 			},
-		}
+		};
+
+		TransactionStatuses::insert(transaction_hash, status);
 
 		let receipt = ethereum::Receipt {
 			state_root: H256::default(), // TODO: should be okay / error status.

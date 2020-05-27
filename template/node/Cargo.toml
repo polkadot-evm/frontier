@@ -1,10 +1,10 @@
 [package]
 name = "frontier-template-node"
 version = "2.0.0-dev"
-authors = ["Anonymous"]
+authors = ["Parity Technologies <admin@parity.io>"]
 description = "Substrate Node template"
 edition = "2018"
-license = "Unlicense"
+license = "Apache-2.0"
 build = "build.rs"
 homepage = "https://substrate.dev"
 repository = "https://github.com/paritytech/substrate/"
@@ -17,7 +17,13 @@ futures = "0.3.4"
 log = "0.4.8"
 structopt = "0.3.8"
 parking_lot = "0.10.0"
+jsonrpc-core = "14.0.3"
 
+sp-api = { version = "2.0.0-dev", path = "../../vendor/substrate/primitives/api" }
+sp-blockchain = { version = "2.0.0-dev", path = "../../vendor/substrate/primitives/blockchain" }
+sc-rpc-api = { version = "0.8.0-dev", path = "../../vendor/substrate/client/rpc-api" }
+substrate-frame-rpc-system = { version = "2.0.0-dev", path = "../../vendor/substrate/utils/frame/rpc/system" }
+pallet-transaction-payment-rpc = { version = "2.0.0-dev", path = "../../vendor/substrate/frame/transaction-payment/rpc/" }
 sc-cli = { version = "0.8.0-dev", path = "../../vendor/substrate/client/cli" }
 sp-core = { version = "2.0.0-dev", path = "../../vendor/substrate/primitives/core" }
 sc-executor = { version = "0.8.0-dev", path = "../../vendor/substrate/client/executor" }
@@ -38,6 +44,8 @@ sp-runtime = { version = "2.0.0-dev", path = "../../vendor/substrate/primitives/
 sc-basic-authorship = { path = "../../vendor/substrate/client/basic-authorship" }
 
 frontier-template-runtime = { version = "2.0.0-dev", path = "../runtime" }
+frontier-rpc = { version = "0.1.0", path = "../../rpc" }
+frontier-rpc-primitives = { version = "0.1.0", path = "../../rpc/primitives" }
 
 [build-dependencies]
 substrate-build-script-utils = { version = "2.0.0-dev", path = "../../vendor/substrate/utils/build-script-utils" }
