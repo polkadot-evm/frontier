@@ -194,8 +194,23 @@ impl<B, C, SC, P, CT> EthApiT for EthApi<B, C, SC, P, CT> where
 		unimplemented!("block_uncles_count_by_number");
 	}
 
-	fn code_at(&self, _: H160, _: Option<BlockNumber>) -> BoxFuture<Bytes> {
-		unimplemented!("code_at");
+	fn code_at(&self, address: H160, number: Option<BlockNumber>) -> Result<Option<Bytes>> {
+		if let Some(number) = number {
+			if number != BlockNumber::Latest {
+				unimplemented!("fetch nonce for past blocks is not yet supported");
+			}
+		}
+		let header = self
+			.select_chain
+			.best_chain()
+			.map_err(|_| internal_err("fetch header failed"))?;
+		Ok(Some(
+			self.client
+				.runtime_api()
+				.code_at(&BlockId::Hash(header.hash()), address)
+				.map_err(|_| internal_err("fetch runtime chain id failed"))?
+				.into(),
+		))
 	}
 
 	fn send_raw_transaction(&self, bytes: Bytes) -> BoxFuture<H256> {

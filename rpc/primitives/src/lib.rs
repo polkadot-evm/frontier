@@ -42,6 +42,7 @@ sp_api::decl_runtime_apis! {
 		fn gas_price() -> U256;
 		fn block_number() -> U256;
 		fn evm_balance(address: H160) -> U256;
+		fn code_at(address: H160) -> Vec<u8>;
 	}
 }
 

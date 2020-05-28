@@ -467,6 +467,14 @@ impl_runtime_apis! {
 				account.balance
 			}
 		}
+
+		fn code_at(address: H160) -> Vec<u8> {
+			if !evm::Module::<Runtime>::account_exists(&address) {
+				vec![]
+			} else {
+				evm::Module::<Runtime>::account_codes(address)
+			}
+		}
 	}
 
 	impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi<
