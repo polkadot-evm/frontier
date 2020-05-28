@@ -448,6 +448,10 @@ impl_runtime_apis! {
 		fn transaction_status(hash: H256) -> Option<ethereum::TransactionStatus> {
 			ethereum::Module::<Runtime>::transaction_status(hash)
 		}
+
+		fn gas_price() -> U256 {
+			FixedGasPrice::min_gas_price()
+		}
 	}
 
 	impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi<

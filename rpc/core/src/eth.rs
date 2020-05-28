@@ -57,7 +57,7 @@ pub trait EthApi {
 
 	/// Returns current gas_price.
 	#[rpc(name = "eth_gasPrice")]
-	fn gas_price(&self) -> BoxFuture<U256>;
+	fn gas_price(&self) -> Result<Option<U256>>;
 
 	/// Returns accounts list.
 	#[rpc(name = "eth_accounts")]
