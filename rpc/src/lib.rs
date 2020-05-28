@@ -116,8 +116,18 @@ impl<B, C, SC, P, CT> EthApiT for EthApi<B, C, SC, P, CT> where
 		unimplemented!("accounts");
 	}
 
-	fn block_number(&self) -> Result<U256> {
-		unimplemented!("block_number");
+	fn block_number(&self) -> Result<Option<U256>> {
+		let header = self
+			.select_chain
+			.best_chain()
+			.map_err(|_| internal_err("fetch header failed"))?;
+		Ok(Some(
+			self.client
+				.runtime_api()
+				.block_number(&BlockId::Hash(header.hash()))
+				.map_err(|_| internal_err("fetch runtime chain id failed"))?
+				.into(),
+		))
 	}
 
 	fn balance(&self, _: H160, _: Option<BlockNumber>) -> BoxFuture<U256> {

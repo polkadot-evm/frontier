@@ -33,6 +33,7 @@ use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata, U256, H160, H256};
 use sp_runtime::traits::{
 	BlakeTwo256, Block as BlockT, IdentifyAccount, IdentityLookup, NumberFor, Saturating, Verify,
+	UniqueSaturatedInto
 };
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
@@ -451,6 +452,11 @@ impl_runtime_apis! {
 
 		fn gas_price() -> U256 {
 			FixedGasPrice::min_gas_price()
+		}
+
+		fn block_number() -> U256 {
+			let number: u128 = <system::Module<Runtime>>::block_number().unique_saturated_into();
+			U256::from(number)
 		}
 	}
 
