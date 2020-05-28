@@ -130,8 +130,23 @@ impl<B, C, SC, P, CT> EthApiT for EthApi<B, C, SC, P, CT> where
 		))
 	}
 
-	fn balance(&self, _: H160, _: Option<BlockNumber>) -> BoxFuture<U256> {
-		unimplemented!("balance");
+	fn balance(&self, address: H160, number: Option<BlockNumber>) -> Result<Option<U256>> {
+		if let Some(number) = number {
+			if number != BlockNumber::Latest {
+				unimplemented!("fetch nonce for past blocks is not yet supported");
+			}
+		}
+		let header = self
+			.select_chain
+			.best_chain()
+			.map_err(|_| internal_err("fetch header failed"))?;
+		Ok(Some(
+			self.client
+				.runtime_api()
+				.evm_balance(&BlockId::Hash(header.hash()), address)
+				.map_err(|_| internal_err("fetch runtime chain id failed"))?
+				.into(),
+		))
 	}
 
 	fn proof(&self, _: H160, _: Vec<H256>, _: Option<BlockNumber>) -> BoxFuture<EthAccount> {

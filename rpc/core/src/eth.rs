@@ -69,7 +69,7 @@ pub trait EthApi {
 
 	/// Returns balance of the given account.
 	#[rpc(name = "eth_getBalance")]
-	fn balance(&self, _: H160, _: Option<BlockNumber>) -> BoxFuture<U256>;
+	fn balance(&self, _: H160, _: Option<BlockNumber>) -> Result<Option<U256>>;
 
 	/// Returns the account- and storage-values of the specified account including the Merkle-proof
 	#[rpc(name = "eth_getProof")]

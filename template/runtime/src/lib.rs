@@ -458,6 +458,15 @@ impl_runtime_apis! {
 			let number: u128 = <system::Module<Runtime>>::block_number().unique_saturated_into();
 			U256::from(number)
 		}
+
+		fn evm_balance(address: H160) -> U256 {
+			if !evm::Module::<Runtime>::account_exists(&address) {
+				U256::zero()
+			} else {
+				let account: EVMAccount = evm::Module::<Runtime>::accounts(address);
+				account.balance
+			}
+		}
 	}
 
 	impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi<
