@@ -98,18 +98,18 @@ impl<B, C, SC, P, CT> EthApiT for EthApi<B, C, SC, P, CT> where
 				.map_err(|_| internal_err("fetch runtime chain id failed"))?.into()))
 	}
 
-	fn gas_price(&self) -> Result<Option<U256>> {
+	fn gas_price(&self) -> Result<U256> {
 		let header = self
 			.select_chain
 			.best_chain()
 			.map_err(|_| internal_err("fetch header failed"))?;
-		Ok(Some(
+		Ok(
 			self.client
 				.runtime_api()
 				.gas_price(&BlockId::Hash(header.hash()))
 				.map_err(|_| internal_err("fetch runtime chain id failed"))?
 				.into(),
-		))
+		)
 	}
 
 	fn accounts(&self) -> Result<Vec<H160>> {
