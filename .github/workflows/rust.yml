@@ -14,7 +14,12 @@ jobs:
     - name: Submodules
       run: git submodule update --init --recursive
     - name: Init
-      run: scripts/init.sh
+      run: |
+        scripts/init.sh
+        cargo --version
+        rustc --version
+        cargo +nightly --version
+        rustc +nightly --version
     - name: Build
       run: cargo build --verbose --all
     - name: Run tests
