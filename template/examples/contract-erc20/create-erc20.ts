@@ -48,8 +48,6 @@ async function init() {
     const evmData = (await api.query.evm.accounts(aliceEvmAccount)) as any;
     console.log(`Alice EVM Account (nonce: ${evmData.nonce}) balance: ${evmData.balance.toHex()}`);
 
-    0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d
-
     return { api, alice, bob };
 }
 
