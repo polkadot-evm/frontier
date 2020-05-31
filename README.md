@@ -29,3 +29,9 @@ submodule should be removed from vendor folder, and directly use upstream.
 The `substrate` submodule contains a large quantity of dependencies, so they
 should directly use `path` directive in dependency declarations. For other
 dependencies, they should use Cargo's patch feature in workspace declaration.
+
+To install those submodules, from the frontier root folder:
+```sh
+git submodule init
+git submodule update
+```
