@@ -454,11 +454,6 @@ impl_runtime_apis! {
 			FixedGasPrice::min_gas_price()
 		}
 
-		fn block_number() -> U256 {
-			let number: u128 = <system::Module<Runtime>>::block_number().unique_saturated_into();
-			U256::from(number)
-		}
-
 		fn evm_balance(address: H160) -> U256 {
 			let account: EVMAccount = evm::Module::<Runtime>::accounts(address);
 			account.balance

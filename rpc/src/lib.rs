@@ -18,7 +18,7 @@ use std::{marker::PhantomData, sync::Arc};
 use ethereum_types::{H160, H256, H64, U256, U64};
 use jsonrpc_core::{BoxFuture, Result, ErrorCode, Error, futures::future::{self, Future}};
 use futures::future::TryFutureExt;
-use sp_runtime::traits::{Block as BlockT, Header as _};
+use sp_runtime::traits::{Block as BlockT, Header as _, UniqueSaturatedInto};
 use sp_runtime::transaction_validity::TransactionSource;
 use sp_api::{ProvideRuntimeApi, BlockId};
 use sp_consensus::SelectChain;
@@ -121,13 +121,7 @@ impl<B, C, SC, P, CT> EthApiT for EthApi<B, C, SC, P, CT> where
 			.select_chain
 			.best_chain()
 			.map_err(|_| internal_err("fetch header failed"))?;
-		Ok(
-			self.client
-				.runtime_api()
-				.block_number(&BlockId::Hash(header.hash()))
-				.map_err(|_| internal_err("fetch runtime chain id failed"))?
-				.into(),
-		)
+		Ok(U256::from(header.number().clone().unique_saturated_into()))
 	}
 
 	fn balance(&self, address: H160, number: Option<BlockNumber>) -> Result<U256> {
