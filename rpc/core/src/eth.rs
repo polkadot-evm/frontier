@@ -109,7 +109,7 @@ pub trait EthApi {
 
 	/// Returns the code at given address at given time (block number).
 	#[rpc(name = "eth_getCode")]
-	fn code_at(&self, _: H160, _: Option<BlockNumber>) -> Result<Option<Bytes>>;
+	fn code_at(&self, _: H160, _: Option<BlockNumber>) -> Result<Bytes>;
 
 	/// Sends signed transaction, returning its hash.
 	#[rpc(name = "eth_sendRawTransaction")]

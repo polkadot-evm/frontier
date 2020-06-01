@@ -465,11 +465,7 @@ impl_runtime_apis! {
 		}
 
 		fn code_at(address: H160) -> Vec<u8> {
-			if !evm::Module::<Runtime>::account_exists(&address) {
-				vec![]
-			} else {
-				evm::Module::<Runtime>::account_codes(address)
-			}
+			evm::Module::<Runtime>::account_codes(address)
 		}
 	}
 
