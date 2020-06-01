@@ -65,7 +65,7 @@ pub trait EthApi {
 
 	/// Returns highest block number.
 	#[rpc(name = "eth_blockNumber")]
-	fn block_number(&self) -> Result<Option<U256>>;
+	fn block_number(&self) -> Result<U256>;
 
 	/// Returns balance of the given account.
 	#[rpc(name = "eth_getBalance")]
