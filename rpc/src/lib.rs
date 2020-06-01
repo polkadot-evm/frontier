@@ -103,7 +103,7 @@ impl<B, C, SC, P, CT> EthApiT for EthApi<B, C, SC, P, CT> where
 	}
 
 	fn accounts(&self) -> Result<Vec<H160>> {
-		unimplemented!("accounts");
+		Ok(vec![])
 	}
 
 	fn block_number(&self) -> Result<U256> {
