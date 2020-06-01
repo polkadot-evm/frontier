@@ -16,7 +16,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use sp_core::{H160, H256};
+use sp_core::{H160, H256, U256};
 use ethereum::Log;
 use ethereum_types::Bloom;
 use codec::{Encode, Decode};
@@ -39,6 +39,9 @@ sp_api::decl_runtime_apis! {
 		fn chain_id() -> u64;
 		fn account_basic(address: H160) -> pallet_evm::Account;
 		fn transaction_status(hash: H256) -> Option<TransactionStatus>;
+		fn gas_price() -> U256;
+		fn evm_balance(address: H160) -> U256;
+		fn code_at(address: H160) -> Vec<u8>;
 	}
 }
 
