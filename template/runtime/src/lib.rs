@@ -460,12 +460,8 @@ impl_runtime_apis! {
 		}
 
 		fn evm_balance(address: H160) -> U256 {
-			if !evm::Module::<Runtime>::account_exists(&address) {
-				U256::zero()
-			} else {
-				let account: EVMAccount = evm::Module::<Runtime>::accounts(address);
-				account.balance
-			}
+			let account: EVMAccount = evm::Module::<Runtime>::accounts(address);
+			account.balance
 		}
 
 		fn code_at(address: H160) -> Vec<u8> {
