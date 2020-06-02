@@ -80,7 +80,7 @@ impl<B, C, SC, P, CT> EthApiT for EthApi<B, C, SC, P, CT> where
 	}
 
 	fn hashrate(&self) -> Result<U256> {
-		unimplemented!("hashrate");
+		Ok(U256::zero())
 	}
 
 	fn author(&self) -> Result<H160> {
