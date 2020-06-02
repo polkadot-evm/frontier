@@ -164,8 +164,8 @@ impl<B, C, SC, P, CT> EthApiT for EthApi<B, C, SC, P, CT> where
 		Ok(U256::zero())
 	}
 
-	fn block_uncles_count_by_number(&self, _: BlockNumber) -> BoxFuture<Option<U256>> {
-		unimplemented!("block_uncles_count_by_number");
+	fn block_uncles_count_by_number(&self, _: BlockNumber) -> Result<U256> {
+		Ok(U256::zero())
 	}
 
 	fn code_at(&self, _: H160, _: Option<BlockNumber>) -> BoxFuture<Bytes> {
