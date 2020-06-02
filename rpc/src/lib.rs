@@ -261,8 +261,8 @@ impl<B, C, SC, P, CT> EthApiT for EthApi<B, C, SC, P, CT> where
 		Ok(receipt)
 	}
 
-	fn uncle_by_block_hash_and_index(&self, _: H256, _: Index) -> BoxFuture<Option<RichBlock>> {
-		unimplemented!("uncle_by_block_hash_and_index");
+	fn uncle_by_block_hash_and_index(&self, _: H256, _: Index) -> Result<Option<RichBlock>> {
+		Ok(None)
 	}
 
 	fn uncle_by_block_number_and_index(
