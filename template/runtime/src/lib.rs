@@ -45,13 +45,13 @@ use sp_std::prelude::*;
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
-use evm::{FeeCalculator, HashTruncateConvertAccountId};
+use evm::{FeeCalculator, HashTruncateConvertAccountId, ConvertAccountId};
 // A few exports that help ease life for downstream crates.
 pub use balances::Call as BalancesCall;
 pub use evm::Account as EVMAccount;
 pub use frame_support::{
 	construct_runtime, parameter_types,
-	traits::{KeyOwnerProofSystem, Randomness},
+	traits::{KeyOwnerProofSystem, Randomness, FindAuthor},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
 		IdentityFee, Weight,
@@ -463,6 +463,17 @@ impl_runtime_apis! {
 
 		fn code_at(address: H160) -> Vec<u8> {
 			evm::Module::<Runtime>::account_codes(address)
+		}
+		
+		fn author() -> H160 {
+			let digest = <system::Module<Runtime>>::digest();
+			let pre_runtime_digests = digest.logs.iter().filter_map(|d| d.as_pre_runtime());
+			if let Some(index) = <aura::Module<Runtime>>::find_author(pre_runtime_digests) {
+				let authority_id = &<aura::Module<Runtime>>::authorities()[index as usize];
+				<evm::HashTruncateConvertAccountId<BlakeTwo256>>::convert_account_id(&authority_id)
+			} else {
+				H160::zero()
+			}
 		}
 	}
 
