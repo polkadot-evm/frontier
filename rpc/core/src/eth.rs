@@ -161,7 +161,7 @@ pub trait EthApi {
 		&self,
 		_: BlockNumber,
 		_: Index,
-	) -> BoxFuture<Option<RichBlock>>;
+	) -> Result<Option<RichBlock>>;
 
 	/// Returns available compilers.
 	/// @deprecated
