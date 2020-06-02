@@ -97,7 +97,7 @@ impl<B, C, SC, P, CT> EthApiT for EthApi<B, C, SC, P, CT> where
 	}
 
 	fn is_mining(&self) -> Result<bool> {
-		unimplemented!("is_mining");
+		Ok(false)
 	}
 
 	fn chain_id(&self) -> Result<Option<U64>> {
