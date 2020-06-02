@@ -339,4 +339,11 @@ impl<B, C, SC, P, CT> EthApiT for EthApi<B, C, SC, P, CT> where
 	fn submit_hashrate(&self, _: U256, _: H256) -> Result<bool> {
 		unimplemented!("submit_hashrate");
 	}
+
+	fn is_listening(&self) -> Result<bool> {
+		Ok(true)
+	}
+	fn version(&self) -> Result<String> {
+		Ok("2.0".to_string())
+	}
 }

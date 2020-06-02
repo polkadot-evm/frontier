@@ -198,6 +198,12 @@ pub trait EthApi {
 	/// Used for submitting mining hashrate.
 	#[rpc(name = "eth_submitHashrate")]
 	fn submit_hashrate(&self, _: U256, _: H256) -> Result<bool>;
+
+	// TODO: Once development is more stable, remove the net_ functions which are already defined net.rs
+	#[rpc(name = "net_listening")]
+	fn is_listening(&self) -> Result<bool>;
+	#[rpc(name = "net_version")]
+	fn version(&self) -> Result<String>;
 }
 
 /// Eth filters rpc api (polling).
