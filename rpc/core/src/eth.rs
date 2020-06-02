@@ -101,7 +101,7 @@ pub trait EthApi {
 
 	/// Returns the number of uncles in a block with given hash.
 	#[rpc(name = "eth_getUncleCountByBlockHash")]
-	fn block_uncles_count_by_hash(&self, _: H256) -> BoxFuture<Option<U256>>;
+	fn block_uncles_count_by_hash(&self, _: H256) -> Result<U256>;
 
 	/// Returns the number of uncles in a block with given block number.
 	#[rpc(name = "eth_getUncleCountByBlockNumber")]
