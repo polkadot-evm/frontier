@@ -459,7 +459,7 @@ impl_runtime_apis! {
 			account.balance
 		}
 
-		fn code_at(address: H160) -> Vec<u8> {
+		fn account_code_at(address: H160) -> Vec<u8> {
 			evm::Module::<Runtime>::account_codes(address)
 		}
 	}
