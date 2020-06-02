@@ -269,8 +269,8 @@ impl<B, C, SC, P, CT> EthApiT for EthApi<B, C, SC, P, CT> where
 		&self,
 		_: BlockNumber,
 		_: Index,
-	) -> BoxFuture<Option<RichBlock>> {
-		unimplemented!("uncle_by_block_number_and_index");
+	) -> Result<Option<RichBlock>> {
+		Ok(None)
 	}
 
 	fn compilers(&self) -> Result<Vec<String>> {
