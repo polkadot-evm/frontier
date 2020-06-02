@@ -39,6 +39,7 @@ sp_api::decl_runtime_apis! {
 		fn chain_id() -> u64;
 		fn account_basic(address: H160) -> pallet_evm::Account;
 		fn transaction_status(hash: H256) -> Option<TransactionStatus>;
+		fn author() -> H160;
 	}
 }
 

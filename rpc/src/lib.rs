@@ -84,7 +84,16 @@ impl<B, C, SC, P, CT> EthApiT for EthApi<B, C, SC, P, CT> where
 	}
 
 	fn author(&self) -> Result<H160> {
-		unimplemented!("author");
+		let header = self.select_chain
+			.best_chain()
+			.map_err(|_| internal_err("fetch header failed"))?;
+		
+		Ok(
+			self.client
+			.runtime_api()
+			.author(&BlockId::Hash(header.hash()))
+			.map_err(|_| internal_err("fetch runtime chain id failed"))?.into()
+		)
 	}
 
 	fn is_mining(&self) -> Result<bool> {
