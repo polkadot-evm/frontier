@@ -137,9 +137,9 @@ impl<B, C, SC, P, CT> EthApiT for EthApi<B, C, SC, P, CT> where
 		Ok(
 			self.client
 				.runtime_api()
-				.evm_balance(&BlockId::Hash(header.hash()), address)
+				.account_basic(&BlockId::Hash(header.hash()), address)
 				.map_err(|_| internal_err("fetch runtime chain id failed"))?
-				.into(),
+				.balance.into(),
 		)
 	}
 

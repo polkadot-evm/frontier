@@ -40,7 +40,6 @@ sp_api::decl_runtime_apis! {
 		fn account_basic(address: H160) -> pallet_evm::Account;
 		fn transaction_status(hash: H256) -> Option<TransactionStatus>;
 		fn gas_price() -> U256;
-		fn evm_balance(address: H160) -> U256;
 		fn account_code_at(address: H160) -> Vec<u8>;
 	}
 }
