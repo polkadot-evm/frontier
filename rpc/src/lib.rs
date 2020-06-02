@@ -160,8 +160,8 @@ impl<B, C, SC, P, CT> EthApiT for EthApi<B, C, SC, P, CT> where
 		unimplemented!("block_transaction_count_by_number");
 	}
 
-	fn block_uncles_count_by_hash(&self, _: H256) -> BoxFuture<Option<U256>> {
-		unimplemented!("block_uncles_count_by_hash");
+	fn block_uncles_count_by_hash(&self, _: H256) -> Result<U256> {
+		Ok(U256::zero())
 	}
 
 	fn block_uncles_count_by_number(&self, _: BlockNumber) -> BoxFuture<Option<U256>> {
