@@ -18,7 +18,7 @@ use std::{marker::PhantomData, sync::Arc};
 use ethereum_types::{H160, H256, H64, U256, U64};
 use jsonrpc_core::{BoxFuture, Result, ErrorCode, Error, futures::future::{self, Future}};
 use futures::future::TryFutureExt;
-use sp_runtime::traits::{Block as BlockT, Header as _};
+use sp_runtime::traits::{Block as BlockT, Header as _, UniqueSaturatedInto};
 use sp_runtime::transaction_validity::TransactionSource;
 use sp_api::{ProvideRuntimeApi, BlockId};
 use sp_consensus::SelectChain;
@@ -111,8 +111,18 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 				.map_err(|_| internal_err("fetch runtime chain id failed"))?.into()))
 	}
 
-	fn gas_price(&self) -> BoxFuture<U256> {
-		unimplemented!("gas_price");
+	fn gas_price(&self) -> Result<U256> {
+		let header = self
+			.select_chain
+			.best_chain()
+			.map_err(|_| internal_err("fetch header failed"))?;
+		Ok(
+			self.client
+				.runtime_api()
+				.gas_price(&BlockId::Hash(header.hash()))
+				.map_err(|_| internal_err("fetch runtime chain id failed"))?
+				.into(),
+		)
 	}
 
 	fn accounts(&self) -> Result<Vec<H160>> {
@@ -120,11 +130,30 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 	}
 
 	fn block_number(&self) -> Result<U256> {
-		unimplemented!("block_number");
+		let header = self
+			.select_chain
+			.best_chain()
+			.map_err(|_| internal_err("fetch header failed"))?;
+		Ok(U256::from(header.number().clone().unique_saturated_into()))
 	}
 
-	fn balance(&self, _: H160, _: Option<BlockNumber>) -> BoxFuture<U256> {
-		unimplemented!("balance");
+	fn balance(&self, address: H160, number: Option<BlockNumber>) -> Result<U256> {
+		if let Some(number) = number {
+			if number != BlockNumber::Latest {
+				unimplemented!("fetch nonce for past blocks is not yet supported");
+			}
+		}
+		let header = self
+			.select_chain
+			.best_chain()
+			.map_err(|_| internal_err("fetch header failed"))?;
+		Ok(
+			self.client
+				.runtime_api()
+				.account_basic(&BlockId::Hash(header.hash()), address)
+				.map_err(|_| internal_err("fetch runtime chain id failed"))?
+				.balance.into(),
+		)
 	}
 
 	fn proof(&self, _: H160, _: Vec<H256>, _: Option<BlockNumber>) -> BoxFuture<EthAccount> {
@@ -172,8 +201,23 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 		Ok(U256::zero())
 	}
 
-	fn code_at(&self, _: H160, _: Option<BlockNumber>) -> BoxFuture<Bytes> {
-		unimplemented!("code_at");
+	fn code_at(&self, address: H160, number: Option<BlockNumber>) -> Result<Bytes> {
+		if let Some(number) = number {
+			if number != BlockNumber::Latest {
+				unimplemented!("fetch nonce for past blocks is not yet supported");
+			}
+		}
+		let header = self
+			.select_chain
+			.best_chain()
+			.map_err(|_| internal_err("fetch header failed"))?;
+		Ok(
+			self.client
+				.runtime_api()
+				.account_code_at(&BlockId::Hash(header.hash()), address)
+				.map_err(|_| internal_err("fetch runtime chain id failed"))?
+				.into(),
+		)
 	}
 
 	fn send_raw_transaction(&self, bytes: Bytes) -> BoxFuture<H256> {
