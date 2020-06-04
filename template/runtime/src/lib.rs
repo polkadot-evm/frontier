@@ -461,6 +461,16 @@ impl_runtime_apis! {
 				H160::zero()
 			}
 		}
+
+		fn block_transaction_count_by_number(number: u32) -> U256 {
+			let result = <ethereum::Module<Runtime>>::blocks_and_receipts(number);
+			if let Some(result) = result {
+				let (block, _receipt) = result;
+				U256::from(block.transactions.len())
+			} else {
+				U256::zero()
+			}
+		}
 	}
 
 	impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi<

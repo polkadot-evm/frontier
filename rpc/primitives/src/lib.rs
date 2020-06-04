@@ -16,7 +16,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use sp_core::{H160, H256};
+use sp_core::{H160, H256, U256};
 use ethereum::Log;
 use ethereum_types::Bloom;
 use codec::{Encode, Decode};
@@ -40,6 +40,7 @@ sp_api::decl_runtime_apis! {
 		fn account_basic(address: H160) -> pallet_evm::Account;
 		fn transaction_status(hash: H256) -> Option<TransactionStatus>;
 		fn author() -> H160;
+		fn block_transaction_count_by_number(number: u32) -> U256;
 	}
 }
 

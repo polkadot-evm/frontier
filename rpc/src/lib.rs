@@ -18,7 +18,7 @@ use std::{marker::PhantomData, sync::Arc};
 use ethereum_types::{H160, H256, H64, U256, U64};
 use jsonrpc_core::{BoxFuture, Result, ErrorCode, Error, futures::future::{self, Future}};
 use futures::future::TryFutureExt;
-use sp_runtime::traits::{Block as BlockT, Header as _};
+use sp_runtime::traits::{Block as BlockT, Header as _, UniqueSaturatedInto};
 use sp_runtime::transaction_validity::TransactionSource;
 use sp_api::{ProvideRuntimeApi, BlockId};
 use sp_consensus::SelectChain;
@@ -156,8 +156,26 @@ impl<B, C, SC, P, CT> EthApiT for EthApi<B, C, SC, P, CT> where
 		unimplemented!("block_transaction_count_by_hash");
 	}
 
-	fn block_transaction_count_by_number(&self, _: BlockNumber) -> BoxFuture<Option<U256>> {
-		unimplemented!("block_transaction_count_by_number");
+	fn block_transaction_count_by_number(&self, number: BlockNumber) -> Result<U256> {
+		let header = self.select_chain.best_chain()
+			.map_err(|_| internal_err("fetch header failed"))?;
+
+		let number_param: u32;
+
+		if let Some(block_number) = number.to_min_block_num() {
+			number_param = block_number.unique_saturated_into();
+		} else if number == BlockNumber::Latest {
+			number_param = header.number().clone().unique_saturated_into() as u32;
+		} else {
+			unimplemented!("fetch count for past blocks is not yet supported");
+		}
+		
+		Ok(Some(
+			self.client.runtime_api()
+			.block_transaction_count_by_number(&BlockId::Hash(header.hash()), number_param)
+		   	.map_err(|_| internal_err("fetch runtime failed"))?
+			.into()
+		))
 	}
 
 	fn block_uncles_count_by_hash(&self, _: H256) -> Result<U256> {
