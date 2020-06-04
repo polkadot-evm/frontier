@@ -57,7 +57,8 @@ decl_storage! {
 	// storage items are isolated from other pallets.
 	// ---------------------------------vvvvvvv
 	trait Store for Module<T: Trait> as Example {
-		BlocksAndReceipts: map hasher(blake2_128_concat) T::BlockNumber => Option<(ethereum::Block, Vec<ethereum::Receipt>)>;
+		BlocksAndReceipts get(fn blocks_and_receipts): 
+			map hasher(blake2_128_concat) T::BlockNumber => Option<(ethereum::Block, Vec<ethereum::Receipt>)>;
 		PendingTransactionsAndReceipts: Vec<(ethereum::Transaction, ethereum::Receipt)>;
 		TransactionStatuses: map hasher(blake2_128_concat) H256 => Option<TransactionStatus>;
 	}
