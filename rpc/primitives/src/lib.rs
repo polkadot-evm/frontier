@@ -41,6 +41,7 @@ sp_api::decl_runtime_apis! {
 		fn transaction_status(hash: H256) -> Option<TransactionStatus>;
 		fn gas_price() -> U256;
 		fn account_code_at(address: H160) -> Vec<u8>;
+		fn author() -> H160;
 	}
 }
 

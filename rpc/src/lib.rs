@@ -80,15 +80,24 @@ impl<B, C, SC, P, CT> EthApiT for EthApi<B, C, SC, P, CT> where
 	}
 
 	fn hashrate(&self) -> Result<U256> {
-		unimplemented!("hashrate");
+		Ok(U256::zero())
 	}
 
 	fn author(&self) -> Result<H160> {
-		unimplemented!("author");
+		let header = self.select_chain
+			.best_chain()
+			.map_err(|_| internal_err("fetch header failed"))?;
+		
+		Ok(
+			self.client
+			.runtime_api()
+			.author(&BlockId::Hash(header.hash()))
+			.map_err(|_| internal_err("fetch runtime chain id failed"))?.into()
+		)
 	}
 
 	fn is_mining(&self) -> Result<bool> {
-		unimplemented!("is_mining");
+		Ok(false)
 	}
 
 	fn chain_id(&self) -> Result<Option<U64>> {
@@ -113,7 +122,7 @@ impl<B, C, SC, P, CT> EthApiT for EthApi<B, C, SC, P, CT> where
 	}
 
 	fn accounts(&self) -> Result<Vec<H160>> {
-		unimplemented!("accounts");
+		Ok(vec![])
 	}
 
 	fn block_number(&self) -> Result<U256> {
@@ -180,12 +189,12 @@ impl<B, C, SC, P, CT> EthApiT for EthApi<B, C, SC, P, CT> where
 		unimplemented!("block_transaction_count_by_number");
 	}
 
-	fn block_uncles_count_by_hash(&self, _: H256) -> BoxFuture<Option<U256>> {
-		unimplemented!("block_uncles_count_by_hash");
+	fn block_uncles_count_by_hash(&self, _: H256) -> Result<U256> {
+		Ok(U256::zero())
 	}
 
-	fn block_uncles_count_by_number(&self, _: BlockNumber) -> BoxFuture<Option<U256>> {
-		unimplemented!("block_uncles_count_by_number");
+	fn block_uncles_count_by_number(&self, _: BlockNumber) -> Result<U256> {
+		Ok(U256::zero())
 	}
 
 	fn code_at(&self, address: H160, number: Option<BlockNumber>) -> Result<Bytes> {
@@ -296,16 +305,16 @@ impl<B, C, SC, P, CT> EthApiT for EthApi<B, C, SC, P, CT> where
 		Ok(receipt)
 	}
 
-	fn uncle_by_block_hash_and_index(&self, _: H256, _: Index) -> BoxFuture<Option<RichBlock>> {
-		unimplemented!("uncle_by_block_hash_and_index");
+	fn uncle_by_block_hash_and_index(&self, _: H256, _: Index) -> Result<Option<RichBlock>> {
+		Ok(None)
 	}
 
 	fn uncle_by_block_number_and_index(
 		&self,
 		_: BlockNumber,
 		_: Index,
-	) -> BoxFuture<Option<RichBlock>> {
-		unimplemented!("uncle_by_block_number_and_index");
+	) -> Result<Option<RichBlock>> {
+		Ok(None)
 	}
 
 	fn compilers(&self) -> Result<Vec<String>> {
