@@ -26,7 +26,7 @@ use sp_transaction_pool::TransactionPool;
 use sc_client_api::backend::{StorageProvider, Backend, StateBackend};
 use sha3::{Keccak256, Digest};
 use sp_runtime::traits::BlakeTwo256;
-
+use sp_blockchain::{Error as BlockChainError, HeaderMetadata, HeaderBackend};
 use frontier_rpc_core::EthApi as EthApiT;
 use frontier_rpc_core::types::{
 	BlockNumber, Bytes, CallRequest, EthAccount, Filter, Index, Log, Receipt, RichBlock,
@@ -64,7 +64,7 @@ impl<B: BlockT, C, SC, P, CT, BE> EthApi<B, C, SC, P, CT, BE> {
 }
 
 impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
-	C: ProvideRuntimeApi<B> + StorageProvider<B,BE>,
+	C: ProvideRuntimeApi<B> + StorageProvider<B,BE> + HeaderBackend<B> + HeaderMetadata<B, Error=BlockChainError>,
 	C::Api: EthereumRuntimeApi<B>,
 	BE: Backend<B> + 'static,
 	BE::State: StateBackend<BlakeTwo256>,
@@ -185,8 +185,21 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 		   .map_err(|_| internal_err("fetch runtime account basic failed"))?.nonce.into())
 	}
 
-	fn block_transaction_count_by_hash(&self, _: H256) -> BoxFuture<Option<U256>> {
-		unimplemented!("block_transaction_count_by_hash");
+	fn block_transaction_count_by_hash(&self, hash: H256) -> Result<U256> {
+		let header_current = self.select_chain.best_chain()
+			.map_err(|_| internal_err("fetch header failed"))?;
+		
+		if let Ok(result) = self.client.header(BlockId::Hash(hash)) {
+			if let Some(header) = result {
+				let deref = *header.number();
+				let number: u32 = deref.unique_saturated_into() as u32;
+				return Ok(self.client.runtime_api()
+					.block_transaction_count_by_number(&BlockId::Hash(header_current.hash()), number)
+					.map_err(|_| internal_err("fetch runtime failed"))?
+					.into());
+			}
+		}
+		Ok(U256::zero())
 	}
 
 	fn block_transaction_count_by_number(&self, _: BlockNumber) -> BoxFuture<Option<U256>> {
