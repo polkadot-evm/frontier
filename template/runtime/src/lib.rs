@@ -455,15 +455,6 @@ impl_runtime_apis! {
 		fn gas_price() -> U256 {
 			FixedGasPrice::min_gas_price()
 		}
-
-		fn evm_balance(address: H160) -> U256 {
-			let account: EVMAccount = evm::Module::<Runtime>::accounts(address);
-			account.balance
-		}
-
-		fn code_at(address: H160) -> Vec<u8> {
-			evm::Module::<Runtime>::account_codes(address)
-		}
 		
 		fn account_code_at(address: H160) -> Vec<u8> {
 			evm::Module::<Runtime>::account_codes(address)
