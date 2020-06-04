@@ -23,7 +23,9 @@ use sp_runtime::transaction_validity::TransactionSource;
 use sp_api::{ProvideRuntimeApi, BlockId};
 use sp_consensus::SelectChain;
 use sp_transaction_pool::TransactionPool;
+use sc_client_api::backend::{StorageProvider, Backend, StateBackend};
 use sha3::{Keccak256, Digest};
+use sp_runtime::traits::BlakeTwo256;
 
 use frontier_rpc_core::EthApi as EthApiT;
 use frontier_rpc_core::types::{
@@ -42,15 +44,15 @@ fn internal_err(message: &str) -> Error {
 	}
 }
 
-pub struct EthApi<B: BlockT, C, SC, P, CT> {
+pub struct EthApi<B: BlockT, C, SC, P, CT, BE> {
 	pool: Arc<P>,
 	client: Arc<C>,
 	select_chain: SC,
 	convert_transaction: CT,
-	_marker: PhantomData<B>,
+	_marker: PhantomData<(B,BE)>,
 }
 
-impl<B: BlockT, C, SC, P, CT> EthApi<B, C, SC, P, CT> {
+impl<B: BlockT, C, SC, P, CT, BE> EthApi<B, C, SC, P, CT, BE> {
 	pub fn new(
 		client: Arc<C>,
 		select_chain: SC,
@@ -61,10 +63,12 @@ impl<B: BlockT, C, SC, P, CT> EthApi<B, C, SC, P, CT> {
 	}
 }
 
-impl<B, C, SC, P, CT> EthApiT for EthApi<B, C, SC, P, CT> where
-	C: ProvideRuntimeApi<B>,
+impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
+	C: ProvideRuntimeApi<B> + StorageProvider<B,BE>,
 	C::Api: EthereumRuntimeApi<B>,
-	B: BlockT + Send + Sync + 'static,
+	BE: Backend<B> + 'static,
+	BE::State: StateBackend<BlakeTwo256>,
+	B: BlockT<Hash=H256> + Send + Sync + 'static,
 	C: Send + Sync + 'static,
 	SC: SelectChain<B> + Clone + 'static,
 	P: TransactionPool<Block=B> + Send + Sync + 'static,
@@ -97,7 +101,7 @@ impl<B, C, SC, P, CT> EthApiT for EthApi<B, C, SC, P, CT> where
 	}
 
 	fn is_mining(&self) -> Result<bool> {
-		unimplemented!("is_mining");
+		Ok(false)
 	}
 
 	fn chain_id(&self) -> Result<Option<U64>> {
@@ -146,9 +150,9 @@ impl<B, C, SC, P, CT> EthApiT for EthApi<B, C, SC, P, CT> where
 		Ok(
 			self.client
 				.runtime_api()
-				.evm_balance(&BlockId::Hash(header.hash()), address)
+				.account_basic(&BlockId::Hash(header.hash()), address)
 				.map_err(|_| internal_err("fetch runtime chain id failed"))?
-				.into(),
+				.balance.into(),
 		)
 	}
 
@@ -189,12 +193,12 @@ impl<B, C, SC, P, CT> EthApiT for EthApi<B, C, SC, P, CT> where
 		unimplemented!("block_transaction_count_by_number");
 	}
 
-	fn block_uncles_count_by_hash(&self, _: H256) -> BoxFuture<Option<U256>> {
-		unimplemented!("block_uncles_count_by_hash");
+	fn block_uncles_count_by_hash(&self, _: H256) -> Result<U256> {
+		Ok(U256::zero())
 	}
 
-	fn block_uncles_count_by_number(&self, _: BlockNumber) -> BoxFuture<Option<U256>> {
-		unimplemented!("block_uncles_count_by_number");
+	fn block_uncles_count_by_number(&self, _: BlockNumber) -> Result<U256> {
+		Ok(U256::zero())
 	}
 
 	fn code_at(&self, address: H160, number: Option<BlockNumber>) -> Result<Bytes> {
@@ -210,7 +214,7 @@ impl<B, C, SC, P, CT> EthApiT for EthApi<B, C, SC, P, CT> where
 		Ok(
 			self.client
 				.runtime_api()
-				.code_at(&BlockId::Hash(header.hash()), address)
+				.account_code_at(&BlockId::Hash(header.hash()), address)
 				.map_err(|_| internal_err("fetch runtime chain id failed"))?
 				.into(),
 		)
@@ -305,16 +309,16 @@ impl<B, C, SC, P, CT> EthApiT for EthApi<B, C, SC, P, CT> where
 		Ok(receipt)
 	}
 
-	fn uncle_by_block_hash_and_index(&self, _: H256, _: Index) -> BoxFuture<Option<RichBlock>> {
-		unimplemented!("uncle_by_block_hash_and_index");
+	fn uncle_by_block_hash_and_index(&self, _: H256, _: Index) -> Result<Option<RichBlock>> {
+		Ok(None)
 	}
 
 	fn uncle_by_block_number_and_index(
 		&self,
 		_: BlockNumber,
 		_: Index,
-	) -> BoxFuture<Option<RichBlock>> {
-		unimplemented!("uncle_by_block_number_and_index");
+	) -> Result<Option<RichBlock>> {
+		Ok(None)
 	}
 
 	fn compilers(&self) -> Result<Vec<String>> {

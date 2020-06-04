@@ -465,6 +465,10 @@ impl_runtime_apis! {
 			evm::Module::<Runtime>::account_codes(address)
 		}
 		
+		fn account_code_at(address: H160) -> Vec<u8> {
+			evm::Module::<Runtime>::account_codes(address)
+		}
+
 		fn author() -> H160 {
 			let digest = <system::Module<Runtime>>::digest();
 			let pre_runtime_digests = digest.logs.iter().filter_map(|d| d.as_pre_runtime());
