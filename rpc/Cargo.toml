@@ -17,6 +17,9 @@ sp-runtime = { path = "../vendor/substrate/primitives/runtime" }
 sp-api = { path = "../vendor/substrate/primitives/api" }
 sp-consensus = { path = "../vendor/substrate/primitives/consensus/common" }
 sp-transaction-pool = { path = "../vendor/substrate/primitives/transaction-pool" }
+sp-storage = { path = "../vendor/substrate/primitives/storage" } 
+sc-service = { path = "../vendor/substrate/client/service" }
+sc-client-api = { path = "../vendor/substrate/client/api" }
 ethereum = { version = "0.2", features = ["codec"] }
 codec = { package = "parity-scale-codec", version = "1.0.0" }
 rlp = "0.4"
