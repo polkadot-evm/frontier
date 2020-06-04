@@ -23,7 +23,9 @@ use sp_runtime::transaction_validity::TransactionSource;
 use sp_api::{ProvideRuntimeApi, BlockId};
 use sp_consensus::SelectChain;
 use sp_transaction_pool::TransactionPool;
+use sc_client_api::backend::{StorageProvider, Backend, StateBackend};
 use sha3::{Keccak256, Digest};
+use sp_runtime::traits::BlakeTwo256;
 
 use frontier_rpc_core::EthApi as EthApiT;
 use frontier_rpc_core::types::{
@@ -42,15 +44,15 @@ fn internal_err(message: &str) -> Error {
 	}
 }
 
-pub struct EthApi<B: BlockT, C, SC, P, CT> {
+pub struct EthApi<B: BlockT, C, SC, P, CT, BE> {
 	pool: Arc<P>,
 	client: Arc<C>,
 	select_chain: SC,
 	convert_transaction: CT,
-	_marker: PhantomData<B>,
+	_marker: PhantomData<(B,BE)>,
 }
 
-impl<B: BlockT, C, SC, P, CT> EthApi<B, C, SC, P, CT> {
+impl<B: BlockT, C, SC, P, CT, BE> EthApi<B, C, SC, P, CT, BE> {
 	pub fn new(
 		client: Arc<C>,
 		select_chain: SC,
@@ -61,10 +63,12 @@ impl<B: BlockT, C, SC, P, CT> EthApi<B, C, SC, P, CT> {
 	}
 }
 
-impl<B, C, SC, P, CT> EthApiT for EthApi<B, C, SC, P, CT> where
-	C: ProvideRuntimeApi<B>,
+impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
+	C: ProvideRuntimeApi<B> + StorageProvider<B,BE>,
 	C::Api: EthereumRuntimeApi<B>,
-	B: BlockT + Send + Sync + 'static,
+	BE: Backend<B> + 'static,
+	BE::State: StateBackend<BlakeTwo256>,
+	B: BlockT<Hash=H256> + Send + Sync + 'static,
 	C: Send + Sync + 'static,
 	SC: SelectChain<B> + Clone + 'static,
 	P: TransactionPool<Block=B> + Send + Sync + 'static,
