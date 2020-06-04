@@ -170,12 +170,10 @@ impl<B, C, SC, P, CT> EthApiT for EthApi<B, C, SC, P, CT> where
 			unimplemented!("fetch count for past blocks is not yet supported");
 		}
 		
-		Ok(Some(
-			self.client.runtime_api()
+		Ok(self.client.runtime_api()
 			.block_transaction_count_by_number(&BlockId::Hash(header.hash()), number_param)
 		   	.map_err(|_| internal_err("fetch runtime failed"))?
-			.into()
-		))
+			.into())
 	}
 
 	fn block_uncles_count_by_hash(&self, _: H256) -> Result<U256> {
