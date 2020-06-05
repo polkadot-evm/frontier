@@ -58,6 +58,8 @@ pub use frame_support::{
 	},
 	StorageValue,
 };
+use frontier_rpc_primitives::PrimitiveBlock;
+
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
@@ -469,6 +471,10 @@ impl_runtime_apis! {
 			} else {
 				H160::zero()
 			}
+		}
+
+		fn block_by_number(number: u32) -> Option<PrimitiveBlock> {
+			<ethereum::Module<Runtime>>::primitive_block(number)
 		}
 	}
 

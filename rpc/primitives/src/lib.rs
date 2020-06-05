@@ -33,6 +33,30 @@ pub struct TransactionStatus {
 	pub logs_bloom: Bloom,
 }
 
+#[derive(Eq, PartialEq, Clone, Encode, Decode, sp_runtime::RuntimeDebug)]
+pub struct PrimitiveBlock {
+	pub hash: Option<H256>, // TODO not in ethereum::Block
+	pub parent_hash: H256,
+	pub uncles_hash: H256, // TODO not in ethereum::Block
+	pub author: H160, // TODO not in ethereum::Block
+	pub miner: H160, // TODO not in ethereum::Block
+	pub state_root: H256,
+	pub transactions_root: H256,
+	pub receipts_root: H256,
+	pub number: Option<U256>,
+	pub gas_used: U256,
+	pub gas_limit: U256,
+	pub extra_data: Vec<u8>,
+	pub logs_bloom: Option<Bloom>,
+	pub timestamp: U256,
+	pub difficulty: U256,
+	pub total_difficulty: Option<U256>, // TODO not in ethereum::Block
+	pub seal_fields: Vec<Vec<u8>>, // TODO not in ethereum::Block
+	pub uncles: Vec<H256>, // TODO not in ethereum::Block
+	pub transactions: Vec<H256>, // ? TODO need support for full txns and txn hashes
+	pub size: Option<U256>, // TODO not in ethereum::Block
+}
+
 sp_api::decl_runtime_apis! {
 	/// API necessary for Ethereum-compatibility layer.
 	pub trait EthereumRuntimeApi {
@@ -42,6 +66,7 @@ sp_api::decl_runtime_apis! {
 		fn gas_price() -> U256;
 		fn account_code_at(address: H160) -> Vec<u8>;
 		fn author() -> H160;
+		fn block_by_number(number: u32) -> Option<PrimitiveBlock>;
 	}
 }
 

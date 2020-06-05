@@ -32,7 +32,7 @@ use sp_runtime::{
 };
 use sha3::{Digest, Keccak256};
 
-pub use frontier_rpc_primitives::TransactionStatus;
+pub use frontier_rpc_primitives::{TransactionStatus, PrimitiveBlock};
 pub use ethereum::{Transaction, Log};
 
 /// A type alias for the balance type from this pallet's point of view.
@@ -221,6 +221,34 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
 impl<T: Trait> Module<T> {
 	pub fn transaction_status(hash: H256) -> Option<TransactionStatus> {
 		TransactionStatuses::get(hash)
+	}
+
+	pub fn primitive_block(number: T::BlockNumber) -> Option<PrimitiveBlock> {
+		if let Some((block, _receipt)) = <BlocksAndReceipts<T>>::get(number) {
+			return Some(PrimitiveBlock {
+				hash: None, // TODO
+				parent_hash: block.header.parent_hash,
+				uncles_hash: H256::zero(), // TODO
+				author: H160::default(), // TODO
+				miner: H160::default(), // TODO
+				state_root: block.header.state_root,
+				transactions_root: block.header.transactions_root,
+				receipts_root: block.header.receipts_root,
+				number: Some(block.header.number),
+				gas_used: block.header.gas_used,
+				gas_limit: block.header.gas_limit,
+				extra_data: vec![], // TODO H256 to Vec<u8>
+				logs_bloom: Some(block.header.logs_bloom),
+				timestamp: U256::from(block.header.timestamp),
+				difficulty: block.header.difficulty,
+				total_difficulty: None,  // TODO
+				seal_fields: vec![], // TODO
+				uncles: vec![], // TODO
+				transactions: vec![], // TODO
+				size: None // TODO
+			})
+		}
+		None
 	}
 
 	/// Execute an Ethereum transaction, ignoring transaction signatures.
