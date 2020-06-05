@@ -58,7 +58,8 @@ pub use frame_support::{
 	},
 	StorageValue,
 };
-use frontier_rpc_primitives::PrimitiveBlock;
+use ethereum_core::Block as EthereumBlock;
+
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -473,8 +474,8 @@ impl_runtime_apis! {
 			}
 		}
 
-		fn block_by_number(number: u32) -> Option<PrimitiveBlock> {
-			<ethereum::Module<Runtime>>::primitive_block(number)
+		fn block_by_number(number: u32) -> Option<EthereumBlock> {
+			<ethereum::Module<Runtime>>::ethereum_block(number)
 		}
 	}
 

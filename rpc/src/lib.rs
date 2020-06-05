@@ -186,30 +186,30 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 		if let Ok(Some(block)) = self.client.runtime_api().block_by_number(
 			&BlockId::Hash(header.hash()), 
 			number_param) {
-
 			Ok(Some(Rich {
 				inner: Block {
-					hash: block.hash,
-					parent_hash: block.parent_hash,
-					uncles_hash: block.uncles_hash,
-					author: block.author,
-					miner: block.miner,
-					state_root: block.state_root,
-					transactions_root: block.transactions_root,
-					receipts_root: block.receipts_root,
-					number: block.number,
-					gas_used: block.gas_used,
-					gas_limit: block.gas_limit,
-					extra_data: Bytes(block.extra_data),
-					logs_bloom: block.logs_bloom,
-					timestamp: block.timestamp,
-					difficulty: block.difficulty,
-					total_difficulty: block.total_difficulty,
+					hash: None, // TODO
+					parent_hash: block.header.parent_hash,
+					uncles_hash: H256::zero(), // TODO
+					author: H160::default(), // TODO
+					miner: H160::default(), // TODO
+					state_root: block.header.state_root,
+					transactions_root: block.header.transactions_root,
+					receipts_root: block.header.receipts_root,
+					number: Some(block.header.number),
+					gas_used: block.header.gas_used,
+					gas_limit: block.header.gas_limit,
+					extra_data: Bytes(vec![]), // TODO H256 to Vec<u8>
+					logs_bloom: Some(block.header.logs_bloom),
+					timestamp: U256::from(block.header.timestamp),
+					difficulty: block.header.difficulty,
+					total_difficulty: None, // TODO
 					seal_fields: vec![], // TODO
-					uncles: block.uncles,
-					// TODO support full flag
-					transactions: BlockTransactions::Hashes(block.transactions),
-					size: block.size
+					uncles: vec![], // TODO
+					// TODO expected struct `frontier_rpc_core::types::transaction::Transaction`, 
+					// found struct `ethereum::transaction::Transaction`
+					transactions: BlockTransactions::Full(vec![]),
+					size: None // TODO
 				},
 				extra_info: BTreeMap::new()
 			}))
