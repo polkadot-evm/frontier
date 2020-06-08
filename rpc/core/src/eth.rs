@@ -57,7 +57,7 @@ pub trait EthApi {
 
 	/// Returns current gas_price.
 	#[rpc(name = "eth_gasPrice")]
-	fn gas_price(&self) -> BoxFuture<U256>;
+	fn gas_price(&self) -> Result<U256>;
 
 	/// Returns accounts list.
 	#[rpc(name = "eth_accounts")]
@@ -69,7 +69,7 @@ pub trait EthApi {
 
 	/// Returns balance of the given account.
 	#[rpc(name = "eth_getBalance")]
-	fn balance(&self, _: H160, _: Option<BlockNumber>) -> BoxFuture<U256>;
+	fn balance(&self, _: H160, _: Option<BlockNumber>) -> Result<U256>;
 
 	/// Returns the account- and storage-values of the specified account including the Merkle-proof
 	#[rpc(name = "eth_getProof")]
@@ -109,7 +109,7 @@ pub trait EthApi {
 
 	/// Returns the code at given address at given time (block number).
 	#[rpc(name = "eth_getCode")]
-	fn code_at(&self, _: H160, _: Option<BlockNumber>) -> BoxFuture<Bytes>;
+	fn code_at(&self, _: H160, _: Option<BlockNumber>) -> Result<Bytes>;
 
 	/// Sends signed transaction, returning its hash.
 	#[rpc(name = "eth_sendRawTransaction")]
@@ -198,6 +198,12 @@ pub trait EthApi {
 	/// Used for submitting mining hashrate.
 	#[rpc(name = "eth_submitHashrate")]
 	fn submit_hashrate(&self, _: U256, _: H256) -> Result<bool>;
+
+	// TODO: Once development is more stable, remove the net_ functions which are already defined net.rs
+	#[rpc(name = "net_listening")]
+	fn is_listening(&self) -> Result<bool>;
+	#[rpc(name = "net_version")]
+	fn version(&self) -> Result<String>;
 }
 
 /// Eth filters rpc api (polling).
