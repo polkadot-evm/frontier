@@ -58,7 +58,7 @@ pub use frame_support::{
 	},
 	StorageValue,
 };
-use ethereum_core::Block as EthereumBlock;
+use ethereum::Block as EthereumBlock;
 
 
 #[cfg(any(feature = "std", test))]
