@@ -42,6 +42,7 @@ sp_api::decl_runtime_apis! {
 		fn gas_price() -> U256;
 		fn account_code_at(address: H160) -> Vec<u8>;
 		fn author() -> H160;
+		fn storage_at(address: H160, index: U256) -> H256;
 	}
 }
 

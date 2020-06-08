@@ -62,6 +62,7 @@ pub use frame_support::{
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
 pub use timestamp::Call as TimestampCall;
+use ethereum::{Digest as Sha3Digest, Keccak256};
 
 /// An index to a block.
 pub type BlockNumber = u32;
@@ -469,6 +470,13 @@ impl_runtime_apis! {
 			} else {
 				H160::zero()
 			}
+		}
+
+		fn storage_at(address: H160, index: U256) -> H256 {
+			let index = H256::from_slice(
+				Keccak256::digest(&ethereum::rlp::encode(&index)[..]).as_slice(),
+			);
+			evm::Module::<Runtime>::account_storages(address,index)
 		}
 	}
 
