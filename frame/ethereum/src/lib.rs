@@ -224,8 +224,11 @@ impl<T: Trait> Module<T> {
 	}
 
 	pub fn block_by_number(number: T::BlockNumber) -> Option<ethereum::Block> {
-		if let Some((block, _receipt)) = <BlocksAndReceipts<T>>::get(number) {
-			return Some(block)
+		if <BlockNumbers<T>>::contains_key(number) {
+			let hash = <BlockNumbers<T>>::get(number);
+			if let Some((block, _receipt)) = BlocksAndReceipts::get(hash) {
+				return Some(block)
+			}
 		}
 		None
 	}
