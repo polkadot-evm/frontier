@@ -223,7 +223,7 @@ impl<T: Trait> Module<T> {
 		TransactionStatuses::get(hash)
 	}
 
-	pub fn ethereum_block(number: T::BlockNumber) -> Option<ethereum::Block> {
+	pub fn block_by_number(number: T::BlockNumber) -> Option<ethereum::Block> {
 		if let Some((block, _receipt)) = <BlocksAndReceipts<T>>::get(number) {
 			return Some(block)
 		}

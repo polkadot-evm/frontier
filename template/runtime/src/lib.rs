@@ -475,7 +475,7 @@ impl_runtime_apis! {
 		}
 
 		fn block_by_number(number: u32) -> Option<EthereumBlock> {
-			<ethereum::Module<Runtime>>::ethereum_block(number)
+			<ethereum::Module<Runtime>>::block_by_number(number)
 		}
 	}
 
