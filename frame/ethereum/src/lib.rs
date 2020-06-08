@@ -57,7 +57,8 @@ decl_storage! {
 	// storage items are isolated from other pallets.
 	// ---------------------------------vvvvvvv
 	trait Store for Module<T: Trait> as Example {
-		BlocksAndReceipts: map hasher(blake2_128_concat) T::BlockNumber => Option<(ethereum::Block, Vec<ethereum::Receipt>)>;
+		BlocksAndReceipts: map hasher(blake2_128_concat) H256 => Option<(ethereum::Block, Vec<ethereum::Receipt>)>;
+		BlockNumbers: map hasher(blake2_128_concat) T::BlockNumber => H256;
 		PendingTransactionsAndReceipts: Vec<(ethereum::Transaction, ethereum::Receipt)>;
 		TransactionStatuses: map hasher(blake2_128_concat) H256 => Option<TransactionStatus>;
 	}
@@ -182,6 +183,7 @@ decl_module! {
 				mix_hash: H256::default(),
 				nonce: H64::default(),
 			};
+			let hash = H256::from_slice(Keccak256::digest(&rlp::encode(&header)).as_slice());
 
 			let block = ethereum::Block {
 				header,
@@ -189,7 +191,8 @@ decl_module! {
 				ommers,
 			};
 
-			BlocksAndReceipts::<T>::insert(n, (block, receipts));
+			BlocksAndReceipts::insert(hash, (block, receipts));
+			BlockNumbers::<T>::insert(n, hash);
 		}
 
 		// A runtime code run after every block and have access to extended set of APIs.
