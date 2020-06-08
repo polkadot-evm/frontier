@@ -189,7 +189,7 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 		unimplemented!("block_transaction_count_by_hash");
 	}
 
-	fn block_transaction_count_by_number(&self, number: BlockNumber) -> Result<U256> {
+	fn block_transaction_count_by_number(&self, number: BlockNumber) -> Result<Option<U256>> {
 		let header = self.select_chain.best_chain()
 			.map_err(|_| internal_err("fetch header failed"))?;
 
@@ -202,11 +202,13 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 		} else {
 			unimplemented!("fetch count for past blocks is not yet supported");
 		}
-		
-		Ok(self.client.runtime_api()
-			.block_transaction_count_by_number(&BlockId::Hash(header.hash()), number_param)
-		   	.map_err(|_| internal_err("fetch runtime failed"))?
-			.into())
+
+		let result = match self.client.runtime_api()
+			.block_transaction_count_by_number(&BlockId::Hash(header.hash()), number_param) {
+			Ok(result) => result,
+			Err(_) => return Ok(None)
+		};
+		Ok(result)
 	}
 
 	fn block_uncles_count_by_hash(&self, _: H256) -> Result<U256> {

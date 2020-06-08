@@ -42,7 +42,7 @@ sp_api::decl_runtime_apis! {
 		fn gas_price() -> U256;
 		fn account_code_at(address: H160) -> Vec<u8>;
 		fn author() -> H160;
-		fn block_transaction_count_by_number(number: u32) -> U256;
+		fn block_transaction_count_by_number(number: u32) -> Option<U256>;
 	}
 }
 

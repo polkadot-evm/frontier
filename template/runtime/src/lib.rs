@@ -471,14 +471,11 @@ impl_runtime_apis! {
 			}
 		}
 
-		fn block_transaction_count_by_number(number: u32) -> U256 {
-			let result = <ethereum::Module<Runtime>>::blocks_and_receipts(number);
-			if let Some(result) = result {
-				let (block, _receipt) = result;
-				U256::from(block.transactions.len())
-			} else {
-				U256::zero()
+		fn block_transaction_count_by_number(number: u32) -> Option<U256> {
+			if let Some(block) = <ethereum::Module<Runtime>>::block_by_number(number) {
+				return Some(U256::from(block.transactions.len()))
 			}
+			None
 		}
 	}
 
