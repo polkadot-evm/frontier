@@ -50,10 +50,13 @@ macro_rules! new_full_start {
 		let mut import_setup = None;
 		let inherent_data_providers = sp_inherents::InherentDataProviders::new();
 
+		let mut is_authority: bool = false;
+
 		let builder = sc_service::ServiceBuilder::new_full::<
 			frontier_template_runtime::opaque::Block, frontier_template_runtime::RuntimeApi, crate::service::Executor
 		>($config)?
-			.with_select_chain(|_config, backend| {
+			.with_select_chain(|config, backend| {
+				is_authority = config.role.is_authority();
 				Ok(sc_consensus::LongestChain::new(backend.clone()))
 			})?
 			.with_transaction_pool(|config, client, _fetcher, prometheus_registry| {
@@ -108,6 +111,7 @@ macro_rules! new_full_start {
 						pool: pool.clone(),
 						select_chain: select_chain.clone(),
 						deny_unsafe,
+						is_authority
 					};
 
 					crate::rpc::create_full(deps)
