@@ -64,6 +64,36 @@ impl<B: BlockT, C, SC, P, CT, BE> EthApi<B, C, SC, P, CT, BE> {
 	}
 }
 
+fn rich_block_build(block: ethereum::Block) -> RichBlock {
+	Rich {
+		inner: Block {
+			hash: None, // TODO
+			parent_hash: block.header.parent_hash,
+			uncles_hash: H256::zero(), // TODO
+			author: H160::default(), // TODO
+			miner: H160::default(), // TODO
+			state_root: block.header.state_root,
+			transactions_root: block.header.transactions_root,
+			receipts_root: block.header.receipts_root,
+			number: Some(block.header.number),
+			gas_used: block.header.gas_used,
+			gas_limit: block.header.gas_limit,
+			extra_data: Bytes(vec![]), // TODO H256 to Vec<u8>
+			logs_bloom: Some(block.header.logs_bloom),
+			timestamp: U256::from(block.header.timestamp),
+			difficulty: block.header.difficulty,
+			total_difficulty: None, // TODO
+			seal_fields: vec![], // TODO
+			uncles: vec![], // TODO
+			// TODO expected struct `frontier_rpc_core::types::transaction::Transaction`, 
+			// found struct `ethereum::transaction::Transaction`
+			transactions: BlockTransactions::Full(vec![]),
+			size: None // TODO
+		},
+		extra_info: BTreeMap::new()
+	}
+}
+
 impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 	C: ProvideRuntimeApi<B> + StorageProvider<B,BE>,
 	C::Api: EthereumRuntimeApi<B>,
@@ -165,8 +195,18 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 		unimplemented!("storage_at");
 	}
 
-	fn block_by_hash(&self, _: H256, _: bool) -> BoxFuture<Option<RichBlock>> {
-		unimplemented!("block_by_hash");
+	fn block_by_hash(&self, hash: H256, _: bool) -> Result<Option<RichBlock>> {
+		let header = self.select_chain.best_chain()
+			.map_err(|_| internal_err("fetch header failed"))?;
+
+		if let Ok(Some(block)) = self.client.runtime_api().block_by_hash(
+			&BlockId::Hash(header.hash()), 
+			hash
+		) {
+			Ok(Some(rich_block_build(block)))
+		} else {
+			Ok(None)
+		}
 	}
 
 	fn block_by_number(&self, number: BlockNumber, _: bool) -> Result<Option<RichBlock>> {
@@ -185,34 +225,9 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 
 		if let Ok(Some(block)) = self.client.runtime_api().block_by_number(
 			&BlockId::Hash(header.hash()), 
-			number_param) {
-			Ok(Some(Rich {
-				inner: Block {
-					hash: None, // TODO
-					parent_hash: block.header.parent_hash,
-					uncles_hash: H256::zero(), // TODO
-					author: H160::default(), // TODO
-					miner: H160::default(), // TODO
-					state_root: block.header.state_root,
-					transactions_root: block.header.transactions_root,
-					receipts_root: block.header.receipts_root,
-					number: Some(block.header.number),
-					gas_used: block.header.gas_used,
-					gas_limit: block.header.gas_limit,
-					extra_data: Bytes(vec![]), // TODO H256 to Vec<u8>
-					logs_bloom: Some(block.header.logs_bloom),
-					timestamp: U256::from(block.header.timestamp),
-					difficulty: block.header.difficulty,
-					total_difficulty: None, // TODO
-					seal_fields: vec![], // TODO
-					uncles: vec![], // TODO
-					// TODO expected struct `frontier_rpc_core::types::transaction::Transaction`, 
-					// found struct `ethereum::transaction::Transaction`
-					transactions: BlockTransactions::Full(vec![]),
-					size: None // TODO
-				},
-				extra_info: BTreeMap::new()
-			}))
+			number_param
+		) {
+			Ok(Some(rich_block_build(block)))
 		} else {
 			Ok(None)
 		}

@@ -477,6 +477,10 @@ impl_runtime_apis! {
 		fn block_by_number(number: u32) -> Option<EthereumBlock> {
 			<ethereum::Module<Runtime>>::block_by_number(number)
 		}
+
+		fn block_by_hash(hash: H256) -> Option<EthereumBlock> {
+			<ethereum::Module<Runtime>>::block_by_hash(hash)
+		}
 	}
 
 	impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi<
