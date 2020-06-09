@@ -15,6 +15,7 @@
 // along with Substrate.  If not, see <http://www.gnu.org/licenses/>.
 
 use std::{marker::PhantomData, sync::Arc};
+use std::collections::BTreeMap;
 use ethereum_types::{H160, H256, H64, U256, U64};
 use jsonrpc_core::{BoxFuture, Result, ErrorCode, Error, futures::future::{self, Future}};
 use futures::future::TryFutureExt;
@@ -30,7 +31,7 @@ use sp_runtime::traits::BlakeTwo256;
 use frontier_rpc_core::EthApi as EthApiT;
 use frontier_rpc_core::types::{
 	BlockNumber, Bytes, CallRequest, EthAccount, Filter, Index, Log, Receipt, RichBlock,
-	SyncStatus, Transaction, Work,
+	SyncStatus, Transaction, Work, Rich, Block, BlockTransactions
 };
 use frontier_rpc_primitives::{EthereumRuntimeApi, ConvertTransaction};
 
@@ -168,8 +169,53 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 		unimplemented!("block_by_hash");
 	}
 
-	fn block_by_number(&self, _: BlockNumber, _: bool) -> BoxFuture<Option<RichBlock>> {
-		unimplemented!("block_by_number");
+	fn block_by_number(&self, number: BlockNumber, _: bool) -> Result<Option<RichBlock>> {
+		let header = self.select_chain.best_chain()
+			.map_err(|_| internal_err("fetch header failed"))?;
+
+		let number_param: u32;
+
+		if let Some(block_number) = number.to_min_block_num() {
+			number_param = block_number.unique_saturated_into();
+		} else if number == BlockNumber::Latest {
+			number_param = header.number().clone().unique_saturated_into() as u32;
+		} else {
+			unimplemented!("only latest or block number are supported");
+		}
+
+		if let Ok(Some(block)) = self.client.runtime_api().block_by_number(
+			&BlockId::Hash(header.hash()), 
+			number_param) {
+			Ok(Some(Rich {
+				inner: Block {
+					hash: None, // TODO
+					parent_hash: block.header.parent_hash,
+					uncles_hash: H256::zero(), // TODO
+					author: H160::default(), // TODO
+					miner: H160::default(), // TODO
+					state_root: block.header.state_root,
+					transactions_root: block.header.transactions_root,
+					receipts_root: block.header.receipts_root,
+					number: Some(block.header.number),
+					gas_used: block.header.gas_used,
+					gas_limit: block.header.gas_limit,
+					extra_data: Bytes(vec![]), // TODO H256 to Vec<u8>
+					logs_bloom: Some(block.header.logs_bloom),
+					timestamp: U256::from(block.header.timestamp),
+					difficulty: block.header.difficulty,
+					total_difficulty: None, // TODO
+					seal_fields: vec![], // TODO
+					uncles: vec![], // TODO
+					// TODO expected struct `frontier_rpc_core::types::transaction::Transaction`, 
+					// found struct `ethereum::transaction::Transaction`
+					transactions: BlockTransactions::Full(vec![]),
+					size: None // TODO
+				},
+				extra_info: BTreeMap::new()
+			}))
+		} else {
+			Ok(None)
+		}
 	}
 
 	fn transaction_count(&self, address: H160, number: Option<BlockNumber>) -> Result<U256> {

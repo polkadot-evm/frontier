@@ -58,6 +58,9 @@ pub use frame_support::{
 	},
 	StorageValue,
 };
+use ethereum::Block as EthereumBlock;
+
+
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
@@ -469,6 +472,10 @@ impl_runtime_apis! {
 			} else {
 				H160::zero()
 			}
+		}
+
+		fn block_by_number(number: u32) -> Option<EthereumBlock> {
+			<ethereum::Module<Runtime>>::block_by_number(number)
 		}
 	}
 
