@@ -43,6 +43,7 @@ sp_api::decl_runtime_apis! {
 		fn account_code_at(address: H160) -> Vec<u8>;
 		fn author() -> H160;
 		fn block_by_number(number: u32) -> Option<EthereumBlock>;
+		fn block_transaction_count_by_number(number: u32) -> Option<U256>;
 	}
 }
 

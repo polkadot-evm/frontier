@@ -235,8 +235,26 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 		unimplemented!("block_transaction_count_by_hash");
 	}
 
-	fn block_transaction_count_by_number(&self, _: BlockNumber) -> BoxFuture<Option<U256>> {
-		unimplemented!("block_transaction_count_by_number");
+	fn block_transaction_count_by_number(&self, number: BlockNumber) -> Result<Option<U256>> {
+		let header = self.select_chain.best_chain()
+			.map_err(|_| internal_err("fetch header failed"))?;
+
+		let number_param: u32;
+
+		if let Some(block_number) = number.to_min_block_num() {
+			number_param = block_number.unique_saturated_into();
+		} else if number == BlockNumber::Latest {
+			number_param = header.number().clone().unique_saturated_into() as u32;
+		} else {
+			unimplemented!("fetch count for past blocks is not yet supported");
+		}
+
+		let result = match self.client.runtime_api()
+			.block_transaction_count_by_number(&BlockId::Hash(header.hash()), number_param) {
+			Ok(result) => result,
+			Err(_) => return Ok(None)
+		};
+		Ok(result)
 	}
 
 	fn block_uncles_count_by_hash(&self, _: H256) -> Result<U256> {
