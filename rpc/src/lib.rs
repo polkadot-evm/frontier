@@ -308,8 +308,31 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 		unimplemented!("estimate_gas");
 	}
 
-	fn transaction_by_hash(&self, _: H256) -> BoxFuture<Option<Transaction>> {
-		unimplemented!("transaction_by_hash");
+	fn transaction_by_hash(&self, hash: H256) -> Result<Option<Transaction>> {
+		Ok(Some(
+			Transaction {
+				hash: H256::default(),
+				nonce: U256::zero(),
+				block_hash: None, //Option<H256>,
+				block_number: None, //Option<U256>,
+				transaction_index: None, //Option<U256>,
+				from: H160::default(),
+				to: None, //Option<H160>,
+				value: U256::zero(),
+				gas_price: U256::zero(),
+				gas: U256::zero(),
+				input: Bytes(vec![]),
+				creates: None, //Option<H160>,
+				raw: Bytes(vec![]),
+				public_key: None, //Option<H512>,
+				chain_id: None, //Option<U64>,
+				standard_v: U256::zero(),
+				v: U256::zero(),
+				r: U256::zero(),
+				s: U256::zero(),
+				condition: None, //Option<TransactionCondition>,
+			}
+		))
 	}
 
 	fn transaction_by_block_hash_and_index(
