@@ -486,6 +486,10 @@ impl_runtime_apis! {
 			None
 		}
 
+		fn block_by_hash(hash: H256) -> Option<EthereumBlock> {
+			<ethereum::Module<Runtime>>::block_by_hash(hash)
+		}
+
 		fn transaction_by_hash(hash: H256) -> Option<FullTransaction> {
 			<ethereum::Module<Runtime>>::transaction_by_hash(hash)
 		}
