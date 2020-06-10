@@ -45,6 +45,7 @@ sp_api::decl_runtime_apis! {
 		fn block_by_number(number: u32) -> Option<EthereumBlock>;
 		fn block_transaction_count_by_number(number: u32) -> Option<U256>;
 		fn block_by_hash(hash: H256) -> Option<EthereumBlock>;
+		fn block_transaction_count_by_hash(hash: H256) -> Option<U256>;
 	}
 }
 
