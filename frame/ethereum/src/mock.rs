@@ -16,6 +16,7 @@
 
 //! Test utilities
 
+use super::*;
 use crate::{Module, Trait};
 use frame_support::{impl_outer_origin, parameter_types, weights::Weight};
 use pallet_evm::{FeeCalculator, HashTruncateConvertAccountId};
@@ -25,6 +26,7 @@ use sp_runtime::{
     traits::{BlakeTwo256, IdentityLookup},
     ModuleId, Perbill,
 };
+use std::str::FromStr;
 
 impl_outer_origin! {
     pub enum Origin for Test where system = frame_system {}
@@ -117,12 +119,58 @@ impl Trait for Test {
 pub type System = frame_system::Module<Test>;
 pub type Balances = pallet_balances::Module<Test>;
 pub type Ethereum = Module<Test>;
+pub type Evm = pallet_evm::Module<Test>;
+
+pub struct AccountInfo {
+    pub address: H160,
+    pub private_key: H256,
+    pub r: H256,
+    pub s: H256,
+    pub v: u64,
+}
 
 // This function basically just builds a genesis storage key/value store according to
 // our desired mockup.
-pub fn new_test_ext() -> sp_io::TestExternalities {
-    frame_system::GenesisConfig::default()
+pub fn new_test_ext() -> (Vec<AccountInfo>, sp_io::TestExternalities) {
+    let storage = frame_system::GenesisConfig::default()
         .build_storage::<Test>()
-        .unwrap()
-        .into()
+        .unwrap();
+    let ext = storage.into();
+
+    // TODO: Replace with a correct way to generate those.
+    const ALICE_ACCOUNT: &str = "3725421C2ED3bB336a6Ebd4A06D2f3721679e47f";
+    const ALICE_PRIVATE_KEY: &str =
+        "f12a96d6ee380d41d87ba35e3d26dc1d8c8718b37578baae94c0460a5b26d3e3";
+    const ALICE_V: u64 = 0x78;
+    const ALICE_R: &str = "e5b8c39851a99396f1844171c99dd66a24f44df3c07c02925e3f547e653abc22";
+    const ALICE_S: &str = "01570aba1ab55d32103e275f6b0ddda5d18a55b927f056e1eeb5238a77d004c1";
+
+    let alice_account = H160::from_str(ALICE_ACCOUNT).unwrap();
+    let alice_private_key = H256::from_str(ALICE_PRIVATE_KEY).unwrap();
+    let alice_r = H256::from_str(ALICE_R).unwrap();
+    let alice_s = H256::from_str(ALICE_S).unwrap();
+
+    let pairs = vec![AccountInfo {
+        address: alice_account,
+        private_key: alice_private_key,
+        r: alice_r,
+        s: alice_s,
+        v: ALICE_V,
+    }];
+
+    (pairs, ext)
+}
+
+pub fn contract_address(sender: H160, nonce: u64) -> H160 {
+    let mut rlp = rlp::RlpStream::new_list(2);
+    rlp.append(&sender);
+    rlp.append(&nonce);
+
+    H160::from_slice(&Keccak256::digest(rlp.out().as_slice())[12..])
+}
+
+pub fn storage_address(sender: H160, slot: H256) -> H256 {
+    H256::from_slice(&Keccak256::digest(
+        [&H256::from(sender)[..], &slot[..]].concat().as_slice(),
+    ))
 }
