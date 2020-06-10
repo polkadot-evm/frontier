@@ -33,7 +33,7 @@ use sp_runtime::{
 use sha3::{Digest, Keccak256};
 
 pub use frontier_rpc_primitives::TransactionStatus;
-pub use ethereum::{Transaction, Log};
+pub use ethereum::{Transaction, Log, Block};
 
 /// A type alias for the balance type from this pallet's point of view.
 pub type BalanceOf<T> = <T as pallet_balances::Trait>::Balance;
@@ -57,7 +57,8 @@ decl_storage! {
 	// storage items are isolated from other pallets.
 	// ---------------------------------vvvvvvv
 	trait Store for Module<T: Trait> as Example {
-		BlocksAndReceipts: map hasher(blake2_128_concat) T::BlockNumber => Option<(ethereum::Block, Vec<ethereum::Receipt>)>;
+		BlocksAndReceipts: map hasher(blake2_128_concat) H256 => Option<(ethereum::Block, Vec<ethereum::Receipt>)>;
+		BlockNumbers: map hasher(blake2_128_concat) T::BlockNumber => H256;
 		PendingTransactionsAndReceipts: Vec<(ethereum::Transaction, ethereum::Receipt)>;
 		TransactionStatuses: map hasher(blake2_128_concat) H256 => Option<TransactionStatus>;
 	}
@@ -182,6 +183,7 @@ decl_module! {
 				mix_hash: H256::default(),
 				nonce: H64::default(),
 			};
+			let hash = H256::from_slice(Keccak256::digest(&rlp::encode(&header)).as_slice());
 
 			let block = ethereum::Block {
 				header,
@@ -189,7 +191,8 @@ decl_module! {
 				ommers,
 			};
 
-			BlocksAndReceipts::<T>::insert(n, (block, receipts));
+			BlocksAndReceipts::insert(hash, (block, receipts));
+			BlockNumbers::<T>::insert(n, hash);
 		}
 
 		// A runtime code run after every block and have access to extended set of APIs.
@@ -221,6 +224,16 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
 impl<T: Trait> Module<T> {
 	pub fn transaction_status(hash: H256) -> Option<TransactionStatus> {
 		TransactionStatuses::get(hash)
+	}
+
+	pub fn block_by_number(number: T::BlockNumber) -> Option<ethereum::Block> {
+		if <BlockNumbers<T>>::contains_key(number) {
+			let hash = <BlockNumbers<T>>::get(number);
+			if let Some((block, _receipt)) = BlocksAndReceipts::get(hash) {
+				return Some(block)
+			}
+		}
+		None
 	}
 
 	/// Execute an Ethereum transaction, ignoring transaction signatures.

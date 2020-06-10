@@ -85,7 +85,7 @@ pub trait EthApi {
 
 	/// Returns block with given number.
 	#[rpc(name = "eth_getBlockByNumber")]
-	fn block_by_number(&self, _: BlockNumber, _: bool) -> BoxFuture<Option<RichBlock>>;
+	fn block_by_number(&self, _: BlockNumber, _: bool) -> Result<Option<RichBlock>>;
 
 	/// Returns the number of transactions sent from given address at given time (block number).
 	#[rpc(name = "eth_getTransactionCount")]
@@ -97,7 +97,7 @@ pub trait EthApi {
 
 	/// Returns the number of transactions in a block with given block number.
 	#[rpc(name = "eth_getBlockTransactionCountByNumber")]
-	fn block_transaction_count_by_number(&self, _: BlockNumber) -> BoxFuture<Option<U256>>;
+	fn block_transaction_count_by_number(&self, _: BlockNumber) -> Result<Option<U256>>;
 
 	/// Returns the number of uncles in a block with given hash.
 	#[rpc(name = "eth_getUncleCountByBlockHash")]
@@ -198,6 +198,12 @@ pub trait EthApi {
 	/// Used for submitting mining hashrate.
 	#[rpc(name = "eth_submitHashrate")]
 	fn submit_hashrate(&self, _: U256, _: H256) -> Result<bool>;
+
+	// TODO: Once development is more stable, remove the net_ functions which are already defined net.rs
+	#[rpc(name = "net_listening")]
+	fn is_listening(&self) -> Result<bool>;
+	#[rpc(name = "net_version")]
+	fn version(&self) -> Result<String>;
 }
 
 /// Eth filters rpc api (polling).
