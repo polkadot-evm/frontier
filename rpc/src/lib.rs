@@ -231,21 +231,27 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 		   .map_err(|_| internal_err("fetch runtime account basic failed"))?.nonce.into())
 	}
 
-	fn block_transaction_count_by_hash(&self, hash: H256) -> Result<U256> {
+	fn block_transaction_count_by_hash(&self, hash: H256) -> Result<Option<U256>> {
 		let header_current = self.select_chain.best_chain()
 			.map_err(|_| internal_err("fetch header failed"))?;
 		
+		let mut number_param = None;
 		if let Ok(result) = self.client.header(BlockId::Hash(hash)) {
 			if let Some(header) = result {
 				let deref = *header.number();
 				let number: u32 = deref.unique_saturated_into() as u32;
-				return Ok(self.client.runtime_api()
-					.block_transaction_count_by_number(&BlockId::Hash(header_current.hash()), number)
-					.map_err(|_| internal_err("fetch runtime failed"))?
-					.into());
+				number_param = Some(number);
 			}
 		}
-		Ok(U256::zero())
+		
+		if let Some(number_param) = number_param {
+			match self.client.runtime_api()
+				.block_transaction_count_by_number(&BlockId::Hash(header_current.hash()), number_param) {
+				Ok(result) => return Ok(result),
+				Err(_) => return Ok(None)
+			};
+		}
+		Ok(None)
 	}
 
 	fn block_transaction_count_by_number(&self, number: BlockNumber) -> Result<Option<U256>> {
