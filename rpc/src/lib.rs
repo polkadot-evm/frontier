@@ -31,7 +31,7 @@ use sp_runtime::traits::BlakeTwo256;
 use frontier_rpc_core::EthApi as EthApiT;
 use frontier_rpc_core::types::{
 	BlockNumber, Bytes, CallRequest, EthAccount, Filter, Index, Log, Receipt, RichBlock,
-	SyncStatus, Transaction, Work, Rich, Block, BlockTransactions
+	SyncStatus, Transaction, Work, Rich, Block, BlockTransactions, TransactionCondition
 };
 use frontier_rpc_primitives::{EthereumRuntimeApi, ConvertTransaction};
 
@@ -309,30 +309,45 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 	}
 
 	fn transaction_by_hash(&self, hash: H256) -> Result<Option<Transaction>> {
-		Ok(Some(
-			Transaction {
-				hash: H256::default(),
-				nonce: U256::zero(),
-				block_hash: None, //Option<H256>,
-				block_number: None, //Option<U256>,
-				transaction_index: None, //Option<U256>,
-				from: H160::default(),
-				to: None, //Option<H160>,
-				value: U256::zero(),
-				gas_price: U256::zero(),
-				gas: U256::zero(),
-				input: Bytes(vec![]),
-				creates: None, //Option<H160>,
-				raw: Bytes(vec![]),
-				public_key: None, //Option<H512>,
-				chain_id: None, //Option<U64>,
-				standard_v: U256::zero(),
-				v: U256::zero(),
-				r: U256::zero(),
-				s: U256::zero(),
-				condition: None, //Option<TransactionCondition>,
-			}
-		))
+		let header = self
+			.select_chain
+			.best_chain()
+			.map_err(|_| internal_err("fetch header failed"))?;
+			
+		if let Ok(Some(transaction)) = self.client.runtime_api().transaction_by_hash(
+			&BlockId::Hash(header.hash()), hash) {
+			return Ok(Some(
+				Transaction {
+					hash: transaction.hash,
+					nonce: transaction.nonce,
+					block_hash: transaction.block_hash,
+					block_number: transaction.block_number,
+					transaction_index: transaction.transaction_index,
+					from: transaction.from,
+					to: transaction.to,
+					value: transaction.value,
+					gas_price: transaction.gas_price,
+					gas: transaction.gas,
+					input: Bytes(transaction.input),
+					creates: transaction.creates,
+					raw: Bytes(transaction.raw),
+					public_key: transaction.public_key,
+					chain_id: match transaction.chain_id {
+						Some(chain_id) => Some(U64::from(chain_id)),
+						None => None
+					},
+					standard_v: transaction.standard_v,
+					v: transaction.v,
+					r: transaction.r,
+					s: transaction.s,
+					condition: match transaction.chain_id {
+						Some(condition) => Some(TransactionCondition::Number(condition)),
+						None => None
+					}
+				}
+			));
+		}
+		Ok(None)
 	}
 
 	fn transaction_by_block_hash_and_index(

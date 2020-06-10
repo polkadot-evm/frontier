@@ -265,6 +265,10 @@ impl<T: Trait> Module<T> {
 	pub fn transaction_status(hash: H256) -> Option<TransactionStatus> {
 		TransactionStatuses::get(hash)
 	}
+	
+	pub fn transaction_by_hash(hash: H256) -> Option<FullTransaction> {
+		Transactions::get(hash)
+	}
 
 	pub fn block_by_number(number: T::BlockNumber) -> Option<ethereum::Block> {
 		if <BlockNumbers<T>>::contains_key(number) {
