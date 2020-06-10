@@ -61,7 +61,7 @@ decl_storage! {
 		BlockNumbers: map hasher(blake2_128_concat) T::BlockNumber => H256;
 		PendingTransactionsAndReceipts: Vec<(ethereum::Transaction, ethereum::Receipt)>;
 		TransactionStatuses: map hasher(blake2_128_concat) H256 => Option<TransactionStatus>;
-		Transactions: map hasher(blake2_128_concat) H256 => Option<FullTransaction>;
+		Transactions: map hasher(blake2_128_concat) H256 => Option<(H256,u32)>;
 	}
 }
 
@@ -195,43 +195,16 @@ decl_module! {
 			BlocksAndReceipts::insert(hash, (block, receipts));
 			BlockNumbers::<T>::insert(n, hash);
 
-			for t in &transactions {
+			for t in &transactions.clone() {
 				let transaction_hash = H256::from_slice(
 					Keccak256::digest(&rlp::encode(t)).as_slice()
 				);
-				if let Some(transaction_status) = TransactionStatuses::get(transaction_hash) {
-					let full_transaction = FullTransaction {
-						hash: transaction_hash,
-						nonce: t.nonce,
-						block_hash: Some(hash),
-						block_number: Some(U256::from(
-							UniqueSaturatedInto::<u128>::unique_saturated_into(n)
-						)),
-						transaction_index: Some(U256::from(
-							UniqueSaturatedInto::<u32>::unique_saturated_into(
-								transaction_status.transaction_index
-							)
-						)),
-						from: transaction_status.from,
-						to: transaction_status.to,
-						value: t.value,
-						gas_price: t.gas_price,
-						gas: t.gas_limit,
-						input: t.input.clone(),
-						creates: transaction_status.contract_address,
-						raw: vec![], // TODO,
-						public_key: None, // TODO,
-						chain_id: None, // TODO
-						standard_v: U256::zero(), // TODO
-						v: U256::zero(), // TODO
-						r: U256::zero(), // TODO
-						s: U256::zero(), // TODO
-						// Option<TransactionCondition>, Not supported? By now all pending 
-						// transactions are stored on chain on_finalize.
-						condition: None, 
-					};
-					Transactions::insert(transaction_hash, full_transaction);
-				};
+				if let Some(status) = TransactionStatuses::get(transaction_hash) {
+					Transactions::insert(
+						transaction_hash, 
+						(hash, status.transaction_index)
+					);
+				}
 			}
 		}
 
@@ -267,7 +240,51 @@ impl<T: Trait> Module<T> {
 	}
 	
 	pub fn transaction_by_hash(hash: H256) -> Option<FullTransaction> {
-		Transactions::get(hash)
+		let (block_hash, transaction_index) = match Transactions::get(hash) {
+			Some(a) => a,
+			_ => return None,
+		};
+
+		let transaction_status = match TransactionStatuses::get(hash) {
+			Some(a) => a,
+			_ => return None,
+		};
+
+		let (block,_receipt) = match BlocksAndReceipts::get(block_hash) {
+			Some(a) => a,
+			_ => return None,
+		};
+
+		let transaction = &block.transactions[transaction_index as usize];
+
+		Some(FullTransaction {
+			hash: hash,
+			nonce: transaction.nonce,
+			block_hash: Some(block_hash),
+			block_number: Some(block.header.number),
+			transaction_index: Some(U256::from(
+				UniqueSaturatedInto::<u32>::unique_saturated_into(
+					transaction_status.transaction_index
+				)
+			)),
+			from: transaction_status.from,
+			to: transaction_status.to,
+			value: transaction.value,
+			gas_price: transaction.gas_price,
+			gas: transaction.gas_limit,
+			input: transaction.input.clone(),
+			creates: transaction_status.contract_address,
+			raw: vec![], // TODO,
+			public_key: None, // TODO,
+			chain_id: None, // TODO
+			standard_v: U256::zero(), // TODO
+			v: U256::zero(), // TODO
+			r: U256::zero(), // TODO
+			s: U256::zero(), // TODO
+			// Option<TransactionCondition>, Not supported? By now all pending 
+			// transactions are stored on chain on_finalize.
+			condition: None, 
+		})
 	}
 
 	pub fn block_by_number(number: T::BlockNumber) -> Option<ethereum::Block> {
