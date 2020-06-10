@@ -81,7 +81,7 @@ pub trait EthApi {
 
 	/// Returns block with given hash.
 	#[rpc(name = "eth_getBlockByHash")]
-	fn block_by_hash(&self, _: H256, _: bool) -> BoxFuture<Option<RichBlock>>;
+	fn block_by_hash(&self, _: H256, _: bool) -> Result<Option<RichBlock>>;
 
 	/// Returns block with given number.
 	#[rpc(name = "eth_getBlockByNumber")]
