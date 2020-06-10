@@ -18,7 +18,6 @@ sp-api = { path = "../vendor/substrate/primitives/api" }
 sp-consensus = { path = "../vendor/substrate/primitives/consensus/common" }
 sp-transaction-pool = { path = "../vendor/substrate/primitives/transaction-pool" }
 sp-storage = { path = "../vendor/substrate/primitives/storage" } 
-sp-blockchain = { path = "../vendor/substrate/primitives/blockchain" } 
 sc-service = { path = "../vendor/substrate/client/service" }
 sc-client-api = { path = "../vendor/substrate/client/api" }
 ethereum = { version = "0.2", features = ["codec"] }

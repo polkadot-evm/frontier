@@ -27,7 +27,6 @@ use sp_transaction_pool::TransactionPool;
 use sc_client_api::backend::{StorageProvider, Backend, StateBackend};
 use sha3::{Keccak256, Digest};
 use sp_runtime::traits::BlakeTwo256;
-use sp_blockchain::{Error as BlockChainError, HeaderMetadata, HeaderBackend};
 use frontier_rpc_core::EthApi as EthApiT;
 use frontier_rpc_core::types::{
 	BlockNumber, Bytes, CallRequest, EthAccount, Filter, Index, Log, Receipt, RichBlock,
@@ -95,7 +94,7 @@ fn rich_block_build(block: ethereum::Block) -> RichBlock {
 }
 
 impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
-	C: ProvideRuntimeApi<B> + StorageProvider<B,BE> + HeaderBackend<B> + HeaderMetadata<B, Error=BlockChainError>,
+	C: ProvideRuntimeApi<B> + StorageProvider<B,BE>,
 	C::Api: EthereumRuntimeApi<B>,
 	BE: Backend<B> + 'static,
 	BE::State: StateBackend<BlakeTwo256>,
