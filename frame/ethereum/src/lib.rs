@@ -236,6 +236,13 @@ impl<T: Trait> Module<T> {
 		None
 	}
 
+	pub fn block_by_hash(hash: H256) -> Option<ethereum::Block> {
+		if let Some((block, _receipt)) = BlocksAndReceipts::get(hash) {
+			return Some(block)
+		}
+		None
+	}
+
 	/// Execute an Ethereum transaction, ignoring transaction signatures.
 	pub fn execute(source: H160, transaction: ethereum::Transaction) {
 		let transaction_hash = H256::from_slice(
