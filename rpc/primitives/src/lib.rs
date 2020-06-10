@@ -16,7 +16,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use sp_core::{H160, H256, U256};
+use sp_core::{H160, H256, H512, U256};
 use ethereum::{Log, Block as EthereumBlock};
 use ethereum_types::Bloom;
 use codec::{Encode, Decode};
@@ -31,6 +31,30 @@ pub struct TransactionStatus {
 	pub contract_address: Option<H160>,
 	pub logs: Vec<Log>,
 	pub logs_bloom: Bloom,
+}
+
+#[derive(Eq, PartialEq, Clone, Encode, Decode, sp_runtime::RuntimeDebug)]
+pub struct Transaction {
+	pub hash: H256,
+	pub nonce: U256,
+	pub block_hash: Option<H256>,
+	pub block_number: Option<U256>,
+	pub transaction_index: Option<U256>,
+	pub from: H160,
+	pub to: Option<H160>,
+	pub value: U256,
+	pub gas_price: U256,
+	pub gas: U256,
+	pub input: Vec<u8>,
+	pub creates: Option<H160>,
+	pub raw: Vec<u8>,
+	pub public_key: Option<H512>,
+	pub chain_id: Option<u64>,
+	pub standard_v: U256,
+	pub v: U256,
+	pub r: U256,
+	pub s: U256,
+	pub condition: Option<u64>,
 }
 
 sp_api::decl_runtime_apis! {

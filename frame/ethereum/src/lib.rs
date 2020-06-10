@@ -32,7 +32,7 @@ use sp_runtime::{
 };
 use sha3::{Digest, Keccak256};
 
-pub use frontier_rpc_primitives::TransactionStatus;
+pub use frontier_rpc_primitives::{TransactionStatus, Transaction as FullTransaction};
 pub use ethereum::{Transaction, Log, Block};
 
 /// A type alias for the balance type from this pallet's point of view.
@@ -61,6 +61,7 @@ decl_storage! {
 		BlockNumbers: map hasher(blake2_128_concat) T::BlockNumber => H256;
 		PendingTransactionsAndReceipts: Vec<(ethereum::Transaction, ethereum::Receipt)>;
 		TransactionStatuses: map hasher(blake2_128_concat) H256 => Option<TransactionStatus>;
+		Transactions: map hasher(blake2_128_concat) H256 => Option<FullTransaction>;
 	}
 }
 
@@ -187,12 +188,51 @@ decl_module! {
 
 			let block = ethereum::Block {
 				header,
-				transactions,
+				transactions: transactions.clone(),
 				ommers,
 			};
 
 			BlocksAndReceipts::insert(hash, (block, receipts));
 			BlockNumbers::<T>::insert(n, hash);
+
+			for t in &transactions {
+				let transaction_hash = H256::from_slice(
+					Keccak256::digest(&rlp::encode(t)).as_slice()
+				);
+				if let Some(transaction_status) = TransactionStatuses::get(transaction_hash) {
+					let full_transaction = FullTransaction {
+						hash: transaction_hash,
+						nonce: t.nonce,
+						block_hash: Some(hash),
+						block_number: Some(U256::from(
+							UniqueSaturatedInto::<u128>::unique_saturated_into(n)
+						)),
+						transaction_index: Some(U256::from(
+							UniqueSaturatedInto::<u32>::unique_saturated_into(
+								transaction_status.transaction_index
+							)
+						)),
+						from: transaction_status.from,
+						to: transaction_status.to,
+						value: t.value,
+						gas_price: t.gas_price,
+						gas: t.gas_limit,
+						input: t.input.clone(),
+						creates: transaction_status.contract_address,
+						raw: vec![], // TODO,
+						public_key: None, // TODO,
+						chain_id: None, // TODO
+						standard_v: U256::zero(), // TODO
+						v: U256::zero(), // TODO
+						r: U256::zero(), // TODO
+						s: U256::zero(), // TODO
+						// Option<TransactionCondition>, Not supported? By now all pending 
+						// transactions are stored on chain on_finalize.
+						condition: None, 
+					};
+					Transactions::insert(transaction_hash, full_transaction);
+				};
+			}
 		}
 
 		// A runtime code run after every block and have access to extended set of APIs.
