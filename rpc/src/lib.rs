@@ -420,8 +420,20 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 		unimplemented!("logs");
 	}
 
-	fn work(&self, _: Option<u64>) -> Result<Work> {
-		unimplemented!("work");
+	fn work(&self) -> Result<Work> {
+		let header = self
+			.select_chain
+			.best_chain()
+			.map_err(|_| internal_err("fetch header failed"))?;
+		
+		Ok(Work {
+			pow_hash: H256::from(header.hash()),
+			seed_hash: H256::default(),
+			target: H256::default(),
+			number: Some(
+				header.number().clone().unique_saturated_into() as u64
+			),
+		})
 	}
 
 	fn submit_work(&self, _: H64, _: H256, _: H256) -> Result<bool> {
