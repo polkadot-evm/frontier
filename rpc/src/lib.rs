@@ -27,7 +27,6 @@ use sp_transaction_pool::TransactionPool;
 use sc_client_api::backend::{StorageProvider, Backend, StateBackend};
 use sha3::{Keccak256, Digest};
 use sp_runtime::traits::BlakeTwo256;
-
 use frontier_rpc_core::EthApi as EthApiT;
 use frontier_rpc_core::types::{
 	BlockNumber, Bytes, CallRequest, EthAccount, Filter, Index, Log, Receipt, RichBlock,
@@ -246,8 +245,16 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 		   .map_err(|_| internal_err("fetch runtime account basic failed"))?.nonce.into())
 	}
 
-	fn block_transaction_count_by_hash(&self, _: H256) -> BoxFuture<Option<U256>> {
-		unimplemented!("block_transaction_count_by_hash");
+	fn block_transaction_count_by_hash(&self, hash: H256) -> Result<Option<U256>> {
+		let header = self.select_chain.best_chain()
+			.map_err(|_| internal_err("fetch header failed"))?;
+
+		let result = match self.client.runtime_api()
+			.block_transaction_count_by_hash(&BlockId::Hash(header.hash()), hash) {
+			Ok(result) => result,
+			Err(_) => return Ok(None)
+		};
+		Ok(result)
 	}
 
 	fn block_transaction_count_by_number(&self, number: BlockNumber) -> Result<Option<U256>> {
