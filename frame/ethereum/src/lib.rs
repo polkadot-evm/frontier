@@ -35,6 +35,12 @@ use sha3::{Digest, Keccak256};
 pub use frontier_rpc_primitives::TransactionStatus;
 pub use ethereum::{Transaction, Log, Block};
 
+#[cfg(all(feature = "std", test))]
+mod tests;
+
+#[cfg(all(feature = "std", test))]
+mod mock;
+
 /// A type alias for the balance type from this pallet's point of view.
 pub type BalanceOf<T> = <T as pallet_balances::Trait>::Balance;
 
