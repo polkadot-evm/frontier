@@ -425,7 +425,7 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 	}
 
 	fn submit_work(&self, _: H64, _: H256, _: H256) -> Result<bool> {
-		unimplemented!("submit_work");
+		Ok(false)
 	}
 
 	fn submit_hashrate(&self, _: U256, _: H256) -> Result<bool> {
