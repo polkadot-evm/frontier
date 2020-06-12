@@ -485,6 +485,13 @@ impl_runtime_apis! {
 			None
 		}
 
+		fn block_transaction_count_by_hash(hash: H256) -> Option<U256> {
+			if let Some(block) = <ethereum::Module<Runtime>>::block_by_hash(hash) {
+				return Some(U256::from(block.transactions.len()))
+			}
+			None
+		}
+
 		fn block_by_hash(hash: H256) -> Option<EthereumBlock> {
 			<ethereum::Module<Runtime>>::block_by_hash(hash)
 		}
