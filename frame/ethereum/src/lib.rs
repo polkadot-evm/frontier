@@ -64,7 +64,7 @@ decl_storage! {
 	// ---------------------------------vvvvvvv
 	trait Store for Module<T: Trait> as Example {
 		BlocksAndReceipts: map hasher(blake2_128_concat) H256 => Option<(ethereum::Block, Vec<ethereum::Receipt>)>;
-		BlockNumbers: map hasher(blake2_128_concat) T::BlockNumber => H256;
+		BlockNumbers get(fn block_numbers): map hasher(blake2_128_concat) T::BlockNumber => H256;
 		PendingTransactionsAndReceipts: Vec<(ethereum::Transaction, ethereum::Receipt)>;
 		TransactionStatuses: map hasher(blake2_128_concat) H256 => Option<TransactionStatus>;
 		Transactions: map hasher(blake2_128_concat) H256 => Option<(H256, u32)>;

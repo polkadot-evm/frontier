@@ -510,6 +510,14 @@ impl_runtime_apis! {
 			TransactionStatus)> {
 			<ethereum::Module<Runtime>>::transaction_by_block_hash_and_index(hash, index)
 		}
+
+		fn transaction_by_block_number_and_index(number: u32, index: u32) -> Option<(
+			EthereumTransaction, 
+			EthereumBlock, 
+			TransactionStatus)> {
+			let hash = <ethereum::Module<Runtime>>::block_numbers(number);
+			<ethereum::Module<Runtime>>::transaction_by_block_hash_and_index(hash, index)
+		}
 	}
 
 	impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi<
