@@ -466,8 +466,13 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 		unimplemented!("logs");
 	}
 
-	fn work(&self, _: Option<u64>) -> Result<Work> {
-		unimplemented!("work");
+	fn work(&self) -> Result<Work> {
+		Ok(Work {
+			pow_hash: H256::default(),
+			seed_hash: H256::default(),
+			target: H256::default(),
+			number: None,
+		})
 	}
 
 	fn submit_work(&self, _: H64, _: H256, _: H256) -> Result<bool> {

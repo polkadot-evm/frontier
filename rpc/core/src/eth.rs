@@ -189,7 +189,7 @@ pub trait EthApi {
 
 	/// Returns the hash of the current block, the seedHash, and the boundary condition to be met.
 	#[rpc(name = "eth_getWork")]
-	fn work(&self, _: Option<u64>) -> Result<Work>;
+	fn work(&self) -> Result<Work>;
 
 	/// Used for submitting a proof-of-work solution.
 	#[rpc(name = "eth_submitWork")]
