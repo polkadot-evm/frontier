@@ -58,8 +58,8 @@ pub use frame_support::{
 	},
 	StorageValue,
 };
-use ethereum::Block as EthereumBlock;
-use frontier_rpc_primitives::Transaction as FullTransaction;
+use ethereum::{Block as EthereumBlock, Transaction as EthereumTransaction};
+use frontier_rpc_primitives::{TransactionStatus};
 
 
 #[cfg(any(feature = "std", test))]
@@ -490,7 +490,10 @@ impl_runtime_apis! {
 			<ethereum::Module<Runtime>>::block_by_hash(hash)
 		}
 
-		fn transaction_by_hash(hash: H256) -> Option<FullTransaction> {
+		fn transaction_by_hash(hash: H256) -> Option<(
+			EthereumTransaction, 
+			EthereumBlock, 
+			TransactionStatus)> {
 			<ethereum::Module<Runtime>>::transaction_by_hash(hash)
 		}
 	}

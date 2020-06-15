@@ -32,7 +32,7 @@ use sp_runtime::{
 };
 use sha3::{Digest, Keccak256};
 
-pub use frontier_rpc_primitives::{TransactionStatus, Transaction as FullTransaction};
+pub use frontier_rpc_primitives::TransactionStatus;
 pub use ethereum::{Transaction, Log, Block};
 
 /// A type alias for the balance type from this pallet's point of view.
@@ -61,7 +61,7 @@ decl_storage! {
 		BlockNumbers: map hasher(blake2_128_concat) T::BlockNumber => H256;
 		PendingTransactionsAndReceipts: Vec<(ethereum::Transaction, ethereum::Receipt)>;
 		TransactionStatuses: map hasher(blake2_128_concat) H256 => Option<TransactionStatus>;
-		Transactions: map hasher(blake2_128_concat) H256 => Option<(H256,u32)>;
+		Transactions: map hasher(blake2_128_concat) H256 => Option<(H256, u32)>;
 	}
 }
 
@@ -192,10 +192,7 @@ decl_module! {
 				ommers,
 			};
 
-			BlocksAndReceipts::insert(hash, (block, receipts));
-			BlockNumbers::<T>::insert(n, hash);
-
-			for t in &transactions.clone() {
+			for t in &transactions {
 				let transaction_hash = H256::from_slice(
 					Keccak256::digest(&rlp::encode(t)).as_slice()
 				);
@@ -206,6 +203,9 @@ decl_module! {
 					);
 				}
 			}
+
+			BlocksAndReceipts::insert(hash, (block, receipts));
+			BlockNumbers::<T>::insert(n, hash);
 		}
 
 		// A runtime code run after every block and have access to extended set of APIs.
@@ -239,52 +239,16 @@ impl<T: Trait> Module<T> {
 		TransactionStatuses::get(hash)
 	}
 	
-	pub fn transaction_by_hash(hash: H256) -> Option<FullTransaction> {
-		let (block_hash, transaction_index) = match Transactions::get(hash) {
-			Some(a) => a,
-			_ => return None,
-		};
-
-		let transaction_status = match TransactionStatuses::get(hash) {
-			Some(a) => a,
-			_ => return None,
-		};
-
-		let (block,_receipt) = match BlocksAndReceipts::get(block_hash) {
-			Some(a) => a,
-			_ => return None,
-		};
-
+	pub fn transaction_by_hash(hash: H256) -> Option<(
+		ethereum::Transaction, 
+		ethereum::Block, 
+		TransactionStatus
+	)> {
+		let (block_hash, transaction_index) = Transactions::get(hash)?;
+		let transaction_status = TransactionStatuses::get(hash)?;
+		let (block,_receipt) = BlocksAndReceipts::get(block_hash)?;
 		let transaction = &block.transactions[transaction_index as usize];
-
-		Some(FullTransaction {
-			hash: hash,
-			nonce: transaction.nonce,
-			block_hash: Some(block_hash),
-			block_number: Some(block.header.number),
-			transaction_index: Some(U256::from(
-				UniqueSaturatedInto::<u32>::unique_saturated_into(
-					transaction_status.transaction_index
-				)
-			)),
-			from: transaction_status.from,
-			to: transaction_status.to,
-			value: transaction.value,
-			gas_price: transaction.gas_price,
-			gas: transaction.gas_limit,
-			input: transaction.input.clone(),
-			creates: transaction_status.contract_address,
-			raw: vec![], // TODO,
-			public_key: None, // TODO,
-			chain_id: None, // TODO
-			standard_v: U256::zero(), // TODO
-			v: U256::zero(), // TODO
-			r: U256::zero(), // TODO
-			s: U256::zero(), // TODO
-			// Option<TransactionCondition>, Not supported? By now all pending 
-			// transactions are stored on chain on_finalize.
-			condition: None, 
-		})
+		Some((transaction.clone(), block, transaction_status))
 	}
 
 	pub fn block_by_number(number: T::BlockNumber) -> Option<ethereum::Block> {
