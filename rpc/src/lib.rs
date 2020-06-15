@@ -421,18 +421,11 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 	}
 
 	fn work(&self) -> Result<Work> {
-		let header = self
-			.select_chain
-			.best_chain()
-			.map_err(|_| internal_err("fetch header failed"))?;
-		
 		Ok(Work {
-			pow_hash: H256::from(header.hash()),
+			pow_hash: H256::default(),
 			seed_hash: H256::default(),
 			target: H256::default(),
-			number: Some(
-				header.number().clone().unique_saturated_into() as u64
-			),
+			number: None,
 		})
 	}
 
