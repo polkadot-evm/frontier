@@ -34,7 +34,13 @@ pub use rlp;
 pub use sha3::{Digest, Keccak256};
 
 pub use frontier_rpc_primitives::TransactionStatus;
-pub use ethereum::{Transaction, Log};
+pub use ethereum::{Transaction, Log, Block};
+
+#[cfg(all(feature = "std", test))]
+mod tests;
+
+#[cfg(all(feature = "std", test))]
+mod mock;
 
 /// A type alias for the balance type from this pallet's point of view.
 pub type BalanceOf<T> = <T as pallet_balances::Trait>::Balance;
@@ -62,6 +68,7 @@ decl_storage! {
 		BlockNumbers: map hasher(blake2_128_concat) T::BlockNumber => H256;
 		PendingTransactionsAndReceipts: Vec<(ethereum::Transaction, ethereum::Receipt)>;
 		TransactionStatuses: map hasher(blake2_128_concat) H256 => Option<TransactionStatus>;
+		Transactions: map hasher(blake2_128_concat) H256 => Option<(H256, u32)>;
 	}
 }
 
@@ -188,9 +195,21 @@ decl_module! {
 
 			let block = ethereum::Block {
 				header,
-				transactions,
+				transactions: transactions.clone(),
 				ommers,
 			};
+
+			for t in &transactions {
+				let transaction_hash = H256::from_slice(
+					Keccak256::digest(&rlp::encode(t)).as_slice()
+				);
+				if let Some(status) = TransactionStatuses::get(transaction_hash) {
+					Transactions::insert(
+						transaction_hash, 
+						(hash, status.transaction_index)
+					);
+				}
+			}
 
 			BlocksAndReceipts::insert(hash, (block, receipts));
 			BlockNumbers::<T>::insert(n, hash);
@@ -225,6 +244,56 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
 impl<T: Trait> Module<T> {
 	pub fn transaction_status(hash: H256) -> Option<TransactionStatus> {
 		TransactionStatuses::get(hash)
+	}
+	
+	pub fn transaction_by_hash(hash: H256) -> Option<(
+		ethereum::Transaction, 
+		ethereum::Block, 
+		TransactionStatus
+	)> {
+		let (block_hash, transaction_index) = Transactions::get(hash)?;
+		let transaction_status = TransactionStatuses::get(hash)?;
+		let (block,_receipt) = BlocksAndReceipts::get(block_hash)?;
+		let transaction = &block.transactions[transaction_index as usize];
+		Some((transaction.clone(), block, transaction_status))
+	}
+
+	pub fn transaction_by_block_hash_and_index(
+		hash: H256,
+		index: u32
+	) -> Option<(
+		ethereum::Transaction, 
+		ethereum::Block, 
+		TransactionStatus
+	)> {
+		let (block,_receipt) = BlocksAndReceipts::get(hash)?;
+		if index < block.transactions.len() as u32 {
+			let transaction = &block.transactions[index as usize];
+			let transaction_hash = H256::from_slice(
+				Keccak256::digest(&rlp::encode(transaction)).as_slice()
+			);
+			let transaction_status = TransactionStatuses::get(transaction_hash)?;
+			Some((transaction.clone(), block, transaction_status))
+		} else {
+			None
+		}
+	}
+
+	pub fn block_by_number(number: T::BlockNumber) -> Option<ethereum::Block> {
+		if <BlockNumbers<T>>::contains_key(number) {
+			let hash = <BlockNumbers<T>>::get(number);
+			if let Some((block, _receipt)) = BlocksAndReceipts::get(hash) {
+				return Some(block)
+			}
+		}
+		None
+	}
+
+	pub fn block_by_hash(hash: H256) -> Option<ethereum::Block> {
+		if let Some((block, _receipt)) = BlocksAndReceipts::get(hash) {
+			return Some(block)
+		}
+		None
 	}
 
 	/// Execute an Ethereum transaction, ignoring transaction signatures.

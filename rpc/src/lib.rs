@@ -15,6 +15,8 @@
 // along with Substrate.  If not, see <http://www.gnu.org/licenses/>.
 
 use std::{marker::PhantomData, sync::Arc};
+use std::collections::BTreeMap;
+use ethereum::{Block as EthereumBlock, Transaction as EthereumTransaction};
 use ethereum_types::{H160, H256, H64, U256, U64};
 use jsonrpc_core::{BoxFuture, Result, ErrorCode, Error, futures::future::{self, Future}};
 use futures::future::TryFutureExt;
@@ -26,13 +28,12 @@ use sp_transaction_pool::TransactionPool;
 use sc_client_api::backend::{StorageProvider, Backend, StateBackend};
 use sha3::{Keccak256, Digest};
 use sp_runtime::traits::BlakeTwo256;
-
 use frontier_rpc_core::EthApi as EthApiT;
 use frontier_rpc_core::types::{
 	BlockNumber, Bytes, CallRequest, EthAccount, Filter, Index, Log, Receipt, RichBlock,
-	SyncStatus, Transaction, Work,
+	SyncStatus, Transaction, Work, Rich, Block, BlockTransactions
 };
-use frontier_rpc_primitives::{EthereumRuntimeApi, ConvertTransaction};
+use frontier_rpc_primitives::{EthereumRuntimeApi, ConvertTransaction, TransactionStatus};
 
 pub use frontier_rpc_core::EthApiServer;
 
@@ -60,6 +61,73 @@ impl<B: BlockT, C, SC, P, CT, BE> EthApi<B, C, SC, P, CT, BE> {
 		convert_transaction: CT,
 	) -> Self {
 		Self { client, select_chain, pool, convert_transaction, _marker: PhantomData }
+	}
+}
+
+fn rich_block_build(block: ethereum::Block) -> RichBlock {
+	Rich {
+		inner: Block {
+			hash: None, // TODO
+			parent_hash: block.header.parent_hash,
+			uncles_hash: H256::zero(), // TODO
+			author: H160::default(), // TODO
+			miner: H160::default(), // TODO
+			state_root: block.header.state_root,
+			transactions_root: block.header.transactions_root,
+			receipts_root: block.header.receipts_root,
+			number: Some(block.header.number),
+			gas_used: block.header.gas_used,
+			gas_limit: block.header.gas_limit,
+			extra_data: Bytes(vec![]), // TODO H256 to Vec<u8>
+			logs_bloom: Some(block.header.logs_bloom),
+			timestamp: U256::from(block.header.timestamp),
+			difficulty: block.header.difficulty,
+			total_difficulty: None, // TODO
+			seal_fields: vec![], // TODO
+			uncles: vec![], // TODO
+			// TODO expected struct `frontier_rpc_core::types::transaction::Transaction`, 
+			// found struct `ethereum::transaction::Transaction`
+			transactions: BlockTransactions::Full(vec![]),
+			size: None // TODO
+		},
+		extra_info: BTreeMap::new()
+	}
+}
+
+fn transaction_build(
+	transaction: EthereumTransaction, 
+	block: EthereumBlock, 
+	status: TransactionStatus
+) -> Transaction {
+	Transaction {
+		hash: H256::from_slice(
+			Keccak256::digest(&rlp::encode(&transaction)).as_slice()
+		),
+		nonce: transaction.nonce,
+		block_hash: Some(H256::from_slice(
+			Keccak256::digest(&rlp::encode(&block.header)).as_slice()
+		)),
+		block_number: Some(block.header.number),
+		transaction_index: Some(U256::from(
+			UniqueSaturatedInto::<u32>::unique_saturated_into(
+				status.transaction_index
+			)
+		)),
+		from: status.from,
+		to: status.to,
+		value: transaction.value,
+		gas_price: transaction.gas_price,
+		gas: transaction.gas_limit,
+		input: Bytes(transaction.input),
+		creates: status.contract_address,
+		raw: Bytes(vec![]), // TODO
+		public_key: None, // TODO
+		chain_id: None, // TODO
+		standard_v: U256::zero(), // TODO
+		v: U256::zero(), // TODO
+		r: U256::zero(), // TODO
+		s: U256::zero(), // TODO
+		condition: None // TODO
 	}
 }
 
@@ -179,12 +247,42 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 		)
 	}
 
-	fn block_by_hash(&self, _: H256, _: bool) -> BoxFuture<Option<RichBlock>> {
-		unimplemented!("block_by_hash");
+	fn block_by_hash(&self, hash: H256, _: bool) -> Result<Option<RichBlock>> {
+		let header = self.select_chain.best_chain()
+			.map_err(|_| internal_err("fetch header failed"))?;
+
+		if let Ok(Some(block)) = self.client.runtime_api().block_by_hash(
+			&BlockId::Hash(header.hash()), 
+			hash
+		) {
+			Ok(Some(rich_block_build(block)))
+		} else {
+			Ok(None)
+		}
 	}
 
-	fn block_by_number(&self, _: BlockNumber, _: bool) -> BoxFuture<Option<RichBlock>> {
-		unimplemented!("block_by_number");
+	fn block_by_number(&self, number: BlockNumber, _: bool) -> Result<Option<RichBlock>> {
+		let header = self.select_chain.best_chain()
+			.map_err(|_| internal_err("fetch header failed"))?;
+
+		let number_param: u32;
+
+		if let Some(block_number) = number.to_min_block_num() {
+			number_param = block_number.unique_saturated_into();
+		} else if number == BlockNumber::Latest {
+			number_param = header.number().clone().unique_saturated_into() as u32;
+		} else {
+			unimplemented!("only latest or block number are supported");
+		}
+
+		if let Ok(Some(block)) = self.client.runtime_api().block_by_number(
+			&BlockId::Hash(header.hash()), 
+			number_param
+		) {
+			Ok(Some(rich_block_build(block)))
+		} else {
+			Ok(None)
+		}
 	}
 
 	fn transaction_count(&self, address: H160, number: Option<BlockNumber>) -> Result<U256> {
@@ -200,12 +298,38 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 		   .map_err(|_| internal_err("fetch runtime account basic failed"))?.nonce.into())
 	}
 
-	fn block_transaction_count_by_hash(&self, _: H256) -> BoxFuture<Option<U256>> {
-		unimplemented!("block_transaction_count_by_hash");
+	fn block_transaction_count_by_hash(&self, hash: H256) -> Result<Option<U256>> {
+		let header = self.select_chain.best_chain()
+			.map_err(|_| internal_err("fetch header failed"))?;
+
+		let result = match self.client.runtime_api()
+			.block_transaction_count_by_hash(&BlockId::Hash(header.hash()), hash) {
+			Ok(result) => result,
+			Err(_) => return Ok(None)
+		};
+		Ok(result)
 	}
 
-	fn block_transaction_count_by_number(&self, _: BlockNumber) -> BoxFuture<Option<U256>> {
-		unimplemented!("block_transaction_count_by_number");
+	fn block_transaction_count_by_number(&self, number: BlockNumber) -> Result<Option<U256>> {
+		let header = self.select_chain.best_chain()
+			.map_err(|_| internal_err("fetch header failed"))?;
+
+		let number_param: u32;
+
+		if let Some(block_number) = number.to_min_block_num() {
+			number_param = block_number.unique_saturated_into();
+		} else if number == BlockNumber::Latest {
+			number_param = header.number().clone().unique_saturated_into() as u32;
+		} else {
+			unimplemented!("fetch count for past blocks is not yet supported");
+		}
+
+		let result = match self.client.runtime_api()
+			.block_transaction_count_by_number(&BlockId::Hash(header.hash()), number_param) {
+			Ok(result) => result,
+			Err(_) => return Ok(None)
+		};
+		Ok(result)
 	}
 
 	fn block_uncles_count_by_hash(&self, _: H256) -> Result<U256> {
@@ -277,16 +401,44 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 		unimplemented!("estimate_gas");
 	}
 
-	fn transaction_by_hash(&self, _: H256) -> BoxFuture<Option<Transaction>> {
-		unimplemented!("transaction_by_hash");
+	fn transaction_by_hash(&self, hash: H256) -> Result<Option<Transaction>> {
+		let header = self
+			.select_chain
+			.best_chain()
+			.map_err(|_| internal_err("fetch header failed"))?;
+		
+		if let Ok(Some((transaction, block, status))) = self.client.runtime_api()
+			.transaction_by_hash(&BlockId::Hash(header.hash()), hash) {
+			return Ok(Some(transaction_build(
+				transaction,
+				block,
+				status
+			)));
+		}
+		Ok(None)
 	}
 
 	fn transaction_by_block_hash_and_index(
 		&self,
-		_: H256,
-		_: Index,
-	) -> BoxFuture<Option<Transaction>> {
-		unimplemented!("transaction_by_block_hash_and_index");
+		hash: H256,
+		index: Index,
+	) -> Result<Option<Transaction>> {
+		let header = self
+			.select_chain
+			.best_chain()
+			.map_err(|_| internal_err("fetch header failed"))?;
+
+		let index_param = index.value() as u32;
+
+		if let Ok(Some((transaction, block, status))) = self.client.runtime_api()
+			.transaction_by_block_hash_and_index(&BlockId::Hash(header.hash()), hash, index_param) {
+			return Ok(Some(transaction_build(
+				transaction,
+				block,
+				status
+			)));
+		}
+		Ok(None)
 	}
 
 	fn transaction_by_block_number_and_index(
@@ -356,16 +508,21 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 		unimplemented!("logs");
 	}
 
-	fn work(&self, _: Option<u64>) -> Result<Work> {
-		unimplemented!("work");
+	fn work(&self) -> Result<Work> {
+		Ok(Work {
+			pow_hash: H256::default(),
+			seed_hash: H256::default(),
+			target: H256::default(),
+			number: None,
+		})
 	}
 
 	fn submit_work(&self, _: H64, _: H256, _: H256) -> Result<bool> {
-		unimplemented!("submit_work");
+		Ok(false)
 	}
 
 	fn submit_hashrate(&self, _: U256, _: H256) -> Result<bool> {
-		unimplemented!("submit_hashrate");
+		Ok(false)
 	}
 
 	fn is_listening(&self) -> Result<bool> {

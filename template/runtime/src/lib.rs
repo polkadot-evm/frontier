@@ -58,6 +58,10 @@ pub use frame_support::{
 	},
 	StorageValue,
 };
+use ethereum::{Block as EthereumBlock, Transaction as EthereumTransaction};
+use frontier_rpc_primitives::{TransactionStatus};
+
+
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
@@ -477,6 +481,42 @@ impl_runtime_apis! {
 				Keccak256::digest(&ethereum::rlp::encode(&index)[..]).as_slice(),
 			);
 			evm::Module::<Runtime>::account_storages(address,index)
+		}
+
+		fn block_by_number(number: u32) -> Option<EthereumBlock> {
+			<ethereum::Module<Runtime>>::block_by_number(number)
+		}
+
+		fn block_transaction_count_by_number(number: u32) -> Option<U256> {
+			if let Some(block) = <ethereum::Module<Runtime>>::block_by_number(number) {
+				return Some(U256::from(block.transactions.len()))
+			}
+			None
+		}
+
+		fn block_transaction_count_by_hash(hash: H256) -> Option<U256> {
+			if let Some(block) = <ethereum::Module<Runtime>>::block_by_hash(hash) {
+				return Some(U256::from(block.transactions.len()))
+			}
+			None
+		}
+
+		fn block_by_hash(hash: H256) -> Option<EthereumBlock> {
+			<ethereum::Module<Runtime>>::block_by_hash(hash)
+		}
+
+		fn transaction_by_hash(hash: H256) -> Option<(
+			EthereumTransaction, 
+			EthereumBlock, 
+			TransactionStatus)> {
+			<ethereum::Module<Runtime>>::transaction_by_hash(hash)
+		}
+
+		fn transaction_by_block_hash_and_index(hash: H256, index: u32) -> Option<(
+			EthereumTransaction, 
+			EthereumBlock, 
+			TransactionStatus)> {
+			<ethereum::Module<Runtime>>::transaction_by_block_hash_and_index(hash, index)
 		}
 	}
 

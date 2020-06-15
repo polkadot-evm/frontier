@@ -17,7 +17,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use sp_core::{H160, H256, U256};
-use ethereum::Log;
+use ethereum::{Log, Block as EthereumBlock, Transaction as EthereumTransaction};
 use ethereum_types::Bloom;
 use codec::{Encode, Decode};
 use sp_std::vec::Vec;
@@ -43,6 +43,23 @@ sp_api::decl_runtime_apis! {
 		fn account_code_at(address: H160) -> Vec<u8>;
 		fn author() -> H160;
 		fn storage_at(address: H160, index: U256) -> H256;
+		fn block_by_number(number: u32) -> Option<EthereumBlock>;
+		fn block_transaction_count_by_number(number: u32) -> Option<U256>;
+		fn block_by_hash(hash: H256) -> Option<EthereumBlock>;
+		fn block_transaction_count_by_hash(hash: H256) -> Option<U256>;
+		fn transaction_by_hash(hash: H256) -> Option<(
+			EthereumTransaction,
+			EthereumBlock,
+			TransactionStatus
+		)>;
+		fn transaction_by_block_hash_and_index(
+			hash: H256, 
+			index: u32
+		) -> Option<(
+			EthereumTransaction,
+			EthereumBlock,
+			TransactionStatus
+		)>;
 	}
 }
 
