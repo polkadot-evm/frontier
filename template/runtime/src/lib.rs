@@ -515,8 +515,10 @@ impl_runtime_apis! {
 			EthereumTransaction, 
 			EthereumBlock, 
 			TransactionStatus)> {
-			let hash = <ethereum::Module<Runtime>>::block_numbers(number);
-			<ethereum::Module<Runtime>>::transaction_by_block_hash_and_index(hash, index)
+			<ethereum::Module<Runtime>>::transaction_by_block_number_and_index(
+				number, 
+				index
+			)
 		}
 	}
 
