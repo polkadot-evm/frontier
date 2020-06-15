@@ -51,6 +51,14 @@ sp_api::decl_runtime_apis! {
 			EthereumBlock,
 			TransactionStatus
 		)>;
+		fn transaction_by_block_hash_and_index(
+			hash: H256, 
+			index: u32
+		) -> Option<(
+			EthereumTransaction,
+			EthereumBlock,
+			TransactionStatus
+		)>;
 	}
 }
 

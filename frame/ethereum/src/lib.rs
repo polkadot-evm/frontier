@@ -257,6 +257,27 @@ impl<T: Trait> Module<T> {
 		Some((transaction.clone(), block, transaction_status))
 	}
 
+	pub fn transaction_by_block_hash_and_index(
+		hash: H256,
+		index: u32
+	) -> Option<(
+		ethereum::Transaction, 
+		ethereum::Block, 
+		TransactionStatus
+	)> {
+		let (block,_receipt) = BlocksAndReceipts::get(hash)?;
+		if index < block.transactions.len() as u32 {
+			let transaction = &block.transactions[index as usize];
+			let transaction_hash = H256::from_slice(
+				Keccak256::digest(&rlp::encode(transaction)).as_slice()
+			);
+			let transaction_status = TransactionStatuses::get(transaction_hash)?;
+			Some((transaction.clone(), block, transaction_status))
+		} else {
+			None
+		}
+	}
+
 	pub fn block_by_number(number: T::BlockNumber) -> Option<ethereum::Block> {
 		if <BlockNumbers<T>>::contains_key(number) {
 			let hash = <BlockNumbers<T>>::get(number);

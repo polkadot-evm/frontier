@@ -137,7 +137,7 @@ pub trait EthApi {
 		&self,
 		_: H256,
 		_: Index,
-	) -> BoxFuture<Option<Transaction>>;
+	) -> Result<Option<Transaction>>;
 
 	/// Returns transaction by given block number and index.
 	#[rpc(name = "eth_getTransactionByBlockNumberAndIndex")]

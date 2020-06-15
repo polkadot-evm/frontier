@@ -16,6 +16,7 @@
 
 use std::{marker::PhantomData, sync::Arc};
 use std::collections::BTreeMap;
+use ethereum::{Block as EthereumBlock, Transaction as EthereumTransaction};
 use ethereum_types::{H160, H256, H64, U256, U64};
 use jsonrpc_core::{BoxFuture, Result, ErrorCode, Error, futures::future::{self, Future}};
 use futures::future::TryFutureExt;
@@ -32,7 +33,7 @@ use frontier_rpc_core::types::{
 	BlockNumber, Bytes, CallRequest, EthAccount, Filter, Index, Log, Receipt, RichBlock,
 	SyncStatus, Transaction, Work, Rich, Block, BlockTransactions
 };
-use frontier_rpc_primitives::{EthereumRuntimeApi, ConvertTransaction};
+use frontier_rpc_primitives::{EthereumRuntimeApi, ConvertTransaction, TransactionStatus};
 
 pub use frontier_rpc_core::EthApiServer;
 
@@ -90,6 +91,43 @@ fn rich_block_build(block: ethereum::Block) -> RichBlock {
 			size: None // TODO
 		},
 		extra_info: BTreeMap::new()
+	}
+}
+
+fn transaction_build(
+	transaction: EthereumTransaction, 
+	block: EthereumBlock, 
+	status: TransactionStatus
+) -> Transaction {
+	Transaction {
+		hash: H256::from_slice(
+			Keccak256::digest(&rlp::encode(&transaction)).as_slice()
+		),
+		nonce: transaction.nonce,
+		block_hash: Some(H256::from_slice(
+			Keccak256::digest(&rlp::encode(&block.header)).as_slice()
+		)),
+		block_number: Some(block.header.number),
+		transaction_index: Some(U256::from(
+			UniqueSaturatedInto::<u32>::unique_saturated_into(
+				status.transaction_index
+			)
+		)),
+		from: status.from,
+		to: status.to,
+		value: transaction.value,
+		gas_price: transaction.gas_price,
+		gas: transaction.gas_limit,
+		input: Bytes(transaction.input),
+		creates: status.contract_address,
+		raw: Bytes(vec![]), // TODO
+		public_key: None, // TODO
+		chain_id: None, // TODO
+		standard_v: U256::zero(), // TODO
+		v: U256::zero(), // TODO
+		r: U256::zero(), // TODO
+		s: U256::zero(), // TODO
+		condition: None // TODO
 	}
 }
 
@@ -356,47 +394,36 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 		
 		if let Ok(Some((transaction, block, status))) = self.client.runtime_api()
 			.transaction_by_hash(&BlockId::Hash(header.hash()), hash) {
-
-			return Ok(Some(
-				Transaction {
-					hash: hash,
-					nonce: transaction.nonce,
-					block_hash: Some(H256::from_slice(
-						Keccak256::digest(&rlp::encode(&block.header)).as_slice()
-					)),
-					block_number: Some(block.header.number),
-					transaction_index: Some(U256::from(
-						UniqueSaturatedInto::<u32>::unique_saturated_into(
-							status.transaction_index
-						)
-					)),
-					from: status.from,
-					to: status.to,
-					value: transaction.value,
-					gas_price: transaction.gas_price,
-					gas: transaction.gas_limit,
-					input: Bytes(transaction.input),
-					creates: status.contract_address,
-					raw: Bytes(vec![]), // TODO
-					public_key: None, // TODO
-					chain_id: None, // TODO
-					standard_v: U256::zero(), // TODO
-					v: U256::zero(), // TODO
-					r: U256::zero(), // TODO
-					s: U256::zero(), // TODO
-					condition: None // TODO
-				}
-			));
+			return Ok(Some(transaction_build(
+				transaction,
+				block,
+				status
+			)));
 		}
 		Ok(None)
 	}
 
 	fn transaction_by_block_hash_and_index(
 		&self,
-		_: H256,
-		_: Index,
-	) -> BoxFuture<Option<Transaction>> {
-		unimplemented!("transaction_by_block_hash_and_index");
+		hash: H256,
+		index: Index,
+	) -> Result<Option<Transaction>> {
+		let header = self
+			.select_chain
+			.best_chain()
+			.map_err(|_| internal_err("fetch header failed"))?;
+
+		let index_param = index.value() as u32;
+
+		if let Ok(Some((transaction, block, status))) = self.client.runtime_api()
+			.transaction_by_block_hash_and_index(&BlockId::Hash(header.hash()), hash, index_param) {
+			return Ok(Some(transaction_build(
+				transaction,
+				block,
+				status
+			)));
+		}
+		Ok(None)
 	}
 
 	fn transaction_by_block_number_and_index(
