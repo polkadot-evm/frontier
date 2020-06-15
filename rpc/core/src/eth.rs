@@ -93,7 +93,7 @@ pub trait EthApi {
 
 	/// Returns the number of transactions in a block with given hash.
 	#[rpc(name = "eth_getBlockTransactionCountByHash")]
-	fn block_transaction_count_by_hash(&self, _: H256) -> BoxFuture<Option<U256>>;
+	fn block_transaction_count_by_hash(&self, _: H256) -> Result<Option<U256>>;
 
 	/// Returns the number of transactions in a block with given block number.
 	#[rpc(name = "eth_getBlockTransactionCountByNumber")]
