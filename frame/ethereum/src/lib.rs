@@ -67,6 +67,7 @@ decl_storage! {
 		BlockNumbers: map hasher(blake2_128_concat) T::BlockNumber => H256;
 		PendingTransactionsAndReceipts: Vec<(ethereum::Transaction, ethereum::Receipt)>;
 		TransactionStatuses: map hasher(blake2_128_concat) H256 => Option<TransactionStatus>;
+		Transactions: map hasher(blake2_128_concat) H256 => Option<(H256, u32)>;
 	}
 }
 
@@ -193,9 +194,21 @@ decl_module! {
 
 			let block = ethereum::Block {
 				header,
-				transactions,
+				transactions: transactions.clone(),
 				ommers,
 			};
+
+			for t in &transactions {
+				let transaction_hash = H256::from_slice(
+					Keccak256::digest(&rlp::encode(t)).as_slice()
+				);
+				if let Some(status) = TransactionStatuses::get(transaction_hash) {
+					Transactions::insert(
+						transaction_hash, 
+						(hash, status.transaction_index)
+					);
+				}
+			}
 
 			BlocksAndReceipts::insert(hash, (block, receipts));
 			BlockNumbers::<T>::insert(n, hash);
@@ -230,6 +243,18 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
 impl<T: Trait> Module<T> {
 	pub fn transaction_status(hash: H256) -> Option<TransactionStatus> {
 		TransactionStatuses::get(hash)
+	}
+	
+	pub fn transaction_by_hash(hash: H256) -> Option<(
+		ethereum::Transaction, 
+		ethereum::Block, 
+		TransactionStatus
+	)> {
+		let (block_hash, transaction_index) = Transactions::get(hash)?;
+		let transaction_status = TransactionStatuses::get(hash)?;
+		let (block,_receipt) = BlocksAndReceipts::get(block_hash)?;
+		let transaction = &block.transactions[transaction_index as usize];
+		Some((transaction.clone(), block, transaction_status))
 	}
 
 	pub fn block_by_number(number: T::BlockNumber) -> Option<ethereum::Block> {

@@ -348,8 +348,47 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 		unimplemented!("estimate_gas");
 	}
 
-	fn transaction_by_hash(&self, _: H256) -> BoxFuture<Option<Transaction>> {
-		unimplemented!("transaction_by_hash");
+	fn transaction_by_hash(&self, hash: H256) -> Result<Option<Transaction>> {
+		let header = self
+			.select_chain
+			.best_chain()
+			.map_err(|_| internal_err("fetch header failed"))?;
+		
+		if let Ok(Some((transaction, block, status))) = self.client.runtime_api()
+			.transaction_by_hash(&BlockId::Hash(header.hash()), hash) {
+
+			return Ok(Some(
+				Transaction {
+					hash: hash,
+					nonce: transaction.nonce,
+					block_hash: Some(H256::from_slice(
+						Keccak256::digest(&rlp::encode(&block.header)).as_slice()
+					)),
+					block_number: Some(block.header.number),
+					transaction_index: Some(U256::from(
+						UniqueSaturatedInto::<u32>::unique_saturated_into(
+							status.transaction_index
+						)
+					)),
+					from: status.from,
+					to: status.to,
+					value: transaction.value,
+					gas_price: transaction.gas_price,
+					gas: transaction.gas_limit,
+					input: Bytes(transaction.input),
+					creates: status.contract_address,
+					raw: Bytes(vec![]), // TODO
+					public_key: None, // TODO
+					chain_id: None, // TODO
+					standard_v: U256::zero(), // TODO
+					v: U256::zero(), // TODO
+					r: U256::zero(), // TODO
+					s: U256::zero(), // TODO
+					condition: None // TODO
+				}
+			));
+		}
+		Ok(None)
 	}
 
 	fn transaction_by_block_hash_and_index(
