@@ -50,13 +50,10 @@ macro_rules! new_full_start {
 		let mut import_setup = None;
 		let inherent_data_providers = sp_inherents::InherentDataProviders::new();
 
-		let mut is_authority: bool = false;
-
 		let builder = sc_service::ServiceBuilder::new_full::<
 			frontier_template_runtime::opaque::Block, frontier_template_runtime::RuntimeApi, crate::service::Executor
 		>($config)?
-			.with_select_chain(|config, backend| {
-				is_authority = config.role.is_authority();
+			.with_select_chain(|_config, backend| {
 				Ok(sc_consensus::LongestChain::new(backend.clone()))
 			})?
 			.with_transaction_pool(|builder| {
@@ -107,6 +104,7 @@ macro_rules! new_full_start {
 			})?
 			.with_rpc_extensions_builder(|builder| {
 				let client = builder.client().clone();
+				let is_authority: bool = builder.config().role.is_authority();
 				let pool = builder.pool().clone();
 				let select_chain = builder.select_chain().cloned()
 					.expect("SelectChain is present for full services or set up failed; qed.");
@@ -147,7 +145,7 @@ pub fn new_full(config: Configuration) -> Result<impl AbstractService, ServiceEr
 			let provider = client as Arc<dyn StorageAndProofProvider<_, _>>;
 			Ok(Arc::new(GrandpaFinalityProofProvider::new(backend, provider)) as _)
 		})?
-		.build()?;
+		.build_full()?;
 
 	if role.is_authority() {
 		let proposer = sc_basic_authorship::ProposerFactory::new(
@@ -309,5 +307,5 @@ pub fn new_light(config: Configuration) -> Result<impl AbstractService, ServiceE
 
 			Ok(crate::rpc::create_light(light_deps))
 		})?
-		.build()
+		.build_light()
 }
