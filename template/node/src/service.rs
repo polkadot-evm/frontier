@@ -143,7 +143,7 @@ pub fn new_full(config: Configuration) -> Result<impl AbstractService, ServiceEr
 			let provider = client as Arc<dyn StorageAndProofProvider<_, _>>;
 			Ok(Arc::new(GrandpaFinalityProofProvider::new(backend, provider)) as _)
 		})?
-		.build()?;
+		.build_full()?;
 
 	if role.is_authority() {
 		let proposer = sc_basic_authorship::ProposerFactory::new(
@@ -305,5 +305,5 @@ pub fn new_light(config: Configuration) -> Result<impl AbstractService, ServiceE
 
 			Ok(crate::rpc::create_light(light_deps))
 		})?
-		.build()
+		.build_light()
 }
