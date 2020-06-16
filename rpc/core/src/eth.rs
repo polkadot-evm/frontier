@@ -81,7 +81,7 @@ pub trait EthApi {
 
 	/// Returns block with given hash.
 	#[rpc(name = "eth_getBlockByHash")]
-	fn block_by_hash(&self, _: H256, _: bool) -> BoxFuture<Option<RichBlock>>;
+	fn block_by_hash(&self, _: H256, _: bool) -> Result<Option<RichBlock>>;
 
 	/// Returns block with given number.
 	#[rpc(name = "eth_getBlockByNumber")]
@@ -93,11 +93,11 @@ pub trait EthApi {
 
 	/// Returns the number of transactions in a block with given hash.
 	#[rpc(name = "eth_getBlockTransactionCountByHash")]
-	fn block_transaction_count_by_hash(&self, _: H256) -> BoxFuture<Option<U256>>;
+	fn block_transaction_count_by_hash(&self, _: H256) -> Result<Option<U256>>;
 
 	/// Returns the number of transactions in a block with given block number.
 	#[rpc(name = "eth_getBlockTransactionCountByNumber")]
-	fn block_transaction_count_by_number(&self, _: BlockNumber) -> BoxFuture<Option<U256>>;
+	fn block_transaction_count_by_number(&self, _: BlockNumber) -> Result<Option<U256>>;
 
 	/// Returns the number of uncles in a block with given hash.
 	#[rpc(name = "eth_getUncleCountByBlockHash")]
@@ -129,7 +129,7 @@ pub trait EthApi {
 
 	/// Get transaction by its hash.
 	#[rpc(name = "eth_getTransactionByHash")]
-	fn transaction_by_hash(&self, _: H256) -> BoxFuture<Option<Transaction>>;
+	fn transaction_by_hash(&self, _: H256) -> Result<Option<Transaction>>;
 
 	/// Returns transaction at given block hash and index.
 	#[rpc(name = "eth_getTransactionByBlockHashAndIndex")]
@@ -137,7 +137,7 @@ pub trait EthApi {
 		&self,
 		_: H256,
 		_: Index,
-	) -> BoxFuture<Option<Transaction>>;
+	) -> Result<Option<Transaction>>;
 
 	/// Returns transaction by given block number and index.
 	#[rpc(name = "eth_getTransactionByBlockNumberAndIndex")]
@@ -189,7 +189,7 @@ pub trait EthApi {
 
 	/// Returns the hash of the current block, the seedHash, and the boundary condition to be met.
 	#[rpc(name = "eth_getWork")]
-	fn work(&self, _: Option<u64>) -> Result<Work>;
+	fn work(&self) -> Result<Work>;
 
 	/// Used for submitting a proof-of-work solution.
 	#[rpc(name = "eth_submitWork")]
