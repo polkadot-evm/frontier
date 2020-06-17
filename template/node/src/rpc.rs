@@ -50,6 +50,8 @@ pub struct FullDeps<C, P, SC> {
 	pub select_chain: SC,
 	/// Whether to deny unsafe calls
 	pub deny_unsafe: DenyUnsafe,
+	/// The Node authority flag
+	pub is_authority: bool,
 }
 
 /// Instantiate all Full RPC extensions.
@@ -79,6 +81,7 @@ pub fn create_full<C, P, M, SC, BE>(
 		pool,
 		select_chain,
 		deny_unsafe: _,
+		is_authority
 	} = deps;
 
 	io.extend_with(
@@ -93,6 +96,7 @@ pub fn create_full<C, P, M, SC, BE>(
 			select_chain,
 			pool.clone(),
 			frontier_template_runtime::TransactionConverter,
+			is_authority,
 		))
 	);
 
