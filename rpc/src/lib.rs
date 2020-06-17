@@ -20,9 +20,12 @@ use ethereum::{Block as EthereumBlock, Transaction as EthereumTransaction};
 use ethereum_types::{H160, H256, H64, U256, U64};
 use jsonrpc_core::{BoxFuture, Result, ErrorCode, Error, futures::future::{self, Future}};
 use futures::future::TryFutureExt;
-use sp_runtime::traits::{Block as BlockT, Header as _, UniqueSaturatedInto};
+use sp_runtime::traits::{Block as BlockT, Header as _, UniqueSaturatedInto, NumberFor};
 use sp_runtime::transaction_validity::TransactionSource;
 use sp_api::{ProvideRuntimeApi, BlockId};
+use sp_io::hashing::{twox_64, twox_128, blake2_128, blake2_256};
+use sp_blockchain::{Error as BlockChainError, HeaderMetadata, HeaderBackend};
+use sp_storage::StorageKey;
 use sp_consensus::SelectChain;
 use sp_transaction_pool::TransactionPool;
 use sc_client_api::backend::{StorageProvider, Backend, StateBackend};
@@ -36,7 +39,8 @@ use frontier_rpc_core::types::{
 use frontier_rpc_primitives::{EthereumRuntimeApi, ConvertTransaction, TransactionStatus};
 
 pub use frontier_rpc_core::EthApiServer;
-
+use frame_support::debug::native;
+use codec::{Encode,Decode};
 fn internal_err(message: &str) -> Error {
 	Error {
 		code: ErrorCode::InternalError,
@@ -131,8 +135,13 @@ fn transaction_build(
 	}
 }
 
+fn storage_prefix_build(module: &[u8], storage: &[u8]) -> Vec<u8> {
+	[twox_128(module), twox_128(storage)].concat().to_vec()
+}
+
 impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
-	C: ProvideRuntimeApi<B> + StorageProvider<B,BE>,
+	C: ProvideRuntimeApi<B> + StorageProvider<B,BE> + 
+		HeaderBackend<B> + HeaderMetadata<B, Error=BlockChainError>,
 	C::Api: EthereumRuntimeApi<B>,
 	BE: Backend<B> + 'static,
 	BE::State: StateBackend<BlakeTwo256>,
@@ -206,15 +215,51 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 	}
 
 	fn balance(&self, address: H160, number: Option<BlockNumber>) -> Result<U256> {
+		let header = self.select_chain.best_chain()
+			.map_err(|_| internal_err("fetch header failed"))?;
+
+		let number_param: u32;
+
 		if let Some(number) = number {
-			if number != BlockNumber::Latest {
-				unimplemented!("fetch nonce for past blocks is not yet supported");
+
+			if let Some(block_number) = number.to_min_block_num() {
+				number_param = block_number.unique_saturated_into();
+			} else if number == BlockNumber::Latest {
+				number_param = header.number().clone().unique_saturated_into() as u32;
+			} else {
+				unimplemented!("only latest or block number are supported");
+			}
+		} else {
+			number_param = header.number().clone().unique_saturated_into() as u32;
+		}
+
+		let mut block_hash = None;
+		if let Ok(result) = self.client.header(BlockId::Number(number_param.into())) {
+			if let Some(header) = result {
+				block_hash = Some(header.hash());
 			}
 		}
-		let header = self
-			.select_chain
-			.best_chain()
-			.map_err(|_| internal_err("fetch header failed"))?;
+
+		let mut data: U256 = U256::zero();
+		if let Some(block_hash) = block_hash {
+			// StorageProvider prefix
+			let mut prefix = storage_prefix_build(b"EVM", b"Accounts");
+			// StorageMap blake2_128_concat key
+			let mut storage_key = blake2_128(address.as_bytes()).to_vec();
+			storage_key.extend_from_slice(address.as_bytes());
+			// Module and Storage prefix + StorageMap concat
+			prefix.extend(storage_key.clone());
+
+			let key = StorageKey(prefix);
+
+			// TODO this is wip, we need to decode the StorageData back to evm::backend::Account
+			data = match self.client.storage(&BlockId::Hash(block_hash), &key) {
+				//Ok(Some(data)) => (&data.0).balance.into(),
+				Ok(data) => U256::zero(),
+				Err(_) => U256::zero()
+			};
+		}
+
 		Ok(
 			self.client
 				.runtime_api()
