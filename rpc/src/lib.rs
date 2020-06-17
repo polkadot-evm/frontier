@@ -50,6 +50,7 @@ pub struct EthApi<B: BlockT, C, SC, P, CT, BE> {
 	client: Arc<C>,
 	select_chain: SC,
 	convert_transaction: CT,
+	is_authority: bool,
 	_marker: PhantomData<(B,BE)>,
 }
 
@@ -59,8 +60,9 @@ impl<B: BlockT, C, SC, P, CT, BE> EthApi<B, C, SC, P, CT, BE> {
 		select_chain: SC,
 		pool: Arc<P>,
 		convert_transaction: CT,
+		is_authority: bool
 	) -> Self {
-		Self { client, select_chain, pool, convert_transaction, _marker: PhantomData }
+		Self { client, select_chain, pool, convert_transaction, is_authority, _marker: PhantomData }
 	}
 }
 
@@ -169,7 +171,7 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 	}
 
 	fn is_mining(&self) -> Result<bool> {
-		Ok(false)
+		Ok(self.is_authority)
 	}
 
 	fn chain_id(&self) -> Result<Option<U64>> {

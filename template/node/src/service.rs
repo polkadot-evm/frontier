@@ -104,6 +104,7 @@ macro_rules! new_full_start {
 			})?
 			.with_rpc_extensions_builder(|builder| {
 				let client = builder.client().clone();
+				let is_authority: bool = builder.config().role.is_authority();
 				let pool = builder.pool().clone();
 				let select_chain = builder.select_chain().cloned()
 					.expect("SelectChain is present for full services or set up failed; qed.");
@@ -114,6 +115,7 @@ macro_rules! new_full_start {
 						pool: pool.clone(),
 						select_chain: select_chain.clone(),
 						deny_unsafe,
+						is_authority
 					};
 
 					crate::rpc::create_full(deps)
