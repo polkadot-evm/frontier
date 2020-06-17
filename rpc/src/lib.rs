@@ -430,10 +430,38 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 
 	fn transaction_by_block_number_and_index(
 		&self,
-		_: BlockNumber,
-		_: Index,
-	) -> BoxFuture<Option<Transaction>> {
-		unimplemented!("transaction_by_block_number_and_index");
+		number: BlockNumber,
+		index: Index,
+	) -> Result<Option<Transaction>> {
+		let header = self
+			.select_chain
+			.best_chain()
+			.map_err(|_| internal_err("fetch header failed"))?;
+
+		let number_param: u32;
+
+		if let Some(block_number) = number.to_min_block_num() {
+			number_param = block_number.unique_saturated_into();
+		} else if number == BlockNumber::Latest {
+			number_param = header.number().clone().unique_saturated_into() as u32;
+		} else {
+			unimplemented!("fetch count for past blocks is not yet supported");
+		}
+
+		let index_param = index.value() as u32;
+
+		if let Ok(Some((transaction, block, status))) = self.client.runtime_api()
+			.transaction_by_block_number_and_index(
+				&BlockId::Hash(header.hash()), 
+				number_param, 
+				index_param) {
+			return Ok(Some(transaction_build(
+				transaction,
+				block,
+				status
+			)));
+		}
+		Ok(None)
 	}
 
 	fn transaction_receipt(&self, hash: H256) -> Result<Option<Receipt>> {

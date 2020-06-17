@@ -59,6 +59,14 @@ sp_api::decl_runtime_apis! {
 			EthereumBlock,
 			TransactionStatus
 		)>;
+		fn transaction_by_block_number_and_index(
+			number: u32, 
+			index: u32
+		) -> Option<(
+			EthereumTransaction,
+			EthereumBlock,
+			TransactionStatus
+		)>;
 	}
 }
 
