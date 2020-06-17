@@ -278,6 +278,21 @@ impl<T: Trait> Module<T> {
 		}
 	}
 
+	pub fn transaction_by_block_number_and_index(
+		number: T::BlockNumber,
+		index: u32
+	) -> Option<(
+		ethereum::Transaction, 
+		ethereum::Block, 
+		TransactionStatus
+	)> {
+		if <BlockNumbers<T>>::contains_key(number) {
+			let hash = <BlockNumbers<T>>::get(number);
+			return <Module<T>>::transaction_by_block_hash_and_index(hash, index);
+		}
+		None
+	}
+
 	pub fn block_by_number(number: T::BlockNumber) -> Option<ethereum::Block> {
 		if <BlockNumbers<T>>::contains_key(number) {
 			let hash = <BlockNumbers<T>>::get(number);

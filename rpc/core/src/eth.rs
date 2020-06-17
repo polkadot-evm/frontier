@@ -145,7 +145,7 @@ pub trait EthApi {
 		&self,
 		_: BlockNumber,
 		_: Index,
-	) -> BoxFuture<Option<Transaction>>;
+	) -> Result<Option<Transaction>>;
 
 	/// Returns transaction receipt by transaction hash.
 	#[rpc(name = "eth_getTransactionReceipt")]
