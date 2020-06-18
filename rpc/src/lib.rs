@@ -230,8 +230,23 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 		unimplemented!("proof");
 	}
 
-	fn storage_at(&self, _: H160, _: U256, _: Option<BlockNumber>) -> BoxFuture<H256> {
-		unimplemented!("storage_at");
+	fn storage_at(&self, address: H160, index: U256, number: Option<BlockNumber>) -> Result<H256> {
+		if let Some(number) = number {
+			if number != BlockNumber::Latest {
+				unimplemented!("fetch storage for past blocks is not yet supported");
+			}
+		}
+		let header = self
+			.select_chain
+			.best_chain()
+			.map_err(|_| internal_err("fetch header failed"))?;
+		Ok(
+			self.client
+				.runtime_api()
+				.storage_at(&BlockId::Hash(header.hash()), address, index)
+				.map_err(|_| internal_err("fetch runtime chain id failed"))?
+				.into(),
+		)
 	}
 
 	fn block_by_hash(&self, hash: H256, _: bool) -> Result<Option<RichBlock>> {

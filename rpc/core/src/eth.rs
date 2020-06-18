@@ -77,7 +77,7 @@ pub trait EthApi {
 
 	/// Returns content of the storage at given address.
 	#[rpc(name = "eth_getStorageAt")]
-	fn storage_at(&self, _: H160, _: U256, _: Option<BlockNumber>) -> BoxFuture<H256>;
+	fn storage_at(&self, _: H160, _: U256, _: Option<BlockNumber>) -> Result<H256>;
 
 	/// Returns block with given hash.
 	#[rpc(name = "eth_getBlockByHash")]
