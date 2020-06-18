@@ -38,6 +38,7 @@ sp_api::decl_runtime_apis! {
 	pub trait EthereumRuntimeApi {
 		fn chain_id() -> u64;
 		fn account_basic(address: H160) -> pallet_evm::Account;
+		fn account_decode(bytes: Vec<u8>) -> pallet_evm::Account;
 		fn transaction_status(hash: H256) -> Option<TransactionStatus>;
 		fn gas_price() -> U256;
 		fn account_code_at(address: H160) -> Vec<u8>;

@@ -20,10 +20,10 @@ use ethereum::{Block as EthereumBlock, Transaction as EthereumTransaction};
 use ethereum_types::{H160, H256, H64, U256, U64};
 use jsonrpc_core::{BoxFuture, Result, ErrorCode, Error, futures::future::{self, Future}};
 use futures::future::TryFutureExt;
-use sp_runtime::traits::{Block as BlockT, Header as _, UniqueSaturatedInto, NumberFor};
+use sp_runtime::traits::{Block as BlockT, Header as _, UniqueSaturatedInto};
 use sp_runtime::transaction_validity::TransactionSource;
 use sp_api::{ProvideRuntimeApi, BlockId};
-use sp_io::hashing::{twox_64, twox_128, blake2_128, blake2_256};
+use sp_io::hashing::{twox_128, blake2_128};
 use sp_blockchain::{Error as BlockChainError, HeaderMetadata, HeaderBackend};
 use sp_storage::StorageKey;
 use sp_consensus::SelectChain;
@@ -37,10 +37,8 @@ use frontier_rpc_core::types::{
 	SyncStatus, Transaction, Work, Rich, Block, BlockTransactions
 };
 use frontier_rpc_primitives::{EthereumRuntimeApi, ConvertTransaction, TransactionStatus};
-
 pub use frontier_rpc_core::EthApiServer;
-use frame_support::debug::native;
-use codec::{Encode,Decode};
+
 fn internal_err(message: &str) -> Error {
 	Error {
 		code: ErrorCode::InternalError,
@@ -221,7 +219,6 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 		let number_param: u32;
 
 		if let Some(number) = number {
-
 			if let Some(block_number) = number.to_min_block_num() {
 				number_param = block_number.unique_saturated_into();
 			} else if number == BlockNumber::Latest {
@@ -240,7 +237,6 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 			}
 		}
 
-		let mut data: U256 = U256::zero();
 		if let Some(block_hash) = block_hash {
 			// StorageProvider prefix
 			let mut prefix = storage_prefix_build(b"EVM", b"Accounts");
@@ -252,14 +248,18 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 
 			let key = StorageKey(prefix);
 
-			// TODO this is wip, we need to decode the StorageData back to evm::backend::Account
-			data = match self.client.storage(&BlockId::Hash(block_hash), &key) {
-				//Ok(Some(data)) => (&data.0).balance.into(),
-				Ok(data) => U256::zero(),
-				Err(_) => U256::zero()
-			};
+			if let Ok(Some(data)) = self.client.storage(
+				&BlockId::Hash(block_hash), 
+				&key) {
+				return Ok(
+					self.client
+						.runtime_api()
+						.account_decode(&BlockId::Hash(header.hash()), data.0)
+						.map_err(|_| internal_err("fetch runtime chain id failed"))?
+						.balance.into()
+				);
+			}
 		}
-
 		Ok(
 			self.client
 				.runtime_api()
