@@ -30,6 +30,7 @@ use sp_runtime::{
 	traits::UniqueSaturatedInto,
 	transaction_validity::{TransactionValidity, TransactionSource, ValidTransaction}
 };
+use rlp;
 use sha3::{Digest, Keccak256};
 
 pub use frontier_rpc_primitives::TransactionStatus;

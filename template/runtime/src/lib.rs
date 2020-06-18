@@ -475,6 +475,12 @@ impl_runtime_apis! {
 			}
 		}
 
+		fn storage_at(address: H160, index: U256) -> H256 {
+			let mut tmp = [0u8; 32];
+			index.to_big_endian(&mut tmp);
+			evm::Module::<Runtime>::account_storages(address, H256::from_slice(&tmp[..]))
+		}
+
 		fn block_by_number(number: u32) -> Option<EthereumBlock> {
 			<ethereum::Module<Runtime>>::block_by_number(number)
 		}
