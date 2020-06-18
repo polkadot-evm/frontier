@@ -452,11 +452,6 @@ impl_runtime_apis! {
 			evm::Module::<Runtime>::accounts(address)
 		}
 
-		fn account_decode(bytes: Vec<u8>) -> EVMAccount {
-			let account: EVMAccount = Decode::decode(&mut &bytes[..]).unwrap();
-			account
-		}
-
 		fn transaction_status(hash: H256) -> Option<ethereum::TransactionStatus> {
 			ethereum::Module::<Runtime>::transaction_status(hash)
 		}

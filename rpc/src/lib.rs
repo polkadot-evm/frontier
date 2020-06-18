@@ -36,7 +36,10 @@ use frontier_rpc_core::types::{
 	BlockNumber, Bytes, CallRequest, EthAccount, Filter, Index, Log, Receipt, RichBlock,
 	SyncStatus, Transaction, Work, Rich, Block, BlockTransactions
 };
-use frontier_rpc_primitives::{EthereumRuntimeApi, ConvertTransaction, TransactionStatus};
+use frontier_rpc_primitives::{
+	EthereumRuntimeApi, ConvertTransaction, TransactionStatus, EVMAccount
+};
+use codec::Decode;
 pub use frontier_rpc_core::EthApiServer;
 
 fn internal_err(message: &str) -> Error {
@@ -251,22 +254,11 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 			if let Ok(Some(data)) = self.client.storage(
 				&BlockId::Hash(block_hash), 
 				&key) {
-				return Ok(
-					self.client
-						.runtime_api()
-						.account_decode(&BlockId::Hash(header.hash()), data.0)
-						.map_err(|_| internal_err("fetch runtime chain id failed"))?
-						.balance.into()
-				);
+				let account: EVMAccount = Decode::decode(&mut &data.0[..]).unwrap();
+				return Ok(account.balance.into());
 			}
 		}
-		Ok(
-			self.client
-				.runtime_api()
-				.account_basic(&BlockId::Hash(header.hash()), address)
-				.map_err(|_| internal_err("fetch runtime chain id failed"))?
-				.balance.into(),
-		)
+		Ok(U256::zero())
 	}
 
 	fn proof(&self, _: H160, _: Vec<H256>, _: Option<BlockNumber>) -> BoxFuture<EthAccount> {

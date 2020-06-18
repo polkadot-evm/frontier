@@ -21,6 +21,7 @@ use ethereum::{Log, Block as EthereumBlock, Transaction as EthereumTransaction};
 use ethereum_types::Bloom;
 use codec::{Encode, Decode};
 use sp_std::vec::Vec;
+pub use pallet_evm::{Account as EVMAccount};
 
 #[derive(Eq, PartialEq, Clone, Encode, Decode, sp_runtime::RuntimeDebug)]
 pub struct TransactionStatus {
@@ -37,8 +38,7 @@ sp_api::decl_runtime_apis! {
 	/// API necessary for Ethereum-compatibility layer.
 	pub trait EthereumRuntimeApi {
 		fn chain_id() -> u64;
-		fn account_basic(address: H160) -> pallet_evm::Account;
-		fn account_decode(bytes: Vec<u8>) -> pallet_evm::Account;
+		fn account_basic(address: H160) -> EVMAccount;
 		fn transaction_status(hash: H256) -> Option<TransactionStatus>;
 		fn gas_price() -> U256;
 		fn account_code_at(address: H160) -> Vec<u8>;
