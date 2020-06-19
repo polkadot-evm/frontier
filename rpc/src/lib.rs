@@ -133,6 +133,61 @@ fn transaction_build(
 	}
 }
 
+impl<B, C, SC, P, CT, BE> EthApi<B, C, SC, P, CT, BE> where
+	C: ProvideRuntimeApi<B> + StorageProvider<B,BE>,
+	C::Api: EthereumRuntimeApi<B>,
+	BE: Backend<B> + 'static,
+	BE::State: StateBackend<BlakeTwo256>,
+	B: BlockT<Hash=H256> + Send + Sync + 'static,
+	C: Send + Sync + 'static,
+	SC: SelectChain<B> + Clone + 'static,
+	P: TransactionPool<Block=B> + Send + Sync + 'static,
+	CT: ConvertTransaction<<B as BlockT>::Extrinsic> + Send + Sync + 'static,
+{
+	fn native_block_number(&self, number: Option<BlockNumber>) -> Result<Option<u32>> {
+		let header = self
+			.select_chain
+			.best_chain()
+			.map_err(|_| internal_err("fetch header failed"))?;
+
+		let mut native_number: Option<u32> = None;
+
+		if let Some(number) = number {
+			match number {
+				BlockNumber::Hash { hash, .. } => {
+					if let Ok(Some(block)) = self.client.runtime_api().block_by_hash(
+						&BlockId::Hash(header.hash()), 
+						hash
+					) {
+						native_number = Some(block.header.number.as_u32());
+					}
+				},
+				BlockNumber::Num(_) => {
+					if let Some(number) = number.to_min_block_num() {
+						native_number = Some(number.unique_saturated_into());
+					}
+				},
+				BlockNumber::Latest => {
+					native_number = Some(
+						header.number().clone().unique_saturated_into() as u32
+					);
+				},
+				BlockNumber::Earliest => {
+					native_number = Some(1);
+				},
+				BlockNumber::Pending => {
+					native_number = None;
+				}
+			};
+		} else {
+			native_number = Some(
+				header.number().clone().unique_saturated_into() as u32
+			);
+		}
+		Ok(native_number)
+	}
+}
+
 impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 	C: ProvideRuntimeApi<B> + StorageProvider<B,BE>,
 	C::Api: EthereumRuntimeApi<B>,
@@ -208,22 +263,16 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 	}
 
 	fn balance(&self, address: H160, number: Option<BlockNumber>) -> Result<U256> {
-		if let Some(number) = number {
-			if number != BlockNumber::Latest {
-				unimplemented!("fetch nonce for past blocks is not yet supported");
-			}
+		if let Ok(Some(native_number)) = self.native_block_number(number) {
+			return Ok(
+				self.client
+					.runtime_api()
+					.account_basic(&BlockId::Number(native_number.into()), address)
+					.map_err(|_| internal_err("fetch runtime chain id failed"))?
+					.balance.into(),
+			);
 		}
-		let header = self
-			.select_chain
-			.best_chain()
-			.map_err(|_| internal_err("fetch header failed"))?;
-		Ok(
-			self.client
-				.runtime_api()
-				.account_basic(&BlockId::Hash(header.hash()), address)
-				.map_err(|_| internal_err("fetch runtime chain id failed"))?
-				.balance.into(),
-		)
+		Ok(U256::zero())
 	}
 
 	fn proof(&self, _: H160, _: Vec<H256>, _: Option<BlockNumber>) -> BoxFuture<EthAccount> {
@@ -231,22 +280,16 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 	}
 
 	fn storage_at(&self, address: H160, index: U256, number: Option<BlockNumber>) -> Result<H256> {
-		if let Some(number) = number {
-			if number != BlockNumber::Latest {
-				unimplemented!("fetch storage for past blocks is not yet supported");
-			}
+		if let Ok(Some(native_number)) = self.native_block_number(number) {
+			return Ok(
+				self.client
+					.runtime_api()
+					.storage_at(&BlockId::Number(native_number.into()), address, index)
+					.map_err(|_| internal_err("fetch runtime chain id failed"))?
+					.into(),
+			);
 		}
-		let header = self
-			.select_chain
-			.best_chain()
-			.map_err(|_| internal_err("fetch header failed"))?;
-		Ok(
-			self.client
-				.runtime_api()
-				.storage_at(&BlockId::Hash(header.hash()), address, index)
-				.map_err(|_| internal_err("fetch runtime chain id failed"))?
-				.into(),
-		)
+		Ok(H256::default())
 	}
 
 	fn block_by_hash(&self, hash: H256, _: bool) -> Result<Option<RichBlock>> {
@@ -266,38 +309,28 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 	fn block_by_number(&self, number: BlockNumber, _: bool) -> Result<Option<RichBlock>> {
 		let header = self.select_chain.best_chain()
 			.map_err(|_| internal_err("fetch header failed"))?;
-
-		let number_param: u32;
-
-		if let Some(block_number) = number.to_min_block_num() {
-			number_param = block_number.unique_saturated_into();
-		} else if number == BlockNumber::Latest {
-			number_param = header.number().clone().unique_saturated_into() as u32;
-		} else {
-			unimplemented!("only latest or block number are supported");
+		if let Ok(Some(native_number)) = self.native_block_number(Some(number)) {
+			if let Ok(Some(block)) = self.client.runtime_api().block_by_number(
+				&BlockId::Hash(header.hash()), 
+				native_number
+			) {
+				return Ok(Some(rich_block_build(block)));
+			}
 		}
-
-		if let Ok(Some(block)) = self.client.runtime_api().block_by_number(
-			&BlockId::Hash(header.hash()), 
-			number_param
-		) {
-			Ok(Some(rich_block_build(block)))
-		} else {
-			Ok(None)
-		}
+		Ok(None)
 	}
 
 	fn transaction_count(&self, address: H160, number: Option<BlockNumber>) -> Result<U256> {
-		if let Some(number) = number {
-			if number != BlockNumber::Latest {
-				unimplemented!("fetch nonce for past blocks is not yet supported");
-			}
+		if let Ok(Some(native_number)) = self.native_block_number(number) {
+			return Ok(
+				self.client
+					.runtime_api()
+					.account_basic(&BlockId::Number(native_number.into()), address)
+		   			.map_err(|_| internal_err("fetch runtime account basic failed"))?
+					   .nonce.into()
+			);
 		}
-
-		let header = self.select_chain.best_chain()
-			.map_err(|_| internal_err("fetch header failed"))?;
-		Ok(self.client.runtime_api().account_basic(&BlockId::Hash(header.hash()), address)
-		   .map_err(|_| internal_err("fetch runtime account basic failed"))?.nonce.into())
+		Ok(U256::zero())
 	}
 
 	fn block_transaction_count_by_hash(&self, hash: H256) -> Result<Option<U256>> {
@@ -316,21 +349,14 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 		let header = self.select_chain.best_chain()
 			.map_err(|_| internal_err("fetch header failed"))?;
 
-		let number_param: u32;
-
-		if let Some(block_number) = number.to_min_block_num() {
-			number_param = block_number.unique_saturated_into();
-		} else if number == BlockNumber::Latest {
-			number_param = header.number().clone().unique_saturated_into() as u32;
-		} else {
-			unimplemented!("fetch count for past blocks is not yet supported");
+		let mut result = None;
+		if let Ok(Some(native_number)) = self.native_block_number(Some(number)) {
+			result = match self.client.runtime_api()
+				.block_transaction_count_by_number(&BlockId::Hash(header.hash()), native_number) {
+				Ok(result) => result,
+				Err(_) => None
+			};
 		}
-
-		let result = match self.client.runtime_api()
-			.block_transaction_count_by_number(&BlockId::Hash(header.hash()), number_param) {
-			Ok(result) => result,
-			Err(_) => return Ok(None)
-		};
 		Ok(result)
 	}
 
@@ -343,22 +369,16 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 	}
 
 	fn code_at(&self, address: H160, number: Option<BlockNumber>) -> Result<Bytes> {
-		if let Some(number) = number {
-			if number != BlockNumber::Latest {
-				unimplemented!("fetch nonce for past blocks is not yet supported");
-			}
+		if let Ok(Some(native_number)) = self.native_block_number(number) {
+			return Ok(
+				self.client
+					.runtime_api()
+					.account_code_at(&BlockId::Number(native_number.into()), address)
+					.map_err(|_| internal_err("fetch runtime chain id failed"))?
+					.into(),
+			);
 		}
-		let header = self
-			.select_chain
-			.best_chain()
-			.map_err(|_| internal_err("fetch header failed"))?;
-		Ok(
-			self.client
-				.runtime_api()
-				.account_code_at(&BlockId::Hash(header.hash()), address)
-				.map_err(|_| internal_err("fetch runtime chain id failed"))?
-				.into(),
-		)
+		Ok(Bytes(vec![]))
 	}
 
 	fn send_raw_transaction(&self, bytes: Bytes) -> BoxFuture<H256> {
@@ -453,28 +473,20 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 			.best_chain()
 			.map_err(|_| internal_err("fetch header failed"))?;
 
-		let number_param: u32;
-
-		if let Some(block_number) = number.to_min_block_num() {
-			number_param = block_number.unique_saturated_into();
-		} else if number == BlockNumber::Latest {
-			number_param = header.number().clone().unique_saturated_into() as u32;
-		} else {
-			unimplemented!("fetch count for past blocks is not yet supported");
-		}
-
 		let index_param = index.value() as u32;
 
-		if let Ok(Some((transaction, block, status))) = self.client.runtime_api()
-			.transaction_by_block_number_and_index(
-				&BlockId::Hash(header.hash()), 
-				number_param, 
-				index_param) {
-			return Ok(Some(transaction_build(
-				transaction,
-				block,
-				status
-			)));
+		if let Ok(Some(native_number)) = self.native_block_number(Some(number)) {
+			if let Ok(Some((transaction, block, status))) = self.client.runtime_api()
+				.transaction_by_block_number_and_index(
+					&BlockId::Hash(header.hash()), 
+					native_number, 
+					index_param) {
+				return Ok(Some(transaction_build(
+					transaction,
+					block,
+					status
+				)));
+			}
 		}
 		Ok(None)
 	}
