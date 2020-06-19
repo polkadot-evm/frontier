@@ -176,7 +176,7 @@ impl<B, C, SC, P, CT, BE> EthApi<B, C, SC, P, CT, BE> where
 					native_number = Some(1);
 				},
 				BlockNumber::Pending => {
-					native_number = Some(0); // TODO
+					native_number = None;
 				}
 			};
 		} else {
