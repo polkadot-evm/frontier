@@ -154,7 +154,7 @@ impl<B, C, SC, P, CT, BE> EthApi<B, C, SC, P, CT, BE> where
 
 		if let Some(number) = number {
 			match number {
-				BlockNumber::Hash{hash,..} => {
+				BlockNumber::Hash { hash, .. } => {
 					if let Ok(Some(block)) = self.client.runtime_api().block_by_hash(
 						&BlockId::Hash(header.hash()), 
 						hash
@@ -325,7 +325,7 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 			return Ok(
 				self.client
 					.runtime_api()
-					.account_basic(&BlockId::Number(native_number.into()),address)
+					.account_basic(&BlockId::Number(native_number.into()), address)
 		   			.map_err(|_| internal_err("fetch runtime account basic failed"))?
 					   .nonce.into()
 			);
