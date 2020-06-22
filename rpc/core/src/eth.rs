@@ -115,9 +115,10 @@ pub trait EthApi {
 	#[rpc(name = "eth_sendRawTransaction")]
 	fn send_raw_transaction(&self, _: Bytes) -> BoxFuture<H256>;
 
-	/// @alias of `eth_sendRawTransaction`.
-	#[rpc(name = "eth_submitTransaction")]
-	fn submit_transaction(&self, _: Bytes) -> Result<H256>;
+	/// Creates new message call transaction 
+	/// or a contract creation, if the data field contains code.
+	#[rpc(name = "eth_sendTransaction")]
+	fn send_transaction(&self, _: CallRequest) -> Result<H256>;
 
 	/// Call contract, returning the output data.
 	#[rpc(name = "eth_call")]

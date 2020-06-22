@@ -411,8 +411,8 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 		)
 	}
 
-	fn submit_transaction(&self, _: Bytes) -> Result<H256> {
-		unimplemented!("submit_transaction");
+	fn send_transaction(&self, _: CallRequest) -> Result<H256> {
+		Err(internal_err("methods that require stored private keys are unsupported"))
 	}
 
 	fn call(&self, _: CallRequest, _: Option<BlockNumber>) -> BoxFuture<Bytes> {
