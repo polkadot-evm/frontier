@@ -19,7 +19,7 @@
 
 use std::{sync::Arc, fmt};
 
-use frontier_template_runtime::{AccountId, Index, opaque::Block, Balance, UncheckedExtrinsic};
+use frontier_template_runtime::{Hash, AccountId, Index, opaque::Block, Balance, UncheckedExtrinsic};
 use sp_api::ProvideRuntimeApi;
 use sp_transaction_pool::TransactionPool;
 use sp_blockchain::{Error as BlockChainError, HeaderMetadata, HeaderBackend};
@@ -27,6 +27,7 @@ use sp_consensus::SelectChain;
 use sc_rpc_api::DenyUnsafe;
 use sc_client_api::backend::{StorageProvider, Backend, StateBackend};
 use sp_runtime::traits::BlakeTwo256;
+use sp_block_builder::BlockBuilder;
 
 /// Light client extra dependencies.
 pub struct LightDeps<C, F, P> {
@@ -64,6 +65,7 @@ pub fn create_full<C, P, M, SC, BE>(
 	C: HeaderBackend<Block> + HeaderMetadata<Block, Error=BlockChainError> + 'static,
 	C: Send + Sync + 'static,
 	C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Index>,
+	C::Api: BlockBuilder<Block>,
 	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance, UncheckedExtrinsic>,
 	C::Api: frontier_rpc_primitives::EthereumRuntimeApi<Block>,
 	<C::Api as sp_api::ApiErrorExt>::Error: fmt::Debug,
@@ -80,12 +82,12 @@ pub fn create_full<C, P, M, SC, BE>(
 		client,
 		pool,
 		select_chain,
-		deny_unsafe: _,
+		deny_unsafe,
 		is_authority
 	} = deps;
 
 	io.extend_with(
-		SystemApi::to_delegate(FullSystem::new(client.clone(), pool.clone()))
+		SystemApi::to_delegate(FullSystem::new(client.clone(), pool.clone(), deny_unsafe))
 	);
 	io.extend_with(
 		TransactionPaymentApi::to_delegate(TransactionPayment::new(client.clone()))
@@ -123,7 +125,9 @@ pub fn create_light<C, P, M, F>(
 	} = deps;
 	let mut io = jsonrpc_core::IoHandler::default();
 	io.extend_with(
-		SystemApi::<AccountId, Index>::to_delegate(LightSystem::new(client, remote_blockchain, fetcher, pool))
+		SystemApi::<Hash, AccountId, Index>::to_delegate(
+			LightSystem::new(client, remote_blockchain, fetcher, pool)
+		)
 	);
 
 	io

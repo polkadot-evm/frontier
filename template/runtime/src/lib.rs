@@ -33,7 +33,6 @@ use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata, U256, H160, H256};
 use sp_runtime::traits::{
 	BlakeTwo256, Block as BlockT, IdentifyAccount, IdentityLookup, NumberFor, Saturating, Verify,
-	UniqueSaturatedInto
 };
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
@@ -163,6 +162,8 @@ parameter_types! {
 }
 
 impl system::Trait for Runtime {
+	/// Base call filter.
+	type BaseCallFilter = ();
 	/// The identifier used to distinguish between accounts.
 	type AccountId = AccountId;
 	/// The aggregated dispatch type that is available for extrinsics.
@@ -504,25 +505,25 @@ impl_runtime_apis! {
 		}
 
 		fn transaction_by_hash(hash: H256) -> Option<(
-			EthereumTransaction, 
-			EthereumBlock, 
+			EthereumTransaction,
+			EthereumBlock,
 			TransactionStatus)> {
 			<ethereum::Module<Runtime>>::transaction_by_hash(hash)
 		}
 
 		fn transaction_by_block_hash_and_index(hash: H256, index: u32) -> Option<(
-			EthereumTransaction, 
-			EthereumBlock, 
+			EthereumTransaction,
+			EthereumBlock,
 			TransactionStatus)> {
 			<ethereum::Module<Runtime>>::transaction_by_block_hash_and_index(hash, index)
 		}
 
 		fn transaction_by_block_number_and_index(number: u32, index: u32) -> Option<(
-			EthereumTransaction, 
-			EthereumBlock, 
+			EthereumTransaction,
+			EthereumBlock,
 			TransactionStatus)> {
 			<ethereum::Module<Runtime>>::transaction_by_block_number_and_index(
-				number, 
+				number,
 				index
 			)
 		}
