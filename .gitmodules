@@ -4,3 +4,6 @@
 [submodule "vendor/substrate"]
 	path = vendor/substrate
 	url = https://github.com/paritytech/substrate
+[submodule "vendor/evm"]
+	path = vendor/evm
+	url = https://github.com/rust-blockchain/evm

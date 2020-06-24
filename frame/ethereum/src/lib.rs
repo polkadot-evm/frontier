@@ -205,7 +205,7 @@ decl_module! {
 				);
 				if let Some(status) = TransactionStatuses::get(transaction_hash) {
 					Transactions::insert(
-						transaction_hash, 
+						transaction_hash,
 						(hash, status.transaction_index)
 					);
 				}
@@ -245,10 +245,10 @@ impl<T: Trait> Module<T> {
 	pub fn transaction_status(hash: H256) -> Option<TransactionStatus> {
 		TransactionStatuses::get(hash)
 	}
-	
+
 	pub fn transaction_by_hash(hash: H256) -> Option<(
-		ethereum::Transaction, 
-		ethereum::Block, 
+		ethereum::Transaction,
+		ethereum::Block,
 		TransactionStatus
 	)> {
 		let (block_hash, transaction_index) = Transactions::get(hash)?;
@@ -262,8 +262,8 @@ impl<T: Trait> Module<T> {
 		hash: H256,
 		index: u32
 	) -> Option<(
-		ethereum::Transaction, 
-		ethereum::Block, 
+		ethereum::Transaction,
+		ethereum::Block,
 		TransactionStatus
 	)> {
 		let (block,_receipt) = BlocksAndReceipts::get(hash)?;
@@ -283,8 +283,8 @@ impl<T: Trait> Module<T> {
 		number: T::BlockNumber,
 		index: u32
 	) -> Option<(
-		ethereum::Transaction, 
-		ethereum::Block, 
+		ethereum::Transaction,
+		ethereum::Block,
 		TransactionStatus
 	)> {
 		if <BlockNumbers<T>>::contains_key(number) {
@@ -328,6 +328,7 @@ impl<T: Trait> Module<T> {
 					transaction.gas_limit.low_u32(),
 					transaction.gas_price,
 					Some(transaction.nonce),
+					true,
 				).unwrap(); // TODO: handle error
 
 				TransactionStatus {
@@ -348,7 +349,8 @@ impl<T: Trait> Module<T> {
 					transaction.gas_limit.low_u32(),
 					transaction.gas_price,
 					Some(transaction.nonce),
-				).unwrap(); // TODO: handle error
+					true,
+				).unwrap().1; // TODO: handle error
 
 				TransactionStatus {
 					transaction_hash,

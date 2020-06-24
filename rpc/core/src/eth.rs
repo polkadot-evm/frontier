@@ -121,11 +121,11 @@ pub trait EthApi {
 
 	/// Call contract, returning the output data.
 	#[rpc(name = "eth_call")]
-	fn call(&self, _: CallRequest, _: Option<BlockNumber>) -> BoxFuture<Bytes>;
+	fn call(&self, _: CallRequest, _: Option<BlockNumber>) -> Result<Bytes>;
 
 	/// Estimate gas needed for execution of given contract.
 	#[rpc(name = "eth_estimateGas")]
-	fn estimate_gas(&self, _: CallRequest, _: Option<BlockNumber>) -> BoxFuture<U256>;
+	fn estimate_gas(&self, _: CallRequest, _: Option<BlockNumber>) -> Result<U256>;
 
 	/// Get transaction by its hash.
 	#[rpc(name = "eth_getTransactionByHash")]

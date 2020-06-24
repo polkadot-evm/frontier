@@ -87,7 +87,7 @@ fn rich_block_build(block: ethereum::Block) -> RichBlock {
 			total_difficulty: None, // TODO
 			seal_fields: vec![], // TODO
 			uncles: vec![], // TODO
-			// TODO expected struct `frontier_rpc_core::types::transaction::Transaction`, 
+			// TODO expected struct `frontier_rpc_core::types::transaction::Transaction`,
 			// found struct `ethereum::transaction::Transaction`
 			transactions: BlockTransactions::Full(vec![]),
 			size: None // TODO
@@ -97,8 +97,8 @@ fn rich_block_build(block: ethereum::Block) -> RichBlock {
 }
 
 fn transaction_build(
-	transaction: EthereumTransaction, 
-	block: EthereumBlock, 
+	transaction: EthereumTransaction,
+	block: EthereumBlock,
 	status: TransactionStatus
 ) -> Transaction {
 	Transaction {
@@ -156,7 +156,7 @@ impl<B, C, SC, P, CT, BE> EthApi<B, C, SC, P, CT, BE> where
 			match number {
 				BlockNumber::Hash { hash, .. } => {
 					if let Ok(Some(block)) = self.client.runtime_api().block_by_hash(
-						&BlockId::Hash(header.hash()), 
+						&BlockId::Hash(header.hash()),
 						hash
 					) {
 						native_number = Some(block.header.number.as_u32());
@@ -216,7 +216,7 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 		let header = self.select_chain
 			.best_chain()
 			.map_err(|_| internal_err("fetch header failed"))?;
-		
+
 		Ok(
 			self.client
 			.runtime_api()
@@ -297,7 +297,7 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 			.map_err(|_| internal_err("fetch header failed"))?;
 
 		if let Ok(Some(block)) = self.client.runtime_api().block_by_hash(
-			&BlockId::Hash(header.hash()), 
+			&BlockId::Hash(header.hash()),
 			hash
 		) {
 			Ok(Some(rich_block_build(block)))
@@ -311,7 +311,7 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 			.map_err(|_| internal_err("fetch header failed"))?;
 		if let Ok(Some(native_number)) = self.native_block_number(Some(number)) {
 			if let Ok(Some(block)) = self.client.runtime_api().block_by_number(
-				&BlockId::Hash(header.hash()), 
+				&BlockId::Hash(header.hash()),
 				native_number
 			) {
 				return Ok(Some(rich_block_build(block)));
@@ -415,12 +415,66 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 		unimplemented!("submit_transaction");
 	}
 
-	fn call(&self, _: CallRequest, _: Option<BlockNumber>) -> BoxFuture<Bytes> {
-		unimplemented!("call");
+	fn call(&self, request: CallRequest, _: Option<BlockNumber>) -> Result<Bytes> {
+		let header = self
+			.select_chain
+			.best_chain()
+			.map_err(|_| internal_err("fetch header failed"))?;
+
+		let from = request.from.unwrap_or_default();
+		let to = request.to.unwrap_or_default();
+		let gas_price = request.gas_price.unwrap_or_default();
+		let gas_limit = request.gas.unwrap_or(U256::max_value());
+		let value = request.value.unwrap_or_default();
+		let data = request.data.map(|d| d.0).unwrap_or_default();
+		let nonce = request.nonce;
+
+		let (ret, _) = self.client.runtime_api()
+			.call(
+				&BlockId::Hash(header.hash()),
+				from,
+				to,
+				data,
+				value,
+				gas_limit,
+				gas_price,
+				nonce,
+			)
+			.map_err(|_| internal_err("executing call failed"))?
+			.ok_or(internal_err("inner executing call failed"))?;
+
+		Ok(Bytes(ret))
 	}
 
-	fn estimate_gas(&self, _: CallRequest, _: Option<BlockNumber>) -> BoxFuture<U256> {
-		unimplemented!("estimate_gas");
+	fn estimate_gas(&self, request: CallRequest, _: Option<BlockNumber>) -> Result<U256> {
+		let header = self
+			.select_chain
+			.best_chain()
+			.map_err(|_| internal_err("fetch header failed"))?;
+
+		let from = request.from.unwrap_or_default();
+		let to = request.to.unwrap_or_default();
+		let gas_price = request.gas_price.unwrap_or_default();
+		let gas_limit = request.gas.unwrap_or(U256::max_value());
+		let value = request.value.unwrap_or_default();
+		let data = request.data.map(|d| d.0).unwrap_or_default();
+		let nonce = request.nonce;
+
+		let (_, used_gas) = self.client.runtime_api()
+			.call(
+				&BlockId::Hash(header.hash()),
+				from,
+				to,
+				data,
+				value,
+				gas_limit,
+				gas_price,
+				nonce,
+			)
+			.map_err(|_| internal_err("executing call failed"))?
+			.ok_or(internal_err("inner executing call failed"))?;
+
+		Ok(used_gas)
 	}
 
 	fn transaction_by_hash(&self, hash: H256) -> Result<Option<Transaction>> {
@@ -428,7 +482,7 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 			.select_chain
 			.best_chain()
 			.map_err(|_| internal_err("fetch header failed"))?;
-		
+
 		if let Ok(Some((transaction, block, status))) = self.client.runtime_api()
 			.transaction_by_hash(&BlockId::Hash(header.hash()), hash) {
 			return Ok(Some(transaction_build(
@@ -478,8 +532,8 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 		if let Ok(Some(native_number)) = self.native_block_number(Some(number)) {
 			if let Ok(Some((transaction, block, status))) = self.client.runtime_api()
 				.transaction_by_block_number_and_index(
-					&BlockId::Hash(header.hash()), 
-					native_number, 
+					&BlockId::Hash(header.hash()),
+					native_number,
 					index_param) {
 				return Ok(Some(transaction_build(
 					transaction,

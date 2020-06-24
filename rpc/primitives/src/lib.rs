@@ -43,6 +43,15 @@ sp_api::decl_runtime_apis! {
 		fn account_code_at(address: H160) -> Vec<u8>;
 		fn author() -> H160;
 		fn storage_at(address: H160, index: U256) -> H256;
+		fn call(
+			from: H160,
+			to: H160,
+			data: Vec<u8>,
+			value: U256,
+			gas_limit: U256,
+			gas_price: U256,
+			nonce: Option<U256>,
+		) -> Option<(Vec<u8>, U256)>;
 		fn block_by_number(number: u32) -> Option<EthereumBlock>;
 		fn block_transaction_count_by_number(number: u32) -> Option<U256>;
 		fn block_by_hash(hash: H256) -> Option<EthereumBlock>;
@@ -53,7 +62,7 @@ sp_api::decl_runtime_apis! {
 			TransactionStatus
 		)>;
 		fn transaction_by_block_hash_and_index(
-			hash: H256, 
+			hash: H256,
 			index: u32
 		) -> Option<(
 			EthereumTransaction,
@@ -61,7 +70,7 @@ sp_api::decl_runtime_apis! {
 			TransactionStatus
 		)>;
 		fn transaction_by_block_number_and_index(
-			number: u32, 
+			number: u32,
 			index: u32
 		) -> Option<(
 			EthereumTransaction,
