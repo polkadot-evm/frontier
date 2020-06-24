@@ -11,3 +11,7 @@ exclude = ["vendor"]
 
 [patch.crates-io]
 ethereum = { path = "vendor/ethereum" }
+evm = { path = "vendor/evm" }
+evm-core = { path = "vendor/evm/core" }
+evm-gasometer = { path = "vendor/evm/gasometer" }
+evm-runtime = { path = "vendor/evm/runtime" }
