@@ -820,8 +820,6 @@ dependencies = [
 [[package]]
 name = "evm"
 version = "0.16.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "23a5c0ebf219b2b878bde1838282e0bb69828338df37fd136f1e93182ae35a59"
 dependencies = [
  "evm-core",
  "evm-gasometer",
@@ -835,8 +833,6 @@ dependencies = [
 [[package]]
 name = "evm-core"
 version = "0.16.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d944a07232006a3435df8aa014fd364ed04cb28d731782339e9c56436594f2d4"
 dependencies = [
  "primitive-types",
 ]
@@ -844,8 +840,6 @@ dependencies = [
 [[package]]
 name = "evm-gasometer"
 version = "0.16.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6a0d986953234d3786d0ca1beaaabab6a581d2128f8ec36c8c57e9c45e3d2b32"
 dependencies = [
  "evm-core",
  "evm-runtime",
@@ -855,8 +849,6 @@ dependencies = [
 [[package]]
 name = "evm-runtime"
 version = "0.16.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1833c22f9518007d3cc28e14ff586263543516a1c7a147b260c603e4deb95403"
 dependencies = [
  "evm-core",
  "primitive-types",
