@@ -22,7 +22,7 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::{decl_module, decl_storage, decl_event, weights::Weight};
+use frame_support::{decl_module, decl_storage, decl_event, weights::Weight, traits::Get};
 use sp_std::prelude::*;
 use frame_system::{self as system, ensure_none};
 use ethereum_types::{H160, H64, H256, U256, Bloom};
@@ -53,6 +53,7 @@ pub type BalanceOf<T> = <T as pallet_balances::Trait>::Balance;
 pub trait Trait: frame_system::Trait<Hash=H256> + pallet_balances::Trait + pallet_timestamp::Trait + pallet_evm::Trait {
 	/// The overarching event type.
 	type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
+    type ChainId: Get<u64>;
 }
 
 decl_storage! {
@@ -136,7 +137,7 @@ decl_module! {
 			sig[0..32].copy_from_slice(&transaction.signature.r()[..]);
 			sig[32..64].copy_from_slice(&transaction.signature.s()[..]);
 			sig[64] = transaction.signature.standard_v();
-			msg.copy_from_slice(&transaction.message_hash(Some(sp_io::misc::chain_id()))[..]);
+			msg.copy_from_slice(&transaction.message_hash(Some(T::ChainId::get()))[..]);
 
 			let pubkey = sp_io::crypto::secp256k1_ecdsa_recover(&sig, &msg)
 				.map_err(|_| "Recover public key failed")?;
