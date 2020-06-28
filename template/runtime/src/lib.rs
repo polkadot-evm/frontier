@@ -448,7 +448,7 @@ impl_runtime_apis! {
 
 	impl frontier_rpc_primitives::EthereumRuntimeApi<Block> for Runtime {
 		fn chain_id() -> u64 {
-			ChainId::get()
+			ethereum::Module::<Runtime>::ChainId::get()
 		}
 
 		fn account_basic(address: H160) -> EVMAccount {
