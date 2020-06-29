@@ -266,7 +266,6 @@ impl balances::Trait for Runtime {
 
 parameter_types! {
 	pub const TransactionByteFee: Balance = 1;
-	pub const EVMModuleId: ModuleId = ModuleId(*b"py/evmpa");
 }
 
 impl transaction_payment::Trait for Runtime {
@@ -289,15 +288,17 @@ impl FeeCalculator for FixedGasPrice {
 	}
 }
 
+parameter_types! {
+	pub const EVMModuleId: ModuleId = ModuleId(*b"py/evmpa");
+}
+
 impl evm::Trait for Runtime {
 	type ModuleId = EVMModuleId;
 	type FeeCalculator = FixedGasPrice;
 	type ConvertAccountId = HashTruncateConvertAccountId<BlakeTwo256>;
 	type Currency = Balances;
 	type Event = Event;
-	type Precompiles = (); // We can use () here because paint_evm provides an
-					   // `impl Precompiles for ()``
-					   // block that always returns none (line 75)
+	type Precompiles = ();
 }
 
 impl ethereum::Trait for Runtime {
