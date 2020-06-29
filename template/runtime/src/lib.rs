@@ -92,8 +92,6 @@ pub type Hash = sp_core::H256;
 /// Digest item type.
 pub type DigestItem = generic::DigestItem<Hash>;
 
-// EVM structs
-pub struct FixedGasPrice;
 /// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
 /// the specifics of the runtime. They can then be made to be agnostic over specific formats
 /// of data like extrinsics, allowing for them to continue syncing the network through upgrades
@@ -266,7 +264,6 @@ impl balances::Trait for Runtime {
 
 parameter_types! {
 	pub const TransactionByteFee: Balance = 1;
-	pub const EVMModuleId: ModuleId = ModuleId(*b"py/evmpa");
 }
 
 impl transaction_payment::Trait for Runtime {
@@ -282,11 +279,18 @@ impl sudo::Trait for Runtime {
 	type Call = Call;
 }
 
+/// Fixed gas price of `1`.
+pub struct FixedGasPrice;
+
 impl FeeCalculator for FixedGasPrice {
 	fn min_gas_price() -> U256 {
 		// Gas price is always one token per gas.
 		1.into()
 	}
+}
+
+parameter_types! {
+	pub const EVMModuleId: ModuleId = ModuleId(*b"py/evmpa");
 }
 
 impl evm::Trait for Runtime {
@@ -295,9 +299,7 @@ impl evm::Trait for Runtime {
 	type ConvertAccountId = HashTruncateConvertAccountId<BlakeTwo256>;
 	type Currency = Balances;
 	type Event = Event;
-	type Precompiles = (); // We can use () here because paint_evm provides an
-					   // `impl Precompiles for ()``
-					   // block that always returns none (line 75)
+	type Precompiles = ();
 }
 
 impl ethereum::Trait for Runtime {
