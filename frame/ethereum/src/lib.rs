@@ -22,7 +22,7 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::{decl_module, decl_storage, decl_event, weights::Weight, traits::Get};
+use frame_support::{decl_module, decl_storage, decl_error, decl_event, ensure, weights::Weight, traits::Get};
 use sp_std::prelude::*;
 use frame_system::{self as system, ensure_none};
 use ethereum_types::{H160, H64, H256, U256, Bloom};
@@ -118,6 +118,15 @@ decl_event!(
 // against them as the first thing you do in your function. There are three convenience calls
 // in system that do the matching for you and return a convenient result: `ensure_signed`,
 // `ensure_root` and `ensure_none`.
+
+
+decl_error! {
+	pub enum Error for Module<T: Trait> {
+		/// Transaction signed with wrong chain id
+		InvalidChainId,
+	}
+}
+
 decl_module! {
 	// Simple declaration of the `Module` type. Lets the macro know what its working on.
 	pub struct Module<T: Trait> for enum Call where origin: T::Origin {
@@ -132,6 +141,10 @@ decl_module! {
 		fn transact(origin, transaction: ethereum::Transaction) {
 			ensure_none(origin)?;
 
+			ensure!(
+				transaction.signature.chain_id().unwrap_or_default() == T::ChainId::get(), 
+				Error::<T>::InvalidChainId
+			);
 			let mut sig = [0u8; 65];
 			let mut msg = [0u8; 32];
 			sig[0..32].copy_from_slice(&transaction.signature.r()[..]);
