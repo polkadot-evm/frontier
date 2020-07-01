@@ -89,7 +89,10 @@ fn rich_block_build(block: ethereum::Block, hash: Option<H256>) -> RichBlock {
 			timestamp: U256::from(block.header.timestamp),
 			difficulty: block.header.difficulty,
 			total_difficulty: None, // TODO
-			seal_fields: vec![], // TODO
+			seal_fields: vec![
+				Bytes(block.header.mix_hash.as_bytes().to_vec()),
+				Bytes(block.header.nonce.as_bytes().to_vec())
+			],
 			uncles: vec![], // TODO
 			// TODO expected struct `frontier_rpc_core::types::transaction::Transaction`,
 			// found struct `ethereum::transaction::Transaction`
