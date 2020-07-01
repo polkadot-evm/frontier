@@ -501,7 +501,7 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 			.best_chain()
 			.map_err(|_| internal_err("fetch header failed"))?;
 
-		if let Ok(Some((transaction, block, status))) = self.client.runtime_api()
+		if let Ok(Some((transaction, block, status, _receipt))) = self.client.runtime_api()
 			.transaction_by_hash(&BlockId::Hash(header.hash()), hash) {
 			return Ok(Some(transaction_build(
 				transaction,
@@ -566,28 +566,45 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 	fn transaction_receipt(&self, hash: H256) -> Result<Option<Receipt>> {
 		let header = self.select_chain.best_chain()
 			.map_err(|_| internal_err("fetch header failed"))?;
-		let status = self.client.runtime_api()
-			.transaction_status(&BlockId::Hash(header.hash()), hash)
-			.map_err(|_| internal_err("fetch runtime transaction status failed"))?;
-		let receipt = status.map(|status| {
-			Receipt {
+		if let Ok(Some((_transaction, block, status, receipt))) = self.client.runtime_api()
+			.transaction_by_hash(&BlockId::Hash(header.hash()), hash) {
+			
+			let block_hash = H256::from_slice(
+				Keccak256::digest(&rlp::encode(&block.header)).as_slice()
+			);
+			return Ok(Some(Receipt {
 				transaction_hash: Some(status.transaction_hash),
 				transaction_index: Some(status.transaction_index.into()),
-				block_hash: Some(Default::default()),
+				block_hash: Some(block_hash),
 				from: Some(status.from),
 				to: status.to,
-				block_number: Some(Default::default()),
-				cumulative_gas_used: Default::default(),
-				gas_used: Some(Default::default()),
+				block_number: Some(block.header.number),
+				cumulative_gas_used: Default::default(), // TODO
+				gas_used: Some(receipt.used_gas),
 				contract_address: status.contract_address,
-				logs: Vec::new(),
-				state_root: None,
-				logs_bloom: Default::default(),
+				logs: {
+					receipt.logs.iter().map(|log| {
+						Log {
+							address: log.address,
+							topics: log.topics.clone(),
+							data: Bytes(log.data.clone()),
+							block_hash: Some(block_hash),
+							block_number: Some(block.header.number),
+							transaction_hash: Some(hash),
+							transaction_index: Some(status.transaction_index.into()),
+							log_index: None, // TODO
+							transaction_log_index: None, // TODO
+							log_type: Default::default(), // TODO
+							removed: false, // TODO
+						}
+					}).collect()
+				},
+				state_root: Some(receipt.state_root),
+				logs_bloom: Default::default(), // TODO
 				status_code: None,
-			}
-		});
-
-		Ok(receipt)
+			}))
+		}
+		Ok(None)
 	}
 
 	fn uncle_by_block_hash_and_index(&self, _: H256, _: Index) -> Result<Option<RichBlock>> {
