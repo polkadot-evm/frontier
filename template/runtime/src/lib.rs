@@ -505,8 +505,17 @@ impl_runtime_apis! {
 			).ok().map(|(_, ret, gas)| (ret, gas))
 		}
 
-		fn block_by_number(number: u32) -> Option<EthereumBlock> {
-			<ethereum::Module<Runtime>>::block_by_number(number)
+		fn block_by_number(number: u32) -> (
+			Option<EthereumBlock>, Vec<Option<ethereum::TransactionStatus>>
+		) {
+			if let Some(block) = <ethereum::Module<Runtime>>::block_by_number(number) {
+				let statuses = <ethereum::Module<Runtime>>::block_transaction_statuses(&block);
+				return (
+					Some(block), 
+					statuses
+				);
+			}
+			(None,vec![])
 		}
 
 		fn block_transaction_count_by_number(number: u32) -> Option<U256> {
@@ -525,6 +534,19 @@ impl_runtime_apis! {
 
 		fn block_by_hash(hash: H256) -> Option<EthereumBlock> {
 			<ethereum::Module<Runtime>>::block_by_hash(hash)
+		}
+
+		fn block_by_hash_with_statuses(hash: H256) -> (
+			Option<EthereumBlock>, Vec<Option<ethereum::TransactionStatus>>
+		) {
+			if let Some(block) = <ethereum::Module<Runtime>>::block_by_hash(hash) {
+				let statuses = <ethereum::Module<Runtime>>::block_transaction_statuses(&block);
+				return (
+					Some(block), 
+					statuses
+				);
+			}
+			(None, vec![])
 		}
 
 		fn transaction_by_hash(hash: H256) -> Option<(
