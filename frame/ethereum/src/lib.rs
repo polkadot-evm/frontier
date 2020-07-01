@@ -34,7 +34,7 @@ use rlp;
 use sha3::{Digest, Keccak256};
 
 pub use frontier_rpc_primitives::TransactionStatus;
-pub use ethereum::{Transaction, Log, Block};
+pub use ethereum::{Transaction, Log, Block, Receipt};
 
 #[cfg(all(feature = "std", test))]
 mod tests;
@@ -249,13 +249,14 @@ impl<T: Trait> Module<T> {
 	pub fn transaction_by_hash(hash: H256) -> Option<(
 		ethereum::Transaction,
 		ethereum::Block,
-		TransactionStatus
+		TransactionStatus,
+		ethereum::Receipt
 	)> {
 		let (block_hash, transaction_index) = Transactions::get(hash)?;
 		let transaction_status = TransactionStatuses::get(hash)?;
-		let (block,_receipt) = BlocksAndReceipts::get(block_hash)?;
+		let (block, receipts) = BlocksAndReceipts::get(block_hash)?;
 		let transaction = &block.transactions[transaction_index as usize];
-		Some((transaction.clone(), block, transaction_status))
+		Some((transaction.clone(), block, transaction_status, receipts[transaction_index as usize].clone()))
 	}
 
 	pub fn transaction_by_block_hash_and_index(
