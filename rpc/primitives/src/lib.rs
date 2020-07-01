@@ -66,7 +66,7 @@ sp_api::decl_runtime_apis! {
 			gas_price: U256,
 			nonce: Option<U256>,
 		) -> Option<(Vec<u8>, U256)>;
-		fn block_by_number(number: u32) -> Option<EthereumBlock>;
+		fn block_by_number(number: u32) -> (Option<EthereumBlock>, Vec<Option<TransactionStatus>>);
 		fn block_transaction_count_by_number(number: u32) -> Option<U256>;
 		fn block_by_hash(hash: H256) -> Option<EthereumBlock>;
 		fn block_by_hash_with_statuses(hash: H256) -> (Option<EthereumBlock>, Vec<Option<TransactionStatus>>);

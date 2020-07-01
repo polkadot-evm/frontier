@@ -328,11 +328,11 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 		let header = self.select_chain.best_chain()
 			.map_err(|_| internal_err("fetch header failed"))?;
 		if let Ok(Some(native_number)) = self.native_block_number(Some(number)) {
-			if let Ok(Some(block)) = self.client.runtime_api().block_by_number(
+			if let Ok((Some(block), statuses)) = self.client.runtime_api().block_by_number(
 				&BlockId::Hash(header.hash()),
 				native_number
 			) {
-				return Ok(Some(rich_block_build(block, vec![], None)));
+				return Ok(Some(rich_block_build(block, statuses, None)));
 			}
 		}
 		Ok(None)
