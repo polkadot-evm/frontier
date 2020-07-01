@@ -57,7 +57,7 @@ pub use frame_support::{
 	},
 	StorageValue,
 };
-use ethereum::{Block as EthereumBlock, Transaction as EthereumTransaction};
+use ethereum::{Block as EthereumBlock, Transaction as EthereumTransaction, Digest, Keccak256, rlp};
 use frontier_rpc_primitives::{TransactionStatus};
 
 
@@ -525,6 +525,21 @@ impl_runtime_apis! {
 
 		fn block_by_hash(hash: H256) -> Option<EthereumBlock> {
 			<ethereum::Module<Runtime>>::block_by_hash(hash)
+		}
+
+		fn block_by_hash_with_statuses(hash: H256) -> (
+			Option<EthereumBlock>, Vec<Option<ethereum::TransactionStatus>>
+		) {
+			if let Some(block) = <ethereum::Module<Runtime>>::block_by_hash(hash) {
+				let statuses = block.transactions.iter().map(|transaction|{
+					let transaction_hash = H256::from_slice(
+						Keccak256::digest(&rlp::encode(transaction)).as_slice()
+					);
+					ethereum::Module::<Runtime>::transaction_status(transaction_hash)
+				}).collect();
+				return (Some(block), statuses);
+			}
+			(None,vec![])
 		}
 
 		fn transaction_by_hash(hash: H256) -> Option<(

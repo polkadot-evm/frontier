@@ -66,7 +66,11 @@ impl<B: BlockT, C, SC, P, CT, BE> EthApi<B, C, SC, P, CT, BE> {
 	}
 }
 
-fn rich_block_build(block: ethereum::Block, hash: Option<H256>) -> RichBlock {
+fn rich_block_build(
+	block: ethereum::Block, 
+	statuses: Vec<Option<TransactionStatus>>, 
+	hash: Option<H256>
+) -> RichBlock {
 	Rich {
 		inner: Block {
 			hash: Some(hash.unwrap_or_else(|| {
@@ -94,9 +98,16 @@ fn rich_block_build(block: ethereum::Block, hash: Option<H256>) -> RichBlock {
 				Bytes(block.header.nonce.as_bytes().to_vec())
 			],
 			uncles: vec![], // TODO
-			// TODO expected struct `frontier_rpc_core::types::transaction::Transaction`,
-			// found struct `ethereum::transaction::Transaction`
-			transactions: BlockTransactions::Full(vec![]),
+			transactions: BlockTransactions::Full(
+				block.transactions.iter().enumerate().map(|(index,transaction)|{
+					let mut status = statuses[index].clone();
+					// A fallback to default check
+					if status.is_none() {
+						status = Some(TransactionStatus::default());
+					}
+					transaction_build(transaction.clone(), block.clone(), status.unwrap())
+				}).collect()
+			),
 			size: None // TODO
 		},
 		extra_info: BTreeMap::new()
@@ -303,11 +314,11 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 		let header = self.select_chain.best_chain()
 			.map_err(|_| internal_err("fetch header failed"))?;
 
-		if let Ok(Some(block)) = self.client.runtime_api().block_by_hash(
+		if let Ok((Some(block), statuses)) = self.client.runtime_api().block_by_hash_with_statuses(
 			&BlockId::Hash(header.hash()),
 			hash
 		) {
-			Ok(Some(rich_block_build(block, Some(hash))))
+			Ok(Some(rich_block_build(block, statuses, Some(hash))))
 		} else {
 			Ok(None)
 		}
@@ -321,7 +332,7 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 				&BlockId::Hash(header.hash()),
 				native_number
 			) {
-				return Ok(Some(rich_block_build(block, None)));
+				return Ok(Some(rich_block_build(block, vec![], None)));
 			}
 		}
 		Ok(None)
