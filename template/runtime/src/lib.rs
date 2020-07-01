@@ -57,7 +57,7 @@ pub use frame_support::{
 	},
 	StorageValue,
 };
-use ethereum::{Block as EthereumBlock, Transaction as EthereumTransaction};
+use ethereum::{Block as EthereumBlock, Transaction as EthereumTransaction, Receipt as EthereumReceipt};
 use frontier_rpc_primitives::{TransactionStatus};
 
 
@@ -455,10 +455,6 @@ impl_runtime_apis! {
 			evm::Module::<Runtime>::accounts(address)
 		}
 
-		fn transaction_status(hash: H256) -> Option<ethereum::TransactionStatus> {
-			ethereum::Module::<Runtime>::transaction_status(hash)
-		}
-
 		fn gas_price() -> U256 {
 			FixedGasPrice::min_gas_price()
 		}
@@ -552,7 +548,8 @@ impl_runtime_apis! {
 		fn transaction_by_hash(hash: H256) -> Option<(
 			EthereumTransaction,
 			EthereumBlock,
-			TransactionStatus)> {
+			TransactionStatus,
+			EthereumReceipt)> {
 			<ethereum::Module<Runtime>>::transaction_by_hash(hash)
 		}
 
