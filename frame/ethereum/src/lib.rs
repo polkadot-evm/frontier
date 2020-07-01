@@ -30,9 +30,8 @@ use sp_runtime::{
 	traits::UniqueSaturatedInto,
 	transaction_validity::{TransactionValidity, TransactionSource, ValidTransaction}
 };
-// Some convenience re-exports to access from impl_runtime_apis
-pub use rlp;
-pub use sha3::{Digest, Keccak256};
+use rlp;
+use sha3::{Digest, Keccak256};
 
 pub use frontier_rpc_primitives::TransactionStatus;
 pub use ethereum::{Transaction, Log, Block};
@@ -310,6 +309,17 @@ impl<T: Trait> Module<T> {
 			return Some(block)
 		}
 		None
+	}
+
+	pub fn block_transaction_statuses(
+		block: &Block
+	) -> Vec<Option<TransactionStatus>> {
+		block.transactions.iter().map(|transaction|{
+			let transaction_hash = H256::from_slice(
+				Keccak256::digest(&rlp::encode(transaction)).as_slice()
+			);
+			<Module<T>>::transaction_status(transaction_hash)
+		}).collect()
 	}
 
 	/// Execute an Ethereum transaction, ignoring transaction signatures.
