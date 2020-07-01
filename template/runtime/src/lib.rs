@@ -546,7 +546,7 @@ impl_runtime_apis! {
 					statuses
 				);
 			}
-			(None,vec![])
+			(None, vec![])
 		}
 
 		fn transaction_by_hash(hash: H256) -> Option<(
