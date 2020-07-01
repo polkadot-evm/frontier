@@ -99,7 +99,7 @@ fn rich_block_build(
 			],
 			uncles: vec![], // TODO
 			transactions: BlockTransactions::Full(
-				block.transactions.iter().enumerate().map(|(index,transaction)|{
+				block.transactions.iter().enumerate().map(|(index, transaction)|{
 					let mut status = statuses[index].clone();
 					// A fallback to default check
 					if status.is_none() {
