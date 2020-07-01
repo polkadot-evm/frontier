@@ -84,7 +84,7 @@ fn rich_block_build(block: ethereum::Block, hash: Option<H256>) -> RichBlock {
 			number: Some(block.header.number),
 			gas_used: block.header.gas_used,
 			gas_limit: block.header.gas_limit,
-			extra_data: Bytes(vec![]), // TODO H256 to Vec<u8>
+			extra_data: Bytes(block.header.extra_data.as_bytes().to_vec()),
 			logs_bloom: Some(block.header.logs_bloom),
 			timestamp: U256::from(block.header.timestamp),
 			difficulty: block.header.difficulty,
