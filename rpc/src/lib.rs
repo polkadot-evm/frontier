@@ -66,10 +66,14 @@ impl<B: BlockT, C, SC, P, CT, BE> EthApi<B, C, SC, P, CT, BE> {
 	}
 }
 
-fn rich_block_build(block: ethereum::Block) -> RichBlock {
+fn rich_block_build(block: ethereum::Block, hash: Option<H256>) -> RichBlock {
 	Rich {
 		inner: Block {
-			hash: None, // TODO
+			hash: Some(hash.unwrap_or_else(|| {
+				H256::from_slice(
+					Keccak256::digest(&rlp::encode(&block.header)).as_slice()
+				)
+			})),
 			parent_hash: block.header.parent_hash,
 			uncles_hash: H256::zero(), // TODO
 			author: H160::default(), // TODO
@@ -300,7 +304,7 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 			&BlockId::Hash(header.hash()),
 			hash
 		) {
-			Ok(Some(rich_block_build(block)))
+			Ok(Some(rich_block_build(block, Some(hash))))
 		} else {
 			Ok(None)
 		}
@@ -314,7 +318,7 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 				&BlockId::Hash(header.hash()),
 				native_number
 			) {
-				return Ok(Some(rich_block_build(block)));
+				return Ok(Some(rich_block_build(block, None)));
 			}
 		}
 		Ok(None)
