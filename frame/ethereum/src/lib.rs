@@ -311,6 +311,17 @@ impl<T: Trait> Module<T> {
 		None
 	}
 
+	pub fn block_transaction_statuses(
+		block: &Block
+	) -> Vec<Option<TransactionStatus>> {
+		block.transactions.iter().map(|transaction|{
+			let transaction_hash = H256::from_slice(
+				Keccak256::digest(&rlp::encode(transaction)).as_slice()
+			);
+			<Module<T>>::transaction_status(transaction_hash)
+		}).collect()
+	}
+
 	/// Execute an Ethereum transaction, ignoring transaction signatures.
 	pub fn execute(source: H160, transaction: ethereum::Transaction) {
 		let transaction_hash = H256::from_slice(

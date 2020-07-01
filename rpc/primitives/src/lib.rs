@@ -33,6 +33,20 @@ pub struct TransactionStatus {
 	pub logs_bloom: Bloom,
 }
 
+impl Default for TransactionStatus {
+	fn default() -> Self {
+		TransactionStatus {
+			transaction_hash: H256::default(),
+			transaction_index: 0 as u32,
+			from: H160::default(),
+			to: None,
+			contract_address: None,
+			logs: Vec::new(),
+			logs_bloom: Bloom::default(),
+		}
+	}
+}
+
 sp_api::decl_runtime_apis! {
 	/// API necessary for Ethereum-compatibility layer.
 	pub trait EthereumRuntimeApi {
@@ -52,9 +66,10 @@ sp_api::decl_runtime_apis! {
 			gas_price: U256,
 			nonce: Option<U256>,
 		) -> Option<(Vec<u8>, U256)>;
-		fn block_by_number(number: u32) -> Option<EthereumBlock>;
+		fn block_by_number(number: u32) -> (Option<EthereumBlock>, Vec<Option<TransactionStatus>>);
 		fn block_transaction_count_by_number(number: u32) -> Option<U256>;
 		fn block_by_hash(hash: H256) -> Option<EthereumBlock>;
+		fn block_by_hash_with_statuses(hash: H256) -> (Option<EthereumBlock>, Vec<Option<TransactionStatus>>);
 		fn block_transaction_count_by_hash(hash: H256) -> Option<U256>;
 		fn transaction_by_hash(hash: H256) -> Option<(
 			EthereumTransaction,
