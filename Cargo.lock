@@ -819,7 +819,9 @@ dependencies = [
 
 [[package]]
 name = "evm"
-version = "0.16.1"
+version = "0.17.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "68224b0aa788720ef0c8a23030a4412a021ed73df069a922bee8f0db9ed617e2"
 dependencies = [
  "evm-core",
  "evm-gasometer",
@@ -832,14 +834,18 @@ dependencies = [
 
 [[package]]
 name = "evm-core"
-version = "0.16.1"
+version = "0.17.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4a040378759577447945c89da1b07d6e33fda32a97a104afe0ec3fa1c382949d"
 dependencies = [
  "primitive-types",
 ]
 
 [[package]]
 name = "evm-gasometer"
-version = "0.16.1"
+version = "0.17.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7bb5bc051afad6bb0735c82b46656bbdfac41917861307a608b1404a546fec42"
 dependencies = [
  "evm-core",
  "evm-runtime",
@@ -848,7 +854,9 @@ dependencies = [
 
 [[package]]
 name = "evm-runtime"
-version = "0.16.1"
+version = "0.17.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7410f5677a52203d3fca02b0eb8f96f9799f3a45cff82946a8ed28379e6b1b04"
 dependencies = [
  "evm-core",
  "primitive-types",
@@ -6715,3 +6723,19 @@ dependencies = [
  "syn 1.0.29",
  "synstructure",
 ]
+
+[[patch.unused]]
+name = "evm"
+version = "0.16.1"
+
+[[patch.unused]]
+name = "evm-core"
+version = "0.16.1"
+
+[[patch.unused]]
+name = "evm-gasometer"
+version = "0.16.1"
+
+[[patch.unused]]
+name = "evm-runtime"
+version = "0.16.1"
