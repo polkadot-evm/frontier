@@ -600,7 +600,7 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 					}).collect()
 				},
 				state_root: Some(receipt.state_root),
-				logs_bloom: Default::default(), // TODO
+				logs_bloom: receipt.logs_bloom,
 				status_code: None,
 			}))
 		}
