@@ -592,7 +592,7 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 				gas_used: Some(receipt.used_gas),
 				contract_address: status.contract_address,
 				logs: {
-					receipt.logs.iter().map(|log| {
+					receipt.logs.iter().enumerate().map(|(i, log)| {
 						Log {
 							address: log.address,
 							topics: log.topics.clone(),
@@ -602,7 +602,7 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 							transaction_hash: Some(hash),
 							transaction_index: Some(status.transaction_index.into()),
 							log_index: None, // TODO
-							transaction_log_index: None, // TODO
+							transaction_log_index: Some(U256::from(i)),
 							log_type: Default::default(), // TODO
 							removed: false, // TODO
 						}
