@@ -250,13 +250,13 @@ impl<T: Trait> Module<T> {
 		ethereum::Transaction,
 		ethereum::Block,
 		TransactionStatus,
-		ethereum::Receipt
+		Vec<ethereum::Receipt>
 	)> {
 		let (block_hash, transaction_index) = Transactions::get(hash)?;
 		let transaction_status = TransactionStatuses::get(hash)?;
 		let (block, receipts) = BlocksAndReceipts::get(block_hash)?;
 		let transaction = &block.transactions[transaction_index as usize];
-		Some((transaction.clone(), block, transaction_status, receipts[transaction_index as usize].clone()))
+		Some((transaction.clone(), block, transaction_status, receipts))
 	}
 
 	pub fn transaction_by_block_hash_and_index(

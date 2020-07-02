@@ -566,12 +566,14 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 	fn transaction_receipt(&self, hash: H256) -> Result<Option<Receipt>> {
 		let header = self.select_chain.best_chain()
 			.map_err(|_| internal_err("fetch header failed"))?;
-		if let Ok(Some((_transaction, block, status, receipt))) = self.client.runtime_api()
+		if let Ok(Some((_transaction, block, status, receipts))) = self.client.runtime_api()
 			.transaction_by_hash(&BlockId::Hash(header.hash()), hash) {
 			
 			let block_hash = H256::from_slice(
 				Keccak256::digest(&rlp::encode(&block.header)).as_slice()
 			);
+			let receipt = receipts[status.transaction_index as usize].clone();
+			
 			return Ok(Some(Receipt {
 				transaction_hash: Some(status.transaction_hash),
 				transaction_index: Some(status.transaction_index.into()),
@@ -579,7 +581,14 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 				from: Some(status.from),
 				to: status.to,
 				block_number: Some(block.header.number),
-				cumulative_gas_used: Default::default(), // TODO
+				cumulative_gas_used: {
+					let mut cumulative_receipts = receipts.clone();
+					cumulative_receipts.truncate((status.transaction_index + 1) as usize);
+					let cumulative_gas: u32 = cumulative_receipts.iter().map(|r| {
+						r.used_gas.as_u32()
+					}).sum();
+					U256::from(cumulative_gas)
+				},
 				gas_used: Some(receipt.used_gas),
 				contract_address: status.contract_address,
 				logs: {

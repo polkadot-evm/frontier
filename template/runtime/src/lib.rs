@@ -549,7 +549,7 @@ impl_runtime_apis! {
 			EthereumTransaction,
 			EthereumBlock,
 			TransactionStatus,
-			EthereumReceipt)> {
+			Vec<EthereumReceipt>)> {
 			<ethereum::Module<Runtime>>::transaction_by_hash(hash)
 		}
 
