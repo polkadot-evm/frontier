@@ -660,6 +660,6 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 		Ok(true)
 	}
 	fn version(&self) -> Result<String> {
-		Ok("2.0".to_string())
+		Ok(self.chain_id().unwrap().unwrap().to_string())
 	}
 }
