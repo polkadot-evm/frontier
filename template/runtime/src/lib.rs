@@ -265,7 +265,6 @@ impl balances::Trait for Runtime {
 parameter_types! {
 	pub const TransactionByteFee: Balance = 1;
 	pub const ChainId: u64 = 42;
-	pub const EVMModuleId: ModuleId = ModuleId(*b"py/evmpa");
 }
 
 impl transaction_payment::Trait for Runtime {
