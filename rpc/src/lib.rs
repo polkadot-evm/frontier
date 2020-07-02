@@ -612,7 +612,6 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 								(pre_receipts_log_index.unwrap_or(0)) + i as u32
 							)),
 							transaction_log_index: Some(U256::from(i)),
-							log_type: Default::default(), // TODO
 							removed: false,
 						}
 					}).collect()
