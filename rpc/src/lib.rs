@@ -108,7 +108,7 @@ fn rich_block_build(
 					transaction_build(transaction.clone(), block.clone(), status.unwrap())
 				}).collect()
 			),
-			size: None // TODO
+			size: Some(U256::from(rlp::encode(&block).len() as u32))
 		},
 		extra_info: BTreeMap::new()
 	}
