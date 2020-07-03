@@ -138,9 +138,9 @@ fn transaction_build(
 		value: transaction.value,
 		gas_price: transaction.gas_price,
 		gas: transaction.gas_limit,
-		input: Bytes(transaction.input),
+		input: Bytes(transaction.clone().input),
 		creates: status.contract_address,
-		raw: Bytes(vec![]), // TODO
+		raw: Bytes(rlp::encode(&transaction)),
 		public_key: None, // TODO
 		chain_id: None, // TODO
 		standard_v: U256::zero(), // TODO
