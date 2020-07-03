@@ -149,7 +149,7 @@ fn transaction_build(
 				None
 			}
 		},
-		standard_v: U256::zero(), // TODO
+		standard_v: U256::from(transaction.signature.standard_v()),
 		v: U256::zero(), // TODO
 		r: U256::zero(), // TODO
 		s: U256::zero(), // TODO
