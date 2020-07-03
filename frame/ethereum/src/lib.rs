@@ -260,6 +260,11 @@ impl<T: Trait> Module<T> {
 		TransactionStatuses::get(hash)
 	}
 
+	// Requires returning a Vec<Receipt> to enable cumulative calculations in the rpc-end.
+	// 
+	// - `cumulative_gas_used`: the sum of `used_gas` for this and all previous transactions 
+	// in the block. 
+	// - `log_index`: each Log's index, block wise.
 	pub fn transaction_by_hash(hash: H256) -> Option<(
 		ethereum::Transaction,
 		ethereum::Block,
