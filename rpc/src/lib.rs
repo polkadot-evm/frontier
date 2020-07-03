@@ -142,7 +142,13 @@ fn transaction_build(
 		creates: status.contract_address,
 		raw: Bytes(rlp::encode(&transaction)),
 		public_key: None, // TODO
-		chain_id: None, // TODO
+		chain_id: {
+			if let Some(chain_id) = transaction.signature.chain_id() {
+				Some(U64::from(chain_id))
+			} else {
+				None
+			}
+		},
 		standard_v: U256::zero(), // TODO
 		v: U256::zero(), // TODO
 		r: U256::zero(), // TODO
