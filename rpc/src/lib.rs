@@ -79,7 +79,7 @@ fn rich_block_build(
 				)
 			})),
 			parent_hash: block.header.parent_hash,
-			uncles_hash: H256::zero(), // TODO
+			uncles_hash: H256::zero(),
 			author: H160::default(), // TODO
 			miner: H160::default(), // TODO
 			state_root: block.header.state_root,
@@ -92,20 +92,19 @@ fn rich_block_build(
 			logs_bloom: Some(block.header.logs_bloom),
 			timestamp: U256::from(block.header.timestamp),
 			difficulty: block.header.difficulty,
-			total_difficulty: None, // TODO
+			total_difficulty: None,
 			seal_fields: vec![
 				Bytes(block.header.mix_hash.as_bytes().to_vec()),
 				Bytes(block.header.nonce.as_bytes().to_vec())
 			],
-			uncles: vec![], // TODO
+			uncles: vec![],
 			transactions: BlockTransactions::Full(
 				block.transactions.iter().enumerate().map(|(index, transaction)|{
-					let mut status = statuses[index].clone();
-					// A fallback to default check
-					if status.is_none() {
-						status = Some(TransactionStatus::default());
-					}
-					transaction_build(transaction.clone(), block.clone(), status.unwrap())
+					transaction_build(
+						transaction.clone(), 
+						block.clone(), 
+						statuses[index].clone().unwrap_or_default()
+					)
 				}).collect()
 			),
 			size: Some(U256::from(rlp::encode(&block).len() as u32))
