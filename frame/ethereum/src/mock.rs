@@ -19,7 +19,9 @@
 use super::*;
 use crate::{Module, Trait};
 use ethereum::{TransactionAction, TransactionSignature};
-use frame_support::{impl_outer_origin, parameter_types, weights::Weight};
+use frame_support::{
+	impl_outer_origin, parameter_types, weights::Weight, ConsensusEngineId
+};
 use pallet_evm::{FeeCalculator, HashTruncateConvertAccountId};
 use rlp::*;
 use sp_core::{H160, H256, U256};
@@ -115,9 +117,20 @@ impl pallet_evm::Trait for Test {
 	type Precompiles = ();
 }
 
+pub struct EthereumFindAuthor;
+impl FindAuthor<H160> for EthereumFindAuthor {
+	fn find_author<'a, I>(_digests: I) -> Option<H160> where
+		I: 'a + IntoIterator<Item=(ConsensusEngineId, &'a [u8])>
+	{
+		None
+	}
+}
+
+
 impl Trait for Test {
     type Event = ();
     type ChainId = ChainId;
+	type FindAuthor = EthereumFindAuthor;
 }
 
 pub type System = frame_system::Module<Test>;
