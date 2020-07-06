@@ -29,7 +29,7 @@ use grandpa::fg_primitives;
 use grandpa::{AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList};
 use codec::{Encode, Decode};
 use sp_api::impl_runtime_apis;
-use sp_consensus_aura::sr25519::AuthorityId as AuraId;
+use sp_consensus_aura::{sr25519::AuthorityId as AuraId, AURA_ENGINE_ID};
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata, U256, H160, H256};
 use sp_runtime::traits::{
 	BlakeTwo256, Block as BlockT, IdentifyAccount, IdentityLookup, NumberFor, Saturating, Verify,
@@ -44,19 +44,18 @@ use sp_std::prelude::*;
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
-use evm::{FeeCalculator, HashTruncateConvertAccountId};
+use evm::{FeeCalculator, HashTruncateConvertAccountId, ConvertAccountId};
 // A few exports that help ease life for downstream crates.
-use aura::AuraAuthorId;
 pub use balances::Call as BalancesCall;
 pub use evm::Account as EVMAccount;
 pub use frame_support::{
 	construct_runtime, parameter_types,
-	traits::{KeyOwnerProofSystem, Randomness},
+	traits::{KeyOwnerProofSystem, Randomness, FindAuthor},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
 		IdentityFee, Weight,
 	},
-	StorageValue,
+	StorageValue, ConsensusEngineId
 };
 use ethereum::{Block as EthereumBlock, Transaction as EthereumTransaction, Receipt as EthereumReceipt};
 use frontier_rpc_primitives::{TransactionStatus};
@@ -304,10 +303,27 @@ impl evm::Trait for Runtime {
 	type Precompiles = ();
 }
 
+pub struct EthereumFindAuthor;
+impl FindAuthor<H160> for EthereumFindAuthor {
+	fn find_author<'a, I>(digests: I) -> Option<H160> where
+		I: 'a + IntoIterator<Item=(ConsensusEngineId, &'a [u8])>
+	{
+		for (id, mut data) in digests.into_iter() {
+			if id == AURA_ENGINE_ID {
+				if let Ok(slot_num) = u64::decode(&mut data) {
+					let author_index = slot_num % Aura::authorities().len() as u64;
+					let authority_id = Aura::authorities()[author_index as usize].clone();
+					return Some(HashTruncateConvertAccountId::<BlakeTwo256>::convert_account_id(&authority_id));
+				}
+			}
+		}
+		None
+	}
+}
+
 impl ethereum::Trait for Runtime {
 	type Event = Event;
-	type Public = AuraId;
-	type FindAuthor = AuraAuthorId<Runtime>;
+	type FindAuthor = EthereumFindAuthor;
 	type ChainId = ChainId;
 }
 
