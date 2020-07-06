@@ -18,6 +18,7 @@ pallet-evm = { version = "2.0.0-dev", default-features = false, path = "../../ve
 sp-runtime = { version = "2.0.0-dev", default-features = false, path = "../../vendor/substrate/primitives/runtime" }
 sp-std = { version = "2.0.0-dev", default-features = false, path = "../../vendor/substrate/primitives/std" }
 sp-io = { version = "2.0.0-dev", default-features = false, path = "../../vendor/substrate/primitives/io" }
+sp-application-crypto = { version = "2.0.0-dev", default-features = false, path = "../../vendor/substrate/primitives/application-crypto" }
 ethereum = { version = "0.2", default-features = false, features = ["codec"] }
 ethereum-types = { version = "0.9", default-features = false }
 rlp = { version = "0.4", default-features = false }
@@ -48,4 +49,5 @@ std = [
 	"sha3/std",
 	"libsecp256k1/std",
 	"frontier-rpc-primitives/std",
+	"sp-application-crypto/std",
 ]

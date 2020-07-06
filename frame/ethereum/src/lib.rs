@@ -22,14 +22,18 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::{decl_module, decl_storage, decl_event, weights::Weight};
+use frame_support::{
+	decl_module, decl_storage, decl_event, weights::Weight, traits::FindAuthor
+};
 use sp_std::prelude::*;
 use frame_system::{self as system, ensure_none};
 use ethereum_types::{H160, H64, H256, U256, Bloom};
 use sp_runtime::{
-	traits::UniqueSaturatedInto,
+	traits::{UniqueSaturatedInto, BlakeTwo256},
 	transaction_validity::{TransactionValidity, TransactionSource, ValidTransaction}
 };
+use sp_application_crypto::AppPublic;
+use pallet_evm::ConvertAccountId;
 use rlp;
 use sha3::{Digest, Keccak256};
 
@@ -53,6 +57,8 @@ pub type BalanceOf<T> = <T as pallet_balances::Trait>::Balance;
 pub trait Trait: frame_system::Trait<Hash=H256> + pallet_balances::Trait + pallet_timestamp::Trait + pallet_evm::Trait {
 	/// The overarching event type.
 	type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
+	type Public: AppPublic;
+	type FindAuthor: FindAuthor<Self::Public>;
 }
 
 decl_storage! {
@@ -167,7 +173,7 @@ decl_module! {
 				ommers_hash: H256::from_slice(
 					Keccak256::digest(&rlp::encode_list(&ommers)[..]).as_slice(),
 				), // TODO: check ommers hash.
-				beneficiary: H160::default(),
+				beneficiary: <Module<T>>::find_author(),
 				state_root: H256::default(), // TODO: figure out if there's better way to get a sort-of-valid state root.
 				transactions_root: H256::from_slice(
 					Keccak256::digest(&rlp::encode_list(&transactions)[..]).as_slice(),
@@ -242,6 +248,16 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
 // functions that do not write to storage and operation functions that do.
 // - Private functions. These are your usual private utilities unavailable to other pallets.
 impl<T: Trait> Module<T> {
+	pub fn find_author() -> H160 {
+		let digest = <frame_system::Module<T>>::digest();
+		let pre_runtime_digests = digest.logs.iter().filter_map(|d| d.as_pre_runtime());
+		if let Some(authority_id) = T::FindAuthor::find_author(pre_runtime_digests) {
+			<pallet_evm::HashTruncateConvertAccountId<BlakeTwo256>>::convert_account_id(&authority_id)
+		} else {
+			H160::default()
+		}
+	}
+
 	pub fn transaction_status(hash: H256) -> Option<TransactionStatus> {
 		TransactionStatuses::get(hash)
 	}

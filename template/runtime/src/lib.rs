@@ -44,13 +44,14 @@ use sp_std::prelude::*;
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
-use evm::{FeeCalculator, HashTruncateConvertAccountId, ConvertAccountId};
+use evm::{FeeCalculator, HashTruncateConvertAccountId};
 // A few exports that help ease life for downstream crates.
+use aura::AuraAuthorId;
 pub use balances::Call as BalancesCall;
 pub use evm::Account as EVMAccount;
 pub use frame_support::{
 	construct_runtime, parameter_types,
-	traits::{KeyOwnerProofSystem, Randomness, FindAuthor},
+	traits::{KeyOwnerProofSystem, Randomness},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
 		IdentityFee, Weight,
@@ -304,6 +305,8 @@ impl evm::Trait for Runtime {
 
 impl ethereum::Trait for Runtime {
 	type Event = Event;
+	type Public = AuraId;
+	type FindAuthor = AuraAuthorId<Runtime>;
 }
 
 construct_runtime!(
@@ -464,14 +467,7 @@ impl_runtime_apis! {
 		}
 
 		fn author() -> H160 {
-			let digest = <system::Module<Runtime>>::digest();
-			let pre_runtime_digests = digest.logs.iter().filter_map(|d| d.as_pre_runtime());
-			if let Some(index) = <aura::Module<Runtime>>::find_author(pre_runtime_digests) {
-				let authority_id = &<aura::Module<Runtime>>::authorities()[index as usize];
-				<evm::HashTruncateConvertAccountId<BlakeTwo256>>::convert_account_id(&authority_id)
-			} else {
-				H160::zero()
-			}
+			<ethereum::Module<Runtime>>::find_author()
 		}
 
 		fn storage_at(address: H160, index: U256) -> H256 {
