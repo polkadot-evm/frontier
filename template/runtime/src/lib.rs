@@ -265,6 +265,7 @@ impl balances::Trait for Runtime {
 
 parameter_types! {
 	pub const TransactionByteFee: Balance = 1;
+	pub const ChainId: u64 = 42;
 }
 
 impl transaction_payment::Trait for Runtime {
@@ -307,6 +308,7 @@ impl ethereum::Trait for Runtime {
 	type Event = Event;
 	type Public = AuraId;
 	type FindAuthor = AuraAuthorId<Runtime>;
+	type ChainId = ChainId;
 }
 
 construct_runtime!(
@@ -451,7 +453,7 @@ impl_runtime_apis! {
 
 	impl frontier_rpc_primitives::EthereumRuntimeApi<Block> for Runtime {
 		fn chain_id() -> u64 {
-			sp_io::misc::chain_id()
+			ChainId::get()
 		}
 
 		fn account_basic(address: H160) -> EVMAccount {

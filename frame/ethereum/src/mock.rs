@@ -101,7 +101,8 @@ impl FeeCalculator for FixedGasPrice {
 }
 
 parameter_types! {
-	pub const TransactionByteFee: u64 = 1;
+    pub const TransactionByteFee: u64 = 1;
+    pub const ChainId: u64 = 42;
 	pub const EVMModuleId: ModuleId = ModuleId(*b"py/evmpa");
 }
 
@@ -115,7 +116,8 @@ impl pallet_evm::Trait for Test {
 }
 
 impl Trait for Test {
-	type Event = ();
+    type Event = ();
+    type ChainId = ChainId;
 }
 
 pub type System = frame_system::Module<Test>;
