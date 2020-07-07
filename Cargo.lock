@@ -6723,19 +6723,3 @@ dependencies = [
  "syn 1.0.29",
  "synstructure",
 ]
-
-[[patch.unused]]
-name = "evm"
-version = "0.16.1"
-
-[[patch.unused]]
-name = "evm-core"
-version = "0.16.1"
-
-[[patch.unused]]
-name = "evm-gasometer"
-version = "0.16.1"
-
-[[patch.unused]]
-name = "evm-runtime"
-version = "0.16.1"
