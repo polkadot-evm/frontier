@@ -19,7 +19,9 @@
 use super::*;
 use crate::{Module, Trait};
 use ethereum::{TransactionAction, TransactionSignature};
-use frame_support::{impl_outer_origin, parameter_types, weights::Weight};
+use frame_support::{
+	impl_outer_origin, parameter_types, weights::Weight, ConsensusEngineId
+};
 use pallet_evm::{FeeCalculator, HashTruncateConvertAccountId};
 use rlp::*;
 use sp_core::{H160, H256, U256};
@@ -100,6 +102,15 @@ impl FeeCalculator for FixedGasPrice {
 	}
 }
 
+pub struct EthereumFindAuthor;
+impl FindAuthor<H160> for EthereumFindAuthor {
+	fn find_author<'a, I>(_digests: I) -> Option<H160> where
+		I: 'a + IntoIterator<Item=(ConsensusEngineId, &'a [u8])>
+	{
+		Some(address_build(0).1)
+	}
+}
+
 parameter_types! {
 	pub const TransactionByteFee: u64 = 1;
 	pub const ChainId: u64 = 42;
@@ -118,6 +129,7 @@ impl pallet_evm::Trait for Test {
 impl Trait for Test {
 	type Event = ();
 	type ChainId = ChainId;
+	type FindAuthor = EthereumFindAuthor;
 }
 
 pub type System = frame_system::Module<Test>;
@@ -130,6 +142,16 @@ pub struct AccountInfo {
 	pub private_key: H256,
 }
 
+fn address_build(seed: u8) -> (H256, H160) {
+	let private_key = H256::from_slice(&[(seed + 1) as u8; 32]); //H256::from_low_u64_be((i + 1) as u64);
+	let secret_key = secp256k1::SecretKey::parse_slice(&private_key[..]).unwrap();
+	let public_key = secp256k1::PublicKey::from_secret_key(&secret_key);
+	let address = H160::from(H256::from_slice(
+		&Keccak256::digest(&public_key.serialize()[1..])[..],
+	));
+	(private_key, address)
+}
+
 // This function basically just builds a genesis storage key/value store according to
 // our desired mockup.
 pub fn new_test_ext(accounts_len: usize) -> (Vec<AccountInfo>, sp_io::TestExternalities) {
@@ -140,12 +162,7 @@ pub fn new_test_ext(accounts_len: usize) -> (Vec<AccountInfo>, sp_io::TestExtern
 
 	let pairs = (0..accounts_len)
 		.map(|i| {
-			let private_key = H256::from_slice(&[(i + 1) as u8; 32]); //H256::from_low_u64_be((i + 1) as u64);
-			let secret_key = secp256k1::SecretKey::parse_slice(&private_key[..]).unwrap();
-			let public_key = secp256k1::PublicKey::from_secret_key(&secret_key);
-			let address = H160::from(H256::from_slice(
-				&Keccak256::digest(&public_key.serialize()[1..])[..],
-			));
+			let (private_key, address) = address_build(i as u8);
 			AccountInfo {
 				private_key: private_key,
 				address: address,

@@ -22,7 +22,10 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::{decl_module, decl_storage, decl_error, decl_event, ensure, weights::Weight, traits::Get};
+use frame_support::{
+	decl_module, decl_storage, decl_error, decl_event, ensure,
+	weights::Weight, traits::Get, traits::FindAuthor
+};
 use sp_std::prelude::*;
 use frame_system::{self as system, ensure_none};
 use ethereum_types::{H160, H64, H256, U256, Bloom};
@@ -54,6 +57,7 @@ pub trait Trait: frame_system::Trait<Hash=H256> + pallet_balances::Trait + palle
 	/// The overarching event type.
 	type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
 	type ChainId: Get<u64>;
+	type FindAuthor: FindAuthor<H160>;
 }
 
 decl_storage! {
@@ -181,7 +185,7 @@ decl_module! {
 				ommers_hash: H256::from_slice(
 					Keccak256::digest(&rlp::encode_list(&ommers)[..]).as_slice(),
 				), // TODO: check ommers hash.
-				beneficiary: H160::default(),
+				beneficiary: <Module<T>>::find_author(),
 				state_root: H256::default(), // TODO: figure out if there's better way to get a sort-of-valid state root.
 				transactions_root: H256::from_slice(
 					Keccak256::digest(&rlp::encode_list(&transactions)[..]).as_slice(),
@@ -256,6 +260,16 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
 // functions that do not write to storage and operation functions that do.
 // - Private functions. These are your usual private utilities unavailable to other pallets.
 impl<T: Trait> Module<T> {
+	pub fn find_author() -> H160 {
+		let digest = <frame_system::Module<T>>::digest();
+		let pre_runtime_digests = digest.logs.iter().filter_map(|d| d.as_pre_runtime());
+		if let Some(authority_id) = T::FindAuthor::find_author(pre_runtime_digests) {
+			authority_id
+		} else {
+			H160::default()
+		}
+	}
+
 	pub fn transaction_status(hash: H256) -> Option<TransactionStatus> {
 		TransactionStatuses::get(hash)
 	}
