@@ -69,7 +69,8 @@ impl<B: BlockT, C, SC, P, CT, BE> EthApi<B, C, SC, P, CT, BE> {
 fn rich_block_build(
 	block: ethereum::Block,
 	statuses: Vec<Option<TransactionStatus>>,
-	hash: Option<H256>
+	hash: Option<H256>,
+	full_transactions: bool
 ) -> RichBlock {
 	Rich {
 		inner: Block {
@@ -98,15 +99,27 @@ fn rich_block_build(
 				Bytes(block.header.nonce.as_bytes().to_vec())
 			],
 			uncles: vec![],
-			transactions: BlockTransactions::Full(
-				block.transactions.iter().enumerate().map(|(index, transaction)|{
-					transaction_build(
-						transaction.clone(),
-						block.clone(),
-						statuses[index].clone().unwrap_or_default()
+			transactions: {
+				if full_transactions {
+					BlockTransactions::Full(
+						block.transactions.iter().enumerate().map(|(index, transaction)|{
+							transaction_build(
+								transaction.clone(),
+								block.clone(),
+								statuses[index].clone().unwrap_or_default()
+							)
+						}).collect()
 					)
-				}).collect()
-			),
+				} else {
+					BlockTransactions::Hashes(
+						block.transactions.iter().map(|transaction|{
+							H256::from_slice(
+								Keccak256::digest(&rlp::encode(&transaction.clone())).as_slice()
+							)
+						}).collect()
+					)
+				}
+			},
 			size: Some(U256::from(rlp::encode(&block).len() as u32))
 		},
 		extra_info: BTreeMap::new()
@@ -309,7 +322,7 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 		Ok(H256::default())
 	}
 
-	fn block_by_hash(&self, hash: H256, _: bool) -> Result<Option<RichBlock>> {
+	fn block_by_hash(&self, hash: H256, full: bool) -> Result<Option<RichBlock>> {
 		let header = self.select_chain.best_chain()
 			.map_err(|_| internal_err("fetch header failed"))?;
 
@@ -317,13 +330,13 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 			&BlockId::Hash(header.hash()),
 			hash
 		) {
-			Ok(Some(rich_block_build(block, statuses, Some(hash))))
+			Ok(Some(rich_block_build(block, statuses, Some(hash), full)))
 		} else {
 			Ok(None)
 		}
 	}
 
-	fn block_by_number(&self, number: BlockNumber, _: bool) -> Result<Option<RichBlock>> {
+	fn block_by_number(&self, number: BlockNumber, full: bool) -> Result<Option<RichBlock>> {
 		let header = self.select_chain.best_chain()
 			.map_err(|_| internal_err("fetch header failed"))?;
 		if let Ok(Some(native_number)) = self.native_block_number(Some(number)) {
@@ -331,7 +344,7 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 				&BlockId::Hash(header.hash()),
 				native_number
 			) {
-				return Ok(Some(rich_block_build(block, statuses, None)));
+				return Ok(Some(rich_block_build(block, statuses, None, full)));
 			}
 		}
 		Ok(None)
