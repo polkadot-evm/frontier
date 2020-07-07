@@ -80,9 +80,9 @@ fn rich_block_build(
 				)
 			})),
 			parent_hash: block.header.parent_hash,
-			uncles_hash: H256::zero(), // TODO
-			author: H160::default(), // TODO
-			miner: H160::default(), // TODO
+			uncles_hash: H256::zero(),
+			author: block.header.beneficiary,
+			miner: block.header.beneficiary,
 			state_root: block.header.state_root,
 			transactions_root: block.header.transactions_root,
 			receipts_root: block.header.receipts_root,
@@ -93,12 +93,12 @@ fn rich_block_build(
 			logs_bloom: Some(block.header.logs_bloom),
 			timestamp: U256::from(block.header.timestamp),
 			difficulty: block.header.difficulty,
-			total_difficulty: None, // TODO
+			total_difficulty: None,
 			seal_fields: vec![
 				Bytes(block.header.mix_hash.as_bytes().to_vec()),
 				Bytes(block.header.nonce.as_bytes().to_vec())
 			],
-			uncles: vec![], // TODO
+			uncles: vec![],
 			transactions: {
 				if full_transactions {
 					BlockTransactions::Full(
@@ -120,7 +120,7 @@ fn rich_block_build(
 					)
 				}
 			},
-			size: None // TODO
+			size: Some(U256::from(rlp::encode(&block).len() as u32))
 		},
 		extra_info: BTreeMap::new()
 	}
@@ -150,15 +150,15 @@ fn transaction_build(
 		value: transaction.value,
 		gas_price: transaction.gas_price,
 		gas: transaction.gas_limit,
-		input: Bytes(transaction.input),
+		input: Bytes(transaction.clone().input),
 		creates: status.contract_address,
-		raw: Bytes(vec![]), // TODO
+		raw: Bytes(rlp::encode(&transaction)),
 		public_key: None, // TODO
-		chain_id: None, // TODO
-		standard_v: U256::zero(), // TODO
-		v: U256::zero(), // TODO
-		r: U256::zero(), // TODO
-		s: U256::zero(), // TODO
+		chain_id: transaction.signature.chain_id().map(U64::from),
+		standard_v: U256::from(transaction.signature.standard_v()),
+		v: U256::from(transaction.signature.v()),
+		r: U256::from(transaction.signature.r().as_bytes()),
+		s: U256::from(transaction.signature.s().as_bytes()),
 		condition: None // TODO
 	}
 }

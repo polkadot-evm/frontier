@@ -39,7 +39,7 @@ use sp_runtime::{
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult, ModuleId, MultiSignature,
 };
-use sp_std::prelude::*;
+use sp_std::{prelude::*, marker::PhantomData};
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
@@ -55,7 +55,7 @@ pub use frame_support::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
 		IdentityFee, Weight,
 	},
-	StorageValue,
+	StorageValue, ConsensusEngineId
 };
 use ethereum::{Block as EthereumBlock, Transaction as EthereumTransaction, Receipt as EthereumReceipt};
 use frontier_rpc_primitives::{TransactionStatus};
@@ -303,8 +303,23 @@ impl evm::Trait for Runtime {
 	type Precompiles = ();
 }
 
+pub struct EthereumFindAuthor<F>(PhantomData<F>);
+impl<F: FindAuthor<u32>> FindAuthor<H160> for EthereumFindAuthor<F>
+{
+	fn find_author<'a, I>(digests: I) -> Option<H160> where
+		I: 'a + IntoIterator<Item=(ConsensusEngineId, &'a [u8])>
+	{
+		if let Some(author_index) = F::find_author(digests) {
+			let authority_id = Aura::authorities()[author_index as usize].clone();
+			return Some(HashTruncateConvertAccountId::<BlakeTwo256>::convert_account_id(&authority_id));
+		}
+		None
+	}
+}
+
 impl ethereum::Trait for Runtime {
 	type Event = Event;
+	type FindAuthor = EthereumFindAuthor<Aura>;
 	type ChainId = ChainId;
 }
 
@@ -466,14 +481,7 @@ impl_runtime_apis! {
 		}
 
 		fn author() -> H160 {
-			let digest = <system::Module<Runtime>>::digest();
-			let pre_runtime_digests = digest.logs.iter().filter_map(|d| d.as_pre_runtime());
-			if let Some(index) = <aura::Module<Runtime>>::find_author(pre_runtime_digests) {
-				let authority_id = &<aura::Module<Runtime>>::authorities()[index as usize];
-				<evm::HashTruncateConvertAccountId<BlakeTwo256>>::convert_account_id(&authority_id)
-			} else {
-				H160::zero()
-			}
+			<ethereum::Module<Runtime>>::find_author()
 		}
 
 		fn storage_at(address: H160, index: U256) -> H256 {
