@@ -138,15 +138,15 @@ fn transaction_build(
 		value: transaction.value,
 		gas_price: transaction.gas_price,
 		gas: transaction.gas_limit,
-		input: Bytes(transaction.input),
+		input: Bytes(transaction.clone().input),
 		creates: status.contract_address,
-		raw: Bytes(vec![]), // TODO
+		raw: Bytes(rlp::encode(&transaction)),
 		public_key: None, // TODO
-		chain_id: None, // TODO
-		standard_v: U256::zero(), // TODO
-		v: U256::zero(), // TODO
-		r: U256::zero(), // TODO
-		s: U256::zero(), // TODO
+		chain_id: transaction.signature.chain_id().map(U64::from),
+		standard_v: U256::from(transaction.signature.standard_v()),
+		v: U256::from(transaction.signature.v()),
+		r: U256::from(transaction.signature.r().as_bytes()),
+		s: U256::from(transaction.signature.s().as_bytes()),
 		condition: None // TODO
 	}
 }
