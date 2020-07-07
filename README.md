@@ -1,12 +1,12 @@
 # Frontier
 
-Frontier is Substrate's Ethereum compatibility layer. It allows you to
-run unmodified Ethereum dapps.
+Frontier is Substrate's Ethereum compatibility layer. It allows you to run
+unmodified Ethereum dapps.
 
 The goal of Ethereum compatibility layer is to be able to:
 
-* Run a normal web3 application via the compatibility layer, using
-  local nodes, where an extra bridge binary is acceptable.
+* Run a normal web3 application via the compatibility layer, using local nodes,
+  where an extra bridge binary is acceptable.
 * Be able to import state from Ethereum mainnet.
 
 It consists of the following components:
@@ -31,6 +31,7 @@ should directly use `path` directive in dependency declarations. For other
 dependencies, they should use Cargo's patch feature in workspace declaration.
 
 To install those submodules, from the frontier root folder:
+
 ```sh
 git submodule init
 git submodule update
