@@ -269,7 +269,7 @@ impl<T: Trait> Module<T> {
 			H160::default()
 		}
 	}
-	
+
 	pub fn transaction_status(hash: H256) -> Option<TransactionStatus> {
 		TransactionStatuses::get(hash)
 	}
