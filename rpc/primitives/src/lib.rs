@@ -77,7 +77,7 @@ sp_api::decl_runtime_apis! {
 			EthereumTransaction,
 			EthereumBlock,
 			TransactionStatus,
-			EthereumReceipt
+			Vec<EthereumReceipt>
 		)>;
 		fn transaction_by_block_hash_and_index(
 			hash: H256,

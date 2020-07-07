@@ -566,12 +566,16 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 	fn transaction_receipt(&self, hash: H256) -> Result<Option<Receipt>> {
 		let header = self.select_chain.best_chain()
 			.map_err(|_| internal_err("fetch header failed"))?;
-		if let Ok(Some((_transaction, block, status, receipt))) = self.client.runtime_api()
+		if let Ok(Some((_transaction, block, status, receipts))) = self.client.runtime_api()
 			.transaction_by_hash(&BlockId::Hash(header.hash()), hash) {
 			
 			let block_hash = H256::from_slice(
 				Keccak256::digest(&rlp::encode(&block.header)).as_slice()
 			);
+			let receipt = receipts[status.transaction_index as usize].clone();
+			let mut cumulative_receipts = receipts.clone();
+			cumulative_receipts.truncate((status.transaction_index + 1) as usize);
+			
 			return Ok(Some(Receipt {
 				transaction_hash: Some(status.transaction_hash),
 				transaction_index: Some(status.transaction_index.into()),
@@ -579,11 +583,23 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 				from: Some(status.from),
 				to: status.to,
 				block_number: Some(block.header.number),
-				cumulative_gas_used: Default::default(), // TODO
+				cumulative_gas_used: {
+					let cumulative_gas: u32 = cumulative_receipts.iter().map(|r| {
+						r.used_gas.as_u32()
+					}).sum();
+					U256::from(cumulative_gas)
+				},
 				gas_used: Some(receipt.used_gas),
 				contract_address: status.contract_address,
 				logs: {
-					receipt.logs.iter().map(|log| {
+					let mut pre_receipts_log_index = None;
+					if cumulative_receipts.len() > 0 {
+						cumulative_receipts.truncate(cumulative_receipts.len() - 1);
+						pre_receipts_log_index = Some(cumulative_receipts.iter().map(|r| {
+							r.logs.len() as u32
+						}).sum::<u32>());
+					}
+					receipt.logs.iter().enumerate().map(|(i, log)| {
 						Log {
 							address: log.address,
 							topics: log.topics.clone(),
@@ -592,15 +608,16 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 							block_number: Some(block.header.number),
 							transaction_hash: Some(hash),
 							transaction_index: Some(status.transaction_index.into()),
-							log_index: None, // TODO
-							transaction_log_index: None, // TODO
-							log_type: Default::default(), // TODO
-							removed: false, // TODO
+							log_index: Some(U256::from(
+								(pre_receipts_log_index.unwrap_or(0)) + i as u32
+							)),
+							transaction_log_index: Some(U256::from(i)),
+							removed: false,
 						}
 					}).collect()
 				},
 				state_root: Some(receipt.state_root),
-				logs_bloom: Default::default(), // TODO
+				logs_bloom: receipt.logs_bloom,
 				status_code: None,
 			}))
 		}

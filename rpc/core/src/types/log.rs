@@ -40,9 +40,6 @@ pub struct Log {
 	pub log_index: Option<U256>,
 	/// Log Index in Transaction
 	pub transaction_log_index: Option<U256>,
-	/// Log Type
-	#[serde(rename = "type")]
-	pub log_type: String,
 	/// Whether Log Type is Removed (Geth Compatibility Field)
 	#[serde(default)]
 	pub removed: bool,
