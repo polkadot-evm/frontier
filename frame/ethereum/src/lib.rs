@@ -53,7 +53,7 @@ pub type BalanceOf<T> = <T as pallet_balances::Trait>::Balance;
 pub trait Trait: frame_system::Trait<Hash=H256> + pallet_balances::Trait + pallet_timestamp::Trait + pallet_evm::Trait {
 	/// The overarching event type.
 	type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
-    type ChainId: Get<u64>;
+	type ChainId: Get<u64>;
 }
 
 decl_storage! {
@@ -142,7 +142,7 @@ decl_module! {
 			ensure_none(origin)?;
 
 			ensure!(
-				transaction.signature.chain_id().unwrap_or_default() == T::ChainId::get(), 
+				transaction.signature.chain_id().unwrap_or_default() == T::ChainId::get(),
 				Error::<T>::InvalidChainId
 			);
 			let mut sig = [0u8; 65];
@@ -261,9 +261,9 @@ impl<T: Trait> Module<T> {
 	}
 
 	// Requires returning a Vec<Receipt> to enable cumulative calculations in the rpc-end.
-	// 
-	// - `cumulative_gas_used`: the sum of `used_gas` for this and all previous transactions 
-	// in the block. 
+	//
+	// - `cumulative_gas_used`: the sum of `used_gas` for this and all previous transactions
+	// in the block.
 	// - `log_index`: each Log's index, block wise.
 	pub fn transaction_by_hash(hash: H256) -> Option<(
 		ethereum::Transaction,
