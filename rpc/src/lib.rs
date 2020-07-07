@@ -112,7 +112,7 @@ fn rich_block_build(
 					)
 				} else {
 					BlockTransactions::Hashes(
-						block.transactions.iter().enumerate().map(|(_, transaction)|{
+						block.transactions.iter().map(|transaction|{
 							H256::from_slice(
 								Keccak256::digest(&rlp::encode(&transaction.clone())).as_slice()
 							)
