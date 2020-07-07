@@ -80,8 +80,8 @@ fn rich_block_build(
 			})),
 			parent_hash: block.header.parent_hash,
 			uncles_hash: H256::zero(),
-			author: H160::default(), // TODO
-			miner: H160::default(), // TODO
+			author: block.header.beneficiary,
+			miner: block.header.beneficiary,
 			state_root: block.header.state_root,
 			transactions_root: block.header.transactions_root,
 			receipts_root: block.header.receipts_root,
