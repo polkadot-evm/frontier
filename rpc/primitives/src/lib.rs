@@ -18,7 +18,7 @@
 
 use sp_core::{H160, H256, U256};
 use ethereum::{
-	Log, Block as EthereumBlock, Transaction as EthereumTransaction, 
+	Log, Block as EthereumBlock, Transaction as EthereumTransaction,
 	Receipt as EthereumReceipt
 };
 use ethereum_types::Bloom;

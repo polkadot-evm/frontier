@@ -509,7 +509,7 @@ impl_runtime_apis! {
 			if let Some(block) = <ethereum::Module<Runtime>>::block_by_number(number) {
 				let statuses = <ethereum::Module<Runtime>>::block_transaction_statuses(&block);
 				return (
-					Some(block), 
+					Some(block),
 					statuses
 				);
 			}
@@ -540,7 +540,7 @@ impl_runtime_apis! {
 			if let Some(block) = <ethereum::Module<Runtime>>::block_by_hash(hash) {
 				let statuses = <ethereum::Module<Runtime>>::block_transaction_statuses(&block);
 				return (
-					Some(block), 
+					Some(block),
 					statuses
 				);
 			}

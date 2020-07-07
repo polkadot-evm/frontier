@@ -67,8 +67,8 @@ impl<B: BlockT, C, SC, P, CT, BE> EthApi<B, C, SC, P, CT, BE> {
 }
 
 fn rich_block_build(
-	block: ethereum::Block, 
-	statuses: Vec<Option<TransactionStatus>>, 
+	block: ethereum::Block,
+	statuses: Vec<Option<TransactionStatus>>,
 	hash: Option<H256>
 ) -> RichBlock {
 	Rich {
@@ -344,8 +344,8 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 				self.client
 					.runtime_api()
 					.account_basic(&BlockId::Number(native_number.into()), address)
-		   			.map_err(|_| internal_err("fetch runtime account basic failed"))?
-					   .nonce.into()
+					.map_err(|_| internal_err("fetch runtime account basic failed"))?
+					.nonce.into()
 			);
 		}
 		Ok(U256::zero())
@@ -568,14 +568,14 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 			.map_err(|_| internal_err("fetch header failed"))?;
 		if let Ok(Some((_transaction, block, status, receipts))) = self.client.runtime_api()
 			.transaction_by_hash(&BlockId::Hash(header.hash()), hash) {
-			
+
 			let block_hash = H256::from_slice(
 				Keccak256::digest(&rlp::encode(&block.header)).as_slice()
 			);
 			let receipt = receipts[status.transaction_index as usize].clone();
 			let mut cumulative_receipts = receipts.clone();
 			cumulative_receipts.truncate((status.transaction_index + 1) as usize);
-			
+
 			return Ok(Some(Receipt {
 				transaction_hash: Some(status.transaction_hash),
 				transaction_index: Some(status.transaction_index.into()),
