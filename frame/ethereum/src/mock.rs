@@ -142,7 +142,7 @@ pub struct AccountInfo {
 	pub private_key: H256,
 }
 
-fn address_build(seed: u8) -> (H256,H160) {
+fn address_build(seed: u8) -> (H256, H160) {
 	let private_key = H256::from_slice(&[(seed + 1) as u8; 32]); //H256::from_low_u64_be((i + 1) as u64);
 	let secret_key = secp256k1::SecretKey::parse_slice(&private_key[..]).unwrap();
 	let public_key = secp256k1::PublicKey::from_secret_key(&secret_key);
