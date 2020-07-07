@@ -22,14 +22,16 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::{decl_module, decl_storage, decl_error, decl_event, ensure, weights::Weight, traits::Get};
+use frame_support::{debug, decl_module, decl_storage, decl_error, decl_event, ensure, weights::Weight, traits::Get};
 use sp_std::prelude::*;
 use frame_system::{self as system, ensure_none};
 use ethereum_types::{H160, H64, H256, U256, Bloom};
 use sp_runtime::{
+	DispatchResult,
 	traits::UniqueSaturatedInto,
 	transaction_validity::{TransactionValidity, TransactionSource, ValidTransaction}
 };
+use pallet_evm:: {ExitReason, ExitFatal};
 use rlp;
 use sha3::{Digest, Keccak256};
 
@@ -124,6 +126,12 @@ decl_error! {
 	pub enum Error for Module<T: Trait> {
 		/// Transaction signed with wrong chain id
 		InvalidChainId,
+		/// Operation not supported by the EVM
+		OperationNotSupported,
+		/// Execution interrupted
+		UnhandledInterrupt,
+		/// Unexpected error from the EVM
+		UnexpectedExecutionError,
 	}
 }
 
@@ -138,7 +146,7 @@ decl_module! {
 
 		/// Transact an Ethereum transaction.
 		#[weight = 0]
-		fn transact(origin, transaction: ethereum::Transaction) {
+		fn transact(origin, transaction: ethereum::Transaction) -> DispatchResult {
 			ensure_none(origin)?;
 
 			ensure!(
@@ -156,7 +164,7 @@ decl_module! {
 				.map_err(|_| "Recover public key failed")?;
 			let source = H160::from(H256::from_slice(Keccak256::digest(&pubkey).as_slice()));
 
-			Self::execute(source, transaction);
+			Self::execute(source, transaction).map_err(|e| { e.into() })
 		}
 
 		// The signature could also look like: `fn on_initialize()`.
@@ -338,15 +346,14 @@ impl<T: Trait> Module<T> {
 	}
 
 	/// Execute an Ethereum transaction, ignoring transaction signatures.
-	pub fn execute(source: H160, transaction: ethereum::Transaction) {
-		let transaction_hash = H256::from_slice(
-			Keccak256::digest(&rlp::encode(&transaction)).as_slice()
-		);
+	pub fn execute(source: H160, transaction: ethereum::Transaction) -> Result<(), Error<T>> {
+		let transaction_hash =
+			H256::from_slice(Keccak256::digest(&rlp::encode(&transaction)).as_slice());
 		let transaction_index = PendingTransactionsAndReceipts::get().len() as u32;
 
 		let status = match transaction.action {
 			ethereum::TransactionAction::Call(target) => {
-				pallet_evm::Module::<T>::execute_call(
+				let execution = pallet_evm::Module::<T>::execute_call(
 					source,
 					target,
 					transaction.input.clone(),
@@ -355,7 +362,30 @@ impl<T: Trait> Module<T> {
 					transaction.gas_price,
 					Some(transaction.nonce),
 					true,
-				).unwrap(); // TODO: handle error
+				);
+
+				match execution {
+					Err(e) => {
+						debug::error!(target: "ethereum", "Failed to execute evm call: {:?}", e);
+						return Err(Error::<T>::UnexpectedExecutionError);
+					}
+					Ok((retv, _, _)) => match retv {
+						ExitReason::Fatal(e) => {
+							debug::error!(target: "ethereum", "Fatal error in evm call: {:?}", e);
+							match e {
+								ExitFatal::NotSupported => {
+									return Err(Error::<T>::OperationNotSupported)
+								}
+								ExitFatal::UnhandledInterrupt => {
+									return Err(Error::<T>::UnhandledInterrupt)
+								}
+								ExitFatal::CallErrorAsFatal(_) => return Err(Error::<T>::UnexpectedExecutionError),
+								ExitFatal::Other(_) => return Err(Error::<T>::UnexpectedExecutionError),
+							}
+						},
+						_ => {}
+					},
+				}
 
 				TransactionStatus {
 					transaction_hash,
@@ -363,12 +393,12 @@ impl<T: Trait> Module<T> {
 					from: source,
 					to: Some(target),
 					contract_address: None,
-					logs: Vec::new(), // TODO: feed in logs.
+					logs: Vec::new(),             // TODO: feed in logs.
 					logs_bloom: Bloom::default(), // TODO: feed in bloom.
 				}
-			},
+			}
 			ethereum::TransactionAction::Create => {
-				let contract_address = pallet_evm::Module::<T>::execute_create(
+				let execution = pallet_evm::Module::<T>::execute_create(
 					source,
 					transaction.input.clone(),
 					transaction.value,
@@ -376,7 +406,32 @@ impl<T: Trait> Module<T> {
 					transaction.gas_price,
 					Some(transaction.nonce),
 					true,
-				).unwrap().1; // TODO: handle error
+				);
+
+				let contract_address = match execution {
+					Err(e) => {
+						debug::error!(target: "ethereum", "Failed to execute evm call: {:?}", e);
+						return Err(Error::<T>::UnexpectedExecutionError);
+					}
+					Ok((retv, address, _)) => match retv {
+						ExitReason::Fatal(e) => {
+							debug::error!(target: "ethereum", "Fatal error in evm call: {:?}", e);
+							match e {
+								ExitFatal::NotSupported => {
+									return Err(Error::<T>::OperationNotSupported)
+								}
+								ExitFatal::UnhandledInterrupt => {
+									return Err(Error::<T>::UnhandledInterrupt)
+								}
+								ExitFatal::CallErrorAsFatal(_) => return Err(Error::<T>::UnexpectedExecutionError),
+								ExitFatal::Other(_) => return Err(Error::<T>::UnexpectedExecutionError),
+							}
+						},
+						_ => {
+							address
+						}
+					}
+				};
 
 				TransactionStatus {
 					transaction_hash,
@@ -384,21 +439,22 @@ impl<T: Trait> Module<T> {
 					from: source,
 					to: None,
 					contract_address: Some(contract_address),
-					logs: Vec::new(), // TODO: feed in logs.
+					logs: Vec::new(),             // TODO: feed in logs.
 					logs_bloom: Bloom::default(), // TODO: feed in bloom.
 				}
-			},
+			}
 		};
 
 		TransactionStatuses::insert(transaction_hash, status);
 
 		let receipt = ethereum::Receipt {
-			state_root: H256::default(), // TODO: should be okay / error status.
-			used_gas: U256::default(), // TODO: set this.
+			state_root: H256::default(),  // TODO: should be okay / error status.
+			used_gas: U256::default(),    // TODO: set this.
 			logs_bloom: Bloom::default(), // TODO: set this.
-			logs: Vec::new(), // TODO: set this.
+			logs: Vec::new(),             // TODO: set this.
 		};
 
 		PendingTransactionsAndReceipts::append((transaction, receipt));
+		Ok(())
 	}
 }
