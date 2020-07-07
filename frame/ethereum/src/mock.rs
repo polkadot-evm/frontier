@@ -103,8 +103,8 @@ impl FeeCalculator for FixedGasPrice {
 }
 
 parameter_types! {
-    pub const TransactionByteFee: u64 = 1;
-    pub const ChainId: u64 = 42;
+	pub const TransactionByteFee: u64 = 1;
+	pub const ChainId: u64 = 42;
 	pub const EVMModuleId: ModuleId = ModuleId(*b"py/evmpa");
 }
 
@@ -128,8 +128,8 @@ impl FindAuthor<H160> for EthereumFindAuthor {
 
 
 impl Trait for Test {
-    type Event = ();
-    type ChainId = ChainId;
+	type Event = ();
+	type ChainId = ChainId;
 	type FindAuthor = EthereumFindAuthor;
 }
 

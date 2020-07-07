@@ -18,7 +18,7 @@
 
 use sp_core::{H160, H256, U256};
 use ethereum::{
-	Log, Block as EthereumBlock, Transaction as EthereumTransaction, 
+	Log, Block as EthereumBlock, Transaction as EthereumTransaction,
 	Receipt as EthereumReceipt
 };
 use ethereum_types::Bloom;
@@ -77,7 +77,7 @@ sp_api::decl_runtime_apis! {
 			EthereumTransaction,
 			EthereumBlock,
 			TransactionStatus,
-			EthereumReceipt
+			Vec<EthereumReceipt>
 		)>;
 		fn transaction_by_block_hash_and_index(
 			hash: H256,
