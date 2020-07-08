@@ -69,7 +69,8 @@ impl<B: BlockT, C, SC, P, CT, BE> EthApi<B, C, SC, P, CT, BE> {
 fn rich_block_build(
 	block: ethereum::Block,
 	statuses: Vec<Option<TransactionStatus>>,
-	hash: Option<H256>
+	hash: Option<H256>,
+	full_transactions: bool
 ) -> RichBlock {
 	Rich {
 		inner: Block {
@@ -79,9 +80,9 @@ fn rich_block_build(
 				)
 			})),
 			parent_hash: block.header.parent_hash,
-			uncles_hash: H256::zero(), // TODO
-			author: H160::default(), // TODO
-			miner: H160::default(), // TODO
+			uncles_hash: H256::zero(),
+			author: block.header.beneficiary,
+			miner: block.header.beneficiary,
 			state_root: block.header.state_root,
 			transactions_root: block.header.transactions_root,
 			receipts_root: block.header.receipts_root,
@@ -92,23 +93,34 @@ fn rich_block_build(
 			logs_bloom: Some(block.header.logs_bloom),
 			timestamp: U256::from(block.header.timestamp),
 			difficulty: block.header.difficulty,
-			total_difficulty: None, // TODO
+			total_difficulty: None,
 			seal_fields: vec![
 				Bytes(block.header.mix_hash.as_bytes().to_vec()),
 				Bytes(block.header.nonce.as_bytes().to_vec())
 			],
-			uncles: vec![], // TODO
-			transactions: BlockTransactions::Full(
-				block.transactions.iter().enumerate().map(|(index, transaction)|{
-					let mut status = statuses[index].clone();
-					// A fallback to default check
-					if status.is_none() {
-						status = Some(TransactionStatus::default());
-					}
-					transaction_build(transaction.clone(), block.clone(), status.unwrap())
-				}).collect()
-			),
-			size: None // TODO
+			uncles: vec![],
+			transactions: {
+				if full_transactions {
+					BlockTransactions::Full(
+						block.transactions.iter().enumerate().map(|(index, transaction)|{
+							transaction_build(
+								transaction.clone(),
+								block.clone(),
+								statuses[index].clone().unwrap_or_default()
+							)
+						}).collect()
+					)
+				} else {
+					BlockTransactions::Hashes(
+						block.transactions.iter().map(|transaction|{
+							H256::from_slice(
+								Keccak256::digest(&rlp::encode(&transaction.clone())).as_slice()
+							)
+						}).collect()
+					)
+				}
+			},
+			size: Some(U256::from(rlp::encode(&block).len() as u32))
 		},
 		extra_info: BTreeMap::new()
 	}
@@ -138,15 +150,15 @@ fn transaction_build(
 		value: transaction.value,
 		gas_price: transaction.gas_price,
 		gas: transaction.gas_limit,
-		input: Bytes(transaction.input),
+		input: Bytes(transaction.clone().input),
 		creates: status.contract_address,
-		raw: Bytes(vec![]), // TODO
+		raw: Bytes(rlp::encode(&transaction)),
 		public_key: None, // TODO
-		chain_id: None, // TODO
-		standard_v: U256::zero(), // TODO
-		v: U256::zero(), // TODO
-		r: U256::zero(), // TODO
-		s: U256::zero(), // TODO
+		chain_id: transaction.signature.chain_id().map(U64::from),
+		standard_v: U256::from(transaction.signature.standard_v()),
+		v: U256::from(transaction.signature.v()),
+		r: U256::from(transaction.signature.r().as_bytes()),
+		s: U256::from(transaction.signature.s().as_bytes()),
 		condition: None // TODO
 	}
 }
@@ -310,7 +322,7 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 		Ok(H256::default())
 	}
 
-	fn block_by_hash(&self, hash: H256, _: bool) -> Result<Option<RichBlock>> {
+	fn block_by_hash(&self, hash: H256, full: bool) -> Result<Option<RichBlock>> {
 		let header = self.select_chain.best_chain()
 			.map_err(|_| internal_err("fetch header failed"))?;
 
@@ -318,13 +330,13 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 			&BlockId::Hash(header.hash()),
 			hash
 		) {
-			Ok(Some(rich_block_build(block, statuses, Some(hash))))
+			Ok(Some(rich_block_build(block, statuses, Some(hash), full)))
 		} else {
 			Ok(None)
 		}
 	}
 
-	fn block_by_number(&self, number: BlockNumber, _: bool) -> Result<Option<RichBlock>> {
+	fn block_by_number(&self, number: BlockNumber, full: bool) -> Result<Option<RichBlock>> {
 		let header = self.select_chain.best_chain()
 			.map_err(|_| internal_err("fetch header failed"))?;
 		if let Ok(Some(native_number)) = self.native_block_number(Some(number)) {
@@ -332,7 +344,7 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 				&BlockId::Hash(header.hash()),
 				native_number
 			) {
-				return Ok(Some(rich_block_build(block, statuses, None)));
+				return Ok(Some(rich_block_build(block, statuses, None, full)));
 			}
 		}
 		Ok(None)
