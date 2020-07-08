@@ -20,6 +20,22 @@ To execute the chain, run:
 $ ./target/debug/frontier-template-node --dev
 ```
 
+### Docker image
+
+You can run the frontier node (for development) within Docker directly.  
+The Dockerfile is optimized for development speed.  
+(Running the `docker run...` command will recompile the binaries but not the dependencies)
+
+Building (takes 5-10 min):
+```bash
+docker build -t frontier-node-dev .
+```
+
+Running (takes 1 min to rebuild binaries):
+```bash
+docker run -t frontier-node-dev
+```
+
 ## Genesis Configuration
 
 The development [chain spec](/src/chain_spec.rs) included with this project defines a genesis block that has been pre-configured with an EVM account for [Alice](https://substrate.dev/docs/en/next/development/tools/subkey#well-known-keys). When [a development chain is started](https://github.com/substrate-developer-hub/substrate-node-template#run), Alice's EVM account will be funded with a large amount of Ether (`U256::MAX`).
