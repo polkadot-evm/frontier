@@ -41,7 +41,7 @@ docker run -t frontier-node-dev
 The development [chain spec](/src/chain_spec.rs) included with this project defines a genesis block that has been pre-configured with an EVM account for [Alice](https://substrate.dev/docs/en/next/development/tools/subkey#well-known-keys). When [a development chain is started](https://github.com/substrate-developer-hub/substrate-node-template#run), Alice's EVM account will be funded with a large amount of Ether (`U256::MAX`).
 The [Polkadot UI](https://polkadot.js.org/apps/#?rpc=ws://127.0.0.1:9944) can be used to see the details of Alice's EVM account.
 In order to view an EVM account, use the `Developer` tab of the Polkadot UI `Settings` app to define the EVM `Account` type as below.
-It is also necessary to define the `Address` and `LookupSource` to send transaction:
+It is also necessary to define the `Address` and `LookupSource` to send transaction, and `Transaction` and `Signature` to be able to inspect blocks:
 
 ```json
   "Address": "AccountId",
@@ -49,6 +49,20 @@ It is also necessary to define the `Address` and `LookupSource` to send transact
   "Account": {
     "nonce": "U256",
     "balance": "U256"
+  },
+  "Transaction": {
+    "nonce": "U256",
+    "action": "String",
+    "gas_price": "u64",
+    "gas_limit": "u64",
+    "value": "U256",
+    "input": "Vec<u8>",
+    "signature": "Signature"
+  },
+  "Signature": {
+    "v": "u64",
+    "r": "H256",
+    "s": "H256"
   }
 ```
 
