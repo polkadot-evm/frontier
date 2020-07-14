@@ -148,7 +148,7 @@ pub fn new_full(config: Configuration) -> Result<TaskManager, ServiceError> {
 	let ServiceComponents {
 		client, transaction_pool, task_manager, keystore, network, select_chain,
 		prometheus_registry, telemetry_on_connect_sinks, ..
-	 } = builder
+	} = builder
 		.with_finality_proof_provider(|client, backend| {
 			// GenesisAuthoritySetProvider is implemented for StorageAndProofProvider
 			let provider = client as Arc<dyn StorageAndProofProvider<_, _>>;
