@@ -1342,6 +1342,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "frontier-template-test-client"
+version = "0.1.0"
+dependencies = [
+ "frontier-template-runtime",
+ "parity-scale-codec",
+ "sc-client-api",
+ "sc-consensus",
+ "sc-executor",
+ "sc-light",
+ "sp-api",
+ "sp-runtime",
+ "substrate-test-client",
+]
+
+[[package]]
 name = "fs-swap"
 version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5133,9 +5148,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.53"
+version = "1.0.56"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "993948e75b189211a9b31a7528f950c6adc21f9720b6438ff80a7fa2f864cea2"
+checksum = "3433e879a558dde8b5e8feb2a04899cf34fdde1fafb894687e52105fc1162ac3"
 dependencies = [
  "itoa",
  "ryu",
@@ -5978,6 +5993,31 @@ dependencies = [
  "log",
  "prometheus",
  "tokio 0.2.21",
+]
+
+[[package]]
+name = "substrate-test-client"
+version = "2.0.0-rc4"
+dependencies = [
+ "futures 0.1.29",
+ "futures 0.3.5",
+ "hash-db",
+ "hex",
+ "parity-scale-codec",
+ "sc-client-api",
+ "sc-client-db",
+ "sc-consensus",
+ "sc-executor",
+ "sc-light",
+ "sc-service",
+ "serde",
+ "serde_json",
+ "sp-blockchain",
+ "sp-consensus",
+ "sp-core",
+ "sp-keyring",
+ "sp-runtime",
+ "sp-state-machine",
 ]
 
 [[package]]
