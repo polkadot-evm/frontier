@@ -162,6 +162,8 @@ parameter_types! {
 impl system::Trait for Runtime {
 	/// Base call filter.
 	type BaseCallFilter = ();
+	/// System weight info.
+	type SystemWeightInfo = ();
 	/// The identifier used to distinguish between accounts.
 	type AccountId = AccountId;
 	/// The aggregated dispatch type that is available for extrinsics.
@@ -246,6 +248,7 @@ impl timestamp::Trait for Runtime {
 	type Moment = u64;
 	type OnTimestampSet = Aura;
 	type MinimumPeriod = MinimumPeriod;
+	type WeightInfo = ();
 }
 
 parameter_types! {
@@ -260,11 +263,11 @@ impl balances::Trait for Runtime {
 	type DustRemoval = ();
 	type ExistentialDeposit = ExistentialDeposit;
 	type AccountStore = System;
+	type WeightInfo = ();
 }
 
 parameter_types! {
 	pub const TransactionByteFee: Balance = 1;
-	pub const ChainId: u64 = 42;
 }
 
 impl transaction_payment::Trait for Runtime {
@@ -292,6 +295,7 @@ impl FeeCalculator for FixedGasPrice {
 
 parameter_types! {
 	pub const EVMModuleId: ModuleId = ModuleId(*b"py/evmpa");
+	pub const ChainId: u64 = 42;
 }
 
 impl evm::Trait for Runtime {
@@ -301,6 +305,7 @@ impl evm::Trait for Runtime {
 	type Currency = Balances;
 	type Event = Event;
 	type Precompiles = ();
+	type ChainId = ChainId;
 }
 
 pub struct EthereumFindAuthor<F>(PhantomData<F>);
@@ -320,7 +325,6 @@ impl<F: FindAuthor<u32>> FindAuthor<H160> for EthereumFindAuthor<F>
 impl ethereum::Trait for Runtime {
 	type Event = Event;
 	type FindAuthor = EthereumFindAuthor<Aura>;
-	type ChainId = ChainId;
 }
 
 construct_runtime!(
@@ -332,7 +336,7 @@ construct_runtime!(
 		System: system::{Module, Call, Config, Storage, Event<T>},
 		RandomnessCollectiveFlip: randomness_collective_flip::{Module, Call, Storage},
 		Timestamp: timestamp::{Module, Call, Storage, Inherent},
-		Aura: aura::{Module, Config<T>, Inherent(Timestamp)},
+		Aura: aura::{Module, Config<T>, Inherent},
 		Grandpa: grandpa::{Module, Call, Storage, Config, Event},
 		Balances: balances::{Module, Call, Storage, Config<T>, Event<T>},
 		TransactionPayment: transaction_payment::{Module, Storage},

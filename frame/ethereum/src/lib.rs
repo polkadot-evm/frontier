@@ -27,7 +27,7 @@ use frame_support::{
 	weights::Weight, traits::Get, traits::FindAuthor
 };
 use sp_std::prelude::*;
-use frame_system::{self as system, ensure_none};
+use frame_system::ensure_none;
 use ethereum_types::{H160, H64, H256, U256, Bloom};
 use sp_runtime::{
 	traits::UniqueSaturatedInto,
@@ -56,7 +56,6 @@ pub type BalanceOf<T> = <T as pallet_balances::Trait>::Balance;
 pub trait Trait: frame_system::Trait<Hash=H256> + pallet_balances::Trait + pallet_timestamp::Trait + pallet_evm::Trait {
 	/// The overarching event type.
 	type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
-	type ChainId: Get<u64>;
 	type FindAuthor: FindAuthor<H160>;
 }
 

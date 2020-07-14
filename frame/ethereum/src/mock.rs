@@ -48,6 +48,7 @@ parameter_types! {
 }
 impl frame_system::Trait for Test {
 	type BaseCallFilter = ();
+	type SystemWeightInfo = ();
 	type Origin = Origin;
 	type Call = ();
 	type Index = u64;
@@ -83,6 +84,7 @@ impl pallet_balances::Trait for Test {
 	type DustRemoval = ();
 	type ExistentialDeposit = ExistentialDeposit;
 	type AccountStore = System;
+	type WeightInfo = ();
 }
 
 parameter_types! {
@@ -93,6 +95,7 @@ impl pallet_timestamp::Trait for Test {
 	type Moment = u64;
 	type OnTimestampSet = ();
 	type MinimumPeriod = MinimumPeriod;
+	type WeightInfo = ();
 }
 
 pub struct FixedGasPrice;
@@ -124,11 +127,11 @@ impl pallet_evm::Trait for Test {
 	type Currency = Balances;
 	type Event = ();
 	type Precompiles = ();
+	type ChainId = ChainId;
 }
 
 impl Trait for Test {
 	type Event = ();
-	type ChainId = ChainId;
 	type FindAuthor = EthereumFindAuthor;
 }
 
