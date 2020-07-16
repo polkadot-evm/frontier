@@ -1,0 +1,52 @@
+[package]
+name = "frontier-test-node"
+version = "2.0.0-dev"
+authors = ["Parity Technologies <admin@parity.io>"]
+description = "Substrate Node for Test"
+edition = "2018"
+license = "Apache-2.0"
+build = "build.rs"
+homepage = "https://substrate.dev"
+repository = "https://github.com/paritytech/substrate/"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+futures = "0.3.4"
+log = "0.4.8"
+structopt = "0.3.8"
+parking_lot = "0.10.0"
+jsonrpc-core = "14.0.3"
+
+sp-api = { version = "2.0.0-dev", path = "../../../vendor/substrate/primitives/api" }
+sp-blockchain = { version = "2.0.0-dev", path = "../../../vendor/substrate/primitives/blockchain" }
+sc-rpc-api = { version = "0.8.0-dev", path = "../../../vendor/substrate/client/rpc-api" }
+sc-rpc = { version = "2.0.0-dev", path = "../../../vendor/substrate/client/rpc" }
+substrate-frame-rpc-system = { version = "2.0.0-dev", path = "../../../vendor/substrate/utils/frame/rpc/system" }
+pallet-transaction-payment-rpc = { version = "2.0.0-dev", path = "../../../vendor/substrate/frame/transaction-payment/rpc/" }
+sc-cli = { version = "0.8.0-dev", path = "../../../vendor/substrate/client/cli" }
+sp-core = { version = "2.0.0-dev", path = "../../../vendor/substrate/primitives/core" }
+sc-executor = { version = "0.8.0-dev", path = "../../../vendor/substrate/client/executor" }
+sc-service = { version = "0.8.0-dev", path = "../../../vendor/substrate/client/service" }
+sp-inherents = { version = "2.0.0-dev", path = "../../../vendor/substrate/primitives/inherents" }
+sc-transaction-pool = { version = "2.0.0-dev", path = "../../../vendor/substrate/client/transaction-pool" }
+sp-transaction-pool = { version = "2.0.0-dev", path = "../../../vendor/substrate/primitives/transaction-pool" }
+sp-timestamp = { version = "2.0.0-dev", path = "../../../vendor/substrate/primitives/timestamp" }
+sc-network = { version = "0.8.0-dev", path = "../../../vendor/substrate/client/network" }
+sp-consensus = { version = "0.8.0-dev", path = "../../../vendor/substrate/primitives/consensus/common" }
+sc-consensus = { version = "0.8.0-dev", path = "../../../vendor/substrate/client/consensus/common" }
+evm = { version = "2.0.0-dev", package = "pallet-evm", path = "../../../vendor/substrate/frame/evm" }
+sc-client-api = { version = "2.0.0-dev", path = "../../../vendor/substrate/client/api" }
+sp-runtime = { version = "2.0.0-dev", path = "../../../vendor/substrate/primitives/runtime" }
+sc-basic-authorship = { path = "../../../vendor/substrate/client/basic-authorship" }
+sp-block-builder = { path = "../../../vendor/substrate/primitives/block-builder" }
+sc-consensus-manual-seal = { path = "../../../vendor/substrate/client/consensus/manual-seal" }
+
+
+frontier-test-runtime = { version = "2.0.0-dev", path = "../runtime" }
+frontier-rpc = { version = "0.1.0", path = "../../../rpc" }
+frontier-rpc-primitives = { version = "0.1.0", path = "../../../rpc/primitives" }
+
+[build-dependencies]
+substrate-build-script-utils = { version = "2.0.0-dev", path = "../../../vendor/substrate/utils/build-script-utils" }
