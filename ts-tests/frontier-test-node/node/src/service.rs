@@ -41,7 +41,6 @@ native_executor_instance!(
 macro_rules! new_full_start {
 	($config:expr) => {{
 
-		println!("Starting full RPC");
 		let inherent_data_providers = sp_inherents::InherentDataProviders::new();
 
 
@@ -83,7 +82,6 @@ macro_rules! new_full_start {
 					.expect("SelectChain is present for full services or set up failed; qed.");
 
 				Ok(move |deny_unsafe| {
-					println!("Starting create_full RPC");
 					let deps = crate::rpc::FullDeps {
 						client: client.clone(),
 						pool: pool.clone(),
@@ -142,6 +140,7 @@ pub fn new_full(config: Configuration) -> Result<TaskManager, ServiceError> {
 		// we spawn the future on a background thread managed by service.
 		task_manager.spawn_essential_handle().spawn_blocking("manual-seal", authorship_future);
 	};
+	log::info!("Test Node Ready");
 
 	Ok(task_manager)
 }

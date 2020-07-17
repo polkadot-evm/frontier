@@ -69,7 +69,6 @@ pub fn create_full<C, P, M, SC, BE>(
 	use frontier_rpc::{EthApi, EthApiServer};
 
 
-	println!("Starting full RPC");
 	let mut io = jsonrpc_core::IoHandler::default();
 	let FullDeps {
 		client,

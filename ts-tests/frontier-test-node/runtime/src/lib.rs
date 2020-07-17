@@ -291,8 +291,7 @@ impl FindAuthor<H160> for EthereumFindAuthor
 	fn find_author<'a, I>(_digests: I) -> Option<H160> where
 		I: 'a + IntoIterator<Item=(ConsensusEngineId, &'a [u8])>
 	{
-		// TODO: support author for manual seal consensus
-		None
+		Some(H160::from_low_u64_be(0x1234567890))
 	}
 }
 
