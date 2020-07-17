@@ -94,7 +94,7 @@ pub fn create_full<C, P, M, SC, BE>(
 			is_authority,
 		))
 	);
-	
+
 	io.extend_with(
 		// We provide the rpc handler with the sending end of the channel to allow the rpc
 		// send EngineCommands to the background block authorship task.

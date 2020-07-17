@@ -106,12 +106,12 @@ pub fn new_full(config: Configuration) -> Result<TaskManager, ServiceError> {
 
 
 	let (builder, commands_stream, inherent_data_providers) = new_full_start!(config);
-	
+
 	inherent_data_providers
 		.register_provider(sp_timestamp::InherentDataProvider)
 		.map_err(Into::into)
 		.map_err(sp_consensus::error::Error::InherentData)?;
-		
+
 	let ServiceComponents {
 		client, transaction_pool, task_manager, select_chain,
 		prometheus_registry, ..
