@@ -17,10 +17,6 @@ describeWithFrontier("Frontier RPC (Constant)", `simple-specs.json`, context => 
 		expect(await context.web3.eth.getAccounts()).to.eql([]);
 	});
 
-	it("genesis block should be null", async function () {
-		expect(await context.web3.eth.getBlock(0)).to.be.null;
-	});
-
 	it("block author should be 0x0000000000000000000000000000001234567890", async function () {
 		// This address `0x1234567890` is hardcoded into the runtime find_author
 		// as we are running manual sealing consensus.
