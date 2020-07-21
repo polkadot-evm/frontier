@@ -10,6 +10,7 @@ Tests are separated depending of their genesis requirements.
 Each group will start a [frontier test node](frontier-test-node) with a given [spec](substrate-specs) before executing the tests.
 
 ## Installation
+
 ```
 npm install
 ```
@@ -20,5 +21,10 @@ npm install
 npm run test
 ```
 
-(The frontier node be listening for RPC on port 19933, mostly to avoid conflict with already running substrate node)
+You can also add the Frontier Node logs to the output using the `FRONTIER_LOG` env variable. Ex:
 
+```
+FRONTIER_LOG="warn,rpc=trace" npm run test
+```
+
+(The frontier node be listening for RPC on port 19933, mostly to avoid conflict with already running substrate node)
