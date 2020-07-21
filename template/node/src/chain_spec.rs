@@ -18,7 +18,7 @@
 use sp_core::{U256, Pair, Public, sr25519};
 use evm::{ConvertAccountId, HashTruncateConvertAccountId};
 use frontier_template_runtime::{
-	AccountId, AuraConfig, BalancesConfig, EVMConfig, EthereumConfig, GenesisConfig, GrandpaConfig, 
+	AccountId, AuraConfig, BalancesConfig, EVMConfig, EthereumConfig, GenesisConfig, GrandpaConfig,
 	Signature, SudoConfig, SystemConfig, WASM_BINARY,
 };
 use sc_service::ChainType;
@@ -162,8 +162,6 @@ fn testnet_genesis(
 		evm: Some(EVMConfig {
 			accounts: evm_accounts,
 		}),
-		ethereum: Some(EthereumConfig {
-			
-		}),
+		ethereum: Some(EthereumConfig {}),
 	}
 }
