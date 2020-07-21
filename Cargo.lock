@@ -1276,6 +1276,7 @@ dependencies = [
  "futures 0.3.5",
  "jsonrpc-core",
  "log",
+ "pallet-ethereum 0.1.0",
  "pallet-evm",
  "pallet-transaction-payment-rpc",
  "parking_lot 0.10.2",
