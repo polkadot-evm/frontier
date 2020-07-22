@@ -203,7 +203,7 @@ impl<B, C, SC, P, CT, BE> EthApi<B, C, SC, P, CT, BE> where
 					);
 				},
 				BlockNumber::Earliest => {
-					native_number = Some(1);
+					native_number = Some(0);
 				},
 				BlockNumber::Pending => {
 					native_number = None;

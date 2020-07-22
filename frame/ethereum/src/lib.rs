@@ -74,6 +74,11 @@ decl_storage! {
 		TransactionStatuses: map hasher(blake2_128_concat) H256 => Option<TransactionStatus>;
 		Transactions: map hasher(blake2_128_concat) H256 => Option<(H256, u32)>;
 	}
+	add_extra_genesis {
+		build(|_config: &GenesisConfig| {
+			<Module<T>>::store_block(T::BlockNumber::from(0));
+		});
+	}
 }
 
 decl_event!(
@@ -174,62 +179,7 @@ decl_module! {
 
 		// The signature could also look like: `fn on_finalize()`
 		fn on_finalize(n: T::BlockNumber) {
-			let transactions_and_receipts = PendingTransactionsAndReceipts::take();
-			let (transactions, receipts): (Vec<_>, Vec<_>) =
-				transactions_and_receipts.into_iter().unzip();
-			let ommers = Vec::<ethereum::Header>::new();
-
-			let header = ethereum::Header {
-				parent_hash: frame_system::Module::<T>::parent_hash(),
-				ommers_hash: H256::from_slice(
-					Keccak256::digest(&rlp::encode_list(&ommers)[..]).as_slice(),
-				), // TODO: check ommers hash.
-				beneficiary: <Module<T>>::find_author(),
-				state_root: H256::default(), // TODO: figure out if there's better way to get a sort-of-valid state root.
-				transactions_root: H256::from_slice(
-					Keccak256::digest(&rlp::encode_list(&transactions)[..]).as_slice(),
-				), // TODO: check transactions hash.
-				receipts_root: H256::from_slice(
-					Keccak256::digest(&rlp::encode_list(&receipts)[..]).as_slice(),
-				), // TODO: check receipts hash.
-				logs_bloom: Bloom::default(), // TODO: gather the logs bloom from receipts.
-				difficulty: U256::zero(),
-				number: U256::from(
-					UniqueSaturatedInto::<u128>::unique_saturated_into(
-						frame_system::Module::<T>::block_number()
-					)
-				),
-				gas_limit: U256::zero(), // TODO: set this using Ethereum's gas limit change algorithm.
-				gas_used: U256::zero(), // TODO: get this from receipts.
-				timestamp: UniqueSaturatedInto::<u64>::unique_saturated_into(
-					pallet_timestamp::Module::<T>::get()
-				),
-				extra_data: H256::default(),
-				mix_hash: H256::default(),
-				nonce: H64::default(),
-			};
-			let hash = H256::from_slice(Keccak256::digest(&rlp::encode(&header)).as_slice());
-
-			let block = ethereum::Block {
-				header,
-				transactions: transactions.clone(),
-				ommers,
-			};
-
-			for t in &transactions {
-				let transaction_hash = H256::from_slice(
-					Keccak256::digest(&rlp::encode(t)).as_slice()
-				);
-				if let Some(status) = TransactionStatuses::get(transaction_hash) {
-					Transactions::insert(
-						transaction_hash,
-						(hash, status.transaction_index)
-					);
-				}
-			}
-
-			BlocksAndReceipts::insert(hash, (block, receipts));
-			BlockNumbers::<T>::insert(n, hash);
+			<Module<T>>::store_block(n);
 		}
 
 		// A runtime code run after every block and have access to extended set of APIs.
@@ -259,6 +209,66 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
 // functions that do not write to storage and operation functions that do.
 // - Private functions. These are your usual private utilities unavailable to other pallets.
 impl<T: Trait> Module<T> {
+
+	fn store_block(n: T::BlockNumber) {
+		let transactions_and_receipts = PendingTransactionsAndReceipts::take();
+		let (transactions, receipts): (Vec<_>, Vec<_>) =
+			transactions_and_receipts.into_iter().unzip();
+		let ommers = Vec::<ethereum::Header>::new();
+
+		let header = ethereum::Header {
+			parent_hash: frame_system::Module::<T>::parent_hash(),
+			ommers_hash: H256::from_slice(
+				Keccak256::digest(&rlp::encode_list(&ommers)[..]).as_slice(),
+			), // TODO: check ommers hash.
+			beneficiary: <Module<T>>::find_author(),
+			state_root: H256::default(), // TODO: figure out if there's better way to get a sort-of-valid state root.
+			transactions_root: H256::from_slice(
+				Keccak256::digest(&rlp::encode_list(&transactions)[..]).as_slice(),
+			), // TODO: check transactions hash.
+			receipts_root: H256::from_slice(
+				Keccak256::digest(&rlp::encode_list(&receipts)[..]).as_slice(),
+			), // TODO: check receipts hash.
+			logs_bloom: Bloom::default(), // TODO: gather the logs bloom from receipts.
+			difficulty: U256::zero(),
+			number: U256::from(
+				UniqueSaturatedInto::<u128>::unique_saturated_into(
+					frame_system::Module::<T>::block_number()
+				)
+			),
+			gas_limit: U256::zero(), // TODO: set this using Ethereum's gas limit change algorithm.
+			gas_used: U256::zero(), // TODO: get this from receipts.
+			timestamp: UniqueSaturatedInto::<u64>::unique_saturated_into(
+				pallet_timestamp::Module::<T>::get()
+			),
+			extra_data: H256::default(),
+			mix_hash: H256::default(),
+			nonce: H64::default(),
+		};
+		let hash = H256::from_slice(Keccak256::digest(&rlp::encode(&header)).as_slice());
+
+		let block = ethereum::Block {
+			header,
+			transactions: transactions.clone(),
+			ommers,
+		};
+
+		for t in &transactions {
+			let transaction_hash = H256::from_slice(
+				Keccak256::digest(&rlp::encode(t)).as_slice()
+			);
+			if let Some(status) = TransactionStatuses::get(transaction_hash) {
+				Transactions::insert(
+					transaction_hash,
+					(hash, status.transaction_index)
+				);
+			}
+		}
+
+		BlocksAndReceipts::insert(hash, (block, receipts));
+		BlockNumbers::<T>::insert(n, hash);
+	}
+
 	pub fn find_author() -> H160 {
 		let digest = <frame_system::Module<T>>::digest();
 		let pre_runtime_digests = digest.logs.iter().filter_map(|d| d.as_pre_runtime());
