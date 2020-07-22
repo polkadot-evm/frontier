@@ -37,7 +37,7 @@ use rlp;
 use sha3::{Digest, Keccak256};
 
 pub use frontier_rpc_primitives::TransactionStatus;
-pub use ethereum::{Transaction, Log, Block, Receipt};
+pub use ethereum::{Transaction, Log, Block, Receipt, TransactionAction};
 
 #[cfg(all(feature = "std", test))]
 mod tests;

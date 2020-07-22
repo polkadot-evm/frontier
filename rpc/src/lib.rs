@@ -16,7 +16,7 @@
 
 use std::{marker::PhantomData, sync::Arc};
 use std::collections::BTreeMap;
-use ethereum::{Block as EthereumBlock, Transaction as EthereumTransaction};
+use ethereum::{Block as EthereumBlock, Transaction as EthereumTransaction, TransactionAction};
 use ethereum_types::{H160, H256, H64, U256, U64};
 use jsonrpc_core::{BoxFuture, Result, ErrorCode, Error, futures::future::{self, Future}};
 use futures::future::TryFutureExt;
@@ -463,12 +463,12 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 			.call(
 				&BlockId::Hash(header.hash()),
 				from,
-				to,
 				data,
 				value,
 				gas_limit,
 				gas_price,
 				nonce,
+				ethereum::TransactionAction::Call(to)
 			)
 			.map_err(|_| internal_err("executing call failed"))?
 			.ok_or(internal_err("inner executing call failed"))?;
@@ -494,12 +494,15 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 			.call(
 				&BlockId::Hash(header.hash()),
 				from,
-				to,
 				data,
 				value,
 				gas_limit,
 				gas_price,
 				nonce,
+				match request.to {
+					Some(to) => ethereum::TransactionAction::Call(to),
+					_ => ethereum::TransactionAction::Create,
+				}
 			)
 			.map_err(|_| internal_err("executing call failed"))?
 			.ok_or(internal_err("inner executing call failed"))?;
