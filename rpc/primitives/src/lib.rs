@@ -96,7 +96,7 @@ sp_api::decl_runtime_apis! {
 			TransactionStatus,
 			Vec<EthereumReceipt>
 		)>;
-		/// For a given block hash and transaction index, returns data necessary to build an Transaction rpc 
+		/// For a given block hash and transaction index, returns data necessary to build an Transaction rpc
 		/// type response.
 		/// - EthereumTransaction: transaction as stored in pallet-ethereum.
 		/// - EthereumBlock: block as stored in pallet-ethereum .
@@ -109,7 +109,7 @@ sp_api::decl_runtime_apis! {
 			EthereumBlock,
 			TransactionStatus
 		)>;
-		/// For a given block number and transaction index, returns data necessary to build an Transaction rpc 
+		/// For a given block number and transaction index, returns data necessary to build an Transaction rpc
 		/// type response.
 		/// - EthereumTransaction: transaction as stored in pallet-ethereum.
 		/// - EthereumBlock: block as stored in pallet-ethereum .
