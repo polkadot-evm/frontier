@@ -18,8 +18,8 @@
 use sp_core::{U256, Pair, Public, sr25519};
 use evm::{ConvertAccountId, HashTruncateConvertAccountId};
 use frontier_template_runtime::{
-	AccountId, AuraConfig, BalancesConfig, EVMConfig, GenesisConfig, GrandpaConfig, Signature,
-	SudoConfig, SystemConfig, WASM_BINARY,
+	AccountId, AuraConfig, BalancesConfig, EVMConfig, EthereumConfig, GenesisConfig, GrandpaConfig,
+	Signature, SudoConfig, SystemConfig, WASM_BINARY,
 };
 use sc_service::ChainType;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -162,5 +162,6 @@ fn testnet_genesis(
 		evm: Some(EVMConfig {
 			accounts: evm_accounts,
 		}),
+		ethereum: Some(EthereumConfig {}),
 	}
 }

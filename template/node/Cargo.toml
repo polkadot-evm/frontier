@@ -37,6 +37,7 @@ sp-consensus-aura = { version = "0.8.0-dev", path = "../../vendor/substrate/prim
 sp-consensus = { version = "0.8.0-dev", path = "../../vendor/substrate/primitives/consensus/common" }
 sc-consensus = { version = "0.8.0-dev", path = "../../vendor/substrate/client/consensus/common" }
 evm = { version = "2.0.0-dev", package = "pallet-evm", path = "../../vendor/substrate/frame/evm" }
+ethereum = { version = "0.1.0", package = "pallet-ethereum", path = "../../frame/ethereum" }
 sc-finality-grandpa = { version = "0.8.0-dev", path = "../../vendor/substrate/client/finality-grandpa" }
 sp-finality-grandpa = { version = "2.0.0-dev", path = "../../vendor/substrate/primitives/finality-grandpa" }
 sc-client-api = { version = "2.0.0-dev", path = "../../vendor/substrate/client/api" }
