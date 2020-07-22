@@ -66,9 +66,7 @@ pub struct Filter {
 	/// Address
 	pub address: Option<FilterAddress>,
 	/// Topics
-	pub topics: Option<Vec<Topic>>,
-	/// Limit
-	pub limit: Option<usize>,
+	pub topics: Option<Topic>,
 }
 
 /// Results of the filter_changes RPC.

@@ -31,7 +31,7 @@ use sp_runtime::traits::BlakeTwo256;
 use frontier_rpc_core::EthApi as EthApiT;
 use frontier_rpc_core::types::{
 	BlockNumber, Bytes, CallRequest, EthAccount, Filter, Index, Log, Receipt, RichBlock,
-	SyncStatus, Transaction, Work, Rich, Block, BlockTransactions
+	SyncStatus, Transaction, Work, Rich, Block, BlockTransactions, VariadicValue
 };
 use frontier_rpc_primitives::{EthereumRuntimeApi, ConvertTransaction, TransactionStatus};
 
@@ -664,8 +664,73 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 		unimplemented!("compile_serpent");
 	}
 
-	fn logs(&self, _: Filter) -> BoxFuture<Vec<Log>> {
-		unimplemented!("logs");
+	fn logs(&self, filter: Filter) -> Result<Vec<Log>> {
+		let header = self.select_chain.best_chain()
+			.map_err(|_| internal_err("fetch header failed"))?;
+
+		let mut from_block_arg = None;
+		if let Some(from_block) = filter.from_block {
+			if let Ok(Some(block_number)) = self.native_block_number(Some(from_block)) {
+				from_block_arg = Some(block_number);
+			}
+		}
+
+		let mut to_block_arg = None;
+		if let Some(to_block) = filter.to_block {
+			if let Ok(Some(block_number)) = self.native_block_number(Some(to_block)) {
+				to_block_arg = Some(block_number);
+			}
+		}
+
+		let mut address_arg = None;
+		if let Some(address) = filter.address {
+			match address {
+				VariadicValue::Single(x) => { address_arg = Some(x); },
+				_ => { address_arg = None; }
+			}
+		}
+
+		let mut topics_arg = None;
+		if let Some(topics) = filter.topics {
+			match topics {
+				VariadicValue::Multiple(x) => { topics_arg = Some(x); },
+				_ => { address_arg = None; }
+			}
+		}
+
+		if let Ok(logs) = self.client.runtime_api()
+			.logs(
+				&BlockId::Hash(header.hash()), 
+				from_block_arg,
+				to_block_arg,
+				filter.block_hash,
+				address_arg,
+				topics_arg
+		) {
+			let mut output = vec![]; 
+			for log in logs {
+				let address = log.0;
+				let topics = log.1;
+				let data = log.2;
+				let block_hash = log.3;
+				let block_number = log.4;
+
+				output.push(Log {
+					address,
+					topics,
+					data: Bytes(data),
+					block_hash,
+					block_number,
+					transaction_hash: None, // TODO
+					transaction_index: None, // TODO
+					log_index: None, // TODO
+					transaction_log_index: None, // TODO
+					removed: false // TODO
+				});
+			}
+			return Ok(output);
+		}
+		Ok(vec![])
 	}
 
 	fn work(&self) -> Result<Work> {

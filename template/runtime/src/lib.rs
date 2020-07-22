@@ -583,6 +583,32 @@ impl_runtime_apis! {
 				index
 			)
 		}
+
+		fn logs(
+			from_block: Option<u32>,
+			to_block: Option<u32>,
+			block_hash: Option<H256>,
+			address: Option<H160>,
+			topic: Option<Vec<H256>>
+		) -> Vec<(
+			H160, // address
+			Vec<H256>, // topics
+			Vec<u8>, // data
+			Option<H256>, // block_hash
+			Option<U256> // block_number
+		)> {
+			let output = <ethereum::Module<Runtime>>::filtered_logs(
+				from_block,
+				to_block,
+				block_hash,
+				address,
+				topic
+			);
+			if let Some(output) = output {
+				return output;
+			}
+			return vec![];
+		}
 	}
 
 	impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi<

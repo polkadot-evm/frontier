@@ -355,6 +355,94 @@ impl<T: Trait> Module<T> {
 		}).collect()
 	}
 
+	fn block_logs(
+		block_hash: H256,
+		address: Option<H160>,
+		topic: Option<Vec<H256>>
+	) -> Option<Vec<(
+		H160, // address
+		Vec<H256>, // topics
+		Vec<u8>, // data
+		Option<H256>, // block_hash
+		Option<U256> // block_number
+	)>> {
+		let mut output = vec![];
+		let (block, receipts) = BlocksAndReceipts::get(block_hash)?;
+		for receipt in receipts {
+			let logs = receipt.logs.clone();
+			for log in logs {
+				let mut add: bool = false;
+				if let (Some(address), Some(topics)) = (address.clone(), topic.clone()) {
+					if address == log.address && log.topics.starts_with(&topics) {
+						add = true;
+					}
+				} else if let Some(address) = address {
+					if address == log.address {
+						add = true;
+					}
+				} else if let Some(topics) = &topic {
+					if log.topics.starts_with(&topics) {
+						add = true;
+					}
+				}
+				if add {
+					output.push((
+						log.address.clone(),
+						log.topics.clone(),
+						log.data.clone(),
+						Some(H256::from_slice(
+							Keccak256::digest(&rlp::encode(&block.header)).as_slice()
+						)),
+						Some(block.header.number.clone())
+					));
+				}
+			}
+		}
+		Some(output)
+	}
+
+	pub fn filtered_logs(
+		from_block: Option<u32>,
+		to_block: Option<u32>,
+		block_hash: Option<H256>,
+		address: Option<H160>,
+		topic: Option<Vec<H256>>,
+	) -> Option<Vec<(
+		H160, // address
+		Vec<H256>, // topics
+		Vec<u8>, // data
+		Option<H256>, // block_hash
+		Option<U256> // block_number
+	)>> {
+		if let Some(block_hash) = block_hash {
+			<Module<T>>::block_logs(
+				block_hash,
+				address,
+				topic
+			)
+		} else if let (Some(from_block), Some(to_block)) = (from_block, to_block) {
+			let mut output = vec![];
+			if from_block >= to_block {
+				for number in from_block..to_block {
+					let block_number = T::BlockNumber::from(number);
+					if <BlockNumbers<T>>::contains_key(block_number) {
+						let hash = <BlockNumbers<T>>::get(block_number);
+						output.extend(<Module<T>>::block_logs(
+							hash,
+							address.clone(),
+							topic.clone()
+						).unwrap())
+					}
+				}
+				Some(output)
+			} else {
+				None
+			}
+		} else {
+			None
+		}
+	}
+
 	/// Execute an Ethereum transaction, ignoring transaction signatures.
 	pub fn execute(source: H160, transaction: ethereum::Transaction) {
 		let transaction_hash = H256::from_slice(

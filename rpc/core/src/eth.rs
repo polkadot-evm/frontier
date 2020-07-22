@@ -185,7 +185,7 @@ pub trait EthApi {
 
 	/// Returns logs matching given filter object.
 	#[rpc(name = "eth_getLogs")]
-	fn logs(&self, _: Filter) -> BoxFuture<Vec<Log>>;
+	fn logs(&self, _: Filter) -> Result<Vec<Log>>;
 
 	/// Returns the hash of the current block, the seedHash, and the boundary condition to be met.
 	#[rpc(name = "eth_getWork")]
