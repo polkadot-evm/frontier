@@ -12,6 +12,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+    - uses: actions/setup-node@v2-beta
+      with:
+        node-version: '12'
     - name: Submodules
       run: git submodule update --init --recursive
     - name: Init
@@ -27,10 +30,7 @@ jobs:
       run: cargo build --verbose --all
     - name: Run tests
       run: cargo test --verbose --all
-    - uses: actions/checkout@v1
-      with:
-        node-version: 10.x
     - name: Install functional tests typescript
       run: cd ts-tests && npm install
     - name: Run functional tests
-      run: npm run test
+      run: cd ts-tests && npm run test
