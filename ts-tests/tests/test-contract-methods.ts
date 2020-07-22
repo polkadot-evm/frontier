@@ -3,7 +3,7 @@ import { expect } from "chai";
 import { createAndFinalizeBlock, customRequest, describeWithFrontier } from "./util";
 import { AbiItem } from "web3-utils";
 
-describeWithFrontier("Frontier RPC (Contract Methods)", `simple-specs.json`, context => {
+describeWithFrontier("Frontier RPC (Contract Methods)", `simple-specs.json`, (context) => {
 	const GENESIS_ACCOUNT = "0x57d213d0927ccc7596044c6ba013dd05522aacba";
 	const GENESIS_ACCOUNT_PRIVATE_KEY = "0x99B3C12287537E38C90A9219D4CB074A89A16E9CDB20BF85728EBD97C343E342";
 
@@ -18,7 +18,7 @@ describeWithFrontier("Frontier RPC (Contract Methods)", `simple-specs.json`, con
 		outputs: [{ internalType: "uint256", name: "d", type: "uint256" }],
 		payable: false,
 		stateMutability: "pure",
-		type: "function"
+		type: "function",
 	} as AbiItem;
 
 	const FIRST_CONTRACT_ADDRESS = "0xc2bf5f29a4384b1ab0c063e1c666f02121b6084a"; // Those test are ordered. In general this should be avoided, but due to the time it takes	// to spin up a frontier node, it saves a lot of time.
@@ -31,7 +31,7 @@ describeWithFrontier("Frontier RPC (Contract Methods)", `simple-specs.json`, con
 				data: TEST_CONTRACT_BYTECODE,
 				value: "0x00",
 				gasPrice: "0x00",
-				gas: "0x100000"
+				gas: "0x100000",
 			},
 			GENESIS_ACCOUNT_PRIVATE_KEY
 		);
@@ -42,54 +42,54 @@ describeWithFrontier("Frontier RPC (Contract Methods)", `simple-specs.json`, con
 	it("should return contract method result", async function () {
 		const contract = new context.web3.eth.Contract([TEST_CONTRACT_ABI], FIRST_CONTRACT_ADDRESS, {
 			from: GENESIS_ACCOUNT,
-			gasPrice: "0"
+			gasPrice: "0",
 		});
 
 		expect(await contract.methods.multiply(3).call()).to.equal("21");
 	});
 
 	// Requires error handling
-	it("should fail for missing parameters", async function () {
+	it.skip("should fail for missing parameters", async function () {
 		const contract = new context.web3.eth.Contract([{ ...TEST_CONTRACT_ABI, inputs: [] }], FIRST_CONTRACT_ADDRESS, {
 			from: GENESIS_ACCOUNT,
-			gasPrice: "0"
+			gasPrice: "0",
 		});
 		await contract.methods
 			.multiply()
 			.call()
-			.catch(err =>
+			.catch((err) =>
 				expect(err.message).to.equal(`Returned error: VM Exception while processing transaction: revert.`)
 			);
 	});
 
 	// Requires error handling
-	it("should fail for too many parameters", async function () {
+	it.skip("should fail for too many parameters", async function () {
 		const contract = new context.web3.eth.Contract(
 			[
 				{
 					...TEST_CONTRACT_ABI,
 					inputs: [
 						{ internalType: "uint256", name: "a", type: "uint256" },
-						{ internalType: "uint256", name: "b", type: "uint256" }
-					]
-				}
+						{ internalType: "uint256", name: "b", type: "uint256" },
+					],
+				},
 			],
 			FIRST_CONTRACT_ADDRESS,
 			{
 				from: GENESIS_ACCOUNT,
-				gasPrice: "0"
+				gasPrice: "0",
 			}
 		);
 		await contract.methods
 			.multiply(3, 4)
 			.call()
-			.catch(err =>
+			.catch((err) =>
 				expect(err.message).to.equal(`Returned error: VM Exception while processing transaction: revert.`)
 			);
 	});
 
 	// Requires error handling
-	it("should fail for invalid parameters", async function () {
+	it.skip("should fail for invalid parameters", async function () {
 		const contract = new context.web3.eth.Contract(
 			[{ ...TEST_CONTRACT_ABI, inputs: [{ internalType: "address", name: "a", type: "address" }] }],
 			FIRST_CONTRACT_ADDRESS,
@@ -98,7 +98,7 @@ describeWithFrontier("Frontier RPC (Contract Methods)", `simple-specs.json`, con
 		await contract.methods
 			.multiply("0x0123456789012345678901234567890123456789")
 			.call()
-			.catch(err =>
+			.catch((err) =>
 				expect(err.message).to.equal(`Returned error: VM Exception while processing transaction: revert.`)
 			);
 	});

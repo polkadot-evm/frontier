@@ -2,7 +2,7 @@ import { expect } from "chai";
 
 import { createAndFinalizeBlock, customRequest, describeWithFrontier } from "./util";
 
-describeWithFrontier("Frontier RPC (Contract)", `simple-specs.json`, context => {
+describeWithFrontier("Frontier RPC (Contract)", `simple-specs.json`, (context) => {
 	const GENESIS_ACCOUNT = "0x57d213d0927ccc7596044c6ba013dd05522aacba";
 	const GENESIS_ACCOUNT_PRIVATE_KEY = "0x99B3C12287537E38C90A9219D4CB074A89A16E9CDB20BF85728EBD97C343E342";
 
@@ -21,7 +21,7 @@ describeWithFrontier("Frontier RPC (Contract)", `simple-specs.json`, context => 
 				data: TEST_CONTRACT_BYTECODE,
 				value: "0x00",
 				gasPrice: "0x00",
-				gas: "0x100000"
+				gas: "0x100000",
 			},
 			GENESIS_ACCOUNT_PRIVATE_KEY
 		);
@@ -29,14 +29,14 @@ describeWithFrontier("Frontier RPC (Contract)", `simple-specs.json`, context => 
 		expect(await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction])).to.deep.equal({
 			id: 1,
 			jsonrpc: "2.0",
-			result: "0xc8009207908c5caf1bae415f02562d92a290dcbe4f2fbf331bda3b7548ae6a6f"
+			result: "0xc8009207908c5caf1bae415f02562d92a290dcbe4f2fbf331bda3b7548ae6a6f",
 		});
 
 		// Verify the contract is not yet stored
 		expect(await customRequest(context.web3, "eth_getCode", [FIRST_CONTRACT_ADDRESS])).to.deep.equal({
 			id: 1,
 			jsonrpc: "2.0",
-			result: "0x"
+			result: "0x",
 		});
 
 		// Verify the contract is stored after the block is produced
@@ -45,7 +45,7 @@ describeWithFrontier("Frontier RPC (Contract)", `simple-specs.json`, context => 
 			id: 1,
 			jsonrpc: "2.0",
 			result:
-				"0x6080604052348015600f57600080fd5b506004361060285760003560e01c8063c6888fa114602d575b600080fd5b605660048036036020811015604157600080fd5b8101908080359060200190929190505050606c565b6040518082815260200191505060405180910390f35b600060078202905091905056fea265627a7a72315820f06085b229f27f9ad48b2ff3dd9714350c1698a37853a30136fa6c5a7762af7364736f6c63430005110032"
+				"0x6080604052348015600f57600080fd5b506004361060285760003560e01c8063c6888fa114602d575b600080fd5b605660048036036020811015604157600080fd5b8101908080359060200190929190505050606c565b6040518082815260200191505060405180910390f35b600060078202905091905056fea265627a7a72315820f06085b229f27f9ad48b2ff3dd9714350c1698a37853a30136fa6c5a7762af7364736f6c63430005110032",
 		});
 	});
 });

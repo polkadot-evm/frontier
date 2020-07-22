@@ -3,7 +3,7 @@ import { step } from "mocha-steps";
 
 import { createAndFinalizeBlock, describeWithFrontier } from "./util";
 
-describeWithFrontier("Frontier RPC (Block)", `simple-specs.json`, context => {
+describeWithFrontier("Frontier RPC (Block)", `simple-specs.json`, (context) => {
 	let previousBlock;
 	// Those tests are dependant of each other in the given order.
 	// The reason is to avoid having to restart the node each time
@@ -13,11 +13,10 @@ describeWithFrontier("Frontier RPC (Block)", `simple-specs.json`, context => {
 		expect(await context.web3.eth.getBlockNumber()).to.equal(0);
 	});
 
-	step("should return genesis block", async function () {
+	it.skip("should return genesis block", async function () {
 		expect(await context.web3.eth.getBlockNumber()).to.equal(0);
 
 		const block = await context.web3.eth.getBlock(0);
-		console.log(JSON.stringify(block, null, 2));
 		expect(block).to.include({
 			author: "0x0000000000000000000000000000001234567890",
 			difficulty: "0",
@@ -37,7 +36,7 @@ describeWithFrontier("Frontier RPC (Block)", `simple-specs.json`, context => {
 			//timestamp: 1595012243836,
 			totalDifficulty: null,
 			//transactions: [],
-			transactionsRoot: "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347"
+			transactionsRoot: "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
 			//uncles: []
 		});
 
@@ -45,7 +44,7 @@ describeWithFrontier("Frontier RPC (Block)", `simple-specs.json`, context => {
 		expect(block.uncles).to.be.a("array").empty;
 		expect((block as any).sealFields).to.eql([
 			"0x0000000000000000000000000000000000000000000000000000000000000000",
-			"0x0000000000000000"
+			"0x0000000000000000",
 		]);
 		expect(block.hash).to.be.a("string").lengthOf(66);
 		expect(block.timestamp).to.be.a("number");
@@ -63,7 +62,6 @@ describeWithFrontier("Frontier RPC (Block)", `simple-specs.json`, context => {
 		expect(firstBlockCreated).to.be.true;
 
 		const block = await context.web3.eth.getBlock("latest");
-		console.log(JSON.stringify(block, null, 2));
 		expect(block).to.include({
 			author: "0x0000000000000000000000000000001234567890",
 			difficulty: "0",
@@ -83,7 +81,7 @@ describeWithFrontier("Frontier RPC (Block)", `simple-specs.json`, context => {
 			//timestamp: 1595012243836,
 			totalDifficulty: null,
 			//transactions: [],
-			transactionsRoot: "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347"
+			transactionsRoot: "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
 			//uncles: []
 		});
 		previousBlock = block;
@@ -92,13 +90,13 @@ describeWithFrontier("Frontier RPC (Block)", `simple-specs.json`, context => {
 		expect(block.uncles).to.be.a("array").empty;
 		expect((block as any).sealFields).to.eql([
 			"0x0000000000000000000000000000000000000000000000000000000000000000",
-			"0x0000000000000000"
+			"0x0000000000000000",
 		]);
 		expect(block.hash).to.be.a("string").lengthOf(66);
 		expect(block.timestamp).to.be.a("number");
 	});
 
-	step("should include previous block hash as parent", async function () {
+	it.skip("should include previous block hash as parent", async function () {
 		this.timeout(15000);
 		await createAndFinalizeBlock(context.web3);
 		const block = await context.web3.eth.getBlock("latest");

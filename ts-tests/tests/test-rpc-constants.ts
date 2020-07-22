@@ -3,7 +3,7 @@ import { createAndFinalizeBlock, customRequest, describeWithFrontier } from "./u
 
 // All test for the RPC
 
-describeWithFrontier("Frontier RPC (Constant)", `simple-specs.json`, context => {
+describeWithFrontier("Frontier RPC (Constant)", `simple-specs.json`, (context) => {
 	it("should have 0 hashrate", async function () {
 		expect(await context.web3.eth.getHashrate()).to.equal(0);
 	});

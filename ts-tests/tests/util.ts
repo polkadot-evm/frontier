@@ -18,7 +18,7 @@ export async function customRequest(web3: Web3, method: string, params: any[]) {
 				jsonrpc: "2.0",
 				id: 1,
 				method,
-				params
+				params,
 			},
 			(error: Error | null, result?: JsonRpcResponse) => {
 				if (error) {
@@ -58,10 +58,10 @@ export async function startFrontierNode(specFilename: string): Promise<{ web3: W
 		`-l${FRONTIER_LOG}`,
 		`--rpc-port=${RPC_PORT}`,
 		`--ws-port=19944`, // not used
-		`--tmp`
+		`--tmp`,
 	];
 	const binary = spawn(cmd, args);
-	binary.on("error", err => {
+	binary.on("error", (err) => {
 		if ((err as any).errno == "ENOENT") {
 			console.error(
 				`\x1b[31mMissing Frontier binary (${BINARY_PATH}).\nPlease compile the Frontier project:\ncargo build --bin frontier-test-node\x1b[0m`
@@ -73,16 +73,16 @@ export async function startFrontierNode(specFilename: string): Promise<{ web3: W
 	});
 
 	const binaryLogs = [];
-	await new Promise(resolve => {
+	await new Promise((resolve) => {
 		const timer = setTimeout(() => {
 			console.error(`\x1b[31m Failed to start Frontier Test Node.\x1b[0m`);
 			console.error(`Command: ${cmd} ${args.join(" ")}`);
 			console.error(`Logs:`);
-			console.error(binaryLogs.map(chunk => chunk.toString()).join("\n"));
+			console.error(binaryLogs.map((chunk) => chunk.toString()).join("\n"));
 			process.exit(1);
 		}, SPAWNING_TIME - 2000);
 
-		const onData = async chunk => {
+		const onData = async (chunk) => {
 			if (DISPLAY_LOG) {
 				console.log(chunk.toString());
 			}
