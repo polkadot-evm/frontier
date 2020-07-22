@@ -20,6 +20,25 @@ It consists of the following components:
 
 Frontier is still work-in-progress. Below are some notes about the development.
 
+### Runtime
+
+A few notes on the EthereumRuntimeApi's runtime implementation requirements:
+
+- For supporting author rpc call, the FindAuthor trait must be implemented in an
+arbitrary struct. This implementation must call the authorities accessor in either
+Aura or Babe and convert the authority id response to H160 using
+pallet_evm::HashTruncateConvertAccountId::convert_account_id.
+
+The struct implementing FindAuthor is passed as the FindAuthor associated type's 
+value for pallet_ethereum.
+
+An Aura example for this is available in the template's runtime (EthereumFindAuthor).
+
+- For supporting chain_id rpc call, a u64 ChainId constant must be defined.
+
+- For supporting gas_price rpc call, FeeCalculator trait must be implemented in an
+arbitrary struct. An example FixedGasPrice is available in the template's runtime.
+
 ### Vendor folder
 
 The vendor folder contains dependencies that contains changes that has not yet
