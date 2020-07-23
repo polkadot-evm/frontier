@@ -714,18 +714,21 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 				let data = log.2;
 				let block_hash = log.3;
 				let block_number = log.4;
-
+				let transaction_hash = log.5;
+				let transaction_index = log.6;
+				let log_index = log.7;
+				let transaction_log_index = log.8;
 				output.push(Log {
 					address,
 					topics,
 					data: Bytes(data),
 					block_hash,
 					block_number,
-					transaction_hash: None, // TODO
-					transaction_index: None, // TODO
-					log_index: None, // TODO
-					transaction_log_index: None, // TODO
-					removed: false // TODO
+					transaction_hash,
+					transaction_index,
+					log_index,
+					transaction_log_index,
+					removed: false
 				});
 			}
 			return Ok(output);

@@ -364,12 +364,22 @@ impl<T: Trait> Module<T> {
 		Vec<H256>, // topics
 		Vec<u8>, // data
 		Option<H256>, // block_hash
-		Option<U256> // block_number
+		Option<U256>, // block_number
+		Option<H256>, // transaction_hash
+		Option<U256>, // transaction_index
+		Option<U256>, // log index in block
+		Option<U256>, // log index in transaction
 	)>> {
 		let mut output = vec![];
 		let (block, receipts) = BlocksAndReceipts::get(block_hash)?;
-		for receipt in receipts {
+		let mut block_log_index: u32 = 0;
+		for (index, receipt) in receipts.iter().enumerate() {
 			let logs = receipt.logs.clone();
+			let mut transaction_log_index: u32 = 0;
+			let transaction = &block.transactions[index as usize];
+			let transaction_hash = H256::from_slice(
+				Keccak256::digest(&rlp::encode(transaction)).as_slice()
+			);
 			for log in logs {
 				let mut add: bool = false;
 				if let (Some(address), Some(topics)) = (address.clone(), topic.clone()) {
@@ -393,9 +403,15 @@ impl<T: Trait> Module<T> {
 						Some(H256::from_slice(
 							Keccak256::digest(&rlp::encode(&block.header)).as_slice()
 						)),
-						Some(block.header.number.clone())
+						Some(block.header.number.clone()),
+						Some(transaction_hash),
+						Some(U256::from(index)),
+						Some(U256::from(block_log_index)),
+						Some(U256::from(transaction_log_index))
 					));
 				}
+				transaction_log_index += 1;
+				block_log_index += 1;
 			}
 		}
 		Some(output)
@@ -412,7 +428,11 @@ impl<T: Trait> Module<T> {
 		Vec<H256>, // topics
 		Vec<u8>, // data
 		Option<H256>, // block_hash
-		Option<U256> // block_number
+		Option<U256>, // block_number
+		Option<H256>, // transaction_hash
+		Option<U256>, // transaction_index
+		Option<U256>, // log index in block
+		Option<U256>, // log index in transaction
 	)>> {
 		if let Some(block_hash) = block_hash {
 			<Module<T>>::block_logs(

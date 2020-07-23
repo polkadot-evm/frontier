@@ -106,7 +106,11 @@ sp_api::decl_runtime_apis! {
 			Vec<H256>, // topics
 			Vec<u8>, // data
 			Option<H256>, // block_hash
-			Option<U256> // block_number
+			Option<U256>, // block_number
+			Option<H256>, // transaction_hash
+			Option<U256>, // transaction_index
+			Option<U256>, // log index in block
+			Option<U256>, // log index in transaction
 		)>;
 	}
 }
