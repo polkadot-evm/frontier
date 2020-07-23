@@ -122,6 +122,24 @@ sp_api::decl_runtime_apis! {
 			EthereumBlock,
 			TransactionStatus
 		)>;
+		/// For given filter arguments, return data necessary to build Logs
+		fn logs(
+			from_block: Option<u32>,
+			to_block: Option<u32>,
+			block_hash: Option<H256>,
+			address: Option<H160>,
+			topic: Option<Vec<H256>>
+		) -> Vec<(
+			H160, // address
+			Vec<H256>, // topics
+			Vec<u8>, // data
+			Option<H256>, // block_hash
+			Option<U256>, // block_number
+			Option<H256>, // transaction_hash
+			Option<U256>, // transaction_index
+			Option<U256>, // log index in block
+			Option<U256>, // log index in transaction
+		)>;
 	}
 }
 
