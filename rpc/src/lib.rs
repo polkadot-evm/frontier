@@ -700,14 +700,14 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 
 		if let Ok(logs) = self.client.runtime_api()
 			.logs(
-				&BlockId::Hash(header.hash()), 
+				&BlockId::Hash(header.hash()),
 				from_block,
 				to_block,
 				filter.block_hash,
 				address,
 				topics
 		) {
-			let mut output = vec![]; 
+			let mut output = vec![];
 			for log in logs {
 				let address = log.0;
 				let topics = log.1;
