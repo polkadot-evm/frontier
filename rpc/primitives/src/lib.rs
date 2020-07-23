@@ -95,6 +95,7 @@ sp_api::decl_runtime_apis! {
 			EthereumBlock,
 			TransactionStatus
 		)>;
+		/// For given filter arguments, return data necessary to build Logs
 		fn logs(
 			from_block: Option<u32>,
 			to_block: Option<u32>,

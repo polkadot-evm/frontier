@@ -668,44 +668,44 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 		let header = self.select_chain.best_chain()
 			.map_err(|_| internal_err("fetch header failed"))?;
 
-		let mut from_block_arg = None;
-		if let Some(from_block) = filter.from_block {
-			if let Ok(Some(block_number)) = self.native_block_number(Some(from_block)) {
-				from_block_arg = Some(block_number);
+		let mut from_block = None;
+		if let Some(from_block_input) = filter.from_block {
+			if let Ok(Some(block_number)) = self.native_block_number(Some(from_block_input)) {
+				from_block = Some(block_number);
 			}
 		}
 
-		let mut to_block_arg = None;
-		if let Some(to_block) = filter.to_block {
-			if let Ok(Some(block_number)) = self.native_block_number(Some(to_block)) {
-				to_block_arg = Some(block_number);
+		let mut to_block = None;
+		if let Some(to_block_input) = filter.to_block {
+			if let Ok(Some(block_number)) = self.native_block_number(Some(to_block_input)) {
+				to_block = Some(block_number);
 			}
 		}
 
-		let mut address_arg = None;
-		if let Some(address) = filter.address {
-			match address {
-				VariadicValue::Single(x) => { address_arg = Some(x); },
-				_ => { address_arg = None; }
+		let mut address = None;
+		if let Some(address_input) = filter.address {
+			match address_input {
+				VariadicValue::Single(x) => { address = Some(x); },
+				_ => { address = None; }
 			}
 		}
 
-		let mut topics_arg = None;
-		if let Some(topics) = filter.topics {
-			match topics {
-				VariadicValue::Multiple(x) => { topics_arg = Some(x); },
-				_ => { address_arg = None; }
+		let mut topics = None;
+		if let Some(topics_input) = filter.topics {
+			match topics_input {
+				VariadicValue::Multiple(x) => { topics = Some(x); },
+				_ => { topics = None; }
 			}
 		}
 
 		if let Ok(logs) = self.client.runtime_api()
 			.logs(
 				&BlockId::Hash(header.hash()), 
-				from_block_arg,
-				to_block_arg,
+				from_block,
+				to_block,
 				filter.block_hash,
-				address_arg,
-				topics_arg
+				address,
+				topics
 		) {
 			let mut output = vec![]; 
 			for log in logs {
