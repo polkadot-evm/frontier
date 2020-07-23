@@ -44,6 +44,13 @@ fn internal_err(message: &str) -> Error {
 		data: None
 	}
 }
+fn not_supported_err(message: &str) -> Error {
+	Error {
+		code: ErrorCode::InvalidRequest,
+		message: message.to_string(),
+		data: None
+	}
+}
 
 pub struct EthApi<B: BlockT, C, SC, P, CT, BE> {
 	pool: Arc<P>,
@@ -649,19 +656,19 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 	}
 
 	fn compilers(&self) -> Result<Vec<String>> {
-		unimplemented!("compilers");
+		Err(not_supported_err("Method eth_getCompilers not supported."))
 	}
 
 	fn compile_lll(&self, _: String) -> Result<Bytes> {
-		unimplemented!("compile_lll");
+		Err(not_supported_err("Method eth_compileLLL not supported."))
 	}
 
 	fn compile_solidity(&self, _: String) -> Result<Bytes> {
-		unimplemented!("compile_solidity");
+		Err(not_supported_err("Method eth_compileSolidity not supported."))
 	}
 
 	fn compile_serpent(&self, _: String) -> Result<Bytes> {
-		unimplemented!("compile_serpent");
+		Err(not_supported_err("Method eth_compileSerpent not supported."))
 	}
 
 	fn logs(&self, _: Filter) -> BoxFuture<Vec<Log>> {

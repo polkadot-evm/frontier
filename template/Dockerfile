@@ -33,4 +33,4 @@ ENV PROFILE ${PROFILE}
 # The execution will re-compile the project to run it
 # This allows to modify the code and not have to re-compile the
 # dependencies.
-CMD cargo run "--$PROFILE" -- --dev
+CMD cargo run --bin frontier-template-node "--$PROFILE" -- --dev

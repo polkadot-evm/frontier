@@ -7,6 +7,8 @@ members = [
 	"template/node",
 	"template/runtime",
 	"template/test-utils/client",
+	"ts-tests/frontier-test-node/node",
+	"ts-tests/frontier-test-node/runtime",
 ]
 exclude = ["vendor"]
 

@@ -27,3 +27,11 @@ jobs:
       run: cargo build --verbose --all
     - name: Run tests
       run: cargo test --verbose --all
+    - name: Use Node.js 10
+      uses: actions/setup-node@v1
+      with:
+        node-version: 10
+    - name: Install functional tests typescript
+      run: cd ts-tests && npm install
+    - name: Run functional tests
+      run: cd ts-tests && npm run test
