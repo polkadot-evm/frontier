@@ -23,7 +23,7 @@ describeWithFrontier("Frontier RPC (Gas)", `simple-specs.json`, (context) => {
 
 	const FIRST_CONTRACT_ADDRESS = "0xc2bf5f29a4384b1ab0c063e1c666f02121b6084a"; // Those test are ordered. In general this should be avoided, but due to the time it takes	// to spin up a frontier node, it saves a lot of time.
 
-	it.skip("eth_estimateGas for contract creation", async function () {
+	it("eth_estimateGas for contract creation", async function () {
 		expect(
 			await context.web3.eth.estimateGas({
 				from: GENESIS_ACCOUNT,

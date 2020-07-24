@@ -458,23 +458,36 @@ impl_runtime_apis! {
 
 		fn call(
 			from: H160,
-			to: H160,
 			data: Vec<u8>,
 			value: U256,
 			gas_limit: U256,
 			gas_price: U256,
 			nonce: Option<U256>,
+			action: ethereum::TransactionAction,
 		) -> Option<(Vec<u8>, U256)> {
-			evm::Module::<Runtime>::execute_call(
-				from,
-				to,
-				data,
-				value,
-				gas_limit.low_u32(),
-				gas_price,
-				nonce,
-				false,
-			).ok().map(|(_, ret, gas)| (ret, gas))
+			match action {
+				ethereum::TransactionAction::Call(to) =>
+					evm::Module::<Runtime>::execute_call(
+						from,
+						to,
+						data,
+						value,
+						gas_limit.low_u32(),
+						gas_price,
+						nonce,
+						false,
+					).ok().map(|(_, ret, gas)| (ret, gas)),
+				ethereum::TransactionAction::Create =>
+					evm::Module::<Runtime>::execute_create(
+						from,
+						data,
+						value,
+						gas_limit.low_u32(),
+						gas_price,
+						nonce,
+						false,
+					).ok().map(|(_, _, gas)| (vec![], gas)),
+			}
 		}
 
 		fn logs(

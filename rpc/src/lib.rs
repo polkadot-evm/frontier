@@ -16,7 +16,7 @@
 
 use std::{marker::PhantomData, sync::Arc};
 use std::collections::BTreeMap;
-use ethereum::{Block as EthereumBlock, Transaction as EthereumTransaction, TransactionAction};
+use ethereum::{Block as EthereumBlock, Transaction as EthereumTransaction};
 use ethereum_types::{H160, H256, H64, U256, U64};
 use jsonrpc_core::{BoxFuture, Result, ErrorCode, Error, futures::future::{self, Future}};
 use futures::future::TryFutureExt;
@@ -490,7 +490,6 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 			.map_err(|_| internal_err("fetch header failed"))?;
 
 		let from = request.from.unwrap_or_default();
-		let to = request.to.unwrap_or_default();
 		let gas_price = request.gas_price.unwrap_or_default();
 		let gas_limit = request.gas.unwrap_or(U256::max_value());
 		let value = request.value.unwrap_or_default();
