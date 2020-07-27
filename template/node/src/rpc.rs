@@ -19,7 +19,7 @@
 
 use std::{sync::Arc, fmt};
 
-use frontier_template_runtime::{Hash, AccountId, Index, opaque::Block, Balance, UncheckedExtrinsic};
+use frontier_template_runtime::{Hash, AccountId, Index, opaque::Block, Balance, opaque::UncheckedExtrinsic};
 use sp_api::ProvideRuntimeApi;
 use sp_transaction_pool::TransactionPool;
 use sp_blockchain::{Error as BlockChainError, HeaderMetadata, HeaderBackend};
@@ -28,6 +28,8 @@ use sc_rpc_api::DenyUnsafe;
 use sc_client_api::backend::{StorageProvider, Backend, StateBackend};
 use sp_runtime::traits::BlakeTwo256;
 use sp_block_builder::BlockBuilder;
+
+pub type IoHandler = jsonrpc_core::IoHandler<sc_rpc::Metadata>;
 
 /// Light client extra dependencies.
 pub struct LightDeps<C, F, P> {

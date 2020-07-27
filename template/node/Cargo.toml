@@ -22,6 +22,7 @@ jsonrpc-core = "14.0.3"
 sp-api = { version = "2.0.0-dev", path = "../../vendor/substrate/primitives/api" }
 sp-blockchain = { version = "2.0.0-dev", path = "../../vendor/substrate/primitives/blockchain" }
 sc-rpc-api = { version = "0.8.0-dev", path = "../../vendor/substrate/client/rpc-api" }
+sc-rpc = { version = "2.0.0-dev", path = "../../vendor/substrate/client/rpc" }
 substrate-frame-rpc-system = { version = "2.0.0-dev", path = "../../vendor/substrate/utils/frame/rpc/system" }
 pallet-transaction-payment-rpc = { version = "2.0.0-dev", path = "../../vendor/substrate/frame/transaction-payment/rpc/" }
 sc-cli = { version = "0.8.0-dev", path = "../../vendor/substrate/client/cli" }
