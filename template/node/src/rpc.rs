@@ -19,7 +19,7 @@
 
 use std::{sync::Arc, fmt};
 
-use frontier_template_runtime::{Hash, AccountId, Index, opaque::Block, Balance, opaque::UncheckedExtrinsic};
+use frontier_template_runtime::{Hash, AccountId, Index, opaque::Block, Balance, UncheckedExtrinsic};
 use sp_api::ProvideRuntimeApi;
 use sp_transaction_pool::TransactionPool;
 use sp_blockchain::{Error as BlockChainError, HeaderMetadata, HeaderBackend};

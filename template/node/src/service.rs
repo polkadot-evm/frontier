@@ -3,7 +3,7 @@
 use std::sync::Arc;
 use std::time::Duration;
 use sc_client_api::{ExecutorProvider, RemoteBackend};
-use frontier_template_runtime::{self, Block, RuntimeApi};
+use frontier_template_runtime::{self, opaque::Block, RuntimeApi};
 use sc_service::{error::Error as ServiceError, Configuration, ServiceComponents, TaskManager};
 use sp_inherents::InherentDataProviders;
 use sc_executor::native_executor_instance;
@@ -74,6 +74,7 @@ pub fn new_full_params(config: Configuration) -> Result<(
 		config.prometheus_registry(),
 	)?;
 
+	let is_authority = config.role.is_authority();
 
 	let rpc_extensions_builder = {
 		let client = client.clone();
@@ -87,7 +88,7 @@ pub fn new_full_params(config: Configuration) -> Result<(
 				pool: pool.clone(),
 				select_chain: select_chain.clone(),
 				deny_unsafe,
-				is_authority: config.role.is_authority(),
+				is_authority: is_authority,
 			};
 
 			crate::rpc::create_full(deps)
@@ -233,12 +234,12 @@ pub fn new_light(config: Configuration) -> Result<TaskManager, ServiceError> {
 	let transaction_pool_api = Arc::new(sc_transaction_pool::LightChainApi::new(
 		client.clone(), on_demand.clone(),
 	));
-	let transaction_pool = sc_transaction_pool::BasicPool::new_light(
+	let transaction_pool = Arc::new(sc_transaction_pool::BasicPool::new_light(
 		config.transaction_pool.clone(),
 		transaction_pool_api,
 		config.prometheus_registry(),
 		task_manager.spawn_handle(),
-	);
+	));
 
 	let grandpa_block_import = sc_finality_grandpa::light_block_import(
 		client.clone(), backend.clone(), &(client.clone() as Arc<_>),
@@ -278,7 +279,7 @@ pub fn new_light(config: Configuration) -> Result<TaskManager, ServiceError> {
 		on_demand: Some(on_demand),
 		remote_blockchain: Some(backend.remote_blockchain()),
 		rpc_extensions_builder: Box::new(sc_service::NoopRpcExtensionBuilder(rpc_extensions)),
-		transaction_pool: Arc::new(transaction_pool),
+		transaction_pool: transaction_pool,
 		config, client, import_queue, keystore, backend, task_manager
 	 }).map(|ServiceComponents { task_manager, .. }| task_manager)
 }
