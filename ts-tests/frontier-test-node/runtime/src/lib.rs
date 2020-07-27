@@ -312,7 +312,7 @@ construct_runtime!(
 		Balances: balances::{Module, Call, Storage, Config<T>, Event<T>},
 		TransactionPayment: transaction_payment::{Module, Storage},
 		Sudo: sudo::{Module, Call, Config<T>, Storage, Event<T>},
-		Ethereum: ethereum::{Module, Call, Storage, Event<T>, ValidateUnsigned},
+		Ethereum: ethereum::{Module, Call, Storage, Event, ValidateUnsigned},
 		EVM: evm::{Module, Config, Call, Storage, Event<T>},
 	}
 );
