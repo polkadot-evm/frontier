@@ -59,7 +59,7 @@ pub use frame_support::{
 	ConsensusEngineId,
 };
 use ethereum::{Block as EthereumBlock, Transaction as EthereumTransaction, Receipt as EthereumReceipt};
-use evm::{Account as EVMAccount, FeeCalculator, EnsureAddressNever, EnsureAddressRoot, HashedAddressMapping};
+use evm::{Account as EVMAccount, FeeCalculator, HashedAddressMapping, EnsureAddressTruncated};
 use frontier_rpc_primitives::{TransactionStatus};
 pub type BlockNumber = u32;
 
@@ -292,8 +292,8 @@ parameter_types! {
 
 impl evm::Trait for Runtime {
 	type FeeCalculator = FixedGasPrice;
-	type CallOrigin = EnsureAddressRoot<AccountId>;
-	type WithdrawOrigin = EnsureAddressNever<AccountId>;
+	type CallOrigin = EnsureAddressTruncated;
+	type WithdrawOrigin = EnsureAddressTruncated;
 	type AddressMapping = HashedAddressMapping<BlakeTwo256>;
 	type Currency = Balances;
 	type Event = Event;

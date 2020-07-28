@@ -1346,6 +1346,94 @@ dependencies = [
 ]
 
 [[package]]
+name = "frontier-template-test-client"
+version = "0.1.0"
+dependencies = [
+ "frontier-template-runtime",
+ "parity-scale-codec",
+ "sc-client-api",
+ "sc-consensus",
+ "sc-executor",
+ "sc-light",
+ "sp-api",
+ "sp-runtime",
+ "substrate-test-client",
+]
+
+[[package]]
+name = "frontier-test-node"
+version = "2.0.0-dev"
+dependencies = [
+ "frontier-rpc",
+ "frontier-rpc-primitives",
+ "frontier-test-runtime",
+ "futures 0.3.5",
+ "jsonrpc-core",
+ "log",
+ "pallet-evm",
+ "pallet-transaction-payment-rpc",
+ "parking_lot 0.10.2",
+ "sc-basic-authorship",
+ "sc-cli",
+ "sc-client-api",
+ "sc-consensus",
+ "sc-consensus-manual-seal",
+ "sc-executor",
+ "sc-network",
+ "sc-rpc",
+ "sc-rpc-api",
+ "sc-service",
+ "sc-transaction-pool",
+ "sp-api",
+ "sp-block-builder",
+ "sp-blockchain",
+ "sp-consensus",
+ "sp-core",
+ "sp-inherents",
+ "sp-runtime",
+ "sp-timestamp",
+ "sp-transaction-pool",
+ "structopt",
+ "substrate-build-script-utils",
+ "substrate-frame-rpc-system",
+]
+
+[[package]]
+name = "frontier-test-runtime"
+version = "2.0.0-dev"
+dependencies = [
+ "frame-executive",
+ "frame-support",
+ "frame-system",
+ "frame-system-rpc-runtime-api",
+ "frontier-rpc-primitives",
+ "pallet-balances",
+ "pallet-ethereum 0.1.0",
+ "pallet-evm",
+ "pallet-grandpa",
+ "pallet-randomness-collective-flip",
+ "pallet-sudo",
+ "pallet-timestamp",
+ "pallet-transaction-payment",
+ "pallet-transaction-payment-rpc-runtime-api",
+ "parity-scale-codec",
+ "serde",
+ "sp-api",
+ "sp-block-builder",
+ "sp-core",
+ "sp-inherents",
+ "sp-io",
+ "sp-offchain",
+ "sp-runtime",
+ "sp-session",
+ "sp-std",
+ "sp-timestamp",
+ "sp-transaction-pool",
+ "sp-version",
+ "substrate-wasm-builder-runner",
+]
+
+[[package]]
 name = "fs-swap"
 version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4520,6 +4608,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "sc-consensus-manual-seal"
+version = "0.8.0-rc5"
+dependencies = [
+ "assert_matches",
+ "derive_more",
+ "futures 0.3.5",
+ "jsonrpc-core",
+ "jsonrpc-core-client",
+ "jsonrpc-derive",
+ "log",
+ "parking_lot 0.10.2",
+ "sc-client-api",
+ "sc-transaction-pool",
+ "serde",
+ "sp-blockchain",
+ "sp-consensus",
+ "sp-core",
+ "sp-inherents",
+ "sp-runtime",
+ "sp-transaction-pool",
+ "substrate-prometheus-endpoint",
+]
+
+[[package]]
 name = "sc-consensus-slots"
 version = "0.8.0-rc5"
 dependencies = [
@@ -6010,6 +6122,31 @@ dependencies = [
  "log",
  "prometheus",
  "tokio 0.2.21",
+]
+
+[[package]]
+name = "substrate-test-client"
+version = "2.0.0-rc5"
+dependencies = [
+ "futures 0.1.29",
+ "futures 0.3.5",
+ "hash-db",
+ "hex",
+ "parity-scale-codec",
+ "sc-client-api",
+ "sc-client-db",
+ "sc-consensus",
+ "sc-executor",
+ "sc-light",
+ "sc-service",
+ "serde",
+ "serde_json",
+ "sp-blockchain",
+ "sp-consensus",
+ "sp-core",
+ "sp-keyring",
+ "sp-runtime",
+ "sp-state-machine",
 ]
 
 [[package]]

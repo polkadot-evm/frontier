@@ -88,7 +88,7 @@ pub fn new_full_params(config: Configuration) -> Result<(
 				pool: pool.clone(),
 				select_chain: select_chain.clone(),
 				deny_unsafe,
-				is_authority: is_authority,
+				is_authority,
 			};
 
 			crate::rpc::create_full(deps)
