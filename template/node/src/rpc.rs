@@ -29,6 +29,8 @@ use sc_client_api::backend::{StorageProvider, Backend, StateBackend};
 use sp_runtime::traits::BlakeTwo256;
 use sp_block_builder::BlockBuilder;
 
+pub type IoHandler = jsonrpc_core::IoHandler<sc_rpc::Metadata>;
+
 /// Light client extra dependencies.
 pub struct LightDeps<C, F, P> {
 	/// The client instance to use.

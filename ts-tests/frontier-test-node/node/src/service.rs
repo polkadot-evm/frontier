@@ -17,13 +17,10 @@
 
 //! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 
-use frontier_test_runtime::{self};
+use std::sync::Arc;
 use sc_consensus_manual_seal::{self as manual_seal};
-use sc_service::{
-	error::{Error as ServiceError}, Configuration, ServiceComponents,
-	TaskManager,
-};
-
+use frontier_test_runtime::{self, opaque::Block, RuntimeApi, Hash};
+use sc_service::{error::Error as ServiceError, Configuration, ServiceComponents, TaskManager};
 use sc_executor::native_executor_instance;
 pub use sc_executor::NativeExecutor;
 
@@ -34,112 +31,136 @@ native_executor_instance!(
 	frontier_test_runtime::native_version,
 );
 
-/// Starts a `ServiceBuilder` for a full service.
-///
-/// Use this macro if you don't actually need the full service, but just the builder in order to
-/// be able to perform chain operations.
-macro_rules! new_full_start {
-	($config:expr) => {{
+type FullClient = sc_service::TFullClient<Block, RuntimeApi, Executor>;
+type FullBackend = sc_service::TFullBackend<Block>;
+type FullSelectChain = sc_consensus::LongestChain<FullBackend, Block>;
 
-		let inherent_data_providers = sp_inherents::InherentDataProviders::new();
+pub fn new_full_params(config: Configuration) -> Result<(
+	sc_service::ServiceParams<
+		Block, FullClient, sp_consensus::import_queue::BasicQueue<Block, sp_api::TransactionFor<FullClient, Block>>,
+		sc_transaction_pool::FullPool<Block, FullClient>,
+		crate::rpc::IoHandler, FullBackend,
+	>,
+	FullSelectChain,
+	futures::channel::mpsc::Receiver<sc_consensus_manual_seal::rpc::EngineCommand<Hash>>,
+	sp_inherents::InherentDataProviders,
+), ServiceError> {
+	let inherent_data_providers = sp_inherents::InherentDataProviders::new();
 
+	let (client, backend, keystore, task_manager) =
+		sc_service::new_full_parts::<Block, RuntimeApi, Executor>(&config)?;
+	let client = Arc::new(client);
 
-		// Channel for the rpc handler to communicate with the authorship task.
-		let (command_sink, commands_stream) = futures::channel::mpsc::channel(1000);
+	// Channel for the rpc handler to communicate with the authorship task.
+	let (command_sink, commands_stream) = futures::channel::mpsc::channel(1000);
 
-		let builder = sc_service::ServiceBuilder::new_full::<
-			frontier_test_runtime::opaque::Block, frontier_test_runtime::RuntimeApi, crate::service::Executor
-		>($config)?
-			.with_select_chain(|_config, backend| {
-				Ok(sc_consensus::LongestChain::new(backend.clone()))
-			})?
-			.with_transaction_pool(|builder| {
-				let pool_api = sc_transaction_pool::FullChainApi::new(
-					builder.client().clone(),
-					None,
-				);
-				Ok(sc_transaction_pool::BasicPool::new_full(
-					builder.config().transaction_pool.clone(),
-					std::sync::Arc::new(pool_api),
-					builder.prometheus_registry(),
-					builder.spawn_handle(),
-					builder.client().clone(),
-				))
-			})?
-			.with_import_queue(
-				|_config, client, _select_chain, _transaction_pool, spawn_task_handle, registry| {
-				Ok(sc_consensus_manual_seal::import_queue(
-					Box::new(client),
-					spawn_task_handle,
-					registry,
-				))
-			})?
-			.with_rpc_extensions_builder(|builder| {
-				let client = builder.client().clone();
-				let is_authority: bool = builder.config().role.is_authority();
-				let pool = builder.pool().clone();
-				let select_chain = builder.select_chain().cloned()
-					.expect("SelectChain is present for full services or set up failed; qed.");
+	let select_chain = sc_consensus::LongestChain::new(backend.clone());
 
-				Ok(move |deny_unsafe| {
-					let deps = crate::rpc::FullDeps {
-						client: client.clone(),
-						pool: pool.clone(),
-						select_chain: select_chain.clone(),
-						deny_unsafe,
-						is_authority,
-						command_sink: command_sink.clone(),
-					};
+	let pool_api = sc_transaction_pool::FullChainApi::new(
+		client.clone(), config.prometheus_registry(),
+	);
+	let transaction_pool = sc_transaction_pool::BasicPool::new_full(
+		config.transaction_pool.clone(),
+		std::sync::Arc::new(pool_api),
+		config.prometheus_registry(),
+		task_manager.spawn_handle(),
+		client.clone(),
+	);
 
-					crate::rpc::create_full(deps)
-				})
-			})?;
+	let import_queue = sc_consensus_manual_seal::import_queue(
+		Box::new(client.clone()),
+		&task_manager.spawn_handle(),
+		config.prometheus_registry(),
+	);
 
-		(builder, commands_stream, inherent_data_providers)
-	}}
+	let is_authority = config.role.is_authority();
+
+	let rpc_extensions_builder = {
+		let client = client.clone();
+		let pool = transaction_pool.clone();
+		let select_chain = select_chain.clone();
+		let command_sink = command_sink.clone();
+
+		Box::new(move |deny_unsafe| {
+			let deps = crate::rpc::FullDeps {
+				client: client.clone(),
+				pool: pool.clone(),
+				select_chain: select_chain.clone(),
+				deny_unsafe,
+				is_authority,
+				command_sink: command_sink.clone(),
+			};
+
+			crate::rpc::create_full(deps)
+		})
+	};
+
+	let params = sc_service::ServiceParams {
+		backend, client, import_queue, keystore, task_manager, transaction_pool, rpc_extensions_builder,
+		config,
+		block_announce_validator_builder: None,
+		on_demand: None,
+		remote_blockchain: None,
+		finality_proof_provider: None,
+		finality_proof_request_builder: Some(Box::new(sc_network::config::DummyFinalityProofRequestBuilder)),
+	};
+
+	Ok((params, select_chain, commands_stream, inherent_data_providers))
 }
 
 /// Builds a new service for a full client.
 pub fn new_full(config: Configuration) -> Result<TaskManager, ServiceError> {
-	let is_authority = config.role.is_authority();
-
-
-
-	let (builder, commands_stream, inherent_data_providers) = new_full_start!(config);
+	let (
+		params, select_chain, commands_stream, inherent_data_providers,
+	) = new_full_params(config)?;
 
 	inherent_data_providers
-		.register_provider(sp_timestamp::InherentDataProvider)
-		.map_err(Into::into)
-		.map_err(sp_consensus::error::Error::InherentData)?;
+	.register_provider(sp_timestamp::InherentDataProvider)
+	.map_err(Into::into)
+	.map_err(sp_consensus::error::Error::InherentData)?;
+
+	let (
+		role, _force_authoring, _name, prometheus_registry,
+		client, transaction_pool, _keystore,
+	) = {
+		let sc_service::ServiceParams {
+			config, client, transaction_pool, keystore, ..
+		} = &params;
+
+		(
+			config.role.clone(),
+			config.force_authoring,
+			config.network.node_name.clone(),
+			config.prometheus_registry().cloned(),
+			client.clone(), transaction_pool.clone(), keystore.clone(),
+		)
+	};
 
 	let ServiceComponents {
-		client, transaction_pool, task_manager, select_chain,
-		prometheus_registry, ..
-	} = builder
-		.build_full()?;
+		task_manager, ..
+	} = sc_service::build(params)?;
 
-	if is_authority {
-		// Proposer object for block authorship.
+	if role.is_authority() {
 		let proposer = sc_basic_authorship::ProposerFactory::new(
 			client.clone(),
 			transaction_pool.clone(),
 			prometheus_registry.as_ref(),
 		);
 
-		// Background authorship future.
+		// Background authorship future
 		let authorship_future = manual_seal::run_manual_seal(
 			Box::new(client.clone()),
 			proposer,
 			client.clone(),
 			transaction_pool.pool().clone(),
 			commands_stream,
-			select_chain.unwrap(),
+			select_chain,
 			inherent_data_providers,
 		);
 
 		// we spawn the future on a background thread managed by service.
 		task_manager.spawn_essential_handle().spawn_blocking("manual-seal", authorship_future);
-	};
+	}
 	log::info!("Test Node Ready");
 
 	Ok(task_manager)

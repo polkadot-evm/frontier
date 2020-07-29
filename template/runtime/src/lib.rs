@@ -25,48 +25,42 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-use grandpa::fg_primitives;
-use grandpa::{AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList};
+use sp_std::{prelude::*, marker::PhantomData};
 use codec::{Encode, Decode};
+use sp_core::{crypto::KeyTypeId, OpaqueMetadata, U256, H160, H256};
+use sp_runtime::{
+	ApplyExtrinsicResult, generic, create_runtime_str, impl_opaque_keys, MultiSignature,
+	transaction_validity::{TransactionValidity, TransactionSource},
+};
+use sp_runtime::traits::{
+	BlakeTwo256, Block as BlockT, IdentityLookup, Verify, IdentifyAccount, NumberFor, Saturating,
+};
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_core::{crypto::KeyTypeId, OpaqueMetadata, U256, H160, H256};
-use sp_runtime::traits::{
-	BlakeTwo256, Block as BlockT, IdentifyAccount, IdentityLookup, NumberFor, Saturating, Verify,
-};
-use sp_runtime::{
-	create_runtime_str, generic, impl_opaque_keys,
-	transaction_validity::{TransactionSource, TransactionValidity},
-	ApplyExtrinsicResult, ModuleId, MultiSignature,
-};
-use sp_std::{prelude::*, marker::PhantomData};
+use grandpa::{AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList};
+use grandpa::fg_primitives;
+use sp_version::RuntimeVersion;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
-use sp_version::RuntimeVersion;
 
-use evm::{FeeCalculator, HashTruncateConvertAccountId, ConvertAccountId};
 // A few exports that help ease life for downstream crates.
-pub use balances::Call as BalancesCall;
-pub use evm::Account as EVMAccount;
-pub use frame_support::{
-	construct_runtime, parameter_types,
-	traits::{KeyOwnerProofSystem, Randomness, FindAuthor},
-	weights::{
-		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
-		IdentityFee, Weight,
-	},
-	StorageValue, ConsensusEngineId
-};
-use ethereum::{Block as EthereumBlock, Transaction as EthereumTransaction, Receipt as EthereumReceipt};
-use frontier_rpc_primitives::{TransactionStatus};
-
-
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
-pub use sp_runtime::{Perbill, Permill};
 pub use timestamp::Call as TimestampCall;
-
-/// An index to a block.
+pub use balances::Call as BalancesCall;
+pub use sp_runtime::{Permill, Perbill};
+pub use frame_support::{
+	construct_runtime, parameter_types, StorageValue,
+	traits::{KeyOwnerProofSystem, Randomness, FindAuthor},
+	weights::{
+		Weight, IdentityFee,
+		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
+	},
+	ConsensusEngineId,
+};
+use ethereum::{Block as EthereumBlock, Transaction as EthereumTransaction, Receipt as EthereumReceipt};
+use evm::{Account as EVMAccount, FeeCalculator, HashedAddressMapping, EnsureAddressTruncated};
+use frontier_rpc_primitives::{TransactionStatus};
 pub type BlockNumber = u32;
 
 /// Alias to 512-bit hash when used in the context of a transaction signature on the chain.
@@ -116,7 +110,6 @@ pub mod opaque {
 	}
 }
 
-/// This runtime version.
 pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("node-frontier-template"),
 	impl_name: create_runtime_str!("node-frontier-template"),
@@ -131,7 +124,7 @@ pub const MILLISECS_PER_BLOCK: u64 = 6000;
 
 pub const SLOT_DURATION: u64 = MILLISECS_PER_BLOCK;
 
-// These time units are defined in number of blocks.
+// Time is measured by number of blocks.
 pub const MINUTES: BlockNumber = 60_000 / (MILLISECS_PER_BLOCK as BlockNumber);
 pub const HOURS: BlockNumber = MINUTES * 60;
 pub const DAYS: BlockNumber = HOURS * 24;
@@ -145,25 +138,23 @@ pub fn native_version() -> NativeVersion {
 	}
 }
 
-const AVERAGE_ON_INITIALIZE_WEIGHT: Perbill = Perbill::from_percent(10);
 parameter_types! {
 	pub const BlockHashCount: BlockNumber = 2400;
 	/// We allow for 2 seconds of compute with a 6 second average block time.
 	pub const MaximumBlockWeight: Weight = 2 * WEIGHT_PER_SECOND;
 	pub const AvailableBlockRatio: Perbill = Perbill::from_percent(75);
 	/// Assume 10% of weight for average on_initialize calls.
-	pub MaximumExtrinsicWeight: Weight =
-		AvailableBlockRatio::get().saturating_sub(AVERAGE_ON_INITIALIZE_WEIGHT)
-		* MaximumBlockWeight::get();
+	pub MaximumExtrinsicWeight: Weight = AvailableBlockRatio::get()
+		.saturating_sub(Perbill::from_percent(10)) * MaximumBlockWeight::get();
 	pub const MaximumBlockLength: u32 = 5 * 1024 * 1024;
 	pub const Version: RuntimeVersion = VERSION;
 }
 
+// Configure FRAME pallets to include in runtime.
+
 impl system::Trait for Runtime {
-	/// Base call filter.
+	/// The basic call filter to use in dispatchable.
 	type BaseCallFilter = ();
-	/// System weight info.
-	type SystemWeightInfo = ();
 	/// The identifier used to distinguish between accounts.
 	type AccountId = AccountId;
 	/// The aggregated dispatch type that is available for extrinsics.
@@ -216,6 +207,8 @@ impl system::Trait for Runtime {
 	type OnKilledAccount = ();
 	/// The data to be stored in an account.
 	type AccountData = balances::AccountData<Balance>;
+	/// Weight information for the extrinsics of this pallet.
+	type SystemWeightInfo = ();
 }
 
 impl aura::Trait for Runtime {
@@ -294,14 +287,14 @@ impl FeeCalculator for FixedGasPrice {
 }
 
 parameter_types! {
-	pub const EVMModuleId: ModuleId = ModuleId(*b"py/evmpa");
 	pub const ChainId: u64 = 42;
 }
 
 impl evm::Trait for Runtime {
-	type ModuleId = EVMModuleId;
 	type FeeCalculator = FixedGasPrice;
-	type ConvertAccountId = HashTruncateConvertAccountId<BlakeTwo256>;
+	type CallOrigin = EnsureAddressTruncated;
+	type WithdrawOrigin = EnsureAddressTruncated;
+	type AddressMapping = HashedAddressMapping<BlakeTwo256>;
 	type Currency = Balances;
 	type Event = Event;
 	type Precompiles = ();
@@ -311,13 +304,9 @@ impl evm::Trait for Runtime {
 pub struct EthereumFindAuthor<F>(PhantomData<F>);
 impl<F: FindAuthor<u32>> FindAuthor<H160> for EthereumFindAuthor<F>
 {
-	fn find_author<'a, I>(digests: I) -> Option<H160> where
+	fn find_author<'a, I>(_digests: I) -> Option<H160> where
 		I: 'a + IntoIterator<Item=(ConsensusEngineId, &'a [u8])>
 	{
-		if let Some(author_index) = F::find_author(digests) {
-			let authority_id = Aura::authorities()[author_index as usize].clone();
-			return Some(HashTruncateConvertAccountId::<BlakeTwo256>::convert_account_id(&authority_id));
-		}
 		None
 	}
 }
@@ -327,6 +316,7 @@ impl ethereum::Trait for Runtime {
 	type FindAuthor = EthereumFindAuthor<Aura>;
 }
 
+// Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
 		Block = Block,
@@ -473,7 +463,7 @@ impl_runtime_apis! {
 		}
 
 		fn account_basic(address: H160) -> EVMAccount {
-			evm::Module::<Runtime>::accounts(address)
+			evm::Module::<Runtime>::account_basic(&address)
 		}
 
 		fn gas_price() -> U256 {
@@ -658,7 +648,7 @@ impl_runtime_apis! {
 			Grandpa::grandpa_authorities()
 		}
 
-		fn submit_report_equivocation_extrinsic(
+		fn submit_report_equivocation_unsigned_extrinsic(
 			_equivocation_proof: fg_primitives::EquivocationProof<
 				<Block as BlockT>::Hash,
 				NumberFor<Block>,

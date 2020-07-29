@@ -30,6 +30,8 @@ use sc_client_api::backend::{StorageProvider, Backend, StateBackend};
 use sp_runtime::traits::BlakeTwo256;
 use sp_block_builder::BlockBuilder;
 
+pub type IoHandler = jsonrpc_core::IoHandler<sc_rpc::Metadata>;
+
 /// Full client dependencies.
 pub struct FullDeps<C, P, SC> {
 	/// The client instance to use.
