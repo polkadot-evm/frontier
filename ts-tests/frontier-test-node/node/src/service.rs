@@ -21,7 +21,7 @@ use std::sync::Arc;
 use std::time::Duration;
 use sc_consensus_manual_seal::{self as manual_seal};
 use sc_client_api::{ExecutorProvider, RemoteBackend};
-use frontier_test_runtime::{self, opaque::Block, RuntimeApi, Hash};
+use frontier_test_runtime::{self, opaque::Block, opaque::UncheckedExtrinsic, RuntimeApi, Hash};
 use sc_service::{error::Error as ServiceError, Configuration, ServiceComponents, TaskManager};
 use sp_inherents::InherentDataProviders;
 use sc_executor::native_executor_instance;
@@ -40,7 +40,7 @@ type FullSelectChain = sc_consensus::LongestChain<FullBackend, Block>;
 
 pub fn new_full_params(config: Configuration) -> Result<(
 	sc_service::ServiceParams<
-		Block, FullClient, sp_consensus::import_queue::BasicQueue<Block, FullClient>,
+		Block, FullClient, sp_consensus::import_queue::BasicQueue<Block, sp_api::TransactionFor<FullClient, Block>>,
 		sc_transaction_pool::FullPool<Block, FullClient>,
 		crate::rpc::IoHandler, FullBackend,
 	>,
@@ -70,8 +70,8 @@ pub fn new_full_params(config: Configuration) -> Result<(
 		client.clone(),
 	);
 
-	let import_queue: sp_consensus::import_queue::BasicQueue<Block, FullClient> = sc_consensus_manual_seal::import_queue(
-		Box::new(client),
+	let import_queue = sc_consensus_manual_seal::import_queue(
+		Box::new(client.clone()),
 		&task_manager.spawn_handle(),
 		config.prometheus_registry(),
 	);
@@ -82,17 +82,16 @@ pub fn new_full_params(config: Configuration) -> Result<(
 		let client = client.clone();
 		let pool = transaction_pool.clone();
 		let select_chain = select_chain.clone();
-		let keystore = keystore.clone();
 		let command_sink = command_sink.clone();
 
 		Box::new(move |deny_unsafe| {
 			let deps = crate::rpc::FullDeps {
-				client,
-				pool,
-				select_chain,
+				client: client.clone(),
+				pool: pool.clone(),
+				select_chain: select_chain.clone(),
 				deny_unsafe,
 				is_authority,
-				command_sink,
+				command_sink: command_sink.clone(),
 			};
 
 			crate::rpc::create_full(deps)
@@ -142,7 +141,7 @@ pub fn new_full(config: Configuration) -> Result<TaskManager, ServiceError> {
 	if role.is_authority() {
 		let proposer = sc_basic_authorship::ProposerFactory::new(
 			client.clone(),
-			transaction_pool,
+			transaction_pool.clone(),
 			prometheus_registry.as_ref(),
 		);
 
