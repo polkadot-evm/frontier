@@ -70,8 +70,7 @@ pub fn new_full_params(config: Configuration) -> Result<(
 		client.clone(),
 	);
 
-
-	let import_queue = sc_consensus_manual_seal::import_queue(
+	let import_queue: sp_consensus::import_queue::BasicQueue<Block, FullClient> = sc_consensus_manual_seal::import_queue(
 		Box::new(client),
 		&task_manager.spawn_handle(),
 		config.prometheus_registry(),
@@ -100,7 +99,7 @@ pub fn new_full_params(config: Configuration) -> Result<(
 		})
 	};
 
-	Ok((sc_service::ServiceParams {
+	let params = sc_service::ServiceParams {
 		backend, client, import_queue, keystore, task_manager, transaction_pool, rpc_extensions_builder,
 		config,
 		block_announce_validator_builder: None,
@@ -108,7 +107,9 @@ pub fn new_full_params(config: Configuration) -> Result<(
 		remote_blockchain: None,
 		finality_proof_provider: None,
 		finality_proof_request_builder: None,
-	}, select_chain, commands_stream, inherent_data_providers))
+	};
+
+	Ok((params, select_chain, commands_stream, inherent_data_providers))
 }
 
 /// Builds a new service for a full client.
