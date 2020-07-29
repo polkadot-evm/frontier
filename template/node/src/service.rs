@@ -80,7 +80,6 @@ pub fn new_full_params(config: Configuration) -> Result<(
 		let client = client.clone();
 		let pool = transaction_pool.clone();
 		let select_chain = select_chain.clone();
-		let keystore = keystore.clone();
 
 		Box::new(move |deny_unsafe| {
 			let deps = crate::rpc::FullDeps {

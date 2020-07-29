@@ -18,12 +18,9 @@
 //! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 
 use std::sync::Arc;
-use std::time::Duration;
 use sc_consensus_manual_seal::{self as manual_seal};
-use sc_client_api::{ExecutorProvider, RemoteBackend};
-use frontier_test_runtime::{self, opaque::Block, opaque::UncheckedExtrinsic, RuntimeApi, Hash};
+use frontier_test_runtime::{self, opaque::Block, RuntimeApi, Hash};
 use sc_service::{error::Error as ServiceError, Configuration, ServiceComponents, TaskManager};
-use sp_inherents::InherentDataProviders;
 use sc_executor::native_executor_instance;
 pub use sc_executor::NativeExecutor;
 
@@ -123,8 +120,8 @@ pub fn new_full(config: Configuration) -> Result<TaskManager, ServiceError> {
 	.map_err(sp_consensus::error::Error::InherentData)?;
 
 	let (
-		role, force_authoring, name, prometheus_registry,
-		client, transaction_pool, keystore,
+		role, _force_authoring, _name, prometheus_registry,
+		client, transaction_pool, _keystore,
 	) = {
 		let sc_service::ServiceParams {
 			config, client, transaction_pool, keystore, ..
@@ -140,7 +137,7 @@ pub fn new_full(config: Configuration) -> Result<TaskManager, ServiceError> {
 	};
 
 	let ServiceComponents {
-		task_manager, network, telemetry_on_connect_sinks, ..
+		task_manager, ..
 	} = sc_service::build(params)?;
 
 	if role.is_authority() {

@@ -18,7 +18,7 @@
 use crate::chain_spec;
 use crate::cli::Cli;
 use crate::service;
-use sc_cli::{SubstrateCli, RuntimeVersion, Role, ChainSpec};
+use sc_cli::{SubstrateCli, RuntimeVersion, ChainSpec};
 use sc_service::ServiceParams;
 use crate::service::new_full_params;
 

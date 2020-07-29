@@ -15,12 +15,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use sp_core::{Pair, Public, sr25519, U256};
+use sp_core::{Pair, Public, sr25519};
 use frontier_test_runtime::{
 	AccountId, BalancesConfig, EVMConfig, GenesisConfig,
 	SudoConfig, SystemConfig, WASM_BINARY, Signature
 };
-use sp_runtime::traits::{BlakeTwo256, IdentifyAccount, Verify};
+use sp_runtime::traits::{IdentifyAccount, Verify};
 use sc_service::ChainType;
 use std::collections::BTreeMap;
 
@@ -131,10 +131,10 @@ fn testnet_genesis(
 	endowed_accounts: Vec<AccountId>,
 	_enable_println: bool,
 ) -> GenesisConfig {
-	let alice_account_id = get_account_id_from_seed::<sr25519::Public>("Alice");
-	let mut evm_accounts = BTreeMap::new();
+	let evm_accounts = BTreeMap::new();
 
 	// TODO: Restore Alice account
+	// let alice_account_id = get_account_id_from_seed::<sr25519::Public>("Alice");
 	// let alice_evm_account_id =
 	// 	HashTruncateConvertAccountId::<BlakeTwo256>::convert_account_id(&alice_account_id);
 	// evm_accounts.insert(
