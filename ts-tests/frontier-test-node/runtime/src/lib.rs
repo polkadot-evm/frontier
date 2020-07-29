@@ -41,7 +41,7 @@ use sp_std::{prelude::*};
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
-use evm::{FeeCalculator, HashTruncateConvertAccountId};
+use evm::{FeeCalculator, HashedAddressMapping, EnsureAddressTruncated};
 // A few exports that help ease life for downstream crates.
 pub use balances::Call as BalancesCall;
 pub use evm::Account as EVMAccount;
@@ -276,9 +276,10 @@ parameter_types! {
 }
 
 impl evm::Trait for Runtime {
-	type ModuleId = EVMModuleId;
 	type FeeCalculator = FixedGasPrice;
-	type ConvertAccountId = HashTruncateConvertAccountId<BlakeTwo256>;
+	type CallOrigin = EnsureAddressTruncated;
+	type WithdrawOrigin = EnsureAddressTruncated;
+	type AddressMapping = HashedAddressMapping<BlakeTwo256>;
 	type Currency = Balances;
 	type Event = Event;
 	type Precompiles = ();
@@ -435,7 +436,7 @@ impl_runtime_apis! {
 		}
 
 		fn account_basic(address: H160) -> EVMAccount {
-			evm::Module::<Runtime>::accounts(address)
+			evm::Module::<Runtime>::account_basic(&address)
 		}
 
 		fn gas_price() -> U256 {
