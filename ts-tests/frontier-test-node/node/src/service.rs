@@ -105,7 +105,7 @@ pub fn new_full_params(config: Configuration) -> Result<(
 		on_demand: None,
 		remote_blockchain: None,
 		finality_proof_provider: None,
-		finality_proof_request_builder: None,
+		finality_proof_request_builder: Some(Box::new(sc_network::config::DummyFinalityProofRequestBuilder)),
 	};
 
 	Ok((params, select_chain, commands_stream, inherent_data_providers))
@@ -116,6 +116,11 @@ pub fn new_full(config: Configuration) -> Result<TaskManager, ServiceError> {
 	let (
 		params, select_chain, commands_stream, inherent_data_providers,
 	) = new_full_params(config)?;
+
+	inherent_data_providers
+	.register_provider(sp_timestamp::InherentDataProvider)
+	.map_err(Into::into)
+	.map_err(sp_consensus::error::Error::InherentData)?;
 
 	let (
 		role, force_authoring, name, prometheus_registry,
