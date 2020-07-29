@@ -141,7 +141,7 @@ pub fn new_full(config: Configuration) -> Result<TaskManager, ServiceError> {
 
 	let ServiceComponents {
 		task_manager, network, telemetry_on_connect_sinks, ..
-	 } = sc_service::build(params)?;
+	} = sc_service::build(params)?;
 
 	if role.is_authority() {
 		let proposer = sc_basic_authorship::ProposerFactory::new(

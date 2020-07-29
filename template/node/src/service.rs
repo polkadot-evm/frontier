@@ -143,7 +143,7 @@ pub fn new_full(config: Configuration) -> Result<TaskManager, ServiceError> {
 
 	let ServiceComponents {
 		task_manager, network, telemetry_on_connect_sinks, ..
-	 } = sc_service::build(params)?;
+	} = sc_service::build(params)?;
 
 	if role.is_authority() {
 		let proposer = sc_basic_authorship::ProposerFactory::new(
@@ -281,5 +281,5 @@ pub fn new_light(config: Configuration) -> Result<TaskManager, ServiceError> {
 		rpc_extensions_builder: Box::new(sc_service::NoopRpcExtensionBuilder(rpc_extensions)),
 		transaction_pool: transaction_pool,
 		config, client, import_queue, keystore, backend, task_manager
-	 }).map(|ServiceComponents { task_manager, .. }| task_manager)
+	}).map(|ServiceComponents { task_manager, .. }| task_manager)
 }
