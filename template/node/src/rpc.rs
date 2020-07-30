@@ -19,6 +19,7 @@
 
 use std::{sync::Arc, fmt};
 
+use sc_consensus_manual_seal::rpc::{ManualSeal, ManualSealApi};
 use frontier_template_runtime::{Hash, AccountId, Index, opaque::Block, Balance, UncheckedExtrinsic};
 use sp_api::ProvideRuntimeApi;
 use sp_transaction_pool::TransactionPool;
@@ -55,6 +56,8 @@ pub struct FullDeps<C, P, SC> {
 	pub deny_unsafe: DenyUnsafe,
 	/// The Node authority flag
 	pub is_authority: bool,
+	/// Manual seal command sink
+	pub command_sink: Option<futures::channel::mpsc::Sender<sc_consensus_manual_seal::rpc::EngineCommand<Hash>>>,
 }
 
 /// Instantiate all Full RPC extensions.
@@ -85,7 +88,8 @@ pub fn create_full<C, P, M, SC, BE>(
 		pool,
 		select_chain,
 		deny_unsafe,
-		is_authority
+		is_authority,
+		command_sink
 	} = deps;
 
 	io.extend_with(
@@ -103,6 +107,17 @@ pub fn create_full<C, P, M, SC, BE>(
 			is_authority,
 		))
 	);
+
+	match command_sink {
+		Some(command_sink) => {
+			io.extend_with(
+				// We provide the rpc handler with the sending end of the channel to allow the rpc
+				// send EngineCommands to the background block authorship task.
+				ManualSealApi::to_delegate(ManualSeal::new(command_sink)),
+			);
+		}
+		_ => {}
+	}
 
 	io
 }

@@ -17,9 +17,9 @@ describeWithFrontier("Frontier RPC (Constant)", `simple-specs.json`, (context) =
 		expect(await context.web3.eth.getAccounts()).to.eql([]);
 	});
 
-	it("block author should be 0x0000000000000000000000000000001234567890", async function () {
+	it("block author should be 0x0000000000000000000000000000000000000000", async function () {
 		// This address `0x1234567890` is hardcoded into the runtime find_author
 		// as we are running manual sealing consensus.
-		expect(await context.web3.eth.getCoinbase()).to.equal("0x0000000000000000000000000000001234567890");
+		expect(await context.web3.eth.getCoinbase()).to.equal("0x0000000000000000000000000000000000000000");
 	});
 });
