@@ -8,7 +8,7 @@ export const SPECS_PATH = `./frontier-test-specs`;
 export const DISPLAY_LOG = process.env.FRONTIER_LOG || false;
 export const FRONTIER_LOG = process.env.FRONTIER_LOG || "info";
 
-export const BINARY_PATH = `../target/debug/frontier-test-node`;
+export const BINARY_PATH = `../target/debug/frontier-template-node`;
 export const SPAWNING_TIME = 30000;
 
 export async function customRequest(web3: Web3, method: string, params: any[]) {
@@ -46,13 +46,14 @@ export async function createAndFinalizeBlock(web3: Web3) {
 export async function startFrontierNode(specFilename: string): Promise<{ web3: Web3; binary: ChildProcess }> {
 	const web3 = new Web3(`http://localhost:${RPC_PORT}`);
 
-	const cmd = `../target/debug/frontier-test-node`;
+	const cmd = BINARY_PATH;
 	const args = [
 		`--chain=${SPECS_PATH}/${specFilename}`,
 		`--validator`, // Required by manual sealing to author the blocks
 		`--execution=Native`, // Faster execution using native
 		`--no-telemetry`,
 		`--no-prometheus`,
+		`--manual-seal`,
 		`--no-grandpa`,
 		`--force-authoring`,
 		`-l${FRONTIER_LOG}`,
@@ -87,7 +88,7 @@ export async function startFrontierNode(specFilename: string): Promise<{ web3: W
 				console.log(chunk.toString());
 			}
 			binaryLogs.push(chunk);
-			if (chunk.toString().match(/Test Node Ready/)) {
+			if (chunk.toString().match(/Manual Seal Ready/)) {
 				// This is needed as the EVM runtime needs to warmup with a first call
 				await web3.eth.getChainId();
 
