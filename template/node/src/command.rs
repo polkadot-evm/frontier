@@ -71,15 +71,15 @@ pub fn run() -> sc_cli::Result<()> {
 			let runner = cli.create_runner(subcommand)?;
 			runner.run_subcommand(subcommand, |config| {
 				let (ServiceParams { client, backend, task_manager, import_queue, .. }, ..)
-					= new_full_params(config)?;
+					= new_full_params(config, cli.run.manual_seal)?;
 				Ok((client, backend, import_queue, task_manager))
 			})
 		}
 		None => {
-			let runner = cli.create_runner(&cli.run)?;
+			let runner = cli.create_runner(&cli.run.base)?;
 			runner.run_node_until_exit(|config| match config.role {
 				Role::Light => service::new_light(config),
-				_ => service::new_full(config),
+				_ => service::new_full(config, cli.run.manual_seal),
 			})
 		}
 	}

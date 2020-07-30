@@ -15,8 +15,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use sc_cli::{RunCmd, Subcommand};
+use sc_cli::{Subcommand};
 use structopt::StructOpt;
+
+
+#[allow(missing_docs)]
+#[derive(Debug, StructOpt)]
+pub struct RunCmd {
+	#[allow(missing_docs)]
+	#[structopt(flatten)]
+	pub base: sc_cli::RunCmd,
+
+	/// Force using Kusama native runtime.
+	#[structopt(long = "manual-seal")]
+	pub manual_seal: bool,
+}
 
 #[derive(Debug, StructOpt)]
 pub struct Cli {

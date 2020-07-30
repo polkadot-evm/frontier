@@ -20,6 +20,13 @@ To execute the chain, run:
 $ ./target/debug/frontier-template-node --dev
 ```
 
+The node also supports to use manual seal (to produce block manually through RPc).  
+This is also used by the ts-tests:
+
+```
+$ ./target/debug/frontier-template-node --dev --manual-seal
+```
+
 ### Docker image
 
 You can run the frontier node (for development) within Docker directly.  
