@@ -47,7 +47,6 @@ describeWithFrontier("Frontier RPC (Block)", `simple-specs.json`, (context) => {
 			"0x0000000000000000",
 		]);
 		expect(block.hash).to.be.a("string").lengthOf(66);
-		expect(block.timestamp).to.be.a("number");
 	});
 
 	let firstBlockCreated = false;
@@ -56,6 +55,14 @@ describeWithFrontier("Frontier RPC (Block)", `simple-specs.json`, (context) => {
 		await createAndFinalizeBlock(context.web3);
 		expect(await context.web3.eth.getBlockNumber()).to.equal(1);
 		firstBlockCreated = true;
+	});
+
+	step("should have valid timestamp after block production", async function () {
+		const block = await context.web3.eth.getBlock("latest");
+		const last5Minutes= (Date.now() / 1000) - 300;
+		const next5Minutes= (Date.now() / 1000) + 300;
+		expect(block.timestamp).to.be.least(last5Minutes);
+		expect(block.timestamp).to.be.below(next5Minutes);
 	});
 
 	step("retrieve block information", async function () {
