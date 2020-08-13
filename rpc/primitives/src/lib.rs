@@ -71,7 +71,7 @@ sp_api::decl_runtime_apis! {
 			data: Vec<u8>,
 			value: U256,
 			gas_limit: U256,
-			gas_price: U256,
+			gas_price: Option<U256>,
 			nonce: Option<U256>,
 			action: TransactionAction
 		) -> Option<(Vec<u8>, U256)>;

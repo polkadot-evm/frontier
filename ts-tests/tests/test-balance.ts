@@ -20,7 +20,7 @@ describeWithFrontier("Frontier RPC (Balance)", `simple-specs.json`, (context) =>
 			from: GENESIS_ACCOUNT,
 			to: TEST_ACCOUNT,
 			value: "0x200", // Must me higher than ExistentialDeposit (500)
-			gasPrice: "0x00",
+			gasPrice: "0x01",
 			gas: "0x100000",
 		}, GENESIS_ACCOUNT_PRIVATE_KEY);
 		await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction]);
