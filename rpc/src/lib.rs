@@ -31,7 +31,7 @@ use sp_runtime::traits::BlakeTwo256;
 use frontier_rpc_core::EthApi as EthApiT;
 use frontier_rpc_core::types::{
 	BlockNumber, Bytes, CallRequest, EthAccount, Filter, Index, Log, Receipt, RichBlock,
-	SyncStatus, Transaction, Work, Rich, Block, BlockTransactions, VariadicValue
+	SyncStatus, SyncInfo, Transaction, Work, Rich, Block, BlockTransactions, VariadicValue
 };
 use frontier_rpc_primitives::{EthereumRuntimeApi, ConvertTransaction, TransactionStatus};
 
@@ -236,13 +236,25 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 	P: TransactionPool<Block=B> + Send + Sync + 'static,
 	CT: ConvertTransaction<<B as BlockT>::Extrinsic> + Send + Sync + 'static,
 {
-	/// Returns protocol version encoded as a string (quotes are necessary).
-	fn protocol_version(&self) -> Result<String> {
-		unimplemented!("protocol version");
+	fn protocol_version(&self) -> Result<u64> {
+		Ok(1)
 	}
 
 	fn syncing(&self) -> Result<SyncStatus> {
-		unimplemented!("syncing");
+		let header = self
+			.select_chain
+			.best_chain()
+			.map_err(|_| internal_err("fetch header failed"))?;
+
+		let block_number = U256::from(header.number().clone().unique_saturated_into());
+
+		Ok(SyncStatus::Info(SyncInfo {
+			starting_block: U256::zero(),
+			current_block: block_number,
+			highest_block: block_number,
+			warp_chunks_amount: None,
+			warp_chunks_processed: None,
+		}))
 	}
 
 	fn hashrate(&self) -> Result<U256> {

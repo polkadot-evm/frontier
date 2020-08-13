@@ -31,7 +31,7 @@ pub use rpc_impl_EthApi::gen_server::EthApi as EthApiServer;
 pub trait EthApi {
 	/// Returns protocol version encoded as a string (quotes are necessary).
 	#[rpc(name = "eth_protocolVersion")]
-	fn protocol_version(&self) -> Result<String>;
+	fn protocol_version(&self) -> Result<u64>;
 
 	/// Returns an object with data about the sync status or false. (wtf?)
 	#[rpc(name = "eth_syncing")]
