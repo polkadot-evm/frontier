@@ -56,7 +56,7 @@ describeWithFrontier("Frontier RPC (Gas)", `simple-specs.json`, (context) => {
 	it("eth_estimateGas for contract call", async function () {
 		const contract = new context.web3.eth.Contract([TEST_CONTRACT_ABI], FIRST_CONTRACT_ADDRESS, {
 			from: GENESIS_ACCOUNT,
-			gasPrice: "0",
+			gasPrice: "0x01",
 		});
 
 		expect(await contract.methods.multiply(3).estimateGas()).to.equal(21204);
