@@ -68,7 +68,7 @@ export async function startFrontierNode(specFilename: string): Promise<{ web3: W
 	binary.on("error", (err) => {
 		if ((err as any).errno == "ENOENT") {
 			console.error(
-				`\x1b[31mMissing Frontier binary (${BINARY_PATH}).\nPlease compile the Frontier project:\ncargo build --bin frontier-test-node\x1b[0m`
+				`\x1b[31mMissing Frontier binary (${BINARY_PATH}).\nPlease compile the Frontier project:\ncargo build\x1b[0m`
 			);
 		} else {
 			console.error(err);
@@ -79,7 +79,7 @@ export async function startFrontierNode(specFilename: string): Promise<{ web3: W
 	const binaryLogs = [];
 	await new Promise((resolve) => {
 		const timer = setTimeout(() => {
-			console.error(`\x1b[31m Failed to start Frontier Test Node.\x1b[0m`);
+			console.error(`\x1b[31m Failed to start Frontier Template Node.\x1b[0m`);
 			console.error(`Command: ${cmd} ${args.join(" ")}`);
 			console.error(`Logs:`);
 			console.error(binaryLogs.map((chunk) => chunk.toString()).join("\n"));
