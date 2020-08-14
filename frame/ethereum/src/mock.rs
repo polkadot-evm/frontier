@@ -22,7 +22,7 @@ use ethereum::{TransactionAction, TransactionSignature};
 use frame_support::{
 	impl_outer_origin, parameter_types, weights::Weight, ConsensusEngineId
 };
-use pallet_evm::{FeeCalculator, HashedAddressMapping, EnsureAddressTruncated};
+use pallet_evm::{FeeCalculator, AddressMapping, EnsureAddressTruncated};
 use rlp::*;
 use sp_core::{H160, H256, U256};
 use sp_runtime::{
@@ -111,7 +111,7 @@ impl FindAuthor<H160> for EthereumFindAuthor {
 	fn find_author<'a, I>(_digests: I) -> Option<H160> where
 		I: 'a + IntoIterator<Item=(ConsensusEngineId, &'a [u8])>
 	{
-		Some(address_build(0).1)
+		Some(address_build(0).address)
 	}
 }
 
@@ -121,11 +121,21 @@ parameter_types! {
 	pub const EVMModuleId: ModuleId = ModuleId(*b"py/evmpa");
 }
 
+pub struct HashedAddressMapping;
+
+impl AddressMapping<AccountId32> for HashedAddressMapping {
+	fn into_account_id(address: H160) -> AccountId32 {
+		let mut data = [0u8; 32];
+		data[0..20].copy_from_slice(&address[..]);
+		AccountId32::from(Into::<[u8; 32]>::into(data))
+	}
+}
+
 impl pallet_evm::Trait for Test {
 	type FeeCalculator = FixedGasPrice;
 	type CallOrigin = EnsureAddressTruncated;
 	type WithdrawOrigin = EnsureAddressTruncated;
-	type AddressMapping = HashedAddressMapping<BlakeTwo256>;
+	type AddressMapping = HashedAddressMapping;
 	type Currency = Balances;
 	type Event = ();
 	type Precompiles = ();
@@ -144,38 +154,53 @@ pub type Evm = pallet_evm::Module<Test>;
 
 pub struct AccountInfo {
 	pub address: H160,
+	pub account_id: AccountId32,
 	pub private_key: H256,
 }
 
-fn address_build(seed: u8) -> (H256, H160) {
+fn address_build(seed: u8) -> AccountInfo {
 	let private_key = H256::from_slice(&[(seed + 1) as u8; 32]); //H256::from_low_u64_be((i + 1) as u64);
 	let secret_key = secp256k1::SecretKey::parse_slice(&private_key[..]).unwrap();
-	let public_key = secp256k1::PublicKey::from_secret_key(&secret_key);
+	let public_key = &secp256k1::PublicKey::from_secret_key(&secret_key).serialize()[1..65];
 	let address = H160::from(H256::from_slice(
-		&Keccak256::digest(&public_key.serialize()[1..])[..],
+		&Keccak256::digest(public_key)[..],
 	));
-	(private_key, address)
+
+	let mut data = [0u8; 32];
+	data[0..20].copy_from_slice(&address[..]);
+
+	AccountInfo {
+		private_key,
+		account_id: AccountId32::from(Into::<[u8; 32]>::into(data)),
+		address
+	}
 }
+
 
 // This function basically just builds a genesis storage key/value store according to
 // our desired mockup.
 pub fn new_test_ext(accounts_len: usize) -> (Vec<AccountInfo>, sp_io::TestExternalities) {
-	let ext = frame_system::GenesisConfig::default()
+	// sc_cli::init_logger("");
+	let mut ext = frame_system::GenesisConfig::default()
 		.build_storage::<Test>()
-		.unwrap()
-		.into();
+		.unwrap();
 
 	let pairs = (0..accounts_len)
-		.map(|i| {
-			let (private_key, address) = address_build(i as u8);
-			AccountInfo {
-				private_key: private_key,
-				address: address,
-			}
-		})
+		.map(|i| address_build(i as u8))
 		.collect::<Vec<_>>();
 
-	(pairs, ext)
+
+	let balances: Vec<_> = (0..accounts_len)
+		.map(|i| {
+			(pairs[i].account_id.clone(), 10_000_000)
+		})
+		.collect();
+
+	pallet_balances::GenesisConfig::<Test> { balances }
+			.assimilate_storage(&mut ext)
+			.unwrap();
+
+	(pairs, ext.into())
 }
 
 pub fn contract_address(sender: H160, nonce: u64) -> H160 {
