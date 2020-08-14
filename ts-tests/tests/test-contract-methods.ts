@@ -4,7 +4,7 @@ import { createAndFinalizeBlock, customRequest, describeWithFrontier } from "./u
 import { AbiItem } from "web3-utils";
 
 describeWithFrontier("Frontier RPC (Contract Methods)", `simple-specs.json`, (context) => {
-	const GENESIS_ACCOUNT = "0x57d213d0927ccc7596044c6ba013dd05522aacba";
+	const GENESIS_ACCOUNT = "0x6be02d1d3665660d22ff9624b7be0551ee1ac91b";
 	const GENESIS_ACCOUNT_PRIVATE_KEY = "0x99B3C12287537E38C90A9219D4CB074A89A16E9CDB20BF85728EBD97C343E342";
 
 	// Solidity: contract test { function multiply(uint a) public pure returns(uint d) {return a * 7;}}
@@ -30,7 +30,7 @@ describeWithFrontier("Frontier RPC (Contract Methods)", `simple-specs.json`, (co
 				from: GENESIS_ACCOUNT,
 				data: TEST_CONTRACT_BYTECODE,
 				value: "0x00",
-				gasPrice: "0x00",
+				gasPrice: "0x01",
 				gas: "0x100000",
 			},
 			GENESIS_ACCOUNT_PRIVATE_KEY
@@ -42,7 +42,7 @@ describeWithFrontier("Frontier RPC (Contract Methods)", `simple-specs.json`, (co
 	it("should return contract method result", async function () {
 		const contract = new context.web3.eth.Contract([TEST_CONTRACT_ABI], FIRST_CONTRACT_ADDRESS, {
 			from: GENESIS_ACCOUNT,
-			gasPrice: "0",
+			gasPrice: "0x01",
 		});
 
 		expect(await contract.methods.multiply(3).call()).to.equal("21");
@@ -52,7 +52,7 @@ describeWithFrontier("Frontier RPC (Contract Methods)", `simple-specs.json`, (co
 	it.skip("should fail for missing parameters", async function () {
 		const contract = new context.web3.eth.Contract([{ ...TEST_CONTRACT_ABI, inputs: [] }], FIRST_CONTRACT_ADDRESS, {
 			from: GENESIS_ACCOUNT,
-			gasPrice: "0",
+			gasPrice: "0x01",
 		});
 		await contract.methods
 			.multiply()
@@ -77,7 +77,7 @@ describeWithFrontier("Frontier RPC (Contract Methods)", `simple-specs.json`, (co
 			FIRST_CONTRACT_ADDRESS,
 			{
 				from: GENESIS_ACCOUNT,
-				gasPrice: "0",
+				gasPrice: "0x01",
 			}
 		);
 		await contract.methods
@@ -93,7 +93,7 @@ describeWithFrontier("Frontier RPC (Contract Methods)", `simple-specs.json`, (co
 		const contract = new context.web3.eth.Contract(
 			[{ ...TEST_CONTRACT_ABI, inputs: [{ internalType: "address", name: "a", type: "address" }] }],
 			FIRST_CONTRACT_ADDRESS,
-			{ from: GENESIS_ACCOUNT, gasPrice: "0" }
+			{ from: GENESIS_ACCOUNT, gasPrice: "0x01" }
 		);
 		await contract.methods
 			.multiply("0x0123456789012345678901234567890123456789")
