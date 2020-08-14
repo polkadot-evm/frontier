@@ -2,7 +2,9 @@ import Web3 from "web3";
 import { JsonRpcResponse } from "web3-core-helpers";
 import { spawn, ChildProcess } from "child_process";
 
-export const RPC_PORT = 19933;
+export const PORT = 19931;
+export const RPC_PORT = 19932;
+export const WS_PORT = 19933;
 export const SPECS_PATH = `./frontier-test-specs`;
 
 export const DISPLAY_LOG = process.env.FRONTIER_LOG || false;
@@ -57,15 +59,16 @@ export async function startFrontierNode(specFilename: string): Promise<{ web3: W
 		`--no-grandpa`,
 		`--force-authoring`,
 		`-l${FRONTIER_LOG}`,
+		`--port=${PORT}`,
 		`--rpc-port=${RPC_PORT}`,
-		`--ws-port=19944`, // not used
+		`--ws-port=${WS_PORT}`, // not used
 		`--tmp`,
 	];
 	const binary = spawn(cmd, args);
 	binary.on("error", (err) => {
 		if ((err as any).errno == "ENOENT") {
 			console.error(
-				`\x1b[31mMissing Frontier binary (${BINARY_PATH}).\nPlease compile the Frontier project:\ncargo build --bin frontier-test-node\x1b[0m`
+				`\x1b[31mMissing Frontier binary (${BINARY_PATH}).\nPlease compile the Frontier project:\ncargo build\x1b[0m`
 			);
 		} else {
 			console.error(err);
@@ -76,7 +79,7 @@ export async function startFrontierNode(specFilename: string): Promise<{ web3: W
 	const binaryLogs = [];
 	await new Promise((resolve) => {
 		const timer = setTimeout(() => {
-			console.error(`\x1b[31m Failed to start Frontier Test Node.\x1b[0m`);
+			console.error(`\x1b[31m Failed to start Frontier Template Node.\x1b[0m`);
 			console.error(`Command: ${cmd} ${args.join(" ")}`);
 			console.error(`Logs:`);
 			console.error(binaryLogs.map((chunk) => chunk.toString()).join("\n"));

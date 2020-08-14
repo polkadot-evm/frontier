@@ -3,7 +3,7 @@ import { expect } from "chai";
 import { createAndFinalizeBlock, customRequest, describeWithFrontier } from "./util";
 
 describeWithFrontier("Frontier RPC (Contract)", `simple-specs.json`, (context) => {
-	const GENESIS_ACCOUNT = "0x57d213d0927ccc7596044c6ba013dd05522aacba";
+	const GENESIS_ACCOUNT = "0x6be02d1d3665660d22ff9624b7be0551ee1ac91b";
 	const GENESIS_ACCOUNT_PRIVATE_KEY = "0x99B3C12287537E38C90A9219D4CB074A89A16E9CDB20BF85728EBD97C343E342";
 
 	// Solidity: contract test { function multiply(uint a) public pure returns(uint d) {return a * 7;}}
@@ -20,7 +20,7 @@ describeWithFrontier("Frontier RPC (Contract)", `simple-specs.json`, (context) =
 				from: GENESIS_ACCOUNT,
 				data: TEST_CONTRACT_BYTECODE,
 				value: "0x00",
-				gasPrice: "0x00",
+				gasPrice: "0x01",
 				gas: "0x100000",
 			},
 			GENESIS_ACCOUNT_PRIVATE_KEY
@@ -29,7 +29,7 @@ describeWithFrontier("Frontier RPC (Contract)", `simple-specs.json`, (context) =
 		expect(await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction])).to.deep.equal({
 			id: 1,
 			jsonrpc: "2.0",
-			result: "0xc8009207908c5caf1bae415f02562d92a290dcbe4f2fbf331bda3b7548ae6a6f",
+			result: "0x0b215a8d3d219de0be005a309a58a14abc29a40f142efbed43da6e19e78c6ffc",
 		});
 
 		// Verify the contract is not yet stored

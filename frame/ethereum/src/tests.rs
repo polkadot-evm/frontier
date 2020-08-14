@@ -35,7 +35,7 @@ const ERC20_CONTRACT_BYTECODE: &str = "608060405234801561001057600080fd5b5061004
 fn default_erc20_creation_transaction(account: &AccountInfo) -> Transaction {
 	UnsignedTransaction {
 		nonce: U256::zero(),
-		gas_price: U256::from(0),
+		gas_price: U256::from(1),
 		gas_limit: U256::from(0x100000),
 		action: ethereum::TransactionAction::Create,
 		value: U256::zero(),
@@ -83,7 +83,7 @@ fn transaction_without_enough_gas_should_not_work() {
 
 	ext.execute_with(|| {
 		let mut transaction = default_erc20_creation_transaction(alice);
-		transaction.gas_price = U256::from(1);
+		transaction.gas_price = U256::from(11_000_000);
 
 		Ethereum::execute(
 			alice.address,

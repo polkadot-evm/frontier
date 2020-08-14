@@ -20,7 +20,7 @@
 use std::{sync::Arc, fmt};
 
 use sc_consensus_manual_seal::rpc::{ManualSeal, ManualSealApi};
-use frontier_template_runtime::{Hash, AccountId, Index, opaque::Block, Balance, UncheckedExtrinsic};
+use frontier_template_runtime::{Hash, AccountId, Index, opaque::Block, Balance};
 use sp_api::ProvideRuntimeApi;
 use sp_transaction_pool::TransactionPool;
 use sp_blockchain::{Error as BlockChainError, HeaderMetadata, HeaderBackend};
@@ -29,8 +29,6 @@ use sc_rpc_api::DenyUnsafe;
 use sc_client_api::backend::{StorageProvider, Backend, StateBackend};
 use sp_runtime::traits::BlakeTwo256;
 use sp_block_builder::BlockBuilder;
-
-pub type IoHandler = jsonrpc_core::IoHandler<sc_rpc::Metadata>;
 
 /// Light client extra dependencies.
 pub struct LightDeps<C, F, P> {
@@ -71,7 +69,7 @@ pub fn create_full<C, P, M, SC, BE>(
 	C: Send + Sync + 'static,
 	C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Index>,
 	C::Api: BlockBuilder<Block>,
-	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance, UncheckedExtrinsic>,
+	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
 	C::Api: frontier_rpc_primitives::EthereumRuntimeApi<Block>,
 	<C::Api as sp_api::ApiErrorExt>::Error: fmt::Debug,
 	P: TransactionPool<Block=Block> + 'static,

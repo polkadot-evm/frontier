@@ -4,7 +4,7 @@ import { describeWithFrontier, customRequest, createAndFinalizeBlock } from "./u
 import { AbiItem } from "web3-utils";
 
 describeWithFrontier("Frontier RPC (Gas)", `simple-specs.json`, (context) => {
-	const GENESIS_ACCOUNT = "0x57d213d0927ccc7596044c6ba013dd05522aacba";
+	const GENESIS_ACCOUNT = "0x6be02d1d3665660d22ff9624b7be0551ee1ac91b";
 	const GENESIS_ACCOUNT_PRIVATE_KEY = "0x99B3C12287537E38C90A9219D4CB074A89A16E9CDB20BF85728EBD97C343E342";
 
 	// Solidity: contract test { function multiply(uint a) public pure returns(uint d) {return a * 7;}}
@@ -56,7 +56,7 @@ describeWithFrontier("Frontier RPC (Gas)", `simple-specs.json`, (context) => {
 	it("eth_estimateGas for contract call", async function () {
 		const contract = new context.web3.eth.Contract([TEST_CONTRACT_ABI], FIRST_CONTRACT_ADDRESS, {
 			from: GENESIS_ACCOUNT,
-			gasPrice: "0",
+			gasPrice: "0x01",
 		});
 
 		expect(await contract.methods.multiply(3).estimateGas()).to.equal(21204);

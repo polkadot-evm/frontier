@@ -16,7 +16,6 @@ targets = ["x86_64-unknown-linux-gnu"]
 futures = "0.3.4"
 log = "0.4.8"
 structopt = "0.3.8"
-parking_lot = "0.10.0"
 jsonrpc-core = "14.0.3"
 
 sp-api = { version = "2.0.0-dev", path = "../../vendor/substrate/primitives/api" }
