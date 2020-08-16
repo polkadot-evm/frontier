@@ -20,7 +20,7 @@ sp-transaction-pool = { path = "../vendor/substrate/primitives/transaction-pool"
 sp-storage = { path = "../vendor/substrate/primitives/storage" } 
 sc-service = { path = "../vendor/substrate/client/service" }
 sc-client-api = { path = "../vendor/substrate/client/api" }
-ethereum = { version = "0.2", features = ["codec"] }
+ethereum = { version = "0.2", features = ["codec"], path = "../vendor/ethereum/" }
 codec = { package = "parity-scale-codec", version = "1.0.0" }
 rlp = "0.4"
 pallet-ethereum = "0.1"
