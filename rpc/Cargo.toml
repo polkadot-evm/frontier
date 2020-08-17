@@ -7,20 +7,26 @@ description = "Ethereum RPC (web3) compatibility layer for Substrate."
 license = "GPL-3.0"
 
 [dependencies]
+derive_more = "0.99.2"
 jsonrpc-core = "14.0.3"
 jsonrpc-derive = "14.0.3"
 jsonrpc-core-client = "14.0.3"
+jsonrpc-pubsub = "14.0.5"
+log = "0.4.8"
 ethereum-types = "0.9.0"
 frontier-rpc-core = { path = "core" }
 frontier-rpc-primitives = { path = "primitives" }
 sp-runtime = { path = "../vendor/substrate/primitives/runtime" }
 sp-api = { path = "../vendor/substrate/primitives/api" }
+sp-io = { path = "../vendor/substrate/primitives/io" }
 sp-consensus = { path = "../vendor/substrate/primitives/consensus/common" }
+sp-blockchain = { path = "../vendor/substrate/primitives/blockchain" }
 sp-transaction-pool = { path = "../vendor/substrate/primitives/transaction-pool" }
 sp-storage = { path = "../vendor/substrate/primitives/storage" } 
 sc-service = { path = "../vendor/substrate/client/service" }
 sc-client-api = { path = "../vendor/substrate/client/api" }
-ethereum = { version = "0.2", features = ["codec"], path = "../vendor/ethereum/" }
+ethereum = { version = "0.2", features = ["codec"] }
+sc-rpc = { path = "../vendor/substrate/client/rpc" }
 codec = { package = "parity-scale-codec", version = "1.0.0" }
 rlp = "0.4"
 pallet-ethereum = "0.1"

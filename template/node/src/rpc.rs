@@ -26,9 +26,14 @@ use sp_transaction_pool::TransactionPool;
 use sp_blockchain::{Error as BlockChainError, HeaderMetadata, HeaderBackend};
 use sp_consensus::SelectChain;
 use sc_rpc_api::DenyUnsafe;
-use sc_client_api::backend::{StorageProvider, Backend, StateBackend};
+use sc_client_api::{
+	backend::{StorageProvider, Backend, StateBackend},
+	client::BlockchainEvents
+};
+use sc_rpc::SubscriptionTaskExecutor;
 use sp_runtime::traits::BlakeTwo256;
 use sp_block_builder::BlockBuilder;
+use jsonrpc_pubsub::manager::SubscriptionManager;
 
 /// Light client extra dependencies.
 pub struct LightDeps<C, F, P> {
@@ -59,12 +64,14 @@ pub struct FullDeps<C, P, SC> {
 }
 
 /// Instantiate all Full RPC extensions.
-pub fn create_full<C, P, M, SC, BE>(
+pub fn create_full<C, P, SC, BE>(
 	deps: FullDeps<C, P, SC>,
-) -> jsonrpc_core::IoHandler<M> where
+	subscription_task_executor: SubscriptionTaskExecutor
+) -> jsonrpc_core::IoHandler<sc_rpc::Metadata> where
 	BE: Backend<Block> + 'static,
 	BE::State: StateBackend<BlakeTwo256>,
 	C: ProvideRuntimeApi<Block> + StorageProvider<Block, BE>,
+	C: BlockchainEvents<Block>,
 	C: HeaderBackend<Block> + HeaderMetadata<Block, Error=BlockChainError> + 'static,
 	C: Send + Sync + 'static,
 	C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Index>,
@@ -73,12 +80,11 @@ pub fn create_full<C, P, M, SC, BE>(
 	C::Api: frontier_rpc_primitives::EthereumRuntimeApi<Block>,
 	<C::Api as sp_api::ApiErrorExt>::Error: fmt::Debug,
 	P: TransactionPool<Block=Block> + 'static,
-	M: jsonrpc_core::Metadata + Default,
 	SC: SelectChain<Block> +'static,
 {
 	use substrate_frame_rpc_system::{FullSystem, SystemApi};
 	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApi};
-	use frontier_rpc::{EthApi, EthApiServer};
+	use frontier_rpc::{EthApi, EthApiServer, EthPubSubApi, EthPubSubApiServer};
 
 	let mut io = jsonrpc_core::IoHandler::default();
 	let FullDeps {
@@ -103,6 +109,13 @@ pub fn create_full<C, P, M, SC, BE>(
 			pool.clone(),
 			frontier_template_runtime::TransactionConverter,
 			is_authority,
+		))
+	);
+	io.extend_with(
+		EthPubSubApiServer::to_delegate(EthPubSubApi::new(
+			pool.clone(),
+			client.clone(),
+			SubscriptionManager::new(Arc::new(subscription_task_executor)),
 		))
 	);
 
