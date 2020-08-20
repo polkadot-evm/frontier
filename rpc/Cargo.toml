@@ -7,7 +7,6 @@ description = "Ethereum RPC (web3) compatibility layer for Substrate."
 license = "GPL-3.0"
 
 [dependencies]
-derive_more = "0.99.2"
 jsonrpc-core = "14.0.3"
 jsonrpc-derive = "14.0.3"
 jsonrpc-core-client = "14.0.3"
