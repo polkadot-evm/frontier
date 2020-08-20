@@ -170,7 +170,7 @@ pub fn new_full(config: Configuration, manual_seal: bool) -> Result<TaskManager,
 				command_sink: Some(command_sink.clone())
 			};
 			crate::rpc::create_full(
-				deps, 
+				deps,
 				subscription_task_executor.clone()
 			)
 		})
