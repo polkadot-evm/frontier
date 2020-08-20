@@ -57,10 +57,12 @@ pub trait Trait: frame_system::Trait<Hash=H256> + pallet_balances::Trait + palle
 }
 
 decl_storage! {
-	trait Store for Module<T: Trait> as Example {
+	trait Store for Module<T: Trait> as Ethereum {
 		/// Block hash to block body and block receipt map.
 		BlocksAndReceipts: map hasher(blake2_128_concat)
 			H256 => Option<(ethereum::Block, Vec<ethereum::Receipt>)>;
+		/// Latest block header. Used for subscriptions.
+		LatestHeader get(fn last_header): (H256, ethereum::Header);
 		/// Block number to block hash map.
 		BlockNumbers: map hasher(blake2_128_concat) T::BlockNumber => H256;
 		/// Current building block's transactions and receipts.
@@ -175,7 +177,7 @@ impl<T: Trait> Module<T> {
 		let hash = H256::from_slice(Keccak256::digest(&rlp::encode(&header)).as_slice());
 
 		let block = ethereum::Block {
-			header,
+			header: header.clone(),
 			transactions: transactions.clone(),
 			ommers,
 		};
@@ -194,6 +196,7 @@ impl<T: Trait> Module<T> {
 
 		BlocksAndReceipts::insert(hash, (block, receipts));
 		BlockNumbers::<T>::insert(n, hash);
+		LatestHeader::put((hash, header));
 	}
 
 	/// Get the author using the FindAuthor trait.
