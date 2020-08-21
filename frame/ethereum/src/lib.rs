@@ -61,8 +61,8 @@ decl_storage! {
 		/// Block hash to block body and block receipt map.
 		BlocksAndReceipts: map hasher(blake2_128_concat)
 			H256 => Option<(ethereum::Block, Vec<ethereum::Receipt>)>;
-		/// Latest block header. Used for subscriptions.
-		LatestHeader get(fn last_header): (H256, ethereum::Header);
+		/// Latest block data. Used for subscriptions.
+		LatestBlock get(fn last_header): (H256, ethereum::Block, Vec<ethereum::Receipt>);
 		/// Block number to block hash map.
 		BlockNumbers: map hasher(blake2_128_concat) T::BlockNumber => H256;
 		/// Current building block's transactions and receipts.
@@ -194,9 +194,9 @@ impl<T: Trait> Module<T> {
 			}
 		}
 
-		BlocksAndReceipts::insert(hash, (block, receipts));
+		BlocksAndReceipts::insert(hash, (block.clone(), receipts.clone()));
 		BlockNumbers::<T>::insert(n, hash);
-		LatestHeader::put((hash, header));
+		LatestBlock::put((hash, block, receipts));
 	}
 
 	/// Get the author using the FindAuthor trait.
