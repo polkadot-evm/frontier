@@ -48,6 +48,39 @@ fn storage_prefix_build(module: &[u8], storage: &[u8]) -> Vec<u8> {
 	[twox_128(module), twox_128(storage)].concat().to_vec()
 }
 
+fn new_heads_result(
+	hash: H256, 
+	block: ethereum::Block
+) -> PubSubResult {
+	PubSubResult::Header(Box::new(
+		Rich {
+			inner: Header {
+				hash: Some(hash),
+				parent_hash: block.header.parent_hash,
+				uncles_hash: block.header.ommers_hash,
+				author: block.header.beneficiary,
+				miner: block.header.beneficiary,
+				state_root: block.header.state_root,
+				transactions_root: block.header.transactions_root,
+				receipts_root: block.header.receipts_root,
+				number: Some(block.header.number),
+				gas_used: block.header.gas_used,
+				gas_limit: block.header.gas_limit,
+				extra_data: Bytes(block.header.extra_data.as_bytes().to_vec()),
+				logs_bloom: block.header.logs_bloom,
+				timestamp: U256::from(block.header.timestamp),
+				difficulty: block.header.difficulty,
+				seal_fields:  vec![
+					Bytes(block.header.mix_hash.as_bytes().to_vec()),
+					Bytes(block.header.nonce.as_bytes().to_vec())
+				],
+				size: Some(U256::from(rlp::encode(&block).len() as u32)),
+			},
+			extra_info: BTreeMap::new()
+		}
+	))
+}
+
 impl<B: BlockT, P, C, BE> EthPubSubApiT for EthPubSubApi<B, P, C, BE>
 	where
 		B: BlockT<Hash=H256> + Send + Sync + 'static,
@@ -72,7 +105,7 @@ impl<B: BlockT, P, C, BE> EthPubSubApiT for EthPubSubApi<B, P, C, BE>
 			},
 			Kind::NewHeads => {
 				let key: StorageKey = StorageKey(
-					storage_prefix_build(b"Ethereum", b"LatestHeader")
+					storage_prefix_build(b"Ethereum", b"LatestBlock")
 				);
 				let stream = match self.client.storage_changes_notification_stream(
 					Some(&[key]),
@@ -87,37 +120,11 @@ impl<B: BlockT, P, C, BE> EthPubSubApiT for EthPubSubApi<B, P, C, BE>
 					let stream = stream
 						.map(|(_block, changes)| {
 							let data = changes.iter().last().unwrap().2.unwrap();
-							let (block_hash, eth_block_header): (
-								H256, ethereum::Header
+							let (hash, block, _): (
+								H256, ethereum::Block, Vec<ethereum::Receipt>
 							) = Decode::decode(&mut &data.0[..]).unwrap();
 							return Ok::<_, ()>(Ok(
-								PubSubResult::Header(Box::new(
-									Rich {
-										inner: Header {
-											hash: Some(block_hash),
-											parent_hash: eth_block_header.parent_hash,
-											uncles_hash: eth_block_header.ommers_hash,
-											author: eth_block_header.beneficiary,
-											miner: eth_block_header.beneficiary,
-											state_root: eth_block_header.state_root,
-											transactions_root: eth_block_header.transactions_root,
-											receipts_root: eth_block_header.receipts_root,
-											number: Some(eth_block_header.number),
-											gas_used: eth_block_header.gas_used,
-											gas_limit: eth_block_header.gas_limit,
-											extra_data: Bytes(eth_block_header.extra_data.as_bytes().to_vec()),
-											logs_bloom: eth_block_header.logs_bloom,
-											timestamp: U256::from(eth_block_header.timestamp),
-											difficulty: eth_block_header.difficulty,
-											seal_fields:  vec![
-												Bytes(eth_block_header.mix_hash.as_bytes().to_vec()),
-												Bytes(eth_block_header.nonce.as_bytes().to_vec())
-											],
-											size: Some(U256::from(0)), // TODO
-										},
-										extra_info: BTreeMap::new()
-									}
-								))
+								new_heads_result(hash, block)
 							));
 						})
 						.compat();
