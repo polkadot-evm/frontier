@@ -4,6 +4,7 @@ members = [
 	"rpc",
 	"rpc/core",
 	"rpc/primitives",
+	"consensus",
 	"consensus/primitives",
 	"template/node",
 	"template/runtime",
