@@ -1416,6 +1416,7 @@ dependencies = [
 name = "frontier-template-node"
 version = "2.0.0-dev"
 dependencies = [
+ "frontier-consensus",
  "frontier-rpc",
  "frontier-rpc-primitives",
  "frontier-template-runtime",
