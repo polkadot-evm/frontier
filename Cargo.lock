@@ -1328,6 +1328,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "frontier-consensus-primitives"
+version = "0.1.0"
+dependencies = [
+ "parity-scale-codec",
+ "sp-api",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "frontier-rpc"
 version = "0.1.0"
 dependencies = [
