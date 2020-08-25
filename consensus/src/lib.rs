@@ -19,16 +19,27 @@
 use std::sync::Arc;
 use std::collections::HashMap;
 use std::marker::PhantomData;
+use frontier_consensus_primitives::{FRONTIER_ENGINE_ID, ConsensusLog};
 use sc_client_api::{BlockOf, backend::AuxStore};
 use sp_blockchain::{HeaderBackend, ProvideCache, well_known_cache_keys::Id as CacheKeyId};
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
-use sp_runtime::traits::Block as BlockT;
+use sp_runtime::generic::OpaqueDigestItemId;
+use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
 use sp_api::ProvideRuntimeApi;
 use sp_consensus::{
 	BlockImportParams, Error as ConsensusError, BlockImport,
 	BlockCheckParams, ImportResult,
 };
+use log::*;
 use sc_client_api;
+
+#[derive(derive_more::Display, Debug)]
+pub enum Error {
+	#[display(fmt = "Multiple post-runtime Ethereum blocks, rejecting!")]
+	MultiplePostRuntimeBlocks,
+	#[display(fmt = "Post-runtime Ethereum block not found, rejecting!")]
+	NoPostRuntimeBlock,
+}
 
 pub struct FrontierBlockImport<B: BlockT, I, C> {
 	inner: I,
@@ -79,4 +90,22 @@ impl<B, I, C> BlockImport<B> for FrontierBlockImport<B, I, C> where
 	) -> Result<ImportResult, Self::Error> {
 		self.inner.import_block(block, new_cache).map_err(Into::into)
 	}
+}
+
+fn find_ethereum_block<B: BlockT>(
+	header: &B::Header,
+) -> Result<ethereum::Block, Error> {
+	let mut ethereum_block: Option<_> = None;
+	for log in header.digest().logs() {
+		trace!(target: "frontier-consensus", "Checking log {:?}, looking for ethereum block.", log);
+		let log = log.try_to::<ConsensusLog>(OpaqueDigestItemId::Consensus(&FRONTIER_ENGINE_ID));
+		match (log, ethereum_block.is_some()) {
+			(Some(ConsensusLog::Block(_)), true) =>
+				return Err(Error::MultiplePostRuntimeBlocks),
+			(Some(ConsensusLog::Block(block)), false) => ethereum_block = Some(block),
+			_ => trace!(target: "frontier-consensus", "Ignoring digest not meant for us"),
+		}
+	}
+
+	Ok(ethereum_block.ok_or(Error::NoPostRuntimeBlock)?)
 }
