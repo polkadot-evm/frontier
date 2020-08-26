@@ -204,7 +204,43 @@ impl<B: BlockT, P, C, BE> EthPubSubApiT for EthPubSubApi<B, P, C, BE>
 				});
 			},
 			Kind::NewPendingTransactions => {
-				unimplemented!(); // TODO
+				let key: StorageKey = StorageKey(
+					storage_prefix_build(b"Ethereum", b"PendingTransactionsAndReceipts")
+				);
+				let stream = match self.client.storage_changes_notification_stream(
+					Some(&[key]),
+					None
+				) {
+					Ok(stream) => stream,
+					Err(_err) => {
+						unimplemented!(); // TODO
+					},
+				};
+				self.subscriptions.add(subscriber, |sink| {
+					let stream = stream
+						.flat_map(|(_block, changes)| {
+							let data = changes.iter().last().unwrap().2.unwrap();
+							let transactions: Vec<(
+								ethereum::Transaction, ethereum::Receipt
+							)> = Decode::decode(&mut &data.0[..]).unwrap();
+							futures::stream::iter(transactions)
+						})
+						.map(|(transaction, _)| {
+							return Ok::<Result<PubSubResult, jsonrpc_core::types::error::Error>, ()>(Ok(
+								PubSubResult::TransactionHash(H256::from_slice(
+									Keccak256::digest(
+										&rlp::encode(&transaction)
+									).as_slice()
+								))
+							));
+						})
+						.compat();
+
+					sink
+						.sink_map_err(|e| warn!("Error sending notifications: {:?}", e))
+						.send_all(stream)
+						.map(|_| ())
+				});
 			},
 			Kind::Syncing => {
 				unimplemented!(); // TODO
