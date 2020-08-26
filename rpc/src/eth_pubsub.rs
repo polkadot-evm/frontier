@@ -16,11 +16,12 @@ use log::warn;
 use jsonrpc_pubsub::{typed::Subscriber, SubscriptionId, manager::SubscriptionManager};
 use frontier_rpc_core::EthPubSubApi::{self as EthPubSubApiT};
 use frontier_rpc_core::types::{
-	Rich, Header, Bytes,
+	Rich, Header, Bytes, Log,
 	pubsub::{Kind, Params, Result as PubSubResult}
 };
 use ethereum_types::{H256, U256};
 use codec::Decode;
+use sha3::{Keccak256, Digest};
 
 pub use frontier_rpc_core::EthPubSubApiServer;
 use futures::{StreamExt as _, TryStreamExt as _};
@@ -49,7 +50,7 @@ fn storage_prefix_build(module: &[u8], storage: &[u8]) -> Vec<u8> {
 }
 
 fn new_heads_result(
-	hash: H256, 
+	hash: H256,
 	block: ethereum::Block
 ) -> PubSubResult {
 	PubSubResult::Header(Box::new(
@@ -101,7 +102,59 @@ impl<B: BlockT, P, C, BE> EthPubSubApiT for EthPubSubApi<B, P, C, BE>
 	) {
 		match kind {
 			Kind::Logs => {
-				unimplemented!(); // TODO
+				let key: StorageKey = StorageKey(
+					storage_prefix_build(b"Ethereum", b"LatestBlock")
+				);
+				let stream = match self.client.storage_changes_notification_stream(
+					Some(&[key]),
+					None
+				) {
+					Ok(stream) => stream,
+					Err(_err) => {
+						unimplemented!(); // TODO
+					},
+				};
+				self.subscriptions.add(subscriber, |sink| {
+					let stream = stream
+						.flat_map(|(_block, changes)| {
+							let data = changes.iter().last().unwrap().2.unwrap();
+							let (_, block, receipts): (
+								H256, ethereum::Block, Vec<ethereum::Receipt>
+							) = Decode::decode(&mut &data.0[..]).unwrap();
+
+							let mut logs: Vec<Log> = vec![];
+							for receipt in receipts {
+								for log in receipt.logs {
+									logs.push(Log {
+										address: log.address,
+										topics: log.topics,
+										data: Bytes(log.data),
+										block_hash: Some(H256::from_slice(
+											Keccak256::digest(&rlp::encode(&block.header)).as_slice()
+										)),
+										block_number: Some(block.header.number),
+										transaction_hash: None, // TODO Option<H256>,
+										transaction_index: None, // TODO Option<U256>,
+										log_index: None, // TODO Option<U256>,
+										transaction_log_index: None, // TODO Option<U256>,
+										removed: false,
+									});
+								}
+							}
+							futures::stream::iter(logs)
+						})
+						.map(|x| {
+							return Ok::<Result<PubSubResult, jsonrpc_core::types::error::Error>, ()>(Ok(
+								PubSubResult::Log(Box::new(x))
+							));
+						})
+						.compat();
+
+					sink
+						.sink_map_err(|e| warn!("Error sending notifications: {:?}", e))
+						.send_all(stream)
+						.map(|_| ())
+				});
 			},
 			Kind::NewHeads => {
 				let key: StorageKey = StorageKey(
