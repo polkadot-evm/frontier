@@ -82,6 +82,32 @@ fn new_heads_result(
 	))
 }
 
+fn logs(
+	block: ethereum::Block,
+	receipts: Vec<ethereum::Receipt>
+) -> Vec<Log> {
+	let mut logs: Vec<Log> = vec![];
+	for receipt in receipts {
+		for log in receipt.logs {
+			logs.push(Log {
+				address: log.address,
+				topics: log.topics,
+				data: Bytes(log.data),
+				block_hash: Some(H256::from_slice(
+					Keccak256::digest(&rlp::encode(&block.header)).as_slice()
+				)),
+				block_number: Some(block.header.number),
+				transaction_hash: None, // TODO Option<H256>,
+				transaction_index: None, // TODO Option<U256>,
+				log_index: None, // TODO Option<U256>,
+				transaction_log_index: None, // TODO Option<U256>,
+				removed: false,
+			});
+		}
+	}
+	logs
+}
+
 impl<B: BlockT, P, C, BE> EthPubSubApiT for EthPubSubApi<B, P, C, BE>
 	where
 		B: BlockT<Hash=H256> + Send + Sync + 'static,
@@ -121,27 +147,7 @@ impl<B: BlockT, P, C, BE> EthPubSubApiT for EthPubSubApi<B, P, C, BE>
 							let (_, block, receipts): (
 								H256, ethereum::Block, Vec<ethereum::Receipt>
 							) = Decode::decode(&mut &data.0[..]).unwrap();
-
-							let mut logs: Vec<Log> = vec![];
-							for receipt in receipts {
-								for log in receipt.logs {
-									logs.push(Log {
-										address: log.address,
-										topics: log.topics,
-										data: Bytes(log.data),
-										block_hash: Some(H256::from_slice(
-											Keccak256::digest(&rlp::encode(&block.header)).as_slice()
-										)),
-										block_number: Some(block.header.number),
-										transaction_hash: None, // TODO Option<H256>,
-										transaction_index: None, // TODO Option<U256>,
-										log_index: None, // TODO Option<U256>,
-										transaction_log_index: None, // TODO Option<U256>,
-										removed: false,
-									});
-								}
-							}
-							futures::stream::iter(logs)
+							futures::stream::iter(logs(block, receipts))
 						})
 						.map(|x| {
 							return Ok::<Result<PubSubResult, jsonrpc_core::types::error::Error>, ()>(Ok(
