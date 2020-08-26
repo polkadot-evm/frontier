@@ -87,22 +87,32 @@ fn logs(
 	receipts: Vec<ethereum::Receipt>
 ) -> Vec<Log> {
 	let mut logs: Vec<Log> = vec![];
+	let mut log_index: u32 = 0;
 	for receipt in receipts {
+		let mut transaction_log_index: u32 = 0;
 		for log in receipt.logs {
 			logs.push(Log {
 				address: log.address,
 				topics: log.topics,
 				data: Bytes(log.data),
 				block_hash: Some(H256::from_slice(
-					Keccak256::digest(&rlp::encode(&block.header)).as_slice()
+					Keccak256::digest(&rlp::encode(
+						&block.header
+					)).as_slice()
 				)),
 				block_number: Some(block.header.number),
-				transaction_hash: None, // TODO Option<H256>,
-				transaction_index: None, // TODO Option<U256>,
-				log_index: None, // TODO Option<U256>,
-				transaction_log_index: None, // TODO Option<U256>,
+				transaction_hash: Some(H256::from_slice(
+					Keccak256::digest(&rlp::encode(
+						&block.transactions[log_index as usize]
+					)).as_slice()
+				)),
+				transaction_index: Some(U256::from(log_index)),
+				log_index: Some(U256::from(log_index)),
+				transaction_log_index: Some(U256::from(transaction_log_index)),
 				removed: false,
 			});
+			log_index += 1;
+			transaction_log_index += 1;
 		}
 	}
 	logs
