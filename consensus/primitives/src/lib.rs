@@ -15,7 +15,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#![cfg_attr(not(feature = "std"), no_std)]
+
 use codec::{Encode, Decode};
+use sp_std::vec::Vec;
 use sp_core::H256;
 use sp_runtime::ConsensusEngineId;
 
