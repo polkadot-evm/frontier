@@ -49,7 +49,7 @@ pub fn load_block_hash<Block: BlockT, B: AuxStore>(
 }
 
 /// Update Aux block hash.
-pub fn write_block_hash<Hash: Encode, B: AuxStore, F, R>(
+pub fn write_block_hash<Hash: Encode, F, R>(
 	ethereum_hash: H256,
 	block_hash: Hash,
 	write_aux: F,
@@ -77,7 +77,7 @@ pub fn load_transaction_metadata<B: AuxStore>(
 }
 
 /// Update Aux transaction metadata.
-pub fn write_transaction_metadata<B: AuxStore, F, R>(
+pub fn write_transaction_metadata<F, R>(
 	hash: H256,
 	metadata: (H256, u32),
 	write_aux: F,

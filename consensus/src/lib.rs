@@ -101,10 +101,35 @@ impl<B, I, C> BlockImport<B> for FrontierBlockImport<B, I, C> where
 
 	fn import_block(
 		&mut self,
-		block: BlockImportParams<B, Self::Transaction>,
+		mut block: BlockImportParams<B, Self::Transaction>,
 		new_cache: HashMap<CacheKeyId, Vec<u8>>,
 	) -> Result<ImportResult, Self::Error> {
+		macro_rules! insert_closure {
+			() => (
+				|insert| block.auxiliary.extend(
+					insert.iter().map(|(k, v)| (k.to_vec(), Some(v.to_vec())))
+				)
+			)
+		}
+
 		let log = find_frontier_log::<B>(&block.header)?;
+		let hash = block.post_hash();
+
+		match log {
+			ConsensusLog::EndBlock {
+				block_hash, transaction_hashes,
+			} => {
+				aux_schema::write_block_hash(block_hash, hash, insert_closure!());
+
+				for (index, transaction_hash) in transaction_hashes.into_iter().enumerate() {
+					aux_schema::write_transaction_metadata(
+						transaction_hash,
+						(block_hash, index as u32),
+						insert_closure!(),
+					);
+				}
+			},
+		}
 
 		self.inner.import_block(block, new_cache).map_err(Into::into)
 	}
@@ -118,7 +143,7 @@ fn find_frontier_log<B: BlockT>(
 		trace!(target: "frontier-consensus", "Checking log {:?}, looking for ethereum block.", log);
 		let log = log.try_to::<ConsensusLog>(OpaqueDigestItemId::Consensus(&FRONTIER_ENGINE_ID));
 		match (log, frontier_log.is_some()) {
-			(Some(log), true) =>
+			(Some(_), true) =>
 				return Err(Error::MultiplePostRuntimeLogs),
 			(Some(log), false) => frontier_log = Some(log),
 			_ => trace!(target: "frontier-consensus", "Ignoring digest not meant for us"),
