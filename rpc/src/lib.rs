@@ -588,24 +588,29 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 		hash: H256,
 		index: Index,
 	) -> Result<Option<Transaction>> {
-		unimplemented!()
+		let id = match frontier_consensus::load_block_hash::<B, _>(self.client.as_ref(), hash)
+			.map_err(|_| internal_err("fetch aux store failed"))?
+		{
+			Some(hash) => BlockId::Hash(hash),
+			None => return Ok(None),
+		};
+		let index = index.value();
 
-		// let header = self
-		// 	.select_chain
-		// 	.best_chain()
-		// 	.map_err(|_| internal_err("fetch header failed"))?;
+		let block = self.client.runtime_api().current_block(&id)
+			.map_err(|_| internal_err("call runtime failed"))?;
+		let statuses = self.client.runtime_api().current_transaction_statuses(&id)
+			.map_err(|_| internal_err("call runtime failed"))?;
 
-		// let index_param = index.value() as u32;
-
-		// if let Ok(Some((transaction, block, status))) = self.client.runtime_api()
-		// 	.transaction_by_block_hash_and_index(&BlockId::Hash(header.hash()), hash, index_param) {
-		// 	return Ok(Some(transaction_build(
-		// 		transaction,
-		// 		block,
-		// 		status
-		// 	)));
-		// }
-		// Ok(None)
+		match (block, statuses) {
+			(Some(block), Some(statuses)) => {
+				Ok(Some(transaction_build(
+					block.transactions[index].clone(),
+					block,
+					statuses[index].clone(),
+				)))
+			},
+			_ => Ok(None)
+		}
 	}
 
 	fn transaction_by_block_number_and_index(
@@ -613,92 +618,109 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 		number: BlockNumber,
 		index: Index,
 	) -> Result<Option<Transaction>> {
-		unimplemented!()
+		let id = match self.native_block_id(Some(number))? {
+			Some(id) => id,
+			None => return Ok(None),
+		};
+		let index = index.value();
 
-		// let header = self
-		// 	.select_chain
-		// 	.best_chain()
-		// 	.map_err(|_| internal_err("fetch header failed"))?;
+		let block = self.client.runtime_api().current_block(&id)
+			.map_err(|_| internal_err("call runtime failed"))?;
+		let statuses = self.client.runtime_api().current_transaction_statuses(&id)
+			.map_err(|_| internal_err("call runtime failed"))?;
 
-		// let index_param = index.value() as u32;
-
-		// if let Ok(Some(native_number)) = self.native_block_id(Some(number)) {
-		// 	if let Ok(Some((transaction, block, status))) = self.client.runtime_api()
-		// 		.transaction_by_block_number_and_index(
-		// 			&BlockId::Hash(header.hash()),
-		// 			native_number,
-		// 			index_param) {
-		// 		return Ok(Some(transaction_build(
-		// 			transaction,
-		// 			block,
-		// 			status
-		// 		)));
-		// 	}
-		// }
-		// Ok(None)
+		match (block, statuses) {
+			(Some(block), Some(statuses)) => {
+				Ok(Some(transaction_build(
+					block.transactions[index].clone(),
+					block,
+					statuses[index].clone(),
+				)))
+			},
+			_ => Ok(None)
+		}
 	}
 
 	fn transaction_receipt(&self, hash: H256) -> Result<Option<Receipt>> {
-		unimplemented!()
+		let (hash, index) = match frontier_consensus::load_transaction_metadata(
+			self.client.as_ref(),
+			hash,
+		).map_err(|_| internal_err("fetch aux store failed"))? {
+			Some((hash, index)) => (hash, index as usize),
+			None => return Ok(None),
+		};
 
-		// let header = self.select_chain.best_chain()
-		// 	.map_err(|_| internal_err("fetch header failed"))?;
-		// if let Ok(Some((_transaction, block, status, receipts))) = self.client.runtime_api()
-		// 	.transaction_by_hash(&BlockId::Hash(header.hash()), hash) {
+		let id = match frontier_consensus::load_block_hash::<B, _>(self.client.as_ref(), hash)
+			.map_err(|_| internal_err("fetch aux store failed"))?
+		{
+			Some(hash) => BlockId::Hash(hash),
+			None => return Ok(None),
+		};
 
-		// 	let block_hash = H256::from_slice(
-		// 		Keccak256::digest(&rlp::encode(&block.header)).as_slice()
-		// 	);
-		// 	let receipt = receipts[status.transaction_index as usize].clone();
-		// 	let mut cumulative_receipts = receipts.clone();
-		// 	cumulative_receipts.truncate((status.transaction_index + 1) as usize);
+		let block = self.client.runtime_api().current_block(&id)
+			.map_err(|_| internal_err("call runtime failed"))?;
+		let receipts = self.client.runtime_api().current_receipts(&id)
+			.map_err(|_| internal_err("call runtime failed"))?;
+		let statuses = self.client.runtime_api().current_transaction_statuses(&id)
+			.map_err(|_| internal_err("call runtime failed"))?;
 
-		// 	return Ok(Some(Receipt {
-		// 		transaction_hash: Some(status.transaction_hash),
-		// 		transaction_index: Some(status.transaction_index.into()),
-		// 		block_hash: Some(block_hash),
-		// 		from: Some(status.from),
-		// 		to: status.to,
-		// 		block_number: Some(block.header.number),
-		// 		cumulative_gas_used: {
-		// 			let cumulative_gas: u32 = cumulative_receipts.iter().map(|r| {
-		// 				r.used_gas.as_u32()
-		// 			}).sum();
-		// 			U256::from(cumulative_gas)
-		// 		},
-		// 		gas_used: Some(receipt.used_gas),
-		// 		contract_address: status.contract_address,
-		// 		logs: {
-		// 			let mut pre_receipts_log_index = None;
-		// 			if cumulative_receipts.len() > 0 {
-		// 				cumulative_receipts.truncate(cumulative_receipts.len() - 1);
-		// 				pre_receipts_log_index = Some(cumulative_receipts.iter().map(|r| {
-		// 					r.logs.len() as u32
-		// 				}).sum::<u32>());
-		// 			}
-		// 			receipt.logs.iter().enumerate().map(|(i, log)| {
-		// 				Log {
-		// 					address: log.address,
-		// 					topics: log.topics.clone(),
-		// 					data: Bytes(log.data.clone()),
-		// 					block_hash: Some(block_hash),
-		// 					block_number: Some(block.header.number),
-		// 					transaction_hash: Some(hash),
-		// 					transaction_index: Some(status.transaction_index.into()),
-		// 					log_index: Some(U256::from(
-		// 						(pre_receipts_log_index.unwrap_or(0)) + i as u32
-		// 					)),
-		// 					transaction_log_index: Some(U256::from(i)),
-		// 					removed: false,
-		// 				}
-		// 			}).collect()
-		// 		},
-		// 		state_root: Some(receipt.state_root),
-		// 		logs_bloom: receipt.logs_bloom,
-		// 		status_code: None,
-		// 	}))
-		// }
-		// Ok(None)
+		match (block, statuses, receipts) {
+			(Some(block), Some(statuses), Some(receipts)) => {
+				let block_hash = H256::from_slice(
+					Keccak256::digest(&rlp::encode(&block.header)).as_slice()
+				);
+				let receipt = receipts[index].clone();
+				let status = statuses[index].clone();
+				let mut cumulative_receipts = receipts.clone();
+				cumulative_receipts.truncate((status.transaction_index + 1) as usize);
+
+				return Ok(Some(Receipt {
+					transaction_hash: Some(status.transaction_hash),
+					transaction_index: Some(status.transaction_index.into()),
+					block_hash: Some(block_hash),
+					from: Some(status.from),
+					to: status.to,
+					block_number: Some(block.header.number),
+					cumulative_gas_used: {
+						let cumulative_gas: u32 = cumulative_receipts.iter().map(|r| {
+							r.used_gas.as_u32()
+						}).sum();
+						U256::from(cumulative_gas)
+					},
+					gas_used: Some(receipt.used_gas),
+					contract_address: status.contract_address,
+					logs: {
+						let mut pre_receipts_log_index = None;
+						if cumulative_receipts.len() > 0 {
+							cumulative_receipts.truncate(cumulative_receipts.len() - 1);
+							pre_receipts_log_index = Some(cumulative_receipts.iter().map(|r| {
+								r.logs.len() as u32
+							}).sum::<u32>());
+						}
+						receipt.logs.iter().enumerate().map(|(i, log)| {
+							Log {
+								address: log.address,
+								topics: log.topics.clone(),
+								data: Bytes(log.data.clone()),
+								block_hash: Some(block_hash),
+								block_number: Some(block.header.number),
+								transaction_hash: Some(hash),
+								transaction_index: Some(status.transaction_index.into()),
+								log_index: Some(U256::from(
+									(pre_receipts_log_index.unwrap_or(0)) + i as u32
+								)),
+								transaction_log_index: Some(U256::from(i)),
+								removed: false,
+							}
+						}).collect()
+					},
+					state_root: Some(receipt.state_root),
+					logs_bloom: receipt.logs_bloom,
+					status_code: None,
+				}))
+			}
+			_ => Ok(None),
+		}
 	}
 
 	fn uncle_by_block_hash_and_index(&self, _: H256, _: Index) -> Result<Option<RichBlock>> {
