@@ -551,22 +551,36 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 	}
 
 	fn transaction_by_hash(&self, hash: H256) -> Result<Option<Transaction>> {
-		unimplemented!()
+		let (hash, index) = match frontier_consensus::load_transaction_metadata(
+			self.client.as_ref(),
+			hash,
+		).map_err(|_| internal_err("fetch aux store failed"))? {
+			Some((hash, index)) => (hash, index as usize),
+			None => return Ok(None),
+		};
 
-		// let header = self
-		// 	.select_chain
-		// 	.best_chain()
-		// 	.map_err(|_| internal_err("fetch header failed"))?;
+		let id = match frontier_consensus::load_block_hash::<B, _>(self.client.as_ref(), hash)
+			.map_err(|_| internal_err("fetch aux store failed"))?
+		{
+			Some(hash) => BlockId::Hash(hash),
+			None => return Ok(None),
+		};
 
-		// if let Ok(Some((transaction, block, status, _receipt))) = self.client.runtime_api()
-		// 	.transaction_by_hash(&BlockId::Hash(header.hash()), hash) {
-		// 	return Ok(Some(transaction_build(
-		// 		transaction,
-		// 		block,
-		// 		status
-		// 	)));
-		// }
-		// Ok(None)
+		let block = self.client.runtime_api().current_block(&id)
+			.map_err(|_| internal_err("call runtime failed"))?;
+		let statuses = self.client.runtime_api().current_transaction_statuses(&id)
+			.map_err(|_| internal_err("call runtime failed"))?;
+
+		match (block, statuses) {
+			(Some(block), Some(statuses)) => {
+				Ok(Some(transaction_build(
+					block.transactions[index].clone(),
+					block,
+					statuses[index].clone(),
+				)))
+			},
+			_ => Ok(None)
+		}
 	}
 
 	fn transaction_by_block_hash_and_index(
