@@ -398,17 +398,21 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 	}
 
 	fn block_transaction_count_by_hash(&self, hash: H256) -> Result<Option<U256>> {
-		unimplemented!()
+		let id = match frontier_consensus::load_block_hash::<B, _>(self.client.as_ref(), hash)
+			.map_err(|_| internal_err("fetch aux store failed"))?
+		{
+			Some(hash) => BlockId::Hash(hash),
+			None => return Ok(None),
+		};
 
-		// let header = self.select_chain.best_chain()
-		// 	.map_err(|_| internal_err("fetch header failed"))?;
+		let block = self.client.runtime_api()
+			.current_block(&id)
+			.map_err(|_| internal_err("fetch runtime account basic failed"))?;
 
-		// let result = match self.client.runtime_api()
-		// 	.block_transaction_count_by_hash(&BlockId::Hash(header.hash()), hash) {
-		// 	Ok(result) => result,
-		// 	Err(_) => return Ok(None)
-		// };
-		// Ok(result)
+		match block {
+			Some(block) => Ok(Some(U256::from(block.transactions.len()))),
+			None => Ok(None),
+		}
 	}
 
 	fn block_transaction_count_by_number(&self, number: BlockNumber) -> Result<Option<U256>> {
