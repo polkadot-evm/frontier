@@ -16,6 +16,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+mod aux_schema;
+
 use std::sync::Arc;
 use std::collections::HashMap;
 use std::marker::PhantomData;
@@ -36,9 +38,21 @@ use sc_client_api;
 #[derive(derive_more::Display, Debug)]
 pub enum Error {
 	#[display(fmt = "Multiple post-runtime Ethereum blocks, rejecting!")]
-	MultiplePostRuntimeBlocks,
+	MultiplePostRuntimeLogs,
 	#[display(fmt = "Post-runtime Ethereum block not found, rejecting!")]
-	NoPostRuntimeBlock,
+	NoPostRuntimeLog,
+}
+
+impl From<Error> for String {
+	fn from(error: Error) -> String {
+		error.to_string()
+	}
+}
+
+impl std::convert::From<Error> for ConsensusError {
+	fn from(error: Error) -> ConsensusError {
+		ConsensusError::ClientImport(error.to_string())
+	}
 }
 
 pub struct FrontierBlockImport<B: BlockT, I, C> {
@@ -88,24 +102,26 @@ impl<B, I, C> BlockImport<B> for FrontierBlockImport<B, I, C> where
 		block: BlockImportParams<B, Self::Transaction>,
 		new_cache: HashMap<CacheKeyId, Vec<u8>>,
 	) -> Result<ImportResult, Self::Error> {
+		let log = find_frontier_log::<B>(&block.header)?;
+
 		self.inner.import_block(block, new_cache).map_err(Into::into)
 	}
 }
 
-fn find_ethereum_block<B: BlockT>(
+fn find_frontier_log<B: BlockT>(
 	header: &B::Header,
-) -> Result<ethereum::Block, Error> {
-	let mut ethereum_block: Option<_> = None;
+) -> Result<ConsensusLog, Error> {
+	let mut frontier_log: Option<_> = None;
 	for log in header.digest().logs() {
 		trace!(target: "frontier-consensus", "Checking log {:?}, looking for ethereum block.", log);
 		let log = log.try_to::<ConsensusLog>(OpaqueDigestItemId::Consensus(&FRONTIER_ENGINE_ID));
-		match (log, ethereum_block.is_some()) {
-			(Some(ConsensusLog::Block(_)), true) =>
-				return Err(Error::MultiplePostRuntimeBlocks),
-			(Some(ConsensusLog::Block(block)), false) => ethereum_block = Some(block),
+		match (log, frontier_log.is_some()) {
+			(Some(log), true) =>
+				return Err(Error::MultiplePostRuntimeLogs),
+			(Some(log), false) => frontier_log = Some(log),
 			_ => trace!(target: "frontier-consensus", "Ignoring digest not meant for us"),
 		}
 	}
 
-	Ok(ethereum_block.ok_or(Error::NoPostRuntimeBlock)?)
+	Ok(frontier_log.ok_or(Error::NoPostRuntimeLog)?)
 }

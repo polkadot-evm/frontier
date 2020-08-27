@@ -27,6 +27,7 @@ use frame_support::{
 	traits::Get, traits::FindAuthor
 };
 use sp_std::prelude::*;
+use sp_runtime::generic::DigestItem;
 use frame_system::ensure_none;
 use ethereum_types::{H160, H64, H256, U256, Bloom};
 use sp_runtime::{
@@ -35,6 +36,8 @@ use sp_runtime::{
 };
 use rlp;
 use sha3::{Digest, Keccak256};
+use codec::Encode;
+use frontier_consensus_primitives::{FRONTIER_ENGINE_ID, ConsensusLog};
 
 pub use frontier_rpc_primitives::TransactionStatus;
 pub use ethereum::{Transaction, Log, Block, Receipt, TransactionAction};
@@ -180,11 +183,14 @@ impl<T: Trait> Module<T> {
 			ommers,
 		};
 
+		let mut transaction_hashes = Vec::new();
+
 		for t in &transactions {
 			let transaction_hash = H256::from_slice(
 				Keccak256::digest(&rlp::encode(t)).as_slice()
 			);
 			if let Some(status) = TransactionStatuses::get(transaction_hash) {
+				transaction_hashes.push(transaction_hash);
 				Transactions::insert(
 					transaction_hash,
 					(hash, status.transaction_index)
@@ -192,8 +198,17 @@ impl<T: Trait> Module<T> {
 			}
 		}
 
-		BlocksAndReceipts::insert(hash, (block, receipts));
+		BlocksAndReceipts::insert(hash, (block.clone(), receipts));
 		BlockNumbers::<T>::insert(n, hash);
+
+		let digest = DigestItem::<T::Hash>::Consensus(
+			FRONTIER_ENGINE_ID,
+			ConsensusLog::EndBlock {
+				block_hash: hash,
+				transaction_hashes,
+			}.encode(),
+		);
+		frame_system::Module::<T>::deposit_log(digest.into());
 	}
 
 	/// Get the author using the FindAuthor trait.
