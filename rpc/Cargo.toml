@@ -11,6 +11,7 @@ jsonrpc-core = "14.0.3"
 jsonrpc-derive = "14.0.3"
 jsonrpc-core-client = "14.0.3"
 ethereum-types = "0.9.0"
+frontier-consensus = { path = "../consensus" }
 frontier-rpc-core = { path = "core" }
 frontier-rpc-primitives = { path = "primitives" }
 sp-runtime = { path = "../vendor/substrate/primitives/runtime" }

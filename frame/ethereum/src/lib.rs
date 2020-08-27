@@ -61,6 +61,10 @@ pub trait Trait: frame_system::Trait<Hash=H256> + pallet_balances::Trait + palle
 
 decl_storage! {
 	trait Store for Module<T: Trait> as Example {
+		/// The current Ethereum block.
+		CurrentBlock: Option<ethereum::Block>;
+		/// The current Ethereum receipts.
+		CurrentReceipts: Option<Vec<ethereum::Receipt>>;
 		/// Block hash to block body and block receipt map.
 		BlocksAndReceipts: map hasher(blake2_128_concat)
 			H256 => Option<(ethereum::Block, Vec<ethereum::Receipt>)>;
@@ -197,6 +201,9 @@ impl<T: Trait> Module<T> {
 				);
 			}
 		}
+
+		CurrentBlock::put(block.clone());
+		CurrentReceipts::put(receipts.clone());
 
 		BlocksAndReceipts::insert(hash, (block.clone(), receipts));
 		BlockNumbers::<T>::insert(n, hash);

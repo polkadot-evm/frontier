@@ -1365,6 +1365,7 @@ version = "0.1.0"
 dependencies = [
  "ethereum",
  "ethereum-types",
+ "frontier-consensus",
  "frontier-rpc-core",
  "frontier-rpc-primitives",
  "futures 0.3.5",
