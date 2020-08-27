@@ -528,16 +528,16 @@ impl_runtime_apis! {
 			}
 		}
 
-		fn current_transaction_status(index: u32) -> Option<TransactionStatus> {
-			Ethereum::current_transaction_status(index)
+		fn current_transaction_statuses() -> Option<Vec<TransactionStatus>> {
+			Ethereum::current_transaction_statuses()
 		}
 
 		fn current_block() -> Option<frame_ethereum::Block> {
 			Ethereum::current_block()
 		}
 
-		fn current_receipt(index: u32) -> Option<frame_ethereum::Receipt> {
-			Ethereum::current_receipt(index)
+		fn current_receipts() -> Option<Vec<frame_ethereum::Receipt>> {
+			Ethereum::current_receipts()
 		}
 	}
 

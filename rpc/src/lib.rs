@@ -354,19 +354,33 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 	}
 
 	fn block_by_number(&self, number: BlockNumber, full: bool) -> Result<Option<RichBlock>> {
-		unimplemented!()
+		let id = match self.native_block_id(Some(number))? {
+			Some(id) => id,
+			None => return Ok(None),
+		};
 
-		// let header = self.select_chain.best_chain()
-		// 	.map_err(|_| internal_err("fetch header failed"))?;
-		// if let Ok(Some(native_number)) = self.native_block_id(Some(number)) {
-		// 	if let Ok((Some(block), statuses)) = self.client.runtime_api().block_by_number(
-		// 		&BlockId::Hash(header.hash()),
-		// 		native_number
-		// 	) {
-		// 		return Ok(Some(rich_block_build(block, statuses, None, full)));
-		// 	}
-		// }
-		// Ok(None)
+		let block = self.client.runtime_api().current_block(&id)
+			.map_err(|_| internal_err("call runtime failed"))?;
+		let statuses = self.client.runtime_api().current_transaction_statuses(&id)
+			.map_err(|_| internal_err("call runtime failed"))?;
+
+		match (block, statuses) {
+			(Some(block), Some(statuses)) => {
+				let hash = H256::from_slice(
+					Keccak256::digest(&rlp::encode(&block.header)).as_slice()z
+				);
+
+				Ok(Some(rich_block_build(
+					block,
+					statuses.into_iter().map(|s| Some(s)).collect(),
+					Some(hash),
+					full,
+				)))
+			},
+			_ => {
+				Ok(None)
+			},
+		}
 	}
 
 	fn transaction_count(&self, address: H160, number: Option<BlockNumber>) -> Result<U256> {
