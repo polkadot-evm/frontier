@@ -416,20 +416,19 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 	}
 
 	fn block_transaction_count_by_number(&self, number: BlockNumber) -> Result<Option<U256>> {
-		unimplemented!()
+		let id = match self.native_block_id(Some(number))? {
+			Some(id) => id,
+			None => return Ok(None),
+		};
 
-		// let header = self.select_chain.best_chain()
-		// 	.map_err(|_| internal_err("fetch header failed"))?;
+		let block = self.client.runtime_api()
+			.current_block(&id)
+			.map_err(|_| internal_err("fetch runtime account basic failed"))?;
 
-		// let mut result = None;
-		// if let Ok(Some(native_number)) = self.native_block_id(Some(number)) {
-		// 	result = match self.client.runtime_api()
-		// 		.block_transaction_count_by_number(&BlockId::Hash(header.hash()), native_number) {
-		// 		Ok(result) => result,
-		// 		Err(_) => None
-		// 	};
-		// }
-		// Ok(result)
+		match block {
+			Some(block) => Ok(Some(U256::from(block.transactions.len()))),
+			None => Ok(None),
+		}
 	}
 
 	fn block_uncles_count_by_hash(&self, _: H256) -> Result<U256> {
