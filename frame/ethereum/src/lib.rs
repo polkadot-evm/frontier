@@ -220,8 +220,8 @@ impl<T: Trait> Module<T> {
 	}
 
 	/// Get the transaction status with given index.
-	pub fn current_transaction_status(index: u32) -> Option<TransactionStatus> {
-		CurrentTransactionStatuses::get().unwrap_or_default().get(index as usize).cloned()
+	pub fn current_transaction_statuses() -> Option<Vec<TransactionStatus>> {
+		CurrentTransactionStatuses::get()
 	}
 
 	/// Get block by number.
@@ -230,8 +230,8 @@ impl<T: Trait> Module<T> {
 	}
 
 	/// Get receipts by number.
-	pub fn current_receipt(index: u32) -> Option<ethereum::Receipt> {
-		CurrentReceipts::get().unwrap_or_default().get(index as usize).cloned()
+	pub fn current_receipts() -> Option<Vec<ethereum::Receipt>> {
+		CurrentReceipts::get()
 	}
 
 	/// Execute an Ethereum transaction, ignoring transaction signatures.

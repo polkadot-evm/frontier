@@ -78,9 +78,9 @@ sp_api::decl_runtime_apis! {
 		/// Return the current block.
 		fn current_block() -> Option<EthereumBlock>;
 		/// Return the current receipt.
-		fn current_receipt(index: u32) -> Option<ethereum::Receipt>;
+		fn current_receipts() -> Option<Vec<ethereum::Receipt>>;
 		/// Return the current transaction status.
-		fn current_transaction_status(index: u32) -> Option<TransactionStatus>;
+		fn current_transaction_statuses() -> Option<Vec<TransactionStatus>>;
 	}
 }
 

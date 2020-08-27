@@ -326,19 +326,31 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 	}
 
 	fn block_by_hash(&self, hash: H256, full: bool) -> Result<Option<RichBlock>> {
-		unimplemented!()
+		let id = match frontier_consensus::load_block_hash::<B, _>(self.client.as_ref(), hash)
+			.map_err(|_| internal_err("fetch aux store failed"))?
+		{
+			Some(hash) => BlockId::Hash(hash),
+			None => return Ok(None),
+		};
 
-		// let header = self.select_chain.best_chain()
-		// 	.map_err(|_| internal_err("fetch header failed"))?;
+		let block = self.client.runtime_api().current_block(&id)
+			.map_err(|_| internal_err("call runtime failed"))?;
+		let statuses = self.client.runtime_api().current_transaction_statuses(&id)
+			.map_err(|_| internal_err("call runtime failed"))?;
 
-		// if let Ok((Some(block), statuses)) = self.client.runtime_api().block_by_hash_with_statuses(
-		// 	&BlockId::Hash(header.hash()),
-		// 	hash
-		// ) {
-		// 	Ok(Some(rich_block_build(block, statuses, Some(hash), full)))
-		// } else {
-		// 	Ok(None)
-		// }
+		match (block, statuses) {
+			(Some(block), Some(statuses)) => {
+				Ok(Some(rich_block_build(
+					block,
+					statuses.into_iter().map(|s| Some(s)).collect(),
+					Some(hash),
+					full,
+				)))
+			},
+			_ => {
+				Ok(None)
+			},
+		}
 	}
 
 	fn block_by_number(&self, number: BlockNumber, full: bool) -> Result<Option<RichBlock>> {
