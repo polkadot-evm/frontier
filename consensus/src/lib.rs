@@ -18,6 +18,8 @@
 
 mod aux_schema;
 
+pub use crate::aux_schema::{load_block_hash, load_transaction_metadata};
+
 use std::sync::Arc;
 use std::collections::HashMap;
 use std::marker::PhantomData;
