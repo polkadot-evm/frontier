@@ -367,7 +367,7 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 		match (block, statuses) {
 			(Some(block), Some(statuses)) => {
 				let hash = H256::from_slice(
-					Keccak256::digest(&rlp::encode(&block.header)).as_slice()z
+					Keccak256::digest(&rlp::encode(&block.header)).as_slice(),
 				);
 
 				Ok(Some(rich_block_build(
@@ -384,18 +384,17 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 	}
 
 	fn transaction_count(&self, address: H160, number: Option<BlockNumber>) -> Result<U256> {
-		unimplemented!()
+		let id = match self.native_block_id(number)? {
+			Some(id) => id,
+			None => return Ok(U256::zero()),
+		};
 
-		// if let Ok(Some(native_number)) = self.native_block_id(number) {
-		// 	return Ok(
-		// 		self.client
-		// 			.runtime_api()
-		// 			.account_basic(&BlockId::Number(native_number.into()), address)
-		// 			.map_err(|_| internal_err("fetch runtime account basic failed"))?
-		// 			.nonce.into()
-		// 	);
-		// }
-		// Ok(U256::zero())
+		let nonce = self.client.runtime_api()
+			.account_basic(&id, address)
+			.map_err(|_| internal_err("fetch runtime account basic failed"))?
+			.nonce.into();
+
+		Ok(nonce)
 	}
 
 	fn block_transaction_count_by_hash(&self, hash: H256) -> Result<Option<U256>> {
