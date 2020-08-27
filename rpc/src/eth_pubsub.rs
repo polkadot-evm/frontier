@@ -251,8 +251,8 @@ impl<B: BlockT, P, C, BE> EthPubSubApiT for EthPubSubApi<B, P, C, BE>
 	fn unsubscribe(
 		&self,
 		_metadata: Option<Self::Metadata>,
-		_subscription_id: SubscriptionId
+		subscription_id: SubscriptionId
 	) -> JsonRpcResult<bool> {
-		Ok(true)
+		Ok(self.subscriptions.cancel(subscription_id))
 	}
 }
