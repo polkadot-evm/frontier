@@ -105,7 +105,7 @@ pub fn create_full<C, P, SC, BE>(
 	io.extend_with(
 		EthApiServer::to_delegate(EthApi::new(
 			client.clone(),
-			select_chain,
+			select_chain.clone(),
 			pool.clone(),
 			frontier_template_runtime::TransactionConverter,
 			is_authority,
@@ -115,6 +115,7 @@ pub fn create_full<C, P, SC, BE>(
 		EthPubSubApiServer::to_delegate(EthPubSubApi::new(
 			pool.clone(),
 			client.clone(),
+			select_chain.clone(),
 			SubscriptionManager::new(Arc::new(subscription_task_executor)),
 		))
 	);
