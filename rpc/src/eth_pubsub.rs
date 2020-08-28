@@ -214,9 +214,9 @@ fn logs_result(
 					transaction_log_index: Some(U256::from(transaction_log_index)),
 					removed: false,
 				});
-				log_index += 1;
-				transaction_log_index += 1;
 			}
+			log_index += 1;
+			transaction_log_index += 1;
 		}
 	}
 	logs
