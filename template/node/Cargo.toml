@@ -47,6 +47,7 @@ sp-runtime = { version = "2.0.0-dev", path = "../../vendor/substrate/primitives/
 sc-basic-authorship = { path = "../../vendor/substrate/client/basic-authorship" }
 sp-block-builder = { path = "../../vendor/substrate/primitives/block-builder" }
 
+frontier-consensus = { version = "0.1.0", path = "../../consensus" }
 frontier-template-runtime = { version = "2.0.0-dev", path = "../runtime" }
 frontier-rpc = { version = "0.1.0", path = "../../rpc" }
 frontier-rpc-primitives = { version = "0.1.0", path = "../../rpc/primitives" }
