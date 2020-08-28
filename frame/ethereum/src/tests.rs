@@ -69,8 +69,8 @@ fn transaction_should_be_added_to_pending() {
 			alice.address,
 			transaction.clone(),
 		);
-		assert_eq!(PendingTransactionsAndReceipts::get().len(), 1);
-		assert_eq!(PendingTransactionsAndReceipts::get()[0].0.input, transaction.input);
+		assert_eq!(Pending::get().len(), 1);
+		assert_eq!(Pending::get()[0].0.input, transaction.input);
 	});
 }
 
