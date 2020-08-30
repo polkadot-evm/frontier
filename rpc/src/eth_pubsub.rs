@@ -302,6 +302,21 @@ fn add_log(
 	true
 }
 
+macro_rules! stream_build {
+	($context:expr => $module:expr, $storage:expr) => {{
+		let key: StorageKey = StorageKey(
+			storage_prefix_build($module, $storage)
+		);
+		match $context.client.storage_changes_notification_stream(
+			Some(&[key]),
+			None
+		) {
+			Ok(stream) => Some(stream),
+			Err(_err) => None,
+		}
+	}};
+}
+
 impl<B: BlockT, P, C, BE, SC> EthPubSubApiT for EthPubSubApi<B, P, C, BE, SC>
 	where
 		B: BlockT<Hash=H256> + Send + Sync + 'static,
@@ -325,109 +340,79 @@ impl<B: BlockT, P, C, BE, SC> EthPubSubApiT for EthPubSubApi<B, P, C, BE, SC>
 		let filtered_params = self.filter(params);
 		match kind {
 			Kind::Logs => {
-				let key: StorageKey = StorageKey(
-					storage_prefix_build(b"Ethereum", b"LatestBlock")
-				);
-				let stream = match self.client.storage_changes_notification_stream(
-					Some(&[key]),
-					None
-				) {
-					Ok(stream) => stream,
-					Err(_err) => {
-						unimplemented!(); // TODO
-					},
-				};
-				self.subscriptions.add(subscriber, |sink| {
-					let stream = stream
-						.flat_map(move |(_block, changes)| {
-							let data = changes.iter().last().unwrap().2.unwrap();
-							let (_, block, receipts): (
-								H256, ethereum::Block, Vec<ethereum::Receipt>
-							) = Decode::decode(&mut &data.0[..]).unwrap();
-							futures::stream::iter(logs_result(block, receipts, &filtered_params))
-						})
-						.map(|x| {
-							return Ok::<Result<PubSubResult, jsonrpc_core::types::error::Error>, ()>(Ok(
-								PubSubResult::Log(Box::new(x))
-							));
-						})
-						.compat();
+				if let Some(stream) = stream_build!(self => b"Ethereum", b"LatestBlock") {
+					self.subscriptions.add(subscriber, |sink| {
+						let stream = stream
+							.flat_map(move |(_block, changes)| {
+								let data = changes.iter().last().unwrap().2.unwrap();
+								let (_, block, receipts): (
+									H256, ethereum::Block, Vec<ethereum::Receipt>
+								) = Decode::decode(&mut &data.0[..]).unwrap();
+								futures::stream::iter(logs_result(block, receipts, &filtered_params))
+							})
+							.map(|x| {
+								return Ok::<Result<PubSubResult, jsonrpc_core::types::error::Error>, ()>(Ok(
+									PubSubResult::Log(Box::new(x))
+								));
+							})
+							.compat();
 
-					sink
-						.sink_map_err(|e| warn!("Error sending notifications: {:?}", e))
-						.send_all(stream)
-						.map(|_| ())
-				});
+						sink
+							.sink_map_err(|e| warn!("Error sending notifications: {:?}", e))
+							.send_all(stream)
+							.map(|_| ())
+					});
+				}
 			},
 			Kind::NewHeads => {
-				let key: StorageKey = StorageKey(
-					storage_prefix_build(b"Ethereum", b"LatestBlock")
-				);
-				let stream = match self.client.storage_changes_notification_stream(
-					Some(&[key]),
-					None
-				) {
-					Ok(stream) => stream,
-					Err(_err) => {
-						unimplemented!(); // TODO
-					},
-				};
-				self.subscriptions.add(subscriber, |sink| {
-					let stream = stream
-						.map(|(_block, changes)| {
-							let data = changes.iter().last().unwrap().2.unwrap();
-							let (hash, block, _): (
-								H256, ethereum::Block, Vec<ethereum::Receipt>
-							) = Decode::decode(&mut &data.0[..]).unwrap();
-							return Ok::<_, ()>(Ok(
-								new_heads_result(hash, block)
-							));
-						})
-						.compat();
-					sink
-						.sink_map_err(|e| warn!("Error sending notifications: {:?}", e))
-						.send_all(stream)
-						.map(|_| ())
-				});
+				if let Some(stream) = stream_build!(self => b"Ethereum", b"LatestBlock") {
+					self.subscriptions.add(subscriber, |sink| {
+						let stream = stream
+							.map(|(_block, changes)| {
+								let data = changes.iter().last().unwrap().2.unwrap();
+								let (hash, block, _): (
+									H256, ethereum::Block, Vec<ethereum::Receipt>
+								) = Decode::decode(&mut &data.0[..]).unwrap();
+								return Ok::<_, ()>(Ok(
+									new_heads_result(hash, block)
+								));
+							})
+							.compat();
+						sink
+							.sink_map_err(|e| warn!("Error sending notifications: {:?}", e))
+							.send_all(stream)
+							.map(|_| ())
+					});
+				}
 			},
 			Kind::NewPendingTransactions => {
-				let key: StorageKey = StorageKey(
-					storage_prefix_build(b"Ethereum", b"PendingTransactionsAndReceipts")
-				);
-				let stream = match self.client.storage_changes_notification_stream(
-					Some(&[key]),
-					None
-				) {
-					Ok(stream) => stream,
-					Err(_err) => {
-						unimplemented!(); // TODO
-					},
-				};
-				self.subscriptions.add(subscriber, |sink| {
-					let stream = stream
-						.flat_map(|(_block, changes)| {
-							let data = changes.iter().last().unwrap().2.unwrap();
-							let transactions: Vec<(
-								ethereum::Transaction, ethereum::Receipt
-							)> = Decode::decode(&mut &data.0[..]).unwrap();
-							futures::stream::iter(transactions)
-						})
-						.map(|(transaction, _)| {
-							return Ok::<Result<PubSubResult, jsonrpc_core::types::error::Error>, ()>(Ok(
-								PubSubResult::TransactionHash(H256::from_slice(
-									Keccak256::digest(
-										&rlp::encode(&transaction)
-									).as_slice()
-								))
-							));
-						})
-						.compat();
+				if let Some(stream) = stream_build!(self => b"Ethereum", b"PendingTransactionsAndReceipts") {
+					self.subscriptions.add(subscriber, |sink| {
+						let stream = stream
+							.flat_map(|(_block, changes)| {
+								let data = changes.iter().last().unwrap().2.unwrap();
+								let transactions: Vec<(
+									ethereum::Transaction, ethereum::Receipt
+								)> = Decode::decode(&mut &data.0[..]).unwrap();
+								futures::stream::iter(transactions)
+							})
+							.map(|(transaction, _)| {
+								return Ok::<Result<PubSubResult, jsonrpc_core::types::error::Error>, ()>(Ok(
+									PubSubResult::TransactionHash(H256::from_slice(
+										Keccak256::digest(
+											&rlp::encode(&transaction)
+										).as_slice()
+									))
+								));
+							})
+							.compat();
 
-					sink
-						.sink_map_err(|e| warn!("Error sending notifications: {:?}", e))
-						.send_all(stream)
-						.map(|_| ())
-				});
+						sink
+							.sink_map_err(|e| warn!("Error sending notifications: {:?}", e))
+							.send_all(stream)
+							.map(|_| ())
+					});
+				}
 			},
 			Kind::Syncing => {
 				unimplemented!(); // TODO
