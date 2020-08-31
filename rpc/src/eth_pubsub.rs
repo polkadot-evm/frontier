@@ -10,7 +10,7 @@ use sp_blockchain::HeaderBackend;
 use sp_storage::StorageKey;
 use sp_io::hashing::twox_128;
 use sc_client_api::{
-	backend::{StorageProvider, Backend, StateBackend},
+	backend::{StorageProvider, Backend, StateBackend, AuxStore},
 	client::BlockchainEvents
 };
 use sc_rpc::Metadata;
@@ -31,7 +31,7 @@ pub use frontier_rpc_core::EthPubSubApiServer;
 use futures::{StreamExt as _, TryStreamExt as _};
 
 use jsonrpc_core::{Result as JsonRpcResult, futures::{Future, Sink}, ErrorCode, Error};
-use frontier_rpc_primitives::EthereumRuntimeApi;
+use frontier_rpc_primitives::{EthereumRuntimeRPCApi, TransactionStatus};
 
 fn internal_err(message: &str) -> Error {
 	Error {
@@ -64,8 +64,8 @@ impl<B: BlockT, P, C, BE, SC> EthPubSubApi<B, P, C, BE, SC> where
 	B: BlockT<Hash=H256> + Send + Sync + 'static,
 	P: TransactionPool<Block=B> + Send + Sync + 'static,
 	C: ProvideRuntimeApi<B> + StorageProvider<B,BE> +
-		BlockchainEvents<B> + HeaderBackend<B>,
-	C::Api: EthereumRuntimeApi<B>,
+		BlockchainEvents<B> + HeaderBackend<B> + AuxStore,
+	C::Api: EthereumRuntimeRPCApi<B>,
 	C: Send + Sync + 'static,
 	BE: Backend<B> + 'static,
 	BE::State: StateBackend<BlakeTwo256>,
@@ -82,10 +82,13 @@ impl<B: BlockT, P, C, BE, SC> EthPubSubApi<B, P, C, BE, SC> where
 		if let Some(number) = number {
 			match number {
 				BlockNumber::Hash { hash, .. } => {
-					if let Ok(Some(block)) = self.client.runtime_api().block_by_hash(
-						&BlockId::Hash(header.hash()),
-						hash
-					) {
+					let id = match frontier_consensus::load_block_hash::<B, _>(self.client.as_ref(), hash)
+						.map_err(|_| internal_err("fetch aux store failed"))?
+					{
+						Some(hash) => BlockId::Hash(hash),
+						None => return Ok(None),
+					};
+					if let Ok(Some(block)) = self.client.runtime_api().current_block(&id) {
 						native_number = Some(block.header.number.as_u32());
 					}
 				},
@@ -119,7 +122,7 @@ impl<B: BlockT, P, C, BE, SC> EthPubSubApi<B, P, C, BE, SC> where
 		let mut to_block: Option<u32> = None;
 		let mut block_hash: Option<H256> = None;
 		let mut address: Option<FilterAddress> = None;
-		let mut topics: Option<Topic> = None;		
+		let mut topics: Option<Topic> = None;
 		if let Some(Params::Logs(f)) = params {
 			from_block = self.native_block_number(f.from_block).unwrap_or(None);
 			to_block = self.native_block_number(f.to_block).unwrap_or(None);
@@ -150,13 +153,14 @@ fn storage_prefix_build(module: &[u8], storage: &[u8]) -> Vec<u8> {
 }
 
 fn new_heads_result(
-	hash: H256,
 	block: ethereum::Block
 ) -> PubSubResult {
 	PubSubResult::Header(Box::new(
 		Rich {
 			inner: Header {
-				hash: Some(hash),
+				hash: Some(H256::from_slice(Keccak256::digest(
+					&rlp::encode(&block.header)
+				).as_slice())),
 				parent_hash: block.header.parent_hash,
 				uncles_hash: block.header.ommers_hash,
 				author: block.header.beneficiary,
@@ -295,7 +299,7 @@ fn add_log(
 	block: &ethereum::Block,
 	params: &FilteredParams
 ) -> bool {
-	if !filter_block_range(block, params) || !filter_block_hash(block_hash, params) || 
+	if !filter_block_range(block, params) || !filter_block_hash(block_hash, params) ||
 		!filter_address(log, params) || !filter_topics(log, params) {
 		return false;
 	}
@@ -322,32 +326,35 @@ impl<B: BlockT, P, C, BE, SC> EthPubSubApiT for EthPubSubApi<B, P, C, BE, SC>
 		B: BlockT<Hash=H256> + Send + Sync + 'static,
 		P: TransactionPool<Block=B> + Send + Sync + 'static,
 		C: ProvideRuntimeApi<B> + StorageProvider<B,BE> +
-			BlockchainEvents<B> + HeaderBackend<B>,
+			BlockchainEvents<B> + HeaderBackend<B> + AuxStore,
 		C: Send + Sync + 'static,
-		C::Api: EthereumRuntimeApi<B>,
+		C::Api: EthereumRuntimeRPCApi<B>,
 		BE: Backend<B> + 'static,
 		BE::State: StateBackend<BlakeTwo256>,
 		SC: SelectChain<B> + Clone + 'static,
 {
 	type Metadata = Metadata;
-	fn subscribe<'a>(
-		&'a self,
+	fn subscribe(
+		&self,
 		_metadata: Self::Metadata,
 		subscriber: Subscriber<PubSubResult>,
 		kind: Kind,
 		params: Option<Params>,
 	) {
 		let filtered_params = self.filter(params);
+		let client = self.client.clone();
 		match kind {
 			Kind::Logs => {
-				if let Some(stream) = stream_build!(self => b"Ethereum", b"LatestBlock") {
+				if let Some(stream) = stream_build!(self => b"Ethereum", b"CurrentReceipts") {
 					self.subscriptions.add(subscriber, |sink| {
 						let stream = stream
-							.flat_map(move |(_block, changes)| {
+							.flat_map(move |(block_hash, changes)| {
+								let id = BlockId::Hash(block_hash);
 								let data = changes.iter().last().unwrap().2.unwrap();
-								let (_, block, receipts): (
-									H256, ethereum::Block, Vec<ethereum::Receipt>
-								) = Decode::decode(&mut &data.0[..]).unwrap();
+								let receipts: Vec<ethereum::Receipt> =
+									Decode::decode(&mut &data.0[..]).unwrap();
+								let block: ethereum::Block =
+									client.runtime_api().current_block(&id).unwrap().unwrap();
 								futures::stream::iter(logs_result(block, receipts, &filtered_params))
 							})
 							.map(|x| {
@@ -365,16 +372,15 @@ impl<B: BlockT, P, C, BE, SC> EthPubSubApiT for EthPubSubApi<B, P, C, BE, SC>
 				}
 			},
 			Kind::NewHeads => {
-				if let Some(stream) = stream_build!(self => b"Ethereum", b"LatestBlock") {
+				if let Some(stream) = stream_build!(self => b"Ethereum", b"CurrentBlock") {
 					self.subscriptions.add(subscriber, |sink| {
 						let stream = stream
 							.map(|(_block, changes)| {
 								let data = changes.iter().last().unwrap().2.unwrap();
-								let (hash, block, _): (
-									H256, ethereum::Block, Vec<ethereum::Receipt>
-								) = Decode::decode(&mut &data.0[..]).unwrap();
+								let block: ethereum::Block =
+									Decode::decode(&mut &data.0[..]).unwrap();
 								return Ok::<_, ()>(Ok(
-									new_heads_result(hash, block)
+									new_heads_result(block)
 								));
 							})
 							.compat();
@@ -386,17 +392,19 @@ impl<B: BlockT, P, C, BE, SC> EthPubSubApiT for EthPubSubApi<B, P, C, BE, SC>
 				}
 			},
 			Kind::NewPendingTransactions => {
-				if let Some(stream) = stream_build!(self => b"Ethereum", b"PendingTransactionsAndReceipts") {
+				if let Some(stream) = stream_build!(self => b"Ethereum", b"Pending") {
 					self.subscriptions.add(subscriber, |sink| {
 						let stream = stream
 							.flat_map(|(_block, changes)| {
 								let data = changes.iter().last().unwrap().2.unwrap();
-								let transactions: Vec<(
-									ethereum::Transaction, ethereum::Receipt
+								let storage: Vec<(
+									ethereum::Transaction, TransactionStatus, ethereum::Receipt
 								)> = Decode::decode(&mut &data.0[..]).unwrap();
+								let transactions: Vec<ethereum::Transaction> =
+									storage.iter().map(|x| x.0.clone()).collect();
 								futures::stream::iter(transactions)
 							})
-							.map(|(transaction, _)| {
+							.map(|transaction| {
 								return Ok::<Result<PubSubResult, jsonrpc_core::types::error::Error>, ()>(Ok(
 									PubSubResult::TransactionHash(H256::from_slice(
 										Keccak256::digest(

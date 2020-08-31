@@ -60,7 +60,7 @@ pub trait Trait: frame_system::Trait<Hash=H256> + pallet_balances::Trait + palle
 }
 
 decl_storage! {
-	trait Store for Module<T: Trait> as Example {
+	trait Store for Module<T: Trait> as Ethereum {
 		/// Current building block's transactions and receipts.
 		Pending: Vec<(ethereum::Transaction, TransactionStatus, ethereum::Receipt)>;
 

@@ -26,8 +26,8 @@ use sp_transaction_pool::TransactionPool;
 use sp_blockchain::{Error as BlockChainError, HeaderMetadata, HeaderBackend};
 use sp_consensus::SelectChain;
 use sc_rpc_api::DenyUnsafe;
-use sc_client_api::backend::{
-	StorageProvider, Backend, StateBackend, AuxStore,
+use sc_client_api::{
+	backend::{StorageProvider, Backend, StateBackend, AuxStore},
 	client::BlockchainEvents
 };
 use sc_rpc::SubscriptionTaskExecutor;
