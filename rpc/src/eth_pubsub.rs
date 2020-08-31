@@ -82,8 +82,9 @@ impl<B: BlockT, P, C, BE, SC> EthPubSubApi<B, P, C, BE, SC> where
 		if let Some(number) = number {
 			match number {
 				BlockNumber::Hash { hash, .. } => {
-					let id = match frontier_consensus::load_block_hash::<B, _>(self.client.as_ref(), hash)
-						.map_err(|_| internal_err("fetch aux store failed"))?
+					let id = match frontier_consensus::load_block_hash::<B, _>(
+						self.client.as_ref(), hash
+					).map_err(|_| internal_err("fetch aux store failed"))?
 					{
 						Some(hash) => BlockId::Hash(hash),
 						None => return Ok(None),
@@ -345,78 +346,101 @@ impl<B: BlockT, P, C, BE, SC> EthPubSubApiT for EthPubSubApi<B, P, C, BE, SC>
 		let client = self.client.clone();
 		match kind {
 			Kind::Logs => {
-				if let Some(stream) = stream_build!(self => b"Ethereum", b"CurrentReceipts") {
+				if let Some(stream) = stream_build!(
+					self => b"Ethereum", b"CurrentReceipts"
+				) {
 					self.subscriptions.add(subscriber, |sink| {
 						let stream = stream
-							.flat_map(move |(block_hash, changes)| {
-								let id = BlockId::Hash(block_hash);
-								let data = changes.iter().last().unwrap().2.unwrap();
-								let receipts: Vec<ethereum::Receipt> =
-									Decode::decode(&mut &data.0[..]).unwrap();
-								let block: ethereum::Block =
-									client.runtime_api().current_block(&id).unwrap().unwrap();
-								futures::stream::iter(logs_result(block, receipts, &filtered_params))
-							})
-							.map(|x| {
-								return Ok::<Result<PubSubResult, jsonrpc_core::types::error::Error>, ()>(Ok(
-									PubSubResult::Log(Box::new(x))
-								));
-							})
-							.compat();
+						.flat_map(move |(block_hash, changes)| {
+							let id = BlockId::Hash(block_hash);
+							let data = changes.iter().last().unwrap().2.unwrap();
+							let receipts: Vec<ethereum::Receipt> =
+								Decode::decode(&mut &data.0[..]).unwrap();
+							let block: ethereum::Block = client.runtime_api()
+								.current_block(&id).unwrap().unwrap();
+							futures::stream::iter(
+								logs_result(block, receipts, &filtered_params)
+							)
+						})
+						.map(|x| {
+							return Ok::<Result<
+								PubSubResult,
+								jsonrpc_core::types::error::Error
+							>, ()>(Ok(
+								PubSubResult::Log(Box::new(x))
+							));
+						})
+						.compat();
 
 						sink
-							.sink_map_err(|e| warn!("Error sending notifications: {:?}", e))
+							.sink_map_err(|e| warn!(
+								"Error sending notifications: {:?}", e
+							))
 							.send_all(stream)
 							.map(|_| ())
 					});
 				}
 			},
 			Kind::NewHeads => {
-				if let Some(stream) = stream_build!(self => b"Ethereum", b"CurrentBlock") {
+				if let Some(stream) = stream_build!(
+					self => b"Ethereum", b"CurrentBlock"
+				) {
 					self.subscriptions.add(subscriber, |sink| {
 						let stream = stream
-							.map(|(_block, changes)| {
-								let data = changes.iter().last().unwrap().2.unwrap();
-								let block: ethereum::Block =
-									Decode::decode(&mut &data.0[..]).unwrap();
-								return Ok::<_, ()>(Ok(
-									new_heads_result(block)
-								));
-							})
-							.compat();
+						.map(|(_block, changes)| {
+							let data = changes.iter().last().unwrap().2.unwrap();
+							let block: ethereum::Block =
+								Decode::decode(&mut &data.0[..]).unwrap();
+							return Ok::<_, ()>(Ok(
+								new_heads_result(block)
+							));
+						})
+						.compat();
+
 						sink
-							.sink_map_err(|e| warn!("Error sending notifications: {:?}", e))
+							.sink_map_err(|e| warn!(
+								"Error sending notifications: {:?}", e
+							))
 							.send_all(stream)
 							.map(|_| ())
 					});
 				}
 			},
 			Kind::NewPendingTransactions => {
-				if let Some(stream) = stream_build!(self => b"Ethereum", b"Pending") {
+				if let Some(stream) = stream_build!(
+					self => b"Ethereum", b"Pending"
+				) {
 					self.subscriptions.add(subscriber, |sink| {
 						let stream = stream
-							.flat_map(|(_block, changes)| {
-								let data = changes.iter().last().unwrap().2.unwrap();
-								let storage: Vec<(
-									ethereum::Transaction, TransactionStatus, ethereum::Receipt
-								)> = Decode::decode(&mut &data.0[..]).unwrap();
-								let transactions: Vec<ethereum::Transaction> =
-									storage.iter().map(|x| x.0.clone()).collect();
-								futures::stream::iter(transactions)
-							})
-							.map(|transaction| {
-								return Ok::<Result<PubSubResult, jsonrpc_core::types::error::Error>, ()>(Ok(
-									PubSubResult::TransactionHash(H256::from_slice(
-										Keccak256::digest(
-											&rlp::encode(&transaction)
-										).as_slice()
-									))
-								));
-							})
-							.compat();
+						.flat_map(|(_block, changes)| {
+							let data = changes.iter().last().unwrap().2.unwrap();
+							let storage: Vec<(
+								ethereum::Transaction,
+								TransactionStatus,
+								ethereum::Receipt
+							)> = Decode::decode(&mut &data.0[..]).unwrap();
+							let transactions: Vec<ethereum::Transaction> =
+								storage.iter().map(|x| x.0.clone()).collect();
+							futures::stream::iter(transactions)
+						})
+						.map(|transaction| {
+							return Ok::<Result<
+								PubSubResult,
+								jsonrpc_core::types::error::Error
+							>, ()>(Ok(
+								PubSubResult::TransactionHash(H256::from_slice(
+									Keccak256::digest(
+										&rlp::encode(&transaction)
+									).as_slice()
+								))
+							));
+						})
+						.compat();
 
 						sink
-							.sink_map_err(|e| warn!("Error sending notifications: {:?}", e))
+							.sink_map_err(|e| warn!(
+								"Error sending notifications: {:?}", e
+							))
 							.send_all(stream)
 							.map(|_| ())
 					});
