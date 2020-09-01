@@ -31,7 +31,7 @@ pub use rpc_impl_EthApi::gen_server::EthApi as EthApiServer;
 pub trait EthApi {
 	/// Returns protocol version encoded as a string (quotes are necessary).
 	#[rpc(name = "eth_protocolVersion")]
-	fn protocol_version(&self) -> Result<String>;
+	fn protocol_version(&self) -> Result<u64>;
 
 	/// Returns an object with data about the sync status or false. (wtf?)
 	#[rpc(name = "eth_syncing")]
@@ -70,10 +70,6 @@ pub trait EthApi {
 	/// Returns balance of the given account.
 	#[rpc(name = "eth_getBalance")]
 	fn balance(&self, _: H160, _: Option<BlockNumber>) -> Result<U256>;
-
-	/// Returns the account- and storage-values of the specified account including the Merkle-proof
-	#[rpc(name = "eth_getProof")]
-	fn proof(&self, _: H160, _: Vec<H256>, _: Option<BlockNumber>) -> BoxFuture<EthAccount>;
 
 	/// Returns content of the storage at given address.
 	#[rpc(name = "eth_getStorageAt")]
@@ -114,10 +110,6 @@ pub trait EthApi {
 	/// Sends signed transaction, returning its hash.
 	#[rpc(name = "eth_sendRawTransaction")]
 	fn send_raw_transaction(&self, _: Bytes) -> BoxFuture<H256>;
-
-	/// @alias of `eth_sendRawTransaction`.
-	#[rpc(name = "eth_submitTransaction")]
-	fn submit_transaction(&self, _: Bytes) -> Result<H256>;
 
 	/// Call contract, returning the output data.
 	#[rpc(name = "eth_call")]
@@ -163,26 +155,6 @@ pub trait EthApi {
 		_: Index,
 	) -> Result<Option<RichBlock>>;
 
-	/// Returns available compilers.
-	/// @deprecated
-	#[rpc(name = "eth_getCompilers")]
-	fn compilers(&self) -> Result<Vec<String>>;
-
-	/// Compiles lll code.
-	/// @deprecated
-	#[rpc(name = "eth_compileLLL")]
-	fn compile_lll(&self, _: String) -> Result<Bytes>;
-
-	/// Compiles solidity.
-	/// @deprecated
-	#[rpc(name = "eth_compileSolidity")]
-	fn compile_solidity(&self, _: String) -> Result<Bytes>;
-
-	/// Compiles serpent.
-	/// @deprecated
-	#[rpc(name = "eth_compileSerpent")]
-	fn compile_serpent(&self, _: String) -> Result<Bytes>;
-
 	/// Returns logs matching given filter object.
 	#[rpc(name = "eth_getLogs")]
 	fn logs(&self, _: Filter) -> Result<Vec<Log>>;
@@ -198,16 +170,9 @@ pub trait EthApi {
 	/// Used for submitting mining hashrate.
 	#[rpc(name = "eth_submitHashrate")]
 	fn submit_hashrate(&self, _: U256, _: H256) -> Result<bool>;
-
-	// TODO: Once development is more stable, remove the net_ functions which are already defined net.rs
-	#[rpc(name = "net_listening")]
-	fn is_listening(&self) -> Result<bool>;
-	#[rpc(name = "net_version")]
-	fn version(&self) -> Result<String>;
 }
 
 /// Eth filters rpc api (polling).
-// TODO: do filters api properly
 #[rpc(server)]
 pub trait EthFilterApi {
 	/// Returns id of new filter.
