@@ -84,7 +84,7 @@ pub fn create_full<C, P, SC, BE>(
 {
 	use substrate_frame_rpc_system::{FullSystem, SystemApi};
 	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApi};
-	use frontier_rpc::{EthApi, EthApiServer, EthPubSubApi, EthPubSubApiServer};
+	use frontier_rpc::{EthApi, EthApiServer, NetApi, NetApiServer, EthPubSubApi, EthPubSubApiServer};
 
 	let mut io = jsonrpc_core::IoHandler::default();
 	let FullDeps {
@@ -110,6 +110,9 @@ pub fn create_full<C, P, SC, BE>(
 			frontier_template_runtime::TransactionConverter,
 			is_authority,
 		))
+	);
+	io.extend_with(
+		NetApiServer::to_delegate(NetApi)
 	);
 	io.extend_with(
 		EthPubSubApiServer::to_delegate(EthPubSubApi::new(

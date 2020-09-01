@@ -28,14 +28,14 @@ use sp_transaction_pool::TransactionPool;
 use sc_client_api::backend::{StorageProvider, Backend, StateBackend, AuxStore};
 use sha3::{Keccak256, Digest};
 use sp_runtime::traits::BlakeTwo256;
-use frontier_rpc_core::EthApi as EthApiT;
+use frontier_rpc_core::{EthApi as EthApiT, NetApi as NetApiT};
 use frontier_rpc_core::types::{
 	BlockNumber, Bytes, CallRequest, EthAccount, Filter, Index, Log, Receipt, RichBlock,
 	SyncStatus, SyncInfo, Transaction, Work, Rich, Block, BlockTransactions, VariadicValue
 };
 use frontier_rpc_primitives::{EthereumRuntimeRPCApi, ConvertTransaction, TransactionStatus};
 
-pub use frontier_rpc_core::EthApiServer;
+pub use frontier_rpc_core::{EthApiServer, NetApiServer};
 
 fn internal_err(message: &str) -> Error {
 	Error {
@@ -308,10 +308,6 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 		Ok(U256::zero())
 	}
 
-	fn proof(&self, _: H160, _: Vec<H256>, _: Option<BlockNumber>) -> BoxFuture<EthAccount> {
-		unimplemented!("proof");
-	}
-
 	fn storage_at(&self, address: H160, index: U256, number: Option<BlockNumber>) -> Result<H256> {
 		if let Ok(Some(id)) = self.native_block_id(number) {
 			return Ok(
@@ -480,10 +476,6 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 				.map(move |_| transaction_hash)
 				.map_err(|_| internal_err("submit transaction to pool failed"))
 		)
-	}
-
-	fn submit_transaction(&self, _: Bytes) -> Result<H256> {
-		unimplemented!("submit_transaction");
 	}
 
 	fn call(&self, request: CallRequest, _: Option<BlockNumber>) -> Result<Bytes> {
@@ -735,22 +727,6 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 		Ok(None)
 	}
 
-	fn compilers(&self) -> Result<Vec<String>> {
-		Err(not_supported_err("Method eth_getCompilers not supported."))
-	}
-
-	fn compile_lll(&self, _: String) -> Result<Bytes> {
-		Err(not_supported_err("Method eth_compileLLL not supported."))
-	}
-
-	fn compile_solidity(&self, _: String) -> Result<Bytes> {
-		Err(not_supported_err("Method eth_compileSolidity not supported."))
-	}
-
-	fn compile_serpent(&self, _: String) -> Result<Bytes> {
-		Err(not_supported_err("Method eth_compileSerpent not supported."))
-	}
-
 	fn logs(&self, filter: Filter) -> Result<Vec<Log>> {
 		let mut blocks_and_receipts = Vec::new();
 		let mut ret = Vec::new();
@@ -883,12 +859,20 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 	fn submit_hashrate(&self, _: U256, _: H256) -> Result<bool> {
 		Ok(false)
 	}
+}
 
+pub struct NetApi;
+
+impl NetApiT for NetApi {
 	fn is_listening(&self) -> Result<bool> {
 		Ok(true)
 	}
 
+	fn peer_count(&self) -> Result<String> {
+		Ok("0".to_string())
+	}
+
 	fn version(&self) -> Result<String> {
-		Ok(self.chain_id().unwrap().unwrap().to_string())
+		Ok("Frontier/v0.1.0".to_string())
 	}
 }

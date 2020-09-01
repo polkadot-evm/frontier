@@ -17,5 +17,5 @@
 mod eth;
 mod eth_pubsub;
 
-pub use eth::{EthApi, EthApiServer};
+pub use eth::{EthApi, EthApiServer, NetApi, NetApiServer};
 pub use eth_pubsub::{EthPubSubApi, EthPubSubApiServer};

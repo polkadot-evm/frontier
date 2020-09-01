@@ -18,6 +18,8 @@
 use jsonrpc_core::Result;
 use jsonrpc_derive::rpc;
 
+pub use rpc_impl_NetApi::gen_server::NetApi as NetApiServer;
+
 /// Net rpc interface.
 #[rpc(server)]
 pub trait NetApi {
