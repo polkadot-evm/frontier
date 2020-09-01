@@ -118,26 +118,17 @@ impl<B: BlockT, P, C, BE, SC> EthPubSubApi<B, P, C, BE, SC> where
 		Ok(native_number)
 	}
 
-	fn filter(&self, params: Option<Params>) -> FilteredParams {
-		let mut from_block: Option<u32> = None;
-		let mut to_block: Option<u32> = None;
-		let mut block_hash: Option<H256> = None;
-		let mut address: Option<FilterAddress> = None;
-		let mut topics: Option<Topic> = None;
+	fn filter_block(
+		&self,
+		params: Option<Params>
+	) -> (Option<u32>, Option<u32>) {
 		if let Some(Params::Logs(f)) = params {
-			from_block = self.native_block_number(f.from_block).unwrap_or(None);
-			to_block = self.native_block_number(f.to_block).unwrap_or(None);
-			block_hash = f.block_hash;
-			address = f.address;
-			topics = f.topics;
+			return (
+				self.native_block_number(f.from_block).unwrap_or(None),
+				self.native_block_number(f.to_block).unwrap_or(None)
+			);
 		}
-		FilteredParams {
-			from_block,
-			to_block,
-			block_hash,
-			address,
-			topics
-		}
+		(None, None)
 	}
 }
 
@@ -149,162 +140,208 @@ struct FilteredParams {
 	topics: Option<Topic>
 }
 
+impl FilteredParams {
+	pub fn new(
+		params: Option<Params>,
+		block_range: (Option<u32>, Option<u32>)
+	) -> Self {
+		if let Some(Params::Logs(d)) = params {
+			return FilteredParams {
+				from_block: block_range.0,
+				to_block: block_range.1,
+				block_hash: d.block_hash,
+				address: d.address,
+				topics: d.topics
+			};
+		}
+		FilteredParams {
+			from_block: None,
+			to_block: None,
+			block_hash: None,
+			address: None,
+			topics: None
+		}
+	}
+
+	pub fn filter_block_range(
+		&self,
+		block: &ethereum::Block
+	) -> bool {
+		let mut out = true;
+		let number: u32 = UniqueSaturatedInto::<u32>::unique_saturated_into(
+			block.header.number
+		);
+		if let Some(from) = self.from_block {
+			if from > number {
+				out = false;
+			}
+		}
+		if let Some(to) = self.to_block {
+			if to < number {
+				out = false;
+			}
+		}
+		out
+	}
+
+	fn filter_block_hash(
+		&self,
+		block_hash: H256
+	) -> bool {
+		if let Some(h) = self.block_hash {
+			if h != block_hash { return false; }
+		}
+		true
+	}
+
+	fn filter_address(
+		&self,
+		log: &ethereum::Log
+	) -> bool {
+		if let Some(input_address) = &self.address {
+			match input_address {
+				VariadicValue::Single(x) => {
+					if log.address != *x { return false; }
+				},
+				VariadicValue::Multiple(x) => {
+					if !x.contains(&log.address) { return false; }
+				},
+				_ => { return true; }
+			}
+		}
+		true
+	}
+
+	fn filter_topics(
+		&self,
+		log: &ethereum::Log
+	) -> bool {
+		if let Some(input_topics) = &self.topics {
+			match input_topics {
+				VariadicValue::Single(x) => {
+					if !log.topics.starts_with(&vec![*x]) {
+						return false;
+					}
+				},
+				VariadicValue::Multiple(x) => {
+					if !log.topics.starts_with(&x) {
+						return false;
+					}
+				},
+				_ => { return true; }
+			}
+		}
+		true
+	}
+}
+
+struct SubscriptionResult {}
+impl SubscriptionResult {
+	pub fn new() -> Self { SubscriptionResult{} }
+	pub fn new_heads(&self, block: ethereum::Block) -> PubSubResult {
+		PubSubResult::Header(Box::new(
+			Rich {
+				inner: Header {
+					hash: Some(H256::from_slice(Keccak256::digest(
+						&rlp::encode(&block.header)
+					).as_slice())),
+					parent_hash: block.header.parent_hash,
+					uncles_hash: block.header.ommers_hash,
+					author: block.header.beneficiary,
+					miner: block.header.beneficiary,
+					state_root: block.header.state_root,
+					transactions_root: block.header.transactions_root,
+					receipts_root: block.header.receipts_root,
+					number: Some(block.header.number),
+					gas_used: block.header.gas_used,
+					gas_limit: block.header.gas_limit,
+					extra_data: Bytes(
+						block.header.extra_data.as_bytes().to_vec()
+					),
+					logs_bloom: block.header.logs_bloom,
+					timestamp: U256::from(block.header.timestamp),
+					difficulty: block.header.difficulty,
+					seal_fields:  vec![
+						Bytes(
+							block.header.mix_hash.as_bytes().to_vec()
+						),
+						Bytes(
+							block.header.nonce.as_bytes().to_vec()
+						)
+					],
+					size: Some(U256::from(
+						rlp::encode(&block).len() as u32
+					)),
+				},
+				extra_info: BTreeMap::new()
+			}
+		))
+	}
+	pub fn logs(
+		&self,
+		block: ethereum::Block,
+		receipts: Vec<ethereum::Receipt>,
+		params: &FilteredParams
+	) -> Vec<Log> {
+		let block_hash = Some(H256::from_slice(
+			Keccak256::digest(&rlp::encode(
+				&block.header
+			)).as_slice()
+		));
+		let mut logs: Vec<Log> = vec![];
+		let mut log_index: u32 = 0;
+		for receipt in receipts {
+			let mut transaction_log_index: u32 = 0;
+			for log in receipt.logs {
+				if self.add_log(
+					block_hash.unwrap(),
+					&log,
+					&block,
+					params
+				) {
+					logs.push(Log {
+						address: log.address,
+						topics: log.topics,
+						data: Bytes(log.data),
+						block_hash: block_hash,
+						block_number: Some(block.header.number),
+						transaction_hash: Some(H256::from_slice(
+							Keccak256::digest(&rlp::encode(
+								&block.transactions[log_index as usize]
+							)).as_slice()
+						)),
+						transaction_index: Some(U256::from(log_index)),
+						log_index: Some(U256::from(log_index)),
+						transaction_log_index: Some(U256::from(
+							transaction_log_index
+						)),
+						removed: false,
+					});
+				}
+				log_index += 1;
+				transaction_log_index += 1;
+			}
+		}
+		logs
+	}
+	fn add_log(
+		&self,
+		block_hash: H256,
+		log: &ethereum::Log,
+		block: &ethereum::Block,
+		params: &FilteredParams
+	) -> bool {
+		if !params.filter_block_range(block) ||
+			!params.filter_block_hash(block_hash) ||
+			!params.filter_address(log) || !params.filter_topics(log) {
+			return false;
+		}
+		true
+	}
+}
+
 fn storage_prefix_build(module: &[u8], storage: &[u8]) -> Vec<u8> {
 	[twox_128(module), twox_128(storage)].concat().to_vec()
-}
-
-fn new_heads_result(
-	block: ethereum::Block
-) -> PubSubResult {
-	PubSubResult::Header(Box::new(
-		Rich {
-			inner: Header {
-				hash: Some(H256::from_slice(Keccak256::digest(
-					&rlp::encode(&block.header)
-				).as_slice())),
-				parent_hash: block.header.parent_hash,
-				uncles_hash: block.header.ommers_hash,
-				author: block.header.beneficiary,
-				miner: block.header.beneficiary,
-				state_root: block.header.state_root,
-				transactions_root: block.header.transactions_root,
-				receipts_root: block.header.receipts_root,
-				number: Some(block.header.number),
-				gas_used: block.header.gas_used,
-				gas_limit: block.header.gas_limit,
-				extra_data: Bytes(block.header.extra_data.as_bytes().to_vec()),
-				logs_bloom: block.header.logs_bloom,
-				timestamp: U256::from(block.header.timestamp),
-				difficulty: block.header.difficulty,
-				seal_fields:  vec![
-					Bytes(block.header.mix_hash.as_bytes().to_vec()),
-					Bytes(block.header.nonce.as_bytes().to_vec())
-				],
-				size: Some(U256::from(rlp::encode(&block).len() as u32)),
-			},
-			extra_info: BTreeMap::new()
-		}
-	))
-}
-
-fn logs_result(
-	block: ethereum::Block,
-	receipts: Vec<ethereum::Receipt>,
-	params: &FilteredParams
-) -> Vec<Log> {
-	let block_hash = Some(H256::from_slice(
-		Keccak256::digest(&rlp::encode(
-			&block.header
-		)).as_slice()
-	));
-	let mut logs: Vec<Log> = vec![];
-	let mut log_index: u32 = 0;
-	for receipt in receipts {
-		let mut transaction_log_index: u32 = 0;
-		for log in receipt.logs {
-			if add_log(block_hash.unwrap(), &log, &block, params) {
-				logs.push(Log {
-					address: log.address,
-					topics: log.topics,
-					data: Bytes(log.data),
-					block_hash: block_hash,
-					block_number: Some(block.header.number),
-					transaction_hash: Some(H256::from_slice(
-						Keccak256::digest(&rlp::encode(
-							&block.transactions[log_index as usize]
-						)).as_slice()
-					)),
-					transaction_index: Some(U256::from(log_index)),
-					log_index: Some(U256::from(log_index)),
-					transaction_log_index: Some(U256::from(transaction_log_index)),
-					removed: false,
-				});
-			}
-			log_index += 1;
-			transaction_log_index += 1;
-		}
-	}
-	logs
-}
-
-fn filter_block_range(
-	block: &ethereum::Block,
-	params: &FilteredParams
-) -> bool {
-	let mut out = true;
-	let number: u32 = UniqueSaturatedInto::<u32>::unique_saturated_into(
-		block.header.number
-	);
-	if let Some(from) = params.from_block {
-		if from > number {
-			out = false;
-		}
-	}
-	if let Some(to) = params.to_block {
-		if to < number {
-			out = false;
-		}
-	}
-	out
-}
-
-fn filter_block_hash(
-	block_hash: H256,
-	params: &FilteredParams
-) -> bool {
-	if let Some(h) = params.block_hash {
-		if h != block_hash { return false; }
-	}
-	true
-}
-
-fn filter_address(
-	log: &ethereum::Log,
-	params: &FilteredParams
-) -> bool {
-	if let Some(input_address) = &params.address {
-		match input_address {
-			VariadicValue::Single(x) => {
-				if log.address != *x { return false; }
-			},
-			VariadicValue::Multiple(x) => {
-				if !x.contains(&log.address) { return false; }
-			},
-			_ => { return true; }
-		}
-	}
-	true
-}
-
-fn filter_topics(
-	log: &ethereum::Log,
-	params: &FilteredParams
-) -> bool {
-	if let Some(input_topics) = &params.topics {
-		match input_topics {
-			VariadicValue::Single(x) => {
-				if !log.topics.starts_with(&vec![*x]) { return false; }
-			},
-			VariadicValue::Multiple(x) => {
-				if !log.topics.starts_with(&x) { return false; }
-			},
-			_ => { return true; }
-		}
-	}
-	true
-}
-
-fn add_log(
-	block_hash: H256,
-	log: &ethereum::Log,
-	block: &ethereum::Block,
-	params: &FilteredParams
-) -> bool {
-	if !filter_block_range(block, params) || !filter_block_hash(block_hash, params) ||
-		!filter_address(log, params) || !filter_topics(log, params) {
-		return false;
-	}
-	true
 }
 
 macro_rules! stream_build {
@@ -342,7 +379,8 @@ impl<B: BlockT, P, C, BE, SC> EthPubSubApiT for EthPubSubApi<B, P, C, BE, SC>
 		kind: Kind,
 		params: Option<Params>,
 	) {
-		let filtered_params = self.filter(params);
+		let filter_block = self.filter_block(params.clone());
+		let filtered_params = FilteredParams::new(params, filter_block);
 		let client = self.client.clone();
 		match kind {
 			Kind::Logs => {
@@ -359,7 +397,8 @@ impl<B: BlockT, P, C, BE, SC> EthPubSubApiT for EthPubSubApi<B, P, C, BE, SC>
 							let block: ethereum::Block = client.runtime_api()
 								.current_block(&id).unwrap().unwrap();
 							futures::stream::iter(
-								logs_result(block, receipts, &filtered_params)
+								SubscriptionResult::new()
+									.logs(block, receipts, &filtered_params)
 							)
 						})
 						.map(|x| {
@@ -392,7 +431,8 @@ impl<B: BlockT, P, C, BE, SC> EthPubSubApiT for EthPubSubApi<B, P, C, BE, SC>
 							let block: ethereum::Block =
 								Decode::decode(&mut &data.0[..]).unwrap();
 							return Ok::<_, ()>(Ok(
-								new_heads_result(block)
+								SubscriptionResult::new()
+									.new_heads(block)
 							));
 						})
 						.compat();
