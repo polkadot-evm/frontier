@@ -7,7 +7,7 @@ use sp_runtime::traits::{
 use sp_transaction_pool::TransactionPool;
 use sp_api::{ProvideRuntimeApi, BlockId};
 use sp_blockchain::HeaderBackend;
-use sp_storage::StorageKey;
+use sp_storage::{StorageKey, StorageData};
 use sp_io::hashing::twox_128;
 use sc_client_api::{
 	backend::{StorageProvider, Backend, StateBackend, AuxStore},
@@ -453,14 +453,25 @@ impl<B: BlockT, P, C, BE, SC> EthPubSubApiT for EthPubSubApi<B, P, C, BE, SC>
 					self.subscriptions.add(subscriber, |sink| {
 						let stream = stream
 						.flat_map(|(_block, changes)| {
-							let data = changes.iter().last().unwrap().2.unwrap();
-							let storage: Vec<(
-								ethereum::Transaction,
-								TransactionStatus,
-								ethereum::Receipt
-							)> = Decode::decode(&mut &data.0[..]).unwrap();
-							let transactions: Vec<ethereum::Transaction> =
-								storage.iter().map(|x| x.0.clone()).collect();
+							let mut transactions: Vec<ethereum::Transaction> = vec![];
+							let storage: Vec<Option<StorageData>> = changes.iter()
+								.filter_map(|(o_sk, _k, v)| {
+									if o_sk.is_none() {
+										Some(v.cloned())
+									} else { None }
+								}).collect();
+							for change in storage {
+								if let Some(data) = change {
+									let storage: Vec<(
+										ethereum::Transaction,
+										TransactionStatus,
+										ethereum::Receipt
+									)> = Decode::decode(&mut &data.0[..]).unwrap();
+									let tmp: Vec<ethereum::Transaction> =
+										storage.iter().map(|x| x.0.clone()).collect();
+									transactions.extend(tmp);
+								}
+							}
 							futures::stream::iter(transactions)
 						})
 						.map(|transaction| {
