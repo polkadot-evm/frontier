@@ -124,6 +124,11 @@ decl_module! {
 		fn on_finalize(n: T::BlockNumber) {
 			<Module<T>>::store_block();
 		}
+
+		fn on_initialize(n: T::BlockNumber) -> frame_support::weights::Weight {
+			Pending::kill();
+			0
+		}
 	}
 }
 
@@ -139,12 +144,10 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
 
 impl<T: Trait> Module<T> {
 	fn store_block() {
-		let pending = Pending::take();
-
 		let mut transactions = Vec::new();
 		let mut statuses = Vec::new();
 		let mut receipts = Vec::new();
-		for (transaction, status, receipt) in pending {
+		for (transaction, status, receipt) in Pending::get() {
 			transactions.push(transaction);
 			statuses.push(status);
 			receipts.push(receipt);
