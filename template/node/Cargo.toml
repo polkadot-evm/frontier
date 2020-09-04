@@ -18,34 +18,34 @@ log = "0.4.8"
 structopt = "0.3.8"
 jsonrpc-core = "14.0.3"
 
-sp-api = { version = "2.0.0-dev", path = "../../vendor/substrate/primitives/api" }
-sp-blockchain = { version = "2.0.0-dev", path = "../../vendor/substrate/primitives/blockchain" }
-sc-rpc-api = { version = "0.8.0-dev", path = "../../vendor/substrate/client/rpc-api" }
-sc-rpc = { version = "2.0.0-dev", path = "../../vendor/substrate/client/rpc" }
-substrate-frame-rpc-system = { version = "2.0.0-dev", path = "../../vendor/substrate/utils/frame/rpc/system" }
-pallet-transaction-payment-rpc = { version = "2.0.0-dev", path = "../../vendor/substrate/frame/transaction-payment/rpc/" }
-sc-cli = { version = "0.8.0-dev", path = "../../vendor/substrate/client/cli" }
-sp-core = { version = "2.0.0-dev", path = "../../vendor/substrate/primitives/core" }
-sc-executor = { version = "0.8.0-dev", path = "../../vendor/substrate/client/executor" }
-sc-service = { version = "0.8.0-dev", path = "../../vendor/substrate/client/service" }
-sp-inherents = { version = "2.0.0-dev", path = "../../vendor/substrate/primitives/inherents" }
-sc-transaction-pool = { version = "2.0.0-dev", path = "../../vendor/substrate/client/transaction-pool" }
-sp-transaction-pool = { version = "2.0.0-dev", path = "../../vendor/substrate/primitives/transaction-pool" }
-sc-network = { version = "0.8.0-dev", path = "../../vendor/substrate/client/network" }
-sc-consensus-aura = { version = "0.8.0-dev", path = "../../vendor/substrate/client/consensus/aura" }
-sp-consensus-aura = { version = "0.8.0-dev", path = "../../vendor/substrate/primitives/consensus/aura" }
-sc-consensus-manual-seal = { path = "../../vendor/substrate/client/consensus/manual-seal" }
-sp-consensus = { version = "0.8.0-dev", path = "../../vendor/substrate/primitives/consensus/common" }
-sc-consensus = { version = "0.8.0-dev", path = "../../vendor/substrate/client/consensus/common" }
-sp-timestamp = { version = "2.0.0-dev", default-features = false, path = "../../vendor/substrate/primitives/timestamp" }
-evm = { version = "2.0.0-dev", package = "pallet-evm", path = "../../vendor/substrate/frame/evm" }
+sp-api = { version = "2.0.0-dev", git = "https://github.com/paritytech/substrate.git", rev = "8a35a14c2dd91bc5de77366f45a06fe45bdfd1d6" }
+sp-blockchain = { version = "2.0.0-dev", git = "https://github.com/paritytech/substrate.git", rev = "8a35a14c2dd91bc5de77366f45a06fe45bdfd1d6" }
+sc-rpc-api = { version = "0.8.0-dev", git = "https://github.com/paritytech/substrate.git", rev = "8a35a14c2dd91bc5de77366f45a06fe45bdfd1d6" }
+sc-rpc = { version = "2.0.0-dev", git = "https://github.com/paritytech/substrate.git", rev = "8a35a14c2dd91bc5de77366f45a06fe45bdfd1d6" }
+substrate-frame-rpc-system = { version = "2.0.0-dev", git = "https://github.com/paritytech/substrate.git", rev = "8a35a14c2dd91bc5de77366f45a06fe45bdfd1d6" }
+pallet-transaction-payment-rpc = { version = "2.0.0-dev", git = "https://github.com/paritytech/substrate.git", rev = "8a35a14c2dd91bc5de77366f45a06fe45bdfd1d6" }
+sc-cli = { version = "0.8.0-dev", git = "https://github.com/paritytech/substrate.git", rev = "8a35a14c2dd91bc5de77366f45a06fe45bdfd1d6" }
+sp-core = { version = "2.0.0-dev", git = "https://github.com/paritytech/substrate.git", rev = "8a35a14c2dd91bc5de77366f45a06fe45bdfd1d6" }
+sc-executor = { version = "0.8.0-dev", git = "https://github.com/paritytech/substrate.git", rev = "8a35a14c2dd91bc5de77366f45a06fe45bdfd1d6" }
+sc-service = { version = "0.8.0-dev", git = "https://github.com/paritytech/substrate.git", rev = "8a35a14c2dd91bc5de77366f45a06fe45bdfd1d6" }
+sp-inherents = { version = "2.0.0-dev", git = "https://github.com/paritytech/substrate.git", rev = "8a35a14c2dd91bc5de77366f45a06fe45bdfd1d6" }
+sc-transaction-pool = { version = "2.0.0-dev", git = "https://github.com/paritytech/substrate.git", rev = "8a35a14c2dd91bc5de77366f45a06fe45bdfd1d6" }
+sp-transaction-pool = { version = "2.0.0-dev", git = "https://github.com/paritytech/substrate.git", rev = "8a35a14c2dd91bc5de77366f45a06fe45bdfd1d6" }
+sc-network = { version = "0.8.0-dev", git = "https://github.com/paritytech/substrate.git", rev = "8a35a14c2dd91bc5de77366f45a06fe45bdfd1d6" }
+sc-consensus-aura = { version = "0.8.0-dev", git = "https://github.com/paritytech/substrate.git", rev = "8a35a14c2dd91bc5de77366f45a06fe45bdfd1d6" }
+sp-consensus-aura = { version = "0.8.0-dev", git = "https://github.com/paritytech/substrate.git", rev = "8a35a14c2dd91bc5de77366f45a06fe45bdfd1d6" }
+sc-consensus-manual-seal = { git = "https://github.com/paritytech/substrate.git", rev = "8a35a14c2dd91bc5de77366f45a06fe45bdfd1d6" }
+sp-consensus = { version = "0.8.0-dev", git = "https://github.com/paritytech/substrate.git", rev = "8a35a14c2dd91bc5de77366f45a06fe45bdfd1d6" }
+sc-consensus = { version = "0.8.0-dev", git = "https://github.com/paritytech/substrate.git", rev = "8a35a14c2dd91bc5de77366f45a06fe45bdfd1d6" }
+sp-timestamp = { version = "2.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", rev = "8a35a14c2dd91bc5de77366f45a06fe45bdfd1d6" }
+evm = { version = "2.0.0-dev", package = "pallet-evm", git = "https://github.com/paritytech/substrate.git", rev = "8a35a14c2dd91bc5de77366f45a06fe45bdfd1d6" }
 ethereum = { version = "0.1.0", package = "pallet-ethereum", path = "../../frame/ethereum" }
-sc-finality-grandpa = { version = "0.8.0-dev", path = "../../vendor/substrate/client/finality-grandpa" }
-sp-finality-grandpa = { version = "2.0.0-dev", path = "../../vendor/substrate/primitives/finality-grandpa" }
-sc-client-api = { version = "2.0.0-dev", path = "../../vendor/substrate/client/api" }
-sp-runtime = { version = "2.0.0-dev", path = "../../vendor/substrate/primitives/runtime" }
-sc-basic-authorship = { path = "../../vendor/substrate/client/basic-authorship" }
-sp-block-builder = { path = "../../vendor/substrate/primitives/block-builder" }
+sc-finality-grandpa = { version = "0.8.0-dev", git = "https://github.com/paritytech/substrate.git", rev = "8a35a14c2dd91bc5de77366f45a06fe45bdfd1d6" }
+sp-finality-grandpa = { version = "2.0.0-dev", git = "https://github.com/paritytech/substrate.git", rev = "8a35a14c2dd91bc5de77366f45a06fe45bdfd1d6" }
+sc-client-api = { version = "2.0.0-dev", git = "https://github.com/paritytech/substrate.git", rev = "8a35a14c2dd91bc5de77366f45a06fe45bdfd1d6" }
+sp-runtime = { version = "2.0.0-dev", git = "https://github.com/paritytech/substrate.git", rev = "8a35a14c2dd91bc5de77366f45a06fe45bdfd1d6" }
+sc-basic-authorship = { git = "https://github.com/paritytech/substrate.git", rev = "8a35a14c2dd91bc5de77366f45a06fe45bdfd1d6" }
+sp-block-builder = { git = "https://github.com/paritytech/substrate.git", rev = "8a35a14c2dd91bc5de77366f45a06fe45bdfd1d6" }
 
 frontier-consensus = { version = "0.1.0", path = "../../consensus" }
 frontier-template-runtime = { version = "2.0.0-dev", path = "../runtime" }
@@ -53,4 +53,4 @@ frontier-rpc = { version = "0.1.0", path = "../../rpc" }
 frontier-rpc-primitives = { version = "0.1.0", path = "../../rpc/primitives" }
 
 [build-dependencies]
-substrate-build-script-utils = { version = "2.0.0-dev", path = "../../vendor/substrate/utils/build-script-utils" }
+substrate-build-script-utils = { version = "2.0.0-dev", git = "https://github.com/paritytech/substrate.git", rev = "8a35a14c2dd91bc5de77366f45a06fe45bdfd1d6" }
