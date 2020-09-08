@@ -21,7 +21,7 @@ use jsonrpc_pubsub::{typed::Subscriber, SubscriptionId, manager::SubscriptionMan
 use frontier_rpc_core::EthPubSubApi::{self as EthPubSubApiT};
 use frontier_rpc_core::types::{
 	BlockNumber, Rich, Header, Bytes, Log, FilterAddress, Topic, VariadicValue,
-	pubsub::{Kind, Params, Result as PubSubResult}
+	pubsub::{Kind, Params, Result as PubSubResult, PubSubSyncStatus}
 };
 use ethereum_types::{H256, U256};
 use codec::Decode;
@@ -33,6 +33,8 @@ use futures::{StreamExt as _, TryStreamExt as _};
 use jsonrpc_core::{Result as JsonRpcResult, futures::{Future, Sink}, ErrorCode, Error};
 use frontier_rpc_primitives::{EthereumRuntimeRPCApi, TransactionStatus};
 
+use sc_network::{NetworkService, ExHashT};
+
 fn internal_err(message: &str) -> Error {
 	Error {
 		code: ErrorCode::InternalError,
@@ -41,26 +43,28 @@ fn internal_err(message: &str) -> Error {
 	}
 }
 
-pub struct EthPubSubApi<B: BlockT, P, C, BE, SC> {
+pub struct EthPubSubApi<B: BlockT, P, C, BE, SC, H: ExHashT> {
 	_pool: Arc<P>,
 	client: Arc<C>,
 	select_chain: SC,
+	network: Arc<NetworkService<B, H>>,
 	subscriptions: SubscriptionManager,
 	_marker: PhantomData<(B, BE)>,
 }
 
-impl<B: BlockT, P, C, BE, SC> EthPubSubApi<B, P, C, BE, SC> {
+impl<B: BlockT, P, C, BE, SC, H: ExHashT> EthPubSubApi<B, P, C, BE, SC, H> {
 	pub fn new(
 		_pool: Arc<P>,
 		client: Arc<C>,
 		select_chain: SC,
+		network: Arc<NetworkService<B, H>>,
 		subscriptions: SubscriptionManager,
 	) -> Self {
-		Self { _pool, client, select_chain, subscriptions, _marker: PhantomData }
+		Self { _pool, client, select_chain, network, subscriptions, _marker: PhantomData }
 	}
 }
 
-impl<B: BlockT, P, C, BE, SC> EthPubSubApi<B, P, C, BE, SC> where
+impl<B: BlockT, P, C, BE, SC, H: ExHashT> EthPubSubApi<B, P, C, BE, SC, H> where
 	B: BlockT<Hash=H256> + Send + Sync + 'static,
 	P: TransactionPool<Block=B> + Send + Sync + 'static,
 	C: ProvideRuntimeApi<B> + StorageProvider<B,BE> +
@@ -359,7 +363,7 @@ macro_rules! stream_build {
 	}};
 }
 
-impl<B: BlockT, P, C, BE, SC> EthPubSubApiT for EthPubSubApi<B, P, C, BE, SC>
+impl<B: BlockT, P, C, BE, SC, H: ExHashT> EthPubSubApiT for EthPubSubApi<B, P, C, BE, SC, H>
 	where
 		B: BlockT<Hash=H256> + Send + Sync + 'static,
 		P: TransactionPool<Block=B> + Send + Sync + 'static,
@@ -382,6 +386,7 @@ impl<B: BlockT, P, C, BE, SC> EthPubSubApiT for EthPubSubApi<B, P, C, BE, SC>
 		let filter_block = self.filter_block(params.clone());
 		let filtered_params = FilteredParams::new(params, filter_block);
 		let client = self.client.clone();
+		let network = self.network.clone();
 		match kind {
 			Kind::Logs => {
 				if let Some(stream) = stream_build!(
@@ -498,7 +503,41 @@ impl<B: BlockT, P, C, BE, SC> EthPubSubApiT for EthPubSubApi<B, P, C, BE, SC>
 				}
 			},
 			Kind::Syncing => {
-				unimplemented!(); // TODO
+				if let Some(stream) = stream_build!(
+					self => b"Ethereum", b"CurrentBlock"
+				) {
+					self.subscriptions.add(subscriber, |sink| {
+						let mut previous_syncing = network.is_major_syncing();
+						let stream = stream
+						.filter_map(move |(_, _)| {
+							let syncing = network.is_major_syncing();
+							if previous_syncing != syncing {
+								previous_syncing = syncing;
+								futures::future::ready(Some(syncing))
+							} else {
+								futures::future::ready(None)
+							}
+						})
+						.map(|syncing| {
+							return Ok::<Result<
+								PubSubResult,
+								jsonrpc_core::types::error::Error
+							>, ()>(Ok(
+								PubSubResult::SyncState(PubSubSyncStatus {
+									syncing: syncing
+								})
+							));							
+						})
+						.compat();
+						sink
+							.sink_map_err(|e| warn!(
+								"Error sending notifications: {:?}", e
+							))
+							.send_all(stream)
+							.map(|_| ())
+
+					});
+				}
 			},
 		}
 	}

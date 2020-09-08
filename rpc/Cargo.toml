@@ -24,6 +24,7 @@ sp-blockchain = { path = "../vendor/substrate/primitives/blockchain" }
 sp-transaction-pool = { path = "../vendor/substrate/primitives/transaction-pool" }
 sp-storage = { path = "../vendor/substrate/primitives/storage" } 
 sc-service = { path = "../vendor/substrate/client/service" }
+sc-network = { path = "../vendor/substrate/client/network" }
 sc-client-api = { path = "../vendor/substrate/client/api" }
 ethereum = { version = "0.2", features = ["codec"] }
 sc-rpc = { path = "../vendor/substrate/client/rpc" }

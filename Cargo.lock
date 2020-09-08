@@ -1378,6 +1378,7 @@ dependencies = [
  "parity-scale-codec",
  "rlp",
  "sc-client-api",
+ "sc-network",
  "sc-rpc",
  "sc-service",
  "sha3",
