@@ -33,6 +33,7 @@ use sc_client_api::{
 use sc_rpc::SubscriptionTaskExecutor;
 use sp_runtime::traits::BlakeTwo256;
 use sp_block_builder::BlockBuilder;
+use sc_network::NetworkService;
 use jsonrpc_pubsub::manager::SubscriptionManager;
 
 /// Light client extra dependencies.
@@ -59,6 +60,8 @@ pub struct FullDeps<C, P, SC> {
 	pub deny_unsafe: DenyUnsafe,
 	/// The Node authority flag
 	pub is_authority: bool,
+	/// Network service
+	pub network: Arc<NetworkService<Block, Hash>>,
 	/// Manual seal command sink
 	pub command_sink: Option<futures::channel::mpsc::Sender<sc_consensus_manual_seal::rpc::EngineCommand<Hash>>>,
 }
@@ -93,6 +96,7 @@ pub fn create_full<C, P, SC, BE>(
 		select_chain,
 		deny_unsafe,
 		is_authority,
+		network,
 		command_sink
 	} = deps;
 
@@ -119,6 +123,7 @@ pub fn create_full<C, P, SC, BE>(
 			pool.clone(),
 			client.clone(),
 			select_chain.clone(),
+			network.clone(),
 			SubscriptionManager::new(Arc::new(subscription_task_executor)),
 		))
 	);

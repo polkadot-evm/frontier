@@ -167,6 +167,7 @@ pub fn new_full(config: Configuration, manual_seal: bool) -> Result<TaskManager,
 		let client = client.clone();
 		let select_chain = select_chain.clone();
 		let pool = transaction_pool.clone();
+		let network = network.clone();
 		Box::new(move |deny_unsafe, _| {
 			let deps = crate::rpc::FullDeps {
 				client: client.clone(),
@@ -174,6 +175,7 @@ pub fn new_full(config: Configuration, manual_seal: bool) -> Result<TaskManager,
 				select_chain: select_chain.clone(),
 				deny_unsafe,
 				is_authority,
+				network: network.clone(),
 				command_sink: Some(command_sink.clone())
 			};
 			crate::rpc::create_full(
