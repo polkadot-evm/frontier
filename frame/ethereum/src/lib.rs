@@ -246,7 +246,7 @@ impl<T: Trait> Module<T> {
 
 		let status = match transaction.action {
 			ethereum::TransactionAction::Call(target) => {
-				pallet_evm::Module::<T>::execute_call(
+				let result = pallet_evm::Module::<T>::execute_call(
 					source,
 					target,
 					transaction.input.clone(),
@@ -263,12 +263,21 @@ impl<T: Trait> Module<T> {
 					from: source,
 					to: Some(target),
 					contract_address: None,
-					logs: Vec::new(), // TODO: feed in logs.
+					logs: {
+						result.3.into_iter()
+						.map(|log| {
+							Log {
+								address: log.address,
+								topics: log.topics,
+								data: log.data
+							}
+						}).collect()
+					},
 					logs_bloom: Bloom::default(), // TODO: feed in bloom.
 				}
 			},
 			ethereum::TransactionAction::Create => {
-				let contract_address = pallet_evm::Module::<T>::execute_create(
+				let result = pallet_evm::Module::<T>::execute_create(
 					source,
 					transaction.input.clone(),
 					transaction.value,
@@ -276,15 +285,24 @@ impl<T: Trait> Module<T> {
 					Some(transaction.gas_price),
 					Some(transaction.nonce),
 					true,
-				).unwrap().1; // TODO: handle error
+				).unwrap(); // TODO: handle error
 
 				TransactionStatus {
 					transaction_hash,
 					transaction_index,
 					from: source,
 					to: None,
-					contract_address: Some(contract_address),
-					logs: Vec::new(), // TODO: feed in logs.
+					contract_address: Some(result.1),
+					logs: {
+						result.3.into_iter()
+						.map(|log| {
+							Log {
+								address: log.address,
+								topics: log.topics,
+								data: log.data
+							}
+						}).collect()
+					},
 					logs_bloom: Bloom::default(), // TODO: feed in bloom.
 				}
 			},
@@ -294,7 +312,7 @@ impl<T: Trait> Module<T> {
 			state_root: H256::default(), // TODO: should be okay / error status.
 			used_gas: U256::default(), // TODO: set this.
 			logs_bloom: Bloom::default(), // TODO: set this.
-			logs: Vec::new(), // TODO: set this.
+			logs: status.clone().logs,
 		};
 
 		Pending::append((transaction, status, receipt));
