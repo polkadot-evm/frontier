@@ -63,7 +63,7 @@ pub struct FrontierBlockImport<B: BlockT, I, C> {
 	_marker: PhantomData<B>,
 }
 
-impl<Block: BlockT, I: Clone, Client> Clone for FrontierBlockImport<Block, I, Client> {
+impl<Block: BlockT, I: Clone + BlockImport<Block>, C> Clone for FrontierBlockImport<Block, I, C> {
 	fn clone(&self) -> Self {
 		FrontierBlockImport {
 			inner: self.inner.clone(),
