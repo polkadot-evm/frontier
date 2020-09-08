@@ -63,6 +63,16 @@ pub struct FrontierBlockImport<B: BlockT, I, C> {
 	_marker: PhantomData<B>,
 }
 
+impl<Block: BlockT, I: Clone + BlockImport<Block>, C> Clone for FrontierBlockImport<Block, I, C> {
+	fn clone(&self) -> Self {
+		FrontierBlockImport {
+			inner: self.inner.clone(),
+			client: self.client.clone(),
+			_marker: PhantomData,
+		}
+	}
+}
+
 impl<B, I, C> FrontierBlockImport<B, I, C> where
 	B: BlockT,
 	I: BlockImport<B, Transaction = sp_api::TransactionFor<C, B>> + Send + Sync,
