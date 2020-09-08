@@ -526,7 +526,7 @@ impl<B: BlockT, P, C, BE, SC, H: ExHashT> EthPubSubApiT for EthPubSubApi<B, P, C
 								PubSubResult::SyncState(PubSubSyncStatus {
 									syncing: syncing
 								})
-							));							
+							));
 						})
 						.compat();
 						sink
