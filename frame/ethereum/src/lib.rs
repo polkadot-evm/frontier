@@ -213,7 +213,7 @@ impl<T: Trait> Module<T> {
 					frame_system::Module::<T>::block_number()
 				)
 			),
-			gas_limit: U256::from(50_000_000), // TODO: set this using Ethereum's gas limit change algorithm.
+			gas_limit: U256::from(0), // TODO: set this using Ethereum's gas limit change algorithm.
 			gas_used: U256::zero(), // TODO: get this from receipts.
 			timestamp: UniqueSaturatedInto::<u64>::unique_saturated_into(
 				pallet_timestamp::Module::<T>::get()
