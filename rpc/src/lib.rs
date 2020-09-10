@@ -873,6 +873,6 @@ impl NetApiT for NetApi {
 	}
 
 	fn version(&self) -> Result<String> {
-		Ok("Frontier/v0.1.0".to_string())
+		Ok("43".to_string())
 	}
 }
