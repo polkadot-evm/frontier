@@ -15,6 +15,7 @@ frontier-consensus = { path = "../consensus" }
 frontier-rpc-core = { path = "core" }
 frontier-rpc-primitives = { path = "primitives" }
 sp-runtime = { path = "../vendor/substrate/primitives/runtime" }
+sp-io = { path = "../vendor/substrate/primitives/io" }
 sp-api = { path = "../vendor/substrate/primitives/api" }
 sp-consensus = { path = "../vendor/substrate/primitives/consensus/common" }
 sp-transaction-pool = { path = "../vendor/substrate/primitives/transaction-pool" }
