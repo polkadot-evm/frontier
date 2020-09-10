@@ -295,7 +295,7 @@ impl<T: Trait> Module<T> {
 						Some(transaction.gas_price),
 						Some(transaction.nonce),
 						true,
-					)
+					).unwrap()
 				).unwrap();
 
 				TransactionStatus {
@@ -318,7 +318,7 @@ impl<T: Trait> Module<T> {
 						Some(transaction.gas_price),
 						Some(transaction.nonce),
 						true,
-					)
+					).unwrap()
 				).unwrap().1;
 
 				TransactionStatus {
@@ -343,28 +343,23 @@ impl<T: Trait> Module<T> {
 		Pending::append((transaction, status, receipt));
 	}
 
-	fn handle_exec<R>(res: Result<(ExitReason, R, U256), pallet_evm::Error<T>>) -> Result<(ExitReason, R, U256), Error<T>> {
-		match res {
-			Ok((exit_reason, s, t)) => {
-				match exit_reason {
-					ExitReason::Succeed(_s) => { Ok((exit_reason, s, t)) },
-					ExitReason::Error(e) => { Err(Self::parse_exit_error(e)) },
-					ExitReason::Revert(e) => {
-						match e {
-							ExitRevert::Reverted => { Err(Error::<T>::Reverted) },
-						}
-					},
-					ExitReason::Fatal(e) => {
-						match e {
-							ExitFatal::NotSupported => { Err(Error::<T>::NotSupported) },
-							ExitFatal::UnhandledInterrupt => { Err(Error::<T>::UnhandledInterrupt) },
-							ExitFatal::CallErrorAsFatal(e_error) => { Err(Self::parse_exit_error(e_error)) },
-							ExitFatal::Other(_s) => { Err(Error::<T>::ExitFatalOther) },
-						}
-					},
+	fn handle_exec<R>(res: (ExitReason, R, U256)) -> Result<(ExitReason, R, U256), Error<T>> {
+		match res.0 {
+			ExitReason::Succeed(_s) => { Ok(res) },
+			ExitReason::Error(e) => { Err(Self::parse_exit_error(e)) },
+			ExitReason::Revert(e) => {
+				match e {
+					ExitRevert::Reverted => { Err(Error::<T>::Reverted) },
 				}
 			},
-			Err(_e) => { Err(Error::<T>::FailedExecution) }
+			ExitReason::Fatal(e) => {
+				match e {
+					ExitFatal::NotSupported => { Err(Error::<T>::NotSupported) },
+					ExitFatal::UnhandledInterrupt => { Err(Error::<T>::UnhandledInterrupt) },
+					ExitFatal::CallErrorAsFatal(e_error) => { Err(Self::parse_exit_error(e_error)) },
+					ExitFatal::Other(_s) => { Err(Error::<T>::ExitFatalOther) },
+				}
+			},
 		}
 	}
 
