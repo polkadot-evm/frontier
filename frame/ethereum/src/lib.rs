@@ -249,7 +249,7 @@ impl<T: Trait> Module<T> {
 					transaction.input.clone(),
 					transaction.value,
 					transaction.gas_limit.low_u32(),
-					Some(transaction.gas_price),
+					transaction.gas_price,
 					Some(transaction.nonce),
 					true,
 				).unwrap(); // TODO: handle error
@@ -270,7 +270,7 @@ impl<T: Trait> Module<T> {
 					transaction.input.clone(),
 					transaction.value,
 					transaction.gas_limit.low_u32(),
-					Some(transaction.gas_price),
+					transaction.gas_price,
 					Some(transaction.nonce),
 					true,
 				).unwrap().1; // TODO: handle error
