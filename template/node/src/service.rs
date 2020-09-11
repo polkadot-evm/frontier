@@ -204,7 +204,7 @@ pub fn new_full(config: Configuration, manual_seal: bool) -> Result<TaskManager,
 	match consensus_result {
 		ConsensusResult::ManualSeal => {
 			if role.is_authority() {
-				let proposer = sc_basic_authorship::ProposerFactory::new(
+				let env = sc_basic_authorship::ProposerFactory::new(
 					client.clone(),
 					transaction_pool.clone(),
 					prometheus_registry.as_ref(),
@@ -212,13 +212,16 @@ pub fn new_full(config: Configuration, manual_seal: bool) -> Result<TaskManager,
 
 				// Background authorship future
 				let authorship_future = manual_seal::run_manual_seal(
-					Box::new(client.clone()),
-					proposer,
-					client.clone(),
-					transaction_pool.pool().clone(),
-					commands_stream,
-					select_chain.clone(),
-					inherent_data_providers,
+					manual_seal::ManualSealParams {
+						block_import: client.clone(),
+						env,
+						client: client.clone(),
+						pool: transaction_pool.pool().clone(),
+						commands_stream,
+						select_chain,
+						consensus_data_provider: None,
+						inherent_data_providers,
+					}
 				);
 
 				// we spawn the future on a background thread managed by service.
