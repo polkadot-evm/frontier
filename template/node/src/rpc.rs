@@ -21,7 +21,7 @@ use std::{sync::Arc, fmt};
 
 use sc_consensus_manual_seal::rpc::{ManualSeal, ManualSealApi};
 use frontier_template_runtime::{Hash, AccountId, Index, opaque::Block, Balance};
-use sp_api::ProvideRuntimeApi;
+use sp_api::{ProvideRuntimeApi, Core};
 use sp_transaction_pool::TransactionPool;
 use sp_blockchain::{Error as BlockChainError, HeaderMetadata, HeaderBackend};
 use sp_consensus::SelectChain;
@@ -99,14 +99,18 @@ pub fn create_full<C, P, M, SC, BE>(
 	io.extend_with(
 		EthApiServer::to_delegate(EthApi::new(
 			client.clone(),
-			select_chain,
+			select_chain.clone(),
 			pool.clone(),
 			frontier_template_runtime::TransactionConverter,
 			is_authority,
 		))
 	);
+
 	io.extend_with(
-		NetApiServer::to_delegate(NetApi)
+		NetApiServer::to_delegate(NetApi::new(
+			client.clone(),
+			select_chain.clone(),
+		))
 	);
 
 	match command_sink {
