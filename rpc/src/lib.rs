@@ -880,7 +880,7 @@ impl<B, BE, C, SC> NetApi<B, BE, C, SC> {
 	}
 }
 
-impl<B, BE, C, SC> NetApiT for NetApi<B, BE, C, SC> where 
+impl<B, BE, C, SC> NetApiT for NetApi<B, BE, C, SC> where
 	C: ProvideRuntimeApi<B> + StorageProvider<B, BE> + AuxStore,
 	C::Api: EthereumRuntimeRPCApi<B>,
 	BE: Backend<B> + 'static,
