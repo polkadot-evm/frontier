@@ -14,13 +14,13 @@ ethereum-types = "0.9.0"
 frontier-consensus = { path = "../consensus" }
 frontier-rpc-core = { path = "core" }
 frontier-rpc-primitives = { path = "primitives" }
-sp-runtime = { path = "../vendor/substrate/primitives/runtime" }
-sp-api = { path = "../vendor/substrate/primitives/api" }
-sp-consensus = { path = "../vendor/substrate/primitives/consensus/common" }
-sp-transaction-pool = { path = "../vendor/substrate/primitives/transaction-pool" }
-sp-storage = { path = "../vendor/substrate/primitives/storage" } 
-sc-service = { path = "../vendor/substrate/client/service" }
-sc-client-api = { path = "../vendor/substrate/client/api" }
+sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sp-api = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sp-consensus = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sp-transaction-pool = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sp-storage = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" } 
+sc-service = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sc-client-api = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 ethereum = { version = "0.2", features = ["codec"], path = "../vendor/ethereum/" }
 codec = { package = "parity-scale-codec", version = "1.0.0" }
 rlp = "0.4"
