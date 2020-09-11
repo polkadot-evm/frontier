@@ -45,13 +45,16 @@ The vendor folder contains dependencies that contains changes that has not yet
 been upstreamed. Once the upstreaming process is finished, the corresponding
 submodule should be removed from vendor folder, and directly use upstream.
 
-The `substrate` submodule contains a large quantity of dependencies, so they
-should directly use `path` directive in dependency declarations. For other
-dependencies, they should use Cargo's patch feature in workspace declaration.
-
 To install those submodules, from the frontier root folder:
 
 ```sh
 git submodule init
 git submodule update
 ```
+
+### Use local version of Substrate
+
+1. Override your local cargo config to point to your local substrate (pointing to your WIP branch): place `paths = ["path/to/substrate"]` in `~/.cargo/config`.
+2. You are good to go.
+
+Remember to comment out the override after it is done to avoid mysterious build issues on other repo.
