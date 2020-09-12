@@ -345,19 +345,19 @@ impl<T: Trait> Module<T> {
 
 	fn handle_exec<R>(res: (ExitReason, R, U256)) -> Result<(ExitReason, R, U256), Error<T>> {
 		match res.0 {
-			ExitReason::Succeed(_s) => { Ok(res) },
-			ExitReason::Error(e) => { Err(Self::parse_exit_error(e)) },
+			ExitReason::Succeed(_s) => Ok(res),
+			ExitReason::Error(e) => Err(Self::parse_exit_error(e)),
 			ExitReason::Revert(e) => {
 				match e {
-					ExitRevert::Reverted => { Err(Error::<T>::Reverted) },
+					ExitRevert::Reverted => Err(Error::<T>::Reverted),
 				}
 			},
 			ExitReason::Fatal(e) => {
 				match e {
-					ExitFatal::NotSupported => { Err(Error::<T>::NotSupported) },
-					ExitFatal::UnhandledInterrupt => { Err(Error::<T>::UnhandledInterrupt) },
-					ExitFatal::CallErrorAsFatal(e_error) => { Err(Self::parse_exit_error(e_error)) },
-					ExitFatal::Other(_s) => { Err(Error::<T>::ExitFatalOther) },
+					ExitFatal::NotSupported => Err(Error::<T>::NotSupported),
+					ExitFatal::UnhandledInterrupt => Err(Error::<T>::UnhandledInterrupt),
+					ExitFatal::CallErrorAsFatal(e_error) => Err(Self::parse_exit_error(e_error)),
+					ExitFatal::Other(_s) => Err(Error::<T>::ExitFatalOther),
 				}
 			},
 		}
@@ -365,20 +365,20 @@ impl<T: Trait> Module<T> {
 
 	fn parse_exit_error(exit_error: ExitError) -> Error<T> {
 		match exit_error {
-			ExitError::StackUnderflow => { return Error::<T>::StackUnderflow },
-			ExitError::StackOverflow => { return Error::<T>::StackOverflow },
-			ExitError::InvalidJump => { return Error::<T>::InvalidJump },
-			ExitError::InvalidRange => { return Error::<T>::InvalidRange },
-			ExitError::DesignatedInvalid => { return Error::<T>::DesignatedInvalid },
-			ExitError::CallTooDeep => { return Error::<T>::CallTooDeep },
-			ExitError::CreateCollision => { return Error::<T>::CreateCollision },
-			ExitError::CreateContractLimit => { return Error::<T>::CreateContractLimit },
-			ExitError::OutOfOffset => { return Error::<T>::OutOfOffset },
-			ExitError::OutOfGas => { return Error::<T>::OutOfGas },
-			ExitError::OutOfFund => { return Error::<T>::OutOfFund },
-			ExitError::PCUnderflow => { return Error::<T>::PCUnderflow },
-			ExitError::CreateEmpty => { return Error::<T>::CreateEmpty },
-			ExitError::Other(_s) => { return Error::<T>::ExitErrorOther },
+			ExitError::StackUnderflow => return Error::<T>::StackUnderflow,
+			ExitError::StackOverflow => return Error::<T>::StackOverflow,
+			ExitError::InvalidJump => return Error::<T>::InvalidJump,
+			ExitError::InvalidRange => return Error::<T>::InvalidRange,
+			ExitError::DesignatedInvalid => return Error::<T>::DesignatedInvalid,
+			ExitError::CallTooDeep => return Error::<T>::CallTooDeep,
+			ExitError::CreateCollision => return Error::<T>::CreateCollision,
+			ExitError::CreateContractLimit => return Error::<T>::CreateContractLimit,
+			ExitError::OutOfOffset => return Error::<T>::OutOfOffset,
+			ExitError::OutOfGas => return Error::<T>::OutOfGas,
+			ExitError::OutOfFund => return Error::<T>::OutOfFund,
+			ExitError::PCUnderflow => return Error::<T>::PCUnderflow,
+			ExitError::CreateEmpty => return Error::<T>::CreateEmpty,
+			ExitError::Other(_s) => return Error::<T>::ExitErrorOther,
 		}
 	}
 }
