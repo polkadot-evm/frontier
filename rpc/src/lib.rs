@@ -17,7 +17,7 @@
 use std::{marker::PhantomData, sync::Arc};
 use std::collections::BTreeMap;
 use ethereum::{Block as EthereumBlock, Transaction as EthereumTransaction};
-use ethereum_types::{H160, H256, H64, U256, U64};
+use ethereum_types::{H160, H256, H64, U256, U64, H512};
 use jsonrpc_core::{BoxFuture, Result, ErrorCode, Error, futures::future::{self, Future}};
 use futures::future::TryFutureExt;
 use sp_runtime::traits::{Block as BlockT, Header as _, UniqueSaturatedInto, Zero, One, Saturating};
@@ -138,6 +138,20 @@ fn transaction_build(
 	block: EthereumBlock,
 	status: TransactionStatus
 ) -> Transaction {
+	let mut sig = [0u8; 65];
+	let mut msg = [0u8; 32];
+	sig[0..32].copy_from_slice(&transaction.signature.r()[..]);
+	sig[32..64].copy_from_slice(&transaction.signature.s()[..]);
+	sig[64] = transaction.signature.standard_v();
+	msg.copy_from_slice(&transaction.message_hash(
+		transaction.signature.chain_id().map(u64::from)
+	)[..]);
+
+	let pubkey = match sp_io::crypto::secp256k1_ecdsa_recover(&sig, &msg) {
+		Ok(p) => Some(H512::from(p)),
+		Err(_e) => None,
+	};
+
 	Transaction {
 		hash: H256::from_slice(
 			Keccak256::digest(&rlp::encode(&transaction)).as_slice()
@@ -160,7 +174,7 @@ fn transaction_build(
 		input: Bytes(transaction.clone().input),
 		creates: status.contract_address,
 		raw: Bytes(rlp::encode(&transaction)),
-		public_key: None, // TODO
+		public_key: pubkey,
 		chain_id: transaction.signature.chain_id().map(U64::from),
 		standard_v: U256::from(transaction.signature.standard_v()),
 		v: U256::from(transaction.signature.v()),

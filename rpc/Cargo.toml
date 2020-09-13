@@ -14,6 +14,7 @@ ethereum-types = "0.9.0"
 frontier-consensus = { path = "../consensus" }
 frontier-rpc-core = { path = "core" }
 frontier-rpc-primitives = { path = "primitives" }
+sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sp-api = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sp-consensus = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }

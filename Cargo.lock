@@ -1399,6 +1399,7 @@ dependencies = [
  "sha3",
  "sp-api",
  "sp-consensus",
+ "sp-io",
  "sp-runtime",
  "sp-storage",
  "sp-transaction-pool",
