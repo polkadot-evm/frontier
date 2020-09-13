@@ -74,7 +74,7 @@ sp_api::decl_runtime_apis! {
 			gas_price: Option<U256>,
 			nonce: Option<U256>,
 			action: TransactionAction
-		) -> Option<(Vec<u8>, U256)>;
+		) -> Result<(Vec<u8>, U256), sp_runtime::DispatchError>;
 		/// Return the current block.
 		fn current_block() -> Option<EthereumBlock>;
 		/// Return the current receipt.
