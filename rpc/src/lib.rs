@@ -861,9 +861,34 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 	}
 }
 
-pub struct NetApi;
+pub struct NetApi<B, BE, C, SC> {
+	select_chain: SC,
+	client: Arc<C>,
+	_marker: PhantomData<(B, BE)>,
+}
 
-impl NetApiT for NetApi {
+impl<B, BE, C, SC> NetApi<B, BE, C, SC> {
+	pub fn new(
+		client: Arc<C>,
+		select_chain: SC,
+	) -> Self {
+		Self {
+			client: client,
+			select_chain: select_chain,
+			_marker: PhantomData,
+		}
+	}
+}
+
+impl<B, BE, C, SC> NetApiT for NetApi<B, BE, C, SC> where
+	C: ProvideRuntimeApi<B> + StorageProvider<B, BE> + AuxStore,
+	C::Api: EthereumRuntimeRPCApi<B>,
+	BE: Backend<B> + 'static,
+	BE::State: StateBackend<BlakeTwo256>,
+	C: Send + Sync + 'static,
+	SC: SelectChain<B> + Clone + 'static,
+	B: BlockT<Hash=H256> + Send + Sync + 'static,
+{
 	fn is_listening(&self) -> Result<bool> {
 		Ok(true)
 	}
@@ -873,6 +898,9 @@ impl NetApiT for NetApi {
 	}
 
 	fn version(&self) -> Result<String> {
-		Ok("Frontier/v0.1.0".to_string())
+		let header = self.select_chain.best_chain()
+			.map_err(|_| internal_err("fetch header failed"))?;
+		Ok(self.client.runtime_api().chain_id(&BlockId::Hash(header.hash()))
+			.map_err(|_| internal_err("fetch runtime chain id failed"))?.to_string())
 	}
 }
