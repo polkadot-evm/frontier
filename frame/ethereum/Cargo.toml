@@ -18,6 +18,7 @@ pallet-evm = { version = "2.0.0-dev", default-features = false, git = "https://g
 sp-runtime = { version = "2.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sp-std = { version = "2.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sp-io = { version = "2.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+evm = { version = "0.17.0", default-features = false }
 ethereum = { version = "0.2", default-features = false, features = ["codec"], path = "../../vendor/ethereum/" }
 ethereum-types = { version = "0.9", default-features = false }
 rlp = { version = "0.4", default-features = false }
@@ -50,4 +51,5 @@ std = [
 	"libsecp256k1/std",
 	"frontier-consensus-primitives/std",
 	"frontier-rpc-primitives/std",
+	"evm/std",
 ]

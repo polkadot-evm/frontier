@@ -34,6 +34,7 @@ use sp_runtime::{
 	traits::UniqueSaturatedInto,
 	transaction_validity::{TransactionValidity, TransactionSource, ValidTransaction}
 };
+use evm::{ExitError, ExitRevert, ExitFatal, ExitReason};
 use rlp;
 use sha3::{Digest, Keccak256};
 use codec::Encode;
@@ -89,6 +90,47 @@ decl_error! {
 	pub enum Error for Module<T: Trait> {
 		/// Transaction signed with wrong chain id
 		InvalidChainId,
+		/// Trying to pop from an empty stack.
+		StackUnderflow,
+		/// Trying to push into a stack over stack limit.
+		StackOverflow,
+		/// Jump destination is invalid.
+		InvalidJump,
+		/// An opcode accesses memory region, but the region is invalid.
+		InvalidRange,
+		/// Encountered the designated invalid opcode.
+		DesignatedInvalid,
+		/// Call stack is too deep (runtime).
+		CallTooDeep,
+		/// Create opcode encountered collision (runtime).
+		CreateCollision,
+		/// Create init code exceeds limit (runtime).
+		CreateContractLimit,
+		///	An opcode accesses external information, but the request is off offset
+		///	limit (runtime).
+		OutOfOffset,
+		/// Execution runs out of gas (runtime).
+		OutOfGas,
+		/// Not enough fund to start the execution (runtime).
+		OutOfFund,
+		/// PC underflowed (unused).
+		PCUnderflow,
+		/// Attempt to create an empty account (runtime, unused).
+		CreateEmpty,
+		/// Other normal errors.
+		ExitErrorOther,
+		/// The operation is not supported.
+		NotSupported,
+		/// The trap (interrupt) is unhandled.
+		UnhandledInterrupt,
+		/// The environment explictly set call errors as fatal error.
+		CallErrorAsFatal,
+		/// Other fatal errors.
+		ExitFatalOther,
+		/// Machine encountered an explict revert.
+		Reverted,
+		/// If call itself fails
+		FailedExecution
 	}
 }
 
@@ -243,16 +285,18 @@ impl<T: Trait> Module<T> {
 
 		let status = match transaction.action {
 			ethereum::TransactionAction::Call(target) => {
-				pallet_evm::Module::<T>::execute_call(
-					source,
-					target,
-					transaction.input.clone(),
-					transaction.value,
-					transaction.gas_limit.low_u32(),
-					transaction.gas_price,
-					Some(transaction.nonce),
-					true,
-				).unwrap(); // TODO: handle error
+				Self::handle_exec(
+					pallet_evm::Module::<T>::execute_call(
+						source,
+						target,
+						transaction.input.clone(),
+						transaction.value,
+						transaction.gas_limit.low_u32(),
+						transaction.gas_price,
+						Some(transaction.nonce),
+						true,
+					).unwrap()
+				).unwrap();
 
 				TransactionStatus {
 					transaction_hash,
@@ -265,15 +309,17 @@ impl<T: Trait> Module<T> {
 				}
 			},
 			ethereum::TransactionAction::Create => {
-				let contract_address = pallet_evm::Module::<T>::execute_create(
-					source,
-					transaction.input.clone(),
-					transaction.value,
-					transaction.gas_limit.low_u32(),
-					transaction.gas_price,
-					Some(transaction.nonce),
-					true,
-				).unwrap().1; // TODO: handle error
+				let contract_address = Self::handle_exec(
+					pallet_evm::Module::<T>::execute_create(
+						source,
+						transaction.input.clone(),
+						transaction.value,
+						transaction.gas_limit.low_u32(),
+						transaction.gas_price,
+						Some(transaction.nonce),
+						true,
+					).unwrap()
+				).unwrap().1;
 
 				TransactionStatus {
 					transaction_hash,
@@ -295,5 +341,44 @@ impl<T: Trait> Module<T> {
 		};
 
 		Pending::append((transaction, status, receipt));
+	}
+
+	fn handle_exec<R>(res: (ExitReason, R, U256)) -> Result<(ExitReason, R, U256), Error<T>> {
+		match res.0 {
+			ExitReason::Succeed(_s) => Ok(res),
+			ExitReason::Error(e) => Err(Self::parse_exit_error(e)),
+			ExitReason::Revert(e) => {
+				match e {
+					ExitRevert::Reverted => Err(Error::<T>::Reverted),
+				}
+			},
+			ExitReason::Fatal(e) => {
+				match e {
+					ExitFatal::NotSupported => Err(Error::<T>::NotSupported),
+					ExitFatal::UnhandledInterrupt => Err(Error::<T>::UnhandledInterrupt),
+					ExitFatal::CallErrorAsFatal(e_error) => Err(Self::parse_exit_error(e_error)),
+					ExitFatal::Other(_s) => Err(Error::<T>::ExitFatalOther),
+				}
+			},
+		}
+	}
+
+	fn parse_exit_error(exit_error: ExitError) -> Error<T> {
+		match exit_error {
+			ExitError::StackUnderflow => return Error::<T>::StackUnderflow,
+			ExitError::StackOverflow => return Error::<T>::StackOverflow,
+			ExitError::InvalidJump => return Error::<T>::InvalidJump,
+			ExitError::InvalidRange => return Error::<T>::InvalidRange,
+			ExitError::DesignatedInvalid => return Error::<T>::DesignatedInvalid,
+			ExitError::CallTooDeep => return Error::<T>::CallTooDeep,
+			ExitError::CreateCollision => return Error::<T>::CreateCollision,
+			ExitError::CreateContractLimit => return Error::<T>::CreateContractLimit,
+			ExitError::OutOfOffset => return Error::<T>::OutOfOffset,
+			ExitError::OutOfGas => return Error::<T>::OutOfGas,
+			ExitError::OutOfFund => return Error::<T>::OutOfFund,
+			ExitError::PCUnderflow => return Error::<T>::PCUnderflow,
+			ExitError::CreateEmpty => return Error::<T>::CreateEmpty,
+			ExitError::Other(_s) => return Error::<T>::ExitErrorOther,
+		}
 	}
 }
