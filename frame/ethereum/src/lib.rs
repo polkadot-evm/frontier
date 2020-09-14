@@ -33,6 +33,7 @@ use sp_runtime::{
 	traits::UniqueSaturatedInto,
 	transaction_validity::{TransactionValidity, TransactionSource, ValidTransaction, InvalidTransaction},
 	generic::DigestItem,
+	DispatchResult,
 };
 use evm::{ExitError, ExitRevert, ExitFatal, ExitReason};
 use sha3::{Digest, Keccak256};
@@ -148,7 +149,7 @@ decl_module! {
 
 			let source = Self::recover_signer(&transaction).ok_or_else(|| Error::<T>::InvalidSignature)?;
 
-			Self::execute(source, transaction);
+			Self::execute(source, transaction)?;
 		}
 
 		fn on_finalize(n: T::BlockNumber) {
@@ -317,7 +318,7 @@ impl<T: Trait> Module<T> {
 	}
 
 	/// Execute an Ethereum transaction, ignoring transaction signatures.
-	pub fn execute(source: H160, transaction: ethereum::Transaction) {
+	pub fn execute(source: H160, transaction: ethereum::Transaction) -> DispatchResult {
 		let transaction_hash = H256::from_slice(
 			Keccak256::digest(&rlp::encode(&transaction)).as_slice()
 		);
@@ -335,8 +336,8 @@ impl<T: Trait> Module<T> {
 						transaction.gas_price,
 						Some(transaction.nonce),
 						true,
-					).unwrap()
-				).unwrap();
+					)?
+				)?;
 
 				TransactionStatus {
 					transaction_hash,
@@ -358,8 +359,8 @@ impl<T: Trait> Module<T> {
 						transaction.gas_price,
 						Some(transaction.nonce),
 						true,
-					).unwrap()
-				).unwrap().1;
+					)?
+				)?.1;
 
 				TransactionStatus {
 					transaction_hash,
@@ -381,6 +382,8 @@ impl<T: Trait> Module<T> {
 		};
 
 		Pending::append((transaction, status, receipt));
+
+		Ok(())
 	}
 
 	fn handle_exec<R>(res: (ExitReason, R, U256)) -> Result<(ExitReason, R, U256), Error<T>> {
