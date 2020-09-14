@@ -60,6 +60,7 @@ impl std::convert::From<Error> for ConsensusError {
 pub struct FrontierBlockImport<B: BlockT, I, C> {
 	inner: I,
 	client: Arc<C>,
+	enabled: bool,
 	_marker: PhantomData<B>,
 }
 
@@ -68,6 +69,7 @@ impl<Block: BlockT, I: Clone + BlockImport<Block>, C> Clone for FrontierBlockImp
 		FrontierBlockImport {
 			inner: self.inner.clone(),
 			client: self.client.clone(),
+			enabled: self.enabled,
 			_marker: PhantomData,
 		}
 	}
@@ -83,10 +85,12 @@ impl<B, I, C> FrontierBlockImport<B, I, C> where
 	pub fn new(
 		inner: I,
 		client: Arc<C>,
+		enabled: bool,
 	) -> Self {
 		Self {
 			inner,
 			client,
+			enabled,
 			_marker: PhantomData,
 		}
 	}
@@ -122,23 +126,25 @@ impl<B, I, C> BlockImport<B> for FrontierBlockImport<B, I, C> where
 			)
 		}
 
-		let log = find_frontier_log::<B>(&block.header)?;
-		let hash = block.post_hash();
+		if self.enabled {
+			let log = find_frontier_log::<B>(&block.header)?;
+			let hash = block.post_hash();
 
-		match log {
-			ConsensusLog::EndBlock {
-				block_hash, transaction_hashes,
-			} => {
-				aux_schema::write_block_hash(block_hash, hash, insert_closure!());
+			match log {
+				ConsensusLog::EndBlock {
+					block_hash, transaction_hashes,
+				} => {
+					aux_schema::write_block_hash(block_hash, hash, insert_closure!());
 
-				for (index, transaction_hash) in transaction_hashes.into_iter().enumerate() {
-					aux_schema::write_transaction_metadata(
-						transaction_hash,
-						(block_hash, index as u32),
-						insert_closure!(),
-					);
-				}
-			},
+					for (index, transaction_hash) in transaction_hashes.into_iter().enumerate() {
+						aux_schema::write_transaction_metadata(
+							transaction_hash,
+							(block_hash, index as u32),
+							insert_closure!(),
+						);
+					}
+				},
+			}
 		}
 
 		self.inner.import_block(block, new_cache).map_err(Into::into)
