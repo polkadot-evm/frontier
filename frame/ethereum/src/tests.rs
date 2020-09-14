@@ -22,7 +22,12 @@ use mock::*;
 use rustc_hex::FromHex;
 use std::str::FromStr;
 use ethereum::TransactionSignature;
-use frame_support::assert_noop;
+use frame_support::{
+	assert_noop, assert_err, assert_ok,
+	unsigned::ValidateUnsigned,
+};
+use sp_runtime::transaction_validity::{TransactionSource, InvalidTransaction};
+
 
 // This ERC-20 contract mints the maximum amount of tokens to the contract creator.
 // pragma solidity ^0.5.0;
@@ -49,10 +54,10 @@ fn transaction_should_increment_nonce() {
 	let alice = &pairs[0];
 
 	ext.execute_with(|| {
-		Ethereum::execute(
+		assert_ok!(Ethereum::execute(
 			alice.address,
 			default_erc20_creation_transaction(alice),
-		);
+		));
 		assert_eq!(Evm::account_basic(&alice.address).nonce, U256::from(1));
 	});
 }
@@ -65,10 +70,10 @@ fn transaction_should_be_added_to_pending() {
 
 	ext.execute_with(|| {
 		let transaction = default_erc20_creation_transaction(alice);
-		Ethereum::execute(
+		assert_ok!(Ethereum::execute(
 			alice.address,
 			transaction.clone(),
-		);
+		));
 		assert_eq!(Pending::get().len(), 1);
 		assert_eq!(Pending::get()[0].0.input, transaction.input);
 	});
@@ -76,7 +81,6 @@ fn transaction_should_be_added_to_pending() {
 
 
 #[test]
-#[should_panic(expected = "called `Result::unwrap()` on an `Err` value: BalanceLow")]
 fn transaction_without_enough_gas_should_not_work() {
 	let (pairs, mut ext) = new_test_ext(1);
 	let alice = &pairs[0];
@@ -85,10 +89,31 @@ fn transaction_without_enough_gas_should_not_work() {
 		let mut transaction = default_erc20_creation_transaction(alice);
 		transaction.gas_price = U256::from(11_000_000);
 
-		Ethereum::execute(
+		assert_err!(Ethereum::validate_unsigned(TransactionSource::External, &Call::transact(transaction)), InvalidTransaction::Payment);
+	});
+}
+
+#[test]
+fn transaction_with_invalid_nonce_should_not_work() {
+	let (pairs, mut ext) = new_test_ext(1);
+	let alice = &pairs[0];
+
+	ext.execute_with(|| {
+		// nonce is 0
+		let mut transaction = default_erc20_creation_transaction(alice);
+		transaction.nonce = U256::from(1);
+
+		assert_err!(Ethereum::validate_unsigned(TransactionSource::External, &Call::transact(transaction.clone())), InvalidTransaction::Future);
+
+		// nonce is 1
+		assert_ok!(Ethereum::execute(
 			alice.address,
-			transaction,
-		);
+			default_erc20_creation_transaction(alice),
+		));
+
+		transaction.nonce = U256::from(0);
+
+		assert_err!(Ethereum::validate_unsigned(TransactionSource::External, &Call::transact(transaction)), InvalidTransaction::Stale);
 	});
 }
 
@@ -100,10 +125,10 @@ fn contract_constructor_should_get_executed() {
 	let alice_storage_address = storage_address(alice.address, H256::zero());
 
 	ext.execute_with(|| {
-		Ethereum::execute(
+		assert_ok!(Ethereum::execute(
 			alice.address,
 			default_erc20_creation_transaction(alice),
-		);
+		));
 		assert_eq!(Evm::account_storages(
 			erc20_address, alice_storage_address
 		), H256::from_str("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff").unwrap())
@@ -144,7 +169,7 @@ fn invalid_signature_should_be_ignored() {
 		assert_noop!(Ethereum::transact(
 			Origin::none(),
 			transaction,
-		), "Recover public key failed");
+		), Error::<Test>::InvalidSignature);
 	});
 }
 
@@ -157,10 +182,10 @@ fn contract_should_be_created_at_given_address() {
 	let erc20_address = contract_address(alice.address, 0);
 
 	ext.execute_with(|| {
-		Ethereum::execute(
+		assert_ok!(Ethereum::execute(
 			alice.address,
 			default_erc20_creation_transaction(alice),
-		);
+		));
 		assert_ne!(Evm::account_codes(erc20_address).len(), 0);
 	});
 }
