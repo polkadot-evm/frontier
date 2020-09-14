@@ -90,7 +90,8 @@ pub fn new_partial(config: &Configuration, manual_seal: bool) -> Result<
 
 	let frontier_block_import = FrontierBlockImport::new(
 		grandpa_block_import.clone(),
-		client.clone()
+		client.clone(),
+		true
 	);
 
 	let aura_block_import = sc_consensus_aura::AuraBlockImport::<_, _, _, AuraPair>::new(
