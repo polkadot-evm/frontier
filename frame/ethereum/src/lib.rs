@@ -130,7 +130,23 @@ decl_error! {
 		/// Machine encountered an explict revert.
 		Reverted,
 		/// If call itself fails
-		FailedExecution
+		FailedExecution,
+
+		/// Errors from pallet_evm:
+		/// Not enough balance to perform action
+		BalanceLow,
+		/// Calculating total fee overflowed
+		FeeOverflow,
+		/// Calculating total payment overflowed
+		PaymentOverflow,
+		/// Withdraw fee failed
+		WithdrawFailed,
+		/// Gas price is too low.
+		GasPriceTooLow,
+		/// Nonce is invalid
+		InvalidNonce,
+		/// Unknown pallet error
+		Unknown,
 	}
 }
 
@@ -283,9 +299,9 @@ impl<T: Trait> Module<T> {
 		);
 		let transaction_index = Pending::get().len() as u32;
 
-		let status = match transaction.action {
+		let (exit_reason, used_gas, status) = match transaction.action {
 			ethereum::TransactionAction::Call(target) => {
-				Self::handle_exec(
+				let (exit_reason, _return_value, used_gas) = Self::handle_exec(
 					pallet_evm::Module::<T>::execute_call(
 						source,
 						target,
@@ -295,10 +311,10 @@ impl<T: Trait> Module<T> {
 						transaction.gas_price,
 						Some(transaction.nonce),
 						true,
-					).unwrap()
+					)
 				).unwrap();
 
-				TransactionStatus {
+				let status = TransactionStatus {
 					transaction_hash,
 					transaction_index,
 					from: source,
@@ -306,10 +322,11 @@ impl<T: Trait> Module<T> {
 					contract_address: None,
 					logs: Vec::new(), // TODO: feed in logs.
 					logs_bloom: Bloom::default(), // TODO: feed in bloom.
-				}
+				};
+				(exit_reason, used_gas, status)
 			},
 			ethereum::TransactionAction::Create => {
-				let contract_address = Self::handle_exec(
+				let (exit_reason, contract_address, used_gas) = Self::handle_exec(
 					pallet_evm::Module::<T>::execute_create(
 						source,
 						transaction.input.clone(),
@@ -318,10 +335,10 @@ impl<T: Trait> Module<T> {
 						transaction.gas_price,
 						Some(transaction.nonce),
 						true,
-					).unwrap()
-				).unwrap().1;
+					)
+				).unwrap();
 
-				TransactionStatus {
+				let status = TransactionStatus {
 					transaction_hash,
 					transaction_index,
 					from: source,
@@ -329,13 +346,14 @@ impl<T: Trait> Module<T> {
 					contract_address: Some(contract_address),
 					logs: Vec::new(), // TODO: feed in logs.
 					logs_bloom: Bloom::default(), // TODO: feed in bloom.
-				}
+				};
+				(exit_reason, used_gas, status)
 			},
 		};
 
 		let receipt = ethereum::Receipt {
 			state_root: H256::default(), // TODO: should be okay / error status.
-			used_gas: U256::default(), // TODO: set this.
+			used_gas,
 			logs_bloom: Bloom::default(), // TODO: set this.
 			logs: Vec::new(), // TODO: set this.
 		};
@@ -343,42 +361,47 @@ impl<T: Trait> Module<T> {
 		Pending::append((transaction, status, receipt));
 	}
 
-	fn handle_exec<R>(res: (ExitReason, R, U256)) -> Result<(ExitReason, R, U256), Error<T>> {
-		match res.0 {
-			ExitReason::Succeed(_s) => Ok(res),
-			ExitReason::Error(e) => Err(Self::parse_exit_error(e)),
-			ExitReason::Revert(e) => {
-				match e {
-					ExitRevert::Reverted => Err(Error::<T>::Reverted),
-				}
-			},
-			ExitReason::Fatal(e) => {
-				match e {
-					ExitFatal::NotSupported => Err(Error::<T>::NotSupported),
-					ExitFatal::UnhandledInterrupt => Err(Error::<T>::UnhandledInterrupt),
-					ExitFatal::CallErrorAsFatal(e_error) => Err(Self::parse_exit_error(e_error)),
-					ExitFatal::Other(_s) => Err(Error::<T>::ExitFatalOther),
-				}
-			},
+	fn handle_exec<R>(res: Result<(ExitReason, R, U256), pallet_evm::Error<T>>) -> Result<(ExitReason, R, U256), Error<T>> {
+		match res {
+			Ok((ExitReason::Succeed(_e), _, _)) => Ok(res.unwrap()),
+			Ok((ExitReason::Error(e), _, _)) => Err(Self::parse_exit_error(e)),
+			Ok((ExitReason::Revert(ExitRevert::Reverted), _, _)) => Err(Error::<T>::Reverted),
+			Ok((ExitReason::Fatal(ExitFatal::NotSupported), _, _)) => Err(Error::<T>::NotSupported),
+			Ok((ExitReason::Fatal(ExitFatal::UnhandledInterrupt), _, _)) => Err(Error::<T>::UnhandledInterrupt),
+			Ok((ExitReason::Fatal(ExitFatal::CallErrorAsFatal(e_error)), _, _)) => Err(Self::parse_exit_error(e_error)),
+			Ok((ExitReason::Fatal(ExitFatal::Other(_s)), _, _)) => Err(Error::<T>::ExitFatalOther),
+			Err(e) => Err(Self::parse_pallet_evm_error(e)),
+		}
+	}
+
+	fn parse_pallet_evm_error(evm_error: pallet_evm::Error::<T>) -> Error<T> {
+		match evm_error {
+			pallet_evm::Error::<T>::BalanceLow => Error::<T>::BalanceLow,
+			pallet_evm::Error::<T>::FeeOverflow => Error::<T>::FeeOverflow,
+			pallet_evm::Error::<T>::PaymentOverflow => Error::<T>::PaymentOverflow,
+			pallet_evm::Error::<T>::WithdrawFailed => Error::<T>::WithdrawFailed,
+			pallet_evm::Error::<T>::GasPriceTooLow => Error::<T>::GasPriceTooLow,
+			pallet_evm::Error::<T>::InvalidNonce => Error::<T>::InvalidNonce,
+			_ => Error::<T>::Unknown,
 		}
 	}
 
 	fn parse_exit_error(exit_error: ExitError) -> Error<T> {
 		match exit_error {
-			ExitError::StackUnderflow => return Error::<T>::StackUnderflow,
-			ExitError::StackOverflow => return Error::<T>::StackOverflow,
-			ExitError::InvalidJump => return Error::<T>::InvalidJump,
-			ExitError::InvalidRange => return Error::<T>::InvalidRange,
-			ExitError::DesignatedInvalid => return Error::<T>::DesignatedInvalid,
-			ExitError::CallTooDeep => return Error::<T>::CallTooDeep,
-			ExitError::CreateCollision => return Error::<T>::CreateCollision,
-			ExitError::CreateContractLimit => return Error::<T>::CreateContractLimit,
-			ExitError::OutOfOffset => return Error::<T>::OutOfOffset,
-			ExitError::OutOfGas => return Error::<T>::OutOfGas,
-			ExitError::OutOfFund => return Error::<T>::OutOfFund,
-			ExitError::PCUnderflow => return Error::<T>::PCUnderflow,
-			ExitError::CreateEmpty => return Error::<T>::CreateEmpty,
-			ExitError::Other(_s) => return Error::<T>::ExitErrorOther,
+			ExitError::StackUnderflow => Error::<T>::StackUnderflow,
+			ExitError::StackOverflow => Error::<T>::StackOverflow,
+			ExitError::InvalidJump => Error::<T>::InvalidJump,
+			ExitError::InvalidRange => Error::<T>::InvalidRange,
+			ExitError::DesignatedInvalid => Error::<T>::DesignatedInvalid,
+			ExitError::CallTooDeep => Error::<T>::CallTooDeep,
+			ExitError::CreateCollision => Error::<T>::CreateCollision,
+			ExitError::CreateContractLimit => Error::<T>::CreateContractLimit,
+			ExitError::OutOfOffset => Error::<T>::OutOfOffset,
+			ExitError::OutOfGas => Error::<T>::OutOfGas,
+			ExitError::OutOfFund => Error::<T>::OutOfFund,
+			ExitError::PCUnderflow => Error::<T>::PCUnderflow,
+			ExitError::CreateEmpty => Error::<T>::CreateEmpty,
+			ExitError::Other(_s) => Error::<T>::ExitErrorOther,
 		}
 	}
 }
