@@ -235,7 +235,7 @@ impl UnsignedTransaction {
 		s.append(&self.action);
 		s.append(&self.value);
 		s.append(&self.input);
-		s.append(&42u8); // TODO: move this chain id into the frame ethereum configuration
+		s.append(&ChainId::get());
 		s.append(&0u8);
 		s.append(&0u8);
 	}
@@ -246,20 +246,14 @@ impl UnsignedTransaction {
 		H256::from_slice(&Keccak256::digest(&stream.drain()).as_slice())
 	}
 
-	pub fn sign(self, key: &H256) -> Transaction {
+	pub fn sign(&self, key: &H256) -> Transaction {
 		let hash = self.signing_hash();
-		let msg = {
-			let mut a = [0u8; 32];
-			for i in 0..32 {
-				a[i] = hash[i];
-			}
-			secp256k1::Message::parse(&a)
-		};
+		let msg = secp256k1::Message::parse(hash.as_fixed_bytes());
 		let s = secp256k1::sign(&msg, &secp256k1::SecretKey::parse_slice(&key[..]).unwrap());
 		let sig = s.0.serialize();
 
 		let sig = TransactionSignature::new(
-			0x78,
+			s.1.serialize() as u64 % 2 + ChainId::get() * 2 + 35,
 			H256::from_slice(&sig[0..32]),
 			H256::from_slice(&sig[32..64]),
 		)
@@ -271,7 +265,7 @@ impl UnsignedTransaction {
 			gas_limit: self.gas_limit,
 			action: self.action,
 			value: self.value,
-			input: self.input,
+			input: self.input.clone(),
 			signature: sig,
 		}
 	}

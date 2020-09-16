@@ -81,7 +81,10 @@ decl_storage! {
 
 decl_event!(
 	/// Ethereum pallet events.
-	pub enum Event { }
+	pub enum Event {
+		/// An ethereum transaction was successfully executed. [from, transaction_hash]
+		Executed(H160, H256),
+	}
 );
 
 
@@ -149,7 +152,11 @@ decl_module! {
 
 			let source = Self::recover_signer(&transaction).ok_or_else(|| Error::<T>::InvalidSignature)?;
 
+			let hash = transaction.message_hash(Some(T::ChainId::get()));
+
 			Self::execute(source, transaction)?;
+
+			Self::deposit_event(Event::Executed(source, hash));
 		}
 
 		fn on_finalize(n: T::BlockNumber) {
@@ -183,9 +190,6 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
 			if transaction.nonce < account_data.nonce {
 				return InvalidTransaction::Stale.into();
 			}
-			if transaction.nonce > account_data.nonce {
-				return InvalidTransaction::Future.into();
-			}
 
 			let fee = transaction.gas_price.saturating_mul(transaction.gas_limit);
 
@@ -194,10 +198,12 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
 			}
 
 			let mut builder = ValidTransaction::with_tag_prefix("Ethereum")
-				.and_provides((&account_data, account_data.nonce));
+				.and_provides((&origin, transaction.nonce));
 
-			if let Some(prev_nonce) = account_data.nonce.checked_sub(1.into()) {
-				builder = builder.and_requires((account_data, prev_nonce))
+			if transaction.nonce > account_data.nonce {
+				if let Some(prev_nonce) = transaction.nonce.checked_sub(1.into()) {
+					builder = builder.and_requires((origin, prev_nonce))
+				}
 			}
 
 			builder.build()
