@@ -241,7 +241,7 @@ impl<T: Trait> Module<T> {
 
 		let ommers = Vec::<ethereum::Header>::new();
 		let header = ethereum::Header {
-			parent_hash: frame_system::Module::<T>::parent_hash(),
+			parent_hash: Self::current_block_hash().unwrap_or_default(),
 			ommers_hash: H256::from_slice(
 				Keccak256::digest(&rlp::encode_list(&ommers)[..]).as_slice(),
 			), // TODO: check ommers hash.
@@ -269,7 +269,7 @@ impl<T: Trait> Module<T> {
 			mix_hash: H256::default(),
 			nonce: H64::default(),
 		};
-		let hash = H256::from_slice(Keccak256::digest(&rlp::encode(&header)).as_slice());
+		let hash = Self::ethereum_block_hash(&header);
 
 		let block = ethereum::Block {
 			header,
@@ -313,9 +313,14 @@ impl<T: Trait> Module<T> {
 		CurrentTransactionStatuses::get()
 	}
 
-	/// Get block by number.
+	/// Get current block.
 	pub fn current_block() -> Option<ethereum::Block> {
 		CurrentBlock::get()
+	}
+
+	/// Get current block hash
+	pub fn current_block_hash() -> Option<H256> {
+		Self::current_block().map(|block| Self::ethereum_block_hash(&block.header))
 	}
 
 	/// Get receipts by number.
@@ -429,5 +434,9 @@ impl<T: Trait> Module<T> {
 			ExitError::CreateEmpty => return Error::<T>::CreateEmpty,
 			ExitError::Other(_s) => return Error::<T>::ExitErrorOther,
 		}
+	}
+
+	fn ethereum_block_hash(header: &ethereum::Header) -> H256 {
+		H256::from_slice(Keccak256::digest(&rlp::encode(header)).as_slice())
 	}
 }

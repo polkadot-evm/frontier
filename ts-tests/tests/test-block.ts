@@ -106,7 +106,7 @@ describeWithFrontier("Frontier RPC (Block)", `simple-specs.json`, (context) => {
 		expect(block.timestamp).to.be.a("number");
 	});
 
-	it.skip("should include previous block hash as parent", async function () {
+	it("should include previous block hash as parent", async function () {
 		this.timeout(15000);
 		await createAndFinalizeBlock(context.web3);
 		const block = await context.web3.eth.getBlock("latest");
