@@ -237,7 +237,7 @@ impl<B, C, SC, P, CT, BE> EthApi<B, C, SC, P, CT, BE> where
 					None
 				}
 			}).collect();
-		
+
 		if out.len() == 1 {
 			return Ok(Some(
 				BlockId::Hash(out[0])
