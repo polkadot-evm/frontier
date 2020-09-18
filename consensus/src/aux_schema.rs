@@ -55,7 +55,7 @@ pub fn write_block_hash<Hash: Encode + Decode, F, R, Backend: AuxStore>(
 	block_hash: Hash,
 	write_aux: F,
 ) -> R where
-	F: FnOnce(&[(&[u8], &[u8])]) -> R, Hash: std::fmt::Debug,
+	F: FnOnce(&[(&[u8], &[u8])]) -> R,
 {
 	let key = block_hash_key(ethereum_hash);
 
