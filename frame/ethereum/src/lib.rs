@@ -23,19 +23,19 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use frame_support::{
-	decl_module, decl_storage, decl_error, decl_event, ensure,
+	decl_module, decl_storage, decl_error, decl_event,
 	traits::Get, traits::FindAuthor
 };
 use sp_std::prelude::*;
-use sp_runtime::generic::DigestItem;
 use frame_system::ensure_none;
 use ethereum_types::{H160, H64, H256, U256, Bloom};
 use sp_runtime::{
 	traits::UniqueSaturatedInto,
-	transaction_validity::{TransactionValidity, TransactionSource, ValidTransaction}
+	transaction_validity::{TransactionValidity, TransactionSource, ValidTransaction, InvalidTransaction},
+	generic::DigestItem,
+	DispatchResult,
 };
 use evm::{ExitError, ExitRevert, ExitFatal, ExitReason};
-use rlp;
 use sha3::{Digest, Keccak256};
 use codec::Encode;
 use frontier_consensus_primitives::{FRONTIER_ENGINE_ID, ConsensusLog};
@@ -81,13 +81,18 @@ decl_storage! {
 
 decl_event!(
 	/// Ethereum pallet events.
-	pub enum Event { }
+	pub enum Event {
+		/// An ethereum transaction was successfully executed. [from, transaction_hash]
+		Executed(H160, H256),
+	}
 );
 
 
 decl_error! {
 	/// Ethereum pallet errors.
 	pub enum Error for Module<T: Trait> {
+		/// Signature is invalid.
+		InvalidSignature,
 		/// Transaction signed with wrong chain id
 		InvalidChainId,
 		/// Trying to pop from an empty stack.
@@ -145,22 +150,13 @@ decl_module! {
 		fn transact(origin, transaction: ethereum::Transaction) {
 			ensure_none(origin)?;
 
-			ensure!(
-				transaction.signature.chain_id().unwrap_or_default() == T::ChainId::get(),
-				Error::<T>::InvalidChainId
-			);
-			let mut sig = [0u8; 65];
-			let mut msg = [0u8; 32];
-			sig[0..32].copy_from_slice(&transaction.signature.r()[..]);
-			sig[32..64].copy_from_slice(&transaction.signature.s()[..]);
-			sig[64] = transaction.signature.standard_v();
-			msg.copy_from_slice(&transaction.message_hash(Some(T::ChainId::get()))[..]);
+			let source = Self::recover_signer(&transaction).ok_or_else(|| Error::<T>::InvalidSignature)?;
 
-			let pubkey = sp_io::crypto::secp256k1_ecdsa_recover(&sig, &msg)
-				.map_err(|_| "Recover public key failed")?;
-			let source = H160::from(H256::from_slice(Keccak256::digest(&pubkey).as_slice()));
+			let hash = transaction.message_hash(Some(T::ChainId::get()));
 
-			Self::execute(source, transaction);
+			Self::execute(source, transaction)?;
+
+			Self::deposit_event(Event::Executed(source, hash));
 		}
 
 		fn on_finalize(n: T::BlockNumber) {
@@ -169,17 +165,68 @@ decl_module! {
 	}
 }
 
+#[repr(u8)]
+enum TransactionValidationError {
+	#[allow (dead_code)]
+	UnknownError,
+	InvalidChainId,
+	InvalidSignature,
+}
+
 impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
 	type Call = Call<T>;
 
 	fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
-		ValidTransaction::with_tag_prefix("Ethereum")
-			.and_provides(call)
-			.build()
+		if let Call::transact(transaction) = call {
+			if transaction.signature.chain_id().unwrap_or_default() != T::ChainId::get() {
+				return InvalidTransaction::Custom(TransactionValidationError::InvalidChainId as u8).into();
+			}
+
+			let origin = Self::recover_signer(&transaction)
+				.ok_or_else(|| InvalidTransaction::Custom(TransactionValidationError::InvalidSignature as u8))?;
+
+			let account_data = pallet_evm::Module::<T>::account_basic(&origin);
+
+			if transaction.nonce < account_data.nonce {
+				return InvalidTransaction::Stale.into();
+			}
+
+			let fee = transaction.gas_price.saturating_mul(transaction.gas_limit);
+
+			if account_data.balance < fee {
+				return InvalidTransaction::Payment.into();
+			}
+
+			let mut builder = ValidTransaction::with_tag_prefix("Ethereum")
+				.and_provides((&origin, transaction.nonce));
+
+			if transaction.nonce > account_data.nonce {
+				if let Some(prev_nonce) = transaction.nonce.checked_sub(1.into()) {
+					builder = builder.and_requires((origin, prev_nonce))
+				}
+			}
+
+			builder.build()
+		} else {
+			Err(InvalidTransaction::Call.into())
+		}
 	}
 }
 
 impl<T: Trait> Module<T> {
+
+	fn recover_signer(transaction: &ethereum::Transaction) -> Option<H160> {
+		let mut sig = [0u8; 65];
+		let mut msg = [0u8; 32];
+		sig[0..32].copy_from_slice(&transaction.signature.r()[..]);
+		sig[32..64].copy_from_slice(&transaction.signature.s()[..]);
+		sig[64] = transaction.signature.standard_v();
+		msg.copy_from_slice(&transaction.message_hash(Some(T::ChainId::get()))[..]);
+
+		let pubkey = sp_io::crypto::secp256k1_ecdsa_recover(&sig, &msg).ok()?;
+		Some(H160::from(H256::from_slice(Keccak256::digest(&pubkey).as_slice())))
+	}
+
 	fn store_block() {
 		let pending = Pending::take();
 
@@ -277,7 +324,7 @@ impl<T: Trait> Module<T> {
 	}
 
 	/// Execute an Ethereum transaction, ignoring transaction signatures.
-	pub fn execute(source: H160, transaction: ethereum::Transaction) {
+	pub fn execute(source: H160, transaction: ethereum::Transaction) -> DispatchResult {
 		let transaction_hash = H256::from_slice(
 			Keccak256::digest(&rlp::encode(&transaction)).as_slice()
 		);
@@ -295,8 +342,8 @@ impl<T: Trait> Module<T> {
 						transaction.gas_price,
 						Some(transaction.nonce),
 						true,
-					).unwrap()
-				).unwrap();
+					)?
+				)?;
 
 				TransactionStatus {
 					transaction_hash,
@@ -318,8 +365,8 @@ impl<T: Trait> Module<T> {
 						transaction.gas_price,
 						Some(transaction.nonce),
 						true,
-					).unwrap()
-				).unwrap().1;
+					)?
+				)?.1;
 
 				TransactionStatus {
 					transaction_hash,
@@ -341,6 +388,8 @@ impl<T: Trait> Module<T> {
 		};
 
 		Pending::append((transaction, status, receipt));
+
+		Ok(())
 	}
 
 	fn handle_exec<R>(res: (ExitReason, R, U256)) -> Result<(ExitReason, R, U256), Error<T>> {
