@@ -73,7 +73,8 @@ pub fn new_partial(config: &Configuration, manual_seal: bool) -> Result<
 
 		let frontier_block_import = FrontierBlockImport::new(
 			client.clone(),
-			client.clone()
+			client.clone(),
+			true,
 		);
 
 		let import_queue = sc_consensus_manual_seal::import_queue(
