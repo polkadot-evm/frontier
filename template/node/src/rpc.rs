@@ -21,7 +21,7 @@ use std::{sync::Arc, fmt};
 
 use sc_consensus_manual_seal::rpc::{ManualSeal, ManualSealApi};
 use frontier_template_runtime::{Hash, AccountId, Index, opaque::Block, Balance};
-use sp_api::{ProvideRuntimeApi, Core};
+use sp_api::ProvideRuntimeApi;
 use sp_transaction_pool::TransactionPool;
 use sp_blockchain::{Error as BlockChainError, HeaderMetadata, HeaderBackend};
 use sp_consensus::SelectChain;

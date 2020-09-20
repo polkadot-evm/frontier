@@ -22,7 +22,7 @@ sp-transaction-pool = { git = "https://github.com/paritytech/substrate.git", bra
 sp-storage = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" } 
 sc-service = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sc-client-api = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-ethereum = { version = "0.2", features = ["codec"], path = "../vendor/ethereum/" }
+ethereum = { version = "0.3", features = ["codec"] }
 codec = { package = "parity-scale-codec", version = "1.0.0" }
 rlp = "0.4"
 pallet-ethereum = "0.1"
