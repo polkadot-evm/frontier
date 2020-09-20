@@ -30,7 +30,7 @@ use sha3::{Keccak256, Digest};
 use sp_runtime::traits::BlakeTwo256;
 use frontier_rpc_core::{EthApi as EthApiT, NetApi as NetApiT};
 use frontier_rpc_core::types::{
-	BlockNumber, Bytes, CallRequest, EthAccount, Filter, Index, Log, Receipt, RichBlock,
+	BlockNumber, Bytes, CallRequest, Filter, Index, Log, Receipt, RichBlock,
 	SyncStatus, SyncInfo, Transaction, Work, Rich, Block, BlockTransactions, VariadicValue
 };
 use frontier_rpc_primitives::{EthereumRuntimeRPCApi, ConvertTransaction, TransactionStatus};
@@ -40,13 +40,6 @@ pub use frontier_rpc_core::{EthApiServer, NetApiServer};
 fn internal_err<T: ToString>(message: T) -> Error {
 	Error {
 		code: ErrorCode::InternalError,
-		message: message.to_string(),
-		data: None
-	}
-}
-fn not_supported_err(message: &str) -> Error {
-	Error {
-		code: ErrorCode::InvalidRequest,
 		message: message.to_string(),
 		data: None
 	}
