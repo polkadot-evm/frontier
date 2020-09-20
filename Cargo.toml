@@ -11,6 +11,3 @@ members = [
 	"template/test-utils/client",
 ]
 exclude = ["vendor"]
-
-[patch.crates-io]
-ethereum = { path = "vendor/ethereum" }

@@ -1,3 +1,0 @@
-[submodule "vendor/ethereum"]
-	path = vendor/ethereum
-	url = https://github.com/rust-blockchain/ethereum

@@ -21,7 +21,7 @@ use jsonrpc_core::{BoxFuture, Result};
 use jsonrpc_derive::rpc;
 
 use crate::types::{
-	BlockNumber, Bytes, CallRequest, EthAccount, Filter, FilterChanges, Index, Log, Receipt,
+	BlockNumber, Bytes, CallRequest, Filter, FilterChanges, Index, Log, Receipt,
 	RichBlock, SyncStatus, Transaction, Work,
 };
 pub use rpc_impl_EthApi::gen_server::EthApi as EthApiServer;

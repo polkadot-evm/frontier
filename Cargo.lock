@@ -1131,7 +1131,9 @@ dependencies = [
 
 [[package]]
 name = "ethereum"
-version = "0.2.0"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9f873613a1191fe9d63794b5d0b636712446153ef0df192e9381bf1f951d3b94"
 dependencies = [
  "ethereum-types",
  "parity-scale-codec",
@@ -1544,7 +1546,7 @@ dependencies = [
  "futures 0.3.5",
  "jsonrpc-core",
  "log",
- "pallet-ethereum 0.1.0",
+ "pallet-ethereum 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "pallet-evm",
  "pallet-transaction-payment-rpc",
  "sc-basic-authorship",
