@@ -140,8 +140,8 @@ fn transaction_build(
 ) -> Transaction {
 	let mut sig = [0u8; 65];
 	let mut msg = [0u8; 32];
-	sig[0..32].copy_from_slice(&transaction.signature.r()[..]);
-	sig[32..64].copy_from_slice(&transaction.signature.s()[..]);
+	transaction.signature.r().to_big_endian(&mut sig[0..32]);
+	transaction.signature.s().to_big_endian(&mut sig[32..64]);
 	sig[64] = transaction.signature.standard_v();
 	msg.copy_from_slice(&transaction.message_hash(
 		transaction.signature.chain_id().map(u64::from)
@@ -178,8 +178,8 @@ fn transaction_build(
 		chain_id: transaction.signature.chain_id().map(U64::from),
 		standard_v: U256::from(transaction.signature.standard_v()),
 		v: U256::from(transaction.signature.v()),
-		r: U256::from(transaction.signature.r().as_bytes()),
-		s: U256::from(transaction.signature.s().as_bytes()),
+		r: U256::from(transaction.signature.r()),
+		s: U256::from(transaction.signature.s()),
 		condition: None // TODO
 	}
 }
@@ -465,9 +465,12 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 	fn send_raw_transaction(&self, bytes: Bytes) -> BoxFuture<H256> {
 		let transaction = match rlp::decode::<ethereum::Transaction>(&bytes.0[..]) {
 			Ok(transaction) => transaction,
-			Err(_) => return Box::new(
-				future::result(Err(internal_err("decode transaction failed")))
-			),
+			Err(e) => {
+				log::error!("Failed to decode transaction: {:?}", e);
+				return Box::new(
+					future::result(Err(internal_err("decode transaction failed")))
+				)
+			},
 		};
 		let transaction_hash = H256::from_slice(
 			Keccak256::digest(&rlp::encode(&transaction)).as_slice()

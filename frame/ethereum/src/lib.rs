@@ -212,8 +212,8 @@ impl<T: Trait> Module<T> {
 	fn recover_signer(transaction: &ethereum::Transaction) -> Option<H160> {
 		let mut sig = [0u8; 65];
 		let mut msg = [0u8; 32];
-		sig[0..32].copy_from_slice(&transaction.signature.r()[..]);
-		sig[32..64].copy_from_slice(&transaction.signature.s()[..]);
+		transaction.signature.r().to_big_endian(&mut sig[0..32]);
+		transaction.signature.s().to_big_endian(&mut sig[32..64]);
 		sig[64] = transaction.signature.standard_v();
 		msg.copy_from_slice(&transaction.message_hash(Some(T::ChainId::get()))[..]);
 
