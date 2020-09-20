@@ -297,7 +297,12 @@ impl frame_evm::Trait for Runtime {
 	type AddressMapping = HashedAddressMapping<BlakeTwo256>;
 	type Currency = Balances;
 	type Event = Event;
-	type Precompiles = ();
+	type Precompiles = (
+		frame_evm::precompiles::ECRecover,
+		frame_evm::precompiles::Sha256,
+		frame_evm::precompiles::Ripemd160,
+		frame_evm::precompiles::Identity,
+	);
 	type ChainId = ChainId;
 }
 
