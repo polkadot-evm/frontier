@@ -27,11 +27,20 @@ type FullBackend = sc_service::TFullBackend<Block>;
 type FullSelectChain = sc_consensus::LongestChain<FullBackend, Block>;
 
 pub enum ConsensusResult {
-	GrandPa((
-		sc_finality_grandpa::GrandpaBlockImport<FullBackend, Block, FullClient, FullSelectChain>,
+	Aura(
+		sc_consensus_aura::AuraBlockImport<
+			Block,
+			FullClient,
+			FrontierBlockImport<
+				Block,
+				sc_finality_grandpa::GrandpaBlockImport<FullBackend, Block, FullClient, FullSelectChain>,
+				FullClient
+			>,
+			AuraPair
+		>,
 		sc_finality_grandpa::LinkHalf<Block, FullClient, FullSelectChain>
-	)),
-	ManualSeal
+	),
+	ManualSeal(FrontierBlockImport<Block, Arc<FullClient>, FullClient>)
 }
 
 pub fn new_partial(config: &Configuration, manual_seal: bool) -> Result<
@@ -62,8 +71,14 @@ pub fn new_partial(config: &Configuration, manual_seal: bool) -> Result<
 			.map_err(Into::into)
 			.map_err(sp_consensus::error::Error::InherentData)?;
 
+		let frontier_block_import = FrontierBlockImport::new(
+			client.clone(),
+			client.clone(),
+			true,
+		);
+
 		let import_queue = sc_consensus_manual_seal::import_queue(
-			Box::new(client.clone()),
+			Box::new(frontier_block_import.clone()),
 			&task_manager.spawn_handle(),
 			config.prometheus_registry(),
 		);
@@ -71,7 +86,7 @@ pub fn new_partial(config: &Configuration, manual_seal: bool) -> Result<
 		return Ok(sc_service::PartialComponents {
 			client, backend, task_manager, import_queue, keystore, select_chain, transaction_pool,
 			inherent_data_providers,
-			other: ConsensusResult::ManualSeal
+			other: ConsensusResult::ManualSeal(frontier_block_import)
 		})
 	}
 
@@ -81,7 +96,8 @@ pub fn new_partial(config: &Configuration, manual_seal: bool) -> Result<
 
 	let frontier_block_import = FrontierBlockImport::new(
 		grandpa_block_import.clone(),
-		client.clone()
+		client.clone(),
+		true
 	);
 
 	let aura_block_import = sc_consensus_aura::AuraBlockImport::<_, _, _, AuraPair>::new(
@@ -90,7 +106,7 @@ pub fn new_partial(config: &Configuration, manual_seal: bool) -> Result<
 
 	let import_queue = sc_consensus_aura::import_queue::<_, _, _, AuraPair, _, _>(
 		sc_consensus_aura::slot_duration(&*client)?,
-		aura_block_import,
+		aura_block_import.clone(),
 		Some(Box::new(grandpa_block_import.clone())),
 		None,
 		client.clone(),
@@ -103,7 +119,7 @@ pub fn new_partial(config: &Configuration, manual_seal: bool) -> Result<
 	Ok(sc_service::PartialComponents {
 		client, backend, task_manager, import_queue, keystore, select_chain, transaction_pool,
 		inherent_data_providers,
-		other: ConsensusResult::GrandPa((grandpa_block_import, grandpa_link))
+		other: ConsensusResult::Aura(aura_block_import, grandpa_link)
 	})
 }
 
@@ -116,7 +132,7 @@ pub fn new_full(config: Configuration, manual_seal: bool) -> Result<TaskManager,
 	} = new_partial(&config, manual_seal)?;
 
 	let (network, network_status_sinks, system_rpc_tx, network_starter) = match consensus_result {
-		ConsensusResult::ManualSeal => {
+		ConsensusResult::ManualSeal(_) => {
 			sc_service::build_network(sc_service::BuildNetworkParams {
 				config: &config,
 				client: client.clone(),
@@ -129,7 +145,7 @@ pub fn new_full(config: Configuration, manual_seal: bool) -> Result<TaskManager,
 				finality_proof_provider: None,
 			})?
 		},
-		ConsensusResult::GrandPa((_, _)) => {
+		ConsensusResult::Aura(_, _) => {
 			sc_service::build_network(sc_service::BuildNetworkParams {
 				config: &config,
 				client: client.clone(),
@@ -199,9 +215,9 @@ pub fn new_full(config: Configuration, manual_seal: bool) -> Result<TaskManager,
 	})?;
 
 	match consensus_result {
-		ConsensusResult::ManualSeal => {
+		ConsensusResult::ManualSeal(block_import) => {
 			if role.is_authority() {
-				let proposer = sc_basic_authorship::ProposerFactory::new(
+				let env = sc_basic_authorship::ProposerFactory::new(
 					client.clone(),
 					transaction_pool.clone(),
 					prometheus_registry.as_ref(),
@@ -209,13 +225,16 @@ pub fn new_full(config: Configuration, manual_seal: bool) -> Result<TaskManager,
 
 				// Background authorship future
 				let authorship_future = manual_seal::run_manual_seal(
-					Box::new(client.clone()),
-					proposer,
-					client.clone(),
-					transaction_pool.pool().clone(),
-					commands_stream,
-					select_chain.clone(),
-					inherent_data_providers,
+					manual_seal::ManualSealParams {
+						block_import,
+						env,
+						client: client.clone(),
+						pool: transaction_pool.pool().clone(),
+						commands_stream,
+						select_chain,
+						consensus_data_provider: None,
+						inherent_data_providers,
+					}
 				);
 
 				// we spawn the future on a background thread managed by service.
@@ -223,7 +242,7 @@ pub fn new_full(config: Configuration, manual_seal: bool) -> Result<TaskManager,
 			}
 			log::info!("Manual Seal Ready");
 		},
-		ConsensusResult::GrandPa((grandpa_block_import, grandpa_link)) => {
+		ConsensusResult::Aura(aura_block_import, grandpa_link) => {
 			if role.is_authority() {
 				let proposer = sc_basic_authorship::ProposerFactory::new(
 					client.clone(),
@@ -237,7 +256,7 @@ pub fn new_full(config: Configuration, manual_seal: bool) -> Result<TaskManager,
 					sc_consensus_aura::slot_duration(&*client)?,
 					client.clone(),
 					select_chain,
-					grandpa_block_import,
+					aura_block_import,
 					proposer,
 					network.clone(),
 					inherent_data_providers.clone(),

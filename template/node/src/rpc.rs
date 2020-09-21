@@ -115,8 +115,12 @@ pub fn create_full<C, P, SC, BE>(
 			is_authority,
 		))
 	);
+
 	io.extend_with(
-		NetApiServer::to_delegate(NetApi)
+		NetApiServer::to_delegate(NetApi::new(
+			client.clone(),
+			select_chain.clone(),
+		))
 	);
 	io.extend_with(
 		EthPubSubApiServer::to_delegate(EthPubSubApi::new(

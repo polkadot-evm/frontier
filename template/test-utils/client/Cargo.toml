@@ -8,11 +8,11 @@ license = "GPL-3.0"
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "1.3.1" }
-sp-runtime = { path = "../../../vendor/substrate/primitives/runtime" }
-sp-api = { path = "../../../vendor/substrate/primitives/api" }
-sc-executor = { path = "../../../vendor/substrate/client/executor" }
-sc-light = { path = "../../../vendor/substrate/client/light" }
-sc-consensus = { path = "../../../vendor/substrate/client/consensus/common" }
-sc-client-api = { path = "../../../vendor/substrate/client/api" }
-substrate-test-client = { path = "../../../vendor/substrate/test-utils/client" }
+sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sp-api = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sc-executor = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sc-light = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sc-consensus = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sc-client-api = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+substrate-test-client = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 frontier-template-runtime = { path = "../../runtime" }

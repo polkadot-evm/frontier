@@ -297,7 +297,12 @@ impl frame_evm::Trait for Runtime {
 	type AddressMapping = HashedAddressMapping<BlakeTwo256>;
 	type Currency = Balances;
 	type Event = Event;
-	type Precompiles = ();
+	type Precompiles = (
+		frame_evm::precompiles::ECRecover,
+		frame_evm::precompiles::Sha256,
+		frame_evm::precompiles::Ripemd160,
+		frame_evm::precompiles::Identity,
+	);
 	type ChainId = ChainId;
 }
 
@@ -501,7 +506,7 @@ impl_runtime_apis! {
 			gas_price: Option<U256>,
 			nonce: Option<U256>,
 			action: frame_ethereum::TransactionAction,
-		) -> Option<(Vec<u8>, U256)> {
+		) -> Result<(Vec<u8>, U256), sp_runtime::DispatchError> {
 			match action {
 				frame_ethereum::TransactionAction::Call(to) =>
 					EVM::execute_call(
@@ -510,20 +515,24 @@ impl_runtime_apis! {
 						data,
 						value,
 						gas_limit.low_u32(),
-						gas_price,
+						gas_price.unwrap_or_default(),
 						nonce,
 						false,
-					).ok().map(|(_, ret, gas, _)| (ret, gas)),
+					)
+					.map(|(_, ret, gas, _)| (ret, gas))
+					.map_err(|err| err.into()),
 				frame_ethereum::TransactionAction::Create =>
 					EVM::execute_create(
 						from,
 						data,
 						value,
 						gas_limit.low_u32(),
-						gas_price,
+						gas_price.unwrap_or_default(),
 						nonce,
 						false,
-					).ok().map(|(_, _, gas, _)| (vec![], gas)),
+					)
+					.map(|(_, _, gas, _)| (vec![], gas))
+					.map_err(|err| err.into()),
 			}
 		}
 
