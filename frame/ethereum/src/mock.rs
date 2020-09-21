@@ -80,6 +80,7 @@ parameter_types! {
 }
 
 impl pallet_balances::Trait for Test {
+	type MaxLocks = MaxLocks;
 	type Balance = u64;
 	type Event = ();
 	type DustRemoval = ();
