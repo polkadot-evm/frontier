@@ -413,7 +413,8 @@ impl<T: Trait> Module<T> {
 		Ok(())
 	}
 
-	fn handle_exec<R>(res: (ExitReason, R, U256)) -> Result<(ExitReason, R, U256), Error<T>> {
+	fn handle_exec<R>(res: (ExitReason, R, U256, Vec<pallet_evm::Log>)) 
+		-> Result<(ExitReason, R, U256, Vec<pallet_evm::Log>), Error<T>> {
 		match res.0 {
 			ExitReason::Succeed(_s) => Ok(res),
 			ExitReason::Error(e) => Err(Self::parse_exit_error(e)),
