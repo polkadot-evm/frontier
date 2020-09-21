@@ -7,10 +7,10 @@ description = "Ethereum RPC (web3) compatibility layer for Substrate."
 license = "GPL-3.0"
 
 [dependencies]
-jsonrpc-core = "14.0.3"
+jsonrpc-core = "15.0.0"
 jsonrpc-derive = "14.0.3"
 jsonrpc-core-client = "14.0.3"
-jsonrpc-pubsub = "14.0.5"
+jsonrpc-pubsub = "15.0.0"
 log = "0.4.8"
 ethereum-types = "0.9.0"
 frontier-consensus = { path = "../consensus" }
