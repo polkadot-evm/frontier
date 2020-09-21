@@ -39,7 +39,7 @@ sp-consensus = { version = "0.8.0-dev", git = "https://github.com/paritytech/sub
 sc-consensus = { version = "0.8.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sp-timestamp = { version = "2.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 evm = { version = "2.0.0-dev", package = "pallet-evm", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-ethereum = { version = "0.1.0", package = "pallet-ethereum", path = "../../frame/ethereum" }
+ethereum = { version = "0.1.0", package = "pallet-ethereum" }
 sc-finality-grandpa = { version = "0.8.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sp-finality-grandpa = { version = "2.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sc-client-api = { version = "2.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }

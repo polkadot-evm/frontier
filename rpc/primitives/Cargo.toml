@@ -10,7 +10,7 @@ license = "GPL-3.0"
 sp-core = { version = "2.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sp-api = { version = "2.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 pallet-evm = { version = "2.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-ethereum = { version = "0.2", default-features = false, features = ["codec"], path = "../../vendor/ethereum/" }
+ethereum = { version = "0.3", default-features = false, features = ["codec"] }
 ethereum-types = { version = "0.9", default-features = false }
 codec = { package = "parity-scale-codec", version = "1.0.0", default-features = false }
 sp-runtime = { version = "2.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }

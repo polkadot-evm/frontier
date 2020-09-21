@@ -59,7 +59,6 @@ pub use frame_support::{
 	},
 	ConsensusEngineId,
 };
-use frame_ethereum::{Block as EthereumBlock, Transaction as EthereumTransaction, Receipt as EthereumReceipt};
 use frame_evm::{Account as EVMAccount, FeeCalculator, HashedAddressMapping, EnsureAddressTruncated};
 use frontier_rpc_primitives::{TransactionStatus};
 pub type BlockNumber = u32;
@@ -298,7 +297,12 @@ impl frame_evm::Trait for Runtime {
 	type AddressMapping = HashedAddressMapping<BlakeTwo256>;
 	type Currency = Balances;
 	type Event = Event;
-	type Precompiles = ();
+	type Precompiles = (
+		frame_evm::precompiles::ECRecover,
+		frame_evm::precompiles::Sha256,
+		frame_evm::precompiles::Ripemd160,
+		frame_evm::precompiles::Identity,
+	);
 	type ChainId = ChainId;
 }
 
