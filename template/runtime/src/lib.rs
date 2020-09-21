@@ -230,6 +230,8 @@ impl pallet_grandpa::Trait for Runtime {
 	)>>::IdentificationTuple;
 
 	type HandleEquivocation = ();
+
+	type WeightInfo = ();
 }
 
 parameter_types! {
