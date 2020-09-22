@@ -10,14 +10,14 @@ license = "GPL-3.0"
 rustc-hex = { version = "2.1.0", default-features = false }
 serde = { version = "1.0.101", optional = true }
 codec = { package = "parity-scale-codec", version = "1.0.0", default-features = false }
-frame-support = { version = "2.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-frame-system = { version = "2.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-pallet-balances = { version = "2.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-pallet-timestamp = { version = "2.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-pallet-evm = { version = "2.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sp-runtime = { version = "2.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sp-std = { version = "2.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sp-io = { version = "2.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+frame-support = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "rococo-branch" }
+frame-system = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "rococo-branch" }
+pallet-balances = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "rococo-branch" }
+pallet-timestamp = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "rococo-branch" }
+pallet-evm = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "rococo-branch" }
+sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "rococo-branch" }
+sp-std = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "rococo-branch" }
+sp-io = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "rococo-branch" }
 evm = { version = "0.17.0", default-features = false }
 ethereum = { version = "0.3", default-features = false, features = ["codec"] }
 ethereum-types = { version = "0.9", default-features = false }
@@ -28,7 +28,7 @@ frontier-consensus-primitives = { path = "../../consensus/primitives", default-f
 frontier-rpc-primitives = { path = "../../rpc/primitives", default-features = false }
 
 [dev-dependencies]
-sp-core = { version = "2.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "rococo-branch" }
 
 [features]
 default = ["std"]

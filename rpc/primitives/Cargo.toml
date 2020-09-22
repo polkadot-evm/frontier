@@ -7,14 +7,14 @@ description = "Runtime primitives for Ethereum RPC (web3) compatibility layer fo
 license = "GPL-3.0"
 
 [dependencies]
-sp-core = { version = "2.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sp-api = { version = "2.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-pallet-evm = { version = "2.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sp-core = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "rococo-branch" }
+sp-api = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "rococo-branch" }
+pallet-evm = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "rococo-branch" }
 ethereum = { version = "0.3", default-features = false, features = ["codec"] }
 ethereum-types = { version = "0.9", default-features = false }
 codec = { package = "parity-scale-codec", version = "1.0.0", default-features = false }
-sp-runtime = { version = "2.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sp-std = { version = "2.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "rococo-branch" }
+sp-std = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "rococo-branch" }
 
 [features]
 default = ["std"]

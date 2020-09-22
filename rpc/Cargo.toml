@@ -14,14 +14,14 @@ ethereum-types = "0.9.0"
 frontier-consensus = { path = "../consensus" }
 frontier-rpc-core = { path = "core" }
 frontier-rpc-primitives = { path = "primitives" }
-sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sp-api = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sp-consensus = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sp-transaction-pool = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sp-storage = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" } 
-sc-service = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sc-client-api = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "rococo-branch" }
+sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "rococo-branch" }
+sp-api = { git = "https://github.com/paritytech/substrate.git", branch = "rococo-branch" }
+sp-consensus = { git = "https://github.com/paritytech/substrate.git", branch = "rococo-branch" }
+sp-transaction-pool = { git = "https://github.com/paritytech/substrate.git", branch = "rococo-branch" }
+sp-storage = { git = "https://github.com/paritytech/substrate.git", branch = "rococo-branch" } 
+sc-service = { git = "https://github.com/paritytech/substrate.git", branch = "rococo-branch" }
+sc-client-api = { git = "https://github.com/paritytech/substrate.git", branch = "rococo-branch" }
 ethereum = { version = "0.3", features = ["codec"] }
 codec = { package = "parity-scale-codec", version = "1.0.0" }
 rlp = "0.4"
