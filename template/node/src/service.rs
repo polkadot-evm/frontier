@@ -186,6 +186,7 @@ pub fn new_full(config: Configuration, manual_seal: bool) -> Result<TaskManager,
 			let deps = crate::rpc::FullDeps {
 				client: client.clone(),
 				pool: pool.clone(),
+				graph_pool: pool.pool().clone(),
 				select_chain: select_chain.clone(),
 				deny_unsafe,
 				is_authority,

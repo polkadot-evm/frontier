@@ -19,6 +19,7 @@ sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "fr
 sp-api = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sp-consensus = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sp-transaction-pool = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sc-transaction-graph = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sp-storage = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" } 
 sc-service = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sc-client-api = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
