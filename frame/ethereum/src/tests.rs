@@ -187,7 +187,6 @@ fn invalid_signature_should_be_ignored() {
 	});
 }
 
-
 #[test]
 fn contract_should_be_created_at_given_address() {
 	let (pairs, mut ext) = new_test_ext(1);
@@ -201,5 +200,21 @@ fn contract_should_be_created_at_given_address() {
 			default_erc20_creation_transaction(alice),
 		));
 		assert_ne!(Evm::account_codes(erc20_address).len(), 0);
+	});
+}
+
+#[test]
+fn transaction_should_generate_correct_gas_used() {
+	let (pairs, mut ext) = new_test_ext(1);
+	let alice = &pairs[0];
+
+	let expected_gas = U256::from(891328);
+
+	ext.execute_with(|| {
+		assert_ok!(Ethereum::execute(
+			alice.address,
+			default_erc20_creation_transaction(alice),
+		));
+		assert_eq!(Pending::get()[0].2.used_gas, expected_gas);
 	});
 }

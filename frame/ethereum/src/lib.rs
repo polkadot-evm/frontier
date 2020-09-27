@@ -261,7 +261,7 @@ impl<T: Trait> Module<T> {
 				)
 			),
 			gas_limit: U256::zero(), // TODO: set this using Ethereum's gas limit change algorithm.
-			gas_used: U256::zero(), // TODO: get this from receipts.
+			gas_used: receipts.clone().into_iter().fold(U256::zero(), |acc, r| acc + r.used_gas),
 			timestamp: UniqueSaturatedInto::<u64>::unique_saturated_into(
 				pallet_timestamp::Module::<T>::get()
 			),
@@ -335,9 +335,9 @@ impl<T: Trait> Module<T> {
 		);
 		let transaction_index = Pending::get().len() as u32;
 
-		let status = match transaction.action {
+		let (status, gas_used) = match transaction.action {
 			ethereum::TransactionAction::Call(target) => {
-				Self::handle_exec(
+				let (_, _, gas_used) = Self::handle_exec(
 					pallet_evm::Module::<T>::execute_call(
 						source,
 						target,
@@ -350,7 +350,7 @@ impl<T: Trait> Module<T> {
 					)?
 				)?;
 
-				TransactionStatus {
+				(TransactionStatus {
 					transaction_hash,
 					transaction_index,
 					from: source,
@@ -358,10 +358,10 @@ impl<T: Trait> Module<T> {
 					contract_address: None,
 					logs: Vec::new(), // TODO: feed in logs.
 					logs_bloom: Bloom::default(), // TODO: feed in bloom.
-				}
+				}, gas_used)
 			},
 			ethereum::TransactionAction::Create => {
-				let contract_address = Self::handle_exec(
+				let (_, contract_address, gas_used) = Self::handle_exec(
 					pallet_evm::Module::<T>::execute_create(
 						source,
 						transaction.input.clone(),
@@ -371,9 +371,9 @@ impl<T: Trait> Module<T> {
 						Some(transaction.nonce),
 						true,
 					)?
-				)?.1;
+				)?;
 
-				TransactionStatus {
+				(TransactionStatus {
 					transaction_hash,
 					transaction_index,
 					from: source,
@@ -381,13 +381,13 @@ impl<T: Trait> Module<T> {
 					contract_address: Some(contract_address),
 					logs: Vec::new(), // TODO: feed in logs.
 					logs_bloom: Bloom::default(), // TODO: feed in bloom.
-				}
+				}, gas_used)
 			},
 		};
 
 		let receipt = ethereum::Receipt {
 			state_root: H256::default(), // TODO: should be okay / error status.
-			used_gas: U256::default(), // TODO: set this.
+			used_gas: gas_used,
 			logs_bloom: Bloom::default(), // TODO: set this.
 			logs: Vec::new(), // TODO: set this.
 		};
