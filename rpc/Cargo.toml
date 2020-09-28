@@ -7,9 +7,11 @@ description = "Ethereum RPC (web3) compatibility layer for Substrate."
 license = "GPL-3.0"
 
 [dependencies]
-jsonrpc-core = "14.0.3"
+jsonrpc-core = "15.0.0"
 jsonrpc-derive = "14.0.3"
 jsonrpc-core-client = "14.0.3"
+jsonrpc-pubsub = "15.0.0"
+log = "0.4.8"
 ethereum-types = "0.9.0"
 frontier-consensus = { path = "../consensus" }
 frontier-rpc-core = { path = "core" }
@@ -17,11 +19,13 @@ frontier-rpc-primitives = { path = "primitives" }
 sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "rococo-branch" }
 sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "rococo-branch" }
 sp-api = { git = "https://github.com/paritytech/substrate.git", branch = "rococo-branch" }
-sp-consensus = { git = "https://github.com/paritytech/substrate.git", branch = "rococo-branch" }
 sp-transaction-pool = { git = "https://github.com/paritytech/substrate.git", branch = "rococo-branch" }
 sp-storage = { git = "https://github.com/paritytech/substrate.git", branch = "rococo-branch" } 
 sc-service = { git = "https://github.com/paritytech/substrate.git", branch = "rococo-branch" }
 sc-client-api = { git = "https://github.com/paritytech/substrate.git", branch = "rococo-branch" }
+sc-network = { git = "https://github.com/paritytech/substrate.git", branch = "rococo-branch" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate.git", branch = "rococo-branch" }
+sc-rpc = { git = "https://github.com/paritytech/substrate.git", branch = "rococo-branch" }
 ethereum = { version = "0.3", features = ["codec"] }
 codec = { package = "parity-scale-codec", version = "1.0.0" }
 rlp = "0.4"
