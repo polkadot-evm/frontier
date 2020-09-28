@@ -20,7 +20,7 @@ use ethereum::{Block as EthereumBlock, Transaction as EthereumTransaction};
 use ethereum_types::{H160, H256, H64, U256, U64, H512};
 use jsonrpc_core::{BoxFuture, Result, futures::future::{self, Future}};
 use futures::future::TryFutureExt;
-use sp_runtime::traits::{Block as BlockT, UniqueSaturatedInto, Zero, One, Saturating};
+use sp_runtime::traits::{Block as BlockT, Header as _, UniqueSaturatedInto, Zero, One, Saturating};
 use sp_runtime::transaction_validity::TransactionSource;
 use sp_api::{ProvideRuntimeApi, BlockId};
 use sp_transaction_pool::TransactionPool;
@@ -225,6 +225,16 @@ impl<B, C, P, CT, BE> EthApi<B, C, P, CT, BE> where
 		}
 		Ok(None)
 	}
+
+	fn headers(&self, id: &BlockId<B>) -> (u64,u64) {
+		let best_number: u64 = UniqueSaturatedInto::<u64>::unique_saturated_into(
+			self.client.info().best_number
+		);
+		let header_number: u64 = UniqueSaturatedInto::<u64>::unique_saturated_into(
+			*self.client.header(id.clone()).unwrap().unwrap().number()
+		);
+		(best_number, header_number)
+	}
 }
 
 impl<B, C, P, CT, BE> EthApiT for EthApi<B, C, P, CT, BE> where
@@ -331,6 +341,10 @@ impl<B, C, P, CT, BE> EthApiT for EthApi<B, C, P, CT, BE> where
 			Some(hash) => hash,
 			_ => return Ok(None),
 		};
+		let (best_number, header_number) = self.headers(&id);
+		if header_number > best_number {
+			return Ok(None);
+		}
 
 		let block = self.client.runtime_api().current_block(&id)
 			.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
@@ -403,6 +417,10 @@ impl<B, C, P, CT, BE> EthApiT for EthApi<B, C, P, CT, BE> where
 			Some(hash) => hash,
 			_ => return Ok(None),
 		};
+		let (best_number, header_number) = self.headers(&id);
+		if header_number > best_number {
+			return Ok(None);
+		}
 
 		let block = self.client.runtime_api()
 			.current_block(&id)
@@ -548,6 +566,10 @@ impl<B, C, P, CT, BE> EthApiT for EthApi<B, C, P, CT, BE> where
 			Some(hash) => hash,
 			_ => return Ok(None),
 		};
+		let (best_number, header_number) = self.headers(&id);
+		if header_number > best_number {
+			return Ok(None);
+		}
 
 		let block = self.client.runtime_api().current_block(&id)
 			.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
@@ -577,6 +599,10 @@ impl<B, C, P, CT, BE> EthApiT for EthApi<B, C, P, CT, BE> where
 			Some(hash) => hash,
 			_ => return Ok(None),
 		};
+		let (best_number, header_number) = self.headers(&id);
+		if header_number > best_number {
+			return Ok(None);
+		}
 		let index = index.value();
 
 		let block = self.client.runtime_api().current_block(&id)
@@ -639,6 +665,10 @@ impl<B, C, P, CT, BE> EthApiT for EthApi<B, C, P, CT, BE> where
 			Some(hash) => hash,
 			_ => return Ok(None),
 		};
+		let (best_number, header_number) = self.headers(&id);
+		if header_number > best_number {
+			return Ok(None);
+		}
 
 		let block = self.client.runtime_api().current_block(&id)
 			.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
@@ -729,6 +759,10 @@ impl<B, C, P, CT, BE> EthApiT for EthApi<B, C, P, CT, BE> where
 				Some(hash) => hash,
 				_ => return Ok(Vec::new()),
 			};
+			let (best_number, header_number) = self.headers(&id);
+			if header_number > best_number {
+				return Ok(Vec::new());
+			}
 
 			let block = self.client.runtime_api()
 				.current_block(&id)
