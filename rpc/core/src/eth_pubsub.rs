@@ -22,6 +22,8 @@ use jsonrpc_pubsub::{typed, SubscriptionId};
 
 use crate::types::pubsub;
 
+pub use rpc_impl_EthPubSubApi::gen_server::EthPubSubApi as EthPubSubApiServer;
+
 /// Eth PUB-SUB rpc interface.
 #[rpc(server)]
 pub trait EthPubSubApi {

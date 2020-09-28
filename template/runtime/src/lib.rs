@@ -230,6 +230,8 @@ impl pallet_grandpa::Trait for Runtime {
 	)>>::IdentificationTuple;
 
 	type HandleEquivocation = ();
+
+	type WeightInfo = ();
 }
 
 parameter_types! {
@@ -246,9 +248,13 @@ impl pallet_timestamp::Trait for Runtime {
 
 parameter_types! {
 	pub const ExistentialDeposit: u128 = 500;
+	// For weight estimation, we assume that the most locks on an individual account will be 50.
+	// This number may need to be adjusted in the future if this assumption no longer holds true.
+	pub const MaxLocks: u32 = 50;
 }
 
 impl pallet_balances::Trait for Runtime {
+	type MaxLocks = MaxLocks;
 	/// The type for recording an account's balance.
 	type Balance = Balance;
 	/// The ubiquitous event type.
@@ -519,7 +525,7 @@ impl_runtime_apis! {
 						nonce,
 						false,
 					)
-					.map(|(_, ret, gas)| (ret, gas))
+					.map(|(_, ret, gas, _)| (ret, gas))
 					.map_err(|err| err.into()),
 				frame_ethereum::TransactionAction::Create =>
 					EVM::execute_create(
@@ -531,7 +537,7 @@ impl_runtime_apis! {
 						nonce,
 						false,
 					)
-					.map(|(_, _, gas)| (vec![], gas))
+					.map(|(_, _, gas, _)| (vec![], gas))
 					.map_err(|err| err.into()),
 			}
 		}

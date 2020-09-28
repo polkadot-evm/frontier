@@ -177,11 +177,13 @@ pub fn new_full(config: Configuration, manual_seal: bool) -> Result<TaskManager,
 	let prometheus_registry = config.prometheus_registry().cloned();
 	let telemetry_connection_sinks = sc_service::TelemetryConnectionSinks::default();
 	let is_authority = role.is_authority();
+	let subscription_task_executor = sc_rpc::SubscriptionTaskExecutor::new(task_manager.spawn_handle());
 
 	let rpc_extensions_builder = {
 		let client = client.clone();
 		let select_chain = select_chain.clone();
 		let pool = transaction_pool.clone();
+		let network = network.clone();
 		Box::new(move |deny_unsafe, _| {
 			let deps = crate::rpc::FullDeps {
 				client: client.clone(),
@@ -189,9 +191,13 @@ pub fn new_full(config: Configuration, manual_seal: bool) -> Result<TaskManager,
 				select_chain: select_chain.clone(),
 				deny_unsafe,
 				is_authority,
+				network: network.clone(),
 				command_sink: Some(command_sink.clone())
 			};
-			crate::rpc::create_full(deps)
+			crate::rpc::create_full(
+				deps,
+				subscription_task_executor.clone()
+			)
 		})
 	};
 
