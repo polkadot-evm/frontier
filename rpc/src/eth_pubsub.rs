@@ -30,18 +30,11 @@ use sha3::{Keccak256, Digest};
 pub use frontier_rpc_core::EthPubSubApiServer;
 use futures::{StreamExt as _, TryStreamExt as _};
 
-use jsonrpc_core::{Result as JsonRpcResult, futures::{Future, Sink}, ErrorCode, Error};
+use jsonrpc_core::{Result as JsonRpcResult, futures::{Future, Sink}};
 use frontier_rpc_primitives::{EthereumRuntimeRPCApi, TransactionStatus};
 
 use sc_network::{NetworkService, ExHashT};
-
-fn internal_err(message: &str) -> Error {
-	Error {
-		code: ErrorCode::InternalError,
-		message: message.to_string(),
-		data: None
-	}
-}
+use crate::internal_err;
 
 pub struct EthPubSubApi<B: BlockT, P, C, BE, SC, H: ExHashT> {
 	_pool: Arc<P>,
@@ -86,15 +79,11 @@ impl<B: BlockT, P, C, BE, SC, H: ExHashT> EthPubSubApi<B, P, C, BE, SC, H> where
 		if let Some(number) = number {
 			match number {
 				BlockNumber::Hash { hash, .. } => {
-					let id = match frontier_consensus::load_block_hash::<B, _>(
-						self.client.as_ref(), hash
-					).map_err(|_| internal_err("fetch aux store failed"))?
-					{
-						Some(hash) => BlockId::Hash(hash),
-						None => return Ok(None),
-					};
-					if let Ok(Some(block)) = self.client.runtime_api().current_block(&id) {
-						native_number = Some(block.header.number.as_u32());
+					let id = self.load_hash(hash).unwrap_or(None);
+					if let Some(id) = id {
+						if let Ok(Some(block)) = self.client.runtime_api().current_block(&id) {
+							native_number = Some(block.header.number.as_u32());
+						}
 					}
 				},
 				BlockNumber::Num(_) => {
@@ -133,6 +122,31 @@ impl<B: BlockT, P, C, BE, SC, H: ExHashT> EthPubSubApi<B, P, C, BE, SC, H> where
 			);
 		}
 		(None, None)
+	}
+
+	// Asumes there is only one mapped canonical block in the AuxStore, otherwise something is wrong
+	fn load_hash(&self, hash: H256) -> JsonRpcResult<Option<BlockId<B>>> {
+		let hashes = match frontier_consensus::load_block_hash::<B, _>(self.client.as_ref(), hash)
+			.map_err(|err| internal_err(format!("fetch aux store failed: {:?}", err)))?
+		{
+			Some(hashes) => hashes,
+			None => return Ok(None),
+		};
+		let out: Vec<H256> = hashes.into_iter()
+			.filter_map(|h| {
+				if let Ok(Some(_)) = self.client.header(BlockId::Hash(h)) {
+					Some(h)
+				} else {
+					None
+				}
+			}).collect();
+
+		if out.len() == 1 {
+			return Ok(Some(
+				BlockId::Hash(out[0])
+			));
+		}
+		Ok(None)
 	}
 }
 
