@@ -28,6 +28,7 @@ use sp_transaction_pool::TransactionPool;
 use sc_client_api::backend::{StorageProvider, Backend, StateBackend, AuxStore};
 use sha3::{Keccak256, Digest};
 use sp_runtime::traits::BlakeTwo256;
+use sp_blockchain::{Error as BlockChainError, HeaderMetadata, HeaderBackend};
 use frontier_rpc_core::{EthApi as EthApiT, NetApi as NetApiT};
 use frontier_rpc_core::types::{
 	BlockNumber, Bytes, CallRequest, Filter, Index, Log, Receipt, RichBlock,
@@ -179,6 +180,7 @@ fn transaction_build(
 
 impl<B, C, SC, P, CT, BE> EthApi<B, C, SC, P, CT, BE> where
 	C: ProvideRuntimeApi<B> + StorageProvider<B, BE> + AuxStore,
+	C: HeaderBackend<B> + HeaderMetadata<B, Error=BlockChainError> + 'static,
 	C::Api: EthereumRuntimeRPCApi<B>,
 	BE: Backend<B> + 'static,
 	BE::State: StateBackend<BlakeTwo256>,
@@ -191,10 +193,7 @@ impl<B, C, SC, P, CT, BE> EthApi<B, C, SC, P, CT, BE> where
 	fn native_block_id(&self, number: Option<BlockNumber>) -> Result<Option<BlockId<B>>> {
 		Ok(match number.unwrap_or(BlockNumber::Latest) {
 			BlockNumber::Hash { hash, .. } => {
-				let hash = frontier_consensus::load_block_hash::<B, _>(self.client.as_ref(), hash)
-					.map_err(|err| internal_err(format!("fetch aux store failed: {:?}", err)))?;
-
-				hash.map(|h| BlockId::Hash(h))
+				self.load_hash(hash).unwrap_or(None)
 			},
 			BlockNumber::Num(number) => {
 				Some(BlockId::Number(number.unique_saturated_into()))
@@ -214,10 +213,36 @@ impl<B, C, SC, P, CT, BE> EthApi<B, C, SC, P, CT, BE> where
 			}
 		})
 	}
+
+	// Asumes there is only one mapped canonical block in the AuxStore, otherwise something is wrong
+	fn load_hash(&self, hash: H256) -> Result<Option<BlockId<B>>> {
+		let hashes = match frontier_consensus::load_block_hash::<B, _>(self.client.as_ref(), hash)
+			.map_err(|err| internal_err(format!("fetch aux store failed: {:?}", err)))?
+		{
+			Some(hashes) => hashes,
+			None => return Ok(None),
+		};
+		let out: Vec<H256> = hashes.into_iter()
+			.filter_map(|h| {
+				if let Ok(Some(_)) = self.client.header(BlockId::Hash(h)) {
+					Some(h)
+				} else {
+					None
+				}
+			}).collect();
+
+		if out.len() == 1 {
+			return Ok(Some(
+				BlockId::Hash(out[0])
+			));
+		}
+		Ok(None)
+	}
 }
 
 impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 	C: ProvideRuntimeApi<B> + StorageProvider<B, BE> + AuxStore,
+	C: HeaderBackend<B> + HeaderMetadata<B, Error=BlockChainError> + 'static,
 	C::Api: EthereumRuntimeRPCApi<B>,
 	BE: Backend<B> + 'static,
 	BE::State: StateBackend<BlakeTwo256>,
@@ -329,11 +354,11 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 	}
 
 	fn block_by_hash(&self, hash: H256, full: bool) -> Result<Option<RichBlock>> {
-		let id = match frontier_consensus::load_block_hash::<B, _>(self.client.as_ref(), hash)
-			.map_err(|err| internal_err(format!("fetch aux store failed: {:?}", err)))?
+		let id = match self.load_hash(hash)
+			.map_err(|err| internal_err(format!("{:?}", err)))?
 		{
-			Some(hash) => BlockId::Hash(hash),
-			None => return Ok(None),
+			Some(hash) => hash,
+			_ => return Ok(None),
 		};
 
 		let block = self.client.runtime_api().current_block(&id)
@@ -401,11 +426,11 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 	}
 
 	fn block_transaction_count_by_hash(&self, hash: H256) -> Result<Option<U256>> {
-		let id = match frontier_consensus::load_block_hash::<B, _>(self.client.as_ref(), hash)
-			.map_err(|err| internal_err(format!("fetch aux store failed: {:?}", err)))?
+		let id = match self.load_hash(hash)
+			.map_err(|err| internal_err(format!("{:?}", err)))?
 		{
-			Some(hash) => BlockId::Hash(hash),
-			None => return Ok(None),
+			Some(hash) => hash,
+			_ => return Ok(None),
 		};
 
 		let block = self.client.runtime_api()
@@ -558,11 +583,11 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 			None => return Ok(None),
 		};
 
-		let id = match frontier_consensus::load_block_hash::<B, _>(self.client.as_ref(), hash)
-			.map_err(|err| internal_err(format!("fetch aux store failed: {:?}", err)))?
+		let id = match self.load_hash(hash)
+			.map_err(|err| internal_err(format!("{:?}", err)))?
 		{
-			Some(hash) => BlockId::Hash(hash),
-			None => return Ok(None),
+			Some(hash) => hash,
+			_ => return Ok(None),
 		};
 
 		let block = self.client.runtime_api().current_block(&id)
@@ -587,11 +612,11 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 		hash: H256,
 		index: Index,
 	) -> Result<Option<Transaction>> {
-		let id = match frontier_consensus::load_block_hash::<B, _>(self.client.as_ref(), hash)
-			.map_err(|err| internal_err(format!("fetch aux store failed: {:?}", err)))?
+		let id = match self.load_hash(hash)
+			.map_err(|err| internal_err(format!("{:?}", err)))?
 		{
-			Some(hash) => BlockId::Hash(hash),
-			None => return Ok(None),
+			Some(hash) => hash,
+			_ => return Ok(None),
 		};
 		let index = index.value();
 
@@ -649,11 +674,11 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 			None => return Ok(None),
 		};
 
-		let id = match frontier_consensus::load_block_hash::<B, _>(self.client.as_ref(), hash)
-			.map_err(|err| internal_err(format!("fetch aux store failed: {:?}", err)))?
+		let id = match self.load_hash(hash)
+			.map_err(|err| internal_err(format!("{:?}", err)))?
 		{
-			Some(hash) => BlockId::Hash(hash),
-			None => return Ok(None),
+			Some(hash) => hash,
+			_ => return Ok(None),
 		};
 
 		let block = self.client.runtime_api().current_block(&id)
@@ -739,11 +764,11 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 		let mut ret = Vec::new();
 
 		if let Some(hash) = filter.block_hash {
-			let id = match frontier_consensus::load_block_hash::<B, _>(self.client.as_ref(), hash)
-				.map_err(|err| internal_err(format!("fetch aux store failed: {:?}", err)))?
+			let id = match self.load_hash(hash)
+				.map_err(|err| internal_err(format!("{:?}", err)))?
 			{
-				Some(hash) => BlockId::Hash(hash),
-				None => return Ok(ret),
+				Some(hash) => hash,
+				_ => return Ok(Vec::new()),
 			};
 
 			let block = self.client.runtime_api()
