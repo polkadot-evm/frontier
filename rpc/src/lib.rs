@@ -505,7 +505,6 @@ impl<B, C, SC, P, CT, BE, A> EthApiT for EthApi<B, C, SC, P, CT, BE, A> where
 				)
 			}
 		}
-		
 	}
 
 	fn call(&self, request: CallRequest, _: Option<BlockNumber>) -> Result<Bytes> {
