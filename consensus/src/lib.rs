@@ -126,6 +126,8 @@ impl<B, I, C> BlockImport<B> for FrontierBlockImport<B, I, C> where
 			)
 		}
 
+		let client = self.client.clone();
+
 		if self.enabled {
 			let log = find_frontier_log::<B>(&block.header)?;
 			let hash = block.post_hash();
@@ -134,7 +136,7 @@ impl<B, I, C> BlockImport<B> for FrontierBlockImport<B, I, C> where
 				ConsensusLog::EndBlock {
 					block_hash, transaction_hashes,
 				} => {
-					aux_schema::write_block_hash(block_hash, hash, insert_closure!());
+					aux_schema::write_block_hash(client.as_ref(), block_hash, hash, insert_closure!());
 
 					for (index, transaction_hash) in transaction_hashes.into_iter().enumerate() {
 						aux_schema::write_transaction_metadata(
