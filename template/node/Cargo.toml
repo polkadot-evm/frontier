@@ -31,6 +31,7 @@ sc-service = { version = "0.8.0-dev", git = "https://github.com/paritytech/subst
 sp-inherents = { version = "2.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sc-transaction-pool = { version = "2.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sp-transaction-pool = { version = "2.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sc-transaction-graph = { version = "2.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sc-network = { version = "0.8.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sc-consensus-aura = { version = "0.8.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sp-consensus-aura = { version = "0.8.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
