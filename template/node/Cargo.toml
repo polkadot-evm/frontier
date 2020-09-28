@@ -16,7 +16,8 @@ targets = ["x86_64-unknown-linux-gnu"]
 futures = "0.3.4"
 log = "0.4.8"
 structopt = "0.3.8"
-jsonrpc-core = "14.0.3"
+jsonrpc-core = "15.0.0"
+jsonrpc-pubsub = "15.0.0"
 
 sp-api = { version = "2.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sp-blockchain = { version = "2.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
