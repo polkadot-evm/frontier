@@ -24,6 +24,7 @@ use sp_runtime::traits::{Block as BlockT, Header as _, UniqueSaturatedInto, Zero
 use sp_runtime::transaction_validity::TransactionSource;
 use sp_api::{ProvideRuntimeApi, BlockId};
 use sp_transaction_pool::TransactionPool;
+use sc_transaction_graph::{Pool, ChainApi};
 use sc_client_api::backend::{StorageProvider, Backend, StateBackend, AuxStore};
 use sha3::{Keccak256, Digest};
 use sp_runtime::traits::BlakeTwo256;
@@ -38,22 +39,24 @@ use crate::internal_err;
 
 pub use frontier_rpc_core::{EthApiServer, NetApiServer};
 
-pub struct EthApi<B: BlockT, C, P, CT, BE> {
+pub struct EthApi<B: BlockT, C, P, CT, BE, A: ChainApi> {
 	pool: Arc<P>,
+	graph_pool: Arc<Pool<A>>,
 	client: Arc<C>,
 	convert_transaction: CT,
 	is_authority: bool,
 	_marker: PhantomData<(B, BE)>,
 }
 
-impl<B: BlockT, C, P, CT, BE> EthApi<B, C, P, CT, BE> {
+impl<B: BlockT, C, P, CT, BE, A: ChainApi> EthApi<B, C, P, CT, BE, A> {
 	pub fn new(
 		client: Arc<C>,
+		graph_pool: Arc<Pool<A>>,
 		pool: Arc<P>,
 		convert_transaction: CT,
 		is_authority: bool
 	) -> Self {
-		Self { client, pool, convert_transaction, is_authority, _marker: PhantomData }
+		Self { client, pool, graph_pool, convert_transaction, is_authority, _marker: PhantomData }
 	}
 }
 
@@ -168,7 +171,7 @@ fn transaction_build(
 	}
 }
 
-impl<B, C, P, CT, BE> EthApi<B, C, P, CT, BE> where
+impl<B, C, P, CT, BE, A> EthApi<B, C, P, CT, BE, A> where
 	C: ProvideRuntimeApi<B> + StorageProvider<B, BE> + AuxStore,
 	C: HeaderBackend<B> + HeaderMetadata<B, Error=BlockChainError> + 'static,
 	C::Api: EthereumRuntimeRPCApi<B>,
@@ -177,6 +180,7 @@ impl<B, C, P, CT, BE> EthApi<B, C, P, CT, BE> where
 	B: BlockT<Hash=H256> + Send + Sync + 'static,
 	C: Send + Sync + 'static,
 	P: TransactionPool<Block=B> + Send + Sync + 'static,
+	A: ChainApi<Block=B> + 'static,
 	CT: ConvertTransaction<<B as BlockT>::Extrinsic> + Send + Sync + 'static,
 {
 	fn native_block_id(&self, number: Option<BlockNumber>) -> Result<Option<BlockId<B>>> {
@@ -237,7 +241,7 @@ impl<B, C, P, CT, BE> EthApi<B, C, P, CT, BE> where
 	}
 }
 
-impl<B, C, P, CT, BE> EthApiT for EthApi<B, C, P, CT, BE> where
+impl<B, C, P, CT, BE, A> EthApiT for EthApi<B, C, P, CT, BE, A> where
 	C: ProvideRuntimeApi<B> + StorageProvider<B, BE> + AuxStore,
 	C: HeaderBackend<B> + HeaderMetadata<B, Error=BlockChainError> + 'static,
 	C::Api: EthereumRuntimeRPCApi<B>,
@@ -246,6 +250,7 @@ impl<B, C, P, CT, BE> EthApiT for EthApi<B, C, P, CT, BE> where
 	B: BlockT<Hash=H256> + Send + Sync + 'static,
 	C: Send + Sync + 'static,
 	P: TransactionPool<Block=B> + Send + Sync + 'static,
+	A: ChainApi<Block=B> + 'static,
 	CT: ConvertTransaction<<B as BlockT>::Extrinsic> + Send + Sync + 'static,
 {
 	fn protocol_version(&self) -> Result<u64> {
@@ -476,21 +481,38 @@ impl<B, C, P, CT, BE> EthApiT for EthApi<B, C, P, CT, BE> where
 				future::result(Err(internal_err("decode transaction failed")))
 			),
 		};
-		let transaction_hash = H256::from_slice(
-			Keccak256::digest(&rlp::encode(&transaction)).as_slice()
-		);
-		let hash = self.client.info().best_hash;
-		Box::new(
-			self.pool
-				.submit_one(
-					&BlockId::hash(hash),
-					TransactionSource::Local,
-					self.convert_transaction.convert_transaction(transaction),
+		// pre-submit checks
+		let uxt = self.convert_transaction.convert_transaction(transaction.clone());
+		let (uxt_hash, _bytes) = self.graph_pool.validated_pool().api().hash_and_length(&uxt);
+		let check_is_known = self.graph_pool.validated_pool().check_is_known(&uxt_hash,false);
+
+		match check_is_known {
+			Ok(_) => {
+				let hash = self.client.info().best_hash;
+				let transaction_hash = H256::from_slice(
+					Keccak256::digest(&rlp::encode(&transaction)).as_slice()
+				);
+				Box::new(
+					self.pool
+						.submit_one(
+							&BlockId::hash(hash),
+							TransactionSource::Local,
+							uxt,
+						)
+						.compat()
+						.map(move |_| transaction_hash)
+						.map_err(|err| internal_err(format!("submit transaction to pool failed: {:?}", err)))
 				)
-				.compat()
-				.map(move |_| transaction_hash)
-				.map_err(|err| internal_err(format!("submit transaction to pool failed: {:?}", err)))
-		)
+			},
+			_ => {
+				// Transaction is already imported or in the ban list
+				Box::new(
+					futures::future::err::<_, jsonrpc_core::types::error::Error>(
+						internal_err(format!("{:?}",check_is_known))
+					).compat()
+				)
+			}
+		}
 	}
 
 	fn call(&self, request: CallRequest, _: Option<BlockNumber>) -> Result<Bytes> {
