@@ -61,7 +61,7 @@ pub trait Trait: frame_system::Trait<Hash=H256> + pallet_balances::Trait + palle
 }
 
 decl_storage! {
-	trait Store for Module<T: Trait> as Example {
+	trait Store for Module<T: Trait> as Ethereum {
 		/// Current building block's transactions and receipts.
 		Pending: Vec<(ethereum::Transaction, TransactionStatus, ethereum::Receipt)>;
 
@@ -162,6 +162,11 @@ decl_module! {
 		fn on_finalize(n: T::BlockNumber) {
 			<Module<T>>::store_block();
 		}
+
+		fn on_initialize(n: T::BlockNumber) -> frame_support::weights::Weight {
+			Pending::kill();
+			0
+		}
 	}
 }
 
@@ -228,12 +233,10 @@ impl<T: Trait> Module<T> {
 	}
 
 	fn store_block() {
-		let pending = Pending::take();
-
 		let mut transactions = Vec::new();
 		let mut statuses = Vec::new();
 		let mut receipts = Vec::new();
-		for (transaction, status, receipt) in pending {
+		for (transaction, status, receipt) in Pending::get() {
 			transactions.push(transaction);
 			statuses.push(status);
 			receipts.push(receipt);
@@ -241,7 +244,7 @@ impl<T: Trait> Module<T> {
 
 		let ommers = Vec::<ethereum::Header>::new();
 		let header = ethereum::Header {
-			parent_hash: frame_system::Module::<T>::parent_hash(),
+			parent_hash: Self::current_block_hash().unwrap_or_default(),
 			ommers_hash: H256::from_slice(
 				Keccak256::digest(&rlp::encode_list(&ommers)[..]).as_slice(),
 			), // TODO: check ommers hash.
@@ -261,7 +264,7 @@ impl<T: Trait> Module<T> {
 				)
 			),
 			gas_limit: U256::zero(), // TODO: set this using Ethereum's gas limit change algorithm.
-			gas_used: U256::zero(), // TODO: get this from receipts.
+			gas_used: receipts.clone().into_iter().fold(U256::zero(), |acc, r| acc + r.used_gas),
 			timestamp: UniqueSaturatedInto::<u64>::unique_saturated_into(
 				pallet_timestamp::Module::<T>::get()
 			),
@@ -269,10 +272,10 @@ impl<T: Trait> Module<T> {
 			mix_hash: H256::default(),
 			nonce: H64::default(),
 		};
-		let hash = H256::from_slice(Keccak256::digest(&rlp::encode(&header)).as_slice());
+		let hash = Self::ethereum_block_hash(&header);
 
 		let block = ethereum::Block {
-			header,
+			header: header.clone(),
 			transactions: transactions.clone(),
 			ommers,
 		};
@@ -313,9 +316,14 @@ impl<T: Trait> Module<T> {
 		CurrentTransactionStatuses::get()
 	}
 
-	/// Get block by number.
+	/// Get current block.
 	pub fn current_block() -> Option<ethereum::Block> {
 		CurrentBlock::get()
+	}
+
+	/// Get current block hash
+	pub fn current_block_hash() -> Option<H256> {
+		Self::current_block().map(|block| Self::ethereum_block_hash(&block.header))
 	}
 
 	/// Get receipts by number.
@@ -330,9 +338,9 @@ impl<T: Trait> Module<T> {
 		);
 		let transaction_index = Pending::get().len() as u32;
 
-		let status = match transaction.action {
+		let (status, gas_used) = match transaction.action {
 			ethereum::TransactionAction::Call(target) => {
-				Self::handle_exec(
+				let (_, _, gas_used, logs) = Self::handle_exec(
 					pallet_evm::Module::<T>::execute_call(
 						source,
 						target,
@@ -345,18 +353,27 @@ impl<T: Trait> Module<T> {
 					)?
 				)?;
 
-				TransactionStatus {
+				(TransactionStatus {
 					transaction_hash,
 					transaction_index,
 					from: source,
 					to: Some(target),
 					contract_address: None,
-					logs: Vec::new(), // TODO: feed in logs.
+					logs: {
+						logs.into_iter()
+						.map(|log| {
+							Log {
+								address: log.address,
+								topics: log.topics,
+								data: log.data
+							}
+						}).collect()
+					},
 					logs_bloom: Bloom::default(), // TODO: feed in bloom.
-				}
+				}, gas_used)
 			},
 			ethereum::TransactionAction::Create => {
-				let contract_address = Self::handle_exec(
+				let (_, contract_address, gas_used, logs) = Self::handle_exec(
 					pallet_evm::Module::<T>::execute_create(
 						source,
 						transaction.input.clone(),
@@ -366,25 +383,34 @@ impl<T: Trait> Module<T> {
 						Some(transaction.nonce),
 						true,
 					)?
-				)?.1;
+				)?;
 
-				TransactionStatus {
+				(TransactionStatus {
 					transaction_hash,
 					transaction_index,
 					from: source,
 					to: None,
 					contract_address: Some(contract_address),
-					logs: Vec::new(), // TODO: feed in logs.
+					logs: {
+						logs.into_iter()
+						.map(|log| {
+							Log {
+								address: log.address,
+								topics: log.topics,
+								data: log.data
+							}
+						}).collect()
+					},
 					logs_bloom: Bloom::default(), // TODO: feed in bloom.
-				}
+				}, gas_used)
 			},
 		};
 
 		let receipt = ethereum::Receipt {
 			state_root: H256::default(), // TODO: should be okay / error status.
-			used_gas: U256::default(), // TODO: set this.
+			used_gas: gas_used,
 			logs_bloom: Bloom::default(), // TODO: set this.
-			logs: Vec::new(), // TODO: set this.
+			logs: status.clone().logs,
 		};
 
 		Pending::append((transaction, status, receipt));
@@ -392,7 +418,8 @@ impl<T: Trait> Module<T> {
 		Ok(())
 	}
 
-	fn handle_exec<R>(res: (ExitReason, R, U256)) -> Result<(ExitReason, R, U256), Error<T>> {
+	fn handle_exec<R>(res: (ExitReason, R, U256, Vec<pallet_evm::Log>))
+		-> Result<(ExitReason, R, U256, Vec<pallet_evm::Log>), Error<T>> {
 		match res.0 {
 			ExitReason::Succeed(_s) => Ok(res),
 			ExitReason::Error(e) => Err(Self::parse_exit_error(e)),
@@ -429,5 +456,9 @@ impl<T: Trait> Module<T> {
 			ExitError::CreateEmpty => return Error::<T>::CreateEmpty,
 			ExitError::Other(_s) => return Error::<T>::ExitErrorOther,
 		}
+	}
+
+	fn ethereum_block_hash(header: &ethereum::Header) -> H256 {
+		H256::from_slice(Keccak256::digest(&rlp::encode(header)).as_slice())
 	}
 }

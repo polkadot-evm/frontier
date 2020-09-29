@@ -76,10 +76,14 @@ impl frame_system::Trait for Test {
 }
 
 parameter_types! {
+	// For weight estimation, we assume that the most locks on an individual account will be 50.
+	// This number may need to be adjusted in the future if this assumption no longer holds true.
+	pub const MaxLocks: u32 = 50;
 	pub const ExistentialDeposit: u64 = 500;
 }
 
 impl pallet_balances::Trait for Test {
+	type MaxLocks = MaxLocks;
 	type Balance = u64;
 	type Event = ();
 	type DustRemoval = ();

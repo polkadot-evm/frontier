@@ -17,6 +17,7 @@ node/runtime/wasm/target/
 polkadot.*
 .DS_Store
 .idea/
+.cargo-remote.toml
 
 # Added by cargo
 /target
