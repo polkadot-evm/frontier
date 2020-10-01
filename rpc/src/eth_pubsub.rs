@@ -116,9 +116,14 @@ impl<B: BlockT, P, C, BE, SC, H: ExHashT> EthPubSubApi<B, P, C, BE, SC, H> where
 		params: Option<Params>
 	) -> (Option<u32>, Option<u32>) {
 		if let Some(Params::Logs(f)) = params {
+			let to_block: Option<u32> = if f.to_block.is_some() {
+				self.native_block_number(f.to_block).unwrap_or(None)
+			} else {
+				None
+			};
 			return (
 				self.native_block_number(f.from_block).unwrap_or(None),
-				self.native_block_number(f.to_block).unwrap_or(None)
+				to_block
 			);
 		}
 		(None, None)
