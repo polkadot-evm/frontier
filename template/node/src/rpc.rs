@@ -24,7 +24,6 @@ use frontier_template_runtime::{Hash, AccountId, Index, opaque::Block, Balance};
 use sp_api::ProvideRuntimeApi;
 use sp_transaction_pool::TransactionPool;
 use sp_blockchain::{Error as BlockChainError, HeaderMetadata, HeaderBackend};
-use sp_consensus::SelectChain;
 use sc_rpc_api::DenyUnsafe;
 use sc_client_api::{
 	backend::{StorageProvider, Backend, StateBackend, AuxStore},
@@ -49,13 +48,11 @@ pub struct LightDeps<C, F, P> {
 }
 
 /// Full client dependencies.
-pub struct FullDeps<C, P, SC> {
+pub struct FullDeps<C, P> {
 	/// The client instance to use.
 	pub client: Arc<C>,
 	/// Transaction pool instance.
 	pub pool: Arc<P>,
-	/// The SelectChain Strategy
-	pub select_chain: SC,
 	/// Whether to deny unsafe calls
 	pub deny_unsafe: DenyUnsafe,
 	/// The Node authority flag
@@ -67,15 +64,15 @@ pub struct FullDeps<C, P, SC> {
 }
 
 /// Instantiate all Full RPC extensions.
-pub fn create_full<C, P, SC, BE>(
-	deps: FullDeps<C, P, SC>,
+pub fn create_full<C, P, BE>(
+	deps: FullDeps<C, P>,
 	subscription_task_executor: SubscriptionTaskExecutor
 ) -> jsonrpc_core::IoHandler<sc_rpc::Metadata> where
 	BE: Backend<Block> + 'static,
 	BE::State: StateBackend<BlakeTwo256>,
 	C: ProvideRuntimeApi<Block> + StorageProvider<Block, BE> + AuxStore,
 	C: BlockchainEvents<Block>,
-	C: HeaderBackend<Block> + HeaderMetadata<Block, Error=BlockChainError> + 'static,
+	C: HeaderBackend<Block> + HeaderMetadata<Block, Error=BlockChainError>,
 	C: Send + Sync + 'static,
 	C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Index>,
 	C::Api: BlockBuilder<Block>,
@@ -83,7 +80,6 @@ pub fn create_full<C, P, SC, BE>(
 	C::Api: frontier_rpc_primitives::EthereumRuntimeRPCApi<Block>,
 	<C::Api as sp_api::ApiErrorExt>::Error: fmt::Debug,
 	P: TransactionPool<Block=Block> + 'static,
-	SC: SelectChain<Block> +'static,
 {
 	use substrate_frame_rpc_system::{FullSystem, SystemApi};
 	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApi};
@@ -93,7 +89,6 @@ pub fn create_full<C, P, SC, BE>(
 	let FullDeps {
 		client,
 		pool,
-		select_chain,
 		deny_unsafe,
 		is_authority,
 		network,
@@ -109,7 +104,6 @@ pub fn create_full<C, P, SC, BE>(
 	io.extend_with(
 		EthApiServer::to_delegate(EthApi::new(
 			client.clone(),
-			select_chain.clone(),
 			pool.clone(),
 			frontier_template_runtime::TransactionConverter,
 			is_authority,
@@ -119,14 +113,12 @@ pub fn create_full<C, P, SC, BE>(
 	io.extend_with(
 		NetApiServer::to_delegate(NetApi::new(
 			client.clone(),
-			select_chain.clone(),
 		))
 	);
 	io.extend_with(
 		EthPubSubApiServer::to_delegate(EthPubSubApi::new(
 			pool.clone(),
 			client.clone(),
-			select_chain.clone(),
 			network.clone(),
 			SubscriptionManager::new(Arc::new(subscription_task_executor)),
 		))

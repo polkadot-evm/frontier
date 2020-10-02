@@ -20,10 +20,9 @@ use ethereum::{Block as EthereumBlock, Transaction as EthereumTransaction};
 use ethereum_types::{H160, H256, H64, U256, U64, H512};
 use jsonrpc_core::{BoxFuture, Result, futures::future::{self, Future}};
 use futures::future::TryFutureExt;
-use sp_runtime::traits::{Block as BlockT, Header as _, UniqueSaturatedInto, Zero, One, Saturating};
+use sp_runtime::traits::{Block as BlockT, UniqueSaturatedInto, Zero, One, Saturating};
 use sp_runtime::transaction_validity::TransactionSource;
 use sp_api::{ProvideRuntimeApi, BlockId};
-use sp_consensus::SelectChain;
 use sp_transaction_pool::TransactionPool;
 use sc_client_api::backend::{StorageProvider, Backend, StateBackend, AuxStore};
 use sha3::{Keccak256, Digest};
@@ -39,24 +38,22 @@ use crate::internal_err;
 
 pub use frontier_rpc_core::{EthApiServer, NetApiServer};
 
-pub struct EthApi<B: BlockT, C, SC, P, CT, BE> {
+pub struct EthApi<B: BlockT, C, P, CT, BE> {
 	pool: Arc<P>,
 	client: Arc<C>,
-	select_chain: SC,
 	convert_transaction: CT,
 	is_authority: bool,
 	_marker: PhantomData<(B, BE)>,
 }
 
-impl<B: BlockT, C, SC, P, CT, BE> EthApi<B, C, SC, P, CT, BE> {
+impl<B: BlockT, C, P, CT, BE> EthApi<B, C, P, CT, BE> {
 	pub fn new(
 		client: Arc<C>,
-		select_chain: SC,
 		pool: Arc<P>,
 		convert_transaction: CT,
 		is_authority: bool
 	) -> Self {
-		Self { client, select_chain, pool, convert_transaction, is_authority, _marker: PhantomData }
+		Self { client, pool, convert_transaction, is_authority, _marker: PhantomData }
 	}
 }
 
@@ -171,7 +168,7 @@ fn transaction_build(
 	}
 }
 
-impl<B, C, SC, P, CT, BE> EthApi<B, C, SC, P, CT, BE> where
+impl<B, C, P, CT, BE> EthApi<B, C, P, CT, BE> where
 	C: ProvideRuntimeApi<B> + StorageProvider<B, BE> + AuxStore,
 	C: HeaderBackend<B> + HeaderMetadata<B, Error=BlockChainError> + 'static,
 	C::Api: EthereumRuntimeRPCApi<B>,
@@ -179,7 +176,6 @@ impl<B, C, SC, P, CT, BE> EthApi<B, C, SC, P, CT, BE> where
 	BE::State: StateBackend<BlakeTwo256>,
 	B: BlockT<Hash=H256> + Send + Sync + 'static,
 	C: Send + Sync + 'static,
-	SC: SelectChain<B> + Clone + 'static,
 	P: TransactionPool<Block=B> + Send + Sync + 'static,
 	CT: ConvertTransaction<<B as BlockT>::Extrinsic> + Send + Sync + 'static,
 {
@@ -193,9 +189,7 @@ impl<B, C, SC, P, CT, BE> EthApi<B, C, SC, P, CT, BE> where
 			},
 			BlockNumber::Latest => {
 				Some(BlockId::Hash(
-					self.select_chain.best_chain()
-						.map_err(|err| internal_err(format!("fetch header failed: {:?}", err)))?
-						.hash()
+					self.client.info().best_hash
 				))
 			},
 			BlockNumber::Earliest => {
@@ -233,7 +227,7 @@ impl<B, C, SC, P, CT, BE> EthApi<B, C, SC, P, CT, BE> where
 	}
 }
 
-impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
+impl<B, C, P, CT, BE> EthApiT for EthApi<B, C, P, CT, BE> where
 	C: ProvideRuntimeApi<B> + StorageProvider<B, BE> + AuxStore,
 	C: HeaderBackend<B> + HeaderMetadata<B, Error=BlockChainError> + 'static,
 	C::Api: EthereumRuntimeRPCApi<B>,
@@ -241,7 +235,6 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 	BE::State: StateBackend<BlakeTwo256>,
 	B: BlockT<Hash=H256> + Send + Sync + 'static,
 	C: Send + Sync + 'static,
-	SC: SelectChain<B> + Clone + 'static,
 	P: TransactionPool<Block=B> + Send + Sync + 'static,
 	CT: ConvertTransaction<<B as BlockT>::Extrinsic> + Send + Sync + 'static,
 {
@@ -250,12 +243,7 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 	}
 
 	fn syncing(&self) -> Result<SyncStatus> {
-		let header = self
-			.select_chain
-			.best_chain()
-			.map_err(|err| internal_err(format!("fetch header failed: {:?}", err)))?;
-
-		let block_number = U256::from(header.number().clone().unique_saturated_into());
+		let block_number = U256::from(self.client.info().best_number.clone().unique_saturated_into());
 
 		Ok(SyncStatus::Info(SyncInfo {
 			starting_block: U256::zero(),
@@ -271,14 +259,12 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 	}
 
 	fn author(&self) -> Result<H160> {
-		let header = self.select_chain
-			.best_chain()
-			.map_err(|err| internal_err(format!("fetch header failed: {:?}", err)))?;
+		let hash = self.client.info().best_hash;
 
 		Ok(
 			self.client
 			.runtime_api()
-			.author(&BlockId::Hash(header.hash()))
+			.author(&BlockId::Hash(hash))
 			.map_err(|err| internal_err(format!("fetch runtime chain id failed: {:?}", err)))?.into()
 		)
 	}
@@ -288,21 +274,17 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 	}
 
 	fn chain_id(&self) -> Result<Option<U64>> {
-		let header = self.select_chain.best_chain()
-			.map_err(|err| internal_err(format!("fetch header failed: {:?}", err)))?;
-		Ok(Some(self.client.runtime_api().chain_id(&BlockId::Hash(header.hash()))
+		let hash = self.client.info().best_hash;
+		Ok(Some(self.client.runtime_api().chain_id(&BlockId::Hash(hash))
 				.map_err(|err| internal_err(format!("fetch runtime chain id failed: {:?}", err)))?.into()))
 	}
 
 	fn gas_price(&self) -> Result<U256> {
-		let header = self
-			.select_chain
-			.best_chain()
-			.map_err(|err| internal_err(format!("fetch header failed: {:?}", err)))?;
+		let hash = self.client.info().best_hash;
 		Ok(
 			self.client
 				.runtime_api()
-				.gas_price(&BlockId::Hash(header.hash()))
+				.gas_price(&BlockId::Hash(hash))
 				.map_err(|err| internal_err(format!("fetch runtime chain id failed: {:?}", err)))?
 				.into(),
 		)
@@ -313,11 +295,7 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 	}
 
 	fn block_number(&self) -> Result<U256> {
-		let header = self
-			.select_chain
-			.best_chain()
-			.map_err(|err| internal_err(format!("fetch header failed: {:?}", err)))?;
-		Ok(U256::from(header.number().clone().unique_saturated_into()))
+		Ok(U256::from(self.client.info().best_number.clone().unique_saturated_into()))
 	}
 
 	fn balance(&self, address: H160, number: Option<BlockNumber>) -> Result<U256> {
@@ -483,17 +461,11 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 		let transaction_hash = H256::from_slice(
 			Keccak256::digest(&rlp::encode(&transaction)).as_slice()
 		);
-		let header = match self.select_chain.best_chain() {
-			Ok(header) => header,
-			Err(_) => return Box::new(
-				future::result(Err(internal_err("fetch header failed")))
-			),
-		};
-		let best_block_hash = header.hash();
+		let hash = self.client.info().best_hash;
 		Box::new(
 			self.pool
 				.submit_one(
-					&BlockId::hash(best_block_hash),
+					&BlockId::hash(hash),
 					TransactionSource::Local,
 					self.convert_transaction.convert_transaction(transaction),
 				)
@@ -504,10 +476,7 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 	}
 
 	fn call(&self, request: CallRequest, _: Option<BlockNumber>) -> Result<Bytes> {
-		let header = self
-			.select_chain
-			.best_chain()
-			.map_err(|err| internal_err(format!("fetch header failed: {:?}", err)))?;
+		let hash = self.client.info().best_hash;
 
 		let from = request.from.unwrap_or_default();
 		let to = request.to.unwrap_or_default();
@@ -519,7 +488,7 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 
 		let (ret, _) = self.client.runtime_api()
 			.call(
-				&BlockId::Hash(header.hash()),
+				&BlockId::Hash(hash),
 				from,
 				data,
 				value,
@@ -535,10 +504,7 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 	}
 
 	fn estimate_gas(&self, request: CallRequest, _: Option<BlockNumber>) -> Result<U256> {
-		let header = self
-			.select_chain
-			.best_chain()
-			.map_err(|err| internal_err(format!("fetch header failed: {:?}", err)))?;
+		let hash = self.client.info().best_hash;
 
 		let from = request.from.unwrap_or_default();
 		let gas_price = request.gas_price;
@@ -549,7 +515,7 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 
 		let (_, used_gas) = self.client.runtime_api()
 			.call(
-				&BlockId::Hash(header.hash()),
+				&BlockId::Hash(hash),
 				from,
 				data,
 				value,
@@ -778,18 +744,14 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 				.and_then(|v| v.to_min_block_num())
 				.map(|s| s.unique_saturated_into())
 				.unwrap_or(
-					*self.select_chain.best_chain()
-						.map_err(|err| internal_err(format!("fetch header failed: {:?}", err)))?
-						.number()
+					self.client.info().best_number
 				);
 
 			let from_number = filter.from_block
 				.and_then(|v| v.to_min_block_num())
 				.map(|s| s.unique_saturated_into())
 				.unwrap_or(
-					*self.select_chain.best_chain()
-						.map_err(|err| internal_err(format!("fetch header failed: {:?}", err)))?
-						.number()
+					self.client.info().best_number
 				);
 
 			while current_number >= from_number {
@@ -886,32 +848,29 @@ impl<B, C, SC, P, CT, BE> EthApiT for EthApi<B, C, SC, P, CT, BE> where
 	}
 }
 
-pub struct NetApi<B, BE, C, SC> {
-	select_chain: SC,
+pub struct NetApi<B, BE, C> {
 	client: Arc<C>,
 	_marker: PhantomData<(B, BE)>,
 }
 
-impl<B, BE, C, SC> NetApi<B, BE, C, SC> {
+impl<B, BE, C> NetApi<B, BE, C> {
 	pub fn new(
 		client: Arc<C>,
-		select_chain: SC,
 	) -> Self {
 		Self {
 			client: client,
-			select_chain: select_chain,
 			_marker: PhantomData,
 		}
 	}
 }
 
-impl<B, BE, C, SC> NetApiT for NetApi<B, BE, C, SC> where
+impl<B, BE, C> NetApiT for NetApi<B, BE, C> where
 	C: ProvideRuntimeApi<B> + StorageProvider<B, BE> + AuxStore,
+	C: HeaderBackend<B> + HeaderMetadata<B, Error=BlockChainError> + 'static,
 	C::Api: EthereumRuntimeRPCApi<B>,
 	BE: Backend<B> + 'static,
 	BE::State: StateBackend<BlakeTwo256>,
 	C: Send + Sync + 'static,
-	SC: SelectChain<B> + Clone + 'static,
 	B: BlockT<Hash=H256> + Send + Sync + 'static,
 {
 	fn is_listening(&self) -> Result<bool> {
@@ -923,9 +882,8 @@ impl<B, BE, C, SC> NetApiT for NetApi<B, BE, C, SC> where
 	}
 
 	fn version(&self) -> Result<String> {
-		let header = self.select_chain.best_chain()
-			.map_err(|_| internal_err("fetch header failed"))?;
-		Ok(self.client.runtime_api().chain_id(&BlockId::Hash(header.hash()))
+		let hash = self.client.info().best_hash;
+		Ok(self.client.runtime_api().chain_id(&BlockId::Hash(hash))
 			.map_err(|_| internal_err("fetch runtime chain id failed"))?.to_string())
 	}
 }
