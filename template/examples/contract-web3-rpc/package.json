@@ -1,9 +1,0 @@
-{
-  "name": "frontier-contract-web3",
-  "version": "0.0.0",
-  "dependencies": {
-    "ts-node": "^8.10.1",
-    "typescript": "^3.9.3",
-    "web3": "^1.2.8"
-  }
-}
