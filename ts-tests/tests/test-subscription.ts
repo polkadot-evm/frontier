@@ -36,8 +36,8 @@ describeWithFrontier("Frontier RPC (Subscription)", `simple-specs.json`, (contex
         // @ts-ignore
         const connected = context.web3.currentProvider.connected;
         expect(connected).to.equal(true);
-        setTimeout(done,8000);
-    }).timeout(10000);
+        setTimeout(done,10000);
+    }).timeout(20000);
 
     step("should subscribe", async function (done) {
         subscription = context.web3.eth.subscribe("newBlockHeaders", function(error, result){});
@@ -70,8 +70,8 @@ describeWithFrontier("Frontier RPC (Subscription)", `simple-specs.json`, (contex
 		expect(data).to.be.not.null;
 		expect(data).to.have.property("transactionsRoot");
 		expect(data["transactionsRoot"]).to.be.eq("0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347");
-        setTimeout(done,8000);
-    }).timeout(10000);
+        setTimeout(done,10000);
+    }).timeout(20000);
 
     step("should get newPendingTransactions stream", async function (done) {
         subscription = context.web3.eth.subscribe("pendingTransactions", function(error, result){});
