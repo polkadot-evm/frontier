@@ -1,12 +1,12 @@
 use std::{marker::PhantomData, sync::Arc};
 use std::collections::BTreeMap;
 use sp_runtime::traits::{
-	Block as BlockT, Header as _, BlakeTwo256,
+	Block as BlockT, BlakeTwo256,
 	UniqueSaturatedInto
 };
 use sp_transaction_pool::TransactionPool;
 use sp_api::{ProvideRuntimeApi, BlockId};
-use sp_blockchain::HeaderBackend;
+use sp_blockchain::{Error as BlockChainError, HeaderMetadata, HeaderBackend};
 use sp_storage::{StorageKey, StorageData};
 use sp_io::hashing::twox_128;
 use sc_client_api::{
@@ -14,7 +14,6 @@ use sc_client_api::{
 	client::BlockchainEvents
 };
 use sc_rpc::Metadata;
-use sp_consensus::SelectChain;
 use log::warn;
 
 use jsonrpc_pubsub::{typed::Subscriber, SubscriptionId, manager::SubscriptionManager};
@@ -36,44 +35,37 @@ use frontier_rpc_primitives::{EthereumRuntimeRPCApi, TransactionStatus};
 use sc_network::{NetworkService, ExHashT};
 use crate::internal_err;
 
-pub struct EthPubSubApi<B: BlockT, P, C, BE, SC, H: ExHashT> {
+pub struct EthPubSubApi<B: BlockT, P, C, BE, H: ExHashT> {
 	_pool: Arc<P>,
 	client: Arc<C>,
-	select_chain: SC,
 	network: Arc<NetworkService<B, H>>,
 	subscriptions: SubscriptionManager,
 	_marker: PhantomData<(B, BE)>,
 }
 
-impl<B: BlockT, P, C, BE, SC, H: ExHashT> EthPubSubApi<B, P, C, BE, SC, H> {
+impl<B: BlockT, P, C, BE, H: ExHashT> EthPubSubApi<B, P, C, BE, H> {
 	pub fn new(
 		_pool: Arc<P>,
 		client: Arc<C>,
-		select_chain: SC,
 		network: Arc<NetworkService<B, H>>,
 		subscriptions: SubscriptionManager,
 	) -> Self {
-		Self { _pool, client, select_chain, network, subscriptions, _marker: PhantomData }
+		Self { _pool, client, network, subscriptions, _marker: PhantomData }
 	}
 }
 
-impl<B: BlockT, P, C, BE, SC, H: ExHashT> EthPubSubApi<B, P, C, BE, SC, H> where
+impl<B: BlockT, P, C, BE, H: ExHashT> EthPubSubApi<B, P, C, BE, H> where
 	B: BlockT<Hash=H256> + Send + Sync + 'static,
 	P: TransactionPool<Block=B> + Send + Sync + 'static,
 	C: ProvideRuntimeApi<B> + StorageProvider<B,BE> +
-		BlockchainEvents<B> + HeaderBackend<B> + AuxStore,
+		BlockchainEvents<B> + AuxStore,
+	C: HeaderBackend<B> + HeaderMetadata<B, Error=BlockChainError> + 'static,
 	C::Api: EthereumRuntimeRPCApi<B>,
 	C: Send + Sync + 'static,
 	BE: Backend<B> + 'static,
 	BE::State: StateBackend<BlakeTwo256>,
-	SC: SelectChain<B> + Clone + 'static,
 {
 	fn native_block_number(&self, number: Option<BlockNumber>) -> JsonRpcResult<Option<u32>> {
-		let header = self
-			.select_chain
-			.best_chain()
-			.map_err(|_| internal_err("fetch header failed"))?;
-
 		let mut native_number: Option<u32> = None;
 
 		if let Some(number) = number {
@@ -93,7 +85,7 @@ impl<B: BlockT, P, C, BE, SC, H: ExHashT> EthPubSubApi<B, P, C, BE, SC, H> where
 				},
 				BlockNumber::Latest => {
 					native_number = Some(
-						header.number().clone().unique_saturated_into() as u32
+						self.client.info().best_number.clone().unique_saturated_into() as u32
 					);
 				},
 				BlockNumber::Earliest => {
@@ -105,7 +97,7 @@ impl<B: BlockT, P, C, BE, SC, H: ExHashT> EthPubSubApi<B, P, C, BE, SC, H> where
 			};
 		} else {
 			native_number = Some(
-				header.number().clone().unique_saturated_into() as u32
+				self.client.info().best_number.clone().unique_saturated_into() as u32
 			);
 		}
 		Ok(native_number)
@@ -382,17 +374,17 @@ macro_rules! stream_build {
 	}};
 }
 
-impl<B: BlockT, P, C, BE, SC, H: ExHashT> EthPubSubApiT for EthPubSubApi<B, P, C, BE, SC, H>
+impl<B: BlockT, P, C, BE, H: ExHashT> EthPubSubApiT for EthPubSubApi<B, P, C, BE, H>
 	where
 		B: BlockT<Hash=H256> + Send + Sync + 'static,
 		P: TransactionPool<Block=B> + Send + Sync + 'static,
 		C: ProvideRuntimeApi<B> + StorageProvider<B,BE> +
-			BlockchainEvents<B> + HeaderBackend<B> + AuxStore,
+			BlockchainEvents<B> + AuxStore,
+		C: HeaderBackend<B> + HeaderMetadata<B, Error=BlockChainError> + 'static,
 		C: Send + Sync + 'static,
 		C::Api: EthereumRuntimeRPCApi<B>,
 		BE: Backend<B> + 'static,
 		BE::State: StateBackend<BlakeTwo256>,
-		SC: SelectChain<B> + Clone + 'static,
 {
 	type Metadata = Metadata;
 	fn subscribe(
