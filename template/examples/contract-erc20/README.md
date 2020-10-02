@@ -1,14 +1,20 @@
-# Frontier Template tutorial
+# ERC20 contract creation
 
-This directory contains typescript script describing the different topics presented by the frontier node template.
+This directory contains typescript script describing the different
+topics presented by the frontier node template.
 
-## Installation and Usage
+## Basic
 
-Use `npm i` to install dependencies. To create an ERC20 contract, execute `node_modules/.bin/ts-node create-erc20.ts` while your template node is running in `--dev` mode.
+### Installation and Usage
 
-## Expected output
+Use `npm i` to install dependencies. To create an ERC20 contract,
+execute `node_modules/.bin/ts-node create-erc20.ts` while your
+template node is running in `--dev` mode.
 
-The ouput of the command should look similar to this
+### Expected output
+
+The ouput of the command should look similar to this:
+
 ```
 └────╼ ts-node create-erc20.ts
 Initiating the API (ignore message "Unable to resolve type B..." and "Unknown types found...")
@@ -53,3 +59,18 @@ Bob EVM Account (nonce: 0) balance: 0x000000000000000000000000000000000000000000
 Bob Contract storage key: 0x0e4b5229940f8e2bf475520e854b789139893f70ee7b5ec9006de746028449fe
 Bob Contract account storage: 0x00000000000000000000000000000000000000000000000000000000000000dd
 ```
+
+## RPC
+
+This section describes how to use the web3.js SDK to interact with
+Frontier.
+
+## Installation and Usage
+
+Use `npm i` to install dependencies. To create an ERC20 contract,
+execute `node_modules/.bin/ts-node create-erc20.ts` while your
+template node is running in `--dev` mode.
+
+## Expected output
+
+WIP
