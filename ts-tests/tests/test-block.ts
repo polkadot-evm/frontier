@@ -60,8 +60,8 @@ describeWithFrontier("Frontier RPC (Block)", `simple-specs.json`, (context) => {
 
 	step("should have valid timestamp after block production", async function () {
 		const block = await context.web3.eth.getBlock("latest");
-		const last5Minutes= (Date.now() / 1000) - 300;
-		const next5Minutes= (Date.now() / 1000) + 300;
+		const last5Minutes = (Date.now() / 1000) - 300;
+		const next5Minutes = (Date.now() / 1000) + 300;
 		expect(block.timestamp).to.be.least(last5Minutes);
 		expect(block.timestamp).to.be.below(next5Minutes);
 	});

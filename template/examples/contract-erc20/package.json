@@ -1,5 +1,5 @@
 {
-	"name": "frontier-tutorials",
+	"name": "frontier-template-contract-erc20",
 	"version": "0.0.0",
 	"dependencies": {
 		"@polkadot/api": "^1.16.0-beta.2",
