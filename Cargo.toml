@@ -10,4 +10,3 @@ members = [
 	"template/runtime",
 	"template/test-utils/client",
 ]
-exclude = ["vendor"]
