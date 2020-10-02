@@ -1097,9 +1097,9 @@ dependencies = [
 
 [[package]]
 name = "ethereum"
-version = "0.3.2"
+version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d4a4f318071992f03c8f06b75d52663539a63b8b7e95ca650394be9d33dfe68a"
+checksum = "da7fef4d2da1de3a4f4f85408379644276db9b46c4af7b0fe38a3debec5cb7cd"
 dependencies = [
  "ethereum-types",
  "parity-scale-codec",
