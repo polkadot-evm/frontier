@@ -1,5 +1,8 @@
 # Frontier
 
+![GitHub Workflow Status](https://img.shields.io/github/workflow/status/paritytech/frontier/Rust)
+![Matrix](https://img.shields.io/matrix/frontier:matrix.org)
+
 Frontier is Substrate's Ethereum compatibility layer. It allows you to run
 unmodified Ethereum dapps.
 
