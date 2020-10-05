@@ -80,6 +80,12 @@ sp_api::decl_runtime_apis! {
 		fn current_receipts() -> Option<Vec<ethereum::Receipt>>;
 		/// Return the current transaction status.
 		fn current_transaction_statuses() -> Option<Vec<TransactionStatus>>;
+		/// Return all the current data for a block in a single runtime call.
+		fn current_all() -> (
+			Option<EthereumBlock>,
+			Option<Vec<ethereum::Receipt>>,
+			Option<Vec<TransactionStatus>>
+		);
 	}
 }
 
