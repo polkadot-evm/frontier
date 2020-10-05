@@ -39,12 +39,17 @@ use crate::internal_err;
 
 pub use frontier_rpc_core::{EthApiServer, NetApiServer};
 
+const DEFAULT_BLOCK_LIMIT: u32 = 50;
+const DEFAULT_LOG_LIMIT: u32 = 500;
+
 pub struct EthApi<B: BlockT, C, P, CT, BE, A: ChainApi> {
 	pool: Arc<P>,
 	graph_pool: Arc<Pool<A>>,
 	client: Arc<C>,
 	convert_transaction: CT,
 	is_authority: bool,
+	eth_block_limit: Option<u32>,
+	eth_log_limit: Option<u32>,
 	_marker: PhantomData<(B, BE)>,
 }
 
@@ -54,9 +59,11 @@ impl<B: BlockT, C, P, CT, BE, A: ChainApi> EthApi<B, C, P, CT, BE, A> {
 		graph_pool: Arc<Pool<A>>,
 		pool: Arc<P>,
 		convert_transaction: CT,
-		is_authority: bool
+		is_authority: bool,
+		eth_block_limit: Option<u32>,
+		eth_log_limit: Option<u32>,
 	) -> Self {
-		Self { client, pool, graph_pool, convert_transaction, is_authority, _marker: PhantomData }
+		Self { client, pool, graph_pool, convert_transaction, is_authority, eth_block_limit, eth_log_limit, _marker: PhantomData }
 	}
 }
 
@@ -774,6 +781,17 @@ impl<B, C, P, CT, BE, A> EthApiT for EthApi<B, C, P, CT, BE, A> where
 		let mut blocks_and_receipts = Vec::new();
 		let mut ret = Vec::new();
 
+		// Check for number of past blocks allowed for querying ethereum events.
+		let mut eth_block_limit: u32 = DEFAULT_BLOCK_LIMIT;
+		// Check for number of logs allowed for querying ethereum events.
+		let mut eth_log_limit: u32 = DEFAULT_LOG_LIMIT;
+		if let Some(block_limit) = self.eth_block_limit {
+			eth_block_limit = block_limit;
+		}
+		if let Some(log_limit) = self.eth_log_limit {
+			eth_log_limit = log_limit;
+		}
+
 		if let Some(hash) = filter.block_hash {
 			let id = match self.load_hash(hash)
 				.map_err(|err| internal_err(format!("{:?}", err)))?
@@ -831,7 +849,13 @@ impl<B, C, P, CT, BE, A> EthApiT for EthApi<B, C, P, CT, BE, A> where
 			}
 		}
 
-		for (block, receipts) in blocks_and_receipts {
+		let mut blocks_processed: u32 = 0;
+		let mut logs_processed: u32 = 0;
+
+		'outer: for (block, receipts) in blocks_and_receipts {
+			if blocks_processed == eth_block_limit {
+				break;
+			}
 			let mut block_log_index: u32 = 0;
 			for (index, receipt) in receipts.iter().enumerate() {
 				let logs = receipt.logs.clone();
@@ -841,6 +865,9 @@ impl<B, C, P, CT, BE, A> EthApiT for EthApi<B, C, P, CT, BE, A> where
 					Keccak256::digest(&rlp::encode(transaction)).as_slice()
 				);
 				for log in logs {
+					if logs_processed == eth_log_limit {
+						break 'outer;
+					}
 					let mut add: bool = false;
 					if let (
 						Some(VariadicValue::Single(address)),
@@ -860,6 +887,8 @@ impl<B, C, P, CT, BE, A> EthApiT for EthApi<B, C, P, CT, BE, A> where
 						if log.topics.starts_with(&topics) {
 							add = true;
 						}
+					} else {
+						add = true;
 					}
 					if add {
 						ret.push(Log {
@@ -879,8 +908,10 @@ impl<B, C, P, CT, BE, A> EthApiT for EthApi<B, C, P, CT, BE, A> where
 					}
 					transaction_log_index += 1;
 					block_log_index += 1;
+					logs_processed += 1;
 				}
 			}
+			blocks_processed += 1;
 		}
 
 		Ok(ret)
