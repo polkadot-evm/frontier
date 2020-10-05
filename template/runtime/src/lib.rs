@@ -558,7 +558,7 @@ impl_runtime_apis! {
 			Option<frame_ethereum::Block>,
 			Option<Vec<frame_ethereum::Receipt>>,
 			Option<Vec<TransactionStatus>>
-		 ) {
+		) {
 			(
 				Ethereum::current_block(),
 				Ethereum::current_receipts(),

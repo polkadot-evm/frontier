@@ -751,7 +751,6 @@ impl<B, C, P, CT, BE> EthApiT for EthApi<B, C, P, CT, BE> where
 				.unwrap_or(
 					self.client.info().best_number
 				);
-			
 			while current_number >= from_number {
 				let id = BlockId::Number(current_number);
 
