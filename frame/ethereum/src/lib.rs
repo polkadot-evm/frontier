@@ -243,16 +243,11 @@ impl<T: Trait> Module<T> {
 		}
 
 		let ommers = Vec::<ethereum::Header>::new();
-		let header = ethereum::Header {
+		let partial_header = ethereum::PartialHeader {
 			parent_hash: Self::current_block_hash().unwrap_or_default(),
-			ommers_hash: H256::from_slice(
-				Keccak256::digest(&rlp::encode_list(&ommers)[..]).as_slice(),
-			), // TODO: check ommers hash.
 			beneficiary: <Module<T>>::find_author(),
-			state_root: H256::default(), // TODO: figure out if there's better way to get a sort-of-valid state root.
-			transactions_root: H256::from_slice(
-				Keccak256::digest(&rlp::encode_list(&transactions)[..]).as_slice(),
-			), // TODO: check transactions hash.
+			// TODO: figure out if there's better way to get a sort-of-valid state root.
+			state_root: H256::default(),
 			receipts_root: H256::from_slice(
 				Keccak256::digest(&rlp::encode_list(&receipts)[..]).as_slice(),
 			), // TODO: check receipts hash.
@@ -272,13 +267,7 @@ impl<T: Trait> Module<T> {
 			mix_hash: H256::default(),
 			nonce: H64::default(),
 		};
-		let hash = Self::ethereum_block_hash(&header);
-
-		let block = ethereum::Block {
-			header: header.clone(),
-			transactions: transactions.clone(),
-			ommers,
-		};
+		let block = ethereum::Block::new(partial_header, transactions.clone(), ommers);
 
 		let mut transaction_hashes = Vec::new();
 
@@ -296,7 +285,7 @@ impl<T: Trait> Module<T> {
 		let digest = DigestItem::<T::Hash>::Consensus(
 			FRONTIER_ENGINE_ID,
 			ConsensusLog::EndBlock {
-				block_hash: hash,
+				block_hash: block.header.hash(),
 				transaction_hashes,
 			}.encode(),
 		);
@@ -323,7 +312,7 @@ impl<T: Trait> Module<T> {
 
 	/// Get current block hash
 	pub fn current_block_hash() -> Option<H256> {
-		Self::current_block().map(|block| Self::ethereum_block_hash(&block.header))
+		Self::current_block().map(|block| block.header.hash())
 	}
 
 	/// Get receipts by number.
@@ -456,9 +445,5 @@ impl<T: Trait> Module<T> {
 			ExitError::CreateEmpty => return Error::<T>::CreateEmpty,
 			ExitError::Other(_s) => return Error::<T>::ExitErrorOther,
 		}
-	}
-
-	fn ethereum_block_hash(header: &ethereum::Header) -> H256 {
-		H256::from_slice(Keccak256::digest(&rlp::encode(header)).as_slice())
 	}
 }
