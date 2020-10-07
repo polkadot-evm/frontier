@@ -305,8 +305,15 @@ impl SubscriptionResult {
 		));
 		let mut logs: Vec<Log> = vec![];
 		let mut log_index: u32 = 0;
-		for receipt in receipts {
+		for (receipt_index, receipt) in receipts.into_iter().enumerate() {
 			let mut transaction_log_index: u32 = 0;
+			let transaction_hash: Option<H256> = if receipt.logs.len() > 0 {
+				Some(H256::from_slice(
+					Keccak256::digest(&rlp::encode(
+						&block.transactions[receipt_index as usize]
+					)).as_slice()
+				))
+			} else { None };
 			for log in receipt.logs {
 				if self.add_log(
 					block_hash.unwrap(),
@@ -320,11 +327,7 @@ impl SubscriptionResult {
 						data: Bytes(log.data),
 						block_hash: block_hash,
 						block_number: Some(block.header.number),
-						transaction_hash: Some(H256::from_slice(
-							Keccak256::digest(&rlp::encode(
-								&block.transactions[log_index as usize]
-							)).as_slice()
-						)),
+						transaction_hash: transaction_hash,
 						transaction_index: Some(U256::from(log_index)),
 						log_index: Some(U256::from(log_index)),
 						transaction_log_index: Some(U256::from(

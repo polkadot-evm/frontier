@@ -799,6 +799,8 @@ impl<B, C, P, CT, BE> EthApiT for EthApi<B, C, P, CT, BE> where
 						if log.topics.starts_with(&topics) {
 							add = true;
 						}
+					} else {
+						add = true;
 					}
 					if add {
 						ret.push(Log {
