@@ -778,7 +778,7 @@ impl<B, C, P, CT, BE, A> EthApiT for EthApi<B, C, P, CT, BE, A> where
 	}
 
 	fn logs(&self, filter: Filter) -> Result<Vec<Log>> {
-		let mut blocks_and_receipts = Vec::new();
+		let mut blocks_and_statuses = Vec::new();
 		let mut ret = Vec::new();
 
 		// Check for number of past blocks allowed for querying ethereum events.
@@ -804,14 +804,12 @@ impl<B, C, P, CT, BE, A> EthApiT for EthApi<B, C, P, CT, BE, A> where
 				return Ok(Vec::new());
 			}
 
-			let block = self.client.runtime_api()
-				.current_block(&id)
+			let (block, _, statuses) = self.client.runtime_api()
+				.current_all(&id)
 				.map_err(|err| internal_err(format!("fetch runtime account basic failed: {:?}", err)))?;
-			let receipts = self.client.runtime_api().current_receipts(&id)
-				.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
 
-			if let (Some(block), Some(receipts)) = (block, receipts) {
-				blocks_and_receipts.push((block, receipts));
+			if let (Some(block), Some(statuses)) = (block, statuses) {
+				blocks_and_statuses.push((block, statuses));
 			}
 		} else {
 			let mut current_number = filter.to_block
@@ -827,18 +825,15 @@ impl<B, C, P, CT, BE, A> EthApiT for EthApi<B, C, P, CT, BE, A> where
 				.unwrap_or(
 					self.client.info().best_number
 				);
-
 			while current_number >= from_number {
 				let id = BlockId::Number(current_number);
 
-				let block = self.client.runtime_api()
-					.current_block(&id)
+				let (block, _, statuses) = self.client.runtime_api()
+					.current_all(&id)
 					.map_err(|err| internal_err(format!("fetch runtime account basic failed: {:?}", err)))?;
-				let receipts = self.client.runtime_api().current_receipts(&id)
-					.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
 
-				if let (Some(block), Some(receipts)) = (block, receipts) {
-					blocks_and_receipts.push((block, receipts));
+				if let (Some(block), Some(statuses)) = (block, statuses) {
+					blocks_and_statuses.push((block, statuses));
 				}
 
 				if current_number == Zero::zero() {
@@ -848,22 +843,22 @@ impl<B, C, P, CT, BE, A> EthApiT for EthApi<B, C, P, CT, BE, A> where
 				}
 			}
 		}
-
+		
 		let mut blocks_processed: u32 = 0;
 		let mut logs_processed: u32 = 0;
-
-		'outer: for (block, receipts) in blocks_and_receipts {
+		
+		'outer: for (block, statuses) in blocks_and_statuses {
 			if blocks_processed == eth_block_limit {
 				break;
 			}
 			let mut block_log_index: u32 = 0;
-			for (index, receipt) in receipts.iter().enumerate() {
-				let logs = receipt.logs.clone();
+			let block_hash = H256::from_slice(
+				Keccak256::digest(&rlp::encode(&block.header)).as_slice()
+			);
+			for status in statuses.iter() {
+				let logs = status.logs.clone();
 				let mut transaction_log_index: u32 = 0;
-				let transaction = &block.transactions[index as usize];
-				let transaction_hash = H256::from_slice(
-					Keccak256::digest(&rlp::encode(transaction)).as_slice()
-				);
+				let transaction_hash = status.transaction_hash;
 				for log in logs {
 					if logs_processed == eth_log_limit {
 						break 'outer;
@@ -895,12 +890,10 @@ impl<B, C, P, CT, BE, A> EthApiT for EthApi<B, C, P, CT, BE, A> where
 							address: log.address.clone(),
 							topics: log.topics.clone(),
 							data: Bytes(log.data.clone()),
-							block_hash: Some(H256::from_slice(
-								Keccak256::digest(&rlp::encode(&block.header)).as_slice()
-							)),
+							block_hash: Some(block_hash),
 							block_number: Some(block.header.number.clone()),
 							transaction_hash: Some(transaction_hash),
-							transaction_index: Some(U256::from(index)),
+							transaction_index: Some(U256::from(status.transaction_index)),
 							log_index: Some(U256::from(block_log_index)),
 							transaction_log_index: Some(U256::from(transaction_log_index)),
 							removed: false,
