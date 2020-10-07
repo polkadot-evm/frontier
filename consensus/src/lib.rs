@@ -83,7 +83,7 @@ impl<B, I, C, BE> FrontierBlockImport<B, I, C, BE> where
 	BE::State: StateBackend<BlakeTwo256>,
 	I: BlockImport<B, Transaction = sp_api::TransactionFor<C, B>> + Send + Sync,
 	I::Error: Into<ConsensusError>,
-	C: ProvideRuntimeApi<B> + Send + Sync + HeaderBackend<B> + AuxStore + ProvideCache<B> + BlockOf + StorageProvider<B,BE>, 
+	C: ProvideRuntimeApi<B> + Send + Sync + HeaderBackend<B> + AuxStore + ProvideCache<B> + BlockOf + StorageProvider<B,BE>,
 	C::Api: BlockBuilderApi<B, Error = sp_blockchain::Error>,
 {
 	pub fn new(
@@ -106,7 +106,7 @@ impl<B, I, C, BE> BlockImport<B> for FrontierBlockImport<B, I, C, BE> where
 	BE::State: StateBackend<BlakeTwo256>,
 	I: BlockImport<B, Transaction = sp_api::TransactionFor<C, B>> + Send + Sync,
 	I::Error: Into<ConsensusError>,
-	C: ProvideRuntimeApi<B> + Send + Sync + HeaderBackend<B> + AuxStore + ProvideCache<B> + BlockOf + StorageProvider<B,BE>, 
+	C: ProvideRuntimeApi<B> + Send + Sync + HeaderBackend<B> + AuxStore + ProvideCache<B> + BlockOf + StorageProvider<B,BE>,
 	C::Api: BlockBuilderApi<B, Error = sp_blockchain::Error>,
 {
 	type Error = ConsensusError;

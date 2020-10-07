@@ -97,7 +97,7 @@ pub fn write_transaction_metadata<F, R>(
 	write_aux(&[(&key, &metadata.encode())])
 }
 
-/// Map a Ethereum block hash to the current runtime stored Ethereum receipts. 
+/// Map a Ethereum block hash to the current runtime stored Ethereum receipts.
 pub fn receipt_key(ethereum_block_hash: H256) -> Vec<u8> {
 	let mut ret = b"ethereum_receipts:".to_vec();
 	ret.append(&mut ethereum_block_hash.as_ref().to_vec());
