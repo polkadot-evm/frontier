@@ -96,3 +96,22 @@ pub fn write_transaction_metadata<F, R>(
 	let key = transaction_metadata_key(hash);
 	write_aux(&[(&key, &metadata.encode())])
 }
+
+/// Map a Ethereum block hash to the current runtime stored Ethereum receipts. 
+pub fn receipt_key(ethereum_block_hash: H256) -> Vec<u8> {
+	let mut ret = b"ethereum_receipts:".to_vec();
+	ret.append(&mut ethereum_block_hash.as_ref().to_vec());
+	ret
+}
+
+/// Update Aux block hash.
+pub fn write_receipts<F, R>(
+	ethereum_hash: H256,
+	data: Vec<u8>,
+	write_aux: F,
+) -> R where
+	F: FnOnce(&[(&[u8], &[u8])]) -> R,
+{
+	let key = receipt_key(ethereum_hash);
+	write_aux(&[(&key, &data[..])])
+}

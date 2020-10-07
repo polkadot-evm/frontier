@@ -1432,6 +1432,7 @@ dependencies = [
  "sp-consensus",
  "sp-core",
  "sp-inherents",
+ "sp-io",
  "sp-runtime",
  "sp-timestamp",
  "substrate-prometheus-endpoint",
