@@ -18,7 +18,7 @@
 
 mod aux_schema;
 
-pub use crate::aux_schema::{load_block_hash, load_transaction_metadata};
+pub use crate::aux_schema::{load_block_hash, load_transaction_metadata, load_receipts};
 
 use std::sync::Arc;
 use std::collections::HashMap;
@@ -28,7 +28,7 @@ use sc_client_api::{BlockOf, backend::AuxStore, StorageProvider, Backend, StateB
 use sp_blockchain::{HeaderBackend, ProvideCache, well_known_cache_keys::Id as CacheKeyId};
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
 use sp_runtime::generic::{OpaqueDigestItemId, BlockId};
-use sp_runtime::traits::{Block as BlockT, Header as HeaderT, BlakeTwo256};
+use sp_runtime::traits::{Block as BlockT, Header as HeaderT, BlakeTwo256, UniqueSaturatedInto, Saturating, One};
 use sp_api::ProvideRuntimeApi;
 use sp_core::storage::StorageKey;
 use sp_io::hashing::twox_128;
@@ -152,13 +152,19 @@ impl<B, I, C, BE> BlockImport<B> for FrontierBlockImport<B, I, C, BE> where
 						);
 					}
 
+					let best_block = block.header.number().saturating_sub(One::one());
+
 					if let Ok(Some(data)) = self.client.storage(
-						&BlockId::Hash(block.header.hash()),
+						&BlockId::Number(best_block),
 						&StorageKey(
-							storage_prefix_build(b"Ethereum", b"CurrentReceipts")
+							storage_prefix_build(b"Ethereum", b"CurrentTransactionStatuses")
 						)
 					) {
-						aux_schema::write_receipts(block_hash, data.0, insert_closure!());
+						aux_schema::write_receipts(
+							UniqueSaturatedInto::<u32>::unique_saturated_into(best_block),
+							data.0,
+							insert_closure!()
+						);
 					}
 				},
 			}

@@ -21,6 +21,7 @@ use sp_core::H256;
 use sp_runtime::traits::Block as BlockT;
 use sc_client_api::backend::AuxStore;
 use sp_blockchain::{Result as ClientResult, Error as ClientError};
+use frontier_rpc_primitives::TransactionStatus;
 
 fn load_decode<B: AuxStore, T: Decode>(backend: &B, key: &[u8]) -> ClientResult<Option<T>> {
 	let corrupt = |e: codec::Error| {
@@ -98,20 +99,29 @@ pub fn write_transaction_metadata<F, R>(
 }
 
 /// Map a Ethereum block hash to the current runtime stored Ethereum receipts.
-pub fn receipt_key(ethereum_block_hash: H256) -> Vec<u8> {
+pub fn receipt_key(block_number: u32) -> Vec<u8> {
 	let mut ret = b"ethereum_receipts:".to_vec();
-	ret.append(&mut ethereum_block_hash.as_ref().to_vec());
+	ret.append(&mut block_number.to_be_bytes().to_vec());
 	ret
+}
+
+/// Given an Ethereum block hash, get the corresponding Ethereum receipts.
+pub fn load_receipts<B: AuxStore>(
+	backend: &B,
+	block_number: u32,
+) -> ClientResult<Option<Vec<TransactionStatus>>> {
+	let key = receipt_key(block_number);
+	load_decode(backend, &key)
 }
 
 /// Update Aux block hash.
 pub fn write_receipts<F, R>(
-	ethereum_hash: H256,
+	block_number: u32,
 	data: Vec<u8>,
 	write_aux: F,
 ) -> R where
 	F: FnOnce(&[(&[u8], &[u8])]) -> R,
 {
-	let key = receipt_key(ethereum_hash);
+	let key = receipt_key(block_number);
 	write_aux(&[(&key, &data[..])])
 }
