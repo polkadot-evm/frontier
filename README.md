@@ -16,7 +16,7 @@ It consists of the following components:
 
 * **[pallet-evm](https://github.com/paritytech/substrate/tree/master/frame/evm)**:
   EVM execution engine for Substrate.
-* **pallet-ethereum**: Emulation of full Ethereum block processing.
+* **[pallet-ethereum](https://github.com/paritytech/frontier/tree/master/frame/ethereum)**: Emulation of full Ethereum block processing.
 * **rpc-ethereum**: Compatibility layer for web3 RPC methods.
 
 ## Development notes
