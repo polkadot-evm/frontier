@@ -736,9 +736,9 @@ impl<B, C, P, CT, BE> EthApiT for EthApi<B, C, P, CT, BE> where
 
 			
 			let block_hash = Some(H256::from_slice(
-				Keccak256::digest(&rlp::encode(&block.unwrap().header)).as_slice()
+				Keccak256::digest(&rlp::encode(&block.clone().unwrap().header)).as_slice()
 			));
-			let block_number = Some(U256::from(0));//Some(block.unwrap().header.number.clone());
+			let block_number = Some(block.unwrap().header.number);
 
 			if let (Some(block_hash), Some(block_number), Some(statuses)) = (block_hash, block_number, statuses) {
 				blocks_and_statuses.push((block_hash, block_number, statuses));
@@ -761,26 +761,20 @@ impl<B, C, P, CT, BE> EthApiT for EthApi<B, C, P, CT, BE> where
 
 				let number = UniqueSaturatedInto::<u32>::unique_saturated_into(current_number);
 
-				let statuses = match frontier_consensus::load_receipts(
+				match frontier_consensus::load_logs(
 					self.client.as_ref(),
 					number
 				).map_err(|err| internal_err(format!("fetch aux store failed: {:?}", err)))?
 				{
-					Some(statuses) => {
-						Some(statuses)
+					Some((block_hash, statuses)) => {
+						let block_number = U256::from(
+							UniqueSaturatedInto::<u32>::unique_saturated_into(current_number)
+						);
+						blocks_and_statuses.push((block_hash, block_number, statuses));
 					},
-					None => {
-						Some(Vec::new())
-					},
+					_ => {},
 				};
-
-				let block_hash = Some(H256::default()); // TODO
-				let block_number = Some(U256::from(number));
-
-				if let (Some(block_hash), Some(block_number), Some(statuses)) = (block_hash, block_number, statuses) {
-					blocks_and_statuses.push((block_hash, block_number, statuses));
-				}
-
+				
 				if current_number == Zero::zero() {
 					break
 				} else {

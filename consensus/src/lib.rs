@@ -18,11 +18,12 @@
 
 mod aux_schema;
 
-pub use crate::aux_schema::{load_block_hash, load_transaction_metadata, load_receipts};
+pub use crate::aux_schema::{load_block_hash, load_transaction_metadata, load_logs};
 
 use std::sync::Arc;
 use std::collections::HashMap;
 use std::marker::PhantomData;
+use codec::Decode;
 use frontier_consensus_primitives::{FRONTIER_ENGINE_ID, ConsensusLog};
 use sc_client_api::{BlockOf, backend::AuxStore, StorageProvider, Backend, StateBackend};
 use sp_blockchain::{HeaderBackend, ProvideCache, well_known_cache_keys::Id as CacheKeyId};
@@ -30,12 +31,13 @@ use sp_block_builder::BlockBuilder as BlockBuilderApi;
 use sp_runtime::generic::{OpaqueDigestItemId, BlockId};
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT, BlakeTwo256, UniqueSaturatedInto, Saturating, One};
 use sp_api::ProvideRuntimeApi;
-use sp_core::storage::StorageKey;
+use sp_core::{H256, storage::StorageKey};
 use sp_io::hashing::twox_128;
 use sp_consensus::{
 	BlockImportParams, Error as ConsensusError, BlockImport,
 	BlockCheckParams, ImportResult,
 };
+use frontier_rpc_primitives::TransactionStatus;
 use log::*;
 use sc_client_api;
 
@@ -151,20 +153,19 @@ impl<B, I, C, BE> BlockImport<B> for FrontierBlockImport<B, I, C, BE> where
 							insert_closure!(),
 						);
 					}
-
-					let best_block = block.header.number().saturating_sub(One::one());
-
-					if let Ok(Some(data)) = self.client.storage(
-						&BlockId::Number(best_block),
-						&StorageKey(
-							storage_prefix_build(b"Ethereum", b"CurrentTransactionStatuses")
-						)
-					) {
-						aux_schema::write_receipts(
-							UniqueSaturatedInto::<u32>::unique_saturated_into(best_block),
-							data.0,
-							insert_closure!()
+					
+					// Store already processed TransactionStatus by block number.
+					if *block.header.number() > One::one() {
+						let number = UniqueSaturatedInto::<u32>::unique_saturated_into(
+							block.header.number().saturating_sub(One::one())
 						);
+						if let Some(data) = logs(client.as_ref(), number) {
+							aux_schema::write_logs(
+								number,
+								data,
+								insert_closure!()
+							);
+						}
 					}
 				},
 			}
@@ -172,6 +173,32 @@ impl<B, I, C, BE> BlockImport<B> for FrontierBlockImport<B, I, C, BE> where
 
 		self.inner.import_block(block, new_cache).map_err(Into::into)
 	}
+}
+
+fn logs<B, BE, C>(
+	client: &C,
+	block_number: u32,
+) -> Option<(H256, Vec<TransactionStatus>)> where 
+	B: BlockT,
+	BE: Backend<B>,
+	BE::State: StateBackend<BlakeTwo256>,
+	C: HeaderBackend<B> + StorageProvider<B,BE>,
+{
+	if let Ok(Some(header)) = client.header(BlockId::Number(block_number.into()))
+	{
+		if let Ok(ConsensusLog::EndBlock { block_hash, .. }) = find_frontier_log::<B>(&header) {
+			if let Ok(Some(data)) = client.storage(
+				&BlockId::Number(block_number.into()),
+				&StorageKey(
+					storage_prefix_build(b"Ethereum", b"CurrentTransactionStatuses")
+				)
+			) {
+				let statuses: Vec<TransactionStatus> = Decode::decode(&mut &data.0[..]).unwrap();
+				return Some((block_hash, statuses))
+			}
+		}
+	}
+	None
 }
 
 fn storage_prefix_build(module: &[u8], storage: &[u8]) -> Vec<u8> {

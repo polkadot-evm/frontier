@@ -98,30 +98,30 @@ pub fn write_transaction_metadata<F, R>(
 	write_aux(&[(&key, &metadata.encode())])
 }
 
-/// Map a Ethereum block hash to the current runtime stored Ethereum receipts.
-pub fn receipt_key(block_number: u32) -> Vec<u8> {
-	let mut ret = b"ethereum_receipts:".to_vec();
+/// Map a Ethereum block number to the current runtime stored Ethereum logs.
+pub fn log_key(block_number: u32) -> Vec<u8> {
+	let mut ret = b"ethereum_log:".to_vec();
 	ret.append(&mut block_number.to_be_bytes().to_vec());
 	ret
 }
 
-/// Given an Ethereum block hash, get the corresponding Ethereum receipts.
-pub fn load_receipts<B: AuxStore>(
+/// Given an Ethereum block number, get the corresponding Ethereum logs.
+pub fn load_logs<B: AuxStore>(
 	backend: &B,
 	block_number: u32,
-) -> ClientResult<Option<Vec<TransactionStatus>>> {
-	let key = receipt_key(block_number);
+) -> ClientResult<Option<(H256, Vec<TransactionStatus>)>> {
+	let key = log_key(block_number);
 	load_decode(backend, &key)
 }
 
-/// Update Aux block hash.
-pub fn write_receipts<F, R>(
+/// Update Aux logs.
+pub fn write_logs<F, R>(
 	block_number: u32,
-	data: Vec<u8>,
+	data: (H256, Vec<TransactionStatus>),
 	write_aux: F,
 ) -> R where
 	F: FnOnce(&[(&[u8], &[u8])]) -> R,
 {
-	let key = receipt_key(block_number);
-	write_aux(&[(&key, &data[..])])
+	let key = log_key(block_number);
+	write_aux(&[(&key, &data.encode())])
 }
