@@ -36,6 +36,7 @@ use sp_runtime::{
 	DispatchResult,
 };
 use evm::{ExitError, ExitRevert, ExitFatal, ExitReason};
+use pallet_evm::{Runner, runner::ExecutionInfo};
 use sha3::{Digest, Keccak256};
 use codec::Encode;
 use frontier_consensus_primitives::{FRONTIER_ENGINE_ID, ConsensusLog};
@@ -329,8 +330,8 @@ impl<T: Trait> Module<T> {
 
 		let (status, gas_used) = match transaction.action {
 			ethereum::TransactionAction::Call(target) => {
-				let (_, _, gas_used, logs) = Self::handle_exec(
-					pallet_evm::Module::<T>::execute_call(
+				let _info = Self::handle_exec(
+					T::Runner::call(
 						source,
 						target,
 						transaction.input.clone(),
@@ -338,8 +339,7 @@ impl<T: Trait> Module<T> {
 						transaction.gas_limit.low_u32(),
 						transaction.gas_price,
 						Some(transaction.nonce),
-						true,
-					)?
+					).map_err(Into::into)?
 				)?;
 
 				(TransactionStatus {
@@ -348,30 +348,30 @@ impl<T: Trait> Module<T> {
 					from: source,
 					to: Some(target),
 					contract_address: None,
-					logs: {
-						logs.into_iter()
-						.map(|log| {
-							Log {
-								address: log.address,
-								topics: log.topics,
-								data: log.data
-							}
-						}).collect()
-					},
+					logs: Vec::new(),
+					// {
+					// 	logs.into_iter()
+					// 	.map(|log| {
+					// 		Log {
+					// 			address: log.address,
+					// 			topics: log.topics,
+					// 			data: log.data
+					// 		}
+					// 	}).collect()
+					// },
 					logs_bloom: Bloom::default(), // TODO: feed in bloom.
-				}, gas_used)
+				}, U256::zero()) // gas_used)
 			},
 			ethereum::TransactionAction::Create => {
-				let (_, contract_address, gas_used, logs) = Self::handle_exec(
-					pallet_evm::Module::<T>::execute_create(
+				let info = Self::handle_exec(
+					T::Runner::create(
 						source,
 						transaction.input.clone(),
 						transaction.value,
 						transaction.gas_limit.low_u32(),
 						transaction.gas_price,
 						Some(transaction.nonce),
-						true,
-					)?
+					).map_err(Into::into)?
 				)?;
 
 				(TransactionStatus {
@@ -379,19 +379,20 @@ impl<T: Trait> Module<T> {
 					transaction_index,
 					from: source,
 					to: None,
-					contract_address: Some(contract_address),
-					logs: {
-						logs.into_iter()
-						.map(|log| {
-							Log {
-								address: log.address,
-								topics: log.topics,
-								data: log.data
-							}
-						}).collect()
-					},
+					contract_address: Some(info.value),
+					logs: Vec::new(),
+					// {
+					// 	logs.into_iter()
+					// 	.map(|log| {
+					// 		Log {
+					// 			address: log.address,
+					// 			topics: log.topics,
+					// 			data: log.data
+					// 		}
+					// 	}).collect()
+					// },
 					logs_bloom: Bloom::default(), // TODO: feed in bloom.
-				}, gas_used)
+				}, U256::zero()) // gas_used)
 			},
 		};
 
@@ -407,9 +408,8 @@ impl<T: Trait> Module<T> {
 		Ok(())
 	}
 
-	fn handle_exec<R>(res: (ExitReason, R, U256, Vec<pallet_evm::Log>))
-		-> Result<(ExitReason, R, U256, Vec<pallet_evm::Log>), Error<T>> {
-		match res.0 {
+	fn handle_exec<R>(res: ExecutionInfo<R>) -> Result<ExecutionInfo<R>, Error<T>> {
+		match res.exit_reason {
 			ExitReason::Succeed(_s) => Ok(res),
 			ExitReason::Error(e) => Err(Self::parse_exit_error(e)),
 			ExitReason::Revert(e) => {
