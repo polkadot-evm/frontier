@@ -264,7 +264,7 @@ impl<T: Trait> Module<T> {
 			timestamp: UniqueSaturatedInto::<u64>::unique_saturated_into(
 				pallet_timestamp::Module::<T>::get()
 			),
-			extra_data: H256::default(),
+			extra_data: Vec::new(),
 			mix_hash: H256::default(),
 			nonce: H64::default(),
 		};
@@ -330,7 +330,7 @@ impl<T: Trait> Module<T> {
 
 		let (status, gas_used) = match transaction.action {
 			ethereum::TransactionAction::Call(target) => {
-				let _info = Self::handle_exec(
+				let info = Self::handle_exec(
 					T::Runner::call(
 						source,
 						target,
@@ -348,19 +348,9 @@ impl<T: Trait> Module<T> {
 					from: source,
 					to: Some(target),
 					contract_address: None,
-					logs: Vec::new(),
-					// {
-					// 	logs.into_iter()
-					// 	.map(|log| {
-					// 		Log {
-					// 			address: log.address,
-					// 			topics: log.topics,
-					// 			data: log.data
-					// 		}
-					// 	}).collect()
-					// },
+					logs: info.logs,
 					logs_bloom: Bloom::default(), // TODO: feed in bloom.
-				}, U256::zero()) // gas_used)
+				}, info.used_gas)
 			},
 			ethereum::TransactionAction::Create => {
 				let info = Self::handle_exec(
@@ -380,19 +370,9 @@ impl<T: Trait> Module<T> {
 					from: source,
 					to: None,
 					contract_address: Some(info.value),
-					logs: Vec::new(),
-					// {
-					// 	logs.into_iter()
-					// 	.map(|log| {
-					// 		Log {
-					// 			address: log.address,
-					// 			topics: log.topics,
-					// 			data: log.data
-					// 		}
-					// 	}).collect()
-					// },
+					logs: info.logs,
 					logs_bloom: Bloom::default(), // TODO: feed in bloom.
-				}, U256::zero()) // gas_used)
+				}, info.used_gas)
 			},
 		};
 

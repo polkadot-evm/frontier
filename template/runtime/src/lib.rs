@@ -528,8 +528,7 @@ impl_runtime_apis! {
 						gas_price.unwrap_or_default(),
 						nonce,
 					)
-					.map(|info| (info.value, gas_limit))
-					// .map(|(_, ret, gas, _)| (ret, gas))
+					.map(|info| (info.value, info.used_gas))
 					.map_err(|err| err.into()),
 				pallet_ethereum::TransactionAction::Create =>
 					<Runtime as pallet_evm::Trait>::Runner::create(
@@ -540,8 +539,7 @@ impl_runtime_apis! {
 						gas_price.unwrap_or_default(),
 						nonce,
 					)
-					.map(|_| (vec![], gas_limit))
-					// .map(|(_, _, gas, _)| (vec![], gas))
+					.map(|info| (vec![], info.used_gas))
 					.map_err(|err| err.into()),
 			}
 		}

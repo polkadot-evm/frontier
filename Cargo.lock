@@ -1097,15 +1097,16 @@ dependencies = [
 
 [[package]]
 name = "ethereum"
-version = "0.3.3"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "da7fef4d2da1de3a4f4f85408379644276db9b46c4af7b0fe38a3debec5cb7cd"
+checksum = "7538b2bb55bde83b500c4e6ea0bdb3b1c0e9e5ae57951941e5412db32c2a8344"
 dependencies = [
  "ethereum-types",
  "parity-scale-codec",
  "rlp",
  "rlp-derive",
- "sha3 0.8.2",
+ "serde",
+ "sha3 0.9.1",
 ]
 
 [[package]]
@@ -1131,10 +1132,11 @@ checksum = "e1cd41440ae7e4734bbd42302f63eaba892afc93a3912dad84006247f0dedb0e"
 
 [[package]]
 name = "evm"
-version = "0.17.2"
+version = "0.17.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bf33417148b0ec01c862ed6dc5aa2db19fd597f6352f6930daafe9c76737f64f"
+checksum = "16c8deca0ec3efa361b03d9cae6fe94321a1d2d0a523437edd720b3d140e3c08"
 dependencies = [
+ "ethereum",
  "evm-core",
  "evm-gasometer",
  "evm-runtime",
@@ -1464,7 +1466,7 @@ dependencies = [
  "jsonrpc-derive 14.2.2",
  "jsonrpc-pubsub 15.0.0",
  "log",
- "pallet-ethereum 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "pallet-ethereum",
  "parity-scale-codec",
  "rlp",
  "sc-client-api",
@@ -1520,7 +1522,7 @@ dependencies = [
  "jsonrpc-core 15.0.0",
  "jsonrpc-pubsub 15.0.0",
  "log",
- "pallet-ethereum 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "pallet-ethereum",
  "pallet-evm",
  "pallet-transaction-payment-rpc",
  "sc-basic-authorship",
@@ -1563,7 +1565,7 @@ dependencies = [
  "frontier-rpc-primitives",
  "pallet-aura",
  "pallet-balances",
- "pallet-ethereum 0.1.0",
+ "pallet-ethereum",
  "pallet-evm",
  "pallet-grandpa",
  "pallet-randomness-collective-flip",
@@ -3682,12 +3684,6 @@ dependencies = [
  "sp-runtime",
  "sp-std",
 ]
-
-[[package]]
-name = "pallet-ethereum"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bd4556fb64842e71bb6e2f98b7541c0d310069eb607d432c6ac9bdaecbfd3118"
 
 [[package]]
 name = "pallet-evm"
@@ -7466,7 +7462,7 @@ version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3bfd5b7557925ce778ff9b9ef90e3ade34c524b5ff10e239c69a42d546d2af56"
 dependencies = [
- "rand 0.7.3",
+ "rand 0.3.23",
 ]
 
 [[package]]

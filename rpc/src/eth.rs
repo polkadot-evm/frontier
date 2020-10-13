@@ -80,7 +80,7 @@ fn rich_block_build(
 			number: Some(block.header.number),
 			gas_used: block.header.gas_used,
 			gas_limit: block.header.gas_limit,
-			extra_data: Bytes(block.header.extra_data.as_bytes().to_vec()),
+			extra_data: Bytes(block.header.extra_data.clone()),
 			logs_bloom: Some(block.header.logs_bloom),
 			timestamp: U256::from(block.header.timestamp / 1000),
 			difficulty: block.header.difficulty,
