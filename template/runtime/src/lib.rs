@@ -504,6 +504,18 @@ impl_runtime_apis! {
 			EVM::account_storages(address, H256::from_slice(&tmp[..]))
 		}
 
+		fn estimate_gas(
+			from: H160,
+			data: Vec<u8>,
+			value: U256,
+			gas_limit: U256,
+			gas_price: Option<U256>,
+			nonce: Option<U256>,
+			action: frame_ethereum::TransactionAction
+		) -> Result<U256, (sp_runtime::DispatchError, Vec<u8>)> {
+			<frame_ethereum::Module<Runtime>>::estimate_gas(from, data, value, gas_limit.low_u32(), gas_price.unwrap_or_default(), nonce, action)
+		}
+
 		fn call(
 			from: H160,
 			data: Vec<u8>,

@@ -64,6 +64,16 @@ sp_api::decl_runtime_apis! {
 		fn author() -> H160;
 		/// For a given account address and index, returns pallet_evm::AccountStorages.
 		fn storage_at(address: H160, index: U256) -> H256;
+		/// Returns gas needed to execute transaction.
+		fn estimate_gas(
+			from: H160,
+			data: Vec<u8>,
+			value: U256,
+			gas_limit: U256,
+			gas_price: Option<U256>,
+			nonce: Option<U256>,
+			action: TransactionAction
+		) -> Result<U256, (sp_runtime::DispatchError, Vec<u8>)>;
 		/// Returns a pallet_evm::execute_call response.
 		fn call(
 			from: H160,

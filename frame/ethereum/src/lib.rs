@@ -407,6 +407,28 @@ impl<T: Trait> Module<T> {
 		Ok(())
 	}
 
+	/// Estimate gas needed to execute Ethereum transaction.
+	pub fn estimate_gas(
+		source: H160,
+		data: Vec<u8>,
+		value: U256,
+		gas_limit: u32,
+		gas_price: U256,
+		nonce: Option<U256>,
+		action: ethereum::TransactionAction
+	) -> Result<U256, (sp_runtime::DispatchError, Vec<u8>)> {
+		let result = match action {
+			ethereum::TransactionAction::Call(target) => pallet_evm::Module::<T>::execute_call(source, target, data, value, gas_limit, gas_price, nonce, false),
+			ethereum::TransactionAction::Create => pallet_evm::Module::<T>::execute_create(source, data, value, gas_limit, gas_price, nonce, false).map(|(reason, _, gas, logs)| (reason, Vec::new(), gas, logs))
+		}.map_err(|err| (err.into(), Vec::new()))?;
+
+		let returned_value = result.1.clone();
+
+		Self::handle_exec::<Vec<u8>>(result)
+			.map(|(_, _, gas, _)| gas)
+			.map_err(|err| (err.into(), returned_value))
+	}
+
 	fn handle_exec<R>(res: (ExitReason, R, U256, Vec<pallet_evm::Log>))
 		-> Result<(ExitReason, R, U256, Vec<pallet_evm::Log>), Error<T>> {
 		match res.0 {
