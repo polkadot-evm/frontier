@@ -21,6 +21,7 @@ pub use eth::{EthApi, EthApiServer, NetApi, NetApiServer};
 pub use eth_pubsub::{EthPubSubApi, EthPubSubApiServer};
 
 use jsonrpc_core::{ErrorCode, Error, Value};
+use sp_runtime::{DispatchError, app_crypto::sp_core::bytes::to_hex};
 
 pub fn internal_err<T: ToString>(message: T) -> Error {
 	Error {
@@ -30,10 +31,14 @@ pub fn internal_err<T: ToString>(message: T) -> Error {
 	}
 }
 
-pub fn execution_err<T: ToString>(message: T, data: Option<Value>) -> Error {
+pub fn handle_call_error((err, data): (DispatchError, Vec<u8>)) -> Error {
+	let error: &'static str = err.into();
+	// TODO: trim error message
+	let msg = String::from_utf8_lossy(&data);
+	let data = to_hex(&data, true);
 	Error {
 		code: ErrorCode::InternalError,
-		message: message.to_string(),
-		data,
+		message: format!("{}: {}", error.to_lowercase(), msg),
+		data: Some(Value::String(data))
 	}
 }

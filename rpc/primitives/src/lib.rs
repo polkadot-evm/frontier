@@ -18,7 +18,7 @@
 
 use sp_core::{H160, H256, U256};
 use ethereum::{
-	Log, Block as EthereumBlock, TransactionAction
+	Log, Block as EthereumBlock
 };
 use ethereum_types::Bloom;
 use codec::{Encode, Decode};
@@ -64,26 +64,16 @@ sp_api::decl_runtime_apis! {
 		fn author() -> H160;
 		/// For a given account address and index, returns pallet_evm::AccountStorages.
 		fn storage_at(address: H160, index: U256) -> H256;
-		/// Returns gas needed to execute transaction.
-		fn estimate_gas(
-			from: H160,
-			data: Vec<u8>,
-			value: U256,
-			gas_limit: U256,
-			gas_price: Option<U256>,
-			nonce: Option<U256>,
-			action: TransactionAction
-		) -> Result<U256, (sp_runtime::DispatchError, Vec<u8>)>;
-		/// Returns a pallet_evm::execute_call response.
+		/// Returns a frame_ethereum::call response be use by eth_call and eth_estimateGas
 		fn call(
 			from: H160,
+			to: H160,
 			data: Vec<u8>,
 			value: U256,
 			gas_limit: U256,
 			gas_price: Option<U256>,
-			nonce: Option<U256>,
-			action: TransactionAction
-		) -> Result<(Vec<u8>, U256), sp_runtime::DispatchError>;
+			nonce: Option<U256>
+		) -> Result<(Vec<u8>, U256), (sp_runtime::DispatchError, Vec<u8>)>;
 		/// Return the current block.
 		fn current_block() -> Option<EthereumBlock>;
 		/// Return the current receipt.

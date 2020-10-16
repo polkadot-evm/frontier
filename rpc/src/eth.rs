@@ -18,7 +18,7 @@ use std::{marker::PhantomData, sync::Arc};
 use std::collections::BTreeMap;
 use ethereum::{Block as EthereumBlock, Transaction as EthereumTransaction};
 use ethereum_types::{H160, H256, H64, U256, U64, H512};
-use jsonrpc_core::{BoxFuture, Result, futures::future::{self, Future}, Value};
+use jsonrpc_core::{BoxFuture, Result, futures::future::{self, Future}};
 use futures::future::TryFutureExt;
 use sp_runtime::traits::{Block as BlockT, UniqueSaturatedInto, Zero, One, Saturating};
 use sp_runtime::transaction_validity::TransactionSource;
@@ -34,10 +34,9 @@ use frontier_rpc_core::types::{
 	SyncStatus, SyncInfo, Transaction, Work, Rich, Block, BlockTransactions, VariadicValue
 };
 use frontier_rpc_primitives::{EthereumRuntimeRPCApi, ConvertTransaction, TransactionStatus};
-use crate::{internal_err, execution_err};
+use crate::{internal_err, handle_call_error};
 
 pub use frontier_rpc_core::{EthApiServer, NetApiServer};
-use sp_runtime::app_crypto::sp_core::bytes::to_hex;
 
 pub struct EthApi<B: BlockT, C, P, CT, BE> {
 	pool: Arc<P>,
@@ -479,27 +478,32 @@ impl<B, C, P, CT, BE> EthApiT for EthApi<B, C, P, CT, BE> where
 	fn call(&self, request: CallRequest, _: Option<BlockNumber>) -> Result<Bytes> {
 		let hash = self.client.info().best_hash;
 
-		let from = request.from.unwrap_or_default();
-		let to = request.to.unwrap_or_default();
-		let gas_price = request.gas_price;
-		let gas_limit = request.gas.unwrap_or(U256::max_value());
-		let value = request.value.unwrap_or_default();
-		let data = request.data.map(|d| d.0).unwrap_or_default();
-		let nonce = request.nonce;
+		let CallRequest {
+			from,
+			to,
+			gas_price,
+			gas,
+			value,
+			data,
+			nonce
+		} = request;
+
+		let gas_limit = gas.unwrap_or(U256::max_value());
+		let data = data.map(|d| d.0).unwrap_or_default();
 
 		let (ret, _) = self.client.runtime_api()
 			.call(
 				&BlockId::Hash(hash),
-				from,
+				from.unwrap_or_default(),
+				to,
 				data,
-				value,
+				value.unwrap_or_default(),
 				gas_limit,
 				gas_price,
-				nonce,
-				ethereum::TransactionAction::Call(to)
+				nonce
 			)
 			.map_err(|err| internal_err(format!("internal error: {:?}", err)))?
-			.map_err(|err| internal_err(format!("executing call failed: {:?}", err)))?;
+			.map_err(handle_call_error)?;
 
 		Ok(Bytes(ret))
 	}
@@ -507,38 +511,32 @@ impl<B, C, P, CT, BE> EthApiT for EthApi<B, C, P, CT, BE> where
 	fn estimate_gas(&self, request: CallRequest, _: Option<BlockNumber>) -> Result<U256> {
 		let hash = self.client.info().best_hash;
 
-		let from = request.from.unwrap_or_default();
-		let gas_price = request.gas_price;
-		let gas_limit = request.gas.unwrap_or(U256::max_value()); // TODO: this isn't safe
-		let value = request.value.unwrap_or_default();
-		let data = request.data.map(|d| d.0).unwrap_or_default();
-		let nonce = request.nonce;
+		let CallRequest {
+			from,
+			to,
+			gas_price,
+			gas,
+			value,
+			data,
+			nonce
+		} = request;
 
-		let used_gas = self.client.runtime_api()
-			.estimate_gas(
+		let gas_limit = gas.unwrap_or(U256::max_value());
+		let data = data.map(|d| d.0).unwrap_or_default();
+
+		let (_, used_gas) = self.client.runtime_api()
+			.call(
 				&BlockId::Hash(hash),
-				from,
+				from.unwrap_or_default(),
+				to,
 				data,
-				value,
+				value.unwrap_or_default(),
 				gas_limit,
 				gas_price,
-				nonce,
-				match request.to {
-					Some(to) => ethereum::TransactionAction::Call(to),
-					_ => ethereum::TransactionAction::Create,
-				}
+				nonce
 			)
 			.map_err(|err| internal_err(format!("internal error: {:?}", err)))?
-			.map_err(|(err, returned_value)| {
-				let error: &'static str = err.into();
-				// TODO: trim error message
-				let msg = String::from_utf8_lossy(&returned_value);
-				let data = to_hex(&returned_value, true);
-				execution_err(
-					format!("execution {}: {}", error.to_lowercase(), msg),
-					Some(Value::String(data))
-				)
-			})?;
+			.map_err(handle_call_error)?;
 
 		Ok(used_gas)
 	}

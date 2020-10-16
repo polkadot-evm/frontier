@@ -504,54 +504,16 @@ impl_runtime_apis! {
 			EVM::account_storages(address, H256::from_slice(&tmp[..]))
 		}
 
-		fn estimate_gas(
-			from: H160,
-			data: Vec<u8>,
-			value: U256,
-			gas_limit: U256,
-			gas_price: Option<U256>,
-			nonce: Option<U256>,
-			action: frame_ethereum::TransactionAction
-		) -> Result<U256, (sp_runtime::DispatchError, Vec<u8>)> {
-			<frame_ethereum::Module<Runtime>>::estimate_gas(from, data, value, gas_limit.low_u32(), gas_price.unwrap_or_default(), nonce, action)
-		}
-
 		fn call(
 			from: H160,
+			to: H160,
 			data: Vec<u8>,
 			value: U256,
 			gas_limit: U256,
 			gas_price: Option<U256>,
-			nonce: Option<U256>,
-			action: frame_ethereum::TransactionAction,
-		) -> Result<(Vec<u8>, U256), sp_runtime::DispatchError> {
-			match action {
-				frame_ethereum::TransactionAction::Call(to) =>
-					EVM::execute_call(
-						from,
-						to,
-						data,
-						value,
-						gas_limit.low_u32(),
-						gas_price.unwrap_or_default(),
-						nonce,
-						false,
-					)
-					.map(|(_, ret, gas, _)| (ret, gas))
-					.map_err(|err| err.into()),
-				frame_ethereum::TransactionAction::Create =>
-					EVM::execute_create(
-						from,
-						data,
-						value,
-						gas_limit.low_u32(),
-						gas_price.unwrap_or_default(),
-						nonce,
-						false,
-					)
-					.map(|(_, _, gas, _)| (vec![], gas))
-					.map_err(|err| err.into()),
-			}
+			nonce: Option<U256>
+		) -> Result<(Vec<u8>, U256), (sp_runtime::DispatchError, Vec<u8>)> {
+			<frame_ethereum::Module<Runtime>>::call(from, to, data, value, gas_limit.low_u32(), gas_price.unwrap_or_default(), nonce)
 		}
 
 		fn current_transaction_statuses() -> Option<Vec<TransactionStatus>> {
