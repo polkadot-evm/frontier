@@ -416,14 +416,21 @@ impl<T: Trait> Module<T> {
 		gas_price: U256,
 		nonce: Option<U256>,
 	) -> Result<(Vec<u8>, U256), (sp_runtime::DispatchError, Vec<u8>)> {
-		let result = pallet_evm::Module::<T>::execute_call(from, to, data, value, gas_limit, gas_price, nonce, false)
-			.map(|(reason, retv, gas, logs)| (reason, retv, gas, logs))
-			.map_err(|err| (err.into(), Vec::new()))?;
+		let result = pallet_evm::Module::<T>::execute_call(
+			from,
+			to,
+			data,
+			value,
+			gas_limit,
+			gas_price,
+			nonce,
+			false
+		).map_err(|err| (err.into(), Vec::new()))?;
 
 		let returned_value = result.1.clone();
 
 		Self::handle_exec::<Vec<u8>>(result)
-			.map(|(_, retv, gas_used, _)| (retv, gas_used))
+			.map(|(_, returned_value, gas_used, _)| (returned_value, gas_used))
 			.map_err(|err| {
 				(err.into(), returned_value)
 			})
