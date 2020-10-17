@@ -488,7 +488,7 @@ impl<B, C, P, CT, BE> EthApiT for EthApi<B, C, P, CT, BE> where
 			nonce
 		} = request;
 
-		let gas_limit = gas.unwrap_or(U256::max_value());
+		let gas_limit = gas.unwrap_or(U256::max_value()); // TODO: set a limit
 		let data = data.map(|d| d.0).unwrap_or_default();
 
 		let action = match to {
@@ -526,7 +526,7 @@ impl<B, C, P, CT, BE> EthApiT for EthApi<B, C, P, CT, BE> where
 			nonce
 		} = request;
 
-		let gas_limit = gas.unwrap_or(U256::max_value());
+		let gas_limit = gas.unwrap_or(U256::max_value()); // TODO: set a limit
 		let data = data.map(|d| d.0).unwrap_or_default();
 
 		let action = match to {
