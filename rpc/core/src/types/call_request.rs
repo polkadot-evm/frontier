@@ -26,7 +26,7 @@ pub struct CallRequest {
 	/// From
 	pub from: Option<H160>,
 	/// To
-	pub to: H160,
+	pub to: Option<H160>,
 	/// Gas Price
 	pub gas_price: Option<U256>,
 	/// Gas

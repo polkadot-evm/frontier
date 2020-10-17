@@ -491,16 +491,21 @@ impl<B, C, P, CT, BE> EthApiT for EthApi<B, C, P, CT, BE> where
 		let gas_limit = gas.unwrap_or(U256::max_value());
 		let data = data.map(|d| d.0).unwrap_or_default();
 
+		let action = match to {
+			Some(to) => ethereum::TransactionAction::Call(to),
+			_ => ethereum::TransactionAction::Create,
+		};
+
 		let (ret, _) = self.client.runtime_api()
 			.call(
 				&BlockId::Hash(hash),
 				from.unwrap_or_default(),
-				to,
 				data,
 				value.unwrap_or_default(),
 				gas_limit,
 				gas_price,
-				nonce
+				nonce,
+				action
 			)
 			.map_err(|err| internal_err(format!("internal error: {:?}", err)))?
 			.map_err(handle_call_error)?;
@@ -524,16 +529,21 @@ impl<B, C, P, CT, BE> EthApiT for EthApi<B, C, P, CT, BE> where
 		let gas_limit = gas.unwrap_or(U256::max_value());
 		let data = data.map(|d| d.0).unwrap_or_default();
 
+		let action = match to {
+			Some(to) => ethereum::TransactionAction::Call(to),
+			_ => ethereum::TransactionAction::Create,
+		};
+
 		let (_, used_gas) = self.client.runtime_api()
 			.call(
 				&BlockId::Hash(hash),
 				from.unwrap_or_default(),
-				to,
 				data,
 				value.unwrap_or_default(),
 				gas_limit,
 				gas_price,
-				nonce
+				nonce,
+				action
 			)
 			.map_err(|err| internal_err(format!("internal error: {:?}", err)))?
 			.map_err(handle_call_error)?;

@@ -409,27 +409,38 @@ impl<T: Trait> Module<T> {
 
 	pub fn call(
 		from: H160,
-		to: H160,
 		data: Vec<u8>,
 		value: U256,
 		gas_limit: u32,
 		gas_price: U256,
 		nonce: Option<U256>,
+		action: TransactionAction
 	) -> Result<(Vec<u8>, U256), (sp_runtime::DispatchError, Vec<u8>)> {
-		let result = pallet_evm::Module::<T>::execute_call(
-			from,
-			to,
-			data,
-			value,
-			gas_limit,
-			gas_price,
-			nonce,
-			false
-		).map_err(|err| (err.into(), Vec::new()))?;
+		let result = match action {
+			TransactionAction::Call(to) => pallet_evm::Module::<T>::execute_call(
+				from,
+				to,
+				data,
+				value,
+				gas_limit,
+				gas_price,
+				nonce,
+				false
+			),
+			TransactionAction::Create => pallet_evm::Module::<T>::execute_create(
+				from,
+				data,
+				value,
+				gas_limit,
+				gas_price,
+				nonce,
+				false
+			).map(|(reason, _, gas_used, logs)| (reason, Vec::new(), gas_used, logs)),
+		}.map_err(|err| (err.into(), Vec::new()))?;
 
 		let returned_value = result.1.clone();
 
-		Self::handle_exec::<Vec<u8>>(result)
+		Self::handle_exec(result)
 			.map(|(_, returned_value, gas_used, _)| (returned_value, gas_used))
 			.map_err(|err| {
 				(err.into(), returned_value)

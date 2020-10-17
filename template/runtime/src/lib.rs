@@ -506,14 +506,14 @@ impl_runtime_apis! {
 
 		fn call(
 			from: H160,
-			to: H160,
 			data: Vec<u8>,
 			value: U256,
 			gas_limit: U256,
 			gas_price: Option<U256>,
-			nonce: Option<U256>
+			nonce: Option<U256>,
+			action: frame_ethereum::TransactionAction
 		) -> Result<(Vec<u8>, U256), (sp_runtime::DispatchError, Vec<u8>)> {
-			<frame_ethereum::Module<Runtime>>::call(from, to, data, value, gas_limit.low_u32(), gas_price.unwrap_or_default(), nonce)
+			<frame_ethereum::Module<Runtime>>::call(from, data, value, gas_limit.low_u32(), gas_price.unwrap_or_default(), nonce, action)
 		}
 
 		fn current_transaction_statuses() -> Option<Vec<TransactionStatus>> {
