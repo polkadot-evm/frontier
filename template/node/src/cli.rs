@@ -15,7 +15,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use structopt::StructOpt;
+use structopt::{StructOpt, clap::arg_enum};
+
+arg_enum! {
+	/// Available Sealing methods.
+	#[allow(missing_docs)]
+	#[derive(Debug, Copy, Clone, StructOpt)]
+	pub enum Sealing {
+		// Seal using rpc method.
+		Manual,
+		// Seal when transaction is executed.
+		Instant,
+	}
+}
 
 #[allow(missing_docs)]
 #[derive(Debug, StructOpt)]
@@ -25,8 +37,8 @@ pub struct RunCmd {
 	pub base: sc_cli::RunCmd,
 
 	/// Force using Kusama native runtime.
-	#[structopt(long = "manual-seal")]
-	pub manual_seal: bool,
+	#[structopt(long = "sealing")]
+	pub sealing: Option<Sealing>,
 }
 
 #[derive(Debug, StructOpt)]

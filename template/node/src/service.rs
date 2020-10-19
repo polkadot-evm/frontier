@@ -5,15 +5,18 @@ use std::time::Duration;
 use sc_client_api::{ExecutorProvider, RemoteBackend};
 use sc_consensus_manual_seal::{self as manual_seal};
 use frontier_consensus::FrontierBlockImport;
-use frontier_template_runtime::{self, opaque::Block, RuntimeApi};
+use frontier_template_runtime::{self, opaque::Block, RuntimeApi, SLOT_DURATION};
 use sc_service::{error::Error as ServiceError, Configuration, TaskManager};
-use sp_inherents::InherentDataProviders;
+use sp_inherents::{InherentDataProviders, ProvideInherentData, InherentIdentifier, InherentData};
 use sc_executor::native_executor_instance;
 pub use sc_executor::NativeExecutor;
 use sp_consensus_aura::sr25519::{AuthorityPair as AuraPair};
 use sc_finality_grandpa::{
 	FinalityProofProvider as GrandpaFinalityProofProvider, SharedVoterState,
 };
+use sp_timestamp::InherentError;
+use crate::cli::Sealing;
+use std::time::SystemTime;
 
 // Our native executor instance.
 native_executor_instance!(
@@ -43,7 +46,44 @@ pub enum ConsensusResult {
 	ManualSeal(FrontierBlockImport<Block, Arc<FullClient>, FullClient>)
 }
 
-pub fn new_partial(config: &Configuration, manual_seal: bool) -> Result<
+pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"timstap0";
+
+/// Provide a mock duration since unix epoch in millisecond for timestamp inherent.
+/// First call will return current timestamp and others calls with increment
+/// it by slot_duration to make Aura think time has passed
+pub struct MockInherentDataProvider;
+
+static mut CURRENT_TIMESTAMP: u64 = 0;
+
+impl ProvideInherentData for MockInherentDataProvider {
+	fn inherent_identifier(&self) -> &'static InherentIdentifier {
+		&INHERENT_IDENTIFIER
+	}
+
+	fn provide_inherent_data(
+		&self,
+		inherent_data: &mut InherentData,
+	) -> Result<(), sp_inherents::Error> {
+		unsafe {
+			if CURRENT_TIMESTAMP == 0 {
+				let now = SystemTime::now()
+					.duration_since(SystemTime::UNIX_EPOCH)
+					.unwrap()
+					.as_millis() as u64;
+				CURRENT_TIMESTAMP = now;
+			} else {
+				CURRENT_TIMESTAMP += SLOT_DURATION;
+			}
+			inherent_data.put_data(INHERENT_IDENTIFIER, &CURRENT_TIMESTAMP)
+		}
+	}
+
+	fn error_to_string(&self, error: &[u8]) -> Option<String> {
+		InherentError::try_from(&INHERENT_IDENTIFIER, error).map(|e| format!("{:?}", e))
+	}
+}
+
+pub fn new_partial(config: &Configuration, sealing: Option<Sealing>) -> Result<
 	sc_service::PartialComponents<
 		FullClient, FullBackend, FullSelectChain,
 		sp_consensus::import_queue::BasicQueue<Block, sp_api::TransactionFor<FullClient, Block>>,
@@ -65,9 +105,9 @@ pub fn new_partial(config: &Configuration, manual_seal: bool) -> Result<
 		client.clone(),
 	);
 
-	if manual_seal {
+	if sealing.is_some() {
 		inherent_data_providers
-			.register_provider(sp_timestamp::InherentDataProvider)
+			.register_provider(MockInherentDataProvider)
 			.map_err(Into::into)
 			.map_err(sp_consensus::error::Error::InherentData)?;
 
@@ -124,12 +164,12 @@ pub fn new_partial(config: &Configuration, manual_seal: bool) -> Result<
 }
 
 /// Builds a new service for a full client.
-pub fn new_full(config: Configuration, manual_seal: bool) -> Result<TaskManager, ServiceError> {
+pub fn new_full(config: Configuration, sealing: Option<Sealing>) -> Result<TaskManager, ServiceError> {
 	let sc_service::PartialComponents {
 		client, backend, mut task_manager, import_queue, keystore, select_chain, transaction_pool,
 		inherent_data_providers,
 		other: consensus_result
-	} = new_partial(&config, manual_seal)?;
+	} = new_partial(&config, sealing)?;
 
 	let (network, network_status_sinks, system_rpc_tx, network_starter) = match consensus_result {
 		ConsensusResult::ManualSeal(_) => {
@@ -222,21 +262,40 @@ pub fn new_full(config: Configuration, manual_seal: bool) -> Result<TaskManager,
 				);
 
 				// Background authorship future
-				let authorship_future = manual_seal::run_manual_seal(
-					manual_seal::ManualSealParams {
-						block_import,
-						env,
-						client: client.clone(),
-						pool: transaction_pool.pool().clone(),
-						commands_stream,
-						select_chain,
-						consensus_data_provider: None,
-						inherent_data_providers,
+				match sealing.unwrap() {
+					Sealing::Manual => {
+						let authorship_future = manual_seal::run_manual_seal(
+							manual_seal::ManualSealParams {
+								block_import,
+								env,
+								client,
+								pool: transaction_pool.pool().clone(),
+								commands_stream,
+								select_chain,
+								consensus_data_provider: None,
+								inherent_data_providers,
+							}
+						);
+						// we spawn the future on a background thread managed by service.
+						task_manager.spawn_essential_handle().spawn_blocking("manual-seal", authorship_future);
+					},
+					Sealing::Instant => {
+						let authorship_future = manual_seal::run_instant_seal(
+							manual_seal::InstantSealParams {
+								block_import,
+								env,
+								client: client.clone(),
+								pool: transaction_pool.pool().clone(),
+								select_chain,
+								consensus_data_provider: None,
+								inherent_data_providers,
+							}
+						);
+						// we spawn the future on a background thread managed by service.
+						task_manager.spawn_essential_handle().spawn_blocking("manual-seal", authorship_future);
 					}
-				);
+				};
 
-				// we spawn the future on a background thread managed by service.
-				task_manager.spawn_essential_handle().spawn_blocking("manual-seal", authorship_future);
 			}
 			log::info!("Manual Seal Ready");
 		},
