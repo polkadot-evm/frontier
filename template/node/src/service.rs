@@ -43,7 +43,7 @@ pub enum ConsensusResult {
 		>,
 		sc_finality_grandpa::LinkHalf<Block, FullClient, FullSelectChain>
 	),
-	ManualSeal(FrontierBlockImport<Block, Arc<FullClient>, FullClient>)
+	ManualSeal(FrontierBlockImport<Block, Arc<FullClient>, FullClient>, Sealing)
 }
 
 pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"timstap0";
@@ -126,7 +126,7 @@ pub fn new_partial(config: &Configuration, sealing: Option<Sealing>) -> Result<
 		return Ok(sc_service::PartialComponents {
 			client, backend, task_manager, import_queue, keystore, select_chain, transaction_pool,
 			inherent_data_providers,
-			other: ConsensusResult::ManualSeal(frontier_block_import)
+			other: ConsensusResult::ManualSeal(frontier_block_import, sealing.expect("already checked above"))
 		})
 	}
 
@@ -172,7 +172,7 @@ pub fn new_full(config: Configuration, sealing: Option<Sealing>) -> Result<TaskM
 	} = new_partial(&config, sealing)?;
 
 	let (network, network_status_sinks, system_rpc_tx, network_starter) = match consensus_result {
-		ConsensusResult::ManualSeal(_) => {
+		ConsensusResult::ManualSeal(_, _) => {
 			sc_service::build_network(sc_service::BuildNetworkParams {
 				config: &config,
 				client: client.clone(),
@@ -253,7 +253,7 @@ pub fn new_full(config: Configuration, sealing: Option<Sealing>) -> Result<TaskM
 	})?;
 
 	match consensus_result {
-		ConsensusResult::ManualSeal(block_import) => {
+		ConsensusResult::ManualSeal(block_import, sealing) => {
 			if role.is_authority() {
 				let env = sc_basic_authorship::ProposerFactory::new(
 					client.clone(),
@@ -262,7 +262,7 @@ pub fn new_full(config: Configuration, sealing: Option<Sealing>) -> Result<TaskM
 				);
 
 				// Background authorship future
-				match sealing.unwrap() {
+				match sealing {
 					Sealing::Manual => {
 						let authorship_future = manual_seal::run_manual_seal(
 							manual_seal::ManualSealParams {
