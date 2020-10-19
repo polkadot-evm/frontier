@@ -261,7 +261,7 @@ impl<B, C, P, CT, BE, A> EthApi<B, C, P, CT, BE, A> where
 				storage_prefix_build(b"Ethereum", b"CurrentBlock")
 			)
 		) {
-			return Decode::decode(&mut &block_data.0[..]).unwrap_or_else(|_| None);
+			return Some(Decode::decode(&mut &block_data.0[..]).unwrap());
 		} else { return None; };
 	}
 
@@ -272,7 +272,7 @@ impl<B, C, P, CT, BE, A> EthApi<B, C, P, CT, BE, A> where
 				storage_prefix_build(b"Ethereum", b"CurrentTransactionStatuses")
 			)
 		) {
-			return Decode::decode(&mut &status_data.0[..]).unwrap_or_else(|_| None);
+			return Some(Decode::decode(&mut &status_data.0[..]).unwrap());
 		} else { return None; };
 	}
 
@@ -283,7 +283,7 @@ impl<B, C, P, CT, BE, A> EthApi<B, C, P, CT, BE, A> where
 				storage_prefix_build(b"Ethereum", b"CurrentReceipts")
 			)
 		) {
-			return Decode::decode(&mut &status_data.0[..]).unwrap_or_else(|_| None);
+			return Some(Decode::decode(&mut &status_data.0[..]).unwrap());
 		} else { return None; };
 	}
 }
