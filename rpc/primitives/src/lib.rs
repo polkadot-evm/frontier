@@ -85,7 +85,13 @@ sp_api::decl_runtime_apis! {
 			Option<EthereumBlock>,
 			Option<Vec<ethereum::Receipt>>,
 			Option<Vec<TransactionStatus>>
-		);
+		) {
+			(
+				Self::current_block(),
+				Self::current_receipts(),
+				Self::current_transaction_statuses(),
+			)
+		}
 	}
 }
 
