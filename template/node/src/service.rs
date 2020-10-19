@@ -292,7 +292,7 @@ pub fn new_full(config: Configuration, sealing: Option<Sealing>) -> Result<TaskM
 							}
 						);
 						// we spawn the future on a background thread managed by service.
-						task_manager.spawn_essential_handle().spawn_blocking("manual-seal", authorship_future);
+						task_manager.spawn_essential_handle().spawn_blocking("instant-seal", authorship_future);
 					}
 				};
 
