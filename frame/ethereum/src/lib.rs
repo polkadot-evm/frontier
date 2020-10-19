@@ -24,7 +24,7 @@
 
 use frame_support::{
 	decl_module, decl_storage, decl_error, decl_event,
-	traits::Get, traits::FindAuthor
+	traits::Get, traits::FindAuthor,
 };
 use sp_std::prelude::*;
 use frame_system::ensure_none;
@@ -48,6 +48,12 @@ mod tests;
 
 #[cfg(all(feature = "std", test))]
 mod mock;
+
+#[derive(Eq, PartialEq, Clone, sp_runtime::RuntimeDebug)]
+pub enum ReturnValue {
+	Bytes(Vec<u8>),
+	Hash(H160),
+}
 
 /// A type alias for the balance type from this pallet's point of view.
 pub type BalanceOf<T> = <T as pallet_balances::Trait>::Balance;
@@ -172,7 +178,7 @@ decl_module! {
 
 #[repr(u8)]
 enum TransactionValidationError {
-	#[allow (dead_code)]
+	#[allow(dead_code)]
 	UnknownError,
 	InvalidChainId,
 	InvalidSignature,
@@ -219,7 +225,6 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
 }
 
 impl<T: Trait> Module<T> {
-
 	fn recover_signer(transaction: &ethereum::Transaction) -> Option<H160> {
 		let mut sig = [0u8; 65];
 		let mut msg = [0u8; 32];
@@ -321,78 +326,52 @@ impl<T: Trait> Module<T> {
 	}
 
 	/// Execute an Ethereum transaction, ignoring transaction signatures.
-	pub fn execute(source: H160, transaction: ethereum::Transaction) -> DispatchResult {
+	pub fn execute(from: H160, transaction: ethereum::Transaction) -> DispatchResult {
 		let transaction_hash = H256::from_slice(
 			Keccak256::digest(&rlp::encode(&transaction)).as_slice()
 		);
 		let transaction_index = Pending::get().len() as u32;
 
-		let (status, gas_used) = match transaction.action {
-			ethereum::TransactionAction::Call(target) => {
-				let (_, _, gas_used, logs) = Self::handle_exec(
-					pallet_evm::Module::<T>::execute_call(
-						source,
-						target,
-						transaction.input.clone(),
-						transaction.value,
-						transaction.gas_limit.low_u32(),
-						transaction.gas_price,
-						Some(transaction.nonce),
-						true,
-					)?
-				)?;
+		let (exit_reason, returned_value, gas_used, logs) = Self::execute_evm(
+			from,
+			transaction.input.clone(),
+			transaction.value,
+			transaction.gas_limit.low_u32(),
+			transaction.gas_price,
+			Some(transaction.nonce),
+			transaction.action,
+			true,
+		)?;
 
-				(TransactionStatus {
-					transaction_hash,
-					transaction_index,
-					from: source,
-					to: Some(target),
-					contract_address: None,
-					logs: {
-						logs.into_iter()
-						.map(|log| {
-							Log {
-								address: log.address,
-								topics: log.topics,
-								data: log.data
-							}
-						}).collect()
-					},
-					logs_bloom: Bloom::default(), // TODO: feed in bloom.
-				}, gas_used)
-			},
-			ethereum::TransactionAction::Create => {
-				let (_, contract_address, gas_used, logs) = Self::handle_exec(
-					pallet_evm::Module::<T>::execute_create(
-						source,
-						transaction.input.clone(),
-						transaction.value,
-						transaction.gas_limit.low_u32(),
-						transaction.gas_price,
-						Some(transaction.nonce),
-						true,
-					)?
-				)?;
+		Self::handle_exit_reason(exit_reason)?;
 
-				(TransactionStatus {
-					transaction_hash,
-					transaction_index,
-					from: source,
-					to: None,
-					contract_address: Some(contract_address),
-					logs: {
-						logs.into_iter()
-						.map(|log| {
-							Log {
-								address: log.address,
-								topics: log.topics,
-								data: log.data
-							}
-						}).collect()
-					},
-					logs_bloom: Bloom::default(), // TODO: feed in bloom.
-				}, gas_used)
+		let to = match transaction.action {
+			TransactionAction::Create => None,
+			TransactionAction::Call(to) => Some(to)
+		};
+
+		let contract_address = match returned_value {
+			ReturnValue::Bytes(_) => None,
+			ReturnValue::Hash(addr) => Some(addr)
+		};
+
+		let status = TransactionStatus {
+			transaction_hash,
+			transaction_index,
+			from,
+			to,
+			contract_address,
+			logs: {
+				logs.into_iter()
+					.map(|log| {
+						Log {
+							address: log.address,
+							topics: log.topics,
+							data: log.data,
+						}
+					}).collect()
 			},
+			logs_bloom: Bloom::default(), // TODO: feed in bloom.
 		};
 
 		let receipt = ethereum::Receipt {
@@ -407,16 +386,86 @@ impl<T: Trait> Module<T> {
 		Ok(())
 	}
 
-	fn handle_exec<R>(res: (ExitReason, R, U256, Vec<pallet_evm::Log>))
-		-> Result<(ExitReason, R, U256, Vec<pallet_evm::Log>), Error<T>> {
-		match res.0 {
-			ExitReason::Succeed(_s) => Ok(res),
+	/// Execute an EVM call or create
+	pub fn call(
+		source: H160,
+		data: Vec<u8>,
+		value: U256,
+		gas_limit: u32,
+		gas_price: U256,
+		nonce: Option<U256>,
+		action: TransactionAction,
+	) -> Result<(Vec<u8>, U256), (sp_runtime::DispatchError, Vec<u8>)> {
+		let (exit_reason, returned_value, gas_used, _) = Self::execute_evm(
+			source,
+			data,
+			value,
+			gas_limit,
+			gas_price,
+			nonce,
+			action,
+			false,
+		).map_err(|err| (err.into(), Vec::new()))?;
+
+		let returned_value = match returned_value.clone() {
+			ReturnValue::Bytes(data) => data,
+			ReturnValue::Hash(_) => Vec::new()
+		};
+
+		Self::handle_exit_reason(exit_reason)
+			.map_err(|err| (err.into(), returned_value.clone()))?;
+
+		Ok((returned_value, gas_used))
+	}
+}
+
+impl<T: Trait> Module<T> {
+	fn execute_evm(
+		source: H160,
+		data: Vec<u8>,
+		value: U256,
+		gas_limit: u32,
+		gas_price: U256,
+		nonce: Option<U256>,
+		action: TransactionAction,
+		apply_state: bool,
+	) -> Result<(ExitReason, ReturnValue, U256, Vec<pallet_evm::Log>), pallet_evm::Error<T>> {
+		match action {
+			TransactionAction::Call(target) => pallet_evm::Module::<T>::execute_call(
+				source,
+				target,
+				data,
+				value,
+				gas_limit,
+				gas_price,
+				nonce,
+				apply_state,
+			).map(|(exit_reason, returned_value, gas_used, logs)| {
+				(exit_reason, ReturnValue::Bytes(returned_value), gas_used, logs)
+			}),
+			TransactionAction::Create => pallet_evm::Module::<T>::execute_create(
+				source,
+				data,
+				value,
+				gas_limit,
+				gas_price,
+				nonce,
+				apply_state,
+			).map(|(exit_reason, returned_value, gas_used, logs)| {
+				(exit_reason, ReturnValue::Hash(returned_value), gas_used, logs)
+			})
+		}
+	}
+
+	fn handle_exit_reason(exit_reason: ExitReason) -> Result<(), Error<T>> {
+		match exit_reason {
+			ExitReason::Succeed(_s) => Ok(()),
 			ExitReason::Error(e) => Err(Self::parse_exit_error(e)),
 			ExitReason::Revert(e) => {
 				match e {
 					ExitRevert::Reverted => Err(Error::<T>::Reverted),
 				}
-			},
+			}
 			ExitReason::Fatal(e) => {
 				match e {
 					ExitFatal::NotSupported => Err(Error::<T>::NotSupported),
@@ -424,26 +473,26 @@ impl<T: Trait> Module<T> {
 					ExitFatal::CallErrorAsFatal(e_error) => Err(Self::parse_exit_error(e_error)),
 					ExitFatal::Other(_s) => Err(Error::<T>::ExitFatalOther),
 				}
-			},
+			}
 		}
 	}
 
 	fn parse_exit_error(exit_error: ExitError) -> Error<T> {
 		match exit_error {
-			ExitError::StackUnderflow => return Error::<T>::StackUnderflow,
-			ExitError::StackOverflow => return Error::<T>::StackOverflow,
-			ExitError::InvalidJump => return Error::<T>::InvalidJump,
-			ExitError::InvalidRange => return Error::<T>::InvalidRange,
-			ExitError::DesignatedInvalid => return Error::<T>::DesignatedInvalid,
-			ExitError::CallTooDeep => return Error::<T>::CallTooDeep,
-			ExitError::CreateCollision => return Error::<T>::CreateCollision,
-			ExitError::CreateContractLimit => return Error::<T>::CreateContractLimit,
-			ExitError::OutOfOffset => return Error::<T>::OutOfOffset,
-			ExitError::OutOfGas => return Error::<T>::OutOfGas,
-			ExitError::OutOfFund => return Error::<T>::OutOfFund,
-			ExitError::PCUnderflow => return Error::<T>::PCUnderflow,
-			ExitError::CreateEmpty => return Error::<T>::CreateEmpty,
-			ExitError::Other(_s) => return Error::<T>::ExitErrorOther,
+			ExitError::StackUnderflow => Error::<T>::StackUnderflow,
+			ExitError::StackOverflow => Error::<T>::StackOverflow,
+			ExitError::InvalidJump => Error::<T>::InvalidJump,
+			ExitError::InvalidRange => Error::<T>::InvalidRange,
+			ExitError::DesignatedInvalid => Error::<T>::DesignatedInvalid,
+			ExitError::CallTooDeep => Error::<T>::CallTooDeep,
+			ExitError::CreateCollision => Error::<T>::CreateCollision,
+			ExitError::CreateContractLimit => Error::<T>::CreateContractLimit,
+			ExitError::OutOfOffset => Error::<T>::OutOfOffset,
+			ExitError::OutOfGas => Error::<T>::OutOfGas,
+			ExitError::OutOfFund => Error::<T>::OutOfFund,
+			ExitError::PCUnderflow => Error::<T>::PCUnderflow,
+			ExitError::CreateEmpty => Error::<T>::CreateEmpty,
+			ExitError::Other(_s) => Error::<T>::ExitErrorOther,
 		}
 	}
 }
