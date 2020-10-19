@@ -16,7 +16,6 @@ use sc_finality_grandpa::{
 };
 use sp_timestamp::InherentError;
 use crate::cli::Sealing;
-use std::time::SystemTime;
 
 // Our native executor instance.
 native_executor_instance!(
@@ -65,15 +64,7 @@ impl ProvideInherentData for MockInherentDataProvider {
 		inherent_data: &mut InherentData,
 	) -> Result<(), sp_inherents::Error> {
 		unsafe {
-			if CURRENT_TIMESTAMP == 0 {
-				let now = SystemTime::now()
-					.duration_since(SystemTime::UNIX_EPOCH)
-					.unwrap()
-					.as_millis() as u64;
-				CURRENT_TIMESTAMP = now;
-			} else {
-				CURRENT_TIMESTAMP += SLOT_DURATION;
-			}
+			CURRENT_TIMESTAMP += SLOT_DURATION;
 			inherent_data.put_data(INHERENT_IDENTIFIER, &CURRENT_TIMESTAMP)
 		}
 	}
