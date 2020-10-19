@@ -21,6 +21,7 @@ use sp_core::H256;
 use sp_runtime::traits::Block as BlockT;
 use sc_client_api::backend::AuxStore;
 use sp_blockchain::{Result as ClientResult, Error as ClientError};
+use frontier_rpc_primitives::TransactionStatus;
 
 fn load_decode<B: AuxStore, T: Decode>(backend: &B, key: &[u8]) -> ClientResult<Option<T>> {
 	let corrupt = |e: codec::Error| {
@@ -95,4 +96,31 @@ pub fn write_transaction_metadata<F, R>(
 {
 	let key = transaction_metadata_key(hash);
 	write_aux(&[(&key, &metadata.encode())])
+}
+/// Map a Ethereum block number to the current runtime stored Ethereum logs.
+pub fn log_key(block_number: u32) -> Vec<u8> {
+	let mut ret = b"ethereum_log:".to_vec();
+	ret.append(&mut block_number.to_be_bytes().to_vec());
+	ret
+}
+
+/// Given an Ethereum block number, get the corresponding Ethereum logs.
+pub fn load_logs<B: AuxStore>(
+	backend: &B,
+	block_number: u32,
+) -> ClientResult<Option<(H256, Vec<TransactionStatus>)>> {
+	let key = log_key(block_number);
+	load_decode(backend, &key)
+}
+
+/// Update Aux logs.
+pub fn write_logs<F, R>(
+	block_number: u32,
+	data: (H256, Vec<TransactionStatus>),
+	write_aux: F,
+) -> R where
+	F: FnOnce(&[(&[u8], &[u8])]) -> R,
+{
+	let key = log_key(block_number);
+	write_aux(&[(&key, &data.encode())])
 }

@@ -16,7 +16,9 @@ sp-api = { git = "https://github.com/paritytech/substrate.git", branch = "rococo
 sc-client-api = { git = "https://github.com/paritytech/substrate.git", branch = "rococo-branch" }
 sp-block-builder = { git = "https://github.com/paritytech/substrate.git", branch = "rococo-branch" }
 sp-inherents = { git = "https://github.com/paritytech/substrate.git", branch = "rococo-branch" }
+sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "rococo-branch" }
 frontier-consensus-primitives = { path = "primitives" }
+frontier-rpc-primitives = { path = "../rpc/primitives" }
 sp-consensus = { git = "https://github.com/paritytech/substrate.git", branch = "rococo-branch" }
 log = "0.4.8"
 futures = { version = "0.3.1", features = ["compat"] }
