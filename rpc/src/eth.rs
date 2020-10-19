@@ -35,7 +35,7 @@ use frontier_rpc_core::types::{
 	SyncStatus, SyncInfo, Transaction, Work, Rich, Block, BlockTransactions, VariadicValue
 };
 use frontier_rpc_primitives::{EthereumRuntimeRPCApi, ConvertTransaction, TransactionStatus};
-use crate::internal_err;
+use crate::{internal_err, handle_call_error};
 
 pub use frontier_rpc_core::{EthApiServer, NetApiServer};
 
@@ -489,27 +489,37 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 	fn call(&self, request: CallRequest, _: Option<BlockNumber>) -> Result<Bytes> {
 		let hash = self.client.info().best_hash;
 
-		let from = request.from.unwrap_or_default();
-		let to = request.to.unwrap_or_default();
-		let gas_price = request.gas_price;
-		let gas_limit = request.gas.unwrap_or(U256::max_value());
-		let value = request.value.unwrap_or_default();
-		let data = request.data.map(|d| d.0).unwrap_or_default();
-		let nonce = request.nonce;
+		let CallRequest {
+			from,
+			to,
+			gas_price,
+			gas,
+			value,
+			data,
+			nonce
+		} = request;
+
+		let gas_limit = gas.unwrap_or(U256::max_value()); // TODO: set a limit
+		let data = data.map(|d| d.0).unwrap_or_default();
+
+		let action = match to {
+			Some(to) => ethereum::TransactionAction::Call(to),
+			_ => ethereum::TransactionAction::Create,
+		};
 
 		let (ret, _) = self.client.runtime_api()
 			.call(
 				&BlockId::Hash(hash),
-				from,
+				from.unwrap_or_default(),
 				data,
-				value,
+				value.unwrap_or_default(),
 				gas_limit,
 				gas_price,
 				nonce,
-				ethereum::TransactionAction::Call(to)
+				action
 			)
 			.map_err(|err| internal_err(format!("internal error: {:?}", err)))?
-			.map_err(|err| internal_err(format!("executing call failed: {:?}", err)))?;
+			.map_err(handle_call_error)?;
 
 		Ok(Bytes(ret))
 	}
@@ -517,29 +527,37 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 	fn estimate_gas(&self, request: CallRequest, _: Option<BlockNumber>) -> Result<U256> {
 		let hash = self.client.info().best_hash;
 
-		let from = request.from.unwrap_or_default();
-		let gas_price = request.gas_price;
-		let gas_limit = request.gas.unwrap_or(U256::max_value()); // TODO: this isn't safe
-		let value = request.value.unwrap_or_default();
-		let data = request.data.map(|d| d.0).unwrap_or_default();
-		let nonce = request.nonce;
+		let CallRequest {
+			from,
+			to,
+			gas_price,
+			gas,
+			value,
+			data,
+			nonce
+		} = request;
+
+		let gas_limit = gas.unwrap_or(U256::max_value()); // TODO: set a limit
+		let data = data.map(|d| d.0).unwrap_or_default();
+
+		let action = match to {
+			Some(to) => ethereum::TransactionAction::Call(to),
+			_ => ethereum::TransactionAction::Create,
+		};
 
 		let (_, used_gas) = self.client.runtime_api()
 			.call(
 				&BlockId::Hash(hash),
-				from,
+				from.unwrap_or_default(),
 				data,
-				value,
+				value.unwrap_or_default(),
 				gas_limit,
 				gas_price,
 				nonce,
-				match request.to {
-					Some(to) => ethereum::TransactionAction::Call(to),
-					_ => ethereum::TransactionAction::Create,
-				}
+				action
 			)
 			.map_err(|err| internal_err(format!("internal error: {:?}", err)))?
-			.map_err(|err| internal_err(format!("executing call failed: {:?}", err)))?;
+			.map_err(handle_call_error)?;
 
 		Ok(used_gas)
 	}

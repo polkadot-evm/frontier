@@ -20,12 +20,24 @@ mod eth_pubsub;
 pub use eth::{EthApi, EthApiServer, NetApi, NetApiServer};
 pub use eth_pubsub::{EthPubSubApi, EthPubSubApiServer};
 
-use jsonrpc_core::{ErrorCode, Error};
+use jsonrpc_core::{ErrorCode, Error, Value};
+use rustc_hex::ToHex;
 
 pub fn internal_err<T: ToString>(message: T) -> Error {
 	Error {
 		code: ErrorCode::InternalError,
 		message: message.to_string(),
 		data: None
+	}
+}
+
+pub fn handle_call_error((err, data): (sp_runtime::DispatchError, Vec<u8>)) -> Error {
+	let error: &'static str = err.into();
+	// TODO: trim error message
+	let msg = String::from_utf8_lossy(&data);
+	Error {
+		code: ErrorCode::InternalError,
+		message: format!("{}: {}", error.to_lowercase(), msg),
+		data: Some(Value::String(data.to_hex()))
 	}
 }

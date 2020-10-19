@@ -511,35 +511,9 @@ impl_runtime_apis! {
 			gas_limit: U256,
 			gas_price: Option<U256>,
 			nonce: Option<U256>,
-			action: frame_ethereum::TransactionAction,
-		) -> Result<(Vec<u8>, U256), sp_runtime::DispatchError> {
-			match action {
-				frame_ethereum::TransactionAction::Call(to) =>
-					EVM::execute_call(
-						from,
-						to,
-						data,
-						value,
-						gas_limit.low_u32(),
-						gas_price.unwrap_or_default(),
-						nonce,
-						false,
-					)
-					.map(|(_, ret, gas, _)| (ret, gas))
-					.map_err(|err| err.into()),
-				frame_ethereum::TransactionAction::Create =>
-					EVM::execute_create(
-						from,
-						data,
-						value,
-						gas_limit.low_u32(),
-						gas_price.unwrap_or_default(),
-						nonce,
-						false,
-					)
-					.map(|(_, _, gas, _)| (vec![], gas))
-					.map_err(|err| err.into()),
-			}
+			action: frame_ethereum::TransactionAction
+		) -> Result<(Vec<u8>, U256), (sp_runtime::DispatchError, Vec<u8>)> {
+			<frame_ethereum::Module<Runtime>>::call(from, data, value, gas_limit.low_u32(), gas_price.unwrap_or_default(), nonce, action)
 		}
 
 		fn current_transaction_statuses() -> Option<Vec<TransactionStatus>> {

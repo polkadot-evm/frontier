@@ -1465,6 +1465,7 @@ dependencies = [
  "pallet-ethereum 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec",
  "rlp",
+ "rustc-hex",
  "sc-client-api",
  "sc-network",
  "sc-rpc",
