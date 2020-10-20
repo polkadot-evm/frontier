@@ -47,9 +47,8 @@ pub enum ConsensusResult {
 
 pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"timstap0";
 
-/// Provide a mock duration since unix epoch in millisecond for timestamp inherent.
-/// First call will return current timestamp and others calls with increment
-/// it by slot_duration to make Aura think time has passed
+/// Provide a mock duration starting at 0 in millisecond for timestamp inherent.
+/// Each call will increment timestamp by slot_duration making Aura think time has passed.
 pub struct MockInherentDataProvider;
 
 static mut CURRENT_TIMESTAMP: u64 = 0;
