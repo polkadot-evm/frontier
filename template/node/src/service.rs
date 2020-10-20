@@ -1,7 +1,6 @@
 //! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 
-use std::sync::Arc;
-use std::time::Duration;
+use std::{sync::Arc, cell::RefCell, time::Duration};
 use sc_client_api::{ExecutorProvider, RemoteBackend};
 use sc_consensus_manual_seal::{self as manual_seal};
 use frontier_consensus::FrontierBlockImport;
@@ -45,15 +44,15 @@ pub enum ConsensusResult {
 	ManualSeal(FrontierBlockImport<Block, Arc<FullClient>, FullClient>, Sealing)
 }
 
-pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"timstap0";
-
 /// Provide a mock duration starting at 0 in millisecond for timestamp inherent.
 /// Each call will increment timestamp by slot_duration making Aura think time has passed.
-pub struct MockInherentDataProvider;
+pub struct MockTimestampInherentDataProvider;
 
-static mut CURRENT_TIMESTAMP: u64 = 0;
+pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"timstap0";
 
-impl ProvideInherentData for MockInherentDataProvider {
+thread_local!(static TIMESTAMP: RefCell<u64> = RefCell::new(0));
+
+impl ProvideInherentData for MockTimestampInherentDataProvider {
 	fn inherent_identifier(&self) -> &'static InherentIdentifier {
 		&INHERENT_IDENTIFIER
 	}
@@ -62,10 +61,10 @@ impl ProvideInherentData for MockInherentDataProvider {
 		&self,
 		inherent_data: &mut InherentData,
 	) -> Result<(), sp_inherents::Error> {
-		unsafe {
-			CURRENT_TIMESTAMP += SLOT_DURATION;
-			inherent_data.put_data(INHERENT_IDENTIFIER, &CURRENT_TIMESTAMP)
-		}
+		TIMESTAMP.with(|x| {
+			*x.borrow_mut() += SLOT_DURATION;
+			inherent_data.put_data(INHERENT_IDENTIFIER, &*x.borrow())
+		})
 	}
 
 	fn error_to_string(&self, error: &[u8]) -> Option<String> {
@@ -97,7 +96,7 @@ pub fn new_partial(config: &Configuration, sealing: Option<Sealing>) -> Result<
 
 	if sealing.is_some() {
 		inherent_data_providers
-			.register_provider(MockInherentDataProvider)
+			.register_provider(MockTimestampInherentDataProvider)
 			.map_err(Into::into)
 			.map_err(sp_consensus::error::Error::InherentData)?;
 
