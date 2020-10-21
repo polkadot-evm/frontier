@@ -94,7 +94,7 @@ pub fn new_partial(config: &Configuration, sealing: Option<Sealing>) -> Result<
 		client.clone(),
 	);
 
-	if sealing.is_some() {
+	if let Some(sealing) = sealing {
 		inherent_data_providers
 			.register_provider(MockTimestampInherentDataProvider)
 			.map_err(Into::into)
@@ -115,7 +115,7 @@ pub fn new_partial(config: &Configuration, sealing: Option<Sealing>) -> Result<
 		return Ok(sc_service::PartialComponents {
 			client, backend, task_manager, import_queue, keystore, select_chain, transaction_pool,
 			inherent_data_providers,
-			other: ConsensusResult::ManualSeal(frontier_block_import, sealing.expect("already checked above"))
+			other: ConsensusResult::ManualSeal(frontier_block_import, sealing)
 		})
 	}
 
