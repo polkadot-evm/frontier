@@ -55,7 +55,7 @@ export async function startFrontierNode(specFilename: string): Promise<{ web3: W
 		`--execution=Native`, // Faster execution using native
 		`--no-telemetry`,
 		`--no-prometheus`,
-		`--manual-seal`,
+		`--sealing=Manual`,
 		`--no-grandpa`,
 		`--force-authoring`,
 		`-l${FRONTIER_LOG}`,
