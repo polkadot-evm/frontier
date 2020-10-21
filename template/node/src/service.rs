@@ -1,19 +1,20 @@
 //! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 
-use std::sync::Arc;
-use std::time::Duration;
+use std::{sync::Arc, cell::RefCell, time::Duration};
 use sc_client_api::{ExecutorProvider, RemoteBackend};
 use sc_consensus_manual_seal::{self as manual_seal};
 use frontier_consensus::FrontierBlockImport;
-use frontier_template_runtime::{self, opaque::Block, RuntimeApi};
+use frontier_template_runtime::{self, opaque::Block, RuntimeApi, SLOT_DURATION};
 use sc_service::{error::Error as ServiceError, Configuration, TaskManager};
-use sp_inherents::InherentDataProviders;
+use sp_inherents::{InherentDataProviders, ProvideInherentData, InherentIdentifier, InherentData};
 use sc_executor::native_executor_instance;
 pub use sc_executor::NativeExecutor;
 use sp_consensus_aura::sr25519::{AuthorityPair as AuraPair};
 use sc_finality_grandpa::{
 	FinalityProofProvider as GrandpaFinalityProofProvider, SharedVoterState,
 };
+use sp_timestamp::InherentError;
+use crate::cli::Sealing;
 
 // Our native executor instance.
 native_executor_instance!(
@@ -40,10 +41,38 @@ pub enum ConsensusResult {
 		>,
 		sc_finality_grandpa::LinkHalf<Block, FullClient, FullSelectChain>
 	),
-	ManualSeal(FrontierBlockImport<Block, Arc<FullClient>, FullClient>)
+	ManualSeal(FrontierBlockImport<Block, Arc<FullClient>, FullClient>, Sealing)
 }
 
-pub fn new_partial(config: &Configuration, manual_seal: bool) -> Result<
+/// Provide a mock duration starting at 0 in millisecond for timestamp inherent.
+/// Each call will increment timestamp by slot_duration making Aura think time has passed.
+pub struct MockTimestampInherentDataProvider;
+
+pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"timstap0";
+
+thread_local!(static TIMESTAMP: RefCell<u64> = RefCell::new(0));
+
+impl ProvideInherentData for MockTimestampInherentDataProvider {
+	fn inherent_identifier(&self) -> &'static InherentIdentifier {
+		&INHERENT_IDENTIFIER
+	}
+
+	fn provide_inherent_data(
+		&self,
+		inherent_data: &mut InherentData,
+	) -> Result<(), sp_inherents::Error> {
+		TIMESTAMP.with(|x| {
+			*x.borrow_mut() += SLOT_DURATION;
+			inherent_data.put_data(INHERENT_IDENTIFIER, &*x.borrow())
+		})
+	}
+
+	fn error_to_string(&self, error: &[u8]) -> Option<String> {
+		InherentError::try_from(&INHERENT_IDENTIFIER, error).map(|e| format!("{:?}", e))
+	}
+}
+
+pub fn new_partial(config: &Configuration, sealing: Option<Sealing>) -> Result<
 	sc_service::PartialComponents<
 		FullClient, FullBackend, FullSelectChain,
 		sp_consensus::import_queue::BasicQueue<Block, sp_api::TransactionFor<FullClient, Block>>,
@@ -65,9 +94,9 @@ pub fn new_partial(config: &Configuration, manual_seal: bool) -> Result<
 		client.clone(),
 	);
 
-	if manual_seal {
+	if let Some(sealing) = sealing {
 		inherent_data_providers
-			.register_provider(sp_timestamp::InherentDataProvider)
+			.register_provider(MockTimestampInherentDataProvider)
 			.map_err(Into::into)
 			.map_err(sp_consensus::error::Error::InherentData)?;
 
@@ -86,7 +115,7 @@ pub fn new_partial(config: &Configuration, manual_seal: bool) -> Result<
 		return Ok(sc_service::PartialComponents {
 			client, backend, task_manager, import_queue, keystore, select_chain, transaction_pool,
 			inherent_data_providers,
-			other: ConsensusResult::ManualSeal(frontier_block_import)
+			other: ConsensusResult::ManualSeal(frontier_block_import, sealing)
 		})
 	}
 
@@ -124,15 +153,15 @@ pub fn new_partial(config: &Configuration, manual_seal: bool) -> Result<
 }
 
 /// Builds a new service for a full client.
-pub fn new_full(config: Configuration, manual_seal: bool) -> Result<TaskManager, ServiceError> {
+pub fn new_full(config: Configuration, sealing: Option<Sealing>) -> Result<TaskManager, ServiceError> {
 	let sc_service::PartialComponents {
 		client, backend, mut task_manager, import_queue, keystore, select_chain, transaction_pool,
 		inherent_data_providers,
 		other: consensus_result
-	} = new_partial(&config, manual_seal)?;
+	} = new_partial(&config, sealing)?;
 
 	let (network, network_status_sinks, system_rpc_tx, network_starter) = match consensus_result {
-		ConsensusResult::ManualSeal(_) => {
+		ConsensusResult::ManualSeal(_, _) => {
 			sc_service::build_network(sc_service::BuildNetworkParams {
 				config: &config,
 				client: client.clone(),
@@ -213,7 +242,7 @@ pub fn new_full(config: Configuration, manual_seal: bool) -> Result<TaskManager,
 	})?;
 
 	match consensus_result {
-		ConsensusResult::ManualSeal(block_import) => {
+		ConsensusResult::ManualSeal(block_import, sealing) => {
 			if role.is_authority() {
 				let env = sc_basic_authorship::ProposerFactory::new(
 					client.clone(),
@@ -222,21 +251,40 @@ pub fn new_full(config: Configuration, manual_seal: bool) -> Result<TaskManager,
 				);
 
 				// Background authorship future
-				let authorship_future = manual_seal::run_manual_seal(
-					manual_seal::ManualSealParams {
-						block_import,
-						env,
-						client: client.clone(),
-						pool: transaction_pool.pool().clone(),
-						commands_stream,
-						select_chain,
-						consensus_data_provider: None,
-						inherent_data_providers,
+				match sealing {
+					Sealing::Manual => {
+						let authorship_future = manual_seal::run_manual_seal(
+							manual_seal::ManualSealParams {
+								block_import,
+								env,
+								client,
+								pool: transaction_pool.pool().clone(),
+								commands_stream,
+								select_chain,
+								consensus_data_provider: None,
+								inherent_data_providers,
+							}
+						);
+						// we spawn the future on a background thread managed by service.
+						task_manager.spawn_essential_handle().spawn_blocking("manual-seal", authorship_future);
+					},
+					Sealing::Instant => {
+						let authorship_future = manual_seal::run_instant_seal(
+							manual_seal::InstantSealParams {
+								block_import,
+								env,
+								client: client.clone(),
+								pool: transaction_pool.pool().clone(),
+								select_chain,
+								consensus_data_provider: None,
+								inherent_data_providers,
+							}
+						);
+						// we spawn the future on a background thread managed by service.
+						task_manager.spawn_essential_handle().spawn_blocking("instant-seal", authorship_future);
 					}
-				);
+				};
 
-				// we spawn the future on a background thread managed by service.
-				task_manager.spawn_essential_handle().spawn_blocking("manual-seal", authorship_future);
 			}
 			log::info!("Manual Seal Ready");
 		},
