@@ -19,7 +19,7 @@
 
 use super::*;
 use mock::*;
-use rustc_hex::FromHex;
+use rustc_hex::{FromHex, ToHex};
 use std::str::FromStr;
 use ethereum::TransactionSignature;
 use frame_support::{
@@ -146,7 +146,6 @@ fn contract_constructor_should_get_executed() {
 		assert_eq!(Evm::account_storages(
 			erc20_address, alice_storage_address
 		), H256::from_str("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff").unwrap())
-
 	});
 }
 
@@ -216,5 +215,65 @@ fn transaction_should_generate_correct_gas_used() {
 			default_erc20_creation_transaction(alice),
 		));
 		assert_eq!(Pending::get()[0].2.used_gas, expected_gas);
+	});
+}
+
+#[test]
+fn call_should_handle_errors() {
+	// 	pragma solidity ^0.6.6;
+	// 	contract Test {
+	// 		function foo() external pure returns (bool) {
+	// 			return true;
+	// 		}
+	// 		function bar() external pure {
+	// 			require(false, "error_msg");
+	// 		}
+	// 	}
+	let contract: &str = "608060405234801561001057600080fd5b50610113806100206000396000f3fe6080604052348015600f57600080fd5b506004361060325760003560e01c8063c2985578146037578063febb0f7e146057575b600080fd5b603d605f565b604051808215151515815260200191505060405180910390f35b605d6068565b005b60006001905090565b600060db576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004018080602001828103825260098152602001807f6572726f725f6d7367000000000000000000000000000000000000000000000081525060200191505060405180910390fd5b56fea2646970667358221220fde68a3968e0e99b16fabf9b2997a78218b32214031f8e07e2c502daf603a69e64736f6c63430006060033";
+
+	let (pairs, mut ext) = new_test_ext(1);
+	let alice = &pairs[0];
+
+	ext.execute_with(|| {
+		assert_ok!(Ethereum::execute(
+			alice.address,
+			UnsignedTransaction {
+				nonce: U256::zero(),
+				gas_price: U256::from(1),
+				gas_limit: U256::from(0x100000),
+				action: ethereum::TransactionAction::Create,
+				value: U256::zero(),
+				input: FromHex::from_hex(contract).unwrap(),
+			}.sign(&alice.private_key),
+		));
+
+		let contract_address: Vec<u8> = FromHex::from_hex("32dcab0ef3fb2de2fce1d2e0799d36239671f04a").unwrap();
+		let foo: Vec<u8> = FromHex::from_hex("c2985578").unwrap();
+		let bar: Vec<u8> = FromHex::from_hex("febb0f7e").unwrap();
+
+		// calling foo will succeed
+		let (returned, _) = Ethereum::call(
+			alice.address,
+			foo,
+			U256::zero(),
+			1048576,
+			U256::from(1),
+			None,
+			TransactionAction::Call(H160::from_slice(&contract_address)),
+		).unwrap();
+		assert_eq!(returned.to_hex::<String>(), "0000000000000000000000000000000000000000000000000000000000000001".to_owned());
+
+		// calling bar will revert
+		let (error, returned) = Ethereum::call(
+			alice.address,
+			bar,
+			U256::zero(),
+			1048576,
+			U256::from(1),
+			None,
+			TransactionAction::Call(H160::from_slice(&contract_address))
+		).err().unwrap();
+		assert_eq!(error, Error::<Test>::Reverted.into());
+		assert_eq!(returned.to_hex::<String>(), "08c379a0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000096572726f725f6d73670000000000000000000000000000000000000000000000".to_owned());
 	});
 }

@@ -24,7 +24,7 @@
 
 use frame_support::{
 	decl_module, decl_storage, decl_error, decl_event,
-	traits::Get, traits::FindAuthor
+	traits::Get, traits::FindAuthor,
 };
 use sp_std::prelude::*;
 use frame_system::ensure_none;
@@ -49,6 +49,12 @@ mod tests;
 
 #[cfg(all(feature = "std", test))]
 mod mock;
+
+#[derive(Eq, PartialEq, Clone, sp_runtime::RuntimeDebug)]
+pub enum ReturnValue {
+	Bytes(Vec<u8>),
+	Hash(H160),
+}
 
 /// A type alias for the balance type from this pallet's point of view.
 pub type BalanceOf<T> = <T as pallet_balances::Trait>::Balance;
@@ -173,7 +179,7 @@ decl_module! {
 
 #[repr(u8)]
 enum TransactionValidationError {
-	#[allow (dead_code)]
+	#[allow(dead_code)]
 	UnknownError,
 	InvalidChainId,
 	InvalidSignature,
@@ -220,7 +226,6 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
 }
 
 impl<T: Trait> Module<T> {
-
 	fn recover_signer(transaction: &ethereum::Transaction) -> Option<H160> {
 		let mut sig = [0u8; 65];
 		let mut msg = [0u8; 32];
@@ -322,7 +327,7 @@ impl<T: Trait> Module<T> {
 	}
 
 	/// Execute an Ethereum transaction, ignoring transaction signatures.
-	pub fn execute(source: H160, transaction: ethereum::Transaction) -> DispatchResult {
+	pub fn execute(from: H160, transaction: ethereum::Transaction) -> DispatchResult {
 		let transaction_hash = H256::from_slice(
 			Keccak256::digest(&rlp::encode(&transaction)).as_slice()
 		);
@@ -374,6 +379,7 @@ impl<T: Trait> Module<T> {
 					logs_bloom: Bloom::default(), // TODO: feed in bloom.
 				}, info.used_gas)
 			},
+			logs_bloom: Bloom::default(), // TODO: feed in bloom.
 		};
 
 		let receipt = ethereum::Receipt {
@@ -396,7 +402,7 @@ impl<T: Trait> Module<T> {
 				match e {
 					ExitRevert::Reverted => Err(Error::<T>::Reverted),
 				}
-			},
+			}
 			ExitReason::Fatal(e) => {
 				match e {
 					ExitFatal::NotSupported => Err(Error::<T>::NotSupported),
@@ -404,26 +410,26 @@ impl<T: Trait> Module<T> {
 					ExitFatal::CallErrorAsFatal(e_error) => Err(Self::parse_exit_error(e_error)),
 					ExitFatal::Other(_s) => Err(Error::<T>::ExitFatalOther),
 				}
-			},
+			}
 		}
 	}
 
 	fn parse_exit_error(exit_error: ExitError) -> Error<T> {
 		match exit_error {
-			ExitError::StackUnderflow => return Error::<T>::StackUnderflow,
-			ExitError::StackOverflow => return Error::<T>::StackOverflow,
-			ExitError::InvalidJump => return Error::<T>::InvalidJump,
-			ExitError::InvalidRange => return Error::<T>::InvalidRange,
-			ExitError::DesignatedInvalid => return Error::<T>::DesignatedInvalid,
-			ExitError::CallTooDeep => return Error::<T>::CallTooDeep,
-			ExitError::CreateCollision => return Error::<T>::CreateCollision,
-			ExitError::CreateContractLimit => return Error::<T>::CreateContractLimit,
-			ExitError::OutOfOffset => return Error::<T>::OutOfOffset,
-			ExitError::OutOfGas => return Error::<T>::OutOfGas,
-			ExitError::OutOfFund => return Error::<T>::OutOfFund,
-			ExitError::PCUnderflow => return Error::<T>::PCUnderflow,
-			ExitError::CreateEmpty => return Error::<T>::CreateEmpty,
-			ExitError::Other(_s) => return Error::<T>::ExitErrorOther,
+			ExitError::StackUnderflow => Error::<T>::StackUnderflow,
+			ExitError::StackOverflow => Error::<T>::StackOverflow,
+			ExitError::InvalidJump => Error::<T>::InvalidJump,
+			ExitError::InvalidRange => Error::<T>::InvalidRange,
+			ExitError::DesignatedInvalid => Error::<T>::DesignatedInvalid,
+			ExitError::CallTooDeep => Error::<T>::CallTooDeep,
+			ExitError::CreateCollision => Error::<T>::CreateCollision,
+			ExitError::CreateContractLimit => Error::<T>::CreateContractLimit,
+			ExitError::OutOfOffset => Error::<T>::OutOfOffset,
+			ExitError::OutOfGas => Error::<T>::OutOfGas,
+			ExitError::OutOfFund => Error::<T>::OutOfFund,
+			ExitError::PCUnderflow => Error::<T>::PCUnderflow,
+			ExitError::CreateEmpty => Error::<T>::CreateEmpty,
+			ExitError::Other(_s) => Error::<T>::ExitErrorOther,
 		}
 	}
 }

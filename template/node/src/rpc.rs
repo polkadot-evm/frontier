@@ -106,6 +106,7 @@ pub fn create_full<C, P, BE>(
 			client.clone(),
 			pool.clone(),
 			frontier_template_runtime::TransactionConverter,
+			network.clone(),
 			is_authority,
 		))
 	);

@@ -1469,6 +1469,7 @@ dependencies = [
  "pallet-ethereum",
  "parity-scale-codec",
  "rlp",
+ "rustc-hex",
  "sc-client-api",
  "sc-network",
  "sc-rpc",
