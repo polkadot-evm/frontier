@@ -306,7 +306,7 @@ impl pallet_evm::Trait for Runtime {
 	type AddressMapping = HashedAddressMapping<BlakeTwo256>;
 	type Currency = Balances;
 	type Event = Event;
-	type Runner = pallet_evm::runner::native::Runner<Self>;
+	type Runner = pallet_evm::runner::stack::Runner<Self>;
 	type Precompiles = (
 		pallet_evm::precompiles::ECRecover,
 		pallet_evm::precompiles::Sha256,

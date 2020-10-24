@@ -57,31 +57,19 @@ fn transaction_should_increment_nonce() {
 	let alice = &pairs[0];
 
 	ext.execute_with(|| {
+		let t = default_erc20_creation_transaction(alice);
 		assert_ok!(Ethereum::execute(
 			alice.address,
-			default_erc20_creation_transaction(alice),
+			t.input,
+			t.value,
+			t.gas_limit,
+			t.gas_price,
+			t.nonce,
+			t.action,
 		));
 		assert_eq!(Evm::account_basic(&alice.address).nonce, U256::from(1));
 	});
 }
-
-
-#[test]
-fn transaction_should_be_added_to_pending() {
-	let (pairs, mut ext) = new_test_ext(1);
-	let alice = &pairs[0];
-
-	ext.execute_with(|| {
-		let transaction = default_erc20_creation_transaction(alice);
-		assert_ok!(Ethereum::execute(
-			alice.address,
-			transaction.clone(),
-		));
-		assert_eq!(Pending::get().len(), 1);
-		assert_eq!(Pending::get()[0].0.input, transaction.input);
-	});
-}
-
 
 #[test]
 fn transaction_without_enough_gas_should_not_work() {
@@ -116,10 +104,17 @@ fn transaction_with_invalid_nonce_should_not_work() {
 				.build()
 		);
 
+		let t = default_erc20_creation_transaction(alice);
+
 		// nonce is 1
 		assert_ok!(Ethereum::execute(
 			alice.address,
-			default_erc20_creation_transaction(alice),
+			t.input,
+			t.value,
+			t.gas_limit,
+			t.gas_price,
+			t.nonce,
+			t.action,
 		));
 
 		transaction.nonce = U256::from(0);
@@ -138,9 +133,16 @@ fn contract_constructor_should_get_executed() {
 	let alice_storage_address = storage_address(alice.address, H256::zero());
 
 	ext.execute_with(|| {
+		let t = default_erc20_creation_transaction(alice);
+
 		assert_ok!(Ethereum::execute(
 			alice.address,
-			default_erc20_creation_transaction(alice),
+			t.input,
+			t.value,
+			t.gas_limit,
+			t.gas_price,
+			t.nonce,
+			t.action,
 		));
 		assert_eq!(Evm::account_storages(
 			erc20_address, alice_storage_address
@@ -193,9 +195,15 @@ fn contract_should_be_created_at_given_address() {
 	let erc20_address = contract_address(alice.address, 0);
 
 	ext.execute_with(|| {
+		let t = default_erc20_creation_transaction(alice);
 		assert_ok!(Ethereum::execute(
 			alice.address,
-			default_erc20_creation_transaction(alice),
+			t.input,
+			t.value,
+			t.gas_limit,
+			t.gas_price,
+			t.nonce,
+			t.action,
 		));
 		assert_ne!(Evm::account_codes(erc20_address).len(), 0);
 	});
@@ -209,11 +217,23 @@ fn transaction_should_generate_correct_gas_used() {
 	let expected_gas = U256::from(891328);
 
 	ext.execute_with(|| {
-		assert_ok!(Ethereum::execute(
+		let t = default_erc20_creation_transaction(alice);
+		let (_, info) = Ethereum::execute(
 			alice.address,
-			default_erc20_creation_transaction(alice),
-		));
-		assert_eq!(Pending::get()[0].2.used_gas, expected_gas);
+			t.input,
+			t.value,
+			t.gas_limit,
+			t.gas_price,
+			t.nonce,
+			t.action,
+		).unwrap();
+
+		match info {
+			CallOrCreateInfo::Create(info) => {
+				assert_eq!(info.used_gas, expected_gas);
+			},
+			CallOrCreateInfo::Call(_) => panic!("expected create info"),
+		}
 	});
 }
 
@@ -234,16 +254,22 @@ fn call_should_handle_errors() {
 	let alice = &pairs[0];
 
 	ext.execute_with(|| {
+		let t = UnsignedTransaction {
+			nonce: U256::zero(),
+			gas_price: U256::from(1),
+			gas_limit: U256::from(0x100000),
+			action: ethereum::TransactionAction::Create,
+			value: U256::zero(),
+			input: FromHex::from_hex(contract).unwrap(),
+		}.sign(&alice.private_key);
 		assert_ok!(Ethereum::execute(
 			alice.address,
-			UnsignedTransaction {
-				nonce: U256::zero(),
-				gas_price: U256::from(1),
-				gas_limit: U256::from(0x100000),
-				action: ethereum::TransactionAction::Create,
-				value: U256::zero(),
-				input: FromHex::from_hex(contract).unwrap(),
-			}.sign(&alice.private_key),
+			t.input,
+			t.value,
+			t.gas_limit,
+			t.gas_price,
+			t.nonce,
+			t.action,
 		));
 
 		let contract_address: Vec<u8> = FromHex::from_hex("32dcab0ef3fb2de2fce1d2e0799d36239671f04a").unwrap();
@@ -251,28 +277,34 @@ fn call_should_handle_errors() {
 		let bar: Vec<u8> = FromHex::from_hex("febb0f7e").unwrap();
 
 		// calling foo will succeed
-		let (returned, _) = Ethereum::call(
+		let (_, info) = Ethereum::execute(
 			alice.address,
 			foo,
 			U256::zero(),
-			1048576,
+			U256::from(1048576),
 			U256::from(1),
-			None,
+			U256::from(1),
 			TransactionAction::Call(H160::from_slice(&contract_address)),
 		).unwrap();
-		assert_eq!(returned.to_hex::<String>(), "0000000000000000000000000000000000000000000000000000000000000001".to_owned());
+
+		match info {
+			CallOrCreateInfo::Call(info) => {
+				assert_eq!(info.value.to_hex::<String>(), "0000000000000000000000000000000000000000000000000000000000000001".to_owned());
+			},
+			CallOrCreateInfo::Create(_) => panic!("expected call info"),
+		}
 
 		// calling bar will revert
-		let (error, returned) = Ethereum::call(
+		let err = Ethereum::execute(
 			alice.address,
 			bar,
 			U256::zero(),
-			1048576,
+			U256::from(1048576),
 			U256::from(1),
-			None,
+			U256::from(2),
 			TransactionAction::Call(H160::from_slice(&contract_address))
 		).err().unwrap();
-		assert_eq!(error, Error::<Test>::Reverted.into());
-		assert_eq!(returned.to_hex::<String>(), "08c379a0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000096572726f725f6d73670000000000000000000000000000000000000000000000".to_owned());
+
+		assert_eq!(err, Error::<Test>::Reverted.into());
 	});
 }
