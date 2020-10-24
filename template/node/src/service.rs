@@ -243,6 +243,7 @@ pub fn new_full(config: Configuration, sealing: Option<Sealing>) -> Result<TaskM
 		ConsensusResult::ManualSeal(block_import, sealing) => {
 			if role.is_authority() {
 				let env = sc_basic_authorship::ProposerFactory::new(
+					task_manager.spawn_handle(),
 					client.clone(),
 					transaction_pool.clone(),
 					prometheus_registry.as_ref(),
@@ -289,6 +290,7 @@ pub fn new_full(config: Configuration, sealing: Option<Sealing>) -> Result<TaskM
 		ConsensusResult::Aura(aura_block_import, grandpa_link) => {
 			if role.is_authority() {
 				let proposer = sc_basic_authorship::ProposerFactory::new(
+					task_manager.spawn_handle(),
 					client.clone(),
 					transaction_pool.clone(),
 					prometheus_registry.as_ref(),
@@ -342,7 +344,6 @@ pub fn new_full(config: Configuration, sealing: Option<Sealing>) -> Result<TaskM
 						config: grandpa_config,
 						link: grandpa_link,
 						network,
-						inherent_data_providers,
 						telemetry_on_connect: Some(telemetry_connection_sinks.on_connect_stream()),
 						voting_rule: sc_finality_grandpa::VotingRulesBuilder::default().build(),
 						prometheus_registry,
@@ -356,11 +357,7 @@ pub fn new_full(config: Configuration, sealing: Option<Sealing>) -> Result<TaskM
 						sc_finality_grandpa::run_grandpa_voter(grandpa_config)?
 					);
 				} else {
-					sc_finality_grandpa::setup_disabled_grandpa(
-						client,
-						&inherent_data_providers,
-						network,
-					)?;
+					sc_finality_grandpa::setup_disabled_grandpa(network)?;
 				}
 			}
 		}

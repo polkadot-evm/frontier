@@ -36,7 +36,7 @@ use sp_runtime::{
 	DispatchResult,
 };
 use evm::{ExitError, ExitRevert, ExitFatal, ExitReason};
-use pallet_evm::{Runner, runner::ExecutionInfo};
+use pallet_evm::{Runner, ExecutionInfo};
 use sha3::{Digest, Keccak256};
 use codec::Encode;
 use frontier_consensus_primitives::{FRONTIER_ENGINE_ID, ConsensusLog};
@@ -337,7 +337,7 @@ impl<T: Trait> Module<T> {
 			ethereum::TransactionAction::Call(target) => {
 				let info = Self::handle_exec(
 					T::Runner::call(
-						source,
+						from,
 						target,
 						transaction.input.clone(),
 						transaction.value,
@@ -350,7 +350,7 @@ impl<T: Trait> Module<T> {
 				(TransactionStatus {
 					transaction_hash,
 					transaction_index,
-					from: source,
+					from,
 					to: Some(target),
 					contract_address: None,
 					logs: info.logs,
@@ -360,7 +360,7 @@ impl<T: Trait> Module<T> {
 			ethereum::TransactionAction::Create => {
 				let info = Self::handle_exec(
 					T::Runner::create(
-						source,
+						from,
 						transaction.input.clone(),
 						transaction.value,
 						transaction.gas_limit.low_u32(),
@@ -372,14 +372,13 @@ impl<T: Trait> Module<T> {
 				(TransactionStatus {
 					transaction_hash,
 					transaction_index,
-					from: source,
+					from,
 					to: None,
 					contract_address: Some(info.value),
 					logs: info.logs,
 					logs_bloom: Bloom::default(), // TODO: feed in bloom.
 				}, info.used_gas)
 			},
-			logs_bloom: Bloom::default(), // TODO: feed in bloom.
 		};
 
 		let receipt = ethereum::Receipt {

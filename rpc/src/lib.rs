@@ -22,6 +22,7 @@ pub use eth_pubsub::{EthPubSubApi, EthPubSubApiServer};
 
 use jsonrpc_core::{ErrorCode, Error, Value};
 use rustc_hex::ToHex;
+use pallet_evm::ExitReason;
 
 pub fn internal_err<T: ToString>(message: T) -> Error {
 	Error {
@@ -31,13 +32,29 @@ pub fn internal_err<T: ToString>(message: T) -> Error {
 	}
 }
 
-pub fn handle_call_error((err, data): (sp_runtime::DispatchError, Vec<u8>)) -> Error {
-	let error: &'static str = err.into();
-	// TODO: trim error message
-	let msg = String::from_utf8_lossy(&data);
-	Error {
-		code: ErrorCode::InternalError,
-		message: format!("{}: {}", error.to_lowercase(), msg),
-		data: Some(Value::String(data.to_hex()))
+pub fn error_on_execution_failure(reason: &ExitReason, data: &[u8]) -> Result<(), Error> {
+	match reason {
+		ExitReason::Succeed(_) => Ok(()),
+		ExitReason::Error(e) => {
+			Err(Error {
+				code: ErrorCode::InternalError,
+				message: format!("evm error: {:?}", e),
+				data: Some(Value::String("0x".to_string()))
+			})
+		},
+		ExitReason::Revert(e) => {
+			Err(Error {
+				code: ErrorCode::InternalError,
+				message: format!("evm revert: {:?}", e),
+				data: Some(Value::String(data.to_hex()))
+			})
+		},
+		ExitReason::Fatal(e) => {
+			Err(Error {
+				code: ErrorCode::InternalError,
+				message: format!("evm fatal: {:?}", e),
+				data: Some(Value::String("0x".to_string()))
+			})
+		},
 	}
 }
