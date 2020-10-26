@@ -17,9 +17,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use sp_core::{H160, H256, U256};
-use ethereum::{
-	Log, Block as EthereumBlock, TransactionAction,
-};
+use ethereum::{Log, Block as EthereumBlock};
 use ethereum_types::Bloom;
 use codec::{Encode, Decode};
 use sp_std::vec::Vec;
@@ -55,7 +53,7 @@ sp_api::decl_runtime_apis! {
 		/// Returns runtime defined pallet_evm::ChainId.
 		fn chain_id() -> u64;
 		/// Returns pallet_evm::Accounts by address.
-		fn account_basic(address: H160) -> pallet_evm::Account;
+		fn account_basic(address: H160) -> sp_evm::Account;
 		/// Returns FixedGasPrice::min_gas_price
 		fn gas_price() -> U256;
 		/// For a given account address, returns pallet_evm::AccountCodes.
@@ -67,13 +65,22 @@ sp_api::decl_runtime_apis! {
 		/// Returns a frame_ethereum::call response.
 		fn call(
 			from: H160,
+			to: H160,
 			data: Vec<u8>,
 			value: U256,
 			gas_limit: U256,
 			gas_price: Option<U256>,
 			nonce: Option<U256>,
-			action: TransactionAction
-		) -> Result<(Vec<u8>, U256), (sp_runtime::DispatchError, Vec<u8>)>;
+		) -> Result<sp_evm::CallInfo, sp_runtime::DispatchError>;
+		/// Returns a frame_ethereum::create response.
+		fn create(
+			from: H160,
+			data: Vec<u8>,
+			value: U256,
+			gas_limit: U256,
+			gas_price: Option<U256>,
+			nonce: Option<U256>,
+		) -> Result<sp_evm::CreateInfo, sp_runtime::DispatchError>;
 		/// Return the current block.
 		fn current_block() -> Option<EthereumBlock>;
 		/// Return the current receipt.

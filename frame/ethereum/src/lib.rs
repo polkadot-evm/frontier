@@ -30,12 +30,14 @@ use sp_std::prelude::*;
 use frame_system::ensure_none;
 use ethereum_types::{H160, H64, H256, U256, Bloom};
 use sp_runtime::{
-	traits::UniqueSaturatedInto,
-	transaction_validity::{TransactionValidity, TransactionSource, ValidTransaction, InvalidTransaction},
-	generic::DigestItem,
-	DispatchResult,
+	transaction_validity::{
+		TransactionValidity, TransactionSource, ValidTransaction, InvalidTransaction,
+	},
+	generic::DigestItem, traits::UniqueSaturatedInto, DispatchError,
 };
 use evm::{ExitError, ExitRevert, ExitFatal, ExitReason};
+use sp_evm::CallOrCreateInfo;
+use pallet_evm::{Runner, ExecutionInfo};
 use sha3::{Digest, Keccak256};
 use codec::Encode;
 use frontier_consensus_primitives::{FRONTIER_ENGINE_ID, ConsensusLog};
@@ -156,13 +158,59 @@ decl_module! {
 		fn transact(origin, transaction: ethereum::Transaction) {
 			ensure_none(origin)?;
 
-			let source = Self::recover_signer(&transaction).ok_or_else(|| Error::<T>::InvalidSignature)?;
+			let source = Self::recover_signer(&transaction)
+				.ok_or_else(|| Error::<T>::InvalidSignature)?;
 
-			let hash = transaction.message_hash(Some(T::ChainId::get()));
+			let transaction_hash = H256::from_slice(
+				Keccak256::digest(&rlp::encode(&transaction)).as_slice()
+			);
+			let transaction_index = Pending::get().len() as u32;
 
-			Self::execute(source, transaction)?;
+			let (to, info) = Self::execute(
+				source,
+				transaction.input.clone(),
+				transaction.value,
+				transaction.gas_limit,
+				transaction.gas_price,
+				transaction.nonce,
+				transaction.action,
+			)?;
 
-			Self::deposit_event(Event::Executed(source, hash));
+			let (status, used_gas) = match info {
+				CallOrCreateInfo::Call(info) => {
+					(TransactionStatus {
+						transaction_hash,
+						transaction_index,
+						from: source,
+						to,
+						contract_address: None,
+						logs: info.logs,
+						logs_bloom: Bloom::default(), // TODO: feed in bloom.
+					}, info.used_gas)
+				},
+				CallOrCreateInfo::Create(info) => {
+					(TransactionStatus {
+						transaction_hash,
+						transaction_index,
+						from: source,
+						to,
+						contract_address: Some(info.value),
+						logs: info.logs,
+						logs_bloom: Bloom::default(), // TODO: feed in bloom.
+					}, info.used_gas)
+				},
+			};
+
+			let receipt = ethereum::Receipt {
+				state_root: H256::default(), // TODO: should be okay / error status.
+				used_gas,
+				logs_bloom: Bloom::default(), // TODO: set this.
+				logs: status.clone().logs,
+			};
+
+			Pending::append((transaction, status, receipt));
+
+			Self::deposit_event(Event::Executed(source, transaction_hash));
 		}
 
 		fn on_finalize(n: T::BlockNumber) {
@@ -268,7 +316,7 @@ impl<T: Trait> Module<T> {
 			timestamp: UniqueSaturatedInto::<u64>::unique_saturated_into(
 				pallet_timestamp::Module::<T>::get()
 			),
-			extra_data: H256::default(),
+			extra_data: Vec::new(),
 			mix_hash: H256::default(),
 			nonce: H64::default(),
 		};
@@ -326,140 +374,47 @@ impl<T: Trait> Module<T> {
 	}
 
 	/// Execute an Ethereum transaction, ignoring transaction signatures.
-	pub fn execute(from: H160, transaction: ethereum::Transaction) -> DispatchResult {
-		let transaction_hash = H256::from_slice(
-			Keccak256::digest(&rlp::encode(&transaction)).as_slice()
-		);
-		let transaction_index = Pending::get().len() as u32;
-
-		let (exit_reason, returned_value, gas_used, logs) = Self::execute_evm(
-			from,
-			transaction.input.clone(),
-			transaction.value,
-			transaction.gas_limit.low_u32(),
-			transaction.gas_price,
-			Some(transaction.nonce),
-			transaction.action,
-			true,
-		)?;
-
-		Self::handle_exit_reason(exit_reason)?;
-
-		let to = match transaction.action {
-			TransactionAction::Create => None,
-			TransactionAction::Call(to) => Some(to)
-		};
-
-		let contract_address = match returned_value {
-			ReturnValue::Bytes(_) => None,
-			ReturnValue::Hash(addr) => Some(addr)
-		};
-
-		let status = TransactionStatus {
-			transaction_hash,
-			transaction_index,
-			from,
-			to,
-			contract_address,
-			logs: {
-				logs.into_iter()
-					.map(|log| {
-						Log {
-							address: log.address,
-							topics: log.topics,
-							data: log.data,
-						}
-					}).collect()
-			},
-			logs_bloom: Bloom::default(), // TODO: feed in bloom.
-		};
-
-		let receipt = ethereum::Receipt {
-			state_root: H256::default(), // TODO: should be okay / error status.
-			used_gas: gas_used,
-			logs_bloom: Bloom::default(), // TODO: set this.
-			logs: status.clone().logs,
-		};
-
-		Pending::append((transaction, status, receipt));
-
-		Ok(())
-	}
-
-	/// Execute an EVM call or create
-	pub fn call(
-		source: H160,
-		data: Vec<u8>,
+	pub fn execute(
+		from: H160,
+		input: Vec<u8>,
 		value: U256,
-		gas_limit: u32,
+		gas_limit: U256,
 		gas_price: U256,
-		nonce: Option<U256>,
+		nonce: U256,
 		action: TransactionAction,
-	) -> Result<(Vec<u8>, U256), (sp_runtime::DispatchError, Vec<u8>)> {
-		let (exit_reason, returned_value, gas_used, _) = Self::execute_evm(
-			source,
-			data,
-			value,
-			gas_limit,
-			gas_price,
-			nonce,
-			action,
-			false,
-		).map_err(|err| (err.into(), Vec::new()))?;
-
-		let returned_value = match returned_value.clone() {
-			ReturnValue::Bytes(data) => data,
-			ReturnValue::Hash(_) => Vec::new()
-		};
-
-		Self::handle_exit_reason(exit_reason)
-			.map_err(|err| (err.into(), returned_value.clone()))?;
-
-		Ok((returned_value, gas_used))
-	}
-}
-
-impl<T: Trait> Module<T> {
-	fn execute_evm(
-		source: H160,
-		data: Vec<u8>,
-		value: U256,
-		gas_limit: u32,
-		gas_price: U256,
-		nonce: Option<U256>,
-		action: TransactionAction,
-		apply_state: bool,
-	) -> Result<(ExitReason, ReturnValue, U256, Vec<pallet_evm::Log>), pallet_evm::Error<T>> {
+	) -> Result<(Option<H160>, CallOrCreateInfo), DispatchError> {
 		match action {
-			TransactionAction::Call(target) => pallet_evm::Module::<T>::execute_call(
-				source,
-				target,
-				data,
-				value,
-				gas_limit,
-				gas_price,
-				nonce,
-				apply_state,
-			).map(|(exit_reason, returned_value, gas_used, logs)| {
-				(exit_reason, ReturnValue::Bytes(returned_value), gas_used, logs)
-			}),
-			TransactionAction::Create => pallet_evm::Module::<T>::execute_create(
-				source,
-				data,
-				value,
-				gas_limit,
-				gas_price,
-				nonce,
-				apply_state,
-			).map(|(exit_reason, returned_value, gas_used, logs)| {
-				(exit_reason, ReturnValue::Hash(returned_value), gas_used, logs)
-			})
+			ethereum::TransactionAction::Call(target) => {
+				Ok((Some(target), CallOrCreateInfo::Call(Self::handle_exec(
+					T::Runner::call(
+						from,
+						target,
+						input.clone(),
+						value,
+						gas_limit.low_u32(),
+						gas_price,
+						Some(nonce),
+					).map_err(Into::into)?
+				)?)))
+			},
+			ethereum::TransactionAction::Create => {
+				Ok((None, CallOrCreateInfo::Create(Self::handle_exec(
+					T::Runner::create(
+						from,
+						input.clone(),
+						value,
+						gas_limit.low_u32(),
+						gas_price,
+						Some(nonce),
+					).map_err(Into::into)?
+				)?)))
+			},
 		}
 	}
 
-	fn handle_exit_reason(exit_reason: ExitReason) -> Result<(), Error<T>> {
-		match exit_reason {
-			ExitReason::Succeed(_s) => Ok(()),
+	fn handle_exec<R>(res: ExecutionInfo<R>) -> Result<ExecutionInfo<R>, Error<T>> {
+		match res.exit_reason {
+			ExitReason::Succeed(_s) => Ok(res),
 			ExitReason::Error(e) => Err(Self::parse_exit_error(e)),
 			ExitReason::Revert(e) => {
 				match e {

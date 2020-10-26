@@ -143,6 +143,7 @@ impl pallet_evm::Trait for Test {
 	type Currency = Balances;
 	type Event = ();
 	type Precompiles = ();
+	type Runner = pallet_evm::runner::stack::Runner<Self>;
 	type ChainId = ChainId;
 }
 
