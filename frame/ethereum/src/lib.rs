@@ -171,8 +171,8 @@ decl_module! {
 				transaction.input.clone(),
 				transaction.value,
 				transaction.gas_limit,
-				transaction.gas_price,
-				transaction.nonce,
+				Some(transaction.gas_price),
+				Some(transaction.nonce),
 				transaction.action,
 			)?;
 
@@ -379,8 +379,8 @@ impl<T: Trait> Module<T> {
 		input: Vec<u8>,
 		value: U256,
 		gas_limit: U256,
-		gas_price: U256,
-		nonce: U256,
+		gas_price: Option<U256>,
+		nonce: Option<U256>,
 		action: TransactionAction,
 	) -> Result<(Option<H160>, CallOrCreateInfo), DispatchError> {
 		match action {
@@ -393,7 +393,7 @@ impl<T: Trait> Module<T> {
 						value,
 						gas_limit.low_u32(),
 						gas_price,
-						Some(nonce),
+						nonce,
 					).map_err(Into::into)?
 				)?)))
 			},
@@ -405,7 +405,7 @@ impl<T: Trait> Module<T> {
 						value,
 						gas_limit.low_u32(),
 						gas_price,
-						Some(nonce),
+						nonce,
 					).map_err(Into::into)?
 				)?)))
 			},

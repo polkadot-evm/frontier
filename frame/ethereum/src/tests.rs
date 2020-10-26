@@ -63,8 +63,8 @@ fn transaction_should_increment_nonce() {
 			t.input,
 			t.value,
 			t.gas_limit,
-			t.gas_price,
-			t.nonce,
+			Some(t.gas_price),
+			Some(t.nonce),
 			t.action,
 		));
 		assert_eq!(Evm::account_basic(&alice.address).nonce, U256::from(1));
@@ -112,8 +112,8 @@ fn transaction_with_invalid_nonce_should_not_work() {
 			t.input,
 			t.value,
 			t.gas_limit,
-			t.gas_price,
-			t.nonce,
+			Some(t.gas_price),
+			Some(t.nonce),
 			t.action,
 		));
 
@@ -140,8 +140,8 @@ fn contract_constructor_should_get_executed() {
 			t.input,
 			t.value,
 			t.gas_limit,
-			t.gas_price,
-			t.nonce,
+			Some(t.gas_price),
+			Some(t.nonce),
 			t.action,
 		));
 		assert_eq!(Evm::account_storages(
@@ -201,8 +201,8 @@ fn contract_should_be_created_at_given_address() {
 			t.input,
 			t.value,
 			t.gas_limit,
-			t.gas_price,
-			t.nonce,
+			Some(t.gas_price),
+			Some(t.nonce),
 			t.action,
 		));
 		assert_ne!(Evm::account_codes(erc20_address).len(), 0);
@@ -223,8 +223,8 @@ fn transaction_should_generate_correct_gas_used() {
 			t.input,
 			t.value,
 			t.gas_limit,
-			t.gas_price,
-			t.nonce,
+			Some(t.gas_price),
+			Some(t.nonce),
 			t.action,
 		).unwrap();
 
@@ -267,8 +267,8 @@ fn call_should_handle_errors() {
 			t.input,
 			t.value,
 			t.gas_limit,
-			t.gas_price,
-			t.nonce,
+			Some(t.gas_price),
+			Some(t.nonce),
 			t.action,
 		));
 
@@ -282,8 +282,8 @@ fn call_should_handle_errors() {
 			foo,
 			U256::zero(),
 			U256::from(1048576),
-			U256::from(1),
-			U256::from(1),
+			Some(U256::from(1)),
+			Some(U256::from(1)),
 			TransactionAction::Call(H160::from_slice(&contract_address)),
 		).unwrap();
 
@@ -300,8 +300,8 @@ fn call_should_handle_errors() {
 			bar,
 			U256::zero(),
 			U256::from(1048576),
-			U256::from(1),
-			U256::from(2),
+			Some(U256::from(1)),
+			Some(U256::from(2)),
 			TransactionAction::Call(H160::from_slice(&contract_address))
 		).err().unwrap();
 
