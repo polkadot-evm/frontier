@@ -171,9 +171,9 @@ fn testnet_genesis(
 			// Assign network admin rights.
 			key: root_key,
 		}),
-		frame_evm: Some(EVMConfig {
+		pallet_evm: Some(EVMConfig {
 			accounts: BTreeMap::new(),
 		}),
-		frame_ethereum: Some(EthereumConfig {}),
+		pallet_ethereum: Some(EthereumConfig {}),
 	}
 }

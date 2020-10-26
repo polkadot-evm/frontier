@@ -19,39 +19,39 @@ structopt = "0.3.8"
 jsonrpc-core = "15.0.0"
 jsonrpc-pubsub = "15.0.0"
 
-sp-api = { version = "2.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sp-blockchain = { version = "2.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sc-rpc-api = { version = "0.8.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sc-rpc = { version = "2.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-substrate-frame-rpc-system = { version = "2.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-pallet-transaction-payment-rpc = { version = "2.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sc-cli = { version = "0.8.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sp-core = { version = "2.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sc-executor = { version = "0.8.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sc-service = { version = "0.8.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sp-inherents = { version = "2.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sc-transaction-pool = { version = "2.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sp-transaction-pool = { version = "2.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sc-network = { version = "0.8.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sc-consensus-aura = { version = "0.8.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sp-consensus-aura = { version = "0.8.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sp-api = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sc-rpc-api = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sc-rpc = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+substrate-frame-rpc-system = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+pallet-transaction-payment-rpc = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sc-cli = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sc-executor = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sc-service = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sp-inherents = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sc-transaction-pool = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sp-transaction-pool = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sc-network = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sc-consensus-aura = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sp-consensus-aura = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sc-consensus-manual-seal = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sp-consensus = { version = "0.8.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sc-consensus = { version = "0.8.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sp-timestamp = { version = "2.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-evm = { version = "2.0.0-dev", package = "pallet-evm", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-ethereum = { version = "0.1.0", package = "pallet-ethereum" }
-sc-finality-grandpa = { version = "0.8.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sp-finality-grandpa = { version = "2.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sc-client-api = { version = "2.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sp-runtime = { version = "2.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sp-consensus = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sc-consensus = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sp-timestamp = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+pallet-evm = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+pallet-ethereum = { path = "../../frame/ethereum" }
+sc-finality-grandpa = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sp-finality-grandpa = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sc-client-api = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sc-basic-authorship = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sp-block-builder = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 
-frontier-consensus = { version = "0.1.0", path = "../../consensus" }
-frontier-template-runtime = { version = "2.0.0-dev", path = "../runtime" }
-frontier-rpc = { version = "0.1.0", path = "../../rpc" }
-frontier-rpc-primitives = { version = "0.1.0", path = "../../rpc/primitives" }
+frontier-consensus = { path = "../../consensus" }
+frontier-template-runtime = { path = "../runtime" }
+frontier-rpc = { path = "../../rpc" }
+frontier-rpc-primitives = { path = "../../rpc/primitives" }
 
 [build-dependencies]
-substrate-build-script-utils = { version = "2.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+substrate-build-script-utils = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }

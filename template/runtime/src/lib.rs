@@ -59,7 +59,10 @@ pub use frame_support::{
 	},
 	ConsensusEngineId,
 };
-use frame_evm::{Account as EVMAccount, FeeCalculator, HashedAddressMapping, EnsureAddressTruncated};
+use pallet_evm::{
+	Account as EVMAccount, FeeCalculator, HashedAddressMapping,
+	EnsureAddressTruncated, Runner,
+};
 use frontier_rpc_primitives::{TransactionStatus};
 pub type BlockNumber = u32;
 
@@ -296,18 +299,19 @@ parameter_types! {
 	pub const ChainId: u64 = 42;
 }
 
-impl frame_evm::Trait for Runtime {
+impl pallet_evm::Trait for Runtime {
 	type FeeCalculator = FixedGasPrice;
 	type CallOrigin = EnsureAddressTruncated;
 	type WithdrawOrigin = EnsureAddressTruncated;
 	type AddressMapping = HashedAddressMapping<BlakeTwo256>;
 	type Currency = Balances;
 	type Event = Event;
+	type Runner = pallet_evm::runner::stack::Runner<Self>;
 	type Precompiles = (
-		frame_evm::precompiles::ECRecover,
-		frame_evm::precompiles::Sha256,
-		frame_evm::precompiles::Ripemd160,
-		frame_evm::precompiles::Identity,
+		pallet_evm::precompiles::ECRecover,
+		pallet_evm::precompiles::Sha256,
+		pallet_evm::precompiles::Ripemd160,
+		pallet_evm::precompiles::Identity,
 	);
 	type ChainId = ChainId;
 }
@@ -326,7 +330,7 @@ impl<F: FindAuthor<u32>> FindAuthor<H160> for EthereumFindAuthor<F>
 	}
 }
 
-impl frame_ethereum::Trait for Runtime {
+impl pallet_ethereum::Trait for Runtime {
 	type Event = Event;
 	type FindAuthor = EthereumFindAuthor<Aura>;
 }
@@ -346,22 +350,22 @@ construct_runtime!(
 		Balances: pallet_balances::{Module, Call, Storage, Config<T>, Event<T>},
 		TransactionPayment: pallet_transaction_payment::{Module, Storage},
 		Sudo: pallet_sudo::{Module, Call, Config<T>, Storage, Event<T>},
-		Ethereum: frame_ethereum::{Module, Call, Storage, Event, Config, ValidateUnsigned},
-		EVM: frame_evm::{Module, Config, Call, Storage, Event<T>},
+		Ethereum: pallet_ethereum::{Module, Call, Storage, Event, Config, ValidateUnsigned},
+		EVM: pallet_evm::{Module, Config, Call, Storage, Event<T>},
 	}
 );
 
 pub struct TransactionConverter;
 
 impl frontier_rpc_primitives::ConvertTransaction<UncheckedExtrinsic> for TransactionConverter {
-	fn convert_transaction(&self, transaction: frame_ethereum::Transaction) -> UncheckedExtrinsic {
-		UncheckedExtrinsic::new_unsigned(frame_ethereum::Call::<Runtime>::transact(transaction).into())
+	fn convert_transaction(&self, transaction: pallet_ethereum::Transaction) -> UncheckedExtrinsic {
+		UncheckedExtrinsic::new_unsigned(pallet_ethereum::Call::<Runtime>::transact(transaction).into())
 	}
 }
 
 impl frontier_rpc_primitives::ConvertTransaction<opaque::UncheckedExtrinsic> for TransactionConverter {
-	fn convert_transaction(&self, transaction: frame_ethereum::Transaction) -> opaque::UncheckedExtrinsic {
-		let extrinsic = UncheckedExtrinsic::new_unsigned(frame_ethereum::Call::<Runtime>::transact(transaction).into());
+	fn convert_transaction(&self, transaction: pallet_ethereum::Transaction) -> opaque::UncheckedExtrinsic {
+		let extrinsic = UncheckedExtrinsic::new_unsigned(pallet_ethereum::Call::<Runtime>::transact(transaction).into());
 		let encoded = extrinsic.encode();
 		opaque::UncheckedExtrinsic::decode(&mut &encoded[..]).expect("Encoded extrinsic is always valid")
 	}
@@ -479,7 +483,7 @@ impl_runtime_apis! {
 
 	impl frontier_rpc_primitives::EthereumRuntimeRPCApi<Block> for Runtime {
 		fn chain_id() -> u64 {
-			<Runtime as frame_evm::Trait>::ChainId::get()
+			<Runtime as pallet_evm::Trait>::ChainId::get()
 		}
 
 		fn account_basic(address: H160) -> EVMAccount {
@@ -487,7 +491,7 @@ impl_runtime_apis! {
 		}
 
 		fn gas_price() -> U256 {
-			<Runtime as frame_evm::Trait>::FeeCalculator::min_gas_price()
+			<Runtime as pallet_evm::Trait>::FeeCalculator::min_gas_price()
 		}
 
 		fn account_code_at(address: H160) -> Vec<u8> {
@@ -495,7 +499,7 @@ impl_runtime_apis! {
 		}
 
 		fn author() -> H160 {
-			<frame_ethereum::Module<Runtime>>::find_author()
+			<pallet_ethereum::Module<Runtime>>::find_author()
 		}
 
 		fn storage_at(address: H160, index: U256) -> H256 {
@@ -506,31 +510,57 @@ impl_runtime_apis! {
 
 		fn call(
 			from: H160,
+			to: H160,
 			data: Vec<u8>,
 			value: U256,
 			gas_limit: U256,
 			gas_price: Option<U256>,
 			nonce: Option<U256>,
-			action: frame_ethereum::TransactionAction
-		) -> Result<(Vec<u8>, U256), (sp_runtime::DispatchError, Vec<u8>)> {
-			<frame_ethereum::Module<Runtime>>::call(from, data, value, gas_limit.low_u32(), gas_price.unwrap_or_default(), nonce, action)
+		) -> Result<pallet_evm::CallInfo, sp_runtime::DispatchError> {
+			<Runtime as pallet_evm::Trait>::Runner::call(
+				from,
+				to,
+				data,
+				value,
+				gas_limit.low_u32(),
+				gas_price.unwrap_or_default(),
+				nonce,
+			).map_err(|err| err.into())
+		}
+
+		fn create(
+			from: H160,
+			data: Vec<u8>,
+			value: U256,
+			gas_limit: U256,
+			gas_price: Option<U256>,
+			nonce: Option<U256>,
+		) -> Result<pallet_evm::CreateInfo, sp_runtime::DispatchError> {
+			<Runtime as pallet_evm::Trait>::Runner::create(
+				from,
+				data,
+				value,
+				gas_limit.low_u32(),
+				gas_price.unwrap_or_default(),
+				nonce,
+			).map_err(|err| err.into())
 		}
 
 		fn current_transaction_statuses() -> Option<Vec<TransactionStatus>> {
 			Ethereum::current_transaction_statuses()
 		}
 
-		fn current_block() -> Option<frame_ethereum::Block> {
+		fn current_block() -> Option<pallet_ethereum::Block> {
 			Ethereum::current_block()
 		}
 
-		fn current_receipts() -> Option<Vec<frame_ethereum::Receipt>> {
+		fn current_receipts() -> Option<Vec<pallet_ethereum::Receipt>> {
 			Ethereum::current_receipts()
 		}
 
 		fn current_all() -> (
-			Option<frame_ethereum::Block>,
-			Option<Vec<frame_ethereum::Receipt>>,
+			Option<pallet_ethereum::Block>,
+			Option<Vec<pallet_ethereum::Receipt>>,
 			Option<Vec<TransactionStatus>>
 		) {
 			(
