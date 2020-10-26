@@ -523,7 +523,7 @@ impl_runtime_apis! {
 				data,
 				value,
 				gas_limit.low_u32(),
-				gas_price.unwrap_or_default(),
+				gas_price,
 				nonce,
 			).map_err(|err| err.into())
 		}
@@ -541,7 +541,7 @@ impl_runtime_apis! {
 				data,
 				value,
 				gas_limit.low_u32(),
-				gas_price.unwrap_or_default(),
+				gas_price,
 				nonce,
 			).map_err(|err| err.into())
 		}
