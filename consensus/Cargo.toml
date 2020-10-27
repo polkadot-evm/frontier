@@ -23,4 +23,4 @@ futures = { version = "0.3.1", features = ["compat"] }
 sp-timestamp = { version = "2.0.0", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 derive_more = "0.99.2"
 prometheus-endpoint = { package = "substrate-prometheus-endpoint", git = "https://github.com/paritytech/substrate.git", branch = "frontier"}
-ethereum = { version = "0.3", features = ["codec"] }
+ethereum = { version = "0.4", features = ["with-codec"] }
