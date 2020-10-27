@@ -73,7 +73,7 @@ impl<B: BlockT, P, C, BE, H: ExHashT> EthPubSubApi<B, P, C, BE, H> where
 				BlockNumber::Hash { hash, .. } => {
 					let id = self.load_hash(hash).unwrap_or(None);
 					if let Some(id) = id {
-						if let Ok(Some(block)) = self.client.runtime_api().current_block(&id) {
+						if let Some(block) = self.current_block(&id) {
 							native_number = Some(block.header.number.as_u32());
 						}
 					}
@@ -144,6 +144,24 @@ impl<B: BlockT, P, C, BE, H: ExHashT> EthPubSubApi<B, P, C, BE, H> where
 			));
 		}
 		Ok(None)
+	}
+
+	fn current_block(&self, id: &BlockId<B>) -> Option<ethereum::Block> {
+		self.query_storage::<ethereum::Block>(
+			id,
+			&StorageKey(
+				storage_prefix_build(b"Ethereum", b"CurrentBlock")
+			)
+		)
+	}
+
+	fn query_storage<T: Decode>(&self, id: &BlockId<B>, key: &StorageKey) -> Option<T> {
+		if let Ok(Some(data)) = self.client.storage(
+			id,
+			key
+		) {
+			return Decode::decode(&mut &data.0[..]).unwrap_or_else(|_| None);
+		} else { return None; };
 	}
 }
 
@@ -292,10 +310,14 @@ impl SubscriptionResult {
 	}
 	pub fn logs(
 		&self,
-		block: ethereum::Block,
+		block_input: Option<ethereum::Block>,
 		receipts: Vec<ethereum::Receipt>,
 		params: &FilteredParams
 	) -> Vec<Log> {
+		if block_input.is_none() {
+			return Vec::new();
+		}
+		let block = block_input.unwrap();
 		let block_hash = Some(H256::from_slice(
 			Keccak256::digest(&rlp::encode(
 				&block.header
@@ -411,8 +433,14 @@ impl<B: BlockT, P, C, BE, H: ExHashT> EthPubSubApiT for EthPubSubApi<B, P, C, BE
 							let data = changes.iter().last().unwrap().2.unwrap();
 							let receipts: Vec<ethereum::Receipt> =
 								Decode::decode(&mut &data.0[..]).unwrap();
-							let block: ethereum::Block = client.runtime_api()
-								.current_block(&id).unwrap().unwrap();
+							let block: Option<ethereum::Block> = if let Ok(Some(data)) = client.storage(
+								&id,
+								&StorageKey(
+									storage_prefix_build(b"Ethereum", b"CurrentBlock")
+								)
+							) {
+								Decode::decode(&mut &data.0[..]).unwrap_or_else(|_| None)
+							} else { None };
 							futures::stream::iter(
 								SubscriptionResult::new()
 									.logs(block, receipts, &filtered_params)

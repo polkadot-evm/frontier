@@ -15,7 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use sp_core::{Pair, Public, sr25519};
+use sp_core::{Pair, Public, sr25519, U256};
 use frontier_template_runtime::{
 	AccountId, AuraConfig, BalancesConfig, EVMConfig, EthereumConfig, GenesisConfig, GrandpaConfig,
 	SudoConfig, SystemConfig, WASM_BINARY, Signature
@@ -173,6 +173,8 @@ fn testnet_genesis(
 		}),
 		pallet_evm: Some(EVMConfig {
 			accounts: BTreeMap::new(),
+			chain_id: Some(42),
+			gas_price: Some(U256::zero()),
 		}),
 		pallet_ethereum: Some(EthereumConfig {}),
 	}

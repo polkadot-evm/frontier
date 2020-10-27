@@ -63,10 +63,6 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> {
 	}
 }
 
-fn storage_prefix_build(module: &[u8], storage: &[u8]) -> Vec<u8> {
-	[twox_128(module), twox_128(storage)].concat().to_vec()
-}
-
 fn rich_block_build(
 	block: ethereum::Block,
 	statuses: Vec<Option<TransactionStatus>>,
@@ -178,6 +174,16 @@ fn transaction_build(
 	}
 }
 
+fn storage_prefix_build(module: &[u8], storage: &[u8]) -> Vec<u8> {
+	[twox_128(module), twox_128(storage)].concat().to_vec()
+}
+
+fn blake2_128_extend(bytes: &[u8]) -> Vec<u8> {
+	let mut ext: Vec<u8> = blake2_128(bytes).to_vec();
+	ext.extend_from_slice(bytes);
+	ext
+}
+
 impl<B, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> where
 	C: ProvideRuntimeApi<B> + StorageProvider<B, BE> + AuxStore,
 	C: HeaderBackend<B> + HeaderMetadata<B, Error=BlockChainError> + 'static,
@@ -237,74 +243,84 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> where
 	}
 
 	fn current_block(&self, id: &BlockId<B>) -> Option<ethereum::Block> {
-		if let Ok(Some(block_data)) = self.client.storage(
-			&id,
+		self.query_storage::<ethereum::Block>(
+			id,
 			&StorageKey(
 				storage_prefix_build(b"Ethereum", b"CurrentBlock")
 			)
-		) {
-			return Decode::decode(&mut &block_data.0[..]).unwrap_or_else(|_| None);
-		} else { return None; };
+		)
 	}
 
 	fn current_statuses(&self, id: &BlockId<B>) -> Option<Vec<TransactionStatus>> {
-		if let Ok(Some(status_data)) = self.client.storage(
-			&id,
+		self.query_storage::<Vec<TransactionStatus>>(
+			id,
 			&StorageKey(
 				storage_prefix_build(b"Ethereum", b"CurrentTransactionStatuses")
 			)
-		) {
-			return Decode::decode(&mut &status_data.0[..]).unwrap_or_else(|_| None);
-		} else { return None; };
+		)
 	}
 
 	fn current_receipts(&self, id: &BlockId<B>) -> Option<Vec<ethereum::Receipt>> {
-		if let Ok(Some(status_data)) = self.client.storage(
-			&id,
+		self.query_storage::<Vec<ethereum::Receipt>>(
+			id,
 			&StorageKey(
 				storage_prefix_build(b"Ethereum", b"CurrentReceipts")
 			)
-		) {
-			return Decode::decode(&mut &status_data.0[..]).unwrap_or_else(|_| None);
-		} else { return None; };
+		)
 	}
 
 	fn account_codes(&self, id: &BlockId<B>, address: H160) -> Option<Vec<u8>> {
 		let mut key: Vec<u8> = storage_prefix_build(b"EVM", b"AccountCodes");
-		let mut sufix: Vec<u8> = blake2_128(address.as_bytes()).to_vec();
-		sufix.extend_from_slice(address.as_bytes());
-		key.extend(sufix);
-		if let Ok(Some(codes)) = self.client.storage(
-			&id,
+		key.extend(blake2_128_extend(address.as_bytes()));
+		self.query_storage::<Vec<u8>>(
+			id,
 			&StorageKey(key)
-		) {
-			return Decode::decode(&mut &codes.0[..]).unwrap_or_else(|_| None);
-		} else { return None; };
-
+		)
 	}
 
 	fn account_storages(&self, id: &BlockId<B>, address: H160, index: U256) -> Option<H256> {
+		let tmp: &mut [u8; 32] = &mut [0; 32];
+		index.to_little_endian(tmp);
+
 		let mut key: Vec<u8> = storage_prefix_build(b"EVM", b"AccountStorages");
+		key.extend(blake2_128_extend(address.as_bytes()));
+		key.extend(blake2_128_extend(tmp));
 
-		let mut sufix_k1: Vec<u8> = blake2_128(address.as_bytes()).to_vec();
-		sufix_k1.extend_from_slice(address.as_bytes());
-
-		let tmp: &mut [u8] = &mut [];
-		index.to_big_endian(tmp);
-		let mut sufix_k2: Vec<u8> = blake2_128(tmp).to_vec();
-		sufix_k2.extend_from_slice(tmp);
-
-		key.extend(sufix_k1);
-		key.extend(sufix_k2);
-
-		if let Ok(Some(storages)) = self.client.storage(
-			&id,
+		self.query_storage::<H256>(
+			id,
 			&StorageKey(key)
-		) {
-			return Decode::decode(&mut &storages.0[..]).unwrap_or_else(|_| None);
-		} else { return None; };
+		)
 	}
 
+	fn chain_id(&self, id: &BlockId<B>) -> Option<u64> {
+		self.query_storage::<u64>(
+			id,
+			&StorageKey(
+				storage_prefix_build(b"EVM", b"ChainId")
+			)
+		)
+	}
+
+	fn gas_price(&self, id: &BlockId<B>) -> Option<U256> {
+		self.query_storage::<U256>(
+			id,
+			&StorageKey(
+				storage_prefix_build(b"EVM", b"GasPrice")
+			)
+		)
+	}
+
+	fn query_storage<T: Decode>(&self, id: &BlockId<B>, key: &StorageKey) -> Option<T> {
+		if let Ok(Some(data)) = self.client.storage(
+			id,
+			key
+		) {
+			if let Ok(result) = Decode::decode(&mut &data.0[..]) {
+				return Some(result);
+			}
+		}
+		None
+	}
 }
 
 impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
@@ -363,19 +379,22 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 
 	fn chain_id(&self) -> Result<Option<U64>> {
 		let hash = self.client.info().best_hash;
-		Ok(Some(self.client.runtime_api().chain_id(&BlockId::Hash(hash))
-				.map_err(|err| internal_err(format!("fetch runtime chain id failed: {:?}", err)))?.into()))
+		let chain_id: Option<u64> = self.chain_id(&BlockId::Hash(hash));
+		return if let Some(chain_id) = chain_id {
+			Ok(Some(chain_id.into()))
+		} else {
+			Err(internal_err("Failed to retrieve chain id."))
+		}
 	}
 
 	fn gas_price(&self) -> Result<U256> {
 		let hash = self.client.info().best_hash;
-		Ok(
-			self.client
-				.runtime_api()
-				.gas_price(&BlockId::Hash(hash))
-				.map_err(|err| internal_err(format!("fetch runtime chain id failed: {:?}", err)))?
-				.into(),
-		)
+		let gas_price: Option<U256> = self.gas_price(&BlockId::Hash(hash));
+		return if let Some(gas_price) = gas_price {
+			Ok(gas_price)
+		} else {
+			Err(internal_err("Failed to retrieve gas price."))
+		}
 	}
 
 	fn accounts(&self) -> Result<Vec<H160>> {
@@ -767,6 +786,10 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 		let statuses: Option<Vec<TransactionStatus>> = self.current_statuses(&id);
 		let receipts: Option<Vec<ethereum::Receipt>> = self.current_receipts(&id);
 
+		println!("---> BLOCK {:#?}", block);
+		println!("---> statuses {:#?}", statuses);
+		println!("---> receipts {:#?}", receipts);
+
 		match (block, statuses, receipts) {
 			(Some(block), Some(statuses), Some(receipts)) => {
 				let block_hash = H256::from_slice(
@@ -996,7 +1019,21 @@ impl<B, BE, C> NetApiT for NetApi<B, BE, C> where
 
 	fn version(&self) -> Result<String> {
 		let hash = self.client.info().best_hash;
-		Ok(self.client.runtime_api().chain_id(&BlockId::Hash(hash))
-			.map_err(|_| internal_err("fetch runtime chain id failed"))?.to_string())
+		let mut chain_id: Option<u64> = None;
+
+		if let Ok(Some(data)) = self.client.storage(
+			&BlockId::Hash(hash),
+			&StorageKey(
+				storage_prefix_build(b"EVM", b"ChainId")
+			)
+		) {
+			chain_id = Decode::decode(&mut &data.0[..]).unwrap_or_else(|_| None);
+		}
+
+		return if let Some(chain_id) = chain_id {
+			Ok(chain_id.to_string())
+		} else {
+			Err(internal_err("Failed to retrieve chain id."))
+		}
 	}
 }

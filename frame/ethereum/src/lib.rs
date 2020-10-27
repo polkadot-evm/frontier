@@ -23,8 +23,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use frame_support::{
-	decl_module, decl_storage, decl_error, decl_event,
-	traits::Get, traits::FindAuthor,
+	decl_module, decl_storage, decl_error, decl_event, traits::FindAuthor,
 };
 use sp_std::prelude::*;
 use frame_system::ensure_none;
@@ -237,7 +236,7 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
 
 	fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
 		if let Call::transact(transaction) = call {
-			if transaction.signature.chain_id().unwrap_or_default() != T::ChainId::get() {
+			if transaction.signature.chain_id().unwrap_or_default() != pallet_evm::Module::<T>::chain_id() {
 				return InvalidTransaction::Custom(TransactionValidationError::InvalidChainId as u8).into();
 			}
 
@@ -279,7 +278,7 @@ impl<T: Trait> Module<T> {
 		sig[0..32].copy_from_slice(&transaction.signature.r()[..]);
 		sig[32..64].copy_from_slice(&transaction.signature.s()[..]);
 		sig[64] = transaction.signature.standard_v();
-		msg.copy_from_slice(&transaction.message_hash(Some(T::ChainId::get()))[..]);
+		msg.copy_from_slice(&transaction.message_hash(Some(pallet_evm::Module::<T>::chain_id()))[..]);
 
 		let pubkey = sp_io::crypto::secp256k1_ecdsa_recover(&sig, &msg).ok()?;
 		Some(H160::from(H256::from_slice(Keccak256::digest(&pubkey).as_slice())))
