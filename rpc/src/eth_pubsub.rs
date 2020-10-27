@@ -160,8 +160,11 @@ impl<B: BlockT, P, C, BE, H: ExHashT> EthPubSubApi<B, P, C, BE, H> where
 			id,
 			key
 		) {
-			return Decode::decode(&mut &data.0[..]).unwrap_or_else(|_| None);
-		} else { return None; };
+			if let Ok(result) = Decode::decode(&mut &data.0[..]) {
+				return Some(result);
+			}
+		}
+		None
 	}
 }
 
