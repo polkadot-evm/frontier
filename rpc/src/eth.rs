@@ -786,10 +786,6 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 		let statuses: Option<Vec<TransactionStatus>> = self.current_statuses(&id);
 		let receipts: Option<Vec<ethereum::Receipt>> = self.current_receipts(&id);
 
-		println!("---> BLOCK {:#?}", block);
-		println!("---> statuses {:#?}", statuses);
-		println!("---> receipts {:#?}", receipts);
-
 		match (block, statuses, receipts) {
 			(Some(block), Some(statuses), Some(receipts)) => {
 				let block_hash = H256::from_slice(
