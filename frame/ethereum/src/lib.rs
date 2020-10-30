@@ -37,7 +37,7 @@ use sp_runtime::{
 };
 use evm::{ExitError, ExitRevert, ExitFatal, ExitReason};
 use sp_evm::CallOrCreateInfo;
-use pallet_evm::{Runner, ExecutionInfo};
+use pallet_evm::Runner;
 use sha3::{Digest, Keccak256};
 use codec::Encode;
 use frontier_consensus_primitives::{FRONTIER_ENGINE_ID, ConsensusLog};
