@@ -49,8 +49,12 @@ impl<'a, T> Deserialize<'a> for VariadicValue<T> where T: DeserializeOwned {
 
 /// Filter Address
 pub type FilterAddress = VariadicValue<H160>;
-/// Topic
-pub type Topic = VariadicValue<H256>;
+/// Topic, supports `A` | `null` | `[A,B,C]` | `[A,[B,C]]` | [null,[B,C]] | [null,[null,C]]
+pub type Topic = VariadicValue<Option<
+	VariadicValue<Option<H256>>
+>>;
+/// FlatTopic, simplifies the matching logic.
+pub type FlatTopic = VariadicValue<Option<H256>>;
 
 /// Filter
 #[derive(Debug, PartialEq, Clone, Deserialize, Eq, Hash)]
