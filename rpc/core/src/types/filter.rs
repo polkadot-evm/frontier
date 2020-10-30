@@ -106,13 +106,12 @@ impl FilteredParams {
 		}
 		Self::default()
 	}
-	/// Cartesian product for VariadicValue conditional indexed parameters. 
+	/// Cartesian product for VariadicValue conditional indexed parameters.
 	/// Executed once on struct instance.
 	/// i.e. `[A,[B,C]]` to `[[A,B],[A,C]]`.
 	fn flatten(topic: &Topic) -> Vec<FlatTopic> {
 		fn cartesian(lists: &Vec<Vec<Option<H256>>>) -> Vec<Vec<Option<H256>>> {
 			let mut res = vec![];
-		 
 			let mut list_iter = lists.iter();
 			if let Some(first_list) = list_iter.next() {
 				for &i in first_list {
@@ -173,7 +172,7 @@ impl FilteredParams {
 
 	/// Replace None values - aka wildcards - for the log input value in that position.
 	pub fn replace(&self, log: &Log, topic: FlatTopic) -> Option<Vec<H256>> {
-		let mut out: Vec<H256> = Vec::new(); 
+		let mut out: Vec<H256> = Vec::new();
 		match topic {
 			VariadicValue::Single(value) => {
 				if let Some(value) = value {
@@ -269,7 +268,6 @@ impl FilteredParams {
 						if !log.topics.starts_with(&vec![single]) {
 							out = false;
 						}
-						
 					}
 				},
 				VariadicValue::Multiple(_) => {
