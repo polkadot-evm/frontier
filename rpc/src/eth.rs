@@ -697,19 +697,10 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 		let (hash, index) = match frontier_consensus::load_transaction_metadata(
 			self.client.as_ref(),
 			hash,
-		).map_err(|err| {
-				println!("AUX Lookup Failed");
-				internal_err(format!("fetch aux store failed : {:?}", err))
-			}
-		)? {
+		).map_err(|err| internal_err(format!("fetch aux store failed : {:?}", err)))? {
 			Some((hash, index)) => (hash, index as usize),
-			None => {
-				println!("Nothing Stored... I think??? Not sure about this error case.");
-				return Ok(None);
-			}
+			None => return Ok(None),
 		};
-
-		println!("Looking up block hash and tx index in aux store succeeded");
 
 		let id = match self.load_hash(hash)
 			.map_err(|err| internal_err(format!("{:?}", err)))?

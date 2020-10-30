@@ -129,21 +129,16 @@ impl<B, I, C> BlockImport<B> for FrontierBlockImport<B, I, C> where
 		let client = self.client.clone();
 
 		if self.enabled {
-			println!("Entering enabled frontier block import");
 			let log = find_frontier_log::<B>(&block.header)?;
 			let hash = block.post_hash();
-			println!("past log and hash");
 
 			match log {
 				ConsensusLog::EndBlock {
 					block_hash, transaction_hashes,
 				} => {
-					println!("matched (makes sense, only one case)");
 					aux_schema::write_block_hash(client.as_ref(), block_hash, hash, insert_closure!());
-					println!("wrote block hash");
 
 					for (index, transaction_hash) in transaction_hashes.into_iter().enumerate() {
-						println!("looping tx hashes");
 						aux_schema::write_transaction_metadata(
 							transaction_hash,
 							(block_hash, index as u32),

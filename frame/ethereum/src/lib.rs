@@ -27,7 +27,6 @@ use frame_support::{
 	traits::Get, traits::FindAuthor,
 };
 use sp_std::prelude::*;
-use sp_std::if_std;
 use frame_system::ensure_none;
 use ethereum_types::{H160, H64, H256, U256, Bloom};
 use sp_runtime::{
@@ -158,9 +157,7 @@ decl_module! {
 		#[weight = 0]
 		fn transact(origin, transaction: ethereum::Transaction) {
 			ensure_none(origin)?;
-			if_std!{
-				println!("a");
-			}
+
 			let source = Self::recover_signer(&transaction)
 				.ok_or_else(|| Error::<T>::InvalidSignature)?;
 
@@ -169,9 +166,6 @@ decl_module! {
 			);
 			let transaction_index = Pending::get().len() as u32;
 
-			if_std!{
-				println!("b");
-			}
 			let (to, info) = Self::execute(
 				source,
 				transaction.input.clone(),
@@ -181,10 +175,6 @@ decl_module! {
 				Some(transaction.nonce),
 				transaction.action,
 			)?;
-
-			if_std!{
-				println!("c");
-			}
 
 			let (status, used_gas) = match info {
 				CallOrCreateInfo::Call(info) => {
@@ -210,9 +200,6 @@ decl_module! {
 					}, info.used_gas)
 				},
 			};
-			if_std!{
-				println!("d");
-			}
 
 			let receipt = ethereum::Receipt {
 				state_root: H256::default(), // TODO: should be okay / error status.
@@ -221,15 +208,7 @@ decl_module! {
 				logs: status.clone().logs,
 			};
 
-			if_std!{
-				println!("e");
-			}
-
 			Pending::append((transaction, status, receipt));
-
-			if_std!{
-				println!("f");
-			}
 
 			Self::deposit_event(Event::Executed(source, transaction_hash));
 		}
@@ -310,12 +289,7 @@ impl<T: Trait> Module<T> {
 		let mut transactions = Vec::new();
 		let mut statuses = Vec::new();
 		let mut receipts = Vec::new();
-		let pending_transactions = Pending::get();
-		if_std!{
-			println!("In Store block function");
-			println!("Pending Transactions: {:?}", pending_transactions);
-		}
-		for (transaction, status, receipt) in pending_transactions {
+		for (transaction, status, receipt) in Pending::get() {
 			transactions.push(transaction);
 			statuses.push(status);
 			receipts.push(receipt);
@@ -424,10 +398,7 @@ impl<T: Trait> Module<T> {
 				)?)))
 			},
 			ethereum::TransactionAction::Create => {
-				if_std!{
-					println!("this is a create action");
-				}
-				let handle_exec_result = Self::handle_exec(
+				Ok((None, CallOrCreateInfo::Create(Self::handle_exec(
 					T::Runner::create(
 						from,
 						input.clone(),
@@ -436,11 +407,7 @@ impl<T: Trait> Module<T> {
 						gas_price,
 						nonce,
 					).map_err(Into::into)?
-				);
-				if_std!{
-					println!("{:?}", handle_exec_result);
-				}
-				Ok((None, CallOrCreateInfo::Create(handle_exec_result?)))
+				)?)))
 			},
 		}
 	}
