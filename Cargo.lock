@@ -1176,9 +1176,9 @@ checksum = "f7531096570974c3a9dcf9e4b8e1cede1ec26cf5046219fb3b9d897503b9be59"
 
 [[package]]
 name = "evm"
-version = "0.18.3"
+version = "0.18.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a80c1beb78e6fd3e947c9a919c79bcf76faaf4e3d5386038d7190a03165299c0"
+checksum = "f1fc70736bd5ec89622647ea9346b70567557917596a39538d76e8f2a17ff59e"
 dependencies = [
  "ethereum",
  "evm-core",
