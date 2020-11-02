@@ -295,7 +295,7 @@ fn call_should_handle_errors() {
 		}
 
 		// calling bar will revert
-		let err = Ethereum::execute(
+		let (_, info) = Ethereum::execute(
 			alice.address,
 			bar,
 			U256::zero(),
@@ -303,8 +303,13 @@ fn call_should_handle_errors() {
 			Some(U256::from(1)),
 			Some(U256::from(2)),
 			TransactionAction::Call(H160::from_slice(&contract_address))
-		).err().unwrap();
+		).ok().unwrap();
 
-		assert_eq!(err, Error::<Test>::Reverted.into());
+		let exit_reason : ExitReason = match info {
+			CallOrCreateInfo::Create(_) => panic!("Should have gotten a Call variant"),
+			CallOrCreateInfo::Call(info) => info.exit_reason,
+		};
+
+		assert_eq!(exit_reason, ExitReason::Revert(ExitRevert::Reverted));
 	});
 }
