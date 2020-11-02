@@ -98,9 +98,9 @@ fn transaction_with_invalid_nonce_should_not_work() {
 
 		assert_eq!(
 			Ethereum::validate_unsigned(TransactionSource::External, &Call::transact(signed)),
-			ValidTransaction::with_tag_prefix("Ethereum")
-				.and_provides((&alice.address, U256::from(1)))
-				.and_requires((&alice.address, U256::from(0)))
+			ValidTransactionBuilder::default()
+				.and_provides((alice.address, U256::from(1)))
+				.and_requires((alice.address, U256::from(0)))
 				.build()
 		);
 

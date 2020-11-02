@@ -31,7 +31,7 @@ use frame_system::ensure_none;
 use ethereum_types::{H160, H64, H256, U256, Bloom};
 use sp_runtime::{
 	transaction_validity::{
-		TransactionValidity, TransactionSource, ValidTransaction, InvalidTransaction,
+		TransactionValidity, TransactionSource, InvalidTransaction, ValidTransactionBuilder,
 	},
 	generic::DigestItem, traits::UniqueSaturatedInto, DispatchError,
 };
@@ -256,8 +256,8 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
 				return InvalidTransaction::Payment.into();
 			}
 
-			let mut builder = ValidTransaction::with_tag_prefix("Ethereum")
-				.and_provides((&origin, transaction.nonce));
+			let mut builder = ValidTransactionBuilder::default()
+				.and_provides((origin, transaction.nonce));
 
 			if transaction.nonce > account_data.nonce {
 				if let Some(prev_nonce) = transaction.nonce.checked_sub(1.into()) {
