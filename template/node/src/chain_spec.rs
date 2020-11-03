@@ -173,8 +173,8 @@ fn testnet_genesis(
 		}),
 		pallet_evm: Some(EVMConfig {
 			accounts: BTreeMap::new(),
-			chain_id: Some(42),
-			gas_price: Some(U256::zero()),
+			chain_id: 42,
+			gas_price: U256::zero(),
 		}),
 		pallet_ethereum: Some(EthereumConfig {}),
 	}
