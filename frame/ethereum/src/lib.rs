@@ -37,7 +37,7 @@ use sp_runtime::{
 };
 use evm::{ExitError, ExitRevert, ExitFatal, ExitReason};
 use sp_evm::CallOrCreateInfo;
-use pallet_evm::Runner;
+use pallet_evm::{Runner, ExecutionInfo};
 use sha3::{Digest, Keccak256};
 use codec::Encode;
 use frontier_consensus_primitives::{FRONTIER_ENGINE_ID, ConsensusLog};
@@ -176,7 +176,7 @@ decl_module! {
 				transaction.action,
 			)?;
 
-			let (status, used_gas, exit_reason) = match info {
+			let (status, used_gas) = match info {
 				CallOrCreateInfo::Call(info) => {
 					(TransactionStatus {
 						transaction_hash,
@@ -186,7 +186,7 @@ decl_module! {
 						contract_address: None,
 						logs: info.logs,
 						logs_bloom: Bloom::default(), // TODO: feed in bloom.
-					}, info.used_gas, info.exit_reason)
+					}, info.used_gas)
 				},
 				CallOrCreateInfo::Create(info) => {
 					(TransactionStatus {
@@ -197,7 +197,7 @@ decl_module! {
 						contract_address: Some(info.value),
 						logs: info.logs,
 						logs_bloom: Bloom::default(), // TODO: feed in bloom.
-					}, info.used_gas, info.exit_reason)
+					}, info.used_gas)
 				},
 			};
 
@@ -209,8 +209,6 @@ decl_module! {
 			};
 
 			Pending::append((transaction, status, receipt));
-
-			Self::handle_exec(exit_reason)?;
 
 			Self::deposit_event(Event::Executed(source, transaction_hash));
 		}
@@ -387,7 +385,7 @@ impl<T: Trait> Module<T> {
 	) -> Result<(Option<H160>, CallOrCreateInfo), DispatchError> {
 		match action {
 			ethereum::TransactionAction::Call(target) => {
-				Ok((Some(target), CallOrCreateInfo::Call(
+				Ok((Some(target), CallOrCreateInfo::Call(Self::handle_exec(
 					T::Runner::call(
 						from,
 						target,
@@ -397,10 +395,10 @@ impl<T: Trait> Module<T> {
 						gas_price,
 						nonce,
 					).map_err(Into::into)?
-				)))
+				)?)))
 			},
 			ethereum::TransactionAction::Create => {
-				Ok((None, CallOrCreateInfo::Create(
+				Ok((None, CallOrCreateInfo::Create(Self::handle_exec(
 					T::Runner::create(
 						from,
 						input.clone(),
@@ -409,14 +407,14 @@ impl<T: Trait> Module<T> {
 						gas_price,
 						nonce,
 					).map_err(Into::into)?
-				)))
+				)?)))
 			},
 		}
 	}
 
-	fn handle_exec(reason: ExitReason) -> Result<(), Error<T>> {
-		match reason {
-			ExitReason::Succeed(_s) => Ok(()),
+	fn handle_exec<R>(res: ExecutionInfo<R>) -> Result<ExecutionInfo<R>, Error<T>> {
+		match res.exit_reason {
+			ExitReason::Succeed(_s) => Ok(res),
 			ExitReason::Error(e) => Err(Self::parse_exit_error(e)),
 			ExitReason::Revert(e) => {
 				match e {
