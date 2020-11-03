@@ -20,13 +20,14 @@ use ethereum::{Block as EthereumBlock, Transaction as EthereumTransaction};
 use ethereum_types::{H160, H256, H64, U256, U64, H512};
 use jsonrpc_core::{BoxFuture, Result, futures::future::{self, Future}};
 use futures::future::TryFutureExt;
-use sp_runtime::traits::{Block as BlockT, UniqueSaturatedInto, Zero, One, Saturating};
-use sp_runtime::transaction_validity::TransactionSource;
+use sp_runtime::{
+	traits::{Block as BlockT, UniqueSaturatedInto, Zero, One, Saturating, BlakeTwo256},
+	transaction_validity::TransactionSource
+};
 use sp_api::{ProvideRuntimeApi, BlockId};
-use sp_transaction_pool::TransactionPool;
+use sp_transaction_pool::{TransactionPool, InPoolTransaction};
 use sc_client_api::backend::{StorageProvider, Backend, StateBackend, AuxStore};
 use sha3::{Keccak256, Digest};
-use sp_runtime::traits::BlakeTwo256;
 use sp_blockchain::{Error as BlockChainError, HeaderMetadata, HeaderBackend};
 use sc_network::{NetworkService, ExHashT};
 use frontier_rpc_core::{EthApi as EthApiT, NetApi as NetApiT};
@@ -38,6 +39,7 @@ use frontier_rpc_primitives::{EthereumRuntimeRPCApi, ConvertTransaction, Transac
 use crate::{internal_err, error_on_execution_failure};
 
 pub use frontier_rpc_core::{EthApiServer, NetApiServer};
+use codec::{self, Encode};
 
 pub struct EthApi<B: BlockT, C, P, CT, BE, H: ExHashT> {
 	pool: Arc<P>,
@@ -394,6 +396,28 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 	}
 
 	fn transaction_count(&self, address: H160, number: Option<BlockNumber>) -> Result<U256> {
+		if let Some(BlockNumber::Pending) = number {
+			// Find future nonce
+			let id = BlockId::hash(self.client.info().best_hash);
+			let nonce: U256 = self.client.runtime_api()
+				.account_basic(&id, address)
+				.map_err(|err| internal_err(format!("fetch runtime account basic failed: {:?}", err)))?
+				.nonce;
+
+			let mut current_nonce = nonce;
+			let mut current_tag = (address, nonce).encode();
+			for tx in self.pool.ready() {
+				// since transactions in `ready()` need to be ordered by nonce
+				// it's fine to continue with current iterator.
+				if tx.provides().get(0) == Some(&current_tag) {
+					current_nonce = current_nonce.saturating_add(1.into());
+					current_tag = (address, current_nonce).encode();
+				}
+			}
+
+			return Ok(current_nonce);
+		}
+
 		let id = match self.native_block_id(number)? {
 			Some(id) => id,
 			None => return Ok(U256::zero()),
