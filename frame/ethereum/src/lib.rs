@@ -35,9 +35,9 @@ use sp_runtime::{
 	},
 	generic::DigestItem, traits::UniqueSaturatedInto, DispatchError,
 };
-use evm::{ExitError, ExitRevert, ExitFatal, ExitReason};
+use evm::ExitReason;
 use sp_evm::CallOrCreateInfo;
-use pallet_evm::{Runner, ExecutionInfo};
+use pallet_evm::Runner;
 use sha3::{Digest, Keccak256};
 use codec::Encode;
 use frontier_consensus_primitives::{FRONTIER_ENGINE_ID, ConsensusLog};
@@ -91,7 +91,7 @@ decl_event!(
 	/// Ethereum pallet events.
 	pub enum Event {
 		/// An ethereum transaction was successfully executed. [from, transaction_hash]
-		Executed(H160, H256),
+		Executed(H160, H256, ExitReason),
 	}
 );
 
@@ -101,49 +101,6 @@ decl_error! {
 	pub enum Error for Module<T: Trait> {
 		/// Signature is invalid.
 		InvalidSignature,
-		/// Transaction signed with wrong chain id
-		InvalidChainId,
-		/// Trying to pop from an empty stack.
-		StackUnderflow,
-		/// Trying to push into a stack over stack limit.
-		StackOverflow,
-		/// Jump destination is invalid.
-		InvalidJump,
-		/// An opcode accesses memory region, but the region is invalid.
-		InvalidRange,
-		/// Encountered the designated invalid opcode.
-		DesignatedInvalid,
-		/// Call stack is too deep (runtime).
-		CallTooDeep,
-		/// Create opcode encountered collision (runtime).
-		CreateCollision,
-		/// Create init code exceeds limit (runtime).
-		CreateContractLimit,
-		///	An opcode accesses external information, but the request is off offset
-		///	limit (runtime).
-		OutOfOffset,
-		/// Execution runs out of gas (runtime).
-		OutOfGas,
-		/// Not enough fund to start the execution (runtime).
-		OutOfFund,
-		/// PC underflowed (unused).
-		PCUnderflow,
-		/// Attempt to create an empty account (runtime, unused).
-		CreateEmpty,
-		/// Other normal errors.
-		ExitErrorOther,
-		/// The operation is not supported.
-		NotSupported,
-		/// The trap (interrupt) is unhandled.
-		UnhandledInterrupt,
-		/// The environment explictly set call errors as fatal error.
-		CallErrorAsFatal,
-		/// Other fatal errors.
-		ExitFatalOther,
-		/// Machine encountered an explict revert.
-		Reverted,
-		/// If call itself fails
-		FailedExecution
 	}
 }
 
@@ -176,9 +133,9 @@ decl_module! {
 				transaction.action,
 			)?;
 
-			let (status, used_gas) = match info {
+			let (reason, status, used_gas) = match info {
 				CallOrCreateInfo::Call(info) => {
-					(TransactionStatus {
+					(info.exit_reason, TransactionStatus {
 						transaction_hash,
 						transaction_index,
 						from: source,
@@ -189,7 +146,7 @@ decl_module! {
 					}, info.used_gas)
 				},
 				CallOrCreateInfo::Create(info) => {
-					(TransactionStatus {
+					(info.exit_reason, TransactionStatus {
 						transaction_hash,
 						transaction_index,
 						from: source,
@@ -210,7 +167,7 @@ decl_module! {
 
 			Pending::append((transaction, status, receipt));
 
-			Self::deposit_event(Event::Executed(source, transaction_hash));
+			Self::deposit_event(Event::Executed(source, transaction_hash, reason));
 		}
 
 		fn on_finalize(n: T::BlockNumber) {
@@ -385,69 +342,26 @@ impl<T: Trait> Module<T> {
 	) -> Result<(Option<H160>, CallOrCreateInfo), DispatchError> {
 		match action {
 			ethereum::TransactionAction::Call(target) => {
-				Ok((Some(target), CallOrCreateInfo::Call(Self::handle_exec(
-					T::Runner::call(
-						from,
-						target,
-						input.clone(),
-						value,
-						gas_limit.low_u32(),
-						gas_price,
-						nonce,
-					).map_err(Into::into)?
-				)?)))
+				Ok((Some(target), CallOrCreateInfo::Call(T::Runner::call(
+					from,
+					target,
+					input.clone(),
+					value,
+					gas_limit.low_u32(),
+					gas_price,
+					nonce,
+				).map_err(Into::into)?)))
 			},
 			ethereum::TransactionAction::Create => {
-				Ok((None, CallOrCreateInfo::Create(Self::handle_exec(
-					T::Runner::create(
-						from,
-						input.clone(),
-						value,
-						gas_limit.low_u32(),
-						gas_price,
-						nonce,
-					).map_err(Into::into)?
-				)?)))
+				Ok((None, CallOrCreateInfo::Create(T::Runner::create(
+					from,
+					input.clone(),
+					value,
+					gas_limit.low_u32(),
+					gas_price,
+					nonce,
+				).map_err(Into::into)?)))
 			},
-		}
-	}
-
-	fn handle_exec<R>(res: ExecutionInfo<R>) -> Result<ExecutionInfo<R>, Error<T>> {
-		match res.exit_reason {
-			ExitReason::Succeed(_s) => Ok(res),
-			ExitReason::Error(e) => Err(Self::parse_exit_error(e)),
-			ExitReason::Revert(e) => {
-				match e {
-					ExitRevert::Reverted => Err(Error::<T>::Reverted),
-				}
-			}
-			ExitReason::Fatal(e) => {
-				match e {
-					ExitFatal::NotSupported => Err(Error::<T>::NotSupported),
-					ExitFatal::UnhandledInterrupt => Err(Error::<T>::UnhandledInterrupt),
-					ExitFatal::CallErrorAsFatal(e_error) => Err(Self::parse_exit_error(e_error)),
-					ExitFatal::Other(_s) => Err(Error::<T>::ExitFatalOther),
-				}
-			}
-		}
-	}
-
-	fn parse_exit_error(exit_error: ExitError) -> Error<T> {
-		match exit_error {
-			ExitError::StackUnderflow => Error::<T>::StackUnderflow,
-			ExitError::StackOverflow => Error::<T>::StackOverflow,
-			ExitError::InvalidJump => Error::<T>::InvalidJump,
-			ExitError::InvalidRange => Error::<T>::InvalidRange,
-			ExitError::DesignatedInvalid => Error::<T>::DesignatedInvalid,
-			ExitError::CallTooDeep => Error::<T>::CallTooDeep,
-			ExitError::CreateCollision => Error::<T>::CreateCollision,
-			ExitError::CreateContractLimit => Error::<T>::CreateContractLimit,
-			ExitError::OutOfOffset => Error::<T>::OutOfOffset,
-			ExitError::OutOfGas => Error::<T>::OutOfGas,
-			ExitError::OutOfFund => Error::<T>::OutOfFund,
-			ExitError::PCUnderflow => Error::<T>::PCUnderflow,
-			ExitError::CreateEmpty => Error::<T>::CreateEmpty,
-			ExitError::Other(_s) => Error::<T>::ExitErrorOther,
 		}
 	}
 }
