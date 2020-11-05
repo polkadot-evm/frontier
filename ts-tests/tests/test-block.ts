@@ -52,8 +52,7 @@ describeWithFrontier("Frontier RPC (Block)", `simple-specs.json`, (context) => {
 	step("should have empty transactions and correct transactionRoot", async function () {
 		const block = await context.web3.eth.getBlock(0);
 		expect(block.transactions).to.be.a("array").empty;
-		// Hash should match Keccak256('0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421')
-		expect(block.transactionRoot).to.equal("0x6fcd3e8e97da273711ccefb79abdd246c5663c7d61057f82bae745ceac5dcc75");
+		expect(block.transactionRoot).to.equal("0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421");
 	});
 
 	let firstBlockCreated = false;
