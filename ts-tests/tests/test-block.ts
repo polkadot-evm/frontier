@@ -52,7 +52,9 @@ describeWithFrontier("Frontier RPC (Block)", `simple-specs.json`, (context) => {
 	step("should have empty transactions and correct transactionRoot", async function () {
 		const block = await context.web3.eth.getBlock(0);
 		expect(block.transactions).to.be.a("array").empty;
-		expect(block.transactionRoot).to.equal("0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421");
+		expect(block).to.include({
+			transactionsRoot: "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
+		});
 	});
 
 	let firstBlockCreated = false;
@@ -90,7 +92,7 @@ describeWithFrontier("Frontier RPC (Block)", `simple-specs.json`, (context) => {
 			timestamp: 6,
 			totalDifficulty: null,
 			//transactions: [],
-			transactionsRoot: "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+			transactionsRoot: "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
 			//uncles: []
 		});
 		previousBlock = block;
