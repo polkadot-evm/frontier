@@ -278,6 +278,7 @@ impl FilteredParams {
 							&replaced[..]
 						) {
 							out = true;
+							break;
 						}
 					}
 				},

@@ -45,8 +45,12 @@ export async function createAndFinalizeBlock(web3: Web3) {
 	}
 }
 
-export async function startFrontierNode(specFilename: string): Promise<{ web3: Web3; binary: ChildProcess }> {
-	const web3 = new Web3(`http://localhost:${RPC_PORT}`);
+export async function startFrontierNode(specFilename: string, provider?: string): Promise<{ web3: Web3; binary: ChildProcess }> {
+
+	var web3;
+	if (!provider || provider == 'http') {
+		web3 = new Web3(`http://localhost:${RPC_PORT}`);
+	}
 
 	const cmd = BINARY_PATH;
 	const args = [
@@ -61,10 +65,11 @@ export async function startFrontierNode(specFilename: string): Promise<{ web3: W
 		`-l${FRONTIER_LOG}`,
 		`--port=${PORT}`,
 		`--rpc-port=${RPC_PORT}`,
-		`--ws-port=${WS_PORT}`, // not used
+		`--ws-port=${WS_PORT}`,
 		`--tmp`,
 	];
 	const binary = spawn(cmd, args);
+
 	binary.on("error", (err) => {
 		if ((err as any).errno == "ENOENT") {
 			console.error(
@@ -92,8 +97,10 @@ export async function startFrontierNode(specFilename: string): Promise<{ web3: W
 			}
 			binaryLogs.push(chunk);
 			if (chunk.toString().match(/Manual Seal Ready/)) {
-				// This is needed as the EVM runtime needs to warmup with a first call
-				await web3.eth.getChainId();
+				if (!provider || provider == "http") {
+					// This is needed as the EVM runtime needs to warmup with a first call
+					await web3.eth.getChainId();
+				}
 
 				clearTimeout(timer);
 				if (!DISPLAY_LOG) {
@@ -108,18 +115,21 @@ export async function startFrontierNode(specFilename: string): Promise<{ web3: W
 		binary.stdout.on("data", onData);
 	});
 
+	if (provider == 'ws') {
+		web3 = new Web3(`ws://localhost:${WS_PORT}`);
+	}
+
 	return { web3, binary };
 }
 
-export function describeWithFrontier(title: string, specFilename: string, cb: (context: { web3: Web3 }) => void) {
+export function describeWithFrontier(title: string, specFilename: string, cb: (context: { web3: Web3 }) => void, provider?: string) {
 	describe(title, () => {
 		let context: { web3: Web3 } = { web3: null };
 		let binary: ChildProcess;
-
 		// Making sure the Frontier node has started
 		before("Starting Frontier Test Node", async function () {
 			this.timeout(SPAWNING_TIME);
-			const init = await startFrontierNode(specFilename);
+			const init = await startFrontierNode(specFilename, provider);
 			context.web3 = init.web3;
 			binary = init.binary;
 		});
