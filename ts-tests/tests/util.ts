@@ -48,7 +48,7 @@ export async function createAndFinalizeBlock(web3: Web3) {
 export async function startFrontierNode(specFilename: string, provider?: string): Promise<{ web3: Web3; binary: ChildProcess }> {
 
 	var web3;
-	if(!provider || provider == 'http') {
+	if (!provider || provider == 'http') {
 		web3 = new Web3(`http://localhost:${RPC_PORT}`);
 	}
 
@@ -97,7 +97,7 @@ export async function startFrontierNode(specFilename: string, provider?: string)
 			}
 			binaryLogs.push(chunk);
 			if (chunk.toString().match(/Manual Seal Ready/)) {
-				if(!provider || provider == "http") {
+				if (!provider || provider == "http") {
 					// This is needed as the EVM runtime needs to warmup with a first call
 					await web3.eth.getChainId();
 				}
@@ -115,7 +115,7 @@ export async function startFrontierNode(specFilename: string, provider?: string)
 		binary.stdout.on("data", onData);
 	});
 
-	if(provider == 'ws') {
+	if (provider == 'ws') {
 		web3 = new Web3(`ws://localhost:${WS_PORT}`);
 	}
 

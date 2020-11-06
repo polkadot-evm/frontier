@@ -206,7 +206,7 @@ describeWithFrontier("Frontier RPC (Subscription)", `simple-specs.json`, (contex
 		await new Promise((resolve) => {
 			subscription.on("data", function (d: any) {
 				data.push(d);
-				if(data.length == logs_generated) {
+				if (data.length == logs_generated) {
 					resolve();
 				}
 			});
