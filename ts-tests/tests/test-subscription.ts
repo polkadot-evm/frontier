@@ -206,4 +206,22 @@ describeWithFrontier("Frontier RPC (Subscription)", `simple-specs.json`, (contex
 
         expect(data).to.not.be.null;
     });
+
+    step("should subscribe to past events", async function () {
+        subscription = context.web3.eth.subscribe("logs", {
+            fromBlock: "0x0"
+        }, function(error, result){});
+
+        let data = [];
+        await new Promise((resolve) => {
+            subscription.on("data", function (d: any) {
+                data.push(d);
+                if(data.length == logs_generated) {
+                    resolve();
+                }
+            });
+        });
+
+        expect(data).to.not.be.empty;
+    });
 }, "ws");
