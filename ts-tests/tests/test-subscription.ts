@@ -150,4 +150,32 @@ describeWithFrontier("Frontier RPC (Subscription)", `simple-specs.json`, (contex
             transactionLogIndex: '0x0'
         });
     });
+
+    step("should subscribe to address logs", async function () {
+        subscription = context.web3.eth.subscribe("logs", {
+            address: "0x42e2EE7Ba8975c473157634Ac2AF4098190fc741"
+        }, function(error, result){});
+
+        await new Promise((resolve) => {
+            subscription.on("connected", function (d: any) {
+                resolve();
+            });
+        });
+
+        const tx = await sendTransaction(context);
+        
+        await createAndFinalizeBlock(context.web3);
+        let data = null;
+        await new Promise((resolve) => {
+            subscription.on("data", function (d: any) {
+                data = d;
+                logs_generated += 1;
+                resolve();
+            });
+        });
+
+        subscription.unsubscribe();
+
+        expect(data).to.not.be.null;
+    });
 }, "ws");
