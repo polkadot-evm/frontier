@@ -20,12 +20,41 @@ mod eth_pubsub;
 pub use eth::{EthApi, EthApiServer, NetApi, NetApiServer};
 pub use eth_pubsub::{EthPubSubApi, EthPubSubApiServer};
 
-use jsonrpc_core::{ErrorCode, Error};
+use jsonrpc_core::{ErrorCode, Error, Value};
+use rustc_hex::ToHex;
+use pallet_evm::ExitReason;
 
 pub fn internal_err<T: ToString>(message: T) -> Error {
 	Error {
 		code: ErrorCode::InternalError,
 		message: message.to_string(),
 		data: None
+	}
+}
+
+pub fn error_on_execution_failure(reason: &ExitReason, data: &[u8]) -> Result<(), Error> {
+	match reason {
+		ExitReason::Succeed(_) => Ok(()),
+		ExitReason::Error(e) => {
+			Err(Error {
+				code: ErrorCode::InternalError,
+				message: format!("evm error: {:?}", e),
+				data: Some(Value::String("0x".to_string()))
+			})
+		},
+		ExitReason::Revert(e) => {
+			Err(Error {
+				code: ErrorCode::InternalError,
+				message: format!("evm revert: {:?}", e),
+				data: Some(Value::String(data.to_hex()))
+			})
+		},
+		ExitReason::Fatal(e) => {
+			Err(Error {
+				code: ErrorCode::InternalError,
+				message: format!("evm fatal: {:?}", e),
+				data: Some(Value::String("0x".to_string()))
+			})
+		},
 	}
 }

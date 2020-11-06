@@ -13,3 +13,8 @@ insert_final_newline=true
 indent_style=tab
 indent_size=tab
 tab_width=4
+
+[*.ts]
+indent_style=tab
+indent_size=tab
+tab_width=4

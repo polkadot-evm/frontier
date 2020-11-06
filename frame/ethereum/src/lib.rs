@@ -24,18 +24,20 @@
 
 use frame_support::{
 	decl_module, decl_storage, decl_error, decl_event,
-	traits::Get, traits::FindAuthor
+	traits::Get, traits::FindAuthor,
 };
 use sp_std::prelude::*;
 use frame_system::ensure_none;
 use ethereum_types::{H160, H64, H256, U256, Bloom};
 use sp_runtime::{
-	traits::UniqueSaturatedInto,
-	transaction_validity::{TransactionValidity, TransactionSource, ValidTransaction, InvalidTransaction},
-	generic::DigestItem,
-	DispatchResult,
+	transaction_validity::{
+		TransactionValidity, TransactionSource, InvalidTransaction, ValidTransactionBuilder,
+	},
+	generic::DigestItem, traits::UniqueSaturatedInto, DispatchError,
 };
-use evm::{ExitError, ExitRevert, ExitFatal, ExitReason};
+use evm::ExitReason;
+use sp_evm::CallOrCreateInfo;
+use pallet_evm::Runner;
 use sha3::{Digest, Keccak256};
 use codec::Encode;
 use frontier_consensus_primitives::{FRONTIER_ENGINE_ID, ConsensusLog};
@@ -48,6 +50,12 @@ mod tests;
 
 #[cfg(all(feature = "std", test))]
 mod mock;
+
+#[derive(Eq, PartialEq, Clone, sp_runtime::RuntimeDebug)]
+pub enum ReturnValue {
+	Bytes(Vec<u8>),
+	Hash(H160),
+}
 
 /// A type alias for the balance type from this pallet's point of view.
 pub type BalanceOf<T> = <T as pallet_balances::Trait>::Balance;
@@ -83,7 +91,7 @@ decl_event!(
 	/// Ethereum pallet events.
 	pub enum Event {
 		/// An ethereum transaction was successfully executed. [from, transaction_hash]
-		Executed(H160, H256),
+		Executed(H160, H256, ExitReason),
 	}
 );
 
@@ -93,49 +101,6 @@ decl_error! {
 	pub enum Error for Module<T: Trait> {
 		/// Signature is invalid.
 		InvalidSignature,
-		/// Transaction signed with wrong chain id
-		InvalidChainId,
-		/// Trying to pop from an empty stack.
-		StackUnderflow,
-		/// Trying to push into a stack over stack limit.
-		StackOverflow,
-		/// Jump destination is invalid.
-		InvalidJump,
-		/// An opcode accesses memory region, but the region is invalid.
-		InvalidRange,
-		/// Encountered the designated invalid opcode.
-		DesignatedInvalid,
-		/// Call stack is too deep (runtime).
-		CallTooDeep,
-		/// Create opcode encountered collision (runtime).
-		CreateCollision,
-		/// Create init code exceeds limit (runtime).
-		CreateContractLimit,
-		///	An opcode accesses external information, but the request is off offset
-		///	limit (runtime).
-		OutOfOffset,
-		/// Execution runs out of gas (runtime).
-		OutOfGas,
-		/// Not enough fund to start the execution (runtime).
-		OutOfFund,
-		/// PC underflowed (unused).
-		PCUnderflow,
-		/// Attempt to create an empty account (runtime, unused).
-		CreateEmpty,
-		/// Other normal errors.
-		ExitErrorOther,
-		/// The operation is not supported.
-		NotSupported,
-		/// The trap (interrupt) is unhandled.
-		UnhandledInterrupt,
-		/// The environment explictly set call errors as fatal error.
-		CallErrorAsFatal,
-		/// Other fatal errors.
-		ExitFatalOther,
-		/// Machine encountered an explict revert.
-		Reverted,
-		/// If call itself fails
-		FailedExecution
 	}
 }
 
@@ -150,13 +115,59 @@ decl_module! {
 		fn transact(origin, transaction: ethereum::Transaction) {
 			ensure_none(origin)?;
 
-			let source = Self::recover_signer(&transaction).ok_or_else(|| Error::<T>::InvalidSignature)?;
+			let source = Self::recover_signer(&transaction)
+				.ok_or_else(|| Error::<T>::InvalidSignature)?;
 
-			let hash = transaction.message_hash(Some(T::ChainId::get()));
+			let transaction_hash = H256::from_slice(
+				Keccak256::digest(&rlp::encode(&transaction)).as_slice()
+			);
+			let transaction_index = Pending::get().len() as u32;
 
-			Self::execute(source, transaction)?;
+			let (to, info) = Self::execute(
+				source,
+				transaction.input.clone(),
+				transaction.value,
+				transaction.gas_limit,
+				Some(transaction.gas_price),
+				Some(transaction.nonce),
+				transaction.action,
+			)?;
 
-			Self::deposit_event(Event::Executed(source, hash));
+			let (reason, status, used_gas) = match info {
+				CallOrCreateInfo::Call(info) => {
+					(info.exit_reason, TransactionStatus {
+						transaction_hash,
+						transaction_index,
+						from: source,
+						to,
+						contract_address: None,
+						logs: info.logs,
+						logs_bloom: Bloom::default(), // TODO: feed in bloom.
+					}, info.used_gas)
+				},
+				CallOrCreateInfo::Create(info) => {
+					(info.exit_reason, TransactionStatus {
+						transaction_hash,
+						transaction_index,
+						from: source,
+						to,
+						contract_address: Some(info.value),
+						logs: info.logs,
+						logs_bloom: Bloom::default(), // TODO: feed in bloom.
+					}, info.used_gas)
+				},
+			};
+
+			let receipt = ethereum::Receipt {
+				state_root: H256::default(), // TODO: should be okay / error status.
+				used_gas,
+				logs_bloom: Bloom::default(), // TODO: set this.
+				logs: status.clone().logs,
+			};
+
+			Pending::append((transaction, status, receipt));
+
+			Self::deposit_event(Event::Executed(source, transaction_hash, reason));
 		}
 
 		fn on_finalize(n: T::BlockNumber) {
@@ -172,7 +183,7 @@ decl_module! {
 
 #[repr(u8)]
 enum TransactionValidationError {
-	#[allow (dead_code)]
+	#[allow(dead_code)]
 	UnknownError,
 	InvalidChainId,
 	InvalidSignature,
@@ -202,8 +213,8 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
 				return InvalidTransaction::Payment.into();
 			}
 
-			let mut builder = ValidTransaction::with_tag_prefix("Ethereum")
-				.and_provides((&origin, transaction.nonce));
+			let mut builder = ValidTransactionBuilder::default()
+				.and_provides((origin, transaction.nonce));
 
 			if transaction.nonce > account_data.nonce {
 				if let Some(prev_nonce) = transaction.nonce.checked_sub(1.into()) {
@@ -219,7 +230,6 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
 }
 
 impl<T: Trait> Module<T> {
-
 	fn recover_signer(transaction: &ethereum::Transaction) -> Option<H160> {
 		let mut sig = [0u8; 65];
 		let mut msg = [0u8; 32];
@@ -243,16 +253,11 @@ impl<T: Trait> Module<T> {
 		}
 
 		let ommers = Vec::<ethereum::Header>::new();
-		let header = ethereum::Header {
+		let partial_header = ethereum::PartialHeader {
 			parent_hash: Self::current_block_hash().unwrap_or_default(),
-			ommers_hash: H256::from_slice(
-				Keccak256::digest(&rlp::encode_list(&ommers)[..]).as_slice(),
-			), // TODO: check ommers hash.
 			beneficiary: <Module<T>>::find_author(),
-			state_root: H256::default(), // TODO: figure out if there's better way to get a sort-of-valid state root.
-			transactions_root: H256::from_slice(
-				Keccak256::digest(&rlp::encode_list(&transactions)[..]).as_slice(),
-			), // TODO: check transactions hash.
+			// TODO: figure out if there's better way to get a sort-of-valid state root.
+			state_root: H256::default(),
 			receipts_root: H256::from_slice(
 				Keccak256::digest(&rlp::encode_list(&receipts)[..]).as_slice(),
 			), // TODO: check receipts hash.
@@ -268,17 +273,11 @@ impl<T: Trait> Module<T> {
 			timestamp: UniqueSaturatedInto::<u64>::unique_saturated_into(
 				pallet_timestamp::Module::<T>::get()
 			),
-			extra_data: H256::default(),
+			extra_data: Vec::new(),
 			mix_hash: H256::default(),
 			nonce: H64::default(),
 		};
-		let hash = Self::ethereum_block_hash(&header);
-
-		let block = ethereum::Block {
-			header: header.clone(),
-			transactions: transactions.clone(),
-			ommers,
-		};
+		let block = ethereum::Block::new(partial_header, transactions.clone(), ommers);
 
 		let mut transaction_hashes = Vec::new();
 
@@ -296,7 +295,7 @@ impl<T: Trait> Module<T> {
 		let digest = DigestItem::<T::Hash>::Consensus(
 			FRONTIER_ENGINE_ID,
 			ConsensusLog::EndBlock {
-				block_hash: hash,
+				block_hash: block.header.hash(),
 				transaction_hashes,
 			}.encode(),
 		);
@@ -323,7 +322,7 @@ impl<T: Trait> Module<T> {
 
 	/// Get current block hash
 	pub fn current_block_hash() -> Option<H256> {
-		Self::current_block().map(|block| Self::ethereum_block_hash(&block.header))
+		Self::current_block().map(|block| block.header.hash())
 	}
 
 	/// Get receipts by number.
@@ -332,133 +331,37 @@ impl<T: Trait> Module<T> {
 	}
 
 	/// Execute an Ethereum transaction, ignoring transaction signatures.
-	pub fn execute(source: H160, transaction: ethereum::Transaction) -> DispatchResult {
-		let transaction_hash = H256::from_slice(
-			Keccak256::digest(&rlp::encode(&transaction)).as_slice()
-		);
-		let transaction_index = Pending::get().len() as u32;
-
-		let (status, gas_used) = match transaction.action {
+	pub fn execute(
+		from: H160,
+		input: Vec<u8>,
+		value: U256,
+		gas_limit: U256,
+		gas_price: Option<U256>,
+		nonce: Option<U256>,
+		action: TransactionAction,
+	) -> Result<(Option<H160>, CallOrCreateInfo), DispatchError> {
+		match action {
 			ethereum::TransactionAction::Call(target) => {
-				let (_, _, gas_used, logs) = Self::handle_exec(
-					pallet_evm::Module::<T>::execute_call(
-						source,
-						target,
-						transaction.input.clone(),
-						transaction.value,
-						transaction.gas_limit.low_u32(),
-						transaction.gas_price,
-						Some(transaction.nonce),
-						true,
-					)?
-				)?;
-
-				(TransactionStatus {
-					transaction_hash,
-					transaction_index,
-					from: source,
-					to: Some(target),
-					contract_address: None,
-					logs: {
-						logs.into_iter()
-						.map(|log| {
-							Log {
-								address: log.address,
-								topics: log.topics,
-								data: log.data
-							}
-						}).collect()
-					},
-					logs_bloom: Bloom::default(), // TODO: feed in bloom.
-				}, gas_used)
+				Ok((Some(target), CallOrCreateInfo::Call(T::Runner::call(
+					from,
+					target,
+					input.clone(),
+					value,
+					gas_limit.low_u32(),
+					gas_price,
+					nonce,
+				).map_err(Into::into)?)))
 			},
 			ethereum::TransactionAction::Create => {
-				let (_, contract_address, gas_used, logs) = Self::handle_exec(
-					pallet_evm::Module::<T>::execute_create(
-						source,
-						transaction.input.clone(),
-						transaction.value,
-						transaction.gas_limit.low_u32(),
-						transaction.gas_price,
-						Some(transaction.nonce),
-						true,
-					)?
-				)?;
-
-				(TransactionStatus {
-					transaction_hash,
-					transaction_index,
-					from: source,
-					to: None,
-					contract_address: Some(contract_address),
-					logs: {
-						logs.into_iter()
-						.map(|log| {
-							Log {
-								address: log.address,
-								topics: log.topics,
-								data: log.data
-							}
-						}).collect()
-					},
-					logs_bloom: Bloom::default(), // TODO: feed in bloom.
-				}, gas_used)
-			},
-		};
-
-		let receipt = ethereum::Receipt {
-			state_root: H256::default(), // TODO: should be okay / error status.
-			used_gas: gas_used,
-			logs_bloom: Bloom::default(), // TODO: set this.
-			logs: status.clone().logs,
-		};
-
-		Pending::append((transaction, status, receipt));
-
-		Ok(())
-	}
-
-	fn handle_exec<R>(res: (ExitReason, R, U256, Vec<pallet_evm::Log>))
-		-> Result<(ExitReason, R, U256, Vec<pallet_evm::Log>), Error<T>> {
-		match res.0 {
-			ExitReason::Succeed(_s) => Ok(res),
-			ExitReason::Error(e) => Err(Self::parse_exit_error(e)),
-			ExitReason::Revert(e) => {
-				match e {
-					ExitRevert::Reverted => Err(Error::<T>::Reverted),
-				}
-			},
-			ExitReason::Fatal(e) => {
-				match e {
-					ExitFatal::NotSupported => Err(Error::<T>::NotSupported),
-					ExitFatal::UnhandledInterrupt => Err(Error::<T>::UnhandledInterrupt),
-					ExitFatal::CallErrorAsFatal(e_error) => Err(Self::parse_exit_error(e_error)),
-					ExitFatal::Other(_s) => Err(Error::<T>::ExitFatalOther),
-				}
+				Ok((None, CallOrCreateInfo::Create(T::Runner::create(
+					from,
+					input.clone(),
+					value,
+					gas_limit.low_u32(),
+					gas_price,
+					nonce,
+				).map_err(Into::into)?)))
 			},
 		}
-	}
-
-	fn parse_exit_error(exit_error: ExitError) -> Error<T> {
-		match exit_error {
-			ExitError::StackUnderflow => return Error::<T>::StackUnderflow,
-			ExitError::StackOverflow => return Error::<T>::StackOverflow,
-			ExitError::InvalidJump => return Error::<T>::InvalidJump,
-			ExitError::InvalidRange => return Error::<T>::InvalidRange,
-			ExitError::DesignatedInvalid => return Error::<T>::DesignatedInvalid,
-			ExitError::CallTooDeep => return Error::<T>::CallTooDeep,
-			ExitError::CreateCollision => return Error::<T>::CreateCollision,
-			ExitError::CreateContractLimit => return Error::<T>::CreateContractLimit,
-			ExitError::OutOfOffset => return Error::<T>::OutOfOffset,
-			ExitError::OutOfGas => return Error::<T>::OutOfGas,
-			ExitError::OutOfFund => return Error::<T>::OutOfFund,
-			ExitError::PCUnderflow => return Error::<T>::PCUnderflow,
-			ExitError::CreateEmpty => return Error::<T>::CreateEmpty,
-			ExitError::Other(_s) => return Error::<T>::ExitErrorOther,
-		}
-	}
-
-	fn ethereum_block_hash(header: &ethereum::Header) -> H256 {
-		H256::from_slice(Keccak256::digest(&rlp::encode(header)).as_slice())
 	}
 }

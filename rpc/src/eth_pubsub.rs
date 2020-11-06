@@ -1,12 +1,12 @@
 use std::{marker::PhantomData, sync::Arc};
 use std::collections::BTreeMap;
 use sp_runtime::traits::{
-	Block as BlockT, Header as _, BlakeTwo256,
+	Block as BlockT, BlakeTwo256,
 	UniqueSaturatedInto
 };
 use sp_transaction_pool::TransactionPool;
 use sp_api::{ProvideRuntimeApi, BlockId};
-use sp_blockchain::HeaderBackend;
+use sp_blockchain::{Error as BlockChainError, HeaderMetadata, HeaderBackend};
 use sp_storage::{StorageKey, StorageData};
 use sp_io::hashing::twox_128;
 use sc_client_api::{
@@ -14,7 +14,6 @@ use sc_client_api::{
 	client::BlockchainEvents
 };
 use sc_rpc::Metadata;
-use sp_consensus::SelectChain;
 use log::warn;
 
 use jsonrpc_pubsub::{typed::Subscriber, SubscriptionId, manager::SubscriptionManager};
@@ -36,44 +35,37 @@ use frontier_rpc_primitives::{EthereumRuntimeRPCApi, TransactionStatus};
 use sc_network::{NetworkService, ExHashT};
 use crate::internal_err;
 
-pub struct EthPubSubApi<B: BlockT, P, C, BE, SC, H: ExHashT> {
+pub struct EthPubSubApi<B: BlockT, P, C, BE, H: ExHashT> {
 	_pool: Arc<P>,
 	client: Arc<C>,
-	select_chain: SC,
 	network: Arc<NetworkService<B, H>>,
 	subscriptions: SubscriptionManager,
 	_marker: PhantomData<(B, BE)>,
 }
 
-impl<B: BlockT, P, C, BE, SC, H: ExHashT> EthPubSubApi<B, P, C, BE, SC, H> {
+impl<B: BlockT, P, C, BE, H: ExHashT> EthPubSubApi<B, P, C, BE, H> {
 	pub fn new(
 		_pool: Arc<P>,
 		client: Arc<C>,
-		select_chain: SC,
 		network: Arc<NetworkService<B, H>>,
 		subscriptions: SubscriptionManager,
 	) -> Self {
-		Self { _pool, client, select_chain, network, subscriptions, _marker: PhantomData }
+		Self { _pool, client, network, subscriptions, _marker: PhantomData }
 	}
 }
 
-impl<B: BlockT, P, C, BE, SC, H: ExHashT> EthPubSubApi<B, P, C, BE, SC, H> where
+impl<B: BlockT, P, C, BE, H: ExHashT> EthPubSubApi<B, P, C, BE, H> where
 	B: BlockT<Hash=H256> + Send + Sync + 'static,
 	P: TransactionPool<Block=B> + Send + Sync + 'static,
 	C: ProvideRuntimeApi<B> + StorageProvider<B,BE> +
-		BlockchainEvents<B> + HeaderBackend<B> + AuxStore,
+		BlockchainEvents<B> + AuxStore,
+	C: HeaderBackend<B> + HeaderMetadata<B, Error=BlockChainError> + 'static,
 	C::Api: EthereumRuntimeRPCApi<B>,
 	C: Send + Sync + 'static,
 	BE: Backend<B> + 'static,
 	BE::State: StateBackend<BlakeTwo256>,
-	SC: SelectChain<B> + Clone + 'static,
 {
 	fn native_block_number(&self, number: Option<BlockNumber>) -> JsonRpcResult<Option<u32>> {
-		let header = self
-			.select_chain
-			.best_chain()
-			.map_err(|_| internal_err("fetch header failed"))?;
-
 		let mut native_number: Option<u32> = None;
 
 		if let Some(number) = number {
@@ -93,7 +85,7 @@ impl<B: BlockT, P, C, BE, SC, H: ExHashT> EthPubSubApi<B, P, C, BE, SC, H> where
 				},
 				BlockNumber::Latest => {
 					native_number = Some(
-						header.number().clone().unique_saturated_into() as u32
+						self.client.info().best_number.clone().unique_saturated_into() as u32
 					);
 				},
 				BlockNumber::Earliest => {
@@ -105,7 +97,7 @@ impl<B: BlockT, P, C, BE, SC, H: ExHashT> EthPubSubApi<B, P, C, BE, SC, H> where
 			};
 		} else {
 			native_number = Some(
-				header.number().clone().unique_saturated_into() as u32
+				self.client.info().best_number.clone().unique_saturated_into() as u32
 			);
 		}
 		Ok(native_number)
@@ -116,9 +108,14 @@ impl<B: BlockT, P, C, BE, SC, H: ExHashT> EthPubSubApi<B, P, C, BE, SC, H> where
 		params: Option<Params>
 	) -> (Option<u32>, Option<u32>) {
 		if let Some(Params::Logs(f)) = params {
+			let to_block: Option<u32> = if f.to_block.is_some() {
+				self.native_block_number(f.to_block).unwrap_or(None)
+			} else {
+				None
+			};
 			return (
 				self.native_block_number(f.from_block).unwrap_or(None),
-				self.native_block_number(f.to_block).unwrap_or(None)
+				to_block
 			);
 		}
 		(None, None)
@@ -273,9 +270,7 @@ impl SubscriptionResult {
 					number: Some(block.header.number),
 					gas_used: block.header.gas_used,
 					gas_limit: block.header.gas_limit,
-					extra_data: Bytes(
-						block.header.extra_data.as_bytes().to_vec()
-					),
+					extra_data: Bytes(block.header.extra_data.clone()),
 					logs_bloom: block.header.logs_bloom,
 					timestamp: U256::from(block.header.timestamp),
 					difficulty: block.header.difficulty,
@@ -308,8 +303,15 @@ impl SubscriptionResult {
 		));
 		let mut logs: Vec<Log> = vec![];
 		let mut log_index: u32 = 0;
-		for receipt in receipts {
+		for (receipt_index, receipt) in receipts.into_iter().enumerate() {
 			let mut transaction_log_index: u32 = 0;
+			let transaction_hash: Option<H256> = if receipt.logs.len() > 0 {
+				Some(H256::from_slice(
+					Keccak256::digest(&rlp::encode(
+						&block.transactions[receipt_index as usize]
+					)).as_slice()
+				))
+			} else { None };
 			for log in receipt.logs {
 				if self.add_log(
 					block_hash.unwrap(),
@@ -323,11 +325,7 @@ impl SubscriptionResult {
 						data: Bytes(log.data),
 						block_hash: block_hash,
 						block_number: Some(block.header.number),
-						transaction_hash: Some(H256::from_slice(
-							Keccak256::digest(&rlp::encode(
-								&block.transactions[log_index as usize]
-							)).as_slice()
-						)),
+						transaction_hash: transaction_hash,
 						transaction_index: Some(U256::from(log_index)),
 						log_index: Some(U256::from(log_index)),
 						transaction_log_index: Some(U256::from(
@@ -377,17 +375,17 @@ macro_rules! stream_build {
 	}};
 }
 
-impl<B: BlockT, P, C, BE, SC, H: ExHashT> EthPubSubApiT for EthPubSubApi<B, P, C, BE, SC, H>
+impl<B: BlockT, P, C, BE, H: ExHashT> EthPubSubApiT for EthPubSubApi<B, P, C, BE, H>
 	where
 		B: BlockT<Hash=H256> + Send + Sync + 'static,
 		P: TransactionPool<Block=B> + Send + Sync + 'static,
 		C: ProvideRuntimeApi<B> + StorageProvider<B,BE> +
-			BlockchainEvents<B> + HeaderBackend<B> + AuxStore,
+			BlockchainEvents<B> + AuxStore,
+		C: HeaderBackend<B> + HeaderMetadata<B, Error=BlockChainError> + 'static,
 		C: Send + Sync + 'static,
 		C::Api: EthereumRuntimeRPCApi<B>,
 		BE: Backend<B> + 'static,
 		BE::State: StateBackend<BlakeTwo256>,
-		SC: SelectChain<B> + Clone + 'static,
 {
 	type Metadata = Metadata;
 	fn subscribe(
