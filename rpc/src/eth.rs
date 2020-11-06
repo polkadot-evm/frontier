@@ -32,7 +32,7 @@ use sp_blockchain::{Error as BlockChainError, HeaderMetadata, HeaderBackend};
 use sc_network::{NetworkService, ExHashT};
 use frontier_rpc_core::{EthApi as EthApiT, NetApi as NetApiT};
 use frontier_rpc_core::types::{
-	BlockNumber, Bytes, CallRequest, Filter, Index, Log, Receipt, RichBlock,
+	BlockNumber, Bytes, CallRequest, Filter, FilteredParams, Index, Log, Receipt, RichBlock,
 	SyncStatus, SyncInfo, Transaction, Work, Rich, Block, BlockTransactions, VariadicValue
 };
 use frontier_rpc_primitives::{EthereumRuntimeRPCApi, ConvertTransaction, TransactionStatus};
@@ -814,6 +814,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 	fn logs(&self, filter: Filter) -> Result<Vec<Log>> {
 		let mut blocks_and_statuses = Vec::new();
 		let mut ret = Vec::new();
+		let params = FilteredParams::new(Some(filter.clone()));
 
 		if let Some(hash) = filter.block_hash {
 			let id = match self.load_hash(hash)
@@ -872,42 +873,49 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 				let logs = status.logs.clone();
 				let mut transaction_log_index: u32 = 0;
 				let transaction_hash = status.transaction_hash;
-				for log in logs {
+				for ethereum_log in logs {
+					let mut log = Log {
+						address: ethereum_log.address.clone(),
+						topics: ethereum_log.topics.clone(),
+						data: Bytes(ethereum_log.data.clone()),
+						block_hash: None,
+						block_number: None,
+						transaction_hash: None,
+						transaction_index: None,
+						log_index: None,
+						transaction_log_index: None,
+						removed: false,
+					};
 					let mut add: bool = false;
 					if let (
-						Some(VariadicValue::Single(address)),
-						Some(VariadicValue::Multiple(topics))
+						Some(VariadicValue::Single(_)),
+						Some(VariadicValue::Multiple(_))
 					) = (
 						filter.address.clone(),
 						filter.topics.clone(),
 					) {
-						if address == log.address && log.topics.starts_with(&topics) {
+						if !params.filter_address(&log) && params.filter_topics(&log) {
 							add = true;
 						}
-					} else if let Some(VariadicValue::Single(address)) = filter.address {
-						if address == log.address {
+					} else if let Some(VariadicValue::Single(_)) = filter.address {
+						if !params.filter_address(&log) {
 							add = true;
 						}
-					} else if let Some(VariadicValue::Multiple(topics)) = &filter.topics {
-						if log.topics.starts_with(&topics) {
+					} else if let Some(VariadicValue::Multiple(_)) = &filter.topics {
+						if params.filter_topics(&log) {
 							add = true;
 						}
 					} else {
 						add = true;
 					}
 					if add {
-						ret.push(Log {
-							address: log.address.clone(),
-							topics: log.topics.clone(),
-							data: Bytes(log.data.clone()),
-							block_hash: Some(block_hash),
-							block_number: Some(block.header.number.clone()),
-							transaction_hash: Some(transaction_hash),
-							transaction_index: Some(U256::from(status.transaction_index)),
-							log_index: Some(U256::from(block_log_index)),
-							transaction_log_index: Some(U256::from(transaction_log_index)),
-							removed: false,
-						});
+						log.block_hash = Some(block_hash);
+						log.block_number = Some(block.header.number.clone());
+						log.transaction_hash = Some(transaction_hash);
+						log.transaction_index = Some(U256::from(status.transaction_index));
+						log.log_index = Some(U256::from(block_log_index));
+						log.transaction_log_index = Some(U256::from(transaction_log_index));
+						ret.push(log);
 					}
 					transaction_log_index += 1;
 					block_log_index += 1;
