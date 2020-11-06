@@ -178,4 +178,32 @@ describeWithFrontier("Frontier RPC (Subscription)", `simple-specs.json`, (contex
 
         expect(data).to.not.be.null;
     });
+
+    step("should subscribe to logs by topic", async function () {
+        subscription = context.web3.eth.subscribe("logs", {
+            topics: ["0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"]
+        }, function(error, result){});
+
+        await new Promise((resolve) => {
+            subscription.on("connected", function (d: any) {
+                resolve();
+            });
+        });
+
+        const tx = await sendTransaction(context);
+        
+        await createAndFinalizeBlock(context.web3);
+        let data = null;
+        await new Promise((resolve) => {
+            subscription.on("data", function (d: any) {
+                data = d;
+                logs_generated += 1;
+                resolve();
+            });
+        });
+
+        subscription.unsubscribe();
+
+        expect(data).to.not.be.null;
+    });
 }, "ws");
