@@ -6,6 +6,7 @@ import { createAndFinalizeBlock, customRequest, describeWithFrontier } from "./u
 describeWithFrontier("Frontier RPC (Subscription)", `simple-specs.json`, (context) => {
 
     let subscription;
+    let logs_generated = 0;
 
     const GENESIS_ACCOUNT = "0x6be02d1d3665660d22ff9624b7be0551ee1ac91b";
 	const GENESIS_ACCOUNT_PRIVATE_KEY = "0x99B3C12287537E38C90A9219D4CB074A89A16E9CDB20BF85728EBD97C343E342";
@@ -101,6 +102,7 @@ describeWithFrontier("Frontier RPC (Subscription)", `simple-specs.json`, (contex
         await new Promise((resolve) => {
             subscription.on("data", function (d: any) {
                 data = d;
+                logs_generated += 1;
                 resolve();
             });
         });
@@ -109,5 +111,43 @@ describeWithFrontier("Frontier RPC (Subscription)", `simple-specs.json`, (contex
 
         expect(data).to.be.not.null;
         expect(tx["transactionHash"]).to.be.eq(data);
+    });
+
+    step("should subscribe to all logs", async function () {
+        subscription = context.web3.eth.subscribe("logs", {}, function(error, result){});
+
+        await new Promise((resolve) => {
+            subscription.on("connected", function (d: any) {
+                resolve();
+            });
+        });
+
+        const tx = await sendTransaction(context);
+        
+        await createAndFinalizeBlock(context.web3);
+
+        let data = null;
+        await new Promise((resolve) => {
+            subscription.on("data", function (d: any) {
+                data = d;
+                logs_generated += 1;
+                resolve();
+            });
+        });
+
+        subscription.unsubscribe();
+
+        const block = await context.web3.eth.getBlock("latest");
+        expect(data).to.include({
+            address: '0x5c4242beB94dE30b922f57241f1D02f36e906915',
+            blockHash: block.hash,
+            blockNumber: block.number,
+            data: '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff',
+            logIndex: 0,
+            removed: false,
+            transactionHash: block.transactions[0],
+            transactionIndex: 0,
+            transactionLogIndex: '0x0'
+        });
     });
 }, "ws");
