@@ -55,7 +55,7 @@ describeWithFrontier("Frontier RPC (Subscription)", `simple-specs.json`, (contex
 		expect(subscriptionId).to.have.lengthOf(16);
 	});
 
-	step("should get newHeads stream", async function () {
+	step("should get newHeads stream", async function (done) {
 		await createAndFinalizeBlock(context.web3);
 		let data = null;
 		await new Promise((resolve) => {
@@ -83,9 +83,10 @@ describeWithFrontier("Frontier RPC (Subscription)", `simple-specs.json`, (contex
 			"0x0000000000000000000000000000000000000000000000000000000000000000",
 			"0x0000000000000000",
 		]);
-	});
+		setTimeout(done,10000);
+	}).timeout(20000);
 
-	step("should get newPendingTransactions stream", async function () {
+	step("should get newPendingTransactions stream", async function (done) {
 		subscription = context.web3.eth.subscribe("pendingTransactions", function(error, result){});
 
 		await new Promise((resolve) => {
@@ -111,9 +112,10 @@ describeWithFrontier("Frontier RPC (Subscription)", `simple-specs.json`, (contex
 
 		expect(data).to.be.not.null;
 		expect(tx["transactionHash"]).to.be.eq(data);
-	});
+		setTimeout(done,10000);
+	}).timeout(20000);
 
-	step("should subscribe to all logs", async function () {
+	step("should subscribe to all logs", async function (done) {
 		subscription = context.web3.eth.subscribe("logs", {}, function(error, result){});
 
 		await new Promise((resolve) => {
@@ -149,9 +151,10 @@ describeWithFrontier("Frontier RPC (Subscription)", `simple-specs.json`, (contex
 			transactionIndex: 0,
 			transactionLogIndex: '0x0'
 		});
-	});
+		setTimeout(done,10000);
+	}).timeout(20000);
 
-	step("should subscribe to address logs", async function () {
+	step("should subscribe to address logs", async function (done) {
 		subscription = context.web3.eth.subscribe("logs", {
 			address: "0x42e2EE7Ba8975c473157634Ac2AF4098190fc741"
 		}, function(error, result){});
@@ -177,9 +180,10 @@ describeWithFrontier("Frontier RPC (Subscription)", `simple-specs.json`, (contex
 		subscription.unsubscribe();
 
 		expect(data).to.not.be.null;
-	});
+		setTimeout(done,10000);
+	}).timeout(20000);
 
-	step("should subscribe to logs by topic", async function () {
+	step("should subscribe to logs by topic", async function (done) {
 		subscription = context.web3.eth.subscribe("logs", {
 			topics: ["0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"]
 		}, function(error, result){});
@@ -205,9 +209,10 @@ describeWithFrontier("Frontier RPC (Subscription)", `simple-specs.json`, (contex
 		subscription.unsubscribe();
 
 		expect(data).to.not.be.null;
-	});
+		setTimeout(done,10000);
+	}).timeout(20000);
 
-	step("should subscribe to past events", async function () {
+	step("should subscribe to past events", async function (done) {
 		subscription = context.web3.eth.subscribe("logs", {
 			fromBlock: "0x0"
 		}, function(error, result){});
@@ -223,5 +228,6 @@ describeWithFrontier("Frontier RPC (Subscription)", `simple-specs.json`, (contex
 		});
 
 		expect(data).to.not.be.empty;
-	});
+		setTimeout(done,10000);
+	}).timeout(20000);
 }, "ws");
