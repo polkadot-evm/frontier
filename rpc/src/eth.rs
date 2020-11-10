@@ -230,6 +230,33 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> where
 		}
 		Ok(None)
 	}
+
+	fn load_transactions(&self, hash: H256) -> Result<Option<(H256, u32)>> {
+		let mut transactions: Vec<(H256, u32)> = Vec::new();
+		match frontier_consensus::load_transaction_metadata(
+			self.client.as_ref(),
+			hash,
+		).map_err(|err| internal_err(format!("fetch aux store failed: {:?}", err)))? {
+			Some(metadata) => {
+				for (hash, index) in metadata {
+					match self.load_hash(hash)
+						.map_err(|err| internal_err(format!("{:?}", err)))?
+					{
+						Some(_) => {
+							transactions.push((hash, index));
+						},
+						_ => {},
+					};
+				}
+			},
+			None => return Ok(None),
+		};
+
+		if transactions.len() == 1 {
+			return Ok(Some(transactions[0]));
+		}
+		Ok(None)
+	}
 }
 
 impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
@@ -627,10 +654,9 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 	}
 
 	fn transaction_by_hash(&self, hash: H256) -> Result<Option<Transaction>> {
-		let (hash, index) = match frontier_consensus::load_transaction_metadata(
-			self.client.as_ref(),
-			hash,
-		).map_err(|err| internal_err(format!("fetch aux store failed: {:?})", err)))? {
+
+		let (hash, index) = match self.load_transactions(hash)
+			.map_err(|err| internal_err(format!("{:?}", err)))? {
 			Some((hash, index)) => (hash, index as usize),
 			None => return Ok(None),
 		};
@@ -718,10 +744,8 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 	}
 
 	fn transaction_receipt(&self, hash: H256) -> Result<Option<Receipt>> {
-		let (hash, index) = match frontier_consensus::load_transaction_metadata(
-			self.client.as_ref(),
-			hash,
-		).map_err(|err| internal_err(format!("fetch aux store failed : {:?}", err)))? {
+		let (hash, index) = match self.load_transactions(hash)
+			.map_err(|err| internal_err(format!("{:?}", err)))? {
 			Some((hash, index)) => (hash, index as usize),
 			None => return Ok(None),
 		};

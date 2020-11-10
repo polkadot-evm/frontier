@@ -80,13 +80,14 @@ pub fn transaction_metadata_key(ethereum_transaction_hash: H256) -> Vec<u8> {
 pub fn load_transaction_metadata<B: AuxStore>(
 	backend: &B,
 	hash: H256,
-) -> ClientResult<Option<(H256, u32)>> {
+) -> ClientResult<Option<Vec<(H256, u32)>>> {
 	let key = transaction_metadata_key(hash);
 	load_decode(backend, &key)
 }
 
 /// Update Aux transaction metadata.
-pub fn write_transaction_metadata<F, R>(
+pub fn write_transaction_metadata<F, R, Backend: AuxStore>(
+	client: &Backend,
 	hash: H256,
 	metadata: (H256, u32),
 	write_aux: F,
@@ -94,5 +95,13 @@ pub fn write_transaction_metadata<F, R>(
 	F: FnOnce(&[(&[u8], &[u8])]) -> R,
 {
 	let key = transaction_metadata_key(hash);
-	write_aux(&[(&key, &metadata.encode())])
+
+	let mut data: Vec<(H256, u32)> = match load_decode(client, &key)
+	{
+		Ok(Some(metadata)) => metadata,
+		_ => Vec::new(),
+	};
+	data.push(metadata);
+
+	write_aux(&[(&key, &data.encode()[..])])
 }

@@ -140,6 +140,7 @@ impl<B, I, C> BlockImport<B> for FrontierBlockImport<B, I, C> where
 
 					for (index, transaction_hash) in transaction_hashes.into_iter().enumerate() {
 						aux_schema::write_transaction_metadata(
+							client.as_ref(),
 							transaction_hash,
 							(block_hash, index as u32),
 							insert_closure!(),
