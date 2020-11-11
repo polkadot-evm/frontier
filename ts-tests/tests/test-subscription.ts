@@ -57,9 +57,9 @@ describeWithFrontier("Frontier RPC (Subscription)", `simple-specs.json`, (contex
 
 	step("should get newHeads stream", async function (done) {
 		subscription = context.web3.eth.subscribe("newBlockHeaders", function(error, result){});
-		await createAndFinalizeBlock(context.web3);
 		let data = null;
 		await new Promise((resolve) => {
+			createAndFinalizeBlock(context.web3);
 			subscription.on("data", function (d: any) {
 				data = d;
 				resolve();
