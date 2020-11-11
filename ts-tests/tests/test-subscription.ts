@@ -50,19 +50,22 @@ describeWithFrontier("Frontier RPC (Subscription)", `simple-specs.json`, (contex
 			});
 		});
 
+		subscription.unsubscribe();
 		expect(connected).to.equal(true);
 		expect(subscriptionId).to.have.lengthOf(16);
 	});
 
 	step("should get newHeads stream", async function (done) {
-		await createAndFinalizeBlock(context.web3);
+		subscription = context.web3.eth.subscribe("newBlockHeaders", function(error, result){});
 		let data = null;
 		await new Promise((resolve) => {
+			createAndFinalizeBlock(context.web3);
 			subscription.on("data", function (d: any) {
 				data = d;
 				resolve();
 			});
 		});
+		subscription.unsubscribe();
 		expect(data).to.include({
 			author: '0x0000000000000000000000000000000000000000',
 			difficulty: '0',
@@ -211,6 +214,7 @@ describeWithFrontier("Frontier RPC (Subscription)", `simple-specs.json`, (contex
 				}
 			});
 		});
+		subscription.unsubscribe();
 
 		expect(data).to.not.be.empty;
 		setTimeout(done,10000);
