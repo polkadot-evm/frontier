@@ -401,7 +401,8 @@ pub type Executive = frame_executive::Executive<
 	Block,
 	frame_system::ChainContext<Runtime>,
 	Runtime,
-	AllModules
+	AllModules,
+	Ethereum
 >;
 
 impl_runtime_apis! {

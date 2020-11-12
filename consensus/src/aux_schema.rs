@@ -21,6 +21,7 @@ use sp_core::H256;
 use sp_runtime::traits::Block as BlockT;
 use sc_client_api::backend::AuxStore;
 use sp_blockchain::{Result as ClientResult, Error as ClientError};
+use crate::StorageMetadata;
 
 fn load_decode<B: AuxStore, T: Decode>(backend: &B, key: &[u8]) -> ClientResult<Option<T>> {
 	let corrupt = |e: codec::Error| {
@@ -96,3 +97,57 @@ pub fn write_transaction_metadata<F, R>(
 	let key = transaction_metadata_key(hash);
 	write_aux(&[(&key, &metadata.encode())])
 }
+
+pub fn load_upgrade_list<B: AuxStore>(
+	backend: &B
+) -> ClientResult<Option<Vec<u128>>> {
+	let key = upgrade_list_key();
+	load_decode(backend, &key)
+}
+
+pub fn load_upgrade_metadata<Block: BlockT, B: AuxStore>(
+	backend: &B,
+	block_number: u128,
+) -> ClientResult<Option<StorageMetadata>> {
+	let key = upgrade_metadata_key(block_number);
+	load_decode(backend, &key)
+}
+
+pub fn upgrade_list_key() -> Vec<u8> {
+	b"ethereum_upgrade_list:".to_vec()
+}
+
+pub fn upgrade_metadata_key(block_number: u128) -> Vec<u8> {
+	let mut ret = b"ethereum_upgrade_metadata:".to_vec();
+	ret.append(&mut block_number.to_le_bytes().to_vec());
+	ret
+}
+
+pub fn write_upgrade_list<F, R, Backend: AuxStore>(
+	client: &Backend,
+	block_number: u128,
+	write_aux: F,
+) -> R where
+	F: FnOnce(&[(&[u8], &[u8])]) -> R,
+{
+	let key = upgrade_list_key();
+	let mut data: Vec<u128> = match load_decode(client, &key)
+	{
+		Ok(Some(checkpoints)) => checkpoints,
+		_ => Vec::new(),
+	};
+	data.push(block_number);
+	write_aux(&[(&key, &data.encode()[..])])
+}
+
+pub fn write_upgrade_metadata<F, R>(
+	block_number: u128,
+	metadata: StorageMetadata,
+	write_aux: F,
+) -> R where
+	F: FnOnce(&[(&[u8], &[u8])]) -> R,
+{
+	let key = upgrade_metadata_key(block_number);
+	write_aux(&[(&key, &metadata.encode()[..])])
+}
+

@@ -32,5 +32,14 @@ pub enum ConsensusLog {
 		block_hash: H256,
 		/// Transaction hashes of the Ethereum block.
 		transaction_hashes: Vec<H256>,
+		/// Storage items metadata on upgrade.
+		metadata: Option<StorageMetadata>,
 	},
+}
+
+#[derive(Decode, Encode, Clone, PartialEq, Eq)]
+pub struct StorageMetadata {
+	pub block: Vec<u8>,
+	pub receipt: Vec<u8>,
+	pub status: Vec<u8>,
 }

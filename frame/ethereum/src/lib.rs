@@ -24,7 +24,7 @@
 
 use frame_support::{
 	decl_module, decl_storage, decl_error, decl_event,
-	traits::Get, traits::FindAuthor,
+	traits::{FindAuthor, Get}, weights::Weight,
 };
 use sp_std::prelude::*;
 use frame_system::ensure_none;
@@ -40,7 +40,7 @@ use sp_evm::CallOrCreateInfo;
 use pallet_evm::Runner;
 use sha3::{Digest, Keccak256};
 use codec::Encode;
-use frontier_consensus_primitives::{FRONTIER_ENGINE_ID, ConsensusLog};
+use frontier_consensus_primitives::{FRONTIER_ENGINE_ID, ConsensusLog, StorageMetadata};
 
 pub use frontier_rpc_primitives::TransactionStatus;
 pub use ethereum::{Transaction, Log, Block, Receipt, TransactionAction};
@@ -79,6 +79,8 @@ decl_storage! {
 		CurrentReceipts: Option<Vec<ethereum::Receipt>>;
 		/// The current transaction statuses.
 		CurrentTransactionStatuses: Option<Vec<TransactionStatus>>;
+		/// Runtime upgrade happened.
+		RuntimeUpgraded get(fn upgraded) config(): bool = false;
 	}
 	add_extra_genesis {
 		build(|_config: &GenesisConfig| {
@@ -178,6 +180,11 @@ decl_module! {
 			Pending::kill();
 			0
 		}
+
+		fn on_runtime_upgrade() -> Weight {
+			RuntimeUpgraded::put(true);
+			0
+		}
 	}
 }
 
@@ -243,6 +250,9 @@ impl<T: Trait> Module<T> {
 	}
 
 	fn store_block() {
+		let block_number = UniqueSaturatedInto::<u128>::unique_saturated_into(
+			frame_system::Module::<T>::block_number()
+		);
 		let mut transactions = Vec::new();
 		let mut statuses = Vec::new();
 		let mut receipts = Vec::new();
@@ -263,11 +273,7 @@ impl<T: Trait> Module<T> {
 			), // TODO: check receipts hash.
 			logs_bloom: Bloom::default(), // TODO: gather the logs bloom from receipts.
 			difficulty: U256::zero(),
-			number: U256::from(
-				UniqueSaturatedInto::<u128>::unique_saturated_into(
-					frame_system::Module::<T>::block_number()
-				)
-			),
+			number: U256::from(block_number),
 			gas_limit: U256::zero(), // TODO: set this using Ethereum's gas limit change algorithm.
 			gas_used: receipts.clone().into_iter().fold(U256::zero(), |acc, r| acc + r.used_gas),
 			timestamp: UniqueSaturatedInto::<u64>::unique_saturated_into(
@@ -292,11 +298,21 @@ impl<T: Trait> Module<T> {
 		CurrentReceipts::put(receipts.clone());
 		CurrentTransactionStatuses::put(statuses.clone());
 
+		let mut metadata: Option<StorageMetadata> = None;
+		if <Module<T>>::runtime_upgraded(block_number) {
+			metadata = Some(StorageMetadata {
+				block: CurrentBlock::hashed_key().to_vec(),
+				receipt: CurrentReceipts::hashed_key().to_vec(),
+				status: CurrentTransactionStatuses::hashed_key().to_vec(),
+			});
+		}
+
 		let digest = DigestItem::<T::Hash>::Consensus(
 			FRONTIER_ENGINE_ID,
 			ConsensusLog::EndBlock {
 				block_hash: block.header.hash(),
 				transaction_hashes,
+				metadata,
 			}.encode(),
 		);
 		frame_system::Module::<T>::deposit_log(digest.into());
@@ -363,5 +379,13 @@ impl<T: Trait> Module<T> {
 				).map_err(Into::into)?)))
 			},
 		}
+	}
+
+	fn runtime_upgraded(block_number: u128) -> bool {
+		if block_number == 1 || RuntimeUpgraded::get() {
+			RuntimeUpgraded::put(false);
+			return true;
+		}
+		false
 	}
 }

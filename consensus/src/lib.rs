@@ -18,17 +18,17 @@
 
 mod aux_schema;
 
-pub use crate::aux_schema::{load_block_hash, load_transaction_metadata};
+pub use crate::aux_schema::{load_block_hash, load_transaction_metadata, load_upgrade_list, load_upgrade_metadata};
 
 use std::sync::Arc;
 use std::collections::HashMap;
 use std::marker::PhantomData;
-use frontier_consensus_primitives::{FRONTIER_ENGINE_ID, ConsensusLog};
+use frontier_consensus_primitives::{FRONTIER_ENGINE_ID, ConsensusLog, StorageMetadata};
 use sc_client_api::{BlockOf, backend::AuxStore};
 use sp_blockchain::{HeaderBackend, ProvideCache, well_known_cache_keys::Id as CacheKeyId};
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
 use sp_runtime::generic::OpaqueDigestItemId;
-use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
+use sp_runtime::traits::{Block as BlockT, Header as HeaderT, UniqueSaturatedInto};
 use sp_api::ProvideRuntimeApi;
 use sp_consensus::{
 	BlockImportParams, Error as ConsensusError, BlockImport,
@@ -134,7 +134,7 @@ impl<B, I, C> BlockImport<B> for FrontierBlockImport<B, I, C> where
 
 			match log {
 				ConsensusLog::EndBlock {
-					block_hash, transaction_hashes,
+					block_hash, transaction_hashes, metadata
 				} => {
 					aux_schema::write_block_hash(client.as_ref(), block_hash, hash, insert_closure!());
 
@@ -145,10 +145,15 @@ impl<B, I, C> BlockImport<B> for FrontierBlockImport<B, I, C> where
 							insert_closure!(),
 						);
 					}
-				},
+
+					if metadata.is_some() {
+						let block_number = block.header.number().clone().unique_saturated_into();
+						aux_schema::write_upgrade_list(client.as_ref(), block_number, insert_closure!());
+						aux_schema::write_upgrade_metadata(block_number, metadata.unwrap(), insert_closure!());
+					}
+				}
 			}
 		}
-
 		self.inner.import_block(block, new_cache).map_err(Into::into)
 	}
 }
