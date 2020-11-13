@@ -79,11 +79,12 @@ decl_storage! {
 		CurrentReceipts: Option<Vec<ethereum::Receipt>>;
 		/// The current transaction statuses.
 		CurrentTransactionStatuses: Option<Vec<TransactionStatus>>;
-		/// Runtime upgrade happened.
-		RuntimeUpgraded get(fn upgraded) config(): bool = false;
+		/// Storage metadata on runtime upgrade.
+		Metadata: Option<StorageMetadata>;
 	}
 	add_extra_genesis {
 		build(|_config: &GenesisConfig| {
+			<Module<T>>::store_metadata();
 			<Module<T>>::store_block();
 		});
 	}
@@ -182,7 +183,7 @@ decl_module! {
 		}
 
 		fn on_runtime_upgrade() -> Weight {
-			RuntimeUpgraded::put(true);
+			<Module<T>>::store_metadata();
 			0
 		}
 	}
@@ -298,14 +299,7 @@ impl<T: Trait> Module<T> {
 		CurrentReceipts::put(receipts.clone());
 		CurrentTransactionStatuses::put(statuses.clone());
 
-		let mut metadata: Option<StorageMetadata> = None;
-		if <Module<T>>::runtime_upgraded(block_number) {
-			metadata = Some(StorageMetadata {
-				block: CurrentBlock::hashed_key().to_vec(),
-				receipt: CurrentReceipts::hashed_key().to_vec(),
-				status: CurrentTransactionStatuses::hashed_key().to_vec(),
-			});
-		}
+		let metadata: Option<StorageMetadata> = <Module<T>>::runtime_upgraded(block_number);
 
 		let digest = DigestItem::<T::Hash>::Consensus(
 			FRONTIER_ENGINE_ID,
@@ -381,11 +375,19 @@ impl<T: Trait> Module<T> {
 		}
 	}
 
-	fn runtime_upgraded(block_number: u128) -> bool {
-		if block_number == 1 || RuntimeUpgraded::get() {
-			RuntimeUpgraded::put(false);
-			return true;
+	fn runtime_upgraded(block_number: u128) -> Option<StorageMetadata> {
+		if block_number == 1 || (block_number > 1 && Metadata::get().is_some()) {
+			let metadata = Metadata::take();
+			return metadata;
 		}
-		false
+		None
+	}
+
+	fn store_metadata() {
+		Metadata::put(StorageMetadata {
+			block: CurrentBlock::hashed_key().to_vec(),
+			receipt: CurrentReceipts::hashed_key().to_vec(),
+			status: CurrentTransactionStatuses::hashed_key().to_vec(),
+		});
 	}
 }
