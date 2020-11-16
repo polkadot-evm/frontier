@@ -57,6 +57,8 @@ pub struct FullDeps<C, P> {
 	pub deny_unsafe: DenyUnsafe,
 	/// The Node authority flag
 	pub is_authority: bool,
+	/// Whether to enable dev signer
+	pub enable_dev_signer: bool,
 	/// Network service
 	pub network: Arc<NetworkService<Block, Hash>>,
 	/// Manual seal command sink
@@ -83,7 +85,10 @@ pub fn create_full<C, P, BE>(
 {
 	use substrate_frame_rpc_system::{FullSystem, SystemApi};
 	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApi};
-	use frontier_rpc::{EthApi, EthApiServer, NetApi, NetApiServer, EthPubSubApi, EthPubSubApiServer};
+	use frontier_rpc::{
+		EthApi, EthApiServer, NetApi, NetApiServer, EthPubSubApi, EthPubSubApiServer,
+		EthDevSigner, EthSigner,
+	};
 
 	let mut io = jsonrpc_core::IoHandler::default();
 	let FullDeps {
@@ -92,7 +97,8 @@ pub fn create_full<C, P, BE>(
 		deny_unsafe,
 		is_authority,
 		network,
-		command_sink
+		command_sink,
+		enable_dev_signer,
 	} = deps;
 
 	io.extend_with(
@@ -101,12 +107,18 @@ pub fn create_full<C, P, BE>(
 	io.extend_with(
 		TransactionPaymentApi::to_delegate(TransactionPayment::new(client.clone()))
 	);
+
+	let mut signers = Vec::new();
+	if enable_dev_signer {
+		signers.push(Box::new(EthDevSigner::new()) as Box<dyn EthSigner>);
+	}
 	io.extend_with(
 		EthApiServer::to_delegate(EthApi::new(
 			client.clone(),
 			pool.clone(),
 			frontier_template_runtime::TransactionConverter,
 			network.clone(),
+			signers,
 			is_authority,
 		))
 	);

@@ -61,7 +61,8 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> {
 		pool: Arc<P>,
 		convert_transaction: CT,
 		network: Arc<NetworkService<B, H>>,
-		is_authority: bool
+		signers: Vec<Box<dyn EthSigner>>,
+		is_authority: bool,
 	) -> Self {
 		Self {
 			client,
@@ -69,7 +70,7 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> {
 			convert_transaction,
 			network,
 			is_authority,
-			signers: Vec::new(),
+			signers,
 			_marker: PhantomData,
 		}
 	}
@@ -548,7 +549,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 
 		for signer in &self.signers {
 			if signer.accounts().contains(&from) {
-				match signer.sign(message) {
+				match signer.sign(message, &from) {
 					Ok(t) => transaction = Some(t),
 					Err(e) => return Box::new(future::result(Err(e))),
 				}
