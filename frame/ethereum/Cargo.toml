@@ -20,7 +20,7 @@ sp-std = { version = "2.0.0-dev", default-features = false, git = "https://githu
 sp-io = { version = "2.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sp-evm = { version = "0.8.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 evm = { version = "0.18.0", features = ["with-codec"], default-features = false }
-ethereum = { version = "0.4", default-features = false, features = ["with-codec"] }
+ethereum = { version = "0.5", default-features = false, features = ["with-codec"] }
 ethereum-types = { version = "0.9", default-features = false }
 rlp = { version = "0.4", default-features = false }
 sha3 = { version = "0.8", default-features = false }
