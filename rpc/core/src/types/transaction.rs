@@ -17,7 +17,7 @@
 use serde::{Serialize, Serializer};
 use serde::ser::SerializeStruct;
 use ethereum_types::{H160, H256, H512, U64, U256};
-use crate::types::{Bytes, TransactionCondition};
+use crate::types::Bytes;
 
 /// Transaction
 #[derive(Debug, Default, Clone, PartialEq, Serialize)]
@@ -61,8 +61,6 @@ pub struct Transaction {
 	pub r: U256,
 	/// The S field of the signature.
 	pub s: U256,
-	/// Transaction activates at specified block.
-	pub condition: Option<TransactionCondition>,
 }
 
 /// Local Transaction Status

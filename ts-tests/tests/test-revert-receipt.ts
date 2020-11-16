@@ -52,7 +52,7 @@ describeWithFrontier("Frontier RPC (Constructor Revert)", `simple-specs.json`, (
 			id: 1,
 			jsonrpc: "2.0",
 			result: {
-				"blockHash": "0xfe01d44b7f1c13e36819ecc6daf39fc28c57e6e4f6646036d7d8b79ed940fb91",
+				"blockHash": "0x523389d52a34094ad401153dd8486fe6af7099da388a4728ed3b09e285ca8604",
 				"blockNumber": "0x1",
 				"contractAddress": "0xc2bf5f29a4384b1ab0c063e1c666f02121b6084a",
 				"cumulativeGasUsed": "0x1069f",
@@ -100,7 +100,7 @@ describeWithFrontier("Frontier RPC (Constructor Revert)", `simple-specs.json`, (
 			id: 1,
 			jsonrpc: "2.0",
 			result: {
-				"blockHash": "0x8761d0bf47b6644e9e420d16b6fe046420c609a9d990e9432c30b254e02902d0",
+				"blockHash": "0x459bb7c418c22239392a4a1e7c2190afbcc6fbd87cb6d547509deac588f27536",
 				"blockNumber": "0x2",
 				"contractAddress": "0x5c4242beb94de30b922f57241f1d02f36e906915",
 				"cumulativeGasUsed": "0xd548",

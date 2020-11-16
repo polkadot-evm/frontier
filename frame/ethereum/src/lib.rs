@@ -43,7 +43,7 @@ use codec::Encode;
 use frontier_consensus_primitives::{FRONTIER_ENGINE_ID, ConsensusLog};
 
 pub use frontier_rpc_primitives::TransactionStatus;
-pub use ethereum::{Transaction, Log, Block, Receipt, TransactionAction};
+pub use ethereum::{Transaction, Log, Block, Receipt, TransactionAction, TransactionMessage};
 
 #[cfg(all(feature = "std", test))]
 mod tests;
@@ -236,7 +236,7 @@ impl<T: Trait> Module<T> {
 		sig[0..32].copy_from_slice(&transaction.signature.r()[..]);
 		sig[32..64].copy_from_slice(&transaction.signature.s()[..]);
 		sig[64] = transaction.signature.standard_v();
-		msg.copy_from_slice(&transaction.message_hash(Some(T::ChainId::get()))[..]);
+		msg.copy_from_slice(&TransactionMessage::from(transaction.clone()).hash()[..]);
 
 		let pubkey = sp_io::crypto::secp256k1_ecdsa_recover(&sig, &msg).ok()?;
 		Some(H160::from(H256::from_slice(Keccak256::digest(&pubkey).as_slice())))

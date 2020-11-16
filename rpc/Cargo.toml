@@ -28,9 +28,11 @@ sc-rpc = { git = "https://github.com/paritytech/substrate.git", branch = "fronti
 sc-network = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 pallet-evm = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 pallet-ethereum = { path = "../frame/ethereum" }
-ethereum = { version = "0.4", features = ["with-codec"] }
+ethereum = { version = "0.5", features = ["with-codec"] }
 codec = { package = "parity-scale-codec", version = "1.0.0" }
 rlp = "0.4"
 futures = { version = "0.3.1", features = ["compat"] }
 sha3 = "0.8"
 rustc-hex = { version = "2.1.0", default-features = false }
+libsecp256k1 = "0.3"
+rand = "0.7"
