@@ -39,7 +39,7 @@ use evm::ExitReason;
 use sp_evm::CallOrCreateInfo;
 use pallet_evm::Runner;
 use sha3::{Digest, Keccak256};
-use codec::Encode;
+use codec::{Encode, Decode};
 use frontier_consensus_primitives::{FRONTIER_ENGINE_ID, ConsensusLog};
 
 pub use frontier_rpc_primitives::TransactionStatus;
@@ -57,6 +57,20 @@ pub enum ReturnValue {
 	Hash(H160),
 }
 
+/// The schema version for Pallet Ethereum's storage
+/// TODO move this into the pallet and add a storage item.
+#[derive(Clone, Debug, Encode, Decode, PartialEq, Eq, PartialOrd, Ord)]
+pub enum EthereumStorageSchema {
+	Undefined,
+	V1,
+}
+
+impl Default for EthereumStorageSchema {
+	fn default() -> Self {
+		Self::Undefined
+	}
+}
+
 /// A type alias for the balance type from this pallet's point of view.
 pub type BalanceOf<T> = <T as pallet_balances::Trait>::Balance;
 
@@ -70,6 +84,10 @@ pub trait Trait: frame_system::Trait<Hash=H256> + pallet_balances::Trait + palle
 
 decl_storage! {
 	trait Store for Module<T: Trait> as Ethereum {
+		/// The current version of the storage schema. This is useful for tracking and executing storage migrations
+		/// as well as querying storage data from optimized RPC handlers
+		Schema: EthereumStorageSchema;
+
 		/// Current building block's transactions and receipts.
 		Pending: Vec<(ethereum::Transaction, TransactionStatus, ethereum::Receipt)>;
 

@@ -41,9 +41,28 @@ use frontier_rpc_core::types::{
 };
 use frontier_rpc_primitives::{EthereumRuntimeRPCApi, ConvertTransaction, TransactionStatus};
 use crate::{internal_err, error_on_execution_failure, EthSigner};
+use sp_storage::StorageKey;
+use sp_io::hashing::twox_128;
 
 pub use frontier_rpc_core::{EthApiServer, NetApiServer};
-use codec::{self, Encode};
+use codec::{self, Encode, Decode};
+use pallet_ethereum::EthereumStorageSchema;
+
+/// The well-known never-chainging storage key from where pallet ethereum's storage schema can be read.
+/// TODO It may be conventional to register or define this key in a particular place.
+fn schema_key() -> StorageKey {
+	StorageKey(
+		[twox_128(b"Ethereum"), twox_128(b"Schema")]
+		.concat()
+		.to_vec()
+	)
+}
+
+/// Something that can fetch Ethereum-related data from a State Backend with some assumptions
+/// about pallet-ethereum's storage schemaschema
+pub trait OptimizedEthApi<Block: BlockT> {
+	fn author(&self, block: &BlockId<Block>) -> Option<H160>;
+}
 
 pub struct EthApi<B: BlockT, C, P, CT, BE, H: ExHashT> {
 	pool: Arc<P>,
@@ -52,6 +71,7 @@ pub struct EthApi<B: BlockT, C, P, CT, BE, H: ExHashT> {
 	network: Arc<NetworkService<B, H>>,
 	is_authority: bool,
 	signers: Vec<Box<dyn EthSigner>>,
+	optimizations: BTreeMap<EthereumStorageSchema, Box<dyn OptimizedEthApi<B> + Send + Sync>>,
 	_marker: PhantomData<(B, BE)>,
 }
 
@@ -71,6 +91,7 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> {
 			network,
 			is_authority,
 			signers,
+			optimizations: BTreeMap::new(),
 			_marker: PhantomData,
 		}
 	}
@@ -185,6 +206,7 @@ fn transaction_build(
 }
 
 impl<B, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> where
+	B: BlockT,
 	C: ProvideRuntimeApi<B> + StorageProvider<B, BE> + AuxStore,
 	C: HeaderBackend<B> + HeaderMetadata<B, Error=BlockChainError> + 'static,
 	C::Api: EthereumRuntimeRPCApi<B>,
@@ -241,6 +263,13 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> where
 		}
 		Ok(None)
 	}
+
+	fn onchain_storage_schema(&self, at: BlockId<B>) -> EthereumStorageSchema {
+		match self.client.storage(&at, &schema_key()) {
+			Ok(Some(bytes)) => Decode::decode(&mut &bytes.0[..]).ok().unwrap_or(EthereumStorageSchema::Undefined),
+			_ => EthereumStorageSchema::Undefined,
+		}
+	}
 }
 
 impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
@@ -283,13 +312,21 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 	}
 
 	fn author(&self) -> Result<H160> {
-		let hash = self.client.info().best_hash;
+		let block = BlockId::Hash(self.client.info().best_hash);
 
+		let schema = self.onchain_storage_schema(block);
+
+		// Attempt to delegate to an optimized handler
+		if let Some(handler) = self.optimizations.get(&schema) {
+			return handler.author(&block).ok_or(internal_err(format!("fetch optimized author failed")).into());
+		}
+
+		// Fall back to the runtime API
 		Ok(
 			self.client
 			.runtime_api()
-			.author(&BlockId::Hash(hash))
-			.map_err(|err| internal_err(format!("fetch runtime chain id failed: {:?}", err)))?.into()
+			.author(&block)
+			.map_err(|err| internal_err(format!("fetch runtime author failed: {:?}", err)))?.into()
 		)
 	}
 
