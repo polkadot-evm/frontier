@@ -36,9 +36,12 @@ pub struct RunCmd {
 	#[structopt(flatten)]
 	pub base: sc_cli::RunCmd,
 
-	/// Force using Kusama native runtime.
+	/// Choose sealing method.
 	#[structopt(long = "sealing")]
 	pub sealing: Option<Sealing>,
+
+	#[structopt(long = "enable-dev-signer")]
+	pub enable_dev_signer: bool,
 }
 
 #[derive(Debug, StructOpt)]
