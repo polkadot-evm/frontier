@@ -58,7 +58,6 @@ pub enum ReturnValue {
 }
 
 /// The schema version for Pallet Ethereum's storage
-/// TODO move this into the pallet and add a storage item.
 #[derive(Clone, Debug, Encode, Decode, PartialEq, Eq, PartialOrd, Ord)]
 pub enum EthereumStorageSchema {
 	Undefined,
