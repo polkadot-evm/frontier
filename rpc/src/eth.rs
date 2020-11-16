@@ -59,7 +59,9 @@ fn schema_key() -> StorageKey {
 }
 
 /// Something that can fetch Ethereum-related data from a State Backend with some assumptions
-/// about pallet-ethereum's storage schemaschema
+/// about pallet-ethereum's storage schema
+///
+/// TODO this needs lots more trait bounds and functions. For now, I'm just scetchign the idea.
 pub trait OptimizedEthApi<Block: BlockT> {
 	fn author(&self, block: &BlockId<Block>) -> Option<H160>;
 
