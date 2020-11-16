@@ -62,6 +62,8 @@ fn schema_key() -> StorageKey {
 /// about pallet-ethereum's storage schemaschema
 pub trait OptimizedEthApi<Block: BlockT> {
 	fn author(&self, block: &BlockId<Block>) -> Option<H160>;
+
+	fn transaction_count(&self, block: &BlockId<Block>, address: H160) -> Option<U256>;
 }
 
 pub struct EthApi<B: BlockT, C, P, CT, BE, H: ExHashT> {
@@ -313,7 +315,6 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 
 	fn author(&self) -> Result<H160> {
 		let block = BlockId::Hash(self.client.info().best_hash);
-
 		let schema = self.onchain_storage_schema(block);
 
 		// Attempt to delegate to an optimized handler
@@ -449,12 +450,21 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 
 	fn transaction_count(&self, address: H160, number: Option<BlockNumber>) -> Result<U256> {
 		if let Some(BlockNumber::Pending) = number {
-			// Find future nonce
-			let id = BlockId::hash(self.client.info().best_hash);
-			let nonce: U256 = self.client.runtime_api()
-				.account_basic(&id, address)
-				.map_err(|err| internal_err(format!("fetch runtime account basic failed: {:?}", err)))?
-				.nonce;
+			let block = BlockId::Hash(self.client.info().best_hash);
+			let schema = self.onchain_storage_schema(block);
+
+			let nonce: U256 = match self.optimizations.get(&schema) {
+				Some(handler) => {
+					handler.transaction_count(&block, address)
+					.ok_or(internal_err(format!("fetch optimized account nonce failed")))?
+				},
+				None => {
+					self.client.runtime_api()
+						.account_basic(&block, address)
+						.map_err(|err| internal_err(format!("fetch runtime account basic failed: {:?}", err)))?
+						.nonce
+				},
+			};
 
 			let mut current_nonce = nonce;
 			let mut current_tag = (address, nonce).encode();
