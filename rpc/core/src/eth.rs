@@ -22,7 +22,7 @@ use jsonrpc_derive::rpc;
 
 use crate::types::{
 	BlockNumber, Bytes, CallRequest, Filter, FilterChanges, Index, Log, Receipt,
-	RichBlock, SyncStatus, Transaction, Work,
+	RichBlock, SyncStatus, Transaction, Work, TransactionRequest,
 };
 pub use rpc_impl_EthApi::gen_server::EthApi as EthApiServer;
 
@@ -106,6 +106,11 @@ pub trait EthApi {
 	/// Returns the code at given address at given time (block number).
 	#[rpc(name = "eth_getCode")]
 	fn code_at(&self, _: H160, _: Option<BlockNumber>) -> Result<Bytes>;
+
+	/// Sends transaction; will block waiting for signer to return the
+	/// transaction hash.
+	#[rpc(name = "eth_sendTransaction")]
+	fn send_transaction(&self, _: TransactionRequest) -> BoxFuture<H256>;
 
 	/// Sends signed transaction, returning its hash.
 	#[rpc(name = "eth_sendRawTransaction")]

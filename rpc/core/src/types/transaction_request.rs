@@ -18,7 +18,7 @@
 
 use serde::{Serialize, Deserialize};
 use ethereum_types::{H160, U256};
-use crate::types::{Bytes, TransactionCondition};
+use crate::types::Bytes;
 
 /// Transaction request coming from RPC
 #[derive(Debug, Clone, Default, Eq, PartialEq, Hash, Serialize, Deserialize)]
@@ -39,6 +39,4 @@ pub struct TransactionRequest {
 	pub data: Option<Bytes>,
 	/// Transaction's nonce
 	pub nonce: Option<U256>,
-	/// Delay until this block condition.
-	pub condition: Option<TransactionCondition>,
 }
