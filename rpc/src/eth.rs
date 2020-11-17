@@ -242,11 +242,11 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> where
 		Ok(None)
 	}
 
-	fn load_transactions(&self, hash: H256) -> Result<Option<(H256, u32)>> {
+	fn load_transactions(&self, transaction_hash: H256) -> Result<Option<(H256, u32)>> {
 		let mut transactions: Vec<(H256, u32)> = Vec::new();
 		match frontier_consensus::load_transaction_metadata(
 			self.client.as_ref(),
-			hash,
+			transaction_hash,
 		).map_err(|err| internal_err(format!("fetch aux store failed: {:?}", err)))? {
 			Some(metadata) => {
 				for (block_hash, index) in metadata {
