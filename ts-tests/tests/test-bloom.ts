@@ -32,19 +32,19 @@ describeWithFrontier("Frontier RPC (Subscription)", `simple-specs.json`, (contex
 	}
 
 	step("receipt data should be in bloom", async function () {
-        let tx = await sendTransaction(context);
-        await createAndFinalizeBlock(context.web3);
-        // check transaction bloom
-        tx = await context.web3.eth.getTransactionReceipt(tx.transactionHash);
-        expect(isInBloom(tx.logsBloom, tx.logs[0].address)).to.be.true;
-        for(var topic of tx.logs[0].topics) {
-            expect(isInBloom(tx.logsBloom, topic)).to.be.true;
-        }
-        // check block bloom
-        const block = await context.web3.eth.getBlock("latest");
-        expect(isInBloom(block.logsBloom, tx.logs[0].address)).to.be.true;
-        for(var topic of tx.logs[0].topics) {
-            expect(isInBloom(block.logsBloom, topic)).to.be.true;
-        }
+		let tx = await sendTransaction(context);
+		await createAndFinalizeBlock(context.web3);
+		// check transaction bloom
+		tx = await context.web3.eth.getTransactionReceipt(tx.transactionHash);
+		expect(isInBloom(tx.logsBloom, tx.logs[0].address)).to.be.true;
+		for(var topic of tx.logs[0].topics) {
+			expect(isInBloom(tx.logsBloom, topic)).to.be.true;
+		}
+		// check block bloom
+		const block = await context.web3.eth.getBlock("latest");
+		expect(isInBloom(block.logsBloom, tx.logs[0].address)).to.be.true;
+		for(var topic of tx.logs[0].topics) {
+			expect(isInBloom(block.logsBloom, topic)).to.be.true;
+		}
 	});
 });
