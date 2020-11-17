@@ -249,12 +249,12 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> where
 			hash,
 		).map_err(|err| internal_err(format!("fetch aux store failed: {:?}", err)))? {
 			Some(metadata) => {
-				for (hash, index) in metadata {
-					match self.load_hash(hash)
+				for (block_hash, index) in metadata {
+					match self.load_hash(block_hash)
 						.map_err(|err| internal_err(format!("{:?}", err)))?
 					{
 						Some(_) => {
-							transactions.push((hash, index));
+							transactions.push((block_hash, index));
 						},
 						_ => {},
 					};
