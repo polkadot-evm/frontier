@@ -142,10 +142,14 @@ decl_module! {
 						to,
 						contract_address: None,
 						logs: info.logs.clone(),
-						logs_bloom: <Module<T>>::logs_bloom(
-							info.logs,
-							&mut Bloom::default()
-						),
+						logs_bloom: {
+							let mut bloom: Bloom = Bloom::default();
+							Self::logs_bloom(
+								info.logs,
+								&mut bloom
+							);
+							bloom
+						},
 					}, info.used_gas)
 				},
 				CallOrCreateInfo::Create(info) => {
@@ -156,10 +160,14 @@ decl_module! {
 						to,
 						contract_address: Some(info.value),
 						logs: info.logs.clone(),
-						logs_bloom: <Module<T>>::logs_bloom(
-							info.logs,
-							&mut Bloom::default()
-						),
+						logs_bloom: {
+							let mut bloom: Bloom = Bloom::default();
+							Self::logs_bloom(
+								info.logs,
+								&mut bloom
+							);
+							bloom
+						},
 					}, info.used_gas)
 				},
 			};
@@ -257,7 +265,7 @@ impl<T: Trait> Module<T> {
 			transactions.push(transaction);
 			statuses.push(status);
 			receipts.push(receipt.clone());
-			<Module<T>>::logs_bloom(
+			Self::logs_bloom(
 				receipt.logs.clone(),
 				&mut logs_bloom
 			);
@@ -313,14 +321,13 @@ impl<T: Trait> Module<T> {
 		frame_system::Module::<T>::deposit_log(digest.into());
 	}
 
-	fn logs_bloom(logs: Vec<Log>, bloom: &mut Bloom) -> Bloom {
+	fn logs_bloom(logs: Vec<Log>, bloom: &mut Bloom) {
 		for log in logs {
 			bloom.accrue(BloomInput::Raw(&log.address[..]));
 			for topic in log.topics {
 				bloom.accrue(BloomInput::Raw(&topic[..]));
 			}
 		}
-		*bloom
 	}
 
 	/// Get the author using the FindAuthor trait.
