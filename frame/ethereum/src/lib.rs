@@ -65,8 +65,22 @@ pub type BalanceOf<T> = <T as pallet_balances::Trait>::Balance;
 pub trait Trait: frame_system::Trait<Hash=H256> + pallet_balances::Trait + pallet_timestamp::Trait + pallet_evm::Trait {
 	/// The overarching event type.
 	type Event: From<Event> + Into<<Self as frame_system::Trait>::Event>;
+	/// Maps Ethereum gas to Substrate weight.
+	type GasToWeight: GasToWeight;
 	/// Find author for Ethereum.
 	type FindAuthor: FindAuthor<H160>;
+}
+
+/// A mapping function that converts Ethereum gas to Substrate weight
+pub trait GasToWeight {
+	fn gas_to_weight(gas: U256) -> Weight;
+}
+
+
+impl GasToWeight for () {
+	fn gas_to_weight(gas: U256) -> Weight {
+		gas.saturated_into::<Weight>()
+	}
 }
 
 decl_storage! {
@@ -112,7 +126,7 @@ decl_module! {
 		fn deposit_event() = default;
 
 		/// Transact an Ethereum transaction.
-		#[weight = transaction.gas_limit.saturated_into::<Weight>()]
+		#[weight = T::GasToWeight::gas_to_weight(transaction.gas_limit)]
 		fn transact(origin, transaction: ethereum::Transaction) {
 			ensure_none(origin)?;
 
