@@ -87,7 +87,7 @@ pub fn create_full<C, P, BE>(
 	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApi};
 	use frontier_rpc::{
 		EthApi, EthApiServer, NetApi, NetApiServer, EthPubSubApi, EthPubSubApiServer,
-		EthDevSigner, EthSigner,
+		EthDevSigner, EthSigner, HexEncodedIdProvider,
 	};
 
 	let mut io = jsonrpc_core::IoHandler::default();
@@ -133,7 +133,10 @@ pub fn create_full<C, P, BE>(
 			pool.clone(),
 			client.clone(),
 			network.clone(),
-			SubscriptionManager::new(Arc::new(subscription_task_executor)),
+			SubscriptionManager::<HexEncodedIdProvider>::with_id_provider(
+				HexEncodedIdProvider::default(),
+				Arc::new(subscription_task_executor)
+			),
 		))
 	);
 
