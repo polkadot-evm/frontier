@@ -24,7 +24,7 @@
 
 use frame_support::{
 	decl_module, decl_storage, decl_error, decl_event,
-	traits::Get, traits::FindAuthor,
+	traits::Get, traits::FindAuthor, weights::Weight
 };
 use sp_std::prelude::*;
 use frame_system::ensure_none;
@@ -34,6 +34,7 @@ use sp_runtime::{
 		TransactionValidity, TransactionSource, InvalidTransaction, ValidTransactionBuilder,
 	},
 	generic::DigestItem, traits::UniqueSaturatedInto, DispatchError,
+	SaturatedConversion,
 };
 use evm::ExitReason;
 use sp_evm::CallOrCreateInfo;
@@ -111,7 +112,7 @@ decl_module! {
 		fn deposit_event() = default;
 
 		/// Transact an Ethereum transaction.
-		#[weight = 0]
+		#[weight = transaction.gas_limit.saturated_into::<Weight>()]
 		fn transact(origin, transaction: ethereum::Transaction) {
 			ensure_none(origin)?;
 
@@ -167,6 +168,8 @@ decl_module! {
 
 			Pending::append((transaction, status, receipt));
 
+			//TODO Refund unused gas as weight refund
+
 			Self::deposit_event(Event::Executed(source, transaction_hash, reason));
 		}
 
@@ -174,7 +177,7 @@ decl_module! {
 			<Module<T>>::store_block();
 		}
 
-		fn on_initialize(n: T::BlockNumber) -> frame_support::weights::Weight {
+		fn on_initialize(n: T::BlockNumber) -> Weight {
 			Pending::kill();
 			0
 		}
