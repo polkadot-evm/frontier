@@ -67,6 +67,7 @@ pub trait Trait: frame_system::Trait<Hash=H256> + pallet_balances::Trait + palle
 	/// The overarching event type.
 	type Event: From<Event> + Into<<Self as frame_system::Trait>::Event>;
 	/// Maps Ethereum gas to Substrate weight.
+	// TODO this should probably go in pallt evm actually, since it also assigns weights. Will open a Substrate PR
 	type GasToWeight: GasToWeight;
 	/// Find author for Ethereum.
 	type FindAuthor: FindAuthor<H160>;
