@@ -52,7 +52,7 @@ describeWithFrontier("Frontier RPC (Subscription)", `simple-specs.json`, (contex
 
 		subscription.unsubscribe();
 		expect(connected).to.equal(true);
-		expect(subscriptionId).to.have.lengthOf(16);
+		expect(subscriptionId).to.have.lengthOf(34);
 	});
 
 	step("should get newHeads stream", async function (done) {
