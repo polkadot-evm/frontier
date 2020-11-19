@@ -24,7 +24,8 @@
 
 use frame_support::{
 	decl_module, decl_storage, decl_error, decl_event,
-	traits::Get, traits::FindAuthor, weights::Weight
+	traits::Get, traits::FindAuthor, weights::Weight,
+	dispatch::DispatchResultWithPostInfo,
 };
 use sp_std::prelude::*;
 use frame_system::ensure_none;
@@ -127,7 +128,7 @@ decl_module! {
 
 		/// Transact an Ethereum transaction.
 		#[weight = T::GasToWeight::gas_to_weight(transaction.gas_limit)]
-		fn transact(origin, transaction: ethereum::Transaction) {
+		fn transact(origin, transaction: ethereum::Transaction) -> DispatchResultWithPostInfo {
 			ensure_none(origin)?;
 
 			let source = Self::recover_signer(&transaction)
@@ -182,9 +183,8 @@ decl_module! {
 
 			Pending::append((transaction, status, receipt));
 
-			//TODO Refund unused gas as weight refund
-
 			Self::deposit_event(Event::Executed(source, transaction_hash, reason));
+			Ok(Some(T::GasToWeight::gas_to_weight(used_gas)).into())
 		}
 
 		fn on_finalize(n: T::BlockNumber) {
