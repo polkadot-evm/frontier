@@ -27,7 +27,7 @@ use sp_runtime::{
 	traits::{Block as BlockT, UniqueSaturatedInto, Zero, One, Saturating, BlakeTwo256},
 	transaction_validity::TransactionSource
 };
-use sp_api::{ProvideRuntimeApi, BlockId};
+use sp_api::{ProvideRuntimeApi, BlockId, ApiErrorExt};
 use sp_transaction_pool::{TransactionPool, InPoolTransaction};
 use sc_client_api::backend::{StorageProvider, Backend, StateBackend, AuxStore};
 use sha3::{Keccak256, Digest};
@@ -61,25 +61,25 @@ fn schema_key() -> StorageKey {
 /// Something that can fetch Ethereum-related data from a State Backend with some assumptions
 /// about pallet-ethereum's storage schema
 ///
-/// TODO this needs lots more trait bounds and functions. For now, I'm just scetchign the idea.
-pub trait OptimizedEthApi<Block: BlockT> {
-	fn author(&self, block: &BlockId<Block>) -> Option<H160>;
+/// TODO this needs lots more trait bounds and functions. For now, I'm just scetching the idea.
+// pub trait OptimizedEthApi<Block: BlockT> {
+// 	fn author(&self, block: &BlockId<Block>) -> Option<H160>;
+//
+// 	fn transaction_count(&self, block: &BlockId<Block>, address: H160) -> Option<U256>;
+// }
 
-	fn transaction_count(&self, block: &BlockId<Block>, address: H160) -> Option<U256>;
-}
-
-pub struct EthApi<B: BlockT, C, P, CT, BE, H: ExHashT> {
+pub struct EthApi<B: BlockT, C: ProvideRuntimeApi<B>, P, CT, BE, H: ExHashT> {
 	pool: Arc<P>,
 	client: Arc<C>,
 	convert_transaction: CT,
 	network: Arc<NetworkService<B, H>>,
 	is_authority: bool,
 	signers: Vec<Box<dyn EthSigner>>,
-	optimizations: BTreeMap<EthereumStorageSchema, Box<dyn OptimizedEthApi<B> + Send + Sync>>,
+	optimizations: BTreeMap<EthereumStorageSchema, Box<dyn EthereumRuntimeRPCApi<B, Error=<<C as ProvideRuntimeApi<B>>::Api as ApiErrorExt>::Error> + Send + Sync>>,
 	_marker: PhantomData<(B, BE)>,
 }
 
-impl<B: BlockT, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> {
+impl<B: BlockT, C: ProvideRuntimeApi<B>, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> {
 	pub fn new(
 		client: Arc<C>,
 		pool: Arc<P>,
@@ -319,17 +319,11 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 		let block = BlockId::Hash(self.client.info().best_hash);
 		let schema = self.onchain_storage_schema(block);
 
-		// Attempt to delegate to an optimized handler
-		if let Some(handler) = self.optimizations.get(&schema) {
-			return handler.author(&block).ok_or(internal_err(format!("fetch optimized author failed")).into());
-		}
-
-		// Fall back to the runtime API
 		Ok(
-			self.client
-			.runtime_api()
-			.author(&block)
-			.map_err(|err| internal_err(format!("fetch runtime author failed: {:?}", err)))?.into()
+			match self.optimizations.get(&schema) {
+				Some(handler) => handler.author(&block).map_err(|err| internal_err(format!("fetch runtime author failed: {:?}", err)))?.into(),
+				None => self.client.runtime_api().author(&block).map_err(|err| internal_err(format!("fetch runtime author failed: {:?}", err)))?.into(),
+			}
 		)
 	}
 
@@ -338,12 +332,16 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 	}
 
 	fn chain_id(&self) -> Result<Option<U64>> {
+		//TODO this one's storage lives in a seperate pallet. So it isn't as straight forward to optimize it.
+		// 1. Don't optimize it
+		// 2. Use something other than pallet ethereum schema as key, maybe make the key type a generic
 		let hash = self.client.info().best_hash;
 		Ok(Some(self.client.runtime_api().chain_id(&BlockId::Hash(hash))
 				.map_err(|err| internal_err(format!("fetch runtime chain id failed: {:?}", err)))?.into()))
 	}
 
 	fn gas_price(&self) -> Result<U256> {
+		//TODO storage in different pallet. See thoughts above on chain_id
 		let hash = self.client.info().best_hash;
 		Ok(
 			self.client
@@ -367,13 +365,21 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 	}
 
 	fn balance(&self, address: H160, number: Option<BlockNumber>) -> Result<U256> {
-		if let Ok(Some(id)) = self.native_block_id(number) {
+		if let Ok(Some(block)) = self.native_block_id(number) {
+
+			let schema = self.onchain_storage_schema(block);
+
 			return Ok(
-				self.client
-					.runtime_api()
-					.account_basic(&id, address)
-					.map_err(|err| internal_err(format!("fetch runtime chain id failed: {:?}", err)))?
-					.balance.into(),
+				match self.optimizations.get(&schema) {
+					Some(handler) => handler
+						.account_basic(&block, address)
+						.map_err(|err| internal_err(format!("fetch runtime chain id failed: {:?}", err)))?
+						.balance.into(),
+					None => self.client.runtime_api()
+						.account_basic(&block, address)
+						.map_err(|err| internal_err(format!("fetch runtime chain id failed: {:?}", err)))?
+						.balance.into(),
+				}
 			);
 		}
 		Ok(U256::zero())
@@ -457,8 +463,10 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 
 			let nonce: U256 = match self.optimizations.get(&schema) {
 				Some(handler) => {
-					handler.transaction_count(&block, address)
-					.ok_or(internal_err(format!("fetch optimized account nonce failed")))?
+					handler
+						.account_basic(&block, address)
+						.map_err(|err| internal_err(format!("fetch runtime account basic failed: {:?}", err)))?
+						.nonce
 				},
 				None => {
 					self.client.runtime_api()
@@ -486,11 +494,18 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 			Some(id) => id,
 			None => return Ok(U256::zero()),
 		};
+		let schema = self.onchain_storage_schema(id);
 
-		let nonce = self.client.runtime_api()
-			.account_basic(&id, address)
-			.map_err(|err| internal_err(format!("fetch runtime account basic failed: {:?}", err)))?
-			.nonce.into();
+		let nonce = match self.optimizations.get(&schema) {
+			Some(handler) => handler
+				.account_basic(&id, address)
+				.map_err(|err| internal_err(format!("fetch runtime account basic failed: {:?}", err)))?
+				.nonce.into(),
+			None => self.client.runtime_api()
+				.account_basic(&id, address)
+				.map_err(|err| internal_err(format!("fetch runtime account basic failed: {:?}", err)))?
+				.nonce.into(),
+		};
 
 		Ok(nonce)
 	}
