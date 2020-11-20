@@ -301,6 +301,7 @@ parameter_types! {
 
 impl pallet_evm::Trait for Runtime {
 	type FeeCalculator = FixedGasPrice;
+	type GasToWeight = ();
 	type CallOrigin = EnsureAddressTruncated;
 	type WithdrawOrigin = EnsureAddressTruncated;
 	type AddressMapping = HashedAddressMapping<BlakeTwo256>;
@@ -332,7 +333,6 @@ impl<F: FindAuthor<u32>> FindAuthor<H160> for EthereumFindAuthor<F>
 
 impl pallet_ethereum::Trait for Runtime {
 	type Event = Event;
-	type GasToWeight = ();
 	type FindAuthor = EthereumFindAuthor<Aura>;
 }
 

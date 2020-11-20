@@ -35,11 +35,10 @@ use sp_runtime::{
 		TransactionValidity, TransactionSource, InvalidTransaction, ValidTransactionBuilder,
 	},
 	generic::DigestItem, traits::UniqueSaturatedInto, DispatchError,
-	SaturatedConversion,
 };
 use evm::ExitReason;
 use fp_evm::CallOrCreateInfo;
-use pallet_evm::Runner;
+use pallet_evm::{Runner, GasToWeight};
 use sha3::{Digest, Keccak256};
 use codec::Encode;
 use frontier_consensus_primitives::{FRONTIER_ENGINE_ID, ConsensusLog};
@@ -66,23 +65,8 @@ pub type BalanceOf<T> = <T as pallet_balances::Trait>::Balance;
 pub trait Trait: frame_system::Trait<Hash=H256> + pallet_balances::Trait + pallet_timestamp::Trait + pallet_evm::Trait {
 	/// The overarching event type.
 	type Event: From<Event> + Into<<Self as frame_system::Trait>::Event>;
-	/// Maps Ethereum gas to Substrate weight.
-	// TODO this should probably go in pallt evm actually, since it also assigns weights. Will open a Substrate PR
-	type GasToWeight: GasToWeight;
 	/// Find author for Ethereum.
 	type FindAuthor: FindAuthor<H160>;
-}
-
-/// A mapping function that converts Ethereum gas to Substrate weight
-pub trait GasToWeight {
-	fn gas_to_weight(gas: U256) -> Weight;
-}
-
-
-impl GasToWeight for () {
-	fn gas_to_weight(gas: U256) -> Weight {
-		gas.saturated_into::<Weight>()
-	}
 }
 
 decl_storage! {
@@ -128,7 +112,7 @@ decl_module! {
 		fn deposit_event() = default;
 
 		/// Transact an Ethereum transaction.
-		#[weight = T::GasToWeight::gas_to_weight(transaction.gas_limit)]
+		#[weight = <T as pallet_evm::Trait>::GasToWeight::gas_to_weight(transaction.gas_limit.low_u32())]
 		fn transact(origin, transaction: ethereum::Transaction) -> DispatchResultWithPostInfo {
 			ensure_none(origin)?;
 
@@ -185,7 +169,7 @@ decl_module! {
 			Pending::append((transaction, status, receipt));
 
 			Self::deposit_event(Event::Executed(source, transaction_hash, reason));
-			Ok(Some(T::GasToWeight::gas_to_weight(used_gas)).into())
+			Ok(Some(T::GasToWeight::gas_to_weight(used_gas.low_u32())).into())
 		}
 
 		fn on_finalize(n: T::BlockNumber) {
