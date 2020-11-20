@@ -42,7 +42,7 @@ use sha3::{Digest, Keccak256};
 use codec::Encode;
 use fp_consensus::{FRONTIER_ENGINE_ID, ConsensusLog};
 
-pub use frontier_rpc_primitives::TransactionStatus;
+pub use fp_rpc::TransactionStatus;
 pub use ethereum::{Transaction, Log, Block, Receipt, TransactionAction, TransactionMessage};
 
 #[cfg(all(feature = "std", test))]

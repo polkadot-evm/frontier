@@ -50,8 +50,8 @@ sp-block-builder = { git = "https://github.com/paritytech/substrate.git", branch
 
 fc-consensus = { path = "../../client/consensus" }
 frontier-template-runtime = { path = "../runtime" }
-frontier-rpc = { path = "../../rpc" }
-frontier-rpc-primitives = { path = "../../rpc/primitives" }
+fc-rpc = { path = "../../client/rpc" }
+fp-rpc = { path = "../../primitives/rpc" }
 
 [build-dependencies]
 substrate-build-script-utils = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
