@@ -126,6 +126,7 @@ pub fn create_full<C, P, BE>(
 	io.extend_with(
 		NetApiServer::to_delegate(NetApi::new(
 			client.clone(),
+			network.clone(),
 		))
 	);
 	io.extend_with(
