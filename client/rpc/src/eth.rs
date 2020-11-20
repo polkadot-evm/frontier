@@ -33,16 +33,16 @@ use sc_client_api::backend::{StorageProvider, Backend, StateBackend, AuxStore};
 use sha3::{Keccak256, Digest};
 use sp_blockchain::{Error as BlockChainError, HeaderMetadata, HeaderBackend};
 use sc_network::{NetworkService, ExHashT};
-use frontier_rpc_core::{EthApi as EthApiT, NetApi as NetApiT};
-use frontier_rpc_core::types::{
+use fc_rpc_core::{EthApi as EthApiT, NetApi as NetApiT};
+use fc_rpc_core::types::{
 	BlockNumber, Bytes, CallRequest, Filter, FilteredParams, Index, Log, Receipt, RichBlock,
 	SyncStatus, SyncInfo, Transaction, Work, Rich, Block, BlockTransactions, VariadicValue,
 	TransactionRequest,
 };
-use frontier_rpc_primitives::{EthereumRuntimeRPCApi, ConvertTransaction, TransactionStatus};
+use fp_rpc::{EthereumRuntimeRPCApi, ConvertTransaction, TransactionStatus};
 use crate::{internal_err, error_on_execution_failure, EthSigner};
 
-pub use frontier_rpc_core::{EthApiServer, NetApiServer};
+pub use fc_rpc_core::{EthApiServer, NetApiServer};
 use codec::{self, Encode};
 
 pub struct EthApi<B: BlockT, C, P, CT, BE, H: ExHashT> {
