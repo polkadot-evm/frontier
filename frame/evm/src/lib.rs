@@ -68,7 +68,7 @@ use codec::{Encode, Decode};
 #[cfg(feature = "std")]
 use serde::{Serialize, Deserialize};
 use frame_support::{decl_module, decl_storage, decl_event, decl_error};
-use frame_support::weights::{Weight, Pays};
+use frame_support::weights::{Weight, Pays, PostDispatchInfo};
 use frame_support::traits::{Currency, ExistenceRequirement, Get};
 use frame_support::dispatch::DispatchResultWithPostInfo;
 use frame_system::RawOrigin;
@@ -383,7 +383,7 @@ decl_module! {
 		) -> DispatchResultWithPostInfo {
 			T::CallOrigin::ensure_address_origin(&source, origin)?;
 
-			match T::Runner::call(
+			let info = T::Runner::call(
 				source,
 				target,
 				input,
@@ -391,20 +391,21 @@ decl_module! {
 				gas_limit,
 				Some(gas_price),
 				nonce,
-			)? {
-				CallInfo {
-					exit_reason: ExitReason::Succeed(_),
-					..
-				} => {
+			)?;
+
+			 match info.exit_reason {
+				ExitReason::Succeed(_) => {
 					Module::<T>::deposit_event(Event::<T>::Executed(target));
 				},
 				_ => {
 					Module::<T>::deposit_event(Event::<T>::ExecutedFailed(target));
 				},
-			}
+			};
 
-			//TODO weight refund
-			Ok(Pays::No.into())
+			Ok(PostDispatchInfo {
+				actual_weight: Some(T::GasToWeight::gas_to_weight(info.used_gas.low_u32())),
+				pays_fee: Pays::No,
+			})
 		}
 
 		/// Issue an EVM create operation. This is similar to a contract creation transaction in
@@ -421,14 +422,16 @@ decl_module! {
 		) -> DispatchResultWithPostInfo {
 			T::CallOrigin::ensure_address_origin(&source, origin)?;
 
-			match T::Runner::create(
+			let info = T::Runner::create(
 				source,
 				init,
 				value,
 				gas_limit,
 				Some(gas_price),
 				nonce,
-			)? {
+			)?;
+
+			match info {
 				CreateInfo {
 					exit_reason: ExitReason::Succeed(_),
 					value: create_address,
@@ -445,8 +448,10 @@ decl_module! {
 				},
 			}
 
-			//TODO weight refund
-			Ok(Pays::No.into())
+			Ok(PostDispatchInfo {
+				actual_weight: Some(T::GasToWeight::gas_to_weight(info.used_gas.low_u32())),
+				pays_fee: Pays::No,
+			})
 		}
 
 		/// Issue an EVM create2 operation.
@@ -463,7 +468,7 @@ decl_module! {
 		) -> DispatchResultWithPostInfo {
 			T::CallOrigin::ensure_address_origin(&source, origin)?;
 
-			match T::Runner::create2(
+			let info = T::Runner::create2(
 				source,
 				init,
 				salt,
@@ -471,7 +476,9 @@ decl_module! {
 				gas_limit,
 				Some(gas_price),
 				nonce,
-			)? {
+			)?;
+
+			match info {
 				CreateInfo {
 					exit_reason: ExitReason::Succeed(_),
 					value: create_address,
@@ -488,8 +495,10 @@ decl_module! {
 				},
 			}
 
-			//TODO weight refund
-			Ok(Pays::No.into())
+			Ok(PostDispatchInfo {
+				actual_weight: Some(T::GasToWeight::gas_to_weight(info.used_gas.low_u32())),
+				pays_fee: Pays::No,
+			})
 		}
 	}
 }
