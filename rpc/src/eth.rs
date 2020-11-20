@@ -58,16 +58,6 @@ fn schema_key() -> StorageKey {
 	)
 }
 
-/// Something that can fetch Ethereum-related data from a State Backend with some assumptions
-/// about pallet-ethereum's storage schema
-///
-/// TODO this needs lots more trait bounds and functions. For now, I'm just scetching the idea.
-// pub trait OptimizedEthApi<Block: BlockT> {
-// 	fn author(&self, block: &BlockId<Block>) -> Option<H160>;
-//
-// 	fn transaction_count(&self, block: &BlockId<Block>, address: H160) -> Option<U256>;
-// }
-
 pub struct EthApi<B: BlockT, C: ProvideRuntimeApi<B>, P, CT, BE, H: ExHashT> {
 	pool: Arc<P>,
 	client: Arc<C>,
