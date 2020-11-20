@@ -4,7 +4,7 @@ version = "0.1.0"
 authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2018"
 description = "Ethereum compatibility full block processing emulation pallet for Substrate."
-license = "GPL-3.0"
+license = "Apache-2.0"
 
 [dependencies]
 rustc-hex = { version = "2.1.0", default-features = false }
