@@ -58,6 +58,14 @@ fn schema_key() -> StorageKey {
 	)
 }
 
+// This is the big test. Can I manually implement the runtime API trait for a custom struct.
+pub struct TestOptimization<B> {
+	_marker: PhantomData<B>,
+}
+impl <B: BlockT> EthereumRuntimeRPCApi<B> for TestOptimization<B> {
+
+}
+
 pub struct EthApi<B: BlockT, C: ProvideRuntimeApi<B>, P, CT, BE, H: ExHashT> {
 	pool: Arc<P>,
 	client: Arc<C>,
