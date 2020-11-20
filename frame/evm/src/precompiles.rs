@@ -15,7 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Builtin precompiles.
+//! Precompile implementations.
 
 use sp_std::{cmp::min, vec::Vec};
 use sp_core::H160;
@@ -127,7 +127,7 @@ impl Precompile for ECRecover {
 		sig[64] = input[63];
 
 		let pubkey = sp_io::crypto::secp256k1_ecdsa_recover(&sig, &msg)
-			.map_err(|_| ExitError::Other("Public key recover failed"))?;
+			.map_err(|_| ExitError::Other("Public key recover failed".into()))?;
 		let mut address = sp_io::hashing::keccak_256(&pubkey);
 		address[0..12].copy_from_slice(&[0u8; 12]);
 
