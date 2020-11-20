@@ -79,13 +79,13 @@ pub fn create_full<C, P, BE>(
 	C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Index>,
 	C::Api: BlockBuilder<Block>,
 	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
-	C::Api: frontier_rpc_primitives::EthereumRuntimeRPCApi<Block>,
+	C::Api: fp_rpc::EthereumRuntimeRPCApi<Block>,
 	<C::Api as sp_api::ApiErrorExt>::Error: fmt::Debug,
 	P: TransactionPool<Block=Block> + 'static,
 {
 	use substrate_frame_rpc_system::{FullSystem, SystemApi};
 	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApi};
-	use frontier_rpc::{
+	use fc_rpc::{
 		EthApi, EthApiServer, NetApi, NetApiServer, EthPubSubApi, EthPubSubApiServer,
 		EthDevSigner, EthSigner,
 	};

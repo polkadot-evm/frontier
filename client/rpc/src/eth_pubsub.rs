@@ -17,8 +17,8 @@ use sc_rpc::Metadata;
 use log::warn;
 
 use jsonrpc_pubsub::{typed::Subscriber, SubscriptionId, manager::SubscriptionManager};
-use frontier_rpc_core::EthPubSubApi::{self as EthPubSubApiT};
-use frontier_rpc_core::types::{
+use fc_rpc_core::EthPubSubApi::{self as EthPubSubApiT};
+use fc_rpc_core::types::{
 	Rich, Header, Bytes, Log, FilteredParams,
 	pubsub::{Kind, Params, Result as PubSubResult, PubSubSyncStatus}
 };
@@ -26,11 +26,11 @@ use ethereum_types::{H256, U256};
 use codec::Decode;
 use sha3::{Keccak256, Digest};
 
-pub use frontier_rpc_core::EthPubSubApiServer;
+pub use fc_rpc_core::EthPubSubApiServer;
 use futures::{StreamExt as _, TryStreamExt as _};
 
 use jsonrpc_core::{Result as JsonRpcResult, futures::{Future, Sink}};
-use frontier_rpc_primitives::{EthereumRuntimeRPCApi, TransactionStatus};
+use fp_rpc::{EthereumRuntimeRPCApi, TransactionStatus};
 
 use sc_network::{NetworkService, ExHashT};
 
