@@ -20,7 +20,7 @@ frame-system = { version = "2.0.0-dev", default-features = false, package = "fra
 frame-system-rpc-runtime-api = { version = "2.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 
 pallet-ethereum = { version = "0.1.0", default-features = false, path = "../../frame/ethereum" }
-pallet-evm = { version = "2.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+pallet-evm = { version = "2.0.0-dev", default-features = false, path = "../../frame/evm" }
 pallet-aura = { version = "2.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 pallet-balances = { version = "2.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 pallet-grandpa = { version = "2.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }

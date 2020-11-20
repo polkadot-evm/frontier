@@ -38,7 +38,7 @@ use sp_runtime::{
 	SaturatedConversion,
 };
 use evm::ExitReason;
-use sp_evm::CallOrCreateInfo;
+use fp_evm::CallOrCreateInfo;
 use pallet_evm::Runner;
 use sha3::{Digest, Keccak256};
 use codec::Encode;
