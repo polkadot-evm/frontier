@@ -1281,6 +1281,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "fc-consensus"
+version = "0.1.0"
+dependencies = [
+ "derive_more",
+ "ethereum",
+ "fp-consensus",
+ "futures 0.3.7",
+ "log",
+ "parity-scale-codec",
+ "sc-client-api",
+ "sp-api",
+ "sp-block-builder",
+ "sp-blockchain",
+ "sp-consensus",
+ "sp-core",
+ "sp-inherents",
+ "sp-runtime",
+ "sp-timestamp",
+ "substrate-prometheus-endpoint",
+]
+
+[[package]]
 name = "fdlimit"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1347,6 +1369,16 @@ version = "2.0.0"
 source = "git+https://github.com/paritytech/substrate.git?branch=frontier#7865a34b17c5881e1c73eb7579faf5affd2365c4"
 dependencies = [
  "parity-scale-codec",
+]
+
+[[package]]
+name = "fp-consensus"
+version = "0.1.0"
+dependencies = [
+ "parity-scale-codec",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
@@ -1489,44 +1521,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "frontier-consensus"
-version = "0.1.0"
-dependencies = [
- "derive_more",
- "ethereum",
- "frontier-consensus-primitives",
- "futures 0.3.7",
- "log",
- "parity-scale-codec",
- "sc-client-api",
- "sp-api",
- "sp-block-builder",
- "sp-blockchain",
- "sp-consensus",
- "sp-core",
- "sp-inherents",
- "sp-runtime",
- "sp-timestamp",
- "substrate-prometheus-endpoint",
-]
-
-[[package]]
-name = "frontier-consensus-primitives"
-version = "0.1.0"
-dependencies = [
- "parity-scale-codec",
- "sp-core",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
 name = "frontier-rpc"
 version = "0.1.0"
 dependencies = [
  "ethereum",
  "ethereum-types",
- "frontier-consensus",
+ "fc-consensus",
  "frontier-rpc-core",
  "frontier-rpc-primitives",
  "futures 0.3.7",
@@ -1587,7 +1587,7 @@ dependencies = [
 name = "frontier-template-node"
 version = "2.0.0-dev"
 dependencies = [
- "frontier-consensus",
+ "fc-consensus",
  "frontier-rpc",
  "frontier-rpc-primitives",
  "frontier-template-runtime",
@@ -3780,10 +3780,10 @@ dependencies = [
  "ethereum",
  "ethereum-types",
  "evm",
+ "fp-consensus",
  "fp-evm",
  "frame-support",
  "frame-system",
- "frontier-consensus-primitives",
  "frontier-rpc-primitives",
  "libsecp256k1",
  "pallet-balances",
