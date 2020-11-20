@@ -15,7 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Builtin precompiles.
+//! Precompile implementations.
 
 use sp_std::{cmp::min, vec::Vec};
 use sp_core::H160;

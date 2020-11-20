@@ -16,7 +16,7 @@
 // limitations under the License.
 
 pub mod stack;
-pub mod native;
+pub mod builtin;
 
 use sp_std::vec::Vec;
 use sp_core::{H160, U256, H256};
