@@ -14,11 +14,11 @@ frame-support = { version = "2.0.0-dev", default-features = false, git = "https:
 frame-system = { version = "2.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 pallet-balances = { version = "2.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 pallet-timestamp = { version = "2.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-pallet-evm = { version = "2.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+pallet-evm = { version = "2.0.0-dev", default-features = false, path = "../evm" }
 sp-runtime = { version = "2.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sp-std = { version = "2.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sp-io = { version = "2.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sp-evm = { version = "0.8.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+fp-evm = { version = "0.8.0", default-features = false, path = "../../primitives/evm" }
 evm = { version = "0.18.0", features = ["with-codec"], default-features = false }
 ethereum = { version = "0.5", default-features = false, features = ["with-codec"] }
 ethereum-types = { version = "0.9", default-features = false }
@@ -45,7 +45,7 @@ std = [
 	"pallet-evm/std",
 	"sp-io/std",
 	"sp-std/std",
-	"sp-evm/std",
+	"fp-evm/std",
 	"ethereum/std",
 	"ethereum-types/std",
 	"rlp/std",
