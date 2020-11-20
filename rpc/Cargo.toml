@@ -26,7 +26,7 @@ sc-service = { git = "https://github.com/paritytech/substrate.git", branch = "fr
 sc-client-api = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sc-rpc = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sc-network = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-pallet-evm = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+pallet-evm = { path = "../frame/evm" }
 pallet-ethereum = { path = "../frame/ethereum" }
 ethereum = { version = "0.5", features = ["with-codec"] }
 codec = { package = "parity-scale-codec", version = "1.0.0" }
