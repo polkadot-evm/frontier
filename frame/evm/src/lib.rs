@@ -393,7 +393,7 @@ decl_module! {
 				nonce,
 			)?;
 
-			 match info.exit_reason {
+			match info.exit_reason {
 				ExitReason::Succeed(_) => {
 					Module::<T>::deposit_event(Event::<T>::Executed(target));
 				},
