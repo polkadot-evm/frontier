@@ -48,7 +48,7 @@ sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "fr
 sc-basic-authorship = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sp-block-builder = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 
-frontier-consensus = { path = "../../consensus" }
+fc-consensus = { path = "../../client/consensus" }
 frontier-template-runtime = { path = "../runtime" }
 frontier-rpc = { path = "../../rpc" }
 frontier-rpc-primitives = { path = "../../rpc/primitives" }

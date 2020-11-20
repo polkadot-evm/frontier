@@ -1,11 +1,12 @@
 [workspace]
 members = [
 	"frame/ethereum",
+	"frame/evm",
+	"client/consensus",
+	"primitives/consensus",
 	"rpc",
 	"rpc/core",
 	"rpc/primitives",
-	"consensus",
-	"consensus/primitives",
 	"template/node",
 	"template/runtime",
 	"template/test-utils/client",

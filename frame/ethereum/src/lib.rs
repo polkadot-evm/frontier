@@ -40,7 +40,7 @@ use fp_evm::CallOrCreateInfo;
 use pallet_evm::Runner;
 use sha3::{Digest, Keccak256};
 use codec::Encode;
-use frontier_consensus_primitives::{FRONTIER_ENGINE_ID, ConsensusLog};
+use fp_consensus::{FRONTIER_ENGINE_ID, ConsensusLog};
 
 pub use frontier_rpc_primitives::TransactionStatus;
 pub use ethereum::{Transaction, Log, Block, Receipt, TransactionAction, TransactionMessage};
