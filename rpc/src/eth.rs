@@ -219,7 +219,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> where
 
 	// Asumes there is only one mapped canonical block in the AuxStore, otherwise something is wrong
 	fn load_hash(&self, hash: H256) -> Result<Option<BlockId<B>>> {
-		let hashes = match frontier_consensus::load_block_hash::<B, _>(self.client.as_ref(), hash)
+		let hashes = match fc_consensus::load_block_hash::<B, _>(self.client.as_ref(), hash)
 			.map_err(|err| internal_err(format!("fetch aux store failed: {:?}", err)))?
 		{
 			Some(hashes) => hashes,
@@ -719,7 +719,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 	}
 
 	fn transaction_by_hash(&self, hash: H256) -> Result<Option<Transaction>> {
-		let (hash, index) = match frontier_consensus::load_transaction_metadata(
+		let (hash, index) = match fc_consensus::load_transaction_metadata(
 			self.client.as_ref(),
 			hash,
 		).map_err(|err| internal_err(format!("fetch aux store failed: {:?})", err)))? {
@@ -810,7 +810,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 	}
 
 	fn transaction_receipt(&self, hash: H256) -> Result<Option<Receipt>> {
-		let (hash, index) = match frontier_consensus::load_transaction_metadata(
+		let (hash, index) = match fc_consensus::load_transaction_metadata(
 			self.client.as_ref(),
 			hash,
 		).map_err(|err| internal_err(format!("fetch aux store failed : {:?}", err)))? {
