@@ -43,7 +43,7 @@ sp-std = { version = "2.0.0-dev", default-features = false, git = "https://githu
 sp-transaction-pool = { version = "2.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sp-version = { version = "2.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 
-frontier-rpc-primitives = { default-features = false, path = "../../rpc/primitives" }
+fp-rpc = { default-features = false, path = "../../primitives/rpc" }
 
 [build-dependencies]
 wasm-builder-runner = { package = "substrate-wasm-builder-runner", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
@@ -58,7 +58,7 @@ std = [
 	"frame-support/std",
 	"frame-system-rpc-runtime-api/std",
 	"frame-system/std",
-	"frontier-rpc-primitives/std",
+	"fp-rpc/std",
 
 	"pallet-ethereum/std",
 	"pallet-evm/std",
