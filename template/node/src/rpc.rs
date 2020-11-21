@@ -70,7 +70,7 @@ pub fn create_full<C, P, BE>(
 	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApi};
 	use fc_rpc::{
 		EthApi, EthApiServer, NetApi, NetApiServer, EthPubSubApi, EthPubSubApiServer,
-		EthDevSigner, EthSigner,
+		Web3Api, Web3ApiServer, EthDevSigner, EthSigner,
 	};
 
 	let mut io = jsonrpc_core::IoHandler::default();
@@ -111,6 +111,13 @@ pub fn create_full<C, P, BE>(
 			client.clone(),
 		))
 	);
+
+	io.extend_with(
+		Web3ApiServer::to_delegate(Web3Api::new(
+			client.clone(),
+		))
+	);
+
 	io.extend_with(
 		EthPubSubApiServer::to_delegate(EthPubSubApi::new(
 			pool.clone(),
