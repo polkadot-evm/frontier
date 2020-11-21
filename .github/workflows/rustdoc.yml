@@ -29,14 +29,6 @@ jobs:
                 command: doc
                 args: --all --no-deps
 
-            - name: Write index.html
-              uses: DamianReeves/write-file-action@v1.0
-              with:
-                path: ./target/doc/index.html
-                contents: |
-                  echo "<meta http-equiv=refresh content=0;url=frontier_rpc/index.html>"
-                write-mode: overwrite
-
             - name: Deploy Documentation
               uses: peaceiris/actions-gh-pages@v3
               with:
