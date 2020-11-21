@@ -23,6 +23,8 @@ use jsonrpc_derive::rpc;
 
 use crate::types::Bytes;
 
+pub use rpc_impl_Web3Api::gen_server::Web3Api as Web3ApiServer;
+
 /// Web3 rpc interface.
 #[rpc(server)]
 pub trait Web3Api {
