@@ -1124,6 +1124,9 @@
 <span id="1121">1121</span>
 <span id="1122">1122</span>
 <span id="1123">1123</span>
+<span id="1124">1124</span>
+<span id="1125">1125</span>
+<span id="1126">1126</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
@@ -2165,23 +2168,26 @@
 	}
 }
 
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">NetApi</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">BE</span>, <span class="ident">C</span><span class="op">&gt;</span> {
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">NetApi</span><span class="op">&lt;</span><span class="ident">B</span>: <span class="ident">BlockT</span>, <span class="ident">BE</span>, <span class="ident">C</span>, <span class="ident">H</span>: <span class="ident">ExHashT</span><span class="op">&gt;</span> {
 	<span class="ident">client</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
-	<span class="ident">_marker</span>: <span class="ident">PhantomData</span><span class="op">&lt;</span>(<span class="ident">B</span>, <span class="ident">BE</span>)<span class="op">&gt;</span>,
+	<span class="ident">network</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">NetworkService</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">H</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+	<span class="ident">_marker</span>: <span class="ident">PhantomData</span><span class="op">&lt;</span><span class="ident">BE</span><span class="op">&gt;</span>,
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">BE</span>, <span class="ident">C</span><span class="op">&gt;</span> <span class="ident">NetApi</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">BE</span>, <span class="ident">C</span><span class="op">&gt;</span> {
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">B</span>: <span class="ident">BlockT</span>, <span class="ident">BE</span>, <span class="ident">C</span>, <span class="ident">H</span>: <span class="ident">ExHashT</span><span class="op">&gt;</span> <span class="ident">NetApi</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">BE</span>, <span class="ident">C</span>, <span class="ident">H</span><span class="op">&gt;</span> {
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(
 		<span class="ident">client</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
+		<span class="ident">network</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">NetworkService</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">H</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 	) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
 		<span class="self">Self</span> {
-			<span class="ident">client</span>: <span class="ident">client</span>,
+			<span class="ident">client</span>,
+			<span class="ident">network</span>,
 			<span class="ident">_marker</span>: <span class="ident">PhantomData</span>,
 		}
 	}
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">BE</span>, <span class="ident">C</span><span class="op">&gt;</span> <span class="ident">NetApiT</span> <span class="kw">for</span> <span class="ident">NetApi</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">BE</span>, <span class="ident">C</span><span class="op">&gt;</span> <span class="kw">where</span>
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">B</span>: <span class="ident">BlockT</span>, <span class="ident">BE</span>, <span class="ident">C</span>, <span class="ident">H</span>: <span class="ident">ExHashT</span><span class="op">&gt;</span> <span class="ident">NetApiT</span> <span class="kw">for</span> <span class="ident">NetApi</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">BE</span>, <span class="ident">C</span>, <span class="ident">H</span><span class="op">&gt;</span> <span class="kw">where</span>
 	<span class="ident">C</span>: <span class="ident">ProvideRuntimeApi</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">StorageProvider</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">BE</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">AuxStore</span>,
 	<span class="ident">C</span>: <span class="ident">HeaderBackend</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">HeaderMetadata</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">Error</span><span class="op">=</span><span class="ident">BlockChainError</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
 	<span class="ident">C</span>::<span class="ident">Api</span>: <span class="ident">EthereumRuntimeRPCApi</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span>,
@@ -2195,7 +2201,7 @@
 	}
 
 	<span class="kw">fn</span> <span class="ident">peer_count</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span> {
-		<span class="prelude-val">Ok</span>(<span class="string">&quot;0&quot;</span>.<span class="ident">to_string</span>())
+		<span class="prelude-val">Ok</span>((<span class="self">self</span>.<span class="ident">network</span>.<span class="ident">num_connected</span>() <span class="kw">as</span> <span class="ident">u32</span>).<span class="ident">to_string</span>())
 	}
 
 	<span class="kw">fn</span> <span class="ident">version</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span> {

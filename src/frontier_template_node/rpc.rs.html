@@ -171,6 +171,7 @@
 <span id="168">168</span>
 <span id="169">169</span>
 <span id="170">170</span>
+<span id="171">171</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! A collection of node-specific RPC methods.</span>
 
@@ -283,6 +284,7 @@
 	<span class="ident">io</span>.<span class="ident">extend_with</span>(
 		<span class="ident">NetApiServer</span>::<span class="ident">to_delegate</span>(<span class="ident">NetApi</span>::<span class="ident">new</span>(
 			<span class="ident">client</span>.<span class="ident">clone</span>(),
+			<span class="ident">network</span>.<span class="ident">clone</span>(),
 		))
 	);
 
