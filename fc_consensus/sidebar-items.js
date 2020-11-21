@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["Error",""]],"fn":[["load_block_hash","Given an Ethereum block hash, get the corresponding Substrate block hash from AuxStore."],["load_transaction_metadata","Given an Ethereum transaction hash, get the corresponding Ethereum block hash and index."]],"struct":[["FrontierBlockImport",""]]});

@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["Validation","Result of `BlockAnnounceValidator::validate`."]],"struct":[["DefaultBlockAnnounceValidator","Default implementation of `BlockAnnounceValidator`."]],"trait":[["BlockAnnounceValidator","Type which checks incoming block announcements."],["Chain","A type which provides access to chain information."]]});
