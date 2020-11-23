@@ -68,7 +68,7 @@ fn schema_key() -> StorageKey {
 pub trait OptimizedEthApi<Block: BlockT> {
 	//TODO what about chainid?
 	/// Returns fp_evm::Accounts by address.
-	fn account_basic(&self, block: &BlockId<Block>, address: &H160) -> fp_evm::Account;
+	fn account_basic(&self, block: &BlockId<Block>, address: H160) -> fp_evm::Account;
 	/// Returns FixedGasPrice::min_gas_price
 	fn gas_price(&self, block: &BlockId<Block>) -> U256;
 	/// For a given account address, returns pallet_evm::AccountCodes.
@@ -83,10 +83,6 @@ pub trait OptimizedEthApi<Block: BlockT> {
 	fn current_receipts(&self, block: &BlockId<Block>) -> Option<Vec<ethereum::Receipt>>;
 	/// Return the current transaction status.
 	fn current_transaction_statuses(&self, block: &BlockId<Block>) -> Option<Vec<TransactionStatus>>;
-
-	// TODO Do I need this? I put it in before I realized I should copy
-	// the runtime API trait
-	fn transaction_count(&self, block: &BlockId<Block>, address: H160) -> Option<U256>;
 
 	//TODO should I have a current_all method at all? If I do, it should be provided.
 }
@@ -480,8 +476,10 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 
 			let nonce: U256 = match self.optimizations.get(&schema) {
 				Some(handler) => {
-					handler.transaction_count(&block, address)
-					.ok_or(internal_err(format!("fetch optimized account nonce failed")))?
+					handler
+						.account_basic(&block, address)
+						.map_err(|err| internal_err(format!("fetch account basic failed: {:?}", err)))?
+						.nonce
 				},
 				None => {
 					self.client.runtime_api()
