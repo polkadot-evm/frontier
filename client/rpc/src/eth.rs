@@ -70,11 +70,11 @@ pub trait OptimizedEthApi<Block: BlockT> {
 
 	/// Returns fp_evm::Accounts by address.
 	/// TODO this requires the address mapping.
-	fn account_basic(&self, block: &BlockId<Block>, address: H160) -> fp_evm::Account;
+	fn account_basic(&self, block: &BlockId<Block>, address: H160) -> Result<fp_evm::Account>;
 	/// Returns FixedGasPrice::min_gas_price
 	fn gas_price(&self, block: &BlockId<Block>) -> Result<U256>;
 	/// For a given account address, returns pallet_evm::AccountCodes.
-	fn account_code_at(&self, block: &BlockId<Block>, address: H160) -> Vec<u8>;
+	fn account_code_at(&self, block: &BlockId<Block>, address: H160) -> Result<Vec<u8>>;
 	/// Returns the author for the specified block
 	fn author(&self, block: &BlockId<Block>) -> Option<H160>;
 	/// For a given account address and index, returns pallet_evm::AccountStorages.
@@ -336,6 +336,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 		Ok(U256::zero())
 	}
 
+	//TODO use match style, not if let
 	fn author(&self) -> Result<H160> {
 		let block = BlockId::Hash(self.client.info().best_hash);
 		let schema = self.onchain_storage_schema(block);
@@ -401,13 +402,25 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 
 	fn balance(&self, address: H160, number: Option<BlockNumber>) -> Result<U256> {
 		if let Ok(Some(id)) = self.native_block_id(number) {
+
+			let schema = self.onchain_storage_schema(id);
 			return Ok(
-				self.client
-					.runtime_api()
-					.account_basic(&id, address)
-					.map_err(|err| internal_err(format!("fetch runtime chain id failed: {:?}", err)))?
-					.balance.into(),
-			);
+				match self.optimizations.get(&schema) {
+					Some(handler) => {
+						handler
+							.account_basic(&id, address)
+							.map_err(|err| internal_err(format!("fetch runtime chain id failed: {:?}", err)))?
+							.balance.into()
+					}
+					None => {
+						self.client
+							.runtime_api()
+							.account_basic(&id, address)
+							.map_err(|err| internal_err(format!("fetch runtime chain id failed: {:?}", err)))?
+							.balance.into()
+					}
+				}
+			)
 		}
 		Ok(U256::zero())
 	}
