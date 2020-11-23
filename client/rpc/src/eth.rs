@@ -80,11 +80,11 @@ pub trait OptimizedEthApi<Block: BlockT> {
 	/// For a given account address and index, returns pallet_evm::AccountStorages.
 	fn storage_at(&self, block: &BlockId<Block>, address: H160, index: U256) -> Result<H256>;
 	/// Return the current block.
-	fn current_block(&self, block: &BlockId<Block>) -> Option<EthereumBlock>;
+	fn current_block(&self, block: &BlockId<Block>) -> Result<Option<EthereumBlock>>;
 	/// Return the current receipt.
-	fn current_receipts(&self, block: &BlockId<Block>) -> Option<Vec<ethereum::Receipt>>;
+	fn current_receipts(&self, block: &BlockId<Block>) -> Result<Option<Vec<ethereum::Receipt>>>;
 	/// Return the current transaction status.
-	fn current_transaction_statuses(&self, block: &BlockId<Block>) -> Option<Vec<TransactionStatus>>;
+	fn current_transaction_statuses(&self, block: &BlockId<Block>) -> Result<Option<Vec<TransactionStatus>>>;
 
 	//TODO should I have a current_all method at all? If I do, it should be provided.
 }
@@ -456,11 +456,24 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 			Some(hash) => hash,
 			_ => return Ok(None),
 		};
+		let schema = self.onchain_storage_schema(id);
 
-		let block = self.client.runtime_api().current_block(&id)
-			.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
-		let statuses = self.client.runtime_api().current_transaction_statuses(&id)
-			.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
+		let (block, statuses) = match self.optimizations.get(&schema) {
+			Some(handler) => {
+				let b = handler.current_block(&id)
+				.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
+				let s = handler.current_transaction_statuses(&id)
+					.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
+				(b, s)
+			}
+			None => {
+				let b = self.client.runtime_api().current_block(&id)
+					.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
+				let s = self.client.runtime_api().current_transaction_statuses(&id)
+					.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
+				(b, s)
+			}
+		};
 
 		match (block, statuses) {
 			(Some(block), Some(statuses)) => {
