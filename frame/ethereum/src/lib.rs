@@ -1,18 +1,19 @@
-// Copyright 2017-2020 Parity Technologies (UK) Ltd.
+// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
-
-// Substrate is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-
-// Substrate is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-
-// You should have received a copy of the GNU General Public License
-// along with Substrate.  If not, see <http://www.gnu.org/licenses/>.
+//
+// Copyright (c) 2020 Parity Technologies (UK) Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// 	http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 //! # Ethereum pallet
 //!
@@ -28,7 +29,7 @@ use frame_support::{
 };
 use sp_std::prelude::*;
 use frame_system::ensure_none;
-use ethereum_types::{H160, H64, H256, U256, Bloom};
+use ethereum_types::{H160, H64, H256, U256, Bloom, BloomInput};
 use sp_runtime::{
 	transaction_validity::{
 		TransactionValidity, TransactionSource, InvalidTransaction, ValidTransactionBuilder,
@@ -36,13 +37,13 @@ use sp_runtime::{
 	generic::DigestItem, traits::UniqueSaturatedInto, DispatchError,
 };
 use evm::ExitReason;
-use sp_evm::CallOrCreateInfo;
+use fp_evm::CallOrCreateInfo;
 use pallet_evm::Runner;
 use sha3::{Digest, Keccak256};
 use codec::{Encode, Decode};
-use frontier_consensus_primitives::{FRONTIER_ENGINE_ID, ConsensusLog};
+use fp_consensus::{FRONTIER_ENGINE_ID, ConsensusLog};
 
-pub use frontier_rpc_primitives::TransactionStatus;
+pub use fp_rpc::TransactionStatus;
 pub use ethereum::{Transaction, Log, Block, Receipt, TransactionAction, TransactionMessage};
 
 #[cfg(all(feature = "std", test))]
@@ -158,8 +159,15 @@ decl_module! {
 						from: source,
 						to,
 						contract_address: None,
-						logs: info.logs,
-						logs_bloom: Bloom::default(), // TODO: feed in bloom.
+						logs: info.logs.clone(),
+						logs_bloom: {
+							let mut bloom: Bloom = Bloom::default();
+							Self::logs_bloom(
+								info.logs,
+								&mut bloom
+							);
+							bloom
+						},
 					}, info.used_gas)
 				},
 				CallOrCreateInfo::Create(info) => {
@@ -169,8 +177,15 @@ decl_module! {
 						from: source,
 						to,
 						contract_address: Some(info.value),
-						logs: info.logs,
-						logs_bloom: Bloom::default(), // TODO: feed in bloom.
+						logs: info.logs.clone(),
+						logs_bloom: {
+							let mut bloom: Bloom = Bloom::default();
+							Self::logs_bloom(
+								info.logs,
+								&mut bloom
+							);
+							bloom
+						},
 					}, info.used_gas)
 				},
 			};
@@ -178,7 +193,7 @@ decl_module! {
 			let receipt = ethereum::Receipt {
 				state_root: H256::default(), // TODO: should be okay / error status.
 				used_gas,
-				logs_bloom: Bloom::default(), // TODO: set this.
+				logs_bloom: status.clone().logs_bloom,
 				logs: status.clone().logs,
 			};
 
@@ -263,10 +278,15 @@ impl<T: Trait> Module<T> {
 		let mut transactions = Vec::new();
 		let mut statuses = Vec::new();
 		let mut receipts = Vec::new();
+		let mut logs_bloom = Bloom::default();
 		for (transaction, status, receipt) in Pending::get() {
 			transactions.push(transaction);
 			statuses.push(status);
-			receipts.push(receipt);
+			receipts.push(receipt.clone());
+			Self::logs_bloom(
+				receipt.logs.clone(),
+				&mut logs_bloom
+			);
 		}
 
 		let ommers = Vec::<ethereum::Header>::new();
@@ -278,7 +298,7 @@ impl<T: Trait> Module<T> {
 			receipts_root: H256::from_slice(
 				Keccak256::digest(&rlp::encode_list(&receipts)[..]).as_slice(),
 			), // TODO: check receipts hash.
-			logs_bloom: Bloom::default(), // TODO: gather the logs bloom from receipts.
+			logs_bloom,
 			difficulty: U256::zero(),
 			number: U256::from(
 				UniqueSaturatedInto::<u128>::unique_saturated_into(
@@ -294,7 +314,13 @@ impl<T: Trait> Module<T> {
 			mix_hash: H256::default(),
 			nonce: H64::default(),
 		};
-		let block = ethereum::Block::new(partial_header, transactions.clone(), ommers);
+		let mut block = ethereum::Block::new(partial_header, transactions.clone(), ommers);
+		block.header.state_root = {
+			let mut input = [0u8; 64];
+			input[..32].copy_from_slice(&frame_system::Module::<T>::parent_hash()[..]);
+			input[32..64].copy_from_slice(&block.header.hash()[..]);
+			H256::from_slice(Keccak256::digest(&input).as_slice())
+		};
 
 		let mut transaction_hashes = Vec::new();
 
@@ -317,6 +343,15 @@ impl<T: Trait> Module<T> {
 			}.encode(),
 		);
 		frame_system::Module::<T>::deposit_log(digest.into());
+	}
+
+	fn logs_bloom(logs: Vec<Log>, bloom: &mut Bloom) {
+		for log in logs {
+			bloom.accrue(BloomInput::Raw(&log.address[..]));
+			for topic in log.topics {
+				bloom.accrue(BloomInput::Raw(&topic[..]));
+			}
+		}
 	}
 
 	/// Get the author using the FindAuthor trait.

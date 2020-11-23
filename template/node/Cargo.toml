@@ -4,7 +4,7 @@ version = "2.0.0-dev"
 authors = ["Parity Technologies <admin@parity.io>"]
 description = "Substrate Node template"
 edition = "2018"
-license = "Apache-2.0"
+license = "Unlicense"
 build = "build.rs"
 homepage = "https://substrate.dev"
 repository = "https://github.com/paritytech/substrate/"
@@ -39,7 +39,7 @@ sc-consensus-manual-seal = { git = "https://github.com/paritytech/substrate.git"
 sp-consensus = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sc-consensus = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sp-timestamp = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-pallet-evm = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+pallet-evm = { path = "../../frame/evm" }
 pallet-ethereum = { path = "../../frame/ethereum" }
 sc-finality-grandpa = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sp-finality-grandpa = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
@@ -48,10 +48,10 @@ sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "fr
 sc-basic-authorship = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sp-block-builder = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 
-frontier-consensus = { path = "../../consensus" }
+fc-consensus = { path = "../../client/consensus" }
 frontier-template-runtime = { path = "../runtime" }
-frontier-rpc = { path = "../../rpc" }
-frontier-rpc-primitives = { path = "../../rpc/primitives" }
+fc-rpc = { path = "../../client/rpc" }
+fp-rpc = { path = "../../primitives/rpc" }
 
 [build-dependencies]
 substrate-build-script-utils = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
