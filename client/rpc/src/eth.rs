@@ -65,12 +65,30 @@ fn schema_key() -> StorageKey {
 /// and ideally we could use the same trait. In practice that doesn't work because types that implement
 /// some runtime API must also implement the core runtime API.
 /// TODO consider creating a Substrate issue for that.
-///
-/// TODO this needs lots more trait bounds and functions. For now, I'm just scetchign the idea.
 pub trait OptimizedEthApi<Block: BlockT> {
+	//TODO what about chainid?
+	/// Returns fp_evm::Accounts by address.
+	fn account_basic(&self, block: &BlockId<Block>, address: &H160) -> fp_evm::Account;
+	/// Returns FixedGasPrice::min_gas_price
+	fn gas_price(&self, block: &BlockId<Block>) -> U256;
+	/// For a given account address, returns pallet_evm::AccountCodes.
+	fn account_code_at(&self, block: &BlockId<Block>, address: H160) -> Vec<u8>;
+	/// Returns the author for the specified block
 	fn author(&self, block: &BlockId<Block>) -> Option<H160>;
+	/// For a given account address and index, returns pallet_evm::AccountStorages.
+	fn storage_at(&self, block: &BlockId<Block>, address: H160, index: U256) -> H256;
+	/// Return the current block.
+	fn current_block(&self, block: &BlockId<Block>) -> Option<EthereumBlock>;
+	/// Return the current receipt.
+	fn current_receipts(&self, block: &BlockId<Block>) -> Option<Vec<ethereum::Receipt>>;
+	/// Return the current transaction status.
+	fn current_transaction_statuses(&self, block: &BlockId<Block>) -> Option<Vec<TransactionStatus>>;
 
+	// TODO Do I need this? I put it in before I realized I should copy
+	// the runtime API trait
 	fn transaction_count(&self, block: &BlockId<Block>, address: H160) -> Option<U256>;
+
+	//TODO should I have a current_all method at all? If I do, it should be provided.
 }
 
 pub struct EthApi<B: BlockT, C, P, CT, BE, H: ExHashT> {

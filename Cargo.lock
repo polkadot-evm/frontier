@@ -1310,6 +1310,7 @@ dependencies = [
  "ethereum-types",
  "fc-consensus",
  "fc-rpc-core",
+ "fp-evm",
  "fp-rpc",
  "futures 0.3.7",
  "jsonrpc-core 15.1.0",
