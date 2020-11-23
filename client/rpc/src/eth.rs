@@ -78,7 +78,7 @@ pub trait OptimizedEthApi<Block: BlockT> {
 	/// Returns the author for the specified block
 	fn author(&self, block: &BlockId<Block>) -> Option<H160>;
 	/// For a given account address and index, returns pallet_evm::AccountStorages.
-	fn storage_at(&self, block: &BlockId<Block>, address: H160, index: U256) -> H256;
+	fn storage_at(&self, block: &BlockId<Block>, address: H160, index: U256) -> Result<H256>;
 	/// Return the current block.
 	fn current_block(&self, block: &BlockId<Block>) -> Option<EthereumBlock>;
 	/// Return the current receipt.
@@ -427,12 +427,23 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 
 	fn storage_at(&self, address: H160, index: U256, number: Option<BlockNumber>) -> Result<H256> {
 		if let Ok(Some(id)) = self.native_block_id(number) {
+			let schema = self.onchain_storage_schema(id);
 			return Ok(
-				self.client
-					.runtime_api()
-					.storage_at(&id, address, index)
-					.map_err(|err| internal_err(format!("fetch runtime chain id failed: {:?}", err)))?
-					.into(),
+				match self.optimizations.get(&schema) {
+					Some(handler) => {
+						handler
+						.storage_at(&id, address, index)
+						.map_err(|err| internal_err(format!("fetch runtime chain id failed: {:?}", err)))?
+						.into()
+					}
+					None => {
+						self.client
+							.runtime_api()
+							.storage_at(&id, address, index)
+							.map_err(|err| internal_err(format!("fetch runtime chain id failed: {:?}", err)))?
+							.into()
+					}
+				}
 			);
 		}
 		Ok(H256::default())
