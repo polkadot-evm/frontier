@@ -576,10 +576,20 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 			Some(hash) => hash,
 			_ => return Ok(None),
 		};
+		let schema = self.onchain_storage_schema(id);
 
-		let block = self.client.runtime_api()
-			.current_block(&id)
-			.map_err(|err| internal_err(format!("fetch runtime account basic failed: {:?}", err)))?;
+		let block = match self.optimizations.get(&schema) {
+			Some(handler) => {
+				handler
+					.current_block(&id)
+					.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?
+			}
+			None => {
+				self.client.runtime_api()
+					.current_block(&id)
+					.map_err(|err| internal_err(format!("fetch runtime account basic failed: {:?}", err)))?
+			}
+		};
 
 		match block {
 			Some(block) => Ok(Some(U256::from(block.transactions.len()))),
@@ -592,10 +602,20 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 			Some(id) => id,
 			None => return Ok(None),
 		};
+		let schema = self.onchain_storage_schema(id);
 
-		let block = self.client.runtime_api()
-			.current_block(&id)
-			.map_err(|err| internal_err(format!("fetch runtime account basic failed: {:?}", err)))?;
+		let block = match self.optimizations.get(&schema) {
+			Some(handler) => {
+				handler
+					.current_block(&id)
+					.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?
+			}
+			None => {
+				self.client.runtime_api()
+					.current_block(&id)
+					.map_err(|err| internal_err(format!("fetch runtime account basic failed: {:?}", err)))?
+			}
+		};
 
 		match block {
 			Some(block) => Ok(Some(U256::from(block.transactions.len()))),
