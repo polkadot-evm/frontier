@@ -1019,13 +1019,28 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 			Some(hash) => hash,
 			_ => return Ok(None),
 		};
+		let schema = self.onchain_storage_schema(id);
 
-		let block = self.client.runtime_api().current_block(&id)
-			.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
-		let receipts = self.client.runtime_api().current_receipts(&id)
-			.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
-		let statuses = self.client.runtime_api().current_transaction_statuses(&id)
-			.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
+		let (block, statuses, receipts) = match self.optimizations.get(&schema) {
+			Some(handler) => {
+				let b = handler.current_block(&id)
+				.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
+				let s = handler.current_transaction_statuses(&id)
+					.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
+				let r = handler.current_receipts(&id)
+					.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
+				(b, s, r)
+			}
+			None => {
+				let b = self.client.runtime_api().current_block(&id)
+					.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
+				let s = self.client.runtime_api().current_transaction_statuses(&id)
+					.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
+				let r = self.client.runtime_api().current_receipts(&id)
+					.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
+				(b, s, r)
+			}
+		};
 
 		match (block, statuses, receipts) {
 			(Some(block), Some(statuses), Some(receipts)) => {
