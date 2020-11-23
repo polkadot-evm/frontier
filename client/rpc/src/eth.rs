@@ -67,10 +67,12 @@ fn schema_key() -> StorageKey {
 /// TODO consider creating a Substrate issue for that.
 pub trait OptimizedEthApi<Block: BlockT> {
 	//TODO what about chainid?
+
 	/// Returns fp_evm::Accounts by address.
+	/// TODO this requires the address mapping.
 	fn account_basic(&self, block: &BlockId<Block>, address: H160) -> fp_evm::Account;
 	/// Returns FixedGasPrice::min_gas_price
-	fn gas_price(&self, block: &BlockId<Block>) -> U256;
+	fn gas_price(&self, block: &BlockId<Block>) -> Result<U256>;
 	/// For a given account address, returns pallet_evm::AccountCodes.
 	fn account_code_at(&self, block: &BlockId<Block>, address: H160) -> Vec<u8>;
 	/// Returns the author for the specified block
@@ -363,14 +365,26 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 	}
 
 	fn gas_price(&self) -> Result<U256> {
-		let hash = self.client.info().best_hash;
-		Ok(
-			self.client
-				.runtime_api()
-				.gas_price(&BlockId::Hash(hash))
-				.map_err(|err| internal_err(format!("fetch runtime chain id failed: {:?}", err)))?
-				.into(),
-		)
+		let block = BlockId::Hash(self.client.info().best_hash);
+		let schema = self.onchain_storage_schema(block);
+
+		match self.optimizations.get(&schema) {
+			Some(handler) => {
+				handler
+					.gas_price(&block)
+					.map_err(|err| internal_err(format!("fetch runtime chain id failed: {:?}", err)))
+					.into()
+			}
+			None => {
+				Ok(
+					self.client
+						.runtime_api()
+						.gas_price(&block)
+						.map_err(|err| internal_err(format!("fetch runtime chain id failed: {:?}", err)))?
+						.into(),
+				)
+			}
+		}
 	}
 
 	fn accounts(&self) -> Result<Vec<H160>> {
@@ -472,22 +486,11 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 	fn transaction_count(&self, address: H160, number: Option<BlockNumber>) -> Result<U256> {
 		if let Some(BlockNumber::Pending) = number {
 			let block = BlockId::Hash(self.client.info().best_hash);
-			let schema = self.onchain_storage_schema(block);
 
-			let nonce: U256 = match self.optimizations.get(&schema) {
-				Some(handler) => {
-					handler
-						.account_basic(&block, address)
-						.map_err(|err| internal_err(format!("fetch account basic failed: {:?}", err)))?
-						.nonce
-				},
-				None => {
-					self.client.runtime_api()
-						.account_basic(&block, address)
-						.map_err(|err| internal_err(format!("fetch runtime account basic failed: {:?}", err)))?
-						.nonce
-				},
-			};
+			let nonce = self.client.runtime_api()
+				.account_basic(&block, address)
+				.map_err(|err| internal_err(format!("fetch runtime account basic failed: {:?}", err)))?
+				.nonce;
 
 			let mut current_nonce = nonce;
 			let mut current_tag = (address, nonce).encode();
