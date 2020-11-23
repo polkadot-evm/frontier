@@ -59,7 +59,10 @@ fn schema_key() -> StorageKey {
 }
 
 /// Something that can fetch Ethereum-related data from a State Backend with some assumptions
-/// about pallet-ethereum's storage schema
+/// about pallet-ethereum's storage schema. This trait is quite similar to the runtime API,
+/// and ideally we could use the same trait. In practice that doesn't work because types that implement
+/// some runtime API must also implement the core runtime API.
+/// TODO consider creating a Substrate issue for that.
 ///
 /// TODO this needs lots more trait bounds and functions. For now, I'm just scetchign the idea.
 pub trait OptimizedEthApi<Block: BlockT> {
