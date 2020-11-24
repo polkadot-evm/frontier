@@ -20,7 +20,7 @@ mod eth;
 mod eth_pubsub;
 
 pub use eth::{EthApi, EthApiServer, NetApi, NetApiServer, Web3Api, Web3ApiServer};
-pub use eth_pubsub::{EthPubSubApi, EthPubSubApiServer};
+pub use eth_pubsub::{EthPubSubApi, EthPubSubApiServer, HexEncodedIdProvider};
 
 use ethereum_types::{H160, H256};
 use jsonrpc_core::{ErrorCode, Error, Value};
