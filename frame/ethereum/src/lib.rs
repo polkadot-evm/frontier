@@ -37,6 +37,7 @@ use sp_runtime::{
 	},
 	generic::DigestItem, traits::UniqueSaturatedInto, DispatchError,
 };
+use codec::Decode;
 use evm::ExitReason;
 use fp_evm::CallOrCreateInfo;
 use pallet_evm::{Runner, GasToWeight};
@@ -305,12 +306,8 @@ impl<T: Trait> Module<T> {
 			nonce: H64::default(),
 		};
 		let mut block = ethereum::Block::new(partial_header, transactions.clone(), ommers);
-		block.header.state_root = {
-			let mut input = [0u8; 64];
-			input[..32].copy_from_slice(&frame_system::Module::<T>::parent_hash()[..]);
-			input[32..64].copy_from_slice(&block.header.hash()[..]);
-			H256::from_slice(Keccak256::digest(&input).as_slice())
-		};
+		block.header.state_root = H256::decode(&mut &sp_io::storage::root()[..])
+			.expect("Node is configured to use the same hash; qed");
 
 		let mut transaction_hashes = Vec::new();
 
