@@ -284,6 +284,7 @@ parameter_types! {
 
 impl pallet_evm::Trait for Runtime {
 	type FeeCalculator = FixedGasPrice;
+	type GasToWeight = ();
 	type CallOrigin = EnsureAddressTruncated;
 	type WithdrawOrigin = EnsureAddressTruncated;
 	type AddressMapping = HashedAddressMapping<BlakeTwo256>;

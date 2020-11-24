@@ -138,6 +138,7 @@ impl AddressMapping<AccountId32> for HashedAddressMapping {
 
 impl pallet_evm::Trait for Test {
 	type FeeCalculator = FixedGasPrice;
+	type GasToWeight = ();
 	type CallOrigin = EnsureAddressTruncated;
 	type WithdrawOrigin = EnsureAddressTruncated;
 	type AddressMapping = HashedAddressMapping;

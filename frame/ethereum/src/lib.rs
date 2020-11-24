@@ -25,7 +25,8 @@
 
 use frame_support::{
 	decl_module, decl_storage, decl_error, decl_event,
-	traits::Get, traits::FindAuthor,
+	traits::Get, traits::FindAuthor, weights::Weight,
+	dispatch::DispatchResultWithPostInfo,
 };
 use sp_std::prelude::*;
 use frame_system::ensure_none;
@@ -38,7 +39,7 @@ use sp_runtime::{
 };
 use evm::ExitReason;
 use fp_evm::CallOrCreateInfo;
-use pallet_evm::Runner;
+use pallet_evm::{Runner, GasToWeight};
 use sha3::{Digest, Keccak256};
 use codec::Encode;
 use fp_consensus::{FRONTIER_ENGINE_ID, ConsensusLog};
@@ -112,8 +113,8 @@ decl_module! {
 		fn deposit_event() = default;
 
 		/// Transact an Ethereum transaction.
-		#[weight = 0]
-		fn transact(origin, transaction: ethereum::Transaction) {
+		#[weight = <T as pallet_evm::Trait>::GasToWeight::gas_to_weight(transaction.gas_limit.low_u32())]
+		fn transact(origin, transaction: ethereum::Transaction) -> DispatchResultWithPostInfo {
 			ensure_none(origin)?;
 
 			let source = Self::recover_signer(&transaction)
@@ -183,13 +184,14 @@ decl_module! {
 			Pending::append((transaction, status, receipt));
 
 			Self::deposit_event(Event::Executed(source, transaction_hash, reason));
+			Ok(Some(T::GasToWeight::gas_to_weight(used_gas.low_u32())).into())
 		}
 
 		fn on_finalize(n: T::BlockNumber) {
 			<Module<T>>::store_block();
 		}
 
-		fn on_initialize(n: T::BlockNumber) -> frame_support::weights::Weight {
+		fn on_initialize(n: T::BlockNumber) -> Weight {
 			Pending::kill();
 			0
 		}
