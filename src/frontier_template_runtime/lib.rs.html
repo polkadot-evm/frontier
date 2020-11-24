@@ -607,7 +607,6 @@
 <span id="604">604</span>
 <span id="605">605</span>
 <span id="606">606</span>
-<span id="607">607</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! The Substrate Node Template runtime. This can be compiled with `#[no_std]`, ready for Wasm.</span>
 
@@ -895,7 +894,6 @@
 
 <span class="kw">impl</span> <span class="ident">pallet_evm</span>::<span class="ident">Trait</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
 	<span class="kw">type</span> <span class="ident">FeeCalculator</span> <span class="op">=</span> <span class="ident">FixedGasPrice</span>;
-	<span class="kw">type</span> <span class="ident">GasToWeight</span> <span class="op">=</span> ();
 	<span class="kw">type</span> <span class="ident">CallOrigin</span> <span class="op">=</span> <span class="ident">EnsureAddressTruncated</span>;
 	<span class="kw">type</span> <span class="ident">WithdrawOrigin</span> <span class="op">=</span> <span class="ident">EnsureAddressTruncated</span>;
 	<span class="kw">type</span> <span class="ident">AddressMapping</span> <span class="op">=</span> <span class="ident">HashedAddressMapping</span><span class="op">&lt;</span><span class="ident">BlakeTwo256</span><span class="op">&gt;</span>;
