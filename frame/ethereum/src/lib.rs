@@ -175,7 +175,12 @@ decl_module! {
 			};
 
 			let receipt = ethereum::Receipt {
-				state_root: H256::default(), // TODO: should be okay / error status.
+				state_root: match reason {
+					ExitReason::Succeed(_) => H256::from_low_u64_be(1),
+					ExitReason::Error(_) => H256::from_low_u64_le(0),
+					ExitReason::Revert(_) => H256::from_low_u64_le(0),
+					ExitReason::Fatal(_) => H256::from_low_u64_le(0),
+				},
 				used_gas,
 				logs_bloom: status.clone().logs_bloom,
 				logs: status.clone().logs,
