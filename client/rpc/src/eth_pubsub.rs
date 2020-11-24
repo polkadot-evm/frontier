@@ -16,8 +16,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use std::{marker::PhantomData, sync::Arc};
+use std::{marker::PhantomData, sync::Arc, iter};
 use std::collections::BTreeMap;
+use rand::distributions::Alphanumeric;
+use rand::{thread_rng, Rng};
+use rustc_hex::ToHex;
 use sp_runtime::traits::{
 	Block as BlockT, BlakeTwo256,
 	UniqueSaturatedInto
@@ -34,7 +37,10 @@ use sc_client_api::{
 use sc_rpc::Metadata;
 use log::warn;
 
-use jsonrpc_pubsub::{typed::Subscriber, SubscriptionId, manager::SubscriptionManager};
+use jsonrpc_pubsub::{
+	typed::Subscriber, SubscriptionId,
+	manager::{SubscriptionManager, IdProvider}
+};
 use fc_rpc_core::EthPubSubApi::{self as EthPubSubApiT};
 use fc_rpc_core::types::{
 	Rich, Header, Bytes, Log, FilteredParams,
@@ -52,11 +58,35 @@ use fp_rpc::{EthereumRuntimeRPCApi, TransactionStatus};
 
 use sc_network::{NetworkService, ExHashT};
 
+#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
+pub struct HexEncodedIdProvider {
+	len: usize,
+}
+
+impl Default for HexEncodedIdProvider {
+	fn default() -> Self {
+		Self { len: 16 }
+	}
+}
+
+impl IdProvider for HexEncodedIdProvider {
+	type Id = String;
+	fn next_id(&self) -> Self::Id {
+		let mut rng = thread_rng();
+		let id: String = iter::repeat(())
+			.map(|()| rng.sample(Alphanumeric))
+			.take(self.len)
+			.collect();
+		let out: String = id.as_bytes().to_hex();
+		format!("0x{}", out)
+	}
+}
+
 pub struct EthPubSubApi<B: BlockT, P, C, BE, H: ExHashT> {
 	_pool: Arc<P>,
 	client: Arc<C>,
 	network: Arc<NetworkService<B, H>>,
-	subscriptions: SubscriptionManager,
+	subscriptions: SubscriptionManager<HexEncodedIdProvider>,
 	_marker: PhantomData<(B, BE)>,
 }
 
@@ -65,7 +95,7 @@ impl<B: BlockT, P, C, BE, H: ExHashT> EthPubSubApi<B, P, C, BE, H> {
 		_pool: Arc<P>,
 		client: Arc<C>,
 		network: Arc<NetworkService<B, H>>,
-		subscriptions: SubscriptionManager,
+		subscriptions: SubscriptionManager<HexEncodedIdProvider>,
 	) -> Self {
 		Self { _pool, client, network, subscriptions, _marker: PhantomData }
 	}
