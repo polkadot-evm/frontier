@@ -85,8 +85,6 @@ pub trait OptimizedEthApi<Block: BlockT> {
 	fn current_receipts(&self, block: &BlockId<Block>) -> Result<Option<Vec<ethereum::Receipt>>>;
 	/// Return the current transaction status.
 	fn current_transaction_statuses(&self, block: &BlockId<Block>) -> Result<Option<Vec<TransactionStatus>>>;
-
-	//TODO should I have a current_all method at all? If I do, it should be provided.
 }
 
 pub struct EthApi<B: BlockT, C, P, CT, BE, H: ExHashT> {
@@ -1113,6 +1111,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 		Ok(None)
 	}
 
+	//TODO I think this is the last one to do
 	fn logs(&self, filter: Filter) -> Result<Vec<Log>> {
 		let mut blocks_and_statuses = Vec::new();
 		let mut ret = Vec::new();

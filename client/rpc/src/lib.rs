@@ -18,6 +18,7 @@
 
 mod eth;
 mod eth_pubsub;
+mod telmo;
 
 pub use eth::{EthApi, EthApiServer, NetApi, NetApiServer, Web3Api, Web3ApiServer};
 pub use eth_pubsub::{EthPubSubApi, EthPubSubApiServer};
