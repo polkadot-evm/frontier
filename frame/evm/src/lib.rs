@@ -68,12 +68,12 @@ use codec::{Encode, Decode};
 #[cfg(feature = "std")]
 use serde::{Serialize, Deserialize};
 use frame_support::{decl_module, decl_storage, decl_event, decl_error};
-use frame_support::weights::{Weight, Pays};
+use frame_support::weights::{Weight, Pays, PostDispatchInfo};
 use frame_support::traits::{Currency, ExistenceRequirement, Get};
 use frame_support::dispatch::DispatchResultWithPostInfo;
 use frame_system::RawOrigin;
 use sp_core::{U256, H256, H160, Hasher};
-use sp_runtime::{AccountId32, traits::{UniqueSaturatedInto, SaturatedConversion, BadOrigin}};
+use sp_runtime::{AccountId32, traits::{UniqueSaturatedInto, BadOrigin}};
 use evm::Config;
 
 /// Type alias for currency balance.
@@ -207,6 +207,17 @@ impl<H: Hasher<Out=H256>> AddressMapping<AccountId32> for HashedAddressMapping<H
 	}
 }
 
+/// A mapping function that converts Ethereum gas to Substrate weight
+pub trait GasToWeight {
+	fn gas_to_weight(gas: u32) -> Weight;
+}
+
+impl GasToWeight for () {
+	fn gas_to_weight(gas: u32) -> Weight {
+		gas as Weight
+	}
+}
+
 /// Substrate system chain ID.
 pub struct SystemChainId;
 
@@ -222,6 +233,9 @@ static ISTANBUL_CONFIG: Config = Config::istanbul();
 pub trait Trait: frame_system::Trait + pallet_timestamp::Trait {
 	/// Calculator for current gas price.
 	type FeeCalculator: FeeCalculator;
+
+	/// Maps Ethereum gas to Substrate weight.
+	type GasToWeight: GasToWeight;
 
 	/// Allow the origin to call on behalf of given address.
 	type CallOrigin: EnsureAddressOrigin<Self::Origin>;
@@ -356,7 +370,7 @@ decl_module! {
 		}
 
 		/// Issue an EVM call operation. This is similar to a message call transaction in Ethereum.
-		#[weight = (*gas_price).saturated_into::<Weight>().saturating_mul(*gas_limit as Weight)]
+		#[weight = T::GasToWeight::gas_to_weight(*gas_limit)]
 		fn call(
 			origin,
 			source: H160,
@@ -369,7 +383,7 @@ decl_module! {
 		) -> DispatchResultWithPostInfo {
 			T::CallOrigin::ensure_address_origin(&source, origin)?;
 
-			match T::Runner::call(
+			let info = T::Runner::call(
 				source,
 				target,
 				input,
@@ -377,24 +391,26 @@ decl_module! {
 				gas_limit,
 				Some(gas_price),
 				nonce,
-			)? {
-				CallInfo {
-					exit_reason: ExitReason::Succeed(_),
-					..
-				} => {
+			)?;
+
+			match info.exit_reason {
+				ExitReason::Succeed(_) => {
 					Module::<T>::deposit_event(Event::<T>::Executed(target));
 				},
 				_ => {
 					Module::<T>::deposit_event(Event::<T>::ExecutedFailed(target));
 				},
-			}
+			};
 
-			Ok(Pays::No.into())
+			Ok(PostDispatchInfo {
+				actual_weight: Some(T::GasToWeight::gas_to_weight(info.used_gas.low_u32())),
+				pays_fee: Pays::No,
+			})
 		}
 
 		/// Issue an EVM create operation. This is similar to a contract creation transaction in
 		/// Ethereum.
-		#[weight = (*gas_price).saturated_into::<Weight>().saturating_mul(*gas_limit as Weight)]
+		#[weight = T::GasToWeight::gas_to_weight(*gas_limit)]
 		fn create(
 			origin,
 			source: H160,
@@ -406,14 +422,16 @@ decl_module! {
 		) -> DispatchResultWithPostInfo {
 			T::CallOrigin::ensure_address_origin(&source, origin)?;
 
-			match T::Runner::create(
+			let info = T::Runner::create(
 				source,
 				init,
 				value,
 				gas_limit,
 				Some(gas_price),
 				nonce,
-			)? {
+			)?;
+
+			match info {
 				CreateInfo {
 					exit_reason: ExitReason::Succeed(_),
 					value: create_address,
@@ -430,11 +448,14 @@ decl_module! {
 				},
 			}
 
-			Ok(Pays::No.into())
+			Ok(PostDispatchInfo {
+				actual_weight: Some(T::GasToWeight::gas_to_weight(info.used_gas.low_u32())),
+				pays_fee: Pays::No,
+			})
 		}
 
 		/// Issue an EVM create2 operation.
-		#[weight = (*gas_price).saturated_into::<Weight>().saturating_mul(*gas_limit as Weight)]
+		#[weight = T::GasToWeight::gas_to_weight(*gas_limit)]
 		fn create2(
 			origin,
 			source: H160,
@@ -447,7 +468,7 @@ decl_module! {
 		) -> DispatchResultWithPostInfo {
 			T::CallOrigin::ensure_address_origin(&source, origin)?;
 
-			match T::Runner::create2(
+			let info = T::Runner::create2(
 				source,
 				init,
 				salt,
@@ -455,7 +476,9 @@ decl_module! {
 				gas_limit,
 				Some(gas_price),
 				nonce,
-			)? {
+			)?;
+
+			match info {
 				CreateInfo {
 					exit_reason: ExitReason::Succeed(_),
 					value: create_address,
@@ -472,7 +495,10 @@ decl_module! {
 				},
 			}
 
-			Ok(Pays::No.into())
+			Ok(PostDispatchInfo {
+				actual_weight: Some(T::GasToWeight::gas_to_weight(info.used_gas.low_u32())),
+				pays_fee: Pays::No,
+			})
 		}
 	}
 }

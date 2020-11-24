@@ -110,6 +110,7 @@ impl FeeCalculator for FixedGasPrice {
 
 impl Trait for Test {
 	type FeeCalculator = FixedGasPrice;
+	type GasToWeight = ();
 
 	type CallOrigin = EnsureAddressRoot<Self::AccountId>;
 	type WithdrawOrigin = EnsureAddressNever<Self::AccountId>;
