@@ -2014,9 +2014,9 @@
 							}
 						}).<span class="ident">collect</span>()
 					},
-					<span class="ident">state_root</span>: <span class="prelude-val">Some</span>(<span class="ident">receipt</span>.<span class="ident">state_root</span>),
+					<span class="ident">status_code</span>: <span class="prelude-val">Some</span>(<span class="ident">U64</span>::<span class="ident">from</span>(<span class="ident">receipt</span>.<span class="ident">state_root</span>.<span class="ident">to_low_u64_be</span>())),
 					<span class="ident">logs_bloom</span>: <span class="ident">receipt</span>.<span class="ident">logs_bloom</span>,
-					<span class="ident">status_code</span>: <span class="prelude-val">None</span>,
+					<span class="ident">state_root</span>: <span class="prelude-val">None</span>,
 				}))
 			}
 			<span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
