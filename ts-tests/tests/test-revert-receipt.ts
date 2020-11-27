@@ -43,8 +43,6 @@ describeWithFrontier("Frontier RPC (Constructor Revert)", `simple-specs.json`, (
 		});
 
 		// Verify the receipt exists after the block is created
-		//TODO Actually, why doesn't this receipt have a status in it?
-		// I guess because the RPC handler in eth.rs sets `status_code: None`??
 		await createAndFinalizeBlock(context.web3);
 		const receipt = await context.web3.eth.getTransactionReceipt(GOOD_TX_HASH);
 		expect(receipt).to.include({
@@ -55,7 +53,8 @@ describeWithFrontier("Frontier RPC (Constructor Revert)", `simple-specs.json`, (
 			gasUsed: 67231,
 			to: null,
 			transactionHash: '0xae813c533aac0719fbca4db6e3bb05cfb5859bdeaaa7dc5c9dbd24083301be8d',
-			transactionIndex: 0
+			transactionIndex: 0,
+			status: true
 		});
 	});
 
@@ -94,7 +93,8 @@ describeWithFrontier("Frontier RPC (Constructor Revert)", `simple-specs.json`, (
 			gasUsed: 54600,
 			to: null,
 			transactionHash: '0x640df9deb183d565addc45bdc8f95b30c7c03ce7e69df49456be9929352e4347',
-			transactionIndex: 0
+			transactionIndex: 0,
+			status: false
 		});
 	});
 });
