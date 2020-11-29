@@ -16,16 +16,16 @@ ethereum-types = "0.9.0"
 fc-consensus = { path = "../consensus" }
 fc-rpc-core = { path = "../rpc-core" }
 fp-rpc = { path = "../../primitives/rpc" }
-sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sp-api = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sp-transaction-pool = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sp-storage = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" } 
-sp-blockchain = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" } 
-sc-service = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sc-client-api = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sc-rpc = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sc-network = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-api = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-transaction-pool = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-storage = { git = "https://github.com/paritytech/substrate.git", branch = "master" } 
+sp-blockchain = { git = "https://github.com/paritytech/substrate.git", branch = "master" } 
+sc-service = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sc-client-api = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sc-rpc = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sc-network = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
 pallet-evm = { path = "../../frame/evm" }
 pallet-ethereum = { path = "../../frame/ethereum" }
 ethereum = { version = "0.5", features = ["with-codec"] }
