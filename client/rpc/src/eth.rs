@@ -66,10 +66,10 @@ fn schema_key() -> StorageKey {
 /// some runtime API must also implement the core runtime API.
 /// TODO consider creating a Substrate issue for that.
 pub trait OptimizedEthApi<Block: BlockT> {
-	//TODO what about chainid?
 
 	/// Returns fp_evm::Accounts by address.
-	/// TODO this requires the address mapping.
+	/// TODO Telmo said this requires the address mapping. Is that true? I guess it would be if
+	/// we have to query pallet balances directly. But can we query pallet evm for that?
 	fn account_basic(&self, block: &BlockId<Block>, address: H160) -> Result<fp_evm::Account>;
 	/// Returns FixedGasPrice::min_gas_price
 	fn gas_price(&self, block: &BlockId<Block>) -> Result<U256>;
@@ -334,22 +334,24 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 		Ok(U256::zero())
 	}
 
-	//TODO use match style, not if let
 	fn author(&self) -> Result<H160> {
 		let block = BlockId::Hash(self.client.info().best_hash);
 		let schema = self.onchain_storage_schema(block);
 
-		// Attempt to delegate to an optimized handler
-		if let Some(handler) = self.optimizations.get(&schema) {
-			return handler.author(&block).ok_or(internal_err(format!("fetch optimized author failed")).into());
-		}
-
-		// Fall back to the runtime API
 		Ok(
-			self.client
-			.runtime_api()
-			.author(&block)
-			.map_err(|err| internal_err(format!("fetch runtime author failed: {:?}", err)))?.into()
+			match self.optimizations.get(&schema) {
+				Some(handler) =>  {
+					handler
+						.author(&block).ok_or(internal_err(format!("fetch optimized author failed")).into())
+				}
+				None => {
+					self.client
+						.runtime_api()
+						.author(&block)
+						.map_err(|err| internal_err(format!("fetch runtime author failed: {:?}", err)))?
+						.into()
+				}
+			}
 		)
 	}
 
