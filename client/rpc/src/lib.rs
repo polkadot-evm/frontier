@@ -46,10 +46,20 @@ pub fn error_on_execution_failure(reason: &ExitReason, data: &[u8]) -> Result<()
 				data: Some(Value::String("0x".to_string()))
 			})
 		},
-		ExitReason::Revert(e) => {
+		ExitReason::Revert(_) => {
+			let mut message = "VM Exception while processing transaction: revert".to_string();
+			// A minimum size of error function selector (4) + offset (32) + string length (32)
+			// should contain a utf-8 encoded revert reason.
+			if data.len() > 68 {
+				let message_len = data[36..68].iter().sum::<u8>();
+				let body: &[u8] = &data[68..68 + message_len as usize];
+				if let Ok(reason) = std::str::from_utf8(body) {
+					message = format!("{} {}", message, reason.to_string());
+				}
+			}
 			Err(Error {
 				code: ErrorCode::InternalError,
-				message: format!("evm revert: {:?}", e),
+				message,
 				data: Some(Value::String(data.to_hex()))
 			})
 		},
