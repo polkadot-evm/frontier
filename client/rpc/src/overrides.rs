@@ -31,17 +31,17 @@ use sp_storage::StorageKey;
 use codec::Decode;
 use sp_io::hashing::{twox_128, blake2_128};
 use fp_rpc::{EthereumRuntimeRPCApi, TransactionStatus};
-use crate::{internal_err, error_on_execution_failure, eth::OptimizedEthApi};
+use crate::{internal_err, error_on_execution_failure, eth::StorageOverride};
 
 pub use fc_rpc_core::{EthApiServer, NetApiServer};
 use codec::{self, Encode};
 
-pub struct Telmo<B: BlockT, C, BE> {
+pub struct SchemaV1Override<B: BlockT, C, BE> {
 	client: Arc<C>,
 	_marker: PhantomData<(B, BE)>,
 }
 
-impl<B: BlockT, C, BE> Telmo<B, C, BE> {
+impl<B: BlockT, C, BE> SchemaV1Override<B, C, BE> {
 	pub fn new(
 		client: Arc<C>,
 	) -> Self {
@@ -59,7 +59,7 @@ fn blake2_128_extend(bytes: &[u8]) -> Vec<u8> {
 	ext
 }
 
-impl<B, C, BE> Telmo<B, C, BE> where
+impl<B, C, BE> SchemaV1Override<B, C, BE> where
 	C: ProvideRuntimeApi<B> + StorageProvider<B, BE> + AuxStore,
 	C: HeaderBackend<B> + HeaderMetadata<B, Error=BlockChainError> + 'static,
 	C::Api: EthereumRuntimeRPCApi<B>,
@@ -149,7 +149,7 @@ impl<B, C, BE> Telmo<B, C, BE> where
 	}
 }
 
-impl<Block: BlockT, C, BE> OptimizedEthApi<Block> for Telmo<Block, C, BE> {
+impl<Block: BlockT, C, BE> StorageOverride<Block> for SchemaV1Override<Block, C, BE> {
 	fn account_basic(&self, block: &BlockId<Block>, address: H160) -> Result<fp_evm::Account> {
 		unimplemented!()
 	}

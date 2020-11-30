@@ -18,7 +18,7 @@
 
 mod eth;
 mod eth_pubsub;
-mod telmo;
+mod overrides;
 
 pub use eth::{EthApi, EthApiServer, NetApi, NetApiServer, Web3Api, Web3ApiServer};
 pub use eth_pubsub::{EthPubSubApi, EthPubSubApiServer, HexEncodedIdProvider};

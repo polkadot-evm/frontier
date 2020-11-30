@@ -61,11 +61,8 @@ fn schema_key() -> StorageKey {
 }
 
 /// Something that can fetch Ethereum-related data from a State Backend with some assumptions
-/// about pallet-ethereum's storage schema. This trait is quite similar to the runtime API,
-/// and ideally we could use the same trait. In practice that doesn't work because types that implement
-/// some runtime API must also implement the core runtime API.
-/// TODO consider creating a Substrate issue for that.
-pub trait OptimizedEthApi<Block: BlockT> {
+/// about pallet-ethereum's storage schema. This trait is quite similar to the runtime API.
+pub trait StorageOverride<Block: BlockT> {
 
 	/// Returns fp_evm::Accounts by address.
 	/// TODO Telmo said this requires the address mapping. Is that true? I guess it would be if
@@ -94,7 +91,7 @@ pub struct EthApi<B: BlockT, C, P, CT, BE, H: ExHashT> {
 	network: Arc<NetworkService<B, H>>,
 	is_authority: bool,
 	signers: Vec<Box<dyn EthSigner>>,
-	optimizations: BTreeMap<EthereumStorageSchema, Box<dyn OptimizedEthApi<B> + Send + Sync>>,
+	overrides: BTreeMap<EthereumStorageSchema, Box<dyn StorageOverride<B> + Send + Sync>>,
 	_marker: PhantomData<(B, BE)>,
 }
 
@@ -114,7 +111,7 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> {
 			network,
 			is_authority,
 			signers,
-			optimizations: BTreeMap::new(),
+			overrides: BTreeMap::new(),
 			_marker: PhantomData,
 		}
 	}
@@ -339,7 +336,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 		let schema = self.onchain_storage_schema(block);
 
 		Ok(
-			match self.optimizations.get(&schema) {
+			match self.overrides.get(&schema) {
 				Some(handler) =>  {
 					handler
 						.author(&block).ok_or(internal_err(format!("fetch optimized author failed")).into())
@@ -369,7 +366,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 		let block = BlockId::Hash(self.client.info().best_hash);
 		let schema = self.onchain_storage_schema(block);
 
-		match self.optimizations.get(&schema) {
+		match self.overrides.get(&schema) {
 			Some(handler) => {
 				handler
 					.gas_price(&block)
@@ -405,7 +402,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 
 			let schema = self.onchain_storage_schema(id);
 			return Ok(
-				match self.optimizations.get(&schema) {
+				match self.overrides.get(&schema) {
 					Some(handler) => {
 						handler
 							.account_basic(&id, address)
@@ -429,7 +426,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 		if let Ok(Some(id)) = self.native_block_id(number) {
 			let schema = self.onchain_storage_schema(id);
 			return Ok(
-				match self.optimizations.get(&schema) {
+				match self.overrides.get(&schema) {
 					Some(handler) => {
 						handler
 						.storage_at(&id, address, index)
@@ -458,7 +455,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 		};
 		let schema = self.onchain_storage_schema(id);
 
-		let (block, statuses) = match self.optimizations.get(&schema) {
+		let (block, statuses) = match self.overrides.get(&schema) {
 			Some(handler) => {
 				let b = handler.current_block(&id)
 				.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
@@ -497,7 +494,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 		};
 		let schema = self.onchain_storage_schema(id);
 
-		let (block, statuses) = match self.optimizations.get(&schema) {
+		let (block, statuses) = match self.overrides.get(&schema) {
 			Some(handler) => {
 				let b = handler.current_block(&id)
 				.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
@@ -578,7 +575,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 		};
 		let schema = self.onchain_storage_schema(id);
 
-		let block = match self.optimizations.get(&schema) {
+		let block = match self.overrides.get(&schema) {
 			Some(handler) => {
 				handler
 					.current_block(&id)
@@ -604,7 +601,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 		};
 		let schema = self.onchain_storage_schema(id);
 
-		let block = match self.optimizations.get(&schema) {
+		let block = match self.overrides.get(&schema) {
 			Some(handler) => {
 				handler
 					.current_block(&id)
@@ -636,7 +633,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 			let schema = self.onchain_storage_schema(id);
 
 			return Ok(
-				match self.optimizations.get(&schema) {
+				match self.overrides.get(&schema) {
 					Some(handler) => {
 						handler
 							.account_code_at(&id, address)
@@ -890,7 +887,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 		};
 		let schema = self.onchain_storage_schema(id);
 
-		let (block, statuses) = match self.optimizations.get(&schema) {
+		let (block, statuses) = match self.overrides.get(&schema) {
 			Some(handler) => {
 				let b = handler.current_block(&id)
 				.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
@@ -934,7 +931,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 
 		let schema = self.onchain_storage_schema(id);
 
-		let (block, statuses) = match self.optimizations.get(&schema) {
+		let (block, statuses) = match self.overrides.get(&schema) {
 			Some(handler) => {
 				let b = handler.current_block(&id)
 				.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
@@ -975,7 +972,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 		let index = index.value();
 		let schema = self.onchain_storage_schema(id);
 
-		let (block, statuses) = match self.optimizations.get(&schema) {
+		let (block, statuses) = match self.overrides.get(&schema) {
 			Some(handler) => {
 				let b = handler.current_block(&id)
 				.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
@@ -1021,7 +1018,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 		};
 		let schema = self.onchain_storage_schema(id);
 
-		let (block, statuses, receipts) = match self.optimizations.get(&schema) {
+		let (block, statuses, receipts) = match self.overrides.get(&schema) {
 			Some(handler) => {
 				let b = handler.current_block(&id)
 				.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
