@@ -14,7 +14,7 @@ The goal of Ethereum compatibility layer is to be able to:
 
 It consists of the following components:
 
-* **[pallet-evm](https://github.com/paritytech/substrate/tree/master/frame/evm)**:
+* **[pallet-evm](https://github.com/paritytech/frontier/tree/master/frame/evm)**:
   EVM execution engine for Substrate.
 * **[pallet-ethereum](https://github.com/paritytech/frontier/tree/master/frame/ethereum)**: Emulation of full Ethereum block processing.
 * **rpc-ethereum**: Compatibility layer for web3 RPC methods.
@@ -32,7 +32,7 @@ arbitrary struct. This implementation must call the authorities accessor in eith
 Aura or Babe and convert the authority id response to H160 using
 pallet_evm::HashTruncateConvertAccountId::convert_account_id.
 
-The struct implementing FindAuthor is passed as the FindAuthor associated type's 
+The struct implementing FindAuthor is passed as the FindAuthor associated type's
 value for pallet_ethereum.
 
 An Aura example for this is available in the template's runtime (EthereumFindAuthor).
