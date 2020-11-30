@@ -18,7 +18,6 @@ use std::{marker::PhantomData, sync::Arc};
 use std::collections::BTreeMap;
 use ethereum::{Block as EthereumBlock, Transaction as EthereumTransaction};
 use ethereum_types::{H160, H256, H64, U256, U64, H512};
-use jsonrpc_core::{BoxFuture, Result, futures::future::{self, Future}};
 use sp_runtime::{
 	traits::{Block as BlockT, Header as _, UniqueSaturatedInto, Zero, One, Saturating, BlakeTwo256},
 	transaction_validity::TransactionSource
@@ -60,9 +59,8 @@ fn blake2_128_extend(bytes: &[u8]) -> Vec<u8> {
 }
 
 impl<B, C, BE> SchemaV1Override<B, C, BE> where
-	C: ProvideRuntimeApi<B> + StorageProvider<B, BE> + AuxStore,
+	C: StorageProvider<B, BE> + AuxStore,
 	C: HeaderBackend<B> + HeaderMetadata<B, Error=BlockChainError> + 'static,
-	C::Api: EthereumRuntimeRPCApi<B>,
 	BE: Backend<B> + 'static,
 	BE::State: StateBackend<BlakeTwo256>,
 	B: BlockT<Hash=H256> + Send + Sync + 'static,
@@ -113,15 +111,6 @@ impl<B, C, BE> SchemaV1Override<B, C, BE> where
 		)
 	}
 
-	fn account_codes(&self, id: &BlockId<B>, address: H160) -> Option<Vec<u8>> {
-		let mut key: Vec<u8> = storage_prefix_build(b"EVM", b"AccountCodes");
-		key.extend(blake2_128_extend(address.as_bytes()));
-		self.query_storage::<Vec<u8>>(
-			id,
-			&StorageKey(key)
-		)
-	}
-
 	fn account_storages(&self, id: &BlockId<B>, address: H160, index: U256) -> Option<H256> {
 		let tmp: &mut [u8; 32] = &mut [0; 32];
 		index.to_little_endian(tmp);
@@ -149,7 +138,17 @@ impl<B, C, BE> SchemaV1Override<B, C, BE> where
 	}
 }
 
-impl<Block: BlockT, C, BE> StorageOverride<Block> for SchemaV1Override<Block, C, BE> {
+impl<Block, C, BE> StorageOverride<Block> for SchemaV1Override<Block, C, BE>
+where
+	C: StorageProvider<Block, BE>,
+	C: AuxStore,
+	C: HeaderBackend<Block>,
+	C: HeaderMetadata<Block, Error=BlockChainError> + 'static,
+	BE: Backend<Block> + 'static,
+	BE::State: StateBackend<BlakeTwo256>,
+	Block: BlockT<Hash=H256> + Send + Sync + 'static,
+	C: Send + Sync + 'static,
+{
 	fn account_basic(&self, block: &BlockId<Block>, address: H160) -> Result<fp_evm::Account> {
 		unimplemented!()
 	}
@@ -158,8 +157,15 @@ impl<Block: BlockT, C, BE> StorageOverride<Block> for SchemaV1Override<Block, C,
 		unimplemented!()
 	}
 	/// For a given account address, returns pallet_evm::AccountCodes.
-	fn account_code_at(&self, block: &BlockId<Block>, address: H160) -> Result<Vec<u8>> {
-		unimplemented!()
+	fn account_code_at(&self, id: &BlockId<Block>, address: H160) -> Result<Vec<u8>> {
+		let mut key: Vec<u8> = storage_prefix_build(b"EVM", b"AccountCodes");
+		key.extend(blake2_128_extend(address.as_bytes()));
+		//TODO are these all going to be hard-coded Oks? If so, do I really need to return a Result?
+		self.query_storage::<Vec<u8>>(
+			id,
+			&StorageKey(key)
+		)
+			.ok_or(Err("error".into()))
 	}
 	/// Returns the author for the specified block
 	fn author(&self, block: &BlockId<Block>) -> Result<H160> {
