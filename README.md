@@ -42,19 +42,6 @@ An Aura example for this is available in the template's runtime (EthereumFindAut
 - For supporting gas_price rpc call, FeeCalculator trait must be implemented in an
 arbitrary struct. An example FixedGasPrice is available in the template's runtime.
 
-### Vendor folder
-
-The vendor folder contains dependencies that contains changes that has not yet
-been upstreamed. Once the upstreaming process is finished, the corresponding
-submodule should be removed from vendor folder, and directly use upstream.
-
-To install those submodules, from the frontier root folder:
-
-```sh
-git submodule init
-git submodule update
-```
-
 ### Use local version of Substrate
 
 1. Override your local cargo config to point to your local substrate (pointing to your WIP branch): place `paths = ["path/to/substrate"]` in `~/.cargo/config`.
