@@ -162,7 +162,7 @@ impl<Block: BlockT, C, BE> StorageOverride<Block> for SchemaV1Override<Block, C,
 		unimplemented!()
 	}
 	/// Returns the author for the specified block
-	fn author(&self, block: &BlockId<Block>) -> Option<H160> {
+	fn author(&self, block: &BlockId<Block>) -> Result<H160> {
 		unimplemented!()
 	}
 	/// For a given account address and index, returns pallet_evm::AccountStorages.

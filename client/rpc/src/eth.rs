@@ -73,7 +73,7 @@ pub trait StorageOverride<Block: BlockT> {
 	/// For a given account address, returns pallet_evm::AccountCodes.
 	fn account_code_at(&self, block: &BlockId<Block>, address: H160) -> Result<Vec<u8>>;
 	/// Returns the author for the specified block
-	fn author(&self, block: &BlockId<Block>) -> Option<H160>;
+	fn author(&self, block: &BlockId<Block>) -> Result<H160>;
 	/// For a given account address and index, returns pallet_evm::AccountStorages.
 	fn storage_at(&self, block: &BlockId<Block>, address: H160, index: U256) -> Result<H256>;
 	/// Return the current block.
@@ -339,7 +339,9 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 			match self.overrides.get(&schema) {
 				Some(handler) =>  {
 					handler
-						.author(&block).ok_or(internal_err(format!("fetch optimized author failed")).into())
+						.author(&block)
+						.map_err(|err| internal_err(format!("fetch runtime author failed: {:?}", err)))?
+						.into()
 				}
 				None => {
 					self.client
