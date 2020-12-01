@@ -310,13 +310,25 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 
 	fn author(&self) -> Result<H160> {
 		let block = BlockId::Hash(self.client.info().best_hash);
+		let schema = self.onchain_storage_schema(block);
 
 		Ok(
-			self.client
-				.runtime_api()
-				.author(&block)
-				.map_err(|err| internal_err(format!("fetch runtime author failed: {:?}", err)))?
-				.into()
+			match self.overrides.get(&schema) {
+				Some(handler) => {
+					handler
+						.current_block(&block)
+						.map_err(|err| internal_err(format!("fetch runtime author failed: {:?}", err)))?
+						.map(|b| b.header.beneficiary)
+						.ok_or(internal_err("Failed to retrieve block."))?
+				}
+				None => {
+					self.client
+						.runtime_api()
+						.author(&block)
+						.map_err(|err| internal_err(format!("fetch runtime author failed: {:?}", err)))?
+						.into()
+				}
+			}
 		)
 	}
 
@@ -332,25 +344,14 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 
 	fn gas_price(&self) -> Result<U256> {
 		let block = BlockId::Hash(self.client.info().best_hash);
-		let schema = self.onchain_storage_schema(block);
 
-		match self.overrides.get(&schema) {
-			Some(handler) => {
-				handler
-					.gas_price(&block)
-					.map_err(|err| internal_err(format!("fetch runtime chain id failed: {:?}", err)))
-					.into()
-			}
-			None => {
-				Ok(
-					self.client
-						.runtime_api()
-						.gas_price(&block)
-						.map_err(|err| internal_err(format!("fetch runtime chain id failed: {:?}", err)))?
-						.into(),
-				)
-			}
-		}
+		Ok(
+			self.client
+				.runtime_api()
+				.gas_price(&block)
+				.map_err(|err| internal_err(format!("fetch runtime chain id failed: {:?}", err)))?
+				.into(),
+		)
 	}
 
 	fn accounts(&self) -> Result<Vec<H160>> {

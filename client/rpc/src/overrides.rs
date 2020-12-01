@@ -36,8 +36,6 @@ pub trait StorageOverride<Block: BlockT> {
 	/// TODO Telmo said this requires the address mapping. Is that true? I guess it would be if
 	/// we have to query pallet balances directly. But can we query pallet evm for that?
 	fn account_basic(&self, block: &BlockId<Block>, address: H160) -> Result<fp_evm::Account>;
-	/// Returns FixedGasPrice::min_gas_price
-	fn gas_price(&self, block: &BlockId<Block>) -> Result<U256>;
 	/// For a given account address, returns pallet_evm::AccountCodes.
 	fn account_code_at(&self, block: &BlockId<Block>, address: H160) -> Result<Vec<u8>>;
 	/// For a given account address and index, returns pallet_evm::AccountStorages.
@@ -111,10 +109,7 @@ where
 	fn account_basic(&self, block: &BlockId<Block>, address: H160) -> Result<fp_evm::Account> {
 		unimplemented!()
 	}
-	/// Returns FixedGasPrice::min_gas_price
-	fn gas_price(&self, block: &BlockId<Block>) -> Result<U256> {
-		unimplemented!()
-	}
+
 	/// For a given account address, returns pallet_evm::AccountCodes.
 	fn account_code_at(&self, block: &BlockId<Block>, address: H160) -> Result<Vec<u8>> {
 		let mut key: Vec<u8> = storage_prefix_build(b"EVM", b"AccountCodes");
