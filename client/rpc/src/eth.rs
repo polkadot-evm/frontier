@@ -1067,7 +1067,6 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 		Ok(None)
 	}
 
-	//TODO I think this is the last one to do
 	fn logs(&self, filter: Filter) -> Result<Vec<Log>> {
 		let mut blocks_and_statuses = Vec::new();
 		let mut ret = Vec::new();
