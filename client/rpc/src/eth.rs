@@ -49,6 +49,7 @@ use sp_io::hashing::twox_128;
 pub use fc_rpc_core::{EthApiServer, NetApiServer, Web3ApiServer};
 use codec::{self, Encode, Decode};
 use pallet_ethereum::EthereumStorageSchema;
+use crate::overrides::StorageOverride;
 
 /// The well-known never-chainging storage key from where pallet ethereum's storage schema can be read.
 /// TODO It may be conventional to register or define this key in a particular place.
@@ -58,30 +59,6 @@ fn schema_key() -> StorageKey {
 		.concat()
 		.to_vec()
 	)
-}
-
-/// Something that can fetch Ethereum-related data from a State Backend with some assumptions
-/// about pallet-ethereum's storage schema. This trait is quite similar to the runtime API.
-pub trait StorageOverride<Block: BlockT> {
-
-	/// Returns fp_evm::Accounts by address.
-	/// TODO Telmo said this requires the address mapping. Is that true? I guess it would be if
-	/// we have to query pallet balances directly. But can we query pallet evm for that?
-	fn account_basic(&self, block: &BlockId<Block>, address: H160) -> Result<fp_evm::Account>;
-	/// Returns FixedGasPrice::min_gas_price
-	fn gas_price(&self, block: &BlockId<Block>) -> Result<U256>;
-	/// For a given account address, returns pallet_evm::AccountCodes.
-	fn account_code_at(&self, block: &BlockId<Block>, address: H160) -> Result<Vec<u8>>;
-	/// Returns the author for the specified block
-	fn author(&self, block: &BlockId<Block>) -> Result<H160>;
-	/// For a given account address and index, returns pallet_evm::AccountStorages.
-	fn storage_at(&self, block: &BlockId<Block>, address: H160, index: U256) -> Result<H256>;
-	/// Return the current block.
-	fn current_block(&self, block: &BlockId<Block>) -> Result<Option<EthereumBlock>>;
-	/// Return the current receipt.
-	fn current_receipts(&self, block: &BlockId<Block>) -> Result<Option<Vec<ethereum::Receipt>>>;
-	/// Return the current transaction status.
-	fn current_transaction_statuses(&self, block: &BlockId<Block>) -> Result<Option<Vec<TransactionStatus>>>;
 }
 
 pub struct EthApi<B: BlockT, C, P, CT, BE, H: ExHashT> {

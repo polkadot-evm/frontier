@@ -25,15 +25,39 @@ use sp_runtime::{
 use sp_api::{ProvideRuntimeApi, BlockId};
 use sc_client_api::backend::{StorageProvider, Backend, StateBackend, AuxStore};
 use sha3::{Keccak256, Digest};
-use sp_blockchain::{Error as BlockChainError, HeaderMetadata, HeaderBackend};
+use sp_blockchain::{Error as BlockChainError, HeaderMetadata, HeaderBackend, Result};
 use sp_storage::StorageKey;
 use codec::Decode;
 use sp_io::hashing::{twox_128, blake2_128};
 use fp_rpc::{EthereumRuntimeRPCApi, TransactionStatus};
-use crate::{internal_err, error_on_execution_failure, eth::StorageOverride};
+use crate::{internal_err, error_on_execution_failure};
 
 pub use fc_rpc_core::{EthApiServer, NetApiServer};
 use codec::{self, Encode};
+
+/// Something that can fetch Ethereum-related data from a State Backend with some assumptions
+/// about pallet-ethereum's storage schema. This trait is quite similar to the runtime API.
+pub trait StorageOverride<Block: BlockT> {
+
+	/// Returns fp_evm::Accounts by address.
+	/// TODO Telmo said this requires the address mapping. Is that true? I guess it would be if
+	/// we have to query pallet balances directly. But can we query pallet evm for that?
+	fn account_basic(&self, block: &BlockId<Block>, address: H160) -> Result<fp_evm::Account>;
+	/// Returns FixedGasPrice::min_gas_price
+	fn gas_price(&self, block: &BlockId<Block>) -> Result<U256>;
+	/// For a given account address, returns pallet_evm::AccountCodes.
+	fn account_code_at(&self, block: &BlockId<Block>, address: H160) -> Result<Vec<u8>>;
+	/// Returns the author for the specified block
+	fn author(&self, block: &BlockId<Block>) -> Result<H160>;
+	/// For a given account address and index, returns pallet_evm::AccountStorages.
+	fn storage_at(&self, block: &BlockId<Block>, address: H160, index: U256) -> Result<H256>;
+	/// Return the current block.
+	fn current_block(&self, block: &BlockId<Block>) -> Result<Option<EthereumBlock>>;
+	/// Return the current receipt.
+	fn current_receipts(&self, block: &BlockId<Block>) -> Result<Option<Vec<ethereum::Receipt>>>;
+	/// Return the current transaction status.
+	fn current_transaction_statuses(&self, block: &BlockId<Block>) -> Result<Option<Vec<TransactionStatus>>>;
+}
 
 pub struct SchemaV1Override<B: BlockT, C, BE> {
 	client: Arc<C>,
@@ -67,41 +91,6 @@ impl<B, C, BE> SchemaV1Override<B, C, BE> where
 	C: Send + Sync + 'static,
 {
 
-	fn headers(&self, id: &BlockId<B>) -> Result<(u64,u64)> {
-		match self.client.header(id.clone())
-			.map_err(|_| internal_err(format!("failed to retrieve header at: {:#?}", id)))?
-		{
-			Some(h) => {
-				let best_number: u64 = UniqueSaturatedInto::<u64>::unique_saturated_into(
-					self.client.info().best_number
-				);
-				let header_number: u64 = UniqueSaturatedInto::<u64>::unique_saturated_into(
-					*h.number()
-				);
-				Ok((best_number, header_number))
-			}
-			_ => Err(internal_err(format!("failed to retrieve header at: {:#?}", id)))
-		}
-	}
-
-	fn current_block(&self, id: &BlockId<B>) -> Option<ethereum::Block> {
-		self.query_storage::<ethereum::Block>(
-			id,
-			&StorageKey(
-				storage_prefix_build(b"Ethereum", b"CurrentBlock")
-			)
-		)
-	}
-
-	fn current_statuses(&self, id: &BlockId<B>) -> Option<Vec<TransactionStatus>> {
-		self.query_storage::<Vec<TransactionStatus>>(
-			id,
-			&StorageKey(
-				storage_prefix_build(b"Ethereum", b"CurrentTransactionStatuses")
-			)
-		)
-	}
-
 	fn current_receipts(&self, id: &BlockId<B>) -> Option<Vec<ethereum::Receipt>> {
 		self.query_storage::<Vec<ethereum::Receipt>>(
 			id,
@@ -125,16 +114,21 @@ impl<B, C, BE> SchemaV1Override<B, C, BE> where
 		)
 	}
 
-	fn query_storage<T: Decode>(&self, id: &BlockId<B>, key: &StorageKey) -> Option<T> {
-		if let Ok(Some(data)) = self.client.storage(
-			id,
-			key
-		) {
-			if let Ok(result) = Decode::decode(&mut &data.0[..]) {
-				return Some(result);
-			}
-		}
-		None
+	fn query_storage<T: Decode>(&self, id: &BlockId<B>, key: &StorageKey) -> Result<T> {
+		// if let Ok(Some(data)) = self.client.storage(
+		// 	id,
+		// 	key
+		// ) {
+		// 	if let Ok(result) = Decode::decode(&mut &data.0[..]) {
+		// 		return Some(result);
+		// 	}
+		// }
+		// None
+
+		let raw_data = self.client.storage(id, key)?
+			.ok_or("Storage provider returned no data".into())?;
+
+		Decode::decode(&mut &raw_data.0[..]).map_err("Could not decode data".into())
 	}
 }
 
@@ -160,12 +154,10 @@ where
 	fn account_code_at(&self, id: &BlockId<Block>, address: H160) -> Result<Vec<u8>> {
 		let mut key: Vec<u8> = storage_prefix_build(b"EVM", b"AccountCodes");
 		key.extend(blake2_128_extend(address.as_bytes()));
-		//TODO are these all going to be hard-coded Oks? If so, do I really need to return a Result?
 		self.query_storage::<Vec<u8>>(
 			id,
 			&StorageKey(key)
 		)
-			.ok_or(Err("error".into()))
 	}
 	/// Returns the author for the specified block
 	fn author(&self, block: &BlockId<Block>) -> Result<H160> {
@@ -177,7 +169,12 @@ where
 	}
 	/// Return the current block.
 	fn current_block(&self, block: &BlockId<Block>) -> Result<Option<EthereumBlock>> {
-		unimplemented!()
+		self.query_storage::<ethereum::Block>(
+			block,
+			&StorageKey(
+				storage_prefix_build(b"Ethereum", b"CurrentBlock")
+			)
+		)
 	}
 	/// Return the current receipt.
 	fn current_receipts(&self, block: &BlockId<Block>) -> Result<Option<Vec<ethereum::Receipt>>> {
@@ -185,6 +182,11 @@ where
 	}
 	/// Return the current transaction status.
 	fn current_transaction_statuses(&self, block: &BlockId<Block>) -> Result<Option<Vec<TransactionStatus>>> {
-		unimplemented!()
+		self.query_storage::<Vec<TransactionStatus>>(
+			block,
+			&StorageKey(
+				storage_prefix_build(b"Ethereum", b"CurrentTransactionStatuses")
+			)
+		)
 	}
 }
