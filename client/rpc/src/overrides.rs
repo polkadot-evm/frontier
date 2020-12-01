@@ -31,11 +31,6 @@ pub use fc_rpc_core::{EthApiServer, NetApiServer};
 /// Something that can fetch Ethereum-related data from a State Backend with some assumptions
 /// about pallet-ethereum's storage schema. This trait is quite similar to the runtime API.
 pub trait StorageOverride<Block: BlockT> {
-
-	/// Returns fp_evm::Accounts by address.
-	/// TODO Telmo said this requires the address mapping. Is that true? I guess it would be if
-	/// we have to query pallet balances directly. But can we query pallet evm for that?
-	fn account_basic(&self, block: &BlockId<Block>, address: H160) -> Result<fp_evm::Account>;
 	/// For a given account address, returns pallet_evm::AccountCodes.
 	fn account_code_at(&self, block: &BlockId<Block>, address: H160) -> Result<Vec<u8>>;
 	/// For a given account address and index, returns pallet_evm::AccountStorages.
@@ -106,10 +101,6 @@ where
 	Block: BlockT<Hash=H256> + Send + Sync + 'static,
 	C: Send + Sync + 'static,
 {
-	fn account_basic(&self, block: &BlockId<Block>, address: H160) -> Result<fp_evm::Account> {
-		unimplemented!()
-	}
-
 	/// For a given account address, returns pallet_evm::AccountCodes.
 	fn account_code_at(&self, block: &BlockId<Block>, address: H160) -> Result<Vec<u8>> {
 		let mut key: Vec<u8> = storage_prefix_build(b"EVM", b"AccountCodes");
@@ -134,8 +125,8 @@ where
 			&StorageKey(key)
 		)
 	}
+
 	/// Return the current block.
-	//TODO what's up with the option here? Isn't query_storage returning a ethereum::Block?
 	fn current_block(&self, block: &BlockId<Block>) -> Result<Option<EthereumBlock>> {
 		self.query_storage::<Option<ethereum::Block>>(
 			block,
@@ -144,6 +135,7 @@ where
 			)
 		)
 	}
+
 	/// Return the current receipt.
 	fn current_receipts(&self, block: &BlockId<Block>) -> Result<Option<Vec<ethereum::Receipt>>> {
 		self.query_storage::<Option<Vec<ethereum::Receipt>>>(
@@ -153,6 +145,7 @@ where
 			)
 		)
 	}
+
 	/// Return the current transaction status.
 	fn current_transaction_statuses(&self, block: &BlockId<Block>) -> Result<Option<Vec<TransactionStatus>>> {
 		self.query_storage::<Option<Vec<TransactionStatus>>>(

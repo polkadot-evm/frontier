@@ -368,24 +368,12 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 
 	fn balance(&self, address: H160, number: Option<BlockNumber>) -> Result<U256> {
 		if let Ok(Some(id)) = self.native_block_id(number) {
-
-			let schema = self.onchain_storage_schema(id);
 			return Ok(
-				match self.overrides.get(&schema) {
-					Some(handler) => {
-						handler
-							.account_basic(&id, address)
-							.map_err(|err| internal_err(format!("fetch runtime chain id failed: {:?}", err)))?
-							.balance.into()
-					}
-					None => {
-						self.client
-							.runtime_api()
-							.account_basic(&id, address)
-							.map_err(|err| internal_err(format!("fetch runtime chain id failed: {:?}", err)))?
-							.balance.into()
-					}
-				}
+				self.client
+					.runtime_api()
+					.account_basic(&id, address)
+					.map_err(|err| internal_err(format!("fetch runtime chain id failed: {:?}", err)))?
+					.balance.into()
 			)
 		}
 		Ok(U256::zero())
