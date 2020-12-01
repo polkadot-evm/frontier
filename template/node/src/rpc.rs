@@ -1,7 +1,7 @@
 //! A collection of node-specific RPC methods.
 
 use std::{sync::Arc, fmt};
-
+use std::collections::BTreeMap;
 use sc_consensus_manual_seal::rpc::{ManualSeal, ManualSealApi};
 use frontier_template_runtime::{Hash, AccountId, Index, opaque::Block, Balance};
 use sp_api::ProvideRuntimeApi;
@@ -17,6 +17,8 @@ use sp_runtime::traits::BlakeTwo256;
 use sp_block_builder::BlockBuilder;
 use sc_network::NetworkService;
 use jsonrpc_pubsub::manager::SubscriptionManager;
+use pallet_ethereum::EthereumStorageSchema;
+use fc_rpc::{StorageOverride, SchemaV1Override};
 
 /// Light client extra dependencies.
 pub struct LightDeps<C, F, P> {
@@ -95,6 +97,11 @@ pub fn create_full<C, P, BE>(
 	if enable_dev_signer {
 		signers.push(Box::new(EthDevSigner::new()) as Box<dyn EthSigner>);
 	}
+	let mut overrides = BTreeMap::new();
+	overrides.insert(
+		EthereumStorageSchema::V1,
+		Box::new(SchemaV1Override::new(client.clone())) as Box<dyn StorageOverride<_> + Send + Sync>
+	);
 	io.extend_with(
 		EthApiServer::to_delegate(EthApi::new(
 			client.clone(),
@@ -102,6 +109,7 @@ pub fn create_full<C, P, BE>(
 			frontier_template_runtime::TransactionConverter,
 			network.clone(),
 			signers,
+			overrides,
 			is_authority,
 		))
 	);

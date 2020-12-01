@@ -79,6 +79,7 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> {
 		convert_transaction: CT,
 		network: Arc<NetworkService<B, H>>,
 		signers: Vec<Box<dyn EthSigner>>,
+		overrides: BTreeMap<EthereumStorageSchema, Box<dyn StorageOverride<B> + Send + Sync>>,
 		is_authority: bool,
 	) -> Self {
 		Self {
@@ -88,7 +89,7 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> {
 			network,
 			is_authority,
 			signers,
-			overrides: BTreeMap::new(),
+			overrides,
 			_marker: PhantomData,
 		}
 	}

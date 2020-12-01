@@ -22,6 +22,7 @@ mod overrides;
 
 pub use eth::{EthApi, EthApiServer, NetApi, NetApiServer, Web3Api, Web3ApiServer};
 pub use eth_pubsub::{EthPubSubApi, EthPubSubApiServer, HexEncodedIdProvider};
+pub use overrides::{StorageOverride, SchemaV1Override};
 
 use ethereum_types::{H160, H256};
 use jsonrpc_core::{ErrorCode, Error, Value};
