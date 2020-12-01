@@ -15,25 +15,18 @@
 // along with Substrate.  If not, see <http://www.gnu.org/licenses/>.
 
 use std::{marker::PhantomData, sync::Arc};
-use std::collections::BTreeMap;
-use ethereum::{Block as EthereumBlock, Transaction as EthereumTransaction};
-use ethereum_types::{H160, H256, H64, U256, U64, H512};
-use sp_runtime::{
-	traits::{Block as BlockT, Header as _, UniqueSaturatedInto, Zero, One, Saturating, BlakeTwo256},
-	transaction_validity::TransactionSource
-};
-use sp_api::{ProvideRuntimeApi, BlockId};
+use ethereum::Block as EthereumBlock;
+use ethereum_types::{H160, H256, U256};
+use sp_runtime::traits::{Block as BlockT, BlakeTwo256};
+use sp_api::BlockId;
 use sc_client_api::backend::{StorageProvider, Backend, StateBackend, AuxStore};
-use sha3::{Keccak256, Digest};
 use sp_blockchain::{Error as BlockChainError, HeaderMetadata, HeaderBackend, Result};
 use sp_storage::StorageKey;
 use codec::Decode;
 use sp_io::hashing::{twox_128, blake2_128};
-use fp_rpc::{EthereumRuntimeRPCApi, TransactionStatus};
-use crate::{internal_err, error_on_execution_failure};
+use fp_rpc::TransactionStatus;
 
 pub use fc_rpc_core::{EthApiServer, NetApiServer};
-use codec::{self, Encode};
 
 /// Something that can fetch Ethereum-related data from a State Backend with some assumptions
 /// about pallet-ethereum's storage schema. This trait is quite similar to the runtime API.
@@ -68,16 +61,6 @@ impl<B: BlockT, C, BE> SchemaV1Override<B, C, BE> {
 	}
 }
 
-fn storage_prefix_build(module: &[u8], storage: &[u8]) -> Vec<u8> {
-	[twox_128(module), twox_128(storage)].concat().to_vec()
-}
-
-fn blake2_128_extend(bytes: &[u8]) -> Vec<u8> {
-	let mut ext: Vec<u8> = blake2_128(bytes).to_vec();
-	ext.extend_from_slice(bytes);
-	ext
-}
-
 impl<B, C, BE> SchemaV1Override<B, C, BE> where
 	C: StorageProvider<B, BE> + AuxStore,
 	C: HeaderBackend<B> + HeaderMetadata<B, Error=BlockChainError> + 'static,
@@ -98,10 +81,20 @@ impl<B, C, BE> SchemaV1Override<B, C, BE> where
 		// None
 
 		let raw_data = self.client.storage(id, key)?
-			.ok_or("Storage provider returned Ok(None)".into())?;
+			.ok_or("Storage provider returned Ok(None)")?;
 
-		Decode::decode(&mut &raw_data.0[..]).map_err("Could not decode data".into())
+		Decode::decode(&mut &raw_data.0[..]).map_err(|_| "Could not decode data".into())
 	}
+}
+
+fn storage_prefix_build(module: &[u8], storage: &[u8]) -> Vec<u8> {
+	[twox_128(module), twox_128(storage)].concat().to_vec()
+}
+
+fn blake2_128_extend(bytes: &[u8]) -> Vec<u8> {
+	let mut ext: Vec<u8> = blake2_128(bytes).to_vec();
+	ext.extend_from_slice(bytes);
+	ext
 }
 
 impl<Block, C, BE> StorageOverride<Block> for SchemaV1Override<Block, C, BE>
@@ -149,7 +142,7 @@ where
 	/// Return the current block.
 	//TODO what's up with the option here? Isn't query_storage returning a ethereum::Block?
 	fn current_block(&self, block: &BlockId<Block>) -> Result<Option<EthereumBlock>> {
-		self.query_storage::<ethereum::Block>(
+		self.query_storage::<Option<ethereum::Block>>(
 			block,
 			&StorageKey(
 				storage_prefix_build(b"Ethereum", b"CurrentBlock")
@@ -158,7 +151,7 @@ where
 	}
 	/// Return the current receipt.
 	fn current_receipts(&self, block: &BlockId<Block>) -> Result<Option<Vec<ethereum::Receipt>>> {
-		self.query_storage::<Vec<ethereum::Receipt>>(
+		self.query_storage::<Option<Vec<ethereum::Receipt>>>(
 			block,
 			&StorageKey(
 				storage_prefix_build(b"Ethereum", b"CurrentReceipts")
@@ -167,7 +160,7 @@ where
 	}
 	/// Return the current transaction status.
 	fn current_transaction_statuses(&self, block: &BlockId<Block>) -> Result<Option<Vec<TransactionStatus>>> {
-		self.query_storage::<Vec<TransactionStatus>>(
+		self.query_storage::<Option<Vec<TransactionStatus>>>(
 			block,
 			&StorageKey(
 				storage_prefix_build(b"Ethereum", b"CurrentTransactionStatuses")

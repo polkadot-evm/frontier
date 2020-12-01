@@ -310,7 +310,6 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 
 	fn author(&self) -> Result<H160> {
 		let block = BlockId::Hash(self.client.info().best_hash);
-		let schema = self.onchain_storage_schema(block);
 
 		Ok(
 			self.client
