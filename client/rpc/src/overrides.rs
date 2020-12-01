@@ -47,8 +47,6 @@ pub trait StorageOverride<Block: BlockT> {
 	fn gas_price(&self, block: &BlockId<Block>) -> Result<U256>;
 	/// For a given account address, returns pallet_evm::AccountCodes.
 	fn account_code_at(&self, block: &BlockId<Block>, address: H160) -> Result<Vec<u8>>;
-	/// Returns the author for the specified block
-	fn author(&self, block: &BlockId<Block>) -> Result<H160>;
 	/// For a given account address and index, returns pallet_evm::AccountStorages.
 	fn storage_at(&self, block: &BlockId<Block>, address: H160, index: U256) -> Result<H256>;
 	/// Return the current block.
@@ -65,9 +63,7 @@ pub struct SchemaV1Override<B: BlockT, C, BE> {
 }
 
 impl<B: BlockT, C, BE> SchemaV1Override<B, C, BE> {
-	pub fn new(
-		client: Arc<C>,
-	) -> Self {
+	pub fn new(client: Arc<C>) -> Self {
 		Self { client, _marker: PhantomData }
 	}
 }
@@ -90,30 +86,6 @@ impl<B, C, BE> SchemaV1Override<B, C, BE> where
 	B: BlockT<Hash=H256> + Send + Sync + 'static,
 	C: Send + Sync + 'static,
 {
-
-	fn current_receipts(&self, id: &BlockId<B>) -> Option<Vec<ethereum::Receipt>> {
-		self.query_storage::<Vec<ethereum::Receipt>>(
-			id,
-			&StorageKey(
-				storage_prefix_build(b"Ethereum", b"CurrentReceipts")
-			)
-		)
-	}
-
-	fn account_storages(&self, id: &BlockId<B>, address: H160, index: U256) -> Option<H256> {
-		let tmp: &mut [u8; 32] = &mut [0; 32];
-		index.to_little_endian(tmp);
-
-		let mut key: Vec<u8> = storage_prefix_build(b"EVM", b"AccountStorages");
-		key.extend(blake2_128_extend(address.as_bytes()));
-		key.extend(blake2_128_extend(tmp));
-
-		self.query_storage::<H256>(
-			id,
-			&StorageKey(key)
-		)
-	}
-
 	fn query_storage<T: Decode>(&self, id: &BlockId<B>, key: &StorageKey) -> Result<T> {
 		// if let Ok(Some(data)) = self.client.storage(
 		// 	id,
@@ -126,7 +98,7 @@ impl<B, C, BE> SchemaV1Override<B, C, BE> where
 		// None
 
 		let raw_data = self.client.storage(id, key)?
-			.ok_or("Storage provider returned no data".into())?;
+			.ok_or("Storage provider returned Ok(None)".into())?;
 
 		Decode::decode(&mut &raw_data.0[..]).map_err("Could not decode data".into())
 	}
@@ -151,23 +123,31 @@ where
 		unimplemented!()
 	}
 	/// For a given account address, returns pallet_evm::AccountCodes.
-	fn account_code_at(&self, id: &BlockId<Block>, address: H160) -> Result<Vec<u8>> {
+	fn account_code_at(&self, block: &BlockId<Block>, address: H160) -> Result<Vec<u8>> {
 		let mut key: Vec<u8> = storage_prefix_build(b"EVM", b"AccountCodes");
 		key.extend(blake2_128_extend(address.as_bytes()));
 		self.query_storage::<Vec<u8>>(
-			id,
+			block,
 			&StorageKey(key)
 		)
 	}
-	/// Returns the author for the specified block
-	fn author(&self, block: &BlockId<Block>) -> Result<H160> {
-		unimplemented!()
-	}
+
 	/// For a given account address and index, returns pallet_evm::AccountStorages.
 	fn storage_at(&self, block: &BlockId<Block>, address: H160, index: U256) -> Result<H256> {
-		unimplemented!()
+		let tmp: &mut [u8; 32] = &mut [0; 32];
+		index.to_little_endian(tmp);
+
+		let mut key: Vec<u8> = storage_prefix_build(b"EVM", b"AccountStorages");
+		key.extend(blake2_128_extend(address.as_bytes()));
+		key.extend(blake2_128_extend(tmp));
+
+		self.query_storage::<H256>(
+			block,
+			&StorageKey(key)
+		)
 	}
 	/// Return the current block.
+	//TODO what's up with the option here? Isn't query_storage returning a ethereum::Block?
 	fn current_block(&self, block: &BlockId<Block>) -> Result<Option<EthereumBlock>> {
 		self.query_storage::<ethereum::Block>(
 			block,
@@ -178,7 +158,12 @@ where
 	}
 	/// Return the current receipt.
 	fn current_receipts(&self, block: &BlockId<Block>) -> Result<Option<Vec<ethereum::Receipt>>> {
-		unimplemented!()
+		self.query_storage::<Vec<ethereum::Receipt>>(
+			block,
+			&StorageKey(
+				storage_prefix_build(b"Ethereum", b"CurrentReceipts")
+			)
+		)
 	}
 	/// Return the current transaction status.
 	fn current_transaction_statuses(&self, block: &BlockId<Block>) -> Result<Option<Vec<TransactionStatus>>> {

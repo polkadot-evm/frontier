@@ -313,21 +313,11 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 		let schema = self.onchain_storage_schema(block);
 
 		Ok(
-			match self.overrides.get(&schema) {
-				Some(handler) =>  {
-					handler
-						.author(&block)
-						.map_err(|err| internal_err(format!("fetch runtime author failed: {:?}", err)))?
-						.into()
-				}
-				None => {
-					self.client
-						.runtime_api()
-						.author(&block)
-						.map_err(|err| internal_err(format!("fetch runtime author failed: {:?}", err)))?
-						.into()
-				}
-			}
+			self.client
+				.runtime_api()
+				.author(&block)
+				.map_err(|err| internal_err(format!("fetch runtime author failed: {:?}", err)))?
+				.into()
 		)
 	}
 
