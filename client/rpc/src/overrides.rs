@@ -43,6 +43,7 @@ pub trait StorageOverride<Block: BlockT> {
 	fn current_transaction_statuses(&self, block: &BlockId<Block>) -> Result<Option<Vec<TransactionStatus>>>;
 }
 
+/// An override for runtimes that use Schema V1
 pub struct SchemaV1Override<B: BlockT, C, BE> {
 	client: Arc<C>,
 	_marker: PhantomData<(B, BE)>,
