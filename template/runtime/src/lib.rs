@@ -509,6 +509,7 @@ impl_runtime_apis! {
 				gas_limit.low_u32(),
 				gas_price,
 				nonce,
+				<Runtime as pallet_evm::Trait>::config(),
 			).map_err(|err| err.into())
 		}
 
@@ -527,6 +528,7 @@ impl_runtime_apis! {
 				gas_limit.low_u32(),
 				gas_price,
 				nonce,
+				<Runtime as pallet_evm::Trait>::config(),
 			).map_err(|err| err.into())
 		}
 

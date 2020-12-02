@@ -392,6 +392,7 @@ impl<T: Trait> Module<T> {
 					gas_limit.low_u32(),
 					gas_price,
 					nonce,
+					T::config(),
 				).map_err(Into::into)?)))
 			},
 			ethereum::TransactionAction::Create => {
@@ -402,6 +403,7 @@ impl<T: Trait> Module<T> {
 					gas_limit.low_u32(),
 					gas_price,
 					nonce,
+					T::config(),
 				).map_err(Into::into)?)))
 			},
 		}
