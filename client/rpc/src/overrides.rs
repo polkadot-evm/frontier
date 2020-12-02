@@ -64,16 +64,6 @@ impl<B, C, BE> SchemaV1Override<B, C, BE> where
 	C: Send + Sync + 'static,
 {
 	fn query_storage<T: Decode>(&self, id: &BlockId<B>, key: &StorageKey) -> Result<T> {
-		// if let Ok(Some(data)) = self.client.storage(
-		// 	id,
-		// 	key
-		// ) {
-		// 	if let Ok(result) = Decode::decode(&mut &data.0[..]) {
-		// 		return Some(result);
-		// 	}
-		// }
-		// None
-
 		let raw_data = self.client.storage(id, key)?
 			.ok_or("Storage provider returned Ok(None)")?;
 
