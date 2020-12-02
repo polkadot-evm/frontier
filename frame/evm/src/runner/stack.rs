@@ -44,7 +44,7 @@ impl<T: Trait> Runner<T> {
 		gas_limit: u32,
 		gas_price: Option<U256>,
 		nonce: Option<U256>,
-		config: &'static evm::Config,
+		config: &evm::Config,
 		f: F,
 	) -> Result<ExecutionInfo<R>, Error<T>> where
 		F: FnOnce(&mut StackExecutor<Backend<T>>) -> (ExitReason, R),
@@ -121,7 +121,7 @@ impl<T: Trait> RunnerT<T> for Runner<T> {
 		gas_limit: u32,
 		gas_price: Option<U256>,
 		nonce: Option<U256>,
-		config: &'static evm::Config,
+		config: &evm::Config,
 	) -> Result<CallInfo, Self::Error> {
 		Self::execute(
 			source,
@@ -147,7 +147,7 @@ impl<T: Trait> RunnerT<T> for Runner<T> {
 		gas_limit: u32,
 		gas_price: Option<U256>,
 		nonce: Option<U256>,
-		config: &'static evm::Config,
+		config: &evm::Config,
 	) -> Result<CreateInfo, Self::Error> {
 		Self::execute(
 			source,
@@ -178,7 +178,7 @@ impl<T: Trait> RunnerT<T> for Runner<T> {
 		gas_limit: u32,
 		gas_price: Option<U256>,
 		nonce: Option<U256>,
-		config: &'static evm::Config,
+		config: &evm::Config,
 	) -> Result<CreateInfo, Self::Error> {
 		let code_hash = H256::from_slice(Keccak256::digest(&init).as_slice());
 		Self::execute(

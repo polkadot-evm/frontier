@@ -55,7 +55,7 @@ impl<T: Trait> RunnerT<T> for Runner<T> {
 		gas_limit: u32,
 		gas_price: Option<U256>,
 		nonce: Option<U256>,
-		config: &'static evm::Config,
+		config: &evm::Config,
 	) -> Result<CallInfo, Self::Error> {
 		let gas_price = match gas_price {
 			Some(gas_price) => {
@@ -122,7 +122,7 @@ impl<T: Trait> RunnerT<T> for Runner<T> {
 		gas_limit: u32,
 		gas_price: Option<U256>,
 		nonce: Option<U256>,
-		config: &'static evm::Config,
+		config: &evm::Config,
 	) -> Result<CreateInfo, Self::Error> {
 		let gas_price = match gas_price {
 			Some(gas_price) => {
@@ -201,7 +201,7 @@ impl<T: Trait> RunnerT<T> for Runner<T> {
 		gas_limit: u32,
 		gas_price: Option<U256>,
 		nonce: Option<U256>,
-		config: &'static evm::Config,
+		config: &evm::Config,
 	) -> Result<CreateInfo, Self::Error> {
 		let gas_price = match gas_price {
 			Some(gas_price) => {

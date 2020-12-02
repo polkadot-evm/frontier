@@ -63,7 +63,7 @@ sp_api::decl_runtime_apis! {
 		fn author() -> H160;
 		/// For a given account address and index, returns pallet_evm::AccountStorages.
 		fn storage_at(address: H160, index: U256) -> H256;
-		/// Returns a frame_ethereum::call response.
+		/// Returns a frame_ethereum::call response. If `estimate` is true,
 		fn call(
 			from: H160,
 			to: H160,
@@ -72,6 +72,7 @@ sp_api::decl_runtime_apis! {
 			gas_limit: U256,
 			gas_price: Option<U256>,
 			nonce: Option<U256>,
+			estimate: bool,
 		) -> Result<fp_evm::CallInfo, sp_runtime::DispatchError>;
 		/// Returns a frame_ethereum::create response.
 		fn create(
@@ -81,6 +82,7 @@ sp_api::decl_runtime_apis! {
 			gas_limit: U256,
 			gas_price: Option<U256>,
 			nonce: Option<U256>,
+			estimate: bool,
 		) -> Result<fp_evm::CreateInfo, sp_runtime::DispatchError>;
 		/// Return the current block.
 		fn current_block() -> Option<EthereumBlock>;
