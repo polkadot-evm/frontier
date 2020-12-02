@@ -101,7 +101,11 @@ decl_storage! {
 	}
 	add_extra_genesis {
 		build(|_config: &GenesisConfig| {
+			// Calculate the ethereum genesis block
 			<Module<T>>::store_block();
+
+			// Store the V1 schema
+			Schema::put(EthereumStorageSchema::V1);
 		});
 	}
 }
