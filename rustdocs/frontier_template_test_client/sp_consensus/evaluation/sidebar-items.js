@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["Error","Error type."]],"fn":[["evaluate_initial","Attempt to evaluate a substrate block as a node block, returning error upon any initial validity checks failing."]],"type":[["Result","Result type alias."]]});

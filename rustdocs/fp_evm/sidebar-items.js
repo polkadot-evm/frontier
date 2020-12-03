@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["CallOrCreateInfo",""]],"struct":[["Account","Basic account information."],["ExecutionInfo",""],["Log",""],["Vicinity","External input from the transaction."]],"type":[["CallInfo",""],["CreateInfo",""]]});

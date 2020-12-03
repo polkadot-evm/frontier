@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["BenchmarkingState","State that manages the backend database reference. Allows runtime to control the database."],["KeyTracker","Track whether a specific key has already been read or written to."],["ReadWriteTracker","A simple object that counts the reads and writes at the key level to the underlying state db."]]});

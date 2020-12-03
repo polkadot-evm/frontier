@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["LightStorage","Light blockchain storage. Stores most recent headers + CHTs for older headers. Locks order: meta, cache."]]});

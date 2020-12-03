@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["ECRecover","The ecrecover precompile."],["Identity","The identity precompile."],["Ripemd160","The ripemd precompile."],["Sha256","The sha256 precompile."]],"trait":[["Precompile","One single precompile used by EVM engine."],["Precompiles","Custom precompiles to be used by EVM engine."]]});
