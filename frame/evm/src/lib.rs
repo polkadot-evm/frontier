@@ -60,7 +60,10 @@ pub mod precompiles;
 pub use crate::precompiles::{Precompile, Precompiles};
 pub use crate::runner::Runner;
 pub use fp_evm::{Account, Log, Vicinity, ExecutionInfo, CallInfo, CreateInfo};
-pub use evm::{ExitReason, ExitSucceed, ExitError, ExitRevert, ExitFatal};
+pub use evm::{
+	ExitReason, ExitSucceed, ExitError, ExitRevert, ExitFatal,
+	backend::{Backend as BackendT, Basic as EvmBasic}, executor::StackExecutor
+};
 
 use sp_std::vec::Vec;
 #[cfg(feature = "std")]
@@ -74,7 +77,7 @@ use frame_support::dispatch::DispatchResultWithPostInfo;
 use frame_system::RawOrigin;
 use sp_core::{U256, H256, H160, Hasher};
 use sp_runtime::{AccountId32, traits::{UniqueSaturatedInto, BadOrigin}};
-use evm::Config;
+pub use evm::Config;
 
 /// Type alias for currency balance.
 pub type BalanceOf<T> = <<T as Trait>::Currency as Currency<<T as frame_system::Trait>::AccountId>>::Balance;
