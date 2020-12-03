@@ -1,4 +1,4 @@
-name: Deploy Docs to GitHub Pages
+name: Deploy docs
 
 on:
     push:
@@ -7,11 +7,11 @@ on:
 
 jobs:
     release:
-        name: GitHub Pages
+        name: Release docs
         runs-on: ubuntu-latest
 
         steps:
-            - name: Checkout Repository
+            - name: Checkout repository
               uses: actions/checkout@v1
             - name: Rust Setup
               run: |
@@ -23,23 +23,23 @@ jobs:
               env:
                 WASM_BUILD_TOOLCHAIN: nightly-2020-08-29
 
-            - name: Build Website
+            - name: Build website
               run: |
                 cd docs
                 yarn install
                 yarn run build
 
-            - name: Build Documentation
+            - name: Build rustdocs
               uses: actions-rs/cargo@v1
               with:
                 command: doc
                 args: --all --no-deps
 
-            - name: Copy Documentation
+            - name: Copy rustdocs
               run: |
                 cp -r ./target/doc docs/.vuepress/dist/rustdocs
 
-            - name: Deploy Documentation
+            - name: Deploy documentation
               uses: peaceiris/actions-gh-pages@v3
               with:
                 deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
