@@ -58,8 +58,8 @@ async function init() {
 	const aliceEvmAccount = `0x${crypto.blake2AsHex(crypto.decodeAddress(alice.address), 256).substring(26)}`;
 
 	console.log(`Alice EVM Account: ${aliceEvmAccount}`);
-	const evmData = (await api.query.evm.accounts(aliceEvmAccount)) as any;
-	console.log(`Alice EVM Account (nonce: ${evmData.nonce}) balance: ${evmData.balance.toHex()}`);
+	// const evmData = (await api.query.evm.accounts(aliceEvmAccount)) as any;
+	// console.log(`Alice EVM Account (nonce: ${evmData.nonce}) balance: ${evmData.balance.toHex()}`);
 
 	return { api, alice, bob };
 }
@@ -72,7 +72,7 @@ async function step1(api: ApiPromise, alice: KeyringPair) {
 	// params: [bytecode, initialBalance, gasLimit, gasPrice],
 	// tx: api.tx.evm.create
 
-	const transaction = await api.tx.evm.create(ERC20_BYTECODES, 0, 4294967295, 1, null);
+	const transaction = await api.tx.evm.create(ERC20_BYTECODES, 0, 4294967295, 1, null, null);
 
 	const contract = new Promise<{ block: string, address: string }>(async (resolve, reject) => {
 		const unsub = await transaction.signAndSend(alice, (result) => {
@@ -120,8 +120,8 @@ async function step2(api: ApiPromise, alice: KeyringPair, contractAddress: strin
 	const storageKey = web3Utils.sha3('0x'.concat(mapKey.concat(mapStorageSlot)));
 	console.log(`Alice Contract storage key: ${storageKey}`);
 
-	const accountStorage = (await api.query.evm.accountStorages(contractAddress, storageKey)).toString();
-	console.log(`Alice Contract account storage: ${accountStorage}`);
+	// const accountStorage = (await api.query.evm.accountStorages(contractAddress, storageKey)).toString();
+	// console.log(`Alice Contract account storage: ${accountStorage}`);
 	return;
 }
 
@@ -178,8 +178,8 @@ async function step4(api: ApiPromise, bob: KeyringPair, contractAddress: string)
 	const storageKey = web3Utils.sha3('0x'.concat(mapKey.concat(mapStorageSlot)));
 	console.log(`Bob Contract storage key: ${storageKey}`);
 
-	const accountStorage = (await api.query.evm.accountStorages(contractAddress, storageKey)).toString();
-	console.log(`Bob Contract account storage: ${accountStorage}`);
+	// const accountStorage = (await api.query.evm.accountStorages(contractAddress, storageKey)).toString();
+	// console.log(`Bob Contract account storage: ${accountStorage}`);
 
 	return;
 }
