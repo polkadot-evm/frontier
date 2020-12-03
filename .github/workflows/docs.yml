@@ -23,16 +23,26 @@ jobs:
               env:
                 WASM_BUILD_TOOLCHAIN: nightly-2020-08-29
 
+            - name: Build Website
+              run: |
+                cd docs
+                yarn install
+                yarn run build
+
             - name: Build Documentation
               uses: actions-rs/cargo@v1
               with:
                 command: doc
                 args: --all --no-deps
 
+            - name: Copy Documentation
+              run: |
+                cp -r ./target/doc docs/.vuepress/dist/rustdocs
+
             - name: Deploy Documentation
               uses: peaceiris/actions-gh-pages@v3
               with:
                 deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
                 publish_branch: gh-pages
-                publish_dir: ./target/doc
+                publish_dir: ./docs/.vuepress/dist
                 keep_files: true
