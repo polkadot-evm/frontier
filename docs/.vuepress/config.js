@@ -1,6 +1,7 @@
 module.exports = {
   title: 'Frontier',
   description: 'Ethereum compatibility layer for Substrate',
+  base: '/frontier/',
 
   head: [
     ['meta', { name: 'theme-color', content: '#3eaf7c' }],
