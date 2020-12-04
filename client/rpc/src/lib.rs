@@ -29,12 +29,15 @@ use pallet_evm::ExitReason;
 use sha3::{Digest, Keccak256};
 
 mod estimate_gas_binary {
+	use std::borrow::Cow;
 	use ethereum_types::{H160, H256, U256};
 	use pallet_evm::{
 		BackendT, EvmBasic, Vicinity, Config, StackExecutor,
-		Precompiles as PrecompilesT, ExitReason
+		Precompiles as PrecompilesT, ExitReason, ExitFatal,
 	};
 	use fc_rpc_core::types::{CallRequest, Bytes};
+	use jsonrpc_core::Error;
+	use crate::error_on_execution_failure;
 
 	pub struct Backend<'vicinity> {
 		_vicinity: &'vicinity Vicinity,
@@ -69,7 +72,7 @@ mod estimate_gas_binary {
 		fn storage(&self, _address: H160, _index: H256) -> H256 { H256::default() }
 	}
 
-	pub fn execute(request: CallRequest) -> (ExitReason, U256) {
+	pub fn execute(request: CallRequest) -> Result<U256, Error> {
 
 		type Precompiles = (
 			pallet_evm::precompiles::ECRecover,
@@ -145,7 +148,14 @@ mod estimate_gas_binary {
 			exit_reason = Some(reason);
 			high = current;
 		}
-		(exit_reason.unwrap(), U256::from(high))
+
+		if exit_reason.is_none() {
+			exit_reason = Some(ExitReason::Fatal(
+				ExitFatal::Other(Cow::from("Unknown exit reason"))
+			));
+		}
+		error_on_execution_failure(&exit_reason.unwrap(), &[])?;
+		Ok(U256::from(high))
 	}
 }
 
