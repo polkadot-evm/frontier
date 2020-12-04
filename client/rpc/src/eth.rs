@@ -674,7 +674,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 			value,
 			data,
 			nonce
-		} = request;
+		} = request.clone();
 
 		let gas_limit = gas.unwrap_or(U256::max_value()); // TODO: set a limit
 		let data = data.map(|d| d.0).unwrap_or_default();
@@ -694,9 +694,10 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 					)
 					.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
 					.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
-
-				error_on_execution_failure(&info.exit_reason, &info.value)?;
-
+				
+				if let Err(_) = error_on_execution_failure(&info.exit_reason, &info.value) {
+					return estimate_gas_binary::execute(request);
+				}
 				info.used_gas
 			},
 			None => {
@@ -713,8 +714,9 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 					.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
 					.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
 
-				error_on_execution_failure(&info.exit_reason, &[])?;
-
+				if let Err(_) = error_on_execution_failure(&info.exit_reason, &[]) {
+					return estimate_gas_binary::execute(request);
+				}
 				info.used_gas
 			},
 		};
