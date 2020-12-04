@@ -115,7 +115,7 @@ mod estimate_gas_binary {
 				current as usize,
 				&evm_config,
 				<Precompiles as PrecompilesT>::execute
-			); 
+			);
 
 			let reason = match to {
 				Some(to) => {

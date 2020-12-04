@@ -694,7 +694,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 					)
 					.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
 					.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
-				
+
 				if let Err(_) = error_on_execution_failure(&info.exit_reason, &info.value) {
 					return estimate_gas_binary::execute(request);
 				}
