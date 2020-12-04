@@ -34,7 +34,7 @@ mod estimate_gas_binary {
 		BackendT, EvmBasic, Vicinity, Config, StackExecutor,
 		Precompiles as PrecompilesT, ExitReason
 	};
-	use fc_rpc_core::types::CallRequest;
+	use fc_rpc_core::types::{CallRequest, Bytes};
 
 	pub struct Backend<'vicinity> {
 		_vicinity: &'vicinity Vicinity,
@@ -112,7 +112,7 @@ mod estimate_gas_binary {
 				current as usize,
 				&evm_config,
 				<Precompiles as PrecompilesT>::execute
-			);
+			); 
 
 			let reason = match to {
 				Some(to) => {
@@ -120,7 +120,9 @@ mod estimate_gas_binary {
 						from.unwrap_or_default(),
 						to,
 						value.unwrap_or_default(),
-						data.clone().unwrap().0,
+						data.clone().unwrap_or(
+							Bytes::new(Vec::new())
+						).0,
 						current as usize,
 					).0
 				},
@@ -128,7 +130,9 @@ mod estimate_gas_binary {
 					executor.transact_create(
 						from.unwrap_or_default(),
 						value.unwrap_or_default(),
-						data.clone().unwrap().0,
+						data.clone().unwrap_or(
+							Bytes::new(Vec::new())
+						).0,
 						current as usize,
 					)
 				}
