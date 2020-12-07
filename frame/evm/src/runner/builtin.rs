@@ -55,6 +55,7 @@ impl<T: Trait> RunnerT<T> for Runner<T> {
 		gas_limit: u32,
 		gas_price: Option<U256>,
 		nonce: Option<U256>,
+		config: &evm::Config,
 	) -> Result<CallInfo, Self::Error> {
 		let gas_price = match gas_price {
 			Some(gas_price) => {
@@ -76,8 +77,6 @@ impl<T: Trait> RunnerT<T> for Runner<T> {
 				gas_price,
 				origin: source,
 			};
-
-			let config = T::config();
 
 			let mut substate = Handler::<T>::new_with_precompile(
 				&vicinity,
@@ -123,6 +122,7 @@ impl<T: Trait> RunnerT<T> for Runner<T> {
 		gas_limit: u32,
 		gas_price: Option<U256>,
 		nonce: Option<U256>,
+		config: &evm::Config,
 	) -> Result<CreateInfo, Self::Error> {
 		let gas_price = match gas_price {
 			Some(gas_price) => {
@@ -144,8 +144,6 @@ impl<T: Trait> RunnerT<T> for Runner<T> {
 				gas_price,
 				origin: source,
 			};
-
-			let config = T::config();
 
 			let mut substate = Handler::<T>::new_with_precompile(
 				&vicinity,
@@ -203,6 +201,7 @@ impl<T: Trait> RunnerT<T> for Runner<T> {
 		gas_limit: u32,
 		gas_price: Option<U256>,
 		nonce: Option<U256>,
+		config: &evm::Config,
 	) -> Result<CreateInfo, Self::Error> {
 		let gas_price = match gas_price {
 			Some(gas_price) => {
@@ -224,8 +223,6 @@ impl<T: Trait> RunnerT<T> for Runner<T> {
 				gas_price,
 				origin: source,
 			};
-
-			let config = T::config();
 
 			let mut substate = Handler::<T>::new_with_precompile(
 				&vicinity,
