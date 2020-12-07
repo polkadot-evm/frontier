@@ -608,6 +608,26 @@
 <span id="605">605</span>
 <span id="606">606</span>
 <span id="607">607</span>
+<span id="608">608</span>
+<span id="609">609</span>
+<span id="610">610</span>
+<span id="611">611</span>
+<span id="612">612</span>
+<span id="613">613</span>
+<span id="614">614</span>
+<span id="615">615</span>
+<span id="616">616</span>
+<span id="617">617</span>
+<span id="618">618</span>
+<span id="619">619</span>
+<span id="620">620</span>
+<span id="621">621</span>
+<span id="622">622</span>
+<span id="623">623</span>
+<span id="624">624</span>
+<span id="625">625</span>
+<span id="626">626</span>
+<span id="627">627</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! The Substrate Node Template runtime. This can be compiled with `#[no_std]`, ready for Wasm.</span>
 
@@ -1111,7 +1131,16 @@
 			<span class="ident">gas_limit</span>: <span class="ident">U256</span>,
 			<span class="ident">gas_price</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
 			<span class="ident">nonce</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
+			<span class="ident">estimate</span>: <span class="ident">bool</span>,
 		) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">pallet_evm</span>::<span class="ident">CallInfo</span>, <span class="ident">sp_runtime</span>::<span class="ident">DispatchError</span><span class="op">&gt;</span> {
+			<span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">estimate</span> {
+				<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">config</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">pallet_evm</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">config</span>().<span class="ident">clone</span>();
+				<span class="ident">config</span>.<span class="ident">estimate</span> <span class="op">=</span> <span class="bool-val">true</span>;
+				<span class="prelude-val">Some</span>(<span class="ident">config</span>)
+			} <span class="kw">else</span> {
+				<span class="prelude-val">None</span>
+			};
+
 			<span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">pallet_evm</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">Runner</span>::<span class="ident">call</span>(
 				<span class="ident">from</span>,
 				<span class="ident">to</span>,
@@ -1120,6 +1149,7 @@
 				<span class="ident">gas_limit</span>.<span class="ident">low_u32</span>(),
 				<span class="ident">gas_price</span>,
 				<span class="ident">nonce</span>,
+				<span class="ident">config</span>.<span class="ident">as_ref</span>().<span class="ident">unwrap_or</span>(<span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">pallet_evm</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">config</span>()),
 			).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">err</span>.<span class="ident">into</span>())
 		}
 
@@ -1130,7 +1160,16 @@
 			<span class="ident">gas_limit</span>: <span class="ident">U256</span>,
 			<span class="ident">gas_price</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
 			<span class="ident">nonce</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
+			<span class="ident">estimate</span>: <span class="ident">bool</span>,
 		) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">pallet_evm</span>::<span class="ident">CreateInfo</span>, <span class="ident">sp_runtime</span>::<span class="ident">DispatchError</span><span class="op">&gt;</span> {
+			<span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">estimate</span> {
+				<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">config</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">pallet_evm</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">config</span>().<span class="ident">clone</span>();
+				<span class="ident">config</span>.<span class="ident">estimate</span> <span class="op">=</span> <span class="bool-val">true</span>;
+				<span class="prelude-val">Some</span>(<span class="ident">config</span>)
+			} <span class="kw">else</span> {
+				<span class="prelude-val">None</span>
+			};
+
 			<span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">pallet_evm</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">Runner</span>::<span class="ident">create</span>(
 				<span class="ident">from</span>,
 				<span class="ident">data</span>,
@@ -1138,6 +1177,7 @@
 				<span class="ident">gas_limit</span>.<span class="ident">low_u32</span>(),
 				<span class="ident">gas_price</span>,
 				<span class="ident">nonce</span>,
+				<span class="ident">config</span>.<span class="ident">as_ref</span>().<span class="ident">unwrap_or</span>(<span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">pallet_evm</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">config</span>()),
 			).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">err</span>.<span class="ident">into</span>())
 		}
 

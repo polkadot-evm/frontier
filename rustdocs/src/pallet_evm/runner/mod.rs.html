@@ -58,6 +58,9 @@
 <span id="55">55</span>
 <span id="56">56</span>
 <span id="57">57</span>
+<span id="58">58</span>
+<span id="59">59</span>
+<span id="60">60</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
@@ -95,6 +98,7 @@
 		<span class="ident">gas_limit</span>: <span class="ident">u32</span>,
 		<span class="ident">gas_price</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
 		<span class="ident">nonce</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
+		<span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="ident">evm</span>::<span class="ident">Config</span>,
 	) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">CallInfo</span>, <span class="self">Self</span>::<span class="ident">Error</span><span class="op">&gt;</span>;
 
 	<span class="kw">fn</span> <span class="ident">create</span>(
@@ -104,6 +108,7 @@
 		<span class="ident">gas_limit</span>: <span class="ident">u32</span>,
 		<span class="ident">gas_price</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
 		<span class="ident">nonce</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
+		<span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="ident">evm</span>::<span class="ident">Config</span>,
 	) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">CreateInfo</span>, <span class="self">Self</span>::<span class="ident">Error</span><span class="op">&gt;</span>;
 
 	<span class="kw">fn</span> <span class="ident">create2</span>(
@@ -114,6 +119,7 @@
 		<span class="ident">gas_limit</span>: <span class="ident">u32</span>,
 		<span class="ident">gas_price</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
 		<span class="ident">nonce</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
+		<span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="ident">evm</span>::<span class="ident">Config</span>,
 	) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">CreateInfo</span>, <span class="self">Self</span>::<span class="ident">Error</span><span class="op">&gt;</span>;
 }
 </pre></div>

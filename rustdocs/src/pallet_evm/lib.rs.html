@@ -543,6 +543,9 @@
 <span id="540">540</span>
 <span id="541">541</span>
 <span id="542">542</span>
+<span id="543">543</span>
+<span id="544">544</span>
+<span id="545">545</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
@@ -937,6 +940,7 @@
 				<span class="ident">gas_limit</span>,
 				<span class="prelude-val">Some</span>(<span class="ident">gas_price</span>),
 				<span class="ident">nonce</span>,
+				<span class="ident">T</span>::<span class="ident">config</span>(),
 			)<span class="question-mark">?</span>;
 
 			<span class="kw">match</span> <span class="ident">info</span>.<span class="ident">exit_reason</span> {
@@ -975,6 +979,7 @@
 				<span class="ident">gas_limit</span>,
 				<span class="prelude-val">Some</span>(<span class="ident">gas_price</span>),
 				<span class="ident">nonce</span>,
+				<span class="ident">T</span>::<span class="ident">config</span>(),
 			)<span class="question-mark">?</span>;
 
 			<span class="kw">match</span> <span class="ident">info</span> {
@@ -1022,6 +1027,7 @@
 				<span class="ident">gas_limit</span>,
 				<span class="prelude-val">Some</span>(<span class="ident">gas_price</span>),
 				<span class="ident">nonce</span>,
+				<span class="ident">T</span>::<span class="ident">config</span>(),
 			)<span class="question-mark">?</span>;
 
 			<span class="kw">match</span> <span class="ident">info</span> {
