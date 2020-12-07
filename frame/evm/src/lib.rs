@@ -391,6 +391,7 @@ decl_module! {
 				gas_limit,
 				Some(gas_price),
 				nonce,
+				T::config(),
 			)?;
 
 			match info.exit_reason {
@@ -429,6 +430,7 @@ decl_module! {
 				gas_limit,
 				Some(gas_price),
 				nonce,
+				T::config(),
 			)?;
 
 			match info {
@@ -476,6 +478,7 @@ decl_module! {
 				gas_limit,
 				Some(gas_price),
 				nonce,
+				T::config(),
 			)?;
 
 			match info {
