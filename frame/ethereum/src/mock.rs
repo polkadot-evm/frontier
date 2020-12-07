@@ -18,7 +18,7 @@
 //! Test utilities
 
 use super::*;
-use crate::{Module, Trait};
+use crate::{Module, Config};
 use ethereum::{TransactionAction, TransactionSignature};
 use frame_support::{
 	impl_outer_origin, parameter_types, weights::Weight, ConsensusEngineId
@@ -149,7 +149,7 @@ impl pallet_evm::Config for Test {
 	type ChainId = ChainId;
 }
 
-impl Trait for Test {
+impl Config for Test {
 	type Event = ();
 	type FindAuthor = EthereumFindAuthor;
 }
