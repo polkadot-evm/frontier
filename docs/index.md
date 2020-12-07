@@ -2,8 +2,8 @@
 home: true
 heroImage: https://v1.vuepress.vuejs.org/hero.png
 tagline: Ethereum compatibility layer for Substrate.
-actionText: Code →
-actionLink: https://github.com/paritytech/frontier
+actionText: Overview →
+actionLink: overview.md
 features:
 - title: EVM Contract
   details: Frontier allows you to run EVM contracts natively in Substrate, tightly integrated with the rest of the Substrate ecosystem.

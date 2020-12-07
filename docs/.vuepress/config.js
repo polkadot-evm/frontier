@@ -15,8 +15,14 @@ module.exports = {
     docsDir: 'docs',
     editLinkText: '',
     lastUpdated: false,
-    nav: [],
-    sidebar: {}
+    nav: [
+      { text: 'API reference', link: 'https://paritytech.github.io/frontier/rustdocs/pallet_evm' }
+    ],
+    sidebar: [
+      'overview',
+      'frame/evm',
+      'frame/ethereum'
+    ]
   },
 
   plugins: [
