@@ -48,7 +48,7 @@ parameter_types! {
 	pub const MaximumBlockLength: u32 = 2 * 1024;
 	pub const AvailableBlockRatio: Perbill = Perbill::from_percent(75);
 }
-impl frame_system::Trait for Test {
+impl frame_system::Config for Test {
 	type BaseCallFilter = ();
 	type SystemWeightInfo = ();
 	type Origin = Origin;
@@ -83,7 +83,7 @@ parameter_types! {
 	pub const ExistentialDeposit: u64 = 500;
 }
 
-impl pallet_balances::Trait for Test {
+impl pallet_balances::Config for Test {
 	type MaxLocks = MaxLocks;
 	type Balance = u64;
 	type Event = ();
@@ -97,7 +97,7 @@ parameter_types! {
 	pub const MinimumPeriod: u64 = 6000 / 2;
 }
 
-impl pallet_timestamp::Trait for Test {
+impl pallet_timestamp::Config for Test {
 	type Moment = u64;
 	type OnTimestampSet = ();
 	type MinimumPeriod = MinimumPeriod;
@@ -136,7 +136,7 @@ impl AddressMapping<AccountId32> for HashedAddressMapping {
 	}
 }
 
-impl pallet_evm::Trait for Test {
+impl pallet_evm::Config for Test {
 	type FeeCalculator = FixedGasPrice;
 	type GasToWeight = ();
 	type CallOrigin = EnsureAddressTruncated;
