@@ -18,8 +18,8 @@ balance managed and used by the EVM module. Once a user has populated
 their balance, they can create and call smart contracts using this
 module.
 
-There's one-to-one mapping from Substrate accounts and EVM external
-accounts that is defined by a conversion function.
+Substrate accounts and EVM external accounts are mapped via
+customizable conversion functions.
 
 ## EVM module vs Ethereum network
 
