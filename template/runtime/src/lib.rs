@@ -282,7 +282,7 @@ parameter_types! {
 	pub const ChainId: u64 = 42;
 }
 
-impl pallet_evm::Trait for Runtime {
+impl pallet_evm::Config for Runtime {
 	type FeeCalculator = FixedGasPrice;
 	type GasToWeight = ();
 	type CallOrigin = EnsureAddressTruncated;
@@ -314,7 +314,7 @@ impl<F: FindAuthor<u32>> FindAuthor<H160> for EthereumFindAuthor<F>
 	}
 }
 
-impl pallet_ethereum::Trait for Runtime {
+impl pallet_ethereum::Config for Runtime {
 	type Event = Event;
 	type FindAuthor = EthereumFindAuthor<Aura>;
 }
@@ -467,7 +467,7 @@ impl_runtime_apis! {
 
 	impl fp_rpc::EthereumRuntimeRPCApi<Block> for Runtime {
 		fn chain_id() -> u64 {
-			<Runtime as pallet_evm::Trait>::ChainId::get()
+			<Runtime as pallet_evm::Config>::ChainId::get()
 		}
 
 		fn account_basic(address: H160) -> EVMAccount {
@@ -475,7 +475,7 @@ impl_runtime_apis! {
 		}
 
 		fn gas_price() -> U256 {
-			<Runtime as pallet_evm::Trait>::FeeCalculator::min_gas_price()
+			<Runtime as pallet_evm::Config>::FeeCalculator::min_gas_price()
 		}
 
 		fn account_code_at(address: H160) -> Vec<u8> {
@@ -501,7 +501,7 @@ impl_runtime_apis! {
 			gas_price: Option<U256>,
 			nonce: Option<U256>,
 		) -> Result<pallet_evm::CallInfo, sp_runtime::DispatchError> {
-			<Runtime as pallet_evm::Trait>::Runner::call(
+			<Runtime as pallet_evm::Config>::Runner::call(
 				from,
 				to,
 				data,
@@ -520,7 +520,7 @@ impl_runtime_apis! {
 			gas_price: Option<U256>,
 			nonce: Option<U256>,
 		) -> Result<pallet_evm::CreateInfo, sp_runtime::DispatchError> {
-			<Runtime as pallet_evm::Trait>::Runner::create(
+			<Runtime as pallet_evm::Config>::Runner::create(
 				from,
 				data,
 				value,
