@@ -518,7 +518,7 @@ impl_runtime_apis! {
 				gas_limit.low_u32(),
 				gas_price,
 				nonce,
-				config.as_ref().unwrap_or(<Runtime as pallet_evm::Trait>::config()),
+				config.as_ref().unwrap_or(<Runtime as pallet_evm::Config>::config()),
 			).map_err(|err| err.into())
 		}
 
@@ -546,7 +546,7 @@ impl_runtime_apis! {
 				gas_limit.low_u32(),
 				gas_price,
 				nonce,
-				config.as_ref().unwrap_or(<Runtime as pallet_evm::Trait>::config()),
+				config.as_ref().unwrap_or(<Runtime as pallet_evm::Config>::config()),
 			).map_err(|err| err.into())
 		}
 
