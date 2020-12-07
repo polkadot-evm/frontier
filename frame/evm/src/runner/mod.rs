@@ -34,6 +34,7 @@ pub trait Runner<T: Trait> {
 		gas_limit: u32,
 		gas_price: Option<U256>,
 		nonce: Option<U256>,
+		config: &evm::Config,
 	) -> Result<CallInfo, Self::Error>;
 
 	fn create(
@@ -43,6 +44,7 @@ pub trait Runner<T: Trait> {
 		gas_limit: u32,
 		gas_price: Option<U256>,
 		nonce: Option<U256>,
+		config: &evm::Config,
 	) -> Result<CreateInfo, Self::Error>;
 
 	fn create2(
@@ -53,5 +55,6 @@ pub trait Runner<T: Trait> {
 		gas_limit: u32,
 		gas_price: Option<U256>,
 		nonce: Option<U256>,
+		config: &evm::Config,
 	) -> Result<CreateInfo, Self::Error>;
 }

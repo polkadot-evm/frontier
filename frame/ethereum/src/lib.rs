@@ -133,6 +133,7 @@ decl_module! {
 				Some(transaction.gas_price),
 				Some(transaction.nonce),
 				transaction.action,
+				None,
 			)?;
 
 			let (reason, status, used_gas) = match info {
@@ -372,7 +373,7 @@ impl<T: Trait> Module<T> {
 		CurrentReceipts::get()
 	}
 
-	/// Execute an Ethereum transaction, ignoring transaction signatures.
+	/// Execute an Ethereum transaction.
 	pub fn execute(
 		from: H160,
 		input: Vec<u8>,
@@ -381,6 +382,7 @@ impl<T: Trait> Module<T> {
 		gas_price: Option<U256>,
 		nonce: Option<U256>,
 		action: TransactionAction,
+		config: Option<evm::Config>,
 	) -> Result<(Option<H160>, CallOrCreateInfo), DispatchError> {
 		match action {
 			ethereum::TransactionAction::Call(target) => {
@@ -392,6 +394,7 @@ impl<T: Trait> Module<T> {
 					gas_limit.low_u32(),
 					gas_price,
 					nonce,
+					config.as_ref().unwrap_or(T::config()),
 				).map_err(Into::into)?)))
 			},
 			ethereum::TransactionAction::Create => {
@@ -402,6 +405,7 @@ impl<T: Trait> Module<T> {
 					gas_limit.low_u32(),
 					gas_price,
 					nonce,
+					config.as_ref().unwrap_or(T::config()),
 				).map_err(Into::into)?)))
 			},
 		}
