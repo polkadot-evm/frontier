@@ -351,6 +351,7 @@ pub fn new_full(
 	Ok(task_manager)
 }
 
+// FIXME: #238 Light client does not have a complete import pipeline or support manual/instant seal.
 /// Builds a new service for a light client.
 pub fn new_light(config: Configuration) -> Result<TaskManager, ServiceError> {
 	let (client, backend, keystore_container, mut task_manager, on_demand) =
@@ -371,8 +372,6 @@ pub fn new_light(config: Configuration) -> Result<TaskManager, ServiceError> {
 		&(client.clone() as Arc<_>),
 		select_chain.clone(),
 	)?;
-
-	//TODO shouldn't we have the aura block import here at least conditionally?
 
 	let import_queue = sc_consensus_aura::import_queue::<_, _, _, AuraPair, _, _>(
 		sc_consensus_aura::slot_duration(&*client)?,
