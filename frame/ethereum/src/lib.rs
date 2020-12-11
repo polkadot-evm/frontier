@@ -217,8 +217,10 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
 
 	fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
 		if let Call::transact(transaction) = call {
-			if transaction.signature.chain_id().unwrap_or_default() != T::ChainId::get() {
-				return InvalidTransaction::Custom(TransactionValidationError::InvalidChainId as u8).into();
+			if let Some(chain_id) = transaction.signature.chain_id() {
+				if chain_id != T::ChainId::get() {
+					return InvalidTransaction::Custom(TransactionValidationError::InvalidChainId as u8).into();
+				}
 			}
 
 			let origin = Self::recover_signer(&transaction)
