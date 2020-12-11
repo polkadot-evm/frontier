@@ -16,8 +16,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use std::{marker::PhantomData, sync::Arc};
-use std::collections::BTreeMap;
+use std::{marker::PhantomData, sync::{Arc, Mutex}};
+use std::collections::{BTreeMap, HashMap};
 use ethereum::{
 	Block as EthereumBlock, Transaction as EthereumTransaction,
 	TransactionMessage as EthereumTransactionMessage,
@@ -42,7 +42,7 @@ use fc_rpc_core::types::{
 	TransactionRequest,
 };
 use fp_rpc::{EthereumRuntimeRPCApi, ConvertTransaction, TransactionStatus};
-use crate::{internal_err, error_on_execution_failure, EthSigner};
+use crate::{internal_err, error_on_execution_failure, EthSigner, public_key};
 
 pub use fc_rpc_core::{EthApiServer, NetApiServer, Web3ApiServer};
 use codec::{self, Encode};
@@ -54,6 +54,7 @@ pub struct EthApi<B: BlockT, C, P, CT, BE, H: ExHashT> {
 	network: Arc<NetworkService<B, H>>,
 	is_authority: bool,
 	signers: Vec<Box<dyn EthSigner>>,
+	pending_transactions: Arc<Mutex<HashMap<H256, Transaction>>>,
 	_marker: PhantomData<(B, BE)>,
 }
 
@@ -73,8 +74,51 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> {
 			network,
 			is_authority,
 			signers,
+			pending_transactions: Arc::new(Mutex::new(HashMap::new())),
 			_marker: PhantomData,
 		}
+	}
+}
+
+fn pending_transaction_build(hash: H256, transaction: EthereumTransaction) -> Transaction {
+	let pubkey = match public_key(&transaction) {
+		Ok(p) => Some(p),
+		Err(_e) => None,
+	};
+	Transaction {
+		hash: hash,
+		nonce: transaction.nonce,
+		block_hash: None,
+		block_number: None,
+		transaction_index: None,
+		from: match pubkey {
+			Some(pk) => H160::from(
+				H256::from_slice(Keccak256::digest(&pk).as_slice())
+			),
+			_ => H160::default()
+		},
+		to: match transaction.action {
+			ethereum::TransactionAction::Call(to) => Some(to),
+			_ => None
+		},
+		value: transaction.value,
+		gas_price: transaction.gas_price,
+		gas: transaction.gas_limit,
+		input: Bytes(transaction.input),
+		creates: None, // TODO? Option<H160>
+		raw: Bytes(Vec::new()), // TODO raw transaction
+		public_key: match pubkey {
+			Some(pk) => Some(H512::from(pk)),
+			_ => None
+		},
+		chain_id: match transaction.signature.chain_id() {
+			Some(d) => Some(U64::from(d)),
+			_ => None
+		},
+		standard_v: U256::from(transaction.signature.standard_v()),
+		v: U256::from(transaction.signature.v()),
+		r: U256::from(transaction.signature.r().as_bytes()),
+		s: U256::from(transaction.signature.s().as_bytes()),
 	}
 }
 
@@ -567,15 +611,22 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 			Keccak256::digest(&rlp::encode(&transaction)).as_slice()
 		);
 		let hash = self.client.info().best_hash;
+		let pending = self.pending_transactions.clone();
 		Box::new(
 			self.pool
 				.submit_one(
 					&BlockId::hash(hash),
 					TransactionSource::Local,
-					self.convert_transaction.convert_transaction(transaction),
+					self.convert_transaction.convert_transaction(transaction.clone()),
 				)
 				.compat()
-				.map(move |_| transaction_hash)
+				.map(move |_| {
+					pending.lock().unwrap().insert(
+						transaction_hash,
+						pending_transaction_build(transaction_hash, transaction)
+					);
+					transaction_hash
+				})
 				.map_err(|err| internal_err(format!("submit transaction to pool failed: {:?}", err)))
 		)
 	}
@@ -591,15 +642,22 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 			Keccak256::digest(&rlp::encode(&transaction)).as_slice()
 		);
 		let hash = self.client.info().best_hash;
+		let pending = self.pending_transactions.clone();
 		Box::new(
 			self.pool
 				.submit_one(
 					&BlockId::hash(hash),
 					TransactionSource::Local,
-					self.convert_transaction.convert_transaction(transaction),
+					self.convert_transaction.convert_transaction(transaction.clone()),
 				)
 				.compat()
-				.map(move |_| transaction_hash)
+				.map(move |_| {
+					pending.lock().unwrap().insert(
+						transaction_hash,
+						pending_transaction_build(transaction_hash, transaction)
+					);
+					transaction_hash
+				})
 				.map_err(|err| internal_err(format!("submit transaction to pool failed: {:?}", err)))
 		)
 	}
