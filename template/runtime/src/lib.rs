@@ -48,6 +48,7 @@ use pallet_evm::{
 };
 use fp_rpc::{TransactionStatus};
 pub type BlockNumber = u32;
+use pallet_transaction_payment::CurrencyAdapter;
 
 /// Alias to 512-bit hash when used in the context of a transaction signature on the chain.
 pub type Signature = MultiSignature;
@@ -138,7 +139,7 @@ parameter_types! {
 
 // Configure FRAME pallets to include in runtime.
 
-impl frame_system::Trait for Runtime {
+impl frame_system::Config for Runtime {
 	/// The basic call filter to use in dispatchable.
 	type BaseCallFilter = ();
 	/// The identifier used to distinguish between accounts.
@@ -197,11 +198,11 @@ impl frame_system::Trait for Runtime {
 	type SystemWeightInfo = ();
 }
 
-impl pallet_aura::Trait for Runtime {
+impl pallet_aura::Config for Runtime {
 	type AuthorityId = AuraId;
 }
 
-impl pallet_grandpa::Trait for Runtime {
+impl pallet_grandpa::Config for Runtime {
 	type Event = Event;
 	type Call = Call;
 
@@ -224,7 +225,7 @@ parameter_types! {
 	pub const MinimumPeriod: u64 = SLOT_DURATION / 2;
 }
 
-impl pallet_timestamp::Trait for Runtime {
+impl pallet_timestamp::Config for Runtime {
 	/// A timestamp: milliseconds since the unix epoch.
 	type Moment = u64;
 	type OnTimestampSet = Aura;
@@ -239,7 +240,7 @@ parameter_types! {
 	pub const MaxLocks: u32 = 50;
 }
 
-impl pallet_balances::Trait for Runtime {
+impl pallet_balances::Config for Runtime {
 	type MaxLocks = MaxLocks;
 	/// The type for recording an account's balance.
 	type Balance = Balance;
@@ -255,15 +256,14 @@ parameter_types! {
 	pub const TransactionByteFee: Balance = 1;
 }
 
-impl pallet_transaction_payment::Trait for Runtime {
-	type Currency = Balances;
-	type OnTransactionPayment = ();
+impl pallet_transaction_payment::Config for Runtime {
+	type OnChargeTransaction = CurrencyAdapter<Balances, ()>;
 	type TransactionByteFee = TransactionByteFee;
 	type WeightToFee = IdentityFee<Balance>;
 	type FeeMultiplierUpdate = ();
 }
 
-impl pallet_sudo::Trait for Runtime {
+impl pallet_sudo::Config for Runtime {
 	type Event = Event;
 	type Call = Call;
 }
@@ -282,7 +282,7 @@ parameter_types! {
 	pub const ChainId: u64 = 42;
 }
 
-impl pallet_evm::Trait for Runtime {
+impl pallet_evm::Config for Runtime {
 	type FeeCalculator = FixedGasPrice;
 	type GasToWeight = ();
 	type CallOrigin = EnsureAddressTruncated;
@@ -314,7 +314,7 @@ impl<F: FindAuthor<u32>> FindAuthor<H160> for EthereumFindAuthor<F>
 	}
 }
 
-impl pallet_ethereum::Trait for Runtime {
+impl pallet_ethereum::Config for Runtime {
 	type Event = Event;
 	type FindAuthor = EthereumFindAuthor<Aura>;
 }
@@ -467,7 +467,7 @@ impl_runtime_apis! {
 
 	impl fp_rpc::EthereumRuntimeRPCApi<Block> for Runtime {
 		fn chain_id() -> u64 {
-			<Runtime as pallet_evm::Trait>::ChainId::get()
+			<Runtime as pallet_evm::Config>::ChainId::get()
 		}
 
 		fn account_basic(address: H160) -> EVMAccount {
@@ -475,7 +475,7 @@ impl_runtime_apis! {
 		}
 
 		fn gas_price() -> U256 {
-			<Runtime as pallet_evm::Trait>::FeeCalculator::min_gas_price()
+			<Runtime as pallet_evm::Config>::FeeCalculator::min_gas_price()
 		}
 
 		fn account_code_at(address: H160) -> Vec<u8> {
@@ -503,14 +503,14 @@ impl_runtime_apis! {
 			estimate: bool,
 		) -> Result<pallet_evm::CallInfo, sp_runtime::DispatchError> {
 			let config = if estimate {
-				let mut config = <Runtime as pallet_evm::Trait>::config().clone();
+				let mut config = <Runtime as pallet_evm::Config>::config().clone();
 				config.estimate = true;
 				Some(config)
 			} else {
 				None
 			};
 
-			<Runtime as pallet_evm::Trait>::Runner::call(
+			<Runtime as pallet_evm::Config>::Runner::call(
 				from,
 				to,
 				data,
@@ -518,7 +518,7 @@ impl_runtime_apis! {
 				gas_limit.low_u32(),
 				gas_price,
 				nonce,
-				config.as_ref().unwrap_or(<Runtime as pallet_evm::Trait>::config()),
+				config.as_ref().unwrap_or(<Runtime as pallet_evm::Config>::config()),
 			).map_err(|err| err.into())
 		}
 
@@ -532,21 +532,21 @@ impl_runtime_apis! {
 			estimate: bool,
 		) -> Result<pallet_evm::CreateInfo, sp_runtime::DispatchError> {
 			let config = if estimate {
-				let mut config = <Runtime as pallet_evm::Trait>::config().clone();
+				let mut config = <Runtime as pallet_evm::Config>::config().clone();
 				config.estimate = true;
 				Some(config)
 			} else {
 				None
 			};
 
-			<Runtime as pallet_evm::Trait>::Runner::create(
+			<Runtime as pallet_evm::Config>::Runner::create(
 				from,
 				data,
 				value,
 				gas_limit.low_u32(),
 				gas_price,
 				nonce,
-				config.as_ref().unwrap_or(<Runtime as pallet_evm::Trait>::config()),
+				config.as_ref().unwrap_or(<Runtime as pallet_evm::Config>::config()),
 			).map_err(|err| err.into())
 		}
 
