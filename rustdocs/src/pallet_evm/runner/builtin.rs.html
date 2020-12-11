@@ -830,19 +830,19 @@
 	<span class="ident">ExternalOpcode</span>, <span class="ident">Opcode</span>, <span class="ident">ExitError</span>, <span class="ident">ExitReason</span>, <span class="ident">Capture</span>, <span class="ident">Context</span>, <span class="ident">CreateScheme</span>, <span class="ident">Stack</span>,
 	<span class="ident">Transfer</span>, <span class="ident">ExitSucceed</span>, <span class="ident">Runtime</span>,
 };
-<span class="kw">use</span> <span class="ident">evm_runtime</span>::{<span class="ident">Config</span>, <span class="ident">Handler</span> <span class="kw">as</span> <span class="ident">HandlerT</span>};
+<span class="kw">use</span> <span class="ident">evm_runtime</span>::{<span class="ident">Config</span> <span class="kw">as</span> <span class="ident">EvmConfig</span>, <span class="ident">Handler</span> <span class="kw">as</span> <span class="ident">HandlerT</span>};
 <span class="kw">use</span> <span class="ident">evm_gasometer</span>::{<span class="self">self</span> <span class="kw">as</span> <span class="ident">gasometer</span>, <span class="ident">Gasometer</span>};
 <span class="kw">use</span> <span class="kw">crate</span>::{
-	<span class="ident">Trait</span>, <span class="ident">Vicinity</span>, <span class="ident">Module</span>, <span class="ident">Event</span>, <span class="ident">Log</span>, <span class="ident">AccountCodes</span>, <span class="ident">AccountStorages</span>, <span class="ident">AddressMapping</span>,
+	<span class="ident">Config</span>, <span class="ident">Vicinity</span>, <span class="ident">Module</span>, <span class="ident">Event</span>, <span class="ident">Log</span>, <span class="ident">AccountCodes</span>, <span class="ident">AccountStorages</span>, <span class="ident">AddressMapping</span>,
 	<span class="ident">Runner</span> <span class="kw">as</span> <span class="ident">RunnerT</span>, <span class="ident">Error</span>, <span class="ident">CallInfo</span>, <span class="ident">CreateInfo</span>, <span class="ident">FeeCalculator</span>, <span class="ident">precompiles</span>::<span class="ident">Precompiles</span>,
 };
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Default</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Runner</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Trait</span><span class="op">&gt;</span> {
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Runner</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> {
 	<span class="ident">_marker</span>: <span class="ident">PhantomData</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Trait</span><span class="op">&gt;</span> <span class="ident">RunnerT</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Runner</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">RunnerT</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Runner</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
 	<span class="kw">type</span> <span class="ident">Error</span> <span class="op">=</span> <span class="ident">Error</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>;
 
 	<span class="kw">fn</span> <span class="ident">call</span>(
@@ -1078,9 +1078,9 @@
 	<span class="ident">gas</span> <span class="op">-</span> <span class="ident">gas</span> <span class="op">/</span> <span class="number">64</span>
 }
 
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Handler</span><span class="op">&lt;</span><span class="lifetime">&#39;vicinity</span>, <span class="lifetime">&#39;config</span>, <span class="ident">T</span>: <span class="ident">Trait</span><span class="op">&gt;</span> {
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Handler</span><span class="op">&lt;</span><span class="lifetime">&#39;vicinity</span>, <span class="lifetime">&#39;config</span>, <span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> {
 	<span class="ident">vicinity</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;vicinity</span> <span class="ident">Vicinity</span>,
-	<span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;config</span> <span class="ident">Config</span>,
+	<span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;config</span> <span class="ident">EvmConfig</span>,
 	<span class="ident">gasometer</span>: <span class="ident">Gasometer</span><span class="op">&lt;</span><span class="lifetime">&#39;config</span><span class="op">&gt;</span>,
 	<span class="ident">deleted</span>: <span class="ident">BTreeSet</span><span class="op">&lt;</span><span class="ident">H160</span><span class="op">&gt;</span>,
 	<span class="ident">logs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Log</span><span class="op">&gt;</span>,
@@ -1090,13 +1090,13 @@
 	<span class="ident">_marker</span>: <span class="ident">PhantomData</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;vicinity</span>, <span class="lifetime">&#39;config</span>, <span class="ident">T</span>: <span class="ident">Trait</span><span class="op">&gt;</span> <span class="ident">Handler</span><span class="op">&lt;</span><span class="lifetime">&#39;vicinity</span>, <span class="lifetime">&#39;config</span>, <span class="ident">T</span><span class="op">&gt;</span> {
+<span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;vicinity</span>, <span class="lifetime">&#39;config</span>, <span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">Handler</span><span class="op">&lt;</span><span class="lifetime">&#39;vicinity</span>, <span class="lifetime">&#39;config</span>, <span class="ident">T</span><span class="op">&gt;</span> {
 	<span class="doccomment">/// Create a new handler with given vicinity.</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new_with_precompile</span>(
 		<span class="ident">vicinity</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;vicinity</span> <span class="ident">Vicinity</span>,
 		<span class="ident">gas_limit</span>: <span class="ident">usize</span>,
 		<span class="ident">is_static</span>: <span class="ident">bool</span>,
-		<span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;config</span> <span class="ident">Config</span>,
+		<span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;config</span> <span class="ident">EvmConfig</span>,
 		<span class="ident">precompile</span>: <span class="kw">fn</span>(<span class="ident">H160</span>, <span class="kw-2">&amp;</span>[<span class="ident">u8</span>], <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span>
 			<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">ExitSucceed</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">usize</span>), <span class="ident">ExitError</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 	) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
@@ -1209,7 +1209,7 @@
 	}
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;vicinity</span>, <span class="lifetime">&#39;config</span>, <span class="ident">T</span>: <span class="ident">Trait</span><span class="op">&gt;</span> <span class="ident">HandlerT</span> <span class="kw">for</span> <span class="ident">Handler</span><span class="op">&lt;</span><span class="lifetime">&#39;vicinity</span>, <span class="lifetime">&#39;config</span>, <span class="ident">T</span><span class="op">&gt;</span> {
+<span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;vicinity</span>, <span class="lifetime">&#39;config</span>, <span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">HandlerT</span> <span class="kw">for</span> <span class="ident">Handler</span><span class="op">&lt;</span><span class="lifetime">&#39;vicinity</span>, <span class="lifetime">&#39;config</span>, <span class="ident">T</span><span class="op">&gt;</span> {
 	<span class="kw">type</span> <span class="ident">CreateInterrupt</span> <span class="op">=</span> <span class="ident">Infallible</span>;
 	<span class="kw">type</span> <span class="ident">CreateFeedback</span> <span class="op">=</span> <span class="ident">Infallible</span>;
 	<span class="kw">type</span> <span class="ident">CallInterrupt</span> <span class="op">=</span> <span class="ident">Infallible</span>;
@@ -1580,7 +1580,7 @@
 	}
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;vicinity</span>, <span class="lifetime">&#39;config</span>, <span class="ident">T</span>: <span class="ident">Trait</span><span class="op">&gt;</span> <span class="ident">Drop</span> <span class="kw">for</span> <span class="ident">Handler</span><span class="op">&lt;</span><span class="lifetime">&#39;vicinity</span>, <span class="lifetime">&#39;config</span>, <span class="ident">T</span><span class="op">&gt;</span> {
+<span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;vicinity</span>, <span class="lifetime">&#39;config</span>, <span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">Drop</span> <span class="kw">for</span> <span class="ident">Handler</span><span class="op">&lt;</span><span class="lifetime">&#39;vicinity</span>, <span class="lifetime">&#39;config</span>, <span class="ident">T</span><span class="op">&gt;</span> {
 	<span class="kw">fn</span> <span class="ident">drop</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) {
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">deleted</span> <span class="op">=</span> <span class="ident">BTreeSet</span>::<span class="ident">new</span>();
 		<span class="ident">mem</span>::<span class="ident">swap</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">deleted</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">deleted</span>);

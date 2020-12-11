@@ -679,6 +679,7 @@
 };
 <span class="kw">use</span> <span class="ident">fp_rpc</span>::{<span class="ident">TransactionStatus</span>};
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="ident">u32</span>;
+<span class="kw">use</span> <span class="ident">pallet_transaction_payment</span>::<span class="ident">CurrencyAdapter</span>;
 
 <span class="doccomment">/// Alias to 512-bit hash when used in the context of a transaction signature on the chain.</span>
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">Signature</span> <span class="op">=</span> <span class="ident">MultiSignature</span>;
@@ -769,7 +770,7 @@
 
 <span class="comment">// Configure FRAME pallets to include in runtime.</span>
 
-<span class="kw">impl</span> <span class="ident">frame_system</span>::<span class="ident">Trait</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
+<span class="kw">impl</span> <span class="ident">frame_system</span>::<span class="ident">Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
 	<span class="doccomment">/// The basic call filter to use in dispatchable.</span>
 	<span class="kw">type</span> <span class="ident">BaseCallFilter</span> <span class="op">=</span> ();
 	<span class="doccomment">/// The identifier used to distinguish between accounts.</span>
@@ -828,11 +829,11 @@
 	<span class="kw">type</span> <span class="ident">SystemWeightInfo</span> <span class="op">=</span> ();
 }
 
-<span class="kw">impl</span> <span class="ident">pallet_aura</span>::<span class="ident">Trait</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
+<span class="kw">impl</span> <span class="ident">pallet_aura</span>::<span class="ident">Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
 	<span class="kw">type</span> <span class="ident">AuthorityId</span> <span class="op">=</span> <span class="ident">AuraId</span>;
 }
 
-<span class="kw">impl</span> <span class="ident">pallet_grandpa</span>::<span class="ident">Trait</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
+<span class="kw">impl</span> <span class="ident">pallet_grandpa</span>::<span class="ident">Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
 	<span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
 	<span class="kw">type</span> <span class="ident">Call</span> <span class="op">=</span> <span class="ident">Call</span>;
 
@@ -855,7 +856,7 @@
 	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MinimumPeriod</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="ident">SLOT_DURATION</span> <span class="op">/</span> <span class="number">2</span>;
 }
 
-<span class="kw">impl</span> <span class="ident">pallet_timestamp</span>::<span class="ident">Trait</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
+<span class="kw">impl</span> <span class="ident">pallet_timestamp</span>::<span class="ident">Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
 	<span class="doccomment">/// A timestamp: milliseconds since the unix epoch.</span>
 	<span class="kw">type</span> <span class="ident">Moment</span> <span class="op">=</span> <span class="ident">u64</span>;
 	<span class="kw">type</span> <span class="ident">OnTimestampSet</span> <span class="op">=</span> <span class="ident">Aura</span>;
@@ -870,7 +871,7 @@
 	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MaxLocks</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">50</span>;
 }
 
-<span class="kw">impl</span> <span class="ident">pallet_balances</span>::<span class="ident">Trait</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
+<span class="kw">impl</span> <span class="ident">pallet_balances</span>::<span class="ident">Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
 	<span class="kw">type</span> <span class="ident">MaxLocks</span> <span class="op">=</span> <span class="ident">MaxLocks</span>;
 	<span class="doccomment">/// The type for recording an account&#39;s balance.</span>
 	<span class="kw">type</span> <span class="ident">Balance</span> <span class="op">=</span> <span class="ident">Balance</span>;
@@ -886,15 +887,14 @@
 	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">TransactionByteFee</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="number">1</span>;
 }
 
-<span class="kw">impl</span> <span class="ident">pallet_transaction_payment</span>::<span class="ident">Trait</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
-	<span class="kw">type</span> <span class="ident">Currency</span> <span class="op">=</span> <span class="ident">Balances</span>;
-	<span class="kw">type</span> <span class="ident">OnTransactionPayment</span> <span class="op">=</span> ();
+<span class="kw">impl</span> <span class="ident">pallet_transaction_payment</span>::<span class="ident">Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
+	<span class="kw">type</span> <span class="ident">OnChargeTransaction</span> <span class="op">=</span> <span class="ident">CurrencyAdapter</span><span class="op">&lt;</span><span class="ident">Balances</span>, ()<span class="op">&gt;</span>;
 	<span class="kw">type</span> <span class="ident">TransactionByteFee</span> <span class="op">=</span> <span class="ident">TransactionByteFee</span>;
 	<span class="kw">type</span> <span class="ident">WeightToFee</span> <span class="op">=</span> <span class="ident">IdentityFee</span><span class="op">&lt;</span><span class="ident">Balance</span><span class="op">&gt;</span>;
 	<span class="kw">type</span> <span class="ident">FeeMultiplierUpdate</span> <span class="op">=</span> ();
 }
 
-<span class="kw">impl</span> <span class="ident">pallet_sudo</span>::<span class="ident">Trait</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
+<span class="kw">impl</span> <span class="ident">pallet_sudo</span>::<span class="ident">Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
 	<span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
 	<span class="kw">type</span> <span class="ident">Call</span> <span class="op">=</span> <span class="ident">Call</span>;
 }
@@ -913,7 +913,7 @@
 	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">ChainId</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">42</span>;
 }
 
-<span class="kw">impl</span> <span class="ident">pallet_evm</span>::<span class="ident">Trait</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
+<span class="kw">impl</span> <span class="ident">pallet_evm</span>::<span class="ident">Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
 	<span class="kw">type</span> <span class="ident">FeeCalculator</span> <span class="op">=</span> <span class="ident">FixedGasPrice</span>;
 	<span class="kw">type</span> <span class="ident">GasToWeight</span> <span class="op">=</span> ();
 	<span class="kw">type</span> <span class="ident">CallOrigin</span> <span class="op">=</span> <span class="ident">EnsureAddressTruncated</span>;
@@ -945,7 +945,7 @@
 	}
 }
 
-<span class="kw">impl</span> <span class="ident">pallet_ethereum</span>::<span class="ident">Trait</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
+<span class="kw">impl</span> <span class="ident">pallet_ethereum</span>::<span class="ident">Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
 	<span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
 	<span class="kw">type</span> <span class="ident">FindAuthor</span> <span class="op">=</span> <span class="ident">EthereumFindAuthor</span><span class="op">&lt;</span><span class="ident">Aura</span><span class="op">&gt;</span>;
 }
@@ -1098,7 +1098,7 @@
 
 	<span class="kw">impl</span> <span class="ident">fp_rpc</span>::<span class="ident">EthereumRuntimeRPCApi</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
 		<span class="kw">fn</span> <span class="ident">chain_id</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u64</span> {
-			<span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">pallet_evm</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">ChainId</span>::<span class="ident">get</span>()
+			<span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">pallet_evm</span>::<span class="ident">Config</span><span class="op">&gt;</span>::<span class="ident">ChainId</span>::<span class="ident">get</span>()
 		}
 
 		<span class="kw">fn</span> <span class="ident">account_basic</span>(<span class="ident">address</span>: <span class="ident">H160</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">EVMAccount</span> {
@@ -1106,7 +1106,7 @@
 		}
 
 		<span class="kw">fn</span> <span class="ident">gas_price</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">U256</span> {
-			<span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">pallet_evm</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">FeeCalculator</span>::<span class="ident">min_gas_price</span>()
+			<span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">pallet_evm</span>::<span class="ident">Config</span><span class="op">&gt;</span>::<span class="ident">FeeCalculator</span>::<span class="ident">min_gas_price</span>()
 		}
 
 		<span class="kw">fn</span> <span class="ident">account_code_at</span>(<span class="ident">address</span>: <span class="ident">H160</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> {
@@ -1134,14 +1134,14 @@
 			<span class="ident">estimate</span>: <span class="ident">bool</span>,
 		) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">pallet_evm</span>::<span class="ident">CallInfo</span>, <span class="ident">sp_runtime</span>::<span class="ident">DispatchError</span><span class="op">&gt;</span> {
 			<span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">estimate</span> {
-				<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">config</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">pallet_evm</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">config</span>().<span class="ident">clone</span>();
+				<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">config</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">pallet_evm</span>::<span class="ident">Config</span><span class="op">&gt;</span>::<span class="ident">config</span>().<span class="ident">clone</span>();
 				<span class="ident">config</span>.<span class="ident">estimate</span> <span class="op">=</span> <span class="bool-val">true</span>;
 				<span class="prelude-val">Some</span>(<span class="ident">config</span>)
 			} <span class="kw">else</span> {
 				<span class="prelude-val">None</span>
 			};
 
-			<span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">pallet_evm</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">Runner</span>::<span class="ident">call</span>(
+			<span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">pallet_evm</span>::<span class="ident">Config</span><span class="op">&gt;</span>::<span class="ident">Runner</span>::<span class="ident">call</span>(
 				<span class="ident">from</span>,
 				<span class="ident">to</span>,
 				<span class="ident">data</span>,
@@ -1149,7 +1149,7 @@
 				<span class="ident">gas_limit</span>.<span class="ident">low_u32</span>(),
 				<span class="ident">gas_price</span>,
 				<span class="ident">nonce</span>,
-				<span class="ident">config</span>.<span class="ident">as_ref</span>().<span class="ident">unwrap_or</span>(<span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">pallet_evm</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">config</span>()),
+				<span class="ident">config</span>.<span class="ident">as_ref</span>().<span class="ident">unwrap_or</span>(<span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">pallet_evm</span>::<span class="ident">Config</span><span class="op">&gt;</span>::<span class="ident">config</span>()),
 			).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">err</span>.<span class="ident">into</span>())
 		}
 
@@ -1163,21 +1163,21 @@
 			<span class="ident">estimate</span>: <span class="ident">bool</span>,
 		) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">pallet_evm</span>::<span class="ident">CreateInfo</span>, <span class="ident">sp_runtime</span>::<span class="ident">DispatchError</span><span class="op">&gt;</span> {
 			<span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">estimate</span> {
-				<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">config</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">pallet_evm</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">config</span>().<span class="ident">clone</span>();
+				<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">config</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">pallet_evm</span>::<span class="ident">Config</span><span class="op">&gt;</span>::<span class="ident">config</span>().<span class="ident">clone</span>();
 				<span class="ident">config</span>.<span class="ident">estimate</span> <span class="op">=</span> <span class="bool-val">true</span>;
 				<span class="prelude-val">Some</span>(<span class="ident">config</span>)
 			} <span class="kw">else</span> {
 				<span class="prelude-val">None</span>
 			};
 
-			<span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">pallet_evm</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">Runner</span>::<span class="ident">create</span>(
+			<span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">pallet_evm</span>::<span class="ident">Config</span><span class="op">&gt;</span>::<span class="ident">Runner</span>::<span class="ident">create</span>(
 				<span class="ident">from</span>,
 				<span class="ident">data</span>,
 				<span class="ident">value</span>,
 				<span class="ident">gas_limit</span>.<span class="ident">low_u32</span>(),
 				<span class="ident">gas_price</span>,
 				<span class="ident">nonce</span>,
-				<span class="ident">config</span>.<span class="ident">as_ref</span>().<span class="ident">unwrap_or</span>(<span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">pallet_evm</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">config</span>()),
+				<span class="ident">config</span>.<span class="ident">as_ref</span>().<span class="ident">unwrap_or</span>(<span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">pallet_evm</span>::<span class="ident">Config</span><span class="op">&gt;</span>::<span class="ident">config</span>()),
 			).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">err</span>.<span class="ident">into</span>())
 		}
 
