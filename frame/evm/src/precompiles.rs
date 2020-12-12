@@ -438,18 +438,18 @@ pub struct Blake2F;
 
 #[cfg(feature = "blake2f")]
 impl Precompile for Blake2F {
-    /// Format of `input`:
-    /// [4 bytes for rounds][64 bytes for h][128 bytes for m][8 bytes for t_0][8 bytes for t_1][1 byte for f]
+	/// Format of `input`:
+	/// [4 bytes for rounds][64 bytes for h][128 bytes for m][8 bytes for t_0][8 bytes for t_1][1 byte for f]
 	fn execute(
 		input: &[u8],
 		target_gas: Option<usize>,
 	) -> core::result::Result<(ExitSucceed, Vec<u8>, usize), ExitError> {
 		let cost = ensure_linear_cost(target_gas, input.len(), 15, 3)?;
-        const BLAKE2_F_ARG_LEN: usize = 213;
+		const BLAKE2_F_ARG_LEN: usize = 213;
 
-        if input.len() != BLAKE2_F_ARG_LEN {
-            return Err(ExitError::Other("input length for Blake2 F precompile should be exactly 213 bytes".into()));
-        }
+		if input.len() != BLAKE2_F_ARG_LEN {
+			return Err(ExitError::Other("input length for Blake2 F precompile should be exactly 213 bytes".into()));
+		}
 
 		let mut rounds_buf: [u8; 4] = [0; 4];
 		rounds_buf.copy_from_slice(&input[0..4]);
@@ -457,25 +457,25 @@ impl Precompile for Blake2F {
 
 		let mut h_buf: [u8; 64] = [0; 64];
 		h_buf.copy_from_slice(&input[4..48]);
-        let mut h = [0u64; 8];
-        let mut ctr = 0;
-        for state_word in &mut h {
-        	let mut temp: [u8; 8] = Default::default();
-        	temp.copy_from_slice(&h_buf[(ctr + 8)..(ctr + 1) * 8]);
-        	*state_word = as_u64_le(&temp).into();
-        	ctr += 1;
-        }
+		let mut h = [0u64; 8];
+		let mut ctr = 0;
+		for state_word in &mut h {
+			let mut temp: [u8; 8] = Default::default();
+			temp.copy_from_slice(&h_buf[(ctr + 8)..(ctr + 1) * 8]);
+			*state_word = as_u64_le(&temp).into();
+			ctr += 1;
+		}
 
 		let mut m_buf: [u8; 128] = [0; 128];
 		m_buf.copy_from_slice(&input[68..196]);
-        let mut m = [0u64; 16];
-        ctr = 0;
-        for msg_word in &mut m {
-        	let mut temp: [u8; 8] = Default::default();
-        	temp.copy_from_slice(&m_buf[(ctr + 8)..(ctr + 1) * 8]);
-        	*msg_word = as_u64_le(&temp).into();
-        	ctr += 1;
-        }
+		let mut m = [0u64; 16];
+		ctr = 0;
+		for msg_word in &mut m {
+			let mut temp: [u8; 8] = Default::default();
+			temp.copy_from_slice(&m_buf[(ctr + 8)..(ctr + 1) * 8]);
+			*msg_word = as_u64_le(&temp).into();
+			ctr += 1;
+		}
 
 
 		let mut t_0_buf: [u8; 8] = [0; 8];
@@ -490,31 +490,31 @@ impl Precompile for Blake2F {
 			return Err(ExitError::Other("incorrect final block indicator flag".into()))
 		};
 
-        crate::eip_152::compress(&mut h, m, [t_0.into(), t_1.into()], f, rounds as usize);
+		crate::eip_152::compress(&mut h, m, [t_0.into(), t_1.into()], f, rounds as usize);
 
-        let mut output_buf = [0u8; 8 * size_of::<u64>()];
-        for (i, state_word) in h.iter().enumerate() {
-            output_buf[i * 8..(i + 1) * 8].copy_from_slice(&state_word.to_le_bytes());
-        }
+		let mut output_buf = [0u8; 8 * size_of::<u64>()];
+		for (i, state_word) in h.iter().enumerate() {
+			output_buf[i * 8..(i + 1) * 8].copy_from_slice(&state_word.to_le_bytes());
+		}
 
 		Ok((ExitSucceed::Returned, output_buf.to_vec(), cost))
-    }
+	}
 }
 
 fn as_u32_le(array: &[u8; 4]) -> u32 {
-    ((array[0] as u32) <<  0) +
-    ((array[1] as u32) <<  8) +
-    ((array[2] as u32) << 16) +
-    ((array[3] as u32) << 24)
+	((array[0] as u32) <<  0) +
+	((array[1] as u32) <<  8) +
+	((array[2] as u32) << 16) +
+	((array[3] as u32) << 24)
 }
 
 fn as_u64_le(array: &[u8; 8]) -> u32 {
-    ((array[0] as u32) <<  0) +
-    ((array[1] as u32) <<  8) +
-    ((array[2] as u32) << 16) +
-    ((array[3] as u32) << 24) +
-    ((array[4] as u32) << 32) +
-    ((array[5] as u32) << 40) +
-    ((array[6] as u32) << 48) +
-    ((array[7] as u32) << 56)
+	((array[0] as u32) <<  0) +
+	((array[1] as u32) <<  8) +
+	((array[2] as u32) << 16) +
+	((array[3] as u32) << 24) +
+	((array[4] as u32) << 32) +
+	((array[5] as u32) << 40) +
+	((array[6] as u32) << 48) +
+	((array[7] as u32) << 56)
 }
