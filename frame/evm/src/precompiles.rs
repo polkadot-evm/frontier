@@ -428,7 +428,7 @@ impl Precompile for Bn128Pairing {
 
 		let mut buf = [0u8; 32];
 		ret_val.to_big_endian(&mut buf);
-		
+
 		Ok((ExitSucceed::Returned, buf.to_vec(), cost))
 	}
 }
