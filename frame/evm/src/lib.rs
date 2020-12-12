@@ -57,6 +57,9 @@ mod tests;
 pub mod runner;
 pub mod precompiles;
 
+#[cfg(feature = "blake2f")]
+pub mod eip_152;
+
 pub use crate::precompiles::{Precompile, Precompiles};
 pub use crate::runner::Runner;
 pub use fp_evm::{Account, Log, Vicinity, ExecutionInfo, CallInfo, CreateInfo};
