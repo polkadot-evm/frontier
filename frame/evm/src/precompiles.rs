@@ -453,7 +453,7 @@ impl Precompile for Blake2F {
 
 		let mut rounds_buf: [u8; 4] = [0; 4];
 		rounds_buf.copy_from_slice(&input[0..4]);
-		let rounds: u32 = as_u32_le(&rounds_buf);
+		let rounds: u32 = u32::from_le_bytes(rounds_buf);
 
 		let mut h_buf: [u8; 64] = [0; 64];
 		h_buf.copy_from_slice(&input[4..48]);
@@ -462,7 +462,7 @@ impl Precompile for Blake2F {
 		for state_word in &mut h {
 			let mut temp: [u8; 8] = Default::default();
 			temp.copy_from_slice(&h_buf[(ctr + 8)..(ctr + 1) * 8]);
-			*state_word = as_u64_le(&temp).into();
+			*state_word = u64::from_le_bytes(temp).into();
 			ctr += 1;
 		}
 
@@ -473,18 +473,18 @@ impl Precompile for Blake2F {
 		for msg_word in &mut m {
 			let mut temp: [u8; 8] = Default::default();
 			temp.copy_from_slice(&m_buf[(ctr + 8)..(ctr + 1) * 8]);
-			*msg_word = as_u64_le(&temp).into();
+			*msg_word = u64::from_le_bytes(temp).into();
 			ctr += 1;
 		}
 
 
 		let mut t_0_buf: [u8; 8] = [0; 8];
 		t_0_buf.copy_from_slice(&input[196..204]);
-		let t_0 = as_u64_le(&t_0_buf);
+		let t_0 = u64::from_le_bytes(t_0_buf);
 
 		let mut t_1_buf: [u8; 8] = [0; 8];
 		t_1_buf.copy_from_slice(&input[204..212]);
-		let t_1 = as_u64_le(&t_1_buf);
+		let t_1 = u64::from_le_bytes(t_1_buf);
 
 		let f = if input[212] == 1 { true } else if input[212] == 0 { false } else {
 			return Err(ExitError::Other("incorrect final block indicator flag".into()))
@@ -499,22 +499,4 @@ impl Precompile for Blake2F {
 
 		Ok((ExitSucceed::Returned, output_buf.to_vec(), cost))
 	}
-}
-
-fn as_u32_le(array: &[u8; 4]) -> u32 {
-	((array[0] as u32) <<  0) +
-	((array[1] as u32) <<  8) +
-	((array[2] as u32) << 16) +
-	((array[3] as u32) << 24)
-}
-
-fn as_u64_le(array: &[u8; 8]) -> u32 {
-	((array[0] as u32) <<  0) +
-	((array[1] as u32) <<  8) +
-	((array[2] as u32) << 16) +
-	((array[3] as u32) << 24) +
-	((array[4] as u32) << 32) +
-	((array[5] as u32) << 40) +
-	((array[6] as u32) << 48) +
-	((array[7] as u32) << 56)
 }
