@@ -318,9 +318,8 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 				Some(handler) => {
 					handler
 						.current_block(&block)
-						.map_err(|err| internal_err(format!("fetch runtime author failed: {:?}", err)))?
-						.map(|b| b.header.beneficiary)
-						.ok_or(internal_err("Failed to retrieve block."))?
+						.ok_or(internal_err("fetching author through override failed"))?
+						.header.beneficiary
 				}
 				None => {
 					self.client
@@ -388,14 +387,14 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 					Some(handler) => {
 						handler
 						.storage_at(&id, address, index)
-						.map_err(|err| internal_err(format!("fetch runtime chain id failed: {:?}", err)))?
+						.ok_or(internal_err("Fetching account storage through override failed"))?
 						.into()
 					}
 					None => {
 						self.client
 							.runtime_api()
 							.storage_at(&id, address, index)
-							.map_err(|err| internal_err(format!("fetch runtime chain id failed: {:?}", err)))?
+							.map_err(|err| internal_err(format!("fetch runtime account storage failed: {:?}", err)))?
 							.into()
 					}
 				}
@@ -415,10 +414,8 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 
 		let (block, statuses) = match self.overrides.get(&schema) {
 			Some(handler) => {
-				let b = handler.current_block(&id)
-				.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
-				let s = handler.current_transaction_statuses(&id)
-					.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
+				let b = handler.current_block(&id);
+				let s = handler.current_transaction_statuses(&id);
 				(b, s)
 			}
 			None => {
@@ -454,10 +451,8 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 
 		let (block, statuses) = match self.overrides.get(&schema) {
 			Some(handler) => {
-				let b = handler.current_block(&id)
-				.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
-				let s = handler.current_transaction_statuses(&id)
-					.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
+				let b = handler.current_block(&id);
+				let s = handler.current_transaction_statuses(&id);
 				(b, s)
 			}
 			None => {
@@ -537,7 +532,6 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 			Some(handler) => {
 				handler
 					.current_block(&id)
-					.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?
 			}
 			None => {
 				self.client.runtime_api()
@@ -563,7 +557,6 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 			Some(handler) => {
 				handler
 					.current_block(&id)
-					.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?
 			}
 			None => {
 				self.client.runtime_api()
@@ -595,7 +588,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 					Some(handler) => {
 						handler
 							.account_code_at(&id, address)
-							.map_err(|err| internal_err(format!("fetch runtime chain id failed: {:?}", err)))?
+							.ok_or(internal_err("fetching account codes via override failed"))?
 							.into()
 					}
 					None => {
@@ -851,10 +844,8 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 
 		let (block, statuses) = match self.overrides.get(&schema) {
 			Some(handler) => {
-				let b = handler.current_block(&id)
-				.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
-				let s = handler.current_transaction_statuses(&id)
-					.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
+				let b = handler.current_block(&id);
+				let s = handler.current_transaction_statuses(&id);
 				(b, s)
 			}
 			None => {
@@ -895,10 +886,8 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 
 		let (block, statuses) = match self.overrides.get(&schema) {
 			Some(handler) => {
-				let b = handler.current_block(&id)
-				.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
-				let s = handler.current_transaction_statuses(&id)
-					.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
+				let b = handler.current_block(&id);
+				let s = handler.current_transaction_statuses(&id);
 				(b, s)
 			}
 			None => {
@@ -936,10 +925,8 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 
 		let (block, statuses) = match self.overrides.get(&schema) {
 			Some(handler) => {
-				let b = handler.current_block(&id)
-				.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
-				let s = handler.current_transaction_statuses(&id)
-					.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
+				let b = handler.current_block(&id);
+				let s = handler.current_transaction_statuses(&id);
 				(b, s)
 			}
 			None => {
@@ -982,12 +969,9 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 
 		let (block, statuses, receipts) = match self.overrides.get(&schema) {
 			Some(handler) => {
-				let b = handler.current_block(&id)
-				.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
-				let s = handler.current_transaction_statuses(&id)
-					.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
-				let r = handler.current_receipts(&id)
-					.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
+				let b = handler.current_block(&id);
+				let s = handler.current_transaction_statuses(&id);
+				let r = handler.current_receipts(&id);
 				(b, s, r)
 			}
 			None => {

@@ -20,7 +20,7 @@ use ethereum_types::{H160, H256, U256};
 use sp_runtime::traits::{Block as BlockT, BlakeTwo256};
 use sp_api::BlockId;
 use sc_client_api::backend::{StorageProvider, Backend, StateBackend, AuxStore};
-use sp_blockchain::{Error as BlockChainError, HeaderMetadata, HeaderBackend, Result};
+use sp_blockchain::{Error as BlockChainError, HeaderMetadata, HeaderBackend};
 use sp_storage::StorageKey;
 use codec::Decode;
 use sp_io::hashing::{twox_128, blake2_128};
@@ -32,15 +32,15 @@ pub use fc_rpc_core::{EthApiServer, NetApiServer};
 /// about pallet-ethereum's storage schema. This trait is quite similar to the runtime API.
 pub trait StorageOverride<Block: BlockT> {
 	/// For a given account address, returns pallet_evm::AccountCodes.
-	fn account_code_at(&self, block: &BlockId<Block>, address: H160) -> Result<Vec<u8>>;
+	fn account_code_at(&self, block: &BlockId<Block>, address: H160) -> Option<Vec<u8>>;
 	/// For a given account address and index, returns pallet_evm::AccountStorages.
-	fn storage_at(&self, block: &BlockId<Block>, address: H160, index: U256) -> Result<H256>;
+	fn storage_at(&self, block: &BlockId<Block>, address: H160, index: U256) -> Option<H256>;
 	/// Return the current block.
-	fn current_block(&self, block: &BlockId<Block>) -> Result<Option<EthereumBlock>>;
+	fn current_block(&self, block: &BlockId<Block>) -> Option<EthereumBlock>;
 	/// Return the current receipt.
-	fn current_receipts(&self, block: &BlockId<Block>) -> Result<Option<Vec<ethereum::Receipt>>>;
+	fn current_receipts(&self, block: &BlockId<Block>) -> Option<Vec<ethereum::Receipt>>;
 	/// Return the current transaction status.
-	fn current_transaction_statuses(&self, block: &BlockId<Block>) -> Result<Option<Vec<TransactionStatus>>>;
+	fn current_transaction_statuses(&self, block: &BlockId<Block>) -> Option<Vec<TransactionStatus>>;
 }
 
 /// An override for runtimes that use Schema V1
@@ -63,11 +63,25 @@ impl<B, C, BE> SchemaV1Override<B, C, BE> where
 	B: BlockT<Hash=H256> + Send + Sync + 'static,
 	C: Send + Sync + 'static,
 {
-	fn query_storage<T: Decode>(&self, id: &BlockId<B>, key: &StorageKey) -> Result<T> {
-		let raw_data = self.client.storage(id, key)?
-			.ok_or("Storage provider returned Ok(None)")?;
+	// My attempt using result
+	// fn query_storage<T: Decode>(&self, id: &BlockId<B>, key: &StorageKey) -> Result<T> {
+	// 	let raw_data = self.client.storage(id, key)?
+	// 		.ok_or("Storage provider returned Ok(None)")?;
+	//
+	// 	Decode::decode(&mut &raw_data.0[..]).map_err(|_| "Could not decode data".into())
+	// }
 
-		Decode::decode(&mut &raw_data.0[..]).map_err(|_| "Could not decode data".into())
+	// Telmo's original version
+	fn query_storage<T: Decode>(&self, id: &BlockId<B>, key: &StorageKey) -> Option<T> {
+		if let Ok(Some(data)) = self.client.storage(
+			id,
+			key
+		) {
+			if let Ok(result) = Decode::decode(&mut &data.0[..]) {
+				return Some(result);
+			}
+		}
+		None
 	}
 }
 
@@ -93,7 +107,7 @@ where
 	C: Send + Sync + 'static,
 {
 	/// For a given account address, returns pallet_evm::AccountCodes.
-	fn account_code_at(&self, block: &BlockId<Block>, address: H160) -> Result<Vec<u8>> {
+	fn account_code_at(&self, block: &BlockId<Block>, address: H160) -> Option<Vec<u8>> {
 		let mut key: Vec<u8> = storage_prefix_build(b"EVM", b"AccountCodes");
 		key.extend(blake2_128_extend(address.as_bytes()));
 		self.query_storage::<Vec<u8>>(
@@ -103,7 +117,7 @@ where
 	}
 
 	/// For a given account address and index, returns pallet_evm::AccountStorages.
-	fn storage_at(&self, block: &BlockId<Block>, address: H160, index: U256) -> Result<H256> {
+	fn storage_at(&self, block: &BlockId<Block>, address: H160, index: U256) -> Option<H256> {
 		let tmp: &mut [u8; 32] = &mut [0; 32];
 		index.to_little_endian(tmp);
 
@@ -118,8 +132,8 @@ where
 	}
 
 	/// Return the current block.
-	fn current_block(&self, block: &BlockId<Block>) -> Result<Option<EthereumBlock>> {
-		self.query_storage::<Option<ethereum::Block>>(
+	fn current_block(&self, block: &BlockId<Block>) -> Option<EthereumBlock> {
+		self.query_storage::<ethereum::Block>(
 			block,
 			&StorageKey(
 				storage_prefix_build(b"Ethereum", b"CurrentBlock")
@@ -128,8 +142,8 @@ where
 	}
 
 	/// Return the current receipt.
-	fn current_receipts(&self, block: &BlockId<Block>) -> Result<Option<Vec<ethereum::Receipt>>> {
-		self.query_storage::<Option<Vec<ethereum::Receipt>>>(
+	fn current_receipts(&self, block: &BlockId<Block>) -> Option<Vec<ethereum::Receipt>> {
+		self.query_storage::<Vec<ethereum::Receipt>>(
 			block,
 			&StorageKey(
 				storage_prefix_build(b"Ethereum", b"CurrentReceipts")
@@ -138,8 +152,8 @@ where
 	}
 
 	/// Return the current transaction status.
-	fn current_transaction_statuses(&self, block: &BlockId<Block>) -> Result<Option<Vec<TransactionStatus>>> {
-		self.query_storage::<Option<Vec<TransactionStatus>>>(
+	fn current_transaction_statuses(&self, block: &BlockId<Block>) -> Option<Vec<TransactionStatus>> {
+		self.query_storage::<Vec<TransactionStatus>>(
 			block,
 			&StorageKey(
 				storage_prefix_build(b"Ethereum", b"CurrentTransactionStatuses")
