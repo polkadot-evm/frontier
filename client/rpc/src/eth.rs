@@ -19,8 +19,7 @@
 use std::{marker::PhantomData, sync::{Arc, Mutex}};
 use std::collections::{BTreeMap, HashMap};
 use ethereum::{
-	Block as EthereumBlock, Transaction as EthereumTransaction,
-	TransactionMessage as EthereumTransactionMessage,
+	Block as EthereumBlock, Transaction as EthereumTransaction
 };
 use ethereum_types::{H160, H256, H64, U256, U64, H512};
 use jsonrpc_core::{BoxFuture, Result, futures::future::{self, Future}};
@@ -81,48 +80,6 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> {
 	}
 }
 
-fn pending_transaction_build(hash: H256, transaction: EthereumTransaction) -> Transaction {
-	let pubkey = match public_key(&transaction) {
-		Ok(p) => Some(p),
-		Err(_e) => None,
-	};
-	Transaction {
-		hash: hash,
-		nonce: transaction.nonce,
-		block_hash: None,
-		block_number: None,
-		transaction_index: None,
-		from: match pubkey {
-			Some(pk) => H160::from(
-				H256::from_slice(Keccak256::digest(&pk).as_slice())
-			),
-			_ => H160::default()
-		},
-		to: match transaction.action {
-			ethereum::TransactionAction::Call(to) => Some(to),
-			_ => None
-		},
-		value: transaction.value,
-		gas_price: transaction.gas_price,
-		gas: transaction.gas_limit,
-		input: Bytes(transaction.input),
-		creates: None,
-		raw: Bytes(Vec::new()),
-		public_key: match pubkey {
-			Some(pk) => Some(H512::from(pk)),
-			_ => None
-		},
-		chain_id: match transaction.signature.chain_id() {
-			Some(d) => Some(U64::from(d)),
-			_ => None
-		},
-		standard_v: U256::from(transaction.signature.standard_v()),
-		v: U256::from(transaction.signature.v()),
-		r: U256::from(transaction.signature.r().as_bytes()),
-		s: U256::from(transaction.signature.s().as_bytes()),
-	}
-}
-
 fn rich_block_build(
 	block: ethereum::Block,
 	statuses: Vec<Option<TransactionStatus>>,
@@ -162,8 +119,8 @@ fn rich_block_build(
 						block.transactions.iter().enumerate().map(|(index, transaction)|{
 							transaction_build(
 								transaction.clone(),
-								block.clone(),
-								statuses[index].clone().unwrap_or_default()
+								Some(block.clone()),
+								Some(statuses[index].clone().unwrap_or_default())
 							)
 						}).collect()
 					)
@@ -185,18 +142,11 @@ fn rich_block_build(
 
 fn transaction_build(
 	transaction: EthereumTransaction,
-	block: EthereumBlock,
-	status: TransactionStatus
+	block: Option<EthereumBlock>,
+	status: Option<TransactionStatus>
 ) -> Transaction {
-	let mut sig = [0u8; 65];
-	let mut msg = [0u8; 32];
-	sig[0..32].copy_from_slice(&transaction.signature.r()[..]);
-	sig[32..64].copy_from_slice(&transaction.signature.s()[..]);
-	sig[64] = transaction.signature.standard_v();
-	msg.copy_from_slice(&EthereumTransactionMessage::from(transaction.clone()).hash()[..]);
-
-	let pubkey = match sp_io::crypto::secp256k1_ecdsa_recover(&sig, &msg) {
-		Ok(p) => Some(H512::from(p)),
+	let pubkey = match public_key(&transaction) {
+		Ok(p) => Some(p),
 		Err(_e) => None,
 	};
 
@@ -205,24 +155,53 @@ fn transaction_build(
 			Keccak256::digest(&rlp::encode(&transaction)).as_slice()
 		),
 		nonce: transaction.nonce,
-		block_hash: Some(H256::from_slice(
-			Keccak256::digest(&rlp::encode(&block.header)).as_slice()
-		)),
-		block_number: Some(block.header.number),
-		transaction_index: Some(U256::from(
-			UniqueSaturatedInto::<u32>::unique_saturated_into(
-				status.transaction_index
-			)
-		)),
-		from: status.from,
-		to: status.to,
+		block_hash: match &block {
+			Some(block) => Some(H256::from_slice(
+				Keccak256::digest(&rlp::encode(&block.header)).as_slice()
+			)),
+			_ => None,
+		},
+		block_number: match &block {
+			Some(block) => Some(block.header.number),
+			_ => None,
+		},
+		transaction_index: match &status {
+			Some(status) => Some(U256::from(
+				UniqueSaturatedInto::<u32>::unique_saturated_into(
+					status.transaction_index
+				)
+			)),
+			_ => None,
+		},
+		from: match &status {
+			Some(status) => status.from,
+			_ => match pubkey {
+				Some(pk) => H160::from(
+					H256::from_slice(Keccak256::digest(&pk).as_slice())
+				),
+				_ => H160::default()
+			}
+		},
+		to: match &status {
+			Some(status) => status.to,
+			_ => match transaction.action {
+				ethereum::TransactionAction::Call(to) => Some(to),
+				_ => None
+			}
+		},
 		value: transaction.value,
 		gas_price: transaction.gas_price,
 		gas: transaction.gas_limit,
 		input: Bytes(transaction.clone().input),
-		creates: status.contract_address,
+		creates: match &status {
+			Some(status) => status.contract_address,
+			_ => None
+		},
 		raw: Bytes(rlp::encode(&transaction)),
-		public_key: pubkey,
+		public_key: match pubkey {
+			Some(pk) => Some(H512::from(pk)),
+			_ => None
+		},
 		chain_id: transaction.signature.chain_id().map(U64::from),
 		standard_v: U256::from(transaction.signature.standard_v()),
 		v: U256::from(transaction.signature.v()),
@@ -626,7 +605,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 						if let Ok(locked) = &mut pending.lock() {
 							locked.insert(
 								transaction_hash,
-								pending_transaction_build(transaction_hash, transaction)
+								transaction_build(transaction, None, None)
 							);
 						}
 					}
@@ -661,7 +640,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 						if let Ok(locked) = &mut pending.lock() {
 							locked.insert(
 								transaction_hash,
-								pending_transaction_build(transaction_hash, transaction)
+								transaction_build(transaction, None, None)
 							);
 						}
 					}
@@ -823,8 +802,8 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 			(Some(block), Some(statuses)) => {
 				Ok(Some(transaction_build(
 					block.transactions[index].clone(),
-					block,
-					statuses[index].clone(),
+					Some(block),
+					Some(statuses[index].clone()),
 				)))
 			},
 			_ => Ok(None)
@@ -853,8 +832,8 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 			(Some(block), Some(statuses)) => {
 				Ok(Some(transaction_build(
 					block.transactions[index].clone(),
-					block,
-					statuses[index].clone(),
+					Some(block),
+					Some(statuses[index].clone()),
 				)))
 			},
 			_ => Ok(None)
@@ -881,8 +860,8 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 			(Some(block), Some(statuses)) => {
 				Ok(Some(transaction_build(
 					block.transactions[index].clone(),
-					block,
-					statuses[index].clone(),
+					Some(block),
+					Some(statuses[index].clone()),
 				)))
 			},
 			_ => Ok(None)
