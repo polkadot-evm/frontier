@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["compress","The Blake2 compression function F. See https://tools.ietf.org/html/rfc7693#section-3.2 Takes as an argument the state vector `h`, message block vector `m`, offset counter `t`, final block indicator flag `f`, and number of rounds `rounds`. The state vector provided as the first parameter is modified by the function."]]});

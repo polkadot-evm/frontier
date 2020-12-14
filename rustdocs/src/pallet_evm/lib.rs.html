@@ -546,6 +546,9 @@
 <span id="543">543</span>
 <span id="544">544</span>
 <span id="545">545</span>
+<span id="546">546</span>
+<span id="547">547</span>
+<span id="548">548</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
@@ -605,6 +608,9 @@
 <span class="kw">mod</span> <span class="ident">tests</span>;
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">runner</span>;
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">precompiles</span>;
+
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;blake2f&quot;</span>)]</span>
+<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">eip_152</span>;
 
 <span class="kw">pub</span> <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">precompiles</span>::{<span class="ident">Precompile</span>, <span class="ident">Precompiles</span>};
 <span class="kw">pub</span> <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">runner</span>::<span class="ident">Runner</span>;
