@@ -1335,6 +1335,7 @@ name = "fp-evm"
 version = "0.8.0"
 dependencies = [
  "evm",
+ "impl-trait-for-tuples",
  "parity-scale-codec",
  "serde",
  "sp-core",
@@ -1540,6 +1541,7 @@ dependencies = [
  "pallet-balances",
  "pallet-ethereum",
  "pallet-evm",
+ "pallet-evm-precompile-simple",
  "pallet-grandpa",
  "pallet-randomness-collective-flip",
  "pallet-sudo",
@@ -3691,21 +3693,16 @@ dependencies = [
 name = "pallet-evm"
 version = "2.0.0"
 dependencies = [
- "ed25519-dalek",
- "ethereum-types",
  "evm",
  "evm-gasometer",
  "evm-runtime",
  "fp-evm",
  "frame-support",
  "frame-system",
- "impl-trait-for-tuples",
- "num",
  "pallet-balances",
  "pallet-timestamp",
  "parity-scale-codec",
  "primitive-types",
- "ripemd160",
  "rlp",
  "serde",
  "sha3 0.8.2",
@@ -3713,7 +3710,60 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
+]
+
+[[package]]
+name = "pallet-evm-precompile-blake2"
+version = "2.0.0"
+dependencies = [
+ "evm",
+ "fp-evm",
+ "sp-core",
+ "sp-io",
+]
+
+[[package]]
+name = "pallet-evm-precompile-bn128"
+version = "2.0.0"
+dependencies = [
+ "evm",
+ "fp-evm",
+ "sp-core",
+ "sp-io",
  "substrate-bn",
+]
+
+[[package]]
+name = "pallet-evm-precompile-ed25519"
+version = "2.0.0"
+dependencies = [
+ "ed25519-dalek",
+ "evm",
+ "fp-evm",
+ "sp-core",
+ "sp-io",
+]
+
+[[package]]
+name = "pallet-evm-precompile-modexp"
+version = "2.0.0"
+dependencies = [
+ "evm",
+ "fp-evm",
+ "num",
+ "sp-core",
+ "sp-io",
+]
+
+[[package]]
+name = "pallet-evm-precompile-simple"
+version = "2.0.0"
+dependencies = [
+ "evm",
+ "fp-evm",
+ "ripemd160",
+ "sp-core",
+ "sp-io",
 ]
 
 [[package]]

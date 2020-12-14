@@ -1,0 +1,25 @@
+[package]
+name = "pallet-evm-precompile-bn128"
+version = "2.0.0"
+authors = ["Parity Technologies <admin@parity.io>"]
+edition = "2018"
+license = "Apache-2.0"
+homepage = "https://substrate.dev"
+repository = "https://github.com/paritytech/substrate/"
+description = "BN128 precompiles for EVM pallet."
+
+[dependencies]
+sp-core = { version = "2.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sp-io = { version = "2.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+fp-evm = { version = "0.8.0", default-features = false, path = "../../../../primitives/evm" }
+evm = { version = "0.19.0", default-features = false, features = ["with-codec"] }
+bn = { package = "substrate-bn", version = "0.5", default-features = false }
+
+[features]
+default = ["std"]
+std = [
+	"sp-core/std",
+	"sp-io/std",
+	"fp-evm/std",
+	"evm/std",
+]

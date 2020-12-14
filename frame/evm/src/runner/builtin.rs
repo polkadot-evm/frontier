@@ -36,7 +36,7 @@ use evm_runtime::{Config as EvmConfig, Handler as HandlerT};
 use evm_gasometer::{self as gasometer, Gasometer};
 use crate::{
 	Config, Vicinity, Module, Event, Log, AccountCodes, AccountStorages, AddressMapping,
-	Runner as RunnerT, Error, CallInfo, CreateInfo, FeeCalculator, precompiles::Precompiles,
+	Runner as RunnerT, Error, CallInfo, CreateInfo, FeeCalculator, PrecompileSet,
 };
 
 #[derive(Default)]
