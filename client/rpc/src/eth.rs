@@ -778,8 +778,10 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 			Some((hash, index)) => (hash, index as usize),
 			None => {
 				if let Some(pending) = &self.pending_transactions {
-					if let Some(transaction) = pending.lock().unwrap().get(&hash) {
-						return Ok(Some(transaction.clone()));
+					if let Ok(locked) = &mut pending.lock() {
+						if let Some(transaction) = locked.get(&hash) {
+							return Ok(Some(transaction.clone()));
+						}
 					}
 				}
 				return Ok(None);
