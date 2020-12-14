@@ -106,8 +106,8 @@ fn pending_transaction_build(hash: H256, transaction: EthereumTransaction) -> Tr
 		gas_price: transaction.gas_price,
 		gas: transaction.gas_limit,
 		input: Bytes(transaction.input),
-		creates: None, // TODO? Option<H160>
-		raw: Bytes(Vec::new()), // TODO raw transaction
+		creates: None,
+		raw: Bytes(Vec::new()),
 		public_key: match pubkey {
 			Some(pk) => Some(H512::from(pk)),
 			_ => None
