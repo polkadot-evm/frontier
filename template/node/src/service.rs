@@ -1,6 +1,8 @@
 //! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 
-use std::{sync::Arc, cell::RefCell, time::Duration};
+use std::{sync::{Arc, Mutex}, cell::RefCell, time::Duration, collections::HashMap};
+use sp_core::H256;
+use fc_rpc_core::types::Transaction;
 use sc_client_api::{ExecutorProvider, RemoteBackend};
 use sc_consensus_manual_seal::{self as manual_seal};
 use fc_consensus::FrontierBlockImport;
@@ -77,7 +79,7 @@ pub fn new_partial(config: &Configuration, sealing: Option<Sealing>) -> Result<
 		FullClient, FullBackend, FullSelectChain,
 		sp_consensus::import_queue::BasicQueue<Block, sp_api::TransactionFor<FullClient, Block>>,
 		sc_transaction_pool::FullPool<Block, FullClient>,
-		ConsensusResult,
+		(ConsensusResult, Arc<Mutex<HashMap<H256, Transaction>>>),
 >, ServiceError> {
 	let inherent_data_providers = sp_inherents::InherentDataProviders::new();
 
@@ -94,6 +96,9 @@ pub fn new_partial(config: &Configuration, sealing: Option<Sealing>) -> Result<
 		client.clone(),
 	);
 
+	let pending_transactions: Arc<Mutex<HashMap<H256, Transaction>>>
+		= Arc::new(Mutex::new(HashMap::new()));
+
 	if let Some(sealing) = sealing {
 		inherent_data_providers
 			.register_provider(MockTimestampInherentDataProvider)
@@ -103,6 +108,7 @@ pub fn new_partial(config: &Configuration, sealing: Option<Sealing>) -> Result<
 		let frontier_block_import = FrontierBlockImport::new(
 			client.clone(),
 			client.clone(),
+			pending_transactions.clone(),
 			true,
 		);
 
@@ -115,7 +121,7 @@ pub fn new_partial(config: &Configuration, sealing: Option<Sealing>) -> Result<
 		return Ok(sc_service::PartialComponents {
 			client, backend, task_manager, import_queue, keystore_container,
 			select_chain, transaction_pool, inherent_data_providers,
-			other: ConsensusResult::ManualSeal(frontier_block_import, sealing)
+			other: (ConsensusResult::ManualSeal(frontier_block_import, sealing), pending_transactions)
 		})
 	}
 
@@ -126,6 +132,7 @@ pub fn new_partial(config: &Configuration, sealing: Option<Sealing>) -> Result<
 	let frontier_block_import = FrontierBlockImport::new(
 		grandpa_block_import.clone(),
 		client.clone(),
+		pending_transactions.clone(),
 		true
 	);
 
@@ -148,7 +155,7 @@ pub fn new_partial(config: &Configuration, sealing: Option<Sealing>) -> Result<
 	Ok(sc_service::PartialComponents {
 		client, backend, task_manager, import_queue, keystore_container,
 		select_chain, transaction_pool, inherent_data_providers,
-		other: ConsensusResult::Aura(aura_block_import, grandpa_link)
+		other: (ConsensusResult::Aura(aura_block_import, grandpa_link), pending_transactions)
 	})
 }
 
@@ -160,7 +167,7 @@ pub fn new_full(
 ) -> Result<TaskManager, ServiceError> {
 	let sc_service::PartialComponents {
 		client, backend, mut task_manager, import_queue, keystore_container,
-		select_chain, transaction_pool, inherent_data_providers, other: consensus_result,
+		select_chain, transaction_pool, inherent_data_providers, other: (consensus_result, pending_transactions),
 	} = new_partial(&config, sealing)?;
 
 	let (network, network_status_sinks, system_rpc_tx, network_starter) = match consensus_result {
@@ -214,6 +221,7 @@ pub fn new_full(
 		let client = client.clone();
 		let pool = transaction_pool.clone();
 		let network = network.clone();
+		let pending = pending_transactions.clone();
 		Box::new(move |deny_unsafe, _| {
 			let deps = crate::rpc::FullDeps {
 				client: client.clone(),
@@ -222,6 +230,7 @@ pub fn new_full(
 				is_authority,
 				enable_dev_signer,
 				network: network.clone(),
+				pending_transactions: pending.clone(),
 				command_sink: Some(command_sink.clone())
 			};
 			crate::rpc::create_full(

@@ -20,7 +20,8 @@ mod aux_schema;
 
 pub use crate::aux_schema::{load_block_hash, load_transaction_metadata};
 
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
+use sp_core::H256;
 use std::collections::HashMap;
 use std::marker::PhantomData;
 use fp_consensus::{FRONTIER_ENGINE_ID, ConsensusLog};
@@ -34,6 +35,7 @@ use sp_consensus::{
 	BlockImportParams, Error as ConsensusError, BlockImport,
 	BlockCheckParams, ImportResult,
 };
+use fc_rpc_core::types::Transaction;
 use log::*;
 use sc_client_api;
 
@@ -60,6 +62,7 @@ impl std::convert::From<Error> for ConsensusError {
 pub struct FrontierBlockImport<B: BlockT, I, C> {
 	inner: I,
 	client: Arc<C>,
+	pending_transactions: Arc<Mutex<HashMap<H256, Transaction>>>,
 	enabled: bool,
 	_marker: PhantomData<B>,
 }
@@ -69,6 +72,7 @@ impl<Block: BlockT, I: Clone + BlockImport<Block>, C> Clone for FrontierBlockImp
 		FrontierBlockImport {
 			inner: self.inner.clone(),
 			client: self.client.clone(),
+			pending_transactions: self.pending_transactions.clone(),
 			enabled: self.enabled,
 			_marker: PhantomData,
 		}
@@ -85,11 +89,13 @@ impl<B, I, C> FrontierBlockImport<B, I, C> where
 	pub fn new(
 		inner: I,
 		client: Arc<C>,
+		pending_transactions: Arc<Mutex<HashMap<H256, Transaction>>>,
 		enabled: bool,
 	) -> Self {
 		Self {
 			inner,
 			client,
+			pending_transactions,
 			enabled,
 			_marker: PhantomData,
 		}
@@ -125,6 +131,7 @@ impl<B, I, C> BlockImport<B> for FrontierBlockImport<B, I, C> where
 				)
 			)
 		}
+		self.pending_transactions.lock().unwrap().clear();
 
 		let client = self.client.clone();
 

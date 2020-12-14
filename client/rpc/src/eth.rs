@@ -64,6 +64,7 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> {
 		pool: Arc<P>,
 		convert_transaction: CT,
 		network: Arc<NetworkService<B, H>>,
+		pending_transactions: Arc<Mutex<HashMap<H256, Transaction>>>,
 		signers: Vec<Box<dyn EthSigner>>,
 		is_authority: bool,
 	) -> Self {
@@ -74,7 +75,7 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> {
 			network,
 			is_authority,
 			signers,
-			pending_transactions: Arc::new(Mutex::new(HashMap::new())),
+			pending_transactions,
 			_marker: PhantomData,
 		}
 	}
@@ -656,6 +657,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 						transaction_hash,
 						pending_transaction_build(transaction_hash, transaction)
 					);
+					println!("-----> Inserted to pending {}", pending.lock().unwrap().len());
 					transaction_hash
 				})
 				.map_err(|err| internal_err(format!("submit transaction to pool failed: {:?}", err)))
@@ -788,7 +790,12 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 			hash,
 		).map_err(|err| internal_err(format!("fetch aux store failed: {:?})", err)))? {
 			Some((hash, index)) => (hash, index as usize),
-			None => return Ok(None),
+			None => {
+				if let Some(transaction) = self.pending_transactions.lock().unwrap().get(&hash) {
+					return Ok(Some(transaction.clone()));
+				}
+				return Ok(None);
+			},
 		};
 
 		let id = match self.load_hash(hash)

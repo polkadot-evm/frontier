@@ -24,3 +24,4 @@ sp-timestamp = { version = "2.0.0", git = "https://github.com/paritytech/substra
 derive_more = "0.99.2"
 prometheus-endpoint = { package = "substrate-prometheus-endpoint", git = "https://github.com/paritytech/substrate.git", branch = "frontier"}
 ethereum = { version = "0.5", features = ["with-codec"] }
+fc-rpc-core = { path = "../rpc-core" }

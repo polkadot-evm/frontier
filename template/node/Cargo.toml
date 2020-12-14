@@ -52,6 +52,7 @@ fc-consensus = { path = "../../client/consensus" }
 frontier-template-runtime = { path = "../runtime" }
 fc-rpc = { path = "../../client/rpc" }
 fp-rpc = { path = "../../primitives/rpc" }
+fc-rpc-core = { path = "../../client/rpc-core" }
 
 [build-dependencies]
 substrate-build-script-utils = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
