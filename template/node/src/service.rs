@@ -79,7 +79,7 @@ pub fn new_partial(config: &Configuration, sealing: Option<Sealing>) -> Result<
 		FullClient, FullBackend, FullSelectChain,
 		sp_consensus::import_queue::BasicQueue<Block, sp_api::TransactionFor<FullClient, Block>>,
 		sc_transaction_pool::FullPool<Block, FullClient>,
-		(ConsensusResult, Arc<Mutex<HashMap<H256, Transaction>>>),
+		(ConsensusResult, Option<Arc<Mutex<HashMap<H256, Transaction>>>>),
 >, ServiceError> {
 	let inherent_data_providers = sp_inherents::InherentDataProviders::new();
 
@@ -96,8 +96,8 @@ pub fn new_partial(config: &Configuration, sealing: Option<Sealing>) -> Result<
 		client.clone(),
 	);
 
-	let pending_transactions: Arc<Mutex<HashMap<H256, Transaction>>>
-		= Arc::new(Mutex::new(HashMap::new()));
+	let pending_transactions: Option<Arc<Mutex<HashMap<H256, Transaction>>>>
+		= Some(Arc::new(Mutex::new(HashMap::new())));
 
 	if let Some(sealing) = sealing {
 		inherent_data_providers

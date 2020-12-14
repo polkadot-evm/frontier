@@ -54,7 +54,7 @@ pub struct EthApi<B: BlockT, C, P, CT, BE, H: ExHashT> {
 	network: Arc<NetworkService<B, H>>,
 	is_authority: bool,
 	signers: Vec<Box<dyn EthSigner>>,
-	pending_transactions: Arc<Mutex<HashMap<H256, Transaction>>>,
+	pending_transactions: Option<Arc<Mutex<HashMap<H256, Transaction>>>>,
 	_marker: PhantomData<(B, BE)>,
 }
 
@@ -64,7 +64,7 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> {
 		pool: Arc<P>,
 		convert_transaction: CT,
 		network: Arc<NetworkService<B, H>>,
-		pending_transactions: Arc<Mutex<HashMap<H256, Transaction>>>,
+		pending_transactions: Option<Arc<Mutex<HashMap<H256, Transaction>>>>,
 		signers: Vec<Box<dyn EthSigner>>,
 		is_authority: bool,
 	) -> Self {
@@ -622,10 +622,13 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 				)
 				.compat()
 				.map(move |_| {
-					pending.lock().unwrap().insert(
-						transaction_hash,
-						pending_transaction_build(transaction_hash, transaction)
-					);
+					if let Some(pending) = pending {
+						pending.lock().unwrap().insert(
+							transaction_hash,
+							pending_transaction_build(transaction_hash, transaction)
+						);
+						println!("---> Inserting to pending {}", pending.lock().unwrap().len());
+					}
 					transaction_hash
 				})
 				.map_err(|err| internal_err(format!("submit transaction to pool failed: {:?}", err)))
@@ -653,11 +656,13 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 				)
 				.compat()
 				.map(move |_| {
-					pending.lock().unwrap().insert(
-						transaction_hash,
-						pending_transaction_build(transaction_hash, transaction)
-					);
-					println!("-----> Inserted to pending {}", pending.lock().unwrap().len());
+					if let Some(pending) = pending {
+						pending.lock().unwrap().insert(
+							transaction_hash,
+							pending_transaction_build(transaction_hash, transaction)
+						);
+						println!("---> Inserting to pending {}", pending.lock().unwrap().len());
+					}
 					transaction_hash
 				})
 				.map_err(|err| internal_err(format!("submit transaction to pool failed: {:?}", err)))
@@ -791,8 +796,10 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 		).map_err(|err| internal_err(format!("fetch aux store failed: {:?})", err)))? {
 			Some((hash, index)) => (hash, index as usize),
 			None => {
-				if let Some(transaction) = self.pending_transactions.lock().unwrap().get(&hash) {
-					return Ok(Some(transaction.clone()));
+				if let Some(pending) = &self.pending_transactions {
+					if let Some(transaction) = pending.lock().unwrap().get(&hash) {
+						return Ok(Some(transaction.clone()));
+					}
 				}
 				return Ok(None);
 			},

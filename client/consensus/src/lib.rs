@@ -62,7 +62,7 @@ impl std::convert::From<Error> for ConsensusError {
 pub struct FrontierBlockImport<B: BlockT, I, C> {
 	inner: I,
 	client: Arc<C>,
-	pending_transactions: Arc<Mutex<HashMap<H256, Transaction>>>,
+	pending_transactions: Option<Arc<Mutex<HashMap<H256, Transaction>>>>,
 	enabled: bool,
 	_marker: PhantomData<B>,
 }
@@ -89,7 +89,7 @@ impl<B, I, C> FrontierBlockImport<B, I, C> where
 	pub fn new(
 		inner: I,
 		client: Arc<C>,
-		pending_transactions: Arc<Mutex<HashMap<H256, Transaction>>>,
+		pending_transactions: Option<Arc<Mutex<HashMap<H256, Transaction>>>>,
 		enabled: bool,
 	) -> Self {
 		Self {
@@ -131,7 +131,11 @@ impl<B, I, C> BlockImport<B> for FrontierBlockImport<B, I, C> where
 				)
 			)
 		}
-		self.pending_transactions.lock().unwrap().clear();
+		if let Some(pending) = &self.pending_transactions {
+			println!("---> Clearing pending PRE {}", pending.lock().unwrap().len());
+			pending.lock().unwrap().clear();
+			println!("---> Clearing pending {}", pending.lock().unwrap().len());
+		}
 
 		let client = self.client.clone();
 
