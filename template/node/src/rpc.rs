@@ -1,9 +1,8 @@
 //! A collection of node-specific RPC methods.
 
-use std::{sync::{Arc, Mutex}, fmt, collections::HashMap};
+use std::{sync::Arc, fmt};
 
-use fc_rpc_core::types::Transaction;
-use sp_core::H256;
+use fc_rpc_core::types::PendingTransactions;
 use sc_consensus_manual_seal::rpc::{ManualSeal, ManualSealApi};
 use frontier_template_runtime::{Hash, AccountId, Index, opaque::Block, Balance};
 use sp_api::ProvideRuntimeApi;
@@ -47,7 +46,7 @@ pub struct FullDeps<C, P> {
 	/// Network service
 	pub network: Arc<NetworkService<Block, Hash>>,
 	/// Ethereum pending transactions.
-	pub pending_transactions: Option<Arc<Mutex<HashMap<H256, Transaction>>>>,
+	pub pending_transactions: PendingTransactions,
 	/// Manual seal command sink
 	pub command_sink: Option<futures::channel::mpsc::Sender<sc_consensus_manual_seal::rpc::EngineCommand<Hash>>>,
 }

@@ -16,8 +16,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use std::{marker::PhantomData, sync::{Arc, Mutex}};
-use std::collections::{BTreeMap, HashMap};
+use std::{marker::PhantomData, sync::Arc, time::Instant};
+use std::collections::BTreeMap;
 use ethereum::{
 	Block as EthereumBlock, Transaction as EthereumTransaction
 };
@@ -38,7 +38,7 @@ use fc_rpc_core::{EthApi as EthApiT, NetApi as NetApiT, Web3Api as Web3ApiT};
 use fc_rpc_core::types::{
 	BlockNumber, Bytes, CallRequest, Filter, FilteredParams, Index, Log, Receipt, RichBlock,
 	SyncStatus, SyncInfo, Transaction, Work, Rich, Block, BlockTransactions, VariadicValue,
-	TransactionRequest,
+	TransactionRequest, PendingTransactions, PendingTransaction,
 };
 use fp_rpc::{EthereumRuntimeRPCApi, ConvertTransaction, TransactionStatus};
 use crate::{internal_err, error_on_execution_failure, EthSigner, public_key};
@@ -53,7 +53,7 @@ pub struct EthApi<B: BlockT, C, P, CT, BE, H: ExHashT> {
 	network: Arc<NetworkService<B, H>>,
 	is_authority: bool,
 	signers: Vec<Box<dyn EthSigner>>,
-	pending_transactions: Option<Arc<Mutex<HashMap<H256, Transaction>>>>,
+	pending_transactions: PendingTransactions,
 	_marker: PhantomData<(B, BE)>,
 }
 
@@ -63,7 +63,7 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> {
 		pool: Arc<P>,
 		convert_transaction: CT,
 		network: Arc<NetworkService<B, H>>,
-		pending_transactions: Option<Arc<Mutex<HashMap<H256, Transaction>>>>,
+		pending_transactions: PendingTransactions,
 		signers: Vec<Box<dyn EthSigner>>,
 		is_authority: bool,
 	) -> Self {
@@ -605,7 +605,10 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 						if let Ok(locked) = &mut pending.lock() {
 							locked.insert(
 								transaction_hash,
-								transaction_build(transaction, None, None)
+								PendingTransaction::new(
+									transaction_build(transaction, None, None),
+									Instant::now()
+								)
 							);
 						}
 					}
@@ -640,7 +643,10 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 						if let Ok(locked) = &mut pending.lock() {
 							locked.insert(
 								transaction_hash,
-								transaction_build(transaction, None, None)
+								PendingTransaction::new(
+									transaction_build(transaction, None, None),
+									Instant::now()
+								)
 							);
 						}
 					}
@@ -779,8 +785,8 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 			None => {
 				if let Some(pending) = &self.pending_transactions {
 					if let Ok(locked) = &mut pending.lock() {
-						if let Some(transaction) = locked.get(&hash) {
-							return Ok(Some(transaction.clone()));
+						if let Some(pending_transaction) = locked.get(&hash) {
+							return Ok(Some(pending_transaction.transaction.clone()));
 						}
 					}
 				}

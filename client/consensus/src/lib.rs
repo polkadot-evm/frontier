@@ -20,8 +20,7 @@ mod aux_schema;
 
 pub use crate::aux_schema::{load_block_hash, load_transaction_metadata};
 
-use std::sync::{Arc, Mutex};
-use sp_core::H256;
+use std::sync::Arc;
 use std::collections::HashMap;
 use std::marker::PhantomData;
 use fp_consensus::{FRONTIER_ENGINE_ID, ConsensusLog};
@@ -35,7 +34,7 @@ use sp_consensus::{
 	BlockImportParams, Error as ConsensusError, BlockImport,
 	BlockCheckParams, ImportResult,
 };
-use fc_rpc_core::types::Transaction;
+use fc_rpc_core::types::PendingTransactions;
 use log::*;
 use sc_client_api;
 
@@ -62,7 +61,7 @@ impl std::convert::From<Error> for ConsensusError {
 pub struct FrontierBlockImport<B: BlockT, I, C> {
 	inner: I,
 	client: Arc<C>,
-	pending_transactions: Option<Arc<Mutex<HashMap<H256, Transaction>>>>,
+	pending_transactions: PendingTransactions,
 	enabled: bool,
 	_marker: PhantomData<B>,
 }
@@ -89,7 +88,7 @@ impl<B, I, C> FrontierBlockImport<B, I, C> where
 	pub fn new(
 		inner: I,
 		client: Arc<C>,
-		pending_transactions: Option<Arc<Mutex<HashMap<H256, Transaction>>>>,
+		pending_transactions: PendingTransactions,
 		enabled: bool,
 	) -> Self {
 		Self {
@@ -147,8 +146,17 @@ impl<B, I, C> BlockImport<B> for FrontierBlockImport<B, I, C> where
 						if let Some(pending) = &self.pending_transactions {
 							if let Ok(locked) = &mut pending.lock() {
 								// We want to retain all pending transactions that were not
-								// processed in the current block.
-								locked.retain(|&k, _| !transaction_hashes.contains(&k));
+								// processed in the current block and that did not exceed
+								// a 60 second mortality.
+								locked.retain(|&k, v| {
+									if transaction_hashes.contains(&k) {
+										return false;
+									}
+									if v.instant.elapsed().as_secs() > 60 {
+										return false;
+									}
+									true
+								});
 							}
 						}
 						for (index, transaction_hash) in transaction_hashes.into_iter().enumerate() {

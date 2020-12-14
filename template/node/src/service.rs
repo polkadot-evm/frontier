@@ -1,8 +1,7 @@
 //! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 
 use std::{sync::{Arc, Mutex}, cell::RefCell, time::Duration, collections::HashMap};
-use sp_core::H256;
-use fc_rpc_core::types::Transaction;
+use fc_rpc_core::types::PendingTransactions;
 use sc_client_api::{ExecutorProvider, RemoteBackend};
 use sc_consensus_manual_seal::{self as manual_seal};
 use fc_consensus::FrontierBlockImport;
@@ -77,7 +76,7 @@ pub fn new_partial(config: &Configuration, sealing: Option<Sealing>) -> Result<
 		FullClient, FullBackend, FullSelectChain,
 		sp_consensus::import_queue::BasicQueue<Block, sp_api::TransactionFor<FullClient, Block>>,
 		sc_transaction_pool::FullPool<Block, FullClient>,
-		(ConsensusResult, Option<Arc<Mutex<HashMap<H256, Transaction>>>>),
+		(ConsensusResult, PendingTransactions),
 >, ServiceError> {
 	let inherent_data_providers = sp_inherents::InherentDataProviders::new();
 
@@ -94,7 +93,7 @@ pub fn new_partial(config: &Configuration, sealing: Option<Sealing>) -> Result<
 		client.clone(),
 	);
 
-	let pending_transactions: Option<Arc<Mutex<HashMap<H256, Transaction>>>>
+	let pending_transactions: PendingTransactions
 		= Some(Arc::new(Mutex::new(HashMap::new())));
 
 	if let Some(sealing) = sealing {
