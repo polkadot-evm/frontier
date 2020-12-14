@@ -131,11 +131,6 @@ impl<B, I, C> BlockImport<B> for FrontierBlockImport<B, I, C> where
 				)
 			)
 		}
-		if let Some(pending) = &self.pending_transactions {
-			if let Ok(locked) = &mut pending.lock() {
-				locked.clear();
-			}
-		}
 
 		let client = self.client.clone();
 
@@ -148,13 +143,21 @@ impl<B, I, C> BlockImport<B> for FrontierBlockImport<B, I, C> where
 					block_hash, transaction_hashes,
 				} => {
 					aux_schema::write_block_hash(client.as_ref(), block_hash, hash, insert_closure!());
-
-					for (index, transaction_hash) in transaction_hashes.into_iter().enumerate() {
-						aux_schema::write_transaction_metadata(
-							transaction_hash,
-							(block_hash, index as u32),
-							insert_closure!(),
-						);
+					if transaction_hashes.len() > 0 {
+						if let Some(pending) = &self.pending_transactions {
+							if let Ok(locked) = &mut pending.lock() {
+								// We want to retain all pending transactions that were not
+								// processed in the current block.
+								locked.retain(|&k, _| !transaction_hashes.contains(&k));
+							}
+						}
+						for (index, transaction_hash) in transaction_hashes.into_iter().enumerate() {
+							aux_schema::write_transaction_metadata(
+								transaction_hash,
+								(block_hash, index as u32),
+								insert_closure!(),
+							);
+						}
 					}
 				},
 			}
