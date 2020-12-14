@@ -133,9 +133,7 @@ impl<B, I, C> BlockImport<B> for FrontierBlockImport<B, I, C> where
 		}
 		if let Some(pending) = &self.pending_transactions {
 			if let Ok(locked) = &mut pending.lock() {
-				println!("---> Clearing pending PRE {}", locked.len());
 				locked.clear();
-				println!("---> Clearing pending {}", locked.len());
 			}
 		}
 

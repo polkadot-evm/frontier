@@ -46,7 +46,7 @@ pub struct FullDeps<C, P> {
 	pub enable_dev_signer: bool,
 	/// Network service
 	pub network: Arc<NetworkService<Block, Hash>>,
-	/// Ethereum pending transactions. 
+	/// Ethereum pending transactions.
 	pub pending_transactions: Option<Arc<Mutex<HashMap<H256, Transaction>>>>,
 	/// Manual seal command sink
 	pub command_sink: Option<futures::channel::mpsc::Sender<sc_consensus_manual_seal::rpc::EngineCommand<Hash>>>,

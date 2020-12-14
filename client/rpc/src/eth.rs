@@ -628,7 +628,6 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 								transaction_hash,
 								pending_transaction_build(transaction_hash, transaction)
 							);
-							println!("---> Inserting to pending {}", locked.len());
 						}
 					}
 					transaction_hash
@@ -664,7 +663,6 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 								transaction_hash,
 								pending_transaction_build(transaction_hash, transaction)
 							);
-							println!("---> Inserting to pending {}", locked.len());
 						}
 					}
 					transaction_hash
