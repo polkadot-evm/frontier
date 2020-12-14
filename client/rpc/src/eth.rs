@@ -623,11 +623,13 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 				.compat()
 				.map(move |_| {
 					if let Some(pending) = pending {
-						pending.lock().unwrap().insert(
-							transaction_hash,
-							pending_transaction_build(transaction_hash, transaction)
-						);
-						println!("---> Inserting to pending {}", pending.lock().unwrap().len());
+						if let Ok(locked) = &mut pending.lock() {
+							locked.insert(
+								transaction_hash,
+								pending_transaction_build(transaction_hash, transaction)
+							);
+							println!("---> Inserting to pending {}", locked.len());
+						}
 					}
 					transaction_hash
 				})
@@ -657,11 +659,13 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 				.compat()
 				.map(move |_| {
 					if let Some(pending) = pending {
-						pending.lock().unwrap().insert(
-							transaction_hash,
-							pending_transaction_build(transaction_hash, transaction)
-						);
-						println!("---> Inserting to pending {}", pending.lock().unwrap().len());
+						if let Ok(locked) = &mut pending.lock() {
+							locked.insert(
+								transaction_hash,
+								pending_transaction_build(transaction_hash, transaction)
+							);
+							println!("---> Inserting to pending {}", locked.len());
+						}
 					}
 					transaction_hash
 				})
