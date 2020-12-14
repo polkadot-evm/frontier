@@ -28,7 +28,7 @@ use sc_client_api::{BlockOf, backend::AuxStore};
 use sp_blockchain::{HeaderBackend, ProvideCache, well_known_cache_keys::Id as CacheKeyId};
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
 use sp_runtime::generic::OpaqueDigestItemId;
-use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
+use sp_runtime::traits::{Block as BlockT, Header as HeaderT, UniqueSaturatedInto};
 use sp_api::ProvideRuntimeApi;
 use sp_consensus::{
 	BlockImportParams, Error as ConsensusError, BlockImport,
@@ -136,6 +136,9 @@ impl<B, I, C> BlockImport<B> for FrontierBlockImport<B, I, C> where
 		if self.enabled {
 			let log = find_frontier_log::<B>(&block.header)?;
 			let hash = block.post_hash();
+			let number: u64 = UniqueSaturatedInto::<u64>::unique_saturated_into(
+				*block.header.number()
+			);
 
 			match log {
 				ConsensusLog::EndBlock {
@@ -147,12 +150,12 @@ impl<B, I, C> BlockImport<B> for FrontierBlockImport<B, I, C> where
 							if let Ok(locked) = &mut pending.lock() {
 								// We want to retain all pending transactions that were not
 								// processed in the current block and that did not exceed
-								// a 60 second mortality.
+								// a given block lifespan.
 								locked.retain(|&k, v| {
 									if transaction_hashes.contains(&k) {
 										return false;
 									}
-									if v.instant.elapsed().as_secs() > 60 {
+									if number < v.at_block + 5 {
 										return false;
 									}
 									true

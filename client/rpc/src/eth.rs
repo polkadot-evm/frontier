@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use std::{marker::PhantomData, sync::Arc, time::Instant};
+use std::{marker::PhantomData, sync::Arc};
 use std::collections::BTreeMap;
 use ethereum::{
 	Block as EthereumBlock, Transaction as EthereumTransaction
@@ -591,6 +591,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 			Keccak256::digest(&rlp::encode(&transaction)).as_slice()
 		);
 		let hash = self.client.info().best_hash;
+		let number = self.client.info().best_number;
 		let pending = self.pending_transactions.clone();
 		Box::new(
 			self.pool
@@ -607,7 +608,9 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 								transaction_hash,
 								PendingTransaction::new(
 									transaction_build(transaction, None, None),
-									Instant::now()
+									UniqueSaturatedInto::<u64>::unique_saturated_into(
+										number
+									)
 								)
 							);
 						}
@@ -629,6 +632,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 			Keccak256::digest(&rlp::encode(&transaction)).as_slice()
 		);
 		let hash = self.client.info().best_hash;
+		let number = self.client.info().best_number;
 		let pending = self.pending_transactions.clone();
 		Box::new(
 			self.pool
@@ -645,7 +649,9 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 								transaction_hash,
 								PendingTransaction::new(
 									transaction_build(transaction, None, None),
-									Instant::now()
+									UniqueSaturatedInto::<u64>::unique_saturated_into(
+										number
+									)
 								)
 							);
 						}
