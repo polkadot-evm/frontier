@@ -21,9 +21,9 @@ pub mod builtin;
 use sp_std::vec::Vec;
 use sp_core::{H160, U256, H256};
 use fp_evm::{CallInfo, CreateInfo};
-use crate::Trait;
+use crate::Config;
 
-pub trait Runner<T: Trait> {
+pub trait Runner<T: Config> {
 	type Error: Into<sp_runtime::DispatchError>;
 
 	fn call(
@@ -34,6 +34,7 @@ pub trait Runner<T: Trait> {
 		gas_limit: u32,
 		gas_price: Option<U256>,
 		nonce: Option<U256>,
+		config: &evm::Config,
 	) -> Result<CallInfo, Self::Error>;
 
 	fn create(
@@ -43,6 +44,7 @@ pub trait Runner<T: Trait> {
 		gas_limit: u32,
 		gas_price: Option<U256>,
 		nonce: Option<U256>,
+		config: &evm::Config,
 	) -> Result<CreateInfo, Self::Error>;
 
 	fn create2(
@@ -53,5 +55,6 @@ pub trait Runner<T: Trait> {
 		gas_limit: u32,
 		gas_price: Option<U256>,
 		nonce: Option<U256>,
+		config: &evm::Config,
 	) -> Result<CreateInfo, Self::Error>;
 }

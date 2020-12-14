@@ -73,18 +73,18 @@ impl Default for EthereumStorageSchema {
 }
 
 /// A type alias for the balance type from this pallet's point of view.
-pub type BalanceOf<T> = <T as pallet_balances::Trait>::Balance;
+pub type BalanceOf<T> = <T as pallet_balances::Config>::Balance;
 
-/// Trait for Ethereum pallet.
-pub trait Trait: frame_system::Trait<Hash=H256> + pallet_balances::Trait + pallet_timestamp::Trait + pallet_evm::Trait {
+/// Configuration trait for Ethereum pallet.
+pub trait Config: frame_system::Config<Hash=H256> + pallet_balances::Config + pallet_timestamp::Config + pallet_evm::Config {
 	/// The overarching event type.
-	type Event: From<Event> + Into<<Self as frame_system::Trait>::Event>;
+	type Event: From<Event> + Into<<Self as frame_system::Config>::Event>;
 	/// Find author for Ethereum.
 	type FindAuthor: FindAuthor<H160>;
 }
 
 decl_storage! {
-	trait Store for Module<T: Trait> as Ethereum {
+	trait Store for Module<T: Config> as Ethereum {
 		/// The current version of the storage schema. This is useful for tracking and executing storage migrations
 		/// as well as querying storage data from optimized RPC handlers
 		Schema: EthereumStorageSchema;
@@ -121,7 +121,7 @@ decl_event!(
 
 decl_error! {
 	/// Ethereum pallet errors.
-	pub enum Error for Module<T: Trait> {
+	pub enum Error for Module<T: Config> {
 		/// Signature is invalid.
 		InvalidSignature,
 	}
@@ -129,12 +129,12 @@ decl_error! {
 
 decl_module! {
 	/// Ethereum pallet module.
-	pub struct Module<T: Trait> for enum Call where origin: T::Origin {
+	pub struct Module<T: Config> for enum Call where origin: T::Origin {
 		/// Deposit one of this pallet's events by using the default implementation.
 		fn deposit_event() = default;
 
 		/// Transact an Ethereum transaction.
-		#[weight = <T as pallet_evm::Trait>::GasToWeight::gas_to_weight(transaction.gas_limit.low_u32())]
+		#[weight = <T as pallet_evm::Config>::GasToWeight::gas_to_weight(transaction.gas_limit.low_u32())]
 		fn transact(origin, transaction: ethereum::Transaction) -> DispatchResultWithPostInfo {
 			ensure_none(origin)?;
 
@@ -154,6 +154,7 @@ decl_module! {
 				Some(transaction.gas_price),
 				Some(transaction.nonce),
 				transaction.action,
+				None,
 			)?;
 
 			let (reason, status, used_gas) = match info {
@@ -232,13 +233,15 @@ enum TransactionValidationError {
 	InvalidSignature,
 }
 
-impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
+impl<T: Config> frame_support::unsigned::ValidateUnsigned for Module<T> {
 	type Call = Call<T>;
 
 	fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
 		if let Call::transact(transaction) = call {
-			if transaction.signature.chain_id().unwrap_or_default() != T::ChainId::get() {
-				return InvalidTransaction::Custom(TransactionValidationError::InvalidChainId as u8).into();
+			if let Some(chain_id) = transaction.signature.chain_id() {
+				if chain_id != T::ChainId::get() {
+					return InvalidTransaction::Custom(TransactionValidationError::InvalidChainId as u8).into();
+				}
 			}
 
 			let origin = Self::recover_signer(&transaction)
@@ -272,7 +275,7 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
 	}
 }
 
-impl<T: Trait> Module<T> {
+impl<T: Config> Module<T> {
 	fn recover_signer(transaction: &ethereum::Transaction) -> Option<H160> {
 		let mut sig = [0u8; 65];
 		let mut msg = [0u8; 32];
@@ -393,7 +396,7 @@ impl<T: Trait> Module<T> {
 		CurrentReceipts::get()
 	}
 
-	/// Execute an Ethereum transaction, ignoring transaction signatures.
+	/// Execute an Ethereum transaction.
 	pub fn execute(
 		from: H160,
 		input: Vec<u8>,
@@ -402,6 +405,7 @@ impl<T: Trait> Module<T> {
 		gas_price: Option<U256>,
 		nonce: Option<U256>,
 		action: TransactionAction,
+		config: Option<evm::Config>,
 	) -> Result<(Option<H160>, CallOrCreateInfo), DispatchError> {
 		match action {
 			ethereum::TransactionAction::Call(target) => {
@@ -413,6 +417,7 @@ impl<T: Trait> Module<T> {
 					gas_limit.low_u32(),
 					gas_price,
 					nonce,
+					config.as_ref().unwrap_or(T::config()),
 				).map_err(Into::into)?)))
 			},
 			ethereum::TransactionAction::Create => {
@@ -423,6 +428,7 @@ impl<T: Trait> Module<T> {
 					gas_limit.low_u32(),
 					gas_price,
 					nonce,
+					config.as_ref().unwrap_or(T::config()),
 				).map_err(Into::into)?)))
 			},
 		}
