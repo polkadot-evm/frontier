@@ -27,9 +27,11 @@ use fp_evm::{ExecutionInfo, CallInfo, CreateInfo, Account, Log, Vicinity};
 use evm::ExitReason;
 use evm::backend::{Backend as BackendT, ApplyBackend, Apply};
 use evm::executor::StackExecutor;
-use crate::{Config, AccountStorages, FeeCalculator, AccountCodes, Module, Event, Error, AddressMapping};
+use crate::{
+	Config, AccountStorages, FeeCalculator, AccountCodes, Module, Event,
+	Error, AddressMapping, PrecompileSet,
+};
 use crate::runner::Runner as RunnerT;
-use crate::precompiles::Precompiles;
 
 #[derive(Default)]
 pub struct Runner<T: Config> {
