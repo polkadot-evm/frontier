@@ -1,0 +1,7 @@
+(function() {var implementors = {};
+implementors["pallet_evm_precompile_blake2"] = [{"text":"impl LinearCostPrecompile for Blake2F","synthetic":false,"types":[]}];
+implementors["pallet_evm_precompile_bn128"] = [{"text":"impl LinearCostPrecompile for Bn128Add","synthetic":false,"types":[]},{"text":"impl LinearCostPrecompile for Bn128Mul","synthetic":false,"types":[]},{"text":"impl LinearCostPrecompile for Bn128Pairing","synthetic":false,"types":[]}];
+implementors["pallet_evm_precompile_ed25519"] = [{"text":"impl LinearCostPrecompile for Ed25519Verify","synthetic":false,"types":[]}];
+implementors["pallet_evm_precompile_modexp"] = [{"text":"impl LinearCostPrecompile for Modexp","synthetic":false,"types":[]}];
+implementors["pallet_evm_precompile_simple"] = [{"text":"impl LinearCostPrecompile for Identity","synthetic":false,"types":[]},{"text":"impl LinearCostPrecompile for ECRecover","synthetic":false,"types":[]},{"text":"impl LinearCostPrecompile for Ripemd160","synthetic":false,"types":[]},{"text":"impl LinearCostPrecompile for Sha256","synthetic":false,"types":[]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
