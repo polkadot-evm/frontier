@@ -244,41 +244,33 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> where
 		Ok(None)
 	}
 
-	fn is_canon(&self, block_hash: H256) -> bool {
-		let best_number: u64 = UniqueSaturatedInto::<u64>::unique_saturated_into(
-			self.client.info().best_number
-		);
-
-		let upper_bound: H256 = match self.client.number(block_hash) {
-			Ok(Some(number)) => {
-				let n: u64 = UniqueSaturatedInto::<u64>::unique_saturated_into(number);
-				if best_number - n > 10 {
-					// We take a closer upper bound to avoid
-					// iterating over the whole ancestor lineage.
-					//
-					// If we are more than 10 blocks away from the chain head
-					// we assume querying by number will return a canon header.
-					self.client.header(BlockId::Number(number)).map_or(
-						self.client.info().best_hash,
-						|header| match &header {
-							Some(header) => header.hash(),
-							_ => self.client.info().best_hash
-						}
-					)
-				} else {
-					self.client.info().best_hash
+	fn is_canon(&self, target_hash: H256) -> bool {
+		if let Ok(Some(number)) = self.client.number(target_hash) {
+			let best_number: u64 = UniqueSaturatedInto::<u64>::unique_saturated_into(
+				self.client.info().best_number
+			);
+			let target_number: u64 =
+				UniqueSaturatedInto::<u64>::unique_saturated_into(number);
+			if best_number - target_number > 10 {
+				// If we are more than 10 blocks away from the chain head
+				// we assume getting the header by Number will return a canon header.
+				//
+				// The target hash is canon if both match.
+				if let Ok(Some(header)) = self.client.header(BlockId::Number(number)) {
+					return header.hash() == target_hash;
 				}
-			},
-			_ => self.client.info().best_hash
-		};
+			} else {
+				// Otherwise fall back to lowest common ancestor strategy.
+				let canon = lowest_common_ancestor(
+					self.client.as_ref(),
+					self.client.info().best_hash,
+					target_hash
+				).map_or(H256::default(), |block| block.hash);
 
-		let canon = lowest_common_ancestor(
-			self.client.as_ref(),
-			upper_bound,
-			block_hash
-		).map_or(H256::default(), |block| block.hash);
-
-		canon == block_hash
+				return canon == target_hash;
+			}
+		}
+		false
 	}
 
 	fn load_transactions(&self, transaction_hash: H256) -> Result<Option<(H256, u32)>> {
