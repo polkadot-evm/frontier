@@ -29,11 +29,11 @@ use sp_runtime::{
 	traits::{Block as BlockT, UniqueSaturatedInto, Zero, One, Saturating, BlakeTwo256},
 	transaction_validity::TransactionSource
 };
-use sp_api::{ProvideRuntimeApi, BlockId, Core};
+use sp_api::{ProvideRuntimeApi, BlockId, Core, HeaderT};
 use sp_transaction_pool::{TransactionPool, InPoolTransaction};
 use sc_client_api::backend::{StorageProvider, Backend, StateBackend, AuxStore};
 use sha3::{Keccak256, Digest};
-use sp_blockchain::{Error as BlockChainError, HeaderMetadata, HeaderBackend};
+use sp_blockchain::{Error as BlockChainError, HeaderMetadata, HeaderBackend, lowest_common_ancestor};
 use sc_network::{NetworkService, ExHashT};
 use fc_rpc_core::{EthApi as EthApiT, NetApi as NetApiT, Web3Api as Web3ApiT};
 use fc_rpc_core::types::{
@@ -229,7 +229,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> where
 		};
 		let out: Vec<H256> = hashes.into_iter()
 			.filter_map(|h| {
-				if let Ok(Some(_)) = self.client.header(BlockId::Hash(h)) {
+				if self.is_canon(h) {
 					Some(h)
 				} else {
 					None
@@ -244,9 +244,46 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> where
 		Ok(None)
 	}
 
+	fn is_canon(&self, block_hash: H256) -> bool {
+		let best_number: u64 = UniqueSaturatedInto::<u64>::unique_saturated_into(
+			self.client.info().best_number
+		);
+
+		let upper_bound: H256 = match self.client.number(block_hash) {
+			Ok(Some(number)) => {
+				let n: u64 = UniqueSaturatedInto::<u64>::unique_saturated_into(number);
+				if best_number - n > 10 {
+					// We take a closer upper bound to avoid
+					// iterating over the whole ancestor lineage.
+					//
+					// If we are more than 10 blocks away from the chain head
+					// we assume querying by number will return a canon header.
+					self.client.header(BlockId::Number(number)).map_or(
+						self.client.info().best_hash,
+						|header| match &header {
+							Some(header) => header.hash(),
+							_ => self.client.info().best_hash
+						}
+					)
+				} else {
+					self.client.info().best_hash
+				}
+			},
+			_ => self.client.info().best_hash
+		};
+
+		let canon = lowest_common_ancestor(
+			self.client.as_ref(),
+			upper_bound,
+			block_hash
+		).map_or(H256::default(), |block| block.hash);
+
+		canon == block_hash
+	}
+
 	fn load_transactions(&self, transaction_hash: H256) -> Result<Option<(H256, u32)>> {
 		let mut transactions: Vec<(H256, u32)> = Vec::new();
-		match frontier_consensus::load_transaction_metadata(
+		match fc_consensus::load_transaction_metadata(
 			self.client.as_ref(),
 			transaction_hash,
 		).map_err(|err| internal_err(format!("fetch aux store failed: {:?}", err)))? {
