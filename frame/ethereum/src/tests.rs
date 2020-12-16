@@ -1,13 +1,13 @@
-// This file is part of Substrate.
-
-// Copyright (C) 2019-2020 Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: Apache-2.0
-
+// This file is part of Frontier.
+//
+// Copyright (c) 2020 Parity Technologies (UK) Ltd.
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//	http://www.apache.org/licenses/LICENSE-2.0
+// 	http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -66,6 +66,7 @@ fn transaction_should_increment_nonce() {
 			Some(t.gas_price),
 			Some(t.nonce),
 			t.action,
+			None,
 		));
 		assert_eq!(Evm::account_basic(&alice.address).nonce, U256::from(1));
 	});
@@ -115,6 +116,7 @@ fn transaction_with_invalid_nonce_should_not_work() {
 			Some(t.gas_price),
 			Some(t.nonce),
 			t.action,
+			None,
 		));
 
 		transaction.nonce = U256::from(0);
@@ -143,6 +145,7 @@ fn contract_constructor_should_get_executed() {
 			Some(t.gas_price),
 			Some(t.nonce),
 			t.action,
+			None,
 		));
 		assert_eq!(Evm::account_storages(
 			erc20_address, alice_storage_address
@@ -204,6 +207,7 @@ fn contract_should_be_created_at_given_address() {
 			Some(t.gas_price),
 			Some(t.nonce),
 			t.action,
+			None,
 		));
 		assert_ne!(Evm::account_codes(erc20_address).len(), 0);
 	});
@@ -226,6 +230,7 @@ fn transaction_should_generate_correct_gas_used() {
 			Some(t.gas_price),
 			Some(t.nonce),
 			t.action,
+			None,
 		).unwrap();
 
 		match info {
@@ -270,6 +275,7 @@ fn call_should_handle_errors() {
 			Some(t.gas_price),
 			Some(t.nonce),
 			t.action,
+			None,
 		));
 
 		let contract_address: Vec<u8> = FromHex::from_hex("32dcab0ef3fb2de2fce1d2e0799d36239671f04a").unwrap();
@@ -285,6 +291,7 @@ fn call_should_handle_errors() {
 			Some(U256::from(1)),
 			Some(U256::from(1)),
 			TransactionAction::Call(H160::from_slice(&contract_address)),
+			None,
 		).unwrap();
 
 		match info {
@@ -302,7 +309,8 @@ fn call_should_handle_errors() {
 			U256::from(1048576),
 			Some(U256::from(1)),
 			Some(U256::from(2)),
-			TransactionAction::Call(H160::from_slice(&contract_address))
+			TransactionAction::Call(H160::from_slice(&contract_address)),
+			None,
 		).ok().unwrap();
 	});
 }

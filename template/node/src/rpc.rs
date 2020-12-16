@@ -1,20 +1,3 @@
-// This file is part of Frontier.
-
-// Copyright (C) 2019-2020 Parity Technologies (UK) Ltd.
-// SPDX-License-Identifier: Apache-2.0
-
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// 	http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 //! A collection of node-specific RPC methods.
 
 use std::{sync::Arc, fmt};
@@ -79,15 +62,15 @@ pub fn create_full<C, P, BE>(
 	C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Index>,
 	C::Api: BlockBuilder<Block>,
 	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
-	C::Api: frontier_rpc_primitives::EthereumRuntimeRPCApi<Block>,
+	C::Api: fp_rpc::EthereumRuntimeRPCApi<Block>,
 	<C::Api as sp_api::ApiErrorExt>::Error: fmt::Debug,
 	P: TransactionPool<Block=Block> + 'static,
 {
 	use substrate_frame_rpc_system::{FullSystem, SystemApi};
 	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApi};
-	use frontier_rpc::{
+	use fc_rpc::{
 		EthApi, EthApiServer, NetApi, NetApiServer, EthPubSubApi, EthPubSubApiServer,
-		EthDevSigner, EthSigner,
+		Web3Api, Web3ApiServer, EthDevSigner, EthSigner, HexEncodedIdProvider,
 	};
 
 	let mut io = jsonrpc_core::IoHandler::default();
@@ -126,14 +109,25 @@ pub fn create_full<C, P, BE>(
 	io.extend_with(
 		NetApiServer::to_delegate(NetApi::new(
 			client.clone(),
+			network.clone(),
 		))
 	);
+
+	io.extend_with(
+		Web3ApiServer::to_delegate(Web3Api::new(
+			client.clone(),
+		))
+	);
+
 	io.extend_with(
 		EthPubSubApiServer::to_delegate(EthPubSubApi::new(
 			pool.clone(),
 			client.clone(),
 			network.clone(),
-			SubscriptionManager::new(Arc::new(subscription_task_executor)),
+			SubscriptionManager::<HexEncodedIdProvider>::with_id_provider(
+				HexEncodedIdProvider::default(),
+				Arc::new(subscription_task_executor)
+			),
 		))
 	);
 

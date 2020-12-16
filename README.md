@@ -14,7 +14,7 @@ The goal of Ethereum compatibility layer is to be able to:
 
 It consists of the following components:
 
-* **[pallet-evm](https://github.com/paritytech/substrate/tree/master/frame/evm)**:
+* **[pallet-evm](https://github.com/paritytech/frontier/tree/master/frame/evm)**:
   EVM execution engine for Substrate.
 * **[pallet-ethereum](https://github.com/paritytech/frontier/tree/master/frame/ethereum)**: Emulation of full Ethereum block processing.
 * **rpc-ethereum**: Compatibility layer for web3 RPC methods.
@@ -32,7 +32,7 @@ arbitrary struct. This implementation must call the authorities accessor in eith
 Aura or Babe and convert the authority id response to H160 using
 pallet_evm::HashTruncateConvertAccountId::convert_account_id.
 
-The struct implementing FindAuthor is passed as the FindAuthor associated type's 
+The struct implementing FindAuthor is passed as the FindAuthor associated type's
 value for pallet_ethereum.
 
 An Aura example for this is available in the template's runtime (EthereumFindAuthor).
@@ -41,19 +41,6 @@ An Aura example for this is available in the template's runtime (EthereumFindAut
 
 - For supporting gas_price rpc call, FeeCalculator trait must be implemented in an
 arbitrary struct. An example FixedGasPrice is available in the template's runtime.
-
-### Vendor folder
-
-The vendor folder contains dependencies that contains changes that has not yet
-been upstreamed. Once the upstreaming process is finished, the corresponding
-submodule should be removed from vendor folder, and directly use upstream.
-
-To install those submodules, from the frontier root folder:
-
-```sh
-git submodule init
-git submodule update
-```
 
 ### Use local version of Substrate
 
