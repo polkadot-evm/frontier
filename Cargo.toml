@@ -7,6 +7,7 @@ members = [
 	"frame/evm/precompile/ed25519",
 	"frame/evm/precompile/bn128",
 	"frame/evm/precompile/blake2",
+	"frame/evm/precompile/dispatch",
 	"client/consensus",
 	"client/rpc-core",
 	"client/rpc",
