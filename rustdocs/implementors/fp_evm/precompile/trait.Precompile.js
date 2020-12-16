@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["pallet_evm_precompile_dispatch"] = [{"text":"impl&lt;T&gt; Precompile for Dispatch&lt;T&gt; <span class=\"where fmt-newline\">where<br>&nbsp;&nbsp;&nbsp;&nbsp;T: Config,<br>&nbsp;&nbsp;&nbsp;&nbsp;T::Call: Dispatchable&lt;PostInfo = PostDispatchInfo&gt; + GetDispatchInfo + Decode,<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;T::Call as Dispatchable&gt;::Origin: From&lt;Option&lt;T::AccountId&gt;&gt;,&nbsp;</span>","synthetic":false,"types":[]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
