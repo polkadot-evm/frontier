@@ -134,7 +134,7 @@ impl<B, I, C> BlockImport<B> for FrontierBlockImport<B, I, C> where
 
 			match log {
 				ConsensusLog::EndBlock {
-					block_hash, transaction_hashes,
+					block_hash, transaction_hashes, ..
 				} => {
 					aux_schema::write_block_hash(client.as_ref(), block_hash, hash, insert_closure!());
 

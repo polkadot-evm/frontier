@@ -333,6 +333,7 @@ impl<T: Config> Module<T> {
 			ConsensusLog::EndBlock {
 				block_hash: block.header.hash(),
 				transaction_hashes,
+				logs_bloom: logs_bloom.data().to_vec(),
 			}.encode(),
 		);
 		frame_system::Module::<T>::deposit_log(digest.into());

@@ -32,5 +32,7 @@ pub enum ConsensusLog {
 		block_hash: H256,
 		/// Transaction hashes of the Ethereum block.
 		transaction_hashes: Vec<H256>,
+		/// Ethereum header bloom data
+		logs_bloom: Vec<u8>,
 	},
 }
