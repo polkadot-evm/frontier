@@ -33,7 +33,7 @@ use sp_api::{ProvideRuntimeApi, BlockId, Core, HeaderT};
 use sp_transaction_pool::{TransactionPool, InPoolTransaction};
 use sc_client_api::backend::{StorageProvider, Backend, StateBackend, AuxStore};
 use sha3::{Keccak256, Digest};
-use sp_blockchain::{Error as BlockChainError, HeaderMetadata, HeaderBackend, lowest_common_ancestor};
+use sp_blockchain::{Error as BlockChainError, HeaderMetadata, HeaderBackend};
 use sc_network::{NetworkService, ExHashT};
 use fc_rpc_core::{EthApi as EthApiT, NetApi as NetApiT, Web3Api as Web3ApiT};
 use fc_rpc_core::types::{
@@ -246,28 +246,8 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> where
 
 	fn is_canon(&self, target_hash: H256) -> bool {
 		if let Ok(Some(number)) = self.client.number(target_hash) {
-			let best_number: u64 = UniqueSaturatedInto::<u64>::unique_saturated_into(
-				self.client.info().best_number
-			);
-			let target_number: u64 =
-				UniqueSaturatedInto::<u64>::unique_saturated_into(number);
-			if best_number - target_number > 10 {
-				// If we are more than 10 blocks away from the chain head
-				// we assume getting the header by Number will return a canon header.
-				//
-				// The target hash is canon if both match.
-				if let Ok(Some(header)) = self.client.header(BlockId::Number(number)) {
-					return header.hash() == target_hash;
-				}
-			} else {
-				// Otherwise fall back to lowest common ancestor strategy.
-				let canon = lowest_common_ancestor(
-					self.client.as_ref(),
-					self.client.info().best_hash,
-					target_hash
-				).map_or(H256::default(), |block| block.hash);
-
-				return canon == target_hash;
+			if let Ok(Some(header)) = self.client.header(BlockId::Number(number)) {
+				return header.hash() == target_hash;
 			}
 		}
 		false
