@@ -588,7 +588,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 					Some(handler) => {
 						handler
 							.account_code_at(&id, address)
-							.ok_or(internal_err("fetching account codes via override failed"))?
+							.unwrap_or(vec![])
 							.into()
 					}
 					None => {

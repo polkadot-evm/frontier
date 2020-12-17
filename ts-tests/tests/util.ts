@@ -10,7 +10,7 @@ export const SPECS_PATH = `./frontier-test-specs`;
 export const DISPLAY_LOG = process.env.FRONTIER_LOG || false;
 export const FRONTIER_LOG = process.env.FRONTIER_LOG || "info";
 
-export const BINARY_PATH = `../target/debug/frontier-template-node`;
+export const BINARY_PATH = `../target/release/frontier-template-node`;
 export const SPAWNING_TIME = 30000;
 
 export async function customRequest(web3: Web3, method: string, params: any[]) {
