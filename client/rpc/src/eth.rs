@@ -155,53 +155,40 @@ fn transaction_build(
 			Keccak256::digest(&rlp::encode(&transaction)).as_slice()
 		),
 		nonce: transaction.nonce,
-		block_hash: match &block {
-			Some(block) => Some(H256::from_slice(
+		block_hash: block.as_ref().map_or(None, |block| {
+			Some(H256::from_slice(
 				Keccak256::digest(&rlp::encode(&block.header)).as_slice()
-			)),
-			_ => None,
-		},
-		block_number: match &block {
-			Some(block) => Some(block.header.number),
-			_ => None,
-		},
-		transaction_index: match &status {
-			Some(status) => Some(U256::from(
+			))
+		}),
+		block_number: block.as_ref().map_or(None, |block| Some(block.header.number)),
+		transaction_index: status.as_ref().map_or(None, |status| {
+			Some(U256::from(
 				UniqueSaturatedInto::<u32>::unique_saturated_into(
 					status.transaction_index
 				)
-			)),
-			_ => None,
-		},
-		from: match &status {
-			Some(status) => status.from,
-			_ => match pubkey {
+			))
+		}),
+		from: status.as_ref().map_or({
+			match pubkey {
 				Some(pk) => H160::from(
 					H256::from_slice(Keccak256::digest(&pk).as_slice())
 				),
 				_ => H160::default()
 			}
-		},
-		to: match &status {
-			Some(status) => status.to,
-			_ => match transaction.action {
+		}, |status| status.from),
+		to: status.as_ref().map_or({
+			match transaction.action {
 				ethereum::TransactionAction::Call(to) => Some(to),
 				_ => None
 			}
-		},
+		}, |status| status.to),
 		value: transaction.value,
 		gas_price: transaction.gas_price,
 		gas: transaction.gas_limit,
 		input: Bytes(transaction.clone().input),
-		creates: match &status {
-			Some(status) => status.contract_address,
-			_ => None
-		},
+		creates: status.as_ref().map_or(None, |status| status.contract_address),
 		raw: Bytes(rlp::encode(&transaction)),
-		public_key: match pubkey {
-			Some(pk) => Some(H512::from(pk)),
-			_ => None
-		},
+		public_key: pubkey.as_ref().map_or(None, |pk| Some(H512::from(pk))),
 		chain_id: transaction.signature.chain_id().map(U64::from),
 		standard_v: U256::from(transaction.signature.standard_v()),
 		v: U256::from(transaction.signature.v()),
