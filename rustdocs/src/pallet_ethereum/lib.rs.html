@@ -416,6 +416,10 @@
 <span id="413">413</span>
 <span id="414">414</span>
 <span id="415">415</span>
+<span id="416">416</span>
+<span id="417">417</span>
+<span id="418">418</span>
+<span id="419">419</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
@@ -511,8 +515,8 @@
 <span class="macro">decl_event</span><span class="macro">!</span>(
 	<span class="doccomment">/// Ethereum pallet events.</span>
 	<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Event</span> {
-		<span class="doccomment">/// An ethereum transaction was successfully executed. [from, transaction_hash]</span>
-		<span class="ident">Executed</span>(<span class="ident">H160</span>, <span class="ident">H256</span>, <span class="ident">ExitReason</span>),
+		<span class="doccomment">/// An ethereum transaction was successfully executed. [from, to/contract_address, transaction_hash, exit_reason]</span>
+		<span class="ident">Executed</span>(<span class="ident">H160</span>, <span class="ident">H160</span>, <span class="ident">H256</span>, <span class="ident">ExitReason</span>),
 	}
 );
 
@@ -544,7 +548,7 @@
 			);
 			<span class="kw">let</span> <span class="ident">transaction_index</span> <span class="op">=</span> <span class="ident">Pending</span>::<span class="ident">get</span>().<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">u32</span>;
 
-			<span class="kw">let</span> (<span class="ident">to</span>, <span class="ident">info</span>) <span class="op">=</span> <span class="self">Self</span>::<span class="ident">execute</span>(
+			<span class="kw">let</span> (<span class="ident">to</span>, <span class="ident">contract_address</span>, <span class="ident">info</span>) <span class="op">=</span> <span class="self">Self</span>::<span class="ident">execute</span>(
 				<span class="ident">source</span>,
 				<span class="ident">transaction</span>.<span class="ident">input</span>.<span class="ident">clone</span>(),
 				<span class="ident">transaction</span>.<span class="ident">value</span>,
@@ -608,7 +612,7 @@
 
 			<span class="ident">Pending</span>::<span class="ident">append</span>((<span class="ident">transaction</span>, <span class="ident">status</span>, <span class="ident">receipt</span>));
 
-			<span class="self">Self</span>::<span class="ident">deposit_event</span>(<span class="ident">Event</span>::<span class="ident">Executed</span>(<span class="ident">source</span>, <span class="ident">transaction_hash</span>, <span class="ident">reason</span>));
+			<span class="self">Self</span>::<span class="ident">deposit_event</span>(<span class="ident">Event</span>::<span class="ident">Executed</span>(<span class="ident">source</span>, <span class="ident">contract_address</span>.<span class="ident">unwrap_or_default</span>(), <span class="ident">transaction_hash</span>, <span class="ident">reason</span>));
 			<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">T</span>::<span class="ident">GasToWeight</span>::<span class="ident">gas_to_weight</span>(<span class="ident">used_gas</span>.<span class="ident">low_u32</span>())).<span class="ident">into</span>())
 		}
 
@@ -804,10 +808,10 @@
 		<span class="ident">nonce</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
 		<span class="ident">action</span>: <span class="ident">TransactionAction</span>,
 		<span class="ident">config</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">evm</span>::<span class="ident">Config</span><span class="op">&gt;</span>,
-	) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">H160</span><span class="op">&gt;</span>, <span class="ident">CallOrCreateInfo</span>), <span class="ident">DispatchError</span><span class="op">&gt;</span> {
+	) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">H160</span><span class="op">&gt;</span>, <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">H160</span><span class="op">&gt;</span>, <span class="ident">CallOrCreateInfo</span>), <span class="ident">DispatchError</span><span class="op">&gt;</span> {
 		<span class="kw">match</span> <span class="ident">action</span> {
 			<span class="ident">ethereum</span>::<span class="ident">TransactionAction</span>::<span class="ident">Call</span>(<span class="ident">target</span>) <span class="op">=</span><span class="op">&gt;</span> {
-				<span class="prelude-val">Ok</span>((<span class="prelude-val">Some</span>(<span class="ident">target</span>), <span class="ident">CallOrCreateInfo</span>::<span class="ident">Call</span>(<span class="ident">T</span>::<span class="ident">Runner</span>::<span class="ident">call</span>(
+				<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">T</span>::<span class="ident">Runner</span>::<span class="ident">call</span>(
 					<span class="ident">from</span>,
 					<span class="ident">target</span>,
 					<span class="ident">input</span>.<span class="ident">clone</span>(),
@@ -816,10 +820,12 @@
 					<span class="ident">gas_price</span>,
 					<span class="ident">nonce</span>,
 					<span class="ident">config</span>.<span class="ident">as_ref</span>().<span class="ident">unwrap_or</span>(<span class="ident">T</span>::<span class="ident">config</span>()),
-				).<span class="ident">map_err</span>(<span class="ident">Into</span>::<span class="ident">into</span>)<span class="question-mark">?</span>)))
+				).<span class="ident">map_err</span>(<span class="ident">Into</span>::<span class="ident">into</span>)<span class="question-mark">?</span>;
+
+				<span class="prelude-val">Ok</span>((<span class="prelude-val">Some</span>(<span class="ident">target</span>), <span class="prelude-val">None</span>, <span class="ident">CallOrCreateInfo</span>::<span class="ident">Call</span>(<span class="ident">res</span>)))
 			},
 			<span class="ident">ethereum</span>::<span class="ident">TransactionAction</span>::<span class="ident">Create</span> <span class="op">=</span><span class="op">&gt;</span> {
-				<span class="prelude-val">Ok</span>((<span class="prelude-val">None</span>, <span class="ident">CallOrCreateInfo</span>::<span class="ident">Create</span>(<span class="ident">T</span>::<span class="ident">Runner</span>::<span class="ident">create</span>(
+				<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">T</span>::<span class="ident">Runner</span>::<span class="ident">create</span>(
 					<span class="ident">from</span>,
 					<span class="ident">input</span>.<span class="ident">clone</span>(),
 					<span class="ident">value</span>,
@@ -827,7 +833,9 @@
 					<span class="ident">gas_price</span>,
 					<span class="ident">nonce</span>,
 					<span class="ident">config</span>.<span class="ident">as_ref</span>().<span class="ident">unwrap_or</span>(<span class="ident">T</span>::<span class="ident">config</span>()),
-				).<span class="ident">map_err</span>(<span class="ident">Into</span>::<span class="ident">into</span>)<span class="question-mark">?</span>)))
+				).<span class="ident">map_err</span>(<span class="ident">Into</span>::<span class="ident">into</span>)<span class="question-mark">?</span>;
+
+				<span class="prelude-val">Ok</span>((<span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(<span class="ident">res</span>.<span class="ident">value</span>), <span class="ident">CallOrCreateInfo</span>::<span class="ident">Create</span>(<span class="ident">res</span>)))
 			},
 		}
 	}
