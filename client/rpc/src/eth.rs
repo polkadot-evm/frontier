@@ -160,13 +160,13 @@ fn transaction_build(
 				Keccak256::digest(&rlp::encode(&block.header)).as_slice()
 			))
 		}),
-		block_number: block.as_ref().map_or(None, |block| Some(block.header.number)),
-		transaction_index: status.as_ref().map_or(None, |status| {
-			Some(U256::from(
+		block_number: block.as_ref().map(|block| block.header.number),
+		transaction_index: status.as_ref().map(|status| {
+			U256::from(
 				UniqueSaturatedInto::<u32>::unique_saturated_into(
 					status.transaction_index
 				)
-			))
+			)
 		}),
 		from: status.as_ref().map_or({
 			match pubkey {
@@ -188,7 +188,7 @@ fn transaction_build(
 		input: Bytes(transaction.clone().input),
 		creates: status.as_ref().map_or(None, |status| status.contract_address),
 		raw: Bytes(rlp::encode(&transaction)),
-		public_key: pubkey.as_ref().map_or(None, |pk| Some(H512::from(pk))),
+		public_key: pubkey.as_ref().map(|pk| H512::from(pk)),
 		chain_id: transaction.signature.chain_id().map(U64::from),
 		standard_v: U256::from(transaction.signature.standard_v()),
 		v: U256::from(transaction.signature.v()),
