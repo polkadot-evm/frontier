@@ -54,18 +54,20 @@ pub fn write_block_hash<Hash: Encode + Decode, F, R, Backend: AuxStore>(
 	ethereum_hash: H256,
 	block_hash: Hash,
 	write_aux: F,
-) -> R where
+) -> ClientResult<R> where
 	F: FnOnce(&[(&[u8], &[u8])]) -> R,
 {
 	let key = block_hash_key(ethereum_hash);
 
 	let mut data: Vec<Hash> = match load_decode(client, &key) {
 		Ok(Some(hashes)) => hashes,
-		_ => Vec::new(),
+		Ok(None) => Vec::new(),
+		Err(e) => return Err(e)
+
 	};
 	data.push(block_hash);
 
-	write_aux(&[(&key, &data.encode()[..])])
+	Ok(write_aux(&[(&key, &data.encode()[..])]))
 }
 
 /// Map an Ethereum transaction hash into its corresponding Ethereum block hash and index.
@@ -90,16 +92,17 @@ pub fn write_transaction_metadata<F, R, Backend: AuxStore>(
 	hash: H256,
 	metadata: (H256, u32),
 	write_aux: F,
-) -> R where
+) -> ClientResult<R> where
 	F: FnOnce(&[(&[u8], &[u8])]) -> R,
 {
 	let key = transaction_metadata_key(hash);
 
 	let mut data: Vec<(H256, u32)> = match load_decode(client, &key) {
 		Ok(Some(metadata)) => metadata,
-		_ => Vec::new(),
+		Ok(None) => Vec::new(),
+		Err(e) => return Err(e)
 	};
 	data.push(metadata);
 
-	write_aux(&[(&key, &data.encode()[..])])
+	Ok(write_aux(&[(&key, &data.encode()[..])]))
 }
