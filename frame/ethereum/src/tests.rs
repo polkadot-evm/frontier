@@ -222,7 +222,7 @@ fn transaction_should_generate_correct_gas_used() {
 
 	ext.execute_with(|| {
 		let t = default_erc20_creation_transaction(alice);
-		let (_, info) = Ethereum::execute(
+		let (_, _, info) = Ethereum::execute(
 			alice.address,
 			t.input,
 			t.value,
@@ -283,7 +283,7 @@ fn call_should_handle_errors() {
 		let bar: Vec<u8> = FromHex::from_hex("febb0f7e").unwrap();
 
 		// calling foo will succeed
-		let (_, info) = Ethereum::execute(
+		let (_, _, info) = Ethereum::execute(
 			alice.address,
 			foo,
 			U256::zero(),
