@@ -14,34 +14,18 @@
 // You should have received a copy of the GNU General Public License
 // along with Substrate.  If not, see <http://www.gnu.org/licenses/>.
 
-use std::{marker::PhantomData, sync::Arc};
 use ethereum::Block as EthereumBlock;
 use ethereum_types::{H160, H256, U256};
-use sp_runtime::traits::{Block as BlockT, BlakeTwo256};
-use sp_api::BlockId;
+use std::{marker::PhantomData, sync::Arc};
 use sc_client_api::backend::{StorageProvider, Backend, StateBackend, AuxStore};
 use sp_blockchain::{Error as BlockChainError, HeaderMetadata, HeaderBackend};
 use sp_storage::StorageKey;
 use codec::Decode;
-use sp_io::hashing::{twox_128, blake2_128};
+use sp_runtime::traits::{Block as BlockT, BlakeTwo256};
+use sp_api::BlockId;
 use fp_rpc::TransactionStatus;
 
-pub use fc_rpc_core::{EthApiServer, NetApiServer};
-
-/// Something that can fetch Ethereum-related data from a State Backend with some assumptions
-/// about pallet-ethereum's storage schema. This trait is quite similar to the runtime API.
-pub trait StorageOverride<Block: BlockT> {
-	/// For a given account address, returns pallet_evm::AccountCodes.
-	fn account_code_at(&self, block: &BlockId<Block>, address: H160) -> Option<Vec<u8>>;
-	/// For a given account address and index, returns pallet_evm::AccountStorages.
-	fn storage_at(&self, block: &BlockId<Block>, address: H160, index: U256) -> Option<H256>;
-	/// Return the current block.
-	fn current_block(&self, block: &BlockId<Block>) -> Option<EthereumBlock>;
-	/// Return the current receipt.
-	fn current_receipts(&self, block: &BlockId<Block>) -> Option<Vec<ethereum::Receipt>>;
-	/// Return the current transaction status.
-	fn current_transaction_statuses(&self, block: &BlockId<Block>) -> Option<Vec<TransactionStatus>>;
-}
+use super::{StorageOverride, storage_prefix_build, blake2_128_extend};
 
 /// An override for runtimes that use Schema V1
 pub struct SchemaV1Override<B: BlockT, C, BE> {
@@ -71,7 +55,6 @@ impl<B, C, BE> SchemaV1Override<B, C, BE> where
 	// 	Decode::decode(&mut &raw_data.0[..]).map_err(|_| "Could not decode data".into())
 	// }
 
-	// Telmo's original version
 	fn query_storage<T: Decode>(&self, id: &BlockId<B>, key: &StorageKey) -> Option<T> {
 		if let Ok(Some(data)) = self.client.storage(
 			id,
@@ -83,16 +66,6 @@ impl<B, C, BE> SchemaV1Override<B, C, BE> where
 		}
 		None
 	}
-}
-
-fn storage_prefix_build(module: &[u8], storage: &[u8]) -> Vec<u8> {
-	[twox_128(module), twox_128(storage)].concat().to_vec()
-}
-
-fn blake2_128_extend(bytes: &[u8]) -> Vec<u8> {
-	let mut ext: Vec<u8> = blake2_128(bytes).to_vec();
-	ext.extend_from_slice(bytes);
-	ext
 }
 
 impl<Block, C, BE> StorageOverride<Block> for SchemaV1Override<Block, C, BE>
