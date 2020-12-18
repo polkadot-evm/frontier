@@ -39,7 +39,7 @@ use sp_runtime::{
 };
 use evm::ExitReason;
 use fp_evm::CallOrCreateInfo;
-use pallet_evm::{Runner, GasToWeight};
+use pallet_evm::{Runner, GasWeightMapping};
 use sha3::{Digest, Keccak256};
 use codec::Encode;
 use fp_consensus::{FRONTIER_ENGINE_ID, ConsensusLog};
@@ -113,7 +113,7 @@ decl_module! {
 		fn deposit_event() = default;
 
 		/// Transact an Ethereum transaction.
-		#[weight = <T as pallet_evm::Config>::GasToWeight::gas_to_weight(transaction.gas_limit.low_u32())]
+		#[weight = <T as pallet_evm::Config>::GasWeightMapping::gas_to_weight(transaction.gas_limit.unique_saturated_into())]
 		fn transact(origin, transaction: ethereum::Transaction) -> DispatchResultWithPostInfo {
 			ensure_none(origin)?;
 
@@ -190,7 +190,7 @@ decl_module! {
 			Pending::append((transaction, status, receipt));
 
 			Self::deposit_event(Event::Executed(source, contract_address.unwrap_or_default(), transaction_hash, reason));
-			Ok(Some(T::GasToWeight::gas_to_weight(used_gas.low_u32())).into())
+			Ok(Some(T::GasWeightMapping::gas_to_weight(used_gas.unique_saturated_into())).into())
 		}
 
 		fn on_finalize(n: T::BlockNumber) {
