@@ -38,6 +38,8 @@ use fc_rpc_core::types::PendingTransactions;
 use log::*;
 use sc_client_api;
 
+const TRANSACTION_RETAIN_THRESHOLD: u64 = 5;
+
 #[derive(derive_more::Display, Debug)]
 pub enum Error {
 	#[display(fmt = "Multiple post-runtime Ethereum blocks, rejecting!")]
@@ -155,7 +157,7 @@ impl<B, I, C> BlockImport<B> for FrontierBlockImport<B, I, C> where
 									if transaction_hashes.contains(&k) {
 										return false;
 									}
-									if number < v.at_block + 5 {
+									if number < v.at_block + TRANSACTION_RETAIN_THRESHOLD {
 										return false;
 									}
 									true
