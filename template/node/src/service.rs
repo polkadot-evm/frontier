@@ -257,19 +257,15 @@ pub fn new_full(
 					if let Some(ConsensusLog::EndBlock {
 						block_hash: _, transaction_hashes,
 					}) = frontier_log {
-						// We want to retain all pending transactions that were not
-						// processed in the current block and that did not exceed
-						// a given block lifespan.
-						locked.retain(|&k, v| {
-							if transaction_hashes.contains(&k) {
-								return false;
-							}
-							if imported_number < v.at_block + TRANSACTION_RETAIN_THRESHOLD {
-								return false;
-							}
-							true
-						});
+						// Retain all pending transactions that were not
+						// processed in the current block.
+						locked.retain(|&k, v| !transaction_hashes.contains(&k));
 					}
+					locked.retain(|&k, v| {
+						// Drop all the transactions that exceeded the given lifespan.
+						let lifespan_limit = v.at_block + TRANSACTION_RETAIN_THRESHOLD;
+						lifespan_limit > imported_number
+					});
 				}
 				futures::future::ready(())
 			})
