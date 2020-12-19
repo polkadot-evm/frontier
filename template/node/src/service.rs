@@ -2,7 +2,7 @@
 
 use std::{sync::{Arc, Mutex}, cell::RefCell, time::Duration, collections::HashMap};
 use fc_rpc_core::types::PendingTransactions;
-use sc_client_api::{ExecutorProvider, RemoteBackend};
+use sc_client_api::{ExecutorProvider, RemoteBackend, BlockchainEvents};
 use sc_consensus_manual_seal::{self as manual_seal};
 use fc_consensus::FrontierBlockImport;
 use frontier_template_runtime::{self, opaque::Block, RuntimeApi, SLOT_DURATION};
@@ -105,7 +105,6 @@ pub fn new_partial(config: &Configuration, sealing: Option<Sealing>) -> Result<
 		let frontier_block_import = FrontierBlockImport::new(
 			client.clone(),
 			client.clone(),
-			pending_transactions.clone(),
 			true,
 		);
 
@@ -129,7 +128,6 @@ pub fn new_partial(config: &Configuration, sealing: Option<Sealing>) -> Result<
 	let frontier_block_import = FrontierBlockImport::new(
 		grandpa_block_import.clone(),
 		client.clone(),
-		pending_transactions.clone(),
 		true
 	);
 
@@ -231,6 +229,52 @@ pub fn new_full(
 		remote_blockchain: None,
 		backend, network_status_sinks, system_rpc_tx, config,
 	})?;
+
+	// Spawn Frontier pending transactions maintenance task (as essential, otherwise we leak).
+	if pending_transactions.is_some() {
+		use futures::StreamExt;
+		use fp_consensus::{FRONTIER_ENGINE_ID, ConsensusLog};
+		use sp_runtime::generic::OpaqueDigestItemId;
+
+		const TRANSACTION_RETAIN_THRESHOLD: u64 = 5;
+		task_manager.spawn_essential_handle().spawn(
+			"frontier-pending-transactions",
+			client.import_notification_stream().for_each(move |notification| {
+
+				if let Ok(locked) = &mut pending_transactions.clone().unwrap().lock() {
+					// As pending transactions have a finite lifespan anyway
+					// we can ignore MultiplePostRuntimeLogs error checks.
+					let mut frontier_log: Option<_> = None;
+					for log in notification.header.digest.logs {
+						let log = log.try_to::<ConsensusLog>(OpaqueDigestItemId::Consensus(&FRONTIER_ENGINE_ID));
+						if let Some(log) = log {
+							frontier_log = Some(log);
+						}
+					}
+
+					let imported_number: u64 = notification.header.number as u64;
+
+					if let Some(ConsensusLog::EndBlock {
+						block_hash: _, transaction_hashes,
+					}) = frontier_log {
+						// We want to retain all pending transactions that were not
+						// processed in the current block and that did not exceed
+						// a given block lifespan.
+						locked.retain(|&k, v| {
+							if transaction_hashes.contains(&k) {
+								return false;
+							}
+							if imported_number < v.at_block + TRANSACTION_RETAIN_THRESHOLD {
+								return false;
+							}
+							true
+						});
+					}
+				}
+				futures::future::ready(())
+			})
+		);
+	}
 
 	match consensus_result {
 		ConsensusResult::ManualSeal(block_import, sealing) => {

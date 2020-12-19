@@ -28,17 +28,14 @@ use sc_client_api::{BlockOf, backend::AuxStore};
 use sp_blockchain::{HeaderBackend, ProvideCache, well_known_cache_keys::Id as CacheKeyId};
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
 use sp_runtime::generic::OpaqueDigestItemId;
-use sp_runtime::traits::{Block as BlockT, Header as HeaderT, UniqueSaturatedInto};
+use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
 use sp_api::ProvideRuntimeApi;
 use sp_consensus::{
 	BlockImportParams, Error as ConsensusError, BlockImport,
 	BlockCheckParams, ImportResult,
 };
-use fc_rpc_core::types::PendingTransactions;
 use log::*;
 use sc_client_api;
-
-const TRANSACTION_RETAIN_THRESHOLD: u64 = 5;
 
 #[derive(derive_more::Display, Debug)]
 pub enum Error {
@@ -63,7 +60,6 @@ impl std::convert::From<Error> for ConsensusError {
 pub struct FrontierBlockImport<B: BlockT, I, C> {
 	inner: I,
 	client: Arc<C>,
-	pending_transactions: PendingTransactions,
 	enabled: bool,
 	_marker: PhantomData<B>,
 }
@@ -73,7 +69,6 @@ impl<Block: BlockT, I: Clone + BlockImport<Block>, C> Clone for FrontierBlockImp
 		FrontierBlockImport {
 			inner: self.inner.clone(),
 			client: self.client.clone(),
-			pending_transactions: self.pending_transactions.clone(),
 			enabled: self.enabled,
 			_marker: PhantomData,
 		}
@@ -90,13 +85,11 @@ impl<B, I, C> FrontierBlockImport<B, I, C> where
 	pub fn new(
 		inner: I,
 		client: Arc<C>,
-		pending_transactions: PendingTransactions,
 		enabled: bool,
 	) -> Self {
 		Self {
 			inner,
 			client,
-			pending_transactions,
 			enabled,
 			_marker: PhantomData,
 		}
@@ -138,39 +131,17 @@ impl<B, I, C> BlockImport<B> for FrontierBlockImport<B, I, C> where
 		if self.enabled {
 			let log = find_frontier_log::<B>(&block.header)?;
 			let hash = block.post_hash();
-			let number: u64 = UniqueSaturatedInto::<u64>::unique_saturated_into(
-				*block.header.number()
-			);
-
 			match log {
 				ConsensusLog::EndBlock {
 					block_hash, transaction_hashes,
 				} => {
 					aux_schema::write_block_hash(client.as_ref(), block_hash, hash, insert_closure!());
-					if transaction_hashes.len() > 0 {
-						if let Some(pending) = &self.pending_transactions {
-							if let Ok(locked) = &mut pending.lock() {
-								// We want to retain all pending transactions that were not
-								// processed in the current block and that did not exceed
-								// a given block lifespan.
-								locked.retain(|&k, v| {
-									if transaction_hashes.contains(&k) {
-										return false;
-									}
-									if number < v.at_block + TRANSACTION_RETAIN_THRESHOLD {
-										return false;
-									}
-									true
-								});
-							}
-						}
-						for (index, transaction_hash) in transaction_hashes.into_iter().enumerate() {
-							aux_schema::write_transaction_metadata(
-								transaction_hash,
-								(block_hash, index as u32),
-								insert_closure!(),
-							);
-						}
+					for (index, transaction_hash) in transaction_hashes.into_iter().enumerate() {
+						aux_schema::write_transaction_metadata(
+							transaction_hash,
+							(block_hash, index as u32),
+							insert_closure!(),
+						);
 					}
 				},
 			}
