@@ -259,9 +259,9 @@ pub fn new_full(
 					}) = frontier_log {
 						// Retain all pending transactions that were not
 						// processed in the current block.
-						locked.retain(|&k, v| !transaction_hashes.contains(&k));
+						locked.retain(|&k, _| !transaction_hashes.contains(&k));
 					}
-					locked.retain(|&k, v| {
+					locked.retain(|_, v| {
 						// Drop all the transactions that exceeded the given lifespan.
 						let lifespan_limit = v.at_block + TRANSACTION_RETAIN_THRESHOLD;
 						lifespan_limit > imported_number
