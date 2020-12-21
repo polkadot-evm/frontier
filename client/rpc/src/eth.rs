@@ -38,8 +38,7 @@ use sc_network::{NetworkService, ExHashT};
 use fc_rpc_core::{EthApi as EthApiT, NetApi as NetApiT, Web3Api as Web3ApiT};
 use fc_rpc_core::types::{
 	BlockNumber, Bytes, CallRequest, Filter, FilteredParams, Index, Log, Receipt, RichBlock,
-	SyncStatus, SyncInfo, Transaction, Work, Rich, Block, BlockTransactions, VariadicValue,
-	TransactionRequest,
+	SyncStatus, SyncInfo, Transaction, Work, Rich, Block, BlockTransactions, TransactionRequest,
 };
 use fp_rpc::{EthereumRuntimeRPCApi, ConvertTransaction, TransactionStatus};
 use crate::{internal_err, error_on_execution_failure, EthSigner};
@@ -984,27 +983,25 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 						transaction_log_index: None,
 						removed: false,
 					};
-					let mut add: bool = false;
+					let mut add: bool = true;
 					if let (
-						Some(VariadicValue::Single(_)),
-						Some(VariadicValue::Multiple(_))
+						Some(_),
+						Some(_)
 					) = (
 						filter.address.clone(),
 						filter.topics.clone(),
 					) {
-						if !params.filter_address(&log) && params.filter_topics(&log) {
-							add = true;
+						if !params.filter_address(&log) || !params.filter_topics(&log) {
+							add = false;
 						}
-					} else if let Some(VariadicValue::Single(_)) = filter.address {
+					} else if let Some(_) = filter.address {
 						if !params.filter_address(&log) {
-							add = true;
+							add = false;
 						}
-					} else if let Some(VariadicValue::Multiple(_)) = &filter.topics {
-						if params.filter_topics(&log) {
-							add = true;
+					} else if let Some(_) = &filter.topics {
+						if !params.filter_topics(&log) {
+							add = false;
 						}
-					} else {
-						add = true;
 					}
 					if add {
 						log.block_hash = Some(block_hash);
