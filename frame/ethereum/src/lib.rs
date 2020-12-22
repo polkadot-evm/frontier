@@ -37,7 +37,6 @@ use sp_runtime::{
 	},
 	generic::DigestItem, traits::UniqueSaturatedInto, DispatchError,
 };
-use codec::Decode;
 use evm::ExitReason;
 use fp_evm::CallOrCreateInfo;
 use pallet_evm::{Runner, GasToWeight};
@@ -45,7 +44,7 @@ use sha3::{Digest, Keccak256};
 use codec::Encode;
 use fp_consensus::{FRONTIER_ENGINE_ID, ConsensusLog};
 
-pub use fp_rpc::TransactionStatus;
+pub use fp_rpc::{TransactionStatus, EthereumExt};
 pub use ethereum::{Transaction, Log, Block, Receipt, TransactionAction, TransactionMessage};
 
 #[cfg(all(feature = "std", test))]
@@ -69,6 +68,8 @@ pub trait Trait: frame_system::Trait<Hash=H256> + pallet_balances::Trait + palle
 	type Event: From<Event> + Into<<Self as frame_system::Trait>::Event>;
 	/// Find author for Ethereum.
 	type FindAuthor: FindAuthor<H160>;
+	/// User configurable functions.
+	type Extension: EthereumExt;
 }
 
 decl_storage! {
@@ -306,8 +307,7 @@ impl<T: Trait> Module<T> {
 			nonce: H64::default(),
 		};
 		let mut block = ethereum::Block::new(partial_header, transactions.clone(), ommers);
-		block.header.state_root = H256::decode(&mut &sp_io::storage::root()[..])
-			.expect("Node is configured to use the same hash; qed");
+		block.header.state_root = T::Extension::eth_state_root();
 
 		let mut transaction_hashes = Vec::new();
 

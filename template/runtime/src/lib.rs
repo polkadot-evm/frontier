@@ -46,7 +46,7 @@ use pallet_evm::{
 	Account as EVMAccount, FeeCalculator, HashedAddressMapping,
 	EnsureAddressTruncated, Runner,
 };
-use fp_rpc::{TransactionStatus};
+use fp_rpc::{TransactionStatus, EthereumExt};
 pub type BlockNumber = u32;
 
 /// Alias to 512-bit hash when used in the context of a transaction signature on the chain.
@@ -314,9 +314,17 @@ impl<F: FindAuthor<u32>> FindAuthor<H160> for EthereumFindAuthor<F>
 	}
 }
 
+impl EthereumExt for Runtime {
+	fn eth_state_root() -> H256 {
+		H256::decode(&mut &sp_io::storage::root()[..])
+			.expect("Node is configured to use the same hash; qed")
+	}
+}
+
 impl pallet_ethereum::Trait for Runtime {
 	type Event = Event;
 	type FindAuthor = EthereumFindAuthor<Aura>;
+	type Extension = Runtime;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
