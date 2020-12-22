@@ -663,7 +663,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 		}
 	}
 
-	fn estimate_gas(&self, request: CallRequest, _: Option<BlockNumber>) -> Result<U256> {
+	fn fast_estimate_gas(&self, request: CallRequest, _: Option<BlockNumber>) -> Result<U256> {
 		let hash = self.client.info().best_hash;
 
 		let CallRequest {
@@ -722,6 +722,41 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 		};
 
 		Ok(used_gas)
+	}
+
+	fn estimate_gas(&self, request: CallRequest, block_number: Option<BlockNumber>) -> Result<U256> {
+		let mut test_request = request.clone();
+		test_request.gas = Some(U256::max_value());
+		let used_gas = self.fast_estimate_gas(test_request, block_number.clone())?;
+		let mut fist_request = request.clone();
+		fist_request.gas = Some(used_gas);
+		let first_result = self.fast_estimate_gas(fist_request, block_number.clone());
+		match first_result {
+			// in most cases, estimate gas will work
+			Ok(used_gas) => {
+				Ok(used_gas)
+			}
+			// do binary search
+			Err(_) => {
+				let mut lower = used_gas;
+				let mut upper = used_gas * 64 / 63;
+				let mut mid = upper;
+				let mut best = mid;
+				while lower + 1 < upper {
+					mid = (lower + upper + 1) / 2;
+					let mut test_request = request.clone();
+					test_request.gas = Some(mid);
+					let test_result = self.fast_estimate_gas(test_request, block_number.clone());
+					if test_result.is_ok() {
+						upper = mid;
+						best = mid;
+					} else {
+						lower = mid;
+					}
+				}
+				Ok(best)
+			}
+		}
 	}
 
 	fn transaction_by_hash(&self, hash: H256) -> Result<Option<Transaction>> {
