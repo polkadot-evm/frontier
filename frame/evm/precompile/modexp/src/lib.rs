@@ -93,9 +93,9 @@ impl LinearCostPrecompile for Modexp {
 		if bytes.len() == mod_len {
 			Ok((ExitSucceed::Returned, bytes.to_vec()))
 		} else if bytes.len() < mod_len {
-			let mut ret = Vec::with_capacity(mod_len);
-			ret.copy_from_slice(&bytes[..]);
-			Ok((ExitSucceed::Returned, bytes.to_vec()))
+			let mut ret = vec![0u8; mod_len - bytes.len()];
+			ret.extend_from_slice(&bytes[..]);
+			Ok((ExitSucceed::Returned, ret.to_vec()))
 		} else {
 			Err(ExitError::Other("failed".into()))
 		}
@@ -145,13 +145,15 @@ mod tests {
 			05\
 			07").expect("Decode failed");
 
+		// 3 ^ 5 % 7 == 5
+
 		let cost: usize = 1;
 
 		println!("input array: {:?}", input);
 
 		match Modexp::execute(&input, cost) {
 			Ok((_, output)) => {
-				assert_eq!(output.len(), 1); // should be same as mod
+				assert_eq!(output.len(), 1); // should be same length as mod
 				let result = BigUint::from_bytes_be(&output[..]);
 				let expected = BigUint::parse_bytes(b"5", 10).unwrap();
 				assert_eq!(result, expected);
@@ -160,6 +162,36 @@ mod tests {
 				panic!("Modexp::execute() returned error"); // TODO: how to pass error on?
 			}
 		}
+	}
 
+	#[test]
+	fn test_large_inputs() {
+
+		let input = hex::decode(
+			"0000000000000000000000000000000000000000000000000000000000000020\
+			0000000000000000000000000000000000000000000000000000000000000020\
+			0000000000000000000000000000000000000000000000000000000000000020\
+			000000000000000000000000000000000000000000000000000000000000EA5F\
+			0000000000000000000000000000000000000000000000000000000000000015\
+			0000000000000000000000000000000000000000000000000000000000003874")
+			.expect("Decode failed");
+
+		// 59999 ^ 21 % 14452 = 10055
+
+		let cost: usize = 1;
+
+		println!("input array: {:?}", input);
+
+		match Modexp::execute(&input, cost) {
+			Ok((_, output)) => {
+				assert_eq!(output.len(), 32); // should be same length as mod
+				let result = BigUint::from_bytes_be(&output[..]);
+				let expected = BigUint::parse_bytes(b"10055", 10).unwrap();
+				assert_eq!(result, expected);
+			},
+			Err(_) => {
+				panic!("Modexp::execute() returned error"); // TODO: how to pass error on?
+			}
+		}
 	}
 }
