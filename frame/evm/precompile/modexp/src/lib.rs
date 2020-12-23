@@ -83,7 +83,8 @@ impl LinearCostPrecompile for Modexp {
 		if bytes.len() == mod_len {
 			Ok((ExitSucceed::Returned, bytes.to_vec()))
 		} else if bytes.len() < mod_len {
-			let mut ret = vec![0u8; mod_len - bytes.len()];
+			let mut ret = Vec::with_capacity(mod_len);
+			ret.extend(core::iter::repeat(0).take(mod_len - bytes.len()));
 			ret.extend_from_slice(&bytes[..]);
 			Ok((ExitSucceed::Returned, ret.to_vec()))
 		} else {
