@@ -58,10 +58,6 @@ impl LinearCostPrecompile for Modexp {
 			BigUint::zero()
 		} else {
 
-			println!("base_len {}", base_len);
-			println!("exp_len {}", exp_len);
-			println!("mod_len {}", mod_len);
-
 			// read the numbers themselves.
 			let base_start = 96; // previous 3 32-byte fields
 			let base = BigUint::from_bytes_be(&input[base_start..base_start + base_len]);
@@ -72,18 +68,12 @@ impl LinearCostPrecompile for Modexp {
 			let mod_start = exp_start + exp_len;
 			let modulus = BigUint::from_bytes_be(&input[mod_start..mod_start + mod_len]);
 
-			println!("base {}", base);
-			println!("exp {}", exponent);
-			println!("mod {}", modulus);
-
 			if modulus.is_zero() || modulus.is_one() {
 				BigUint::zero()
 			} else {
 				base.modpow(&exponent, &modulus)
 			}
 		};
-
-		println!("r {}", r);
 
 		// write output to given memory, left padded and same length as the modulus.
 		let bytes = r.to_bytes_be();
@@ -149,8 +139,6 @@ mod tests {
 
 		let cost: usize = 1;
 
-		println!("input array: {:?}", input);
-
 		match Modexp::execute(&input, cost) {
 			Ok((_, output)) => {
 				assert_eq!(output.len(), 1); // should be same length as mod
@@ -179,8 +167,6 @@ mod tests {
 		// 59999 ^ 21 % 14452 = 10055
 
 		let cost: usize = 1;
-
-		println!("input array: {:?}", input);
 
 		match Modexp::execute(&input, cost) {
 			Ok((_, output)) => {
