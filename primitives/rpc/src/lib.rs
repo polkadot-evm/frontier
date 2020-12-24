@@ -24,7 +24,10 @@ use codec::{Encode, Decode};
 use sp_std::vec::Vec;
 
 pub trait EthereumExt {
-	fn eth_state_root() -> H256;
+	fn eth_state_root() -> H256 {
+		H256::decode(&mut &sp_io::storage::root()[..])
+			.expect("Node is configured to use the same hash; qed")
+	}
 }
 
 #[derive(Eq, PartialEq, Clone, Encode, Decode, sp_runtime::RuntimeDebug)]

@@ -314,17 +314,12 @@ impl<F: FindAuthor<u32>> FindAuthor<H160> for EthereumFindAuthor<F>
 	}
 }
 
-impl EthereumExt for Runtime {
-	fn eth_state_root() -> H256 {
-		H256::decode(&mut &sp_io::storage::root()[..])
-			.expect("Node is configured to use the same hash; qed")
-	}
-}
+impl EthereumExt for Runtime {}
 
 impl pallet_ethereum::Config for Runtime {
 	type Event = Event;
 	type FindAuthor = EthereumFindAuthor<Aura>;
-	type Extension = Runtime;
+	type Extension = Self;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
