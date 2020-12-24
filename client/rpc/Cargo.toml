@@ -26,6 +26,7 @@ sc-service = { git = "https://github.com/paritytech/substrate.git", branch = "fr
 sc-client-api = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sc-rpc = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sc-network = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sp-trie = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 pallet-evm = { path = "../../frame/evm" }
 pallet-ethereum = { path = "../../frame/ethereum" }
 ethereum = { version = "0.5", features = ["with-codec"] }
@@ -36,3 +37,4 @@ sha3 = "0.8"
 rustc-hex = { version = "2.1.0", default-features = false }
 libsecp256k1 = "0.3"
 rand = "0.7"
+trie-db = "0.22.1"

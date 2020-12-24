@@ -39,13 +39,17 @@ use fc_rpc_core::{EthApi as EthApiT, NetApi as NetApiT, Web3Api as Web3ApiT};
 use fc_rpc_core::types::{
 	BlockNumber, Bytes, CallRequest, Filter, FilteredParams, Index, Log, Receipt, RichBlock,
 	SyncStatus, SyncInfo, Transaction, Work, Rich, Block, BlockTransactions, VariadicValue,
-	TransactionRequest,
+	TransactionRequest, EthAccount, StorageProof,
 };
 use fp_rpc::{EthereumRuntimeRPCApi, ConvertTransaction, TransactionStatus};
 use crate::{internal_err, error_on_execution_failure, EthSigner};
 
 pub use fc_rpc_core::{EthApiServer, NetApiServer, Web3ApiServer};
 use codec::{self, Encode};
+
+use sp_trie::{MemoryDB, Trie, TrieMut};
+use sp_trie::trie_types::{TrieDBMut, TrieDB};
+use trie_db::proof::generate_proof;
 
 pub struct EthApi<B: BlockT, C, P, CT, BE, H: ExHashT> {
 	pool: Arc<P>,
@@ -1040,8 +1044,115 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 	fn submit_hashrate(&self, _: U256, _: H256) -> Result<bool> {
 		Ok(false)
 	}
-}
 
+	fn account_proof(&self, address: H160, storage_keys: Vec<H256>, number: BlockNumber) -> Result<EthAccount> {
+		if let Ok(Some(id)) = self.native_block_id(Some(number)) {
+			// State root.
+			let block = self.client.runtime_api().current_block(&id)
+				.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
+			let state_root = block.map_or(H256::default(), |b| b.header.state_root);
+
+			// Account balance and nonce.
+			let account = self.client
+				.runtime_api()
+				.account_basic(&id, address)
+				.map_err(|err| internal_err(format!("fetch runtime account failed: {:?}", err)))?;
+			let balance: U256 = account.balance.into();
+			let nonce: U256 = account.nonce.into();
+
+			// Account code.
+			let account_code: Vec<u8> = self.client
+				.runtime_api()
+				.account_code_at(&id, address)
+				.map_err(|err| internal_err(format!("fetch runtime account_code failed: {:?}", err)))?;
+
+			// Trie address hash.
+			let address_hash = H256::from_slice(Keccak256::digest(&address[..]).as_slice());
+
+			// Build the proving trie for account.
+			let mut db = MemoryDB::<ethereum::util::KeccakHasher>::default();
+			let mut root = state_root;
+			{
+				let mut trie = TrieDBMut::new(&mut db, &mut root);
+				let _ = trie.insert(
+					address_hash.as_bytes(),
+					&account_code
+				);
+			}
+			// Account proof.
+			// The `storage_root` is the keccak of the Account trie's root (?).
+			let trie = TrieDB::new(&db, &root).unwrap();
+			let storage_root = H256::from_slice(
+				Keccak256::digest(&trie.root()[..]).as_slice()
+			);
+			let account_proof = generate_proof(&trie, vec![&address_hash])
+				.map_or(
+					Vec::new(),
+					|proofs| {
+						proofs.into_iter()
+							.map(|bytes| Bytes::new(bytes))
+							.collect::<Vec<Bytes>>()
+					}
+				);
+
+
+			// Build the proving trie for storage.
+			let mut db = MemoryDB::<ethereum::util::KeccakHasher>::default();
+			let mut root = storage_root;
+			let mut storage_map: Vec<([u8; 32], [u8; 32])> = Vec::new();
+			{
+				let mut trie = TrieDBMut::new(&mut db, &mut root);
+				for key in storage_keys.iter() {
+					let value: H256 =  self.client
+						.runtime_api()
+						.storage_at(&id, address, U256::from(key.to_fixed_bytes()))
+						.map_err(|err| internal_err(format!("fetch runtime storage_at failed: {:?}", err)))?
+						.into();
+					let _ = trie.insert(&key[..], &value[..]);
+					storage_map.push((key.to_fixed_bytes(), value.to_fixed_bytes()));
+				}
+			}
+
+			// Storage proof.
+			let trie = TrieDB::new(&db, &root).unwrap();
+			let storage_proof = storage_map.iter().map(|(k, v)| {
+				StorageProof {
+					key: U256::from(k),
+					value: U256::from(v),
+					proof: generate_proof(&trie, vec![&H256::from_slice(&k[..])]).map_or(
+						Vec::new(),
+						|proofs| {
+							proofs.into_iter()
+								.map(|bytes| Bytes::new(bytes))
+								.collect::<Vec<Bytes>>()
+						}
+					)
+				}
+			}).collect::<Vec<StorageProof>>();
+
+			return Ok(EthAccount {
+				address,
+				balance,
+				code_hash: H256::from_slice(
+					Keccak256::digest(&account_code).as_slice()
+				),
+				nonce,
+				storage_hash: storage_root,
+				account_proof: account_proof,
+				storage_proof
+			});
+		}
+		Ok(EthAccount {
+			address: H160::default(),
+			balance: U256::zero(),
+			code_hash: H256::default(),
+			nonce: U256::zero(),
+			storage_hash: H256::default(),
+			account_proof: Vec::new(),
+			storage_proof: Vec::new()
+		})
+	}
+}
 pub struct NetApi<B: BlockT, BE, C, H: ExHashT> {
 	client: Arc<C>,
 	network: Arc<NetworkService<B, H>>,
