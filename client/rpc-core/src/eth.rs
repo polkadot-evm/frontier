@@ -24,7 +24,7 @@ use jsonrpc_derive::rpc;
 
 use crate::types::{
 	BlockNumber, Bytes, CallRequest, Filter, FilterChanges, Index, Log, Receipt,
-	RichBlock, SyncStatus, Transaction, Work, TransactionRequest,
+	RichBlock, SyncStatus, Transaction, Work, TransactionRequest, EthAccount,
 };
 pub use rpc_impl_EthApi::gen_server::EthApi as EthApiServer;
 
@@ -177,6 +177,10 @@ pub trait EthApi {
 	/// Used for submitting mining hashrate.
 	#[rpc(name = "eth_submitHashrate")]
 	fn submit_hashrate(&self, _: U256, _: H256) -> Result<bool>;
+
+	/// Returns proof for account and storage.
+	#[rpc(name = "eth_getProof")]
+	fn account_proof(&self, _: H160, _: Vec<H256>, _: BlockNumber) -> Result<EthAccount>;
 }
 
 /// Eth filters rpc api (polling).
