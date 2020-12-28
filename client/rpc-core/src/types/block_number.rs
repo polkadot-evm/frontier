@@ -142,13 +142,41 @@ impl<'a> Visitor<'a> for BlockNumberVisitor {
 			_ if value.starts_with("0x") => u64::from_str_radix(&value[2..], 16).map(BlockNumber::Num).map_err(|e| {
 				Error::custom(format!("Invalid block number: {}", e))
 			}),
-			_ => {
-				Err(Error::custom("Invalid block number: missing 0x prefix".to_string()))
-			},
+			_ => u64::from_str_radix(&value, 10).map(BlockNumber::Num).map_err(|_| {
+				Error::custom("Invalid block number: non-decimal or missing 0x prefix".to_string())
+			}),
 		}
 	}
 
 	fn visit_string<E>(self, value: String) -> Result<Self::Value, E> where E: Error {
 		self.visit_str(value.as_ref())
+	}
+
+	fn visit_u64<E>(self, value: u64) -> Result<Self::Value, E> where E: Error {
+		Ok(BlockNumber::Num(value))
+	}
+}
+
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	fn match_block_number(block_number: BlockNumber) -> Option<u64> {
+		match block_number {
+			BlockNumber::Num(number) => Some(number),
+			_ => None
+		}
+	}
+
+	#[test]
+	fn block_number_deserialize() {
+		let bn_dec: BlockNumber = serde_json::from_str(r#""42""#).unwrap();
+		let bn_hex: BlockNumber = serde_json::from_str(r#""0x45""#).unwrap();
+		let bn_u64: BlockNumber = serde_json::from_str(r#"420"#).unwrap();
+
+		assert_eq!(match_block_number(bn_dec).unwrap(), 42 as u64);
+		assert_eq!(match_block_number(bn_hex).unwrap(), 69 as u64);
+		assert_eq!(match_block_number(bn_u64).unwrap(), 420 as u64);
 	}
 }
