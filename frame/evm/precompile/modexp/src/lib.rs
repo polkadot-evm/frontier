@@ -79,8 +79,8 @@ impl LinearCostPrecompile for Modexp {
 
 		// bounds check handled above
 		let base_len = base_len_big.to_usize().expect("base_len out of bounds");
-		let exp_len = base_len_big.to_usize().expect("exp_len out of bounds");
-		let mod_len = base_len_big.to_usize().expect("mod_len out of bounds");
+		let exp_len = exp_len_big.to_usize().expect("exp_len out of bounds");
+		let mod_len = mod_len_big.to_usize().expect("mod_len out of bounds");
 
 		// input length should be at least 96 + user-specified length of base + exp + mod
 		let total_len = base_len + exp_len + mod_len + 96;
@@ -246,6 +246,33 @@ mod tests {
 				assert_eq!(output.len(), 32); // should be same length as mod
 				let result = BigUint::from_bytes_be(&output[..]);
 				let expected = BigUint::parse_bytes(b"10055", 10).unwrap();
+				assert_eq!(result, expected);
+			},
+			Err(_) => {
+				panic!("Modexp::execute() returned error"); // TODO: how to pass error on?
+			}
+		}
+	}
+
+	#[test]
+	fn test_large_computation() {
+
+		let input = hex::decode(
+			"0000000000000000000000000000000000000000000000000000000000000001\
+			0000000000000000000000000000000000000000000000000000000000000020\
+			0000000000000000000000000000000000000000000000000000000000000020\
+			03\
+			fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2e\
+			fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f")
+			.expect("Decode failed");
+
+		let cost: usize = 1;
+
+		match Modexp::execute(&input, cost) {
+			Ok((_, output)) => {
+				assert_eq!(output.len(), 32); // should be same length as mod
+				let result = BigUint::from_bytes_be(&output[..]);
+				let expected = BigUint::parse_bytes(b"1", 10).unwrap();
 				assert_eq!(result, expected);
 			},
 			Err(_) => {
