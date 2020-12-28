@@ -35,6 +35,10 @@ impl LinearCostPrecompile for Modexp {
 		input: &[u8],
 		_: usize,
 	) -> core::result::Result<(ExitSucceed, Vec<u8>), ExitError> {
+		if input.len() < 96 {
+			return Err(ExitError::Other("input must contain at least 96 bytes".into()));
+		};
+
 		let mut buf = [0; 32];
 		buf.copy_from_slice(&input[0..32]);
 		let mut len_bytes = [0u8; 8];
@@ -57,18 +61,16 @@ impl LinearCostPrecompile for Modexp {
 		let r = if base_len == 0 && mod_len == 0 {
 			BigUint::zero()
 		} else {
+
 			// read the numbers themselves.
-			let mut buf = Vec::with_capacity(max(mod_len, max(base_len, exp_len)));
-			buf.copy_from_slice(&input[0..base_len]);
-			let base = BigUint::from_bytes_be(&buf[..base_len]);
+			let base_start = 96; // previous 3 32-byte fields
+			let base = BigUint::from_bytes_be(&input[base_start..base_start + base_len]);
 
-			buf = Vec::with_capacity(max(mod_len, max(base_len, exp_len)));
-			buf.copy_from_slice(&input[base_len..base_len + exp_len]);
-			let exponent = BigUint::from_bytes_be(&buf[..exp_len]);
+			let exp_start = base_start + base_len;
+			let exponent = BigUint::from_bytes_be(&input[exp_start..exp_start + exp_len]);
 
-			buf = Vec::with_capacity(max(mod_len, max(base_len, exp_len)));
-			buf.copy_from_slice(&input[(base_len + exp_len)..(base_len + exp_len + mod_len)]);
-			let modulus = BigUint::from_bytes_be(&buf[..mod_len]);
+			let mod_start = exp_start + exp_len;
+			let modulus = BigUint::from_bytes_be(&input[mod_start..mod_start + mod_len]);
 
 			if modulus.is_zero() || modulus.is_one() {
 				BigUint::zero()
@@ -82,13 +84,103 @@ impl LinearCostPrecompile for Modexp {
 
 		// always true except in the case of zero-length modulus, which leads to
 		// output of length and value 1.
-		if bytes.len() <= mod_len {
-			let res_start = mod_len - bytes.len();
-			let mut ret = Vec::with_capacity(bytes.len() - mod_len);
-			ret.copy_from_slice(&bytes[res_start..bytes.len()]);
+		if bytes.len() == mod_len {
+			Ok((ExitSucceed::Returned, bytes.to_vec()))
+		} else if bytes.len() < mod_len {
+			let mut ret = Vec::with_capacity(mod_len);
+			ret.extend(core::iter::repeat(0).take(mod_len - bytes.len()));
+			ret.extend_from_slice(&bytes[..]);
 			Ok((ExitSucceed::Returned, ret.to_vec()))
 		} else {
 			Err(ExitError::Other("failed".into()))
+		}
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	extern crate hex;
+
+	#[test]
+	fn test_empty_input() -> std::result::Result<(), ExitError> {
+
+		let input: [u8; 0] = [];
+		let cost: usize = 1;
+
+		match Modexp::execute(&input, cost) {
+			Ok((_, _)) => {
+				panic!("Test not expected to pass");
+			},
+			Err(e) => {
+				assert_eq!(e, ExitError::Other("input must contain at least 96 bytes".into()));
+				Ok(())
+			}
+		}
+	}
+
+	#[test]
+	fn test_simple_inputs() {
+
+		// ModExp expects the following as inputs:
+		// 1) 32 bytes expressing the length of base
+		// 2) 32 bytes expressing the length of exponent
+		// 3) 32 bytes expressing the length of modulus
+		// 4) base, size as described above
+		// 5) exponent, size as described above
+		// 6) modulus, size as described above
+
+		let input = hex::decode(
+			"0000000000000000000000000000000000000000000000000000000000000001\
+			0000000000000000000000000000000000000000000000000000000000000001\
+			0000000000000000000000000000000000000000000000000000000000000001\
+			03\
+			05\
+			07").expect("Decode failed");
+
+		// 3 ^ 5 % 7 == 5
+
+		let cost: usize = 1;
+
+		match Modexp::execute(&input, cost) {
+			Ok((_, output)) => {
+				assert_eq!(output.len(), 1); // should be same length as mod
+				let result = BigUint::from_bytes_be(&output[..]);
+				let expected = BigUint::parse_bytes(b"5", 10).unwrap();
+				assert_eq!(result, expected);
+			},
+			Err(_) => {
+				panic!("Modexp::execute() returned error"); // TODO: how to pass error on?
+			}
+		}
+	}
+
+	#[test]
+	fn test_large_inputs() {
+
+		let input = hex::decode(
+			"0000000000000000000000000000000000000000000000000000000000000020\
+			0000000000000000000000000000000000000000000000000000000000000020\
+			0000000000000000000000000000000000000000000000000000000000000020\
+			000000000000000000000000000000000000000000000000000000000000EA5F\
+			0000000000000000000000000000000000000000000000000000000000000015\
+			0000000000000000000000000000000000000000000000000000000000003874")
+			.expect("Decode failed");
+
+		// 59999 ^ 21 % 14452 = 10055
+
+		let cost: usize = 1;
+
+		match Modexp::execute(&input, cost) {
+			Ok((_, output)) => {
+				assert_eq!(output.len(), 32); // should be same length as mod
+				let result = BigUint::from_bytes_be(&output[..]);
+				let expected = BigUint::parse_bytes(b"10055", 10).unwrap();
+				assert_eq!(result, expected);
+			},
+			Err(_) => {
+				panic!("Modexp::execute() returned error"); // TODO: how to pass error on?
+			}
 		}
 	}
 }
