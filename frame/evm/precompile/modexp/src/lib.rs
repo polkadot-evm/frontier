@@ -35,6 +35,10 @@ impl LinearCostPrecompile for Modexp {
 		input: &[u8],
 		_: usize,
 	) -> core::result::Result<(ExitSucceed, Vec<u8>), ExitError> {
+		if input.len() < 96 {
+			return Err(ExitError::Other("input must contain at least 96 bytes".into()));
+		};
+
 		let mut buf = [0; 32];
 		buf.copy_from_slice(&input[0..32]);
 		let mut len_bytes = [0u8; 8];
@@ -98,21 +102,19 @@ mod tests {
 	use super::*;
 	extern crate hex;
 
-	// TODO: this panics, as the input is expected to be some minimum size (96 bytes?)
-	//       it should probably handle this more gracefully (e.g. not panic)
 	#[test]
-	#[should_panic]
-	fn test_empty_input() {
+	fn test_empty_input() -> std::result::Result<(), ExitError> {
 
 		let input: [u8; 0] = [];
 		let cost: usize = 1;
 
 		match Modexp::execute(&input, cost) {
-			Ok((_, output)) => {
-				// TODO: evaluate output
+			Ok((_, _)) => {
+				panic!("Test not expected to pass");
 			},
-			Err(_) => {
-				panic!("Modexp::execute() returned error"); // TODO: how to pass error on?
+			Err(e) => {
+				assert_eq!(e, ExitError::Other("input must contain at least 96 bytes".into()));
+				Ok(())
 			}
 		}
 	}
