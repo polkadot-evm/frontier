@@ -93,7 +93,7 @@ mod tests {
 			112, 059, 172, 003, 028, 174, 127, 096, ];
 
 		let secret_key = SecretKey::from_bytes(&secret_key_bytes)
-							   .expect("Failed to generate secretkey");
+								.expect("Failed to generate secretkey");
 		let public_key = (&secret_key).into();
 
 		let keypair = Keypair { secret: secret_key, public: public_key };
