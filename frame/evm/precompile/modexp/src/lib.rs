@@ -23,9 +23,25 @@ use alloc::vec::Vec;
 use core::cmp::max;
 use fp_evm::LinearCostPrecompile;
 use evm::{ExitSucceed, ExitError};
-use num::{BigUint, Zero, One};
+use num::{BigUint, Zero, One, ToPrimitive, FromPrimitive};
 
 pub struct Modexp;
+
+// ModExp expects the following as inputs:
+// 1) 32 bytes expressing the length of base
+// 2) 32 bytes expressing the length of exponent
+// 3) 32 bytes expressing the length of modulus
+// 4) base, size as described above
+// 5) exponent, size as described above
+// 6) modulus, size as described above
+//
+//
+// NOTE: input sizes are arbitrarily large (up to 256 bits), with the expectation
+//       that gas limits would be applied before actual computation.
+//
+//       maximum stack size will also prevent abuse.
+//
+//       see: https://eips.ethereum.org/EIPS/eip-198
 
 impl LinearCostPrecompile for Modexp {
 	const BASE: usize = 15;
@@ -39,23 +55,39 @@ impl LinearCostPrecompile for Modexp {
 			return Err(ExitError::Other("input must contain at least 96 bytes".into()));
 		};
 
+		// reasonable assumption: this must fit within the Ethereum EVM's max stack size
+		let max_size_big = BigUint::from_u32(1024).expect("can't create BigUint");
+
 		let mut buf = [0; 32];
 		buf.copy_from_slice(&input[0..32]);
-		let mut len_bytes = [0u8; 8];
-		len_bytes.copy_from_slice(&buf[24..]);
-		let base_len = u64::from_be_bytes(len_bytes) as usize;
+		let base_len_big = BigUint::from_bytes_be(&buf);
+		if base_len_big > max_size_big {
+			return Err(ExitError::Other("unreasonably large base length".into()));
+		}
 
-		buf = [0; 32];
 		buf.copy_from_slice(&input[32..64]);
-		len_bytes = [0u8; 8];
-		len_bytes.copy_from_slice(&buf[24..]);
-		let exp_len = u64::from_be_bytes(len_bytes) as usize;
+		let exp_len_big = BigUint::from_bytes_be(&buf);
+		if exp_len_big > max_size_big {
+			return Err(ExitError::Other("unreasonably large exponent length".into()));
+		}
 
-		buf = [0; 32];
 		buf.copy_from_slice(&input[64..96]);
-		len_bytes = [0u8; 8];
-		len_bytes.copy_from_slice(&buf[24..]);
-		let mod_len = u64::from_be_bytes(len_bytes) as usize;
+		let mod_len_big = BigUint::from_bytes_be(&buf);
+		if mod_len_big > max_size_big {
+			return Err(ExitError::Other("unreasonably large exponent length".into()));
+		}
+
+		// bounds check handled above
+		let base_len = base_len_big.to_usize().expect("base_len out of bounds");
+		let exp_len = exp_len_big.to_usize().expect("exp_len out of bounds");
+		let mod_len = mod_len_big.to_usize().expect("mod_len out of bounds");
+
+		// input length should be at least 96 + user-specified length of base + exp + mod
+		let total_len = base_len + exp_len + mod_len + 96;
+		if input.len() < total_len {
+			let err_msg = format!("expected at least {} bytes but received {}", total_len, input.len());
+			return Err(ExitError::Other(err_msg.into()));
+		}
 
 		// Gas formula allows arbitrary large exp_len when base and modulus are empty, so we need to handle empty base first.
 		let r = if base_len == 0 && mod_len == 0 {
@@ -71,6 +103,8 @@ impl LinearCostPrecompile for Modexp {
 
 			let mod_start = exp_start + exp_len;
 			let modulus = BigUint::from_bytes_be(&input[mod_start..mod_start + mod_len]);
+
+			// TODO: computation should only proceed if sufficient gas has been provided
 
 			if modulus.is_zero() || modulus.is_one() {
 				BigUint::zero()
@@ -120,15 +154,51 @@ mod tests {
 	}
 
 	#[test]
-	fn test_simple_inputs() {
+	fn test_insufficient_input() -> std::result::Result<(), ExitError> {
 
-		// ModExp expects the following as inputs:
-		// 1) 32 bytes expressing the length of base
-		// 2) 32 bytes expressing the length of exponent
-		// 3) 32 bytes expressing the length of modulus
-		// 4) base, size as described above
-		// 5) exponent, size as described above
-		// 6) modulus, size as described above
+		let input = hex::decode(
+			"0000000000000000000000000000000000000000000000000000000000000001\
+			0000000000000000000000000000000000000000000000000000000000000001\
+			0000000000000000000000000000000000000000000000000000000000000001")
+			.expect("Decode failed");
+
+		let cost: usize = 1;
+
+		match Modexp::execute(&input, cost) {
+			Ok((_, _)) => {
+				panic!("Test not expected to pass");
+			},
+			Err(e) => {
+				assert_eq!(e, ExitError::Other("expected at least 99 bytes but received 96".into()));
+				Ok(())
+			}
+		}
+	}
+
+	#[test]
+	fn test_excessive_input() -> std::result::Result<(), ExitError> {
+
+		let input = hex::decode(
+			"1000000000000000000000000000000000000000000000000000000000000001\
+			0000000000000000000000000000000000000000000000000000000000000001\
+			0000000000000000000000000000000000000000000000000000000000000001")
+			.expect("Decode failed");
+
+		let cost: usize = 1;
+
+		match Modexp::execute(&input, cost) {
+			Ok((_, _)) => {
+				panic!("Test not expected to pass");
+			},
+			Err(e) => {
+				assert_eq!(e, ExitError::Other("unreasonably large base length".into()));
+				Ok(())
+			}
+		}
+	}
+
+	#[test]
+	fn test_simple_inputs() {
 
 		let input = hex::decode(
 			"0000000000000000000000000000000000000000000000000000000000000001\
@@ -176,6 +246,33 @@ mod tests {
 				assert_eq!(output.len(), 32); // should be same length as mod
 				let result = BigUint::from_bytes_be(&output[..]);
 				let expected = BigUint::parse_bytes(b"10055", 10).unwrap();
+				assert_eq!(result, expected);
+			},
+			Err(_) => {
+				panic!("Modexp::execute() returned error"); // TODO: how to pass error on?
+			}
+		}
+	}
+
+	#[test]
+	fn test_large_computation() {
+
+		let input = hex::decode(
+			"0000000000000000000000000000000000000000000000000000000000000001\
+			0000000000000000000000000000000000000000000000000000000000000020\
+			0000000000000000000000000000000000000000000000000000000000000020\
+			03\
+			fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2e\
+			fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f")
+			.expect("Decode failed");
+
+		let cost: usize = 1;
+
+		match Modexp::execute(&input, cost) {
+			Ok((_, output)) => {
+				assert_eq!(output.len(), 32); // should be same length as mod
+				let result = BigUint::from_bytes_be(&output[..]);
+				let expected = BigUint::parse_bytes(b"1", 10).unwrap();
 				assert_eq!(result, expected);
 			},
 			Err(_) => {
