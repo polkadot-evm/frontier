@@ -1131,6 +1131,60 @@
 <span id="1128">1128</span>
 <span id="1129">1129</span>
 <span id="1130">1130</span>
+<span id="1131">1131</span>
+<span id="1132">1132</span>
+<span id="1133">1133</span>
+<span id="1134">1134</span>
+<span id="1135">1135</span>
+<span id="1136">1136</span>
+<span id="1137">1137</span>
+<span id="1138">1138</span>
+<span id="1139">1139</span>
+<span id="1140">1140</span>
+<span id="1141">1141</span>
+<span id="1142">1142</span>
+<span id="1143">1143</span>
+<span id="1144">1144</span>
+<span id="1145">1145</span>
+<span id="1146">1146</span>
+<span id="1147">1147</span>
+<span id="1148">1148</span>
+<span id="1149">1149</span>
+<span id="1150">1150</span>
+<span id="1151">1151</span>
+<span id="1152">1152</span>
+<span id="1153">1153</span>
+<span id="1154">1154</span>
+<span id="1155">1155</span>
+<span id="1156">1156</span>
+<span id="1157">1157</span>
+<span id="1158">1158</span>
+<span id="1159">1159</span>
+<span id="1160">1160</span>
+<span id="1161">1161</span>
+<span id="1162">1162</span>
+<span id="1163">1163</span>
+<span id="1164">1164</span>
+<span id="1165">1165</span>
+<span id="1166">1166</span>
+<span id="1167">1167</span>
+<span id="1168">1168</span>
+<span id="1169">1169</span>
+<span id="1170">1170</span>
+<span id="1171">1171</span>
+<span id="1172">1172</span>
+<span id="1173">1173</span>
+<span id="1174">1174</span>
+<span id="1175">1175</span>
+<span id="1176">1176</span>
+<span id="1177">1177</span>
+<span id="1178">1178</span>
+<span id="1179">1179</span>
+<span id="1180">1180</span>
+<span id="1181">1181</span>
+<span id="1182">1182</span>
+<span id="1183">1183</span>
+<span id="1184">1184</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
@@ -1153,8 +1207,7 @@
 <span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">marker</span>::<span class="ident">PhantomData</span>, <span class="ident">sync</span>::<span class="ident">Arc</span>};
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">collections</span>::<span class="ident">BTreeMap</span>;
 <span class="kw">use</span> <span class="ident">ethereum</span>::{
-	<span class="ident">Block</span> <span class="kw">as</span> <span class="ident">EthereumBlock</span>, <span class="ident">Transaction</span> <span class="kw">as</span> <span class="ident">EthereumTransaction</span>,
-	<span class="ident">TransactionMessage</span> <span class="kw">as</span> <span class="ident">EthereumTransactionMessage</span>,
+	<span class="ident">Block</span> <span class="kw">as</span> <span class="ident">EthereumBlock</span>, <span class="ident">Transaction</span> <span class="kw">as</span> <span class="ident">EthereumTransaction</span>
 };
 <span class="kw">use</span> <span class="ident">ethereum_types</span>::{<span class="ident">H160</span>, <span class="ident">H256</span>, <span class="ident">H64</span>, <span class="ident">U256</span>, <span class="ident">U64</span>, <span class="ident">H512</span>};
 <span class="kw">use</span> <span class="ident">jsonrpc_core</span>::{<span class="ident">BoxFuture</span>, <span class="prelude-ty">Result</span>, <span class="ident">futures</span>::<span class="ident">future</span>::{<span class="self">self</span>, <span class="ident">Future</span>}};
@@ -1173,10 +1226,10 @@
 <span class="kw">use</span> <span class="ident">fc_rpc_core</span>::<span class="ident">types</span>::{
 	<span class="ident">BlockNumber</span>, <span class="ident">Bytes</span>, <span class="ident">CallRequest</span>, <span class="ident">Filter</span>, <span class="ident">FilteredParams</span>, <span class="ident">Index</span>, <span class="ident">Log</span>, <span class="ident">Receipt</span>, <span class="ident">RichBlock</span>,
 	<span class="ident">SyncStatus</span>, <span class="ident">SyncInfo</span>, <span class="ident">Transaction</span>, <span class="ident">Work</span>, <span class="ident">Rich</span>, <span class="ident">Block</span>, <span class="ident">BlockTransactions</span>, <span class="ident">VariadicValue</span>,
-	<span class="ident">TransactionRequest</span>,
+	<span class="ident">TransactionRequest</span>, <span class="ident">PendingTransactions</span>, <span class="ident">PendingTransaction</span>,
 };
 <span class="kw">use</span> <span class="ident">fp_rpc</span>::{<span class="ident">EthereumRuntimeRPCApi</span>, <span class="ident">ConvertTransaction</span>, <span class="ident">TransactionStatus</span>};
-<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">internal_err</span>, <span class="ident">error_on_execution_failure</span>, <span class="ident">EthSigner</span>};
+<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">internal_err</span>, <span class="ident">error_on_execution_failure</span>, <span class="ident">EthSigner</span>, <span class="ident">public_key</span>};
 
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">fc_rpc_core</span>::{<span class="ident">EthApiServer</span>, <span class="ident">NetApiServer</span>, <span class="ident">Web3ApiServer</span>};
 <span class="kw">use</span> <span class="ident">codec</span>::{<span class="self">self</span>, <span class="ident">Encode</span>};
@@ -1188,6 +1241,7 @@
 	<span class="ident">network</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">NetworkService</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">H</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 	<span class="ident">is_authority</span>: <span class="ident">bool</span>,
 	<span class="ident">signers</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="ident">dyn</span> <span class="ident">EthSigner</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+	<span class="ident">pending_transactions</span>: <span class="ident">PendingTransactions</span>,
 	<span class="ident">_marker</span>: <span class="ident">PhantomData</span><span class="op">&lt;</span>(<span class="ident">B</span>, <span class="ident">BE</span>)<span class="op">&gt;</span>,
 }
 
@@ -1197,6 +1251,7 @@
 		<span class="ident">pool</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">P</span><span class="op">&gt;</span>,
 		<span class="ident">convert_transaction</span>: <span class="ident">CT</span>,
 		<span class="ident">network</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">NetworkService</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">H</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+		<span class="ident">pending_transactions</span>: <span class="ident">PendingTransactions</span>,
 		<span class="ident">signers</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="ident">dyn</span> <span class="ident">EthSigner</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 		<span class="ident">is_authority</span>: <span class="ident">bool</span>,
 	) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
@@ -1207,6 +1262,7 @@
 			<span class="ident">network</span>,
 			<span class="ident">is_authority</span>,
 			<span class="ident">signers</span>,
+			<span class="ident">pending_transactions</span>,
 			<span class="ident">_marker</span>: <span class="ident">PhantomData</span>,
 		}
 	}
@@ -1251,8 +1307,8 @@
 						<span class="ident">block</span>.<span class="ident">transactions</span>.<span class="ident">iter</span>().<span class="ident">enumerate</span>().<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">index</span>, <span class="ident">transaction</span>)<span class="op">|</span>{
 							<span class="ident">transaction_build</span>(
 								<span class="ident">transaction</span>.<span class="ident">clone</span>(),
-								<span class="ident">block</span>.<span class="ident">clone</span>(),
-								<span class="ident">statuses</span>[<span class="ident">index</span>].<span class="ident">clone</span>().<span class="ident">unwrap_or_default</span>()
+								<span class="prelude-val">Some</span>(<span class="ident">block</span>.<span class="ident">clone</span>()),
+								<span class="prelude-val">Some</span>(<span class="ident">statuses</span>[<span class="ident">index</span>].<span class="ident">clone</span>().<span class="ident">unwrap_or_default</span>())
 							)
 						}).<span class="ident">collect</span>()
 					)
@@ -1274,18 +1330,11 @@
 
 <span class="kw">fn</span> <span class="ident">transaction_build</span>(
 	<span class="ident">transaction</span>: <span class="ident">EthereumTransaction</span>,
-	<span class="ident">block</span>: <span class="ident">EthereumBlock</span>,
-	<span class="ident">status</span>: <span class="ident">TransactionStatus</span>
+	<span class="ident">block</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">EthereumBlock</span><span class="op">&gt;</span>,
+	<span class="ident">status</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">TransactionStatus</span><span class="op">&gt;</span>
 ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Transaction</span> {
-	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">sig</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">65</span>];
-	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">msg</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">32</span>];
-	<span class="ident">sig</span>[<span class="number">0</span>..<span class="number">32</span>].<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">transaction</span>.<span class="ident">signature</span>.<span class="ident">r</span>()[..]);
-	<span class="ident">sig</span>[<span class="number">32</span>..<span class="number">64</span>].<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">transaction</span>.<span class="ident">signature</span>.<span class="ident">s</span>()[..]);
-	<span class="ident">sig</span>[<span class="number">64</span>] <span class="op">=</span> <span class="ident">transaction</span>.<span class="ident">signature</span>.<span class="ident">standard_v</span>();
-	<span class="ident">msg</span>.<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">EthereumTransactionMessage</span>::<span class="ident">from</span>(<span class="ident">transaction</span>.<span class="ident">clone</span>()).<span class="ident">hash</span>()[..]);
-
-	<span class="kw">let</span> <span class="ident">pubkey</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">sp_io</span>::<span class="ident">crypto</span>::<span class="ident">secp256k1_ecdsa_recover</span>(<span class="kw-2">&amp;</span><span class="ident">sig</span>, <span class="kw-2">&amp;</span><span class="ident">msg</span>) {
-		<span class="prelude-val">Ok</span>(<span class="ident">p</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">H512</span>::<span class="ident">from</span>(<span class="ident">p</span>)),
+	<span class="kw">let</span> <span class="ident">pubkey</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">public_key</span>(<span class="kw-2">&amp;</span><span class="ident">transaction</span>) {
+		<span class="prelude-val">Ok</span>(<span class="ident">p</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">p</span>),
 		<span class="prelude-val">Err</span>(<span class="ident">_e</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">None</span>,
 	};
 
@@ -1294,24 +1343,40 @@
 			<span class="ident">Keccak256</span>::<span class="ident">digest</span>(<span class="kw-2">&amp;</span><span class="ident">rlp</span>::<span class="ident">encode</span>(<span class="kw-2">&amp;</span><span class="ident">transaction</span>)).<span class="ident">as_slice</span>()
 		),
 		<span class="ident">nonce</span>: <span class="ident">transaction</span>.<span class="ident">nonce</span>,
-		<span class="ident">block_hash</span>: <span class="prelude-val">Some</span>(<span class="ident">H256</span>::<span class="ident">from_slice</span>(
-			<span class="ident">Keccak256</span>::<span class="ident">digest</span>(<span class="kw-2">&amp;</span><span class="ident">rlp</span>::<span class="ident">encode</span>(<span class="kw-2">&amp;</span><span class="ident">block</span>.<span class="ident">header</span>)).<span class="ident">as_slice</span>()
-		)),
-		<span class="ident">block_number</span>: <span class="prelude-val">Some</span>(<span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">number</span>),
-		<span class="ident">transaction_index</span>: <span class="prelude-val">Some</span>(<span class="ident">U256</span>::<span class="ident">from</span>(
-			<span class="ident">UniqueSaturatedInto</span>::<span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>::<span class="ident">unique_saturated_into</span>(
-				<span class="ident">status</span>.<span class="ident">transaction_index</span>
+		<span class="ident">block_hash</span>: <span class="ident">block</span>.<span class="ident">as_ref</span>().<span class="ident">map_or</span>(<span class="prelude-val">None</span>, <span class="op">|</span><span class="ident">block</span><span class="op">|</span> {
+			<span class="prelude-val">Some</span>(<span class="ident">H256</span>::<span class="ident">from_slice</span>(
+				<span class="ident">Keccak256</span>::<span class="ident">digest</span>(<span class="kw-2">&amp;</span><span class="ident">rlp</span>::<span class="ident">encode</span>(<span class="kw-2">&amp;</span><span class="ident">block</span>.<span class="ident">header</span>)).<span class="ident">as_slice</span>()
+			))
+		}),
+		<span class="ident">block_number</span>: <span class="ident">block</span>.<span class="ident">as_ref</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">block</span><span class="op">|</span> <span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">number</span>),
+		<span class="ident">transaction_index</span>: <span class="ident">status</span>.<span class="ident">as_ref</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">status</span><span class="op">|</span> {
+			<span class="ident">U256</span>::<span class="ident">from</span>(
+				<span class="ident">UniqueSaturatedInto</span>::<span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>::<span class="ident">unique_saturated_into</span>(
+					<span class="ident">status</span>.<span class="ident">transaction_index</span>
+				)
 			)
-		)),
-		<span class="ident">from</span>: <span class="ident">status</span>.<span class="ident">from</span>,
-		<span class="ident">to</span>: <span class="ident">status</span>.<span class="ident">to</span>,
+		}),
+		<span class="ident">from</span>: <span class="ident">status</span>.<span class="ident">as_ref</span>().<span class="ident">map_or</span>({
+			<span class="kw">match</span> <span class="ident">pubkey</span> {
+				<span class="prelude-val">Some</span>(<span class="ident">pk</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">H160</span>::<span class="ident">from</span>(
+					<span class="ident">H256</span>::<span class="ident">from_slice</span>(<span class="ident">Keccak256</span>::<span class="ident">digest</span>(<span class="kw-2">&amp;</span><span class="ident">pk</span>).<span class="ident">as_slice</span>())
+				),
+				<span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">H160</span>::<span class="ident">default</span>()
+			}
+		}, <span class="op">|</span><span class="ident">status</span><span class="op">|</span> <span class="ident">status</span>.<span class="ident">from</span>),
+		<span class="ident">to</span>: <span class="ident">status</span>.<span class="ident">as_ref</span>().<span class="ident">map_or</span>({
+			<span class="kw">match</span> <span class="ident">transaction</span>.<span class="ident">action</span> {
+				<span class="ident">ethereum</span>::<span class="ident">TransactionAction</span>::<span class="ident">Call</span>(<span class="ident">to</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">to</span>),
+				<span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">None</span>
+			}
+		}, <span class="op">|</span><span class="ident">status</span><span class="op">|</span> <span class="ident">status</span>.<span class="ident">to</span>),
 		<span class="ident">value</span>: <span class="ident">transaction</span>.<span class="ident">value</span>,
 		<span class="ident">gas_price</span>: <span class="ident">transaction</span>.<span class="ident">gas_price</span>,
 		<span class="ident">gas</span>: <span class="ident">transaction</span>.<span class="ident">gas_limit</span>,
 		<span class="ident">input</span>: <span class="ident">Bytes</span>(<span class="ident">transaction</span>.<span class="ident">clone</span>().<span class="ident">input</span>),
-		<span class="ident">creates</span>: <span class="ident">status</span>.<span class="ident">contract_address</span>,
+		<span class="ident">creates</span>: <span class="ident">status</span>.<span class="ident">as_ref</span>().<span class="ident">map_or</span>(<span class="prelude-val">None</span>, <span class="op">|</span><span class="ident">status</span><span class="op">|</span> <span class="ident">status</span>.<span class="ident">contract_address</span>),
 		<span class="ident">raw</span>: <span class="ident">Bytes</span>(<span class="ident">rlp</span>::<span class="ident">encode</span>(<span class="kw-2">&amp;</span><span class="ident">transaction</span>)),
-		<span class="ident">public_key</span>: <span class="ident">pubkey</span>,
+		<span class="ident">public_key</span>: <span class="ident">pubkey</span>.<span class="ident">as_ref</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">pk</span><span class="op">|</span> <span class="ident">H512</span>::<span class="ident">from</span>(<span class="ident">pk</span>)),
 		<span class="ident">chain_id</span>: <span class="ident">transaction</span>.<span class="ident">signature</span>.<span class="ident">chain_id</span>().<span class="ident">map</span>(<span class="ident">U64</span>::<span class="ident">from</span>),
 		<span class="ident">standard_v</span>: <span class="ident">U256</span>::<span class="ident">from</span>(<span class="ident">transaction</span>.<span class="ident">signature</span>.<span class="ident">standard_v</span>()),
 		<span class="ident">v</span>: <span class="ident">U256</span>::<span class="ident">from</span>(<span class="ident">transaction</span>.<span class="ident">signature</span>.<span class="ident">v</span>()),
@@ -1701,15 +1766,32 @@
 			<span class="ident">Keccak256</span>::<span class="ident">digest</span>(<span class="kw-2">&amp;</span><span class="ident">rlp</span>::<span class="ident">encode</span>(<span class="kw-2">&amp;</span><span class="ident">transaction</span>)).<span class="ident">as_slice</span>()
 		);
 		<span class="kw">let</span> <span class="ident">hash</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">info</span>().<span class="ident">best_hash</span>;
+		<span class="kw">let</span> <span class="ident">number</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">info</span>().<span class="ident">best_number</span>;
+		<span class="kw">let</span> <span class="ident">pending</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">pending_transactions</span>.<span class="ident">clone</span>();
 		<span class="ident">Box</span>::<span class="ident">new</span>(
 			<span class="self">self</span>.<span class="ident">pool</span>
 				.<span class="ident">submit_one</span>(
 					<span class="kw-2">&amp;</span><span class="ident">BlockId</span>::<span class="ident">hash</span>(<span class="ident">hash</span>),
 					<span class="ident">TransactionSource</span>::<span class="ident">Local</span>,
-					<span class="self">self</span>.<span class="ident">convert_transaction</span>.<span class="ident">convert_transaction</span>(<span class="ident">transaction</span>),
+					<span class="self">self</span>.<span class="ident">convert_transaction</span>.<span class="ident">convert_transaction</span>(<span class="ident">transaction</span>.<span class="ident">clone</span>()),
 				)
 				.<span class="ident">compat</span>()
-				.<span class="ident">map</span>(<span class="kw">move</span> <span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">transaction_hash</span>)
+				.<span class="ident">map</span>(<span class="kw">move</span> <span class="op">|</span><span class="kw">_</span><span class="op">|</span> {
+					<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">pending</span>) <span class="op">=</span> <span class="ident">pending</span> {
+						<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">locked</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">pending</span>.<span class="ident">lock</span>() {
+							<span class="ident">locked</span>.<span class="ident">insert</span>(
+								<span class="ident">transaction_hash</span>,
+								<span class="ident">PendingTransaction</span>::<span class="ident">new</span>(
+									<span class="ident">transaction_build</span>(<span class="ident">transaction</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>),
+									<span class="ident">UniqueSaturatedInto</span>::<span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>::<span class="ident">unique_saturated_into</span>(
+										<span class="ident">number</span>
+									)
+								)
+							);
+						}
+					}
+					<span class="ident">transaction_hash</span>
+				})
 				.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;submit transaction to pool failed: {:?}&quot;</span>, <span class="ident">err</span>)))
 		)
 	}
@@ -1725,15 +1807,32 @@
 			<span class="ident">Keccak256</span>::<span class="ident">digest</span>(<span class="kw-2">&amp;</span><span class="ident">rlp</span>::<span class="ident">encode</span>(<span class="kw-2">&amp;</span><span class="ident">transaction</span>)).<span class="ident">as_slice</span>()
 		);
 		<span class="kw">let</span> <span class="ident">hash</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">info</span>().<span class="ident">best_hash</span>;
+		<span class="kw">let</span> <span class="ident">number</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">info</span>().<span class="ident">best_number</span>;
+		<span class="kw">let</span> <span class="ident">pending</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">pending_transactions</span>.<span class="ident">clone</span>();
 		<span class="ident">Box</span>::<span class="ident">new</span>(
 			<span class="self">self</span>.<span class="ident">pool</span>
 				.<span class="ident">submit_one</span>(
 					<span class="kw-2">&amp;</span><span class="ident">BlockId</span>::<span class="ident">hash</span>(<span class="ident">hash</span>),
 					<span class="ident">TransactionSource</span>::<span class="ident">Local</span>,
-					<span class="self">self</span>.<span class="ident">convert_transaction</span>.<span class="ident">convert_transaction</span>(<span class="ident">transaction</span>),
+					<span class="self">self</span>.<span class="ident">convert_transaction</span>.<span class="ident">convert_transaction</span>(<span class="ident">transaction</span>.<span class="ident">clone</span>()),
 				)
 				.<span class="ident">compat</span>()
-				.<span class="ident">map</span>(<span class="kw">move</span> <span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">transaction_hash</span>)
+				.<span class="ident">map</span>(<span class="kw">move</span> <span class="op">|</span><span class="kw">_</span><span class="op">|</span> {
+					<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">pending</span>) <span class="op">=</span> <span class="ident">pending</span> {
+						<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">locked</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">pending</span>.<span class="ident">lock</span>() {
+							<span class="ident">locked</span>.<span class="ident">insert</span>(
+								<span class="ident">transaction_hash</span>,
+								<span class="ident">PendingTransaction</span>::<span class="ident">new</span>(
+									<span class="ident">transaction_build</span>(<span class="ident">transaction</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>),
+									<span class="ident">UniqueSaturatedInto</span>::<span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>::<span class="ident">unique_saturated_into</span>(
+										<span class="ident">number</span>
+									)
+								)
+							);
+						}
+					}
+					<span class="ident">transaction_hash</span>
+				})
 				.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;submit transaction to pool failed: {:?}&quot;</span>, <span class="ident">err</span>)))
 		)
 	}
@@ -1864,7 +1963,16 @@
 			<span class="ident">hash</span>,
 		).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;fetch aux store failed: {:?})&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span> {
 			<span class="prelude-val">Some</span>((<span class="ident">hash</span>, <span class="ident">index</span>)) <span class="op">=</span><span class="op">&gt;</span> (<span class="ident">hash</span>, <span class="ident">index</span> <span class="kw">as</span> <span class="ident">usize</span>),
-			<span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
+			<span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {
+				<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">pending</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">pending_transactions</span> {
+					<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">locked</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">pending</span>.<span class="ident">lock</span>() {
+						<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">pending_transaction</span>) <span class="op">=</span> <span class="ident">locked</span>.<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">hash</span>) {
+							<span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">pending_transaction</span>.<span class="ident">transaction</span>.<span class="ident">clone</span>()));
+						}
+					}
+				}
+				<span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>);
+			},
 		};
 
 		<span class="kw">let</span> <span class="ident">id</span> <span class="op">=</span> <span class="kw">match</span> <span class="self">self</span>.<span class="ident">load_hash</span>(<span class="ident">hash</span>)
@@ -1883,8 +1991,8 @@
 			(<span class="prelude-val">Some</span>(<span class="ident">block</span>), <span class="prelude-val">Some</span>(<span class="ident">statuses</span>)) <span class="op">=</span><span class="op">&gt;</span> {
 				<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">transaction_build</span>(
 					<span class="ident">block</span>.<span class="ident">transactions</span>[<span class="ident">index</span>].<span class="ident">clone</span>(),
-					<span class="ident">block</span>,
-					<span class="ident">statuses</span>[<span class="ident">index</span>].<span class="ident">clone</span>(),
+					<span class="prelude-val">Some</span>(<span class="ident">block</span>),
+					<span class="prelude-val">Some</span>(<span class="ident">statuses</span>[<span class="ident">index</span>].<span class="ident">clone</span>()),
 				)))
 			},
 			<span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>)
@@ -1913,8 +2021,8 @@
 			(<span class="prelude-val">Some</span>(<span class="ident">block</span>), <span class="prelude-val">Some</span>(<span class="ident">statuses</span>)) <span class="op">=</span><span class="op">&gt;</span> {
 				<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">transaction_build</span>(
 					<span class="ident">block</span>.<span class="ident">transactions</span>[<span class="ident">index</span>].<span class="ident">clone</span>(),
-					<span class="ident">block</span>,
-					<span class="ident">statuses</span>[<span class="ident">index</span>].<span class="ident">clone</span>(),
+					<span class="prelude-val">Some</span>(<span class="ident">block</span>),
+					<span class="prelude-val">Some</span>(<span class="ident">statuses</span>[<span class="ident">index</span>].<span class="ident">clone</span>()),
 				)))
 			},
 			<span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>)
@@ -1941,8 +2049,8 @@
 			(<span class="prelude-val">Some</span>(<span class="ident">block</span>), <span class="prelude-val">Some</span>(<span class="ident">statuses</span>)) <span class="op">=</span><span class="op">&gt;</span> {
 				<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">transaction_build</span>(
 					<span class="ident">block</span>.<span class="ident">transactions</span>[<span class="ident">index</span>].<span class="ident">clone</span>(),
-					<span class="ident">block</span>,
-					<span class="ident">statuses</span>[<span class="ident">index</span>].<span class="ident">clone</span>(),
+					<span class="prelude-val">Some</span>(<span class="ident">block</span>),
+					<span class="prelude-val">Some</span>(<span class="ident">statuses</span>[<span class="ident">index</span>].<span class="ident">clone</span>()),
 				)))
 			},
 			<span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>)

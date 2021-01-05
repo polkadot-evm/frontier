@@ -53,6 +53,8 @@
 <span id="50">50</span>
 <span id="51">51</span>
 <span id="52">52</span>
+<span id="53">53</span>
+<span id="54">54</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
@@ -103,7 +105,9 @@
 	<span class="ident">SyncStatus</span>, <span class="ident">SyncInfo</span>, <span class="ident">Peers</span>, <span class="ident">PeerInfo</span>, <span class="ident">PeerNetworkInfo</span>, <span class="ident">PeerProtocolsInfo</span>,
 	<span class="ident">TransactionStats</span>, <span class="ident">ChainStatus</span>, <span class="ident">EthProtocolInfo</span>, <span class="ident">PipProtocolInfo</span>,
 };
-<span class="kw">pub</span> <span class="kw">use</span> <span class="self">self</span>::<span class="ident">transaction</span>::{<span class="ident">Transaction</span>, <span class="ident">RichRawTransaction</span>, <span class="ident">LocalTransactionStatus</span>};
+<span class="kw">pub</span> <span class="kw">use</span> <span class="self">self</span>::<span class="ident">transaction</span>::{
+	<span class="ident">Transaction</span>, <span class="ident">RichRawTransaction</span>, <span class="ident">LocalTransactionStatus</span>, <span class="ident">PendingTransactions</span>, <span class="ident">PendingTransaction</span>,
+};
 <span class="kw">pub</span> <span class="kw">use</span> <span class="self">self</span>::<span class="ident">transaction_request</span>::<span class="ident">TransactionRequest</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="self">self</span>::<span class="ident">work</span>::<span class="ident">Work</span>;
 </pre></div>

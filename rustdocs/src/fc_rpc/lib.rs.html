@@ -164,6 +164,22 @@
 <span id="161">161</span>
 <span id="162">162</span>
 <span id="163">163</span>
+<span id="164">164</span>
+<span id="165">165</span>
+<span id="166">166</span>
+<span id="167">167</span>
+<span id="168">168</span>
+<span id="169">169</span>
+<span id="170">170</span>
+<span id="171">171</span>
+<span id="172">172</span>
+<span id="173">173</span>
+<span id="174">174</span>
+<span id="175">175</span>
+<span id="176">176</span>
+<span id="177">177</span>
+<span id="178">178</span>
+<span id="179">179</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
@@ -190,6 +206,9 @@
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">eth_pubsub</span>::{<span class="ident">EthPubSubApi</span>, <span class="ident">EthPubSubApiServer</span>, <span class="ident">HexEncodedIdProvider</span>};
 
 <span class="kw">use</span> <span class="ident">ethereum_types</span>::{<span class="ident">H160</span>, <span class="ident">H256</span>};
+<span class="kw">use</span> <span class="ident">ethereum</span>::{
+	<span class="ident">Transaction</span> <span class="kw">as</span> <span class="ident">EthereumTransaction</span>, <span class="ident">TransactionMessage</span> <span class="kw">as</span> <span class="ident">EthereumTransactionMessage</span>,
+};
 <span class="kw">use</span> <span class="ident">jsonrpc_core</span>::{<span class="ident">ErrorCode</span>, <span class="ident">Error</span>, <span class="ident">Value</span>};
 <span class="kw">use</span> <span class="ident">rustc_hex</span>::<span class="ident">ToHex</span>;
 <span class="kw">use</span> <span class="ident">pallet_evm</span>::<span class="ident">ExitReason</span>;
@@ -238,6 +257,19 @@
 			})
 		},
 	}
+}
+
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">public_key</span>(<span class="ident">transaction</span>: <span class="kw-2">&amp;</span><span class="ident">EthereumTransaction</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>
+	[<span class="ident">u8</span>; <span class="number">64</span>], <span class="ident">sp_io</span>::<span class="ident">EcdsaVerifyError</span>
+<span class="op">&gt;</span> {
+	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">sig</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">65</span>];
+	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">msg</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">32</span>];
+	<span class="ident">sig</span>[<span class="number">0</span>..<span class="number">32</span>].<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">transaction</span>.<span class="ident">signature</span>.<span class="ident">r</span>()[..]);
+	<span class="ident">sig</span>[<span class="number">32</span>..<span class="number">64</span>].<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">transaction</span>.<span class="ident">signature</span>.<span class="ident">s</span>()[..]);
+	<span class="ident">sig</span>[<span class="number">64</span>] <span class="op">=</span> <span class="ident">transaction</span>.<span class="ident">signature</span>.<span class="ident">standard_v</span>();
+	<span class="ident">msg</span>.<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">EthereumTransactionMessage</span>::<span class="ident">from</span>(<span class="ident">transaction</span>.<span class="ident">clone</span>()).<span class="ident">hash</span>()[..]);
+
+	<span class="ident">sp_io</span>::<span class="ident">crypto</span>::<span class="ident">secp256k1_ecdsa_recover</span>(<span class="kw-2">&amp;</span><span class="ident">sig</span>, <span class="kw-2">&amp;</span><span class="ident">msg</span>)
 }
 
 <span class="doccomment">/// A generic Ethereum signer.</span>

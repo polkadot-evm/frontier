@@ -175,11 +175,17 @@
 <span id="172">172</span>
 <span id="173">173</span>
 <span id="174">174</span>
+<span id="175">175</span>
+<span id="176">176</span>
+<span id="177">177</span>
+<span id="178">178</span>
+<span id="179">179</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! A collection of node-specific RPC methods.</span>
 
 <span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">sync</span>::<span class="ident">Arc</span>, <span class="ident">fmt</span>};
 
+<span class="kw">use</span> <span class="ident">fc_rpc_core</span>::<span class="ident">types</span>::<span class="ident">PendingTransactions</span>;
 <span class="kw">use</span> <span class="ident">sc_consensus_manual_seal</span>::<span class="ident">rpc</span>::{<span class="ident">ManualSeal</span>, <span class="ident">ManualSealApi</span>};
 <span class="kw">use</span> <span class="ident">frontier_template_runtime</span>::{<span class="ident">Hash</span>, <span class="ident">AccountId</span>, <span class="ident">Index</span>, <span class="ident">opaque</span>::<span class="ident">Block</span>, <span class="ident">Balance</span>};
 <span class="kw">use</span> <span class="ident">sp_api</span>::<span class="ident">ProvideRuntimeApi</span>;
@@ -222,6 +228,8 @@
 	<span class="kw">pub</span> <span class="ident">enable_dev_signer</span>: <span class="ident">bool</span>,
 	<span class="doccomment">/// Network service</span>
 	<span class="kw">pub</span> <span class="ident">network</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">NetworkService</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">Hash</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+	<span class="doccomment">/// Ethereum pending transactions.</span>
+	<span class="kw">pub</span> <span class="ident">pending_transactions</span>: <span class="ident">PendingTransactions</span>,
 	<span class="doccomment">/// Manual seal command sink</span>
 	<span class="kw">pub</span> <span class="ident">command_sink</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">futures</span>::<span class="ident">channel</span>::<span class="ident">mpsc</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">sc_consensus_manual_seal</span>::<span class="ident">rpc</span>::<span class="ident">EngineCommand</span><span class="op">&lt;</span><span class="ident">Hash</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 }
@@ -258,6 +266,7 @@
 		<span class="ident">deny_unsafe</span>,
 		<span class="ident">is_authority</span>,
 		<span class="ident">network</span>,
+		<span class="ident">pending_transactions</span>,
 		<span class="ident">command_sink</span>,
 		<span class="ident">enable_dev_signer</span>,
 	} <span class="op">=</span> <span class="ident">deps</span>;
@@ -279,6 +288,7 @@
 			<span class="ident">pool</span>.<span class="ident">clone</span>(),
 			<span class="ident">frontier_template_runtime</span>::<span class="ident">TransactionConverter</span>,
 			<span class="ident">network</span>.<span class="ident">clone</span>(),
+			<span class="ident">pending_transactions</span>.<span class="ident">clone</span>(),
 			<span class="ident">signers</span>,
 			<span class="ident">is_authority</span>,
 		))
