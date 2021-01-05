@@ -263,7 +263,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 	fn syncing(&self) -> Result<SyncStatus> {
 		if self.network.is_major_syncing() {
 			let block_number = U256::from(
-				self.client.info().best_number.clone().unique_saturated_into()
+				UniqueSaturatedInto::<u128>::unique_saturated_into(self.client.info().best_number.clone())
 			);
 			Ok(SyncStatus::Info(SyncInfo {
 				starting_block: U256::zero(),
@@ -325,7 +325,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 	}
 
 	fn block_number(&self) -> Result<U256> {
-		Ok(U256::from(self.client.info().best_number.clone().unique_saturated_into()))
+		Ok(U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(self.client.info().best_number.clone())))
 	}
 
 	fn balance(&self, address: H160, number: Option<BlockNumber>) -> Result<U256> {
@@ -1074,8 +1074,8 @@ impl<B: BlockT, BE, C, H: ExHashT> NetApiT for NetApi<B, BE, C, H> where
 		Ok(true)
 	}
 
-	fn peer_count(&self) -> Result<String> {
-		Ok((self.network.num_connected() as u32).to_string())
+	fn peer_count(&self) -> Result<u32> {
+		Ok(self.network.num_connected() as u32)
 	}
 
 	fn version(&self) -> Result<String> {
