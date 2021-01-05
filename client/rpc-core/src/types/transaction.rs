@@ -16,6 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+use std::{sync::{Arc, Mutex}, collections::HashMap};
 use serde::{Serialize, Serializer};
 use serde::ser::SerializeStruct;
 use ethereum_types::{H160, H256, H512, U64, U256};
@@ -154,3 +155,16 @@ pub struct RichRawTransaction {
 	#[serde(rename = "tx")]
 	pub transaction: Transaction
 }
+
+pub struct PendingTransaction {
+	pub transaction: Transaction,
+	pub at_block: u64
+}
+
+impl PendingTransaction {
+	pub fn new(transaction: Transaction, at_block: u64) -> Self {
+		Self { transaction, at_block }
+	}
+}
+
+pub type PendingTransactions = Option<Arc<Mutex<HashMap<H256, PendingTransaction>>>>;
