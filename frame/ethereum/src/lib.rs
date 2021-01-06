@@ -39,7 +39,7 @@ use sp_runtime::{
 };
 use evm::ExitReason;
 use fp_evm::CallOrCreateInfo;
-use pallet_evm::{Runner, GasToWeight};
+use pallet_evm::{Runner, GasWeightMapping};
 use sha3::{Digest, Keccak256};
 use codec::Encode;
 use fp_consensus::{FRONTIER_ENGINE_ID, ConsensusLog};
@@ -92,8 +92,8 @@ decl_storage! {
 decl_event!(
 	/// Ethereum pallet events.
 	pub enum Event {
-		/// An ethereum transaction was successfully executed. [from, transaction_hash]
-		Executed(H160, H256, ExitReason),
+		/// An ethereum transaction was successfully executed. [from, to/contract_address, transaction_hash, exit_reason]
+		Executed(H160, H160, H256, ExitReason),
 	}
 );
 
@@ -113,7 +113,7 @@ decl_module! {
 		fn deposit_event() = default;
 
 		/// Transact an Ethereum transaction.
-		#[weight = <T as pallet_evm::Config>::GasToWeight::gas_to_weight(transaction.gas_limit.low_u32())]
+		#[weight = <T as pallet_evm::Config>::GasWeightMapping::gas_to_weight(transaction.gas_limit.unique_saturated_into())]
 		fn transact(origin, transaction: ethereum::Transaction) -> DispatchResultWithPostInfo {
 			ensure_none(origin)?;
 
@@ -125,7 +125,7 @@ decl_module! {
 			);
 			let transaction_index = Pending::get().len() as u32;
 
-			let (to, info) = Self::execute(
+			let (to, contract_address, info) = Self::execute(
 				source,
 				transaction.input.clone(),
 				transaction.value,
@@ -189,8 +189,8 @@ decl_module! {
 
 			Pending::append((transaction, status, receipt));
 
-			Self::deposit_event(Event::Executed(source, transaction_hash, reason));
-			Ok(Some(T::GasToWeight::gas_to_weight(used_gas.low_u32())).into())
+			Self::deposit_event(Event::Executed(source, contract_address.unwrap_or_default(), transaction_hash, reason));
+			Ok(Some(T::GasWeightMapping::gas_to_weight(used_gas.unique_saturated_into())).into())
 		}
 
 		fn on_finalize(n: T::BlockNumber) {
@@ -298,7 +298,7 @@ impl<T: Config> Module<T> {
 					frame_system::Module::<T>::block_number()
 				)
 			),
-			gas_limit: U256::zero(), // TODO: set this using Ethereum's gas limit change algorithm.
+			gas_limit: U256::from(u32::max_value()), // TODO: set this using Ethereum's gas limit change algorithm.
 			gas_used: receipts.clone().into_iter().fold(U256::zero(), |acc, r| acc + r.used_gas),
 			timestamp: UniqueSaturatedInto::<u64>::unique_saturated_into(
 				pallet_timestamp::Module::<T>::get()
@@ -385,10 +385,10 @@ impl<T: Config> Module<T> {
 		nonce: Option<U256>,
 		action: TransactionAction,
 		config: Option<evm::Config>,
-	) -> Result<(Option<H160>, CallOrCreateInfo), DispatchError> {
+	) -> Result<(Option<H160>, Option<H160>, CallOrCreateInfo), DispatchError> {
 		match action {
 			ethereum::TransactionAction::Call(target) => {
-				Ok((Some(target), CallOrCreateInfo::Call(T::Runner::call(
+				let res = T::Runner::call(
 					from,
 					target,
 					input.clone(),
@@ -397,10 +397,12 @@ impl<T: Config> Module<T> {
 					gas_price,
 					nonce,
 					config.as_ref().unwrap_or(T::config()),
-				).map_err(Into::into)?)))
+				).map_err(Into::into)?;
+
+				Ok((Some(target), None, CallOrCreateInfo::Call(res)))
 			},
 			ethereum::TransactionAction::Create => {
-				Ok((None, CallOrCreateInfo::Create(T::Runner::create(
+				let res = T::Runner::create(
 					from,
 					input.clone(),
 					value,
@@ -408,7 +410,9 @@ impl<T: Config> Module<T> {
 					gas_price,
 					nonce,
 					config.as_ref().unwrap_or(T::config()),
-				).map_err(Into::into)?)))
+				).map_err(Into::into)?;
+
+				Ok((None, Some(res.value), CallOrCreateInfo::Create(res)))
 			},
 		}
 	}

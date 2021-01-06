@@ -35,10 +35,12 @@ impl LinearCostPrecompile for Ed25519Verify {
 		input: &[u8],
 		_: usize,
 	) -> core::result::Result<(ExitSucceed, Vec<u8>), ExitError> {
-		let len = min(input.len(), 128);
+		if input.len() < 128 {
+			return Err(ExitError::Other("input must contain 128 bytes".into()));
+		};
 
 		let mut i = [0u8; 128];
-		i[..len].copy_from_slice(&input[..len]);
+		i[..128].copy_from_slice(&input[..128]);
 
 		let mut buf = [0u8; 4];
 
@@ -58,3 +60,97 @@ impl LinearCostPrecompile for Ed25519Verify {
 		Ok((ExitSucceed::Returned, buf.to_vec()))
 	}
 }
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use ed25519_dalek::{Keypair, SecretKey, Signer};
+
+	#[test]
+	fn test_empty_input() -> std::result::Result<(), ExitError> {
+
+		let input: [u8; 0] = [];
+		let cost: usize = 1;
+
+		match Ed25519Verify::execute(&input, cost) {
+			Ok((_, _)) => {
+				panic!("Test not expected to pass");
+			},
+			Err(e) => {
+				assert_eq!(e, ExitError::Other("input must contain 128 bytes".into()));
+				Ok(())
+			}
+		}
+	}
+
+	#[test]
+	fn test_verify() -> std::result::Result<(), ExitError> {
+
+		let secret_key_bytes: [u8; ed25519_dalek::SECRET_KEY_LENGTH] = [
+			157, 097, 177, 157, 239, 253, 090, 096,
+			186, 132, 074, 244, 146, 236, 044, 196,
+			068, 073, 197, 105, 123, 050, 105, 025,
+			112, 059, 172, 003, 028, 174, 127, 096, ];
+
+		let secret_key = SecretKey::from_bytes(&secret_key_bytes)
+								.expect("Failed to generate secretkey");
+		let public_key = (&secret_key).into();
+
+		let keypair = Keypair { secret: secret_key, public: public_key };
+
+		let msg: &[u8] = b"abcdefghijklmnopqrstuvwxyz123456";
+		assert_eq!(msg.len(), 32);
+		let signature = keypair.sign(msg);
+
+		// input is:
+		// 1) message (32 bytes)
+		// 2) pubkey (32 bytes)
+		// 3) signature (64 bytes)
+		let mut input: Vec<u8> = Vec::with_capacity(128);
+		input.extend_from_slice(msg);
+		input.extend_from_slice(&public_key.to_bytes());
+		input.extend_from_slice(&signature.to_bytes());
+		assert_eq!(input.len(), 128);
+
+		let cost: usize = 1;
+
+		match Ed25519Verify::execute(&input, cost) {
+			Ok((_, output)) => {
+				assert_eq!(output.len(), 4);
+				assert_eq!(output[0], 0u8);
+				assert_eq!(output[1], 0u8);
+				assert_eq!(output[2], 0u8);
+				assert_eq!(output[3], 0u8);
+			},
+			Err(e) => {
+				return Err(e);
+			}
+		};
+
+		// try again with a different message
+		let msg: &[u8] = b"BAD_MESSAGE_mnopqrstuvwxyz123456";
+
+		let mut input: Vec<u8> = Vec::with_capacity(128);
+		input.extend_from_slice(msg);
+		input.extend_from_slice(&public_key.to_bytes());
+		input.extend_from_slice(&signature.to_bytes());
+		assert_eq!(input.len(), 128);
+
+		match Ed25519Verify::execute(&input, cost) {
+			Ok((_, output)) => {
+				assert_eq!(output.len(), 4);
+				assert_eq!(output[0], 0u8);
+				assert_eq!(output[1], 0u8);
+				assert_eq!(output[2], 0u8);
+				assert_eq!(output[3], 1u8); // non-zero indicates error (in our case, 1)
+			},
+			Err(e) => {
+				return Err(e);
+			}
+		};
+
+		Ok(())
+	}
+
+}
+
