@@ -171,6 +171,10 @@
 <span id="168">168</span>
 <span id="169">169</span>
 <span id="170">170</span>
+<span id="171">171</span>
+<span id="172">172</span>
+<span id="173">173</span>
+<span id="174">174</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
@@ -309,13 +313,17 @@
 				<span class="ident">ConsensusLog</span>::<span class="ident">EndBlock</span> {
 					<span class="ident">block_hash</span>, <span class="ident">transaction_hashes</span>,
 				} <span class="op">=</span><span class="op">&gt;</span> {
-					<span class="ident">aux_schema</span>::<span class="ident">write_block_hash</span>(<span class="ident">client</span>.<span class="ident">as_ref</span>(), <span class="ident">block_hash</span>, <span class="ident">hash</span>, <span class="macro">insert_closure</span><span class="macro">!</span>());
+					<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">aux_schema</span>::<span class="ident">write_block_hash</span>(<span class="ident">client</span>.<span class="ident">as_ref</span>(), <span class="ident">block_hash</span>, <span class="ident">hash</span>, <span class="macro">insert_closure</span><span class="macro">!</span>());
+					<span class="kw">if</span> <span class="ident">res</span>.<span class="ident">is_err</span>() { <span class="macro">trace</span><span class="macro">!</span>(<span class="ident">target</span>: <span class="string">&quot;frontier-consensus&quot;</span>, <span class="string">&quot;{:?}&quot;</span>, <span class="ident">res</span>); }
+
 					<span class="kw">for</span> (<span class="ident">index</span>, <span class="ident">transaction_hash</span>) <span class="kw">in</span> <span class="ident">transaction_hashes</span>.<span class="ident">into_iter</span>().<span class="ident">enumerate</span>() {
-						<span class="ident">aux_schema</span>::<span class="ident">write_transaction_metadata</span>(
+						<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">aux_schema</span>::<span class="ident">write_transaction_metadata</span>(
+							<span class="ident">client</span>.<span class="ident">as_ref</span>(),
 							<span class="ident">transaction_hash</span>,
 							(<span class="ident">block_hash</span>, <span class="ident">index</span> <span class="kw">as</span> <span class="ident">u32</span>),
 							<span class="macro">insert_closure</span><span class="macro">!</span>(),
 						);
+						<span class="kw">if</span> <span class="ident">res</span>.<span class="ident">is_err</span>() { <span class="macro">trace</span><span class="macro">!</span>(<span class="ident">target</span>: <span class="string">&quot;frontier-consensus&quot;</span>, <span class="string">&quot;{:?}&quot;</span>, <span class="ident">res</span>); }
 					}
 				},
 			}
