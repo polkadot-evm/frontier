@@ -1185,7 +1185,6 @@ name = "fc-consensus"
 version = "0.1.0"
 dependencies = [
  "derive_more",
- "ethereum",
  "fp-consensus",
  "futures 0.3.7",
  "log",
@@ -1352,6 +1351,7 @@ dependencies = [
  "parity-scale-codec",
  "sp-api",
  "sp-core",
+ "sp-io",
  "sp-runtime",
  "sp-std",
 ]
@@ -1490,6 +1490,8 @@ version = "2.0.0-dev"
 dependencies = [
  "fc-consensus",
  "fc-rpc",
+ "fc-rpc-core",
+ "fp-consensus",
  "fp-rpc",
  "frontier-template-runtime",
  "futures 0.3.7",
