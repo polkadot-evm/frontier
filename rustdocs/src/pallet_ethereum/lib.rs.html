@@ -420,6 +420,12 @@
 <span id="417">417</span>
 <span id="418">418</span>
 <span id="419">419</span>
+<span id="420">420</span>
+<span id="421">421</span>
+<span id="422">422</span>
+<span id="423">423</span>
+<span id="424">424</span>
+<span id="425">425</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
@@ -464,7 +470,7 @@
 <span class="kw">use</span> <span class="ident">fp_evm</span>::<span class="ident">CallOrCreateInfo</span>;
 <span class="kw">use</span> <span class="ident">pallet_evm</span>::{<span class="ident">Runner</span>, <span class="ident">GasWeightMapping</span>};
 <span class="kw">use</span> <span class="ident">sha3</span>::{<span class="ident">Digest</span>, <span class="ident">Keccak256</span>};
-<span class="kw">use</span> <span class="ident">codec</span>::<span class="ident">Encode</span>;
+<span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Encode</span>, <span class="ident">Decode</span>};
 <span class="kw">use</span> <span class="ident">fp_consensus</span>::{<span class="ident">FRONTIER_ENGINE_ID</span>, <span class="ident">ConsensusLog</span>};
 
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">fp_rpc</span>::<span class="ident">TransactionStatus</span>;
@@ -485,12 +491,23 @@
 <span class="doccomment">/// A type alias for the balance type from this pallet&#39;s point of view.</span>
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">pallet_balances</span>::<span class="ident">Config</span><span class="op">&gt;</span>::<span class="ident">Balance</span>;
 
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">IntermediateStateRoot</span>;
+
+<span class="kw">impl</span> <span class="ident">Get</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">IntermediateStateRoot</span> {
+	<span class="kw">fn</span> <span class="ident">get</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">H256</span> {
+		<span class="ident">H256</span>::<span class="ident">decode</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="kw-2">&amp;</span><span class="ident">sp_io</span>::<span class="ident">storage</span>::<span class="ident">root</span>()[..])
+			.<span class="ident">expect</span>(<span class="string">&quot;Node is configured to use the same hash; qed&quot;</span>)
+	}
+}
+
 <span class="doccomment">/// Configuration trait for Ethereum pallet.</span>
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Config</span>: <span class="ident">frame_system</span>::<span class="ident">Config</span><span class="op">&lt;</span><span class="ident">Hash</span><span class="op">=</span><span class="ident">H256</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">pallet_balances</span>::<span class="ident">Config</span> <span class="op">+</span> <span class="ident">pallet_timestamp</span>::<span class="ident">Config</span> <span class="op">+</span> <span class="ident">pallet_evm</span>::<span class="ident">Config</span> {
 	<span class="doccomment">/// The overarching event type.</span>
 	<span class="kw">type</span> <span class="ident">Event</span>: <span class="ident">From</span><span class="op">&lt;</span><span class="ident">Event</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Into</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="self">Self</span> <span class="kw">as</span> <span class="ident">frame_system</span>::<span class="ident">Config</span><span class="op">&gt;</span>::<span class="ident">Event</span><span class="op">&gt;</span>;
 	<span class="doccomment">/// Find author for Ethereum.</span>
 	<span class="kw">type</span> <span class="ident">FindAuthor</span>: <span class="ident">FindAuthor</span><span class="op">&lt;</span><span class="ident">H160</span><span class="op">&gt;</span>;
+	<span class="doccomment">/// How Ethereum state root is calculated.</span>
+	<span class="kw">type</span> <span class="ident">StateRoot</span>: <span class="ident">Get</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span>;
 }
 
 <span class="macro">decl_storage</span><span class="macro">!</span> {
@@ -731,12 +748,7 @@
 			<span class="ident">nonce</span>: <span class="ident">H64</span>::<span class="ident">default</span>(),
 		};
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">block</span> <span class="op">=</span> <span class="ident">ethereum</span>::<span class="ident">Block</span>::<span class="ident">new</span>(<span class="ident">partial_header</span>, <span class="ident">transactions</span>.<span class="ident">clone</span>(), <span class="ident">ommers</span>);
-		<span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">state_root</span> <span class="op">=</span> {
-			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">input</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">64</span>];
-			<span class="ident">input</span>[..<span class="number">32</span>].<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">frame_system</span>::<span class="ident">Module</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">parent_hash</span>()[..]);
-			<span class="ident">input</span>[<span class="number">32</span>..<span class="number">64</span>].<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">hash</span>()[..]);
-			<span class="ident">H256</span>::<span class="ident">from_slice</span>(<span class="ident">Keccak256</span>::<span class="ident">digest</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>).<span class="ident">as_slice</span>())
-		};
+		<span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">state_root</span> <span class="op">=</span> <span class="ident">T</span>::<span class="ident">StateRoot</span>::<span class="ident">get</span>();
 
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">transaction_hashes</span> <span class="op">=</span> <span class="ident">Vec</span>::<span class="ident">new</span>();
 
