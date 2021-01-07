@@ -46,9 +46,11 @@ use pallet_evm::{
 	Account as EVMAccount, FeeCalculator, HashedAddressMapping,
 	EnsureAddressTruncated, Runner,
 };
-use fp_rpc::{TransactionStatus, EthereumExt};
-pub type BlockNumber = u32;
+use fp_rpc::TransactionStatus;
 use pallet_transaction_payment::CurrencyAdapter;
+
+/// Type of block number.
+pub type BlockNumber = u32;
 
 /// Alias to 512-bit hash when used in the context of a transaction signature on the chain.
 pub type Signature = MultiSignature;
@@ -314,12 +316,10 @@ impl<F: FindAuthor<u32>> FindAuthor<H160> for EthereumFindAuthor<F>
 	}
 }
 
-impl EthereumExt for Runtime {}
-
 impl pallet_ethereum::Config for Runtime {
 	type Event = Event;
 	type FindAuthor = EthereumFindAuthor<Aura>;
-	type Extension = Self;
+	type StateRoot = pallet_ethereum::IntermediateStateRoot;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
