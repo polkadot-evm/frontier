@@ -18,7 +18,7 @@
 //! Test utilities
 
 use super::*;
-use crate::{Module, Config};
+use crate::{Module, Config, IntermediateStateRoot};
 use ethereum::{TransactionAction, TransactionSignature};
 use frame_support::{
 	impl_outer_origin, parameter_types, weights::Weight, ConsensusEngineId
@@ -32,7 +32,6 @@ use sp_runtime::{
 	ModuleId, Perbill,
 };
 use sp_runtime::AccountId32;
-use fp_rpc::EthereumExt;
 
 impl_outer_origin! {
 	pub enum Origin for Test where system = frame_system {}
@@ -150,12 +149,10 @@ impl pallet_evm::Config for Test {
 	type ChainId = ChainId;
 }
 
-impl EthereumExt for Test {}
-
 impl Config for Test {
 	type Event = ();
 	type FindAuthor = EthereumFindAuthor;
-	type Extension = Self;
+	type StateRoot = IntermediateStateRoot;
 }
 
 pub type System = frame_system::Module<Test>;

@@ -20,7 +20,7 @@
 extern crate alloc;
 
 use alloc::vec::Vec;
-use core::{cmp::min, convert::TryFrom};
+use core::convert::TryFrom;
 use fp_evm::LinearCostPrecompile;
 use evm::{ExitSucceed, ExitError};
 use ed25519_dalek::{PublicKey, Verifier, Signature};
@@ -153,4 +153,3 @@ mod tests {
 	}
 
 }
-
