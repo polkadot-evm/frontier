@@ -32,6 +32,7 @@ use sp_runtime::{
 	ModuleId, Perbill,
 };
 use sp_runtime::AccountId32;
+use fp_rpc::EthereumExt;
 
 impl_outer_origin! {
 	pub enum Origin for Test where system = frame_system {}
@@ -149,9 +150,12 @@ impl pallet_evm::Config for Test {
 	type ChainId = ChainId;
 }
 
+impl EthereumExt for Test {}
+
 impl Config for Test {
 	type Event = ();
 	type FindAuthor = EthereumFindAuthor;
+	type Extension = Self;
 }
 
 pub type System = frame_system::Module<Test>;
