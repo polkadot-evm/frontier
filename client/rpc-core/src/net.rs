@@ -31,7 +31,7 @@ pub trait NetApi {
 
 	/// Returns number of peers connected to node.
 	#[rpc(name = "net_peerCount")]
-	fn peer_count(&self) -> Result<String>;
+	fn peer_count(&self) -> Result<u32>;
 
 	/// Returns true if client is actively listening for network connections.
 	/// Otherwise false.
