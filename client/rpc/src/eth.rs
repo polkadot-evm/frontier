@@ -28,7 +28,7 @@ use sp_runtime::{
 	traits::{Block as BlockT, UniqueSaturatedInto, Zero, One, Saturating, BlakeTwo256},
 	transaction_validity::TransactionSource
 };
-use sp_api::{ProvideRuntimeApi, BlockId, Core};
+use sp_api::{ProvideRuntimeApi, BlockId, Core, HeaderT};
 use sp_transaction_pool::{TransactionPool, InPoolTransaction};
 use sc_client_api::backend::{StorageProvider, Backend, StateBackend, AuxStore};
 use sha3::{Keccak256, Digest};
@@ -240,7 +240,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> where
 		};
 		let out: Vec<H256> = hashes.into_iter()
 			.filter_map(|h| {
-				if let Ok(Some(_)) = self.client.header(BlockId::Hash(h)) {
+				if self.is_canon(h) {
 					Some(h)
 				} else {
 					None
@@ -251,6 +251,42 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> where
 			return Ok(Some(
 				BlockId::Hash(out[0])
 			));
+		}
+		Ok(None)
+	}
+
+	fn is_canon(&self, target_hash: H256) -> bool {
+		if let Ok(Some(number)) = self.client.number(target_hash) {
+			if let Ok(Some(header)) = self.client.header(BlockId::Number(number)) {
+				return header.hash() == target_hash;
+			}
+		}
+		false
+	}
+
+	fn load_transactions(&self, transaction_hash: H256) -> Result<Option<(H256, u32)>> {
+		let mut transactions: Vec<(H256, u32)> = Vec::new();
+		match fc_consensus::load_transaction_metadata(
+			self.client.as_ref(),
+			transaction_hash,
+		).map_err(|err| internal_err(format!("fetch aux store failed: {:?}", err)))? {
+			Some(metadata) => {
+				for (block_hash, index) in metadata {
+					match self.load_hash(block_hash)
+						.map_err(|err| internal_err(format!("{:?}", err)))?
+					{
+						Some(_) => {
+							transactions.push((block_hash, index));
+						},
+						_ => {},
+					};
+				}
+			},
+			None => return Ok(None),
+		};
+
+		if transactions.len() == 1 {
+			return Ok(Some(transactions[0]));
 		}
 		Ok(None)
 	}
@@ -770,10 +806,9 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 	}
 
 	fn transaction_by_hash(&self, hash: H256) -> Result<Option<Transaction>> {
-		let (hash, index) = match fc_consensus::load_transaction_metadata(
-			self.client.as_ref(),
-			hash,
-		).map_err(|err| internal_err(format!("fetch aux store failed: {:?})", err)))? {
+
+		let (hash, index) = match self.load_transactions(hash)
+			.map_err(|err| internal_err(format!("{:?}", err)))? {
 			Some((hash, index)) => (hash, index as usize),
 			None => {
 				if let Some(pending) = &self.pending_transactions {
@@ -870,10 +905,8 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 	}
 
 	fn transaction_receipt(&self, hash: H256) -> Result<Option<Receipt>> {
-		let (hash, index) = match fc_consensus::load_transaction_metadata(
-			self.client.as_ref(),
-			hash,
-		).map_err(|err| internal_err(format!("fetch aux store failed : {:?}", err)))? {
+		let (hash, index) = match self.load_transactions(hash)
+			.map_err(|err| internal_err(format!("{:?}", err)))? {
 			Some((hash, index)) => (hash, index as usize),
 			None => return Ok(None),
 		};

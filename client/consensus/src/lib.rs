@@ -135,13 +135,17 @@ impl<B, I, C> BlockImport<B> for FrontierBlockImport<B, I, C> where
 				ConsensusLog::EndBlock {
 					block_hash, transaction_hashes,
 				} => {
-					aux_schema::write_block_hash(client.as_ref(), block_hash, hash, insert_closure!());
+					let res = aux_schema::write_block_hash(client.as_ref(), block_hash, hash, insert_closure!());
+					if res.is_err() { trace!(target: "frontier-consensus", "{:?}", res); }
+
 					for (index, transaction_hash) in transaction_hashes.into_iter().enumerate() {
-						aux_schema::write_transaction_metadata(
+						let res = aux_schema::write_transaction_metadata(
+							client.as_ref(),
 							transaction_hash,
 							(block_hash, index as u32),
 							insert_closure!(),
 						);
+						if res.is_err() { trace!(target: "frontier-consensus", "{:?}", res); }
 					}
 				},
 			}
