@@ -80,7 +80,7 @@ pub trait Config: frame_system::Config<Hash=H256> + pallet_balances::Config + pa
 	/// How Ethereum state root is calculated.
 	type StateRoot: Get<H256>;
 	/// The block gas limit. Can be a simple constant, or an adjustment algorithm in another pallet.
-	type BlockGasLimit: Get<U256>;
+	type BlockGasLimit: Get<u32>;
 }
 
 decl_storage! {
