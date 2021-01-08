@@ -41,7 +41,7 @@ use evm::ExitReason;
 use fp_evm::CallOrCreateInfo;
 use pallet_evm::{Runner, GasWeightMapping};
 use sha3::{Digest, Keccak256};
-use codec::Encode;
+use codec::{Encode, Decode};
 use fp_consensus::{FRONTIER_ENGINE_ID, ConsensusLog};
 
 pub use fp_rpc::TransactionStatus;
@@ -62,12 +62,23 @@ pub enum ReturnValue {
 /// A type alias for the balance type from this pallet's point of view.
 pub type BalanceOf<T> = <T as pallet_balances::Config>::Balance;
 
+pub struct IntermediateStateRoot;
+
+impl Get<H256> for IntermediateStateRoot {
+	fn get() -> H256 {
+		H256::decode(&mut &sp_io::storage::root()[..])
+			.expect("Node is configured to use the same hash; qed")
+	}
+}
+
 /// Configuration trait for Ethereum pallet.
 pub trait Config: frame_system::Config<Hash=H256> + pallet_balances::Config + pallet_timestamp::Config + pallet_evm::Config {
 	/// The overarching event type.
 	type Event: From<Event> + Into<<Self as frame_system::Config>::Event>;
 	/// Find author for Ethereum.
 	type FindAuthor: FindAuthor<H160>;
+	/// How Ethereum state root is calculated.
+	type StateRoot: Get<H256>;
 }
 
 decl_storage! {
@@ -308,12 +319,7 @@ impl<T: Config> Module<T> {
 			nonce: H64::default(),
 		};
 		let mut block = ethereum::Block::new(partial_header, transactions.clone(), ommers);
-		block.header.state_root = {
-			let mut input = [0u8; 64];
-			input[..32].copy_from_slice(&frame_system::Module::<T>::parent_hash()[..]);
-			input[32..64].copy_from_slice(&block.header.hash()[..]);
-			H256::from_slice(Keccak256::digest(&input).as_slice())
-		};
+		block.header.state_root = T::StateRoot::get();
 
 		let mut transaction_hashes = Vec::new();
 

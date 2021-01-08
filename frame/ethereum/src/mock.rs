@@ -18,7 +18,7 @@
 //! Test utilities
 
 use super::*;
-use crate::{Module, Config};
+use crate::{Module, Config, IntermediateStateRoot};
 use ethereum::{TransactionAction, TransactionSignature};
 use frame_support::{
 	impl_outer_origin, parameter_types, weights::Weight, ConsensusEngineId
@@ -152,6 +152,7 @@ impl pallet_evm::Config for Test {
 impl Config for Test {
 	type Event = ();
 	type FindAuthor = EthereumFindAuthor;
+	type StateRoot = IntermediateStateRoot;
 }
 
 pub type System = frame_system::Module<Test>;

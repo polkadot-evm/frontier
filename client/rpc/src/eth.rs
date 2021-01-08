@@ -19,8 +19,7 @@
 use std::{marker::PhantomData, sync::Arc};
 use std::collections::BTreeMap;
 use ethereum::{
-	Block as EthereumBlock, Transaction as EthereumTransaction,
-	TransactionMessage as EthereumTransactionMessage,
+	Block as EthereumBlock, Transaction as EthereumTransaction
 };
 use ethereum_types::{H160, H256, H64, U256, U64, H512};
 use jsonrpc_core::{BoxFuture, Result, futures::future::{self, Future}};
@@ -29,7 +28,7 @@ use sp_runtime::{
 	traits::{Block as BlockT, UniqueSaturatedInto, Zero, One, Saturating, BlakeTwo256},
 	transaction_validity::TransactionSource
 };
-use sp_api::{ProvideRuntimeApi, BlockId, Core};
+use sp_api::{ProvideRuntimeApi, BlockId, Core, HeaderT};
 use sp_transaction_pool::{TransactionPool, InPoolTransaction};
 use sc_client_api::backend::{StorageProvider, Backend, StateBackend, AuxStore};
 use sha3::{Keccak256, Digest};
@@ -39,10 +38,10 @@ use fc_rpc_core::{EthApi as EthApiT, NetApi as NetApiT, Web3Api as Web3ApiT};
 use fc_rpc_core::types::{
 	BlockNumber, Bytes, CallRequest, Filter, FilteredParams, Index, Log, Receipt, RichBlock,
 	SyncStatus, SyncInfo, Transaction, Work, Rich, Block, BlockTransactions, VariadicValue,
-	TransactionRequest,
+	TransactionRequest, PendingTransactions, PendingTransaction,
 };
 use fp_rpc::{EthereumRuntimeRPCApi, ConvertTransaction, TransactionStatus};
-use crate::{internal_err, error_on_execution_failure, EthSigner};
+use crate::{internal_err, error_on_execution_failure, EthSigner, public_key};
 
 pub use fc_rpc_core::{EthApiServer, NetApiServer, Web3ApiServer};
 use codec::{self, Encode};
@@ -54,6 +53,7 @@ pub struct EthApi<B: BlockT, C, P, CT, BE, H: ExHashT> {
 	network: Arc<NetworkService<B, H>>,
 	is_authority: bool,
 	signers: Vec<Box<dyn EthSigner>>,
+	pending_transactions: PendingTransactions,
 	_marker: PhantomData<(B, BE)>,
 }
 
@@ -63,6 +63,7 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> {
 		pool: Arc<P>,
 		convert_transaction: CT,
 		network: Arc<NetworkService<B, H>>,
+		pending_transactions: PendingTransactions,
 		signers: Vec<Box<dyn EthSigner>>,
 		is_authority: bool,
 	) -> Self {
@@ -73,6 +74,7 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> {
 			network,
 			is_authority,
 			signers,
+			pending_transactions,
 			_marker: PhantomData,
 		}
 	}
@@ -117,8 +119,8 @@ fn rich_block_build(
 						block.transactions.iter().enumerate().map(|(index, transaction)|{
 							transaction_build(
 								transaction.clone(),
-								block.clone(),
-								statuses[index].clone().unwrap_or_default()
+								Some(block.clone()),
+								Some(statuses[index].clone().unwrap_or_default())
 							)
 						}).collect()
 					)
@@ -140,18 +142,11 @@ fn rich_block_build(
 
 fn transaction_build(
 	transaction: EthereumTransaction,
-	block: EthereumBlock,
-	status: TransactionStatus
+	block: Option<EthereumBlock>,
+	status: Option<TransactionStatus>
 ) -> Transaction {
-	let mut sig = [0u8; 65];
-	let mut msg = [0u8; 32];
-	sig[0..32].copy_from_slice(&transaction.signature.r()[..]);
-	sig[32..64].copy_from_slice(&transaction.signature.s()[..]);
-	sig[64] = transaction.signature.standard_v();
-	msg.copy_from_slice(&EthereumTransactionMessage::from(transaction.clone()).hash()[..]);
-
-	let pubkey = match sp_io::crypto::secp256k1_ecdsa_recover(&sig, &msg) {
-		Ok(p) => Some(H512::from(p)),
+	let pubkey = match public_key(&transaction) {
+		Ok(p) => Some(p),
 		Err(_e) => None,
 	};
 
@@ -160,24 +155,40 @@ fn transaction_build(
 			Keccak256::digest(&rlp::encode(&transaction)).as_slice()
 		),
 		nonce: transaction.nonce,
-		block_hash: Some(H256::from_slice(
-			Keccak256::digest(&rlp::encode(&block.header)).as_slice()
-		)),
-		block_number: Some(block.header.number),
-		transaction_index: Some(U256::from(
-			UniqueSaturatedInto::<u32>::unique_saturated_into(
-				status.transaction_index
+		block_hash: block.as_ref().map_or(None, |block| {
+			Some(H256::from_slice(
+				Keccak256::digest(&rlp::encode(&block.header)).as_slice()
+			))
+		}),
+		block_number: block.as_ref().map(|block| block.header.number),
+		transaction_index: status.as_ref().map(|status| {
+			U256::from(
+				UniqueSaturatedInto::<u32>::unique_saturated_into(
+					status.transaction_index
+				)
 			)
-		)),
-		from: status.from,
-		to: status.to,
+		}),
+		from: status.as_ref().map_or({
+			match pubkey {
+				Some(pk) => H160::from(
+					H256::from_slice(Keccak256::digest(&pk).as_slice())
+				),
+				_ => H160::default()
+			}
+		}, |status| status.from),
+		to: status.as_ref().map_or({
+			match transaction.action {
+				ethereum::TransactionAction::Call(to) => Some(to),
+				_ => None
+			}
+		}, |status| status.to),
 		value: transaction.value,
 		gas_price: transaction.gas_price,
 		gas: transaction.gas_limit,
 		input: Bytes(transaction.clone().input),
-		creates: status.contract_address,
+		creates: status.as_ref().map_or(None, |status| status.contract_address),
 		raw: Bytes(rlp::encode(&transaction)),
-		public_key: pubkey,
+		public_key: pubkey.as_ref().map(|pk| H512::from(pk)),
 		chain_id: transaction.signature.chain_id().map(U64::from),
 		standard_v: U256::from(transaction.signature.standard_v()),
 		v: U256::from(transaction.signature.v()),
@@ -229,7 +240,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> where
 		};
 		let out: Vec<H256> = hashes.into_iter()
 			.filter_map(|h| {
-				if let Ok(Some(_)) = self.client.header(BlockId::Hash(h)) {
+				if self.is_canon(h) {
 					Some(h)
 				} else {
 					None
@@ -240,6 +251,42 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> where
 			return Ok(Some(
 				BlockId::Hash(out[0])
 			));
+		}
+		Ok(None)
+	}
+
+	fn is_canon(&self, target_hash: H256) -> bool {
+		if let Ok(Some(number)) = self.client.number(target_hash) {
+			if let Ok(Some(header)) = self.client.header(BlockId::Number(number)) {
+				return header.hash() == target_hash;
+			}
+		}
+		false
+	}
+
+	fn load_transactions(&self, transaction_hash: H256) -> Result<Option<(H256, u32)>> {
+		let mut transactions: Vec<(H256, u32)> = Vec::new();
+		match fc_consensus::load_transaction_metadata(
+			self.client.as_ref(),
+			transaction_hash,
+		).map_err(|err| internal_err(format!("fetch aux store failed: {:?}", err)))? {
+			Some(metadata) => {
+				for (block_hash, index) in metadata {
+					match self.load_hash(block_hash)
+						.map_err(|err| internal_err(format!("{:?}", err)))?
+					{
+						Some(_) => {
+							transactions.push((block_hash, index));
+						},
+						_ => {},
+					};
+				}
+			},
+			None => return Ok(None),
+		};
+
+		if transactions.len() == 1 {
+			return Ok(Some(transactions[0]));
 		}
 		Ok(None)
 	}
@@ -263,7 +310,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 	fn syncing(&self) -> Result<SyncStatus> {
 		if self.network.is_major_syncing() {
 			let block_number = U256::from(
-				self.client.info().best_number.clone().unique_saturated_into()
+				UniqueSaturatedInto::<u128>::unique_saturated_into(self.client.info().best_number.clone())
 			);
 			Ok(SyncStatus::Info(SyncInfo {
 				starting_block: U256::zero(),
@@ -325,7 +372,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 	}
 
 	fn block_number(&self) -> Result<U256> {
-		Ok(U256::from(self.client.info().best_number.clone().unique_saturated_into()))
+		Ok(U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(self.client.info().best_number.clone())))
 	}
 
 	fn balance(&self, address: H160, number: Option<BlockNumber>) -> Result<U256> {
@@ -567,15 +614,32 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 			Keccak256::digest(&rlp::encode(&transaction)).as_slice()
 		);
 		let hash = self.client.info().best_hash;
+		let number = self.client.info().best_number;
+		let pending = self.pending_transactions.clone();
 		Box::new(
 			self.pool
 				.submit_one(
 					&BlockId::hash(hash),
 					TransactionSource::Local,
-					self.convert_transaction.convert_transaction(transaction),
+					self.convert_transaction.convert_transaction(transaction.clone()),
 				)
 				.compat()
-				.map(move |_| transaction_hash)
+				.map(move |_| {
+					if let Some(pending) = pending {
+						if let Ok(locked) = &mut pending.lock() {
+							locked.insert(
+								transaction_hash,
+								PendingTransaction::new(
+									transaction_build(transaction, None, None),
+									UniqueSaturatedInto::<u64>::unique_saturated_into(
+										number
+									)
+								)
+							);
+						}
+					}
+					transaction_hash
+				})
 				.map_err(|err| internal_err(format!("submit transaction to pool failed: {:?}", err)))
 		)
 	}
@@ -591,15 +655,32 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 			Keccak256::digest(&rlp::encode(&transaction)).as_slice()
 		);
 		let hash = self.client.info().best_hash;
+		let number = self.client.info().best_number;
+		let pending = self.pending_transactions.clone();
 		Box::new(
 			self.pool
 				.submit_one(
 					&BlockId::hash(hash),
 					TransactionSource::Local,
-					self.convert_transaction.convert_transaction(transaction),
+					self.convert_transaction.convert_transaction(transaction.clone()),
 				)
 				.compat()
-				.map(move |_| transaction_hash)
+				.map(move |_| {
+					if let Some(pending) = pending {
+						if let Ok(locked) = &mut pending.lock() {
+							locked.insert(
+								transaction_hash,
+								PendingTransaction::new(
+									transaction_build(transaction, None, None),
+									UniqueSaturatedInto::<u64>::unique_saturated_into(
+										number
+									)
+								)
+							);
+						}
+					}
+					transaction_hash
+				})
 				.map_err(|err| internal_err(format!("submit transaction to pool failed: {:?}", err)))
 		)
 	}
@@ -760,12 +841,20 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 	}
 
 	fn transaction_by_hash(&self, hash: H256) -> Result<Option<Transaction>> {
-		let (hash, index) = match fc_consensus::load_transaction_metadata(
-			self.client.as_ref(),
-			hash,
-		).map_err(|err| internal_err(format!("fetch aux store failed: {:?})", err)))? {
+
+		let (hash, index) = match self.load_transactions(hash)
+			.map_err(|err| internal_err(format!("{:?}", err)))? {
 			Some((hash, index)) => (hash, index as usize),
-			None => return Ok(None),
+			None => {
+				if let Some(pending) = &self.pending_transactions {
+					if let Ok(locked) = &mut pending.lock() {
+						if let Some(pending_transaction) = locked.get(&hash) {
+							return Ok(Some(pending_transaction.transaction.clone()));
+						}
+					}
+				}
+				return Ok(None);
+			},
 		};
 
 		let id = match self.load_hash(hash)
@@ -784,8 +873,8 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 			(Some(block), Some(statuses)) => {
 				Ok(Some(transaction_build(
 					block.transactions[index].clone(),
-					block,
-					statuses[index].clone(),
+					Some(block),
+					Some(statuses[index].clone()),
 				)))
 			},
 			_ => Ok(None)
@@ -814,8 +903,8 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 			(Some(block), Some(statuses)) => {
 				Ok(Some(transaction_build(
 					block.transactions[index].clone(),
-					block,
-					statuses[index].clone(),
+					Some(block),
+					Some(statuses[index].clone()),
 				)))
 			},
 			_ => Ok(None)
@@ -842,8 +931,8 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 			(Some(block), Some(statuses)) => {
 				Ok(Some(transaction_build(
 					block.transactions[index].clone(),
-					block,
-					statuses[index].clone(),
+					Some(block),
+					Some(statuses[index].clone()),
 				)))
 			},
 			_ => Ok(None)
@@ -851,10 +940,8 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 	}
 
 	fn transaction_receipt(&self, hash: H256) -> Result<Option<Receipt>> {
-		let (hash, index) = match fc_consensus::load_transaction_metadata(
-			self.client.as_ref(),
-			hash,
-		).map_err(|err| internal_err(format!("fetch aux store failed : {:?}", err)))? {
+		let (hash, index) = match self.load_transactions(hash)
+			.map_err(|err| internal_err(format!("{:?}", err)))? {
 			Some((hash, index)) => (hash, index as usize),
 			None => return Ok(None),
 		};
@@ -1019,27 +1106,25 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 						transaction_log_index: None,
 						removed: false,
 					};
-					let mut add: bool = false;
+					let mut add: bool = true;
 					if let (
-						Some(VariadicValue::Single(_)),
-						Some(VariadicValue::Multiple(_))
+						Some(_),
+						Some(_)
 					) = (
 						filter.address.clone(),
 						filter.topics.clone(),
 					) {
-						if !params.filter_address(&log) && params.filter_topics(&log) {
-							add = true;
+						if !params.filter_address(&log) || !params.filter_topics(&log) {
+							add = false;
 						}
-					} else if let Some(VariadicValue::Single(_)) = filter.address {
+					} else if let Some(_) = filter.address {
 						if !params.filter_address(&log) {
-							add = true;
+							add = false;
 						}
-					} else if let Some(VariadicValue::Multiple(_)) = &filter.topics {
-						if params.filter_topics(&log) {
-							add = true;
+					} else if let Some(_) = &filter.topics {
+						if !params.filter_topics(&log) {
+							add = false;
 						}
-					} else {
-						add = true;
 					}
 					if add {
 						log.block_hash = Some(block_hash);
@@ -1109,8 +1194,8 @@ impl<B: BlockT, BE, C, H: ExHashT> NetApiT for NetApi<B, BE, C, H> where
 		Ok(true)
 	}
 
-	fn peer_count(&self) -> Result<String> {
-		Ok((self.network.num_connected() as u32).to_string())
+	fn peer_count(&self) -> Result<u32> {
+		Ok(self.network.num_connected() as u32)
 	}
 
 	fn version(&self) -> Result<String> {

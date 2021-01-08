@@ -15,6 +15,9 @@ fp-evm = { version = "0.8.0", default-features = false, path = "../../../../prim
 evm = { version = "0.20.0", default-features = false, features = ["with-codec"] }
 num = { version = "0.3", features = ["alloc"], default-features = false }
 
+[dev-dependencies]
+hex = "0.4.0"
+
 [features]
 default = ["std"]
 std = [
