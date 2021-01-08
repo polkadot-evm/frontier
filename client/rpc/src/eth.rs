@@ -744,98 +744,100 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 		}
 	}
 
-	fn fast_estimate_gas(&self, request: CallRequest, _: Option<BlockNumber>) -> Result<U256> {
-		let hash = self.client.info().best_hash;
+	fn estimate_gas(&self, request: CallRequest, _: Option<BlockNumber>) -> Result<U256> {
+		let calculate_gas_used = |request| {
+			let hash = self.client.info().best_hash;
 
-		let CallRequest {
-			from,
-			to,
-			gas_price,
-			gas,
-			value,
-			data,
-			nonce
-		} = request;
+			let CallRequest {
+				from,
+				to,
+				gas_price,
+				gas,
+				value,
+				data,
+				nonce
+			} = request;
 
-		let gas_limit = gas.unwrap_or(U256::max_value()); // TODO: set a limit
-		let data = data.map(|d| d.0).unwrap_or_default();
+			let gas_limit = gas.unwrap_or(U256::max_value()); // TODO: set a limit
+			let data = data.map(|d| d.0).unwrap_or_default();
 
-		let used_gas = match to {
-			Some(to) => {
-				let info = self.client.runtime_api()
-					.call(
-						&BlockId::Hash(hash),
-						from.unwrap_or_default(),
-						to,
-						data,
-						value.unwrap_or_default(),
-						gas_limit,
-						gas_price,
-						nonce,
-						true,
-					)
-					.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
-					.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
+			let used_gas = match to {
+				Some(to) => {
+					let info = self.client.runtime_api()
+						.call(
+							&BlockId::Hash(hash),
+							from.unwrap_or_default(),
+							to,
+							data,
+							value.unwrap_or_default(),
+							gas_limit,
+							gas_price,
+							nonce,
+							true,
+						)
+						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
+						.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
 
-				error_on_execution_failure(&info.exit_reason, &info.value)?;
+					error_on_execution_failure(&info.exit_reason, &info.value)?;
 
-				info.used_gas
-			},
-			None => {
-				let info = self.client.runtime_api()
-					.create(
-						&BlockId::Hash(hash),
-						from.unwrap_or_default(),
-						data,
-						value.unwrap_or_default(),
-						gas_limit,
-						gas_price,
-						nonce,
-						true,
-					)
-					.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
-					.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
+					info.used_gas
+				},
+				None => {
+					let info = self.client.runtime_api()
+						.create(
+							&BlockId::Hash(hash),
+							from.unwrap_or_default(),
+							data,
+							value.unwrap_or_default(),
+							gas_limit,
+							gas_price,
+							nonce,
+							true,
+						)
+						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
+						.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
 
-				error_on_execution_failure(&info.exit_reason, &[])?;
+					error_on_execution_failure(&info.exit_reason, &[])?;
 
-				info.used_gas
-			},
+					info.used_gas
+				},
+			};
+
+			Ok(used_gas)
 		};
-
-		Ok(used_gas)
-	}
-
-	fn estimate_gas(&self, request: CallRequest, block_number: Option<BlockNumber>) -> Result<U256> {
-		let mut test_request = request.clone();
-		test_request.gas = Some(U256::max_value());
-		let used_gas = self.fast_estimate_gas(test_request, block_number.clone())?;
-		let mut fist_request = request.clone();
-		fist_request.gas = Some(used_gas);
-		let first_result = self.fast_estimate_gas(fist_request, block_number.clone());
-		match first_result {
-			// in most cases, estimate gas will work
-			Ok(used_gas) => {
-				Ok(used_gas)
-			}
-			// do binary search
-			Err(_) => {
-				let mut lower = used_gas;
-				let mut upper = used_gas * 64 / 63;
-				let mut mid = upper;
-				let mut best = mid;
-				while lower + 1 < upper {
-					mid = (lower + upper + 1) / 2;
-					let mut test_request = request.clone();
-					test_request.gas = Some(mid);
-					let test_result = self.fast_estimate_gas(test_request, block_number.clone());
-					if test_result.is_ok() {
-						upper = mid;
-						best = mid;
-					} else {
-						lower = mid;
-					}
+		if cfg!(not(feature = "rpc_binary_search_estimate")) {
+			calculate_gas_used(request)
+		} else {
+			let mut test_request = request.clone();
+			test_request.gas = Some(U256::max_value());
+			let used_gas = calculate_gas_used(test_request)?;
+			let mut fist_request = request.clone();
+			fist_request.gas = Some(used_gas);
+			let first_result = calculate_gas_used(fist_request);
+			match first_result {
+				Ok(used_gas) => {
+					Ok(used_gas)
 				}
-				Ok(best)
+
+				Err(_) => {
+					let mut lower = used_gas;
+					let mut upper = used_gas * 64 / 63;
+					let mut mid = upper;
+					let mut best = mid;
+					while lower + 1 < upper {
+						mid = (lower + upper + 1) / 2;
+						let mut test_request = request.clone();
+						test_request.gas = Some(mid);
+						let test_result = calculate_gas_used(test_request);
+						if test_result.is_ok() {
+							upper = mid;
+							best = mid;
+						} else {
+							lower = mid;
+						}
+					}
+					Ok(best)
+				}
 			}
 		}
 	}

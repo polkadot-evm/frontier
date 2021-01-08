@@ -126,9 +126,6 @@ pub trait EthApi {
 	#[rpc(name = "eth_estimateGas")]
 	fn estimate_gas(&self, _: CallRequest, _: Option<BlockNumber>) -> Result<U256>;
 
-	#[rpc(name = "eth_fastEstimateGas")]
-	fn fast_estimate_gas(&self, _: CallRequest, _: Option<BlockNumber>) -> Result<U256>;
-
 	/// Get transaction by its hash.
 	#[rpc(name = "eth_getTransactionByHash")]
 	fn transaction_by_hash(&self, _: H256) -> Result<Option<Transaction>>;

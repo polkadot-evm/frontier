@@ -36,3 +36,6 @@ sha3 = "0.8"
 rustc-hex = { version = "2.1.0", default-features = false }
 libsecp256k1 = "0.3"
 rand = "0.7"
+
+[features]
+rpc_binary_search_estimate = []
