@@ -149,10 +149,15 @@ impl pallet_evm::Config for Test {
 	type ChainId = ChainId;
 }
 
+parameter_types! {
+	pub const BlockGasLimit: U256 = U256::MAX;
+}
+
 impl Config for Test {
 	type Event = ();
 	type FindAuthor = EthereumFindAuthor;
 	type StateRoot = IntermediateStateRoot;
+	type BlockGasLimit = BlockGasLimit;
 }
 
 pub type System = frame_system::Module<Test>;
