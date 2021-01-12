@@ -27,6 +27,7 @@ sha3 = { version = "0.8", default-features = false }
 libsecp256k1 = { version = "0.3", default-features = false }
 fp-consensus = { path = "../../primitives/consensus", default-features = false }
 fp-rpc = { path = "../../primitives/rpc", default-features = false }
+fp-storage = { path = "../../primitives/storage", default-features = false}
 
 [dev-dependencies]
 sp-core = { version = "2.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
@@ -53,5 +54,6 @@ std = [
 	"libsecp256k1/std",
 	"fp-consensus/std",
 	"fp-rpc/std",
+	"fp-storage/std",
 	"evm/std",
 ]

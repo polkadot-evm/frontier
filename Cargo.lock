@@ -1212,6 +1212,7 @@ dependencies = [
  "fc-rpc-core",
  "fp-evm",
  "fp-rpc",
+ "fp-storage",
  "futures 0.3.7",
  "jsonrpc-core 15.1.0",
  "jsonrpc-core-client 14.2.0",
@@ -1345,6 +1346,20 @@ dependencies = [
 
 [[package]]
 name = "fp-rpc"
+version = "0.1.0"
+dependencies = [
+ "ethereum",
+ "ethereum-types",
+ "fp-evm",
+ "parity-scale-codec",
+ "sp-api",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "fp-storage"
 version = "0.1.0"
 dependencies = [
  "ethereum",
@@ -3673,6 +3688,7 @@ dependencies = [
  "fp-consensus",
  "fp-evm",
  "fp-rpc",
+ "fp-storage",
  "frame-support",
  "frame-system",
  "libsecp256k1",

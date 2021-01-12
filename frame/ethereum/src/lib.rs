@@ -43,6 +43,7 @@ use pallet_evm::{Runner, GasToWeight};
 use sha3::{Digest, Keccak256};
 use codec::{Encode, Decode};
 use fp_consensus::{FRONTIER_ENGINE_ID, ConsensusLog};
+use fp_storage::PALLET_ETHEREUM_SCHEMA;
 
 pub use fp_rpc::TransactionStatus;
 pub use ethereum::{Transaction, Log, Block, Receipt, TransactionAction, TransactionMessage};
@@ -85,10 +86,6 @@ pub trait Config: frame_system::Config<Hash=H256> + pallet_balances::Config + pa
 
 decl_storage! {
 	trait Store for Module<T: Config> as Ethereum {
-		/// The current version of the storage schema. This is useful for tracking and executing storage migrations
-		/// as well as querying storage data from optimized RPC handlers
-		Schema: EthereumStorageSchema;
-
 		/// Current building block's transactions and receipts.
 		Pending: Vec<(ethereum::Transaction, TransactionStatus, ethereum::Receipt)>;
 
@@ -104,8 +101,8 @@ decl_storage! {
 			// Calculate the ethereum genesis block
 			<Module<T>>::store_block();
 
-			// Store the V1 schema
-			Schema::put(EthereumStorageSchema::V1);
+			// Initialize the storage schema at the well known key.
+			frame_support::storage::unhashed::put::<EthereumStorageSchema>(&PALLET_ETHEREUM_SCHEMA, &EthereumStorageSchema::V1);
 		});
 	}
 }

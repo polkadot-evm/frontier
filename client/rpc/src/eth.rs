@@ -42,24 +42,14 @@ use fc_rpc_core::types::{
 	TransactionRequest,
 };
 use fp_rpc::{EthereumRuntimeRPCApi, ConvertTransaction, TransactionStatus};
+use fp_storage::PALLET_ETHEREUM_SCHEMA;
 use crate::{internal_err, error_on_execution_failure, EthSigner};
 use sp_storage::StorageKey;
-use sp_io::hashing::twox_128;
 
 pub use fc_rpc_core::{EthApiServer, NetApiServer, Web3ApiServer};
 use codec::{self, Encode, Decode};
 use pallet_ethereum::EthereumStorageSchema;
 use crate::overrides::StorageOverride;
-
-/// The well-known never-chainging storage key from where pallet ethereum's storage schema can be read.
-/// TODO It may be conventional to register or define this key in a particular place.
-fn schema_key() -> StorageKey {
-	StorageKey(
-		[twox_128(b"Ethereum"), twox_128(b"Schema")]
-		.concat()
-		.to_vec()
-	)
-}
 
 pub struct EthApi<B: BlockT, C, P, CT, BE, H: ExHashT> {
 	pool: Arc<P>,
@@ -263,7 +253,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> where
 	}
 
 	fn onchain_storage_schema(&self, at: BlockId<B>) -> EthereumStorageSchema {
-		match self.client.storage(&at, &schema_key()) {
+		match self.client.storage(&at, &StorageKey(PALLET_ETHEREUM_SCHEMA.to_vec())) {
 			Ok(Some(bytes)) => Decode::decode(&mut &bytes.0[..]).ok().unwrap_or(EthereumStorageSchema::Undefined),
 			_ => EthereumStorageSchema::Undefined,
 		}
