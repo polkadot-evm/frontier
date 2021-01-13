@@ -317,7 +317,7 @@ impl<F: FindAuthor<u32>> FindAuthor<H160> for EthereumFindAuthor<F>
 }
 
 parameter_types! {
-	pub const BlockGasLimit: U256 = U256::MAX;
+	pub BlockGasLimit: U256 = U256::from(u32::max_value());
 }
 
 impl pallet_ethereum::Config for Runtime {
