@@ -158,6 +158,7 @@ pub fn new_full(
 	config: Configuration,
 	sealing: Option<Sealing>,
 	enable_dev_signer: bool,
+	minimum_gas_price: u128,
 ) -> Result<TaskManager, ServiceError> {
 	let sc_service::PartialComponents {
 		client, backend, mut task_manager, import_queue, keystore_container,
@@ -208,7 +209,8 @@ pub fn new_full(
 				enable_dev_signer,
 				network: network.clone(),
 				pending_transactions: pending.clone(),
-				command_sink: Some(command_sink.clone())
+				command_sink: Some(command_sink.clone()),
+				minimum_gas_price: minimum_gas_price,
 			};
 			crate::rpc::create_full(
 				deps,

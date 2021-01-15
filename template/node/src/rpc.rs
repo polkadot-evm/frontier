@@ -43,6 +43,8 @@ pub struct FullDeps<C, P> {
 	pub is_authority: bool,
 	/// Whether to enable dev signer
 	pub enable_dev_signer: bool,
+	/// Minimum gas price for adding txes to txpool
+	pub minimum_gas_price: u128,
 	/// Network service
 	pub network: Arc<NetworkService<Block, Hash>>,
 	/// Ethereum pending transactions.
@@ -86,6 +88,7 @@ pub fn create_full<C, P, BE>(
 		pending_transactions,
 		command_sink,
 		enable_dev_signer,
+		minimum_gas_price,
 	} = deps;
 
 	io.extend_with(
@@ -108,6 +111,7 @@ pub fn create_full<C, P, BE>(
 			pending_transactions.clone(),
 			signers,
 			is_authority,
+			minimum_gas_price,
 		))
 	);
 
