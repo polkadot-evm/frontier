@@ -79,6 +79,8 @@ pub trait Config: frame_system::Config<Hash=H256> + pallet_balances::Config + pa
 	type FindAuthor: FindAuthor<H160>;
 	/// How Ethereum state root is calculated.
 	type StateRoot: Get<H256>;
+	/// The block gas limit. Can be a simple constant, or an adjustment algorithm in another pallet.
+	type BlockGasLimit: Get<U256>;
 }
 
 decl_storage! {
@@ -309,7 +311,7 @@ impl<T: Config> Module<T> {
 					frame_system::Module::<T>::block_number()
 				)
 			),
-			gas_limit: U256::from(u32::max_value()), // TODO: set this using Ethereum's gas limit change algorithm.
+			gas_limit: T::BlockGasLimit::get(),
 			gas_used: receipts.clone().into_iter().fold(U256::zero(), |acc, r| acc + r.used_gas),
 			timestamp: UniqueSaturatedInto::<u64>::unique_saturated_into(
 				pallet_timestamp::Module::<T>::get()
