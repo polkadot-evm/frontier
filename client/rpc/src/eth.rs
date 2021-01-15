@@ -658,7 +658,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 				future::result(Err(internal_err("decode transaction failed")))
 			),
 		};
-		
+
 		if transaction.gas_price < U256::from(self.minimum_gas_price) {
 			return Box::new(future::result(Err(internal_err("gas price too low"))));
 		}
