@@ -805,9 +805,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 
 			Ok(used_gas)
 		};
-		if cfg!(not(feature = "rpc_binary_search_estimate")) {
-			calculate_gas_used(request)
-		} else {
+		if cfg!(feature = "rpc_binary_search_estimate") {
 			let mut lower = U256::from(21_000);
 			// TODO: get a good upper limit, but below U64::max to operation overflow
 			let mut upper = U256::from(1_000_000_000);
@@ -843,6 +841,8 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 				}
 			}
 			Ok(best)
+		} else {
+			calculate_gas_used(request)
 		}
 	}
 
