@@ -7,6 +7,7 @@ describeWithFrontier("Frontier RPC (Contract)", `simple-specs.json`, (context) =
 	const GENESIS_ACCOUNT_PRIVATE_KEY = "0x99B3C12287537E38C90A9219D4CB074A89A16E9CDB20BF85728EBD97C343E342";
 
 	const TEST_CONTRACT_BYTECODE = testContract.bytecode;
+	const TEST_CONTRACT_DEPLOYED_BYTECODE = testContract.deployedBytecode
 	const FIRST_CONTRACT_ADDRESS = "0xc2bf5f29a4384b1ab0c063e1c666f02121b6084a";
 	// Those test are ordered. In general this should be avoided, but due to the time it takes
 	// to spin up a frontier node, it saves a lot of time.
@@ -27,7 +28,7 @@ describeWithFrontier("Frontier RPC (Contract)", `simple-specs.json`, (context) =
 		expect(await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction])).to.deep.equal({
 			id: 1,
 			jsonrpc: "2.0",
-			result: "0x7f7055775146c3f13e0dcee82375aedb3c71a24a021f63921bc5c7216040a273",
+			result: "0x91909bf89e41916057dc2a338c760508da9ecb400e9bf24510fe06f4c05d9c87",
 		});
 
 		// Verify the contract is not yet stored
@@ -43,7 +44,7 @@ describeWithFrontier("Frontier RPC (Contract)", `simple-specs.json`, (context) =
 			id: 1,
 			jsonrpc: "2.0",
 			result:
-				"0x6080604052348015600f57600080fd5b506004361060285760003560e01c8063c6888fa114602d575b600080fd5b605660048036036020811015604157600080fd5b8101908080359060200190929190505050606c565b6040518082815260200191505060405180910390f35b600060078202905091905056fea265627a7a72315820a304e718a572041343f0fba6a040c7674c0992956b1c8caa40482fe0b6d6499764736f6c63430005100032",
+			TEST_CONTRACT_DEPLOYED_BYTECODE,
 		});
 	});
 });
