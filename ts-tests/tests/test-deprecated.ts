@@ -1,4 +1,5 @@
 import { expect } from "chai";
+
 import { customRequest, describeWithFrontier } from "./util";
 
 describeWithFrontier("Frontier RPC (Deprecated)", `simple-specs.json`, (context) => {

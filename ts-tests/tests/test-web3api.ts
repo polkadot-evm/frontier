@@ -1,5 +1,6 @@
 import { expect } from "chai";
 import { step } from "mocha-steps";
+
 import { describeWithFrontier, customRequest } from "./util";
 
 describeWithFrontier("Frontier RPC (Web3Api)", `simple-specs.json`, (context) => {
@@ -8,7 +9,7 @@ describeWithFrontier("Frontier RPC (Web3Api)", `simple-specs.json`, (context) =>
 		const version = await context.web3.eth.getNodeInfo();
 		expect(version).to.be.equal("node-frontier-template/v1.1/fc-rpc-0.1.0");
 	});
-	
+
 	step("should remote sha3", async function () {
 		const data = context.web3.utils.stringToHex("hello");
 		const hash = await customRequest(context.web3, "web3_sha3", [data]);
