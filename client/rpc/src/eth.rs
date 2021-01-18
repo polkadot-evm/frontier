@@ -486,18 +486,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 			_ => return Ok(None),
 		};
 		let schema = self.onchain_storage_schema(id);
-
-		let block = match self.overrides.get(&schema) {
-			Some(handler) => {
-				handler
-					.current_block(&id)
-			}
-			None => {
-				self.client.runtime_api()
-					.current_block(&id)
-					.map_err(|err| internal_err(format!("fetch runtime account basic failed: {:?}", err)))?
-			}
-		};
+		let block = self.overrides.get(&schema).unwrap_or(&self.fallback).current_block(&id);
 
 		match block {
 			Some(block) => Ok(Some(U256::from(block.transactions.len()))),
@@ -511,18 +500,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 			None => return Ok(None),
 		};
 		let schema = self.onchain_storage_schema(id);
-
-		let block = match self.overrides.get(&schema) {
-			Some(handler) => {
-				handler
-					.current_block(&id)
-			}
-			None => {
-				self.client.runtime_api()
-					.current_block(&id)
-					.map_err(|err| internal_err(format!("fetch runtime account basic failed: {:?}", err)))?
-			}
-		};
+		let block = self.overrides.get(&schema).unwrap_or(&self.fallback).current_block(&id);
 
 		match block {
 			Some(block) => Ok(Some(U256::from(block.transactions.len()))),
@@ -543,21 +521,12 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 			let schema = self.onchain_storage_schema(id);
 
 			return Ok(
-				match self.overrides.get(&schema) {
-					Some(handler) => {
-						handler
-							.account_code_at(&id, address)
-							.unwrap_or(vec![])
-							.into()
-					}
-					None => {
-						self.client
-							.runtime_api()
-							.account_code_at(&id, address)
-							.map_err(|err| internal_err(format!("fetch runtime chain id failed: {:?}", err)))?
-							.into()
-					}
-				}
+				self.overrides
+					.get(&schema)
+					.unwrap_or(&self.fallback)
+					.account_code_at(&id, address)
+					.unwrap_or(vec![])
+					.into()
 			);
 		}
 		Ok(Bytes(vec![]))
@@ -800,21 +769,10 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 			_ => return Ok(None),
 		};
 		let schema = self.onchain_storage_schema(id);
+		let handler = self.overrides.get(&schema).unwrap_or(&self.fallback);
 
-		let (block, statuses) = match self.overrides.get(&schema) {
-			Some(handler) => {
-				let b = handler.current_block(&id);
-				let s = handler.current_transaction_statuses(&id);
-				(b, s)
-			}
-			None => {
-				let b = self.client.runtime_api().current_block(&id)
-					.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
-				let s = self.client.runtime_api().current_transaction_statuses(&id)
-					.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
-				(b, s)
-			}
-		};
+		let block = handler.current_block(&id);
+		let statuses = handler.current_transaction_statuses(&id);
 
 		match (block, statuses) {
 			(Some(block), Some(statuses)) => {
@@ -842,21 +800,10 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 		let index = index.value();
 
 		let schema = self.onchain_storage_schema(id);
+		let handler = self.overrides.get(&schema).unwrap_or(&self.fallback);
 
-		let (block, statuses) = match self.overrides.get(&schema) {
-			Some(handler) => {
-				let b = handler.current_block(&id);
-				let s = handler.current_transaction_statuses(&id);
-				(b, s)
-			}
-			None => {
-				let b = self.client.runtime_api().current_block(&id)
-					.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
-				let s = self.client.runtime_api().current_transaction_statuses(&id)
-					.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
-				(b, s)
-			}
-		};
+		let block = handler.current_block(&id);
+		let statuses = handler.current_transaction_statuses(&id);
 
 		match (block, statuses) {
 			(Some(block), Some(statuses)) => {
@@ -881,21 +828,10 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 		};
 		let index = index.value();
 		let schema = self.onchain_storage_schema(id);
+		let handler = self.overrides.get(&schema).unwrap_or(&self.fallback);
 
-		let (block, statuses) = match self.overrides.get(&schema) {
-			Some(handler) => {
-				let b = handler.current_block(&id);
-				let s = handler.current_transaction_statuses(&id);
-				(b, s)
-			}
-			None => {
-				let b = self.client.runtime_api().current_block(&id)
-					.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
-				let s = self.client.runtime_api().current_transaction_statuses(&id)
-					.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
-				(b, s)
-			}
-		};
+		let block = handler.current_block(&id);
+		let statuses = handler.current_transaction_statuses(&id);
 
 		match (block, statuses) {
 			(Some(block), Some(statuses)) => {
@@ -925,24 +861,11 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 			_ => return Ok(None),
 		};
 		let schema = self.onchain_storage_schema(id);
+		let handler = self.overrides.get(&schema).unwrap_or(&self.fallback);
 
-		let (block, statuses, receipts) = match self.overrides.get(&schema) {
-			Some(handler) => {
-				let b = handler.current_block(&id);
-				let s = handler.current_transaction_statuses(&id);
-				let r = handler.current_receipts(&id);
-				(b, s, r)
-			}
-			None => {
-				let b = self.client.runtime_api().current_block(&id)
-					.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
-				let s = self.client.runtime_api().current_transaction_statuses(&id)
-					.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
-				let r = self.client.runtime_api().current_receipts(&id)
-					.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
-				(b, s, r)
-			}
-		};
+		let block = handler.current_block(&id);
+		let statuses = handler.current_transaction_statuses(&id);
+		let receipts = handler.current_receipts(&id);
 
 		match (block, statuses, receipts) {
 			(Some(block), Some(statuses), Some(receipts)) => {
