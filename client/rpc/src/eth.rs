@@ -373,21 +373,12 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 		if let Ok(Some(id)) = self.native_block_id(number) {
 			let schema = self.onchain_storage_schema(id);
 			return Ok(
-				match self.overrides.get(&schema) {
-					Some(handler) => {
-						handler
-						.storage_at(&id, address, index)
-						.ok_or(internal_err("Fetching account storage through override failed"))?
-						.into()
-					}
-					None => {
-						self.client
-							.runtime_api()
-							.storage_at(&id, address, index)
-							.map_err(|err| internal_err(format!("fetch runtime account storage failed: {:?}", err)))?
-							.into()
-					}
-				}
+				self.overrides
+					.get(&schema)
+					.unwrap_or(&self.fallback)
+					.storage_at(&id, address, index)
+					.ok_or(internal_err("Fetching account storage through override failed"))?
+					.into()
 			);
 		}
 		Ok(H256::default())
@@ -401,21 +392,10 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 			_ => return Ok(None),
 		};
 		let schema = self.onchain_storage_schema(id);
+		let handler = self.overrides.get(&schema).unwrap_or(&self.fallback);
 
-		let (block, statuses) = match self.overrides.get(&schema) {
-			Some(handler) => {
-				let b = handler.current_block(&id);
-				let s = handler.current_transaction_statuses(&id);
-				(b, s)
-			}
-			None => {
-				let b = self.client.runtime_api().current_block(&id)
-					.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
-				let s = self.client.runtime_api().current_transaction_statuses(&id)
-					.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
-				(b, s)
-			}
-		};
+		let block = handler.current_block(&id);
+		let statuses = handler.current_transaction_statuses(&id);
 
 		match (block, statuses) {
 			(Some(block), Some(statuses)) => {
@@ -438,21 +418,10 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 			None => return Ok(None),
 		};
 		let schema = self.onchain_storage_schema(id);
+		let handler = self.overrides.get(&schema).unwrap_or(&self.fallback);
 
-		let (block, statuses) = match self.overrides.get(&schema) {
-			Some(handler) => {
-				let b = handler.current_block(&id);
-				let s = handler.current_transaction_statuses(&id);
-				(b, s)
-			}
-			None => {
-				let b = self.client.runtime_api().current_block(&id)
-					.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
-				let s = self.client.runtime_api().current_transaction_statuses(&id)
-					.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
-				(b, s)
-			}
-		};
+		let block = handler.current_block(&id);
+		let statuses = handler.current_transaction_statuses(&id);
 
 		match (block, statuses) {
 			(Some(block), Some(statuses)) => {
