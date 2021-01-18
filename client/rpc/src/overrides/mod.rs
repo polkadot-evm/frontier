@@ -63,6 +63,17 @@ pub struct RuntimeApiStorageOverride<B: BlockT, C> {
 	_marker: PhantomData<B>,
 }
 
+impl<B, C> RuntimeApiStorageOverride<B, C> where
+	C: ProvideRuntimeApi<B>,
+	C::Api: EthereumRuntimeRPCApi<B>,
+	B: BlockT<Hash=H256> + Send + Sync + 'static,
+	C: Send + Sync + 'static,
+{
+	pub fn new(client: Arc<C>) -> Self {
+		Self { client, _marker: PhantomData }
+	}
+}
+
 impl<Block, C> StorageOverride<Block> for RuntimeApiStorageOverride<Block, C>
 where
 	C: ProvideRuntimeApi<Block>,

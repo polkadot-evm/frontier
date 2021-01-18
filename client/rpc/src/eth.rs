@@ -49,7 +49,7 @@ use sp_storage::StorageKey;
 pub use fc_rpc_core::{EthApiServer, NetApiServer, Web3ApiServer};
 use codec::{self, Encode, Decode};
 use pallet_ethereum::EthereumStorageSchema;
-use crate::overrides::StorageOverride;
+use crate::overrides::{StorageOverride, RuntimeApiStorageOverride};
 
 pub struct EthApi<B: BlockT, C, P, CT, BE, H: ExHashT> {
 	pool: Arc<P>,
@@ -59,10 +59,16 @@ pub struct EthApi<B: BlockT, C, P, CT, BE, H: ExHashT> {
 	is_authority: bool,
 	signers: Vec<Box<dyn EthSigner>>,
 	overrides: BTreeMap<EthereumStorageSchema, Box<dyn StorageOverride<B> + Send + Sync>>,
+	fallback: Box<dyn StorageOverride<B> + Send + Sync>,
 	_marker: PhantomData<(B, BE)>,
 }
 
-impl<B: BlockT, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> {
+impl<B: BlockT, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> where
+	C: ProvideRuntimeApi<B>,
+	C::Api: EthereumRuntimeRPCApi<B>,
+	B: BlockT<Hash=H256> + Send + Sync + 'static,
+	C: Send + Sync + 'static,
+{
 	pub fn new(
 		client: Arc<C>,
 		pool: Arc<P>,
@@ -73,13 +79,14 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> {
 		is_authority: bool,
 	) -> Self {
 		Self {
-			client,
+			client: client.clone(),
 			pool,
 			convert_transaction,
 			network,
 			is_authority,
 			signers,
 			overrides,
+			fallback: Box::new(RuntimeApiStorageOverride::new(client)),
 			_marker: PhantomData,
 		}
 	}
@@ -305,21 +312,12 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 		let schema = self.onchain_storage_schema(block);
 
 		Ok(
-			match self.overrides.get(&schema) {
-				Some(handler) => {
-					handler
-						.current_block(&block)
-						.ok_or(internal_err("fetching author through override failed"))?
-						.header.beneficiary
-				}
-				None => {
-					self.client
-						.runtime_api()
-						.author(&block)
-						.map_err(|err| internal_err(format!("fetch runtime author failed: {:?}", err)))?
-						.into()
-				}
-			}
+			self.overrides
+			.get(&schema)
+			.unwrap_or(&self.fallback)
+			.current_block(&block)
+			.ok_or(internal_err("fetching author through override failed"))?
+			.header.beneficiary
 		)
 	}
 
