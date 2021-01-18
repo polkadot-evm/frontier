@@ -2,6 +2,7 @@
 
 use std::{sync::Arc, fmt};
 use std::collections::BTreeMap;
+use fc_rpc_core::types::PendingTransactions;
 use sc_consensus_manual_seal::rpc::{ManualSeal, ManualSealApi};
 use frontier_template_runtime::{Hash, AccountId, Index, opaque::Block, Balance};
 use sp_api::ProvideRuntimeApi;
@@ -46,6 +47,8 @@ pub struct FullDeps<C, P> {
 	pub enable_dev_signer: bool,
 	/// Network service
 	pub network: Arc<NetworkService<Block, Hash>>,
+	/// Ethereum pending transactions.
+	pub pending_transactions: PendingTransactions,
 	/// Manual seal command sink
 	pub command_sink: Option<futures::channel::mpsc::Sender<sc_consensus_manual_seal::rpc::EngineCommand<Hash>>>,
 }
@@ -82,6 +85,7 @@ pub fn create_full<C, P, BE>(
 		deny_unsafe,
 		is_authority,
 		network,
+		pending_transactions,
 		command_sink,
 		enable_dev_signer,
 	} = deps;
@@ -108,6 +112,7 @@ pub fn create_full<C, P, BE>(
 			pool.clone(),
 			frontier_template_runtime::TransactionConverter,
 			network.clone(),
+			pending_transactions.clone(),
 			signers,
 			overrides,
 			is_authority,

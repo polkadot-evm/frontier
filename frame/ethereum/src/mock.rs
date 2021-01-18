@@ -18,7 +18,7 @@
 //! Test utilities
 
 use super::*;
-use crate::{Module, Config};
+use crate::{Module, Config, IntermediateStateRoot};
 use ethereum::{TransactionAction, TransactionSignature};
 use frame_support::{
 	impl_outer_origin, parameter_types, weights::Weight, ConsensusEngineId
@@ -138,7 +138,7 @@ impl AddressMapping<AccountId32> for HashedAddressMapping {
 
 impl pallet_evm::Config for Test {
 	type FeeCalculator = FixedGasPrice;
-	type GasToWeight = ();
+	type GasWeightMapping = ();
 	type CallOrigin = EnsureAddressTruncated;
 	type WithdrawOrigin = EnsureAddressTruncated;
 	type AddressMapping = HashedAddressMapping;
@@ -149,9 +149,15 @@ impl pallet_evm::Config for Test {
 	type ChainId = ChainId;
 }
 
+parameter_types! {
+	pub const BlockGasLimit: U256 = U256::MAX;
+}
+
 impl Config for Test {
 	type Event = ();
 	type FindAuthor = EthereumFindAuthor;
+	type StateRoot = IntermediateStateRoot;
+	type BlockGasLimit = BlockGasLimit;
 }
 
 pub type System = frame_system::Module<Test>;

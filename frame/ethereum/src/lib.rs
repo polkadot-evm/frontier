@@ -39,7 +39,7 @@ use sp_runtime::{
 };
 use evm::ExitReason;
 use fp_evm::CallOrCreateInfo;
-use pallet_evm::{Runner, GasToWeight};
+use pallet_evm::{Runner, GasWeightMapping};
 use sha3::{Digest, Keccak256};
 use codec::{Encode, Decode};
 use fp_consensus::{FRONTIER_ENGINE_ID, ConsensusLog};
@@ -76,12 +76,25 @@ impl Default for EthereumStorageSchema {
 /// A type alias for the balance type from this pallet's point of view.
 pub type BalanceOf<T> = <T as pallet_balances::Config>::Balance;
 
+pub struct IntermediateStateRoot;
+
+impl Get<H256> for IntermediateStateRoot {
+	fn get() -> H256 {
+		H256::decode(&mut &sp_io::storage::root()[..])
+			.expect("Node is configured to use the same hash; qed")
+	}
+}
+
 /// Configuration trait for Ethereum pallet.
 pub trait Config: frame_system::Config<Hash=H256> + pallet_balances::Config + pallet_timestamp::Config + pallet_evm::Config {
 	/// The overarching event type.
 	type Event: From<Event> + Into<<Self as frame_system::Config>::Event>;
 	/// Find author for Ethereum.
 	type FindAuthor: FindAuthor<H160>;
+	/// How Ethereum state root is calculated.
+	type StateRoot: Get<H256>;
+	/// The block gas limit. Can be a simple constant, or an adjustment algorithm in another pallet.
+	type BlockGasLimit: Get<U256>;
 }
 
 decl_storage! {
@@ -131,7 +144,7 @@ decl_module! {
 		fn deposit_event() = default;
 
 		/// Transact an Ethereum transaction.
-		#[weight = <T as pallet_evm::Config>::GasToWeight::gas_to_weight(transaction.gas_limit.low_u32())]
+		#[weight = <T as pallet_evm::Config>::GasWeightMapping::gas_to_weight(transaction.gas_limit.unique_saturated_into())]
 		fn transact(origin, transaction: ethereum::Transaction) -> DispatchResultWithPostInfo {
 			ensure_none(origin)?;
 
@@ -208,7 +221,7 @@ decl_module! {
 			Pending::append((transaction, status, receipt));
 
 			Self::deposit_event(Event::Executed(source, contract_address.unwrap_or_default(), transaction_hash, reason));
-			Ok(Some(T::GasToWeight::gas_to_weight(used_gas.low_u32())).into())
+			Ok(Some(T::GasWeightMapping::gas_to_weight(used_gas.unique_saturated_into())).into())
 		}
 
 		fn on_finalize(n: T::BlockNumber) {
@@ -316,7 +329,7 @@ impl<T: Config> Module<T> {
 					frame_system::Module::<T>::block_number()
 				)
 			),
-			gas_limit: U256::from(u32::max_value()), // TODO: set this using Ethereum's gas limit change algorithm.
+			gas_limit: T::BlockGasLimit::get(),
 			gas_used: receipts.clone().into_iter().fold(U256::zero(), |acc, r| acc + r.used_gas),
 			timestamp: UniqueSaturatedInto::<u64>::unique_saturated_into(
 				pallet_timestamp::Module::<T>::get()
@@ -326,12 +339,7 @@ impl<T: Config> Module<T> {
 			nonce: H64::default(),
 		};
 		let mut block = ethereum::Block::new(partial_header, transactions.clone(), ommers);
-		block.header.state_root = {
-			let mut input = [0u8; 64];
-			input[..32].copy_from_slice(&frame_system::Module::<T>::parent_hash()[..]);
-			input[32..64].copy_from_slice(&block.header.hash()[..]);
-			H256::from_slice(Keccak256::digest(&input).as_slice())
-		};
+		block.header.state_root = T::StateRoot::get();
 
 		let mut transaction_hashes = Vec::new();
 

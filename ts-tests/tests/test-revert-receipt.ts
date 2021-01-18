@@ -82,7 +82,7 @@ describeWithFrontier("Frontier RPC (Constructor Revert)", `simple-specs.json`, (
 			jsonrpc: "2.0",
 			result: FAIL_TX_HASH,
 		});
-		
+
 		await createAndFinalizeBlock(context.web3);
 		const receipt = await context.web3.eth.getTransactionReceipt(FAIL_TX_HASH);
 		expect(receipt).to.include({
