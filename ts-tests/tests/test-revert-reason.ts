@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import { step } from "mocha-steps";
+
 import ExplicitRevertReason from "../build/contracts/ExplicitRevertReason.json"
 import { createAndFinalizeBlock, customRequest, describeWithFrontier } from "./util";
 import { AbiItem } from "web3-utils";
