@@ -1,20 +1,21 @@
 import { expect } from "chai";
 
-import testContract from "../build/contracts/Test.json"
+import Test from "../build/contracts/Test.json"
 import { describeWithFrontier, createAndFinalizeBlock } from "./util";
 import { AbiItem } from "web3-utils";
 
 describeWithFrontier("Frontier RPC (Gas)", `simple-specs.json`, (context) => {
 	const GENESIS_ACCOUNT = "0x6be02d1d3665660d22ff9624b7be0551ee1ac91b";
 
-	const TEST_CONTRACT_ABI = testContract.abi as AbiItem[];
+	const TEST_CONTRACT_BYTECODE = Test.bytecode;
+	const TEST_CONTRACT_ABI = Test.abi as AbiItem[];
 	const FIRST_CONTRACT_ADDRESS = "0xc2bf5f29a4384b1ab0c063e1c666f02121b6084a"; // Those test are ordered. In general this should be avoided, but due to the time it takes	// to spin up a frontier node, it saves a lot of time.
 
 	it("eth_estimateGas for contract creation", async function () {
 		expect(
 			await context.web3.eth.estimateGas({
 				from: GENESIS_ACCOUNT,
-				data: testContract.bytecode,
+				data: Test.bytecode,
 			})
 		).to.equal(91019);
 	});
