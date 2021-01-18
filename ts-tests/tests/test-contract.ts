@@ -1,14 +1,14 @@
 import { expect } from "chai";
 
+import Test from "../build/contracts/Test.json"
 import { createAndFinalizeBlock, customRequest, describeWithFrontier } from "./util";
 
 describeWithFrontier("Frontier RPC (Contract)", `simple-specs.json`, (context) => {
 	const GENESIS_ACCOUNT = "0x6be02d1d3665660d22ff9624b7be0551ee1ac91b";
 	const GENESIS_ACCOUNT_PRIVATE_KEY = "0x99B3C12287537E38C90A9219D4CB074A89A16E9CDB20BF85728EBD97C343E342";
 
-	// Solidity: contract test { function multiply(uint a) public pure returns(uint d) {return a * 7;}}
-	const TEST_CONTRACT_BYTECODE =
-		"0x6080604052348015600f57600080fd5b5060ae8061001e6000396000f3fe6080604052348015600f57600080fd5b506004361060285760003560e01c8063c6888fa114602d575b600080fd5b605660048036036020811015604157600080fd5b8101908080359060200190929190505050606c565b6040518082815260200191505060405180910390f35b600060078202905091905056fea265627a7a72315820f06085b229f27f9ad48b2ff3dd9714350c1698a37853a30136fa6c5a7762af7364736f6c63430005110032";
+	const TEST_CONTRACT_BYTECODE = Test.bytecode;
+	const TEST_CONTRACT_DEPLOYED_BYTECODE = Test.deployedBytecode
 	const FIRST_CONTRACT_ADDRESS = "0xc2bf5f29a4384b1ab0c063e1c666f02121b6084a";
 	// Those test are ordered. In general this should be avoided, but due to the time it takes
 	// to spin up a frontier node, it saves a lot of time.
@@ -29,7 +29,7 @@ describeWithFrontier("Frontier RPC (Contract)", `simple-specs.json`, (context) =
 		expect(await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction])).to.deep.equal({
 			id: 1,
 			jsonrpc: "2.0",
-			result: "0x0b215a8d3d219de0be005a309a58a14abc29a40f142efbed43da6e19e78c6ffc",
+			result: "0xf447aa7c3dae362a1a1222f6ab9c3a04542bf5f2350b9591ede20b37526b33d1",
 		});
 
 		// Verify the contract is not yet stored
@@ -45,7 +45,7 @@ describeWithFrontier("Frontier RPC (Contract)", `simple-specs.json`, (context) =
 			id: 1,
 			jsonrpc: "2.0",
 			result:
-				"0x6080604052348015600f57600080fd5b506004361060285760003560e01c8063c6888fa114602d575b600080fd5b605660048036036020811015604157600080fd5b8101908080359060200190929190505050606c565b6040518082815260200191505060405180910390f35b600060078202905091905056fea265627a7a72315820f06085b229f27f9ad48b2ff3dd9714350c1698a37853a30136fa6c5a7762af7364736f6c63430005110032",
+			TEST_CONTRACT_DEPLOYED_BYTECODE,
 		});
 	});
 });

@@ -1,5 +1,6 @@
 import { expect } from "chai";
-import { createAndFinalizeBlock, customRequest, describeWithFrontier } from "./util";
+
+import { describeWithFrontier } from "./util";
 
 // All test for the RPC
 
