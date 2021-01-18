@@ -1,6 +1,6 @@
 import { expect } from "chai";
 
-import Test from "../build/contracts/test.json"
+import Test from "../build/contracts/Test.json"
 import { createAndFinalizeBlock, customRequest, describeWithFrontier } from "./util";
 
 describeWithFrontier("Frontier RPC (Contract)", `simple-specs.json`, (context) => {
