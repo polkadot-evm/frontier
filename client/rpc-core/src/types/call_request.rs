@@ -21,7 +21,7 @@ use ethereum_types::{H160, U256};
 use crate::types::Bytes;
 
 /// Call request
-#[derive(Debug, Default, PartialEq, Deserialize)]
+#[derive(Debug, Default, PartialEq, Deserialize, Clone)]
 #[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct CallRequest {
