@@ -277,8 +277,9 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 
 	fn syncing(&self) -> Result<SyncStatus> {
 		if self.network.is_major_syncing() {
+			let temp: u64 = self.client.info().best_number.clone().unique_saturated_into();
 			let block_number = U256::from(
-				self.client.info().best_number.clone().unique_saturated_into()
+				temp
 			);
 			Ok(SyncStatus::Info(SyncInfo {
 				starting_block: U256::zero(),
@@ -353,7 +354,8 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 	}
 
 	fn block_number(&self) -> Result<U256> {
-		Ok(U256::from(self.client.info().best_number.clone().unique_saturated_into()))
+		let temp : u64 = self.client.info().best_number.clone().unique_saturated_into();
+		Ok(U256::from(temp))
 	}
 
 	fn balance(&self, address: H160, number: Option<BlockNumber>) -> Result<U256> {
