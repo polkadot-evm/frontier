@@ -1513,7 +1513,21 @@ impl<B, C> EthFilterApiT for EthFilterApi<B, C> where
 		response
 	}
 
-	fn uninstall_filter(&self, _: Index) -> Result<bool> {
-		unimplemented!();
+	fn uninstall_filter(&self, index: Index) -> Result<bool> {
+		let key = U256::from(index.value());
+		let pool = self.filter_pool.clone();
+		// Try to lock.
+		let response = if let Ok(locked) = &mut pool.lock() {
+			if let Some(_) = locked.remove(&key) {
+				Ok(true)
+			} else {
+				Err(internal_err(
+					format!("Filter id {:?} does not exist.", key)
+				))
+			}
+		} else {
+			Err(internal_err("Filter pool is not available."))
+		};
+		response
 	}
 }
