@@ -1329,11 +1329,11 @@ impl<B, C> EthFilterApiT for EthFilterApi<B, C> where
 	fn new_filter(&self, filter: Filter) -> Result<U256> {
 		self.create_filter(FilterType::Log(filter))
 	}
-	
+
 	fn new_block_filter(&self) -> Result<U256> {
 		self.create_filter(FilterType::Block)
 	}
-	
+
 	fn new_pending_transaction_filter(&self) -> Result<U256> {
 		self.create_filter(FilterType::PendingTransaction)
 	}
