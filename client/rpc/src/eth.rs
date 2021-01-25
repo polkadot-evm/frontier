@@ -1335,7 +1335,7 @@ impl<B, C> EthFilterApiT for EthFilterApi<B, C> where
 	}
 	
 	fn new_pending_transaction_filter(&self) -> Result<U256> {
-		unimplemented!();
+		self.create_filter(FilterType::PendingTransaction)
 	}
 
 	fn filter_changes(&self, _: Index) -> BoxFuture<FilterChanges> {

@@ -33,4 +33,10 @@ describeWithFrontier("Frontier RPC (EthFilterApi)", `simple-specs.json`, (contex
         );
         expect(create_filter.result).to.be.eq("0x3");
     });
+    
+    step("should create a Pending Transaction filter and return the ID", async function () {
+		let create_filter = await customRequest(context.web3, "eth_newPendingTransactionFilter", []
+        );
+        expect(create_filter.result).to.be.eq("0x4");
+    });
 });
