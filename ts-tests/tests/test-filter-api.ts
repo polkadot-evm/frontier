@@ -141,18 +141,18 @@ describeWithFrontier("Frontier RPC (EthFilterApi)", `simple-specs.json`, (contex
 	});
 
 	step("should uninstall created filters.", async function () {
-        let create_filter = await customRequest(context.web3, "eth_newBlockFilter", []);
-        let filter_id = create_filter.result;
-        
-        // Should return true when removed from the filter pool.
-        let uninstall = await customRequest(context.web3, "eth_uninstallFilter", [filter_id]);
-        expect(uninstall.result).to.be.eq(true);
+		let create_filter = await customRequest(context.web3, "eth_newBlockFilter", []);
+		let filter_id = create_filter.result;
+		
+		// Should return true when removed from the filter pool.
+		let uninstall = await customRequest(context.web3, "eth_uninstallFilter", [filter_id]);
+		expect(uninstall.result).to.be.eq(true);
 
-        // Should return error if does not exist.
-        try {
+		// Should return error if does not exist.
+		try {
 			await await customRequest(context.web3, "eth_uninstallFilter", [filter_id]);
 		} catch (error) {
 			expect(JSON.parse(uninstall.error).message).to.be.eq("Filter id 7 does not exist.");
 		}
-    });
+	});
 });
