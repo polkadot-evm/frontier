@@ -34,16 +34,18 @@ use sc_client_api::backend::{StorageProvider, Backend, StateBackend, AuxStore};
 use sha3::{Keccak256, Digest};
 use sp_blockchain::{Error as BlockChainError, HeaderMetadata, HeaderBackend};
 use sc_network::{NetworkService, ExHashT};
-use fc_rpc_core::{EthApi as EthApiT, NetApi as NetApiT, Web3Api as Web3ApiT};
+use fc_rpc_core::{
+	EthApi as EthApiT, NetApi as NetApiT, Web3Api as Web3ApiT, EthFilterApi as EthFilterApiT
+};
 use fc_rpc_core::types::{
-	BlockNumber, Bytes, CallRequest, Filter, FilteredParams, Index, Log, Receipt, RichBlock,
-	SyncStatus, SyncInfo, Transaction, Work, Rich, Block, BlockTransactions, VariadicValue,
-	TransactionRequest, PendingTransactions, PendingTransaction,
+	BlockNumber, Bytes, CallRequest, Filter, FilteredParams, FilterChanges, Index, Log, Receipt,
+	RichBlock, SyncStatus, SyncInfo, Transaction, Work, Rich, Block, BlockTransactions,
+	VariadicValue, TransactionRequest, PendingTransactions, PendingTransaction,
 };
 use fp_rpc::{EthereumRuntimeRPCApi, ConvertTransaction, TransactionStatus};
 use crate::{internal_err, error_on_execution_failure, EthSigner, public_key};
 
-pub use fc_rpc_core::{EthApiServer, NetApiServer, Web3ApiServer};
+pub use fc_rpc_core::{EthApiServer, NetApiServer, Web3ApiServer, EthFilterApiServer};
 use codec::{self, Encode};
 
 pub struct EthApi<B: BlockT, C, P, CT, BE, H: ExHashT> {
@@ -1252,5 +1254,54 @@ impl<B, C> Web3ApiT for Web3Api<B, C> where
 		Ok(H256::from_slice(
 			Keccak256::digest(&input.into_vec()).as_slice()
 		))
+	}
+}
+
+pub struct EthFilterApi<B, C> {
+	client: Arc<C>,
+	_marker: PhantomData<B>,
+}
+
+impl<B, C> EthFilterApi<B, C> {
+	pub fn new(
+		client: Arc<C>,
+	) -> Self {
+		Self {
+			client: client,
+			_marker: PhantomData,
+		}
+	}
+}
+
+impl<B, C> EthFilterApiT for EthFilterApi<B, C> where
+	C: ProvideRuntimeApi<B> + AuxStore,
+	C::Api: EthereumRuntimeRPCApi<B>,
+	C: HeaderBackend<B> + HeaderMetadata<B, Error=BlockChainError> + 'static,
+	C: Send + Sync + 'static,
+	B: BlockT<Hash=H256> + Send + Sync + 'static,
+{
+	
+	fn new_filter(&self, _: Filter) -> Result<U256>{
+		unimplemented!();
+	}
+	
+	fn new_block_filter(&self) -> Result<U256> {
+		unimplemented!();
+	}
+	
+	fn new_pending_transaction_filter(&self) -> Result<U256> {
+		unimplemented!();
+	}
+
+	fn filter_changes(&self, _: Index) -> BoxFuture<FilterChanges> {
+		unimplemented!();
+	}
+
+	fn filter_logs(&self, _: Index) -> BoxFuture<Vec<Log>> {
+		unimplemented!();
+	}
+
+	fn uninstall_filter(&self, _: Index) -> Result<bool> {
+		unimplemented!();
 	}
 }

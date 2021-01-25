@@ -27,6 +27,7 @@ use crate::types::{
 	RichBlock, SyncStatus, Transaction, Work, TransactionRequest,
 };
 pub use rpc_impl_EthApi::gen_server::EthApi as EthApiServer;
+pub use rpc_impl_EthFilterApi::gen_server::EthFilterApi as EthFilterApiServer;
 
 /// Eth rpc interface.
 #[rpc(server)]

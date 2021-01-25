@@ -72,8 +72,9 @@ pub fn create_full<C, P, BE>(
 	use substrate_frame_rpc_system::{FullSystem, SystemApi};
 	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApi};
 	use fc_rpc::{
-		EthApi, EthApiServer, NetApi, NetApiServer, EthPubSubApi, EthPubSubApiServer,
-		Web3Api, Web3ApiServer, EthDevSigner, EthSigner, HexEncodedIdProvider,
+		EthApi, EthApiServer, EthFilterApi, EthFilterApiServer, NetApi, NetApiServer,
+		EthPubSubApi, EthPubSubApiServer, Web3Api, Web3ApiServer, EthDevSigner, EthSigner,
+		HexEncodedIdProvider,
 	};
 
 	let mut io = jsonrpc_core::IoHandler::default();
@@ -108,6 +109,12 @@ pub fn create_full<C, P, BE>(
 			pending_transactions.clone(),
 			signers,
 			is_authority,
+		))
+	);
+
+	io.extend_with(
+		EthFilterApiServer::to_delegate(EthFilterApi::new(
+			client.clone(),
 		))
 	);
 
