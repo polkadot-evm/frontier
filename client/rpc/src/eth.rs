@@ -15,8 +15,11 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
-
-use std::{marker::PhantomData, sync::{Arc, Mutex}};
+use std::{
+	marker::PhantomData,
+	sync::{Arc, Mutex},
+	time::{SystemTime, UNIX_EPOCH}
+};
 use std::collections::BTreeMap;
 use ethereum::{
 	Block as EthereumBlock, Transaction as EthereumTransaction
@@ -38,8 +41,8 @@ use fc_rpc_core::{
 	EthApi as EthApiT, NetApi as NetApiT, Web3Api as Web3ApiT, EthFilterApi as EthFilterApiT
 };
 use fc_rpc_core::types::{
-	BlockNumber, Bytes, CallRequest, Filter, FilteredParams, FilterChanges, FilterPool,
-	Index, Log, Receipt, RichBlock, SyncStatus, SyncInfo, Transaction, Work, Rich, Block,
+	BlockNumber, Bytes, CallRequest, Filter, FilteredParams, FilterChanges, FilterPool, FilterPoolItem,
+	FilterType, Index, Log, Receipt, RichBlock, SyncStatus, SyncInfo, Transaction, Work, Rich, Block,
 	BlockTransactions, VariadicValue, TransactionRequest, PendingTransactions,
 	PendingTransaction,
 };
@@ -1283,9 +1286,36 @@ impl<B, C> EthFilterApiT for EthFilterApi<B, C> where
 	C: Send + Sync + 'static,
 	B: BlockT<Hash=H256> + Send + Sync + 'static,
 {
-	
-	fn new_filter(&self, _: Filter) -> Result<U256>{
-		unimplemented!();
+	fn new_filter(&self, filter: Filter) -> Result<U256> {
+		let block_number = self.client.info().best_number;
+		let pool = self.filter_pool.clone();
+		let response = if let Ok(locked) = &mut pool.lock() {
+			let last_key = match locked.iter().next_back() {
+				Some((k,_)) => *k,
+				None => U256::zero()
+			};
+			if let Some(key) = last_key.checked_add(U256::one()) {
+				locked.insert(
+					key,
+					FilterPoolItem {
+						last_poll: BlockNumber::Num(
+							block_number.unique_saturated_into() as u64
+						),
+						filter_type: FilterType::Log(filter),
+						created_at: SystemTime::now()
+							.duration_since(UNIX_EPOCH)
+							.expect("Time went backwards")
+							.as_millis()
+					}
+				);
+				Ok(key)
+			} else {
+				Err(internal_err("Filter pool is full."))
+			}
+		} else {
+			Err(internal_err("Filter pool is not available."))
+		};
+		response
 	}
 	
 	fn new_block_filter(&self) -> Result<U256> {
