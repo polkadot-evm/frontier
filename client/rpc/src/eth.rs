@@ -1427,7 +1427,6 @@ impl<B, C> EthFilterApiT for EthFilterApi<B, C> where
 							}
 						}
 						// Update filter `last_poll`.
-						let best_number = self.client.info().best_number;
 						locked.insert(
 							key,
 							FilterPoolItem {
@@ -1448,7 +1447,7 @@ impl<B, C> EthFilterApiT for EthFilterApi<B, C> where
 					}
 				}
 			} else {
-				Err(internal_err(format!("Filter item {:?} does not exist.", key)))
+				Err(internal_err(format!("Filter id {:?} does not exist.", key)))
 			}
 		} else {
 			Err(internal_err("Filter pool is not available."))
@@ -1456,8 +1455,62 @@ impl<B, C> EthFilterApiT for EthFilterApi<B, C> where
 		response
 	}
 
-	fn filter_logs(&self, _: Index) -> Result<Vec<Log>> {
-		unimplemented!();
+	fn filter_logs(&self, index: Index) -> Result<Vec<Log>> {
+		let key = U256::from(index.value());
+		let pool = self.filter_pool.clone();
+		// Try to lock.
+		let response = if let Ok(locked) = &mut pool.lock() {
+			// Try to get key.
+			if let Some(pool_item) = locked.clone().get(&key) {
+				match &pool_item.filter_type {
+					FilterType::Log(filter) => {
+						let mut current_number = filter.to_block.clone()
+							.and_then(|v| v.to_min_block_num())
+							.map(|s| s.unique_saturated_into())
+							.unwrap_or(
+								self.client.info().best_number
+							);
+
+						let from_number = filter.from_block.clone()
+							.and_then(|v| v.to_min_block_num())
+							.map(|s| s.unique_saturated_into())
+							.unwrap_or(
+								self.client.info().best_number
+							);
+
+						let mut blocks_and_statuses = Vec::new();
+						while current_number >= from_number {
+							let id = BlockId::Number(current_number);
+
+							let (block, _, statuses) = self.client.runtime_api()
+								.current_all(&id)
+								.map_err(|err| internal_err(
+									format!("fetch runtime account basic failed: {:?}", err)
+								))?;
+
+							if let (Some(block), Some(statuses)) = (block, statuses) {
+								blocks_and_statuses.push((block, statuses));
+							}
+
+							if current_number == Zero::zero() {
+								break
+							} else {
+								current_number = current_number.saturating_sub(One::one());
+							}
+						}
+						Ok(logs_build(filter.clone(), blocks_and_statuses))
+					},
+					_ => Err(internal_err(
+						format!("Filter id {:?} is not a Log filter.", key)
+					))
+				}
+			} else {
+				Err(internal_err(format!("Filter id {:?} does not exist.", key)))
+			}
+		} else {
+			Err(internal_err("Filter pool is not available."))
+		};
+		response
 	}
 
 	fn uninstall_filter(&self, _: Index) -> Result<bool> {

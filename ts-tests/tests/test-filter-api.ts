@@ -111,4 +111,33 @@ describeWithFrontier("Frontier RPC (EthFilterApi)", `simple-specs.json`, (contex
 		expect(poll.result.length).to.be.eq(0);
 	});
 
+	step("should return response for raw Log filter request.", async function () {
+		// Create contract.
+		let tx = await sendTransaction(context);
+		await createAndFinalizeBlock(context.web3);
+		let receipt = await context.web3.eth.getTransactionReceipt(tx.transactionHash);
+
+		expect(receipt.logs.length).to.be.eq(1);
+
+		// Create a filter for the created contract.
+		let create_filter = await customRequest(context.web3, "eth_newFilter", [{
+			"fromBlock": "0x0",
+			"toBlock": "latest",
+			"address": receipt.contractAddress,
+			"topics": receipt.logs[0].topics
+		}]);
+		let poll = await customRequest(context.web3, "eth_getFilterLogs", [create_filter.result]);
+
+		expect(poll.result.length).to.be.eq(1);
+		expect(poll.result[0].address.toLowerCase()).to.be.eq(receipt.contractAddress.toLowerCase());
+		expect(poll.result[0].topics).to.be.deep.eq(receipt.logs[0].topics);
+
+		// A subsequent request must return the same response.
+		poll = await customRequest(context.web3, "eth_getFilterLogs", [create_filter.result]);
+
+		expect(poll.result.length).to.be.eq(1);
+		expect(poll.result[0].address.toLowerCase()).to.be.eq(receipt.contractAddress.toLowerCase());
+		expect(poll.result[0].topics).to.be.deep.eq(receipt.logs[0].topics);
+	});
+
 });
