@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use std::{marker::PhantomData, sync::Arc};
+use std::{marker::PhantomData, sync::{Arc, Mutex}};
 use std::collections::BTreeMap;
 use ethereum::{
 	Block as EthereumBlock, Transaction as EthereumTransaction
@@ -38,9 +38,10 @@ use fc_rpc_core::{
 	EthApi as EthApiT, NetApi as NetApiT, Web3Api as Web3ApiT, EthFilterApi as EthFilterApiT
 };
 use fc_rpc_core::types::{
-	BlockNumber, Bytes, CallRequest, Filter, FilteredParams, FilterChanges, Index, Log, Receipt,
-	RichBlock, SyncStatus, SyncInfo, Transaction, Work, Rich, Block, BlockTransactions,
-	VariadicValue, TransactionRequest, PendingTransactions, PendingTransaction,
+	BlockNumber, Bytes, CallRequest, Filter, FilteredParams, FilterChanges, FilterPool,
+	Index, Log, Receipt, RichBlock, SyncStatus, SyncInfo, Transaction, Work, Rich, Block,
+	BlockTransactions, VariadicValue, TransactionRequest, PendingTransactions,
+	PendingTransaction,
 };
 use fp_rpc::{EthereumRuntimeRPCApi, ConvertTransaction, TransactionStatus};
 use crate::{internal_err, error_on_execution_failure, EthSigner, public_key};
@@ -1259,6 +1260,7 @@ impl<B, C> Web3ApiT for Web3Api<B, C> where
 
 pub struct EthFilterApi<B, C> {
 	client: Arc<C>,
+	filter_pool: FilterPool,
 	_marker: PhantomData<B>,
 }
 
@@ -1268,6 +1270,7 @@ impl<B, C> EthFilterApi<B, C> {
 	) -> Self {
 		Self {
 			client: client,
+			filter_pool: Arc::new(Mutex::new(BTreeMap::new())),
 			_marker: PhantomData,
 		}
 	}
