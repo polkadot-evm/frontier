@@ -1292,8 +1292,9 @@ impl<B, C> EthFilterApi<B, C> where
 	B: BlockT<Hash=H256> + Send + Sync + 'static,
 {
 	fn create_filter(&self, filter_type: FilterType) -> Result<U256> {
-		let block_number = self.client.info()
-			.best_number.unique_saturated_into() as u64;
+		let block_number = UniqueSaturatedInto::<u64>::unique_saturated_into(
+			self.client.info().best_number
+		);
 		let pool = self.filter_pool.clone();
 		let response = if let Ok(locked) = &mut pool.lock() {
 			let last_key = match locked.iter().next_back() {
@@ -1344,8 +1345,9 @@ impl<B, C> EthFilterApiT for EthFilterApi<B, C> where
 
 	fn filter_changes(&self, index: Index) -> Result<FilterChanges> {
 		let key = U256::from(index.value());
-		let block_number = self.client.info()
-			.best_number.unique_saturated_into() as u64;
+		let block_number = UniqueSaturatedInto::<u64>::unique_saturated_into(
+			self.client.info().best_number
+		);
 		let pool = self.filter_pool.clone();
 		// Try to lock.
 		let response = if let Ok(locked) = &mut pool.lock() {
@@ -1429,7 +1431,9 @@ impl<B, C> EthFilterApiT for EthFilterApi<B, C> where
 						locked.insert(
 							key,
 							FilterPoolItem {
-								last_poll: BlockNumber::Num(block_number + 1),
+								last_poll: BlockNumber::Num(
+									block_number + 1
+								),
 								filter_type: pool_item.clone().filter_type,
 								created_at: pool_item.created_at
 							}
