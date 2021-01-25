@@ -26,5 +26,11 @@ describeWithFrontier("Frontier RPC (EthFilterApi)", `simple-specs.json`, (contex
           }]
         );
         expect(create_filter.result).to.be.eq("0x2");
-	});
+    });
+    
+    step("should create a Block filter and return the ID", async function () {
+		let create_filter = await customRequest(context.web3, "eth_newBlockFilter", []
+        );
+        expect(create_filter.result).to.be.eq("0x3");
+    });
 });
