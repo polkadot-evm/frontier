@@ -1292,7 +1292,8 @@ impl<B, C> EthFilterApi<B, C> where
 	B: BlockT<Hash=H256> + Send + Sync + 'static,
 {
 	fn create_filter(&self, filter_type: FilterType) -> Result<U256> {
-		let block_number = self.client.info().best_number;
+		let block_number = self.client.info()
+			.best_number.unique_saturated_into() as u64;
 		let pool = self.filter_pool.clone();
 		let response = if let Ok(locked) = &mut pool.lock() {
 			let last_key = match locked.iter().next_back() {
@@ -1303,9 +1304,7 @@ impl<B, C> EthFilterApi<B, C> where
 				locked.insert(
 					key,
 					FilterPoolItem {
-						last_poll: BlockNumber::Num(
-							block_number.unique_saturated_into() as u64
-						),
+						last_poll: BlockNumber::Num(block_number),
 						filter_type: filter_type,
 						created_at: SystemTime::now()
 							.duration_since(UNIX_EPOCH)
@@ -1345,7 +1344,8 @@ impl<B, C> EthFilterApiT for EthFilterApi<B, C> where
 
 	fn filter_changes(&self, index: Index) -> Result<FilterChanges> {
 		let key = U256::from(index.value());
-		let block_number = self.client.info().best_number;
+		let block_number = self.client.info()
+			.best_number.unique_saturated_into() as u64;
 		let pool = self.filter_pool.clone();
 		// Try to lock.
 		let response = if let Ok(locked) = &mut pool.lock() {
@@ -1355,8 +1355,7 @@ impl<B, C> EthFilterApiT for EthFilterApi<B, C> where
 					// For each block created since last poll, get a vector of ethereum hashes.
 					FilterType::Block => {
 						let last = pool_item.last_poll.to_min_block_num().unwrap();
-						let current = block_number.unique_saturated_into() as u64;
-						let next = current + 1;
+						let next = block_number + 1;
 						let mut ethereum_hashes: Vec<H256> = Vec::new();
 						for n in last..next {
 							let id = BlockId::Number(n.unique_saturated_into());
@@ -1430,9 +1429,7 @@ impl<B, C> EthFilterApiT for EthFilterApi<B, C> where
 						locked.insert(
 							key,
 							FilterPoolItem {
-								last_poll: BlockNumber::Num(
-									(block_number.unique_saturated_into() as u64) + 1
-								),
+								last_poll: BlockNumber::Num(block_number + 1),
 								filter_type: pool_item.clone().filter_type,
 								created_at: pool_item.created_at
 							}
