@@ -1279,14 +1279,14 @@ impl<B, C> EthFilterApi<B, C> {
 	}
 }
 
-impl<B, C> EthFilterApiT for EthFilterApi<B, C> where
+impl<B, C> EthFilterApi<B, C> where
 	C: ProvideRuntimeApi<B> + AuxStore,
 	C::Api: EthereumRuntimeRPCApi<B>,
 	C: HeaderBackend<B> + HeaderMetadata<B, Error=BlockChainError> + 'static,
 	C: Send + Sync + 'static,
 	B: BlockT<Hash=H256> + Send + Sync + 'static,
 {
-	fn new_filter(&self, filter: Filter) -> Result<U256> {
+	fn create_filter(&self, filter_type: FilterType) -> Result<U256> {
 		let block_number = self.client.info().best_number;
 		let pool = self.filter_pool.clone();
 		let response = if let Ok(locked) = &mut pool.lock() {
@@ -1301,7 +1301,7 @@ impl<B, C> EthFilterApiT for EthFilterApi<B, C> where
 						last_poll: BlockNumber::Num(
 							block_number.unique_saturated_into() as u64
 						),
-						filter_type: FilterType::Log(filter),
+						filter_type: filter_type,
 						created_at: SystemTime::now()
 							.duration_since(UNIX_EPOCH)
 							.expect("Time went backwards")
@@ -1316,6 +1316,18 @@ impl<B, C> EthFilterApiT for EthFilterApi<B, C> where
 			Err(internal_err("Filter pool is not available."))
 		};
 		response
+	}
+}
+
+impl<B, C> EthFilterApiT for EthFilterApi<B, C> where
+	C: ProvideRuntimeApi<B> + AuxStore,
+	C::Api: EthereumRuntimeRPCApi<B>,
+	C: HeaderBackend<B> + HeaderMetadata<B, Error=BlockChainError> + 'static,
+	C: Send + Sync + 'static,
+	B: BlockT<Hash=H256> + Send + Sync + 'static,
+{
+	fn new_filter(&self, filter: Filter) -> Result<U256> {
+		self.create_filter(FilterType::Log(filter))
 	}
 	
 	fn new_block_filter(&self) -> Result<U256> {
