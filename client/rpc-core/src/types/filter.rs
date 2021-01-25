@@ -316,12 +316,14 @@ impl Serialize for FilterChanges {
 
 }
 
+#[derive(Debug, Clone)]
 pub enum FilterType {
 	Block,
 	PendingTransaction,
 	Log(Filter)
 }
 
+#[derive(Debug, Clone)]
 pub struct FilterPoolItem {
 	pub last_poll: BlockNumber,
 	pub filter_type: FilterType,

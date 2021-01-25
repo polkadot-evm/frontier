@@ -1338,11 +1338,62 @@ impl<B, C> EthFilterApiT for EthFilterApi<B, C> where
 		self.create_filter(FilterType::PendingTransaction)
 	}
 
-	fn filter_changes(&self, _: Index) -> BoxFuture<FilterChanges> {
-		unimplemented!();
+	fn filter_changes(&self, index: Index) -> Result<FilterChanges> {
+		let key = U256::from(index.value());
+		let block_number = self.client.info().best_number;
+		let pool = self.filter_pool.clone();
+		// Try to lock.
+		let response = if let Ok(locked) = &mut pool.lock() {
+			// Try to get key.
+			if let Some(pool_item) = locked.clone().get(&key) {
+				match &pool_item.filter_type {
+					// For each block created since last poll, get the ethereum hash.
+					FilterType::Block => {
+						let last = pool_item.last_poll.to_min_block_num().unwrap();
+						let current = block_number.unique_saturated_into() as u64;
+						let next = current + 1;
+						let mut ethereum_hashes: Vec<H256> = Vec::new();
+						for n in last..next {
+							let id = BlockId::Number(n.unique_saturated_into());
+							let block = self.client.runtime_api()
+								.current_block(&id)
+								.map_err(|err| internal_err(
+									format!("fetch runtime block failed: {:?}", err)
+								))?;
+							if let Some(block) = block {
+								ethereum_hashes.push(block.header.hash())
+							}
+						}
+						// Update filter `last_poll`.
+						locked.insert(
+							key,
+							FilterPoolItem {
+								last_poll: BlockNumber::Num(next),
+								filter_type: pool_item.clone().filter_type,
+								created_at: pool_item.created_at
+							}
+						);
+						Ok(FilterChanges::Hashes(ethereum_hashes))
+					},
+					// TODO: use last_poll as block number for the stored filter, and after replace that item in the btreemap
+					FilterType::Log(filter) => {
+						Ok(FilterChanges::Hashes(Vec::new()))
+					},
+					// TODO: pending transactions is unsupported?
+					_ => {
+						Ok(FilterChanges::Hashes(Vec::new()))
+					}
+				}
+			} else {
+				Err(internal_err(format!("Filter item {:?} does not exist.", key)))
+			}
+		} else {
+			Err(internal_err("Filter pool is not available."))
+		};
+		response
 	}
 
-	fn filter_logs(&self, _: Index) -> BoxFuture<Vec<Log>> {
+	fn filter_logs(&self, _: Index) -> Result<Vec<Log>> {
 		unimplemented!();
 	}
 
