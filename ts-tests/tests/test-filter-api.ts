@@ -162,6 +162,7 @@ describeWithFrontier("Frontier RPC (EthFilterApi)", `simple-specs.json`, (contex
 	});
 
 	step("should drain the filter pool.", async function () {
+		this.timeout(15000);
 		const block_lifespan_threshold = 100;
 
 		let create_filter = await customRequest(context.web3, "eth_newBlockFilter", []);
