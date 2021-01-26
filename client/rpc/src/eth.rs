@@ -15,11 +15,7 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
-use std::{
-	marker::PhantomData,
-	sync::{Arc, Mutex},
-	time::{SystemTime, UNIX_EPOCH}
-};
+use std::{marker::PhantomData, sync::Arc};
 use std::collections::BTreeMap;
 use ethereum::{
 	Block as EthereumBlock, Transaction as EthereumTransaction
@@ -1269,16 +1265,20 @@ impl<B, C> Web3ApiT for Web3Api<B, C> where
 pub struct EthFilterApi<B, C> {
 	client: Arc<C>,
 	filter_pool: FilterPool,
+	max_stored_filters: usize,
 	_marker: PhantomData<B>,
 }
 
 impl<B, C> EthFilterApi<B, C> {
 	pub fn new(
 		client: Arc<C>,
+		filter_pool: FilterPool,
+		max_stored_filters: usize,
 	) -> Self {
 		Self {
-			client: client,
-			filter_pool: Arc::new(Mutex::new(BTreeMap::new())),
+			client,
+			filter_pool,
+			max_stored_filters,
 			_marker: PhantomData,
 		}
 	}
@@ -1297,26 +1297,26 @@ impl<B, C> EthFilterApi<B, C> where
 		);
 		let pool = self.filter_pool.clone();
 		let response = if let Ok(locked) = &mut pool.lock() {
+			if locked.len() >= self.max_stored_filters {
+				return Err(internal_err(
+					format!("Filter pool is full (limit {:?}).", self.max_stored_filters)
+				));
+			}
 			let last_key = match locked.iter().next_back() {
 				Some((k,_)) => *k,
 				None => U256::zero()
 			};
-			if let Some(key) = last_key.checked_add(U256::one()) {
-				locked.insert(
-					key,
-					FilterPoolItem {
-						last_poll: BlockNumber::Num(block_number),
-						filter_type: filter_type,
-						created_at: SystemTime::now()
-							.duration_since(UNIX_EPOCH)
-							.expect("Time went backwards")
-							.as_millis()
-					}
-				);
-				Ok(key)
-			} else {
-				Err(internal_err("Filter pool is full."))
-			}
+			// Assume `max_stored_filters` is always < U256::max.
+			let key = last_key.checked_add(U256::one()).unwrap();
+			locked.insert(
+				key,
+				FilterPoolItem {
+					last_poll: BlockNumber::Num(block_number),
+					filter_type: filter_type,
+					at_block: block_number
+				}
+			);
+			Ok(key)
 		} else {
 			Err(internal_err("Filter pool is not available."))
 		};
@@ -1376,7 +1376,7 @@ impl<B, C> EthFilterApiT for EthFilterApi<B, C> where
 							FilterPoolItem {
 								last_poll: BlockNumber::Num(next),
 								filter_type: pool_item.clone().filter_type,
-								created_at: pool_item.created_at
+								at_block: pool_item.at_block
 							}
 						);
 						Ok(FilterChanges::Hashes(ethereum_hashes))
@@ -1435,7 +1435,7 @@ impl<B, C> EthFilterApiT for EthFilterApi<B, C> where
 									block_number + 1
 								),
 								filter_type: pool_item.clone().filter_type,
-								created_at: pool_item.created_at
+								at_block: pool_item.at_block
 							}
 						);
 						Ok(FilterChanges::Logs(

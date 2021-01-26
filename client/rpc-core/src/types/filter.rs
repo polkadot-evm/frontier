@@ -327,7 +327,7 @@ pub enum FilterType {
 pub struct FilterPoolItem {
 	pub last_poll: BlockNumber,
 	pub filter_type: FilterType,
-	pub created_at: u128
+	pub at_block: u64
 }
 
 /// On-memory stored filters created through the `eth_newFilter` RPC.

@@ -149,10 +149,44 @@ describeWithFrontier("Frontier RPC (EthFilterApi)", `simple-specs.json`, (contex
 		expect(uninstall.result).to.be.eq(true);
 
 		// Should return error if does not exist.
-		try {
-			await await customRequest(context.web3, "eth_uninstallFilter", [filter_id]);
-		} catch (error) {
-			expect(JSON.parse(uninstall.error).message).to.be.eq("Filter id 7 does not exist.");
+		let r = await customRequest(context.web3, "eth_uninstallFilter", [filter_id]);
+		expect(
+			r.error
+		).to.include({
+			message: 'Filter id 7 does not exist.'
+		});
+	});
+
+	step("should drain the filter pool.", async function () {
+		const block_lifespan_threshold = 100;
+
+		let create_filter = await customRequest(context.web3, "eth_newBlockFilter", []);
+		let filter_id = create_filter.result;
+
+		for (let i = 0; i <= block_lifespan_threshold; i++) {
+			await createAndFinalizeBlock(context.web3);
 		}
+
+		let r = await customRequest(context.web3, "eth_getFilterChanges", [filter_id]);
+		expect(
+			r.error
+		).to.include({
+			message: 'Filter id 7 does not exist.'
+		});
+	});
+
+	step("should have a filter pool max size of 500.", async function () {
+		const max_filter_pool = 500;
+
+		for (let i = 0; i < max_filter_pool; i++) {
+			await customRequest(context.web3, "eth_newBlockFilter", []);
+		}
+
+		let r = await customRequest(context.web3, "eth_newBlockFilter", []);
+		expect(
+			r.error
+		).to.include({
+			message: 'Filter pool is full (limit 500).'
+		});
 	});
 });
