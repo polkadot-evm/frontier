@@ -53,9 +53,13 @@ describeWithFrontier("Frontier RPC (EthFilterApi)", `simple-specs.json`, (contex
 		expect(create_filter.result).to.be.eq("0x3");
 	});
 	
-	step("should create a Pending Transaction filter and return the ID", async function () {
-		let create_filter = await customRequest(context.web3, "eth_newPendingTransactionFilter", []);
-		expect(create_filter.result).to.be.eq("0x4");
+	step("should return unsupported error for Pending Transaction filter creation", async function () {
+		let r = await customRequest(context.web3, "eth_newPendingTransactionFilter", []);
+		expect(
+			r.error
+		).to.include({
+			message: 'Method not available.'
+		});
 	});
 	
 	step("should return responses for Block filter polling.", async function () {
@@ -153,7 +157,7 @@ describeWithFrontier("Frontier RPC (EthFilterApi)", `simple-specs.json`, (contex
 		expect(
 			r.error
 		).to.include({
-			message: 'Filter id 7 does not exist.'
+			message: 'Filter id 6 does not exist.'
 		});
 	});
 
@@ -171,7 +175,7 @@ describeWithFrontier("Frontier RPC (EthFilterApi)", `simple-specs.json`, (contex
 		expect(
 			r.error
 		).to.include({
-			message: 'Filter id 7 does not exist.'
+			message: 'Filter id 6 does not exist.'
 		});
 	});
 
