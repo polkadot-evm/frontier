@@ -1121,12 +1121,16 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 				blocks_and_statuses.push((block, statuses));
 			}
 		} else {
-			let mut current_number = filter.to_block.clone()
+			let best_number = self.client.info().best_number;
+			let mut current_number = filter
+				.to_block.clone()
 				.and_then(|v| v.to_min_block_num())
 				.map(|s| s.unique_saturated_into())
-				.unwrap_or(
-					self.client.info().best_number
-				);
+				.unwrap_or(best_number);
+
+			if current_number > best_number {
+				current_number = best_number;
+			}
 
 			let from_number = filter.from_block.clone()
 				.and_then(|v| v.to_min_block_num())
@@ -1383,13 +1387,16 @@ impl<B, C> EthFilterApiT for EthFilterApi<B, C> where
 					// For each event since last poll, get a vector of ethereum logs.
 					FilterType::Log(filter) => {
 						// Either the filter-specific `to` block or best block.
+						let best_number = self.client.info().best_number;
 						let mut current_number = filter
 							.to_block.clone()
 							.and_then(|v| v.to_min_block_num())
 							.map(|s| s.unique_saturated_into())
-							.unwrap_or(
-								self.client.info().best_number
-							);
+							.unwrap_or(best_number);
+
+						if current_number > best_number {
+							current_number = best_number;
+						}
 
 						// The from clause is the max(last_poll, filter_from).
 						let last_poll = pool_item
@@ -1464,12 +1471,20 @@ impl<B, C> EthFilterApiT for EthFilterApi<B, C> where
 			if let Some(pool_item) = locked.clone().get(&key) {
 				match &pool_item.filter_type {
 					FilterType::Log(filter) => {
-						let mut current_number = filter.to_block.clone()
+						let best_number = self.client.info().best_number;
+						let mut current_number = filter
+							.to_block.clone()
 							.and_then(|v| v.to_min_block_num())
 							.map(|s| s.unique_saturated_into())
-							.unwrap_or(
-								self.client.info().best_number
-							);
+							.unwrap_or(best_number);
+
+						if current_number > best_number {
+							current_number = best_number;
+						}
+
+						if current_number > self.client.info().best_number {
+							current_number = self.client.info().best_number;
+						}
 
 						let from_number = filter.from_block.clone()
 							.and_then(|v| v.to_min_block_num())
