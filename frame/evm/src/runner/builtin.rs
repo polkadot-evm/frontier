@@ -19,7 +19,7 @@
 
 use sp_std::{
 	convert::Infallible, marker::PhantomData, rc::Rc,
-	collections::btree_set::BTreeSet, vec::Vec, mem, cmp::min,
+	collections::btree_set::BTreeSet, vec::Vec, mem, cmp::{min, max},
 };
 use sp_core::{H160, U256, H256};
 use sp_runtime::{TransactionOutcome, traits::UniqueSaturatedInto};
@@ -52,7 +52,7 @@ impl<T: Config> RunnerT<T> for Runner<T> {
 		target: H160,
 		input: Vec<u8>,
 		value: U256,
-		gas_limit: u32,
+		gas_limit: u64,
 		gas_price: Option<U256>,
 		nonce: Option<U256>,
 		config: &evm::Config,
@@ -80,7 +80,7 @@ impl<T: Config> RunnerT<T> for Runner<T> {
 
 			let mut substate = Handler::<T>::new_with_precompile(
 				&vicinity,
-				gas_limit as usize,
+				gas_limit,
 				false,
 				config,
 				T::Precompiles::execute,
@@ -119,7 +119,7 @@ impl<T: Config> RunnerT<T> for Runner<T> {
 		source: H160,
 		init: Vec<u8>,
 		value: U256,
-		gas_limit: u32,
+		gas_limit: u64,
 		gas_price: Option<U256>,
 		nonce: Option<U256>,
 		config: &evm::Config,
@@ -147,7 +147,7 @@ impl<T: Config> RunnerT<T> for Runner<T> {
 
 			let mut substate = Handler::<T>::new_with_precompile(
 				&vicinity,
-				gas_limit as usize,
+				gas_limit,
 				false,
 				config,
 				T::Precompiles::execute,
@@ -198,7 +198,7 @@ impl<T: Config> RunnerT<T> for Runner<T> {
 		init: Vec<u8>,
 		salt: H256,
 		value: U256,
-		gas_limit: u32,
+		gas_limit: u64,
 		gas_price: Option<U256>,
 		nonce: Option<U256>,
 		config: &evm::Config,
@@ -226,7 +226,7 @@ impl<T: Config> RunnerT<T> for Runner<T> {
 
 			let mut substate = Handler::<T>::new_with_precompile(
 				&vicinity,
-				gas_limit as usize,
+				gas_limit,
 				false,
 				config,
 				T::Precompiles::execute,
@@ -276,7 +276,7 @@ impl<T: Config> RunnerT<T> for Runner<T> {
 	}
 }
 
-fn l64(gas: usize) -> usize {
+fn l64(gas: u64) -> u64 {
 	gas - gas / 64
 }
 
@@ -286,8 +286,8 @@ pub struct Handler<'vicinity, 'config, T: Config> {
 	gasometer: Gasometer<'config>,
 	deleted: BTreeSet<H160>,
 	logs: Vec<Log>,
-	precompile: fn(H160, &[u8], Option<usize>, &Context) ->
-		Option<Result<(ExitSucceed, Vec<u8>, usize), ExitError>>,
+	precompile: fn(H160, &[u8], Option<u64>, &Context) ->
+		Option<Result<(ExitSucceed, Vec<u8>, u64), ExitError>>,
 	is_static: bool,
 	_marker: PhantomData<T>,
 }
@@ -296,11 +296,11 @@ impl<'vicinity, 'config, T: Config> Handler<'vicinity, 'config, T> {
 	/// Create a new handler with given vicinity.
 	pub fn new_with_precompile(
 		vicinity: &'vicinity Vicinity,
-		gas_limit: usize,
+		gas_limit: u64,
 		is_static: bool,
 		config: &'config EvmConfig,
-		precompile: fn(H160, &[u8], Option<usize>, &Context) ->
-			Option<Result<(ExitSucceed, Vec<u8>, usize), ExitError>>,
+		precompile: fn(H160, &[u8], Option<u64>, &Context) ->
+			Option<Result<(ExitSucceed, Vec<u8>, u64), ExitError>>,
 	) -> Self {
 		Self {
 			vicinity,
@@ -317,9 +317,9 @@ impl<'vicinity, 'config, T: Config> Handler<'vicinity, 'config, T> {
 	/// Get used gas for the current executor, given the price.
 	pub fn used_gas(
 		&self,
-	) -> usize {
+	) -> u64 {
 		self.gasometer.total_used_gas() -
-			min(self.gasometer.total_used_gas() / 2, self.gasometer.refunded_gas() as usize)
+			min(self.gasometer.total_used_gas() / 2, max(self.gasometer.refunded_gas(), 0) as u64)
 	}
 
 	pub fn execute(
@@ -551,7 +551,7 @@ impl<'vicinity, 'config, T: Config> HandlerT for Handler<'vicinity, 'config, T> 
 		scheme: CreateScheme,
 		value: U256,
 		init_code: Vec<u8>,
-		target_gas: Option<usize>,
+		target_gas: Option<u64>,
 	) -> Capture<(ExitReason, Option<H160>, Vec<u8>), Self::CreateInterrupt> {
 		macro_rules! try_or_fail {
 			( $e:expr ) => {
@@ -667,7 +667,7 @@ impl<'vicinity, 'config, T: Config> HandlerT for Handler<'vicinity, 'config, T> 
 		code_address: H160,
 		transfer: Option<Transfer>,
 		input: Vec<u8>,
-		target_gas: Option<usize>,
+		target_gas: Option<u64>,
 		is_static: bool,
 		context: Context,
 	) -> Capture<(ExitReason, Vec<u8>), Self::CallInterrupt> {

@@ -37,7 +37,7 @@ use sc_network::{NetworkService, ExHashT};
 use fc_rpc_core::{EthApi as EthApiT, NetApi as NetApiT, Web3Api as Web3ApiT};
 use fc_rpc_core::types::{
 	BlockNumber, Bytes, CallRequest, Filter, FilteredParams, Index, Log, Receipt, RichBlock,
-	SyncStatus, SyncInfo, Transaction, Work, Rich, Block, BlockTransactions, VariadicValue,
+	SyncStatus, SyncInfo, Transaction, Work, Rich, Block, BlockTransactions,
 	TransactionRequest, PendingTransactions, PendingTransaction,
 };
 use fp_rpc::{EthereumRuntimeRPCApi, ConvertTransaction, TransactionStatus};
@@ -187,7 +187,7 @@ fn transaction_build(
 		gas: transaction.gas_limit,
 		input: Bytes(transaction.clone().input),
 		creates: status.as_ref().map_or(None, |status| status.contract_address),
-		raw: Bytes(rlp::encode(&transaction)),
+		raw: Bytes(rlp::encode(&transaction).to_vec()),
 		public_key: pubkey.as_ref().map(|pk| H512::from(pk)),
 		chain_id: transaction.signature.chain_id().map(U64::from),
 		standard_v: U256::from(transaction.signature.standard_v()),

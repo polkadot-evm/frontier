@@ -28,12 +28,12 @@ use ed25519_dalek::{PublicKey, Verifier, Signature};
 pub struct Ed25519Verify;
 
 impl LinearCostPrecompile for Ed25519Verify {
-	const BASE: usize = 15;
-	const WORD: usize = 3;
+	const BASE: u64 = 15;
+	const WORD: u64 = 3;
 
 	fn execute(
 		input: &[u8],
-		_: usize,
+		_: u64,
 	) -> core::result::Result<(ExitSucceed, Vec<u8>), ExitError> {
 		if input.len() < 128 {
 			return Err(ExitError::Other("input must contain 128 bytes".into()));
@@ -70,7 +70,7 @@ mod tests {
 	fn test_empty_input() -> std::result::Result<(), ExitError> {
 
 		let input: [u8; 0] = [];
-		let cost: usize = 1;
+		let cost: u64 = 1;
 
 		match Ed25519Verify::execute(&input, cost) {
 			Ok((_, _)) => {
@@ -112,7 +112,7 @@ mod tests {
 		input.extend_from_slice(&signature.to_bytes());
 		assert_eq!(input.len(), 128);
 
-		let cost: usize = 1;
+		let cost: u64 = 1;
 
 		match Ed25519Verify::execute(&input, cost) {
 			Ok((_, output)) => {
