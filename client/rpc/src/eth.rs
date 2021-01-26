@@ -1340,7 +1340,7 @@ impl<B, C> EthFilterApiT for EthFilterApi<B, C> where
 	}
 
 	fn new_pending_transaction_filter(&self) -> Result<U256> {
-		self.create_filter(FilterType::PendingTransaction)
+		Err(internal_err("Method not available."))
 	}
 
 	fn filter_changes(&self, index: Index) -> Result<FilterChanges> {
@@ -1442,9 +1442,9 @@ impl<B, C> EthFilterApiT for EthFilterApi<B, C> where
 							logs_build(filter.clone(), blocks_and_statuses)
 						))
 					},
-					// TODO: pending transactions is unsupported?
+					// Should never reach here.
 					_ => {
-						Ok(FilterChanges::Hashes(Vec::new()))
+						Err(internal_err("Method not available."))
 					}
 				}
 			} else {
