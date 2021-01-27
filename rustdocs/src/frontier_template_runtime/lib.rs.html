@@ -634,8 +634,6 @@
 <span id="631">631</span>
 <span id="632">632</span>
 <span id="633">633</span>
-<span id="634">634</span>
-<span id="635">635</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! The Substrate Node Template runtime. This can be compiled with `#[no_std]`, ready for Wasm.</span>
 
@@ -655,7 +653,7 @@
 	<span class="ident">transaction_validity</span>::{<span class="ident">TransactionValidity</span>, <span class="ident">TransactionSource</span>},
 };
 <span class="kw">use</span> <span class="ident">sp_runtime</span>::<span class="ident">traits</span>::{
-	<span class="ident">BlakeTwo256</span>, <span class="ident">Block</span> <span class="kw">as</span> <span class="ident">BlockT</span>, <span class="ident">IdentityLookup</span>, <span class="ident">Verify</span>, <span class="ident">IdentifyAccount</span>, <span class="ident">NumberFor</span>, <span class="ident">Saturating</span>,
+	<span class="ident">BlakeTwo256</span>, <span class="ident">Block</span> <span class="kw">as</span> <span class="ident">BlockT</span>, <span class="ident">Verify</span>, <span class="ident">IdentifyAccount</span>, <span class="ident">NumberFor</span>, <span class="ident">AccountIdLookup</span>,
 };
 <span class="kw">use</span> <span class="ident">sp_api</span>::<span class="ident">impl_runtime_apis</span>;
 <span class="kw">use</span> <span class="ident">sp_consensus_aura</span>::<span class="ident">sr25519</span>::<span class="ident">AuthorityId</span> <span class="kw">as</span> <span class="ident">AuraId</span>;
@@ -766,16 +764,17 @@
 	}
 }
 
+<span class="kw">const</span> <span class="ident">NORMAL_DISPATCH_RATIO</span>: <span class="ident">Perbill</span> <span class="op">=</span> <span class="ident">Perbill</span>::<span class="ident">from_percent</span>(<span class="number">75</span>);
+
 <span class="macro">parameter_types</span><span class="macro">!</span> {
+	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">Version</span>: <span class="ident">RuntimeVersion</span> <span class="op">=</span> <span class="ident">VERSION</span>;
 	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">BlockHashCount</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="number">2400</span>;
 	<span class="doccomment">/// We allow for 2 seconds of compute with a 6 second average block time.</span>
-	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MaximumBlockWeight</span>: <span class="ident">Weight</span> <span class="op">=</span> <span class="number">2</span> <span class="op">*</span> <span class="ident">WEIGHT_PER_SECOND</span>;
-	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">AvailableBlockRatio</span>: <span class="ident">Perbill</span> <span class="op">=</span> <span class="ident">Perbill</span>::<span class="ident">from_percent</span>(<span class="number">75</span>);
-	<span class="doccomment">/// Assume 10% of weight for average on_initialize calls.</span>
-	<span class="kw">pub</span> <span class="ident">MaximumExtrinsicWeight</span>: <span class="ident">Weight</span> <span class="op">=</span> <span class="ident">AvailableBlockRatio</span>::<span class="ident">get</span>()
-		.<span class="ident">saturating_sub</span>(<span class="ident">Perbill</span>::<span class="ident">from_percent</span>(<span class="number">10</span>)) <span class="op">*</span> <span class="ident">MaximumBlockWeight</span>::<span class="ident">get</span>();
-	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MaximumBlockLength</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">5</span> <span class="op">*</span> <span class="number">1024</span> <span class="op">*</span> <span class="number">1024</span>;
-	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">Version</span>: <span class="ident">RuntimeVersion</span> <span class="op">=</span> <span class="ident">VERSION</span>;
+	<span class="kw">pub</span> <span class="ident">BlockWeights</span>: <span class="ident">frame_system</span>::<span class="ident">limits</span>::<span class="ident">BlockWeights</span> <span class="op">=</span> <span class="ident">frame_system</span>::<span class="ident">limits</span>::<span class="ident">BlockWeights</span>
+		::<span class="ident">with_sensible_defaults</span>(<span class="number">2</span> <span class="op">*</span> <span class="ident">WEIGHT_PER_SECOND</span>, <span class="ident">NORMAL_DISPATCH_RATIO</span>);
+	<span class="kw">pub</span> <span class="ident">BlockLength</span>: <span class="ident">frame_system</span>::<span class="ident">limits</span>::<span class="ident">BlockLength</span> <span class="op">=</span> <span class="ident">frame_system</span>::<span class="ident">limits</span>::<span class="ident">BlockLength</span>
+		::<span class="ident">max_with_normal_ratio</span>(<span class="number">5</span> <span class="op">*</span> <span class="number">1024</span> <span class="op">*</span> <span class="number">1024</span>, <span class="ident">NORMAL_DISPATCH_RATIO</span>);
+	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">SS58Prefix</span>: <span class="ident">u8</span> <span class="op">=</span> <span class="number">42</span>;
 }
 
 <span class="comment">// Configure FRAME pallets to include in runtime.</span>
@@ -783,12 +782,16 @@
 <span class="kw">impl</span> <span class="ident">frame_system</span>::<span class="ident">Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
 	<span class="doccomment">/// The basic call filter to use in dispatchable.</span>
 	<span class="kw">type</span> <span class="ident">BaseCallFilter</span> <span class="op">=</span> ();
+	<span class="doccomment">/// Block &amp; extrinsics weights: base values and limits.</span>
+	<span class="kw">type</span> <span class="ident">BlockWeights</span> <span class="op">=</span> <span class="ident">BlockWeights</span>;
+	<span class="doccomment">/// The maximum length of a block (in bytes).</span>
+	<span class="kw">type</span> <span class="ident">BlockLength</span> <span class="op">=</span> <span class="ident">BlockLength</span>;
 	<span class="doccomment">/// The identifier used to distinguish between accounts.</span>
 	<span class="kw">type</span> <span class="ident">AccountId</span> <span class="op">=</span> <span class="ident">AccountId</span>;
 	<span class="doccomment">/// The aggregated dispatch type that is available for extrinsics.</span>
 	<span class="kw">type</span> <span class="ident">Call</span> <span class="op">=</span> <span class="ident">Call</span>;
 	<span class="doccomment">/// The lookup mechanism to get account ID from whatever is passed in dispatchers.</span>
-	<span class="kw">type</span> <span class="ident">Lookup</span> <span class="op">=</span> <span class="ident">IdentityLookup</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span>;
+	<span class="kw">type</span> <span class="ident">Lookup</span> <span class="op">=</span> <span class="ident">AccountIdLookup</span><span class="op">&lt;</span><span class="ident">AccountId</span>, ()<span class="op">&gt;</span>;
 	<span class="doccomment">/// The index type for storing how many extrinsics an account has signed.</span>
 	<span class="kw">type</span> <span class="ident">Index</span> <span class="op">=</span> <span class="ident">Index</span>;
 	<span class="doccomment">/// The index type for blocks.</span>
@@ -805,24 +808,8 @@
 	<span class="kw">type</span> <span class="ident">Origin</span> <span class="op">=</span> <span class="ident">Origin</span>;
 	<span class="doccomment">/// Maximum number of block number to block hash mappings to keep (oldest pruned first).</span>
 	<span class="kw">type</span> <span class="ident">BlockHashCount</span> <span class="op">=</span> <span class="ident">BlockHashCount</span>;
-	<span class="doccomment">/// Maximum weight of each block.</span>
-	<span class="kw">type</span> <span class="ident">MaximumBlockWeight</span> <span class="op">=</span> <span class="ident">MaximumBlockWeight</span>;
 	<span class="doccomment">/// The weight of database operations that the runtime can invoke.</span>
 	<span class="kw">type</span> <span class="ident">DbWeight</span> <span class="op">=</span> <span class="ident">RocksDbWeight</span>;
-	<span class="doccomment">/// The weight of the overhead invoked on the block import process, independent of the</span>
-	<span class="doccomment">/// extrinsics included in that block.</span>
-	<span class="kw">type</span> <span class="ident">BlockExecutionWeight</span> <span class="op">=</span> <span class="ident">BlockExecutionWeight</span>;
-	<span class="doccomment">/// The base weight of any extrinsic processed by the runtime, independent of the</span>
-	<span class="doccomment">/// logic of that extrinsic. (Signature verification, nonce increment, fee, etc...)</span>
-	<span class="kw">type</span> <span class="ident">ExtrinsicBaseWeight</span> <span class="op">=</span> <span class="ident">ExtrinsicBaseWeight</span>;
-	<span class="doccomment">/// The maximum weight that a single extrinsic of `Normal` dispatch class can have,</span>
-	<span class="doccomment">/// idependent of the logic of that extrinsics. (Roughly max block weight - average on</span>
-	<span class="doccomment">/// initialize cost).</span>
-	<span class="kw">type</span> <span class="ident">MaximumExtrinsicWeight</span> <span class="op">=</span> <span class="ident">MaximumExtrinsicWeight</span>;
-	<span class="doccomment">/// Maximum size of all encoded transactions (in bytes) that are allowed in one block.</span>
-	<span class="kw">type</span> <span class="ident">MaximumBlockLength</span> <span class="op">=</span> <span class="ident">MaximumBlockLength</span>;
-	<span class="doccomment">/// Portion of the block weight that is available to all normal transactions.</span>
-	<span class="kw">type</span> <span class="ident">AvailableBlockRatio</span> <span class="op">=</span> <span class="ident">AvailableBlockRatio</span>;
 	<span class="doccomment">/// Version of the runtime.</span>
 	<span class="kw">type</span> <span class="ident">Version</span> <span class="op">=</span> <span class="ident">Version</span>;
 	<span class="doccomment">/// Converts a module to the index of the module in `construct_runtime!`.</span>
@@ -837,6 +824,8 @@
 	<span class="kw">type</span> <span class="ident">AccountData</span> <span class="op">=</span> <span class="ident">pallet_balances</span>::<span class="ident">AccountData</span><span class="op">&lt;</span><span class="ident">Balance</span><span class="op">&gt;</span>;
 	<span class="doccomment">/// Weight information for the extrinsics of this pallet.</span>
 	<span class="kw">type</span> <span class="ident">SystemWeightInfo</span> <span class="op">=</span> ();
+	<span class="doccomment">/// This is used as an identifier of the chain. 42 is the generic substrate prefix.</span>
+	<span class="kw">type</span> <span class="ident">SS58Prefix</span> <span class="op">=</span> <span class="ident">SS58Prefix</span>;
 }
 
 <span class="kw">impl</span> <span class="ident">pallet_aura</span>::<span class="ident">Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
@@ -1003,7 +992,7 @@
 }
 
 <span class="doccomment">/// The address format for describing accounts.</span>
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">Address</span> <span class="op">=</span> <span class="ident">AccountId</span>;
+<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">Address</span> <span class="op">=</span> <span class="ident">sp_runtime</span>::<span class="ident">MultiAddress</span><span class="op">&lt;</span><span class="ident">AccountId</span>, ()<span class="op">&gt;</span>;
 <span class="doccomment">/// Block header type as expected by this runtime.</span>
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">Header</span> <span class="op">=</span> <span class="ident">generic</span>::<span class="ident">Header</span><span class="op">&lt;</span><span class="ident">BlockNumber</span>, <span class="ident">BlakeTwo256</span><span class="op">&gt;</span>;
 <span class="doccomment">/// Block type as expected by this runtime.</span>
@@ -1162,7 +1151,7 @@
 				<span class="ident">to</span>,
 				<span class="ident">data</span>,
 				<span class="ident">value</span>,
-				<span class="ident">gas_limit</span>.<span class="ident">low_u32</span>(),
+				<span class="ident">gas_limit</span>.<span class="ident">low_u64</span>(),
 				<span class="ident">gas_price</span>,
 				<span class="ident">nonce</span>,
 				<span class="ident">config</span>.<span class="ident">as_ref</span>().<span class="ident">unwrap_or</span>(<span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">pallet_evm</span>::<span class="ident">Config</span><span class="op">&gt;</span>::<span class="ident">config</span>()),
@@ -1190,7 +1179,7 @@
 				<span class="ident">from</span>,
 				<span class="ident">data</span>,
 				<span class="ident">value</span>,
-				<span class="ident">gas_limit</span>.<span class="ident">low_u32</span>(),
+				<span class="ident">gas_limit</span>.<span class="ident">low_u64</span>(),
 				<span class="ident">gas_price</span>,
 				<span class="ident">nonce</span>,
 				<span class="ident">config</span>.<span class="ident">as_ref</span>().<span class="ident">unwrap_or</span>(<span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">pallet_evm</span>::<span class="ident">Config</span><span class="op">&gt;</span>::<span class="ident">config</span>()),
@@ -1231,6 +1220,13 @@
 			<span class="ident">len</span>: <span class="ident">u32</span>
 		) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">pallet_transaction_payment_rpc_runtime_api</span>::<span class="ident">RuntimeDispatchInfo</span><span class="op">&lt;</span><span class="ident">Balance</span><span class="op">&gt;</span> {
 			<span class="ident">TransactionPayment</span>::<span class="ident">query_info</span>(<span class="ident">uxt</span>, <span class="ident">len</span>)
+		}
+
+		<span class="kw">fn</span> <span class="ident">query_fee_details</span>(
+			<span class="ident">uxt</span>: <span class="op">&lt;</span><span class="ident">Block</span> <span class="kw">as</span> <span class="ident">BlockT</span><span class="op">&gt;</span>::<span class="ident">Extrinsic</span>,
+			<span class="ident">len</span>: <span class="ident">u32</span>,
+		) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">pallet_transaction_payment</span>::<span class="ident">FeeDetails</span><span class="op">&lt;</span><span class="ident">Balance</span><span class="op">&gt;</span> {
+			<span class="ident">TransactionPayment</span>::<span class="ident">query_fee_details</span>(<span class="ident">uxt</span>, <span class="ident">len</span>)
 		}
 	}
 

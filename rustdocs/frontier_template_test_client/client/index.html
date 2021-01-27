@@ -7,19 +7,20 @@ parts:</p>
 <ul>
 <li>A database containing the blocks and chain state, generally referred to as
 the <a href="sc_client_api::backend::Backend"><code>Backend</code></a>.</li>
-<li>A runtime environment, generally referred to as the <a href="CallExecutor"><code>Executor</code></a>.</li>
+<li>A runtime environment, generally referred to as the
+<a href="sc_client_api::call_executor::CallExecutor"><code>Executor</code></a>.</li>
 </ul>
 <h1 id="initialization" class="section-header"><a href="#initialization">Initialization</a></h1>
 <p>Creating a <a href="../../frontier_template_test_client/client/struct.Client.html" title="Client"><code>Client</code></a> is done by calling the <code>new</code> method and passing to it a
-<a href="sc_client_api::backend::Backend"><code>Backend</code></a> and an <a href="CallExecutor"><code>Executor</code></a>.</p>
+<a href="sc_client_api::backend::Backend"><code>Backend</code></a> and an
+<a href="sc_client_api::call_executor::CallExecutor"><code>Executor</code></a>.</p>
 <p>The former is typically provided by the <code>sc-client-db</code> crate.</p>
 <p>The latter typically requires passing one of:</p>
 <ul>
 <li>A <a href="../../frontier_template_test_client/client/struct.LocalCallExecutor.html" title="LocalCallExecutor"><code>LocalCallExecutor</code></a> running the runtime locally.</li>
-<li>A <a href="light::call_executor::RemoteCallRequest"><code>RemoteCallExecutor</code></a> that will ask a
+<li>A <a href="sc_client_api::light::RemoteCallRequest"><code>RemoteCallExecutor</code></a> that will ask a
 third-party to perform the executions.</li>
-<li>A <a href="light::call_executor::RemoteOrLocalCallExecutor"><code>RemoteOrLocalCallExecutor</code></a>, combination
-of the two.</li>
+<li>A <a href="sc_client_api::light::LocalOrRemote"><code>RemoteOrLocalCallExecutor</code></a>, combination of the two.</li>
 </ul>
 <p>Additionally, the fourth generic parameter of the <code>Client</code> is a marker type representing
 the ways in which the runtime can interface with the outside. Any code that builds a <code>Client</code>

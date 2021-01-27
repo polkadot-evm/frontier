@@ -51,4 +51,9 @@ module4 .., // Here module4 is given index 1
 <p>The population of the genesis storage depends on the order of modules. So, if one of your
 modules depends on another module, the module that is depended upon needs to come before
 the module depending on it.</p>
+<h1 id="type-definitions" class="section-header"><a href="#type-definitions">Type definitions</a></h1>
+<ul>
+<li>The macro generates a type alias for each pallet to their <code>Module</code> (or <code>Pallet</code>).
+E.g. <code>type System = frame_system::Module&lt;Runtime&gt;</code></li>
+</ul>
 </div></section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../";window.currentCrate = "frontier_template_runtime";</script><script src="../main.js"></script><script defer src="../search-index.js"></script></body></html>

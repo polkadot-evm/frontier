@@ -817,7 +817,7 @@
 
 <span class="kw">use</span> <span class="ident">sp_std</span>::{
 	<span class="ident">convert</span>::<span class="ident">Infallible</span>, <span class="ident">marker</span>::<span class="ident">PhantomData</span>, <span class="ident">rc</span>::<span class="ident">Rc</span>,
-	<span class="ident">collections</span>::<span class="ident">btree_set</span>::<span class="ident">BTreeSet</span>, <span class="ident">vec</span>::<span class="ident">Vec</span>, <span class="ident">mem</span>, <span class="ident">cmp</span>::<span class="ident">min</span>,
+	<span class="ident">collections</span>::<span class="ident">btree_set</span>::<span class="ident">BTreeSet</span>, <span class="ident">vec</span>::<span class="ident">Vec</span>, <span class="ident">mem</span>, <span class="ident">cmp</span>::{<span class="ident">min</span>, <span class="ident">max</span>},
 };
 <span class="kw">use</span> <span class="ident">sp_core</span>::{<span class="ident">H160</span>, <span class="ident">U256</span>, <span class="ident">H256</span>};
 <span class="kw">use</span> <span class="ident">sp_runtime</span>::{<span class="ident">TransactionOutcome</span>, <span class="ident">traits</span>::<span class="ident">UniqueSaturatedInto</span>};
@@ -850,7 +850,7 @@
 		<span class="ident">target</span>: <span class="ident">H160</span>,
 		<span class="ident">input</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
 		<span class="ident">value</span>: <span class="ident">U256</span>,
-		<span class="ident">gas_limit</span>: <span class="ident">u32</span>,
+		<span class="ident">gas_limit</span>: <span class="ident">u64</span>,
 		<span class="ident">gas_price</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
 		<span class="ident">nonce</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
 		<span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="ident">evm</span>::<span class="ident">Config</span>,
@@ -878,7 +878,7 @@
 
 			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">substate</span> <span class="op">=</span> <span class="ident">Handler</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">new_with_precompile</span>(
 				<span class="kw-2">&amp;</span><span class="ident">vicinity</span>,
-				<span class="ident">gas_limit</span> <span class="kw">as</span> <span class="ident">usize</span>,
+				<span class="ident">gas_limit</span>,
 				<span class="bool-val">false</span>,
 				<span class="ident">config</span>,
 				<span class="ident">T</span>::<span class="ident">Precompiles</span>::<span class="ident">execute</span>,
@@ -917,7 +917,7 @@
 		<span class="ident">source</span>: <span class="ident">H160</span>,
 		<span class="ident">init</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
 		<span class="ident">value</span>: <span class="ident">U256</span>,
-		<span class="ident">gas_limit</span>: <span class="ident">u32</span>,
+		<span class="ident">gas_limit</span>: <span class="ident">u64</span>,
 		<span class="ident">gas_price</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
 		<span class="ident">nonce</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
 		<span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="ident">evm</span>::<span class="ident">Config</span>,
@@ -945,7 +945,7 @@
 
 			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">substate</span> <span class="op">=</span> <span class="ident">Handler</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">new_with_precompile</span>(
 				<span class="kw-2">&amp;</span><span class="ident">vicinity</span>,
-				<span class="ident">gas_limit</span> <span class="kw">as</span> <span class="ident">usize</span>,
+				<span class="ident">gas_limit</span>,
 				<span class="bool-val">false</span>,
 				<span class="ident">config</span>,
 				<span class="ident">T</span>::<span class="ident">Precompiles</span>::<span class="ident">execute</span>,
@@ -996,7 +996,7 @@
 		<span class="ident">init</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
 		<span class="ident">salt</span>: <span class="ident">H256</span>,
 		<span class="ident">value</span>: <span class="ident">U256</span>,
-		<span class="ident">gas_limit</span>: <span class="ident">u32</span>,
+		<span class="ident">gas_limit</span>: <span class="ident">u64</span>,
 		<span class="ident">gas_price</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
 		<span class="ident">nonce</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
 		<span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="ident">evm</span>::<span class="ident">Config</span>,
@@ -1024,7 +1024,7 @@
 
 			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">substate</span> <span class="op">=</span> <span class="ident">Handler</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">new_with_precompile</span>(
 				<span class="kw-2">&amp;</span><span class="ident">vicinity</span>,
-				<span class="ident">gas_limit</span> <span class="kw">as</span> <span class="ident">usize</span>,
+				<span class="ident">gas_limit</span>,
 				<span class="bool-val">false</span>,
 				<span class="ident">config</span>,
 				<span class="ident">T</span>::<span class="ident">Precompiles</span>::<span class="ident">execute</span>,
@@ -1074,7 +1074,7 @@
 	}
 }
 
-<span class="kw">fn</span> <span class="ident">l64</span>(<span class="ident">gas</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">usize</span> {
+<span class="kw">fn</span> <span class="ident">l64</span>(<span class="ident">gas</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u64</span> {
 	<span class="ident">gas</span> <span class="op">-</span> <span class="ident">gas</span> <span class="op">/</span> <span class="number">64</span>
 }
 
@@ -1084,8 +1084,8 @@
 	<span class="ident">gasometer</span>: <span class="ident">Gasometer</span><span class="op">&lt;</span><span class="lifetime">&#39;config</span><span class="op">&gt;</span>,
 	<span class="ident">deleted</span>: <span class="ident">BTreeSet</span><span class="op">&lt;</span><span class="ident">H160</span><span class="op">&gt;</span>,
 	<span class="ident">logs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Log</span><span class="op">&gt;</span>,
-	<span class="ident">precompile</span>: <span class="kw">fn</span>(<span class="ident">H160</span>, <span class="kw-2">&amp;</span>[<span class="ident">u8</span>], <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span>, <span class="kw-2">&amp;</span><span class="ident">Context</span>) <span class="op">-</span><span class="op">&gt;</span>
-		<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">ExitSucceed</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">usize</span>), <span class="ident">ExitError</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+	<span class="ident">precompile</span>: <span class="kw">fn</span>(<span class="ident">H160</span>, <span class="kw-2">&amp;</span>[<span class="ident">u8</span>], <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>, <span class="kw-2">&amp;</span><span class="ident">Context</span>) <span class="op">-</span><span class="op">&gt;</span>
+		<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">ExitSucceed</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">u64</span>), <span class="ident">ExitError</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 	<span class="ident">is_static</span>: <span class="ident">bool</span>,
 	<span class="ident">_marker</span>: <span class="ident">PhantomData</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
 }
@@ -1094,11 +1094,11 @@
 	<span class="doccomment">/// Create a new handler with given vicinity.</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new_with_precompile</span>(
 		<span class="ident">vicinity</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;vicinity</span> <span class="ident">Vicinity</span>,
-		<span class="ident">gas_limit</span>: <span class="ident">usize</span>,
+		<span class="ident">gas_limit</span>: <span class="ident">u64</span>,
 		<span class="ident">is_static</span>: <span class="ident">bool</span>,
 		<span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;config</span> <span class="ident">EvmConfig</span>,
-		<span class="ident">precompile</span>: <span class="kw">fn</span>(<span class="ident">H160</span>, <span class="kw-2">&amp;</span>[<span class="ident">u8</span>], <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span>, <span class="kw-2">&amp;</span><span class="ident">Context</span>) <span class="op">-</span><span class="op">&gt;</span>
-			<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">ExitSucceed</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">usize</span>), <span class="ident">ExitError</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+		<span class="ident">precompile</span>: <span class="kw">fn</span>(<span class="ident">H160</span>, <span class="kw-2">&amp;</span>[<span class="ident">u8</span>], <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>, <span class="kw-2">&amp;</span><span class="ident">Context</span>) <span class="op">-</span><span class="op">&gt;</span>
+			<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">ExitSucceed</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">u64</span>), <span class="ident">ExitError</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 	) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
 		<span class="self">Self</span> {
 			<span class="ident">vicinity</span>,
@@ -1115,9 +1115,9 @@
 	<span class="doccomment">/// Get used gas for the current executor, given the price.</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">used_gas</span>(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
-	) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">usize</span> {
+	) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u64</span> {
 		<span class="self">self</span>.<span class="ident">gasometer</span>.<span class="ident">total_used_gas</span>() <span class="op">-</span>
-			<span class="ident">min</span>(<span class="self">self</span>.<span class="ident">gasometer</span>.<span class="ident">total_used_gas</span>() <span class="op">/</span> <span class="number">2</span>, <span class="self">self</span>.<span class="ident">gasometer</span>.<span class="ident">refunded_gas</span>() <span class="kw">as</span> <span class="ident">usize</span>)
+			<span class="ident">min</span>(<span class="self">self</span>.<span class="ident">gasometer</span>.<span class="ident">total_used_gas</span>() <span class="op">/</span> <span class="number">2</span>, <span class="ident">max</span>(<span class="self">self</span>.<span class="ident">gasometer</span>.<span class="ident">refunded_gas</span>(), <span class="number">0</span>) <span class="kw">as</span> <span class="ident">u64</span>)
 	}
 
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">execute</span>(
@@ -1349,7 +1349,7 @@
 		<span class="ident">scheme</span>: <span class="ident">CreateScheme</span>,
 		<span class="ident">value</span>: <span class="ident">U256</span>,
 		<span class="ident">init_code</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
-		<span class="ident">target_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span>,
+		<span class="ident">target_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
 	) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Capture</span><span class="op">&lt;</span>(<span class="ident">ExitReason</span>, <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">H160</span><span class="op">&gt;</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>), <span class="self">Self</span>::<span class="ident">CreateInterrupt</span><span class="op">&gt;</span> {
 		<span class="macro">macro_rules</span><span class="macro">!</span> <span class="ident">try_or_fail</span> {
 			( <span class="macro-nonterminal">$</span><span class="macro-nonterminal">e</span>:<span class="ident">expr</span> ) <span class="op">=</span><span class="op">&gt;</span> {
@@ -1465,7 +1465,7 @@
 		<span class="ident">code_address</span>: <span class="ident">H160</span>,
 		<span class="ident">transfer</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Transfer</span><span class="op">&gt;</span>,
 		<span class="ident">input</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
-		<span class="ident">target_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span>,
+		<span class="ident">target_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
 		<span class="ident">is_static</span>: <span class="ident">bool</span>,
 		<span class="ident">context</span>: <span class="ident">Context</span>,
 	) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Capture</span><span class="op">&lt;</span>(<span class="ident">ExitReason</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>), <span class="self">Self</span>::<span class="ident">CallInterrupt</span><span class="op">&gt;</span> {

@@ -138,12 +138,12 @@
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Identity</span>;
 
 <span class="kw">impl</span> <span class="ident">LinearCostPrecompile</span> <span class="kw">for</span> <span class="ident">Identity</span> {
-	<span class="kw">const</span> <span class="ident">BASE</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">15</span>;
-	<span class="kw">const</span> <span class="ident">WORD</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">3</span>;
+	<span class="kw">const</span> <span class="ident">BASE</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">15</span>;
+	<span class="kw">const</span> <span class="ident">WORD</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">3</span>;
 
 	<span class="kw">fn</span> <span class="ident">execute</span>(
 		<span class="ident">input</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>],
-		<span class="kw">_</span>: <span class="ident">usize</span>,
+		<span class="kw">_</span>: <span class="ident">u64</span>,
 	) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">core</span>::<span class="ident">result</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">ExitSucceed</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>), <span class="ident">ExitError</span><span class="op">&gt;</span> {
 		<span class="prelude-val">Ok</span>((<span class="ident">ExitSucceed</span>::<span class="ident">Returned</span>, <span class="ident">input</span>.<span class="ident">to_vec</span>()))
 	}
@@ -153,12 +153,12 @@
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">ECRecover</span>;
 
 <span class="kw">impl</span> <span class="ident">LinearCostPrecompile</span> <span class="kw">for</span> <span class="ident">ECRecover</span> {
-	<span class="kw">const</span> <span class="ident">BASE</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">3000</span>;
-	<span class="kw">const</span> <span class="ident">WORD</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">0</span>;
+	<span class="kw">const</span> <span class="ident">BASE</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">3000</span>;
+	<span class="kw">const</span> <span class="ident">WORD</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">0</span>;
 
 	<span class="kw">fn</span> <span class="ident">execute</span>(
 		<span class="ident">i</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>],
-		<span class="kw">_</span>: <span class="ident">usize</span>,
+		<span class="kw">_</span>: <span class="ident">u64</span>,
 	) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">core</span>::<span class="ident">result</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">ExitSucceed</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>), <span class="ident">ExitError</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">input</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">128</span>];
 		<span class="ident">input</span>[..<span class="ident">min</span>(<span class="ident">i</span>.<span class="ident">len</span>(), <span class="number">128</span>)].<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">i</span>[..<span class="ident">min</span>(<span class="ident">i</span>.<span class="ident">len</span>(), <span class="number">128</span>)]);
@@ -184,12 +184,12 @@
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Ripemd160</span>;
 
 <span class="kw">impl</span> <span class="ident">LinearCostPrecompile</span> <span class="kw">for</span> <span class="ident">Ripemd160</span> {
-	<span class="kw">const</span> <span class="ident">BASE</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">600</span>;
-	<span class="kw">const</span> <span class="ident">WORD</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">120</span>;
+	<span class="kw">const</span> <span class="ident">BASE</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">600</span>;
+	<span class="kw">const</span> <span class="ident">WORD</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">120</span>;
 
 	<span class="kw">fn</span> <span class="ident">execute</span>(
 		<span class="ident">input</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>],
-		<span class="ident">_cost</span>: <span class="ident">usize</span>,
+		<span class="ident">_cost</span>: <span class="ident">u64</span>,
 	) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">core</span>::<span class="ident">result</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">ExitSucceed</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>), <span class="ident">ExitError</span><span class="op">&gt;</span> {
 		<span class="kw">use</span> <span class="ident">ripemd160</span>::<span class="ident">Digest</span>;
 
@@ -203,12 +203,12 @@
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Sha256</span>;
 
 <span class="kw">impl</span> <span class="ident">LinearCostPrecompile</span> <span class="kw">for</span> <span class="ident">Sha256</span> {
-	<span class="kw">const</span> <span class="ident">BASE</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">60</span>;
-	<span class="kw">const</span> <span class="ident">WORD</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">12</span>;
+	<span class="kw">const</span> <span class="ident">BASE</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">60</span>;
+	<span class="kw">const</span> <span class="ident">WORD</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">12</span>;
 
 	<span class="kw">fn</span> <span class="ident">execute</span>(
 		<span class="ident">input</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>],
-		<span class="ident">_cost</span>: <span class="ident">usize</span>,
+		<span class="ident">_cost</span>: <span class="ident">u64</span>,
 	) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">core</span>::<span class="ident">result</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">ExitSucceed</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>), <span class="ident">ExitError</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> <span class="ident">ret</span> <span class="op">=</span> <span class="ident">sp_io</span>::<span class="ident">hashing</span>::<span class="ident">sha2_256</span>(<span class="ident">input</span>);
 		<span class="prelude-val">Ok</span>((<span class="ident">ExitSucceed</span>::<span class="ident">Returned</span>, <span class="ident">ret</span>.<span class="ident">to_vec</span>()))

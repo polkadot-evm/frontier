@@ -128,14 +128,14 @@
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Blake2F</span>;
 
 <span class="kw">impl</span> <span class="ident">LinearCostPrecompile</span> <span class="kw">for</span> <span class="ident">Blake2F</span> {
-	<span class="kw">const</span> <span class="ident">BASE</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">15</span>;
-	<span class="kw">const</span> <span class="ident">WORD</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">3</span>;
+	<span class="kw">const</span> <span class="ident">BASE</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">15</span>;
+	<span class="kw">const</span> <span class="ident">WORD</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">3</span>;
 
 	<span class="doccomment">/// Format of `input`:</span>
 	<span class="doccomment">/// [4 bytes for rounds][64 bytes for h][128 bytes for m][8 bytes for t_0][8 bytes for t_1][1 byte for f]</span>
 	<span class="kw">fn</span> <span class="ident">execute</span>(
 		<span class="ident">input</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>],
-		<span class="kw">_</span>: <span class="ident">usize</span>,
+		<span class="kw">_</span>: <span class="ident">u64</span>,
 	) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">core</span>::<span class="ident">result</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">ExitSucceed</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>), <span class="ident">ExitError</span><span class="op">&gt;</span> {
 		<span class="kw">const</span> <span class="ident">BLAKE2_F_ARG_LEN</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">213</span>;
 

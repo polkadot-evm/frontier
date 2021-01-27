@@ -542,15 +542,6 @@
 <span id="539">539</span>
 <span id="540">540</span>
 <span id="541">541</span>
-<span id="542">542</span>
-<span id="543">543</span>
-<span id="544">544</span>
-<span id="545">545</span>
-<span id="546">546</span>
-<span id="547">547</span>
-<span id="548">548</span>
-<span id="549">549</span>
-<span id="550">550</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
@@ -764,25 +755,16 @@
 
 <span class="doccomment">/// A mapping function that converts Ethereum gas to Substrate weight</span>
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">GasWeightMapping</span> {
-	<span class="kw">fn</span> <span class="ident">gas_to_weight</span>(<span class="ident">gas</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Weight</span>;
-	<span class="kw">fn</span> <span class="ident">weight_to_gas</span>(<span class="ident">weight</span>: <span class="ident">Weight</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">usize</span>;
+	<span class="kw">fn</span> <span class="ident">gas_to_weight</span>(<span class="ident">gas</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Weight</span>;
+	<span class="kw">fn</span> <span class="ident">weight_to_gas</span>(<span class="ident">weight</span>: <span class="ident">Weight</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u64</span>;
 }
 
 <span class="kw">impl</span> <span class="ident">GasWeightMapping</span> <span class="kw">for</span> () {
-	<span class="kw">fn</span> <span class="ident">gas_to_weight</span>(<span class="ident">gas</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Weight</span> {
+	<span class="kw">fn</span> <span class="ident">gas_to_weight</span>(<span class="ident">gas</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Weight</span> {
 		<span class="ident">gas</span> <span class="kw">as</span> <span class="ident">Weight</span>
 	}
-	<span class="kw">fn</span> <span class="ident">weight_to_gas</span>(<span class="ident">weight</span>: <span class="ident">Weight</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">usize</span> {
-		<span class="ident">weight</span> <span class="kw">as</span> <span class="ident">usize</span>
-	}
-}
-
-<span class="doccomment">/// Substrate system chain ID.</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">SystemChainId</span>;
-
-<span class="kw">impl</span> <span class="ident">Get</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">SystemChainId</span> {
-	<span class="kw">fn</span> <span class="ident">get</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u64</span> {
-		<span class="ident">sp_io</span>::<span class="ident">misc</span>::<span class="ident">chain_id</span>()
+	<span class="kw">fn</span> <span class="ident">weight_to_gas</span>(<span class="ident">weight</span>: <span class="ident">Weight</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u64</span> {
+		<span class="ident">weight</span> <span class="kw">as</span> <span class="ident">u64</span>
 	}
 }
 
@@ -929,14 +911,14 @@
 		}
 
 		<span class="doccomment">/// Issue an EVM call operation. This is similar to a message call transaction in Ethereum.</span>
-		<span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="ident">T</span>::<span class="ident">GasWeightMapping</span>::<span class="ident">gas_to_weight</span>(<span class="kw-2">*</span><span class="ident">gas_limit</span> <span class="kw">as</span> <span class="ident">usize</span>)]</span>
+		<span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="ident">T</span>::<span class="ident">GasWeightMapping</span>::<span class="ident">gas_to_weight</span>(<span class="kw-2">*</span><span class="ident">gas_limit</span>)]</span>
 		<span class="kw">fn</span> <span class="ident">call</span>(
 			<span class="ident">origin</span>,
 			<span class="ident">source</span>: <span class="ident">H160</span>,
 			<span class="ident">target</span>: <span class="ident">H160</span>,
 			<span class="ident">input</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
 			<span class="ident">value</span>: <span class="ident">U256</span>,
-			<span class="ident">gas_limit</span>: <span class="ident">u32</span>,
+			<span class="ident">gas_limit</span>: <span class="ident">u64</span>,
 			<span class="ident">gas_price</span>: <span class="ident">U256</span>,
 			<span class="ident">nonce</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
 		) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">DispatchResultWithPostInfo</span> {
@@ -970,13 +952,13 @@
 
 		<span class="doccomment">/// Issue an EVM create operation. This is similar to a contract creation transaction in</span>
 		<span class="doccomment">/// Ethereum.</span>
-		<span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="ident">T</span>::<span class="ident">GasWeightMapping</span>::<span class="ident">gas_to_weight</span>(<span class="kw-2">*</span><span class="ident">gas_limit</span> <span class="kw">as</span> <span class="ident">usize</span>)]</span>
+		<span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="ident">T</span>::<span class="ident">GasWeightMapping</span>::<span class="ident">gas_to_weight</span>(<span class="kw-2">*</span><span class="ident">gas_limit</span>)]</span>
 		<span class="kw">fn</span> <span class="ident">create</span>(
 			<span class="ident">origin</span>,
 			<span class="ident">source</span>: <span class="ident">H160</span>,
 			<span class="ident">init</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
 			<span class="ident">value</span>: <span class="ident">U256</span>,
-			<span class="ident">gas_limit</span>: <span class="ident">u32</span>,
+			<span class="ident">gas_limit</span>: <span class="ident">u64</span>,
 			<span class="ident">gas_price</span>: <span class="ident">U256</span>,
 			<span class="ident">nonce</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
 		) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">DispatchResultWithPostInfo</span> {
@@ -1016,14 +998,14 @@
 		}
 
 		<span class="doccomment">/// Issue an EVM create2 operation.</span>
-		<span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="ident">T</span>::<span class="ident">GasWeightMapping</span>::<span class="ident">gas_to_weight</span>(<span class="kw-2">*</span><span class="ident">gas_limit</span> <span class="kw">as</span> <span class="ident">usize</span>)]</span>
+		<span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="ident">T</span>::<span class="ident">GasWeightMapping</span>::<span class="ident">gas_to_weight</span>(<span class="kw-2">*</span><span class="ident">gas_limit</span>)]</span>
 		<span class="kw">fn</span> <span class="ident">create2</span>(
 			<span class="ident">origin</span>,
 			<span class="ident">source</span>: <span class="ident">H160</span>,
 			<span class="ident">init</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
 			<span class="ident">salt</span>: <span class="ident">H256</span>,
 			<span class="ident">value</span>: <span class="ident">U256</span>,
-			<span class="ident">gas_limit</span>: <span class="ident">u32</span>,
+			<span class="ident">gas_limit</span>: <span class="ident">u64</span>,
 			<span class="ident">gas_price</span>: <span class="ident">U256</span>,
 			<span class="ident">nonce</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
 		) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">DispatchResultWithPostInfo</span> {
