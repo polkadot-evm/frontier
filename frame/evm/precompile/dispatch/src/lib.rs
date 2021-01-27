@@ -38,9 +38,9 @@ impl<T> Precompile for Dispatch<T> where
 {
 	fn execute(
 		input: &[u8],
-		target_gas: Option<usize>,
+		target_gas: Option<u64>,
 		context: &Context,
-	) -> core::result::Result<(ExitSucceed, Vec<u8>, usize), ExitError> {
+	) -> core::result::Result<(ExitSucceed, Vec<u8>, u64), ExitError> {
 		let call = T::Call::decode(&mut &input[..]).map_err(|_| ExitError::Other("decode failed".into()))?;
 		let info = call.get_dispatch_info();
 
