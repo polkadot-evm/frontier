@@ -30,9 +30,9 @@ pub trait PrecompileSet {
 	fn execute(
 		address: H160,
 		input: &[u8],
-		target_gas: Option<usize>,
+		target_gas: Option<u64>,
 		context: &Context,
-	) -> Option<core::result::Result<(ExitSucceed, Vec<u8>, usize), ExitError>>;
+	) -> Option<core::result::Result<(ExitSucceed, Vec<u8>, u64), ExitError>>;
 }
 
 /// One single precompile used by EVM engine.
@@ -42,9 +42,9 @@ pub trait Precompile {
 	/// successful. Otherwise return `Err(_)`.
 	fn execute(
 		input: &[u8],
-		target_gas: Option<usize>,
+		target_gas: Option<u64>,
 		context: &Context,
-	) -> core::result::Result<(ExitSucceed, Vec<u8>, usize), ExitError>;
+	) -> core::result::Result<(ExitSucceed, Vec<u8>, u64), ExitError>;
 }
 
 #[impl_for_tuples(16)]
@@ -55,9 +55,9 @@ impl PrecompileSet for Tuple {
 	fn execute(
 		address: H160,
 		input: &[u8],
-		target_gas: Option<usize>,
+		target_gas: Option<u64>,
 		context: &Context,
-	) -> Option<core::result::Result<(ExitSucceed, Vec<u8>, usize), ExitError>> {
+	) -> Option<core::result::Result<(ExitSucceed, Vec<u8>, u64), ExitError>> {
 		let mut index = 0;
 
 		for_tuples!( #(
@@ -72,22 +72,22 @@ impl PrecompileSet for Tuple {
 }
 
 pub trait LinearCostPrecompile {
-	const BASE: usize;
-	const WORD: usize;
+	const BASE: u64;
+	const WORD: u64;
 
 	fn execute(
 		input: &[u8],
-		cost: usize,
+		cost: u64,
 	) -> core::result::Result<(ExitSucceed, Vec<u8>), ExitError>;
 }
 
 impl<T: LinearCostPrecompile> Precompile for T {
 	fn execute(
 		input: &[u8],
-		target_gas: Option<usize>,
+		target_gas: Option<u64>,
 		_: &Context,
-	) -> core::result::Result<(ExitSucceed, Vec<u8>, usize), ExitError> {
-		let cost = ensure_linear_cost(target_gas, input.len(), T::BASE, T::WORD)?;
+	) -> core::result::Result<(ExitSucceed, Vec<u8>, u64), ExitError> {
+		let cost = ensure_linear_cost(target_gas, input.len() as u64, T::BASE, T::WORD)?;
 
 		let (succeed, out) = T::execute(input, cost)?;
 		Ok((succeed, out, cost))
@@ -96,11 +96,11 @@ impl<T: LinearCostPrecompile> Precompile for T {
 
 /// Linear gas cost
 fn ensure_linear_cost(
-	target_gas: Option<usize>,
-	len: usize,
-	base: usize,
-	word: usize
-) -> Result<usize, ExitError> {
+	target_gas: Option<u64>,
+	len: u64,
+	base: u64,
+	word: u64
+) -> Result<u64, ExitError> {
 	let cost = base.checked_add(
 		word.checked_mul(len.saturating_add(31) / 32).ok_or(ExitError::OutOfGas)?
 	).ok_or(ExitError::OutOfGas)?;

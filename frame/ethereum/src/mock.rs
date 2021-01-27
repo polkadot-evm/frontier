@@ -21,7 +21,7 @@ use super::*;
 use crate::{Module, Config, IntermediateStateRoot};
 use ethereum::{TransactionAction, TransactionSignature};
 use frame_support::{
-	impl_outer_origin, parameter_types, weights::Weight, ConsensusEngineId
+	impl_outer_origin, parameter_types, ConsensusEngineId
 };
 use pallet_evm::{FeeCalculator, AddressMapping, EnsureAddressTruncated};
 use rlp::*;
@@ -29,7 +29,7 @@ use sp_core::{H160, H256, U256};
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
-	ModuleId, Perbill,
+	ModuleId,
 };
 use sp_runtime::AccountId32;
 
@@ -44,36 +44,32 @@ impl_outer_origin! {
 pub struct Test;
 parameter_types! {
 	pub const BlockHashCount: u64 = 250;
-	pub const MaximumBlockWeight: Weight = 1024;
-	pub const MaximumBlockLength: u32 = 2 * 1024;
-	pub const AvailableBlockRatio: Perbill = Perbill::from_percent(75);
+	pub BlockWeights: frame_system::limits::BlockWeights =
+		frame_system::limits::BlockWeights::simple_max(1024);
 }
 impl frame_system::Config for Test {
 	type BaseCallFilter = ();
-	type SystemWeightInfo = ();
+	type BlockWeights = ();
+	type BlockLength = ();
+	type DbWeight = ();
 	type Origin = Origin;
-	type Call = ();
 	type Index = u64;
 	type BlockNumber = u64;
 	type Hash = H256;
+	type Call = ();
 	type Hashing = BlakeTwo256;
 	type AccountId = AccountId32;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type Header = Header;
 	type Event = ();
 	type BlockHashCount = BlockHashCount;
-	type MaximumBlockWeight = MaximumBlockWeight;
-	type DbWeight = ();
-	type BlockExecutionWeight = ();
-	type ExtrinsicBaseWeight = ();
-	type MaximumExtrinsicWeight = MaximumBlockWeight;
-	type MaximumBlockLength = MaximumBlockLength;
-	type AvailableBlockRatio = AvailableBlockRatio;
 	type Version = ();
 	type PalletInfo = ();
 	type AccountData = pallet_balances::AccountData<u64>;
 	type OnNewAccount = ();
 	type OnKilledAccount = ();
+	type SystemWeightInfo = ();
+	type SS58Prefix = ();
 }
 
 parameter_types! {
@@ -221,7 +217,7 @@ pub fn contract_address(sender: H160, nonce: u64) -> H160 {
 	rlp.append(&sender);
 	rlp.append(&nonce);
 
-	H160::from_slice(&Keccak256::digest(rlp.out().as_slice())[12..])
+	H160::from_slice(&Keccak256::digest(&rlp.out())[12..])
 }
 
 pub fn storage_address(sender: H160, slot: H256) -> H256 {
@@ -256,7 +252,7 @@ impl UnsignedTransaction {
 	fn signing_hash(&self) -> H256 {
 		let mut stream = RlpStream::new();
 		self.signing_rlp_append(&mut stream);
-		H256::from_slice(&Keccak256::digest(&stream.drain()).as_slice())
+		H256::from_slice(&Keccak256::digest(&stream.out()).as_slice())
 	}
 
 	pub fn sign(&self, key: &H256) -> Transaction {

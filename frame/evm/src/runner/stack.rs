@@ -43,7 +43,7 @@ impl<T: Config> Runner<T> {
 	pub fn execute<F, R>(
 		source: H160,
 		value: U256,
-		gas_limit: u32,
+		gas_limit: u64,
 		gas_price: Option<U256>,
 		nonce: Option<U256>,
 		config: &evm::Config,
@@ -68,7 +68,7 @@ impl<T: Config> Runner<T> {
 		let mut backend = Backend::<T>::new(&vicinity);
 		let mut executor = StackExecutor::new_with_precompile(
 			&backend,
-			gas_limit as usize,
+			gas_limit,
 			config,
 			T::Precompiles::execute,
 		);
@@ -120,7 +120,7 @@ impl<T: Config> RunnerT<T> for Runner<T> {
 		target: H160,
 		input: Vec<u8>,
 		value: U256,
-		gas_limit: u32,
+		gas_limit: u64,
 		gas_price: Option<U256>,
 		nonce: Option<U256>,
 		config: &evm::Config,
@@ -137,7 +137,7 @@ impl<T: Config> RunnerT<T> for Runner<T> {
 				target,
 				value,
 				input,
-				gas_limit as usize,
+				gas_limit,
 			),
 		)
 	}
@@ -146,7 +146,7 @@ impl<T: Config> RunnerT<T> for Runner<T> {
 		source: H160,
 		init: Vec<u8>,
 		value: U256,
-		gas_limit: u32,
+		gas_limit: u64,
 		gas_price: Option<U256>,
 		nonce: Option<U256>,
 		config: &evm::Config,
@@ -166,7 +166,7 @@ impl<T: Config> RunnerT<T> for Runner<T> {
 					source,
 					value,
 					init,
-					gas_limit as usize,
+					gas_limit,
 				), address)
 			},
 		)
@@ -177,7 +177,7 @@ impl<T: Config> RunnerT<T> for Runner<T> {
 		init: Vec<u8>,
 		salt: H256,
 		value: U256,
-		gas_limit: u32,
+		gas_limit: u64,
 		gas_price: Option<U256>,
 		nonce: Option<U256>,
 		config: &evm::Config,
@@ -199,7 +199,7 @@ impl<T: Config> RunnerT<T> for Runner<T> {
 					value,
 					init,
 					salt,
-					gas_limit as usize,
+					gas_limit,
 				), address)
 			},
 		)
