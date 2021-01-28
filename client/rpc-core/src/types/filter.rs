@@ -272,8 +272,18 @@ impl FilteredParams {
 						}
 					}
 				},
-				VariadicValue::Multiple(_) => {
-					let replaced: Option<Vec<H256>> = self.replace(log, topic);
+				VariadicValue::Multiple(multi) => {
+					// Shrink the topics until the last item is Some.
+					let mut new_multi = multi;
+					while new_multi.iter().last().unwrap_or(&Some(H256::default())).is_none() {
+						new_multi.pop();
+					}
+					// We can discard right away any logs with lesser topics than the filter.
+					if new_multi.len() > log.topics.len() {
+						out = false;
+						break;
+					}
+					let replaced: Option<Vec<H256>> = self.replace(log, VariadicValue::Multiple(new_multi));
 					if let Some(replaced) = replaced {
 						out = false;
 						if log.topics.starts_with(
