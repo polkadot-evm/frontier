@@ -28,12 +28,12 @@ use evm::{ExitSucceed, ExitError};
 pub struct Identity;
 
 impl LinearCostPrecompile for Identity {
-	const BASE: usize = 15;
-	const WORD: usize = 3;
+	const BASE: u64 = 15;
+	const WORD: u64 = 3;
 
 	fn execute(
 		input: &[u8],
-		_: usize,
+		_: u64,
 	) -> core::result::Result<(ExitSucceed, Vec<u8>), ExitError> {
 		Ok((ExitSucceed::Returned, input.to_vec()))
 	}
@@ -43,12 +43,12 @@ impl LinearCostPrecompile for Identity {
 pub struct ECRecover;
 
 impl LinearCostPrecompile for ECRecover {
-	const BASE: usize = 3000;
-	const WORD: usize = 0;
+	const BASE: u64 = 3000;
+	const WORD: u64 = 0;
 
 	fn execute(
 		i: &[u8],
-		_: usize,
+		_: u64,
 	) -> core::result::Result<(ExitSucceed, Vec<u8>), ExitError> {
 		let mut input = [0u8; 128];
 		input[..min(i.len(), 128)].copy_from_slice(&i[..min(i.len(), 128)]);
@@ -74,12 +74,12 @@ impl LinearCostPrecompile for ECRecover {
 pub struct Ripemd160;
 
 impl LinearCostPrecompile for Ripemd160 {
-	const BASE: usize = 600;
-	const WORD: usize = 120;
+	const BASE: u64 = 600;
+	const WORD: u64 = 120;
 
 	fn execute(
 		input: &[u8],
-		_cost: usize,
+		_cost: u64,
 	) -> core::result::Result<(ExitSucceed, Vec<u8>), ExitError> {
 		use ripemd160::Digest;
 
@@ -93,12 +93,12 @@ impl LinearCostPrecompile for Ripemd160 {
 pub struct Sha256;
 
 impl LinearCostPrecompile for Sha256 {
-	const BASE: usize = 60;
-	const WORD: usize = 12;
+	const BASE: u64 = 60;
+	const WORD: u64 = 12;
 
 	fn execute(
 		input: &[u8],
-		_cost: usize,
+		_cost: u64,
 	) -> core::result::Result<(ExitSucceed, Vec<u8>), ExitError> {
 		let ret = sp_io::hashing::sha2_256(input);
 		Ok((ExitSucceed::Returned, ret.to_vec()))

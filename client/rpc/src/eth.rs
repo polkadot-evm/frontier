@@ -188,7 +188,7 @@ fn transaction_build(
 		gas: transaction.gas_limit,
 		input: Bytes(transaction.clone().input),
 		creates: status.as_ref().map_or(None, |status| status.contract_address),
-		raw: Bytes(rlp::encode(&transaction)),
+		raw: Bytes(rlp::encode(&transaction).to_vec()),
 		public_key: pubkey.as_ref().map(|pk| H512::from(pk)),
 		chain_id: transaction.signature.chain_id().map(U64::from),
 		standard_v: U256::from(transaction.signature.standard_v()),
