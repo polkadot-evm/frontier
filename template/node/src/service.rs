@@ -1,7 +1,7 @@
 //! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 
-use std::{sync::{Arc, Mutex}, cell::RefCell, time::Duration, collections::HashMap};
-use fc_rpc_core::types::PendingTransactions;
+use std::{sync::{Arc, Mutex}, cell::RefCell, time::Duration, collections::{HashMap, BTreeMap}};
+use fc_rpc_core::types::{FilterPool, PendingTransactions};
 use sc_client_api::{ExecutorProvider, RemoteBackend, BlockchainEvents};
 use sc_consensus_manual_seal::{self as manual_seal};
 use fc_consensus::FrontierBlockImport;
@@ -77,7 +77,7 @@ pub fn new_partial(config: &Configuration, sealing: Option<Sealing>) -> Result<
 		FullClient, FullBackend, FullSelectChain,
 		sp_consensus::import_queue::BasicQueue<Block, sp_api::TransactionFor<FullClient, Block>>,
 		sc_transaction_pool::FullPool<Block, FullClient>,
-		(ConsensusResult, PendingTransactions, Option<TelemetrySpan>),
+		(ConsensusResult, PendingTransactions, Option<TelemetrySpan>, Option<FilterPool>),
 >, ServiceError> {
 	let inherent_data_providers = sp_inherents::InherentDataProviders::new();
 
@@ -96,6 +96,9 @@ pub fn new_partial(config: &Configuration, sealing: Option<Sealing>) -> Result<
 
 	let pending_transactions: PendingTransactions
 		= Some(Arc::new(Mutex::new(HashMap::new())));
+
+	let filter_pool: Option<FilterPool>
+		= Some(Arc::new(Mutex::new(BTreeMap::new())));
 
 	if let Some(sealing) = sealing {
 		inherent_data_providers
@@ -118,7 +121,7 @@ pub fn new_partial(config: &Configuration, sealing: Option<Sealing>) -> Result<
 		return Ok(sc_service::PartialComponents {
 			client, backend, task_manager, import_queue, keystore_container,
 			select_chain, transaction_pool, inherent_data_providers,
-			other: (ConsensusResult::ManualSeal(frontier_block_import, sealing), pending_transactions, telemetry_span)
+			other: (ConsensusResult::ManualSeal(frontier_block_import, sealing), pending_transactions, telemetry_span, filter_pool)
 		})
 	}
 
@@ -150,7 +153,7 @@ pub fn new_partial(config: &Configuration, sealing: Option<Sealing>) -> Result<
 	Ok(sc_service::PartialComponents {
 		client, backend, task_manager, import_queue, keystore_container,
 		select_chain, transaction_pool, inherent_data_providers,
-		other: (ConsensusResult::Aura(aura_block_import, grandpa_link), pending_transactions, telemetry_span)
+		other: (ConsensusResult::Aura(aura_block_import, grandpa_link), pending_transactions, telemetry_span, filter_pool)
 	})
 }
 
@@ -163,7 +166,7 @@ pub fn new_full(
 	let sc_service::PartialComponents {
 		client, backend, mut task_manager, import_queue, keystore_container,
 		select_chain, transaction_pool, inherent_data_providers,
-		other: (consensus_result, pending_transactions, telemetry_span),
+		other: (consensus_result, pending_transactions, telemetry_span, filter_pool),
 	} = new_partial(&config, sealing)?;
 
 	let (network, network_status_sinks, system_rpc_tx, network_starter) =
@@ -200,6 +203,7 @@ pub fn new_full(
 		let pool = transaction_pool.clone();
 		let network = network.clone();
 		let pending = pending_transactions.clone();
+		let filter_pool = filter_pool.clone();
 		Box::new(move |deny_unsafe, _| {
 			let deps = crate::rpc::FullDeps {
 				client: client.clone(),
@@ -209,6 +213,7 @@ pub fn new_full(
 				enable_dev_signer,
 				network: network.clone(),
 				pending_transactions: pending.clone(),
+				filter_pool: filter_pool.clone(),
 				command_sink: Some(command_sink.clone())
 			};
 			crate::rpc::create_full(
@@ -229,6 +234,28 @@ pub fn new_full(
 		remote_blockchain: None,
 		backend, network_status_sinks, system_rpc_tx, config, telemetry_span,
 	})?;
+
+	// Spawn Frontier EthFilterApi maintenance task.
+	if filter_pool.is_some() {
+		use futures::StreamExt;
+		// Each filter is allowed to stay in the pool for 100 blocks.
+		const FILTER_RETAIN_THRESHOLD: u64 = 100;
+		task_manager.spawn_essential_handle().spawn(
+			"frontier-filter-pool",
+			client.import_notification_stream().for_each(move |notification| {
+				if let Ok(locked) = &mut filter_pool.clone().unwrap().lock() {
+					let imported_number: u64 = notification.header.number as u64;
+					for (k, v) in locked.clone().iter() {
+						let lifespan_limit = v.at_block + FILTER_RETAIN_THRESHOLD;
+						if lifespan_limit <= imported_number {
+							locked.remove(&k);
+						}
+					}
+				}
+				futures::future::ready(())
+			})
+		);
+	}
 
 	// Spawn Frontier pending transactions maintenance task (as essential, otherwise we leak).
 	if pending_transactions.is_some() {
