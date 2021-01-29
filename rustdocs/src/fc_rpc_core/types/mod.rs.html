@@ -55,6 +55,9 @@
 <span id="52">52</span>
 <span id="53">53</span>
 <span id="54">54</span>
+<span id="55">55</span>
+<span id="56">56</span>
+<span id="57">57</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
@@ -97,7 +100,10 @@
 <span class="kw">pub</span> <span class="kw">use</span> <span class="self">self</span>::<span class="ident">block</span>::{<span class="ident">RichBlock</span>, <span class="ident">Block</span>, <span class="ident">BlockTransactions</span>, <span class="ident">Header</span>, <span class="ident">RichHeader</span>, <span class="ident">Rich</span>};
 <span class="kw">pub</span> <span class="kw">use</span> <span class="self">self</span>::<span class="ident">block_number</span>::<span class="ident">BlockNumber</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="self">self</span>::<span class="ident">call_request</span>::<span class="ident">CallRequest</span>;
-<span class="kw">pub</span> <span class="kw">use</span> <span class="self">self</span>::<span class="ident">filter</span>::{<span class="ident">Filter</span>, <span class="ident">FilterChanges</span>, <span class="ident">VariadicValue</span>, <span class="ident">FilterAddress</span>, <span class="ident">Topic</span>, <span class="ident">FilteredParams</span>};
+<span class="kw">pub</span> <span class="kw">use</span> <span class="self">self</span>::<span class="ident">filter</span>::{
+	<span class="ident">Filter</span>, <span class="ident">FilterChanges</span>, <span class="ident">FilterPool</span>, <span class="ident">FilterPoolItem</span>, <span class="ident">FilterType</span>, <span class="ident">VariadicValue</span>, <span class="ident">FilterAddress</span>,
+	<span class="ident">Topic</span>, <span class="ident">FilteredParams</span>,
+};
 <span class="kw">pub</span> <span class="kw">use</span> <span class="self">self</span>::<span class="ident">index</span>::<span class="ident">Index</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="self">self</span>::<span class="ident">log</span>::<span class="ident">Log</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="self">self</span>::<span class="ident">receipt</span>::<span class="ident">Receipt</span>;

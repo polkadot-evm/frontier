@@ -481,11 +481,38 @@
 <span id="478">478</span>
 <span id="479">479</span>
 <span id="480">480</span>
+<span id="481">481</span>
+<span id="482">482</span>
+<span id="483">483</span>
+<span id="484">484</span>
+<span id="485">485</span>
+<span id="486">486</span>
+<span id="487">487</span>
+<span id="488">488</span>
+<span id="489">489</span>
+<span id="490">490</span>
+<span id="491">491</span>
+<span id="492">492</span>
+<span id="493">493</span>
+<span id="494">494</span>
+<span id="495">495</span>
+<span id="496">496</span>
+<span id="497">497</span>
+<span id="498">498</span>
+<span id="499">499</span>
+<span id="500">500</span>
+<span id="501">501</span>
+<span id="502">502</span>
+<span id="503">503</span>
+<span id="504">504</span>
+<span id="505">505</span>
+<span id="506">506</span>
+<span id="507">507</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Service and ServiceFactory implementation. Specialized wrapper over substrate service.</span>
 
-<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">sync</span>::{<span class="ident">Arc</span>, <span class="ident">Mutex</span>}, <span class="ident">cell</span>::<span class="ident">RefCell</span>, <span class="ident">time</span>::<span class="ident">Duration</span>, <span class="ident">collections</span>::<span class="ident">HashMap</span>};
-<span class="kw">use</span> <span class="ident">fc_rpc_core</span>::<span class="ident">types</span>::<span class="ident">PendingTransactions</span>;
+<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">sync</span>::{<span class="ident">Arc</span>, <span class="ident">Mutex</span>}, <span class="ident">cell</span>::<span class="ident">RefCell</span>, <span class="ident">time</span>::<span class="ident">Duration</span>, <span class="ident">collections</span>::{<span class="ident">HashMap</span>, <span class="ident">BTreeMap</span>}};
+<span class="kw">use</span> <span class="ident">fc_rpc_core</span>::<span class="ident">types</span>::{<span class="ident">FilterPool</span>, <span class="ident">PendingTransactions</span>};
 <span class="kw">use</span> <span class="ident">sc_client_api</span>::{<span class="ident">ExecutorProvider</span>, <span class="ident">RemoteBackend</span>, <span class="ident">BlockchainEvents</span>};
 <span class="kw">use</span> <span class="ident">sc_consensus_manual_seal</span>::{<span class="self">self</span> <span class="kw">as</span> <span class="ident">manual_seal</span>};
 <span class="kw">use</span> <span class="ident">fc_consensus</span>::<span class="ident">FrontierBlockImport</span>;
@@ -561,7 +588,7 @@
 		<span class="ident">FullClient</span>, <span class="ident">FullBackend</span>, <span class="ident">FullSelectChain</span>,
 		<span class="ident">sp_consensus</span>::<span class="ident">import_queue</span>::<span class="ident">BasicQueue</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">sp_api</span>::<span class="ident">TransactionFor</span><span class="op">&lt;</span><span class="ident">FullClient</span>, <span class="ident">Block</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 		<span class="ident">sc_transaction_pool</span>::<span class="ident">FullPool</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">FullClient</span><span class="op">&gt;</span>,
-		(<span class="ident">ConsensusResult</span>, <span class="ident">PendingTransactions</span>, <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">TelemetrySpan</span><span class="op">&gt;</span>),
+		(<span class="ident">ConsensusResult</span>, <span class="ident">PendingTransactions</span>, <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">TelemetrySpan</span><span class="op">&gt;</span>, <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">FilterPool</span><span class="op">&gt;</span>),
 <span class="op">&gt;</span>, <span class="ident">ServiceError</span><span class="op">&gt;</span> {
 	<span class="kw">let</span> <span class="ident">inherent_data_providers</span> <span class="op">=</span> <span class="ident">sp_inherents</span>::<span class="ident">InherentDataProviders</span>::<span class="ident">new</span>();
 
@@ -580,6 +607,9 @@
 
 	<span class="kw">let</span> <span class="ident">pending_transactions</span>: <span class="ident">PendingTransactions</span>
 		<span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">Arc</span>::<span class="ident">new</span>(<span class="ident">Mutex</span>::<span class="ident">new</span>(<span class="ident">HashMap</span>::<span class="ident">new</span>())));
+
+	<span class="kw">let</span> <span class="ident">filter_pool</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">FilterPool</span><span class="op">&gt;</span>
+		<span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">Arc</span>::<span class="ident">new</span>(<span class="ident">Mutex</span>::<span class="ident">new</span>(<span class="ident">BTreeMap</span>::<span class="ident">new</span>())));
 
 	<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">sealing</span>) <span class="op">=</span> <span class="ident">sealing</span> {
 		<span class="ident">inherent_data_providers</span>
@@ -602,7 +632,7 @@
 		<span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">sc_service</span>::<span class="ident">PartialComponents</span> {
 			<span class="ident">client</span>, <span class="ident">backend</span>, <span class="ident">task_manager</span>, <span class="ident">import_queue</span>, <span class="ident">keystore_container</span>,
 			<span class="ident">select_chain</span>, <span class="ident">transaction_pool</span>, <span class="ident">inherent_data_providers</span>,
-			<span class="ident">other</span>: (<span class="ident">ConsensusResult</span>::<span class="ident">ManualSeal</span>(<span class="ident">frontier_block_import</span>, <span class="ident">sealing</span>), <span class="ident">pending_transactions</span>, <span class="ident">telemetry_span</span>)
+			<span class="ident">other</span>: (<span class="ident">ConsensusResult</span>::<span class="ident">ManualSeal</span>(<span class="ident">frontier_block_import</span>, <span class="ident">sealing</span>), <span class="ident">pending_transactions</span>, <span class="ident">telemetry_span</span>, <span class="ident">filter_pool</span>)
 		})
 	}
 
@@ -634,7 +664,7 @@
 	<span class="prelude-val">Ok</span>(<span class="ident">sc_service</span>::<span class="ident">PartialComponents</span> {
 		<span class="ident">client</span>, <span class="ident">backend</span>, <span class="ident">task_manager</span>, <span class="ident">import_queue</span>, <span class="ident">keystore_container</span>,
 		<span class="ident">select_chain</span>, <span class="ident">transaction_pool</span>, <span class="ident">inherent_data_providers</span>,
-		<span class="ident">other</span>: (<span class="ident">ConsensusResult</span>::<span class="ident">Aura</span>(<span class="ident">aura_block_import</span>, <span class="ident">grandpa_link</span>), <span class="ident">pending_transactions</span>, <span class="ident">telemetry_span</span>)
+		<span class="ident">other</span>: (<span class="ident">ConsensusResult</span>::<span class="ident">Aura</span>(<span class="ident">aura_block_import</span>, <span class="ident">grandpa_link</span>), <span class="ident">pending_transactions</span>, <span class="ident">telemetry_span</span>, <span class="ident">filter_pool</span>)
 	})
 }
 
@@ -647,7 +677,7 @@
 	<span class="kw">let</span> <span class="ident">sc_service</span>::<span class="ident">PartialComponents</span> {
 		<span class="ident">client</span>, <span class="ident">backend</span>, <span class="kw-2">mut</span> <span class="ident">task_manager</span>, <span class="ident">import_queue</span>, <span class="ident">keystore_container</span>,
 		<span class="ident">select_chain</span>, <span class="ident">transaction_pool</span>, <span class="ident">inherent_data_providers</span>,
-		<span class="ident">other</span>: (<span class="ident">consensus_result</span>, <span class="ident">pending_transactions</span>, <span class="ident">telemetry_span</span>),
+		<span class="ident">other</span>: (<span class="ident">consensus_result</span>, <span class="ident">pending_transactions</span>, <span class="ident">telemetry_span</span>, <span class="ident">filter_pool</span>),
 	} <span class="op">=</span> <span class="ident">new_partial</span>(<span class="kw-2">&amp;</span><span class="ident">config</span>, <span class="ident">sealing</span>)<span class="question-mark">?</span>;
 
 	<span class="kw">let</span> (<span class="ident">network</span>, <span class="ident">network_status_sinks</span>, <span class="ident">system_rpc_tx</span>, <span class="ident">network_starter</span>) <span class="op">=</span>
@@ -684,6 +714,7 @@
 		<span class="kw">let</span> <span class="ident">pool</span> <span class="op">=</span> <span class="ident">transaction_pool</span>.<span class="ident">clone</span>();
 		<span class="kw">let</span> <span class="ident">network</span> <span class="op">=</span> <span class="ident">network</span>.<span class="ident">clone</span>();
 		<span class="kw">let</span> <span class="ident">pending</span> <span class="op">=</span> <span class="ident">pending_transactions</span>.<span class="ident">clone</span>();
+		<span class="kw">let</span> <span class="ident">filter_pool</span> <span class="op">=</span> <span class="ident">filter_pool</span>.<span class="ident">clone</span>();
 		<span class="ident">Box</span>::<span class="ident">new</span>(<span class="kw">move</span> <span class="op">|</span><span class="ident">deny_unsafe</span>, <span class="kw">_</span><span class="op">|</span> {
 			<span class="kw">let</span> <span class="ident">deps</span> <span class="op">=</span> <span class="kw">crate</span>::<span class="ident">rpc</span>::<span class="ident">FullDeps</span> {
 				<span class="ident">client</span>: <span class="ident">client</span>.<span class="ident">clone</span>(),
@@ -693,6 +724,7 @@
 				<span class="ident">enable_dev_signer</span>,
 				<span class="ident">network</span>: <span class="ident">network</span>.<span class="ident">clone</span>(),
 				<span class="ident">pending_transactions</span>: <span class="ident">pending</span>.<span class="ident">clone</span>(),
+				<span class="ident">filter_pool</span>: <span class="ident">filter_pool</span>.<span class="ident">clone</span>(),
 				<span class="ident">command_sink</span>: <span class="prelude-val">Some</span>(<span class="ident">command_sink</span>.<span class="ident">clone</span>())
 			};
 			<span class="kw">crate</span>::<span class="ident">rpc</span>::<span class="ident">create_full</span>(
@@ -713,6 +745,28 @@
 		<span class="ident">remote_blockchain</span>: <span class="prelude-val">None</span>,
 		<span class="ident">backend</span>, <span class="ident">network_status_sinks</span>, <span class="ident">system_rpc_tx</span>, <span class="ident">config</span>, <span class="ident">telemetry_span</span>,
 	})<span class="question-mark">?</span>;
+
+	<span class="comment">// Spawn Frontier EthFilterApi maintenance task.</span>
+	<span class="kw">if</span> <span class="ident">filter_pool</span>.<span class="ident">is_some</span>() {
+		<span class="kw">use</span> <span class="ident">futures</span>::<span class="ident">StreamExt</span>;
+		<span class="comment">// Each filter is allowed to stay in the pool for 100 blocks.</span>
+		<span class="kw">const</span> <span class="ident">FILTER_RETAIN_THRESHOLD</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">100</span>;
+		<span class="ident">task_manager</span>.<span class="ident">spawn_essential_handle</span>().<span class="ident">spawn</span>(
+			<span class="string">&quot;frontier-filter-pool&quot;</span>,
+			<span class="ident">client</span>.<span class="ident">import_notification_stream</span>().<span class="ident">for_each</span>(<span class="kw">move</span> <span class="op">|</span><span class="ident">notification</span><span class="op">|</span> {
+				<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">locked</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">filter_pool</span>.<span class="ident">clone</span>().<span class="ident">unwrap</span>().<span class="ident">lock</span>() {
+					<span class="kw">let</span> <span class="ident">imported_number</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="ident">notification</span>.<span class="ident">header</span>.<span class="ident">number</span> <span class="kw">as</span> <span class="ident">u64</span>;
+					<span class="kw">for</span> (<span class="ident">k</span>, <span class="ident">v</span>) <span class="kw">in</span> <span class="ident">locked</span>.<span class="ident">clone</span>().<span class="ident">iter</span>() {
+						<span class="kw">let</span> <span class="ident">lifespan_limit</span> <span class="op">=</span> <span class="ident">v</span>.<span class="ident">at_block</span> <span class="op">+</span> <span class="ident">FILTER_RETAIN_THRESHOLD</span>;
+						<span class="kw">if</span> <span class="ident">lifespan_limit</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">imported_number</span> {
+							<span class="ident">locked</span>.<span class="ident">remove</span>(<span class="kw-2">&amp;</span><span class="ident">k</span>);
+						}
+					}
+				}
+				<span class="ident">futures</span>::<span class="ident">future</span>::<span class="ident">ready</span>(())
+			})
+		);
+	}
 
 	<span class="comment">// Spawn Frontier pending transactions maintenance task (as essential, otherwise we leak).</span>
 	<span class="kw">if</span> <span class="ident">pending_transactions</span>.<span class="ident">is_some</span>() {
