@@ -316,6 +316,16 @@
 <span id="313">313</span>
 <span id="314">314</span>
 <span id="315">315</span>
+<span id="316">316</span>
+<span id="317">317</span>
+<span id="318">318</span>
+<span id="319">319</span>
+<span id="320">320</span>
+<span id="321">321</span>
+<span id="322">322</span>
+<span id="323">323</span>
+<span id="324">324</span>
+<span id="325">325</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
@@ -591,8 +601,18 @@
 						}
 					}
 				},
-				<span class="ident">VariadicValue</span>::<span class="ident">Multiple</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
-					<span class="kw">let</span> <span class="ident">replaced</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">replace</span>(<span class="ident">log</span>, <span class="ident">topic</span>);
+				<span class="ident">VariadicValue</span>::<span class="ident">Multiple</span>(<span class="ident">multi</span>) <span class="op">=</span><span class="op">&gt;</span> {
+					<span class="comment">// Shrink the topics until the last item is Some.</span>
+					<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">new_multi</span> <span class="op">=</span> <span class="ident">multi</span>;
+					<span class="kw">while</span> <span class="ident">new_multi</span>.<span class="ident">iter</span>().<span class="ident">last</span>().<span class="ident">unwrap_or</span>(<span class="kw-2">&amp;</span><span class="prelude-val">Some</span>(<span class="ident">H256</span>::<span class="ident">default</span>())).<span class="ident">is_none</span>() {
+						<span class="ident">new_multi</span>.<span class="ident">pop</span>();
+					}
+					<span class="comment">// We can discard right away any logs with lesser topics than the filter.</span>
+					<span class="kw">if</span> <span class="ident">new_multi</span>.<span class="ident">len</span>() <span class="op">&gt;</span> <span class="ident">log</span>.<span class="ident">topics</span>.<span class="ident">len</span>() {
+						<span class="ident">out</span> <span class="op">=</span> <span class="bool-val">false</span>;
+						<span class="kw">break</span>;
+					}
+					<span class="kw">let</span> <span class="ident">replaced</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">replace</span>(<span class="ident">log</span>, <span class="ident">VariadicValue</span>::<span class="ident">Multiple</span>(<span class="ident">new_multi</span>));
 					<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">replaced</span>) <span class="op">=</span> <span class="ident">replaced</span> {
 						<span class="ident">out</span> <span class="op">=</span> <span class="bool-val">false</span>;
 						<span class="kw">if</span> <span class="ident">log</span>.<span class="ident">topics</span>.<span class="ident">starts_with</span>(
