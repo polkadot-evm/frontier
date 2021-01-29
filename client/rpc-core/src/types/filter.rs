@@ -15,8 +15,8 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
-
-use ethereum_types::{H160, H256};
+use std::{sync::{Arc, Mutex}, collections::BTreeMap};
+use ethereum_types::{H160, H256, U256};
 use serde::de::{Error, DeserializeOwned};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::{Value, from_value};
@@ -322,4 +322,24 @@ impl Serialize for FilterChanges {
 			FilterChanges::Empty => (&[] as &[Value]).serialize(s),
 		}
 	}
+
+
 }
+
+#[derive(Debug, Clone)]
+pub enum FilterType {
+	Block,
+	PendingTransaction,
+	Log(Filter)
+}
+
+#[derive(Debug, Clone)]
+pub struct FilterPoolItem {
+	pub last_poll: BlockNumber,
+	pub filter_type: FilterType,
+	pub at_block: u64
+}
+
+/// On-memory stored filters created through the `eth_newFilter` RPC.
+pub type FilterPool = Arc<Mutex<BTreeMap<U256, FilterPoolItem>>>;
+
