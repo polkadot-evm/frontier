@@ -3696,6 +3696,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-dynamic-fee"
+version = "0.1.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "serde",
+ "sp-core",
+ "sp-inherents",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-ethereum"
 version = "0.1.0"
 dependencies = [
