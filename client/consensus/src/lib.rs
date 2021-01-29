@@ -24,12 +24,13 @@ use std::sync::Arc;
 use std::collections::HashMap;
 use std::marker::PhantomData;
 use fp_consensus::{FRONTIER_ENGINE_ID, ConsensusLog};
+use fp_rpc::EthereumRuntimeRPCApi;
 use sc_client_api::{BlockOf, backend::AuxStore};
 use sp_blockchain::{HeaderBackend, ProvideCache, well_known_cache_keys::Id as CacheKeyId};
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
 use sp_runtime::generic::OpaqueDigestItemId;
-use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
-use sp_api::ProvideRuntimeApi;
+use sp_runtime::traits::{Block as BlockT, Header as HeaderT, One, Zero};
+use sp_api::{ProvideRuntimeApi, BlockId};
 use sp_consensus::{
 	BlockImportParams, Error as ConsensusError, BlockImport,
 	BlockCheckParams, ImportResult,
@@ -43,6 +44,8 @@ pub enum Error {
 	MultiplePostRuntimeLogs,
 	#[display(fmt = "Post-runtime Ethereum block not found, rejecting!")]
 	NoPostRuntimeLog,
+	#[display(fmt = "Cannot access the runtime at genesis, rejecting!")]
+	RuntimeApiCallFailed,
 }
 
 impl From<Error> for String {
@@ -80,6 +83,7 @@ impl<B, I, C> FrontierBlockImport<B, I, C> where
 	I: BlockImport<B, Transaction = sp_api::TransactionFor<C, B>> + Send + Sync,
 	I::Error: Into<ConsensusError>,
 	C: ProvideRuntimeApi<B> + Send + Sync + HeaderBackend<B> + AuxStore + ProvideCache<B> + BlockOf,
+	C::Api: EthereumRuntimeRPCApi<B>,
 	C::Api: BlockBuilderApi<B, Error = sp_blockchain::Error>,
 {
 	pub fn new(
@@ -101,6 +105,7 @@ impl<B, I, C> BlockImport<B> for FrontierBlockImport<B, I, C> where
 	I: BlockImport<B, Transaction = sp_api::TransactionFor<C, B>> + Send + Sync,
 	I::Error: Into<ConsensusError>,
 	C: ProvideRuntimeApi<B> + Send + Sync + HeaderBackend<B> + AuxStore + ProvideCache<B> + BlockOf,
+	C::Api: EthereumRuntimeRPCApi<B>,
 	C::Api: BlockBuilderApi<B, Error = sp_blockchain::Error>,
 {
 	type Error = ConsensusError;
@@ -148,6 +153,22 @@ impl<B, I, C> BlockImport<B> for FrontierBlockImport<B, I, C> where
 						if res.is_err() { trace!(target: "frontier-consensus", "{:?}", res); }
 					}
 				},
+			}
+			// On importing block 1 we also map the genesis block in the auxiliary.
+			if block.header.number().clone() == One::one() {
+				let id = BlockId::Number(Zero::zero());
+				if let Ok(Some(header)) = client.header(id) {
+					let block = self.client.runtime_api().current_block(&id)
+						.map_err(|_| Error::RuntimeApiCallFailed)?;
+					let block_hash = block.unwrap().header.hash();
+					let res = aux_schema::write_block_hash(
+						client.as_ref(),
+						block_hash,
+						header.hash(),
+						insert_closure!()
+					);
+					if res.is_err() { trace!(target: "frontier-consensus", "{:?}", res); }
+				}
 			}
 		}
 

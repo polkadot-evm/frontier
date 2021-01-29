@@ -13,7 +13,7 @@ describeWithFrontier("Frontier RPC (Block)", `simple-specs.json`, (context) => {
 		expect(await context.web3.eth.getBlockNumber()).to.equal(0);
 	});
 
-	it("should return genesis block", async function () {
+	it("should return genesis block by number", async function () {
 		expect(await context.web3.eth.getBlockNumber()).to.equal(0);
 
 		const block = await context.web3.eth.getBlock(0);
@@ -40,6 +40,7 @@ describeWithFrontier("Frontier RPC (Block)", `simple-specs.json`, (context) => {
 		expect(block.hash).to.be.a("string").lengthOf(66);
 		expect(block.parentHash).to.be.a("string").lengthOf(66);
 		expect(block.timestamp).to.be.a("number");
+		previousBlock = block;
 	});
 
 	step("should have empty uncles and correct sha3Uncles", async function () {
@@ -67,6 +68,33 @@ describeWithFrontier("Frontier RPC (Block)", `simple-specs.json`, (context) => {
 	step("should have valid timestamp after block production", async function () {
 		const block = await context.web3.eth.getBlock("latest");
 		expect(block.timestamp).to.be.eq(6);
+	});
+
+	it("genesis block should be already available by hash", async function () {
+		const block = await context.web3.eth.getBlock(previousBlock.hash);
+		expect(block).to.include({
+			author: "0x0000000000000000000000000000000000000000",
+			difficulty: "0",
+			extraData: "0x",
+			gasLimit: 4294967295,
+			gasUsed: 0,
+			logsBloom:
+				"0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+			miner: "0x0000000000000000000000000000000000000000",
+			number: 0,
+			receiptsRoot: "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+			size: 505,
+			timestamp: 0,
+			totalDifficulty: null,
+		});
+
+		expect((block as any).sealFields).to.eql([
+			"0x0000000000000000000000000000000000000000000000000000000000000000",
+			"0x0000000000000000",
+		]);
+		expect(block.hash).to.be.a("string").lengthOf(66);
+		expect(block.parentHash).to.be.a("string").lengthOf(66);
+		expect(block.timestamp).to.be.a("number");
 	});
 
 	step("retrieve block information", async function () {
