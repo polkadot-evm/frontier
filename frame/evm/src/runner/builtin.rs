@@ -88,6 +88,26 @@ impl<T: Config> RunnerT<T> for Runner<T> {
 
 			let code = substate.code(target);
 
+			// transfer
+			if value != U256::zero() {
+				match substate.transfer(Transfer {
+					source,
+					target,
+					value,
+				}) {
+					Ok(()) => {}
+					Err(e) => {
+						let call_info = CallInfo {
+							exit_reason: ExitReason::Error(e),
+							value: Vec::new(),
+							used_gas: U256::zero(),
+							logs: Vec::new(),
+						};
+						return TransactionOutcome::Rollback(Ok(call_info));
+					}
+				}
+			}
+
 			let (reason, out) = substate.execute(
 				source,
 				target,
@@ -335,6 +355,17 @@ impl<'vicinity, 'config, T: Config> Handler<'vicinity, 'config, T> {
 			address,
 			apparent_value: value,
 		};
+
+		if let Some(ret) = (self.precompile)(address, &input, Some(0), &context) {
+			match ret {
+				Ok((_, _, _)) => {
+					return (ExitReason::Succeed(ExitSucceed::Returned), Vec::new());
+				}
+				Err(e) => {
+					return (ExitReason::Error(e), Vec::new());
+				}
+			};
+		}
 
 		let mut runtime = Runtime::new(
 			Rc::new(code),
@@ -714,12 +745,11 @@ impl<'vicinity, 'config, T: Config> HandlerT for Handler<'vicinity, 'config, T> 
 			);
 
 			if let Some(transfer) = transfer {
-				match substate.transfer(transfer) {
-					Ok(()) => (),
-					Err(e) => return TransactionOutcome::Rollback(
-						Capture::Exit((e.into(), Vec::new()))
-					),
-				}
+				try_or_fail!(substate.transfer(transfer));
+			}
+
+			if let Some(result) = (self.precompile)(code_address, &input, Some(0), &context) {
+				try_or_fail!(result);
 			}
 
 			let (reason, out) = substate.execute(
