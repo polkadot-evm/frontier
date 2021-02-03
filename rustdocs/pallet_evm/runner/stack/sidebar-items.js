@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["Backend","Substrate backend for EVM."],["Runner",""]]});
+initSidebarItems({"struct":[["Runner",""],["SubstrateStackState","Substrate backend for EVM."]]});

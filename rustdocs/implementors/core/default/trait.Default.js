@@ -7,5 +7,5 @@ implementors["frontier_template_runtime"] = [{"text":"impl Default for SessionKe
 implementors["frontier_template_test_client"] = [{"text":"impl Default for GenesisParameters","synthetic":false,"types":[]}];
 implementors["pallet_dynamic_fee"] = [{"text":"impl Default for GenesisConfig","synthetic":false,"types":[]}];
 implementors["pallet_ethereum"] = [{"text":"impl Default for GenesisConfig","synthetic":false,"types":[]}];
-implementors["pallet_evm"] = [{"text":"impl&lt;T:&nbsp;Default + Config&gt; Default for Runner&lt;T&gt;","synthetic":false,"types":[]},{"text":"impl&lt;T:&nbsp;Default + Config&gt; Default for Runner&lt;T&gt;","synthetic":false,"types":[]},{"text":"impl Default for GenesisConfig","synthetic":false,"types":[]}];
+implementors["pallet_evm"] = [{"text":"impl&lt;T:&nbsp;Default + Config&gt; Default for Runner&lt;T&gt;","synthetic":false,"types":[]},{"text":"impl Default for GenesisConfig","synthetic":false,"types":[]}];
 if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

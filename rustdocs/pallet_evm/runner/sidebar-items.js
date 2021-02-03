@@ -1,1 +1,1 @@
-initSidebarItems({"mod":[["builtin","Native EVM runner."],["stack","EVM stack-based runner."]],"trait":[["Runner",""]]});
+initSidebarItems({"mod":[["stack","EVM stack-based runner."]],"trait":[["Runner",""]]});
