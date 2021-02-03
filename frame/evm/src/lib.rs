@@ -70,7 +70,7 @@ use codec::{Encode, Decode};
 use serde::{Serialize, Deserialize};
 use frame_support::{decl_module, decl_storage, decl_event, decl_error};
 use frame_support::weights::{Weight, Pays, PostDispatchInfo};
-use frame_support::traits::{Currency, ExistenceRequirement, Get};
+use frame_support::traits::{Currency, ExistenceRequirement, Get, WithdrawReasons};
 use frame_support::dispatch::DispatchResultWithPostInfo;
 use frame_system::RawOrigin;
 use sp_core::{U256, H256, H160, Hasher};
@@ -537,5 +537,29 @@ impl<T: Config> Module<T> {
 			nonce: U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(nonce)),
 			balance: U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(balance)),
 		}
+	}
+
+	/// Withdraw fee.
+	pub fn withdraw_fee(address: &H160, value: U256) -> Result<(), Error<T>> {
+		let account_id = T::AddressMapping::into_account_id(*address);
+
+		drop(T::Currency::withdraw(
+			&account_id,
+			value.low_u128().unique_saturated_into(),
+			WithdrawReasons::FEE,
+			ExistenceRequirement::AllowDeath,
+		).map_err(|_| Error::<T>::BalanceLow)?);
+
+		Ok(())
+	}
+
+	/// Deposit fee.
+	pub fn deposit_fee(address: &H160, value: U256) {
+		let account_id = T::AddressMapping::into_account_id(*address);
+
+		drop(T::Currency::deposit_creating(
+			&account_id,
+			value.low_u128().unique_saturated_into(),
+		));
 	}
 }
