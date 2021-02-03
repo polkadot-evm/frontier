@@ -17,6 +17,7 @@ sc-client-api = { version = "2.0.0", git = "https://github.com/paritytech/substr
 sp-block-builder = { version = "2.0.0", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sp-inherents = { version = "2.0.0", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 fp-consensus = { version = "0.1.0", path = "../../primitives/consensus" }
+fp-rpc = { path = "../../primitives/rpc" }
 sp-consensus = { version = "0.8.0", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 log = "0.4.8"
 futures = { version = "0.3.1", features = ["compat"] }
