@@ -1,5 +1,5 @@
 (function() {var implementors = {};
-implementors["fp_consensus"] = [{"text":"impl EncodeLike&lt;ConsensusLog&gt; for ConsensusLog","synthetic":false,"types":[]}];
+implementors["fp_consensus"] = [{"text":"impl EncodeLike&lt;ConsensusLog&gt; for ConsensusLog","synthetic":false,"types":[]},{"text":"impl EncodeLike&lt;PostHashes&gt; for PostHashes","synthetic":false,"types":[]}];
 implementors["fp_evm"] = [{"text":"impl EncodeLike&lt;Vicinity&gt; for Vicinity","synthetic":false,"types":[]},{"text":"impl&lt;T&gt; EncodeLike&lt;ExecutionInfo&lt;T&gt;&gt; for ExecutionInfo&lt;T&gt; <span class=\"where fmt-newline\">where<br>&nbsp;&nbsp;&nbsp;&nbsp;T: Encode,<br>&nbsp;&nbsp;&nbsp;&nbsp;T: Encode,&nbsp;</span>","synthetic":false,"types":[]},{"text":"impl EncodeLike&lt;CallOrCreateInfo&gt; for CallOrCreateInfo","synthetic":false,"types":[]}];
 implementors["fp_rpc"] = [{"text":"impl EncodeLike&lt;TransactionStatus&gt; for TransactionStatus","synthetic":false,"types":[]}];
 implementors["frontier_template_runtime"] = [{"text":"impl EncodeLike&lt;SessionKeys&gt; for SessionKeys","synthetic":false,"types":[]},{"text":"impl EncodeLike&lt;Event&gt; for Event","synthetic":false,"types":[]},{"text":"impl EncodeLike&lt;OriginCaller&gt; for OriginCaller","synthetic":false,"types":[]},{"text":"impl EncodeLike&lt;Call&gt; for Call","synthetic":false,"types":[]}];

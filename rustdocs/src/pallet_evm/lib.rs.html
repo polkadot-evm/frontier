@@ -862,8 +862,8 @@
 
 <span class="macro">decl_storage</span><span class="macro">!</span> {
 	<span class="kw">trait</span> <span class="ident">Store</span> <span class="kw">for</span> <span class="ident">Module</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="kw">as</span> <span class="ident">EVM</span> {
-		<span class="ident">AccountCodes</span> <span class="ident">get</span>(<span class="kw">fn</span> <span class="ident">account_codes</span>): <span class="ident">map</span> <span class="ident">hasher</span>(<span class="ident">blake2_128_concat</span>) <span class="ident">H160</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>;
-		<span class="ident">AccountStorages</span> <span class="ident">get</span>(<span class="kw">fn</span> <span class="ident">account_storages</span>):
+		<span class="kw">pub</span> <span class="ident">AccountCodes</span> <span class="ident">get</span>(<span class="kw">fn</span> <span class="ident">account_codes</span>): <span class="ident">map</span> <span class="ident">hasher</span>(<span class="ident">blake2_128_concat</span>) <span class="ident">H160</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>;
+		<span class="kw">pub</span> <span class="ident">AccountStorages</span> <span class="ident">get</span>(<span class="kw">fn</span> <span class="ident">account_storages</span>):
 			<span class="ident">double_map</span> <span class="ident">hasher</span>(<span class="ident">blake2_128_concat</span>) <span class="ident">H160</span>, <span class="ident">hasher</span>(<span class="ident">blake2_128_concat</span>) <span class="ident">H256</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">H256</span>;
 	}
 

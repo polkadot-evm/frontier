@@ -1,5 +1,5 @@
 (function() {var implementors = {};
-implementors["fp_consensus"] = [{"text":"impl Decode for ConsensusLog","synthetic":false,"types":[]}];
+implementors["fp_consensus"] = [{"text":"impl Decode for ConsensusLog","synthetic":false,"types":[]},{"text":"impl Decode for PostHashes","synthetic":false,"types":[]}];
 implementors["fp_evm"] = [{"text":"impl Decode for Vicinity","synthetic":false,"types":[]},{"text":"impl&lt;T&gt; Decode for ExecutionInfo&lt;T&gt; <span class=\"where fmt-newline\">where<br>&nbsp;&nbsp;&nbsp;&nbsp;T: Decode,<br>&nbsp;&nbsp;&nbsp;&nbsp;T: Decode,&nbsp;</span>","synthetic":false,"types":[]},{"text":"impl Decode for CallOrCreateInfo","synthetic":false,"types":[]}];
 implementors["fp_rpc"] = [{"text":"impl Decode for TransactionStatus","synthetic":false,"types":[]}];
 implementors["frontier_template_runtime"] = [{"text":"impl Decode for SessionKeys","synthetic":false,"types":[]},{"text":"impl Decode for Event","synthetic":false,"types":[]},{"text":"impl Decode for OriginCaller","synthetic":false,"types":[]},{"text":"impl Decode for Call","synthetic":false,"types":[]}];

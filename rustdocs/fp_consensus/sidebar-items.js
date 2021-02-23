@@ -1,1 +1,1 @@
-initSidebarItems({"constant":[["FRONTIER_ENGINE_ID",""]],"enum":[["ConsensusLog",""]]});
+initSidebarItems({"constant":[["FRONTIER_ENGINE_ID",""]],"enum":[["ConsensusLog",""]],"struct":[["PostHashes",""]]});
