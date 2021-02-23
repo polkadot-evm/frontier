@@ -21,16 +21,41 @@ use codec::{Encode, Decode};
 use sp_std::vec::Vec;
 use sp_core::H256;
 use sp_runtime::ConsensusEngineId;
+use sha3::{Digest, Keccak256};
 
 pub const FRONTIER_ENGINE_ID: ConsensusEngineId = [b'f', b'r', b'o', b'n'];
 
 #[derive(Decode, Encode, Clone, PartialEq, Eq)]
 pub enum ConsensusLog {
 	#[codec(index = "1")]
-	EndBlock {
-		/// Ethereum block hash.
-		block_hash: H256,
-		/// Transaction hashes of the Ethereum block.
-		transaction_hashes: Vec<H256>,
-	},
+	PostHashes(PostHashes),
+	#[codec(index = "2")]
+	PostBlock(ethereum::Block),
+	#[codec(index = "3")]
+	PreBlock(ethereum::Block),
+}
+
+#[derive(Decode, Encode, Clone, PartialEq, Eq)]
+pub struct PostHashes {
+	/// Ethereum block hash.
+	pub block_hash: H256,
+	/// Transaction hashes of the Ethereum block.
+	pub transaction_hashes: Vec<H256>,
+}
+
+impl PostHashes {
+	pub fn from_block(block: ethereum::Block) -> Self {
+		let mut transaction_hashes = Vec::new();
+
+		for t in &block.transactions {
+			let transaction_hash = H256::from_slice(
+				Keccak256::digest(&rlp::encode(t)).as_slice()
+			);
+			transaction_hashes.push(transaction_hash);
+		}
+
+		let block_hash = block.header.hash();
+
+		PostHashes { transaction_hashes, block_hash }
+	}
 }

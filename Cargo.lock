@@ -1376,7 +1376,10 @@ dependencies = [
 name = "fp-consensus"
 version = "0.1.0"
 dependencies = [
+ "ethereum",
  "parity-scale-codec",
+ "rlp",
+ "sha3 0.8.2",
  "sp-core",
  "sp-runtime",
  "sp-std",
