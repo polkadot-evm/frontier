@@ -13,6 +13,9 @@ sp-std = { version = "2.0.0", default-features = false, git = "https://github.co
 sp-runtime = { version = "2.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sp-core = { version = "2.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 codec = { package = "parity-scale-codec", version = "1.3.1", default-features = false, features = ["derive"] }
+ethereum = { version = "0.6.0", default-features = false, features = ["with-codec"] }
+rlp = { version = "0.5", default-features = false }
+sha3 = { version = "0.8", default-features = false }
 
 [features]
 default = ["std"]
@@ -21,4 +24,7 @@ std = [
 	"sp-runtime/std",
 	"sp-core/std",
 	"codec/std",
+	"ethereum/std",
+	"rlp/std",
+	"sha3/std",
 ]

@@ -267,7 +267,6 @@ pub fn new_full(
 		task_manager.spawn_essential_handle().spawn(
 			"frontier-pending-transactions",
 			client.import_notification_stream().for_each(move |notification| {
-
 				if let Ok(locked) = &mut pending_transactions.clone().unwrap().lock() {
 					// As pending transactions have a finite lifespan anyway
 					// we can ignore MultiplePostRuntimeLogs error checks.
@@ -281,12 +280,18 @@ pub fn new_full(
 
 					let imported_number: u64 = notification.header.number as u64;
 
-					if let Some(ConsensusLog::EndBlock {
-						block_hash: _, transaction_hashes,
-					}) = frontier_log {
+					let post_hashes = frontier_log.map(|l| {
+						match l {
+							ConsensusLog::PostHashes(post_hashes) => post_hashes,
+							ConsensusLog::PreBlock(block) => fp_consensus::PostHashes::from_block(block),
+							ConsensusLog::PostBlock(block) => fp_consensus::PostHashes::from_block(block),
+						}
+					});
+
+					if let Some(post_hashes) = post_hashes {
 						// Retain all pending transactions that were not
 						// processed in the current block.
-						locked.retain(|&k, _| !transaction_hashes.contains(&k));
+						locked.retain(|&k, _| !post_hashes.transaction_hashes.contains(&k));
 					}
 					locked.retain(|_, v| {
 						// Drop all the transactions that exceeded the given lifespan.
