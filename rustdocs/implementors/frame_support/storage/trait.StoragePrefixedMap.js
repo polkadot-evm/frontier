@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["pallet_evm"] = [{"text":"impl StoragePrefixedMap&lt;Vec&lt;u8, Global&gt;&gt; for AccountCodes","synthetic":false,"types":[]},{"text":"impl StoragePrefixedMap&lt;H256&gt; for AccountStorages","synthetic":false,"types":[]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
