@@ -323,25 +323,13 @@ impl<T: Config> Module<T> {
 		let mut block = ethereum::Block::new(partial_header, transactions.clone(), ommers);
 		block.header.state_root = T::StateRoot::get();
 
-		let mut transaction_hashes = Vec::new();
-
-		for t in &transactions {
-			let transaction_hash = H256::from_slice(
-				Keccak256::digest(&rlp::encode(t)).as_slice()
-			);
-			transaction_hashes.push(transaction_hash);
-		}
-
 		CurrentBlock::put(block.clone());
 		CurrentReceipts::put(receipts.clone());
 		CurrentTransactionStatuses::put(statuses.clone());
 
 		let digest = DigestItem::<T::Hash>::Consensus(
 			FRONTIER_ENGINE_ID,
-			ConsensusLog::EndBlock {
-				block_hash: block.header.hash(),
-				transaction_hashes,
-			}.encode(),
+			ConsensusLog::PostHashes(fp_consensus::PostHashes::from_block(block)).encode(),
 		);
 		frame_system::Module::<T>::deposit_log(digest.into());
 	}
