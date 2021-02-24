@@ -1245,6 +1245,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "fc-db"
+version = "0.1.0"
+dependencies = [
+ "kvdb",
+ "kvdb-rocksdb",
+ "parity-scale-codec",
+ "parking_lot 0.11.1",
+ "sp-core",
+ "sp-database",
+ "sp-runtime",
+]
+
+[[package]]
 name = "fc-rpc"
 version = "0.1.0"
 dependencies = [
