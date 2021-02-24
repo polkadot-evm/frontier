@@ -6,7 +6,7 @@ use sc_client_api::{ExecutorProvider, RemoteBackend, BlockchainEvents};
 use sc_consensus_manual_seal::{self as manual_seal};
 use fc_consensus::FrontierBlockImport;
 use frontier_template_runtime::{self, opaque::Block, RuntimeApi, SLOT_DURATION};
-use sc_service::{error::Error as ServiceError, Configuration, TaskManager};
+use sc_service::{error::Error as ServiceError, Configuration, TaskManager, BasePath};
 use sp_inherents::{InherentDataProviders, ProvideInherentData, InherentIdentifier, InherentData};
 use sc_executor::native_executor_instance;
 pub use sc_executor::NativeExecutor;
@@ -14,6 +14,7 @@ use sp_consensus_aura::sr25519::{AuthorityPair as AuraPair};
 use sc_finality_grandpa::SharedVoterState;
 use sp_timestamp::InherentError;
 use sc_telemetry::TelemetrySpan;
+use sc_cli::SubstrateCli;
 use crate::cli::Sealing;
 
 // Our native executor instance.
@@ -72,12 +73,29 @@ impl ProvideInherentData for MockTimestampInherentDataProvider {
 	}
 }
 
+pub fn open_frontier_backend(config: &Configuration) -> Result<Arc<fc_db::Backend<Block>>, String> {
+	let config_dir = config.base_path.as_ref()
+		.map(|base_path| base_path.config_dir(config.chain_spec.id()))
+		.unwrap_or_else(|| {
+			BasePath::from_project("", "", &crate::cli::Cli::executable_name())
+				.config_dir(config.chain_spec.id())
+		});
+	let database_dir = config_dir.join("frontier").join("db");
+
+	Ok(Arc::new(fc_db::Backend::<Block>::new(&fc_db::DatabaseSettings {
+		source: fc_db::DatabaseSettingsSrc::RocksDb {
+			path: database_dir,
+			cache_size: 0,
+		}
+	})?))
+}
+
 pub fn new_partial(config: &Configuration, sealing: Option<Sealing>) -> Result<
 	sc_service::PartialComponents<
 		FullClient, FullBackend, FullSelectChain,
 		sp_consensus::import_queue::BasicQueue<Block, sp_api::TransactionFor<FullClient, Block>>,
 		sc_transaction_pool::FullPool<Block, FullClient>,
-		(ConsensusResult, PendingTransactions, Option<TelemetrySpan>, Option<FilterPool>),
+		(ConsensusResult, PendingTransactions, Option<TelemetrySpan>, Option<FilterPool>, Arc<fc_db::Backend<Block>>),
 >, ServiceError> {
 	let inherent_data_providers = sp_inherents::InherentDataProviders::new();
 
@@ -100,6 +118,8 @@ pub fn new_partial(config: &Configuration, sealing: Option<Sealing>) -> Result<
 	let filter_pool: Option<FilterPool>
 		= Some(Arc::new(Mutex::new(BTreeMap::new())));
 
+	let frontier_backend = open_frontier_backend(config)?;
+
 	if let Some(sealing) = sealing {
 		inherent_data_providers
 			.register_provider(MockTimestampInherentDataProvider)
@@ -109,6 +129,7 @@ pub fn new_partial(config: &Configuration, sealing: Option<Sealing>) -> Result<
 		let frontier_block_import = FrontierBlockImport::new(
 			client.clone(),
 			client.clone(),
+			frontier_backend.clone(),
 			true,
 		);
 
@@ -121,7 +142,7 @@ pub fn new_partial(config: &Configuration, sealing: Option<Sealing>) -> Result<
 		return Ok(sc_service::PartialComponents {
 			client, backend, task_manager, import_queue, keystore_container,
 			select_chain, transaction_pool, inherent_data_providers,
-			other: (ConsensusResult::ManualSeal(frontier_block_import, sealing), pending_transactions, telemetry_span, filter_pool)
+			other: (ConsensusResult::ManualSeal(frontier_block_import, sealing), pending_transactions, telemetry_span, filter_pool, frontier_backend)
 		})
 	}
 
@@ -132,6 +153,7 @@ pub fn new_partial(config: &Configuration, sealing: Option<Sealing>) -> Result<
 	let frontier_block_import = FrontierBlockImport::new(
 		grandpa_block_import.clone(),
 		client.clone(),
+		frontier_backend.clone(),
 		true
 	);
 
@@ -153,7 +175,7 @@ pub fn new_partial(config: &Configuration, sealing: Option<Sealing>) -> Result<
 	Ok(sc_service::PartialComponents {
 		client, backend, task_manager, import_queue, keystore_container,
 		select_chain, transaction_pool, inherent_data_providers,
-		other: (ConsensusResult::Aura(aura_block_import, grandpa_link), pending_transactions, telemetry_span, filter_pool)
+		other: (ConsensusResult::Aura(aura_block_import, grandpa_link), pending_transactions, telemetry_span, filter_pool, frontier_backend)
 	})
 }
 
@@ -166,7 +188,7 @@ pub fn new_full(
 	let sc_service::PartialComponents {
 		client, backend, mut task_manager, import_queue, keystore_container,
 		select_chain, transaction_pool, inherent_data_providers,
-		other: (consensus_result, pending_transactions, telemetry_span, filter_pool),
+		other: (consensus_result, pending_transactions, telemetry_span, filter_pool, frontier_backend),
 	} = new_partial(&config, sealing)?;
 
 	let (network, network_status_sinks, system_rpc_tx, network_starter) =
@@ -214,6 +236,7 @@ pub fn new_full(
 				network: network.clone(),
 				pending_transactions: pending.clone(),
 				filter_pool: filter_pool.clone(),
+				backend: frontier_backend.clone(),
 				command_sink: Some(command_sink.clone())
 			};
 			crate::rpc::create_full(

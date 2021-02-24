@@ -49,6 +49,8 @@ pub struct FullDeps<C, P> {
 	pub pending_transactions: PendingTransactions,
 	/// EthFilterApi pool.
 	pub filter_pool: Option<FilterPool>,
+	/// Backend.
+	pub backend: Arc<fc_db::Backend<Block>>,
 	/// Manual seal command sink
 	pub command_sink: Option<futures::channel::mpsc::Sender<sc_consensus_manual_seal::rpc::EngineCommand<Hash>>>,
 }
@@ -89,6 +91,7 @@ pub fn create_full<C, P, BE>(
 		pending_transactions,
 		filter_pool,
 		command_sink,
+		backend,
 		enable_dev_signer,
 	} = deps;
 
@@ -111,6 +114,7 @@ pub fn create_full<C, P, BE>(
 			network.clone(),
 			pending_transactions.clone(),
 			signers,
+			backend,
 			is_authority,
 		))
 	);
