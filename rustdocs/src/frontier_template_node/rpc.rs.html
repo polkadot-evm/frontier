@@ -194,6 +194,10 @@
 <span id="191">191</span>
 <span id="192">192</span>
 <span id="193">193</span>
+<span id="194">194</span>
+<span id="195">195</span>
+<span id="196">196</span>
+<span id="197">197</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! A collection of node-specific RPC methods.</span>
 
@@ -246,6 +250,8 @@
 	<span class="kw">pub</span> <span class="ident">pending_transactions</span>: <span class="ident">PendingTransactions</span>,
 	<span class="doccomment">/// EthFilterApi pool.</span>
 	<span class="kw">pub</span> <span class="ident">filter_pool</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">FilterPool</span><span class="op">&gt;</span>,
+	<span class="doccomment">/// Backend.</span>
+	<span class="kw">pub</span> <span class="ident">backend</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">fc_db</span>::<span class="ident">Backend</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 	<span class="doccomment">/// Manual seal command sink</span>
 	<span class="kw">pub</span> <span class="ident">command_sink</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">futures</span>::<span class="ident">channel</span>::<span class="ident">mpsc</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">sc_consensus_manual_seal</span>::<span class="ident">rpc</span>::<span class="ident">EngineCommand</span><span class="op">&lt;</span><span class="ident">Hash</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 }
@@ -286,6 +292,7 @@
 		<span class="ident">pending_transactions</span>,
 		<span class="ident">filter_pool</span>,
 		<span class="ident">command_sink</span>,
+		<span class="ident">backend</span>,
 		<span class="ident">enable_dev_signer</span>,
 	} <span class="op">=</span> <span class="ident">deps</span>;
 
@@ -308,6 +315,7 @@
 			<span class="ident">network</span>.<span class="ident">clone</span>(),
 			<span class="ident">pending_transactions</span>.<span class="ident">clone</span>(),
 			<span class="ident">signers</span>,
+			<span class="ident">backend</span>,
 			<span class="ident">is_authority</span>,
 		))
 	);

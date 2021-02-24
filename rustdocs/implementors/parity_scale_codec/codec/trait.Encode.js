@@ -1,4 +1,5 @@
 (function() {var implementors = {};
+implementors["fc_db"] = [{"text":"impl&lt;Block:&nbsp;BlockT&gt; Encode for TransactionMetadata&lt;Block&gt; <span class=\"where fmt-newline\">where<br>&nbsp;&nbsp;&nbsp;&nbsp;Block::Hash: Encode,<br>&nbsp;&nbsp;&nbsp;&nbsp;Block::Hash: Encode,&nbsp;</span>","synthetic":false,"types":[]}];
 implementors["fp_consensus"] = [{"text":"impl Encode for ConsensusLog","synthetic":false,"types":[]},{"text":"impl Encode for PostHashes","synthetic":false,"types":[]}];
 implementors["fp_evm"] = [{"text":"impl Encode for Vicinity","synthetic":false,"types":[]},{"text":"impl&lt;T&gt; Encode for ExecutionInfo&lt;T&gt; <span class=\"where fmt-newline\">where<br>&nbsp;&nbsp;&nbsp;&nbsp;T: Encode,<br>&nbsp;&nbsp;&nbsp;&nbsp;T: Encode,&nbsp;</span>","synthetic":false,"types":[]},{"text":"impl Encode for CallOrCreateInfo","synthetic":false,"types":[]}];
 implementors["fp_rpc"] = [{"text":"impl Encode for TransactionStatus","synthetic":false,"types":[]}];

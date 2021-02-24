@@ -513,6 +513,29 @@
 <span id="510">510</span>
 <span id="511">511</span>
 <span id="512">512</span>
+<span id="513">513</span>
+<span id="514">514</span>
+<span id="515">515</span>
+<span id="516">516</span>
+<span id="517">517</span>
+<span id="518">518</span>
+<span id="519">519</span>
+<span id="520">520</span>
+<span id="521">521</span>
+<span id="522">522</span>
+<span id="523">523</span>
+<span id="524">524</span>
+<span id="525">525</span>
+<span id="526">526</span>
+<span id="527">527</span>
+<span id="528">528</span>
+<span id="529">529</span>
+<span id="530">530</span>
+<span id="531">531</span>
+<span id="532">532</span>
+<span id="533">533</span>
+<span id="534">534</span>
+<span id="535">535</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Service and ServiceFactory implementation. Specialized wrapper over substrate service.</span>
 
@@ -522,7 +545,7 @@
 <span class="kw">use</span> <span class="ident">sc_consensus_manual_seal</span>::{<span class="self">self</span> <span class="kw">as</span> <span class="ident">manual_seal</span>};
 <span class="kw">use</span> <span class="ident">fc_consensus</span>::<span class="ident">FrontierBlockImport</span>;
 <span class="kw">use</span> <span class="ident">frontier_template_runtime</span>::{<span class="self">self</span>, <span class="ident">opaque</span>::<span class="ident">Block</span>, <span class="ident">RuntimeApi</span>, <span class="ident">SLOT_DURATION</span>};
-<span class="kw">use</span> <span class="ident">sc_service</span>::{<span class="ident">error</span>::<span class="ident">Error</span> <span class="kw">as</span> <span class="ident">ServiceError</span>, <span class="ident">Configuration</span>, <span class="ident">TaskManager</span>};
+<span class="kw">use</span> <span class="ident">sc_service</span>::{<span class="ident">error</span>::<span class="ident">Error</span> <span class="kw">as</span> <span class="ident">ServiceError</span>, <span class="ident">Configuration</span>, <span class="ident">TaskManager</span>, <span class="ident">BasePath</span>};
 <span class="kw">use</span> <span class="ident">sp_inherents</span>::{<span class="ident">InherentDataProviders</span>, <span class="ident">ProvideInherentData</span>, <span class="ident">InherentIdentifier</span>, <span class="ident">InherentData</span>};
 <span class="kw">use</span> <span class="ident">sc_executor</span>::<span class="ident">native_executor_instance</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">sc_executor</span>::<span class="ident">NativeExecutor</span>;
@@ -530,6 +553,7 @@
 <span class="kw">use</span> <span class="ident">sc_finality_grandpa</span>::<span class="ident">SharedVoterState</span>;
 <span class="kw">use</span> <span class="ident">sp_timestamp</span>::<span class="ident">InherentError</span>;
 <span class="kw">use</span> <span class="ident">sc_telemetry</span>::<span class="ident">TelemetrySpan</span>;
+<span class="kw">use</span> <span class="ident">sc_cli</span>::<span class="ident">SubstrateCli</span>;
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">cli</span>::<span class="ident">Sealing</span>;
 
 <span class="comment">// Our native executor instance.</span>
@@ -588,12 +612,29 @@
 	}
 }
 
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">open_frontier_backend</span>(<span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="ident">Configuration</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">fc_db</span>::<span class="ident">Backend</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">String</span><span class="op">&gt;</span> {
+	<span class="kw">let</span> <span class="ident">config_dir</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">base_path</span>.<span class="ident">as_ref</span>()
+		.<span class="ident">map</span>(<span class="op">|</span><span class="ident">base_path</span><span class="op">|</span> <span class="ident">base_path</span>.<span class="ident">config_dir</span>(<span class="ident">config</span>.<span class="ident">chain_spec</span>.<span class="ident">id</span>()))
+		.<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> {
+			<span class="ident">BasePath</span>::<span class="ident">from_project</span>(<span class="string">&quot;&quot;</span>, <span class="string">&quot;&quot;</span>, <span class="kw-2">&amp;</span><span class="kw">crate</span>::<span class="ident">cli</span>::<span class="ident">Cli</span>::<span class="ident">executable_name</span>())
+				.<span class="ident">config_dir</span>(<span class="ident">config</span>.<span class="ident">chain_spec</span>.<span class="ident">id</span>())
+		});
+	<span class="kw">let</span> <span class="ident">database_dir</span> <span class="op">=</span> <span class="ident">config_dir</span>.<span class="ident">join</span>(<span class="string">&quot;frontier&quot;</span>).<span class="ident">join</span>(<span class="string">&quot;db&quot;</span>);
+
+	<span class="prelude-val">Ok</span>(<span class="ident">Arc</span>::<span class="ident">new</span>(<span class="ident">fc_db</span>::<span class="ident">Backend</span>::<span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="ident">fc_db</span>::<span class="ident">DatabaseSettings</span> {
+		<span class="ident">source</span>: <span class="ident">fc_db</span>::<span class="ident">DatabaseSettingsSrc</span>::<span class="ident">RocksDb</span> {
+			<span class="ident">path</span>: <span class="ident">database_dir</span>,
+			<span class="ident">cache_size</span>: <span class="number">0</span>,
+		}
+	})<span class="question-mark">?</span>))
+}
+
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new_partial</span>(<span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="ident">Configuration</span>, <span class="ident">sealing</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Sealing</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>
 	<span class="ident">sc_service</span>::<span class="ident">PartialComponents</span><span class="op">&lt;</span>
 		<span class="ident">FullClient</span>, <span class="ident">FullBackend</span>, <span class="ident">FullSelectChain</span>,
 		<span class="ident">sp_consensus</span>::<span class="ident">import_queue</span>::<span class="ident">BasicQueue</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">sp_api</span>::<span class="ident">TransactionFor</span><span class="op">&lt;</span><span class="ident">FullClient</span>, <span class="ident">Block</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 		<span class="ident">sc_transaction_pool</span>::<span class="ident">FullPool</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">FullClient</span><span class="op">&gt;</span>,
-		(<span class="ident">ConsensusResult</span>, <span class="ident">PendingTransactions</span>, <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">TelemetrySpan</span><span class="op">&gt;</span>, <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">FilterPool</span><span class="op">&gt;</span>),
+		(<span class="ident">ConsensusResult</span>, <span class="ident">PendingTransactions</span>, <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">TelemetrySpan</span><span class="op">&gt;</span>, <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">FilterPool</span><span class="op">&gt;</span>, <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">fc_db</span>::<span class="ident">Backend</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span><span class="op">&gt;</span>),
 <span class="op">&gt;</span>, <span class="ident">ServiceError</span><span class="op">&gt;</span> {
 	<span class="kw">let</span> <span class="ident">inherent_data_providers</span> <span class="op">=</span> <span class="ident">sp_inherents</span>::<span class="ident">InherentDataProviders</span>::<span class="ident">new</span>();
 
@@ -616,6 +657,8 @@
 	<span class="kw">let</span> <span class="ident">filter_pool</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">FilterPool</span><span class="op">&gt;</span>
 		<span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">Arc</span>::<span class="ident">new</span>(<span class="ident">Mutex</span>::<span class="ident">new</span>(<span class="ident">BTreeMap</span>::<span class="ident">new</span>())));
 
+	<span class="kw">let</span> <span class="ident">frontier_backend</span> <span class="op">=</span> <span class="ident">open_frontier_backend</span>(<span class="ident">config</span>)<span class="question-mark">?</span>;
+
 	<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">sealing</span>) <span class="op">=</span> <span class="ident">sealing</span> {
 		<span class="ident">inherent_data_providers</span>
 			.<span class="ident">register_provider</span>(<span class="ident">MockTimestampInherentDataProvider</span>)
@@ -625,6 +668,7 @@
 		<span class="kw">let</span> <span class="ident">frontier_block_import</span> <span class="op">=</span> <span class="ident">FrontierBlockImport</span>::<span class="ident">new</span>(
 			<span class="ident">client</span>.<span class="ident">clone</span>(),
 			<span class="ident">client</span>.<span class="ident">clone</span>(),
+			<span class="ident">frontier_backend</span>.<span class="ident">clone</span>(),
 			<span class="bool-val">true</span>,
 		);
 
@@ -637,7 +681,7 @@
 		<span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">sc_service</span>::<span class="ident">PartialComponents</span> {
 			<span class="ident">client</span>, <span class="ident">backend</span>, <span class="ident">task_manager</span>, <span class="ident">import_queue</span>, <span class="ident">keystore_container</span>,
 			<span class="ident">select_chain</span>, <span class="ident">transaction_pool</span>, <span class="ident">inherent_data_providers</span>,
-			<span class="ident">other</span>: (<span class="ident">ConsensusResult</span>::<span class="ident">ManualSeal</span>(<span class="ident">frontier_block_import</span>, <span class="ident">sealing</span>), <span class="ident">pending_transactions</span>, <span class="ident">telemetry_span</span>, <span class="ident">filter_pool</span>)
+			<span class="ident">other</span>: (<span class="ident">ConsensusResult</span>::<span class="ident">ManualSeal</span>(<span class="ident">frontier_block_import</span>, <span class="ident">sealing</span>), <span class="ident">pending_transactions</span>, <span class="ident">telemetry_span</span>, <span class="ident">filter_pool</span>, <span class="ident">frontier_backend</span>)
 		})
 	}
 
@@ -648,6 +692,7 @@
 	<span class="kw">let</span> <span class="ident">frontier_block_import</span> <span class="op">=</span> <span class="ident">FrontierBlockImport</span>::<span class="ident">new</span>(
 		<span class="ident">grandpa_block_import</span>.<span class="ident">clone</span>(),
 		<span class="ident">client</span>.<span class="ident">clone</span>(),
+		<span class="ident">frontier_backend</span>.<span class="ident">clone</span>(),
 		<span class="bool-val">true</span>
 	);
 
@@ -669,7 +714,7 @@
 	<span class="prelude-val">Ok</span>(<span class="ident">sc_service</span>::<span class="ident">PartialComponents</span> {
 		<span class="ident">client</span>, <span class="ident">backend</span>, <span class="ident">task_manager</span>, <span class="ident">import_queue</span>, <span class="ident">keystore_container</span>,
 		<span class="ident">select_chain</span>, <span class="ident">transaction_pool</span>, <span class="ident">inherent_data_providers</span>,
-		<span class="ident">other</span>: (<span class="ident">ConsensusResult</span>::<span class="ident">Aura</span>(<span class="ident">aura_block_import</span>, <span class="ident">grandpa_link</span>), <span class="ident">pending_transactions</span>, <span class="ident">telemetry_span</span>, <span class="ident">filter_pool</span>)
+		<span class="ident">other</span>: (<span class="ident">ConsensusResult</span>::<span class="ident">Aura</span>(<span class="ident">aura_block_import</span>, <span class="ident">grandpa_link</span>), <span class="ident">pending_transactions</span>, <span class="ident">telemetry_span</span>, <span class="ident">filter_pool</span>, <span class="ident">frontier_backend</span>)
 	})
 }
 
@@ -682,7 +727,7 @@
 	<span class="kw">let</span> <span class="ident">sc_service</span>::<span class="ident">PartialComponents</span> {
 		<span class="ident">client</span>, <span class="ident">backend</span>, <span class="kw-2">mut</span> <span class="ident">task_manager</span>, <span class="ident">import_queue</span>, <span class="ident">keystore_container</span>,
 		<span class="ident">select_chain</span>, <span class="ident">transaction_pool</span>, <span class="ident">inherent_data_providers</span>,
-		<span class="ident">other</span>: (<span class="ident">consensus_result</span>, <span class="ident">pending_transactions</span>, <span class="ident">telemetry_span</span>, <span class="ident">filter_pool</span>),
+		<span class="ident">other</span>: (<span class="ident">consensus_result</span>, <span class="ident">pending_transactions</span>, <span class="ident">telemetry_span</span>, <span class="ident">filter_pool</span>, <span class="ident">frontier_backend</span>),
 	} <span class="op">=</span> <span class="ident">new_partial</span>(<span class="kw-2">&amp;</span><span class="ident">config</span>, <span class="ident">sealing</span>)<span class="question-mark">?</span>;
 
 	<span class="kw">let</span> (<span class="ident">network</span>, <span class="ident">network_status_sinks</span>, <span class="ident">system_rpc_tx</span>, <span class="ident">network_starter</span>) <span class="op">=</span>
@@ -730,6 +775,7 @@
 				<span class="ident">network</span>: <span class="ident">network</span>.<span class="ident">clone</span>(),
 				<span class="ident">pending_transactions</span>: <span class="ident">pending</span>.<span class="ident">clone</span>(),
 				<span class="ident">filter_pool</span>: <span class="ident">filter_pool</span>.<span class="ident">clone</span>(),
+				<span class="ident">backend</span>: <span class="ident">frontier_backend</span>.<span class="ident">clone</span>(),
 				<span class="ident">command_sink</span>: <span class="prelude-val">Some</span>(<span class="ident">command_sink</span>.<span class="ident">clone</span>())
 			};
 			<span class="kw">crate</span>::<span class="ident">rpc</span>::<span class="ident">create_full</span>(
