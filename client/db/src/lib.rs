@@ -81,6 +81,10 @@ impl<Block: BlockT> Backend<Block> {
 			})
 		})
 	}
+
+	pub fn mapping_db(&self) -> &Arc<MappingDb<Block>> {
+		&self.mapping_db
+	}
 }
 
 pub struct MappingCommitment<Block: BlockT> {
@@ -116,10 +120,10 @@ impl<Block: BlockT> MappingDb<Block> {
 	pub fn transaction_metadata(
 		&self,
 		ethereum_transaction_hash: &H256,
-	) -> Result<Option<TransactionMetadata<Block>>, String> {
+	) -> Result<Vec<TransactionMetadata<Block>>, String> {
 		match self.db.get(crate::columns::TRANSACTION_MAPPING, &ethereum_transaction_hash.encode()) {
-			Some(raw) => Ok(Some(TransactionMetadata::decode(&mut &raw[..]).map_err(|e| format!("{:?}", e))?)),
-			None => Ok(None),
+			Some(raw) => Ok(Vec::<TransactionMetadata<Block>>::decode(&mut &raw[..]).map_err(|e| format!("{:?}", e))?),
+			None => Ok(Vec::new()),
 		}
 	}
 
@@ -140,11 +144,12 @@ impl<Block: BlockT> MappingDb<Block> {
 		);
 
 		for (i, ethereum_transaction_hash) in commitment.ethereum_transaction_hashes.into_iter().enumerate() {
-			let metadata = TransactionMetadata::<Block> {
+			let mut metadata = self.transaction_metadata(&ethereum_transaction_hash)?;
+			metadata.push(TransactionMetadata::<Block> {
 				block_hash: commitment.block_hash,
 				ethereum_block_hash: commitment.ethereum_block_hash,
 				ethereum_index: i as u32,
-			};
+			});
 			transaction.set(
 				crate::columns::TRANSACTION_MAPPING,
 				&ethereum_transaction_hash.encode(),
