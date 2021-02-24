@@ -12,6 +12,7 @@ members = [
 	"client/consensus",
 	"client/rpc-core",
 	"client/rpc",
+	"client/db",
 	"primitives/consensus",
 	"primitives/evm",
 	"primitives/rpc",
