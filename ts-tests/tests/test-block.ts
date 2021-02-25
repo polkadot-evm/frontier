@@ -30,7 +30,7 @@ describeWithFrontier("Frontier RPC (Block)", `simple-specs.json`, (context) => {
 			receiptsRoot: "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
 			size: 505,
 			timestamp: 0,
-			totalDifficulty: null,
+			totalDifficulty: "0",
 		});
 
 		expect((block as any).sealFields).to.eql([
@@ -85,7 +85,7 @@ describeWithFrontier("Frontier RPC (Block)", `simple-specs.json`, (context) => {
 			receiptsRoot: "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
 			size: 505,
 			timestamp: 0,
-			totalDifficulty: null,
+			totalDifficulty: "0",
 		});
 
 		expect((block as any).sealFields).to.eql([
@@ -116,7 +116,7 @@ describeWithFrontier("Frontier RPC (Block)", `simple-specs.json`, (context) => {
 			receiptsRoot: "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
 			size: 507,
 			timestamp: 6,
-			totalDifficulty: null,
+			totalDifficulty: "0",
 			//transactions: [],
 			transactionsRoot: "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
 			//uncles: []
