@@ -887,9 +887,9 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 						lower = mid;
 						mid = (lower + upper + 1) / 2;
 
-                        if mid == lower {
+						if mid == lower {
                             break;
-                        }
+						}
 					}
 				}
 			}
