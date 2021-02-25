@@ -1055,7 +1055,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 								data: Bytes(log.data.clone()),
 								block_hash: Some(block_hash),
 								block_number: Some(block.header.number),
-								transaction_hash: Some(hash),
+								transaction_hash: Some(status.transaction_hash),
 								transaction_index: Some(status.transaction_index.into()),
 								log_index: Some(U256::from(
 									(pre_receipts_log_index.unwrap_or(0)) + i as u32
