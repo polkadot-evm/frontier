@@ -1532,6 +1532,10 @@
 <span id="1529">1529</span>
 <span id="1530">1530</span>
 <span id="1531">1531</span>
+<span id="1532">1532</span>
+<span id="1533">1533</span>
+<span id="1534">1534</span>
+<span id="1535">1535</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
@@ -2421,6 +2425,10 @@
 					<span class="prelude-val">Err</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
 						<span class="ident">lower</span> <span class="op">=</span> <span class="ident">mid</span>;
 						<span class="ident">mid</span> <span class="op">=</span> (<span class="ident">lower</span> <span class="op">+</span> <span class="ident">upper</span> <span class="op">+</span> <span class="number">1</span>) <span class="op">/</span> <span class="number">2</span>;
+
+						<span class="kw">if</span> <span class="ident">mid</span> <span class="op">=</span><span class="op">=</span> <span class="ident">lower</span> {
+							<span class="kw">break</span>;
+						}
 					}
 				}
 			}
