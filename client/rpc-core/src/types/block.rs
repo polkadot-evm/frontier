@@ -79,7 +79,7 @@ pub struct Block {
 	/// Difficulty
 	pub difficulty: U256,
 	/// Total difficulty
-	pub total_difficulty: Option<U256>,
+	pub total_difficulty: U256,
 	/// Seal fields
 	pub seal_fields: Vec<Bytes>,
 	/// Uncles' hashes
