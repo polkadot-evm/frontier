@@ -1646,7 +1646,7 @@
 			<span class="ident">logs_bloom</span>: <span class="prelude-val">Some</span>(<span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">logs_bloom</span>),
 			<span class="ident">timestamp</span>: <span class="ident">U256</span>::<span class="ident">from</span>(<span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">timestamp</span> <span class="op">/</span> <span class="number">1000</span>),
 			<span class="ident">difficulty</span>: <span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">difficulty</span>,
-			<span class="ident">total_difficulty</span>: <span class="prelude-val">None</span>,
+			<span class="ident">total_difficulty</span>: <span class="ident">U256</span>::<span class="ident">zero</span>(),
 			<span class="ident">seal_fields</span>: <span class="macro">vec</span><span class="macro">!</span>[
 				<span class="ident">Bytes</span>(<span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">mix_hash</span>.<span class="ident">as_bytes</span>().<span class="ident">to_vec</span>()),
 				<span class="ident">Bytes</span>(<span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">nonce</span>.<span class="ident">as_bytes</span>().<span class="ident">to_vec</span>())
@@ -2590,7 +2590,7 @@
 								<span class="ident">data</span>: <span class="ident">Bytes</span>(<span class="ident">log</span>.<span class="ident">data</span>.<span class="ident">clone</span>()),
 								<span class="ident">block_hash</span>: <span class="prelude-val">Some</span>(<span class="ident">block_hash</span>),
 								<span class="ident">block_number</span>: <span class="prelude-val">Some</span>(<span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">number</span>),
-								<span class="ident">transaction_hash</span>: <span class="prelude-val">Some</span>(<span class="ident">hash</span>),
+								<span class="ident">transaction_hash</span>: <span class="prelude-val">Some</span>(<span class="ident">status</span>.<span class="ident">transaction_hash</span>),
 								<span class="ident">transaction_index</span>: <span class="prelude-val">Some</span>(<span class="ident">status</span>.<span class="ident">transaction_index</span>.<span class="ident">into</span>()),
 								<span class="ident">log_index</span>: <span class="prelude-val">Some</span>(<span class="ident">U256</span>::<span class="ident">from</span>(
 									(<span class="ident">pre_receipts_log_index</span>.<span class="ident">unwrap_or</span>(<span class="number">0</span>)) <span class="op">+</span> <span class="ident">i</span> <span class="kw">as</span> <span class="ident">u32</span>
