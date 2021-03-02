@@ -416,6 +416,10 @@
 <span id="413">413</span>
 <span id="414">414</span>
 <span id="415">415</span>
+<span id="416">416</span>
+<span id="417">417</span>
+<span id="418">418</span>
+<span id="419">419</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
@@ -458,7 +462,7 @@
 };
 <span class="kw">use</span> <span class="ident">evm</span>::<span class="ident">ExitReason</span>;
 <span class="kw">use</span> <span class="ident">fp_evm</span>::<span class="ident">CallOrCreateInfo</span>;
-<span class="kw">use</span> <span class="ident">pallet_evm</span>::{<span class="ident">Runner</span>, <span class="ident">GasWeightMapping</span>};
+<span class="kw">use</span> <span class="ident">pallet_evm</span>::{<span class="ident">Runner</span>, <span class="ident">GasWeightMapping</span>, <span class="ident">FeeCalculator</span>};
 <span class="kw">use</span> <span class="ident">sha3</span>::{<span class="ident">Digest</span>, <span class="ident">Keccak256</span>};
 <span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Encode</span>, <span class="ident">Decode</span>};
 <span class="kw">use</span> <span class="ident">fp_consensus</span>::{<span class="ident">FRONTIER_ENGINE_ID</span>, <span class="ident">ConsensusLog</span>};
@@ -665,8 +669,12 @@
 			}
 
 			<span class="kw">let</span> <span class="ident">fee</span> <span class="op">=</span> <span class="ident">transaction</span>.<span class="ident">gas_price</span>.<span class="ident">saturating_mul</span>(<span class="ident">transaction</span>.<span class="ident">gas_limit</span>);
+			<span class="kw">let</span> <span class="ident">total_payment</span> <span class="op">=</span> <span class="ident">transaction</span>.<span class="ident">value</span>.<span class="ident">saturating_add</span>(<span class="ident">fee</span>);
+			<span class="kw">if</span> <span class="ident">account_data</span>.<span class="ident">balance</span> <span class="op">&lt;</span> <span class="ident">total_payment</span> {
+				<span class="kw">return</span> <span class="ident">InvalidTransaction</span>::<span class="ident">Payment</span>.<span class="ident">into</span>();
+			}
 
-			<span class="kw">if</span> <span class="ident">account_data</span>.<span class="ident">balance</span> <span class="op">&lt;</span> <span class="ident">fee</span> {
+			<span class="kw">if</span> <span class="ident">transaction</span>.<span class="ident">gas_price</span> <span class="op">&lt;</span> <span class="ident">T</span>::<span class="ident">FeeCalculator</span>::<span class="ident">min_gas_price</span>() {
 				<span class="kw">return</span> <span class="ident">InvalidTransaction</span>::<span class="ident">Payment</span>.<span class="ident">into</span>();
 			}
 
