@@ -39,7 +39,7 @@ use sp_runtime::{
 };
 use evm::ExitReason;
 use fp_evm::CallOrCreateInfo;
-use pallet_evm::{Runner, GasWeightMapping};
+use pallet_evm::{Runner, GasWeightMapping, FeeCalculator};
 use sha3::{Digest, Keccak256};
 use codec::{Encode, Decode};
 use fp_consensus::{FRONTIER_ENGINE_ID, ConsensusLog};
@@ -246,8 +246,12 @@ impl<T: Config> frame_support::unsigned::ValidateUnsigned for Module<T> {
 			}
 
 			let fee = transaction.gas_price.saturating_mul(transaction.gas_limit);
+			let total_payment = transaction.value.saturating_add(fee);
+			if account_data.balance < total_payment {
+				return InvalidTransaction::Payment.into();
+			}
 
-			if account_data.balance < fee {
+			if transaction.gas_price < T::FeeCalculator::min_gas_price() {
 				return InvalidTransaction::Payment.into();
 			}
 
