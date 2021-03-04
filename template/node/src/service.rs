@@ -1,8 +1,9 @@
 //! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 
 use std::{sync::{Arc, Mutex}, cell::RefCell, time::Duration, collections::{HashMap, BTreeMap}};
+use fc_rpc::EthTask;
 use fc_rpc_core::types::{FilterPool, PendingTransactions};
-use sc_client_api::{ExecutorProvider, RemoteBackend, BlockchainEvents};
+use sc_client_api::{ExecutorProvider, RemoteBackend};
 use sc_consensus_manual_seal::{self as manual_seal};
 use fc_consensus::FrontierBlockImport;
 use frontier_template_runtime::{self, opaque::Block, RuntimeApi, SLOT_DURATION};
@@ -259,24 +260,16 @@ pub fn new_full(
 	})?;
 
 	// Spawn Frontier EthFilterApi maintenance task.
-	if filter_pool.is_some() {
-		use futures::StreamExt;
+	if let Some(filter_pool) = filter_pool {
 		// Each filter is allowed to stay in the pool for 100 blocks.
 		const FILTER_RETAIN_THRESHOLD: u64 = 100;
 		task_manager.spawn_essential_handle().spawn(
 			"frontier-filter-pool",
-			client.import_notification_stream().for_each(move |notification| {
-				if let Ok(locked) = &mut filter_pool.clone().unwrap().lock() {
-					let imported_number: u64 = notification.header.number as u64;
-					for (k, v) in locked.clone().iter() {
-						let lifespan_limit = v.at_block + FILTER_RETAIN_THRESHOLD;
-						if lifespan_limit <= imported_number {
-							locked.remove(&k);
-						}
-					}
-				}
-				futures::future::ready(())
-			})
+			EthTask::filter_pool_task(
+					Arc::clone(&client),
+					filter_pool,
+					FILTER_RETAIN_THRESHOLD,
+			)
 		);
 	}
 
@@ -285,8 +278,8 @@ pub fn new_full(
 		const TRANSACTION_RETAIN_THRESHOLD: u64 = 5;
 		task_manager.spawn_essential_handle().spawn(
 			"frontier-pending-transactions",
-			fc_rpc::pending_transaction_task(
-					client.clone(),
+			EthTask::pending_transaction_task(
+				Arc::clone(&client),
 					pending_transactions,
 					TRANSACTION_RETAIN_THRESHOLD,
 				)

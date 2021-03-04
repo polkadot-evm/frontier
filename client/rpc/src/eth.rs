@@ -1536,53 +1536,91 @@ impl<B, C> EthFilterApiT for EthFilterApi<B, C> where
 	}
 }
 
-pub async fn pending_transaction_task<B, C> (
-	client: Arc<C>,
-	pending_transactions: Arc<Mutex<HashMap<H256, PendingTransaction>>>,
-	retain_threshold: u64
-) where
-	C: ProvideRuntimeApi<B> + AuxStore,
-	C::Api: EthereumRuntimeRPCApi<B>,
-	C: HeaderBackend<B> + BlockchainEvents<B> + HeaderMetadata<B, Error=BlockChainError> + 'static,
-	C: Send + Sync + 'static,
-	B: BlockT<Hash=H256> + Send + Sync + 'static,
-{	
-	let mut notification_st = client.import_notification_stream();
+pub struct EthTask<B, C>(PhantomData<(B, C)>);
 
-	while let Some(notification) = notification_st.next().await {
-		if let Ok(mut pending_transactions) = pending_transactions.lock() {
-			// As pending transactions have a finite lifespan anyway
-			// we can ignore MultiplePostRuntimeLogs error checks.
-			let mut frontier_log: Option<_> = None;
-			for log in notification.header.digest().logs.iter().rev() {
-				let log = log.try_to::<ConsensusLog>(OpaqueDigestItemId::Consensus(
-					&FRONTIER_ENGINE_ID,
-				));
-				if log.is_some() {
-					frontier_log = log;
-					break;
+impl<B, C> EthTask<B, C> 
+where
+	C: ProvideRuntimeApi<B> + BlockchainEvents<B>,
+	B: BlockT,
+{
+	pub async fn pending_transaction_task(
+		client: Arc<C>,
+		pending_transactions: Arc<Mutex<HashMap<H256, PendingTransaction>>>,
+		retain_threshold: u64
+	) {	
+		let mut notification_st = client.import_notification_stream();
+	
+		while let Some(notification) = notification_st.next().await {
+			if let Ok(mut pending_transactions) = pending_transactions.lock() {
+				// As pending transactions have a finite lifespan anyway
+				// we can ignore MultiplePostRuntimeLogs error checks.
+				let mut frontier_log: Option<_> = None;
+				for log in notification.header.digest().logs.iter().rev() {
+					let log = log.try_to::<ConsensusLog>(OpaqueDigestItemId::Consensus(
+						&FRONTIER_ENGINE_ID,
+					));
+					if log.is_some() {
+						frontier_log = log;
+						break;
+					}
+				}
+	
+				let imported_number: u64 = UniqueSaturatedInto::<u64>::unique_saturated_into(
+					*notification.header.number()
+				);
+	
+				if let Some(ConsensusLog::PostHashes(PostHashes {
+					block_hash: _,
+					transaction_hashes,
+				})) = frontier_log
+				{
+					// Retain all pending transactions that were not
+					// processed in the current block.
+					pending_transactions.retain(|&k, _| !transaction_hashes.contains(&k));
+				}
+	
+				pending_transactions.retain(|_, v| {
+					// Drop all the transactions that exceeded the given lifespan.
+					let lifespan_limit = v.at_block + retain_threshold;
+					lifespan_limit > imported_number
+				});
+			}
+		}
+	}
+	
+	pub async fn filter_pool_task(
+		client: Arc<C>,
+		filter_pool: Arc<Mutex<BTreeMap<U256, FilterPoolItem>>>,
+		retain_threshold: u64
+	) {
+		let mut notification_st = client.import_notification_stream();
+	
+		while let Some(notification) = notification_st.next().await {
+			if let Ok(filter_pool) = &mut filter_pool.lock() {
+				let imported_number: u64 = UniqueSaturatedInto::<u64>::unique_saturated_into(
+					*notification.header.number()
+				);
+				
+				// BTreeMap::retain is unstable :c.
+				// 1. We collect all keys to remove.
+				// 2. We remove them.
+				let remove_list: Vec<_> = filter_pool
+					.iter()
+					.filter_map(|(&k, v)| {
+						let lifespan_limit = v.at_block + retain_threshold;
+						if lifespan_limit <= imported_number {
+							Some(k)
+						} else {
+							None
+						}
+					})
+					.collect();
+	
+				for key in remove_list {
+					filter_pool.remove(&key);
 				}
 			}
-
-			let imported_number: u64 = UniqueSaturatedInto::<u64>::unique_saturated_into(
-				*notification.header.number()
-			);
-
-			if let Some(ConsensusLog::PostHashes(PostHashes {
-				block_hash: _,
-				transaction_hashes,
-			})) = frontier_log
-			{
-				// Retain all pending transactions that were not
-				// processed in the current block.
-				pending_transactions.retain(|&k, _| !transaction_hashes.contains(&k));
-			}
-
-			pending_transactions.retain(|_, v| {
-				// Drop all the transactions that exceeded the given lifespan.
-				let lifespan_limit = v.at_block + retain_threshold;
-				lifespan_limit > imported_number
-			});
 		}
 	}
 }
+
