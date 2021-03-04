@@ -20,7 +20,8 @@ mod eth;
 mod eth_pubsub;
 
 pub use eth::{
-	EthApi, EthApiServer, EthFilterApi, EthFilterApiServer, NetApi, NetApiServer, Web3Api, Web3ApiServer
+	EthApi, EthApiServer, EthFilterApi, EthFilterApiServer, NetApi, NetApiServer, Web3Api, Web3ApiServer,
+	pending_transaction_task,
 };
 pub use eth_pubsub::{EthPubSubApi, EthPubSubApiServer, HexEncodedIdProvider};
 

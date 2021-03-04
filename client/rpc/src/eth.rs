@@ -15,21 +15,22 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
-use std::{marker::PhantomData, sync::Arc};
-use std::collections::BTreeMap;
+use std::{marker::PhantomData, sync::{Mutex, Arc}};
+use std::collections::{HashMap, BTreeMap};
 use ethereum::{
 	Block as EthereumBlock, Transaction as EthereumTransaction
 };
 use ethereum_types::{H160, H256, H64, U256, U64, H512};
 use jsonrpc_core::{BoxFuture, Result, futures::future::{self, Future}};
-use futures::future::TryFutureExt;
+use futures::{StreamExt, future::TryFutureExt};
 use sp_runtime::{
 	traits::{Block as BlockT, UniqueSaturatedInto, Zero, One, Saturating, BlakeTwo256},
-	transaction_validity::TransactionSource
+	transaction_validity::TransactionSource,
+	generic::OpaqueDigestItemId
 };
 use sp_api::{ProvideRuntimeApi, BlockId, Core, HeaderT};
 use sp_transaction_pool::{TransactionPool, InPoolTransaction};
-use sc_client_api::backend::{StorageProvider, Backend, StateBackend, AuxStore};
+use sc_client_api::{client::BlockchainEvents, backend::{StorageProvider, Backend, StateBackend, AuxStore}};
 use sha3::{Keccak256, Digest};
 use sp_blockchain::{Error as BlockChainError, HeaderMetadata, HeaderBackend};
 use sc_network::{NetworkService, ExHashT};
@@ -42,6 +43,7 @@ use fc_rpc_core::types::{
 	BlockTransactions, TransactionRequest, PendingTransactions, PendingTransaction,
 };
 use fp_rpc::{EthereumRuntimeRPCApi, ConvertTransaction, TransactionStatus};
+use fp_consensus::{ConsensusLog, PostHashes, FRONTIER_ENGINE_ID};
 use crate::{internal_err, error_on_execution_failure, EthSigner, public_key};
 
 pub use fc_rpc_core::{EthApiServer, NetApiServer, Web3ApiServer, EthFilterApiServer};
@@ -1531,5 +1533,56 @@ impl<B, C> EthFilterApiT for EthFilterApi<B, C> where
 			Err(internal_err("Filter pool is not available."))
 		};
 		response
+	}
+}
+
+pub async fn pending_transaction_task<B, C> (
+	client: Arc<C>,
+	pending_transactions: Arc<Mutex<HashMap<H256, PendingTransaction>>>,
+	retain_threshold: u64
+) where
+	C: ProvideRuntimeApi<B> + AuxStore,
+	C::Api: EthereumRuntimeRPCApi<B>,
+	C: HeaderBackend<B> + BlockchainEvents<B> + HeaderMetadata<B, Error=BlockChainError> + 'static,
+	C: Send + Sync + 'static,
+	B: BlockT<Hash=H256> + Send + Sync + 'static,
+{	
+	let mut notification_st = client.import_notification_stream();
+
+	while let Some(notification) = notification_st.next().await {
+		if let Ok(mut pending_transactions) = pending_transactions.lock() {
+			// As pending transactions have a finite lifespan anyway
+			// we can ignore MultiplePostRuntimeLogs error checks.
+			let mut frontier_log: Option<_> = None;
+			for log in notification.header.digest().logs.iter().rev() {
+				let log = log.try_to::<ConsensusLog>(OpaqueDigestItemId::Consensus(
+					&FRONTIER_ENGINE_ID,
+				));
+				if log.is_some() {
+					frontier_log = log;
+					break;
+				}
+			}
+
+			let imported_number: u64 = UniqueSaturatedInto::<u64>::unique_saturated_into(
+				*notification.header.number()
+			);
+
+			if let Some(ConsensusLog::PostHashes(PostHashes {
+				block_hash: _,
+				transaction_hashes,
+			})) = frontier_log
+			{
+				// Retain all pending transactions that were not
+				// processed in the current block.
+				pending_transactions.retain(|&k, _| !transaction_hashes.contains(&k));
+			}
+
+			pending_transactions.retain(|_, v| {
+				// Drop all the transactions that exceeded the given lifespan.
+				let lifespan_limit = v.at_block + retain_threshold;
+				lifespan_limit > imported_number
+			});
+		}
 	}
 }
