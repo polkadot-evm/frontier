@@ -27,11 +27,11 @@ pub const FRONTIER_ENGINE_ID: ConsensusEngineId = [b'f', b'r', b'o', b'n'];
 
 #[derive(Decode, Encode, Clone, PartialEq, Eq)]
 pub enum ConsensusLog {
-	#[codec(index = "1")]
+	#[codec(index = 1u8)]
 	PostHashes(PostHashes),
-	#[codec(index = "2")]
+	#[codec(index = 2u8)]
 	PostBlock(ethereum::Block),
-	#[codec(index = "3")]
+	#[codec(index = 3u8)]
 	PreBlock(ethereum::Block),
 }
 

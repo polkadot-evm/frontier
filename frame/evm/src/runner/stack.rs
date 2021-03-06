@@ -20,7 +20,7 @@
 use sp_std::{marker::PhantomData, vec::Vec, boxed::Box, mem, collections::btree_set::BTreeSet};
 use sp_core::{U256, H256, H160};
 use sp_runtime::traits::UniqueSaturatedInto;
-use frame_support::{
+pub use frame_support::{
 	debug, ensure, traits::{Get, Currency, ExistenceRequirement},
 	storage::{StorageMap, StorageDoubleMap},
 };
@@ -91,39 +91,39 @@ impl<T: Config> Runner<T> {
 
 		let used_gas = U256::from(executor.used_gas());
 		let actual_fee = executor.fee(gas_price);
-		debug::debug!(
-			target: "evm",
-			"Execution {:?} [source: {:?}, value: {}, gas_limit: {}, actual_fee: {}]",
-			reason,
-			source,
-			value,
-			gas_limit,
-			actual_fee
-		);
+		// debug::trace::debug!(
+		// 	target: "evm",
+		// 	"Execution {:?} [source: {:?}, value: {}, gas_limit: {}, actual_fee: {}]",
+		// 	reason,
+		// 	source,
+		// 	value,
+		// 	gas_limit,
+		// 	actual_fee
+		// );
 
 		Module::<T>::deposit_fee(&source, total_fee.saturating_sub(actual_fee));
 
 		let state = executor.into_state();
 
 		for address in state.substate.deletes {
-			debug::debug!(
-				target: "evm",
-				"Deleting account at {:?}",
-				address
-			);
+			// debug::trace::debug!(
+			// 	target: "evm",
+			// 	"Deleting account at {:?}",
+			// 	address
+			// );
 			Module::<T>::remove_account(&address)
 		}
 
 		for log in &state.substate.logs {
-			debug::trace!(
-				target: "evm",
-				"Inserting log for {:?}, topics ({}) {:?}, data ({}): {:?}]",
-				log.address,
-				log.topics.len(),
-				log.topics,
-				log.data.len(),
-				log.data
-			);
+			// debug::trace::debug!(
+			// 	target: "evm",
+			// 	"Inserting log for {:?}, topics ({}) {:?}, data ({}): {:?}]",
+			// 	log.address,
+			// 	log.topics.len(),
+			// 	log.topics,
+			// 	log.data.len(),
+			// 	log.data
+			// );
 			Module::<T>::deposit_event(Event::<T>::Log(Log {
 				address: log.address,
 				topics: log.topics.clone(),
@@ -445,21 +445,21 @@ impl<'vicinity, 'config, T: Config> StackStateT<'config> for SubstrateStackState
 
 	fn set_storage(&mut self, address: H160, index: H256, value: H256) {
 		if value == H256::default() {
-			debug::debug!(
-				target: "evm",
-				"Removing storage for {:?} [index: {:?}]",
-				address,
-				index,
-			);
+			// debug::trace::debug!(
+			// 	target: "evm",
+			// 	"Removing storage for {:?} [index: {:?}]",
+			// 	address,
+			// 	index,
+			// );
 			AccountStorages::remove(address, index);
 		} else {
-			debug::debug!(
-				target: "evm",
-				"Updating storage for {:?} [index: {:?}, value: {:?}]",
-				address,
-				index,
-				value,
-			);
+			// debug::trace::debug!(
+			// 	target: "evm",
+			// 	"Updating storage for {:?} [index: {:?}, value: {:?}]",
+			// 	address,
+			// 	index,
+			// 	value,
+			// );
 			AccountStorages::insert(address, index, value);
 		}
 	}
@@ -477,12 +477,12 @@ impl<'vicinity, 'config, T: Config> StackStateT<'config> for SubstrateStackState
 	}
 
 	fn set_code(&mut self, address: H160, code: Vec<u8>) {
-		debug::debug!(
-			target: "evm",
-			"Inserting code ({} bytes) at {:?}",
-			code.len(),
-			address
-		);
+		// debug::trace::debug!(
+		// 	target: "evm",
+		// 	"Inserting code ({} bytes) at {:?}",
+		// 	code.len(),
+		// 	address
+		// );
 		Module::<T>::create_account(address, code);
 	}
 
