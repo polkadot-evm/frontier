@@ -9,7 +9,7 @@ license = "Apache-2.0"
 [dependencies]
 rustc-hex = { version = "2.1.0", default-features = false }
 serde = { version = "1.0.101", optional = true }
-codec = { package = "parity-scale-codec", version = "1.0.0", default-features = false }
+codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false }
 frame-support = { version = "3.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 frame-system = { version = "3.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 pallet-balances = { version = "3.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }

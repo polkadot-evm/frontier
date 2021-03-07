@@ -30,7 +30,7 @@ sc-network = { git = "https://github.com/paritytech/substrate.git", branch = "fr
 pallet-evm = { path = "../../frame/evm" }
 pallet-ethereum = { path = "../../frame/ethereum" }
 ethereum = { version = "0.6", features = ["with-codec"] }
-codec = { package = "parity-scale-codec", version = "1.0.0" }
+codec = { package = "parity-scale-codec", version = "2.0.0" }
 rlp = "0.5"
 futures = { version = "0.3.1", features = ["compat"] }
 sha3 = "0.8"
