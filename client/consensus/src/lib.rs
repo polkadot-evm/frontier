@@ -139,7 +139,7 @@ impl<B, I, C> BlockImport<B> for FrontierBlockImport<B, I, C> where
 				ethereum_block_hash: post_hashes.block_hash,
 				ethereum_transaction_hashes: post_hashes.transaction_hashes,
 			};
-			let res = self.backend.mapping_db().write_hashes(mapping_commitment);
+			let res = self.backend.mapping().write_hashes(mapping_commitment);
 			if res.is_err() { trace!(target: "frontier-consensus", "{:?}", res); }
 
 			// On importing block 1 we also map the genesis block in the auxiliary.
@@ -154,7 +154,7 @@ impl<B, I, C> BlockImport<B> for FrontierBlockImport<B, I, C> where
 						ethereum_block_hash: block_hash,
 						ethereum_transaction_hashes: Vec::new(),
 					};
-					let res = self.backend.mapping_db().write_hashes(mapping_commitment);
+					let res = self.backend.mapping().write_hashes(mapping_commitment);
 					if res.is_err() { trace!(target: "frontier-consensus", "{:?}", res); }
 				}
 			}

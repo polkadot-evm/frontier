@@ -41,7 +41,7 @@ pub fn sync_block<Block: BlockT, C>(
 		ethereum_block_hash: post_hashes.block_hash,
 		ethereum_transaction_hashes: post_hashes.transaction_hashes,
 	};
-	backend.mapping_db().write_hashes(mapping_commitment)?;
+	backend.mapping().write_hashes(mapping_commitment)?;
 
 	Ok(())
 }
