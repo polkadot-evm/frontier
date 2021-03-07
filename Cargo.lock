@@ -1259,6 +1259,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "fc-mapping-sync"
+version = "0.1.0"
+dependencies = [
+ "fc-consensus",
+ "fc-db",
+ "fp-consensus",
+ "sp-blockchain",
+ "sp-runtime",
+]
+
+[[package]]
 name = "fc-rpc"
 version = "0.1.0"
 dependencies = [

@@ -120,17 +120,9 @@ impl<B, I, C> BlockImport<B> for FrontierBlockImport<B, I, C> where
 
 	fn import_block(
 		&mut self,
-		mut block: BlockImportParams<B, Self::Transaction>,
+		block: BlockImportParams<B, Self::Transaction>,
 		new_cache: HashMap<CacheKeyId, Vec<u8>>,
 	) -> Result<ImportResult, Self::Error> {
-		macro_rules! insert_closure {
-			() => (
-				|insert| block.auxiliary.extend(
-					insert.iter().map(|(k, v)| (k.to_vec(), Some(v.to_vec())))
-				)
-			)
-		}
-
 		let client = self.client.clone();
 
 		if self.enabled {
@@ -172,7 +164,7 @@ impl<B, I, C> BlockImport<B> for FrontierBlockImport<B, I, C> where
 	}
 }
 
-fn find_frontier_log<B: BlockT>(
+pub fn find_frontier_log<B: BlockT>(
 	header: &B::Header,
 ) -> Result<ConsensusLog, Error> {
 	let mut frontier_log: Option<_> = None;

@@ -87,6 +87,15 @@ impl<Block: BlockT> Backend<Block> {
 	}
 }
 
+pub struct MetaDb<Block: BlockT> {
+	db: Arc<dyn Database<DbHash>>,
+	_marker: PhantomData<Block>,
+}
+
+impl<Block: BlockT> MetaDb<Block> {
+
+}
+
 pub struct MappingCommitment<Block: BlockT> {
 	pub block_hash: Block::Hash,
 	pub ethereum_block_hash: H256,
