@@ -1265,6 +1265,7 @@ dependencies = [
  "fc-consensus",
  "fc-db",
  "fp-consensus",
+ "sc-client-api",
  "sp-blockchain",
  "sp-runtime",
 ]

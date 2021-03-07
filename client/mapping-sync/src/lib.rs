@@ -16,19 +16,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use sp_runtime::{generic::BlockId, traits::Block as BlockT};
-use sp_blockchain::HeaderBackend;
+use sp_runtime::{generic::BlockId, traits::{Block as BlockT, Header as HeaderT, Zero}};
 use fp_consensus::ConsensusLog;
 
-pub fn sync_block<Block: BlockT, C>(
-	client: &C,
+pub fn sync_block<Block: BlockT>(
 	backend: &fc_db::Backend<Block>,
-	hash: Block::Hash,
-) -> Result<(), String> where
-	C: HeaderBackend<Block>,
-{
-	let header = client.header(BlockId::Hash(hash)).map_err(|e| format!("{:?}", e))?
-		.ok_or("Header not found".to_string())?;
+	header: &Block::Header,
+) -> Result<(), String> {
 	let log = fc_consensus::find_frontier_log::<Block>(&header)?;
 	let post_hashes = match log {
 		ConsensusLog::PostHashes(post_hashes) => post_hashes,
@@ -37,11 +31,64 @@ pub fn sync_block<Block: BlockT, C>(
 	};
 
 	let mapping_commitment = fc_db::MappingCommitment {
-		block_hash: hash,
+		block_hash: header.hash(),
 		ethereum_block_hash: post_hashes.block_hash,
 		ethereum_transaction_hashes: post_hashes.transaction_hashes,
 	};
 	backend.mapping().write_hashes(mapping_commitment)?;
 
 	Ok(())
+}
+
+pub fn sync_one_block<Block: BlockT, B>(
+	substrate_backend: &B,
+	frontier_backend: &fc_db::Backend<Block>,
+) -> Result<bool, String> where
+	B: sp_blockchain::HeaderBackend<Block> + sp_blockchain::Backend<Block>,
+{
+	let mut current_syncing_tips = frontier_backend.meta().current_syncing_tips()?;
+
+	if current_syncing_tips.len() == 0 {
+		// Sync genesis block.
+
+		let header = substrate_backend.header(BlockId::Number(Zero::zero()))
+			.map_err(|e| format!("{:?}", e))?
+			.ok_or("Genesis header not found".to_string())?;
+		sync_block(frontier_backend, &header)?;
+
+		current_syncing_tips.push(header.hash());
+		frontier_backend.meta().write_current_syncing_tips(current_syncing_tips)?;
+
+		Ok(true)
+	} else {
+		let mut syncing_tip_and_children = None;
+
+		for tip in &current_syncing_tips {
+			let children = substrate_backend.children(*tip)
+				.map_err(|e| format!("{:?}", e))?;
+
+			if children.len() > 0 {
+				syncing_tip_and_children = Some((*tip, children));
+				break
+			}
+		}
+
+		if let Some((syncing_tip, children)) = syncing_tip_and_children {
+			let header = substrate_backend.header(BlockId::Hash(syncing_tip))
+				.map_err(|e| format!("{:?}", e))?
+				.ok_or("Genesis header not found".to_string())?;
+
+			current_syncing_tips.retain(|tip| tip != &syncing_tip);
+			sync_block(frontier_backend, &header)?;
+
+			for child in children {
+				current_syncing_tips.push(child);
+			}
+			frontier_backend.meta().write_current_syncing_tips(current_syncing_tips)?;
+
+			Ok(true)
+		} else {
+			Ok(false)
+		}
+	}
 }
