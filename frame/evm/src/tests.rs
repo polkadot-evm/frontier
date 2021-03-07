@@ -117,6 +117,7 @@ impl Config for Test {
 	type Event = Event<Test>;
 	type Precompiles = ();
 	type ChainId = ();
+	type OnChargeTransaction = ();
 }
 
 type System = frame_system::Module<Test>;
@@ -179,5 +180,26 @@ fn fail_call_return_ok() {
 			U256::default(),
 			None,
 		));
+	});
+}
+
+#[test]
+fn fee_deduction() {
+	new_test_ext().execute_with(|| {
+		// Create an EVM address and the corresponding Substrate address that will be charged fees and refunded
+		let evm_addr = H160::from_str("1000000000000000000000000000000000000003").unwrap();
+		let substrate_addr = <Test as Config>::AddressMapping::into_account_id(evm_addr);
+
+		// Seed account
+		let _ = <Test as Config>::Currency::deposit_creating(&substrate_addr, 100);
+		assert_eq!(Balances::free_balance(&substrate_addr), 100);
+
+		// Deduct fees as 10 units
+		let imbalance = <<Test as Config>::OnChargeTransaction as OnChargeEVMTransaction<Test>>::withdraw_fee(&evm_addr, U256::from(10)).unwrap();
+		assert_eq!(Balances::free_balance(&substrate_addr), 90);
+
+		// Refund fees as 5 units
+		<<Test as Config>::OnChargeTransaction as OnChargeEVMTransaction<Test>>::correct_and_deposit_fee(&evm_addr, U256::from(5), imbalance).unwrap();
+		assert_eq!(Balances::free_balance(&substrate_addr), 95);
 	});
 }

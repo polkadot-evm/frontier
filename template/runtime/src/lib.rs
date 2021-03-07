@@ -291,6 +291,7 @@ impl pallet_evm::Config for Runtime {
 		pallet_evm_precompile_simple::Identity,
 	);
 	type ChainId = ChainId;
+	type OnChargeTransaction = ();
 }
 
 pub struct EthereumFindAuthor<F>(PhantomData<F>);
