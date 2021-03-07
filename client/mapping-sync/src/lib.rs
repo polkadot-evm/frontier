@@ -92,3 +92,19 @@ pub fn sync_one_block<Block: BlockT, B>(
 		}
 	}
 }
+
+pub fn sync_blocks<Block: BlockT, B>(
+	substrate_backend: &B,
+	frontier_backend: &fc_db::Backend<Block>,
+	limit: usize,
+) -> Result<bool, String> where
+	B: sp_blockchain::HeaderBackend<Block> + sp_blockchain::Backend<Block>,
+{
+	let mut synced_any = false;
+
+	for _ in 0..limit {
+		synced_any = synced_any || sync_one_block(substrate_backend, frontier_backend)?;
+	}
+
+	Ok(synced_any)
+}
