@@ -16,6 +16,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+mod worker;
+
+pub use worker::MappingSyncWorker;
+
 use sp_runtime::{generic::BlockId, traits::{Block as BlockT, Header as HeaderT, Zero}};
 use fp_consensus::ConsensusLog;
 

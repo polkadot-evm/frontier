@@ -13,3 +13,5 @@ sc-client-api = { version = "2.0.0", git = "https://github.com/paritytech/substr
 fp-consensus = { path = "../../primitives/consensus" }
 fc-consensus = { path = "../consensus" }
 fc-db = { path = "../db" }
+futures = { version = "0.3.1", features = ["compat"] }
+futures-timer = "3.0.1"
