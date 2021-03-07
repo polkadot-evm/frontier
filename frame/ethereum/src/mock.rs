@@ -143,6 +143,7 @@ impl pallet_evm::Config for Test {
 	type Precompiles = ();
 	type Runner = pallet_evm::runner::stack::Runner<Self>;
 	type ChainId = ChainId;
+	type OnChargeTransaction = ();
 }
 
 parameter_types! {

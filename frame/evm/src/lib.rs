@@ -70,15 +70,18 @@ use codec::{Encode, Decode};
 use serde::{Serialize, Deserialize};
 use frame_support::{decl_module, decl_storage, decl_event, decl_error};
 use frame_support::weights::{Weight, Pays, PostDispatchInfo};
-use frame_support::traits::{Currency, ExistenceRequirement, Get, WithdrawReasons};
+use frame_support::traits::{Currency, ExistenceRequirement, Get, WithdrawReasons, Imbalance, OnUnbalanced};
 use frame_support::dispatch::DispatchResultWithPostInfo;
 use frame_system::RawOrigin;
 use sp_core::{U256, H256, H160, Hasher};
-use sp_runtime::{AccountId32, traits::{UniqueSaturatedInto, BadOrigin}};
+use sp_runtime::{AccountId32, traits::{UniqueSaturatedInto, BadOrigin, Saturating}};
 use evm::Config as EvmConfig;
 
 /// Type alias for currency balance.
 pub type BalanceOf<T> = <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
+
+/// Type alias for negative imbalance during fees
+type NegativeImbalanceOf<C, T> = <C as Currency<<T as frame_system::Config>::AccountId>>::NegativeImbalance;
 
 /// Trait that outputs the current transaction gas price.
 pub trait FeeCalculator {
@@ -251,6 +254,11 @@ pub trait Config: frame_system::Config + pallet_timestamp::Config {
 	type ChainId: Get<u64>;
 	/// EVM execution runner.
 	type Runner: Runner<Self>;
+
+	/// To handle fee deduction for EVM transactions. An example is this pallet being used by `pallet_ethereum`
+	/// where the chain implementing `pallet_ethereum` should be able to configure what happens to the fees
+	/// Similar to `OnChargeTransaction` of `pallet_transaction_payment`
+	type OnChargeTransaction: OnChargeEVMTransaction<Self>;
 
 	/// EVM config used in the module.
 	fn config() -> &'static EvmConfig {
@@ -557,28 +565,112 @@ impl<T: Config> Module<T> {
 			balance: U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(balance)),
 		}
 	}
+}
 
-	/// Withdraw fee.
-	pub fn withdraw_fee(address: &H160, value: U256) -> Result<(), Error<T>> {
-		let account_id = T::AddressMapping::into_account_id(*address);
+/// Handle withdrawing, refunding and depositing of transaction fees.
+/// Similar to `OnChargeTransaction` of `pallet_transaction_payment`
+pub trait OnChargeEVMTransaction<T: Config> {
+	type LiquidityInfo: Default;
 
-		drop(T::Currency::withdraw(
+	/// Before the transaction is executed the payment of the transaction fees
+	/// need to be secured.
+	fn withdraw_fee(who: &H160, fee: U256) -> Result<Self::LiquidityInfo, Error<T>>;
+
+	/// After the transaction was executed the actual fee can be calculated.
+	/// This function should refund any overpaid fees and optionally deposit
+	/// the corrected amount.
+	fn correct_and_deposit_fee(
+		who: &H160,
+		corrected_fee: U256,
+		already_withdrawn: Self::LiquidityInfo,
+	) -> Result<(), Error<T>>;
+}
+
+/// Implements the transaction payment for a module implementing the `Currency`
+/// trait (eg. the pallet_balances) using an unbalance handler (implementing
+/// `OnUnbalanced`).
+/// Similar to `CurrencyAdapter` of `pallet_transaction_payment`
+pub struct EVMCurrencyAdapter<C, OU>(sp_std::marker::PhantomData<(C, OU)>);
+
+impl<T, C, OU> OnChargeEVMTransaction<T> for EVMCurrencyAdapter<C, OU>
+where
+	T: Config,
+	C: Currency<<T as frame_system::Config>::AccountId>,
+	C::PositiveImbalance: Imbalance<
+		<C as Currency<<T as frame_system::Config>::AccountId>>::Balance,
+		Opposite = C::NegativeImbalance,
+	>,
+	C::NegativeImbalance: Imbalance<
+		<C as Currency<<T as frame_system::Config>::AccountId>>::Balance,
+		Opposite = C::PositiveImbalance,
+	>,
+	OU: OnUnbalanced<NegativeImbalanceOf<C, T>>,
+{
+	// Kept type as Option to satisfy bound of Default
+	type LiquidityInfo = Option<NegativeImbalanceOf<C, T>>;
+
+	fn withdraw_fee(who: &H160, fee: U256) -> Result<Self::LiquidityInfo, Error<T>> {
+		let account_id = T::AddressMapping::into_account_id(*who);
+		let imbalance = C::withdraw(
 			&account_id,
-			value.low_u128().unique_saturated_into(),
+			fee.low_u128().unique_saturated_into(),
 			WithdrawReasons::FEE,
 			ExistenceRequirement::AllowDeath,
-		).map_err(|_| Error::<T>::BalanceLow)?);
-
-		Ok(())
+		)
+		.map_err(|_| Error::<T>::BalanceLow)?;
+		Ok(Some(imbalance))
 	}
 
-	/// Deposit fee.
-	pub fn deposit_fee(address: &H160, value: U256) {
-		let account_id = T::AddressMapping::into_account_id(*address);
+	fn correct_and_deposit_fee(
+		who: &H160,
+		corrected_fee: U256,
+		already_withdrawn: Self::LiquidityInfo,
+	) -> Result<(), Error<T>> {
+		if let Some(paid) = already_withdrawn {
+			let account_id = T::AddressMapping::into_account_id(*who);
 
-		drop(T::Currency::deposit_creating(
-			&account_id,
-			value.low_u128().unique_saturated_into(),
-		));
+			// Calculate how much refund we should return
+			let refund_amount = paid
+				.peek()
+				.saturating_sub(corrected_fee.low_u128().unique_saturated_into());
+			// refund to the account that paid the fees. If this fails, the
+			// account might have dropped below the existential balance. In
+			// that case we don't refund anything.
+			let refund_imbalance = C::deposit_into_existing(&account_id, refund_amount)
+				.unwrap_or_else(|_| C::PositiveImbalance::zero());
+			// merge the imbalance caused by paying the fees and refunding parts of it again.
+			let adjusted_paid = paid
+				.offset(refund_imbalance)
+				.map_err(|_| Error::<T>::BalanceLow)?;
+			OU::on_unbalanced(adjusted_paid);
+		}
+		Ok(())
+	}
+}
+
+/// Implementation for () does not specify what to do with imbalance
+impl<T> OnChargeEVMTransaction<T> for ()
+	where
+	T: Config,
+	<T::Currency as Currency<<T as frame_system::Config>::AccountId>>::PositiveImbalance:
+		Imbalance<<T::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance, Opposite = <T::Currency as Currency<<T as frame_system::Config>::AccountId>>::NegativeImbalance>,
+	<T::Currency as Currency<<T as frame_system::Config>::AccountId>>::NegativeImbalance:
+		Imbalance<<T::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance, Opposite = <T::Currency as Currency<<T as frame_system::Config>::AccountId>>::PositiveImbalance>, {
+	// Kept type as Option to satisfy bound of Default
+	type LiquidityInfo = Option<NegativeImbalanceOf<T::Currency, T>>;
+
+	fn withdraw_fee(
+		who: &H160,
+		fee: U256,
+	) -> Result<Self::LiquidityInfo, Error<T>> {
+		EVMCurrencyAdapter::<<T as Config>::Currency, ()>::withdraw_fee(who, fee)
+	}
+
+	fn correct_and_deposit_fee(
+		who: &H160,
+		corrected_fee: U256,
+		already_withdrawn: Self::LiquidityInfo,
+	) -> Result<(), Error<T>> {
+		EVMCurrencyAdapter::<<T as Config>::Currency, ()>::correct_and_deposit_fee(who, corrected_fee, already_withdrawn)
 	}
 }
