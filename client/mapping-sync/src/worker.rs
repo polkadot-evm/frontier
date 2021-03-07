@@ -37,6 +37,26 @@ pub struct MappingSyncWorker<Block: BlockT, B> {
 	have_next: bool,
 }
 
+impl<Block: BlockT, B> MappingSyncWorker<Block, B> {
+	pub fn new(
+		import_notifications: ImportNotifications<Block>,
+		timeout: Duration,
+		substrate_backend: Arc<B>,
+		frontier_backend: Arc<fc_db::Backend<Block>>,
+	) -> Self {
+		Self {
+			import_notifications,
+			timeout,
+			inner_delay: None,
+
+			substrate_backend,
+			frontier_backend,
+
+			have_next: true,
+		}
+	}
+}
+
 impl<Block: BlockT, B> Stream for MappingSyncWorker<Block, B> where
 	B: sc_client_api::Backend<Block>,
 {
