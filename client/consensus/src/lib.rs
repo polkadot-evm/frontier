@@ -60,7 +60,6 @@ pub struct FrontierBlockImport<B: BlockT, I, C> {
 	inner: I,
 	client: Arc<C>,
 	backend: Arc<fc_db::Backend<B>>,
-	enabled: bool,
 	_marker: PhantomData<B>,
 }
 
@@ -70,7 +69,6 @@ impl<Block: BlockT, I: Clone + BlockImport<Block>, C> Clone for FrontierBlockImp
 			inner: self.inner.clone(),
 			client: self.client.clone(),
 			backend: self.backend.clone(),
-			enabled: self.enabled,
 			_marker: PhantomData,
 		}
 	}
@@ -88,13 +86,11 @@ impl<B, I, C> FrontierBlockImport<B, I, C> where
 		inner: I,
 		client: Arc<C>,
 		backend: Arc<fc_db::Backend::<B>>,
-		enabled: bool,
 	) -> Self {
 		Self {
 			inner,
 			client,
 			backend,
-			enabled,
 			_marker: PhantomData,
 		}
 	}
@@ -123,12 +119,10 @@ impl<B, I, C> BlockImport<B> for FrontierBlockImport<B, I, C> where
 		block: BlockImportParams<B, Self::Transaction>,
 		new_cache: HashMap<CacheKeyId, Vec<u8>>,
 	) -> Result<ImportResult, Self::Error> {
-		if self.enabled {
-			// We validate that there are only one frontier log. No other
-			// actions are needed and mapping syncing is delegated to a separate
-			// worker.
-			let _ = find_frontier_log::<B>(&block.header)?;
-		}
+		// We validate that there are only one frontier log. No other
+		// actions are needed and mapping syncing is delegated to a separate
+		// worker.
+		let _ = find_frontier_log::<B>(&block.header)?;
 
 		self.inner.import_block(block, new_cache).map_err(Into::into)
 	}
