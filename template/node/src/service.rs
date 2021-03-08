@@ -301,7 +301,7 @@ pub fn new_full(
 				if let Ok(locked) = &mut pending_transactions.clone().unwrap().lock() {
 					// As pending transactions have a finite lifespan anyway
 					// we can ignore MultiplePostRuntimeLogs error checks.
-					let log = fp_consensus::find_log::<Block>(&notification.header).ok();
+					let log = fp_consensus::find_log(&notification.header.digest).ok();
 					let post_hashes = log.map(|log| log.into_hashes());
 
 					if let Some(post_hashes) = post_hashes {
