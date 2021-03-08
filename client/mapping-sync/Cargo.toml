@@ -7,10 +7,10 @@ description = "Mapping sync logic for Frontier."
 license = "GPL-3.0-or-later WITH Classpath-exception-2.0"
 
 [dependencies]
-sp-runtime = { version = "2.0.0", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sp-blockchain = { version = "2.0.0", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sc-client-api = { version = "2.0.0", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sp-api = { version = "2.0.0", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sp-runtime = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sp-blockchain = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sc-client-api = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sp-api = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 fp-consensus = { path = "../../primitives/consensus" }
 fc-consensus = { path = "../consensus" }
 fc-db = { path = "../db" }
