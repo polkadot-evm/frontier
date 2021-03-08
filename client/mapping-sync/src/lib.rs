@@ -30,7 +30,7 @@ pub fn sync_block<Block: BlockT>(
 	backend: &fc_db::Backend<Block>,
 	header: &Block::Header,
 ) -> Result<(), String> {
-	let log = fp_consensus::find_log::<Block>(&header).map_err(|e| format!("{:?}", e))?;
+	let log = fp_consensus::find_log(header.digest()).map_err(|e| format!("{:?}", e))?;
 	let post_hashes = log.into_hashes();
 
 	let mapping_commitment = fc_db::MappingCommitment {

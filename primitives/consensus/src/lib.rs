@@ -21,10 +21,9 @@ use codec::{Encode, Decode};
 use sp_std::vec::Vec;
 use sp_core::H256;
 use sp_runtime::{
-	ConsensusEngineId, generic::OpaqueDigestItemId,
-	traits::{Block as BlockT, Header as HeaderT},
+	ConsensusEngineId, generic::{Digest, OpaqueDigestItemId},
 };
-use sha3::{Digest, Keccak256};
+use sha3::{Digest as Sha3Digest, Keccak256};
 
 pub const FRONTIER_ENGINE_ID: ConsensusEngineId = [b'f', b'r', b'o', b'n'];
 
@@ -89,12 +88,12 @@ pub enum FindLogError {
 	MultipleLogs,
 }
 
-pub fn find_pre_log<Block: BlockT>(
-	header: &Block::Header,
+pub fn find_pre_log<Hash>(
+	digest: &Digest<Hash>,
 ) -> Result<PreLog, FindLogError> {
 	let mut found = None;
 
-	for log in header.digest().logs() {
+	for log in digest.logs() {
 		let log = log.try_to::<PreLog>(OpaqueDigestItemId::PreRuntime(&FRONTIER_ENGINE_ID));
 		match (log, found.is_some()) {
 			(Some(_), true) => return Err(FindLogError::MultipleLogs),
@@ -106,12 +105,12 @@ pub fn find_pre_log<Block: BlockT>(
 	found.ok_or(FindLogError::NotFound)
 }
 
-pub fn find_post_log<Block: BlockT>(
-	header: &Block::Header,
+pub fn find_post_log<Hash>(
+	digest: &Digest<Hash>,
 ) -> Result<PostLog, FindLogError> {
 	let mut found = None;
 
-	for log in header.digest().logs() {
+	for log in digest.logs() {
 		let log = log.try_to::<PostLog>(OpaqueDigestItemId::Consensus(&FRONTIER_ENGINE_ID));
 		match (log, found.is_some()) {
 			(Some(_), true) => return Err(FindLogError::MultipleLogs),
@@ -123,12 +122,12 @@ pub fn find_post_log<Block: BlockT>(
 	found.ok_or(FindLogError::NotFound)
 }
 
-pub fn find_log<Block: BlockT>(
-	header: &Block::Header,
+pub fn find_log<Hash>(
+	digest: &Digest<Hash>,
 ) -> Result<Log, FindLogError> {
 	let mut found = None;
 
-	for log in header.digest().logs() {
+	for log in digest.logs() {
 		let pre_log = log.try_to::<PreLog>(OpaqueDigestItemId::PreRuntime(&FRONTIER_ENGINE_ID));
 		match (pre_log, found.is_some()) {
 			(Some(_), true) => return Err(FindLogError::MultipleLogs),
@@ -147,12 +146,12 @@ pub fn find_log<Block: BlockT>(
 	found.ok_or(FindLogError::NotFound)
 }
 
-pub fn ensure_log<Block: BlockT>(
-	header: &Block::Header,
+pub fn ensure_log<Hash>(
+	digest: &Digest<Hash>,
 ) -> Result<(), FindLogError> {
 	let mut found = false;
 
-	for log in header.digest().logs() {
+	for log in digest.logs() {
 		let pre_log = log.try_to::<PreLog>(OpaqueDigestItemId::PreRuntime(&FRONTIER_ENGINE_ID));
 		match (pre_log, found) {
 			(Some(_), true) => return Err(FindLogError::MultipleLogs),
