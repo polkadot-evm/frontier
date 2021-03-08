@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["Error",""]],"fn":[["find_frontier_log",""]],"struct":[["FrontierBlockImport",""]]});
+initSidebarItems({"enum":[["Error",""]],"struct":[["FrontierBlockImport",""]]});

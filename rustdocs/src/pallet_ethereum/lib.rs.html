@@ -465,7 +465,7 @@
 <span class="kw">use</span> <span class="ident">pallet_evm</span>::{<span class="ident">Runner</span>, <span class="ident">GasWeightMapping</span>, <span class="ident">FeeCalculator</span>};
 <span class="kw">use</span> <span class="ident">sha3</span>::{<span class="ident">Digest</span>, <span class="ident">Keccak256</span>};
 <span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Encode</span>, <span class="ident">Decode</span>};
-<span class="kw">use</span> <span class="ident">fp_consensus</span>::{<span class="ident">FRONTIER_ENGINE_ID</span>, <span class="ident">ConsensusLog</span>};
+<span class="kw">use</span> <span class="ident">fp_consensus</span>::{<span class="ident">FRONTIER_ENGINE_ID</span>, <span class="ident">PostLog</span>};
 
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">fp_rpc</span>::<span class="ident">TransactionStatus</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">ethereum</span>::{<span class="ident">Transaction</span>, <span class="ident">Log</span>, <span class="ident">Block</span>, <span class="ident">Receipt</span>, <span class="ident">TransactionAction</span>, <span class="ident">TransactionMessage</span>};
@@ -756,7 +756,7 @@
 
 		<span class="kw">let</span> <span class="ident">digest</span> <span class="op">=</span> <span class="ident">DigestItem</span>::<span class="op">&lt;</span><span class="ident">T</span>::<span class="ident">Hash</span><span class="op">&gt;</span>::<span class="ident">Consensus</span>(
 			<span class="ident">FRONTIER_ENGINE_ID</span>,
-			<span class="ident">ConsensusLog</span>::<span class="ident">PostHashes</span>(<span class="ident">fp_consensus</span>::<span class="ident">PostHashes</span>::<span class="ident">from_block</span>(<span class="ident">block</span>)).<span class="ident">encode</span>(),
+			<span class="ident">PostLog</span>::<span class="ident">Hashes</span>(<span class="ident">fp_consensus</span>::<span class="ident">Hashes</span>::<span class="ident">from_block</span>(<span class="ident">block</span>)).<span class="ident">encode</span>(),
 		);
 		<span class="ident">frame_system</span>::<span class="ident">Module</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">deposit_log</span>(<span class="ident">digest</span>.<span class="ident">into</span>());
 	}
