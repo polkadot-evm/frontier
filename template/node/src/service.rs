@@ -5,6 +5,7 @@ use fc_rpc_core::types::{FilterPool, PendingTransactions};
 use sc_client_api::{ExecutorProvider, RemoteBackend, BlockchainEvents};
 use sc_consensus_manual_seal::{self as manual_seal};
 use fc_consensus::FrontierBlockImport;
+use fc_mapping_sync::MappingSyncWorker;
 use frontier_template_runtime::{self, opaque::Block, RuntimeApi, SLOT_DURATION};
 use sc_service::{error::Error as ServiceError, Configuration, TaskManager, BasePath};
 use sp_inherents::{InherentDataProviders, ProvideInherentData, InherentIdentifier, InherentData};
@@ -15,6 +16,7 @@ use sc_finality_grandpa::SharedVoterState;
 use sp_timestamp::InherentError;
 use sc_telemetry::TelemetrySpan;
 use sc_cli::SubstrateCli;
+use futures::StreamExt;
 use crate::cli::Sealing;
 
 // Our native executor instance.
@@ -131,7 +133,6 @@ pub fn new_partial(config: &Configuration, sealing: Option<Sealing>) -> Result<
 			client.clone(),
 			client.clone(),
 			frontier_backend.clone(),
-			true,
 		);
 
 		let import_queue = sc_consensus_manual_seal::import_queue(
@@ -155,7 +156,6 @@ pub fn new_partial(config: &Configuration, sealing: Option<Sealing>) -> Result<
 		grandpa_block_import.clone(),
 		client.clone(),
 		frontier_backend.clone(),
-		true
 	);
 
 	let aura_block_import = sc_consensus_aura::AuraBlockImport::<_, _, _, AuraPair>::new(
@@ -227,6 +227,8 @@ pub fn new_full(
 		let network = network.clone();
 		let pending = pending_transactions.clone();
 		let filter_pool = filter_pool.clone();
+		let frontier_backend = frontier_backend.clone();
+
 		Box::new(move |deny_unsafe, _| {
 			let deps = crate::rpc::FullDeps {
 				client: client.clone(),
@@ -247,6 +249,17 @@ pub fn new_full(
 		})
 	};
 
+	task_manager.spawn_essential_handle().spawn(
+		"frontier-mapping-sync-worker",
+		MappingSyncWorker::new(
+			client.import_notification_stream(),
+			Duration::new(6, 0),
+			client.clone(),
+			backend.clone(),
+			frontier_backend.clone(),
+		).for_each(|()| futures::future::ready(()))
+	);
+
 	let telemetry_span = TelemetrySpan::new();
 	let _telemetry_span_entered = telemetry_span.enter();
 
@@ -264,7 +277,6 @@ pub fn new_full(
 
 	// Spawn Frontier EthFilterApi maintenance task.
 	if filter_pool.is_some() {
-		use futures::StreamExt;
 		// Each filter is allowed to stay in the pool for 100 blocks.
 		const FILTER_RETAIN_THRESHOLD: u64 = 100;
 		task_manager.spawn_essential_handle().spawn(
@@ -286,10 +298,6 @@ pub fn new_full(
 
 	// Spawn Frontier pending transactions maintenance task (as essential, otherwise we leak).
 	if pending_transactions.is_some() {
-		use futures::StreamExt;
-		use fp_consensus::{FRONTIER_ENGINE_ID, ConsensusLog};
-		use sp_runtime::generic::OpaqueDigestItemId;
-
 		const TRANSACTION_RETAIN_THRESHOLD: u64 = 5;
 		task_manager.spawn_essential_handle().spawn(
 			"frontier-pending-transactions",
@@ -297,29 +305,17 @@ pub fn new_full(
 				if let Ok(locked) = &mut pending_transactions.clone().unwrap().lock() {
 					// As pending transactions have a finite lifespan anyway
 					// we can ignore MultiplePostRuntimeLogs error checks.
-					let mut frontier_log: Option<_> = None;
-					for log in notification.header.digest.logs {
-						let log = log.try_to::<ConsensusLog>(OpaqueDigestItemId::Consensus(&FRONTIER_ENGINE_ID));
-						if let Some(log) = log {
-							frontier_log = Some(log);
-						}
-					}
-
-					let imported_number: u64 = notification.header.number as u64;
-
-					let post_hashes = frontier_log.map(|l| {
-						match l {
-							ConsensusLog::PostHashes(post_hashes) => post_hashes,
-							ConsensusLog::PreBlock(block) => fp_consensus::PostHashes::from_block(block),
-							ConsensusLog::PostBlock(block) => fp_consensus::PostHashes::from_block(block),
-						}
-					});
+					let log = fp_consensus::find_log(&notification.header.digest).ok();
+					let post_hashes = log.map(|log| log.into_hashes());
 
 					if let Some(post_hashes) = post_hashes {
 						// Retain all pending transactions that were not
 						// processed in the current block.
 						locked.retain(|&k, _| !post_hashes.transaction_hashes.contains(&k));
 					}
+
+					let imported_number: u64 = notification.header.number as u64;
+
 					locked.retain(|_, v| {
 						// Drop all the transactions that exceeded the given lifespan.
 						let lifespan_limit = v.at_block + TRANSACTION_RETAIN_THRESHOLD;
