@@ -42,7 +42,7 @@ use fp_evm::CallOrCreateInfo;
 use pallet_evm::{Runner, GasWeightMapping, FeeCalculator};
 use sha3::{Digest, Keccak256};
 use codec::{Encode, Decode};
-use fp_consensus::{FRONTIER_ENGINE_ID, ConsensusLog};
+use fp_consensus::{FRONTIER_ENGINE_ID, PostLog};
 
 pub use fp_rpc::TransactionStatus;
 pub use ethereum::{Transaction, Log, Block, Receipt, TransactionAction, TransactionMessage};
@@ -333,7 +333,7 @@ impl<T: Config> Module<T> {
 
 		let digest = DigestItem::<T::Hash>::Consensus(
 			FRONTIER_ENGINE_ID,
-			ConsensusLog::PostHashes(fp_consensus::PostHashes::from_block(block)).encode(),
+			PostLog::Hashes(fp_consensus::Hashes::from_block(block)).encode(),
 		);
 		frame_system::Module::<T>::deposit_log(digest.into());
 	}

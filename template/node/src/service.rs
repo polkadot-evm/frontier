@@ -294,9 +294,6 @@ pub fn new_full(
 
 	// Spawn Frontier pending transactions maintenance task (as essential, otherwise we leak).
 	if pending_transactions.is_some() {
-		use fp_consensus::{FRONTIER_ENGINE_ID, ConsensusLog};
-		use sp_runtime::generic::OpaqueDigestItemId;
-
 		const TRANSACTION_RETAIN_THRESHOLD: u64 = 5;
 		task_manager.spawn_essential_handle().spawn(
 			"frontier-pending-transactions",
@@ -304,29 +301,17 @@ pub fn new_full(
 				if let Ok(locked) = &mut pending_transactions.clone().unwrap().lock() {
 					// As pending transactions have a finite lifespan anyway
 					// we can ignore MultiplePostRuntimeLogs error checks.
-					let mut frontier_log: Option<_> = None;
-					for log in notification.header.digest.logs {
-						let log = log.try_to::<ConsensusLog>(OpaqueDigestItemId::Consensus(&FRONTIER_ENGINE_ID));
-						if let Some(log) = log {
-							frontier_log = Some(log);
-						}
-					}
-
-					let imported_number: u64 = notification.header.number as u64;
-
-					let post_hashes = frontier_log.map(|l| {
-						match l {
-							ConsensusLog::PostHashes(post_hashes) => post_hashes,
-							ConsensusLog::PreBlock(block) => fp_consensus::PostHashes::from_block(block),
-							ConsensusLog::PostBlock(block) => fp_consensus::PostHashes::from_block(block),
-						}
-					});
+					let log = fp_consensus::find_log::<Block>(&notification.header).ok();
+					let post_hashes = log.map(|log| log.into_hashes());
 
 					if let Some(post_hashes) = post_hashes {
 						// Retain all pending transactions that were not
 						// processed in the current block.
 						locked.retain(|&k, _| !post_hashes.transaction_hashes.contains(&k));
 					}
+
+					let imported_number: u64 = notification.header.number as u64;
+
 					locked.retain(|_, v| {
 						// Drop all the transactions that exceeded the given lifespan.
 						let lifespan_limit = v.at_block + TRANSACTION_RETAIN_THRESHOLD;
