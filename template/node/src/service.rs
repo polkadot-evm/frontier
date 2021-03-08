@@ -132,7 +132,6 @@ pub fn new_partial(config: &Configuration, sealing: Option<Sealing>) -> Result<
 			client.clone(),
 			client.clone(),
 			frontier_backend.clone(),
-			true,
 		);
 
 		let import_queue = sc_consensus_manual_seal::import_queue(
@@ -156,7 +155,6 @@ pub fn new_partial(config: &Configuration, sealing: Option<Sealing>) -> Result<
 		grandpa_block_import.clone(),
 		client.clone(),
 		frontier_backend.clone(),
-		true
 	);
 
 	let aura_block_import = sc_consensus_aura::AuraBlockImport::<_, _, _, AuraPair>::new(
