@@ -24,7 +24,7 @@ use fp_rpc::EthereumRuntimeRPCApi;
 use sc_client_api::{BlockOf, backend::AuxStore};
 use sp_blockchain::{HeaderBackend, ProvideCache, well_known_cache_keys::Id as CacheKeyId};
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
-use sp_runtime::traits::Block as BlockT;
+use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
 use sp_api::ProvideRuntimeApi;
 use sp_consensus::{
 	BlockImportParams, Error as ConsensusError, BlockImport,
@@ -129,7 +129,7 @@ impl<B, I, C> BlockImport<B> for FrontierBlockImport<B, I, C> where
 		// We validate that there are only one frontier log. No other
 		// actions are needed and mapping syncing is delegated to a separate
 		// worker.
-		ensure_log::<B>(&block.header).map_err(|e| Error::from(e))?;
+		ensure_log(&block.header.digest()).map_err(|e| Error::from(e))?;
 
 		self.inner.import_block(block, new_cache).map_err(Into::into)
 	}
