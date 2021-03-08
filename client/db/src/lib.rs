@@ -65,8 +65,13 @@ pub(crate) mod columns {
 	pub const TRANSACTION_MAPPING: u32 = 2;
 }
 
+pub(crate) mod static_keys {
+	pub const CURRENT_SYNCING_TIPS: &[u8] = b"CURRENT_SYNCING_TIPS";
+}
+
 pub struct Backend<Block: BlockT> {
-	mapping_db: Arc<MappingDb<Block>>,
+	meta: Arc<MetaDb<Block>>,
+	mapping: Arc<MappingDb<Block>>,
 }
 
 impl<Block: BlockT> Backend<Block> {
@@ -74,16 +79,52 @@ impl<Block: BlockT> Backend<Block> {
 		let db = utils::open_database(config)?;
 
 		Ok(Self {
-			mapping_db: Arc::new(MappingDb {
+			mapping: Arc::new(MappingDb {
 				db: db.clone(),
 				write_lock: Arc::new(Mutex::new(())),
 				_marker: PhantomData,
-			})
+			}),
+			meta: Arc::new(MetaDb {
+				db: db.clone(),
+				_marker: PhantomData,
+			}),
 		})
 	}
 
-	pub fn mapping_db(&self) -> &Arc<MappingDb<Block>> {
-		&self.mapping_db
+	pub fn mapping(&self) -> &Arc<MappingDb<Block>> {
+		&self.mapping
+	}
+
+	pub fn meta(&self) -> &Arc<MetaDb<Block>> {
+		&self.meta
+	}
+}
+
+pub struct MetaDb<Block: BlockT> {
+	db: Arc<dyn Database<DbHash>>,
+	_marker: PhantomData<Block>,
+}
+
+impl<Block: BlockT> MetaDb<Block> {
+	pub fn current_syncing_tips(&self) -> Result<Vec<Block::Hash>, String> {
+		match self.db.get(crate::columns::META, &crate::static_keys::CURRENT_SYNCING_TIPS) {
+			Some(raw) => Ok(Vec::<Block::Hash>::decode(&mut &raw[..]).map_err(|e| format!("{:?}", e))?),
+			None => Ok(Vec::new()),
+		}
+	}
+
+	pub fn write_current_syncing_tips(&self, tips: Vec<Block::Hash>) -> Result<(), String> {
+		let mut transaction = sp_database::Transaction::new();
+
+		transaction.set(
+			crate::columns::META,
+			crate::static_keys::CURRENT_SYNCING_TIPS,
+			&tips.encode(),
+		);
+
+		self.db.commit(transaction).map_err(|e| format!("{:?}", e))?;
+
+		Ok(())
 	}
 }
 

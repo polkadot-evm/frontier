@@ -301,7 +301,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> where
 
 	// Asumes there is only one mapped canonical block in the AuxStore, otherwise something is wrong
 	fn load_hash(&self, hash: H256) -> Result<Option<BlockId<B>>> {
-		let hashes = self.backend.mapping_db().block_hashes(&hash)
+		let hashes = self.backend.mapping().block_hashes(&hash)
 			.map_err(|err| internal_err(format!("fetch aux store failed: {:?}", err)))?;
 		let out: Vec<H256> = hashes.into_iter()
 			.filter_map(|h| {
@@ -330,7 +330,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> where
 	}
 
 	fn load_transactions(&self, transaction_hash: H256) -> Result<Option<(H256, u32)>> {
-		let transaction_metadata = self.backend.mapping_db().transaction_metadata(&transaction_hash)
+		let transaction_metadata = self.backend.mapping().transaction_metadata(&transaction_hash)
 			.map_err(|err| internal_err(format!("fetch aux store failed: {:?}", err)))?;
 
 		if transaction_metadata.len() == 1 {
