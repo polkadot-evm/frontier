@@ -255,6 +255,7 @@ pub fn new_full(
 		MappingSyncWorker::new(
 			client.import_notification_stream(),
 			Duration::new(6, 0),
+			client.clone(),
 			backend.clone(),
 			frontier_backend.clone(),
 		).for_each(|()| futures::future::ready(()))

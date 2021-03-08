@@ -22,25 +22,32 @@ use std::sync::Arc;
 use futures::{prelude::*, task::{Context, Poll}};
 use sp_runtime::traits::Block as BlockT;
 use sc_client_api::ImportNotifications;
+use sp_api::ProvideRuntimeApi;
+use sc_client_api::BlockOf;
+use sp_blockchain::HeaderBackend;
+use fp_rpc::EthereumRuntimeRPCApi;
 use futures_timer::Delay;
+use log::warn;
 
 const LIMIT: usize = 8;
 
-pub struct MappingSyncWorker<Block: BlockT, B> {
+pub struct MappingSyncWorker<Block: BlockT, C, B> {
 	import_notifications: ImportNotifications<Block>,
 	timeout: Duration,
 	inner_delay: Option<Delay>,
 
+	client: Arc<C>,
 	substrate_backend: Arc<B>,
 	frontier_backend: Arc<fc_db::Backend<Block>>,
 
 	have_next: bool,
 }
 
-impl<Block: BlockT, B> MappingSyncWorker<Block, B> {
+impl<Block: BlockT, C, B> MappingSyncWorker<Block, C, B> {
 	pub fn new(
 		import_notifications: ImportNotifications<Block>,
 		timeout: Duration,
+		client: Arc<C>,
 		substrate_backend: Arc<B>,
 		frontier_backend: Arc<fc_db::Backend<Block>>,
 	) -> Self {
@@ -49,6 +56,7 @@ impl<Block: BlockT, B> MappingSyncWorker<Block, B> {
 			timeout,
 			inner_delay: None,
 
+			client,
 			substrate_backend,
 			frontier_backend,
 
@@ -57,7 +65,9 @@ impl<Block: BlockT, B> MappingSyncWorker<Block, B> {
 	}
 }
 
-impl<Block: BlockT, B> Stream for MappingSyncWorker<Block, B> where
+impl<Block: BlockT, C, B> Stream for MappingSyncWorker<Block, C, B> where
+	C: ProvideRuntimeApi<Block> + Send + Sync + HeaderBackend<Block> + BlockOf,
+	C::Api: EthereumRuntimeRPCApi<Block>,
 	B: sc_client_api::Backend<Block>,
 {
 	type Item = ();
@@ -93,15 +103,20 @@ impl<Block: BlockT, B> Stream for MappingSyncWorker<Block, B> where
 			self.inner_delay = None;
 
 			match crate::sync_blocks(
+				self.client.as_ref(),
 				self.substrate_backend.blockchain(),
-				&self.frontier_backend,
+				self.frontier_backend.as_ref(),
 				LIMIT,
 			) {
 				Ok(have_next) => {
 					self.have_next = have_next;
 					Poll::Ready(Some(()))
 				},
-				Err(_) => Poll::Ready(None),
+				Err(e) => {
+					self.have_next = false;
+					warn!(target: "mapping-sync", "Syncing failed with error {:?}, retrying.", e);
+					Poll::Ready(Some(()))
+				},
 			}
 		} else {
 			Poll::Pending
