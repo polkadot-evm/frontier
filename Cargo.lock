@@ -1156,19 +1156,6 @@ dependencies = [
 
 [[package]]
 name = "ethbloom"
-version = "0.10.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "22a621dcebea74f2a6f2002d0a885c81ccf6cbdf86760183316a7722b5707ca4"
-dependencies = [
- "crunchy",
- "fixed-hash",
- "impl-codec 0.4.2",
- "impl-rlp",
- "tiny-keccak",
-]
-
-[[package]]
-name = "ethbloom"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "779864b9c7f7ead1f092972c3257496c6a84b46dba2ce131dd8a282cb2cc5972"
@@ -1183,28 +1170,11 @@ dependencies = [
 
 [[package]]
 name = "ethereum"
-version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d8603f637f22e3ab9aff8466b37850cd7ea2ae52034b07e41fdc82f1f68dfa2c"
-dependencies = [
- "ethereum-types 0.10.0",
- "hash-db",
- "hash256-std-hasher",
- "parity-scale-codec 1.3.7",
- "rlp",
- "rlp-derive",
- "serde",
- "sha3 0.9.1",
- "triehash",
-]
-
-[[package]]
-name = "ethereum"
 version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "567ce064a8232c16e2b2c2173a936b91fbe35c2f2c5278871f5a1a31688b42e9"
 dependencies = [
- "ethereum-types 0.11.0",
+ "ethereum-types",
  "funty",
  "hash-db",
  "hash256-std-hasher",
@@ -1218,25 +1188,11 @@ dependencies = [
 
 [[package]]
 name = "ethereum-types"
-version = "0.10.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "05dc5f0df4915fa6dff7f975a8366ecfaaa8959c74235469495153e7bb1b280e"
-dependencies = [
- "ethbloom 0.10.0",
- "fixed-hash",
- "impl-codec 0.4.2",
- "impl-rlp",
- "primitive-types 0.8.0",
- "uint",
-]
-
-[[package]]
-name = "ethereum-types"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f64b5df66a228d85e4b17e5d6c6aa43b0310898ffe8a85988c4c032357aaabfd"
 dependencies = [
- "ethbloom 0.11.0",
+ "ethbloom",
  "fixed-hash",
  "impl-codec 0.5.0",
  "impl-rlp",
@@ -1257,7 +1213,7 @@ version = "0.24.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0467250a12bb144ad7b2f41e03e8675e38b971ab73f6d42ede6b78af07657e7b"
 dependencies = [
- "ethereum 0.7.1",
+ "ethereum",
  "evm-core 0.24.0",
  "evm-gasometer 0.24.0",
  "evm-runtime 0.24.0",
@@ -1422,8 +1378,8 @@ dependencies = [
 name = "fc-rpc"
 version = "0.1.0"
 dependencies = [
- "ethereum 0.6.0",
- "ethereum-types 0.11.0",
+ "ethereum",
+ "ethereum-types",
  "fc-consensus",
  "fc-db",
  "fc-rpc-core",
@@ -1458,7 +1414,7 @@ dependencies = [
 name = "fc-rpc-core"
 version = "0.1.0"
 dependencies = [
- "ethereum-types 0.11.0",
+ "ethereum-types",
  "jsonrpc-core 15.1.0",
  "jsonrpc-core-client 14.2.0",
  "jsonrpc-derive 14.2.2",
@@ -1551,7 +1507,7 @@ dependencies = [
 name = "fp-consensus"
 version = "0.1.0"
 dependencies = [
- "ethereum 0.7.1",
+ "ethereum",
  "parity-scale-codec 2.0.1",
  "rlp",
  "sha3 0.8.2",
@@ -1576,8 +1532,8 @@ dependencies = [
 name = "fp-rpc"
 version = "0.1.0"
 dependencies = [
- "ethereum 0.7.1",
- "ethereum-types 0.11.0",
+ "ethereum",
+ "ethereum-types",
  "fp-evm",
  "parity-scale-codec 2.0.1",
  "sp-api",
@@ -3943,8 +3899,8 @@ dependencies = [
 name = "pallet-ethereum"
 version = "0.1.0"
 dependencies = [
- "ethereum 0.7.1",
- "ethereum-types 0.11.0",
+ "ethereum",
+ "ethereum-types",
  "evm",
  "fp-consensus",
  "fp-evm",
@@ -4642,7 +4598,6 @@ checksum = "b3824ae2c5e27160113b9e029a10ec9e3f0237bad8029f69c7724393c9fdefd8"
 dependencies = [
  "fixed-hash",
  "impl-codec 0.4.2",
- "impl-rlp",
  "uint",
 ]
 
