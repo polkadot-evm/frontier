@@ -25,8 +25,8 @@ use sc_client_api::{BlockOf, backend::AuxStore};
 use sp_blockchain::{HeaderBackend, ProvideCache, well_known_cache_keys::Id as CacheKeyId};
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
 use sp_runtime::generic::OpaqueDigestItemId;
-use sp_runtime::traits::{Block as BlockT, Header as HeaderT, One, Zero};
-use sp_api::{ProvideRuntimeApi, BlockId};
+use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
+use sp_api::ProvideRuntimeApi;
 use sp_consensus::{
 	BlockImportParams, Error as ConsensusError, BlockImport,
 	BlockCheckParams, ImportResult,
@@ -120,59 +120,21 @@ impl<B, I, C> BlockImport<B> for FrontierBlockImport<B, I, C> where
 
 	fn import_block(
 		&mut self,
-		mut block: BlockImportParams<B, Self::Transaction>,
+		block: BlockImportParams<B, Self::Transaction>,
 		new_cache: HashMap<CacheKeyId, Vec<u8>>,
 	) -> Result<ImportResult, Self::Error> {
-		macro_rules! insert_closure {
-			() => (
-				|insert| block.auxiliary.extend(
-					insert.iter().map(|(k, v)| (k.to_vec(), Some(v.to_vec())))
-				)
-			)
-		}
-
-		let client = self.client.clone();
-
 		if self.enabled {
-			let log = find_frontier_log::<B>(&block.header)?;
-			let hash = block.post_hash();
-			let post_hashes = match log {
-				ConsensusLog::PostHashes(post_hashes) => post_hashes,
-				ConsensusLog::PreBlock(block) => fp_consensus::PostHashes::from_block(block),
-				ConsensusLog::PostBlock(block) => fp_consensus::PostHashes::from_block(block),
-			};
-
-			let mapping_commitment = fc_db::MappingCommitment {
-				block_hash: hash,
-				ethereum_block_hash: post_hashes.block_hash,
-				ethereum_transaction_hashes: post_hashes.transaction_hashes,
-			};
-			let res = self.backend.mapping_db().write_hashes(mapping_commitment);
-			if res.is_err() { trace!(target: "frontier-consensus", "{:?}", res); }
-
-			// On importing block 1 we also map the genesis block in the auxiliary.
-			if block.header.number().clone() == One::one() {
-				let id = BlockId::Number(Zero::zero());
-				if let Ok(Some(header)) = client.header(id) {
-					let block = self.client.runtime_api().current_block(&id)
-						.map_err(|_| Error::RuntimeApiCallFailed)?;
-					let block_hash = block.unwrap().header.hash(); // TODO: shouldn't use unwrap
-					let mapping_commitment = fc_db::MappingCommitment::<B> {
-						block_hash: header.hash(),
-						ethereum_block_hash: block_hash,
-						ethereum_transaction_hashes: Vec::new(),
-					};
-					let res = self.backend.mapping_db().write_hashes(mapping_commitment);
-					if res.is_err() { trace!(target: "frontier-consensus", "{:?}", res); }
-				}
-			}
+			// We validate that there are only one frontier log. No other
+			// actions are needed and mapping syncing is delegated to a separate
+			// worker.
+			let _ = find_frontier_log::<B>(&block.header)?;
 		}
 
 		self.inner.import_block(block, new_cache).map_err(Into::into)
 	}
 }
 
-fn find_frontier_log<B: BlockT>(
+pub fn find_frontier_log<B: BlockT>(
 	header: &B::Header,
 ) -> Result<ConsensusLog, Error> {
 	let mut frontier_log: Option<_> = None;
