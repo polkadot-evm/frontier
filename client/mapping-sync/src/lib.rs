@@ -71,7 +71,7 @@ pub fn sync_genesis_block<Block: BlockT, C>(
 	Ok(())
 }
 
-pub fn sync_one_block<Block: BlockT, C, B>(
+pub fn sync_one_level<Block: BlockT, C, B>(
 	client: &C,
 	substrate_backend: &B,
 	frontier_backend: &fc_db::Backend<Block>,
@@ -108,14 +108,14 @@ pub fn sync_one_block<Block: BlockT, C, B>(
 		}
 
 		if let Some((syncing_tip, children)) = syncing_tip_and_children {
-			let header = substrate_backend.header(BlockId::Hash(syncing_tip))
-				.map_err(|e| format!("{:?}", e))?
-				.ok_or("Genesis header not found".to_string())?;
-
 			current_syncing_tips.retain(|tip| tip != &syncing_tip);
-			sync_block(frontier_backend, &header)?;
 
 			for child in children {
+				let header = substrate_backend.header(BlockId::Hash(child))
+					.map_err(|e| format!("{:?}", e))?
+					.ok_or("Header not found".to_string())?;
+
+				sync_block(frontier_backend, &header)?;
 				current_syncing_tips.push(child);
 			}
 			frontier_backend.meta().write_current_syncing_tips(current_syncing_tips)?;
@@ -140,7 +140,7 @@ pub fn sync_blocks<Block: BlockT, C, B>(
 	let mut synced_any = false;
 
 	for _ in 0..limit {
-		synced_any = synced_any || sync_one_block(client, substrate_backend, frontier_backend)?;
+		synced_any = synced_any || sync_one_level(client, substrate_backend, frontier_backend)?;
 	}
 
 	Ok(synced_any)
