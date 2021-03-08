@@ -24,19 +24,14 @@ use sp_runtime::{generic::BlockId, traits::{Block as BlockT, Header as HeaderT, 
 use sp_api::ProvideRuntimeApi;
 use sc_client_api::BlockOf;
 use sp_blockchain::HeaderBackend;
-use fp_consensus::ConsensusLog;
 use fp_rpc::EthereumRuntimeRPCApi;
 
 pub fn sync_block<Block: BlockT>(
 	backend: &fc_db::Backend<Block>,
 	header: &Block::Header,
 ) -> Result<(), String> {
-	let log = fc_consensus::find_frontier_log::<Block>(&header)?;
-	let post_hashes = match log {
-		ConsensusLog::PostHashes(post_hashes) => post_hashes,
-		ConsensusLog::PreBlock(block) => fp_consensus::PostHashes::from_block(block),
-		ConsensusLog::PostBlock(block) => fp_consensus::PostHashes::from_block(block),
-	};
+	let log = fp_consensus::find_log::<Block>(&header).map_err(|e| format!("{:?}", e))?;
+	let post_hashes = log.into_hashes();
 
 	let mapping_commitment = fc_db::MappingCommitment {
 		block_hash: header.hash(),

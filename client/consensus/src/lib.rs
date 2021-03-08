@@ -19,27 +19,25 @@
 use std::sync::Arc;
 use std::collections::HashMap;
 use std::marker::PhantomData;
-use fp_consensus::{FRONTIER_ENGINE_ID, ConsensusLog};
+use fp_consensus::{ensure_log, FindLogError};
 use fp_rpc::EthereumRuntimeRPCApi;
 use sc_client_api::{BlockOf, backend::AuxStore};
 use sp_blockchain::{HeaderBackend, ProvideCache, well_known_cache_keys::Id as CacheKeyId};
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
-use sp_runtime::generic::OpaqueDigestItemId;
-use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
+use sp_runtime::traits::Block as BlockT;
 use sp_api::ProvideRuntimeApi;
 use sp_consensus::{
 	BlockImportParams, Error as ConsensusError, BlockImport,
 	BlockCheckParams, ImportResult,
 };
-use log::*;
 use sc_client_api;
 
 #[derive(derive_more::Display, Debug)]
 pub enum Error {
-	#[display(fmt = "Multiple post-runtime Ethereum blocks, rejecting!")]
-	MultiplePostRuntimeLogs,
-	#[display(fmt = "Post-runtime Ethereum block not found, rejecting!")]
-	NoPostRuntimeLog,
+	#[display(fmt = "Multiple runtime Ethereum blocks, rejecting!")]
+	MultipleRuntimeLogs,
+	#[display(fmt = "Runtime Ethereum block not found, rejecting!")]
+	NoRuntimeLog,
 	#[display(fmt = "Cannot access the runtime at genesis, rejecting!")]
 	RuntimeApiCallFailed,
 }
@@ -50,7 +48,16 @@ impl From<Error> for String {
 	}
 }
 
-impl std::convert::From<Error> for ConsensusError {
+impl From<FindLogError> for Error {
+	fn from(error: FindLogError) -> Error {
+		match error {
+			FindLogError::NotFound => Error::NoRuntimeLog,
+			FindLogError::MultipleLogs => Error::MultipleRuntimeLogs,
+		}
+	}
+}
+
+impl From<Error> for ConsensusError {
 	fn from(error: Error) -> ConsensusError {
 		ConsensusError::ClientImport(error.to_string())
 	}
@@ -122,26 +129,8 @@ impl<B, I, C> BlockImport<B> for FrontierBlockImport<B, I, C> where
 		// We validate that there are only one frontier log. No other
 		// actions are needed and mapping syncing is delegated to a separate
 		// worker.
-		let _ = find_frontier_log::<B>(&block.header)?;
+		ensure_log::<B>(&block.header).map_err(|e| Error::from(e))?;
 
 		self.inner.import_block(block, new_cache).map_err(Into::into)
 	}
-}
-
-pub fn find_frontier_log<B: BlockT>(
-	header: &B::Header,
-) -> Result<ConsensusLog, Error> {
-	let mut frontier_log: Option<_> = None;
-	for log in header.digest().logs() {
-		trace!(target: "frontier-consensus", "Checking log {:?}, looking for ethereum block.", log);
-		let log = log.try_to::<ConsensusLog>(OpaqueDigestItemId::Consensus(&FRONTIER_ENGINE_ID));
-		match (log, frontier_log.is_some()) {
-			(Some(_), true) =>
-				return Err(Error::MultiplePostRuntimeLogs),
-			(Some(log), false) => frontier_log = Some(log),
-			_ => trace!(target: "frontier-consensus", "Ignoring digest not meant for us"),
-		}
-	}
-
-	Ok(frontier_log.ok_or(Error::NoPostRuntimeLog)?)
 }
