@@ -15,21 +15,22 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
-use std::{marker::PhantomData, sync::Arc};
-use std::collections::BTreeMap;
+use std::{marker::PhantomData, sync::{Mutex, Arc}};
+use std::collections::{HashMap, BTreeMap};
 use ethereum::{
 	Block as EthereumBlock, Transaction as EthereumTransaction
 };
 use ethereum_types::{H160, H256, H64, U256, U64, H512};
 use jsonrpc_core::{BoxFuture, Result, futures::future::{self, Future}};
-use futures::future::TryFutureExt;
+use futures::{StreamExt, future::TryFutureExt};
 use sp_runtime::{
 	traits::{Block as BlockT, UniqueSaturatedInto, Zero, One, Saturating, BlakeTwo256},
-	transaction_validity::TransactionSource
+	transaction_validity::TransactionSource,
+	generic::OpaqueDigestItemId
 };
 use sp_api::{ProvideRuntimeApi, BlockId, Core, HeaderT};
 use sp_transaction_pool::{TransactionPool, InPoolTransaction};
-use sc_client_api::backend::{StorageProvider, Backend, StateBackend, AuxStore};
+use sc_client_api::{client::BlockchainEvents, backend::{StorageProvider, Backend, StateBackend, AuxStore}};
 use sha3::{Keccak256, Digest};
 use sp_blockchain::{Error as BlockChainError, HeaderMetadata, HeaderBackend};
 use sc_network::{NetworkService, ExHashT};
@@ -1533,3 +1534,80 @@ impl<B, C> EthFilterApiT for EthFilterApi<B, C> where
 		response
 	}
 }
+
+pub struct EthTask<B, C>(PhantomData<(B, C)>);
+
+impl<B, C> EthTask<B, C>
+where
+	C: ProvideRuntimeApi<B> + BlockchainEvents<B>,
+	B: BlockT,
+{
+	pub async fn pending_transaction_task(
+		client: Arc<C>,
+		pending_transactions: Arc<Mutex<HashMap<H256, PendingTransaction>>>,
+		retain_threshold: u64
+	) {
+		let mut notification_st = client.import_notification_stream();
+
+		while let Some(notification) = notification_st.next().await {
+			if let Ok(mut pending_transactions) = pending_transactions.lock() {
+				// As pending transactions have a finite lifespan anyway
+				// we can ignore MultiplePostRuntimeLogs error checks.
+				let log = fp_consensus::find_log(&notification.header.digest()).ok();
+				let post_hashes = log.map(|log| log.into_hashes());
+
+				if let Some(post_hashes) = post_hashes {
+					// Retain all pending transactions that were not
+					// processed in the current block.
+					pending_transactions.retain(|&k, _| !post_hashes.transaction_hashes.contains(&k));
+				}
+
+				let imported_number: u64 = UniqueSaturatedInto::<u64>::unique_saturated_into(
+					*notification.header.number()
+				);
+
+				pending_transactions.retain(|_, v| {
+					// Drop all the transactions that exceeded the given lifespan.
+					let lifespan_limit = v.at_block + retain_threshold;
+					lifespan_limit > imported_number
+				});
+			}
+		}
+	}
+
+	pub async fn filter_pool_task(
+		client: Arc<C>,
+		filter_pool: Arc<Mutex<BTreeMap<U256, FilterPoolItem>>>,
+		retain_threshold: u64
+	) {
+		let mut notification_st = client.import_notification_stream();
+
+		while let Some(notification) = notification_st.next().await {
+			if let Ok(filter_pool) = &mut filter_pool.lock() {
+				let imported_number: u64 = UniqueSaturatedInto::<u64>::unique_saturated_into(
+					*notification.header.number()
+				);
+
+				// BTreeMap::retain is unstable :c.
+				// 1. We collect all keys to remove.
+				// 2. We remove them.
+				let remove_list: Vec<_> = filter_pool
+					.iter()
+					.filter_map(|(&k, v)| {
+						let lifespan_limit = v.at_block + retain_threshold;
+						if lifespan_limit <= imported_number {
+							Some(k)
+						} else {
+							None
+						}
+					})
+					.collect();
+
+				for key in remove_list {
+					filter_pool.remove(&key);
+				}
+			}
+		}
+	}
+}
+
