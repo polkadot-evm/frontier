@@ -43,7 +43,6 @@ use fc_rpc_core::types::{
 	BlockTransactions, TransactionRequest, PendingTransactions, PendingTransaction,
 };
 use fp_rpc::{EthereumRuntimeRPCApi, ConvertTransaction, TransactionStatus};
-use fp_consensus::{ConsensusLog, PostHashes, FRONTIER_ENGINE_ID};
 use crate::{internal_err, error_on_execution_failure, EthSigner, public_key};
 
 pub use fc_rpc_core::{EthApiServer, NetApiServer, Web3ApiServer, EthFilterApiServer};
@@ -303,7 +302,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> where
 
 	// Asumes there is only one mapped canonical block in the AuxStore, otherwise something is wrong
 	fn load_hash(&self, hash: H256) -> Result<Option<BlockId<B>>> {
-		let hashes = self.backend.mapping_db().block_hashes(&hash)
+		let hashes = self.backend.mapping().block_hashes(&hash)
 			.map_err(|err| internal_err(format!("fetch aux store failed: {:?}", err)))?;
 		let out: Vec<H256> = hashes.into_iter()
 			.filter_map(|h| {
@@ -332,7 +331,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> where
 	}
 
 	fn load_transactions(&self, transaction_hash: H256) -> Result<Option<(H256, u32)>> {
-		let transaction_metadata = self.backend.mapping_db().transaction_metadata(&transaction_hash)
+		let transaction_metadata = self.backend.mapping().transaction_metadata(&transaction_hash)
 			.map_err(|err| internal_err(format!("fetch aux store failed: {:?}", err)))?;
 
 		if transaction_metadata.len() == 1 {
@@ -1554,30 +1553,18 @@ where
 			if let Ok(mut pending_transactions) = pending_transactions.lock() {
 				// As pending transactions have a finite lifespan anyway
 				// we can ignore MultiplePostRuntimeLogs error checks.
-				let mut frontier_log: Option<_> = None;
-				for log in notification.header.digest().logs.iter().rev() {
-					let log = log.try_to::<ConsensusLog>(OpaqueDigestItemId::Consensus(
-						&FRONTIER_ENGINE_ID,
-					));
-					if log.is_some() {
-						frontier_log = log;
-						break;
-					}
+				let log = fp_consensus::find_log(&notification.header.digest()).ok();
+				let post_hashes = log.map(|log| log.into_hashes());
+
+				if let Some(post_hashes) = post_hashes {
+					// Retain all pending transactions that were not
+					// processed in the current block.
+					pending_transactions.retain(|&k, _| !post_hashes.transaction_hashes.contains(&k));
 				}
-	
+
 				let imported_number: u64 = UniqueSaturatedInto::<u64>::unique_saturated_into(
 					*notification.header.number()
 				);
-	
-				if let Some(ConsensusLog::PostHashes(PostHashes {
-					block_hash: _,
-					transaction_hashes,
-				})) = frontier_log
-				{
-					// Retain all pending transactions that were not
-					// processed in the current block.
-					pending_transactions.retain(|&k, _| !transaction_hashes.contains(&k));
-				}
 	
 				pending_transactions.retain(|_, v| {
 					// Drop all the transactions that exceeded the given lifespan.
