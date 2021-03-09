@@ -1537,7 +1537,7 @@ impl<B, C> EthFilterApiT for EthFilterApi<B, C> where
 
 pub struct EthTask<B, C>(PhantomData<(B, C)>);
 
-impl<B, C> EthTask<B, C> 
+impl<B, C> EthTask<B, C>
 where
 	C: ProvideRuntimeApi<B> + BlockchainEvents<B>,
 	B: BlockT,
@@ -1546,9 +1546,9 @@ where
 		client: Arc<C>,
 		pending_transactions: Arc<Mutex<HashMap<H256, PendingTransaction>>>,
 		retain_threshold: u64
-	) {	
+	) {
 		let mut notification_st = client.import_notification_stream();
-	
+
 		while let Some(notification) = notification_st.next().await {
 			if let Ok(mut pending_transactions) = pending_transactions.lock() {
 				// As pending transactions have a finite lifespan anyway
@@ -1565,7 +1565,7 @@ where
 				let imported_number: u64 = UniqueSaturatedInto::<u64>::unique_saturated_into(
 					*notification.header.number()
 				);
-	
+
 				pending_transactions.retain(|_, v| {
 					// Drop all the transactions that exceeded the given lifespan.
 					let lifespan_limit = v.at_block + retain_threshold;
@@ -1574,20 +1574,20 @@ where
 			}
 		}
 	}
-	
+
 	pub async fn filter_pool_task(
 		client: Arc<C>,
 		filter_pool: Arc<Mutex<BTreeMap<U256, FilterPoolItem>>>,
 		retain_threshold: u64
 	) {
 		let mut notification_st = client.import_notification_stream();
-	
+
 		while let Some(notification) = notification_st.next().await {
 			if let Ok(filter_pool) = &mut filter_pool.lock() {
 				let imported_number: u64 = UniqueSaturatedInto::<u64>::unique_saturated_into(
 					*notification.header.number()
 				);
-				
+
 				// BTreeMap::retain is unstable :c.
 				// 1. We collect all keys to remove.
 				// 2. We remove them.
@@ -1602,7 +1602,7 @@ where
 						}
 					})
 					.collect();
-	
+
 				for key in remove_list {
 					filter_pool.remove(&key);
 				}
