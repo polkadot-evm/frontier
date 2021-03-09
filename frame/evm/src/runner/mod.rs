@@ -16,7 +16,6 @@
 // limitations under the License.
 
 pub mod stack;
-pub mod builtin;
 
 use sp_std::vec::Vec;
 use sp_core::{H160, U256, H256};
@@ -31,7 +30,7 @@ pub trait Runner<T: Config> {
 		target: H160,
 		input: Vec<u8>,
 		value: U256,
-		gas_limit: u32,
+		gas_limit: u64,
 		gas_price: Option<U256>,
 		nonce: Option<U256>,
 		config: &evm::Config,
@@ -41,7 +40,7 @@ pub trait Runner<T: Config> {
 		source: H160,
 		init: Vec<u8>,
 		value: U256,
-		gas_limit: u32,
+		gas_limit: u64,
 		gas_price: Option<U256>,
 		nonce: Option<U256>,
 		config: &evm::Config,
@@ -52,7 +51,7 @@ pub trait Runner<T: Config> {
 		init: Vec<u8>,
 		salt: H256,
 		value: U256,
-		gas_limit: u32,
+		gas_limit: u64,
 		gas_price: Option<U256>,
 		nonce: Option<U256>,
 		config: &evm::Config,

@@ -12,9 +12,11 @@ jsonrpc-derive = "14.0.3"
 jsonrpc-core-client = "14.0.3"
 jsonrpc-pubsub = "15.0.0"
 log = "0.4.8"
-ethereum-types = "0.9.0"
+ethereum-types = "0.10.0"
 fc-consensus = { path = "../consensus" }
+fc-db = { path = "../db" }
 fc-rpc-core = { path = "../rpc-core" }
+fp-consensus = { path = "../../primitives/consensus" }
 fp-rpc = { path = "../../primitives/rpc" }
 fp-storage = { path = "../../primitives/storage"}
 sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
@@ -30,9 +32,9 @@ sc-network = { git = "https://github.com/paritytech/substrate.git", branch = "fr
 pallet-evm = { path = "../../frame/evm" }
 fp-evm = { path = "../../primitives/evm" }
 pallet-ethereum = { path = "../../frame/ethereum" }
-ethereum = { version = "0.5", features = ["with-codec"] }
+ethereum = { version = "0.6", features = ["with-codec"] }
 codec = { package = "parity-scale-codec", version = "1.0.0" }
-rlp = "0.4"
+rlp = "0.5"
 futures = { version = "0.3.1", features = ["compat"] }
 sha3 = "0.8"
 rustc-hex = { version = "2.1.0", default-features = false }

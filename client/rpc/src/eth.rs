@@ -15,37 +15,39 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
-
-use std::{marker::PhantomData, sync::Arc};
-use std::collections::BTreeMap;
+use std::{marker::PhantomData, sync::{Mutex, Arc}};
+use std::collections::{HashMap, BTreeMap};
 use ethereum::{
 	Block as EthereumBlock, Transaction as EthereumTransaction
 };
 use ethereum_types::{H160, H256, H64, U256, U64, H512};
 use jsonrpc_core::{BoxFuture, Result, futures::future::{self, Future}};
-use futures::future::TryFutureExt;
+use futures::{StreamExt, future::TryFutureExt};
 use sp_runtime::{
 	traits::{Block as BlockT, UniqueSaturatedInto, Zero, One, Saturating, BlakeTwo256},
-	transaction_validity::TransactionSource
+	transaction_validity::TransactionSource,
+	generic::OpaqueDigestItemId
 };
 use sp_api::{ProvideRuntimeApi, BlockId, Core, HeaderT};
 use sp_transaction_pool::{TransactionPool, InPoolTransaction};
-use sc_client_api::backend::{StorageProvider, Backend, StateBackend, AuxStore};
+use sc_client_api::{client::BlockchainEvents, backend::{StorageProvider, Backend, StateBackend, AuxStore}};
 use sha3::{Keccak256, Digest};
 use sp_blockchain::{Error as BlockChainError, HeaderMetadata, HeaderBackend};
 use sc_network::{NetworkService, ExHashT};
-use fc_rpc_core::{EthApi as EthApiT, NetApi as NetApiT, Web3Api as Web3ApiT};
+use fc_rpc_core::{
+	EthApi as EthApiT, NetApi as NetApiT, Web3Api as Web3ApiT, EthFilterApi as EthFilterApiT
+};
 use fc_rpc_core::types::{
-	BlockNumber, Bytes, CallRequest, Filter, FilteredParams, Index, Log, Receipt, RichBlock,
-	SyncStatus, SyncInfo, Transaction, Work, Rich, Block, BlockTransactions, VariadicValue,
-	TransactionRequest, PendingTransactions, PendingTransaction,
+	BlockNumber, Bytes, CallRequest, Filter, FilteredParams, FilterChanges, FilterPool, FilterPoolItem,
+	FilterType, Index, Log, Receipt, RichBlock, SyncStatus, SyncInfo, Transaction, Work, Rich, Block,
+	BlockTransactions, TransactionRequest, PendingTransactions, PendingTransaction,
 };
 use fp_rpc::{EthereumRuntimeRPCApi, ConvertTransaction, TransactionStatus};
 use fp_storage::PALLET_ETHEREUM_SCHEMA;
 use crate::{internal_err, error_on_execution_failure, EthSigner, public_key};
 use sp_storage::StorageKey;
 
-pub use fc_rpc_core::{EthApiServer, NetApiServer, Web3ApiServer};
+pub use fc_rpc_core::{EthApiServer, NetApiServer, Web3ApiServer, EthFilterApiServer};
 use codec::{self, Encode, Decode};
 use pallet_ethereum::EthereumStorageSchema;
 use crate::overrides::{StorageOverride, RuntimeApiStorageOverride};
@@ -60,6 +62,7 @@ pub struct EthApi<B: BlockT, C, P, CT, BE, H: ExHashT> {
 	overrides: BTreeMap<EthereumStorageSchema, Box<dyn StorageOverride<B> + Send + Sync>>,
 	fallback: Box<dyn StorageOverride<B> + Send + Sync>,
 	pending_transactions: PendingTransactions,
+	backend: Arc<fc_db::Backend<B>>,
 	_marker: PhantomData<(B, BE)>,
 }
 
@@ -77,6 +80,7 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> where
 		pending_transactions: PendingTransactions,
 		signers: Vec<Box<dyn EthSigner>>,
 		overrides: BTreeMap<EthereumStorageSchema, Box<dyn StorageOverride<B> + Send + Sync>>,
+		backend: Arc<fc_db::Backend<B>>,
 		is_authority: bool,
 	) -> Self {
 		Self {
@@ -89,6 +93,7 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> where
 			overrides,
 			fallback: Box::new(RuntimeApiStorageOverride::new(client)),
 			pending_transactions,
+			backend,
 			_marker: PhantomData,
 		}
 	}
@@ -121,7 +126,7 @@ fn rich_block_build(
 			logs_bloom: Some(block.header.logs_bloom),
 			timestamp: U256::from(block.header.timestamp / 1000),
 			difficulty: block.header.difficulty,
-			total_difficulty: None,
+			total_difficulty: U256::zero(),
 			seal_fields: vec![
 				Bytes(block.header.mix_hash.as_bytes().to_vec()),
 				Bytes(block.header.nonce.as_bytes().to_vec())
@@ -201,7 +206,7 @@ fn transaction_build(
 		gas: transaction.gas_limit,
 		input: Bytes(transaction.clone().input),
 		creates: status.as_ref().map_or(None, |status| status.contract_address),
-		raw: Bytes(rlp::encode(&transaction)),
+		raw: Bytes(rlp::encode(&transaction).to_vec()),
 		public_key: pubkey.as_ref().map(|pk| H512::from(pk)),
 		chain_id: transaction.signature.chain_id().map(U64::from),
 		standard_v: U256::from(transaction.signature.standard_v()),
@@ -209,6 +214,71 @@ fn transaction_build(
 		r: U256::from(transaction.signature.r().as_bytes()),
 		s: U256::from(transaction.signature.s().as_bytes()),
 	}
+}
+
+fn logs_build(
+	filter: Filter,
+	blocks_and_statuses: Vec<(EthereumBlock, Vec<TransactionStatus>)>
+) -> Vec<Log> {
+	let params = FilteredParams::new(Some(filter.clone()));
+	let mut ret = Vec::new();
+	for (block, statuses) in blocks_and_statuses {
+		let mut block_log_index: u32 = 0;
+		let block_hash = H256::from_slice(
+			Keccak256::digest(&rlp::encode(&block.header)).as_slice()
+		);
+		for status in statuses.iter() {
+			let logs = status.logs.clone();
+			let mut transaction_log_index: u32 = 0;
+			let transaction_hash = status.transaction_hash;
+			for ethereum_log in logs {
+				let mut log = Log {
+					address: ethereum_log.address.clone(),
+					topics: ethereum_log.topics.clone(),
+					data: Bytes(ethereum_log.data.clone()),
+					block_hash: None,
+					block_number: None,
+					transaction_hash: None,
+					transaction_index: None,
+					log_index: None,
+					transaction_log_index: None,
+					removed: false,
+				};
+				let mut add: bool = true;
+				if let (
+					Some(_),
+					Some(_)
+				) = (
+					filter.address.clone(),
+					filter.topics.clone(),
+				) {
+					if !params.filter_address(&log) || !params.filter_topics(&log) {
+						add = false;
+					}
+				} else if let Some(_) = filter.address {
+					if !params.filter_address(&log) {
+						add = false;
+					}
+				} else if let Some(_) = &filter.topics {
+					if !params.filter_topics(&log) {
+						add = false;
+					}
+				}
+				if add {
+					log.block_hash = Some(block_hash);
+					log.block_number = Some(block.header.number.clone());
+					log.transaction_hash = Some(transaction_hash);
+					log.transaction_index = Some(U256::from(status.transaction_index));
+					log.log_index = Some(U256::from(block_log_index));
+					log.transaction_log_index = Some(U256::from(transaction_log_index));
+					ret.push(log);
+				}
+				transaction_log_index += 1;
+				block_log_index += 1;
+			}
+		}
+	}
+	ret
 }
 
 impl<B, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> where
@@ -247,12 +317,8 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> where
 
 	// Asumes there is only one mapped canonical block in the AuxStore, otherwise something is wrong
 	fn load_hash(&self, hash: H256) -> Result<Option<BlockId<B>>> {
-		let hashes = match fc_consensus::load_block_hash::<B, _>(self.client.as_ref(), hash)
-			.map_err(|err| internal_err(format!("fetch aux store failed: {:?}", err)))?
-		{
-			Some(hashes) => hashes,
-			None => return Ok(None),
-		};
+		let hashes = self.backend.mapping().block_hashes(&hash)
+			.map_err(|err| internal_err(format!("fetch aux store failed: {:?}", err)))?;
 		let out: Vec<H256> = hashes.into_iter()
 			.filter_map(|h| {
 				if self.is_canon(h) {
@@ -287,30 +353,14 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> where
 	}
 
 	fn load_transactions(&self, transaction_hash: H256) -> Result<Option<(H256, u32)>> {
-		let mut transactions: Vec<(H256, u32)> = Vec::new();
-		match fc_consensus::load_transaction_metadata(
-			self.client.as_ref(),
-			transaction_hash,
-		).map_err(|err| internal_err(format!("fetch aux store failed: {:?}", err)))? {
-			Some(metadata) => {
-				for (block_hash, index) in metadata {
-					match self.load_hash(block_hash)
-						.map_err(|err| internal_err(format!("{:?}", err)))?
-					{
-						Some(_) => {
-							transactions.push((block_hash, index));
-						},
-						_ => {},
-					};
-				}
-			},
-			None => return Ok(None),
-		};
+		let transaction_metadata = self.backend.mapping().transaction_metadata(&transaction_hash)
+			.map_err(|err| internal_err(format!("fetch aux store failed: {:?}", err)))?;
 
-		if transactions.len() == 1 {
-			return Ok(Some(transactions[0]));
+		if transaction_metadata.len() == 1 {
+			Ok(Some((transaction_metadata[0].ethereum_block_hash, transaction_metadata[0].ethereum_index)))
+		} else {
+			Ok(None)
 		}
-		Ok(None)
 	}
 }
 
@@ -864,6 +914,10 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 					Err(_) => {
 						lower = mid;
 						mid = (lower + upper + 1) / 2;
+
+						if mid == lower {
+							break;
+						}
 					}
 				}
 			}
@@ -1033,7 +1087,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 								data: Bytes(log.data.clone()),
 								block_hash: Some(block_hash),
 								block_number: Some(block.header.number),
-								transaction_hash: Some(hash),
+								transaction_hash: Some(status.transaction_hash),
 								transaction_index: Some(status.transaction_index.into()),
 								log_index: Some(U256::from(
 									(pre_receipts_log_index.unwrap_or(0)) + i as u32
@@ -1066,10 +1120,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 
 	fn logs(&self, filter: Filter) -> Result<Vec<Log>> {
 		let mut blocks_and_statuses = Vec::new();
-		let mut ret = Vec::new();
-		let params = FilteredParams::new(Some(filter.clone()));
-
-		if let Some(hash) = filter.block_hash {
+		if let Some(hash) = filter.block_hash.clone() {
 			let id = match self.load_hash(hash)
 				.map_err(|err| internal_err(format!("{:?}", err)))?
 			{
@@ -1085,14 +1136,18 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 				blocks_and_statuses.push((block, statuses));
 			}
 		} else {
-			let mut current_number = filter.to_block
+			let best_number = self.client.info().best_number;
+			let mut current_number = filter
+				.to_block.clone()
 				.and_then(|v| v.to_min_block_num())
 				.map(|s| s.unique_saturated_into())
-				.unwrap_or(
-					self.client.info().best_number
-				);
+				.unwrap_or(best_number);
 
-			let from_number = filter.from_block
+			if current_number > best_number {
+				current_number = best_number;
+			}
+
+			let from_number = filter.from_block.clone()
 				.and_then(|v| v.to_min_block_num())
 				.map(|s| s.unique_saturated_into())
 				.unwrap_or(
@@ -1117,64 +1172,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 			}
 		}
 
-		for (block, statuses) in blocks_and_statuses {
-			let mut block_log_index: u32 = 0;
-			let block_hash = H256::from_slice(
-				Keccak256::digest(&rlp::encode(&block.header)).as_slice()
-			);
-			for status in statuses.iter() {
-				let logs = status.logs.clone();
-				let mut transaction_log_index: u32 = 0;
-				let transaction_hash = status.transaction_hash;
-				for ethereum_log in logs {
-					let mut log = Log {
-						address: ethereum_log.address.clone(),
-						topics: ethereum_log.topics.clone(),
-						data: Bytes(ethereum_log.data.clone()),
-						block_hash: None,
-						block_number: None,
-						transaction_hash: None,
-						transaction_index: None,
-						log_index: None,
-						transaction_log_index: None,
-						removed: false,
-					};
-					let mut add: bool = true;
-					if let (
-						Some(_),
-						Some(_)
-					) = (
-						filter.address.clone(),
-						filter.topics.clone(),
-					) {
-						if !params.filter_address(&log) || !params.filter_topics(&log) {
-							add = false;
-						}
-					} else if let Some(_) = filter.address {
-						if !params.filter_address(&log) {
-							add = false;
-						}
-					} else if let Some(_) = &filter.topics {
-						if !params.filter_topics(&log) {
-							add = false;
-						}
-					}
-					if add {
-						log.block_hash = Some(block_hash);
-						log.block_number = Some(block.header.number.clone());
-						log.transaction_hash = Some(transaction_hash);
-						log.transaction_index = Some(U256::from(status.transaction_index));
-						log.log_index = Some(U256::from(block_log_index));
-						log.transaction_log_index = Some(U256::from(transaction_log_index));
-						ret.push(log);
-					}
-					transaction_log_index += 1;
-					block_log_index += 1;
-				}
-			}
-		}
-
-		Ok(ret)
+		Ok(logs_build(filter,blocks_and_statuses))
 	}
 
 	fn work(&self) -> Result<Work> {
@@ -1279,5 +1277,363 @@ impl<B, C> Web3ApiT for Web3Api<B, C> where
 		Ok(H256::from_slice(
 			Keccak256::digest(&input.into_vec()).as_slice()
 		))
+	}
+}
+
+pub struct EthFilterApi<B, C> {
+	client: Arc<C>,
+	filter_pool: FilterPool,
+	max_stored_filters: usize,
+	_marker: PhantomData<B>,
+}
+
+impl<B, C> EthFilterApi<B, C> {
+	pub fn new(
+		client: Arc<C>,
+		filter_pool: FilterPool,
+		max_stored_filters: usize,
+	) -> Self {
+		Self {
+			client,
+			filter_pool,
+			max_stored_filters,
+			_marker: PhantomData,
+		}
+	}
+}
+
+impl<B, C> EthFilterApi<B, C> where
+	C: ProvideRuntimeApi<B> + AuxStore,
+	C::Api: EthereumRuntimeRPCApi<B>,
+	C: HeaderBackend<B> + HeaderMetadata<B, Error=BlockChainError> + 'static,
+	C: Send + Sync + 'static,
+	B: BlockT<Hash=H256> + Send + Sync + 'static,
+{
+	fn create_filter(&self, filter_type: FilterType) -> Result<U256> {
+		let block_number = UniqueSaturatedInto::<u64>::unique_saturated_into(
+			self.client.info().best_number
+		);
+		let pool = self.filter_pool.clone();
+		let response = if let Ok(locked) = &mut pool.lock() {
+			if locked.len() >= self.max_stored_filters {
+				return Err(internal_err(
+					format!("Filter pool is full (limit {:?}).", self.max_stored_filters)
+				));
+			}
+			let last_key = match locked.iter().next_back() {
+				Some((k,_)) => *k,
+				None => U256::zero()
+			};
+			// Assume `max_stored_filters` is always < U256::max.
+			let key = last_key.checked_add(U256::one()).unwrap();
+			locked.insert(
+				key,
+				FilterPoolItem {
+					last_poll: BlockNumber::Num(block_number),
+					filter_type: filter_type,
+					at_block: block_number
+				}
+			);
+			Ok(key)
+		} else {
+			Err(internal_err("Filter pool is not available."))
+		};
+		response
+	}
+}
+
+impl<B, C> EthFilterApiT for EthFilterApi<B, C> where
+	C: ProvideRuntimeApi<B> + AuxStore,
+	C::Api: EthereumRuntimeRPCApi<B>,
+	C: HeaderBackend<B> + HeaderMetadata<B, Error=BlockChainError> + 'static,
+	C: Send + Sync + 'static,
+	B: BlockT<Hash=H256> + Send + Sync + 'static,
+{
+	fn new_filter(&self, filter: Filter) -> Result<U256> {
+		self.create_filter(FilterType::Log(filter))
+	}
+
+	fn new_block_filter(&self) -> Result<U256> {
+		self.create_filter(FilterType::Block)
+	}
+
+	fn new_pending_transaction_filter(&self) -> Result<U256> {
+		Err(internal_err("Method not available."))
+	}
+
+	fn filter_changes(&self, index: Index) -> Result<FilterChanges> {
+		let key = U256::from(index.value());
+		let block_number = UniqueSaturatedInto::<u64>::unique_saturated_into(
+			self.client.info().best_number
+		);
+		let pool = self.filter_pool.clone();
+		// Try to lock.
+		let response = if let Ok(locked) = &mut pool.lock() {
+			// Try to get key.
+			if let Some(pool_item) = locked.clone().get(&key) {
+				match &pool_item.filter_type {
+					// For each block created since last poll, get a vector of ethereum hashes.
+					FilterType::Block => {
+						let last = pool_item.last_poll.to_min_block_num().unwrap();
+						let next = block_number + 1;
+						let mut ethereum_hashes: Vec<H256> = Vec::new();
+						for n in last..next {
+							let id = BlockId::Number(n.unique_saturated_into());
+							let block = self.client.runtime_api()
+								.current_block(&id)
+								.map_err(|err| internal_err(
+									format!("fetch runtime block failed: {:?}", err)
+								))?;
+							if let Some(block) = block {
+								ethereum_hashes.push(block.header.hash())
+							}
+						}
+						// Update filter `last_poll`.
+						locked.insert(
+							key,
+							FilterPoolItem {
+								last_poll: BlockNumber::Num(next),
+								filter_type: pool_item.clone().filter_type,
+								at_block: pool_item.at_block
+							}
+						);
+						Ok(FilterChanges::Hashes(ethereum_hashes))
+					},
+					// For each event since last poll, get a vector of ethereum logs.
+					FilterType::Log(filter) => {
+						// Either the filter-specific `to` block or best block.
+						let best_number = self.client.info().best_number;
+						let mut current_number = filter
+							.to_block.clone()
+							.and_then(|v| v.to_min_block_num())
+							.map(|s| s.unique_saturated_into())
+							.unwrap_or(best_number);
+
+						if current_number > best_number {
+							current_number = best_number;
+						}
+
+						// The from clause is the max(last_poll, filter_from).
+						let last_poll = pool_item
+							.last_poll
+							.to_min_block_num().unwrap()
+							.unique_saturated_into();
+
+						let filter_from = filter.from_block.clone()
+							.and_then(|v| v.to_min_block_num())
+							.map(|s| s.unique_saturated_into())
+							.unwrap_or(
+								last_poll
+							);
+
+						let from_number = std::cmp::max(last_poll, filter_from);
+						// Build the response.
+						let mut blocks_and_statuses = Vec::new();
+						while current_number >= from_number {
+							let id = BlockId::Number(current_number);
+
+							let (block, _, statuses) = self.client.runtime_api()
+								.current_all(&id)
+								.map_err(|err| internal_err(
+									format!("fetch runtime account basic failed: {:?}", err)
+								))?;
+
+							if let (Some(block), Some(statuses)) = (block, statuses) {
+								blocks_and_statuses.push((block, statuses));
+							}
+
+							if current_number == Zero::zero() {
+								break
+							} else {
+								current_number = current_number.saturating_sub(One::one());
+							}
+						}
+						// Update filter `last_poll`.
+						locked.insert(
+							key,
+							FilterPoolItem {
+								last_poll: BlockNumber::Num(
+									block_number + 1
+								),
+								filter_type: pool_item.clone().filter_type,
+								at_block: pool_item.at_block
+							}
+						);
+						Ok(FilterChanges::Logs(
+							logs_build(filter.clone(), blocks_and_statuses)
+						))
+					},
+					// Should never reach here.
+					_ => {
+						Err(internal_err("Method not available."))
+					}
+				}
+			} else {
+				Err(internal_err(format!("Filter id {:?} does not exist.", key)))
+			}
+		} else {
+			Err(internal_err("Filter pool is not available."))
+		};
+		response
+	}
+
+	fn filter_logs(&self, index: Index) -> Result<Vec<Log>> {
+		let key = U256::from(index.value());
+		let pool = self.filter_pool.clone();
+		// Try to lock.
+		let response = if let Ok(locked) = &mut pool.lock() {
+			// Try to get key.
+			if let Some(pool_item) = locked.clone().get(&key) {
+				match &pool_item.filter_type {
+					FilterType::Log(filter) => {
+						let best_number = self.client.info().best_number;
+						let mut current_number = filter
+							.to_block.clone()
+							.and_then(|v| v.to_min_block_num())
+							.map(|s| s.unique_saturated_into())
+							.unwrap_or(best_number);
+
+						if current_number > best_number {
+							current_number = best_number;
+						}
+
+						if current_number > self.client.info().best_number {
+							current_number = self.client.info().best_number;
+						}
+
+						let from_number = filter.from_block.clone()
+							.and_then(|v| v.to_min_block_num())
+							.map(|s| s.unique_saturated_into())
+							.unwrap_or(
+								self.client.info().best_number
+							);
+
+						let mut blocks_and_statuses = Vec::new();
+						while current_number >= from_number {
+							let id = BlockId::Number(current_number);
+
+							let (block, _, statuses) = self.client.runtime_api()
+								.current_all(&id)
+								.map_err(|err| internal_err(
+									format!("fetch runtime account basic failed: {:?}", err)
+								))?;
+
+							if let (Some(block), Some(statuses)) = (block, statuses) {
+								blocks_and_statuses.push((block, statuses));
+							}
+
+							if current_number == Zero::zero() {
+								break
+							} else {
+								current_number = current_number.saturating_sub(One::one());
+							}
+						}
+						Ok(logs_build(filter.clone(), blocks_and_statuses))
+					},
+					_ => Err(internal_err(
+						format!("Filter id {:?} is not a Log filter.", key)
+					))
+				}
+			} else {
+				Err(internal_err(format!("Filter id {:?} does not exist.", key)))
+			}
+		} else {
+			Err(internal_err("Filter pool is not available."))
+		};
+		response
+	}
+
+	fn uninstall_filter(&self, index: Index) -> Result<bool> {
+		let key = U256::from(index.value());
+		let pool = self.filter_pool.clone();
+		// Try to lock.
+		let response = if let Ok(locked) = &mut pool.lock() {
+			if let Some(_) = locked.remove(&key) {
+				Ok(true)
+			} else {
+				Err(internal_err(
+					format!("Filter id {:?} does not exist.", key)
+				))
+			}
+		} else {
+			Err(internal_err("Filter pool is not available."))
+		};
+		response
+	}
+}
+
+pub struct EthTask<B, C>(PhantomData<(B, C)>);
+
+impl<B, C> EthTask<B, C>
+where
+	C: ProvideRuntimeApi<B> + BlockchainEvents<B>,
+	B: BlockT,
+{
+	pub async fn pending_transaction_task(
+		client: Arc<C>,
+		pending_transactions: Arc<Mutex<HashMap<H256, PendingTransaction>>>,
+		retain_threshold: u64
+	) {
+		let mut notification_st = client.import_notification_stream();
+
+		while let Some(notification) = notification_st.next().await {
+			if let Ok(mut pending_transactions) = pending_transactions.lock() {
+				// As pending transactions have a finite lifespan anyway
+				// we can ignore MultiplePostRuntimeLogs error checks.
+				let log = fp_consensus::find_log(&notification.header.digest()).ok();
+				let post_hashes = log.map(|log| log.into_hashes());
+
+				if let Some(post_hashes) = post_hashes {
+					// Retain all pending transactions that were not
+					// processed in the current block.
+					pending_transactions.retain(|&k, _| !post_hashes.transaction_hashes.contains(&k));
+				}
+
+				let imported_number: u64 = UniqueSaturatedInto::<u64>::unique_saturated_into(
+					*notification.header.number()
+				);
+
+				pending_transactions.retain(|_, v| {
+					// Drop all the transactions that exceeded the given lifespan.
+					let lifespan_limit = v.at_block + retain_threshold;
+					lifespan_limit > imported_number
+				});
+			}
+		}
+	}
+
+	pub async fn filter_pool_task(
+		client: Arc<C>,
+		filter_pool: Arc<Mutex<BTreeMap<U256, FilterPoolItem>>>,
+		retain_threshold: u64
+	) {
+		let mut notification_st = client.import_notification_stream();
+
+		while let Some(notification) = notification_st.next().await {
+			if let Ok(filter_pool) = &mut filter_pool.lock() {
+				let imported_number: u64 = UniqueSaturatedInto::<u64>::unique_saturated_into(
+					*notification.header.number()
+				);
+
+				// BTreeMap::retain is unstable :c.
+				// 1. We collect all keys to remove.
+				// 2. We remove them.
+				let remove_list: Vec<_> = filter_pool
+					.iter()
+					.filter_map(|(&k, v)| {
+						let lifespan_limit = v.at_block + retain_threshold;
+						if lifespan_limit <= imported_number {
+							Some(k)
+						} else {
+							None
+						}
+					})
+					.collect();
+
+				for key in remove_list {
+					filter_pool.remove(&key);
+				}
+			}
+		}
 	}
 }

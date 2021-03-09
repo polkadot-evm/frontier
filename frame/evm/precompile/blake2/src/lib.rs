@@ -29,14 +29,14 @@ use evm::{ExitSucceed, ExitError};
 pub struct Blake2F;
 
 impl LinearCostPrecompile for Blake2F {
-	const BASE: usize = 15;
-	const WORD: usize = 3;
+	const BASE: u64 = 15;
+	const WORD: u64 = 3;
 
 	/// Format of `input`:
 	/// [4 bytes for rounds][64 bytes for h][128 bytes for m][8 bytes for t_0][8 bytes for t_1][1 byte for f]
 	fn execute(
 		input: &[u8],
-		_: usize,
+		_: u64,
 	) -> core::result::Result<(ExitSucceed, Vec<u8>), ExitError> {
 		const BLAKE2_F_ARG_LEN: usize = 213;
 

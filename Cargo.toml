@@ -1,5 +1,6 @@
 [workspace]
 members = [
+	"frame/dynamic-fee",
 	"frame/ethereum",
 	"frame/evm",
 	"frame/evm/precompile/simple",
@@ -11,6 +12,8 @@ members = [
 	"client/consensus",
 	"client/rpc-core",
 	"client/rpc",
+	"client/db",
+	"client/mapping-sync",
 	"primitives/consensus",
 	"primitives/evm",
 	"primitives/rpc",

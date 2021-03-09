@@ -70,15 +70,18 @@ use codec::{Encode, Decode};
 use serde::{Serialize, Deserialize};
 use frame_support::{decl_module, decl_storage, decl_event, decl_error};
 use frame_support::weights::{Weight, Pays, PostDispatchInfo};
-use frame_support::traits::{Currency, ExistenceRequirement, Get};
+use frame_support::traits::{Currency, ExistenceRequirement, Get, WithdrawReasons, Imbalance, OnUnbalanced};
 use frame_support::dispatch::DispatchResultWithPostInfo;
 use frame_system::RawOrigin;
 use sp_core::{U256, H256, H160, Hasher};
-use sp_runtime::{AccountId32, traits::{UniqueSaturatedInto, BadOrigin}};
+use sp_runtime::{AccountId32, traits::{UniqueSaturatedInto, BadOrigin, Saturating}};
 use evm::Config as EvmConfig;
 
 /// Type alias for currency balance.
 pub type BalanceOf<T> = <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
+
+/// Type alias for negative imbalance during fees
+type NegativeImbalanceOf<C, T> = <C as Currency<<T as frame_system::Config>::AccountId>>::NegativeImbalance;
 
 /// Trait that outputs the current transaction gas price.
 pub trait FeeCalculator {
@@ -210,25 +213,16 @@ impl<H: Hasher<Out=H256>> AddressMapping<AccountId32> for HashedAddressMapping<H
 
 /// A mapping function that converts Ethereum gas to Substrate weight
 pub trait GasWeightMapping {
-	fn gas_to_weight(gas: usize) -> Weight;
-	fn weight_to_gas(weight: Weight) -> usize;
+	fn gas_to_weight(gas: u64) -> Weight;
+	fn weight_to_gas(weight: Weight) -> u64;
 }
 
 impl GasWeightMapping for () {
-	fn gas_to_weight(gas: usize) -> Weight {
+	fn gas_to_weight(gas: u64) -> Weight {
 		gas as Weight
 	}
-	fn weight_to_gas(weight: Weight) -> usize {
-		weight as usize
-	}
-}
-
-/// Substrate system chain ID.
-pub struct SystemChainId;
-
-impl Get<u64> for SystemChainId {
-	fn get() -> u64 {
-		sp_io::misc::chain_id()
+	fn weight_to_gas(weight: Weight) -> u64 {
+		weight as u64
 	}
 }
 
@@ -261,6 +255,11 @@ pub trait Config: frame_system::Config + pallet_timestamp::Config {
 	/// EVM execution runner.
 	type Runner: Runner<Self>;
 
+	/// To handle fee deduction for EVM transactions. An example is this pallet being used by `pallet_ethereum`
+	/// where the chain implementing `pallet_ethereum` should be able to configure what happens to the fees
+	/// Similar to `OnChargeTransaction` of `pallet_transaction_payment`
+	type OnChargeTransaction: OnChargeEVMTransaction<Self>;
+
 	/// EVM config used in the module.
 	fn config() -> &'static EvmConfig {
 		&ISTANBUL_CONFIG
@@ -283,8 +282,8 @@ pub struct GenesisAccount {
 
 decl_storage! {
 	trait Store for Module<T: Config> as EVM {
-		AccountCodes get(fn account_codes): map hasher(blake2_128_concat) H160 => Vec<u8>;
-		AccountStorages get(fn account_storages):
+		pub AccountCodes get(fn account_codes): map hasher(blake2_128_concat) H160 => Vec<u8>;
+		pub AccountStorages get(fn account_storages):
 			double_map hasher(blake2_128_concat) H160, hasher(blake2_128_concat) H256 => H256;
 	}
 
@@ -375,14 +374,14 @@ decl_module! {
 		}
 
 		/// Issue an EVM call operation. This is similar to a message call transaction in Ethereum.
-		#[weight = T::GasWeightMapping::gas_to_weight(*gas_limit as usize)]
+		#[weight = T::GasWeightMapping::gas_to_weight(*gas_limit)]
 		fn call(
 			origin,
 			source: H160,
 			target: H160,
 			input: Vec<u8>,
 			value: U256,
-			gas_limit: u32,
+			gas_limit: u64,
 			gas_price: U256,
 			nonce: Option<U256>,
 		) -> DispatchResultWithPostInfo {
@@ -416,13 +415,13 @@ decl_module! {
 
 		/// Issue an EVM create operation. This is similar to a contract creation transaction in
 		/// Ethereum.
-		#[weight = T::GasWeightMapping::gas_to_weight(*gas_limit as usize)]
+		#[weight = T::GasWeightMapping::gas_to_weight(*gas_limit)]
 		fn create(
 			origin,
 			source: H160,
 			init: Vec<u8>,
 			value: U256,
-			gas_limit: u32,
+			gas_limit: u64,
 			gas_price: U256,
 			nonce: Option<U256>,
 		) -> DispatchResultWithPostInfo {
@@ -462,14 +461,14 @@ decl_module! {
 		}
 
 		/// Issue an EVM create2 operation.
-		#[weight = T::GasWeightMapping::gas_to_weight(*gas_limit as usize)]
+		#[weight = T::GasWeightMapping::gas_to_weight(*gas_limit)]
 		fn create2(
 			origin,
 			source: H160,
 			init: Vec<u8>,
 			salt: H256,
 			value: U256,
-			gas_limit: u32,
+			gas_limit: u64,
 			gas_price: U256,
 			nonce: Option<U256>,
 		) -> DispatchResultWithPostInfo {
@@ -531,8 +530,27 @@ impl<T: Config> Module<T> {
 
 	/// Remove an account.
 	pub fn remove_account(address: &H160) {
+		if AccountCodes::contains_key(address) {
+			let account_id = T::AddressMapping::into_account_id(*address);
+			frame_system::Module::<T>::dec_ref(&account_id);
+		}
+
 		AccountCodes::remove(address);
 		AccountStorages::remove_prefix(address);
+	}
+
+	/// Create an account.
+	pub fn create_account(address: H160, code: Vec<u8>) {
+		if code.is_empty() {
+			return
+		}
+
+		if !AccountCodes::contains_key(&address) {
+			let account_id = T::AddressMapping::into_account_id(address);
+			frame_system::Module::<T>::inc_ref(&account_id);
+		}
+
+		AccountCodes::insert(address, code);
 	}
 
 	/// Get the account basic in EVM format.
@@ -546,5 +564,113 @@ impl<T: Config> Module<T> {
 			nonce: U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(nonce)),
 			balance: U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(balance)),
 		}
+	}
+}
+
+/// Handle withdrawing, refunding and depositing of transaction fees.
+/// Similar to `OnChargeTransaction` of `pallet_transaction_payment`
+pub trait OnChargeEVMTransaction<T: Config> {
+	type LiquidityInfo: Default;
+
+	/// Before the transaction is executed the payment of the transaction fees
+	/// need to be secured.
+	fn withdraw_fee(who: &H160, fee: U256) -> Result<Self::LiquidityInfo, Error<T>>;
+
+	/// After the transaction was executed the actual fee can be calculated.
+	/// This function should refund any overpaid fees and optionally deposit
+	/// the corrected amount.
+	fn correct_and_deposit_fee(
+		who: &H160,
+		corrected_fee: U256,
+		already_withdrawn: Self::LiquidityInfo,
+	) -> Result<(), Error<T>>;
+}
+
+/// Implements the transaction payment for a module implementing the `Currency`
+/// trait (eg. the pallet_balances) using an unbalance handler (implementing
+/// `OnUnbalanced`).
+/// Similar to `CurrencyAdapter` of `pallet_transaction_payment`
+pub struct EVMCurrencyAdapter<C, OU>(sp_std::marker::PhantomData<(C, OU)>);
+
+impl<T, C, OU> OnChargeEVMTransaction<T> for EVMCurrencyAdapter<C, OU>
+where
+	T: Config,
+	C: Currency<<T as frame_system::Config>::AccountId>,
+	C::PositiveImbalance: Imbalance<
+		<C as Currency<<T as frame_system::Config>::AccountId>>::Balance,
+		Opposite = C::NegativeImbalance,
+	>,
+	C::NegativeImbalance: Imbalance<
+		<C as Currency<<T as frame_system::Config>::AccountId>>::Balance,
+		Opposite = C::PositiveImbalance,
+	>,
+	OU: OnUnbalanced<NegativeImbalanceOf<C, T>>,
+{
+	// Kept type as Option to satisfy bound of Default
+	type LiquidityInfo = Option<NegativeImbalanceOf<C, T>>;
+
+	fn withdraw_fee(who: &H160, fee: U256) -> Result<Self::LiquidityInfo, Error<T>> {
+		let account_id = T::AddressMapping::into_account_id(*who);
+		let imbalance = C::withdraw(
+			&account_id,
+			fee.low_u128().unique_saturated_into(),
+			WithdrawReasons::FEE,
+			ExistenceRequirement::AllowDeath,
+		)
+		.map_err(|_| Error::<T>::BalanceLow)?;
+		Ok(Some(imbalance))
+	}
+
+	fn correct_and_deposit_fee(
+		who: &H160,
+		corrected_fee: U256,
+		already_withdrawn: Self::LiquidityInfo,
+	) -> Result<(), Error<T>> {
+		if let Some(paid) = already_withdrawn {
+			let account_id = T::AddressMapping::into_account_id(*who);
+
+			// Calculate how much refund we should return
+			let refund_amount = paid
+				.peek()
+				.saturating_sub(corrected_fee.low_u128().unique_saturated_into());
+			// refund to the account that paid the fees. If this fails, the
+			// account might have dropped below the existential balance. In
+			// that case we don't refund anything.
+			let refund_imbalance = C::deposit_into_existing(&account_id, refund_amount)
+				.unwrap_or_else(|_| C::PositiveImbalance::zero());
+			// merge the imbalance caused by paying the fees and refunding parts of it again.
+			let adjusted_paid = paid
+				.offset(refund_imbalance)
+				.map_err(|_| Error::<T>::BalanceLow)?;
+			OU::on_unbalanced(adjusted_paid);
+		}
+		Ok(())
+	}
+}
+
+/// Implementation for () does not specify what to do with imbalance
+impl<T> OnChargeEVMTransaction<T> for ()
+	where
+	T: Config,
+	<T::Currency as Currency<<T as frame_system::Config>::AccountId>>::PositiveImbalance:
+		Imbalance<<T::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance, Opposite = <T::Currency as Currency<<T as frame_system::Config>::AccountId>>::NegativeImbalance>,
+	<T::Currency as Currency<<T as frame_system::Config>::AccountId>>::NegativeImbalance:
+		Imbalance<<T::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance, Opposite = <T::Currency as Currency<<T as frame_system::Config>::AccountId>>::PositiveImbalance>, {
+	// Kept type as Option to satisfy bound of Default
+	type LiquidityInfo = Option<NegativeImbalanceOf<T::Currency, T>>;
+
+	fn withdraw_fee(
+		who: &H160,
+		fee: U256,
+	) -> Result<Self::LiquidityInfo, Error<T>> {
+		EVMCurrencyAdapter::<<T as Config>::Currency, ()>::withdraw_fee(who, fee)
+	}
+
+	fn correct_and_deposit_fee(
+		who: &H160,
+		corrected_fee: U256,
+		already_withdrawn: Self::LiquidityInfo,
+	) -> Result<(), Error<T>> {
+		EVMCurrencyAdapter::<<T as Config>::Currency, ()>::correct_and_deposit_fee(who, corrected_fee, already_withdrawn)
 	}
 }
