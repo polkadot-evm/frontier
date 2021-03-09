@@ -43,10 +43,14 @@ use fc_rpc_core::types::{
 	BlockTransactions, TransactionRequest, PendingTransactions, PendingTransaction,
 };
 use fp_rpc::{EthereumRuntimeRPCApi, ConvertTransaction, TransactionStatus};
+use fp_storage::PALLET_ETHEREUM_SCHEMA;
 use crate::{internal_err, error_on_execution_failure, EthSigner, public_key};
+use sp_storage::StorageKey;
 
 pub use fc_rpc_core::{EthApiServer, NetApiServer, Web3ApiServer, EthFilterApiServer};
-use codec::{self, Encode};
+use codec::{self, Encode, Decode};
+use pallet_ethereum::EthereumStorageSchema;
+use crate::overrides::{StorageOverride, RuntimeApiStorageOverride};
 
 pub struct EthApi<B: BlockT, C, P, CT, BE, H: ExHashT> {
 	pool: Arc<P>,
@@ -55,12 +59,19 @@ pub struct EthApi<B: BlockT, C, P, CT, BE, H: ExHashT> {
 	network: Arc<NetworkService<B, H>>,
 	is_authority: bool,
 	signers: Vec<Box<dyn EthSigner>>,
+	overrides: BTreeMap<EthereumStorageSchema, Box<dyn StorageOverride<B> + Send + Sync>>,
+	fallback: Box<dyn StorageOverride<B> + Send + Sync>,
 	pending_transactions: PendingTransactions,
 	backend: Arc<fc_db::Backend<B>>,
 	_marker: PhantomData<(B, BE)>,
 }
 
-impl<B: BlockT, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> {
+impl<B: BlockT, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> where
+	C: ProvideRuntimeApi<B>,
+	C::Api: EthereumRuntimeRPCApi<B>,
+	B: BlockT<Hash=H256> + Send + Sync + 'static,
+	C: Send + Sync + 'static,
+{
 	pub fn new(
 		client: Arc<C>,
 		pool: Arc<P>,
@@ -68,16 +79,19 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> {
 		network: Arc<NetworkService<B, H>>,
 		pending_transactions: PendingTransactions,
 		signers: Vec<Box<dyn EthSigner>>,
+		overrides: BTreeMap<EthereumStorageSchema, Box<dyn StorageOverride<B> + Send + Sync>>,
 		backend: Arc<fc_db::Backend<B>>,
 		is_authority: bool,
 	) -> Self {
 		Self {
-			client,
+			client: client.clone(),
 			pool,
 			convert_transaction,
 			network,
 			is_authority,
 			signers,
+			overrides,
+			fallback: Box::new(RuntimeApiStorageOverride::new(client)),
 			pending_transactions,
 			backend,
 			_marker: PhantomData,
@@ -268,6 +282,7 @@ fn logs_build(
 }
 
 impl<B, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> where
+	B: BlockT,
 	C: ProvideRuntimeApi<B> + StorageProvider<B, BE> + AuxStore,
 	C: HeaderBackend<B> + HeaderMetadata<B, Error=BlockChainError> + 'static,
 	C::Api: EthereumRuntimeRPCApi<B>,
@@ -319,6 +334,13 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> where
 			));
 		}
 		Ok(None)
+	}
+
+	fn onchain_storage_schema(&self, at: BlockId<B>) -> EthereumStorageSchema {
+		match self.client.storage(&at, &StorageKey(PALLET_ETHEREUM_SCHEMA.to_vec())) {
+			Ok(Some(bytes)) => Decode::decode(&mut &bytes.0[..]).ok().unwrap_or(EthereumStorageSchema::Undefined),
+			_ => EthereumStorageSchema::Undefined,
+		}
 	}
 
 	fn is_canon(&self, target_hash: H256) -> bool {
@@ -382,13 +404,16 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 	}
 
 	fn author(&self) -> Result<H160> {
-		let hash = self.client.info().best_hash;
+		let block = BlockId::Hash(self.client.info().best_hash);
+		let schema = self.onchain_storage_schema(block);
 
 		Ok(
-			self.client
-			.runtime_api()
-			.author(&BlockId::Hash(hash))
-			.map_err(|err| internal_err(format!("fetch runtime chain id failed: {:?}", err)))?.into()
+			self.overrides
+			.get(&schema)
+			.unwrap_or(&self.fallback)
+			.current_block(&block)
+			.ok_or(internal_err("fetching author through override failed"))?
+			.header.beneficiary
 		)
 	}
 
@@ -403,11 +428,12 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 	}
 
 	fn gas_price(&self) -> Result<U256> {
-		let hash = self.client.info().best_hash;
+		let block = BlockId::Hash(self.client.info().best_hash);
+
 		Ok(
 			self.client
 				.runtime_api()
-				.gas_price(&BlockId::Hash(hash))
+				.gas_price(&block)
 				.map_err(|err| internal_err(format!("fetch runtime chain id failed: {:?}", err)))?
 				.into(),
 		)
@@ -432,20 +458,22 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 					.runtime_api()
 					.account_basic(&id, address)
 					.map_err(|err| internal_err(format!("fetch runtime chain id failed: {:?}", err)))?
-					.balance.into(),
-			);
+					.balance.into()
+			)
 		}
 		Ok(U256::zero())
 	}
 
 	fn storage_at(&self, address: H160, index: U256, number: Option<BlockNumber>) -> Result<H256> {
 		if let Ok(Some(id)) = self.native_block_id(number) {
+			let schema = self.onchain_storage_schema(id);
 			return Ok(
-				self.client
-					.runtime_api()
+				self.overrides
+					.get(&schema)
+					.unwrap_or(&self.fallback)
 					.storage_at(&id, address, index)
-					.map_err(|err| internal_err(format!("fetch runtime chain id failed: {:?}", err)))?
-					.into(),
+					.ok_or(internal_err("Fetching account storage through override failed"))?
+					.into()
 			);
 		}
 		Ok(H256::default())
@@ -458,11 +486,11 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 			Some(hash) => hash,
 			_ => return Ok(None),
 		};
+		let schema = self.onchain_storage_schema(id);
+		let handler = self.overrides.get(&schema).unwrap_or(&self.fallback);
 
-		let block = self.client.runtime_api().current_block(&id)
-			.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
-		let statuses = self.client.runtime_api().current_transaction_statuses(&id)
-			.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
+		let block = handler.current_block(&id);
+		let statuses = handler.current_transaction_statuses(&id);
 
 		match (block, statuses) {
 			(Some(block), Some(statuses)) => {
@@ -484,11 +512,11 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 			Some(id) => id,
 			None => return Ok(None),
 		};
+		let schema = self.onchain_storage_schema(id);
+		let handler = self.overrides.get(&schema).unwrap_or(&self.fallback);
 
-		let block = self.client.runtime_api().current_block(&id)
-			.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
-		let statuses = self.client.runtime_api().current_transaction_statuses(&id)
-			.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
+		let block = handler.current_block(&id);
+		let statuses = handler.current_transaction_statuses(&id);
 
 		match (block, statuses) {
 			(Some(block), Some(statuses)) => {
@@ -511,10 +539,10 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 
 	fn transaction_count(&self, address: H160, number: Option<BlockNumber>) -> Result<U256> {
 		if let Some(BlockNumber::Pending) = number {
-			// Find future nonce
-			let id = BlockId::hash(self.client.info().best_hash);
-			let nonce: U256 = self.client.runtime_api()
-				.account_basic(&id, address)
+			let block = BlockId::Hash(self.client.info().best_hash);
+
+			let nonce = self.client.runtime_api()
+				.account_basic(&block, address)
 				.map_err(|err| internal_err(format!("fetch runtime account basic failed: {:?}", err)))?
 				.nonce;
 
@@ -552,10 +580,8 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 			Some(hash) => hash,
 			_ => return Ok(None),
 		};
-
-		let block = self.client.runtime_api()
-			.current_block(&id)
-			.map_err(|err| internal_err(format!("fetch runtime account basic failed: {:?}", err)))?;
+		let schema = self.onchain_storage_schema(id);
+		let block = self.overrides.get(&schema).unwrap_or(&self.fallback).current_block(&id);
 
 		match block {
 			Some(block) => Ok(Some(U256::from(block.transactions.len()))),
@@ -568,10 +594,8 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 			Some(id) => id,
 			None => return Ok(None),
 		};
-
-		let block = self.client.runtime_api()
-			.current_block(&id)
-			.map_err(|err| internal_err(format!("fetch runtime account basic failed: {:?}", err)))?;
+		let schema = self.onchain_storage_schema(id);
+		let block = self.overrides.get(&schema).unwrap_or(&self.fallback).current_block(&id);
 
 		match block {
 			Some(block) => Ok(Some(U256::from(block.transactions.len()))),
@@ -589,12 +613,15 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 
 	fn code_at(&self, address: H160, number: Option<BlockNumber>) -> Result<Bytes> {
 		if let Ok(Some(id)) = self.native_block_id(number) {
+			let schema = self.onchain_storage_schema(id);
+
 			return Ok(
-				self.client
-					.runtime_api()
+				self.overrides
+					.get(&schema)
+					.unwrap_or(&self.fallback)
 					.account_code_at(&id, address)
-					.map_err(|err| internal_err(format!("fetch runtime chain id failed: {:?}", err)))?
-					.into(),
+					.unwrap_or(vec![])
+					.into()
 			);
 		}
 		Ok(Bytes(vec![]))
@@ -923,11 +950,11 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 			Some(hash) => hash,
 			_ => return Ok(None),
 		};
+		let schema = self.onchain_storage_schema(id);
+		let handler = self.overrides.get(&schema).unwrap_or(&self.fallback);
 
-		let block = self.client.runtime_api().current_block(&id)
-			.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
-		let statuses = self.client.runtime_api().current_transaction_statuses(&id)
-			.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
+		let block = handler.current_block(&id);
+		let statuses = handler.current_transaction_statuses(&id);
 
 		match (block, statuses) {
 			(Some(block), Some(statuses)) => {
@@ -954,10 +981,11 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 		};
 		let index = index.value();
 
-		let block = self.client.runtime_api().current_block(&id)
-			.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
-		let statuses = self.client.runtime_api().current_transaction_statuses(&id)
-			.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
+		let schema = self.onchain_storage_schema(id);
+		let handler = self.overrides.get(&schema).unwrap_or(&self.fallback);
+
+		let block = handler.current_block(&id);
+		let statuses = handler.current_transaction_statuses(&id);
 
 		match (block, statuses) {
 			(Some(block), Some(statuses)) => {
@@ -981,11 +1009,11 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 			None => return Ok(None),
 		};
 		let index = index.value();
+		let schema = self.onchain_storage_schema(id);
+		let handler = self.overrides.get(&schema).unwrap_or(&self.fallback);
 
-		let block = self.client.runtime_api().current_block(&id)
-			.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
-		let statuses = self.client.runtime_api().current_transaction_statuses(&id)
-			.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
+		let block = handler.current_block(&id);
+		let statuses = handler.current_transaction_statuses(&id);
 
 		match (block, statuses) {
 			(Some(block), Some(statuses)) => {
@@ -1012,13 +1040,12 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 			Some(hash) => hash,
 			_ => return Ok(None),
 		};
+		let schema = self.onchain_storage_schema(id);
+		let handler = self.overrides.get(&schema).unwrap_or(&self.fallback);
 
-		let block = self.client.runtime_api().current_block(&id)
-			.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
-		let receipts = self.client.runtime_api().current_receipts(&id)
-			.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
-		let statuses = self.client.runtime_api().current_transaction_statuses(&id)
-			.map_err(|err| internal_err(format!("call runtime failed: {:?}", err)))?;
+		let block = handler.current_block(&id);
+		let statuses = handler.current_transaction_statuses(&id);
+		let receipts = handler.current_receipts(&id);
 
 		match (block, statuses, receipts) {
 			(Some(block), Some(statuses), Some(receipts)) => {
@@ -1610,4 +1637,3 @@ where
 		}
 	}
 }
-
