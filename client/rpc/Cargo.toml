@@ -17,6 +17,7 @@ fc-consensus = { path = "../consensus" }
 fc-db = { path = "../db" }
 fc-rpc-core = { path = "../rpc-core" }
 fp-rpc = { path = "../../primitives/rpc" }
+fp-consensus = { path = "../../primitives/consensus" }
 sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sp-api = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
