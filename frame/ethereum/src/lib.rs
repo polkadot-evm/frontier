@@ -44,6 +44,7 @@ use pallet_evm::{Runner, GasWeightMapping, FeeCalculator};
 use sha3::{Digest, Keccak256};
 use codec::{Encode, Decode};
 use fp_consensus::{FRONTIER_ENGINE_ID, PostLog, PreLog};
+use fp_storage::PALLET_ETHEREUM_SCHEMA;
 
 pub use fp_rpc::TransactionStatus;
 pub use ethereum::{Transaction, Log, Block, Receipt, TransactionAction, TransactionMessage};
@@ -58,6 +59,19 @@ mod mock;
 pub enum ReturnValue {
 	Bytes(Vec<u8>),
 	Hash(H160),
+}
+
+/// The schema version for Pallet Ethereum's storage
+#[derive(Clone, Debug, Encode, Decode, PartialEq, Eq, PartialOrd, Ord)]
+pub enum EthereumStorageSchema {
+	Undefined,
+	V1,
+}
+
+impl Default for EthereumStorageSchema {
+	fn default() -> Self {
+		Self::Undefined
+	}
 }
 
 /// A type alias for the balance type from this pallet's point of view.
@@ -98,7 +112,11 @@ decl_storage! {
 	}
 	add_extra_genesis {
 		build(|_config: &GenesisConfig| {
+			// Calculate the ethereum genesis block
 			<Module<T>>::store_block(false);
+
+			// Initialize the storage schema at the well known key.
+			frame_support::storage::unhashed::put::<EthereumStorageSchema>(&PALLET_ETHEREUM_SCHEMA, &EthereumStorageSchema::V1);
 		});
 	}
 }
