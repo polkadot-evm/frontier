@@ -441,6 +441,24 @@
 <span id="438">438</span>
 <span id="439">439</span>
 <span id="440">440</span>
+<span id="441">441</span>
+<span id="442">442</span>
+<span id="443">443</span>
+<span id="444">444</span>
+<span id="445">445</span>
+<span id="446">446</span>
+<span id="447">447</span>
+<span id="448">448</span>
+<span id="449">449</span>
+<span id="450">450</span>
+<span id="451">451</span>
+<span id="452">452</span>
+<span id="453">453</span>
+<span id="454">454</span>
+<span id="455">455</span>
+<span id="456">456</span>
+<span id="457">457</span>
+<span id="458">458</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
@@ -488,6 +506,7 @@
 <span class="kw">use</span> <span class="ident">sha3</span>::{<span class="ident">Digest</span>, <span class="ident">Keccak256</span>};
 <span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Encode</span>, <span class="ident">Decode</span>};
 <span class="kw">use</span> <span class="ident">fp_consensus</span>::{<span class="ident">FRONTIER_ENGINE_ID</span>, <span class="ident">PostLog</span>, <span class="ident">PreLog</span>};
+<span class="kw">use</span> <span class="ident">fp_storage</span>::<span class="ident">PALLET_ETHEREUM_SCHEMA</span>;
 
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">fp_rpc</span>::<span class="ident">TransactionStatus</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">ethereum</span>::{<span class="ident">Transaction</span>, <span class="ident">Log</span>, <span class="ident">Block</span>, <span class="ident">Receipt</span>, <span class="ident">TransactionAction</span>, <span class="ident">TransactionMessage</span>};
@@ -502,6 +521,19 @@
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">ReturnValue</span> {
 	<span class="ident">Bytes</span>(<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>),
 	<span class="ident">Hash</span>(<span class="ident">H160</span>),
+}
+
+<span class="doccomment">/// The schema version for Pallet Ethereum&#39;s storage</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>, <span class="ident">PartialOrd</span>, <span class="ident">Ord</span>)]</span>
+<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">EthereumStorageSchema</span> {
+	<span class="ident">Undefined</span>,
+	<span class="ident">V1</span>,
+}
+
+<span class="kw">impl</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">EthereumStorageSchema</span> {
+	<span class="kw">fn</span> <span class="ident">default</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+		<span class="self">Self</span>::<span class="ident">Undefined</span>
+	}
 }
 
 <span class="doccomment">/// A type alias for the balance type from this pallet&#39;s point of view.</span>
@@ -542,7 +574,11 @@
 	}
 	<span class="ident">add_extra_genesis</span> {
 		<span class="ident">build</span>(<span class="op">|</span><span class="ident">_config</span>: <span class="kw-2">&amp;</span><span class="ident">GenesisConfig</span><span class="op">|</span> {
+			<span class="comment">// Calculate the ethereum genesis block</span>
 			<span class="op">&lt;</span><span class="ident">Module</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">store_block</span>(<span class="bool-val">false</span>);
+
+			<span class="comment">// Initialize the storage schema at the well known key.</span>
+			<span class="ident">frame_support</span>::<span class="ident">storage</span>::<span class="ident">unhashed</span>::<span class="ident">put</span>::<span class="op">&lt;</span><span class="ident">EthereumStorageSchema</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="ident">PALLET_ETHEREUM_SCHEMA</span>, <span class="kw-2">&amp;</span><span class="ident">EthereumStorageSchema</span>::<span class="ident">V1</span>);
 		});
 	}
 }

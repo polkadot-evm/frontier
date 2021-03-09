@@ -198,11 +198,19 @@
 <span id="195">195</span>
 <span id="196">196</span>
 <span id="197">197</span>
+<span id="198">198</span>
+<span id="199">199</span>
+<span id="200">200</span>
+<span id="201">201</span>
+<span id="202">202</span>
+<span id="203">203</span>
+<span id="204">204</span>
+<span id="205">205</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! A collection of node-specific RPC methods.</span>
 
 <span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">sync</span>::<span class="ident">Arc</span>, <span class="ident">fmt</span>};
-
+<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">collections</span>::<span class="ident">BTreeMap</span>;
 <span class="kw">use</span> <span class="ident">fc_rpc_core</span>::<span class="ident">types</span>::{<span class="ident">PendingTransactions</span>, <span class="ident">FilterPool</span>};
 <span class="kw">use</span> <span class="ident">sc_consensus_manual_seal</span>::<span class="ident">rpc</span>::{<span class="ident">ManualSeal</span>, <span class="ident">ManualSealApi</span>};
 <span class="kw">use</span> <span class="ident">frontier_template_runtime</span>::{<span class="ident">Hash</span>, <span class="ident">AccountId</span>, <span class="ident">Index</span>, <span class="ident">opaque</span>::<span class="ident">Block</span>, <span class="ident">Balance</span>};
@@ -219,6 +227,8 @@
 <span class="kw">use</span> <span class="ident">sp_block_builder</span>::<span class="ident">BlockBuilder</span>;
 <span class="kw">use</span> <span class="ident">sc_network</span>::<span class="ident">NetworkService</span>;
 <span class="kw">use</span> <span class="ident">jsonrpc_pubsub</span>::<span class="ident">manager</span>::<span class="ident">SubscriptionManager</span>;
+<span class="kw">use</span> <span class="ident">pallet_ethereum</span>::<span class="ident">EthereumStorageSchema</span>;
+<span class="kw">use</span> <span class="ident">fc_rpc</span>::{<span class="ident">StorageOverride</span>, <span class="ident">SchemaV1Override</span>};
 
 <span class="doccomment">/// Light client extra dependencies.</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">LightDeps</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">F</span>, <span class="ident">P</span><span class="op">&gt;</span> {
@@ -307,6 +317,11 @@
 	<span class="kw">if</span> <span class="ident">enable_dev_signer</span> {
 		<span class="ident">signers</span>.<span class="ident">push</span>(<span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">EthDevSigner</span>::<span class="ident">new</span>()) <span class="kw">as</span> <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">EthSigner</span><span class="op">&gt;</span>);
 	}
+	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">overrides</span> <span class="op">=</span> <span class="ident">BTreeMap</span>::<span class="ident">new</span>();
+	<span class="ident">overrides</span>.<span class="ident">insert</span>(
+		<span class="ident">EthereumStorageSchema</span>::<span class="ident">V1</span>,
+		<span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">SchemaV1Override</span>::<span class="ident">new</span>(<span class="ident">client</span>.<span class="ident">clone</span>())) <span class="kw">as</span> <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">StorageOverride</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span><span class="op">&gt;</span>
+	);
 	<span class="ident">io</span>.<span class="ident">extend_with</span>(
 		<span class="ident">EthApiServer</span>::<span class="ident">to_delegate</span>(<span class="ident">EthApi</span>::<span class="ident">new</span>(
 			<span class="ident">client</span>.<span class="ident">clone</span>(),
@@ -315,6 +330,7 @@
 			<span class="ident">network</span>.<span class="ident">clone</span>(),
 			<span class="ident">pending_transactions</span>.<span class="ident">clone</span>(),
 			<span class="ident">signers</span>,
+			<span class="ident">overrides</span>,
 			<span class="ident">backend</span>,
 			<span class="ident">is_authority</span>,
 		))
