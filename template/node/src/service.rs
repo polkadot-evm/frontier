@@ -137,7 +137,7 @@ pub fn new_partial(config: &Configuration, sealing: Option<Sealing>) -> Result<
 
 		let import_queue = sc_consensus_manual_seal::import_queue(
 			Box::new(frontier_block_import.clone()),
-			&task_manager.spawn_handle(),
+			&task_manager.spawn_essential_handle(),
 			config.prometheus_registry(),
 		);
 
@@ -168,7 +168,7 @@ pub fn new_partial(config: &Configuration, sealing: Option<Sealing>) -> Result<
 		Some(Box::new(grandpa_block_import.clone())),
 		client.clone(),
 		inherent_data_providers.clone(),
-		&task_manager.spawn_handle(),
+		&task_manager.spawn_essential_handle(),
 		config.prometheus_registry(),
 		sp_consensus::CanAuthorWithNativeVersion::new(client.executor().clone()),
 	)?;
@@ -485,7 +485,7 @@ pub fn new_light(config: Configuration) -> Result<TaskManager, ServiceError> {
 		Some(Box::new(grandpa_block_import)),
 		client.clone(),
 		InherentDataProviders::new(),
-		&task_manager.spawn_handle(),
+		&task_manager.spawn_essential_handle(),
 		config.prometheus_registry(),
 		sp_consensus::NeverCanAuthor,
 	)?;
