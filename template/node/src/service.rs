@@ -117,6 +117,7 @@ pub fn new_partial(config: &Configuration, sealing: Option<Sealing>) -> Result<
 			&config,
 			telemetry.as_ref().map(|(_, telemetry)| telemetry.handle()),
 		)?;
+	let client = Arc::new(client);
 
 	let telemetry = telemetry
 		.map(|(worker, telemetry)| {
@@ -496,9 +497,6 @@ pub fn new_light(config: Configuration) -> Result<TaskManager, ServiceError> {
 		});
 
 	let select_chain = sc_consensus::LongestChain::new(backend.clone());
-
-	let telemetry_span = TelemetrySpan::new();
-	let _telemetry_span_entered = telemetry_span.enter();
 
 	let transaction_pool = Arc::new(sc_transaction_pool::BasicPool::new_light(
 		config.transaction_pool.clone(),
