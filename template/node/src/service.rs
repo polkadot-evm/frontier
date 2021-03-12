@@ -14,7 +14,7 @@ pub use sc_executor::NativeExecutor;
 use sp_consensus_aura::sr25519::{AuthorityPair as AuraPair};
 use sc_finality_grandpa::SharedVoterState;
 use sp_timestamp::InherentError;
-use sc_telemetry::TelemetrySpan;
+use sc_telemetry::Telemetry;
 use sc_cli::SubstrateCli;
 use futures::StreamExt;
 use crate::cli::Sealing;
@@ -260,7 +260,7 @@ pub fn new_full(
 		).for_each(|()| futures::future::ready(()))
 	);
 
-	let telemetry_span = TelemetrySpan::new();
+	let telemetry_span = Telemetry::new();
 	let _telemetry_span_entered = telemetry_span.enter();
 
 	let (_rpc_handlers, telemetry_connection_notifier) = sc_service::spawn_tasks(sc_service::SpawnTasksParams {
@@ -462,7 +462,7 @@ pub fn new_light(config: Configuration) -> Result<TaskManager, ServiceError> {
 
 	let select_chain = sc_consensus::LongestChain::new(backend.clone());
 
-	let telemetry_span = TelemetrySpan::new();
+	let telemetry_span = Telemetry::new();
 	let _telemetry_span_entered = telemetry_span.enter();
 
 	let transaction_pool = Arc::new(sc_transaction_pool::BasicPool::new_light(
