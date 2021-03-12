@@ -26,7 +26,6 @@ use futures::{StreamExt, future::TryFutureExt};
 use sp_runtime::{
 	traits::{Block as BlockT, UniqueSaturatedInto, Zero, One, Saturating, BlakeTwo256},
 	transaction_validity::TransactionSource,
-	generic::OpaqueDigestItemId
 };
 use sp_api::{ProvideRuntimeApi, BlockId, Core, HeaderT};
 use sp_transaction_pool::{TransactionPool, InPoolTransaction};
@@ -472,9 +471,8 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 					.get(&schema)
 					.unwrap_or(&self.fallback)
 					.storage_at(&id, address, index)
-					.ok_or(internal_err("Fetching account storage through override failed"))?
-					.into()
-			);
+					.unwrap_or_default()
+			)
 		}
 		Ok(H256::default())
 	}
