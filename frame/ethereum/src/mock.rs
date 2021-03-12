@@ -37,6 +37,18 @@ impl_outer_origin! {
 	pub enum Origin for Test where system = frame_system {}
 }
 
+pub struct PalletInfo;
+
+impl frame_support::traits::PalletInfo for PalletInfo {
+	fn index<P: 'static>() -> Option<usize> {
+		return Some(0)
+	}
+
+	fn name<P: 'static>() -> Option<&'static str> {
+		return Some("TestName")
+	}
+}
+
 // For testing the pallet, we construct most of a mock runtime. This means
 // first constructing a configuration type (`Test`) which `impl`s each of the
 // configuration traits of pallets we want to use.
@@ -64,7 +76,7 @@ impl frame_system::Config for Test {
 	type Event = ();
 	type BlockHashCount = BlockHashCount;
 	type Version = ();
-	type PalletInfo = ();
+	type PalletInfo = PalletInfo;
 	type AccountData = pallet_balances::AccountData<u64>;
 	type OnNewAccount = ();
 	type OnKilledAccount = ();
