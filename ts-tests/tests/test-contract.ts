@@ -29,7 +29,7 @@ describeWithFrontier("Frontier RPC (Contract)", `simple-specs.json`, (context) =
 		expect(await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction])).to.deep.equal({
 			id: 1,
 			jsonrpc: "2.0",
-			result: "0xf447aa7c3dae362a1a1222f6ab9c3a04542bf5f2350b9591ede20b37526b33d1",
+			result: "0x61c237c4abb93c8d99727bddb69a0c778cd88be95ea54345949ce00b2824f1ad",
 		});
 
 		// Verify the contract is not yet stored
