@@ -98,7 +98,7 @@ pub fn new_partial(config: &Configuration, sealing: Option<Sealing>) -> Result<
 		FullClient, FullBackend, FullSelectChain,
 		sp_consensus::import_queue::BasicQueue<Block, sp_api::TransactionFor<FullClient, Block>>,
 		sc_transaction_pool::FullPool<Block, FullClient>,
-		(ConsensusResult, PendingTransactions, Option<FilterPool>, Arc<fc_db::Backend<Block>>),
+		(ConsensusResult, PendingTransactions, Option<FilterPool>, Arc<fc_db::Backend<Block>>, Option<Telemetry>),
 >, ServiceError> {
 	let inherent_data_providers = sp_inherents::InherentDataProviders::new();
 
@@ -163,7 +163,13 @@ pub fn new_partial(config: &Configuration, sealing: Option<Sealing>) -> Result<
 		return Ok(sc_service::PartialComponents {
 			client, backend, task_manager, import_queue, keystore_container,
 			select_chain, transaction_pool, inherent_data_providers,
-			other: (ConsensusResult::ManualSeal(frontier_block_import, sealing), pending_transactions, filter_pool, frontier_backend)
+			other: (
+				ConsensusResult::ManualSeal(frontier_block_import, sealing),
+				pending_transactions,
+				filter_pool,
+				frontier_backend,
+				telemetry,
+			)
 		})
 	}
 
@@ -202,7 +208,13 @@ pub fn new_partial(config: &Configuration, sealing: Option<Sealing>) -> Result<
 	Ok(sc_service::PartialComponents {
 		client, backend, task_manager, import_queue, keystore_container,
 		select_chain, transaction_pool, inherent_data_providers,
-		other: (ConsensusResult::Aura(aura_block_import, grandpa_link), pending_transactions, filter_pool, frontier_backend)
+		other: (
+			ConsensusResult::Aura(aura_block_import, grandpa_link),
+			pending_transactions,
+			filter_pool,
+			frontier_backend,
+			telemetry,
+		)
 	})
 }
 
@@ -215,7 +227,7 @@ pub fn new_full(
 	let sc_service::PartialComponents {
 		client, backend, mut task_manager, import_queue, keystore_container,
 		select_chain, transaction_pool, inherent_data_providers,
-		other: (consensus_result, pending_transactions, filter_pool, frontier_backend),
+		other: (consensus_result, pending_transactions, filter_pool, frontier_backend, mut telemetry),
 	} = new_partial(&config, sealing)?;
 
 	let (network, network_status_sinks, system_rpc_tx, network_starter) =
@@ -234,7 +246,7 @@ pub fn new_full(
 
 	if config.offchain_worker.enabled {
 		sc_service::build_offchain_workers(
-			&config, backend.clone(), task_manager.spawn_handle(), client.clone(), network.clone(),
+			&config, task_manager.spawn_handle(), client.clone(), network.clone(),
 		);
 	}
 
@@ -286,10 +298,7 @@ pub fn new_full(
 		).for_each(|()| futures::future::ready(()))
 	);
 
-	let telemetry_span = Telemetry::new();
-	let _telemetry_span_entered = telemetry_span.enter();
-
-	let (_rpc_handlers, telemetry_connection_notifier) = sc_service::spawn_tasks(sc_service::SpawnTasksParams {
+	let _rpc_handlers = sc_service::spawn_tasks(sc_service::SpawnTasksParams {
 		network: network.clone(),
 		client: client.clone(),
 		keystore: keystore_container.sync_keystore(),
@@ -298,7 +307,7 @@ pub fn new_full(
 		rpc_extensions_builder: rpc_extensions_builder,
 		on_demand: None,
 		remote_blockchain: None,
-		backend, network_status_sinks, system_rpc_tx, config, telemetry_span: Some(telemetry_span.clone()),
+		backend, network_status_sinks, system_rpc_tx, config, telemetry: telemetry.as_mut(),
 	})?;
 
 	// Spawn Frontier EthFilterApi maintenance task.
@@ -361,6 +370,7 @@ pub fn new_full(
 					client.clone(),
 					transaction_pool.clone(),
 					prometheus_registry.as_ref(),
+					telemetry.as_ref().map(|x| x.handle()),
 				);
 
 				// Background authorship future
@@ -408,22 +418,27 @@ pub fn new_full(
 					client.clone(),
 					transaction_pool.clone(),
 					prometheus_registry.as_ref(),
+					telemetry.as_ref().map(|x| x.handle()),
 				);
 
 				let can_author_with =
 					sp_consensus::CanAuthorWithNativeVersion::new(client.executor().clone());
-				let aura = sc_consensus_aura::start_aura::<_, _, _, _, _, AuraPair, _, _, _, _>(
-					sc_consensus_aura::slot_duration(&*client)?,
-					client.clone(),
-					select_chain,
-					aura_block_import,
-					proposer,
-					network.clone(),
-					inherent_data_providers.clone(),
-					force_authoring,
-					backoff_authoring_blocks,
-					keystore_container.sync_keystore(),
-					can_author_with,
+				let aura = sc_consensus_aura::start_aura::<AuraPair, _, _, _, _, _, _, _, _, _>(
+					StartAuraParams {
+						slot_duration: sc_consensus_aura::slot_duration(&*client)?,
+						client: client.clone(),
+						select_chain,
+						block_import: aura_block_import,
+						proposer_factory: proposer,
+						sync_oracle: network.clone(),
+						inherent_data_providers: inherent_data_providers.clone(),
+						force_authoring,
+						backoff_authoring_blocks,
+						keystore: keystore_container.sync_keystore(),
+						can_author_with,
+						block_proposal_slot_portion: SlotProportion::new(2f32 / 3f32),
+						telemetry: telemetry.as_ref().map(|x| x.handle()),
+					}
 				)?;
 
 				// the AURA authoring task is considered essential, i.e. if it
@@ -446,6 +461,7 @@ pub fn new_full(
 					observer_enabled: false,
 					keystore,
 					is_authority: role.is_authority(),
+					telemetry: telemetry.as_ref().map(|x| x.handle()),
 				};
 
 				if enable_grandpa {
@@ -459,7 +475,7 @@ pub fn new_full(
 						config: grandpa_config,
 						link: grandpa_link,
 						network,
-						telemetry_on_connect: telemetry_connection_notifier.map(|x| x.on_connect_stream()),
+						telemetry: telemetry.as_ref().map(|x| x.handle()),
 						voting_rule: sc_finality_grandpa::VotingRulesBuilder::default().build(),
 						prometheus_registry,
 						shared_voter_state: SharedVoterState::empty(),
@@ -483,13 +499,28 @@ pub fn new_full(
 // FIXME: #238 Light client does not have a complete import pipeline or support manual/instant seal.
 /// Builds a new service for a light client.
 pub fn new_light(config: Configuration) -> Result<TaskManager, ServiceError> {
+	let telemetry = config.telemetry_endpoints.clone()
+		.filter(|x| !x.is_empty())
+		.map(|endpoints| -> Result<_, sc_telemetry::Error> {
+			let worker = TelemetryWorker::new(16)?;
+			let telemetry = worker.handle().new_telemetry(endpoints);
+			Ok((worker, telemetry))
+		})
+		.transpose()?;
+
 	let (client, backend, keystore_container, mut task_manager, on_demand) =
-		sc_service::new_light_parts::<Block, RuntimeApi, Executor>(&config)?;
+		sc_service::new_light_parts::<Block, RuntimeApi, Executor>(
+			&config,
+			telemetry.as_ref().map(|(_, telemetry)| telemetry.handle()),
+		)?;
+
+	let mut telemetry = telemetry
+		.map(|(worker, telemetry)| {
+			task_manager.spawn_handle().spawn("telemetry", worker.run());
+			telemetry
+		});
 
 	let select_chain = sc_consensus::LongestChain::new(backend.clone());
-
-	let telemetry_span = Telemetry::new();
-	let _telemetry_span_entered = telemetry_span.enter();
 
 	let transaction_pool = Arc::new(sc_transaction_pool::BasicPool::new_light(
 		config.transaction_pool.clone(),
@@ -503,17 +534,22 @@ pub fn new_light(config: Configuration) -> Result<TaskManager, ServiceError> {
 		client.clone(),
 		&(client.clone() as Arc<_>),
 		select_chain.clone(),
+		telemetry.as_ref().map(|x| x.handle()),
 	)?;
 
-	let import_queue = sc_consensus_aura::import_queue::<_, _, _, AuraPair, _, _>(
-		sc_consensus_aura::slot_duration(&*client)?,
-		grandpa_block_import.clone(),
-		Some(Box::new(grandpa_block_import)),
-		client.clone(),
-		InherentDataProviders::new(),
-		&task_manager.spawn_essential_handle(),
-		config.prometheus_registry(),
-		sp_consensus::NeverCanAuthor,
+	let import_queue = sc_consensus_aura::import_queue::<AuraPair, _, _, _, _, _>(
+		ImportQueueParams {
+			slot_duration: sc_consensus_aura::slot_duration(&*client)?,
+			block_import: grandpa_block_import.clone(),
+			justification_import: Some(Box::new(grandpa_block_import)),
+			client: client.clone(),
+			inherent_data_providers: InherentDataProviders::new(),
+			spawner: &task_manager.spawn_essential_handle(),
+			registry: config.prometheus_registry(),
+			can_author_with: sp_consensus::NeverCanAuthor,
+			check_for_equivocation: Default::default(),
+			telemetry: telemetry.as_ref().map(|x| x.handle()),
+		}
 	)?;
 
 	let light_deps = crate::rpc::LightDeps {
@@ -538,7 +574,7 @@ pub fn new_light(config: Configuration) -> Result<TaskManager, ServiceError> {
 
 	if config.offchain_worker.enabled {
 		sc_service::build_offchain_workers(
-			&config, backend.clone(), task_manager.spawn_handle(), client.clone(), network.clone(),
+			&config, task_manager.spawn_handle(), client.clone(), network.clone(),
 		);
 	}
 
@@ -555,7 +591,7 @@ pub fn new_light(config: Configuration) -> Result<TaskManager, ServiceError> {
 		network,
 		network_status_sinks,
 		system_rpc_tx,
-		telemetry_span: Some(telemetry_span.clone()),
+		telemetry: telemetry.as_mut(),
 	})?;
 
 	network_starter.start_network();
