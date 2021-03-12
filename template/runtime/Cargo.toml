@@ -47,7 +47,7 @@ sp-version = { version = "3.0.0-dev", default-features = false, git = "https://g
 fp-rpc = { default-features = false, path = "../../primitives/rpc" }
 
 [build-dependencies]
-substrate-wasm-builder = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
+substrate-wasm-builder = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 
 [features]
 default = ["std"]
