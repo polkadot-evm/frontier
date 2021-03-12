@@ -166,7 +166,7 @@ mod tests {
 				panic!("Test not expected to pass");
 			},
 			Err(e) => {
-				assert_eq!(e, ExitError::Other("expected at least 99 bytes but received 96".into()));
+				assert_eq!(e, ExitError::Other("insufficient input size".into()));
 				Ok(())
 			}
 		}
