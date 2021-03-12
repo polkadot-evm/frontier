@@ -12,7 +12,7 @@ jsonrpc-derive = "14.0.3"
 jsonrpc-core-client = "14.0.3"
 jsonrpc-pubsub = "15.0.0"
 log = "0.4.8"
-ethereum-types = "0.10.0"
+ethereum-types = "0.11.0"
 fc-consensus = { path = "../consensus" }
 fc-db = { path = "../db" }
 fc-rpc-core = { path = "../rpc-core" }
@@ -32,8 +32,8 @@ sc-network = { git = "https://github.com/paritytech/substrate.git", branch = "fr
 pallet-evm = { path = "../../frame/evm" }
 fp-evm = { path = "../../primitives/evm" }
 pallet-ethereum = { path = "../../frame/ethereum" }
-ethereum = { version = "0.6", features = ["with-codec"] }
-codec = { package = "parity-scale-codec", version = "1.0.0" }
+ethereum = { version = "0.7.1", features = ["with-codec"] }
+codec = { package = "parity-scale-codec", version = "2.0.0" }
 rlp = "0.5"
 futures = { version = "0.3.1", features = ["compat"] }
 sha3 = "0.8"

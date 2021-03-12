@@ -1,6 +1,6 @@
 [package]
 name = "pallet-evm-precompile-modexp"
-version = "2.0.0"
+version = "3.0.0"
 authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2018"
 license = "Apache-2.0"
@@ -9,10 +9,10 @@ repository = "https://github.com/paritytech/substrate/"
 description = "MODEXP precompiles for EVM pallet."
 
 [dependencies]
-sp-core = { version = "2.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sp-io = { version = "2.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sp-core = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sp-io = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 fp-evm = { version = "0.8.0", default-features = false, path = "../../../../primitives/evm" }
-evm = { version = "0.23.0", default-features = false, features = ["with-codec"] }
+evm = { version = "0.24.0", default-features = false, features = ["with-codec"] }
 num = { version = "0.3", features = ["alloc"], default-features = false }
 
 [dev-dependencies]

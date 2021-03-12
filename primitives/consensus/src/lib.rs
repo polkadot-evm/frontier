@@ -45,15 +45,15 @@ impl Log {
 
 #[derive(Decode, Encode, Clone, PartialEq, Eq)]
 pub enum PreLog {
-	#[codec(index = "3")]
+	#[codec(index = 3)]
 	Block(ethereum::Block),
 }
 
 #[derive(Decode, Encode, Clone, PartialEq, Eq)]
 pub enum PostLog {
-	#[codec(index = "1")]
+	#[codec(index = 1)]
 	Hashes(Hashes),
-	#[codec(index = "2")]
+	#[codec(index = 2)]
 	Block(ethereum::Block),
 }
 
