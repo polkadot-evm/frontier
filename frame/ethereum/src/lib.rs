@@ -29,7 +29,8 @@ use frame_support::{
 	dispatch::DispatchResultWithPostInfo,
 };
 use sp_std::prelude::*;
-use frame_system::ensure_none;
+use frame_system::{ensure_none, RawOrigin};
+use frame_support::{ensure, traits::UnfilteredDispatchable};
 use ethereum_types::{H160, H64, H256, U256, Bloom, BloomInput};
 use sp_runtime::{
 	transaction_validity::{
@@ -39,10 +40,11 @@ use sp_runtime::{
 };
 use evm::ExitReason;
 use fp_evm::CallOrCreateInfo;
-use pallet_evm::{Runner, GasWeightMapping};
+use pallet_evm::{Runner, GasWeightMapping, FeeCalculator};
 use sha3::{Digest, Keccak256};
 use codec::{Encode, Decode};
-use fp_consensus::{FRONTIER_ENGINE_ID, ConsensusLog};
+use fp_consensus::{FRONTIER_ENGINE_ID, PostLog, PreLog};
+use fp_storage::PALLET_ETHEREUM_SCHEMA;
 
 pub use fp_rpc::TransactionStatus;
 pub use ethereum::{Transaction, Log, Block, Receipt, TransactionAction, TransactionMessage};
@@ -57,6 +59,19 @@ mod mock;
 pub enum ReturnValue {
 	Bytes(Vec<u8>),
 	Hash(H160),
+}
+
+/// The schema version for Pallet Ethereum's storage
+#[derive(Clone, Debug, Encode, Decode, PartialEq, Eq, PartialOrd, Ord)]
+pub enum EthereumStorageSchema {
+	Undefined,
+	V1,
+}
+
+impl Default for EthereumStorageSchema {
+	fn default() -> Self {
+		Self::Undefined
+	}
 }
 
 /// A type alias for the balance type from this pallet's point of view.
@@ -97,7 +112,11 @@ decl_storage! {
 	}
 	add_extra_genesis {
 		build(|_config: &GenesisConfig| {
-			<Module<T>>::store_block();
+			// Calculate the ethereum genesis block
+			<Module<T>>::store_block(false);
+
+			// Initialize the storage schema at the well known key.
+			frame_support::storage::unhashed::put::<EthereumStorageSchema>(&PALLET_ETHEREUM_SCHEMA, &EthereumStorageSchema::V1);
 		});
 	}
 }
@@ -116,6 +135,8 @@ decl_error! {
 	pub enum Error for Module<T: Config> {
 		/// Signature is invalid.
 		InvalidSignature,
+		/// Pre-log is present, therefore transact is not allowed.
+		PreLogExists,
 	}
 }
 
@@ -129,6 +150,11 @@ decl_module! {
 		#[weight = <T as pallet_evm::Config>::GasWeightMapping::gas_to_weight(transaction.gas_limit.unique_saturated_into())]
 		fn transact(origin, transaction: ethereum::Transaction) -> DispatchResultWithPostInfo {
 			ensure_none(origin)?;
+
+			ensure!(
+				fp_consensus::find_pre_log(&frame_system::Module::<T>::digest()).is_err(),
+				Error::<T>::PreLogExists,
+			);
 
 			let source = Self::recover_signer(&transaction)
 				.ok_or_else(|| Error::<T>::InvalidSignature)?;
@@ -207,11 +233,22 @@ decl_module! {
 		}
 
 		fn on_finalize(n: T::BlockNumber) {
-			<Module<T>>::store_block();
+			<Module<T>>::store_block(
+				fp_consensus::find_pre_log(&frame_system::Module::<T>::digest()).is_err(),
+			);
 		}
 
 		fn on_initialize(n: T::BlockNumber) -> Weight {
 			Pending::kill();
+
+			if let Ok(log) = fp_consensus::find_pre_log(&frame_system::Module::<T>::digest()) {
+				let PreLog::Block(block) = log;
+
+				for transaction in block.transactions {
+					let _ = Call::<T>::transact(transaction).dispatch_bypass_filter(RawOrigin::None.into());
+				}
+			}
+
 			0
 		}
 	}
@@ -246,8 +283,12 @@ impl<T: Config> frame_support::unsigned::ValidateUnsigned for Module<T> {
 			}
 
 			let fee = transaction.gas_price.saturating_mul(transaction.gas_limit);
+			let total_payment = transaction.value.saturating_add(fee);
+			if account_data.balance < total_payment {
+				return InvalidTransaction::Payment.into();
+			}
 
-			if account_data.balance < fee {
+			if transaction.gas_price < T::FeeCalculator::min_gas_price() {
 				return InvalidTransaction::Payment.into();
 			}
 
@@ -280,7 +321,7 @@ impl<T: Config> Module<T> {
 		Some(H160::from(H256::from_slice(Keccak256::digest(&pubkey).as_slice())))
 	}
 
-	fn store_block() {
+	fn store_block(post_log: bool) {
 		let mut transactions = Vec::new();
 		let mut statuses = Vec::new();
 		let mut receipts = Vec::new();
@@ -327,11 +368,13 @@ impl<T: Config> Module<T> {
 		CurrentReceipts::put(receipts.clone());
 		CurrentTransactionStatuses::put(statuses.clone());
 
-		let digest = DigestItem::<T::Hash>::Consensus(
-			FRONTIER_ENGINE_ID,
-			ConsensusLog::PostHashes(fp_consensus::PostHashes::from_block(block)).encode(),
-		);
-		frame_system::Module::<T>::deposit_log(digest.into());
+		if post_log {
+			let digest = DigestItem::<T::Hash>::Consensus(
+				FRONTIER_ENGINE_ID,
+				PostLog::Hashes(fp_consensus::Hashes::from_block(block)).encode(),
+			);
+			frame_system::Module::<T>::deposit_log(digest.into());
+		}
 	}
 
 	fn logs_bloom(logs: Vec<Log>, bloom: &mut Bloom) {
