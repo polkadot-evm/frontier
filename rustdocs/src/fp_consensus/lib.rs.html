@@ -224,15 +224,15 @@
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Decode</span>, <span class="ident">Encode</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">PreLog</span> {
-	<span class="attribute">#[<span class="ident">codec</span>(<span class="ident">index</span> <span class="op">=</span> <span class="string">&quot;3&quot;</span>)]</span>
+	<span class="attribute">#[<span class="ident">codec</span>(<span class="ident">index</span> <span class="op">=</span> <span class="number">3</span>)]</span>
 	<span class="ident">Block</span>(<span class="ident">ethereum</span>::<span class="ident">Block</span>),
 }
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Decode</span>, <span class="ident">Encode</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">PostLog</span> {
-	<span class="attribute">#[<span class="ident">codec</span>(<span class="ident">index</span> <span class="op">=</span> <span class="string">&quot;1&quot;</span>)]</span>
+	<span class="attribute">#[<span class="ident">codec</span>(<span class="ident">index</span> <span class="op">=</span> <span class="number">1</span>)]</span>
 	<span class="ident">Hashes</span>(<span class="ident">Hashes</span>),
-	<span class="attribute">#[<span class="ident">codec</span>(<span class="ident">index</span> <span class="op">=</span> <span class="string">&quot;2&quot;</span>)]</span>
+	<span class="attribute">#[<span class="ident">codec</span>(<span class="ident">index</span> <span class="op">=</span> <span class="number">2</span>)]</span>
 	<span class="ident">Block</span>(<span class="ident">ethereum</span>::<span class="ident">Block</span>),
 }
 
