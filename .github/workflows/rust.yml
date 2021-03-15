@@ -27,6 +27,8 @@ jobs:
       run: cargo build --verbose --all
     - name: Run tests
       run: cargo test --verbose --all
+    - name: Build manual seal client
+      run: cd template/node && cargo build --verbose --no-default-features --features manual-seal
     - name: Use Node.js 10
       uses: actions/setup-node@v1
       with:
