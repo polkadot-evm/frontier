@@ -26,7 +26,7 @@ describeWithFrontier("Frontier RPC (Contract)", `simple-specs.json`, (context) =
 			GENESIS_ACCOUNT_PRIVATE_KEY
 		);
 
-		expect(await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction])).to.deep.equal({
+		expect(await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction])).to.include({
 			id: 1,
 			jsonrpc: "2.0",
 			result: "0x670d3cce9769079f7065913dccfc45f1821b018a5894280ef03979f9dd0949b2",

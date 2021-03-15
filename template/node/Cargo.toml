@@ -51,7 +51,7 @@ sc-telemetry = { git = "https://github.com/paritytech/substrate.git", branch = "
 
 fc-consensus = { path = "../../client/consensus" }
 fp-consensus = { path = "../../primitives/consensus" }
-frontier-template-runtime = { path = "../runtime" }
+frontier-template-runtime = { path = "../runtime", default-features = false, features = ["std"] }
 fc-rpc = { path = "../../client/rpc" }
 fp-rpc = { path = "../../primitives/rpc" }
 fc-rpc-core = { path = "../../client/rpc-core" }
@@ -60,3 +60,8 @@ fc-mapping-sync = { path = "../../client/mapping-sync" }
 
 [build-dependencies]
 substrate-build-script-utils = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+
+[features]
+default = ["aura"]
+aura = ["frontier-template-runtime/aura"]
+manual-seal = ["frontier-template-runtime/manual-seal"]

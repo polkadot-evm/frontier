@@ -223,10 +223,9 @@ impl pallet_timestamp::Config for Runtime {
 	type Moment = u64;
 	type MinimumPeriod = MinimumPeriod;
 	type WeightInfo = ();
-
-	// Implementations using Aura should set this to 'Aura'. However, this is currently
-	// incompatible with manual-sealing. See https://github.com/paritytech/frontier/issues/315
-	// for more details.
+	#[cfg(feature = "aura")]
+	type OnTimestampSet = Aura;
+	#[cfg(feature = "manual-seal")]
 	type OnTimestampSet = ();
 }
 
