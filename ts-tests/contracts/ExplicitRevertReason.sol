@@ -1,4 +1,4 @@
-pragma solidity 0.5.16;
+pragma solidity 0.8.2;
 
 contract ExplicitRevertReason {
 		function max10(uint256 a) public returns (uint256) {
