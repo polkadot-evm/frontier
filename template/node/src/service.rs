@@ -172,7 +172,7 @@ pub fn new_partial(config: &Configuration, #[allow(unused_variables)] cli: &Cli)
 			client, backend, task_manager, import_queue, keystore_container,
 			select_chain, transaction_pool, inherent_data_providers,
 			other: (
-				(frontier_block_import, sealing)
+				(frontier_block_import, sealing),
 				pending_transactions,
 				filter_pool,
 				frontier_backend,
