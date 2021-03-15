@@ -1,14 +1,23 @@
-use structopt::{StructOpt, clap::arg_enum};
+use structopt::StructOpt;
+#[cfg(feature = "manual-seal")]
+use structopt::clap::arg_enum;
 
+#[cfg(feature = "manual-seal")]
 arg_enum! {
 	/// Available Sealing methods.
-	#[allow(missing_docs)]
 	#[derive(Debug, Copy, Clone, StructOpt)]
 	pub enum Sealing {
 		// Seal using rpc method.
 		Manual,
 		// Seal when transaction is executed.
 		Instant,
+	}
+}
+
+#[cfg(feature = "manual-seal")]
+impl Default for Sealing {
+	fn default() -> Sealing {
+		Sealing::Manual
 	}
 }
 
@@ -19,9 +28,10 @@ pub struct RunCmd {
 	#[structopt(flatten)]
 	pub base: sc_cli::RunCmd,
 
+	#[cfg(feature = "manual-seal")]
 	/// Choose sealing method.
 	#[structopt(long = "sealing")]
-	pub sealing: Option<Sealing>,
+	pub sealing: Sealing,
 
 	#[structopt(long = "enable-dev-signer")]
 	pub enable_dev_signer: bool,
