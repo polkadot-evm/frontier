@@ -218,7 +218,7 @@ pub fn new_partial(config: &Configuration, #[allow(unused_variables)] cli: &Cli)
 			client, backend, task_manager, import_queue, keystore_container,
 			select_chain, transaction_pool, inherent_data_providers,
 			other: (
-				ConsensusResult::Aura(aura_block_import, grandpa_link),
+				(aura_block_import, grandpa_link),
 				pending_transactions,
 				filter_pool,
 				frontier_backend,
