@@ -173,7 +173,7 @@
 			<span class="kw">let</span> <span class="ident">runner</span> <span class="op">=</span> <span class="ident">cli</span>.<span class="ident">create_runner</span>(<span class="ident">cmd</span>)<span class="question-mark">?</span>;
 			<span class="ident">runner</span>.<span class="ident">async_run</span>(<span class="op">|</span><span class="ident">config</span><span class="op">|</span> {
 				<span class="kw">let</span> <span class="ident">PartialComponents</span> { <span class="ident">client</span>, <span class="ident">task_manager</span>, <span class="ident">import_queue</span>, ..}
-					<span class="op">=</span> <span class="ident">new_partial</span>(<span class="kw-2">&amp;</span><span class="ident">config</span>, <span class="ident">cli</span>.<span class="ident">run</span>.<span class="ident">sealing</span>)<span class="question-mark">?</span>;
+					<span class="op">=</span> <span class="ident">new_partial</span>(<span class="kw-2">&amp;</span><span class="ident">config</span>, <span class="kw-2">&amp;</span><span class="ident">cli</span>)<span class="question-mark">?</span>;
 				<span class="prelude-val">Ok</span>((<span class="ident">cmd</span>.<span class="ident">run</span>(<span class="ident">client</span>, <span class="ident">import_queue</span>), <span class="ident">task_manager</span>))
 			})
 		},
@@ -181,7 +181,7 @@
 			<span class="kw">let</span> <span class="ident">runner</span> <span class="op">=</span> <span class="ident">cli</span>.<span class="ident">create_runner</span>(<span class="ident">cmd</span>)<span class="question-mark">?</span>;
 			<span class="ident">runner</span>.<span class="ident">async_run</span>(<span class="op">|</span><span class="ident">config</span><span class="op">|</span> {
 				<span class="kw">let</span> <span class="ident">PartialComponents</span> { <span class="ident">client</span>, <span class="ident">task_manager</span>, ..}
-					<span class="op">=</span> <span class="ident">new_partial</span>(<span class="kw-2">&amp;</span><span class="ident">config</span>, <span class="ident">cli</span>.<span class="ident">run</span>.<span class="ident">sealing</span>)<span class="question-mark">?</span>;
+					<span class="op">=</span> <span class="ident">new_partial</span>(<span class="kw-2">&amp;</span><span class="ident">config</span>, <span class="kw-2">&amp;</span><span class="ident">cli</span>)<span class="question-mark">?</span>;
 				<span class="prelude-val">Ok</span>((<span class="ident">cmd</span>.<span class="ident">run</span>(<span class="ident">client</span>, <span class="ident">config</span>.<span class="ident">database</span>), <span class="ident">task_manager</span>))
 			})
 		},
@@ -189,7 +189,7 @@
 			<span class="kw">let</span> <span class="ident">runner</span> <span class="op">=</span> <span class="ident">cli</span>.<span class="ident">create_runner</span>(<span class="ident">cmd</span>)<span class="question-mark">?</span>;
 			<span class="ident">runner</span>.<span class="ident">async_run</span>(<span class="op">|</span><span class="ident">config</span><span class="op">|</span> {
 				<span class="kw">let</span> <span class="ident">PartialComponents</span> { <span class="ident">client</span>, <span class="ident">task_manager</span>, ..}
-					<span class="op">=</span> <span class="ident">new_partial</span>(<span class="kw-2">&amp;</span><span class="ident">config</span>, <span class="ident">cli</span>.<span class="ident">run</span>.<span class="ident">sealing</span>)<span class="question-mark">?</span>;
+					<span class="op">=</span> <span class="ident">new_partial</span>(<span class="kw-2">&amp;</span><span class="ident">config</span>, <span class="kw-2">&amp;</span><span class="ident">cli</span>)<span class="question-mark">?</span>;
 				<span class="prelude-val">Ok</span>((<span class="ident">cmd</span>.<span class="ident">run</span>(<span class="ident">client</span>, <span class="ident">config</span>.<span class="ident">chain_spec</span>), <span class="ident">task_manager</span>))
 			})
 		},
@@ -197,7 +197,7 @@
 			<span class="kw">let</span> <span class="ident">runner</span> <span class="op">=</span> <span class="ident">cli</span>.<span class="ident">create_runner</span>(<span class="ident">cmd</span>)<span class="question-mark">?</span>;
 			<span class="ident">runner</span>.<span class="ident">async_run</span>(<span class="op">|</span><span class="ident">config</span><span class="op">|</span> {
 				<span class="kw">let</span> <span class="ident">PartialComponents</span> { <span class="ident">client</span>, <span class="ident">task_manager</span>, <span class="ident">import_queue</span>, ..}
-					<span class="op">=</span> <span class="ident">new_partial</span>(<span class="kw-2">&amp;</span><span class="ident">config</span>, <span class="ident">cli</span>.<span class="ident">run</span>.<span class="ident">sealing</span>)<span class="question-mark">?</span>;
+					<span class="op">=</span> <span class="ident">new_partial</span>(<span class="kw-2">&amp;</span><span class="ident">config</span>, <span class="kw-2">&amp;</span><span class="ident">cli</span>)<span class="question-mark">?</span>;
 				<span class="prelude-val">Ok</span>((<span class="ident">cmd</span>.<span class="ident">run</span>(<span class="ident">client</span>, <span class="ident">import_queue</span>), <span class="ident">task_manager</span>))
 			})
 		},
@@ -209,7 +209,7 @@
 			<span class="kw">let</span> <span class="ident">runner</span> <span class="op">=</span> <span class="ident">cli</span>.<span class="ident">create_runner</span>(<span class="ident">cmd</span>)<span class="question-mark">?</span>;
 			<span class="ident">runner</span>.<span class="ident">async_run</span>(<span class="op">|</span><span class="ident">config</span><span class="op">|</span> {
 				<span class="kw">let</span> <span class="ident">PartialComponents</span> { <span class="ident">client</span>, <span class="ident">task_manager</span>, <span class="ident">backend</span>, ..}
-					<span class="op">=</span> <span class="ident">new_partial</span>(<span class="kw-2">&amp;</span><span class="ident">config</span>, <span class="ident">cli</span>.<span class="ident">run</span>.<span class="ident">sealing</span>)<span class="question-mark">?</span>;
+					<span class="op">=</span> <span class="ident">new_partial</span>(<span class="kw-2">&amp;</span><span class="ident">config</span>, <span class="kw-2">&amp;</span><span class="ident">cli</span>)<span class="question-mark">?</span>;
 				<span class="prelude-val">Ok</span>((<span class="ident">cmd</span>.<span class="ident">run</span>(<span class="ident">client</span>, <span class="ident">backend</span>), <span class="ident">task_manager</span>))
 			})
 		},
@@ -218,7 +218,7 @@
 			<span class="ident">runner</span>.<span class="ident">run_node_until_exit</span>(<span class="op">|</span><span class="ident">config</span><span class="op">|</span> <span class="kw">async</span> <span class="kw">move</span> {
 				<span class="kw">match</span> <span class="ident">config</span>.<span class="ident">role</span> {
 					<span class="ident">Role</span>::<span class="ident">Light</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">service</span>::<span class="ident">new_light</span>(<span class="ident">config</span>),
-					<span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">service</span>::<span class="ident">new_full</span>(<span class="ident">config</span>, <span class="ident">cli</span>.<span class="ident">run</span>.<span class="ident">sealing</span>, <span class="ident">cli</span>.<span class="ident">run</span>.<span class="ident">enable_dev_signer</span>),
+					<span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">service</span>::<span class="ident">new_full</span>(<span class="ident">config</span>, <span class="kw-2">&amp;</span><span class="ident">cli</span>),
 				}.<span class="ident">map_err</span>(<span class="ident">sc_cli</span>::<span class="ident">Error</span>::<span class="ident">Service</span>)
 			})
 		}

@@ -638,7 +638,6 @@
 <span id="635">635</span>
 <span id="636">636</span>
 <span id="637">637</span>
-<span id="638">638</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! The Substrate Node Template runtime. This can be compiled with `#[no_std]`, ready for Wasm.</span>
 
@@ -865,10 +864,9 @@
 	<span class="kw">type</span> <span class="ident">Moment</span> <span class="op">=</span> <span class="ident">u64</span>;
 	<span class="kw">type</span> <span class="ident">MinimumPeriod</span> <span class="op">=</span> <span class="ident">MinimumPeriod</span>;
 	<span class="kw">type</span> <span class="ident">WeightInfo</span> <span class="op">=</span> ();
-
-	<span class="comment">// Implementations using Aura should set this to &#39;Aura&#39;. However, this is currently</span>
-	<span class="comment">// incompatible with manual-sealing. See https://github.com/paritytech/frontier/issues/315</span>
-	<span class="comment">// for more details.</span>
+	<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;aura&quot;</span>)]</span>
+	<span class="kw">type</span> <span class="ident">OnTimestampSet</span> <span class="op">=</span> <span class="ident">Aura</span>;
+	<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;manual-seal&quot;</span>)]</span>
 	<span class="kw">type</span> <span class="ident">OnTimestampSet</span> <span class="op">=</span> ();
 }
 

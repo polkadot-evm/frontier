@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["Sealing","Available Sealing methods."],["Subcommand",""]],"struct":[["Cli",""],["RunCmd",""]]});
+initSidebarItems({"enum":[["Subcommand",""]],"struct":[["Cli",""],["RunCmd",""]]});
