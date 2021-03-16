@@ -19,7 +19,7 @@ describeWithFrontier("Frontier RPC (EthFilterApi)", `simple-specs.json`, (contex
 				data: TEST_CONTRACT_BYTECODE,
 				value: "0x00",
 				gasPrice: "0x01",
-				gas: "0x4F930",
+				gas: "0x100000",
 			},
 			GENESIS_ACCOUNT_PRIVATE_KEY
 		);
