@@ -18,5 +18,6 @@ implementors["pallet_evm_precompile_bn128"] = [{"text":"impl Freeze for Bn128Add
 implementors["pallet_evm_precompile_dispatch"] = [{"text":"impl&lt;T&gt; Freeze for Dispatch&lt;T&gt;","synthetic":true,"types":[]}];
 implementors["pallet_evm_precompile_ed25519"] = [{"text":"impl Freeze for Ed25519Verify","synthetic":true,"types":[]}];
 implementors["pallet_evm_precompile_modexp"] = [{"text":"impl Freeze for Modexp","synthetic":true,"types":[]}];
-implementors["pallet_evm_precompile_simple"] = [{"text":"impl Freeze for Identity","synthetic":true,"types":[]},{"text":"impl Freeze for ECRecover","synthetic":true,"types":[]},{"text":"impl Freeze for Ripemd160","synthetic":true,"types":[]},{"text":"impl Freeze for Sha256","synthetic":true,"types":[]}];
+implementors["pallet_evm_precompile_sha3fips"] = [{"text":"impl Freeze for Sha3FIPS256","synthetic":true,"types":[]},{"text":"impl Freeze for Sha3FIPS512","synthetic":true,"types":[]}];
+implementors["pallet_evm_precompile_simple"] = [{"text":"impl Freeze for Identity","synthetic":true,"types":[]},{"text":"impl Freeze for ECRecover","synthetic":true,"types":[]},{"text":"impl Freeze for Ripemd160","synthetic":true,"types":[]},{"text":"impl Freeze for Sha256","synthetic":true,"types":[]},{"text":"impl Freeze for ECRecoverPublicKey","synthetic":true,"types":[]}];
 if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

@@ -19,5 +19,6 @@ sourcesIndex["pallet_evm_precompile_bn128"] = {"name":"","files":["lib.rs"]};
 sourcesIndex["pallet_evm_precompile_dispatch"] = {"name":"","files":["lib.rs"]};
 sourcesIndex["pallet_evm_precompile_ed25519"] = {"name":"","files":["lib.rs"]};
 sourcesIndex["pallet_evm_precompile_modexp"] = {"name":"","files":["lib.rs"]};
+sourcesIndex["pallet_evm_precompile_sha3fips"] = {"name":"","files":["lib.rs"]};
 sourcesIndex["pallet_evm_precompile_simple"] = {"name":"","files":["lib.rs"]};
 createSourceSidebar();

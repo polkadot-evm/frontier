@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["ECRecover","The ecrecover precompile."],["Identity","The identity precompile."],["Ripemd160","The ripemd precompile."],["Sha256","The sha256 precompile."]]});
+initSidebarItems({"struct":[["ECRecover","The ecrecover precompile."],["ECRecoverPublicKey","The ecrecover precompile."],["Identity","The identity precompile."],["Ripemd160","The ripemd precompile."],["Sha256","The sha256 precompile."]]});
