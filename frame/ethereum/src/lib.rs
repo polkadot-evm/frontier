@@ -29,7 +29,7 @@ use frame_support::{
 	dispatch::DispatchResultWithPostInfo,
 };
 use sp_std::prelude::*;
-use frame_system::{ensure_none, RawOrigin};
+use frame_system::ensure_none;
 use frame_support::{ensure, traits::UnfilteredDispatchable};
 use ethereum_types::{H160, H64, H256, U256, Bloom, BloomInput};
 use sp_runtime::{
@@ -151,85 +151,7 @@ decl_module! {
 		fn transact(origin, transaction: ethereum::Transaction) -> DispatchResultWithPostInfo {
 			ensure_none(origin)?;
 
-			ensure!(
-				fp_consensus::find_pre_log(&frame_system::Module::<T>::digest()).is_err(),
-				Error::<T>::PreLogExists,
-			);
-
-			let source = Self::recover_signer(&transaction)
-				.ok_or_else(|| Error::<T>::InvalidSignature)?;
-
-			let transaction_hash = H256::from_slice(
-				Keccak256::digest(&rlp::encode(&transaction)).as_slice()
-			);
-			let transaction_index = Pending::get().len() as u32;
-
-			let (to, contract_address, info) = Self::execute(
-				source,
-				transaction.input.clone(),
-				transaction.value,
-				transaction.gas_limit,
-				Some(transaction.gas_price),
-				Some(transaction.nonce),
-				transaction.action,
-				None,
-			)?;
-
-			let (reason, status, used_gas) = match info {
-				CallOrCreateInfo::Call(info) => {
-					(info.exit_reason, TransactionStatus {
-						transaction_hash,
-						transaction_index,
-						from: source,
-						to,
-						contract_address: None,
-						logs: info.logs.clone(),
-						logs_bloom: {
-							let mut bloom: Bloom = Bloom::default();
-							Self::logs_bloom(
-								info.logs,
-								&mut bloom
-							);
-							bloom
-						},
-					}, info.used_gas)
-				},
-				CallOrCreateInfo::Create(info) => {
-					(info.exit_reason, TransactionStatus {
-						transaction_hash,
-						transaction_index,
-						from: source,
-						to,
-						contract_address: Some(info.value),
-						logs: info.logs.clone(),
-						logs_bloom: {
-							let mut bloom: Bloom = Bloom::default();
-							Self::logs_bloom(
-								info.logs,
-								&mut bloom
-							);
-							bloom
-						},
-					}, info.used_gas)
-				},
-			};
-
-			let receipt = ethereum::Receipt {
-				state_root: match reason {
-					ExitReason::Succeed(_) => H256::from_low_u64_be(1),
-					ExitReason::Error(_) => H256::from_low_u64_le(0),
-					ExitReason::Revert(_) => H256::from_low_u64_le(0),
-					ExitReason::Fatal(_) => H256::from_low_u64_le(0),
-				},
-				used_gas,
-				logs_bloom: status.clone().logs_bloom,
-				logs: status.clone().logs,
-			};
-
-			Pending::append((transaction, status, receipt));
-
-			Self::deposit_event(Event::Executed(source, contract_address.unwrap_or_default(), transaction_hash, reason));
-			Ok(Some(T::GasWeightMapping::gas_to_weight(used_gas.unique_saturated_into())).into())
+			Self::do_transact(transaction)
 		}
 
 		fn on_finalize(n: T::BlockNumber) {
@@ -245,7 +167,8 @@ decl_module! {
 				let PreLog::Block(block) = log;
 
 				for transaction in block.transactions {
-					let _ = Call::<T>::transact(transaction).dispatch_bypass_filter(RawOrigin::None.into());
+					Self::do_transact(transaction)
+						.expect("pre-block transaction verification failed; the block cannot be built");
 				}
 			}
 
@@ -384,6 +307,88 @@ impl<T: Config> Module<T> {
 				bloom.accrue(BloomInput::Raw(&topic[..]));
 			}
 		}
+	}
+
+	fn do_transact(transaction: ethereum::Transaction) -> DispatchResultWithPostInfo {
+		ensure!(
+			fp_consensus::find_pre_log(&frame_system::Module::<T>::digest()).is_err(),
+			Error::<T>::PreLogExists,
+		);
+
+		let source = Self::recover_signer(&transaction)
+			.ok_or_else(|| Error::<T>::InvalidSignature)?;
+
+		let transaction_hash = H256::from_slice(
+			Keccak256::digest(&rlp::encode(&transaction)).as_slice()
+		);
+		let transaction_index = Pending::get().len() as u32;
+
+		let (to, contract_address, info) = Self::execute(
+			source,
+			transaction.input.clone(),
+			transaction.value,
+			transaction.gas_limit,
+			Some(transaction.gas_price),
+			Some(transaction.nonce),
+			transaction.action,
+			None,
+		)?;
+
+		let (reason, status, used_gas) = match info {
+			CallOrCreateInfo::Call(info) => {
+				(info.exit_reason, TransactionStatus {
+					transaction_hash,
+					transaction_index,
+					from: source,
+					to,
+					contract_address: None,
+					logs: info.logs.clone(),
+					logs_bloom: {
+						let mut bloom: Bloom = Bloom::default();
+						Self::logs_bloom(
+							info.logs,
+							&mut bloom
+						);
+						bloom
+					},
+				}, info.used_gas)
+			},
+			CallOrCreateInfo::Create(info) => {
+				(info.exit_reason, TransactionStatus {
+					transaction_hash,
+					transaction_index,
+					from: source,
+					to,
+					contract_address: Some(info.value),
+					logs: info.logs.clone(),
+					logs_bloom: {
+						let mut bloom: Bloom = Bloom::default();
+						Self::logs_bloom(
+							info.logs,
+							&mut bloom
+						);
+						bloom
+					},
+				}, info.used_gas)
+			},
+		};
+
+		let receipt = ethereum::Receipt {
+			state_root: match reason {
+				ExitReason::Succeed(_) => H256::from_low_u64_be(1),
+				ExitReason::Error(_) => H256::from_low_u64_le(0),
+				ExitReason::Revert(_) => H256::from_low_u64_le(0),
+				ExitReason::Fatal(_) => H256::from_low_u64_le(0),
+			},
+			used_gas,
+			logs_bloom: status.clone().logs_bloom,
+			logs: status.clone().logs,
+		};
+
+		Pending::append((transaction, status, receipt));
+
+		Self::deposit_event(Event::Executed(source, contract_address.unwrap_or_default(), transaction_hash, reason));
+		Ok(Some(T::GasWeightMapping::gas_to_weight(used_gas.unique_saturated_into())).into())
 	}
 
 	/// Get the author using the FindAuthor trait.
