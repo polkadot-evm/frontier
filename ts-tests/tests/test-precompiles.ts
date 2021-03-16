@@ -49,7 +49,7 @@ describeWithFrontier("Frontier RPC (Precompile)", `simple-specs.json`, (context)
 		const tx = await context.web3.eth.accounts.signTransaction(
 			{
 				from: GENESIS_ACCOUNT,
-				to: ECRECOVER_PRECOMPILE_ADDRESS,
+				to: '0000000000000000000000000000000000000005',
 				data: `0x${hash.toString()}${sigPart}`,
 				value: "0x00",
 				gasPrice: "0x01",
@@ -58,15 +58,14 @@ describeWithFrontier("Frontier RPC (Precompile)", `simple-specs.json`, (context)
 			GENESIS_ACCOUNT_PRIVATE_KEY
 		);
 
-		const contract = new context.web3.eth.Contract([{ ...TEST_CONTRACT_ABI[0], inputs: [] }], FIRST_CONTRACT_ADDRESS, {
+		const contract = new context.web3.eth.Contract(TEST_CONTRACT_ABI, FIRST_CONTRACT_ADDRESS, {
 			from: GENESIS_ACCOUNT,
 			gasPrice: "0x01",
 		});
-		let result = await contract.methods
-			.ecrecover()
-			.call(`0x${hash.toString()}${sigPart}`)
-		console.log(result);
-		let result = await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction]);
+		
+		await contract.methods
+			.ecrecover(`0x${hash.toString()}${sigPart}`)
+			.call()
 	});
 
 	it('should perform identity directly', async () => {
