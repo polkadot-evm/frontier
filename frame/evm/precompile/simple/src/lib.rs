@@ -104,3 +104,32 @@ impl LinearCostPrecompile for Sha256 {
 		Ok((ExitSucceed::Returned, ret.to_vec()))
 	}
 }
+
+/// The ecrecover precompile.
+pub struct ECRecoverPublicKey;
+
+impl LinearCostPrecompile for ECRecoverPublicKey {
+	const BASE: u64 = 3000;
+	const WORD: u64 = 0;
+
+	fn execute(
+		i: &[u8],
+		_: u64,
+	) -> core::result::Result<(ExitSucceed, Vec<u8>), ExitError> {
+		let mut input = [0u8; 128];
+		input[..min(i.len(), 128)].copy_from_slice(&i[..min(i.len(), 128)]);
+
+		let mut msg = [0u8; 32];
+		let mut sig = [0u8; 65];
+
+		msg[0..32].copy_from_slice(&input[0..32]);
+		sig[0..32].copy_from_slice(&input[64..96]);
+		sig[32..64].copy_from_slice(&input[96..128]);
+		sig[64] = input[63];
+
+		let pubkey = sp_io::crypto::secp256k1_ecdsa_recover(&sig, &msg)
+			.map_err(|_| ExitError::Other("Public key recover failed".into()))?;
+
+		Ok((ExitSucceed::Returned, pubkey.to_vec()))
+	}
+}
