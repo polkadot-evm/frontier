@@ -81,10 +81,6 @@ impl<T: Config> Runner<T> {
 		let source_account = Module::<T>::account_basic(&source);
 		ensure!(source_account.balance >= total_payment, Error::<T>::BalanceLow);
 
-		if let Some(nonce) = nonce {
-			ensure!(source_account.nonce == nonce, Error::<T>::InvalidNonce);
-		}
-
 		// Deduct fee from the `source` account.
 		let fee = T::OnChargeTransaction::withdraw_fee(&source, total_fee)?;
 
@@ -141,6 +137,24 @@ impl<T: Config> Runner<T> {
 			logs: state.substate.logs,
 		})
 	}
+
+	fn inc_nonce(
+		source: H160,
+		tx_nonce: Option<U256>,
+		is_create: bool,
+		config: &evm::Config,
+	) -> Result<(), Error<T>> {
+		let account_id = T::AddressMapping::into_account_id(source);
+		let source_account = Module::<T>::account_basic(&source);
+		if let Some(nonce) = tx_nonce {
+			ensure!(source_account.nonce == nonce, Error::<T>::InvalidNonce);
+		}
+
+		if !is_create || (is_create && config.create_increase_nonce) {
+			frame_system::Module::<T>::inc_account_nonce(&account_id);
+		}
+		Ok(())
+	}
 }
 
 impl<T: Config> RunnerT<T> for Runner<T> {
@@ -156,6 +170,7 @@ impl<T: Config> RunnerT<T> for Runner<T> {
 		nonce: Option<U256>,
 		config: &evm::Config,
 	) -> Result<CallInfo, Self::Error> {
+		Self::inc_nonce(source, nonce, false, config)?;
 		Self::execute(
 			source,
 			value,
@@ -182,6 +197,7 @@ impl<T: Config> RunnerT<T> for Runner<T> {
 		nonce: Option<U256>,
 		config: &evm::Config,
 	) -> Result<CreateInfo, Self::Error> {
+		Self::inc_nonce(source, nonce, true, config)?;
 		Self::execute(
 			source,
 			value,
@@ -213,6 +229,7 @@ impl<T: Config> RunnerT<T> for Runner<T> {
 		nonce: Option<U256>,
 		config: &evm::Config,
 	) -> Result<CreateInfo, Self::Error> {
+		Self::inc_nonce(source, nonce, true, config)?;
 		let code_hash = H256::from_slice(Keccak256::digest(&init).as_slice());
 		Self::execute(
 			source,
@@ -435,11 +452,6 @@ impl<'vicinity, 'config, T: Config> StackStateT<'config> for SubstrateStackState
 
 	fn deleted(&self, address: H160) -> bool {
 		self.substate.deleted(address)
-	}
-
-	fn inc_nonce(&mut self, address: H160) {
-		let account_id = T::AddressMapping::into_account_id(address);
-		frame_system::Module::<T>::inc_account_nonce(&account_id);
 	}
 
 	fn set_storage(&mut self, address: H160, index: H256, value: H256) {
