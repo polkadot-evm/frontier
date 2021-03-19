@@ -66,7 +66,7 @@ pub fn sync_genesis_block<Block: BlockT, C>(
 	Ok(())
 }
 
-pub fn sync_one_level<Block: BlockT, C, B>(
+pub fn sync_one_block<Block: BlockT, C, B>(
 	client: &C,
 	substrate_backend: &B,
 	frontier_backend: &fc_db::Backend<Block>,
@@ -137,7 +137,7 @@ pub fn sync_blocks<Block: BlockT, C, B>(
 	let mut synced_any = false;
 
 	for _ in 0..limit {
-		synced_any = synced_any || sync_one_level(client, substrate_backend, frontier_backend)?;
+		synced_any = synced_any || sync_one_block(client, substrate_backend, frontier_backend)?;
 	}
 
 	Ok(synced_any)
