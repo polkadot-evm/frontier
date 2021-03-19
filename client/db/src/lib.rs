@@ -58,11 +58,12 @@ impl DatabaseSettingsSrc {
 }
 
 pub(crate) mod columns {
-	pub const NUM_COLUMNS: u32 = 3;
+	pub const NUM_COLUMNS: u32 = 4;
 
 	pub const META: u32 = 0;
 	pub const BLOCK_MAPPING: u32 = 1;
 	pub const TRANSACTION_MAPPING: u32 = 2;
+	pub const SYNCED_MAPPING: u32 = 3;
 }
 
 pub(crate) mod static_keys {
@@ -148,6 +149,16 @@ pub struct MappingDb<Block: BlockT> {
 }
 
 impl<Block: BlockT> MappingDb<Block> {
+	pub fn is_synced(
+		&self,
+		block_hash: &Block::Hash,
+	) -> Result<bool, String> {
+		match self.db.get(crate::columns::SYNCED_MAPPING, &block_hash.encode()) {
+			Some(raw) => Ok(bool::decode(&mut &raw[..]).map_err(|e| format!("{:?}", e))?),
+			None => Ok(false),
+		}
+	}
+
 	pub fn block_hashes(
 		&self,
 		ethereum_block_hash: &H256,
@@ -197,6 +208,12 @@ impl<Block: BlockT> MappingDb<Block> {
 				&metadata.encode(),
 			);
 		}
+
+		transaction.set(
+			crate::columns::SYNCED_MAPPING,
+			&commitment.block_hash.encode(),
+			&true.encode(),
+		);
 
 		self.db.commit(transaction).map_err(|e| format!("{:?}", e))?;
 
