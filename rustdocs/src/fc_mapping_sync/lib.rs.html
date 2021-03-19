@@ -142,7 +142,6 @@
 <span id="139">139</span>
 <span id="140">140</span>
 <span id="141">141</span>
-<span id="142">142</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
@@ -212,7 +211,7 @@
 	<span class="prelude-val">Ok</span>(())
 }
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">sync_one_level</span><span class="op">&lt;</span><span class="ident">Block</span>: <span class="ident">BlockT</span>, <span class="ident">C</span>, <span class="ident">B</span><span class="op">&gt;</span>(
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">sync_one_block</span><span class="op">&lt;</span><span class="ident">Block</span>: <span class="ident">BlockT</span>, <span class="ident">C</span>, <span class="ident">B</span><span class="op">&gt;</span>(
 	<span class="ident">client</span>: <span class="kw-2">&amp;</span><span class="ident">C</span>,
 	<span class="ident">substrate_backend</span>: <span class="kw-2">&amp;</span><span class="ident">B</span>,
 	<span class="ident">frontier_backend</span>: <span class="kw-2">&amp;</span><span class="ident">fc_db</span>::<span class="ident">Backend</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>,
@@ -223,48 +222,47 @@
 {
 	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">current_syncing_tips</span> <span class="op">=</span> <span class="ident">frontier_backend</span>.<span class="ident">meta</span>().<span class="ident">current_syncing_tips</span>()<span class="question-mark">?</span>;
 
-	<span class="kw">if</span> <span class="ident">current_syncing_tips</span>.<span class="ident">len</span>() <span class="op">=</span><span class="op">=</span> <span class="number">0</span> {
-		<span class="comment">// Sync genesis block.</span>
+	<span class="kw">if</span> <span class="ident">current_syncing_tips</span>.<span class="ident">is_empty</span>() {
+		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">leaves</span> <span class="op">=</span> <span class="ident">substrate_backend</span>.<span class="ident">leaves</span>().<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
+		<span class="kw">if</span> <span class="ident">leaves</span>.<span class="ident">is_empty</span>() {
+			<span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="bool-val">false</span>)
+		}
 
-		<span class="kw">let</span> <span class="ident">header</span> <span class="op">=</span> <span class="ident">substrate_backend</span>.<span class="ident">header</span>(<span class="ident">BlockId</span>::<span class="ident">Number</span>(<span class="ident">Zero</span>::<span class="ident">zero</span>()))
-			.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">e</span>))<span class="question-mark">?</span>
-			.<span class="ident">ok_or</span>(<span class="string">&quot;Genesis header not found&quot;</span>.<span class="ident">to_string</span>())<span class="question-mark">?</span>;
-		<span class="ident">sync_genesis_block</span>(<span class="ident">client</span>, <span class="ident">frontier_backend</span>, <span class="kw-2">&amp;</span><span class="ident">header</span>)<span class="question-mark">?</span>;
+		<span class="ident">current_syncing_tips</span>.<span class="ident">append</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">leaves</span>);
+	}
 
-		<span class="ident">current_syncing_tips</span>.<span class="ident">push</span>(<span class="ident">header</span>.<span class="ident">hash</span>());
+	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">operating_tip</span> <span class="op">=</span> <span class="prelude-val">None</span>;
+
+	<span class="kw">while</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">checking_tip</span>) <span class="op">=</span> <span class="ident">current_syncing_tips</span>.<span class="ident">pop</span>() {
+		<span class="kw">if</span> <span class="op">!</span><span class="ident">frontier_backend</span>.<span class="ident">mapping</span>().<span class="ident">is_synced</span>(<span class="kw-2">&amp;</span><span class="ident">checking_tip</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">e</span>))<span class="question-mark">?</span> {
+			<span class="ident">operating_tip</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">checking_tip</span>);
+			<span class="kw">break</span>
+		}
+	}
+
+	<span class="kw">let</span> <span class="ident">operating_tip</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">operating_tip</span> {
+		<span class="prelude-val">Some</span>(<span class="ident">operating_tip</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">operating_tip</span>,
+		<span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {
+			<span class="ident">frontier_backend</span>.<span class="ident">meta</span>().<span class="ident">write_current_syncing_tips</span>(<span class="ident">current_syncing_tips</span>)<span class="question-mark">?</span>;
+			<span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="bool-val">false</span>)
+		}
+	};
+
+	<span class="kw">let</span> <span class="ident">operating_header</span> <span class="op">=</span> <span class="ident">substrate_backend</span>.<span class="ident">header</span>(<span class="ident">BlockId</span>::<span class="ident">Hash</span>(<span class="ident">operating_tip</span>))
+		.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">e</span>))<span class="question-mark">?</span>
+		.<span class="ident">ok_or</span>(<span class="string">&quot;Header not found&quot;</span>.<span class="ident">to_string</span>())<span class="question-mark">?</span>;
+
+	<span class="kw">if</span> <span class="ident">operating_header</span>.<span class="ident">number</span>() <span class="op">=</span><span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">Zero</span>::<span class="ident">zero</span>() {
+		<span class="ident">sync_genesis_block</span>(<span class="ident">client</span>, <span class="ident">frontier_backend</span>, <span class="kw-2">&amp;</span><span class="ident">operating_header</span>)<span class="question-mark">?</span>;
+
 		<span class="ident">frontier_backend</span>.<span class="ident">meta</span>().<span class="ident">write_current_syncing_tips</span>(<span class="ident">current_syncing_tips</span>)<span class="question-mark">?</span>;
-
 		<span class="prelude-val">Ok</span>(<span class="bool-val">true</span>)
 	} <span class="kw">else</span> {
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">syncing_tip_and_children</span> <span class="op">=</span> <span class="prelude-val">None</span>;
+		<span class="ident">sync_block</span>(<span class="ident">frontier_backend</span>, <span class="kw-2">&amp;</span><span class="ident">operating_header</span>)<span class="question-mark">?</span>;
 
-		<span class="kw">for</span> <span class="ident">tip</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">current_syncing_tips</span> {
-			<span class="kw">let</span> <span class="ident">children</span> <span class="op">=</span> <span class="ident">substrate_backend</span>.<span class="ident">children</span>(<span class="kw-2">*</span><span class="ident">tip</span>)
-				.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
-
-			<span class="kw">if</span> <span class="ident">children</span>.<span class="ident">len</span>() <span class="op">&gt;</span> <span class="number">0</span> {
-				<span class="ident">syncing_tip_and_children</span> <span class="op">=</span> <span class="prelude-val">Some</span>((<span class="kw-2">*</span><span class="ident">tip</span>, <span class="ident">children</span>));
-				<span class="kw">break</span>
-			}
-		}
-
-		<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>((<span class="ident">syncing_tip</span>, <span class="ident">children</span>)) <span class="op">=</span> <span class="ident">syncing_tip_and_children</span> {
-			<span class="ident">current_syncing_tips</span>.<span class="ident">retain</span>(<span class="op">|</span><span class="ident">tip</span><span class="op">|</span> <span class="ident">tip</span> <span class="op">!</span><span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">syncing_tip</span>);
-
-			<span class="kw">for</span> <span class="ident">child</span> <span class="kw">in</span> <span class="ident">children</span> {
-				<span class="kw">let</span> <span class="ident">header</span> <span class="op">=</span> <span class="ident">substrate_backend</span>.<span class="ident">header</span>(<span class="ident">BlockId</span>::<span class="ident">Hash</span>(<span class="ident">child</span>))
-					.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">e</span>))<span class="question-mark">?</span>
-					.<span class="ident">ok_or</span>(<span class="string">&quot;Header not found&quot;</span>.<span class="ident">to_string</span>())<span class="question-mark">?</span>;
-
-				<span class="ident">sync_block</span>(<span class="ident">frontier_backend</span>, <span class="kw-2">&amp;</span><span class="ident">header</span>)<span class="question-mark">?</span>;
-				<span class="ident">current_syncing_tips</span>.<span class="ident">push</span>(<span class="ident">child</span>);
-			}
-			<span class="ident">frontier_backend</span>.<span class="ident">meta</span>().<span class="ident">write_current_syncing_tips</span>(<span class="ident">current_syncing_tips</span>)<span class="question-mark">?</span>;
-
-			<span class="prelude-val">Ok</span>(<span class="bool-val">true</span>)
-		} <span class="kw">else</span> {
-			<span class="prelude-val">Ok</span>(<span class="bool-val">false</span>)
-		}
+		<span class="ident">current_syncing_tips</span>.<span class="ident">push</span>(<span class="kw-2">*</span><span class="ident">operating_header</span>.<span class="ident">parent_hash</span>());
+		<span class="ident">frontier_backend</span>.<span class="ident">meta</span>().<span class="ident">write_current_syncing_tips</span>(<span class="ident">current_syncing_tips</span>)<span class="question-mark">?</span>;
+		<span class="prelude-val">Ok</span>(<span class="bool-val">true</span>)
 	}
 }
 
@@ -281,7 +279,7 @@
 	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">synced_any</span> <span class="op">=</span> <span class="bool-val">false</span>;
 
 	<span class="kw">for</span> <span class="kw">_</span> <span class="kw">in</span> <span class="number">0</span>..<span class="ident">limit</span> {
-		<span class="ident">synced_any</span> <span class="op">=</span> <span class="ident">synced_any</span> <span class="op">|</span><span class="op">|</span> <span class="ident">sync_one_level</span>(<span class="ident">client</span>, <span class="ident">substrate_backend</span>, <span class="ident">frontier_backend</span>)<span class="question-mark">?</span>;
+		<span class="ident">synced_any</span> <span class="op">=</span> <span class="ident">synced_any</span> <span class="op">|</span><span class="op">|</span> <span class="ident">sync_one_block</span>(<span class="ident">client</span>, <span class="ident">substrate_backend</span>, <span class="ident">frontier_backend</span>)<span class="question-mark">?</span>;
 	}
 
 	<span class="prelude-val">Ok</span>(<span class="ident">synced_any</span>)
