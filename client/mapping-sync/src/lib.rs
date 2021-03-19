@@ -88,10 +88,7 @@ pub fn sync_one_block<Block: BlockT, C, B>(
 
 	let mut operating_tip = None;
 
-	while !current_syncing_tips.is_empty() {
-		let checking_tip = current_syncing_tips.pop()
-			.expect("checked above current_syncing_tips is not empty; qed");
-
+	while let Some(checking_tip) = current_syncing_tips.pop() {
 		if !frontier_backend.mapping().is_synced(&checking_tip).map_err(|e| format!("{:?}", e))? {
 			operating_tip = Some(checking_tip);
 			break
