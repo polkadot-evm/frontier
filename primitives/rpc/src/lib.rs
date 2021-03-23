@@ -96,8 +96,6 @@ sp_api::decl_runtime_apis! {
 			Option<Vec<ethereum::Receipt>>,
 			Option<Vec<TransactionStatus>>
 		);
-		/// Return the current block gas limit
-		fn current_block_gas_limit() -> U256;
 	}
 }
 
