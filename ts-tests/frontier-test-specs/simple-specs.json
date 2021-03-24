@@ -34,6 +34,12 @@
             "code": []
           }
         }
+      },
+      "palletAura": {
+        "authorities": []
+      },
+      "palletGrandpa": {
+        "authorities": []
       }
     }
   }

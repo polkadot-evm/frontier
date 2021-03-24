@@ -84,8 +84,7 @@ impl LinearCostPrecompile for Modexp {
 		// input length should be at least 96 + user-specified length of base + exp + mod
 		let total_len = base_len + exp_len + mod_len + 96;
 		if input.len() < total_len {
-			let err_msg = format!("expected at least {} bytes but received {}", total_len, input.len());
-			return Err(ExitError::Other(err_msg.into()));
+			return Err(ExitError::Other("insufficient input size".into()));
 		}
 
 		// Gas formula allows arbitrary large exp_len when base and modulus are empty, so we need to handle empty base first.
@@ -167,7 +166,7 @@ mod tests {
 				panic!("Test not expected to pass");
 			},
 			Err(e) => {
-				assert_eq!(e, ExitError::Other("expected at least 99 bytes but received 96".into()));
+				assert_eq!(e, ExitError::Other("insufficient input size".into()));
 				Ok(())
 			}
 		}

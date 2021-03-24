@@ -9,10 +9,10 @@ license = "Apache-2.0"
 [dependencies]
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false }
 serde = { version = "1.0.101", optional = true }
-sp-std = { version = "3.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sp-core = { version = "3.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sp-runtime = { version = "3.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sp-inherents = { version = "3.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sp-std = { version = "3.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sp-core = { version = "3.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sp-runtime = { version = "3.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sp-inherents = { version = "3.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 frame-system = { version = "3.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 frame-support = { version = "3.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 
