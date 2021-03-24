@@ -301,29 +301,29 @@
 	<span class="ident">_enable_println</span>: <span class="ident">bool</span>,
 ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">GenesisConfig</span> {
 	<span class="ident">GenesisConfig</span> {
-		<span class="ident">frame_system</span>: <span class="prelude-val">Some</span>(<span class="ident">SystemConfig</span> {
+		<span class="ident">frame_system</span>: <span class="ident">SystemConfig</span> {
 			<span class="comment">// Add Wasm runtime to storage.</span>
 			<span class="ident">code</span>: <span class="ident">wasm_binary</span>.<span class="ident">to_vec</span>(),
 			<span class="ident">changes_trie_config</span>: <span class="ident">Default</span>::<span class="ident">default</span>(),
-		}),
-		<span class="ident">pallet_balances</span>: <span class="prelude-val">Some</span>(<span class="ident">BalancesConfig</span> {
+		},
+		<span class="ident">pallet_balances</span>: <span class="ident">BalancesConfig</span> {
 			<span class="comment">// Configure endowed accounts with initial balance of 1 &lt;&lt; 60.</span>
 			<span class="ident">balances</span>: <span class="ident">endowed_accounts</span>.<span class="ident">iter</span>().<span class="ident">cloned</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">k</span><span class="op">|</span>(<span class="ident">k</span>, <span class="number">1</span> <span class="op">&lt;</span><span class="op">&lt;</span> <span class="number">60</span>)).<span class="ident">collect</span>(),
-		}),
-		<span class="ident">pallet_aura</span>: <span class="prelude-val">Some</span>(<span class="ident">AuraConfig</span> {
+		},
+		<span class="ident">pallet_aura</span>: <span class="ident">AuraConfig</span> {
 			<span class="ident">authorities</span>: <span class="ident">initial_authorities</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> (<span class="ident">x</span>.<span class="number">0</span>.<span class="ident">clone</span>())).<span class="ident">collect</span>(),
-		}),
-		<span class="ident">pallet_grandpa</span>: <span class="prelude-val">Some</span>(<span class="ident">GrandpaConfig</span> {
+		},
+		<span class="ident">pallet_grandpa</span>: <span class="ident">GrandpaConfig</span> {
 			<span class="ident">authorities</span>: <span class="ident">initial_authorities</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> (<span class="ident">x</span>.<span class="number">1</span>.<span class="ident">clone</span>(), <span class="number">1</span>)).<span class="ident">collect</span>(),
-		}),
-		<span class="ident">pallet_sudo</span>: <span class="prelude-val">Some</span>(<span class="ident">SudoConfig</span> {
+		},
+		<span class="ident">pallet_sudo</span>: <span class="ident">SudoConfig</span> {
 			<span class="comment">// Assign network admin rights.</span>
 			<span class="ident">key</span>: <span class="ident">root_key</span>,
-		}),
-		<span class="ident">pallet_evm</span>: <span class="prelude-val">Some</span>(<span class="ident">EVMConfig</span> {
+		},
+		<span class="ident">pallet_evm</span>: <span class="ident">EVMConfig</span> {
 			<span class="ident">accounts</span>: <span class="ident">BTreeMap</span>::<span class="ident">new</span>(),
-		}),
-		<span class="ident">pallet_ethereum</span>: <span class="prelude-val">Some</span>(<span class="ident">EthereumConfig</span> {}),
+		},
+		<span class="ident">pallet_ethereum</span>: <span class="ident">EthereumConfig</span> {},
 	}
 }
 </pre></div>
