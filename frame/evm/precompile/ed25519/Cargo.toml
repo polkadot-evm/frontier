@@ -12,7 +12,7 @@ description = "ED25519 precompiles for EVM pallet."
 sp-core = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sp-io = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 fp-evm = { version = "0.8.0", default-features = false, path = "../../../../primitives/evm" }
-evm = { version = "0.24.0", default-features = false, features = ["with-codec"] }
+evm = { version = "0.25.0", default-features = false, features = ["with-codec"] }
 ed25519-dalek = { version = "1.0.0", features = ["alloc", "u64_backend"], default-features = false }
 
 [features]
