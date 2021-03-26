@@ -1,3 +1,3 @@
 (function() {var implementors = {};
-implementors["frontier_template_test_client"] = [{"text":"impl GenesisInit for GenesisParameters","synthetic":false,"types":[]}];
+implementors["frontier_template_test_client"] = [{"text":"impl <a class=\"trait\" href=\"frontier_template_test_client/trait.GenesisInit.html\" title=\"trait frontier_template_test_client::GenesisInit\">GenesisInit</a> for <a class=\"struct\" href=\"frontier_template_test_client/struct.GenesisParameters.html\" title=\"struct frontier_template_test_client::GenesisParameters\">GenesisParameters</a>","synthetic":false,"types":["frontier_template_test_client::GenesisParameters"]}];
 if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

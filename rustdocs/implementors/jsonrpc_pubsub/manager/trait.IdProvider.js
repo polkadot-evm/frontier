@@ -1,3 +1,3 @@
 (function() {var implementors = {};
-implementors["fc_rpc"] = [{"text":"impl IdProvider for HexEncodedIdProvider","synthetic":false,"types":[]}];
+implementors["fc_rpc"] = [{"text":"impl IdProvider for <a class=\"struct\" href=\"fc_rpc/struct.HexEncodedIdProvider.html\" title=\"struct fc_rpc::HexEncodedIdProvider\">HexEncodedIdProvider</a>","synthetic":false,"types":["fc_rpc::eth_pubsub::HexEncodedIdProvider"]}];
 if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

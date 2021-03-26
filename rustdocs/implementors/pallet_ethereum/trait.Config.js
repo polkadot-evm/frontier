@@ -1,3 +1,3 @@
 (function() {var implementors = {};
-implementors["frontier_template_runtime"] = [{"text":"impl Config for Runtime","synthetic":false,"types":[]}];
+implementors["frontier_template_runtime"] = [{"text":"impl <a class=\"trait\" href=\"pallet_ethereum/trait.Config.html\" title=\"trait pallet_ethereum::Config\">Config</a> for <a class=\"struct\" href=\"frontier_template_runtime/struct.Runtime.html\" title=\"struct frontier_template_runtime::Runtime\">Runtime</a>","synthetic":false,"types":["frontier_template_runtime::Runtime"]}];
 if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

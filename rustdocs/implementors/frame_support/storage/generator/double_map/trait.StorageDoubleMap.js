@@ -1,3 +1,3 @@
 (function() {var implementors = {};
-implementors["pallet_evm"] = [{"text":"impl StorageDoubleMap&lt;H160, H256, H256&gt; for AccountStorages","synthetic":false,"types":[]}];
+implementors["pallet_evm"] = [{"text":"impl StorageDoubleMap&lt;H160, H256, H256&gt; for <a class=\"struct\" href=\"pallet_evm/struct.AccountStorages.html\" title=\"struct pallet_evm::AccountStorages\">AccountStorages</a>","synthetic":false,"types":["pallet_evm::AccountStorages"]}];
 if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

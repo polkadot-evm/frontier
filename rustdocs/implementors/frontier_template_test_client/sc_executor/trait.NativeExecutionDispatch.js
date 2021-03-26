@@ -1,3 +1,3 @@
 (function() {var implementors = {};
-implementors["frontier_template_test_client"] = [{"text":"impl NativeExecutionDispatch for LocalExecutor","synthetic":false,"types":[]}];
+implementors["frontier_template_test_client"] = [{"text":"impl <a class=\"trait\" href=\"frontier_template_test_client/sc_executor/trait.NativeExecutionDispatch.html\" title=\"trait frontier_template_test_client::sc_executor::NativeExecutionDispatch\">NativeExecutionDispatch</a> for <a class=\"struct\" href=\"frontier_template_test_client/struct.LocalExecutor.html\" title=\"struct frontier_template_test_client::LocalExecutor\">LocalExecutor</a>","synthetic":false,"types":["frontier_template_test_client::LocalExecutor"]}];
 if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

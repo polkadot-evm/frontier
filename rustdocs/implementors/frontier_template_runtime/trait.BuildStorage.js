@@ -1,3 +1,3 @@
 (function() {var implementors = {};
-implementors["frontier_template_runtime"] = [{"text":"impl BuildStorage for GenesisConfig","synthetic":false,"types":[]}];
+implementors["frontier_template_runtime"] = [{"text":"impl <a class=\"trait\" href=\"frontier_template_runtime/trait.BuildStorage.html\" title=\"trait frontier_template_runtime::BuildStorage\">BuildStorage</a> for <a class=\"struct\" href=\"frontier_template_runtime/struct.GenesisConfig.html\" title=\"struct frontier_template_runtime::GenesisConfig\">GenesisConfig</a>","synthetic":false,"types":["frontier_template_runtime::GenesisConfig"]}];
 if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

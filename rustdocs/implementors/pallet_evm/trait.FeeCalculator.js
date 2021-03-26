@@ -1,4 +1,4 @@
 (function() {var implementors = {};
-implementors["frontier_template_runtime"] = [{"text":"impl FeeCalculator for FixedGasPrice","synthetic":false,"types":[]}];
+implementors["frontier_template_runtime"] = [{"text":"impl <a class=\"trait\" href=\"pallet_evm/trait.FeeCalculator.html\" title=\"trait pallet_evm::FeeCalculator\">FeeCalculator</a> for <a class=\"struct\" href=\"frontier_template_runtime/struct.FixedGasPrice.html\" title=\"struct frontier_template_runtime::FixedGasPrice\">FixedGasPrice</a>","synthetic":false,"types":["frontier_template_runtime::FixedGasPrice"]}];
 implementors["pallet_evm"] = [];
 if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
