@@ -355,11 +355,25 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> where
 		let transaction_metadata = self.backend.mapping().transaction_metadata(&transaction_hash)
 			.map_err(|err| internal_err(format!("fetch aux store failed: {:?}", err)))?;
 
-		if transaction_metadata.len() == 1 {
-			Ok(Some((transaction_metadata[0].ethereum_block_hash, transaction_metadata[0].ethereum_index)))
-		} else {
-			Ok(None)
-		}
+			if transaction_metadata.len() == 1 {
+				Ok(Some((
+					transaction_metadata[0].ethereum_block_hash,
+					transaction_metadata[0].ethereum_index,
+				)))
+			} else if transaction_metadata.len() > 1 {
+				transaction_metadata
+					.iter()
+					.find(|meta| self.is_canon(meta.block_hash))
+					.map_or(
+						Ok(Some((
+							transaction_metadata[0].ethereum_block_hash,
+							transaction_metadata[0].ethereum_index,
+						))),
+						|meta| Ok(Some((meta.ethereum_block_hash, meta.ethereum_index))),
+					)
+			} else {
+				Ok(None)
+			}
 	}
 }
 
