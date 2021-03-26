@@ -356,12 +356,12 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> where
 			.map_err(|err| internal_err(format!("fetch aux store failed: {:?}", err)))?;
 
 			if transaction_metadata.len() == 1 {
-				return Ok(Some((
+				Ok(Some((
 					transaction_metadata[0].ethereum_block_hash,
 					transaction_metadata[0].ethereum_index,
-				)));
+				)))
 			} else if transaction_metadata.len() > 1 {
-				let res = transaction_metadata
+				transaction_metadata
 					.iter()
 					.find(|meta| self.is_canon(meta.block_hash))
 					.map_or(
@@ -370,8 +370,9 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> where
 							transaction_metadata[0].ethereum_index,
 						))),
 						|meta| Ok(Some((meta.ethereum_block_hash, meta.ethereum_index))),
-					);
-				return res;
+					)
+			} else {
+				Ok(None)
 			}
 	}
 }
