@@ -36,37 +36,33 @@ use rustc_hex::ToHex;
 use pallet_evm::ExitReason;
 use sha3::{Digest, Keccak256};
 
-use sp_runtime::traits::{Block as BlockT, BlakeTwo256, Zero, UniqueSaturatedInto};
-use sp_storage::StorageKey;
-use sp_blockchain::HeaderBackend;
-use sp_api::{BlockId, HeaderT};
-use sc_network::ExHashT;
-use sc_client_api::backend::{StorageProvider, Backend, StateBackend};
-use fc_rpc_core::types::BlockNumber;
-use fp_storage::PALLET_ETHEREUM_SCHEMA;
+pub mod frontier_backend_client {
 
-use jsonrpc_core::Result as RpcResult;
-use codec::Decode;
-use pallet_ethereum::EthereumStorageSchema;
-use std::marker::PhantomData;
+	use super::internal_err;
 
-pub struct FrontierBackendClient<B: BlockT, C, BE, H: ExHashT> {
-	_marker: PhantomData<(B, C, BE, H)>,
-}
+	use sp_runtime::traits::{Block as BlockT, BlakeTwo256, Zero, UniqueSaturatedInto};
+	use sp_storage::StorageKey;
+	use sp_blockchain::HeaderBackend;
+	use sp_api::{BlockId, HeaderT};
+	use sc_client_api::backend::{StorageProvider, Backend, StateBackend};
+	use fc_rpc_core::types::BlockNumber;
+	use fp_storage::PALLET_ETHEREUM_SCHEMA;
+	
+	use jsonrpc_core::Result as RpcResult;
+	use codec::Decode;
+	
+	use ethereum_types::H256;
+	use pallet_ethereum::EthereumStorageSchema;
 
-impl<B, C, BE, H: ExHashT> FrontierBackendClient<B, C, BE, H> where
-	B: BlockT,
-	C: StorageProvider<B, BE>,
-	C: HeaderBackend<B> + 'static,
-	BE: Backend<B> + 'static,
-	BE::State: StateBackend<BlakeTwo256>,
-	B: BlockT<Hash=H256> + Send + Sync + 'static,
-	C: Send + Sync + 'static,
-{
-	fn native_block_id(client: &C, backend: &fc_db::Backend<B>, number: Option<BlockNumber>) -> RpcResult<Option<BlockId<B>>> {
+	pub fn native_block_id<B: BlockT, C>(client: &C, backend: &fc_db::Backend<B>, number: Option<BlockNumber>) -> RpcResult<Option<BlockId<B>>> where
+		B: BlockT,
+		C: HeaderBackend<B> + 'static,
+		B: BlockT<Hash=H256> + Send + Sync + 'static,
+		C: Send + Sync + 'static,
+	{
 		Ok(match number.unwrap_or(BlockNumber::Latest) {
 			BlockNumber::Hash { hash, .. } => {
-				Self::load_hash(client, backend, hash).unwrap_or(None)
+				load_hash::<B, C>(client, backend, hash).unwrap_or(None)
 			},
 			BlockNumber::Num(number) => {
 				Some(BlockId::Number(number.unique_saturated_into()))
@@ -86,12 +82,17 @@ impl<B, C, BE, H: ExHashT> FrontierBackendClient<B, C, BE, H> where
 	}
 
 	// Asumes there is only one mapped canonical block in the AuxStore, otherwise something is wrong
-	fn load_hash(client: &C, backend: &fc_db::Backend<B>, hash: H256) -> RpcResult<Option<BlockId<B>>> {
+	pub fn load_hash<B: BlockT, C>(client: &C, backend: &fc_db::Backend<B>, hash: H256) -> RpcResult<Option<BlockId<B>>> where
+		B: BlockT,
+		C: HeaderBackend<B> + 'static,
+		B: BlockT<Hash=H256> + Send + Sync + 'static,
+		C: Send + Sync + 'static,
+	{
 		let hashes = backend.mapping().block_hashes(&hash)
 			.map_err(|err| internal_err(format!("fetch aux store failed: {:?}", err)))?;
 		let out: Vec<H256> = hashes.into_iter()
 			.filter_map(|h| {
-				if Self::is_canon(client, h) {
+				if is_canon::<B, C>(client, h) {
 					Some(h)
 				} else {
 					None
@@ -106,14 +107,26 @@ impl<B, C, BE, H: ExHashT> FrontierBackendClient<B, C, BE, H> where
 		Ok(None)
 	}
 
-	fn onchain_storage_schema(client: &C, at: BlockId<B>) -> EthereumStorageSchema {
+	pub fn onchain_storage_schema<B: BlockT, C, BE>(client: &C, at: BlockId<B>) -> EthereumStorageSchema where
+		B: BlockT,
+		C: StorageProvider<B, BE>,
+		BE: Backend<B> + 'static,
+		BE::State: StateBackend<BlakeTwo256>,
+		B: BlockT<Hash=H256> + Send + Sync + 'static,
+		C: Send + Sync + 'static,
+	{
 		match client.storage(&at, &StorageKey(PALLET_ETHEREUM_SCHEMA.to_vec())) {
 			Ok(Some(bytes)) => Decode::decode(&mut &bytes.0[..]).ok().unwrap_or(EthereumStorageSchema::Undefined),
 			_ => EthereumStorageSchema::Undefined,
 		}
 	}
 
-	fn is_canon(client: &C, target_hash: H256) -> bool {
+	pub fn is_canon<B: BlockT, C>(client: &C, target_hash: H256) -> bool where
+		B: BlockT,
+		C: HeaderBackend<B> + 'static,
+		B: BlockT<Hash=H256> + Send + Sync + 'static,
+		C: Send + Sync + 'static,
+	{
 		if let Ok(Some(number)) = client.number(target_hash) {
 			if let Ok(Some(header)) = client.header(BlockId::Number(number)) {
 				return header.hash() == target_hash;
@@ -122,7 +135,12 @@ impl<B, C, BE, H: ExHashT> FrontierBackendClient<B, C, BE, H> where
 		false
 	}
 
-	fn load_transactions(client: &C, backend: &fc_db::Backend<B>, transaction_hash: H256) -> RpcResult<Option<(H256, u32)>> {
+	pub fn load_transactions<B: BlockT, C>(client: &C, backend: &fc_db::Backend<B>, transaction_hash: H256) -> RpcResult<Option<(H256, u32)>> where
+		B: BlockT,
+		C: HeaderBackend<B> + 'static,
+		B: BlockT<Hash=H256> + Send + Sync + 'static,
+		C: Send + Sync + 'static,
+	{
 		let transaction_metadata = backend.mapping().transaction_metadata(&transaction_hash)
 			.map_err(|err| internal_err(format!("fetch aux store failed: {:?}", err)))?;
 
@@ -134,7 +152,7 @@ impl<B, C, BE, H: ExHashT> FrontierBackendClient<B, C, BE, H> where
 			} else if transaction_metadata.len() > 1 {
 				transaction_metadata
 					.iter()
-					.find(|meta| Self::is_canon(client, meta.block_hash))
+					.find(|meta| is_canon::<B, C>(client, meta.block_hash))
 					.map_or(
 						Ok(Some((
 							transaction_metadata[0].ethereum_block_hash,
