@@ -36,6 +36,118 @@ use rustc_hex::ToHex;
 use pallet_evm::ExitReason;
 use sha3::{Digest, Keccak256};
 
+use sp_runtime::traits::{Block as BlockT, BlakeTwo256, Zero, UniqueSaturatedInto};
+use sp_storage::StorageKey;
+use sp_blockchain::HeaderBackend;
+use sp_api::{BlockId, HeaderT};
+use sc_network::ExHashT;
+use sc_client_api::backend::{StorageProvider, Backend, StateBackend};
+use fc_rpc_core::types::BlockNumber;
+use fp_storage::PALLET_ETHEREUM_SCHEMA;
+
+use jsonrpc_core::Result as RpcResult;
+use codec::Decode;
+use pallet_ethereum::EthereumStorageSchema;
+use std::marker::PhantomData;
+
+pub struct FrontierBackendClient<B: BlockT, C, BE, H: ExHashT> {
+	_marker: PhantomData<(B, C, BE, H)>,
+}
+
+impl<B, C, BE, H: ExHashT> FrontierBackendClient<B, C, BE, H> where
+	B: BlockT,
+	C: StorageProvider<B, BE>,
+	C: HeaderBackend<B> + 'static,
+	BE: Backend<B> + 'static,
+	BE::State: StateBackend<BlakeTwo256>,
+	B: BlockT<Hash=H256> + Send + Sync + 'static,
+	C: Send + Sync + 'static,
+{
+	fn native_block_id(client: &C, backend: &fc_db::Backend<B>, number: Option<BlockNumber>) -> RpcResult<Option<BlockId<B>>> {
+		Ok(match number.unwrap_or(BlockNumber::Latest) {
+			BlockNumber::Hash { hash, .. } => {
+				Self::load_hash(client, backend, hash).unwrap_or(None)
+			},
+			BlockNumber::Num(number) => {
+				Some(BlockId::Number(number.unique_saturated_into()))
+			},
+			BlockNumber::Latest => {
+				Some(BlockId::Hash(
+					client.info().best_hash
+				))
+			},
+			BlockNumber::Earliest => {
+				Some(BlockId::Number(Zero::zero()))
+			},
+			BlockNumber::Pending => {
+				None
+			}
+		})
+	}
+
+	// Asumes there is only one mapped canonical block in the AuxStore, otherwise something is wrong
+	fn load_hash(client: &C, backend: &fc_db::Backend<B>, hash: H256) -> RpcResult<Option<BlockId<B>>> {
+		let hashes = backend.mapping().block_hashes(&hash)
+			.map_err(|err| internal_err(format!("fetch aux store failed: {:?}", err)))?;
+		let out: Vec<H256> = hashes.into_iter()
+			.filter_map(|h| {
+				if Self::is_canon(client, h) {
+					Some(h)
+				} else {
+					None
+				}
+			}).collect();
+
+		if out.len() == 1 {
+			return Ok(Some(
+				BlockId::Hash(out[0])
+			));
+		}
+		Ok(None)
+	}
+
+	fn onchain_storage_schema(client: &C, at: BlockId<B>) -> EthereumStorageSchema {
+		match client.storage(&at, &StorageKey(PALLET_ETHEREUM_SCHEMA.to_vec())) {
+			Ok(Some(bytes)) => Decode::decode(&mut &bytes.0[..]).ok().unwrap_or(EthereumStorageSchema::Undefined),
+			_ => EthereumStorageSchema::Undefined,
+		}
+	}
+
+	fn is_canon(client: &C, target_hash: H256) -> bool {
+		if let Ok(Some(number)) = client.number(target_hash) {
+			if let Ok(Some(header)) = client.header(BlockId::Number(number)) {
+				return header.hash() == target_hash;
+			}
+		}
+		false
+	}
+
+	fn load_transactions(client: &C, backend: &fc_db::Backend<B>, transaction_hash: H256) -> RpcResult<Option<(H256, u32)>> {
+		let transaction_metadata = backend.mapping().transaction_metadata(&transaction_hash)
+			.map_err(|err| internal_err(format!("fetch aux store failed: {:?}", err)))?;
+
+			if transaction_metadata.len() == 1 {
+				Ok(Some((
+					transaction_metadata[0].ethereum_block_hash,
+					transaction_metadata[0].ethereum_index,
+				)))
+			} else if transaction_metadata.len() > 1 {
+				transaction_metadata
+					.iter()
+					.find(|meta| Self::is_canon(client, meta.block_hash))
+					.map_or(
+						Ok(Some((
+							transaction_metadata[0].ethereum_block_hash,
+							transaction_metadata[0].ethereum_index,
+						))),
+						|meta| Ok(Some((meta.ethereum_block_hash, meta.ethereum_index))),
+					)
+			} else {
+				Ok(None)
+			}
+	}
+}
+
 pub fn internal_err<T: ToString>(message: T) -> Error {
 	Error {
 		code: ErrorCode::InternalError,
