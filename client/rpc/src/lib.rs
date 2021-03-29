@@ -47,10 +47,10 @@ pub mod frontier_backend_client {
 	use sc_client_api::backend::{StorageProvider, Backend, StateBackend};
 	use fc_rpc_core::types::BlockNumber;
 	use fp_storage::PALLET_ETHEREUM_SCHEMA;
-	
+
 	use jsonrpc_core::Result as RpcResult;
 	use codec::Decode;
-	
+
 	use ethereum_types::H256;
 	use pallet_ethereum::EthereumStorageSchema;
 
