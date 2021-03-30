@@ -20,11 +20,66 @@
 extern crate alloc;
 
 use alloc::vec::Vec;
-use fp_evm::LinearCostPrecompile;
-use evm::{ExitSucceed, ExitError};
+use fp_evm::Precompile;
+use evm::{ExitSucceed, ExitError, Context};
 use num::{BigUint, Zero, One, ToPrimitive, FromPrimitive};
 
+use core::ops::BitAnd;
+
 pub struct Modexp;
+
+// TODO: is there something in Substrate I can use?
+fn max(a: u64, b: u64) -> u64 {
+	if a > b {
+		a
+	} else {
+		b
+	}
+}
+
+// Calculate gas cost according to EIP 2565:
+// https://eips.ethereum.org/EIPS/eip-2565
+fn calculate_gas_cost(
+	base_length: u64,
+	exp_length: u64,
+	mod_length: u64,
+	exponent: &BigUint,
+) -> u64 {
+
+	fn calculate_multiplication_complexity(base_length: u64, mod_length: u64) -> u64 {
+		let max_length = max(base_length, mod_length);
+		let mut words = max_length / 8;
+		if max_length % 8 > 0 {
+			words += 1;
+		}
+
+		// TODO: prevent/handle overflow
+		words ^ 2
+	}
+
+	fn calculate_iteration_count(exp_length: u64, exponent: &BigUint) -> u64 {
+		let mut iteration_count: u64 = 0;
+
+		if exp_length <= 32 && exponent.is_zero() {
+			iteration_count = 0
+		} else if exp_length <= 32 {
+			iteration_count = exponent.bits() - 1;
+		} else if exp_length > 32 {
+
+			// construct BigUint to represent (2^256) - 1
+			let bytes: [u8; 32] = [0xFF; 32];
+			let max_256_bit_uint = BigUint::from_bytes_be(&bytes);
+
+			iteration_count = (8 * (exp_length - 32)) + ((exponent.bitand(max_256_bit_uint)).bits() - 1)
+		}
+
+		max(iteration_count, 1)
+	}
+
+	let multiplication_complexity = calculate_multiplication_complexity(base_length, mod_length);
+	let iteration_count = calculate_iteration_count(exp_length, exponent);
+	max(200, (multiplication_complexity * iteration_count / 3))
+}
 
 // ModExp expects the following as inputs:
 // 1) 32 bytes expressing the length of base
@@ -42,14 +97,12 @@ pub struct Modexp;
 //
 //       see: https://eips.ethereum.org/EIPS/eip-198
 
-impl LinearCostPrecompile for Modexp {
-	const BASE: u64 = 15;
-	const WORD: u64 = 3;
-
+impl Precompile for Modexp {
 	fn execute(
 		input: &[u8],
-		_: u64,
-	) -> core::result::Result<(ExitSucceed, Vec<u8>), ExitError> {
+		target_gas: Option<u64>,
+		context: &Context,
+	) -> core::result::Result<(ExitSucceed, Vec<u8>, u64), ExitError> {
 		if input.len() < 96 {
 			return Err(ExitError::Other("input must contain at least 96 bytes".into()));
 		};
@@ -99,10 +152,15 @@ impl LinearCostPrecompile for Modexp {
 			let exp_start = base_start + base_len;
 			let exponent = BigUint::from_bytes_be(&input[exp_start..exp_start + exp_len]);
 
+			// do our gas accounting
+			// TODO: we could technically avoid reading base first...
+			let gas_cost = calculate_gas_cost(base_len as u64, exp_len as u64, mod_len as u64, &exponent);
+			if gas_cost > target_gas.expect("Gas limit not provided") { // TODO: I'm probably misunderstanding this
+				return Err(ExitError::OutOfGas);
+			}
+
 			let mod_start = exp_start + exp_len;
 			let modulus = BigUint::from_bytes_be(&input[mod_start..mod_start + mod_len]);
-
-			// TODO: computation should only proceed if sufficient gas has been provided
 
 			if modulus.is_zero() || modulus.is_one() {
 				BigUint::zero()
@@ -117,12 +175,12 @@ impl LinearCostPrecompile for Modexp {
 		// always true except in the case of zero-length modulus, which leads to
 		// output of length and value 1.
 		if bytes.len() == mod_len {
-			Ok((ExitSucceed::Returned, bytes.to_vec()))
+			Ok((ExitSucceed::Returned, bytes.to_vec(), 0))
 		} else if bytes.len() < mod_len {
 			let mut ret = Vec::with_capacity(mod_len);
 			ret.extend(core::iter::repeat(0).take(mod_len - bytes.len()));
 			ret.extend_from_slice(&bytes[..]);
-			Ok((ExitSucceed::Returned, ret.to_vec()))
+			Ok((ExitSucceed::Returned, ret.to_vec(), 0))
 		} else {
 			Err(ExitError::Other("failed".into()))
 		}
