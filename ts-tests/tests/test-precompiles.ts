@@ -35,7 +35,7 @@ describeWithFrontier("Frontier RPC (Precompile)", `simple-specs.json`, (context)
 	// Those test are ordered. In general this should be avoided, but due to the time it takes
 	// to spin up a frontier node, it saves a lot of time.
 
-	it.only('should perform ecrecover', async () => {
+	it('should perform ecrecover', async () => {
 		const web3 = context.web3;
 
 		const message = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Tubulum fuisse, qua illum, cuius is condemnatus est rogatione, P. Eaedem res maneant alio modo.'
