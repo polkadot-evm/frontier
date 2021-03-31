@@ -677,6 +677,8 @@
 <span id="674">674</span>
 <span id="675">675</span>
 <span id="676">676</span>
+<span id="677">677</span>
+<span id="678">678</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
@@ -932,6 +934,8 @@
 	<span class="kw">type</span> <span class="ident">Precompiles</span>: <span class="ident">PrecompileSet</span>;
 	<span class="doccomment">/// Chain ID of EVM.</span>
 	<span class="kw">type</span> <span class="ident">ChainId</span>: <span class="ident">Get</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>;
+	<span class="doccomment">/// The block gas limit. Can be a simple constant, or an adjustment algorithm in another pallet.</span>
+	<span class="kw">type</span> <span class="ident">BlockGasLimit</span>: <span class="ident">Get</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>;
 	<span class="doccomment">/// EVM execution runner.</span>
 	<span class="kw">type</span> <span class="ident">Runner</span>: <span class="ident">Runner</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span>;
 
