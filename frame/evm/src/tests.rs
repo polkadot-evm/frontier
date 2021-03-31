@@ -129,6 +129,7 @@ impl Config for Test {
 	type Event = Event<Test>;
 	type Precompiles = ();
 	type ChainId = ();
+	type BlockGasLimit = ();
 	type OnChargeTransaction = ();
 }
 
