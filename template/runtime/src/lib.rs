@@ -276,6 +276,7 @@ impl FeeCalculator for FixedGasPrice {
 
 parameter_types! {
 	pub const ChainId: u64 = 42;
+	pub BlockGasLimit: U256 = U256::from(u32::max_value());
 }
 
 impl pallet_evm::Config for Runtime {
@@ -297,6 +298,7 @@ impl pallet_evm::Config for Runtime {
 		pallet_evm_precompile_sha3fips::Sha3FIPS512,
 	);
 	type ChainId = ChainId;
+	type BlockGasLimit = BlockGasLimit;
 	type OnChargeTransaction = ();
 }
 
@@ -314,15 +316,10 @@ impl<F: FindAuthor<u32>> FindAuthor<H160> for EthereumFindAuthor<F>
 	}
 }
 
-parameter_types! {
-	pub BlockGasLimit: U256 = U256::from(u32::max_value());
-}
-
 impl pallet_ethereum::Config for Runtime {
 	type Event = Event;
 	type FindAuthor = EthereumFindAuthor<Aura>;
 	type StateRoot = pallet_ethereum::IntermediateStateRoot;
-	type BlockGasLimit = BlockGasLimit;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
