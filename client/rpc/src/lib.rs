@@ -35,6 +35,7 @@ use jsonrpc_core::{ErrorCode, Error, Value};
 use rustc_hex::ToHex;
 use pallet_evm::ExitReason;
 use sha3::{Digest, Keccak256};
+use evm::ExitError;
 
 pub mod frontier_backend_client {
 
@@ -178,6 +179,14 @@ pub fn error_on_execution_failure(reason: &ExitReason, data: &[u8]) -> Result<()
 	match reason {
 		ExitReason::Succeed(_) => Ok(()),
 		ExitReason::Error(e) => {
+			if *e == ExitError::OutOfGas || *e == ExitError::OutOfFund {
+				// `ServerError(0)` will be useful in estimate gas
+				return Err(Error {
+					code: ErrorCode::ServerError(0),
+					message: format!("out of gas or fund"),
+					data: None,
+				});
+			}
 			Err(Error {
 				code: ErrorCode::InternalError,
 				message: format!("evm error: {:?}", e),
