@@ -1553,6 +1553,10 @@
 <span id="1550">1550</span>
 <span id="1551">1551</span>
 <span id="1552">1552</span>
+<span id="1553">1553</span>
+<span id="1554">1554</span>
+<span id="1555">1555</span>
+<span id="1556">1556</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
@@ -1577,7 +1581,7 @@
 	<span class="ident">Block</span> <span class="kw">as</span> <span class="ident">EthereumBlock</span>, <span class="ident">Transaction</span> <span class="kw">as</span> <span class="ident">EthereumTransaction</span>
 };
 <span class="kw">use</span> <span class="ident">ethereum_types</span>::{<span class="ident">H160</span>, <span class="ident">H256</span>, <span class="ident">H64</span>, <span class="ident">U256</span>, <span class="ident">U64</span>, <span class="ident">H512</span>};
-<span class="kw">use</span> <span class="ident">jsonrpc_core</span>::{<span class="ident">BoxFuture</span>, <span class="prelude-ty">Result</span>, <span class="ident">futures</span>::<span class="ident">future</span>::{<span class="self">self</span>, <span class="ident">Future</span>}};
+<span class="kw">use</span> <span class="ident">jsonrpc_core</span>::{<span class="ident">BoxFuture</span>, <span class="prelude-ty">Result</span>, <span class="ident">ErrorCode</span>, <span class="ident">futures</span>::<span class="ident">future</span>::{<span class="self">self</span>, <span class="ident">Future</span>}};
 <span class="kw">use</span> <span class="ident">futures</span>::{<span class="ident">StreamExt</span>, <span class="ident">future</span>::<span class="ident">TryFutureExt</span>};
 <span class="kw">use</span> <span class="ident">sp_runtime</span>::{
 	<span class="ident">traits</span>::{<span class="ident">Block</span> <span class="kw">as</span> <span class="ident">BlockT</span>, <span class="ident">UniqueSaturatedInto</span>, <span class="ident">Zero</span>, <span class="ident">One</span>, <span class="ident">Saturating</span>, <span class="ident">BlakeTwo256</span>},
@@ -2291,7 +2295,7 @@
 	}
 
 	<span class="kw">fn</span> <span class="ident">estimate_gas</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">request</span>: <span class="ident">CallRequest</span>, <span class="kw">_</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">BlockNumber</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span> {
-		<span class="kw">let</span> <span class="ident">calculate_gas_used</span> <span class="op">=</span> <span class="op">|</span><span class="ident">request</span><span class="op">|</span> {
+		<span class="kw">let</span> <span class="ident">calculate_gas_used</span> <span class="op">=</span> <span class="op">|</span><span class="ident">request</span><span class="op">|</span> <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span> {
 			<span class="kw">let</span> <span class="ident">hash</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">info</span>().<span class="ident">best_hash</span>;
 
 			<span class="kw">let</span> <span class="ident">CallRequest</span> {
@@ -2379,14 +2383,18 @@
 						<span class="ident">mid</span> <span class="op">=</span> (<span class="ident">lower</span> <span class="op">+</span> <span class="ident">upper</span> <span class="op">+</span> <span class="number">1</span>) <span class="op">/</span> <span class="number">2</span>;
 					}
 
-					<span class="comment">// if Err -- we need more gas</span>
-					<span class="prelude-val">Err</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
-						<span class="ident">lower</span> <span class="op">=</span> <span class="ident">mid</span>;
-						<span class="ident">mid</span> <span class="op">=</span> (<span class="ident">lower</span> <span class="op">+</span> <span class="ident">upper</span> <span class="op">+</span> <span class="number">1</span>) <span class="op">/</span> <span class="number">2</span>;
-
-						<span class="kw">if</span> <span class="ident">mid</span> <span class="op">=</span><span class="op">=</span> <span class="ident">lower</span> {
-							<span class="kw">break</span>;
+					<span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=</span><span class="op">&gt;</span> {
+						<span class="comment">// if Err == OutofGas or OutofFund, we need more gas</span>
+						<span class="kw">if</span> <span class="ident">err</span>.<span class="ident">code</span> <span class="op">=</span><span class="op">=</span> <span class="ident">ErrorCode</span>::<span class="ident">ServerError</span>(<span class="number">0</span>) {
+							<span class="ident">lower</span> <span class="op">=</span> <span class="ident">mid</span>;
+							<span class="ident">mid</span> <span class="op">=</span> (<span class="ident">lower</span> <span class="op">+</span> <span class="ident">upper</span> <span class="op">+</span> <span class="number">1</span>) <span class="op">/</span> <span class="number">2</span>;
+							<span class="kw">if</span> <span class="ident">mid</span> <span class="op">=</span><span class="op">=</span> <span class="ident">lower</span> {
+								<span class="kw">break</span>;
+							}
 						}
+
+						<span class="comment">// Other errors, return directly</span>
+						<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">err</span>);
 					}
 				}
 			}
