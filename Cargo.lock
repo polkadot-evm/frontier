@@ -1363,6 +1363,7 @@ version = "0.1.0"
 dependencies = [
  "ethereum",
  "ethereum-types",
+ "evm",
  "fc-consensus",
  "fc-db",
  "fc-rpc-core",

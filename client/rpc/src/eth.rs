@@ -21,7 +21,7 @@ use ethereum::{
 	Block as EthereumBlock, Transaction as EthereumTransaction
 };
 use ethereum_types::{H160, H256, H64, U256, U64, H512};
-use jsonrpc_core::{BoxFuture, Result, futures::future::{self, Future}};
+use jsonrpc_core::{BoxFuture, Result, ErrorCode, futures::future::{self, Future}};
 use futures::{StreamExt, future::TryFutureExt};
 use sp_runtime::{
 	traits::{Block as BlockT, UniqueSaturatedInto, Zero, One, Saturating, BlakeTwo256},
@@ -735,7 +735,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 	}
 
 	fn estimate_gas(&self, request: CallRequest, _: Option<BlockNumber>) -> Result<U256> {
-		let calculate_gas_used = |request| {
+		let calculate_gas_used = |request| -> Result<U256> {
 			let hash = self.client.info().best_hash;
 
 			let CallRequest {
@@ -823,14 +823,18 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 						mid = (lower + upper + 1) / 2;
 					}
 
-					// if Err -- we need more gas
-					Err(_) => {
-						lower = mid;
-						mid = (lower + upper + 1) / 2;
-
-						if mid == lower {
-							break;
+					Err(err) => {
+						// if Err == OutofGas or OutofFund, we need more gas
+						if err.code == ErrorCode::ServerError(0) {
+							lower = mid;
+							mid = (lower + upper + 1) / 2;
+							if mid == lower {
+								break;
+							}
 						}
+
+						// Other errors, return directly
+						return Err(err);
 					}
 				}
 			}
