@@ -92,7 +92,7 @@ where
 	/// For a given account address and index, returns pallet_evm::AccountStorages.
 	fn storage_at(&self, block: &BlockId<Block>, address: H160, index: U256) -> Option<H256> {
 		let tmp: &mut [u8; 32] = &mut [0; 32];
-		index.to_little_endian(tmp);
+		index.to_big_endian(tmp);
 
 		let mut key: Vec<u8> = storage_prefix_build(b"EVM", b"AccountStorages");
 		key.extend(blake2_128_extend(address.as_bytes()));
