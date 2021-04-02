@@ -39,28 +39,30 @@ describeWithFrontier("Frontier RPC (Modexp Precompile EIP-2565)", `simple-specs.
 			console.log("Executing test case "+ testCase.Name);
 			// console.log(testCase)
 
-			console.log("About to sign txn...");
-			const tx = await context.web3.eth.accounts.signTransaction(
+			const callResult = await context.web3.eth.call(
 				{
 					from: GENESIS_ACCOUNT,
+					to: MODEXP_CONTRACT_ADDRESS,
 					data: testCase.Input,
 					value: "0x00",
 					gasPrice: "0x01",
-					gas: "0x"+ testCase.Gas.toString(16),
-				},
-				GENESIS_ACCOUNT_PRIVATE_KEY
+					gas: "0x10000",
+				}
 			);
-			console.log("About to send...");
 
-			const r = customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction]);
-			console.log("About to finalize block...");
-			await createAndFinalizeBlock(context.web3);
-			console.log("About to get receipt...");
-			const receipt = await context.web3.eth.getTransactionReceipt(tx.messageHash);
+			// console.log("callResult => ", callResult);	
+			// console.log("expected: "+ testCase.Expected);
+			expect(callResult).equals("0x"+testCase.Expected);
 
-			console.log("About to get assert...");
-			expect(receipt.gasUsed).equals(testCase.Gas);
+			const estimateGasResult = await context.web3.eth.estimateGas(
+				{
+					from: GENESIS_ACCOUNT,
+					to: MODEXP_CONTRACT_ADDRESS,
+					data: testCase.Input,
+				}
+			);
+			console.log("estimateGas: "+ estimateGasResult + " expectedGas: "+ testCase.Gas +" diff: "+ (estimateGasResult - testCase.Gas));
 		}
-	});
+	}).timeout(60000);
 
 });
