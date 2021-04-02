@@ -29,15 +29,10 @@ describeWithFrontier("Frontier RPC (Modexp Precompile EIP-2565)", `simple-specs.
 	it("should pass all EIP2565 test cases", async function() {
 
 		const data = await readFile("tests/modexp_eip2565.json");
-		console.log("read file");
-		// console.log("data => ", data);
-
 		const cases = JSON.parse(data);
-		// console.log("parsed json => ", cases);
 
 		for (const testCase of cases) {
 			console.log("Executing test case "+ testCase.Name);
-			// console.log(testCase)
 
 			const callResult = await context.web3.eth.call(
 				{
@@ -50,8 +45,6 @@ describeWithFrontier("Frontier RPC (Modexp Precompile EIP-2565)", `simple-specs.
 				}
 			);
 
-			// console.log("callResult => ", callResult);	
-			// console.log("expected: "+ testCase.Expected);
 			expect(callResult).equals("0x"+testCase.Expected);
 
 			const estimateGasResult = await context.web3.eth.estimateGas(
