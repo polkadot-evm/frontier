@@ -179,6 +179,25 @@ impl<Block: BlockT> MappingDb<Block> {
 		}
 	}
 
+	pub fn write_none(
+		&self,
+		block_hash: Block::Hash
+	) -> Result<(), String> {
+		let _lock = self.write_lock.lock();
+
+		let mut transaction = sp_database::Transaction::new();
+
+		transaction.set(
+			crate::columns::SYNCED_MAPPING,
+			&block_hash.encode(),
+			&true.encode(),
+		);
+
+		self.db.commit(transaction).map_err(|e| format!("{:?}", e))?;
+
+		Ok(())
+	}
+
 	pub fn write_hashes(
 		&self,
 		commitment: MappingCommitment<Block>,
