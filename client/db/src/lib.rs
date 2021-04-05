@@ -159,13 +159,13 @@ impl<Block: BlockT> MappingDb<Block> {
 		}
 	}
 
-	pub fn block_hashes(
+	pub fn block_hash(
 		&self,
 		ethereum_block_hash: &H256,
-	) -> Result<Vec<Block::Hash>, String> {
+	) -> Result<Option<Block::Hash>, String> {
 		match self.db.get(crate::columns::BLOCK_MAPPING, &ethereum_block_hash.encode()) {
-			Some(raw) => Ok(Vec::<Block::Hash>::decode(&mut &raw[..]).map_err(|e| format!("{:?}", e))?),
-			None => Ok(Vec::new()),
+			Some(raw) => Ok(Some(Block::Hash::decode(&mut &raw[..]).map_err(|e| format!("{:?}", e))?)),
+			None => Ok(None),
 		}
 	}
 
@@ -187,12 +187,10 @@ impl<Block: BlockT> MappingDb<Block> {
 
 		let mut transaction = sp_database::Transaction::new();
 
-		let mut block_hashes = self.block_hashes(&commitment.ethereum_block_hash)?;
-		block_hashes.push(commitment.block_hash);
 		transaction.set(
 			crate::columns::BLOCK_MAPPING,
 			&commitment.ethereum_block_hash.encode(),
-			&block_hashes.encode()
+			&commitment.block_hash.encode()
 		);
 
 		for (i, ethereum_transaction_hash) in commitment.ethereum_transaction_hashes.into_iter().enumerate() {

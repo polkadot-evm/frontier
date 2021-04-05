@@ -89,20 +89,12 @@ pub mod frontier_backend_client {
 		B: BlockT<Hash=H256> + Send + Sync + 'static,
 		C: Send + Sync + 'static,
 	{
-		let hashes = backend.mapping().block_hashes(&hash)
+		let substrate_hash = backend.mapping().block_hash(&hash)
 			.map_err(|err| internal_err(format!("fetch aux store failed: {:?}", err)))?;
-		let out: Vec<H256> = hashes.into_iter()
-			.filter_map(|h| {
-				if is_canon::<B, C>(client, h) {
-					Some(h)
-				} else {
-					None
-				}
-			}).collect();
 
-		if out.len() == 1 {
+		if let Some(substrate_hash) = substrate_hash {
 			return Ok(Some(
-				BlockId::Hash(out[0])
+				BlockId::Hash(substrate_hash)
 			));
 		}
 		Ok(None)
