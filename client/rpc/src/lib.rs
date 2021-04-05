@@ -82,7 +82,6 @@ pub mod frontier_backend_client {
 		})
 	}
 
-	// Asumes there is only one mapped canonical block in the AuxStore, otherwise something is wrong
 	pub fn load_hash<B: BlockT, C>(client: &C, backend: &fc_db::Backend<B>, hash: H256) -> RpcResult<Option<BlockId<B>>> where
 		B: BlockT,
 		C: HeaderBackend<B> + 'static,
