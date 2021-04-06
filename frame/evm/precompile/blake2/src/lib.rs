@@ -109,10 +109,13 @@ mod tests {
 		Gas: u64,
 	}
 
-	// TODO: DRY
-	#[test]
-	fn process_consensus_tests() -> std::result::Result<(), ExitError> {
-		let data = fs::read_to_string("./blake2F.json")
+	/// Tests a precompile against the ethereum consensus tests defined in the given file at filepath.
+	/// The file is expected to be in JSON format and contain an array of test vectors, where each
+	/// vector can be deserialized into an "EthConsensusTest".
+	pub fn test_precompile_consensus_tests<P: Precompile>(filepath: &str)
+		-> std::result::Result<(), String>
+	{
+		let data = fs::read_to_string(&filepath)
 			.expect("Failed to read blake2F.json");
 
 		let tests: Vec<EthConsensusTest> = serde_json::from_str(&data)
@@ -130,7 +133,7 @@ mod tests {
 				apparent_value: From::from(0),
 			};
 
-			match Blake2F::execute(&input, Some(cost), &context) {
+			match P::execute(&input, Some(cost), &context) {
 				Ok((_, output, gas)) => {
 					let as_hex: String = hex::encode(output);
 					assert_eq!(as_hex, test.Expected,
@@ -139,11 +142,20 @@ mod tests {
 							   "test '{}' failed (different gas cost)", test.Name);
 				},
 				Err(_) => {
-					panic!("Modexp::execute() returned error");
+					panic!("Precompile::execute() returned error");
 				}
 			}
 		}
 
+		Ok(())
+	}
+
+
+
+	// TODO: DRY
+	#[test]
+	fn process_consensus_tests() -> std::result::Result<(), String> {
+		test_precompile_consensus_tests::<Blake2F>("./blake2F.json")?;
 		Ok(())
 	}
 }
