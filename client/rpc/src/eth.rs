@@ -1201,34 +1201,48 @@ impl<B, C> Web3ApiT for Web3Api<B, C> where
 	}
 }
 
-pub struct EthFilterApi<B, C> {
+pub struct EthFilterApi<B: BlockT, C, BE> {
 	client: Arc<C>,
 	filter_pool: FilterPool,
 	max_stored_filters: usize,
-	_marker: PhantomData<B>,
+	overrides: BTreeMap<EthereumStorageSchema, Box<dyn StorageOverride<B> + Send + Sync>>,
+	fallback: Box<dyn StorageOverride<B> + Send + Sync>,
+	_marker: PhantomData<(B, BE)>,
 }
 
-impl<B, C> EthFilterApi<B, C> {
+impl<B: BlockT, C, BE> EthFilterApi<B, C, BE>  where
+	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
+	C::Api: EthereumRuntimeRPCApi<B>,
+	B: BlockT<Hash=H256> + Send + Sync + 'static,
+	BE: Backend<B> + 'static,
+	BE::State: StateBackend<BlakeTwo256>,
+	C: Send + Sync + 'static,
+{
 	pub fn new(
 		client: Arc<C>,
 		filter_pool: FilterPool,
 		max_stored_filters: usize,
+		overrides: BTreeMap<EthereumStorageSchema, Box<dyn StorageOverride<B> + Send + Sync>>,
 	) -> Self {
 		Self {
-			client,
+			client: client.clone(),
 			filter_pool,
 			max_stored_filters,
+			overrides,
+			fallback: Box::new(RuntimeApiStorageOverride::new(client)),
 			_marker: PhantomData,
 		}
 	}
 }
 
-impl<B, C> EthFilterApi<B, C> where
-	C: ProvideRuntimeApi<B> + AuxStore,
+impl<B, C, BE> EthFilterApi<B, C, BE> where
+	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
 	C::Api: EthereumRuntimeRPCApi<B>,
 	C: HeaderBackend<B> + HeaderMetadata<B, Error=BlockChainError> + 'static,
 	C: Send + Sync + 'static,
 	B: BlockT<Hash=H256> + Send + Sync + 'static,
+	BE: Backend<B> + 'static,
+	BE::State: StateBackend<BlakeTwo256>,
 {
 	fn create_filter(&self, filter_type: FilterType) -> Result<U256> {
 		let block_number = UniqueSaturatedInto::<u64>::unique_saturated_into(
@@ -1263,12 +1277,14 @@ impl<B, C> EthFilterApi<B, C> where
 	}
 }
 
-impl<B, C> EthFilterApiT for EthFilterApi<B, C> where
-	C: ProvideRuntimeApi<B> + AuxStore,
+impl<B, C, BE> EthFilterApiT for EthFilterApi<B, C, BE> where
+	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
 	C::Api: EthereumRuntimeRPCApi<B>,
 	C: HeaderBackend<B> + HeaderMetadata<B, Error=BlockChainError> + 'static,
 	C: Send + Sync + 'static,
 	B: BlockT<Hash=H256> + Send + Sync + 'static,
+	BE: Backend<B> + 'static,
+	BE::State: StateBackend<BlakeTwo256>,
 {
 	fn new_filter(&self, filter: Filter) -> Result<U256> {
 		self.create_filter(FilterType::Log(filter))
@@ -1300,11 +1316,11 @@ impl<B, C> EthFilterApiT for EthFilterApi<B, C> where
 						let mut ethereum_hashes: Vec<H256> = Vec::new();
 						for n in last..next {
 							let id = BlockId::Number(n.unique_saturated_into());
-							let block = self.client.runtime_api()
-								.current_block(&id)
-								.map_err(|err| internal_err(
-									format!("fetch runtime block failed: {:?}", err)
-								))?;
+
+							let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(self.client.as_ref(), id);
+							let handler = self.overrides.get(&schema).unwrap_or(&self.fallback);
+
+							let block = handler.current_block(&id);
 							if let Some(block) = block {
 								ethereum_hashes.push(block.header.hash())
 							}
@@ -1353,11 +1369,11 @@ impl<B, C> EthFilterApiT for EthFilterApi<B, C> where
 						while current_number >= from_number {
 							let id = BlockId::Number(current_number);
 
-							let (block, _, statuses) = self.client.runtime_api()
-								.current_all(&id)
-								.map_err(|err| internal_err(
-									format!("fetch runtime account basic failed: {:?}", err)
-								))?;
+							let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(self.client.as_ref(), id);
+							let handler = self.overrides.get(&schema).unwrap_or(&self.fallback);
+
+							let block = handler.current_block(&id);
+							let statuses = handler.current_transaction_statuses(&id);
 
 							if let (Some(block), Some(statuses)) = (block, statuses) {
 								blocks_and_statuses.push((block, statuses));
@@ -1433,11 +1449,11 @@ impl<B, C> EthFilterApiT for EthFilterApi<B, C> where
 						while current_number >= from_number {
 							let id = BlockId::Number(current_number);
 
-							let (block, _, statuses) = self.client.runtime_api()
-								.current_all(&id)
-								.map_err(|err| internal_err(
-									format!("fetch runtime account basic failed: {:?}", err)
-								))?;
+							let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(self.client.as_ref(), id);
+							let handler = self.overrides.get(&schema).unwrap_or(&self.fallback);
+
+							let block = handler.current_block(&id);
+							let statuses = handler.current_transaction_statuses(&id);
 
 							if let (Some(block), Some(statuses)) = (block, statuses) {
 								blocks_and_statuses.push((block, statuses));

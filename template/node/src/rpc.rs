@@ -128,11 +128,17 @@ pub fn create_full<C, P, BE>(
 	);
 
 	if let Some(filter_pool) = filter_pool {
+		let mut overrides = BTreeMap::new();
+		overrides.insert(
+			EthereumStorageSchema::V1,
+			Box::new(SchemaV1Override::new(client.clone())) as Box<dyn StorageOverride<_> + Send + Sync>
+		);
 		io.extend_with(
 			EthFilterApiServer::to_delegate(EthFilterApi::new(
 				client.clone(),
 				filter_pool.clone(),
 				500 as usize, // max stored filters
+				overrides,
 			))
 		);
 	}
