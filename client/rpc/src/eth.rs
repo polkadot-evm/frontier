@@ -56,7 +56,7 @@ pub struct EthApi<B: BlockT, C, P, CT, BE, H: ExHashT> {
 	network: Arc<NetworkService<B, H>>,
 	is_authority: bool,
 	signers: Vec<Box<dyn EthSigner>>,
-	overrides: BTreeMap<EthereumStorageSchema, Box<dyn StorageOverride<B> + Send + Sync>>,
+	overrides: Arc<BTreeMap<EthereumStorageSchema, Box<dyn StorageOverride<B> + Send + Sync>>>,
 	fallback: Box<dyn StorageOverride<B> + Send + Sync>,
 	pending_transactions: PendingTransactions,
 	backend: Arc<fc_db::Backend<B>>,
@@ -76,7 +76,7 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> where
 		network: Arc<NetworkService<B, H>>,
 		pending_transactions: PendingTransactions,
 		signers: Vec<Box<dyn EthSigner>>,
-		overrides: BTreeMap<EthereumStorageSchema, Box<dyn StorageOverride<B> + Send + Sync>>,
+		overrides: Arc<BTreeMap<EthereumStorageSchema, Box<dyn StorageOverride<B> + Send + Sync>>>,
 		backend: Arc<fc_db::Backend<B>>,
 		is_authority: bool,
 	) -> Self {
@@ -1205,7 +1205,7 @@ pub struct EthFilterApi<B: BlockT, C, BE> {
 	client: Arc<C>,
 	filter_pool: FilterPool,
 	max_stored_filters: usize,
-	overrides: BTreeMap<EthereumStorageSchema, Box<dyn StorageOverride<B> + Send + Sync>>,
+	overrides: Arc<BTreeMap<EthereumStorageSchema, Box<dyn StorageOverride<B> + Send + Sync>>>,
 	fallback: Box<dyn StorageOverride<B> + Send + Sync>,
 	_marker: PhantomData<(B, BE)>,
 }
@@ -1222,7 +1222,7 @@ impl<B: BlockT, C, BE> EthFilterApi<B, C, BE>  where
 		client: Arc<C>,
 		filter_pool: FilterPool,
 		max_stored_filters: usize,
-		overrides: BTreeMap<EthereumStorageSchema, Box<dyn StorageOverride<B> + Send + Sync>>,
+		overrides: Arc<BTreeMap<EthereumStorageSchema, Box<dyn StorageOverride<B> + Send + Sync>>>,
 	) -> Self {
 		Self {
 			client: client.clone(),

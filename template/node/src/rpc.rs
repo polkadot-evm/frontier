@@ -108,11 +108,14 @@ pub fn create_full<C, P, BE>(
 	if enable_dev_signer {
 		signers.push(Box::new(EthDevSigner::new()) as Box<dyn EthSigner>);
 	}
-	let mut overrides = BTreeMap::new();
-	overrides.insert(
+	let mut overrides_map = BTreeMap::new();
+	overrides_map.insert(
 		EthereumStorageSchema::V1,
 		Box::new(SchemaV1Override::new(client.clone())) as Box<dyn StorageOverride<_> + Send + Sync>
 	);
+
+	let overrides = Arc::new(overrides_map);
+	
 	io.extend_with(
 		EthApiServer::to_delegate(EthApi::new(
 			client.clone(),
@@ -121,18 +124,13 @@ pub fn create_full<C, P, BE>(
 			network.clone(),
 			pending_transactions.clone(),
 			signers,
-			overrides,
+			overrides.clone(),
 			backend,
 			is_authority,
 		))
 	);
 
 	if let Some(filter_pool) = filter_pool {
-		let mut overrides = BTreeMap::new();
-		overrides.insert(
-			EthereumStorageSchema::V1,
-			Box::new(SchemaV1Override::new(client.clone())) as Box<dyn StorageOverride<_> + Send + Sync>
-		);
 		io.extend_with(
 			EthFilterApiServer::to_delegate(EthFilterApi::new(
 				client.clone(),
