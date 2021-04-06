@@ -1045,9 +1045,11 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 				_ => return Ok(Vec::new()),
 			};
 
-			let (block, _, statuses) = self.client.runtime_api()
-				.current_all(&id)
-				.map_err(|err| internal_err(format!("fetch runtime account basic failed: {:?}", err)))?;
+			let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(self.client.as_ref(), id);
+			let handler = self.overrides.get(&schema).unwrap_or(&self.fallback);
+
+			let block = handler.current_block(&id);
+			let statuses = handler.current_transaction_statuses(&id);
 
 			if let (Some(block), Some(statuses)) = (block, statuses) {
 				blocks_and_statuses.push((block, statuses));
@@ -1073,9 +1075,11 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 			while current_number >= from_number {
 				let id = BlockId::Number(current_number);
 
-				let (block, _, statuses) = self.client.runtime_api()
-					.current_all(&id)
-					.map_err(|err| internal_err(format!("fetch runtime account basic failed: {:?}", err)))?;
+				let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(self.client.as_ref(), id);
+				let handler = self.overrides.get(&schema).unwrap_or(&self.fallback);
+
+				let block = handler.current_block(&id);
+				let statuses = handler.current_transaction_statuses(&id);
 
 				if let (Some(block), Some(statuses)) = (block, statuses) {
 					blocks_and_statuses.push((block, statuses));
