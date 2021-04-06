@@ -1505,9 +1505,11 @@ name = "fp-evm"
 version = "0.8.0"
 dependencies = [
  "evm",
+ "hex",
  "impl-trait-for-tuples 0.1.3",
  "parity-scale-codec",
  "serde",
+ "serde_json",
  "sp-core",
  "sp-std",
 ]
@@ -3947,9 +3949,6 @@ version = "3.0.0"
 dependencies = [
  "evm",
  "fp-evm",
- "hex",
- "serde",
- "serde_json",
  "sp-core",
  "sp-io",
 ]
@@ -3995,11 +3994,8 @@ version = "3.0.0"
 dependencies = [
  "evm",
  "fp-evm",
- "hex",
  "log",
  "num",
- "serde",
- "serde_json",
  "sp-core",
  "sp-io",
 ]

@@ -29,6 +29,10 @@ use evm::ExitReason;
 pub use evm::backend::{Basic as Account, Log};
 pub use precompile::{Precompile, PrecompileSet, LinearCostPrecompile};
 
+// TODO: should be #[cfg(test)], but that doesn't seem possible
+#[cfg(feature = "std")]
+pub use precompile::test_precompile_consensus_tests;
+
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Default)]
 #[cfg_attr(feature = "std", derive(Debug, Serialize, Deserialize))]
 /// External input from the transaction.

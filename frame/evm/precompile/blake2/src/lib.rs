@@ -96,66 +96,11 @@ impl Precompile for Blake2F {
 #[cfg(test)]
 mod tests {
 	use super::*;
-	extern crate hex;
-	use std::fs;
-	use serde::Deserialize;
-
-	#[allow(non_snake_case)]
-	#[derive(Deserialize, Debug)]
-	struct EthConsensusTest {
-		Input: String,
-		Expected: String,
-		Name: String,
-		Gas: u64,
-	}
-
-	/// Tests a precompile against the ethereum consensus tests defined in the given file at filepath.
-	/// The file is expected to be in JSON format and contain an array of test vectors, where each
-	/// vector can be deserialized into an "EthConsensusTest".
-	pub fn test_precompile_consensus_tests<P: Precompile>(filepath: &str)
-		-> std::result::Result<(), String>
-	{
-		let data = fs::read_to_string(&filepath)
-			.expect("Failed to read blake2F.json");
-
-		let tests: Vec<EthConsensusTest> = serde_json::from_str(&data)
-			.expect("expected json array");
-
-		for test in tests {
-			let input: Vec<u8> = hex::decode(test.Input)
-				.expect("Could not hex-decode test input data");
-
-			let cost: u64 = 1000000;
-
-			let context: Context = Context {
-				address: Default::default(),
-				caller: Default::default(),
-				apparent_value: From::from(0),
-			};
-
-			match P::execute(&input, Some(cost), &context) {
-				Ok((_, output, gas)) => {
-					let as_hex: String = hex::encode(output);
-					assert_eq!(as_hex, test.Expected,
-							   "test '{}' failed (different output)", test.Name);
-					assert_eq!(gas, test.Gas,
-							   "test '{}' failed (different gas cost)", test.Name);
-				},
-				Err(_) => {
-					panic!("Precompile::execute() returned error");
-				}
-			}
-		}
-
-		Ok(())
-	}
-
-
 
 	// TODO: DRY
 	#[test]
 	fn process_consensus_tests() -> std::result::Result<(), String> {
-		test_precompile_consensus_tests::<Blake2F>("./blake2F.json")?;
+		fp_evm::test_precompile_consensus_tests::<Blake2F>("./blake2F.json")?;
 		Ok(())
 	}
 }
