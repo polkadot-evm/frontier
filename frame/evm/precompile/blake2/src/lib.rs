@@ -93,3 +93,58 @@ impl LinearCostPrecompile for Blake2F {
 		Ok((ExitSucceed::Returned, output_buf.to_vec()))
 	}
 }
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	extern crate hex;
+	use std::fs;
+	use serde::Deserialize;
+
+	#[allow(non_snake_case)]
+	#[derive(Deserialize, Debug)]
+	struct EthConsensusTest {
+		Input: String,
+		Expected: String,
+		Name: String,
+		Gas: u64,
+	}
+
+	// TODO: DRY
+	#[test]
+	fn process_consensus_tests() -> std::result::Result<(), ExitError> {
+		let data = fs::read_to_string("./blake2F.json")
+			.expect("Failed to read blake2F.json");
+
+		let tests: Vec<EthConsensusTest> = serde_json::from_str(&data)
+			.expect("expected json array");
+
+		for test in tests {
+			let input: Vec<u8> = hex::decode(test.Input)
+				.expect("Could not hex-decode test input data");
+
+			let cost: u64 = 1000000;
+
+			let context: Context = Context {
+				address: Default::default(),
+				caller: Default::default(),
+				apparent_value: From::from(0),
+			};
+
+			match Blake2F::execute(&input, Some(cost), &context) {
+				Ok((_, output, gas)) => {
+					let as_hex: String = hex::encode(output);
+					assert_eq!(as_hex, test.Expected,
+							   "test '{}' failed (different output)", test.Name);
+					assert_eq!(gas, test.Gas,
+							   "test '{}' failed (different gas cost)", test.Name);
+				},
+				Err(_) => {
+					panic!("Modexp::execute() returned error");
+				}
+			}
+		}
+
+		Ok(())
+	}
+}

@@ -3947,6 +3947,9 @@ version = "3.0.0"
 dependencies = [
  "evm",
  "fp-evm",
+ "hex",
+ "serde",
+ "serde_json",
  "sp-core",
  "sp-io",
 ]
