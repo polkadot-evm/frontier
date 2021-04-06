@@ -28,6 +28,8 @@ use core::ops::BitAnd;
 
 pub struct Modexp;
 
+const MIN_GAS_COST: u64 = 200;
+
 // TODO: is there something in Substrate I can use?
 fn max(a: u64, b: u64) -> u64 {
 	if a > b {
@@ -54,14 +56,14 @@ fn calculate_gas_cost(
 		}
 
 		// TODO: prevent/handle overflow
-		words ^ 2
+		words * words
 	}
 
 	fn calculate_iteration_count(exp_length: u64, exponent: &BigUint) -> u64 {
 		let mut iteration_count: u64 = 0;
 
 		if exp_length <= 32 && exponent.is_zero() {
-			iteration_count = 0
+			iteration_count = 0;
 		} else if exp_length <= 32 {
 			iteration_count = exponent.bits() - 1;
 		} else if exp_length > 32 {
@@ -70,7 +72,7 @@ fn calculate_gas_cost(
 			let bytes: [u8; 32] = [0xFF; 32];
 			let max_256_bit_uint = BigUint::from_bytes_be(&bytes);
 
-			iteration_count = (8 * (exp_length - 32)) + ((exponent.bitand(max_256_bit_uint)).bits() - 1)
+			iteration_count = (8 * (exp_length - 32)) + ((exponent.bitand(max_256_bit_uint)).bits() - 1);
 		}
 
 		max(iteration_count, 1)
@@ -78,7 +80,7 @@ fn calculate_gas_cost(
 
 	let multiplication_complexity = calculate_multiplication_complexity(base_length, mod_length);
 	let iteration_count = calculate_iteration_count(exp_length, exponent);
-	let gas = max(200,
+	let gas = max(MIN_GAS_COST,
 				  multiplication_complexity * iteration_count / 3);
 
 	gas
@@ -144,8 +146,8 @@ impl Precompile for Modexp {
 		}
 
 		// Gas formula allows arbitrary large exp_len when base and modulus are empty, so we need to handle empty base first.
-		let r = if base_len == 0 && mod_len == 0 {
-			BigUint::zero()
+		let (r, gas_cost) = if base_len == 0 && mod_len == 0 {
+			(BigUint::zero(), MIN_GAS_COST)
 		} else {
 
 			// read the numbers themselves.
@@ -166,9 +168,9 @@ impl Precompile for Modexp {
 			let modulus = BigUint::from_bytes_be(&input[mod_start..mod_start + mod_len]);
 
 			if modulus.is_zero() || modulus.is_one() {
-				BigUint::zero()
+				(BigUint::zero(), gas_cost)
 			} else {
-				base.modpow(&exponent, &modulus)
+				(base.modpow(&exponent, &modulus), gas_cost)
 			}
 		};
 
@@ -178,12 +180,12 @@ impl Precompile for Modexp {
 		// always true except in the case of zero-length modulus, which leads to
 		// output of length and value 1.
 		if bytes.len() == mod_len {
-			Ok((ExitSucceed::Returned, bytes.to_vec(), 0))
+			Ok((ExitSucceed::Returned, bytes.to_vec(), gas_cost))
 		} else if bytes.len() < mod_len {
 			let mut ret = Vec::with_capacity(mod_len);
 			ret.extend(core::iter::repeat(0).take(mod_len - bytes.len()));
 			ret.extend_from_slice(&bytes[..]);
-			Ok((ExitSucceed::Returned, ret.to_vec(), 0))
+			Ok((ExitSucceed::Returned, ret.to_vec(), gas_cost))
 		} else {
 			Err(ExitError::Other("failed".into()))
 		}
@@ -229,8 +231,10 @@ mod tests {
 			match Modexp::execute(&input, Some(cost), &context) {
 				Ok((_, output, gas)) => {
 					let as_hex: String = hex::encode(output);
-					assert_eq!(as_hex, test.Expected, "test '{}' failed", test.Name);
-					assert_eq!(gas, test.Gas, "test '{}' failed", test.Name);
+					assert_eq!(as_hex, test.Expected,
+							   "test '{}' failed (different output)", test.Name);
+					assert_eq!(gas, test.Gas,
+							   "test '{}' failed (different gas cost)", test.Name);
 				},
 				Err(_) => {
 					panic!("Modexp::execute() returned error");
