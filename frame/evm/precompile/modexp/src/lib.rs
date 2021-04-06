@@ -78,7 +78,10 @@ fn calculate_gas_cost(
 
 	let multiplication_complexity = calculate_multiplication_complexity(base_length, mod_length);
 	let iteration_count = calculate_iteration_count(exp_length, exponent);
-	max(200, (multiplication_complexity * iteration_count / 3))
+	let gas = max(200,
+				  multiplication_complexity * iteration_count / 3);
+
+	gas
 }
 
 // ModExp expects the following as inputs:
@@ -101,7 +104,7 @@ impl Precompile for Modexp {
 	fn execute(
 		input: &[u8],
 		target_gas: Option<u64>,
-		context: &Context,
+		_context: &Context,
 	) -> core::result::Result<(ExitSucceed, Vec<u8>, u64), ExitError> {
 		if input.len() < 96 {
 			return Err(ExitError::Other("input must contain at least 96 bytes".into()));
@@ -191,6 +194,56 @@ impl Precompile for Modexp {
 mod tests {
 	use super::*;
 	extern crate hex;
+	use std::fs;
+	use serde::Deserialize;
+
+	#[allow(non_snake_case)]
+	#[derive(Deserialize, Debug)]
+	struct EthConsensusTest {
+		Input: String,
+		Expected: String,
+		Name: String,
+		Gas: u64,
+	}
+
+	#[test]
+	fn process_consensus_tests() -> std::result::Result<(), ExitError> {
+		let data = fs::read_to_string("./modexp_eip2565.json")
+			.expect("Failed to read modexp_eip2565.json");
+
+		let tests: Vec<EthConsensusTest> = serde_json::from_str(&data)
+			.expect("expected json array");
+
+		for test in tests {
+			let input: Vec<u8> = hex::decode(test.Input)
+				.expect("Could not hex-decode test input data");
+
+			let cost: u64 = 1000000;
+
+			let context: Context = Context {
+				address: Default::default(),
+				caller: Default::default(),
+				apparent_value: From::from(0),
+			};
+
+			match Modexp::execute(&input, Some(cost), &context) {
+				Ok((_, output, gas)) => {
+					let as_hex: String = hex::encode(output);
+					assert_eq!(as_hex, test.Expected, "test '{}' failed", test.Name);
+					assert_eq!(gas, test.Gas, "test '{}' failed", test.Name);
+				},
+				Err(_) => {
+					panic!("Modexp::execute() returned error");
+				}
+			}
+
+		}
+		Ok(())
+	}
+
+
+
+
 
 	#[test]
 	fn test_empty_input() -> std::result::Result<(), ExitError> {
@@ -198,8 +251,14 @@ mod tests {
 
 		let cost: u64 = 1;
 
-		match Modexp::execute(&input, cost) {
-			Ok((_, _)) => {
+		let context: Context = Context {
+			address: Default::default(),
+			caller: Default::default(),
+			apparent_value: From::from(0),
+		};
+
+		match Modexp::execute(&input, Some(cost), &context) {
+			Ok((_, _, _)) => {
 				panic!("Test not expected to pass");
 			},
 			Err(e) => {
@@ -219,8 +278,14 @@ mod tests {
 
 		let cost: u64 = 1;
 
-		match Modexp::execute(&input, cost) {
-			Ok((_, _)) => {
+		let context: Context = Context {
+			address: Default::default(),
+			caller: Default::default(),
+			apparent_value: From::from(0),
+		};
+
+		match Modexp::execute(&input, Some(cost), &context) {
+			Ok((_, _, _)) => {
 				panic!("Test not expected to pass");
 			},
 			Err(e) => {
@@ -241,8 +306,14 @@ mod tests {
 
 		let cost: u64 = 1;
 
-		match Modexp::execute(&input, cost) {
-			Ok((_, _)) => {
+		let context: Context = Context {
+			address: Default::default(),
+			caller: Default::default(),
+			apparent_value: From::from(0),
+		};
+
+		match Modexp::execute(&input, Some(cost), &context) {
+			Ok((_, _, _)) => {
 				panic!("Test not expected to pass");
 			},
 			Err(e) => {
@@ -265,10 +336,16 @@ mod tests {
 
 		// 3 ^ 5 % 7 == 5
 
-		let cost: u64 = 1;
+		let cost: u64 = 100000;
 
-		match Modexp::execute(&input, cost) {
-			Ok((_, output)) => {
+		let context: Context = Context {
+			address: Default::default(),
+			caller: Default::default(),
+			apparent_value: From::from(0),
+		};
+
+		match Modexp::execute(&input, Some(cost), &context) {
+			Ok((_, output, _)) => {
 				assert_eq!(output.len(), 1); // should be same length as mod
 				let result = BigUint::from_bytes_be(&output[..]);
 				let expected = BigUint::parse_bytes(b"5", 10).unwrap();
@@ -294,10 +371,16 @@ mod tests {
 
 		// 59999 ^ 21 % 14452 = 10055
 
-		let cost: u64 = 1;
+		let cost: u64 = 100000;
 
-		match Modexp::execute(&input, cost) {
-			Ok((_, output)) => {
+		let context: Context = Context {
+			address: Default::default(),
+			caller: Default::default(),
+			apparent_value: From::from(0),
+		};
+
+		match Modexp::execute(&input, Some(cost), &context) {
+			Ok((_, output, _)) => {
 				assert_eq!(output.len(), 32); // should be same length as mod
 				let result = BigUint::from_bytes_be(&output[..]);
 				let expected = BigUint::parse_bytes(b"10055", 10).unwrap();
@@ -320,10 +403,16 @@ mod tests {
 			fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f")
 			.expect("Decode failed");
 
-		let cost: u64 = 1;
+		let cost: u64 = 100000;
 
-		match Modexp::execute(&input, cost) {
-			Ok((_, output)) => {
+		let context: Context = Context {
+			address: Default::default(),
+			caller: Default::default(),
+			apparent_value: From::from(0),
+		};
+
+		match Modexp::execute(&input, Some(cost), &context) {
+			Ok((_, output, _)) => {
 				assert_eq!(output.len(), 32); // should be same length as mod
 				let result = BigUint::from_bytes_be(&output[..]);
 				let expected = BigUint::parse_bytes(b"1", 10).unwrap();

@@ -3993,7 +3993,10 @@ dependencies = [
  "evm",
  "fp-evm",
  "hex",
+ "log",
  "num",
+ "serde",
+ "serde_json",
  "sp-core",
  "sp-io",
 ]
