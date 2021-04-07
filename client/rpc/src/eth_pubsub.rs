@@ -291,7 +291,7 @@ impl<B: BlockT, P, C, BE, H: ExHashT> EthPubSubApiT for EthPubSubApi<B, P, C, BE
 
 							let block = handler.current_block(&id);
 							let receipts = handler.current_receipts(&id);
-							
+
 							match (receipts, block) {
 								(Some(receipts), Some(block)) =>
 									futures::future::ready(Some((block, receipts))),
