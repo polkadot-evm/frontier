@@ -136,7 +136,7 @@ pub fn create_full<C, P, BE>(
 				client.clone(),
 				filter_pool.clone(),
 				500 as usize, // max stored filters
-				overrides,
+				overrides.clone(),
 			))
 		);
 	}
@@ -163,6 +163,7 @@ pub fn create_full<C, P, BE>(
 				HexEncodedIdProvider::default(),
 				Arc::new(subscription_task_executor)
 			),
+			overrides
 		))
 	);
 

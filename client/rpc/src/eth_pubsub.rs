@@ -31,7 +31,7 @@ use sp_blockchain::{Error as BlockChainError, HeaderMetadata, HeaderBackend};
 use sp_storage::{StorageKey, StorageData};
 use sp_io::hashing::twox_128;
 use sc_client_api::{
-	backend::{StorageProvider, Backend, StateBackend, AuxStore},
+	backend::{StorageProvider, Backend, StateBackend},
 	client::BlockchainEvents
 };
 use sc_rpc::Metadata;
@@ -57,6 +57,9 @@ use jsonrpc_core::{Result as JsonRpcResult, futures::{Future, Sink}};
 use fp_rpc::{EthereumRuntimeRPCApi, TransactionStatus};
 
 use sc_network::{NetworkService, ExHashT};
+
+use pallet_ethereum::EthereumStorageSchema;
+use crate::{frontier_backend_client, overrides::{StorageOverride, RuntimeApiStorageOverride}};
 
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
 pub struct HexEncodedIdProvider {
@@ -87,17 +90,33 @@ pub struct EthPubSubApi<B: BlockT, P, C, BE, H: ExHashT> {
 	client: Arc<C>,
 	network: Arc<NetworkService<B, H>>,
 	subscriptions: SubscriptionManager<HexEncodedIdProvider>,
+	overrides: Arc<BTreeMap<EthereumStorageSchema, Box<dyn StorageOverride<B> + Send + Sync>>>,
+	fallback: Arc<Box<dyn StorageOverride<B> + Send + Sync>>,
 	_marker: PhantomData<(B, BE)>,
 }
 
-impl<B: BlockT, P, C, BE, H: ExHashT> EthPubSubApi<B, P, C, BE, H> {
+impl<B: BlockT, P, C, BE, H: ExHashT> EthPubSubApi<B, P, C, BE, H> where
+	B: BlockT<Hash=H256> + Send + Sync + 'static,
+	C: ProvideRuntimeApi<B>,
+	C::Api: EthereumRuntimeRPCApi<B>,
+	C: Send + Sync + 'static,
+{
 	pub fn new(
 		_pool: Arc<P>,
 		client: Arc<C>,
 		network: Arc<NetworkService<B, H>>,
 		subscriptions: SubscriptionManager<HexEncodedIdProvider>,
+		overrides: Arc<BTreeMap<EthereumStorageSchema, Box<dyn StorageOverride<B> + Send + Sync>>>,
 	) -> Self {
-		Self { _pool, client, network, subscriptions, _marker: PhantomData }
+		Self {
+			_pool,
+			client: client.clone(),
+			network,
+			subscriptions,
+			overrides,
+			fallback: Arc::new(Box::new(RuntimeApiStorageOverride::new(client))),
+			_marker: PhantomData
+		}
 	}
 }
 
@@ -233,7 +252,7 @@ impl<B: BlockT, P, C, BE, H: ExHashT> EthPubSubApiT for EthPubSubApi<B, P, C, BE
 		B: BlockT<Hash=H256> + Send + Sync + 'static,
 		P: TransactionPool<Block=B> + Send + Sync + 'static,
 		C: ProvideRuntimeApi<B> + StorageProvider<B,BE> +
-			BlockchainEvents<B> + AuxStore,
+			BlockchainEvents<B>,
 		C: HeaderBackend<B> + HeaderMetadata<B, Error=BlockChainError> + 'static,
 		C: Send + Sync + 'static,
 		C::Api: EthereumRuntimeRPCApi<B>,
@@ -255,6 +274,8 @@ impl<B: BlockT, P, C, BE, H: ExHashT> EthPubSubApiT for EthPubSubApi<B, P, C, BE
 
 		let client = self.client.clone();
 		let network = self.network.clone();
+		let overrides = self.overrides.clone();
+		let fallback = self.fallback.clone();
 		match kind {
 			Kind::Logs => {
 				self.subscriptions.add(subscriber, |sink| {
@@ -262,12 +283,17 @@ impl<B: BlockT, P, C, BE, H: ExHashT> EthPubSubApiT for EthPubSubApi<B, P, C, BE
 					.filter_map(move |notification| {
 						if notification.is_new_best {
 							let id = BlockId::Hash(notification.hash);
-							let receipts = client.runtime_api()
-								.current_receipts(&id);
-							let block = client.runtime_api()
-								.current_block(&id);
+
+							let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(
+								client.as_ref(), id
+							);
+							let handler = overrides.get(&schema).unwrap_or(&fallback);
+
+							let block = handler.current_block(&id);
+							let receipts = handler.current_receipts(&id);
+							
 							match (receipts, block) {
-								(Ok(Some(receipts)), Ok(Some(block))) =>
+								(Some(receipts), Some(block)) =>
 									futures::future::ready(Some((block, receipts))),
 								_ => futures::future::ready(None)
 							}
@@ -304,12 +330,14 @@ impl<B: BlockT, P, C, BE, H: ExHashT> EthPubSubApiT for EthPubSubApi<B, P, C, BE
 					.filter_map(move |notification| {
 						if notification.is_new_best {
 							let id = BlockId::Hash(notification.hash);
-							let block = client.runtime_api()
-								.current_block(&id);
-							match block {
-								Ok(Some(block)) => futures::future::ready(Some(block)),
-								_ => futures::future::ready(None)
-							}
+
+							let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(
+								client.as_ref(), id
+							);
+							let handler = overrides.get(&schema).unwrap_or(&fallback);
+
+							let block = handler.current_block(&id);
+							futures::future::ready(block)
 						} else {
 							futures::future::ready(None)
 						}
