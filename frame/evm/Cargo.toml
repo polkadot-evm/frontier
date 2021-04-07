@@ -30,6 +30,7 @@ evm = { version = "0.25.0", default-features = false, features = ["with-codec"] 
 evm-runtime = { version = "0.25.0", default-features = false }
 evm-gasometer = { version = "0.25.0", default-features = false }
 sha3 = { version = "0.8", default-features = false }
+log = { version = "0.4", default-features = false }
 
 [features]
 default = ["std"]
@@ -52,4 +53,5 @@ std = [
 	"evm-runtime/std",
 	"evm-gasometer/std",
 	"pallet-timestamp/std",
+	"log/std",
 ]
