@@ -156,15 +156,17 @@ pub fn test_precompile_consensus_tests<P: Precompile>(filepath: &str)
 		};
 
 		match P::execute(&input, Some(cost), &context) {
-			Ok((_, output, gas)) => {
+			Ok((exit, output, gas)) => {
 				let as_hex: String = hex::encode(output);
+				assert_eq!(exit, ExitSucceed::Returned,
+						  "test '{}' returned {:?} (expected 'Returned')", test.Name, exit);
 				assert_eq!(as_hex, test.Expected,
 						   "test '{}' failed (different output)", test.Name);
 				assert_eq!(gas, test.Gas,
 						   "test '{}' failed (different gas cost)", test.Name);
 			},
-			Err(_) => {
-				panic!("Precompile::execute() returned error");
+			Err(err) => {
+				return Err(format!("Test '{}' returned error: {:?}", test.Name, err));
 			}
 		}
 	}
