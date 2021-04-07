@@ -8,7 +8,6 @@ homepage = "https://substrate.dev"
 repository = "https://github.com/paritytech/substrate/"
 description = "Primitive EVM abstractions for Substrate."
 documentation = "https://docs.rs/sp-evm"
-readme = "README.md"
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
