@@ -14,25 +14,25 @@ jsonrpc-pubsub = "15.0.0"
 log = "0.4.8"
 ethereum-types = "0.11.0"
 evm = "0.25.0"
-fc-consensus = { path = "../consensus" }
-fc-db = { path = "../db" }
-fc-rpc-core = { path = "../rpc-core" }
-fp-consensus = { path = "../../primitives/consensus" }
-fp-rpc = { path = "../../primitives/rpc" }
-fp-storage = { path = "../../primitives/storage"}
-sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sp-api = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sp-transaction-pool = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sp-storage = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sc-service = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sc-client-api = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sc-rpc = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sc-network = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-pallet-evm = { path = "../../frame/evm" }
-fp-evm = { path = "../../primitives/evm" }
-pallet-ethereum = { path = "../../frame/ethereum" }
+fc-consensus = { version = "1.0.0", path = "../consensus" }
+fc-db = { version = "1.0.0", path = "../db" }
+fc-rpc-core = { version = "1.0.0", path = "../rpc-core" }
+fp-consensus = { version = "1.0.0", path = "../../primitives/consensus" }
+fp-rpc = { version = "1.0.0", path = "../../primitives/rpc" }
+fp-storage = { version = "1.0.0", path = "../../primitives/storage"}
+sp-io = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sp-runtime = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sp-api = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sp-transaction-pool = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sp-storage = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sp-blockchain = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sc-service = { version = "0.9.0", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sc-client-api = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sc-rpc = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sc-network = { version = "0.9.0", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+pallet-evm = { version = "3.0.0", path = "../../frame/evm" }
+fp-evm = { version = "1.0.0", path = "../../primitives/evm" }
+pallet-ethereum = { version = "1.0.0", path = "../../frame/ethereum" }
 ethereum = { version = "0.7.1", features = ["with-codec"] }
 codec = { package = "parity-scale-codec", version = "2.0.0" }
 rlp = "0.5"
