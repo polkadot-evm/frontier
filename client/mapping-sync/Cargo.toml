@@ -11,10 +11,10 @@ sp-runtime = { version = "3.0.0", git = "https://github.com/paritytech/substrate
 sp-blockchain = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sc-client-api = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sp-api = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-fp-consensus = { path = "../../primitives/consensus" }
-fc-consensus = { path = "../consensus" }
-fc-db = { path = "../db" }
-fp-rpc = { path = "../../primitives/rpc" }
+fp-consensus = { version = "1.0.0", path = "../../primitives/consensus" }
+fc-consensus = { version = "1.0.0", path = "../consensus" }
+fc-db = { version = "1.0.0", path = "../db" }
+fp-rpc = { version = "1.0.0", path = "../../primitives/rpc" }
 futures = { version = "0.3.1", features = ["compat"] }
 futures-timer = "3.0.1"
 log = "0.4.8"
