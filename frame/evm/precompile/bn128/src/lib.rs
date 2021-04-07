@@ -182,3 +182,26 @@ impl Precompile for Bn128Pairing {
 		Ok((ExitSucceed::Returned, buf.to_vec(), gas_cost))
 	}
 }
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn process_consensus_tests_for_add() -> std::result::Result<(), String> {
+		fp_evm::test_precompile_consensus_tests::<Bn128Add>("../testdata/common_bnadd.json")?;
+		Ok(())
+	}
+
+	#[test]
+	fn process_consensus_tests_for_mul() -> std::result::Result<(), String> {
+		fp_evm::test_precompile_consensus_tests::<Bn128Mul>("../testdata/common_bnmul.json")?;
+		Ok(())
+	}
+
+	#[test]
+	fn process_consensus_tests_for_pair() -> std::result::Result<(), String> {
+		fp_evm::test_precompile_consensus_tests::<Bn128Pairing>("../testdata/common_bnpair.json")?;
+		Ok(())
+	}
+}
