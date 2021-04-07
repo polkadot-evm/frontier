@@ -1306,7 +1306,7 @@ dependencies = [
 
 [[package]]
 name = "fc-consensus"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "derive_more",
  "fc-db",
@@ -1342,7 +1342,7 @@ dependencies = [
 
 [[package]]
 name = "fc-mapping-sync"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "fc-consensus",
  "fc-db",
@@ -1359,7 +1359,7 @@ dependencies = [
 
 [[package]]
 name = "fc-rpc"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "ethereum",
  "ethereum-types",
@@ -1399,7 +1399,7 @@ dependencies = [
 
 [[package]]
 name = "fc-rpc-core"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "ethereum-types",
  "jsonrpc-core 15.1.0",
@@ -1492,7 +1492,7 @@ dependencies = [
 
 [[package]]
 name = "fp-consensus"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "ethereum",
  "parity-scale-codec",
@@ -1505,7 +1505,7 @@ dependencies = [
 
 [[package]]
 name = "fp-evm"
-version = "0.8.0"
+version = "1.0.0"
 dependencies = [
  "evm",
  "impl-trait-for-tuples 0.1.3",
@@ -1517,7 +1517,7 @@ dependencies = [
 
 [[package]]
 name = "fp-rpc"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "ethereum",
  "ethereum-types",
@@ -1532,7 +1532,7 @@ dependencies = [
 
 [[package]]
 name = "fp-storage"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "ethereum",
  "ethereum-types",
@@ -1678,7 +1678,7 @@ dependencies = [
 
 [[package]]
 name = "frontier-template-node"
-version = "3.0.0-dev"
+version = "0.0.0"
 dependencies = [
  "fc-consensus",
  "fc-db",
@@ -1727,7 +1727,7 @@ dependencies = [
 
 [[package]]
 name = "frontier-template-runtime"
-version = "3.0.0-dev"
+version = "0.0.0"
 dependencies = [
  "fp-rpc",
  "frame-executive",
@@ -1765,7 +1765,7 @@ dependencies = [
 
 [[package]]
 name = "frontier-template-test-client"
-version = "0.1.0"
+version = "0.0.0"
 dependencies = [
  "frontier-template-runtime",
  "parity-scale-codec",
@@ -3880,7 +3880,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-dynamic-fee"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -3894,7 +3894,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-ethereum"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "ethereum",
  "ethereum-types",
@@ -3945,7 +3945,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm-precompile-blake2"
-version = "3.0.0"
+version = "1.0.0"
 dependencies = [
  "evm",
  "fp-evm",
@@ -3955,7 +3955,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm-precompile-bn128"
-version = "3.0.0"
+version = "1.0.0"
 dependencies = [
  "evm",
  "fp-evm",
@@ -3966,7 +3966,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm-precompile-dispatch"
-version = "3.0.0"
+version = "1.0.0"
 dependencies = [
  "evm",
  "fp-evm",
@@ -3979,7 +3979,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm-precompile-ed25519"
-version = "3.0.0"
+version = "1.0.0"
 dependencies = [
  "ed25519-dalek",
  "evm",
@@ -3990,7 +3990,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm-precompile-modexp"
-version = "3.0.0"
+version = "1.0.0"
 dependencies = [
  "evm",
  "fp-evm",
@@ -4002,7 +4002,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm-precompile-sha3fips"
-version = "3.0.0"
+version = "1.0.0"
 dependencies = [
  "evm",
  "fp-evm",
@@ -4013,7 +4013,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm-precompile-simple"
-version = "3.0.0"
+version = "1.0.0"
 dependencies = [
  "evm",
  "fp-evm",

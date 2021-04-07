@@ -1,10 +1,11 @@
 [package]
 name = "frontier-template-test-client"
-version = "0.1.0"
+version = "0.0.0"
 authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2018"
 description = "Ethereum RPC (web3) compatibility layer for Substrate."
 license = "GPL-3.0"
+publish = false
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "2.0.0" }

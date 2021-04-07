@@ -1,11 +1,12 @@
 [package]
 name = "frontier-template-runtime"
-version = "3.0.0-dev"
+version = "0.0.0"
 authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2018"
 license = "Unlicense"
 homepage = "https://substrate.dev"
 repository = "https://github.com/paritytech/substrate/"
+publish = false
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
@@ -19,10 +20,10 @@ frame-support = { version = "3.0.0-dev", default-features = false, git = "https:
 frame-system = { version = "3.0.0-dev", default-features = false, package = "frame-system", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 frame-system-rpc-runtime-api = { version = "3.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 
-pallet-ethereum = { version = "0.1.0", default-features = false, path = "../../frame/ethereum" }
-pallet-evm = { version = "3.0.0-dev", default-features = false, path = "../../frame/evm" }
-pallet-evm-precompile-simple = { version = "3.0.0-dev", default-features = false, path = "../../frame/evm/precompile/simple" }
-pallet-evm-precompile-sha3fips = { version = "3.0.0-dev", default-features = false, path = "../../frame/evm/precompile/sha3fips" }
+pallet-ethereum = { default-features = false, path = "../../frame/ethereum" }
+pallet-evm = { default-features = false, path = "../../frame/evm" }
+pallet-evm-precompile-simple = { default-features = false, path = "../../frame/evm/precompile/simple" }
+pallet-evm-precompile-sha3fips = { default-features = false, path = "../../frame/evm/precompile/sha3fips" }
 pallet-aura = { version = "3.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 pallet-balances = { version = "3.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 pallet-grandpa = { version = "3.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
