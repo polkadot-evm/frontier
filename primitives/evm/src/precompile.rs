@@ -124,7 +124,7 @@ struct EthConsensusTest {
 	Input: String,
 	Expected: String,
 	Name: String,
-	Gas: u64,
+	Gas: Option<u64>,
 }
 
 /// Tests a precompile against the ethereum consensus tests defined in the given file at filepath.
@@ -162,8 +162,10 @@ pub fn test_precompile_consensus_tests<P: Precompile>(filepath: &str)
 						  "test '{}' returned {:?} (expected 'Returned')", test.Name, exit);
 				assert_eq!(as_hex, test.Expected,
 						   "test '{}' failed (different output)", test.Name);
-				assert_eq!(gas, test.Gas,
-						   "test '{}' failed (different gas cost)", test.Name);
+				if let Some(expected_gas) = test.Gas {
+					assert_eq!(gas, expected_gas,
+							   "test '{}' failed (different gas cost)", test.Name);
+				}
 			},
 			Err(err) => {
 				return Err(format!("Test '{}' returned error: {:?}", test.Name, err));

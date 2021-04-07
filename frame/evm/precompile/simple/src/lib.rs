@@ -151,4 +151,16 @@ mod tests {
 		fp_evm::test_precompile_consensus_tests::<ECRecover>("../testdata/ecRecover.json")?;
 		Ok(())
 	}
+
+	#[test]
+	fn process_consensus_tests_for_sha256() -> std::result::Result<(), String> {
+		fp_evm::test_precompile_consensus_tests::<Sha256>("../testdata/common_sha256.json")?;
+		Ok(())
+	}
+
+	#[test]
+	fn process_consensus_tests_for_ripemd160() -> std::result::Result<(), String> {
+		fp_evm::test_precompile_consensus_tests::<Ripemd160>("../testdata/common_ripemd.json")?;
+		Ok(())
+	}
 }
