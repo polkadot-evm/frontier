@@ -196,58 +196,12 @@ impl Precompile for Modexp {
 mod tests {
 	use super::*;
 	extern crate hex;
-	use std::fs;
-	use serde::Deserialize;
-
-	#[allow(non_snake_case)]
-	#[derive(Deserialize, Debug)]
-	struct EthConsensusTest {
-		Input: String,
-		Expected: String,
-		Name: String,
-		Gas: u64,
-	}
 
 	#[test]
-	fn process_consensus_tests() -> std::result::Result<(), ExitError> {
-		let data = fs::read_to_string("./modexp_eip2565.json")
-			.expect("Failed to read modexp_eip2565.json");
-
-		let tests: Vec<EthConsensusTest> = serde_json::from_str(&data)
-			.expect("expected json array");
-
-		for test in tests {
-			let input: Vec<u8> = hex::decode(test.Input)
-				.expect("Could not hex-decode test input data");
-
-			let cost: u64 = 1000000;
-
-			let context: Context = Context {
-				address: Default::default(),
-				caller: Default::default(),
-				apparent_value: From::from(0),
-			};
-
-			match Modexp::execute(&input, Some(cost), &context) {
-				Ok((_, output, gas)) => {
-					let as_hex: String = hex::encode(output);
-					assert_eq!(as_hex, test.Expected,
-							   "test '{}' failed (different output)", test.Name);
-					assert_eq!(gas, test.Gas,
-							   "test '{}' failed (different gas cost)", test.Name);
-				},
-				Err(_) => {
-					panic!("Modexp::execute() returned error");
-				}
-			}
-
-		}
+	fn process_consensus_tests() -> std::result::Result<(), String> {
+		fp_evm::test_precompile_consensus_tests::<Modexp>("../testdata/modexp_eip2565.json")?;
 		Ok(())
 	}
-
-
-
-
 
 	#[test]
 	fn test_empty_input() -> std::result::Result<(), ExitError> {

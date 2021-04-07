@@ -97,10 +97,9 @@ impl Precompile for Blake2F {
 mod tests {
 	use super::*;
 
-	// TODO: DRY
 	#[test]
 	fn process_consensus_tests() -> std::result::Result<(), String> {
-		fp_evm::test_precompile_consensus_tests::<Blake2F>("./blake2F.json")?;
+		fp_evm::test_precompile_consensus_tests::<Blake2F>("../testdata/blake2F.json")?;
 		Ok(())
 	}
 }
