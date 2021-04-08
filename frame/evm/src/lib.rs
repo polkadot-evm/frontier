@@ -252,6 +252,8 @@ pub trait Config: frame_system::Config + pallet_timestamp::Config {
 	type Precompiles: PrecompileSet;
 	/// Chain ID of EVM.
 	type ChainId: Get<u64>;
+	/// The block gas limit. Can be a simple constant, or an adjustment algorithm in another pallet.
+	type BlockGasLimit: Get<U256>;
 	/// EVM execution runner.
 	type Runner: Runner<Self>;
 

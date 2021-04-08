@@ -25,7 +25,7 @@ pub use eth::{
 	EthTask,
 };
 pub use eth_pubsub::{EthPubSubApi, EthPubSubApiServer, HexEncodedIdProvider};
-pub use overrides::{StorageOverride, SchemaV1Override};
+pub use overrides::{StorageOverride, SchemaV1Override, OverrideHandle, RuntimeApiStorageOverride};
 
 use ethereum_types::{H160, H256};
 use ethereum::{
@@ -35,6 +35,7 @@ use jsonrpc_core::{ErrorCode, Error, Value};
 use rustc_hex::ToHex;
 use pallet_evm::ExitReason;
 use sha3::{Digest, Keccak256};
+use evm::ExitError;
 
 pub mod frontier_backend_client {
 
@@ -81,27 +82,18 @@ pub mod frontier_backend_client {
 		})
 	}
 
-	// Asumes there is only one mapped canonical block in the AuxStore, otherwise something is wrong
 	pub fn load_hash<B: BlockT, C>(client: &C, backend: &fc_db::Backend<B>, hash: H256) -> RpcResult<Option<BlockId<B>>> where
 		B: BlockT,
 		C: HeaderBackend<B> + 'static,
 		B: BlockT<Hash=H256> + Send + Sync + 'static,
 		C: Send + Sync + 'static,
 	{
-		let hashes = backend.mapping().block_hashes(&hash)
+		let substrate_hash = backend.mapping().block_hash(&hash)
 			.map_err(|err| internal_err(format!("fetch aux store failed: {:?}", err)))?;
-		let out: Vec<H256> = hashes.into_iter()
-			.filter_map(|h| {
-				if is_canon::<B, C>(client, h) {
-					Some(h)
-				} else {
-					None
-				}
-			}).collect();
 
-		if out.len() == 1 {
+		if let Some(substrate_hash) = substrate_hash {
 			return Ok(Some(
-				BlockId::Hash(out[0])
+				BlockId::Hash(substrate_hash)
 			));
 		}
 		Ok(None)
@@ -178,6 +170,14 @@ pub fn error_on_execution_failure(reason: &ExitReason, data: &[u8]) -> Result<()
 	match reason {
 		ExitReason::Succeed(_) => Ok(()),
 		ExitReason::Error(e) => {
+			if *e == ExitError::OutOfGas || *e == ExitError::OutOfFund {
+				// `ServerError(0)` will be useful in estimate gas
+				return Err(Error {
+					code: ErrorCode::ServerError(0),
+					message: format!("out of gas or fund"),
+					data: None,
+				});
+			}
 			Err(Error {
 				code: ErrorCode::InternalError,
 				message: format!("evm error: {:?}", e),

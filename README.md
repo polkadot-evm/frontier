@@ -1,7 +1,7 @@
 # Frontier
 
-![GitHub Workflow Status](https://img.shields.io/github/workflow/status/paritytech/frontier/Rust)
-![Matrix](https://img.shields.io/matrix/frontier:matrix.org)
+[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/paritytech/frontier/Rust)](https://github.com/paritytech/frontier/actions)
+[![Matrix](https://img.shields.io/matrix/frontier:matrix.org)](https://matrix.to/#/#frontier:matrix.org)
 
 Frontier is Substrate's Ethereum compatibility layer. It allows you to run
 unmodified Ethereum dapps.
@@ -12,39 +12,105 @@ The goal of Ethereum compatibility layer is to be able to:
   where an extra bridge binary is acceptable.
 * Be able to import state from Ethereum mainnet.
 
-It consists of the following components:
+## Releases
 
-* **[pallet-evm](https://github.com/paritytech/frontier/tree/master/frame/evm)**:
-  EVM execution engine for Substrate.
-* **[pallet-ethereum](https://github.com/paritytech/frontier/tree/master/frame/ethereum)**: Emulation of full Ethereum block processing.
-* **rpc-ethereum**: Compatibility layer for web3 RPC methods.
+### Primitives
 
-## Development notes
+Those are suitable to be included in a runtime. Primitives are structures shared
+by higher-level code.
 
-Frontier is still work-in-progress. Below are some notes about the development.
+* `fp-consensus`: Consensus layer primitives.
+  ![Crates.io](https://img.shields.io/crates/v/fp-consensus)
+* `fp-evm`: EVM primitives. ![Crates.io](https://img.shields.io/crates/v/fp-evm)
+* `fp-rpc`: RPC primitives. ![Crates.io](https://img.shields.io/crates/v/fp-rpc)
+* `fp-storage`: Well-known storage information.
+  ![Crates.io](https://img.shields.io/crates/v/fp-storage)
 
-### Runtime
+### Pallets
 
-A few notes on the EthereumRuntimeApi's runtime implementation requirements:
+Those pallets serve as runtime components for projects using Frontier.
 
-- For supporting author rpc call, the FindAuthor trait must be implemented in an
-arbitrary struct. This implementation must call the authorities accessor in either
-Aura or Babe and convert the authority id response to H160 using
-pallet_evm::HashTruncateConvertAccountId::convert_account_id.
+* `pallet-evm`: EVM execution handling.
+  ![Crates.io](https://img.shields.io/crates/v/pallet-evm)
+* `pallet-ethereum`: Ethereum block handling.
+  ![Crates.io](https://img.shields.io/crates/v/pallet-ethereum)
+* `pallet-dynamic-fee`: Extends the fee handling logic so that it can be changed
+  within the runtime.
+  ![Crates.io](https://img.shields.io/crates/v/pallet-dynamic-fee)
 
-The struct implementing FindAuthor is passed as the FindAuthor associated type's
-value for pallet_ethereum.
+### EVM Pallet precompiles
 
-An Aura example for this is available in the template's runtime (EthereumFindAuthor).
+Those precompiles can be used together with `pallet-evm` for additional
+functionalities of the EVM executor.
 
-- For supporting chain_id rpc call, a u64 ChainId constant must be defined.
+* `pallet-evm-precompile-simple`: Four basic precompiles in Ethereum EVMs.
+  ![Crates.io](https://img.shields.io/crates/v/pallet-evm-precompile-simple)
+* `pallet-evm-precompile-blake2`: BLAKE2 precompile.
+  ![Crates.io](https://img.shields.io/crates/v/pallet-evm-precompile-blake2)
+* `pallet-evm-precompile-bn128`: BN128 precompile.
+  ![Crates.io](https://img.shields.io/crates/v/pallet-evm-precompile-bn128)
+* `pallet-evm-precompile-ed25519`: ED25519 precompile.
+  ![Crates.io](https://img.shields.io/crates/v/pallet-evm-precompile-ed25519)
+* `pallet-evm-precompile-modexp`: MODEXP precompile.
+  ![Crates.io](https://img.shields.io/crates/v/pallet-evm-precompile-modexp)
+* `pallet-evm-precompile-sha3fips`: Standard SHA3 precompile.
+  ![Crates.io](https://img.shields.io/crates/v/pallet-evm-precompile-sha3fips)
+* `pallet-evm-precompile-dispatch`: Enable interoperability between EVM
+  contracts and other Substrate runtime components.
+  ![Crates.io](https://img.shields.io/crates/v/pallet-evm-precompile-dispatch)
 
-- For supporting gas_price rpc call, FeeCalculator trait must be implemented in an
-arbitrary struct. An example FixedGasPrice is available in the template's runtime.
+### Client-side libraries
 
-### Use local version of Substrate
+Those are libraries that should be used on client-side to enable RPC, block hash
+mapping, and other features.
 
-1. Override your local cargo config to point to your local substrate (pointing to your WIP branch): place `paths = ["path/to/substrate"]` in `~/.cargo/config`.
-2. You are good to go.
+* `fc-consensus`: Consensus block import.
+  ![Crates.io](https://img.shields.io/crates/v/fc-consensus)
+* `fc-db`: Frontier-specific database backend.
+  ![Crates.io](https://img.shields.io/crates/v/fc-db)
+* `fc-mapping-sync`: Block hash mapping syncing logic.
+  ![Crates.io](https://img.shields.io/crates/v/fc-mapping-sync)
+* `fc-rpc-core`: Core RPC logic.
+  ![Crates.io](https://img.shields.io/crates/v/fc-rpc-core)
+* `fc-rpc`: RPC implementation.
+  ![Crates.io](https://img.shields.io/crates/v/fc-rpc)
 
-Remember to comment out the override after it is done to avoid mysterious build issues on other repo.
+## Development workflow
+
+### Pull request
+
+All changes (except new releases) are handled through pull requests.
+
+### Versioning
+
+Frontier follows [Semantic Versioning](https://semver.org/). An unreleased crate
+in the repository will have the `-dev` suffix in the end, and we do rolling
+releases.
+
+When you make a pull request against this repository, please also update the
+affected crates' versions, using the following rules. Note that the rules should
+be applied recursively -- if a change modifies any upper crate's dependency
+(even just the `Cargo.toml` file), then the upper crate will also need to apply
+those rules.
+
+Additionally, if your change is notable, then you should also modify the
+corresponding `CHANGELOG.md` file, in the "Unreleased" section.
+
+If the affected crate already has `-dev` suffix:
+
+* If your change is a patch, then you do not have to update any versions.
+* If your change introduces a new feature, please check if the local version
+  already had its minor version bumped, if not, bump it.
+* If your change modifies the current interface, please check if the local
+  version already had its major version bumped, if not, bump it.
+
+If the affected crate does not yet have `-dev` suffix:
+
+* If your change is a patch, then bump the patch version, and add `-dev` suffix.
+* If your change introduces a new feature, then bump the minor version, and add
+  `-dev` suffix.
+* If your change modifies the current interface, then bump the major version,
+  and add `-dev` suffix.
+
+If your pull request introduces a new crate, please set its version to
+`1.0.0-dev`.
