@@ -28,13 +28,17 @@ use evm::{ExitSucceed, ExitError, Context};
 
 pub struct Blake2F;
 
+impl Blake2F {
+	const GAS_COST_PER_ROUND: u64 = 1; // https://eips.ethereum.org/EIPS/eip-152#gas-costs-and-benchmarks
+}
+
 impl Precompile for Blake2F {
 
 	/// Format of `input`:
 	/// [4 bytes for rounds][64 bytes for h][128 bytes for m][8 bytes for t_0][8 bytes for t_1][1 byte for f]
 	fn execute(
 		input: &[u8],
-		_target_gas: Option<u64>,
+		target_gas: Option<u64>,
 		_context: &Context,
 	) -> core::result::Result<(ExitSucceed, Vec<u8>, u64), ExitError> {
 		const BLAKE2_F_ARG_LEN: usize = 213;
@@ -46,6 +50,11 @@ impl Precompile for Blake2F {
 		let mut rounds_buf: [u8; 4] = [0; 4];
 		rounds_buf.copy_from_slice(&input[0..4]);
 		let rounds: u32 = u32::from_be_bytes(rounds_buf);
+
+		let gas_cost: u64 = (rounds as u64) * Blake2F::GAS_COST_PER_ROUND;
+		if gas_cost > target_gas.expect("Gas limit not provided") { // TODO
+			return Err(ExitError::OutOfGas);
+		}
 
 		let mut h_buf: [u8; 64] = [0; 64];
 		h_buf.copy_from_slice(&input[4..68]);
@@ -89,7 +98,7 @@ impl Precompile for Blake2F {
 			output_buf[i * 8..(i + 1) * 8].copy_from_slice(&state_word.to_le_bytes());
 		}
 
-		Ok((ExitSucceed::Returned, output_buf.to_vec(), 0))
+		Ok((ExitSucceed::Returned, output_buf.to_vec(), gas_cost))
 	}
 }
 

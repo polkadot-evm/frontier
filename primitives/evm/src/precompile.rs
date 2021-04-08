@@ -147,7 +147,7 @@ pub fn test_precompile_consensus_tests<P: Precompile>(filepath: &str)
 		let input: Vec<u8> = hex::decode(test.Input)
 			.expect("Could not hex-decode test input data");
 
-		let cost: u64 = 1000000;
+		let cost: u64 = 10000000;
 
 		let context: Context = Context {
 			address: Default::default(),
