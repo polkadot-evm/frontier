@@ -159,12 +159,12 @@ pub fn test_precompile_consensus_tests<P: Precompile>(filepath: &str)
 			Ok((exit, output, gas)) => {
 				let as_hex: String = hex::encode(output);
 				assert_eq!(exit, ExitSucceed::Returned,
-						  "test '{}' returned {:?} (expected 'Returned')", test.Name, exit);
+						"test '{}' returned {:?} (expected 'Returned')", test.Name, exit);
 				assert_eq!(as_hex, test.Expected,
-						   "test '{}' failed (different output)", test.Name);
+						"test '{}' failed (different output)", test.Name);
 				if let Some(expected_gas) = test.Gas {
 					assert_eq!(gas, expected_gas,
-							   "test '{}' failed (different gas cost)", test.Name);
+							"test '{}' failed (different gas cost)", test.Name);
 				}
 			},
 			Err(err) => {
