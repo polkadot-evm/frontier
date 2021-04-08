@@ -75,7 +75,13 @@ mapping, and other features.
 * `fc-rpc`: RPC implementation.
   ![Crates.io](https://img.shields.io/crates/v/fc-rpc)
 
-## Versioning
+## Development workflow
+
+### Pull request
+
+All changes (except new releases) are handled through pull requests.
+
+### Versioning
 
 Frontier follows [Semantic Versioning](https://semver.org/). An unreleased crate
 in the repository will have the `-dev` suffix in the end, and we do rolling
