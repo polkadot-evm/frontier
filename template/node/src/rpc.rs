@@ -113,7 +113,7 @@ pub fn create_full<C, P, BE>(
 		EthereumStorageSchema::V1,
 		Box::new(SchemaV1Override::new(client.clone())) as Box<dyn StorageOverride<_> + Send + Sync>
 	);
-	
+
 	let overrides = Arc::new(OverrideHandle {
 		schemas: overrides_map,
 		fallback: Box::new(RuntimeApiStorageOverride::new(client.clone())),
