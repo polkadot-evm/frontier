@@ -19,68 +19,58 @@ The goal of Ethereum compatibility layer is to be able to:
 Those are suitable to be included in a runtime. Primitives are structures shared
 by higher-level code.
 
-* `fp-consensus` (![Crates.io](https://img.shields.io/crates/v/fp-consensus)):
-  Consensus layer primitives.
-* `fp-evm` (![Crates.io](https://img.shields.io/crates/v/fp-evm)): EVM
-  primitives.
-* `fp-rpc` (![Crates.io](https://img.shields.io/crates/v/fp-rpc)): RPC
-  primitives.
-* `fp-storage` (![Crates.io](https://img.shields.io/crates/v/fp-storage)):
-  Well-known storage information.
+* `fp-consensus`: Consensus layer primitives.
+  ![Crates.io](https://img.shields.io/crates/v/fp-consensus)
+* `fp-evm`: EVM primitives. ![Crates.io](https://img.shields.io/crates/v/fp-evm)
+* `fp-rpc`: RPC primitives. ![Crates.io](https://img.shields.io/crates/v/fp-rpc)
+* `fp-storage`: Well-known storage information.
+  ![Crates.io](https://img.shields.io/crates/v/fp-storage)
 
 ### Pallets
 
 Those pallets serve as runtime components for projects using Frontier.
 
-* `pallet-evm` (![Crates.io](https://img.shields.io/crates/v/pallet-evm)): EVM
-  execution handling.
-* `pallet-ethereum`
-  (![Crates.io](https://img.shields.io/crates/v/pallet-ethereum)): Ethereum
-  block handling.
-* `pallet-dynamic-fee`
-  (![Crates.io](https://img.shields.io/crates/v/pallet-dynamic-fee)): Extends
-  the fee handling logic so that it can be changed within the runtime.
+* `pallet-evm`: EVM execution handling.
+  ![Crates.io](https://img.shields.io/crates/v/pallet-evm)
+* `pallet-ethereum`: Ethereum block handling.
+  ![Crates.io](https://img.shields.io/crates/v/pallet-ethereum)
+* `pallet-dynamic-fee`: Extends the fee handling logic so that it can be changed
+  within the runtime.
+  ![Crates.io](https://img.shields.io/crates/v/pallet-dynamic-fee)
 
 ### EVM Pallet precompiles
 
 Those precompiles can be used together with `pallet-evm` for additional
 functionalities of the EVM executor.
 
-* `pallet-evm-precompile-simple`
-  (![Crates.io](https://img.shields.io/crates/v/pallet-evm-precompile-simple)):
-  Four basic precompiles in Ethereum EVMs.
-* `pallet-evm-precompile-blake2`
-  (![Crates.io](https://img.shields.io/crates/v/pallet-evm-precompile-blake2)):
-  BLAKE2 precompile.
-* `pallet-evm-precompile-bn128`
-  (![Crates.io](https://img.shields.io/crates/v/pallet-evm-precompile-bn128)):
-  BN128 precompile.
-* `pallet-evm-precompile-ed25519`
-  (![Crates.io](https://img.shields.io/crates/v/pallet-evm-precompile-ed25519)):
-  ED25519 precompile.
-* `pallet-evm-precompile-modexp`
-  (![Crates.io](https://img.shields.io/crates/v/pallet-evm-precompile-modexp)):
-  MODEXP precompile.
-* `pallet-evm-precompile-sha3fips`
-  (![Crates.io](https://img.shields.io/crates/v/pallet-evm-precompile-sha3fips)):
-  Standard SHA3 precompile.
-* `pallet-evm-precompile-dispatch`
-  (![Crates.io](https://img.shields.io/crates/v/pallet-evm-precompile-dispatch)):
-  Enable interoperability between EVM contracts and other Substrate runtime
-  components.
+* `pallet-evm-precompile-simple`: Four basic precompiles in Ethereum EVMs.
+  ![Crates.io](https://img.shields.io/crates/v/pallet-evm-precompile-simple)
+* `pallet-evm-precompile-blake2`: BLAKE2 precompile.
+  ![Crates.io](https://img.shields.io/crates/v/pallet-evm-precompile-blake2)
+* `pallet-evm-precompile-bn128`: BN128 precompile.
+  ![Crates.io](https://img.shields.io/crates/v/pallet-evm-precompile-bn128)
+* `pallet-evm-precompile-ed25519`: ED25519 precompile.
+  ![Crates.io](https://img.shields.io/crates/v/pallet-evm-precompile-ed25519)
+* `pallet-evm-precompile-modexp`: MODEXP precompile.
+  ![Crates.io](https://img.shields.io/crates/v/pallet-evm-precompile-modexp)
+* `pallet-evm-precompile-sha3fips`: Standard SHA3 precompile.
+  ![Crates.io](https://img.shields.io/crates/v/pallet-evm-precompile-sha3fips)
+* `pallet-evm-precompile-dispatch`: Enable interoperability between EVM
+  contracts and other Substrate runtime components.
+  ![Crates.io](https://img.shields.io/crates/v/pallet-evm-precompile-dispatch)
 
 ### Client-side libraries
 
 Those are libraries that should be used on client-side to enable RPC, block hash
 mapping, and other features.
 
-* `fc-consensus` (![Crates.io](https://img.shields.io/crates/v/fc-consensus)):
-  Consensus block import.
-* `fc-db` (![Crates.io](https://img.shields.io/crates/v/fc-db)):
-  Frontier-specific database backend.
-* `fc-mapping-sync`
-  (![Crates.io](https://img.shields.io/crates/v/fc-mapping-sync)): Block hash
-  mapping syncing logic.
-* `fc-rpc-core` (![Crates.io](https://img.shields.io/crates/v/fc-rpc-core)):
-  Core RPC logic.
-* `fc-rpc` (![Crates.io](https://img.shields.io/crates/v/fc-rpc)): RPC implementation.
+* `fc-consensus`: Consensus block import.
+  ![Crates.io](https://img.shields.io/crates/v/fc-consensus)
+* `fc-db`: Frontier-specific database backend.
+  ![Crates.io](https://img.shields.io/crates/v/fc-db)
+* `fc-mapping-sync`: Block hash mapping syncing logic.
+  ![Crates.io](https://img.shields.io/crates/v/fc-mapping-sync)
+* `fc-rpc-core`: Core RPC logic.
+  ![Crates.io](https://img.shields.io/crates/v/fc-rpc-core)
+* `fc-rpc`: RPC implementation.
+  ![Crates.io](https://img.shields.io/crates/v/fc-rpc)
