@@ -20,7 +20,7 @@ use sp_block_builder::BlockBuilder;
 use sc_network::NetworkService;
 use jsonrpc_pubsub::manager::SubscriptionManager;
 use pallet_ethereum::EthereumStorageSchema;
-use fc_rpc::{StorageOverride, SchemaV1Override};
+use fc_rpc::{StorageOverride, SchemaV1Override, OverrideHandle, RuntimeApiStorageOverride};
 
 /// Light client extra dependencies.
 pub struct LightDeps<C, F, P> {
@@ -113,8 +113,11 @@ pub fn create_full<C, P, BE>(
 		EthereumStorageSchema::V1,
 		Box::new(SchemaV1Override::new(client.clone())) as Box<dyn StorageOverride<_> + Send + Sync>
 	);
-
-	let overrides = Arc::new(overrides_map);
+	
+	let overrides = Arc::new(OverrideHandle {
+		schemas: overrides_map,
+		fallback: Box::new(RuntimeApiStorageOverride::new(client.clone())),
+	});
 
 	io.extend_with(
 		EthApiServer::to_delegate(EthApi::new(

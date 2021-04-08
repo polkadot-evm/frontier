@@ -58,8 +58,7 @@ use fp_rpc::{EthereumRuntimeRPCApi, TransactionStatus};
 
 use sc_network::{NetworkService, ExHashT};
 
-use pallet_ethereum::EthereumStorageSchema;
-use crate::{frontier_backend_client, overrides::{StorageOverride, RuntimeApiStorageOverride}};
+use crate::{frontier_backend_client, overrides::OverrideHandle};
 
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
 pub struct HexEncodedIdProvider {
@@ -90,8 +89,7 @@ pub struct EthPubSubApi<B: BlockT, P, C, BE, H: ExHashT> {
 	client: Arc<C>,
 	network: Arc<NetworkService<B, H>>,
 	subscriptions: SubscriptionManager<HexEncodedIdProvider>,
-	overrides: Arc<BTreeMap<EthereumStorageSchema, Box<dyn StorageOverride<B> + Send + Sync>>>,
-	fallback: Arc<Box<dyn StorageOverride<B> + Send + Sync>>,
+	overrides: Arc<OverrideHandle<B>>,
 	_marker: PhantomData<(B, BE)>,
 }
 
@@ -106,7 +104,7 @@ impl<B: BlockT, P, C, BE, H: ExHashT> EthPubSubApi<B, P, C, BE, H> where
 		client: Arc<C>,
 		network: Arc<NetworkService<B, H>>,
 		subscriptions: SubscriptionManager<HexEncodedIdProvider>,
-		overrides: Arc<BTreeMap<EthereumStorageSchema, Box<dyn StorageOverride<B> + Send + Sync>>>,
+		overrides: Arc<OverrideHandle<B>>,
 	) -> Self {
 		Self {
 			_pool,
@@ -114,7 +112,6 @@ impl<B: BlockT, P, C, BE, H: ExHashT> EthPubSubApi<B, P, C, BE, H> where
 			network,
 			subscriptions,
 			overrides,
-			fallback: Arc::new(Box::new(RuntimeApiStorageOverride::new(client))),
 			_marker: PhantomData
 		}
 	}
@@ -275,7 +272,6 @@ impl<B: BlockT, P, C, BE, H: ExHashT> EthPubSubApiT for EthPubSubApi<B, P, C, BE
 		let client = self.client.clone();
 		let network = self.network.clone();
 		let overrides = self.overrides.clone();
-		let fallback = self.fallback.clone();
 		match kind {
 			Kind::Logs => {
 				self.subscriptions.add(subscriber, |sink| {
@@ -287,7 +283,7 @@ impl<B: BlockT, P, C, BE, H: ExHashT> EthPubSubApiT for EthPubSubApi<B, P, C, BE
 							let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(
 								client.as_ref(), id
 							);
-							let handler = overrides.get(&schema).unwrap_or(&fallback);
+							let handler = overrides.schemas.get(&schema).unwrap_or(&overrides.fallback);
 
 							let block = handler.current_block(&id);
 							let receipts = handler.current_receipts(&id);
@@ -334,7 +330,7 @@ impl<B: BlockT, P, C, BE, H: ExHashT> EthPubSubApiT for EthPubSubApi<B, P, C, BE
 							let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(
 								client.as_ref(), id
 							);
-							let handler = overrides.get(&schema).unwrap_or(&fallback);
+							let handler = overrides.schemas.get(&schema).unwrap_or(&overrides.fallback);
 
 							let block = handler.current_block(&id);
 							futures::future::ready(block)

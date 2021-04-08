@@ -46,8 +46,7 @@ use crate::{frontier_backend_client, internal_err, error_on_execution_failure, E
 
 pub use fc_rpc_core::{EthApiServer, NetApiServer, Web3ApiServer, EthFilterApiServer};
 use codec::{self, Encode};
-use pallet_ethereum::EthereumStorageSchema;
-use crate::overrides::{StorageOverride, RuntimeApiStorageOverride};
+use crate::overrides::OverrideHandle;
 
 pub struct EthApi<B: BlockT, C, P, CT, BE, H: ExHashT> {
 	pool: Arc<P>,
@@ -56,8 +55,7 @@ pub struct EthApi<B: BlockT, C, P, CT, BE, H: ExHashT> {
 	network: Arc<NetworkService<B, H>>,
 	is_authority: bool,
 	signers: Vec<Box<dyn EthSigner>>,
-	overrides: Arc<BTreeMap<EthereumStorageSchema, Box<dyn StorageOverride<B> + Send + Sync>>>,
-	fallback: Box<dyn StorageOverride<B> + Send + Sync>,
+	overrides: Arc<OverrideHandle<B>>,
 	pending_transactions: PendingTransactions,
 	backend: Arc<fc_db::Backend<B>>,
 	_marker: PhantomData<(B, BE)>,
@@ -76,7 +74,7 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> where
 		network: Arc<NetworkService<B, H>>,
 		pending_transactions: PendingTransactions,
 		signers: Vec<Box<dyn EthSigner>>,
-		overrides: Arc<BTreeMap<EthereumStorageSchema, Box<dyn StorageOverride<B> + Send + Sync>>>,
+		overrides: Arc<OverrideHandle<B>>,
 		backend: Arc<fc_db::Backend<B>>,
 		is_authority: bool,
 	) -> Self {
@@ -88,7 +86,6 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> where
 			is_authority,
 			signers,
 			overrides,
-			fallback: Box::new(RuntimeApiStorageOverride::new(client)),
 			pending_transactions,
 			backend,
 			_marker: PhantomData,
@@ -322,9 +319,9 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 		let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(self.client.as_ref(), block);
 
 		Ok(
-			self.overrides
+			self.overrides.schemas
 			.get(&schema)
-			.unwrap_or(&self.fallback)
+			.unwrap_or(&self.overrides.fallback)
 			.current_block(&block)
 			.ok_or(internal_err("fetching author through override failed"))?
 			.header.beneficiary
@@ -382,9 +379,9 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 		if let Ok(Some(id)) = frontier_backend_client::native_block_id::<B, C>(self.client.as_ref(), self.backend.as_ref(), number) {
 			let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(self.client.as_ref(), id);
 			return Ok(
-				self.overrides
+				self.overrides.schemas
 					.get(&schema)
-					.unwrap_or(&self.fallback)
+					.unwrap_or(&self.overrides.fallback)
 					.storage_at(&id, address, index)
 					.unwrap_or_default()
 			)
@@ -400,7 +397,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 			_ => return Ok(None),
 		};
 		let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(self.client.as_ref(), id);
-		let handler = self.overrides.get(&schema).unwrap_or(&self.fallback);
+		let handler = self.overrides.schemas.get(&schema).unwrap_or(&self.overrides.fallback);
 
 		let block = handler.current_block(&id);
 		let statuses = handler.current_transaction_statuses(&id);
@@ -426,7 +423,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 			None => return Ok(None),
 		};
 		let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(self.client.as_ref(), id);
-		let handler = self.overrides.get(&schema).unwrap_or(&self.fallback);
+		let handler = self.overrides.schemas.get(&schema).unwrap_or(&self.overrides.fallback);
 
 		let block = handler.current_block(&id);
 		let statuses = handler.current_transaction_statuses(&id);
@@ -494,7 +491,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 			_ => return Ok(None),
 		};
 		let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(self.client.as_ref(), id);
-		let block = self.overrides.get(&schema).unwrap_or(&self.fallback).current_block(&id);
+		let block = self.overrides.schemas.get(&schema).unwrap_or(&self.overrides.fallback).current_block(&id);
 
 		match block {
 			Some(block) => Ok(Some(U256::from(block.transactions.len()))),
@@ -508,7 +505,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 			None => return Ok(None),
 		};
 		let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(self.client.as_ref(), id);
-		let block = self.overrides.get(&schema).unwrap_or(&self.fallback).current_block(&id);
+		let block = self.overrides.schemas.get(&schema).unwrap_or(&self.overrides.fallback).current_block(&id);
 
 		match block {
 			Some(block) => Ok(Some(U256::from(block.transactions.len()))),
@@ -529,9 +526,9 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 			let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(self.client.as_ref(), id);
 
 			return Ok(
-				self.overrides
+				self.overrides.schemas
 					.get(&schema)
-					.unwrap_or(&self.fallback)
+					.unwrap_or(&self.overrides.fallback)
 					.account_code_at(&id, address)
 					.unwrap_or(vec![])
 					.into()
@@ -868,7 +865,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 			_ => return Ok(None),
 		};
 		let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(self.client.as_ref(), id);
-		let handler = self.overrides.get(&schema).unwrap_or(&self.fallback);
+		let handler = self.overrides.schemas.get(&schema).unwrap_or(&self.overrides.fallback);
 
 		let block = handler.current_block(&id);
 		let statuses = handler.current_transaction_statuses(&id);
@@ -899,7 +896,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 		let index = index.value();
 
 		let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(self.client.as_ref(), id);
-		let handler = self.overrides.get(&schema).unwrap_or(&self.fallback);
+		let handler = self.overrides.schemas.get(&schema).unwrap_or(&self.overrides.fallback);
 
 		let block = handler.current_block(&id);
 		let statuses = handler.current_transaction_statuses(&id);
@@ -927,7 +924,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 		};
 		let index = index.value();
 		let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(self.client.as_ref(), id);
-		let handler = self.overrides.get(&schema).unwrap_or(&self.fallback);
+		let handler = self.overrides.schemas.get(&schema).unwrap_or(&self.overrides.fallback);
 
 		let block = handler.current_block(&id);
 		let statuses = handler.current_transaction_statuses(&id);
@@ -958,7 +955,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 			_ => return Ok(None),
 		};
 		let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(self.client.as_ref(), id);
-		let handler = self.overrides.get(&schema).unwrap_or(&self.fallback);
+		let handler = self.overrides.schemas.get(&schema).unwrap_or(&self.overrides.fallback);
 
 		let block = handler.current_block(&id);
 		let statuses = handler.current_transaction_statuses(&id);
@@ -1046,7 +1043,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 			};
 
 			let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(self.client.as_ref(), id);
-			let handler = self.overrides.get(&schema).unwrap_or(&self.fallback);
+			let handler = self.overrides.schemas.get(&schema).unwrap_or(&self.overrides.fallback);
 
 			let block = handler.current_block(&id);
 			let statuses = handler.current_transaction_statuses(&id);
@@ -1076,7 +1073,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 				let id = BlockId::Number(current_number);
 
 				let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(self.client.as_ref(), id);
-				let handler = self.overrides.get(&schema).unwrap_or(&self.fallback);
+				let handler = self.overrides.schemas.get(&schema).unwrap_or(&self.overrides.fallback);
 
 				let block = handler.current_block(&id);
 				let statuses = handler.current_transaction_statuses(&id);
@@ -1205,8 +1202,7 @@ pub struct EthFilterApi<B: BlockT, C, BE> {
 	client: Arc<C>,
 	filter_pool: FilterPool,
 	max_stored_filters: usize,
-	overrides: Arc<BTreeMap<EthereumStorageSchema, Box<dyn StorageOverride<B> + Send + Sync>>>,
-	fallback: Box<dyn StorageOverride<B> + Send + Sync>,
+	overrides: Arc<OverrideHandle<B>>,
 	_marker: PhantomData<(B, BE)>,
 }
 
@@ -1222,14 +1218,13 @@ impl<B: BlockT, C, BE> EthFilterApi<B, C, BE>  where
 		client: Arc<C>,
 		filter_pool: FilterPool,
 		max_stored_filters: usize,
-		overrides: Arc<BTreeMap<EthereumStorageSchema, Box<dyn StorageOverride<B> + Send + Sync>>>,
+		overrides: Arc<OverrideHandle<B>>,
 	) -> Self {
 		Self {
 			client: client.clone(),
 			filter_pool,
 			max_stored_filters,
 			overrides,
-			fallback: Box::new(RuntimeApiStorageOverride::new(client)),
 			_marker: PhantomData,
 		}
 	}
@@ -1318,7 +1313,7 @@ impl<B, C, BE> EthFilterApiT for EthFilterApi<B, C, BE> where
 							let id = BlockId::Number(n.unique_saturated_into());
 
 							let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(self.client.as_ref(), id);
-							let handler = self.overrides.get(&schema).unwrap_or(&self.fallback);
+							let handler = self.overrides.schemas.get(&schema).unwrap_or(&self.overrides.fallback);
 
 							let block = handler.current_block(&id);
 							if let Some(block) = block {
@@ -1370,7 +1365,7 @@ impl<B, C, BE> EthFilterApiT for EthFilterApi<B, C, BE> where
 							let id = BlockId::Number(current_number);
 
 							let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(self.client.as_ref(), id);
-							let handler = self.overrides.get(&schema).unwrap_or(&self.fallback);
+							let handler = self.overrides.schemas.get(&schema).unwrap_or(&self.overrides.fallback);
 
 							let block = handler.current_block(&id);
 							let statuses = handler.current_transaction_statuses(&id);
@@ -1450,7 +1445,7 @@ impl<B, C, BE> EthFilterApiT for EthFilterApi<B, C, BE> where
 							let id = BlockId::Number(current_number);
 
 							let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(self.client.as_ref(), id);
-							let handler = self.overrides.get(&schema).unwrap_or(&self.fallback);
+							let handler = self.overrides.schemas.get(&schema).unwrap_or(&self.overrides.fallback);
 
 							let block = handler.current_block(&id);
 							let statuses = handler.current_transaction_statuses(&id);
