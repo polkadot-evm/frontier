@@ -25,19 +25,11 @@ use evm::{ExitSucceed, ExitError, Context};
 use num::{BigUint, Zero, One, ToPrimitive, FromPrimitive};
 
 use core::ops::BitAnd;
+use core::cmp::max;
 
 pub struct Modexp;
 
 const MIN_GAS_COST: u64 = 200;
-
-// TODO: is there something in Substrate I can use?
-fn max(a: u64, b: u64) -> u64 {
-	if a > b {
-		a
-	} else {
-		b
-	}
-}
 
 // Calculate gas cost according to EIP 2565:
 // https://eips.ethereum.org/EIPS/eip-2565
