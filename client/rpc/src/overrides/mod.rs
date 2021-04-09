@@ -13,6 +13,7 @@
 
 // You should have received a copy of the GNU General Public License
 // along with Substrate.  If not, see <http://www.gnu.org/licenses/>.
+use std::collections::BTreeMap;
 
 use ethereum::Block as EthereumBlock;
 use ethereum_types::{H160, H256, U256};
@@ -27,6 +28,12 @@ mod schema_v1_override;
 
 pub use fc_rpc_core::{EthApiServer, NetApiServer};
 pub use schema_v1_override::SchemaV1Override;
+use pallet_ethereum::EthereumStorageSchema;
+
+pub struct OverrideHandle<Block: BlockT> {
+	pub schemas: BTreeMap<EthereumStorageSchema, Box<dyn StorageOverride<Block> + Send + Sync>>,
+	pub fallback: Box<dyn StorageOverride<Block> + Send + Sync>
+}
 
 /// Something that can fetch Ethereum-related data. This trait is quite similar to the runtime API,
 /// and indeed oe implementation of it uses the runtime API.

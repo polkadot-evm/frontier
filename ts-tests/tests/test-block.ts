@@ -3,7 +3,7 @@ import { step } from "mocha-steps";
 
 import { createAndFinalizeBlock, describeWithFrontier } from "./util";
 
-describeWithFrontier("Frontier RPC (Block)", `simple-specs.json`, (context) => {
+describeWithFrontier("Frontier RPC (Block)", (context) => {
 	let previousBlock;
 	// Those tests are dependant of each other in the given order.
 	// The reason is to avoid having to restart the node each time

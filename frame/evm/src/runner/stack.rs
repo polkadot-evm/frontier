@@ -21,7 +21,7 @@ use sp_std::{marker::PhantomData, vec::Vec, boxed::Box, mem, collections::btree_
 use sp_core::{U256, H256, H160};
 use sp_runtime::traits::UniqueSaturatedInto;
 use frame_support::{
-	log, ensure, traits::{Get, Currency, ExistenceRequirement},
+	ensure, traits::{Get, Currency, ExistenceRequirement},
 	storage::{StorageMap, StorageDoubleMap},
 };
 use sha3::{Keccak256, Digest};
