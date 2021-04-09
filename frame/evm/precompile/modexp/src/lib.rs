@@ -151,9 +151,11 @@ impl Precompile for Modexp {
 			// do our gas accounting
 			// TODO: we could technically avoid reading base first...
 			let gas_cost = calculate_gas_cost(base_len as u64, exp_len as u64, mod_len as u64, &exponent);
-			if gas_cost > target_gas.expect("Gas limit not provided") { // TODO: I'm probably misunderstanding this
-				return Err(ExitError::OutOfGas);
-			}
+			if let Some(gas_left) = target_gas {
+				if gas_left < gas_cost {
+					return Err(ExitError::OutOfGas);
+				}
+			};
 
 			let mod_start = exp_start + exp_len;
 			let modulus = BigUint::from_bytes_be(&input[mod_start..mod_start + mod_len]);

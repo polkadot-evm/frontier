@@ -128,8 +128,10 @@ impl Precompile for Bn128Pairing {
 
 			let gas_cost: u64 =
 				Bn128Pairing::BASE_GAS_COST + (elements as u64 * Bn128Pairing::GAS_COST_PER_PAIRING);
-			if gas_cost > target_gas.expect("Gas limit not provided") { // TODO: Handle
-				return Err(ExitError::OutOfGas);
+			if let Some(gas_left) = target_gas {
+				if gas_left < gas_cost {
+					return Err(ExitError::OutOfGas);
+				}
 			}
 
 			let mut vals = Vec::new();

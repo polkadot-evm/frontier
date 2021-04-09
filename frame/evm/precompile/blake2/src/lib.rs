@@ -52,8 +52,10 @@ impl Precompile for Blake2F {
 		let rounds: u32 = u32::from_be_bytes(rounds_buf);
 
 		let gas_cost: u64 = (rounds as u64) * Blake2F::GAS_COST_PER_ROUND;
-		if gas_cost > target_gas.expect("Gas limit not provided") { // TODO
-			return Err(ExitError::OutOfGas);
+		if let Some(gas_left) = target_gas {
+			if gas_left < gas_cost {
+				return Err(ExitError::OutOfGas);
+			}
 		}
 
 		let mut h_buf: [u8; 64] = [0; 64];
