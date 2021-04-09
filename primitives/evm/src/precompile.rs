@@ -134,7 +134,6 @@ struct EthConsensusTest {
 pub fn test_precompile_consensus_tests<P: Precompile>(filepath: &str)
 	-> std::result::Result<(), String>
 {
-	use hex;
 	use std::fs;
 
 	let data = fs::read_to_string(&filepath)

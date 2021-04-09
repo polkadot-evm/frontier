@@ -53,7 +53,7 @@ impl Precompile for Bn128Add {
 
 	fn execute(
 		input: &[u8],
-		target_gas: Option<u64>,
+		_target_gas: Option<u64>,
 		_context: &Context,
 	) -> core::result::Result<(ExitSucceed, Vec<u8>, u64), ExitError> {
 		use bn::AffineG1;
