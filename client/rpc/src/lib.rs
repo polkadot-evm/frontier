@@ -63,7 +63,7 @@ pub mod frontier_backend_client {
 	{
 		Ok(match number.unwrap_or(BlockNumber::Latest) {
 			BlockNumber::Hash { hash, .. } => {
-				load_hash::<B, C>(client, backend, hash).unwrap_or(None)
+				load_hash::<B>(backend, hash).unwrap_or(None)
 			},
 			BlockNumber::Num(number) => {
 				Some(BlockId::Number(number.unique_saturated_into()))
@@ -82,11 +82,9 @@ pub mod frontier_backend_client {
 		})
 	}
 
-	pub fn load_hash<B: BlockT, C>(client: &C, backend: &fc_db::Backend<B>, hash: H256) -> RpcResult<Option<BlockId<B>>> where
+	pub fn load_hash<B: BlockT>(backend: &fc_db::Backend<B>, hash: H256) -> RpcResult<Option<BlockId<B>>> where
 		B: BlockT,
-		C: HeaderBackend<B> + 'static,
 		B: BlockT<Hash=H256> + Send + Sync + 'static,
-		C: Send + Sync + 'static,
 	{
 		let substrate_hash = backend.mapping().block_hash(&hash)
 			.map_err(|err| internal_err(format!("fetch aux store failed: {:?}", err)))?;

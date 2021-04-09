@@ -30,7 +30,7 @@ use frame_support::{
 };
 use sp_std::prelude::*;
 use frame_system::ensure_none;
-use frame_support::{ensure, traits::UnfilteredDispatchable};
+use frame_support::ensure;
 use ethereum_types::{H160, H64, H256, U256, Bloom, BloomInput};
 use sp_runtime::{
 	transaction_validity::{

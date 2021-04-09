@@ -3894,7 +3894,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-ethereum"
-version = "1.0.0"
+version = "1.0.1-dev"
 dependencies = [
  "ethereum",
  "ethereum-types",
