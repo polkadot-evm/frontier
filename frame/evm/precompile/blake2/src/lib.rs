@@ -58,6 +58,8 @@ impl Precompile for Blake2F {
 			}
 		}
 
+		// we use from_le_bytes below to effectively swap byte order to LE if architecture is BE
+
 		let mut h_buf: [u8; 64] = [0; 64];
 		h_buf.copy_from_slice(&input[4..68]);
 		let mut h = [0u64; 8];
@@ -65,7 +67,7 @@ impl Precompile for Blake2F {
 		for state_word in &mut h {
 			let mut temp: [u8; 8] = Default::default();
 			temp.copy_from_slice(&h_buf[(ctr * 8)..(ctr + 1) * 8]);
-			*state_word = u64::from_ne_bytes(temp).into();
+			*state_word = u64::from_le_bytes(temp).into();
 			ctr += 1;
 		}
 
@@ -76,18 +78,18 @@ impl Precompile for Blake2F {
 		for msg_word in &mut m {
 			let mut temp: [u8; 8] = Default::default();
 			temp.copy_from_slice(&m_buf[(ctr * 8)..(ctr + 1) * 8]);
-			*msg_word = u64::from_ne_bytes(temp).into();
+			*msg_word = u64::from_le_bytes(temp).into();
 			ctr += 1;
 		}
 
 
 		let mut t_0_buf: [u8; 8] = [0; 8];
 		t_0_buf.copy_from_slice(&input[196..204]);
-		let t_0 = u64::from_ne_bytes(t_0_buf);
+		let t_0 = u64::from_le_bytes(t_0_buf);
 
 		let mut t_1_buf: [u8; 8] = [0; 8];
 		t_1_buf.copy_from_slice(&input[204..212]);
-		let t_1 = u64::from_ne_bytes(t_1_buf);
+		let t_1 = u64::from_le_bytes(t_1_buf);
 
 		let f = if input[212] == 1 { true } else if input[212] == 0 { false } else {
 			return Err(ExitError::Other("incorrect final block indicator flag".into()))
