@@ -163,8 +163,23 @@
 <span id="160">160</span>
 <span id="161">161</span>
 <span id="162">162</span>
+<span id="163">163</span>
+<span id="164">164</span>
+<span id="165">165</span>
+<span id="166">166</span>
+<span id="167">167</span>
+<span id="168">168</span>
+<span id="169">169</span>
+<span id="170">170</span>
+<span id="171">171</span>
+<span id="172">172</span>
+<span id="173">173</span>
+<span id="174">174</span>
+<span id="175">175</span>
+<span id="176">176</span>
 </pre><div class="example-wrap"><pre class="rust ">
-<span class="kw">use</span> <span class="ident">sp_core</span>::{<span class="ident">Pair</span>, <span class="ident">Public</span>, <span class="ident">sr25519</span>};
+<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">str</span>::<span class="ident">FromStr</span>, <span class="ident">collections</span>::<span class="ident">BTreeMap</span>};
+<span class="kw">use</span> <span class="ident">sp_core</span>::{<span class="ident">H160</span>, <span class="ident">U256</span>, <span class="ident">Pair</span>, <span class="ident">Public</span>, <span class="ident">sr25519</span>};
 <span class="kw">use</span> <span class="ident">frontier_template_runtime</span>::{
 	<span class="ident">AccountId</span>, <span class="ident">AuraConfig</span>, <span class="ident">BalancesConfig</span>, <span class="ident">EVMConfig</span>, <span class="ident">EthereumConfig</span>, <span class="ident">GenesisConfig</span>, <span class="ident">GrandpaConfig</span>,
 	<span class="ident">SudoConfig</span>, <span class="ident">SystemConfig</span>, <span class="ident">WASM_BINARY</span>, <span class="ident">Signature</span>
@@ -173,7 +188,6 @@
 <span class="kw">use</span> <span class="ident">sp_finality_grandpa</span>::<span class="ident">AuthorityId</span> <span class="kw">as</span> <span class="ident">GrandpaId</span>;
 <span class="kw">use</span> <span class="ident">sp_runtime</span>::<span class="ident">traits</span>::{<span class="ident">Verify</span>, <span class="ident">IdentifyAccount</span>};
 <span class="kw">use</span> <span class="ident">sc_service</span>::<span class="ident">ChainType</span>;
-<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">collections</span>::<span class="ident">BTreeMap</span>;
 
 <span class="comment">// The URL for the telemetry server.</span>
 <span class="comment">// const STAGING_TELEMETRY_URL: &amp;str = &quot;wss://telemetry.polkadot.io/submit/&quot;;</span>
@@ -321,7 +335,21 @@
 			<span class="ident">key</span>: <span class="ident">root_key</span>,
 		},
 		<span class="ident">pallet_evm</span>: <span class="ident">EVMConfig</span> {
-			<span class="ident">accounts</span>: <span class="ident">BTreeMap</span>::<span class="ident">new</span>(),
+			<span class="ident">accounts</span>: {
+				<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">map</span> <span class="op">=</span> <span class="ident">BTreeMap</span>::<span class="ident">new</span>();
+				<span class="ident">map</span>.<span class="ident">insert</span>(
+					<span class="ident">H160</span>::<span class="ident">from_str</span>(<span class="string">&quot;6be02d1d3665660d22ff9624b7be0551ee1ac91b&quot;</span>)
+						.<span class="ident">expect</span>(<span class="string">&quot;internal H160 is valid; qed&quot;</span>),
+					<span class="ident">pallet_evm</span>::<span class="ident">GenesisAccount</span> {
+						<span class="ident">balance</span>: <span class="ident">U256</span>::<span class="ident">from_str</span>(<span class="string">&quot;0xffffffffffffffffffffffffffffffff&quot;</span>)
+							.<span class="ident">expect</span>(<span class="string">&quot;internal U256 is valid; qed&quot;</span>),
+						<span class="ident">code</span>: <span class="ident">Default</span>::<span class="ident">default</span>(),
+						<span class="ident">nonce</span>: <span class="ident">Default</span>::<span class="ident">default</span>(),
+						<span class="ident">storage</span>: <span class="ident">Default</span>::<span class="ident">default</span>(),
+					}
+				);
+				<span class="ident">map</span>
+			},
 		},
 		<span class="ident">pallet_ethereum</span>: <span class="ident">EthereumConfig</span> {},
 	}
