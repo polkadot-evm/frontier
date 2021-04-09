@@ -3,7 +3,7 @@ import { step } from "mocha-steps";
 
 import { createAndFinalizeBlock, customRequest, describeWithFrontier } from "./util";
 
-describeWithFrontier("Frontier RPC (Subscription)", `simple-specs.json`, (context) => {
+describeWithFrontier("Frontier RPC (Subscription)", (context) => {
 
 	let subscription;
 	let logs_generated = 0;
