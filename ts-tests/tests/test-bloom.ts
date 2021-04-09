@@ -3,7 +3,7 @@ import { step } from "mocha-steps";
 
 import { createAndFinalizeBlock, customRequest, describeWithFrontier } from "./util";
 
-describeWithFrontier("Frontier RPC (Bloom)", `simple-specs.json`, (context) => {
+describeWithFrontier("Frontier RPC (Bloom)", (context) => {
 
 	const GENESIS_ACCOUNT = "0x6be02d1d3665660d22ff9624b7be0551ee1ac91b";
 	const GENESIS_ACCOUNT_PRIVATE_KEY = "0x99B3C12287537E38C90A9219D4CB074A89A16E9CDB20BF85728EBD97C343E342";
