@@ -418,7 +418,7 @@ decl_module! {
 		/// Issue an EVM create operation. This is similar to a contract creation transaction in
 		/// Ethereum.
 		#[weight = T::GasWeightMapping::gas_to_weight(*gas_limit)]
-		fn create(
+		pub fn create(
 			origin,
 			source: H160,
 			init: Vec<u8>,
