@@ -377,7 +377,7 @@ decl_module! {
 
 		/// Issue an EVM call operation. This is similar to a message call transaction in Ethereum.
 		#[weight = T::GasWeightMapping::gas_to_weight(*gas_limit)]
-		fn call(
+		pub fn call(
 			origin,
 			source: H160,
 			target: H160,
