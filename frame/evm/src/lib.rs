@@ -68,14 +68,16 @@ use sp_std::vec::Vec;
 use codec::{Encode, Decode};
 #[cfg(feature = "std")]
 use serde::{Serialize, Deserialize};
-use frame_support::{decl_module, decl_storage, decl_event, decl_error};
-use frame_support::weights::{Weight, Pays, PostDispatchInfo};
-use frame_support::traits::{Currency, ExistenceRequirement, Get, WithdrawReasons, Imbalance, OnUnbalanced};
-use frame_support::dispatch::DispatchResultWithPostInfo;
+use frame_support::{weights::Weight};
+use frame_support::traits::{Currency, ExistenceRequirement, WithdrawReasons, Imbalance, OnUnbalanced};
+
 use frame_system::RawOrigin;
 use sp_core::{U256, H256, H160, Hasher};
 use sp_runtime::{AccountId32, traits::{UniqueSaturatedInto, BadOrigin, Saturating}};
 use evm::Config as EvmConfig;
+
+use sp_std::collections::btree_map::BTreeMap;
+use frame_support::weights::PostDispatchInfo;
 
 /// Type alias for currency balance.
 pub type BalanceOf<T> = <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
@@ -228,77 +230,95 @@ impl GasWeightMapping for () {
 
 static ISTANBUL_CONFIG: EvmConfig = EvmConfig::istanbul();
 
-/// EVM module trait
-pub trait Config: frame_system::Config + pallet_timestamp::Config {
-	/// Calculator for current gas price.
-	type FeeCalculator: FeeCalculator;
+pub use pallet::*;
 
-	/// Maps Ethereum gas to Substrate weight.
-	type GasWeightMapping: GasWeightMapping;
+#[frame_support::pallet]
+pub mod pallet {
+	use super::*;
+	use frame_support::pallet_prelude::*;
+	use frame_system::pallet_prelude::*;
 
-	/// Allow the origin to call on behalf of given address.
-	type CallOrigin: EnsureAddressOrigin<Self::Origin>;
-	/// Allow the origin to withdraw on behalf of given address.
-	type WithdrawOrigin: EnsureAddressOrigin<Self::Origin, Success=Self::AccountId>;
+	/// EVM module trait
+	#[pallet::config]
+	pub trait Config: frame_system::Config + pallet_timestamp::Config {
+		/// Calculator for current gas price.
+		type FeeCalculator: FeeCalculator;
 
-	/// Mapping from address to account id.
-	type AddressMapping: AddressMapping<Self::AccountId>;
-	/// Currency type for withdraw and balance storage.
-	type Currency: Currency<Self::AccountId>;
+		/// Maps Ethereum gas to Substrate weight.
+		type GasWeightMapping: GasWeightMapping;
 
-	/// The overarching event type.
-	type Event: From<Event<Self>> + Into<<Self as frame_system::Config>::Event>;
-	/// Precompiles associated with this EVM engine.
-	type Precompiles: PrecompileSet;
-	/// Chain ID of EVM.
-	type ChainId: Get<u64>;
-	/// The block gas limit. Can be a simple constant, or an adjustment algorithm in another pallet.
-	type BlockGasLimit: Get<U256>;
-	/// EVM execution runner.
-	type Runner: Runner<Self>;
+		/// Allow the origin to call on behalf of given address.
+		type CallOrigin: EnsureAddressOrigin<Self::Origin>;
+		/// Allow the origin to withdraw on behalf of given address.
+		type WithdrawOrigin: EnsureAddressOrigin<Self::Origin, Success=Self::AccountId>;
 
-	/// To handle fee deduction for EVM transactions. An example is this pallet being used by `pallet_ethereum`
-	/// where the chain implementing `pallet_ethereum` should be able to configure what happens to the fees
-	/// Similar to `OnChargeTransaction` of `pallet_transaction_payment`
-	type OnChargeTransaction: OnChargeEVMTransaction<Self>;
+		/// Mapping from address to account id.
+		type AddressMapping: AddressMapping<Self::AccountId>;
+		/// Currency type for withdraw and balance storage.
+		type Currency: Currency<Self::AccountId>;
 
-	/// EVM config used in the module.
-	fn config() -> &'static EvmConfig {
-		&ISTANBUL_CONFIG
-	}
-}
+		/// The overarching event type.
+		type Event: IsType<<Self as frame_system::Config>::Event> + From<Event<Self>>;
+		/// Precompiles associated with this EVM engine.
+		type Precompiles: PrecompileSet;
+		/// Chain ID of EVM.
+		type ChainId: Get<u64>;
+		/// The block gas limit. Can be a simple constant, or an adjustment algorithm in another pallet.
+		type BlockGasLimit: Get<U256>;
+		/// EVM execution runner.
+		type Runner: Runner<Self>;
 
-#[cfg(feature = "std")]
-#[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, Serialize, Deserialize)]
-/// Account definition used for genesis block construction.
-pub struct GenesisAccount {
-	/// Account nonce.
-	pub nonce: U256,
-	/// Account balance.
-	pub balance: U256,
-	/// Full account storage.
-	pub storage: std::collections::BTreeMap<H256, H256>,
-	/// Account code.
-	pub code: Vec<u8>,
-}
+		/// To handle fee deduction for EVM transactions. An example is this pallet being used by `pallet_ethereum`
+		/// where the chain implementing `pallet_ethereum` should be able to configure what happens to the fees
+		/// Similar to `OnChargeTransaction` of `pallet_transaction_payment`
+		type OnChargeTransaction: OnChargeEVMTransaction<Self>;
 
-decl_storage! {
-	trait Store for Module<T: Config> as EVM {
-		pub AccountCodes get(fn account_codes): map hasher(blake2_128_concat) H160 => Vec<u8>;
-		pub AccountStorages get(fn account_storages):
-			double_map hasher(blake2_128_concat) H160, hasher(blake2_128_concat) H256 => H256;
+		/// EVM config used in the module.
+		fn config() -> &'static EvmConfig {
+			&ISTANBUL_CONFIG
+		}
 	}
 
-	add_extra_genesis {
-		config(accounts): std::collections::BTreeMap<H160, GenesisAccount>;
-		build(|config: &GenesisConfig| {
-			for (address, account) in &config.accounts {
+	#[pallet::storage]
+	#[pallet::getter(fn account_codes)]
+	pub type AccountCodes<T: Config> = StorageMap<_, Blake2_128Concat, H160, Vec<u8>, ValueQuery>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn account_storages)]
+	pub type AccountStorages<T: Config> = StorageDoubleMap<
+		_,
+		Blake2_128Concat,
+		H160,
+		Blake2_128Concat,
+		H256,
+		H256,
+		ValueQuery,
+	>;
+
+	#[pallet::genesis_config]
+	pub struct GenesisConfig {
+		accounts: BTreeMap<H160, GenesisAccount>,
+	}
+
+	#[cfg(feature = "std")]
+	impl Default for GenesisConfig {
+		fn default() -> Self {
+			GenesisConfig {
+				accounts: BTreeMap::new(),
+			}
+		}
+	}
+
+	#[pallet::genesis_build]
+	impl<T: Config> GenesisBuild<T> for GenesisConfig {
+		fn build(&self) {
+			for (address, account) in &self.accounts {
 				let account_id = T::AddressMapping::into_account_id(*address);
 
 				// ASSUME: in one single EVM transaction, the nonce will not increase more than
 				// `u128::max_value()`.
 				for _ in 0..account.nonce.low_u128() {
-					frame_system::Module::<T>::inc_account_nonce(&account_id);
+					frame_system::Pallet::<T>::inc_account_nonce(&account_id);
 				}
 
 				T::Currency::deposit_creating(
@@ -306,21 +326,18 @@ decl_storage! {
 					account.balance.low_u128().unique_saturated_into(),
 				);
 
-				AccountCodes::insert(address, &account.code);
+				AccountCodes::<T>::insert(address, &account.code);
 
 				for (index, value) in &account.storage {
-					AccountStorages::insert(address, index, value);
+					AccountStorages::<T>::insert(address, index, value);
 				}
 			}
-		});
+		}
 	}
-}
 
-decl_event! {
-	/// EVM events
-	pub enum Event<T> where
-		<T as frame_system::Config>::AccountId,
-	{
+	#[pallet::event]
+	#[pallet::generate_deposit(pub(super) fn deposit_event)]
+	pub enum Event<T: Config> {
 		/// Ethereum events from contracts.
 		Log(Log),
 		/// A contract has been created at given \[address\].
@@ -332,14 +349,13 @@ decl_event! {
 		/// A \[contract\] has been executed with errors. States are reverted with only gas fees applied.
 		ExecutedFailed(H160),
 		/// A deposit has been made at a given address. \[sender, address, value\]
-		BalanceDeposit(AccountId, H160, U256),
+		BalanceDeposit(T::AccountId, H160, U256),
 		/// A withdrawal has been made from a given address. \[sender, address, value\]
-		BalanceWithdraw(AccountId, H160, U256),
+		BalanceWithdraw(T::AccountId, H160, U256),
 	}
-}
 
-decl_error! {
-	pub enum Error for Module<T: Config> {
+	#[pallet::error]
+	pub enum Error<T> {
 		/// Not enough balance to perform action
 		BalanceLow,
 		/// Calculating total fee overflowed
@@ -353,17 +369,20 @@ decl_error! {
 		/// Nonce is invalid
 		InvalidNonce,
 	}
-}
 
-decl_module! {
-	pub struct Module<T: Config> for enum Call where origin: T::Origin {
-		type Error = Error<T>;
+	#[pallet::pallet]
+	#[pallet::generate_store(pub(super) trait Store)]
+	pub struct Pallet<T>(PhantomData<T>);
 
-		fn deposit_event() = default;
+	#[pallet::hooks]
+	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+	}
 
+	#[pallet::call]
+	impl<T: Config> Pallet<T> {
 		/// Withdraw balance from EVM into currency/balances module.
-		#[weight = 0]
-		fn withdraw(origin, address: H160, value: BalanceOf<T>) {
+		#[pallet::weight(0)]
+		fn withdraw(origin: OriginFor<T>, address: H160, value: BalanceOf<T>) -> DispatchResultWithPostInfo {
 			let destination = T::WithdrawOrigin::ensure_address_origin(&address, origin)?;
 			let address_account_id = T::AddressMapping::into_account_id(address);
 
@@ -373,12 +392,14 @@ decl_module! {
 				value,
 				ExistenceRequirement::AllowDeath
 			)?;
+
+			Ok(().into())
 		}
 
 		/// Issue an EVM call operation. This is similar to a message call transaction in Ethereum.
-		#[weight = T::GasWeightMapping::gas_to_weight(*gas_limit)]
+		#[pallet::weight(T::GasWeightMapping::gas_to_weight(*gas_limit))]
 		fn call(
-			origin,
+			origin: OriginFor<T>,
 			source: H160,
 			target: H160,
 			input: Vec<u8>,
@@ -402,10 +423,10 @@ decl_module! {
 
 			match info.exit_reason {
 				ExitReason::Succeed(_) => {
-					Module::<T>::deposit_event(Event::<T>::Executed(target));
+					Pallet::<T>::deposit_event(Event::<T>::Executed(target));
 				},
 				_ => {
-					Module::<T>::deposit_event(Event::<T>::ExecutedFailed(target));
+					Pallet::<T>::deposit_event(Event::<T>::ExecutedFailed(target));
 				},
 			};
 
@@ -417,9 +438,9 @@ decl_module! {
 
 		/// Issue an EVM create operation. This is similar to a contract creation transaction in
 		/// Ethereum.
-		#[weight = T::GasWeightMapping::gas_to_weight(*gas_limit)]
+		#[pallet::weight(T::GasWeightMapping::gas_to_weight(*gas_limit))]
 		fn create(
-			origin,
+			origin: OriginFor<T>,
 			source: H160,
 			init: Vec<u8>,
 			value: U256,
@@ -445,14 +466,14 @@ decl_module! {
 					value: create_address,
 					..
 				} => {
-					Module::<T>::deposit_event(Event::<T>::Created(create_address));
+					Pallet::<T>::deposit_event(Event::<T>::Created(create_address));
 				},
 				CreateInfo {
 					exit_reason: _,
 					value: create_address,
 					..
 				} => {
-					Module::<T>::deposit_event(Event::<T>::CreatedFailed(create_address));
+					Pallet::<T>::deposit_event(Event::<T>::CreatedFailed(create_address));
 				},
 			}
 
@@ -463,9 +484,9 @@ decl_module! {
 		}
 
 		/// Issue an EVM create2 operation.
-		#[weight = T::GasWeightMapping::gas_to_weight(*gas_limit)]
+		#[pallet::weight(T::GasWeightMapping::gas_to_weight(*gas_limit))]
 		fn create2(
-			origin,
+			origin: OriginFor<T>,
 			source: H160,
 			init: Vec<u8>,
 			salt: H256,
@@ -493,14 +514,14 @@ decl_module! {
 					value: create_address,
 					..
 				} => {
-					Module::<T>::deposit_event(Event::<T>::Created(create_address));
+					Pallet::<T>::deposit_event(Event::<T>::Created(create_address));
 				},
 				CreateInfo {
 					exit_reason: _,
 					value: create_address,
 					..
 				} => {
-					Module::<T>::deposit_event(Event::<T>::CreatedFailed(create_address));
+					Pallet::<T>::deposit_event(Event::<T>::CreatedFailed(create_address));
 				},
 			}
 
@@ -512,11 +533,25 @@ decl_module! {
 	}
 }
 
-impl<T: Config> Module<T> {
+#[cfg(feature = "std")]
+#[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, Serialize, Deserialize)]
+/// Account definition used for genesis block construction.
+pub struct GenesisAccount {
+	/// Account nonce.
+	pub nonce: U256,
+	/// Account balance.
+	pub balance: U256,
+	/// Full account storage.
+	pub storage: std::collections::BTreeMap<H256, H256>,
+	/// Account code.
+	pub code: Vec<u8>,
+}
+
+impl<T: Config> Pallet<T> {
 	/// Check whether an account is empty.
 	pub fn is_account_empty(address: &H160) -> bool {
 		let account = Self::account_basic(address);
-		let code_len = AccountCodes::decode_len(address).unwrap_or(0);
+		let code_len = AccountCodes::<T>::decode_len(address).unwrap_or(0);
 
 		account.nonce == U256::zero() &&
 			account.balance == U256::zero() &&
@@ -532,13 +567,13 @@ impl<T: Config> Module<T> {
 
 	/// Remove an account.
 	pub fn remove_account(address: &H160) {
-		if AccountCodes::contains_key(address) {
+		if AccountCodes::<T>::contains_key(address) {
 			let account_id = T::AddressMapping::into_account_id(*address);
-			let _ = frame_system::Module::<T>::dec_consumers(&account_id);
+			let _ = frame_system::Pallet::<T>::dec_consumers(&account_id);
 		}
 
-		AccountCodes::remove(address);
-		AccountStorages::remove_prefix(address);
+		AccountCodes::<T>::remove(address);
+		AccountStorages::<T>::remove_prefix(address);
 	}
 
 	/// Create an account.
@@ -547,19 +582,19 @@ impl<T: Config> Module<T> {
 			return
 		}
 
-		if !AccountCodes::contains_key(&address) {
+		if !AccountCodes::<T>::contains_key(&address) {
 			let account_id = T::AddressMapping::into_account_id(address);
-			let _ = frame_system::Module::<T>::inc_consumers(&account_id);
+			let _ = frame_system::Pallet::<T>::inc_consumers(&account_id);
 		}
 
-		AccountCodes::insert(address, code);
+		AccountCodes::<T>::insert(address, code);
 	}
 
 	/// Get the account basic in EVM format.
 	pub fn account_basic(address: &H160) -> Account {
 		let account_id = T::AddressMapping::into_account_id(*address);
 
-		let nonce = frame_system::Module::<T>::account_nonce(&account_id);
+		let nonce = frame_system::Pallet::<T>::account_nonce(&account_id);
 		let balance = T::Currency::free_balance(&account_id);
 
 		Account {
