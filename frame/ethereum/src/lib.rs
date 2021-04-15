@@ -24,7 +24,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use frame_support::{
-	decl_module, decl_storage, decl_error, decl_event,
 	traits::Get, traits::FindAuthor, weights::Weight,
 	dispatch::DispatchResultWithPostInfo,
 };
@@ -94,8 +93,9 @@ pub mod pallet {
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
-	#[pallet::config]
 	/// Configuration trait for Ethereum pallet.
+	#[pallet::config]
+	#[pallet::disable_frame_system_supertrait_check]
 	pub trait Config: frame_system::Config<Hash=H256> + pallet_balances::Config + pallet_timestamp::Config + pallet_evm::Config {
 		/// The overarching event type.
 		type Event: IsType<<Self as frame_system::Config>::Event> + From<Event<Self>>;
@@ -112,40 +112,18 @@ pub mod pallet {
 
 	/// The current Ethereum block.
 	#[pallet::storage]
-	#[pallet::getter(fn pending)]
+	#[pallet::getter(fn current_block)]
 	pub type CurrentBlock<T: Config> = StorageValue<_, Option<ethereum::Block>, ValueQuery>;
 
 	/// The current Ethereum receipts.
 	#[pallet::storage]
-	#[pallet::getter(fn pending)]
+	#[pallet::getter(fn current_receipts)]
 	pub type CurrentReceipts<T: Config> = StorageValue<_, Option<Vec<ethereum::Receipt>>, ValueQuery>;
 
 	/// The current transaction statuses.
 	#[pallet::storage]
-	#[pallet::getter(fn pending)]
+	#[pallet::getter(fn current_transaction_statuses)]
 	pub type CurrentTransactionStatuses<T: Config> = StorageValue<_, Option<Vec<TransactionStatus>>, ValueQuery>;
-
-	#[pallet::genesis_config]
-	pub struct GenesisConfig<T: Config> {}
-
-	#[cfg(feature = "std")]
-	impl<T: Config> Default for GenesisConfig<T> {
-		fn default() -> Self {
-			GenesisConfig {
-			}
-		}
-	}
-
-	#[pallet::genesis_build]
-	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
-		fn build(&self) {
-			// Calculate the ethereum genesis block
-			<Pallet<T>>::store_block(false);
-
-			// Initialize the storage schema at the well known key.
-			frame_support::storage::unhashed::put::<EthereumStorageSchema>(&PALLET_ETHEREUM_SCHEMA, &EthereumStorageSchema::V1);
-		}
-	}
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -175,7 +153,13 @@ pub mod pallet {
 		}
 
 		fn on_initialize(n: T::BlockNumber) -> Weight {
-			Pending::kill();
+			// Calculate the ethereum genesis block
+			<Pallet<T>>::store_block(false);
+
+			// Initialize the storage schema at the well known key.
+			frame_support::storage::unhashed::put::<EthereumStorageSchema>(&PALLET_ETHEREUM_SCHEMA, &EthereumStorageSchema::V1);
+
+			Pending::<T>::kill();
 
 			if let Ok(log) = fp_consensus::find_pre_log(&frame_system::Pallet::<T>::digest()) {
 				let PreLog::Block(block) = log;
@@ -194,10 +178,60 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {
 		/// Transact an Ethereum transaction.
 		#[pallet::weight(<T as pallet_evm::Config>::GasWeightMapping::gas_to_weight(transaction.gas_limit.unique_saturated_into()))]
-		fn transact(origin, transaction: ethereum::Transaction) -> DispatchResultWithPostInfo {
+		fn transact(origin: OriginFor<T>, transaction: ethereum::Transaction) -> DispatchResultWithPostInfo {
 			ensure_none(origin)?;
 
 			Self::do_transact(transaction)
+		}
+	}
+
+	#[pallet::validate_unsigned]
+	impl<T: Config> frame_support::unsigned::ValidateUnsigned for Pallet<T> {
+		type Call = Call<T>;
+		fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
+			if let Call::transact(transaction) = call {
+				if let Some(chain_id) = transaction.signature.chain_id() {
+					if chain_id != T::ChainId::get() {
+						return InvalidTransaction::Custom(TransactionValidationError::InvalidChainId as u8).into();
+					}
+				}
+
+				let origin = Self::recover_signer(&transaction)
+					.ok_or_else(|| InvalidTransaction::Custom(TransactionValidationError::InvalidSignature as u8))?;
+
+				if transaction.gas_limit >= T::BlockGasLimit::get() {
+					return InvalidTransaction::Custom(TransactionValidationError::InvalidGasLimit as u8).into();
+				}
+
+				let account_data = pallet_evm::Pallet::<T>::account_basic(&origin);
+
+				if transaction.nonce < account_data.nonce {
+					return InvalidTransaction::Stale.into();
+				}
+
+				let fee = transaction.gas_price.saturating_mul(transaction.gas_limit);
+				let total_payment = transaction.value.saturating_add(fee);
+				if account_data.balance < total_payment {
+					return InvalidTransaction::Payment.into();
+				}
+
+				if transaction.gas_price < T::FeeCalculator::min_gas_price() {
+					return InvalidTransaction::Payment.into();
+				}
+
+				let mut builder = ValidTransactionBuilder::default()
+					.and_provides((origin, transaction.nonce));
+
+				if transaction.nonce > account_data.nonce {
+					if let Some(prev_nonce) = transaction.nonce.checked_sub(1.into()) {
+						builder = builder.and_requires((origin, prev_nonce))
+					}
+				}
+
+				builder.build()
+			} else {
+				Err(InvalidTransaction::Call.into())
+			}
 		}
 	}
 }
@@ -209,56 +243,6 @@ enum TransactionValidationError {
 	InvalidChainId,
 	InvalidSignature,
 	InvalidGasLimit,
-}
-
-impl<T: Config> frame_support::unsigned::ValidateUnsigned for Pallet<T> {
-	type Call = Call<T>;
-
-	fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
-		if let Call::transact(transaction) = call {
-			if let Some(chain_id) = transaction.signature.chain_id() {
-				if chain_id != T::ChainId::get() {
-					return InvalidTransaction::Custom(TransactionValidationError::InvalidChainId as u8).into();
-				}
-			}
-
-			let origin = Self::recover_signer(&transaction)
-				.ok_or_else(|| InvalidTransaction::Custom(TransactionValidationError::InvalidSignature as u8))?;
-
-			if transaction.gas_limit >= T::BlockGasLimit::get() {
-				return InvalidTransaction::Custom(TransactionValidationError::InvalidGasLimit as u8).into();
-			}
-
-			let account_data = pallet_evm::Pallet::<T>::account_basic(&origin);
-
-			if transaction.nonce < account_data.nonce {
-				return InvalidTransaction::Stale.into();
-			}
-
-			let fee = transaction.gas_price.saturating_mul(transaction.gas_limit);
-			let total_payment = transaction.value.saturating_add(fee);
-			if account_data.balance < total_payment {
-				return InvalidTransaction::Payment.into();
-			}
-
-			if transaction.gas_price < T::FeeCalculator::min_gas_price() {
-				return InvalidTransaction::Payment.into();
-			}
-
-			let mut builder = ValidTransactionBuilder::default()
-				.and_provides((origin, transaction.nonce));
-
-			if transaction.nonce > account_data.nonce {
-				if let Some(prev_nonce) = transaction.nonce.checked_sub(1.into()) {
-					builder = builder.and_requires((origin, prev_nonce))
-				}
-			}
-
-			builder.build()
-		} else {
-			Err(InvalidTransaction::Call.into())
-		}
-	}
 }
 
 impl<T: Config> Pallet<T> {
@@ -279,7 +263,7 @@ impl<T: Config> Pallet<T> {
 		let mut statuses = Vec::new();
 		let mut receipts = Vec::new();
 		let mut logs_bloom = Bloom::default();
-		for (transaction, status, receipt) in Pending::get() {
+		for (transaction, status, receipt) in Pending::<T>::get() {
 			transactions.push(transaction);
 			statuses.push(status);
 			receipts.push(receipt.clone());
@@ -292,7 +276,7 @@ impl<T: Config> Pallet<T> {
 		let ommers = Vec::<ethereum::Header>::new();
 		let partial_header = ethereum::PartialHeader {
 			parent_hash: Self::current_block_hash().unwrap_or_default(),
-			beneficiary: <Pallet<T>>::find_author(),
+			beneficiary: Self::find_author(),
 			// TODO: figure out if there's better way to get a sort-of-valid state root.
 			state_root: H256::default(),
 			receipts_root: H256::from_slice(
@@ -317,9 +301,9 @@ impl<T: Config> Pallet<T> {
 		let mut block = ethereum::Block::new(partial_header, transactions.clone(), ommers);
 		block.header.state_root = T::StateRoot::get();
 
-		CurrentBlock::put(block.clone());
-		CurrentReceipts::put(receipts.clone());
-		CurrentTransactionStatuses::put(statuses.clone());
+		CurrentBlock::<T>::put(block.clone().into());
+		CurrentReceipts::<T>::put(receipts.clone().into());
+		CurrentTransactionStatuses::put(statuses.clone().into());
 
 		if post_log {
 			let digest = DigestItem::<T::Hash>::Consensus(
@@ -351,7 +335,7 @@ impl<T: Config> Pallet<T> {
 		let transaction_hash = H256::from_slice(
 			Keccak256::digest(&rlp::encode(&transaction)).as_slice()
 		);
-		let transaction_index = Pending::get().len() as u32;
+		let transaction_index = Pending::<T>::get().len() as u32;
 
 		let (to, contract_address, info) = Self::execute(
 			source,
@@ -415,7 +399,7 @@ impl<T: Config> Pallet<T> {
 			logs: status.clone().logs,
 		};
 
-		Pending::append((transaction, status, receipt));
+		Pending::<T>::append((transaction, status, receipt));
 
 		Self::deposit_event(Event::Executed(source, contract_address.unwrap_or_default(), transaction_hash, reason));
 		Ok(Some(T::GasWeightMapping::gas_to_weight(used_gas.unique_saturated_into())).into())
@@ -429,25 +413,25 @@ impl<T: Config> Pallet<T> {
 		T::FindAuthor::find_author(pre_runtime_digests).unwrap_or_default()
 	}
 
-	/// Get the transaction status with given index.
-	pub fn current_transaction_statuses() -> Option<Vec<TransactionStatus>> {
-		CurrentTransactionStatuses::get()
-	}
+	// /// Get the transaction status with given index.
+	// pub fn current_transaction_statuses() -> Option<Vec<TransactionStatus>> {
+	// 	CurrentTransactionStatuses::get()
+	// }
 
-	/// Get current block.
-	pub fn current_block() -> Option<ethereum::Block> {
-		CurrentBlock::get()
-	}
+	// /// Get current block.
+	// pub fn current_block() -> Option<ethereum::Block> {
+	// 	CurrentBlock::<T>::get()
+	// }
 
 	/// Get current block hash
 	pub fn current_block_hash() -> Option<H256> {
 		Self::current_block().map(|block| block.header.hash())
 	}
 
-	/// Get receipts by number.
-	pub fn current_receipts() -> Option<Vec<ethereum::Receipt>> {
-		CurrentReceipts::get()
-	}
+	// /// Get receipts by number.
+	// pub fn current_receipts() -> Option<Vec<ethereum::Receipt>> {
+	// 	CurrentReceipts::<T>::get()
+	// }
 
 	/// Execute an Ethereum transaction.
 	pub fn execute(
