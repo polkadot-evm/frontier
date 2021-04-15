@@ -48,6 +48,39 @@ use fp_storage::PALLET_ETHEREUM_SCHEMA;
 pub use fp_rpc::TransactionStatus;
 pub use ethereum::{Transaction, Log, Block, Receipt, TransactionAction, TransactionMessage};
 
+#[derive(Clone, Debug, Encode, Decode)]
+pub struct ETHBlock {
+	inner: Block
+}
+
+#[derive(Clone, Debug, Encode, Decode)]
+pub struct ETHReceipts {
+	inner: Vec<Receipt>,
+}
+
+#[derive(Clone, Debug, Encode, Decode)]
+pub struct ETHTxStatuses {
+	inner: Vec<TransactionStatus>,
+}
+
+impl Into<Block> for ETHBlock {
+    fn into(self) -> Block {
+        self.inner
+    }
+}
+
+impl Into<Vec<Receipt>> for ETHReceipts {
+    fn into(self) -> Vec<Receipt> {
+        self.inner
+    }
+}
+
+impl Into<Vec<TransactionStatus>> for ETHTxStatuses {
+    fn into(self) -> Vec<TransactionStatus> {
+        self.inner
+    }
+}
+
 #[cfg(all(feature = "std", test))]
 mod tests;
 
@@ -113,17 +146,17 @@ pub mod pallet {
 	/// The current Ethereum block.
 	#[pallet::storage]
 	#[pallet::getter(fn current_block)]
-	pub type CurrentBlock<T: Config> = StorageValue<_, Option<ethereum::Block>, ValueQuery>;
+	pub type CurrentBlock<T: Config> = StorageValue<_, Option<ETHBlock>, ValueQuery>;
 
 	/// The current Ethereum receipts.
 	#[pallet::storage]
 	#[pallet::getter(fn current_receipts)]
-	pub type CurrentReceipts<T: Config> = StorageValue<_, Option<Vec<ethereum::Receipt>>, ValueQuery>;
+	pub type CurrentReceipts<T: Config> = StorageValue<_, Option<ETHReceipts>, ValueQuery>;
 
 	/// The current transaction statuses.
 	#[pallet::storage]
 	#[pallet::getter(fn current_transaction_statuses)]
-	pub type CurrentTransactionStatuses<T: Config> = StorageValue<_, Option<Vec<TransactionStatus>>, ValueQuery>;
+	pub type CurrentTransactionStatuses<T: Config> = StorageValue<_, Option<ETHTxStatuses>, ValueQuery>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -146,13 +179,13 @@ pub mod pallet {
 
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-		fn on_finalize(n: T::BlockNumber) {
+		fn on_finalize(_n: T::BlockNumber) {
 			<Pallet<T>>::store_block(
 				fp_consensus::find_pre_log(&frame_system::Pallet::<T>::digest()).is_err(),
 			);
 		}
 
-		fn on_initialize(n: T::BlockNumber) -> Weight {
+		fn on_initialize(_n: T::BlockNumber) -> Weight {
 			// Calculate the ethereum genesis block
 			<Pallet<T>>::store_block(false);
 
@@ -178,7 +211,7 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {
 		/// Transact an Ethereum transaction.
 		#[pallet::weight(<T as pallet_evm::Config>::GasWeightMapping::gas_to_weight(transaction.gas_limit.unique_saturated_into()))]
-		fn transact(origin: OriginFor<T>, transaction: ethereum::Transaction) -> DispatchResultWithPostInfo {
+		pub(crate) fn transact(origin: OriginFor<T>, transaction: ethereum::Transaction) -> DispatchResultWithPostInfo {
 			ensure_none(origin)?;
 
 			Self::do_transact(transaction)
@@ -301,9 +334,9 @@ impl<T: Config> Pallet<T> {
 		let mut block = ethereum::Block::new(partial_header, transactions.clone(), ommers);
 		block.header.state_root = T::StateRoot::get();
 
-		CurrentBlock::<T>::put(block.clone().into());
-		CurrentReceipts::<T>::put(receipts.clone().into());
-		CurrentTransactionStatuses::put(statuses.clone().into());
+		CurrentBlock::<T>::put(Some(ETHBlock { inner: block.clone().into() }));
+		CurrentReceipts::<T>::put(Some(ETHReceipts { inner: receipts.clone().into() }));
+		CurrentTransactionStatuses::<T>::put(Some(ETHTxStatuses { inner: statuses.clone().into() }));
 
 		if post_log {
 			let digest = DigestItem::<T::Hash>::Consensus(
@@ -425,7 +458,7 @@ impl<T: Config> Pallet<T> {
 
 	/// Get current block hash
 	pub fn current_block_hash() -> Option<H256> {
-		Self::current_block().map(|block| block.header.hash())
+		Self::current_block().map(|block| block.inner.header.hash())
 	}
 
 	// /// Get receipts by number.

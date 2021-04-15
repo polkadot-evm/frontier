@@ -297,7 +297,7 @@ pub mod pallet {
 
 	#[pallet::genesis_config]
 	pub struct GenesisConfig {
-		accounts: BTreeMap<H160, GenesisAccount>,
+		pub accounts: BTreeMap<H160, GenesisAccount>,
 	}
 
 	#[cfg(feature = "std")]
