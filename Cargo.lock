@@ -3997,7 +3997,6 @@ dependencies = [
  "evm",
  "fp-evm",
  "hex",
- "log",
  "num",
  "sp-core",
  "sp-io",

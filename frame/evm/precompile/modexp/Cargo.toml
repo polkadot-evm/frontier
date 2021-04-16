@@ -14,7 +14,6 @@ sp-io = { version = "3.0.0", default-features = false, git = "https://github.com
 fp-evm = { version = "1.0.1-dev", default-features = false, path = "../../../../primitives/evm" }
 evm = { version = "0.25.0", default-features = false, features = ["with-codec"] }
 num = { version = "0.3", features = ["alloc"], default-features = false }
-log = "0.4"
 
 [dev-dependencies]
 hex = "0.4.0"
