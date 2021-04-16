@@ -22,7 +22,7 @@ jobs:
         cargo +$WASM_BUILD_TOOLCHAIN --version
         rustc +$WASM_BUILD_TOOLCHAIN --version
       env:
-        WASM_BUILD_TOOLCHAIN: nightly-2020-08-29
+        WASM_BUILD_TOOLCHAIN: nightly-2021-02-25
     - name: Build
       run: cargo build --verbose --all
     - name: Run tests
