@@ -3947,7 +3947,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm-precompile-blake2"
-version = "1.0.0"
+version = "1.0.1"
 dependencies = [
  "evm",
  "fp-evm",
@@ -3957,7 +3957,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm-precompile-bn128"
-version = "1.0.0"
+version = "1.0.1"
 dependencies = [
  "evm",
  "fp-evm",
@@ -3992,7 +3992,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm-precompile-modexp"
-version = "1.0.0"
+version = "1.0.1"
 dependencies = [
  "evm",
  "fp-evm",
@@ -4016,7 +4016,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm-precompile-simple"
-version = "1.0.0"
+version = "1.0.1"
 dependencies = [
  "evm",
  "fp-evm",
