@@ -1,6 +1,6 @@
 [package]
 name = "fc-mapping-sync"
-version = "1.0.0"
+version = "1.1.0-dev"
 authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2018"
 description = "Mapping sync logic for Frontier."

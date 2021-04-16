@@ -21,26 +21,37 @@ mod worker;
 pub use worker::MappingSyncWorker;
 
 use sp_runtime::{generic::BlockId, traits::{Block as BlockT, Header as HeaderT, Zero}};
-use sp_api::ProvideRuntimeApi;
+use sp_api::{ApiExt, ProvideRuntimeApi};
 use sc_client_api::BlockOf;
 use sp_blockchain::HeaderBackend;
 use fp_rpc::EthereumRuntimeRPCApi;
+use fp_consensus::FindLogError;
 
 pub fn sync_block<Block: BlockT>(
 	backend: &fc_db::Backend<Block>,
 	header: &Block::Header,
 ) -> Result<(), String> {
-	let log = fp_consensus::find_log(header.digest()).map_err(|e| format!("{:?}", e))?;
-	let post_hashes = log.into_hashes();
+	match fp_consensus::find_log(header.digest()) {
+		Ok(log) => {
+			let post_hashes = log.into_hashes();
 
-	let mapping_commitment = fc_db::MappingCommitment {
-		block_hash: header.hash(),
-		ethereum_block_hash: post_hashes.block_hash,
-		ethereum_transaction_hashes: post_hashes.transaction_hashes,
-	};
-	backend.mapping().write_hashes(mapping_commitment)?;
+			let mapping_commitment = fc_db::MappingCommitment {
+				block_hash: header.hash(),
+				ethereum_block_hash: post_hashes.block_hash,
+				ethereum_transaction_hashes: post_hashes.transaction_hashes,
+			};
+			backend.mapping().write_hashes(mapping_commitment)?;
 
-	Ok(())
+			Ok(())
+		},
+		Err(FindLogError::NotFound) => {
+			backend.mapping().write_none(header.hash())?;
+
+			Ok(())
+		},
+		Err(FindLogError::MultipleLogs) => Err("Multiple logs found".to_string()),
+	}
+
 }
 
 pub fn sync_genesis_block<Block: BlockT, C>(
@@ -53,15 +64,22 @@ pub fn sync_genesis_block<Block: BlockT, C>(
 {
 	let id = BlockId::Hash(header.hash());
 
-	let block = client.runtime_api().current_block(&id)
+	let has_api = client.runtime_api().has_api::<dyn EthereumRuntimeRPCApi<Block>>(&id)
 		.map_err(|e| format!("{:?}", e))?;
-	let block_hash = block.ok_or("Ethereum genesis block not found".to_string())?.header.hash();
-	let mapping_commitment = fc_db::MappingCommitment::<Block> {
-		block_hash: header.hash(),
-		ethereum_block_hash: block_hash,
-		ethereum_transaction_hashes: Vec::new(),
-	};
-	backend.mapping().write_hashes(mapping_commitment)?;
+
+	if has_api {
+		let block = client.runtime_api().current_block(&id)
+			.map_err(|e| format!("{:?}", e))?;
+		let block_hash = block.ok_or("Ethereum genesis block not found".to_string())?.header.hash();
+		let mapping_commitment = fc_db::MappingCommitment::<Block> {
+			block_hash: header.hash(),
+			ethereum_block_hash: block_hash,
+			ethereum_transaction_hashes: Vec::new(),
+		};
+		backend.mapping().write_hashes(mapping_commitment)?;
+	} else {
+		backend.mapping().write_none(header.hash())?;
+	}
 
 	Ok(())
 }
