@@ -9,21 +9,21 @@ repository = "https://github.com/paritytech/frontier/"
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "2.0.0", features = ["derive"] }
-sp-core = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "rococo-v1" }
-sp-blockchain = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "rococo-v1" }
-sp-runtime = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "rococo-v1" }
-sp-api = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "rococo-v1" }
-sc-client-api = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "rococo-v1" }
-sp-block-builder = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "rococo-v1" }
-sp-inherents = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "rococo-v1" }
+sp-core = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git" }
+sp-blockchain = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git" }
+sp-runtime = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git" }
+sp-api = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git" }
+sc-client-api = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git" }
+sp-block-builder = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git" }
+sp-inherents = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git" }
 fp-consensus = { version = "1.0.0", path = "../../primitives/consensus" }
 fp-rpc = { version = "1.0.0", path = "../../primitives/rpc" }
 fc-db = { version = "1.0.0", path = "../db" }
-sp-consensus = { version = "0.9.0", git = "https://github.com/paritytech/substrate.git", branch = "rococo-v1" }
+sp-consensus = { version = "0.9.0", git = "https://github.com/paritytech/substrate.git" }
 log = "0.4.8"
 futures = { version = "0.3.1", features = ["compat"] }
 futures-util = "0.3.14"
-sp-timestamp = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "rococo-v1" }
+sp-timestamp = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git" }
 derive_more = "0.99.2"
-prometheus-endpoint = { version = "0.9.0", package = "substrate-prometheus-endpoint", git = "https://github.com/paritytech/substrate.git", branch = "rococo-v1"}
+prometheus-endpoint = { version = "0.9.0", package = "substrate-prometheus-endpoint", git = "https://github.com/paritytech/substrate.git"}
 async-trait = "0.1.42"

@@ -143,4 +143,8 @@ impl<T: Config> ProvideInherent for Pallet<T> {
 	fn check_inherent(_call: &Self::Call, _data: &InherentData) -> result::Result<(), Self::Error> {
 		Ok(())
 	}
+
+	fn is_inherent(call: &Self::Call) -> bool {
+		matches!(call, Call::note_min_gas_price_target(_))
+	}
 }

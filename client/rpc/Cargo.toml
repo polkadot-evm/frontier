@@ -20,16 +20,16 @@ fc-rpc-core = { version = "1.0.0", path = "../rpc-core" }
 fp-consensus = { version = "1.0.0", path = "../../primitives/consensus" }
 fp-rpc = { version = "1.0.0", path = "../../primitives/rpc" }
 fp-storage = { version = "1.0.0", path = "../../primitives/storage"}
-sp-io = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "rococo-v1" }
-sp-runtime = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "rococo-v1" }
-sp-api = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "rococo-v1" }
-sp-transaction-pool = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "rococo-v1" }
-sp-storage = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "rococo-v1" }
-sp-blockchain = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "rococo-v1" }
-sc-service = { version = "0.9.0", git = "https://github.com/paritytech/substrate.git", branch = "rococo-v1" }
-sc-client-api = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "rococo-v1" }
-sc-rpc = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "rococo-v1" }
-sc-network = { version = "0.9.0", git = "https://github.com/paritytech/substrate.git", branch = "rococo-v1" }
+sp-io = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git" }
+sp-runtime = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git" }
+sp-api = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git" }
+sp-transaction-pool = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git" }
+sp-storage = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git" }
+sp-blockchain = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git" }
+sc-service = { version = "0.9.0", git = "https://github.com/paritytech/substrate.git" }
+sc-client-api = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git" }
+sc-rpc = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git" }
+sc-network = { version = "0.9.0", git = "https://github.com/paritytech/substrate.git" }
 pallet-evm = { version = "3.0.0", path = "../../frame/evm" }
 fp-evm = { version = "1.0.0", path = "../../primitives/evm" }
 pallet-ethereum = { version = "1.0.1-dev", path = "../../frame/ethereum" }

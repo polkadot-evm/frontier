@@ -9,8 +9,8 @@ repository = "https://github.com/paritytech/substrate/"
 description = "MODEXP precompiles for EVM pallet."
 
 [dependencies]
-sp-core = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "rococo-v1" }
-sp-io = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "rococo-v1" }
+sp-core = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git" }
+sp-io = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git" }
 fp-evm = { version = "1.0.0", default-features = false, path = "../../../../primitives/evm" }
 evm = { version = "0.25.0", default-features = false, features = ["with-codec"] }
 num = { version = "0.3", features = ["alloc"], default-features = false }
