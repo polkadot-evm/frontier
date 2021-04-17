@@ -296,21 +296,23 @@ pub mod pallet {
 	>;
 
 	#[pallet::genesis_config]
-	pub struct GenesisConfig {
+	pub struct GenesisConfig<T: Config> {
 		pub accounts: BTreeMap<H160, GenesisAccount>,
+		pub marker: PhantomData<T>,
 	}
 
 	#[cfg(feature = "std")]
-	impl Default for GenesisConfig {
+	impl<T: Config> Default for GenesisConfig<T> {
 		fn default() -> Self {
 			GenesisConfig {
 				accounts: BTreeMap::new(),
+				marker: PhantomData,
 			}
 		}
 	}
 
 	#[pallet::genesis_build]
-	impl<T: Config> GenesisBuild<T> for GenesisConfig {
+	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
 		fn build(&self) {
 			for (address, account) in &self.accounts {
 				let account_id = T::AddressMapping::into_account_id(*address);
@@ -382,7 +384,7 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {
 		/// Withdraw balance from EVM into currency/balances module.
 		#[pallet::weight(0)]
-		fn withdraw(origin: OriginFor<T>, address: H160, value: BalanceOf<T>) -> DispatchResultWithPostInfo {
+		pub(super) fn withdraw(origin: OriginFor<T>, address: H160, value: BalanceOf<T>) -> DispatchResultWithPostInfo {
 			let destination = T::WithdrawOrigin::ensure_address_origin(&address, origin)?;
 			let address_account_id = T::AddressMapping::into_account_id(address);
 
@@ -398,7 +400,7 @@ pub mod pallet {
 
 		/// Issue an EVM call operation. This is similar to a message call transaction in Ethereum.
 		#[pallet::weight(T::GasWeightMapping::gas_to_weight(*gas_limit))]
-		fn call(
+		pub(super) fn call(
 			origin: OriginFor<T>,
 			source: H160,
 			target: H160,
@@ -439,7 +441,7 @@ pub mod pallet {
 		/// Issue an EVM create operation. This is similar to a contract creation transaction in
 		/// Ethereum.
 		#[pallet::weight(T::GasWeightMapping::gas_to_weight(*gas_limit))]
-		fn create(
+		pub(super) fn create(
 			origin: OriginFor<T>,
 			source: H160,
 			init: Vec<u8>,
@@ -485,7 +487,7 @@ pub mod pallet {
 
 		/// Issue an EVM create2 operation.
 		#[pallet::weight(T::GasWeightMapping::gas_to_weight(*gas_limit))]
-		fn create2(
+		pub(super) fn create2(
 			origin: OriginFor<T>,
 			source: H160,
 			init: Vec<u8>,
@@ -676,11 +678,12 @@ where
 			let refund_imbalance = C::deposit_into_existing(&account_id, refund_amount)
 				.unwrap_or_else(|_| C::PositiveImbalance::zero());
 			// merge the imbalance caused by paying the fees and refunding parts of it again.
-			let adjusted_paid = paid
-				.offset(refund_imbalance)
-				.try_same()
-				.map_err(|_| Error::<T>::BalanceLow)?;
-			OU::on_unbalanced(adjusted_paid);
+			match paid.offset(refund_imbalance).try_same() {
+				Ok(adjusted) => {
+					OU::on_unbalanced(adjusted)
+				},
+				Err(_) => {},
+			}
 		}
 		Ok(())
 	}

@@ -340,7 +340,7 @@ construct_runtime!(
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
 		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
 		Ethereum: pallet_ethereum::{Pallet, Call, Storage, Event<T>, ValidateUnsigned},
-		EVM: pallet_evm::{Pallet, Config, Call, Storage, Event<T>},
+		EVM: pallet_evm::{Pallet, Config<T>, Call, Storage, Event<T>},
 	}
 );
 

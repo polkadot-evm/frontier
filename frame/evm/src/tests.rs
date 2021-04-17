@@ -18,6 +18,7 @@
 #![cfg(test)]
 
 use super::*;
+use core::marker::PhantomData;
 
 use std::{str::FromStr, collections::BTreeMap};
 use frame_support::{
@@ -140,13 +141,12 @@ type EVM = Pallet<Test>;
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
-	use self::GenesisConfig as EVMConfig;
 	let mut accounts = BTreeMap::new();
 	accounts.insert(
 		H160::from_str("1000000000000000000000000000000000000001").unwrap(),
 		GenesisAccount {
 			nonce: U256::from(1),
-			balance: U256::from(1000000),
+			balance: U256::from(1_000_000_000),
 			storage: Default::default(),
 			code: vec![
 				0x00, // STOP
@@ -157,7 +157,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 		H160::from_str("1000000000000000000000000000000000000002").unwrap(),
 		GenesisAccount {
 			nonce: U256::from(1),
-			balance: U256::from(1000000),
+			balance: U256::from(1_000_000_000),
 			storage: Default::default(),
 			code: vec![
 				0xff, // INVALID
@@ -165,8 +165,9 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 		}
 	);
 
+	let marker = PhantomData::<Test>;
 	pallet_balances::GenesisConfig::<Test>::default().assimilate_storage(&mut t).unwrap();
-	EVMConfig { accounts }.assimilate_storage(&mut t).unwrap();
+	self::GenesisConfig{ accounts, marker }.assimilate_storage(&mut t).unwrap();
 	t.into()
 }
 

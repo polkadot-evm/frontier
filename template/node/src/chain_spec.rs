@@ -170,6 +170,7 @@ fn testnet_genesis(
 				);
 				map
 			},
+			marker: core::marker::PhantomData,
 		},
 	}
 }
