@@ -64,21 +64,21 @@ pub struct ETHTxStatuses {
 }
 
 impl Into<Block> for ETHBlock {
-    fn into(self) -> Block {
-        self.inner
-    }
+	fn into(self) -> Block {
+		self.inner
+	}
 }
 
 impl Into<Vec<Receipt>> for ETHReceipts {
-    fn into(self) -> Vec<Receipt> {
-        self.inner
-    }
+	fn into(self) -> Vec<Receipt> {
+		self.inner
+	}
 }
 
 impl Into<Vec<TransactionStatus>> for ETHTxStatuses {
-    fn into(self) -> Vec<TransactionStatus> {
-        self.inner
-    }
+	fn into(self) -> Vec<TransactionStatus> {
+		self.inner
+	}
 }
 
 #[cfg(all(feature = "std", test))]

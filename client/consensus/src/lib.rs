@@ -19,7 +19,6 @@
 use std::collections::HashMap;
 use std::{
 	sync::Arc, marker::PhantomData, fmt::Debug,
-	
 };
 use fp_consensus::{ensure_log, FindLogError};
 use fp_rpc::EthereumRuntimeRPCApi;
