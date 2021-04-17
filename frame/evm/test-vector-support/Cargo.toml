@@ -22,4 +22,5 @@ std = [
 	"serde",
 	"serde_json",
 	"evm/std",
+	"fp-evm/std",
 ]
