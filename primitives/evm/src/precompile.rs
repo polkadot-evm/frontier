@@ -113,4 +113,3 @@ fn ensure_linear_cost(
 
 	Ok(cost)
 }
-
