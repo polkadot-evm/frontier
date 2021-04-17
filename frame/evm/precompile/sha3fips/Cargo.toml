@@ -5,7 +5,7 @@ authors = ["Parity Technologies <admin@parity.io>", "Drew Stone <drew@commonweal
 edition = "2018"
 license = "Apache-2.0"
 homepage = "https://substrate.dev"
-repository = "https://github.com/paritytech/substrate/"
+repository = "https://github.com/paritytech/frontier/"
 description = "SHA3 FIPS202 precompile for EVM pallet."
 
 [dependencies]
