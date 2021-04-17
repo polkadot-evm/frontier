@@ -144,23 +144,24 @@ impl LinearCostPrecompile for ECRecoverPublicKey {
 #[cfg(test)]
 mod tests {
 	use super::*;
+	use pallet_evm_test_vector_support::test_precompile_test_vectors;
 
 	// TODO: this fails on the test "InvalidHighV-bits-1" where it is expected to return ""
 	#[test]
 	fn process_consensus_tests_for_ecrecover() -> std::result::Result<(), String> {
-		fp_evm::test_precompile_consensus_tests::<ECRecover>("../testdata/ecRecover.json")?;
+		test_precompile_test_vectors::<ECRecover>("../testdata/ecRecover.json")?;
 		Ok(())
 	}
 
 	#[test]
 	fn process_consensus_tests_for_sha256() -> std::result::Result<(), String> {
-		fp_evm::test_precompile_consensus_tests::<Sha256>("../testdata/common_sha256.json")?;
+		test_precompile_test_vectors::<Sha256>("../testdata/common_sha256.json")?;
 		Ok(())
 	}
 
 	#[test]
 	fn process_consensus_tests_for_ripemd160() -> std::result::Result<(), String> {
-		fp_evm::test_precompile_consensus_tests::<Ripemd160>("../testdata/common_ripemd.json")?;
+		test_precompile_test_vectors::<Ripemd160>("../testdata/common_ripemd.json")?;
 		Ok(())
 	}
 }

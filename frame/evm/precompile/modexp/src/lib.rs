@@ -189,10 +189,11 @@ impl Precompile for Modexp {
 mod tests {
 	use super::*;
 	extern crate hex;
+	use pallet_evm_test_vector_support::test_precompile_test_vectors;
 
 	#[test]
 	fn process_consensus_tests() -> std::result::Result<(), String> {
-		fp_evm::test_precompile_consensus_tests::<Modexp>("../testdata/modexp_eip2565.json")?;
+		test_precompile_test_vectors::<Modexp>("../testdata/modexp_eip2565.json")?;
 		Ok(())
 	}
 

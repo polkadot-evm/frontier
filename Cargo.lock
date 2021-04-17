@@ -3960,6 +3960,7 @@ version = "1.1.0-dev"
 dependencies = [
  "evm",
  "fp-evm",
+ "pallet-evm-test-vector-support",
  "sp-core",
  "sp-io",
  "substrate-bn",
@@ -3997,6 +3998,7 @@ dependencies = [
  "fp-evm",
  "hex",
  "num",
+ "pallet-evm-test-vector-support",
  "sp-core",
  "sp-io",
 ]
@@ -4018,6 +4020,7 @@ version = "1.0.1-dev"
 dependencies = [
  "evm",
  "fp-evm",
+ "pallet-evm-test-vector-support",
  "ripemd160",
  "sp-core",
  "sp-io",
