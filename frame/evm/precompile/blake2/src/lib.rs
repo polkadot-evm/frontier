@@ -109,10 +109,11 @@ impl Precompile for Blake2F {
 #[cfg(test)]
 mod tests {
 	use super::*;
+	use pallet_evm_test_vector_support::test_precompile_test_vectors;
 
 	#[test]
 	fn process_consensus_tests() -> std::result::Result<(), String> {
-		fp_evm::test_precompile_consensus_tests::<Blake2F>("../testdata/blake2F.json")?;
+		test_precompile_test_vectors::<Blake2F>("../testdata/blake2F.json")?;
 		Ok(())
 	}
 }
