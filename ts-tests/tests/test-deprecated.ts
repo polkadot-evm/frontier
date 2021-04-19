@@ -2,7 +2,7 @@ import { expect } from "chai";
 
 import { customRequest, describeWithFrontier } from "./util";
 
-describeWithFrontier("Frontier RPC (Deprecated)", `simple-specs.json`, (context) => {
+describeWithFrontier("Frontier RPC (Deprecated)", (context) => {
 	// List of deprecated methods
 	[
 		{ method: "eth_getCompilers", params: [] },

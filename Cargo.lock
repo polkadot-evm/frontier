@@ -1340,7 +1340,7 @@ dependencies = [
 
 [[package]]
 name = "fc-mapping-sync"
-version = "1.0.0"
+version = "1.1.0-dev"
 dependencies = [
  "fc-consensus",
  "fc-db",
@@ -3893,7 +3893,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-ethereum"
-version = "1.0.0"
+version = "1.0.1-dev"
 dependencies = [
  "ethereum",
  "ethereum-types",

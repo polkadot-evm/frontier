@@ -1,4 +1,5 @@
-use sp_core::{Pair, Public, sr25519};
+use std::{str::FromStr, collections::BTreeMap};
+use sp_core::{H160, U256, Pair, Public, sr25519};
 use frontier_template_runtime::{
 	AccountId, AuraConfig, BalancesConfig, EVMConfig, EthereumConfig, GenesisConfig, GrandpaConfig,
 	SudoConfig, SystemConfig, WASM_BINARY, Signature
@@ -7,7 +8,6 @@ use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::traits::{Verify, IdentifyAccount};
 use sc_service::ChainType;
-use std::collections::BTreeMap;
 
 // The URL for the telemetry server.
 // const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
@@ -155,7 +155,21 @@ fn testnet_genesis(
 			key: root_key,
 		},
 		pallet_evm: EVMConfig {
-			accounts: BTreeMap::new(),
+			accounts: {
+				let mut map = BTreeMap::new();
+				map.insert(
+					H160::from_str("6be02d1d3665660d22ff9624b7be0551ee1ac91b")
+						.expect("internal H160 is valid; qed"),
+					pallet_evm::GenesisAccount {
+						balance: U256::from_str("0xffffffffffffffffffffffffffffffff")
+							.expect("internal U256 is valid; qed"),
+						code: Default::default(),
+						nonce: Default::default(),
+						storage: Default::default(),
+					}
+				);
+				map
+			},
 		},
 		pallet_ethereum: EthereumConfig {},
 	}

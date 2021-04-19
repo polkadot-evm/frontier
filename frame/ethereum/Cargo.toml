@@ -1,6 +1,6 @@
 [package]
 name = "pallet-ethereum"
-version = "1.0.0"
+version = "1.0.1-dev"
 authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2018"
 description = "Ethereum compatibility full block processing emulation pallet for Substrate."

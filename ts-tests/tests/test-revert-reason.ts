@@ -4,7 +4,7 @@ import ExplicitRevertReason from "../build/contracts/ExplicitRevertReason.json"
 import { createAndFinalizeBlock, customRequest, describeWithFrontier } from "./util";
 import { AbiItem } from "web3-utils";
 
-describeWithFrontier("Frontier RPC (Revert Reason)", `simple-specs.json`, (context) => {
+describeWithFrontier("Frontier RPC (Revert Reason)", (context) => {
 
 	let contractAddress;
 
