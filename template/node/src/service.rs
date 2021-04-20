@@ -277,6 +277,7 @@ pub fn new_full(
 		let pending = pending_transactions.clone();
 		let filter_pool = filter_pool.clone();
 		let frontier_backend = frontier_backend.clone();
+		let max_past_logs = cli.run.max_past_logs;
 
 		Box::new(move |deny_unsafe, _| {
 			let deps = crate::rpc::FullDeps {
@@ -289,7 +290,8 @@ pub fn new_full(
 				pending_transactions: pending.clone(),
 				filter_pool: filter_pool.clone(),
 				backend: frontier_backend.clone(),
-				command_sink: Some(command_sink.clone())
+				max_past_logs,
+				command_sink: Some(command_sink.clone()),
 			};
 			crate::rpc::create_full(
 				deps,

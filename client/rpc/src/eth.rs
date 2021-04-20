@@ -58,6 +58,7 @@ pub struct EthApi<B: BlockT, C, P, CT, BE, H: ExHashT> {
 	overrides: Arc<OverrideHandle<B>>,
 	pending_transactions: PendingTransactions,
 	backend: Arc<fc_db::Backend<B>>,
+	max_past_logs: u32,
 	_marker: PhantomData<(B, BE)>,
 }
 
@@ -77,6 +78,7 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> where
 		overrides: Arc<OverrideHandle<B>>,
 		backend: Arc<fc_db::Backend<B>>,
 		is_authority: bool,
+		max_past_logs: u32,
 	) -> Self {
 		Self {
 			client: client.clone(),
@@ -88,6 +90,7 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H> where
 			overrides,
 			pending_transactions,
 			backend,
+			max_past_logs,
 			_marker: PhantomData,
 		}
 	}
@@ -1069,6 +1072,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 				.unwrap_or(
 					self.client.info().best_number
 				);
+
 			while current_number >= from_number {
 				let id = BlockId::Number(current_number);
 
@@ -1084,6 +1088,11 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 							logs_build(&mut ret, &filter, block, statuses);
 						}
 					}
+				}
+				if ret.len() as u32 > self.max_past_logs {
+					return Err(internal_err(
+						format!("query returned more than {} results", self.max_past_logs)
+					));
 				}
 				if current_number == Zero::zero() {
 					break
