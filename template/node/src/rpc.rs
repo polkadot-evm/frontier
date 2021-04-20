@@ -144,6 +144,7 @@ pub fn create_full<C, P, BE>(
 				filter_pool.clone(),
 				500 as usize, // max stored filters
 				overrides.clone(),
+				max_past_logs,
 			))
 		);
 	}

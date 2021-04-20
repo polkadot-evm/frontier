@@ -1222,6 +1222,7 @@ pub struct EthFilterApi<B: BlockT, C, BE> {
 	filter_pool: FilterPool,
 	max_stored_filters: usize,
 	overrides: Arc<OverrideHandle<B>>,
+	max_past_logs: u32,
 	_marker: PhantomData<(B, BE)>,
 }
 
@@ -1238,12 +1239,14 @@ impl<B: BlockT, C, BE> EthFilterApi<B, C, BE>  where
 		filter_pool: FilterPool,
 		max_stored_filters: usize,
 		overrides: Arc<OverrideHandle<B>>,
+		max_past_logs: u32,
 	) -> Self {
 		Self {
 			client: client.clone(),
 			filter_pool,
 			max_stored_filters,
 			overrides,
+			max_past_logs,
 			_marker: PhantomData,
 		}
 	}
@@ -1352,6 +1355,10 @@ impl<B, C, BE> EthFilterApiT for EthFilterApi<B, C, BE> where
 					},
 					// For each event since last poll, get a vector of ethereum logs.
 					FilterType::Log(filter) => {
+						// Max request duration of 10 seconds. 
+						let max_duration = time::Duration::from_secs(10);
+						let begin_request = time::Instant::now();
+
 						// Either the filter-specific `to` block or best block.
 						let best_number = self.client.info().best_number;
 						let mut current_number = filter
@@ -1378,6 +1385,7 @@ impl<B, C, BE> EthFilterApiT for EthFilterApi<B, C, BE> where
 							);
 
 						let from_number = std::cmp::max(last_poll, filter_from);
+
 						// Build the response.
 						let mut ret: Vec<Log> = Vec::new();
 						while current_number >= from_number {
@@ -1387,12 +1395,26 @@ impl<B, C, BE> EthFilterApiT for EthFilterApi<B, C, BE> where
 							let handler = self.overrides.schemas.get(&schema).unwrap_or(&self.overrides.fallback);
 
 							let block = handler.current_block(&id);
-							let statuses = handler.current_transaction_statuses(&id);
 
-							if let (Some(block), Some(statuses)) = (block, statuses) {
-								logs_build(&mut ret, &filter, block, statuses);
+							if let Some(block) = block {
+								if FilteredParams::in_bloom(block.header.logs_bloom, &filter) {
+									let statuses = handler.current_transaction_statuses(&id);
+									if let Some(statuses) = statuses {
+										logs_build(&mut ret, &filter, block, statuses);
+									}
+								}
 							}
-
+							// Check for restrictions
+							if ret.len() as u32 > self.max_past_logs {
+								return Err(internal_err(
+									format!("query returned more than {} results", self.max_past_logs)
+								));
+							}
+							if begin_request.elapsed() > max_duration {
+								return Err(internal_err(
+									format!("query timeout of {} seconds exceeded", max_duration.as_secs())
+								));
+							}
 							if current_number == Zero::zero() {
 								break
 							} else {
@@ -1435,6 +1457,10 @@ impl<B, C, BE> EthFilterApiT for EthFilterApi<B, C, BE> where
 			if let Some(pool_item) = locked.clone().get(&key) {
 				match &pool_item.filter_type {
 					FilterType::Log(filter) => {
+						// Max request duration of 10 seconds. 
+						let max_duration = time::Duration::from_secs(10);
+						let begin_request = time::Instant::now();
+						
 						let best_number = self.client.info().best_number;
 						let mut current_number = filter
 							.to_block.clone()
@@ -1465,12 +1491,26 @@ impl<B, C, BE> EthFilterApiT for EthFilterApi<B, C, BE> where
 							let handler = self.overrides.schemas.get(&schema).unwrap_or(&self.overrides.fallback);
 
 							let block = handler.current_block(&id);
-							let statuses = handler.current_transaction_statuses(&id);
 
-							if let (Some(block), Some(statuses)) = (block, statuses) {
-								logs_build(&mut ret, &filter, block, statuses);
+							if let Some(block) = block {
+								if FilteredParams::in_bloom(block.header.logs_bloom, &filter) {
+									let statuses = handler.current_transaction_statuses(&id);
+									if let Some(statuses) = statuses {
+										logs_build(&mut ret, &filter, block, statuses);
+									}
+								}
 							}
-
+							// Check for restrictions
+							if ret.len() as u32 > self.max_past_logs {
+								return Err(internal_err(
+									format!("query returned more than {} results", self.max_past_logs)
+								));
+							}
+							if begin_request.elapsed() > max_duration {
+								return Err(internal_err(
+									format!("query timeout of {} seconds exceeded", max_duration.as_secs())
+								));
+							}
 							if current_number == Zero::zero() {
 								break
 							} else {
