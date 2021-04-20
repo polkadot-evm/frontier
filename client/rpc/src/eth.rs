@@ -15,7 +15,7 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
-use std::{marker::PhantomData, sync::{Mutex, Arc}};
+use std::{marker::PhantomData, time, sync::{Mutex, Arc}};
 use std::collections::{HashMap, BTreeMap};
 use ethereum::{
 	Block as EthereumBlock, Transaction as EthereumTransaction
@@ -1035,6 +1035,10 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 	}
 
 	fn logs(&self, filter: Filter) -> Result<Vec<Log>> {
+		// Max request duration of 10 seconds. 
+		let max_duration = time::Duration::from_secs(10);
+		let begin_request = time::Instant::now();
+
 		let mut blocks_and_statuses = Vec::new();
 		let mut ret: Vec<Log> = Vec::new();
 		if let Some(hash) = filter.block_hash.clone() {
@@ -1089,9 +1093,15 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 						}
 					}
 				}
+				// Check for restrictions
 				if ret.len() as u32 > self.max_past_logs {
 					return Err(internal_err(
 						format!("query returned more than {} results", self.max_past_logs)
+					));
+				}
+				if begin_request.elapsed() > max_duration {
+					return Err(internal_err(
+						format!("query timeout of {} seconds exceeded", max_duration.as_secs())
 					));
 				}
 				if current_number == Zero::zero() {
