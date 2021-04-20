@@ -210,66 +210,65 @@ fn transaction_build(
 	}
 }
 
-fn logs_build(
-	filter: Filter,
-	blocks_and_statuses: Vec<(EthereumBlock, Vec<TransactionStatus>)>
-) -> Vec<Log> {
+fn logs_build<'a>(
+	ret: &'a mut Vec<Log>,
+	filter: &'a Filter,
+	block: EthereumBlock,
+	transaction_statuses: Vec<TransactionStatus>
+) -> &'a Vec<Log> {
 	let params = FilteredParams::new(Some(filter.clone()));
-	let mut ret = Vec::new();
-	for (block, statuses) in blocks_and_statuses {
-		let mut block_log_index: u32 = 0;
-		let block_hash = H256::from_slice(
-			Keccak256::digest(&rlp::encode(&block.header)).as_slice()
-		);
-		for status in statuses.iter() {
-			let logs = status.logs.clone();
-			let mut transaction_log_index: u32 = 0;
-			let transaction_hash = status.transaction_hash;
-			for ethereum_log in logs {
-				let mut log = Log {
-					address: ethereum_log.address.clone(),
-					topics: ethereum_log.topics.clone(),
-					data: Bytes(ethereum_log.data.clone()),
-					block_hash: None,
-					block_number: None,
-					transaction_hash: None,
-					transaction_index: None,
-					log_index: None,
-					transaction_log_index: None,
-					removed: false,
-				};
-				let mut add: bool = true;
-				if let (
-					Some(_),
-					Some(_)
-				) = (
-					filter.address.clone(),
-					filter.topics.clone(),
-				) {
-					if !params.filter_address(&log) || !params.filter_topics(&log) {
-						add = false;
-					}
-				} else if let Some(_) = filter.address {
-					if !params.filter_address(&log) {
-						add = false;
-					}
-				} else if let Some(_) = &filter.topics {
-					if !params.filter_topics(&log) {
-						add = false;
-					}
+	let mut block_log_index: u32 = 0;
+	let block_hash = H256::from_slice(
+		Keccak256::digest(&rlp::encode(&block.header)).as_slice()
+	);
+	for status in transaction_statuses.iter() {
+		let logs = status.logs.clone();
+		let mut transaction_log_index: u32 = 0;
+		let transaction_hash = status.transaction_hash;
+		for ethereum_log in logs {
+			let mut log = Log {
+				address: ethereum_log.address.clone(),
+				topics: ethereum_log.topics.clone(),
+				data: Bytes(ethereum_log.data.clone()),
+				block_hash: None,
+				block_number: None,
+				transaction_hash: None,
+				transaction_index: None,
+				log_index: None,
+				transaction_log_index: None,
+				removed: false,
+			};
+			let mut add: bool = true;
+			if let (
+				Some(_),
+				Some(_)
+			) = (
+				filter.address.clone(),
+				filter.topics.clone(),
+			) {
+				if !params.filter_address(&log) || !params.filter_topics(&log) {
+					add = false;
 				}
-				if add {
-					log.block_hash = Some(block_hash);
-					log.block_number = Some(block.header.number.clone());
-					log.transaction_hash = Some(transaction_hash);
-					log.transaction_index = Some(U256::from(status.transaction_index));
-					log.log_index = Some(U256::from(block_log_index));
-					log.transaction_log_index = Some(U256::from(transaction_log_index));
-					ret.push(log);
+			} else if let Some(_) = filter.address {
+				if !params.filter_address(&log) {
+					add = false;
 				}
-				transaction_log_index += 1;
-				block_log_index += 1;
+			} else if let Some(_) = &filter.topics {
+				if !params.filter_topics(&log) {
+					add = false;
+				}
 			}
+			if add {
+				log.block_hash = Some(block_hash);
+				log.block_number = Some(block.header.number.clone());
+				log.transaction_hash = Some(transaction_hash);
+				log.transaction_index = Some(U256::from(status.transaction_index));
+				log.log_index = Some(U256::from(block_log_index));
+				log.transaction_log_index = Some(U256::from(transaction_log_index));
+				ret.push(log);
+			}
+			transaction_log_index += 1;
+			block_log_index += 1;
 		}
 	}
 	ret
@@ -1034,6 +1033,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 
 	fn logs(&self, filter: Filter) -> Result<Vec<Log>> {
 		let mut blocks_and_statuses = Vec::new();
+		let mut ret: Vec<Log> = Vec::new();
 		if let Some(hash) = filter.block_hash.clone() {
 			let id = match frontier_backend_client::load_hash::<B>(self.backend.as_ref(), hash)
 				.map_err(|err| internal_err(format!("{:?}", err)))?
@@ -1079,7 +1079,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 				let statuses = handler.current_transaction_statuses(&id);
 
 				if let (Some(block), Some(statuses)) = (block, statuses) {
-					blocks_and_statuses.push((block, statuses));
+					logs_build(&mut ret, &filter, block, statuses);
 				}
 
 				if current_number == Zero::zero() {
@@ -1089,8 +1089,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 				}
 			}
 		}
-
-		Ok(logs_build(filter,blocks_and_statuses))
+		Ok(ret)
 	}
 
 	fn work(&self) -> Result<Work> {
@@ -1360,7 +1359,7 @@ impl<B, C, BE> EthFilterApiT for EthFilterApi<B, C, BE> where
 
 						let from_number = std::cmp::max(last_poll, filter_from);
 						// Build the response.
-						let mut blocks_and_statuses = Vec::new();
+						let mut ret: Vec<Log> = Vec::new();
 						while current_number >= from_number {
 							let id = BlockId::Number(current_number);
 
@@ -1371,7 +1370,7 @@ impl<B, C, BE> EthFilterApiT for EthFilterApi<B, C, BE> where
 							let statuses = handler.current_transaction_statuses(&id);
 
 							if let (Some(block), Some(statuses)) = (block, statuses) {
-								blocks_and_statuses.push((block, statuses));
+								logs_build(&mut ret, &filter, block, statuses);
 							}
 
 							if current_number == Zero::zero() {
@@ -1391,9 +1390,7 @@ impl<B, C, BE> EthFilterApiT for EthFilterApi<B, C, BE> where
 								at_block: pool_item.at_block
 							}
 						);
-						Ok(FilterChanges::Logs(
-							logs_build(filter.clone(), blocks_and_statuses)
-						))
+						Ok(FilterChanges::Logs(ret))
 					},
 					// Should never reach here.
 					_ => {
@@ -1440,7 +1437,7 @@ impl<B, C, BE> EthFilterApiT for EthFilterApi<B, C, BE> where
 								self.client.info().best_number
 							);
 
-						let mut blocks_and_statuses = Vec::new();
+						let mut ret: Vec<Log> = Vec::new();
 						while current_number >= from_number {
 							let id = BlockId::Number(current_number);
 
@@ -1451,7 +1448,7 @@ impl<B, C, BE> EthFilterApiT for EthFilterApi<B, C, BE> where
 							let statuses = handler.current_transaction_statuses(&id);
 
 							if let (Some(block), Some(statuses)) = (block, statuses) {
-								blocks_and_statuses.push((block, statuses));
+								logs_build(&mut ret, &filter, block, statuses);
 							}
 
 							if current_number == Zero::zero() {
@@ -1460,7 +1457,7 @@ impl<B, C, BE> EthFilterApiT for EthFilterApi<B, C, BE> where
 								current_number = current_number.saturating_sub(One::one());
 							}
 						}
-						Ok(logs_build(filter.clone(), blocks_and_statuses))
+						Ok(ret)
 					},
 					_ => Err(internal_err(
 						format!("Filter id {:?} is not a Log filter.", key)
