@@ -1076,12 +1076,15 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 				let handler = self.overrides.schemas.get(&schema).unwrap_or(&self.overrides.fallback);
 
 				let block = handler.current_block(&id);
-				let statuses = handler.current_transaction_statuses(&id);
 
-				if let (Some(block), Some(statuses)) = (block, statuses) {
-					logs_build(&mut ret, &filter, block, statuses);
+				if let Some(block) = block {
+					if FilteredParams::in_bloom(block.header.logs_bloom, &filter) {
+						let statuses = handler.current_transaction_statuses(&id);
+						if let Some(statuses) = statuses {
+							logs_build(&mut ret, &filter, block, statuses);
+						}
+					}
 				}
-
 				if current_number == Zero::zero() {
 					break
 				} else {
