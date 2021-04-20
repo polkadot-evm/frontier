@@ -130,7 +130,7 @@ impl FilteredParams {
 		// Topics
 		let topic_in_bloom = if let Some(topics) = &filter.topics {
 			let mut inner_topics: Vec<Option<H256>> = Vec::new();
-			for flat in FilteredParams::flatten(topics) {
+			for flat in Self::flatten(topics) {
 				match flat {
 					VariadicValue::Single(topic) => {
 						inner_topics.push(topic);
@@ -167,7 +167,7 @@ impl FilteredParams {
 	/// Cartesian product for VariadicValue conditional indexed parameters.
 	/// Executed once on struct instance.
 	/// i.e. `[A,[B,C]]` to `[[A,B],[A,C]]`.
-	pub fn flatten(topic: &Topic) -> Vec<FlatTopic> {
+	fn flatten(topic: &Topic) -> Vec<FlatTopic> {
 		fn cartesian(lists: &Vec<Vec<Option<H256>>>) -> Vec<Vec<Option<H256>>> {
 			let mut res = vec![];
 			let mut list_iter = lists.iter();
