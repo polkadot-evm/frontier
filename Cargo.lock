@@ -3921,7 +3921,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm"
-version = "3.0.0"
+version = "3.0.1-dev"
 dependencies = [
  "evm",
  "evm-gasometer",
@@ -3968,7 +3968,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm-precompile-dispatch"
-version = "1.0.0"
+version = "1.0.1-dev"
 dependencies = [
  "evm",
  "fp-evm",
@@ -3981,7 +3981,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm-precompile-ed25519"
-version = "1.0.0"
+version = "1.0.1-dev"
 dependencies = [
  "ed25519-dalek",
  "evm",
@@ -4005,7 +4005,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm-precompile-sha3fips"
-version = "1.0.0"
+version = "1.0.1-dev"
 dependencies = [
  "evm",
  "fp-evm",
@@ -4028,7 +4028,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm-test-vector-support"
-version = "1.0.1-dev"
+version = "1.0.0-dev"
 dependencies = [
  "evm",
  "fp-evm",
