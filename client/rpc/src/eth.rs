@@ -24,7 +24,7 @@ use ethereum_types::{H160, H256, H64, U256, U64, H512};
 use jsonrpc_core::{BoxFuture, Result, ErrorCode, futures::future::{self, Future}};
 use futures::{StreamExt, future::TryFutureExt};
 use sp_runtime::{
-	traits::{Block as BlockT, UniqueSaturatedInto, Zero, One, Saturating, BlakeTwo256},
+	traits::{Block as BlockT, UniqueSaturatedInto, Zero, One, Saturating, BlakeTwo256, NumberFor},
 	transaction_validity::TransactionSource,
 };
 use sp_api::{ProvideRuntimeApi, BlockId, Core, HeaderT};
@@ -213,7 +213,66 @@ fn transaction_build(
 	}
 }
 
-fn logs_build<'a>(
+fn filter_range_logs<B: BlockT, C, BE>(
+	client: &C,
+	overrides: &OverrideHandle<B>,
+	ret: &mut Vec<Log>,
+	max_past_logs: u32,
+	filter: &Filter,
+	from: NumberFor<B>,
+	to: NumberFor<B>,
+) -> Result<()> where
+	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
+	C: HeaderBackend<B> + HeaderMetadata<B, Error=BlockChainError> + 'static,
+	C::Api: EthereumRuntimeRPCApi<B>,
+	BE: Backend<B> + 'static,
+	BE::State: StateBackend<BlakeTwo256>,
+	B: BlockT<Hash=H256> + Send + Sync + 'static,
+	C: Send + Sync + 'static,
+{
+	// Max request duration of 10 seconds.
+	let max_duration = time::Duration::from_secs(10);
+	let begin_request = time::Instant::now();
+
+	let mut current_number = to;
+
+	while current_number >= from {
+		let id = BlockId::Number(current_number);
+
+		let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(client, id);
+		let handler = overrides.schemas.get(&schema).unwrap_or(&overrides.fallback);
+
+		let block = handler.current_block(&id);
+
+		if let Some(block) = block {
+			if FilteredParams::in_bloom(block.header.logs_bloom, filter) {
+				let statuses = handler.current_transaction_statuses(&id);
+				if let Some(statuses) = statuses {
+					filter_block_logs(ret, filter, block, statuses);
+				}
+			}
+		}
+		// Check for restrictions
+		if ret.len() as u32 > max_past_logs {
+			return Err(internal_err(
+				format!("query returned more than {} results", max_past_logs)
+			));
+		}
+		if begin_request.elapsed() > max_duration {
+			return Err(internal_err(
+				format!("query timeout of {} seconds exceeded", max_duration.as_secs())
+			));
+		}
+		if current_number == Zero::zero() {
+			break
+		} else {
+			current_number = current_number.saturating_sub(One::one());
+		}
+	}
+	Ok(())
+}
+
+fn filter_block_logs<'a>(
 	ret: &'a mut Vec<Log>,
 	filter: &'a Filter,
 	block: EthereumBlock,
@@ -1035,10 +1094,6 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 	}
 
 	fn logs(&self, filter: Filter) -> Result<Vec<Log>> {
-		// Max request duration of 10 seconds.
-		let max_duration = time::Duration::from_secs(10);
-		let begin_request = time::Instant::now();
-
 		let mut ret: Vec<Log> = Vec::new();
 		if let Some(hash) = filter.block_hash.clone() {
 			let id = match frontier_backend_client::load_hash::<B>(self.backend.as_ref(), hash)
@@ -1054,7 +1109,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 			let block = handler.current_block(&id);
 			let statuses = handler.current_transaction_statuses(&id);
 			if let (Some(block), Some(statuses)) = (block, statuses) {
-				logs_build(&mut ret, &filter, block, statuses);
+				filter_block_logs(&mut ret, &filter, block, statuses);
 			}
 		} else {
 			let best_number = self.client.info().best_number;
@@ -1075,39 +1130,15 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 					self.client.info().best_number
 				);
 
-			while current_number >= from_number {
-				let id = BlockId::Number(current_number);
-
-				let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(self.client.as_ref(), id);
-				let handler = self.overrides.schemas.get(&schema).unwrap_or(&self.overrides.fallback);
-
-				let block = handler.current_block(&id);
-
-				if let Some(block) = block {
-					if FilteredParams::in_bloom(block.header.logs_bloom, &filter) {
-						let statuses = handler.current_transaction_statuses(&id);
-						if let Some(statuses) = statuses {
-							logs_build(&mut ret, &filter, block, statuses);
-						}
-					}
-				}
-				// Check for restrictions
-				if ret.len() as u32 > self.max_past_logs {
-					return Err(internal_err(
-						format!("query returned more than {} results", self.max_past_logs)
-					));
-				}
-				if begin_request.elapsed() > max_duration {
-					return Err(internal_err(
-						format!("query timeout of {} seconds exceeded", max_duration.as_secs())
-					));
-				}
-				if current_number == Zero::zero() {
-					break
-				} else {
-					current_number = current_number.saturating_sub(One::one());
-				}
-			}
+			let _ = filter_range_logs(
+				self.client.as_ref(),
+				&self.overrides,
+				&mut ret,
+				self.max_past_logs,
+				&filter,
+				from_number,
+				current_number
+			)?;
 		}
 		Ok(ret)
 	}
@@ -1355,10 +1386,6 @@ impl<B, C, BE> EthFilterApiT for EthFilterApi<B, C, BE> where
 					},
 					// For each event since last poll, get a vector of ethereum logs.
 					FilterType::Log(filter) => {
-						// Max request duration of 10 seconds.
-						let max_duration = time::Duration::from_secs(10);
-						let begin_request = time::Instant::now();
-
 						// Either the filter-specific `to` block or best block.
 						let best_number = self.client.info().best_number;
 						let mut current_number = filter
@@ -1388,39 +1415,15 @@ impl<B, C, BE> EthFilterApiT for EthFilterApi<B, C, BE> where
 
 						// Build the response.
 						let mut ret: Vec<Log> = Vec::new();
-						while current_number >= from_number {
-							let id = BlockId::Number(current_number);
-
-							let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(self.client.as_ref(), id);
-							let handler = self.overrides.schemas.get(&schema).unwrap_or(&self.overrides.fallback);
-
-							let block = handler.current_block(&id);
-
-							if let Some(block) = block {
-								if FilteredParams::in_bloom(block.header.logs_bloom, &filter) {
-									let statuses = handler.current_transaction_statuses(&id);
-									if let Some(statuses) = statuses {
-										logs_build(&mut ret, &filter, block, statuses);
-									}
-								}
-							}
-							// Check for restrictions
-							if ret.len() as u32 > self.max_past_logs {
-								return Err(internal_err(
-									format!("query returned more than {} results", self.max_past_logs)
-								));
-							}
-							if begin_request.elapsed() > max_duration {
-								return Err(internal_err(
-									format!("query timeout of {} seconds exceeded", max_duration.as_secs())
-								));
-							}
-							if current_number == Zero::zero() {
-								break
-							} else {
-								current_number = current_number.saturating_sub(One::one());
-							}
-						}
+						let _ = filter_range_logs(
+							self.client.as_ref(),
+							&self.overrides,
+							&mut ret,
+							self.max_past_logs,
+							&filter,
+							from_number,
+							current_number
+						)?;
 						// Update filter `last_poll`.
 						locked.insert(
 							key,
@@ -1457,9 +1460,6 @@ impl<B, C, BE> EthFilterApiT for EthFilterApi<B, C, BE> where
 			if let Some(pool_item) = locked.clone().get(&key) {
 				match &pool_item.filter_type {
 					FilterType::Log(filter) => {
-						// Max request duration of 10 seconds.
-						let max_duration = time::Duration::from_secs(10);
-						let begin_request = time::Instant::now();
 						let best_number = self.client.info().best_number;
 						let mut current_number = filter
 							.to_block.clone()
@@ -1483,39 +1483,15 @@ impl<B, C, BE> EthFilterApiT for EthFilterApi<B, C, BE> where
 							);
 
 						let mut ret: Vec<Log> = Vec::new();
-						while current_number >= from_number {
-							let id = BlockId::Number(current_number);
-
-							let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(self.client.as_ref(), id);
-							let handler = self.overrides.schemas.get(&schema).unwrap_or(&self.overrides.fallback);
-
-							let block = handler.current_block(&id);
-
-							if let Some(block) = block {
-								if FilteredParams::in_bloom(block.header.logs_bloom, &filter) {
-									let statuses = handler.current_transaction_statuses(&id);
-									if let Some(statuses) = statuses {
-										logs_build(&mut ret, &filter, block, statuses);
-									}
-								}
-							}
-							// Check for restrictions
-							if ret.len() as u32 > self.max_past_logs {
-								return Err(internal_err(
-									format!("query returned more than {} results", self.max_past_logs)
-								));
-							}
-							if begin_request.elapsed() > max_duration {
-								return Err(internal_err(
-									format!("query timeout of {} seconds exceeded", max_duration.as_secs())
-								));
-							}
-							if current_number == Zero::zero() {
-								break
-							} else {
-								current_number = current_number.saturating_sub(One::one());
-							}
-						}
+						let _ = filter_range_logs(
+							self.client.as_ref(),
+							&self.overrides,
+							&mut ret,
+							self.max_past_logs,
+							&filter,
+							from_number,
+							current_number
+						)?;
 						Ok(ret)
 					},
 					_ => Err(internal_err(
