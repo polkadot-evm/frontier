@@ -6,10 +6,10 @@ use fc_rpc_core::types::{FilterPool, PendingTransactions};
 use sc_client_api::{ExecutorProvider, RemoteBackend, BlockchainEvents};
 #[cfg(feature = "manual-seal")]
 use sc_consensus_manual_seal::{self as manual_seal};
-use fc_consensus::FrontierBlockImport;
 use fc_mapping_sync::MappingSyncWorker;
 use frontier_template_runtime::{self, opaque::Block, RuntimeApi, SLOT_DURATION};
 use sc_service::{error::Error as ServiceError, Configuration, TaskManager, BasePath};
+use sc_finality_grandpa::GrandpaBlockImport;
 use sp_inherents::{InherentDataProviders, ProvideInherentData, InherentIdentifier, InherentData};
 use sc_executor::native_executor_instance;
 pub use sc_executor::NativeExecutor;
@@ -41,18 +41,14 @@ pub type ConsensusResult = (
 	sc_consensus_aura::AuraBlockImport<
 		Block,
 		FullClient,
-		FrontierBlockImport<
-			Block,
-			sc_finality_grandpa::GrandpaBlockImport<FullBackend, Block, FullClient, FullSelectChain>,
-			FullClient
-		>,
+		GrandpaBlockImport<FullBackend, Block, FullClient, FullSelectChain>,
 		AuraPair
 	>,
 	sc_finality_grandpa::LinkHalf<Block, FullClient, FullSelectChain>
 );
 
 #[cfg(feature = "manual-seal")]
-pub type ConsensusResult = (FrontierBlockImport<Block, Arc<FullClient>, FullClient>, Sealing);
+pub type ConsensusResult = (Arc<FullClient>, Sealing);
 
 /// Provide a mock duration starting at 0 in millisecond for timestamp inherent.
 /// Each call will increment timestamp by slot_duration making Aura think time has passed.
@@ -156,23 +152,18 @@ pub fn new_partial(config: &Configuration, #[allow(unused_variables)] cli: &Cli)
 			.map_err(Into::into)
 			.map_err(sp_consensus::error::Error::InherentData)?;
 
-		let frontier_block_import = FrontierBlockImport::new(
-			client.clone(),
-			client.clone(),
-			frontier_backend.clone(),
-		);
-
 		let import_queue = sc_consensus_manual_seal::import_queue(
-			Box::new(frontier_block_import.clone()),
+			Box::new(client.clone()),
 			&task_manager.spawn_essential_handle(),
 			config.prometheus_registry(),
 		);
 
 		Ok(sc_service::PartialComponents {
-			client, backend, task_manager, import_queue, keystore_container,
+			client: client.clone(),
+			backend, task_manager, import_queue, keystore_container,
 			select_chain, transaction_pool, inherent_data_providers,
 			other: (
-				(frontier_block_import, sealing),
+				(client, sealing),
 				pending_transactions,
 				filter_pool,
 				frontier_backend,
@@ -189,14 +180,8 @@ pub fn new_partial(config: &Configuration, #[allow(unused_variables)] cli: &Cli)
 			telemetry.as_ref().map(|x| x.handle()),
 		)?;
 
-		let frontier_block_import = FrontierBlockImport::new(
-			grandpa_block_import.clone(),
-			client.clone(),
-			frontier_backend.clone(),
-		);
-
 		let aura_block_import = sc_consensus_aura::AuraBlockImport::<_, _, _, AuraPair>::new(
-			frontier_block_import, client.clone(),
+			grandpa_block_import.clone(), client.clone(),
 		);
 
 		let import_queue = sc_consensus_aura::import_queue::<AuraPair, _, _, _, _, _>(
