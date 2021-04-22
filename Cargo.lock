@@ -1304,7 +1304,7 @@ dependencies = [
 
 [[package]]
 name = "fc-consensus"
-version = "1.0.0"
+version = "1.0.1-dev"
 dependencies = [
  "derive_more",
  "fc-db",

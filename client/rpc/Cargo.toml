@@ -14,7 +14,7 @@ jsonrpc-pubsub = "15.0.0"
 log = "0.4.8"
 ethereum-types = "0.11.0"
 evm = "0.25.0"
-fc-consensus = { version = "1.0.0", path = "../consensus" }
+fc-consensus = { version = "1.0.1-dev", path = "../consensus" }
 fc-db = { version = "1.0.0", path = "../db" }
 fc-rpc-core = { version = "1.0.0", path = "../rpc-core" }
 fp-consensus = { version = "1.0.0", path = "../../primitives/consensus" }
