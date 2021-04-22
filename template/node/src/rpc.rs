@@ -54,6 +54,8 @@ pub struct FullDeps<C, P> {
 	pub filter_pool: Option<FilterPool>,
 	/// Backend.
 	pub backend: Arc<fc_db::Backend<Block>>,
+	/// Maximum number of logs in a query.
+	pub max_past_logs: u32,
 	/// Manual seal command sink
 	pub command_sink: Option<futures::channel::mpsc::Sender<sc_consensus_manual_seal::rpc::EngineCommand<Hash>>>,
 }
@@ -94,6 +96,7 @@ pub fn create_full<C, P, BE>(
 		filter_pool,
 		command_sink,
 		backend,
+		max_past_logs,
 		enable_dev_signer,
 	} = deps;
 
@@ -130,6 +133,7 @@ pub fn create_full<C, P, BE>(
 			overrides.clone(),
 			backend,
 			is_authority,
+			max_past_logs,
 		))
 	);
 
@@ -140,6 +144,7 @@ pub fn create_full<C, P, BE>(
 				filter_pool.clone(),
 				500 as usize, // max stored filters
 				overrides.clone(),
+				max_past_logs,
 			))
 		);
 	}

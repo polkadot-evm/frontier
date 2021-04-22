@@ -16,7 +16,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 use std::{sync::{Arc, Mutex}, collections::BTreeMap};
-use ethereum_types::{H160, H256, U256};
+use core::convert::AsRef;
+use ethereum_types::{H160, H256, U256, Bloom, BloomInput};
 use serde::de::{Error, DeserializeOwned};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::{Value, from_value};
@@ -108,6 +109,68 @@ impl FilteredParams {
 		}
 		Self::default()
 	}
+	/// Checks the possible existance of an address or topic(s) in a Bloom.
+	/// Wildcards (VariadicValue::Null) are matched as positive.
+	pub fn in_bloom(bloom: Bloom, filter: &Filter) -> bool {
+		fn ret<T: AsRef<[u8]>>(inputs: Vec<Option<T>>, bloom: Bloom) -> bool {
+			let mut ret = false;
+			if inputs.len() == 0 {
+				ret = true;
+			} else {
+				for inner in inputs {
+					// Wildcard (None) or matching topic.
+					if inner.is_none() || bloom.contains_input(
+						BloomInput::Raw(inner.unwrap().as_ref())
+					) {
+						ret = true;
+						break;
+					}
+				}
+			}
+			ret
+		}
+		// Address
+		let address_in_bloom = if let Some(address) = &filter.address {
+			let mut inner_addresses: Vec<Option<H160>> = Vec::new();
+			match address {
+				VariadicValue::Single(address) => {
+					inner_addresses.push(Some(*address))
+				},
+				VariadicValue::Multiple(ref addresses) => {
+					for address in addresses.into_iter() {
+						inner_addresses.push(Some(*address))
+					}
+				},
+				_ => inner_addresses.push(None)
+			}
+			ret(inner_addresses, bloom)
+
+		} else {
+			true
+		};
+		// Topics
+		let topic_in_bloom = if let Some(topics) = &filter.topics {
+			let mut inner_topics: Vec<Option<H256>> = Vec::new();
+			for flat in FilteredParams::flatten(topics) {
+				match flat {
+					VariadicValue::Single(topic) => {
+						inner_topics.push(topic);
+					},
+					VariadicValue::Multiple(topics) => {
+						for topic in topics {
+							inner_topics.push(topic);
+						}
+					},
+					_ => inner_topics.push(None)
+				}
+			}
+			ret(inner_topics, bloom)
+		} else {
+			true
+		};
+		address_in_bloom && topic_in_bloom
+	}
+
 	/// Cartesian product for VariadicValue conditional indexed parameters.
 	/// Executed once on struct instance.
 	/// i.e. `[A,[B,C]]` to `[[A,B],[A,C]]`.
