@@ -50,7 +50,6 @@ sc-basic-authorship = { git = "https://github.com/paritytech/substrate.git", bra
 sp-block-builder = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sc-telemetry = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 
-fc-consensus = { path = "../../client/consensus" }
 fp-consensus = { path = "../../primitives/consensus" }
 frontier-template-runtime = { path = "../runtime", default-features = false, features = ["std"] }
 fc-rpc = { path = "../../client/rpc" }
