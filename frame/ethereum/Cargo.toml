@@ -14,11 +14,11 @@ frame-support = { version = "3.0.0", default-features = false, git = "https://gi
 frame-system = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 pallet-balances = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 pallet-timestamp = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-pallet-evm = { version = "3.0.0", default-features = false, path = "../evm" }
+pallet-evm = { version = "3.0.1-dev", default-features = false, path = "../evm" }
 sp-runtime = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sp-std = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sp-io = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-fp-evm = { version = "1.0.0", default-features = false, path = "../../primitives/evm" }
+fp-evm = { version = "1.0.1-dev", default-features = false, path = "../../primitives/evm" }
 evm = { version = "0.25.0", features = ["with-codec"], default-features = false }
 ethereum = { version = "0.7.1", default-features = false, features = ["with-codec"] }
 ethereum-types = { version = "0.11", default-features = false }
@@ -26,8 +26,8 @@ rlp = { version = "0.5", default-features = false }
 sha3 = { version = "0.8", default-features = false }
 libsecp256k1 = { version = "0.3", default-features = false }
 fp-consensus = { version = "1.0.0", path = "../../primitives/consensus", default-features = false }
-fp-rpc = { version = "1.0.0", path = "../../primitives/rpc", default-features = false }
-fp-storage = { version = "1.0.0", path = "../../primitives/storage", default-features = false}
+fp-rpc = { version = "1.0.1-dev", path = "../../primitives/rpc", default-features = false }
+fp-storage = { version = "1.0.1-dev", path = "../../primitives/storage", default-features = false}
 
 [dev-dependencies]
 sp-core = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }

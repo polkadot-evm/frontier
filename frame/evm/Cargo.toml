@@ -1,11 +1,11 @@
 [package]
 name = "pallet-evm"
-version = "3.0.0"
+version = "3.0.1-dev"
 authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2018"
 license = "Apache-2.0"
 homepage = "https://substrate.dev"
-repository = "https://github.com/paritytech/substrate/"
+repository = "https://github.com/paritytech/frontier/"
 description = "FRAME EVM contracts pallet"
 readme = "README.md"
 
@@ -23,7 +23,7 @@ sp-core = { version = "3.0.0", default-features = false, git = "https://github.c
 sp-runtime = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sp-std = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sp-io = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-fp-evm = { version = "1.0.0", default-features = false, path = "../../primitives/evm" }
+fp-evm = { version = "1.0.1-dev", default-features = false, path = "../../primitives/evm" }
 primitive-types = { version = "0.9.0", default-features = false, features = ["rlp", "byteorder"] }
 rlp = { version = "0.5", default-features = false }
 evm = { version = "0.25.0", default-features = false, features = ["with-codec"] }
