@@ -19,7 +19,7 @@ fc-db = { version = "1.0.0", path = "../db" }
 fc-rpc-core = { version = "1.0.0", path = "../rpc-core" }
 fp-consensus = { version = "1.0.0", path = "../../primitives/consensus" }
 fp-rpc = { version = "1.0.0", path = "../../primitives/rpc" }
-fp-storage = { version = "1.0.0", path = "../../primitives/storage"}
+fp-storage = { version = "1.0.1-dev", path = "../../primitives/storage"}
 sp-io = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sp-runtime = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sp-api = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
