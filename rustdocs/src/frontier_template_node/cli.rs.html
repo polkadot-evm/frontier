@@ -72,6 +72,10 @@
 <span id="69">69</span>
 <span id="70">70</span>
 <span id="71">71</span>
+<span id="72">72</span>
+<span id="73">73</span>
+<span id="74">74</span>
+<span id="75">75</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="ident">structopt</span>::<span class="ident">StructOpt</span>;
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;manual-seal&quot;</span>)]</span>
@@ -110,6 +114,10 @@
 
 	<span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">long</span> <span class="op">=</span> <span class="string">&quot;enable-dev-signer&quot;</span>)]</span>
 	<span class="kw">pub</span> <span class="ident">enable_dev_signer</span>: <span class="ident">bool</span>,
+
+	<span class="doccomment">/// Maximum number of logs in a query.</span>
+	<span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">long</span>, <span class="ident">default_value</span> <span class="op">=</span> <span class="string">&quot;10000&quot;</span>)]</span>
+	<span class="kw">pub</span> <span class="ident">max_past_logs</span>: <span class="ident">u32</span>,
 }
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">StructOpt</span>)]</span>
