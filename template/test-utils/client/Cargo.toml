@@ -9,11 +9,11 @@ publish = false
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "2.0.0" }
-sp-runtime = { git = "https://github.com/paritytech/substrate.git", rev = "22f09c602704aeee2b59b14f427f73f6cb8b5e2f" }
-sp-api = { git = "https://github.com/paritytech/substrate.git", rev = "22f09c602704aeee2b59b14f427f73f6cb8b5e2f" }
-sc-executor = { git = "https://github.com/paritytech/substrate.git", rev = "22f09c602704aeee2b59b14f427f73f6cb8b5e2f" }
-sc-light = { git = "https://github.com/paritytech/substrate.git", rev = "22f09c602704aeee2b59b14f427f73f6cb8b5e2f" }
-sc-consensus = { git = "https://github.com/paritytech/substrate.git", rev = "22f09c602704aeee2b59b14f427f73f6cb8b5e2f" }
-sc-client-api = { git = "https://github.com/paritytech/substrate.git", rev = "22f09c602704aeee2b59b14f427f73f6cb8b5e2f" }
-substrate-test-client = { git = "https://github.com/paritytech/substrate.git", rev = "22f09c602704aeee2b59b14f427f73f6cb8b5e2f" }
+sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-api = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sc-executor = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sc-light = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sc-consensus = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sc-client-api = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
+substrate-test-client = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
 frontier-template-runtime = { path = "../../runtime" }

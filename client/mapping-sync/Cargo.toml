@@ -7,10 +7,10 @@ description = "Mapping sync logic for Frontier."
 license = "GPL-3.0-or-later WITH Classpath-exception-2.0"
 
 [dependencies]
-sp-runtime = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", rev = "22f09c602704aeee2b59b14f427f73f6cb8b5e2f" }
-sp-blockchain = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", rev = "22f09c602704aeee2b59b14f427f73f6cb8b5e2f" }
-sc-client-api = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", rev = "22f09c602704aeee2b59b14f427f73f6cb8b5e2f" }
-sp-api = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", rev = "22f09c602704aeee2b59b14f427f73f6cb8b5e2f" }
+sp-runtime = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-blockchain = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sc-client-api = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-api = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 fp-consensus = { version = "1.0.0", path = "../../primitives/consensus" }
 fc-consensus = { version = "1.0.0", path = "../consensus" }
 fc-db = { version = "1.0.0", path = "../db" }

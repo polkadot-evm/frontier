@@ -9,9 +9,9 @@ repository = "https://github.com/paritytech/substrate/"
 description = "DISPATCH precompiles for EVM pallet."
 
 [dependencies]
-sp-core = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", rev = "22f09c602704aeee2b59b14f427f73f6cb8b5e2f" }
-sp-io = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", rev = "22f09c602704aeee2b59b14f427f73f6cb8b5e2f" }
-frame-support = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", rev = "22f09c602704aeee2b59b14f427f73f6cb8b5e2f" }
+sp-core = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-io = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
+frame-support = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 pallet-evm = { version = "3.0.0", default-features = false, path = "../.." }
 fp-evm = { version = "1.0.0", default-features = false, path = "../../../../primitives/evm" }
 evm = { version = "0.25.0", default-features = false, features = ["with-codec"] }
