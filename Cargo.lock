@@ -1335,7 +1335,7 @@ dependencies = [
 
 [[package]]
 name = "fc-consensus"
-version = "1.0.0"
+version = "1.0.1-dev"
 dependencies = [
  "async-trait",
  "derive_more",
@@ -1373,7 +1373,7 @@ dependencies = [
 
 [[package]]
 name = "fc-mapping-sync"
-version = "1.0.0"
+version = "1.1.0-dev"
 dependencies = [
  "fc-consensus",
  "fc-db",
@@ -1430,7 +1430,7 @@ dependencies = [
 
 [[package]]
 name = "fc-rpc-core"
-version = "1.0.0"
+version = "1.1.0-dev"
 dependencies = [
  "ethereum-types",
  "jsonrpc-core 15.1.0",
@@ -1536,7 +1536,7 @@ dependencies = [
 
 [[package]]
 name = "fp-evm"
-version = "1.0.0"
+version = "1.0.1-dev"
 dependencies = [
  "evm",
  "impl-trait-for-tuples 0.1.3",
@@ -1548,7 +1548,7 @@ dependencies = [
 
 [[package]]
 name = "fp-rpc"
-version = "1.0.0"
+version = "1.0.1-dev"
 dependencies = [
  "ethereum",
  "ethereum-types",
@@ -1563,7 +1563,7 @@ dependencies = [
 
 [[package]]
 name = "fp-storage"
-version = "1.0.0"
+version = "1.0.1-dev"
 dependencies = [
  "ethereum",
  "ethereum-types",
@@ -1768,6 +1768,7 @@ dependencies = [
  "pallet-balances",
  "pallet-ethereum",
  "pallet-evm",
+ "pallet-evm-precompile-modexp",
  "pallet-evm-precompile-sha3fips",
  "pallet-evm-precompile-simple",
  "pallet-grandpa",
@@ -4027,7 +4028,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm"
-version = "3.0.0"
+version = "3.0.1-dev"
 dependencies = [
  "evm",
  "evm-gasometer",
@@ -4051,20 +4052,22 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm-precompile-blake2"
-version = "1.0.0"
+version = "1.1.0-dev"
 dependencies = [
  "evm",
  "fp-evm",
+ "pallet-evm-test-vector-support",
  "sp-core",
  "sp-io",
 ]
 
 [[package]]
 name = "pallet-evm-precompile-bn128"
-version = "1.0.0"
+version = "2.0.0-dev"
 dependencies = [
  "evm",
  "fp-evm",
+ "pallet-evm-test-vector-support",
  "sp-core",
  "sp-io",
  "substrate-bn",
@@ -4072,7 +4075,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm-precompile-dispatch"
-version = "1.0.0"
+version = "1.0.1-dev"
 dependencies = [
  "evm",
  "fp-evm",
@@ -4085,7 +4088,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm-precompile-ed25519"
-version = "1.0.0"
+version = "1.0.1-dev"
 dependencies = [
  "ed25519-dalek",
  "evm",
@@ -4096,19 +4099,20 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm-precompile-modexp"
-version = "1.0.0"
+version = "1.1.0-dev"
 dependencies = [
  "evm",
  "fp-evm",
  "hex",
  "num",
+ "pallet-evm-test-vector-support",
  "sp-core",
  "sp-io",
 ]
 
 [[package]]
 name = "pallet-evm-precompile-sha3fips"
-version = "1.0.0"
+version = "1.0.1-dev"
 dependencies = [
  "evm",
  "fp-evm",
@@ -4119,13 +4123,25 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm-precompile-simple"
-version = "1.0.0"
+version = "1.0.1-dev"
 dependencies = [
  "evm",
  "fp-evm",
+ "pallet-evm-test-vector-support",
  "ripemd160",
  "sp-core",
  "sp-io",
+]
+
+[[package]]
+name = "pallet-evm-test-vector-support"
+version = "1.0.0-dev"
+dependencies = [
+ "evm",
+ "fp-evm",
+ "hex",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -4865,15 +4881,6 @@ dependencies = [
  "rand_core 0.3.1",
  "rdrand",
  "winapi 0.3.9",
-]
-
-[[package]]
-name = "rand"
-version = "0.5.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c618c47cd3ebd209790115ab837de41425723956ad3ce2e6a7f09890947cacb9"
-dependencies = [
- "rand_core 0.3.1",
 ]
 
 [[package]]
@@ -7268,14 +7275,14 @@ dependencies = [
 
 [[package]]
 name = "substrate-bn"
-version = "0.5.0"
+version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "acb439bec2318e98b83f1e12ddaaf2082d6fc29becc3117714ccb575fa343bc1"
+checksum = "72b5bbfa79abbae15dd642ea8176a21a635ff3c00059961d1ea27ad04e5b441c"
 dependencies = [
  "byteorder",
  "crunchy",
  "lazy_static",
- "rand 0.5.6",
+ "rand 0.8.3",
  "rustc-hex",
 ]
 

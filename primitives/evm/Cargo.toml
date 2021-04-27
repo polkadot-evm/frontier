@@ -1,11 +1,11 @@
 [package]
 name = "fp-evm"
-version = "1.0.0"
+version = "1.0.1-dev"
 license = "Apache-2.0"
 authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2018"
 homepage = "https://substrate.dev"
-repository = "https://github.com/paritytech/substrate/"
+repository = "https://github.com/paritytech/frontier/"
 description = "Primitive EVM abstractions for Substrate."
 documentation = "https://docs.rs/sp-evm"
 

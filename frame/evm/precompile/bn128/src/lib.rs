@@ -21,8 +21,8 @@ extern crate alloc;
 
 use alloc::vec::Vec;
 use sp_core::U256;
-use fp_evm::LinearCostPrecompile;
-use evm::{ExitSucceed, ExitError};
+use fp_evm::Precompile;
+use evm::{ExitSucceed, ExitError, Context};
 
 fn read_fr(input: &[u8], start_inx: usize) -> Result<bn::Fr, ExitError> {
 	bn::Fr::from_slice(&input[start_inx..(start_inx + 32)]).map_err(|_| ExitError::Other("Invalid field element".into()))
@@ -45,14 +45,17 @@ fn read_point(input: &[u8], start_inx: usize) -> Result<bn::G1, ExitError> {
 /// The Bn128Add builtin
 pub struct Bn128Add;
 
-impl LinearCostPrecompile for Bn128Add {
-	const BASE: u64 = 15;
-	const WORD: u64 = 3;
+impl Bn128Add {
+	const GAS_COST: u64 = 150; // https://eips.ethereum.org/EIPS/eip-1108
+}
+
+impl Precompile for Bn128Add {
 
 	fn execute(
 		input: &[u8],
-		_: u64,
-	) -> core::result::Result<(ExitSucceed, Vec<u8>), ExitError> {
+		_target_gas: Option<u64>,
+		_context: &Context,
+	) -> core::result::Result<(ExitSucceed, Vec<u8>, u64), ExitError> {
 		use bn::AffineG1;
 
 		let p1 = read_point(input, 0)?;
@@ -65,21 +68,24 @@ impl LinearCostPrecompile for Bn128Add {
 			sum.y().to_big_endian(&mut buf[32..64]).map_err(|_| ExitError::Other("Cannot fail since 32..64 is 32-byte length".into()))?;
 		}
 
-		Ok((ExitSucceed::Returned, buf.to_vec()))
+		Ok((ExitSucceed::Returned, buf.to_vec(), Bn128Add::GAS_COST))
 	}
 }
 
 /// The Bn128Mul builtin
 pub struct Bn128Mul;
 
-impl LinearCostPrecompile for Bn128Mul {
-	const BASE: u64 = 15;
-	const WORD: u64 = 3;
+impl Bn128Mul {
+	const GAS_COST: u64 = 6_000; // https://eips.ethereum.org/EIPS/eip-1108
+}
+
+impl Precompile for Bn128Mul {
 
 	fn execute(
 		input: &[u8],
-		_: u64,
-	) -> core::result::Result<(ExitSucceed, Vec<u8>), ExitError> {
+		_target_gas: Option<u64>,
+		_context: &Context,
+	) -> core::result::Result<(ExitSucceed, Vec<u8>, u64), ExitError> {
 		use bn::AffineG1;
 
 		let p = read_point(input, 0)?;
@@ -92,28 +98,42 @@ impl LinearCostPrecompile for Bn128Mul {
 			sum.y().to_big_endian(&mut buf[32..64]).map_err(|_| ExitError::Other("Cannot fail since 32..64 is 32-byte length".into()))?;
 		}
 
-		Ok((ExitSucceed::Returned, buf.to_vec()))
+		Ok((ExitSucceed::Returned, buf.to_vec(), Bn128Mul::GAS_COST))
 	}
 }
 
 /// The Bn128Pairing builtin
 pub struct Bn128Pairing;
 
-impl LinearCostPrecompile for Bn128Pairing {
-	const BASE: u64 = 15;
-	const WORD: u64 = 3;
+impl Bn128Pairing {
+	// https://eips.ethereum.org/EIPS/eip-1108
+	const BASE_GAS_COST: u64 = 45_000;
+	const GAS_COST_PER_PAIRING: u64 = 34_000;
+}
+
+impl Precompile for Bn128Pairing {
 
 	fn execute(
 		input: &[u8],
-		_: u64,
-	) -> core::result::Result<(ExitSucceed, Vec<u8>), ExitError> {
+		target_gas: Option<u64>,
+		_context: &Context,
+	) -> core::result::Result<(ExitSucceed, Vec<u8>, u64), ExitError> {
 		use bn::{AffineG1, AffineG2, Fq, Fq2, pairing_batch, G1, G2, Gt, Group};
 
-		let ret_val = if input.is_empty() {
-			U256::one()
+		let (ret_val, gas_cost) = if input.is_empty() {
+			(U256::one(), Bn128Pairing::BASE_GAS_COST)
 		} else {
 			// (a, b_a, b_b - each 64-byte affine coordinates)
 			let elements = input.len() / 192;
+
+			let gas_cost: u64 =
+				Bn128Pairing::BASE_GAS_COST + (elements as u64 * Bn128Pairing::GAS_COST_PER_PAIRING);
+			if let Some(gas_left) = target_gas {
+				if gas_left < gas_cost {
+					return Err(ExitError::OutOfGas);
+				}
+			}
+
 			let mut vals = Vec::new();
 			for idx in 0..elements {
 				let a_x = Fq::from_slice(&input[idx*192..idx*192+32])
@@ -152,15 +172,39 @@ impl LinearCostPrecompile for Bn128Pairing {
 			let mul = pairing_batch(&vals);
 
 			if mul == Gt::one() {
-				U256::one()
+				(U256::one(), gas_cost)
 			} else {
-				U256::zero()
+				(U256::zero(), gas_cost)
 			}
 		};
 
 		let mut buf = [0u8; 32];
 		ret_val.to_big_endian(&mut buf);
 
-		Ok((ExitSucceed::Returned, buf.to_vec()))
+		Ok((ExitSucceed::Returned, buf.to_vec(), gas_cost))
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use pallet_evm_test_vector_support::test_precompile_test_vectors;
+
+	#[test]
+	fn process_consensus_tests_for_add() -> std::result::Result<(), String> {
+		test_precompile_test_vectors::<Bn128Add>("../testdata/common_bnadd.json")?;
+		Ok(())
+	}
+
+	#[test]
+	fn process_consensus_tests_for_mul() -> std::result::Result<(), String> {
+		test_precompile_test_vectors::<Bn128Mul>("../testdata/common_bnmul.json")?;
+		Ok(())
+	}
+
+	#[test]
+	fn process_consensus_tests_for_pair() -> std::result::Result<(), String> {
+		test_precompile_test_vectors::<Bn128Pairing>("../testdata/common_bnpair.json")?;
+		Ok(())
 	}
 }
