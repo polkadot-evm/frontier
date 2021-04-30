@@ -236,6 +236,15 @@ fn filter_range_logs<B: BlockT, C, BE>(
 
 	let mut current_number = to;
 
+	// Pre-calculate BloomInput for reuse.
+	let topics_input = if let Some(_) = &filter.topics {
+		let filtered_params = FilteredParams::new(Some(filter.clone()));
+		Some(filtered_params.flat_topics)
+	} else {
+		None
+	};
+	let bloom_filter = FilteredParams::bloom_filter(&filter.address, &topics_input);
+
 	while current_number >= from {
 		let id = BlockId::Number(current_number);
 
@@ -245,7 +254,7 @@ fn filter_range_logs<B: BlockT, C, BE>(
 		let block = handler.current_block(&id);
 
 		if let Some(block) = block {
-			if FilteredParams::in_bloom(block.header.logs_bloom, filter) {
+			if FilteredParams::in_bloom(block.header.logs_bloom, &bloom_filter) {
 				let statuses = handler.current_transaction_statuses(&id);
 				if let Some(statuses) = statuses {
 					filter_block_logs(ret, filter, block, statuses);
