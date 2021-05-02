@@ -1,6 +1,6 @@
 [package]
 name = "fc-consensus"
-version = "1.0.0"
+version = "1.0.1-dev"
 authors = ["Parity Technologies <admin@parity.io>"]
 description = "Frontier consensus for substrate"
 edition = "2018"
@@ -9,21 +9,21 @@ repository = "https://github.com/paritytech/frontier/"
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "2.0.0", features = ["derive"] }
-sp-core = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git" }
-sp-blockchain = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git" }
-sp-runtime = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git" }
-sp-api = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git" }
-sc-client-api = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git" }
-sp-block-builder = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git" }
-sp-inherents = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git" }
+sp-core = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-blockchain = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-runtime = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-api = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sc-client-api = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-block-builder = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-inherents = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 fp-consensus = { version = "1.0.0", path = "../../primitives/consensus" }
-fp-rpc = { version = "1.0.0", path = "../../primitives/rpc" }
+fp-rpc = { version = "1.0.1-dev", path = "../../primitives/rpc" }
 fc-db = { version = "1.0.0", path = "../db" }
-sp-consensus = { version = "0.9.0", git = "https://github.com/paritytech/substrate.git" }
+sp-consensus = { version = "0.9.0", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 log = "0.4.8"
 futures = { version = "0.3.1", features = ["compat"] }
 futures-util = "0.3.14"
-sp-timestamp = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git" }
+sp-timestamp = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 derive_more = "0.99.2"
-prometheus-endpoint = { version = "0.9.0", package = "substrate-prometheus-endpoint", git = "https://github.com/paritytech/substrate.git"}
+prometheus-endpoint = { version = "0.9.0", package = "substrate-prometheus-endpoint", git = "https://github.com/paritytech/substrate.git", branch = "master"}
 async-trait = "0.1.42"

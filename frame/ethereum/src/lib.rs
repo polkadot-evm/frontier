@@ -50,17 +50,17 @@ pub use ethereum::{Transaction, Log, Block, Receipt, TransactionAction, Transact
 
 #[derive(Clone, Debug, Encode, Decode)]
 pub struct ETHBlock {
-	inner: Block
+	pub inner: Block
 }
 
 #[derive(Clone, Debug, Encode, Decode)]
 pub struct ETHReceipts {
-	inner: Vec<Receipt>,
+	pub inner: Vec<Receipt>,
 }
 
 #[derive(Clone, Debug, Encode, Decode)]
 pub struct ETHTxStatuses {
-	inner: Vec<TransactionStatus>,
+	pub inner: Vec<TransactionStatus>,
 }
 
 impl Into<Block> for ETHBlock {
