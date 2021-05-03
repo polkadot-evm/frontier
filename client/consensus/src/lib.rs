@@ -103,6 +103,7 @@ impl<B, I, C> FrontierBlockImport<B, I, C> where
 	}
 }
 
+#[async_trait::async_trait]
 impl<B, I, C> BlockImport<B> for FrontierBlockImport<B, I, C> where
 	B: BlockT,
 	I: BlockImport<B, Transaction = sp_api::TransactionFor<C, B>> + Send + Sync,
@@ -114,14 +115,14 @@ impl<B, I, C> BlockImport<B> for FrontierBlockImport<B, I, C> where
 	type Error = ConsensusError;
 	type Transaction = sp_api::TransactionFor<C, B>;
 
-	fn check_block(
+	async fn check_block(
 		&mut self,
 		block: BlockCheckParams<B>,
 	) -> Result<ImportResult, Self::Error> {
-		self.inner.check_block(block).map_err(Into::into)
+		self.inner.check_block(block).await.map_err(Into::into)
 	}
 
-	fn import_block(
+	async fn import_block(
 		&mut self,
 		block: BlockImportParams<B, Self::Transaction>,
 		new_cache: HashMap<CacheKeyId, Vec<u8>>,
@@ -131,6 +132,6 @@ impl<B, I, C> BlockImport<B> for FrontierBlockImport<B, I, C> where
 		// worker.
 		ensure_log(&block.header.digest()).map_err(|e| Error::from(e))?;
 
-		self.inner.import_block(block, new_cache).map_err(Into::into)
+		self.inner.import_block(block, new_cache).await.map_err(Into::into)
 	}
 }
