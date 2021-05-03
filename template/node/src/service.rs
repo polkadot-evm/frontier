@@ -1,5 +1,7 @@
 //! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 
+use sp_inherents::InherentIdentifier;
+use sp_inherents::InherentData;
 use std::{sync::{Arc, Mutex}, cell::RefCell, time::Duration, collections::{HashMap, BTreeMap}};
 use fc_rpc::EthTask;
 use fc_rpc_core::types::{FilterPool, PendingTransactions};
@@ -10,7 +12,6 @@ use fc_consensus::FrontierBlockImport;
 use fc_mapping_sync::MappingSyncWorker;
 use frontier_template_runtime::{self, opaque::Block, RuntimeApi, SLOT_DURATION};
 use sc_service::{error::Error as ServiceError, Configuration, TaskManager, BasePath};
-use sp_inherents::{InherentDataProviders, ProvideInherentData, InherentIdentifier, InherentData};
 use sc_executor::native_executor_instance;
 pub use sc_executor::NativeExecutor;
 use sc_consensus_aura::{ImportQueueParams, StartAuraParams, SlotProportion};
@@ -20,6 +21,8 @@ use sp_timestamp::InherentError;
 use sc_telemetry::{Telemetry, TelemetryWorker};
 use sc_cli::SubstrateCli;
 use futures::StreamExt;
+use sc_consensus_aura::slot_duration;
+use sc_finality_grandpa::block_import;
 
 use crate::cli::Cli;
 #[cfg(feature = "manual-seal")]
@@ -106,8 +109,6 @@ pub fn new_partial(config: &Configuration, #[allow(unused_variables)] cli: &Cli)
 		sc_transaction_pool::FullPool<Block, FullClient>,
 		(ConsensusResult, PendingTransactions, Option<FilterPool>, Arc<fc_db::Backend<Block>>, Option<Telemetry>),
 >, ServiceError> {
-	let inherent_data_providers = sp_inherents::InherentDataProviders::new();
-
 	let telemetry = config.telemetry_endpoints.clone()
 		.filter(|x| !x.is_empty())
 		.map(|endpoints| -> Result<_, sc_telemetry::Error> {
@@ -147,6 +148,8 @@ pub fn new_partial(config: &Configuration, #[allow(unused_variables)] cli: &Cli)
 		= Some(Arc::new(Mutex::new(BTreeMap::new())));
 
 	let frontier_backend = open_frontier_backend(config)?;
+
+	let inherent_data_providers = sp_inherents::InherentDataProviders::new();
 
 	#[cfg(feature = "manual-seal")] {
 		let sealing = cli.run.sealing;
@@ -199,19 +202,28 @@ pub fn new_partial(config: &Configuration, #[allow(unused_variables)] cli: &Cli)
 			frontier_block_import, client.clone(),
 		);
 
-		let import_queue = sc_consensus_aura::import_queue::<AuraPair, _, _, _, _, _>(
+		let import_queue = sc_consensus_aura::import_queue::<AuraPair, _, _, _, _, _, _>(
 			ImportQueueParams {
-				slot_duration: sc_consensus_aura::slot_duration(&*client)?,
 				block_import: aura_block_import.clone(),
 				justification_import: Some(Box::new(grandpa_block_import.clone())),
 				client: client.clone(),
-				inherent_data_providers: inherent_data_providers.clone(),
+				create_inherent_data_providers: move |_, ()| async move {
+					let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
+
+					let slot =
+						sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_duration(
+							*timestamp,
+							slot_duration,
+						);
+
+					Ok((timestamp, slot))
+				},
 				spawner: &task_manager.spawn_essential_handle(),
-				registry: config.prometheus_registry(),
 				can_author_with: sp_consensus::CanAuthorWithNativeVersion::new(client.executor().clone()),
+				registry: config.prometheus_registry(),
 				check_for_equivocation: Default::default(),
 				telemetry: telemetry.as_ref().map(|x| x.handle()),
-			}
+			},
 		)?;
 
 		Ok(sc_service::PartialComponents {
@@ -413,22 +425,32 @@ pub fn new_full(
 
 			let can_author_with =
 				sp_consensus::CanAuthorWithNativeVersion::new(client.executor().clone());
-			let aura = sc_consensus_aura::start_aura::<AuraPair, _, _, _, _, _, _, _, _, _>(
+			let aura = sc_consensus_aura::start_aura::<AuraPair, _, _, _, _, _, _, _, _, _, _>(
 				StartAuraParams {
-					slot_duration: sc_consensus_aura::slot_duration(&*client)?,
+					slot_duration,
 					client: client.clone(),
 					select_chain,
-					block_import: aura_block_import,
-					proposer_factory: proposer,
-					sync_oracle: network.clone(),
-					inherent_data_providers: inherent_data_providers.clone(),
+					block_import,
+					proposer_factory,
+					create_inherent_data_providers: move |_, ()| async move {
+						let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
+
+						let slot =
+							sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_duration(
+								*timestamp,
+								raw_slot_duration,
+							);
+
+						Ok((timestamp, slot))
+					},
 					force_authoring,
 					backoff_authoring_blocks,
 					keystore: keystore_container.sync_keystore(),
 					can_author_with,
+					sync_oracle: network.clone(),
 					block_proposal_slot_portion: SlotProportion::new(2f32 / 3f32),
 					telemetry: telemetry.as_ref().map(|x| x.handle()),
-				}
+				},
 			)?;
 
 			// the AURA authoring task is considered essential, i.e. if it
@@ -525,19 +547,28 @@ pub fn new_light(config: Configuration) -> Result<TaskManager, ServiceError> {
 		telemetry.as_ref().map(|x| x.handle()),
 	)?;
 
-	let import_queue = sc_consensus_aura::import_queue::<AuraPair, _, _, _, _, _>(
+	let import_queue = sc_consensus_aura::import_queue::<AuraPair, _, _, _, _, _, _>(
 		ImportQueueParams {
-			slot_duration: sc_consensus_aura::slot_duration(&*client)?,
-			block_import: grandpa_block_import.clone(),
-			justification_import: Some(Box::new(grandpa_block_import)),
+			block_import: block_import.clone(),
+			justification_import: Some(Box::new(grandpa_block_import.clone())),
 			client: client.clone(),
-			inherent_data_providers: InherentDataProviders::new(),
+			create_inherent_data_providers: move |_, ()| async move {
+				let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
+
+				let slot =
+					sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_duration(
+						*timestamp,
+						slot_duration,
+					);
+
+				Ok((timestamp, slot))
+			},
 			spawner: &task_manager.spawn_essential_handle(),
-			registry: config.prometheus_registry(),
 			can_author_with: sp_consensus::NeverCanAuthor,
+			registry: config.prometheus_registry(),
 			check_for_equivocation: Default::default(),
 			telemetry: telemetry.as_ref().map(|x| x.handle()),
-		}
+		},
 	)?;
 
 	let light_deps = crate::rpc::LightDeps {
