@@ -19,7 +19,7 @@
 use std::ops::Deref;
 use std::collections::BTreeMap;
 
-use ethereum_types::{H160, H256, U256, Bloom as H2048};
+use ethereum_types::{H64, H160, H256, U256, Bloom as H2048};
 use serde::ser::Error;
 use serde::{Serialize, Serializer};
 use crate::types::{Bytes, Transaction};
@@ -78,6 +78,8 @@ pub struct Block {
 	pub timestamp: U256,
 	/// Difficulty
 	pub difficulty: U256,
+	/// Nonce
+	pub nonce: H64,
 	/// Total difficulty
 	pub total_difficulty: U256,
 	/// Seal fields
@@ -125,6 +127,8 @@ pub struct Header {
 	pub timestamp: U256,
 	/// Difficulty
 	pub difficulty: U256,
+	/// Nonce
+	pub nonce: H64,
 	/// Seal fields
 	pub seal_fields: Vec<Bytes>,
 	/// Size in bytes

@@ -141,6 +141,7 @@ impl SubscriptionResult {
 					logs_bloom: block.header.logs_bloom,
 					timestamp: U256::from(block.header.timestamp),
 					difficulty: block.header.difficulty,
+					nonce: block.header.nonce,
 					seal_fields:  vec![
 						Bytes(
 							block.header.mix_hash.as_bytes().to_vec()

@@ -18,6 +18,7 @@ npm install
 ## Run the tests
 
 ```
+npm run build
 npm run test
 ```
 

@@ -123,6 +123,7 @@ fn rich_block_build(
 			logs_bloom: Some(block.header.logs_bloom),
 			timestamp: U256::from(block.header.timestamp / 1000),
 			difficulty: block.header.difficulty,
+			nonce: block.header.nonce,
 			total_difficulty: U256::zero(),
 			seal_fields: vec![
 				Bytes(block.header.mix_hash.as_bytes().to_vec()),

@@ -20,6 +20,7 @@ describeWithFrontier("Frontier RPC (Block)", (context) => {
 		expect(block).to.include({
 			author: "0x0000000000000000000000000000000000000000",
 			difficulty: "0",
+			nonce: "0x0000000000000000",
 			extraData: "0x",
 			gasLimit: 4294967295,
 			gasUsed: 0,
@@ -75,6 +76,7 @@ describeWithFrontier("Frontier RPC (Block)", (context) => {
 		expect(block).to.include({
 			author: "0x0000000000000000000000000000000000000000",
 			difficulty: "0",
+			nonce: "0x0000000000000000",
 			extraData: "0x",
 			gasLimit: 4294967295,
 			gasUsed: 0,
@@ -104,6 +106,7 @@ describeWithFrontier("Frontier RPC (Block)", (context) => {
 		expect(block).to.include({
 			author: "0x0000000000000000000000000000000000000000",
 			difficulty: "0",
+			nonce: "0x0000000000000000",
 			extraData: "0x",
 			gasLimit: 4294967295,
 			gasUsed: 0,
