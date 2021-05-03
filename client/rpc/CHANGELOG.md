@@ -2,4 +2,4 @@
 
 ## Unreleased
 
-- `EthPubSubApi::new` takes an additional `overrides` parameter.
+* `EthPubSubApi::new` takes an additional `overrides` parameter.

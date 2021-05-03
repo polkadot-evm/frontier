@@ -193,7 +193,7 @@ impl SubscriptionResult {
 						block_hash: block_hash,
 						block_number: Some(block.header.number),
 						transaction_hash: transaction_hash,
-						transaction_index: Some(U256::from(log_index)),
+						transaction_index: Some(U256::from(receipt_index)),
 						log_index: Some(U256::from(log_index)),
 						transaction_log_index: Some(U256::from(
 							transaction_log_index
