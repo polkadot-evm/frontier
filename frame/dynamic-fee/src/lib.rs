@@ -22,9 +22,7 @@ use codec::{Encode, Decode};
 use sp_std::{result, cmp::{min, max}};
 use sp_runtime::RuntimeDebug;
 use sp_core::U256;
-use sp_inherents::{InherentIdentifier, InherentData, ProvideInherent, IsFatalError};
-#[cfg(feature = "std")]
-use sp_inherents::ProvideInherentData;
+use sp_inherents::{InherentIdentifier, InherentData, IsFatalError};
 use frame_support::{traits::Get};
 
 use frame_system::ensure_none;
@@ -93,6 +91,27 @@ pub mod pallet {
 			Ok(().into())
 		}
 	}
+
+	#[pallet::inherent]
+	impl<T: Config> ProvideInherent for Pallet<T> {
+		type Call = Call<T>;
+		type Error = InherentError;
+		const INHERENT_IDENTIFIER: InherentIdentifier = INHERENT_IDENTIFIER;
+		
+		fn create_inherent(data: &InherentData) -> Option<Self::Call> {
+			let target = data.get_data::<InherentType>(&INHERENT_IDENTIFIER).ok()??;
+
+			Some(Call::note_min_gas_price_target(target))
+		}
+
+		fn check_inherent(_call: &Self::Call, _data: &InherentData) -> result::Result<(), Self::Error> {
+			Ok(())
+		}
+
+		fn is_inherent(call: &Self::Call) -> bool {
+			matches!(call, Call::note_min_gas_price_target(_))
+		}
+	}
 }
 
 #[derive(Encode, Decode, RuntimeDebug)]
@@ -105,46 +124,5 @@ impl IsFatalError for InherentError {
 }
 
 pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"dynfee0_";
-
 pub type InherentType = U256;
 
-#[cfg(feature = "std")]
-pub struct InherentDataProvider(pub InherentType);
-
-#[cfg(feature = "std")]
-impl ProvideInherentData for InherentDataProvider {
-	fn inherent_identifier(&self) -> &'static InherentIdentifier {
-		&INHERENT_IDENTIFIER
-	}
-
-	fn provide_inherent_data(
-		&self,
-		inherent_data: &mut InherentData
-	) -> Result<(), sp_inherents::Error> {
-		inherent_data.put_data(INHERENT_IDENTIFIER, &self.0)
-	}
-
-	fn error_to_string(&self, _: &[u8]) -> Option<String> {
-		None
-	}
-}
-
-impl<T: Config> ProvideInherent for Pallet<T> {
-	type Call = Call<T>;
-	type Error = InherentError;
-	const INHERENT_IDENTIFIER: InherentIdentifier = INHERENT_IDENTIFIER;
-
-	fn create_inherent(data: &InherentData) -> Option<Self::Call> {
-		let target = data.get_data::<InherentType>(&INHERENT_IDENTIFIER).ok()??;
-
-		Some(Call::note_min_gas_price_target(target))
-	}
-
-	fn check_inherent(_call: &Self::Call, _data: &InherentData) -> result::Result<(), Self::Error> {
-		Ok(())
-	}
-
-	fn is_inherent(call: &Self::Call) -> bool {
-		matches!(call, Call::note_min_gas_price_target(_))
-	}
-}

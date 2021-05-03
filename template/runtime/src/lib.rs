@@ -558,21 +558,21 @@ impl_runtime_apis! {
 
 		fn current_transaction_statuses() -> Option<Vec<TransactionStatus>> {
 			match Ethereum::current_transaction_statuses() {
-				Some(elt) => Some(elt.inner.into()),
+				Some(elt) => Some(elt.into()),
 				None => None,
 			}
 		}
 
 		fn current_block() -> Option<pallet_ethereum::Block> {
 			match Ethereum::current_block() {
-				Some(elt) => Some(elt.inner.into()),
+				Some(elt) => Some(elt.into()),
 				None => None,
 			}
 		}
 
 		fn current_receipts() -> Option<Vec<pallet_ethereum::Receipt>> {
 			match Ethereum::current_receipts() {
-				Some(elt) => Some(elt.inner.into()),
+				Some(elt) => Some(elt.into()),
 				None => None,
 			}
 		}
