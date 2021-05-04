@@ -424,7 +424,7 @@ pub fn new_full(
 					slot_duration,
 					client: client.clone(),
 					select_chain,
-					block_import,
+					block_import: aura_block_import,
 					proposer_factory,
 					create_inherent_data_providers: move |_, ()| async move {
 						let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
