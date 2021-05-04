@@ -125,4 +125,3 @@ impl IsFatalError for InherentError {
 
 pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"dynfee0_";
 pub type InherentType = U256;
-
