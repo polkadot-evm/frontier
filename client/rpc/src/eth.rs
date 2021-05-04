@@ -468,15 +468,21 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 		};
 		let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(self.client.as_ref(), id);
 		let handler = self.overrides.schemas.get(&schema).unwrap_or(&self.overrides.fallback);
-
 		let block = handler.current_block(&id);
 		let statuses = handler.current_transaction_statuses(&id);
-
 		match (block, statuses) {
 			(Some(block), Some(statuses)) => {
 				Ok(Some(rich_block_build(
 					block,
 					statuses.into_iter().map(|s| Some(s)).collect(),
+					Some(hash),
+					full,
+				)))
+			},
+			(Some(block), None) => {
+				Ok(Some(rich_block_build(
+					block,
+					vec![],
 					Some(hash),
 					full,
 				)))
@@ -494,22 +500,34 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 		};
 		let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(self.client.as_ref(), id);
 		let handler = self.overrides.schemas.get(&schema).unwrap_or(&self.overrides.fallback);
-
 		let block = handler.current_block(&id);
 		let statuses = handler.current_transaction_statuses(&id);
-
 		match (block, statuses) {
 			(Some(block), Some(statuses)) => {
 				let hash = H256::from_slice(
 					Keccak256::digest(&rlp::encode(&block.header)).as_slice(),
 				);
 
-				Ok(Some(rich_block_build(
+				let rich_block = rich_block_build(
 					block,
 					statuses.into_iter().map(|s| Some(s)).collect(),
 					Some(hash),
 					full,
-				)))
+				);
+				Ok(Some(rich_block))
+			},
+			(Some(block), None) => {
+				let hash = H256::from_slice(
+					Keccak256::digest(&rlp::encode(&block.header)).as_slice(),
+				);
+
+				let rich_block = rich_block_build(
+					block,
+					vec![],
+					Some(hash),
+					full,
+				);
+				Ok(Some(rich_block))
 			},
 			_ => {
 				Ok(None)
