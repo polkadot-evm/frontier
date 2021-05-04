@@ -97,7 +97,7 @@ pub mod pallet {
 		type Call = Call<T>;
 		type Error = InherentError;
 		const INHERENT_IDENTIFIER: InherentIdentifier = INHERENT_IDENTIFIER;
-		
+
 		fn create_inherent(data: &InherentData) -> Option<Self::Call> {
 			let target = data.get_data::<InherentType>(&INHERENT_IDENTIFIER).ok()??;
 
