@@ -80,7 +80,6 @@ impl LinearCostPrecompile for Curve25519ScalarMul {
 		let mut scalar_buf = [0; 32];
 		scalar_buf.copy_from_slice(&input[0..32]);
 		let scalar = Scalar::from_bytes_mod_order(scalar_buf);
-		
 
 		let mut pt_buf = [0; 32];
 		pt_buf.copy_from_slice(&input[32..64]);
@@ -99,18 +98,18 @@ mod tests {
 
 	#[test]
 	fn test_sum() -> std::result::Result<(), ExitError> {
-        let s1 = Scalar::from(999u64);
-        let p1 = &constants::RISTRETTO_BASEPOINT_POINT * &s1;
+		let s1 = Scalar::from(999u64);
+		let p1 = &constants::RISTRETTO_BASEPOINT_POINT * &s1;
 
-        let s2 = Scalar::from(333u64);
-        let p2 = &constants::RISTRETTO_BASEPOINT_POINT * &s2;
+		let s2 = Scalar::from(333u64);
+		let p2 = &constants::RISTRETTO_BASEPOINT_POINT * &s2;
 
-        let vec = vec![p1.clone(), p2.clone()];
-        let mut input = vec![];
-        input.extend_from_slice(&p1.compress().to_bytes());
-        input.extend_from_slice(&p2.compress().to_bytes());
+		let vec = vec![p1.clone(), p2.clone()];
+		let mut input = vec![];
+		input.extend_from_slice(&p1.compress().to_bytes());
+		input.extend_from_slice(&p2.compress().to_bytes());
 
-        let sum: RistrettoPoint = vec.iter().sum();
+		let sum: RistrettoPoint = vec.iter().sum();
 		let cost: u64 = 1;
 
 		match Curve25519Add::execute(&input, cost) {
@@ -126,8 +125,8 @@ mod tests {
 
 	#[test]
 	fn test_empty() -> std::result::Result<(), ExitError> {
-        // Test that sum works for the empty iterator
-        let input = vec![];
+		// Test that sum works for the empty iterator
+		let input = vec![];
 
 		let cost: u64 = 1;
 
@@ -144,14 +143,14 @@ mod tests {
 
 	#[test]
 	fn test_scalar_mul() -> std::result::Result<(), ExitError> {
-        let s1 = Scalar::from(999u64);
-        let s2 = Scalar::from(333u64);
-        let p1 = &constants::RISTRETTO_BASEPOINT_POINT * &s1;
-        let p2 = &constants::RISTRETTO_BASEPOINT_POINT * &s2;
+		let s1 = Scalar::from(999u64);
+		let s2 = Scalar::from(333u64);
+		let p1 = &constants::RISTRETTO_BASEPOINT_POINT * &s1;
+		let p2 = &constants::RISTRETTO_BASEPOINT_POINT * &s2;
 
-        let mut input = vec![];
-        input.extend_from_slice(&s1.to_bytes());
-        input.extend_from_slice(&constants::RISTRETTO_BASEPOINT_POINT.compress().to_bytes());
+		let mut input = vec![];
+		input.extend_from_slice(&s1.to_bytes());
+		input.extend_from_slice(&constants::RISTRETTO_BASEPOINT_POINT.compress().to_bytes());
 
 		let cost: u64 = 1;
 
@@ -169,7 +168,7 @@ mod tests {
 
 	#[test]
 	fn test_scalar_mul_empty_error() -> std::result::Result<(), ExitError> {
-        let input = vec![];
+		let input = vec![];
 
 		let cost: u64 = 1;
 
@@ -186,7 +185,7 @@ mod tests {
 
 	#[test]
 	fn test_point_addition_bad_length() -> std::result::Result<(), ExitError> {
-        let input: Vec<u8> = [0u8; 33].to_vec();
+		let input: Vec<u8> = [0u8; 33].to_vec();
 
 		let cost: u64 = 1;
 
@@ -203,18 +202,18 @@ mod tests {
 
 	#[test]
 	fn test_point_addition_too_many_points() -> std::result::Result<(), ExitError> {
-        let mut input = vec![];
-        input.extend_from_slice(&constants::RISTRETTO_BASEPOINT_POINT.compress().to_bytes()); // 1
-        input.extend_from_slice(&constants::RISTRETTO_BASEPOINT_POINT.compress().to_bytes()); // 2
-        input.extend_from_slice(&constants::RISTRETTO_BASEPOINT_POINT.compress().to_bytes()); // 3
-        input.extend_from_slice(&constants::RISTRETTO_BASEPOINT_POINT.compress().to_bytes()); // 4
-        input.extend_from_slice(&constants::RISTRETTO_BASEPOINT_POINT.compress().to_bytes()); // 5
-        input.extend_from_slice(&constants::RISTRETTO_BASEPOINT_POINT.compress().to_bytes()); // 6
-        input.extend_from_slice(&constants::RISTRETTO_BASEPOINT_POINT.compress().to_bytes()); // 7
-        input.extend_from_slice(&constants::RISTRETTO_BASEPOINT_POINT.compress().to_bytes()); // 8
-        input.extend_from_slice(&constants::RISTRETTO_BASEPOINT_POINT.compress().to_bytes()); // 9
-        input.extend_from_slice(&constants::RISTRETTO_BASEPOINT_POINT.compress().to_bytes()); // 10
-        input.extend_from_slice(&constants::RISTRETTO_BASEPOINT_POINT.compress().to_bytes()); // 11
+		let mut input = vec![];
+		input.extend_from_slice(&constants::RISTRETTO_BASEPOINT_POINT.compress().to_bytes()); // 1
+		input.extend_from_slice(&constants::RISTRETTO_BASEPOINT_POINT.compress().to_bytes()); // 2
+		input.extend_from_slice(&constants::RISTRETTO_BASEPOINT_POINT.compress().to_bytes()); // 3
+		input.extend_from_slice(&constants::RISTRETTO_BASEPOINT_POINT.compress().to_bytes()); // 4
+		input.extend_from_slice(&constants::RISTRETTO_BASEPOINT_POINT.compress().to_bytes()); // 5
+		input.extend_from_slice(&constants::RISTRETTO_BASEPOINT_POINT.compress().to_bytes()); // 6
+		input.extend_from_slice(&constants::RISTRETTO_BASEPOINT_POINT.compress().to_bytes()); // 7
+		input.extend_from_slice(&constants::RISTRETTO_BASEPOINT_POINT.compress().to_bytes()); // 8
+		input.extend_from_slice(&constants::RISTRETTO_BASEPOINT_POINT.compress().to_bytes()); // 9
+		input.extend_from_slice(&constants::RISTRETTO_BASEPOINT_POINT.compress().to_bytes()); // 10
+		input.extend_from_slice(&constants::RISTRETTO_BASEPOINT_POINT.compress().to_bytes()); // 11
 
 		let cost: u64 = 1;
 
