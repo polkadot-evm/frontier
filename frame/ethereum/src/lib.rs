@@ -305,6 +305,8 @@ impl<T: Config> Pallet<T> {
 			nonce: H64::default(),
 		};
 		let mut block = ethereum::Block::new(partial_header, transactions.clone(), ommers);
+		#[cfg(feature = "std")]
+		println!("Block {:?}, {:?}", frame_system::Pallet::<T>::block_number(), block);
 		block.header.state_root = T::StateRoot::get();
 
 		CurrentBlock::<T>::put(Some(block.clone()));
