@@ -111,7 +111,7 @@ decl_storage! {
 	add_extra_genesis {
 		build(|_config: &GenesisConfig| {
 			// Calculate the ethereum genesis block
-			<Module<T>>::store_block(false);
+			<Module<T>>::store_block(false, U256::zero());
 
 			// Initialize the storage schema at the well known key.
 			frame_support::storage::unhashed::put::<EthereumStorageSchema>(&PALLET_ETHEREUM_SCHEMA, &EthereumStorageSchema::V1);
@@ -155,6 +155,11 @@ decl_module! {
 		fn on_finalize(n: T::BlockNumber) {
 			<Module<T>>::store_block(
 				fp_consensus::find_pre_log(&frame_system::Module::<T>::digest()).is_err(),
+				U256::from(
+					UniqueSaturatedInto::<u128>::unique_saturated_into(
+						frame_system::Module::<T>::block_number()
+					)
+				),
 			);
 		}
 
@@ -247,7 +252,7 @@ impl<T: Config> Module<T> {
 		Some(H160::from(H256::from_slice(Keccak256::digest(&pubkey).as_slice())))
 	}
 
-	fn store_block(post_log: bool) {
+	fn store_block(post_log: bool, block_number: U256) {
 		let mut transactions = Vec::new();
 		let mut statuses = Vec::new();
 		let mut receipts = Vec::new();
@@ -273,11 +278,7 @@ impl<T: Config> Module<T> {
 			), // TODO: check receipts hash.
 			logs_bloom,
 			difficulty: U256::zero(),
-			number: U256::from(
-				UniqueSaturatedInto::<u128>::unique_saturated_into(
-					frame_system::Module::<T>::block_number()
-				)
-			),
+			number: block_number,
 			gas_limit: T::BlockGasLimit::get(),
 			gas_used: receipts.clone().into_iter().fold(U256::zero(), |acc, r| acc + r.used_gas),
 			timestamp: UniqueSaturatedInto::<u64>::unique_saturated_into(
