@@ -4085,7 +4085,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm-precompile-curve25519"
-version = "1.0.1-dev"
+version = "1.0.0-dev"
 dependencies = [
  "curve25519-dalek 3.1.0",
  "evm",

@@ -63,6 +63,6 @@ fc-mapping-sync = { path = "../../client/mapping-sync" }
 substrate-build-script-utils = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
 
 [features]
-default = ["aura"]
+default = ["manual-seal"]
 aura = ["frontier-template-runtime/aura"]
 manual-seal = ["frontier-template-runtime/manual-seal"]
