@@ -4084,6 +4084,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-evm-precompile-curve25519"
+version = "1.0.1-dev"
+dependencies = [
+ "curve25519-dalek 3.1.0",
+ "evm",
+ "fp-evm",
+ "frame-support",
+ "pallet-evm",
+ "parity-scale-codec",
+ "sp-core",
+ "sp-io",
+]
+
+[[package]]
 name = "pallet-evm-precompile-dispatch"
 version = "1.0.1-dev"
 dependencies = [

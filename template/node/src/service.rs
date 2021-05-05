@@ -130,13 +130,7 @@ pub fn new_partial(config: &Configuration, #[allow(unused_variables)] cli: &Cli)
 	let frontier_backend = open_frontier_backend(config)?;
 
 	#[cfg(feature = "manual-seal")] {
-		let inherent_data_providers = sp_inherents::InherentDataProviders::new();
 		let sealing = cli.run.sealing;
-
-		inherent_data_providers
-			.register_provider(MockTimestampInherentDataProvider)
-			.map_err(Into::into)
-			.map_err(sp_consensus::error::Error::InherentData)?;
 
 		let frontier_block_import = FrontierBlockImport::new(
 			client.clone(),
@@ -152,7 +146,7 @@ pub fn new_partial(config: &Configuration, #[allow(unused_variables)] cli: &Cli)
 
 		Ok(sc_service::PartialComponents {
 			client, backend, task_manager, import_queue, keystore_container,
-			select_chain, transaction_pool, inherent_data_providers,
+			select_chain, transaction_pool,
 			other: (
 				(frontier_block_import, sealing),
 				pending_transactions,
@@ -374,7 +368,11 @@ pub fn new_full(
 							commands_stream,
 							select_chain,
 							consensus_data_provider: None,
-							inherent_data_providers,
+							create_inherent_data_providers: move |_, ()| async move {
+								let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
+
+								Ok((timestamp, ()))
+							},
 						}
 					);
 					// we spawn the future on a background thread managed by service.
@@ -389,7 +387,11 @@ pub fn new_full(
 							pool: transaction_pool.pool().clone(),
 							select_chain,
 							consensus_data_provider: None,
-							inherent_data_providers,
+							create_inherent_data_providers: move |_, ()| async move {
+								let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
+
+								Ok((timestamp, ()))
+							},
 						}
 					);
 					// we spawn the future on a background thread managed by service.
@@ -620,6 +622,6 @@ pub fn new_light(config: Configuration) -> Result<TaskManager, ServiceError> {
 }
 
 #[cfg(feature = "manual-seal")]
-pub fn new_light(config: Configuration) -> Result<TaskManager, ServiceError> {
+pub fn new_light(_config: Configuration) -> Result<TaskManager, ServiceError> {
 	return Err(ServiceError::Other("Manual seal does not support light client".to_string()))
 }
