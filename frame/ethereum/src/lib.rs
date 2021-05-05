@@ -273,6 +273,12 @@ impl<T: Config> Pallet<T> {
 			);
 		}
 
+		#[cfg(feature = "std")]
+		println!("Number {:?}, {:?}", U256::from(
+			UniqueSaturatedInto::<u128>::unique_saturated_into(
+				frame_system::Pallet::<T>::block_number()
+			),
+		), frame_system::Pallet::<T>::block_number());
 		let ommers = Vec::<ethereum::Header>::new();
 		let partial_header = ethereum::PartialHeader {
 			parent_hash: Self::current_block_hash().unwrap_or_default(),

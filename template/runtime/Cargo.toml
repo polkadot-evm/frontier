@@ -54,7 +54,7 @@ fp-rpc = { default-features = false, path = "../../primitives/rpc" }
 substrate-wasm-builder = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
 
 [features]
-default = ["std", "manual-seal"]
+default = ["std", "aura"]
 aura = []
 manual-seal = []
 std = [

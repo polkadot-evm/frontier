@@ -498,9 +498,11 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 			Some(id) => id,
 			None => return Ok(None),
 		};
+
 		let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(self.client.as_ref(), id);
 		let handler = self.overrides.schemas.get(&schema).unwrap_or(&self.overrides.fallback);
 		let block = handler.current_block(&id);
+		println!("{:?}, {:?}", id, block);
 		let statuses = handler.current_transaction_statuses(&id);
 		match (block, statuses) {
 			(Some(block), Some(statuses)) => {

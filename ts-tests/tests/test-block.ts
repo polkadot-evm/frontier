@@ -13,10 +13,10 @@ describeWithFrontier("Frontier RPC (Block)", (context) => {
 		expect(await context.web3.eth.getBlockNumber()).to.equal(0);
 	});
 
-	it("should return genesis block by number", async function () {
+	step("should return genesis block by number", async function () {
 		expect(await context.web3.eth.getBlockNumber()).to.equal(0);
-
 		const block = await context.web3.eth.getBlock(0);
+		console.log(block);
 		expect(block).to.include({
 			author: "0x0000000000000000000000000000000000000000",
 			difficulty: "0",
@@ -70,7 +70,7 @@ describeWithFrontier("Frontier RPC (Block)", (context) => {
 		expect(block.timestamp).to.be.eq(6);
 	});
 
-	it("genesis block should be already available by hash", async function () {
+	step("genesis block should be already available by hash", async function () {
 		const block = await context.web3.eth.getBlock(previousBlock.hash);
 		expect(block).to.include({
 			author: "0x0000000000000000000000000000000000000000",
