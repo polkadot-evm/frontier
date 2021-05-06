@@ -468,6 +468,12 @@
 <span id="465">465</span>
 <span id="466">466</span>
 <span id="467">467</span>
+<span id="468">468</span>
+<span id="469">469</span>
+<span id="470">470</span>
+<span id="471">471</span>
+<span id="472">472</span>
+<span id="473">473</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
@@ -690,12 +696,18 @@
 				<span class="kw">return</span> <span class="ident">InvalidTransaction</span>::<span class="ident">Payment</span>.<span class="ident">into</span>();
 			}
 
-			<span class="kw">if</span> <span class="ident">transaction</span>.<span class="ident">gas_price</span> <span class="op">&lt;</span> <span class="ident">T</span>::<span class="ident">FeeCalculator</span>::<span class="ident">min_gas_price</span>() {
+			<span class="kw">let</span> <span class="ident">min_gas_price</span> <span class="op">=</span> <span class="ident">T</span>::<span class="ident">FeeCalculator</span>::<span class="ident">min_gas_price</span>();
+
+			<span class="kw">if</span> <span class="ident">transaction</span>.<span class="ident">gas_price</span> <span class="op">&lt;</span> <span class="ident">min_gas_price</span> {
 				<span class="kw">return</span> <span class="ident">InvalidTransaction</span>::<span class="ident">Payment</span>.<span class="ident">into</span>();
 			}
 
 			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">builder</span> <span class="op">=</span> <span class="ident">ValidTransactionBuilder</span>::<span class="ident">default</span>()
-				.<span class="ident">and_provides</span>((<span class="ident">origin</span>, <span class="ident">transaction</span>.<span class="ident">nonce</span>));
+				.<span class="ident">and_provides</span>((<span class="ident">origin</span>, <span class="ident">transaction</span>.<span class="ident">nonce</span>))
+				.<span class="ident">priority</span>({
+					<span class="kw">let</span> <span class="ident">target_gas</span> <span class="op">=</span> (<span class="ident">transaction</span>.<span class="ident">gas_limit</span> <span class="op">*</span> <span class="ident">transaction</span>.<span class="ident">gas_price</span>) <span class="op">/</span> <span class="ident">min_gas_price</span>;
+					<span class="ident">T</span>::<span class="ident">GasWeightMapping</span>::<span class="ident">gas_to_weight</span>(<span class="ident">target_gas</span>.<span class="ident">unique_saturated_into</span>())
+				});
 
 			<span class="kw">if</span> <span class="ident">transaction</span>.<span class="ident">nonce</span> <span class="op">&gt;</span> <span class="ident">account_data</span>.<span class="ident">nonce</span> {
 				<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">prev_nonce</span>) <span class="op">=</span> <span class="ident">transaction</span>.<span class="ident">nonce</span>.<span class="ident">checked_sub</span>(<span class="number">1</span>.<span class="ident">into</span>()) {
