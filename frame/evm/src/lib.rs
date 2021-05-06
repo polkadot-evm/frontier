@@ -643,8 +643,7 @@ where
 			// merge the imbalance caused by paying the fees and refunding parts of it again.
 			let adjusted_paid = paid
 				.offset(refund_imbalance)
-				//Peer Review: Is this right? https://crates.parity.io/frame_support/traits/enum.SameOrOther.html
-				.try_same()
+				.same()
 				.map_err(|_| Error::<T>::BalanceLow)?;
 			OU::on_unbalanced(adjusted_paid);
 		}
