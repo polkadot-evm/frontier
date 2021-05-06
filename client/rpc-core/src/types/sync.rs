@@ -50,6 +50,12 @@ pub struct Peers {
 	pub peers: Vec<PeerInfo>,
 }
 
+#[derive(Debug, Serialize)]
+pub enum PeerCount {
+	U32(u32),
+	String(String)
+}
+
 /// Peer connection information
 #[derive(Default, Debug, Serialize)]
 pub struct PeerInfo {
