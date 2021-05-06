@@ -377,6 +377,8 @@ pub type SignedExtra = (
 	frame_system::CheckEra<Runtime>,
 	frame_system::CheckNonce<Runtime>,
 	frame_system::CheckWeight<Runtime>,
+	// We could actually remove this and instead allow normal frame users
+	// to specify their own gas price (would require work to be nice in Polkadot js)
 	pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
 );
 /// Unchecked extrinsic type as expected by this runtime.
@@ -391,6 +393,58 @@ pub type Executive = frame_executive::Executive<
 	Runtime,
 	AllModules
 >;
+
+//TODO move this to a crate outside the template so it can be reused.
+/// Prioritize FRAME transactions according to ethereum-style (pre eip1559) gas-price rules
+///
+/// This struct wraps frame executive's ... and works together with frontier's
+/// validate unsigned (todo link telmo's pr code).
+///
+/// TODO probably needs to be generic over the Extrinsic type too. Or maybe that can be calculated from the executive?
+pub struct GasPricePrioritizer<E: Executive> {
+	fn validate_and_prioritize(
+		source: TransactionSource,
+		tx: <Block as BlockT>::Extrinsic,
+	) -> TransactionValidity {
+		// First we do the normal prioritizing according to frame executive
+		// (or whatever inner executive is passed in)
+		// At this point, assuming the proper unsigned validator is installed
+		// link telmos pr code or my modification of it, the ethereum transactions
+		// are properly prioritized according to gas price.
+		// But the Substrate transactions are prioritized according to
+		// TODO link the exact prioritization, I think it is basically according to
+		// fee...
+		let mut intermediate_valid = E::validate_transaction(source, tx)?;
+
+		// TODO the condition here should be:
+		// if this is not a pallet_ethereum::transact extrinsic, then re-prioritize
+		// TODO link the utxo workshop example
+		let is_frame_transaction: bool = true;
+		if (is_frame_transaction) {
+			let weight = tx.get_dispatch_info().weight;
+
+			// TODO whatever fee you would otherwise have charged.
+			// In the current runtime this comes from pallet_transaction payment.
+			// While writing this, it occurrs to me that we could also write our own pallet
+			// responsible for charging fees on the normal signed transactions.
+			let fee = PalletTransactionPayment::query_fee_details()
+				.inclusion_fee.expect("If we stick with pallet transaction payment, we'll need to massage the data from https://crates.parity.io/pallet_transaction_payment/struct.FeeDetails.html a little bit");
+
+			// Calculate how much gas this effectively uses according to the existing mapping
+			let effective_gas = GasWeightMapping::weight_to_gas(weight);
+
+			// Here we calculate an ethereum-style effective gas price using the
+			// current fee of the transaction
+			let effective_gas_price = effective_gas / fee;
+
+			// Overwrite the original frame-style prioritization with this ethereum one
+			intermediate_valid.priority = effective_gas_price;
+		}
+
+		// Return the result
+		intermediate_valid
+	}
+}
 
 impl_runtime_apis! {
 	impl sp_api::Core<Block> for Runtime {
@@ -443,7 +497,7 @@ impl_runtime_apis! {
 			source: TransactionSource,
 			tx: <Block as BlockT>::Extrinsic,
 		) -> TransactionValidity {
-			Executive::validate_transaction(source, tx)
+			GasPricePrioritizer<Executive>::validate_and_prioritize(source, tx)
 		}
 	}
 
