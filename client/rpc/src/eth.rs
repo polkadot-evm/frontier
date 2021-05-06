@@ -1208,9 +1208,10 @@ impl<B: BlockT, BE, C, H: ExHashT> NetApiT for NetApi<B, BE, C, H> where
 	fn peer_count(&self) -> Result<PeerCount> {
 		let peer_count = self.network.num_connected();
 		Ok(
-		match self.peer_count_as_hex {
-			true => PeerCount::String(format!("0x{:x}", peer_count)),
-			false => PeerCount::U32(peer_count as u32);
+			match self.peer_count_as_hex {
+				true => PeerCount::String(format!("0x{:x}", peer_count)),
+				false => PeerCount::U32(peer_count as u32)
+			}
 		)
 	}
 
