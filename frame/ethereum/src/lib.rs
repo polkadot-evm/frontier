@@ -144,21 +144,45 @@ pub mod pallet {
 	#[pallet::generate_store(pub(super) trait Store)]
 	pub struct Pallet<T>(PhantomData<T>);
 
+	#[pallet::genesis_config]
+	pub struct GenesisConfig<T: Config> {
+		pub marker: PhantomData<T>,
+	}
+
+	#[cfg(feature = "std")]
+	impl<T: Config> Default for GenesisConfig<T> {
+		fn default() -> Self {
+			GenesisConfig {
+				marker: PhantomData,
+			}
+		}
+	}
+
+	#[pallet::genesis_build]
+	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+		fn build(&self) {
+			// Calculate the ethereum genesis block
+			<Pallet<T>>::store_block(false, U256::zero());
+
+			// Initialize the storage schema at the well known key.
+			frame_support::storage::unhashed::put::<EthereumStorageSchema>(&PALLET_ETHEREUM_SCHEMA, &EthereumStorageSchema::V1);
+		}
+	}
+
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn on_finalize(_n: T::BlockNumber) {
 			<Pallet<T>>::store_block(
 				fp_consensus::find_pre_log(&frame_system::Pallet::<T>::digest()).is_err(),
+				U256::from(
+					UniqueSaturatedInto::<u128>::unique_saturated_into(
+						frame_system::Pallet::<T>::block_number()
+					)
+				),
 			);
 		}
 
 		fn on_initialize(_n: T::BlockNumber) -> Weight {
-			// Calculate the ethereum genesis block
-			<Pallet<T>>::store_block(false);
-
-			// Initialize the storage schema at the well known key.
-			frame_support::storage::unhashed::put::<EthereumStorageSchema>(&PALLET_ETHEREUM_SCHEMA, &EthereumStorageSchema::V1);
-
 			Pending::<T>::kill();
 
 			if let Ok(log) = fp_consensus::find_pre_log(&frame_system::Pallet::<T>::digest()) {
@@ -258,7 +282,7 @@ impl<T: Config> Pallet<T> {
 		Some(H160::from(H256::from_slice(Keccak256::digest(&pubkey).as_slice())))
 	}
 
-	fn store_block(post_log: bool) {
+	fn store_block(post_log: bool, block_number: U256) {
 		let mut transactions = Vec::new();
 		let mut statuses = Vec::new();
 		let mut receipts = Vec::new();
@@ -273,16 +297,10 @@ impl<T: Config> Pallet<T> {
 			);
 		}
 
-		#[cfg(feature = "std")]
-		println!("Number {:?}, {:?}", U256::from(
-			UniqueSaturatedInto::<u128>::unique_saturated_into(
-				frame_system::Pallet::<T>::block_number()
-			),
-		), frame_system::Pallet::<T>::block_number());
 		let ommers = Vec::<ethereum::Header>::new();
 		let partial_header = ethereum::PartialHeader {
 			parent_hash: Self::current_block_hash().unwrap_or_default(),
-			beneficiary: Self::find_author(),
+			beneficiary: <Pallet<T>>::find_author(),
 			// TODO: figure out if there's better way to get a sort-of-valid state root.
 			state_root: H256::default(),
 			receipts_root: H256::from_slice(
@@ -290,11 +308,7 @@ impl<T: Config> Pallet<T> {
 			), // TODO: check receipts hash.
 			logs_bloom,
 			difficulty: U256::zero(),
-			number: U256::from(
-				UniqueSaturatedInto::<u128>::unique_saturated_into(
-					frame_system::Pallet::<T>::block_number()
-				)
-			),
+			number: block_number,
 			gas_limit: T::BlockGasLimit::get(),
 			gas_used: receipts.clone().into_iter().fold(U256::zero(), |acc, r| acc + r.used_gas),
 			timestamp: UniqueSaturatedInto::<u64>::unique_saturated_into(
@@ -305,8 +319,6 @@ impl<T: Config> Pallet<T> {
 			nonce: H64::default(),
 		};
 		let mut block = ethereum::Block::new(partial_header, transactions.clone(), ommers);
-		#[cfg(feature = "std")]
-		println!("Block {:?}, {:?}", frame_system::Pallet::<T>::block_number(), block);
 		block.header.state_root = T::StateRoot::get();
 
 		CurrentBlock::<T>::put(Some(block.clone()));

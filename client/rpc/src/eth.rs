@@ -502,7 +502,6 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 		let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(self.client.as_ref(), id);
 		let handler = self.overrides.schemas.get(&schema).unwrap_or(&self.overrides.fallback);
 		let block = handler.current_block(&id);
-		println!("{:?}, {:?}", id, block);
 		let statuses = handler.current_transaction_statuses(&id);
 		match (block, statuses) {
 			(Some(block), Some(statuses)) => {
@@ -628,6 +627,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 	}
 
 	fn send_transaction(&self, request: TransactionRequest) -> BoxFuture<H256> {
+		println!("{:?}", request);
 		let from = match request.from {
 			Some(from) => from,
 			None => {
@@ -932,14 +932,16 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 	}
 
 	fn transaction_by_hash(&self, hash: H256) -> Result<Option<Transaction>> {
-
+		println!("Hash: {:?}", hash);
 		let (hash, index) = match frontier_backend_client::load_transactions::<B, C>(self.client.as_ref(), self.backend.as_ref(), hash)
 			.map_err(|err| internal_err(format!("{:?}", err)))? {
 			Some((hash, index)) => (hash, index as usize),
 			None => {
 				if let Some(pending) = &self.pending_transactions {
 					if let Ok(locked) = &mut pending.lock() {
+						println!("Locked");
 						if let Some(pending_transaction) = locked.get(&hash) {
+							println!("Pending");
 							return Ok(Some(pending_transaction.transaction.clone()));
 						}
 					}
@@ -959,7 +961,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 
 		let block = handler.current_block(&id);
 		let statuses = handler.current_transaction_statuses(&id);
-
+		println!("{:?}, {:?}", block, statuses);
 		match (block, statuses) {
 			(Some(block), Some(statuses)) => {
 				Ok(Some(transaction_build(

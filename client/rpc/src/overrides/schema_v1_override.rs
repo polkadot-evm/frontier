@@ -106,12 +106,12 @@ where
 
 	/// Return the current block.
 	fn current_block(&self, block: &BlockId<Block>) -> Option<EthereumBlock> {
-		self.query_storage::<ethereum::Block>(
+		self.query_storage::<Option<ethereum::Block>>(
 			block,
 			&StorageKey(
 				storage_prefix_build(b"Ethereum", b"CurrentBlock")
 			)
-		)
+		).unwrap()
 	}
 
 	/// Return the current receipt.

@@ -12,6 +12,9 @@ export const FRONTIER_LOG = process.env.FRONTIER_LOG || "info";
 export const BINARY_PATH = `../target/release/frontier-template-node`;
 export const SPAWNING_TIME = 30000;
 
+export const GENESIS_ACCOUNT = "0x6be02d1d3665660d22ff9624b7be0551ee1ac91b";
+export const GENESIS_ACCOUNT_PRIVATE_KEY = "0x99B3C12287537E38C90A9219D4CB074A89A16E9CDB20BF85728EBD97C343E342";
+
 export async function customRequest(web3: Web3, method: string, params: any[]) {
 	return new Promise<JsonRpcResponse>((resolve, reject) => {
 		(web3.currentProvider as any).send(
@@ -122,18 +125,17 @@ export async function startFrontierNode(provider?: string): Promise<{ web3: Web3
 
 export function describeWithFrontier(title: string, cb: (context: { web3: Web3 }) => void, provider?: string) {
 	describe(title, () => {
-		let context: { web3: Web3 } = { web3: null };
+		let context: { web3: Web3, provider: any } = { web3: null, provider: null };
 		let binary: ChildProcess;
 		// Making sure the Frontier node has started
 		before("Starting Frontier Test Node", async function () {
 			this.timeout(SPAWNING_TIME);
 			const init = await startFrontierNode(provider);
 			context.web3 = init.web3;
-			binary = init.binary;
 		});
 
 		after(async function () {
-			//console.log(`\x1b[31m Killing RPC\x1b[0m`);
+			// console.log(`\x1b[31m Killing RPC\x1b[0m`);
 			binary.kill();
 		});
 

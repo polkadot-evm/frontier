@@ -154,6 +154,7 @@ fn testnet_genesis(
 			// Assign network admin rights.
 			key: root_key,
 		},
+		pallet_ethereum: Default::default(),
 		pallet_evm: EVMConfig {
 			accounts: {
 				let mut map = BTreeMap::new();
