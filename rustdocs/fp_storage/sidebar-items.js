@@ -1,1 +1,1 @@
-initSidebarItems({"constant":[["PALLET_ETHEREUM_SCHEMA","Current version of pallet Ethereum's storage schema is stored under this key."]]});
+initSidebarItems({"constant":[["PALLET_ETHEREUM_SCHEMA","Current version of pallet Ethereum’s storage schema is stored under this key."]]});
