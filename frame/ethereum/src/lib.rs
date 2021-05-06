@@ -242,7 +242,7 @@ pub mod pallet {
 				let min_gas_price = T::FeeCalculator::min_gas_price();
 
 				if transaction.gas_price < min_gas_price {
-				  return InvalidTransaction::Payment.into();
+					return InvalidTransaction::Payment.into();
 				}
 
 				let mut builder = ValidTransactionBuilder::default()
