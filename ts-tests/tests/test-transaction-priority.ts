@@ -19,25 +19,25 @@ describeWithFrontier("Frontier RPC (Priority)", (context) => {
 				data: TEST_CONTRACT_BYTECODE,
 				value: "0x00",
 				gasPrice: gasPrice,
-                gas: "0x100000",
-                nonce: 0,
+				gas: "0x100000",
+				nonce: 0,
 			},
 			GENESIS_ACCOUNT_PRIVATE_KEY
 		);
 
 		await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction]);
 		return tx;
-    }
-    
+	}
+	
 	step("should prioritize transaction with the higher gasPrice", async function () {
-        this.timeout(15000);
-        const gasPrices = ["0x03","0x01","0x06","0x08","0x03","0x09","0x04","0x07","0x05"];
+		this.timeout(15000);
+		const gasPrices = ["0x03","0x01","0x06","0x08","0x03","0x09","0x04","0x07","0x05"];
 		for(var gasPrice of gasPrices) {
-            await sendTransaction(context, gasPrice);
-        }
-        await createAndFinalizeBlock(context.web3);
-        const block = await context.web3.eth.getBlock("latest",true);
-        expect(block.transactions.length).to.be.eq(1);
-        expect(block.transactions[0].gasPrice).to.be.eq('9');
+			await sendTransaction(context, gasPrice);
+		}
+		await createAndFinalizeBlock(context.web3);
+		const block = await context.web3.eth.getBlock("latest",true);
+		expect(block.transactions.length).to.be.eq(1);
+		expect(block.transactions[0].gasPrice).to.be.eq('9');
 	});
 });
