@@ -101,6 +101,7 @@ fn transaction_with_invalid_nonce_should_not_work() {
 			Ethereum::validate_unsigned(TransactionSource::External, &Call::transact(signed)),
 			ValidTransactionBuilder::default()
 				.and_provides((alice.address, U256::from(1)))
+				.priority(1048576 as u64)
 				.and_requires((alice.address, U256::from(0)))
 				.build()
 		);

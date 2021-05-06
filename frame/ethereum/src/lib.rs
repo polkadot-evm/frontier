@@ -219,12 +219,18 @@ impl<T: Config> frame_support::unsigned::ValidateUnsigned for Module<T> {
 				return InvalidTransaction::Payment.into();
 			}
 
-			if transaction.gas_price < T::FeeCalculator::min_gas_price() {
+			let min_gas_price = T::FeeCalculator::min_gas_price();
+
+			if transaction.gas_price < min_gas_price {
 				return InvalidTransaction::Payment.into();
 			}
 
 			let mut builder = ValidTransactionBuilder::default()
-				.and_provides((origin, transaction.nonce));
+				.and_provides((origin, transaction.nonce))
+				.priority({
+					let target_gas = (transaction.gas_limit * transaction.gas_price) / min_gas_price;
+					T::GasWeightMapping::gas_to_weight(target_gas.unique_saturated_into())
+				});
 
 			if transaction.nonce > account_data.nonce {
 				if let Some(prev_nonce) = transaction.nonce.checked_sub(1.into()) {
