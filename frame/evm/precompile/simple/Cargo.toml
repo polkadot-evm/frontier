@@ -11,12 +11,12 @@ description = "Simple precompiles for EVM pallet."
 [dependencies]
 sp-core = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sp-io = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-fp-evm = { version = "1.0.1-dev", default-features = false, path = "../../../../primitives/evm" }
+fp-evm = { version = "1.1.0-dev", default-features = false, path = "../../../../primitives/evm" }
 evm = { version = "0.26.0", default-features = false, features = ["with-codec"] }
 ripemd160 = { version = "0.9", default-features = false }
 
 [dev-dependencies]
-pallet-evm-test-vector-support = { version = "1.0.0-dev", path = "../../test-vector-support" }
+pallet-evm-test-vector-support = { version = "1.1.0-dev", path = "../../test-vector-support" }
 
 [features]
 default = ["std"]

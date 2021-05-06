@@ -1304,7 +1304,7 @@ dependencies = [
 
 [[package]]
 name = "fc-consensus"
-version = "1.0.1-dev"
+version = "1.1.0-dev"
 dependencies = [
  "derive_more",
  "fc-db",
@@ -1340,7 +1340,7 @@ dependencies = [
 
 [[package]]
 name = "fc-mapping-sync"
-version = "1.1.0-dev"
+version = "1.2.0-dev"
 dependencies = [
  "fc-consensus",
  "fc-db",
@@ -1357,7 +1357,7 @@ dependencies = [
 
 [[package]]
 name = "fc-rpc"
-version = "2.0.0-dev"
+version = "2.1.0-dev"
 dependencies = [
  "ethereum",
  "ethereum-types",
@@ -1503,7 +1503,7 @@ dependencies = [
 
 [[package]]
 name = "fp-evm"
-version = "1.0.1-dev"
+version = "1.1.0-dev"
 dependencies = [
  "evm",
  "impl-trait-for-tuples 0.1.3",
@@ -1515,7 +1515,7 @@ dependencies = [
 
 [[package]]
 name = "fp-rpc"
-version = "1.0.1-dev"
+version = "1.1.0-dev"
 dependencies = [
  "ethereum",
  "ethereum-types",
@@ -1530,7 +1530,7 @@ dependencies = [
 
 [[package]]
 name = "fp-storage"
-version = "1.0.1-dev"
+version = "1.1.0-dev"
 dependencies = [
  "ethereum",
  "ethereum-types",
@@ -3893,7 +3893,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-ethereum"
-version = "1.0.1-dev"
+version = "1.1.0-dev"
 dependencies = [
  "ethereum",
  "ethereum-types",
@@ -3921,7 +3921,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm"
-version = "3.0.1-dev"
+version = "3.1.0-dev"
 dependencies = [
  "evm",
  "evm-gasometer",
@@ -3945,7 +3945,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm-precompile-blake2"
-version = "1.1.0-dev"
+version = "1.2.0-dev"
 dependencies = [
  "evm",
  "fp-evm",
@@ -3956,7 +3956,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm-precompile-bn128"
-version = "2.0.0-dev"
+version = "2.1.0-dev"
 dependencies = [
  "evm",
  "fp-evm",
@@ -3968,7 +3968,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm-precompile-dispatch"
-version = "1.0.1-dev"
+version = "1.1.0-dev"
 dependencies = [
  "evm",
  "fp-evm",
@@ -3981,7 +3981,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm-precompile-ed25519"
-version = "1.0.1-dev"
+version = "1.1.0-dev"
 dependencies = [
  "ed25519-dalek",
  "evm",
@@ -3992,7 +3992,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm-precompile-modexp"
-version = "1.1.0-dev"
+version = "1.2.0-dev"
 dependencies = [
  "evm",
  "fp-evm",
@@ -4005,7 +4005,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm-precompile-sha3fips"
-version = "1.0.1-dev"
+version = "1.1.0-dev"
 dependencies = [
  "evm",
  "fp-evm",
@@ -4016,7 +4016,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm-precompile-simple"
-version = "1.0.1-dev"
+version = "1.1.0-dev"
 dependencies = [
  "evm",
  "fp-evm",
@@ -4028,7 +4028,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm-test-vector-support"
-version = "1.0.0-dev"
+version = "1.1.0-dev"
 dependencies = [
  "evm",
  "fp-evm",
