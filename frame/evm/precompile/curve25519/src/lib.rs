@@ -44,7 +44,7 @@ impl LinearCostPrecompile for Curve25519Add {
 			return Err(ExitError::Other("input cannot be greater than 320 bytes (10 compressed points)".into()));
 		};
 
-		let mut points = vec![];
+		let mut points = Vec::new();
 		let mut temp_buf = input.clone();
 		while temp_buf.len() > 0 {
 			let mut buf = [0; 32];
