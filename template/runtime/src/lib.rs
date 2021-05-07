@@ -10,6 +10,7 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 use sp_std::{prelude::*, marker::PhantomData};
 use codec::{Encode, Decode};
+use pallet_ethereum::Call::transact;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata, U256, H160, H256};
 use sp_runtime::{
 	ApplyExtrinsicResult, generic, create_runtime_str, impl_opaque_keys, MultiSignature,
@@ -37,14 +38,14 @@ pub use frame_support::{
 	construct_runtime, parameter_types, StorageValue,
 	traits::{KeyOwnerProofSystem, Randomness, FindAuthor},
 	weights::{
-		Weight, IdentityFee,
+		Weight, IdentityFee, GetDispatchInfo,
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
 	},
 	ConsensusEngineId,
 };
 use pallet_evm::{
 	Account as EVMAccount, FeeCalculator, HashedAddressMapping,
-	EnsureAddressTruncated, Runner,
+	EnsureAddressTruncated, Runner, GasWeightMapping,
 };
 use fp_rpc::TransactionStatus;
 use pallet_transaction_payment::CurrencyAdapter;
@@ -401,12 +402,12 @@ pub type Executive = frame_executive::Executive<
 /// pallet_ethereum's `ValidateUnsigned` implementation. (Or maybe that logic could be moved here?)
 ///
 /// TODO probably needs to be generic over the Extrinsic type too. Or maybe that can be calculated from the executive?
-pub struct GasPricePrioritizer<E: Executive>;
+pub struct GasPricePrioritizer();
 
-impl<E> GasPricePrioritizer<E> {
+impl GasPricePrioritizer {
 	fn validate_and_prioritize(
 		source: TransactionSource,
-		tx: <Block as BlockT>::Extrinsic,
+		xt: <Block as BlockT>::Extrinsic,
 	) -> TransactionValidity {
 		// First we do the normal prioritizing according to frame executive
 		// (or whatever inner executive is passed in)
@@ -416,36 +417,43 @@ impl<E> GasPricePrioritizer<E> {
 		// But the Substrate transactions are prioritized according to
 		// (TODO link the exact prioritization), I think it is basically according to
 		// fee...
-		let mut intermediate_valid = E::validate_transaction(source, tx)?;
+		let mut intermediate_valid = Executive::validate_transaction(source, xt.clone())?;
 
 		// TODO the condition here should be:
 		// if this is not a pallet_ethereum::transact extrinsic, then re-prioritize
 		// https://github.com/substrate-developer-hub/utxo-workshop/blob/cacc031f0de027de24f8dfa092fe9e386cefc31f/runtime/src/lib.rs#L352
-		let is_frame_transaction: bool = true;
-		if is_frame_transaction {
-			let weight = tx.get_dispatch_info().weight;
+		Ok(match &xt.function {
+			Call::Ethereum(transact(_)) => intermediate_valid,
+			_ => {
+				let weight = xt.get_dispatch_info().weight;
+				// Whatever fee you would otherwise have charged.
+				//TODO we probably need to be generic over this too.
+				// In the current runtime this comes from pallet_transaction payment.
+				// While writing this, it occurrs to me that we could also write our own pallet
+				// responsible for charging fees on the normal signed transactions.
+				let inclusion = TransactionPayment::query_fee_details(xt.clone(), xt.encode().len() as u32)
+					.inclusion_fee.expect("If we stick with pallet transaction payment, we'll need to massage the data from https://crates.parity.io/pallet_transaction_payment/struct.FeeDetails.html a little bit");
 
-			// Whatever fee you would otherwise have charged.
-			//TODO we probably need to be generic over this too.
-			// In the current runtime this comes from pallet_transaction payment.
-			// While writing this, it occurrs to me that we could also write our own pallet
-			// responsible for charging fees on the normal signed transactions.
-			let fee = PalletTransactionPayment::query_fee_details()
-				.inclusion_fee.expect("If we stick with pallet transaction payment, we'll need to massage the data from https://crates.parity.io/pallet_transaction_payment/struct.FeeDetails.html a little bit");
-
-			// Calculate how much gas this effectively uses according to the existing mapping
-			let effective_gas = GasWeightMapping::weight_to_gas(weight);
-
-			// Here we calculate an ethereum-style effective gas price using the
-			// current fee of the transaction
-			let effective_gas_price = effective_gas / fee;
-
-			// Overwrite the original frame-style prioritization with this ethereum one
-			intermediate_valid.priority = effective_gas_price;
-		}
-
-		// Return the result
-		intermediate_valid
+				let fee = inclusion.base_fee.saturating_add(inclusion.len_fee);
+				if fee == 0 {
+					intermediate_valid.priority = 0;
+					intermediate_valid
+				} else {
+					
+					// Calculate how much gas this effectively uses according to the existing mapping
+					let effective_gas =
+						<Runtime as pallet_evm::Config>::GasWeightMapping::weight_to_gas(weight);
+	
+					// Here we calculate an ethereum-style effective gas price using the
+					// current fee of the transaction
+					let effective_gas_price = effective_gas / fee as u64;
+	
+					// Overwrite the original frame-style prioritization with this ethereum one
+					intermediate_valid.priority = effective_gas_price;
+					intermediate_valid
+				}
+			}
+		})
 	}
 }
 
@@ -500,7 +508,7 @@ impl_runtime_apis! {
 			source: TransactionSource,
 			tx: <Block as BlockT>::Extrinsic,
 		) -> TransactionValidity {
-			GasPricePrioritizer::<Executive>::validate_and_prioritize(source, tx)
+			GasPricePrioritizer::validate_and_prioritize(source, tx)
 		}
 	}
 
