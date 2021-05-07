@@ -31,7 +31,7 @@ describeWithFrontier("Frontier RPC (Priority)", (context) => {
 	
 	step("should prioritize transaction with the higher gasPrice", async function () {
 		this.timeout(15000);
-		const gasPrices = ["0x03","0x01","0x06","0x08","0x03","0x09","0x04","0x07","0x05"];
+		const gasPrices = ["0x0","0x03","0x01","0x06","0x08","0x03","0x09","0x04","0x07","0x05"];
 		for(var gasPrice of gasPrices) {
 			await sendTransaction(context, gasPrice);
 		}
