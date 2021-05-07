@@ -439,15 +439,12 @@ impl GasPricePrioritizer {
 					intermediate_valid.priority = 0;
 					intermediate_valid
 				} else {
-					
 					// Calculate how much gas this effectively uses according to the existing mapping
 					let effective_gas =
 						<Runtime as pallet_evm::Config>::GasWeightMapping::weight_to_gas(weight);
-	
 					// Here we calculate an ethereum-style effective gas price using the
 					// current fee of the transaction
 					let effective_gas_price = effective_gas / fee as u64;
-	
 					// Overwrite the original frame-style prioritization with this ethereum one
 					intermediate_valid.priority = effective_gas_price;
 					intermediate_valid
