@@ -51,6 +51,7 @@ pub struct Peers {
 }
 
 #[derive(Debug, Serialize)]
+#[serde(untagged)]
 pub enum PeerCount {
 	U32(u32),
 	String(String)
