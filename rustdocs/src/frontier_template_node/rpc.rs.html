@@ -219,6 +219,8 @@
 <span id="216">216</span>
 <span id="217">217</span>
 <span id="218">218</span>
+<span id="219">219</span>
+<span id="220">220</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! A collection of node-specific RPC methods.</span>
 
@@ -375,6 +377,8 @@
 		<span class="ident">NetApiServer</span>::<span class="ident">to_delegate</span>(<span class="ident">NetApi</span>::<span class="ident">new</span>(
 			<span class="ident">client</span>.<span class="ident">clone</span>(),
 			<span class="ident">network</span>.<span class="ident">clone</span>(),
+			<span class="comment">// Whether to format the `peer_count` response as Hex (default) or not.</span>
+			<span class="bool-val">true</span>,
 		))
 	);
 

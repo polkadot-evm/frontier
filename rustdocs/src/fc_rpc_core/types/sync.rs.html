@@ -145,6 +145,13 @@
 <span id="142">142</span>
 <span id="143">143</span>
 <span id="144">144</span>
+<span id="145">145</span>
+<span id="146">146</span>
+<span id="147">147</span>
+<span id="148">148</span>
+<span id="149">149</span>
+<span id="150">150</span>
+<span id="151">151</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
@@ -196,6 +203,13 @@
 	<span class="kw">pub</span> <span class="ident">max</span>: <span class="ident">u32</span>,
 	<span class="doccomment">/// Detailed information on peers</span>
 	<span class="kw">pub</span> <span class="ident">peers</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">PeerInfo</span><span class="op">&gt;</span>,
+}
+
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Serialize</span>)]</span>
+<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">untagged</span>)]</span>
+<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">PeerCount</span> {
+	<span class="ident">U32</span>(<span class="ident">u32</span>),
+	<span class="ident">String</span>(<span class="ident">String</span>)
 }
 
 <span class="doccomment">/// Peer connection information</span>
