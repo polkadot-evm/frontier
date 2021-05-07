@@ -9,7 +9,7 @@ export const WS_PORT = 19933;
 export const DISPLAY_LOG = process.env.FRONTIER_LOG || false;
 export const FRONTIER_LOG = process.env.FRONTIER_LOG || "info";
 
-export const BINARY_PATH = `../target/release/frontier-template-node`;
+export const BINARY_PATH = `../target/debug/frontier-template-node`;
 export const SPAWNING_TIME = 30000;
 
 export const GENESIS_ACCOUNT = "0x6be02d1d3665660d22ff9624b7be0551ee1ac91b";
