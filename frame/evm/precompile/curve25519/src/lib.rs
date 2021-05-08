@@ -63,6 +63,7 @@ impl LinearCostPrecompile for Curve25519Add {
 	}
 }
 
+// Multiplies a scalar field element with an elliptic curve point
 pub struct Curve25519ScalarMul;
 
 impl LinearCostPrecompile for Curve25519ScalarMul {
@@ -77,10 +78,12 @@ impl LinearCostPrecompile for Curve25519ScalarMul {
 			return Err(ExitError::Other("input must contain 64 bytes (scalar - 32 bytes, point - 32 bytes)".into()));
 		};
 
+		// first 32 bytes is for the scalar value
 		let mut scalar_buf = [0; 32];
 		scalar_buf.copy_from_slice(&input[0..32]);
 		let scalar = Scalar::from_bytes_mod_order(scalar_buf);
 
+		// second 32 bytes is for the compressed ristretto point bytes
 		let mut pt_buf = [0; 32];
 		pt_buf.copy_from_slice(&input[32..64]);
 		let point: RistrettoPoint = CompressedRistretto::from_slice(&pt_buf)
