@@ -16,6 +16,7 @@ sourcesIndex["pallet_ethereum"] = {"name":"","files":["lib.rs"]};
 sourcesIndex["pallet_evm"] = {"name":"","dirs":[{"name":"runner","files":["mod.rs","stack.rs"]}],"files":["lib.rs"]};
 sourcesIndex["pallet_evm_precompile_blake2"] = {"name":"","files":["eip_152.rs","lib.rs"]};
 sourcesIndex["pallet_evm_precompile_bn128"] = {"name":"","files":["lib.rs"]};
+sourcesIndex["pallet_evm_precompile_curve25519"] = {"name":"","files":["lib.rs"]};
 sourcesIndex["pallet_evm_precompile_dispatch"] = {"name":"","files":["lib.rs"]};
 sourcesIndex["pallet_evm_precompile_ed25519"] = {"name":"","files":["lib.rs"]};
 sourcesIndex["pallet_evm_precompile_modexp"] = {"name":"","files":["lib.rs"]};
