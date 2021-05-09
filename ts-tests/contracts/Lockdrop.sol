@@ -35,13 +35,18 @@ contract Lockdrop {
     uint256 constant public LOCK_DROP_PERIOD = 1 days * 92; // 3 months
     uint256 public LOCK_START_TIME;
     uint256 public LOCK_END_TIME;
+
+    function period() public returns (uint256) { return LOCK_DROP_PERIOD; }
+    function start() public returns (uint256) { return LOCK_START_TIME; }
+    function end() public returns (uint256) { return LOCK_END_TIME; }
+
     // ETH locking events
     event Locked(address indexed owner, uint256 eth, Lock lockAddr, Term term, bytes edgewareAddr, bool isValidator, uint time);
     event Signaled(address indexed contractAddr, bytes edgewareAddr, uint time);
     
-    constructor(uint startTime) public {
-        LOCK_START_TIME = startTime;
-        LOCK_END_TIME = startTime + LOCK_DROP_PERIOD;
+    constructor() public {
+        LOCK_START_TIME = block.timestamp;
+        LOCK_END_TIME = LOCK_START_TIME + LOCK_DROP_PERIOD;
     }
 
     /**

@@ -12,6 +12,20 @@ export const FRONTIER_LOG = process.env.FRONTIER_LOG || "info";
 export const BINARY_PATH = `../target/debug/frontier-template-node`;
 export const SPAWNING_TIME = 30000;
 
+export function getCurrentBlock(web3) {
+  return new Promise((resolve, reject) => {
+    web3.eth.getBlock('latest', function (err, res) {
+      if (err) return reject(err);
+      resolve(res);
+    });
+  });
+}
+
+export async function getCurrentTimestamp(web3) {
+  const block: any = await getCurrentBlock(web3);
+  return block.timestamp;
+}
+
 export async function customRequest(web3: Web3, method: string, params: any[]) {
 	return new Promise<JsonRpcResponse>((resolve, reject) => {
 		(web3.currentProvider as any).send(
