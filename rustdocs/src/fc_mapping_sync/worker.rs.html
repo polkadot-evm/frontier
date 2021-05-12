@@ -156,7 +156,7 @@
 <span class="kw">use</span> <span class="ident">sp_blockchain</span>::<span class="ident">HeaderBackend</span>;
 <span class="kw">use</span> <span class="ident">fp_rpc</span>::<span class="ident">EthereumRuntimeRPCApi</span>;
 <span class="kw">use</span> <span class="ident">futures_timer</span>::<span class="ident">Delay</span>;
-<span class="kw">use</span> <span class="ident">log</span>::<span class="ident">warn</span>;
+<span class="kw">use</span> <span class="ident">log</span>::<span class="ident">debug</span>;
 
 <span class="kw">const</span> <span class="ident">LIMIT</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">8</span>;
 
@@ -243,7 +243,7 @@
 				},
 				<span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> {
 					<span class="self">self</span>.<span class="ident">have_next</span> <span class="op">=</span> <span class="bool-val">false</span>;
-					<span class="macro">warn</span><span class="macro">!</span>(<span class="ident">target</span>: <span class="string">&quot;mapping-sync&quot;</span>, <span class="string">&quot;Syncing failed with error {:?}, retrying.&quot;</span>, <span class="ident">e</span>);
+					<span class="macro">debug</span><span class="macro">!</span>(<span class="ident">target</span>: <span class="string">&quot;mapping-sync&quot;</span>, <span class="string">&quot;Syncing failed with error {:?}, retrying.&quot;</span>, <span class="ident">e</span>);
 					<span class="ident">Poll</span>::<span class="ident">Ready</span>(<span class="prelude-val">Some</span>(()))
 				},
 			}
