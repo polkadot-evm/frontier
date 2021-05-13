@@ -43,6 +43,11 @@ decl_storage! {
 		MinGasPrice get(fn min_gas_price) config(): U256;
 		TargetMinGasPrice: Option<U256>;
 	}
+	add_extra_genesis {
+		build(|_config: &GenesisConfig| {
+			MinGasPrice::set(U256::from(1));
+		});
+	}
 }
 
 decl_event!(
@@ -81,12 +86,30 @@ decl_module! {
 	}
 }
 
+impl<T: Config> pallet_evm::FeeCalculator for Module<T> {
+	fn min_gas_price() -> U256 {
+		MinGasPrice::get()
+	}
+}
+
 #[derive(Encode, Decode, RuntimeDebug)]
 pub enum InherentError { }
 
 impl IsFatalError for InherentError {
 	fn is_fatal_error(&self) -> bool {
 		match *self { }
+	}
+}
+
+impl InherentError {
+	/// Try to create an instance ouf of the given identifier and data.
+	#[cfg(feature = "std")]
+	pub fn try_from(id: &InherentIdentifier, data: &[u8]) -> Option<Self> {
+		if id == &INHERENT_IDENTIFIER {
+			<InherentError as codec::Decode>::decode(&mut &data[..]).ok()
+		} else {
+			None
+		}
 	}
 }
 
@@ -110,8 +133,8 @@ impl ProvideInherentData for InherentDataProvider {
 		inherent_data.put_data(INHERENT_IDENTIFIER, &self.0)
 	}
 
-	fn error_to_string(&self, _: &[u8]) -> Option<String> {
-		None
+	fn error_to_string(&self, error: &[u8]) -> Option<String> {
+		InherentError::try_from(&INHERENT_IDENTIFIER, error).map(|e| format!("{:?}", e))
 	}
 }
 
