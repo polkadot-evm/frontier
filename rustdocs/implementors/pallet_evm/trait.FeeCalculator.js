@@ -1,4 +1,4 @@
 (function() {var implementors = {};
-implementors["frontier_template_runtime"] = [{"text":"impl <a class=\"trait\" href=\"pallet_evm/trait.FeeCalculator.html\" title=\"trait pallet_evm::FeeCalculator\">FeeCalculator</a> for <a class=\"struct\" href=\"frontier_template_runtime/struct.FixedGasPrice.html\" title=\"struct frontier_template_runtime::FixedGasPrice\">FixedGasPrice</a>","synthetic":false,"types":["frontier_template_runtime::FixedGasPrice"]}];
+implementors["pallet_dynamic_fee"] = [{"text":"impl&lt;T:&nbsp;<a class=\"trait\" href=\"pallet_dynamic_fee/trait.Config.html\" title=\"trait pallet_dynamic_fee::Config\">Config</a>&gt; <a class=\"trait\" href=\"pallet_evm/trait.FeeCalculator.html\" title=\"trait pallet_evm::FeeCalculator\">FeeCalculator</a> for <a class=\"struct\" href=\"pallet_dynamic_fee/struct.Module.html\" title=\"struct pallet_dynamic_fee::Module\">Module</a>&lt;T&gt;","synthetic":false,"types":["pallet_dynamic_fee::Module"]}];
 implementors["pallet_evm"] = [];
 if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

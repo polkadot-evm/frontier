@@ -133,6 +133,29 @@
 <span id="130">130</span>
 <span id="131">131</span>
 <span id="132">132</span>
+<span id="133">133</span>
+<span id="134">134</span>
+<span id="135">135</span>
+<span id="136">136</span>
+<span id="137">137</span>
+<span id="138">138</span>
+<span id="139">139</span>
+<span id="140">140</span>
+<span id="141">141</span>
+<span id="142">142</span>
+<span id="143">143</span>
+<span id="144">144</span>
+<span id="145">145</span>
+<span id="146">146</span>
+<span id="147">147</span>
+<span id="148">148</span>
+<span id="149">149</span>
+<span id="150">150</span>
+<span id="151">151</span>
+<span id="152">152</span>
+<span id="153">153</span>
+<span id="154">154</span>
+<span id="155">155</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
@@ -179,6 +202,11 @@
 		<span class="ident">MinGasPrice</span> <span class="ident">get</span>(<span class="kw">fn</span> <span class="ident">min_gas_price</span>) <span class="ident">config</span>(): <span class="ident">U256</span>;
 		<span class="ident">TargetMinGasPrice</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>;
 	}
+	<span class="ident">add_extra_genesis</span> {
+		<span class="ident">build</span>(<span class="op">|</span><span class="ident">_config</span>: <span class="kw-2">&amp;</span><span class="ident">GenesisConfig</span><span class="op">|</span> {
+			<span class="ident">MinGasPrice</span>::<span class="ident">set</span>(<span class="ident">U256</span>::<span class="ident">from</span>(<span class="number">1</span>));
+		});
+	}
 }
 
 <span class="macro">decl_event</span><span class="macro">!</span>(
@@ -217,12 +245,30 @@
 	}
 }
 
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">pallet_evm</span>::<span class="ident">FeeCalculator</span> <span class="kw">for</span> <span class="ident">Module</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">min_gas_price</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">U256</span> {
+		<span class="ident">MinGasPrice</span>::<span class="ident">get</span>()
+	}
+}
+
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">RuntimeDebug</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">InherentError</span> { }
 
 <span class="kw">impl</span> <span class="ident">IsFatalError</span> <span class="kw">for</span> <span class="ident">InherentError</span> {
 	<span class="kw">fn</span> <span class="ident">is_fatal_error</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
 		<span class="kw">match</span> <span class="kw-2">*</span><span class="self">self</span> { }
+	}
+}
+
+<span class="kw">impl</span> <span class="ident">InherentError</span> {
+	<span class="doccomment">/// Try to create an instance ouf of the given identifier and data.</span>
+	<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>)]</span>
+	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">try_from</span>(<span class="ident">id</span>: <span class="kw-2">&amp;</span><span class="ident">InherentIdentifier</span>, <span class="ident">data</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
+		<span class="kw">if</span> <span class="ident">id</span> <span class="op">=</span><span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">INHERENT_IDENTIFIER</span> {
+			<span class="op">&lt;</span><span class="ident">InherentError</span> <span class="kw">as</span> <span class="ident">codec</span>::<span class="ident">Decode</span><span class="op">&gt;</span>::<span class="ident">decode</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="kw-2">&amp;</span><span class="ident">data</span>[..]).<span class="ident">ok</span>()
+		} <span class="kw">else</span> {
+			<span class="prelude-val">None</span>
+		}
 	}
 }
 
@@ -246,8 +292,8 @@
 		<span class="ident">inherent_data</span>.<span class="ident">put_data</span>(<span class="ident">INHERENT_IDENTIFIER</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>)
 	}
 
-	<span class="kw">fn</span> <span class="ident">error_to_string</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="kw">_</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span> {
-		<span class="prelude-val">None</span>
+	<span class="kw">fn</span> <span class="ident">error_to_string</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">error</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span> {
+		<span class="ident">InherentError</span>::<span class="ident">try_from</span>(<span class="kw-2">&amp;</span><span class="ident">INHERENT_IDENTIFIER</span>, <span class="ident">error</span>).<span class="ident">map</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">e</span>))
 	}
 }
 

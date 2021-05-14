@@ -639,6 +639,7 @@
 <span id="636">636</span>
 <span id="637">637</span>
 <span id="638">638</span>
+<span id="639">639</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! The Substrate Node Template runtime. This can be compiled with `#[no_std]`, ready for Wasm.</span>
 
@@ -906,15 +907,6 @@
 	<span class="kw">type</span> <span class="ident">Call</span> <span class="op">=</span> <span class="ident">Call</span>;
 }
 
-<span class="doccomment">/// Fixed gas price of `1`.</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">FixedGasPrice</span>;
-
-<span class="kw">impl</span> <span class="ident">FeeCalculator</span> <span class="kw">for</span> <span class="ident">FixedGasPrice</span> {
-	<span class="kw">fn</span> <span class="ident">min_gas_price</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">U256</span> {
-		<span class="comment">// Gas price is always one token per gas.</span>
-		<span class="number">1</span>.<span class="ident">into</span>()
-	}
-}
 
 <span class="macro">parameter_types</span><span class="macro">!</span> {
 	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">ChainId</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">42</span>;
@@ -922,7 +914,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">pallet_evm</span>::<span class="ident">Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
-	<span class="kw">type</span> <span class="ident">FeeCalculator</span> <span class="op">=</span> <span class="ident">FixedGasPrice</span>;
+	<span class="kw">type</span> <span class="ident">FeeCalculator</span> <span class="op">=</span> <span class="ident">pallet_dynamic_fee</span>::<span class="ident">Module</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span>;
 	<span class="kw">type</span> <span class="ident">GasWeightMapping</span> <span class="op">=</span> ();
 	<span class="kw">type</span> <span class="ident">CallOrigin</span> <span class="op">=</span> <span class="ident">EnsureAddressTruncated</span>;
 	<span class="kw">type</span> <span class="ident">WithdrawOrigin</span> <span class="op">=</span> <span class="ident">EnsureAddressTruncated</span>;
@@ -965,6 +957,15 @@
 	<span class="kw">type</span> <span class="ident">StateRoot</span> <span class="op">=</span> <span class="ident">pallet_ethereum</span>::<span class="ident">IntermediateStateRoot</span>;
 }
 
+<span class="ident">frame_support</span>::<span class="macro">parameter_types</span><span class="macro">!</span> {
+	<span class="kw">pub</span> <span class="ident">BoundDivision</span>: <span class="ident">U256</span> <span class="op">=</span> <span class="ident">U256</span>::<span class="ident">from</span>(<span class="number">1024</span>);
+}
+
+<span class="kw">impl</span> <span class="ident">pallet_dynamic_fee</span>::<span class="ident">Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
+	<span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
+	<span class="kw">type</span> <span class="ident">MinGasPriceBoundDivisor</span> <span class="op">=</span> <span class="ident">BoundDivision</span>;
+}
+
 <span class="comment">// Create the runtime by composing the FRAME pallets that were previously configured.</span>
 <span class="macro">construct_runtime</span><span class="macro">!</span>(
 	<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Runtime</span> <span class="kw">where</span>
@@ -982,6 +983,7 @@
 		<span class="ident">Sudo</span>: <span class="ident">pallet_sudo</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Config</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>},
 		<span class="ident">Ethereum</span>: <span class="ident">pallet_ethereum</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span>, <span class="ident">Config</span>, <span class="ident">ValidateUnsigned</span>},
 		<span class="ident">EVM</span>: <span class="ident">pallet_evm</span>::{<span class="ident">Module</span>, <span class="ident">Config</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>},
+		<span class="ident">DynamicFee</span>: <span class="ident">pallet_dynamic_fee</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Config</span>, <span class="ident">Event</span>, <span class="ident">Inherent</span>},
 	}
 );
 
