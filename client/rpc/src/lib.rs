@@ -172,7 +172,7 @@ pub fn error_on_execution_failure(reason: &ExitReason, data: &[u8]) -> Result<()
 				// `ServerError(0)` will be useful in estimate gas
 				return Err(Error {
 					code: ErrorCode::ServerError(0),
-					message: format!("out of gas or fund"),
+					message: format!("out of gas"),
 					data: None,
 				});
 			}
