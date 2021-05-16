@@ -150,7 +150,7 @@ impl SubscriptionResult {
 						)
 					],
 					size: Some(U256::from(
-						rlp::encode(&block).len() as u32
+						rlp::encode(&block.header).len() as u32
 					)),
 				},
 				extra_info: BTreeMap::new()
