@@ -45,6 +45,7 @@ impl Serialize for BlockTransactions {
 
 /// Block representation
 #[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Block {
 	/// Header of the block
 	#[serde(flatten)]
