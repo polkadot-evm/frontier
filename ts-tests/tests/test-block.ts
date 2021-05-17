@@ -17,6 +17,7 @@ describeWithFrontier("Frontier RPC (Block)", (context) => {
 		expect(await context.web3.eth.getBlockNumber()).to.equal(0);
 
 		const block = await context.web3.eth.getBlock(0);
+		console.log(block)
 		expect(block).to.include({
 			author: "0x0000000000000000000000000000000000000000",
 			difficulty: "0",

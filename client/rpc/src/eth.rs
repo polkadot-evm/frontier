@@ -38,7 +38,7 @@ use fc_rpc_core::{
 };
 use fc_rpc_core::types::{
 	BlockNumber, Bytes, CallRequest, Filter, FilteredParams, FilterChanges, FilterPool, FilterPoolItem,
-	FilterType, Index, Log, Receipt, RichBlock, SyncStatus, SyncInfo, Transaction, Work, Rich, Block,
+	FilterType, Index, Log, Receipt, RichBlock, SyncStatus, SyncInfo, Transaction, Work, Rich, Block, Header,
 	BlockTransactions, TransactionRequest, PendingTransactions, PendingTransaction, PeerCount,
 };
 use fp_rpc::{EthereumRuntimeRPCApi, ConvertTransaction, TransactionStatus};
@@ -104,30 +104,33 @@ fn rich_block_build(
 ) -> RichBlock {
 	Rich {
 		inner: Block {
-			hash: Some(hash.unwrap_or_else(|| {
-				H256::from_slice(
-					Keccak256::digest(&rlp::encode(&block.header)).as_slice()
-				)
-			})),
-			parent_hash: block.header.parent_hash,
-			uncles_hash: block.header.ommers_hash,
-			author: block.header.beneficiary,
-			miner: block.header.beneficiary,
-			state_root: block.header.state_root,
-			transactions_root: block.header.transactions_root,
-			receipts_root: block.header.receipts_root,
-			number: Some(block.header.number),
-			gas_used: block.header.gas_used,
-			gas_limit: block.header.gas_limit,
-			extra_data: Bytes(block.header.extra_data.clone()),
-			logs_bloom: Some(block.header.logs_bloom),
-			timestamp: U256::from(block.header.timestamp / 1000),
-			difficulty: block.header.difficulty,
+			header: Header {
+				hash: Some(hash.unwrap_or_else(|| {
+					H256::from_slice(
+						Keccak256::digest(&rlp::encode(&block.header)).as_slice()
+					)
+				})),
+				parent_hash: block.header.parent_hash,
+				uncles_hash: block.header.ommers_hash,
+				author: block.header.beneficiary,
+				miner: block.header.beneficiary,
+				state_root: block.header.state_root,
+				transactions_root: block.header.transactions_root,
+				receipts_root: block.header.receipts_root,
+				number: Some(block.header.number),
+				gas_used: block.header.gas_used,
+				gas_limit: block.header.gas_limit,
+				extra_data: Bytes(block.header.extra_data.clone()),
+				logs_bloom: block.header.logs_bloom,
+				timestamp: U256::from(block.header.timestamp / 1000),
+				difficulty: block.header.difficulty,
+				seal_fields: vec![
+					Bytes(block.header.mix_hash.as_bytes().to_vec()),
+					Bytes(block.header.nonce.as_bytes().to_vec())
+				],
+				size: Some(U256::from(rlp::encode(&block.header).len() as u32))
+			},
 			total_difficulty: U256::zero(),
-			seal_fields: vec![
-				Bytes(block.header.mix_hash.as_bytes().to_vec()),
-				Bytes(block.header.nonce.as_bytes().to_vec())
-			],
 			uncles: vec![],
 			transactions: {
 				if full_transactions {
