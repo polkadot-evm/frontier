@@ -755,7 +755,19 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 			nonce
 		} = request;
 
-		let gas_limit = gas.unwrap_or(U256::max_value()); // TODO: set a limit
+		// use given gas limit or query current block's limit
+		let gas_limit = match gas {
+			Some(amount) => amount,
+			None => {
+				let block = self.client.runtime_api().current_block(&BlockId::Hash(hash))
+					.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?;
+				if let Some(block) = block {
+					block.header.gas_limit
+				} else {
+					return Err(internal_err(format!("block unavailable, cannot query gas limit")));
+				}
+			},
+		};
 		let data = data.map(|d| d.0).unwrap_or_default();
 
 		match to {
@@ -815,7 +827,20 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 				nonce
 			} = request;
 
-			let gas_limit = gas.unwrap_or(U256::max_value()); // TODO: set a limit
+			// use given gas limit or query current block's limit
+			let gas_limit = match gas {
+				Some(amount) => amount,
+				None => {
+					let block = self.client.runtime_api().current_block(&BlockId::Hash(hash))
+						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?;
+					if let Some(block) = block {
+						block.header.gas_limit
+					} else {
+						return Err(internal_err(format!("block unavailable, cannot query gas limit")));
+					}
+				},
+			};
+
 			let data = data.map(|d| d.0).unwrap_or_default();
 
 			let used_gas = match to {
