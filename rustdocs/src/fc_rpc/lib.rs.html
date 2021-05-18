@@ -484,11 +484,11 @@
 	<span class="kw">match</span> <span class="ident">reason</span> {
 		<span class="ident">ExitReason</span>::<span class="ident">Succeed</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(()),
 		<span class="ident">ExitReason</span>::<span class="ident">Error</span>(<span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> {
-			<span class="kw">if</span> <span class="kw-2">*</span><span class="ident">e</span> <span class="op">=</span><span class="op">=</span> <span class="ident">ExitError</span>::<span class="ident">OutOfGas</span> <span class="op">|</span><span class="op">|</span> <span class="kw-2">*</span><span class="ident">e</span> <span class="op">=</span><span class="op">=</span> <span class="ident">ExitError</span>::<span class="ident">OutOfFund</span> {
+			<span class="kw">if</span> <span class="kw-2">*</span><span class="ident">e</span> <span class="op">=</span><span class="op">=</span> <span class="ident">ExitError</span>::<span class="ident">OutOfGas</span> {
 				<span class="comment">// `ServerError(0)` will be useful in estimate gas</span>
 				<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span> {
 					<span class="ident">code</span>: <span class="ident">ErrorCode</span>::<span class="ident">ServerError</span>(<span class="number">0</span>),
-					<span class="ident">message</span>: <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;out of gas or fund&quot;</span>),
+					<span class="ident">message</span>: <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;out of gas&quot;</span>),
 					<span class="ident">data</span>: <span class="prelude-val">None</span>,
 				});
 			}

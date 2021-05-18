@@ -2516,17 +2516,17 @@
 					}
 
 					<span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=</span><span class="op">&gt;</span> {
-						<span class="comment">// if Err == OutofGas or OutofFund, we need more gas</span>
+						<span class="comment">// if Err == OutofGas, we need more gas</span>
 						<span class="kw">if</span> <span class="ident">err</span>.<span class="ident">code</span> <span class="op">=</span><span class="op">=</span> <span class="ident">ErrorCode</span>::<span class="ident">ServerError</span>(<span class="number">0</span>) {
 							<span class="ident">lower</span> <span class="op">=</span> <span class="ident">mid</span>;
 							<span class="ident">mid</span> <span class="op">=</span> (<span class="ident">lower</span> <span class="op">+</span> <span class="ident">upper</span> <span class="op">+</span> <span class="number">1</span>) <span class="op">/</span> <span class="number">2</span>;
 							<span class="kw">if</span> <span class="ident">mid</span> <span class="op">=</span><span class="op">=</span> <span class="ident">lower</span> {
 								<span class="kw">break</span>;
 							}
+						} <span class="kw">else</span> {
+							<span class="comment">// Other errors, return directly</span>
+							<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">err</span>);
 						}
-
-						<span class="comment">// Other errors, return directly</span>
-						<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">err</span>);
 					}
 				}
 			}
