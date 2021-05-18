@@ -43,7 +43,7 @@ pub use frame_support::{
 	ConsensusEngineId,
 };
 use pallet_evm::{
-	Account as EVMAccount, FeeCalculator, HashedAddressMapping,
+	Account as EVMAccount, HashedAddressMapping,
 	EnsureAddressTruncated, Runner,
 };
 use fp_rpc::TransactionStatus;
@@ -340,7 +340,7 @@ construct_runtime!(
 		Sudo: pallet_sudo::{Module, Call, Config<T>, Storage, Event<T>},
 		Ethereum: pallet_ethereum::{Module, Call, Storage, Event, Config, ValidateUnsigned},
 		EVM: pallet_evm::{Module, Config, Call, Storage, Event<T>},
-		DynamicFee: pallet_dynamic_fee::{Module, Call, Storage, Config, Event, Inherent},
+		DynamicFee: pallet_dynamic_fee::{Module, Call, Storage, Config, Event<T>, Inherent},
 	}
 );
 

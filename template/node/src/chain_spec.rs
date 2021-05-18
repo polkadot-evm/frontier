@@ -1,7 +1,7 @@
 use std::{str::FromStr, collections::BTreeMap};
 use sp_core::{H160, U256, Pair, Public, sr25519};
 use frontier_template_runtime::{
-	AccountId, AuraConfig, BalancesConfig, EVMConfig, EthereumConfig, GenesisConfig, GrandpaConfig,
+	AccountId, AuraConfig, BalancesConfig, EVMConfig, EthereumConfig, GenesisConfig, GrandpaConfig, DynamicFeeConfig,
 	SudoConfig, SystemConfig, WASM_BINARY, Signature
 };
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -172,6 +172,8 @@ fn testnet_genesis(
 			},
 		},
 		pallet_ethereum: EthereumConfig {},
-		pallet_dynamic_fee: Default::default(),
+		pallet_dynamic_fee: DynamicFeeConfig {
+			min_gas_price: U256::from(1),
+		},
 	}
 }
