@@ -172,5 +172,6 @@ fn testnet_genesis(
 			},
 		},
 		pallet_ethereum: EthereumConfig {},
+		pallet_dynamic_fee: Default::default(),
 	}
 }

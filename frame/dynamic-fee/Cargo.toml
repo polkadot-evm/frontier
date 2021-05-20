@@ -1,12 +1,13 @@
 [package]
 name = "pallet-dynamic-fee"
-version = "1.0.0"
+version = "1.0.1-dev"
 authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2018"
 description = "Dynamic fee handling for EVM."
 license = "Apache-2.0"
 
 [dependencies]
+pallet-evm = { path = "../evm", version = "3.0.1-dev", default-features = false }
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false }
 serde = { version = "1.0.101", optional = true }
 sp-std = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
@@ -27,4 +28,5 @@ std = [
 	"sp-inherents/std",
 	"frame-system/std",
 	"frame-support/std",
+	"pallet-evm/std",
 ]

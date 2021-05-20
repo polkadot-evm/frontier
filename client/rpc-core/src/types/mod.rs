@@ -48,7 +48,7 @@ pub use self::log::Log;
 pub use self::receipt::Receipt;
 pub use self::sync::{
 	SyncStatus, SyncInfo, Peers, PeerInfo, PeerNetworkInfo, PeerProtocolsInfo,
-	TransactionStats, ChainStatus, EthProtocolInfo, PipProtocolInfo,
+	TransactionStats, ChainStatus, EthProtocolInfo, PipProtocolInfo, PeerCount,
 };
 pub use self::transaction::{
 	Transaction, RichRawTransaction, LocalTransactionStatus, PendingTransactions, PendingTransaction,
