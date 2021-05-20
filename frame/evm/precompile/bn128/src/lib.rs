@@ -25,7 +25,6 @@ use fp_evm::Precompile;
 use evm::{ExitSucceed, ExitError, Context};
 
 fn read_fr(input: &[u8], start_inx: usize) -> Result<bn::Fr, ExitError> {
-
 	if input.len() < start_inx + 32 {
 		return Err(ExitError::Other("Input not long enough".into()));
 	}
