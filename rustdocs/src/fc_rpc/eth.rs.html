@@ -1622,6 +1622,31 @@
 <span id="1619">1619</span>
 <span id="1620">1620</span>
 <span id="1621">1621</span>
+<span id="1622">1622</span>
+<span id="1623">1623</span>
+<span id="1624">1624</span>
+<span id="1625">1625</span>
+<span id="1626">1626</span>
+<span id="1627">1627</span>
+<span id="1628">1628</span>
+<span id="1629">1629</span>
+<span id="1630">1630</span>
+<span id="1631">1631</span>
+<span id="1632">1632</span>
+<span id="1633">1633</span>
+<span id="1634">1634</span>
+<span id="1635">1635</span>
+<span id="1636">1636</span>
+<span id="1637">1637</span>
+<span id="1638">1638</span>
+<span id="1639">1639</span>
+<span id="1640">1640</span>
+<span id="1641">1641</span>
+<span id="1642">1642</span>
+<span id="1643">1643</span>
+<span id="1644">1644</span>
+<span id="1645">1645</span>
+<span id="1646">1646</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
@@ -2380,7 +2405,19 @@
 			<span class="ident">nonce</span>
 		} <span class="op">=</span> <span class="ident">request</span>;
 
-		<span class="kw">let</span> <span class="ident">gas_limit</span> <span class="op">=</span> <span class="ident">gas</span>.<span class="ident">unwrap_or</span>(<span class="ident">U256</span>::<span class="ident">max_value</span>()); <span class="comment">// TODO: set a limit</span>
+		<span class="comment">// use given gas limit or query current block&#39;s limit</span>
+		<span class="kw">let</span> <span class="ident">gas_limit</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">gas</span> {
+			<span class="prelude-val">Some</span>(<span class="ident">amount</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">amount</span>,
+			<span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {
+				<span class="kw">let</span> <span class="ident">block</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">runtime_api</span>().<span class="ident">current_block</span>(<span class="kw-2">&amp;</span><span class="ident">BlockId</span>::<span class="ident">Hash</span>(<span class="ident">hash</span>))
+					.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>;
+				<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">block</span>) <span class="op">=</span> <span class="ident">block</span> {
+					<span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">gas_limit</span>
+				} <span class="kw">else</span> {
+					<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;block unavailable, cannot query gas limit&quot;</span>)));
+				}
+			},
+		};
 		<span class="kw">let</span> <span class="ident">data</span> <span class="op">=</span> <span class="ident">data</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">d</span><span class="op">|</span> <span class="ident">d</span>.<span class="number">0</span>).<span class="ident">unwrap_or_default</span>();
 
 		<span class="kw">match</span> <span class="ident">to</span> {
@@ -2440,7 +2477,20 @@
 				<span class="ident">nonce</span>
 			} <span class="op">=</span> <span class="ident">request</span>;
 
-			<span class="kw">let</span> <span class="ident">gas_limit</span> <span class="op">=</span> <span class="ident">gas</span>.<span class="ident">unwrap_or</span>(<span class="ident">U256</span>::<span class="ident">max_value</span>()); <span class="comment">// TODO: set a limit</span>
+			<span class="comment">// use given gas limit or query current block&#39;s limit</span>
+			<span class="kw">let</span> <span class="ident">gas_limit</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">gas</span> {
+				<span class="prelude-val">Some</span>(<span class="ident">amount</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">amount</span>,
+				<span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {
+					<span class="kw">let</span> <span class="ident">block</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">runtime_api</span>().<span class="ident">current_block</span>(<span class="kw-2">&amp;</span><span class="ident">BlockId</span>::<span class="ident">Hash</span>(<span class="ident">hash</span>))
+						.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>;
+					<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">block</span>) <span class="op">=</span> <span class="ident">block</span> {
+						<span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">gas_limit</span>
+					} <span class="kw">else</span> {
+						<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;block unavailable, cannot query gas limit&quot;</span>)));
+					}
+				},
+			};
+
 			<span class="kw">let</span> <span class="ident">data</span> <span class="op">=</span> <span class="ident">data</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">d</span><span class="op">|</span> <span class="ident">d</span>.<span class="number">0</span>).<span class="ident">unwrap_or_default</span>();
 
 			<span class="kw">let</span> <span class="ident">used_gas</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">to</span> {
