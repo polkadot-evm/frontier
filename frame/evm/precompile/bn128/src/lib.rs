@@ -25,11 +25,19 @@ use fp_evm::Precompile;
 use evm::{ExitSucceed, ExitError, Context};
 
 fn read_fr(input: &[u8], start_inx: usize) -> Result<bn::Fr, ExitError> {
+	if input.len() < start_inx + 32 {
+		return Err(ExitError::Other("Input not long enough".into()));
+	}
+
 	bn::Fr::from_slice(&input[start_inx..(start_inx + 32)]).map_err(|_| ExitError::Other("Invalid field element".into()))
 }
 
 fn read_point(input: &[u8], start_inx: usize) -> Result<bn::G1, ExitError> {
 	use bn::{Fq, AffineG1, G1, Group};
+
+	if input.len() < start_inx + 64 {
+		return Err(ExitError::Other("Input not long enough".into()));
+	}
 
 	let px = Fq::from_slice(&input[start_inx..(start_inx + 32)]).map_err(|_| ExitError::Other("Invalid point x coordinate".into()))?;
 	let py = Fq::from_slice(&input[(start_inx + 32)..(start_inx + 64)]).map_err(|_| ExitError::Other("Invalid point y coordinate".into()))?;
