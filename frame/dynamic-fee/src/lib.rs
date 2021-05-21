@@ -22,73 +22,118 @@ use codec::{Encode, Decode};
 use sp_std::{result, cmp::{min, max}};
 use sp_runtime::RuntimeDebug;
 use sp_core::U256;
-use sp_inherents::{InherentIdentifier, InherentData, ProvideInherent, IsFatalError};
-#[cfg(feature = "std")]
-use sp_inherents::ProvideInherentData;
-use frame_support::{
-	decl_module, decl_storage, decl_event,
-	traits::Get,
-};
+use sp_inherents::{InherentIdentifier, InherentData, IsFatalError};
+use frame_support::{traits::Get};
+
 use frame_system::ensure_none;
+pub use pallet::*;
 
-pub trait Config: frame_system::Config {
-	/// The overarching event type.
-	type Event: From<Event> + Into<<Self as frame_system::Config>::Event>;
-	/// Bound divisor for min gas price.
-	type MinGasPriceBoundDivisor: Get<U256>;
-}
+/// Implementation of Mixer pallet
+#[frame_support::pallet]
+pub mod pallet {
+	use super::*;
+	use frame_support::pallet_prelude::*;
+	use frame_system::pallet_prelude::*;
 
-decl_storage! {
-	trait Store for Module<T: Config> as DynamicFee {
-		MinGasPrice get(fn min_gas_price) config(): U256;
-		TargetMinGasPrice: Option<U256>;
+	#[pallet::config]
+	pub trait Config: frame_system::Config {
+		/// The overarching event type.
+		type Event: IsType<<Self as frame_system::Config>::Event> + From<Event<Self>>;
+		/// Bound divisor for min gas price.
+		type MinGasPriceBoundDivisor: Get<U256>;
 	}
-	add_extra_genesis {
-		build(|_config: &GenesisConfig| {
-			MinGasPrice::set(U256::from(1));
-		});
+
+	#[pallet::storage]
+	#[pallet::getter(fn target_min_gas_price)]
+	pub type TargetMinGasPrice<T: Config> = StorageValue<_, Option<U256>, ValueQuery>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn min_gas_price)]
+	pub type MinGasPrice<T: Config> = StorageValue<_, U256, ValueQuery>;
+
+	#[pallet::genesis_config]
+	pub struct GenesisConfig {
+		pub gas_price: U256,
 	}
-}
 
-decl_event!(
-	pub enum Event {
-		TargetMinGasPriceSet(U256),
+	#[cfg(feature = "std")]
+	impl Default for GenesisConfig {
+		fn default() -> Self {
+			Self {
+				gas_price: U256::from(1),
+			}
+		}
 	}
-);
 
-decl_module! {
-	pub struct Module<T: Config> for enum Call where origin: T::Origin {
-		fn deposit_event() = default;
+	#[pallet::genesis_build]
+	impl<T: Config> GenesisBuild<T> for GenesisConfig {
+		fn build(&self) {
+			MinGasPrice::<T>::set(U256::from(1));
+		}
+	}
 
-		fn on_finalize(n: T::BlockNumber) {
-			if let Some(target) = TargetMinGasPrice::get() {
-				let bound = MinGasPrice::get() / T::MinGasPriceBoundDivisor::get() + U256::one();
+	#[pallet::event]
+	#[pallet::generate_deposit(pub(super) fn deposit_event)]
+	pub enum Event<T: Config> {
+		TargetMinGasPriceSet(U256)
+	}
 
-				let upper_limit = MinGasPrice::get().saturating_add(bound);
-				let lower_limit = MinGasPrice::get().saturating_sub(bound);
+	#[pallet::pallet]
+	#[pallet::generate_store(pub(super) trait Store)]
+	pub struct Pallet<T>(PhantomData<T>);
 
-				MinGasPrice::set(min(upper_limit, max(lower_limit, target)));
+	#[pallet::hooks]
+	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+		fn on_finalize(_n: T::BlockNumber) {
+			if let Some(target) = TargetMinGasPrice::<T>::get() {
+				let bound = MinGasPrice::<T>::get() / T::MinGasPriceBoundDivisor::get() + U256::one();
+
+				let upper_limit = MinGasPrice::<T>::get().saturating_add(bound);
+				let lower_limit = MinGasPrice::<T>::get().saturating_sub(bound);
+
+				MinGasPrice::<T>::set(min(upper_limit, max(lower_limit, target)));
 			}
 
-			TargetMinGasPrice::kill();
+			TargetMinGasPrice::<T>::kill();
 		}
+	}
 
-		#[weight = 0]
+	#[pallet::call]
+	impl<T: Config> Pallet<T> {
+		#[pallet::weight(0)]
 		fn note_min_gas_price_target(
-			origin,
+			origin: OriginFor<T>,
 			target: U256,
-		) {
+		) -> DispatchResultWithPostInfo {
 			ensure_none(origin)?;
 
-			TargetMinGasPrice::set(Some(target));
+			TargetMinGasPrice::<T>::set(Some(target));
 			Self::deposit_event(Event::TargetMinGasPriceSet(target));
+			Ok(().into())
+		}
+	}
+
+	#[pallet::inherent]
+	impl<T: Config> ProvideInherent for Pallet<T> {
+		type Call = Call<T>;
+		type Error = InherentError;
+		const INHERENT_IDENTIFIER: InherentIdentifier = INHERENT_IDENTIFIER;
+
+		fn create_inherent(data: &InherentData) -> Option<Self::Call> {
+			let target = data.get_data::<InherentType>(&INHERENT_IDENTIFIER).ok()??;
+
+			Some(Call::note_min_gas_price_target(target))
+		}
+
+		fn check_inherent(_call: &Self::Call, _data: &InherentData) -> result::Result<(), Self::Error> {
+			Ok(())
 		}
 	}
 }
 
-impl<T: Config> pallet_evm::FeeCalculator for Module<T> {
+impl<T: Config> pallet_evm::FeeCalculator for Pallet<T> {
 	fn min_gas_price() -> U256 {
-		MinGasPrice::get()
+		MinGasPrice::<T>::get()
 	}
 }
 
@@ -114,14 +159,14 @@ impl InherentError {
 }
 
 pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"dynfee0_";
-
 pub type InherentType = U256;
+
 
 #[cfg(feature = "std")]
 pub struct InherentDataProvider(pub InherentType);
 
 #[cfg(feature = "std")]
-impl ProvideInherentData for InherentDataProvider {
+impl sp_inherents::ProvideInherentData for InherentDataProvider {
 	fn inherent_identifier(&self) -> &'static InherentIdentifier {
 		&INHERENT_IDENTIFIER
 	}
@@ -138,18 +183,3 @@ impl ProvideInherentData for InherentDataProvider {
 	}
 }
 
-impl<T: Config> ProvideInherent for Module<T> {
-	type Call = Call<T>;
-	type Error = InherentError;
-	const INHERENT_IDENTIFIER: InherentIdentifier = INHERENT_IDENTIFIER;
-
-	fn create_inherent(data: &InherentData) -> Option<Self::Call> {
-		let target = data.get_data::<InherentType>(&INHERENT_IDENTIFIER).ok()??;
-
-		Some(Call::note_min_gas_price_target(target))
-	}
-
-	fn check_inherent(_call: &Self::Call, _data: &InherentData) -> result::Result<(), Self::Error> {
-		Ok(())
-	}
-}

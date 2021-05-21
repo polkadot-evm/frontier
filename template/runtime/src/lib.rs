@@ -340,7 +340,7 @@ construct_runtime!(
 		Sudo: pallet_sudo::{Module, Call, Config<T>, Storage, Event<T>},
 		Ethereum: pallet_ethereum::{Module, Call, Storage, Event, Config, ValidateUnsigned},
 		EVM: pallet_evm::{Module, Config, Call, Storage, Event<T>},
-		DynamicFee: pallet_dynamic_fee::{Module, Call, Storage, Config, Event, Inherent},
+		DynamicFee: pallet_dynamic_fee::{Module, Call, Storage, Config, Event<T>, Inherent},
 	}
 );
 
