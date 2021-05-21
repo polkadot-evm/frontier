@@ -406,7 +406,7 @@ pub type Executive = frame_executive::Executive<
 pub struct GasPricePrioritizer();
 
 impl GasPricePrioritizer {
-	fn validate_and_prioritize(
+	pub fn validate_and_prioritize(
 		source: TransactionSource,
 		xt: <Block as BlockT>::Extrinsic,
 	) -> TransactionValidity {

@@ -53,6 +53,11 @@ fp-rpc = { default-features = false, path = "../../primitives/rpc" }
 [build-dependencies]
 substrate-wasm-builder = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 
+[dev-dependencies]
+hex-literal = "0.3"
+rlp = "0.5"
+sp-keyring = { version = "3.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+
 [features]
 default = ["std", "aura"]
 aura = []
