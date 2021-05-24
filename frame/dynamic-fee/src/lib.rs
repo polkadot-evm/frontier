@@ -60,6 +60,11 @@ decl_module! {
 	pub struct Module<T: Config> for enum Call where origin: T::Origin {
 		fn deposit_event() = default;
 
+		fn on_initialize(_block_number: T::BlockNumber) -> Weight {
+			TargetMinGasPrice::kill();
+			0
+		}
+
 		fn on_finalize(n: T::BlockNumber) {
 			if let Some(target) = TargetMinGasPrice::get() {
 				let bound = MinGasPrice::get() / T::MinGasPriceBoundDivisor::get() + U256::one();
@@ -69,8 +74,6 @@ decl_module! {
 
 				MinGasPrice::set(min(upper_limit, max(lower_limit, target)));
 			}
-
-			TargetMinGasPrice::kill();
 		}
 
 		#[weight = 0]
@@ -81,7 +84,6 @@ decl_module! {
 			ensure_none(origin)?;
 
 			TargetMinGasPrice::set(Some(target));
-			Self::deposit_event(Event::TargetMinGasPriceSet(target));
 		}
 	}
 }
