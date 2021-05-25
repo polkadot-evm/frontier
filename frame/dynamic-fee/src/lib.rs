@@ -32,8 +32,6 @@ use frame_support::{
 use frame_system::ensure_none;
 
 pub trait Config: frame_system::Config {
-	/// The overarching event type.
-	type Event: From<Event> + Into<<Self as frame_system::Config>::Event>;
 	/// Bound divisor for min gas price.
 	type MinGasPriceBoundDivisor: Get<U256>;
 }
@@ -50,14 +48,8 @@ decl_storage! {
 	}
 }
 
-decl_event!(
-	pub enum Event {}
-);
-
 decl_module! {
 	pub struct Module<T: Config> for enum Call where origin: T::Origin {
-		fn deposit_event() = default;
-
 		fn on_initialize(_block_number: T::BlockNumber) -> Weight {
 			TargetMinGasPrice::kill();
 
