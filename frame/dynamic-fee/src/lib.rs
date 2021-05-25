@@ -51,9 +51,7 @@ decl_storage! {
 }
 
 decl_event!(
-	pub enum Event {
-		TargetMinGasPriceSet(U256),
-	}
+	pub enum Event {}
 );
 
 decl_module! {
