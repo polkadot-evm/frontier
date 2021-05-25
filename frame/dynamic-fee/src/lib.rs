@@ -27,7 +27,7 @@ use sp_inherents::{InherentIdentifier, InherentData, ProvideInherent, IsFatalErr
 use sp_inherents::ProvideInherentData;
 use frame_support::{
 	decl_module, decl_storage, decl_event,
-	traits::Get,
+	traits::Get, weights::Weight,
 };
 use frame_system::ensure_none;
 
@@ -62,7 +62,8 @@ decl_module! {
 
 		fn on_initialize(_block_number: T::BlockNumber) -> Weight {
 			TargetMinGasPrice::kill();
-			0
+
+			T::DbWeight::get().writes(1)
 		}
 
 		fn on_finalize(n: T::BlockNumber) {
@@ -76,7 +77,7 @@ decl_module! {
 			}
 		}
 
-		#[weight = 0]
+		#[weight = T::DbWeight::get().writes(1)]
 		fn note_min_gas_price_target(
 			origin,
 			target: U256,
