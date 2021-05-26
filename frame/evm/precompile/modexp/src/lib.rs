@@ -220,7 +220,7 @@ mod tests {
 		};
 
 		match Modexp::execute(&input, Some(cost), &context) {
-			Ok((_, _, _)) => {
+			Ok(_) => {
 				panic!("Test not expected to pass");
 			},
 			Err(e) => {
@@ -247,7 +247,7 @@ mod tests {
 		};
 
 		match Modexp::execute(&input, Some(cost), &context) {
-			Ok((_, _, _)) => {
+			Ok(_) => {
 				panic!("Test not expected to pass");
 			},
 			Err(e) => {
@@ -275,7 +275,7 @@ mod tests {
 		};
 
 		match Modexp::execute(&input, Some(cost), &context) {
-			Ok((_, _, _)) => {
+			Ok(_) => {
 				panic!("Test not expected to pass");
 			},
 			Err(e) => {
@@ -307,9 +307,9 @@ mod tests {
 		};
 
 		match Modexp::execute(&input, Some(cost), &context) {
-			Ok((_, output, _)) => {
-				assert_eq!(output.len(), 1); // should be same length as mod
-				let result = BigUint::from_bytes_be(&output[..]);
+			Ok(precompile_result) => {
+				assert_eq!(precompile_result.output.len(), 1); // should be same length as mod
+				let result = BigUint::from_bytes_be(&precompile_result.output[..]);
 				let expected = BigUint::parse_bytes(b"5", 10).unwrap();
 				assert_eq!(result, expected);
 			},
@@ -342,9 +342,9 @@ mod tests {
 		};
 
 		match Modexp::execute(&input, Some(cost), &context) {
-			Ok((_, output, _)) => {
-				assert_eq!(output.len(), 32); // should be same length as mod
-				let result = BigUint::from_bytes_be(&output[..]);
+			Ok(precompile_result) => {
+				assert_eq!(precompile_result.output.len(), 32); // should be same length as mod
+				let result = BigUint::from_bytes_be(&precompile_result.output[..]);
 				let expected = BigUint::parse_bytes(b"10055", 10).unwrap();
 				assert_eq!(result, expected);
 			},
@@ -374,9 +374,9 @@ mod tests {
 		};
 
 		match Modexp::execute(&input, Some(cost), &context) {
-			Ok((_, output, _)) => {
-				assert_eq!(output.len(), 32); // should be same length as mod
-				let result = BigUint::from_bytes_be(&output[..]);
+			Ok(precompile_result) => {
+				assert_eq!(precompile_result.output.len(), 32); // should be same length as mod
+				let result = BigUint::from_bytes_be(&precompile_result.output[..]);
 				let expected = BigUint::parse_bytes(b"1", 10).unwrap();
 				assert_eq!(result, expected);
 			},
