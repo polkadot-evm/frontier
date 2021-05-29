@@ -379,6 +379,16 @@
 <span id="376">376</span>
 <span id="377">377</span>
 <span id="378">378</span>
+<span id="379">379</span>
+<span id="380">380</span>
+<span id="381">381</span>
+<span id="382">382</span>
+<span id="383">383</span>
+<span id="384">384</span>
+<span id="385">385</span>
+<span id="386">386</span>
+<span id="387">387</span>
+<span id="388">388</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
@@ -403,7 +413,7 @@
 
 <span class="kw">use</span> <span class="ident">alloc</span>::<span class="ident">vec</span>::<span class="ident">Vec</span>;
 <span class="kw">use</span> <span class="ident">fp_evm</span>::<span class="ident">Precompile</span>;
-<span class="kw">use</span> <span class="ident">evm</span>::{<span class="ident">ExitSucceed</span>, <span class="ident">ExitError</span>, <span class="ident">Context</span>};
+<span class="kw">use</span> <span class="ident">evm</span>::{<span class="ident">ExitSucceed</span>, <span class="ident">ExitError</span>, <span class="ident">Context</span>, <span class="ident">executor</span>::<span class="ident">PrecompileOutput</span>};
 <span class="kw">use</span> <span class="ident">num</span>::{<span class="ident">BigUint</span>, <span class="ident">Zero</span>, <span class="ident">One</span>, <span class="ident">ToPrimitive</span>, <span class="ident">FromPrimitive</span>};
 
 <span class="kw">use</span> <span class="ident">core</span>::<span class="ident">ops</span>::<span class="ident">BitAnd</span>;
@@ -480,7 +490,7 @@
 		<span class="ident">input</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>],
 		<span class="ident">target_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
 		<span class="ident">_context</span>: <span class="kw-2">&amp;</span><span class="ident">Context</span>,
-	) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">core</span>::<span class="ident">result</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">ExitSucceed</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">u64</span>), <span class="ident">ExitError</span><span class="op">&gt;</span> {
+	) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">core</span>::<span class="ident">result</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">PrecompileOutput</span>, <span class="ident">ExitError</span><span class="op">&gt;</span> {
 		<span class="kw">if</span> <span class="ident">input</span>.<span class="ident">len</span>() <span class="op">&lt;</span> <span class="number">96</span> {
 			<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">ExitError</span>::<span class="ident">Other</span>(<span class="string">&quot;input must contain at least 96 bytes&quot;</span>.<span class="ident">into</span>()));
 		};
@@ -555,12 +565,22 @@
 		<span class="comment">// always true except in the case of zero-length modulus, which leads to</span>
 		<span class="comment">// output of length and value 1.</span>
 		<span class="kw">if</span> <span class="ident">bytes</span>.<span class="ident">len</span>() <span class="op">=</span><span class="op">=</span> <span class="ident">mod_len</span> {
-			<span class="prelude-val">Ok</span>((<span class="ident">ExitSucceed</span>::<span class="ident">Returned</span>, <span class="ident">bytes</span>.<span class="ident">to_vec</span>(), <span class="ident">gas_cost</span>))
+			<span class="prelude-val">Ok</span>(<span class="ident">PrecompileOutput</span> {
+				<span class="ident">exit_status</span>: <span class="ident">ExitSucceed</span>::<span class="ident">Returned</span>,
+				<span class="ident">cost</span>: <span class="ident">gas_cost</span>,
+				<span class="ident">output</span>: <span class="ident">bytes</span>.<span class="ident">to_vec</span>(),
+				<span class="ident">logs</span>: <span class="ident">Default</span>::<span class="ident">default</span>(),
+			})
 		} <span class="kw">else</span> <span class="kw">if</span> <span class="ident">bytes</span>.<span class="ident">len</span>() <span class="op">&lt;</span> <span class="ident">mod_len</span> {
 			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">ret</span> <span class="op">=</span> <span class="ident">Vec</span>::<span class="ident">with_capacity</span>(<span class="ident">mod_len</span>);
 			<span class="ident">ret</span>.<span class="ident">extend</span>(<span class="ident">core</span>::<span class="ident">iter</span>::<span class="ident">repeat</span>(<span class="number">0</span>).<span class="ident">take</span>(<span class="ident">mod_len</span> <span class="op">-</span> <span class="ident">bytes</span>.<span class="ident">len</span>()));
 			<span class="ident">ret</span>.<span class="ident">extend_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">bytes</span>[..]);
-			<span class="prelude-val">Ok</span>((<span class="ident">ExitSucceed</span>::<span class="ident">Returned</span>, <span class="ident">ret</span>.<span class="ident">to_vec</span>(), <span class="ident">gas_cost</span>))
+			<span class="prelude-val">Ok</span>(<span class="ident">PrecompileOutput</span> {
+				<span class="ident">exit_status</span>: <span class="ident">ExitSucceed</span>::<span class="ident">Returned</span>,
+				<span class="ident">cost</span>: <span class="ident">gas_cost</span>,
+				<span class="ident">output</span>: <span class="ident">ret</span>.<span class="ident">to_vec</span>(),
+				<span class="ident">logs</span>: <span class="ident">Default</span>::<span class="ident">default</span>(),
+			})
 		} <span class="kw">else</span> {
 			<span class="prelude-val">Err</span>(<span class="ident">ExitError</span>::<span class="ident">Other</span>(<span class="string">&quot;failed&quot;</span>.<span class="ident">into</span>()))
 		}
@@ -592,7 +612,7 @@
 		};
 
 		<span class="kw">match</span> <span class="ident">Modexp</span>::<span class="ident">execute</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>, <span class="prelude-val">Some</span>(<span class="ident">cost</span>), <span class="kw-2">&amp;</span><span class="ident">context</span>) {
-			<span class="prelude-val">Ok</span>((<span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>)) <span class="op">=</span><span class="op">&gt;</span> {
+			<span class="prelude-val">Ok</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
 				<span class="macro">panic</span><span class="macro">!</span>(<span class="string">&quot;Test not expected to pass&quot;</span>);
 			},
 			<span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> {
@@ -619,7 +639,7 @@
 		};
 
 		<span class="kw">match</span> <span class="ident">Modexp</span>::<span class="ident">execute</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>, <span class="prelude-val">Some</span>(<span class="ident">cost</span>), <span class="kw-2">&amp;</span><span class="ident">context</span>) {
-			<span class="prelude-val">Ok</span>((<span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>)) <span class="op">=</span><span class="op">&gt;</span> {
+			<span class="prelude-val">Ok</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
 				<span class="macro">panic</span><span class="macro">!</span>(<span class="string">&quot;Test not expected to pass&quot;</span>);
 			},
 			<span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> {
@@ -647,7 +667,7 @@
 		};
 
 		<span class="kw">match</span> <span class="ident">Modexp</span>::<span class="ident">execute</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>, <span class="prelude-val">Some</span>(<span class="ident">cost</span>), <span class="kw-2">&amp;</span><span class="ident">context</span>) {
-			<span class="prelude-val">Ok</span>((<span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>)) <span class="op">=</span><span class="op">&gt;</span> {
+			<span class="prelude-val">Ok</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
 				<span class="macro">panic</span><span class="macro">!</span>(<span class="string">&quot;Test not expected to pass&quot;</span>);
 			},
 			<span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> {
@@ -679,9 +699,9 @@
 		};
 
 		<span class="kw">match</span> <span class="ident">Modexp</span>::<span class="ident">execute</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>, <span class="prelude-val">Some</span>(<span class="ident">cost</span>), <span class="kw-2">&amp;</span><span class="ident">context</span>) {
-			<span class="prelude-val">Ok</span>((<span class="kw">_</span>, <span class="ident">output</span>, <span class="kw">_</span>)) <span class="op">=</span><span class="op">&gt;</span> {
-				<span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">output</span>.<span class="ident">len</span>(), <span class="number">1</span>); <span class="comment">// should be same length as mod</span>
-				<span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="ident">BigUint</span>::<span class="ident">from_bytes_be</span>(<span class="kw-2">&amp;</span><span class="ident">output</span>[..]);
+			<span class="prelude-val">Ok</span>(<span class="ident">precompile_result</span>) <span class="op">=</span><span class="op">&gt;</span> {
+				<span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">precompile_result</span>.<span class="ident">output</span>.<span class="ident">len</span>(), <span class="number">1</span>); <span class="comment">// should be same length as mod</span>
+				<span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="ident">BigUint</span>::<span class="ident">from_bytes_be</span>(<span class="kw-2">&amp;</span><span class="ident">precompile_result</span>.<span class="ident">output</span>[..]);
 				<span class="kw">let</span> <span class="ident">expected</span> <span class="op">=</span> <span class="ident">BigUint</span>::<span class="ident">parse_bytes</span>(<span class="string">b&quot;5&quot;</span>, <span class="number">10</span>).<span class="ident">unwrap</span>();
 				<span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">result</span>, <span class="ident">expected</span>);
 			},
@@ -714,9 +734,9 @@
 		};
 
 		<span class="kw">match</span> <span class="ident">Modexp</span>::<span class="ident">execute</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>, <span class="prelude-val">Some</span>(<span class="ident">cost</span>), <span class="kw-2">&amp;</span><span class="ident">context</span>) {
-			<span class="prelude-val">Ok</span>((<span class="kw">_</span>, <span class="ident">output</span>, <span class="kw">_</span>)) <span class="op">=</span><span class="op">&gt;</span> {
-				<span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">output</span>.<span class="ident">len</span>(), <span class="number">32</span>); <span class="comment">// should be same length as mod</span>
-				<span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="ident">BigUint</span>::<span class="ident">from_bytes_be</span>(<span class="kw-2">&amp;</span><span class="ident">output</span>[..]);
+			<span class="prelude-val">Ok</span>(<span class="ident">precompile_result</span>) <span class="op">=</span><span class="op">&gt;</span> {
+				<span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">precompile_result</span>.<span class="ident">output</span>.<span class="ident">len</span>(), <span class="number">32</span>); <span class="comment">// should be same length as mod</span>
+				<span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="ident">BigUint</span>::<span class="ident">from_bytes_be</span>(<span class="kw-2">&amp;</span><span class="ident">precompile_result</span>.<span class="ident">output</span>[..]);
 				<span class="kw">let</span> <span class="ident">expected</span> <span class="op">=</span> <span class="ident">BigUint</span>::<span class="ident">parse_bytes</span>(<span class="string">b&quot;10055&quot;</span>, <span class="number">10</span>).<span class="ident">unwrap</span>();
 				<span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">result</span>, <span class="ident">expected</span>);
 			},
@@ -746,9 +766,9 @@
 		};
 
 		<span class="kw">match</span> <span class="ident">Modexp</span>::<span class="ident">execute</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>, <span class="prelude-val">Some</span>(<span class="ident">cost</span>), <span class="kw-2">&amp;</span><span class="ident">context</span>) {
-			<span class="prelude-val">Ok</span>((<span class="kw">_</span>, <span class="ident">output</span>, <span class="kw">_</span>)) <span class="op">=</span><span class="op">&gt;</span> {
-				<span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">output</span>.<span class="ident">len</span>(), <span class="number">32</span>); <span class="comment">// should be same length as mod</span>
-				<span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="ident">BigUint</span>::<span class="ident">from_bytes_be</span>(<span class="kw-2">&amp;</span><span class="ident">output</span>[..]);
+			<span class="prelude-val">Ok</span>(<span class="ident">precompile_result</span>) <span class="op">=</span><span class="op">&gt;</span> {
+				<span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">precompile_result</span>.<span class="ident">output</span>.<span class="ident">len</span>(), <span class="number">32</span>); <span class="comment">// should be same length as mod</span>
+				<span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="ident">BigUint</span>::<span class="ident">from_bytes_be</span>(<span class="kw-2">&amp;</span><span class="ident">precompile_result</span>.<span class="ident">output</span>[..]);
 				<span class="kw">let</span> <span class="ident">expected</span> <span class="op">=</span> <span class="ident">BigUint</span>::<span class="ident">parse_bytes</span>(<span class="string">b&quot;1&quot;</span>, <span class="number">10</span>).<span class="ident">unwrap</span>();
 				<span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">result</span>, <span class="ident">expected</span>);
 			},

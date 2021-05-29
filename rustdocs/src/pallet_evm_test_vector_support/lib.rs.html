@@ -100,7 +100,7 @@
 <span class="comment">// limitations under the License.</span>
 
 <span class="kw">use</span> <span class="ident">fp_evm</span>::<span class="ident">Precompile</span>;
-<span class="kw">use</span> <span class="ident">evm</span>::{<span class="ident">ExitSucceed</span>, <span class="ident">Context</span>};
+<span class="kw">use</span> <span class="ident">evm</span>::{<span class="ident">ExitSucceed</span>, <span class="ident">Context</span>, <span class="ident">executor</span>::<span class="ident">PrecompileOutput</span>};
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>)]</span>
 <span class="kw">use</span> <span class="ident">serde</span>::<span class="ident">Deserialize</span>;
@@ -143,14 +143,14 @@
 		};
 
 		<span class="kw">match</span> <span class="ident">P</span>::<span class="ident">execute</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>, <span class="prelude-val">Some</span>(<span class="ident">cost</span>), <span class="kw-2">&amp;</span><span class="ident">context</span>) {
-			<span class="prelude-val">Ok</span>((<span class="ident">exit</span>, <span class="ident">output</span>, <span class="ident">gas</span>)) <span class="op">=</span><span class="op">&gt;</span> {
-				<span class="kw">let</span> <span class="ident">as_hex</span>: <span class="ident">String</span> <span class="op">=</span> <span class="ident">hex</span>::<span class="ident">encode</span>(<span class="ident">output</span>);
-				<span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">exit</span>, <span class="ident">ExitSucceed</span>::<span class="ident">Returned</span>,
-						<span class="string">&quot;test &#39;{}&#39; returned {:?} (expected &#39;Returned&#39;)&quot;</span>, <span class="ident">test</span>.<span class="ident">Name</span>, <span class="ident">exit</span>);
+			<span class="prelude-val">Ok</span>(<span class="ident">result</span>) <span class="op">=</span><span class="op">&gt;</span> {
+				<span class="kw">let</span> <span class="ident">as_hex</span>: <span class="ident">String</span> <span class="op">=</span> <span class="ident">hex</span>::<span class="ident">encode</span>(<span class="ident">result</span>.<span class="ident">output</span>);
+				<span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">result</span>.<span class="ident">exit_status</span>, <span class="ident">ExitSucceed</span>::<span class="ident">Returned</span>,
+						<span class="string">&quot;test &#39;{}&#39; returned {:?} (expected &#39;Returned&#39;)&quot;</span>, <span class="ident">test</span>.<span class="ident">Name</span>, <span class="ident">result</span>.<span class="ident">exit_status</span>);
 				<span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">as_hex</span>, <span class="ident">test</span>.<span class="ident">Expected</span>,
 						<span class="string">&quot;test &#39;{}&#39; failed (different output)&quot;</span>, <span class="ident">test</span>.<span class="ident">Name</span>);
 				<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">expected_gas</span>) <span class="op">=</span> <span class="ident">test</span>.<span class="ident">Gas</span> {
-					<span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">gas</span>, <span class="ident">expected_gas</span>,
+					<span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">result</span>.<span class="ident">cost</span>, <span class="ident">expected_gas</span>,
 							<span class="string">&quot;test &#39;{}&#39; failed (different gas cost)&quot;</span>, <span class="ident">test</span>.<span class="ident">Name</span>);
 				}
 			},
