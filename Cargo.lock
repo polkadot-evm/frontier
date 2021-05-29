@@ -3876,7 +3876,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-dynamic-fee"
-version = "1.0.1-dev"
+version = "2.0.0-dev"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -3919,7 +3919,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm"
-version = "3.0.1-dev"
+version = "4.0.0-dev"
 dependencies = [
  "evm",
  "evm-gasometer",
@@ -3972,7 +3972,6 @@ dependencies = [
  "evm",
  "fp-evm",
  "frame-support",
- "pallet-evm",
  "parity-scale-codec",
  "sp-core",
  "sp-io",
@@ -3993,7 +3992,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm-precompile-ed25519"
-version = "1.0.1-dev"
+version = "2.0.0-dev"
 dependencies = [
  "ed25519-dalek",
  "evm",
@@ -4017,7 +4016,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm-precompile-sha3fips"
-version = "1.0.1-dev"
+version = "2.0.0-dev"
 dependencies = [
  "evm",
  "fp-evm",
@@ -4028,7 +4027,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm-precompile-simple"
-version = "1.0.1-dev"
+version = "2.0.0-dev"
 dependencies = [
  "evm",
  "fp-evm",

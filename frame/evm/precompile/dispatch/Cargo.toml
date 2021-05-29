@@ -12,7 +12,7 @@ description = "DISPATCH precompiles for EVM pallet."
 sp-core = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sp-io = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 frame-support = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-pallet-evm = { version = "3.0.1-dev", default-features = false, path = "../.." }
+pallet-evm = { version = "4.0.0-dev", default-features = false, path = "../.." }
 fp-evm = { version = "2.0.0-dev", default-features = false, path = "../../../../primitives/evm" }
 evm = { version = "0.27.0", default-features = false, features = ["with-codec"] }
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false }

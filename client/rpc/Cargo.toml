@@ -30,7 +30,7 @@ sc-service = { version = "0.9.0", git = "https://github.com/paritytech/substrate
 sc-client-api = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sc-rpc = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sc-network = { version = "0.9.0", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-pallet-evm = { version = "3.0.1-dev", path = "../../frame/evm" }
+pallet-evm = { version = "4.0.0-dev", path = "../../frame/evm" }
 fp-evm = { version = "2.0.0-dev", path = "../../primitives/evm" }
 pallet-ethereum = { version = "2.0.0-dev", path = "../../frame/ethereum" }
 ethereum = { version = "0.7.1", features = ["with-codec"] }
