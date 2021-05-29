@@ -1508,7 +1508,7 @@ dependencies = [
 
 [[package]]
 name = "fp-evm"
-version = "2.0.0-dev"
+version = "2.0.0"
 dependencies = [
  "evm",
  "impl-trait-for-tuples 0.1.3",
