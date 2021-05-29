@@ -24,7 +24,7 @@ mod eip_152;
 use alloc::vec::Vec;
 use core::mem::size_of;
 use fp_evm::Precompile;
-use evm::{ExitSucceed, ExitError, Context};
+use evm::{ExitSucceed, ExitError, Context, executor::PrecompileOutput};
 
 pub struct Blake2F;
 
@@ -40,7 +40,7 @@ impl Precompile for Blake2F {
 		input: &[u8],
 		target_gas: Option<u64>,
 		_context: &Context,
-	) -> core::result::Result<(ExitSucceed, Vec<u8>, u64), ExitError> {
+	) -> core::result::Result<PrecompileOutput, ExitError> {
 		const BLAKE2_F_ARG_LEN: usize = 213;
 
 		if input.len() != BLAKE2_F_ARG_LEN {
@@ -102,7 +102,12 @@ impl Precompile for Blake2F {
 			output_buf[i * 8..(i + 1) * 8].copy_from_slice(&state_word.to_le_bytes());
 		}
 
-		Ok((ExitSucceed::Returned, output_buf.to_vec(), gas_cost))
+		Ok(PrecompileOutput {
+			exit_status: ExitSucceed::Returned,
+			cost: gas_cost,
+			output: output_buf.to_vec(),
+			logs: Default::default(),
+		})
 	}
 }
 
