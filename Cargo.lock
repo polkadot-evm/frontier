@@ -1520,7 +1520,7 @@ dependencies = [
 
 [[package]]
 name = "fp-rpc"
-version = "2.0.0-dev"
+version = "2.0.0"
 dependencies = [
  "ethereum",
  "ethereum-types",
@@ -1535,7 +1535,7 @@ dependencies = [
 
 [[package]]
 name = "fp-storage"
-version = "1.0.1-dev"
+version = "1.0.1"
 
 [[package]]
 name = "frame-benchmarking"
