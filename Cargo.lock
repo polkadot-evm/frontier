@@ -1536,16 +1536,6 @@ dependencies = [
 [[package]]
 name = "fp-storage"
 version = "1.0.1-dev"
-dependencies = [
- "ethereum",
- "ethereum-types",
- "fp-evm",
- "parity-scale-codec",
- "sp-api",
- "sp-core",
- "sp-runtime",
- "sp-std",
-]
 
 [[package]]
 name = "frame-benchmarking"
