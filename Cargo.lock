@@ -1309,7 +1309,7 @@ dependencies = [
 
 [[package]]
 name = "fc-consensus"
-version = "1.0.1-dev"
+version = "2.0.0-dev"
 dependencies = [
  "derive_more",
  "fc-db",
@@ -1345,7 +1345,7 @@ dependencies = [
 
 [[package]]
 name = "fc-mapping-sync"
-version = "1.1.0-dev"
+version = "2.0.0-dev"
 dependencies = [
  "fc-consensus",
  "fc-db",
@@ -1520,7 +1520,7 @@ dependencies = [
 
 [[package]]
 name = "fp-rpc"
-version = "1.0.1-dev"
+version = "2.0.0-dev"
 dependencies = [
  "ethereum",
  "ethereum-types",
@@ -3901,7 +3901,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-ethereum"
-version = "1.0.1-dev"
+version = "2.0.0-dev"
 dependencies = [
  "ethereum",
  "ethereum-types",
