@@ -32,6 +32,7 @@ sc-executor = { git = "https://github.com/paritytech/substrate.git", branch = "f
 sc-service = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sp-inherents = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sc-transaction-pool = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sc-transaction-graph = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sp-transaction-pool = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sc-network = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sc-consensus-aura = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
