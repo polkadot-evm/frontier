@@ -17,7 +17,7 @@ describeWithFrontier("Frontier RPC (Gas)", (context) => {
 				from: GENESIS_ACCOUNT,
 				data: Test.bytecode,
 			})
-		).to.equal(149143);
+		).to.equal(159715);
 	});
 
 	it.skip("block gas limit over 5M", async function () {
