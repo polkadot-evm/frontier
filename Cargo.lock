@@ -3919,7 +3919,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm"
-version = "4.0.0-dev"
+version = "4.0.0"
 dependencies = [
  "evm",
  "evm-gasometer",
