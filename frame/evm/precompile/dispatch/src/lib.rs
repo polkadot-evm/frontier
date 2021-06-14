@@ -22,7 +22,7 @@ extern crate alloc;
 use alloc::vec::Vec;
 use core::marker::PhantomData;
 use fp_evm::Precompile;
-use evm::{ExitSucceed, ExitError, Context};
+use evm::{ExitSucceed, ExitError, Context, executor::PrecompileOutput};
 use frame_support::{dispatch::{Dispatchable, GetDispatchInfo, PostDispatchInfo}, weights::{Pays, DispatchClass}};
 use pallet_evm::{AddressMapping, GasWeightMapping};
 use codec::Decode;
@@ -40,7 +40,7 @@ impl<T> Precompile for Dispatch<T> where
 		input: &[u8],
 		target_gas: Option<u64>,
 		context: &Context,
-	) -> core::result::Result<(ExitSucceed, Vec<u8>, u64), ExitError> {
+	) -> core::result::Result<PrecompileOutput, ExitError> {
 		let call = T::Call::decode(&mut &input[..]).map_err(|_| ExitError::Other("decode failed".into()))?;
 		let info = call.get_dispatch_info();
 
@@ -61,7 +61,12 @@ impl<T> Precompile for Dispatch<T> where
 		match call.dispatch(Some(origin).into()) {
 			Ok(post_info) => {
 				let cost = T::GasWeightMapping::weight_to_gas(post_info.actual_weight.unwrap_or(info.weight));
-				Ok((ExitSucceed::Stopped, Default::default(), cost))
+				Ok(PrecompileOutput {
+					exit_status: ExitSucceed::Stopped,
+					cost,
+					output: Default::default(),
+					logs: Default::default(),
+				})
 			},
 			Err(_) => Err(ExitError::Other("dispatch execution failed".into())),
 		}

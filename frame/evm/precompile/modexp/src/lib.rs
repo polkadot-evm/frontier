@@ -21,7 +21,7 @@ extern crate alloc;
 
 use alloc::vec::Vec;
 use fp_evm::Precompile;
-use evm::{ExitSucceed, ExitError, Context};
+use evm::{ExitSucceed, ExitError, Context, executor::PrecompileOutput};
 use num::{BigUint, Zero, One, ToPrimitive, FromPrimitive};
 
 use core::ops::BitAnd;
@@ -98,7 +98,7 @@ impl Precompile for Modexp {
 		input: &[u8],
 		target_gas: Option<u64>,
 		_context: &Context,
-	) -> core::result::Result<(ExitSucceed, Vec<u8>, u64), ExitError> {
+	) -> core::result::Result<PrecompileOutput, ExitError> {
 		if input.len() < 96 {
 			return Err(ExitError::Other("input must contain at least 96 bytes".into()));
 		};
@@ -173,12 +173,22 @@ impl Precompile for Modexp {
 		// always true except in the case of zero-length modulus, which leads to
 		// output of length and value 1.
 		if bytes.len() == mod_len {
-			Ok((ExitSucceed::Returned, bytes.to_vec(), gas_cost))
+			Ok(PrecompileOutput {
+				exit_status: ExitSucceed::Returned,
+				cost: gas_cost,
+				output: bytes.to_vec(),
+				logs: Default::default(),
+			})
 		} else if bytes.len() < mod_len {
 			let mut ret = Vec::with_capacity(mod_len);
 			ret.extend(core::iter::repeat(0).take(mod_len - bytes.len()));
 			ret.extend_from_slice(&bytes[..]);
-			Ok((ExitSucceed::Returned, ret.to_vec(), gas_cost))
+			Ok(PrecompileOutput {
+				exit_status: ExitSucceed::Returned,
+				cost: gas_cost,
+				output: ret.to_vec(),
+				logs: Default::default(),
+			})
 		} else {
 			Err(ExitError::Other("failed".into()))
 		}
@@ -210,7 +220,7 @@ mod tests {
 		};
 
 		match Modexp::execute(&input, Some(cost), &context) {
-			Ok((_, _, _)) => {
+			Ok(_) => {
 				panic!("Test not expected to pass");
 			},
 			Err(e) => {
@@ -237,7 +247,7 @@ mod tests {
 		};
 
 		match Modexp::execute(&input, Some(cost), &context) {
-			Ok((_, _, _)) => {
+			Ok(_) => {
 				panic!("Test not expected to pass");
 			},
 			Err(e) => {
@@ -265,7 +275,7 @@ mod tests {
 		};
 
 		match Modexp::execute(&input, Some(cost), &context) {
-			Ok((_, _, _)) => {
+			Ok(_) => {
 				panic!("Test not expected to pass");
 			},
 			Err(e) => {
@@ -297,9 +307,9 @@ mod tests {
 		};
 
 		match Modexp::execute(&input, Some(cost), &context) {
-			Ok((_, output, _)) => {
-				assert_eq!(output.len(), 1); // should be same length as mod
-				let result = BigUint::from_bytes_be(&output[..]);
+			Ok(precompile_result) => {
+				assert_eq!(precompile_result.output.len(), 1); // should be same length as mod
+				let result = BigUint::from_bytes_be(&precompile_result.output[..]);
 				let expected = BigUint::parse_bytes(b"5", 10).unwrap();
 				assert_eq!(result, expected);
 			},
@@ -332,9 +342,9 @@ mod tests {
 		};
 
 		match Modexp::execute(&input, Some(cost), &context) {
-			Ok((_, output, _)) => {
-				assert_eq!(output.len(), 32); // should be same length as mod
-				let result = BigUint::from_bytes_be(&output[..]);
+			Ok(precompile_result) => {
+				assert_eq!(precompile_result.output.len(), 32); // should be same length as mod
+				let result = BigUint::from_bytes_be(&precompile_result.output[..]);
 				let expected = BigUint::parse_bytes(b"10055", 10).unwrap();
 				assert_eq!(result, expected);
 			},
@@ -364,9 +374,9 @@ mod tests {
 		};
 
 		match Modexp::execute(&input, Some(cost), &context) {
-			Ok((_, output, _)) => {
-				assert_eq!(output.len(), 32); // should be same length as mod
-				let result = BigUint::from_bytes_be(&output[..]);
+			Ok(precompile_result) => {
+				assert_eq!(precompile_result.output.len(), 32); // should be same length as mod
+				let result = BigUint::from_bytes_be(&precompile_result.output[..]);
 				let expected = BigUint::parse_bytes(b"1", 10).unwrap();
 				assert_eq!(result, expected);
 			},

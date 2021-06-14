@@ -25,7 +25,8 @@
 
 use frame_support::{
 	decl_module, decl_storage, decl_error, decl_event,
-	traits::Get, traits::FindAuthor, weights::Weight,
+	traits::Get, traits::FindAuthor,
+	weights::{Pays, PostDispatchInfo, Weight},
 	dispatch::DispatchResultWithPostInfo,
 };
 use sp_std::prelude::*;
@@ -152,7 +153,7 @@ decl_module! {
 			Self::do_transact(transaction)
 		}
 
-		fn on_finalize(n: T::BlockNumber) {
+		fn on_finalize(_n: T::BlockNumber) {
 			<Module<T>>::store_block(
 				fp_consensus::find_pre_log(&frame_system::Module::<T>::digest()).is_err(),
 				U256::from(
@@ -163,7 +164,7 @@ decl_module! {
 			);
 		}
 
-		fn on_initialize(n: T::BlockNumber) -> Weight {
+		fn on_initialize(_n: T::BlockNumber) -> Weight {
 			Pending::kill();
 
 			if let Ok(log) = fp_consensus::find_pre_log(&frame_system::Module::<T>::digest()) {
@@ -395,7 +396,10 @@ impl<T: Config> Module<T> {
 		Pending::append((transaction, status, receipt));
 
 		Self::deposit_event(Event::Executed(source, contract_address.unwrap_or_default(), transaction_hash, reason));
-		Ok(Some(T::GasWeightMapping::gas_to_weight(used_gas.unique_saturated_into())).into())
+		Ok(PostDispatchInfo {
+			actual_weight: Some(T::GasWeightMapping::gas_to_weight(used_gas.unique_saturated_into())),
+			pays_fee: Pays::No,
+		}).into()
 	}
 
 	/// Get the author using the FindAuthor trait.
