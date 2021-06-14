@@ -32,7 +32,10 @@ evm-runtime = { version = "0.26.0", default-features = false }
 evm-gasometer = { version = "0.26.0", default-features = false }
 sha3 = { version = "0.8", default-features = false }
 log = { version = "0.4", default-features = false }
-hex = { version = "0.4", default-features = false, optional = true }
+hex = { version = "0.4", default-features = false }
+
+[dev-dependencies]
+hex = "0.4"
 
 [features]
 default = ["std"]
@@ -57,8 +60,8 @@ std = [
 	"evm-gasometer/std",
 	"pallet-timestamp/std",
 	"log/std",
+	"hex/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",
-	"hex",
 ]
