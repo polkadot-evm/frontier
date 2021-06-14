@@ -53,8 +53,11 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-mod tests;
+pub mod tests;
 pub mod runner;
+
+// #[cfg(feature = "runtime-benchmarks")]
+pub mod benchmarks;
 
 pub use crate::runner::Runner;
 pub use fp_evm::{
