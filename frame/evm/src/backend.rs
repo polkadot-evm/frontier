@@ -26,7 +26,7 @@ use frame_support::traits::Get;
 use frame_support::{debug, storage::{StorageMap, StorageDoubleMap}};
 use sha3::{Keccak256, Digest};
 use evm::backend::{Backend as BackendT, ApplyBackend, Apply};
-use crate::{AccountStorages, AccountCodes, Config, Event, Pallet};
+use crate::{Trait, AccountStorages, AccountCodes, Module, Event};
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Default)]
 #[cfg_attr(feature = "std", derive(Debug, Serialize, Deserialize))]
@@ -73,7 +73,7 @@ impl<'vicinity, T> Backend<'vicinity, T> {
 	}
 }
 
-impl<'vicinity, T: Config> BackendT for Backend<'vicinity, T> {
+impl<'vicinity, T: Trait> BackendT for Backend<'vicinity, T> {
 	fn gas_price(&self) -> U256 { self.vicinity.gas_price }
 	fn origin(&self) -> H160 { self.vicinity.origin }
 
@@ -82,12 +82,12 @@ impl<'vicinity, T: Config> BackendT for Backend<'vicinity, T> {
 			H256::default()
 		} else {
 			let number = T::BlockNumber::from(number.as_u32());
-			H256::from_slice(frame_system::Pallet::<T>::block_hash(number).as_ref())
+			H256::from_slice(frame_system::Module::<T>::block_hash(number).as_ref())
 		}
 	}
 
 	fn block_number(&self) -> U256 {
-		let number: u128 = frame_system::Pallet::<T>::block_number().unique_saturated_into();
+		let number: u128 = frame_system::Module::<T>::block_number().unique_saturated_into();
 		U256::from(number)
 	}
 
@@ -96,7 +96,7 @@ impl<'vicinity, T: Config> BackendT for Backend<'vicinity, T> {
 	}
 
 	fn block_timestamp(&self) -> U256 {
-		let now: u128 = pallet_timestamp::Pallet::<T>::get().unique_saturated_into();
+		let now: u128 = pallet_timestamp::Module::<T>::get().unique_saturated_into();
 		U256::from(now / 1000)
 	}
 
@@ -117,7 +117,7 @@ impl<'vicinity, T: Config> BackendT for Backend<'vicinity, T> {
 	}
 
 	fn basic(&self, address: H160) -> evm::backend::Basic {
-		let account = Pallet::<T>::account_basic(&address);
+		let account = Module::<T>::account_basic(&address);
 
 		evm::backend::Basic {
 			balance: account.balance,
