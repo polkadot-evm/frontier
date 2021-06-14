@@ -470,14 +470,14 @@ impl_runtime_apis! {
 
 					// TODO How do I get the tip?
 					let tip = 0;
-					
+
 					// Calculate the fee that will be taken by pallet transaction payment
 					let fee: u64 = TransactionPayment::compute_fee(
 						xt.encode().len() as u32,
 						&dispatch_info,
 						tip,
 					).saturated_into();
-					
+
 					// Calculate how much gas this effectively uses according to the existing mapping
 					let effective_gas = <Runtime as pallet_evm::Config>::GasWeightMapping::weight_to_gas(dispatch_info.weight);
 
