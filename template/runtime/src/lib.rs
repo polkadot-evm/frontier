@@ -44,7 +44,7 @@ pub use frame_support::{
 };
 use pallet_evm::{
 	Account as EVMAccount, FeeCalculator, HashedAddressMapping,
-	EnsureAddressTruncated, Runner,
+	EnsureAddressTruncated, Runner, BlockHashMapping
 };
 use fp_rpc::TransactionStatus;
 use pallet_transaction_payment::CurrencyAdapter;
@@ -273,6 +273,7 @@ parameter_types! {
 impl pallet_evm::Config for Runtime {
 	type FeeCalculator = pallet_dynamic_fee::Module<Self>;
 	type GasWeightMapping = ();
+	type BlockHashMapping = Ethereum;
 	type CallOrigin = EnsureAddressTruncated;
 	type WithdrawOrigin = EnsureAddressTruncated;
 	type AddressMapping = HashedAddressMapping<BlakeTwo256>;
