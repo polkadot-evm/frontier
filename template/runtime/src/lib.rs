@@ -436,15 +436,12 @@ impl GasPricePrioritizer {
 					.inclusion_fee.expect("If we stick with pallet transaction payment, we'll need to massage the data from https://crates.parity.io/pallet_transaction_payment/struct.FeeDetails.html a little bit");
 
 				let fee = inclusion.base_fee.saturating_add(inclusion.len_fee);
-				if fee == 0 {
-					intermediate_valid.priority = 0;
-					intermediate_valid
-				} else {
-					// Calculate how much gas this effectively uses according to the existing mapping
-					let effective_gas =
-						<Runtime as pallet_evm::Config>::GasWeightMapping::weight_to_gas(weight);
-					// Here we calculate an ethereum-style effective gas price using the
-					// current fee of the transaction
+				
+				// Calculate how much gas this effectively uses according to the existing mapping
+				let effective_gas =
+					<Runtime as pallet_evm::Config>::GasWeightMapping::weight_to_gas(weight);
+				// Here we calculate an ethereum-style effective gas price using the
+				// current fee of the transaction
 					let effective_gas_price = effective_gas / fee as u64;
 					// Overwrite the original frame-style prioritization with this ethereum one
 					intermediate_valid.priority = effective_gas_price;
