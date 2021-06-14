@@ -679,36 +679,6 @@
 <span id="676">676</span>
 <span id="677">677</span>
 <span id="678">678</span>
-<span id="679">679</span>
-<span id="680">680</span>
-<span id="681">681</span>
-<span id="682">682</span>
-<span id="683">683</span>
-<span id="684">684</span>
-<span id="685">685</span>
-<span id="686">686</span>
-<span id="687">687</span>
-<span id="688">688</span>
-<span id="689">689</span>
-<span id="690">690</span>
-<span id="691">691</span>
-<span id="692">692</span>
-<span id="693">693</span>
-<span id="694">694</span>
-<span id="695">695</span>
-<span id="696">696</span>
-<span id="697">697</span>
-<span id="698">698</span>
-<span id="699">699</span>
-<span id="700">700</span>
-<span id="701">701</span>
-<span id="702">702</span>
-<span id="703">703</span>
-<span id="704">704</span>
-<span id="705">705</span>
-<span id="706">706</span>
-<span id="707">707</span>
-<span id="708">708</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
@@ -727,38 +697,38 @@
 <span class="comment">// See the License for the specific language governing permissions and</span>
 <span class="comment">// limitations under the License.</span>
 
-<span class="doccomment">//! # EVM Pallet</span>
+<span class="doccomment">//! # EVM Module</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//! The EVM pallet allows unmodified EVM code to be executed in a Substrate-based blockchain.</span>
+<span class="doccomment">//! The EVM module allows unmodified EVM code to be executed in a Substrate-based blockchain.</span>
 <span class="doccomment">//! - [`evm::Config`]</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! ## EVM Engine</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//! The EVM pallet uses [`SputnikVM`](https://github.com/rust-blockchain/evm) as the underlying EVM engine.</span>
+<span class="doccomment">//! The EVM module uses [`SputnikVM`](https://github.com/rust-blockchain/evm) as the underlying EVM engine.</span>
 <span class="doccomment">//! The engine is overhauled so that it&#39;s [`modular`](https://github.com/corepaper/evm).</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! ## Execution Lifecycle</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//! There are a separate set of accounts managed by the EVM pallet. Substrate based accounts can call the EVM Pallet</span>
+<span class="doccomment">//! There are a separate set of accounts managed by the EVM module. Substrate based accounts can call the EVM Module</span>
 <span class="doccomment">//! to deposit or withdraw balance from the Substrate base-currency into a different balance managed and used by</span>
-<span class="doccomment">//! the EVM pallet. Once a user has populated their balance, they can create and call smart contracts using this pallet.</span>
+<span class="doccomment">//! the EVM module. Once a user has populated their balance, they can create and call smart contracts using this module.</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! There&#39;s one-to-one mapping from Substrate accounts and EVM external accounts that is defined by a conversion function.</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//! ## EVM Pallet vs Ethereum Network</span>
+<span class="doccomment">//! ## EVM Module vs Ethereum Network</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//! The EVM pallet should be able to produce nearly identical results compared to the Ethereum mainnet,</span>
+<span class="doccomment">//! The EVM module should be able to produce nearly identical results compared to the Ethereum mainnet,</span>
 <span class="doccomment">//! including gas cost and balance changes.</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Observable differences include:</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//! - The available length of block hashes may not be 256 depending on the configuration of the System pallet</span>
+<span class="doccomment">//! - The available length of block hashes may not be 256 depending on the configuration of the System module</span>
 <span class="doccomment">//! in the Substrate runtime.</span>
-<span class="doccomment">//! - Difficulty and coinbase, which do not make sense in this pallet and is currently hard coded to zero.</span>
+<span class="doccomment">//! - Difficulty and coinbase, which do not make sense in this module and is currently hard coded to zero.</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! We currently do not aim to make unobservable behaviors, such as state root, to be the same. We also don&#39;t aim to follow</span>
 <span class="doccomment">//! the exact same transaction / receipt format. However, given one Ethereum transaction and one Substrate account&#39;s</span>
-<span class="doccomment">//! private key, one should be able to convert any Ethereum transaction into a transaction compatible with this pallet.</span>
+<span class="doccomment">//! private key, one should be able to convert any Ethereum transaction into a transaction compatible with this module.</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! The gas configurations are configurable. Right now, a pre-defined Istanbul hard fork configuration option is provided.</span>
 
@@ -780,314 +750,14 @@
 <span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Encode</span>, <span class="ident">Decode</span>};
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>)]</span>
 <span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">Serialize</span>, <span class="ident">Deserialize</span>};
-<span class="kw">use</span> <span class="ident">frame_support</span>::<span class="ident">weights</span>::{<span class="ident">Weight</span>, <span class="ident">PostDispatchInfo</span>};
-<span class="kw">use</span> <span class="ident">frame_support</span>::<span class="ident">traits</span>::{<span class="ident">Currency</span>, <span class="ident">ExistenceRequirement</span>, <span class="ident">WithdrawReasons</span>, <span class="ident">Imbalance</span>, <span class="ident">OnUnbalanced</span>};
+<span class="kw">use</span> <span class="ident">frame_support</span>::{<span class="ident">decl_module</span>, <span class="ident">decl_storage</span>, <span class="ident">decl_event</span>, <span class="ident">decl_error</span>};
+<span class="kw">use</span> <span class="ident">frame_support</span>::<span class="ident">weights</span>::{<span class="ident">Weight</span>, <span class="ident">Pays</span>, <span class="ident">PostDispatchInfo</span>};
+<span class="kw">use</span> <span class="ident">frame_support</span>::<span class="ident">traits</span>::{<span class="ident">Currency</span>, <span class="ident">ExistenceRequirement</span>, <span class="ident">Get</span>, <span class="ident">WithdrawReasons</span>, <span class="ident">Imbalance</span>, <span class="ident">OnUnbalanced</span>};
+<span class="kw">use</span> <span class="ident">frame_support</span>::<span class="ident">dispatch</span>::<span class="ident">DispatchResultWithPostInfo</span>;
 <span class="kw">use</span> <span class="ident">frame_system</span>::<span class="ident">RawOrigin</span>;
 <span class="kw">use</span> <span class="ident">sp_core</span>::{<span class="ident">U256</span>, <span class="ident">H256</span>, <span class="ident">H160</span>, <span class="ident">Hasher</span>};
 <span class="kw">use</span> <span class="ident">sp_runtime</span>::{<span class="ident">AccountId32</span>, <span class="ident">traits</span>::{<span class="ident">UniqueSaturatedInto</span>, <span class="ident">BadOrigin</span>, <span class="ident">Saturating</span>}};
 <span class="kw">use</span> <span class="ident">evm</span>::<span class="ident">Config</span> <span class="kw">as</span> <span class="ident">EvmConfig</span>;
-
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">pallet</span>::<span class="kw-2">*</span>;
-
-<span class="attribute">#[<span class="ident">frame_support</span>::<span class="ident">pallet</span>]</span>
-<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">pallet</span> {
-	<span class="kw">use</span> <span class="ident">frame_support</span>::<span class="ident">pallet_prelude</span>::<span class="kw-2">*</span>;
-	<span class="kw">use</span> <span class="ident">frame_system</span>::<span class="ident">pallet_prelude</span>::<span class="kw-2">*</span>;
-	<span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
-
-	<span class="attribute">#[<span class="ident">pallet</span>::<span class="ident">pallet</span>]</span>
-	<span class="attribute">#[<span class="ident">pallet</span>::<span class="ident">generate_store</span>(<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">trait</span> <span class="ident">Store</span>)]</span>
-	<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>(<span class="kw">_</span>);
-
-	<span class="attribute">#[<span class="ident">pallet</span>::<span class="ident">config</span>]</span>
-	<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Config</span>: <span class="ident">frame_system</span>::<span class="ident">Config</span> <span class="op">+</span> <span class="ident">pallet_timestamp</span>::<span class="ident">Config</span> {
-		<span class="doccomment">/// Calculator for current gas price.</span>
-		<span class="kw">type</span> <span class="ident">FeeCalculator</span>: <span class="ident">FeeCalculator</span>;
-
-		<span class="doccomment">/// Maps Ethereum gas to Substrate weight.</span>
-		<span class="kw">type</span> <span class="ident">GasWeightMapping</span>: <span class="ident">GasWeightMapping</span>;
-
-		<span class="doccomment">/// Allow the origin to call on behalf of given address.</span>
-		<span class="kw">type</span> <span class="ident">CallOrigin</span>: <span class="ident">EnsureAddressOrigin</span><span class="op">&lt;</span><span class="self">Self</span>::<span class="ident">Origin</span><span class="op">&gt;</span>;
-		<span class="doccomment">/// Allow the origin to withdraw on behalf of given address.</span>
-		<span class="kw">type</span> <span class="ident">WithdrawOrigin</span>: <span class="ident">EnsureAddressOrigin</span><span class="op">&lt;</span><span class="self">Self</span>::<span class="ident">Origin</span>, <span class="ident">Success</span><span class="op">=</span><span class="self">Self</span>::<span class="ident">AccountId</span><span class="op">&gt;</span>;
-
-		<span class="doccomment">/// Mapping from address to account id.</span>
-		<span class="kw">type</span> <span class="ident">AddressMapping</span>: <span class="ident">AddressMapping</span><span class="op">&lt;</span><span class="self">Self</span>::<span class="ident">AccountId</span><span class="op">&gt;</span>;
-		<span class="doccomment">/// Currency type for withdraw and balance storage.</span>
-		<span class="kw">type</span> <span class="ident">Currency</span>: <span class="ident">Currency</span><span class="op">&lt;</span><span class="self">Self</span>::<span class="ident">AccountId</span><span class="op">&gt;</span>;
-
-		<span class="doccomment">/// The overarching event type.</span>
-		<span class="kw">type</span> <span class="ident">Event</span>: <span class="ident">From</span><span class="op">&lt;</span><span class="ident">Event</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">IsType</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="self">Self</span> <span class="kw">as</span> <span class="ident">frame_system</span>::<span class="ident">Config</span><span class="op">&gt;</span>::<span class="ident">Event</span><span class="op">&gt;</span>;
-		<span class="doccomment">/// Precompiles associated with this EVM engine.</span>
-		<span class="kw">type</span> <span class="ident">Precompiles</span>: <span class="ident">PrecompileSet</span>;
-		<span class="doccomment">/// Chain ID of EVM.</span>
-		<span class="kw">type</span> <span class="ident">ChainId</span>: <span class="ident">Get</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>;
-		<span class="doccomment">/// The block gas limit. Can be a simple constant, or an adjustment algorithm in another pallet.</span>
-		<span class="kw">type</span> <span class="ident">BlockGasLimit</span>: <span class="ident">Get</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>;
-		<span class="doccomment">/// EVM execution runner.</span>
-		<span class="kw">type</span> <span class="ident">Runner</span>: <span class="ident">Runner</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span>;
-
-		<span class="doccomment">/// To handle fee deduction for EVM transactions. An example is this pallet being used by `pallet_ethereum`</span>
-		<span class="doccomment">/// where the chain implementing `pallet_ethereum` should be able to configure what happens to the fees</span>
-		<span class="doccomment">/// Similar to `OnChargeTransaction` of `pallet_transaction_payment`</span>
-		<span class="kw">type</span> <span class="ident">OnChargeTransaction</span>: <span class="ident">OnChargeEVMTransaction</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span>;
-
-		<span class="doccomment">/// EVM config used in the pallet.</span>
-		<span class="kw">fn</span> <span class="ident">config</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">EvmConfig</span> {
-			<span class="kw-2">&amp;</span><span class="ident">ISTANBUL_CONFIG</span>
-		}
-	}
-
-	<span class="attribute">#[<span class="ident">pallet</span>::<span class="ident">hooks</span>]</span>
-	<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">Hooks</span><span class="op">&lt;</span><span class="ident">BlockNumberFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {}
-
-	<span class="attribute">#[<span class="ident">pallet</span>::<span class="ident">call</span>]</span>
-	<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-		<span class="doccomment">/// Withdraw balance from EVM into currency/balances pallet.</span>
-		<span class="attribute">#[<span class="ident">pallet</span>::<span class="ident">weight</span>(<span class="number">0</span>)]</span>
-		<span class="kw">fn</span> <span class="ident">withdraw</span>(<span class="ident">origin</span>: <span class="ident">OriginFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">address</span>: <span class="ident">H160</span>, <span class="ident">value</span>: <span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">DispatchResult</span> {
-			<span class="kw">let</span> <span class="ident">destination</span> <span class="op">=</span> <span class="ident">T</span>::<span class="ident">WithdrawOrigin</span>::<span class="ident">ensure_address_origin</span>(<span class="kw-2">&amp;</span><span class="ident">address</span>, <span class="ident">origin</span>)<span class="question-mark">?</span>;
-			<span class="kw">let</span> <span class="ident">address_account_id</span> <span class="op">=</span> <span class="ident">T</span>::<span class="ident">AddressMapping</span>::<span class="ident">into_account_id</span>(<span class="ident">address</span>);
-
-			<span class="ident">T</span>::<span class="ident">Currency</span>::<span class="ident">transfer</span>(
-				<span class="kw-2">&amp;</span><span class="ident">address_account_id</span>,
-				<span class="kw-2">&amp;</span><span class="ident">destination</span>,
-				<span class="ident">value</span>,
-				<span class="ident">ExistenceRequirement</span>::<span class="ident">AllowDeath</span>,
-			)<span class="question-mark">?</span>;
-
-			<span class="prelude-val">Ok</span>(())
-		}
-
-		<span class="doccomment">/// Issue an EVM call operation. This is similar to a message call transaction in Ethereum.</span>
-		<span class="attribute">#[<span class="ident">pallet</span>::<span class="ident">weight</span>(<span class="ident">T</span>::<span class="ident">GasWeightMapping</span>::<span class="ident">gas_to_weight</span>(<span class="kw-2">*</span><span class="ident">gas_limit</span>))]</span>
-		<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn</span> <span class="ident">call</span>(
-			<span class="ident">origin</span>: <span class="ident">OriginFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
-			<span class="ident">source</span>: <span class="ident">H160</span>,
-			<span class="ident">target</span>: <span class="ident">H160</span>,
-			<span class="ident">input</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
-			<span class="ident">value</span>: <span class="ident">U256</span>,
-			<span class="ident">gas_limit</span>: <span class="ident">u64</span>,
-			<span class="ident">gas_price</span>: <span class="ident">U256</span>,
-			<span class="ident">nonce</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-		) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">DispatchResultWithPostInfo</span> {
-			<span class="ident">T</span>::<span class="ident">CallOrigin</span>::<span class="ident">ensure_address_origin</span>(<span class="kw-2">&amp;</span><span class="ident">source</span>, <span class="ident">origin</span>)<span class="question-mark">?</span>;
-
-			<span class="kw">let</span> <span class="ident">info</span> <span class="op">=</span> <span class="ident">T</span>::<span class="ident">Runner</span>::<span class="ident">call</span>(
-				<span class="ident">source</span>,
-				<span class="ident">target</span>,
-				<span class="ident">input</span>,
-				<span class="ident">value</span>,
-				<span class="ident">gas_limit</span>,
-				<span class="prelude-val">Some</span>(<span class="ident">gas_price</span>),
-				<span class="ident">nonce</span>,
-				<span class="ident">T</span>::<span class="ident">config</span>(),
-			)<span class="question-mark">?</span>;
-
-			<span class="kw">match</span> <span class="ident">info</span>.<span class="ident">exit_reason</span> {
-				<span class="ident">ExitReason</span>::<span class="ident">Succeed</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
-					<span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">deposit_event</span>(<span class="ident">Event</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">Executed</span>(<span class="ident">target</span>));
-				},
-				<span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> {
-					<span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">deposit_event</span>(<span class="ident">Event</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">ExecutedFailed</span>(<span class="ident">target</span>));
-				},
-			};
-
-			<span class="prelude-val">Ok</span>(<span class="ident">PostDispatchInfo</span> {
-				<span class="ident">actual_weight</span>: <span class="prelude-val">Some</span>(<span class="ident">T</span>::<span class="ident">GasWeightMapping</span>::<span class="ident">gas_to_weight</span>(<span class="ident">info</span>.<span class="ident">used_gas</span>.<span class="ident">unique_saturated_into</span>())),
-				<span class="ident">pays_fee</span>: <span class="ident">Pays</span>::<span class="ident">No</span>,
-			})
-		}
-
-		<span class="doccomment">/// Issue an EVM create operation. This is similar to a contract creation transaction in</span>
-		<span class="doccomment">/// Ethereum.</span>
-		<span class="attribute">#[<span class="ident">pallet</span>::<span class="ident">weight</span>(<span class="ident">T</span>::<span class="ident">GasWeightMapping</span>::<span class="ident">gas_to_weight</span>(<span class="kw-2">*</span><span class="ident">gas_limit</span>))]</span>
-		<span class="kw">fn</span> <span class="ident">create</span>(
-			<span class="ident">origin</span>: <span class="ident">OriginFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
-			<span class="ident">source</span>: <span class="ident">H160</span>,
-			<span class="ident">init</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
-			<span class="ident">value</span>: <span class="ident">U256</span>,
-			<span class="ident">gas_limit</span>: <span class="ident">u64</span>,
-			<span class="ident">gas_price</span>: <span class="ident">U256</span>,
-			<span class="ident">nonce</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-		) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">DispatchResultWithPostInfo</span> {
-			<span class="ident">T</span>::<span class="ident">CallOrigin</span>::<span class="ident">ensure_address_origin</span>(<span class="kw-2">&amp;</span><span class="ident">source</span>, <span class="ident">origin</span>)<span class="question-mark">?</span>;
-
-			<span class="kw">let</span> <span class="ident">info</span> <span class="op">=</span> <span class="ident">T</span>::<span class="ident">Runner</span>::<span class="ident">create</span>(
-				<span class="ident">source</span>,
-				<span class="ident">init</span>,
-				<span class="ident">value</span>,
-				<span class="ident">gas_limit</span>,
-				<span class="prelude-val">Some</span>(<span class="ident">gas_price</span>),
-				<span class="ident">nonce</span>,
-				<span class="ident">T</span>::<span class="ident">config</span>(),
-			)<span class="question-mark">?</span>;
-
-			<span class="kw">match</span> <span class="ident">info</span> {
-				<span class="ident">CreateInfo</span> {
-					<span class="ident">exit_reason</span>: <span class="ident">ExitReason</span>::<span class="ident">Succeed</span>(<span class="kw">_</span>),
-					<span class="ident">value</span>: <span class="ident">create_address</span>,
-					..
-				} <span class="op">=</span><span class="op">&gt;</span> {
-					<span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">deposit_event</span>(<span class="ident">Event</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">Created</span>(<span class="ident">create_address</span>));
-				},
-				<span class="ident">CreateInfo</span> {
-					<span class="ident">exit_reason</span>: <span class="kw">_</span>,
-					<span class="ident">value</span>: <span class="ident">create_address</span>,
-					..
-				} <span class="op">=</span><span class="op">&gt;</span> {
-					<span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">deposit_event</span>(<span class="ident">Event</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">CreatedFailed</span>(<span class="ident">create_address</span>));
-				},
-			}
-
-			<span class="prelude-val">Ok</span>(<span class="ident">PostDispatchInfo</span> {
-				<span class="ident">actual_weight</span>: <span class="prelude-val">Some</span>(<span class="ident">T</span>::<span class="ident">GasWeightMapping</span>::<span class="ident">gas_to_weight</span>(<span class="ident">info</span>.<span class="ident">used_gas</span>.<span class="ident">unique_saturated_into</span>())),
-				<span class="ident">pays_fee</span>: <span class="ident">Pays</span>::<span class="ident">No</span>,
-			})
-		}
-
-		<span class="doccomment">/// Issue an EVM create2 operation.</span>
-		<span class="attribute">#[<span class="ident">pallet</span>::<span class="ident">weight</span>(<span class="ident">T</span>::<span class="ident">GasWeightMapping</span>::<span class="ident">gas_to_weight</span>(<span class="kw-2">*</span><span class="ident">gas_limit</span>))]</span>
-		<span class="kw">fn</span> <span class="ident">create2</span>(
-			<span class="ident">origin</span>: <span class="ident">OriginFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
-			<span class="ident">source</span>: <span class="ident">H160</span>,
-			<span class="ident">init</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
-			<span class="ident">salt</span>: <span class="ident">H256</span>,
-			<span class="ident">value</span>: <span class="ident">U256</span>,
-			<span class="ident">gas_limit</span>: <span class="ident">u64</span>,
-			<span class="ident">gas_price</span>: <span class="ident">U256</span>,
-			<span class="ident">nonce</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-		) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">DispatchResultWithPostInfo</span> {
-			<span class="ident">T</span>::<span class="ident">CallOrigin</span>::<span class="ident">ensure_address_origin</span>(<span class="kw-2">&amp;</span><span class="ident">source</span>, <span class="ident">origin</span>)<span class="question-mark">?</span>;
-
-			<span class="kw">let</span> <span class="ident">info</span> <span class="op">=</span> <span class="ident">T</span>::<span class="ident">Runner</span>::<span class="ident">create2</span>(
-				<span class="ident">source</span>,
-				<span class="ident">init</span>,
-				<span class="ident">salt</span>,
-				<span class="ident">value</span>,
-				<span class="ident">gas_limit</span>,
-				<span class="prelude-val">Some</span>(<span class="ident">gas_price</span>),
-				<span class="ident">nonce</span>,
-				<span class="ident">T</span>::<span class="ident">config</span>(),
-			)<span class="question-mark">?</span>;
-
-			<span class="kw">match</span> <span class="ident">info</span> {
-				<span class="ident">CreateInfo</span> {
-					<span class="ident">exit_reason</span>: <span class="ident">ExitReason</span>::<span class="ident">Succeed</span>(<span class="kw">_</span>),
-					<span class="ident">value</span>: <span class="ident">create_address</span>,
-					..
-				} <span class="op">=</span><span class="op">&gt;</span> {
-					<span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">deposit_event</span>(<span class="ident">Event</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">Created</span>(<span class="ident">create_address</span>));
-				},
-				<span class="ident">CreateInfo</span> {
-					<span class="ident">exit_reason</span>: <span class="kw">_</span>,
-					<span class="ident">value</span>: <span class="ident">create_address</span>,
-					..
-				} <span class="op">=</span><span class="op">&gt;</span> {
-					<span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">deposit_event</span>(<span class="ident">Event</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">CreatedFailed</span>(<span class="ident">create_address</span>));
-				},
-			}
-
-			<span class="prelude-val">Ok</span>(<span class="ident">PostDispatchInfo</span> {
-				<span class="ident">actual_weight</span>: <span class="prelude-val">Some</span>(<span class="ident">T</span>::<span class="ident">GasWeightMapping</span>::<span class="ident">gas_to_weight</span>(<span class="ident">info</span>.<span class="ident">used_gas</span>.<span class="ident">unique_saturated_into</span>())),
-				<span class="ident">pays_fee</span>: <span class="ident">Pays</span>::<span class="ident">No</span>,
-			})
-		}
-	}
-
-	<span class="attribute">#[<span class="ident">pallet</span>::<span class="ident">event</span>]</span>
-	<span class="attribute">#[<span class="ident">pallet</span>::<span class="ident">generate_deposit</span>(<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn</span> <span class="ident">deposit_event</span>)]</span>
-	<span class="attribute">#[<span class="ident">pallet</span>::<span class="ident">metadata</span>(<span class="ident">T</span>::<span class="ident">AccountId</span> <span class="op">=</span> <span class="string">&quot;AccountId&quot;</span>)]</span>
-	<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> {
-		<span class="doccomment">/// Ethereum events from contracts.</span>
-		<span class="ident">Log</span>(<span class="ident">Log</span>),
-		<span class="doccomment">/// A contract has been created at given \[address\].</span>
-		<span class="ident">Created</span>(<span class="ident">H160</span>),
-		<span class="doccomment">/// A \[contract\] was attempted to be created, but the execution failed.</span>
-		<span class="ident">CreatedFailed</span>(<span class="ident">H160</span>),
-		<span class="doccomment">/// A \[contract\] has been executed successfully with states applied.</span>
-		<span class="ident">Executed</span>(<span class="ident">H160</span>),
-		<span class="doccomment">/// A \[contract\] has been executed with errors. States are reverted with only gas fees applied.</span>
-		<span class="ident">ExecutedFailed</span>(<span class="ident">H160</span>),
-		<span class="doccomment">/// A deposit has been made at a given address. \[sender, address, value\]</span>
-		<span class="ident">BalanceDeposit</span>(<span class="ident">T</span>::<span class="ident">AccountId</span>, <span class="ident">H160</span>, <span class="ident">U256</span>),
-		<span class="doccomment">/// A withdrawal has been made from a given address. \[sender, address, value\]</span>
-		<span class="ident">BalanceWithdraw</span>(<span class="ident">T</span>::<span class="ident">AccountId</span>, <span class="ident">H160</span>, <span class="ident">U256</span>),
-	}
-
-	<span class="attribute">#[<span class="ident">pallet</span>::<span class="ident">error</span>]</span>
-	<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Error</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-		<span class="doccomment">/// Not enough balance to perform action</span>
-		<span class="ident">BalanceLow</span>,
-		<span class="doccomment">/// Calculating total fee overflowed</span>
-		<span class="ident">FeeOverflow</span>,
-		<span class="doccomment">/// Calculating total payment overflowed</span>
-		<span class="ident">PaymentOverflow</span>,
-		<span class="doccomment">/// Withdraw fee failed</span>
-		<span class="ident">WithdrawFailed</span>,
-		<span class="doccomment">/// Gas price is too low.</span>
-		<span class="ident">GasPriceTooLow</span>,
-		<span class="doccomment">/// Nonce is invalid</span>
-		<span class="ident">InvalidNonce</span>,
-	}
-
-	<span class="attribute">#[<span class="ident">pallet</span>::<span class="ident">genesis_config</span>]</span>
-	<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">GenesisConfig</span> {
-		<span class="kw">pub</span> <span class="ident">accounts</span>: <span class="ident">std</span>::<span class="ident">collections</span>::<span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">H160</span>, <span class="ident">GenesisAccount</span><span class="op">&gt;</span>,
-	}
-
-	<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>)]</span>
-	<span class="kw">impl</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">GenesisConfig</span> {
-		<span class="kw">fn</span> <span class="ident">default</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-			<span class="self">Self</span> {
-				<span class="ident">accounts</span>: <span class="ident">Default</span>::<span class="ident">default</span>(),
-			}
-		}
-	}
-
-	<span class="attribute">#[<span class="ident">pallet</span>::<span class="ident">genesis_build</span>]</span>
-	<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">GenesisBuild</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">GenesisConfig</span> {
-		<span class="kw">fn</span> <span class="ident">build</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) {
-			<span class="kw">for</span> (<span class="ident">address</span>, <span class="ident">account</span>) <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">accounts</span> {
-				<span class="kw">let</span> <span class="ident">account_id</span> <span class="op">=</span> <span class="ident">T</span>::<span class="ident">AddressMapping</span>::<span class="ident">into_account_id</span>(<span class="kw-2">*</span><span class="ident">address</span>);
-
-				<span class="comment">// ASSUME: in one single EVM transaction, the nonce will not increase more than</span>
-				<span class="comment">// `u128::max_value()`.</span>
-				<span class="kw">for</span> <span class="kw">_</span> <span class="kw">in</span> <span class="number">0</span>..<span class="ident">account</span>.<span class="ident">nonce</span>.<span class="ident">low_u128</span>() {
-					<span class="ident">frame_system</span>::<span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">inc_account_nonce</span>(<span class="kw-2">&amp;</span><span class="ident">account_id</span>);
-				}
-
-				<span class="ident">T</span>::<span class="ident">Currency</span>::<span class="ident">deposit_creating</span>(
-					<span class="kw-2">&amp;</span><span class="ident">account_id</span>,
-					<span class="ident">account</span>.<span class="ident">balance</span>.<span class="ident">low_u128</span>().<span class="ident">unique_saturated_into</span>(),
-				);
-
-				<span class="op">&lt;</span><span class="ident">AccountCodes</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">insert</span>(<span class="ident">address</span>, <span class="kw-2">&amp;</span><span class="ident">account</span>.<span class="ident">code</span>);
-
-				<span class="kw">for</span> (<span class="ident">index</span>, <span class="ident">value</span>) <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">account</span>.<span class="ident">storage</span> {
-					<span class="op">&lt;</span><span class="ident">AccountStorages</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">insert</span>(<span class="ident">address</span>, <span class="ident">index</span>, <span class="ident">value</span>);
-				}
-			}
-		}
-	}
-
-	<span class="attribute">#[<span class="ident">pallet</span>::<span class="ident">storage</span>]</span>
-	<span class="attribute">#[<span class="ident">pallet</span>::<span class="ident">getter</span>(<span class="kw">fn</span> <span class="ident">account_codes</span>)]</span>
-	<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">AccountCodes</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">StorageMap</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">Blake2_128Concat</span>, <span class="ident">H160</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">ValueQuery</span><span class="op">&gt;</span>;
-
-	<span class="attribute">#[<span class="ident">pallet</span>::<span class="ident">storage</span>]</span>
-	<span class="attribute">#[<span class="ident">pallet</span>::<span class="ident">getter</span>(<span class="kw">fn</span> <span class="ident">account_storages</span>)]</span>
-	<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">AccountStorages</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">StorageDoubleMap</span><span class="op">&lt;</span>
-		<span class="kw">_</span>,
-		<span class="ident">Blake2_128Concat</span>,
-		<span class="ident">H160</span>,
-		<span class="ident">Blake2_128Concat</span>,
-		<span class="ident">H256</span>,
-		<span class="ident">H256</span>,
-		<span class="ident">ValueQuery</span>,
-	<span class="op">&gt;</span>;
-}
 
 <span class="doccomment">/// Type alias for currency balance.</span>
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="op">=</span> <span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">Config</span><span class="op">&gt;</span>::<span class="ident">Currency</span> <span class="kw">as</span> <span class="ident">Currency</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">frame_system</span>::<span class="ident">Config</span><span class="op">&gt;</span>::<span class="ident">AccountId</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">Balance</span>;
@@ -1240,6 +910,46 @@
 
 <span class="kw">static</span> <span class="ident">ISTANBUL_CONFIG</span>: <span class="ident">EvmConfig</span> <span class="op">=</span> <span class="ident">EvmConfig</span>::<span class="ident">istanbul</span>();
 
+<span class="doccomment">/// EVM module trait</span>
+<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Config</span>: <span class="ident">frame_system</span>::<span class="ident">Config</span> <span class="op">+</span> <span class="ident">pallet_timestamp</span>::<span class="ident">Config</span> {
+	<span class="doccomment">/// Calculator for current gas price.</span>
+	<span class="kw">type</span> <span class="ident">FeeCalculator</span>: <span class="ident">FeeCalculator</span>;
+
+	<span class="doccomment">/// Maps Ethereum gas to Substrate weight.</span>
+	<span class="kw">type</span> <span class="ident">GasWeightMapping</span>: <span class="ident">GasWeightMapping</span>;
+
+	<span class="doccomment">/// Allow the origin to call on behalf of given address.</span>
+	<span class="kw">type</span> <span class="ident">CallOrigin</span>: <span class="ident">EnsureAddressOrigin</span><span class="op">&lt;</span><span class="self">Self</span>::<span class="ident">Origin</span><span class="op">&gt;</span>;
+	<span class="doccomment">/// Allow the origin to withdraw on behalf of given address.</span>
+	<span class="kw">type</span> <span class="ident">WithdrawOrigin</span>: <span class="ident">EnsureAddressOrigin</span><span class="op">&lt;</span><span class="self">Self</span>::<span class="ident">Origin</span>, <span class="ident">Success</span><span class="op">=</span><span class="self">Self</span>::<span class="ident">AccountId</span><span class="op">&gt;</span>;
+
+	<span class="doccomment">/// Mapping from address to account id.</span>
+	<span class="kw">type</span> <span class="ident">AddressMapping</span>: <span class="ident">AddressMapping</span><span class="op">&lt;</span><span class="self">Self</span>::<span class="ident">AccountId</span><span class="op">&gt;</span>;
+	<span class="doccomment">/// Currency type for withdraw and balance storage.</span>
+	<span class="kw">type</span> <span class="ident">Currency</span>: <span class="ident">Currency</span><span class="op">&lt;</span><span class="self">Self</span>::<span class="ident">AccountId</span><span class="op">&gt;</span>;
+
+	<span class="doccomment">/// The overarching event type.</span>
+	<span class="kw">type</span> <span class="ident">Event</span>: <span class="ident">From</span><span class="op">&lt;</span><span class="ident">Event</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Into</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="self">Self</span> <span class="kw">as</span> <span class="ident">frame_system</span>::<span class="ident">Config</span><span class="op">&gt;</span>::<span class="ident">Event</span><span class="op">&gt;</span>;
+	<span class="doccomment">/// Precompiles associated with this EVM engine.</span>
+	<span class="kw">type</span> <span class="ident">Precompiles</span>: <span class="ident">PrecompileSet</span>;
+	<span class="doccomment">/// Chain ID of EVM.</span>
+	<span class="kw">type</span> <span class="ident">ChainId</span>: <span class="ident">Get</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>;
+	<span class="doccomment">/// The block gas limit. Can be a simple constant, or an adjustment algorithm in another pallet.</span>
+	<span class="kw">type</span> <span class="ident">BlockGasLimit</span>: <span class="ident">Get</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>;
+	<span class="doccomment">/// EVM execution runner.</span>
+	<span class="kw">type</span> <span class="ident">Runner</span>: <span class="ident">Runner</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span>;
+
+	<span class="doccomment">/// To handle fee deduction for EVM transactions. An example is this pallet being used by `pallet_ethereum`</span>
+	<span class="doccomment">/// where the chain implementing `pallet_ethereum` should be able to configure what happens to the fees</span>
+	<span class="doccomment">/// Similar to `OnChargeTransaction` of `pallet_transaction_payment`</span>
+	<span class="kw">type</span> <span class="ident">OnChargeTransaction</span>: <span class="ident">OnChargeEVMTransaction</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span>;
+
+	<span class="doccomment">/// EVM config used in the module.</span>
+	<span class="kw">fn</span> <span class="ident">config</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">EvmConfig</span> {
+		<span class="kw-2">&amp;</span><span class="ident">ISTANBUL_CONFIG</span>
+	}
+}
+
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>)]</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">Debug</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>)]</span>
 <span class="doccomment">/// Account definition used for genesis block construction.</span>
@@ -1254,11 +964,241 @@
 	<span class="kw">pub</span> <span class="ident">code</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
+<span class="macro">decl_storage</span><span class="macro">!</span> {
+	<span class="kw">trait</span> <span class="ident">Store</span> <span class="kw">for</span> <span class="ident">Module</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="kw">as</span> <span class="ident">EVM</span> {
+		<span class="kw">pub</span> <span class="ident">AccountCodes</span> <span class="ident">get</span>(<span class="kw">fn</span> <span class="ident">account_codes</span>): <span class="ident">map</span> <span class="ident">hasher</span>(<span class="ident">blake2_128_concat</span>) <span class="ident">H160</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>;
+		<span class="kw">pub</span> <span class="ident">AccountStorages</span> <span class="ident">get</span>(<span class="kw">fn</span> <span class="ident">account_storages</span>):
+			<span class="ident">double_map</span> <span class="ident">hasher</span>(<span class="ident">blake2_128_concat</span>) <span class="ident">H160</span>, <span class="ident">hasher</span>(<span class="ident">blake2_128_concat</span>) <span class="ident">H256</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">H256</span>;
+	}
+
+	<span class="ident">add_extra_genesis</span> {
+		<span class="ident">config</span>(<span class="ident">accounts</span>): <span class="ident">std</span>::<span class="ident">collections</span>::<span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">H160</span>, <span class="ident">GenesisAccount</span><span class="op">&gt;</span>;
+		<span class="ident">build</span>(<span class="op">|</span><span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="ident">GenesisConfig</span><span class="op">|</span> {
+			<span class="kw">for</span> (<span class="ident">address</span>, <span class="ident">account</span>) <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">config</span>.<span class="ident">accounts</span> {
+				<span class="kw">let</span> <span class="ident">account_id</span> <span class="op">=</span> <span class="ident">T</span>::<span class="ident">AddressMapping</span>::<span class="ident">into_account_id</span>(<span class="kw-2">*</span><span class="ident">address</span>);
+
+				<span class="comment">// ASSUME: in one single EVM transaction, the nonce will not increase more than</span>
+				<span class="comment">// `u128::max_value()`.</span>
+				<span class="kw">for</span> <span class="kw">_</span> <span class="kw">in</span> <span class="number">0</span>..<span class="ident">account</span>.<span class="ident">nonce</span>.<span class="ident">low_u128</span>() {
+					<span class="ident">frame_system</span>::<span class="ident">Module</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">inc_account_nonce</span>(<span class="kw-2">&amp;</span><span class="ident">account_id</span>);
+				}
+
+				<span class="ident">T</span>::<span class="ident">Currency</span>::<span class="ident">deposit_creating</span>(
+					<span class="kw-2">&amp;</span><span class="ident">account_id</span>,
+					<span class="ident">account</span>.<span class="ident">balance</span>.<span class="ident">low_u128</span>().<span class="ident">unique_saturated_into</span>(),
+				);
+
+				<span class="ident">AccountCodes</span>::<span class="ident">insert</span>(<span class="ident">address</span>, <span class="kw-2">&amp;</span><span class="ident">account</span>.<span class="ident">code</span>);
+
+				<span class="kw">for</span> (<span class="ident">index</span>, <span class="ident">value</span>) <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">account</span>.<span class="ident">storage</span> {
+					<span class="ident">AccountStorages</span>::<span class="ident">insert</span>(<span class="ident">address</span>, <span class="ident">index</span>, <span class="ident">value</span>);
+				}
+			}
+		});
+	}
+}
+
+<span class="macro">decl_event</span><span class="macro">!</span> {
+	<span class="doccomment">/// EVM events</span>
+	<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="kw">where</span>
+		<span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">frame_system</span>::<span class="ident">Config</span><span class="op">&gt;</span>::<span class="ident">AccountId</span>,
+	{
+		<span class="doccomment">/// Ethereum events from contracts.</span>
+		<span class="ident">Log</span>(<span class="ident">Log</span>),
+		<span class="doccomment">/// A contract has been created at given \[address\].</span>
+		<span class="ident">Created</span>(<span class="ident">H160</span>),
+		<span class="doccomment">/// A \[contract\] was attempted to be created, but the execution failed.</span>
+		<span class="ident">CreatedFailed</span>(<span class="ident">H160</span>),
+		<span class="doccomment">/// A \[contract\] has been executed successfully with states applied.</span>
+		<span class="ident">Executed</span>(<span class="ident">H160</span>),
+		<span class="doccomment">/// A \[contract\] has been executed with errors. States are reverted with only gas fees applied.</span>
+		<span class="ident">ExecutedFailed</span>(<span class="ident">H160</span>),
+		<span class="doccomment">/// A deposit has been made at a given address. \[sender, address, value\]</span>
+		<span class="ident">BalanceDeposit</span>(<span class="ident">AccountId</span>, <span class="ident">H160</span>, <span class="ident">U256</span>),
+		<span class="doccomment">/// A withdrawal has been made from a given address. \[sender, address, value\]</span>
+		<span class="ident">BalanceWithdraw</span>(<span class="ident">AccountId</span>, <span class="ident">H160</span>, <span class="ident">U256</span>),
+	}
+}
+
+<span class="macro">decl_error</span><span class="macro">!</span> {
+	<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Error</span> <span class="kw">for</span> <span class="ident">Module</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> {
+		<span class="doccomment">/// Not enough balance to perform action</span>
+		<span class="ident">BalanceLow</span>,
+		<span class="doccomment">/// Calculating total fee overflowed</span>
+		<span class="ident">FeeOverflow</span>,
+		<span class="doccomment">/// Calculating total payment overflowed</span>
+		<span class="ident">PaymentOverflow</span>,
+		<span class="doccomment">/// Withdraw fee failed</span>
+		<span class="ident">WithdrawFailed</span>,
+		<span class="doccomment">/// Gas price is too low.</span>
+		<span class="ident">GasPriceTooLow</span>,
+		<span class="doccomment">/// Nonce is invalid</span>
+		<span class="ident">InvalidNonce</span>,
+	}
+}
+
+<span class="macro">decl_module</span><span class="macro">!</span> {
+	<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Module</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="kw">enum</span> <span class="ident">Call</span> <span class="kw">where</span> <span class="ident">origin</span>: <span class="ident">T</span>::<span class="ident">Origin</span> {
+		<span class="kw">type</span> <span class="ident">Error</span> <span class="op">=</span> <span class="ident">Error</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>;
+
+		<span class="kw">fn</span> <span class="ident">deposit_event</span>() <span class="op">=</span> <span class="ident">default</span>;
+
+		<span class="doccomment">/// Withdraw balance from EVM into currency/balances module.</span>
+		<span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="number">0</span>]</span>
+		<span class="kw">fn</span> <span class="ident">withdraw</span>(<span class="ident">origin</span>, <span class="ident">address</span>: <span class="ident">H160</span>, <span class="ident">value</span>: <span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>) {
+			<span class="kw">let</span> <span class="ident">destination</span> <span class="op">=</span> <span class="ident">T</span>::<span class="ident">WithdrawOrigin</span>::<span class="ident">ensure_address_origin</span>(<span class="kw-2">&amp;</span><span class="ident">address</span>, <span class="ident">origin</span>)<span class="question-mark">?</span>;
+			<span class="kw">let</span> <span class="ident">address_account_id</span> <span class="op">=</span> <span class="ident">T</span>::<span class="ident">AddressMapping</span>::<span class="ident">into_account_id</span>(<span class="ident">address</span>);
+
+			<span class="ident">T</span>::<span class="ident">Currency</span>::<span class="ident">transfer</span>(
+				<span class="kw-2">&amp;</span><span class="ident">address_account_id</span>,
+				<span class="kw-2">&amp;</span><span class="ident">destination</span>,
+				<span class="ident">value</span>,
+				<span class="ident">ExistenceRequirement</span>::<span class="ident">AllowDeath</span>
+			)<span class="question-mark">?</span>;
+		}
+
+		<span class="doccomment">/// Issue an EVM call operation. This is similar to a message call transaction in Ethereum.</span>
+		<span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="ident">T</span>::<span class="ident">GasWeightMapping</span>::<span class="ident">gas_to_weight</span>(<span class="kw-2">*</span><span class="ident">gas_limit</span>)]</span>
+		<span class="kw">fn</span> <span class="ident">call</span>(
+			<span class="ident">origin</span>,
+			<span class="ident">source</span>: <span class="ident">H160</span>,
+			<span class="ident">target</span>: <span class="ident">H160</span>,
+			<span class="ident">input</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
+			<span class="ident">value</span>: <span class="ident">U256</span>,
+			<span class="ident">gas_limit</span>: <span class="ident">u64</span>,
+			<span class="ident">gas_price</span>: <span class="ident">U256</span>,
+			<span class="ident">nonce</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
+		) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">DispatchResultWithPostInfo</span> {
+			<span class="ident">T</span>::<span class="ident">CallOrigin</span>::<span class="ident">ensure_address_origin</span>(<span class="kw-2">&amp;</span><span class="ident">source</span>, <span class="ident">origin</span>)<span class="question-mark">?</span>;
+
+			<span class="kw">let</span> <span class="ident">info</span> <span class="op">=</span> <span class="ident">T</span>::<span class="ident">Runner</span>::<span class="ident">call</span>(
+				<span class="ident">source</span>,
+				<span class="ident">target</span>,
+				<span class="ident">input</span>,
+				<span class="ident">value</span>,
+				<span class="ident">gas_limit</span>,
+				<span class="prelude-val">Some</span>(<span class="ident">gas_price</span>),
+				<span class="ident">nonce</span>,
+				<span class="ident">T</span>::<span class="ident">config</span>(),
+			)<span class="question-mark">?</span>;
+
+			<span class="kw">match</span> <span class="ident">info</span>.<span class="ident">exit_reason</span> {
+				<span class="ident">ExitReason</span>::<span class="ident">Succeed</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
+					<span class="ident">Module</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">deposit_event</span>(<span class="ident">Event</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">Executed</span>(<span class="ident">target</span>));
+				},
+				<span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> {
+					<span class="ident">Module</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">deposit_event</span>(<span class="ident">Event</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">ExecutedFailed</span>(<span class="ident">target</span>));
+				},
+			};
+
+			<span class="prelude-val">Ok</span>(<span class="ident">PostDispatchInfo</span> {
+				<span class="ident">actual_weight</span>: <span class="prelude-val">Some</span>(<span class="ident">T</span>::<span class="ident">GasWeightMapping</span>::<span class="ident">gas_to_weight</span>(<span class="ident">info</span>.<span class="ident">used_gas</span>.<span class="ident">unique_saturated_into</span>())),
+				<span class="ident">pays_fee</span>: <span class="ident">Pays</span>::<span class="ident">No</span>,
+			})
+		}
+
+		<span class="doccomment">/// Issue an EVM create operation. This is similar to a contract creation transaction in</span>
+		<span class="doccomment">/// Ethereum.</span>
+		<span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="ident">T</span>::<span class="ident">GasWeightMapping</span>::<span class="ident">gas_to_weight</span>(<span class="kw-2">*</span><span class="ident">gas_limit</span>)]</span>
+		<span class="kw">fn</span> <span class="ident">create</span>(
+			<span class="ident">origin</span>,
+			<span class="ident">source</span>: <span class="ident">H160</span>,
+			<span class="ident">init</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
+			<span class="ident">value</span>: <span class="ident">U256</span>,
+			<span class="ident">gas_limit</span>: <span class="ident">u64</span>,
+			<span class="ident">gas_price</span>: <span class="ident">U256</span>,
+			<span class="ident">nonce</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
+		) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">DispatchResultWithPostInfo</span> {
+			<span class="ident">T</span>::<span class="ident">CallOrigin</span>::<span class="ident">ensure_address_origin</span>(<span class="kw-2">&amp;</span><span class="ident">source</span>, <span class="ident">origin</span>)<span class="question-mark">?</span>;
+
+			<span class="kw">let</span> <span class="ident">info</span> <span class="op">=</span> <span class="ident">T</span>::<span class="ident">Runner</span>::<span class="ident">create</span>(
+				<span class="ident">source</span>,
+				<span class="ident">init</span>,
+				<span class="ident">value</span>,
+				<span class="ident">gas_limit</span>,
+				<span class="prelude-val">Some</span>(<span class="ident">gas_price</span>),
+				<span class="ident">nonce</span>,
+				<span class="ident">T</span>::<span class="ident">config</span>(),
+			)<span class="question-mark">?</span>;
+
+			<span class="kw">match</span> <span class="ident">info</span> {
+				<span class="ident">CreateInfo</span> {
+					<span class="ident">exit_reason</span>: <span class="ident">ExitReason</span>::<span class="ident">Succeed</span>(<span class="kw">_</span>),
+					<span class="ident">value</span>: <span class="ident">create_address</span>,
+					..
+				} <span class="op">=</span><span class="op">&gt;</span> {
+					<span class="ident">Module</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">deposit_event</span>(<span class="ident">Event</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">Created</span>(<span class="ident">create_address</span>));
+				},
+				<span class="ident">CreateInfo</span> {
+					<span class="ident">exit_reason</span>: <span class="kw">_</span>,
+					<span class="ident">value</span>: <span class="ident">create_address</span>,
+					..
+				} <span class="op">=</span><span class="op">&gt;</span> {
+					<span class="ident">Module</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">deposit_event</span>(<span class="ident">Event</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">CreatedFailed</span>(<span class="ident">create_address</span>));
+				},
+			}
+
+			<span class="prelude-val">Ok</span>(<span class="ident">PostDispatchInfo</span> {
+				<span class="ident">actual_weight</span>: <span class="prelude-val">Some</span>(<span class="ident">T</span>::<span class="ident">GasWeightMapping</span>::<span class="ident">gas_to_weight</span>(<span class="ident">info</span>.<span class="ident">used_gas</span>.<span class="ident">unique_saturated_into</span>())),
+				<span class="ident">pays_fee</span>: <span class="ident">Pays</span>::<span class="ident">No</span>,
+			})
+		}
+
+		<span class="doccomment">/// Issue an EVM create2 operation.</span>
+		<span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="ident">T</span>::<span class="ident">GasWeightMapping</span>::<span class="ident">gas_to_weight</span>(<span class="kw-2">*</span><span class="ident">gas_limit</span>)]</span>
+		<span class="kw">fn</span> <span class="ident">create2</span>(
+			<span class="ident">origin</span>,
+			<span class="ident">source</span>: <span class="ident">H160</span>,
+			<span class="ident">init</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
+			<span class="ident">salt</span>: <span class="ident">H256</span>,
+			<span class="ident">value</span>: <span class="ident">U256</span>,
+			<span class="ident">gas_limit</span>: <span class="ident">u64</span>,
+			<span class="ident">gas_price</span>: <span class="ident">U256</span>,
+			<span class="ident">nonce</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
+		) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">DispatchResultWithPostInfo</span> {
+			<span class="ident">T</span>::<span class="ident">CallOrigin</span>::<span class="ident">ensure_address_origin</span>(<span class="kw-2">&amp;</span><span class="ident">source</span>, <span class="ident">origin</span>)<span class="question-mark">?</span>;
+
+			<span class="kw">let</span> <span class="ident">info</span> <span class="op">=</span> <span class="ident">T</span>::<span class="ident">Runner</span>::<span class="ident">create2</span>(
+				<span class="ident">source</span>,
+				<span class="ident">init</span>,
+				<span class="ident">salt</span>,
+				<span class="ident">value</span>,
+				<span class="ident">gas_limit</span>,
+				<span class="prelude-val">Some</span>(<span class="ident">gas_price</span>),
+				<span class="ident">nonce</span>,
+				<span class="ident">T</span>::<span class="ident">config</span>(),
+			)<span class="question-mark">?</span>;
+
+			<span class="kw">match</span> <span class="ident">info</span> {
+				<span class="ident">CreateInfo</span> {
+					<span class="ident">exit_reason</span>: <span class="ident">ExitReason</span>::<span class="ident">Succeed</span>(<span class="kw">_</span>),
+					<span class="ident">value</span>: <span class="ident">create_address</span>,
+					..
+				} <span class="op">=</span><span class="op">&gt;</span> {
+					<span class="ident">Module</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">deposit_event</span>(<span class="ident">Event</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">Created</span>(<span class="ident">create_address</span>));
+				},
+				<span class="ident">CreateInfo</span> {
+					<span class="ident">exit_reason</span>: <span class="kw">_</span>,
+					<span class="ident">value</span>: <span class="ident">create_address</span>,
+					..
+				} <span class="op">=</span><span class="op">&gt;</span> {
+					<span class="ident">Module</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">deposit_event</span>(<span class="ident">Event</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">CreatedFailed</span>(<span class="ident">create_address</span>));
+				},
+			}
+
+			<span class="prelude-val">Ok</span>(<span class="ident">PostDispatchInfo</span> {
+				<span class="ident">actual_weight</span>: <span class="prelude-val">Some</span>(<span class="ident">T</span>::<span class="ident">GasWeightMapping</span>::<span class="ident">gas_to_weight</span>(<span class="ident">info</span>.<span class="ident">used_gas</span>.<span class="ident">unique_saturated_into</span>())),
+				<span class="ident">pays_fee</span>: <span class="ident">Pays</span>::<span class="ident">No</span>,
+			})
+		}
+	}
+}
+
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">Module</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
 	<span class="doccomment">/// Check whether an account is empty.</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_account_empty</span>(<span class="ident">address</span>: <span class="kw-2">&amp;</span><span class="ident">H160</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
 		<span class="kw">let</span> <span class="ident">account</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">account_basic</span>(<span class="ident">address</span>);
-		<span class="kw">let</span> <span class="ident">code_len</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">AccountCodes</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">decode_len</span>(<span class="ident">address</span>).<span class="ident">unwrap_or</span>(<span class="number">0</span>);
+		<span class="kw">let</span> <span class="ident">code_len</span> <span class="op">=</span> <span class="ident">AccountCodes</span>::<span class="ident">decode_len</span>(<span class="ident">address</span>).<span class="ident">unwrap_or</span>(<span class="number">0</span>);
 
 		<span class="ident">account</span>.<span class="ident">nonce</span> <span class="op">=</span><span class="op">=</span> <span class="ident">U256</span>::<span class="ident">zero</span>() <span class="op">&amp;&amp;</span>
 			<span class="ident">account</span>.<span class="ident">balance</span> <span class="op">=</span><span class="op">=</span> <span class="ident">U256</span>::<span class="ident">zero</span>() <span class="op">&amp;&amp;</span>
@@ -1274,13 +1214,13 @@
 
 	<span class="doccomment">/// Remove an account.</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">remove_account</span>(<span class="ident">address</span>: <span class="kw-2">&amp;</span><span class="ident">H160</span>) {
-		<span class="kw">if</span> <span class="op">&lt;</span><span class="ident">AccountCodes</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">contains_key</span>(<span class="ident">address</span>) {
+		<span class="kw">if</span> <span class="ident">AccountCodes</span>::<span class="ident">contains_key</span>(<span class="ident">address</span>) {
 			<span class="kw">let</span> <span class="ident">account_id</span> <span class="op">=</span> <span class="ident">T</span>::<span class="ident">AddressMapping</span>::<span class="ident">into_account_id</span>(<span class="kw-2">*</span><span class="ident">address</span>);
-			<span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">frame_system</span>::<span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">dec_consumers</span>(<span class="kw-2">&amp;</span><span class="ident">account_id</span>);
+			<span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">frame_system</span>::<span class="ident">Module</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">dec_consumers</span>(<span class="kw-2">&amp;</span><span class="ident">account_id</span>);
 		}
 
-		<span class="op">&lt;</span><span class="ident">AccountCodes</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">remove</span>(<span class="ident">address</span>);
-		<span class="op">&lt;</span><span class="ident">AccountStorages</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">remove_prefix</span>(<span class="ident">address</span>);
+		<span class="ident">AccountCodes</span>::<span class="ident">remove</span>(<span class="ident">address</span>);
+		<span class="ident">AccountStorages</span>::<span class="ident">remove_prefix</span>(<span class="ident">address</span>);
 	}
 
 	<span class="doccomment">/// Create an account.</span>
@@ -1289,19 +1229,19 @@
 			<span class="kw">return</span>
 		}
 
-		<span class="kw">if</span> <span class="op">!</span><span class="op">&lt;</span><span class="ident">AccountCodes</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">contains_key</span>(<span class="kw-2">&amp;</span><span class="ident">address</span>) {
+		<span class="kw">if</span> <span class="op">!</span><span class="ident">AccountCodes</span>::<span class="ident">contains_key</span>(<span class="kw-2">&amp;</span><span class="ident">address</span>) {
 			<span class="kw">let</span> <span class="ident">account_id</span> <span class="op">=</span> <span class="ident">T</span>::<span class="ident">AddressMapping</span>::<span class="ident">into_account_id</span>(<span class="ident">address</span>);
-			<span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">frame_system</span>::<span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">inc_consumers</span>(<span class="kw-2">&amp;</span><span class="ident">account_id</span>);
+			<span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">frame_system</span>::<span class="ident">Module</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">inc_consumers</span>(<span class="kw-2">&amp;</span><span class="ident">account_id</span>);
 		}
 
-		<span class="op">&lt;</span><span class="ident">AccountCodes</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">insert</span>(<span class="ident">address</span>, <span class="ident">code</span>);
+		<span class="ident">AccountCodes</span>::<span class="ident">insert</span>(<span class="ident">address</span>, <span class="ident">code</span>);
 	}
 
 	<span class="doccomment">/// Get the account basic in EVM format.</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">account_basic</span>(<span class="ident">address</span>: <span class="kw-2">&amp;</span><span class="ident">H160</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Account</span> {
 		<span class="kw">let</span> <span class="ident">account_id</span> <span class="op">=</span> <span class="ident">T</span>::<span class="ident">AddressMapping</span>::<span class="ident">into_account_id</span>(<span class="kw-2">*</span><span class="ident">address</span>);
 
-		<span class="kw">let</span> <span class="ident">nonce</span> <span class="op">=</span> <span class="ident">frame_system</span>::<span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">account_nonce</span>(<span class="kw-2">&amp;</span><span class="ident">account_id</span>);
+		<span class="kw">let</span> <span class="ident">nonce</span> <span class="op">=</span> <span class="ident">frame_system</span>::<span class="ident">Module</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">account_nonce</span>(<span class="kw-2">&amp;</span><span class="ident">account_id</span>);
 		<span class="kw">let</span> <span class="ident">balance</span> <span class="op">=</span> <span class="ident">T</span>::<span class="ident">Currency</span>::<span class="ident">free_balance</span>(<span class="kw-2">&amp;</span><span class="ident">account_id</span>);
 
 		<span class="ident">Account</span> {
@@ -1330,7 +1270,7 @@
 	) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>;
 }
 
-<span class="doccomment">/// Implements the transaction payment for a pallet implementing the `Currency`</span>
+<span class="doccomment">/// Implements the transaction payment for a module implementing the `Currency`</span>
 <span class="doccomment">/// trait (eg. the pallet_balances) using an unbalance handler (implementing</span>
 <span class="doccomment">/// `OnUnbalanced`).</span>
 <span class="doccomment">/// Similar to `CurrencyAdapter` of `pallet_transaction_payment`</span>
