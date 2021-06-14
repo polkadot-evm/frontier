@@ -1,6 +1,6 @@
 [package]
 name = "fc-consensus"
-version = "2.0.0-dev"
+version = "2.0.0"
 authors = ["Parity Technologies <admin@parity.io>"]
 description = "Frontier consensus for substrate"
 edition = "2018"
@@ -17,7 +17,7 @@ sc-client-api = { version = "3.0.0", git = "https://github.com/paritytech/substr
 sp-block-builder = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sp-inherents = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 fp-consensus = { version = "1.0.0", path = "../../primitives/consensus" }
-fp-rpc = { version = "2.0.0-dev", path = "../../primitives/rpc" }
+fp-rpc = { version = "2.0.0", path = "../../primitives/rpc" }
 fc-db = { version = "1.0.0", path = "../db" }
 sp-consensus = { version = "0.9.0", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 log = "0.4.8"
