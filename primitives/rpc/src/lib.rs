@@ -64,6 +64,7 @@ sp_api::decl_runtime_apis! {
 		/// For a given account address and index, returns pallet_evm::AccountStorages.
 		fn storage_at(address: H160, index: U256) -> H256;
 		/// Returns a frame_ethereum::call response. If `estimate` is true,
+		#[skip_initialize_block]
 		fn call(
 			from: H160,
 			to: H160,
@@ -75,6 +76,7 @@ sp_api::decl_runtime_apis! {
 			estimate: bool,
 		) -> Result<fp_evm::CallInfo, sp_runtime::DispatchError>;
 		/// Returns a frame_ethereum::create response.
+		#[skip_initialize_block]
 		fn create(
 			from: H160,
 			data: Vec<u8>,
