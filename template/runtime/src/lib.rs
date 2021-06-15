@@ -468,14 +468,16 @@ impl_runtime_apis! {
 				_ => {
 					let dispatch_info = xt.get_dispatch_info();
 
-					// TODO How do I get the tip?
-					let tip = 0;
+					let fee_details = TransactionPayment::query_fee_details(
+						xt.clone(),
+						xt.encode().len() as u32
+					);
 
 					// Calculate the fee that will be taken by pallet transaction payment
 					let fee: u64 = TransactionPayment::compute_fee(
 						xt.encode().len() as u32,
 						&dispatch_info,
-						tip,
+						fee_details.tip,
 					).saturated_into();
 
 					// Calculate how much gas this effectively uses according to the existing mapping
