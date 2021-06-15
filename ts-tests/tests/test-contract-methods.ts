@@ -58,6 +58,21 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 		expect(await contract.methods.currentBlock().call()).to.eq(block.number.toString());
 	});
 
+	it("should get correct environmental block hash", async function () {
+		// Solidity `blockhash` is expected to return the ethereum block hash at a given height.
+		const contract = new context.web3.eth.Contract(TEST_CONTRACT_ABI, FIRST_CONTRACT_ADDRESS, {
+			from: GENESIS_ACCOUNT,
+			gasPrice: "0x01",
+		});
+		let number = (await context.web3.eth.getBlock("latest")).number;
+		let last = number + 256;
+		for(let i = number; i <= last; i++) {
+			let hash = (await context.web3.eth.getBlock("latest")).hash;
+			expect(await contract.methods.blockHash().call(i)).to.eq(hash);
+			await createAndFinalizeBlock(context.web3);
+		}
+	});
+
 	// Requires error handling
 	it.skip("should fail for missing parameters", async function () {
 		const contract = new context.web3.eth.Contract([{ ...TEST_CONTRACT_ABI[0], inputs: [] }], FIRST_CONTRACT_ADDRESS, {
