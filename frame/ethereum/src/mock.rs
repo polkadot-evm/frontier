@@ -119,8 +119,8 @@ impl FeeCalculator for FixedGasPrice {
 	}
 }
 
-pub struct EthereumFindAuthor;
-impl FindAuthor<H160> for EthereumFindAuthor {
+pub struct FindAuthorTruncated;
+impl FindAuthor<H160> for FindAuthorTruncated {
 	fn find_author<'a, I>(_digests: I) -> Option<H160> where
 		I: 'a + IntoIterator<Item=(ConsensusEngineId, &'a [u8])>
 	{
@@ -158,6 +158,7 @@ impl pallet_evm::Config for Test {
 	type ChainId = ChainId;
 	type BlockGasLimit = BlockGasLimit;
 	type OnChargeTransaction = ();
+	type FindAuthor = FindAuthorTruncated;
 }
 
 impl Config for Test {
