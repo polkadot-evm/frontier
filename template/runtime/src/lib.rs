@@ -478,6 +478,13 @@ impl_runtime_apis! {
 							// Based on clues from:
 							// https://github.com/paritytech/substrate/blob/master/frame/transaction-payment/src/lib.rs#L477
 							// https://github.com/paritytech/substrate/blob/master/frame/transaction-payment/src/lib.rs#L501
+
+							// Dang, this didn't work
+							//   error[E0616]: field `0` of struct `ChargeTransactionPayment` is private
+							//      --> /home/joshy/ProgrammingProjects/frontier/template/runtime/src/lib.rs:481:37
+							//      |
+							//  481 | ...                   let tip = charge_transaction.0;
+							//      |                                                    ^ private field
 							let tip = charge_transaction.0;
 
 							tip
