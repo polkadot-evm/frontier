@@ -18,7 +18,7 @@
 use sp_std::vec::Vec;
 use sp_core::H160;
 use impl_trait_for_tuples::impl_for_tuples;
-use evm::{ExitSucceed, ExitError, Context, executor::PrecompileOutput};
+use evm::{ExitSucceed, ExitError, Context};
 
 /// Custom precompiles to be used by EVM engine.
 pub trait PrecompileSet {
@@ -32,7 +32,7 @@ pub trait PrecompileSet {
 		input: &[u8],
 		target_gas: Option<u64>,
 		context: &Context,
-	) -> Option<core::result::Result<PrecompileOutput, ExitError>>;
+	) -> Option<core::result::Result<(ExitSucceed, Vec<u8>, u64), ExitError>>;
 }
 
 /// One single precompile used by EVM engine.
@@ -44,7 +44,7 @@ pub trait Precompile {
 		input: &[u8],
 		target_gas: Option<u64>,
 		context: &Context,
-	) -> core::result::Result<PrecompileOutput, ExitError>;
+	) -> core::result::Result<(ExitSucceed, Vec<u8>, u64), ExitError>;
 }
 
 #[impl_for_tuples(16)]
@@ -57,7 +57,7 @@ impl PrecompileSet for Tuple {
 		input: &[u8],
 		target_gas: Option<u64>,
 		context: &Context,
-	) -> Option<core::result::Result<PrecompileOutput, ExitError>> {
+	) -> Option<core::result::Result<(ExitSucceed, Vec<u8>, u64), ExitError>> {
 		let mut index = 0;
 
 		for_tuples!( #(
@@ -86,16 +86,11 @@ impl<T: LinearCostPrecompile> Precompile for T {
 		input: &[u8],
 		target_gas: Option<u64>,
 		_: &Context,
-	) -> core::result::Result<PrecompileOutput, ExitError> {
+	) -> core::result::Result<(ExitSucceed, Vec<u8>, u64), ExitError> {
 		let cost = ensure_linear_cost(target_gas, input.len() as u64, T::BASE, T::WORD)?;
 
-		let (exit_status, output) = T::execute(input, cost)?;
-		Ok(PrecompileOutput {
-			exit_status,
-			cost,
-			output,
-			logs: Default::default(),
-		})
+		let (succeed, out) = T::execute(input, cost)?;
+		Ok((succeed, out, cost))
 	}
 }
 

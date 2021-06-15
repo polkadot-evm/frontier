@@ -22,22 +22,14 @@ extern crate alloc;
 use alloc::vec::Vec;
 use sp_core::U256;
 use fp_evm::Precompile;
-use evm::{ExitSucceed, ExitError, Context, executor::PrecompileOutput};
+use evm::{ExitSucceed, ExitError, Context};
 
 fn read_fr(input: &[u8], start_inx: usize) -> Result<bn::Fr, ExitError> {
-	if input.len() < start_inx + 32 {
-		return Err(ExitError::Other("Input not long enough".into()));
-	}
-
 	bn::Fr::from_slice(&input[start_inx..(start_inx + 32)]).map_err(|_| ExitError::Other("Invalid field element".into()))
 }
 
 fn read_point(input: &[u8], start_inx: usize) -> Result<bn::G1, ExitError> {
 	use bn::{Fq, AffineG1, G1, Group};
-
-	if input.len() < start_inx + 64 {
-		return Err(ExitError::Other("Input not long enough".into()));
-	}
 
 	let px = Fq::from_slice(&input[start_inx..(start_inx + 32)]).map_err(|_| ExitError::Other("Invalid point x coordinate".into()))?;
 	let py = Fq::from_slice(&input[(start_inx + 32)..(start_inx + 64)]).map_err(|_| ExitError::Other("Invalid point y coordinate".into()))?;
@@ -63,7 +55,7 @@ impl Precompile for Bn128Add {
 		input: &[u8],
 		_target_gas: Option<u64>,
 		_context: &Context,
-	) -> core::result::Result<PrecompileOutput, ExitError> {
+	) -> core::result::Result<(ExitSucceed, Vec<u8>, u64), ExitError> {
 		use bn::AffineG1;
 
 		let p1 = read_point(input, 0)?;
@@ -76,12 +68,7 @@ impl Precompile for Bn128Add {
 			sum.y().to_big_endian(&mut buf[32..64]).map_err(|_| ExitError::Other("Cannot fail since 32..64 is 32-byte length".into()))?;
 		}
 
-		Ok(PrecompileOutput {
-			exit_status: ExitSucceed::Returned,
-			cost: Bn128Add::GAS_COST,
-			output: buf.to_vec(),
-			logs: Default::default(),
-		})
+		Ok((ExitSucceed::Returned, buf.to_vec(), Bn128Add::GAS_COST))
 	}
 }
 
@@ -98,7 +85,7 @@ impl Precompile for Bn128Mul {
 		input: &[u8],
 		_target_gas: Option<u64>,
 		_context: &Context,
-	) -> core::result::Result<PrecompileOutput, ExitError> {
+	) -> core::result::Result<(ExitSucceed, Vec<u8>, u64), ExitError> {
 		use bn::AffineG1;
 
 		let p = read_point(input, 0)?;
@@ -111,12 +98,7 @@ impl Precompile for Bn128Mul {
 			sum.y().to_big_endian(&mut buf[32..64]).map_err(|_| ExitError::Other("Cannot fail since 32..64 is 32-byte length".into()))?;
 		}
 
-		Ok(PrecompileOutput {
-			exit_status: ExitSucceed::Returned,
-			cost: Bn128Mul::GAS_COST,
-			output: buf.to_vec(),
-			logs: Default::default(),
-		})
+		Ok((ExitSucceed::Returned, buf.to_vec(), Bn128Mul::GAS_COST))
 	}
 }
 
@@ -135,7 +117,7 @@ impl Precompile for Bn128Pairing {
 		input: &[u8],
 		target_gas: Option<u64>,
 		_context: &Context,
-	) -> core::result::Result<PrecompileOutput, ExitError> {
+	) -> core::result::Result<(ExitSucceed, Vec<u8>, u64), ExitError> {
 		use bn::{AffineG1, AffineG2, Fq, Fq2, pairing_batch, G1, G2, Gt, Group};
 
 		let (ret_val, gas_cost) = if input.is_empty() {
@@ -199,12 +181,7 @@ impl Precompile for Bn128Pairing {
 		let mut buf = [0u8; 32];
 		ret_val.to_big_endian(&mut buf);
 
-		Ok(PrecompileOutput {
-			exit_status: ExitSucceed::Returned,
-			cost: gas_cost,
-			output: buf.to_vec(),
-			logs: Default::default(),
-		})
+		Ok((ExitSucceed::Returned, buf.to_vec(), gas_cost))
 	}
 }
 

@@ -26,12 +26,14 @@ use sp_inherents::{InherentIdentifier, InherentData, ProvideInherent, IsFatalErr
 #[cfg(feature = "std")]
 use sp_inherents::ProvideInherentData;
 use frame_support::{
-	decl_module, decl_storage,
-	traits::Get, weights::Weight,
+	decl_module, decl_storage, decl_event,
+	traits::Get,
 };
 use frame_system::ensure_none;
 
 pub trait Config: frame_system::Config {
+	/// The overarching event type.
+	type Event: From<Event> + Into<<Self as frame_system::Config>::Event>;
 	/// Bound divisor for min gas price.
 	type MinGasPriceBoundDivisor: Get<U256>;
 }
@@ -48,15 +50,17 @@ decl_storage! {
 	}
 }
 
+decl_event!(
+	pub enum Event {
+		TargetMinGasPriceSet(U256),
+	}
+);
+
 decl_module! {
 	pub struct Module<T: Config> for enum Call where origin: T::Origin {
-		fn on_initialize(_block_number: T::BlockNumber) -> Weight {
-			TargetMinGasPrice::kill();
+		fn deposit_event() = default;
 
-			T::DbWeight::get().writes(1)
-		}
-
-		fn on_finalize(_n: T::BlockNumber) {
+		fn on_finalize(n: T::BlockNumber) {
 			if let Some(target) = TargetMinGasPrice::get() {
 				let bound = MinGasPrice::get() / T::MinGasPriceBoundDivisor::get() + U256::one();
 
@@ -65,9 +69,11 @@ decl_module! {
 
 				MinGasPrice::set(min(upper_limit, max(lower_limit, target)));
 			}
+
+			TargetMinGasPrice::kill();
 		}
 
-		#[weight = T::DbWeight::get().writes(1)]
+		#[weight = 0]
 		fn note_min_gas_price_target(
 			origin,
 			target: U256,
@@ -75,6 +81,7 @@ decl_module! {
 			ensure_none(origin)?;
 
 			TargetMinGasPrice::set(Some(target));
+			Self::deposit_event(Event::TargetMinGasPriceSet(target));
 		}
 	}
 }
