@@ -42,15 +42,16 @@ sc-consensus = { git = "https://github.com/paritytech/substrate.git", branch = "
 sp-timestamp = { git = "https://github.com/paritytech/substrate.git", branch = "rococo-v1" }
 pallet-evm = { path = "../../frame/evm" }
 pallet-ethereum = { path = "../../frame/ethereum" }
-sc-finality-grandpa = { git = "https://github.com/paritytech/substrate.git", branch = "rococo-v1" }
-sp-finality-grandpa = { git = "https://github.com/paritytech/substrate.git", branch = "rococo-v1" }
-sc-client-api = { git = "https://github.com/paritytech/substrate.git", branch = "rococo-v1" }
-sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "rococo-v1" }
-sc-basic-authorship = { git = "https://github.com/paritytech/substrate.git", branch = "rococo-v1" }
-sp-block-builder = { git = "https://github.com/paritytech/substrate.git", branch = "rococo-v1" }
-sc-telemetry = { git = "https://github.com/paritytech/substrate.git", branch = "rococo-v1" }
-frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
-frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+pallet-dynamic-fee = { path = "../../frame/dynamic-fee" }
+sc-finality-grandpa = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sp-finality-grandpa = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sc-client-api = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sc-basic-authorship = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sp-block-builder = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sc-telemetry = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate", branch = "frontier" }
+frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "frontier" }
 
 fc-consensus = { path = "../../client/consensus" }
 fp-consensus = { path = "../../primitives/consensus" }

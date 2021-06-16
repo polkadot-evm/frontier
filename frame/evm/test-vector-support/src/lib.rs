@@ -16,7 +16,7 @@
 // limitations under the License.
 
 use fp_evm::Precompile;
-use evm::{ExitSucceed, Context};
+use evm::{ExitSucceed, Context, executor::PrecompileOutput};
 
 #[cfg(feature = "std")]
 use serde::Deserialize;
@@ -59,14 +59,14 @@ pub fn test_precompile_test_vectors<P: Precompile>(filepath: &str)
 		};
 
 		match P::execute(&input, Some(cost), &context) {
-			Ok((exit, output, gas)) => {
-				let as_hex: String = hex::encode(output);
-				assert_eq!(exit, ExitSucceed::Returned,
-						"test '{}' returned {:?} (expected 'Returned')", test.Name, exit);
+			Ok(result) => {
+				let as_hex: String = hex::encode(result.output);
+				assert_eq!(result.exit_status, ExitSucceed::Returned,
+						"test '{}' returned {:?} (expected 'Returned')", test.Name, result.exit_status);
 				assert_eq!(as_hex, test.Expected,
 						"test '{}' failed (different output)", test.Name);
 				if let Some(expected_gas) = test.Gas {
-					assert_eq!(gas, expected_gas,
+					assert_eq!(result.cost, expected_gas,
 							"test '{}' failed (different gas cost)", test.Name);
 				}
 			},

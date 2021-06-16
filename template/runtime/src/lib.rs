@@ -266,15 +266,6 @@ impl pallet_sudo::Config for Runtime {
 	type Call = Call;
 }
 
-/// Fixed gas price of `1`.
-pub struct FixedGasPrice;
-
-impl FeeCalculator for FixedGasPrice {
-	fn min_gas_price() -> U256 {
-		// Gas price is always one token per gas.
-		1.into()
-	}
-}
 
 parameter_types! {
 	pub const ChainId: u64 = 42;
@@ -282,7 +273,7 @@ parameter_types! {
 }
 
 impl pallet_evm::Config for Runtime {
-	type FeeCalculator = FixedGasPrice;
+	type FeeCalculator = pallet_dynamic_fee::Module<Self>;
 	type GasWeightMapping = ();
 	type CallOrigin = EnsureAddressTruncated;
 	type WithdrawOrigin = EnsureAddressTruncated;
@@ -325,6 +316,14 @@ impl pallet_ethereum::Config for Runtime {
 	type StateRoot = pallet_ethereum::IntermediateStateRoot;
 }
 
+frame_support::parameter_types! {
+	pub BoundDivision: U256 = U256::from(1024);
+}
+
+impl pallet_dynamic_fee::Config for Runtime {
+	type MinGasPriceBoundDivisor = BoundDivision;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -332,16 +331,17 @@ construct_runtime!(
 		NodeBlock = opaque::Block,
 		UncheckedExtrinsic = UncheckedExtrinsic
 	{
-		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-		RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Call, Storage},
-		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
-		Aura: pallet_aura::{Pallet, Config<T>},
-		Grandpa: pallet_grandpa::{Pallet, Call, Storage, Config, Event},
-		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-		TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
-		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
-		Ethereum: pallet_ethereum::{Pallet, Call, Storage, Event, Config, ValidateUnsigned},
-		EVM: pallet_evm::{Pallet, Config, Call, Storage, Event<T>},
+		System: frame_system::{Module, Call, Config, Storage, Event<T>},
+		RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
+		Timestamp: pallet_timestamp::{Module, Call, Storage, Inherent},
+		Aura: pallet_aura::{Module, Config<T>},
+		Grandpa: pallet_grandpa::{Module, Call, Storage, Config, Event},
+		Balances: pallet_balances::{Module, Call, Storage, Config<T>, Event<T>},
+		TransactionPayment: pallet_transaction_payment::{Module, Storage},
+		Sudo: pallet_sudo::{Module, Call, Config<T>, Storage, Event<T>},
+		Ethereum: pallet_ethereum::{Module, Call, Storage, Event, Config, ValidateUnsigned},
+		EVM: pallet_evm::{Module, Config, Call, Storage, Event<T>},
+		DynamicFee: pallet_dynamic_fee::{Module, Call, Storage, Config, Inherent},
 	}
 );
 

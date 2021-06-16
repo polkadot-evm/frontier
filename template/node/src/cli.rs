@@ -39,6 +39,10 @@ pub struct RunCmd {
 	/// Maximum number of logs in a query.
 	#[structopt(long, default_value = "10000")]
 	pub max_past_logs: u32,
+
+	/// The dynamic-fee pallet target gas price set by block author
+	#[structopt(long, default_value = "1")]
+	pub target_gas_price: u64,
 }
 
 #[derive(Debug, StructOpt)]

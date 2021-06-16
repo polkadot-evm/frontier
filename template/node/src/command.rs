@@ -3,7 +3,7 @@ use crate::cli::{Cli, Subcommand};
 use crate::service;
 use sc_cli::{SubstrateCli, RuntimeVersion, Role, ChainSpec};
 use sc_service::PartialComponents;
-use crate::service::new_partial;
+use crate::service::{frontier_database_dir, new_partial};
 
 impl SubstrateCli for Cli {
 	fn impl_name() -> String {
@@ -88,7 +88,15 @@ pub fn run() -> sc_cli::Result<()> {
 		},
 		Some(Subcommand::PurgeChain(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
-			runner.sync_run(|config| cmd.run(config.database))
+			runner.sync_run(|config| {
+				// Remove Frontier offchain db
+				let frontier_database_config = sc_service::DatabaseConfig::RocksDb {
+					path: frontier_database_dir(&config),
+					cache_size: 0,
+				};
+				cmd.run(frontier_database_config)?;
+				cmd.run(config.database)
+			})
 		},
 		Some(Subcommand::Revert(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
