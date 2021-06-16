@@ -13,9 +13,9 @@ fp-evm = { version = "2.0.0", default-features = false, path = "../../primitives
 ethereum = { version = "0.7.1", default-features = false, features = ["with-codec"] }
 ethereum-types = { version = "0.11", default-features = false }
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false }
-sp-runtime = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "rococo-v1" }
-sp-std = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "rococo-v1" }
-sp-io = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "rococo-v1" }
+sp-runtime = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sp-std = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+sp-io = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 
 [features]
 default = ["std"]

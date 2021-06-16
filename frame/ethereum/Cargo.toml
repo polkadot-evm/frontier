@@ -30,7 +30,7 @@ fp-rpc = { version = "2.0.0", path = "../../primitives/rpc", default-features = 
 fp-storage = { version = "1.0.1", path = "../../primitives/storage", default-features = false}
 
 [dev-dependencies]
-sp-core = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "rococo-v1" }
+sp-core = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 
 [features]
 default = ["std"]
