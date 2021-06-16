@@ -28,8 +28,6 @@ use sp_runtime::traits::{
 use sp_transaction_pool::TransactionPool;
 use sp_api::{ProvideRuntimeApi, BlockId};
 use sp_blockchain::{Error as BlockChainError, HeaderMetadata, HeaderBackend};
-use sp_storage::{StorageKey, StorageData};
-use sp_io::hashing::twox_128;
 use sc_client_api::{
 	backend::{StorageProvider, Backend, StateBackend},
 	client::BlockchainEvents
@@ -47,14 +45,13 @@ use fc_rpc_core::types::{
 	pubsub::{Kind, Params, Result as PubSubResult, PubSubSyncStatus}
 };
 use ethereum_types::{H256, U256};
-use codec::Decode;
 use sha3::{Keccak256, Digest};
 
 pub use fc_rpc_core::EthPubSubApiServer;
 use futures::{StreamExt as _, TryStreamExt as _};
 
 use jsonrpc_core::{Result as JsonRpcResult, futures::{Future, Sink}};
-use fp_rpc::{EthereumRuntimeRPCApi, TransactionStatus};
+use fp_rpc::EthereumRuntimeRPCApi;
 
 use sc_network::{NetworkService, ExHashT};
 
@@ -238,10 +235,6 @@ impl SubscriptionResult {
 		}
 		true
 	}
-}
-
-fn storage_prefix_build(module: &[u8], storage: &[u8]) -> Vec<u8> {
-	[twox_128(module), twox_128(storage)].concat().to_vec()
 }
 
 impl<B: BlockT, P, C, BE, H: ExHashT> EthPubSubApiT for EthPubSubApi<B, P, C, BE, H>
