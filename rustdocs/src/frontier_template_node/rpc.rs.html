@@ -1,6 +1,6 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `template/node/src/rpc.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>rpc.rs - source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script id="default-settings"></script><script src="../../storage.js"></script><script src="../../crates.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../../favicon.svg">
 <link rel="alternate icon" type="image/png" href="../../favicon-16x16.png">
-<link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a href='../../frontier_template_node/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu"><img src="../../brush.svg" width="18" height="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" class="help-button">?</button>
+<link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a href='../../frontier_template_node/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu"><img src="../../brush.svg" width="18" height="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" class="help-button">?</button>
                 <a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" height="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
@@ -224,26 +224,26 @@
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! A collection of node-specific RPC methods.</span>
 
-<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">sync</span>::<span class="ident">Arc</span>;
+<span class="kw">use</span> <span class="ident">std::sync::Arc</span>;
 
-<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">collections</span>::<span class="ident">BTreeMap</span>;
-<span class="kw">use</span> <span class="ident">fc_rpc_core</span>::<span class="ident">types</span>::{<span class="ident">PendingTransactions</span>, <span class="ident">FilterPool</span>};
-<span class="kw">use</span> <span class="ident">sc_consensus_manual_seal</span>::<span class="ident">rpc</span>::{<span class="ident">ManualSeal</span>, <span class="ident">ManualSealApi</span>};
-<span class="kw">use</span> <span class="ident">frontier_template_runtime</span>::{<span class="ident">Hash</span>, <span class="ident">AccountId</span>, <span class="ident">Index</span>, <span class="ident">opaque</span>::<span class="ident">Block</span>, <span class="ident">Balance</span>};
-<span class="kw">use</span> <span class="ident">sp_api</span>::<span class="ident">ProvideRuntimeApi</span>;
-<span class="kw">use</span> <span class="ident">sp_transaction_pool</span>::<span class="ident">TransactionPool</span>;
+<span class="kw">use</span> <span class="ident">std::collections::BTreeMap</span>;
+<span class="kw">use</span> <span class="ident">fc_rpc_core::types</span>::{<span class="ident">PendingTransactions</span>, <span class="ident">FilterPool</span>};
+<span class="kw">use</span> <span class="ident">sc_consensus_manual_seal::rpc</span>::{<span class="ident">ManualSeal</span>, <span class="ident">ManualSealApi</span>};
+<span class="kw">use</span> <span class="ident">frontier_template_runtime</span>::{<span class="ident">Hash</span>, <span class="ident">AccountId</span>, <span class="ident">Index</span>, <span class="ident">opaque::Block</span>, <span class="ident">Balance</span>};
+<span class="kw">use</span> <span class="ident">sp_api::ProvideRuntimeApi</span>;
+<span class="kw">use</span> <span class="ident">sp_transaction_pool::TransactionPool</span>;
 <span class="kw">use</span> <span class="ident">sp_blockchain</span>::{<span class="ident">Error</span> <span class="kw">as</span> <span class="ident">BlockChainError</span>, <span class="ident">HeaderMetadata</span>, <span class="ident">HeaderBackend</span>};
-<span class="kw">use</span> <span class="ident">sc_rpc_api</span>::<span class="ident">DenyUnsafe</span>;
+<span class="kw">use</span> <span class="ident">sc_rpc_api::DenyUnsafe</span>;
 <span class="kw">use</span> <span class="ident">sc_client_api</span>::{
 	<span class="ident">backend</span>::{<span class="ident">StorageProvider</span>, <span class="ident">Backend</span>, <span class="ident">StateBackend</span>, <span class="ident">AuxStore</span>},
-	<span class="ident">client</span>::<span class="ident">BlockchainEvents</span>
+	<span class="ident">client::BlockchainEvents</span>
 };
-<span class="kw">use</span> <span class="ident">sc_rpc</span>::<span class="ident">SubscriptionTaskExecutor</span>;
-<span class="kw">use</span> <span class="ident">sp_runtime</span>::<span class="ident">traits</span>::<span class="ident">BlakeTwo256</span>;
-<span class="kw">use</span> <span class="ident">sp_block_builder</span>::<span class="ident">BlockBuilder</span>;
-<span class="kw">use</span> <span class="ident">sc_network</span>::<span class="ident">NetworkService</span>;
-<span class="kw">use</span> <span class="ident">jsonrpc_pubsub</span>::<span class="ident">manager</span>::<span class="ident">SubscriptionManager</span>;
-<span class="kw">use</span> <span class="ident">pallet_ethereum</span>::<span class="ident">EthereumStorageSchema</span>;
+<span class="kw">use</span> <span class="ident">sc_rpc::SubscriptionTaskExecutor</span>;
+<span class="kw">use</span> <span class="ident">sp_runtime::traits::BlakeTwo256</span>;
+<span class="kw">use</span> <span class="ident">sp_block_builder::BlockBuilder</span>;
+<span class="kw">use</span> <span class="ident">sc_network::NetworkService</span>;
+<span class="kw">use</span> <span class="ident">jsonrpc_pubsub::manager::SubscriptionManager</span>;
+<span class="kw">use</span> <span class="ident">pallet_ethereum::EthereumStorageSchema</span>;
 <span class="kw">use</span> <span class="ident">fc_rpc</span>::{<span class="ident">StorageOverride</span>, <span class="ident">SchemaV1Override</span>, <span class="ident">OverrideHandle</span>, <span class="ident">RuntimeApiStorageOverride</span>};
 
 <span class="doccomment">/// Light client extra dependencies.</span>
@@ -253,7 +253,7 @@
 	<span class="doccomment">/// Transaction pool instance.</span>
 	<span class="kw">pub</span> <span class="ident">pool</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">P</span><span class="op">&gt;</span>,
 	<span class="doccomment">/// Remote access to the blockchain (async).</span>
-	<span class="kw">pub</span> <span class="ident">remote_blockchain</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">sc_client_api</span>::<span class="ident">light</span>::<span class="ident">RemoteBlockchain</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+	<span class="kw">pub</span> <span class="ident">remote_blockchain</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">sc_client_api::light::RemoteBlockchain</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 	<span class="doccomment">/// Fetcher instance.</span>
 	<span class="kw">pub</span> <span class="ident">fetcher</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span>,
 }
@@ -277,28 +277,28 @@
 	<span class="doccomment">/// EthFilterApi pool.</span>
 	<span class="kw">pub</span> <span class="ident">filter_pool</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">FilterPool</span><span class="op">&gt;</span>,
 	<span class="doccomment">/// Backend.</span>
-	<span class="kw">pub</span> <span class="ident">backend</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">fc_db</span>::<span class="ident">Backend</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+	<span class="kw">pub</span> <span class="ident">backend</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">fc_db::Backend</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 	<span class="doccomment">/// Maximum number of logs in a query.</span>
 	<span class="kw">pub</span> <span class="ident">max_past_logs</span>: <span class="ident">u32</span>,
 	<span class="doccomment">/// Manual seal command sink</span>
-	<span class="kw">pub</span> <span class="ident">command_sink</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">futures</span>::<span class="ident">channel</span>::<span class="ident">mpsc</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">sc_consensus_manual_seal</span>::<span class="ident">rpc</span>::<span class="ident">EngineCommand</span><span class="op">&lt;</span><span class="ident">Hash</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+	<span class="kw">pub</span> <span class="ident">command_sink</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">futures::channel::mpsc::Sender</span><span class="op">&lt;</span><span class="ident">sc_consensus_manual_seal::rpc::EngineCommand</span><span class="op">&lt;</span><span class="ident">Hash</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 }
 
 <span class="doccomment">/// Instantiate all Full RPC extensions.</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">create_full</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">BE</span><span class="op">&gt;</span>(
 	<span class="ident">deps</span>: <span class="ident">FullDeps</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">P</span><span class="op">&gt;</span>,
 	<span class="ident">subscription_task_executor</span>: <span class="ident">SubscriptionTaskExecutor</span>
-) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">jsonrpc_core</span>::<span class="ident">IoHandler</span><span class="op">&lt;</span><span class="ident">sc_rpc</span>::<span class="ident">Metadata</span><span class="op">&gt;</span> <span class="kw">where</span>
+) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">jsonrpc_core::IoHandler</span><span class="op">&lt;</span><span class="ident">sc_rpc::Metadata</span><span class="op">&gt;</span> <span class="kw">where</span>
 	<span class="ident">BE</span>: <span class="ident">Backend</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
-	<span class="ident">BE</span>::<span class="ident">State</span>: <span class="ident">StateBackend</span><span class="op">&lt;</span><span class="ident">BlakeTwo256</span><span class="op">&gt;</span>,
+	<span class="ident">BE::State</span>: <span class="ident">StateBackend</span><span class="op">&lt;</span><span class="ident">BlakeTwo256</span><span class="op">&gt;</span>,
 	<span class="ident">C</span>: <span class="ident">ProvideRuntimeApi</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">StorageProvider</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">BE</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">AuxStore</span>,
 	<span class="ident">C</span>: <span class="ident">BlockchainEvents</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>,
 	<span class="ident">C</span>: <span class="ident">HeaderBackend</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">HeaderMetadata</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">Error</span><span class="op">=</span><span class="ident">BlockChainError</span><span class="op">&gt;</span>,
 	<span class="ident">C</span>: <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
-	<span class="ident">C</span>::<span class="ident">Api</span>: <span class="ident">substrate_frame_rpc_system</span>::<span class="ident">AccountNonceApi</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">AccountId</span>, <span class="ident">Index</span><span class="op">&gt;</span>,
-	<span class="ident">C</span>::<span class="ident">Api</span>: <span class="ident">BlockBuilder</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>,
-	<span class="ident">C</span>::<span class="ident">Api</span>: <span class="ident">pallet_transaction_payment_rpc</span>::<span class="ident">TransactionPaymentRuntimeApi</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">Balance</span><span class="op">&gt;</span>,
-	<span class="ident">C</span>::<span class="ident">Api</span>: <span class="ident">fp_rpc</span>::<span class="ident">EthereumRuntimeRPCApi</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>,
+	<span class="ident">C::Api</span>: <span class="ident">substrate_frame_rpc_system::AccountNonceApi</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">AccountId</span>, <span class="ident">Index</span><span class="op">&gt;</span>,
+	<span class="ident">C::Api</span>: <span class="ident">BlockBuilder</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>,
+	<span class="ident">C::Api</span>: <span class="ident">pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">Balance</span><span class="op">&gt;</span>,
+	<span class="ident">C::Api</span>: <span class="ident">fp_rpc::EthereumRuntimeRPCApi</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>,
 	<span class="ident">P</span>: <span class="ident">TransactionPool</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">=</span><span class="ident">Block</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
 {
 	<span class="kw">use</span> <span class="ident">substrate_frame_rpc_system</span>::{<span class="ident">FullSystem</span>, <span class="ident">SystemApi</span>};
@@ -309,7 +309,7 @@
 		<span class="ident">HexEncodedIdProvider</span>,
 	};
 
-	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">io</span> <span class="op">=</span> <span class="ident">jsonrpc_core</span>::<span class="ident">IoHandler</span>::<span class="ident">default</span>();
+	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">io</span> <span class="op">=</span> <span class="ident">jsonrpc_core::IoHandler::default</span>();
 	<span class="kw">let</span> <span class="ident">FullDeps</span> {
 		<span class="ident">client</span>,
 		<span class="ident">pool</span>,
@@ -325,32 +325,32 @@
 	} <span class="op">=</span> <span class="ident">deps</span>;
 
 	<span class="ident">io</span>.<span class="ident">extend_with</span>(
-		<span class="ident">SystemApi</span>::<span class="ident">to_delegate</span>(<span class="ident">FullSystem</span>::<span class="ident">new</span>(<span class="ident">client</span>.<span class="ident">clone</span>(), <span class="ident">pool</span>.<span class="ident">clone</span>(), <span class="ident">deny_unsafe</span>))
+		<span class="ident">SystemApi::to_delegate</span>(<span class="ident">FullSystem::new</span>(<span class="ident">client</span>.<span class="ident">clone</span>(), <span class="ident">pool</span>.<span class="ident">clone</span>(), <span class="ident">deny_unsafe</span>))
 	);
 	<span class="ident">io</span>.<span class="ident">extend_with</span>(
-		<span class="ident">TransactionPaymentApi</span>::<span class="ident">to_delegate</span>(<span class="ident">TransactionPayment</span>::<span class="ident">new</span>(<span class="ident">client</span>.<span class="ident">clone</span>()))
+		<span class="ident">TransactionPaymentApi::to_delegate</span>(<span class="ident">TransactionPayment::new</span>(<span class="ident">client</span>.<span class="ident">clone</span>()))
 	);
 
-	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">signers</span> <span class="op">=</span> <span class="ident">Vec</span>::<span class="ident">new</span>();
+	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">signers</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
 	<span class="kw">if</span> <span class="ident">enable_dev_signer</span> {
-		<span class="ident">signers</span>.<span class="ident">push</span>(<span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">EthDevSigner</span>::<span class="ident">new</span>()) <span class="kw">as</span> <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">EthSigner</span><span class="op">&gt;</span>);
+		<span class="ident">signers</span>.<span class="ident">push</span>(<span class="ident">Box::new</span>(<span class="ident">EthDevSigner::new</span>()) <span class="kw">as</span> <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">EthSigner</span><span class="op">&gt;</span>);
 	}
-	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">overrides_map</span> <span class="op">=</span> <span class="ident">BTreeMap</span>::<span class="ident">new</span>();
+	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">overrides_map</span> <span class="op">=</span> <span class="ident">BTreeMap::new</span>();
 	<span class="ident">overrides_map</span>.<span class="ident">insert</span>(
-		<span class="ident">EthereumStorageSchema</span>::<span class="ident">V1</span>,
-		<span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">SchemaV1Override</span>::<span class="ident">new</span>(<span class="ident">client</span>.<span class="ident">clone</span>())) <span class="kw">as</span> <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">StorageOverride</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span><span class="op">&gt;</span>
+		<span class="ident">EthereumStorageSchema::V1</span>,
+		<span class="ident">Box::new</span>(<span class="ident">SchemaV1Override::new</span>(<span class="ident">client</span>.<span class="ident">clone</span>())) <span class="kw">as</span> <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">StorageOverride</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span><span class="op">&gt;</span>
 	);
 
-	<span class="kw">let</span> <span class="ident">overrides</span> <span class="op">=</span> <span class="ident">Arc</span>::<span class="ident">new</span>(<span class="ident">OverrideHandle</span> {
+	<span class="kw">let</span> <span class="ident">overrides</span> <span class="op">=</span> <span class="ident">Arc::new</span>(<span class="ident">OverrideHandle</span> {
 		<span class="ident">schemas</span>: <span class="ident">overrides_map</span>,
-		<span class="ident">fallback</span>: <span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">RuntimeApiStorageOverride</span>::<span class="ident">new</span>(<span class="ident">client</span>.<span class="ident">clone</span>())),
+		<span class="ident">fallback</span>: <span class="ident">Box::new</span>(<span class="ident">RuntimeApiStorageOverride::new</span>(<span class="ident">client</span>.<span class="ident">clone</span>())),
 	});
 
 	<span class="ident">io</span>.<span class="ident">extend_with</span>(
-		<span class="ident">EthApiServer</span>::<span class="ident">to_delegate</span>(<span class="ident">EthApi</span>::<span class="ident">new</span>(
+		<span class="ident">EthApiServer::to_delegate</span>(<span class="ident">EthApi::new</span>(
 			<span class="ident">client</span>.<span class="ident">clone</span>(),
 			<span class="ident">pool</span>.<span class="ident">clone</span>(),
-			<span class="ident">frontier_template_runtime</span>::<span class="ident">TransactionConverter</span>,
+			<span class="ident">frontier_template_runtime::TransactionConverter</span>,
 			<span class="ident">network</span>.<span class="ident">clone</span>(),
 			<span class="ident">pending_transactions</span>.<span class="ident">clone</span>(),
 			<span class="ident">signers</span>,
@@ -363,7 +363,7 @@
 
 	<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">filter_pool</span>) <span class="op">=</span> <span class="ident">filter_pool</span> {
 		<span class="ident">io</span>.<span class="ident">extend_with</span>(
-			<span class="ident">EthFilterApiServer</span>::<span class="ident">to_delegate</span>(<span class="ident">EthFilterApi</span>::<span class="ident">new</span>(
+			<span class="ident">EthFilterApiServer::to_delegate</span>(<span class="ident">EthFilterApi::new</span>(
 				<span class="ident">client</span>.<span class="ident">clone</span>(),
 				<span class="ident">filter_pool</span>.<span class="ident">clone</span>(),
 				<span class="number">500</span> <span class="kw">as</span> <span class="ident">usize</span>, <span class="comment">// max stored filters</span>
@@ -374,7 +374,7 @@
 	}
 
 	<span class="ident">io</span>.<span class="ident">extend_with</span>(
-		<span class="ident">NetApiServer</span>::<span class="ident">to_delegate</span>(<span class="ident">NetApi</span>::<span class="ident">new</span>(
+		<span class="ident">NetApiServer::to_delegate</span>(<span class="ident">NetApi::new</span>(
 			<span class="ident">client</span>.<span class="ident">clone</span>(),
 			<span class="ident">network</span>.<span class="ident">clone</span>(),
 			<span class="comment">// Whether to format the `peer_count` response as Hex (default) or not.</span>
@@ -383,19 +383,19 @@
 	);
 
 	<span class="ident">io</span>.<span class="ident">extend_with</span>(
-		<span class="ident">Web3ApiServer</span>::<span class="ident">to_delegate</span>(<span class="ident">Web3Api</span>::<span class="ident">new</span>(
+		<span class="ident">Web3ApiServer::to_delegate</span>(<span class="ident">Web3Api::new</span>(
 			<span class="ident">client</span>.<span class="ident">clone</span>(),
 		))
 	);
 
 	<span class="ident">io</span>.<span class="ident">extend_with</span>(
-		<span class="ident">EthPubSubApiServer</span>::<span class="ident">to_delegate</span>(<span class="ident">EthPubSubApi</span>::<span class="ident">new</span>(
+		<span class="ident">EthPubSubApiServer::to_delegate</span>(<span class="ident">EthPubSubApi::new</span>(
 			<span class="ident">pool</span>.<span class="ident">clone</span>(),
 			<span class="ident">client</span>.<span class="ident">clone</span>(),
 			<span class="ident">network</span>.<span class="ident">clone</span>(),
-			<span class="ident">SubscriptionManager</span>::<span class="op">&lt;</span><span class="ident">HexEncodedIdProvider</span><span class="op">&gt;</span>::<span class="ident">with_id_provider</span>(
-				<span class="ident">HexEncodedIdProvider</span>::<span class="ident">default</span>(),
-				<span class="ident">Arc</span>::<span class="ident">new</span>(<span class="ident">subscription_task_executor</span>)
+			<span class="ident">SubscriptionManager</span>::<span class="op">&lt;</span><span class="ident">HexEncodedIdProvider</span><span class="op">&gt;</span><span class="ident">::with_id_provider</span>(
+				<span class="ident">HexEncodedIdProvider::default</span>(),
+				<span class="ident">Arc::new</span>(<span class="ident">subscription_task_executor</span>)
 			),
 			<span class="ident">overrides</span>
 		))
@@ -406,7 +406,7 @@
 			<span class="ident">io</span>.<span class="ident">extend_with</span>(
 				<span class="comment">// We provide the rpc handler with the sending end of the channel to allow the rpc</span>
 				<span class="comment">// send EngineCommands to the background block authorship task.</span>
-				<span class="ident">ManualSealApi</span>::<span class="ident">to_delegate</span>(<span class="ident">ManualSeal</span>::<span class="ident">new</span>(<span class="ident">command_sink</span>)),
+				<span class="ident">ManualSealApi::to_delegate</span>(<span class="ident">ManualSeal::new</span>(<span class="ident">command_sink</span>)),
 			);
 		}
 		<span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> {}
@@ -418,12 +418,12 @@
 <span class="doccomment">/// Instantiate all Light RPC extensions.</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">create_light</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">M</span>, <span class="ident">F</span><span class="op">&gt;</span>(
 	<span class="ident">deps</span>: <span class="ident">LightDeps</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">F</span>, <span class="ident">P</span><span class="op">&gt;</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">jsonrpc_core</span>::<span class="ident">IoHandler</span><span class="op">&lt;</span><span class="ident">M</span><span class="op">&gt;</span> <span class="kw">where</span>
-	<span class="ident">C</span>: <span class="ident">sp_blockchain</span>::<span class="ident">HeaderBackend</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>,
+) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">jsonrpc_core::IoHandler</span><span class="op">&lt;</span><span class="ident">M</span><span class="op">&gt;</span> <span class="kw">where</span>
+	<span class="ident">C</span>: <span class="ident">sp_blockchain::HeaderBackend</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>,
 	<span class="ident">C</span>: <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
-	<span class="ident">F</span>: <span class="ident">sc_client_api</span>::<span class="ident">light</span>::<span class="ident">Fetcher</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
+	<span class="ident">F</span>: <span class="ident">sc_client_api::light::Fetcher</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
 	<span class="ident">P</span>: <span class="ident">TransactionPool</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
-	<span class="ident">M</span>: <span class="ident">jsonrpc_core</span>::<span class="ident">Metadata</span> <span class="op">+</span> <span class="ident">Default</span>,
+	<span class="ident">M</span>: <span class="ident">jsonrpc_core::Metadata</span> <span class="op">+</span> <span class="ident">Default</span>,
 {
 	<span class="kw">use</span> <span class="ident">substrate_frame_rpc_system</span>::{<span class="ident">LightSystem</span>, <span class="ident">SystemApi</span>};
 
@@ -433,15 +433,15 @@
 		<span class="ident">remote_blockchain</span>,
 		<span class="ident">fetcher</span>
 	} <span class="op">=</span> <span class="ident">deps</span>;
-	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">io</span> <span class="op">=</span> <span class="ident">jsonrpc_core</span>::<span class="ident">IoHandler</span>::<span class="ident">default</span>();
+	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">io</span> <span class="op">=</span> <span class="ident">jsonrpc_core::IoHandler::default</span>();
 	<span class="ident">io</span>.<span class="ident">extend_with</span>(
-		<span class="ident">SystemApi</span>::<span class="op">&lt;</span><span class="ident">Hash</span>, <span class="ident">AccountId</span>, <span class="ident">Index</span><span class="op">&gt;</span>::<span class="ident">to_delegate</span>(
-			<span class="ident">LightSystem</span>::<span class="ident">new</span>(<span class="ident">client</span>, <span class="ident">remote_blockchain</span>, <span class="ident">fetcher</span>, <span class="ident">pool</span>)
+		<span class="ident">SystemApi</span>::<span class="op">&lt;</span><span class="ident">Hash</span>, <span class="ident">AccountId</span>, <span class="ident">Index</span><span class="op">&gt;</span><span class="ident">::to_delegate</span>(
+			<span class="ident">LightSystem::new</span>(<span class="ident">client</span>, <span class="ident">remote_blockchain</span>, <span class="ident">fetcher</span>, <span class="ident">pool</span>)
 		)
 	);
 
 	<span class="ident">io</span>
 }
 </pre></div>
-</section><section id="search" class="content hidden"></section><section class="footer"></section><div id="rustdoc-vars" data-root-path="../../" data-current-crate="frontier_template_node" data-search-js="../../search-index.js"></div>
+</section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../" data-current-crate="frontier_template_node" data-search-index-js="../../search-index.js" data-search-js="../../search.js"></div>
     <script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script></body></html>

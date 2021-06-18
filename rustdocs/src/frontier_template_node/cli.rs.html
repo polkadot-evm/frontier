@@ -1,6 +1,6 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `template/node/src/cli.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>cli.rs - source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script id="default-settings"></script><script src="../../storage.js"></script><script src="../../crates.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../../favicon.svg">
 <link rel="alternate icon" type="image/png" href="../../favicon-16x16.png">
-<link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a href='../../frontier_template_node/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu"><img src="../../brush.svg" width="18" height="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" class="help-button">?</button>
+<link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a href='../../frontier_template_node/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu"><img src="../../brush.svg" width="18" height="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" class="help-button">?</button>
                 <a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" height="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1"> 1</span>
 <span id="2"> 2</span>
 <span id="3"> 3</span>
@@ -81,12 +81,12 @@
 <span id="78">78</span>
 <span id="79">79</span>
 </pre><div class="example-wrap"><pre class="rust ">
-<span class="kw">use</span> <span class="ident">structopt</span>::<span class="ident">StructOpt</span>;
+<span class="kw">use</span> <span class="ident">structopt::StructOpt</span>;
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;manual-seal&quot;</span>)]</span>
-<span class="kw">use</span> <span class="ident">structopt</span>::<span class="ident">clap</span>::<span class="ident">arg_enum</span>;
+<span class="kw">use</span> <span class="ident">structopt::clap::arg_enum</span>;
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;manual-seal&quot;</span>)]</span>
-<span class="macro">arg_enum</span><span class="macro">!</span> {
+<span class="macro">arg_enum!</span> {
 	<span class="doccomment">/// Available Sealing methods.</span>
 	<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">StructOpt</span>)]</span>
 	<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Sealing</span> {
@@ -100,7 +100,7 @@
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;manual-seal&quot;</span>)]</span>
 <span class="kw">impl</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">Sealing</span> {
 	<span class="kw">fn</span> <span class="ident">default</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Sealing</span> {
-		<span class="ident">Sealing</span>::<span class="ident">Manual</span>
+		<span class="ident">Sealing::Manual</span>
 	}
 }
 
@@ -109,7 +109,7 @@
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">RunCmd</span> {
 	<span class="attribute">#[<span class="ident">allow</span>(<span class="ident">missing_docs</span>)]</span>
 	<span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">flatten</span>)]</span>
-	<span class="kw">pub</span> <span class="ident">base</span>: <span class="ident">sc_cli</span>::<span class="ident">RunCmd</span>,
+	<span class="kw">pub</span> <span class="ident">base</span>: <span class="ident">sc_cli::RunCmd</span>,
 
 	<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;manual-seal&quot;</span>)]</span>
 	<span class="doccomment">/// Choose sealing method.</span>
@@ -140,26 +140,26 @@
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">StructOpt</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Subcommand</span> {
 	<span class="doccomment">/// Build a chain specification.</span>
-	<span class="ident">BuildSpec</span>(<span class="ident">sc_cli</span>::<span class="ident">BuildSpecCmd</span>),
+	<span class="ident">BuildSpec</span>(<span class="ident">sc_cli::BuildSpecCmd</span>),
 
 	<span class="doccomment">/// Validate blocks.</span>
-	<span class="ident">CheckBlock</span>(<span class="ident">sc_cli</span>::<span class="ident">CheckBlockCmd</span>),
+	<span class="ident">CheckBlock</span>(<span class="ident">sc_cli::CheckBlockCmd</span>),
 
 	<span class="doccomment">/// Export blocks.</span>
-	<span class="ident">ExportBlocks</span>(<span class="ident">sc_cli</span>::<span class="ident">ExportBlocksCmd</span>),
+	<span class="ident">ExportBlocks</span>(<span class="ident">sc_cli::ExportBlocksCmd</span>),
 
 	<span class="doccomment">/// Export the state of a given block into a chain spec.</span>
-	<span class="ident">ExportState</span>(<span class="ident">sc_cli</span>::<span class="ident">ExportStateCmd</span>),
+	<span class="ident">ExportState</span>(<span class="ident">sc_cli::ExportStateCmd</span>),
 
 	<span class="doccomment">/// Import blocks.</span>
-	<span class="ident">ImportBlocks</span>(<span class="ident">sc_cli</span>::<span class="ident">ImportBlocksCmd</span>),
+	<span class="ident">ImportBlocks</span>(<span class="ident">sc_cli::ImportBlocksCmd</span>),
 
 	<span class="doccomment">/// Remove the whole chain.</span>
-	<span class="ident">PurgeChain</span>(<span class="ident">sc_cli</span>::<span class="ident">PurgeChainCmd</span>),
+	<span class="ident">PurgeChain</span>(<span class="ident">sc_cli::PurgeChainCmd</span>),
 
 	<span class="doccomment">/// Revert the chain to a previous state.</span>
-	<span class="ident">Revert</span>(<span class="ident">sc_cli</span>::<span class="ident">RevertCmd</span>),
+	<span class="ident">Revert</span>(<span class="ident">sc_cli::RevertCmd</span>),
 }
 </pre></div>
-</section><section id="search" class="content hidden"></section><section class="footer"></section><div id="rustdoc-vars" data-root-path="../../" data-current-crate="frontier_template_node" data-search-js="../../search-index.js"></div>
+</section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../" data-current-crate="frontier_template_node" data-search-index-js="../../search-index.js" data-search-js="../../search.js"></div>
     <script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script></body></html>
