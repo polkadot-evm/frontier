@@ -118,7 +118,7 @@ impl<B, I, C> BlockImport<B> for FrontierBlockImport<B, I, C> where
 		&mut self,
 		block: BlockCheckParams<B>,
 	) -> Result<ImportResult, Self::Error> {
-		self.inner.check_block(block).await.map_err(Into::into)
+		self.inner.check_block(block).map_err(Into::into)
 	}
 
 	fn import_block(
