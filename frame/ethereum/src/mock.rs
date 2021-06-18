@@ -158,6 +158,7 @@ impl pallet_evm::Config for Test {
 	type ChainId = ChainId;
 	type BlockGasLimit = BlockGasLimit;
 	type OnChargeTransaction = ();
+	type BlockHashMapping = Ethereum;
 }
 
 impl Config for Test {
