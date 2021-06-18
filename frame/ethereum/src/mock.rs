@@ -21,7 +21,8 @@ use super::*;
 use crate::{Module, Config, IntermediateStateRoot};
 use ethereum::{TransactionAction, TransactionSignature};
 use frame_support::{
-	impl_outer_origin, parameter_types, ConsensusEngineId
+	impl_outer_origin, parameter_types, ConsensusEngineId,
+	traits::FindAuthor
 };
 use pallet_evm::{FeeCalculator, AddressMapping, EnsureAddressTruncated};
 use rlp::*;
@@ -163,7 +164,6 @@ impl pallet_evm::Config for Test {
 
 impl Config for Test {
 	type Event = ();
-	type FindAuthor = EthereumFindAuthor;
 	type StateRoot = IntermediateStateRoot;
 }
 
