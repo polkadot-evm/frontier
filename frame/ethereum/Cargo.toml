@@ -24,7 +24,7 @@ ethereum = { version = "0.7.1", default-features = false, features = ["with-code
 ethereum-types = { version = "0.11", default-features = false }
 rlp = { version = "0.5", default-features = false }
 sha3 = { version = "0.8", default-features = false }
-libsecp256k1 = { version = "0.5", default-features = false }
+libsecp256k1 = { version = "0.5", default-features = false, features = ["static-context", "hmac"] }
 fp-consensus = { version = "1.0.0", path = "../../primitives/consensus", default-features = false }
 fp-rpc = { version = "2.0.0", path = "../../primitives/rpc", default-features = false }
 fp-storage = { version = "1.0.1", path = "../../primitives/storage", default-features = false}
