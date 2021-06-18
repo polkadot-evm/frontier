@@ -59,6 +59,7 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 	});
 
 	it("should get correct environmental block hash", async function () {
+		this.timeout(20000);
 		// Solidity `blockhash` is expected to return the ethereum block hash at a given height.
 		const contract = new context.web3.eth.Contract(TEST_CONTRACT_ABI, FIRST_CONTRACT_ADDRESS, {
 			from: GENESIS_ACCOUNT,
@@ -68,9 +69,13 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 		let last = number + 256;
 		for(let i = number; i <= last; i++) {
 			let hash = (await context.web3.eth.getBlock("latest")).hash;
-			expect(await contract.methods.blockHash().call(i)).to.eq(hash);
+			expect(await contract.methods.blockHash(i).call()).to.eq(hash);
 			await createAndFinalizeBlock(context.web3);
 		}
+		// should not store more than 256 hashes
+		expect(await contract.methods.blockHash(number).call()).to.eq(
+			"0x0000000000000000000000000000000000000000000000000000000000000000"
+		);
 	});
 
 	// Requires error handling
