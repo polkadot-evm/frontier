@@ -19,7 +19,7 @@
 
 //! Benchmarking
 use sp_std::prelude::*;
-use crate::{Config, Pallet, EnsureAddressNever, EnsureAddressSame, EnsureAddressRoot,
+use crate::{Config, Module, EnsureAddressNever, EnsureAddressSame, EnsureAddressRoot,
 	FeeCalculator, HashedAddressMapping, Event, BalanceOf, AddressMapping, IdentityAddressMapping,
 	runner::Runner};
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, account};
@@ -82,7 +82,6 @@ impl frame_system::Config for Test {
 	type OnKilledAccount = ();
 	type SystemWeightInfo = ();
 	type SS58Prefix = ();
-	type OnSetCode = ();
 }
 
 parameter_types! {
