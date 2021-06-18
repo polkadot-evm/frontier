@@ -30,8 +30,8 @@ use frame_support::{
 use frame_support::traits::Currency;
 use sp_runtime::{
 	generic,
-    traits::{BlakeTwo256, IdentityLookup},
-    Perbill,
+	traits::{BlakeTwo256, IdentityLookup},
+	Perbill,
 };
 use sp_core::{U256, H256, H160, crypto::AccountId32};
 use sp_std::boxed::Box;
@@ -234,7 +234,7 @@ benchmarks! {
 			None,
 			Some(nonce_as_u256),
 			T::config(),
-        );
+		);
 
 		if call_runner_results.is_err() {
 			panic!("call failed");
