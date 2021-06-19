@@ -193,8 +193,8 @@ decl_module! {
 }
 
 /// Returns the Ethereum block hash by number.
-pub struct EthereumBlockHashMapping<T>(sp_std::marker::PhantomData<T>);
-impl<T: Config> BlockHashMapping for EthereumBlockHashMapping<T> {
+pub struct EthereumBlockHashMapping;
+impl BlockHashMapping for EthereumBlockHashMapping {
 	fn block_hash(number: u32) -> H256 {
 		BlockHash::get(U256::from(number))
 	}

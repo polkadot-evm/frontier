@@ -272,7 +272,7 @@ parameter_types! {
 impl pallet_evm::Config for Runtime {
 	type FeeCalculator = pallet_dynamic_fee::Module<Self>;
 	type GasWeightMapping = ();
-	type BlockHashMapping = pallet_ethereum::EthereumBlockHashMapping<Self>;
+	type BlockHashMapping = pallet_ethereum::EthereumBlockHashMapping;
 	type CallOrigin = EnsureAddressTruncated;
 	type WithdrawOrigin = EnsureAddressTruncated;
 	type AddressMapping = HashedAddressMapping<BlakeTwo256>;
