@@ -21,7 +21,7 @@ frame-system = { version = "3.0.0-dev", default-features = false, package = "fra
 frame-system-rpc-runtime-api = { version = "3.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 
 pallet-ethereum = { default-features = false, path = "../../frame/ethereum" }
-pallet-evm = { default-features = false, path = "../../frame/evm", version = "5.0.0-dev" }
+pallet-evm = { default-features = false, path = "../../frame/evm" }
 pallet-dynamic-fee = { default-features = false, path = "../../frame/dynamic-fee" }
 pallet-evm-precompile-simple = { default-features = false, path = "../../frame/evm/precompile/simple" }
 pallet-evm-precompile-sha3fips = { default-features = false, path = "../../frame/evm/precompile/sha3fips" }
