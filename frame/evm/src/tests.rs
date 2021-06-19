@@ -131,7 +131,7 @@ impl Config for Test {
 	type ChainId = ();
 	type BlockGasLimit = ();
 	type OnChargeTransaction = ();
-	type BlockHashMapping = EVM;
+	type BlockHashMapping = crate::SubstrateBlockHashMapping<Self>;
 }
 
 type System = frame_system::Module<Test>;
