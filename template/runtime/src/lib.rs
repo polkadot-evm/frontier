@@ -43,8 +43,7 @@ pub use frame_support::{
 	ConsensusEngineId,
 };
 use pallet_evm::{
-	Account as EVMAccount, FeeCalculator, HashedAddressMapping,
-	EnsureAddressTruncated, Runner,
+	Account as EVMAccount, FeeCalculator, HashedAddressMapping, EnsureAddressTruncated, Runner,
 };
 use fp_rpc::TransactionStatus;
 use pallet_transaction_payment::CurrencyAdapter;
@@ -131,7 +130,7 @@ const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 
 parameter_types! {
 	pub const Version: RuntimeVersion = VERSION;
-	pub const BlockHashCount: BlockNumber = 2400;
+	pub const BlockHashCount: BlockNumber = 256;
 	/// We allow for 2 seconds of compute with a 6 second average block time.
 	pub BlockWeights: frame_system::limits::BlockWeights = frame_system::limits::BlockWeights
 		::with_sensible_defaults(2 * WEIGHT_PER_SECOND, NORMAL_DISPATCH_RATIO);
@@ -273,6 +272,7 @@ parameter_types! {
 impl pallet_evm::Config for Runtime {
 	type FeeCalculator = pallet_dynamic_fee::Module<Self>;
 	type GasWeightMapping = ();
+	type BlockHashMapping = pallet_ethereum::EthereumBlockHashMapping;
 	type CallOrigin = EnsureAddressTruncated;
 	type WithdrawOrigin = EnsureAddressTruncated;
 	type AddressMapping = HashedAddressMapping<BlakeTwo256>;
