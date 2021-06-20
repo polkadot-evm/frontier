@@ -515,7 +515,6 @@
 <span id="512">512</span>
 <span id="513">513</span>
 <span id="514">514</span>
-<span id="515">515</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
@@ -550,7 +549,7 @@
 <span class="kw">use</span> <span class="ident">evm::executor</span>::{<span class="ident">StackExecutor</span>, <span class="ident">StackSubstateMetadata</span>, <span class="ident">StackState</span> <span class="kw">as</span> <span class="ident">StackStateT</span>};
 <span class="kw">use</span> <span class="kw">crate</span>::{
 	<span class="ident">Config</span>, <span class="ident">AccountStorages</span>, <span class="ident">FeeCalculator</span>, <span class="ident">AccountCodes</span>, <span class="ident">Module</span>, <span class="ident">Event</span>,
-	<span class="ident">Error</span>, <span class="ident">AddressMapping</span>, <span class="ident">PrecompileSet</span>, <span class="ident">OnChargeEVMTransaction</span>
+	<span class="ident">Error</span>, <span class="ident">AddressMapping</span>, <span class="ident">PrecompileSet</span>, <span class="ident">OnChargeEVMTransaction</span>, <span class="ident">BlockHashMapping</span>,
 };
 <span class="kw">use</span> <span class="kw">crate</span><span class="ident">::runner::Runner</span> <span class="kw">as</span> <span class="ident">RunnerT</span>;
 
@@ -866,8 +865,7 @@
 		<span class="kw">if</span> <span class="ident">number</span> <span class="op">&gt;</span> <span class="ident">U256::from</span>(<span class="ident">u32::max_value</span>()) {
 			<span class="ident">H256::default</span>()
 		} <span class="kw">else</span> {
-			<span class="kw">let</span> <span class="ident">number</span> <span class="op">=</span> <span class="ident">T::BlockNumber::from</span>(<span class="ident">number</span>.<span class="ident">as_u32</span>());
-			<span class="ident">H256::from_slice</span>(<span class="ident">frame_system::Module</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::block_hash</span>(<span class="ident">number</span>).<span class="ident">as_ref</span>())
+			<span class="ident">T::BlockHashMapping::block_hash</span>(<span class="ident">number</span>.<span class="ident">as_u32</span>())
 		}
 	}
 

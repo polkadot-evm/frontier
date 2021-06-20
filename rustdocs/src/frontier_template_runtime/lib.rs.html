@@ -685,8 +685,7 @@
 	<span class="ident">ConsensusEngineId</span>,
 };
 <span class="kw">use</span> <span class="ident">pallet_evm</span>::{
-	<span class="ident">Account</span> <span class="kw">as</span> <span class="ident">EVMAccount</span>, <span class="ident">FeeCalculator</span>, <span class="ident">HashedAddressMapping</span>,
-	<span class="ident">EnsureAddressTruncated</span>, <span class="ident">Runner</span>,
+	<span class="ident">Account</span> <span class="kw">as</span> <span class="ident">EVMAccount</span>, <span class="ident">FeeCalculator</span>, <span class="ident">HashedAddressMapping</span>, <span class="ident">EnsureAddressTruncated</span>, <span class="ident">Runner</span>,
 };
 <span class="kw">use</span> <span class="ident">fp_rpc::TransactionStatus</span>;
 <span class="kw">use</span> <span class="ident">pallet_transaction_payment::CurrencyAdapter</span>;
@@ -773,7 +772,7 @@
 
 <span class="macro">parameter_types!</span> {
 	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">Version</span>: <span class="ident">RuntimeVersion</span> <span class="op">=</span> <span class="ident">VERSION</span>;
-	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">BlockHashCount</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="number">2400</span>;
+	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">BlockHashCount</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="number">256</span>;
 	<span class="doccomment">/// We allow for 2 seconds of compute with a 6 second average block time.</span>
 	<span class="kw">pub</span> <span class="ident">BlockWeights</span>: <span class="ident">frame_system::limits::BlockWeights</span> <span class="op">=</span> <span class="ident">frame_system::limits::BlockWeights</span>
 		<span class="ident">::with_sensible_defaults</span>(<span class="number">2</span> <span class="op">*</span> <span class="ident">WEIGHT_PER_SECOND</span>, <span class="ident">NORMAL_DISPATCH_RATIO</span>);
@@ -915,6 +914,7 @@
 <span class="kw">impl</span> <span class="ident">pallet_evm::Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
 	<span class="kw">type</span> <span class="ident">FeeCalculator</span> <span class="op">=</span> <span class="ident">pallet_dynamic_fee::Module</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span>;
 	<span class="kw">type</span> <span class="ident">GasWeightMapping</span> <span class="op">=</span> ();
+	<span class="kw">type</span> <span class="ident">BlockHashMapping</span> <span class="op">=</span> <span class="ident">pallet_ethereum::EthereumBlockHashMapping</span>;
 	<span class="kw">type</span> <span class="ident">CallOrigin</span> <span class="op">=</span> <span class="ident">EnsureAddressTruncated</span>;
 	<span class="kw">type</span> <span class="ident">WithdrawOrigin</span> <span class="op">=</span> <span class="ident">EnsureAddressTruncated</span>;
 	<span class="kw">type</span> <span class="ident">AddressMapping</span> <span class="op">=</span> <span class="ident">HashedAddressMapping</span><span class="op">&lt;</span><span class="ident">BlakeTwo256</span><span class="op">&gt;</span>;

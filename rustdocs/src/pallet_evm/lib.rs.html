@@ -679,6 +679,23 @@
 <span id="676">676</span>
 <span id="677">677</span>
 <span id="678">678</span>
+<span id="679">679</span>
+<span id="680">680</span>
+<span id="681">681</span>
+<span id="682">682</span>
+<span id="683">683</span>
+<span id="684">684</span>
+<span id="685">685</span>
+<span id="686">686</span>
+<span id="687">687</span>
+<span id="688">688</span>
+<span id="689">689</span>
+<span id="690">690</span>
+<span id="691">691</span>
+<span id="692">692</span>
+<span id="693">693</span>
+<span id="694">694</span>
+<span id="695">695</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
@@ -893,6 +910,20 @@
 	}
 }
 
+<span class="doccomment">/// A trait for getting a block hash by number.</span>
+<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">BlockHashMapping</span> {
+	<span class="kw">fn</span> <span class="ident">block_hash</span>(<span class="ident">number</span>: <span class="ident">u32</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">H256</span>;
+}
+
+<span class="doccomment">/// Returns the Substrate block hash by number.</span>
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">SubstrateBlockHashMapping</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>(<span class="ident">sp_std::marker::PhantomData</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>);
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">BlockHashMapping</span> <span class="kw">for</span> <span class="ident">SubstrateBlockHashMapping</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">block_hash</span>(<span class="ident">number</span>: <span class="ident">u32</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">H256</span> {
+		<span class="kw">let</span> <span class="ident">number</span> <span class="op">=</span> <span class="ident">T::BlockNumber::from</span>(<span class="ident">number</span>);
+		<span class="ident">H256::from_slice</span>(<span class="ident">frame_system::Module</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::block_hash</span>(<span class="ident">number</span>).<span class="ident">as_ref</span>())
+	}
+}
+
 <span class="doccomment">/// A mapping function that converts Ethereum gas to Substrate weight</span>
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">GasWeightMapping</span> {
 	<span class="kw">fn</span> <span class="ident">gas_to_weight</span>(<span class="ident">gas</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Weight</span>;
@@ -917,6 +948,9 @@
 
 	<span class="doccomment">/// Maps Ethereum gas to Substrate weight.</span>
 	<span class="kw">type</span> <span class="ident">GasWeightMapping</span>: <span class="ident">GasWeightMapping</span>;
+
+	<span class="doccomment">/// Block number to block hash.</span>
+	<span class="kw">type</span> <span class="ident">BlockHashMapping</span>: <span class="ident">BlockHashMapping</span>;
 
 	<span class="doccomment">/// Allow the origin to call on behalf of given address.</span>
 	<span class="kw">type</span> <span class="ident">CallOrigin</span>: <span class="ident">EnsureAddressOrigin</span><span class="op">&lt;</span><span class="self">Self</span><span class="ident">::Origin</span><span class="op">&gt;</span>;
