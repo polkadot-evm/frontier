@@ -160,6 +160,7 @@ impl pallet_evm::Config for Test {
 	type BlockGasLimit = BlockGasLimit;
 	type OnChargeTransaction = ();
 	type FindAuthor = FindAuthorTruncated;
+	type BlockHashMapping = crate::EthereumBlockHashMapping;
 }
 
 impl Config for Test {

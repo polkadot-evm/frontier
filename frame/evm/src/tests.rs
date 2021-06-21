@@ -148,6 +148,7 @@ impl Config for Test {
 	type BlockGasLimit = ();
 	type OnChargeTransaction = ();
 	type FindAuthor = FindAuthorTruncated<Aura>;
+	type BlockHashMapping = crate::SubstrateBlockHashMapping<Self>;
 }
 
 type System = frame_system::Module<Test>;
