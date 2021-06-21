@@ -211,6 +211,20 @@ impl<H: Hasher<Out=H256>> AddressMapping<AccountId32> for HashedAddressMapping<H
 	}
 }
 
+/// A trait for getting a block hash by number.
+pub trait BlockHashMapping {
+	fn block_hash(number: u32) -> H256;
+}
+
+/// Returns the Substrate block hash by number.
+pub struct SubstrateBlockHashMapping<T>(sp_std::marker::PhantomData<T>);
+impl<T: Config> BlockHashMapping for SubstrateBlockHashMapping<T> {
+	fn block_hash(number: u32) -> H256 {
+		let number = T::BlockNumber::from(number);
+		H256::from_slice(frame_system::Module::<T>::block_hash(number).as_ref())
+	}
+}
+
 /// A mapping function that converts Ethereum gas to Substrate weight
 pub trait GasWeightMapping {
 	fn gas_to_weight(gas: u64) -> Weight;
@@ -235,6 +249,9 @@ pub trait Config: frame_system::Config + pallet_timestamp::Config {
 
 	/// Maps Ethereum gas to Substrate weight.
 	type GasWeightMapping: GasWeightMapping;
+
+	/// Block number to block hash.
+	type BlockHashMapping: BlockHashMapping;
 
 	/// Allow the origin to call on behalf of given address.
 	type CallOrigin: EnsureAddressOrigin<Self::Origin>;
