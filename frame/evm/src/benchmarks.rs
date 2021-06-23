@@ -89,11 +89,14 @@ benchmarks! {
 
 		let mut rlp = RlpStream::new_list(2);
 		rlp.append(&caller);
-		rlp.append(&0_u8);
+		rlp.append(&0u8);
 		let contract_address = H160::from_slice(&Keccak256::digest(&rlp.out())[12..]);
 
-		let encoded_call = vec![15, 20, 164, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255];
+		let mut encoded_call = vec![0u8; 36];
+		encoded_call[0..4].copy_from_slice(&Keccak256::digest(b"big_loop(uint256)")[0..4]);
+		U256::from_str_radix("FFFFFFFFFFFFFFFFFFFF", 16)
+			.expect("Bad hex string?")
+			.to_big_endian(&mut encoded_call[4..36]);
 
 		let gas_limit_call = x as u64;
 
