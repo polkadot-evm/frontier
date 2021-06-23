@@ -64,9 +64,7 @@ benchmarks! {
 			248, 147, 37, 182, 225, 205, 14, 92, 87, 133, 97, 3, 76, 150, 37, 152, 138, 100, 115,
 			111, 108, 99, 67, 0, 8, 2, 0, 51];
 
-		let caller_addr_bytes = vec![238, 139, 183, 163, 132, 239, 34, 101, 124, 51, 180, 96, 215,
-			171, 66, 56, 131, 9, 97, 55];
-		let caller = H160::from_slice(caller_addr_bytes.as_slice());
+		let caller = H160::default();
 
 		let mut nonce: u64 = 0;
 		let nonce_as_u256: U256 = nonce.into();
