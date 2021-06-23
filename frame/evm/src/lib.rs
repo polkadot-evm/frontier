@@ -56,7 +56,7 @@
 mod tests;
 pub mod runner;
 
-// #[cfg(feature = "runtime-benchmarks")]
+#[cfg(any(test, feature = "runtime-benchmarks"))]
 pub mod benchmarks;
 
 pub use crate::runner::Runner;

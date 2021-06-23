@@ -246,3 +246,23 @@ benchmarks! {
 	}
 }
 
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use frame_support::assert_ok;
+	use sp_io::TestExternalities;
+
+	pub fn new_test_ext() -> TestExternalities {
+		let t = frame_system::GenesisConfig::default()
+			.build_storage::<Test>()
+			.unwrap();
+		TestExternalities::new(t)
+	}
+
+	#[test]
+	fn test_runner_execute() {
+		new_test_ext().execute_with(|| {
+			assert_ok!(test_benchmark_runner_execute::<Test>());
+		});
+	}
+}
