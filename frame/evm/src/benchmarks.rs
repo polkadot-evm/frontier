@@ -80,10 +80,7 @@ benchmarks! {
 			Some(nonce_as_u256),
 			T::config(),
 		);
-
-		if create_runner_results.is_err() {
-			panic!("create failed");
-		}
+		assert_eq!(create_runner_results.is_ok(), true, "create() failed");
 
 		let mut rlp = RlpStream::new_list(2);
 		rlp.append(&caller);
@@ -110,14 +107,7 @@ benchmarks! {
 			Some(nonce_as_u256),
 			T::config(),
 		);
-
-		if call_runner_results.is_err() {
-			panic!("call failed");
-		}
-	}
-	verify {
-		// assert_ok!(create_runner_results.is_ok(), "fail");
-		// assert_ok!(call_dispatch_results);
+		assert_eq!(call_runner_results.is_ok(), true, "call() failed");
 	}
 }
 
