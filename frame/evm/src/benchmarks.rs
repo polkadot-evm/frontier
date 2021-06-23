@@ -153,7 +153,7 @@ benchmarks! {
 
 	runner_execute {
 
-		let x in 1..u32::MAX;
+		let x in 1..10000000;
 
 		let balance = 10_000_000_000_000_000_000u64;
 
