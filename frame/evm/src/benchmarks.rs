@@ -28,6 +28,11 @@ use sha3::{Keccak256, Digest};
 
 benchmarks! {
 
+	// This benchmark tests the relationship between gas and weight. It deploys a contract which
+	// has an infinite loop in a public function. We then call this function with varying amounts
+	// of gas, expecting it to OOG. The benchmarking framework measures the amount of time (aka
+	// weight) it takes before OOGing and relates that to the amount of gas provided, leaving us
+	// with an estimate for gas-to-weight mapping.
 	runner_execute {
 
 		let x in 1..10000000;
@@ -82,11 +87,13 @@ benchmarks! {
 		);
 		assert_eq!(create_runner_results.is_ok(), true, "create() failed");
 
+		// derive the resulting contract address from our create
 		let mut rlp = RlpStream::new_list(2);
 		rlp.append(&caller);
 		rlp.append(&0u8);
 		let contract_address = H160::from_slice(&Keccak256::digest(&rlp.out())[12..]);
 
+		// derive encoded contract call -- in this case, just the function selector
 		let mut encoded_call = vec![0u8; 4];
 		encoded_call[0..4].copy_from_slice(&Keccak256::digest(b"infinite()")[0..4]);
 
