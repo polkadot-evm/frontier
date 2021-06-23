@@ -16,22 +16,17 @@
 // limitations under the License.
 
 //! Test mock for unit tests and benchmarking
-use super::*;
 use sp_std::prelude::*;
-use crate::{Config, Module, EnsureAddressNever, EnsureAddressSame, EnsureAddressRoot,
-	FeeCalculator, HashedAddressMapping, Event, BalanceOf, AddressMapping, IdentityAddressMapping,
-	runner::Runner};
-use frame_system::RawOrigin;
+use crate::{Config, EnsureAddressNever, EnsureAddressRoot,
+	FeeCalculator, Event, IdentityAddressMapping};
 use frame_support::{
-	assert_ok, impl_outer_origin, parameter_types, impl_outer_dispatch,
+	impl_outer_origin, parameter_types,
 };
-use frame_support::traits::Currency;
 use sp_runtime::{
 	generic,
 	traits::{BlakeTwo256, IdentityLookup},
-	Perbill,
 };
-use sp_core::{U256, H256, H160, crypto::AccountId32};
+use sp_core::{U256, H256, H160};
 use sp_std::boxed::Box;
 
 impl_outer_origin! {
