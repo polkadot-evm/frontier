@@ -23,6 +23,8 @@ use crate::{Config, Module, FeeCalculator,
 	runner::Runner};
 use frame_benchmarking::{benchmarks, account};
 use sp_core::{U256, H160};
+use rlp::RlpStream;
+use sha3::{Keccak256, Digest};
 
 benchmarks! {
 
@@ -85,10 +87,10 @@ benchmarks! {
 			panic!("create failed");
 		}
 
-		// now call deployed contract
-		let contract_address_bytes = vec![129, 182, 42, 142, 233, 89, 33, 192, 197, 10, 176, 87,
-			246, 156, 87, 224, 182, 27, 249, 144];
-		let contract_address = H160::from_slice(contract_address_bytes.as_slice());
+		let mut rlp = RlpStream::new_list(2);
+		rlp.append(&caller);
+		rlp.append(&0_u8);
+		let contract_address = H160::from_slice(&Keccak256::digest(&rlp.out())[12..]);
 
 		let encoded_call = vec![15, 20, 164, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 			0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255];
