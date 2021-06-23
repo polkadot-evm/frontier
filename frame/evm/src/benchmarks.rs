@@ -36,119 +36,6 @@ use sp_runtime::{
 use sp_core::{U256, H256, H160, crypto::AccountId32};
 use sp_std::boxed::Box;
 
-impl_outer_origin! {
-	pub enum Origin for Test where system = frame_system {}
-}
-
-pub struct PalletInfo;
-
-impl frame_support::traits::PalletInfo for PalletInfo {
-	fn index<P: 'static>() -> Option<usize> {
-		return Some(0)
-	}
-
-	fn name<P: 'static>() -> Option<&'static str> {
-		return Some("TestName")
-	}
-}
-
-#[derive(Clone, Eq, PartialEq)]
-pub struct Test;
-parameter_types! {
-	pub const BlockHashCount: u64 = 250;
-	pub BlockWeights: frame_system::limits::BlockWeights =
-		frame_system::limits::BlockWeights::simple_max(1024);
-}
-impl frame_system::Config for Test {
-	type BaseCallFilter = ();
-	type BlockWeights = ();
-	type BlockLength = ();
-	type DbWeight = ();
-	type Origin = Origin;
-	type Index = u64;
-	type BlockNumber = u64;
-	type Hash = H256;
-	type Call = ();
-	type Hashing = BlakeTwo256;
-	type AccountId = H160;
-	type Lookup = IdentityLookup<Self::AccountId>;
-	type Header = generic::Header<u64, BlakeTwo256>;
-	type Event = ();
-	type BlockHashCount = BlockHashCount;
-	type Version = ();
-	type PalletInfo = PalletInfo;
-	type AccountData = pallet_balances::AccountData<u64>;
-	type OnNewAccount = ();
-	type OnKilledAccount = ();
-	type SystemWeightInfo = ();
-	type SS58Prefix = ();
-}
-
-parameter_types! {
-	pub const ExistentialDeposit: u64 = 0;
-}
-impl pallet_balances::Config for Test {
-	type MaxLocks = ();
-	type Balance = u64;
-	type DustRemoval = ();
-	type Event = ();
-	type ExistentialDeposit = ExistentialDeposit;
-	type AccountStore = System;
-	type WeightInfo = ();
-}
-
-parameter_types! {
-	pub const MinimumPeriod: u64 = 1000;
-}
-impl pallet_timestamp::Config for Test {
-	type Moment = u64;
-	type OnTimestampSet = ();
-	type MinimumPeriod = MinimumPeriod;
-	type WeightInfo = ();
-}
-
-/// Fixed gas price of `0`.
-pub struct FixedGasPrice;
-impl FeeCalculator for FixedGasPrice {
-	fn min_gas_price() -> U256 {
-		0.into()
-	}
-}
-
-
-type System = frame_system::Module<Test>;
-type Balances = pallet_balances::Module<Test>;
-
-impl Config for Test {
-	type FeeCalculator = FixedGasPrice;
-	type GasWeightMapping = ();
-
-	type CallOrigin = EnsureAddressRoot<Self::AccountId>;
-	type WithdrawOrigin = EnsureAddressNever<Self::AccountId>;
-
-	type AddressMapping = IdentityAddressMapping;
-	type Currency = Balances;
-	type Runner = crate::runner::stack::Runner<Self>;
-
-	type Event = Event<Test>;
-	type Precompiles = ();
-	type ChainId = ();
-	type BlockGasLimit = ();
-	type OnChargeTransaction = ();
-}
-
-fn create_funded_user<T: Config>(
-	string: &'static str,
-	n: u32,
-	balance: BalanceOf<T>,
-) -> T::AccountId {
-	const SEED: u32 = 0;
-	let user = account(string, n, SEED);
-	T::Currency::make_free_balance_be(&user, balance);
-	T::Currency::issue(balance);
-	user
-}
-
 benchmarks! {
 
 	runner_execute {
@@ -249,6 +136,7 @@ benchmarks! {
 #[cfg(test)]
 mod tests {
 	use super::*;
+	use crate::mock::Test;
 	use frame_support::assert_ok;
 	use sp_io::TestExternalities;
 
