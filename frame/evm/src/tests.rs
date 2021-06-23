@@ -18,6 +18,7 @@
 #![cfg(test)]
 
 use super::*;
+use crate::mock::*;
 
 use std::{str::FromStr, collections::BTreeMap};
 use frame_support::{
@@ -28,110 +29,6 @@ use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
 };
-
-impl_outer_origin! {
-	pub enum Origin for Test where system = frame_system {}
-}
-
-impl_outer_dispatch! {
-	pub enum OuterCall for Test where origin: Origin {
-		self::EVM,
-	}
-}
-
-pub struct PalletInfo;
-
-impl frame_support::traits::PalletInfo for PalletInfo {
-	fn index<P: 'static>() -> Option<usize> {
-		return Some(0)
-	}
-
-	fn name<P: 'static>() -> Option<&'static str> {
-		return Some("TestName")
-	}
-}
-
-#[derive(Clone, Eq, PartialEq)]
-pub struct Test;
-parameter_types! {
-	pub const BlockHashCount: u64 = 250;
-	pub BlockWeights: frame_system::limits::BlockWeights =
-		frame_system::limits::BlockWeights::simple_max(1024);
-}
-impl frame_system::Config for Test {
-	type BaseCallFilter = ();
-	type BlockWeights = ();
-	type BlockLength = ();
-	type DbWeight = ();
-	type Origin = Origin;
-	type Index = u64;
-	type BlockNumber = u64;
-	type Hash = H256;
-	type Call = OuterCall;
-	type Hashing = BlakeTwo256;
-	type AccountId = AccountId32;
-	type Lookup = IdentityLookup<Self::AccountId>;
-	type Header = Header;
-	type Event = ();
-	type BlockHashCount = BlockHashCount;
-	type Version = ();
-	type PalletInfo = PalletInfo;
-	type AccountData = pallet_balances::AccountData<u64>;
-	type OnNewAccount = ();
-	type OnKilledAccount = ();
-	type SystemWeightInfo = ();
-	type SS58Prefix = ();
-}
-
-parameter_types! {
-	pub const ExistentialDeposit: u64 = 1;
-}
-impl pallet_balances::Config for Test {
-	type MaxLocks = ();
-	type Balance = u64;
-	type DustRemoval = ();
-	type Event = ();
-	type ExistentialDeposit = ExistentialDeposit;
-	type AccountStore = System;
-	type WeightInfo = ();
-}
-
-parameter_types! {
-	pub const MinimumPeriod: u64 = 1000;
-}
-impl pallet_timestamp::Config for Test {
-	type Moment = u64;
-	type OnTimestampSet = ();
-	type MinimumPeriod = MinimumPeriod;
-	type WeightInfo = ();
-}
-
-/// Fixed gas price of `0`.
-pub struct FixedGasPrice;
-impl FeeCalculator for FixedGasPrice {
-	fn min_gas_price() -> U256 {
-		// Gas price is always one token per gas.
-		0.into()
-	}
-}
-
-impl Config for Test {
-	type FeeCalculator = FixedGasPrice;
-	type GasWeightMapping = ();
-
-	type CallOrigin = EnsureAddressRoot<Self::AccountId>;
-	type WithdrawOrigin = EnsureAddressNever<Self::AccountId>;
-
-	type AddressMapping = HashedAddressMapping<Blake2Hasher>;
-	type Currency = Balances;
-	type Runner = crate::runner::stack::Runner<Self>;
-
-	type Event = Event<Test>;
-	type Precompiles = ();
-	type ChainId = ();
-	type BlockGasLimit = ();
-	type OnChargeTransaction = ();
-}
 
 type System = frame_system::Module<Test>;
 type Balances = pallet_balances::Module<Test>;
