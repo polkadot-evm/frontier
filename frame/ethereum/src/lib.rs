@@ -37,11 +37,11 @@ use sp_runtime::{
 	transaction_validity::{
 		TransactionValidity, TransactionSource, InvalidTransaction, ValidTransactionBuilder,
 	},
-	generic::DigestItem, traits::UniqueSaturatedInto, DispatchError,
+	generic::DigestItem, traits::{Saturating, UniqueSaturatedInto, One, Zero}, DispatchError,
 };
 use evm::ExitReason;
 use fp_evm::CallOrCreateInfo;
-use pallet_evm::{Runner, GasWeightMapping, FeeCalculator};
+use pallet_evm::{Runner, GasWeightMapping, FeeCalculator, BlockHashMapping};
 use sha3::{Digest, Keccak256};
 use codec::{Encode, Decode};
 use fp_consensus::{FRONTIER_ENGINE_ID, PostLog, PreLog};
@@ -108,6 +108,8 @@ decl_storage! {
 		CurrentReceipts: Option<Vec<ethereum::Receipt>>;
 		/// The current transaction statuses.
 		CurrentTransactionStatuses: Option<Vec<TransactionStatus>>;
+		// Mapping for block number and hashes.
+		BlockHash: map hasher(twox_64_concat) U256 => H256;
 	}
 	add_extra_genesis {
 		build(|_config: &GenesisConfig| {
@@ -153,7 +155,7 @@ decl_module! {
 			Self::do_transact(transaction)
 		}
 
-		fn on_finalize(_n: T::BlockNumber) {
+		fn on_finalize(n: T::BlockNumber) {
 			<Module<T>>::store_block(
 				fp_consensus::find_pre_log(&frame_system::Module::<T>::digest()).is_err(),
 				U256::from(
@@ -162,6 +164,15 @@ decl_module! {
 					)
 				),
 			);
+			// move block hash pruning window by one block
+			let block_hash_count = T::BlockHashCount::get();
+			let to_remove = n.saturating_sub(block_hash_count).saturating_sub(One::one());
+			// keep genesis hash
+			if !to_remove.is_zero() {
+				BlockHash::remove(U256::from(
+					UniqueSaturatedInto::<u32>::unique_saturated_into(to_remove)
+				));
+			}
 		}
 
 		fn on_initialize(_n: T::BlockNumber) -> Weight {
@@ -178,6 +189,14 @@ decl_module! {
 
 			0
 		}
+	}
+}
+
+/// Returns the Ethereum block hash by number.
+pub struct EthereumBlockHashMapping;
+impl BlockHashMapping for EthereumBlockHashMapping {
+	fn block_hash(number: u32) -> H256 {
+		BlockHash::get(U256::from(number))
 	}
 }
 
@@ -303,6 +322,7 @@ impl<T: Config> Module<T> {
 		CurrentBlock::put(block.clone());
 		CurrentReceipts::put(receipts.clone());
 		CurrentTransactionStatuses::put(statuses.clone());
+		BlockHash::insert(block_number, block.header.hash());
 
 		if post_log {
 			let digest = DigestItem::<T::Hash>::Consensus(
