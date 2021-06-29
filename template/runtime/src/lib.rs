@@ -47,6 +47,7 @@ use pallet_evm::{
 };
 use fp_rpc::TransactionStatus;
 use pallet_transaction_payment::CurrencyAdapter;
+use pallet_ethereum::{Transaction as EthereumTransaction, Call::transact};
 
 /// Type of block number.
 pub type BlockNumber = u32;
@@ -575,6 +576,15 @@ impl_runtime_apis! {
 				Ethereum::current_receipts(),
 				Ethereum::current_transaction_statuses()
 			)
+		}
+
+		fn extrinsic_filter(
+			xts: Vec<<Block as BlockT>::Extrinsic>,
+		) -> Vec<EthereumTransaction> {
+			xts.into_iter().filter_map(|xt| match xt.function {
+				Call::Ethereum(transact(t)) => Some(t),
+				_ => None
+			}).collect::<Vec<EthereumTransaction>>()
 		}
 	}
 

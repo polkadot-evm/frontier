@@ -96,7 +96,6 @@ describeWithFrontier("Frontier RPC (Subscription)", (context) => {
 		const tx = await sendTransaction(context);
 		let data = null;
 		await new Promise((resolve) => {
-			createAndFinalizeBlock(context.web3);
 			subscription.on("data", function (d: any) {
 				data = d;
 				logs_generated += 1;
@@ -107,6 +106,7 @@ describeWithFrontier("Frontier RPC (Subscription)", (context) => {
 
 		expect(data).to.be.not.null;
 		expect(tx["transactionHash"]).to.be.eq(data);
+		await createAndFinalizeBlock(context.web3);
 		setTimeout(done,10000);
 	}).timeout(20000);
 
