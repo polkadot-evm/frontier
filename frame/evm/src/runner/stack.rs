@@ -357,7 +357,7 @@ impl<'vicinity, 'config, T: Config> BackendT for SubstrateStackState<'vicinity, 
 	}
 
 	fn block_coinbase(&self) -> H160 {
-		H160::default()
+		Module::<T>::find_author()
 	}
 
 	fn block_timestamp(&self) -> U256 {

@@ -19,15 +19,17 @@
 
 use super::*;
 
-use std::{str::FromStr, collections::BTreeMap};
+use std::{str::FromStr, collections::BTreeMap, marker::PhantomData};
 use frame_support::{
 	assert_ok, impl_outer_origin, parameter_types, impl_outer_dispatch,
+	ConsensusEngineId,
 };
 use sp_core::{Blake2Hasher, H256};
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
 };
+use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 
 impl_outer_origin! {
 	pub enum Origin for Test where system = frame_system {}
@@ -106,12 +108,26 @@ impl pallet_timestamp::Config for Test {
 	type WeightInfo = ();
 }
 
+impl pallet_aura::Config for Test {
+	type AuthorityId = AuraId;
+}
+
 /// Fixed gas price of `0`.
 pub struct FixedGasPrice;
 impl FeeCalculator for FixedGasPrice {
 	fn min_gas_price() -> U256 {
 		// Gas price is always one token per gas.
 		0.into()
+	}
+}
+
+pub struct FindAuthorTruncated<F>(PhantomData<F>);
+impl<F: FindAuthor<u32>> FindAuthor<H160> for FindAuthorTruncated<F>
+{
+	fn find_author<'a, I>(_digests: I) -> Option<H160> where
+		I: 'a + IntoIterator<Item=(ConsensusEngineId, &'a [u8])>
+	{
+		Some(H160::from_str("1234500000000000000000000000000000000000").unwrap())
 	}
 }
 
@@ -131,11 +147,13 @@ impl Config for Test {
 	type ChainId = ();
 	type BlockGasLimit = ();
 	type OnChargeTransaction = ();
+	type FindAuthor = FindAuthorTruncated<Aura>;
 	type BlockHashMapping = crate::SubstrateBlockHashMapping<Self>;
 }
 
 type System = frame_system::Module<Test>;
 type Balances = pallet_balances::Module<Test>;
+type Aura = pallet_aura::Module<Test>;
 type EVM = Module<Test>;
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
@@ -215,5 +233,13 @@ fn fee_deduction() {
 		// Refund fees as 5 units
 		<<Test as Config>::OnChargeTransaction as OnChargeEVMTransaction<Test>>::correct_and_deposit_fee(&evm_addr, U256::from(5), imbalance).unwrap();
 		assert_eq!(Balances::free_balance(&substrate_addr), 95);
+	});
+}
+
+#[test]
+fn find_author() {
+	new_test_ext().execute_with(|| {
+		let author = EVM::find_author();
+		assert_eq!(author, H160::from_str("1234500000000000000000000000000000000000").unwrap());
 	});
 }
