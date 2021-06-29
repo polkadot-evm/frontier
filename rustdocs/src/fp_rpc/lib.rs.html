@@ -107,6 +107,11 @@
 <span id="104">104</span>
 <span id="105">105</span>
 <span id="106">106</span>
+<span id="107">107</span>
+<span id="108">108</span>
+<span id="109">109</span>
+<span id="110">110</span>
+<span id="111">111</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
@@ -132,6 +137,7 @@
 <span class="kw">use</span> <span class="ident">ethereum_types::Bloom</span>;
 <span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Encode</span>, <span class="ident">Decode</span>};
 <span class="kw">use</span> <span class="ident">sp_std::vec::Vec</span>;
+<span class="kw">use</span> <span class="ident">sp_runtime::traits::Block</span> <span class="kw">as</span> <span class="ident">BlockT</span>;
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">Clone</span>, <span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">sp_runtime::RuntimeDebug</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">TransactionStatus</span> {
@@ -208,6 +214,10 @@
 			<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ethereum::Receipt</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 			<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TransactionStatus</span><span class="op">&gt;</span><span class="op">&gt;</span>
 		);
+		<span class="doccomment">/// Receives a `Vec&lt;OpaqueExtrinsic&gt;` and filters all the ethereum transactions.</span>
+		<span class="kw">fn</span> <span class="ident">extrinsic_filter</span>(
+			<span class="ident">xts</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">Block</span> <span class="kw">as</span> <span class="ident">BlockT</span><span class="op">&gt;</span><span class="ident">::Extrinsic</span><span class="op">&gt;</span>,
+		) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ethereum::Transaction</span><span class="op">&gt;</span>;
 	}
 }
 

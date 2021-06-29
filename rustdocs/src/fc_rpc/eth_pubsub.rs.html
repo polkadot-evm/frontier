@@ -436,23 +436,6 @@
 <span id="433">433</span>
 <span id="434">434</span>
 <span id="435">435</span>
-<span id="436">436</span>
-<span id="437">437</span>
-<span id="438">438</span>
-<span id="439">439</span>
-<span id="440">440</span>
-<span id="441">441</span>
-<span id="442">442</span>
-<span id="443">443</span>
-<span id="444">444</span>
-<span id="445">445</span>
-<span id="446">446</span>
-<span id="447">447</span>
-<span id="448">448</span>
-<span id="449">449</span>
-<span id="450">450</span>
-<span id="451">451</span>
-<span id="452">452</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
@@ -484,8 +467,6 @@
 <span class="kw">use</span> <span class="ident">sp_transaction_pool::TransactionPool</span>;
 <span class="kw">use</span> <span class="ident">sp_api</span>::{<span class="ident">ProvideRuntimeApi</span>, <span class="ident">BlockId</span>};
 <span class="kw">use</span> <span class="ident">sp_blockchain</span>::{<span class="ident">Error</span> <span class="kw">as</span> <span class="ident">BlockChainError</span>, <span class="ident">HeaderMetadata</span>, <span class="ident">HeaderBackend</span>};
-<span class="kw">use</span> <span class="ident">sp_storage</span>::{<span class="ident">StorageKey</span>, <span class="ident">StorageData</span>};
-<span class="kw">use</span> <span class="ident">sp_io::hashing::twox_128</span>;
 <span class="kw">use</span> <span class="ident">sc_client_api</span>::{
 	<span class="ident">backend</span>::{<span class="ident">StorageProvider</span>, <span class="ident">Backend</span>, <span class="ident">StateBackend</span>},
 	<span class="ident">client::BlockchainEvents</span>
@@ -503,14 +484,13 @@
 	<span class="ident">pubsub</span>::{<span class="ident">Kind</span>, <span class="ident">Params</span>, <span class="prelude-ty">Result</span> <span class="kw">as</span> <span class="ident">PubSubResult</span>, <span class="ident">PubSubSyncStatus</span>}
 };
 <span class="kw">use</span> <span class="ident">ethereum_types</span>::{<span class="ident">H256</span>, <span class="ident">U256</span>};
-<span class="kw">use</span> <span class="ident">codec::Decode</span>;
 <span class="kw">use</span> <span class="ident">sha3</span>::{<span class="ident">Keccak256</span>, <span class="ident">Digest</span>};
 
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">fc_rpc_core::EthPubSubApiServer</span>;
 <span class="kw">use</span> <span class="ident">futures</span>::{<span class="ident">StreamExt</span> <span class="kw">as</span> <span class="kw">_</span>, <span class="ident">TryStreamExt</span> <span class="kw">as</span> <span class="kw">_</span>};
 
 <span class="kw">use</span> <span class="ident">jsonrpc_core</span>::{<span class="prelude-ty">Result</span> <span class="kw">as</span> <span class="ident">JsonRpcResult</span>, <span class="ident">futures</span>::{<span class="ident">Future</span>, <span class="ident">Sink</span>}};
-<span class="kw">use</span> <span class="ident">fp_rpc</span>::{<span class="ident">EthereumRuntimeRPCApi</span>, <span class="ident">TransactionStatus</span>};
+<span class="kw">use</span> <span class="ident">fp_rpc::EthereumRuntimeRPCApi</span>;
 
 <span class="kw">use</span> <span class="ident">sc_network</span>::{<span class="ident">NetworkService</span>, <span class="ident">ExHashT</span>};
 
@@ -541,7 +521,7 @@
 }
 
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">EthPubSubApi</span><span class="op">&lt;</span><span class="ident">B</span>: <span class="ident">BlockT</span>, <span class="ident">P</span>, <span class="ident">C</span>, <span class="ident">BE</span>, <span class="ident">H</span>: <span class="ident">ExHashT</span><span class="op">&gt;</span> {
-	<span class="ident">_pool</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">P</span><span class="op">&gt;</span>,
+	<span class="ident">pool</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">P</span><span class="op">&gt;</span>,
 	<span class="ident">client</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
 	<span class="ident">network</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">NetworkService</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">H</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 	<span class="ident">subscriptions</span>: <span class="ident">SubscriptionManager</span><span class="op">&lt;</span><span class="ident">HexEncodedIdProvider</span><span class="op">&gt;</span>,
@@ -556,14 +536,14 @@
 	<span class="ident">C</span>: <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
 {
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(
-		<span class="ident">_pool</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">P</span><span class="op">&gt;</span>,
+		<span class="ident">pool</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">P</span><span class="op">&gt;</span>,
 		<span class="ident">client</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
 		<span class="ident">network</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">NetworkService</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">H</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 		<span class="ident">subscriptions</span>: <span class="ident">SubscriptionManager</span><span class="op">&lt;</span><span class="ident">HexEncodedIdProvider</span><span class="op">&gt;</span>,
 		<span class="ident">overrides</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">OverrideHandle</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 	) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
 		<span class="self">Self</span> {
-			<span class="ident">_pool</span>,
+			<span class="ident">pool</span>: <span class="ident">pool</span>.<span class="ident">clone</span>(),
 			<span class="ident">client</span>: <span class="ident">client</span>.<span class="ident">clone</span>(),
 			<span class="ident">network</span>,
 			<span class="ident">subscriptions</span>,
@@ -696,10 +676,6 @@
 	}
 }
 
-<span class="kw">fn</span> <span class="ident">storage_prefix_build</span>(<span class="ident">module</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>], <span class="ident">storage</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> {
-	[<span class="ident">twox_128</span>(<span class="ident">module</span>), <span class="ident">twox_128</span>(<span class="ident">storage</span>)].<span class="ident">concat</span>().<span class="ident">to_vec</span>()
-}
-
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">B</span>: <span class="ident">BlockT</span>, <span class="ident">P</span>, <span class="ident">C</span>, <span class="ident">BE</span>, <span class="ident">H</span>: <span class="ident">ExHashT</span><span class="op">&gt;</span> <span class="ident">EthPubSubApiT</span> <span class="kw">for</span> <span class="ident">EthPubSubApi</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">P</span>, <span class="ident">C</span>, <span class="ident">BE</span>, <span class="ident">H</span><span class="op">&gt;</span>
 	<span class="kw">where</span>
 		<span class="ident">B</span>: <span class="ident">BlockT</span><span class="op">&lt;</span><span class="ident">Hash</span><span class="op">=</span><span class="ident">H256</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
@@ -726,6 +702,7 @@
 		};
 
 		<span class="kw">let</span> <span class="ident">client</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">clone</span>();
+		<span class="kw">let</span> <span class="ident">pool</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">pool</span>.<span class="ident">clone</span>();
 		<span class="kw">let</span> <span class="ident">network</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">network</span>.<span class="ident">clone</span>();
 		<span class="kw">let</span> <span class="ident">overrides</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">overrides</span>.<span class="ident">clone</span>();
 		<span class="kw">match</span> <span class="ident">kind</span> {
@@ -810,58 +787,47 @@
 				});
 			},
 			<span class="ident">Kind::NewPendingTransactions</span> <span class="op">=</span><span class="op">&gt;</span> {
-				<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">stream</span>) <span class="op">=</span> <span class="ident">client</span>.<span class="ident">storage_changes_notification_stream</span>(
-					<span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>[<span class="ident">StorageKey</span>(
-						<span class="ident">storage_prefix_build</span>(<span class="string">b&quot;Ethereum&quot;</span>, <span class="string">b&quot;Pending&quot;</span>)
-					)]),
-					<span class="prelude-val">None</span>
-				) {
-					<span class="self">self</span>.<span class="ident">subscriptions</span>.<span class="ident">add</span>(<span class="ident">subscriber</span>, <span class="op">|</span><span class="ident">sink</span><span class="op">|</span> {
-						<span class="kw">let</span> <span class="ident">stream</span> <span class="op">=</span> <span class="ident">stream</span>
-						.<span class="ident">flat_map</span>(<span class="op">|</span>(<span class="ident">_block</span>, <span class="ident">changes</span>)<span class="op">|</span> {
-							<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">transactions</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ethereum::Transaction</span><span class="op">&gt;</span> <span class="op">=</span> <span class="macro">vec!</span>[];
-							<span class="kw">let</span> <span class="ident">storage</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">StorageData</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">changes</span>.<span class="ident">iter</span>()
-								.<span class="ident">filter_map</span>(<span class="op">|</span>(<span class="ident">o_sk</span>, <span class="ident">_k</span>, <span class="ident">v</span>)<span class="op">|</span> {
-									<span class="kw">if</span> <span class="ident">o_sk</span>.<span class="ident">is_none</span>() {
-										<span class="prelude-val">Some</span>(<span class="ident">v</span>.<span class="ident">cloned</span>())
-									} <span class="kw">else</span> { <span class="prelude-val">None</span> }
-								}).<span class="ident">collect</span>();
-							<span class="kw">for</span> <span class="ident">change</span> <span class="kw">in</span> <span class="ident">storage</span> {
-								<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">data</span>) <span class="op">=</span> <span class="ident">change</span> {
-									<span class="kw">let</span> <span class="ident">storage</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(
-										<span class="ident">ethereum::Transaction</span>,
-										<span class="ident">TransactionStatus</span>,
-										<span class="ident">ethereum::Receipt</span>
-									)<span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Decode::decode</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="kw-2">&amp;</span><span class="ident">data</span>.<span class="number">0</span>[..]).<span class="ident">unwrap</span>();
-									<span class="kw">let</span> <span class="ident">tmp</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ethereum::Transaction</span><span class="op">&gt;</span> <span class="op">=</span>
-										<span class="ident">storage</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="ident">x</span>.<span class="number">0</span>.<span class="ident">clone</span>()).<span class="ident">collect</span>();
-									<span class="ident">transactions</span>.<span class="ident">extend</span>(<span class="ident">tmp</span>);
-								}
-							}
-							<span class="ident">futures::stream::iter</span>(<span class="ident">transactions</span>)
-						})
-						.<span class="ident">map</span>(<span class="op">|</span><span class="ident">transaction</span><span class="op">|</span> {
-							<span class="kw">return</span> <span class="prelude-val">Ok</span>::<span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span>
-								<span class="ident">PubSubResult</span>,
-								<span class="ident">jsonrpc_core::types::error::Error</span>
-							<span class="op">&gt;</span>, ()<span class="op">&gt;</span>(<span class="prelude-val">Ok</span>(
-								<span class="ident">PubSubResult::TransactionHash</span>(<span class="ident">H256::from_slice</span>(
-									<span class="ident">Keccak256::digest</span>(
-										<span class="kw-2">&amp;</span><span class="ident">rlp::encode</span>(<span class="kw-2">&amp;</span><span class="ident">transaction</span>)
-									).<span class="ident">as_slice</span>()
-								))
-							));
-						})
-						.<span class="ident">compat</span>();
-
-						<span class="ident">sink</span>
-							.<span class="ident">sink_map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">warn!</span>(
-								<span class="string">&quot;Error sending notifications: {:?}&quot;</span>, <span class="ident">e</span>
+				<span class="kw">use</span> <span class="ident">sp_transaction_pool::InPoolTransaction</span>;
+				<span class="self">self</span>.<span class="ident">subscriptions</span>.<span class="ident">add</span>(<span class="ident">subscriber</span>, <span class="kw">move</span> <span class="op">|</span><span class="ident">sink</span><span class="op">|</span> {
+					<span class="kw">let</span> <span class="ident">stream</span> <span class="op">=</span> <span class="ident">pool</span>.<span class="ident">import_notification_stream</span>()
+					.<span class="ident">filter_map</span>(<span class="kw">move</span> <span class="op">|</span><span class="ident">txhash</span><span class="op">|</span> {
+						<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">xt</span>) <span class="op">=</span> <span class="ident">pool</span>.<span class="ident">ready_transaction</span>(<span class="kw-2">&amp;</span><span class="ident">txhash</span>) {
+							<span class="kw">let</span> <span class="ident">best_block</span>: <span class="ident">BlockId</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">BlockId::Hash</span>(<span class="ident">client</span>.<span class="ident">info</span>().<span class="ident">best_hash</span>);
+							<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">client</span>.<span class="ident">runtime_api</span>().<span class="ident">extrinsic_filter</span>(
+								<span class="kw-2">&amp;</span><span class="ident">best_block</span>, <span class="macro">vec!</span>[<span class="ident">xt</span>.<span class="ident">data</span>().<span class="ident">clone</span>()]
+							) {
+								<span class="prelude-val">Ok</span>(<span class="ident">txs</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">if</span> <span class="ident">txs</span>.<span class="ident">len</span>() <span class="op">=</span><span class="op">=</span> <span class="number">1</span> {
+									<span class="prelude-val">Some</span>(<span class="ident">txs</span>[<span class="number">0</span>].<span class="ident">clone</span>())
+								} <span class="kw">else</span> {
+									<span class="prelude-val">None</span>
+								},
+								<span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">None</span>
+							};
+							<span class="ident">futures::future::ready</span>(<span class="ident">res</span>)
+						} <span class="kw">else</span> {
+							<span class="ident">futures::future::ready</span>(<span class="prelude-val">None</span>)
+						}
+					})
+					.<span class="ident">map</span>(<span class="op">|</span><span class="ident">transaction</span><span class="op">|</span> {
+						<span class="kw">return</span> <span class="prelude-val">Ok</span>::<span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span>
+							<span class="ident">PubSubResult</span>,
+							<span class="ident">jsonrpc_core::types::error::Error</span>
+						<span class="op">&gt;</span>, ()<span class="op">&gt;</span>(<span class="prelude-val">Ok</span>(
+							<span class="ident">PubSubResult::TransactionHash</span>(<span class="ident">H256::from_slice</span>(
+								<span class="ident">Keccak256::digest</span>(
+									<span class="kw-2">&amp;</span><span class="ident">rlp::encode</span>(<span class="kw-2">&amp;</span><span class="ident">transaction</span>)
+								).<span class="ident">as_slice</span>()
 							))
-							.<span class="ident">send_all</span>(<span class="ident">stream</span>)
-							.<span class="ident">map</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> ())
-					});
-				}
+						));
+					})
+					.<span class="ident">compat</span>();
+					<span class="ident">sink</span>
+						.<span class="ident">sink_map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">warn!</span>(
+							<span class="string">&quot;Error sending notifications: {:?}&quot;</span>, <span class="ident">e</span>
+						))
+						.<span class="ident">send_all</span>(<span class="ident">stream</span>)
+						.<span class="ident">map</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> ())
+				});
 			},
 			<span class="ident">Kind::Syncing</span> <span class="op">=</span><span class="op">&gt;</span> {
 				<span class="self">self</span>.<span class="ident">subscriptions</span>.<span class="ident">add</span>(<span class="ident">subscriber</span>, <span class="op">|</span><span class="ident">sink</span><span class="op">|</span> {

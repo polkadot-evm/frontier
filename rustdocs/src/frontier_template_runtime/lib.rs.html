@@ -638,6 +638,16 @@
 <span id="635">635</span>
 <span id="636">636</span>
 <span id="637">637</span>
+<span id="638">638</span>
+<span id="639">639</span>
+<span id="640">640</span>
+<span id="641">641</span>
+<span id="642">642</span>
+<span id="643">643</span>
+<span id="644">644</span>
+<span id="645">645</span>
+<span id="646">646</span>
+<span id="647">647</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! The Substrate Node Template runtime. This can be compiled with `#[no_std]`, ready for Wasm.</span>
 
@@ -688,6 +698,7 @@
 };
 <span class="kw">use</span> <span class="ident">fp_rpc::TransactionStatus</span>;
 <span class="kw">use</span> <span class="ident">pallet_transaction_payment::CurrencyAdapter</span>;
+<span class="kw">use</span> <span class="ident">pallet_ethereum</span>::{<span class="ident">Transaction</span> <span class="kw">as</span> <span class="ident">EthereumTransaction</span>, <span class="ident">Call::transact</span>};
 
 <span class="doccomment">/// Type of block number.</span>
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="ident">u32</span>;
@@ -1216,6 +1227,15 @@
 				<span class="ident">Ethereum::current_receipts</span>(),
 				<span class="ident">Ethereum::current_transaction_statuses</span>()
 			)
+		}
+
+		<span class="kw">fn</span> <span class="ident">extrinsic_filter</span>(
+			<span class="ident">xts</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">Block</span> <span class="kw">as</span> <span class="ident">BlockT</span><span class="op">&gt;</span><span class="ident">::Extrinsic</span><span class="op">&gt;</span>,
+		) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">EthereumTransaction</span><span class="op">&gt;</span> {
+			<span class="ident">xts</span>.<span class="ident">into_iter</span>().<span class="ident">filter_map</span>(<span class="op">|</span><span class="ident">xt</span><span class="op">|</span> <span class="kw">match</span> <span class="ident">xt</span>.<span class="ident">function</span> {
+				<span class="ident">Call::Ethereum</span>(<span class="ident">transact</span>(<span class="ident">t</span>)) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">t</span>),
+				<span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">None</span>
+			}).<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">EthereumTransaction</span><span class="op">&gt;</span><span class="op">&gt;</span>()
 		}
 	}
 
