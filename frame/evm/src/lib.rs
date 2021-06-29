@@ -70,7 +70,9 @@ use codec::{Encode, Decode};
 use serde::{Serialize, Deserialize};
 use frame_support::{decl_module, decl_storage, decl_event, decl_error};
 use frame_support::weights::{Weight, Pays, PostDispatchInfo};
-use frame_support::traits::{Currency, ExistenceRequirement, Get, WithdrawReasons, Imbalance, OnUnbalanced};
+use frame_support::traits::{
+	Currency, ExistenceRequirement, Get, WithdrawReasons, Imbalance, OnUnbalanced, FindAuthor
+};
 use frame_support::dispatch::DispatchResultWithPostInfo;
 use frame_system::RawOrigin;
 use sp_core::{U256, H256, H160, Hasher};
@@ -278,6 +280,9 @@ pub trait Config: frame_system::Config + pallet_timestamp::Config {
 	/// where the chain implementing `pallet_ethereum` should be able to configure what happens to the fees
 	/// Similar to `OnChargeTransaction` of `pallet_transaction_payment`
 	type OnChargeTransaction: OnChargeEVMTransaction<Self>;
+
+	/// Find author for the current block.
+	type FindAuthor: FindAuthor<H160>;
 
 	/// EVM config used in the module.
 	fn config() -> &'static EvmConfig {
@@ -583,6 +588,14 @@ impl<T: Config> Module<T> {
 			nonce: U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(nonce)),
 			balance: U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(balance)),
 		}
+	}
+
+	/// Get the author using the FindAuthor trait.
+	pub fn find_author() -> H160 {
+		let digest = <frame_system::Module<T>>::digest();
+		let pre_runtime_digests = digest.logs.iter().filter_map(|d| d.as_pre_runtime());
+
+		T::FindAuthor::find_author(pre_runtime_digests).unwrap_or_default()
 	}
 }
 
