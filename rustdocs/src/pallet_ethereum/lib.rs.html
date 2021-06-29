@@ -489,17 +489,6 @@
 <span id="486">486</span>
 <span id="487">487</span>
 <span id="488">488</span>
-<span id="489">489</span>
-<span id="490">490</span>
-<span id="491">491</span>
-<span id="492">492</span>
-<span id="493">493</span>
-<span id="494">494</span>
-<span id="495">495</span>
-<span id="496">496</span>
-<span id="497">497</span>
-<span id="498">498</span>
-<span id="499">499</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
@@ -528,8 +517,7 @@
 
 <span class="kw">use</span> <span class="ident">frame_support</span>::{
 	<span class="ident">decl_module</span>, <span class="ident">decl_storage</span>, <span class="ident">decl_error</span>, <span class="ident">decl_event</span>,
-	<span class="ident">traits::Get</span>, <span class="ident">traits::FindAuthor</span>,
-	<span class="ident">weights</span>::{<span class="ident">Pays</span>, <span class="ident">PostDispatchInfo</span>, <span class="ident">Weight</span>},
+	<span class="ident">traits::Get</span>, <span class="ident">weights</span>::{<span class="ident">Pays</span>, <span class="ident">PostDispatchInfo</span>, <span class="ident">Weight</span>},
 	<span class="ident">dispatch::DispatchResultWithPostInfo</span>,
 };
 <span class="kw">use</span> <span class="ident">sp_std::prelude</span>::<span class="kw-2">*</span>;
@@ -594,8 +582,6 @@
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Config</span>: <span class="ident">frame_system::Config</span><span class="op">&lt;</span><span class="ident">Hash</span><span class="op">=</span><span class="ident">H256</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">pallet_balances::Config</span> <span class="op">+</span> <span class="ident">pallet_timestamp::Config</span> <span class="op">+</span> <span class="ident">pallet_evm::Config</span> {
 	<span class="doccomment">/// The overarching event type.</span>
 	<span class="kw">type</span> <span class="ident">Event</span>: <span class="ident">From</span><span class="op">&lt;</span><span class="ident">Event</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Into</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="self">Self</span> <span class="kw">as</span> <span class="ident">frame_system::Config</span><span class="op">&gt;</span><span class="ident">::Event</span><span class="op">&gt;</span>;
-	<span class="doccomment">/// Find author for Ethereum.</span>
-	<span class="kw">type</span> <span class="ident">FindAuthor</span>: <span class="ident">FindAuthor</span><span class="op">&lt;</span><span class="ident">H160</span><span class="op">&gt;</span>;
 	<span class="doccomment">/// How Ethereum state root is calculated.</span>
 	<span class="kw">type</span> <span class="ident">StateRoot</span>: <span class="ident">Get</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span>;
 }
@@ -801,7 +787,7 @@
 		<span class="kw">let</span> <span class="ident">ommers</span> <span class="op">=</span> <span class="ident">Vec</span>::<span class="op">&lt;</span><span class="ident">ethereum::Header</span><span class="op">&gt;</span><span class="ident">::new</span>();
 		<span class="kw">let</span> <span class="ident">partial_header</span> <span class="op">=</span> <span class="ident">ethereum::PartialHeader</span> {
 			<span class="ident">parent_hash</span>: <span class="self">Self</span><span class="ident">::current_block_hash</span>().<span class="ident">unwrap_or_default</span>(),
-			<span class="ident">beneficiary</span>: <span class="op">&lt;</span><span class="ident">Module</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::find_author</span>(),
+			<span class="ident">beneficiary</span>: <span class="ident">pallet_evm::Module</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::find_author</span>(),
 			<span class="comment">// TODO: figure out if there&#39;s better way to get a sort-of-valid state root.</span>
 			<span class="ident">state_root</span>: <span class="ident">H256::default</span>(),
 			<span class="ident">receipts_root</span>: <span class="ident">H256::from_slice</span>(
@@ -928,14 +914,6 @@
 			<span class="ident">actual_weight</span>: <span class="prelude-val">Some</span>(<span class="ident">T::GasWeightMapping::gas_to_weight</span>(<span class="ident">used_gas</span>.<span class="ident">unique_saturated_into</span>())),
 			<span class="ident">pays_fee</span>: <span class="ident">Pays::No</span>,
 		}).<span class="ident">into</span>()
-	}
-
-	<span class="doccomment">/// Get the author using the FindAuthor trait.</span>
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">find_author</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">H160</span> {
-		<span class="kw">let</span> <span class="ident">digest</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">frame_system::Module</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::digest</span>();
-		<span class="kw">let</span> <span class="ident">pre_runtime_digests</span> <span class="op">=</span> <span class="ident">digest</span>.<span class="ident">logs</span>.<span class="ident">iter</span>().<span class="ident">filter_map</span>(<span class="op">|</span><span class="ident">d</span><span class="op">|</span> <span class="ident">d</span>.<span class="ident">as_pre_runtime</span>());
-
-		<span class="ident">T::FindAuthor::find_author</span>(<span class="ident">pre_runtime_digests</span>).<span class="ident">unwrap_or_default</span>()
 	}
 
 	<span class="doccomment">/// Get the transaction status with given index.</span>

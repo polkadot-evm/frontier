@@ -875,7 +875,7 @@
 	}
 
 	<span class="kw">fn</span> <span class="ident">block_coinbase</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">H160</span> {
-		<span class="ident">H160::default</span>()
+		<span class="ident">Module</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::find_author</span>()
 	}
 
 	<span class="kw">fn</span> <span class="ident">block_timestamp</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">U256</span> {
