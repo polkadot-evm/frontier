@@ -31,6 +31,7 @@ native_executor_instance!(
 	pub Executor,
 	frontier_template_runtime::api::dispatch,
 	frontier_template_runtime::native_version,
+	frame_benchmarking::benchmarking::HostFunctions,
 );
 
 type FullClient = sc_service::TFullClient<Block, RuntimeApi, Executor>;
