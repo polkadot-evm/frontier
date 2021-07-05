@@ -21,16 +21,8 @@ use super::*;
 use crate::mock::*;
 
 use std::{str::FromStr, collections::BTreeMap};
-use frame_support::{
-	assert_ok, impl_outer_origin, parameter_types, impl_outer_dispatch,
-};
-use sp_core::{Blake2Hasher, H256};
-use sp_runtime::{
-	testing::Header,
-	traits::{BlakeTwo256, IdentityLookup},
-};
+use frame_support::assert_ok;
 
-type System = frame_system::Module<Test>;
 type Balances = pallet_balances::Module<Test>;
 type EVM = Module<Test>;
 
@@ -111,5 +103,13 @@ fn fee_deduction() {
 		// Refund fees as 5 units
 		<<Test as Config>::OnChargeTransaction as OnChargeEVMTransaction<Test>>::correct_and_deposit_fee(&evm_addr, U256::from(5), imbalance).unwrap();
 		assert_eq!(Balances::free_balance(&substrate_addr), 95);
+	});
+}
+
+#[test]
+fn find_author() {
+	new_test_ext().execute_with(|| {
+		let author = EVM::find_author();
+		assert_eq!(author, H160::from_str("1234500000000000000000000000000000000000").unwrap());
 	});
 }

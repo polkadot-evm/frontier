@@ -28,8 +28,6 @@ use sp_runtime::traits::{
 use sp_transaction_pool::TransactionPool;
 use sp_api::{ProvideRuntimeApi, BlockId};
 use sp_blockchain::{Error as BlockChainError, HeaderMetadata, HeaderBackend};
-use sp_storage::{StorageKey, StorageData};
-use sp_io::hashing::twox_128;
 use sc_client_api::{
 	backend::{StorageProvider, Backend, StateBackend},
 	client::BlockchainEvents
@@ -47,14 +45,13 @@ use fc_rpc_core::types::{
 	pubsub::{Kind, Params, Result as PubSubResult, PubSubSyncStatus}
 };
 use ethereum_types::{H256, U256};
-use codec::Decode;
 use sha3::{Keccak256, Digest};
 
 pub use fc_rpc_core::EthPubSubApiServer;
 use futures::{StreamExt as _, TryStreamExt as _};
 
 use jsonrpc_core::{Result as JsonRpcResult, futures::{Future, Sink}};
-use fp_rpc::{EthereumRuntimeRPCApi, TransactionStatus};
+use fp_rpc::EthereumRuntimeRPCApi;
 
 use sc_network::{NetworkService, ExHashT};
 
@@ -85,7 +82,7 @@ impl IdProvider for HexEncodedIdProvider {
 }
 
 pub struct EthPubSubApi<B: BlockT, P, C, BE, H: ExHashT> {
-	_pool: Arc<P>,
+	pool: Arc<P>,
 	client: Arc<C>,
 	network: Arc<NetworkService<B, H>>,
 	subscriptions: SubscriptionManager<HexEncodedIdProvider>,
@@ -100,14 +97,14 @@ impl<B: BlockT, P, C, BE, H: ExHashT> EthPubSubApi<B, P, C, BE, H> where
 	C: Send + Sync + 'static,
 {
 	pub fn new(
-		_pool: Arc<P>,
+		pool: Arc<P>,
 		client: Arc<C>,
 		network: Arc<NetworkService<B, H>>,
 		subscriptions: SubscriptionManager<HexEncodedIdProvider>,
 		overrides: Arc<OverrideHandle<B>>,
 	) -> Self {
 		Self {
-			_pool,
+			pool: pool.clone(),
 			client: client.clone(),
 			network,
 			subscriptions,
@@ -240,10 +237,6 @@ impl SubscriptionResult {
 	}
 }
 
-fn storage_prefix_build(module: &[u8], storage: &[u8]) -> Vec<u8> {
-	[twox_128(module), twox_128(storage)].concat().to_vec()
-}
-
 impl<B: BlockT, P, C, BE, H: ExHashT> EthPubSubApiT for EthPubSubApi<B, P, C, BE, H>
 	where
 		B: BlockT<Hash=H256> + Send + Sync + 'static,
@@ -270,6 +263,7 @@ impl<B: BlockT, P, C, BE, H: ExHashT> EthPubSubApiT for EthPubSubApi<B, P, C, BE
 		};
 
 		let client = self.client.clone();
+		let pool = self.pool.clone();
 		let network = self.network.clone();
 		let overrides = self.overrides.clone();
 		match kind {
@@ -354,58 +348,47 @@ impl<B: BlockT, P, C, BE, H: ExHashT> EthPubSubApiT for EthPubSubApi<B, P, C, BE
 				});
 			},
 			Kind::NewPendingTransactions => {
-				if let Ok(stream) = client.storage_changes_notification_stream(
-					Some(&[StorageKey(
-						storage_prefix_build(b"Ethereum", b"Pending")
-					)]),
-					None
-				) {
-					self.subscriptions.add(subscriber, |sink| {
-						let stream = stream
-						.flat_map(|(_block, changes)| {
-							let mut transactions: Vec<ethereum::Transaction> = vec![];
-							let storage: Vec<Option<StorageData>> = changes.iter()
-								.filter_map(|(o_sk, _k, v)| {
-									if o_sk.is_none() {
-										Some(v.cloned())
-									} else { None }
-								}).collect();
-							for change in storage {
-								if let Some(data) = change {
-									let storage: Vec<(
-										ethereum::Transaction,
-										TransactionStatus,
-										ethereum::Receipt
-									)> = Decode::decode(&mut &data.0[..]).unwrap();
-									let tmp: Vec<ethereum::Transaction> =
-										storage.iter().map(|x| x.0.clone()).collect();
-									transactions.extend(tmp);
-								}
-							}
-							futures::stream::iter(transactions)
-						})
-						.map(|transaction| {
-							return Ok::<Result<
-								PubSubResult,
-								jsonrpc_core::types::error::Error
-							>, ()>(Ok(
-								PubSubResult::TransactionHash(H256::from_slice(
-									Keccak256::digest(
-										&rlp::encode(&transaction)
-									).as_slice()
-								))
-							));
-						})
-						.compat();
-
-						sink
-							.sink_map_err(|e| warn!(
-								"Error sending notifications: {:?}", e
+				use sp_transaction_pool::InPoolTransaction;
+				self.subscriptions.add(subscriber, move |sink| {
+					let stream = pool.import_notification_stream()
+					.filter_map(move |txhash| {
+						if let Some(xt) = pool.ready_transaction(&txhash) {
+							let best_block: BlockId<B> = BlockId::Hash(client.info().best_hash);
+							let res = match client.runtime_api().extrinsic_filter(
+								&best_block, vec![xt.data().clone()]
+							) {
+								Ok(txs) => if txs.len() == 1 {
+									Some(txs[0].clone())
+								} else {
+									None
+								},
+								_ => None
+							};
+							futures::future::ready(res)
+						} else {
+							futures::future::ready(None)
+						}
+					})
+					.map(|transaction| {
+						return Ok::<Result<
+							PubSubResult,
+							jsonrpc_core::types::error::Error
+						>, ()>(Ok(
+							PubSubResult::TransactionHash(H256::from_slice(
+								Keccak256::digest(
+									&rlp::encode(&transaction)
+								).as_slice()
 							))
-							.send_all(stream)
-							.map(|_| ())
-					});
-				}
+						));
+					})
+					.compat();
+					sink
+						.sink_map_err(|e| warn!(
+							"Error sending notifications: {:?}", e
+						))
+						.send_all(stream)
+						.map(|_| ())
+				});
 			},
 			Kind::Syncing => {
 				self.subscriptions.add(subscriber, |sink| {
