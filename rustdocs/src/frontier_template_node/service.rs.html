@@ -608,6 +608,7 @@
 <span id="605">605</span>
 <span id="606">606</span>
 <span id="607">607</span>
+<span id="608">608</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Service and ServiceFactory implementation. Specialized wrapper over substrate service.</span>
 
@@ -642,6 +643,7 @@
 	<span class="kw">pub</span> <span class="ident">Executor</span>,
 	<span class="ident">frontier_template_runtime::api::dispatch</span>,
 	<span class="ident">frontier_template_runtime::native_version</span>,
+	<span class="ident">frame_benchmarking::benchmarking::HostFunctions</span>,
 );
 
 <span class="kw">type</span> <span class="ident">FullClient</span> <span class="op">=</span> <span class="ident">sc_service::TFullClient</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">RuntimeApi</span>, <span class="ident">Executor</span><span class="op">&gt;</span>;
