@@ -50,6 +50,8 @@ sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "fr
 sc-basic-authorship = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sp-block-builder = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sc-telemetry = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate", branch = "frontier" }
+frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "frontier" }
 
 fc-consensus = { path = "../../client/consensus" }
 fp-consensus = { path = "../../primitives/consensus" }
@@ -67,3 +69,6 @@ substrate-build-script-utils = { git = "https://github.com/paritytech/substrate.
 default = ["aura"]
 aura = ["frontier-template-runtime/aura"]
 manual-seal = ["frontier-template-runtime/manual-seal"]
+runtime-benchmarks = [
+	"frontier-template-runtime/runtime-benchmarks",
+]

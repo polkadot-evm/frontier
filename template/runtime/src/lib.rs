@@ -644,4 +644,25 @@ impl_runtime_apis! {
 			None
 		}
 	}
+
+	#[cfg(feature = "runtime-benchmarks")]
+	impl frame_benchmarking::Benchmark<Block> for Runtime {
+		fn dispatch_benchmark(
+			config: frame_benchmarking::BenchmarkConfig
+		) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
+			use frame_benchmarking::{Benchmarking, BenchmarkBatch, add_benchmark, TrackedStorageKey};
+			use pallet_evm::Module as PalletEvmBench;
+			impl frame_system_benchmarking::Config for Runtime {}
+
+			let whitelist: Vec<TrackedStorageKey> = vec![];
+
+			let mut batches = Vec::<BenchmarkBatch>::new();
+			let params = (&config, &whitelist);
+
+			add_benchmark!(params, batches, pallet_evm, PalletEvmBench::<Runtime>);
+
+			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
+			Ok(batches)
+		}
+	}
 }

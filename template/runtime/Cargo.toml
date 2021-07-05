@@ -50,6 +50,10 @@ sp-version = { version = "3.0.0-dev", default-features = false, git = "https://g
 
 fp-rpc = { default-features = false, path = "../../primitives/rpc" }
 
+# benchmarking dependencies
+frame-benchmarking = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "frontier", optional = true }
+frame-system-benchmarking = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "frontier", optional = true }
+
 [build-dependencies]
 substrate-wasm-builder = { git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 
@@ -93,4 +97,12 @@ std = [
 	"sp-std/std",
 	"sp-transaction-pool/std",
 	"sp-version/std",
+	"frame-benchmarking/std",
+	"frame-system-benchmarking/std",
+]
+runtime-benchmarks = [
+	"frame-benchmarking",
+	"frame-system-benchmarking",
+	"frame-system/runtime-benchmarks",
+	"pallet-evm/runtime-benchmarks",
 ]

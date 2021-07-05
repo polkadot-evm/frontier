@@ -56,6 +56,10 @@
 mod tests;
 pub mod runner;
 
+#[cfg(any(test, feature = "runtime-benchmarks"))]
+pub mod benchmarks;
+mod mock;
+
 pub use crate::runner::Runner;
 pub use fp_evm::{
 	Account, Log, Vicinity, ExecutionInfo, CallInfo, CreateInfo, Precompile,

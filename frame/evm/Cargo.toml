@@ -23,6 +23,7 @@ sp-core = { version = "3.0.0", default-features = false, git = "https://github.c
 sp-runtime = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sp-std = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 sp-io = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+frame-benchmarking = { version = "3.0.0", git = "https://github.com/paritytech/substrate", branch = "frontier", default-features = false, optional = true }
 fp-evm = { version = "2.0.0", default-features = false, path = "../../primitives/evm" }
 primitive-types = { version = "0.9.0", default-features = false, features = ["rlp", "byteorder"] }
 rlp = { version = "0.5", default-features = false }
@@ -31,10 +32,7 @@ evm-runtime = { version = "0.27.0", default-features = false }
 evm-gasometer = { version = "0.27.0", default-features = false }
 sha3 = { version = "0.8", default-features = false }
 log = { version = "0.4", default-features = false }
-
-[dev-dependencies]
-sp-consensus-aura = { version = "0.9.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-pallet-aura = { version = "3.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
+hex = { version = "0.4", default-features = false }
 
 [features]
 default = ["std"]
@@ -47,6 +45,7 @@ std = [
 	"frame-system/std",
 	"pallet-balances/std",
 	"sp-io/std",
+	"frame-benchmarking/std",
 	"sp-std/std",
 	"fp-evm/std",
 	"sha3/std",
@@ -58,4 +57,8 @@ std = [
 	"evm-gasometer/std",
 	"pallet-timestamp/std",
 	"log/std",
+	"hex/std",
+]
+runtime-benchmarks = [
+	"frame-benchmarking",
 ]
