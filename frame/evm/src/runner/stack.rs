@@ -370,7 +370,7 @@ impl<'vicinity, 'config, T: Config> BackendT for SubstrateStackState<'vicinity, 
 	}
 
 	fn block_gas_limit(&self) -> U256 {
-		U256::zero()
+		T::BlockGasLimit::get()
 	}
 
 	fn chain_id(&self) -> U256 {
