@@ -484,11 +484,6 @@
 <span id="481">481</span>
 <span id="482">482</span>
 <span id="483">483</span>
-<span id="484">484</span>
-<span id="485">485</span>
-<span id="486">486</span>
-<span id="487">487</span>
-<span id="488">488</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
@@ -736,12 +731,7 @@
 
 			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">builder</span> <span class="op">=</span> <span class="ident">ValidTransactionBuilder::default</span>()
 				.<span class="ident">and_provides</span>((<span class="ident">origin</span>, <span class="ident">transaction</span>.<span class="ident">nonce</span>))
-				.<span class="ident">priority</span>(<span class="kw">if</span> <span class="ident">min_gas_price</span> <span class="op">=</span><span class="op">=</span> <span class="ident">U256::zero</span>() {
-						<span class="number">0</span>
-					} <span class="kw">else</span> {
-						<span class="kw">let</span> <span class="ident">target_gas</span> <span class="op">=</span> (<span class="ident">transaction</span>.<span class="ident">gas_limit</span> <span class="op">*</span> <span class="ident">transaction</span>.<span class="ident">gas_price</span>) <span class="op">/</span> <span class="ident">min_gas_price</span>;
-						<span class="ident">T::GasWeightMapping::gas_to_weight</span>(<span class="ident">target_gas</span>.<span class="ident">unique_saturated_into</span>())
-				});
+				.<span class="ident">priority</span>(<span class="ident">transaction</span>.<span class="ident">gas_price</span>.<span class="ident">unique_saturated_into</span>());
 
 			<span class="kw">if</span> <span class="ident">transaction</span>.<span class="ident">nonce</span> <span class="op">&gt;</span> <span class="ident">account_data</span>.<span class="ident">nonce</span> {
 				<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">prev_nonce</span>) <span class="op">=</span> <span class="ident">transaction</span>.<span class="ident">nonce</span>.<span class="ident">checked_sub</span>(<span class="number">1</span>.<span class="ident">into</span>()) {
