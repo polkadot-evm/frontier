@@ -78,6 +78,15 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 		);
 	});
 
+	it("should get correct environmental block gaslimit", async function () {
+		const contract = new context.web3.eth.Contract(TEST_CONTRACT_ABI, FIRST_CONTRACT_ADDRESS, {
+			from: GENESIS_ACCOUNT,
+			gasPrice: "0x01",
+		});
+		// Max u32
+		expect(await contract.methods.gasLimit().call()).to.eq('4294967295');
+	});
+
 	// Requires error handling
 	it.skip("should fail for missing parameters", async function () {
 		const contract = new context.web3.eth.Contract([{ ...TEST_CONTRACT_ABI[0], inputs: [] }], FIRST_CONTRACT_ADDRESS, {
