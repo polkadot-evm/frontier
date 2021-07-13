@@ -189,14 +189,6 @@ decl_module! {
 	}
 }
 
-/// Returns the Ethereum block hash by number.
-pub struct EthereumBlockHashMapping;
-impl BlockHashMapping for EthereumBlockHashMapping {
-	fn block_hash(number: u32) -> H256 {
-		BlockHash::get(U256::from(number))
-	}
-}
-
 #[repr(u8)]
 enum TransactionValidationError {
 	#[allow(dead_code)]
@@ -479,5 +471,12 @@ impl<T: Config> Module<T> {
 				Ok((None, Some(res.value), CallOrCreateInfo::Create(res)))
 			},
 		}
+	}
+}
+
+/// Returns the Ethereum block hash by number.
+impl<T: Config> BlockHashMapping for Module<T> {
+	fn block_hash(number: u32) -> H256 {
+		BlockHash::get(U256::from(number))
 	}
 }
