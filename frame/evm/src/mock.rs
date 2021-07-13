@@ -18,7 +18,7 @@
 //! Test mock for unit tests and benchmarking
 use sp_std::prelude::*;
 use crate::{Config, EnsureAddressNever, EnsureAddressRoot,
-	FeeCalculator, Event, IdentityAddressMapping};
+	FeeCalculator, Event, IdentityAddressMapping, BlockHashMapping};
 use frame_support::{
 	impl_outer_origin, parameter_types, ConsensusEngineId,
 	traits::FindAuthor
@@ -118,6 +118,14 @@ impl FindAuthor<H160> for FindAuthorTruncated {
 	}
 }
 
+/// Returns the Substrate block hash by number.
+pub struct SubstrateBlockHashMapping<T>(sp_std::marker::PhantomData<T>);
+impl<T: Config> BlockHashMapping for SubstrateBlockHashMapping<T> {
+	fn block_hash(number: u32) -> H256 {
+		let number = T::BlockNumber::from(number);
+		H256::from_slice(frame_system::Module::<T>::block_hash(number).as_ref())
+	}
+}
 
 type System = frame_system::Module<Test>;
 type Balances = pallet_balances::Module<Test>;
@@ -138,7 +146,7 @@ impl Config for Test {
 	type ChainId = ();
 	type BlockGasLimit = ();
 	type OnChargeTransaction = ();
-	type BlockHashMapping = crate::SubstrateBlockHashMapping<Self>;
+	type BlockHashMapping = SubstrateBlockHashMapping<Self>;
 	type FindAuthor = FindAuthorTruncated;
 }
 
