@@ -1629,13 +1629,17 @@ where
 		// When spawning the task, make sure we map genesis if needed.
 		if let Ok(None) = client.get_aux(PALLET_ETHEREUM_SCHEMA_CACHE) {
 			let mut cache: Vec<(EthereumStorageSchema, H256)> = Vec::new();
-			cache.push((EthereumStorageSchema::V1, client.info().best_hash));
-			let _ = client.insert_aux(
-				&[(PALLET_ETHEREUM_SCHEMA_CACHE, &cache.encode()[..])],
-				&[]
-			).map_err(|err| {
-				warn!("Error AuxStore insert for genesis: {:?}", err);
-			});
+			if let Ok(Some(header)) = client.header(BlockId::Number(Zero::zero())) {
+				cache.push((EthereumStorageSchema::V1, header.hash()));
+				let _ = client.insert_aux(
+					&[(PALLET_ETHEREUM_SCHEMA_CACHE, &cache.encode()[..])],
+					&[]
+				).map_err(|err| {
+					warn!("Error AuxStore insert for genesis: {:?}", err);
+				});
+			} else {
+				warn!("Error genesis header unreachable");
+			}
 		}
 
 		// Subscribe to changes for the pallet-ethereum Schema.
