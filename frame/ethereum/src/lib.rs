@@ -135,6 +135,8 @@ decl_error! {
 		InvalidSignature,
 		/// Pre-log is present, therefore transact is not allowed.
 		PreLogExists,
+		/// The transaction execute failed
+		ExecutionFailed
 	}
 }
 
@@ -399,7 +401,7 @@ impl<T: Config> Module<T> {
 		};
 
 		let receipt = ethereum::Receipt {
-			state_root: match reason {
+			state_root: match reason.clone() {
 				ExitReason::Succeed(_) => H256::from_low_u64_be(1),
 				ExitReason::Error(_) => H256::from_low_u64_le(0),
 				ExitReason::Revert(_) => H256::from_low_u64_le(0),
@@ -412,11 +414,15 @@ impl<T: Config> Module<T> {
 
 		Pending::append((transaction, status, receipt));
 
-		Self::deposit_event(Event::Executed(source, contract_address.unwrap_or_default(), transaction_hash, reason));
-		Ok(PostDispatchInfo {
-			actual_weight: Some(T::GasWeightMapping::gas_to_weight(used_gas.unique_saturated_into())),
-			pays_fee: Pays::No,
-		}).into()
+		Self::deposit_event(Event::Executed(source, contract_address.unwrap_or_default(), transaction_hash, reason.clone()));
+		match reason {
+			ExitReason::Succeed(_) => Ok(PostDispatchInfo {
+				actual_weight: Some(T::GasWeightMapping::gas_to_weight(used_gas.unique_saturated_into())),
+				pays_fee: Pays::No,
+			}),
+			_ => Err(Error::<T>::ExecutionFailed.into()),
+		}
+
 	}
 
 	/// Get the transaction status with given index.
