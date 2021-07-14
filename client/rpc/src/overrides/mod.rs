@@ -30,6 +30,9 @@ pub use fc_rpc_core::{EthApiServer, NetApiServer};
 pub use schema_v1_override::SchemaV1Override;
 use pallet_ethereum::EthereumStorageSchema;
 
+/// Cached version of pallet Ethereum's storage schema is stored under this key in the AuxStore.
+pub const PALLET_ETHEREUM_SCHEMA_CACHE: &'static [u8] = b":ethereum_schema_cache";
+
 pub struct OverrideHandle<Block: BlockT> {
 	pub schemas: BTreeMap<EthereumStorageSchema, Box<dyn StorageOverride<Block> + Send + Sync>>,
 	pub fallback: Box<dyn StorageOverride<Block> + Send + Sync>
