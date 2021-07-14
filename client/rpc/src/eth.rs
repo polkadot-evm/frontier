@@ -253,6 +253,7 @@ fn filter_range_logs<B: BlockT, C, BE>(
 		let schema_cache: Vec<(EthereumStorageSchema, H256)> = Decode::decode(
 			&mut &aux_data[..]
 		).unwrap();
+		// TODO order might not be guaranteed. Make sure `local_cache` is sorted asc.
 		for (schema, hash) in schema_cache {
 			if let Ok(Some(header)) = client.header(BlockId::Hash(hash)) {
 				let number = *header.number();
