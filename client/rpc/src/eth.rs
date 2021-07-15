@@ -1666,13 +1666,20 @@ where
 							if let Ok(Some(old_cache)) = client.get_aux(PALLET_ETHEREUM_SCHEMA_CACHE) {
 								let mut new_cache: Vec<(EthereumStorageSchema, H256)> =
 									Decode::decode(&mut &old_cache[..]).unwrap();
-								new_cache.push((new_schema, hash));
-								let _ = client.insert_aux(
-									&[(PALLET_ETHEREUM_SCHEMA_CACHE, &new_cache.encode()[..])],
-									&[]
-								).map_err(|err| {
-									warn!("Error AuxStore insert on storage change: {:?}", err);
-								});
+								match &new_cache[..] {
+									[.., (schema, _)] if *schema == new_schema => {
+										warn!("Schema version already in AuxStore, ignoring: {:?}", new_schema);
+									}
+									_ => {
+										new_cache.push((new_schema, hash));
+										let _ = client.insert_aux(
+											&[(PALLET_ETHEREUM_SCHEMA_CACHE, &new_cache.encode()[..])],
+											&[]
+										).map_err(|err| {
+											warn!("Error AuxStore insert on storage change: {:?}", err);
+										});
+									}
+								}
 							} else {
 								warn!("Error AuxStore schema cache is corrupted");
 							}
