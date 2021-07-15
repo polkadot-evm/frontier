@@ -246,45 +246,45 @@ fn filter_range_logs<B: BlockT, C, BE>(
 	};
 	let bloom_filter = FilteredParams::bloom_filter(&filter.address, &topics_input);
 
-	// Get schema cache. A single AuxStore read before the block range iteration. 
-	// This prevents having to do an extra DB read per block range iteration to get the actual schema.
-	let mut local_cache: Vec<(NumberFor<B>, EthereumStorageSchema)> = Vec::new();
+	// Get schema cache. A single AuxStore read before the block range iteration.
+	// This prevents having to do an extra DB read per block range iteration to getthe actual schema.
+	let mut local_cache: BTreeMap<NumberFor<B>, EthereumStorageSchema> = BTreeMap::new();
 	if let Ok(Some(aux_data)) = client.get_aux(PALLET_ETHEREUM_SCHEMA_CACHE) {
 		let schema_cache: Vec<(EthereumStorageSchema, H256)> = Decode::decode(
 			&mut &aux_data[..]
 		).unwrap();
-		// TODO order might not be guaranteed. Make sure `local_cache` is sorted asc.
 		for (schema, hash) in schema_cache {
 			if let Ok(Some(header)) = client.header(BlockId::Hash(hash)) {
 				let number = *header.number();
-				local_cache.push((number, schema));
+				local_cache.insert(number, schema);
 			}
 		}
 	}
-	let mut default_schema: Option<EthereumStorageSchema> = None;
-	if local_cache.len() == 1 {
+	let cache_keys: Vec<NumberFor<B>> = local_cache.keys().cloned().collect();
+	let mut default_schema: Option<&EthereumStorageSchema> = None;
+	if cache_keys.len() == 1 {
 		// There is only one schema and that's the one we use.
-		default_schema = Some(local_cache[0].1);
+		default_schema = local_cache.get(&cache_keys[0]);
 	}
 
 	while current_number >= from {
 		let id = BlockId::Number(current_number);
 		let schema = match default_schema {
 			// If there is a single schema, we just assign.
-			Some(default_schema) => default_schema,
+			Some(default_schema) => *default_schema,
 			_ => {
 				// If there are multiple schemas, we iterate over the - hopefully short - list
-				// and assign the one belonging to the current_number.
+				// of keys and assign the one belonging to the current_number.
 				// Because there are more than 1 schema, and current_number cannot be < 0,
 				// (i - 1) will always be >= 0.
-				let mut default_schema: Option<EthereumStorageSchema> = None;
-				for (i, (number, _)) in local_cache.iter().enumerate() {
-					if current_number < *number {
-						default_schema = Some(local_cache[i - 1].1)
+				let mut default_schema: Option<&EthereumStorageSchema> = None;
+				for (i, k) in cache_keys.iter().enumerate() {
+					if &current_number < k {
+						default_schema = local_cache.get(&cache_keys[i - 1]);
 					}
 				}
 				match default_schema {
-					Some(schema) => schema,
+					Some(schema) => *schema,
 					// Fallback to DB read. This will happen i.e. when there is no cache
 					// task configured at service level.
 					_ => frontier_backend_client::onchain_storage_schema::<B, C, BE>(client, id)
@@ -1650,6 +1650,7 @@ where
 			while let Some((hash, changes)) = stream.next().await {
 				// Make sure only block hashes marked as best are referencing cache checkpoints.
 				if hash == client.info().best_hash {
+					// Just map the change set to the actual data.
 					let storage: Vec<Option<StorageData>> = changes.iter()
 						.filter_map(|(o_sk, _k, v)| {
 							if o_sk.is_none() {
@@ -1658,18 +1659,23 @@ where
 						}).collect();
 					for change in storage {
 						if let Some(data) = change {
+							// Decode the wrapped blob which's type is known.
+							let new_schema: EthereumStorageSchema = Decode::decode(&mut &data.0[..])
+								.unwrap();
 							// Cache new entry and overwrite the AuxStore value.
-							let new_schema: EthereumStorageSchema = Decode::decode(&mut &data.0[..]).unwrap();
-							let old_cache = client.get_aux(PALLET_ETHEREUM_SCHEMA_CACHE).unwrap().unwrap();
-							let mut new_cache: Vec<(EthereumStorageSchema, H256)> = 
-								Decode::decode(&mut &old_cache[..]).unwrap();
-							new_cache.push((new_schema, hash));
-							let _ = client.insert_aux(
-								&[(PALLET_ETHEREUM_SCHEMA_CACHE, &new_cache.encode()[..])],
-								&[]
-							).map_err(|err| {
-								warn!("Error AuxStore insert on storage change: {:?}", err);
-							});
+							if let Ok(Some(old_cache)) = client.get_aux(PALLET_ETHEREUM_SCHEMA_CACHE) {
+								let mut new_cache: Vec<(EthereumStorageSchema, H256)> =
+									Decode::decode(&mut &old_cache[..]).unwrap();
+								new_cache.push((new_schema, hash));
+								let _ = client.insert_aux(
+									&[(PALLET_ETHEREUM_SCHEMA_CACHE, &new_cache.encode()[..])],
+									&[]
+								).map_err(|err| {
+									warn!("Error AuxStore insert on storage change: {:?}", err);
+								});
+							} else {
+								warn!("Error AuxStore schema cache is corrupted");
+							}
 						}
 					}
 				}
