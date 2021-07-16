@@ -291,8 +291,7 @@ impl<T: Config> Module<T> {
 		let partial_header = ethereum::PartialHeader {
 			parent_hash: Self::current_block_hash().unwrap_or_default(),
 			beneficiary: pallet_evm::Module::<T>::find_author(),
-			// TODO: figure out if there's better way to get a sort-of-valid state root.
-			state_root: H256::default(),
+			state_root: T::StateRoot::get(),
 			receipts_root: H256::from_slice(
 				Keccak256::digest(&rlp::encode_list(&receipts)[..]).as_slice(),
 			), // TODO: check receipts hash.
@@ -308,8 +307,7 @@ impl<T: Config> Module<T> {
 			mix_hash: H256::default(),
 			nonce: H64::default(),
 		};
-		let mut block = ethereum::Block::new(partial_header, transactions.clone(), ommers);
-		block.header.state_root = T::StateRoot::get();
+		let block = ethereum::Block::new(partial_header, transactions.clone(), ommers);
 
 		CurrentBlock::put(block.clone());
 		CurrentReceipts::put(receipts.clone());
