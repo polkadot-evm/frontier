@@ -21,7 +21,9 @@ use super::*;
 use crate::mock::*;
 
 use std::{str::FromStr, collections::BTreeMap};
-use frame_support::assert_ok;
+use frame_support::{
+	assert_ok, traits::{WithdrawReasons, LockIdentifier, LockableCurrency},
+};
 
 type Balances = pallet_balances::Module<Test>;
 type EVM = Module<Test>;
@@ -111,5 +113,31 @@ fn find_author() {
 	new_test_ext().execute_with(|| {
 		let author = EVM::find_author();
 		assert_eq!(author, H160::from_str("1234500000000000000000000000000000000000").unwrap());
+	});
+}
+
+#[test]
+fn reducible_balance() {
+	new_test_ext().execute_with(|| {
+		let evm_addr = H160::from_str("1000000000000000000000000000000000000001").unwrap();
+		let account_id = <Test as Config>::AddressMapping::into_account_id(evm_addr);
+		let existential = ExistentialDeposit::get();
+
+		// Genesis Balance.
+		let genesis_balance = EVM::account_basic(&evm_addr).balance;
+
+		// Lock identifier.
+		let lock_id: LockIdentifier = *b"te/stlok";
+		// Reserve some funds.
+		let to_lock = 1000;
+		Balances::set_lock(
+			lock_id,
+			&account_id,
+			to_lock,
+			WithdrawReasons::RESERVE
+		);
+		// Reducible is, as currently configured in `account_basic`, (balance - lock + existential).
+		let reducible_balance = EVM::account_basic(&evm_addr).balance;
+		assert_eq!(reducible_balance, (genesis_balance - to_lock + existential));
 	});
 }
