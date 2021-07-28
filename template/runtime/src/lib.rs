@@ -322,6 +322,25 @@ impl pallet_dynamic_fee::Config for Runtime {
 	type MinGasPriceBoundDivisor = BoundDivision;
 }
 
+frame_support::parameter_types! {
+	pub const Modifier: u32 = 1250; // 12.5%
+	pub const Threshold: (u8, u8) = (0, 100);
+}
+
+pub struct BaseFeeThreshold;
+impl pallet_base_fee::BaseFeeThreshold for BaseFeeThreshold
+{
+	fn lower() -> Permill { Permill::zero() }
+	fn upper() -> Permill { Permill::one() }
+}
+
+// use pallet_base_fee::pallet::BaseFeeThreshold;
+impl pallet_base_fee::Config for Runtime {
+	type Event = Event;
+	type Threshold = BaseFeeThreshold;
+	type Modifier = Modifier;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -340,6 +359,7 @@ construct_runtime!(
 		Ethereum: pallet_ethereum::{Module, Call, Storage, Event, Config, ValidateUnsigned},
 		EVM: pallet_evm::{Module, Config, Call, Storage, Event<T>},
 		DynamicFee: pallet_dynamic_fee::{Module, Call, Storage, Config, Inherent},
+		BaseFee: pallet_base_fee::{Module, Call, Storage, Config<T>, Event},
 	}
 );
 
