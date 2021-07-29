@@ -24,11 +24,11 @@ jobs:
       env:
         WASM_BUILD_TOOLCHAIN: nightly-2020-08-29
     - name: Build
-      run: cargo build --verbose --all
+      run: cargo build --locked --verbose --all
     - name: Run tests
-      run: cargo test --verbose --all
+      run: cargo test --locked --verbose --all
     - name: Build manual seal client
-      run: cd template/node && cargo build --verbose --no-default-features --features manual-seal
+      run: cd template/node && cargo build --locked --verbose --no-default-features --features manual-seal
     - name: Use Node.js 10
       uses: actions/setup-node@v1
       with:
