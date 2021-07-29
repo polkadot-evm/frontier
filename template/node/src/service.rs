@@ -7,7 +7,7 @@ use sc_client_api::{ExecutorProvider, RemoteBackend, BlockchainEvents};
 #[cfg(feature = "manual-seal")]
 use sc_consensus_manual_seal::{self as manual_seal};
 use fc_consensus::FrontierBlockImport;
-use fc_mapping_sync::MappingSyncWorker;
+use fc_mapping_sync::{MappingSyncWorker, SyncStrategy};
 use frontier_template_runtime::{self, opaque::Block, RuntimeApi, SLOT_DURATION};
 use sc_service::{error::Error as ServiceError, Configuration, TaskManager, BasePath};
 use sp_inherents::{InherentDataProviders, ProvideInherentData, InherentIdentifier, InherentData};
@@ -321,6 +321,7 @@ pub fn new_full(
 			client.clone(),
 			backend.clone(),
 			frontier_backend.clone(),
+			SyncStrategy::Normal,
 		).for_each(|()| futures::future::ready(()))
 	);
 

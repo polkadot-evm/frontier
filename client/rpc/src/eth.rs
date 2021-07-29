@@ -1584,27 +1584,29 @@ where
 		let mut notification_st = client.import_notification_stream();
 
 		while let Some(notification) = notification_st.next().await {
-			if let Ok(mut pending_transactions) = pending_transactions.lock() {
-				// As pending transactions have a finite lifespan anyway
-				// we can ignore MultiplePostRuntimeLogs error checks.
-				let log = fp_consensus::find_log(&notification.header.digest()).ok();
-				let post_hashes = log.map(|log| log.into_hashes());
+			if notification.is_new_best {
+				if let Ok(mut pending_transactions) = pending_transactions.lock() {
+					// As pending transactions have a finite lifespan anyway
+					// we can ignore MultiplePostRuntimeLogs error checks.
+					let log = fp_consensus::find_log(&notification.header.digest()).ok();
+					let post_hashes = log.map(|log| log.into_hashes());
 
-				if let Some(post_hashes) = post_hashes {
-					// Retain all pending transactions that were not
-					// processed in the current block.
-					pending_transactions.retain(|&k, _| !post_hashes.transaction_hashes.contains(&k));
+					if let Some(post_hashes) = post_hashes {
+						// Retain all pending transactions that were not
+						// processed in the current block.
+						pending_transactions.retain(|&k, _| !post_hashes.transaction_hashes.contains(&k));
+					}
+
+					let imported_number: u64 = UniqueSaturatedInto::<u64>::unique_saturated_into(
+						*notification.header.number()
+					);
+
+					pending_transactions.retain(|_, v| {
+						// Drop all the transactions that exceeded the given lifespan.
+						let lifespan_limit = v.at_block + retain_threshold;
+						lifespan_limit > imported_number
+					});
 				}
-
-				let imported_number: u64 = UniqueSaturatedInto::<u64>::unique_saturated_into(
-					*notification.header.number()
-				);
-
-				pending_transactions.retain(|_, v| {
-					// Drop all the transactions that exceeded the given lifespan.
-					let lifespan_limit = v.at_block + retain_threshold;
-					lifespan_limit > imported_number
-				});
 			}
 		}
 	}
