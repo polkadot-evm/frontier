@@ -288,14 +288,14 @@ impl<T: Config> Module<T> {
 		}
 
 		let ommers = Vec::<ethereum::Header>::new();
+		let receipts_root = ethereum::util::ordered_trie_root(
+			receipts.iter().map(|r| rlp::encode(r))
+		);
 		let partial_header = ethereum::PartialHeader {
 			parent_hash: Self::current_block_hash().unwrap_or_default(),
 			beneficiary: pallet_evm::Module::<T>::find_author(),
-			// TODO: figure out if there's better way to get a sort-of-valid state root.
-			state_root: H256::default(),
-			receipts_root: H256::from_slice(
-				Keccak256::digest(&rlp::encode_list(&receipts)[..]).as_slice(),
-			), // TODO: check receipts hash.
+			state_root: T::StateRoot::get(),
+			receipts_root,
 			logs_bloom,
 			difficulty: U256::zero(),
 			number: block_number,
@@ -308,8 +308,7 @@ impl<T: Config> Module<T> {
 			mix_hash: H256::default(),
 			nonce: H64::default(),
 		};
-		let mut block = ethereum::Block::new(partial_header, transactions.clone(), ommers);
-		block.header.state_root = T::StateRoot::get();
+		let block = ethereum::Block::new(partial_header, transactions.clone(), ommers);
 
 		CurrentBlock::put(block.clone());
 		CurrentReceipts::put(receipts.clone());
