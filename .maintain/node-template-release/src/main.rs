@@ -88,7 +88,7 @@ fn parse_cargo_toml(file: &Path) -> CargoToml {
     toml::from_str(&content).expect("Cargo.toml is a valid toml file")
 }
 
-/// Replaces all substrate path dependencies with a git dependency.
+/// Replaces all frontier path dependencies with a git dependency.
 fn replace_path_dependencies_with_git(
     cargo_toml_path: &Path,
     commit_id: &str,
@@ -273,6 +273,6 @@ fn main() {
         Compression::default(),
     );
     let mut tar = tar::Builder::new(output);
-    tar.append_dir_all("substrate-node-template", node_template_path)
-        .expect("Writes substrate-node-template archive");
+    tar.append_dir_all("frontier-node-template", node_template_path)
+        .expect("Writes frontier-node-template archive");
 }
