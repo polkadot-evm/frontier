@@ -25,7 +25,7 @@
 
 use frame_support::{
 	decl_module, decl_storage, decl_error, decl_event,
-	traits::Get, traits::FindAuthor, weights::Weight,
+	traits::Get, weights::{Pays, PostDispatchInfo, Weight},
 	dispatch::DispatchResultWithPostInfo,
 };
 use sp_std::prelude::*;
@@ -36,11 +36,11 @@ use sp_runtime::{
 	transaction_validity::{
 		TransactionValidity, TransactionSource, InvalidTransaction, ValidTransactionBuilder,
 	},
-	generic::DigestItem, traits::UniqueSaturatedInto, DispatchError,
+	generic::DigestItem, traits::{Saturating, UniqueSaturatedInto, One, Zero}, DispatchError,
 };
 use evm::ExitReason;
 use fp_evm::CallOrCreateInfo;
-use pallet_evm::{Runner, GasWeightMapping, FeeCalculator};
+use pallet_evm::{Runner, GasWeightMapping, FeeCalculator, BlockHashMapping};
 use sha3::{Digest, Keccak256};
 use codec::{Encode, Decode};
 use fp_consensus::{FRONTIER_ENGINE_ID, PostLog, PreLog};
@@ -90,8 +90,6 @@ impl Get<H256> for IntermediateStateRoot {
 pub trait Config: frame_system::Config<Hash=H256> + pallet_balances::Config + pallet_timestamp::Config + pallet_evm::Config {
 	/// The overarching event type.
 	type Event: From<Event> + Into<<Self as frame_system::Config>::Event>;
-	/// Find author for Ethereum.
-	type FindAuthor: FindAuthor<H160>;
 	/// How Ethereum state root is calculated.
 	type StateRoot: Get<H256>;
 }
@@ -107,6 +105,8 @@ decl_storage! {
 		CurrentReceipts: Option<Vec<ethereum::Receipt>>;
 		/// The current transaction statuses.
 		CurrentTransactionStatuses: Option<Vec<TransactionStatus>>;
+		// Mapping for block number and hashes.
+		BlockHash: map hasher(twox_64_concat) U256 => H256;
 	}
 	add_extra_genesis {
 		build(|_config: &GenesisConfig| {
@@ -161,9 +161,18 @@ decl_module! {
 					)
 				),
 			);
+			// move block hash pruning window by one block
+			let block_hash_count = T::BlockHashCount::get();
+			let to_remove = n.saturating_sub(block_hash_count).saturating_sub(One::one());
+			// keep genesis hash
+			if !to_remove.is_zero() {
+				BlockHash::remove(U256::from(
+					UniqueSaturatedInto::<u32>::unique_saturated_into(to_remove)
+				));
+			}
 		}
 
-		fn on_initialize(n: T::BlockNumber) -> Weight {
+		fn on_initialize(_n: T::BlockNumber) -> Weight {
 			Pending::kill();
 
 			if let Ok(log) = fp_consensus::find_pre_log(&frame_system::Module::<T>::digest()) {
@@ -177,6 +186,14 @@ decl_module! {
 
 			0
 		}
+	}
+}
+
+/// Returns the Ethereum block hash by number.
+pub struct EthereumBlockHashMapping;
+impl BlockHashMapping for EthereumBlockHashMapping {
+	fn block_hash(number: u32) -> H256 {
+		BlockHash::get(U256::from(number))
 	}
 }
 
@@ -227,12 +244,7 @@ impl<T: Config> frame_support::unsigned::ValidateUnsigned for Module<T> {
 
 			let mut builder = ValidTransactionBuilder::default()
 				.and_provides((origin, transaction.nonce))
-				.priority(if min_gas_price == U256::zero() {
-						0
-					} else {
-						let target_gas = (transaction.gas_limit * transaction.gas_price) / min_gas_price;
-						T::GasWeightMapping::gas_to_weight(target_gas.unique_saturated_into())
-				});
+				.priority(transaction.gas_price.unique_saturated_into());
 
 			if transaction.nonce > account_data.nonce {
 				if let Some(prev_nonce) = transaction.nonce.checked_sub(1.into()) {
@@ -276,14 +288,14 @@ impl<T: Config> Module<T> {
 		}
 
 		let ommers = Vec::<ethereum::Header>::new();
+		let receipts_root = ethereum::util::ordered_trie_root(
+			receipts.iter().map(|r| rlp::encode(r))
+		);
 		let partial_header = ethereum::PartialHeader {
 			parent_hash: Self::current_block_hash().unwrap_or_default(),
-			beneficiary: <Module<T>>::find_author(),
-			// TODO: figure out if there's better way to get a sort-of-valid state root.
-			state_root: H256::default(),
-			receipts_root: H256::from_slice(
-				Keccak256::digest(&rlp::encode_list(&receipts)[..]).as_slice(),
-			), // TODO: check receipts hash.
+			beneficiary: pallet_evm::Module::<T>::find_author(),
+			state_root: T::StateRoot::get(),
+			receipts_root,
 			logs_bloom,
 			difficulty: U256::zero(),
 			number: block_number,
@@ -296,12 +308,12 @@ impl<T: Config> Module<T> {
 			mix_hash: H256::default(),
 			nonce: H64::default(),
 		};
-		let mut block = ethereum::Block::new(partial_header, transactions.clone(), ommers);
-		block.header.state_root = T::StateRoot::get();
+		let block = ethereum::Block::new(partial_header, transactions.clone(), ommers);
 
 		CurrentBlock::put(block.clone());
 		CurrentReceipts::put(receipts.clone());
 		CurrentTransactionStatuses::put(statuses.clone());
+		BlockHash::insert(block_number, block.header.hash());
 
 		if post_log {
 			let digest = DigestItem::<T::Hash>::Consensus(
@@ -400,15 +412,10 @@ impl<T: Config> Module<T> {
 		Pending::append((transaction, status, receipt));
 
 		Self::deposit_event(Event::Executed(source, contract_address.unwrap_or_default(), transaction_hash, reason));
-		Ok(Some(T::GasWeightMapping::gas_to_weight(used_gas.unique_saturated_into())).into())
-	}
-
-	/// Get the author using the FindAuthor trait.
-	pub fn find_author() -> H160 {
-		let digest = <frame_system::Module<T>>::digest();
-		let pre_runtime_digests = digest.logs.iter().filter_map(|d| d.as_pre_runtime());
-
-		T::FindAuthor::find_author(pre_runtime_digests).unwrap_or_default()
+		Ok(PostDispatchInfo {
+			actual_weight: Some(T::GasWeightMapping::gas_to_weight(used_gas.unique_saturated_into())),
+			pays_fee: Pays::No,
+		}).into()
 	}
 
 	/// Get the transaction status with given index.

@@ -18,125 +18,13 @@
 #![cfg(test)]
 
 use super::*;
+use crate::mock::*;
 
 use std::{str::FromStr, collections::BTreeMap};
-use frame_support::{
-	assert_ok, impl_outer_origin, parameter_types, impl_outer_dispatch,
-	traits::GenesisBuild,
-};
-use sp_core::{Blake2Hasher, H256};
-use sp_runtime::{
-	testing::Header,
-	traits::{BlakeTwo256, IdentityLookup},
-};
+use frame_support::assert_ok;
 
-impl_outer_origin! {
-	pub enum Origin for Test where system = frame_system {}
-}
-
-impl_outer_dispatch! {
-	pub enum OuterCall for Test where origin: Origin {
-		self::EVM,
-	}
-}
-
-pub struct PalletInfo;
-
-impl frame_support::traits::PalletInfo for PalletInfo {
-	fn index<P: 'static>() -> Option<usize> {
-		return Some(0)
-	}
-
-	fn name<P: 'static>() -> Option<&'static str> {
-		return Some("TestName")
-	}
-}
-
-#[derive(Clone, Eq, PartialEq)]
-pub struct Test;
-parameter_types! {
-	pub const BlockHashCount: u64 = 250;
-	pub BlockWeights: frame_system::limits::BlockWeights =
-		frame_system::limits::BlockWeights::simple_max(1024);
-}
-impl frame_system::Config for Test {
-	type BaseCallFilter = ();
-	type BlockWeights = ();
-	type BlockLength = ();
-	type DbWeight = ();
-	type Origin = Origin;
-	type Index = u64;
-	type BlockNumber = u64;
-	type Hash = H256;
-	type Call = OuterCall;
-	type Hashing = BlakeTwo256;
-	type AccountId = AccountId32;
-	type Lookup = IdentityLookup<Self::AccountId>;
-	type Header = Header;
-	type Event = ();
-	type BlockHashCount = BlockHashCount;
-	type Version = ();
-	type PalletInfo = PalletInfo;
-	type AccountData = pallet_balances::AccountData<u64>;
-	type OnNewAccount = ();
-	type OnKilledAccount = ();
-	type SystemWeightInfo = ();
-	type SS58Prefix = ();
-}
-
-parameter_types! {
-	pub const ExistentialDeposit: u64 = 1;
-}
-impl pallet_balances::Config for Test {
-	type MaxLocks = ();
-	type Balance = u64;
-	type DustRemoval = ();
-	type Event = ();
-	type ExistentialDeposit = ExistentialDeposit;
-	type AccountStore = System;
-	type WeightInfo = ();
-}
-
-parameter_types! {
-	pub const MinimumPeriod: u64 = 1000;
-}
-impl pallet_timestamp::Config for Test {
-	type Moment = u64;
-	type OnTimestampSet = ();
-	type MinimumPeriod = MinimumPeriod;
-	type WeightInfo = ();
-}
-
-/// Fixed gas price of `0`.
-pub struct FixedGasPrice;
-impl FeeCalculator for FixedGasPrice {
-	fn min_gas_price() -> U256 {
-		// Gas price is always one token per gas.
-		0.into()
-	}
-}
-
-impl Config for Test {
-	type FeeCalculator = FixedGasPrice;
-	type GasWeightMapping = ();
-
-	type CallOrigin = EnsureAddressRoot<Self::AccountId>;
-	type WithdrawOrigin = EnsureAddressNever<Self::AccountId>;
-
-	type AddressMapping = HashedAddressMapping<Blake2Hasher>;
-	type Currency = Balances;
-	type Runner = crate::runner::stack::Runner<Self>;
-
-	type Event = ();
-	type Precompiles = ();
-	type ChainId = ();
-	type BlockGasLimit = ();
-	type OnChargeTransaction = ();
-}
-
-type System = frame_system::Pallet<Test>;
-type Balances = pallet_balances::Pallet<Test>;
-type EVM = Pallet<Test>;
+type Balances = pallet_balances::Module<Test>;
+type EVM = Module<Test>;
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
@@ -166,7 +54,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	);
 
 	pallet_balances::GenesisConfig::<Test>::default().assimilate_storage(&mut t).unwrap();
-	<GenesisConfig as GenesisBuild<Test>>::assimilate_storage(&GenesisConfig { accounts }, &mut t).unwrap();
+	GenesisConfig { accounts }.assimilate_storage::<Test>(&mut t).unwrap();
 	t.into()
 }
 
@@ -215,5 +103,13 @@ fn fee_deduction() {
 		// Refund fees as 5 units
 		<<Test as Config>::OnChargeTransaction as OnChargeEVMTransaction<Test>>::correct_and_deposit_fee(&evm_addr, U256::from(5), imbalance).unwrap();
 		assert_eq!(Balances::free_balance(&substrate_addr), 95);
+	});
+}
+
+#[test]
+fn find_author() {
+	new_test_ext().execute_with(|| {
+		let author = EVM::find_author();
+		assert_eq!(author, H160::from_str("1234500000000000000000000000000000000000").unwrap());
 	});
 }
