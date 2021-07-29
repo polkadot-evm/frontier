@@ -702,12 +702,26 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 	}
 
 	fn send_raw_transaction(&self, bytes: Bytes) -> BoxFuture<H256> {
-		let transaction = match rlp::decode::<ethereum::Transaction>(&bytes.0[..]) {
-			Ok(transaction) => transaction,
-			Err(_) => return Box::new(
-				future::result(Err(internal_err("decode transaction failed")))
-			),
-		};
+
+		let slice = &bytes.0[..];
+		let transaction = if slice.len > 0 && slice.get(0) > 0x7f {
+			// Legacy transaction. Decode and wrap in envelope.
+			match rlp::decode::<ethereum::TransactionV0>(slice) {
+				Ok(transaction) => ethereum::Transaction::V0(transaction),
+				Err(_) => return Box::new(
+					future::result(Err(internal_err("decode transaction failed")))
+				),
+			}
+		} else {
+			// Typed Transaction.
+			match ethereum::Transaction::from_slice(slice) {
+				Ok(transaction) => transaction,
+				Err(_) => return Box::new(
+					future::result(Err(internal_err("decode transaction failed")))
+				),
+			}
+		}
+
 		let transaction_hash = H256::from_slice(
 			Keccak256::digest(&rlp::encode(&transaction)).as_slice()
 		);
