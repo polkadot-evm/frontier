@@ -806,36 +806,36 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 					.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
 					.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
 
-                error_on_execution_failure(&info.exit_reason, &[])?;
+				error_on_execution_failure(&info.exit_reason, &[])?;
 
-                Ok(Bytes(info.value[..].to_vec()))
-            }
-        }
-    }
+				Ok(Bytes(info.value[..].to_vec()))
+			}
+		}
+	}
 
-    fn estimate_gas(
-        &self,
-        request: CallRequest,
-        _: Option<BlockNumber>,
-    ) -> Result<U256> {
-        let gas_limit = {
-            // query current block's gas limit
+	fn estimate_gas(
+		&self,
+		request: CallRequest,
+		_: Option<BlockNumber>,
+	) -> Result<U256> {
+		let gas_limit = {
+			// query current block's gas limit
 			let id = BlockId::Hash(self.client.info().best_hash);
-            let schema =
-                frontier_backend_client::onchain_storage_schema::<B, C, BE>(&self.client, id);
-            let handler = self
-                .overrides
-                .schemas
-                .get(&schema)
-                .unwrap_or(&self.overrides.fallback);
+			let schema =
+				frontier_backend_client::onchain_storage_schema::<B, C, BE>(&self.client, id);
+			let handler = self
+				.overrides
+				.schemas
+				.get(&schema)
+				.unwrap_or(&self.overrides.fallback);
 
-            let block = handler.current_block(&id);
-            if let Some(block) = block {
-                block.header.gas_limit
-            } else {
-                return Err(internal_err("block unavailable, cannot query gas limit"));
-            }
-        };
+			let block = handler.current_block(&id);
+			if let Some(block) = block {
+				block.header.gas_limit
+			} else {
+				return Err(internal_err("block unavailable, cannot query gas limit"));
+			}
+		};
 
 		let calculate_gas_used = |request, gas_limit| -> Result<U256> {
 			let hash = self.client.info().best_hash;
@@ -851,7 +851,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 			} = request;
 
 			// Use request gas limit only if it less than gas_limit parameter
-            let gas_limit = core::cmp::min(gas.unwrap_or(gas_limit), gas_limit);
+			let gas_limit = core::cmp::min(gas.unwrap_or(gas_limit), gas_limit);
 
 			let data = data.map(|d| d.0).unwrap_or_default();
 
