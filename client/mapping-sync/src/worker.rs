@@ -31,6 +31,12 @@ use log::debug;
 
 const LIMIT: usize = 8;
 
+#[derive(PartialEq, Copy, Clone)]
+pub enum SyncStrategy {
+	Normal,
+	Parachain
+}
+
 pub struct MappingSyncWorker<Block: BlockT, C, B> {
 	import_notifications: ImportNotifications<Block>,
 	timeout: Duration,
@@ -41,6 +47,8 @@ pub struct MappingSyncWorker<Block: BlockT, C, B> {
 	frontier_backend: Arc<fc_db::Backend<Block>>,
 
 	have_next: bool,
+
+	strategy: SyncStrategy,
 }
 
 impl<Block: BlockT, C, B> MappingSyncWorker<Block, C, B> {
@@ -50,6 +58,7 @@ impl<Block: BlockT, C, B> MappingSyncWorker<Block, C, B> {
 		client: Arc<C>,
 		substrate_backend: Arc<B>,
 		frontier_backend: Arc<fc_db::Backend<Block>>,
+		strategy: SyncStrategy,
 	) -> Self {
 		Self {
 			import_notifications,
@@ -61,6 +70,8 @@ impl<Block: BlockT, C, B> MappingSyncWorker<Block, C, B> {
 			frontier_backend,
 
 			have_next: true,
+
+			strategy,
 		}
 	}
 }
@@ -107,6 +118,7 @@ impl<Block: BlockT, C, B> Stream for MappingSyncWorker<Block, C, B> where
 				self.substrate_backend.blockchain(),
 				self.frontier_backend.as_ref(),
 				LIMIT,
+				self.strategy,
 			) {
 				Ok(have_next) => {
 					self.have_next = have_next;
