@@ -125,6 +125,18 @@
 <span id="123">123</span>
 <span id="124">124</span>
 <span id="125">125</span>
+<span id="126">126</span>
+<span id="127">127</span>
+<span id="128">128</span>
+<span id="129">129</span>
+<span id="130">130</span>
+<span id="131">131</span>
+<span id="132">132</span>
+<span id="133">133</span>
+<span id="134">134</span>
+<span id="135">135</span>
+<span id="136">136</span>
+<span id="137">137</span>
 </pre><pre class="rust">
 <span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
@@ -159,6 +171,12 @@
 
 <span class="kw">const</span> <span class="ident">LIMIT</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">8</span>;
 
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">PartialEq</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>)]</span>
+<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">SyncStrategy</span> {
+	<span class="ident">Normal</span>,
+	<span class="ident">Parachain</span>
+}
+
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">MappingSyncWorker</span><span class="op">&lt;</span><span class="ident">Block</span>: <span class="ident">BlockT</span>, <span class="ident">C</span>, <span class="ident">B</span><span class="op">&gt;</span> {
 	<span class="ident">import_notifications</span>: <span class="ident">ImportNotifications</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>,
 	<span class="ident">timeout</span>: <span class="ident">Duration</span>,
@@ -169,6 +187,8 @@
 	<span class="ident">frontier_backend</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">fc_db::Backend</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 
 	<span class="ident">have_next</span>: <span class="ident">bool</span>,
+
+	<span class="ident">strategy</span>: <span class="ident">SyncStrategy</span>,
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">Block</span>: <span class="ident">BlockT</span>, <span class="ident">C</span>, <span class="ident">B</span><span class="op">&gt;</span> <span class="ident">MappingSyncWorker</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">C</span>, <span class="ident">B</span><span class="op">&gt;</span> {
@@ -178,6 +198,7 @@
 		<span class="ident">client</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
 		<span class="ident">substrate_backend</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span>,
 		<span class="ident">frontier_backend</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">fc_db::Backend</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+		<span class="ident">strategy</span>: <span class="ident">SyncStrategy</span>,
 	) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
 		<span class="self">Self</span> {
 			<span class="ident">import_notifications</span>,
@@ -189,6 +210,8 @@
 			<span class="ident">frontier_backend</span>,
 
 			<span class="ident">have_next</span>: <span class="bool-val">true</span>,
+
+			<span class="ident">strategy</span>,
 		}
 	}
 }
@@ -235,6 +258,7 @@
 				<span class="self">self</span>.<span class="ident">substrate_backend</span>.<span class="ident">blockchain</span>(),
 				<span class="self">self</span>.<span class="ident">frontier_backend</span>.<span class="ident">as_ref</span>(),
 				<span class="ident">LIMIT</span>,
+				<span class="self">self</span>.<span class="ident">strategy</span>,
 			) {
 				<span class="prelude-val">Ok</span>(<span class="ident">have_next</span>) <span class="op">=</span><span class="op">&gt;</span> {
 					<span class="self">self</span>.<span class="ident">have_next</span> <span class="op">=</span> <span class="ident">have_next</span>;
