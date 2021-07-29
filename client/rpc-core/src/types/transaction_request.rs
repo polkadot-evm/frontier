@@ -31,8 +31,15 @@ pub struct TransactionRequest {
 	pub from: Option<H160>,
 	/// Recipient
 	pub to: Option<H160>,
-	/// Gas Price
+	/// Gas Price, legacy.
+	#[serde(default)]
 	pub gas_price: Option<U256>,
+	/// Max BaseFeePerGas the user is willing to pay.
+	#[serde(default)]
+	pub max_fee_per_gas: Option<U256>,
+	/// The miner's tip.
+	#[serde(default)]
+	pub max_priority_fee_per_gas: Option<U256>,
 	/// Gas
 	pub gas: Option<U256>,
 	/// Value of transaction in wei
@@ -41,4 +48,7 @@ pub struct TransactionRequest {
 	pub data: Option<Bytes>,
 	/// Transaction's nonce
 	pub nonce: Option<U256>,
+	/// TODO! Pre-pay to warm storage access.
+	#[serde(default)]
+	pub access_list: Option<Vec<(H160, Vec<H256>)>>,
 }

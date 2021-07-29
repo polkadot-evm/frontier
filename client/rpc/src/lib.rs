@@ -284,24 +284,59 @@ impl EthSigner for EthDevSigner {
 					.map_err(|_| internal_err("invalid signing message"))?;
 				let (signature, recid) = secp256k1::sign(&signing_message, secret);
 
-				let v = match message.chain_id {
-					None => 27 + recid.serialize() as u64,
-					Some(chain_id) => 2 * chain_id + 35 + recid.serialize() as u64,
-				};
 				let rs = signature.serialize();
 				let r = H256::from_slice(&rs[0..32]);
 				let s = H256::from_slice(&rs[32..64]);
 
-				transaction = Some(ethereum::Transaction {
-					nonce: message.nonce,
-					gas_price: message.gas_price,
-					gas_limit: message.gas_limit,
-					action: message.action,
-					value: message.value,
-					input: message.input.clone(),
-					signature: ethereum::TransactionSignature::new(v, r, s)
-						.ok_or(internal_err("signer generated invalid signature"))?,
-				});
+				transaction = match message => {
+					ethereum::TransactionMessage::V0(m) => {
+						let v = match m.chain_id {
+							None => 27 + recid.serialize() as u64,
+							Some(chain_id) => 2 * chain_id + 35 + recid.serialize() as u64,
+						};
+						Some(ethereum::Transaction::V0(ethereum::TransactionV0 {
+							nonce: m.nonce,
+							gas_price: m.gas_price,
+							gas_limit: m.gas_limit,
+							action: m.action,
+							value: m.value,
+							input: m.input.clone(),
+							signature: ethereum::TransactionSignature::new(v, r, s)
+								.ok_or(internal_err("signer generated invalid signature"))?,
+						}))
+					},
+					ethereum::TransactionMessage::V1(m) => {
+						Some(ethereum::Transaction::V1(ethereum::TransactionV1 {
+							chain_id: m.chain_id,
+							nonce: m.nonce,
+							gas_price: m.gas_price,
+							gas_limit: m.gas_limit,
+							action: m.action,
+							value: m.value,
+							input: m.input.clone(),
+							access_list: m.access_list,
+							odd_y_parity: m.chain_id % 2 == 0,
+							r,
+							s
+						}))
+					},
+					ethereum::TransactionMessage::V2(m) => {
+						Some(ethereum::Transaction::V2(ethereum::TransactionV2 {
+							chain_id: m.chain_id,
+							nonce: m.nonce,
+							max_priority_fee_per_gas: m.max_priority_fee_per_gas,
+							max_fee_per_gas: m.max_fee_per_gas,
+							gas_limit: m.gas_limit,
+							action: m.action,
+							value: m.value,
+							input: m.input.clone(),
+							access_list: m.access_list,
+							odd_y_parity: m.chain_id % 2 == 0,
+							r,
+							s
+						}))
+					},
+				};
 
 				break
 			}

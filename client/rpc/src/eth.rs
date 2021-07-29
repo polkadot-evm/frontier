@@ -638,17 +638,66 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 			Err(e) => return Box::new(future::result(Err(e))),
 		};
 
-		let message = ethereum::TransactionMessage {
-			nonce,
-			gas_price: request.gas_price.unwrap_or(U256::from(1)),
-			gas_limit: request.gas.unwrap_or(U256::max_value()),
-			value: request.value.unwrap_or(U256::zero()),
-			input: request.data.map(|s| s.into_vec()).unwrap_or_default(),
-			action: match request.to {
-				Some(to) => ethereum::TransactionAction::Call(to),
-				None => ethereum::TransactionAction::Create,
+		// Is there a standard on which JSON RPC transaction requests are typed?
+		// or we need to manually match for versions here?
+		let message = match (request.gas_price, request.max_fee_per_gas, request.access_list) {
+			(Some(_), None, None) => {
+				// Legacy V0 transaction.
+				ethereum::TransactionMessage::V0(ethereum::TransactionMessageV0 {
+					nonce,
+					// TODO the default was wrong, needed min_gas_price (old), and new will fall back to BaseFeePerGas
+					gas_price: request.gas_price.unwrap_or(U256::from(1)),
+					gas_limit: request.gas.unwrap_or(U256::max_value()),
+					value: request.value.unwrap_or(U256::zero()),
+					input: request.data.map(|s| s.into_vec()).unwrap_or_default(),
+					action: match request.to {
+						Some(to) => ethereum::TransactionAction::Call(to),
+						None => ethereum::TransactionAction::Create,
+					},
+					chain_id: chain_id.map(|s| s.as_u64()),
+				})
 			},
-			chain_id: chain_id.map(|s| s.as_u64()),
+			(_, None, Some(_)) => {
+				// V1 transaction (EIP-2930).
+				ethereum::TransactionMessage::V1(ethereum::TransactionMessageV1 {
+					nonce,
+					// TODO the default was wrong, needed min_gas_price (old), and new will fall back to BaseFeePerGas
+					gas_price: request.gas_price.unwrap_or(U256::from(1)),
+					gas_limit: request.gas.unwrap_or(U256::max_value()),
+					value: request.value.unwrap_or(U256::zero()),
+					input: request.data.map(|s| s.into_vec()).unwrap_or_default(),
+					action: match request.to {
+						Some(to) => ethereum::TransactionAction::Call(to),
+						None => ethereum::TransactionAction::Create,
+					},
+					chain_id: chain_id.map(|s| s.as_u64()),
+					access_list: request.access_list.unwrap(),
+				})
+			},
+			(None, Some(_), _) || (None, None, None) => {
+				// V2 transaction (EIP-1559).
+				// Empty fields fall back to the canonical transaction schema.
+				ethereum::TransactionMessage::V2(ethereum::TransactionMessageV2 {
+					nonce,
+					// TODO the default must be BaseFeePerGas
+					max_fee_per_gas: request.max_fee_per_gas.unwrap_or(U256::from(1)),
+					max_priority_fee_per_gas: request.max_priority_fee_per_gas.unwrap_or(U256::from(0)),
+					gas_limit: request.gas.unwrap_or(U256::max_value()),
+					value: request.value.unwrap_or(U256::zero()),
+					input: request.data.map(|s| s.into_vec()).unwrap_or_default(),
+					action: match request.to {
+						Some(to) => ethereum::TransactionAction::Call(to),
+						None => ethereum::TransactionAction::Create,
+					},
+					chain_id: chain_id.map(|s| s.as_u64()),
+					access_list: request.access_list.unwrap(),
+				})
+			},
+			_ => {
+				return Box::new(future::result(Err(internal_err(
+					"invalid transaction parameters"
+				))));
+			}
 		};
 
 		let mut transaction = None;
