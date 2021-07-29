@@ -74,6 +74,15 @@ impl Default for EthereumStorageSchema {
 	}
 }
 
+#[derive(Clone, Debug, Encode, Decode, PartialEq, Eq, PartialOrd, Ord)]
+struct TransactionData {
+	nonce: U256,
+	gas_limit: U256,
+	gas_price: Option<U256>,
+	value: U256,
+	chain_id: Option<u64>
+}
+
 /// A type alias for the balance type from this pallet's point of view.
 pub type BalanceOf<T> = <T as pallet_balances::Config>::Balance;
 
@@ -211,47 +220,52 @@ impl<T: Config> frame_support::unsigned::ValidateUnsigned for Module<T> {
 
 	fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
 		if let Call::transact(transaction) = call {
-			if let Some(chain_id) = transaction.signature.chain_id() {
+			let transaction_data = Self::transaction_data(&transaction);
+			let nonce = transaction_data.nonce;
+			let gas_limit = transaction_data.gas_limit;
+
+			if let Some(chain_id) = transaction_data.chain_id {
 				if chain_id != T::ChainId::get() {
 					return InvalidTransaction::Custom(TransactionValidationError::InvalidChainId as u8).into();
 				}
 			}
-
 			let origin = Self::recover_signer(&transaction)
 				.ok_or_else(|| InvalidTransaction::Custom(TransactionValidationError::InvalidSignature as u8))?;
-
-			if transaction.gas_limit >= T::BlockGasLimit::get() {
+	
+			if gas_limit >= T::BlockGasLimit::get() {
 				return InvalidTransaction::Custom(TransactionValidationError::InvalidGasLimit as u8).into();
 			}
-
+	
 			let account_data = pallet_evm::Module::<T>::account_basic(&origin);
-
-			if transaction.nonce < account_data.nonce {
+	
+			if nonce < account_data.nonce {
 				return InvalidTransaction::Stale.into();
 			}
 
-			let fee = transaction.gas_price.saturating_mul(transaction.gas_limit);
-			let total_payment = transaction.value.saturating_add(fee);
-			if account_data.balance < total_payment {
-				return InvalidTransaction::Payment.into();
-			}
-
-			let min_gas_price = T::FeeCalculator::min_gas_price();
-
-			if transaction.gas_price < min_gas_price {
-				return InvalidTransaction::Payment.into();
+			// Legacy transaction
+			let mut priority = 0;
+			if let Some(gas_price) = transaction_data.gas_price {
+				let fee = gas_price.saturating_mul(gas_limit);
+				let total_payment = transaction_data.value.saturating_add(fee);
+				let min_gas_price = T::FeeCalculator::min_gas_price();
+				if gas_price < min_gas_price || account_data.balance < total_payment {
+					return InvalidTransaction::Payment.into();
+				}
+				priority = gas_price.unique_saturated_into();
+			} else {
+				// TODO
 			}
 
 			let mut builder = ValidTransactionBuilder::default()
-				.and_provides((origin, transaction.nonce))
-				.priority(transaction.gas_price.unique_saturated_into());
-
-			if transaction.nonce > account_data.nonce {
-				if let Some(prev_nonce) = transaction.nonce.checked_sub(1.into()) {
+				.and_provides((origin, nonce))
+				.priority(priority);
+	
+			if nonce > account_data.nonce {
+				if let Some(prev_nonce) = nonce.checked_sub(1.into()) {
 					builder = builder.and_requires((origin, prev_nonce))
 				}
 			}
-
+	
 			builder.build()
 		} else {
 			Err(InvalidTransaction::Call.into())
@@ -260,14 +274,41 @@ impl<T: Config> frame_support::unsigned::ValidateUnsigned for Module<T> {
 }
 
 impl<T: Config> Module<T> {
+	fn transaction_data(transaction: &ethereum::Transaction) -> TransactionData {
+		match transaction {
+			ethereum::Transaction::V0(t) => TransactionData {
+				nonce: t.nonce,
+				gas_limit: t.gas_limit,
+				gas_price: Some(t.gas_price),
+				value: t.value,
+				chain_id: transaction.signature.chain_id()
+			},
+			_ => {
+				// TODO
+			}
+		}
+	}
+
 	fn recover_signer(transaction: &ethereum::Transaction) -> Option<H160> {
 		let mut sig = [0u8; 65];
 		let mut msg = [0u8; 32];
 		sig[0..32].copy_from_slice(&transaction.signature.r()[..]);
 		sig[32..64].copy_from_slice(&transaction.signature.s()[..]);
-		sig[64] = transaction.signature.standard_v();
-		msg.copy_from_slice(&TransactionMessage::from(transaction.clone()).hash()[..]);
+		match transaction {
+			ethereum::Transaction::V0(t) => {
+				sig[64] = t.signature.standard_v();
+				msg.copy_from_slice(&ethereum::TransactionMessageV0::from(t.clone()).hash()[..]);
+			},
+			ethereum::Transaction::V1(t) => {
+				sig[64] = t.odd_y_parity;
+				msg.copy_from_slice(&ethereum::TransactionMessageV1::from(t.clone()).hash()[..]);
+			},
+			ethereum::Transaction::V2(t) => {
+				sig[64] = t.odd_y_parity;
+				msg.copy_from_slice(&ethereum::TransactionMessageV2::from(t.clone()).hash()[..]);
+			},
 
+		}
 		let pubkey = sp_io::crypto::secp256k1_ecdsa_recover(&sig, &msg).ok()?;
 		Some(H160::from(H256::from_slice(Keccak256::digest(&pubkey).as_slice())))
 	}
@@ -348,16 +389,7 @@ impl<T: Config> Module<T> {
 		);
 		let transaction_index = Pending::get().len() as u32;
 
-		let (to, contract_address, info) = Self::execute(
-			source,
-			transaction.input.clone(),
-			transaction.value,
-			transaction.gas_limit,
-			Some(transaction.gas_price),
-			Some(transaction.nonce),
-			transaction.action,
-			None,
-		)?;
+		let (to, contract_address, info) = Self::execute(&transaction, None)?;
 
 		let (reason, status, used_gas) = match info {
 			CallOrCreateInfo::Call(info) => {
@@ -441,15 +473,27 @@ impl<T: Config> Module<T> {
 
 	/// Execute an Ethereum transaction.
 	pub fn execute(
-		from: H160,
-		input: Vec<u8>,
-		value: U256,
-		gas_limit: U256,
-		gas_price: Option<U256>,
-		nonce: Option<U256>,
-		action: TransactionAction,
+		transaction: &ethereum::Transaction,
 		config: Option<evm::Config>,
 	) -> Result<(Option<H160>, Option<H160>, CallOrCreateInfo), DispatchError> {
+		let (from, input, value, gas_limit, gas_price, nonce, action) = {
+			match transaction {
+				ethereum::Transaction::V0(t) => {
+					(
+						t.from,
+						t.input,
+						t.value,
+						t.gas_limit,
+						Some(t.gas_price),
+						Some(t.nonce),
+						t.action,
+					)
+				},
+				_ => {
+					// TODO
+				}
+			}
+		}
 		match action {
 			ethereum::TransactionAction::Call(target) => {
 				let res = T::Runner::call(
