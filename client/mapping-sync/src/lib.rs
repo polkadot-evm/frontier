@@ -132,7 +132,7 @@ pub fn sync_one_block<Block: BlockT, C, B>(
 		frontier_backend.meta().write_current_syncing_tips(current_syncing_tips)?;
 		Ok(true)
 	} else {
-		if SyncStrategy::Best == strategy && operating_header.number() > &client.info().best_number {
+		if SyncStrategy::Parachain == strategy && operating_header.number() > &client.info().best_number {
 			return Ok(false);
 		}
 		sync_block(frontier_backend, &operating_header)?;

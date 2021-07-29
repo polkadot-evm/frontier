@@ -321,7 +321,7 @@ pub fn new_full(
 			client.clone(),
 			backend.clone(),
 			frontier_backend.clone(),
-			SyncStrategy::Any,
+			SyncStrategy::Normal,
 		).for_each(|()| futures::future::ready(()))
 	);
 
