@@ -388,6 +388,20 @@
 <span id="386">386</span>
 <span id="387">387</span>
 <span id="388">388</span>
+<span id="389">389</span>
+<span id="390">390</span>
+<span id="391">391</span>
+<span id="392">392</span>
+<span id="393">393</span>
+<span id="394">394</span>
+<span id="395">395</span>
+<span id="396">396</span>
+<span id="397">397</span>
+<span id="398">398</span>
+<span id="399">399</span>
+<span id="400">400</span>
+<span id="401">401</span>
+<span id="402">402</span>
 </pre><pre class="rust">
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
@@ -411,12 +425,12 @@
 <span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">alloc</span>;
 
 <span class="kw">use</span> <span class="ident">alloc::vec::Vec</span>;
+<span class="kw">use</span> <span class="ident">evm</span>::{<span class="ident">executor::PrecompileOutput</span>, <span class="ident">Context</span>, <span class="ident">ExitError</span>, <span class="ident">ExitSucceed</span>};
 <span class="kw">use</span> <span class="ident">fp_evm::Precompile</span>;
-<span class="kw">use</span> <span class="ident">evm</span>::{<span class="ident">ExitSucceed</span>, <span class="ident">ExitError</span>, <span class="ident">Context</span>, <span class="ident">executor::PrecompileOutput</span>};
-<span class="kw">use</span> <span class="ident">num</span>::{<span class="ident">BigUint</span>, <span class="ident">Zero</span>, <span class="ident">One</span>, <span class="ident">ToPrimitive</span>, <span class="ident">FromPrimitive</span>};
+<span class="kw">use</span> <span class="ident">num</span>::{<span class="ident">BigUint</span>, <span class="ident">FromPrimitive</span>, <span class="ident">One</span>, <span class="ident">ToPrimitive</span>, <span class="ident">Zero</span>};
 
-<span class="kw">use</span> <span class="ident">core::ops::BitAnd</span>;
 <span class="kw">use</span> <span class="ident">core::cmp::max</span>;
+<span class="kw">use</span> <span class="ident">core::ops::BitAnd</span>;
 
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Modexp</span>;
 
@@ -430,7 +444,6 @@
 	<span class="ident">mod_length</span>: <span class="ident">u64</span>,
 	<span class="ident">exponent</span>: <span class="kw-2">&amp;</span><span class="ident">BigUint</span>,
 ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u64</span> {
-
 	<span class="kw">fn</span> <span class="ident">calculate_multiplication_complexity</span>(<span class="ident">base_length</span>: <span class="ident">u64</span>, <span class="ident">mod_length</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u64</span> {
 		<span class="kw">let</span> <span class="ident">max_length</span> <span class="op">=</span> <span class="ident">max</span>(<span class="ident">base_length</span>, <span class="ident">mod_length</span>);
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">words</span> <span class="op">=</span> <span class="ident">max_length</span> <span class="op">/</span> <span class="number">8</span>;
@@ -450,12 +463,12 @@
 		} <span class="kw">else</span> <span class="kw">if</span> <span class="ident">exp_length</span> <span class="op">&lt;</span><span class="op">=</span> <span class="number">32</span> {
 			<span class="ident">iteration_count</span> <span class="op">=</span> <span class="ident">exponent</span>.<span class="ident">bits</span>() <span class="op">-</span> <span class="number">1</span>;
 		} <span class="kw">else</span> <span class="kw">if</span> <span class="ident">exp_length</span> <span class="op">&gt;</span> <span class="number">32</span> {
-
 			<span class="comment">// construct BigUint to represent (2^256) - 1</span>
 			<span class="kw">let</span> <span class="ident">bytes</span>: [<span class="ident">u8</span>; <span class="number">32</span>] <span class="op">=</span> [<span class="number">0xFF</span>; <span class="number">32</span>];
 			<span class="kw">let</span> <span class="ident">max_256_bit_uint</span> <span class="op">=</span> <span class="ident">BigUint::from_bytes_be</span>(<span class="kw-2">&amp;</span><span class="ident">bytes</span>);
 
-			<span class="ident">iteration_count</span> <span class="op">=</span> (<span class="number">8</span> <span class="op">*</span> (<span class="ident">exp_length</span> <span class="op">-</span> <span class="number">32</span>)) <span class="op">+</span> ((<span class="ident">exponent</span>.<span class="ident">bitand</span>(<span class="ident">max_256_bit_uint</span>)).<span class="ident">bits</span>() <span class="op">-</span> <span class="number">1</span>);
+			<span class="ident">iteration_count</span> <span class="op">=</span>
+				(<span class="number">8</span> <span class="op">*</span> (<span class="ident">exp_length</span> <span class="op">-</span> <span class="number">32</span>)) <span class="op">+</span> ((<span class="ident">exponent</span>.<span class="ident">bitand</span>(<span class="ident">max_256_bit_uint</span>)).<span class="ident">bits</span>() <span class="op">-</span> <span class="number">1</span>);
 		}
 
 		<span class="ident">max</span>(<span class="ident">iteration_count</span>, <span class="number">1</span>)
@@ -463,7 +476,10 @@
 
 	<span class="kw">let</span> <span class="ident">multiplication_complexity</span> <span class="op">=</span> <span class="ident">calculate_multiplication_complexity</span>(<span class="ident">base_length</span>, <span class="ident">mod_length</span>);
 	<span class="kw">let</span> <span class="ident">iteration_count</span> <span class="op">=</span> <span class="ident">calculate_iteration_count</span>(<span class="ident">exp_length</span>, <span class="ident">exponent</span>);
-	<span class="kw">let</span> <span class="ident">gas</span> <span class="op">=</span> <span class="ident">max</span>(<span class="ident">MIN_GAS_COST</span>, <span class="ident">multiplication_complexity</span> <span class="op">*</span> <span class="ident">iteration_count</span> <span class="op">/</span> <span class="number">3</span>);
+	<span class="kw">let</span> <span class="ident">gas</span> <span class="op">=</span> <span class="ident">max</span>(
+		<span class="ident">MIN_GAS_COST</span>,
+		<span class="ident">multiplication_complexity</span> <span class="op">*</span> <span class="ident">iteration_count</span> <span class="op">/</span> <span class="number">3</span>,
+	);
 
 	<span class="ident">gas</span>
 }
@@ -491,7 +507,9 @@
 		<span class="ident">_context</span>: <span class="kw-2">&amp;</span><span class="ident">Context</span>,
 	) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">core::result::Result</span><span class="op">&lt;</span><span class="ident">PrecompileOutput</span>, <span class="ident">ExitError</span><span class="op">&gt;</span> {
 		<span class="kw">if</span> <span class="ident">input</span>.<span class="ident">len</span>() <span class="op">&lt;</span> <span class="number">96</span> {
-			<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">ExitError::Other</span>(<span class="string">&quot;input must contain at least 96 bytes&quot;</span>.<span class="ident">into</span>()));
+			<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">ExitError::Other</span>(
+				<span class="string">&quot;input must contain at least 96 bytes&quot;</span>.<span class="ident">into</span>(),
+			));
 		};
 
 		<span class="comment">// reasonable assumption: this must fit within the Ethereum EVM&#39;s max stack size</span>
@@ -507,13 +525,17 @@
 		<span class="ident">buf</span>.<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>[<span class="number">32</span>..<span class="number">64</span>]);
 		<span class="kw">let</span> <span class="ident">exp_len_big</span> <span class="op">=</span> <span class="ident">BigUint::from_bytes_be</span>(<span class="kw-2">&amp;</span><span class="ident">buf</span>);
 		<span class="kw">if</span> <span class="ident">exp_len_big</span> <span class="op">&gt;</span> <span class="ident">max_size_big</span> {
-			<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">ExitError::Other</span>(<span class="string">&quot;unreasonably large exponent length&quot;</span>.<span class="ident">into</span>()));
+			<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">ExitError::Other</span>(
+				<span class="string">&quot;unreasonably large exponent length&quot;</span>.<span class="ident">into</span>(),
+			));
 		}
 
 		<span class="ident">buf</span>.<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>[<span class="number">64</span>..<span class="number">96</span>]);
 		<span class="kw">let</span> <span class="ident">mod_len_big</span> <span class="op">=</span> <span class="ident">BigUint::from_bytes_be</span>(<span class="kw-2">&amp;</span><span class="ident">buf</span>);
 		<span class="kw">if</span> <span class="ident">mod_len_big</span> <span class="op">&gt;</span> <span class="ident">max_size_big</span> {
-			<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">ExitError::Other</span>(<span class="string">&quot;unreasonably large exponent length&quot;</span>.<span class="ident">into</span>()));
+			<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">ExitError::Other</span>(
+				<span class="string">&quot;unreasonably large exponent length&quot;</span>.<span class="ident">into</span>(),
+			));
 		}
 
 		<span class="comment">// bounds check handled above</span>
@@ -531,7 +553,6 @@
 		<span class="kw">let</span> (<span class="ident">r</span>, <span class="ident">gas_cost</span>) <span class="op">=</span> <span class="kw">if</span> <span class="ident">base_len</span> <span class="op">=</span><span class="op">=</span> <span class="number">0</span> <span class="op">&amp;&amp;</span> <span class="ident">mod_len</span> <span class="op">=</span><span class="op">=</span> <span class="number">0</span> {
 			(<span class="ident">BigUint::zero</span>(), <span class="ident">MIN_GAS_COST</span>)
 		} <span class="kw">else</span> {
-
 			<span class="comment">// read the numbers themselves.</span>
 			<span class="kw">let</span> <span class="ident">base_start</span> <span class="op">=</span> <span class="number">96</span>; <span class="comment">// previous 3 32-byte fields</span>
 			<span class="kw">let</span> <span class="ident">base</span> <span class="op">=</span> <span class="ident">BigUint::from_bytes_be</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>[<span class="ident">base_start</span>..<span class="ident">base_start</span> <span class="op">+</span> <span class="ident">base_len</span>]);
@@ -541,7 +562,8 @@
 
 			<span class="comment">// do our gas accounting</span>
 			<span class="comment">// TODO: we could technically avoid reading base first...</span>
-			<span class="kw">let</span> <span class="ident">gas_cost</span> <span class="op">=</span> <span class="ident">calculate_gas_cost</span>(<span class="ident">base_len</span> <span class="kw">as</span> <span class="ident">u64</span>, <span class="ident">exp_len</span> <span class="kw">as</span> <span class="ident">u64</span>, <span class="ident">mod_len</span> <span class="kw">as</span> <span class="ident">u64</span>, <span class="kw-2">&amp;</span><span class="ident">exponent</span>);
+			<span class="kw">let</span> <span class="ident">gas_cost</span> <span class="op">=</span>
+				<span class="ident">calculate_gas_cost</span>(<span class="ident">base_len</span> <span class="kw">as</span> <span class="ident">u64</span>, <span class="ident">exp_len</span> <span class="kw">as</span> <span class="ident">u64</span>, <span class="ident">mod_len</span> <span class="kw">as</span> <span class="ident">u64</span>, <span class="kw-2">&amp;</span><span class="ident">exponent</span>);
 			<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">gas_left</span>) <span class="op">=</span> <span class="ident">target_gas</span> {
 				<span class="kw">if</span> <span class="ident">gas_left</span> <span class="op">&lt;</span> <span class="ident">gas_cost</span> {
 					<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">ExitError::OutOfGas</span>);
@@ -613,9 +635,12 @@
 		<span class="kw">match</span> <span class="ident">Modexp::execute</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>, <span class="prelude-val">Some</span>(<span class="ident">cost</span>), <span class="kw-2">&amp;</span><span class="ident">context</span>) {
 			<span class="prelude-val">Ok</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
 				<span class="macro">panic!</span>(<span class="string">&quot;Test not expected to pass&quot;</span>);
-			},
+			}
 			<span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> {
-				<span class="macro">assert_eq!</span>(<span class="ident">e</span>, <span class="ident">ExitError::Other</span>(<span class="string">&quot;input must contain at least 96 bytes&quot;</span>.<span class="ident">into</span>()));
+				<span class="macro">assert_eq!</span>(
+					<span class="ident">e</span>,
+					<span class="ident">ExitError::Other</span>(<span class="string">&quot;input must contain at least 96 bytes&quot;</span>.<span class="ident">into</span>())
+				);
 				<span class="prelude-val">Ok</span>(())
 			}
 		}
@@ -626,8 +651,9 @@
 		<span class="kw">let</span> <span class="ident">input</span> <span class="op">=</span> <span class="ident">hex::decode</span>(
 			<span class="string">&quot;0000000000000000000000000000000000000000000000000000000000000001\
 			0000000000000000000000000000000000000000000000000000000000000001\
-			0000000000000000000000000000000000000000000000000000000000000001&quot;</span>)
-			.<span class="ident">expect</span>(<span class="string">&quot;Decode failed&quot;</span>);
+			0000000000000000000000000000000000000000000000000000000000000001&quot;</span>,
+		)
+		.<span class="ident">expect</span>(<span class="string">&quot;Decode failed&quot;</span>);
 
 		<span class="kw">let</span> <span class="ident">cost</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">1</span>;
 
@@ -640,7 +666,7 @@
 		<span class="kw">match</span> <span class="ident">Modexp::execute</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>, <span class="prelude-val">Some</span>(<span class="ident">cost</span>), <span class="kw-2">&amp;</span><span class="ident">context</span>) {
 			<span class="prelude-val">Ok</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
 				<span class="macro">panic!</span>(<span class="string">&quot;Test not expected to pass&quot;</span>);
-			},
+			}
 			<span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> {
 				<span class="macro">assert_eq!</span>(<span class="ident">e</span>, <span class="ident">ExitError::Other</span>(<span class="string">&quot;insufficient input size&quot;</span>.<span class="ident">into</span>()));
 				<span class="prelude-val">Ok</span>(())
@@ -650,12 +676,12 @@
 
 	<span class="attribute">#[<span class="ident">test</span>]</span>
 	<span class="kw">fn</span> <span class="ident">test_excessive_input</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">std::result::Result</span><span class="op">&lt;</span>(), <span class="ident">ExitError</span><span class="op">&gt;</span> {
-
 		<span class="kw">let</span> <span class="ident">input</span> <span class="op">=</span> <span class="ident">hex::decode</span>(
 			<span class="string">&quot;1000000000000000000000000000000000000000000000000000000000000001\
 			0000000000000000000000000000000000000000000000000000000000000001\
-			0000000000000000000000000000000000000000000000000000000000000001&quot;</span>)
-			.<span class="ident">expect</span>(<span class="string">&quot;Decode failed&quot;</span>);
+			0000000000000000000000000000000000000000000000000000000000000001&quot;</span>,
+		)
+		.<span class="ident">expect</span>(<span class="string">&quot;Decode failed&quot;</span>);
 
 		<span class="kw">let</span> <span class="ident">cost</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">1</span>;
 
@@ -668,7 +694,7 @@
 		<span class="kw">match</span> <span class="ident">Modexp::execute</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>, <span class="prelude-val">Some</span>(<span class="ident">cost</span>), <span class="kw-2">&amp;</span><span class="ident">context</span>) {
 			<span class="prelude-val">Ok</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
 				<span class="macro">panic!</span>(<span class="string">&quot;Test not expected to pass&quot;</span>);
-			},
+			}
 			<span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> {
 				<span class="macro">assert_eq!</span>(<span class="ident">e</span>, <span class="ident">ExitError::Other</span>(<span class="string">&quot;unreasonably large base length&quot;</span>.<span class="ident">into</span>()));
 				<span class="prelude-val">Ok</span>(())
@@ -678,14 +704,15 @@
 
 	<span class="attribute">#[<span class="ident">test</span>]</span>
 	<span class="kw">fn</span> <span class="ident">test_simple_inputs</span>() {
-
 		<span class="kw">let</span> <span class="ident">input</span> <span class="op">=</span> <span class="ident">hex::decode</span>(
 			<span class="string">&quot;0000000000000000000000000000000000000000000000000000000000000001\
 			0000000000000000000000000000000000000000000000000000000000000001\
 			0000000000000000000000000000000000000000000000000000000000000001\
 			03\
 			05\
-			07&quot;</span>).<span class="ident">expect</span>(<span class="string">&quot;Decode failed&quot;</span>);
+			07&quot;</span>,
+		)
+		.<span class="ident">expect</span>(<span class="string">&quot;Decode failed&quot;</span>);
 
 		<span class="comment">// 3 ^ 5 % 7 == 5</span>
 
@@ -703,7 +730,7 @@
 				<span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="ident">BigUint::from_bytes_be</span>(<span class="kw-2">&amp;</span><span class="ident">precompile_result</span>.<span class="ident">output</span>[..]);
 				<span class="kw">let</span> <span class="ident">expected</span> <span class="op">=</span> <span class="ident">BigUint::parse_bytes</span>(<span class="string">b&quot;5&quot;</span>, <span class="number">10</span>).<span class="ident">unwrap</span>();
 				<span class="macro">assert_eq!</span>(<span class="ident">result</span>, <span class="ident">expected</span>);
-			},
+			}
 			<span class="prelude-val">Err</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
 				<span class="macro">panic!</span>(<span class="string">&quot;Modexp::execute() returned error&quot;</span>); <span class="comment">// TODO: how to pass error on?</span>
 			}
@@ -712,15 +739,15 @@
 
 	<span class="attribute">#[<span class="ident">test</span>]</span>
 	<span class="kw">fn</span> <span class="ident">test_large_inputs</span>() {
-
 		<span class="kw">let</span> <span class="ident">input</span> <span class="op">=</span> <span class="ident">hex::decode</span>(
 			<span class="string">&quot;0000000000000000000000000000000000000000000000000000000000000020\
 			0000000000000000000000000000000000000000000000000000000000000020\
 			0000000000000000000000000000000000000000000000000000000000000020\
 			000000000000000000000000000000000000000000000000000000000000EA5F\
 			0000000000000000000000000000000000000000000000000000000000000015\
-			0000000000000000000000000000000000000000000000000000000000003874&quot;</span>)
-			.<span class="ident">expect</span>(<span class="string">&quot;Decode failed&quot;</span>);
+			0000000000000000000000000000000000000000000000000000000000003874&quot;</span>,
+		)
+		.<span class="ident">expect</span>(<span class="string">&quot;Decode failed&quot;</span>);
 
 		<span class="comment">// 59999 ^ 21 % 14452 = 10055</span>
 
@@ -738,7 +765,7 @@
 				<span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="ident">BigUint::from_bytes_be</span>(<span class="kw-2">&amp;</span><span class="ident">precompile_result</span>.<span class="ident">output</span>[..]);
 				<span class="kw">let</span> <span class="ident">expected</span> <span class="op">=</span> <span class="ident">BigUint::parse_bytes</span>(<span class="string">b&quot;10055&quot;</span>, <span class="number">10</span>).<span class="ident">unwrap</span>();
 				<span class="macro">assert_eq!</span>(<span class="ident">result</span>, <span class="ident">expected</span>);
-			},
+			}
 			<span class="prelude-val">Err</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
 				<span class="macro">panic!</span>(<span class="string">&quot;Modexp::execute() returned error&quot;</span>); <span class="comment">// TODO: how to pass error on?</span>
 			}
@@ -753,8 +780,9 @@
 			0000000000000000000000000000000000000000000000000000000000000020\
 			03\
 			fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2e\
-			fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f&quot;</span>)
-			.<span class="ident">expect</span>(<span class="string">&quot;Decode failed&quot;</span>);
+			fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f&quot;</span>,
+		)
+		.<span class="ident">expect</span>(<span class="string">&quot;Decode failed&quot;</span>);
 
 		<span class="kw">let</span> <span class="ident">cost</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">100000</span>;
 
@@ -770,7 +798,7 @@
 				<span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="ident">BigUint::from_bytes_be</span>(<span class="kw-2">&amp;</span><span class="ident">precompile_result</span>.<span class="ident">output</span>[..]);
 				<span class="kw">let</span> <span class="ident">expected</span> <span class="op">=</span> <span class="ident">BigUint::parse_bytes</span>(<span class="string">b&quot;1&quot;</span>, <span class="number">10</span>).<span class="ident">unwrap</span>();
 				<span class="macro">assert_eq!</span>(<span class="ident">result</span>, <span class="ident">expected</span>);
-			},
+			}
 			<span class="prelude-val">Err</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
 				<span class="macro">panic!</span>(<span class="string">&quot;Modexp::execute() returned error&quot;</span>); <span class="comment">// TODO: how to pass error on?</span>
 			}

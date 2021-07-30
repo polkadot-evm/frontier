@@ -61,9 +61,9 @@
 <span class="comment">// along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.</span>
 
 <span class="doccomment">//! Net rpc interface.</span>
+<span class="kw">use</span> <span class="kw">crate</span><span class="ident">::types::PeerCount</span>;
 <span class="kw">use</span> <span class="ident">jsonrpc_core::Result</span>;
 <span class="kw">use</span> <span class="ident">jsonrpc_derive::rpc</span>;
-<span class="kw">use</span> <span class="kw">crate</span><span class="ident">::types::PeerCount</span>;
 
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">rpc_impl_NetApi::gen_server::NetApi</span> <span class="kw">as</span> <span class="ident">NetApiServer</span>;
 

@@ -233,6 +233,26 @@
 <span id="231">231</span>
 <span id="232">232</span>
 <span id="233">233</span>
+<span id="234">234</span>
+<span id="235">235</span>
+<span id="236">236</span>
+<span id="237">237</span>
+<span id="238">238</span>
+<span id="239">239</span>
+<span id="240">240</span>
+<span id="241">241</span>
+<span id="242">242</span>
+<span id="243">243</span>
+<span id="244">244</span>
+<span id="245">245</span>
+<span id="246">246</span>
+<span id="247">247</span>
+<span id="248">248</span>
+<span id="249">249</span>
+<span id="250">250</span>
+<span id="251">251</span>
+<span id="252">252</span>
+<span id="253">253</span>
 </pre><pre class="rust">
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
@@ -256,34 +276,37 @@
 <span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">alloc</span>;
 
 <span class="kw">use</span> <span class="ident">alloc::vec::Vec</span>;
-<span class="kw">use</span> <span class="ident">sp_core::U256</span>;
+<span class="kw">use</span> <span class="ident">evm</span>::{<span class="ident">executor::PrecompileOutput</span>, <span class="ident">Context</span>, <span class="ident">ExitError</span>, <span class="ident">ExitSucceed</span>};
 <span class="kw">use</span> <span class="ident">fp_evm::Precompile</span>;
-<span class="kw">use</span> <span class="ident">evm</span>::{<span class="ident">ExitSucceed</span>, <span class="ident">ExitError</span>, <span class="ident">Context</span>, <span class="ident">executor::PrecompileOutput</span>};
+<span class="kw">use</span> <span class="ident">sp_core::U256</span>;
 
 <span class="kw">fn</span> <span class="ident">read_fr</span>(<span class="ident">input</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>], <span class="ident">start_inx</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">bn::Fr</span>, <span class="ident">ExitError</span><span class="op">&gt;</span> {
 	<span class="kw">if</span> <span class="ident">input</span>.<span class="ident">len</span>() <span class="op">&lt;</span> <span class="ident">start_inx</span> <span class="op">+</span> <span class="number">32</span> {
 		<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">ExitError::Other</span>(<span class="string">&quot;Input not long enough&quot;</span>.<span class="ident">into</span>()));
 	}
 
-	<span class="ident">bn::Fr::from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>[<span class="ident">start_inx</span>..(<span class="ident">start_inx</span> <span class="op">+</span> <span class="number">32</span>)]).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">ExitError::Other</span>(<span class="string">&quot;Invalid field element&quot;</span>.<span class="ident">into</span>()))
+	<span class="ident">bn::Fr::from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>[<span class="ident">start_inx</span>..(<span class="ident">start_inx</span> <span class="op">+</span> <span class="number">32</span>)])
+		.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">ExitError::Other</span>(<span class="string">&quot;Invalid field element&quot;</span>.<span class="ident">into</span>()))
 }
 
 <span class="kw">fn</span> <span class="ident">read_point</span>(<span class="ident">input</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>], <span class="ident">start_inx</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">bn::G1</span>, <span class="ident">ExitError</span><span class="op">&gt;</span> {
-	<span class="kw">use</span> <span class="ident">bn</span>::{<span class="ident">Fq</span>, <span class="ident">AffineG1</span>, <span class="ident">G1</span>, <span class="ident">Group</span>};
+	<span class="kw">use</span> <span class="ident">bn</span>::{<span class="ident">AffineG1</span>, <span class="ident">Fq</span>, <span class="ident">Group</span>, <span class="ident">G1</span>};
 
 	<span class="kw">if</span> <span class="ident">input</span>.<span class="ident">len</span>() <span class="op">&lt;</span> <span class="ident">start_inx</span> <span class="op">+</span> <span class="number">64</span> {
 		<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">ExitError::Other</span>(<span class="string">&quot;Input not long enough&quot;</span>.<span class="ident">into</span>()));
 	}
 
-	<span class="kw">let</span> <span class="ident">px</span> <span class="op">=</span> <span class="ident">Fq::from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>[<span class="ident">start_inx</span>..(<span class="ident">start_inx</span> <span class="op">+</span> <span class="number">32</span>)]).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">ExitError::Other</span>(<span class="string">&quot;Invalid point x coordinate&quot;</span>.<span class="ident">into</span>()))<span class="question-mark">?</span>;
-	<span class="kw">let</span> <span class="ident">py</span> <span class="op">=</span> <span class="ident">Fq::from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>[(<span class="ident">start_inx</span> <span class="op">+</span> <span class="number">32</span>)..(<span class="ident">start_inx</span> <span class="op">+</span> <span class="number">64</span>)]).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">ExitError::Other</span>(<span class="string">&quot;Invalid point y coordinate&quot;</span>.<span class="ident">into</span>()))<span class="question-mark">?</span>;
-	<span class="prelude-val">Ok</span>(
-		<span class="kw">if</span> <span class="ident">px</span> <span class="op">=</span><span class="op">=</span> <span class="ident">Fq::zero</span>() <span class="op">&amp;&amp;</span> <span class="ident">py</span> <span class="op">=</span><span class="op">=</span> <span class="ident">Fq::zero</span>() {
-			<span class="ident">G1::zero</span>()
-		} <span class="kw">else</span> {
-			<span class="ident">AffineG1::new</span>(<span class="ident">px</span>, <span class="ident">py</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">ExitError::Other</span>(<span class="string">&quot;Invalid curve point&quot;</span>.<span class="ident">into</span>()))<span class="question-mark">?</span>.<span class="ident">into</span>()
-		}
-	)
+	<span class="kw">let</span> <span class="ident">px</span> <span class="op">=</span> <span class="ident">Fq::from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>[<span class="ident">start_inx</span>..(<span class="ident">start_inx</span> <span class="op">+</span> <span class="number">32</span>)])
+		.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">ExitError::Other</span>(<span class="string">&quot;Invalid point x coordinate&quot;</span>.<span class="ident">into</span>()))<span class="question-mark">?</span>;
+	<span class="kw">let</span> <span class="ident">py</span> <span class="op">=</span> <span class="ident">Fq::from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>[(<span class="ident">start_inx</span> <span class="op">+</span> <span class="number">32</span>)..(<span class="ident">start_inx</span> <span class="op">+</span> <span class="number">64</span>)])
+		.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">ExitError::Other</span>(<span class="string">&quot;Invalid point y coordinate&quot;</span>.<span class="ident">into</span>()))<span class="question-mark">?</span>;
+	<span class="prelude-val">Ok</span>(<span class="kw">if</span> <span class="ident">px</span> <span class="op">=</span><span class="op">=</span> <span class="ident">Fq::zero</span>() <span class="op">&amp;&amp;</span> <span class="ident">py</span> <span class="op">=</span><span class="op">=</span> <span class="ident">Fq::zero</span>() {
+		<span class="ident">G1::zero</span>()
+	} <span class="kw">else</span> {
+		<span class="ident">AffineG1::new</span>(<span class="ident">px</span>, <span class="ident">py</span>)
+			.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">ExitError::Other</span>(<span class="string">&quot;Invalid curve point&quot;</span>.<span class="ident">into</span>()))<span class="question-mark">?</span>
+			.<span class="ident">into</span>()
+	})
 }
 
 <span class="doccomment">/// The Bn128Add builtin</span>
@@ -294,7 +317,6 @@
 }
 
 <span class="kw">impl</span> <span class="ident">Precompile</span> <span class="kw">for</span> <span class="ident">Bn128Add</span> {
-
 	<span class="kw">fn</span> <span class="ident">execute</span>(
 		<span class="ident">input</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>],
 		<span class="ident">_target_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
@@ -308,8 +330,12 @@
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">buf</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">64</span>];
 		<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">sum</span>) <span class="op">=</span> <span class="ident">AffineG1::from_jacobian</span>(<span class="ident">p1</span> <span class="op">+</span> <span class="ident">p2</span>) {
 			<span class="comment">// point not at infinity</span>
-			<span class="ident">sum</span>.<span class="ident">x</span>().<span class="ident">to_big_endian</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">buf</span>[<span class="number">0</span>..<span class="number">32</span>]).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">ExitError::Other</span>(<span class="string">&quot;Cannot fail since 0..32 is 32-byte length&quot;</span>.<span class="ident">into</span>()))<span class="question-mark">?</span>;
-			<span class="ident">sum</span>.<span class="ident">y</span>().<span class="ident">to_big_endian</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">buf</span>[<span class="number">32</span>..<span class="number">64</span>]).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">ExitError::Other</span>(<span class="string">&quot;Cannot fail since 32..64 is 32-byte length&quot;</span>.<span class="ident">into</span>()))<span class="question-mark">?</span>;
+			<span class="ident">sum</span>.<span class="ident">x</span>().<span class="ident">to_big_endian</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">buf</span>[<span class="number">0</span>..<span class="number">32</span>]).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> {
+				<span class="ident">ExitError::Other</span>(<span class="string">&quot;Cannot fail since 0..32 is 32-byte length&quot;</span>.<span class="ident">into</span>())
+			})<span class="question-mark">?</span>;
+			<span class="ident">sum</span>.<span class="ident">y</span>().<span class="ident">to_big_endian</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">buf</span>[<span class="number">32</span>..<span class="number">64</span>]).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> {
+				<span class="ident">ExitError::Other</span>(<span class="string">&quot;Cannot fail since 32..64 is 32-byte length&quot;</span>.<span class="ident">into</span>())
+			})<span class="question-mark">?</span>;
 		}
 
 		<span class="prelude-val">Ok</span>(<span class="ident">PrecompileOutput</span> {
@@ -329,7 +355,6 @@
 }
 
 <span class="kw">impl</span> <span class="ident">Precompile</span> <span class="kw">for</span> <span class="ident">Bn128Mul</span> {
-
 	<span class="kw">fn</span> <span class="ident">execute</span>(
 		<span class="ident">input</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>],
 		<span class="ident">_target_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
@@ -343,8 +368,12 @@
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">buf</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">64</span>];
 		<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">sum</span>) <span class="op">=</span> <span class="ident">AffineG1::from_jacobian</span>(<span class="ident">p</span> <span class="op">*</span> <span class="ident">fr</span>) {
 			<span class="comment">// point not at infinity</span>
-			<span class="ident">sum</span>.<span class="ident">x</span>().<span class="ident">to_big_endian</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">buf</span>[<span class="number">0</span>..<span class="number">32</span>]).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">ExitError::Other</span>(<span class="string">&quot;Cannot fail since 0..32 is 32-byte length&quot;</span>.<span class="ident">into</span>()))<span class="question-mark">?</span>;
-			<span class="ident">sum</span>.<span class="ident">y</span>().<span class="ident">to_big_endian</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">buf</span>[<span class="number">32</span>..<span class="number">64</span>]).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">ExitError::Other</span>(<span class="string">&quot;Cannot fail since 32..64 is 32-byte length&quot;</span>.<span class="ident">into</span>()))<span class="question-mark">?</span>;
+			<span class="ident">sum</span>.<span class="ident">x</span>().<span class="ident">to_big_endian</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">buf</span>[<span class="number">0</span>..<span class="number">32</span>]).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> {
+				<span class="ident">ExitError::Other</span>(<span class="string">&quot;Cannot fail since 0..32 is 32-byte length&quot;</span>.<span class="ident">into</span>())
+			})<span class="question-mark">?</span>;
+			<span class="ident">sum</span>.<span class="ident">y</span>().<span class="ident">to_big_endian</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">buf</span>[<span class="number">32</span>..<span class="number">64</span>]).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> {
+				<span class="ident">ExitError::Other</span>(<span class="string">&quot;Cannot fail since 32..64 is 32-byte length&quot;</span>.<span class="ident">into</span>())
+			})<span class="question-mark">?</span>;
 		}
 
 		<span class="prelude-val">Ok</span>(<span class="ident">PrecompileOutput</span> {
@@ -366,13 +395,12 @@
 }
 
 <span class="kw">impl</span> <span class="ident">Precompile</span> <span class="kw">for</span> <span class="ident">Bn128Pairing</span> {
-
 	<span class="kw">fn</span> <span class="ident">execute</span>(
 		<span class="ident">input</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>],
 		<span class="ident">target_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
 		<span class="ident">_context</span>: <span class="kw-2">&amp;</span><span class="ident">Context</span>,
 	) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">core::result::Result</span><span class="op">&lt;</span><span class="ident">PrecompileOutput</span>, <span class="ident">ExitError</span><span class="op">&gt;</span> {
-		<span class="kw">use</span> <span class="ident">bn</span>::{<span class="ident">AffineG1</span>, <span class="ident">AffineG2</span>, <span class="ident">Fq</span>, <span class="ident">Fq2</span>, <span class="ident">pairing_batch</span>, <span class="ident">G1</span>, <span class="ident">G2</span>, <span class="ident">Gt</span>, <span class="ident">Group</span>};
+		<span class="kw">use</span> <span class="ident">bn</span>::{<span class="ident">pairing_batch</span>, <span class="ident">AffineG1</span>, <span class="ident">AffineG2</span>, <span class="ident">Fq</span>, <span class="ident">Fq2</span>, <span class="ident">Group</span>, <span class="ident">Gt</span>, <span class="ident">G1</span>, <span class="ident">G2</span>};
 
 		<span class="kw">let</span> (<span class="ident">ret_val</span>, <span class="ident">gas_cost</span>) <span class="op">=</span> <span class="kw">if</span> <span class="ident">input</span>.<span class="ident">is_empty</span>() {
 			(<span class="ident">U256::one</span>(), <span class="ident">Bn128Pairing::BASE_GAS_COST</span>)
@@ -380,8 +408,8 @@
 			<span class="comment">// (a, b_a, b_b - each 64-byte affine coordinates)</span>
 			<span class="kw">let</span> <span class="ident">elements</span> <span class="op">=</span> <span class="ident">input</span>.<span class="ident">len</span>() <span class="op">/</span> <span class="number">192</span>;
 
-			<span class="kw">let</span> <span class="ident">gas_cost</span>: <span class="ident">u64</span> <span class="op">=</span>
-				<span class="ident">Bn128Pairing::BASE_GAS_COST</span> <span class="op">+</span> (<span class="ident">elements</span> <span class="kw">as</span> <span class="ident">u64</span> <span class="op">*</span> <span class="ident">Bn128Pairing::GAS_COST_PER_PAIRING</span>);
+			<span class="kw">let</span> <span class="ident">gas_cost</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="ident">Bn128Pairing::BASE_GAS_COST</span>
+				<span class="op">+</span> (<span class="ident">elements</span> <span class="kw">as</span> <span class="ident">u64</span> <span class="op">*</span> <span class="ident">Bn128Pairing::GAS_COST_PER_PAIRING</span>);
 			<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">gas_left</span>) <span class="op">=</span> <span class="ident">target_gas</span> {
 				<span class="kw">if</span> <span class="ident">gas_left</span> <span class="op">&lt;</span> <span class="ident">gas_cost</span> {
 					<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">ExitError::OutOfGas</span>);
@@ -390,38 +418,50 @@
 
 			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">vals</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
 			<span class="kw">for</span> <span class="ident">idx</span> <span class="kw">in</span> <span class="number">0</span>..<span class="ident">elements</span> {
-				<span class="kw">let</span> <span class="ident">a_x</span> <span class="op">=</span> <span class="ident">Fq::from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>[<span class="ident">idx</span><span class="kw-2">*</span><span class="number">192</span>..<span class="ident">idx</span><span class="kw-2">*</span><span class="number">192</span><span class="op">+</span><span class="number">32</span>])
+				<span class="kw">let</span> <span class="ident">a_x</span> <span class="op">=</span> <span class="ident">Fq::from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>[<span class="ident">idx</span> <span class="op">*</span> <span class="number">192</span>..<span class="ident">idx</span> <span class="op">*</span> <span class="number">192</span> <span class="op">+</span> <span class="number">32</span>])
 					.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">ExitError::Other</span>(<span class="string">&quot;Invalid a argument x coordinate&quot;</span>.<span class="ident">into</span>()))<span class="question-mark">?</span>;
 
-				<span class="kw">let</span> <span class="ident">a_y</span> <span class="op">=</span> <span class="ident">Fq::from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>[<span class="ident">idx</span><span class="kw-2">*</span><span class="number">192</span><span class="op">+</span><span class="number">32</span>..<span class="ident">idx</span><span class="kw-2">*</span><span class="number">192</span><span class="op">+</span><span class="number">64</span>])
+				<span class="kw">let</span> <span class="ident">a_y</span> <span class="op">=</span> <span class="ident">Fq::from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>[<span class="ident">idx</span> <span class="op">*</span> <span class="number">192</span> <span class="op">+</span> <span class="number">32</span>..<span class="ident">idx</span> <span class="op">*</span> <span class="number">192</span> <span class="op">+</span> <span class="number">64</span>])
 					.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">ExitError::Other</span>(<span class="string">&quot;Invalid a argument y coordinate&quot;</span>.<span class="ident">into</span>()))<span class="question-mark">?</span>;
 
-				<span class="kw">let</span> <span class="ident">b_a_y</span> <span class="op">=</span> <span class="ident">Fq::from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>[<span class="ident">idx</span><span class="kw-2">*</span><span class="number">192</span><span class="op">+</span><span class="number">64</span>..<span class="ident">idx</span><span class="kw-2">*</span><span class="number">192</span><span class="op">+</span><span class="number">96</span>])
-					.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">ExitError::Other</span>(<span class="string">&quot;Invalid b argument imaginary coeff x coordinate&quot;</span>.<span class="ident">into</span>()))<span class="question-mark">?</span>;
+				<span class="kw">let</span> <span class="ident">b_a_y</span> <span class="op">=</span>
+					<span class="ident">Fq::from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>[<span class="ident">idx</span> <span class="op">*</span> <span class="number">192</span> <span class="op">+</span> <span class="number">64</span>..<span class="ident">idx</span> <span class="op">*</span> <span class="number">192</span> <span class="op">+</span> <span class="number">96</span>]).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> {
+						<span class="ident">ExitError::Other</span>(<span class="string">&quot;Invalid b argument imaginary coeff x coordinate&quot;</span>.<span class="ident">into</span>())
+					})<span class="question-mark">?</span>;
 
-				<span class="kw">let</span> <span class="ident">b_a_x</span> <span class="op">=</span> <span class="ident">Fq::from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>[<span class="ident">idx</span><span class="kw-2">*</span><span class="number">192</span><span class="op">+</span><span class="number">96</span>..<span class="ident">idx</span><span class="kw-2">*</span><span class="number">192</span><span class="op">+</span><span class="number">128</span>])
-					.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">ExitError::Other</span>(<span class="string">&quot;Invalid b argument imaginary coeff y coordinate&quot;</span>.<span class="ident">into</span>()))<span class="question-mark">?</span>;
+				<span class="kw">let</span> <span class="ident">b_a_x</span> <span class="op">=</span>
+					<span class="ident">Fq::from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>[<span class="ident">idx</span> <span class="op">*</span> <span class="number">192</span> <span class="op">+</span> <span class="number">96</span>..<span class="ident">idx</span> <span class="op">*</span> <span class="number">192</span> <span class="op">+</span> <span class="number">128</span>]).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> {
+						<span class="ident">ExitError::Other</span>(<span class="string">&quot;Invalid b argument imaginary coeff y coordinate&quot;</span>.<span class="ident">into</span>())
+					})<span class="question-mark">?</span>;
 
-				<span class="kw">let</span> <span class="ident">b_b_y</span> <span class="op">=</span> <span class="ident">Fq::from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>[<span class="ident">idx</span><span class="kw-2">*</span><span class="number">192</span><span class="op">+</span><span class="number">128</span>..<span class="ident">idx</span><span class="kw-2">*</span><span class="number">192</span><span class="op">+</span><span class="number">160</span>])
-					.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">ExitError::Other</span>(<span class="string">&quot;Invalid b argument real coeff x coordinate&quot;</span>.<span class="ident">into</span>()))<span class="question-mark">?</span>;
+				<span class="kw">let</span> <span class="ident">b_b_y</span> <span class="op">=</span>
+					<span class="ident">Fq::from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>[<span class="ident">idx</span> <span class="op">*</span> <span class="number">192</span> <span class="op">+</span> <span class="number">128</span>..<span class="ident">idx</span> <span class="op">*</span> <span class="number">192</span> <span class="op">+</span> <span class="number">160</span>]).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> {
+						<span class="ident">ExitError::Other</span>(<span class="string">&quot;Invalid b argument real coeff x coordinate&quot;</span>.<span class="ident">into</span>())
+					})<span class="question-mark">?</span>;
 
-				<span class="kw">let</span> <span class="ident">b_b_x</span> <span class="op">=</span> <span class="ident">Fq::from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>[<span class="ident">idx</span><span class="kw-2">*</span><span class="number">192</span><span class="op">+</span><span class="number">160</span>..<span class="ident">idx</span><span class="kw-2">*</span><span class="number">192</span><span class="op">+</span><span class="number">192</span>])
-					.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">ExitError::Other</span>(<span class="string">&quot;Invalid b argument real coeff y coordinate&quot;</span>.<span class="ident">into</span>()))<span class="question-mark">?</span>;
+				<span class="kw">let</span> <span class="ident">b_b_x</span> <span class="op">=</span>
+					<span class="ident">Fq::from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>[<span class="ident">idx</span> <span class="op">*</span> <span class="number">192</span> <span class="op">+</span> <span class="number">160</span>..<span class="ident">idx</span> <span class="op">*</span> <span class="number">192</span> <span class="op">+</span> <span class="number">192</span>]).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> {
+						<span class="ident">ExitError::Other</span>(<span class="string">&quot;Invalid b argument real coeff y coordinate&quot;</span>.<span class="ident">into</span>())
+					})<span class="question-mark">?</span>;
 
 				<span class="kw">let</span> <span class="ident">b_a</span> <span class="op">=</span> <span class="ident">Fq2::new</span>(<span class="ident">b_a_x</span>, <span class="ident">b_a_y</span>);
 				<span class="kw">let</span> <span class="ident">b_b</span> <span class="op">=</span> <span class="ident">Fq2::new</span>(<span class="ident">b_b_x</span>, <span class="ident">b_b_y</span>);
 				<span class="kw">let</span> <span class="ident">b</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">b_a</span>.<span class="ident">is_zero</span>() <span class="op">&amp;&amp;</span> <span class="ident">b_b</span>.<span class="ident">is_zero</span>() {
 					<span class="ident">G2::zero</span>()
 				} <span class="kw">else</span> {
-					<span class="ident">G2::from</span>(<span class="ident">AffineG2::new</span>(<span class="ident">b_a</span>, <span class="ident">b_b</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">ExitError::Other</span>(<span class="string">&quot;Invalid b argument - not on curve&quot;</span>.<span class="ident">into</span>()))<span class="question-mark">?</span>)
+					<span class="ident">G2::from</span>(<span class="ident">AffineG2::new</span>(<span class="ident">b_a</span>, <span class="ident">b_b</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> {
+						<span class="ident">ExitError::Other</span>(<span class="string">&quot;Invalid b argument - not on curve&quot;</span>.<span class="ident">into</span>())
+					})<span class="question-mark">?</span>)
 				};
 				<span class="kw">let</span> <span class="ident">a</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">a_x</span>.<span class="ident">is_zero</span>() <span class="op">&amp;&amp;</span> <span class="ident">a_y</span>.<span class="ident">is_zero</span>() {
 					<span class="ident">G1::zero</span>()
 				} <span class="kw">else</span> {
-					<span class="ident">G1::from</span>(<span class="ident">AffineG1::new</span>(<span class="ident">a_x</span>, <span class="ident">a_y</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">ExitError::Other</span>(<span class="string">&quot;Invalid a argument - not on curve&quot;</span>.<span class="ident">into</span>()))<span class="question-mark">?</span>)
+					<span class="ident">G1::from</span>(<span class="ident">AffineG1::new</span>(<span class="ident">a_x</span>, <span class="ident">a_y</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> {
+						<span class="ident">ExitError::Other</span>(<span class="string">&quot;Invalid a argument - not on curve&quot;</span>.<span class="ident">into</span>())
+					})<span class="question-mark">?</span>)
 				};
 				<span class="ident">vals</span>.<span class="ident">push</span>((<span class="ident">a</span>, <span class="ident">b</span>));
-			};
+			}
 
 			<span class="kw">let</span> <span class="ident">mul</span> <span class="op">=</span> <span class="ident">pairing_batch</span>(<span class="kw-2">&amp;</span><span class="ident">vals</span>);
 

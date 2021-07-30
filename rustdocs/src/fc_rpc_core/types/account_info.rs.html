@@ -101,9 +101,9 @@
 
 <span class="doccomment">//! Return types for RPC calls</span>
 
-<span class="kw">use</span> <span class="ident">serde::Serialize</span>;
-<span class="kw">use</span> <span class="ident">ethereum_types</span>::{<span class="ident">Public</span>, <span class="ident">Address</span>, <span class="ident">H160</span>, <span class="ident">H256</span>, <span class="ident">U256</span>};
 <span class="kw">use</span> <span class="kw">crate</span><span class="ident">::types::Bytes</span>;
+<span class="kw">use</span> <span class="ident">ethereum_types</span>::{<span class="ident">Address</span>, <span class="ident">Public</span>, <span class="ident">H160</span>, <span class="ident">H256</span>, <span class="ident">U256</span>};
+<span class="kw">use</span> <span class="ident">serde::Serialize</span>;
 
 <span class="doccomment">/// Account information.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Default</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Serialize</span>)]</span>
@@ -118,7 +118,7 @@
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">StorageProof</span> {
 	<span class="kw">pub</span> <span class="ident">key</span>: <span class="ident">U256</span>,
 	<span class="kw">pub</span> <span class="ident">value</span>: <span class="ident">U256</span>,
-	<span class="kw">pub</span> <span class="ident">proof</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Bytes</span><span class="op">&gt;</span>
+	<span class="kw">pub</span> <span class="ident">proof</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Bytes</span><span class="op">&gt;</span>,
 }
 
 <span class="doccomment">/// Account information.</span>
@@ -150,7 +150,7 @@
 <span class="doccomment">/// as well as information that tells if it is valid for</span>
 <span class="doccomment">/// the current chain</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Serialize</span>)]</span>
-<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename_all</span><span class="op">=</span><span class="string">&quot;camelCase&quot;</span>)]</span>
+<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;camelCase&quot;</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">RecoveredAccount</span> {
 	<span class="doccomment">/// address of the recovered account</span>
 	<span class="kw">pub</span> <span class="ident">address</span>: <span class="ident">Address</span>,
@@ -159,7 +159,7 @@
 	<span class="doccomment">/// If the signature contains chain replay protection,</span>
 	<span class="doccomment">/// And the chain_id encoded within the signature</span>
 	<span class="doccomment">/// matches the current chain this would be true, otherwise false.</span>
-	<span class="kw">pub</span> <span class="ident">is_valid_for_current_chain</span>: <span class="ident">bool</span>
+	<span class="kw">pub</span> <span class="ident">is_valid_for_current_chain</span>: <span class="ident">bool</span>,
 }
 </pre></div>
 </section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="fc_rpc_core" data-search-index-js="../../../search-index.js" data-search-js="../../../search.js"></div><script src="../../../main.js"></script><script src="../../../source-script.js"></script><script src="../../../source-files.js"></script></body></html>

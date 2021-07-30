@@ -61,9 +61,9 @@
 <span class="comment">// You should have received a copy of the GNU General Public License</span>
 <span class="comment">// along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.</span>
 
-<span class="kw">use</span> <span class="ident">serde::Deserialize</span>;
-<span class="kw">use</span> <span class="ident">ethereum_types</span>::{<span class="ident">H160</span>, <span class="ident">U256</span>};
 <span class="kw">use</span> <span class="kw">crate</span><span class="ident">::types::Bytes</span>;
+<span class="kw">use</span> <span class="ident">ethereum_types</span>::{<span class="ident">H160</span>, <span class="ident">U256</span>};
+<span class="kw">use</span> <span class="ident">serde::Deserialize</span>;
 
 <span class="doccomment">/// Call request</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Default</span>, <span class="ident">PartialEq</span>, <span class="ident">Deserialize</span>, <span class="ident">Clone</span>)]</span>

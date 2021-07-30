@@ -151,6 +151,8 @@
 <span id="149">149</span>
 <span id="150">150</span>
 <span id="151">151</span>
+<span id="152">152</span>
+<span id="153">153</span>
 </pre><pre class="rust">
 <span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
@@ -172,7 +174,7 @@
 
 <span class="kw">use</span> <span class="ident">std::collections::BTreeMap</span>;
 
-<span class="kw">use</span> <span class="ident">ethereum_types</span>::{<span class="ident">U256</span>, <span class="ident">H512</span>};
+<span class="kw">use</span> <span class="ident">ethereum_types</span>::{<span class="ident">H512</span>, <span class="ident">U256</span>};
 <span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">Serialize</span>, <span class="ident">Serializer</span>};
 
 <span class="doccomment">/// Sync info</span>
@@ -208,7 +210,7 @@
 <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">untagged</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">PeerCount</span> {
 	<span class="ident">U32</span>(<span class="ident">u32</span>),
-	<span class="ident">String</span>(<span class="ident">String</span>)
+	<span class="ident">String</span>(<span class="ident">String</span>),
 }
 
 <span class="doccomment">/// Peer connection information</span>
@@ -273,15 +275,17 @@
 	<span class="doccomment">/// Info when syncing</span>
 	<span class="ident">Info</span>(<span class="ident">SyncInfo</span>),
 	<span class="doccomment">/// Not syncing</span>
-	<span class="prelude-val">None</span>
+	<span class="prelude-val">None</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">Serialize</span> <span class="kw">for</span> <span class="ident">SyncStatus</span> {
 	<span class="kw">fn</span> <span class="ident">serialize</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">serializer</span>: <span class="ident">S</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">S::Ok</span>, <span class="ident">S::Error</span><span class="op">&gt;</span>
-	<span class="kw">where</span> <span class="ident">S</span>: <span class="ident">Serializer</span> {
+	<span class="kw">where</span>
+		<span class="ident">S</span>: <span class="ident">Serializer</span>,
+	{
 		<span class="kw">match</span> <span class="kw-2">*</span><span class="self">self</span> {
 			<span class="ident">SyncStatus::Info</span>(<span class="kw-2">ref</span> <span class="ident">info</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">info</span>.<span class="ident">serialize</span>(<span class="ident">serializer</span>),
-			<span class="ident">SyncStatus::None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="bool-val">false</span>.<span class="ident">serialize</span>(<span class="ident">serializer</span>)
+			<span class="ident">SyncStatus::None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="bool-val">false</span>.<span class="ident">serialize</span>(<span class="ident">serializer</span>),
 		}
 	}
 }

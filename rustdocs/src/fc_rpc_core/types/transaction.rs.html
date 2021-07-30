@@ -170,6 +170,13 @@
 <span id="168">168</span>
 <span id="169">169</span>
 <span id="170">170</span>
+<span id="171">171</span>
+<span id="172">172</span>
+<span id="173">173</span>
+<span id="174">174</span>
+<span id="175">175</span>
+<span id="176">176</span>
+<span id="177">177</span>
 </pre><pre class="rust">
 <span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
@@ -189,11 +196,14 @@
 <span class="comment">// You should have received a copy of the GNU General Public License</span>
 <span class="comment">// along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.</span>
 
-<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">sync</span>::{<span class="ident">Arc</span>, <span class="ident">Mutex</span>}, <span class="ident">collections::HashMap</span>};
-<span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">Serialize</span>, <span class="ident">Serializer</span>};
-<span class="kw">use</span> <span class="ident">serde::ser::SerializeStruct</span>;
-<span class="kw">use</span> <span class="ident">ethereum_types</span>::{<span class="ident">H160</span>, <span class="ident">H256</span>, <span class="ident">H512</span>, <span class="ident">U64</span>, <span class="ident">U256</span>};
 <span class="kw">use</span> <span class="kw">crate</span><span class="ident">::types::Bytes</span>;
+<span class="kw">use</span> <span class="ident">ethereum_types</span>::{<span class="ident">H160</span>, <span class="ident">H256</span>, <span class="ident">H512</span>, <span class="ident">U256</span>, <span class="ident">U64</span>};
+<span class="kw">use</span> <span class="ident">serde::ser::SerializeStruct</span>;
+<span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">Serialize</span>, <span class="ident">Serializer</span>};
+<span class="kw">use</span> <span class="ident">std</span>::{
+	<span class="ident">collections::HashMap</span>,
+	<span class="ident">sync</span>::{<span class="ident">Arc</span>, <span class="ident">Mutex</span>},
+};
 
 <span class="doccomment">/// Transaction</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Default</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Serialize</span>)]</span>
@@ -264,7 +274,8 @@
 
 <span class="kw">impl</span> <span class="ident">Serialize</span> <span class="kw">for</span> <span class="ident">LocalTransactionStatus</span> {
 	<span class="kw">fn</span> <span class="ident">serialize</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">serializer</span>: <span class="ident">S</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">S::Ok</span>, <span class="ident">S::Error</span><span class="op">&gt;</span>
-		<span class="kw">where</span> <span class="ident">S</span>: <span class="ident">Serializer</span>
+	<span class="kw">where</span>
+		<span class="ident">S</span>: <span class="ident">Serializer</span>,
 	{
 		<span class="kw">use</span> <span class="self">self</span><span class="ident">::LocalTransactionStatus</span>::<span class="kw-2">*</span>;
 
@@ -285,34 +296,34 @@
 			<span class="ident">Mined</span>(<span class="kw-2">ref</span> <span class="ident">tx</span>) <span class="op">=</span><span class="op">&gt;</span> {
 				<span class="ident">struc</span>.<span class="ident">serialize_field</span>(<span class="ident">status</span>, <span class="string">&quot;mined&quot;</span>)<span class="question-mark">?</span>;
 				<span class="ident">struc</span>.<span class="ident">serialize_field</span>(<span class="ident">transaction</span>, <span class="ident">tx</span>)<span class="question-mark">?</span>;
-			},
+			}
 			<span class="ident">Culled</span>(<span class="kw-2">ref</span> <span class="ident">tx</span>) <span class="op">=</span><span class="op">&gt;</span> {
 				<span class="ident">struc</span>.<span class="ident">serialize_field</span>(<span class="ident">status</span>, <span class="string">&quot;culled&quot;</span>)<span class="question-mark">?</span>;
 				<span class="ident">struc</span>.<span class="ident">serialize_field</span>(<span class="ident">transaction</span>, <span class="ident">tx</span>)<span class="question-mark">?</span>;
-			},
+			}
 			<span class="ident">Dropped</span>(<span class="kw-2">ref</span> <span class="ident">tx</span>) <span class="op">=</span><span class="op">&gt;</span> {
 				<span class="ident">struc</span>.<span class="ident">serialize_field</span>(<span class="ident">status</span>, <span class="string">&quot;dropped&quot;</span>)<span class="question-mark">?</span>;
 				<span class="ident">struc</span>.<span class="ident">serialize_field</span>(<span class="ident">transaction</span>, <span class="ident">tx</span>)<span class="question-mark">?</span>;
-			},
+			}
 			<span class="ident">Canceled</span>(<span class="kw-2">ref</span> <span class="ident">tx</span>) <span class="op">=</span><span class="op">&gt;</span> {
 				<span class="ident">struc</span>.<span class="ident">serialize_field</span>(<span class="ident">status</span>, <span class="string">&quot;canceled&quot;</span>)<span class="question-mark">?</span>;
 				<span class="ident">struc</span>.<span class="ident">serialize_field</span>(<span class="ident">transaction</span>, <span class="ident">tx</span>)<span class="question-mark">?</span>;
-			},
+			}
 			<span class="ident">Invalid</span>(<span class="kw-2">ref</span> <span class="ident">tx</span>) <span class="op">=</span><span class="op">&gt;</span> {
 				<span class="ident">struc</span>.<span class="ident">serialize_field</span>(<span class="ident">status</span>, <span class="string">&quot;invalid&quot;</span>)<span class="question-mark">?</span>;
 				<span class="ident">struc</span>.<span class="ident">serialize_field</span>(<span class="ident">transaction</span>, <span class="ident">tx</span>)<span class="question-mark">?</span>;
-			},
+			}
 			<span class="ident">Rejected</span>(<span class="kw-2">ref</span> <span class="ident">tx</span>, <span class="kw-2">ref</span> <span class="ident">reason</span>) <span class="op">=</span><span class="op">&gt;</span> {
 				<span class="ident">struc</span>.<span class="ident">serialize_field</span>(<span class="ident">status</span>, <span class="string">&quot;rejected&quot;</span>)<span class="question-mark">?</span>;
 				<span class="ident">struc</span>.<span class="ident">serialize_field</span>(<span class="ident">transaction</span>, <span class="ident">tx</span>)<span class="question-mark">?</span>;
 				<span class="ident">struc</span>.<span class="ident">serialize_field</span>(<span class="string">&quot;error&quot;</span>, <span class="ident">reason</span>)<span class="question-mark">?</span>;
-			},
+			}
 			<span class="ident">Replaced</span>(<span class="kw-2">ref</span> <span class="ident">tx</span>, <span class="kw-2">ref</span> <span class="ident">gas_price</span>, <span class="kw-2">ref</span> <span class="ident">hash</span>) <span class="op">=</span><span class="op">&gt;</span> {
 				<span class="ident">struc</span>.<span class="ident">serialize_field</span>(<span class="ident">status</span>, <span class="string">&quot;replaced&quot;</span>)<span class="question-mark">?</span>;
 				<span class="ident">struc</span>.<span class="ident">serialize_field</span>(<span class="ident">transaction</span>, <span class="ident">tx</span>)<span class="question-mark">?</span>;
 				<span class="ident">struc</span>.<span class="ident">serialize_field</span>(<span class="string">&quot;hash&quot;</span>, <span class="ident">hash</span>)<span class="question-mark">?</span>;
 				<span class="ident">struc</span>.<span class="ident">serialize_field</span>(<span class="string">&quot;gasPrice&quot;</span>, <span class="ident">gas_price</span>)<span class="question-mark">?</span>;
-			},
+			}
 		}
 
 		<span class="ident">struc</span>.<span class="ident">end</span>()
@@ -326,17 +337,20 @@
 	<span class="kw">pub</span> <span class="ident">raw</span>: <span class="ident">Bytes</span>,
 	<span class="doccomment">/// Transaction details</span>
 	<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename</span> <span class="op">=</span> <span class="string">&quot;tx&quot;</span>)]</span>
-	<span class="kw">pub</span> <span class="ident">transaction</span>: <span class="ident">Transaction</span>
+	<span class="kw">pub</span> <span class="ident">transaction</span>: <span class="ident">Transaction</span>,
 }
 
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">PendingTransaction</span> {
 	<span class="kw">pub</span> <span class="ident">transaction</span>: <span class="ident">Transaction</span>,
-	<span class="kw">pub</span> <span class="ident">at_block</span>: <span class="ident">u64</span>
+	<span class="kw">pub</span> <span class="ident">at_block</span>: <span class="ident">u64</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">PendingTransaction</span> {
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">transaction</span>: <span class="ident">Transaction</span>, <span class="ident">at_block</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-		<span class="self">Self</span> { <span class="ident">transaction</span>, <span class="ident">at_block</span> }
+		<span class="self">Self</span> {
+			<span class="ident">transaction</span>,
+			<span class="ident">at_block</span>,
+		}
 	}
 }
 

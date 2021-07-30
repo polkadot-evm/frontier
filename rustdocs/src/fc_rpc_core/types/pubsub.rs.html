@@ -103,6 +103,10 @@
 <span id="101">101</span>
 <span id="102">102</span>
 <span id="103">103</span>
+<span id="104">104</span>
+<span id="105">105</span>
+<span id="106">106</span>
+<span id="107">107</span>
 </pre><pre class="rust">
 <span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
@@ -124,11 +128,11 @@
 
 <span class="doccomment">//! Pub-Sub types.</span>
 
+<span class="kw">use</span> <span class="kw">crate</span><span class="ident">::types</span>::{<span class="ident">Filter</span>, <span class="ident">Log</span>, <span class="ident">RichHeader</span>};
 <span class="kw">use</span> <span class="ident">ethereum_types::H256</span>;
-<span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">Deserialize</span>, <span class="ident">Deserializer</span>, <span class="ident">Serialize</span>, <span class="ident">Serializer</span>};
 <span class="kw">use</span> <span class="ident">serde::de::Error</span>;
-<span class="kw">use</span> <span class="ident">serde_json</span>::{<span class="ident">Value</span>, <span class="ident">from_value</span>};
-<span class="kw">use</span> <span class="kw">crate</span><span class="ident">::types</span>::{<span class="ident">RichHeader</span>, <span class="ident">Filter</span>, <span class="ident">Log</span>};
+<span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">Deserialize</span>, <span class="ident">Deserializer</span>, <span class="ident">Serialize</span>, <span class="ident">Serializer</span>};
+<span class="kw">use</span> <span class="ident">serde_json</span>::{<span class="ident">from_value</span>, <span class="ident">Value</span>};
 
 <span class="doccomment">/// Subscription result.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>)]</span>
@@ -140,12 +144,12 @@
 	<span class="doccomment">/// Transaction hash</span>
 	<span class="ident">TransactionHash</span>(<span class="ident">H256</span>),
 	<span class="doccomment">/// SyncStatus</span>
-	<span class="ident">SyncState</span>(<span class="ident">PubSubSyncStatus</span>)
+	<span class="ident">SyncState</span>(<span class="ident">PubSubSyncStatus</span>),
 }
 
 <span class="doccomment">/// PubSbub sync status</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Serialize</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">Clone</span>)]</span>
-<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename_all</span><span class="op">=</span><span class="string">&quot;camelCase&quot;</span>)]</span>
+<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;camelCase&quot;</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">PubSubSyncStatus</span> {
 	<span class="doccomment">/// is_major_syncing?</span>
 	<span class="kw">pub</span> <span class="ident">syncing</span>: <span class="ident">bool</span>,
@@ -153,7 +157,8 @@
 
 <span class="kw">impl</span> <span class="ident">Serialize</span> <span class="kw">for</span> <span class="prelude-ty">Result</span> {
 	<span class="kw">fn</span> <span class="ident">serialize</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">serializer</span>: <span class="ident">S</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">::std::result::Result</span><span class="op">&lt;</span><span class="ident">S::Ok</span>, <span class="ident">S::Error</span><span class="op">&gt;</span>
-		<span class="kw">where</span> <span class="ident">S</span>: <span class="ident">Serializer</span>
+	<span class="kw">where</span>
+		<span class="ident">S</span>: <span class="ident">Serializer</span>,
 	{
 		<span class="kw">match</span> <span class="kw-2">*</span><span class="self">self</span> {
 			<span class="ident">Result::Header</span>(<span class="kw-2">ref</span> <span class="ident">header</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">header</span>.<span class="ident">serialize</span>(<span class="ident">serializer</span>),
@@ -196,14 +201,17 @@
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">Deserialize</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Params</span> {
 	<span class="kw">fn</span> <span class="ident">deserialize</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span>(<span class="ident">deserializer</span>: <span class="ident">D</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">::std::result::Result</span><span class="op">&lt;</span><span class="ident">Params</span>, <span class="ident">D::Error</span><span class="op">&gt;</span>
-	<span class="kw">where</span> <span class="ident">D</span>: <span class="ident">Deserializer</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
+	<span class="kw">where</span>
+		<span class="ident">D</span>: <span class="ident">Deserializer</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>,
+	{
 		<span class="kw">let</span> <span class="ident">v</span>: <span class="ident">Value</span> <span class="op">=</span> <span class="ident">Deserialize::deserialize</span>(<span class="ident">deserializer</span>)<span class="question-mark">?</span>;
 
 		<span class="kw">if</span> <span class="ident">v</span>.<span class="ident">is_null</span>() {
 			<span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">Params::None</span>);
 		}
 
-		<span class="ident">from_value</span>(<span class="ident">v</span>.<span class="ident">clone</span>()).<span class="ident">map</span>(<span class="ident">Params::Logs</span>)
+		<span class="ident">from_value</span>(<span class="ident">v</span>.<span class="ident">clone</span>())
+			.<span class="ident">map</span>(<span class="ident">Params::Logs</span>)
 			.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">D::Error::custom</span>(<span class="macro">format!</span>(<span class="string">&quot;Invalid Pub-Sub parameters: {}&quot;</span>, <span class="ident">e</span>)))
 	}
 }

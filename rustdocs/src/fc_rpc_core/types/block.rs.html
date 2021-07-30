@@ -172,6 +172,13 @@
 <span id="170">170</span>
 <span id="171">171</span>
 <span id="172">172</span>
+<span id="173">173</span>
+<span id="174">174</span>
+<span id="175">175</span>
+<span id="176">176</span>
+<span id="177">177</span>
+<span id="178">178</span>
+<span id="179">179</span>
 </pre><pre class="rust">
 <span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
@@ -191,13 +198,13 @@
 <span class="comment">// You should have received a copy of the GNU General Public License</span>
 <span class="comment">// along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.</span>
 
-<span class="kw">use</span> <span class="ident">std::ops::Deref</span>;
 <span class="kw">use</span> <span class="ident">std::collections::BTreeMap</span>;
+<span class="kw">use</span> <span class="ident">std::ops::Deref</span>;
 
-<span class="kw">use</span> <span class="ident">ethereum_types</span>::{<span class="ident">H160</span>, <span class="ident">H256</span>, <span class="ident">U256</span>, <span class="ident">Bloom</span> <span class="kw">as</span> <span class="ident">H2048</span>};
+<span class="kw">use</span> <span class="kw">crate</span><span class="ident">::types</span>::{<span class="ident">Bytes</span>, <span class="ident">Transaction</span>};
+<span class="kw">use</span> <span class="ident">ethereum_types</span>::{<span class="ident">Bloom</span> <span class="kw">as</span> <span class="ident">H2048</span>, <span class="ident">H160</span>, <span class="ident">H256</span>, <span class="ident">U256</span>};
 <span class="kw">use</span> <span class="ident">serde::ser::Error</span>;
 <span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">Serialize</span>, <span class="ident">Serializer</span>};
-<span class="kw">use</span> <span class="kw">crate</span><span class="ident">::types</span>::{<span class="ident">Bytes</span>, <span class="ident">Transaction</span>};
 
 <span class="doccomment">/// Block Transactions</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
@@ -205,15 +212,17 @@
 	<span class="doccomment">/// Only hashes</span>
 	<span class="ident">Hashes</span>(<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span>),
 	<span class="doccomment">/// Full transactions</span>
-	<span class="ident">Full</span>(<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Transaction</span><span class="op">&gt;</span>)
+	<span class="ident">Full</span>(<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Transaction</span><span class="op">&gt;</span>),
 }
 
 <span class="kw">impl</span> <span class="ident">Serialize</span> <span class="kw">for</span> <span class="ident">BlockTransactions</span> {
 	<span class="kw">fn</span> <span class="ident">serialize</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">serializer</span>: <span class="ident">S</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">S::Ok</span>, <span class="ident">S::Error</span><span class="op">&gt;</span>
-	<span class="kw">where</span> <span class="ident">S</span>: <span class="ident">Serializer</span> {
+	<span class="kw">where</span>
+		<span class="ident">S</span>: <span class="ident">Serializer</span>,
+	{
 		<span class="kw">match</span> <span class="kw-2">*</span><span class="self">self</span> {
 			<span class="ident">BlockTransactions::Hashes</span>(<span class="kw-2">ref</span> <span class="ident">hashes</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">hashes</span>.<span class="ident">serialize</span>(<span class="ident">serializer</span>),
-			<span class="ident">BlockTransactions::Full</span>(<span class="kw-2">ref</span> <span class="ident">ts</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ts</span>.<span class="ident">serialize</span>(<span class="ident">serializer</span>)
+			<span class="ident">BlockTransactions::Full</span>(<span class="kw-2">ref</span> <span class="ident">ts</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ts</span>.<span class="ident">serialize</span>(<span class="ident">serializer</span>),
 		}
 	}
 }
@@ -331,7 +340,10 @@
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Serialize</span><span class="op">&gt;</span> <span class="ident">Serialize</span> <span class="kw">for</span> <span class="ident">Rich</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-	<span class="kw">fn</span> <span class="ident">serialize</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">serializer</span>: <span class="ident">S</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">S::Ok</span>, <span class="ident">S::Error</span><span class="op">&gt;</span> <span class="kw">where</span> <span class="ident">S</span>: <span class="ident">Serializer</span> {
+	<span class="kw">fn</span> <span class="ident">serialize</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">serializer</span>: <span class="ident">S</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">S::Ok</span>, <span class="ident">S::Error</span><span class="op">&gt;</span>
+	<span class="kw">where</span>
+		<span class="ident">S</span>: <span class="ident">Serializer</span>,
+	{
 		<span class="kw">use</span> <span class="ident">serde_json</span>::{<span class="ident">to_value</span>, <span class="ident">Value</span>};
 
 		<span class="kw">let</span> <span class="ident">serialized</span> <span class="op">=</span> (<span class="ident">to_value</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">inner</span>), <span class="ident">to_value</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">extra_info</span>));
@@ -341,7 +353,9 @@
 			<span class="comment">// and serialize</span>
 			<span class="ident">value</span>.<span class="ident">serialize</span>(<span class="ident">serializer</span>)
 		} <span class="kw">else</span> {
-			<span class="prelude-val">Err</span>(<span class="ident">S::Error::custom</span>(<span class="string">&quot;Unserializable structures: expected objects&quot;</span>))
+			<span class="prelude-val">Err</span>(<span class="ident">S::Error::custom</span>(
+				<span class="string">&quot;Unserializable structures: expected objects&quot;</span>,
+			))
 		}
 	}
 }

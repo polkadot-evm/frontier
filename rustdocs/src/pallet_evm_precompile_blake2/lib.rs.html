@@ -124,6 +124,12 @@
 <span id="122">122</span>
 <span id="123">123</span>
 <span id="124">124</span>
+<span id="125">125</span>
+<span id="126">126</span>
+<span id="127">127</span>
+<span id="128">128</span>
+<span id="129">129</span>
+<span id="130">130</span>
 </pre><pre class="rust">
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
@@ -150,8 +156,8 @@
 
 <span class="kw">use</span> <span class="ident">alloc::vec::Vec</span>;
 <span class="kw">use</span> <span class="ident">core::mem::size_of</span>;
+<span class="kw">use</span> <span class="ident">evm</span>::{<span class="ident">executor::PrecompileOutput</span>, <span class="ident">Context</span>, <span class="ident">ExitError</span>, <span class="ident">ExitSucceed</span>};
 <span class="kw">use</span> <span class="ident">fp_evm::Precompile</span>;
-<span class="kw">use</span> <span class="ident">evm</span>::{<span class="ident">ExitSucceed</span>, <span class="ident">ExitError</span>, <span class="ident">Context</span>, <span class="ident">executor::PrecompileOutput</span>};
 
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Blake2F</span>;
 
@@ -160,7 +166,6 @@
 }
 
 <span class="kw">impl</span> <span class="ident">Precompile</span> <span class="kw">for</span> <span class="ident">Blake2F</span> {
-
 	<span class="doccomment">/// Format of `input`:</span>
 	<span class="doccomment">/// [4 bytes for rounds][64 bytes for h][128 bytes for m][8 bytes for t_0][8 bytes for t_1][1 byte for f]</span>
 	<span class="kw">fn</span> <span class="ident">execute</span>(
@@ -171,7 +176,9 @@
 		<span class="kw">const</span> <span class="ident">BLAKE2_F_ARG_LEN</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">213</span>;
 
 		<span class="kw">if</span> <span class="ident">input</span>.<span class="ident">len</span>() <span class="op">!</span><span class="op">=</span> <span class="ident">BLAKE2_F_ARG_LEN</span> {
-			<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">ExitError::Other</span>(<span class="string">&quot;input length for Blake2 F precompile should be exactly 213 bytes&quot;</span>.<span class="ident">into</span>()));
+			<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">ExitError::Other</span>(
+				<span class="string">&quot;input length for Blake2 F precompile should be exactly 213 bytes&quot;</span>.<span class="ident">into</span>(),
+			));
 		}
 
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">rounds_buf</span>: [<span class="ident">u8</span>; <span class="number">4</span>] <span class="op">=</span> [<span class="number">0</span>; <span class="number">4</span>];
@@ -209,7 +216,6 @@
 			<span class="ident">ctr</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
 		}
 
-
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">t_0_buf</span>: [<span class="ident">u8</span>; <span class="number">8</span>] <span class="op">=</span> [<span class="number">0</span>; <span class="number">8</span>];
 		<span class="ident">t_0_buf</span>.<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>[<span class="number">196</span>..<span class="number">204</span>]);
 		<span class="kw">let</span> <span class="ident">t_0</span> <span class="op">=</span> <span class="ident">u64::from_le_bytes</span>(<span class="ident">t_0_buf</span>);
@@ -218,8 +224,14 @@
 		<span class="ident">t_1_buf</span>.<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>[<span class="number">204</span>..<span class="number">212</span>]);
 		<span class="kw">let</span> <span class="ident">t_1</span> <span class="op">=</span> <span class="ident">u64::from_le_bytes</span>(<span class="ident">t_1_buf</span>);
 
-		<span class="kw">let</span> <span class="ident">f</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">input</span>[<span class="number">212</span>] <span class="op">=</span><span class="op">=</span> <span class="number">1</span> { <span class="bool-val">true</span> } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">input</span>[<span class="number">212</span>] <span class="op">=</span><span class="op">=</span> <span class="number">0</span> { <span class="bool-val">false</span> } <span class="kw">else</span> {
-			<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">ExitError::Other</span>(<span class="string">&quot;incorrect final block indicator flag&quot;</span>.<span class="ident">into</span>()))
+		<span class="kw">let</span> <span class="ident">f</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">input</span>[<span class="number">212</span>] <span class="op">=</span><span class="op">=</span> <span class="number">1</span> {
+			<span class="bool-val">true</span>
+		} <span class="kw">else</span> <span class="kw">if</span> <span class="ident">input</span>[<span class="number">212</span>] <span class="op">=</span><span class="op">=</span> <span class="number">0</span> {
+			<span class="bool-val">false</span>
+		} <span class="kw">else</span> {
+			<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">ExitError::Other</span>(
+				<span class="string">&quot;incorrect final block indicator flag&quot;</span>.<span class="ident">into</span>(),
+			));
 		};
 
 		<span class="kw">crate</span><span class="ident">::eip_152::compress</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">h</span>, <span class="ident">m</span>, [<span class="ident">t_0</span>.<span class="ident">into</span>(), <span class="ident">t_1</span>.<span class="ident">into</span>()], <span class="ident">f</span>, <span class="ident">rounds</span> <span class="kw">as</span> <span class="ident">usize</span>);

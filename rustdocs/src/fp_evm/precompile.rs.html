@@ -138,10 +138,10 @@
 <span class="comment">// See the License for the specific language governing permissions and</span>
 <span class="comment">// limitations under the License.</span>
 
-<span class="kw">use</span> <span class="ident">sp_std::vec::Vec</span>;
-<span class="kw">use</span> <span class="ident">sp_core::H160</span>;
+<span class="kw">use</span> <span class="ident">evm</span>::{<span class="ident">executor::PrecompileOutput</span>, <span class="ident">Context</span>, <span class="ident">ExitError</span>, <span class="ident">ExitSucceed</span>};
 <span class="kw">use</span> <span class="ident">impl_trait_for_tuples::impl_for_tuples</span>;
-<span class="kw">use</span> <span class="ident">evm</span>::{<span class="ident">ExitSucceed</span>, <span class="ident">ExitError</span>, <span class="ident">Context</span>, <span class="ident">executor::PrecompileOutput</span>};
+<span class="kw">use</span> <span class="ident">sp_core::H160</span>;
+<span class="kw">use</span> <span class="ident">sp_std::vec::Vec</span>;
 
 <span class="doccomment">/// Custom precompiles to be used by EVM engine.</span>
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">PrecompileSet</span> {
@@ -198,10 +198,7 @@
 	<span class="kw">const</span> <span class="ident">BASE</span>: <span class="ident">u64</span>;
 	<span class="kw">const</span> <span class="ident">WORD</span>: <span class="ident">u64</span>;
 
-	<span class="kw">fn</span> <span class="ident">execute</span>(
-		<span class="ident">input</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>],
-		<span class="ident">cost</span>: <span class="ident">u64</span>,
-	) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">core::result::Result</span><span class="op">&lt;</span>(<span class="ident">ExitSucceed</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>), <span class="ident">ExitError</span><span class="op">&gt;</span>;
+	<span class="kw">fn</span> <span class="ident">execute</span>(<span class="ident">input</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>], <span class="ident">cost</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">core::result::Result</span><span class="op">&lt;</span>(<span class="ident">ExitSucceed</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>), <span class="ident">ExitError</span><span class="op">&gt;</span>;
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">LinearCostPrecompile</span><span class="op">&gt;</span> <span class="ident">Precompile</span> <span class="kw">for</span> <span class="ident">T</span> {
@@ -227,15 +224,18 @@
 	<span class="ident">target_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
 	<span class="ident">len</span>: <span class="ident">u64</span>,
 	<span class="ident">base</span>: <span class="ident">u64</span>,
-	<span class="ident">word</span>: <span class="ident">u64</span>
+	<span class="ident">word</span>: <span class="ident">u64</span>,
 ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">u64</span>, <span class="ident">ExitError</span><span class="op">&gt;</span> {
-	<span class="kw">let</span> <span class="ident">cost</span> <span class="op">=</span> <span class="ident">base</span>.<span class="ident">checked_add</span>(
-		<span class="ident">word</span>.<span class="ident">checked_mul</span>(<span class="ident">len</span>.<span class="ident">saturating_add</span>(<span class="number">31</span>) <span class="op">/</span> <span class="number">32</span>).<span class="ident">ok_or</span>(<span class="ident">ExitError::OutOfGas</span>)<span class="question-mark">?</span>
-	).<span class="ident">ok_or</span>(<span class="ident">ExitError::OutOfGas</span>)<span class="question-mark">?</span>;
+	<span class="kw">let</span> <span class="ident">cost</span> <span class="op">=</span> <span class="ident">base</span>
+		.<span class="ident">checked_add</span>(
+			<span class="ident">word</span>.<span class="ident">checked_mul</span>(<span class="ident">len</span>.<span class="ident">saturating_add</span>(<span class="number">31</span>) <span class="op">/</span> <span class="number">32</span>)
+				.<span class="ident">ok_or</span>(<span class="ident">ExitError::OutOfGas</span>)<span class="question-mark">?</span>,
+		)
+		.<span class="ident">ok_or</span>(<span class="ident">ExitError::OutOfGas</span>)<span class="question-mark">?</span>;
 
 	<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">target_gas</span>) <span class="op">=</span> <span class="ident">target_gas</span> {
 		<span class="kw">if</span> <span class="ident">cost</span> <span class="op">&gt;</span> <span class="ident">target_gas</span> {
-			<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">ExitError::OutOfGas</span>)
+			<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">ExitError::OutOfGas</span>);
 		}
 	}
 

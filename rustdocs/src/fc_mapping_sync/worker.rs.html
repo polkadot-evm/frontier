@@ -137,6 +137,10 @@
 <span id="135">135</span>
 <span id="136">136</span>
 <span id="137">137</span>
+<span id="138">138</span>
+<span id="139">139</span>
+<span id="140">140</span>
+<span id="141">141</span>
 </pre><pre class="rust">
 <span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
@@ -156,25 +160,28 @@
 <span class="comment">// You should have received a copy of the GNU General Public License</span>
 <span class="comment">// along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.</span>
 
-<span class="kw">use</span> <span class="ident">std::time::Duration</span>;
-<span class="kw">use</span> <span class="ident">std::pin::Pin</span>;
-<span class="kw">use</span> <span class="ident">std::sync::Arc</span>;
-<span class="kw">use</span> <span class="ident">futures</span>::{<span class="ident">prelude</span>::<span class="kw-2">*</span>, <span class="ident">task</span>::{<span class="ident">Context</span>, <span class="ident">Poll</span>}};
-<span class="kw">use</span> <span class="ident">sp_runtime::traits::Block</span> <span class="kw">as</span> <span class="ident">BlockT</span>;
-<span class="kw">use</span> <span class="ident">sc_client_api::ImportNotifications</span>;
-<span class="kw">use</span> <span class="ident">sp_api::ProvideRuntimeApi</span>;
-<span class="kw">use</span> <span class="ident">sc_client_api::BlockOf</span>;
-<span class="kw">use</span> <span class="ident">sp_blockchain::HeaderBackend</span>;
 <span class="kw">use</span> <span class="ident">fp_rpc::EthereumRuntimeRPCApi</span>;
+<span class="kw">use</span> <span class="ident">futures</span>::{
+	<span class="ident">prelude</span>::<span class="kw-2">*</span>,
+	<span class="ident">task</span>::{<span class="ident">Context</span>, <span class="ident">Poll</span>},
+};
 <span class="kw">use</span> <span class="ident">futures_timer::Delay</span>;
 <span class="kw">use</span> <span class="ident">log::debug</span>;
+<span class="kw">use</span> <span class="ident">sc_client_api::BlockOf</span>;
+<span class="kw">use</span> <span class="ident">sc_client_api::ImportNotifications</span>;
+<span class="kw">use</span> <span class="ident">sp_api::ProvideRuntimeApi</span>;
+<span class="kw">use</span> <span class="ident">sp_blockchain::HeaderBackend</span>;
+<span class="kw">use</span> <span class="ident">sp_runtime::traits::Block</span> <span class="kw">as</span> <span class="ident">BlockT</span>;
+<span class="kw">use</span> <span class="ident">std::pin::Pin</span>;
+<span class="kw">use</span> <span class="ident">std::sync::Arc</span>;
+<span class="kw">use</span> <span class="ident">std::time::Duration</span>;
 
 <span class="kw">const</span> <span class="ident">LIMIT</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">8</span>;
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">PartialEq</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">SyncStrategy</span> {
 	<span class="ident">Normal</span>,
-	<span class="ident">Parachain</span>
+	<span class="ident">Parachain</span>,
 }
 
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">MappingSyncWorker</span><span class="op">&lt;</span><span class="ident">Block</span>: <span class="ident">BlockT</span>, <span class="ident">C</span>, <span class="ident">B</span><span class="op">&gt;</span> {
@@ -216,7 +223,8 @@
 	}
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">Block</span>: <span class="ident">BlockT</span>, <span class="ident">C</span>, <span class="ident">B</span><span class="op">&gt;</span> <span class="ident">Stream</span> <span class="kw">for</span> <span class="ident">MappingSyncWorker</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">C</span>, <span class="ident">B</span><span class="op">&gt;</span> <span class="kw">where</span>
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">Block</span>: <span class="ident">BlockT</span>, <span class="ident">C</span>, <span class="ident">B</span><span class="op">&gt;</span> <span class="ident">Stream</span> <span class="kw">for</span> <span class="ident">MappingSyncWorker</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">C</span>, <span class="ident">B</span><span class="op">&gt;</span>
+<span class="kw">where</span>
 	<span class="ident">C</span>: <span class="ident">ProvideRuntimeApi</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="ident">HeaderBackend</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">BlockOf</span>,
 	<span class="ident">C::Api</span>: <span class="ident">EthereumRuntimeRPCApi</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>,
 	<span class="ident">B</span>: <span class="ident">sc_client_api::Backend</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>,
@@ -231,7 +239,7 @@
 				<span class="ident">Poll::Pending</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">break</span>,
 				<span class="ident">Poll::Ready</span>(<span class="prelude-val">Some</span>(<span class="kw">_</span>)) <span class="op">=</span><span class="op">&gt;</span> {
 					<span class="ident">fire</span> <span class="op">=</span> <span class="bool-val">true</span>;
-				},
+				}
 				<span class="ident">Poll::Ready</span>(<span class="prelude-val">None</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="ident">Poll::Ready</span>(<span class="prelude-val">None</span>),
 			}
 		}
@@ -243,7 +251,7 @@
 			<span class="ident">Poll::Pending</span> <span class="op">=</span><span class="op">&gt;</span> (),
 			<span class="ident">Poll::Ready</span>(()) <span class="op">=</span><span class="op">&gt;</span> {
 				<span class="ident">fire</span> <span class="op">=</span> <span class="bool-val">true</span>;
-			},
+			}
 		}
 
 		<span class="kw">if</span> <span class="self">self</span>.<span class="ident">have_next</span> {
@@ -263,12 +271,12 @@
 				<span class="prelude-val">Ok</span>(<span class="ident">have_next</span>) <span class="op">=</span><span class="op">&gt;</span> {
 					<span class="self">self</span>.<span class="ident">have_next</span> <span class="op">=</span> <span class="ident">have_next</span>;
 					<span class="ident">Poll::Ready</span>(<span class="prelude-val">Some</span>(()))
-				},
+				}
 				<span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> {
 					<span class="self">self</span>.<span class="ident">have_next</span> <span class="op">=</span> <span class="bool-val">false</span>;
 					<span class="macro">debug!</span>(<span class="ident">target</span>: <span class="string">&quot;mapping-sync&quot;</span>, <span class="string">&quot;Syncing failed with error {:?}, retrying.&quot;</span>, <span class="ident">e</span>);
 					<span class="ident">Poll::Ready</span>(<span class="prelude-val">Some</span>(()))
-				},
+				}
 			}
 		} <span class="kw">else</span> {
 			<span class="ident">Poll::Pending</span>

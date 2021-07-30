@@ -182,6 +182,36 @@
 <span id="180">180</span>
 <span id="181">181</span>
 <span id="182">182</span>
+<span id="183">183</span>
+<span id="184">184</span>
+<span id="185">185</span>
+<span id="186">186</span>
+<span id="187">187</span>
+<span id="188">188</span>
+<span id="189">189</span>
+<span id="190">190</span>
+<span id="191">191</span>
+<span id="192">192</span>
+<span id="193">193</span>
+<span id="194">194</span>
+<span id="195">195</span>
+<span id="196">196</span>
+<span id="197">197</span>
+<span id="198">198</span>
+<span id="199">199</span>
+<span id="200">200</span>
+<span id="201">201</span>
+<span id="202">202</span>
+<span id="203">203</span>
+<span id="204">204</span>
+<span id="205">205</span>
+<span id="206">206</span>
+<span id="207">207</span>
+<span id="208">208</span>
+<span id="209">209</span>
+<span id="210">210</span>
+<span id="211">211</span>
+<span id="212">212</span>
 </pre><pre class="rust">
 <span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
@@ -201,10 +231,10 @@
 <span class="comment">// You should have received a copy of the GNU General Public License</span>
 <span class="comment">// along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.</span>
 
-<span class="kw">use</span> <span class="ident">std::fmt</span>;
-<span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">Deserialize</span>, <span class="ident">Deserializer</span>, <span class="ident">Serialize</span>, <span class="ident">Serializer</span>};
-<span class="kw">use</span> <span class="ident">serde::de</span>::{<span class="ident">Error</span>, <span class="ident">Visitor</span>, <span class="ident">MapAccess</span>};
 <span class="kw">use</span> <span class="ident">ethereum_types::H256</span>;
+<span class="kw">use</span> <span class="ident">serde::de</span>::{<span class="ident">Error</span>, <span class="ident">MapAccess</span>, <span class="ident">Visitor</span>};
+<span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">Deserialize</span>, <span class="ident">Deserializer</span>, <span class="ident">Serialize</span>, <span class="ident">Serializer</span>};
+<span class="kw">use</span> <span class="ident">std::fmt</span>;
 
 <span class="doccomment">/// Represents rpc api block number param.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">PartialEq</span>, <span class="ident">Clone</span>, <span class="ident">Hash</span>, <span class="ident">Eq</span>)]</span>
@@ -233,7 +263,10 @@
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">Deserialize</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">BlockNumber</span> {
-	<span class="kw">fn</span> <span class="ident">deserialize</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span>(<span class="ident">deserializer</span>: <span class="ident">D</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">BlockNumber</span>, <span class="ident">D::Error</span><span class="op">&gt;</span> <span class="kw">where</span> <span class="ident">D</span>: <span class="ident">Deserializer</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">deserialize</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span>(<span class="ident">deserializer</span>: <span class="ident">D</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">BlockNumber</span>, <span class="ident">D::Error</span><span class="op">&gt;</span>
+	<span class="kw">where</span>
+		<span class="ident">D</span>: <span class="ident">Deserializer</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>,
+	{
 		<span class="ident">deserializer</span>.<span class="ident">deserialize_any</span>(<span class="ident">BlockNumberVisitor</span>)
 	}
 }
@@ -249,11 +282,18 @@
 }
 
 <span class="kw">impl</span> <span class="ident">Serialize</span> <span class="kw">for</span> <span class="ident">BlockNumber</span> {
-	<span class="kw">fn</span> <span class="ident">serialize</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">serializer</span>: <span class="ident">S</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">S::Ok</span>, <span class="ident">S::Error</span><span class="op">&gt;</span> <span class="kw">where</span> <span class="ident">S</span>: <span class="ident">Serializer</span> {
+	<span class="kw">fn</span> <span class="ident">serialize</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">serializer</span>: <span class="ident">S</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">S::Ok</span>, <span class="ident">S::Error</span><span class="op">&gt;</span>
+	<span class="kw">where</span>
+		<span class="ident">S</span>: <span class="ident">Serializer</span>,
+	{
 		<span class="kw">match</span> <span class="kw-2">*</span><span class="self">self</span> {
-			<span class="ident">BlockNumber::Hash</span>{ <span class="ident">hash</span>, <span class="ident">require_canonical</span> } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">serializer</span>.<span class="ident">serialize_str</span>(
-				<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">&quot;{{ &#39;hash&#39;: &#39;{}&#39;, &#39;requireCanonical&#39;: &#39;{}&#39;  }}&quot;</span>, <span class="ident">hash</span>, <span class="ident">require_canonical</span>)
-			),
+			<span class="ident">BlockNumber::Hash</span> {
+				<span class="ident">hash</span>,
+				<span class="ident">require_canonical</span>,
+			} <span class="op">=</span><span class="op">&gt;</span> <span class="ident">serializer</span>.<span class="ident">serialize_str</span>(<span class="kw-2">&amp;</span><span class="macro">format!</span>(
+				<span class="string">&quot;{{ &#39;hash&#39;: &#39;{}&#39;, &#39;requireCanonical&#39;: &#39;{}&#39;  }}&quot;</span>,
+				<span class="ident">hash</span>, <span class="ident">require_canonical</span>
+			)),
 			<span class="ident">BlockNumber::Num</span>(<span class="kw-2">ref</span> <span class="ident">x</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">serializer</span>.<span class="ident">serialize_str</span>(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">&quot;0x{:x}&quot;</span>, <span class="ident">x</span>)),
 			<span class="ident">BlockNumber::Latest</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">serializer</span>.<span class="ident">serialize_str</span>(<span class="string">&quot;latest&quot;</span>),
 			<span class="ident">BlockNumber::Earliest</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">serializer</span>.<span class="ident">serialize_str</span>(<span class="string">&quot;earliest&quot;</span>),
@@ -268,11 +308,18 @@
 	<span class="kw">type</span> <span class="ident">Value</span> <span class="op">=</span> <span class="ident">BlockNumber</span>;
 
 	<span class="kw">fn</span> <span class="ident">expecting</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">formatter</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt::Formatter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt::Result</span> {
-		<span class="macro">write!</span>(<span class="ident">formatter</span>, <span class="string">&quot;a block number or &#39;latest&#39;, &#39;earliest&#39; or &#39;pending&#39;&quot;</span>)
+		<span class="macro">write!</span>(
+			<span class="ident">formatter</span>,
+			<span class="string">&quot;a block number or &#39;latest&#39;, &#39;earliest&#39; or &#39;pending&#39;&quot;</span>
+		)
 	}
 
-	<span class="kw">fn</span> <span class="ident">visit_map</span><span class="op">&lt;</span><span class="ident">V</span><span class="op">&gt;</span>(<span class="self">self</span>, <span class="kw-2">mut</span> <span class="ident">visitor</span>: <span class="ident">V</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="ident">::Value</span>, <span class="ident">V::Error</span><span class="op">&gt;</span> <span class="kw">where</span> <span class="ident">V</span>: <span class="ident">MapAccess</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
-		<span class="kw">let</span> (<span class="kw-2">mut</span> <span class="ident">require_canonical</span>, <span class="kw-2">mut</span> <span class="ident">block_number</span>, <span class="kw-2">mut</span> <span class="ident">block_hash</span>) <span class="op">=</span> (<span class="bool-val">false</span>, <span class="prelude-val">None</span>::<span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>, <span class="prelude-val">None</span>::<span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span>);
+	<span class="kw">fn</span> <span class="ident">visit_map</span><span class="op">&lt;</span><span class="ident">V</span><span class="op">&gt;</span>(<span class="self">self</span>, <span class="kw-2">mut</span> <span class="ident">visitor</span>: <span class="ident">V</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="ident">::Value</span>, <span class="ident">V::Error</span><span class="op">&gt;</span>
+	<span class="kw">where</span>
+		<span class="ident">V</span>: <span class="ident">MapAccess</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>,
+	{
+		<span class="kw">let</span> (<span class="kw-2">mut</span> <span class="ident">require_canonical</span>, <span class="kw-2">mut</span> <span class="ident">block_number</span>, <span class="kw-2">mut</span> <span class="ident">block_hash</span>) <span class="op">=</span>
+			(<span class="bool-val">false</span>, <span class="prelude-val">None</span>::<span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>, <span class="prelude-val">None</span>::<span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span>);
 
 		<span class="kw">loop</span> {
 			<span class="kw">let</span> <span class="ident">key_str</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">visitor</span>.<span class="ident">next_key</span>()<span class="question-mark">?</span>;
@@ -289,7 +336,9 @@
 							<span class="ident">block_number</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">number</span>);
 							<span class="kw">break</span>;
 						} <span class="kw">else</span> {
-							<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error::custom</span>(<span class="string">&quot;Invalid block number: missing 0x prefix&quot;</span>.<span class="ident">to_string</span>()))
+							<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error::custom</span>(
+								<span class="string">&quot;Invalid block number: missing 0x prefix&quot;</span>.<span class="ident">to_string</span>(),
+							));
 						}
 					}
 					<span class="string">&quot;blockHash&quot;</span> <span class="op">=</span><span class="op">&gt;</span> {
@@ -298,50 +347,61 @@
 					<span class="string">&quot;requireCanonical&quot;</span> <span class="op">=</span><span class="op">&gt;</span> {
 						<span class="ident">require_canonical</span> <span class="op">=</span> <span class="ident">visitor</span>.<span class="ident">next_value</span>()<span class="question-mark">?</span>;
 					}
-					<span class="ident">key</span> <span class="op">=</span><span class="op">&gt;</span> {
-						<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error::custom</span>(<span class="macro">format!</span>(<span class="string">&quot;Unknown key: {}&quot;</span>, <span class="ident">key</span>)))
-					}
-				}
-				<span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {
-					<span class="kw">break</span>
-				}
+					<span class="ident">key</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error::custom</span>(<span class="macro">format!</span>(<span class="string">&quot;Unknown key: {}&quot;</span>, <span class="ident">key</span>))),
+				},
+				<span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">break</span>,
 			};
 		}
 
 		<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">number</span>) <span class="op">=</span> <span class="ident">block_number</span> {
-			<span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">BlockNumber::Num</span>(<span class="ident">number</span>))
+			<span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">BlockNumber::Num</span>(<span class="ident">number</span>));
 		}
 
 		<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">hash</span>) <span class="op">=</span> <span class="ident">block_hash</span> {
-			<span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">BlockNumber::Hash</span> { <span class="ident">hash</span>, <span class="ident">require_canonical</span> })
+			<span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">BlockNumber::Hash</span> {
+				<span class="ident">hash</span>,
+				<span class="ident">require_canonical</span>,
+			});
 		}
 
-		<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error::custom</span>(<span class="string">&quot;Invalid input&quot;</span>))
+		<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error::custom</span>(<span class="string">&quot;Invalid input&quot;</span>));
 	}
 
-	<span class="kw">fn</span> <span class="ident">visit_str</span><span class="op">&lt;</span><span class="ident">E</span><span class="op">&gt;</span>(<span class="self">self</span>, <span class="ident">value</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="ident">::Value</span>, <span class="ident">E</span><span class="op">&gt;</span> <span class="kw">where</span> <span class="ident">E</span>: <span class="ident">Error</span> {
+	<span class="kw">fn</span> <span class="ident">visit_str</span><span class="op">&lt;</span><span class="ident">E</span><span class="op">&gt;</span>(<span class="self">self</span>, <span class="ident">value</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="ident">::Value</span>, <span class="ident">E</span><span class="op">&gt;</span>
+	<span class="kw">where</span>
+		<span class="ident">E</span>: <span class="ident">Error</span>,
+	{
 		<span class="kw">match</span> <span class="ident">value</span> {
 			<span class="string">&quot;latest&quot;</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">BlockNumber::Latest</span>),
 			<span class="string">&quot;earliest&quot;</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">BlockNumber::Earliest</span>),
 			<span class="string">&quot;pending&quot;</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">BlockNumber::Pending</span>),
-			<span class="kw">_</span> <span class="kw">if</span> <span class="ident">value</span>.<span class="ident">starts_with</span>(<span class="string">&quot;0x&quot;</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">u64::from_str_radix</span>(<span class="kw-2">&amp;</span><span class="ident">value</span>[<span class="number">2</span>..], <span class="number">16</span>).<span class="ident">map</span>(<span class="ident">BlockNumber::Num</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> {
-				<span class="ident">Error::custom</span>(<span class="macro">format!</span>(<span class="string">&quot;Invalid block number: {}&quot;</span>, <span class="ident">e</span>))
-			}),
-			<span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">u64::from_str_radix</span>(<span class="kw-2">&amp;</span><span class="ident">value</span>, <span class="number">10</span>).<span class="ident">map</span>(<span class="ident">BlockNumber::Num</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> {
-				<span class="ident">Error::custom</span>(<span class="string">&quot;Invalid block number: non-decimal or missing 0x prefix&quot;</span>.<span class="ident">to_string</span>())
-			}),
+			<span class="kw">_</span> <span class="kw">if</span> <span class="ident">value</span>.<span class="ident">starts_with</span>(<span class="string">&quot;0x&quot;</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">u64::from_str_radix</span>(<span class="kw-2">&amp;</span><span class="ident">value</span>[<span class="number">2</span>..], <span class="number">16</span>)
+				.<span class="ident">map</span>(<span class="ident">BlockNumber::Num</span>)
+				.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">Error::custom</span>(<span class="macro">format!</span>(<span class="string">&quot;Invalid block number: {}&quot;</span>, <span class="ident">e</span>))),
+			<span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">u64::from_str_radix</span>(<span class="kw-2">&amp;</span><span class="ident">value</span>, <span class="number">10</span>)
+				.<span class="ident">map</span>(<span class="ident">BlockNumber::Num</span>)
+				.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> {
+					<span class="ident">Error::custom</span>(
+						<span class="string">&quot;Invalid block number: non-decimal or missing 0x prefix&quot;</span>.<span class="ident">to_string</span>(),
+					)
+				}),
 		}
 	}
 
-	<span class="kw">fn</span> <span class="ident">visit_string</span><span class="op">&lt;</span><span class="ident">E</span><span class="op">&gt;</span>(<span class="self">self</span>, <span class="ident">value</span>: <span class="ident">String</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="ident">::Value</span>, <span class="ident">E</span><span class="op">&gt;</span> <span class="kw">where</span> <span class="ident">E</span>: <span class="ident">Error</span> {
+	<span class="kw">fn</span> <span class="ident">visit_string</span><span class="op">&lt;</span><span class="ident">E</span><span class="op">&gt;</span>(<span class="self">self</span>, <span class="ident">value</span>: <span class="ident">String</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="ident">::Value</span>, <span class="ident">E</span><span class="op">&gt;</span>
+	<span class="kw">where</span>
+		<span class="ident">E</span>: <span class="ident">Error</span>,
+	{
 		<span class="self">self</span>.<span class="ident">visit_str</span>(<span class="ident">value</span>.<span class="ident">as_ref</span>())
 	}
 
-	<span class="kw">fn</span> <span class="ident">visit_u64</span><span class="op">&lt;</span><span class="ident">E</span><span class="op">&gt;</span>(<span class="self">self</span>, <span class="ident">value</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="ident">::Value</span>, <span class="ident">E</span><span class="op">&gt;</span> <span class="kw">where</span> <span class="ident">E</span>: <span class="ident">Error</span> {
+	<span class="kw">fn</span> <span class="ident">visit_u64</span><span class="op">&lt;</span><span class="ident">E</span><span class="op">&gt;</span>(<span class="self">self</span>, <span class="ident">value</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="ident">::Value</span>, <span class="ident">E</span><span class="op">&gt;</span>
+	<span class="kw">where</span>
+		<span class="ident">E</span>: <span class="ident">Error</span>,
+	{
 		<span class="prelude-val">Ok</span>(<span class="ident">BlockNumber::Num</span>(<span class="ident">value</span>))
 	}
 }
-
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
 <span class="kw">mod</span> <span class="ident">tests</span> {
@@ -350,7 +410,7 @@
 	<span class="kw">fn</span> <span class="ident">match_block_number</span>(<span class="ident">block_number</span>: <span class="ident">BlockNumber</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span> {
 		<span class="kw">match</span> <span class="ident">block_number</span> {
 			<span class="ident">BlockNumber::Num</span>(<span class="ident">number</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">number</span>),
-			<span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">None</span>
+			<span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">None</span>,
 		}
 	}
 

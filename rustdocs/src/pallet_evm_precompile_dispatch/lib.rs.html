@@ -74,6 +74,13 @@
 <span id="72">72</span>
 <span id="73">73</span>
 <span id="74">74</span>
+<span id="75">75</span>
+<span id="76">76</span>
+<span id="77">77</span>
+<span id="78">78</span>
+<span id="79">79</span>
+<span id="80">80</span>
+<span id="81">81</span>
 </pre><pre class="rust">
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
@@ -97,20 +104,24 @@
 <span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">alloc</span>;
 
 <span class="kw">use</span> <span class="ident">alloc::vec::Vec</span>;
-<span class="kw">use</span> <span class="ident">core::marker::PhantomData</span>;
-<span class="kw">use</span> <span class="ident">fp_evm::Precompile</span>;
-<span class="kw">use</span> <span class="ident">evm</span>::{<span class="ident">ExitSucceed</span>, <span class="ident">ExitError</span>, <span class="ident">Context</span>, <span class="ident">executor::PrecompileOutput</span>};
-<span class="kw">use</span> <span class="ident">frame_support</span>::{<span class="ident">dispatch</span>::{<span class="ident">Dispatchable</span>, <span class="ident">GetDispatchInfo</span>, <span class="ident">PostDispatchInfo</span>}, <span class="ident">weights</span>::{<span class="ident">Pays</span>, <span class="ident">DispatchClass</span>}};
-<span class="kw">use</span> <span class="ident">pallet_evm</span>::{<span class="ident">AddressMapping</span>, <span class="ident">GasWeightMapping</span>};
 <span class="kw">use</span> <span class="ident">codec::Decode</span>;
+<span class="kw">use</span> <span class="ident">core::marker::PhantomData</span>;
+<span class="kw">use</span> <span class="ident">evm</span>::{<span class="ident">executor::PrecompileOutput</span>, <span class="ident">Context</span>, <span class="ident">ExitError</span>, <span class="ident">ExitSucceed</span>};
+<span class="kw">use</span> <span class="ident">fp_evm::Precompile</span>;
+<span class="kw">use</span> <span class="ident">frame_support</span>::{
+	<span class="ident">dispatch</span>::{<span class="ident">Dispatchable</span>, <span class="ident">GetDispatchInfo</span>, <span class="ident">PostDispatchInfo</span>},
+	<span class="ident">weights</span>::{<span class="ident">DispatchClass</span>, <span class="ident">Pays</span>},
+};
+<span class="kw">use</span> <span class="ident">pallet_evm</span>::{<span class="ident">AddressMapping</span>, <span class="ident">GasWeightMapping</span>};
 
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Dispatch</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">pallet_evm::Config</span><span class="op">&gt;</span> {
 	<span class="ident">_marker</span>: <span class="ident">PhantomData</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="ident">Precompile</span> <span class="kw">for</span> <span class="ident">Dispatch</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="kw">where</span>
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="ident">Precompile</span> <span class="kw">for</span> <span class="ident">Dispatch</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>
+<span class="kw">where</span>
 	<span class="ident">T</span>: <span class="ident">pallet_evm::Config</span>,
-	<span class="ident">T::Call</span>: <span class="ident">Dispatchable</span><span class="op">&lt;</span><span class="ident">PostInfo</span><span class="op">=</span><span class="ident">PostDispatchInfo</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">GetDispatchInfo</span> <span class="op">+</span> <span class="ident">Decode</span>,
+	<span class="ident">T::Call</span>: <span class="ident">Dispatchable</span><span class="op">&lt;</span><span class="ident">PostInfo</span> <span class="op">=</span> <span class="ident">PostDispatchInfo</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">GetDispatchInfo</span> <span class="op">+</span> <span class="ident">Decode</span>,
 	<span class="op">&lt;</span><span class="ident">T::Call</span> <span class="kw">as</span> <span class="ident">Dispatchable</span><span class="op">&gt;</span><span class="ident">::Origin</span>: <span class="ident">From</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">T::AccountId</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 {
 	<span class="kw">fn</span> <span class="ident">execute</span>(
@@ -118,18 +129,19 @@
 		<span class="ident">target_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
 		<span class="ident">context</span>: <span class="kw-2">&amp;</span><span class="ident">Context</span>,
 	) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">core::result::Result</span><span class="op">&lt;</span><span class="ident">PrecompileOutput</span>, <span class="ident">ExitError</span><span class="op">&gt;</span> {
-		<span class="kw">let</span> <span class="ident">call</span> <span class="op">=</span> <span class="ident">T::Call::decode</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="kw-2">&amp;</span><span class="ident">input</span>[..]).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">ExitError::Other</span>(<span class="string">&quot;decode failed&quot;</span>.<span class="ident">into</span>()))<span class="question-mark">?</span>;
+		<span class="kw">let</span> <span class="ident">call</span> <span class="op">=</span> <span class="ident">T::Call::decode</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="kw-2">&amp;</span><span class="ident">input</span>[..])
+			.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">ExitError::Other</span>(<span class="string">&quot;decode failed&quot;</span>.<span class="ident">into</span>()))<span class="question-mark">?</span>;
 		<span class="kw">let</span> <span class="ident">info</span> <span class="op">=</span> <span class="ident">call</span>.<span class="ident">get_dispatch_info</span>();
 
 		<span class="kw">let</span> <span class="ident">valid_call</span> <span class="op">=</span> <span class="ident">info</span>.<span class="ident">pays_fee</span> <span class="op">=</span><span class="op">=</span> <span class="ident">Pays::Yes</span> <span class="op">&amp;&amp;</span> <span class="ident">info</span>.<span class="ident">class</span> <span class="op">=</span><span class="op">=</span> <span class="ident">DispatchClass::Normal</span>;
 		<span class="kw">if</span> <span class="op">!</span><span class="ident">valid_call</span> {
-			<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">ExitError::Other</span>(<span class="string">&quot;invalid call&quot;</span>.<span class="ident">into</span>()))
+			<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">ExitError::Other</span>(<span class="string">&quot;invalid call&quot;</span>.<span class="ident">into</span>()));
 		}
 
 		<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">gas</span>) <span class="op">=</span> <span class="ident">target_gas</span> {
 			<span class="kw">let</span> <span class="ident">valid_weight</span> <span class="op">=</span> <span class="ident">info</span>.<span class="ident">weight</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">T::GasWeightMapping::gas_to_weight</span>(<span class="ident">gas</span>);
 			<span class="kw">if</span> <span class="op">!</span><span class="ident">valid_weight</span> {
-				<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">ExitError::OutOfGas</span>)
+				<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">ExitError::OutOfGas</span>);
 			}
 		}
 
@@ -137,14 +149,16 @@
 
 		<span class="kw">match</span> <span class="ident">call</span>.<span class="ident">dispatch</span>(<span class="prelude-val">Some</span>(<span class="ident">origin</span>).<span class="ident">into</span>()) {
 			<span class="prelude-val">Ok</span>(<span class="ident">post_info</span>) <span class="op">=</span><span class="op">&gt;</span> {
-				<span class="kw">let</span> <span class="ident">cost</span> <span class="op">=</span> <span class="ident">T::GasWeightMapping::weight_to_gas</span>(<span class="ident">post_info</span>.<span class="ident">actual_weight</span>.<span class="ident">unwrap_or</span>(<span class="ident">info</span>.<span class="ident">weight</span>));
+				<span class="kw">let</span> <span class="ident">cost</span> <span class="op">=</span> <span class="ident">T::GasWeightMapping::weight_to_gas</span>(
+					<span class="ident">post_info</span>.<span class="ident">actual_weight</span>.<span class="ident">unwrap_or</span>(<span class="ident">info</span>.<span class="ident">weight</span>),
+				);
 				<span class="prelude-val">Ok</span>(<span class="ident">PrecompileOutput</span> {
 					<span class="ident">exit_status</span>: <span class="ident">ExitSucceed::Stopped</span>,
 					<span class="ident">cost</span>,
 					<span class="ident">output</span>: <span class="ident">Default::default</span>(),
 					<span class="ident">logs</span>: <span class="ident">Default::default</span>(),
 				})
-			},
+			}
 			<span class="prelude-val">Err</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">ExitError::Other</span>(<span class="string">&quot;dispatch execution failed&quot;</span>.<span class="ident">into</span>())),
 		}
 	}

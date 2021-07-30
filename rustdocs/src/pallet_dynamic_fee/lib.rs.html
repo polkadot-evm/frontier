@@ -169,18 +169,18 @@
 <span class="comment">// Ensure we&#39;re `no_std` when compiling for Wasm.</span>
 <span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
 
-<span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Encode</span>, <span class="ident">Decode</span>};
-<span class="kw">use</span> <span class="ident">sp_std</span>::{<span class="ident">result</span>, <span class="ident">cmp</span>::{<span class="ident">min</span>, <span class="ident">max</span>}};
-<span class="kw">use</span> <span class="ident">sp_runtime::RuntimeDebug</span>;
+<span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Decode</span>, <span class="ident">Encode</span>};
+<span class="kw">use</span> <span class="ident">frame_support</span>::{<span class="ident">decl_module</span>, <span class="ident">decl_storage</span>, <span class="ident">traits::Get</span>, <span class="ident">weights::Weight</span>};
+<span class="kw">use</span> <span class="ident">frame_system::ensure_none</span>;
 <span class="kw">use</span> <span class="ident">sp_core::U256</span>;
-<span class="kw">use</span> <span class="ident">sp_inherents</span>::{<span class="ident">InherentIdentifier</span>, <span class="ident">InherentData</span>, <span class="ident">ProvideInherent</span>, <span class="ident">IsFatalError</span>};
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>)]</span>
 <span class="kw">use</span> <span class="ident">sp_inherents::ProvideInherentData</span>;
-<span class="kw">use</span> <span class="ident">frame_support</span>::{
-	<span class="ident">decl_module</span>, <span class="ident">decl_storage</span>,
-	<span class="ident">traits::Get</span>, <span class="ident">weights::Weight</span>,
+<span class="kw">use</span> <span class="ident">sp_inherents</span>::{<span class="ident">InherentData</span>, <span class="ident">InherentIdentifier</span>, <span class="ident">IsFatalError</span>, <span class="ident">ProvideInherent</span>};
+<span class="kw">use</span> <span class="ident">sp_runtime::RuntimeDebug</span>;
+<span class="kw">use</span> <span class="ident">sp_std</span>::{
+	<span class="ident">cmp</span>::{<span class="ident">max</span>, <span class="ident">min</span>},
+	<span class="ident">result</span>,
 };
-<span class="kw">use</span> <span class="ident">frame_system::ensure_none</span>;
 
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Config</span>: <span class="ident">frame_system::Config</span> {
 	<span class="doccomment">/// Bound divisor for min gas price.</span>
@@ -237,11 +237,11 @@
 }
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">RuntimeDebug</span>)]</span>
-<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">InherentError</span> { }
+<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">InherentError</span> {}
 
 <span class="kw">impl</span> <span class="ident">IsFatalError</span> <span class="kw">for</span> <span class="ident">InherentError</span> {
 	<span class="kw">fn</span> <span class="ident">is_fatal_error</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
-		<span class="kw">match</span> <span class="kw-2">*</span><span class="self">self</span> { }
+		<span class="kw">match</span> <span class="kw-2">*</span><span class="self">self</span> {}
 	}
 }
 
@@ -272,7 +272,7 @@
 
 	<span class="kw">fn</span> <span class="ident">provide_inherent_data</span>(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		<span class="ident">inherent_data</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">InherentData</span>
+		<span class="ident">inherent_data</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">InherentData</span>,
 	) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">sp_inherents::Error</span><span class="op">&gt;</span> {
 		<span class="ident">inherent_data</span>.<span class="ident">put_data</span>(<span class="ident">INHERENT_IDENTIFIER</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>)
 	}
