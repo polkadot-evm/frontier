@@ -308,11 +308,14 @@ where
 					Some(schema) => *schema,
 					// Fallback to DB read. This will happen i.e. when there is no cache
 					// task configured at service level.
-					_ => frontier_backend_client::onchain_storage_schema::<B, C, BE>(client, id)
+					_ => frontier_backend_client::onchain_storage_schema::<B, C, BE>(client, id),
 				}
 			}
 		};
-		let handler = overrides.schemas.get(&schema).unwrap_or(&overrides.fallback);
+		let handler = overrides
+			.schemas
+			.get(&schema)
+			.unwrap_or(&overrides.fallback);
 
 		let block = handler.current_block(&id);
 
@@ -1778,26 +1781,22 @@ pub struct EthTask<B, C>(PhantomData<(B, C)>);
 impl<B, C> EthTask<B, C>
 where
 	C: ProvideRuntimeApi<B> + BlockchainEvents<B> + HeaderBackend<B>,
-	B: BlockT<Hash=H256>,
+	B: BlockT<Hash = H256>,
 {
 	/// Task that caches at which best hash a new EthereumStorageSchema was inserted in the Runtime Storage.
-	pub async fn ethereum_schema_cache_task(
-		client: Arc<C>,
-		backend: Arc<fc_db::Backend<B>>,
-	) {
-		use sp_storage::{StorageData, StorageKey};
+	pub async fn ethereum_schema_cache_task(client: Arc<C>, backend: Arc<fc_db::Backend<B>>) {
 		use fp_storage::PALLET_ETHEREUM_SCHEMA;
 		use log::warn;
+		use sp_storage::{StorageData, StorageKey};
 
 		if let Ok(None) = frontier_backend_client::load_cached_schema::<B>(backend.as_ref()) {
 			let mut cache: Vec<(EthereumStorageSchema, H256)> = Vec::new();
 			if let Ok(Some(header)) = client.header(BlockId::Number(Zero::zero())) {
 				cache.push((EthereumStorageSchema::V1, header.hash()));
-				let _ = frontier_backend_client::write_cached_schema::<B>(
-					backend.as_ref(), cache
-				).map_err(|err| {
-					warn!("Error schema cache insert for genesis: {:?}", err);
-				});
+				let _ = frontier_backend_client::write_cached_schema::<B>(backend.as_ref(), cache)
+					.map_err(|err| {
+						warn!("Error schema cache insert for genesis: {:?}", err);
+					});
 			} else {
 				warn!("Error genesis header unreachable");
 			}
@@ -1806,38 +1805,50 @@ where
 		// Subscribe to changes for the pallet-ethereum Schema.
 		if let Ok(mut stream) = client.storage_changes_notification_stream(
 			Some(&[StorageKey(PALLET_ETHEREUM_SCHEMA.to_vec())]),
-			None
+			None,
 		) {
 			while let Some((hash, changes)) = stream.next().await {
 				// Make sure only block hashes marked as best are referencing cache checkpoints.
 				if hash == client.info().best_hash {
 					// Just map the change set to the actual data.
-					let storage: Vec<Option<StorageData>> = changes.iter()
+					let storage: Vec<Option<StorageData>> = changes
+						.iter()
 						.filter_map(|(o_sk, _k, v)| {
 							if o_sk.is_none() {
 								Some(v.cloned())
-							} else { None }
-						}).collect();
+							} else {
+								None
+							}
+						})
+						.collect();
 					for change in storage {
 						if let Some(data) = change {
 							// Decode the wrapped blob which's type is known.
-							let new_schema: EthereumStorageSchema = Decode::decode(&mut &data.0[..])
-								.unwrap();
+							let new_schema: EthereumStorageSchema =
+								Decode::decode(&mut &data.0[..]).unwrap();
 							// Cache new entry and overwrite the AuxStore value.
-							if let Ok(Some(old_cache)) = frontier_backend_client::load_cached_schema::<B>(
-								backend.as_ref()
-							) {
+							if let Ok(Some(old_cache)) =
+								frontier_backend_client::load_cached_schema::<B>(backend.as_ref())
+							{
 								let mut new_cache: Vec<(EthereumStorageSchema, H256)> = old_cache;
 								match &new_cache[..] {
 									[.., (schema, _)] if *schema == new_schema => {
-										warn!("Schema version already in AuxStore, ignoring: {:?}", new_schema);
+										warn!(
+											"Schema version already in AuxStore, ignoring: {:?}",
+											new_schema
+										);
 									}
 									_ => {
 										new_cache.push((new_schema, hash));
 										let _ = frontier_backend_client::write_cached_schema::<B>(
-											backend.as_ref(), new_cache
-										).map_err(|err| {
-											warn!("Error schema cache insert for genesis: {:?}", err);
+											backend.as_ref(),
+											new_cache,
+										)
+										.map_err(|err| {
+											warn!(
+												"Error schema cache insert for genesis: {:?}",
+												err
+											);
 										});
 									}
 								}

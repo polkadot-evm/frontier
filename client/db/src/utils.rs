@@ -16,8 +16,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use std::{fs, sync::Arc, path::{Path, PathBuf}, io::{Read, Write, ErrorKind}};
-use crate::{Database, DbHash, DatabaseSettings, DatabaseSettingsSrc};
+use crate::{Database, DatabaseSettings, DatabaseSettingsSrc, DbHash};
+use std::{
+	fs,
+	io::{ErrorKind, Read, Write},
+	path::{Path, PathBuf},
+	sync::Arc,
+};
 
 /// Version file name.
 const VERSION_FILE_NAME: &'static str = "db_version";
@@ -30,9 +35,7 @@ pub fn upgrade_db(db_path: &Path) -> Result<(), String> {
 		let db_version = current_version(db_path)?;
 		match db_version {
 			0 => Err(format!("Unsupported database version: {}", db_version))?,
-			1 => {
-				migrate_1_to_2(db_path)?
-			},
+			1 => migrate_1_to_2(db_path)?,
 			CURRENT_VERSION => (),
 			_ => Err(format!("Future database version: {}", db_version))?,
 		}
@@ -45,8 +48,7 @@ pub fn upgrade_db(db_path: &Path) -> Result<(), String> {
 /// 1) the number of columns has changed from 4 to 5;
 /// 2) ETHEREUM_SCHEMA_CACHE column is added;
 fn migrate_1_to_2(db_path: &Path) -> Result<(), String> {
-	let db_path = db_path.to_str()
-		.ok_or_else(|| "Invalid database path")?;
+	let db_path = db_path.to_str().ok_or_else(|| "Invalid database path")?;
 	let db_cfg = kvdb_rocksdb::DatabaseConfig::with_columns(crate::columns::V1_NUM_COLUMNS);
 	let db = kvdb_rocksdb::Database::open(&db_cfg, db_path).map_err(|err| format!("{}", err))?;
 	db.add_column().map_err(|err| format!("{}", err))
@@ -62,9 +64,10 @@ fn current_version(path: &Path) -> Result<u32, String> {
 		Err(_) => Err(unknown_version_err()),
 		Ok(mut file) => {
 			let mut s = String::new();
-			file.read_to_string(&mut s).map_err(|_| unknown_version_err())?;
+			file.read_to_string(&mut s)
+				.map_err(|_| unknown_version_err())?;
 			u32::from_str_radix(&s, 10).map_err(|_| unknown_version_err())
-		},
+		}
 	}
 }
 
@@ -81,15 +84,17 @@ fn update_version(path: &Path, version: Option<u32>) -> Result<(), String> {
 	let v = version.unwrap_or(CURRENT_VERSION);
 	fs::create_dir_all(path).map_err(|err| format!("{}", err))?;
 	let mut file = fs::File::create(version_file_path(path)).map_err(|err| format!("{}", err))?;
-	file.write_all(format!("{}", v).as_bytes()).map_err(|err| format!("{}", err))?;
+	file.write_all(format!("{}", v).as_bytes())
+		.map_err(|err| format!("{}", err))?;
 	Ok(())
 }
 
-pub fn open_database(
-	config: &DatabaseSettings,
-) -> Result<Arc<dyn Database<DbHash>>, String> {
+pub fn open_database(config: &DatabaseSettings) -> Result<Arc<dyn Database<DbHash>>, String> {
 	let db: Arc<dyn Database<DbHash>> = match &config.source {
-		DatabaseSettingsSrc::RocksDb { path, cache_size: _ } => {
+		DatabaseSettingsSrc::RocksDb {
+			path,
+			cache_size: _,
+		} => {
 			// We introduce versioning as part of the V2.
 			// Make sure that migration happens on a versionless client upgrade to V2.
 			if !version_file_path(&path).exists() && CURRENT_VERSION == 2 {
@@ -99,7 +104,8 @@ pub fn open_database(
 			upgrade_db(&path)?;
 
 			let db_config = kvdb_rocksdb::DatabaseConfig::with_columns(crate::columns::NUM_COLUMNS);
-			let path = path.to_str()
+			let path = path
+				.to_str()
 				.ok_or_else(|| "Invalid database path".to_string())?;
 
 			let db = kvdb_rocksdb::Database::open(&db_config, &path)

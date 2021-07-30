@@ -21,11 +21,11 @@ mod utils;
 pub use sp_database::Database;
 
 use codec::{Decode, Encode};
+use fp_storage::PALLET_ETHEREUM_SCHEMA_CACHE;
+use pallet_ethereum::EthereumStorageSchema;
 use parking_lot::Mutex;
 use sp_core::H256;
 use sp_runtime::traits::Block as BlockT;
-use pallet_ethereum::EthereumStorageSchema;
-use fp_storage::PALLET_ETHEREUM_SCHEMA_CACHE;
 use std::{
 	marker::PhantomData,
 	path::{Path, PathBuf},
@@ -200,13 +200,14 @@ impl<Block: BlockT> MappingDb<Block> {
 		}
 	}
 
-	pub fn ethereum_schema(
-		&self,
-	) -> Result<Option<Vec<(EthereumStorageSchema, H256)>>, String> {
-		match self.db.get(crate::columns::ETHEREUM_SCHEMA_CACHE, &PALLET_ETHEREUM_SCHEMA_CACHE.encode()) {
-			Some(raw) => {
-				Ok(Some(Decode::decode(&mut &raw[..]).map_err(|e| format!("{:?}", e))?))
-			},
+	pub fn ethereum_schema(&self) -> Result<Option<Vec<(EthereumStorageSchema, H256)>>, String> {
+		match self.db.get(
+			crate::columns::ETHEREUM_SCHEMA_CACHE,
+			&PALLET_ETHEREUM_SCHEMA_CACHE.encode(),
+		) {
+			Some(raw) => Ok(Some(
+				Decode::decode(&mut &raw[..]).map_err(|e| format!("{:?}", e))?,
+			)),
 			None => Ok(None),
 		}
 	}
@@ -225,15 +226,14 @@ impl<Block: BlockT> MappingDb<Block> {
 			&new_cache.encode(),
 		);
 
-		self.db.commit(transaction).map_err(|e| format!("{:?}", e))?;
+		self.db
+			.commit(transaction)
+			.map_err(|e| format!("{:?}", e))?;
 
 		Ok(())
 	}
 
-	pub fn write_none(
-		&self,
-		block_hash: Block::Hash
-	) -> Result<(), String> {
+	pub fn write_none(&self, block_hash: Block::Hash) -> Result<(), String> {
 		let _lock = self.write_lock.lock();
 
 		let mut transaction = sp_database::Transaction::new();
