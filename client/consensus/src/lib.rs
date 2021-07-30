@@ -16,21 +16,20 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use std::sync::Arc;
-use std::collections::HashMap;
-use std::marker::PhantomData;
 use fp_consensus::{ensure_log, FindLogError};
 use fp_rpc::EthereumRuntimeRPCApi;
-use sc_client_api::{BlockOf, backend::AuxStore};
-use sp_blockchain::{HeaderBackend, ProvideCache, well_known_cache_keys::Id as CacheKeyId};
-use sp_block_builder::BlockBuilder as BlockBuilderApi;
-use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
-use sp_api::ProvideRuntimeApi;
-use sp_consensus::{
-	BlockImportParams, Error as ConsensusError, BlockImport,
-	BlockCheckParams, ImportResult,
-};
 use sc_client_api;
+use sc_client_api::{backend::AuxStore, BlockOf};
+use sp_api::ProvideRuntimeApi;
+use sp_block_builder::BlockBuilder as BlockBuilderApi;
+use sp_blockchain::{well_known_cache_keys::Id as CacheKeyId, HeaderBackend, ProvideCache};
+use sp_consensus::{
+	BlockCheckParams, BlockImport, BlockImportParams, Error as ConsensusError, ImportResult,
+};
+use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
+use std::collections::HashMap;
+use std::marker::PhantomData;
+use std::sync::Arc;
 
 #[derive(derive_more::Display, Debug)]
 pub enum Error {
@@ -81,7 +80,8 @@ impl<Block: BlockT, I: Clone + BlockImport<Block>, C> Clone for FrontierBlockImp
 	}
 }
 
-impl<B, I, C> FrontierBlockImport<B, I, C> where
+impl<B, I, C> FrontierBlockImport<B, I, C>
+where
 	B: BlockT,
 	I: BlockImport<B, Transaction = sp_api::TransactionFor<C, B>> + Send + Sync,
 	I::Error: Into<ConsensusError>,
@@ -89,11 +89,7 @@ impl<B, I, C> FrontierBlockImport<B, I, C> where
 	C::Api: EthereumRuntimeRPCApi<B>,
 	C::Api: BlockBuilderApi<B>,
 {
-	pub fn new(
-		inner: I,
-		client: Arc<C>,
-		backend: Arc<fc_db::Backend::<B>>,
-	) -> Self {
+	pub fn new(inner: I, client: Arc<C>, backend: Arc<fc_db::Backend<B>>) -> Self {
 		Self {
 			inner,
 			client,
@@ -103,7 +99,8 @@ impl<B, I, C> FrontierBlockImport<B, I, C> where
 	}
 }
 
-impl<B, I, C> BlockImport<B> for FrontierBlockImport<B, I, C> where
+impl<B, I, C> BlockImport<B> for FrontierBlockImport<B, I, C>
+where
 	B: BlockT,
 	I: BlockImport<B, Transaction = sp_api::TransactionFor<C, B>> + Send + Sync,
 	I::Error: Into<ConsensusError>,
@@ -114,10 +111,7 @@ impl<B, I, C> BlockImport<B> for FrontierBlockImport<B, I, C> where
 	type Error = ConsensusError;
 	type Transaction = sp_api::TransactionFor<C, B>;
 
-	fn check_block(
-		&mut self,
-		block: BlockCheckParams<B>,
-	) -> Result<ImportResult, Self::Error> {
+	fn check_block(&mut self, block: BlockCheckParams<B>) -> Result<ImportResult, Self::Error> {
 		self.inner.check_block(block).map_err(Into::into)
 	}
 
@@ -131,6 +125,8 @@ impl<B, I, C> BlockImport<B> for FrontierBlockImport<B, I, C> where
 		// worker.
 		ensure_log(&block.header.digest()).map_err(|e| Error::from(e))?;
 
-		self.inner.import_block(block, new_cache).map_err(Into::into)
+		self.inner
+			.import_block(block, new_cache)
+			.map_err(Into::into)
 	}
 }

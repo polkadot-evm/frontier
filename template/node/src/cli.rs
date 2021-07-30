@@ -1,6 +1,6 @@
-use structopt::StructOpt;
 #[cfg(feature = "manual-seal")]
 use structopt::clap::arg_enum;
+use structopt::StructOpt;
 
 #[cfg(feature = "manual-seal")]
 arg_enum! {

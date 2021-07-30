@@ -14,18 +14,18 @@
 // You should have received a copy of the GNU General Public License
 // along with Substrate.  If not, see <http://www.gnu.org/licenses/>.
 
+use codec::Decode;
 use ethereum::Block as EthereumBlock;
 use ethereum_types::{H160, H256, U256};
-use std::{marker::PhantomData, sync::Arc};
-use sc_client_api::backend::{StorageProvider, Backend, StateBackend, AuxStore};
-use sp_blockchain::{Error as BlockChainError, HeaderMetadata, HeaderBackend};
-use sp_storage::StorageKey;
-use codec::Decode;
-use sp_runtime::traits::{Block as BlockT, BlakeTwo256};
-use sp_api::BlockId;
 use fp_rpc::TransactionStatus;
+use sc_client_api::backend::{AuxStore, Backend, StateBackend, StorageProvider};
+use sp_api::BlockId;
+use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
+use sp_runtime::traits::{BlakeTwo256, Block as BlockT};
+use sp_storage::StorageKey;
+use std::{marker::PhantomData, sync::Arc};
 
-use super::{StorageOverride, storage_prefix_build, blake2_128_extend};
+use super::{blake2_128_extend, storage_prefix_build, StorageOverride};
 
 /// An override for runtimes that use Schema V1
 pub struct SchemaV1Override<B: BlockT, C, BE> {
@@ -35,16 +35,20 @@ pub struct SchemaV1Override<B: BlockT, C, BE> {
 
 impl<B: BlockT, C, BE> SchemaV1Override<B, C, BE> {
 	pub fn new(client: Arc<C>) -> Self {
-		Self { client, _marker: PhantomData }
+		Self {
+			client,
+			_marker: PhantomData,
+		}
 	}
 }
 
-impl<B, C, BE> SchemaV1Override<B, C, BE> where
+impl<B, C, BE> SchemaV1Override<B, C, BE>
+where
 	C: StorageProvider<B, BE> + AuxStore,
-	C: HeaderBackend<B> + HeaderMetadata<B, Error=BlockChainError> + 'static,
+	C: HeaderBackend<B> + HeaderMetadata<B, Error = BlockChainError> + 'static,
 	BE: Backend<B> + 'static,
 	BE::State: StateBackend<BlakeTwo256>,
-	B: BlockT<Hash=H256> + Send + Sync + 'static,
+	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	C: Send + Sync + 'static,
 {
 	// My attempt using result
@@ -56,10 +60,7 @@ impl<B, C, BE> SchemaV1Override<B, C, BE> where
 	// }
 
 	fn query_storage<T: Decode>(&self, id: &BlockId<B>, key: &StorageKey) -> Option<T> {
-		if let Ok(Some(data)) = self.client.storage(
-			id,
-			key
-		) {
+		if let Ok(Some(data)) = self.client.storage(id, key) {
 			if let Ok(result) = Decode::decode(&mut &data.0[..]) {
 				return Some(result);
 			}
@@ -73,20 +74,17 @@ where
 	C: StorageProvider<Block, BE>,
 	C: AuxStore,
 	C: HeaderBackend<Block>,
-	C: HeaderMetadata<Block, Error=BlockChainError> + 'static,
+	C: HeaderMetadata<Block, Error = BlockChainError> + 'static,
 	BE: Backend<Block> + 'static,
 	BE::State: StateBackend<BlakeTwo256>,
-	Block: BlockT<Hash=H256> + Send + Sync + 'static,
+	Block: BlockT<Hash = H256> + Send + Sync + 'static,
 	C: Send + Sync + 'static,
 {
 	/// For a given account address, returns pallet_evm::AccountCodes.
 	fn account_code_at(&self, block: &BlockId<Block>, address: H160) -> Option<Vec<u8>> {
 		let mut key: Vec<u8> = storage_prefix_build(b"EVM", b"AccountCodes");
 		key.extend(blake2_128_extend(address.as_bytes()));
-		self.query_storage::<Vec<u8>>(
-			block,
-			&StorageKey(key)
-		)
+		self.query_storage::<Vec<u8>>(block, &StorageKey(key))
 	}
 
 	/// For a given account address and index, returns pallet_evm::AccountStorages.
@@ -98,19 +96,14 @@ where
 		key.extend(blake2_128_extend(address.as_bytes()));
 		key.extend(blake2_128_extend(tmp));
 
-		self.query_storage::<H256>(
-			block,
-			&StorageKey(key)
-		)
+		self.query_storage::<H256>(block, &StorageKey(key))
 	}
 
 	/// Return the current block.
 	fn current_block(&self, block: &BlockId<Block>) -> Option<EthereumBlock> {
 		self.query_storage::<ethereum::Block>(
 			block,
-			&StorageKey(
-				storage_prefix_build(b"Ethereum", b"CurrentBlock")
-			)
+			&StorageKey(storage_prefix_build(b"Ethereum", b"CurrentBlock")),
 		)
 	}
 
@@ -118,19 +111,21 @@ where
 	fn current_receipts(&self, block: &BlockId<Block>) -> Option<Vec<ethereum::Receipt>> {
 		self.query_storage::<Vec<ethereum::Receipt>>(
 			block,
-			&StorageKey(
-				storage_prefix_build(b"Ethereum", b"CurrentReceipts")
-			)
+			&StorageKey(storage_prefix_build(b"Ethereum", b"CurrentReceipts")),
 		)
 	}
 
 	/// Return the current transaction status.
-	fn current_transaction_statuses(&self, block: &BlockId<Block>) -> Option<Vec<TransactionStatus>> {
+	fn current_transaction_statuses(
+		&self,
+		block: &BlockId<Block>,
+	) -> Option<Vec<TransactionStatus>> {
 		self.query_storage::<Vec<TransactionStatus>>(
 			block,
-			&StorageKey(
-				storage_prefix_build(b"Ethereum", b"CurrentTransactionStatuses")
-			)
+			&StorageKey(storage_prefix_build(
+				b"Ethereum",
+				b"CurrentTransactionStatuses",
+			)),
 		)
 	}
 }

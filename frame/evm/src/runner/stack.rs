@@ -17,23 +17,24 @@
 
 //! EVM stack-based runner.
 
-use sp_std::{marker::PhantomData, vec::Vec, boxed::Box, mem, collections::btree_set::BTreeSet};
-use sp_core::{U256, H256, H160};
-use sp_runtime::traits::UniqueSaturatedInto;
-use frame_support::{
-	ensure, traits::{Get, Currency, ExistenceRequirement},
-	storage::{StorageMap, StorageDoubleMap},
-};
-use sha3::{Keccak256, Digest};
-use fp_evm::{ExecutionInfo, CallInfo, CreateInfo, Log, Vicinity};
-use evm::{ExitReason, ExitError, Transfer};
-use evm::backend::Backend as BackendT;
-use evm::executor::{StackExecutor, StackSubstateMetadata, StackState as StackStateT};
-use crate::{
-	Config, AccountStorages, FeeCalculator, AccountCodes, Module, Event,
-	Error, AddressMapping, PrecompileSet, OnChargeEVMTransaction, BlockHashMapping,
-};
 use crate::runner::Runner as RunnerT;
+use crate::{
+	AccountCodes, AccountStorages, AddressMapping, BlockHashMapping, Config, Error, Event,
+	FeeCalculator, Module, OnChargeEVMTransaction, PrecompileSet,
+};
+use evm::backend::Backend as BackendT;
+use evm::executor::{StackExecutor, StackState as StackStateT, StackSubstateMetadata};
+use evm::{ExitError, ExitReason, Transfer};
+use fp_evm::{CallInfo, CreateInfo, ExecutionInfo, Log, Vicinity};
+use frame_support::{
+	ensure,
+	storage::{StorageDoubleMap, StorageMap},
+	traits::{Currency, ExistenceRequirement, Get},
+};
+use sha3::{Digest, Keccak256};
+use sp_core::{H160, H256, U256};
+use sp_runtime::traits::UniqueSaturatedInto;
+use sp_std::{boxed::Box, collections::btree_set::BTreeSet, marker::PhantomData, mem, vec::Vec};
 
 #[derive(Default)]
 pub struct Runner<T: Config> {
@@ -50,15 +51,21 @@ impl<T: Config> Runner<T> {
 		nonce: Option<U256>,
 		config: &'config evm::Config,
 		f: F,
-	) -> Result<ExecutionInfo<R>, Error<T>> where
-		F: FnOnce(&mut StackExecutor<'config, SubstrateStackState<'_, 'config, T>>) -> (ExitReason, R),
+	) -> Result<ExecutionInfo<R>, Error<T>>
+	where
+		F: FnOnce(
+			&mut StackExecutor<'config, SubstrateStackState<'_, 'config, T>>,
+		) -> (ExitReason, R),
 	{
 		// Gas price check is skipped when performing a gas estimation.
 		let gas_price = match gas_price {
 			Some(gas_price) => {
-				ensure!(gas_price >= T::FeeCalculator::min_gas_price(), Error::<T>::GasPriceTooLow);
+				ensure!(
+					gas_price >= T::FeeCalculator::min_gas_price(),
+					Error::<T>::GasPriceTooLow
+				);
 				gas_price
-			},
+			}
 			None => Default::default(),
 		};
 
@@ -69,17 +76,20 @@ impl<T: Config> Runner<T> {
 
 		let metadata = StackSubstateMetadata::new(gas_limit, &config);
 		let state = SubstrateStackState::new(&vicinity, metadata);
-		let mut executor = StackExecutor::new_with_precompile(
-			state,
-			config,
-			T::Precompiles::execute,
-		);
+		let mut executor =
+			StackExecutor::new_with_precompile(state, config, T::Precompiles::execute);
 
-		let total_fee = gas_price.checked_mul(U256::from(gas_limit))
+		let total_fee = gas_price
+			.checked_mul(U256::from(gas_limit))
 			.ok_or(Error::<T>::FeeOverflow)?;
-		let total_payment = value.checked_add(total_fee).ok_or(Error::<T>::PaymentOverflow)?;
+		let total_payment = value
+			.checked_add(total_fee)
+			.ok_or(Error::<T>::PaymentOverflow)?;
 		let source_account = Module::<T>::account_basic(&source);
-		ensure!(source_account.balance >= total_payment, Error::<T>::BalanceLow);
+		ensure!(
+			source_account.balance >= total_payment,
+			Error::<T>::BalanceLow
+		);
 
 		if let Some(nonce) = nonce {
 			ensure!(source_account.nonce == nonce, Error::<T>::InvalidNonce);
@@ -163,13 +173,7 @@ impl<T: Config> RunnerT<T> for Runner<T> {
 			gas_price,
 			nonce,
 			config,
-			|executor| executor.transact_call(
-				source,
-				target,
-				value,
-				input,
-				gas_limit,
-			),
+			|executor| executor.transact_call(source, target, value, input, gas_limit),
 		)
 	}
 
@@ -190,15 +194,11 @@ impl<T: Config> RunnerT<T> for Runner<T> {
 			nonce,
 			config,
 			|executor| {
-				let address = executor.create_address(
-					evm::CreateScheme::Legacy { caller: source },
-				);
-				(executor.transact_create(
-					source,
-					value,
-					init,
-					gas_limit,
-				), address)
+				let address = executor.create_address(evm::CreateScheme::Legacy { caller: source });
+				(
+					executor.transact_create(source, value, init, gas_limit),
+					address,
+				)
 			},
 		)
 	}
@@ -222,16 +222,15 @@ impl<T: Config> RunnerT<T> for Runner<T> {
 			nonce,
 			config,
 			|executor| {
-				let address = executor.create_address(
-					evm::CreateScheme::Create2 { caller: source, code_hash, salt },
-				);
-				(executor.transact_create2(
-					source,
-					value,
-					init,
+				let address = executor.create_address(evm::CreateScheme::Create2 {
+					caller: source,
+					code_hash,
 					salt,
-					gas_limit,
-				), address)
+				});
+				(
+					executor.transact_create2(source, value, init, salt, gas_limit),
+					address,
+				)
 			},
 		)
 	}
@@ -299,11 +298,11 @@ impl<'config> SubstrateStackSubstate<'config> {
 
 	pub fn deleted(&self, address: H160) -> bool {
 		if self.deletes.contains(&address) {
-			return true
+			return true;
 		}
 
 		if let Some(parent) = self.parent.as_ref() {
-			return parent.deleted(address)
+			return parent.deleted(address);
 		}
 
 		false
@@ -315,7 +314,9 @@ impl<'config> SubstrateStackSubstate<'config> {
 
 	pub fn log(&mut self, address: H160, topics: Vec<H256>, data: Vec<u8>) {
 		self.logs.push(Log {
-			address, topics, data,
+			address,
+			topics,
+			data,
 		});
 	}
 }
@@ -330,18 +331,26 @@ pub struct SubstrateStackState<'vicinity, 'config, T> {
 impl<'vicinity, 'config, T: Config> SubstrateStackState<'vicinity, 'config, T> {
 	/// Create a new backend with given vicinity.
 	pub fn new(vicinity: &'vicinity Vicinity, metadata: StackSubstateMetadata<'config>) -> Self {
-		Self { vicinity, substate: SubstrateStackSubstate {
-			metadata,
-			deletes: BTreeSet::new(),
-			logs: Vec::new(),
-			parent: None,
-		}, _marker: PhantomData }
+		Self {
+			vicinity,
+			substate: SubstrateStackSubstate {
+				metadata,
+				deletes: BTreeSet::new(),
+				logs: Vec::new(),
+				parent: None,
+			},
+			_marker: PhantomData,
+		}
 	}
 }
 
 impl<'vicinity, 'config, T: Config> BackendT for SubstrateStackState<'vicinity, 'config, T> {
-	fn gas_price(&self) -> U256 { self.vicinity.gas_price }
-	fn origin(&self) -> H160 { self.vicinity.origin }
+	fn gas_price(&self) -> U256 {
+		self.vicinity.gas_price
+	}
+	fn origin(&self) -> H160 {
+		self.vicinity.origin
+	}
 
 	fn block_hash(&self, number: U256) -> H256 {
 		if number > U256::from(u32::max_value()) {
@@ -403,7 +412,9 @@ impl<'vicinity, 'config, T: Config> BackendT for SubstrateStackState<'vicinity, 
 	}
 }
 
-impl<'vicinity, 'config, T: Config> StackStateT<'config> for SubstrateStackState<'vicinity, 'config, T> {
+impl<'vicinity, 'config, T: Config> StackStateT<'config>
+	for SubstrateStackState<'vicinity, 'config, T>
+{
 	fn metadata(&self) -> &StackSubstateMetadata<'config> {
 		self.substate.metadata()
 	}
@@ -493,7 +504,8 @@ impl<'vicinity, 'config, T: Config> StackStateT<'config> for SubstrateStackState
 			&target,
 			transfer.value.low_u128().unique_saturated_into(),
 			ExistenceRequirement::AllowDeath,
-		).map_err(|_| ExitError::OutOfFund)
+		)
+		.map_err(|_| ExitError::OutOfFund)
 	}
 
 	fn reset_balance(&mut self, _address: H160) {

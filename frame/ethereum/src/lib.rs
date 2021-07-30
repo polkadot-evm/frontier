@@ -23,31 +23,34 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use codec::{Decode, Encode};
+use ethereum_types::{Bloom, BloomInput, H160, H256, H64, U256};
+use evm::ExitReason;
+use fp_consensus::{PostLog, PreLog, FRONTIER_ENGINE_ID};
+use fp_evm::CallOrCreateInfo;
+use fp_storage::PALLET_ETHEREUM_SCHEMA;
+use frame_support::ensure;
 use frame_support::{
-	decl_module, decl_storage, decl_error, decl_event,
-	traits::Get, weights::{Pays, PostDispatchInfo, Weight},
+	decl_error, decl_event, decl_module, decl_storage,
 	dispatch::DispatchResultWithPostInfo,
+	traits::Get,
+	weights::{Pays, PostDispatchInfo, Weight},
+};
+use frame_system::ensure_none;
+use pallet_evm::{BlockHashMapping, FeeCalculator, GasWeightMapping, Runner};
+use sha3::{Digest, Keccak256};
+use sp_runtime::{
+	generic::DigestItem,
+	traits::{One, Saturating, UniqueSaturatedInto, Zero},
+	transaction_validity::{
+		InvalidTransaction, TransactionSource, TransactionValidity, ValidTransactionBuilder,
+	},
+	DispatchError,
 };
 use sp_std::prelude::*;
-use frame_system::ensure_none;
-use frame_support::ensure;
-use ethereum_types::{H160, H64, H256, U256, Bloom, BloomInput};
-use sp_runtime::{
-	transaction_validity::{
-		TransactionValidity, TransactionSource, InvalidTransaction, ValidTransactionBuilder,
-	},
-	generic::DigestItem, traits::{Saturating, UniqueSaturatedInto, One, Zero}, DispatchError,
-};
-use evm::ExitReason;
-use fp_evm::CallOrCreateInfo;
-use pallet_evm::{Runner, GasWeightMapping, FeeCalculator, BlockHashMapping};
-use sha3::{Digest, Keccak256};
-use codec::{Encode, Decode};
-use fp_consensus::{FRONTIER_ENGINE_ID, PostLog, PreLog};
-use fp_storage::PALLET_ETHEREUM_SCHEMA;
 
+pub use ethereum::{Block, Log, Receipt, Transaction, TransactionAction, TransactionMessage};
 pub use fp_rpc::TransactionStatus;
-pub use ethereum::{Transaction, Log, Block, Receipt, TransactionAction, TransactionMessage};
 
 #[cfg(all(feature = "std", test))]
 mod tests;
@@ -87,7 +90,12 @@ impl Get<H256> for IntermediateStateRoot {
 }
 
 /// Configuration trait for Ethereum pallet.
-pub trait Config: frame_system::Config<Hash=H256> + pallet_balances::Config + pallet_timestamp::Config + pallet_evm::Config {
+pub trait Config:
+	frame_system::Config<Hash = H256>
+	+ pallet_balances::Config
+	+ pallet_timestamp::Config
+	+ pallet_evm::Config
+{
 	/// The overarching event type.
 	type Event: From<Event> + Into<<Self as frame_system::Config>::Event>;
 	/// How Ethereum state root is calculated.
@@ -126,7 +134,6 @@ decl_event!(
 		Executed(H160, H160, H256, ExitReason),
 	}
 );
-
 
 decl_error! {
 	/// Ethereum pallet errors.
@@ -213,15 +220,22 @@ impl<T: Config> frame_support::unsigned::ValidateUnsigned for Module<T> {
 		if let Call::transact(transaction) = call {
 			if let Some(chain_id) = transaction.signature.chain_id() {
 				if chain_id != T::ChainId::get() {
-					return InvalidTransaction::Custom(TransactionValidationError::InvalidChainId as u8).into();
+					return InvalidTransaction::Custom(
+						TransactionValidationError::InvalidChainId as u8,
+					)
+					.into();
 				}
 			}
 
-			let origin = Self::recover_signer(&transaction)
-				.ok_or_else(|| InvalidTransaction::Custom(TransactionValidationError::InvalidSignature as u8))?;
+			let origin = Self::recover_signer(&transaction).ok_or_else(|| {
+				InvalidTransaction::Custom(TransactionValidationError::InvalidSignature as u8)
+			})?;
 
 			if transaction.gas_limit >= T::BlockGasLimit::get() {
-				return InvalidTransaction::Custom(TransactionValidationError::InvalidGasLimit as u8).into();
+				return InvalidTransaction::Custom(
+					TransactionValidationError::InvalidGasLimit as u8,
+				)
+				.into();
 			}
 
 			let account_data = pallet_evm::Module::<T>::account_basic(&origin);
@@ -269,7 +283,9 @@ impl<T: Config> Module<T> {
 		msg.copy_from_slice(&TransactionMessage::from(transaction.clone()).hash()[..]);
 
 		let pubkey = sp_io::crypto::secp256k1_ecdsa_recover(&sig, &msg).ok()?;
-		Some(H160::from(H256::from_slice(Keccak256::digest(&pubkey).as_slice())))
+		Some(H160::from(H256::from_slice(
+			Keccak256::digest(&pubkey).as_slice(),
+		)))
 	}
 
 	fn store_block(post_log: bool, block_number: U256) {
@@ -281,16 +297,12 @@ impl<T: Config> Module<T> {
 			transactions.push(transaction);
 			statuses.push(status);
 			receipts.push(receipt.clone());
-			Self::logs_bloom(
-				receipt.logs.clone(),
-				&mut logs_bloom
-			);
+			Self::logs_bloom(receipt.logs.clone(), &mut logs_bloom);
 		}
 
 		let ommers = Vec::<ethereum::Header>::new();
-		let receipts_root = ethereum::util::ordered_trie_root(
-			receipts.iter().map(|r| rlp::encode(r))
-		);
+		let receipts_root =
+			ethereum::util::ordered_trie_root(receipts.iter().map(|r| rlp::encode(r)));
 		let partial_header = ethereum::PartialHeader {
 			parent_hash: Self::current_block_hash().unwrap_or_default(),
 			beneficiary: pallet_evm::Module::<T>::find_author(),
@@ -300,9 +312,12 @@ impl<T: Config> Module<T> {
 			difficulty: U256::zero(),
 			number: block_number,
 			gas_limit: T::BlockGasLimit::get(),
-			gas_used: receipts.clone().into_iter().fold(U256::zero(), |acc, r| acc + r.used_gas),
+			gas_used: receipts
+				.clone()
+				.into_iter()
+				.fold(U256::zero(), |acc, r| acc + r.used_gas),
 			timestamp: UniqueSaturatedInto::<u64>::unique_saturated_into(
-				pallet_timestamp::Module::<T>::get()
+				pallet_timestamp::Module::<T>::get(),
 			),
 			extra_data: Vec::new(),
 			mix_hash: H256::default(),
@@ -339,12 +354,11 @@ impl<T: Config> Module<T> {
 			Error::<T>::PreLogExists,
 		);
 
-		let source = Self::recover_signer(&transaction)
-			.ok_or_else(|| Error::<T>::InvalidSignature)?;
+		let source =
+			Self::recover_signer(&transaction).ok_or_else(|| Error::<T>::InvalidSignature)?;
 
-		let transaction_hash = H256::from_slice(
-			Keccak256::digest(&rlp::encode(&transaction)).as_slice()
-		);
+		let transaction_hash =
+			H256::from_slice(Keccak256::digest(&rlp::encode(&transaction)).as_slice());
 		let transaction_index = Pending::get().len() as u32;
 
 		let (to, contract_address, info) = Self::execute(
@@ -359,8 +373,9 @@ impl<T: Config> Module<T> {
 		)?;
 
 		let (reason, status, used_gas) = match info {
-			CallOrCreateInfo::Call(info) => {
-				(info.exit_reason, TransactionStatus {
+			CallOrCreateInfo::Call(info) => (
+				info.exit_reason,
+				TransactionStatus {
 					transaction_hash,
 					transaction_index,
 					from: source,
@@ -369,16 +384,15 @@ impl<T: Config> Module<T> {
 					logs: info.logs.clone(),
 					logs_bloom: {
 						let mut bloom: Bloom = Bloom::default();
-						Self::logs_bloom(
-							info.logs,
-							&mut bloom
-						);
+						Self::logs_bloom(info.logs, &mut bloom);
 						bloom
 					},
-				}, info.used_gas)
-			},
-			CallOrCreateInfo::Create(info) => {
-				(info.exit_reason, TransactionStatus {
+				},
+				info.used_gas,
+			),
+			CallOrCreateInfo::Create(info) => (
+				info.exit_reason,
+				TransactionStatus {
 					transaction_hash,
 					transaction_index,
 					from: source,
@@ -387,14 +401,12 @@ impl<T: Config> Module<T> {
 					logs: info.logs.clone(),
 					logs_bloom: {
 						let mut bloom: Bloom = Bloom::default();
-						Self::logs_bloom(
-							info.logs,
-							&mut bloom
-						);
+						Self::logs_bloom(info.logs, &mut bloom);
 						bloom
 					},
-				}, info.used_gas)
-			},
+				},
+				info.used_gas,
+			),
 		};
 
 		let receipt = ethereum::Receipt {
@@ -411,11 +423,19 @@ impl<T: Config> Module<T> {
 
 		Pending::append((transaction, status, receipt));
 
-		Self::deposit_event(Event::Executed(source, contract_address.unwrap_or_default(), transaction_hash, reason));
+		Self::deposit_event(Event::Executed(
+			source,
+			contract_address.unwrap_or_default(),
+			transaction_hash,
+			reason,
+		));
 		Ok(PostDispatchInfo {
-			actual_weight: Some(T::GasWeightMapping::gas_to_weight(used_gas.unique_saturated_into())),
+			actual_weight: Some(T::GasWeightMapping::gas_to_weight(
+				used_gas.unique_saturated_into(),
+			)),
 			pays_fee: Pays::No,
-		}).into()
+		})
+		.into()
 	}
 
 	/// Get the transaction status with given index.
@@ -460,10 +480,11 @@ impl<T: Config> Module<T> {
 					gas_price,
 					nonce,
 					config.as_ref().unwrap_or(T::config()),
-				).map_err(Into::into)?;
+				)
+				.map_err(Into::into)?;
 
 				Ok((Some(target), None, CallOrCreateInfo::Call(res)))
-			},
+			}
 			ethereum::TransactionAction::Create => {
 				let res = T::Runner::create(
 					from,
@@ -473,10 +494,11 @@ impl<T: Config> Module<T> {
 					gas_price,
 					nonce,
 					config.as_ref().unwrap_or(T::config()),
-				).map_err(Into::into)?;
+				)
+				.map_err(Into::into)?;
 
 				Ok((None, Some(res.value), CallOrCreateInfo::Create(res)))
-			},
+			}
 		}
 	}
 }
