@@ -46,7 +46,7 @@ use crate::{frontier_backend_client, internal_err, error_on_execution_failure, E
 
 pub use fc_rpc_core::{EthApiServer, NetApiServer, Web3ApiServer, EthFilterApiServer};
 use codec::{self, Encode, Decode};
-use crate::overrides::{OverrideHandle, PALLET_ETHEREUM_SCHEMA_CACHE};
+use crate::overrides::OverrideHandle;
 use pallet_ethereum::EthereumStorageSchema;
 
 pub struct EthApi<B: BlockT, C, P, CT, BE, H: ExHashT> {
@@ -216,6 +216,7 @@ fn transaction_build(
 
 fn filter_range_logs<B: BlockT, C, BE>(
 	client: &C,
+	backend: &fc_db::Backend<B>,
 	overrides: &OverrideHandle<B>,
 	ret: &mut Vec<Log>,
 	max_past_logs: u32,
@@ -249,10 +250,7 @@ fn filter_range_logs<B: BlockT, C, BE>(
 	// Get schema cache. A single AuxStore read before the block range iteration.
 	// This prevents having to do an extra DB read per block range iteration to getthe actual schema.
 	let mut local_cache: BTreeMap<NumberFor<B>, EthereumStorageSchema> = BTreeMap::new();
-	if let Ok(Some(aux_data)) = client.get_aux(PALLET_ETHEREUM_SCHEMA_CACHE) {
-		let schema_cache: Vec<(EthereumStorageSchema, H256)> = Decode::decode(
-			&mut &aux_data[..]
-		).unwrap();
+	if let Ok(Some(schema_cache)) = frontier_backend_client::load_cached_schema::<B>(backend) {
 		for (schema, hash) in schema_cache {
 			if let Ok(Some(header)) = client.header(BlockId::Hash(hash)) {
 				let number = *header.number();
@@ -1208,6 +1206,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 
 			let _ = filter_range_logs(
 				self.client.as_ref(),
+				self.backend.as_ref(),
 				&self.overrides,
 				&mut ret,
 				self.max_past_logs,
@@ -1335,6 +1334,7 @@ impl<B, C> Web3ApiT for Web3Api<B, C> where
 
 pub struct EthFilterApi<B: BlockT, C, BE> {
 	client: Arc<C>,
+	backend: Arc<fc_db::Backend<B>>,
 	filter_pool: FilterPool,
 	max_stored_filters: usize,
 	overrides: Arc<OverrideHandle<B>>,
@@ -1352,6 +1352,7 @@ impl<B: BlockT, C, BE> EthFilterApi<B, C, BE>  where
 {
 	pub fn new(
 		client: Arc<C>,
+		backend: Arc<fc_db::Backend<B>>,
 		filter_pool: FilterPool,
 		max_stored_filters: usize,
 		overrides: Arc<OverrideHandle<B>>,
@@ -1359,6 +1360,7 @@ impl<B: BlockT, C, BE> EthFilterApi<B, C, BE>  where
 	) -> Self {
 		Self {
 			client: client.clone(),
+			backend: backend.clone(),
 			filter_pool,
 			max_stored_filters,
 			overrides,
@@ -1502,6 +1504,7 @@ impl<B, C, BE> EthFilterApiT for EthFilterApi<B, C, BE> where
 						let mut ret: Vec<Log> = Vec::new();
 						let _ = filter_range_logs(
 							self.client.as_ref(),
+							self.backend.as_ref(),
 							&self.overrides,
 							&mut ret,
 							self.max_past_logs,
@@ -1570,6 +1573,7 @@ impl<B, C, BE> EthFilterApiT for EthFilterApi<B, C, BE> where
 						let mut ret: Vec<Log> = Vec::new();
 						let _ = filter_range_logs(
 							self.client.as_ref(),
+							self.backend.as_ref(),
 							&self.overrides,
 							&mut ret,
 							self.max_past_logs,
@@ -1615,27 +1619,26 @@ pub struct EthTask<B, C>(PhantomData<(B, C)>);
 
 impl<B, C> EthTask<B, C>
 where
-	C: ProvideRuntimeApi<B> + BlockchainEvents<B> + HeaderBackend<B> + AuxStore,
+	C: ProvideRuntimeApi<B> + BlockchainEvents<B> + HeaderBackend<B>,
 	B: BlockT<Hash=H256>,
 {
 	/// Task that caches at which best hash a new EthereumStorageSchema was inserted in the Runtime Storage.
 	pub async fn ethereum_schema_cache_task(
 		client: Arc<C>,
+		backend: Arc<fc_db::Backend<B>>,
 	) {
 		use sp_storage::{StorageData, StorageKey};
 		use fp_storage::PALLET_ETHEREUM_SCHEMA;
 		use log::warn;
 
-		// When spawning the task, make sure we map genesis if needed.
-		if let Ok(None) = client.get_aux(PALLET_ETHEREUM_SCHEMA_CACHE) {
+		if let Ok(None) = frontier_backend_client::load_cached_schema::<B>(backend.as_ref()) {
 			let mut cache: Vec<(EthereumStorageSchema, H256)> = Vec::new();
 			if let Ok(Some(header)) = client.header(BlockId::Number(Zero::zero())) {
 				cache.push((EthereumStorageSchema::V1, header.hash()));
-				let _ = client.insert_aux(
-					&[(PALLET_ETHEREUM_SCHEMA_CACHE, &cache.encode()[..])],
-					&[]
+				let _ = frontier_backend_client::write_cached_schema::<B>(
+					backend.as_ref(), cache
 				).map_err(|err| {
-					warn!("Error AuxStore insert for genesis: {:?}", err);
+					warn!("Error schema cache insert for genesis: {:?}", err);
 				});
 			} else {
 				warn!("Error genesis header unreachable");
@@ -1663,25 +1666,25 @@ where
 							let new_schema: EthereumStorageSchema = Decode::decode(&mut &data.0[..])
 								.unwrap();
 							// Cache new entry and overwrite the AuxStore value.
-							if let Ok(Some(old_cache)) = client.get_aux(PALLET_ETHEREUM_SCHEMA_CACHE) {
-								let mut new_cache: Vec<(EthereumStorageSchema, H256)> =
-									Decode::decode(&mut &old_cache[..]).unwrap();
+							if let Ok(Some(old_cache)) = frontier_backend_client::load_cached_schema::<B>(
+								backend.as_ref()
+							) {
+								let mut new_cache: Vec<(EthereumStorageSchema, H256)> = old_cache;
 								match &new_cache[..] {
 									[.., (schema, _)] if *schema == new_schema => {
 										warn!("Schema version already in AuxStore, ignoring: {:?}", new_schema);
 									}
 									_ => {
 										new_cache.push((new_schema, hash));
-										let _ = client.insert_aux(
-											&[(PALLET_ETHEREUM_SCHEMA_CACHE, &new_cache.encode()[..])],
-											&[]
+										let _ = frontier_backend_client::write_cached_schema::<B>(
+											backend.as_ref(), new_cache
 										).map_err(|err| {
-											warn!("Error AuxStore insert on storage change: {:?}", err);
+											warn!("Error schema cache insert for genesis: {:?}", err);
 										});
 									}
 								}
 							} else {
-								warn!("Error AuxStore schema cache is corrupted");
+								warn!("Error schema cache is corrupted");
 							}
 						}
 					}
