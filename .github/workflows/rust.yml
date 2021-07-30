@@ -55,3 +55,5 @@ jobs:
         WASM_BUILD_TOOLCHAIN: nightly-2020-08-29
     - name: Rustfmt
       run: cargo fmt --all -- --check
+    - name: Clippy
+      run: cargo clippy --all

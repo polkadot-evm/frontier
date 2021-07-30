@@ -15,6 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#![deny(warnings)]
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
@@ -51,6 +52,7 @@ pub enum PreLog {
 }
 
 #[derive(Decode, Encode, Clone, PartialEq, Eq)]
+#[allow(clippy::large_enum_variant)]
 pub enum PostLog {
 	#[codec(index = 1)]
 	Hashes(Hashes),

@@ -39,7 +39,7 @@ impl Default for TransactionStatus {
 	fn default() -> Self {
 		TransactionStatus {
 			transaction_hash: H256::default(),
-			transaction_index: 0 as u32,
+			transaction_index: 0_u32,
 			from: H160::default(),
 			to: None,
 			contract_address: None,

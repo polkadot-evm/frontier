@@ -46,7 +46,7 @@ impl LinearCostPrecompile for Curve25519Add {
 		};
 
 		let mut points = Vec::new();
-		let mut temp_buf = input.clone();
+		let mut temp_buf = input;
 		while temp_buf.len() > 0 {
 			let mut buf = [0; 32];
 			buf.copy_from_slice(&temp_buf[0..32]);
