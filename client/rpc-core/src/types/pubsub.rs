@@ -18,11 +18,11 @@
 
 //! Pub-Sub types.
 
+use crate::types::{Filter, Log, RichHeader};
 use ethereum_types::H256;
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde::de::Error;
-use serde_json::{Value, from_value};
-use crate::types::{RichHeader, Filter, Log};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use serde_json::{from_value, Value};
 
 /// Subscription result.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -34,12 +34,12 @@ pub enum Result {
 	/// Transaction hash
 	TransactionHash(H256),
 	/// SyncStatus
-	SyncState(PubSubSyncStatus)
+	SyncState(PubSubSyncStatus),
 }
 
 /// PubSbub sync status
 #[derive(Debug, Serialize, Eq, PartialEq, Clone)]
-#[serde(rename_all="camelCase")]
+#[serde(rename_all = "camelCase")]
 pub struct PubSubSyncStatus {
 	/// is_major_syncing?
 	pub syncing: bool,
@@ -47,7 +47,8 @@ pub struct PubSubSyncStatus {
 
 impl Serialize for Result {
 	fn serialize<S>(&self, serializer: S) -> ::std::result::Result<S::Ok, S::Error>
-		where S: Serializer
+	where
+		S: Serializer,
 	{
 		match *self {
 			Result::Header(ref header) => header.serialize(serializer),
@@ -90,14 +91,17 @@ impl Default for Params {
 
 impl<'a> Deserialize<'a> for Params {
 	fn deserialize<D>(deserializer: D) -> ::std::result::Result<Params, D::Error>
-	where D: Deserializer<'a> {
+	where
+		D: Deserializer<'a>,
+	{
 		let v: Value = Deserialize::deserialize(deserializer)?;
 
 		if v.is_null() {
 			return Ok(Params::None);
 		}
 
-		from_value(v.clone()).map(Params::Logs)
+		from_value(v.clone())
+			.map(Params::Logs)
 			.map_err(|e| D::Error::custom(format!("Invalid Pub-Sub parameters: {}", e)))
 	}
 }

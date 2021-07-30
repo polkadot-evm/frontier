@@ -17,13 +17,14 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Encode, Decode};
-use sp_std::vec::Vec;
+use codec::{Decode, Encode};
+use sha3::{Digest as Sha3Digest, Keccak256};
 use sp_core::H256;
 use sp_runtime::{
-	ConsensusEngineId, generic::{Digest, OpaqueDigestItemId},
+	generic::{Digest, OpaqueDigestItemId},
+	ConsensusEngineId,
 };
-use sha3::{Digest as Sha3Digest, Keccak256};
+use sp_std::vec::Vec;
 
 pub const FRONTIER_ENGINE_ID: ConsensusEngineId = [b'f', b'r', b'o', b'n'];
 
@@ -70,15 +71,16 @@ impl Hashes {
 		let mut transaction_hashes = Vec::new();
 
 		for t in &block.transactions {
-			let transaction_hash = H256::from_slice(
-				Keccak256::digest(&rlp::encode(t)).as_slice()
-			);
+			let transaction_hash = H256::from_slice(Keccak256::digest(&rlp::encode(t)).as_slice());
 			transaction_hashes.push(transaction_hash);
 		}
 
 		let block_hash = block.header.hash();
 
-		Hashes { transaction_hashes, block_hash }
+		Hashes {
+			transaction_hashes,
+			block_hash,
+		}
 	}
 }
 
@@ -88,9 +90,7 @@ pub enum FindLogError {
 	MultipleLogs,
 }
 
-pub fn find_pre_log<Hash>(
-	digest: &Digest<Hash>,
-) -> Result<PreLog, FindLogError> {
+pub fn find_pre_log<Hash>(digest: &Digest<Hash>) -> Result<PreLog, FindLogError> {
 	let mut found = None;
 
 	for log in digest.logs() {
@@ -105,9 +105,7 @@ pub fn find_pre_log<Hash>(
 	found.ok_or(FindLogError::NotFound)
 }
 
-pub fn find_post_log<Hash>(
-	digest: &Digest<Hash>,
-) -> Result<PostLog, FindLogError> {
+pub fn find_post_log<Hash>(digest: &Digest<Hash>) -> Result<PostLog, FindLogError> {
 	let mut found = None;
 
 	for log in digest.logs() {
@@ -122,9 +120,7 @@ pub fn find_post_log<Hash>(
 	found.ok_or(FindLogError::NotFound)
 }
 
-pub fn find_log<Hash>(
-	digest: &Digest<Hash>,
-) -> Result<Log, FindLogError> {
+pub fn find_log<Hash>(digest: &Digest<Hash>) -> Result<Log, FindLogError> {
 	let mut found = None;
 
 	for log in digest.logs() {
@@ -146,9 +142,7 @@ pub fn find_log<Hash>(
 	found.ok_or(FindLogError::NotFound)
 }
 
-pub fn ensure_log<Hash>(
-	digest: &Digest<Hash>,
-) -> Result<(), FindLogError> {
+pub fn ensure_log<Hash>(digest: &Digest<Hash>) -> Result<(), FindLogError> {
 	let mut found = false;
 
 	for log in digest.logs() {

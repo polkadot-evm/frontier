@@ -18,10 +18,10 @@
 
 //! Serializable wrapper around vector of bytes
 
-use std::fmt;
-use rustc_hex::{ToHex, FromHex};
-use serde::{Serialize, Serializer, Deserialize, Deserializer};
+use rustc_hex::{FromHex, ToHex};
 use serde::de::{Error, Visitor};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use std::fmt;
 
 /// Wrapper structure around vector of bytes.
 #[derive(Debug, PartialEq, Eq, Default, Hash, Clone)]
@@ -52,7 +52,8 @@ impl Into<Vec<u8>> for Bytes {
 
 impl Serialize for Bytes {
 	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-	where S: Serializer
+	where
+		S: Serializer,
 	{
 		let mut serialized = "0x".to_owned();
 		serialized.push_str(self.0.to_hex::<String>().as_ref());
@@ -62,7 +63,9 @@ impl Serialize for Bytes {
 
 impl<'a> Deserialize<'a> for Bytes {
 	fn deserialize<D>(deserializer: D) -> Result<Bytes, D::Error>
-	where D: Deserializer<'a> {
+	where
+		D: Deserializer<'a>,
+	{
 		deserializer.deserialize_any(BytesVisitor)
 	}
 }
@@ -76,15 +79,25 @@ impl<'a> Visitor<'a> for BytesVisitor {
 		write!(formatter, "a 0x-prefixed, hex-encoded vector of bytes")
 	}
 
-	fn visit_str<E>(self, value: &str) -> Result<Self::Value, E> where E: Error {
+	fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+	where
+		E: Error,
+	{
 		if value.len() >= 2 && value.starts_with("0x") && value.len() & 1 == 0 {
-			Ok(Bytes::new(FromHex::from_hex(&value[2..]).map_err(|e| Error::custom(format!("Invalid hex: {}", e)))?))
+			Ok(Bytes::new(FromHex::from_hex(&value[2..]).map_err(|e| {
+				Error::custom(format!("Invalid hex: {}", e))
+			})?))
 		} else {
-			Err(Error::custom("Invalid bytes format. Expected a 0x-prefixed hex string with even length"))
+			Err(Error::custom(
+				"Invalid bytes format. Expected a 0x-prefixed hex string with even length",
+			))
 		}
 	}
 
-	fn visit_string<E>(self, value: String) -> Result<Self::Value, E> where E: Error {
+	fn visit_string<E>(self, value: String) -> Result<Self::Value, E>
+	where
+		E: Error,
+	{
 		self.visit_str(value.as_ref())
 	}
 }

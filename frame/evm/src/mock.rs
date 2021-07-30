@@ -16,18 +16,16 @@
 // limitations under the License.
 
 //! Test mock for unit tests and benchmarking
-use sp_std::prelude::*;
-use crate::{Config, EnsureAddressNever, EnsureAddressRoot,
-	FeeCalculator, Event, IdentityAddressMapping};
-use frame_support::{
-	impl_outer_origin, parameter_types, ConsensusEngineId,
-	traits::FindAuthor
+use crate::{
+	Config, EnsureAddressNever, EnsureAddressRoot, Event, FeeCalculator, IdentityAddressMapping,
 };
+use frame_support::{impl_outer_origin, parameter_types, traits::FindAuthor, ConsensusEngineId};
+use sp_core::{H160, H256, U256};
 use sp_runtime::{
 	generic,
 	traits::{BlakeTwo256, IdentityLookup},
 };
-use sp_core::{U256, H256, H160};
+use sp_std::prelude::*;
 use sp_std::{boxed::Box, str::FromStr};
 
 impl_outer_origin! {
@@ -38,11 +36,11 @@ pub struct PalletInfo;
 
 impl frame_support::traits::PalletInfo for PalletInfo {
 	fn index<P: 'static>() -> Option<usize> {
-		return Some(0)
+		return Some(0);
 	}
 
 	fn name<P: 'static>() -> Option<&'static str> {
-		return Some("TestName")
+		return Some("TestName");
 	}
 }
 
@@ -111,13 +109,13 @@ impl FeeCalculator for FixedGasPrice {
 
 pub struct FindAuthorTruncated;
 impl FindAuthor<H160> for FindAuthorTruncated {
-	fn find_author<'a, I>(_digests: I) -> Option<H160> where
-		I: 'a + IntoIterator<Item=(ConsensusEngineId, &'a [u8])>
+	fn find_author<'a, I>(_digests: I) -> Option<H160>
+	where
+		I: 'a + IntoIterator<Item = (ConsensusEngineId, &'a [u8])>,
 	{
 		Some(H160::from_str("1234500000000000000000000000000000000000").unwrap())
 	}
 }
-
 
 type System = frame_system::Module<Test>;
 type Balances = pallet_balances::Module<Test>;
@@ -141,4 +139,3 @@ impl Config for Test {
 	type BlockHashMapping = crate::SubstrateBlockHashMapping<Self>;
 	type FindAuthor = FindAuthorTruncated;
 }
-
