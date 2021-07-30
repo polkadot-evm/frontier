@@ -288,6 +288,8 @@ where
 		default_schema = local_cache.get(&cache_keys[0]);
 	}
 
+	println!("---------------> {:?}", local_cache);
+
 	while current_number >= from {
 		let id = BlockId::Number(current_number);
 		let schema = match default_schema {
@@ -1797,6 +1799,7 @@ where
 					.map_err(|err| {
 						warn!("Error schema cache insert for genesis: {:?}", err);
 					});
+				println!("---------------> GENESIS MAP");
 			} else {
 				warn!("Error genesis header unreachable");
 			}

@@ -102,7 +102,7 @@ pub mod frontier_backend_client {
 		B: BlockT<Hash = H256> + Send + Sync + 'static,
 	{
 		let cache = backend
-			.mapping()
+			.meta()
 			.ethereum_schema()
 			.map_err(|err| internal_err(format!("fetch backend failed: {:?}", err)))?;
 		Ok(cache)
@@ -117,7 +117,7 @@ pub mod frontier_backend_client {
 		B: BlockT<Hash = H256> + Send + Sync + 'static,
 	{
 		backend
-			.mapping()
+			.meta()
 			.write_ethereum_schema(new_cache)
 			.map_err(|err| internal_err(format!("write backend failed: {:?}", err)))?;
 		Ok(())

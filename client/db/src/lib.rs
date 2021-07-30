@@ -64,14 +64,12 @@ impl DatabaseSettingsSrc {
 }
 
 pub(crate) mod columns {
-	pub const V1_NUM_COLUMNS: u32 = 4;
-	pub const NUM_COLUMNS: u32 = 5;
+	pub const NUM_COLUMNS: u32 = 4;
 
 	pub const META: u32 = 0;
 	pub const BLOCK_MAPPING: u32 = 1;
 	pub const TRANSACTION_MAPPING: u32 = 2;
 	pub const SYNCED_MAPPING: u32 = 3;
-	pub const ETHEREUM_SCHEMA_CACHE: u32 = 4;
 }
 
 pub(crate) mod static_keys {
@@ -142,6 +140,37 @@ impl<Block: BlockT> MetaDb<Block> {
 
 		Ok(())
 	}
+
+	pub fn ethereum_schema(&self) -> Result<Option<Vec<(EthereumStorageSchema, H256)>>, String> {
+		match self
+			.db
+			.get(crate::columns::META, &PALLET_ETHEREUM_SCHEMA_CACHE.encode())
+		{
+			Some(raw) => Ok(Some(
+				Decode::decode(&mut &raw[..]).map_err(|e| format!("{:?}", e))?,
+			)),
+			None => Ok(None),
+		}
+	}
+
+	pub fn write_ethereum_schema(
+		&self,
+		new_cache: Vec<(EthereumStorageSchema, H256)>,
+	) -> Result<(), String> {
+		let mut transaction = sp_database::Transaction::new();
+
+		transaction.set(
+			crate::columns::META,
+			&PALLET_ETHEREUM_SCHEMA_CACHE.encode(),
+			&new_cache.encode(),
+		);
+
+		self.db
+			.commit(transaction)
+			.map_err(|e| format!("{:?}", e))?;
+
+		Ok(())
+	}
 }
 
 pub struct MappingCommitment<Block: BlockT> {
@@ -198,39 +227,6 @@ impl<Block: BlockT> MappingDb<Block> {
 				.map_err(|e| format!("{:?}", e))?),
 			None => Ok(Vec::new()),
 		}
-	}
-
-	pub fn ethereum_schema(&self) -> Result<Option<Vec<(EthereumStorageSchema, H256)>>, String> {
-		match self.db.get(
-			crate::columns::ETHEREUM_SCHEMA_CACHE,
-			&PALLET_ETHEREUM_SCHEMA_CACHE.encode(),
-		) {
-			Some(raw) => Ok(Some(
-				Decode::decode(&mut &raw[..]).map_err(|e| format!("{:?}", e))?,
-			)),
-			None => Ok(None),
-		}
-	}
-
-	pub fn write_ethereum_schema(
-		&self,
-		new_cache: Vec<(EthereumStorageSchema, H256)>,
-	) -> Result<(), String> {
-		let _lock = self.write_lock.lock();
-
-		let mut transaction = sp_database::Transaction::new();
-
-		transaction.set(
-			crate::columns::ETHEREUM_SCHEMA_CACHE,
-			&PALLET_ETHEREUM_SCHEMA_CACHE.encode(),
-			&new_cache.encode(),
-		);
-
-		self.db
-			.commit(transaction)
-			.map_err(|e| format!("{:?}", e))?;
-
-		Ok(())
 	}
 
 	pub fn write_none(&self, block_hash: Block::Hash) -> Result<(), String> {
