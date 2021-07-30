@@ -18,15 +18,12 @@
 //! Consensus extension module tests for BABE consensus.
 
 use super::*;
+use ethereum::TransactionSignature;
+use frame_support::{assert_err, assert_noop, assert_ok, unsigned::ValidateUnsigned};
 use mock::*;
 use rustc_hex::{FromHex, ToHex};
+use sp_runtime::transaction_validity::{InvalidTransaction, TransactionSource};
 use std::str::FromStr;
-use ethereum::TransactionSignature;
-use frame_support::{
-	assert_noop, assert_err, assert_ok,
-	unsigned::ValidateUnsigned,
-};
-use sp_runtime::transaction_validity::{TransactionSource, InvalidTransaction};
 
 // This ERC-20 contract mints the maximum amount of tokens to the contract creator.
 // pragma solidity ^0.5.0;
@@ -81,7 +78,10 @@ fn transaction_without_enough_gas_should_not_work() {
 		let mut transaction = default_erc20_creation_transaction(alice);
 		transaction.gas_price = U256::from(11_000_000);
 
-		assert_err!(Ethereum::validate_unsigned(TransactionSource::External, &Call::transact(transaction)), InvalidTransaction::Payment);
+		assert_err!(
+			Ethereum::validate_unsigned(TransactionSource::External, &Call::transact(transaction)),
+			InvalidTransaction::Payment
+		);
 	});
 }
 
@@ -124,7 +124,10 @@ fn transaction_with_invalid_nonce_should_not_work() {
 
 		let signed2 = transaction.sign(&alice.private_key);
 
-		assert_err!(Ethereum::validate_unsigned(TransactionSource::External, &Call::transact(signed2)), InvalidTransaction::Stale);
+		assert_err!(
+			Ethereum::validate_unsigned(TransactionSource::External, &Call::transact(signed2)),
+			InvalidTransaction::Stale
+		);
 	});
 }
 
@@ -148,9 +151,11 @@ fn contract_constructor_should_get_executed() {
 			t.action,
 			None,
 		));
-		assert_eq!(Evm::account_storages(
-			erc20_address, alice_storage_address
-		), H256::from_str("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff").unwrap())
+		assert_eq!(
+			Evm::account_storages(erc20_address, alice_storage_address),
+			H256::from_str("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")
+				.unwrap()
+		)
 	});
 }
 
@@ -163,16 +168,15 @@ fn source_should_be_derived_from_signature() {
 	let alice_storage_address = storage_address(alice.address, H256::zero());
 
 	ext.execute_with(|| {
-		Ethereum::transact(
-			Origin::none(),
-			default_erc20_creation_transaction(alice),
-		).expect("Failed to execute transaction");
+		Ethereum::transact(Origin::none(), default_erc20_creation_transaction(alice))
+			.expect("Failed to execute transaction");
 
 		// We verify the transaction happened with alice account.
-		assert_eq!(Evm::account_storages(
-			erc20_address, alice_storage_address
-		), H256::from_str("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff").unwrap())
-
+		assert_eq!(
+			Evm::account_storages(erc20_address, alice_storage_address),
+			H256::from_str("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")
+				.unwrap()
+		)
 	});
 }
 
@@ -182,12 +186,17 @@ fn invalid_signature_should_be_ignored() {
 	let alice = &pairs[0];
 
 	let mut transaction = default_erc20_creation_transaction(alice);
-	transaction.signature = TransactionSignature::new(0x78, H256::from_slice(&[55u8;32]), H256::from_slice(&[55u8;32])).unwrap();
+	transaction.signature = TransactionSignature::new(
+		0x78,
+		H256::from_slice(&[55u8; 32]),
+		H256::from_slice(&[55u8; 32]),
+	)
+	.unwrap();
 	ext.execute_with(|| {
-		assert_noop!(Ethereum::transact(
-			Origin::none(),
-			transaction,
-		), Error::<Test>::InvalidSignature);
+		assert_noop!(
+			Ethereum::transact(Origin::none(), transaction,),
+			Error::<Test>::InvalidSignature
+		);
 	});
 }
 
@@ -232,12 +241,13 @@ fn transaction_should_generate_correct_gas_used() {
 			Some(t.nonce),
 			t.action,
 			None,
-		).unwrap();
+		)
+		.unwrap();
 
 		match info {
 			CallOrCreateInfo::Create(info) => {
 				assert_eq!(info.used_gas, expected_gas);
-			},
+			}
 			CallOrCreateInfo::Call(_) => panic!("expected create info"),
 		}
 	});
@@ -267,7 +277,8 @@ fn call_should_handle_errors() {
 			action: ethereum::TransactionAction::Create,
 			value: U256::zero(),
 			input: FromHex::from_hex(contract).unwrap(),
-		}.sign(&alice.private_key);
+		}
+		.sign(&alice.private_key);
 		assert_ok!(Ethereum::execute(
 			alice.address,
 			t.input,
@@ -279,7 +290,8 @@ fn call_should_handle_errors() {
 			None,
 		));
 
-		let contract_address: Vec<u8> = FromHex::from_hex("32dcab0ef3fb2de2fce1d2e0799d36239671f04a").unwrap();
+		let contract_address: Vec<u8> =
+			FromHex::from_hex("32dcab0ef3fb2de2fce1d2e0799d36239671f04a").unwrap();
 		let foo: Vec<u8> = FromHex::from_hex("c2985578").unwrap();
 		let bar: Vec<u8> = FromHex::from_hex("febb0f7e").unwrap();
 
@@ -293,12 +305,16 @@ fn call_should_handle_errors() {
 			Some(U256::from(1)),
 			TransactionAction::Call(H160::from_slice(&contract_address)),
 			None,
-		).unwrap();
+		)
+		.unwrap();
 
 		match info {
 			CallOrCreateInfo::Call(info) => {
-				assert_eq!(info.value.to_hex::<String>(), "0000000000000000000000000000000000000000000000000000000000000001".to_owned());
-			},
+				assert_eq!(
+					info.value.to_hex::<String>(),
+					"0000000000000000000000000000000000000000000000000000000000000001".to_owned()
+				);
+			}
 			CallOrCreateInfo::Create(_) => panic!("expected call info"),
 		}
 
@@ -312,6 +328,8 @@ fn call_should_handle_errors() {
 			Some(U256::from(2)),
 			TransactionAction::Call(H160::from_slice(&contract_address)),
 			None,
-		).ok().unwrap();
+		)
+		.ok()
+		.unwrap();
 	});
 }

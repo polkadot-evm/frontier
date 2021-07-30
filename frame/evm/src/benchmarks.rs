@@ -18,13 +18,12 @@
 #![cfg(feature = "runtime-benchmarks")]
 
 //! Benchmarking
-use sp_std::prelude::*;
-use crate::{Config, Module, FeeCalculator,
-	runner::Runner};
-use frame_benchmarking::{benchmarks, account};
-use sp_core::{U256, H160};
+use crate::{runner::Runner, Config, FeeCalculator, Module};
+use frame_benchmarking::{account, benchmarks};
 use rlp::RlpStream;
-use sha3::{Keccak256, Digest};
+use sha3::{Digest, Keccak256};
+use sp_core::{H160, U256};
+use sp_std::prelude::*;
 
 benchmarks! {
 

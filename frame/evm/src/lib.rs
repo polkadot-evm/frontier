@@ -53,41 +53,46 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-mod tests;
 pub mod runner;
+mod tests;
 
 #[cfg(any(test, feature = "runtime-benchmarks"))]
 pub mod benchmarks;
 mod mock;
 
 pub use crate::runner::Runner;
+pub use evm::{ExitError, ExitFatal, ExitReason, ExitRevert, ExitSucceed};
 pub use fp_evm::{
-	Account, Log, Vicinity, ExecutionInfo, CallInfo, CreateInfo, Precompile,
-	PrecompileSet, LinearCostPrecompile,
+	Account, CallInfo, CreateInfo, ExecutionInfo, LinearCostPrecompile, Log, Precompile,
+	PrecompileSet, Vicinity,
 };
-pub use evm::{ExitReason, ExitSucceed, ExitError, ExitRevert, ExitFatal};
 
-use sp_std::vec::Vec;
 #[cfg(feature = "std")]
-use codec::{Encode, Decode};
-#[cfg(feature = "std")]
-use serde::{Serialize, Deserialize};
-use frame_support::{decl_module, decl_storage, decl_event, decl_error};
-use frame_support::weights::{Weight, Pays, PostDispatchInfo};
-use frame_support::traits::{
-	Currency, ExistenceRequirement, Get, WithdrawReasons, Imbalance, OnUnbalanced, FindAuthor
-};
-use frame_support::dispatch::DispatchResultWithPostInfo;
-use frame_system::RawOrigin;
-use sp_core::{U256, H256, H160, Hasher};
-use sp_runtime::{AccountId32, traits::{UniqueSaturatedInto, BadOrigin, Saturating}};
+use codec::{Decode, Encode};
 use evm::Config as EvmConfig;
+use frame_support::dispatch::DispatchResultWithPostInfo;
+use frame_support::traits::{
+	Currency, ExistenceRequirement, FindAuthor, Get, Imbalance, OnUnbalanced, WithdrawReasons,
+};
+use frame_support::weights::{Pays, PostDispatchInfo, Weight};
+use frame_support::{decl_error, decl_event, decl_module, decl_storage};
+use frame_system::RawOrigin;
+#[cfg(feature = "std")]
+use serde::{Deserialize, Serialize};
+use sp_core::{Hasher, H160, H256, U256};
+use sp_runtime::{
+	traits::{BadOrigin, Saturating, UniqueSaturatedInto},
+	AccountId32,
+};
+use sp_std::vec::Vec;
 
 /// Type alias for currency balance.
-pub type BalanceOf<T> = <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
+pub type BalanceOf<T> =
+	<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
 /// Type alias for negative imbalance during fees
-type NegativeImbalanceOf<C, T> = <C as Currency<<T as frame_system::Config>::AccountId>>::NegativeImbalance;
+type NegativeImbalanceOf<C, T> =
+	<C as Currency<<T as frame_system::Config>::AccountId>>::NegativeImbalance;
 
 /// Trait that outputs the current transaction gas price.
 pub trait FeeCalculator {
@@ -96,7 +101,9 @@ pub trait FeeCalculator {
 }
 
 impl FeeCalculator for () {
-	fn min_gas_price() -> U256 { U256::zero() }
+	fn min_gas_price() -> U256 {
+		U256::zero()
+	}
 }
 
 pub trait EnsureAddressOrigin<OuterOrigin> {
@@ -122,18 +129,16 @@ pub trait EnsureAddressOrigin<OuterOrigin> {
 /// ID is `H160`.
 pub struct EnsureAddressSame;
 
-impl<OuterOrigin> EnsureAddressOrigin<OuterOrigin> for EnsureAddressSame where
+impl<OuterOrigin> EnsureAddressOrigin<OuterOrigin> for EnsureAddressSame
+where
 	OuterOrigin: Into<Result<RawOrigin<H160>, OuterOrigin>> + From<RawOrigin<H160>>,
 {
 	type Success = H160;
 
-	fn try_address_origin(
-		address: &H160,
-		origin: OuterOrigin,
-	) -> Result<H160, OuterOrigin> {
+	fn try_address_origin(address: &H160, origin: OuterOrigin) -> Result<H160, OuterOrigin> {
 		origin.into().and_then(|o| match o {
 			RawOrigin::Signed(who) if &who == address => Ok(who),
-			r => Err(OuterOrigin::from(r))
+			r => Err(OuterOrigin::from(r)),
 		})
 	}
 }
@@ -141,15 +146,13 @@ impl<OuterOrigin> EnsureAddressOrigin<OuterOrigin> for EnsureAddressSame where
 /// Ensure that the origin is root.
 pub struct EnsureAddressRoot<AccountId>(sp_std::marker::PhantomData<AccountId>);
 
-impl<OuterOrigin, AccountId> EnsureAddressOrigin<OuterOrigin> for EnsureAddressRoot<AccountId> where
+impl<OuterOrigin, AccountId> EnsureAddressOrigin<OuterOrigin> for EnsureAddressRoot<AccountId>
+where
 	OuterOrigin: Into<Result<RawOrigin<AccountId>, OuterOrigin>> + From<RawOrigin<AccountId>>,
 {
 	type Success = ();
 
-	fn try_address_origin(
-		_address: &H160,
-		origin: OuterOrigin,
-	) -> Result<(), OuterOrigin> {
+	fn try_address_origin(_address: &H160, origin: OuterOrigin) -> Result<(), OuterOrigin> {
 		origin.into().and_then(|o| match o {
 			RawOrigin::Root => Ok(()),
 			r => Err(OuterOrigin::from(r)),
@@ -163,10 +166,7 @@ pub struct EnsureAddressNever<AccountId>(sp_std::marker::PhantomData<AccountId>)
 impl<OuterOrigin, AccountId> EnsureAddressOrigin<OuterOrigin> for EnsureAddressNever<AccountId> {
 	type Success = AccountId;
 
-	fn try_address_origin(
-		_address: &H160,
-		origin: OuterOrigin,
-	) -> Result<AccountId, OuterOrigin> {
+	fn try_address_origin(_address: &H160, origin: OuterOrigin) -> Result<AccountId, OuterOrigin> {
 		Err(origin)
 	}
 }
@@ -175,19 +175,18 @@ impl<OuterOrigin, AccountId> EnsureAddressOrigin<OuterOrigin> for EnsureAddressN
 /// `AccountId32`.
 pub struct EnsureAddressTruncated;
 
-impl<OuterOrigin> EnsureAddressOrigin<OuterOrigin> for EnsureAddressTruncated where
+impl<OuterOrigin> EnsureAddressOrigin<OuterOrigin> for EnsureAddressTruncated
+where
 	OuterOrigin: Into<Result<RawOrigin<AccountId32>, OuterOrigin>> + From<RawOrigin<AccountId32>>,
 {
 	type Success = AccountId32;
 
-	fn try_address_origin(
-		address: &H160,
-		origin: OuterOrigin,
-	) -> Result<AccountId32, OuterOrigin> {
+	fn try_address_origin(address: &H160, origin: OuterOrigin) -> Result<AccountId32, OuterOrigin> {
 		origin.into().and_then(|o| match o {
-			RawOrigin::Signed(who)
-				if AsRef::<[u8; 32]>::as_ref(&who)[0..20] == address[0..20] => Ok(who),
-			r => Err(OuterOrigin::from(r))
+			RawOrigin::Signed(who) if AsRef::<[u8; 32]>::as_ref(&who)[0..20] == address[0..20] => {
+				Ok(who)
+			}
+			r => Err(OuterOrigin::from(r)),
 		})
 	}
 }
@@ -200,13 +199,15 @@ pub trait AddressMapping<A> {
 pub struct IdentityAddressMapping;
 
 impl AddressMapping<H160> for IdentityAddressMapping {
-	fn into_account_id(address: H160) -> H160 { address }
+	fn into_account_id(address: H160) -> H160 {
+		address
+	}
 }
 
 /// Hashed address mapping.
 pub struct HashedAddressMapping<H>(sp_std::marker::PhantomData<H>);
 
-impl<H: Hasher<Out=H256>> AddressMapping<AccountId32> for HashedAddressMapping<H> {
+impl<H: Hasher<Out = H256>> AddressMapping<AccountId32> for HashedAddressMapping<H> {
 	fn into_account_id(address: H160) -> AccountId32 {
 		let mut data = [0u8; 24];
 		data[0..4].copy_from_slice(b"evm:");
@@ -262,7 +263,7 @@ pub trait Config: frame_system::Config + pallet_timestamp::Config {
 	/// Allow the origin to call on behalf of given address.
 	type CallOrigin: EnsureAddressOrigin<Self::Origin>;
 	/// Allow the origin to withdraw on behalf of given address.
-	type WithdrawOrigin: EnsureAddressOrigin<Self::Origin, Success=Self::AccountId>;
+	type WithdrawOrigin: EnsureAddressOrigin<Self::Origin, Success = Self::AccountId>;
 
 	/// Mapping from address to account id.
 	type AddressMapping: AddressMapping<Self::AccountId>;
@@ -544,9 +545,7 @@ impl<T: Config> Module<T> {
 		let account = Self::account_basic(address);
 		let code_len = AccountCodes::decode_len(address).unwrap_or(0);
 
-		account.nonce == U256::zero() &&
-			account.balance == U256::zero() &&
-			code_len == 0
+		account.nonce == U256::zero() && account.balance == U256::zero() && code_len == 0
 	}
 
 	/// Remove an account if its empty.
@@ -570,7 +569,7 @@ impl<T: Config> Module<T> {
 	/// Create an account.
 	pub fn create_account(address: H160, code: Vec<u8>) {
 		if code.is_empty() {
-			return
+			return;
 		}
 
 		if !AccountCodes::contains_key(&address) {

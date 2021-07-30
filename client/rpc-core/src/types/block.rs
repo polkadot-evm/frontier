@@ -16,13 +16,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use std::ops::Deref;
 use std::collections::BTreeMap;
+use std::ops::Deref;
 
-use ethereum_types::{H160, H256, U256, Bloom as H2048};
+use crate::types::{Bytes, Transaction};
+use ethereum_types::{Bloom as H2048, H160, H256, U256};
 use serde::ser::Error;
 use serde::{Serialize, Serializer};
-use crate::types::{Bytes, Transaction};
 
 /// Block Transactions
 #[derive(Debug)]
@@ -30,15 +30,17 @@ pub enum BlockTransactions {
 	/// Only hashes
 	Hashes(Vec<H256>),
 	/// Full transactions
-	Full(Vec<Transaction>)
+	Full(Vec<Transaction>),
 }
 
 impl Serialize for BlockTransactions {
 	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-	where S: Serializer {
+	where
+		S: Serializer,
+	{
 		match *self {
 			BlockTransactions::Hashes(ref hashes) => hashes.serialize(serializer),
-			BlockTransactions::Full(ref ts) => ts.serialize(serializer)
+			BlockTransactions::Full(ref ts) => ts.serialize(serializer),
 		}
 	}
 }
@@ -156,7 +158,10 @@ impl<T> Deref for Rich<T> {
 }
 
 impl<T: Serialize> Serialize for Rich<T> {
-	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
+	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+	where
+		S: Serializer,
+	{
 		use serde_json::{to_value, Value};
 
 		let serialized = (to_value(&self.inner), to_value(&self.extra_info));
@@ -166,7 +171,9 @@ impl<T: Serialize> Serialize for Rich<T> {
 			// and serialize
 			value.serialize(serializer)
 		} else {
-			Err(S::Error::custom("Unserializable structures: expected objects"))
+			Err(S::Error::custom(
+				"Unserializable structures: expected objects",
+			))
 		}
 	}
 }
