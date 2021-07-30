@@ -809,12 +809,35 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 				error_on_execution_failure(&info.exit_reason, &[])?;
 
 				Ok(Bytes(info.value[..].to_vec()))
-			},
+			}
 		}
 	}
 
-	fn estimate_gas(&self, request: CallRequest, _: Option<BlockNumber>) -> Result<U256> {
-		let calculate_gas_used = |request| -> Result<U256> {
+	fn estimate_gas(
+		&self,
+		request: CallRequest,
+		_: Option<BlockNumber>,
+	) -> Result<U256> {
+		let gas_limit = {
+			// query current block's gas limit
+			let id = BlockId::Hash(self.client.info().best_hash);
+			let schema =
+				frontier_backend_client::onchain_storage_schema::<B, C, BE>(&self.client, id);
+			let handler = self
+				.overrides
+				.schemas
+				.get(&schema)
+				.unwrap_or(&self.overrides.fallback);
+
+			let block = handler.current_block(&id);
+			if let Some(block) = block {
+				block.header.gas_limit
+			} else {
+				return Err(internal_err("block unavailable, cannot query gas limit"));
+			}
+		};
+
+		let calculate_gas_used = |request, gas_limit| -> Result<U256> {
 			let hash = self.client.info().best_hash;
 
 			let CallRequest {
@@ -827,19 +850,8 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 				nonce
 			} = request;
 
-			// use given gas limit or query current block's limit
-			let gas_limit = match gas {
-				Some(amount) => amount,
-				None => {
-					let block = self.client.runtime_api().current_block(&BlockId::Hash(hash))
-						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?;
-					if let Some(block) = block {
-						block.header.gas_limit
-					} else {
-						return Err(internal_err(format!("block unavailable, cannot query gas limit")));
-					}
-				},
-			};
+			// Use request gas limit only if it less than gas_limit parameter
+			let gas_limit = core::cmp::min(gas.unwrap_or(gas_limit), gas_limit);
 
 			let data = data.map(|d| d.0).unwrap_or_default();
 
@@ -905,7 +917,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 			while change_pct > threshold_pct {
 				let mut test_request = request.clone();
 				test_request.gas = Some(mid);
-				match calculate_gas_used(test_request) {
+				match calculate_gas_used(test_request, gas_limit) {
 					// if Ok -- try to reduce the gas used
 					Ok(used_gas) => {
 						old_best = best;
@@ -932,7 +944,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 			}
 			Ok(best)
 		} else {
-			calculate_gas_used(request)
+			calculate_gas_used(request, gas_limit)
 		}
 	}
 
