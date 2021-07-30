@@ -3,3 +3,4 @@
 ## Unreleased
 
 * Added support for syncing mapping hashes mid-way.
+* Bump `fc-db` to `2.0.0-dev`.

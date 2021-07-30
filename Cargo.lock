@@ -1309,7 +1309,7 @@ dependencies = [
 
 [[package]]
 name = "fc-consensus"
-version = "2.0.0"
+version = "2.0.0-dev"
 dependencies = [
  "derive_more",
  "fc-db",
@@ -1332,10 +1332,12 @@ dependencies = [
 
 [[package]]
 name = "fc-db"
-version = "1.0.0"
+version = "2.0.0-dev"
 dependencies = [
+ "fp-storage",
  "kvdb",
  "kvdb-rocksdb",
+ "pallet-ethereum",
  "parity-scale-codec",
  "parking_lot 0.11.1",
  "sp-core",
@@ -1535,7 +1537,7 @@ dependencies = [
 
 [[package]]
 name = "fp-storage"
-version = "1.0.1"
+version = "2.0.0-dev"
 
 [[package]]
 name = "frame-benchmarking"
