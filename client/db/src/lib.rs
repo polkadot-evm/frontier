@@ -58,12 +58,14 @@ impl DatabaseSettingsSrc {
 }
 
 pub(crate) mod columns {
-	pub const NUM_COLUMNS: u32 = 4;
+	pub const V1_NUM_COLUMNS: u32 = 4;
+	pub const NUM_COLUMNS: u32 = 5;
 
 	pub const META: u32 = 0;
 	pub const BLOCK_MAPPING: u32 = 1;
 	pub const TRANSACTION_MAPPING: u32 = 2;
 	pub const SYNCED_MAPPING: u32 = 3;
+	pub const ETHEREUM_SCHEMA_CACHE: u32 = 4;
 }
 
 pub(crate) mod static_keys {
