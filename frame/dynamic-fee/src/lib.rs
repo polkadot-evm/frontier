@@ -18,18 +18,18 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Encode, Decode};
-use sp_std::{result, cmp::{min, max}};
-use sp_runtime::RuntimeDebug;
+use codec::{Decode, Encode};
+use frame_support::{decl_module, decl_storage, traits::Get, weights::Weight};
+use frame_system::ensure_none;
 use sp_core::U256;
-use sp_inherents::{InherentIdentifier, InherentData, ProvideInherent, IsFatalError};
 #[cfg(feature = "std")]
 use sp_inherents::ProvideInherentData;
-use frame_support::{
-	decl_module, decl_storage,
-	traits::Get, weights::Weight,
+use sp_inherents::{InherentData, InherentIdentifier, IsFatalError, ProvideInherent};
+use sp_runtime::RuntimeDebug;
+use sp_std::{
+	cmp::{max, min},
+	result,
 };
-use frame_system::ensure_none;
 
 pub trait Config: frame_system::Config {
 	/// Bound divisor for min gas price.
@@ -86,11 +86,11 @@ impl<T: Config> pallet_evm::FeeCalculator for Module<T> {
 }
 
 #[derive(Encode, Decode, RuntimeDebug)]
-pub enum InherentError { }
+pub enum InherentError {}
 
 impl IsFatalError for InherentError {
 	fn is_fatal_error(&self) -> bool {
-		match *self { }
+		match *self {}
 	}
 }
 
@@ -121,7 +121,7 @@ impl ProvideInherentData for InherentDataProvider {
 
 	fn provide_inherent_data(
 		&self,
-		inherent_data: &mut InherentData
+		inherent_data: &mut InherentData,
 	) -> Result<(), sp_inherents::Error> {
 		inherent_data.put_data(INHERENT_IDENTIFIER, &self.0)
 	}

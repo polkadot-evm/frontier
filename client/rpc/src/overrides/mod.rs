@@ -17,22 +17,22 @@ use std::collections::BTreeMap;
 
 use ethereum::Block as EthereumBlock;
 use ethereum_types::{H160, H256, U256};
-use sp_runtime::traits::Block as BlockT;
-use sp_api::{BlockId, ProvideRuntimeApi};
-use sp_io::hashing::{twox_128, blake2_128};
-use fp_rpc::TransactionStatus;
-use std::{marker::PhantomData, sync::Arc};
 use fp_rpc::EthereumRuntimeRPCApi;
+use fp_rpc::TransactionStatus;
+use sp_api::{BlockId, ProvideRuntimeApi};
+use sp_io::hashing::{blake2_128, twox_128};
+use sp_runtime::traits::Block as BlockT;
+use std::{marker::PhantomData, sync::Arc};
 
 mod schema_v1_override;
 
 pub use fc_rpc_core::{EthApiServer, NetApiServer};
-pub use schema_v1_override::SchemaV1Override;
 use pallet_ethereum::EthereumStorageSchema;
+pub use schema_v1_override::SchemaV1Override;
 
 pub struct OverrideHandle<Block: BlockT> {
 	pub schemas: BTreeMap<EthereumStorageSchema, Box<dyn StorageOverride<Block> + Send + Sync>>,
-	pub fallback: Box<dyn StorageOverride<Block> + Send + Sync>
+	pub fallback: Box<dyn StorageOverride<Block> + Send + Sync>,
 }
 
 /// Something that can fetch Ethereum-related data. This trait is quite similar to the runtime API,
@@ -50,7 +50,10 @@ pub trait StorageOverride<Block: BlockT> {
 	/// Return the current receipt.
 	fn current_receipts(&self, block: &BlockId<Block>) -> Option<Vec<ethereum::Receipt>>;
 	/// Return the current transaction status.
-	fn current_transaction_statuses(&self, block: &BlockId<Block>) -> Option<Vec<TransactionStatus>>;
+	fn current_transaction_statuses(
+		&self,
+		block: &BlockId<Block>,
+	) -> Option<Vec<TransactionStatus>>;
 }
 
 fn storage_prefix_build(module: &[u8], storage: &[u8]) -> Vec<u8> {
@@ -70,14 +73,18 @@ pub struct RuntimeApiStorageOverride<B: BlockT, C> {
 	_marker: PhantomData<B>,
 }
 
-impl<B, C> RuntimeApiStorageOverride<B, C> where
+impl<B, C> RuntimeApiStorageOverride<B, C>
+where
 	C: ProvideRuntimeApi<B>,
 	C::Api: EthereumRuntimeRPCApi<B>,
-	B: BlockT<Hash=H256> + Send + Sync + 'static,
+	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	C: Send + Sync + 'static,
 {
 	pub fn new(client: Arc<C>) -> Self {
-		Self { client, _marker: PhantomData }
+		Self {
+			client,
+			_marker: PhantomData,
+		}
 	}
 }
 
@@ -85,7 +92,7 @@ impl<Block, C> StorageOverride<Block> for RuntimeApiStorageOverride<Block, C>
 where
 	C: ProvideRuntimeApi<Block>,
 	C::Api: EthereumRuntimeRPCApi<Block>,
-	Block: BlockT<Hash=H256> + Send + Sync + 'static,
+	Block: BlockT<Hash = H256> + Send + Sync + 'static,
 	C: Send + Sync + 'static,
 {
 	/// For a given account address, returns pallet_evm::AccountCodes.
@@ -106,10 +113,7 @@ where
 
 	/// Return the current block.
 	fn current_block(&self, block: &BlockId<Block>) -> Option<EthereumBlock> {
-		self.client
-			.runtime_api()
-			.current_block(&block)
-			.ok()?
+		self.client.runtime_api().current_block(&block).ok()?
 	}
 
 	/// Return the current receipt.
@@ -118,7 +122,13 @@ where
 	}
 
 	/// Return the current transaction status.
-	fn current_transaction_statuses(&self, block: &BlockId<Block>) -> Option<Vec<TransactionStatus>> {
-		self.client.runtime_api().current_transaction_statuses(&block).ok()?
+	fn current_transaction_statuses(
+		&self,
+		block: &BlockId<Block>,
+	) -> Option<Vec<TransactionStatus>> {
+		self.client
+			.runtime_api()
+			.current_transaction_statuses(&block)
+			.ok()?
 	}
 }

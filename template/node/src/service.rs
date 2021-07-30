@@ -1,26 +1,31 @@
 //! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 
-use std::{sync::{Arc, Mutex}, cell::RefCell, time::Duration, collections::{HashMap, BTreeMap}};
-use fc_rpc::EthTask;
-use fc_rpc_core::types::{FilterPool, PendingTransactions};
-use sc_client_api::{ExecutorProvider, RemoteBackend, BlockchainEvents};
-#[cfg(feature = "manual-seal")]
-use sc_consensus_manual_seal::{self as manual_seal};
 use fc_consensus::FrontierBlockImport;
 use fc_mapping_sync::{MappingSyncWorker, SyncStrategy};
+use fc_rpc::EthTask;
+use fc_rpc_core::types::{FilterPool, PendingTransactions};
 use frontier_template_runtime::{self, opaque::Block, RuntimeApi, SLOT_DURATION};
-use sc_service::{error::Error as ServiceError, Configuration, TaskManager, BasePath};
-use sp_inherents::{InherentDataProviders, ProvideInherentData, InherentIdentifier, InherentData};
+use futures::StreamExt;
+use sc_cli::SubstrateCli;
+use sc_client_api::{BlockchainEvents, ExecutorProvider, RemoteBackend};
+use sc_consensus_aura::{ImportQueueParams, SlotProportion, StartAuraParams};
+#[cfg(feature = "manual-seal")]
+use sc_consensus_manual_seal::{self as manual_seal};
 use sc_executor::native_executor_instance;
 pub use sc_executor::NativeExecutor;
-use sc_consensus_aura::{ImportQueueParams, StartAuraParams, SlotProportion};
-use sp_consensus_aura::sr25519::{AuthorityPair as AuraPair};
 use sc_finality_grandpa::SharedVoterState;
-use sp_timestamp::InherentError;
+use sc_service::{error::Error as ServiceError, BasePath, Configuration, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryWorker};
-use sc_cli::SubstrateCli;
-use futures::StreamExt;
+use sp_consensus_aura::sr25519::AuthorityPair as AuraPair;
 use sp_core::U256;
+use sp_inherents::{InherentData, InherentDataProviders, InherentIdentifier, ProvideInherentData};
+use sp_timestamp::InherentError;
+use std::{
+	cell::RefCell,
+	collections::{BTreeMap, HashMap},
+	sync::{Arc, Mutex},
+	time::Duration,
+};
 
 use crate::cli::Cli;
 #[cfg(feature = "manual-seal")]
@@ -45,16 +50,24 @@ pub type ConsensusResult = (
 		FullClient,
 		FrontierBlockImport<
 			Block,
-			sc_finality_grandpa::GrandpaBlockImport<FullBackend, Block, FullClient, FullSelectChain>,
-			FullClient
+			sc_finality_grandpa::GrandpaBlockImport<
+				FullBackend,
+				Block,
+				FullClient,
+				FullSelectChain,
+			>,
+			FullClient,
 		>,
-		AuraPair
+		AuraPair,
 	>,
-	sc_finality_grandpa::LinkHalf<Block, FullClient, FullSelectChain>
+	sc_finality_grandpa::LinkHalf<Block, FullClient, FullSelectChain>,
 );
 
 #[cfg(feature = "manual-seal")]
-pub type ConsensusResult = (FrontierBlockImport<Block, Arc<FullClient>, FullClient>, Sealing);
+pub type ConsensusResult = (
+	FrontierBlockImport<Block, Arc<FullClient>, FullClient>,
+	Sealing,
+);
 
 /// Provide a mock duration starting at 0 in millisecond for timestamp inherent.
 /// Each call will increment timestamp by slot_duration making Aura think time has passed.
@@ -85,7 +98,9 @@ impl ProvideInherentData for MockTimestampInherentDataProvider {
 }
 
 pub fn frontier_database_dir(config: &Configuration) -> std::path::PathBuf {
-	let config_dir = config.base_path.as_ref()
+	let config_dir = config
+		.base_path
+		.as_ref()
 		.map(|base_path| base_path.config_dir(config.chain_spec.id()))
 		.unwrap_or_else(|| {
 			BasePath::from_project("", "", &crate::cli::Cli::executable_name())
@@ -95,24 +110,41 @@ pub fn frontier_database_dir(config: &Configuration) -> std::path::PathBuf {
 }
 
 pub fn open_frontier_backend(config: &Configuration) -> Result<Arc<fc_db::Backend<Block>>, String> {
-	Ok(Arc::new(fc_db::Backend::<Block>::new(&fc_db::DatabaseSettings {
-		source: fc_db::DatabaseSettingsSrc::RocksDb {
-			path: frontier_database_dir(&config),
-			cache_size: 0,
-		}
-	})?))
+	Ok(Arc::new(fc_db::Backend::<Block>::new(
+		&fc_db::DatabaseSettings {
+			source: fc_db::DatabaseSettingsSrc::RocksDb {
+				path: frontier_database_dir(&config),
+				cache_size: 0,
+			},
+		},
+	)?))
 }
 
-pub fn new_partial(config: &Configuration, #[allow(unused_variables)] cli: &Cli) -> Result<
+pub fn new_partial(
+	config: &Configuration,
+	#[allow(unused_variables)] cli: &Cli,
+) -> Result<
 	sc_service::PartialComponents<
-		FullClient, FullBackend, FullSelectChain,
+		FullClient,
+		FullBackend,
+		FullSelectChain,
 		sp_consensus::import_queue::BasicQueue<Block, sp_api::TransactionFor<FullClient, Block>>,
 		sc_transaction_pool::FullPool<Block, FullClient>,
-		(ConsensusResult, PendingTransactions, Option<FilterPool>, Arc<fc_db::Backend<Block>>, Option<Telemetry>),
->, ServiceError> {
+		(
+			ConsensusResult,
+			PendingTransactions,
+			Option<FilterPool>,
+			Arc<fc_db::Backend<Block>>,
+			Option<Telemetry>,
+		),
+	>,
+	ServiceError,
+> {
 	let inherent_data_providers = sp_inherents::InherentDataProviders::new();
 
-	let telemetry = config.telemetry_endpoints.clone()
+	let telemetry = config
+		.telemetry_endpoints
+		.clone()
 		.filter(|x| !x.is_empty())
 		.map(|endpoints| -> Result<_, sc_telemetry::Error> {
 			let worker = TelemetryWorker::new(16)?;
@@ -128,11 +160,10 @@ pub fn new_partial(config: &Configuration, #[allow(unused_variables)] cli: &Cli)
 		)?;
 	let client = Arc::new(client);
 
-	let telemetry = telemetry
-		.map(|(worker, telemetry)| {
-			task_manager.spawn_handle().spawn("telemetry", worker.run());
-			telemetry
-		});
+	let telemetry = telemetry.map(|(worker, telemetry)| {
+		task_manager.spawn_handle().spawn("telemetry", worker.run());
+		telemetry
+	});
 
 	let select_chain = sc_consensus::LongestChain::new(backend.clone());
 
@@ -144,15 +175,14 @@ pub fn new_partial(config: &Configuration, #[allow(unused_variables)] cli: &Cli)
 		client.clone(),
 	);
 
-	let pending_transactions: PendingTransactions
-		= Some(Arc::new(Mutex::new(HashMap::new())));
+	let pending_transactions: PendingTransactions = Some(Arc::new(Mutex::new(HashMap::new())));
 
-	let filter_pool: Option<FilterPool>
-		= Some(Arc::new(Mutex::new(BTreeMap::new())));
+	let filter_pool: Option<FilterPool> = Some(Arc::new(Mutex::new(BTreeMap::new())));
 
 	let frontier_backend = open_frontier_backend(config)?;
 
-	#[cfg(feature = "manual-seal")] {
+	#[cfg(feature = "manual-seal")]
+	{
 		let sealing = cli.run.sealing;
 
 		inherent_data_providers
@@ -160,15 +190,14 @@ pub fn new_partial(config: &Configuration, #[allow(unused_variables)] cli: &Cli)
 			.map_err(Into::into)
 			.map_err(sp_consensus::error::Error::InherentData)?;
 		inherent_data_providers
-			.register_provider(pallet_dynamic_fee::InherentDataProvider(U256::from(cli.run.target_gas_price)))
+			.register_provider(pallet_dynamic_fee::InherentDataProvider(U256::from(
+				cli.run.target_gas_price,
+			)))
 			.map_err(Into::into)
 			.map_err(sp_consensus::Error::InherentData)?;
 
-		let frontier_block_import = FrontierBlockImport::new(
-			client.clone(),
-			client.clone(),
-			frontier_backend.clone(),
-		);
+		let frontier_block_import =
+			FrontierBlockImport::new(client.clone(), client.clone(), frontier_backend.clone());
 
 		let import_queue = sc_consensus_manual_seal::import_queue(
 			Box::new(frontier_block_import.clone()),
@@ -177,21 +206,30 @@ pub fn new_partial(config: &Configuration, #[allow(unused_variables)] cli: &Cli)
 		);
 
 		Ok(sc_service::PartialComponents {
-			client, backend, task_manager, import_queue, keystore_container,
-			select_chain, transaction_pool, inherent_data_providers,
+			client,
+			backend,
+			task_manager,
+			import_queue,
+			keystore_container,
+			select_chain,
+			transaction_pool,
+			inherent_data_providers,
 			other: (
 				(frontier_block_import, sealing),
 				pending_transactions,
 				filter_pool,
 				frontier_backend,
 				telemetry,
-			)
+			),
 		})
 	}
 
-	#[cfg(feature = "aura")] {
+	#[cfg(feature = "aura")]
+	{
 		inherent_data_providers
-			.register_provider(pallet_dynamic_fee::InherentDataProvider(U256::from(cli.run.target_gas_price)))
+			.register_provider(pallet_dynamic_fee::InherentDataProvider(U256::from(
+				cli.run.target_gas_price,
+			)))
 			.map_err(Into::into)
 			.map_err(sp_consensus::Error::InherentData)?;
 
@@ -209,11 +247,12 @@ pub fn new_partial(config: &Configuration, #[allow(unused_variables)] cli: &Cli)
 		);
 
 		let aura_block_import = sc_consensus_aura::AuraBlockImport::<_, _, _, AuraPair>::new(
-			frontier_block_import, client.clone(),
+			frontier_block_import,
+			client.clone(),
 		);
 
-		let import_queue = sc_consensus_aura::import_queue::<AuraPair, _, _, _, _, _>(
-			ImportQueueParams {
+		let import_queue =
+			sc_consensus_aura::import_queue::<AuraPair, _, _, _, _, _>(ImportQueueParams {
 				slot_duration: sc_consensus_aura::slot_duration(&*client)?,
 				block_import: aura_block_import.clone(),
 				justification_import: Some(Box::new(grandpa_block_import.clone())),
@@ -221,37 +260,48 @@ pub fn new_partial(config: &Configuration, #[allow(unused_variables)] cli: &Cli)
 				inherent_data_providers: inherent_data_providers.clone(),
 				spawner: &task_manager.spawn_essential_handle(),
 				registry: config.prometheus_registry(),
-				can_author_with: sp_consensus::CanAuthorWithNativeVersion::new(client.executor().clone()),
+				can_author_with: sp_consensus::CanAuthorWithNativeVersion::new(
+					client.executor().clone(),
+				),
 				check_for_equivocation: Default::default(),
 				telemetry: telemetry.as_ref().map(|x| x.handle()),
-			}
-		)?;
+			})?;
 
 		Ok(sc_service::PartialComponents {
-			client, backend, task_manager, import_queue, keystore_container,
-			select_chain, transaction_pool, inherent_data_providers,
+			client,
+			backend,
+			task_manager,
+			import_queue,
+			keystore_container,
+			select_chain,
+			transaction_pool,
+			inherent_data_providers,
 			other: (
 				(aura_block_import, grandpa_link),
 				pending_transactions,
 				filter_pool,
 				frontier_backend,
 				telemetry,
-			)
+			),
 		})
 	}
 }
 
 /// Builds a new service for a full client.
-pub fn new_full(
-	config: Configuration,
-	cli: &Cli,
-) -> Result<TaskManager, ServiceError> {
+pub fn new_full(config: Configuration, cli: &Cli) -> Result<TaskManager, ServiceError> {
 	let enable_dev_signer = cli.run.enable_dev_signer;
 
 	let sc_service::PartialComponents {
-		client, backend, mut task_manager, import_queue, keystore_container,
-		select_chain, transaction_pool, inherent_data_providers,
-		other: (consensus_result, pending_transactions, filter_pool, frontier_backend, mut telemetry),
+		client,
+		backend,
+		mut task_manager,
+		import_queue,
+		keystore_container,
+		select_chain,
+		transaction_pool,
+		inherent_data_providers,
+		other:
+			(consensus_result, pending_transactions, filter_pool, frontier_backend, mut telemetry),
 	} = new_partial(&config, cli)?;
 
 	let (network, network_status_sinks, system_rpc_tx, network_starter) =
@@ -270,7 +320,10 @@ pub fn new_full(
 
 	if config.offchain_worker.enabled {
 		sc_service::build_offchain_workers(
-			&config, task_manager.spawn_handle(), client.clone(), network.clone(),
+			&config,
+			task_manager.spawn_handle(),
+			client.clone(),
+			network.clone(),
 		);
 	}
 
@@ -281,7 +334,8 @@ pub fn new_full(
 	let enable_grandpa = !config.disable_grandpa;
 	let prometheus_registry = config.prometheus_registry().cloned();
 	let is_authority = role.is_authority();
-	let subscription_task_executor = sc_rpc::SubscriptionTaskExecutor::new(task_manager.spawn_handle());
+	let subscription_task_executor =
+		sc_rpc::SubscriptionTaskExecutor::new(task_manager.spawn_handle());
 
 	let rpc_extensions_builder = {
 		let client = client.clone();
@@ -306,10 +360,7 @@ pub fn new_full(
 				max_past_logs,
 				command_sink: Some(command_sink.clone()),
 			};
-			crate::rpc::create_full(
-				deps,
-				subscription_task_executor.clone()
-			)
+			crate::rpc::create_full(deps, subscription_task_executor.clone())
 		})
 	};
 
@@ -322,7 +373,8 @@ pub fn new_full(
 			backend.clone(),
 			frontier_backend.clone(),
 			SyncStrategy::Normal,
-		).for_each(|()| futures::future::ready(()))
+		)
+		.for_each(|()| futures::future::ready(())),
 	);
 
 	let _rpc_handlers = sc_service::spawn_tasks(sc_service::SpawnTasksParams {
@@ -334,7 +386,11 @@ pub fn new_full(
 		rpc_extensions_builder: rpc_extensions_builder,
 		on_demand: None,
 		remote_blockchain: None,
-		backend, network_status_sinks, system_rpc_tx, config, telemetry: telemetry.as_mut(),
+		backend,
+		network_status_sinks,
+		system_rpc_tx,
+		config,
+		telemetry: telemetry.as_mut(),
 	})?;
 
 	// Spawn Frontier EthFilterApi maintenance task.
@@ -343,11 +399,7 @@ pub fn new_full(
 		const FILTER_RETAIN_THRESHOLD: u64 = 100;
 		task_manager.spawn_essential_handle().spawn(
 			"frontier-filter-pool",
-			EthTask::filter_pool_task(
-					Arc::clone(&client),
-					filter_pool,
-					FILTER_RETAIN_THRESHOLD,
-			)
+			EthTask::filter_pool_task(Arc::clone(&client), filter_pool, FILTER_RETAIN_THRESHOLD),
 		);
 	}
 
@@ -358,13 +410,14 @@ pub fn new_full(
 			"frontier-pending-transactions",
 			EthTask::pending_transaction_task(
 				Arc::clone(&client),
-					pending_transactions,
-					TRANSACTION_RETAIN_THRESHOLD,
-				)
+				pending_transactions,
+				TRANSACTION_RETAIN_THRESHOLD,
+			),
 		);
 	}
 
-	#[cfg(feature = "manual-seal")] {
+	#[cfg(feature = "manual-seal")]
+	{
 		let (block_import, sealing) = consensus_result;
 
 		if role.is_authority() {
@@ -379,8 +432,8 @@ pub fn new_full(
 			// Background authorship future
 			match sealing {
 				Sealing::Manual => {
-					let authorship_future = manual_seal::run_manual_seal(
-						manual_seal::ManualSealParams {
+					let authorship_future =
+						manual_seal::run_manual_seal(manual_seal::ManualSealParams {
 							block_import,
 							env,
 							client,
@@ -389,14 +442,15 @@ pub fn new_full(
 							select_chain,
 							consensus_data_provider: None,
 							inherent_data_providers,
-						}
-					);
+						});
 					// we spawn the future on a background thread managed by service.
-					task_manager.spawn_essential_handle().spawn_blocking("manual-seal", authorship_future);
-				},
+					task_manager
+						.spawn_essential_handle()
+						.spawn_blocking("manual-seal", authorship_future);
+				}
 				Sealing::Instant => {
-					let authorship_future = manual_seal::run_instant_seal(
-						manual_seal::InstantSealParams {
+					let authorship_future =
+						manual_seal::run_instant_seal(manual_seal::InstantSealParams {
 							block_import,
 							env,
 							client: client.clone(),
@@ -404,18 +458,19 @@ pub fn new_full(
 							select_chain,
 							consensus_data_provider: None,
 							inherent_data_providers,
-						}
-					);
+						});
 					// we spawn the future on a background thread managed by service.
-					task_manager.spawn_essential_handle().spawn_blocking("instant-seal", authorship_future);
+					task_manager
+						.spawn_essential_handle()
+						.spawn_blocking("instant-seal", authorship_future);
 				}
 			};
-
 		}
 		log::info!("Manual Seal Ready");
 	}
 
-	#[cfg(feature = "aura")] {
+	#[cfg(feature = "aura")]
+	{
 		let (aura_block_import, grandpa_link) = consensus_result;
 
 		if role.is_authority() {
@@ -444,12 +499,14 @@ pub fn new_full(
 					can_author_with,
 					block_proposal_slot_portion: SlotProportion::new(2f32 / 3f32),
 					telemetry: telemetry.as_ref().map(|x| x.handle()),
-				}
+				},
 			)?;
 
 			// the AURA authoring task is considered essential, i.e. if it
 			// fails we take down the service with it.
-			task_manager.spawn_essential_handle().spawn_blocking("aura", aura);
+			task_manager
+				.spawn_essential_handle()
+				.spawn_blocking("aura", aura);
 
 			// if the node isn't actively participating in consensus then it doesn't
 			// need a keystore, regardless of which protocol we use below.
@@ -491,7 +548,7 @@ pub fn new_full(
 				// if it fails we take down the service with it.
 				task_manager.spawn_essential_handle().spawn_blocking(
 					"grandpa-voter",
-					sc_finality_grandpa::run_grandpa_voter(grandpa_config)?
+					sc_finality_grandpa::run_grandpa_voter(grandpa_config)?,
 				);
 			}
 		}
@@ -503,7 +560,9 @@ pub fn new_full(
 
 #[cfg(feature = "aura")]
 pub fn new_light(config: Configuration) -> Result<TaskManager, ServiceError> {
-	let telemetry = config.telemetry_endpoints.clone()
+	let telemetry = config
+		.telemetry_endpoints
+		.clone()
 		.filter(|x| !x.is_empty())
 		.map(|endpoints| -> Result<_, sc_telemetry::Error> {
 			let worker = TelemetryWorker::new(16)?;
@@ -518,11 +577,10 @@ pub fn new_light(config: Configuration) -> Result<TaskManager, ServiceError> {
 			telemetry.as_ref().map(|(_, telemetry)| telemetry.handle()),
 		)?;
 
-	let mut telemetry = telemetry
-		.map(|(worker, telemetry)| {
-			task_manager.spawn_handle().spawn("telemetry", worker.run());
-			telemetry
-		});
+	let mut telemetry = telemetry.map(|(worker, telemetry)| {
+		task_manager.spawn_handle().spawn("telemetry", worker.run());
+		telemetry
+	});
 
 	let select_chain = sc_consensus::LongestChain::new(backend.clone());
 
@@ -541,8 +599,8 @@ pub fn new_light(config: Configuration) -> Result<TaskManager, ServiceError> {
 		telemetry.as_ref().map(|x| x.handle()),
 	)?;
 
-	let import_queue = sc_consensus_aura::import_queue::<AuraPair, _, _, _, _, _>(
-		ImportQueueParams {
+	let import_queue =
+		sc_consensus_aura::import_queue::<AuraPair, _, _, _, _, _>(ImportQueueParams {
 			slot_duration: sc_consensus_aura::slot_duration(&*client)?,
 			block_import: grandpa_block_import.clone(),
 			justification_import: Some(Box::new(grandpa_block_import)),
@@ -553,8 +611,7 @@ pub fn new_light(config: Configuration) -> Result<TaskManager, ServiceError> {
 			can_author_with: sp_consensus::NeverCanAuthor,
 			check_for_equivocation: Default::default(),
 			telemetry: telemetry.as_ref().map(|x| x.handle()),
-		}
-	)?;
+		})?;
 
 	let light_deps = crate::rpc::LightDeps {
 		remote_blockchain: backend.remote_blockchain(),
@@ -578,7 +635,10 @@ pub fn new_light(config: Configuration) -> Result<TaskManager, ServiceError> {
 
 	if config.offchain_worker.enabled {
 		sc_service::build_offchain_workers(
-			&config, task_manager.spawn_handle(), client.clone(), network.clone(),
+			&config,
+			task_manager.spawn_handle(),
+			client.clone(),
+			network.clone(),
 		);
 	}
 
@@ -605,5 +665,7 @@ pub fn new_light(config: Configuration) -> Result<TaskManager, ServiceError> {
 
 #[cfg(feature = "manual-seal")]
 pub fn new_light(config: Configuration) -> Result<TaskManager, ServiceError> {
-	return Err(ServiceError::Other("Manual seal does not support light client".to_string()))
+	return Err(ServiceError::Other(
+		"Manual seal does not support light client".to_string(),
+	));
 }

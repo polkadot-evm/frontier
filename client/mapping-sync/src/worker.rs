@@ -16,25 +16,28 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use std::time::Duration;
-use std::pin::Pin;
-use std::sync::Arc;
-use futures::{prelude::*, task::{Context, Poll}};
-use sp_runtime::traits::Block as BlockT;
-use sc_client_api::ImportNotifications;
-use sp_api::ProvideRuntimeApi;
-use sc_client_api::BlockOf;
-use sp_blockchain::HeaderBackend;
 use fp_rpc::EthereumRuntimeRPCApi;
+use futures::{
+	prelude::*,
+	task::{Context, Poll},
+};
 use futures_timer::Delay;
 use log::debug;
+use sc_client_api::BlockOf;
+use sc_client_api::ImportNotifications;
+use sp_api::ProvideRuntimeApi;
+use sp_blockchain::HeaderBackend;
+use sp_runtime::traits::Block as BlockT;
+use std::pin::Pin;
+use std::sync::Arc;
+use std::time::Duration;
 
 const LIMIT: usize = 8;
 
 #[derive(PartialEq, Copy, Clone)]
 pub enum SyncStrategy {
 	Normal,
-	Parachain
+	Parachain,
 }
 
 pub struct MappingSyncWorker<Block: BlockT, C, B> {
@@ -76,7 +79,8 @@ impl<Block: BlockT, C, B> MappingSyncWorker<Block, C, B> {
 	}
 }
 
-impl<Block: BlockT, C, B> Stream for MappingSyncWorker<Block, C, B> where
+impl<Block: BlockT, C, B> Stream for MappingSyncWorker<Block, C, B>
+where
 	C: ProvideRuntimeApi<Block> + Send + Sync + HeaderBackend<Block> + BlockOf,
 	C::Api: EthereumRuntimeRPCApi<Block>,
 	B: sc_client_api::Backend<Block>,
@@ -91,7 +95,7 @@ impl<Block: BlockT, C, B> Stream for MappingSyncWorker<Block, C, B> where
 				Poll::Pending => break,
 				Poll::Ready(Some(_)) => {
 					fire = true;
-				},
+				}
 				Poll::Ready(None) => return Poll::Ready(None),
 			}
 		}
@@ -103,7 +107,7 @@ impl<Block: BlockT, C, B> Stream for MappingSyncWorker<Block, C, B> where
 			Poll::Pending => (),
 			Poll::Ready(()) => {
 				fire = true;
-			},
+			}
 		}
 
 		if self.have_next {
@@ -123,12 +127,12 @@ impl<Block: BlockT, C, B> Stream for MappingSyncWorker<Block, C, B> where
 				Ok(have_next) => {
 					self.have_next = have_next;
 					Poll::Ready(Some(()))
-				},
+				}
 				Err(e) => {
 					self.have_next = false;
 					debug!(target: "mapping-sync", "Syncing failed with error {:?}, retrying.", e);
 					Poll::Ready(Some(()))
-				},
+				}
 			}
 		} else {
 			Poll::Pending
