@@ -56,7 +56,7 @@ use std::{
 };
 
 use crate::overrides::OverrideHandle;
-use codec::{self, Encode};
+use codec::{self, Decode, Encode};
 pub use fc_rpc_core::{EthApiServer, EthFilterApiServer, NetApiServer, Web3ApiServer};
 use pallet_ethereum::EthereumStorageSchema;
 
