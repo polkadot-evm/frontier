@@ -20,6 +20,8 @@ use std::{sync::{Arc, Mutex}, collections::HashMap};
 use serde::{Serialize, Serializer};
 use serde::ser::SerializeStruct;
 use ethereum_types::{H160, H256, H512, U64, U256};
+use ethereum::{AccessListItem, TransactionV0, TransactionV1, TransactionV2};
+use sha3::{Keccak256, Digest};
 use crate::types::Bytes;
 
 /// Transaction
@@ -43,7 +45,14 @@ pub struct Transaction {
 	/// Transfered value
 	pub value: U256,
 	/// Gas Price
-	pub gas_price: U256,
+	#[cfg_attr(feature = "std", serde(skip_serializing_if = "Option::is_none"))]
+	pub gas_price: Option<U256>,
+	/// Max BaseFeePerGas the user is willing to pay.
+	#[cfg_attr(feature = "std", serde(skip_serializing_if = "Option::is_none"))]
+	pub max_fee_per_gas: Option<U256>,
+	/// The miner's tip.
+	#[cfg_attr(feature = "std", serde(skip_serializing_if = "Option::is_none"))]
+	pub max_priority_fee_per_gas: Option<U256>,
 	/// Gas
 	pub gas: U256,
 	/// Data
@@ -64,6 +73,112 @@ pub struct Transaction {
 	pub r: U256,
 	/// The S field of the signature.
 	pub s: U256,
+	/// TODO! Pre-pay to warm storage access.
+	#[cfg_attr(feature = "std", serde(skip_serializing_if = "Option::is_none"))]
+	pub access_list: Option<Vec<AccessListItem>>,
+}
+
+impl From<TransactionV0> for Transaction {
+	fn from(transaction: TransactionV0) -> Self {
+		let serialized = {
+			let envelope = ethereum::Transaction::V0(transaction.clone());
+			envelope.serialize()
+		};
+		Transaction {
+			hash: H256::from_slice(
+				Keccak256::digest(&serialized).as_slice()
+			),
+			nonce: transaction.nonce,
+			block_hash: None,
+			block_number: None,
+			transaction_index: None,
+			from: H160::default(),
+			to: None,
+			value: transaction.value,
+			gas_price: Some(transaction.gas_price),
+			max_fee_per_gas: None,
+			max_priority_fee_per_gas: None,
+			gas: transaction.gas_limit,
+			input: Bytes(transaction.clone().input),
+			creates: None,
+			raw: Bytes(serialized.to_vec()),
+			public_key: None,
+			chain_id: transaction.signature.chain_id().map(U64::from),
+			standard_v: U256::from(transaction.signature.standard_v()),
+			v: U256::from(transaction.signature.v()),
+			r: U256::from(transaction.signature.r().as_bytes()),
+			s: U256::from(transaction.signature.s().as_bytes()),
+			access_list: None,
+		}
+	}
+}
+impl From<TransactionV1> for Transaction {
+	fn from(transaction: TransactionV1) -> Self {
+		let serialized = {
+			let envelope = ethereum::Transaction::V1(transaction.clone());
+			envelope.serialize()
+		};
+		Transaction {
+			hash: H256::from_slice(
+				Keccak256::digest(&serialized).as_slice()
+			),
+			nonce: transaction.nonce,
+			block_hash: None,
+			block_number: None,
+			transaction_index: None,
+			from: H160::default(),
+			to: None,
+			value: transaction.value,
+			gas_price: Some(transaction.gas_price),
+			max_fee_per_gas: None,
+			max_priority_fee_per_gas: None,
+			gas: transaction.gas_limit,
+			input: Bytes(transaction.clone().input),
+			creates: None,
+			raw: Bytes(serialized.to_vec()),
+			public_key: None,
+			chain_id: Some(U64::from(transaction.chain_id)),
+			standard_v: U256::from(transaction.odd_y_parity as u8),
+			v: U256::from(transaction.odd_y_parity as u8), // TODO
+			r: U256::from(transaction.r.as_bytes()),
+			s: U256::from(transaction.s.as_bytes()),
+			access_list: Some(transaction.access_list),
+		}
+	}
+}
+impl From<TransactionV2> for Transaction {
+	fn from(transaction: TransactionV2) -> Self {
+		let serialized = {
+			let envelope = ethereum::Transaction::V2(transaction.clone());
+			envelope.serialize()
+		};
+		Transaction {
+			hash: H256::from_slice(
+				Keccak256::digest(&serialized).as_slice()
+			),
+			nonce: transaction.nonce,
+			block_hash: None,
+			block_number: None,
+			transaction_index: None,
+			from: H160::default(),
+			to: None,
+			value: transaction.value,
+			gas_price: None,
+			max_fee_per_gas: Some(transaction.max_fee_per_gas),
+			max_priority_fee_per_gas: Some(transaction.max_priority_fee_per_gas),
+			gas: transaction.gas_limit,
+			input: Bytes(transaction.clone().input),
+			creates: None,
+			raw: Bytes(serialized.to_vec()),
+			public_key: None,
+			chain_id: Some(U64::from(transaction.chain_id)),
+			standard_v: U256::from(transaction.odd_y_parity as u8),
+			v: U256::from(transaction.odd_y_parity as u8), // TODO
+			r: U256::from(transaction.r.as_bytes()),
+			s: U256::from(transaction.s.as_bytes()),
+			access_list: Some(transaction.access_list),
+		}
+	}
 }
 
 /// Local Transaction Status

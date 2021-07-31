@@ -79,6 +79,8 @@ struct TransactionData {
 	nonce: U256,
 	gas_limit: U256,
 	gas_price: Option<U256>,
+	max_fee_per_gas: Option<U256>,
+	max_priority_fee_per_gas: Option<U256>,
 	value: U256,
 	chain_id: Option<u64>
 }
@@ -154,7 +156,9 @@ decl_module! {
 		fn deposit_event() = default;
 
 		/// Transact an Ethereum transaction.
-		#[weight = <T as pallet_evm::Config>::GasWeightMapping::gas_to_weight(transaction.gas_limit.unique_saturated_into())]
+		// #[weight = <T as pallet_evm::Config>::GasWeightMapping::gas_to_weight(transaction.gas_limit.unique_saturated_into())]
+		// TODO we need to unmarshall the transaction envelope to get the gas_limit.
+		#[weight = 0]
 		fn transact(origin, transaction: ethereum::Transaction) -> DispatchResultWithPostInfo {
 			ensure_none(origin)?;
 
@@ -242,9 +246,9 @@ impl<T: Config> frame_support::unsigned::ValidateUnsigned for Module<T> {
 				return InvalidTransaction::Stale.into();
 			}
 
-			// Legacy transaction
 			let mut priority = 0;
 			if let Some(gas_price) = transaction_data.gas_price {
+				// Legacy and V1 transaction.
 				let fee = gas_price.saturating_mul(gas_limit);
 				let total_payment = transaction_data.value.saturating_add(fee);
 				let min_gas_price = T::FeeCalculator::min_gas_price();
@@ -252,8 +256,20 @@ impl<T: Config> frame_support::unsigned::ValidateUnsigned for Module<T> {
 					return InvalidTransaction::Payment.into();
 				}
 				priority = gas_price.unique_saturated_into();
+			} else if let Some(max_fee_per_gas) = transaction_data.max_fee_per_gas {
+				// V2 transaction.
+				let fee = max_fee_per_gas.saturating_mul(gas_limit);
+				let total_payment = transaction_data.value.saturating_add(fee);
+				// TODO get base_fee_per_gas or fallback to min_gas_price
+				let base_fee_per_gas = U256::zero();
+				if max_fee_per_gas < base_fee_per_gas || account_data.balance < total_payment {
+					return InvalidTransaction::Payment.into();
+				}
+				if let Some(max_priority_fee_per_gas) = transaction_data.max_priority_fee_per_gas {
+					priority = max_priority_fee_per_gas.unique_saturated_into();
+				}
 			} else {
-				// TODO
+				return InvalidTransaction::Payment.into();
 			}
 
 			let mut builder = ValidTransactionBuilder::default()
@@ -280,11 +296,28 @@ impl<T: Config> Module<T> {
 				nonce: t.nonce,
 				gas_limit: t.gas_limit,
 				gas_price: Some(t.gas_price),
+				max_fee_per_gas: None,
+				max_priority_fee_per_gas: None,
 				value: t.value,
-				chain_id: transaction.signature.chain_id()
+				chain_id: t.signature.chain_id()
 			},
-			_ => {
-				// TODO
+			ethereum::Transaction::V1(t) => TransactionData {
+				nonce: t.nonce,
+				gas_limit: t.gas_limit,
+				gas_price: Some(t.gas_price),
+				max_fee_per_gas: None,
+				max_priority_fee_per_gas: None,
+				value: t.value,
+				chain_id: Some(t.chain_id)
+			},
+			ethereum::Transaction::V2(t) => TransactionData {
+				nonce: t.nonce,
+				gas_limit: t.gas_limit,
+				gas_price: None,
+				max_fee_per_gas: Some(t.max_fee_per_gas),
+				max_priority_fee_per_gas: Some(t.max_priority_fee_per_gas),
+				value: t.value,
+				chain_id: Some(t.chain_id)
 			}
 		}
 	}
@@ -292,23 +325,25 @@ impl<T: Config> Module<T> {
 	fn recover_signer(transaction: &ethereum::Transaction) -> Option<H160> {
 		let mut sig = [0u8; 65];
 		let mut msg = [0u8; 32];
-		sig[0..32].copy_from_slice(&transaction.signature.r()[..]);
-		sig[32..64].copy_from_slice(&transaction.signature.s()[..]);
 		match transaction {
 			ethereum::Transaction::V0(t) => {
+				sig[0..32].copy_from_slice(&t.signature.r()[..]);
+				sig[32..64].copy_from_slice(&t.signature.s()[..]);
 				sig[64] = t.signature.standard_v();
-				msg.copy_from_slice(&ethereum::TransactionMessageV0::from(t.clone()).hash()[..]);
 			},
 			ethereum::Transaction::V1(t) => {
-				sig[64] = t.odd_y_parity;
-				msg.copy_from_slice(&ethereum::TransactionMessageV1::from(t.clone()).hash()[..]);
+				sig[0..32].copy_from_slice(&t.r[..]);
+				sig[32..64].copy_from_slice(&t.s[..]);
+				sig[64] = t.odd_y_parity as u8;
 			},
 			ethereum::Transaction::V2(t) => {
-				sig[64] = t.odd_y_parity;
-				msg.copy_from_slice(&ethereum::TransactionMessageV2::from(t.clone()).hash()[..]);
+				sig[0..32].copy_from_slice(&t.r[..]);
+				sig[32..64].copy_from_slice(&t.s[..]);
+				sig[64] = t.odd_y_parity as u8;
 			},
 
 		}
+		msg.copy_from_slice(&ethereum::TransactionMessage::from(transaction.clone()).hash()[..]);
 		let pubkey = sp_io::crypto::secp256k1_ecdsa_recover(&sig, &msg).ok()?;
 		Some(H160::from(H256::from_slice(Keccak256::digest(&pubkey).as_slice())))
 	}
@@ -385,11 +420,11 @@ impl<T: Config> Module<T> {
 			.ok_or_else(|| Error::<T>::InvalidSignature)?;
 
 		let transaction_hash = H256::from_slice(
-			Keccak256::digest(&rlp::encode(&transaction)).as_slice()
+			Keccak256::digest(&transaction.serialize()).as_slice()
 		);
 		let transaction_index = Pending::get().len() as u32;
 
-		let (to, contract_address, info) = Self::execute(&transaction, None)?;
+		let (to, contract_address, info) = Self::execute(source, &transaction, None)?;
 
 		let (reason, status, used_gas) = match info {
 			CallOrCreateInfo::Call(info) => {
@@ -473,15 +508,15 @@ impl<T: Config> Module<T> {
 
 	/// Execute an Ethereum transaction.
 	pub fn execute(
+		from: H160,
 		transaction: &ethereum::Transaction,
 		config: Option<evm::Config>,
 	) -> Result<(Option<H160>, Option<H160>, CallOrCreateInfo), DispatchError> {
-		let (from, input, value, gas_limit, gas_price, nonce, action) = {
+		let (input, value, gas_limit, gas_price, nonce, action) = {
 			match transaction {
 				ethereum::Transaction::V0(t) => {
 					(
-						t.from,
-						t.input,
+						t.input.clone(),
 						t.value,
 						t.gas_limit,
 						Some(t.gas_price),
@@ -489,11 +524,28 @@ impl<T: Config> Module<T> {
 						t.action,
 					)
 				},
-				_ => {
-					// TODO
+				ethereum::Transaction::V1(t) => {
+					(
+						t.input.clone(),
+						t.value,
+						t.gas_limit,
+						Some(t.gas_price),
+						Some(t.nonce),
+						t.action,
+					)
+				},
+				ethereum::Transaction::V2(t) => {
+					(
+						t.input.clone(),
+						t.value,
+						t.gas_limit,
+						Some(t.max_fee_per_gas),
+						Some(t.nonce),
+						t.action,
+					)
 				}
 			}
-		}
+		};
 		match action {
 			ethereum::TransactionAction::Call(target) => {
 				let res = T::Runner::call(

@@ -71,7 +71,7 @@ impl Hashes {
 
 		for t in &block.transactions {
 			let transaction_hash = H256::from_slice(
-				Keccak256::digest(&rlp::encode(t)).as_slice()
+				Keccak256::digest(&t.serialize()).as_slice()
 			);
 			transaction_hashes.push(transaction_hash);
 		}

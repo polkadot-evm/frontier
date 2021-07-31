@@ -17,9 +17,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 use std::{marker::PhantomData, time, sync::{Mutex, Arc}};
 use std::collections::{HashMap, BTreeMap};
-use ethereum::{
-	Block as EthereumBlock, Transaction as EthereumTransaction
-};
+use ethereum::Block as EthereumBlock;
 use ethereum_types::{H160, H256, H64, U256, U64, H512};
 use jsonrpc_core::{BoxFuture, Result, ErrorCode, futures::future::{self, Future}};
 use futures::{StreamExt, future::TryFutureExt};
@@ -46,6 +44,7 @@ use crate::{frontier_backend_client, internal_err, error_on_execution_failure, E
 
 pub use fc_rpc_core::{EthApiServer, NetApiServer, Web3ApiServer, EthFilterApiServer};
 use codec::{self, Encode};
+use rlp::{Decodable, Encodable};
 use crate::overrides::OverrideHandle;
 
 pub struct EthApi<B: BlockT, C, P, CT, BE, H: ExHashT> {
@@ -144,73 +143,80 @@ fn rich_block_build(
 					BlockTransactions::Hashes(
 						block.transactions.iter().map(|transaction|{
 							H256::from_slice(
-								Keccak256::digest(&rlp::encode(&transaction.clone())).as_slice()
+								Keccak256::digest(&transaction.clone().serialize()).as_slice()
 							)
 						}).collect()
 					)
 				}
 			},
-			size: Some(U256::from(rlp::encode(&block).len() as u32))
+			// TODO find the new way to calculate the size now that Block is not RplEncodeable.
+			// size: Some(U256::from(rlp::encode(&block).len() as u32))
+			size: Some(U256::zero())
 		},
 		extra_info: BTreeMap::new()
 	}
 }
 
 fn transaction_build(
-	transaction: EthereumTransaction,
+	ethereum_transaction: ethereum::Transaction,
 	block: Option<EthereumBlock>,
 	status: Option<TransactionStatus>
 ) -> Transaction {
-	let pubkey = match public_key(&transaction) {
+
+	let mut transaction: Transaction = match ethereum_transaction {
+		ethereum::Transaction::V0(t) => t.into(),
+		ethereum::Transaction::V1(t) => t.into(),
+		ethereum::Transaction::V2(t) => t.into(),
+	};
+
+	let pubkey = match public_key(&ethereum_transaction) {
 		Ok(p) => Some(p),
 		Err(_e) => None,
 	};
 
-	Transaction {
-		hash: H256::from_slice(
-			Keccak256::digest(&rlp::encode(&transaction)).as_slice()
-		),
-		nonce: transaction.nonce,
-		block_hash: block.as_ref().map_or(None, |block| {
-			Some(H256::from_slice(
-				Keccak256::digest(&rlp::encode(&block.header)).as_slice()
-			))
-		}),
-		block_number: block.as_ref().map(|block| block.header.number),
-		transaction_index: status.as_ref().map(|status| {
-			U256::from(
-				UniqueSaturatedInto::<u32>::unique_saturated_into(
-					status.transaction_index
-				)
+	// Block hash.
+	transaction.block_hash = block.as_ref().map_or(None, |block| {
+		Some(H256::from_slice(
+			Keccak256::digest(&rlp::encode(&block.header)).as_slice()
+		))
+	});
+	// Block number.
+	transaction.block_number = block.as_ref().map(|block| block.header.number);
+	// Transaction index.
+	transaction.transaction_index = status.as_ref().map(|status| {
+		U256::from(
+			UniqueSaturatedInto::<u32>::unique_saturated_into(
+				status.transaction_index
 			)
-		}),
-		from: status.as_ref().map_or({
-			match pubkey {
-				Some(pk) => H160::from(
-					H256::from_slice(Keccak256::digest(&pk).as_slice())
-				),
-				_ => H160::default()
-			}
-		}, |status| status.from),
-		to: status.as_ref().map_or({
-			match transaction.action {
-				ethereum::TransactionAction::Call(to) => Some(to),
-				_ => None
-			}
-		}, |status| status.to),
-		value: transaction.value,
-		gas_price: transaction.gas_price,
-		gas: transaction.gas_limit,
-		input: Bytes(transaction.clone().input),
-		creates: status.as_ref().map_or(None, |status| status.contract_address),
-		raw: Bytes(rlp::encode(&transaction).to_vec()),
-		public_key: pubkey.as_ref().map(|pk| H512::from(pk)),
-		chain_id: transaction.signature.chain_id().map(U64::from),
-		standard_v: U256::from(transaction.signature.standard_v()),
-		v: U256::from(transaction.signature.v()),
-		r: U256::from(transaction.signature.r().as_bytes()),
-		s: U256::from(transaction.signature.s().as_bytes()),
-	}
+		)
+	});
+	// From.
+	transaction.from = status.as_ref().map_or({
+		match pubkey {
+			Some(pk) => H160::from(
+				H256::from_slice(Keccak256::digest(&pk).as_slice())
+			),
+			_ => H160::default()
+		}
+	}, |status| status.from);
+	// To.
+	transaction.to = status.as_ref().map_or({
+		let action = match ethereum_transaction {
+			ethereum::Transaction::V0(t) => t.action,
+			ethereum::Transaction::V1(t) => t.action,
+			ethereum::Transaction::V2(t) => t.action,
+		};
+		match action {
+			ethereum::TransactionAction::Call(to) => Some(to),
+			_ => None
+		}
+	}, |status| status.to);
+	// Creates.
+	transaction.creates = status.as_ref().map_or(None, |status| status.contract_address);
+	// Public key.
+	transaction.public_key = pubkey.as_ref().map(|pk| H512::from(pk));
+
+	transaction
 }
 
 fn filter_range_logs<B: BlockT, C, BE>(
@@ -634,64 +640,28 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 		};
 
 		let chain_id = match self.chain_id() {
-			Ok(chain_id) => chain_id,
+			Ok(Some(chain_id)) => chain_id.as_u64(),
+			Ok(None) => 27,
 			Err(e) => return Box::new(future::result(Err(e))),
 		};
 
-		// Is there a standard on which JSON RPC transaction requests are typed?
-		// or we need to manually match for versions here?
-		let message = match (request.gas_price, request.max_fee_per_gas, request.access_list) {
-			(Some(_), None, None) => {
-				// Legacy V0 transaction.
-				ethereum::TransactionMessage::V0(ethereum::TransactionMessageV0 {
-					nonce,
-					// TODO the default was wrong, needed min_gas_price (old), and new will fall back to BaseFeePerGas
-					gas_price: request.gas_price.unwrap_or(U256::from(1)),
-					gas_limit: request.gas.unwrap_or(U256::max_value()),
-					value: request.value.unwrap_or(U256::zero()),
-					input: request.data.map(|s| s.into_vec()).unwrap_or_default(),
-					action: match request.to {
-						Some(to) => ethereum::TransactionAction::Call(to),
-						None => ethereum::TransactionAction::Create,
-					},
-					chain_id: chain_id.map(|s| s.as_u64()),
-				})
+		// Into TransactionMessage from TransactionRequest + set chain id and nonce.
+		let mut message: Option<ethereum::TransactionMessage> = request.into();
+		message = match message {
+			Some(ethereum::TransactionMessage::V0(mut m)) => {
+				m.nonce = nonce;
+				m.chain_id = Some(chain_id);
+				Some(ethereum::TransactionMessage::V0(m))
 			},
-			(_, None, Some(_)) => {
-				// V1 transaction (EIP-2930).
-				ethereum::TransactionMessage::V1(ethereum::TransactionMessageV1 {
-					nonce,
-					// TODO the default was wrong, needed min_gas_price (old), and new will fall back to BaseFeePerGas
-					gas_price: request.gas_price.unwrap_or(U256::from(1)),
-					gas_limit: request.gas.unwrap_or(U256::max_value()),
-					value: request.value.unwrap_or(U256::zero()),
-					input: request.data.map(|s| s.into_vec()).unwrap_or_default(),
-					action: match request.to {
-						Some(to) => ethereum::TransactionAction::Call(to),
-						None => ethereum::TransactionAction::Create,
-					},
-					chain_id: chain_id.map(|s| s.as_u64()),
-					access_list: request.access_list.unwrap(),
-				})
+			Some(ethereum::TransactionMessage::V1(mut m)) => {
+				m.nonce = nonce;
+				m.chain_id = chain_id;
+				Some(ethereum::TransactionMessage::V1(m))
 			},
-			(None, Some(_), _) || (None, None, None) => {
-				// V2 transaction (EIP-1559).
-				// Empty fields fall back to the canonical transaction schema.
-				ethereum::TransactionMessage::V2(ethereum::TransactionMessageV2 {
-					nonce,
-					// TODO the default must be BaseFeePerGas
-					max_fee_per_gas: request.max_fee_per_gas.unwrap_or(U256::from(1)),
-					max_priority_fee_per_gas: request.max_priority_fee_per_gas.unwrap_or(U256::from(0)),
-					gas_limit: request.gas.unwrap_or(U256::max_value()),
-					value: request.value.unwrap_or(U256::zero()),
-					input: request.data.map(|s| s.into_vec()).unwrap_or_default(),
-					action: match request.to {
-						Some(to) => ethereum::TransactionAction::Call(to),
-						None => ethereum::TransactionAction::Create,
-					},
-					chain_id: chain_id.map(|s| s.as_u64()),
-					access_list: request.access_list.unwrap(),
-				})
+			Some(ethereum::TransactionMessage::V2(mut m)) => {
+				m.nonce = nonce;
+				m.chain_id = chain_id;
+				Some(ethereum::TransactionMessage::V2(m))
 			},
 			_ => {
 				return Box::new(future::result(Err(internal_err(
@@ -699,12 +669,11 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 				))));
 			}
 		};
-
 		let mut transaction = None;
 
 		for signer in &self.signers {
 			if signer.accounts().contains(&from) {
-				match signer.sign(message, &from) {
+				match signer.sign(message.unwrap(), &from) {
 					Ok(t) => transaction = Some(t),
 					Err(e) => return Box::new(future::result(Err(e))),
 				}
@@ -717,7 +686,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 			None => return Box::new(future::result(Err(internal_err("no signer available")))),
 		};
 		let transaction_hash = H256::from_slice(
-			Keccak256::digest(&rlp::encode(&transaction)).as_slice()
+			Keccak256::digest(&transaction.serialize()).as_slice()
 		);
 		let hash = self.client.info().best_hash;
 		let number = self.client.info().best_number;
@@ -753,7 +722,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 	fn send_raw_transaction(&self, bytes: Bytes) -> BoxFuture<H256> {
 
 		let slice = &bytes.0[..];
-		let transaction = if slice.len > 0 && slice.get(0) > 0x7f {
+		let transaction = if slice.len() > 0 && slice.get(0).unwrap() > &0x7f {
 			// Legacy transaction. Decode and wrap in envelope.
 			match rlp::decode::<ethereum::TransactionV0>(slice) {
 				Ok(transaction) => ethereum::Transaction::V0(transaction),
@@ -769,10 +738,10 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 					future::result(Err(internal_err("decode transaction failed")))
 				),
 			}
-		}
+		};
 
 		let transaction_hash = H256::from_slice(
-			Keccak256::digest(&rlp::encode(&transaction)).as_slice()
+			Keccak256::digest(&transaction.serialize()).as_slice()
 		);
 		let hash = self.client.info().best_hash;
 		let number = self.client.info().best_number;

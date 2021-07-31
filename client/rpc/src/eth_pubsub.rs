@@ -146,9 +146,11 @@ impl SubscriptionResult {
 							block.header.nonce.as_bytes().to_vec()
 						)
 					],
-					size: Some(U256::from(
-						rlp::encode(&block).len() as u32
-					)),
+					// TODO find the new way to calculate the size now that Block is not RplEncodeable.
+					// size: Some(U256::from(
+					// 	rlp::encode(&block).len() as u32
+					// )),
+					size: Some(U256::zero()),
 				},
 				extra_info: BTreeMap::new()
 			}
@@ -171,9 +173,9 @@ impl SubscriptionResult {
 			let mut transaction_log_index: u32 = 0;
 			let transaction_hash: Option<H256> = if receipt.logs.len() > 0 {
 				Some(H256::from_slice(
-					Keccak256::digest(&rlp::encode(
-						&block.transactions[receipt_index as usize]
-					)).as_slice()
+					Keccak256::digest(
+						&block.transactions[receipt_index as usize].serialize()
+					).as_slice()
 				))
 			} else { None };
 			for log in receipt.logs {
@@ -376,7 +378,7 @@ impl<B: BlockT, P, C, BE, H: ExHashT> EthPubSubApiT for EthPubSubApi<B, P, C, BE
 						>, ()>(Ok(
 							PubSubResult::TransactionHash(H256::from_slice(
 								Keccak256::digest(
-									&rlp::encode(&transaction)
+									&transaction.serialize()
 								).as_slice()
 							))
 						));

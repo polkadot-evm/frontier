@@ -28,9 +28,6 @@ pub use eth_pubsub::{EthPubSubApi, EthPubSubApiServer, HexEncodedIdProvider};
 pub use overrides::{StorageOverride, SchemaV1Override, OverrideHandle, RuntimeApiStorageOverride};
 
 use ethereum_types::{H160, H256};
-use ethereum::{
-	Transaction as EthereumTransaction, TransactionMessage as EthereumTransactionMessage,
-};
 use jsonrpc_core::{ErrorCode, Error, Value};
 use rustc_hex::ToHex;
 use pallet_evm::ExitReason;
@@ -209,16 +206,30 @@ pub fn error_on_execution_failure(reason: &ExitReason, data: &[u8]) -> Result<()
 	}
 }
 
-pub fn public_key(transaction: &EthereumTransaction) -> Result<
+pub fn public_key(transaction: &ethereum::Transaction) -> Result<
 	[u8; 64], sp_io::EcdsaVerifyError
 > {
 	let mut sig = [0u8; 65];
 	let mut msg = [0u8; 32];
-	sig[0..32].copy_from_slice(&transaction.signature.r()[..]);
-	sig[32..64].copy_from_slice(&transaction.signature.s()[..]);
-	sig[64] = transaction.signature.standard_v();
-	msg.copy_from_slice(&EthereumTransactionMessage::from(transaction.clone()).hash()[..]);
+	match transaction {
+		ethereum::Transaction::V0(t) => {
+			sig[0..32].copy_from_slice(&t.signature.r()[..]);
+			sig[32..64].copy_from_slice(&t.signature.s()[..]);
+			sig[64] = t.signature.standard_v();
+		},
+		ethereum::Transaction::V1(t) => {
+			sig[0..32].copy_from_slice(&t.r[..]);
+			sig[32..64].copy_from_slice(&t.s[..]);
+			sig[64] = t.odd_y_parity as u8;
+		},
+		ethereum::Transaction::V2(t) => {
+			sig[0..32].copy_from_slice(&t.r[..]);
+			sig[32..64].copy_from_slice(&t.s[..]);
+			sig[64] = t.odd_y_parity as u8;
+		},
 
+	}
+	msg.copy_from_slice(&ethereum::TransactionMessage::from(transaction.clone()).hash()[..]);
 	sp_io::crypto::secp256k1_ecdsa_recover(&sig, &msg)
 }
 
@@ -288,7 +299,7 @@ impl EthSigner for EthDevSigner {
 				let r = H256::from_slice(&rs[0..32]);
 				let s = H256::from_slice(&rs[32..64]);
 
-				transaction = match message => {
+				transaction = match message {
 					ethereum::TransactionMessage::V0(m) => {
 						let v = match m.chain_id {
 							None => 27 + recid.serialize() as u64,

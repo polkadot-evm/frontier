@@ -19,7 +19,8 @@
 //! `TransactionRequest` type
 
 use serde::{Serialize, Deserialize};
-use ethereum_types::{H160, U256};
+use ethereum_types::{H160, H256, U256};
+use ethereum::{AccessListItem, TransactionMessage};
 use crate::types::Bytes;
 
 /// Transaction request coming from RPC
@@ -51,4 +52,70 @@ pub struct TransactionRequest {
 	/// TODO! Pre-pay to warm storage access.
 	#[serde(default)]
 	pub access_list: Option<Vec<(H160, Vec<H256>)>>,
+}
+
+impl Into<Option<TransactionMessage>> for TransactionRequest {
+	fn into(self) -> Option<TransactionMessage> {
+		match (self.gas_price, self.max_fee_per_gas, self.access_list.clone()) {
+			(Some(_), None, None) => {
+				// Legacy V0 transaction.
+				Some(ethereum::TransactionMessage::V0(ethereum::TransactionMessageV0 {
+					nonce: U256::zero(),
+					// TODO the default was wrong, needed min_gas_price (old),
+					// and new will fall back to BaseFeePerGas
+					gas_price: self.gas_price.unwrap_or(U256::from(1)),
+					gas_limit: self.gas.unwrap_or(U256::max_value()),
+					value: self.value.unwrap_or(U256::zero()),
+					input: self.data.map(|s| s.into_vec()).unwrap_or_default(),
+					action: match self.to {
+						Some(to) => ethereum::TransactionAction::Call(to),
+						None => ethereum::TransactionAction::Create,
+					},
+					chain_id: None,
+				}))
+			},
+			(_, None, Some(_)) => {
+				// V1 transaction (EIP-2930).
+				Some(ethereum::TransactionMessage::V1(ethereum::TransactionMessageV1 {
+					nonce: U256::zero(),
+					// TODO the default was wrong, needed min_gas_price (old),
+					// and new will fall back to BaseFeePerGas
+					gas_price: self.gas_price.unwrap_or(U256::from(1)),
+					gas_limit: self.gas.unwrap_or(U256::max_value()),
+					value: self.value.unwrap_or(U256::zero()),
+					input: self.data.map(|s| s.into_vec()).unwrap_or_default(),
+					action: match self.to {
+						Some(to) => ethereum::TransactionAction::Call(to),
+						None => ethereum::TransactionAction::Create,
+					},
+					chain_id: 0,
+					access_list: self.access_list.unwrap().into_iter()
+						.map(|(address, slots)| AccessListItem { address, slots })
+						.collect(),
+				}))
+			},
+			(None, Some(_), _) | (None, None, None) => {
+				// V2 transaction (EIP-1559).
+				// Empty fields fall back to the canonical transaction schema.
+				Some(ethereum::TransactionMessage::V2(ethereum::TransactionMessageV2 {
+					nonce: U256::zero(),
+					// TODO the default must be BaseFeePerGas
+					max_fee_per_gas: self.max_fee_per_gas.unwrap_or(U256::from(1)),
+					max_priority_fee_per_gas: self.max_priority_fee_per_gas.unwrap_or(U256::from(0)),
+					gas_limit: self.gas.unwrap_or(U256::max_value()),
+					value: self.value.unwrap_or(U256::zero()),
+					input: self.data.map(|s| s.into_vec()).unwrap_or_default(),
+					action: match self.to {
+						Some(to) => ethereum::TransactionAction::Call(to),
+						None => ethereum::TransactionAction::Create,
+					},
+					chain_id: 0,
+					access_list: self.access_list.unwrap_or(Vec::new()).into_iter()
+						.map(|(address, slots)| AccessListItem { address, slots })
+						.collect(),
+				}))
+			},
+			_ => None
+		}
+	}
 }
