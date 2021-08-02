@@ -163,7 +163,10 @@ mod tests {
 	use super::*;
 	use crate as pallet_dynamic_fee;
 
-	use frame_support::{assert_err, assert_ok, parameter_types};
+	use frame_support::{
+		assert_err, assert_ok, parameter_types,
+		traits::{OnFinalize, OnInitialize},
+	};
 	use sp_core::{H256, U256};
 	use sp_io::TestExternalities;
 	use sp_runtime::{
@@ -240,9 +243,18 @@ mod tests {
 		}
 	);
 
+	fn run_to_block(n: u64) {
+		while System::block_number() < n {
+			DynamicFee::on_finalize(System::block_number());
+			System::set_block_number(System::block_number() + 1);
+			DynamicFee::on_initialize(System::block_number());
+		}
+	}
+
 	#[test]
 	fn double_set_in_a_block_failed() {
 		new_test_ext().execute_with(|| {
+			run_to_block(3);
 			assert_ok!(DynamicFee::note_min_gas_price_target(
 				Origin::none(),
 				U256::zero()
@@ -251,6 +263,12 @@ mod tests {
 				DynamicFee::note_min_gas_price_target(Origin::none(), U256::zero()),
 				Error::<Test>::UpdateMinGasPriceOnce
 			);
+
+			run_to_block(4);
+			assert_ok!(DynamicFee::note_min_gas_price_target(
+				Origin::none(),
+				U256::zero()
+			));
 		});
 	}
 }
