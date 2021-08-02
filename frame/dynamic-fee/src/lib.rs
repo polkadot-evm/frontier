@@ -44,7 +44,6 @@ decl_storage! {
 	trait Store for Module<T: Config> as DynamicFee {
 		MinGasPrice get(fn min_gas_price) config(): U256;
 		TargetMinGasPrice: Option<U256>;
-		DisUpdate: bool;
 	}
 	add_extra_genesis {
 		build(|_config: &GenesisConfig| {
@@ -56,7 +55,7 @@ decl_storage! {
 decl_error! {
 	pub enum Error for Module<T: Config> {
 		// The MinGasPrice must be updated only once in the block
-		UpdateMinGasPriceOnce,
+		NotedMinGasPriceMoreThanOnce,
 	}
 }
 
@@ -69,8 +68,7 @@ decl_module! {
 		}
 
 		fn on_finalize(_n: T::BlockNumber) {
-			DisUpdate::put(false);
-			if let Some(target) = TargetMinGasPrice::get() {
+			if let Some(target) = TargetMinGasPrice::take() {
 				let bound = MinGasPrice::get() / T::MinGasPriceBoundDivisor::get() + U256::one();
 
 				let upper_limit = MinGasPrice::get().saturating_add(bound);
@@ -86,10 +84,9 @@ decl_module! {
 			target: U256,
 		) {
 			ensure_none(origin)?;
-			ensure!(!DisUpdate::get(), Error::<T>::UpdateMinGasPriceOnce);
+			ensure!(TargetMinGasPrice::get().is_none(), Error::<T>::NotedMinGasPriceMoreThanOnce);
 
 			TargetMinGasPrice::set(Some(target));
-			DisUpdate::put(true);
 		}
 	}
 }
@@ -265,7 +262,7 @@ mod tests {
 			));
 			assert_err!(
 				DynamicFee::note_min_gas_price_target(Origin::none(), U256::zero()),
-				Error::<Test>::UpdateMinGasPriceOnce
+				Error::<Test>::NotedMinGasPriceMoreThanOnce
 			);
 
 			run_to_block(4);
