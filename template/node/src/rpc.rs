@@ -135,7 +135,7 @@ where
 		pending_transactions.clone(),
 		signers,
 		overrides.clone(),
-		backend,
+		backend.clone(),
 		is_authority,
 		max_past_logs,
 	)));
@@ -143,6 +143,7 @@ where
 	if let Some(filter_pool) = filter_pool {
 		io.extend_with(EthFilterApiServer::to_delegate(EthFilterApi::new(
 			client.clone(),
+			backend,
 			filter_pool.clone(),
 			500 as usize, // max stored filters
 			overrides.clone(),

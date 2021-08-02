@@ -416,6 +416,10 @@ pub fn new_full(config: Configuration, cli: &Cli) -> Result<TaskManager, Service
 		);
 	}
 
+	task_manager.spawn_essential_handle().spawn(
+		"frontier-schema-cache-task",
+		EthTask::ethereum_schema_cache_task(Arc::clone(&client), Arc::clone(&frontier_backend)),
+	);
 	#[cfg(feature = "manual-seal")]
 	{
 		let (block_import, sealing) = consensus_result;

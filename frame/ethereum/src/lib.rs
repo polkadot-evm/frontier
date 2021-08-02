@@ -65,7 +65,7 @@ pub enum ReturnValue {
 }
 
 /// The schema version for Pallet Ethereum's storage
-#[derive(Clone, Debug, Encode, Decode, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, Encode, Decode, PartialEq, Eq, PartialOrd, Ord)]
 pub enum EthereumStorageSchema {
 	Undefined,
 	V1,
