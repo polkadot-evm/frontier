@@ -1038,7 +1038,7 @@ where
 		if cfg!(feature = "rpc_binary_search_estimate") {
 			let mut lower = U256::from(21_000);
 			// TODO: get a good upper limit, but below U64::max to operation overflow
-			let mut upper = U256::from(1_000_000_000);
+			let mut upper = U256::from(gas_limit);
 			let mut mid = upper;
 			let mut best = mid;
 			let mut old_best: U256;
