@@ -13,7 +13,7 @@ sc-client-api = { version = "3.0.0", git = "https://github.com/paritytech/substr
 sp-api = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
 fp-consensus = { version = "1.0.0", path = "../../primitives/consensus" }
 fc-consensus = { version = "2.0.0-dev", path = "../consensus" }
-fc-db = { version = "1.0.0", path = "../db" }
+fc-db = { version = "2.0.0-dev", path = "../db" }
 fp-rpc = { version = "2.0.0-dev", path = "../../primitives/rpc" }
 futures = { version = "0.3.1", features = ["compat"] }
 futures-timer = "3.0.1"
