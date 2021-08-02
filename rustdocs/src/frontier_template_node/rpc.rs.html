@@ -210,6 +210,7 @@
 <span id="208">208</span>
 <span id="209">209</span>
 <span id="210">210</span>
+<span id="211">211</span>
 </pre><pre class="rust">
 <span class="doccomment">//! A collection of node-specific RPC methods.</span>
 
@@ -348,7 +349,7 @@
 		<span class="ident">pending_transactions</span>.<span class="ident">clone</span>(),
 		<span class="ident">signers</span>,
 		<span class="ident">overrides</span>.<span class="ident">clone</span>(),
-		<span class="ident">backend</span>,
+		<span class="ident">backend</span>.<span class="ident">clone</span>(),
 		<span class="ident">is_authority</span>,
 		<span class="ident">max_past_logs</span>,
 	)));
@@ -356,6 +357,7 @@
 	<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">filter_pool</span>) <span class="op">=</span> <span class="ident">filter_pool</span> {
 		<span class="ident">io</span>.<span class="ident">extend_with</span>(<span class="ident">EthFilterApiServer::to_delegate</span>(<span class="ident">EthFilterApi::new</span>(
 			<span class="ident">client</span>.<span class="ident">clone</span>(),
+			<span class="ident">backend</span>,
 			<span class="ident">filter_pool</span>.<span class="ident">clone</span>(),
 			<span class="number">500</span> <span class="kw">as</span> <span class="ident">usize</span>, <span class="comment">// max stored filters</span>
 			<span class="ident">overrides</span>.<span class="ident">clone</span>(),
