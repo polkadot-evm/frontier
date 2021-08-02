@@ -19,7 +19,11 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
-use frame_support::{decl_error, decl_module, decl_storage, ensure, traits::Get, weights::Weight};
+use frame_support::{
+	decl_error, decl_module, decl_storage, ensure,
+	traits::Get,
+	weights::{DispatchClass, Weight},
+};
 use frame_system::ensure_none;
 use sp_core::U256;
 #[cfg(feature = "std")]
@@ -76,7 +80,7 @@ decl_module! {
 			}
 		}
 
-		#[weight = T::DbWeight::get().writes(1)]
+		#[weight = (T::DbWeight::get().writes(1), DispatchClass::Mandatory)]
 		pub fn note_min_gas_price_target(
 			origin,
 			target: U256,
