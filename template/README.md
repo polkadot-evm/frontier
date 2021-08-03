@@ -4,11 +4,21 @@ A [FRAME](https://substrate.dev/docs/en/next/conceptual/runtime/frame)-based
 [Substrate](https://substrate.dev/en/) node with the Ethereum RPC support, ready for hacking
 :rocket:
 
-## Upstream
+## Generation & Upstream
 
-This template was forked from the
+This template is maintained in the
+[Frontier](https://github.com/paritytech/frontier/tree/master/template) project repository, and can
+be used to generate a stand-alone template for use in an independent project via the included
+[template generation scipt](https://github.com/paritytech/frontier/blob/master/docs/node-template-release.md).
+
+A ready-to-use template generated this way is hosted for each Frontier release on the
+[substrate-developer-hub/frontier-node-template](https://github.com/substrate-developer-hub/frontier-node-template)
+repository.
+
+This template was originally forked from the
 [Substrate Node Template](https://github.com/substrate-developer-hub/substrate-node-template). You
-can find more information on features on this template there.
+can find more information on features on this template there, and more detailed usage on the
+[Substrate Developer Hub Tutorials](https://substrate.dev/tutorials/) that use this heavily.
 
 ## Build & Run
 
