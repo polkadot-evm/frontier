@@ -34,16 +34,16 @@ To execute the chain, run:
 $ ./target/debug/frontier-template-node --dev
 ```
 
-The node also supports to use manual seal (to produce block manually through RPc).  
+The node also supports to use manual seal (to produce block manually through RPC).  
 This is also used by the ts-tests:
 
 ```
 $ ./target/debug/frontier-template-node --dev --manual-seal
 ```
 
-### Docker image
+### Docker Based Development
 
-You can run the frontier node (for development) within Docker directly.  
+Optionally, You can build and run the frontier node within Docker directly.  
 The Dockerfile is optimized for development speed.  
 (Running the `docker run...` command will recompile the binaries but not the dependencies)
 
@@ -73,26 +73,28 @@ of Alice's EVM account. In order to view an EVM account, use the `Developer` tab
 inspect blocks:
 
 ```json
-  "Address": "AccountId",
-  "LookupSource": "AccountId",
-  "Account": {
-    "nonce": "U256",
-    "balance": "U256"
-  },
-  "Transaction": {
-    "nonce": "U256",
-    "action": "String",
-    "gas_price": "u64",
-    "gas_limit": "u64",
-    "value": "U256",
-    "input": "Vec<u8>",
-    "signature": "Signature"
-  },
-  "Signature": {
-    "v": "u64",
-    "r": "H256",
-    "s": "H256"
-  }
+{
+	"Address": "AccountId",
+	"LookupSource": "AccountId",
+	"Account": {
+		"nonce": "U256",
+		"balance": "U256"
+	},
+	"Transaction": {
+		"nonce": "U256",
+		"action": "String",
+		"gas_price": "u64",
+		"gas_limit": "u64",
+		"value": "U256",
+		"input": "Vec<u8>",
+		"signature": "Signature"
+	},
+	"Signature": {
+		"v": "u64",
+		"r": "H256",
+		"s": "H256"
+	}
+}
 ```
 
 Use the `Chain State` app's `Storage` tab to query `evm > accounts` with Alice's EVM account ID
