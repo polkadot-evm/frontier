@@ -65,7 +65,7 @@ The development [chain spec](node/src/chain_spec.rs) included with this project 
 block that has been pre-configured with an EVM account for
 [Alice](https://substrate.dev/docs/en/knowledgebase/integrate/subkey#well-known-keys). When
 [a development chain is started](https://github.com/substrate-developer-hub/substrate-node-template#run),
-Alice's EVM account will be funded with a large amount of Ether (`U256::MAX`). The
+Alice's EVM account will be funded with a large amount of Ether. The
 [Polkadot UI](https://polkadot.js.org/apps/#?rpc=ws://127.0.0.1:9944) can be used to see the details
 of Alice's EVM account. In order to view an EVM account, use the `Developer` tab of the Polkadot UI
 `Settings` app to define the EVM `Account` type as below. It is also necessary to define the
@@ -74,8 +74,8 @@ inspect blocks:
 
 ```json
 {
-	"Address": "AccountId",
-	"LookupSource": "AccountId",
+	"Address": "MultiAddress",
+	"LookupSource": "MultiAddress",
 	"Account": {
 		"nonce": "U256",
 		"balance": "U256"
@@ -97,21 +97,19 @@ inspect blocks:
 }
 ```
 
-Use the `Chain State` app's `Storage` tab to query `evm > accounts` with Alice's EVM account ID
-(`0x57d213d0927ccc7596044c6ba013dd05522aacba`); the value that is returned should be:
+Use the `Developer` app's `RPC calls` tab to query `eth > getBalance(address, number)` with Alice's
+EVM account ID (`0x57d213d0927ccc7596044c6ba013dd05522aacba`); the value that is returned should be:
 
-```json
-{
-  nonce: 0,
-  balance: 115,792,089,237,316,195,423,570,985,008,687,907,853,269,984,665,640,564,039,457,584,007,913,129,639,935
-}
+```text
+x: eth.getBalance
+340,282,366,920,938,463,463,374,607,431,768,211,455
 ```
 
 > Further reading:
 > [EVM accounts](https://github.com/danforbes/danforbes/blob/master/writings/eth-dev.md#Accounts)
 
 Alice's EVM account ID was calculated using
-[a provided utility](utils/README.md#--evm-address-address).
+[an included utility script](utils/README.md#--evm-address-address).
 
 ## Example 1: ERC20 Contract Deployment using EVM dispatchable
 
@@ -134,6 +132,7 @@ Use the Polkadot UI `Extrinsics` app to deploy the contract from Alice's account
 extrinsic as a signed transaction) using `evm > create` with the following parameters:
 
 ```
+source: 0x57d213d0927ccc7596044c6ba013dd05522aacba
 init: <contract bytecode>
 value: 0
 gas_limit: 4294967295
