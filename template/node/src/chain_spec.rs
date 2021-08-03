@@ -165,7 +165,9 @@ fn testnet_genesis(
 			accounts: {
 				let mut map = BTreeMap::new();
 				map.insert(
-					H160::from_str("6be02d1d3665660d22ff9624b7be0551ee1ac91b")
+					// H160 address of Alice dev account
+					// Derived from SS58 (42 prefix) address 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY
+					H160::from_str("57d213d0927ccc7596044c6ba013dd05522aacba")
 						.expect("internal H160 is valid; qed"),
 					pallet_evm::GenesisAccount {
 						balance: U256::from_str("0xffffffffffffffffffffffffffffffff")
