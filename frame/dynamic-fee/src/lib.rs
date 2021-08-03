@@ -20,7 +20,7 @@
 
 use codec::{Decode, Encode};
 use frame_support::{
-	decl_error, decl_module, decl_storage, ensure,
+	decl_module, decl_storage,
 	traits::Get,
 	weights::{DispatchClass, Weight},
 };
@@ -52,13 +52,6 @@ decl_storage! {
 	}
 }
 
-decl_error! {
-	pub enum Error for Module<T: Config> {
-		// The MinGasPrice must be updated only once in the block
-		NotedMinGasPriceMoreThanOnce,
-	}
-}
-
 decl_module! {
 	pub struct Module<T: Config> for enum Call where origin: T::Origin {
 		fn on_initialize(_block_number: T::BlockNumber) -> Weight {
@@ -84,7 +77,7 @@ decl_module! {
 			target: U256,
 		) {
 			ensure_none(origin)?;
-			ensure!(TargetMinGasPrice::get().is_none(), Error::<T>::NotedMinGasPriceMoreThanOnce);
+			assert!(TargetMinGasPrice::get().is_none(), "TargetMinGasPrice must be updated only once in the block");
 
 			TargetMinGasPrice::set(Some(target));
 		}
@@ -165,7 +158,7 @@ mod tests {
 	use crate as pallet_dynamic_fee;
 
 	use frame_support::{
-		assert_err, assert_ok, parameter_types,
+		assert_ok, parameter_types,
 		traits::{OnFinalize, OnInitialize},
 	};
 	use sp_core::{H256, U256};
@@ -253,6 +246,7 @@ mod tests {
 	}
 
 	#[test]
+	#[should_panic(expected = "TargetMinGasPrice must be updated only once in the block")]
 	fn double_set_in_a_block_failed() {
 		new_test_ext().execute_with(|| {
 			run_to_block(3);
@@ -260,11 +254,7 @@ mod tests {
 				Origin::none(),
 				U256::zero()
 			));
-			assert_err!(
-				DynamicFee::note_min_gas_price_target(Origin::none(), U256::zero()),
-				Error::<Test>::NotedMinGasPriceMoreThanOnce
-			);
-
+			let _ = DynamicFee::note_min_gas_price_target(Origin::none(), U256::zero());
 			run_to_block(4);
 			assert_ok!(DynamicFee::note_min_gas_price_target(
 				Origin::none(),
