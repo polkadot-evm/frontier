@@ -4,11 +4,21 @@ A [FRAME](https://substrate.dev/docs/en/next/conceptual/runtime/frame)-based
 [Substrate](https://substrate.dev/en/) node with the Ethereum RPC support, ready for hacking
 :rocket:
 
-## Upstream
+## Generation & Upstream
 
-This template was forked from the
+This template is maintained in the
+[Frontier](https://github.com/paritytech/frontier/tree/master/template) project repository, and can
+be used to generate a stand-alone template for use in an independent project via the included
+[template generation script](https://github.com/paritytech/frontier/blob/master/docs/node-template-release.md).
+
+A ready-to-use template generated this way is hosted for each Frontier release on the
+[substrate-developer-hub/frontier-node-template](https://github.com/substrate-developer-hub/frontier-node-template)
+repository.
+
+This template was originally forked from the
 [Substrate Node Template](https://github.com/substrate-developer-hub/substrate-node-template). You
-can find more information on features on this template there.
+can find more information on features on this template there, and more detailed usage on the
+[Substrate Developer Hub Tutorials](https://substrate.dev/tutorials/) that use this heavily.
 
 ## Build & Run
 
@@ -24,16 +34,16 @@ To execute the chain, run:
 $ ./target/debug/frontier-template-node --dev
 ```
 
-The node also supports to use manual seal (to produce block manually through RPc).  
+The node also supports to use manual seal (to produce block manually through RPC).  
 This is also used by the ts-tests:
 
 ```
 $ ./target/debug/frontier-template-node --dev --manual-seal
 ```
 
-### Docker image
+### Docker Based Development
 
-You can run the frontier node (for development) within Docker directly.  
+Optionally, You can build and run the frontier node within Docker directly.  
 The Dockerfile is optimized for development speed.  
 (Running the `docker run...` command will recompile the binaries but not the dependencies)
 
@@ -55,7 +65,7 @@ The development [chain spec](node/src/chain_spec.rs) included with this project 
 block that has been pre-configured with an EVM account for
 [Alice](https://substrate.dev/docs/en/knowledgebase/integrate/subkey#well-known-keys). When
 [a development chain is started](https://github.com/substrate-developer-hub/substrate-node-template#run),
-Alice's EVM account will be funded with a large amount of Ether (`U256::MAX`). The
+Alice's EVM account will be funded with a large amount of Ether. The
 [Polkadot UI](https://polkadot.js.org/apps/#?rpc=ws://127.0.0.1:9944) can be used to see the details
 of Alice's EVM account. In order to view an EVM account, use the `Developer` tab of the Polkadot UI
 `Settings` app to define the EVM `Account` type as below. It is also necessary to define the
@@ -63,43 +73,43 @@ of Alice's EVM account. In order to view an EVM account, use the `Developer` tab
 inspect blocks:
 
 ```json
-  "Address": "AccountId",
-  "LookupSource": "AccountId",
-  "Account": {
-    "nonce": "U256",
-    "balance": "U256"
-  },
-  "Transaction": {
-    "nonce": "U256",
-    "action": "String",
-    "gas_price": "u64",
-    "gas_limit": "u64",
-    "value": "U256",
-    "input": "Vec<u8>",
-    "signature": "Signature"
-  },
-  "Signature": {
-    "v": "u64",
-    "r": "H256",
-    "s": "H256"
-  }
+{
+	"Address": "MultiAddress",
+	"LookupSource": "MultiAddress",
+	"Account": {
+		"nonce": "U256",
+		"balance": "U256"
+	},
+	"Transaction": {
+		"nonce": "U256",
+		"action": "String",
+		"gas_price": "u64",
+		"gas_limit": "u64",
+		"value": "U256",
+		"input": "Vec<u8>",
+		"signature": "Signature"
+	},
+	"Signature": {
+		"v": "u64",
+		"r": "H256",
+		"s": "H256"
+	}
+}
 ```
 
-Use the `Chain State` app's `Storage` tab to query `evm > accounts` with Alice's EVM account ID
-(`0x57d213d0927ccc7596044c6ba013dd05522aacba`); the value that is returned should be:
+Use the `Developer` app's `RPC calls` tab to query `eth > getBalance(address, number)` with Alice's
+EVM account ID (`0xd43593c715fdd31c61141abd04a99fd6822c8558`); the value that is returned should be:
 
-```json
-{
-  nonce: 0,
-  balance: 115,792,089,237,316,195,423,570,985,008,687,907,853,269,984,665,640,564,039,457,584,007,913,129,639,935
-}
+```text
+x: eth.getBalance
+340,282,366,920,938,463,463,374,607,431,768,211,455
 ```
 
 > Further reading:
 > [EVM accounts](https://github.com/danforbes/danforbes/blob/master/writings/eth-dev.md#Accounts)
 
 Alice's EVM account ID was calculated using
-[a provided utility](utils/README.md#--evm-address-address).
+[an included utility script](utils/README.md#--evm-address-address).
 
 ## Example 1: ERC20 Contract Deployment using EVM dispatchable
 
@@ -122,29 +132,44 @@ Use the Polkadot UI `Extrinsics` app to deploy the contract from Alice's account
 extrinsic as a signed transaction) using `evm > create` with the following parameters:
 
 ```
-init: <contract bytecode>
+source: 0xd43593c715fdd31c61141abd04a99fd6822c8558
+init: <raw contract bytecode, a very long hex value>
 value: 0
 gas_limit: 4294967295
 gas_price: 1
+nonce: <empty> {None}
 ```
 
 The values for `gas_limit` and `gas_price` were chosen for convenience and have little inherent or
-special meaning.
+special meaning. Note that `None` for the nonce will increment the known nonce for the source
+account, starting from `0x0`, you may manually set this but will get an "evm.InvalidNonce" error if
+not set correctly.
 
-While the extrinsic is processing, open the browser console and take note of the output. Once the
-extrinsic has finalized, the EVM pallet will fire a `Created` event with an `address` field that
-provides the address of the newly-created contract. In this case, however, it is trivial to
+Once the extrinsic is in a block, navigate to the `Network` -> `Explorer` tab in the UI, or open up
+the browser console to see that the EVM pallet has fired a `Created` event with an `address` field
+that provides the address of the newly-created contract:
+
+```bash
+# console:
+... {"phase":{"applyExtrinsic":2},"event":{"index":"0x0901","data":["0x8a50db1e0f9452cfd91be8dc004ceb11cb08832f"]} ...
+
+# UI:
+evm.Created
+A contract has been created at given [address]
+   H160: 0x8a50db1e0f9452cfd91be8dc004ceb11cb08832f
+```
+
+In this case, however, it is trivial to
 [calculate this value](https://ethereum.stackexchange.com/a/46960):
-`0x11650d764feb44f78810ef08700c2284f7e81dcb`. That is because EVM contract account IDs are
+`0x8a50db1e0f9452cfd91be8dc004ceb11cb08832f`. That is because EVM contract account IDs are
 determined solely by the ID and nonce of the contract creator's account and, in this case, both of
-those values are well-known (`0x57d213d0927ccc7596044c6ba013dd05522aacba` and `0x0`, respectively).
-
-Use the `Chain State` app to view the EVM accounts for Alice and the newly-created contract; notice
-that Alice's `nonce` has been incremented to `1` and her `balance` has decreased. Next, query
-`evm > accountCodes` for both Alice's and the contract's account IDs; notice that Alice's account
-code is empty and the contract's is equal to the bytecode of the Solidity contract.
+those values are well-known (`0xd43593c715fdd31c61141abd04a99fd6822c8558` and `0x0`, respectively).
 
 ### Step 2: Check Contract Storage
+
+Use the `Chain State` UI tab to query`evm > accountCodes` for both Alice's and the contract's
+account IDs; notice that Alice's account code is empty and the contract's is equal to the bytecode
+of the Solidity contract.
 
 The ERC-20 contract that was deployed inherits from
 [the OpenZeppelin ERC-20 implementation](https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC20/ERC20.sol)
@@ -152,26 +177,27 @@ and extends its capabilities by adding
 [a constructor that mints a maximum amount of tokens to the contract creator](examples/contract-erc20/truffle/contracts/MyToken.sol#L8).
 Use the `Chain State` app to query `evm > accountStorage` and view the value associated with Alice's
 account in the `_balances` map of the ERC-20 contract; use the ERC-20 contract address
-(`0x11650d764feb44f78810ef08700c2284f7e81dcb`) as the first parameter and the storage slot to read
-as the second parameter (`0xa7473b24b6fd8e15602cfb2f15c6a2e2770a692290d0c5097b77dd334132b7ce`). The
+(`0x8a50db1e0f9452cfd91be8dc004ceb11cb08832f`) as the first parameter and the storage slot to read
+as the second parameter (`0x045c0350b9cf0df39c4b40400c965118df2dca5ce0fbcf0de4aafc099aea4a14`). The
 value that is returned should be
 `0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff`.
 
 The storage slot was calculated using
 [a provided utility](utils/README.md#--erc20-slot-slot-address). (Slot 0 and alice address:
-`0x57d213d0927ccc7596044c6ba013dd05522aacba`)
+`0xd43593c715fdd31c61141abd04a99fd6822c8558`)
 
 > Further reading:
 > [EVM layout of state variables in storage](https://solidity.readthedocs.io/en/latest/miscellaneous.html#layout-of-state-variables-in-storage)
 
 ### Step 3: Contract Usage
 
-Use the `Extrinsics` app to invoke the `transfer(address, uint256)` function on the ERC-20 contract
-with `evm > call` and transfer some of the ERC-20 tokens from Alice to Bob.
+Use the `Developer` -> `Extrinsics` tab to invoke the `transfer(address, uint256)` function on the
+ERC-20 contract with `evm > call` and transfer some of the ERC-20 tokens from Alice to Bob.
 
-```
-target: 0x11650d764feb44f78810ef08700c2284f7e81dcb
-input: 0xa9059cbb0000000000000000000000008bc395119f39603402d0c85bc9eda5dfc5ae216000000000000000000000000000000000000000000000000000000000000000dd
+```text
+target: 0x8a50db1e0f9452cfd91be8dc004ceb11cb08832f
+source: 0xd43593c715fdd31c61141abd04a99fd6822c8558
+input: 0xa9059cbb0000000000000000000000008eaf04151687736326c9fea17e25fc528761369300000000000000000000000000000000000000000000000000000000000000dd
 value: 0
 gas_limit: 4294967295
 gas_price: 1
@@ -180,7 +206,7 @@ gas_price: 1
 The value of the `input` parameter is an EVM ABI-encoded function call that was calculated using
 [the Remix web IDE](http://remix.ethereum.org); it consists of a function selector (`0xa9059cbb`)
 and the arguments to be used for the function invocation. In this case, the arguments correspond to
-Bob's EVM account ID (`0x8bc395119f39603402d0c85bc9eda5dfc5ae2160`) and the number of tokens to be
+Bob's EVM account ID (`0x8eaf04151687736326c9fea17e25fc5287613693`) and the number of tokens to be
 transferred (`0xdd`, or 221 in hex).
 
 > Further reading:
