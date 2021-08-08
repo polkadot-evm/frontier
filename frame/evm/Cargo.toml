@@ -25,11 +25,11 @@ sp-std = { version = "4.0.0-dev", default-features = false, git = "https://githu
 sp-io = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
 frame-benchmarking = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", default-features = false, optional = true }
 fp-evm = { version = "3.0.0-dev", default-features = false, path = "../../primitives/evm" }
-primitive-types = { version = "0.9.0", default-features = false, features = ["rlp", "byteorder"] }
+primitive-types = { version = "0.10.0", default-features = false, features = ["rlp", "byteorder"] }
 rlp = { version = "0.5", default-features = false }
-evm = { version = "0.29.0", default-features = false, features = ["with-codec"] }
-evm-runtime = { version = "0.29.0", default-features = false }
-evm-gasometer = { version = "0.29.0", default-features = false }
+evm = { version = "0.30.0", default-features = false, features = ["with-codec"] }
+evm-runtime = { version = "0.30.0", default-features = false }
+evm-gasometer = { version = "0.30.0", default-features = false }
 sha3 = { version = "0.8", default-features = false }
 log = { version = "0.4", default-features = false }
 hex = { version = "0.4", default-features = false }

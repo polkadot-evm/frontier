@@ -1318,15 +1318,15 @@ dependencies = [
 
 [[package]]
 name = "evm"
-version = "0.29.0"
+version = "0.30.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b4b47ed919b9193843eef218e1b767a6a5af2fdadedce7a18a8f598d12f76e6f"
+checksum = "a5c3002a3e79803bd8691e0154e1f8f61f8376e1c616eebc620b8b3d0fe72809"
 dependencies = [
  "environmental",
  "ethereum 0.8.0",
- "evm-core 0.29.0",
- "evm-gasometer 0.29.0",
- "evm-runtime 0.29.0",
+ "evm-core 0.30.0",
+ "evm-gasometer 0.30.0",
+ "evm-runtime 0.30.0",
  "log",
  "parity-scale-codec",
  "primitive-types 0.10.1",
@@ -1349,9 +1349,9 @@ dependencies = [
 
 [[package]]
 name = "evm-core"
-version = "0.29.0"
+version = "0.30.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d04203aff1b00900dbb999e9aa35b2f1a3b41ec7c903fb9d04083fdf744bc487"
+checksum = "a7bfa2dae9a2c6c0172d83c37eb406bfabf6a9d1af17b7ab4958e89853ddae97"
 dependencies = [
  "funty",
  "parity-scale-codec",
@@ -1373,13 +1373,13 @@ dependencies = [
 
 [[package]]
 name = "evm-gasometer"
-version = "0.29.0"
+version = "0.30.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2af97403fe81f6d597a0875edb9c34ee0b4638feda7db445fd355cfa2e5f66b8"
+checksum = "14d5b12117cb9a5a9b9f031296ea86416da2cd9d8c9a9e3a2fa10275ae55f3ea"
 dependencies = [
  "environmental",
- "evm-core 0.29.0",
- "evm-runtime 0.29.0",
+ "evm-core 0.30.0",
+ "evm-runtime 0.30.0",
  "primitive-types 0.10.1",
 ]
 
@@ -1397,12 +1397,12 @@ dependencies = [
 
 [[package]]
 name = "evm-runtime"
-version = "0.29.0"
+version = "0.30.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "62d7467444181cd99a04929d9d6ef6f83a35f4c96c1305f11818490e359b53c7"
+checksum = "3921ac8964cf13d12693392fef6686ef94470328ccd8eea384c6ff9ac0125b01"
 dependencies = [
  "environmental",
- "evm-core 0.29.0",
+ "evm-core 0.30.0",
  "primitive-types 0.10.1",
  "sha3 0.8.2",
 ]
@@ -1514,7 +1514,7 @@ version = "2.0.0-dev"
 dependencies = [
  "ethereum 0.8.0",
  "ethereum-types 0.12.0",
- "evm 0.29.0",
+ "evm 0.30.0",
  "fc-consensus",
  "fc-db",
  "fc-rpc-core",
@@ -1659,7 +1659,7 @@ dependencies = [
 name = "fp-evm"
 version = "3.0.0-dev"
 dependencies = [
- "evm 0.27.0",
+ "evm 0.30.0",
  "impl-trait-for-tuples 0.1.3",
  "parity-scale-codec",
  "serde",
@@ -4263,9 +4263,9 @@ dependencies = [
 name = "pallet-evm"
 version = "6.0.0-dev"
 dependencies = [
- "evm 0.29.0",
- "evm-gasometer 0.29.0",
- "evm-runtime 0.29.0",
+ "evm 0.30.0",
+ "evm-gasometer 0.30.0",
+ "evm-runtime 0.30.0",
  "fp-evm",
  "frame-benchmarking",
  "frame-support",
@@ -4275,7 +4275,7 @@ dependencies = [
  "pallet-balances",
  "pallet-timestamp",
  "parity-scale-codec",
- "primitive-types 0.9.1",
+ "primitive-types 0.10.1",
  "rlp",
  "serde",
  "sha3 0.8.2",
