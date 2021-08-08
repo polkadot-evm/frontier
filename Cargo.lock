@@ -1537,7 +1537,7 @@ dependencies = [
 
 [[package]]
 name = "fp-storage"
-version = "2.0.0-dev"
+version = "2.0.0"
 
 [[package]]
 name = "frame-benchmarking"
@@ -3994,7 +3994,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-dynamic-fee"
-version = "3.0.0-dev"
+version = "3.0.0"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -4011,7 +4011,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-ethereum"
-version = "3.0.0-dev"
+version = "3.0.0"
 dependencies = [
  "ethereum",
  "ethereum-types",
@@ -4039,7 +4039,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm"
-version = "5.0.0-dev"
+version = "5.0.0"
 dependencies = [
  "evm",
  "evm-gasometer",
