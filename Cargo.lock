@@ -1245,9 +1245,9 @@ dependencies = [
 
 [[package]]
 name = "ethereum"
-version = "0.8.0"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "42ccff962ede8fe7c3ec53d46b8316f3c53377a701a30c0325918b38ce04a497"
+checksum = "4a67be3eaf296ef668733f54c637e84d0ca34eaf194f0077455135981ad464c3"
 dependencies = [
  "bytes 1.0.1",
  "ethereum-types 0.12.0",
@@ -1318,12 +1318,12 @@ dependencies = [
 
 [[package]]
 name = "evm"
-version = "0.30.0"
+version = "0.30.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a5c3002a3e79803bd8691e0154e1f8f61f8376e1c616eebc620b8b3d0fe72809"
+checksum = "3144301c57a81101003055c7cab61b58e68060f3bd1c54aa419f663e4f0e6347"
 dependencies = [
  "environmental",
- "ethereum 0.8.0",
+ "ethereum 0.9.0",
  "evm-core 0.30.0",
  "evm-gasometer 0.30.0",
  "evm-runtime 0.30.0",
@@ -1512,9 +1512,9 @@ dependencies = [
 name = "fc-rpc"
 version = "2.0.0-dev"
 dependencies = [
- "ethereum 0.8.0",
+ "ethereum 0.9.0",
  "ethereum-types 0.12.0",
- "evm 0.30.0",
+ "evm 0.30.1",
  "fc-consensus",
  "fc-db",
  "fc-rpc-core",
@@ -1646,7 +1646,7 @@ dependencies = [
 name = "fp-consensus"
 version = "2.0.0-dev"
 dependencies = [
- "ethereum 0.8.0",
+ "ethereum 0.9.0",
  "parity-scale-codec",
  "rlp",
  "sha3 0.8.2",
@@ -1659,7 +1659,7 @@ dependencies = [
 name = "fp-evm"
 version = "3.0.0-dev"
 dependencies = [
- "evm 0.30.0",
+ "evm 0.30.1",
  "impl-trait-for-tuples 0.1.3",
  "parity-scale-codec",
  "serde",
@@ -1671,8 +1671,8 @@ dependencies = [
 name = "fp-rpc"
 version = "3.0.0-dev"
 dependencies = [
- "ethereum 0.7.1",
- "ethereum-types 0.11.0",
+ "ethereum 0.9.0",
+ "ethereum-types 0.12.0",
  "fp-evm",
  "parity-scale-codec",
  "sp-api",
@@ -4235,9 +4235,9 @@ dependencies = [
 name = "pallet-ethereum"
 version = "4.0.0-dev"
 dependencies = [
- "ethereum 0.7.1",
- "ethereum-types 0.11.0",
- "evm 0.27.0",
+ "ethereum 0.9.0",
+ "ethereum-types 0.12.0",
+ "evm 0.30.1",
  "fp-consensus",
  "fp-evm",
  "fp-rpc",
@@ -4263,7 +4263,7 @@ dependencies = [
 name = "pallet-evm"
 version = "6.0.0-dev"
 dependencies = [
- "evm 0.30.0",
+ "evm 0.30.1",
  "evm-gasometer 0.30.0",
  "evm-runtime 0.30.0",
  "fp-evm",
