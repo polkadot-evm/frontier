@@ -7,13 +7,13 @@ description = "Ethereum RPC (web3) compatibility layer for Substrate."
 license = "GPL-3.0-or-later WITH Classpath-exception-2.0"
 
 [dependencies]
-jsonrpc-core = "15.0.0"
-jsonrpc-derive = "14.0.3"
-jsonrpc-core-client = "14.0.3"
-jsonrpc-pubsub = "15.0.0"
+jsonrpc-core = "18.0"
+jsonrpc-derive = "18.0"
+jsonrpc-core-client = "18.0"
+jsonrpc-pubsub = "18.0"
 log = "0.4.8"
 ethereum-types = "0.12.0"
-evm = "0.30.0"
+evm = "0.30.1"
 fc-consensus = { version = "2.0.0-dev", path = "../consensus" }
 fc-db = { version = "2.0.0-dev", path = "../db" }
 fc-rpc-core = { version = "1.1.0-dev", path = "../rpc-core" }
@@ -26,6 +26,7 @@ sp-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate
 sp-transaction-pool = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate" }
 sp-storage = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate" }
 sp-blockchain = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate" }
+sc-transaction-pool-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate" }
 sc-service = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate" }
 sc-client-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate" }
 sc-rpc = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate" }

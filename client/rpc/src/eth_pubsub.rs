@@ -28,7 +28,7 @@ use sc_rpc::Metadata;
 use sp_api::{BlockId, ProvideRuntimeApi};
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 use sp_runtime::traits::{BlakeTwo256, Block as BlockT, UniqueSaturatedInto};
-use sp_transaction_pool::TransactionPool;
+use sc_transaction_pool_api::TransactionPool;
 use std::collections::BTreeMap;
 use std::{iter, marker::PhantomData, sync::Arc};
 
@@ -121,7 +121,7 @@ impl SubscriptionResult {
 	pub fn new() -> Self {
 		SubscriptionResult {}
 	}
-	pub fn new_heads(&self, block: ethereum::Block) -> PubSubResult {
+	pub fn new_heads(&self, block: ethereum::BlockV0) -> PubSubResult {
 		PubSubResult::Header(Box::new(Rich {
 			inner: Header {
 				hash: Some(H256::from_slice(
@@ -152,7 +152,7 @@ impl SubscriptionResult {
 	}
 	pub fn logs(
 		&self,
-		block: ethereum::Block,
+		block: ethereum::BlockV0,
 		receipts: Vec<ethereum::Receipt>,
 		params: &FilteredParams,
 	) -> Vec<Log> {
@@ -196,7 +196,7 @@ impl SubscriptionResult {
 		&self,
 		block_hash: H256,
 		ethereum_log: &ethereum::Log,
-		block: &ethereum::Block,
+		block: &ethereum::BlockV0,
 		params: &FilteredParams,
 	) -> bool {
 		let log = Log {
@@ -338,7 +338,8 @@ where
 				});
 			}
 			Kind::NewPendingTransactions => {
-				use sp_transaction_pool::InPoolTransaction;
+				use sc_transaction_pool_api::InPoolTransaction;
+
 				self.subscriptions.add(subscriber, move |sink| {
 					let stream = pool
 						.import_notification_stream()

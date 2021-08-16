@@ -18,7 +18,7 @@
 use crate::{
 	error_on_execution_failure, frontier_backend_client, internal_err, public_key, EthSigner,
 };
-use ethereum::{Block as EthereumBlock, Transaction as EthereumTransaction};
+use ethereum::{BlockV0 as EthereumBlock, TransactionV0 as EthereumTransaction};
 use ethereum_types::{H160, H256, H512, H64, U256, U64};
 use fc_rpc_core::types::{
 	Block, BlockNumber, BlockTransactions, Bytes, CallRequest, Filter, FilterChanges, FilterPool,
@@ -47,7 +47,7 @@ use sp_runtime::{
 	traits::{BlakeTwo256, Block as BlockT, NumberFor, One, Saturating, UniqueSaturatedInto, Zero},
 	transaction_validity::TransactionSource,
 };
-use sp_transaction_pool::{InPoolTransaction, TransactionPool};
+use sc_transaction_pool_api::{InPoolTransaction, TransactionPool};
 use std::collections::{BTreeMap, HashMap};
 use std::{
 	marker::PhantomData,
@@ -110,7 +110,7 @@ where
 }
 
 fn rich_block_build(
-	block: ethereum::Block,
+	block: ethereum::BlockV0,
 	statuses: Vec<Option<TransactionStatus>>,
 	hash: Option<H256>,
 	full_transactions: bool,
@@ -763,7 +763,7 @@ where
 			Err(e) => return Box::new(future::result(Err(e))),
 		};
 
-		let message = ethereum::TransactionMessage {
+		let message = ethereum::LegacyTransactionMessage {
 			nonce,
 			gas_price: request.gas_price.unwrap_or(U256::from(1)),
 			gas_limit: request.gas.unwrap_or(U256::max_value()),
@@ -827,7 +827,7 @@ where
 	}
 
 	fn send_raw_transaction(&self, bytes: Bytes) -> BoxFuture<H256> {
-		let transaction = match rlp::decode::<ethereum::Transaction>(&bytes.0[..]) {
+		let transaction = match rlp::decode::<ethereum::TransactionV0>(&bytes.0[..]) {
 			Ok(transaction) => transaction,
 			Err(_) => {
 				return Box::new(future::result(Err(internal_err(
