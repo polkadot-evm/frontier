@@ -1457,6 +1457,7 @@ dependencies = [
 name = "fc-consensus"
 version = "2.0.0-dev"
 dependencies = [
+ "async-trait",
  "derive_more",
  "fc-db",
  "fp-consensus",
@@ -1465,6 +1466,7 @@ dependencies = [
  "log",
  "parity-scale-codec",
  "sc-client-api",
+ "sc-consensus",
  "sp-api",
  "sp-block-builder",
  "sp-blockchain",

@@ -23,13 +23,15 @@ use sc_client_api::{backend::AuxStore, BlockOf};
 use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
 use sp_blockchain::{well_known_cache_keys::Id as CacheKeyId, HeaderBackend, ProvideCache};
-use sp_consensus::{
-	BlockCheckParams, BlockImport, BlockImportParams, Error as ConsensusError, ImportResult,
+use sp_consensus::Error as ConsensusError;
+use sc_consensus::{
+	BlockCheckParams, BlockImport, BlockImportParams, ImportResult,
 };
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
 use std::collections::HashMap;
 use std::marker::PhantomData;
 use std::sync::Arc;
+use async_trait::async_trait;
 
 #[derive(derive_more::Display, Debug)]
 pub enum Error {
@@ -99,6 +101,7 @@ where
 	}
 }
 
+#[async_trait]
 impl<B, I, C> BlockImport<B> for FrontierBlockImport<B, I, C>
 where
 	B: BlockT,
@@ -111,11 +114,11 @@ where
 	type Error = ConsensusError;
 	type Transaction = sp_api::TransactionFor<C, B>;
 
-	fn check_block(&mut self, block: BlockCheckParams<B>) -> Result<ImportResult, Self::Error> {
-		self.inner.check_block(block).map_err(Into::into)
+	async fn check_block(&mut self, block: BlockCheckParams<B>) -> Result<ImportResult, Self::Error> {
+		self.inner.check_block(block).await.map_err(Into::into)
 	}
 
-	fn import_block(
+	async fn import_block(
 		&mut self,
 		block: BlockImportParams<B, Self::Transaction>,
 		new_cache: HashMap<CacheKeyId, Vec<u8>>,
@@ -127,6 +130,7 @@ where
 
 		self.inner
 			.import_block(block, new_cache)
+			.await
 			.map_err(Into::into)
 	}
 }
