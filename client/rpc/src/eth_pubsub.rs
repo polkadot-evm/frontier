@@ -46,11 +46,10 @@ use jsonrpc_pubsub::{
 use sha3::{Digest, Keccak256};
 
 pub use fc_rpc_core::EthPubSubApiServer;
-use futures::{StreamExt as _, TryStreamExt as _};
+use futures::{SinkExt as _, StreamExt as _, FutureExt as _};
 
 use fp_rpc::EthereumRuntimeRPCApi;
 use jsonrpc_core::{
-	futures::{Future, Sink},
 	Result as JsonRpcResult,
 };
 
@@ -297,10 +296,8 @@ where
 							return Ok::<Result<PubSubResult, jsonrpc_core::types::error::Error>, ()>(
 								Ok(PubSubResult::Log(Box::new(x))),
 							);
-						})
-						.compat();
-					sink.sink_map_err(|e| warn!("Error sending notifications: {:?}", e))
-						.send_all(stream)
+						});
+					stream.forward(sink.sink_map_err(|e| warn!("Error sending notifications: {:?}", e)))
 						.map(|_| ())
 				});
 			}
@@ -330,10 +327,8 @@ where
 						})
 						.map(|block| {
 							return Ok::<_, ()>(Ok(SubscriptionResult::new().new_heads(block)));
-						})
-						.compat();
-					sink.sink_map_err(|e| warn!("Error sending notifications: {:?}", e))
-						.send_all(stream)
+						});
+					stream.forward(sink.sink_map_err(|e| warn!("Error sending notifications: {:?}", e)))
 						.map(|_| ())
 				});
 			}
@@ -370,10 +365,8 @@ where
 									Keccak256::digest(&rlp::encode(&transaction)).as_slice(),
 								))),
 							);
-						})
-						.compat();
-					sink.sink_map_err(|e| warn!("Error sending notifications: {:?}", e))
-						.send_all(stream)
+						});
+					stream.forward(sink.sink_map_err(|e| warn!("Error sending notifications: {:?}", e)))
 						.map(|_| ())
 				});
 			}
@@ -397,10 +390,8 @@ where
 									syncing: syncing,
 								})),
 							);
-						})
-						.compat();
-					sink.sink_map_err(|e| warn!("Error sending notifications: {:?}", e))
-						.send_all(stream)
+						});
+					stream.forward(sink.sink_map_err(|e| warn!("Error sending notifications: {:?}", e)))
 						.map(|_| ())
 				});
 			}
