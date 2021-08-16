@@ -4087,7 +4087,7 @@ dependencies = [
 name = "pallet-evm-precompile-blake2"
 version = "2.0.0-dev"
 dependencies = [
- "evm 0.27.0",
+ "evm 0.30.1",
  "fp-evm",
  "pallet-evm-test-vector-support",
  "sp-core",
@@ -4098,7 +4098,7 @@ dependencies = [
 name = "pallet-evm-precompile-bn128"
 version = "2.0.0-dev"
 dependencies = [
- "evm 0.27.0",
+ "evm 0.30.1",
  "fp-evm",
  "pallet-evm-test-vector-support",
  "sp-core",
@@ -4111,7 +4111,7 @@ name = "pallet-evm-precompile-curve25519"
 version = "1.0.0-dev"
 dependencies = [
  "curve25519-dalek 4.0.0-pre.0",
- "evm 0.27.0",
+ "evm 0.30.1",
  "fp-evm",
  "frame-support",
  "parity-scale-codec",
@@ -4123,7 +4123,7 @@ dependencies = [
 name = "pallet-evm-precompile-dispatch"
 version = "2.0.0-dev"
 dependencies = [
- "evm 0.27.0",
+ "evm 0.30.1",
  "fp-evm",
  "frame-support",
  "pallet-evm",
@@ -4137,7 +4137,7 @@ name = "pallet-evm-precompile-ed25519"
 version = "2.0.0-dev"
 dependencies = [
  "ed25519-dalek",
- "evm 0.27.0",
+ "evm 0.30.1",
  "fp-evm",
  "sp-core",
  "sp-io",
@@ -4147,7 +4147,7 @@ dependencies = [
 name = "pallet-evm-precompile-modexp"
 version = "2.0.0-dev"
 dependencies = [
- "evm 0.27.0",
+ "evm 0.30.1",
  "fp-evm",
  "hex",
  "num",
@@ -4160,7 +4160,7 @@ dependencies = [
 name = "pallet-evm-precompile-sha3fips"
 version = "2.0.0-dev"
 dependencies = [
- "evm 0.27.0",
+ "evm 0.30.1",
  "fp-evm",
  "sp-core",
  "sp-io",
@@ -4171,7 +4171,7 @@ dependencies = [
 name = "pallet-evm-precompile-simple"
 version = "2.0.0-dev"
 dependencies = [
- "evm 0.27.0",
+ "evm 0.30.1",
  "fp-evm",
  "pallet-evm-test-vector-support",
  "ripemd160",
