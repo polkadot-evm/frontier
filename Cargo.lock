@@ -4218,6 +4218,7 @@ dependencies = [
 name = "pallet-dynamic-fee"
 version = "4.0.0-dev"
 dependencies = [
+ "async-trait",
  "frame-support",
  "frame-system",
  "pallet-evm",

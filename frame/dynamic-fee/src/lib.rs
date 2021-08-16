@@ -23,17 +23,17 @@ use frame_support::{
 	decl_module, decl_storage,
 	traits::Get,
 	weights::{DispatchClass, Weight},
+	inherent::{ProvideInherent, IsFatalError},
 };
 use frame_system::ensure_none;
 use sp_core::U256;
-#[cfg(feature = "std")]
-use sp_inherents::ProvideInherentData;
-use sp_inherents::{InherentData, InherentIdentifier, IsFatalError, ProvideInherent};
+use sp_inherents::{InherentData, InherentIdentifier};
 use sp_runtime::RuntimeDebug;
 use sp_std::{
 	cmp::{max, min},
 	result,
 };
+use async_trait::async_trait;
 
 pub trait Config: frame_system::Config {
 	/// Bound divisor for min gas price.
@@ -90,52 +90,6 @@ impl<T: Config> pallet_evm::FeeCalculator for Module<T> {
 	}
 }
 
-#[derive(Encode, Decode, RuntimeDebug)]
-pub enum InherentError {}
-
-impl IsFatalError for InherentError {
-	fn is_fatal_error(&self) -> bool {
-		match *self {}
-	}
-}
-
-impl InherentError {
-	/// Try to create an instance ouf of the given identifier and data.
-	#[cfg(feature = "std")]
-	pub fn try_from(id: &InherentIdentifier, data: &[u8]) -> Option<Self> {
-		if id == &INHERENT_IDENTIFIER {
-			<InherentError as codec::Decode>::decode(&mut &data[..]).ok()
-		} else {
-			None
-		}
-	}
-}
-
-pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"dynfee0_";
-
-pub type InherentType = U256;
-
-#[cfg(feature = "std")]
-pub struct InherentDataProvider(pub InherentType);
-
-#[cfg(feature = "std")]
-impl ProvideInherentData for InherentDataProvider {
-	fn inherent_identifier(&self) -> &'static InherentIdentifier {
-		&INHERENT_IDENTIFIER
-	}
-
-	fn provide_inherent_data(
-		&self,
-		inherent_data: &mut InherentData,
-	) -> Result<(), sp_inherents::Error> {
-		inherent_data.put_data(INHERENT_IDENTIFIER, &self.0)
-	}
-
-	fn error_to_string(&self, error: &[u8]) -> Option<String> {
-		InherentError::try_from(&INHERENT_IDENTIFIER, error).map(|e| format!("{:?}", e))
-	}
-}
-
 impl<T: Config> ProvideInherent for Module<T> {
 	type Call = Call<T>;
 	type Error = InherentError;
@@ -149,6 +103,46 @@ impl<T: Config> ProvideInherent for Module<T> {
 
 	fn check_inherent(_call: &Self::Call, _data: &InherentData) -> result::Result<(), Self::Error> {
 		Ok(())
+	}
+
+	fn is_inherent(call: &Self::Call) -> bool {
+		matches!(call, Call::note_min_gas_price_target(_))
+	}
+}
+
+#[derive(Encode, Decode, RuntimeDebug)]
+pub enum InherentError {}
+
+impl IsFatalError for InherentError {
+	fn is_fatal_error(&self) -> bool {
+		match *self {}
+	}
+}
+
+pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"dynfee0_";
+
+pub type InherentType = U256;
+
+#[cfg(feature = "std")]
+pub struct InherentDataProvider(pub InherentType);
+
+#[cfg(feature = "std")]
+#[async_trait]
+impl sp_inherents::InherentDataProvider for InherentDataProvider {
+	fn provide_inherent_data(
+		&self,
+		inherent_data: &mut InherentData,
+	) -> Result<(), sp_inherents::Error> {
+		inherent_data.put_data(INHERENT_IDENTIFIER, &self.0)
+	}
+
+	async fn try_handle_error(
+		&self,
+		_identifier: &InherentIdentifier,
+		_error: &[u8],
+	) -> Option<Result<(), sp_inherents::Error>> {
+		// The pallet never reports error.
+		None
 	}
 }
 
