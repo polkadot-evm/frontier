@@ -58,7 +58,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	pallet_balances::GenesisConfig::<Test>::default()
 		.assimilate_storage(&mut t)
 		.unwrap();
-	GenesisConfig { accounts }
+	crate::GenesisConfig { accounts }
 		.assimilate_storage::<Test>(&mut t)
 		.unwrap();
 	t.into()
