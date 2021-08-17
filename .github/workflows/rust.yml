@@ -22,7 +22,7 @@ jobs:
         cargo +$WASM_BUILD_TOOLCHAIN --version
         rustc +$WASM_BUILD_TOOLCHAIN --version
       env:
-        WASM_BUILD_TOOLCHAIN: nightly-2020-08-29
+        WASM_BUILD_TOOLCHAIN: nightly-2021-07-06
     - name: Build
       run: cargo build --locked --verbose --all
     - name: Run tests
@@ -52,6 +52,6 @@ jobs:
         cargo +$WASM_BUILD_TOOLCHAIN --version
         rustc +$WASM_BUILD_TOOLCHAIN --version
       env:
-        WASM_BUILD_TOOLCHAIN: nightly-2020-08-29
+        WASM_BUILD_TOOLCHAIN: nightly-2021-07-06
     - name: Rustfmt
       run: cargo fmt --all -- --check
