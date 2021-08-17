@@ -49,7 +49,10 @@ use sp_runtime::{
 };
 use sp_std::prelude::*;
 
-pub use ethereum::{BlockV0 as Block, Log, Receipt, TransactionV0 as Transaction, TransactionAction, LegacyTransactionMessage};
+pub use ethereum::{
+	BlockV0 as Block, LegacyTransactionMessage, Log, Receipt, TransactionAction,
+	TransactionV0 as Transaction,
+};
 pub use fp_rpc::TransactionStatus;
 
 #[cfg(all(feature = "std", test))]

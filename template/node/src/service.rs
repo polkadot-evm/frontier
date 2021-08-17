@@ -1,10 +1,17 @@
 //! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 
+use crate::cli::Cli;
+#[cfg(feature = "manual-seal")]
+use crate::cli::Sealing;
+use async_trait::async_trait;
 use fc_consensus::FrontierBlockImport;
 use fc_mapping_sync::{MappingSyncWorker, SyncStrategy};
-use fc_rpc_core::types::{FilterPool, PendingTransactions};
 use fc_rpc::EthTask;
+use fc_rpc_core::types::{FilterPool, PendingTransactions};
 use frontier_template_runtime::{self, opaque::Block, RuntimeApi, SLOT_DURATION};
+use futures::StreamExt;
+use sc_cli::SubstrateCli;
+use sc_client_api::BlockchainEvents;
 use sc_client_api::{ExecutorProvider, RemoteBackend};
 use sc_consensus_aura::{ImportQueueParams, SlotProportion, StartAuraParams};
 #[cfg(feature = "manual-seal")]
@@ -12,26 +19,19 @@ use sc_consensus_manual_seal::{self as manual_seal};
 pub use sc_executor::NativeExecutor;
 use sc_finality_grandpa::SharedVoterState;
 use sc_keystore::LocalKeystore;
-use sc_service::{error::Error as ServiceError, BasePath, Configuration, TaskManager};
-use sc_cli::SubstrateCli;
-use sc_client_api::BlockchainEvents;
-use sc_telemetry::{Telemetry, TelemetryWorker};
 use sc_network::warp_request_handler::WarpSyncProvider;
+use sc_service::{error::Error as ServiceError, BasePath, Configuration, TaskManager};
+use sc_telemetry::{Telemetry, TelemetryWorker};
 use sp_consensus::SlotData;
 use sp_consensus_aura::sr25519::AuthorityPair as AuraPair;
+use sp_core::U256;
+use sp_inherents::{InherentData, InherentIdentifier};
 use std::{
 	cell::RefCell,
 	collections::{BTreeMap, HashMap},
 	sync::{Arc, Mutex},
 	time::Duration,
 };
-use sp_core::U256;
-use sp_inherents::{InherentData, InherentIdentifier};
-use async_trait::async_trait;
-use futures::StreamExt;
-use crate::cli::Cli;
-#[cfg(feature = "manual-seal")]
-use crate::cli::Sealing;
 
 // Our native executor instance.
 pub struct Executor;
@@ -56,12 +56,7 @@ type FullSelectChain = sc_consensus::LongestChain<FullBackend, Block>;
 pub type ConsensusResult = (
 	FrontierBlockImport<
 		Block,
-		sc_finality_grandpa::GrandpaBlockImport<
-			FullBackend,
-			Block,
-			FullClient,
-			FullSelectChain,
-		>,
+		sc_finality_grandpa::GrandpaBlockImport<FullBackend, Block, FullClient, FullSelectChain>,
 		FullClient,
 	>,
 	sc_finality_grandpa::LinkHalf<Block, FullClient, FullSelectChain>,
@@ -147,7 +142,9 @@ pub fn new_partial(
 	ServiceError,
 > {
 	if config.keystore_remote.is_some() {
-		return Err(ServiceError::Other(format!("Remote Keystores are not supported.")))
+		return Err(ServiceError::Other(format!(
+			"Remote Keystores are not supported."
+		)));
 	}
 
 	let telemetry = config
@@ -189,7 +186,8 @@ pub fn new_partial(
 
 	let frontier_backend = open_frontier_backend(config)?;
 
-	#[cfg(feature = "manual-seal")] {
+	#[cfg(feature = "manual-seal")]
+	{
 		let sealing = cli.run.sealing;
 
 		let frontier_block_import =
@@ -219,7 +217,8 @@ pub fn new_partial(
 		})
 	}
 
-	#[cfg(feature = "aura")] {
+	#[cfg(feature = "aura")]
+	{
 		let (grandpa_block_import, grandpa_link) = sc_finality_grandpa::block_import(
 			client.clone(),
 			&(client.clone() as Arc<_>),
@@ -250,9 +249,8 @@ pub fn new_partial(
 							slot_duration,
 						);
 
-					let dynamic_fee = pallet_dynamic_fee::InherentDataProvider(U256::from(
-						target_gas_price
-					));
+					let dynamic_fee =
+						pallet_dynamic_fee::InherentDataProvider(U256::from(target_gas_price));
 
 					Ok((timestamp, slot, dynamic_fee))
 				},
@@ -273,7 +271,13 @@ pub fn new_partial(
 			keystore_container,
 			select_chain,
 			transaction_pool,
-			other: ((frontier_block_import, grandpa_link), pending_transactions, filter_pool, frontier_backend, telemetry),
+			other: (
+				(frontier_block_import, grandpa_link),
+				pending_transactions,
+				filter_pool,
+				frontier_backend,
+				telemetry,
+			),
 		})
 	}
 }
@@ -302,23 +306,31 @@ pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, Ser
 	if let Some(url) = &config.keystore_remote {
 		match remote_keystore(url) {
 			Ok(k) => keystore_container.set_remote_keystore(k),
-			Err(e) =>
+			Err(e) => {
 				return Err(ServiceError::Other(format!(
 					"Error hooking up remote keystore for {}: {}",
 					url, e
-				))),
+				)))
+			}
 		};
 	}
 
 	let warp_sync: Option<Arc<dyn WarpSyncProvider<Block>>> = {
-		#[cfg(feature = "aura")] {
-			config.network.extra_sets.push(sc_finality_grandpa::grandpa_peers_set_config());
-			Some(Arc::new(sc_finality_grandpa::warp_proof::NetworkProvider::new(
-				backend.clone(),
-				consensus_result.1.shared_authority_set().clone(),
-			)))
+		#[cfg(feature = "aura")]
+		{
+			config
+				.network
+				.extra_sets
+				.push(sc_finality_grandpa::grandpa_peers_set_config());
+			Some(Arc::new(
+				sc_finality_grandpa::warp_proof::NetworkProvider::new(
+					backend.clone(),
+					consensus_result.1.shared_authority_set().clone(),
+				),
+			))
 		}
-		#[cfg(feature = "manual-seal")] {
+		#[cfg(feature = "manual-seal")]
+		{
 			None
 		}
 	};
@@ -382,7 +394,10 @@ pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, Ser
 				command_sink: Some(command_sink.clone()),
 			};
 
-			Ok(crate::rpc::create_full(deps, subscription_task_executor.clone()))
+			Ok(crate::rpc::create_full(
+				deps,
+				subscription_task_executor.clone(),
+			))
 		})
 	};
 
@@ -442,7 +457,8 @@ pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, Ser
 		EthTask::ethereum_schema_cache_task(Arc::clone(&client), Arc::clone(&frontier_backend)),
 	);
 
-	#[cfg(feature = "manual-seal")] {
+	#[cfg(feature = "manual-seal")]
+	{
 		let (block_import, sealing) = consensus_result;
 
 		if role.is_authority() {
@@ -471,9 +487,9 @@ pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, Ser
 							create_inherent_data_providers: move |_, ()| async move {
 								let mock_timestamp = MockTimestampInherentDataProvider;
 
-								let dynamic_fee = pallet_dynamic_fee::InherentDataProvider(U256::from(
-									target_gas_price
-								));
+								let dynamic_fee = pallet_dynamic_fee::InherentDataProvider(
+									U256::from(target_gas_price),
+								);
 
 								Ok((mock_timestamp, dynamic_fee))
 							},
@@ -495,9 +511,9 @@ pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, Ser
 							create_inherent_data_providers: move |_, ()| async move {
 								let mock_timestamp = MockTimestampInherentDataProvider;
 
-								let dynamic_fee = pallet_dynamic_fee::InherentDataProvider(U256::from(
-									target_gas_price
-								));
+								let dynamic_fee = pallet_dynamic_fee::InherentDataProvider(
+									U256::from(target_gas_price),
+								);
 
 								Ok((mock_timestamp, dynamic_fee))
 							},
@@ -512,7 +528,8 @@ pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, Ser
 		log::info!("Manual Seal Ready");
 	}
 
-	#[cfg(feature = "aura")] {
+	#[cfg(feature = "aura")]
+	{
 		let (block_import, grandpa_link) = consensus_result;
 
 		if role.is_authority() {
@@ -547,9 +564,8 @@ pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, Ser
 								raw_slot_duration,
 							);
 
-						let dynamic_fee = pallet_dynamic_fee::InherentDataProvider(U256::from(
-							target_gas_price
-						));
+						let dynamic_fee =
+							pallet_dynamic_fee::InherentDataProvider(U256::from(target_gas_price));
 
 						Ok((timestamp, slot, dynamic_fee))
 					},
@@ -567,13 +583,18 @@ pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, Ser
 
 			// the AURA authoring task is considered essential, i.e. if it
 			// fails we take down the service with it.
-			task_manager.spawn_essential_handle().spawn_blocking("aura", aura);
+			task_manager
+				.spawn_essential_handle()
+				.spawn_blocking("aura", aura);
 		}
 
 		// if the node isn't actively participating in consensus then it doesn't
 		// need a keystore, regardless of which protocol we use below.
-		let keystore =
-			if role.is_authority() { Some(keystore_container.sync_keystore()) } else { None };
+		let keystore = if role.is_authority() {
+			Some(keystore_container.sync_keystore())
+		} else {
+			None
+		};
 
 		let grandpa_config = sc_finality_grandpa::Config {
 			// FIXME #1578 make this available through chainspec
@@ -641,7 +662,10 @@ pub fn new_light(mut config: Configuration) -> Result<TaskManager, ServiceError>
 		telemetry
 	});
 
-	config.network.extra_sets.push(sc_finality_grandpa::grandpa_peers_set_config());
+	config
+		.network
+		.extra_sets
+		.push(sc_finality_grandpa::grandpa_peers_set_config());
 
 	let select_chain = sc_consensus::LongestChain::new(backend.clone());
 

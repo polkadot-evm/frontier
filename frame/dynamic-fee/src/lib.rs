@@ -18,12 +18,13 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use async_trait::async_trait;
 use codec::{Decode, Encode};
 use frame_support::{
 	decl_module, decl_storage,
+	inherent::{IsFatalError, ProvideInherent},
 	traits::Get,
 	weights::{DispatchClass, Weight},
-	inherent::{ProvideInherent, IsFatalError},
 };
 use frame_system::ensure_none;
 use sp_core::U256;
@@ -33,7 +34,6 @@ use sp_std::{
 	cmp::{max, min},
 	result,
 };
-use async_trait::async_trait;
 
 pub trait Config: frame_system::Config {
 	/// Bound divisor for min gas price.

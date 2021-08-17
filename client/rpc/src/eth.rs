@@ -31,15 +31,13 @@ use fc_rpc_core::{
 };
 use fp_rpc::{ConvertTransaction, EthereumRuntimeRPCApi, TransactionStatus};
 use futures::{future::TryFutureExt, StreamExt};
-use jsonrpc_core::{
-	futures::future,
-	BoxFuture, ErrorCode, Result,
-};
+use jsonrpc_core::{futures::future, BoxFuture, ErrorCode, Result};
 use sc_client_api::{
 	backend::{AuxStore, Backend, StateBackend, StorageProvider},
 	client::BlockchainEvents,
 };
 use sc_network::{ExHashT, NetworkService};
+use sc_transaction_pool_api::{InPoolTransaction, TransactionPool};
 use sha3::{Digest, Keccak256};
 use sp_api::{BlockId, Core, HeaderT, ProvideRuntimeApi};
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
@@ -47,7 +45,6 @@ use sp_runtime::{
 	traits::{BlakeTwo256, Block as BlockT, NumberFor, One, Saturating, UniqueSaturatedInto, Zero},
 	transaction_validity::TransactionSource,
 };
-use sc_transaction_pool_api::{InPoolTransaction, TransactionPool};
 use std::collections::{BTreeMap, HashMap};
 use std::{
 	marker::PhantomData,
@@ -743,9 +740,7 @@ where
 
 				match accounts.get(0) {
 					Some(account) => account.clone(),
-					None => {
-						return Box::pin(future::err(internal_err("no signer available")))
-					}
+					None => return Box::pin(future::err(internal_err("no signer available"))),
 				}
 			}
 		};
@@ -828,11 +823,7 @@ where
 	fn send_raw_transaction(&self, bytes: Bytes) -> BoxFuture<Result<H256>> {
 		let transaction = match rlp::decode::<ethereum::TransactionV0>(&bytes.0[..]) {
 			Ok(transaction) => transaction,
-			Err(_) => {
-				return Box::pin(future::err(internal_err(
-					"decode transaction failed",
-				)))
-			}
+			Err(_) => return Box::pin(future::err(internal_err("decode transaction failed"))),
 		};
 		let transaction_hash =
 			H256::from_slice(Keccak256::digest(&rlp::encode(&transaction)).as_slice());

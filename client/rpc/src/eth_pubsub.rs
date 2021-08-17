@@ -25,10 +25,10 @@ use sc_client_api::{
 	client::BlockchainEvents,
 };
 use sc_rpc::Metadata;
+use sc_transaction_pool_api::TransactionPool;
 use sp_api::{BlockId, ProvideRuntimeApi};
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 use sp_runtime::traits::{BlakeTwo256, Block as BlockT, UniqueSaturatedInto};
-use sc_transaction_pool_api::TransactionPool;
 use std::collections::BTreeMap;
 use std::{iter, marker::PhantomData, sync::Arc};
 
@@ -46,12 +46,10 @@ use jsonrpc_pubsub::{
 use sha3::{Digest, Keccak256};
 
 pub use fc_rpc_core::EthPubSubApiServer;
-use futures::{SinkExt as _, StreamExt as _, FutureExt as _};
+use futures::{FutureExt as _, SinkExt as _, StreamExt as _};
 
 use fp_rpc::EthereumRuntimeRPCApi;
-use jsonrpc_core::{
-	Result as JsonRpcResult,
-};
+use jsonrpc_core::Result as JsonRpcResult;
 
 use sc_network::{ExHashT, NetworkService};
 
@@ -297,7 +295,10 @@ where
 								Ok(PubSubResult::Log(Box::new(x))),
 							);
 						});
-					stream.forward(sink.sink_map_err(|e| warn!("Error sending notifications: {:?}", e)))
+					stream
+						.forward(
+							sink.sink_map_err(|e| warn!("Error sending notifications: {:?}", e)),
+						)
 						.map(|_| ())
 				});
 			}
@@ -328,7 +329,10 @@ where
 						.map(|block| {
 							return Ok::<_, ()>(Ok(SubscriptionResult::new().new_heads(block)));
 						});
-					stream.forward(sink.sink_map_err(|e| warn!("Error sending notifications: {:?}", e)))
+					stream
+						.forward(
+							sink.sink_map_err(|e| warn!("Error sending notifications: {:?}", e)),
+						)
 						.map(|_| ())
 				});
 			}
@@ -366,7 +370,10 @@ where
 								))),
 							);
 						});
-					stream.forward(sink.sink_map_err(|e| warn!("Error sending notifications: {:?}", e)))
+					stream
+						.forward(
+							sink.sink_map_err(|e| warn!("Error sending notifications: {:?}", e)),
+						)
 						.map(|_| ())
 				});
 			}
@@ -391,7 +398,10 @@ where
 								})),
 							);
 						});
-					stream.forward(sink.sink_map_err(|e| warn!("Error sending notifications: {:?}", e)))
+					stream
+						.forward(
+							sink.sink_map_err(|e| warn!("Error sending notifications: {:?}", e)),
+						)
 						.map(|_| ())
 				});
 			}

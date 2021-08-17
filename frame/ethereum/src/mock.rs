@@ -17,18 +17,18 @@
 
 //! Test utilities
 
-use crate::{Keccak256, IntermediateStateRoot, Transaction};
+use crate::{IntermediateStateRoot, Keccak256, Transaction};
 use ethereum::{TransactionAction, TransactionSignature};
 use frame_support::{parameter_types, traits::FindAuthor, ConsensusEngineId, PalletId};
 use pallet_evm::{AddressMapping, EnsureAddressTruncated, FeeCalculator};
 use rlp::*;
+use sha3::Digest;
 use sp_core::{H160, H256, U256};
 use sp_runtime::AccountId32;
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
 };
-use sha3::Digest;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;

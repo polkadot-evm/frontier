@@ -17,10 +17,13 @@
 
 //! Consensus extension module tests for BABE consensus.
 
+use crate::mock::*;
+use crate::{
+	CallOrCreateInfo, Error, Transaction, TransactionAction, ValidTransactionBuilder, H160, H256,
+	U256,
+};
 use ethereum::TransactionSignature;
 use frame_support::{assert_err, assert_noop, assert_ok, unsigned::ValidateUnsigned};
-use crate::{U256, H160, H256, Transaction, TransactionAction, ValidTransactionBuilder, CallOrCreateInfo, Error};
-use crate::mock::*;
 use rustc_hex::{FromHex, ToHex};
 use sp_runtime::transaction_validity::{InvalidTransaction, TransactionSource};
 use std::str::FromStr;
@@ -79,7 +82,10 @@ fn transaction_without_enough_gas_should_not_work() {
 		transaction.gas_price = U256::from(11_000_000);
 
 		assert_err!(
-			Ethereum::validate_unsigned(TransactionSource::External, &crate::Call::transact(transaction)),
+			Ethereum::validate_unsigned(
+				TransactionSource::External,
+				&crate::Call::transact(transaction)
+			),
 			InvalidTransaction::Payment
 		);
 	});
@@ -98,7 +104,10 @@ fn transaction_with_invalid_nonce_should_not_work() {
 		let signed = transaction.sign(&alice.private_key);
 
 		assert_eq!(
-			Ethereum::validate_unsigned(TransactionSource::External, &crate::Call::transact(signed)),
+			Ethereum::validate_unsigned(
+				TransactionSource::External,
+				&crate::Call::transact(signed)
+			),
 			ValidTransactionBuilder::default()
 				.and_provides((alice.address, U256::from(1)))
 				.priority(1u64)
@@ -125,7 +134,10 @@ fn transaction_with_invalid_nonce_should_not_work() {
 		let signed2 = transaction.sign(&alice.private_key);
 
 		assert_err!(
-			Ethereum::validate_unsigned(TransactionSource::External, &crate::Call::transact(signed2)),
+			Ethereum::validate_unsigned(
+				TransactionSource::External,
+				&crate::Call::transact(signed2)
+			),
 			InvalidTransaction::Stale
 		);
 	});

@@ -16,9 +16,7 @@
 // limitations under the License.
 
 //! Test mock for unit tests and benchmarking
-use crate::{
-	EnsureAddressNever, EnsureAddressRoot, FeeCalculator, IdentityAddressMapping,
-};
+use crate::{EnsureAddressNever, EnsureAddressRoot, FeeCalculator, IdentityAddressMapping};
 use frame_support::{parameter_types, traits::FindAuthor, ConsensusEngineId};
 use sp_core::{H160, H256, U256};
 use sp_runtime::{

@@ -28,7 +28,7 @@ pub use eth_pubsub::{EthPubSubApi, EthPubSubApiServer, HexEncodedIdProvider};
 pub use overrides::{OverrideHandle, RuntimeApiStorageOverride, SchemaV1Override, StorageOverride};
 
 use ethereum::{
-	TransactionV0 as EthereumTransaction, LegacyTransactionMessage as EthereumTransactionMessage,
+	LegacyTransactionMessage as EthereumTransactionMessage, TransactionV0 as EthereumTransaction,
 };
 use ethereum_types::{H160, H256};
 use evm::ExitError;
