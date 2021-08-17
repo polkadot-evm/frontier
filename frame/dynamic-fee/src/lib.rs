@@ -200,6 +200,7 @@ mod tests {
 		type OnKilledAccount = ();
 		type SystemWeightInfo = ();
 		type SS58Prefix = ();
+		type OnSetCode = ();
 	}
 
 	frame_support::parameter_types! {
@@ -225,9 +226,9 @@ mod tests {
 			NodeBlock = Block,
 			UncheckedExtrinsic = UncheckedExtrinsic,
 		{
-			System: frame_system::{Module, Call, Config, Storage, Event<T>},
-			Timestamp: pallet_timestamp::{Module, Call, Storage},
-			DynamicFee: pallet_dynamic_fee::{Module, Call, Storage, Inherent},
+			System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+			Timestamp: pallet_timestamp::{Pallet, Call, Storage},
+			DynamicFee: pallet_dynamic_fee::{Pallet, Call, Storage, Inherent},
 		}
 	);
 
