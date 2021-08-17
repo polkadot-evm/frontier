@@ -29,7 +29,9 @@ use sp_core::U256;
 use sp_inherents::{InherentData, InherentIdentifier};
 use async_trait::async_trait;
 use futures::StreamExt;
-use crate::cli::{Cli, Sealing};
+use crate::cli::Cli;
+#[cfg(feature = "manual-seal")]
+use crate::cli::Sealing;
 
 // Our native executor instance.
 pub struct Executor;
