@@ -1,5 +1,5 @@
 [package]
-name = "node-template"
+name = "frontier-template"
 version = "0.0.0"
 authors = ["Substrate DevHub <https://github.com/substrate-developer-hub>"]
 description = "A fresh FRAME-based Substrate node, ready for hacking."
@@ -52,13 +52,22 @@ pallet-transaction-payment-rpc = { git = "https://github.com/paritytech/substrat
 frame-benchmarking = { git = "https://github.com/paritytech/substrate" }
 frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate" }
 
-node-template-runtime = { git = "https://github.com/paritytech/substrate" }
+fc-consensus = { path = "../../client/consensus" }
+fp-consensus = { path = "../../primitives/consensus" }
+frontier-template-runtime = { path = "../runtime" }
+fc-rpc = { path = "../../client/rpc" }
+fp-rpc = { path = "../../primitives/rpc" }
+fc-rpc-core = { path = "../../client/rpc-core" }
+fc-db = { path = "../../client/db" }
+fc-mapping-sync = { path = "../../client/mapping-sync" }
 
 [build-dependencies]
 substrate-build-script-utils = { git = "https://github.com/paritytech/substrate" }
 
 [features]
-default = []
+default = ["aura"]
+aura = ["frontier-template-runtime/aura"]
+manual-seal = ["frontier-template-runtime/manual-seal"]
 runtime-benchmarks = [
-	"node-template-runtime/runtime-benchmarks",
+	"frontier-template-runtime/runtime-benchmarks",
 ]
