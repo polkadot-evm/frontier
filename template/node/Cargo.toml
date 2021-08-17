@@ -7,7 +7,7 @@ edition = "2018"
 license = "Unlicense"
 build = "build.rs"
 homepage = "https://substrate.dev"
-repository = "https://github.com/substrate-developer-hub/substrate-node-template/"
+repository = "https://github.com/substrate-developer-hub/frontier-node-template/"
 publish = false
 
 [package.metadata.docs.rs]
@@ -19,43 +19,43 @@ name = "node-template"
 [dependencies]
 structopt = "0.3.8"
 
-sc-cli = { version = "0.10.0-dev", path = "../../../client/cli", features = ["wasmtime"] }
-sp-core = { version = "4.0.0-dev", path = "../../../primitives/core" }
-sc-executor = { version = "0.10.0-dev", path = "../../../client/executor", features = ["wasmtime"] }
-sc-service = { version = "0.10.0-dev", path = "../../../client/service", features = ["wasmtime"] }
-sc-telemetry = { version = "4.0.0-dev", path = "../../../client/telemetry" }
-sc-keystore = { version = "4.0.0-dev", path = "../../../client/keystore" }
-sc-transaction-pool = { version = "4.0.0-dev", path = "../../../client/transaction-pool" }
-sc-transaction-pool-api = { version = "4.0.0-dev", path = "../../../client/transaction-pool/api" }
-sc-consensus-aura = { version = "0.10.0-dev", path = "../../../client/consensus/aura" }
-sp-consensus-aura = { version = "0.10.0-dev", path = "../../../primitives/consensus/aura" }
-sp-consensus = { version = "0.10.0-dev", path = "../../../primitives/consensus/common" }
-sc-consensus = { version = "0.10.0-dev", path = "../../../client/consensus/common" }
-sc-finality-grandpa = { version = "0.10.0-dev", path = "../../../client/finality-grandpa" }
-sp-finality-grandpa = { version = "4.0.0-dev", path = "../../../primitives/finality-grandpa" }
-sc-client-api = { version = "4.0.0-dev", path = "../../../client/api" }
-sp-runtime = { version = "4.0.0-dev", path = "../../../primitives/runtime" }
-sp-timestamp = { version = "4.0.0-dev", path = "../../../primitives/timestamp" }
+sc-cli = { features = ["wasmtime"] }
+sp-core = { git = "https://github.com/paritytech/substrate" }
+sc-executor = { features = ["wasmtime"] }
+sc-service = { features = ["wasmtime"] }
+sc-telemetry = { git = "https://github.com/paritytech/substrate" }
+sc-keystore = { git = "https://github.com/paritytech/substrate" }
+sc-transaction-pool = { git = "https://github.com/paritytech/substrate" }
+sc-transaction-pool-api = { git = "https://github.com/paritytech/substrate" }
+sc-consensus-aura = { git = "https://github.com/paritytech/substrate" }
+sp-consensus-aura = { git = "https://github.com/paritytech/substrate" }
+sp-consensus = { git = "https://github.com/paritytech/substrate" }
+sc-consensus = { git = "https://github.com/paritytech/substrate" }
+sc-finality-grandpa = { git = "https://github.com/paritytech/substrate" }
+sp-finality-grandpa = { git = "https://github.com/paritytech/substrate" }
+sc-client-api = { git = "https://github.com/paritytech/substrate" }
+sp-runtime = { git = "https://github.com/paritytech/substrate" }
+sp-timestamp = { git = "https://github.com/paritytech/substrate" }
 
 # These dependencies are used for the node template's RPCs
 jsonrpc-core = "18.0.0"
-sc-rpc = { version = "4.0.0-dev", path = "../../../client/rpc" }
-sp-api = { version = "4.0.0-dev", path = "../../../primitives/api" }
-sc-rpc-api = { version = "0.10.0-dev", path = "../../../client/rpc-api" }
-sp-blockchain = { version = "4.0.0-dev", path = "../../../primitives/blockchain" }
-sp-block-builder = { version = "4.0.0-dev", path = "../../../primitives/block-builder" }
-sc-basic-authorship = { version = "0.10.0-dev", path = "../../../client/basic-authorship" }
-substrate-frame-rpc-system = { version = "4.0.0-dev", path = "../../../utils/frame/rpc/system" }
-pallet-transaction-payment-rpc = { version = "4.0.0-dev", path = "../../../frame/transaction-payment/rpc/" }
+sc-rpc = { git = "https://github.com/paritytech/substrate" }
+sp-api = { git = "https://github.com/paritytech/substrate" }
+sc-rpc-api = { git = "https://github.com/paritytech/substrate" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate" }
+sp-block-builder = { git = "https://github.com/paritytech/substrate" }
+sc-basic-authorship = { git = "https://github.com/paritytech/substrate" }
+substrate-frame-rpc-system = { git = "https://github.com/paritytech/substrate" }
+pallet-transaction-payment-rpc = { git = "https://github.com/paritytech/substrate" }
 
 # These dependencies are used for runtime benchmarking
-frame-benchmarking = { version = "4.0.0-dev", path = "../../../frame/benchmarking" }
-frame-benchmarking-cli = { version = "4.0.0-dev", path = "../../../utils/frame/benchmarking-cli" }
+frame-benchmarking = { git = "https://github.com/paritytech/substrate" }
+frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate" }
 
-node-template-runtime = { version = "3.0.0", path = "../runtime" }
+node-template-runtime = { git = "https://github.com/paritytech/substrate" }
 
 [build-dependencies]
-substrate-build-script-utils = { version = "3.0.0", path = "../../../utils/build-script-utils" }
+substrate-build-script-utils = { git = "https://github.com/paritytech/substrate" }
 
 [features]
 default = []
