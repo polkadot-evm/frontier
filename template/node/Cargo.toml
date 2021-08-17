@@ -14,15 +14,15 @@ publish = false
 targets = ["x86_64-unknown-linux-gnu"]
 
 [[bin]]
-name = "node-template"
+name = "frontier-template"
 
 [dependencies]
 structopt = "0.3.8"
 
-sc-cli = { features = ["wasmtime"] }
+sc-cli = { git = "https://github.com/paritytech/substrate", features = ["wasmtime"] }
 sp-core = { git = "https://github.com/paritytech/substrate" }
-sc-executor = { features = ["wasmtime"] }
-sc-service = { features = ["wasmtime"] }
+sc-executor = { git = "https://github.com/paritytech/substrate", features = ["wasmtime"] }
+sc-service = { git = "https://github.com/paritytech/substrate", features = ["wasmtime"] }
 sc-telemetry = { git = "https://github.com/paritytech/substrate" }
 sc-keystore = { git = "https://github.com/paritytech/substrate" }
 sc-transaction-pool = { git = "https://github.com/paritytech/substrate" }
@@ -60,6 +60,8 @@ fp-rpc = { path = "../../primitives/rpc" }
 fc-rpc-core = { path = "../../client/rpc-core" }
 fc-db = { path = "../../client/db" }
 fc-mapping-sync = { path = "../../client/mapping-sync" }
+
+pallet-evm = { path = "../../frame/evm" }
 
 [build-dependencies]
 substrate-build-script-utils = { git = "https://github.com/paritytech/substrate" }
