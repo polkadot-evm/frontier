@@ -2008,6 +2008,7 @@ dependencies = [
  "futures 0.3.16",
  "jsonrpc-core",
  "jsonrpc-pubsub",
+ "log",
  "pallet-dynamic-fee",
  "pallet-ethereum",
  "pallet-evm",

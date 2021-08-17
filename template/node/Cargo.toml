@@ -21,6 +21,7 @@ structopt = "0.3.8"
 async-trait = "0.1"
 jsonrpc-pubsub = "18.0.0"
 futures = "0.3"
+log = "0.4.8"
 
 sc-cli = { git = "https://github.com/paritytech/substrate", features = ["wasmtime"] }
 sp-core = { git = "https://github.com/paritytech/substrate" }
@@ -60,7 +61,7 @@ frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate" }
 
 fc-consensus = { path = "../../client/consensus" }
 fp-consensus = { path = "../../primitives/consensus" }
-frontier-template-runtime = { path = "../runtime" }
+frontier-template-runtime = { path = "../runtime", default-features = false, features = ["std"] }
 fc-rpc = { path = "../../client/rpc" }
 fp-rpc = { path = "../../primitives/rpc" }
 fc-rpc-core = { path = "../../client/rpc-core" }

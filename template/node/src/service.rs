@@ -7,6 +7,8 @@ use fc_rpc::EthTask;
 use frontier_template_runtime::{self, opaque::Block, RuntimeApi, SLOT_DURATION};
 use sc_client_api::{ExecutorProvider, RemoteBackend};
 use sc_consensus_aura::{ImportQueueParams, SlotProportion, StartAuraParams};
+#[cfg(feature = "manual-seal")]
+use sc_consensus_manual_seal::{self as manual_seal};
 pub use sc_executor::NativeExecutor;
 use sc_finality_grandpa::SharedVoterState;
 use sc_keystore::LocalKeystore;
@@ -27,7 +29,7 @@ use sp_core::U256;
 use sp_inherents::{InherentData, InherentIdentifier};
 use async_trait::async_trait;
 use futures::StreamExt;
-use crate::cli::Cli;
+use crate::cli::{Cli, Sealing};
 
 // Our native executor instance.
 pub struct Executor;
@@ -184,6 +186,36 @@ pub fn new_partial(
 	let filter_pool: Option<FilterPool> = Some(Arc::new(Mutex::new(BTreeMap::new())));
 
 	let frontier_backend = open_frontier_backend(config)?;
+
+	#[cfg(feature = "manual-seal")] {
+		let sealing = cli.run.sealing;
+
+		let frontier_block_import =
+			FrontierBlockImport::new(client.clone(), client.clone(), frontier_backend.clone());
+
+		let import_queue = sc_consensus_manual_seal::import_queue(
+			Box::new(frontier_block_import.clone()),
+			&task_manager.spawn_essential_handle(),
+			config.prometheus_registry(),
+		);
+
+		Ok(sc_service::PartialComponents {
+			client,
+			backend,
+			task_manager,
+			import_queue,
+			keystore_container,
+			select_chain,
+			transaction_pool,
+			other: (
+				(frontier_block_import, sealing),
+				pending_transactions,
+				filter_pool,
+				frontier_backend,
+				telemetry,
+			),
+		})
+	}
 
 	#[cfg(feature = "aura")] {
 		let (grandpa_block_import, grandpa_link) = sc_finality_grandpa::block_import(
@@ -408,6 +440,76 @@ pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, Ser
 		EthTask::ethereum_schema_cache_task(Arc::clone(&client), Arc::clone(&frontier_backend)),
 	);
 
+	#[cfg(feature = "manual-seal")] {
+		let (block_import, sealing) = consensus_result;
+
+		if role.is_authority() {
+			let env = sc_basic_authorship::ProposerFactory::new(
+				task_manager.spawn_handle(),
+				client.clone(),
+				transaction_pool.clone(),
+				prometheus_registry.as_ref(),
+				telemetry.as_ref().map(|x| x.handle()),
+			);
+
+			let target_gas_price = cli.run.target_gas_price;
+
+			// Background authorship future
+			match sealing {
+				Sealing::Manual => {
+					let authorship_future =
+						manual_seal::run_manual_seal(manual_seal::ManualSealParams {
+							block_import,
+							env,
+							client,
+							pool: transaction_pool.clone(),
+							commands_stream,
+							select_chain,
+							consensus_data_provider: None,
+							create_inherent_data_providers: move |_, ()| async move {
+								let mock_timestamp = MockTimestampInherentDataProvider;
+
+								let dynamic_fee = pallet_dynamic_fee::InherentDataProvider(U256::from(
+									target_gas_price
+								));
+
+								Ok((mock_timestamp, dynamic_fee))
+							},
+						});
+					// we spawn the future on a background thread managed by service.
+					task_manager
+						.spawn_essential_handle()
+						.spawn_blocking("manual-seal", authorship_future);
+				}
+				Sealing::Instant => {
+					let authorship_future =
+						manual_seal::run_instant_seal(manual_seal::InstantSealParams {
+							block_import,
+							env,
+							client: client.clone(),
+							pool: transaction_pool.clone(),
+							select_chain,
+							consensus_data_provider: None,
+							create_inherent_data_providers: move |_, ()| async move {
+								let mock_timestamp = MockTimestampInherentDataProvider;
+
+								let dynamic_fee = pallet_dynamic_fee::InherentDataProvider(U256::from(
+									target_gas_price
+								));
+
+								Ok((mock_timestamp, dynamic_fee))
+							},
+						});
+					// we spawn the future on a background thread managed by service.
+					task_manager
+						.spawn_essential_handle()
+						.spawn_blocking("instant-seal", authorship_future);
+				}
+			};
+		}
+		log::info!("Manual Seal Ready");
+	}
+
 	#[cfg(feature = "aura")] {
 		let (block_import, grandpa_link) = consensus_result;
 
@@ -425,6 +527,7 @@ pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, Ser
 
 			let slot_duration = sc_consensus_aura::slot_duration(&*client)?;
 			let raw_slot_duration = slot_duration.slot_duration();
+			let target_gas_price = cli.run.target_gas_price;
 
 			let aura = sc_consensus_aura::start_aura::<AuraPair, _, _, _, _, _, _, _, _, _, _, _>(
 				StartAuraParams {
@@ -442,7 +545,11 @@ pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, Ser
 								raw_slot_duration,
 							);
 
-						Ok((timestamp, slot))
+						let dynamic_fee = pallet_dynamic_fee::InherentDataProvider(U256::from(
+							target_gas_price
+						));
+
+						Ok((timestamp, slot, dynamic_fee))
 					},
 					force_authoring,
 					backoff_authoring_blocks,
