@@ -1791,6 +1791,7 @@ dependencies = [
 name = "frontier-template-node"
 version = "0.0.0"
 dependencies = [
+ "async-trait",
  "fc-consensus",
  "fc-db",
  "fc-mapping-sync",

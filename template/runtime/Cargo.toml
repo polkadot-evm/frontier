@@ -1,7 +1,7 @@
 [package]
 name = "frontier-template-runtime"
 version = "0.0.0"
-authors = ["Parity Technologies <admin@parity.io>"]
+authors = ["Substrate DevHub <https://github.com/substrate-developer-hub>"]
 edition = "2018"
 license = "Unlicense"
 homepage = "https://substrate.dev"
