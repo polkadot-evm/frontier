@@ -18,6 +18,9 @@ name = "frontier-template"
 
 [dependencies]
 structopt = "0.3.8"
+async-trait = "0.1"
+jsonrpc-pubsub = "18.0.0"
+futures = "0.3"
 
 sc-cli = { git = "https://github.com/paritytech/substrate", features = ["wasmtime"] }
 sp-core = { git = "https://github.com/paritytech/substrate" }
@@ -31,11 +34,14 @@ sc-consensus-aura = { git = "https://github.com/paritytech/substrate" }
 sp-consensus-aura = { git = "https://github.com/paritytech/substrate" }
 sp-consensus = { git = "https://github.com/paritytech/substrate" }
 sc-consensus = { git = "https://github.com/paritytech/substrate" }
+sc-consensus-manual-seal = { git = "https://github.com/paritytech/substrate" }
+sc-network = { git = "https://github.com/paritytech/substrate" }
 sc-finality-grandpa = { git = "https://github.com/paritytech/substrate" }
 sp-finality-grandpa = { git = "https://github.com/paritytech/substrate" }
 sc-client-api = { git = "https://github.com/paritytech/substrate" }
 sp-runtime = { git = "https://github.com/paritytech/substrate" }
 sp-timestamp = { git = "https://github.com/paritytech/substrate" }
+sp-inherents = { git = "https://github.com/paritytech/substrate" }
 
 # These dependencies are used for the node template's RPCs
 jsonrpc-core = "18.0.0"
@@ -62,6 +68,8 @@ fc-db = { path = "../../client/db" }
 fc-mapping-sync = { path = "../../client/mapping-sync" }
 
 pallet-evm = { path = "../../frame/evm" }
+pallet-ethereum = { path = "../../frame/ethereum" }
+pallet-dynamic-fee = { path = "../../frame/dynamic-fee" }
 
 [build-dependencies]
 substrate-build-script-utils = { git = "https://github.com/paritytech/substrate" }
