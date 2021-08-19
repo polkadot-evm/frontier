@@ -23,6 +23,7 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use core::cell::RefCell;
 use codec::{Decode, Encode};
 use ethereum_types::{Bloom, BloomInput, H160, H256, H64, U256};
 use evm::ExitReason;
@@ -48,6 +49,7 @@ use sp_runtime::{
 	DispatchError,
 };
 use sp_std::prelude::*;
+use sp_std::vec::Vec;
 
 pub use ethereum::{Block, Log, Receipt, Transaction, TransactionAction, TransactionMessage};
 pub use fp_rpc::TransactionStatus;
@@ -227,7 +229,7 @@ impl<T: Config> frame_support::unsigned::ValidateUnsigned for Module<T> {
 				}
 			}
 
-			let origin = Self::recover_signer(&transaction).ok_or_else(|| {
+			let origin = Self::recover_signer(&transaction, SignerCacheStrategy::Use).ok_or_else(|| {
 				InvalidTransaction::Custom(TransactionValidationError::InvalidSignature as u8)
 			})?;
 
@@ -273,19 +275,112 @@ impl<T: Config> frame_support::unsigned::ValidateUnsigned for Module<T> {
 	}
 }
 
+struct SignerCache(RefCell<Vec<([u8;65], H160)>>);
+
+// We assume wasm is not multi-threaded.
+// This is the same assumption as the environmental crate.
+#[cfg(not(feature = "std"))]
+unsafe impl Sync for SignerCache {}
+
+#[cfg(feature = "std")]
+std::thread_local! {
+	static SIGNER_CACHE: SignerCache = SignerCache::new();
+}
+
+#[cfg(not(feature = "std"))]
+static SIGNER_CACHE: SignerCache = SignerCache::new();
+
+impl SignerCache {
+	const fn new() -> Self {
+		Self(RefCell::new(Vec::new()))
+	}
+	fn get_inner(&self, sig: &[u8; 65]) -> Option<H160> {
+		let vec = self.0.borrow();
+		match vec.binary_search_by(|entry| entry.0.cmp(&sig)) {
+			Ok(index) => vec.get(index).map(|entry| entry.1),
+			Err(_) => None,
+		}
+	}
+	fn set_inner(&self, sig: [u8; 65], signer: H160) {
+		let mut vec = self.0.borrow_mut();
+		match vec.binary_search_by(|entry| entry.0.cmp(&sig)) {
+			Ok(index) => vec.insert(index, (sig, signer)),
+			Err(index) => vec.insert(index, (sig, signer)),
+		};
+	}
+	fn remove_inner(&self, sig: &[u8; 65]) -> Option<H160> {
+		let mut vec = self.0.borrow_mut();
+		match vec.binary_search_by(|entry| entry.0.cmp(&sig)) {
+			Ok(index) => {
+				let signer = vec[index].1;
+				vec.remove(index);
+				Some(signer)
+			}
+			Err(_) => None,
+		}
+	}
+}
+
+#[cfg(feature = "std")]
+impl SignerCache {
+	fn get(sig: &[u8; 65]) -> Option<H160> {
+		SIGNER_CACHE.with(|cache| cache.get_inner(sig))
+	}
+	fn set(sig: [u8; 65], signer: H160) {
+		SIGNER_CACHE.with(|cache| cache.set_inner(sig, signer))
+	}
+	fn remove(sig: &[u8; 65]) -> Option<H160> {
+		SIGNER_CACHE.with(|cache| cache.remove_inner(sig))
+	}
+}
+#[cfg(not(feature = "std"))]
+impl SignerCache {
+	fn get(sig: &[u8; 65]) -> Option<H160> {
+		SIGNER_CACHE.get_inner(sig)
+	}
+	fn set(sig: [u8; 65], signer: H160) {
+		SIGNER_CACHE.set_inner(sig, signer)
+	}
+	fn remove(sig: &[u8; 65]) -> Option<H160> {
+		SIGNER_CACHE.remove_inner(sig)
+	}
+}
+
+#[derive(PartialEq, Eq)]
+pub enum SignerCacheStrategy {
+	NotUse,
+	Use,
+	UseAndPrune,
+}
+
 impl<T: Config> Module<T> {
-	fn recover_signer(transaction: &ethereum::Transaction) -> Option<H160> {
+	fn recover_signer(transaction: &ethereum::Transaction, cache_strategy: SignerCacheStrategy) -> Option<H160> {
 		let mut sig = [0u8; 65];
 		let mut msg = [0u8; 32];
 		sig[0..32].copy_from_slice(&transaction.signature.r()[..]);
 		sig[32..64].copy_from_slice(&transaction.signature.s()[..]);
 		sig[64] = transaction.signature.standard_v();
-		msg.copy_from_slice(&TransactionMessage::from(transaction.clone()).hash()[..]);
 
-		let pubkey = sp_io::crypto::secp256k1_ecdsa_recover(&sig, &msg).ok()?;
-		Some(H160::from(H256::from_slice(
-			Keccak256::digest(&pubkey).as_slice(),
-		)))
+		let signer_opt = match cache_strategy {
+			SignerCacheStrategy::NotUse => None,
+			SignerCacheStrategy::Use => SignerCache::get(&sig),
+			SignerCacheStrategy::UseAndPrune => SignerCache::remove(&sig),
+		};
+
+		if signer_opt.is_some() {
+			signer_opt
+		} else {
+			msg.copy_from_slice(&TransactionMessage::from(transaction.clone()).hash()[..]);
+
+			let pubkey = sp_io::crypto::secp256k1_ecdsa_recover(&sig, &msg).ok()?;
+			let signer = H160::from(H256::from_slice(
+				Keccak256::digest(&pubkey).as_slice(),
+			));
+			if cache_strategy == SignerCacheStrategy::Use {
+				SignerCache::set(sig, signer);
+			}
+			Some(signer)
+		}
 	}
 
 	fn store_block(post_log: bool, block_number: U256) {
@@ -355,7 +450,7 @@ impl<T: Config> Module<T> {
 		);
 
 		let source =
-			Self::recover_signer(&transaction).ok_or_else(|| Error::<T>::InvalidSignature)?;
+			Self::recover_signer(&transaction, SignerCacheStrategy::UseAndPrune).ok_or_else(|| Error::<T>::InvalidSignature)?;
 
 		let transaction_hash =
 			H256::from_slice(Keccak256::digest(&rlp::encode(&transaction)).as_slice());
