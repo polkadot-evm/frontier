@@ -10,7 +10,7 @@ export const DISPLAY_LOG = process.env.FRONTIER_LOG || false;
 export const FRONTIER_LOG = process.env.FRONTIER_LOG || "info";
 
 export const BINARY_PATH = `../target/debug/frontier-template-node`;
-export const SPAWNING_TIME = 30000;
+export const SPAWNING_TIME = 60000;
 
 export async function customRequest(web3: Web3, method: string, params: any[]) {
 	return new Promise<JsonRpcResponse>((resolve, reject) => {
