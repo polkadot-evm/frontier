@@ -35,7 +35,7 @@ describeWithFrontier("Frontier RPC (Subscription)", (context) => {
 		// @ts-ignore
 		const connected = context.web3.currentProvider.connected;
 		expect(connected).to.equal(true);
-	});
+	}).timeout(20000);
 
 	step("should subscribe", async function () {
 		subscription = context.web3.eth.subscribe("newBlockHeaders", function(error, result){});
@@ -53,7 +53,7 @@ describeWithFrontier("Frontier RPC (Subscription)", (context) => {
 		subscription.unsubscribe();
 		expect(connected).to.equal(true);
 		expect(subscriptionId).to.have.lengthOf(34);
-	});
+	}).timeout(20000);;
 
 	step("should get newHeads stream", async function (done) {
 		subscription = context.web3.eth.subscribe("newBlockHeaders", function(error, result){});
