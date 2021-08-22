@@ -8,7 +8,7 @@ export const WS_PORT = 19933;
 
 export const DISPLAY_LOG = process.env.FRONTIER_LOG || false;
 export const FRONTIER_LOG = process.env.FRONTIER_LOG || "info";
-export const FRONITER_BUILD = process.env.FRONTIER_BUILD || "release";
+export const FRONTIER_BUILD = process.env.FRONTIER_BUILD || "release";
 
 export const BINARY_PATH = `../target/${FRONTIER_BUILD}/frontier-template-node`;
 export const SPAWNING_TIME = 60000;

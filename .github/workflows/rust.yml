@@ -23,8 +23,6 @@ jobs:
         rustc +$WASM_BUILD_TOOLCHAIN --version
       env:
         WASM_BUILD_TOOLCHAIN: nightly-2021-07-06
-    - name: Build
-      run: cargo build --locked --verbose --all
     - name: Run tests
       run: cargo test --locked --verbose --all
   integration:
