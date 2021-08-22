@@ -43,6 +43,7 @@ export async function createAndFinalizeBlock(web3: Web3) {
 	if (!response.result) {
 		throw new Error(`Unexpected result: ${JSON.stringify(response)}`);
 	}
+	await new Promise(resolve => setTimeout(() => resolve(), 500));
 }
 
 export async function startFrontierNode(provider?: string): Promise<{ web3: Web3; binary: ChildProcess }> {
