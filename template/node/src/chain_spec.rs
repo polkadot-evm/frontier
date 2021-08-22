@@ -38,7 +38,7 @@ pub fn authority_keys_from_seed(s: &str) -> (AuraId, GrandpaId) {
 }
 
 pub fn development_config() -> Result<ChainSpec, String> {
-	let wasm_binary = WASM_BINARY.ok_or("Development wasm binary not available".to_string())?;
+	let wasm_binary = WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?;
 
 	Ok(ChainSpec::from_genesis(
 		// Name
@@ -77,7 +77,7 @@ pub fn development_config() -> Result<ChainSpec, String> {
 }
 
 pub fn local_testnet_config() -> Result<ChainSpec, String> {
-	let wasm_binary = WASM_BINARY.ok_or("Development wasm binary not available".to_string())?;
+	let wasm_binary = WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?;
 
 	Ok(ChainSpec::from_genesis(
 		// Name
@@ -135,12 +135,12 @@ fn testnet_genesis(
 	_enable_println: bool,
 ) -> GenesisConfig {
 	GenesisConfig {
-		frame_system: SystemConfig {
+		system: SystemConfig {
 			// Add Wasm runtime to storage.
 			code: wasm_binary.to_vec(),
 			changes_trie_config: Default::default(),
 		},
-		pallet_balances: BalancesConfig {
+		balances: BalancesConfig {
 			// Configure endowed accounts with initial balance of 1 << 60.
 			balances: endowed_accounts
 				.iter()
@@ -148,20 +148,20 @@ fn testnet_genesis(
 				.map(|k| (k, 1 << 60))
 				.collect(),
 		},
-		pallet_aura: AuraConfig {
+		aura: AuraConfig {
 			authorities: initial_authorities.iter().map(|x| (x.0.clone())).collect(),
 		},
-		pallet_grandpa: GrandpaConfig {
+		grandpa: GrandpaConfig {
 			authorities: initial_authorities
 				.iter()
 				.map(|x| (x.1.clone(), 1))
 				.collect(),
 		},
-		pallet_sudo: SudoConfig {
+		sudo: SudoConfig {
 			// Assign network admin rights.
 			key: root_key,
 		},
-		pallet_evm: EVMConfig {
+		evm: EVMConfig {
 			accounts: {
 				let mut map = BTreeMap::new();
 				map.insert(
@@ -195,7 +195,7 @@ fn testnet_genesis(
 				map
 			},
 		},
-		pallet_ethereum: EthereumConfig {},
-		pallet_dynamic_fee: Default::default(),
+		ethereum: EthereumConfig {},
+		dynamic_fee: Default::default(),
 	}
 }
