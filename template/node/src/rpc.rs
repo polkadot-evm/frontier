@@ -15,11 +15,11 @@ use sc_consensus_manual_seal::rpc::{ManualSeal, ManualSealApi};
 use sc_network::NetworkService;
 use sc_rpc::SubscriptionTaskExecutor;
 use sc_rpc_api::DenyUnsafe;
+use sc_service::TransactionPool;
 use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 use sp_runtime::traits::BlakeTwo256;
-use sp_transaction_pool::TransactionPool;
 use std::collections::BTreeMap;
 
 /// Light client extra dependencies.

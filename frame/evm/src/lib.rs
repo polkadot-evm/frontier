@@ -53,12 +53,14 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
+#[cfg(test)]
+mod mock;
 pub mod runner;
+#[cfg(test)]
 mod tests;
 
 #[cfg(any(test, feature = "runtime-benchmarks"))]
 pub mod benchmarks;
-mod mock;
 
 pub use crate::runner::Runner;
 pub use evm::{ExitError, ExitFatal, ExitReason, ExitRevert, ExitSucceed};
@@ -563,7 +565,7 @@ impl<T: Config> Module<T> {
 		}
 
 		AccountCodes::remove(address);
-		AccountStorages::remove_prefix(address);
+		AccountStorages::remove_prefix(address, None);
 	}
 
 	/// Create an account.
@@ -676,6 +678,7 @@ where
 			// merge the imbalance caused by paying the fees and refunding parts of it again.
 			let adjusted_paid = paid
 				.offset(refund_imbalance)
+				.same()
 				.map_err(|_| Error::<T>::BalanceLow)?;
 			OU::on_unbalanced(adjusted_paid);
 		}

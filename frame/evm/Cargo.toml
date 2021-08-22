@@ -1,6 +1,6 @@
 [package]
 name = "pallet-evm"
-version = "5.0.0"
+version = "6.0.0-dev"
 authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2018"
 license = "Apache-2.0"
@@ -15,21 +15,21 @@ targets = ["x86_64-unknown-linux-gnu"]
 [dependencies]
 serde = { version = "1.0.101", optional = true, features = ["derive"] }
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false }
-frame-support = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-frame-system = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-pallet-timestamp = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-pallet-balances = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sp-core = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sp-runtime = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sp-std = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sp-io = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-frame-benchmarking = { version = "3.0.0", git = "https://github.com/paritytech/substrate", branch = "frontier", default-features = false, optional = true }
-fp-evm = { version = "2.0.0", default-features = false, path = "../../primitives/evm" }
-primitive-types = { version = "0.9.0", default-features = false, features = ["rlp", "byteorder"] }
+frame-support = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
+frame-system = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
+pallet-timestamp = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
+pallet-balances = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
+sp-core = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
+sp-runtime = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
+sp-std = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
+sp-io = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
+frame-benchmarking = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", default-features = false, optional = true }
+fp-evm = { version = "3.0.0-dev", default-features = false, path = "../../primitives/evm" }
+primitive-types = { version = "0.10.0", default-features = false, features = ["rlp", "byteorder"] }
 rlp = { version = "0.5", default-features = false }
-evm = { version = "0.27.0", default-features = false, features = ["with-codec"] }
-evm-runtime = { version = "0.27.0", default-features = false }
-evm-gasometer = { version = "0.27.0", default-features = false }
+evm = { version = "0.30.0", default-features = false, features = ["with-codec"] }
+evm-runtime = { version = "0.30.0", default-features = false }
+evm-gasometer = { version = "0.30.0", default-features = false }
 sha3 = { version = "0.8", default-features = false }
 log = { version = "0.4", default-features = false }
 hex = { version = "0.4", default-features = false }

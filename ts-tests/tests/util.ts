@@ -8,9 +8,10 @@ export const WS_PORT = 19933;
 
 export const DISPLAY_LOG = process.env.FRONTIER_LOG || false;
 export const FRONTIER_LOG = process.env.FRONTIER_LOG || "info";
+export const FRONTIER_BUILD = process.env.FRONTIER_BUILD || "release";
 
-export const BINARY_PATH = `../target/debug/frontier-template-node`;
-export const SPAWNING_TIME = 30000;
+export const BINARY_PATH = `../target/${FRONTIER_BUILD}/frontier-template-node`;
+export const SPAWNING_TIME = 60000;
 
 export async function customRequest(web3: Web3, method: string, params: any[]) {
 	return new Promise<JsonRpcResponse>((resolve, reject) => {
@@ -38,6 +39,16 @@ export async function customRequest(web3: Web3, method: string, params: any[]) {
 // Create a block and finalize it.
 // It will include all previously executed transactions since the last finalized block.
 export async function createAndFinalizeBlock(web3: Web3) {
+	const response = await customRequest(web3, "engine_createBlock", [true, true, null]);
+	if (!response.result) {
+		throw new Error(`Unexpected result: ${JSON.stringify(response)}`);
+	}
+	await new Promise(resolve => setTimeout(() => resolve(), 500));
+}
+
+// Create a block and finalize it.
+// It will include all previously executed transactions since the last finalized block.
+export async function createAndFinalizeBlockNowait(web3: Web3) {
 	const response = await customRequest(web3, "engine_createBlock", [true, true, null]);
 	if (!response.result) {
 		throw new Error(`Unexpected result: ${JSON.stringify(response)}`);

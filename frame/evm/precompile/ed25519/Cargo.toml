@@ -9,10 +9,10 @@ repository = "https://github.com/paritytech/frontier/"
 description = "ED25519 precompiles for EVM pallet."
 
 [dependencies]
-sp-core = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sp-io = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-fp-evm = { version = "2.0.0-dev", default-features = false, path = "../../../../primitives/evm" }
-evm = { version = "0.27.0", default-features = false, features = ["with-codec"] }
+sp-core = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
+sp-io = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
+fp-evm = { version = "3.0.0-dev", default-features = false, path = "../../../../primitives/evm" }
+evm = { version = "0.30.0", default-features = false, features = ["with-codec"] }
 ed25519-dalek = { version = "1.0.0", features = ["alloc", "u64_backend"], default-features = false }
 
 [features]
