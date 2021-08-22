@@ -8,8 +8,9 @@ export const WS_PORT = 19933;
 
 export const DISPLAY_LOG = process.env.FRONTIER_LOG || false;
 export const FRONTIER_LOG = process.env.FRONTIER_LOG || "info";
+export const FRONITER_BUILD = process.env.FRONTIER_BUILD || "release";
 
-export const BINARY_PATH = `../target/debug/frontier-template-node`;
+export const BINARY_PATH = `../target/${FRONTIER_BUILD}/frontier-template-node`;
 export const SPAWNING_TIME = 60000;
 
 export async function customRequest(web3: Web3, method: string, params: any[]) {
