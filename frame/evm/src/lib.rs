@@ -92,9 +92,9 @@ pub use pallet::*;
 
 #[frame_support::pallet]
 pub mod pallet {
+	use super::*;
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
-	use super::*;
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
@@ -195,14 +195,16 @@ pub mod pallet {
 			match info.exit_reason {
 				ExitReason::Succeed(_) => {
 					Pallet::<T>::deposit_event(Event::<T>::Executed(target));
-				},
+				}
 				_ => {
 					Pallet::<T>::deposit_event(Event::<T>::ExecutedFailed(target));
-				},
+				}
 			};
 
 			Ok(PostDispatchInfo {
-				actual_weight: Some(T::GasWeightMapping::gas_to_weight(info.used_gas.unique_saturated_into())),
+				actual_weight: Some(T::GasWeightMapping::gas_to_weight(
+					info.used_gas.unique_saturated_into(),
+				)),
 				pays_fee: Pays::No,
 			})
 		}
@@ -238,18 +240,20 @@ pub mod pallet {
 					..
 				} => {
 					Pallet::<T>::deposit_event(Event::<T>::Created(create_address));
-				},
+				}
 				CreateInfo {
 					exit_reason: _,
 					value: create_address,
 					..
 				} => {
 					Pallet::<T>::deposit_event(Event::<T>::CreatedFailed(create_address));
-				},
+				}
 			}
 
 			Ok(PostDispatchInfo {
-				actual_weight: Some(T::GasWeightMapping::gas_to_weight(info.used_gas.unique_saturated_into())),
+				actual_weight: Some(T::GasWeightMapping::gas_to_weight(
+					info.used_gas.unique_saturated_into(),
+				)),
 				pays_fee: Pays::No,
 			})
 		}
@@ -286,18 +290,20 @@ pub mod pallet {
 					..
 				} => {
 					Pallet::<T>::deposit_event(Event::<T>::Created(create_address));
-				},
+				}
 				CreateInfo {
 					exit_reason: _,
 					value: create_address,
 					..
 				} => {
 					Pallet::<T>::deposit_event(Event::<T>::CreatedFailed(create_address));
-				},
+				}
 			}
 
 			Ok(PostDispatchInfo {
-				actual_weight: Some(T::GasWeightMapping::gas_to_weight(info.used_gas.unique_saturated_into())),
+				actual_weight: Some(T::GasWeightMapping::gas_to_weight(
+					info.used_gas.unique_saturated_into(),
+				)),
 				pays_fee: Pays::No,
 			})
 		}
@@ -385,15 +391,8 @@ pub mod pallet {
 
 	#[pallet::storage]
 	#[pallet::getter(fn account_storages)]
-	pub type AccountStorages<T: Config> = StorageDoubleMap<
-		_,
-		Blake2_128Concat,
-		H160,
-		Blake2_128Concat,
-		H256,
-		H256,
-		ValueQuery,
-	>;
+	pub type AccountStorages<T: Config> =
+		StorageDoubleMap<_, Blake2_128Concat, H160, Blake2_128Concat, H256, H256, ValueQuery>;
 }
 
 /// Type alias for currency balance.
