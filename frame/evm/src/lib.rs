@@ -74,8 +74,8 @@ use codec::{Decode, Encode};
 use evm::Config as EvmConfig;
 use frame_support::dispatch::DispatchResultWithPostInfo;
 use frame_support::traits::{
-	Currency, ExistenceRequirement, FindAuthor, Get, Imbalance, OnUnbalanced, WithdrawReasons,
-	tokens::fungible::Inspect,
+	tokens::fungible::Inspect, Currency, ExistenceRequirement, FindAuthor, Get, Imbalance,
+	OnUnbalanced, WithdrawReasons,
 };
 use frame_support::weights::{Pays, PostDispatchInfo, Weight};
 use frame_system::RawOrigin;

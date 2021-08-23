@@ -21,7 +21,7 @@ use super::*;
 use crate::mock::*;
 
 use frame_support::assert_ok;
-use frame_support::traits::{GenesisBuild, WithdrawReasons, LockIdentifier, LockableCurrency};
+use frame_support::traits::{GenesisBuild, LockIdentifier, LockableCurrency, WithdrawReasons};
 use std::{collections::BTreeMap, str::FromStr};
 
 type Balances = pallet_balances::Pallet<Test>;
@@ -136,12 +136,7 @@ fn reducible_balance() {
 		let lock_id: LockIdentifier = *b"te/stlok";
 		// Reserve some funds.
 		let to_lock = 1000;
-		Balances::set_lock(
-			lock_id,
-			&account_id,
-			to_lock,
-			WithdrawReasons::RESERVE
-		);
+		Balances::set_lock(lock_id, &account_id, to_lock, WithdrawReasons::RESERVE);
 		// Reducible is, as currently configured in `account_basic`, (balance - lock + existential).
 		let reducible_balance = EVM::account_basic(&evm_addr).balance;
 		assert_eq!(reducible_balance, (genesis_balance - to_lock + existential));
