@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    name: 'Run tests'
+    name: 'Run Rust tests'
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -22,13 +22,27 @@ jobs:
         cargo +$WASM_BUILD_TOOLCHAIN --version
         rustc +$WASM_BUILD_TOOLCHAIN --version
       env:
-        WASM_BUILD_TOOLCHAIN: nightly-2020-08-29
-    - name: Build
-      run: cargo build --locked --verbose --all
+        WASM_BUILD_TOOLCHAIN: nightly-2021-07-06
     - name: Run tests
       run: cargo test --locked --verbose --all
+  integration:
+    name: 'Run integration tests'
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Submodules
+      run: git submodule update --init --recursive
+    - name: Init
+      run: |
+        scripts/init.sh
+        cargo --version
+        rustc --version
+        cargo +$WASM_BUILD_TOOLCHAIN --version
+        rustc +$WASM_BUILD_TOOLCHAIN --version
+      env:
+        WASM_BUILD_TOOLCHAIN: nightly-2021-07-06
     - name: Build manual seal client
-      run: cd template/node && cargo build --locked --verbose --no-default-features --features manual-seal
+      run: cd template/node && cargo build --release --locked --verbose --no-default-features --features manual-seal
     - name: Use Node.js 10
       uses: actions/setup-node@v1
       with:
@@ -52,6 +66,6 @@ jobs:
         cargo +$WASM_BUILD_TOOLCHAIN --version
         rustc +$WASM_BUILD_TOOLCHAIN --version
       env:
-        WASM_BUILD_TOOLCHAIN: nightly-2020-08-29
+        WASM_BUILD_TOOLCHAIN: nightly-2021-07-06
     - name: Rustfmt
       run: cargo fmt --all -- --check

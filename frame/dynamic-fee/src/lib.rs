@@ -18,17 +18,17 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use async_trait::async_trait;
 use codec::{Decode, Encode};
 use frame_support::{
 	decl_module, decl_storage,
+	inherent::{IsFatalError, ProvideInherent},
 	traits::Get,
 	weights::{DispatchClass, Weight},
 };
 use frame_system::ensure_none;
 use sp_core::U256;
-#[cfg(feature = "std")]
-use sp_inherents::ProvideInherentData;
-use sp_inherents::{InherentData, InherentIdentifier, IsFatalError, ProvideInherent};
+use sp_inherents::{InherentData, InherentIdentifier};
 use sp_runtime::RuntimeDebug;
 use sp_std::{
 	cmp::{max, min},
@@ -90,52 +90,6 @@ impl<T: Config> pallet_evm::FeeCalculator for Module<T> {
 	}
 }
 
-#[derive(Encode, Decode, RuntimeDebug)]
-pub enum InherentError {}
-
-impl IsFatalError for InherentError {
-	fn is_fatal_error(&self) -> bool {
-		match *self {}
-	}
-}
-
-impl InherentError {
-	/// Try to create an instance ouf of the given identifier and data.
-	#[cfg(feature = "std")]
-	pub fn try_from(id: &InherentIdentifier, data: &[u8]) -> Option<Self> {
-		if id == &INHERENT_IDENTIFIER {
-			<InherentError as codec::Decode>::decode(&mut &data[..]).ok()
-		} else {
-			None
-		}
-	}
-}
-
-pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"dynfee0_";
-
-pub type InherentType = U256;
-
-#[cfg(feature = "std")]
-pub struct InherentDataProvider(pub InherentType);
-
-#[cfg(feature = "std")]
-impl ProvideInherentData for InherentDataProvider {
-	fn inherent_identifier(&self) -> &'static InherentIdentifier {
-		&INHERENT_IDENTIFIER
-	}
-
-	fn provide_inherent_data(
-		&self,
-		inherent_data: &mut InherentData,
-	) -> Result<(), sp_inherents::Error> {
-		inherent_data.put_data(INHERENT_IDENTIFIER, &self.0)
-	}
-
-	fn error_to_string(&self, error: &[u8]) -> Option<String> {
-		InherentError::try_from(&INHERENT_IDENTIFIER, error).map(|e| format!("{:?}", e))
-	}
-}
-
 impl<T: Config> ProvideInherent for Module<T> {
 	type Call = Call<T>;
 	type Error = InherentError;
@@ -149,6 +103,46 @@ impl<T: Config> ProvideInherent for Module<T> {
 
 	fn check_inherent(_call: &Self::Call, _data: &InherentData) -> result::Result<(), Self::Error> {
 		Ok(())
+	}
+
+	fn is_inherent(call: &Self::Call) -> bool {
+		matches!(call, Call::note_min_gas_price_target(_))
+	}
+}
+
+#[derive(Encode, Decode, RuntimeDebug)]
+pub enum InherentError {}
+
+impl IsFatalError for InherentError {
+	fn is_fatal_error(&self) -> bool {
+		match *self {}
+	}
+}
+
+pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"dynfee0_";
+
+pub type InherentType = U256;
+
+#[cfg(feature = "std")]
+pub struct InherentDataProvider(pub InherentType);
+
+#[cfg(feature = "std")]
+#[async_trait]
+impl sp_inherents::InherentDataProvider for InherentDataProvider {
+	fn provide_inherent_data(
+		&self,
+		inherent_data: &mut InherentData,
+	) -> Result<(), sp_inherents::Error> {
+		inherent_data.put_data(INHERENT_IDENTIFIER, &self.0)
+	}
+
+	async fn try_handle_error(
+		&self,
+		_identifier: &InherentIdentifier,
+		_error: &[u8],
+	) -> Option<Result<(), sp_inherents::Error>> {
+		// The pallet never reports error.
+		None
 	}
 }
 
@@ -206,6 +200,7 @@ mod tests {
 		type OnKilledAccount = ();
 		type SystemWeightInfo = ();
 		type SS58Prefix = ();
+		type OnSetCode = ();
 	}
 
 	frame_support::parameter_types! {
@@ -231,9 +226,9 @@ mod tests {
 			NodeBlock = Block,
 			UncheckedExtrinsic = UncheckedExtrinsic,
 		{
-			System: frame_system::{Module, Call, Config, Storage, Event<T>},
-			Timestamp: pallet_timestamp::{Module, Call, Storage},
-			DynamicFee: pallet_dynamic_fee::{Module, Call, Storage, Inherent},
+			System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+			Timestamp: pallet_timestamp::{Pallet, Call, Storage},
+			DynamicFee: pallet_dynamic_fee::{Pallet, Call, Storage, Inherent},
 		}
 	);
 

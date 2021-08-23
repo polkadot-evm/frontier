@@ -35,7 +35,7 @@ describeWithFrontier("Frontier RPC (Subscription)", (context) => {
 		// @ts-ignore
 		const connected = context.web3.currentProvider.connected;
 		expect(connected).to.equal(true);
-	});
+	}).timeout(20000);
 
 	step("should subscribe", async function () {
 		subscription = context.web3.eth.subscribe("newBlockHeaders", function(error, result){});
@@ -53,19 +53,22 @@ describeWithFrontier("Frontier RPC (Subscription)", (context) => {
 		subscription.unsubscribe();
 		expect(connected).to.equal(true);
 		expect(subscriptionId).to.have.lengthOf(34);
-	});
+	}).timeout(20000);;
 
 	step("should get newHeads stream", async function (done) {
 		subscription = context.web3.eth.subscribe("newBlockHeaders", function(error, result){});
 		let data = null;
-		await new Promise((resolve) => {
-			createAndFinalizeBlock(context.web3);
-			subscription.on("data", function (d: any) {
-				data = d;
-				resolve();
-			});
+		let dataResolve = null;
+		let dataPromise = new Promise((resolve) => { dataResolve = resolve; });
+		subscription.on("data", function (d: any) {
+			data = d;
+			subscription.unsubscribe();
+			dataResolve();
 		});
-		subscription.unsubscribe();
+
+		await createAndFinalizeBlock(context.web3);
+		await dataPromise;
+
 		expect(data).to.include({
 			author: '0x0000000000000000000000000000000000000000',
 			difficulty: '0',
@@ -81,8 +84,9 @@ describeWithFrontier("Frontier RPC (Subscription)", (context) => {
 			"0x0000000000000000000000000000000000000000000000000000000000000000",
 			"0x0000000000000000",
 		]);
-		setTimeout(done,10000);
-	}).timeout(20000);
+
+		done()
+	}).timeout(40000);
 
 	step("should get newPendingTransactions stream", async function (done) {
 		subscription = context.web3.eth.subscribe("pendingTransactions", function(error, result){});
@@ -102,12 +106,12 @@ describeWithFrontier("Frontier RPC (Subscription)", (context) => {
 				resolve();
 			});
 		});
-		subscription.unsubscribe();
 
+		subscription.unsubscribe();
 		expect(data).to.be.not.null;
 		expect(tx["transactionHash"]).to.be.eq(data);
-		await createAndFinalizeBlock(context.web3);
-		setTimeout(done,10000);
+
+		done()
 	}).timeout(20000);
 
 	step("should subscribe to all logs", async function (done) {
@@ -121,16 +125,18 @@ describeWithFrontier("Frontier RPC (Subscription)", (context) => {
 
 		const tx = await sendTransaction(context);
 		let data = null;
-		await new Promise((resolve) => {
-			createAndFinalizeBlock(context.web3);
-			subscription.on("data", function (d: any) {
-				data = d;
-				logs_generated += 1;
-				resolve();
-			});
+		let dataResolve = null;
+		let dataPromise = new Promise((resolve) => { dataResolve = resolve; });
+		subscription.on("data", function (d: any) {
+			data = d;
+			logs_generated += 1;
+			dataResolve();
 		});
-		subscription.unsubscribe();
 
+		await createAndFinalizeBlock(context.web3);
+		await dataPromise;
+
+		subscription.unsubscribe();
 		const block = await context.web3.eth.getBlock("latest");
 		expect(data).to.include({
 			blockHash: block.hash,
@@ -142,34 +148,7 @@ describeWithFrontier("Frontier RPC (Subscription)", (context) => {
 			transactionIndex: 0,
 			transactionLogIndex: '0x0'
 		});
-		setTimeout(done,10000);
-	}).timeout(20000);
-
-	step("should subscribe to logs by address", async function (done) {
-		subscription = context.web3.eth.subscribe("logs", {
-			address: "0x42e2EE7Ba8975c473157634Ac2AF4098190fc741"
-		}, function(error, result){});
-
-		await new Promise((resolve) => {
-			subscription.on("connected", function (d: any) {
-				resolve();
-			});
-		});
-
-		const tx = await sendTransaction(context);
-		let data = null;
-		await new Promise((resolve) => {
-			createAndFinalizeBlock(context.web3);
-			subscription.on("data", function (d: any) {
-				data = d;
-				logs_generated += 1;
-				resolve();
-			});
-		});
-		subscription.unsubscribe();
-
-		expect(data).to.not.be.null;
-		setTimeout(done,10000);
+		done();
 	}).timeout(20000);
 
 	step("should subscribe to logs by multiple addresses", async function (done) {
@@ -190,18 +169,20 @@ describeWithFrontier("Frontier RPC (Subscription)", (context) => {
 
 		const tx = await sendTransaction(context);
 		let data = null;
-		await new Promise((resolve) => {
-			createAndFinalizeBlock(context.web3);
-			subscription.on("data", function (d: any) {
-				data = d;
-				logs_generated += 1;
-				resolve();
-			});
+		let dataResolve = null;
+		let dataPromise = new Promise((resolve) => { dataResolve = resolve; });
+		subscription.on("data", function (d: any) {
+			data = d;
+			logs_generated += 1;
+			dataResolve();
 		});
-		subscription.unsubscribe();
 
+		await createAndFinalizeBlock(context.web3);
+		await dataPromise;
+
+		subscription.unsubscribe();
 		expect(data).to.not.be.null;
-		setTimeout(done,10000);
+		done();
 	}).timeout(20000);
 
 	step("should subscribe to logs by topic", async function (done) {
@@ -217,18 +198,21 @@ describeWithFrontier("Frontier RPC (Subscription)", (context) => {
 
 		const tx = await sendTransaction(context);
 		let data = null;
-		await new Promise((resolve) => {
-			createAndFinalizeBlock(context.web3);
-			subscription.on("data", function (d: any) {
-				data = d;
-				logs_generated += 1;
-				resolve();
-			});
-		});
-		subscription.unsubscribe();
+		let dataResolve = null;
+		let dataPromise = new Promise((resolve) => { dataResolve = resolve; });
 
+		subscription.on("data", function (d: any) {
+			data = d;
+			logs_generated += 1;
+			dataResolve();
+		});
+
+		await createAndFinalizeBlock(context.web3);
+		await dataPromise;
+
+		subscription.unsubscribe();
 		expect(data).to.not.be.null;
-		setTimeout(done,10000);
+		done();
 	}).timeout(20000);
 
 	step("should get past events #1: by topic", async function (done) {
@@ -241,16 +225,13 @@ describeWithFrontier("Frontier RPC (Subscription)", (context) => {
 		await new Promise((resolve) => {
 			subscription.on("data", function (d: any) {
 				data.push(d);
-				setTimeout(function() {
-					if(data.length == logs_generated)
-						resolve();
-				},2000);
+				resolve();
 			});
 		});
 		subscription.unsubscribe();
 
 		expect(data).to.not.be.empty;
-		setTimeout(done,10000);
+		done();
 	}).timeout(20000);
 
 	step("should get past events #2: by address", async function (done) {
@@ -263,16 +244,13 @@ describeWithFrontier("Frontier RPC (Subscription)", (context) => {
 		await new Promise((resolve) => {
 			subscription.on("data", function (d: any) {
 				data.push(d);
-				setTimeout(function() {
-					if(data.length == 1)
-						resolve();
-				},2000);
+				resolve();
 			});
 		});
 		subscription.unsubscribe();
 
 		expect(data).to.not.be.empty;
-		setTimeout(done,10000);
+		done();
 	}).timeout(20000);
 
 	step("should get past events #3: by address + topic", async function (done) {
@@ -286,19 +264,16 @@ describeWithFrontier("Frontier RPC (Subscription)", (context) => {
 		await new Promise((resolve) => {
 			subscription.on("data", function (d: any) {
 				data.push(d);
-				setTimeout(function() {
-					if(data.length == 1)
-						resolve();
-				},2000);
+				resolve();
 			});
 		});
 		subscription.unsubscribe();
 
 		expect(data).to.not.be.empty;
-		setTimeout(done,10000);
+		done();
 	}).timeout(20000);
 
-	step("should get past events #3: multiple addresses", async function (done) {
+	step("should get past events #4: multiple addresses", async function (done) {
 		subscription = context.web3.eth.subscribe("logs", {
 			fromBlock: "0x0",
 			topics: ["0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"],
@@ -315,16 +290,13 @@ describeWithFrontier("Frontier RPC (Subscription)", (context) => {
 		await new Promise((resolve) => {
 			subscription.on("data", function (d: any) {
 				data.push(d);
-				setTimeout(function() {
-					if(data.length == logs_generated)
-						resolve();
-				},2000);
+				resolve();
 			});
 		});
 		subscription.unsubscribe();
 
 		expect(data).to.not.be.empty;
-		setTimeout(done,10000);
+		done();
 	}).timeout(20000);
 
 	step("should support topic wildcards", async function (done) {
@@ -343,18 +315,21 @@ describeWithFrontier("Frontier RPC (Subscription)", (context) => {
 
 		const tx = await sendTransaction(context);
 		let data = null;
-		await new Promise((resolve) => {
-			createAndFinalizeBlock(context.web3);
-			subscription.on("data", function (d: any) {
-				data = d;
-				logs_generated += 1;
-				resolve();
-			});
-		});
-		subscription.unsubscribe();
+		let dataResolve = null;
+		let dataPromise = new Promise((resolve) => { dataResolve = resolve; });
 
+		subscription.on("data", function (d: any) {
+			data = d;
+			logs_generated += 1;
+			dataResolve();
+		});
+
+		await createAndFinalizeBlock(context.web3);
+		await dataPromise;
+
+		subscription.unsubscribe();
 		expect(data).to.not.be.null;
-		setTimeout(done,10000);
+		done();
 	}).timeout(20000);
 
 	step("should support single values wrapped around a sequence", async function (done) {
@@ -373,18 +348,21 @@ describeWithFrontier("Frontier RPC (Subscription)", (context) => {
 
 		const tx = await sendTransaction(context);
 		let data = null;
-		await new Promise((resolve) => {
-			createAndFinalizeBlock(context.web3);
-			subscription.on("data", function (d: any) {
-				data = d;
-				logs_generated += 1;
-				resolve();
-			});
-		});
-		subscription.unsubscribe();
+		let dataResolve = null;
+		let dataPromise = new Promise((resolve) => { dataResolve = resolve; });
 
+		subscription.on("data", function (d: any) {
+			data = d;
+			logs_generated += 1;
+			dataResolve();
+		});
+
+		await createAndFinalizeBlock(context.web3);
+		await dataPromise;
+
+		subscription.unsubscribe();
 		expect(data).to.not.be.null;
-		setTimeout(done,10000);
+		done();
 	}).timeout(20000);
 
 	step("should support topic conditional parameters", async function (done) {
@@ -406,18 +384,21 @@ describeWithFrontier("Frontier RPC (Subscription)", (context) => {
 
 		const tx = await sendTransaction(context);
 		let data = null;
-		await new Promise((resolve) => {
-			createAndFinalizeBlock(context.web3);
-			subscription.on("data", function (d: any) {
-				data = d;
-				logs_generated += 1;
-				resolve();
-			});
-		});
-		subscription.unsubscribe();
+		let dataResolve = null;
+		let dataPromise = new Promise((resolve) => { dataResolve = resolve; });
 
+		subscription.on("data", function (d: any) {
+			data = d;
+			logs_generated += 1;
+			dataResolve();
+		});
+
+		await createAndFinalizeBlock(context.web3);
+		await dataPromise;
+
+		subscription.unsubscribe();
 		expect(data).to.not.be.null;
-		setTimeout(done,10000);
+		done();
 	}).timeout(20000);
 
 	step("should support multiple topic conditional parameters", async function (done) {
@@ -443,18 +424,20 @@ describeWithFrontier("Frontier RPC (Subscription)", (context) => {
 
 		const tx = await sendTransaction(context);
 		let data = null;
-		await new Promise((resolve) => {
-			createAndFinalizeBlock(context.web3);
-			subscription.on("data", function (d: any) {
-				data = d;
-				logs_generated += 1;
-				resolve();
-			});
+		let dataResolve = null;
+		let dataPromise = new Promise((resolve) => { dataResolve = resolve; });
+		subscription.on("data", function (d: any) {
+			data = d;
+			logs_generated += 1;
+			dataResolve();
 		});
-		subscription.unsubscribe();
 
+		await createAndFinalizeBlock(context.web3);
+		await dataPromise;
+
+		subscription.unsubscribe();
 		expect(data).to.not.be.null;
-		setTimeout(done,10000);
+		done();
 	}).timeout(20000);
 
 	step("should combine topic wildcards and conditional parameters", async function (done) {
@@ -477,17 +460,19 @@ describeWithFrontier("Frontier RPC (Subscription)", (context) => {
 
 		const tx = await sendTransaction(context);
 		let data = null;
-		await new Promise((resolve) => {
-			createAndFinalizeBlock(context.web3);
-			subscription.on("data", function (d: any) {
-				data = d;
-				logs_generated += 1;
-				resolve();
-			});
+		let dataResolve = null;
+		let dataPromise = new Promise((resolve) => { dataResolve = resolve; });
+		subscription.on("data", function (d: any) {
+			data = d;
+			logs_generated += 1;
+			dataResolve();
 		});
-		subscription.unsubscribe();
 
+		await createAndFinalizeBlock(context.web3);
+		await dataPromise;
+
+		subscription.unsubscribe();
 		expect(data).to.not.be.null;
-		setTimeout(done,10000);
+		done();
 	}).timeout(20000);
 }, "ws");

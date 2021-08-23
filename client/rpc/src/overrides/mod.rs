@@ -15,7 +15,7 @@
 // along with Substrate.  If not, see <http://www.gnu.org/licenses/>.
 use std::collections::BTreeMap;
 
-use ethereum::Block as EthereumBlock;
+use ethereum::BlockV0 as EthereumBlock;
 use ethereum_types::{H160, H256, U256};
 use fp_rpc::EthereumRuntimeRPCApi;
 use fp_rpc::TransactionStatus;

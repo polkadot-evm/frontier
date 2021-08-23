@@ -1,7 +1,7 @@
 import { expect } from "chai";
 
 import Test from "../build/contracts/Test.json"
-import { createAndFinalizeBlock, customRequest, describeWithFrontier } from "./util";
+import { createAndFinalizeBlock, createAndFinalizeBlockNowait, customRequest, describeWithFrontier } from "./util";
 import { AbiItem } from "web3-utils";
 
 describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
@@ -70,7 +70,7 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 		for(let i = number; i <= last; i++) {
 			let hash = (await context.web3.eth.getBlock("latest")).hash;
 			expect(await contract.methods.blockHash(i).call()).to.eq(hash);
-			await createAndFinalizeBlock(context.web3);
+			await createAndFinalizeBlockNowait(context.web3);
 		}
 		// should not store more than 256 hashes
 		expect(await contract.methods.blockHash(number).call()).to.eq(

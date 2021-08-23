@@ -15,7 +15,7 @@
 // along with Substrate.  If not, see <http://www.gnu.org/licenses/>.
 
 use codec::Decode;
-use ethereum::Block as EthereumBlock;
+use ethereum::BlockV0 as EthereumBlock;
 use ethereum_types::{H160, H256, U256};
 use fp_rpc::TransactionStatus;
 use sc_client_api::backend::{AuxStore, Backend, StateBackend, StorageProvider};
@@ -101,7 +101,7 @@ where
 
 	/// Return the current block.
 	fn current_block(&self, block: &BlockId<Block>) -> Option<EthereumBlock> {
-		self.query_storage::<ethereum::Block>(
+		self.query_storage::<ethereum::BlockV0>(
 			block,
 			&StorageKey(storage_prefix_build(b"Ethereum", b"CurrentBlock")),
 		)
