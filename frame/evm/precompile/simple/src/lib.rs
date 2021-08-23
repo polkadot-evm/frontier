@@ -21,8 +21,8 @@ extern crate alloc;
 
 use alloc::vec::Vec;
 use core::cmp::min;
+use evm::{ExitError, ExitSucceed};
 use fp_evm::LinearCostPrecompile;
-use evm::{ExitSucceed, ExitError};
 
 /// The identity precompile.
 pub struct Identity;
@@ -31,10 +31,7 @@ impl LinearCostPrecompile for Identity {
 	const BASE: u64 = 15;
 	const WORD: u64 = 3;
 
-	fn execute(
-		input: &[u8],
-		_: u64,
-	) -> core::result::Result<(ExitSucceed, Vec<u8>), ExitError> {
+	fn execute(input: &[u8], _: u64) -> core::result::Result<(ExitSucceed, Vec<u8>), ExitError> {
 		Ok((ExitSucceed::Returned, input.to_vec()))
 	}
 }
@@ -46,10 +43,7 @@ impl LinearCostPrecompile for ECRecover {
 	const BASE: u64 = 3000;
 	const WORD: u64 = 0;
 
-	fn execute(
-		i: &[u8],
-		_: u64,
-	) -> core::result::Result<(ExitSucceed, Vec<u8>), ExitError> {
+	fn execute(i: &[u8], _: u64) -> core::result::Result<(ExitSucceed, Vec<u8>), ExitError> {
 		let mut input = [0u8; 128];
 		input[..min(i.len(), 128)].copy_from_slice(&i[..min(i.len(), 128)]);
 
@@ -66,10 +60,8 @@ impl LinearCostPrecompile for ECRecover {
 				let mut address = sp_io::hashing::keccak_256(&pubkey);
 				address[0..12].copy_from_slice(&[0u8; 12]);
 				address.to_vec()
-			},
-			Err(_) => {
-				[0u8; 0].to_vec()
 			}
+			Err(_) => [0u8; 0].to_vec(),
 		};
 
 		Ok((ExitSucceed::Returned, result))
@@ -119,10 +111,7 @@ impl LinearCostPrecompile for ECRecoverPublicKey {
 	const BASE: u64 = 3000;
 	const WORD: u64 = 0;
 
-	fn execute(
-		i: &[u8],
-		_: u64,
-	) -> core::result::Result<(ExitSucceed, Vec<u8>), ExitError> {
+	fn execute(i: &[u8], _: u64) -> core::result::Result<(ExitSucceed, Vec<u8>), ExitError> {
 		let mut input = [0u8; 128];
 		input[..min(i.len(), 128)].copy_from_slice(&i[..min(i.len(), 128)]);
 

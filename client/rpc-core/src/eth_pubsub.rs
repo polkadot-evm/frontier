@@ -43,6 +43,10 @@ pub trait EthPubSubApi {
 	);
 
 	/// Unsubscribe from existing Eth subscription.
-	#[pubsub(subscription = "eth_subscription", unsubscribe, name = "eth_unsubscribe")]
+	#[pubsub(
+		subscription = "eth_subscription",
+		unsubscribe,
+		name = "eth_unsubscribe"
+	)]
 	fn unsubscribe(&self, _: Option<Self::Metadata>, _: SubscriptionId) -> Result<bool>;
 }
