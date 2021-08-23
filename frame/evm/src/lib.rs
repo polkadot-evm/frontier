@@ -74,7 +74,8 @@ use codec::{Decode, Encode};
 use evm::Config as EvmConfig;
 use frame_support::dispatch::DispatchResultWithPostInfo;
 use frame_support::traits::{
-	Currency, ExistenceRequirement, FindAuthor, Get, Imbalance, OnUnbalanced, WithdrawReasons,
+	tokens::fungible::Inspect, Currency, ExistenceRequirement, FindAuthor, Get, Imbalance,
+	OnUnbalanced, WithdrawReasons,
 };
 use frame_support::weights::{Pays, PostDispatchInfo, Weight};
 use frame_system::RawOrigin;
@@ -118,7 +119,7 @@ pub mod pallet {
 		/// Mapping from address to account id.
 		type AddressMapping: AddressMapping<Self::AccountId>;
 		/// Currency type for withdraw and balance storage.
-		type Currency: Currency<Self::AccountId>;
+		type Currency: Currency<Self::AccountId> + Inspect<Self::AccountId>;
 
 		/// The overarching event type.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
@@ -621,7 +622,8 @@ impl<T: Config> Pallet<T> {
 		let account_id = T::AddressMapping::into_account_id(*address);
 
 		let nonce = frame_system::Pallet::<T>::account_nonce(&account_id);
-		let balance = T::Currency::free_balance(&account_id);
+		// keepalive `true` takes into account ExistentialDeposit as part of what's considered liquid balance.
+		let balance = T::Currency::reducible_balance(&account_id, true);
 
 		Account {
 			nonce: U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(nonce)),
