@@ -28,7 +28,7 @@ pub use eth_pubsub::{EthPubSubApi, EthPubSubApiServer, HexEncodedIdProvider};
 pub use overrides::{OverrideHandle, RuntimeApiStorageOverride, SchemaV1Override, StorageOverride};
 
 use ethereum::{
-	Transaction as EthereumTransaction, TransactionMessage as EthereumTransactionMessage,
+	LegacyTransactionMessage as EthereumTransactionMessage, TransactionV0 as EthereumTransaction,
 };
 use ethereum_types::{H160, H256};
 use evm::ExitError;
@@ -265,9 +265,9 @@ pub trait EthSigner: Send + Sync {
 	/// Sign a transaction message using the given account in message.
 	fn sign(
 		&self,
-		message: ethereum::TransactionMessage,
+		message: ethereum::LegacyTransactionMessage,
 		address: &H160,
-	) -> Result<ethereum::Transaction, Error>;
+	) -> Result<ethereum::TransactionV0, Error>;
 }
 
 pub struct EthDevSigner {
@@ -303,9 +303,9 @@ impl EthSigner for EthDevSigner {
 
 	fn sign(
 		&self,
-		message: ethereum::TransactionMessage,
+		message: ethereum::LegacyTransactionMessage,
 		address: &H160,
-	) -> Result<ethereum::Transaction, Error> {
+	) -> Result<ethereum::TransactionV0, Error> {
 		let mut transaction = None;
 
 		for secret in &self.keys {
@@ -329,7 +329,7 @@ impl EthSigner for EthDevSigner {
 				let r = H256::from_slice(&rs[0..32]);
 				let s = H256::from_slice(&rs[32..64]);
 
-				transaction = Some(ethereum::Transaction {
+				transaction = Some(ethereum::TransactionV0 {
 					nonce: message.nonce,
 					gas_price: message.gas_price,
 					gas_limit: message.gas_limit,

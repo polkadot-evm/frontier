@@ -17,16 +17,19 @@
 
 //! Consensus extension module tests for BABE consensus.
 
-use super::*;
+use crate::mock::*;
+use crate::{
+	CallOrCreateInfo, Error, Transaction, TransactionAction, ValidTransactionBuilder, H160, H256,
+	U256,
+};
 use ethereum::TransactionSignature;
 use frame_support::{assert_err, assert_noop, assert_ok, unsigned::ValidateUnsigned};
-use mock::*;
 use rustc_hex::{FromHex, ToHex};
 use sp_runtime::transaction_validity::{InvalidTransaction, TransactionSource};
 use std::str::FromStr;
 
 // This ERC-20 contract mints the maximum amount of tokens to the contract creator.
-// pragma solidity ^0.5.0;
+// pragma solidity ^0.5.0;`
 // import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v2.5.1/contracts/token/ERC20/ERC20.sol";
 // contract MyToken is ERC20 {
 //	 constructor() public { _mint(msg.sender, 2**256 - 1); }
@@ -65,7 +68,7 @@ fn transaction_should_increment_nonce() {
 			t.action,
 			None,
 		));
-		assert_eq!(Evm::account_basic(&alice.address).nonce, U256::from(1));
+		assert_eq!(EVM::account_basic(&alice.address).nonce, U256::from(1));
 	});
 }
 
@@ -79,7 +82,10 @@ fn transaction_without_enough_gas_should_not_work() {
 		transaction.gas_price = U256::from(11_000_000);
 
 		assert_err!(
-			Ethereum::validate_unsigned(TransactionSource::External, &Call::transact(transaction)),
+			Ethereum::validate_unsigned(
+				TransactionSource::External,
+				&crate::Call::transact(transaction)
+			),
 			InvalidTransaction::Payment
 		);
 	});
@@ -98,7 +104,10 @@ fn transaction_with_invalid_nonce_should_not_work() {
 		let signed = transaction.sign(&alice.private_key);
 
 		assert_eq!(
-			Ethereum::validate_unsigned(TransactionSource::External, &Call::transact(signed)),
+			Ethereum::validate_unsigned(
+				TransactionSource::External,
+				&crate::Call::transact(signed)
+			),
 			ValidTransactionBuilder::default()
 				.and_provides((alice.address, U256::from(1)))
 				.priority(1u64)
@@ -125,7 +134,10 @@ fn transaction_with_invalid_nonce_should_not_work() {
 		let signed2 = transaction.sign(&alice.private_key);
 
 		assert_err!(
-			Ethereum::validate_unsigned(TransactionSource::External, &Call::transact(signed2)),
+			Ethereum::validate_unsigned(
+				TransactionSource::External,
+				&crate::Call::transact(signed2)
+			),
 			InvalidTransaction::Stale
 		);
 	});
@@ -152,7 +164,7 @@ fn contract_constructor_should_get_executed() {
 			None,
 		));
 		assert_eq!(
-			Evm::account_storages(erc20_address, alice_storage_address),
+			EVM::account_storages(erc20_address, alice_storage_address),
 			H256::from_str("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")
 				.unwrap()
 		)
@@ -173,7 +185,7 @@ fn source_should_be_derived_from_signature() {
 
 		// We verify the transaction happened with alice account.
 		assert_eq!(
-			Evm::account_storages(erc20_address, alice_storage_address),
+			EVM::account_storages(erc20_address, alice_storage_address),
 			H256::from_str("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")
 				.unwrap()
 		)
@@ -219,7 +231,7 @@ fn contract_should_be_created_at_given_address() {
 			t.action,
 			None,
 		));
-		assert_ne!(Evm::account_codes(erc20_address).len(), 0);
+		assert_ne!(EVM::account_codes(erc20_address).len(), 0);
 	});
 }
 

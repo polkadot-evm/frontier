@@ -17,46 +17,42 @@
 
 //! Test utilities
 
-use super::*;
-use crate::{Config, IntermediateStateRoot, Module};
+use crate::{IntermediateStateRoot, Keccak256, Transaction};
 use ethereum::{TransactionAction, TransactionSignature};
-use frame_support::{impl_outer_origin, parameter_types, traits::FindAuthor, ConsensusEngineId};
+use frame_support::{parameter_types, traits::FindAuthor, ConsensusEngineId, PalletId};
 use pallet_evm::{AddressMapping, EnsureAddressTruncated, FeeCalculator};
 use rlp::*;
+use sha3::Digest;
 use sp_core::{H160, H256, U256};
 use sp_runtime::AccountId32;
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
-	ModuleId,
 };
 
-impl_outer_origin! {
-	pub enum Origin for Test where system = frame_system {}
+type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
+type Block = frame_system::mocking::MockBlock<Test>;
+
+frame_support::construct_runtime! {
+	pub enum Test where
+		Block = Block,
+		NodeBlock = Block,
+		UncheckedExtrinsic = UncheckedExtrinsic,
+	{
+		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
+		Timestamp: pallet_timestamp::{Pallet, Call, Storage},
+		EVM: pallet_evm::{Pallet, Call, Storage, Config, Event<T>},
+		Ethereum: crate::{Pallet, Call, Storage, Event},
+	}
 }
 
-pub struct PalletInfo;
-
-impl frame_support::traits::PalletInfo for PalletInfo {
-	fn index<P: 'static>() -> Option<usize> {
-		return Some(0);
-	}
-
-	fn name<P: 'static>() -> Option<&'static str> {
-		return Some("TestName");
-	}
-}
-
-// For testing the pallet, we construct most of a mock runtime. This means
-// first constructing a configuration type (`Test`) which `impl`s each of the
-// configuration traits of pallets we want to use.
-#[derive(Clone, Eq, PartialEq)]
-pub struct Test;
 parameter_types! {
 	pub const BlockHashCount: u64 = 250;
 	pub BlockWeights: frame_system::limits::BlockWeights =
 		frame_system::limits::BlockWeights::simple_max(1024);
 }
+
 impl frame_system::Config for Test {
 	type BaseCallFilter = ();
 	type BlockWeights = ();
@@ -66,12 +62,12 @@ impl frame_system::Config for Test {
 	type Index = u64;
 	type BlockNumber = u64;
 	type Hash = H256;
-	type Call = ();
+	type Call = Call;
 	type Hashing = BlakeTwo256;
 	type AccountId = AccountId32;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type Header = Header;
-	type Event = ();
+	type Event = Event;
 	type BlockHashCount = BlockHashCount;
 	type Version = ();
 	type PalletInfo = PalletInfo;
@@ -80,6 +76,7 @@ impl frame_system::Config for Test {
 	type OnKilledAccount = ();
 	type SystemWeightInfo = ();
 	type SS58Prefix = ();
+	type OnSetCode = ();
 }
 
 parameter_types! {
@@ -92,11 +89,13 @@ parameter_types! {
 impl pallet_balances::Config for Test {
 	type MaxLocks = MaxLocks;
 	type Balance = u64;
-	type Event = ();
+	type Event = Event;
 	type DustRemoval = ();
 	type ExistentialDeposit = ExistentialDeposit;
 	type AccountStore = System;
 	type WeightInfo = ();
+	type MaxReserves = ();
+	type ReserveIdentifier = ();
 }
 
 parameter_types! {
@@ -130,7 +129,7 @@ impl FindAuthor<H160> for FindAuthorTruncated {
 parameter_types! {
 	pub const TransactionByteFee: u64 = 1;
 	pub const ChainId: u64 = 42;
-	pub const EVMModuleId: ModuleId = ModuleId(*b"py/evmpa");
+	pub const EVMModuleId: PalletId = PalletId(*b"py/evmpa");
 	pub const BlockGasLimit: U256 = U256::MAX;
 }
 
@@ -151,7 +150,7 @@ impl pallet_evm::Config for Test {
 	type WithdrawOrigin = EnsureAddressTruncated;
 	type AddressMapping = HashedAddressMapping;
 	type Currency = Balances;
-	type Event = ();
+	type Event = Event;
 	type Precompiles = ();
 	type Runner = pallet_evm::runner::stack::Runner<Self>;
 	type ChainId = ChainId;
@@ -161,15 +160,10 @@ impl pallet_evm::Config for Test {
 	type BlockHashMapping = crate::EthereumBlockHashMapping;
 }
 
-impl Config for Test {
-	type Event = ();
+impl crate::Config for Test {
+	type Event = Event;
 	type StateRoot = IntermediateStateRoot;
 }
-
-pub type System = frame_system::Module<Test>;
-pub type Balances = pallet_balances::Module<Test>;
-pub type Ethereum = Module<Test>;
-pub type Evm = pallet_evm::Module<Test>;
 
 pub struct AccountInfo {
 	pub address: H160,

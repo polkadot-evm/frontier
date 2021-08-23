@@ -51,7 +51,10 @@ use sp_runtime::{
 use sp_std::prelude::*;
 use sp_std::vec::Vec;
 
-pub use ethereum::{Block, Log, Receipt, Transaction, TransactionAction, TransactionMessage};
+pub use ethereum::{
+	BlockV0 as Block, LegacyTransactionMessage, Log, Receipt, TransactionAction,
+	TransactionV0 as Transaction,
+};
 pub use fp_rpc::TransactionStatus;
 
 #[cfg(all(feature = "std", test))]
@@ -107,10 +110,10 @@ pub trait Config:
 decl_storage! {
 	trait Store for Module<T: Config> as Ethereum {
 		/// Current building block's transactions and receipts.
-		Pending: Vec<(ethereum::Transaction, TransactionStatus, ethereum::Receipt)>;
+		Pending: Vec<(Transaction, TransactionStatus, ethereum::Receipt)>;
 
 		/// The current Ethereum block.
-		CurrentBlock: Option<ethereum::Block>;
+		CurrentBlock: Option<ethereum::BlockV0>;
 		/// The current Ethereum receipts.
 		CurrentReceipts: Option<Vec<ethereum::Receipt>>;
 		/// The current transaction statuses.
@@ -155,7 +158,7 @@ decl_module! {
 
 		/// Transact an Ethereum transaction.
 		#[weight = <T as pallet_evm::Config>::GasWeightMapping::gas_to_weight(transaction.gas_limit.unique_saturated_into())]
-		fn transact(origin, transaction: ethereum::Transaction) -> DispatchResultWithPostInfo {
+		fn transact(origin, transaction: Transaction) -> DispatchResultWithPostInfo {
 			ensure_none(origin)?;
 
 			Self::do_transact(transaction)
@@ -354,7 +357,7 @@ pub enum SignerCacheStrategy {
 }
 
 impl<T: Config> Module<T> {
-	fn recover_signer(transaction: &ethereum::Transaction, cache_strategy: SignerCacheStrategy) -> Option<H160> {
+	fn recover_signer(transaction: &Transaction, cache_strategy: SignerCacheStrategy) -> Option<H160> {
 		let mut sig = [0u8; 65];
 		let mut msg = [0u8; 32];
 		sig[0..32].copy_from_slice(&transaction.signature.r()[..]);
@@ -370,7 +373,7 @@ impl<T: Config> Module<T> {
 		if signer_opt.is_some() {
 			signer_opt
 		} else {
-			msg.copy_from_slice(&TransactionMessage::from(transaction.clone()).hash()[..]);
+			msg.copy_from_slice(&LegacyTransactionMessage::from(transaction.clone()).hash()[..]);
 
 			let pubkey = sp_io::crypto::secp256k1_ecdsa_recover(&sig, &msg).ok()?;
 			let signer = H160::from(H256::from_slice(
@@ -443,7 +446,7 @@ impl<T: Config> Module<T> {
 		}
 	}
 
-	fn do_transact(transaction: ethereum::Transaction) -> DispatchResultWithPostInfo {
+	fn do_transact(transaction: Transaction) -> DispatchResultWithPostInfo {
 		ensure!(
 			fp_consensus::find_pre_log(&frame_system::Module::<T>::digest()).is_err(),
 			Error::<T>::PreLogExists,
@@ -539,7 +542,7 @@ impl<T: Config> Module<T> {
 	}
 
 	/// Get current block.
-	pub fn current_block() -> Option<ethereum::Block> {
+	pub fn current_block() -> Option<ethereum::BlockV0> {
 		CurrentBlock::get()
 	}
 

@@ -25,10 +25,10 @@ use sc_client_api::{
 	client::BlockchainEvents,
 };
 use sc_rpc::Metadata;
+use sc_transaction_pool_api::TransactionPool;
 use sp_api::{BlockId, ProvideRuntimeApi};
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 use sp_runtime::traits::{BlakeTwo256, Block as BlockT, UniqueSaturatedInto};
-use sp_transaction_pool::TransactionPool;
 use std::collections::BTreeMap;
 use std::{iter, marker::PhantomData, sync::Arc};
 
@@ -46,13 +46,10 @@ use jsonrpc_pubsub::{
 use sha3::{Digest, Keccak256};
 
 pub use fc_rpc_core::EthPubSubApiServer;
-use futures::{StreamExt as _, TryStreamExt as _};
+use futures::{FutureExt as _, SinkExt as _, StreamExt as _};
 
 use fp_rpc::EthereumRuntimeRPCApi;
-use jsonrpc_core::{
-	futures::{Future, Sink},
-	Result as JsonRpcResult,
-};
+use jsonrpc_core::Result as JsonRpcResult;
 
 use sc_network::{ExHashT, NetworkService};
 
@@ -121,7 +118,7 @@ impl SubscriptionResult {
 	pub fn new() -> Self {
 		SubscriptionResult {}
 	}
-	pub fn new_heads(&self, block: ethereum::Block) -> PubSubResult {
+	pub fn new_heads(&self, block: ethereum::BlockV0) -> PubSubResult {
 		PubSubResult::Header(Box::new(Rich {
 			inner: Header {
 				hash: Some(H256::from_slice(
@@ -152,7 +149,7 @@ impl SubscriptionResult {
 	}
 	pub fn logs(
 		&self,
-		block: ethereum::Block,
+		block: ethereum::BlockV0,
 		receipts: Vec<ethereum::Receipt>,
 		params: &FilteredParams,
 	) -> Vec<Log> {
@@ -196,7 +193,7 @@ impl SubscriptionResult {
 		&self,
 		block_hash: H256,
 		ethereum_log: &ethereum::Log,
-		block: &ethereum::Block,
+		block: &ethereum::BlockV0,
 		params: &FilteredParams,
 	) -> bool {
 		let log = Log {
@@ -297,10 +294,11 @@ where
 							return Ok::<Result<PubSubResult, jsonrpc_core::types::error::Error>, ()>(
 								Ok(PubSubResult::Log(Box::new(x))),
 							);
-						})
-						.compat();
-					sink.sink_map_err(|e| warn!("Error sending notifications: {:?}", e))
-						.send_all(stream)
+						});
+					stream
+						.forward(
+							sink.sink_map_err(|e| warn!("Error sending notifications: {:?}", e)),
+						)
 						.map(|_| ())
 				});
 			}
@@ -330,15 +328,17 @@ where
 						})
 						.map(|block| {
 							return Ok::<_, ()>(Ok(SubscriptionResult::new().new_heads(block)));
-						})
-						.compat();
-					sink.sink_map_err(|e| warn!("Error sending notifications: {:?}", e))
-						.send_all(stream)
+						});
+					stream
+						.forward(
+							sink.sink_map_err(|e| warn!("Error sending notifications: {:?}", e)),
+						)
 						.map(|_| ())
 				});
 			}
 			Kind::NewPendingTransactions => {
-				use sp_transaction_pool::InPoolTransaction;
+				use sc_transaction_pool_api::InPoolTransaction;
+
 				self.subscriptions.add(subscriber, move |sink| {
 					let stream = pool
 						.import_notification_stream()
@@ -369,10 +369,11 @@ where
 									Keccak256::digest(&rlp::encode(&transaction)).as_slice(),
 								))),
 							);
-						})
-						.compat();
-					sink.sink_map_err(|e| warn!("Error sending notifications: {:?}", e))
-						.send_all(stream)
+						});
+					stream
+						.forward(
+							sink.sink_map_err(|e| warn!("Error sending notifications: {:?}", e)),
+						)
 						.map(|_| ())
 				});
 			}
@@ -396,10 +397,11 @@ where
 									syncing: syncing,
 								})),
 							);
-						})
-						.compat();
-					sink.sink_map_err(|e| warn!("Error sending notifications: {:?}", e))
-						.send_all(stream)
+						});
+					stream
+						.forward(
+							sink.sink_map_err(|e| warn!("Error sending notifications: {:?}", e)),
+						)
 						.map(|_| ())
 				});
 			}
