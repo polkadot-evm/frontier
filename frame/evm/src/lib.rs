@@ -77,7 +77,6 @@ use frame_support::traits::{
 	Currency, ExistenceRequirement, FindAuthor, Get, Imbalance, OnUnbalanced, WithdrawReasons,
 };
 use frame_support::weights::{Pays, PostDispatchInfo, Weight};
-use frame_support::{decl_error, decl_event, decl_module, decl_storage};
 use frame_system::RawOrigin;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
@@ -122,7 +121,7 @@ pub mod pallet {
 		type Currency: Currency<Self::AccountId>;
 
 		/// The overarching event type.
-		type Event: From<Event<Self>> + Into<<Self as frame_system::Config>::Event>;
+		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 		/// Precompiles associated with this EVM engine.
 		type Precompiles: PrecompileSet;
 		/// Chain ID of EVM.
@@ -153,7 +152,11 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {
 		/// Withdraw balance from EVM into currency/balances pallet.
 		#[pallet::weight(0)]
-		fn withdraw(origin: OriginFor<T>, address: H160, value: BalanceOf<T>) -> DispatchResult {
+		pub fn withdraw(
+			origin: OriginFor<T>,
+			address: H160,
+			value: BalanceOf<T>,
+		) -> DispatchResult {
 			let destination = T::WithdrawOrigin::ensure_address_origin(&address, origin)?;
 			let address_account_id = T::AddressMapping::into_account_id(address);
 
@@ -169,7 +172,7 @@ pub mod pallet {
 
 		/// Issue an EVM call operation. This is similar to a message call transaction in Ethereum.
 		#[pallet::weight(T::GasWeightMapping::gas_to_weight(*gas_limit))]
-		pub(super) fn call(
+		pub fn call(
 			origin: OriginFor<T>,
 			source: H160,
 			target: H160,
@@ -212,7 +215,7 @@ pub mod pallet {
 		/// Issue an EVM create operation. This is similar to a contract creation transaction in
 		/// Ethereum.
 		#[pallet::weight(T::GasWeightMapping::gas_to_weight(*gas_limit))]
-		fn create(
+		pub fn create(
 			origin: OriginFor<T>,
 			source: H160,
 			init: Vec<u8>,
@@ -260,7 +263,7 @@ pub mod pallet {
 
 		/// Issue an EVM create2 operation.
 		#[pallet::weight(T::GasWeightMapping::gas_to_weight(*gas_limit))]
-		fn create2(
+		pub fn create2(
 			origin: OriginFor<T>,
 			source: H160,
 			init: Vec<u8>,
@@ -537,7 +540,7 @@ pub struct SubstrateBlockHashMapping<T>(sp_std::marker::PhantomData<T>);
 impl<T: Config> BlockHashMapping for SubstrateBlockHashMapping<T> {
 	fn block_hash(number: u32) -> H256 {
 		let number = T::BlockNumber::from(number);
-		H256::from_slice(frame_system::Module::<T>::block_hash(number).as_ref())
+		H256::from_slice(frame_system::Pallet::<T>::block_hash(number).as_ref())
 	}
 }
 
@@ -596,7 +599,7 @@ impl<T: Config> Pallet<T> {
 		}
 
 		<AccountCodes<T>>::remove(address);
-		AccountStorages::remove_prefix(address, None);
+		<AccountStorages<T>>::remove_prefix(address, None);
 	}
 
 	/// Create an account.
@@ -628,7 +631,7 @@ impl<T: Config> Pallet<T> {
 
 	/// Get the author using the FindAuthor trait.
 	pub fn find_author() -> H160 {
-		let digest = <frame_system::Module<T>>::digest();
+		let digest = <frame_system::Pallet<T>>::digest();
 		let pre_runtime_digests = digest.logs.iter().filter_map(|d| d.as_pre_runtime());
 
 		T::FindAuthor::find_author(pre_runtime_digests).unwrap_or_default()

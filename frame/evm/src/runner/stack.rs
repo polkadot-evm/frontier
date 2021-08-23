@@ -20,7 +20,7 @@
 use crate::runner::Runner as RunnerT;
 use crate::{
 	AccountCodes, AccountStorages, AddressMapping, BlockHashMapping, Config, Error, Event,
-	FeeCalculator, Module, OnChargeEVMTransaction, PrecompileSet,
+	FeeCalculator, OnChargeEVMTransaction, Pallet, PrecompileSet,
 };
 use evm::backend::Backend as BackendT;
 use evm::executor::{StackExecutor, StackState as StackStateT, StackSubstateMetadata};
@@ -28,7 +28,6 @@ use evm::{ExitError, ExitReason, Transfer};
 use fp_evm::{CallInfo, CreateInfo, ExecutionInfo, Log, Vicinity};
 use frame_support::{
 	ensure,
-	storage::{StorageDoubleMap, StorageMap},
 	traits::{Currency, ExistenceRequirement, Get},
 };
 use sha3::{Digest, Keccak256};
@@ -85,7 +84,7 @@ impl<T: Config> Runner<T> {
 		let total_payment = value
 			.checked_add(total_fee)
 			.ok_or(Error::<T>::PaymentOverflow)?;
-		let source_account = Module::<T>::account_basic(&source);
+		let source_account = Pallet::<T>::account_basic(&source);
 		ensure!(
 			source_account.balance >= total_payment,
 			Error::<T>::BalanceLow
@@ -124,7 +123,7 @@ impl<T: Config> Runner<T> {
 				"Deleting account at {:?}",
 				address
 			);
-			Module::<T>::remove_account(&address)
+			Pallet::<T>::remove_account(&address)
 		}
 
 		for log in &state.substate.logs {
@@ -137,7 +136,7 @@ impl<T: Config> Runner<T> {
 				log.data.len(),
 				log.data
 			);
-			Module::<T>::deposit_event(Event::<T>::Log(Log {
+			Pallet::<T>::deposit_event(Event::<T>::Log(Log {
 				address: log.address,
 				topics: log.topics.clone(),
 				data: log.data.clone(),
@@ -361,16 +360,16 @@ impl<'vicinity, 'config, T: Config> BackendT for SubstrateStackState<'vicinity, 
 	}
 
 	fn block_number(&self) -> U256 {
-		let number: u128 = frame_system::Module::<T>::block_number().unique_saturated_into();
+		let number: u128 = frame_system::Pallet::<T>::block_number().unique_saturated_into();
 		U256::from(number)
 	}
 
 	fn block_coinbase(&self) -> H160 {
-		Module::<T>::find_author()
+		Pallet::<T>::find_author()
 	}
 
 	fn block_timestamp(&self) -> U256 {
-		let now: u128 = pallet_timestamp::Module::<T>::get().unique_saturated_into();
+		let now: u128 = pallet_timestamp::Pallet::<T>::get().unique_saturated_into();
 		U256::from(now / 1000)
 	}
 
@@ -391,7 +390,7 @@ impl<'vicinity, 'config, T: Config> BackendT for SubstrateStackState<'vicinity, 
 	}
 
 	fn basic(&self, address: H160) -> evm::backend::Basic {
-		let account = Module::<T>::account_basic(&address);
+		let account = Pallet::<T>::account_basic(&address);
 
 		evm::backend::Basic {
 			balance: account.balance,
@@ -400,11 +399,11 @@ impl<'vicinity, 'config, T: Config> BackendT for SubstrateStackState<'vicinity, 
 	}
 
 	fn code(&self, address: H160) -> Vec<u8> {
-		AccountCodes::get(&address)
+		<AccountCodes<T>>::get(&address)
 	}
 
 	fn storage(&self, address: H160, index: H256) -> H256 {
-		AccountStorages::get(address, index)
+		<AccountStorages<T>>::get(address, index)
 	}
 
 	fn original_storage(&self, _address: H160, _index: H256) -> Option<H256> {
@@ -440,7 +439,7 @@ impl<'vicinity, 'config, T: Config> StackStateT<'config>
 	}
 
 	fn is_empty(&self, address: H160) -> bool {
-		Module::<T>::is_account_empty(&address)
+		Pallet::<T>::is_account_empty(&address)
 	}
 
 	fn deleted(&self, address: H160) -> bool {
@@ -449,7 +448,7 @@ impl<'vicinity, 'config, T: Config> StackStateT<'config>
 
 	fn inc_nonce(&mut self, address: H160) {
 		let account_id = T::AddressMapping::into_account_id(address);
-		frame_system::Module::<T>::inc_account_nonce(&account_id);
+		frame_system::Pallet::<T>::inc_account_nonce(&account_id);
 	}
 
 	fn set_storage(&mut self, address: H160, index: H256, value: H256) {
@@ -460,7 +459,7 @@ impl<'vicinity, 'config, T: Config> StackStateT<'config>
 				address,
 				index,
 			);
-			AccountStorages::remove(address, index);
+			<AccountStorages<T>>::remove(address, index);
 		} else {
 			log::debug!(
 				target: "evm",
@@ -469,12 +468,12 @@ impl<'vicinity, 'config, T: Config> StackStateT<'config>
 				index,
 				value,
 			);
-			AccountStorages::insert(address, index, value);
+			<AccountStorages<T>>::insert(address, index, value);
 		}
 	}
 
 	fn reset_storage(&mut self, address: H160) {
-		AccountStorages::remove_prefix(address, None);
+		<AccountStorages<T>>::remove_prefix(address, None);
 	}
 
 	fn log(&mut self, address: H160, topics: Vec<H256>, data: Vec<u8>) {
@@ -492,7 +491,7 @@ impl<'vicinity, 'config, T: Config> StackStateT<'config>
 			code.len(),
 			address
 		);
-		Module::<T>::create_account(address, code);
+		Pallet::<T>::create_account(address, code);
 	}
 
 	fn transfer(&mut self, transfer: Transfer) -> Result<(), ExitError> {
