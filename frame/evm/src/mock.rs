@@ -16,38 +16,32 @@
 // limitations under the License.
 
 //! Test mock for unit tests and benchmarking
-use sp_std::prelude::*;
-use crate::{Config, EnsureAddressNever, EnsureAddressRoot,
-	FeeCalculator, Event, IdentityAddressMapping};
-use frame_support::{
-	impl_outer_origin, parameter_types, ConsensusEngineId,
-	traits::FindAuthor
-};
+use crate::{EnsureAddressNever, EnsureAddressRoot, FeeCalculator, IdentityAddressMapping};
+use frame_support::{parameter_types, traits::FindAuthor, ConsensusEngineId};
+use sp_core::{H160, H256, U256};
 use sp_runtime::{
 	generic,
 	traits::{BlakeTwo256, IdentityLookup},
 };
-use sp_core::{U256, H256, H160};
+use sp_std::prelude::*;
 use sp_std::{boxed::Box, str::FromStr};
 
-impl_outer_origin! {
-	pub enum Origin for Test where system = frame_system {}
+type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
+type Block = frame_system::mocking::MockBlock<Test>;
+
+frame_support::construct_runtime! {
+	pub enum Test where
+		Block = Block,
+		NodeBlock = Block,
+		UncheckedExtrinsic = UncheckedExtrinsic,
+	{
+		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
+		Timestamp: pallet_timestamp::{Pallet, Call, Storage},
+		EVM: crate::{Pallet, Call, Storage, Config, Event<T>},
+	}
 }
 
-pub struct PalletInfo;
-
-impl frame_support::traits::PalletInfo for PalletInfo {
-	fn index<P: 'static>() -> Option<usize> {
-		return Some(0)
-	}
-
-	fn name<P: 'static>() -> Option<&'static str> {
-		return Some("TestName")
-	}
-}
-
-#[derive(Clone, Eq, PartialEq)]
-pub struct Test;
 parameter_types! {
 	pub const BlockHashCount: u64 = 250;
 	pub BlockWeights: frame_system::limits::BlockWeights =
@@ -62,12 +56,12 @@ impl frame_system::Config for Test {
 	type Index = u64;
 	type BlockNumber = u64;
 	type Hash = H256;
-	type Call = ();
+	type Call = Call;
 	type Hashing = BlakeTwo256;
 	type AccountId = H160;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type Header = generic::Header<u64, BlakeTwo256>;
-	type Event = ();
+	type Event = Event;
 	type BlockHashCount = BlockHashCount;
 	type Version = ();
 	type PalletInfo = PalletInfo;
@@ -76,6 +70,7 @@ impl frame_system::Config for Test {
 	type OnKilledAccount = ();
 	type SystemWeightInfo = ();
 	type SS58Prefix = ();
+	type OnSetCode = ();
 }
 
 parameter_types! {
@@ -85,10 +80,12 @@ impl pallet_balances::Config for Test {
 	type MaxLocks = ();
 	type Balance = u64;
 	type DustRemoval = ();
-	type Event = ();
+	type Event = Event;
 	type ExistentialDeposit = ExistentialDeposit;
 	type AccountStore = System;
 	type WeightInfo = ();
+	type MaxReserves = ();
+	type ReserveIdentifier = ();
 }
 
 parameter_types! {
@@ -111,18 +108,15 @@ impl FeeCalculator for FixedGasPrice {
 
 pub struct FindAuthorTruncated;
 impl FindAuthor<H160> for FindAuthorTruncated {
-	fn find_author<'a, I>(_digests: I) -> Option<H160> where
-		I: 'a + IntoIterator<Item=(ConsensusEngineId, &'a [u8])>
+	fn find_author<'a, I>(_digests: I) -> Option<H160>
+	where
+		I: 'a + IntoIterator<Item = (ConsensusEngineId, &'a [u8])>,
 	{
 		Some(H160::from_str("1234500000000000000000000000000000000000").unwrap())
 	}
 }
 
-
-type System = frame_system::Module<Test>;
-type Balances = pallet_balances::Module<Test>;
-
-impl Config for Test {
+impl crate::Config for Test {
 	type FeeCalculator = FixedGasPrice;
 	type GasWeightMapping = ();
 
@@ -133,7 +127,7 @@ impl Config for Test {
 	type Currency = Balances;
 	type Runner = crate::runner::stack::Runner<Self>;
 
-	type Event = Event<Test>;
+	type Event = Event;
 	type Precompiles = ();
 	type ChainId = ();
 	type BlockGasLimit = ();
@@ -141,4 +135,3 @@ impl Config for Test {
 	type BlockHashMapping = crate::SubstrateBlockHashMapping<Self>;
 	type FindAuthor = FindAuthorTruncated;
 }
-

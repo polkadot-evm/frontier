@@ -17,49 +17,42 @@
 
 //! Test utilities
 
-use super::*;
-use crate::{Module, Config, IntermediateStateRoot};
+use crate::{IntermediateStateRoot, Keccak256, Transaction};
 use ethereum::{TransactionAction, TransactionSignature};
-use frame_support::{
-	impl_outer_origin, parameter_types, ConsensusEngineId,
-	traits::FindAuthor
-};
-use pallet_evm::{FeeCalculator, AddressMapping, EnsureAddressTruncated};
+use frame_support::{parameter_types, traits::FindAuthor, ConsensusEngineId, PalletId};
+use pallet_evm::{AddressMapping, EnsureAddressTruncated, FeeCalculator};
 use rlp::*;
+use sha3::Digest;
 use sp_core::{H160, H256, U256};
+use sp_runtime::AccountId32;
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
-	ModuleId,
 };
-use sp_runtime::AccountId32;
 
-impl_outer_origin! {
-	pub enum Origin for Test where system = frame_system {}
+type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
+type Block = frame_system::mocking::MockBlock<Test>;
+
+frame_support::construct_runtime! {
+	pub enum Test where
+		Block = Block,
+		NodeBlock = Block,
+		UncheckedExtrinsic = UncheckedExtrinsic,
+	{
+		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
+		Timestamp: pallet_timestamp::{Pallet, Call, Storage},
+		EVM: pallet_evm::{Pallet, Call, Storage, Config, Event<T>},
+		Ethereum: crate::{Pallet, Call, Storage, Event},
+	}
 }
 
-pub struct PalletInfo;
-
-impl frame_support::traits::PalletInfo for PalletInfo {
-	fn index<P: 'static>() -> Option<usize> {
-		return Some(0)
-	}
-
-	fn name<P: 'static>() -> Option<&'static str> {
-		return Some("TestName")
-	}
-}
-
-// For testing the pallet, we construct most of a mock runtime. This means
-// first constructing a configuration type (`Test`) which `impl`s each of the
-// configuration traits of pallets we want to use.
-#[derive(Clone, Eq, PartialEq)]
-pub struct Test;
 parameter_types! {
 	pub const BlockHashCount: u64 = 250;
 	pub BlockWeights: frame_system::limits::BlockWeights =
 		frame_system::limits::BlockWeights::simple_max(1024);
 }
+
 impl frame_system::Config for Test {
 	type BaseCallFilter = ();
 	type BlockWeights = ();
@@ -69,12 +62,12 @@ impl frame_system::Config for Test {
 	type Index = u64;
 	type BlockNumber = u64;
 	type Hash = H256;
-	type Call = ();
+	type Call = Call;
 	type Hashing = BlakeTwo256;
 	type AccountId = AccountId32;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type Header = Header;
-	type Event = ();
+	type Event = Event;
 	type BlockHashCount = BlockHashCount;
 	type Version = ();
 	type PalletInfo = PalletInfo;
@@ -83,6 +76,7 @@ impl frame_system::Config for Test {
 	type OnKilledAccount = ();
 	type SystemWeightInfo = ();
 	type SS58Prefix = ();
+	type OnSetCode = ();
 }
 
 parameter_types! {
@@ -95,11 +89,13 @@ parameter_types! {
 impl pallet_balances::Config for Test {
 	type MaxLocks = MaxLocks;
 	type Balance = u64;
-	type Event = ();
+	type Event = Event;
 	type DustRemoval = ();
 	type ExistentialDeposit = ExistentialDeposit;
 	type AccountStore = System;
 	type WeightInfo = ();
+	type MaxReserves = ();
+	type ReserveIdentifier = ();
 }
 
 parameter_types! {
@@ -122,8 +118,9 @@ impl FeeCalculator for FixedGasPrice {
 
 pub struct FindAuthorTruncated;
 impl FindAuthor<H160> for FindAuthorTruncated {
-	fn find_author<'a, I>(_digests: I) -> Option<H160> where
-		I: 'a + IntoIterator<Item=(ConsensusEngineId, &'a [u8])>
+	fn find_author<'a, I>(_digests: I) -> Option<H160>
+	where
+		I: 'a + IntoIterator<Item = (ConsensusEngineId, &'a [u8])>,
 	{
 		Some(address_build(0).address)
 	}
@@ -132,7 +129,7 @@ impl FindAuthor<H160> for FindAuthorTruncated {
 parameter_types! {
 	pub const TransactionByteFee: u64 = 1;
 	pub const ChainId: u64 = 42;
-	pub const EVMModuleId: ModuleId = ModuleId(*b"py/evmpa");
+	pub const EVMModuleId: PalletId = PalletId(*b"py/evmpa");
 	pub const BlockGasLimit: U256 = U256::MAX;
 }
 
@@ -153,7 +150,7 @@ impl pallet_evm::Config for Test {
 	type WithdrawOrigin = EnsureAddressTruncated;
 	type AddressMapping = HashedAddressMapping;
 	type Currency = Balances;
-	type Event = ();
+	type Event = Event;
 	type Precompiles = ();
 	type Runner = pallet_evm::runner::stack::Runner<Self>;
 	type ChainId = ChainId;
@@ -163,15 +160,10 @@ impl pallet_evm::Config for Test {
 	type BlockHashMapping = crate::EthereumBlockHashMapping;
 }
 
-impl Config for Test {
-	type Event = ();
+impl crate::Config for Test {
+	type Event = Event;
 	type StateRoot = IntermediateStateRoot;
 }
-
-pub type System = frame_system::Module<Test>;
-pub type Balances = pallet_balances::Module<Test>;
-pub type Ethereum = Module<Test>;
-pub type Evm = pallet_evm::Module<Test>;
 
 pub struct AccountInfo {
 	pub address: H160,
@@ -183,9 +175,7 @@ fn address_build(seed: u8) -> AccountInfo {
 	let private_key = H256::from_slice(&[(seed + 1) as u8; 32]); //H256::from_low_u64_be((i + 1) as u64);
 	let secret_key = libsecp256k1::SecretKey::parse_slice(&private_key[..]).unwrap();
 	let public_key = &libsecp256k1::PublicKey::from_secret_key(&secret_key).serialize()[1..65];
-	let address = H160::from(H256::from_slice(
-		&Keccak256::digest(public_key)[..],
-	));
+	let address = H160::from(H256::from_slice(&Keccak256::digest(public_key)[..]));
 
 	let mut data = [0u8; 32];
 	data[0..20].copy_from_slice(&address[..]);
@@ -193,10 +183,9 @@ fn address_build(seed: u8) -> AccountInfo {
 	AccountInfo {
 		private_key,
 		account_id: AccountId32::from(Into::<[u8; 32]>::into(data)),
-		address
+		address,
 	}
 }
-
 
 // This function basically just builds a genesis storage key/value store according to
 // our desired mockup.
@@ -210,16 +199,13 @@ pub fn new_test_ext(accounts_len: usize) -> (Vec<AccountInfo>, sp_io::TestExtern
 		.map(|i| address_build(i as u8))
 		.collect::<Vec<_>>();
 
-
 	let balances: Vec<_> = (0..accounts_len)
-		.map(|i| {
-			(pairs[i].account_id.clone(), 10_000_000)
-		})
+		.map(|i| (pairs[i].account_id.clone(), 10_000_000))
 		.collect();
 
 	pallet_balances::GenesisConfig::<Test> { balances }
-			.assimilate_storage(&mut ext)
-			.unwrap();
+		.assimilate_storage(&mut ext)
+		.unwrap();
 
 	(pairs, ext.into())
 }
@@ -270,7 +256,10 @@ impl UnsignedTransaction {
 	pub fn sign(&self, key: &H256) -> Transaction {
 		let hash = self.signing_hash();
 		let msg = libsecp256k1::Message::parse(hash.as_fixed_bytes());
-		let s = libsecp256k1::sign(&msg, &libsecp256k1::SecretKey::parse_slice(&key[..]).unwrap());
+		let s = libsecp256k1::sign(
+			&msg,
+			&libsecp256k1::SecretKey::parse_slice(&key[..]).unwrap(),
+		);
 		let sig = s.0.serialize();
 
 		let sig = TransactionSignature::new(
@@ -278,7 +267,7 @@ impl UnsignedTransaction {
 			H256::from_slice(&sig[0..32]),
 			H256::from_slice(&sig[32..64]),
 		)
-			.unwrap();
+		.unwrap();
 
 		Transaction {
 			nonce: self.nonce,

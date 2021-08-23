@@ -23,8 +23,8 @@ mod eip_152;
 
 use alloc::vec::Vec;
 use core::mem::size_of;
+use evm::{executor::PrecompileOutput, Context, ExitError, ExitSucceed};
 use fp_evm::Precompile;
-use evm::{ExitSucceed, ExitError, Context, executor::PrecompileOutput};
 
 pub struct Blake2F;
 
@@ -33,7 +33,6 @@ impl Blake2F {
 }
 
 impl Precompile for Blake2F {
-
 	/// Format of `input`:
 	/// [4 bytes for rounds][64 bytes for h][128 bytes for m][8 bytes for t_0][8 bytes for t_1][1 byte for f]
 	fn execute(
@@ -44,7 +43,9 @@ impl Precompile for Blake2F {
 		const BLAKE2_F_ARG_LEN: usize = 213;
 
 		if input.len() != BLAKE2_F_ARG_LEN {
-			return Err(ExitError::Other("input length for Blake2 F precompile should be exactly 213 bytes".into()));
+			return Err(ExitError::Other(
+				"input length for Blake2 F precompile should be exactly 213 bytes".into(),
+			));
 		}
 
 		let mut rounds_buf: [u8; 4] = [0; 4];
@@ -82,7 +83,6 @@ impl Precompile for Blake2F {
 			ctr += 1;
 		}
 
-
 		let mut t_0_buf: [u8; 8] = [0; 8];
 		t_0_buf.copy_from_slice(&input[196..204]);
 		let t_0 = u64::from_le_bytes(t_0_buf);
@@ -91,8 +91,14 @@ impl Precompile for Blake2F {
 		t_1_buf.copy_from_slice(&input[204..212]);
 		let t_1 = u64::from_le_bytes(t_1_buf);
 
-		let f = if input[212] == 1 { true } else if input[212] == 0 { false } else {
-			return Err(ExitError::Other("incorrect final block indicator flag".into()))
+		let f = if input[212] == 1 {
+			true
+		} else if input[212] == 0 {
+			false
+		} else {
+			return Err(ExitError::Other(
+				"incorrect final block indicator flag".into(),
+			));
 		};
 
 		crate::eip_152::compress(&mut h, m, [t_0.into(), t_1.into()], f, rounds as usize);

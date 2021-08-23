@@ -1,7 +1,7 @@
 import { expect } from "chai";
 
 import Test from "../build/contracts/Test.json"
-import { createAndFinalizeBlock, customRequest, describeWithFrontier } from "./util";
+import { createAndFinalizeBlock, createAndFinalizeBlockNowait, customRequest, describeWithFrontier } from "./util";
 import { AbiItem } from "web3-utils";
 
 describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
@@ -70,12 +70,21 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 		for(let i = number; i <= last; i++) {
 			let hash = (await context.web3.eth.getBlock("latest")).hash;
 			expect(await contract.methods.blockHash(i).call()).to.eq(hash);
-			await createAndFinalizeBlock(context.web3);
+			await createAndFinalizeBlockNowait(context.web3);
 		}
 		// should not store more than 256 hashes
 		expect(await contract.methods.blockHash(number).call()).to.eq(
 			"0x0000000000000000000000000000000000000000000000000000000000000000"
 		);
+	});
+
+	it("should get correct environmental block gaslimit", async function () {
+		const contract = new context.web3.eth.Contract(TEST_CONTRACT_ABI, FIRST_CONTRACT_ADDRESS, {
+			from: GENESIS_ACCOUNT,
+			gasPrice: "0x01",
+		});
+		// Max u32
+		expect(await contract.methods.gasLimit().call()).to.eq('4294967295');
 	});
 
 	// Requires error handling

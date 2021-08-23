@@ -20,16 +20,17 @@
 use super::*;
 use crate::mock::*;
 
-use std::{str::FromStr, collections::BTreeMap};
-use frame_support::{
-	assert_ok, traits::{WithdrawReasons, LockIdentifier, LockableCurrency},
-};
+use frame_support::assert_ok;
+use frame_support::traits::{GenesisBuild, WithdrawReasons, LockIdentifier, LockableCurrency};
+use std::{collections::BTreeMap, str::FromStr};
 
-type Balances = pallet_balances::Module<Test>;
-type EVM = Module<Test>;
+type Balances = pallet_balances::Pallet<Test>;
+type EVM = Pallet<Test>;
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
-	let mut t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
+	let mut t = frame_system::GenesisConfig::default()
+		.build_storage::<Test>()
+		.unwrap();
 
 	let mut accounts = BTreeMap::new();
 	accounts.insert(
@@ -41,7 +42,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 			code: vec![
 				0x00, // STOP
 			],
-		}
+		},
 	);
 	accounts.insert(
 		H160::from_str("1000000000000000000000000000000000000002").unwrap(),
@@ -52,11 +53,13 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 			code: vec![
 				0xff, // INVALID
 			],
-		}
+		},
 	);
 
-	pallet_balances::GenesisConfig::<Test>::default().assimilate_storage(&mut t).unwrap();
-	GenesisConfig { accounts }.assimilate_storage::<Test>(&mut t).unwrap();
+	pallet_balances::GenesisConfig::<Test>::default()
+		.assimilate_storage(&mut t)
+		.unwrap();
+	GenesisBuild::<Test>::assimilate_storage(&crate::GenesisConfig { accounts }, &mut t).unwrap();
 	t.into()
 }
 
@@ -112,7 +115,10 @@ fn fee_deduction() {
 fn find_author() {
 	new_test_ext().execute_with(|| {
 		let author = EVM::find_author();
-		assert_eq!(author, H160::from_str("1234500000000000000000000000000000000000").unwrap());
+		assert_eq!(
+			author,
+			H160::from_str("1234500000000000000000000000000000000000").unwrap()
+		);
 	});
 }
 

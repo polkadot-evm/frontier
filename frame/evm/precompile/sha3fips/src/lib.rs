@@ -19,11 +19,11 @@
 
 extern crate alloc;
 
-use tiny_keccak::Hasher;
 use alloc::vec::Vec;
+use tiny_keccak::Hasher;
 
+use evm::{ExitError, ExitSucceed};
 use fp_evm::LinearCostPrecompile;
-use evm::{ExitSucceed, ExitError};
 
 pub struct Sha3FIPS256;
 
@@ -31,10 +31,7 @@ impl LinearCostPrecompile for Sha3FIPS256 {
 	const BASE: u64 = 60;
 	const WORD: u64 = 12;
 
-	fn execute(
-		input: &[u8],
-		_: u64,
-	) -> core::result::Result<(ExitSucceed, Vec<u8>), ExitError> {
+	fn execute(input: &[u8], _: u64) -> core::result::Result<(ExitSucceed, Vec<u8>), ExitError> {
 		let mut output = [0; 32];
 		let mut sha3 = tiny_keccak::Sha3::v256();
 		sha3.update(input);
@@ -49,10 +46,7 @@ impl LinearCostPrecompile for Sha3FIPS512 {
 	const BASE: u64 = 60;
 	const WORD: u64 = 12;
 
-	fn execute(
-		input: &[u8],
-		_: u64,
-	) -> core::result::Result<(ExitSucceed, Vec<u8>), ExitError> {
+	fn execute(input: &[u8], _: u64) -> core::result::Result<(ExitSucceed, Vec<u8>), ExitError> {
 		let mut output = [0; 64];
 		let mut sha3 = tiny_keccak::Sha3::v512();
 		sha3.update(input);
@@ -79,7 +73,7 @@ mod tests {
 			Ok((_, out)) => {
 				assert_eq!(out, expected);
 				Ok(())
-			},
+			}
 			Err(e) => {
 				panic!("Test not expected to fail: {:?}", e);
 			}
@@ -87,7 +81,7 @@ mod tests {
 	}
 
 	#[test]
-	fn hello_sha3_256() -> std::result::Result<(), ExitError>{
+	fn hello_sha3_256() -> std::result::Result<(), ExitError> {
 		let input = b"hello";
 		let expected = b"\
 			\x33\x38\xbe\x69\x4f\x50\xc5\xf3\x38\x81\x49\x86\xcd\xf0\x68\x64\
@@ -100,7 +94,7 @@ mod tests {
 			Ok((_, out)) => {
 				assert_eq!(out, expected);
 				Ok(())
-			},
+			}
 			Err(e) => {
 				panic!("Test not expected to fail: {:?}", e);
 			}
@@ -108,7 +102,7 @@ mod tests {
 	}
 
 	#[test]
-	fn long_string_sha3_256() -> std::result::Result<(), ExitError>{
+	fn long_string_sha3_256() -> std::result::Result<(), ExitError> {
 		let input = b"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
 		let expected = b"\
 			\xbd\xe3\xf2\x69\x17\x5e\x1d\xcd\xa1\x38\x48\x27\x8a\xa6\x04\x6b\
@@ -121,7 +115,7 @@ mod tests {
 			Ok((_, out)) => {
 				assert_eq!(out, expected);
 				Ok(())
-			},
+			}
 			Err(e) => {
 				panic!("Test not expected to fail: {:?}", e);
 			}
@@ -129,7 +123,7 @@ mod tests {
 	}
 
 	#[test]
-	fn long_string_sha3_512() -> std::result::Result<(), ExitError>{
+	fn long_string_sha3_512() -> std::result::Result<(), ExitError> {
 		let input = b"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
 		let expected = b"\
 			\xf3\x2a\x94\x23\x55\x13\x51\xdf\x0a\x07\xc0\xb8\xc2\x0e\xb9\x72\
@@ -144,7 +138,7 @@ mod tests {
 			Ok((_, out)) => {
 				assert_eq!(out, expected);
 				Ok(())
-			},
+			}
 			Err(e) => {
 				panic!("Test not expected to fail: {:?}", e);
 			}
