@@ -53,35 +53,47 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-mod tests;
+#[cfg(test)]
+mod mock;
 pub mod runner;
+#[cfg(test)]
+mod tests;
+
+#[cfg(any(test, feature = "runtime-benchmarks"))]
+pub mod benchmarks;
 
 pub use crate::runner::Runner;
+pub use evm::{ExitError, ExitFatal, ExitReason, ExitRevert, ExitSucceed};
 pub use fp_evm::{
-	Account, Log, Vicinity, ExecutionInfo, CallInfo, CreateInfo, Precompile,
-	PrecompileSet, LinearCostPrecompile,
+	Account, CallInfo, CreateInfo, ExecutionInfo, LinearCostPrecompile, Log, Precompile,
+	PrecompileSet, Vicinity,
 };
-pub use evm::{ExitReason, ExitSucceed, ExitError, ExitRevert, ExitFatal};
 
-use sp_std::vec::Vec;
 #[cfg(feature = "std")]
-use codec::{Encode, Decode};
-#[cfg(feature = "std")]
-use serde::{Serialize, Deserialize};
-use frame_support::weights::{Weight, PostDispatchInfo};
-use frame_support::traits::{Currency, ExistenceRequirement, WithdrawReasons, Imbalance, OnUnbalanced};
-use frame_system::RawOrigin;
-use sp_core::{U256, H256, H160, Hasher};
-use sp_runtime::{AccountId32, traits::{UniqueSaturatedInto, BadOrigin, Saturating}};
+use codec::{Decode, Encode};
 use evm::Config as EvmConfig;
+use frame_support::dispatch::DispatchResultWithPostInfo;
+use frame_support::traits::{
+	Currency, ExistenceRequirement, FindAuthor, Get, Imbalance, OnUnbalanced, WithdrawReasons,
+};
+use frame_support::weights::{Pays, PostDispatchInfo, Weight};
+use frame_system::RawOrigin;
+#[cfg(feature = "std")]
+use serde::{Deserialize, Serialize};
+use sp_core::{Hasher, H160, H256, U256};
+use sp_runtime::{
+	traits::{BadOrigin, Saturating, UniqueSaturatedInto},
+	AccountId32,
+};
+use sp_std::vec::Vec;
 
 pub use pallet::*;
 
 #[frame_support::pallet]
 pub mod pallet {
+	use super::*;
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
-	use super::*;
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
@@ -95,10 +107,13 @@ pub mod pallet {
 		/// Maps Ethereum gas to Substrate weight.
 		type GasWeightMapping: GasWeightMapping;
 
+		/// Block number to block hash.
+		type BlockHashMapping: BlockHashMapping;
+
 		/// Allow the origin to call on behalf of given address.
 		type CallOrigin: EnsureAddressOrigin<Self::Origin>;
 		/// Allow the origin to withdraw on behalf of given address.
-		type WithdrawOrigin: EnsureAddressOrigin<Self::Origin, Success=Self::AccountId>;
+		type WithdrawOrigin: EnsureAddressOrigin<Self::Origin, Success = Self::AccountId>;
 
 		/// Mapping from address to account id.
 		type AddressMapping: AddressMapping<Self::AccountId>;
@@ -121,7 +136,10 @@ pub mod pallet {
 		/// Similar to `OnChargeTransaction` of `pallet_transaction_payment`
 		type OnChargeTransaction: OnChargeEVMTransaction<Self>;
 
-		/// EVM config used in the pallet.
+		/// Find author for the current block.
+		type FindAuthor: FindAuthor<H160>;
+
+		/// EVM config used in the module.
 		fn config() -> &'static EvmConfig {
 			&ISTANBUL_CONFIG
 		}
@@ -131,7 +149,11 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {
 		/// Withdraw balance from EVM into currency/balances pallet.
 		#[pallet::weight(0)]
-		fn withdraw(origin: OriginFor<T>, address: H160, value: BalanceOf<T>) -> DispatchResult {
+		pub fn withdraw(
+			origin: OriginFor<T>,
+			address: H160,
+			value: BalanceOf<T>,
+		) -> DispatchResult {
 			let destination = T::WithdrawOrigin::ensure_address_origin(&address, origin)?;
 			let address_account_id = T::AddressMapping::into_account_id(address);
 
@@ -147,7 +169,7 @@ pub mod pallet {
 
 		/// Issue an EVM call operation. This is similar to a message call transaction in Ethereum.
 		#[pallet::weight(T::GasWeightMapping::gas_to_weight(*gas_limit))]
-		pub(super) fn call(
+		pub fn call(
 			origin: OriginFor<T>,
 			source: H160,
 			target: H160,
@@ -173,14 +195,16 @@ pub mod pallet {
 			match info.exit_reason {
 				ExitReason::Succeed(_) => {
 					Pallet::<T>::deposit_event(Event::<T>::Executed(target));
-				},
+				}
 				_ => {
 					Pallet::<T>::deposit_event(Event::<T>::ExecutedFailed(target));
-				},
+				}
 			};
 
 			Ok(PostDispatchInfo {
-				actual_weight: Some(T::GasWeightMapping::gas_to_weight(info.used_gas.unique_saturated_into())),
+				actual_weight: Some(T::GasWeightMapping::gas_to_weight(
+					info.used_gas.unique_saturated_into(),
+				)),
 				pays_fee: Pays::No,
 			})
 		}
@@ -188,7 +212,7 @@ pub mod pallet {
 		/// Issue an EVM create operation. This is similar to a contract creation transaction in
 		/// Ethereum.
 		#[pallet::weight(T::GasWeightMapping::gas_to_weight(*gas_limit))]
-		fn create(
+		pub fn create(
 			origin: OriginFor<T>,
 			source: H160,
 			init: Vec<u8>,
@@ -216,25 +240,27 @@ pub mod pallet {
 					..
 				} => {
 					Pallet::<T>::deposit_event(Event::<T>::Created(create_address));
-				},
+				}
 				CreateInfo {
 					exit_reason: _,
 					value: create_address,
 					..
 				} => {
 					Pallet::<T>::deposit_event(Event::<T>::CreatedFailed(create_address));
-				},
+				}
 			}
 
 			Ok(PostDispatchInfo {
-				actual_weight: Some(T::GasWeightMapping::gas_to_weight(info.used_gas.unique_saturated_into())),
+				actual_weight: Some(T::GasWeightMapping::gas_to_weight(
+					info.used_gas.unique_saturated_into(),
+				)),
 				pays_fee: Pays::No,
 			})
 		}
 
 		/// Issue an EVM create2 operation.
 		#[pallet::weight(T::GasWeightMapping::gas_to_weight(*gas_limit))]
-		fn create2(
+		pub fn create2(
 			origin: OriginFor<T>,
 			source: H160,
 			init: Vec<u8>,
@@ -264,18 +290,20 @@ pub mod pallet {
 					..
 				} => {
 					Pallet::<T>::deposit_event(Event::<T>::Created(create_address));
-				},
+				}
 				CreateInfo {
 					exit_reason: _,
 					value: create_address,
 					..
 				} => {
 					Pallet::<T>::deposit_event(Event::<T>::CreatedFailed(create_address));
-				},
+				}
 			}
 
 			Ok(PostDispatchInfo {
-				actual_weight: Some(T::GasWeightMapping::gas_to_weight(info.used_gas.unique_saturated_into())),
+				actual_weight: Some(T::GasWeightMapping::gas_to_weight(
+					info.used_gas.unique_saturated_into(),
+				)),
 				pays_fee: Pays::No,
 			})
 		}
@@ -363,22 +391,17 @@ pub mod pallet {
 
 	#[pallet::storage]
 	#[pallet::getter(fn account_storages)]
-	pub type AccountStorages<T: Config> = StorageDoubleMap<
-		_,
-		Blake2_128Concat,
-		H160,
-		Blake2_128Concat,
-		H256,
-		H256,
-		ValueQuery,
-	>;
+	pub type AccountStorages<T: Config> =
+		StorageDoubleMap<_, Blake2_128Concat, H160, Blake2_128Concat, H256, H256, ValueQuery>;
 }
 
 /// Type alias for currency balance.
-pub type BalanceOf<T> = <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
+pub type BalanceOf<T> =
+	<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
 /// Type alias for negative imbalance during fees
-type NegativeImbalanceOf<C, T> = <C as Currency<<T as frame_system::Config>::AccountId>>::NegativeImbalance;
+type NegativeImbalanceOf<C, T> =
+	<C as Currency<<T as frame_system::Config>::AccountId>>::NegativeImbalance;
 
 /// Trait that outputs the current transaction gas price.
 pub trait FeeCalculator {
@@ -387,7 +410,9 @@ pub trait FeeCalculator {
 }
 
 impl FeeCalculator for () {
-	fn min_gas_price() -> U256 { U256::zero() }
+	fn min_gas_price() -> U256 {
+		U256::zero()
+	}
 }
 
 pub trait EnsureAddressOrigin<OuterOrigin> {
@@ -413,18 +438,16 @@ pub trait EnsureAddressOrigin<OuterOrigin> {
 /// ID is `H160`.
 pub struct EnsureAddressSame;
 
-impl<OuterOrigin> EnsureAddressOrigin<OuterOrigin> for EnsureAddressSame where
+impl<OuterOrigin> EnsureAddressOrigin<OuterOrigin> for EnsureAddressSame
+where
 	OuterOrigin: Into<Result<RawOrigin<H160>, OuterOrigin>> + From<RawOrigin<H160>>,
 {
 	type Success = H160;
 
-	fn try_address_origin(
-		address: &H160,
-		origin: OuterOrigin,
-	) -> Result<H160, OuterOrigin> {
+	fn try_address_origin(address: &H160, origin: OuterOrigin) -> Result<H160, OuterOrigin> {
 		origin.into().and_then(|o| match o {
 			RawOrigin::Signed(who) if &who == address => Ok(who),
-			r => Err(OuterOrigin::from(r))
+			r => Err(OuterOrigin::from(r)),
 		})
 	}
 }
@@ -432,15 +455,13 @@ impl<OuterOrigin> EnsureAddressOrigin<OuterOrigin> for EnsureAddressSame where
 /// Ensure that the origin is root.
 pub struct EnsureAddressRoot<AccountId>(sp_std::marker::PhantomData<AccountId>);
 
-impl<OuterOrigin, AccountId> EnsureAddressOrigin<OuterOrigin> for EnsureAddressRoot<AccountId> where
+impl<OuterOrigin, AccountId> EnsureAddressOrigin<OuterOrigin> for EnsureAddressRoot<AccountId>
+where
 	OuterOrigin: Into<Result<RawOrigin<AccountId>, OuterOrigin>> + From<RawOrigin<AccountId>>,
 {
 	type Success = ();
 
-	fn try_address_origin(
-		_address: &H160,
-		origin: OuterOrigin,
-	) -> Result<(), OuterOrigin> {
+	fn try_address_origin(_address: &H160, origin: OuterOrigin) -> Result<(), OuterOrigin> {
 		origin.into().and_then(|o| match o {
 			RawOrigin::Root => Ok(()),
 			r => Err(OuterOrigin::from(r)),
@@ -454,10 +475,7 @@ pub struct EnsureAddressNever<AccountId>(sp_std::marker::PhantomData<AccountId>)
 impl<OuterOrigin, AccountId> EnsureAddressOrigin<OuterOrigin> for EnsureAddressNever<AccountId> {
 	type Success = AccountId;
 
-	fn try_address_origin(
-		_address: &H160,
-		origin: OuterOrigin,
-	) -> Result<AccountId, OuterOrigin> {
+	fn try_address_origin(_address: &H160, origin: OuterOrigin) -> Result<AccountId, OuterOrigin> {
 		Err(origin)
 	}
 }
@@ -466,19 +484,18 @@ impl<OuterOrigin, AccountId> EnsureAddressOrigin<OuterOrigin> for EnsureAddressN
 /// `AccountId32`.
 pub struct EnsureAddressTruncated;
 
-impl<OuterOrigin> EnsureAddressOrigin<OuterOrigin> for EnsureAddressTruncated where
+impl<OuterOrigin> EnsureAddressOrigin<OuterOrigin> for EnsureAddressTruncated
+where
 	OuterOrigin: Into<Result<RawOrigin<AccountId32>, OuterOrigin>> + From<RawOrigin<AccountId32>>,
 {
 	type Success = AccountId32;
 
-	fn try_address_origin(
-		address: &H160,
-		origin: OuterOrigin,
-	) -> Result<AccountId32, OuterOrigin> {
+	fn try_address_origin(address: &H160, origin: OuterOrigin) -> Result<AccountId32, OuterOrigin> {
 		origin.into().and_then(|o| match o {
-			RawOrigin::Signed(who)
-				if AsRef::<[u8; 32]>::as_ref(&who)[0..20] == address[0..20] => Ok(who),
-			r => Err(OuterOrigin::from(r))
+			RawOrigin::Signed(who) if AsRef::<[u8; 32]>::as_ref(&who)[0..20] == address[0..20] => {
+				Ok(who)
+			}
+			r => Err(OuterOrigin::from(r)),
 		})
 	}
 }
@@ -491,13 +508,15 @@ pub trait AddressMapping<A> {
 pub struct IdentityAddressMapping;
 
 impl AddressMapping<H160> for IdentityAddressMapping {
-	fn into_account_id(address: H160) -> H160 { address }
+	fn into_account_id(address: H160) -> H160 {
+		address
+	}
 }
 
 /// Hashed address mapping.
 pub struct HashedAddressMapping<H>(sp_std::marker::PhantomData<H>);
 
-impl<H: Hasher<Out=H256>> AddressMapping<AccountId32> for HashedAddressMapping<H> {
+impl<H: Hasher<Out = H256>> AddressMapping<AccountId32> for HashedAddressMapping<H> {
 	fn into_account_id(address: H160) -> AccountId32 {
 		let mut data = [0u8; 24];
 		data[0..4].copy_from_slice(b"evm:");
@@ -505,6 +524,20 @@ impl<H: Hasher<Out=H256>> AddressMapping<AccountId32> for HashedAddressMapping<H
 		let hash = H::hash(&data);
 
 		AccountId32::from(Into::<[u8; 32]>::into(hash))
+	}
+}
+
+/// A trait for getting a block hash by number.
+pub trait BlockHashMapping {
+	fn block_hash(number: u32) -> H256;
+}
+
+/// Returns the Substrate block hash by number.
+pub struct SubstrateBlockHashMapping<T>(sp_std::marker::PhantomData<T>);
+impl<T: Config> BlockHashMapping for SubstrateBlockHashMapping<T> {
+	fn block_hash(number: u32) -> H256 {
+		let number = T::BlockNumber::from(number);
+		H256::from_slice(frame_system::Pallet::<T>::block_hash(number).as_ref())
 	}
 }
 
@@ -545,9 +578,7 @@ impl<T: Config> Pallet<T> {
 		let account = Self::account_basic(address);
 		let code_len = <AccountCodes<T>>::decode_len(address).unwrap_or(0);
 
-		account.nonce == U256::zero() &&
-			account.balance == U256::zero() &&
-			code_len == 0
+		account.nonce == U256::zero() && account.balance == U256::zero() && code_len == 0
 	}
 
 	/// Remove an account if its empty.
@@ -565,13 +596,13 @@ impl<T: Config> Pallet<T> {
 		}
 
 		<AccountCodes<T>>::remove(address);
-		<AccountStorages<T>>::remove_prefix(address);
+		<AccountStorages<T>>::remove_prefix(address, None);
 	}
 
 	/// Create an account.
 	pub fn create_account(address: H160, code: Vec<u8>) {
 		if code.is_empty() {
-			return
+			return;
 		}
 
 		if !<AccountCodes<T>>::contains_key(&address) {
@@ -593,6 +624,14 @@ impl<T: Config> Pallet<T> {
 			nonce: U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(nonce)),
 			balance: U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(balance)),
 		}
+	}
+
+	/// Get the author using the FindAuthor trait.
+	pub fn find_author() -> H160 {
+		let digest = <frame_system::Pallet<T>>::digest();
+		let pre_runtime_digests = digest.logs.iter().filter_map(|d| d.as_pre_runtime());
+
+		T::FindAuthor::find_author(pre_runtime_digests).unwrap_or_default()
 	}
 }
 
@@ -670,6 +709,7 @@ where
 			// merge the imbalance caused by paying the fees and refunding parts of it again.
 			let adjusted_paid = paid
 				.offset(refund_imbalance)
+				.same()
 				.map_err(|_| Error::<T>::BalanceLow)?;
 			OU::on_unbalanced(adjusted_paid);
 		}
