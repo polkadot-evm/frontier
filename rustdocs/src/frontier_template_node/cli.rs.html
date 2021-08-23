@@ -83,6 +83,8 @@
 <span id="81">81</span>
 <span id="82">82</span>
 <span id="83">83</span>
+<span id="84">84</span>
+<span id="85">85</span>
 </pre><pre class="rust">
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;manual-seal&quot;</span>)]</span>
 <span class="kw">use</span> <span class="ident">structopt::clap::arg_enum</span>;
@@ -142,6 +144,8 @@
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">StructOpt</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Subcommand</span> {
+	<span class="doccomment">/// Key management cli utilities</span>
+	<span class="ident">Key</span>(<span class="ident">sc_cli::KeySubcommand</span>),
 	<span class="doccomment">/// Build a chain specification.</span>
 	<span class="ident">BuildSpec</span>(<span class="ident">sc_cli::BuildSpecCmd</span>),
 

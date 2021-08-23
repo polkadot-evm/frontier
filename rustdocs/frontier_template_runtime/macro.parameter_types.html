@@ -22,10 +22,9 @@
     (<span class="ident">IMPL</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">name</span>:<span class="ident">ident</span>, <span class="macro-nonterminal">$</span><span class="kw">type</span>:<span class="macro-nonterminal">ty</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">value</span>:<span class="ident">expr</span>) <span class="op">=</span><span class="op">&gt;</span> { ... };
     (<span class="ident">IMPL_STORAGE</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">name</span>:<span class="ident">ident</span>, <span class="macro-nonterminal">$</span><span class="kw">type</span>:<span class="macro-nonterminal">ty</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">value</span>:<span class="ident">expr</span>) <span class="op">=</span><span class="op">&gt;</span> { ... };
     (
-		$(
-			$( <span class="attribute">#[ <span class="macro-nonterminal">$</span><span class="macro-nonterminal">attr</span>:<span class="ident">meta</span> ]</span> )<span class="op">*</span>
-			<span class="macro-nonterminal">$</span><span class="macro-nonterminal">vis</span>:<span class="ident">vis</span> <span class="kw">static</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">name</span>:<span class="ident">ident</span>: <span class="macro-nonterminal">$</span><span class="kw">type</span>:<span class="macro-nonterminal">ty</span> <span class="op">=</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">value</span>:<span class="ident">expr</span>;
-		)<span class="op">*</span>
+		$( <span class="attribute">#[ <span class="macro-nonterminal">$</span><span class="macro-nonterminal">attr</span>:<span class="ident">meta</span> ]</span> )<span class="op">*</span>
+		<span class="macro-nonterminal">$</span><span class="macro-nonterminal">vis</span>:<span class="ident">vis</span> <span class="kw">static</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">name</span>:<span class="ident">ident</span>: <span class="macro-nonterminal">$</span><span class="kw">type</span>:<span class="macro-nonterminal">ty</span> <span class="op">=</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">value</span>:<span class="ident">expr</span>;
+		$( <span class="macro-nonterminal">$</span><span class="macro-nonterminal">rest</span>:<span class="ident">tt</span> )<span class="op">*</span>
 	) <span class="op">=</span><span class="op">&gt;</span> { ... };
 }</pre></div>
 </div><details class="rustdoc-toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Create new implementations of the <a href="crate::traits::Get"><code>Get</code></a> trait.</p>
@@ -47,10 +46,10 @@ the storage is built using the following formula:</p>
 <p><code>twox_128(&quot;:&quot; ++ NAME ++ &quot;:&quot;)</code> where <code>NAME</code> is the name that is passed as type name.</p>
 </li>
 <li>
-<p>Using <code>static</code> to create a static parameter type. Its value is
-being provided by a static variable with the equivalent name in <code>UPPER_SNAKE_CASE</code>. An
-additional <code>set</code> function is provided in this case to alter the static variable.
-<strong>This is intended for testing ONLY and is ONLY available when <code>std</code> is enabled.</strong></p>
+<p>Using <code>static</code> to create a static parameter type. Its value is being provided by a static
+variable with the equivalent name in <code>UPPER_SNAKE_CASE</code>. An additional <code>set</code> function is
+provided in this case to alter the static variable. <strong>This is intended for testing ONLY and is
+ONLY available when <code>std</code> is enabled.</strong></p>
 </li>
 </ul>
 <h1 id="examples" class="section-header"><a href="#examples">Examples</a></h1>

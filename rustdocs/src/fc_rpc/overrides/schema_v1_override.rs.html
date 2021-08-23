@@ -149,7 +149,7 @@
 <span class="comment">// along with Substrate.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</span>
 
 <span class="kw">use</span> <span class="ident">codec::Decode</span>;
-<span class="kw">use</span> <span class="ident">ethereum::Block</span> <span class="kw">as</span> <span class="ident">EthereumBlock</span>;
+<span class="kw">use</span> <span class="ident">ethereum::BlockV0</span> <span class="kw">as</span> <span class="ident">EthereumBlock</span>;
 <span class="kw">use</span> <span class="ident">ethereum_types</span>::{<span class="ident">H160</span>, <span class="ident">H256</span>, <span class="ident">U256</span>};
 <span class="kw">use</span> <span class="ident">fp_rpc::TransactionStatus</span>;
 <span class="kw">use</span> <span class="ident">sc_client_api::backend</span>::{<span class="ident">AuxStore</span>, <span class="ident">Backend</span>, <span class="ident">StateBackend</span>, <span class="ident">StorageProvider</span>};
@@ -235,7 +235,7 @@
 
 	<span class="doccomment">/// Return the current block.</span>
 	<span class="kw">fn</span> <span class="ident">current_block</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">block</span>: <span class="kw-2">&amp;</span><span class="ident">BlockId</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">EthereumBlock</span><span class="op">&gt;</span> {
-		<span class="self">self</span>.<span class="ident">query_storage</span>::<span class="op">&lt;</span><span class="ident">ethereum::Block</span><span class="op">&gt;</span>(
+		<span class="self">self</span>.<span class="ident">query_storage</span>::<span class="op">&lt;</span><span class="ident">ethereum::BlockV0</span><span class="op">&gt;</span>(
 			<span class="ident">block</span>,
 			<span class="kw-2">&amp;</span><span class="ident">StorageKey</span>(<span class="ident">storage_prefix_build</span>(<span class="string">b&quot;Ethereum&quot;</span>, <span class="string">b&quot;CurrentBlock&quot;</span>)),
 		)

@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["pallet_evm"] = [{"text":"impl&lt;T:&nbsp;<a class=\"trait\" href=\"pallet_evm/pallet/trait.Config.html\" title=\"trait pallet_evm::pallet::Config\">Config</a>&gt; GenesisBuild&lt;T, <a class=\"primitive\" href=\"https://doc.rust-lang.org/1.54.0/std/primitive.unit.html\">()</a>&gt; for <a class=\"struct\" href=\"pallet_evm/pallet/struct.GenesisConfig.html\" title=\"struct pallet_evm::pallet::GenesisConfig\">GenesisConfig</a>","synthetic":false,"types":["pallet_evm::pallet::GenesisConfig"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

@@ -36,8 +36,8 @@ value of the original type.</p>
 old type, thus other calls (such as <code>get</code>) will fail at decoding it.</p>
 <h1 id="usage" class="section-header"><a href="#usage">Usage</a></h1>
 <p>This would typically be called inside the module implementation of on_runtime_upgrade, while
-ensuring <strong>no usage of this storage are made before the call to <code>on_runtime_upgrade</code></strong>. (More
-precisely prior initialized modules doesn’t make use of this storage).</p>
+ensuring <strong>no usage of this storage are made before the call to <code>on_runtime_upgrade</code></strong>.
+(More precisely prior initialized modules doesn’t make use of this storage).</p>
 </div></details><details class="rustdoc-toggle" open><summary><div id="tymethod.put" class="method has-srclink"><h4 class="code-header">fn <a href="#tymethod.put" class="fnname">put</a>&lt;Arg&gt;(val: Arg) <span class="where fmt-newline">where<br>&nbsp;&nbsp;&nbsp;&nbsp;Arg: EncodeLike&lt;T&gt;,&nbsp;</span></h4></div></summary><div class="docblock"><p>Store a value under this key into the provided storage instance.</p>
 </div></details><details class="rustdoc-toggle" open><summary><div id="tymethod.set" class="method has-srclink"><h4 class="code-header">fn <a href="#tymethod.set" class="fnname">set</a>(val: Self::<a class="type" href="trait.StorageValue.html#associatedtype.Query" title="type frontier_template_runtime::StorageValue::Query">Query</a>)</h4></div></summary><div class="docblock"><p>Store a value under this key into the provided storage instance; this uses the query
 type rather than the underlying value.</p>

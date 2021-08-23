@@ -322,11 +322,11 @@
 	<span class="doccomment">/// Sends transaction; will block waiting for signer to return the</span>
 	<span class="doccomment">/// transaction hash.</span>
 	<span class="attribute">#[<span class="ident">rpc</span>(<span class="ident">name</span> <span class="op">=</span> <span class="string">&quot;eth_sendTransaction&quot;</span>)]</span>
-	<span class="kw">fn</span> <span class="ident">send_transaction</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="kw">_</span>: <span class="ident">TransactionRequest</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">BoxFuture</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span>;
+	<span class="kw">fn</span> <span class="ident">send_transaction</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="kw">_</span>: <span class="ident">TransactionRequest</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">BoxFuture</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span><span class="op">&gt;</span>;
 
 	<span class="doccomment">/// Sends signed transaction, returning its hash.</span>
 	<span class="attribute">#[<span class="ident">rpc</span>(<span class="ident">name</span> <span class="op">=</span> <span class="string">&quot;eth_sendRawTransaction&quot;</span>)]</span>
-	<span class="kw">fn</span> <span class="ident">send_raw_transaction</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="kw">_</span>: <span class="ident">Bytes</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">BoxFuture</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span>;
+	<span class="kw">fn</span> <span class="ident">send_raw_transaction</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="kw">_</span>: <span class="ident">Bytes</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">BoxFuture</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span><span class="op">&gt;</span>;
 
 	<span class="doccomment">/// Call contract, returning the output data.</span>
 	<span class="attribute">#[<span class="ident">rpc</span>(<span class="ident">name</span> <span class="op">=</span> <span class="string">&quot;eth_call&quot;</span>)]</span>
