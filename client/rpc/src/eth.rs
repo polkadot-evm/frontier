@@ -21,8 +21,8 @@ use crate::{
 use ethereum::{BlockV0 as EthereumBlock, TransactionV0 as EthereumTransaction};
 use ethereum_types::{H160, H256, H512, H64, U256, U64};
 use fc_rpc_core::types::{
-	Block, Header, BlockNumber, BlockTransactions, Bytes, CallRequest, Filter, FilterChanges, FilterPool,
-	FilterPoolItem, FilterType, FilteredParams, Index, Log, PeerCount, PendingTransaction,
+	Block, BlockNumber, BlockTransactions, Bytes, CallRequest, Filter, FilterChanges, FilterPool,
+	FilterPoolItem, FilterType, FilteredParams, Header, Index, Log, PeerCount, PendingTransaction,
 	PendingTransactions, Receipt, Rich, RichBlock, SyncInfo, SyncStatus, Transaction,
 	TransactionRequest, Work,
 };
@@ -116,9 +116,7 @@ fn rich_block_build(
 		inner: Block {
 			header: Header {
 				hash: Some(hash.unwrap_or_else(|| {
-					H256::from_slice(
-						Keccak256::digest(&rlp::encode(&block.header)).as_slice()
-					)
+					H256::from_slice(Keccak256::digest(&rlp::encode(&block.header)).as_slice())
 				})),
 				parent_hash: block.header.parent_hash,
 				uncles_hash: block.header.ommers_hash,
@@ -136,9 +134,9 @@ fn rich_block_build(
 				difficulty: block.header.difficulty,
 				seal_fields: vec![
 					Bytes(block.header.mix_hash.as_bytes().to_vec()),
-					Bytes(block.header.nonce.as_bytes().to_vec())
+					Bytes(block.header.nonce.as_bytes().to_vec()),
 				],
-				size: Some(U256::from(rlp::encode(&block.header).len() as u32))
+				size: Some(U256::from(rlp::encode(&block.header).len() as u32)),
 			},
 			total_difficulty: U256::zero(),
 			uncles: vec![],
