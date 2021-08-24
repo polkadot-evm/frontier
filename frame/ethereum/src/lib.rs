@@ -38,8 +38,10 @@ use frame_support::{
 use pallet_evm::{BlockHashMapping, FeeCalculator, GasWeightMapping, Runner};
 use sha3::{Digest, Keccak256};
 use sp_runtime::{
-	generic::DigestItem, traits::UniqueSaturatedInto,
-	transaction_validity::ValidTransactionBuilder, DispatchError,
+	generic::DigestItem,
+	traits::{One, Saturating, UniqueSaturatedInto, Zero},
+	transaction_validity::ValidTransactionBuilder,
+	DispatchError,
 };
 use sp_std::{marker::PhantomData, prelude::*};
 
@@ -80,13 +82,24 @@ pub mod pallet {
 
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-		fn on_finalize(_: T::BlockNumber) {
+		fn on_finalize(n: T::BlockNumber) {
 			<Pallet<T>>::store_block(
 				fp_consensus::find_pre_log(&frame_system::Pallet::<T>::digest()).is_err(),
 				U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(
 					frame_system::Pallet::<T>::block_number(),
 				)),
 			);
+			// move block hash pruning window by one block
+			let block_hash_count = T::BlockHashCount::get();
+			let to_remove = n
+				.saturating_sub(block_hash_count)
+				.saturating_sub(One::one());
+			// keep genesis hash
+			if !to_remove.is_zero() {
+				<BlockHash<T>>::remove(U256::from(
+					UniqueSaturatedInto::<u32>::unique_saturated_into(to_remove),
+				));
+			}
 		}
 
 		fn on_initialize(_: T::BlockNumber) -> Weight {
