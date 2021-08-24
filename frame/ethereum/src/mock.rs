@@ -17,7 +17,8 @@
 
 //! Test utilities
 
-use crate::{IntermediateStateRoot, Keccak256, Transaction};
+use super::*;
+use crate::IntermediateStateRoot;
 use ethereum::{TransactionAction, TransactionSignature};
 use frame_support::{parameter_types, traits::FindAuthor, ConsensusEngineId, PalletId};
 use pallet_evm::{AddressMapping, EnsureAddressTruncated, FeeCalculator};
@@ -157,7 +158,7 @@ impl pallet_evm::Config for Test {
 	type BlockGasLimit = BlockGasLimit;
 	type OnChargeTransaction = ();
 	type FindAuthor = FindAuthorTruncated;
-	type BlockHashMapping = crate::EthereumBlockHashMapping;
+	type BlockHashMapping = crate::EthereumBlockHashMapping<Self>;
 }
 
 impl crate::Config for Test {
