@@ -507,6 +507,19 @@
 <span id="505">505</span>
 <span id="506">506</span>
 <span id="507">507</span>
+<span id="508">508</span>
+<span id="509">509</span>
+<span id="510">510</span>
+<span id="511">511</span>
+<span id="512">512</span>
+<span id="513">513</span>
+<span id="514">514</span>
+<span id="515">515</span>
+<span id="516">516</span>
+<span id="517">517</span>
+<span id="518">518</span>
+<span id="519">519</span>
+<span id="520">520</span>
 </pre><pre class="rust">
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
@@ -541,23 +554,19 @@
 <span class="kw">use</span> <span class="ident">fp_storage::PALLET_ETHEREUM_SCHEMA</span>;
 <span class="kw">use</span> <span class="ident">frame_support::ensure</span>;
 <span class="kw">use</span> <span class="ident">frame_support</span>::{
-	<span class="ident">decl_error</span>, <span class="ident">decl_event</span>, <span class="ident">decl_module</span>, <span class="ident">decl_storage</span>,
 	<span class="ident">dispatch::DispatchResultWithPostInfo</span>,
 	<span class="ident">traits::Get</span>,
 	<span class="ident">weights</span>::{<span class="ident">Pays</span>, <span class="ident">PostDispatchInfo</span>, <span class="ident">Weight</span>},
 };
-<span class="kw">use</span> <span class="ident">frame_system::ensure_none</span>;
 <span class="kw">use</span> <span class="ident">pallet_evm</span>::{<span class="ident">BlockHashMapping</span>, <span class="ident">FeeCalculator</span>, <span class="ident">GasWeightMapping</span>, <span class="ident">Runner</span>};
 <span class="kw">use</span> <span class="ident">sha3</span>::{<span class="ident">Digest</span>, <span class="ident">Keccak256</span>};
 <span class="kw">use</span> <span class="ident">sp_runtime</span>::{
 	<span class="ident">generic::DigestItem</span>,
 	<span class="ident">traits</span>::{<span class="ident">One</span>, <span class="ident">Saturating</span>, <span class="ident">UniqueSaturatedInto</span>, <span class="ident">Zero</span>},
-	<span class="ident">transaction_validity</span>::{
-		<span class="ident">InvalidTransaction</span>, <span class="ident">TransactionSource</span>, <span class="ident">TransactionValidity</span>, <span class="ident">ValidTransactionBuilder</span>,
-	},
+	<span class="ident">transaction_validity::ValidTransactionBuilder</span>,
 	<span class="ident">DispatchError</span>,
 };
-<span class="kw">use</span> <span class="ident">sp_std::prelude</span>::<span class="kw-2">*</span>;
+<span class="kw">use</span> <span class="ident">sp_std</span>::{<span class="ident">marker::PhantomData</span>, <span class="ident">prelude</span>::<span class="kw-2">*</span>};
 
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">ethereum</span>::{
 	<span class="ident">BlockV0</span> <span class="kw">as</span> <span class="ident">Block</span>, <span class="ident">LegacyTransactionMessage</span>, <span class="ident">Log</span>, <span class="ident">Receipt</span>, <span class="ident">TransactionAction</span>,
@@ -566,227 +575,200 @@
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">fp_rpc::TransactionStatus</span>;
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">all</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>, <span class="ident">test</span>))]</span>
+<span class="kw">mod</span> <span class="ident">mock</span>;
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">all</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>, <span class="ident">test</span>))]</span>
 <span class="kw">mod</span> <span class="ident">tests</span>;
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">all</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>, <span class="ident">test</span>))]</span>
-<span class="kw">mod</span> <span class="ident">mock</span>;
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">pallet</span>::<span class="kw-2">*</span>;
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">Clone</span>, <span class="ident">sp_runtime::RuntimeDebug</span>)]</span>
-<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">ReturnValue</span> {
-	<span class="ident">Bytes</span>(<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>),
-	<span class="ident">Hash</span>(<span class="ident">H160</span>),
-}
+<span class="attribute">#[<span class="ident">frame_support::pallet</span>]</span>
+<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">pallet</span> {
+	<span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
+	<span class="kw">use</span> <span class="ident">frame_support::pallet_prelude</span>::<span class="kw-2">*</span>;
+	<span class="kw">use</span> <span class="ident">frame_system::pallet_prelude</span>::<span class="kw-2">*</span>;
 
-<span class="doccomment">/// The schema version for Pallet Ethereum&#39;s storage</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">Debug</span>, <span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>, <span class="ident">PartialOrd</span>, <span class="ident">Ord</span>)]</span>
-<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">EthereumStorageSchema</span> {
-	<span class="ident">Undefined</span>,
-	<span class="ident">V1</span>,
-}
-
-<span class="kw">impl</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">EthereumStorageSchema</span> {
-	<span class="kw">fn</span> <span class="ident">default</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-		<span class="self">Self</span><span class="ident">::Undefined</span>
+	<span class="attribute">#[<span class="ident">pallet::config</span>]</span>
+	<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Config</span>:
+		<span class="ident">frame_system::Config</span>
+		<span class="op">+</span> <span class="ident">pallet_balances::Config</span>
+		<span class="op">+</span> <span class="ident">pallet_timestamp::Config</span>
+		<span class="op">+</span> <span class="ident">pallet_evm::Config</span>
+	{
+		<span class="doccomment">/// The overarching event type.</span>
+		<span class="kw">type</span> <span class="ident">Event</span>: <span class="ident">From</span><span class="op">&lt;</span><span class="ident">Event</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">IsType</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="self">Self</span> <span class="kw">as</span> <span class="ident">frame_system::Config</span><span class="op">&gt;</span><span class="ident">::Event</span><span class="op">&gt;</span>;
+		<span class="doccomment">/// How Ethereum state root is calculated.</span>
+		<span class="kw">type</span> <span class="ident">StateRoot</span>: <span class="ident">Get</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span>;
 	}
-}
+	<span class="attribute">#[<span class="ident">pallet::pallet</span>]</span>
+	<span class="attribute">#[<span class="ident">pallet::generate_store</span>(<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">trait</span> <span class="ident">Store</span>)]</span>
+	<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>(<span class="ident">PhantomData</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>);
 
-<span class="doccomment">/// A type alias for the balance type from this pallet&#39;s point of view.</span>
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">pallet_balances::Config</span><span class="op">&gt;</span><span class="ident">::Balance</span>;
-
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">IntermediateStateRoot</span>;
-
-<span class="kw">impl</span> <span class="ident">Get</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">IntermediateStateRoot</span> {
-	<span class="kw">fn</span> <span class="ident">get</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">H256</span> {
-		<span class="ident">H256::decode</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="kw-2">&amp;</span><span class="ident">sp_io::storage::root</span>()[..])
-			.<span class="ident">expect</span>(<span class="string">&quot;Node is configured to use the same hash; qed&quot;</span>)
-	}
-}
-
-<span class="doccomment">/// Configuration trait for Ethereum pallet.</span>
-<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Config</span>:
-	<span class="ident">frame_system::Config</span><span class="op">&lt;</span><span class="ident">Hash</span> <span class="op">=</span> <span class="ident">H256</span><span class="op">&gt;</span>
-	<span class="op">+</span> <span class="ident">pallet_balances::Config</span>
-	<span class="op">+</span> <span class="ident">pallet_timestamp::Config</span>
-	<span class="op">+</span> <span class="ident">pallet_evm::Config</span>
-{
-	<span class="doccomment">/// The overarching event type.</span>
-	<span class="kw">type</span> <span class="ident">Event</span>: <span class="ident">From</span><span class="op">&lt;</span><span class="ident">Event</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Into</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="self">Self</span> <span class="kw">as</span> <span class="ident">frame_system::Config</span><span class="op">&gt;</span><span class="ident">::Event</span><span class="op">&gt;</span>;
-	<span class="doccomment">/// How Ethereum state root is calculated.</span>
-	<span class="kw">type</span> <span class="ident">StateRoot</span>: <span class="ident">Get</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span>;
-}
-
-<span class="macro">decl_storage!</span> {
-	<span class="kw">trait</span> <span class="ident">Store</span> <span class="kw">for</span> <span class="ident">Module</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="kw">as</span> <span class="ident">Ethereum</span> {
-		<span class="doccomment">/// Current building block&#39;s transactions and receipts.</span>
-		<span class="ident">Pending</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">Transaction</span>, <span class="ident">TransactionStatus</span>, <span class="ident">ethereum::Receipt</span>)<span class="op">&gt;</span>;
-
-		<span class="doccomment">/// The current Ethereum block.</span>
-		<span class="ident">CurrentBlock</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">ethereum::BlockV0</span><span class="op">&gt;</span>;
-		<span class="doccomment">/// The current Ethereum receipts.</span>
-		<span class="ident">CurrentReceipts</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ethereum::Receipt</span><span class="op">&gt;</span><span class="op">&gt;</span>;
-		<span class="doccomment">/// The current transaction statuses.</span>
-		<span class="ident">CurrentTransactionStatuses</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TransactionStatus</span><span class="op">&gt;</span><span class="op">&gt;</span>;
-		<span class="comment">// Mapping for block number and hashes.</span>
-		<span class="ident">BlockHash</span>: <span class="ident">map</span> <span class="ident">hasher</span>(<span class="ident">twox_64_concat</span>) <span class="ident">U256</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">H256</span>;
-	}
-	<span class="ident">add_extra_genesis</span> {
-		<span class="ident">build</span>(<span class="op">|</span><span class="ident">_config</span>: <span class="kw-2">&amp;</span><span class="ident">GenesisConfig</span><span class="op">|</span> {
-			<span class="comment">// Calculate the ethereum genesis block</span>
-			<span class="op">&lt;</span><span class="ident">Module</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::store_block</span>(<span class="bool-val">false</span>, <span class="ident">U256::zero</span>());
-
-			<span class="comment">// Initialize the storage schema at the well known key.</span>
-			<span class="ident">frame_support::storage::unhashed::put</span>::<span class="op">&lt;</span><span class="ident">EthereumStorageSchema</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="ident">PALLET_ETHEREUM_SCHEMA</span>, <span class="kw-2">&amp;</span><span class="ident">EthereumStorageSchema::V1</span>);
-		});
-	}
-}
-
-<span class="macro">decl_event!</span>(
-	<span class="doccomment">/// Ethereum pallet events.</span>
-	<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Event</span> {
-		<span class="doccomment">/// An ethereum transaction was successfully executed. [from, to/contract_address, transaction_hash, exit_reason]</span>
-		<span class="ident">Executed</span>(<span class="ident">H160</span>, <span class="ident">H160</span>, <span class="ident">H256</span>, <span class="ident">ExitReason</span>),
-	}
-);
-
-<span class="macro">decl_error!</span> {
-	<span class="doccomment">/// Ethereum pallet errors.</span>
-	<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Error</span> <span class="kw">for</span> <span class="ident">Module</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> {
-		<span class="doccomment">/// Signature is invalid.</span>
-		<span class="ident">InvalidSignature</span>,
-		<span class="doccomment">/// Pre-log is present, therefore transact is not allowed.</span>
-		<span class="ident">PreLogExists</span>,
-	}
-}
-
-<span class="macro">decl_module!</span> {
-	<span class="doccomment">/// Ethereum pallet module.</span>
-	<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Module</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="kw">enum</span> <span class="ident">Call</span> <span class="kw">where</span> <span class="ident">origin</span>: <span class="ident">T::Origin</span> {
-		<span class="doccomment">/// Deposit one of this pallet&#39;s events by using the default implementation.</span>
-		<span class="kw">fn</span> <span class="ident">deposit_event</span>() <span class="op">=</span> <span class="ident">default</span>;
-
-		<span class="doccomment">/// Transact an Ethereum transaction.</span>
-		<span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">pallet_evm::Config</span><span class="op">&gt;</span><span class="ident">::GasWeightMapping::gas_to_weight</span>(<span class="ident">transaction</span>.<span class="ident">gas_limit</span>.<span class="ident">unique_saturated_into</span>())]</span>
-		<span class="kw">fn</span> <span class="ident">transact</span>(<span class="ident">origin</span>, <span class="ident">transaction</span>: <span class="ident">Transaction</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">DispatchResultWithPostInfo</span> {
-			<span class="ident">ensure_none</span>(<span class="ident">origin</span>)<span class="question-mark">?</span>;
-
-			<span class="self">Self</span><span class="ident">::do_transact</span>(<span class="ident">transaction</span>)
-		}
-
+	<span class="attribute">#[<span class="ident">pallet::hooks</span>]</span>
+	<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">Hooks</span><span class="op">&lt;</span><span class="ident">BlockNumberFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
 		<span class="kw">fn</span> <span class="ident">on_finalize</span>(<span class="ident">n</span>: <span class="ident">T::BlockNumber</span>) {
-			<span class="op">&lt;</span><span class="ident">Module</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::store_block</span>(
-				<span class="ident">fp_consensus::find_pre_log</span>(<span class="kw-2">&amp;</span><span class="ident">frame_system::Module</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::digest</span>()).<span class="ident">is_err</span>(),
-				<span class="ident">U256::from</span>(
-					<span class="ident">UniqueSaturatedInto</span>::<span class="op">&lt;</span><span class="ident">u128</span><span class="op">&gt;</span><span class="ident">::unique_saturated_into</span>(
-						<span class="ident">frame_system::Module</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::block_number</span>()
-					)
-				),
+			<span class="op">&lt;</span><span class="ident">Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::store_block</span>(
+				<span class="ident">fp_consensus::find_pre_log</span>(<span class="kw-2">&amp;</span><span class="ident">frame_system::Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::digest</span>()).<span class="ident">is_err</span>(),
+				<span class="ident">U256::from</span>(<span class="ident">UniqueSaturatedInto</span>::<span class="op">&lt;</span><span class="ident">u128</span><span class="op">&gt;</span><span class="ident">::unique_saturated_into</span>(
+					<span class="ident">frame_system::Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::block_number</span>(),
+				)),
 			);
 			<span class="comment">// move block hash pruning window by one block</span>
 			<span class="kw">let</span> <span class="ident">block_hash_count</span> <span class="op">=</span> <span class="ident">T::BlockHashCount::get</span>();
-			<span class="kw">let</span> <span class="ident">to_remove</span> <span class="op">=</span> <span class="ident">n</span>.<span class="ident">saturating_sub</span>(<span class="ident">block_hash_count</span>).<span class="ident">saturating_sub</span>(<span class="ident">One::one</span>());
+			<span class="kw">let</span> <span class="ident">to_remove</span> <span class="op">=</span> <span class="ident">n</span>
+				.<span class="ident">saturating_sub</span>(<span class="ident">block_hash_count</span>)
+				.<span class="ident">saturating_sub</span>(<span class="ident">One::one</span>());
 			<span class="comment">// keep genesis hash</span>
 			<span class="kw">if</span> <span class="op">!</span><span class="ident">to_remove</span>.<span class="ident">is_zero</span>() {
-				<span class="ident">BlockHash::remove</span>(<span class="ident">U256::from</span>(
-					<span class="ident">UniqueSaturatedInto</span>::<span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span><span class="ident">::unique_saturated_into</span>(<span class="ident">to_remove</span>)
+				<span class="op">&lt;</span><span class="ident">BlockHash</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::remove</span>(<span class="ident">U256::from</span>(
+					<span class="ident">UniqueSaturatedInto</span>::<span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span><span class="ident">::unique_saturated_into</span>(<span class="ident">to_remove</span>),
 				));
 			}
 		}
 
-		<span class="kw">fn</span> <span class="ident">on_initialize</span>(<span class="ident">_n</span>: <span class="ident">T::BlockNumber</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Weight</span> {
-			<span class="ident">Pending::kill</span>();
+		<span class="kw">fn</span> <span class="ident">on_initialize</span>(<span class="kw">_</span>: <span class="ident">T::BlockNumber</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Weight</span> {
+			<span class="ident">Pending</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::kill</span>();
 
-			<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">log</span>) <span class="op">=</span> <span class="ident">fp_consensus::find_pre_log</span>(<span class="kw-2">&amp;</span><span class="ident">frame_system::Module</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::digest</span>()) {
+			<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">log</span>) <span class="op">=</span> <span class="ident">fp_consensus::find_pre_log</span>(<span class="kw-2">&amp;</span><span class="ident">frame_system::Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::digest</span>()) {
 				<span class="kw">let</span> <span class="ident">PreLog::Block</span>(<span class="ident">block</span>) <span class="op">=</span> <span class="ident">log</span>;
 
 				<span class="kw">for</span> <span class="ident">transaction</span> <span class="kw">in</span> <span class="ident">block</span>.<span class="ident">transactions</span> {
-					<span class="self">Self</span><span class="ident">::do_transact</span>(<span class="ident">transaction</span>)
-						.<span class="ident">expect</span>(<span class="string">&quot;pre-block transaction verification failed; the block cannot be built&quot;</span>);
+					<span class="self">Self</span><span class="ident">::do_transact</span>(<span class="ident">transaction</span>).<span class="ident">expect</span>(
+						<span class="string">&quot;pre-block transaction verification failed; the block cannot be built&quot;</span>,
+					);
 				}
 			}
 
 			<span class="number">0</span>
 		}
 	}
-}
 
-<span class="doccomment">/// Returns the Ethereum block hash by number.</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">EthereumBlockHashMapping</span>;
-<span class="kw">impl</span> <span class="ident">BlockHashMapping</span> <span class="kw">for</span> <span class="ident">EthereumBlockHashMapping</span> {
-	<span class="kw">fn</span> <span class="ident">block_hash</span>(<span class="ident">number</span>: <span class="ident">u32</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">H256</span> {
-		<span class="ident">BlockHash::get</span>(<span class="ident">U256::from</span>(<span class="ident">number</span>))
+	<span class="attribute">#[<span class="ident">pallet::call</span>]</span>
+	<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
+		<span class="doccomment">/// Transact an Ethereum transaction.</span>
+		<span class="attribute">#[<span class="ident">pallet::weight</span>(<span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">pallet_evm::Config</span><span class="op">&gt;</span><span class="ident">::GasWeightMapping::gas_to_weight</span>(<span class="ident">transaction</span>.<span class="ident">gas_limit</span>.<span class="ident">unique_saturated_into</span>()))]</span>
+		<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">transact</span>(
+			<span class="ident">origin</span>: <span class="ident">OriginFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
+			<span class="ident">transaction</span>: <span class="ident">Transaction</span>,
+		) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">DispatchResultWithPostInfo</span> {
+			<span class="ident">ensure_none</span>(<span class="ident">origin</span>)<span class="question-mark">?</span>;
+
+			<span class="self">Self</span><span class="ident">::do_transact</span>(<span class="ident">transaction</span>)
+		}
 	}
-}
 
-<span class="attribute">#[<span class="ident">repr</span>(<span class="ident">u8</span>)]</span>
-<span class="kw">enum</span> <span class="ident">TransactionValidationError</span> {
-	<span class="attribute">#[<span class="ident">allow</span>(<span class="ident">dead_code</span>)]</span>
-	<span class="ident">UnknownError</span>,
-	<span class="ident">InvalidChainId</span>,
-	<span class="ident">InvalidSignature</span>,
-	<span class="ident">InvalidGasLimit</span>,
-}
+	<span class="attribute">#[<span class="ident">pallet::event</span>]</span>
+	<span class="attribute">#[<span class="ident">pallet::generate_deposit</span>(<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn</span> <span class="ident">deposit_event</span>)]</span>
+	<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Event</span> {
+		<span class="doccomment">/// An ethereum transaction was successfully executed. [from, to/contract_address, transaction_hash, exit_reason]</span>
+		<span class="ident">Executed</span>(<span class="ident">H160</span>, <span class="ident">H160</span>, <span class="ident">H256</span>, <span class="ident">ExitReason</span>),
+	}
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">frame_support::unsigned::ValidateUnsigned</span> <span class="kw">for</span> <span class="ident">Module</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-	<span class="kw">type</span> <span class="ident">Call</span> <span class="op">=</span> <span class="ident">Call</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>;
+	<span class="attribute">#[<span class="ident">pallet::error</span>]</span>
+	<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Error</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
+		<span class="doccomment">/// Signature is invalid.</span>
+		<span class="ident">InvalidSignature</span>,
+		<span class="doccomment">/// Pre-log is present, therefore transact is not allowed.</span>
+		<span class="ident">PreLogExists</span>,
+	}
 
-	<span class="kw">fn</span> <span class="ident">validate_unsigned</span>(<span class="ident">_source</span>: <span class="ident">TransactionSource</span>, <span class="ident">call</span>: <span class="kw-2">&amp;</span><span class="self">Self</span><span class="ident">::Call</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">TransactionValidity</span> {
-		<span class="kw">if</span> <span class="kw">let</span> <span class="ident">Call::transact</span>(<span class="ident">transaction</span>) <span class="op">=</span> <span class="ident">call</span> {
-			<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">chain_id</span>) <span class="op">=</span> <span class="ident">transaction</span>.<span class="ident">signature</span>.<span class="ident">chain_id</span>() {
-				<span class="kw">if</span> <span class="ident">chain_id</span> <span class="op">!</span><span class="op">=</span> <span class="ident">T::ChainId::get</span>() {
+	<span class="doccomment">/// Current building block&#39;s transactions and receipts.</span>
+	<span class="attribute">#[<span class="ident">pallet::storage</span>]</span>
+	<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type</span> <span class="ident">Pending</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="op">=</span>
+		<span class="ident">StorageValue</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">Transaction</span>, <span class="ident">TransactionStatus</span>, <span class="ident">ethereum::Receipt</span>)<span class="op">&gt;</span>, <span class="ident">ValueQuery</span><span class="op">&gt;</span>;
+
+	<span class="doccomment">/// The current Ethereum block.</span>
+	<span class="attribute">#[<span class="ident">pallet::storage</span>]</span>
+	<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type</span> <span class="ident">CurrentBlock</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">StorageValue</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">ethereum::BlockV0</span><span class="op">&gt;</span>;
+
+	<span class="doccomment">/// The current Ethereum receipts.</span>
+	<span class="attribute">#[<span class="ident">pallet::storage</span>]</span>
+	<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type</span> <span class="ident">CurrentReceipts</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">StorageValue</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ethereum::Receipt</span><span class="op">&gt;</span><span class="op">&gt;</span>;
+
+	<span class="doccomment">/// The current transaction statuses.</span>
+	<span class="attribute">#[<span class="ident">pallet::storage</span>]</span>
+	<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type</span> <span class="ident">CurrentTransactionStatuses</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">StorageValue</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TransactionStatus</span><span class="op">&gt;</span><span class="op">&gt;</span>;
+
+	<span class="comment">// Mapping for block number and hashes.</span>
+	<span class="attribute">#[<span class="ident">pallet::storage</span>]</span>
+	<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type</span> <span class="ident">BlockHash</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">StorageMap</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">Twox64Concat</span>, <span class="ident">U256</span>, <span class="ident">H256</span>, <span class="ident">ValueQuery</span><span class="op">&gt;</span>;
+
+	<span class="attribute">#[<span class="ident">pallet::genesis_config</span>]</span>
+	<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Default</span>)]</span>
+	<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">GenesisConfig</span> {}
+
+	<span class="attribute">#[<span class="ident">pallet::genesis_build</span>]</span>
+	<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">GenesisBuild</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">GenesisConfig</span> {
+		<span class="kw">fn</span> <span class="ident">build</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) {
+			<span class="op">&lt;</span><span class="ident">Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::store_block</span>(<span class="bool-val">false</span>, <span class="ident">U256::zero</span>());
+			<span class="ident">frame_support::storage::unhashed::put</span>::<span class="op">&lt;</span><span class="ident">EthereumStorageSchema</span><span class="op">&gt;</span>(
+				<span class="kw-2">&amp;</span><span class="ident">PALLET_ETHEREUM_SCHEMA</span>,
+				<span class="kw-2">&amp;</span><span class="ident">EthereumStorageSchema::V1</span>,
+			);
+		}
+	}
+
+	<span class="attribute">#[<span class="ident">pallet::validate_unsigned</span>]</span>
+	<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">ValidateUnsigned</span> <span class="kw">for</span> <span class="ident">Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
+		<span class="kw">type</span> <span class="ident">Call</span> <span class="op">=</span> <span class="ident">Call</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>;
+
+		<span class="kw">fn</span> <span class="ident">validate_unsigned</span>(<span class="ident">_source</span>: <span class="ident">TransactionSource</span>, <span class="ident">call</span>: <span class="kw-2">&amp;</span><span class="self">Self</span><span class="ident">::Call</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">TransactionValidity</span> {
+			<span class="kw">if</span> <span class="kw">let</span> <span class="ident">Call::transact</span>(<span class="ident">transaction</span>) <span class="op">=</span> <span class="ident">call</span> {
+				<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">chain_id</span>) <span class="op">=</span> <span class="ident">transaction</span>.<span class="ident">signature</span>.<span class="ident">chain_id</span>() {
+					<span class="kw">if</span> <span class="ident">chain_id</span> <span class="op">!</span><span class="op">=</span> <span class="ident">T::ChainId::get</span>() {
+						<span class="kw">return</span> <span class="ident">InvalidTransaction::Custom</span>(
+							<span class="ident">TransactionValidationError::InvalidChainId</span> <span class="kw">as</span> <span class="ident">u8</span>,
+						)
+						.<span class="ident">into</span>();
+					}
+				}
+
+				<span class="kw">let</span> <span class="ident">origin</span> <span class="op">=</span> <span class="self">Self</span><span class="ident">::recover_signer</span>(<span class="kw-2">&amp;</span><span class="ident">transaction</span>).<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> {
+					<span class="ident">InvalidTransaction::Custom</span>(<span class="ident">TransactionValidationError::InvalidSignature</span> <span class="kw">as</span> <span class="ident">u8</span>)
+				})<span class="question-mark">?</span>;
+
+				<span class="kw">if</span> <span class="ident">transaction</span>.<span class="ident">gas_limit</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">T::BlockGasLimit::get</span>() {
 					<span class="kw">return</span> <span class="ident">InvalidTransaction::Custom</span>(
-						<span class="ident">TransactionValidationError::InvalidChainId</span> <span class="kw">as</span> <span class="ident">u8</span>,
+						<span class="ident">TransactionValidationError::InvalidGasLimit</span> <span class="kw">as</span> <span class="ident">u8</span>,
 					)
 					.<span class="ident">into</span>();
 				}
-			}
 
-			<span class="kw">let</span> <span class="ident">origin</span> <span class="op">=</span> <span class="self">Self</span><span class="ident">::recover_signer</span>(<span class="kw-2">&amp;</span><span class="ident">transaction</span>).<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> {
-				<span class="ident">InvalidTransaction::Custom</span>(<span class="ident">TransactionValidationError::InvalidSignature</span> <span class="kw">as</span> <span class="ident">u8</span>)
-			})<span class="question-mark">?</span>;
+				<span class="kw">let</span> <span class="ident">account_data</span> <span class="op">=</span> <span class="ident">pallet_evm::Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::account_basic</span>(<span class="kw-2">&amp;</span><span class="ident">origin</span>);
 
-			<span class="kw">if</span> <span class="ident">transaction</span>.<span class="ident">gas_limit</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">T::BlockGasLimit::get</span>() {
-				<span class="kw">return</span> <span class="ident">InvalidTransaction::Custom</span>(
-					<span class="ident">TransactionValidationError::InvalidGasLimit</span> <span class="kw">as</span> <span class="ident">u8</span>,
-				)
-				.<span class="ident">into</span>();
-			}
-
-			<span class="kw">let</span> <span class="ident">account_data</span> <span class="op">=</span> <span class="ident">pallet_evm::Module</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::account_basic</span>(<span class="kw-2">&amp;</span><span class="ident">origin</span>);
-
-			<span class="kw">if</span> <span class="ident">transaction</span>.<span class="ident">nonce</span> <span class="op">&lt;</span> <span class="ident">account_data</span>.<span class="ident">nonce</span> {
-				<span class="kw">return</span> <span class="ident">InvalidTransaction::Stale</span>.<span class="ident">into</span>();
-			}
-
-			<span class="kw">let</span> <span class="ident">fee</span> <span class="op">=</span> <span class="ident">transaction</span>.<span class="ident">gas_price</span>.<span class="ident">saturating_mul</span>(<span class="ident">transaction</span>.<span class="ident">gas_limit</span>);
-			<span class="kw">let</span> <span class="ident">total_payment</span> <span class="op">=</span> <span class="ident">transaction</span>.<span class="ident">value</span>.<span class="ident">saturating_add</span>(<span class="ident">fee</span>);
-			<span class="kw">if</span> <span class="ident">account_data</span>.<span class="ident">balance</span> <span class="op">&lt;</span> <span class="ident">total_payment</span> {
-				<span class="kw">return</span> <span class="ident">InvalidTransaction::Payment</span>.<span class="ident">into</span>();
-			}
-
-			<span class="kw">let</span> <span class="ident">min_gas_price</span> <span class="op">=</span> <span class="ident">T::FeeCalculator::min_gas_price</span>();
-
-			<span class="kw">if</span> <span class="ident">transaction</span>.<span class="ident">gas_price</span> <span class="op">&lt;</span> <span class="ident">min_gas_price</span> {
-				<span class="kw">return</span> <span class="ident">InvalidTransaction::Payment</span>.<span class="ident">into</span>();
-			}
-
-			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">builder</span> <span class="op">=</span> <span class="ident">ValidTransactionBuilder::default</span>()
-				.<span class="ident">and_provides</span>((<span class="ident">origin</span>, <span class="ident">transaction</span>.<span class="ident">nonce</span>))
-				.<span class="ident">priority</span>(<span class="ident">transaction</span>.<span class="ident">gas_price</span>.<span class="ident">unique_saturated_into</span>());
-
-			<span class="kw">if</span> <span class="ident">transaction</span>.<span class="ident">nonce</span> <span class="op">&gt;</span> <span class="ident">account_data</span>.<span class="ident">nonce</span> {
-				<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">prev_nonce</span>) <span class="op">=</span> <span class="ident">transaction</span>.<span class="ident">nonce</span>.<span class="ident">checked_sub</span>(<span class="number">1</span>.<span class="ident">into</span>()) {
-					<span class="ident">builder</span> <span class="op">=</span> <span class="ident">builder</span>.<span class="ident">and_requires</span>((<span class="ident">origin</span>, <span class="ident">prev_nonce</span>))
+				<span class="kw">if</span> <span class="ident">transaction</span>.<span class="ident">nonce</span> <span class="op">&lt;</span> <span class="ident">account_data</span>.<span class="ident">nonce</span> {
+					<span class="kw">return</span> <span class="ident">InvalidTransaction::Stale</span>.<span class="ident">into</span>();
 				}
-			}
 
-			<span class="ident">builder</span>.<span class="ident">build</span>()
-		} <span class="kw">else</span> {
-			<span class="prelude-val">Err</span>(<span class="ident">InvalidTransaction::Call</span>.<span class="ident">into</span>())
+				<span class="kw">let</span> <span class="ident">fee</span> <span class="op">=</span> <span class="ident">transaction</span>.<span class="ident">gas_price</span>.<span class="ident">saturating_mul</span>(<span class="ident">transaction</span>.<span class="ident">gas_limit</span>);
+				<span class="kw">let</span> <span class="ident">total_payment</span> <span class="op">=</span> <span class="ident">transaction</span>.<span class="ident">value</span>.<span class="ident">saturating_add</span>(<span class="ident">fee</span>);
+				<span class="kw">if</span> <span class="ident">account_data</span>.<span class="ident">balance</span> <span class="op">&lt;</span> <span class="ident">total_payment</span> {
+					<span class="kw">return</span> <span class="ident">InvalidTransaction::Payment</span>.<span class="ident">into</span>();
+				}
+
+				<span class="kw">let</span> <span class="ident">min_gas_price</span> <span class="op">=</span> <span class="ident">T::FeeCalculator::min_gas_price</span>();
+
+				<span class="kw">if</span> <span class="ident">transaction</span>.<span class="ident">gas_price</span> <span class="op">&lt;</span> <span class="ident">min_gas_price</span> {
+					<span class="kw">return</span> <span class="ident">InvalidTransaction::Payment</span>.<span class="ident">into</span>();
+				}
+
+				<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">builder</span> <span class="op">=</span> <span class="ident">ValidTransactionBuilder::default</span>()
+					.<span class="ident">and_provides</span>((<span class="ident">origin</span>, <span class="ident">transaction</span>.<span class="ident">nonce</span>))
+					.<span class="ident">priority</span>(<span class="ident">transaction</span>.<span class="ident">gas_price</span>.<span class="ident">unique_saturated_into</span>());
+
+				<span class="kw">if</span> <span class="ident">transaction</span>.<span class="ident">nonce</span> <span class="op">&gt;</span> <span class="ident">account_data</span>.<span class="ident">nonce</span> {
+					<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">prev_nonce</span>) <span class="op">=</span> <span class="ident">transaction</span>.<span class="ident">nonce</span>.<span class="ident">checked_sub</span>(<span class="number">1</span>.<span class="ident">into</span>()) {
+						<span class="ident">builder</span> <span class="op">=</span> <span class="ident">builder</span>.<span class="ident">and_requires</span>((<span class="ident">origin</span>, <span class="ident">prev_nonce</span>))
+					}
+				}
+				<span class="ident">builder</span>.<span class="ident">build</span>()
+			} <span class="kw">else</span> {
+				<span class="prelude-val">Err</span>(<span class="ident">InvalidTransaction::Call</span>.<span class="ident">into</span>())
+			}
 		}
 	}
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">Module</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
 	<span class="kw">fn</span> <span class="ident">recover_signer</span>(<span class="ident">transaction</span>: <span class="kw-2">&amp;</span><span class="ident">Transaction</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">H160</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">sig</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">65</span>];
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">msg</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">32</span>];
@@ -806,7 +788,7 @@
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">statuses</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">receipts</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">logs_bloom</span> <span class="op">=</span> <span class="ident">Bloom::default</span>();
-		<span class="kw">for</span> (<span class="ident">transaction</span>, <span class="ident">status</span>, <span class="ident">receipt</span>) <span class="kw">in</span> <span class="ident">Pending::get</span>() {
+		<span class="kw">for</span> (<span class="ident">transaction</span>, <span class="ident">status</span>, <span class="ident">receipt</span>) <span class="kw">in</span> <span class="ident">Pending</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::get</span>() {
 			<span class="ident">transactions</span>.<span class="ident">push</span>(<span class="ident">transaction</span>);
 			<span class="ident">statuses</span>.<span class="ident">push</span>(<span class="ident">status</span>);
 			<span class="ident">receipts</span>.<span class="ident">push</span>(<span class="ident">receipt</span>.<span class="ident">clone</span>());
@@ -818,7 +800,7 @@
 			<span class="ident">ethereum::util::ordered_trie_root</span>(<span class="ident">receipts</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">r</span><span class="op">|</span> <span class="ident">rlp::encode</span>(<span class="ident">r</span>)));
 		<span class="kw">let</span> <span class="ident">partial_header</span> <span class="op">=</span> <span class="ident">ethereum::PartialHeader</span> {
 			<span class="ident">parent_hash</span>: <span class="self">Self</span><span class="ident">::current_block_hash</span>().<span class="ident">unwrap_or_default</span>(),
-			<span class="ident">beneficiary</span>: <span class="ident">pallet_evm::Module</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::find_author</span>(),
+			<span class="ident">beneficiary</span>: <span class="ident">pallet_evm::Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::find_author</span>(),
 			<span class="ident">state_root</span>: <span class="ident">T::StateRoot::get</span>(),
 			<span class="ident">receipts_root</span>,
 			<span class="ident">logs_bloom</span>,
@@ -830,7 +812,7 @@
 				.<span class="ident">into_iter</span>()
 				.<span class="ident">fold</span>(<span class="ident">U256::zero</span>(), <span class="op">|</span><span class="ident">acc</span>, <span class="ident">r</span><span class="op">|</span> <span class="ident">acc</span> <span class="op">+</span> <span class="ident">r</span>.<span class="ident">used_gas</span>),
 			<span class="ident">timestamp</span>: <span class="ident">UniqueSaturatedInto</span>::<span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span><span class="ident">::unique_saturated_into</span>(
-				<span class="ident">pallet_timestamp::Module</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::get</span>(),
+				<span class="ident">pallet_timestamp::Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::get</span>(),
 			),
 			<span class="ident">extra_data</span>: <span class="ident">Vec::new</span>(),
 			<span class="ident">mix_hash</span>: <span class="ident">H256::default</span>(),
@@ -838,17 +820,17 @@
 		};
 		<span class="kw">let</span> <span class="ident">block</span> <span class="op">=</span> <span class="ident">ethereum::Block::new</span>(<span class="ident">partial_header</span>, <span class="ident">transactions</span>.<span class="ident">clone</span>(), <span class="ident">ommers</span>);
 
-		<span class="ident">CurrentBlock::put</span>(<span class="ident">block</span>.<span class="ident">clone</span>());
-		<span class="ident">CurrentReceipts::put</span>(<span class="ident">receipts</span>.<span class="ident">clone</span>());
-		<span class="ident">CurrentTransactionStatuses::put</span>(<span class="ident">statuses</span>.<span class="ident">clone</span>());
-		<span class="ident">BlockHash::insert</span>(<span class="ident">block_number</span>, <span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">hash</span>());
+		<span class="ident">CurrentBlock</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::put</span>(<span class="ident">block</span>.<span class="ident">clone</span>());
+		<span class="ident">CurrentReceipts</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::put</span>(<span class="ident">receipts</span>.<span class="ident">clone</span>());
+		<span class="ident">CurrentTransactionStatuses</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::put</span>(<span class="ident">statuses</span>.<span class="ident">clone</span>());
+		<span class="ident">BlockHash</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::insert</span>(<span class="ident">block_number</span>, <span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">hash</span>());
 
 		<span class="kw">if</span> <span class="ident">post_log</span> {
 			<span class="kw">let</span> <span class="ident">digest</span> <span class="op">=</span> <span class="ident">DigestItem</span>::<span class="op">&lt;</span><span class="ident">T::Hash</span><span class="op">&gt;</span><span class="ident">::Consensus</span>(
 				<span class="ident">FRONTIER_ENGINE_ID</span>,
 				<span class="ident">PostLog::Hashes</span>(<span class="ident">fp_consensus::Hashes::from_block</span>(<span class="ident">block</span>)).<span class="ident">encode</span>(),
 			);
-			<span class="ident">frame_system::Module</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::deposit_log</span>(<span class="ident">digest</span>.<span class="ident">into</span>());
+			<span class="ident">frame_system::Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::deposit_log</span>(<span class="ident">digest</span>.<span class="ident">into</span>());
 		}
 	}
 
@@ -863,7 +845,7 @@
 
 	<span class="kw">fn</span> <span class="ident">do_transact</span>(<span class="ident">transaction</span>: <span class="ident">Transaction</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">DispatchResultWithPostInfo</span> {
 		<span class="macro">ensure!</span>(
-			<span class="ident">fp_consensus::find_pre_log</span>(<span class="kw-2">&amp;</span><span class="ident">frame_system::Module</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::digest</span>()).<span class="ident">is_err</span>(),
+			<span class="ident">fp_consensus::find_pre_log</span>(<span class="kw-2">&amp;</span><span class="ident">frame_system::Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::digest</span>()).<span class="ident">is_err</span>(),
 			<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::PreLogExists</span>,
 		);
 
@@ -872,7 +854,7 @@
 
 		<span class="kw">let</span> <span class="ident">transaction_hash</span> <span class="op">=</span>
 			<span class="ident">H256::from_slice</span>(<span class="ident">Keccak256::digest</span>(<span class="kw-2">&amp;</span><span class="ident">rlp::encode</span>(<span class="kw-2">&amp;</span><span class="ident">transaction</span>)).<span class="ident">as_slice</span>());
-		<span class="kw">let</span> <span class="ident">transaction_index</span> <span class="op">=</span> <span class="ident">Pending::get</span>().<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">u32</span>;
+		<span class="kw">let</span> <span class="ident">transaction_index</span> <span class="op">=</span> <span class="ident">Pending</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::get</span>().<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">u32</span>;
 
 		<span class="kw">let</span> (<span class="ident">to</span>, <span class="ident">contract_address</span>, <span class="ident">info</span>) <span class="op">=</span> <span class="self">Self</span><span class="ident">::execute</span>(
 			<span class="ident">source</span>,
@@ -934,7 +916,7 @@
 			<span class="ident">logs</span>: <span class="ident">status</span>.<span class="ident">clone</span>().<span class="ident">logs</span>,
 		};
 
-		<span class="ident">Pending::append</span>((<span class="ident">transaction</span>, <span class="ident">status</span>, <span class="ident">receipt</span>));
+		<span class="ident">Pending</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::append</span>((<span class="ident">transaction</span>, <span class="ident">status</span>, <span class="ident">receipt</span>));
 
 		<span class="self">Self</span><span class="ident">::deposit_event</span>(<span class="ident">Event::Executed</span>(
 			<span class="ident">source</span>,
@@ -953,12 +935,12 @@
 
 	<span class="doccomment">/// Get the transaction status with given index.</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">current_transaction_statuses</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TransactionStatus</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-		<span class="ident">CurrentTransactionStatuses::get</span>()
+		<span class="ident">CurrentTransactionStatuses</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::get</span>()
 	}
 
 	<span class="doccomment">/// Get current block.</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">current_block</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">ethereum::BlockV0</span><span class="op">&gt;</span> {
-		<span class="ident">CurrentBlock::get</span>()
+		<span class="ident">CurrentBlock</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::get</span>()
 	}
 
 	<span class="doccomment">/// Get current block hash</span>
@@ -968,7 +950,7 @@
 
 	<span class="doccomment">/// Get receipts by number.</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">current_receipts</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ethereum::Receipt</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-		<span class="ident">CurrentReceipts::get</span>()
+		<span class="ident">CurrentReceipts</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::get</span>()
 	}
 
 	<span class="doccomment">/// Execute an Ethereum transaction.</span>
@@ -1014,6 +996,50 @@
 			}
 		}
 	}
+}
+
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">Clone</span>, <span class="ident">sp_runtime::RuntimeDebug</span>)]</span>
+<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">ReturnValue</span> {
+	<span class="ident">Bytes</span>(<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>),
+	<span class="ident">Hash</span>(<span class="ident">H160</span>),
+}
+
+<span class="doccomment">/// The schema version for Pallet Ethereum&#39;s storage</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">Debug</span>, <span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>, <span class="ident">PartialOrd</span>, <span class="ident">Ord</span>)]</span>
+<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">EthereumStorageSchema</span> {
+	<span class="ident">Undefined</span>,
+	<span class="ident">V1</span>,
+}
+
+<span class="kw">impl</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">EthereumStorageSchema</span> {
+	<span class="kw">fn</span> <span class="ident">default</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+		<span class="self">Self</span><span class="ident">::Undefined</span>
+	}
+}
+
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">IntermediateStateRoot</span>;
+<span class="kw">impl</span> <span class="ident">Get</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">IntermediateStateRoot</span> {
+	<span class="kw">fn</span> <span class="ident">get</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">H256</span> {
+		<span class="ident">H256::decode</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="kw-2">&amp;</span><span class="ident">sp_io::storage::root</span>()[..])
+			.<span class="ident">expect</span>(<span class="string">&quot;Node is configured to use the same hash; qed&quot;</span>)
+	}
+}
+
+<span class="doccomment">/// Returns the Ethereum block hash by number.</span>
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">EthereumBlockHashMapping</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>(<span class="ident">PhantomData</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>);
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">BlockHashMapping</span> <span class="kw">for</span> <span class="ident">EthereumBlockHashMapping</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">block_hash</span>(<span class="ident">number</span>: <span class="ident">u32</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">H256</span> {
+		<span class="ident">BlockHash</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::get</span>(<span class="ident">U256::from</span>(<span class="ident">number</span>))
+	}
+}
+
+<span class="attribute">#[<span class="ident">repr</span>(<span class="ident">u8</span>)]</span>
+<span class="kw">enum</span> <span class="ident">TransactionValidationError</span> {
+	<span class="attribute">#[<span class="ident">allow</span>(<span class="ident">dead_code</span>)]</span>
+	<span class="ident">UnknownError</span>,
+	<span class="ident">InvalidChainId</span>,
+	<span class="ident">InvalidSignature</span>,
+	<span class="ident">InvalidGasLimit</span>,
 }
 </pre></div>
 </section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_ethereum" data-search-index-js="../../search-index.js" data-search-js="../../search.js"></div><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script></body></html>
