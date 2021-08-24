@@ -18,7 +18,7 @@
 //! Test utilities
 
 use super::*;
-use crate::{Pallet, Config, IntermediateStateRoot};
+use crate::IntermediateStateRoot;
 use ethereum::{TransactionAction, TransactionSignature};
 use frame_support::{parameter_types, traits::FindAuthor, ConsensusEngineId, PalletId};
 use pallet_evm::{AddressMapping, EnsureAddressTruncated, FeeCalculator};
@@ -158,18 +158,13 @@ impl pallet_evm::Config for Test {
 	type BlockGasLimit = BlockGasLimit;
 	type OnChargeTransaction = ();
 	type FindAuthor = FindAuthorTruncated;
-	type BlockHashMapping = crate::EthereumBlockHashMapping;
+	type BlockHashMapping = crate::EthereumBlockHashMapping<Self>;
 }
 
 impl crate::Config for Test {
 	type Event = Event;
 	type StateRoot = IntermediateStateRoot;
 }
-
-pub type System = frame_system::Pallet<Test>;
-pub type Balances = pallet_balances::Pallet<Test>;
-pub type Ethereum = Pallet<Test>;
-pub type Evm = pallet_evm::Pallet<Test>;
 
 pub struct AccountInfo {
 	pub address: H160,
