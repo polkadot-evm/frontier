@@ -1933,6 +1933,9 @@
 <span id="1931">1931</span>
 <span id="1932">1932</span>
 <span id="1933">1933</span>
+<span id="1934">1934</span>
+<span id="1935">1935</span>
+<span id="1936">1936</span>
 </pre><pre class="rust">
 <span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
@@ -1958,7 +1961,7 @@
 <span class="kw">use</span> <span class="ident">ethereum_types</span>::{<span class="ident">H160</span>, <span class="ident">H256</span>, <span class="ident">H512</span>, <span class="ident">H64</span>, <span class="ident">U256</span>, <span class="ident">U64</span>};
 <span class="kw">use</span> <span class="ident">fc_rpc_core::types</span>::{
 	<span class="ident">Block</span>, <span class="ident">BlockNumber</span>, <span class="ident">BlockTransactions</span>, <span class="ident">Bytes</span>, <span class="ident">CallRequest</span>, <span class="ident">Filter</span>, <span class="ident">FilterChanges</span>, <span class="ident">FilterPool</span>,
-	<span class="ident">FilterPoolItem</span>, <span class="ident">FilterType</span>, <span class="ident">FilteredParams</span>, <span class="ident">Index</span>, <span class="ident">Log</span>, <span class="ident">PeerCount</span>, <span class="ident">PendingTransaction</span>,
+	<span class="ident">FilterPoolItem</span>, <span class="ident">FilterType</span>, <span class="ident">FilteredParams</span>, <span class="ident">Header</span>, <span class="ident">Index</span>, <span class="ident">Log</span>, <span class="ident">PeerCount</span>, <span class="ident">PendingTransaction</span>,
 	<span class="ident">PendingTransactions</span>, <span class="ident">Receipt</span>, <span class="ident">Rich</span>, <span class="ident">RichBlock</span>, <span class="ident">SyncInfo</span>, <span class="ident">SyncStatus</span>, <span class="ident">Transaction</span>,
 	<span class="ident">TransactionRequest</span>, <span class="ident">Work</span>,
 };
@@ -2050,28 +2053,31 @@
 ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">RichBlock</span> {
 	<span class="ident">Rich</span> {
 		<span class="ident">inner</span>: <span class="ident">Block</span> {
-			<span class="ident">hash</span>: <span class="prelude-val">Some</span>(<span class="ident">hash</span>.<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> {
-				<span class="ident">H256::from_slice</span>(<span class="ident">Keccak256::digest</span>(<span class="kw-2">&amp;</span><span class="ident">rlp::encode</span>(<span class="kw-2">&amp;</span><span class="ident">block</span>.<span class="ident">header</span>)).<span class="ident">as_slice</span>())
-			})),
-			<span class="ident">parent_hash</span>: <span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">parent_hash</span>,
-			<span class="ident">uncles_hash</span>: <span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">ommers_hash</span>,
-			<span class="ident">author</span>: <span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">beneficiary</span>,
-			<span class="ident">miner</span>: <span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">beneficiary</span>,
-			<span class="ident">state_root</span>: <span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">state_root</span>,
-			<span class="ident">transactions_root</span>: <span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">transactions_root</span>,
-			<span class="ident">receipts_root</span>: <span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">receipts_root</span>,
-			<span class="ident">number</span>: <span class="prelude-val">Some</span>(<span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">number</span>),
-			<span class="ident">gas_used</span>: <span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">gas_used</span>,
-			<span class="ident">gas_limit</span>: <span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">gas_limit</span>,
-			<span class="ident">extra_data</span>: <span class="ident">Bytes</span>(<span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">extra_data</span>.<span class="ident">clone</span>()),
-			<span class="ident">logs_bloom</span>: <span class="prelude-val">Some</span>(<span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">logs_bloom</span>),
-			<span class="ident">timestamp</span>: <span class="ident">U256::from</span>(<span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">timestamp</span> <span class="op">/</span> <span class="number">1000</span>),
-			<span class="ident">difficulty</span>: <span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">difficulty</span>,
+			<span class="ident">header</span>: <span class="ident">Header</span> {
+				<span class="ident">hash</span>: <span class="prelude-val">Some</span>(<span class="ident">hash</span>.<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> {
+					<span class="ident">H256::from_slice</span>(<span class="ident">Keccak256::digest</span>(<span class="kw-2">&amp;</span><span class="ident">rlp::encode</span>(<span class="kw-2">&amp;</span><span class="ident">block</span>.<span class="ident">header</span>)).<span class="ident">as_slice</span>())
+				})),
+				<span class="ident">parent_hash</span>: <span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">parent_hash</span>,
+				<span class="ident">uncles_hash</span>: <span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">ommers_hash</span>,
+				<span class="ident">author</span>: <span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">beneficiary</span>,
+				<span class="ident">miner</span>: <span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">beneficiary</span>,
+				<span class="ident">state_root</span>: <span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">state_root</span>,
+				<span class="ident">transactions_root</span>: <span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">transactions_root</span>,
+				<span class="ident">receipts_root</span>: <span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">receipts_root</span>,
+				<span class="ident">number</span>: <span class="prelude-val">Some</span>(<span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">number</span>),
+				<span class="ident">gas_used</span>: <span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">gas_used</span>,
+				<span class="ident">gas_limit</span>: <span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">gas_limit</span>,
+				<span class="ident">extra_data</span>: <span class="ident">Bytes</span>(<span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">extra_data</span>.<span class="ident">clone</span>()),
+				<span class="ident">logs_bloom</span>: <span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">logs_bloom</span>,
+				<span class="ident">timestamp</span>: <span class="ident">U256::from</span>(<span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">timestamp</span> <span class="op">/</span> <span class="number">1000</span>),
+				<span class="ident">difficulty</span>: <span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">difficulty</span>,
+				<span class="ident">seal_fields</span>: <span class="macro">vec!</span>[
+					<span class="ident">Bytes</span>(<span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">mix_hash</span>.<span class="ident">as_bytes</span>().<span class="ident">to_vec</span>()),
+					<span class="ident">Bytes</span>(<span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">nonce</span>.<span class="ident">as_bytes</span>().<span class="ident">to_vec</span>()),
+				],
+				<span class="ident">size</span>: <span class="prelude-val">Some</span>(<span class="ident">U256::from</span>(<span class="ident">rlp::encode</span>(<span class="kw-2">&amp;</span><span class="ident">block</span>.<span class="ident">header</span>).<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">u32</span>)),
+			},
 			<span class="ident">total_difficulty</span>: <span class="ident">U256::zero</span>(),
-			<span class="ident">seal_fields</span>: <span class="macro">vec!</span>[
-				<span class="ident">Bytes</span>(<span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">mix_hash</span>.<span class="ident">as_bytes</span>().<span class="ident">to_vec</span>()),
-				<span class="ident">Bytes</span>(<span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">nonce</span>.<span class="ident">as_bytes</span>().<span class="ident">to_vec</span>()),
-			],
 			<span class="ident">uncles</span>: <span class="macro">vec!</span>[],
 			<span class="ident">transactions</span>: {
 				<span class="kw">if</span> <span class="ident">full_transactions</span> {
