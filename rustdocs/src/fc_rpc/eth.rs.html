@@ -1924,6 +1924,15 @@
 <span id="1922">1922</span>
 <span id="1923">1923</span>
 <span id="1924">1924</span>
+<span id="1925">1925</span>
+<span id="1926">1926</span>
+<span id="1927">1927</span>
+<span id="1928">1928</span>
+<span id="1929">1929</span>
+<span id="1930">1930</span>
+<span id="1931">1931</span>
+<span id="1932">1932</span>
+<span id="1933">1933</span>
 </pre><pre class="rust">
 <span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
@@ -2952,12 +2961,15 @@
 			<span class="prelude-val">Ok</span>(<span class="ident">used_gas</span>)
 		};
 		<span class="kw">if</span> <span class="macro">cfg!</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;rpc_binary_search_estimate&quot;</span>) {
+			<span class="kw">const</span> <span class="ident">MAX_OOG_PER_ESTIMATE_QUERY</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">2</span>;
+
 			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">lower</span> <span class="op">=</span> <span class="ident">U256::from</span>(<span class="number">21_000</span>);
 			<span class="comment">// TODO: get a good upper limit, but below U64::max to operation overflow</span>
 			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">upper</span> <span class="op">=</span> <span class="ident">U256::from</span>(<span class="ident">gas_limit</span>);
 			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">mid</span> <span class="op">=</span> <span class="ident">upper</span>;
 			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">best</span> <span class="op">=</span> <span class="ident">mid</span>;
 			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">old_best</span>: <span class="ident">U256</span>;
+			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">num_oog</span> <span class="op">=</span> <span class="number">0</span>;
 
 			<span class="comment">// if the gas estimation depends on the gas limit, then we want to binary</span>
 			<span class="comment">// search until the change is under some threshold. but if not dependent,</span>
@@ -2982,6 +2994,12 @@
 					<span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=</span><span class="op">&gt;</span> {
 						<span class="comment">// if Err == OutofGas, we need more gas</span>
 						<span class="kw">if</span> <span class="ident">err</span>.<span class="ident">code</span> <span class="op">=</span><span class="op">=</span> <span class="ident">ErrorCode::ServerError</span>(<span class="number">0</span>) {
+							<span class="ident">num_oog</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
+							<span class="comment">// don&#39;t try more than twice if we oog</span>
+							<span class="kw">if</span> <span class="ident">num_oog</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">MAX_OOG_PER_ESTIMATE_QUERY</span> {
+								<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">err</span>);
+							}
+
 							<span class="ident">lower</span> <span class="op">=</span> <span class="ident">mid</span>;
 							<span class="ident">mid</span> <span class="op">=</span> (<span class="ident">lower</span> <span class="op">+</span> <span class="ident">upper</span> <span class="op">+</span> <span class="number">1</span>) <span class="op">/</span> <span class="number">2</span>;
 							<span class="kw">if</span> <span class="ident">mid</span> <span class="op">=</span><span class="op">=</span> <span class="ident">lower</span> {
