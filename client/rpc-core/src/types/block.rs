@@ -49,41 +49,11 @@ impl Serialize for BlockTransactions {
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Block {
-	/// Hash of the block
-	pub hash: Option<H256>,
-	/// Hash of the parent
-	pub parent_hash: H256,
-	/// Hash of the uncles
-	#[serde(rename = "sha3Uncles")]
-	pub uncles_hash: H256,
-	/// Authors address
-	pub author: H160,
-	/// Alias of `author`
-	pub miner: H160,
-	/// State root hash
-	pub state_root: H256,
-	/// Transactions root hash
-	pub transactions_root: H256,
-	/// Transactions receipts root hash
-	pub receipts_root: H256,
-	/// Block number
-	pub number: Option<U256>,
-	/// Gas Used
-	pub gas_used: U256,
-	/// Gas Limit
-	pub gas_limit: U256,
-	/// Extra data
-	pub extra_data: Bytes,
-	/// Logs bloom
-	pub logs_bloom: Option<H2048>,
-	/// Timestamp
-	pub timestamp: U256,
-	/// Difficulty
-	pub difficulty: U256,
+	/// Header of the block
+	#[serde(flatten)]
+	pub header: Header,
 	/// Total difficulty
 	pub total_difficulty: U256,
-	/// Seal fields
-	pub seal_fields: Vec<Bytes>,
 	/// Uncles' hashes
 	pub uncles: Vec<H256>,
 	/// Transactions
