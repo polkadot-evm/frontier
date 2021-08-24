@@ -481,9 +481,6 @@ impl Default for EthereumStorageSchema {
 	}
 }
 
-/// A type alias for the balance type from this pallet's point of view.
-pub type BalanceOf<T> = <T as pallet_balances::Config>::Balance;
-
 pub struct IntermediateStateRoot;
 impl Get<H256> for IntermediateStateRoot {
 	fn get() -> H256 {
