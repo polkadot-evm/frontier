@@ -16,9 +16,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use serde::Serialize;
-use ethereum_types::{H160, H256, U256};
 use crate::types::Bytes;
+use ethereum_types::{H160, H256, U256};
+use serde::Serialize;
 
 /// Log
 #[derive(Debug, Serialize, PartialEq, Eq, Hash, Clone)]

@@ -2,4 +2,5 @@
 
 ## Unreleased
 
-* Implemented evm FeeCalculator for dynamic-fee pallet. 
+* Uses unreleased pallet-evm 5.0.0-dev
+* Update `TargetGasPrice` once in a block
