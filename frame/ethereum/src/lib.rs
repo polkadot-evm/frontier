@@ -23,6 +23,13 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use codec::{Decode, Encode};
+use ethereum_types::{Bloom, BloomInput, H160, H256, H64, U256};
+use evm::ExitReason;
+use fp_consensus::{PostLog, PreLog, FRONTIER_ENGINE_ID};
+use fp_evm::CallOrCreateInfo;
+use fp_storage::PALLET_ETHEREUM_SCHEMA;
+use frame_support::ensure;
 use frame_support::{
 	traits::Get, traits::FindAuthor, dispatch::DispatchResultWithPostInfo,
 };
@@ -33,16 +40,13 @@ use sp_runtime::{
 	transaction_validity::ValidTransactionBuilder,
 	generic::DigestItem, traits::UniqueSaturatedInto, DispatchError,
 };
-use evm::ExitReason;
-use fp_evm::CallOrCreateInfo;
-use pallet_evm::{Runner, GasWeightMapping, FeeCalculator};
-use sha3::{Digest, Keccak256};
-use codec::{Encode, Decode};
-use fp_consensus::{FRONTIER_ENGINE_ID, PostLog, PreLog};
-use fp_storage::PALLET_ETHEREUM_SCHEMA;
+use sp_std::prelude::*;
 
+pub use ethereum::{
+	BlockV0 as Block, LegacyTransactionMessage, Log, Receipt, TransactionAction,
+	TransactionV0 as Transaction,
+};
 pub use fp_rpc::TransactionStatus;
-pub use ethereum::{Transaction, Log, Block, Receipt, TransactionAction, TransactionMessage};
 
 #[cfg(all(feature = "std", test))]
 mod tests;
@@ -64,8 +68,6 @@ pub mod pallet {
 	{
 		/// The overarching event type.
 		type Event: From<Event> + IsType<<Self as frame_system::Config>::Event>;
-		/// Find author for Ethereum.
-		type FindAuthor: FindAuthor<H160>;
 		/// How Ethereum state root is calculated.
 		type StateRoot: Get<H256>;
 	}
@@ -194,19 +196,13 @@ pub mod pallet {
 					return InvalidTransaction::Payment.into();
 				}
 
-				let mut builder = ValidTransactionBuilder::default()
-					.and_provides((origin, transaction.nonce))
-					.priority(if min_gas_price == U256::zero() {
-							0
-						} else {
-							let target_gas = (transaction.gas_limit * transaction.gas_price) / min_gas_price;
-							T::GasWeightMapping::gas_to_weight(target_gas.unique_saturated_into())
-					});
+			let mut builder = ValidTransactionBuilder::default()
+				.and_provides((origin, transaction.nonce))
+				.priority(transaction.gas_price.unique_saturated_into());
 
-				if transaction.nonce > account_data.nonce {
-					if let Some(prev_nonce) = transaction.nonce.checked_sub(1.into()) {
-						builder = builder.and_requires((origin, prev_nonce))
-					}
+			if transaction.nonce > account_data.nonce {
+				if let Some(prev_nonce) = transaction.nonce.checked_sub(1.into()) {
+					builder = builder.and_requires((origin, prev_nonce))
 				}
 
 				builder.build()
@@ -224,10 +220,12 @@ impl<T: Config> Pallet<T> {
 		sig[0..32].copy_from_slice(&transaction.signature.r()[..]);
 		sig[32..64].copy_from_slice(&transaction.signature.s()[..]);
 		sig[64] = transaction.signature.standard_v();
-		msg.copy_from_slice(&TransactionMessage::from(transaction.clone()).hash()[..]);
+		msg.copy_from_slice(&LegacyTransactionMessage::from(transaction.clone()).hash()[..]);
 
 		let pubkey = sp_io::crypto::secp256k1_ecdsa_recover(&sig, &msg).ok()?;
-		Some(H160::from(H256::from_slice(Keccak256::digest(&pubkey).as_slice())))
+		Some(H160::from(H256::from_slice(
+			Keccak256::digest(&pubkey).as_slice(),
+		)))
 	}
 
 	fn store_block(post_log: bool, block_number: U256) {
@@ -239,26 +237,25 @@ impl<T: Config> Pallet<T> {
 			transactions.push(transaction);
 			statuses.push(status);
 			receipts.push(receipt.clone());
-			Self::logs_bloom(
-				receipt.logs.clone(),
-				&mut logs_bloom
-			);
+			Self::logs_bloom(receipt.logs.clone(), &mut logs_bloom);
 		}
 
 		let ommers = Vec::<ethereum::Header>::new();
+		let receipts_root =
+			ethereum::util::ordered_trie_root(receipts.iter().map(|r| rlp::encode(r)));
 		let partial_header = ethereum::PartialHeader {
 			parent_hash: Self::current_block_hash().unwrap_or_default(),
-			beneficiary: <Pallet<T>>::find_author(),
-			// TODO: figure out if there's better way to get a sort-of-valid state root.
-			state_root: H256::default(),
-			receipts_root: H256::from_slice(
-				Keccak256::digest(&rlp::encode_list(&receipts)[..]).as_slice(),
-			), // TODO: check receipts hash.
+			beneficiary: pallet_evm::Module::<T>::find_author(),
+			state_root: T::StateRoot::get(),
+			receipts_root,
 			logs_bloom,
 			difficulty: U256::zero(),
 			number: block_number,
 			gas_limit: T::BlockGasLimit::get(),
-			gas_used: receipts.clone().into_iter().fold(U256::zero(), |acc, r| acc + r.used_gas),
+			gas_used: receipts
+				.clone()
+				.into_iter()
+				.fold(U256::zero(), |acc, r| acc + r.used_gas),
 			timestamp: UniqueSaturatedInto::<u64>::unique_saturated_into(
 				pallet_timestamp::Pallet::<T>::get()
 			),
@@ -266,12 +263,12 @@ impl<T: Config> Pallet<T> {
 			mix_hash: H256::default(),
 			nonce: H64::default(),
 		};
-		let mut block = ethereum::Block::new(partial_header, transactions.clone(), ommers);
-		block.header.state_root = T::StateRoot::get();
+		let block = ethereum::Block::new(partial_header, transactions.clone(), ommers);
 
-		CurrentBlock::<T>::put(block.clone());
-		CurrentReceipts::<T>::put(receipts.clone());
-		CurrentTransactionStatuses::<T>::put(statuses.clone());
+		CurrentBlock::put(block.clone());
+		CurrentReceipts::put(receipts.clone());
+		CurrentTransactionStatuses::put(statuses.clone());
+		BlockHash::insert(block_number, block.header.hash());
 
 		if post_log {
 			let digest = DigestItem::<T::Hash>::Consensus(
@@ -291,19 +288,18 @@ impl<T: Config> Pallet<T> {
 		}
 	}
 
-	fn do_transact(transaction: ethereum::Transaction) -> DispatchResultWithPostInfo {
+	fn do_transact(transaction: Transaction) -> DispatchResultWithPostInfo {
 		ensure!(
 			fp_consensus::find_pre_log(&frame_system::Pallet::<T>::digest()).is_err(),
 			Error::<T>::PreLogExists,
 		);
 
-		let source = Self::recover_signer(&transaction)
-			.ok_or_else(|| Error::<T>::InvalidSignature)?;
+		let source =
+			Self::recover_signer(&transaction).ok_or_else(|| Error::<T>::InvalidSignature)?;
 
-		let transaction_hash = H256::from_slice(
-			Keccak256::digest(&rlp::encode(&transaction)).as_slice()
-		);
-		let transaction_index = Pending::<T>::get().len() as u32;
+		let transaction_hash =
+			H256::from_slice(Keccak256::digest(&rlp::encode(&transaction)).as_slice());
+		let transaction_index = Pending::get().len() as u32;
 
 		let (to, contract_address, info) = Self::execute(
 			source,
@@ -317,8 +313,9 @@ impl<T: Config> Pallet<T> {
 		)?;
 
 		let (reason, status, used_gas) = match info {
-			CallOrCreateInfo::Call(info) => {
-				(info.exit_reason, TransactionStatus {
+			CallOrCreateInfo::Call(info) => (
+				info.exit_reason,
+				TransactionStatus {
 					transaction_hash,
 					transaction_index,
 					from: source,
@@ -327,16 +324,15 @@ impl<T: Config> Pallet<T> {
 					logs: info.logs.clone(),
 					logs_bloom: {
 						let mut bloom: Bloom = Bloom::default();
-						Self::logs_bloom(
-							info.logs,
-							&mut bloom
-						);
+						Self::logs_bloom(info.logs, &mut bloom);
 						bloom
 					},
-				}, info.used_gas)
-			},
-			CallOrCreateInfo::Create(info) => {
-				(info.exit_reason, TransactionStatus {
+				},
+				info.used_gas,
+			),
+			CallOrCreateInfo::Create(info) => (
+				info.exit_reason,
+				TransactionStatus {
 					transaction_hash,
 					transaction_index,
 					from: source,
@@ -345,14 +341,12 @@ impl<T: Config> Pallet<T> {
 					logs: info.logs.clone(),
 					logs_bloom: {
 						let mut bloom: Bloom = Bloom::default();
-						Self::logs_bloom(
-							info.logs,
-							&mut bloom
-						);
+						Self::logs_bloom(info.logs, &mut bloom);
 						bloom
 					},
-				}, info.used_gas)
-			},
+				},
+				info.used_gas,
+			),
 		};
 
 		let receipt = ethereum::Receipt {
@@ -369,16 +363,19 @@ impl<T: Config> Pallet<T> {
 
 		Pending::<T>::append((transaction, status, receipt));
 
-		Self::deposit_event(Event::Executed(source, contract_address.unwrap_or_default(), transaction_hash, reason));
-		Ok(Some(T::GasWeightMapping::gas_to_weight(used_gas.unique_saturated_into())).into())
-	}
-
-	/// Get the author using the FindAuthor trait.
-	pub fn find_author() -> H160 {
-		let digest = <frame_system::Pallet<T>>::digest();
-		let pre_runtime_digests = digest.logs.iter().filter_map(|d| d.as_pre_runtime());
-
-		T::FindAuthor::find_author(pre_runtime_digests).unwrap_or_default()
+		Self::deposit_event(Event::Executed(
+			source,
+			contract_address.unwrap_or_default(),
+			transaction_hash,
+			reason,
+		));
+		Ok(PostDispatchInfo {
+			actual_weight: Some(T::GasWeightMapping::gas_to_weight(
+				used_gas.unique_saturated_into(),
+			)),
+			pays_fee: Pays::No,
+		})
+		.into()
 	}
 
 	/// Get the transaction status with given index.
@@ -387,8 +384,8 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Get current block.
-	pub fn current_block() -> Option<ethereum::Block> {
-		CurrentBlock::<T>::get()
+	pub fn current_block() -> Option<ethereum::BlockV0> {
+		CurrentBlock::get()
 	}
 
 	/// Get current block hash
@@ -423,10 +420,11 @@ impl<T: Config> Pallet<T> {
 					gas_price,
 					nonce,
 					config.as_ref().unwrap_or(T::config()),
-				).map_err(Into::into)?;
+				)
+				.map_err(Into::into)?;
 
 				Ok((Some(target), None, CallOrCreateInfo::Call(res)))
-			},
+			}
 			ethereum::TransactionAction::Create => {
 				let res = T::Runner::create(
 					from,
@@ -436,10 +434,11 @@ impl<T: Config> Pallet<T> {
 					gas_price,
 					nonce,
 					config.as_ref().unwrap_or(T::config()),
-				).map_err(Into::into)?;
+				)
+				.map_err(Into::into)?;
 
 				Ok((None, Some(res.value), CallOrCreateInfo::Create(res)))
-			},
+			}
 		}
 	}
 }
