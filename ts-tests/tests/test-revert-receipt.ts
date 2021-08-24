@@ -46,7 +46,6 @@ describeWithFrontier("Frontier RPC (Constructor Revert)", (context) => {
 		await createAndFinalizeBlock(context.web3);
 		const receipt = await context.web3.eth.getTransactionReceipt(GOOD_TX_HASH);
 		expect(receipt).to.include({
-			blockNumber: 1,
 			contractAddress: '0xC2Bf5F29a4384b1aB0C063e1c666f02121B6084a',
 			cumulativeGasUsed: 67231,
 			from: '0x6be02d1d3665660d22ff9624b7be0551ee1ac91b',
@@ -86,7 +85,6 @@ describeWithFrontier("Frontier RPC (Constructor Revert)", (context) => {
 		await createAndFinalizeBlock(context.web3);
 		const receipt = await context.web3.eth.getTransactionReceipt(FAIL_TX_HASH);
 		expect(receipt).to.include({
-			blockNumber: 2,
 			contractAddress: '0x5c4242beB94dE30b922f57241f1D02f36e906915',
 			cumulativeGasUsed: 54600,
 			from: '0x6be02d1d3665660d22ff9624b7be0551ee1ac91b',

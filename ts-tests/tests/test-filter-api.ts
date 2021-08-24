@@ -2,7 +2,7 @@ import { expect } from "chai";
 import { step } from "mocha-steps";
 import { create } from "ts-node";
 
-import { createAndFinalizeBlock, describeWithFrontier, customRequest } from "./util";
+import { createAndFinalizeBlock, createAndFinalizeBlockNowait, describeWithFrontier, customRequest } from "./util";
 
 describeWithFrontier("Frontier RPC (EthFilterApi)", (context) => {
 
@@ -169,7 +169,7 @@ describeWithFrontier("Frontier RPC (EthFilterApi)", (context) => {
 		let filter_id = create_filter.result;
 
 		for (let i = 0; i <= block_lifespan_threshold; i++) {
-			await createAndFinalizeBlock(context.web3);
+			await createAndFinalizeBlockNowait(context.web3);
 		}
 
 		let r = await customRequest(context.web3, "eth_getFilterChanges", [filter_id]);

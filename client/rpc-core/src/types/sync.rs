@@ -18,7 +18,7 @@
 
 use std::collections::BTreeMap;
 
-use ethereum_types::{U256, H512};
+use ethereum_types::{H512, U256};
 use serde::{Serialize, Serializer};
 
 /// Sync info
@@ -54,7 +54,7 @@ pub struct Peers {
 #[serde(untagged)]
 pub enum PeerCount {
 	U32(u32),
-	String(String)
+	String(String),
 }
 
 /// Peer connection information
@@ -119,15 +119,17 @@ pub enum SyncStatus {
 	/// Info when syncing
 	Info(SyncInfo),
 	/// Not syncing
-	None
+	None,
 }
 
 impl Serialize for SyncStatus {
 	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-	where S: Serializer {
+	where
+		S: Serializer,
+	{
 		match *self {
 			SyncStatus::Info(ref info) => info.serialize(serializer),
-			SyncStatus::None => false.serialize(serializer)
+			SyncStatus::None => false.serialize(serializer),
 		}
 	}
 }
