@@ -71,6 +71,54 @@ pub type FlatTopic = VariadicValue<Option<H256>>;
 
 pub type BloomFilter<'a> = Vec<Option<Bloom>>;
 
+impl From<&VariadicValue<H160>> for Vec<Option<Bloom>> {
+	fn from(address: &VariadicValue<H160>) -> Self {
+		let mut blooms = BloomFilter::new();
+		match address {
+			VariadicValue::Single(address) => {
+				let bloom: Bloom = BloomInput::Raw(address.as_ref()).into();
+				blooms.push(Some(bloom))
+			}
+			VariadicValue::Multiple(addresses) => {
+				for address in addresses.into_iter() {
+					let bloom: Bloom = BloomInput::Raw(address.as_ref()).into();
+					blooms.push(Some(bloom))
+				}
+			}
+			_ => blooms.push(None),
+		}
+		blooms
+	}
+}
+
+impl From<&VariadicValue<Option<H256>>> for Vec<Option<Bloom>> {
+	fn from(topics: &VariadicValue<Option<H256>>) -> Self {
+		let mut blooms = BloomFilter::new();
+		match topics {
+			VariadicValue::Single(topic) => {
+				if let Some(topic) = topic {
+					let bloom: Bloom = BloomInput::Raw(topic.as_ref()).into();
+					blooms.push(Some(bloom));
+				} else {
+					blooms.push(None);
+				}
+			}
+			VariadicValue::Multiple(topics) => {
+				for topic in topics.into_iter() {
+					if let Some(topic) = topic {
+						let bloom: Bloom = BloomInput::Raw(topic.as_ref()).into();
+						blooms.push(Some(bloom));
+					} else {
+						blooms.push(None);
+					}
+				}
+			}
+			_ => blooms.push(None),
+		}
+		blooms
+	}
+}
+
 /// Filter
 #[derive(Debug, PartialEq, Clone, Deserialize, Eq, Hash)]
 #[serde(deny_unknown_fields)]
@@ -122,55 +170,62 @@ impl FilteredParams {
 		Self::default()
 	}
 
-	pub fn bloom_filter<'a>(
-		address: &'a Option<FilterAddress>,
-		topics: &'a Option<Vec<FlatTopic>>,
-	) -> BloomFilter<'a> {
-		let mut blooms = BloomFilter::new();
-		// Address
+	/// Build an address-based BloomFilter.
+	pub fn adresses_bloom_filter<'a>(address: &'a Option<FilterAddress>) -> BloomFilter<'a> {
 		if let Some(address) = address {
-			match address {
-				VariadicValue::Single(address) => {
-					let bloom: Bloom = BloomInput::Raw(address.as_ref()).into();
-					blooms.push(Some(bloom))
-				}
-				VariadicValue::Multiple(addresses) => {
-					for address in addresses.into_iter() {
-						let bloom: Bloom = BloomInput::Raw(address.as_ref()).into();
-						blooms.push(Some(bloom))
-					}
-				}
-				_ => blooms.push(None),
-			}
+			return address.into();
 		}
-		// Topics
-		if let Some(topics) = topics {
-			for flat in topics {
-				match flat {
-					VariadicValue::Single(topic) => {
-						if let Some(topic) = topic {
-							let bloom: Bloom = BloomInput::Raw(topic.as_ref()).into();
-							blooms.push(Some(bloom));
-						} else {
-							blooms.push(None);
-						}
-					}
-					_ => blooms.push(None),
-				}
-			}
-		}
-		blooms
+		Vec::new()
 	}
 
-	/// Checks the possible existance of an address or topic(s) in a Bloom.
-	/// Wildcards (VariadicValue::Null) are matched as positive.
-	pub fn in_bloom(bloom: Bloom, bloom_input: &BloomFilter) -> bool {
-		if bloom_input.len() == 0 {
+	/// Build a topic-based BloomFilter.
+	pub fn topics_bloom_filter<'a>(topics: &'a Option<Vec<FlatTopic>>) -> Vec<BloomFilter<'a>> {
+		let mut output: Vec<BloomFilter> = Vec::new();
+		if let Some(topics) = topics {
+			for flat in topics {
+				output.push(flat.into());
+			}
+		}
+		output
+	}
+
+	/// Evaluates if a Bloom contains a provided sequence of topics.
+	pub fn topics_in_bloom(bloom: Bloom, topic_bloom_filters: &Vec<BloomFilter>) -> bool {
+		if topic_bloom_filters.len() == 0 {
+			// No filter provided, match.
+			return true;
+		}
+		// A logical OR evaluation over `topic_bloom_filters`.
+		for subset in topic_bloom_filters.into_iter() {
+			let mut matches = false;
+			for el in subset {
+				matches = match el {
+					Some(input) => bloom.contains_bloom(input),
+					// Wildcards are true.
+					None => true,
+				};
+				// Each subset must be evaluated sequentially to true or break.
+				if !matches {
+					break;
+				}
+			}
+			// If any subset is fully evaluated to true, there is no further evaluation.
+			if matches {
+				return true;
+			}
+		}
+		false
+	}
+
+	/// Evaluates if a Bloom contains the provided address(es).
+	pub fn address_in_bloom(bloom: Bloom, address_bloom_filter: &BloomFilter) -> bool {
+		if address_bloom_filter.len() == 0 {
+			// No filter provided, match.
 			return true;
 		} else {
-			for inner in bloom_input {
-				// Wildcard (None) or matching topic.
-				if match inner {
+			// Wildcards are true.
+			for el in address_bloom_filter {
+				if match el {
 					Some(input) => bloom.contains_bloom(input),
 					None => true,
 				} {
