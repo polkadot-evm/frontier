@@ -80,9 +80,13 @@ impl From<&VariadicValue<H160>> for Vec<Option<Bloom>> {
 				blooms.push(Some(bloom))
 			}
 			VariadicValue::Multiple(addresses) => {
-				for address in addresses.into_iter() {
-					let bloom: Bloom = BloomInput::Raw(address.as_ref()).into();
-					blooms.push(Some(bloom))
+				if addresses.len() == 0 {
+					blooms.push(None);
+				} else {
+					for address in addresses.into_iter() {
+						let bloom: Bloom = BloomInput::Raw(address.as_ref()).into();
+						blooms.push(Some(bloom));
+					}
 				}
 			}
 			_ => blooms.push(None),
@@ -104,12 +108,16 @@ impl From<&VariadicValue<Option<H256>>> for Vec<Option<Bloom>> {
 				}
 			}
 			VariadicValue::Multiple(topics) => {
-				for topic in topics.into_iter() {
-					if let Some(topic) = topic {
-						let bloom: Bloom = BloomInput::Raw(topic.as_ref()).into();
-						blooms.push(Some(bloom));
-					} else {
-						blooms.push(None);
+				if topics.len() == 0 {
+					blooms.push(None);
+				} else {
+					for topic in topics.into_iter() {
+						if let Some(topic) = topic {
+							let bloom: Bloom = BloomInput::Raw(topic.as_ref()).into();
+							blooms.push(Some(bloom));
+						} else {
+							blooms.push(None);
+						}
 					}
 				}
 			}
@@ -586,6 +594,27 @@ mod tests {
 		};
 		let topics_bloom = FilteredParams::topics_bloom_filter(&topics_input);
 		assert!(!FilteredParams::topics_in_bloom(
+			block_bloom(),
+			&topics_bloom
+		));
+	}
+	#[test]
+	fn bloom_filter_should_match_by_empty_topic() {
+		let filter = Filter {
+			from_block: None,
+			to_block: None,
+			block_hash: None,
+			address: None,
+			topics: Some(VariadicValue::Multiple(vec![])),
+		};
+		let topics_input = if let Some(_) = &filter.topics {
+			let filtered_params = FilteredParams::new(Some(filter.clone()));
+			Some(filtered_params.flat_topics)
+		} else {
+			None
+		};
+		let topics_bloom = FilteredParams::topics_bloom_filter(&topics_input);
+		assert!(FilteredParams::topics_in_bloom(
 			block_bloom(),
 			&topics_bloom
 		));
