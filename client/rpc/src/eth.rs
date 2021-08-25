@@ -268,7 +268,8 @@ where
 	} else {
 		None
 	};
-	let bloom_filter = FilteredParams::bloom_filter(&filter.address, &topics_input);
+	let address_bloom_filter = FilteredParams::adresses_bloom_filter(&filter.address);
+	let topics_bloom_filter = FilteredParams::topics_bloom_filter(&topics_input);
 
 	// Get schema cache. A single AuxStore read before the block range iteration.
 	// This prevents having to do an extra DB read per block range iteration to getthe actual schema.
@@ -320,7 +321,9 @@ where
 		let block = handler.current_block(&id);
 
 		if let Some(block) = block {
-			if FilteredParams::in_bloom(block.header.logs_bloom, &bloom_filter) {
+			if FilteredParams::address_in_bloom(block.header.logs_bloom, &address_bloom_filter)
+				&& FilteredParams::topics_in_bloom(block.header.logs_bloom, &topics_bloom_filter)
+			{
 				let statuses = handler.current_transaction_statuses(&id);
 				if let Some(statuses) = statuses {
 					filter_block_logs(ret, filter, block, statuses);
