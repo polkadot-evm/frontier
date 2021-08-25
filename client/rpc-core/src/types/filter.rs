@@ -469,3 +469,253 @@ pub struct FilterPoolItem {
 
 /// On-memory stored filters created through the `eth_newFilter` RPC.
 pub type FilterPool = Arc<Mutex<BTreeMap<U256, FilterPoolItem>>>;
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use std::str::FromStr;
+
+	fn block_bloom() -> Bloom {
+		let test_address = H160::from_str("1000000000000000000000000000000000000000").unwrap();
+		let topic1 =
+			H256::from_str("1000000000000000000000000000000000000000000000000000000000000000")
+				.unwrap();
+		let topic2 =
+			H256::from_str("2000000000000000000000000000000000000000000000000000000000000000")
+				.unwrap();
+
+		let mut block_bloom = Bloom::default();
+		block_bloom.accrue(BloomInput::Raw(&test_address[..]));
+		block_bloom.accrue(BloomInput::Raw(&topic1[..]));
+		block_bloom.accrue(BloomInput::Raw(&topic2[..]));
+		block_bloom
+	}
+
+	#[test]
+	fn bloom_filter_should_match_by_address() {
+		let test_address = H160::from_str("1000000000000000000000000000000000000000").unwrap();
+		let filter = Filter {
+			from_block: None,
+			to_block: None,
+			block_hash: None,
+			address: Some(VariadicValue::Single(test_address)),
+			topics: None,
+		};
+		let address_bloom = FilteredParams::adresses_bloom_filter(&filter.address);
+		assert!(FilteredParams::address_in_bloom(
+			block_bloom(),
+			&address_bloom
+		));
+	}
+
+	#[test]
+	fn bloom_filter_should_not_match_by_address() {
+		let test_address = H160::from_str("2000000000000000000000000000000000000000").unwrap();
+		let filter = Filter {
+			from_block: None,
+			to_block: None,
+			block_hash: None,
+			address: Some(VariadicValue::Single(test_address)),
+			topics: None,
+		};
+		let address_bloom = FilteredParams::adresses_bloom_filter(&filter.address);
+		assert!(!FilteredParams::address_in_bloom(
+			block_bloom(),
+			&address_bloom
+		));
+	}
+	#[test]
+	fn bloom_filter_should_match_by_topic() {
+		let topic1 =
+			H256::from_str("1000000000000000000000000000000000000000000000000000000000000000")
+				.unwrap();
+		let topic2 =
+			H256::from_str("2000000000000000000000000000000000000000000000000000000000000000")
+				.unwrap();
+		let topic3 =
+			H256::from_str("3000000000000000000000000000000000000000000000000000000000000000")
+				.unwrap();
+		let filter = Filter {
+			from_block: None,
+			to_block: None,
+			block_hash: None,
+			address: None,
+			topics: Some(VariadicValue::Multiple(vec![
+				Some(VariadicValue::Single(Some(topic1))),
+				Some(VariadicValue::Multiple(vec![Some(topic2), Some(topic3)])),
+			])),
+		};
+		let topics_input = if let Some(_) = &filter.topics {
+			let filtered_params = FilteredParams::new(Some(filter.clone()));
+			Some(filtered_params.flat_topics)
+		} else {
+			None
+		};
+		let topics_bloom = FilteredParams::topics_bloom_filter(&topics_input);
+		assert!(FilteredParams::topics_in_bloom(
+			block_bloom(),
+			&topics_bloom
+		));
+	}
+	#[test]
+	fn bloom_filter_should_not_match_by_topic() {
+		let topic1 =
+			H256::from_str("1000000000000000000000000000000000000000000000000000000000000000")
+				.unwrap();
+		let topic2 =
+			H256::from_str("4000000000000000000000000000000000000000000000000000000000000000")
+				.unwrap();
+		let topic3 =
+			H256::from_str("5000000000000000000000000000000000000000000000000000000000000000")
+				.unwrap();
+		let filter = Filter {
+			from_block: None,
+			to_block: None,
+			block_hash: None,
+			address: None,
+			topics: Some(VariadicValue::Multiple(vec![
+				Some(VariadicValue::Single(Some(topic1))),
+				Some(VariadicValue::Multiple(vec![Some(topic2), Some(topic3)])),
+			])),
+		};
+		let topics_input = if let Some(_) = &filter.topics {
+			let filtered_params = FilteredParams::new(Some(filter.clone()));
+			Some(filtered_params.flat_topics)
+		} else {
+			None
+		};
+		let topics_bloom = FilteredParams::topics_bloom_filter(&topics_input);
+		assert!(!FilteredParams::topics_in_bloom(
+			block_bloom(),
+			&topics_bloom
+		));
+	}
+	#[test]
+	fn bloom_filter_should_match_combined() {
+		let test_address = H160::from_str("1000000000000000000000000000000000000000").unwrap();
+		let topic1 =
+			H256::from_str("1000000000000000000000000000000000000000000000000000000000000000")
+				.unwrap();
+		let topic2 =
+			H256::from_str("2000000000000000000000000000000000000000000000000000000000000000")
+				.unwrap();
+		let topic3 =
+			H256::from_str("3000000000000000000000000000000000000000000000000000000000000000")
+				.unwrap();
+		let filter = Filter {
+			from_block: None,
+			to_block: None,
+			block_hash: None,
+			address: Some(VariadicValue::Single(test_address)),
+			topics: Some(VariadicValue::Multiple(vec![
+				Some(VariadicValue::Single(Some(topic1))),
+				Some(VariadicValue::Multiple(vec![Some(topic2), Some(topic3)])),
+			])),
+		};
+		let topics_input = if let Some(_) = &filter.topics {
+			let filtered_params = FilteredParams::new(Some(filter.clone()));
+			Some(filtered_params.flat_topics)
+		} else {
+			None
+		};
+		let address_bloom = FilteredParams::adresses_bloom_filter(&filter.address);
+		let topics_bloom = FilteredParams::topics_bloom_filter(&topics_input);
+		let matches = FilteredParams::address_in_bloom(block_bloom(), &address_bloom)
+			&& FilteredParams::topics_in_bloom(block_bloom(), &topics_bloom);
+		assert!(matches);
+	}
+	#[test]
+	fn bloom_filter_should_not_match_combined() {
+		let test_address = H160::from_str("2000000000000000000000000000000000000000").unwrap();
+		let topic1 =
+			H256::from_str("1000000000000000000000000000000000000000000000000000000000000000")
+				.unwrap();
+		let topic2 =
+			H256::from_str("2000000000000000000000000000000000000000000000000000000000000000")
+				.unwrap();
+		let topic3 =
+			H256::from_str("3000000000000000000000000000000000000000000000000000000000000000")
+				.unwrap();
+		let filter = Filter {
+			from_block: None,
+			to_block: None,
+			block_hash: None,
+			address: Some(VariadicValue::Single(test_address)),
+			topics: Some(VariadicValue::Multiple(vec![
+				Some(VariadicValue::Single(Some(topic1))),
+				Some(VariadicValue::Multiple(vec![Some(topic2), Some(topic3)])),
+			])),
+		};
+		let topics_input = if let Some(_) = &filter.topics {
+			let filtered_params = FilteredParams::new(Some(filter.clone()));
+			Some(filtered_params.flat_topics)
+		} else {
+			None
+		};
+		let address_bloom = FilteredParams::adresses_bloom_filter(&filter.address);
+		let topics_bloom = FilteredParams::topics_bloom_filter(&topics_input);
+		let matches = FilteredParams::address_in_bloom(block_bloom(), &address_bloom)
+			&& FilteredParams::topics_in_bloom(block_bloom(), &topics_bloom);
+		assert!(!matches);
+	}
+	#[test]
+	fn bloom_filter_should_match_wildcards_by_topic() {
+		let topic2 =
+			H256::from_str("2000000000000000000000000000000000000000000000000000000000000000")
+				.unwrap();
+		let topic3 =
+			H256::from_str("3000000000000000000000000000000000000000000000000000000000000000")
+				.unwrap();
+		let filter = Filter {
+			from_block: None,
+			to_block: None,
+			block_hash: None,
+			address: None,
+			topics: Some(VariadicValue::Multiple(vec![
+				None,
+				Some(VariadicValue::Multiple(vec![Some(topic2), Some(topic3)])),
+			])),
+		};
+		let topics_input = if let Some(_) = &filter.topics {
+			let filtered_params = FilteredParams::new(Some(filter.clone()));
+			Some(filtered_params.flat_topics)
+		} else {
+			None
+		};
+		let topics_bloom = FilteredParams::topics_bloom_filter(&topics_input);
+		assert!(FilteredParams::topics_in_bloom(
+			block_bloom(),
+			&topics_bloom
+		));
+	}
+	#[test]
+	fn bloom_filter_should_not_match_wildcards_by_topic() {
+		let topic2 =
+			H256::from_str("4000000000000000000000000000000000000000000000000000000000000000")
+				.unwrap();
+		let topic3 =
+			H256::from_str("5000000000000000000000000000000000000000000000000000000000000000")
+				.unwrap();
+		let filter = Filter {
+			from_block: None,
+			to_block: None,
+			block_hash: None,
+			address: None,
+			topics: Some(VariadicValue::Multiple(vec![
+				None,
+				Some(VariadicValue::Multiple(vec![Some(topic2), Some(topic3)])),
+			])),
+		};
+		let topics_input = if let Some(_) = &filter.topics {
+			let filtered_params = FilteredParams::new(Some(filter.clone()));
+			Some(filtered_params.flat_topics)
+		} else {
+			None
+		};
+		let topics_bloom = FilteredParams::topics_bloom_filter(&topics_input);
+		assert!(!FilteredParams::topics_in_bloom(
+			block_bloom(),
+			&topics_bloom
+		));
+	}
+}
