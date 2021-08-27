@@ -344,7 +344,7 @@ impl<T: Config> Pallet<T> {
 			None,
 		)?;
 
-		let (reason, status, used_gas) = match info {
+		let (reason, status, used_gas, dest) = match info {
 			CallOrCreateInfo::Call(info) => (
 				info.exit_reason,
 				TransactionStatus {
@@ -361,6 +361,7 @@ impl<T: Config> Pallet<T> {
 					},
 				},
 				info.used_gas,
+				to,
 			),
 			CallOrCreateInfo::Create(info) => (
 				info.exit_reason,
@@ -378,6 +379,7 @@ impl<T: Config> Pallet<T> {
 					},
 				},
 				info.used_gas,
+				Some(info.value),
 			),
 		};
 
@@ -397,7 +399,7 @@ impl<T: Config> Pallet<T> {
 
 		Self::deposit_event(Event::Executed(
 			source,
-			contract_address.unwrap_or_default(),
+			dest.unwrap_or_default(),
 			transaction_hash,
 			reason,
 		));
