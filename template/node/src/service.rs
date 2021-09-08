@@ -294,8 +294,7 @@ pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, Ser
 		mut keystore_container,
 		select_chain,
 		transaction_pool,
-		other:
-			(consensus_result, filter_pool, frontier_backend, mut telemetry),
+		other: (consensus_result, filter_pool, frontier_backend, mut telemetry),
 	} = new_partial(&config, &cli)?;
 
 	if let Some(url) = &config.keystore_remote {

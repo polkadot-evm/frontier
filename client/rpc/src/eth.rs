@@ -22,8 +22,8 @@ use ethereum::{BlockV0 as EthereumBlock, TransactionV0 as EthereumTransaction};
 use ethereum_types::{H160, H256, H512, H64, U256, U64};
 use fc_rpc_core::types::{
 	Block, BlockNumber, BlockTransactions, Bytes, CallRequest, Filter, FilterChanges, FilterPool,
-	FilterPoolItem, FilterType, FilteredParams, Header, Index, Log, PeerCount, Receipt, Rich, RichBlock, SyncInfo, SyncStatus, Transaction,
-	TransactionRequest, Work,
+	FilterPoolItem, FilterType, FilteredParams, Header, Index, Log, PeerCount, Receipt, Rich,
+	RichBlock, SyncInfo, SyncStatus, Transaction, TransactionRequest, Work,
 };
 use fc_rpc_core::{
 	EthApi as EthApiT, EthFilterApi as EthFilterApiT, NetApi as NetApiT, Web3Api as Web3ApiT,
@@ -1064,24 +1064,25 @@ where
 	}
 
 	fn transaction_by_hash(&self, hash: H256) -> Result<Option<Transaction>> {
-
 		let mut xts: Vec<<B as BlockT>::Extrinsic> = Vec::new();
 		// Collect transactions in the ready validated pool.
-		xts.extend(self
-			.graph
-			.validated_pool()
-			.ready()
-			.map(|in_pool_tx| in_pool_tx.data().clone())
-			.collect::<Vec<<B as BlockT>::Extrinsic>>());
+		xts.extend(
+			self.graph
+				.validated_pool()
+				.ready()
+				.map(|in_pool_tx| in_pool_tx.data().clone())
+				.collect::<Vec<<B as BlockT>::Extrinsic>>(),
+		);
 
 		// Collect transactions in the future validated pool.
-		xts.extend(self
-			.graph
-			.validated_pool()
-			.futures()
-			.iter()
-			.map(|(_hash, extrinsic)| extrinsic.clone())
-			.collect::<Vec<<B as BlockT>::Extrinsic>>());
+		xts.extend(
+			self.graph
+				.validated_pool()
+				.futures()
+				.iter()
+				.map(|(_hash, extrinsic)| extrinsic.clone())
+				.collect::<Vec<<B as BlockT>::Extrinsic>>(),
+		);
 
 		let best_block: BlockId<B> = BlockId::Hash(self.client.info().best_hash);
 		let ethereum_transactions: Vec<ethereum::TransactionV0> = self
@@ -1093,9 +1094,7 @@ where
 			})?;
 
 		for txn in ethereum_transactions {
-			let inner_hash = H256::from_slice(
-				Keccak256::digest(&rlp::encode(&txn)).as_slice()
-			);
+			let inner_hash = H256::from_slice(Keccak256::digest(&rlp::encode(&txn)).as_slice());
 			if hash == inner_hash {
 				return Ok(Some(transaction_build(txn, None, None)));
 			}
@@ -1109,7 +1108,7 @@ where
 		.map_err(|err| internal_err(format!("{:?}", err)))?
 		{
 			Some((hash, index)) => (hash, index as usize),
-			None => return Ok(None)
+			None => return Ok(None),
 		};
 
 		let id = match frontier_backend_client::load_hash::<B>(self.backend.as_ref(), hash)
