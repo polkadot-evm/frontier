@@ -159,19 +159,3 @@ pub struct RichRawTransaction {
 	#[serde(rename = "tx")]
 	pub transaction: Transaction,
 }
-
-pub struct PendingTransaction {
-	pub transaction: Transaction,
-	pub at_block: u64,
-}
-
-impl PendingTransaction {
-	pub fn new(transaction: Transaction, at_block: u64) -> Self {
-		Self {
-			transaction,
-			at_block,
-		}
-	}
-}
-
-pub type PendingTransactions = Option<Arc<Mutex<HashMap<H256, PendingTransaction>>>>;

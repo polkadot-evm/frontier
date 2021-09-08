@@ -53,7 +53,7 @@ pub use self::sync::{
 	PipProtocolInfo, SyncInfo, SyncStatus, TransactionStats,
 };
 pub use self::transaction::{
-	LocalTransactionStatus, PendingTransaction, PendingTransactions, RichRawTransaction,
+	LocalTransactionStatus, RichRawTransaction,
 	Transaction,
 };
 pub use self::transaction_request::TransactionRequest;

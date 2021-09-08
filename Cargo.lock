@@ -1575,6 +1575,7 @@ dependencies = [
  "sc-network",
  "sc-rpc",
  "sc-service",
+ "sc-transaction-pool",
  "sc-transaction-pool-api",
  "sha3 0.8.2",
  "sp-api",

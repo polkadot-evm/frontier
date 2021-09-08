@@ -7,7 +7,7 @@ use async_trait::async_trait;
 use fc_consensus::FrontierBlockImport;
 use fc_mapping_sync::{MappingSyncWorker, SyncStrategy};
 use fc_rpc::EthTask;
-use fc_rpc_core::types::{FilterPool, PendingTransactions};
+use fc_rpc_core::types::FilterPool;
 use frontier_template_runtime::{self, opaque::Block, RuntimeApi, SLOT_DURATION};
 use futures::StreamExt;
 use sc_cli::SubstrateCli;
@@ -133,7 +133,6 @@ pub fn new_partial(
 		sc_transaction_pool::FullPool<Block, FullClient>,
 		(
 			ConsensusResult,
-			PendingTransactions,
 			Option<FilterPool>,
 			Arc<fc_db::Backend<Block>>,
 			Option<Telemetry>,
@@ -180,8 +179,6 @@ pub fn new_partial(
 		client.clone(),
 	);
 
-	let pending_transactions: PendingTransactions = Some(Arc::new(Mutex::new(HashMap::new())));
-
 	let filter_pool: Option<FilterPool> = Some(Arc::new(Mutex::new(BTreeMap::new())));
 
 	let frontier_backend = open_frontier_backend(config)?;
@@ -209,7 +206,6 @@ pub fn new_partial(
 			transaction_pool,
 			other: (
 				(frontier_block_import, sealing),
-				pending_transactions,
 				filter_pool,
 				frontier_backend,
 				telemetry,
@@ -273,7 +269,6 @@ pub fn new_partial(
 			transaction_pool,
 			other: (
 				(frontier_block_import, grandpa_link),
-				pending_transactions,
 				filter_pool,
 				frontier_backend,
 				telemetry,
@@ -300,7 +295,7 @@ pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, Ser
 		select_chain,
 		transaction_pool,
 		other:
-			(consensus_result, pending_transactions, filter_pool, frontier_backend, mut telemetry),
+			(consensus_result, filter_pool, frontier_backend, mut telemetry),
 	} = new_partial(&config, &cli)?;
 
 	if let Some(url) = &config.keystore_remote {
@@ -374,7 +369,6 @@ pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, Ser
 		let client = client.clone();
 		let pool = transaction_pool.clone();
 		let network = network.clone();
-		let pending = pending_transactions.clone();
 		let filter_pool = filter_pool.clone();
 		let frontier_backend = frontier_backend.clone();
 		let max_past_logs = cli.run.max_past_logs;
@@ -383,11 +377,11 @@ pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, Ser
 			let deps = crate::rpc::FullDeps {
 				client: client.clone(),
 				pool: pool.clone(),
+				graph: pool.pool().clone(),
 				deny_unsafe,
 				is_authority,
 				enable_dev_signer,
 				network: network.clone(),
-				pending_transactions: pending.clone(),
 				filter_pool: filter_pool.clone(),
 				backend: frontier_backend.clone(),
 				max_past_logs,
@@ -436,19 +430,6 @@ pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, Ser
 		task_manager.spawn_essential_handle().spawn(
 			"frontier-filter-pool",
 			EthTask::filter_pool_task(Arc::clone(&client), filter_pool, FILTER_RETAIN_THRESHOLD),
-		);
-	}
-
-	// Spawn Frontier pending transactions maintenance task (as essential, otherwise we leak).
-	if let Some(pending_transactions) = pending_transactions {
-		const TRANSACTION_RETAIN_THRESHOLD: u64 = 5;
-		task_manager.spawn_essential_handle().spawn(
-			"frontier-pending-transactions",
-			EthTask::pending_transaction_task(
-				Arc::clone(&client),
-				pending_transactions,
-				TRANSACTION_RETAIN_THRESHOLD,
-			),
 		);
 	}
 
