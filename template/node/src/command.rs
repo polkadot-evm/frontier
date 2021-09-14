@@ -21,7 +21,7 @@ use crate::{
 	service::{self, frontier_database_dir},
 };
 use frontier_template_runtime::Block;
-use sc_cli::{ChainSpec, Role, RuntimeVersion, SubstrateCli};
+use sc_cli::{ChainSpec, RuntimeVersion, SubstrateCli};
 use sc_service::PartialComponents;
 
 impl SubstrateCli for Cli {
@@ -160,7 +160,9 @@ pub fn run() -> sc_cli::Result<()> {
 			let runner = cli.create_runner(&cli.run.base)?;
 			runner.run_node_until_exit(|config| async move {
 				match config.role {
-					Role::Light => service::new_light(config),
+					// NOTE: light client removed, you may configure other roles here
+					// you will need `use sc_cli::Role;` added
+					// Role::Light => service::new_light(config), 
 					_ => service::new_full(config, &cli),
 				}
 				.map_err(sc_cli::Error::Service)

@@ -403,7 +403,7 @@ pub type Executive = frame_executive::Executive<
 	Block,
 	frame_system::ChainContext<Runtime>,
 	Runtime,
-	AllModules,
+	AllPallets,
 >;
 
 impl_runtime_apis! {
@@ -498,7 +498,7 @@ impl_runtime_apis! {
 		}
 
 		fn author() -> H160 {
-			<pallet_evm::Module<Runtime>>::find_author()
+			<pallet_evm::Pallet<Runtime>>::find_author()
 		}
 
 		fn storage_at(address: H160, index: U256) -> H256 {
