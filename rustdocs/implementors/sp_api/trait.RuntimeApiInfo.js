@@ -1,3 +1,3 @@
 (function() {var implementors = {};
-implementors["fp_rpc"] = [{"text":"impl&lt;Block:&nbsp;BlockT&gt; RuntimeApiInfo for dyn <a class=\"trait\" href=\"fp_rpc/trait.EthereumRuntimeRPCApi.html\" title=\"trait fp_rpc::EthereumRuntimeRPCApi\">EthereumRuntimeRPCApi</a>&lt;Block&gt;","synthetic":false,"types":["fp_rpc::EthereumRuntimeRPCApi"]}];
+implementors["fp_rpc"] = [{"text":"impl&lt;Block:&nbsp;BlockT&gt; RuntimeApiInfo for dyn <a class=\"trait\" href=\"fp_rpc/trait.EthereumRuntimeRPCApi.html\" title=\"trait fp_rpc::EthereumRuntimeRPCApi\">EthereumRuntimeRPCApi</a>&lt;Block&gt;","synthetic":false,"types":[]}];
 if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
