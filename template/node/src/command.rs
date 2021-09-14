@@ -162,7 +162,7 @@ pub fn run() -> sc_cli::Result<()> {
 				match config.role {
 					// NOTE: light client removed, you may configure other roles here
 					// you will need `use sc_cli::Role;` added
-					// Role::Light => service::new_light(config), 
+					// Role::Light => service::new_light(config),
 					_ => service::new_full(config, &cli),
 				}
 				.map_err(sc_cli::Error::Service)
