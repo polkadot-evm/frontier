@@ -30,7 +30,7 @@ use frame_support::{
 };
 use pallet_evm::{AddressMapping, GasWeightMapping};
 
-pub struct Dispatch<T: pallet_evm::Config> {
+pub struct Dispatch<T> {
 	_marker: PhantomData<T>,
 }
 
