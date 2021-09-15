@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Substrate Node Template Release Process | Frontier</title>
+    <title>Frontier Node Template Release Process | Frontier</title>
     <meta name="generator" content="VuePress 1.7.1">
     
     <meta name="description" content="Ethereum compatibility layer for Substrate">
@@ -11,7 +11,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     
-    <link rel="preload" href="/frontier/assets/css/0.styles.821e87ed.css" as="style"><link rel="preload" href="/frontier/assets/js/app.bd8cf579.js" as="script"><link rel="preload" href="/frontier/assets/js/2.da2a74d6.js" as="script"><link rel="preload" href="/frontier/assets/js/11.ba5713ee.js" as="script"><link rel="prefetch" href="/frontier/assets/js/10.30ba1d3b.js"><link rel="prefetch" href="/frontier/assets/js/12.6dd7e481.js"><link rel="prefetch" href="/frontier/assets/js/3.0de82c9b.js"><link rel="prefetch" href="/frontier/assets/js/4.09fd2c39.js"><link rel="prefetch" href="/frontier/assets/js/5.fc791712.js"><link rel="prefetch" href="/frontier/assets/js/6.ffe6f60a.js"><link rel="prefetch" href="/frontier/assets/js/7.1bbcea90.js"><link rel="prefetch" href="/frontier/assets/js/8.f24d54ad.js"><link rel="prefetch" href="/frontier/assets/js/9.0fa9fb5a.js">
+    <link rel="preload" href="/frontier/assets/css/0.styles.821e87ed.css" as="style"><link rel="preload" href="/frontier/assets/js/app.242393cf.js" as="script"><link rel="preload" href="/frontier/assets/js/2.da2a74d6.js" as="script"><link rel="preload" href="/frontier/assets/js/11.d4b2f54f.js" as="script"><link rel="prefetch" href="/frontier/assets/js/10.30ba1d3b.js"><link rel="prefetch" href="/frontier/assets/js/12.6dd7e481.js"><link rel="prefetch" href="/frontier/assets/js/3.0de82c9b.js"><link rel="prefetch" href="/frontier/assets/js/4.09fd2c39.js"><link rel="prefetch" href="/frontier/assets/js/5.fc791712.js"><link rel="prefetch" href="/frontier/assets/js/6.ffe6f60a.js"><link rel="prefetch" href="/frontier/assets/js/7.1bbcea90.js"><link rel="prefetch" href="/frontier/assets/js/8.f24d54ad.js"><link rel="prefetch" href="/frontier/assets/js/9.0fa9fb5a.js">
     <link rel="stylesheet" href="/frontier/assets/css/0.styles.821e87ed.css">
   </head>
   <body>
@@ -23,20 +23,24 @@
   API reference
   <span><svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg> <span class="sr-only">(opens new window)</span></span></a></div> <a href="https://github.com/paritytech/frontier" target="_blank" rel="noopener noreferrer" class="repo-link">
     GitHub
-    <span><svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg> <span class="sr-only">(opens new window)</span></span></a></nav>  <ul class="sidebar-links"><li><a href="/frontier/overview.html" class="sidebar-link">Overview</a></li><li><a href="/frontier/frame/evm.html" class="sidebar-link">EVM pallet</a></li><li><a href="/frontier/frame/ethereum.html" class="sidebar-link">Ethereum pallet</a></li></ul> </aside> <main class="page"> <div class="theme-default-content content__default"><h1 id="substrate-node-template-release-process"><a href="#substrate-node-template-release-process" class="header-anchor">#</a> Substrate Node Template Release Process</h1> <blockquote><p>NOTE: this is a
-<a href="https://github.com/paritytech/substrate/blob/master/docs/node-template-release.md" target="_blank" rel="noopener noreferrer">copy from Subtrate<span><svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg> <span class="sr-only">(opens new window)</span></span></a> -
-there is NO frontier template on the devhub at present. This file only serves as a reference.</p></blockquote> <ol><li><p>This release process has to be run in a github checkout Substrate directory with your work
-committed into <code>https://github.com/paritytech/substrate/</code>, because the build script will check
-the existence of your current git commit ID in the remote repository.</p> <div class="language- extra-class"><pre><code>Assume you are in root directory of Substrate. Run:
+    <span><svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg> <span class="sr-only">(opens new window)</span></span></a></nav>  <ul class="sidebar-links"><li><a href="/frontier/overview.html" class="sidebar-link">Overview</a></li><li><a href="/frontier/frame/evm.html" class="sidebar-link">EVM pallet</a></li><li><a href="/frontier/frame/ethereum.html" class="sidebar-link">Ethereum pallet</a></li></ul> </aside> <main class="page"> <div class="theme-default-content content__default"><h1 id="frontier-node-template-release-process"><a href="#frontier-node-template-release-process" class="header-anchor">#</a> Frontier Node Template Release Process</h1> <blockquote><p>NOTE: this based on the
+<a href="https://github.com/paritytech/substrate/blob/master/docs/node-template-release.md" target="_blank" rel="noopener noreferrer">Subtrate node template release process<span><svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg> <span class="sr-only">(opens new window)</span></span></a> -</p></blockquote> <ol><li><p>Clone and checkout the <code>main</code> branch of the
+<a href="https://github.com/substrate-developer-hub/frontier-node-template/" target="_blank" rel="noopener noreferrer">Frontier Node Template<span><svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg> <span class="sr-only">(opens new window)</span></span></a>.
+Note the path to this directory.</p></li> <li><p>This release process has to be run in a github checkout Frontier directory with your work
+committed into <code>https://github.com/paritytech/frontier/</code>, because the build script will check
+the existence of your current git commit ID in the remote repository.</p> <div class="language- extra-class"><pre><code>Assume you are in the root directory of Frontier. Run:
 
 ```bash
 cd .maintain/
-./node-template-release.sh &lt;output tar.gz file&gt;
+./node-template-release.sh TEMPLATE.tar.gz
 ```
-</code></pre></div></li> <li><p>Expand the output tar gzipped file and replace files in current Substrate Node Template by
-running the following command.</p> <div class="language- extra-class"><pre><code>```bash
+</code></pre></div></li> <li><p>Expand the output tar gzipped file that is created in the top level working dir of Frontier and
+replace files in current Frontier Node Template by running the following command:</p> <div class="language- extra-class"><pre><code>```bash
+# Note the file will be placed in the top level working dir of Frontier
+# Move the archive to wherever you like...
+tar xvzf TEMPLATE.tar.gz
 # This is where the tar.gz file uncompressed
-cd substrate-node-template
+cd frontier-node-template
 # rsync with force copying. Note the slash at the destination directory is important
 rsync -avh * &lt;destination node-template directory&gt;/
 # For dry-running add `-n` argument
@@ -46,10 +50,10 @@ rsync -avh * &lt;destination node-template directory&gt;/
 The above command only copies existing files from the source to the destination, but does not
 delete files/directories that are removed from the source. So you need to manually check and
 remove them in the destination.
-</code></pre></div></li> <li><p>There are actually three packages in the Node Template, <code>node-template</code> (the node),
-<code>node-template-runtime</code> (the runtime), and <code>pallet-template</code>, and each has its own <code>Cargo.toml</code>.
-Inside these three files, dependencies are listed in expanded form and linked to a certain git
-commit in Substrate remote repository, such as:</p> <div class="language- extra-class"><pre><code>```toml
+</code></pre></div></li> <li><p>There are actually two packages in the Node Template, <code>frontier-node-template</code> (the node),
+<code>frontier-template-runtime</code> (the runtime); Each has its' own <code>Cargo.toml</code>. Inside these three
+files, dependencies are listed in expanded form and linked to a certain git commit in Frontier
+remote repository, such as:</p> <div class="language- extra-class"><pre><code>```toml
 [dev-dependencies.sp-core]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
@@ -70,7 +74,7 @@ P.S: This step can be automated if we update `node-template-release` package in
 `.maintain/node-template-release`.
 </code></pre></div></li> <li><p>Once the three <code>Cargo.toml</code>s are updated, compile and confirm that the Node Template builds.
 Then commit the changes to a new branch in
-<a href="https://github.com/substrate-developer-hub/substrate-node-template" target="_blank" rel="noopener noreferrer">Substrate Node Template<span><svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg> <span class="sr-only">(opens new window)</span></span></a>,
+<a href="https://github.com/substrate-developer-hub/frontier-node-template" target="_blank" rel="noopener noreferrer">Substrate Node Template<span><svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg> <span class="sr-only">(opens new window)</span></span></a>,
 and make a PR.</p> <div class="language- extra-class"><pre><code>&gt; Note that there is a chance the code in Substrate Node Template works with the linked Substrate git
 commit but not with published packages due to the latest (as yet) unpublished features. In this case,
 rollback that section of the Node Template to its previous version to ensure the Node Template builds.
@@ -83,6 +87,6 @@ thread 'main' panicked at 'Creates output file: Os { code: 2, kind: NotFound, me
 </code></pre></div><p>note: run with <code>RUST_BACKTRACE=1</code> environment variable to display a backtrace ```</p> <div class="language- extra-class"><pre><code>This is likely due to that your output path is not a valid `tar.gz` filename or you don't have write
 permission to the destination. Try with a simple output path such as `~/node-tpl.tar.gz`.
 </code></pre></div></li></ul></div> <footer class="page-edit"><!----> <!----></footer> <!----> </main></div><div class="global-ui"></div></div>
-    <script src="/frontier/assets/js/app.bd8cf579.js" defer></script><script src="/frontier/assets/js/2.da2a74d6.js" defer></script><script src="/frontier/assets/js/11.ba5713ee.js" defer></script>
+    <script src="/frontier/assets/js/app.242393cf.js" defer></script><script src="/frontier/assets/js/2.da2a74d6.js" defer></script><script src="/frontier/assets/js/11.d4b2f54f.js" defer></script>
   </body>
 </html>
