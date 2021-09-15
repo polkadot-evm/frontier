@@ -162,6 +162,7 @@ pub mod frontier_backend_client {
 		client: &C,
 		backend: &fc_db::Backend<B>,
 		transaction_hash: H256,
+		only_canonical: bool,
 	) -> RpcResult<Option<(H256, u32)>>
 	where
 		B: BlockT,
