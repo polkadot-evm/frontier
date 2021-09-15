@@ -184,7 +184,7 @@ pub mod frontier_backend_client {
 						Ok(Some((
 							transaction_metadata[0].ethereum_block_hash,
 							transaction_metadata[0].ethereum_index,
-						)));
+						)))
 					} else {
 						Ok(None)
 					}
