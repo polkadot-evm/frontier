@@ -176,20 +176,20 @@ pub mod frontier_backend_client {
 			.map_err(|err| internal_err(format!("fetch aux store failed: {:?}", err)))?;
 
 		transaction_metadata
-		.iter()
-		.find(|meta| is_canon::<B, C>(client, meta.block_hash))
-		.map_or_else(
-			|| {
-				if !only_canonical && transaction_metadata.len() > 0 {
-					return Ok(Some((
-						transaction_metadata[0].ethereum_block_hash,
-						transaction_metadata[0].ethereum_index,
-					)));
-				}
-				Ok(None)
-			},
-			|meta| Ok(Some((meta.ethereum_block_hash, meta.ethereum_index))),
-		)
+			.iter()
+			.find(|meta| is_canon::<B, C>(client, meta.block_hash))
+			.map_or_else(
+				|| {
+					if !only_canonical && transaction_metadata.len() > 0 {
+						return Ok(Some((
+							transaction_metadata[0].ethereum_block_hash,
+							transaction_metadata[0].ethereum_index,
+						)));
+					}
+					Ok(None)
+				},
+				|meta| Ok(Some((meta.ethereum_block_hash, meta.ethereum_index))),
+			)
 	}
 }
 

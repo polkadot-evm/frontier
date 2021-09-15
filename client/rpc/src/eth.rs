@@ -1093,7 +1093,7 @@ where
 			self.client.as_ref(),
 			self.backend.as_ref(),
 			hash,
-			false
+			false,
 		)
 		.map_err(|err| internal_err(format!("{:?}", err)))?
 		{
@@ -1211,7 +1211,7 @@ where
 			self.client.as_ref(),
 			self.backend.as_ref(),
 			hash,
-			true
+			true,
 		)
 		.map_err(|err| internal_err(format!("{:?}", err)))?
 		{
