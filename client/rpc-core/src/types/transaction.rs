@@ -20,10 +20,6 @@ use crate::types::Bytes;
 use ethereum_types::{H160, H256, H512, U256, U64};
 use serde::ser::SerializeStruct;
 use serde::{Serialize, Serializer};
-use std::{
-	collections::HashMap,
-	sync::{Arc, Mutex},
-};
 
 /// Transaction
 #[derive(Debug, Default, Clone, PartialEq, Serialize)]
