@@ -36,10 +36,7 @@ use sc_client_api::{
 	client::BlockchainEvents,
 };
 use sc_network::{ExHashT, NetworkService};
-// `test_helpers` is a misleading name, interface previously available on `sc_transaction_graph`.
-// substrate PR to change this so its available as a public reexport:
-// https://github.com/paritytech/substrate/pull/9726
-use sc_transaction_pool::test_helpers::{ChainApi, Pool};
+use sc_transaction_pool::{ChainApi, Pool};
 use sc_transaction_pool_api::{InPoolTransaction, TransactionPool};
 use sha3::{Digest, Keccak256};
 use sp_api::{BlockId, Core, HeaderT, ProvideRuntimeApi};

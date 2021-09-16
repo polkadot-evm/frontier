@@ -16,14 +16,11 @@ use sc_network::NetworkService;
 use sc_rpc::SubscriptionTaskExecutor;
 use sc_rpc_api::DenyUnsafe;
 use sc_service::TransactionPool;
+use sc_transaction_pool::{ChainApi, Pool};
 use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 use sp_runtime::traits::BlakeTwo256;
-// `test_helpers` is a misleading name, interface previously available on `sc_transaction_graph`.
-// substrate PR to change this so its available as a public reexport:
-// https://github.com/paritytech/substrate/pull/9726
-use sc_transaction_pool::test_helpers::{ChainApi, Pool};
 use std::collections::BTreeMap;
 
 /// Light client extra dependencies.
