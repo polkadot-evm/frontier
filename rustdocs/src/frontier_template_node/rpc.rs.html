@@ -209,13 +209,15 @@
 <span id="209">209</span>
 <span id="210">210</span>
 <span id="211">211</span>
+<span id="212">212</span>
+<span id="213">213</span>
 </pre><pre class="rust">
 <span class="doccomment">//! A collection of node-specific RPC methods.</span>
 
 <span class="kw">use</span> <span class="ident">std::sync::Arc</span>;
 
 <span class="kw">use</span> <span class="ident">fc_rpc</span>::{<span class="ident">OverrideHandle</span>, <span class="ident">RuntimeApiStorageOverride</span>, <span class="ident">SchemaV1Override</span>, <span class="ident">StorageOverride</span>};
-<span class="kw">use</span> <span class="ident">fc_rpc_core::types</span>::{<span class="ident">FilterPool</span>, <span class="ident">PendingTransactions</span>};
+<span class="kw">use</span> <span class="ident">fc_rpc_core::types::FilterPool</span>;
 <span class="kw">use</span> <span class="ident">frontier_template_runtime</span>::{<span class="ident">opaque::Block</span>, <span class="ident">AccountId</span>, <span class="ident">Balance</span>, <span class="ident">Hash</span>, <span class="ident">Index</span>};
 <span class="kw">use</span> <span class="ident">jsonrpc_pubsub::manager::SubscriptionManager</span>;
 <span class="kw">use</span> <span class="ident">pallet_ethereum::EthereumStorageSchema</span>;
@@ -228,6 +230,7 @@
 <span class="kw">use</span> <span class="ident">sc_rpc::SubscriptionTaskExecutor</span>;
 <span class="kw">use</span> <span class="ident">sc_rpc_api::DenyUnsafe</span>;
 <span class="kw">use</span> <span class="ident">sc_service::TransactionPool</span>;
+<span class="kw">use</span> <span class="ident">sc_transaction_pool</span>::{<span class="ident">ChainApi</span>, <span class="ident">Pool</span>};
 <span class="kw">use</span> <span class="ident">sp_api::ProvideRuntimeApi</span>;
 <span class="kw">use</span> <span class="ident">sp_block_builder::BlockBuilder</span>;
 <span class="kw">use</span> <span class="ident">sp_blockchain</span>::{<span class="ident">Error</span> <span class="kw">as</span> <span class="ident">BlockChainError</span>, <span class="ident">HeaderBackend</span>, <span class="ident">HeaderMetadata</span>};
@@ -247,11 +250,13 @@
 }
 
 <span class="doccomment">/// Full client dependencies.</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">FullDeps</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">P</span><span class="op">&gt;</span> {
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">FullDeps</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">A</span>: <span class="ident">ChainApi</span><span class="op">&gt;</span> {
 	<span class="doccomment">/// The client instance to use.</span>
 	<span class="kw">pub</span> <span class="ident">client</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
 	<span class="doccomment">/// Transaction pool instance.</span>
 	<span class="kw">pub</span> <span class="ident">pool</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">P</span><span class="op">&gt;</span>,
+	<span class="doccomment">/// Graph pool instance.</span>
+	<span class="kw">pub</span> <span class="ident">graph</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">Pool</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 	<span class="doccomment">/// Whether to deny unsafe calls</span>
 	<span class="kw">pub</span> <span class="ident">deny_unsafe</span>: <span class="ident">DenyUnsafe</span>,
 	<span class="doccomment">/// The Node authority flag</span>
@@ -260,8 +265,6 @@
 	<span class="kw">pub</span> <span class="ident">enable_dev_signer</span>: <span class="ident">bool</span>,
 	<span class="doccomment">/// Network service</span>
 	<span class="kw">pub</span> <span class="ident">network</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">NetworkService</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">Hash</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-	<span class="doccomment">/// Ethereum pending transactions.</span>
-	<span class="kw">pub</span> <span class="ident">pending_transactions</span>: <span class="ident">PendingTransactions</span>,
 	<span class="doccomment">/// EthFilterApi pool.</span>
 	<span class="kw">pub</span> <span class="ident">filter_pool</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">FilterPool</span><span class="op">&gt;</span>,
 	<span class="doccomment">/// Backend.</span>
@@ -274,8 +277,8 @@
 }
 
 <span class="doccomment">/// Instantiate all Full RPC extensions.</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">create_full</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">BE</span><span class="op">&gt;</span>(
-	<span class="ident">deps</span>: <span class="ident">FullDeps</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">P</span><span class="op">&gt;</span>,
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">create_full</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">BE</span>, <span class="ident">A</span><span class="op">&gt;</span>(
+	<span class="ident">deps</span>: <span class="ident">FullDeps</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">A</span><span class="op">&gt;</span>,
 	<span class="ident">subscription_task_executor</span>: <span class="ident">SubscriptionTaskExecutor</span>,
 ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">jsonrpc_core::IoHandler</span><span class="op">&lt;</span><span class="ident">sc_rpc::Metadata</span><span class="op">&gt;</span>
 <span class="kw">where</span>
@@ -290,6 +293,7 @@
 	<span class="ident">C::Api</span>: <span class="ident">pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">Balance</span><span class="op">&gt;</span>,
 	<span class="ident">C::Api</span>: <span class="ident">fp_rpc::EthereumRuntimeRPCApi</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>,
 	<span class="ident">P</span>: <span class="ident">TransactionPool</span><span class="op">&lt;</span><span class="ident">Block</span> <span class="op">=</span> <span class="ident">Block</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
+	<span class="ident">A</span>: <span class="ident">ChainApi</span><span class="op">&lt;</span><span class="ident">Block</span> <span class="op">=</span> <span class="ident">Block</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
 {
 	<span class="kw">use</span> <span class="ident">fc_rpc</span>::{
 		<span class="ident">EthApi</span>, <span class="ident">EthApiServer</span>, <span class="ident">EthDevSigner</span>, <span class="ident">EthFilterApi</span>, <span class="ident">EthFilterApiServer</span>, <span class="ident">EthPubSubApi</span>,
@@ -303,10 +307,10 @@
 	<span class="kw">let</span> <span class="ident">FullDeps</span> {
 		<span class="ident">client</span>,
 		<span class="ident">pool</span>,
+		<span class="ident">graph</span>,
 		<span class="ident">deny_unsafe</span>,
 		<span class="ident">is_authority</span>,
 		<span class="ident">network</span>,
-		<span class="ident">pending_transactions</span>,
 		<span class="ident">filter_pool</span>,
 		<span class="ident">command_sink</span>,
 		<span class="ident">backend</span>,
@@ -342,9 +346,9 @@
 	<span class="ident">io</span>.<span class="ident">extend_with</span>(<span class="ident">EthApiServer::to_delegate</span>(<span class="ident">EthApi::new</span>(
 		<span class="ident">client</span>.<span class="ident">clone</span>(),
 		<span class="ident">pool</span>.<span class="ident">clone</span>(),
+		<span class="ident">graph</span>,
 		<span class="ident">frontier_template_runtime::TransactionConverter</span>,
 		<span class="ident">network</span>.<span class="ident">clone</span>(),
-		<span class="ident">pending_transactions</span>.<span class="ident">clone</span>(),
 		<span class="ident">signers</span>,
 		<span class="ident">overrides</span>.<span class="ident">clone</span>(),
 		<span class="ident">backend</span>.<span class="ident">clone</span>(),

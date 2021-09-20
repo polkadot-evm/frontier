@@ -1902,43 +1902,6 @@
 <span id="1902">1902</span>
 <span id="1903">1903</span>
 <span id="1904">1904</span>
-<span id="1905">1905</span>
-<span id="1906">1906</span>
-<span id="1907">1907</span>
-<span id="1908">1908</span>
-<span id="1909">1909</span>
-<span id="1910">1910</span>
-<span id="1911">1911</span>
-<span id="1912">1912</span>
-<span id="1913">1913</span>
-<span id="1914">1914</span>
-<span id="1915">1915</span>
-<span id="1916">1916</span>
-<span id="1917">1917</span>
-<span id="1918">1918</span>
-<span id="1919">1919</span>
-<span id="1920">1920</span>
-<span id="1921">1921</span>
-<span id="1922">1922</span>
-<span id="1923">1923</span>
-<span id="1924">1924</span>
-<span id="1925">1925</span>
-<span id="1926">1926</span>
-<span id="1927">1927</span>
-<span id="1928">1928</span>
-<span id="1929">1929</span>
-<span id="1930">1930</span>
-<span id="1931">1931</span>
-<span id="1932">1932</span>
-<span id="1933">1933</span>
-<span id="1934">1934</span>
-<span id="1935">1935</span>
-<span id="1936">1936</span>
-<span id="1937">1937</span>
-<span id="1938">1938</span>
-<span id="1939">1939</span>
-<span id="1940">1940</span>
-<span id="1941">1941</span>
 </pre><pre class="rust">
 <span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
@@ -1964,9 +1927,8 @@
 <span class="kw">use</span> <span class="ident">ethereum_types</span>::{<span class="ident">H160</span>, <span class="ident">H256</span>, <span class="ident">H512</span>, <span class="ident">H64</span>, <span class="ident">U256</span>, <span class="ident">U64</span>};
 <span class="kw">use</span> <span class="ident">fc_rpc_core::types</span>::{
 	<span class="ident">Block</span>, <span class="ident">BlockNumber</span>, <span class="ident">BlockTransactions</span>, <span class="ident">Bytes</span>, <span class="ident">CallRequest</span>, <span class="ident">Filter</span>, <span class="ident">FilterChanges</span>, <span class="ident">FilterPool</span>,
-	<span class="ident">FilterPoolItem</span>, <span class="ident">FilterType</span>, <span class="ident">FilteredParams</span>, <span class="ident">Header</span>, <span class="ident">Index</span>, <span class="ident">Log</span>, <span class="ident">PeerCount</span>, <span class="ident">PendingTransaction</span>,
-	<span class="ident">PendingTransactions</span>, <span class="ident">Receipt</span>, <span class="ident">Rich</span>, <span class="ident">RichBlock</span>, <span class="ident">SyncInfo</span>, <span class="ident">SyncStatus</span>, <span class="ident">Transaction</span>,
-	<span class="ident">TransactionRequest</span>, <span class="ident">Work</span>,
+	<span class="ident">FilterPoolItem</span>, <span class="ident">FilterType</span>, <span class="ident">FilteredParams</span>, <span class="ident">Header</span>, <span class="ident">Index</span>, <span class="ident">Log</span>, <span class="ident">PeerCount</span>, <span class="ident">Receipt</span>, <span class="ident">Rich</span>,
+	<span class="ident">RichBlock</span>, <span class="ident">SyncInfo</span>, <span class="ident">SyncStatus</span>, <span class="ident">Transaction</span>, <span class="ident">TransactionRequest</span>, <span class="ident">Work</span>,
 };
 <span class="kw">use</span> <span class="ident">fc_rpc_core</span>::{
 	<span class="ident">EthApi</span> <span class="kw">as</span> <span class="ident">EthApiT</span>, <span class="ident">EthFilterApi</span> <span class="kw">as</span> <span class="ident">EthFilterApiT</span>, <span class="ident">NetApi</span> <span class="kw">as</span> <span class="ident">NetApiT</span>, <span class="ident">Web3Api</span> <span class="kw">as</span> <span class="ident">Web3ApiT</span>,
@@ -1979,6 +1941,7 @@
 	<span class="ident">client::BlockchainEvents</span>,
 };
 <span class="kw">use</span> <span class="ident">sc_network</span>::{<span class="ident">ExHashT</span>, <span class="ident">NetworkService</span>};
+<span class="kw">use</span> <span class="ident">sc_transaction_pool</span>::{<span class="ident">ChainApi</span>, <span class="ident">Pool</span>};
 <span class="kw">use</span> <span class="ident">sc_transaction_pool_api</span>::{<span class="ident">InPoolTransaction</span>, <span class="ident">TransactionPool</span>};
 <span class="kw">use</span> <span class="ident">sha3</span>::{<span class="ident">Digest</span>, <span class="ident">Keccak256</span>};
 <span class="kw">use</span> <span class="ident">sp_api</span>::{<span class="ident">BlockId</span>, <span class="ident">Core</span>, <span class="ident">HeaderT</span>, <span class="ident">ProvideRuntimeApi</span>};
@@ -1987,7 +1950,7 @@
 	<span class="ident">traits</span>::{<span class="ident">BlakeTwo256</span>, <span class="ident">Block</span> <span class="kw">as</span> <span class="ident">BlockT</span>, <span class="ident">NumberFor</span>, <span class="ident">One</span>, <span class="ident">Saturating</span>, <span class="ident">UniqueSaturatedInto</span>, <span class="ident">Zero</span>},
 	<span class="ident">transaction_validity::TransactionSource</span>,
 };
-<span class="kw">use</span> <span class="ident">std::collections</span>::{<span class="ident">BTreeMap</span>, <span class="ident">HashMap</span>};
+<span class="kw">use</span> <span class="ident">std::collections::BTreeMap</span>;
 <span class="kw">use</span> <span class="ident">std</span>::{
 	<span class="ident">marker::PhantomData</span>,
 	<span class="ident">sync</span>::{<span class="ident">Arc</span>, <span class="ident">Mutex</span>},
@@ -1999,33 +1962,34 @@
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">fc_rpc_core</span>::{<span class="ident">EthApiServer</span>, <span class="ident">EthFilterApiServer</span>, <span class="ident">NetApiServer</span>, <span class="ident">Web3ApiServer</span>};
 <span class="kw">use</span> <span class="ident">pallet_ethereum::EthereumStorageSchema</span>;
 
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">EthApi</span><span class="op">&lt;</span><span class="ident">B</span>: <span class="ident">BlockT</span>, <span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">CT</span>, <span class="ident">BE</span>, <span class="ident">H</span>: <span class="ident">ExHashT</span><span class="op">&gt;</span> {
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">EthApi</span><span class="op">&lt;</span><span class="ident">B</span>: <span class="ident">BlockT</span>, <span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">CT</span>, <span class="ident">BE</span>, <span class="ident">H</span>: <span class="ident">ExHashT</span>, <span class="ident">A</span>: <span class="ident">ChainApi</span><span class="op">&gt;</span> {
 	<span class="ident">pool</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">P</span><span class="op">&gt;</span>,
+	<span class="ident">graph</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">Pool</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 	<span class="ident">client</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
 	<span class="ident">convert_transaction</span>: <span class="ident">CT</span>,
 	<span class="ident">network</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">NetworkService</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">H</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 	<span class="ident">is_authority</span>: <span class="ident">bool</span>,
 	<span class="ident">signers</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">EthSigner</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 	<span class="ident">overrides</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">OverrideHandle</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-	<span class="ident">pending_transactions</span>: <span class="ident">PendingTransactions</span>,
 	<span class="ident">backend</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">fc_db::Backend</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 	<span class="ident">max_past_logs</span>: <span class="ident">u32</span>,
 	<span class="ident">_marker</span>: <span class="ident">PhantomData</span><span class="op">&lt;</span>(<span class="ident">B</span>, <span class="ident">BE</span>)<span class="op">&gt;</span>,
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">B</span>: <span class="ident">BlockT</span>, <span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">CT</span>, <span class="ident">BE</span>, <span class="ident">H</span>: <span class="ident">ExHashT</span><span class="op">&gt;</span> <span class="ident">EthApi</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">CT</span>, <span class="ident">BE</span>, <span class="ident">H</span><span class="op">&gt;</span>
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">B</span>: <span class="ident">BlockT</span>, <span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">CT</span>, <span class="ident">BE</span>, <span class="ident">H</span>: <span class="ident">ExHashT</span>, <span class="ident">A</span>: <span class="ident">ChainApi</span><span class="op">&gt;</span> <span class="ident">EthApi</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">CT</span>, <span class="ident">BE</span>, <span class="ident">H</span>, <span class="ident">A</span><span class="op">&gt;</span>
 <span class="kw">where</span>
 	<span class="ident">C</span>: <span class="ident">ProvideRuntimeApi</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span>,
 	<span class="ident">C::Api</span>: <span class="ident">EthereumRuntimeRPCApi</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span>,
 	<span class="ident">B</span>: <span class="ident">BlockT</span><span class="op">&lt;</span><span class="ident">Hash</span> <span class="op">=</span> <span class="ident">H256</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
+	<span class="ident">A</span>: <span class="ident">ChainApi</span><span class="op">&lt;</span><span class="ident">Block</span> <span class="op">=</span> <span class="ident">B</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
 	<span class="ident">C</span>: <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
 {
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(
 		<span class="ident">client</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
 		<span class="ident">pool</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">P</span><span class="op">&gt;</span>,
+		<span class="ident">graph</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">Pool</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 		<span class="ident">convert_transaction</span>: <span class="ident">CT</span>,
 		<span class="ident">network</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">NetworkService</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">H</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-		<span class="ident">pending_transactions</span>: <span class="ident">PendingTransactions</span>,
 		<span class="ident">signers</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">EthSigner</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 		<span class="ident">overrides</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">OverrideHandle</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 		<span class="ident">backend</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">fc_db::Backend</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span><span class="op">&gt;</span>,
@@ -2035,12 +1999,12 @@
 		<span class="self">Self</span> {
 			<span class="ident">client</span>: <span class="ident">client</span>.<span class="ident">clone</span>(),
 			<span class="ident">pool</span>,
+			<span class="ident">graph</span>,
 			<span class="ident">convert_transaction</span>,
 			<span class="ident">network</span>,
 			<span class="ident">is_authority</span>,
 			<span class="ident">signers</span>,
 			<span class="ident">overrides</span>,
-			<span class="ident">pending_transactions</span>,
 			<span class="ident">backend</span>,
 			<span class="ident">max_past_logs</span>,
 			<span class="ident">_marker</span>: <span class="ident">PhantomData</span>,
@@ -2350,7 +2314,7 @@
 	<span class="ident">ret</span>
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">CT</span>, <span class="ident">BE</span>, <span class="ident">H</span>: <span class="ident">ExHashT</span><span class="op">&gt;</span> <span class="ident">EthApiT</span> <span class="kw">for</span> <span class="ident">EthApi</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">CT</span>, <span class="ident">BE</span>, <span class="ident">H</span><span class="op">&gt;</span>
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">CT</span>, <span class="ident">BE</span>, <span class="ident">H</span>: <span class="ident">ExHashT</span>, <span class="ident">A</span><span class="op">&gt;</span> <span class="ident">EthApiT</span> <span class="kw">for</span> <span class="ident">EthApi</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">CT</span>, <span class="ident">BE</span>, <span class="ident">H</span>, <span class="ident">A</span><span class="op">&gt;</span>
 <span class="kw">where</span>
 	<span class="ident">C</span>: <span class="ident">ProvideRuntimeApi</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">StorageProvider</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">BE</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">AuxStore</span>,
 	<span class="ident">C</span>: <span class="ident">HeaderBackend</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">HeaderMetadata</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">Error</span> <span class="op">=</span> <span class="ident">BlockChainError</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
@@ -2360,6 +2324,7 @@
 	<span class="ident">B</span>: <span class="ident">BlockT</span><span class="op">&lt;</span><span class="ident">Hash</span> <span class="op">=</span> <span class="ident">H256</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
 	<span class="ident">C</span>: <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
 	<span class="ident">P</span>: <span class="ident">TransactionPool</span><span class="op">&lt;</span><span class="ident">Block</span> <span class="op">=</span> <span class="ident">B</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
+	<span class="ident">A</span>: <span class="ident">ChainApi</span><span class="op">&lt;</span><span class="ident">Block</span> <span class="op">=</span> <span class="ident">B</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
 	<span class="ident">CT</span>: <span class="ident">ConvertTransaction</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">B</span> <span class="kw">as</span> <span class="ident">BlockT</span><span class="op">&gt;</span><span class="ident">::Extrinsic</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
 {
 	<span class="kw">fn</span> <span class="ident">protocol_version</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span> {
@@ -2738,8 +2703,6 @@
 		<span class="kw">let</span> <span class="ident">transaction_hash</span> <span class="op">=</span>
 			<span class="ident">H256::from_slice</span>(<span class="ident">Keccak256::digest</span>(<span class="kw-2">&amp;</span><span class="ident">rlp::encode</span>(<span class="kw-2">&amp;</span><span class="ident">transaction</span>)).<span class="ident">as_slice</span>());
 		<span class="kw">let</span> <span class="ident">hash</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">info</span>().<span class="ident">best_hash</span>;
-		<span class="kw">let</span> <span class="ident">number</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">info</span>().<span class="ident">best_number</span>;
-		<span class="kw">let</span> <span class="ident">pending</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">pending_transactions</span>.<span class="ident">clone</span>();
 		<span class="ident">Box::pin</span>(
 			<span class="self">self</span>.<span class="ident">pool</span>
 				.<span class="ident">submit_one</span>(
@@ -2748,20 +2711,7 @@
 					<span class="self">self</span>.<span class="ident">convert_transaction</span>
 						.<span class="ident">convert_transaction</span>(<span class="ident">transaction</span>.<span class="ident">clone</span>()),
 				)
-				.<span class="ident">map_ok</span>(<span class="kw">move</span> <span class="op">|</span><span class="kw">_</span><span class="op">|</span> {
-					<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">pending</span>) <span class="op">=</span> <span class="ident">pending</span> {
-						<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">locked</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">pending</span>.<span class="ident">lock</span>() {
-							<span class="ident">locked</span>.<span class="ident">insert</span>(
-								<span class="ident">transaction_hash</span>,
-								<span class="ident">PendingTransaction::new</span>(
-									<span class="ident">transaction_build</span>(<span class="ident">transaction</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>),
-									<span class="ident">UniqueSaturatedInto</span>::<span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span><span class="ident">::unique_saturated_into</span>(<span class="ident">number</span>),
-								),
-							);
-						}
-					}
-					<span class="ident">transaction_hash</span>
-				})
+				.<span class="ident">map_ok</span>(<span class="kw">move</span> <span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">transaction_hash</span>)
 				.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> {
 					<span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;submit transaction to pool failed: {:?}&quot;</span>, <span class="ident">err</span>))
 				}),
@@ -2776,8 +2726,6 @@
 		<span class="kw">let</span> <span class="ident">transaction_hash</span> <span class="op">=</span>
 			<span class="ident">H256::from_slice</span>(<span class="ident">Keccak256::digest</span>(<span class="kw-2">&amp;</span><span class="ident">rlp::encode</span>(<span class="kw-2">&amp;</span><span class="ident">transaction</span>)).<span class="ident">as_slice</span>());
 		<span class="kw">let</span> <span class="ident">hash</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">info</span>().<span class="ident">best_hash</span>;
-		<span class="kw">let</span> <span class="ident">number</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">info</span>().<span class="ident">best_number</span>;
-		<span class="kw">let</span> <span class="ident">pending</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">pending_transactions</span>.<span class="ident">clone</span>();
 		<span class="ident">Box::pin</span>(
 			<span class="self">self</span>.<span class="ident">pool</span>
 				.<span class="ident">submit_one</span>(
@@ -2786,20 +2734,7 @@
 					<span class="self">self</span>.<span class="ident">convert_transaction</span>
 						.<span class="ident">convert_transaction</span>(<span class="ident">transaction</span>.<span class="ident">clone</span>()),
 				)
-				.<span class="ident">map_ok</span>(<span class="kw">move</span> <span class="op">|</span><span class="kw">_</span><span class="op">|</span> {
-					<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">pending</span>) <span class="op">=</span> <span class="ident">pending</span> {
-						<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">locked</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">pending</span>.<span class="ident">lock</span>() {
-							<span class="ident">locked</span>.<span class="ident">insert</span>(
-								<span class="ident">transaction_hash</span>,
-								<span class="ident">PendingTransaction::new</span>(
-									<span class="ident">transaction_build</span>(<span class="ident">transaction</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>),
-									<span class="ident">UniqueSaturatedInto</span>::<span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span><span class="ident">::unique_saturated_into</span>(<span class="ident">number</span>),
-								),
-							);
-						}
-					}
-					<span class="ident">transaction_hash</span>
-				})
+				.<span class="ident">map_ok</span>(<span class="kw">move</span> <span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">transaction_hash</span>)
 				.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> {
 					<span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;submit transaction to pool failed: {:?}&quot;</span>, <span class="ident">err</span>))
 				}),
@@ -3031,6 +2966,42 @@
 	}
 
 	<span class="kw">fn</span> <span class="ident">transaction_by_hash</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">hash</span>: <span class="ident">H256</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Transaction</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">xts</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">B</span> <span class="kw">as</span> <span class="ident">BlockT</span><span class="op">&gt;</span><span class="ident">::Extrinsic</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
+		<span class="comment">// Collect transactions in the ready validated pool.</span>
+		<span class="ident">xts</span>.<span class="ident">extend</span>(
+			<span class="self">self</span>.<span class="ident">graph</span>
+				.<span class="ident">validated_pool</span>()
+				.<span class="ident">ready</span>()
+				.<span class="ident">map</span>(<span class="op">|</span><span class="ident">in_pool_tx</span><span class="op">|</span> <span class="ident">in_pool_tx</span>.<span class="ident">data</span>().<span class="ident">clone</span>())
+				.<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">B</span> <span class="kw">as</span> <span class="ident">BlockT</span><span class="op">&gt;</span><span class="ident">::Extrinsic</span><span class="op">&gt;</span><span class="op">&gt;</span>(),
+		);
+
+		<span class="comment">// Collect transactions in the future validated pool.</span>
+		<span class="ident">xts</span>.<span class="ident">extend</span>(
+			<span class="self">self</span>.<span class="ident">graph</span>
+				.<span class="ident">validated_pool</span>()
+				.<span class="ident">futures</span>()
+				.<span class="ident">iter</span>()
+				.<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">_hash</span>, <span class="ident">extrinsic</span>)<span class="op">|</span> <span class="ident">extrinsic</span>.<span class="ident">clone</span>())
+				.<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">B</span> <span class="kw">as</span> <span class="ident">BlockT</span><span class="op">&gt;</span><span class="ident">::Extrinsic</span><span class="op">&gt;</span><span class="op">&gt;</span>(),
+		);
+
+		<span class="kw">let</span> <span class="ident">best_block</span>: <span class="ident">BlockId</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">BlockId::Hash</span>(<span class="self">self</span>.<span class="ident">client</span>.<span class="ident">info</span>().<span class="ident">best_hash</span>);
+		<span class="kw">let</span> <span class="ident">ethereum_transactions</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ethereum::TransactionV0</span><span class="op">&gt;</span> <span class="op">=</span> <span class="self">self</span>
+			.<span class="ident">client</span>
+			.<span class="ident">runtime_api</span>()
+			.<span class="ident">extrinsic_filter</span>(<span class="kw-2">&amp;</span><span class="ident">best_block</span>, <span class="ident">xts</span>)
+			.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> {
+				<span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;fetch runtime extrinsic filter failed: {:?}&quot;</span>, <span class="ident">err</span>))
+			})<span class="question-mark">?</span>;
+
+		<span class="kw">for</span> <span class="ident">txn</span> <span class="kw">in</span> <span class="ident">ethereum_transactions</span> {
+			<span class="kw">let</span> <span class="ident">inner_hash</span> <span class="op">=</span> <span class="ident">H256::from_slice</span>(<span class="ident">Keccak256::digest</span>(<span class="kw-2">&amp;</span><span class="ident">rlp::encode</span>(<span class="kw-2">&amp;</span><span class="ident">txn</span>)).<span class="ident">as_slice</span>());
+			<span class="kw">if</span> <span class="ident">hash</span> <span class="op">=</span><span class="op">=</span> <span class="ident">inner_hash</span> {
+				<span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">transaction_build</span>(<span class="ident">txn</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>)));
+			}
+		}
+
 		<span class="kw">let</span> (<span class="ident">hash</span>, <span class="ident">index</span>) <span class="op">=</span> <span class="kw">match</span> <span class="ident">frontier_backend_client::load_transactions</span>::<span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span><span class="op">&gt;</span>(
 			<span class="self">self</span>.<span class="ident">client</span>.<span class="ident">as_ref</span>(),
 			<span class="self">self</span>.<span class="ident">backend</span>.<span class="ident">as_ref</span>(),
@@ -3040,16 +3011,7 @@
 		.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>
 		{
 			<span class="prelude-val">Some</span>((<span class="ident">hash</span>, <span class="ident">index</span>)) <span class="op">=</span><span class="op">&gt;</span> (<span class="ident">hash</span>, <span class="ident">index</span> <span class="kw">as</span> <span class="ident">usize</span>),
-			<span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {
-				<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">pending</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">pending_transactions</span> {
-					<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">locked</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">pending</span>.<span class="ident">lock</span>() {
-						<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">pending_transaction</span>) <span class="op">=</span> <span class="ident">locked</span>.<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">hash</span>) {
-							<span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">pending_transaction</span>.<span class="ident">transaction</span>.<span class="ident">clone</span>()));
-						}
-					}
-				}
-				<span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>);
-			}
+			<span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
 		};
 
 		<span class="kw">let</span> <span class="ident">id</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">frontier_backend_client::load_hash</span>::<span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span>(<span class="self">self</span>.<span class="ident">backend</span>.<span class="ident">as_ref</span>(), <span class="ident">hash</span>)
@@ -3805,42 +3767,6 @@
 							}
 						}
 					}
-				}
-			}
-		}
-	}
-
-	<span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">pending_transaction_task</span>(
-		<span class="ident">client</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
-		<span class="ident">pending_transactions</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">Mutex</span><span class="op">&lt;</span><span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">H256</span>, <span class="ident">PendingTransaction</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-		<span class="ident">retain_threshold</span>: <span class="ident">u64</span>,
-	) {
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">notification_st</span> <span class="op">=</span> <span class="ident">client</span>.<span class="ident">import_notification_stream</span>();
-
-		<span class="kw">while</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">notification</span>) <span class="op">=</span> <span class="ident">notification_st</span>.<span class="ident">next</span>().<span class="kw">await</span> {
-			<span class="kw">if</span> <span class="ident">notification</span>.<span class="ident">is_new_best</span> {
-				<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="kw-2">mut</span> <span class="ident">pending_transactions</span>) <span class="op">=</span> <span class="ident">pending_transactions</span>.<span class="ident">lock</span>() {
-					<span class="comment">// As pending transactions have a finite lifespan anyway</span>
-					<span class="comment">// we can ignore MultiplePostRuntimeLogs error checks.</span>
-					<span class="kw">let</span> <span class="ident">log</span> <span class="op">=</span> <span class="ident">fp_consensus::find_log</span>(<span class="kw-2">&amp;</span><span class="ident">notification</span>.<span class="ident">header</span>.<span class="ident">digest</span>()).<span class="ident">ok</span>();
-					<span class="kw">let</span> <span class="ident">post_hashes</span> <span class="op">=</span> <span class="ident">log</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">log</span><span class="op">|</span> <span class="ident">log</span>.<span class="ident">into_hashes</span>());
-
-					<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">post_hashes</span>) <span class="op">=</span> <span class="ident">post_hashes</span> {
-						<span class="comment">// Retain all pending transactions that were not</span>
-						<span class="comment">// processed in the current block.</span>
-						<span class="ident">pending_transactions</span>
-							.<span class="ident">retain</span>(<span class="op">|</span><span class="kw-2">&amp;</span><span class="ident">k</span>, <span class="kw">_</span><span class="op">|</span> <span class="op">!</span><span class="ident">post_hashes</span>.<span class="ident">transaction_hashes</span>.<span class="ident">contains</span>(<span class="kw-2">&amp;</span><span class="ident">k</span>));
-					}
-
-					<span class="kw">let</span> <span class="ident">imported_number</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="ident">UniqueSaturatedInto</span>::<span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span><span class="ident">::unique_saturated_into</span>(
-						<span class="kw-2">*</span><span class="ident">notification</span>.<span class="ident">header</span>.<span class="ident">number</span>(),
-					);
-
-					<span class="ident">pending_transactions</span>.<span class="ident">retain</span>(<span class="op">|</span><span class="kw">_</span>, <span class="ident">v</span><span class="op">|</span> {
-						<span class="comment">// Drop all the transactions that exceeded the given lifespan.</span>
-						<span class="kw">let</span> <span class="ident">lifespan_limit</span> <span class="op">=</span> <span class="ident">v</span>.<span class="ident">at_block</span> <span class="op">+</span> <span class="ident">retain_threshold</span>;
-						<span class="ident">lifespan_limit</span> <span class="op">&gt;</span> <span class="ident">imported_number</span>
-					});
 				}
 			}
 		}

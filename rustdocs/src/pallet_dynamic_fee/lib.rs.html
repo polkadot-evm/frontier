@@ -439,7 +439,7 @@
 			<span class="ident">frame_system::limits::BlockWeights::simple_max</span>(<span class="number">1024</span>);
 	}
 	<span class="kw">impl</span> <span class="ident">frame_system::Config</span> <span class="kw">for</span> <span class="ident">Test</span> {
-		<span class="kw">type</span> <span class="ident">BaseCallFilter</span> <span class="op">=</span> ();
+		<span class="kw">type</span> <span class="ident">BaseCallFilter</span> <span class="op">=</span> <span class="ident">frame_support::traits::Everything</span>;
 		<span class="kw">type</span> <span class="ident">BlockWeights</span> <span class="op">=</span> ();
 		<span class="kw">type</span> <span class="ident">BlockLength</span> <span class="op">=</span> ();
 		<span class="kw">type</span> <span class="ident">DbWeight</span> <span class="op">=</span> ();

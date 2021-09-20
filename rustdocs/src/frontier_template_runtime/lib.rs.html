@@ -681,6 +681,11 @@
 <span id="681">681</span>
 <span id="682">682</span>
 <span id="683">683</span>
+<span id="684">684</span>
+<span id="685">685</span>
+<span id="686">686</span>
+<span id="687">687</span>
+<span id="688">688</span>
 </pre><pre class="rust">
 <span class="doccomment">//! The Substrate Node Template runtime. This can be compiled with `#[no_std]`, ready for Wasm.</span>
 
@@ -876,9 +881,14 @@
 	<span class="kw">type</span> <span class="ident">OnSetCode</span> <span class="op">=</span> ();
 }
 
+<span class="macro">parameter_types!</span> {
+	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MaxAuthorities</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">100</span>;
+}
+
 <span class="kw">impl</span> <span class="ident">pallet_aura::Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
 	<span class="kw">type</span> <span class="ident">AuthorityId</span> <span class="op">=</span> <span class="ident">AuraId</span>;
 	<span class="kw">type</span> <span class="ident">DisabledValidators</span> <span class="op">=</span> ();
+	<span class="kw">type</span> <span class="ident">MaxAuthorities</span> <span class="op">=</span> <span class="ident">MaxAuthorities</span>;
 }
 
 <span class="kw">impl</span> <span class="ident">pallet_grandpa::Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
@@ -1154,7 +1164,7 @@
 		}
 
 		<span class="kw">fn</span> <span class="ident">authorities</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">AuraId</span><span class="op">&gt;</span> {
-			<span class="ident">Aura::authorities</span>()
+			<span class="ident">Aura::authorities</span>().<span class="ident">to_vec</span>()
 		}
 	}
 
