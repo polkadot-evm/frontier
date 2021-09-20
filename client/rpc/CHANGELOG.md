@@ -9,3 +9,4 @@
 * `EthFilterApi::new` takes an additional `backend` parameter.
 * Bump `fp-storage` to `2.0.0-dev`.
 * Bump `fc-db` to `2.0.0-dev`.
+* Removed on-memory pending transactions in favor of transaction pool.

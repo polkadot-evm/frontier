@@ -3,7 +3,7 @@
 use std::sync::Arc;
 
 use fc_rpc::{OverrideHandle, RuntimeApiStorageOverride, SchemaV1Override, StorageOverride};
-use fc_rpc_core::types::{FilterPool, PendingTransactions};
+use fc_rpc_core::types::FilterPool;
 use frontier_template_runtime::{opaque::Block, AccountId, Balance, Hash, Index};
 use jsonrpc_pubsub::manager::SubscriptionManager;
 use pallet_ethereum::EthereumStorageSchema;
@@ -16,6 +16,7 @@ use sc_network::NetworkService;
 use sc_rpc::SubscriptionTaskExecutor;
 use sc_rpc_api::DenyUnsafe;
 use sc_service::TransactionPool;
+use sc_transaction_pool::{ChainApi, Pool};
 use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
@@ -35,11 +36,13 @@ pub struct LightDeps<C, F, P> {
 }
 
 /// Full client dependencies.
-pub struct FullDeps<C, P> {
+pub struct FullDeps<C, P, A: ChainApi> {
 	/// The client instance to use.
 	pub client: Arc<C>,
 	/// Transaction pool instance.
 	pub pool: Arc<P>,
+	/// Graph pool instance.
+	pub graph: Arc<Pool<A>>,
 	/// Whether to deny unsafe calls
 	pub deny_unsafe: DenyUnsafe,
 	/// The Node authority flag
@@ -48,8 +51,6 @@ pub struct FullDeps<C, P> {
 	pub enable_dev_signer: bool,
 	/// Network service
 	pub network: Arc<NetworkService<Block, Hash>>,
-	/// Ethereum pending transactions.
-	pub pending_transactions: PendingTransactions,
 	/// EthFilterApi pool.
 	pub filter_pool: Option<FilterPool>,
 	/// Backend.
@@ -62,8 +63,8 @@ pub struct FullDeps<C, P> {
 }
 
 /// Instantiate all Full RPC extensions.
-pub fn create_full<C, P, BE>(
-	deps: FullDeps<C, P>,
+pub fn create_full<C, P, BE, A>(
+	deps: FullDeps<C, P, A>,
 	subscription_task_executor: SubscriptionTaskExecutor,
 ) -> jsonrpc_core::IoHandler<sc_rpc::Metadata>
 where
@@ -78,6 +79,7 @@ where
 	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
 	C::Api: fp_rpc::EthereumRuntimeRPCApi<Block>,
 	P: TransactionPool<Block = Block> + 'static,
+	A: ChainApi<Block = Block> + 'static,
 {
 	use fc_rpc::{
 		EthApi, EthApiServer, EthDevSigner, EthFilterApi, EthFilterApiServer, EthPubSubApi,
@@ -91,10 +93,10 @@ where
 	let FullDeps {
 		client,
 		pool,
+		graph,
 		deny_unsafe,
 		is_authority,
 		network,
-		pending_transactions,
 		filter_pool,
 		command_sink,
 		backend,
@@ -130,9 +132,9 @@ where
 	io.extend_with(EthApiServer::to_delegate(EthApi::new(
 		client.clone(),
 		pool.clone(),
+		graph,
 		frontier_template_runtime::TransactionConverter,
 		network.clone(),
-		pending_transactions.clone(),
 		signers,
 		overrides.clone(),
 		backend.clone(),
