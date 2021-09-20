@@ -20,10 +20,6 @@ use crate::types::Bytes;
 use ethereum_types::{H160, H256, H512, U256, U64};
 use serde::ser::SerializeStruct;
 use serde::{Serialize, Serializer};
-use std::{
-	collections::HashMap,
-	sync::{Arc, Mutex},
-};
 
 /// Transaction
 #[derive(Debug, Default, Clone, PartialEq, Serialize)]
@@ -159,19 +155,3 @@ pub struct RichRawTransaction {
 	#[serde(rename = "tx")]
 	pub transaction: Transaction,
 }
-
-pub struct PendingTransaction {
-	pub transaction: Transaction,
-	pub at_block: u64,
-}
-
-impl PendingTransaction {
-	pub fn new(transaction: Transaction, at_block: u64) -> Self {
-		Self {
-			transaction,
-			at_block,
-		}
-	}
-}
-
-pub type PendingTransactions = Option<Arc<Mutex<HashMap<H256, PendingTransaction>>>>;

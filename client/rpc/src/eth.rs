@@ -22,9 +22,8 @@ use ethereum::{BlockV0 as EthereumBlock, TransactionV0 as EthereumTransaction};
 use ethereum_types::{H160, H256, H512, H64, U256, U64};
 use fc_rpc_core::types::{
 	Block, BlockNumber, BlockTransactions, Bytes, CallRequest, Filter, FilterChanges, FilterPool,
-	FilterPoolItem, FilterType, FilteredParams, Header, Index, Log, PeerCount, PendingTransaction,
-	PendingTransactions, Receipt, Rich, RichBlock, SyncInfo, SyncStatus, Transaction,
-	TransactionRequest, Work,
+	FilterPoolItem, FilterType, FilteredParams, Header, Index, Log, PeerCount, Receipt, Rich,
+	RichBlock, SyncInfo, SyncStatus, Transaction, TransactionRequest, Work,
 };
 use fc_rpc_core::{
 	EthApi as EthApiT, EthFilterApi as EthFilterApiT, NetApi as NetApiT, Web3Api as Web3ApiT,
@@ -37,6 +36,7 @@ use sc_client_api::{
 	client::BlockchainEvents,
 };
 use sc_network::{ExHashT, NetworkService};
+use sc_transaction_pool::{ChainApi, Pool};
 use sc_transaction_pool_api::{InPoolTransaction, TransactionPool};
 use sha3::{Digest, Keccak256};
 use sp_api::{BlockId, Core, HeaderT, ProvideRuntimeApi};
@@ -45,7 +45,7 @@ use sp_runtime::{
 	traits::{BlakeTwo256, Block as BlockT, NumberFor, One, Saturating, UniqueSaturatedInto, Zero},
 	transaction_validity::TransactionSource,
 };
-use std::collections::{BTreeMap, HashMap};
+use std::collections::BTreeMap;
 use std::{
 	marker::PhantomData,
 	sync::{Arc, Mutex},
@@ -57,33 +57,34 @@ use codec::{self, Decode, Encode};
 pub use fc_rpc_core::{EthApiServer, EthFilterApiServer, NetApiServer, Web3ApiServer};
 use pallet_ethereum::EthereumStorageSchema;
 
-pub struct EthApi<B: BlockT, C, P, CT, BE, H: ExHashT> {
+pub struct EthApi<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> {
 	pool: Arc<P>,
+	graph: Arc<Pool<A>>,
 	client: Arc<C>,
 	convert_transaction: CT,
 	network: Arc<NetworkService<B, H>>,
 	is_authority: bool,
 	signers: Vec<Box<dyn EthSigner>>,
 	overrides: Arc<OverrideHandle<B>>,
-	pending_transactions: PendingTransactions,
 	backend: Arc<fc_db::Backend<B>>,
 	max_past_logs: u32,
 	_marker: PhantomData<(B, BE)>,
 }
 
-impl<B: BlockT, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H>
+impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> EthApi<B, C, P, CT, BE, H, A>
 where
 	C: ProvideRuntimeApi<B>,
 	C::Api: EthereumRuntimeRPCApi<B>,
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
+	A: ChainApi<Block = B> + 'static,
 	C: Send + Sync + 'static,
 {
 	pub fn new(
 		client: Arc<C>,
 		pool: Arc<P>,
+		graph: Arc<Pool<A>>,
 		convert_transaction: CT,
 		network: Arc<NetworkService<B, H>>,
-		pending_transactions: PendingTransactions,
 		signers: Vec<Box<dyn EthSigner>>,
 		overrides: Arc<OverrideHandle<B>>,
 		backend: Arc<fc_db::Backend<B>>,
@@ -93,12 +94,12 @@ where
 		Self {
 			client: client.clone(),
 			pool,
+			graph,
 			convert_transaction,
 			network,
 			is_authority,
 			signers,
 			overrides,
-			pending_transactions,
 			backend,
 			max_past_logs,
 			_marker: PhantomData,
@@ -408,7 +409,7 @@ fn filter_block_logs<'a>(
 	ret
 }
 
-impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H>
+impl<B, C, P, CT, BE, H: ExHashT, A> EthApiT for EthApi<B, C, P, CT, BE, H, A>
 where
 	C: ProvideRuntimeApi<B> + StorageProvider<B, BE> + AuxStore,
 	C: HeaderBackend<B> + HeaderMetadata<B, Error = BlockChainError> + 'static,
@@ -418,6 +419,7 @@ where
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	C: Send + Sync + 'static,
 	P: TransactionPool<Block = B> + Send + Sync + 'static,
+	A: ChainApi<Block = B> + 'static,
 	CT: ConvertTransaction<<B as BlockT>::Extrinsic> + Send + Sync + 'static,
 {
 	fn protocol_version(&self) -> Result<u64> {
@@ -796,8 +798,6 @@ where
 		let transaction_hash =
 			H256::from_slice(Keccak256::digest(&rlp::encode(&transaction)).as_slice());
 		let hash = self.client.info().best_hash;
-		let number = self.client.info().best_number;
-		let pending = self.pending_transactions.clone();
 		Box::pin(
 			self.pool
 				.submit_one(
@@ -806,20 +806,7 @@ where
 					self.convert_transaction
 						.convert_transaction(transaction.clone()),
 				)
-				.map_ok(move |_| {
-					if let Some(pending) = pending {
-						if let Ok(locked) = &mut pending.lock() {
-							locked.insert(
-								transaction_hash,
-								PendingTransaction::new(
-									transaction_build(transaction, None, None),
-									UniqueSaturatedInto::<u64>::unique_saturated_into(number),
-								),
-							);
-						}
-					}
-					transaction_hash
-				})
+				.map_ok(move |_| transaction_hash)
 				.map_err(|err| {
 					internal_err(format!("submit transaction to pool failed: {:?}", err))
 				}),
@@ -834,8 +821,6 @@ where
 		let transaction_hash =
 			H256::from_slice(Keccak256::digest(&rlp::encode(&transaction)).as_slice());
 		let hash = self.client.info().best_hash;
-		let number = self.client.info().best_number;
-		let pending = self.pending_transactions.clone();
 		Box::pin(
 			self.pool
 				.submit_one(
@@ -844,20 +829,7 @@ where
 					self.convert_transaction
 						.convert_transaction(transaction.clone()),
 				)
-				.map_ok(move |_| {
-					if let Some(pending) = pending {
-						if let Ok(locked) = &mut pending.lock() {
-							locked.insert(
-								transaction_hash,
-								PendingTransaction::new(
-									transaction_build(transaction, None, None),
-									UniqueSaturatedInto::<u64>::unique_saturated_into(number),
-								),
-							);
-						}
-					}
-					transaction_hash
-				})
+				.map_ok(move |_| transaction_hash)
 				.map_err(|err| {
 					internal_err(format!("submit transaction to pool failed: {:?}", err))
 				}),
@@ -1089,6 +1061,42 @@ where
 	}
 
 	fn transaction_by_hash(&self, hash: H256) -> Result<Option<Transaction>> {
+		let mut xts: Vec<<B as BlockT>::Extrinsic> = Vec::new();
+		// Collect transactions in the ready validated pool.
+		xts.extend(
+			self.graph
+				.validated_pool()
+				.ready()
+				.map(|in_pool_tx| in_pool_tx.data().clone())
+				.collect::<Vec<<B as BlockT>::Extrinsic>>(),
+		);
+
+		// Collect transactions in the future validated pool.
+		xts.extend(
+			self.graph
+				.validated_pool()
+				.futures()
+				.iter()
+				.map(|(_hash, extrinsic)| extrinsic.clone())
+				.collect::<Vec<<B as BlockT>::Extrinsic>>(),
+		);
+
+		let best_block: BlockId<B> = BlockId::Hash(self.client.info().best_hash);
+		let ethereum_transactions: Vec<ethereum::TransactionV0> = self
+			.client
+			.runtime_api()
+			.extrinsic_filter(&best_block, xts)
+			.map_err(|err| {
+				internal_err(format!("fetch runtime extrinsic filter failed: {:?}", err))
+			})?;
+
+		for txn in ethereum_transactions {
+			let inner_hash = H256::from_slice(Keccak256::digest(&rlp::encode(&txn)).as_slice());
+			if hash == inner_hash {
+				return Ok(Some(transaction_build(txn, None, None)));
+			}
+		}
+
 		let (hash, index) = match frontier_backend_client::load_transactions::<B, C>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
@@ -1098,16 +1106,7 @@ where
 		.map_err(|err| internal_err(format!("{:?}", err)))?
 		{
 			Some((hash, index)) => (hash, index as usize),
-			None => {
-				if let Some(pending) = &self.pending_transactions {
-					if let Ok(locked) = &mut pending.lock() {
-						if let Some(pending_transaction) = locked.get(&hash) {
-							return Ok(Some(pending_transaction.transaction.clone()));
-						}
-					}
-				}
-				return Ok(None);
-			}
+			None => return Ok(None),
 		};
 
 		let id = match frontier_backend_client::load_hash::<B>(self.backend.as_ref(), hash)
@@ -1863,42 +1862,6 @@ where
 							}
 						}
 					}
-				}
-			}
-		}
-	}
-
-	pub async fn pending_transaction_task(
-		client: Arc<C>,
-		pending_transactions: Arc<Mutex<HashMap<H256, PendingTransaction>>>,
-		retain_threshold: u64,
-	) {
-		let mut notification_st = client.import_notification_stream();
-
-		while let Some(notification) = notification_st.next().await {
-			if notification.is_new_best {
-				if let Ok(mut pending_transactions) = pending_transactions.lock() {
-					// As pending transactions have a finite lifespan anyway
-					// we can ignore MultiplePostRuntimeLogs error checks.
-					let log = fp_consensus::find_log(&notification.header.digest()).ok();
-					let post_hashes = log.map(|log| log.into_hashes());
-
-					if let Some(post_hashes) = post_hashes {
-						// Retain all pending transactions that were not
-						// processed in the current block.
-						pending_transactions
-							.retain(|&k, _| !post_hashes.transaction_hashes.contains(&k));
-					}
-
-					let imported_number: u64 = UniqueSaturatedInto::<u64>::unique_saturated_into(
-						*notification.header.number(),
-					);
-
-					pending_transactions.retain(|_, v| {
-						// Drop all the transactions that exceeded the given lifespan.
-						let lifespan_limit = v.at_block + retain_threshold;
-						lifespan_limit > imported_number
-					});
 				}
 			}
 		}
