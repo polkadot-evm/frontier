@@ -1565,6 +1565,7 @@ dependencies = [
  "jsonrpc-pubsub",
  "libsecp256k1 0.3.5",
  "log",
+ "lru",
  "pallet-ethereum",
  "pallet-evm",
  "parity-scale-codec",
