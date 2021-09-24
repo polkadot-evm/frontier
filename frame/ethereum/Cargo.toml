@@ -5,6 +5,7 @@ authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2018"
 description = "Ethereum compatibility full block processing emulation pallet for Substrate."
 license = "Apache-2.0"
+resolver = "2"
 
 [dependencies]
 rustc-hex = { version = "2.1.0", default-features = false }
@@ -24,13 +25,13 @@ ethereum = { version = "0.9.0", default-features = false, features = ["with-code
 ethereum-types = { version = "0.12", default-features = false }
 rlp = { version = "0.5", default-features = false }
 sha3 = { version = "0.8", default-features = false }
-libsecp256k1 = { version = "0.5", default-features = false, features = ["static-context", "hmac"] }
 fp-consensus = { version = "2.0.0-dev", path = "../../primitives/consensus", default-features = false }
 fp-rpc = { version = "3.0.0-dev", path = "../../primitives/rpc", default-features = false }
 fp-storage = { version = "2.0.0", path = "../../primitives/storage", default-features = false}
 
 [dev-dependencies]
 sp-core = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate" }
+libsecp256k1 = { version = "0.5", features = ["static-context", "hmac"] }
 
 [features]
 default = ["std"]
@@ -51,7 +52,6 @@ std = [
 	"ethereum-types/std",
 	"rlp/std",
 	"sha3/std",
-	"libsecp256k1/std",
 	"fp-consensus/std",
 	"fp-rpc/std",
 	"fp-storage/std",
