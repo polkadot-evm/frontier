@@ -1943,8 +1943,8 @@ where
 /// Storing them in an LRU cache will allow to reduce database accesses
 /// when many subsequent requests are related to the same blocks.
 pub struct EthBlockDataCache<B: BlockT> {
-	blocks: Mutex<LruCache<B::Hash, EthereumBlock>>,
-	statuses: Mutex<LruCache<B::Hash, Vec<TransactionStatus>>>,
+	blocks: parking_lot::Mutex<LruCache<B::Hash, EthereumBlock>>,
+	statuses: parking_lot::Mutex<LruCache<B::Hash, Vec<TransactionStatus>>>,
 }
 
 impl<B: BlockT> EthBlockDataCache<B>
@@ -1955,8 +1955,8 @@ impl<B: BlockT> EthBlockDataCache<B>
 		statuses_cache_size: usize,
 	) -> Self {
 		Self {
-			blocks: Mutex::new(LruCache::new(blocks_cache_size)),
-			statuses: Mutex::new(LruCache::new(statuses_cache_size)),
+			blocks: parking_lot::Mutex::new(LruCache::new(blocks_cache_size)),
+			statuses: parking_lot::Mutex::new(LruCache::new(statuses_cache_size)),
 		}
 	}
 
@@ -1967,16 +1967,16 @@ impl<B: BlockT> EthBlockDataCache<B>
 		substrate_block_hash: B::Hash,
 	) -> Option<EthereumBlock> {
 
-		if let Ok(mut cache) = self.blocks.lock() {
+		{
+			let mut cache = self.blocks.lock();
 			if let Some(block) = cache.get(&substrate_block_hash).cloned() {
 				return Some(block);
 			}
 		}
 
 		if let Some(block) = handler.current_block(&BlockId::Hash(substrate_block_hash)) {
-			if let Ok(mut cache) = self.blocks.lock() {
-				cache.put(substrate_block_hash, block.clone());
-			}
+			let mut cache = self.blocks.lock();
+			cache.put(substrate_block_hash, block.clone());
 
 			return Some(block);
 		}
@@ -1991,16 +1991,16 @@ impl<B: BlockT> EthBlockDataCache<B>
 		substrate_block_hash: B::Hash,
 	) -> Option<Vec<TransactionStatus>> {
 
-		if let Ok(mut cache) = self.statuses.lock() {
+		{
+			let mut cache = self.statuses.lock();
 			if let Some(statuses) = cache.get(&substrate_block_hash).cloned() {
 				return Some(statuses);
 			}
 		}
 
 		if let Some(statuses) = handler.current_transaction_statuses(&BlockId::Hash(substrate_block_hash)) {
-			if let Ok(mut cache) = self.statuses.lock() {
-				cache.put(substrate_block_hash, statuses.clone());
-			}
+			let mut cache = self.statuses.lock();
+			cache.put(substrate_block_hash, statuses.clone());
 
 			return Some(statuses);
 		}

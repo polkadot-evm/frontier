@@ -1569,6 +1569,7 @@ dependencies = [
  "pallet-ethereum",
  "pallet-evm",
  "parity-scale-codec",
+ "parking_lot 0.11.1",
  "rand 0.7.3",
  "rlp",
  "rustc-hex",
