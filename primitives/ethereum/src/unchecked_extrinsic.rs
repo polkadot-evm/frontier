@@ -84,7 +84,7 @@ where
 				let recovered_address = H160::from(H256::from_slice(
 					Keccak256::digest(&recovered_pubkey).as_slice(),
 				));
-				if recovered_address == ethereum_address && Extra::metadata().is_empty() {
+				if recovered_address == ethereum_address && Extra::identifier().is_empty() {
 					Ok(CheckedExtrinsic {
 						signed: CheckedSignature::EthereumTransaction(preimage_hash, ethereum_address),
 						function,
