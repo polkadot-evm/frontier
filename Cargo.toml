@@ -19,6 +19,7 @@ members = [
 	"primitives/consensus",
 	"primitives/evm",
 	"primitives/rpc",
+	"primitives/ethereum",
 	"template/node",
 	"template/runtime",
 ]
