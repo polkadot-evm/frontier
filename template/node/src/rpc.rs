@@ -2,7 +2,9 @@
 
 use std::sync::Arc;
 
-use fc_rpc::{OverrideHandle, RuntimeApiStorageOverride, SchemaV1Override, StorageOverride};
+use fc_rpc::{
+	EthBlockDataCache, OverrideHandle, RuntimeApiStorageOverride, SchemaV1Override, StorageOverride,
+};
 use fc_rpc_core::types::FilterPool;
 use frontier_template_runtime::{opaque::Block, AccountId, Balance, Hash, Index};
 use jsonrpc_pubsub::manager::SubscriptionManager;
@@ -129,6 +131,8 @@ where
 		fallback: Box::new(RuntimeApiStorageOverride::new(client.clone())),
 	});
 
+	let block_data_cache = Arc::new(EthBlockDataCache::new(50, 50));
+
 	io.extend_with(EthApiServer::to_delegate(EthApi::new(
 		client.clone(),
 		pool.clone(),
@@ -140,6 +144,7 @@ where
 		backend.clone(),
 		is_authority,
 		max_past_logs,
+		block_data_cache.clone(),
 	)));
 
 	if let Some(filter_pool) = filter_pool {
@@ -150,6 +155,7 @@ where
 			500 as usize, // max stored filters
 			overrides.clone(),
 			max_past_logs,
+			block_data_cache.clone(),
 		)));
 	}
 
