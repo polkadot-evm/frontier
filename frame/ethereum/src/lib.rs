@@ -109,7 +109,10 @@ pub mod pallet {
 				let PreLog::Block(block) = log;
 
 				for transaction in block.transactions {
-					Self::do_transact(transaction).expect(
+					let source = Self::recover_signer(&transaction).expect(
+						"pre-block transaction source verification failed; the block cannot be built",
+					);
+					Self::do_transact(transaction, source).expect(
 						"pre-block transaction verification failed; the block cannot be built",
 					);
 				}
@@ -121,15 +124,16 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		/// Transact an Ethereum transaction.
+		/// Transact an Ethereum transaction. Signed transaction must match provided `source`.
 		#[pallet::weight(<T as pallet_evm::Config>::GasWeightMapping::gas_to_weight(transaction.gas_limit.unique_saturated_into()))]
 		pub fn transact(
 			origin: OriginFor<T>,
 			transaction: Transaction,
+			source: Option<H160>,
 		) -> DispatchResultWithPostInfo {
 			ensure_none(origin)?;
-
-			Self::do_transact(transaction)
+			let source = source.ok_or_else(|| Error::<T>::InvalidSource)?;
+			Self::do_transact(transaction, source)
 		}
 	}
 
@@ -144,6 +148,8 @@ pub mod pallet {
 	pub enum Error<T> {
 		/// Signature is invalid.
 		InvalidSignature,
+		/// Provided source is invalid.
+		InvalidSource,
 		/// Pre-log is present, therefore transact is not allowed.
 		PreLogExists,
 	}
@@ -189,7 +195,7 @@ pub mod pallet {
 		type Call = Call<T>;
 
 		fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
-			if let Call::transact(transaction) = call {
+			if let Call::transact(transaction, source) = call {
 				// We must ensure a transaction can pay the cost of its data bytes.
 				// If it can't it should not be included in a block.
 				let mut gasometer = evm::gasometer::Gasometer::new(
@@ -223,6 +229,15 @@ pub mod pallet {
 				let origin = Self::recover_signer(&transaction).ok_or_else(|| {
 					InvalidTransaction::Custom(TransactionValidationError::InvalidSignature as u8)
 				})?;
+
+				// Do not remove, as this this is the only source of signer truth.
+				// Reject transaction that doesn't match the provided source.
+				if &Some(origin) != source {
+					return InvalidTransaction::Custom(
+						TransactionValidationError::InvalidSource as u8,
+					)
+					.into();
+				}
 
 				if transaction.gas_limit >= T::BlockGasLimit::get() {
 					return InvalidTransaction::Custom(
@@ -267,7 +282,7 @@ pub mod pallet {
 }
 
 impl<T: Config> Pallet<T> {
-	fn recover_signer(transaction: &Transaction) -> Option<H160> {
+	pub fn recover_signer(transaction: &Transaction) -> Option<H160> {
 		let mut sig = [0u8; 65];
 		let mut msg = [0u8; 32];
 		sig[0..32].copy_from_slice(&transaction.signature.r()[..]);
@@ -341,14 +356,11 @@ impl<T: Config> Pallet<T> {
 		}
 	}
 
-	fn do_transact(transaction: Transaction) -> DispatchResultWithPostInfo {
+	fn do_transact(transaction: Transaction, source: H160) -> DispatchResultWithPostInfo {
 		ensure!(
 			fp_consensus::find_pre_log(&frame_system::Pallet::<T>::digest()).is_err(),
 			Error::<T>::PreLogExists,
 		);
-
-		let source =
-			Self::recover_signer(&transaction).ok_or_else(|| Error::<T>::InvalidSignature)?;
 
 		let transaction_hash =
 			H256::from_slice(Keccak256::digest(&rlp::encode(&transaction)).as_slice());
@@ -540,4 +552,5 @@ enum TransactionValidationError {
 	InvalidChainId,
 	InvalidSignature,
 	InvalidGasLimit,
+	InvalidSource,
 }
