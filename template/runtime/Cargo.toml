@@ -49,6 +49,9 @@ sp-version = { default-features = false, git = "https://github.com/paritytech/su
 
 fp-rpc = { default-features = false, path = "../../primitives/rpc" }
 
+#TODO Do I need this? I added it following https://gist.github.com/ascjones/0d81a4c44e84cacd9f714cd34a6de823	
+scale-info = { version = "1.0.0", default-features = false, features = ["derive"] }
+
 # benchmarking dependencies
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true }
 frame-system-benchmarking = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true }
@@ -97,6 +100,7 @@ std = [
 	"sp-version/std",
 	"frame-benchmarking/std",
 	"frame-system-benchmarking/std",
+	"scale-info/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",
