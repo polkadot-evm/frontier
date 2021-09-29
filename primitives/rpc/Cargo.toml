@@ -16,6 +16,7 @@ codec = { package = "parity-scale-codec", version = "2.0.0", default-features = 
 sp-runtime = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
 sp-std = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
 sp-io = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
+scale-info = { version = "1.0", features = ["derive"], default-features = false }
 
 [features]
 default = ["std"]
@@ -29,4 +30,5 @@ std = [
 	"sp-runtime/std",
 	"sp-std/std",
 	"sp-io/std",
+	"scale-info/std",
 ]
