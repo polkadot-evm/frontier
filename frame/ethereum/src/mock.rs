@@ -44,7 +44,7 @@ frame_support::construct_runtime! {
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage},
 		EVM: pallet_evm::{Pallet, Call, Storage, Config, Event<T>},
-		Ethereum: crate::{Pallet, Call, Storage, Event},
+		Ethereum: crate::{Pallet, Call, Storage, Event, Origin},
 	}
 }
 
@@ -162,8 +162,10 @@ impl pallet_evm::Config for Test {
 }
 
 impl crate::Config for Test {
+	type Origin = Origin;
 	type Event = Event;
 	type StateRoot = IntermediateStateRoot;
+	type EthereumTransactionOrigin = crate::EnsureEthereumTransaction;
 }
 
 pub struct AccountInfo {

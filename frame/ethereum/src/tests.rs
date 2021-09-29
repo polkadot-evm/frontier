@@ -19,7 +19,7 @@
 
 use crate::{
 	mock::*, CallOrCreateInfo, Error, Transaction, TransactionAction, ValidTransactionBuilder,
-	H160, H256, U256,
+	H160, H256, U256, RawOrigin,
 };
 use ethereum::TransactionSignature;
 use frame_support::{assert_err, assert_noop, assert_ok, unsigned::ValidateUnsigned};
@@ -80,13 +80,10 @@ fn transaction_without_enough_gas_should_not_work() {
 		let mut transaction = default_erc20_creation_transaction(alice);
 		transaction.gas_price = U256::from(11_000_000);
 
-		assert_err!(
-			Ethereum::validate_unsigned(
-				TransactionSource::External,
-				&crate::Call::transact(transaction)
-			),
-			InvalidTransaction::Payment
-		);
+		let call = crate::Call::<Test>::transact(transaction);
+		let source = call.check_self_contained().unwrap().unwrap();
+
+		assert_err!(call.validate_self_contained(&source).unwrap(), InvalidTransaction::Payment);
 	});
 }
 
@@ -101,12 +98,11 @@ fn transaction_with_invalid_nonce_should_not_work() {
 		transaction.nonce = U256::from(1);
 
 		let signed = transaction.sign(&alice.private_key);
+		let call = crate::Call::<Test>::transact(signed);
+		let source = call.check_self_contained().unwrap().unwrap();
 
 		assert_eq!(
-			Ethereum::validate_unsigned(
-				TransactionSource::External,
-				&crate::Call::transact(signed)
-			),
+			call.validate_self_contained(&source).unwrap(),
 			ValidTransactionBuilder::default()
 				.and_provides((alice.address, U256::from(1)))
 				.priority(1u64)
@@ -131,12 +127,11 @@ fn transaction_with_invalid_nonce_should_not_work() {
 		transaction.nonce = U256::from(0);
 
 		let signed2 = transaction.sign(&alice.private_key);
+		let call2 = crate::Call::<Test>::transact(signed2);
+		let source2 = call2.check_self_contained().unwrap().unwrap();
 
 		assert_err!(
-			Ethereum::validate_unsigned(
-				TransactionSource::External,
-				&crate::Call::transact(signed2)
-			),
+			call2.validate_self_contained(&source2).unwrap(),
 			InvalidTransaction::Stale
 		);
 	});
@@ -179,7 +174,7 @@ fn source_should_be_derived_from_signature() {
 	let alice_storage_address = storage_address(alice.address, H256::zero());
 
 	ext.execute_with(|| {
-		Ethereum::transact(Origin::none(), default_erc20_creation_transaction(alice))
+		Ethereum::transact(RawOrigin::EthereumTransaction(alice.address).into(), default_erc20_creation_transaction(alice))
 			.expect("Failed to execute transaction");
 
 		// We verify the transaction happened with alice account.
@@ -188,26 +183,6 @@ fn source_should_be_derived_from_signature() {
 			H256::from_str("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")
 				.unwrap()
 		)
-	});
-}
-
-#[test]
-fn invalid_signature_should_be_ignored() {
-	let (pairs, mut ext) = new_test_ext(1);
-	let alice = &pairs[0];
-
-	let mut transaction = default_erc20_creation_transaction(alice);
-	transaction.signature = TransactionSignature::new(
-		0x78,
-		H256::from_slice(&[55u8; 32]),
-		H256::from_slice(&[55u8; 32]),
-	)
-	.unwrap();
-	ext.execute_with(|| {
-		assert_noop!(
-			Ethereum::transact(Origin::none(), transaction,),
-			Error::<Test>::InvalidSignature
-		);
 	});
 }
 
