@@ -9,7 +9,7 @@ use sp_runtime::{
 	transaction_validity::{InvalidTransaction, TransactionValidityError},
 };
 use sha3::{Digest, Keccak256};
-use crate::{CheckedExtrinsic, CheckedSignature, MultiSignature, EthereumAddress};
+use crate::{CheckedExtrinsic, CheckedSignature, MultiSignature, EthereumAddress, EthereumTransaction};
 
 /// A extrinsic right from the external world. This is unchecked and so
 /// can contain a signature.
@@ -63,7 +63,7 @@ impl<Address, AccountId, Call, Extra, Lookup> Checkable<Lookup>
 	for UncheckedExtrinsic<Address, Call, Extra>
 where
 	Address: Member + MaybeDisplay + EthereumAddress,
-	Call: Encode + Member,
+	Call: Encode + Member + EthereumTransaction,
 	MultiSignature: Member + traits::Verify,
 	<MultiSignature as traits::Verify>::Signer: IdentifyAccount<AccountId = AccountId>,
 	Extra: SignedExtension<AccountId = AccountId>,
@@ -73,27 +73,28 @@ where
 	type Checked = CheckedExtrinsic<AccountId, Call, Extra>;
 
 	fn check(self, lookup: &Lookup) -> Result<Self::Checked, TransactionValidityError> {
-		let ethereum_address = self.0.signature.as_ref().and_then(|(address, _, _)| address.ethereum_address());
-
-		match (ethereum_address, self.0) {
-			(Some(ethereum_address), sp_runtime::generic::UncheckedExtrinsic {
-				signature: Some((_, MultiSignature::EthereumTransaction(preimage_hash, signature), _)),
+		match self.0 {
+			sp_runtime::generic::UncheckedExtrinsic {
+				signature: Some((address, MultiSignature::EthereumTransaction(signature), _)),
 				function,
-			}) => {
+			} => {
+				let preimage_hash = function.preimage_hash().ok_or(TransactionValidityError::Invalid(InvalidTransaction::BadProof))?;
+				let ethereum_address = address.ethereum_address().ok_or(TransactionValidityError::Invalid(InvalidTransaction::BadProof))?;
+
 				let recovered_pubkey = sp_io::crypto::secp256k1_ecdsa_recover(&signature.0, &preimage_hash.0).map_err(|_| TransactionValidityError::Invalid(InvalidTransaction::BadProof))?;
 				let recovered_address = H160::from(H256::from_slice(
 					Keccak256::digest(&recovered_pubkey).as_slice(),
 				));
 				if recovered_address == ethereum_address && Extra::identifier().is_empty() {
 					Ok(CheckedExtrinsic {
-						signed: CheckedSignature::EthereumTransaction(preimage_hash, ethereum_address),
+						signed: CheckedSignature::EthereumTransaction(ethereum_address),
 						function,
 					})
 				} else {
 					Err(TransactionValidityError::Invalid(InvalidTransaction::BadProof))
 				}
 			},
-			(_, extrinsic) => {
+			extrinsic => {
 				let checked = Checkable::<Lookup>::check(extrinsic, lookup)?;
 				Ok(CheckedExtrinsic {
 					signed: match checked.signed {

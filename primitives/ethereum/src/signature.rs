@@ -18,9 +18,8 @@
 use codec::{Decode, Encode};
 #[cfg(feature = "std")]
 use serde::{Serialize, Deserialize};
-use scale_info::TypeInfo;
 use core::convert::TryFrom;
-use sp_core::{crypto::Public, H256, ecdsa, ed25519, sr25519};
+use sp_core::{crypto::Public, ecdsa, ed25519, sr25519};
 use sp_runtime::{RuntimeDebug, AccountId32, MultiSigner, traits::{Verify, Lazy}};
 
 /// Signature verify that can work with any known signature types.
@@ -34,7 +33,7 @@ pub enum MultiSignature {
 	/// An ECDSA/SECP256k1 signature.
 	Ecdsa(ecdsa::Signature),
 	/// A pre-hashed ECDSA/SECP256k1 signature.
-	EthereumTransaction(H256, ecdsa::Signature),
+	EthereumTransaction(ecdsa::Signature),
 }
 
 impl From<ed25519::Signature> for MultiSignature {
@@ -112,7 +111,7 @@ impl Verify for MultiSignature {
 				}
 			},
 			// No AccountId32 signature is valid for this type.
-			(Self::EthereumTransaction(_, _), _) => false,
+			(Self::EthereumTransaction(_), _) => false,
 		}
 	}
 }

@@ -28,9 +28,13 @@ pub use crate::unchecked_extrinsic::UncheckedExtrinsic;
 use sp_core::{H256, H160};
 
 pub trait EthereumOrigin {
-	fn ethereum_transaction(pre_hash: H256, id: H160) -> Self;
+	fn ethereum_transaction(sender: H160) -> Self;
 }
 
 pub trait EthereumAddress {
 	fn ethereum_address(&self) -> Option<H160>;
+}
+
+pub trait EthereumTransaction {
+	fn preimage_hash(&self) -> Option<H256>;
 }
