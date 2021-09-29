@@ -18,8 +18,8 @@
 //! Consensus extension module tests for BABE consensus.
 
 use crate::{
-	mock::*, CallOrCreateInfo, Error, Transaction, TransactionAction, ValidTransactionBuilder,
-	H160, H256, U256, RawOrigin,
+	mock::*, CallOrCreateInfo, Error, RawOrigin, Transaction, TransactionAction,
+	ValidTransactionBuilder, H160, H256, U256,
 };
 use ethereum::TransactionSignature;
 use frame_support::{assert_err, assert_noop, assert_ok, unsigned::ValidateUnsigned};
@@ -83,7 +83,10 @@ fn transaction_without_enough_gas_should_not_work() {
 		let call = crate::Call::<Test>::transact(transaction);
 		let source = call.check_self_contained().unwrap().unwrap();
 
-		assert_err!(call.validate_self_contained(&source).unwrap(), InvalidTransaction::Payment);
+		assert_err!(
+			call.validate_self_contained(&source).unwrap(),
+			InvalidTransaction::Payment
+		);
 	});
 }
 
@@ -174,8 +177,11 @@ fn source_should_be_derived_from_signature() {
 	let alice_storage_address = storage_address(alice.address, H256::zero());
 
 	ext.execute_with(|| {
-		Ethereum::transact(RawOrigin::EthereumTransaction(alice.address).into(), default_erc20_creation_transaction(alice))
-			.expect("Failed to execute transaction");
+		Ethereum::transact(
+			RawOrigin::EthereumTransaction(alice.address).into(),
+			default_erc20_creation_transaction(alice),
+		)
+		.expect("Failed to execute transaction");
 
 		// We verify the transaction happened with alice account.
 		assert_eq!(
