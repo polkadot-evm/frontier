@@ -4271,7 +4271,6 @@ dependencies = [
  "parity-scale-codec",
  "primitive-types",
  "rlp",
- "scale-info 1.0.0",
  "serde",
  "sha3 0.8.2",
  "sp-core",

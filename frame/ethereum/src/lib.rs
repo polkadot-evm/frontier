@@ -86,14 +86,20 @@ pub mod pallet {
 		+ pallet_timestamp::Config
 		+ pallet_evm::Config
 	{
+		/// The outer origin type.
+		type Origin: From<RawOrigin>;
 		/// The overarching event type.
 		type Event: From<Event> + IsType<<Self as frame_system::Config>::Event>;
 		/// How Ethereum state root is calculated.
 		type StateRoot: Get<H256>;
 	}
+
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
 	pub struct Pallet<T>(PhantomData<T>);
+
+	#[pallet::origin]
+	pub type Origin = RawOrigin;
 
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
@@ -369,7 +375,7 @@ impl<T: Config> Pallet<T> {
 			H256::from_slice(Keccak256::digest(&rlp::encode(&transaction)).as_slice());
 		let transaction_index = Pending::<T>::get().len() as u32;
 
-		let (to, contract_address, info) = Self::execute(
+		let (to, _, info) = Self::execute(
 			source,
 			transaction.input.clone(),
 			transaction.value,
