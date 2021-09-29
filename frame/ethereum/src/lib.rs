@@ -44,6 +44,9 @@ use sp_runtime::{
 	DispatchError,
 };
 use sp_std::{marker::PhantomData, prelude::*};
+use sp_runtime::transaction_validity::TransactionValidityError;
+use sp_runtime::transaction_validity::TransactionValidity;
+use sp_runtime::transaction_validity::InvalidTransaction;
 
 pub use ethereum::{
 	BlockV0 as Block, LegacyTransactionMessage, Log, Receipt, TransactionAction,
@@ -88,6 +91,109 @@ impl<
 	#[cfg(feature = "runtime-benchmarks")]
 	fn successful_origin() -> O {
 		O::from(RawOrigin::EthereumTransaction(Default::default()))
+	}
+}
+
+impl<T: Config> Call<T> {
+	pub fn is_self_contained(&self) -> bool {
+		match self {
+			Call::transact(_) => true,
+			_ => false,
+		}
+	}
+
+	pub fn check_self_contained(&self) -> Option<Result<H160, TransactionValidityError>> {
+		if let Call::transact(transaction) = self {
+			let check = || {
+				let origin = Pallet::<T>::recover_signer(&transaction).ok_or_else(|| {
+					InvalidTransaction::Custom(TransactionValidationError::InvalidSignature as u8)
+				})?;
+
+				Ok(origin)
+			};
+
+
+			Some(check())
+		} else {
+			None
+		}
+	}
+
+	pub fn validate_self_contained(&self, origin: &H160) -> Option<TransactionValidity> {
+		if let Call::transact(transaction) = self {
+			let validate = || {
+				// We must ensure a transaction can pay the cost of its data bytes.
+				// If it can't it should not be included in a block.
+				let mut gasometer = evm::gasometer::Gasometer::new(
+					transaction.gas_limit.low_u64(),
+					<T as pallet_evm::Config>::config(),
+				);
+				let transaction_cost = match transaction.action {
+					TransactionAction::Call(_) => {
+						evm::gasometer::call_transaction_cost(&transaction.input)
+					}
+					TransactionAction::Create => {
+						evm::gasometer::create_transaction_cost(&transaction.input)
+					}
+				};
+				if gasometer.record_transaction(transaction_cost).is_err() {
+					return InvalidTransaction::Custom(
+						TransactionValidationError::InvalidGasLimit as u8,
+					)
+						.into();
+				}
+
+				if let Some(chain_id) = transaction.signature.chain_id() {
+					if chain_id != T::ChainId::get() {
+						return InvalidTransaction::Custom(
+							TransactionValidationError::InvalidChainId as u8,
+						)
+							.into();
+					}
+				}
+
+				if transaction.gas_limit >= T::BlockGasLimit::get() {
+					return InvalidTransaction::Custom(
+						TransactionValidationError::InvalidGasLimit as u8,
+					)
+					.into();
+				}
+
+				let account_data = pallet_evm::Pallet::<T>::account_basic(&origin);
+
+				if transaction.nonce < account_data.nonce {
+					return InvalidTransaction::Stale.into();
+				}
+
+				let fee = transaction.gas_price.saturating_mul(transaction.gas_limit);
+				let total_payment = transaction.value.saturating_add(fee);
+				if account_data.balance < total_payment {
+					return InvalidTransaction::Payment.into();
+				}
+
+				let min_gas_price = T::FeeCalculator::min_gas_price();
+
+				if transaction.gas_price < min_gas_price {
+					return InvalidTransaction::Payment.into();
+				}
+
+				let mut builder = ValidTransactionBuilder::default()
+					.and_provides((origin, transaction.nonce))
+					.priority(transaction.gas_price.unique_saturated_into());
+
+				if transaction.nonce > account_data.nonce {
+					if let Some(prev_nonce) = transaction.nonce.checked_sub(1.into()) {
+						builder = builder.and_requires((origin, prev_nonce))
+					}
+				}
+
+				builder.build()
+			};
+
+			Some(validate())
+		} else {
+			None
+		}
 	}
 }
 
@@ -227,87 +333,6 @@ pub mod pallet {
 				&PALLET_ETHEREUM_SCHEMA,
 				&EthereumStorageSchema::V1,
 			);
-		}
-	}
-
-	#[pallet::validate_unsigned]
-	impl<T: Config> ValidateUnsigned for Pallet<T> {
-		type Call = Call<T>;
-
-		fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
-			if let Call::transact(transaction) = call {
-				// We must ensure a transaction can pay the cost of its data bytes.
-				// If it can't it should not be included in a block.
-				let mut gasometer = evm::gasometer::Gasometer::new(
-					transaction.gas_limit.low_u64(),
-					<T as pallet_evm::Config>::config(),
-				);
-				let transaction_cost = match transaction.action {
-					TransactionAction::Call(_) => {
-						evm::gasometer::call_transaction_cost(&transaction.input)
-					}
-					TransactionAction::Create => {
-						evm::gasometer::create_transaction_cost(&transaction.input)
-					}
-				};
-				if gasometer.record_transaction(transaction_cost).is_err() {
-					return InvalidTransaction::Custom(
-						TransactionValidationError::InvalidGasLimit as u8,
-					)
-					.into();
-				}
-
-				if let Some(chain_id) = transaction.signature.chain_id() {
-					if chain_id != T::ChainId::get() {
-						return InvalidTransaction::Custom(
-							TransactionValidationError::InvalidChainId as u8,
-						)
-						.into();
-					}
-				}
-
-				let origin = Self::recover_signer(&transaction).ok_or_else(|| {
-					InvalidTransaction::Custom(TransactionValidationError::InvalidSignature as u8)
-				})?;
-
-				if transaction.gas_limit >= T::BlockGasLimit::get() {
-					return InvalidTransaction::Custom(
-						TransactionValidationError::InvalidGasLimit as u8,
-					)
-					.into();
-				}
-
-				let account_data = pallet_evm::Pallet::<T>::account_basic(&origin);
-
-				if transaction.nonce < account_data.nonce {
-					return InvalidTransaction::Stale.into();
-				}
-
-				let fee = transaction.gas_price.saturating_mul(transaction.gas_limit);
-				let total_payment = transaction.value.saturating_add(fee);
-				if account_data.balance < total_payment {
-					return InvalidTransaction::Payment.into();
-				}
-
-				let min_gas_price = T::FeeCalculator::min_gas_price();
-
-				if transaction.gas_price < min_gas_price {
-					return InvalidTransaction::Payment.into();
-				}
-
-				let mut builder = ValidTransactionBuilder::default()
-					.and_provides((origin, transaction.nonce))
-					.priority(transaction.gas_price.unique_saturated_into());
-
-				if transaction.nonce > account_data.nonce {
-					if let Some(prev_nonce) = transaction.nonce.checked_sub(1.into()) {
-						builder = builder.and_requires((origin, prev_nonce))
-					}
-				}
-				builder.build()
-			} else {
-				Err(InvalidTransaction::Call.into())
-			}
 		}
 	}
 }
