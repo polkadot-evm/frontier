@@ -48,8 +48,6 @@ sp-transaction-pool = { default-features = false, git = "https://github.com/pari
 sp-version = { default-features = false, git = "https://github.com/paritytech/substrate" }
 
 fp-rpc = { default-features = false, path = "../../primitives/rpc" }
-
-#TODO Do I need this? I added it following https://gist.github.com/ascjones/0d81a4c44e84cacd9f714cd34a6de823	
 scale-info = { version = "1.0.0", default-features = false, features = ["derive"] }
 
 # benchmarking dependencies
