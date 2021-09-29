@@ -27,7 +27,8 @@ members = [
 [patch.crates-io]
 ethereum = { git = "https://github.com/purestake/ethereum", branch = "joshy-scale-info"}
 
-# These are cumulative. I need to also override the ones that I did in dependencies.
+evm-core = { git = "https://github.com/purestake/evm", branch = "joshy-scale-info"}
+
 ethereum-types = { git = "https://github.com/purestake/parity-common", branch = "joshy-scale-info-ethereum"}
 rlp = { git = "https://github.com/purestake/parity-common", branch = "joshy-scale-info-ethereum"}
 rlp-derive = { git = "https://github.com/purestake/parity-common", branch = "joshy-scale-info-ethereum"}
