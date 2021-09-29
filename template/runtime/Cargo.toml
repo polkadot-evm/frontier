@@ -40,7 +40,6 @@ sp-block-builder = { default-features = false, git = "https://github.com/parityt
 sp-consensus-aura = { default-features = false, git = "https://github.com/paritytech/substrate" }
 sp-core = { default-features = false, git = "https://github.com/paritytech/substrate" }
 sp-inherents = { default-features = false, git = "https://github.com/paritytech/substrate"}
-sp-io = { default-features = false, git = "https://github.com/paritytech/substrate" }
 sp-offchain = { default-features = false, git = "https://github.com/paritytech/substrate" }
 sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate" }
 sp-session = { default-features = false, git = "https://github.com/paritytech/substrate" }
@@ -90,7 +89,6 @@ std = [
 	"sp-consensus-aura/std",
 	"sp-core/std",
 	"sp-inherents/std",
-	"sp-io/std",
 	"sp-offchain/std",
 	"sp-runtime/std",
 	"sp-session/std",
