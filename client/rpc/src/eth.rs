@@ -1087,42 +1087,6 @@ where
 	}
 
 	fn transaction_by_hash(&self, hash: H256) -> Result<Option<Transaction>> {
-		let mut xts: Vec<<B as BlockT>::Extrinsic> = Vec::new();
-		// Collect transactions in the ready validated pool.
-		xts.extend(
-			self.graph
-				.validated_pool()
-				.ready()
-				.map(|in_pool_tx| in_pool_tx.data().clone())
-				.collect::<Vec<<B as BlockT>::Extrinsic>>(),
-		);
-
-		// Collect transactions in the future validated pool.
-		xts.extend(
-			self.graph
-				.validated_pool()
-				.futures()
-				.iter()
-				.map(|(_hash, extrinsic)| extrinsic.clone())
-				.collect::<Vec<<B as BlockT>::Extrinsic>>(),
-		);
-
-		let best_block: BlockId<B> = BlockId::Hash(self.client.info().best_hash);
-		let ethereum_transactions: Vec<ethereum::TransactionV0> = self
-			.client
-			.runtime_api()
-			.extrinsic_filter(&best_block, xts)
-			.map_err(|err| {
-				internal_err(format!("fetch runtime extrinsic filter failed: {:?}", err))
-			})?;
-
-		for txn in ethereum_transactions {
-			let inner_hash = H256::from_slice(Keccak256::digest(&rlp::encode(&txn)).as_slice());
-			if hash == inner_hash {
-				return Ok(Some(transaction_build(txn, None, None)));
-			}
-		}
-
 		let (hash, index) = match frontier_backend_client::load_transactions::<B, C>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
@@ -1132,7 +1096,48 @@ where
 		.map_err(|err| internal_err(format!("{:?}", err)))?
 		{
 			Some((hash, index)) => (hash, index as usize),
-			None => return Ok(None),
+			None => {
+				// If the transaction is not yet mapped in the frontier db,
+				// check for it in the transaction pool.
+				let mut xts: Vec<<B as BlockT>::Extrinsic> = Vec::new();
+				// Collect transactions in the ready validated pool.
+				xts.extend(
+					self.graph
+						.validated_pool()
+						.ready()
+						.map(|in_pool_tx| in_pool_tx.data().clone())
+						.collect::<Vec<<B as BlockT>::Extrinsic>>(),
+				);
+
+				// Collect transactions in the future validated pool.
+				xts.extend(
+					self.graph
+						.validated_pool()
+						.futures()
+						.iter()
+						.map(|(_hash, extrinsic)| extrinsic.clone())
+						.collect::<Vec<<B as BlockT>::Extrinsic>>(),
+				);
+
+				let best_block: BlockId<B> = BlockId::Hash(self.client.info().best_hash);
+				let ethereum_transactions: Vec<ethereum::TransactionV0> = self
+					.client
+					.runtime_api()
+					.extrinsic_filter(&best_block, xts)
+					.map_err(|err| {
+						internal_err(format!("fetch runtime extrinsic filter failed: {:?}", err))
+					})?;
+
+				for txn in ethereum_transactions {
+					let inner_hash =
+						H256::from_slice(Keccak256::digest(&rlp::encode(&txn)).as_slice());
+					if hash == inner_hash {
+						return Ok(Some(transaction_build(txn, None, None)));
+					}
+				}
+				// Unknown transaction.
+				return Ok(None);
+			}
 		};
 
 		let id = match frontier_backend_client::load_hash::<B>(self.backend.as_ref(), hash)
