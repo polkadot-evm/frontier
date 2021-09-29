@@ -4210,6 +4210,7 @@ dependencies = [
  "pallet-evm",
  "pallet-timestamp",
  "parity-scale-codec",
+ "scale-info",
  "serde",
  "sp-core",
  "sp-inherents",
