@@ -23,12 +23,17 @@ members = [
 	"template/runtime",
 ]
 
-# Use scale-info compatible crates that I hacked together.
+# Use scale-info compatible crates that I hacked together. Each of these overrides is associated with a
+# dependency in another repo
 [patch.crates-io]
-ethereum = { git = "https://github.com/purestake/ethereum", branch = "joshy-scale-info"}
 
+# RustBlockchain/evm repo: https://github.com/rust-blockchain/evm/pull/63
 evm-core = { git = "https://github.com/purestake/evm", branch = "joshy-scale-info"}
 
+# RustBlockchain/ethereum repo: https://github.com/rust-blockchain/ethereum/pull/22
+ethereum = { git = "https://github.com/purestake/ethereum", branch = "joshy-scale-info"}
+
+# Parity-common repo: https://github.com/paritytech/parity-common/pull/593
 ethereum-types = { git = "https://github.com/purestake/parity-common", branch = "joshy-scale-info-ethereum"}
 rlp = { git = "https://github.com/purestake/parity-common", branch = "joshy-scale-info-ethereum"}
 rlp-derive = { git = "https://github.com/purestake/parity-common", branch = "joshy-scale-info-ethereum"}
