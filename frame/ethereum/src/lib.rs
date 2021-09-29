@@ -47,6 +47,7 @@ use sp_std::{marker::PhantomData, prelude::*};
 use sp_runtime::transaction_validity::TransactionValidityError;
 use sp_runtime::transaction_validity::TransactionValidity;
 use sp_runtime::transaction_validity::InvalidTransaction;
+use sp_runtime::RuntimeDebug;
 
 pub use ethereum::{
 	BlockV0 as Block, LegacyTransactionMessage, Log, Receipt, TransactionAction,
@@ -59,7 +60,7 @@ mod mock;
 #[cfg(all(feature = "std", test))]
 mod tests;
 
-#[derive(PartialEq, Eq, Clone, Encode, Decode)]
+#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug)]
 pub enum RawOrigin {
 	EthereumTransaction(H160),
 }

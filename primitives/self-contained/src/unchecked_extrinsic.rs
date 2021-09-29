@@ -1,19 +1,23 @@
 use scale_info::TypeInfo;
-use codec::Encode;
+use codec::{Encode, Decode};
 use sp_runtime::{
+	RuntimeDebug,
 	traits::{
 		self, Checkable, Extrinsic, ExtrinsicMetadata, IdentifyAccount, MaybeDisplay, Member,
 		SignedExtension,
 	},
 	transaction_validity::{InvalidTransaction, TransactionValidityError},
 };
+use frame_support::traits::ExtrinsicCall;
+use frame_support::weights::GetDispatchInfo;
+use frame_support::weights::DispatchInfo;
 use crate::{CheckedExtrinsic, CheckedSignature, SelfContainedCall};
 
 /// A extrinsic right from the external world. This is unchecked and so
 /// can contain a signature.
-#[derive(PartialEq, Eq, Clone, TypeInfo)]
+#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub struct UncheckedExtrinsic<Address, Call, Signature, Extra: SignedExtension>(
-	sp_runtime::generic::UncheckedExtrinsic<Address, Call, Signature, Extra>,
+	pub sp_runtime::generic::UncheckedExtrinsic<Address, Call, Signature, Extra>,
 );
 
 #[cfg(feature = "std")]
@@ -105,4 +109,24 @@ where
 {
 	const VERSION: u8 = <sp_runtime::generic::UncheckedExtrinsic<Address, Call, Signature, Extra> as ExtrinsicMetadata>::VERSION;
 	type SignedExtensions = Extra;
+}
+
+impl<Address, Call: SelfContainedCall, Signature, Extra> ExtrinsicCall
+	for UncheckedExtrinsic<Address, Call, Signature, Extra>
+where
+	Extra: SignedExtension,
+{
+	fn call(&self) -> &Self::Call {
+		&self.0.function
+	}
+}
+
+impl<Address, Call: GetDispatchInfo, Signature, Extra> GetDispatchInfo
+	for UncheckedExtrinsic<Address, Call, Signature, Extra>
+where
+	Extra: SignedExtension,
+{
+	fn get_dispatch_info(&self) -> DispatchInfo {
+		self.0.function.get_dispatch_info()
+	}
 }

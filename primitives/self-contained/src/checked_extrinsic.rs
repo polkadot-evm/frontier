@@ -22,6 +22,8 @@ use sp_runtime::{
 	},
 	transaction_validity::{InvalidTransaction, TransactionSource, TransactionValidity, TransactionValidityError},
 };
+use frame_support::weights::GetDispatchInfo;
+use frame_support::weights::DispatchInfo;
 use crate::SelfContainedCall;
 
 #[derive(PartialEq, Eq, Clone, sp_core::RuntimeDebug)]
@@ -42,6 +44,12 @@ pub struct CheckedExtrinsic<AccountId, Call, Extra, SelfContainedSignedInfo> {
 
 	/// The function that should be called.
 	pub function: Call,
+}
+
+impl<AccountId, Call: GetDispatchInfo, Extra, SelfContainedSignedInfo> GetDispatchInfo for CheckedExtrinsic<AccountId, Call, Extra, SelfContainedSignedInfo> {
+	fn get_dispatch_info(&self) -> DispatchInfo {
+		self.function.get_dispatch_info()
+	}
 }
 
 impl<AccountId, Call, Extra, SelfContainedSignedInfo, Origin> traits::Applyable for CheckedExtrinsic<AccountId, Call, Extra, SelfContainedSignedInfo>
@@ -107,7 +115,7 @@ where
 				Ok(res)
 			},
 			CheckedSignature::SelfContained(signed_info) => {
-				self.function.apply_self_contained(signed_info).ok_or(TransactionValidityError::Invalid(InvalidTransaction::BadProof))?
+				Ok(self.function.apply_self_contained(signed_info).ok_or(TransactionValidityError::Invalid(InvalidTransaction::BadProof))?)
 			},
 		}
 	}

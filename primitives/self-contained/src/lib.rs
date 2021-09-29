@@ -42,5 +42,5 @@ pub trait SelfContainedCall: Dispatchable {
 	fn validate_self_contained(&self, info: &Self::SignedInfo) -> Option<TransactionValidity>;
 	/// Apply a self-contained function. Returns `None` if the
 	/// function is not a self-contained.
-	fn apply_self_contained(self, info: Self::SignedInfo) -> Option<sp_runtime::ApplyExtrinsicResultWithInfo<PostDispatchInfoOf<Self>>>;
+	fn apply_self_contained(self, info: Self::SignedInfo) -> Option<sp_runtime::DispatchResultWithInfo<PostDispatchInfoOf<Self>>>;
 }

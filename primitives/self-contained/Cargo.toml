@@ -19,6 +19,7 @@ sp-io = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate"
 scale-info = { version = "1.0.0", default-features = false, features = ["derive"] }
 parity-util-mem = { version = "0.10", optional = true }
 sha3 = { version = "0.8", default-features = false }
+frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", default-features = false }
 
 [features]
 default = ["std"]
@@ -31,4 +32,5 @@ std = [
 	"scale-info/std",
 	"parity-util-mem",
 	"sha3/std",
+	"frame-support/std",
 ]
