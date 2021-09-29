@@ -32,14 +32,14 @@ use fp_storage::PALLET_ETHEREUM_SCHEMA;
 use frame_support::ensure;
 use frame_support::{
 	dispatch::DispatchResultWithPostInfo,
-	traits::Get,
+	traits::{Get, EnsureOrigin},
 	weights::{Pays, PostDispatchInfo, Weight},
 };
 use pallet_evm::{BlockHashMapping, FeeCalculator, GasWeightMapping, Runner};
 use sha3::{Digest, Keccak256};
 use sp_runtime::{
 	generic::DigestItem,
-	traits::{One, Saturating, UniqueSaturatedInto, Zero, BadOrigin},
+	traits::{One, Saturating, UniqueSaturatedInto, Zero},
 	transaction_validity::ValidTransactionBuilder,
 	DispatchError,
 };
@@ -58,16 +58,36 @@ mod tests;
 
 #[derive(PartialEq, Eq, Clone, Encode, Decode)]
 pub enum RawOrigin {
-	EthereumTransaction(H160, H256),
+	EthereumTransaction(H160),
 }
 
-pub fn ensure_ethereum_transaction<OuterOrigin, AccountId>(o: OuterOrigin) -> Result<(H160, H256), BadOrigin>
+pub fn ensure_ethereum_transaction<OuterOrigin>(
+	o: OuterOrigin,
+) -> Result<H160, &'static str>
 where
 	OuterOrigin: Into<Result<RawOrigin, OuterOrigin>>,
 {
 	match o.into() {
-		Ok(RawOrigin::EthereumTransaction(t, u)) => Ok((t, u)),
-		_ => Err(BadOrigin),
+		Ok(RawOrigin::EthereumTransaction(n)) => Ok(n),
+		_ => Err("bad origin: expected to be an Ethereum transaction"),
+	}
+}
+
+pub struct EnsureEthereumTransaction;
+impl<
+		O: Into<Result<RawOrigin, O>> + From<RawOrigin>
+	> EnsureOrigin<O> for EnsureEthereumTransaction
+{
+	type Success = H160;
+	fn try_origin(o: O) -> Result<Self::Success, O> {
+		o.into().and_then(|o| match o {
+			RawOrigin::EthereumTransaction(id) => Ok(id),
+		})
+	}
+
+	#[cfg(feature = "runtime-benchmarks")]
+	fn successful_origin() -> O {
+		O::from(RawOrigin::EthereumTransaction(Default::default()))
 	}
 }
 
@@ -92,6 +112,8 @@ pub mod pallet {
 		type Event: From<Event> + IsType<<Self as frame_system::Config>::Event>;
 		/// How Ethereum state root is calculated.
 		type StateRoot: Get<H256>;
+		/// Ethereum transaction origin.
+		type EthereumTransactionOrigin: EnsureOrigin<OriginFor<Self>, Success = H160>;
 	}
 
 	#[pallet::pallet]
@@ -130,7 +152,10 @@ pub mod pallet {
 				let PreLog::Block(block) = log;
 
 				for transaction in block.transactions {
-					Self::do_transact(transaction).expect(
+					let source = Self::recover_signer(&transaction)
+						.expect("pre-block transaction signature invalid; the block cannot be built");
+
+					Self::do_transact(source, transaction).expect(
 						"pre-block transaction verification failed; the block cannot be built",
 					);
 				}
@@ -148,9 +173,9 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			transaction: Transaction,
 		) -> DispatchResultWithPostInfo {
-			ensure_none(origin)?;
+			let source = T::EthereumTransactionOrigin::ensure_origin(origin)?;
 
-			Self::do_transact(transaction)
+			Self::do_transact(source, transaction)
 		}
 	}
 
@@ -362,14 +387,11 @@ impl<T: Config> Pallet<T> {
 		}
 	}
 
-	fn do_transact(transaction: Transaction) -> DispatchResultWithPostInfo {
+	fn do_transact(source: H160, transaction: Transaction) -> DispatchResultWithPostInfo {
 		ensure!(
 			fp_consensus::find_pre_log(&frame_system::Pallet::<T>::digest()).is_err(),
 			Error::<T>::PreLogExists,
 		);
-
-		let source =
-			Self::recover_signer(&transaction).ok_or_else(|| Error::<T>::InvalidSignature)?;
 
 		let transaction_hash =
 			H256::from_slice(Keccak256::digest(&rlp::encode(&transaction)).as_slice());
