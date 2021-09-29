@@ -1706,21 +1706,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "fp-ethereum"
-version = "1.0.0-dev"
-dependencies = [
- "ethereum",
- "parity-scale-codec",
- "parity-util-mem",
- "scale-info 1.0.0",
- "serde",
- "sha3 0.8.2",
- "sp-core",
- "sp-io",
- "sp-runtime",
-]
-
-[[package]]
 name = "fp-evm"
 version = "3.0.0-dev"
 dependencies = [
@@ -1745,6 +1730,21 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
+]
+
+[[package]]
+name = "fp-self-contained"
+version = "1.0.0-dev"
+dependencies = [
+ "ethereum",
+ "parity-scale-codec",
+ "parity-util-mem",
+ "scale-info 1.0.0",
+ "serde",
+ "sha3 0.8.2",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
 ]
 
 [[package]]
@@ -4232,9 +4232,9 @@ dependencies = [
  "ethereum-types",
  "evm",
  "fp-consensus",
- "fp-ethereum",
  "fp-evm",
  "fp-rpc",
+ "fp-self-contained",
  "fp-storage",
  "frame-support",
  "frame-system",

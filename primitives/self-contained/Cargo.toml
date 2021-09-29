@@ -1,5 +1,5 @@
 [package]
-name = "fp-ethereum"
+name = "fp-self-contained"
 version = "1.0.0-dev"
 license = "Apache-2.0"
 authors = ["Parity Technologies <admin@parity.io>"]
