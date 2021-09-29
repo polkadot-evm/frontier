@@ -1,17 +1,18 @@
+use crate::{CheckedExtrinsic, CheckedSignature, SelfContainedCall};
+use codec::{Decode, Encode};
+use frame_support::{
+	traits::ExtrinsicCall,
+	weights::{DispatchInfo, GetDispatchInfo},
+};
 use scale_info::TypeInfo;
-use codec::{Encode, Decode};
 use sp_runtime::{
-	RuntimeDebug,
 	traits::{
 		self, Checkable, Extrinsic, ExtrinsicMetadata, IdentifyAccount, MaybeDisplay, Member,
 		SignedExtension,
 	},
 	transaction_validity::{InvalidTransaction, TransactionValidityError},
+	RuntimeDebug,
 };
-use frame_support::traits::ExtrinsicCall;
-use frame_support::weights::GetDispatchInfo;
-use frame_support::weights::DispatchInfo;
-use crate::{CheckedExtrinsic, CheckedSignature, SelfContainedCall};
 
 /// A extrinsic right from the external world. This is unchecked and so
 /// can contain a signature.
@@ -36,12 +37,16 @@ impl<Address, Call, Signature, Extra: SignedExtension>
 {
 	/// New instance of a signed extrinsic aka "transaction".
 	pub fn new_signed(function: Call, signed: Address, signature: Signature, extra: Extra) -> Self {
-		Self(sp_runtime::generic::UncheckedExtrinsic::new_signed(function, signed, signature, extra))
+		Self(sp_runtime::generic::UncheckedExtrinsic::new_signed(
+			function, signed, signature, extra,
+		))
 	}
 
 	/// New instance of an unsigned extrinsic aka "inherent".
 	pub fn new_unsigned(function: Call) -> Self {
-		Self(sp_runtime::generic::UncheckedExtrinsic::new_unsigned(function))
+		Self(sp_runtime::generic::UncheckedExtrinsic::new_unsigned(
+			function,
+		))
 	}
 }
 
@@ -76,15 +81,20 @@ where
 	AccountId: Member + MaybeDisplay,
 	Lookup: traits::Lookup<Source = Address, Target = AccountId>,
 {
-	type Checked = CheckedExtrinsic<AccountId, Call, Extra, <Call as SelfContainedCall>::SignedInfo>;
+	type Checked =
+		CheckedExtrinsic<AccountId, Call, Extra, <Call as SelfContainedCall>::SignedInfo>;
 
 	fn check(self, lookup: &Lookup) -> Result<Self::Checked, TransactionValidityError> {
 		if self.0.function.is_self_contained() {
 			if self.0.signature.is_some() {
-				return Err(TransactionValidityError::Invalid(InvalidTransaction::BadProof))
+				return Err(TransactionValidityError::Invalid(
+					InvalidTransaction::BadProof,
+				));
 			}
 
-			let signed_info = self.0.function.check_self_contained().ok_or(TransactionValidityError::Invalid(InvalidTransaction::BadProof))??;
+			let signed_info = self.0.function.check_self_contained().ok_or(
+				TransactionValidityError::Invalid(InvalidTransaction::BadProof),
+			)??;
 			Ok(CheckedExtrinsic {
 				signed: CheckedSignature::SelfContained(signed_info),
 				function: self.0.function,
@@ -128,5 +138,30 @@ where
 {
 	fn get_dispatch_info(&self) -> DispatchInfo {
 		self.0.function.get_dispatch_info()
+	}
+}
+
+#[cfg(feature = "std")]
+impl<Address: Encode, Signature: Encode, Call: Encode, Extra: SignedExtension> serde::Serialize
+	for UncheckedExtrinsic<Address, Call, Signature, Extra>
+{
+	fn serialize<S>(&self, seq: S) -> Result<S::Ok, S::Error>
+	where
+		S: ::serde::Serializer,
+	{
+		self.0.serialize(seq)
+	}
+}
+
+#[cfg(feature = "std")]
+impl<'a, Address: Decode, Signature: Decode, Call: Decode, Extra: SignedExtension>
+	serde::Deserialize<'a> for UncheckedExtrinsic<Address, Call, Signature, Extra>
+{
+	fn deserialize<D>(de: D) -> Result<Self, D::Error>
+	where
+		D: serde::Deserializer<'a>,
+	{
+		<sp_runtime::generic::UncheckedExtrinsic<Address, Call, Signature, Extra>>::deserialize(de)
+			.map(Self)
 	}
 }

@@ -29,10 +29,10 @@ use evm::ExitReason;
 use fp_consensus::{PostLog, PreLog, FRONTIER_ENGINE_ID};
 use fp_evm::CallOrCreateInfo;
 use fp_storage::PALLET_ETHEREUM_SCHEMA;
-use frame_support::ensure;
 use frame_support::{
 	dispatch::DispatchResultWithPostInfo,
-	traits::{Get, EnsureOrigin},
+	ensure,
+	traits::{EnsureOrigin, Get},
 	weights::{Pays, PostDispatchInfo, Weight},
 };
 use pallet_evm::{BlockHashMapping, FeeCalculator, GasWeightMapping, Runner};
@@ -40,14 +40,12 @@ use sha3::{Digest, Keccak256};
 use sp_runtime::{
 	generic::DigestItem,
 	traits::{One, Saturating, UniqueSaturatedInto, Zero},
-	transaction_validity::ValidTransactionBuilder,
-	DispatchError,
+	transaction_validity::{
+		InvalidTransaction, TransactionValidity, TransactionValidityError, ValidTransactionBuilder,
+	},
+	DispatchError, RuntimeDebug,
 };
 use sp_std::{marker::PhantomData, prelude::*};
-use sp_runtime::transaction_validity::TransactionValidityError;
-use sp_runtime::transaction_validity::TransactionValidity;
-use sp_runtime::transaction_validity::InvalidTransaction;
-use sp_runtime::RuntimeDebug;
 
 pub use ethereum::{
 	BlockV0 as Block, LegacyTransactionMessage, Log, Receipt, TransactionAction,
@@ -65,9 +63,7 @@ pub enum RawOrigin {
 	EthereumTransaction(H160),
 }
 
-pub fn ensure_ethereum_transaction<OuterOrigin>(
-	o: OuterOrigin,
-) -> Result<H160, &'static str>
+pub fn ensure_ethereum_transaction<OuterOrigin>(o: OuterOrigin) -> Result<H160, &'static str>
 where
 	OuterOrigin: Into<Result<RawOrigin, OuterOrigin>>,
 {
@@ -78,9 +74,8 @@ where
 }
 
 pub struct EnsureEthereumTransaction;
-impl<
-		O: Into<Result<RawOrigin, O>> + From<RawOrigin>
-	> EnsureOrigin<O> for EnsureEthereumTransaction
+impl<O: Into<Result<RawOrigin, O>> + From<RawOrigin>> EnsureOrigin<O>
+	for EnsureEthereumTransaction
 {
 	type Success = H160;
 	fn try_origin(o: O) -> Result<Self::Success, O> {
@@ -113,7 +108,6 @@ impl<T: Config> Call<T> {
 				Ok(origin)
 			};
 
-
 			Some(check())
 		} else {
 			None
@@ -141,7 +135,7 @@ impl<T: Config> Call<T> {
 					return InvalidTransaction::Custom(
 						TransactionValidationError::InvalidGasLimit as u8,
 					)
-						.into();
+					.into();
 				}
 
 				if let Some(chain_id) = transaction.signature.chain_id() {
@@ -149,7 +143,7 @@ impl<T: Config> Call<T> {
 						return InvalidTransaction::Custom(
 							TransactionValidationError::InvalidChainId as u8,
 						)
-							.into();
+						.into();
 					}
 				}
 
@@ -259,8 +253,9 @@ pub mod pallet {
 				let PreLog::Block(block) = log;
 
 				for transaction in block.transactions {
-					let source = Self::recover_signer(&transaction)
-						.expect("pre-block transaction signature invalid; the block cannot be built");
+					let source = Self::recover_signer(&transaction).expect(
+						"pre-block transaction signature invalid; the block cannot be built",
+					);
 
 					Self::do_transact(source, transaction).expect(
 						"pre-block transaction verification failed; the block cannot be built",

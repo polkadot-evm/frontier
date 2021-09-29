@@ -16,8 +16,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use serde::de::{Error, Visitor};
-use serde::{Deserialize, Deserializer};
+use serde::{
+	de::{Error, Visitor},
+	Deserialize, Deserializer,
+};
 use std::fmt;
 
 /// Represents usize.

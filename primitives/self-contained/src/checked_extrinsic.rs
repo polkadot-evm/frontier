@@ -15,16 +15,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::SelfContainedCall;
+use frame_support::weights::{DispatchInfo, GetDispatchInfo};
 use sp_runtime::{
 	traits::{
 		self, DispatchInfoOf, Dispatchable, MaybeDisplay, Member, PostDispatchInfoOf,
 		SignedExtension, ValidateUnsigned,
 	},
-	transaction_validity::{InvalidTransaction, TransactionSource, TransactionValidity, TransactionValidityError},
+	transaction_validity::{
+		InvalidTransaction, TransactionSource, TransactionValidity, TransactionValidityError,
+	},
 };
-use frame_support::weights::GetDispatchInfo;
-use frame_support::weights::DispatchInfo;
-use crate::SelfContainedCall;
 
 #[derive(PartialEq, Eq, Clone, sp_core::RuntimeDebug)]
 pub enum CheckedSignature<AccountId, Extra, SelfContainedSignedInfo> {
@@ -46,16 +47,21 @@ pub struct CheckedExtrinsic<AccountId, Call, Extra, SelfContainedSignedInfo> {
 	pub function: Call,
 }
 
-impl<AccountId, Call: GetDispatchInfo, Extra, SelfContainedSignedInfo> GetDispatchInfo for CheckedExtrinsic<AccountId, Call, Extra, SelfContainedSignedInfo> {
+impl<AccountId, Call: GetDispatchInfo, Extra, SelfContainedSignedInfo> GetDispatchInfo
+	for CheckedExtrinsic<AccountId, Call, Extra, SelfContainedSignedInfo>
+{
 	fn get_dispatch_info(&self) -> DispatchInfo {
 		self.function.get_dispatch_info()
 	}
 }
 
-impl<AccountId, Call, Extra, SelfContainedSignedInfo, Origin> traits::Applyable for CheckedExtrinsic<AccountId, Call, Extra, SelfContainedSignedInfo>
+impl<AccountId, Call, Extra, SelfContainedSignedInfo, Origin> traits::Applyable
+	for CheckedExtrinsic<AccountId, Call, Extra, SelfContainedSignedInfo>
 where
 	AccountId: Member + MaybeDisplay,
-	Call: Member + Dispatchable<Origin = Origin> + SelfContainedCall<SignedInfo = SelfContainedSignedInfo>,
+	Call: Member
+		+ Dispatchable<Origin = Origin>
+		+ SelfContainedCall<SignedInfo = SelfContainedSignedInfo>,
 	Extra: SignedExtension<AccountId = AccountId, Call = Call>,
 	Origin: From<Option<AccountId>>,
 	SelfContainedSignedInfo: Send + Sync + 'static,
@@ -73,15 +79,17 @@ where
 		match &self.signed {
 			CheckedSignature::Signed(id, extra) => {
 				Extra::validate(extra, id, &self.function, info, len)
-			},
+			}
 			CheckedSignature::Unsigned => {
 				let valid = Extra::validate_unsigned(&self.function, info, len)?;
 				let unsigned_validation = U::validate_unsigned(source, &self.function)?;
 				Ok(valid.combine_with(unsigned_validation))
-			},
+			}
 			CheckedSignature::SelfContained(signed_info) => {
-				self.function.validate_self_contained(&signed_info).ok_or(TransactionValidityError::Invalid(InvalidTransaction::BadProof))?
-			},
+				self.function.validate_self_contained(&signed_info).ok_or(
+					TransactionValidityError::Invalid(InvalidTransaction::BadProof),
+				)?
+			}
 		}
 	}
 
@@ -99,9 +107,15 @@ where
 					Ok(info) => info,
 					Err(err) => err.post_info,
 				};
-				Extra::post_dispatch(pre, info, &post_info, len, &res.map(|_| ()).map_err(|e| e.error))?;
+				Extra::post_dispatch(
+					pre,
+					info,
+					&post_info,
+					len,
+					&res.map(|_| ()).map_err(|e| e.error),
+				)?;
 				Ok(res)
-			},
+			}
 			CheckedSignature::Unsigned => {
 				let pre = Extra::pre_dispatch_unsigned(&self.function, info, len)?;
 				U::pre_dispatch(&self.function)?;
@@ -111,12 +125,20 @@ where
 					Ok(info) => info,
 					Err(err) => err.post_info,
 				};
-				Extra::post_dispatch(pre, info, &post_info, len, &res.map(|_| ()).map_err(|e| e.error))?;
+				Extra::post_dispatch(
+					pre,
+					info,
+					&post_info,
+					len,
+					&res.map(|_| ()).map_err(|e| e.error),
+				)?;
 				Ok(res)
-			},
+			}
 			CheckedSignature::SelfContained(signed_info) => {
-				Ok(self.function.apply_self_contained(signed_info).ok_or(TransactionValidityError::Invalid(InvalidTransaction::BadProof))?)
-			},
+				Ok(self.function.apply_self_contained(signed_info).ok_or(
+					TransactionValidityError::Invalid(InvalidTransaction::BadProof),
+				)?)
+			}
 		}
 	}
 }

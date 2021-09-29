@@ -17,10 +17,9 @@
 
 //! Consensus extension module tests for BABE consensus.
 
-use crate::mock::*;
 use crate::{
-	CallOrCreateInfo, Error, Transaction, TransactionAction, ValidTransactionBuilder, H160, H256,
-	U256,
+	mock::*, CallOrCreateInfo, Error, Transaction, TransactionAction, ValidTransactionBuilder,
+	H160, H256, U256,
 };
 use ethereum::TransactionSignature;
 use frame_support::{assert_err, assert_noop, assert_ok, unsigned::ValidateUnsigned};

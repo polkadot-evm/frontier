@@ -25,10 +25,10 @@ use pallet_evm::{AddressMapping, EnsureAddressTruncated, FeeCalculator};
 use rlp::*;
 use sha3::Digest;
 use sp_core::{H160, H256, U256};
-use sp_runtime::AccountId32;
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
+	AccountId32,
 };
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;

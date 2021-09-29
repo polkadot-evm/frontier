@@ -20,11 +20,15 @@
 mod checked_extrinsic;
 mod unchecked_extrinsic;
 
-pub use crate::checked_extrinsic::{CheckedSignature, CheckedExtrinsic};
-pub use crate::unchecked_extrinsic::UncheckedExtrinsic;
+pub use crate::{
+	checked_extrinsic::{CheckedExtrinsic, CheckedSignature},
+	unchecked_extrinsic::UncheckedExtrinsic,
+};
 
-use sp_runtime::transaction_validity::{TransactionValidity, TransactionValidityError};
-use sp_runtime::traits::{Dispatchable, PostDispatchInfoOf};
+use sp_runtime::{
+	traits::{Dispatchable, PostDispatchInfoOf},
+	transaction_validity::{TransactionValidity, TransactionValidityError},
+};
 
 /// A call that has self-contained functions. A self-contained
 /// function is something that has its signature embedded in its call.
@@ -42,5 +46,8 @@ pub trait SelfContainedCall: Dispatchable {
 	fn validate_self_contained(&self, info: &Self::SignedInfo) -> Option<TransactionValidity>;
 	/// Apply a self-contained function. Returns `None` if the
 	/// function is not a self-contained.
-	fn apply_self_contained(self, info: Self::SignedInfo) -> Option<sp_runtime::DispatchResultWithInfo<PostDispatchInfoOf<Self>>>;
+	fn apply_self_contained(
+		self,
+		info: Self::SignedInfo,
+	) -> Option<sp_runtime::DispatchResultWithInfo<PostDispatchInfoOf<Self>>>;
 }
