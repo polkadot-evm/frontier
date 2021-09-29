@@ -98,7 +98,7 @@ impl<T: Config> ProvideInherent for Module<T> {
 	fn create_inherent(data: &InherentData) -> Option<Self::Call> {
 		let target = data.get_data::<InherentType>(&INHERENT_IDENTIFIER).ok()??;
 
-		Some(Call::note_min_gas_price_target(target))
+		Some(Call::note_min_gas_price_target{target})
 	}
 
 	fn check_inherent(_call: &Self::Call, _data: &InherentData) -> result::Result<(), Self::Error> {
@@ -106,7 +106,7 @@ impl<T: Config> ProvideInherent for Module<T> {
 	}
 
 	fn is_inherent(call: &Self::Call) -> bool {
-		matches!(call, Call::note_min_gas_price_target(_))
+		matches!(call, Call::note_min_gas_price_target{..})
 	}
 }
 
