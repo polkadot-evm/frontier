@@ -79,6 +79,7 @@ where
 				function,
 			} => {
 				let preimage_hash = function.preimage_hash().ok_or(TransactionValidityError::Invalid(InvalidTransaction::BadProof))?;
+				let hash = function.hash().ok_or(TransactionValidityError::Invalid(InvalidTransaction::BadProof))?;
 				let ethereum_address = address.ethereum_address().ok_or(TransactionValidityError::Invalid(InvalidTransaction::BadProof))?;
 
 				let recovered_pubkey = sp_io::crypto::secp256k1_ecdsa_recover(&signature.0, &preimage_hash.0).map_err(|_| TransactionValidityError::Invalid(InvalidTransaction::BadProof))?;
@@ -87,7 +88,7 @@ where
 				));
 				if recovered_address == ethereum_address && Extra::identifier().is_empty() {
 					Ok(CheckedExtrinsic {
-						signed: CheckedSignature::EthereumTransaction(ethereum_address),
+						signed: CheckedSignature::EthereumTransaction(ethereum_address, hash),
 						function,
 					})
 				} else {

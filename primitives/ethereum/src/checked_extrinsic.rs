@@ -15,7 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use sp_core::H160;
+use sp_core::{H160, H256};
 use sp_runtime::{
 	traits::{
 		self, DispatchInfoOf, Dispatchable, MaybeDisplay, Member, PostDispatchInfoOf,
@@ -29,7 +29,7 @@ use crate::EthereumOrigin;
 pub enum CheckedSignature<AccountId, Extra> {
 	Signed(AccountId, Extra),
 	Unsigned,
-	EthereumTransaction(H160),
+	EthereumTransaction(H160, H256),
 }
 
 /// Definition of something that the external world might want to say; its
@@ -71,7 +71,8 @@ where
 				let unsigned_validation = U::validate_unsigned(source, &self.function)?;
 				Ok(valid.combine_with(unsigned_validation))
 			},
-			CheckedSignature::EthereumTransaction(_) => {
+			CheckedSignature::EthereumTransaction(_, _) => {
+				// TODO: add all block validation logics.
 				Ok(Default::default())
 			},
 		}
@@ -106,8 +107,8 @@ where
 				Extra::post_dispatch(pre, info, &post_info, len, &res.map(|_| ()).map_err(|e| e.error))?;
 				Ok(res)
 			},
-			CheckedSignature::EthereumTransaction(id) => {
-				let origin = Origin::ethereum_transaction(id);
+			CheckedSignature::EthereumTransaction(id, hash) => {
+				let origin = Origin::ethereum_transaction(id, hash);
 				let res = self.function.dispatch(origin);
 				Ok(res)
 			},
