@@ -17,25 +17,30 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-mod signature;
 mod checked_extrinsic;
 mod unchecked_extrinsic;
 
-pub use crate::signature::MultiSignature;
 pub use crate::checked_extrinsic::{CheckedSignature, CheckedExtrinsic};
 pub use crate::unchecked_extrinsic::UncheckedExtrinsic;
 
-use sp_core::{H256, H160};
+use sp_runtime::transaction_validity::{TransactionValidity, TransactionValidityError};
+use sp_runtime::traits::{Dispatchable, PostDispatchInfoOf};
 
-pub trait EthereumOrigin {
-	fn ethereum_transaction(sender: H160, hash: H256) -> Self;
-}
+/// A call that has self-contained functions. A self-contained
+/// function is something that has its signature embedded in its call.
+pub trait SelfContainedCall: Dispatchable {
+	/// Validated signature info.
+	type SignedInfo;
 
-pub trait EthereumAddress {
-	fn ethereum_address(&self) -> Option<H160>;
-}
-
-pub trait EthereumTransaction {
-	fn preimage_hash(&self) -> Option<H256>;
-	fn hash(&self) -> Option<H256>;
+	/// Returns whether the current call is a self-contained function.
+	fn is_self_contained(&self) -> bool;
+	/// Check signatures of a self-contained function. Returns `None`
+	/// if the function is not a self-contained.
+	fn check_self_contained(&self) -> Option<Result<Self::SignedInfo, TransactionValidityError>>;
+	/// Validate a self-contained function. Returns `None` if the
+	/// function is not a self-contained.
+	fn validate_self_contained(&self, info: &Self::SignedInfo) -> Option<TransactionValidity>;
+	/// Apply a self-contained function. Returns `None` if the
+	/// function is not a self-contained.
+	fn apply_self_contained(self, info: Self::SignedInfo) -> Option<sp_runtime::ApplyExtrinsicResultWithInfo<PostDispatchInfoOf<Self>>>;
 }

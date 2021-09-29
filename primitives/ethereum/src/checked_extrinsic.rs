@@ -15,42 +15,42 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use sp_core::{H160, H256};
 use sp_runtime::{
 	traits::{
 		self, DispatchInfoOf, Dispatchable, MaybeDisplay, Member, PostDispatchInfoOf,
 		SignedExtension, ValidateUnsigned,
 	},
-	transaction_validity::{TransactionSource, TransactionValidity},
+	transaction_validity::{InvalidTransaction, TransactionSource, TransactionValidity, TransactionValidityError},
 };
-use crate::EthereumOrigin;
+use crate::SelfContainedCall;
 
 #[derive(PartialEq, Eq, Clone, sp_core::RuntimeDebug)]
-pub enum CheckedSignature<AccountId, Extra> {
+pub enum CheckedSignature<AccountId, Extra, SelfContainedSignedInfo> {
 	Signed(AccountId, Extra),
 	Unsigned,
-	EthereumTransaction(H160, H256),
+	SelfContained(SelfContainedSignedInfo),
 }
 
 /// Definition of something that the external world might want to say; its
 /// existence implies that it has been checked and is good, particularly with
 /// regards to the signature.
 #[derive(PartialEq, Eq, Clone, sp_core::RuntimeDebug)]
-pub struct CheckedExtrinsic<AccountId, Call, Extra> {
+pub struct CheckedExtrinsic<AccountId, Call, Extra, SelfContainedSignedInfo> {
 	/// Who this purports to be from and the number of extrinsics have come before
 	/// from the same signer, if anyone (note this is not a signature).
-	pub signed: CheckedSignature<AccountId, Extra>,
+	pub signed: CheckedSignature<AccountId, Extra, SelfContainedSignedInfo>,
 
 	/// The function that should be called.
 	pub function: Call,
 }
 
-impl<AccountId, Call, Extra, Origin> traits::Applyable for CheckedExtrinsic<AccountId, Call, Extra>
+impl<AccountId, Call, Extra, SelfContainedSignedInfo, Origin> traits::Applyable for CheckedExtrinsic<AccountId, Call, Extra, SelfContainedSignedInfo>
 where
 	AccountId: Member + MaybeDisplay,
-	Call: Member + Dispatchable<Origin = Origin>,
+	Call: Member + Dispatchable<Origin = Origin> + SelfContainedCall<SignedInfo = SelfContainedSignedInfo>,
 	Extra: SignedExtension<AccountId = AccountId, Call = Call>,
-	Origin: From<Option<AccountId>> + EthereumOrigin,
+	Origin: From<Option<AccountId>>,
+	SelfContainedSignedInfo: Send + Sync + 'static,
 {
 	type Call = Call;
 
@@ -71,9 +71,8 @@ where
 				let unsigned_validation = U::validate_unsigned(source, &self.function)?;
 				Ok(valid.combine_with(unsigned_validation))
 			},
-			CheckedSignature::EthereumTransaction(_, _) => {
-				// TODO: add all block validation logics.
-				Ok(Default::default())
+			CheckedSignature::SelfContained(signed_info) => {
+				self.function.validate_self_contained(&signed_info).ok_or(TransactionValidityError::Invalid(InvalidTransaction::BadProof))?
 			},
 		}
 	}
@@ -107,10 +106,8 @@ where
 				Extra::post_dispatch(pre, info, &post_info, len, &res.map(|_| ()).map_err(|e| e.error))?;
 				Ok(res)
 			},
-			CheckedSignature::EthereumTransaction(id, hash) => {
-				let origin = Origin::ethereum_transaction(id, hash);
-				let res = self.function.dispatch(origin);
-				Ok(res)
+			CheckedSignature::SelfContained(signed_info) => {
+				self.function.apply_self_contained(signed_info).ok_or(TransactionValidityError::Invalid(InvalidTransaction::BadProof))?
 			},
 		}
 	}
