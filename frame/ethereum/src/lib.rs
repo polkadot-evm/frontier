@@ -39,7 +39,7 @@ use pallet_evm::{BlockHashMapping, FeeCalculator, GasWeightMapping, Runner};
 use sha3::{Digest, Keccak256};
 use sp_runtime::{
 	generic::DigestItem,
-	traits::{One, Saturating, UniqueSaturatedInto, Zero},
+	traits::{One, Saturating, UniqueSaturatedInto, Zero, BadOrigin},
 	transaction_validity::ValidTransactionBuilder,
 	DispatchError,
 };
@@ -55,6 +55,21 @@ pub use fp_rpc::TransactionStatus;
 mod mock;
 #[cfg(all(feature = "std", test))]
 mod tests;
+
+#[derive(PartialEq, Eq, Clone, Encode, Decode)]
+pub enum RawOrigin {
+	EthereumTransaction(H160, H256),
+}
+
+pub fn ensure_ethereum_transaction<OuterOrigin, AccountId>(o: OuterOrigin) -> Result<(H160, H256), BadOrigin>
+where
+	OuterOrigin: Into<Result<RawOrigin, OuterOrigin>>,
+{
+	match o.into() {
+		Ok(RawOrigin::EthereumTransaction(t, u)) => Ok((t, u)),
+		_ => Err(BadOrigin),
+	}
+}
 
 pub use pallet::*;
 
