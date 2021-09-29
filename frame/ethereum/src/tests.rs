@@ -84,7 +84,7 @@ fn transaction_without_enough_gas_should_not_work() {
 		assert_err!(
 			Ethereum::validate_unsigned(
 				TransactionSource::External,
-				&crate::Call::transact(transaction)
+				&crate::Call::transact { transaction }
 			),
 			InvalidTransaction::Payment
 		);
@@ -106,7 +106,9 @@ fn transaction_with_invalid_nonce_should_not_work() {
 		assert_eq!(
 			Ethereum::validate_unsigned(
 				TransactionSource::External,
-				&crate::Call::transact(signed)
+				&crate::Call::transact {
+					transaction: signed
+				}
 			),
 			ValidTransactionBuilder::default()
 				.and_provides((alice.address, U256::from(1)))
@@ -136,7 +138,9 @@ fn transaction_with_invalid_nonce_should_not_work() {
 		assert_err!(
 			Ethereum::validate_unsigned(
 				TransactionSource::External,
-				&crate::Call::transact(signed2)
+				&crate::Call::transact {
+					transaction: signed2
+				}
 			),
 			InvalidTransaction::Stale
 		);
