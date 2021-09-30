@@ -323,10 +323,8 @@ impl pallet_evm::Config for Runtime {
 }
 
 impl pallet_ethereum::Config for Runtime {
-	type Origin = Origin;
 	type Event = Event;
 	type StateRoot = pallet_ethereum::IntermediateStateRoot;
-	type EthereumTransactionOrigin = pallet_ethereum::EnsureEthereumTransaction;
 }
 
 frame_support::parameter_types! {

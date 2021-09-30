@@ -162,10 +162,8 @@ impl pallet_evm::Config for Test {
 }
 
 impl crate::Config for Test {
-	type Origin = Origin;
 	type Event = Event;
 	type StateRoot = IntermediateStateRoot;
-	type EthereumTransactionOrigin = crate::EnsureEthereumTransaction;
 }
 
 pub struct AccountInfo {

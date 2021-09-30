@@ -35,6 +35,7 @@ use frame_support::{
 	traits::{EnsureOrigin, Get},
 	weights::{Pays, PostDispatchInfo, Weight},
 };
+use frame_system::pallet_prelude::OriginFor;
 use pallet_evm::{BlockHashMapping, FeeCalculator, GasWeightMapping, Runner};
 use sha3::{Digest, Keccak256};
 use sp_runtime::{
@@ -90,7 +91,10 @@ impl<O: Into<Result<RawOrigin, O>> + From<RawOrigin>> EnsureOrigin<O>
 	}
 }
 
-impl<T: Config> Call<T> {
+impl<T: Config> Call<T>
+where
+	OriginFor<T>: Into<Result<RawOrigin, OriginFor<T>>>,
+{
 	pub fn is_self_contained(&self) -> bool {
 		match self {
 			Call::transact(_) => true,
@@ -207,14 +211,10 @@ pub mod pallet {
 		+ pallet_timestamp::Config
 		+ pallet_evm::Config
 	{
-		/// The outer origin type.
-		type Origin: From<RawOrigin>;
 		/// The overarching event type.
 		type Event: From<Event> + IsType<<Self as frame_system::Config>::Event>;
 		/// How Ethereum state root is calculated.
 		type StateRoot: Get<H256>;
-		/// Ethereum transaction origin.
-		type EthereumTransactionOrigin: EnsureOrigin<OriginFor<Self>, Success = H160>;
 	}
 
 	#[pallet::pallet]
@@ -268,14 +268,17 @@ pub mod pallet {
 	}
 
 	#[pallet::call]
-	impl<T: Config> Pallet<T> {
+	impl<T: Config> Pallet<T>
+	where
+		OriginFor<T>: Into<Result<RawOrigin, OriginFor<T>>>,
+	{
 		/// Transact an Ethereum transaction.
 		#[pallet::weight(<T as pallet_evm::Config>::GasWeightMapping::gas_to_weight(transaction.gas_limit.unique_saturated_into()))]
 		pub fn transact(
 			origin: OriginFor<T>,
 			transaction: Transaction,
 		) -> DispatchResultWithPostInfo {
-			let source = T::EthereumTransactionOrigin::ensure_origin(origin)?;
+			let source = ensure_ethereum_transaction(origin)?;
 
 			Self::do_transact(source, transaction)
 		}
