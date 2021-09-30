@@ -19,8 +19,10 @@
 //! Serializable wrapper around vector of bytes
 
 use rustc_hex::{FromHex, ToHex};
-use serde::de::{Error, Visitor};
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use serde::{
+	de::{Error, Visitor},
+	Deserialize, Deserializer, Serialize, Serializer,
+};
 use std::fmt;
 
 /// Wrapper structure around vector of bytes.

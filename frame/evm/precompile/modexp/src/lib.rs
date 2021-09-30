@@ -24,8 +24,7 @@ use evm::{executor::PrecompileOutput, Context, ExitError, ExitSucceed};
 use fp_evm::Precompile;
 use num::{BigUint, FromPrimitive, One, ToPrimitive, Zero};
 
-use core::cmp::max;
-use core::ops::BitAnd;
+use core::{cmp::max, ops::BitAnd};
 
 pub struct Modexp;
 

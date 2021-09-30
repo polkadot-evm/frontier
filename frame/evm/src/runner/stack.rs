@@ -17,14 +17,15 @@
 
 //! EVM stack-based runner.
 
-use crate::runner::Runner as RunnerT;
 use crate::{
-	AccountCodes, AccountStorages, AddressMapping, BlockHashMapping, Config, Error, Event,
-	FeeCalculator, OnChargeEVMTransaction, Pallet, PrecompileSet,
+	runner::Runner as RunnerT, AccountCodes, AccountStorages, AddressMapping, BlockHashMapping,
+	Config, Error, Event, FeeCalculator, OnChargeEVMTransaction, Pallet, PrecompileSet,
 };
-use evm::backend::Backend as BackendT;
-use evm::executor::{StackExecutor, StackState as StackStateT, StackSubstateMetadata};
-use evm::{ExitError, ExitReason, Transfer};
+use evm::{
+	backend::Backend as BackendT,
+	executor::{StackExecutor, StackState as StackStateT, StackSubstateMetadata},
+	ExitError, ExitReason, Transfer,
+};
 use fp_evm::{CallInfo, CreateInfo, ExecutionInfo, Log, Vicinity};
 use frame_support::{
 	ensure,
