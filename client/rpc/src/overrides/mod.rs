@@ -17,8 +17,7 @@ use std::collections::BTreeMap;
 
 use ethereum::BlockV0 as EthereumBlock;
 use ethereum_types::{H160, H256, U256};
-use fp_rpc::EthereumRuntimeRPCApi;
-use fp_rpc::TransactionStatus;
+use fp_rpc::{EthereumRuntimeRPCApi, TransactionStatus};
 use sp_api::{BlockId, ProvideRuntimeApi};
 use sp_io::hashing::{blake2_128, twox_128};
 use sp_runtime::traits::Block as BlockT;

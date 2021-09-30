@@ -17,8 +17,10 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 use core::convert::AsRef;
 use ethereum_types::{Bloom, BloomInput, H160, H256, U256};
-use serde::de::{DeserializeOwned, Error};
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use serde::{
+	de::{DeserializeOwned, Error},
+	Deserialize, Deserializer, Serialize, Serializer,
+};
 use serde_json::{from_value, Value};
 use std::{
 	collections::BTreeMap,

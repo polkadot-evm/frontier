@@ -20,8 +20,7 @@
 
 use crate::types::{Filter, Log, RichHeader};
 use ethereum_types::H256;
-use serde::de::Error;
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use serde::{de::Error, Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::{from_value, Value};
 
 /// Subscription result.

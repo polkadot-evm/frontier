@@ -23,8 +23,7 @@ use sp_runtime::{
 	generic,
 	traits::{BlakeTwo256, IdentityLookup},
 };
-use sp_std::prelude::*;
-use sp_std::{boxed::Box, str::FromStr};
+use sp_std::{boxed::Box, prelude::*, str::FromStr};
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
