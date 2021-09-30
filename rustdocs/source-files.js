@@ -7,6 +7,7 @@ sourcesIndex["fc_rpc_core"] = {"name":"","dirs":[{"name":"types","files":["accou
 sourcesIndex["fp_consensus"] = {"name":"","files":["lib.rs"]};
 sourcesIndex["fp_evm"] = {"name":"","files":["lib.rs","precompile.rs"]};
 sourcesIndex["fp_rpc"] = {"name":"","files":["lib.rs"]};
+sourcesIndex["fp_self_contained"] = {"name":"","files":["checked_extrinsic.rs","lib.rs","unchecked_extrinsic.rs"]};
 sourcesIndex["fp_storage"] = {"name":"","files":["lib.rs"]};
 sourcesIndex["frontier_template_node"] = {"name":"","files":["chain_spec.rs","cli.rs","command.rs","main.rs","rpc.rs","service.rs"]};
 sourcesIndex["frontier_template_runtime"] = {"name":"","files":["lib.rs"]};

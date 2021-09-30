@@ -774,7 +774,6 @@
 <span id="774">774</span>
 <span id="775">775</span>
 <span id="776">776</span>
-<span id="777">777</span>
 </pre><pre class="rust">
 <span class="doccomment">//! Service and ServiceFactory implementation. Specialized wrapper over substrate service.</span>
 
@@ -789,8 +788,7 @@
 <span class="kw">use</span> <span class="ident">frontier_template_runtime</span>::{<span class="self">self</span>, <span class="ident">opaque::Block</span>, <span class="ident">RuntimeApi</span>, <span class="ident">SLOT_DURATION</span>};
 <span class="kw">use</span> <span class="ident">futures::StreamExt</span>;
 <span class="kw">use</span> <span class="ident">sc_cli::SubstrateCli</span>;
-<span class="kw">use</span> <span class="ident">sc_client_api::BlockchainEvents</span>;
-<span class="kw">use</span> <span class="ident">sc_client_api</span>::{<span class="ident">ExecutorProvider</span>, <span class="ident">RemoteBackend</span>};
+<span class="kw">use</span> <span class="ident">sc_client_api</span>::{<span class="ident">BlockchainEvents</span>, <span class="ident">ExecutorProvider</span>, <span class="ident">RemoteBackend</span>};
 <span class="kw">use</span> <span class="ident">sc_consensus_aura</span>::{<span class="ident">ImportQueueParams</span>, <span class="ident">SlotProportion</span>, <span class="ident">StartAuraParams</span>};
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;manual-seal&quot;</span>)]</span>
 <span class="kw">use</span> <span class="ident">sc_consensus_manual_seal</span>::{<span class="self">self</span> <span class="kw">as</span> <span class="ident">manual_seal</span>};

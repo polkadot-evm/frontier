@@ -399,7 +399,6 @@
 <span id="399">399</span>
 <span id="400">400</span>
 <span id="401">401</span>
-<span id="402">402</span>
 </pre><pre class="rust">
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
@@ -427,8 +426,7 @@
 <span class="kw">use</span> <span class="ident">fp_evm::Precompile</span>;
 <span class="kw">use</span> <span class="ident">num</span>::{<span class="ident">BigUint</span>, <span class="ident">FromPrimitive</span>, <span class="ident">One</span>, <span class="ident">ToPrimitive</span>, <span class="ident">Zero</span>};
 
-<span class="kw">use</span> <span class="ident">core::cmp::max</span>;
-<span class="kw">use</span> <span class="ident">core::ops::BitAnd</span>;
+<span class="kw">use</span> <span class="ident">core</span>::{<span class="ident">cmp::max</span>, <span class="ident">ops::BitAnd</span>};
 
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Modexp</span>;
 

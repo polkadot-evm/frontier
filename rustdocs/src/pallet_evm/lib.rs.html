@@ -745,6 +745,8 @@
 <span id="745">745</span>
 <span id="746">746</span>
 <span id="747">747</span>
+<span id="748">748</span>
+<span id="749">749</span>
 </pre><pre class="rust">
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
@@ -820,12 +822,14 @@
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>)]</span>
 <span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Decode</span>, <span class="ident">Encode</span>};
 <span class="kw">use</span> <span class="ident">evm::Config</span> <span class="kw">as</span> <span class="ident">EvmConfig</span>;
-<span class="kw">use</span> <span class="ident">frame_support::dispatch::DispatchResultWithPostInfo</span>;
-<span class="kw">use</span> <span class="ident">frame_support::traits</span>::{
-	<span class="ident">tokens::fungible::Inspect</span>, <span class="ident">Currency</span>, <span class="ident">ExistenceRequirement</span>, <span class="ident">FindAuthor</span>, <span class="ident">Get</span>, <span class="ident">Imbalance</span>,
-	<span class="ident">OnUnbalanced</span>, <span class="ident">WithdrawReasons</span>,
+<span class="kw">use</span> <span class="ident">frame_support</span>::{
+	<span class="ident">dispatch::DispatchResultWithPostInfo</span>,
+	<span class="ident">traits</span>::{
+		<span class="ident">tokens::fungible::Inspect</span>, <span class="ident">Currency</span>, <span class="ident">ExistenceRequirement</span>, <span class="ident">FindAuthor</span>, <span class="ident">Get</span>, <span class="ident">Imbalance</span>,
+		<span class="ident">OnUnbalanced</span>, <span class="ident">WithdrawReasons</span>,
+	},
+	<span class="ident">weights</span>::{<span class="ident">Pays</span>, <span class="ident">PostDispatchInfo</span>, <span class="ident">Weight</span>},
 };
-<span class="kw">use</span> <span class="ident">frame_support::weights</span>::{<span class="ident">Pays</span>, <span class="ident">PostDispatchInfo</span>, <span class="ident">Weight</span>};
 <span class="kw">use</span> <span class="ident">frame_system::RawOrigin</span>;
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>)]</span>
 <span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">Deserialize</span>, <span class="ident">Serialize</span>};

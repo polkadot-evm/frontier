@@ -436,8 +436,7 @@
 <span class="comment">// along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.</span>
 
 <span class="kw">use</span> <span class="ident">log::warn</span>;
-<span class="kw">use</span> <span class="ident">rand::distributions::Alphanumeric</span>;
-<span class="kw">use</span> <span class="ident">rand</span>::{<span class="ident">thread_rng</span>, <span class="ident">Rng</span>};
+<span class="kw">use</span> <span class="ident">rand</span>::{<span class="ident">distributions::Alphanumeric</span>, <span class="ident">thread_rng</span>, <span class="ident">Rng</span>};
 <span class="kw">use</span> <span class="ident">rustc_hex::ToHex</span>;
 <span class="kw">use</span> <span class="ident">sc_client_api</span>::{
 	<span class="ident">backend</span>::{<span class="ident">Backend</span>, <span class="ident">StateBackend</span>, <span class="ident">StorageProvider</span>},
@@ -448,15 +447,16 @@
 <span class="kw">use</span> <span class="ident">sp_api</span>::{<span class="ident">BlockId</span>, <span class="ident">ProvideRuntimeApi</span>};
 <span class="kw">use</span> <span class="ident">sp_blockchain</span>::{<span class="ident">Error</span> <span class="kw">as</span> <span class="ident">BlockChainError</span>, <span class="ident">HeaderBackend</span>, <span class="ident">HeaderMetadata</span>};
 <span class="kw">use</span> <span class="ident">sp_runtime::traits</span>::{<span class="ident">BlakeTwo256</span>, <span class="ident">Block</span> <span class="kw">as</span> <span class="ident">BlockT</span>, <span class="ident">UniqueSaturatedInto</span>};
-<span class="kw">use</span> <span class="ident">std::collections::BTreeMap</span>;
-<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">iter</span>, <span class="ident">marker::PhantomData</span>, <span class="ident">sync::Arc</span>};
+<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">collections::BTreeMap</span>, <span class="ident">iter</span>, <span class="ident">marker::PhantomData</span>, <span class="ident">sync::Arc</span>};
 
 <span class="kw">use</span> <span class="ident">ethereum_types</span>::{<span class="ident">H256</span>, <span class="ident">U256</span>};
-<span class="kw">use</span> <span class="ident">fc_rpc_core::types</span>::{
-	<span class="ident">pubsub</span>::{<span class="ident">Kind</span>, <span class="ident">Params</span>, <span class="ident">PubSubSyncStatus</span>, <span class="prelude-ty">Result</span> <span class="kw">as</span> <span class="ident">PubSubResult</span>},
-	<span class="ident">Bytes</span>, <span class="ident">FilteredParams</span>, <span class="ident">Header</span>, <span class="ident">Log</span>, <span class="ident">Rich</span>,
+<span class="kw">use</span> <span class="ident">fc_rpc_core</span>::{
+	<span class="ident">types</span>::{
+		<span class="ident">pubsub</span>::{<span class="ident">Kind</span>, <span class="ident">Params</span>, <span class="ident">PubSubSyncStatus</span>, <span class="prelude-ty">Result</span> <span class="kw">as</span> <span class="ident">PubSubResult</span>},
+		<span class="ident">Bytes</span>, <span class="ident">FilteredParams</span>, <span class="ident">Header</span>, <span class="ident">Log</span>, <span class="ident">Rich</span>,
+	},
+	<span class="ident">EthPubSubApi</span>::{<span class="self">self</span> <span class="kw">as</span> <span class="ident">EthPubSubApiT</span>},
 };
-<span class="kw">use</span> <span class="ident">fc_rpc_core::EthPubSubApi</span>::{<span class="self">self</span> <span class="kw">as</span> <span class="ident">EthPubSubApiT</span>};
 <span class="kw">use</span> <span class="ident">jsonrpc_pubsub</span>::{
 	<span class="ident">manager</span>::{<span class="ident">IdProvider</span>, <span class="ident">SubscriptionManager</span>},
 	<span class="ident">typed::Subscriber</span>,
