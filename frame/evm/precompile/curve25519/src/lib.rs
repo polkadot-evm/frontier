@@ -19,9 +19,11 @@
 
 extern crate alloc;
 use alloc::vec::Vec;
-use curve25519_dalek::ristretto::{CompressedRistretto, RistrettoPoint};
-use curve25519_dalek::scalar::Scalar;
-use curve25519_dalek::traits::Identity;
+use curve25519_dalek::{
+	ristretto::{CompressedRistretto, RistrettoPoint},
+	scalar::Scalar,
+	traits::Identity,
+};
 use evm::{ExitError, ExitSucceed};
 use fp_evm::LinearCostPrecompile;
 

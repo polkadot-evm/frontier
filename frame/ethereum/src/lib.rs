@@ -29,19 +29,22 @@ use evm::ExitReason;
 use fp_consensus::{PostLog, PreLog, FRONTIER_ENGINE_ID};
 use fp_evm::CallOrCreateInfo;
 use fp_storage::PALLET_ETHEREUM_SCHEMA;
-use frame_support::ensure;
 use frame_support::{
 	dispatch::DispatchResultWithPostInfo,
-	traits::Get,
+	ensure,
+	traits::{EnsureOrigin, Get},
 	weights::{Pays, PostDispatchInfo, Weight},
 };
+use frame_system::pallet_prelude::OriginFor;
 use pallet_evm::{BlockHashMapping, FeeCalculator, GasWeightMapping, Runner};
 use sha3::{Digest, Keccak256};
 use sp_runtime::{
 	generic::DigestItem,
 	traits::{One, Saturating, UniqueSaturatedInto, Zero},
-	transaction_validity::ValidTransactionBuilder,
-	DispatchError,
+	transaction_validity::{
+		InvalidTransaction, TransactionValidity, TransactionValidityError, ValidTransactionBuilder,
+	},
+	DispatchError, RuntimeDebug,
 };
 use sp_std::{marker::PhantomData, prelude::*};
 
@@ -55,6 +58,143 @@ pub use fp_rpc::TransactionStatus;
 mod mock;
 #[cfg(all(feature = "std", test))]
 mod tests;
+
+#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug)]
+pub enum RawOrigin {
+	EthereumTransaction(H160),
+}
+
+pub fn ensure_ethereum_transaction<OuterOrigin>(o: OuterOrigin) -> Result<H160, &'static str>
+where
+	OuterOrigin: Into<Result<RawOrigin, OuterOrigin>>,
+{
+	match o.into() {
+		Ok(RawOrigin::EthereumTransaction(n)) => Ok(n),
+		_ => Err("bad origin: expected to be an Ethereum transaction"),
+	}
+}
+
+pub struct EnsureEthereumTransaction;
+impl<O: Into<Result<RawOrigin, O>> + From<RawOrigin>> EnsureOrigin<O>
+	for EnsureEthereumTransaction
+{
+	type Success = H160;
+	fn try_origin(o: O) -> Result<Self::Success, O> {
+		o.into().and_then(|o| match o {
+			RawOrigin::EthereumTransaction(id) => Ok(id),
+		})
+	}
+
+	#[cfg(feature = "runtime-benchmarks")]
+	fn successful_origin() -> O {
+		O::from(RawOrigin::EthereumTransaction(Default::default()))
+	}
+}
+
+impl<T: Config> Call<T>
+where
+	OriginFor<T>: Into<Result<RawOrigin, OriginFor<T>>>,
+{
+	pub fn is_self_contained(&self) -> bool {
+		match self {
+			Call::transact(_) => true,
+			_ => false,
+		}
+	}
+
+	pub fn check_self_contained(&self) -> Option<Result<H160, TransactionValidityError>> {
+		if let Call::transact(transaction) = self {
+			let check = || {
+				let origin = Pallet::<T>::recover_signer(&transaction).ok_or_else(|| {
+					InvalidTransaction::Custom(TransactionValidationError::InvalidSignature as u8)
+				})?;
+
+				Ok(origin)
+			};
+
+			Some(check())
+		} else {
+			None
+		}
+	}
+
+	pub fn validate_self_contained(&self, origin: &H160) -> Option<TransactionValidity> {
+		if let Call::transact(transaction) = self {
+			let validate = || {
+				// We must ensure a transaction can pay the cost of its data bytes.
+				// If it can't it should not be included in a block.
+				let mut gasometer = evm::gasometer::Gasometer::new(
+					transaction.gas_limit.low_u64(),
+					<T as pallet_evm::Config>::config(),
+				);
+				let transaction_cost = match transaction.action {
+					TransactionAction::Call(_) => {
+						evm::gasometer::call_transaction_cost(&transaction.input)
+					}
+					TransactionAction::Create => {
+						evm::gasometer::create_transaction_cost(&transaction.input)
+					}
+				};
+				if gasometer.record_transaction(transaction_cost).is_err() {
+					return InvalidTransaction::Custom(
+						TransactionValidationError::InvalidGasLimit as u8,
+					)
+					.into();
+				}
+
+				if let Some(chain_id) = transaction.signature.chain_id() {
+					if chain_id != T::ChainId::get() {
+						return InvalidTransaction::Custom(
+							TransactionValidationError::InvalidChainId as u8,
+						)
+						.into();
+					}
+				}
+
+				if transaction.gas_limit >= T::BlockGasLimit::get() {
+					return InvalidTransaction::Custom(
+						TransactionValidationError::InvalidGasLimit as u8,
+					)
+					.into();
+				}
+
+				let account_data = pallet_evm::Pallet::<T>::account_basic(&origin);
+
+				if transaction.nonce < account_data.nonce {
+					return InvalidTransaction::Stale.into();
+				}
+
+				let fee = transaction.gas_price.saturating_mul(transaction.gas_limit);
+				let total_payment = transaction.value.saturating_add(fee);
+				if account_data.balance < total_payment {
+					return InvalidTransaction::Payment.into();
+				}
+
+				let min_gas_price = T::FeeCalculator::min_gas_price();
+
+				if transaction.gas_price < min_gas_price {
+					return InvalidTransaction::Payment.into();
+				}
+
+				let mut builder = ValidTransactionBuilder::default()
+					.and_provides((origin, transaction.nonce))
+					.priority(transaction.gas_price.unique_saturated_into());
+
+				if transaction.nonce > account_data.nonce {
+					if let Some(prev_nonce) = transaction.nonce.checked_sub(1.into()) {
+						builder = builder.and_requires((origin, prev_nonce))
+					}
+				}
+
+				builder.build()
+			};
+
+			Some(validate())
+		} else {
+			None
+		}
+	}
+}
 
 pub use pallet::*;
 
@@ -76,9 +216,13 @@ pub mod pallet {
 		/// How Ethereum state root is calculated.
 		type StateRoot: Get<H256>;
 	}
+
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
 	pub struct Pallet<T>(PhantomData<T>);
+
+	#[pallet::origin]
+	pub type Origin = RawOrigin;
 
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
@@ -109,7 +253,11 @@ pub mod pallet {
 				let PreLog::Block(block) = log;
 
 				for transaction in block.transactions {
-					Self::do_transact(transaction).expect(
+					let source = Self::recover_signer(&transaction).expect(
+						"pre-block transaction signature invalid; the block cannot be built",
+					);
+
+					Self::do_transact(source, transaction).expect(
 						"pre-block transaction verification failed; the block cannot be built",
 					);
 				}
@@ -120,16 +268,19 @@ pub mod pallet {
 	}
 
 	#[pallet::call]
-	impl<T: Config> Pallet<T> {
+	impl<T: Config> Pallet<T>
+	where
+		OriginFor<T>: Into<Result<RawOrigin, OriginFor<T>>>,
+	{
 		/// Transact an Ethereum transaction.
 		#[pallet::weight(<T as pallet_evm::Config>::GasWeightMapping::gas_to_weight(transaction.gas_limit.unique_saturated_into()))]
 		pub fn transact(
 			origin: OriginFor<T>,
 			transaction: Transaction,
 		) -> DispatchResultWithPostInfo {
-			ensure_none(origin)?;
+			let source = ensure_ethereum_transaction(origin)?;
 
-			Self::do_transact(transaction)
+			Self::do_transact(source, transaction)
 		}
 	}
 
@@ -181,87 +332,6 @@ pub mod pallet {
 				&PALLET_ETHEREUM_SCHEMA,
 				&EthereumStorageSchema::V1,
 			);
-		}
-	}
-
-	#[pallet::validate_unsigned]
-	impl<T: Config> ValidateUnsigned for Pallet<T> {
-		type Call = Call<T>;
-
-		fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
-			if let Call::transact(transaction) = call {
-				// We must ensure a transaction can pay the cost of its data bytes.
-				// If it can't it should not be included in a block.
-				let mut gasometer = evm::gasometer::Gasometer::new(
-					transaction.gas_limit.low_u64(),
-					<T as pallet_evm::Config>::config(),
-				);
-				let transaction_cost = match transaction.action {
-					TransactionAction::Call(_) => {
-						evm::gasometer::call_transaction_cost(&transaction.input)
-					}
-					TransactionAction::Create => {
-						evm::gasometer::create_transaction_cost(&transaction.input)
-					}
-				};
-				if gasometer.record_transaction(transaction_cost).is_err() {
-					return InvalidTransaction::Custom(
-						TransactionValidationError::InvalidGasLimit as u8,
-					)
-					.into();
-				}
-
-				if let Some(chain_id) = transaction.signature.chain_id() {
-					if chain_id != T::ChainId::get() {
-						return InvalidTransaction::Custom(
-							TransactionValidationError::InvalidChainId as u8,
-						)
-						.into();
-					}
-				}
-
-				let origin = Self::recover_signer(&transaction).ok_or_else(|| {
-					InvalidTransaction::Custom(TransactionValidationError::InvalidSignature as u8)
-				})?;
-
-				if transaction.gas_limit >= T::BlockGasLimit::get() {
-					return InvalidTransaction::Custom(
-						TransactionValidationError::InvalidGasLimit as u8,
-					)
-					.into();
-				}
-
-				let account_data = pallet_evm::Pallet::<T>::account_basic(&origin);
-
-				if transaction.nonce < account_data.nonce {
-					return InvalidTransaction::Stale.into();
-				}
-
-				let fee = transaction.gas_price.saturating_mul(transaction.gas_limit);
-				let total_payment = transaction.value.saturating_add(fee);
-				if account_data.balance < total_payment {
-					return InvalidTransaction::Payment.into();
-				}
-
-				let min_gas_price = T::FeeCalculator::min_gas_price();
-
-				if transaction.gas_price < min_gas_price {
-					return InvalidTransaction::Payment.into();
-				}
-
-				let mut builder = ValidTransactionBuilder::default()
-					.and_provides((origin, transaction.nonce))
-					.priority(transaction.gas_price.unique_saturated_into());
-
-				if transaction.nonce > account_data.nonce {
-					if let Some(prev_nonce) = transaction.nonce.checked_sub(1.into()) {
-						builder = builder.and_requires((origin, prev_nonce))
-					}
-				}
-				builder.build()
-			} else {
-				Err(InvalidTransaction::Call.into())
-			}
 		}
 	}
 }
@@ -341,20 +411,17 @@ impl<T: Config> Pallet<T> {
 		}
 	}
 
-	fn do_transact(transaction: Transaction) -> DispatchResultWithPostInfo {
+	fn do_transact(source: H160, transaction: Transaction) -> DispatchResultWithPostInfo {
 		ensure!(
 			fp_consensus::find_pre_log(&frame_system::Pallet::<T>::digest()).is_err(),
 			Error::<T>::PreLogExists,
 		);
 
-		let source =
-			Self::recover_signer(&transaction).ok_or_else(|| Error::<T>::InvalidSignature)?;
-
 		let transaction_hash =
 			H256::from_slice(Keccak256::digest(&rlp::encode(&transaction)).as_slice());
 		let transaction_index = Pending::<T>::get().len() as u32;
 
-		let (to, contract_address, info) = Self::execute(
+		let (to, _, info) = Self::execute(
 			source,
 			transaction.input.clone(),
 			transaction.value,

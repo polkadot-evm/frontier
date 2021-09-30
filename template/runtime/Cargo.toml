@@ -49,6 +49,7 @@ sp-transaction-pool = { default-features = false, git = "https://github.com/pari
 sp-version = { default-features = false, git = "https://github.com/paritytech/substrate" }
 
 fp-rpc = { default-features = false, path = "../../primitives/rpc" }
+fp-self-contained = { default-features = false, path = "../../primitives/self-contained" }
 
 # benchmarking dependencies
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true }
@@ -70,6 +71,7 @@ std = [
 	"frame-system-rpc-runtime-api/std",
 	"frame-system/std",
 	"fp-rpc/std",
+	"fp-self-contained/std",
 
 	"pallet-ethereum/std",
 	"pallet-evm/std",
