@@ -34,7 +34,7 @@ use futures::{future::TryFutureExt, StreamExt};
 use jsonrpc_core::{futures::future, BoxFuture, ErrorCode, Result};
 use lru::LruCache;
 use sc_client_api::{
-	backend::{AuxStore, Backend, StateBackend, StorageProvider},
+	backend::{Backend, StateBackend, StorageProvider},
 	client::BlockchainEvents,
 };
 use sc_network::{ExHashT, NetworkService};
@@ -278,7 +278,7 @@ where
 	let address_bloom_filter = FilteredParams::adresses_bloom_filter(&filter.address);
 	let topics_bloom_filter = FilteredParams::topics_bloom_filter(&topics_input);
 
-	// Get schema cache. A single AuxStore read before the block range iteration.
+	// Get schema cache. A single read before the block range iteration.
 	// This prevents having to do an extra DB read per block range iteration to getthe actual schema.
 	let mut local_cache: BTreeMap<NumberFor<B>, EthereumStorageSchema> = BTreeMap::new();
 	if let Ok(Some(schema_cache)) = frontier_backend_client::load_cached_schema::<B>(backend) {
@@ -422,7 +422,7 @@ fn filter_block_logs<'a>(
 
 impl<B, C, P, CT, BE, H: ExHashT, A> EthApiT for EthApi<B, C, P, CT, BE, H, A>
 where
-	C: ProvideRuntimeApi<B> + StorageProvider<B, BE> + AuxStore,
+	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
 	C: HeaderBackend<B> + HeaderMetadata<B, Error = BlockChainError> + 'static,
 	C::Api: EthereumRuntimeRPCApi<B>,
 	BE: Backend<B> + 'static,
@@ -1480,7 +1480,7 @@ impl<B: BlockT, BE, C, H: ExHashT> NetApi<B, BE, C, H> {
 
 impl<B: BlockT, BE, C, H: ExHashT> NetApiT for NetApi<B, BE, C, H>
 where
-	C: ProvideRuntimeApi<B> + StorageProvider<B, BE> + AuxStore,
+	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
 	C: HeaderBackend<B> + HeaderMetadata<B, Error = BlockChainError> + 'static,
 	C::Api: EthereumRuntimeRPCApi<B>,
 	BE: Backend<B> + 'static,
@@ -1527,7 +1527,7 @@ impl<B, C> Web3Api<B, C> {
 
 impl<B, C> Web3ApiT for Web3Api<B, C>
 where
-	C: ProvideRuntimeApi<B> + AuxStore,
+	C: ProvideRuntimeApi<B>,
 	C::Api: EthereumRuntimeRPCApi<B>,
 	C: HeaderBackend<B> + HeaderMetadata<B, Error = BlockChainError> + 'static,
 	C: Send + Sync + 'static,
@@ -1907,7 +1907,7 @@ where
 							// Decode the wrapped blob which's type is known.
 							let new_schema: EthereumStorageSchema =
 								Decode::decode(&mut &data.0[..]).unwrap();
-							// Cache new entry and overwrite the AuxStore value.
+							// Cache new entry and overwrite the old database value.
 							if let Ok(Some(old_cache)) =
 								frontier_backend_client::load_cached_schema::<B>(backend.as_ref())
 							{
@@ -1915,7 +1915,7 @@ where
 								match &new_cache[..] {
 									[.., (schema, _)] if *schema == new_schema => {
 										warn!(
-											"Schema version already in AuxStore, ignoring: {:?}",
+											"Schema version already in Frontier database, ignoring: {:?}",
 											new_schema
 										);
 									}
