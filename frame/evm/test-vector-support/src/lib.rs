@@ -15,7 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use evm::{executor::PrecompileOutput, Context, ExitSucceed};
+use evm::{Context, ExitSucceed};
 use fp_evm::Precompile;
 
 #[cfg(feature = "std")]
