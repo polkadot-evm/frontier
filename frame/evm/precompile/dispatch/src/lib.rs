@@ -19,7 +19,6 @@
 
 extern crate alloc;
 
-use alloc::vec::Vec;
 use codec::Decode;
 use core::marker::PhantomData;
 use evm::{executor::PrecompileOutput, Context, ExitError, ExitSucceed};
