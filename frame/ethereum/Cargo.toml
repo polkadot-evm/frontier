@@ -36,6 +36,7 @@ libsecp256k1 = { version = "0.5", features = ["static-context", "hmac"] }
 
 [features]
 default = ["std"]
+runtime-benchmarks = []
 std = [
 	"serde",
 	"rustc-hex/std",
