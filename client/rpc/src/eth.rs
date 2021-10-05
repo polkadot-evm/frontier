@@ -19,13 +19,14 @@ use crate::{
 	error_on_execution_failure, frontier_backend_client, internal_err, public_key, EthSigner,
 	StorageOverride,
 };
-use ethereum::{BlockV0 as EthereumBlock, TransactionV0 as EthereumTransaction};
+use ethereum::{BlockV2 as EthereumBlock, TransactionV2 as EthereumTransaction};
 use ethereum_types::{H160, H256, H512, H64, U256, U64};
 use fc_rpc_core::{
 	types::{
 		Block, BlockNumber, BlockTransactions, Bytes, CallRequest, Filter, FilterChanges,
 		FilterPool, FilterPoolItem, FilterType, FilteredParams, Header, Index, Log, PeerCount,
-		Receipt, Rich, RichBlock, SyncInfo, SyncStatus, Transaction, TransactionRequest, Work,
+		Receipt, Rich, RichBlock, SyncInfo, SyncStatus, Transaction, TransactionMessage,
+		TransactionRequest, Work,
 	},
 	EthApi as EthApiT, EthFilterApi as EthFilterApiT, NetApi as NetApiT, Web3Api as Web3ApiT,
 };
@@ -113,7 +114,7 @@ where
 }
 
 fn rich_block_build(
-	block: ethereum::BlockV0,
+	block: ethereum::Block<EthereumTransaction>,
 	statuses: Vec<Option<TransactionStatus>>,
 	hash: Option<H256>,
 	full_transactions: bool,
@@ -184,62 +185,64 @@ fn rich_block_build(
 }
 
 fn transaction_build(
-	transaction: EthereumTransaction,
-	block: Option<EthereumBlock>,
+	ethereum_transaction: EthereumTransaction,
+	block: Option<ethereum::Block<EthereumTransaction>>,
 	status: Option<TransactionStatus>,
 ) -> Transaction {
-	let pubkey = match public_key(&transaction) {
+	let mut transaction: Transaction = ethereum_transaction.clone().into();
+
+	let pubkey = match public_key(&ethereum_transaction) {
 		Ok(p) => Some(p),
 		Err(_e) => None,
 	};
 
-	Transaction {
-		hash: H256::from_slice(Keccak256::digest(&rlp::encode(&transaction)).as_slice()),
-		nonce: transaction.nonce,
-		block_hash: block.as_ref().map_or(None, |block| {
-			Some(H256::from_slice(
-				Keccak256::digest(&rlp::encode(&block.header)).as_slice(),
-			))
-		}),
-		block_number: block.as_ref().map(|block| block.header.number),
-		transaction_index: status.as_ref().map(|status| {
-			U256::from(UniqueSaturatedInto::<u32>::unique_saturated_into(
-				status.transaction_index,
-			))
-		}),
-		from: status.as_ref().map_or(
-			{
-				match pubkey {
-					Some(pk) => H160::from(H256::from_slice(Keccak256::digest(&pk).as_slice())),
-					_ => H160::default(),
-				}
-			},
-			|status| status.from,
-		),
-		to: status.as_ref().map_or(
-			{
-				match transaction.action {
-					ethereum::TransactionAction::Call(to) => Some(to),
-					_ => None,
-				}
-			},
-			|status| status.to,
-		),
-		value: transaction.value,
-		gas_price: transaction.gas_price,
-		gas: transaction.gas_limit,
-		input: Bytes(transaction.clone().input),
-		creates: status
-			.as_ref()
-			.map_or(None, |status| status.contract_address),
-		raw: Bytes(rlp::encode(&transaction).to_vec()),
-		public_key: pubkey.as_ref().map(|pk| H512::from(pk)),
-		chain_id: transaction.signature.chain_id().map(U64::from),
-		standard_v: U256::from(transaction.signature.standard_v()),
-		v: U256::from(transaction.signature.v()),
-		r: U256::from(transaction.signature.r().as_bytes()),
-		s: U256::from(transaction.signature.s().as_bytes()),
-	}
+	// Block hash.
+	transaction.block_hash = block.as_ref().map_or(None, |block| {
+		Some(H256::from_slice(
+			Keccak256::digest(&rlp::encode(&block.header)).as_slice(),
+		))
+	});
+	// Block number.
+	transaction.block_number = block.as_ref().map(|block| block.header.number);
+	// Transaction index.
+	transaction.transaction_index = status.as_ref().map(|status| {
+		U256::from(UniqueSaturatedInto::<u32>::unique_saturated_into(
+			status.transaction_index,
+		))
+	});
+	// From.
+	transaction.from = status.as_ref().map_or(
+		{
+			match pubkey {
+				Some(pk) => H160::from(H256::from_slice(Keccak256::digest(&pk).as_slice())),
+				_ => H160::default(),
+			}
+		},
+		|status| status.from,
+	);
+	// To.
+	transaction.to = status.as_ref().map_or(
+		{
+			let action = match ethereum_transaction {
+				EthereumTransaction::Legacy(t) => t.action,
+				EthereumTransaction::EIP2930(t) => t.action,
+				EthereumTransaction::EIP1559(t) => t.action,
+			};
+			match action {
+				ethereum::TransactionAction::Call(to) => Some(to),
+				_ => None,
+			}
+		},
+		|status| status.to,
+	);
+	// Creates.
+	transaction.creates = status
+		.as_ref()
+		.map_or(None, |status| status.contract_address);
+	// Public key.
+	transaction.public_key = pubkey.as_ref().map(|pk| H512::from(pk));
+
+	transaction
 }
 
 fn filter_range_logs<B: BlockT, C, BE>(
@@ -787,28 +790,38 @@ where
 		};
 
 		let chain_id = match self.chain_id() {
-			Ok(chain_id) => chain_id,
+			Ok(Some(chain_id)) => chain_id.as_u64(),
+			Ok(None) => 27,
 			Err(e) => return Box::pin(future::err(e)),
 		};
 
-		let message = ethereum::LegacyTransactionMessage {
-			nonce,
-			gas_price: request.gas_price.unwrap_or(U256::from(1)),
-			gas_limit: request.gas.unwrap_or(U256::max_value()),
-			value: request.value.unwrap_or(U256::zero()),
-			input: request.data.map(|s| s.into_vec()).unwrap_or_default(),
-			action: match request.to {
-				Some(to) => ethereum::TransactionAction::Call(to),
-				None => ethereum::TransactionAction::Create,
-			},
-			chain_id: chain_id.map(|s| s.as_u64()),
+		let mut message: Option<TransactionMessage> = request.into();
+		message = match message {
+			Some(TransactionMessage::Legacy(mut m)) => {
+				m.nonce = nonce;
+				m.chain_id = Some(chain_id);
+				Some(TransactionMessage::Legacy(m))
+			}
+			Some(TransactionMessage::EIP2930(mut m)) => {
+				m.nonce = nonce;
+				m.chain_id = chain_id;
+				Some(TransactionMessage::EIP2930(m))
+			}
+			Some(TransactionMessage::EIP1559(mut m)) => {
+				m.nonce = nonce;
+				m.chain_id = chain_id;
+				Some(TransactionMessage::EIP1559(m))
+			}
+			_ => {
+				return Box::pin(future::err(internal_err("invalid transaction parameters")));
+			}
 		};
 
 		let mut transaction = None;
 
 		for signer in &self.signers {
 			if signer.accounts().contains(&from) {
-				match signer.sign(message, &from) {
+				match signer.sign(message.unwrap(), &from) {
 					Ok(t) => transaction = Some(t),
 					Err(e) => return Box::pin(future::err(e)),
 				}
@@ -839,9 +852,19 @@ where
 	}
 
 	fn send_raw_transaction(&self, bytes: Bytes) -> BoxFuture<Result<H256>> {
-		let transaction = match rlp::decode::<ethereum::TransactionV0>(&bytes.0[..]) {
-			Ok(transaction) => transaction,
-			Err(_) => return Box::pin(future::err(internal_err("decode transaction failed"))),
+		let mut slice = &bytes.0[..];
+		let transaction = if slice.len() > 0 && slice.get(0).unwrap() > &0x7f {
+			// Legacy transaction. Decode and wrap in envelope.
+			match rlp::decode::<ethereum::TransactionV0>(&mut slice) {
+				Ok(transaction) => EthereumTransaction::Legacy(transaction),
+				Err(_) => return Box::pin(future::err(internal_err("decode transaction failed"))),
+			}
+		} else {
+			// Typed Transaction.
+			match EthereumTransaction::decode(&mut slice) {
+				Ok(transaction) => transaction,
+				Err(_) => return Box::pin(future::err(internal_err("decode transaction failed"))),
+			}
 		};
 		let transaction_hash =
 			H256::from_slice(Keccak256::digest(&rlp::encode(&transaction)).as_slice());
@@ -1120,7 +1143,7 @@ where
 				);
 
 				let best_block: BlockId<B> = BlockId::Hash(self.client.info().best_hash);
-				let ethereum_transactions: Vec<ethereum::TransactionV0> = self
+				let ethereum_transactions: Vec<EthereumTransaction> = self
 					.client
 					.runtime_api()
 					.extrinsic_filter(&best_block, xts)

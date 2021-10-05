@@ -49,8 +49,8 @@ use sp_runtime::{
 use sp_std::{marker::PhantomData, prelude::*};
 
 pub use ethereum::{
-	BlockV0 as Block, LegacyTransactionMessage, Log, Receipt, TransactionAction,
-	TransactionV0 as Transaction,
+	BlockV2 as Block, LegacyTransactionMessage, Log, Receipt, TransactionAction,
+	TransactionV2 as Transaction,
 };
 pub use fp_rpc::TransactionStatus;
 
@@ -72,6 +72,19 @@ where
 		Ok(RawOrigin::EthereumTransaction(n)) => Ok(n),
 		_ => Err("bad origin: expected to be an Ethereum transaction"),
 	}
+}
+
+#[derive(Clone, Debug, Encode, Decode, PartialEq, Eq)]
+struct TransactionData {
+	action: TransactionAction,
+	input: Vec<u8>,
+	nonce: U256,
+	gas_limit: U256,
+	gas_price: Option<U256>,
+	max_fee_per_gas: Option<U256>,
+	max_priority_fee_per_gas: Option<U256>,
+	value: U256,
+	chain_id: Option<u64>,
 }
 
 pub struct EnsureEthereumTransaction;
@@ -121,18 +134,22 @@ where
 	pub fn validate_self_contained(&self, origin: &H160) -> Option<TransactionValidity> {
 		if let Call::transact(transaction) = self {
 			let validate = || {
+				let transaction_data = Pallet::<T>::transaction_data(&transaction);
+				let nonce = transaction_data.nonce;
+				let gas_limit = transaction_data.gas_limit;
 				// We must ensure a transaction can pay the cost of its data bytes.
 				// If it can't it should not be included in a block.
 				let mut gasometer = evm::gasometer::Gasometer::new(
-					transaction.gas_limit.low_u64(),
+					gas_limit.low_u64(),
 					<T as pallet_evm::Config>::config(),
 				);
-				let transaction_cost = match transaction.action {
+
+				let transaction_cost = match transaction_data.action {
 					TransactionAction::Call(_) => {
-						evm::gasometer::call_transaction_cost(&transaction.input)
+						evm::gasometer::call_transaction_cost(&transaction_data.input)
 					}
 					TransactionAction::Create => {
-						evm::gasometer::create_transaction_cost(&transaction.input)
+						evm::gasometer::create_transaction_cost(&transaction_data.input)
 					}
 				};
 				if gasometer.record_transaction(transaction_cost).is_err() {
@@ -142,7 +159,7 @@ where
 					.into();
 				}
 
-				if let Some(chain_id) = transaction.signature.chain_id() {
+				if let Some(chain_id) = transaction_data.chain_id {
 					if chain_id != T::ChainId::get() {
 						return InvalidTransaction::Custom(
 							TransactionValidationError::InvalidChainId as u8,
@@ -151,7 +168,7 @@ where
 					}
 				}
 
-				if transaction.gas_limit >= T::BlockGasLimit::get() {
+				if gas_limit >= T::BlockGasLimit::get() {
 					return InvalidTransaction::Custom(
 						TransactionValidationError::InvalidGasLimit as u8,
 					)
@@ -160,28 +177,37 @@ where
 
 				let account_data = pallet_evm::Pallet::<T>::account_basic(&origin);
 
-				if transaction.nonce < account_data.nonce {
+				if nonce < account_data.nonce {
 					return InvalidTransaction::Stale.into();
-				}
-
-				let fee = transaction.gas_price.saturating_mul(transaction.gas_limit);
-				let total_payment = transaction.value.saturating_add(fee);
-				if account_data.balance < total_payment {
-					return InvalidTransaction::Payment.into();
 				}
 
 				let min_gas_price = T::FeeCalculator::min_gas_price();
 
-				if transaction.gas_price < min_gas_price {
+				// TODO eip1559 handling
+				let gas_price = if let Some(gas_price) = transaction_data.gas_price {
+					gas_price
+				} else if let Some(max_fee_per_gas) = transaction_data.max_fee_per_gas {
+					max_fee_per_gas
+				} else {
+					return InvalidTransaction::Payment.into();
+				};
+
+				if gas_price < min_gas_price {
+					return InvalidTransaction::Payment.into();
+				}
+
+				let fee = gas_price.saturating_mul(gas_limit);
+				let total_payment = transaction_data.value.saturating_add(fee);
+				if account_data.balance < total_payment {
 					return InvalidTransaction::Payment.into();
 				}
 
 				let mut builder = ValidTransactionBuilder::default()
-					.and_provides((origin, transaction.nonce))
-					.priority(transaction.gas_price.unique_saturated_into());
+					.and_provides((origin, nonce))
+					.priority(gas_price.unique_saturated_into());
 
-				if transaction.nonce > account_data.nonce {
-					if let Some(prev_nonce) = transaction.nonce.checked_sub(1.into()) {
+				if nonce > account_data.nonce {
+					if let Some(prev_nonce) = nonce.checked_sub(1.into()) {
 						builder = builder.and_requires((origin, prev_nonce))
 					}
 				}
@@ -273,7 +299,9 @@ pub mod pallet {
 		OriginFor<T>: Into<Result<RawOrigin, OriginFor<T>>>,
 	{
 		/// Transact an Ethereum transaction.
-		#[pallet::weight(<T as pallet_evm::Config>::GasWeightMapping::gas_to_weight(transaction.gas_limit.unique_saturated_into()))]
+		#[pallet::weight(<T as pallet_evm::Config>::GasWeightMapping::gas_to_weight(
+			Pallet::<T>::transaction_data(transaction).gas_limit.unique_saturated_into()
+		))]
 		pub fn transact(
 			origin: OriginFor<T>,
 			transaction: Transaction,
@@ -306,7 +334,7 @@ pub mod pallet {
 
 	/// The current Ethereum block.
 	#[pallet::storage]
-	pub(super) type CurrentBlock<T: Config> = StorageValue<_, ethereum::BlockV0>;
+	pub(super) type CurrentBlock<T: Config> = StorageValue<_, ethereum::BlockV2>;
 
 	/// The current Ethereum receipts.
 	#[pallet::storage]
@@ -330,21 +358,80 @@ pub mod pallet {
 			<Pallet<T>>::store_block(false, U256::zero());
 			frame_support::storage::unhashed::put::<EthereumStorageSchema>(
 				&PALLET_ETHEREUM_SCHEMA,
-				&EthereumStorageSchema::V1,
+				&EthereumStorageSchema::V2,
 			);
 		}
 	}
 }
 
 impl<T: Config> Pallet<T> {
+	fn transaction_data(transaction: &Transaction) -> TransactionData {
+		match transaction {
+			Transaction::Legacy(t) => TransactionData {
+				action: t.action,
+				input: t.input.clone(),
+				nonce: t.nonce,
+				gas_limit: t.gas_limit,
+				gas_price: Some(t.gas_price),
+				max_fee_per_gas: None,
+				max_priority_fee_per_gas: None,
+				value: t.value,
+				chain_id: t.signature.chain_id(),
+			},
+			Transaction::EIP2930(t) => TransactionData {
+				action: t.action,
+				input: t.input.clone(),
+				nonce: t.nonce,
+				gas_limit: t.gas_limit,
+				gas_price: Some(t.gas_price),
+				max_fee_per_gas: None,
+				max_priority_fee_per_gas: None,
+				value: t.value,
+				chain_id: Some(t.chain_id),
+			},
+			Transaction::EIP1559(t) => TransactionData {
+				action: t.action,
+				input: t.input.clone(),
+				nonce: t.nonce,
+				gas_limit: t.gas_limit,
+				gas_price: None,
+				max_fee_per_gas: Some(t.max_fee_per_gas),
+				max_priority_fee_per_gas: Some(t.max_priority_fee_per_gas),
+				value: t.value,
+				chain_id: Some(t.chain_id),
+			},
+		}
+	}
+
 	fn recover_signer(transaction: &Transaction) -> Option<H160> {
 		let mut sig = [0u8; 65];
 		let mut msg = [0u8; 32];
-		sig[0..32].copy_from_slice(&transaction.signature.r()[..]);
-		sig[32..64].copy_from_slice(&transaction.signature.s()[..]);
-		sig[64] = transaction.signature.standard_v();
-		msg.copy_from_slice(&LegacyTransactionMessage::from(transaction.clone()).hash()[..]);
-
+		match transaction {
+			Transaction::Legacy(t) => {
+				sig[0..32].copy_from_slice(&t.signature.r()[..]);
+				sig[32..64].copy_from_slice(&t.signature.s()[..]);
+				sig[64] = t.signature.standard_v();
+				msg.copy_from_slice(
+					&ethereum::LegacyTransactionMessage::from(t.clone()).hash()[..],
+				);
+			}
+			Transaction::EIP2930(t) => {
+				sig[0..32].copy_from_slice(&t.r[..]);
+				sig[32..64].copy_from_slice(&t.s[..]);
+				sig[64] = t.odd_y_parity as u8;
+				msg.copy_from_slice(
+					&ethereum::EIP2930TransactionMessage::from(t.clone()).hash()[..],
+				);
+			}
+			Transaction::EIP1559(t) => {
+				sig[0..32].copy_from_slice(&t.r[..]);
+				sig[32..64].copy_from_slice(&t.s[..]);
+				sig[64] = t.odd_y_parity as u8;
+				msg.copy_from_slice(
+					&ethereum::EIP1559TransactionMessage::from(t.clone()).hash()[..],
+				);
+			}
+		}
 		let pubkey = sp_io::crypto::secp256k1_ecdsa_recover(&sig, &msg).ok()?;
 		Some(H160::from(H256::from_slice(
 			Keccak256::digest(&pubkey).as_slice(),
@@ -421,16 +508,7 @@ impl<T: Config> Pallet<T> {
 			H256::from_slice(Keccak256::digest(&rlp::encode(&transaction)).as_slice());
 		let transaction_index = Pending::<T>::get().len() as u32;
 
-		let (to, _, info) = Self::execute(
-			source,
-			transaction.input.clone(),
-			transaction.value,
-			transaction.gas_limit,
-			Some(transaction.gas_price),
-			Some(transaction.nonce),
-			transaction.action,
-			None,
-		)?;
+		let (to, contract_address, info) = Self::execute(source, &transaction, None)?;
 
 		let (reason, status, used_gas, dest) = match info {
 			CallOrCreateInfo::Call(info) => (
@@ -506,7 +584,7 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Get current block.
-	pub fn current_block() -> Option<ethereum::BlockV0> {
+	pub fn current_block() -> Option<ethereum::BlockV2> {
 		CurrentBlock::<T>::get()
 	}
 
@@ -523,14 +601,38 @@ impl<T: Config> Pallet<T> {
 	/// Execute an Ethereum transaction.
 	pub fn execute(
 		from: H160,
-		input: Vec<u8>,
-		value: U256,
-		gas_limit: U256,
-		gas_price: Option<U256>,
-		nonce: Option<U256>,
-		action: TransactionAction,
+		transaction: &Transaction,
 		config: Option<evm::Config>,
 	) -> Result<(Option<H160>, Option<H160>, CallOrCreateInfo), DispatchError> {
+		let (input, value, gas_limit, gas_price, nonce, action) = {
+			match transaction {
+				Transaction::Legacy(t) => (
+					t.input.clone(),
+					t.value,
+					t.gas_limit,
+					Some(t.gas_price),
+					Some(t.nonce),
+					t.action,
+				),
+				Transaction::EIP2930(t) => (
+					t.input.clone(),
+					t.value,
+					t.gas_limit,
+					Some(t.gas_price),
+					Some(t.nonce),
+					t.action,
+				),
+				Transaction::EIP1559(t) => (
+					t.input.clone(),
+					t.value,
+					t.gas_limit,
+					Some(t.max_fee_per_gas),
+					Some(t.nonce),
+					t.action,
+				),
+			}
+		};
+
 		match action {
 			ethereum::TransactionAction::Call(target) => {
 				let res = T::Runner::call(
@@ -576,6 +678,7 @@ pub enum ReturnValue {
 pub enum EthereumStorageSchema {
 	Undefined,
 	V1,
+	V2,
 }
 
 impl Default for EthereumStorageSchema {

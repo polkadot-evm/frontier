@@ -15,19 +15,21 @@
 // along with Substrate.  If not, see <http://www.gnu.org/licenses/>.
 use std::collections::BTreeMap;
 
-use ethereum::BlockV0 as EthereumBlock;
+use ethereum::BlockV2 as EthereumBlock;
 use ethereum_types::{H160, H256, U256};
 use fp_rpc::{EthereumRuntimeRPCApi, TransactionStatus};
-use sp_api::{BlockId, ProvideRuntimeApi};
+use sp_api::{ApiExt, BlockId, ProvideRuntimeApi};
 use sp_io::hashing::{blake2_128, twox_128};
 use sp_runtime::traits::Block as BlockT;
 use std::{marker::PhantomData, sync::Arc};
 
 mod schema_v1_override;
+mod schema_v2_override;
 
 pub use fc_rpc_core::{EthApiServer, NetApiServer};
 use pallet_ethereum::EthereumStorageSchema;
 pub use schema_v1_override::SchemaV1Override;
+pub use schema_v2_override::SchemaV2Override;
 
 pub struct OverrideHandle<Block: BlockT> {
 	pub schemas: BTreeMap<EthereumStorageSchema, Box<dyn StorageOverride<Block> + Send + Sync>>,
@@ -111,8 +113,27 @@ where
 	}
 
 	/// Return the current block.
-	fn current_block(&self, block: &BlockId<Block>) -> Option<EthereumBlock> {
-		self.client.runtime_api().current_block(&block).ok()?
+	fn current_block(&self, block: &BlockId<Block>) -> Option<ethereum::BlockV2> {
+		let api = self.client.runtime_api();
+
+		let api_version = if let Ok(Some(api_version)) =
+			api.api_version::<dyn EthereumRuntimeRPCApi<Block>>(&block)
+		{
+			api_version
+		} else {
+			return None;
+		};
+		if api_version == 1 {
+			#[allow(deprecated)]
+			let old_block = api.current_block_before_version_2(&block).ok()?;
+			if let Some(block) = old_block {
+				Some(block.into())
+			} else {
+				None
+			}
+		} else {
+			api.current_block(&block).ok()?
+		}
 	}
 
 	/// Return the current receipt.

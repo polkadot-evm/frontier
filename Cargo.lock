@@ -1592,14 +1592,17 @@ dependencies = [
 name = "fc-rpc-core"
 version = "1.1.0-dev"
 dependencies = [
+ "ethereum",
  "ethereum-types",
  "jsonrpc-core",
  "jsonrpc-core-client",
  "jsonrpc-derive",
  "jsonrpc-pubsub",
+ "rlp",
  "rustc-hex",
  "serde",
  "serde_json",
+ "sha3 0.8.2",
 ]
 
 [[package]]
