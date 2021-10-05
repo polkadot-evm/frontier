@@ -1,6 +1,6 @@
-use structopt::StructOpt;
 #[cfg(feature = "manual-seal")]
 use structopt::clap::arg_enum;
+use structopt::StructOpt;
 
 #[cfg(feature = "manual-seal")]
 arg_enum! {
@@ -56,6 +56,8 @@ pub struct Cli {
 
 #[derive(Debug, StructOpt)]
 pub enum Subcommand {
+	/// Key management cli utilities
+	Key(sc_cli::KeySubcommand),
 	/// Build a chain specification.
 	BuildSpec(sc_cli::BuildSpecCmd),
 

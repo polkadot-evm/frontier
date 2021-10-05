@@ -16,13 +16,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use std::{sync::{Arc, Mutex}, collections::HashMap};
-use serde::{Serialize, Serializer};
-use serde::ser::SerializeStruct;
-use ethereum_types::{H160, H256, H512, U64, U256};
-use ethereum::{AccessListItem, TransactionV0, TransactionV1, TransactionV2};
-use sha3::{Keccak256, Digest};
 use crate::types::Bytes;
+use ethereum::{AccessListItem, TransactionV2};
+use ethereum_types::{H160, H256, H512, U256, U64};
+use serde::{ser::SerializeStruct, Serialize, Serializer};
+use sha3::{Digest, Keccak256};
 
 /// Transaction
 #[derive(Debug, Default, Clone, PartialEq, Serialize)]
@@ -78,105 +76,84 @@ pub struct Transaction {
 	pub access_list: Option<Vec<AccessListItem>>,
 }
 
-impl From<TransactionV0> for Transaction {
-	fn from(transaction: TransactionV0) -> Self {
-		let serialized = {
-			let envelope = ethereum::Transaction::V0(transaction.clone());
-			envelope.serialize()
-		};
-		Transaction {
-			hash: H256::from_slice(
-				Keccak256::digest(&serialized).as_slice()
-			),
-			nonce: transaction.nonce,
-			block_hash: None,
-			block_number: None,
-			transaction_index: None,
-			from: H160::default(),
-			to: None,
-			value: transaction.value,
-			gas_price: Some(transaction.gas_price),
-			max_fee_per_gas: None,
-			max_priority_fee_per_gas: None,
-			gas: transaction.gas_limit,
-			input: Bytes(transaction.clone().input),
-			creates: None,
-			raw: Bytes(serialized.to_vec()),
-			public_key: None,
-			chain_id: transaction.signature.chain_id().map(U64::from),
-			standard_v: U256::from(transaction.signature.standard_v()),
-			v: U256::from(transaction.signature.v()),
-			r: U256::from(transaction.signature.r().as_bytes()),
-			s: U256::from(transaction.signature.s().as_bytes()),
-			access_list: None,
-		}
-	}
-}
-impl From<TransactionV1> for Transaction {
-	fn from(transaction: TransactionV1) -> Self {
-		let serialized = {
-			let envelope = ethereum::Transaction::V1(transaction.clone());
-			envelope.serialize()
-		};
-		Transaction {
-			hash: H256::from_slice(
-				Keccak256::digest(&serialized).as_slice()
-			),
-			nonce: transaction.nonce,
-			block_hash: None,
-			block_number: None,
-			transaction_index: None,
-			from: H160::default(),
-			to: None,
-			value: transaction.value,
-			gas_price: Some(transaction.gas_price),
-			max_fee_per_gas: None,
-			max_priority_fee_per_gas: None,
-			gas: transaction.gas_limit,
-			input: Bytes(transaction.clone().input),
-			creates: None,
-			raw: Bytes(serialized.to_vec()),
-			public_key: None,
-			chain_id: Some(U64::from(transaction.chain_id)),
-			standard_v: U256::from(transaction.odd_y_parity as u8),
-			v: U256::from(transaction.odd_y_parity as u8), // TODO
-			r: U256::from(transaction.r.as_bytes()),
-			s: U256::from(transaction.s.as_bytes()),
-			access_list: Some(transaction.access_list),
-		}
-	}
-}
 impl From<TransactionV2> for Transaction {
 	fn from(transaction: TransactionV2) -> Self {
-		let serialized = {
-			let envelope = ethereum::Transaction::V2(transaction.clone());
-			envelope.serialize()
-		};
-		Transaction {
-			hash: H256::from_slice(
-				Keccak256::digest(&serialized).as_slice()
-			),
-			nonce: transaction.nonce,
-			block_hash: None,
-			block_number: None,
-			transaction_index: None,
-			from: H160::default(),
-			to: None,
-			value: transaction.value,
-			gas_price: None,
-			max_fee_per_gas: Some(transaction.max_fee_per_gas),
-			max_priority_fee_per_gas: Some(transaction.max_priority_fee_per_gas),
-			gas: transaction.gas_limit,
-			input: Bytes(transaction.clone().input),
-			creates: None,
-			raw: Bytes(serialized.to_vec()),
-			public_key: None,
-			chain_id: Some(U64::from(transaction.chain_id)),
-			standard_v: U256::from(transaction.odd_y_parity as u8),
-			v: U256::from(transaction.odd_y_parity as u8), // TODO
-			r: U256::from(transaction.r.as_bytes()),
-			s: U256::from(transaction.s.as_bytes()),
-			access_list: Some(transaction.access_list),
+		let serialized = rlp::encode(&transaction);
+		let hash = H256::from_slice(Keccak256::digest(&serialized).as_slice());
+		let raw = Bytes(serialized.to_vec());
+		match transaction {
+			TransactionV2::Legacy(t) => Transaction {
+				hash,
+				nonce: t.nonce,
+				block_hash: None,
+				block_number: None,
+				transaction_index: None,
+				from: H160::default(),
+				to: None,
+				value: t.value,
+				gas_price: Some(t.gas_price),
+				max_fee_per_gas: None,
+				max_priority_fee_per_gas: None,
+				gas: t.gas_limit,
+				input: Bytes(t.clone().input),
+				creates: None,
+				raw,
+				public_key: None,
+				chain_id: t.signature.chain_id().map(U64::from),
+				standard_v: U256::from(t.signature.standard_v()),
+				v: U256::from(t.signature.v()),
+				r: U256::from(t.signature.r().as_bytes()),
+				s: U256::from(t.signature.s().as_bytes()),
+				access_list: None,
+			},
+			TransactionV2::EIP2930(t) => Transaction {
+				hash,
+				nonce: t.nonce,
+				block_hash: None,
+				block_number: None,
+				transaction_index: None,
+				from: H160::default(),
+				to: None,
+				value: t.value,
+				gas_price: Some(t.gas_price),
+				max_fee_per_gas: None,
+				max_priority_fee_per_gas: None,
+				gas: t.gas_limit,
+				input: Bytes(t.clone().input),
+				creates: None,
+				raw,
+				public_key: None,
+				chain_id: Some(U64::from(t.chain_id)),
+				standard_v: U256::from(t.odd_y_parity as u8),
+				v: U256::from(t.odd_y_parity as u8), // TODO,
+				r: U256::from(t.r.as_bytes()),
+				s: U256::from(t.s.as_bytes()),
+				access_list: Some(t.access_list),
+			},
+			TransactionV2::EIP1559(t) => Transaction {
+				hash,
+				nonce: t.nonce,
+				block_hash: None,
+				block_number: None,
+				transaction_index: None,
+				from: H160::default(),
+				to: None,
+				value: t.value,
+				gas_price: None,
+				max_fee_per_gas: Some(t.max_fee_per_gas),
+				max_priority_fee_per_gas: Some(t.max_priority_fee_per_gas),
+				gas: t.gas_limit,
+				input: Bytes(t.clone().input),
+				creates: None,
+				raw,
+				public_key: None,
+				chain_id: Some(U64::from(t.chain_id)),
+				standard_v: U256::from(t.odd_y_parity as u8),
+				v: U256::from(t.odd_y_parity as u8), // TODO
+				r: U256::from(t.r.as_bytes()),
+				s: U256::from(t.s.as_bytes()),
+				access_list: Some(t.access_list),
+			},
 		}
 	}
 }
@@ -206,7 +183,8 @@ pub enum LocalTransactionStatus {
 
 impl Serialize for LocalTransactionStatus {
 	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-		where S: Serializer
+	where
+		S: Serializer,
 	{
 		use self::LocalTransactionStatus::*;
 
@@ -227,34 +205,34 @@ impl Serialize for LocalTransactionStatus {
 			Mined(ref tx) => {
 				struc.serialize_field(status, "mined")?;
 				struc.serialize_field(transaction, tx)?;
-			},
+			}
 			Culled(ref tx) => {
 				struc.serialize_field(status, "culled")?;
 				struc.serialize_field(transaction, tx)?;
-			},
+			}
 			Dropped(ref tx) => {
 				struc.serialize_field(status, "dropped")?;
 				struc.serialize_field(transaction, tx)?;
-			},
+			}
 			Canceled(ref tx) => {
 				struc.serialize_field(status, "canceled")?;
 				struc.serialize_field(transaction, tx)?;
-			},
+			}
 			Invalid(ref tx) => {
 				struc.serialize_field(status, "invalid")?;
 				struc.serialize_field(transaction, tx)?;
-			},
+			}
 			Rejected(ref tx, ref reason) => {
 				struc.serialize_field(status, "rejected")?;
 				struc.serialize_field(transaction, tx)?;
 				struc.serialize_field("error", reason)?;
-			},
+			}
 			Replaced(ref tx, ref gas_price, ref hash) => {
 				struc.serialize_field(status, "replaced")?;
 				struc.serialize_field(transaction, tx)?;
 				struc.serialize_field("hash", hash)?;
 				struc.serialize_field("gasPrice", gas_price)?;
-			},
+			}
 		}
 
 		struc.end()
@@ -268,18 +246,5 @@ pub struct RichRawTransaction {
 	pub raw: Bytes,
 	/// Transaction details
 	#[serde(rename = "tx")]
-	pub transaction: Transaction
-}
-
-pub struct PendingTransaction {
 	pub transaction: Transaction,
-	pub at_block: u64
 }
-
-impl PendingTransaction {
-	pub fn new(transaction: Transaction, at_block: u64) -> Self {
-		Self { transaction, at_block }
-	}
-}
-
-pub type PendingTransactions = Option<Arc<Mutex<HashMap<H256, PendingTransaction>>>>;
