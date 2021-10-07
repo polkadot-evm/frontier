@@ -19,106 +19,133 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use async_trait::async_trait;
-use codec::{Decode, Encode};
-use frame_support::{
-	decl_module, decl_storage,
-	inherent::{IsFatalError, ProvideInherent},
-	traits::Get,
-	weights::{DispatchClass, Weight},
-};
-use frame_system::ensure_none;
+use frame_support::inherent::IsFatalError;
 use sp_core::U256;
 use sp_inherents::{InherentData, InherentIdentifier};
-use sp_runtime::RuntimeDebug;
 use sp_std::{
 	cmp::{max, min},
 	result,
 };
 
+pub use pallet::*;
+
 #[cfg(test)]
 mod tests;
 
-pub trait Config: frame_system::Config {
-	/// Bound divisor for min gas price.
-	type MinGasPriceBoundDivisor: Get<U256>;
-}
+#[frame_support::pallet]
+pub mod pallet {
+	use frame_support::pallet_prelude::*;
+	use frame_system::pallet_prelude::*;
+	use super::*;
 
-decl_storage! {
-	trait Store for Module<T: Config> as DynamicFee {
-		MinGasPrice get(fn min_gas_price) config(): U256;
-		TargetMinGasPrice: Option<U256>;
-	}
-	add_extra_genesis {
-		build(|_config: &GenesisConfig| {
-			MinGasPrice::set(U256::from(1));
-		});
-	}
-}
+	#[pallet::pallet]
+	#[pallet::generate_store(pub(super) trait Store)]
+	pub struct Pallet<T>(_);
 
-decl_module! {
-	pub struct Module<T: Config> for enum Call where origin: T::Origin {
-		fn on_initialize(_block_number: T::BlockNumber) -> Weight {
-			TargetMinGasPrice::kill();
+	#[pallet::config]
+	pub trait Config: frame_system::Config {
+		/// Bound divisor for min gas price.
+		type MinGasPriceBoundDivisor: Get<U256>;
+	}
+
+	#[pallet::hooks]
+	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+		fn on_initialize(_n: BlockNumberFor<T>) -> Weight {
+			TargetMinGasPrice::<T>::kill();
 
 			T::DbWeight::get().writes(1)
 		}
 
-		fn on_finalize(_n: T::BlockNumber) {
-			if let Some(target) = TargetMinGasPrice::take() {
-				let bound = MinGasPrice::get() / T::MinGasPriceBoundDivisor::get() + U256::one();
+		fn on_finalize(_n: BlockNumberFor<T>) {
+			if let Some(target) = TargetMinGasPrice::<T>::take() {
+				let bound = MinGasPrice::<T>::get() / T::MinGasPriceBoundDivisor::get() + U256::one();
 
-				let upper_limit = MinGasPrice::get().saturating_add(bound);
-				let lower_limit = MinGasPrice::get().saturating_sub(bound);
+				let upper_limit = MinGasPrice::<T>::get().saturating_add(bound);
+				let lower_limit = MinGasPrice::<T>::get().saturating_sub(bound);
 
-				MinGasPrice::set(min(upper_limit, max(lower_limit, target)));
+				MinGasPrice::<T>::set(min(upper_limit, max(lower_limit, target)));
 			}
 		}
+	}
 
-		#[weight = (T::DbWeight::get().writes(1), DispatchClass::Mandatory)]
-		pub fn note_min_gas_price_target(
-			origin,
-			target: U256,
-		) {
+	#[pallet::call]
+	impl<T: Config> Pallet<T> {
+		#[pallet::weight((T::DbWeight::get().writes(1), DispatchClass::Mandatory))]
+		pub fn note_min_gas_price_target(origin: OriginFor<T>, target: U256) -> DispatchResult {
 			ensure_none(origin)?;
-			assert!(TargetMinGasPrice::get().is_none(), "TargetMinGasPrice must be updated only once in the block");
+			assert!(
+				TargetMinGasPrice::<T>::get().is_none(),
+				"TargetMinGasPrice must be updated only once in the block",
+			);
 
-			TargetMinGasPrice::set(Some(target));
+			TargetMinGasPrice::<T>::set(Some(target));
+			Ok(())
+		}
+	}
+
+	#[pallet::genesis_config]
+	pub struct GenesisConfig {
+		pub min_gas_price: U256,
+	}
+
+	#[cfg(feature = "std")]
+	impl Default for GenesisConfig {
+		fn default() -> Self {
+			Self {
+				min_gas_price: Default::default(),
+			}
+		}
+	}
+
+	#[pallet::genesis_build]
+	impl<T: Config> GenesisBuild<T> for GenesisConfig {
+		fn build(&self) {
+			MinGasPrice::<T>::put(self.min_gas_price);
+			MinGasPrice::<T>::set(U256::from(1));
+		}
+	}
+
+	#[pallet::storage]
+	#[pallet::getter(fn min_gas_price)]
+	pub(super) type MinGasPrice<T: Config> = StorageValue<_, U256, ValueQuery>;
+
+	#[pallet::storage]
+	pub(super) type TargetMinGasPrice<T: Config> = StorageValue<_, U256>;
+
+	#[derive(Encode, Decode, RuntimeDebug)]
+	pub enum InherentError {}
+
+	impl IsFatalError for InherentError {
+		fn is_fatal_error(&self) -> bool {
+			match *self {}
+		}
+	}
+
+	#[pallet::inherent]
+	impl<T: Config> ProvideInherent for Pallet<T> {
+		type Call = Call<T>;
+		type Error = InherentError;
+		const INHERENT_IDENTIFIER: InherentIdentifier = INHERENT_IDENTIFIER;
+	
+		fn create_inherent(data: &InherentData) -> Option<Self::Call> {
+			let target = data.get_data::<InherentType>(&INHERENT_IDENTIFIER).ok()??;
+	
+			Some(Call::note_min_gas_price_target(target))
+		}
+	
+		fn check_inherent(_call: &Self::Call, _data: &InherentData) -> result::Result<(), Self::Error> {
+			Ok(())
+		}
+	
+		fn is_inherent(call: &Self::Call) -> bool {
+			matches!(call, Call::note_min_gas_price_target(_))
 		}
 	}
 }
 
-impl<T: Config> pallet_evm::FeeCalculator for Module<T> {
+impl<T: Config> pallet_evm::FeeCalculator for Pallet<T> {
 	fn min_gas_price() -> U256 {
-		MinGasPrice::get()
-	}
-}
-
-impl<T: Config> ProvideInherent for Module<T> {
-	type Call = Call<T>;
-	type Error = InherentError;
-	const INHERENT_IDENTIFIER: InherentIdentifier = INHERENT_IDENTIFIER;
-
-	fn create_inherent(data: &InherentData) -> Option<Self::Call> {
-		let target = data.get_data::<InherentType>(&INHERENT_IDENTIFIER).ok()??;
-
-		Some(Call::note_min_gas_price_target(target))
-	}
-
-	fn check_inherent(_call: &Self::Call, _data: &InherentData) -> result::Result<(), Self::Error> {
-		Ok(())
-	}
-
-	fn is_inherent(call: &Self::Call) -> bool {
-		matches!(call, Call::note_min_gas_price_target(_))
-	}
-}
-
-#[derive(Encode, Decode, RuntimeDebug)]
-pub enum InherentError {}
-
-impl IsFatalError for InherentError {
-	fn is_fatal_error(&self) -> bool {
-		match *self {}
+		MinGasPrice::<T>::get()
 	}
 }
 
