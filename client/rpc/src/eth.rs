@@ -1090,7 +1090,7 @@ where
 		#[cfg(feature = "rpc_binary_search_estimate")]
 		{
 			// Execute the binary search and hone in on an executable gas limit
-			const MAX_TRIALS: usize = 6; // With 6 trials we have a precision of 1/2^5 = 3,125%.
+			const MAX_TRIALS: usize = 6; // With 6 trials we have a precision of 1/2^6 = 1.5625%.
 			const MIN_GAS_PER_TX: U256 = U256([21_000, 0, 0, 0]);
 			let cap = highest;
 			let mut lowest = MIN_GAS_PER_TX;
