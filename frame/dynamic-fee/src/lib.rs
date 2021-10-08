@@ -101,7 +101,6 @@ pub mod pallet {
 	impl<T: Config> GenesisBuild<T> for GenesisConfig {
 		fn build(&self) {
 			MinGasPrice::<T>::put(self.min_gas_price);
-			MinGasPrice::<T>::set(U256::from(1));
 		}
 	}
 
