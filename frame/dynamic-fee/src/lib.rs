@@ -34,9 +34,9 @@ mod tests;
 
 #[frame_support::pallet]
 pub mod pallet {
+	use super::*;
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
-	use super::*;
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
@@ -58,7 +58,8 @@ pub mod pallet {
 
 		fn on_finalize(_n: BlockNumberFor<T>) {
 			if let Some(target) = TargetMinGasPrice::<T>::take() {
-				let bound = MinGasPrice::<T>::get() / T::MinGasPriceBoundDivisor::get() + U256::one();
+				let bound =
+					MinGasPrice::<T>::get() / T::MinGasPriceBoundDivisor::get() + U256::one();
 
 				let upper_limit = MinGasPrice::<T>::get().saturating_add(bound);
 				let lower_limit = MinGasPrice::<T>::get().saturating_sub(bound);
@@ -125,17 +126,20 @@ pub mod pallet {
 		type Call = Call<T>;
 		type Error = InherentError;
 		const INHERENT_IDENTIFIER: InherentIdentifier = INHERENT_IDENTIFIER;
-	
+
 		fn create_inherent(data: &InherentData) -> Option<Self::Call> {
 			let target = data.get_data::<InherentType>(&INHERENT_IDENTIFIER).ok()??;
-	
+
 			Some(Call::note_min_gas_price_target(target))
 		}
-	
-		fn check_inherent(_call: &Self::Call, _data: &InherentData) -> result::Result<(), Self::Error> {
+
+		fn check_inherent(
+			_call: &Self::Call,
+			_data: &InherentData,
+		) -> result::Result<(), Self::Error> {
 			Ok(())
 		}
-	
+
 		fn is_inherent(call: &Self::Call) -> bool {
 			matches!(call, Call::note_min_gas_price_target(_))
 		}
