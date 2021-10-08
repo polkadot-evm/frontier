@@ -168,12 +168,7 @@ fn rich_block_build(
 						block
 							.transactions
 							.iter()
-							.map(|transaction| {
-								H256::from_slice(
-									Keccak256::digest(&rlp::encode(&transaction.clone()))
-										.as_slice(),
-								)
-							})
+							.map(|transaction| transaction.hash())
 							.collect(),
 					)
 				}
@@ -833,8 +828,7 @@ where
 			Some(transaction) => transaction,
 			None => return Box::pin(future::err(internal_err("no signer available"))),
 		};
-		let transaction_hash =
-			H256::from_slice(Keccak256::digest(&rlp::encode(&transaction)).as_slice());
+		let transaction_hash = transaction.hash();
 		let hash = self.client.info().best_hash;
 		Box::pin(
 			self.pool
@@ -853,21 +847,30 @@ where
 
 	fn send_raw_transaction(&self, bytes: Bytes) -> BoxFuture<Result<H256>> {
 		let mut slice = &bytes.0[..];
-		let transaction = if slice.len() > 0 && slice.get(0).unwrap() > &0x7f {
+		if slice.len() == 0 {
+			return Box::pin(future::err(internal_err("transaction data is empty")));
+		}
+		let first = slice.get(0).unwrap();
+		let transaction = if first > &0x7f {
 			// Legacy transaction. Decode and wrap in envelope.
-			match rlp::decode::<ethereum::TransactionV0>(&mut slice) {
-				Ok(transaction) => EthereumTransaction::Legacy(transaction),
+			match rlp::decode::<ethereum::TransactionV0>(slice) {
+				Ok(transaction) => ethereum::TransactionV2::Legacy(transaction),
 				Err(_) => return Box::pin(future::err(internal_err("decode transaction failed"))),
 			}
 		} else {
 			// Typed Transaction.
-			match EthereumTransaction::decode(&mut slice) {
+			// `ethereum` crate decode implementation for `TransactionV2` expects a valid rlp input,
+			// and EIP-1559 breaks that assumption by prepending a version byte.
+			// We re-encode the payload input to get a valid rlp, and the decode implementation will strip
+			// them to check the transaction version byte.
+			let extend = rlp::encode(&slice);
+			match rlp::decode::<ethereum::TransactionV2>(&extend[..]) {
 				Ok(transaction) => transaction,
 				Err(_) => return Box::pin(future::err(internal_err("decode transaction failed"))),
 			}
 		};
-		let transaction_hash =
-			H256::from_slice(Keccak256::digest(&rlp::encode(&transaction)).as_slice());
+
+		let transaction_hash = transaction.hash();
 		let hash = self.client.info().best_hash;
 		Box::pin(
 			self.pool
@@ -1152,8 +1155,7 @@ where
 					})?;
 
 				for txn in ethereum_transactions {
-					let inner_hash =
-						H256::from_slice(Keccak256::digest(&rlp::encode(&txn)).as_slice());
+					let inner_hash = txn.hash();
 					if hash == inner_hash {
 						return Ok(Some(transaction_build(txn, None, None)));
 					}

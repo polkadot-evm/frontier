@@ -79,7 +79,7 @@ pub struct Transaction {
 impl From<TransactionV2> for Transaction {
 	fn from(transaction: TransactionV2) -> Self {
 		let serialized = rlp::encode(&transaction);
-		let hash = H256::from_slice(Keccak256::digest(&serialized).as_slice());
+		let hash = transaction.hash();
 		let raw = Bytes(serialized.to_vec());
 		match transaction {
 			TransactionV2::Legacy(t) => Transaction {
