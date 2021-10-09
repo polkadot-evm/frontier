@@ -342,8 +342,6 @@ pub mod pallet {
 		PaymentOverflow,
 		/// Withdraw fee failed
 		WithdrawFailed,
-		/// Gas price is too low.
-		GasPriceTooLow,
 		/// Nonce is invalid
 		InvalidNonce,
 	}
