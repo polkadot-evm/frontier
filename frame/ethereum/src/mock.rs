@@ -112,7 +112,11 @@ impl pallet_timestamp::Config for Test {
 
 pub struct FixedGasPrice;
 impl FeeCalculator for FixedGasPrice {
-	fn min_gas_price() -> U256 {
+	fn base_gas_price() -> U256 {
+		1.into()
+	}
+
+	fn gas_price() -> U256 {
 		1.into()
 	}
 }

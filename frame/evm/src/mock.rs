@@ -16,9 +16,9 @@
 // limitations under the License.
 
 //! Test mock for unit tests and benchmarking
-use crate::{EnsureAddressNever, EnsureAddressRoot, FeeCalculator, IdentityAddressMapping};
+use crate::{EnsureAddressNever, EnsureAddressRoot, IdentityAddressMapping};
 use frame_support::{parameter_types, traits::FindAuthor, ConsensusEngineId};
-use sp_core::{H160, H256, U256};
+use sp_core::{H160, H256};
 use sp_runtime::{
 	generic,
 	traits::{BlakeTwo256, IdentityLookup},
@@ -97,14 +97,6 @@ impl pallet_timestamp::Config for Test {
 	type WeightInfo = ();
 }
 
-/// Fixed gas price of `0`.
-pub struct FixedGasPrice;
-impl FeeCalculator for FixedGasPrice {
-	fn min_gas_price() -> U256 {
-		0.into()
-	}
-}
-
 pub struct FindAuthorTruncated;
 impl FindAuthor<H160> for FindAuthorTruncated {
 	fn find_author<'a, I>(_digests: I) -> Option<H160>
@@ -116,7 +108,7 @@ impl FindAuthor<H160> for FindAuthorTruncated {
 }
 
 impl crate::Config for Test {
-	type FeeCalculator = FixedGasPrice;
+	type FeeCalculator = ();
 	type GasWeightMapping = ();
 
 	type CallOrigin = EnsureAddressRoot<Self::AccountId>;
