@@ -56,7 +56,7 @@ sp_api::decl_runtime_apis! {
 		fn chain_id() -> u64;
 		/// Returns pallet_evm::Accounts by address.
 		fn account_basic(address: H160) -> fp_evm::Account;
-		/// Returns FixedGasPrice::min_gas_price
+		/// Returns gas price
 		fn gas_price() -> U256;
 		/// For a given account address, returns pallet_evm::AccountCodes.
 		fn account_code_at(address: H160) -> Vec<u8>;

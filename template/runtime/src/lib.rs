@@ -45,7 +45,9 @@ pub use frame_support::{
 };
 pub use pallet_balances::Call as BalancesCall;
 use pallet_ethereum::{Call::transact, Transaction as EthereumTransaction};
-use pallet_evm::{Account as EVMAccount, EnsureAddressTruncated, HashedAddressMapping, Runner};
+use pallet_evm::{
+	Account as EVMAccount, EnsureAddressTruncated, FeeCalculator, HashedAddressMapping, Runner,
+};
 pub use pallet_timestamp::Call as TimestampCall;
 use pallet_transaction_payment::CurrencyAdapter;
 #[cfg(any(feature = "std", test))]
@@ -329,10 +331,12 @@ impl pallet_ethereum::Config for Runtime {
 
 frame_support::parameter_types! {
 	pub BoundDivision: U256 = U256::from(1024);
+	pub BaseGasPrice: U256 = 1.into();
 }
 
 impl pallet_dynamic_fee::Config for Runtime {
 	type MinGasPriceBoundDivisor = BoundDivision;
+	type BaseGasPrice = BaseGasPrice;
 }
 
 impl pallet_randomness_collective_flip::Config for Runtime {}
@@ -537,7 +541,7 @@ impl_runtime_apis! {
 		}
 
 		fn gas_price() -> U256 {
-			<Runtime as pallet_evm::Config>::FeeCalculator::min_gas_price()
+			<Runtime as pallet_evm::Config>::FeeCalculator::gas_price()
 		}
 
 		fn account_code_at(address: H160) -> Vec<u8> {

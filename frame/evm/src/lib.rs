@@ -409,11 +409,17 @@ type NegativeImbalanceOf<C, T> =
 /// Trait that outputs the current transaction gas price.
 pub trait FeeCalculator {
 	/// Return the minimal required gas price.
-	fn min_gas_price() -> U256;
+	fn base_gas_price() -> U256;
+	/// Return the gas price provided by the dynamic_fee
+	fn gas_price() -> U256;
 }
 
 impl FeeCalculator for () {
-	fn min_gas_price() -> U256 {
+	fn base_gas_price() -> U256 {
+		U256::zero()
+	}
+
+	fn gas_price() -> U256 {
 		U256::zero()
 	}
 }

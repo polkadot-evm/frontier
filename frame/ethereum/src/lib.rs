@@ -170,8 +170,7 @@ where
 					return InvalidTransaction::Payment.into();
 				}
 
-				let min_gas_price = T::FeeCalculator::min_gas_price();
-
+				let min_gas_price = T::FeeCalculator::base_gas_price();
 				if transaction.gas_price < min_gas_price {
 					return InvalidTransaction::Payment.into();
 				}

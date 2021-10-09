@@ -19,7 +19,7 @@
 
 use crate::{
 	runner::Runner as RunnerT, AccountCodes, AccountStorages, AddressMapping, BlockHashMapping,
-	Config, Error, Event, FeeCalculator, OnChargeEVMTransaction, Pallet, PrecompileSet,
+	Config, Error, Event, OnChargeEVMTransaction, Pallet, PrecompileSet,
 };
 use evm::{
 	backend::Backend as BackendT,
@@ -57,17 +57,8 @@ impl<T: Config> Runner<T> {
 			&mut StackExecutor<'config, SubstrateStackState<'_, 'config, T>>,
 		) -> (ExitReason, R),
 	{
-		// Gas price check is skipped when performing a gas estimation.
-		let gas_price = match gas_price {
-			Some(gas_price) => {
-				ensure!(
-					gas_price >= T::FeeCalculator::min_gas_price(),
-					Error::<T>::GasPriceTooLow
-				);
-				gas_price
-			}
-			None => Default::default(),
-		};
+		// Gas price is default when performing a gas estimation.
+		let gas_price = gas_price.unwrap_or_default();
 
 		let vicinity = Vicinity {
 			gas_price,

@@ -82,9 +82,11 @@ impl pallet_timestamp::Config for Test {
 
 frame_support::parameter_types! {
 	pub BoundDivision: U256 = 1024.into();
+	pub BaseGasPrice: U256 = 1.into();
 }
 impl Config for Test {
 	type MinGasPriceBoundDivisor = BoundDivision;
+	type BaseGasPrice = BaseGasPrice;
 }
 
 frame_support::construct_runtime!(

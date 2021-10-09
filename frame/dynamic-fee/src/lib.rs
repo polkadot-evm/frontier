@@ -19,7 +19,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use async_trait::async_trait;
-use frame_support::inherent::IsFatalError;
+use frame_support::{inherent::IsFatalError, traits::Get};
 use sp_core::U256;
 use sp_inherents::{InherentData, InherentIdentifier};
 use sp_std::{
@@ -46,6 +46,8 @@ pub mod pallet {
 	pub trait Config: frame_system::Config {
 		/// Bound divisor for min gas price.
 		type MinGasPriceBoundDivisor: Get<U256>;
+		/// Fixed BaseGasPrice
+		type BaseGasPrice: Get<U256>;
 	}
 
 	#[pallet::hooks]
@@ -63,8 +65,9 @@ pub mod pallet {
 
 				let upper_limit = MinGasPrice::<T>::get().saturating_add(bound);
 				let lower_limit = MinGasPrice::<T>::get().saturating_sub(bound);
+				let gas_price = min(upper_limit, max(lower_limit, target));
 
-				MinGasPrice::<T>::set(min(upper_limit, max(lower_limit, target)));
+				MinGasPrice::<T>::set(max(gas_price, T::BaseGasPrice::get()));
 			}
 		}
 	}
@@ -147,7 +150,11 @@ pub mod pallet {
 }
 
 impl<T: Config> pallet_evm::FeeCalculator for Pallet<T> {
-	fn min_gas_price() -> U256 {
+	fn base_gas_price() -> U256 {
+		T::BaseGasPrice::get()
+	}
+
+	fn gas_price() -> U256 {
 		MinGasPrice::<T>::get()
 	}
 }
