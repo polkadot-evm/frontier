@@ -12,7 +12,6 @@ description = "MODEXP precompiles for EVM pallet."
 sp-core = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
 sp-io = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
 fp-evm = { version = "3.0.0-dev", default-features = false, path = "../../../../primitives/evm" }
-evm = { version = "0.30.0", default-features = false, features = ["with-codec"] }
 num = { version = "0.4", features = ["alloc"], default-features = false }
 
 [dev-dependencies]
@@ -25,6 +24,5 @@ std = [
 	"sp-core/std",
 	"sp-io/std",
 	"fp-evm/std",
-	"evm/std",
 	"num/std",
 ]

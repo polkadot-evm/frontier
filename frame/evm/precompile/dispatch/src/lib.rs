@@ -21,8 +21,7 @@ extern crate alloc;
 
 use codec::Decode;
 use core::marker::PhantomData;
-use evm::{executor::PrecompileOutput, Context, ExitError, ExitSucceed};
-use fp_evm::Precompile;
+use fp_evm::{Precompile, PrecompileOutput, Context, ExitError, ExitSucceed};
 use frame_support::{
 	dispatch::{Dispatchable, GetDispatchInfo, PostDispatchInfo},
 	weights::{DispatchClass, Pays},

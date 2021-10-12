@@ -21,8 +21,7 @@ extern crate alloc;
 
 use alloc::vec::Vec;
 use core::cmp::min;
-use evm::{ExitError, ExitSucceed};
-use fp_evm::LinearCostPrecompile;
+use fp_evm::{LinearCostPrecompile, ExitError, ExitSucceed};
 
 /// The identity precompile.
 pub struct Identity;
