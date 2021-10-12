@@ -32,7 +32,6 @@ pub trait Runner<T: Config> {
 		value: U256,
 		gas_limit: u64,
 		gas_price: Option<U256>,
-		nonce: Option<U256>,
 		config: &evm::Config,
 	) -> Result<CallInfo, Self::Error>;
 
@@ -42,7 +41,6 @@ pub trait Runner<T: Config> {
 		value: U256,
 		gas_limit: u64,
 		gas_price: Option<U256>,
-		nonce: Option<U256>,
 		config: &evm::Config,
 	) -> Result<CreateInfo, Self::Error>;
 
@@ -53,7 +51,6 @@ pub trait Runner<T: Config> {
 		value: U256,
 		gas_limit: u64,
 		gas_price: Option<U256>,
-		nonce: Option<U256>,
 		config: &evm::Config,
 	) -> Result<CreateInfo, Self::Error>;
 }

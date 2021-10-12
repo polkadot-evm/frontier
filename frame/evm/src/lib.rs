@@ -180,7 +180,7 @@ pub mod pallet {
 			value: U256,
 			gas_limit: u64,
 			gas_price: U256,
-			nonce: Option<U256>,
+			_nonce: Option<U256>,
 		) -> DispatchResultWithPostInfo {
 			T::CallOrigin::ensure_address_origin(&source, origin)?;
 
@@ -191,7 +191,6 @@ pub mod pallet {
 				value,
 				gas_limit,
 				Some(gas_price),
-				nonce,
 				T::config(),
 			)?;
 
@@ -222,19 +221,12 @@ pub mod pallet {
 			value: U256,
 			gas_limit: u64,
 			gas_price: U256,
-			nonce: Option<U256>,
+			_nonce: Option<U256>,
 		) -> DispatchResultWithPostInfo {
 			T::CallOrigin::ensure_address_origin(&source, origin)?;
 
-			let info = T::Runner::create(
-				source,
-				init,
-				value,
-				gas_limit,
-				Some(gas_price),
-				nonce,
-				T::config(),
-			)?;
+			let info =
+				T::Runner::create(source, init, value, gas_limit, Some(gas_price), T::config())?;
 
 			match info {
 				CreateInfo {
@@ -271,7 +263,7 @@ pub mod pallet {
 			value: U256,
 			gas_limit: u64,
 			gas_price: U256,
-			nonce: Option<U256>,
+			_nonce: Option<U256>,
 		) -> DispatchResultWithPostInfo {
 			T::CallOrigin::ensure_address_origin(&source, origin)?;
 
@@ -282,7 +274,6 @@ pub mod pallet {
 				value,
 				gas_limit,
 				Some(gas_price),
-				nonce,
 				T::config(),
 			)?;
 
@@ -614,6 +605,16 @@ impl<T: Config> Pallet<T> {
 		}
 
 		<AccountCodes<T>>::insert(address, code);
+	}
+
+	/// Get the account balance in EVM format.
+	pub fn account_balance(address: &H160) -> U256 {
+		let account_id = T::AddressMapping::into_account_id(*address);
+
+		// keepalive `true` takes into account ExistentialDeposit as part of what's considered liquid balance.
+		let balance = T::Currency::reducible_balance(&account_id, true);
+
+		U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(balance))
 	}
 
 	/// Get the account basic in EVM format.

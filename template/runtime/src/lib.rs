@@ -440,6 +440,18 @@ impl fp_self_contained::SelfContainedCall for Call {
 		}
 	}
 
+	fn pre_dispatch_self_contained(
+		&self,
+		info: &Self::SignedInfo,
+	) -> Option<Result<(), TransactionValidityError>> {
+		match self {
+			Call::Ethereum(pallet_ethereum::Call::transact(transaction)) => {
+				Some(Ethereum::validate_transaction_in_block(*info, transaction))
+			}
+			_ => None,
+		}
+	}
+
 	fn apply_self_contained(
 		self,
 		info: Self::SignedInfo,
@@ -561,7 +573,7 @@ impl_runtime_apis! {
 			value: U256,
 			gas_limit: U256,
 			gas_price: Option<U256>,
-			nonce: Option<U256>,
+			_nonce: Option<U256>,
 			estimate: bool,
 		) -> Result<pallet_evm::CallInfo, sp_runtime::DispatchError> {
 			let config = if estimate {
@@ -579,7 +591,6 @@ impl_runtime_apis! {
 				value,
 				gas_limit.low_u64(),
 				gas_price,
-				nonce,
 				config.as_ref().unwrap_or(<Runtime as pallet_evm::Config>::config()),
 			).map_err(|err| err.into())
 		}
@@ -590,7 +601,7 @@ impl_runtime_apis! {
 			value: U256,
 			gas_limit: U256,
 			gas_price: Option<U256>,
-			nonce: Option<U256>,
+			_nonce: Option<U256>,
 			estimate: bool,
 		) -> Result<pallet_evm::CreateInfo, sp_runtime::DispatchError> {
 			let config = if estimate {
@@ -607,7 +618,6 @@ impl_runtime_apis! {
 				value,
 				gas_limit.low_u64(),
 				gas_price,
-				nonce,
 				config.as_ref().unwrap_or(<Runtime as pallet_evm::Config>::config()),
 			).map_err(|err| err.into())
 		}

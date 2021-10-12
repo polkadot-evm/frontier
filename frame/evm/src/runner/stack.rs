@@ -19,7 +19,7 @@
 
 use crate::{
 	runner::Runner as RunnerT, AccountCodes, AccountStorages, AddressMapping, BlockHashMapping,
-	Config, Error, Event, FeeCalculator, OnChargeEVMTransaction, Pallet, PrecompileSet,
+	Config, Error, Event, OnChargeEVMTransaction, Pallet, PrecompileSet,
 };
 use evm::{
 	backend::Backend as BackendT,
@@ -27,10 +27,7 @@ use evm::{
 	ExitError, ExitReason, Transfer,
 };
 use fp_evm::{CallInfo, CreateInfo, ExecutionInfo, Log, Vicinity};
-use frame_support::{
-	ensure,
-	traits::{Currency, ExistenceRequirement, Get},
-};
+use frame_support::traits::{Currency, ExistenceRequirement, Get};
 use sha3::{Digest, Keccak256};
 use sp_core::{H160, H256, U256};
 use sp_runtime::traits::UniqueSaturatedInto;
@@ -48,7 +45,6 @@ impl<T: Config> Runner<T> {
 		value: U256,
 		gas_limit: u64,
 		gas_price: Option<U256>,
-		nonce: Option<U256>,
 		config: &'config evm::Config,
 		f: F,
 	) -> Result<ExecutionInfo<R>, Error<T>>
@@ -57,18 +53,7 @@ impl<T: Config> Runner<T> {
 			&mut StackExecutor<'config, SubstrateStackState<'_, 'config, T>>,
 		) -> (ExitReason, R),
 	{
-		// Gas price check is skipped when performing a gas estimation.
-		let gas_price = match gas_price {
-			Some(gas_price) => {
-				ensure!(
-					gas_price >= T::FeeCalculator::min_gas_price(),
-					Error::<T>::GasPriceTooLow
-				);
-				gas_price
-			}
-			None => Default::default(),
-		};
-
+		let gas_price = gas_price.unwrap_or_default();
 		let vicinity = Vicinity {
 			gas_price,
 			origin: source,
@@ -81,19 +66,7 @@ impl<T: Config> Runner<T> {
 
 		let total_fee = gas_price
 			.checked_mul(U256::from(gas_limit))
-			.ok_or(Error::<T>::FeeOverflow)?;
-		let total_payment = value
-			.checked_add(total_fee)
-			.ok_or(Error::<T>::PaymentOverflow)?;
-		let source_account = Pallet::<T>::account_basic(&source);
-		ensure!(
-			source_account.balance >= total_payment,
-			Error::<T>::BalanceLow
-		);
-
-		if let Some(nonce) = nonce {
-			ensure!(source_account.nonce == nonce, Error::<T>::InvalidNonce);
-		}
+			.expect("fee overflow"); // If overflow, we must ensure that the block is rejected
 
 		// Deduct fee from the `source` account.
 		let fee = T::OnChargeTransaction::withdraw_fee(&source, total_fee)?;
@@ -163,18 +136,11 @@ impl<T: Config> RunnerT<T> for Runner<T> {
 		value: U256,
 		gas_limit: u64,
 		gas_price: Option<U256>,
-		nonce: Option<U256>,
 		config: &evm::Config,
 	) -> Result<CallInfo, Self::Error> {
-		Self::execute(
-			source,
-			value,
-			gas_limit,
-			gas_price,
-			nonce,
-			config,
-			|executor| executor.transact_call(source, target, value, input, gas_limit),
-		)
+		Self::execute(source, value, gas_limit, gas_price, config, |executor| {
+			executor.transact_call(source, target, value, input, gas_limit)
+		})
 	}
 
 	fn create(
@@ -183,24 +149,15 @@ impl<T: Config> RunnerT<T> for Runner<T> {
 		value: U256,
 		gas_limit: u64,
 		gas_price: Option<U256>,
-		nonce: Option<U256>,
 		config: &evm::Config,
 	) -> Result<CreateInfo, Self::Error> {
-		Self::execute(
-			source,
-			value,
-			gas_limit,
-			gas_price,
-			nonce,
-			config,
-			|executor| {
-				let address = executor.create_address(evm::CreateScheme::Legacy { caller: source });
-				(
-					executor.transact_create(source, value, init, gas_limit),
-					address,
-				)
-			},
-		)
+		Self::execute(source, value, gas_limit, gas_price, config, |executor| {
+			let address = executor.create_address(evm::CreateScheme::Legacy { caller: source });
+			(
+				executor.transact_create(source, value, init, gas_limit),
+				address,
+			)
+		})
 	}
 
 	fn create2(
@@ -210,29 +167,20 @@ impl<T: Config> RunnerT<T> for Runner<T> {
 		value: U256,
 		gas_limit: u64,
 		gas_price: Option<U256>,
-		nonce: Option<U256>,
 		config: &evm::Config,
 	) -> Result<CreateInfo, Self::Error> {
 		let code_hash = H256::from_slice(Keccak256::digest(&init).as_slice());
-		Self::execute(
-			source,
-			value,
-			gas_limit,
-			gas_price,
-			nonce,
-			config,
-			|executor| {
-				let address = executor.create_address(evm::CreateScheme::Create2 {
-					caller: source,
-					code_hash,
-					salt,
-				});
-				(
-					executor.transact_create2(source, value, init, salt, gas_limit),
-					address,
-				)
-			},
-		)
+		Self::execute(source, value, gas_limit, gas_price, config, |executor| {
+			let address = executor.create_address(evm::CreateScheme::Create2 {
+				caller: source,
+				code_hash,
+				salt,
+			});
+			(
+				executor.transact_create2(source, value, init, salt, gas_limit),
+				address,
+			)
+		})
 	}
 }
 
