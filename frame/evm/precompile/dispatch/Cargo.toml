@@ -14,7 +14,6 @@ sp-io = { version = "4.0.0-dev", default-features = false, git = "https://github
 frame-support = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
 pallet-evm = { version = "6.0.0-dev", default-features = false, path = "../.." }
 fp-evm = { version = "3.0.0-dev", default-features = false, path = "../../../../primitives/evm" }
-evm = { version = "0.30.0", default-features = false, features = ["with-codec"] }
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false }
 
 [features]
@@ -25,6 +24,5 @@ std = [
 	"frame-support/std",
 	"pallet-evm/std",
 	"fp-evm/std",
-	"evm/std",
 	"codec/std",
 ]
