@@ -126,7 +126,6 @@
 <span id="126">126</span>
 <span id="127">127</span>
 <span id="128">128</span>
-<span id="129">129</span>
 </pre><pre class="rust">
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
@@ -152,8 +151,7 @@
 <span class="kw">mod</span> <span class="ident">eip_152</span>;
 
 <span class="kw">use</span> <span class="ident">core::mem::size_of</span>;
-<span class="kw">use</span> <span class="ident">evm</span>::{<span class="ident">executor::PrecompileOutput</span>, <span class="ident">Context</span>, <span class="ident">ExitError</span>, <span class="ident">ExitSucceed</span>};
-<span class="kw">use</span> <span class="ident">fp_evm::Precompile</span>;
+<span class="kw">use</span> <span class="ident">fp_evm</span>::{<span class="ident">Context</span>, <span class="ident">ExitError</span>, <span class="ident">ExitSucceed</span>, <span class="ident">Precompile</span>, <span class="ident">PrecompileOutput</span>};
 
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Blake2F</span>;
 

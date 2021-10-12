@@ -57,6 +57,9 @@
 <span id="57">57</span>
 <span id="58">58</span>
 <span id="59">59</span>
+<span id="60">60</span>
+<span id="61">61</span>
+<span id="62">62</span>
 </pre><pre class="rust">
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
@@ -80,14 +83,17 @@
 <span class="kw">mod</span> <span class="ident">precompile</span>;
 
 <span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Decode</span>, <span class="ident">Encode</span>};
-<span class="kw">use</span> <span class="ident">evm::ExitReason</span>;
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">evm::ExitReason</span>;
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>)]</span>
 <span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">Deserialize</span>, <span class="ident">Serialize</span>};
 <span class="kw">use</span> <span class="ident">sp_core</span>::{<span class="ident">H160</span>, <span class="ident">U256</span>};
 <span class="kw">use</span> <span class="ident">sp_std::vec::Vec</span>;
 
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">evm::backend</span>::{<span class="ident">Basic</span> <span class="kw">as</span> <span class="ident">Account</span>, <span class="ident">Log</span>};
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">precompile</span>::{<span class="ident">LinearCostPrecompile</span>, <span class="ident">Precompile</span>, <span class="ident">PrecompileSet</span>};
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">precompile</span>::{
+	<span class="ident">Context</span>, <span class="ident">ExitError</span>, <span class="ident">ExitSucceed</span>, <span class="ident">LinearCostPrecompile</span>, <span class="ident">Precompile</span>, <span class="ident">PrecompileOutput</span>,
+	<span class="ident">PrecompileSet</span>,
+};
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">Default</span>)]</span>
 <span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>, <span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>))]</span>

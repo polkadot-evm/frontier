@@ -398,7 +398,6 @@
 <span id="398">398</span>
 <span id="399">399</span>
 <span id="400">400</span>
-<span id="401">401</span>
 </pre><pre class="rust">
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
@@ -422,8 +421,7 @@
 <span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">alloc</span>;
 
 <span class="kw">use</span> <span class="ident">alloc::vec::Vec</span>;
-<span class="kw">use</span> <span class="ident">evm</span>::{<span class="ident">executor::PrecompileOutput</span>, <span class="ident">Context</span>, <span class="ident">ExitError</span>, <span class="ident">ExitSucceed</span>};
-<span class="kw">use</span> <span class="ident">fp_evm::Precompile</span>;
+<span class="kw">use</span> <span class="ident">fp_evm</span>::{<span class="ident">Context</span>, <span class="ident">ExitError</span>, <span class="ident">ExitSucceed</span>, <span class="ident">Precompile</span>, <span class="ident">PrecompileOutput</span>};
 <span class="kw">use</span> <span class="ident">num</span>::{<span class="ident">BigUint</span>, <span class="ident">FromPrimitive</span>, <span class="ident">One</span>, <span class="ident">ToPrimitive</span>, <span class="ident">Zero</span>};
 
 <span class="kw">use</span> <span class="ident">core</span>::{<span class="ident">cmp::max</span>, <span class="ident">ops::BitAnd</span>};

@@ -253,7 +253,6 @@
 <span id="253">253</span>
 <span id="254">254</span>
 <span id="255">255</span>
-<span id="256">256</span>
 </pre><pre class="rust">
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
@@ -281,8 +280,7 @@
 	<span class="ident">scalar::Scalar</span>,
 	<span class="ident">traits::Identity</span>,
 };
-<span class="kw">use</span> <span class="ident">evm</span>::{<span class="ident">ExitError</span>, <span class="ident">ExitSucceed</span>};
-<span class="kw">use</span> <span class="ident">fp_evm::LinearCostPrecompile</span>;
+<span class="kw">use</span> <span class="ident">fp_evm</span>::{<span class="ident">ExitError</span>, <span class="ident">ExitSucceed</span>, <span class="ident">LinearCostPrecompile</span>};
 
 <span class="comment">// Adds at most 10 curve25519 points and returns the CompressedRistretto bytes representation</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Curve25519Add</span>;
