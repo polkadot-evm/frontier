@@ -4265,7 +4265,6 @@ dependencies = [
 name = "pallet-evm-precompile-blake2"
 version = "2.0.0-dev"
 dependencies = [
- "evm",
  "fp-evm",
  "pallet-evm-test-vector-support",
  "sp-core",
