@@ -24,8 +24,7 @@ use curve25519_dalek::{
 	scalar::Scalar,
 	traits::Identity,
 };
-use evm::{ExitError, ExitSucceed};
-use fp_evm::LinearCostPrecompile;
+use fp_evm::{ExitError, ExitSucceed, LinearCostPrecompile};
 
 // Adds at most 10 curve25519 points and returns the CompressedRistretto bytes representation
 pub struct Curve25519Add;
