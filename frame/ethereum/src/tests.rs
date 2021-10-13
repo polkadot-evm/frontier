@@ -68,6 +68,7 @@ fn transaction_should_increment_nonce() {
 			t.value,
 			t.gas_limit,
 			Some(t.gas_price),
+			Some(t.nonce),
 			t.action,
 			None,
 		));
@@ -126,6 +127,7 @@ fn transaction_with_to_low_nonce_should_not_work() {
 			t.value,
 			t.gas_limit,
 			Some(t.gas_price),
+			Some(t.nonce),
 			t.action,
 			None,
 		));
@@ -210,6 +212,7 @@ fn contract_constructor_should_get_executed() {
 			t.value,
 			t.gas_limit,
 			Some(t.gas_price),
+			Some(t.nonce),
 			t.action,
 			None,
 		));
@@ -260,6 +263,7 @@ fn contract_should_be_created_at_given_address() {
 			t.value,
 			t.gas_limit,
 			Some(t.gas_price),
+			Some(t.nonce),
 			t.action,
 			None,
 		));
@@ -282,6 +286,7 @@ fn transaction_should_generate_correct_gas_used() {
 			t.value,
 			t.gas_limit,
 			Some(t.gas_price),
+			Some(t.nonce),
 			t.action,
 			None,
 		)
@@ -328,6 +333,7 @@ fn call_should_handle_errors() {
 			t.value,
 			t.gas_limit,
 			Some(t.gas_price),
+			Some(t.nonce),
 			t.action,
 			None,
 		));
@@ -343,6 +349,7 @@ fn call_should_handle_errors() {
 			foo,
 			U256::zero(),
 			U256::from(1048576),
+			Some(U256::from(1)),
 			Some(U256::from(1)),
 			TransactionAction::Call(H160::from_slice(&contract_address)),
 			None,
@@ -366,6 +373,7 @@ fn call_should_handle_errors() {
 			U256::zero(),
 			U256::from(1048576),
 			Some(U256::from(1)),
+			Some(U256::from(2)),
 			TransactionAction::Call(H160::from_slice(&contract_address)),
 			None,
 		)

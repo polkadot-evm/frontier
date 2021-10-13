@@ -457,6 +457,7 @@ impl<T: Config> Pallet<T> {
 			transaction.value,
 			transaction.gas_limit,
 			Some(transaction.gas_price),
+			Some(transaction.nonce),
 			transaction.action,
 			None,
 		)?;
@@ -556,6 +557,7 @@ impl<T: Config> Pallet<T> {
 		value: U256,
 		gas_limit: U256,
 		gas_price: Option<U256>,
+		nonce: Option<U256>,
 		action: TransactionAction,
 		config: Option<evm::Config>,
 	) -> Result<(Option<H160>, Option<H160>, CallOrCreateInfo), DispatchError> {
@@ -568,6 +570,7 @@ impl<T: Config> Pallet<T> {
 					value,
 					gas_limit.low_u64(),
 					gas_price,
+					nonce,
 					config.as_ref().unwrap_or(T::config()),
 				)
 				.map_err(Into::into)?;
@@ -581,6 +584,7 @@ impl<T: Config> Pallet<T> {
 					value,
 					gas_limit.low_u64(),
 					gas_price,
+					nonce,
 					config.as_ref().unwrap_or(T::config()),
 				)
 				.map_err(Into::into)?;
