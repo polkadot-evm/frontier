@@ -1083,12 +1083,12 @@ where
 		}
 		#[cfg(feature = "rpc_binary_search_estimate")]
 		{
-			// Start close to the used gas for faster binary search
-			let mut mid = used_gas * 3;
-
 			// Define the lower bound of the binary search
 			const MIN_GAS_PER_TX: U256 = U256([21_000, 0, 0, 0]);
 			let mut lowest = MIN_GAS_PER_TX;
+
+			// Start close to the used gas for faster binary search
+			let mut mid = std::cmp::min(used_gas * 3, (highest + lowest) / 2);
 
 			// Execute the binary search and hone in on an executable gas limit.
 			let mut previous_highest = highest;
