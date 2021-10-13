@@ -118,78 +118,26 @@ where
 		}
 	}
 
+	pub fn pre_dispatch_self_contained(
+		&self,
+		origin: &H160,
+	) -> Option<Result<(), TransactionValidityError>> {
+		if let Call::transact(transaction) = self {
+			Some(Pallet::<T>::validate_transaction_in_block(
+				*origin,
+				&transaction,
+			))
+		} else {
+			None
+		}
+	}
+
 	pub fn validate_self_contained(&self, origin: &H160) -> Option<TransactionValidity> {
 		if let Call::transact(transaction) = self {
-			let validate = || {
-				// We must ensure a transaction can pay the cost of its data bytes.
-				// If it can't it should not be included in a block.
-				let mut gasometer = evm::gasometer::Gasometer::new(
-					transaction.gas_limit.low_u64(),
-					<T as pallet_evm::Config>::config(),
-				);
-				let transaction_cost = match transaction.action {
-					TransactionAction::Call(_) => {
-						evm::gasometer::call_transaction_cost(&transaction.input)
-					}
-					TransactionAction::Create => {
-						evm::gasometer::create_transaction_cost(&transaction.input)
-					}
-				};
-				if gasometer.record_transaction(transaction_cost).is_err() {
-					return InvalidTransaction::Custom(
-						TransactionValidationError::InvalidGasLimit as u8,
-					)
-					.into();
-				}
-
-				if let Some(chain_id) = transaction.signature.chain_id() {
-					if chain_id != T::ChainId::get() {
-						return InvalidTransaction::Custom(
-							TransactionValidationError::InvalidChainId as u8,
-						)
-						.into();
-					}
-				}
-
-				if transaction.gas_limit >= T::BlockGasLimit::get() {
-					return InvalidTransaction::Custom(
-						TransactionValidationError::InvalidGasLimit as u8,
-					)
-					.into();
-				}
-
-				let account_data = pallet_evm::Pallet::<T>::account_basic(&origin);
-
-				if transaction.nonce < account_data.nonce {
-					return InvalidTransaction::Stale.into();
-				}
-
-				let fee = transaction.gas_price.saturating_mul(transaction.gas_limit);
-				let total_payment = transaction.value.saturating_add(fee);
-				if account_data.balance < total_payment {
-					return InvalidTransaction::Payment.into();
-				}
-
-				let min_gas_price = T::FeeCalculator::min_gas_price();
-
-				if transaction.gas_price < min_gas_price {
-					return InvalidTransaction::Payment.into();
-				}
-
-				let mut builder = ValidTransactionBuilder::default()
-					.and_provides((origin, transaction.nonce))
-					.priority(transaction.gas_price.unique_saturated_into());
-
-				if transaction.nonce > account_data.nonce {
-					if let Some(prev_nonce) = transaction.nonce.checked_sub(1.into()) {
-						builder = builder.and_requires((origin, prev_nonce))
-					}
-				}
-
-				builder.build()
-			};
-
-			Some(validate())
+			Some(Pallet::<T>::validate_transaction_in_pool(
+				*origin,
+				transaction,
+			))
 		} else {
 			None
 		}
@@ -259,8 +207,11 @@ pub mod pallet {
 						"pre-block transaction signature invalid; the block cannot be built",
 					);
 
-					Self::do_transact(source, transaction).expect(
+					Self::validate_transaction_in_block(source, &transaction).expect(
 						"pre-block transaction verification failed; the block cannot be built",
+					);
+					Self::apply_validated_transaction(source, transaction).expect(
+						"pre-block transaction execution failed; the block cannot be built",
 					);
 				}
 			}
@@ -287,7 +238,7 @@ pub mod pallet {
 				Error::<T>::PreLogExists,
 			);
 
-			Self::do_transact(source, transaction)
+			Self::apply_validated_transaction(source, transaction)
 		}
 	}
 
@@ -418,7 +369,98 @@ impl<T: Config> Pallet<T> {
 		}
 	}
 
-	fn do_transact(source: H160, transaction: Transaction) -> DispatchResultWithPostInfo {
+	// Common controls to be performed in the same way by the pool and the
+	// State Transition Function (STF).
+	// This is the case for all controls except those concerning the nonce.
+	fn validate_transaction_common(
+		origin: H160,
+		transaction: &Transaction,
+	) -> Result<U256, TransactionValidityError> {
+		// We must ensure a transaction can pay the cost of its data bytes.
+		// If it can't it should not be included in a block.
+		let mut gasometer = evm::gasometer::Gasometer::new(
+			transaction.gas_limit.low_u64(),
+			<T as pallet_evm::Config>::config(),
+		);
+		let transaction_cost = match transaction.action {
+			TransactionAction::Call(_) => evm::gasometer::call_transaction_cost(&transaction.input),
+			TransactionAction::Create => {
+				evm::gasometer::create_transaction_cost(&transaction.input)
+			}
+		};
+		if gasometer.record_transaction(transaction_cost).is_err() {
+			return Err(InvalidTransaction::Custom(
+				TransactionValidationError::InvalidGasLimit as u8,
+			)
+			.into());
+		}
+
+		if let Some(chain_id) = transaction.signature.chain_id() {
+			if chain_id != T::ChainId::get() {
+				return Err(InvalidTransaction::Custom(
+					TransactionValidationError::InvalidChainId as u8,
+				)
+				.into());
+			}
+		}
+
+		if transaction.gas_limit >= T::BlockGasLimit::get() {
+			return Err(InvalidTransaction::Custom(
+				TransactionValidationError::InvalidGasLimit as u8,
+			)
+			.into());
+		}
+
+		let account_data = pallet_evm::Pallet::<T>::account_basic(&origin);
+
+		let fee = transaction.gas_price.saturating_mul(transaction.gas_limit);
+		let total_payment = transaction.value.saturating_add(fee);
+		if account_data.balance < total_payment {
+			return Err(InvalidTransaction::Payment.into());
+		}
+
+		let min_gas_price = T::FeeCalculator::min_gas_price();
+
+		if transaction.gas_price < min_gas_price {
+			return Err(InvalidTransaction::Payment.into());
+		}
+
+		Ok(account_data.nonce)
+	}
+
+	// Controls that must be performed by the pool.
+	// The controls common with the State Transition Function (STF) are in
+	// the function `validate_transaction_common`.
+	fn validate_transaction_in_pool(
+		origin: H160,
+		transaction: &Transaction,
+	) -> TransactionValidity {
+		let account_nonce = Self::validate_transaction_common(origin, transaction)?;
+
+		if transaction.nonce < account_nonce {
+			return Err(InvalidTransaction::Stale.into());
+		}
+
+		// The tag provides and requires must be filled correctly according to the nonce.
+		let mut builder = ValidTransactionBuilder::default()
+			.and_provides((origin, transaction.nonce))
+			.priority(transaction.gas_price.unique_saturated_into());
+
+		// In the context of the pool, a transaction with
+		// too high a nonce is still considered valid
+		if transaction.nonce > account_nonce {
+			if let Some(prev_nonce) = transaction.nonce.checked_sub(1.into()) {
+				builder = builder.and_requires((origin, prev_nonce))
+			}
+		}
+
+		builder.build()
+	}
+
+	fn apply_validated_transaction(
+		source: H160,
+		transaction: Transaction,
+	) -> DispatchResultWithPostInfo {
 		let transaction_hash =
 			H256::from_slice(Keccak256::digest(&rlp::encode(&transaction)).as_slice());
 		let transaction_index = Pending::<T>::get().len() as u32;
@@ -563,6 +605,29 @@ impl<T: Config> Pallet<T> {
 
 				Ok((None, Some(res.value), CallOrCreateInfo::Create(res)))
 			}
+		}
+	}
+
+	/// Validate an Ethereum transaction already in block
+	///
+	/// This function must be called during the pre-dispatch phase
+	/// (just before applying the extrinsic).
+	pub fn validate_transaction_in_block(
+		origin: H160,
+		transaction: &ethereum::TransactionV0,
+	) -> Result<(), TransactionValidityError> {
+		let account_nonce = Self::validate_transaction_common(origin, transaction)?;
+
+		// In the context of the block, a transaction with a nonce that is
+		// too high should be considered invalid and make the whole block invalid.
+		if transaction.nonce > account_nonce {
+			Err(TransactionValidityError::Invalid(
+				InvalidTransaction::Future,
+			))
+		} else if transaction.nonce < account_nonce {
+			Err(TransactionValidityError::Invalid(InvalidTransaction::Stale))
+		} else {
+			Ok(())
 		}
 	}
 }

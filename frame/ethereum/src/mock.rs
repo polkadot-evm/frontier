@@ -19,6 +19,7 @@
 
 use super::*;
 use crate::IntermediateStateRoot;
+use codec::{WrapperTypeDecode, WrapperTypeEncode};
 use ethereum::{TransactionAction, TransactionSignature};
 use frame_support::{parameter_types, traits::FindAuthor, ConsensusEngineId, PalletId};
 use pallet_evm::{AddressMapping, EnsureAddressTruncated, FeeCalculator};
@@ -27,11 +28,13 @@ use sha3::Digest;
 use sp_core::{H160, H256, U256};
 use sp_runtime::{
 	testing::Header,
-	traits::{BlakeTwo256, IdentityLookup},
+	traits::{BlakeTwo256, IdentityLookup, SignedExtension},
 	AccountId32,
 };
 
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
+pub type SignedExtra = (frame_system::CheckSpecVersion<Test>,);
+
+type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test, (), SignedExtra>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
 frame_support::construct_runtime! {
@@ -166,6 +169,54 @@ impl crate::Config for Test {
 	type StateRoot = IntermediateStateRoot;
 }
 
+impl fp_self_contained::SelfContainedCall for Call {
+	type SignedInfo = H160;
+
+	fn is_self_contained(&self) -> bool {
+		match self {
+			Call::Ethereum(call) => call.is_self_contained(),
+			_ => false,
+		}
+	}
+
+	fn check_self_contained(&self) -> Option<Result<Self::SignedInfo, TransactionValidityError>> {
+		match self {
+			Call::Ethereum(call) => call.check_self_contained(),
+			_ => None,
+		}
+	}
+
+	fn validate_self_contained(&self, info: &Self::SignedInfo) -> Option<TransactionValidity> {
+		match self {
+			Call::Ethereum(call) => call.validate_self_contained(info),
+			_ => None,
+		}
+	}
+
+	fn pre_dispatch_self_contained(
+		&self,
+		info: &Self::SignedInfo,
+	) -> Option<Result<(), TransactionValidityError>> {
+		match self {
+			Call::Ethereum(call) => call.pre_dispatch_self_contained(info),
+			_ => None,
+		}
+	}
+
+	fn apply_self_contained(
+		self,
+		info: Self::SignedInfo,
+	) -> Option<sp_runtime::DispatchResultWithInfo<sp_runtime::traits::PostDispatchInfoOf<Self>>> {
+		use sp_runtime::traits::Dispatchable as _;
+		match self {
+			call @ Call::Ethereum(crate::Call::transact(_)) => {
+				Some(call.dispatch(Origin::from(crate::RawOrigin::EthereumTransaction(info))))
+			}
+			_ => None,
+		}
+	}
+}
+
 pub struct AccountInfo {
 	pub address: H160,
 	pub account_id: AccountId32,
@@ -255,6 +306,10 @@ impl UnsignedTransaction {
 	}
 
 	pub fn sign(&self, key: &H256) -> Transaction {
+		self.sign_with_chain_id(key, ChainId::get())
+	}
+
+	pub fn sign_with_chain_id(&self, key: &H256, chain_id: u64) -> Transaction {
 		let hash = self.signing_hash();
 		let msg = libsecp256k1::Message::parse(hash.as_fixed_bytes());
 		let s = libsecp256k1::sign(
@@ -264,7 +319,7 @@ impl UnsignedTransaction {
 		let sig = s.0.serialize();
 
 		let sig = TransactionSignature::new(
-			s.1.serialize() as u64 % 2 + ChainId::get() * 2 + 35,
+			s.1.serialize() as u64 % 2 + chain_id * 2 + 35,
 			H256::from_slice(&sig[0..32]),
 			H256::from_slice(&sig[32..64]),
 		)

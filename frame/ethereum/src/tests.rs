@@ -18,13 +18,18 @@
 //! Consensus extension module tests for BABE consensus.
 
 use crate::{
-	mock::*, CallOrCreateInfo, Error, RawOrigin, Transaction, TransactionAction,
-	ValidTransactionBuilder, H160, H256, U256,
+	mock::*, CallOrCreateInfo, Error, RawOrigin, Transaction, TransactionAction, H160, H256, U256,
 };
 use ethereum::TransactionSignature;
-use frame_support::{assert_err, assert_noop, assert_ok, unsigned::ValidateUnsigned};
+use frame_support::{
+	assert_err, assert_noop, assert_ok,
+	unsigned::{TransactionValidityError, ValidateUnsigned},
+};
 use rustc_hex::{FromHex, ToHex};
-use sp_runtime::transaction_validity::{InvalidTransaction, TransactionSource};
+use sp_runtime::traits::Applyable;
+use sp_runtime::transaction_validity::{
+	InvalidTransaction, TransactionSource, ValidTransactionBuilder,
+};
 use std::str::FromStr;
 
 // This ERC-20 contract mints the maximum amount of tokens to the contract creator.
@@ -91,7 +96,7 @@ fn transaction_without_enough_gas_should_not_work() {
 }
 
 #[test]
-fn transaction_with_invalid_nonce_should_not_work() {
+fn transaction_with_to_low_nonce_should_not_work() {
 	let (pairs, mut ext) = new_test_ext(1);
 	let alice = &pairs[0];
 
@@ -136,6 +141,57 @@ fn transaction_with_invalid_nonce_should_not_work() {
 		assert_err!(
 			call2.validate_self_contained(&source2).unwrap(),
 			InvalidTransaction::Stale
+		);
+	});
+}
+
+#[test]
+fn transaction_with_to_hight_nonce_should_fail_in_block() {
+	let (pairs, mut ext) = new_test_ext(1);
+	let alice = &pairs[0];
+
+	ext.execute_with(|| {
+		let mut transaction = default_erc20_creation_unsigned_transaction();
+		transaction.nonce = U256::one();
+
+		let signed = transaction.sign(&alice.private_key);
+		let call = crate::Call::<Test>::transact(signed);
+		let source = call.check_self_contained().unwrap().unwrap();
+		let extrinsic = fp_self_contained::CheckedExtrinsic::<_, _, SignedExtra, _> {
+			signed: fp_self_contained::CheckedSignature::SelfContained(source),
+			function: Call::Ethereum(call),
+		};
+		use frame_support::weights::GetDispatchInfo as _;
+		let dispatch_info = extrinsic.get_dispatch_info();
+		assert_err!(
+			extrinsic.apply::<Test>(&dispatch_info, 0),
+			TransactionValidityError::Invalid(InvalidTransaction::Future)
+		);
+	});
+}
+
+#[test]
+fn transaction_with_invalid_chain_id_should_fail_in_block() {
+	let (pairs, mut ext) = new_test_ext(1);
+	let alice = &pairs[0];
+
+	ext.execute_with(|| {
+		let transaction =
+			default_erc20_creation_unsigned_transaction().sign_with_chain_id(&alice.private_key, 1);
+
+		let call = crate::Call::<Test>::transact(transaction);
+		let source = call.check_self_contained().unwrap().unwrap();
+		let extrinsic = fp_self_contained::CheckedExtrinsic::<_, _, SignedExtra, _> {
+			signed: fp_self_contained::CheckedSignature::SelfContained(source),
+			function: Call::Ethereum(call),
+		};
+		use frame_support::weights::GetDispatchInfo as _;
+		let dispatch_info = extrinsic.get_dispatch_info();
+		assert_err!(
+			extrinsic.apply::<Test>(&dispatch_info, 0),
+			TransactionValidityError::Invalid(InvalidTransaction::Custom(
+				crate::TransactionValidationError::InvalidChainId as u8,
+			))
 		);
 	});
 }
