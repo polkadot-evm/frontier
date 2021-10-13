@@ -231,9 +231,9 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			let source = ensure_ethereum_transaction(origin)?;
 			// Disable transact functionality if PreLog exist.
-			ensure!(
+			assert!(
 				fp_consensus::find_pre_log(&frame_system::Pallet::<T>::digest()).is_err(),
-				Error::<T>::PreLogExists,
+				"pre log already exists; block is invalid",
 			);
 
 			Ok(Self::apply_validated_transaction(source, transaction))
