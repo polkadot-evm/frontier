@@ -118,6 +118,20 @@ where
 		}
 	}
 
+	pub fn pre_dispatch_self_contained(
+		&self,
+		origin: &H160,
+	) -> Option<Result<(), TransactionValidityError>> {
+		if let Call::transact(transaction) = self {
+			Some(Pallet::<T>::validate_transaction_in_block(
+				*origin,
+				&transaction,
+			))
+		} else {
+			None
+		}
+	}
+
 	pub fn validate_self_contained(&self, origin: &H160) -> Option<TransactionValidity> {
 		if let Call::transact(transaction) = self {
 			Some(Pallet::<T>::validate_transaction_in_pool(

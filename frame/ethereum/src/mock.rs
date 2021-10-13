@@ -198,9 +198,7 @@ impl fp_self_contained::SelfContainedCall for Call {
 		info: &Self::SignedInfo,
 	) -> Option<Result<(), TransactionValidityError>> {
 		match self {
-			Call::Ethereum(crate::Call::transact(transaction)) => {
-				Some(Ethereum::validate_transaction_in_block(*info, transaction))
-			}
+			Call::Ethereum(call) => call.pre_dispatch_self_contained(info),
 			_ => None,
 		}
 	}
