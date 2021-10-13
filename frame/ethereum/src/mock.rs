@@ -164,6 +164,7 @@ impl pallet_evm::Config for Test {
 impl crate::Config for Test {
 	type Event = Event;
 	type StateRoot = IntermediateStateRoot;
+	type BaseFeeHandler = Ethereum;
 }
 
 pub struct AccountInfo {
@@ -270,7 +271,7 @@ impl UnsignedTransaction {
 		)
 		.unwrap();
 
-		Transaction {
+		Transaction::Legacy(ethereum::LegacyTransaction {
 			nonce: self.nonce,
 			gas_price: self.gas_price,
 			gas_limit: self.gas_limit,
@@ -278,6 +279,6 @@ impl UnsignedTransaction {
 			value: self.value,
 			input: self.input.clone(),
 			signature: sig,
-		}
+		})
 	}
 }
