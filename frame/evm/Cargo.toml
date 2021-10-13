@@ -33,6 +33,7 @@ evm-gasometer = { version = "0.30.0", default-features = false }
 sha3 = { version = "0.8", default-features = false }
 log = { version = "0.4", default-features = false }
 hex = { version = "0.4", default-features = false }
+scale-info = { version = "1.0.0", default-features = false, features = ["derive"] }
 
 [features]
 default = ["std"]
@@ -58,6 +59,7 @@ std = [
 	"pallet-timestamp/std",
 	"log/std",
 	"hex/std",
+	"scale-info/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",
