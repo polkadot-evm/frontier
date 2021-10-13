@@ -1,3 +1,3 @@
 (function() {var implementors = {};
-implementors["pallet_dynamic_fee"] = [{"text":"impl IsFatalError for <a class=\"enum\" href=\"pallet_dynamic_fee/enum.InherentError.html\" title=\"enum pallet_dynamic_fee::InherentError\">InherentError</a>","synthetic":false,"types":["pallet_dynamic_fee::InherentError"]}];
+implementors["pallet_dynamic_fee"] = [{"text":"impl IsFatalError for <a class=\"enum\" href=\"pallet_dynamic_fee/pallet/enum.InherentError.html\" title=\"enum pallet_dynamic_fee::pallet::InherentError\">InherentError</a>","synthetic":false,"types":["pallet_dynamic_fee::pallet::InherentError"]}];
 if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
