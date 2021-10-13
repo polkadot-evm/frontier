@@ -114,7 +114,7 @@ impl<T: Config> Runner<T> {
 		);
 
 		// Refund fees to the `source` account if deducted more before,
-		T::OnChargeTransaction::correct_and_deposit_fee(&source, actual_fee, fee)?;
+		T::OnChargeTransaction::correct_and_deposit_fee(&source, actual_fee, fee);
 
 		let state = executor.into_state();
 

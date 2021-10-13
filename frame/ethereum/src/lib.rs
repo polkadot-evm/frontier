@@ -210,9 +210,7 @@ pub mod pallet {
 					Self::validate_transaction_in_block(source, &transaction).expect(
 						"pre-block transaction verification failed; the block cannot be built",
 					);
-					Self::apply_validated_transaction(source, transaction).expect(
-						"pre-block transaction execution failed; the block cannot be built",
-					);
+					Self::apply_validated_transaction(source, transaction);
 				}
 			}
 
@@ -233,12 +231,12 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			let source = ensure_ethereum_transaction(origin)?;
 			// Disable transact functionality if PreLog exist.
-			ensure!(
+			assert!(
 				fp_consensus::find_pre_log(&frame_system::Pallet::<T>::digest()).is_err(),
-				Error::<T>::PreLogExists,
+				"pre log already exists; block is invalid",
 			);
 
-			Self::apply_validated_transaction(source, transaction)
+			Ok(Self::apply_validated_transaction(source, transaction))
 		}
 	}
 
@@ -457,10 +455,7 @@ impl<T: Config> Pallet<T> {
 		builder.build()
 	}
 
-	fn apply_validated_transaction(
-		source: H160,
-		transaction: Transaction,
-	) -> DispatchResultWithPostInfo {
+	fn apply_validated_transaction(source: H160, transaction: Transaction) -> PostDispatchInfo {
 		let transaction_hash =
 			H256::from_slice(Keccak256::digest(&rlp::encode(&transaction)).as_slice());
 		let transaction_index = Pending::<T>::get().len() as u32;
@@ -474,7 +469,8 @@ impl<T: Config> Pallet<T> {
 			Some(transaction.nonce),
 			transaction.action,
 			None,
-		)?;
+		)
+		.expect("transaction is already validated; error indicates that the block is invalid");
 
 		let (reason, status, used_gas, dest) = match info {
 			CallOrCreateInfo::Call(info) => (
@@ -535,13 +531,13 @@ impl<T: Config> Pallet<T> {
 			transaction_hash,
 			reason,
 		));
-		Ok(PostDispatchInfo {
+
+		PostDispatchInfo {
 			actual_weight: Some(T::GasWeightMapping::gas_to_weight(
 				used_gas.unique_saturated_into(),
 			)),
 			pays_fee: Pays::No,
-		})
-		.into()
+		}
 	}
 
 	/// Get the transaction status with given index.
