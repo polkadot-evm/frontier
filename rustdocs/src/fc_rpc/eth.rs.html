@@ -3156,12 +3156,12 @@
 		}
 		<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;rpc_binary_search_estimate&quot;</span>)]</span>
 		{
-			<span class="comment">// Start close to the used gas for faster binary search</span>
-			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">mid</span> <span class="op">=</span> <span class="ident">used_gas</span> <span class="op">*</span> <span class="number">3</span>;
-
 			<span class="comment">// Define the lower bound of the binary search</span>
 			<span class="kw">const</span> <span class="ident">MIN_GAS_PER_TX</span>: <span class="ident">U256</span> <span class="op">=</span> <span class="ident">U256</span>([<span class="number">21_000</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>]);
 			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">lowest</span> <span class="op">=</span> <span class="ident">MIN_GAS_PER_TX</span>;
+
+			<span class="comment">// Start close to the used gas for faster binary search</span>
+			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">mid</span> <span class="op">=</span> <span class="ident">std::cmp::min</span>(<span class="ident">used_gas</span> <span class="op">*</span> <span class="number">3</span>, (<span class="ident">highest</span> <span class="op">+</span> <span class="ident">lowest</span>) <span class="op">/</span> <span class="number">2</span>);
 
 			<span class="comment">// Execute the binary search and hone in on an executable gas limit.</span>
 			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">previous_highest</span> <span class="op">=</span> <span class="ident">highest</span>;
