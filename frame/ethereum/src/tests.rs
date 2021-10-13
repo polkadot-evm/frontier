@@ -26,9 +26,9 @@ use frame_support::{
 	unsigned::{TransactionValidityError, ValidateUnsigned},
 };
 use rustc_hex::{FromHex, ToHex};
-use sp_runtime::traits::Applyable;
-use sp_runtime::transaction_validity::{
-	InvalidTransaction, TransactionSource, ValidTransactionBuilder,
+use sp_runtime::{
+	traits::Applyable,
+	transaction_validity::{InvalidTransaction, TransactionSource, ValidTransactionBuilder},
 };
 use std::str::FromStr;
 
