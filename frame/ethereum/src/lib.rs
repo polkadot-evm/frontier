@@ -249,6 +249,8 @@ pub mod pallet {
 		fn on_initialize(_: T::BlockNumber) -> Weight {
 			Pending::<T>::kill();
 
+			// If the digest contain an existing ethereum block(encoded as PreLog), If contains,
+			// execute the imported block firstly and disable transact dispatch function.
 			if let Ok(log) = fp_consensus::find_pre_log(&frame_system::Pallet::<T>::digest()) {
 				let PreLog::Block(block) = log;
 
@@ -279,6 +281,11 @@ pub mod pallet {
 			transaction: Transaction,
 		) -> DispatchResultWithPostInfo {
 			let source = ensure_ethereum_transaction(origin)?;
+			// Disable transact functionality if PreLog exist.
+			ensure!(
+				fp_consensus::find_pre_log(&frame_system::Pallet::<T>::digest()).is_err(),
+				Error::<T>::PreLogExists,
+			);
 
 			Self::do_transact(source, transaction)
 		}
@@ -412,11 +419,6 @@ impl<T: Config> Pallet<T> {
 	}
 
 	fn do_transact(source: H160, transaction: Transaction) -> DispatchResultWithPostInfo {
-		ensure!(
-			fp_consensus::find_pre_log(&frame_system::Pallet::<T>::digest()).is_err(),
-			Error::<T>::PreLogExists,
-		);
-
 		let transaction_hash =
 			H256::from_slice(Keccak256::digest(&rlp::encode(&transaction)).as_slice());
 		let transaction_index = Pending::<T>::get().len() as u32;
