@@ -9,8 +9,8 @@ repository = "https://github.com/paritytech/frontier/"
 description = "MODEXP precompiles for EVM pallet."
 
 [dependencies]
-sp-core = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
-sp-io = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
+sp-core = { version = "4.0.0-dev", default-features = false, git = "https://github.com/purestake/substrate", branch = "moonbeam-polkadot-v0.9.11" }
+sp-io = { version = "4.0.0-dev", default-features = false, git = "https://github.com/purestake/substrate", branch = "moonbeam-polkadot-v0.9.11" }
 fp-evm = { version = "3.0.0-dev", default-features = false, path = "../../../../primitives/evm" }
 num = { version = "0.4", features = ["alloc"], default-features = false }
 

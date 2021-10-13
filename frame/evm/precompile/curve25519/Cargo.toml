@@ -9,9 +9,9 @@ repository = "https://github.com/paritytech/frontier/"
 description = "Curve25519 elliptic curve precompiles for EVM pallet."
 
 [dependencies]
-sp-core = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
-sp-io = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
-frame-support = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
+sp-core = { version = "4.0.0-dev", default-features = false, git = "https://github.com/purestake/substrate", branch = "moonbeam-polkadot-v0.9.11" }
+sp-io = { version = "4.0.0-dev", default-features = false, git = "https://github.com/purestake/substrate", branch = "moonbeam-polkadot-v0.9.11" }
+frame-support = { version = "4.0.0-dev", default-features = false, git = "https://github.com/purestake/substrate", branch = "moonbeam-polkadot-v0.9.11" }
 fp-evm = { version = "3.0.0-dev", default-features = false, path = "../../../../primitives/evm" }
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false }
 
