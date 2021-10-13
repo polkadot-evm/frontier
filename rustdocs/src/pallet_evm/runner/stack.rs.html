@@ -641,7 +641,7 @@
 		);
 
 		<span class="comment">// Refund fees to the `source` account if deducted more before,</span>
-		<span class="ident">T::OnChargeTransaction::correct_and_deposit_fee</span>(<span class="kw-2">&amp;</span><span class="ident">source</span>, <span class="ident">actual_fee</span>, <span class="ident">fee</span>)<span class="question-mark">?</span>;
+		<span class="ident">T::OnChargeTransaction::correct_and_deposit_fee</span>(<span class="kw-2">&amp;</span><span class="ident">source</span>, <span class="ident">actual_fee</span>, <span class="ident">fee</span>);
 
 		<span class="kw">let</span> <span class="ident">state</span> <span class="op">=</span> <span class="ident">executor</span>.<span class="ident">into_state</span>();
 

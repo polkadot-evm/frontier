@@ -746,7 +746,6 @@
 <span id="746">746</span>
 <span id="747">747</span>
 <span id="748">748</span>
-<span id="749">749</span>
 </pre><pre class="rust">
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
@@ -1405,7 +1404,7 @@
 		<span class="ident">who</span>: <span class="kw-2">&amp;</span><span class="ident">H160</span>,
 		<span class="ident">corrected_fee</span>: <span class="ident">U256</span>,
 		<span class="ident">already_withdrawn</span>: <span class="self">Self</span><span class="ident">::LiquidityInfo</span>,
-	) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>;
+	);
 }
 
 <span class="doccomment">/// Implements the transaction payment for a pallet implementing the `Currency`</span>
@@ -1447,7 +1446,7 @@
 		<span class="ident">who</span>: <span class="kw-2">&amp;</span><span class="ident">H160</span>,
 		<span class="ident">corrected_fee</span>: <span class="ident">U256</span>,
 		<span class="ident">already_withdrawn</span>: <span class="self">Self</span><span class="ident">::LiquidityInfo</span>,
-	) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+	) {
 		<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">paid</span>) <span class="op">=</span> <span class="ident">already_withdrawn</span> {
 			<span class="kw">let</span> <span class="ident">account_id</span> <span class="op">=</span> <span class="ident">T::AddressMapping::into_account_id</span>(<span class="kw-2">*</span><span class="ident">who</span>);
 
@@ -1464,10 +1463,9 @@
 			<span class="kw">let</span> <span class="ident">adjusted_paid</span> <span class="op">=</span> <span class="ident">paid</span>
 				.<span class="ident">offset</span>(<span class="ident">refund_imbalance</span>)
 				.<span class="ident">same</span>()
-				.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::BalanceLow</span>)<span class="question-mark">?</span>;
+				.<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">C::NegativeImbalance::zero</span>());
 			<span class="ident">OU::on_unbalanced</span>(<span class="ident">adjusted_paid</span>);
 		}
-		<span class="prelude-val">Ok</span>(())
 	}
 }
 
@@ -1493,8 +1491,8 @@
 		<span class="ident">who</span>: <span class="kw-2">&amp;</span><span class="ident">H160</span>,
 		<span class="ident">corrected_fee</span>: <span class="ident">U256</span>,
 		<span class="ident">already_withdrawn</span>: <span class="self">Self</span><span class="ident">::LiquidityInfo</span>,
-	) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-		<span class="ident">EVMCurrencyAdapter</span>::<span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">Config</span><span class="op">&gt;</span><span class="ident">::Currency</span>, ()<span class="op">&gt;</span><span class="ident">::correct_and_deposit_fee</span>(<span class="ident">who</span>, <span class="ident">corrected_fee</span>, <span class="ident">already_withdrawn</span>)
+	) {
+		<span class="op">&lt;</span><span class="ident">EVMCurrencyAdapter</span>::<span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">Config</span><span class="op">&gt;</span><span class="ident">::Currency</span>, ()<span class="op">&gt;</span> <span class="kw">as</span> <span class="ident">OnChargeEVMTransaction</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::correct_and_deposit_fee</span>(<span class="ident">who</span>, <span class="ident">corrected_fee</span>, <span class="ident">already_withdrawn</span>)
 	}
 }
 </pre></div>
