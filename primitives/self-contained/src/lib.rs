@@ -57,10 +57,7 @@ pub trait SelfContainedCall: Dispatchable {
 	fn pre_dispatch_self_contained(
 		&self,
 		info: &Self::SignedInfo,
-	) -> Option<Result<(), TransactionValidityError>> {
-		self.validate_self_contained(info)
-			.map(|res| res.map(|_| ()))
-	}
+	) -> Option<Result<(), TransactionValidityError>>;
 	/// Apply a self-contained function. Returns `None` if the
 	/// function is not a self-contained.
 	fn apply_self_contained(
