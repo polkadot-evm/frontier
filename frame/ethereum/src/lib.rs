@@ -181,22 +181,32 @@ where
 					return InvalidTransaction::Stale.into();
 				}
 
-				let min_gas_price = T::FeeCalculator::min_gas_price();
+				let base_fee = T::BaseFeeHandler::base_fee();
+				let mut priority = 0;
 
-				// TODO eip1559 handling
 				let gas_price = if let Some(gas_price) = transaction_data.gas_price {
+					// Legacy and EIP-2930 transactions.
+					priority = gas_price.unique_saturated_into();
 					gas_price
 				} else if let Some(max_fee_per_gas) = transaction_data.max_fee_per_gas {
+					// EIP-1559 transactions.
 					max_fee_per_gas
 				} else {
 					return InvalidTransaction::Payment.into();
 				};
 
-				if gas_price < min_gas_price {
+				if gas_price < base_fee {
 					return InvalidTransaction::Payment.into();
 				}
 
-				let fee = gas_price.saturating_mul(gas_limit);
+				let mut fee = gas_price.saturating_mul(gas_limit);
+				if let Some(max_priority_fee_per_gas) = transaction_data.max_priority_fee_per_gas {
+					// EIP-1559 transaction priority is determined by `max_priority_fee_per_gas`.
+					// If the transaction do not include this optional parameter, priority is now considered zero.
+					priority = max_priority_fee_per_gas.unique_saturated_into();
+					// Add the priority tip to the payable fee.
+					fee.saturating_add(max_priority_fee_per_gas.saturating_mul(gas_limit));
+				}
 				let total_payment = transaction_data.value.saturating_add(fee);
 				if account_data.balance < total_payment {
 					return InvalidTransaction::Payment.into();
@@ -204,7 +214,7 @@ where
 
 				let mut builder = ValidTransactionBuilder::default()
 					.and_provides((origin, nonce))
-					.priority(gas_price.unique_saturated_into());
+					.priority(priority);
 
 				if nonce > account_data.nonce {
 					if let Some(prev_nonce) = nonce.checked_sub(1.into()) {
@@ -220,6 +230,10 @@ where
 			None
 		}
 	}
+}
+
+pub trait BaseFeeHandler {
+	fn base_fee() -> U256;
 }
 
 pub use pallet::*;
@@ -241,6 +255,8 @@ pub mod pallet {
 		type Event: From<Event> + IsType<<Self as frame_system::Config>::Event>;
 		/// How Ethereum state root is calculated.
 		type StateRoot: Get<H256>;
+		/// Base fee handler.
+		type BaseFeeHandler: BaseFeeHandler;
 	}
 
 	#[pallet::pallet]
@@ -361,6 +377,12 @@ pub mod pallet {
 				&EthereumStorageSchema::V2,
 			);
 		}
+	}
+}
+
+impl<T: Config> BaseFeeHandler for Pallet<T> {
+	fn base_fee() -> U256 {
+		T::FeeCalculator::min_gas_price()
 	}
 }
 
@@ -621,14 +643,19 @@ impl<T: Config> Pallet<T> {
 					Some(t.nonce),
 					t.action,
 				),
-				Transaction::EIP1559(t) => (
-					t.input.clone(),
-					t.value,
-					t.gas_limit,
-					Some(t.max_fee_per_gas),
-					Some(t.nonce),
-					t.action,
-				),
+				Transaction::EIP1559(t) => {
+					// For EIP-1559 transactions the `gas_price` is the sum of both the on-chain calculated base fee
+					// plus the optional priority fee.
+					let gas_price = t.max_fee_per_gas.saturating_add(t.max_priority_fee_per_gas);
+					(
+						t.input.clone(),
+						t.value,
+						t.gas_limit,
+						Some(gas_price),
+						Some(t.nonce),
+						t.action,
+					)
+				}
 			}
 		};
 

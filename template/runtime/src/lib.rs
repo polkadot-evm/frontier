@@ -325,6 +325,7 @@ impl pallet_evm::Config for Runtime {
 impl pallet_ethereum::Config for Runtime {
 	type Event = Event;
 	type StateRoot = pallet_ethereum::IntermediateStateRoot;
+	type BaseFeeHandler = BaseFee;
 }
 
 frame_support::parameter_types! {
@@ -333,6 +334,27 @@ frame_support::parameter_types! {
 
 impl pallet_dynamic_fee::Config for Runtime {
 	type MinGasPriceBoundDivisor = BoundDivision;
+}
+
+frame_support::parameter_types! {
+	pub const Modifier: u32 = 1250; // 12.5%
+	pub const Threshold: (u8, u8) = (0, 100);
+}
+
+pub struct BaseFeeThreshold;
+impl pallet_base_fee::BaseFeeThreshold for BaseFeeThreshold {
+	fn lower() -> Permill {
+		Permill::zero()
+	}
+	fn upper() -> Permill {
+		Permill::one()
+	}
+}
+
+impl pallet_base_fee::Config for Runtime {
+	type Event = Event;
+	type Threshold = BaseFeeThreshold;
+	type Modifier = Modifier;
 }
 
 impl pallet_randomness_collective_flip::Config for Runtime {}
@@ -355,6 +377,7 @@ construct_runtime!(
 		Ethereum: pallet_ethereum::{Pallet, Call, Storage, Event, Config, Origin},
 		EVM: pallet_evm::{Pallet, Config, Call, Storage, Event<T>},
 		DynamicFee: pallet_dynamic_fee::{Pallet, Call, Storage, Config, Inherent},
+		BaseFee: pallet_base_fee::{Pallet, Call, Storage, Config<T>, Event},
 	}
 );
 

@@ -1944,6 +1944,7 @@ dependencies = [
  "jsonrpc-core",
  "jsonrpc-pubsub",
  "log",
+ "pallet-base-fee",
  "pallet-dynamic-fee",
  "pallet-ethereum",
  "pallet-evm",
@@ -1993,6 +1994,7 @@ dependencies = [
  "frame-system-rpc-runtime-api",
  "pallet-aura",
  "pallet-balances",
+ "pallet-base-fee",
  "pallet-dynamic-fee",
  "pallet-ethereum",
  "pallet-evm",
@@ -4209,6 +4211,19 @@ dependencies = [
  "parity-scale-codec",
  "sp-runtime",
  "sp-std",
+]
+
+[[package]]
+name = "pallet-base-fee"
+version = "1.0.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "pallet-ethereum",
+ "parity-scale-codec",
+ "serde",
+ "sp-core",
+ "sp-runtime",
 ]
 
 [[package]]
