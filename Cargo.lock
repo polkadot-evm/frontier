@@ -4219,7 +4219,7 @@ version = "1.0.0"
 dependencies = [
  "frame-support",
  "frame-system",
- "pallet-ethereum",
+ "pallet-evm",
  "parity-scale-codec",
  "serde",
  "sp-core",

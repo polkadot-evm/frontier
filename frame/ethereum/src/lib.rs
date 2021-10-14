@@ -181,7 +181,7 @@ where
 					return InvalidTransaction::Stale.into();
 				}
 
-				let base_fee = T::BaseFeeHandler::base_fee();
+				let base_fee = T::FeeCalculator::min_gas_price();
 				let mut priority = 0;
 
 				let gas_price = if let Some(gas_price) = transaction_data.gas_price {
@@ -232,10 +232,6 @@ where
 	}
 }
 
-pub trait BaseFeeHandler {
-	fn base_fee() -> U256;
-}
-
 pub use pallet::*;
 
 #[frame_support::pallet]
@@ -255,8 +251,6 @@ pub mod pallet {
 		type Event: From<Event> + IsType<<Self as frame_system::Config>::Event>;
 		/// How Ethereum state root is calculated.
 		type StateRoot: Get<H256>;
-		/// Base fee handler.
-		type BaseFeeHandler: BaseFeeHandler;
 	}
 
 	#[pallet::pallet]
@@ -377,12 +371,6 @@ pub mod pallet {
 				&EthereumStorageSchema::V2,
 			);
 		}
-	}
-}
-
-impl<T: Config> BaseFeeHandler for Pallet<T> {
-	fn base_fee() -> U256 {
-		T::FeeCalculator::min_gas_price()
 	}
 }
 

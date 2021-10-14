@@ -31,6 +31,7 @@ use sp_std::{marker::PhantomData, prelude::*};
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
+use pallet_evm::FeeCalculator;
 
 // A few exports that help ease life for downstream crates.
 use fp_rpc::TransactionStatus;
@@ -297,7 +298,7 @@ parameter_types! {
 }
 
 impl pallet_evm::Config for Runtime {
-	type FeeCalculator = pallet_dynamic_fee::Module<Self>;
+	type FeeCalculator = BaseFee;
 	type GasWeightMapping = ();
 	type BlockHashMapping = pallet_ethereum::EthereumBlockHashMapping<Self>;
 	type CallOrigin = EnsureAddressTruncated;
@@ -325,7 +326,6 @@ impl pallet_evm::Config for Runtime {
 impl pallet_ethereum::Config for Runtime {
 	type Event = Event;
 	type StateRoot = pallet_ethereum::IntermediateStateRoot;
-	type BaseFeeHandler = BaseFee;
 }
 
 frame_support::parameter_types! {

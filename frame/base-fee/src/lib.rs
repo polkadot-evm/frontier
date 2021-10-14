@@ -186,8 +186,8 @@ pub mod pallet {
 		}
 	}
 
-	impl<T: Config> pallet_ethereum::BaseFeeHandler for Pallet<T> {
-		fn base_fee() -> U256 {
+	impl<T: Config> pallet_evm::FeeCalculator for Pallet<T> {
+		fn min_gas_price() -> U256 {
 			<BaseFeePerGas<T>>::get()
 		}
 	}
