@@ -36,7 +36,7 @@ pub mod pallet {
 		/// Lower and upper bounds for increasing / decreasing `BaseFeePerGas`.
 		type Threshold: BaseFeeThreshold;
 		/// Coefficient used to increase or decrease `BaseFeePerGas`.
-		type Modifier: Get<u32>;
+		type Modifier: Get<Permill>;
 	}
 
 	#[pallet::pallet]
@@ -46,14 +46,28 @@ pub mod pallet {
 	#[pallet::genesis_config]
 	pub struct GenesisConfig<T: Config> {
 		pub base_fee_per_gas: U256,
+		pub is_active: bool,
 		_marker: PhantomData<T>,
+	}
+
+	#[cfg(feature = "std")]
+	impl<T: Config> GenesisConfig<T> {
+		pub fn new(base_fee_per_gas: U256, is_active: bool) -> Self {
+			Self {
+				base_fee_per_gas,
+				is_active,
+				_marker: PhantomData,
+			}
+		}
 	}
 
 	#[cfg(feature = "std")]
 	impl<T: Config> Default for GenesisConfig<T> {
 		fn default() -> Self {
 			Self {
-				base_fee_per_gas: U256::from(1),
+				// 1 GWEI
+				base_fee_per_gas: U256::from(1_000_000_000),
+				is_active: true,
 				_marker: PhantomData,
 			}
 		}
@@ -63,6 +77,7 @@ pub mod pallet {
 	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
 		fn build(&self) {
 			<BaseFeePerGas<T>>::put(self.base_fee_per_gas);
+			<IsActive<T>>::put(self.is_active);
 		}
 	}
 
@@ -70,44 +85,84 @@ pub mod pallet {
 	#[pallet::getter(fn base_fee_per_gas)]
 	pub type BaseFeePerGas<T> = StorageValue<_, U256, ValueQuery, GetDefault>;
 
+	#[pallet::storage]
+	#[pallet::getter(fn is_active)]
+	pub type IsActive<T> = StorageValue<_, bool, ValueQuery, GetDefault>;
+
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event {
 		NewBaseFeePerGas(U256),
+		BaseFeeOverflow,
+		IsActive(bool),
 	}
 
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn on_finalize(_n: <T as frame_system::Config>::BlockNumber) {
-			let lower = T::Threshold::lower();
-			let upper = T::Threshold::upper();
-			let weight = <frame_system::Pallet<T>>::block_weight();
-			let max_weight =
-				<<T as frame_system::Config>::BlockWeights as frame_support::traits::Get<_>>::get()
-					.max_block;
-			// Percentage of total weight consumed by all extrinsics in the block.
-			let weight_used = (weight.total().saturating_mul(100))
-				.checked_div(max_weight)
-				.unwrap_or(100) as u32;
-			// If one of the bounds is reached, update `BaseFeePerGas`.
-			if Permill::from_percent(weight_used) >= upper {
-				// Increase base fee by Modifier.
-				let base_fee = <BaseFeePerGas<T>>::get();
-				let new_base_fee = {
-					let increase =
-						U256::from(T::Modifier::get() / 100).saturating_mul(base_fee) / 100;
-					base_fee.saturating_add(increase)
-				};
-				Self::deposit_event(Event::NewBaseFeePerGas(new_base_fee));
-			} else if Permill::from_percent(weight_used) <= lower {
-				// Decrease base fee by Modifier.
-				let base_fee = <BaseFeePerGas<T>>::get();
-				let new_base_fee = {
-					let decrease =
-						U256::from(T::Modifier::get() / 100).saturating_mul(base_fee) / 100;
-					base_fee.saturating_sub(decrease)
-				};
-				Self::deposit_event(Event::NewBaseFeePerGas(new_base_fee));
+			if <IsActive<T>>::get() {
+				let lower = T::Threshold::lower();
+				let upper = T::Threshold::upper();
+				// `target` is the ideal congestion of the network where the base fee should remain unchanged.
+				// Under normal circumstances the `target` should be 50%.
+				// If we go below the `target`, the base fee is linearly decreased by the Modifier delta of lower~target.
+				// If we go above the `target`, the base fee is linearly increased by the Modifier delta of upper~target.
+				// The base fee is fully increased (default 12.5%) if the block is upper full (default 100%).
+				// The base fee is fully decreased (default 12.5%) if the block is lower empty (default 0%).
+				let weight = <frame_system::Pallet<T>>::block_weight();
+				let max_weight =
+					<<T as frame_system::Config>::BlockWeights as frame_support::traits::Get<_>>::get()
+						.max_block;
+
+				// We convert `weight` into block fullness and ensure we are within the lower and upper bound.
+				let weight_used =
+					Permill::from_rational(weight.total(), max_weight).clamp(lower, upper);
+				// After clamp `weighted_used` is always between `lower` and `upper`.
+				// We scale the block fullness range to the lower/upper range, and the usage represents the
+				// actual percentage within this new scale.
+				let usage = (weight_used - lower) / (upper - lower);
+
+				// 50% block fullness is our threshold.
+				let target = Permill::from_parts(500_000);
+				if usage > target {
+					// Above target, increase.
+					let coef =
+						Permill::from_parts((usage.deconstruct() - target.deconstruct()) * 2u32);
+					// How much of the Modifier is used to mutate base fee.
+					let coef = T::Modifier::get() * coef;
+					<BaseFeePerGas<T>>::mutate(|bf| {
+						if let Some(scaled_basefee) = bf.checked_mul(U256::from(coef.deconstruct()))
+						{
+							// Normalize to GWEI.
+							let increase = scaled_basefee
+								.checked_div(U256::from(1_000_000))
+								.unwrap_or(U256::zero());
+							*bf = bf.saturating_add(U256::from(increase));
+							Self::deposit_event(Event::NewBaseFeePerGas(*bf));
+						} else {
+							Self::deposit_event(Event::BaseFeeOverflow);
+						}
+					});
+				} else if usage < target {
+					// Below target, decrease.
+					let coef =
+						Permill::from_parts((target.deconstruct() - usage.deconstruct()) * 2u32);
+					// How much of the Modifier is used to mutate base fee.
+					let coef = T::Modifier::get() * coef;
+					<BaseFeePerGas<T>>::mutate(|bf| {
+						if let Some(scaled_basefee) = bf.checked_mul(U256::from(coef.deconstruct()))
+						{
+							// Normalize to GWEI.
+							let decrease = scaled_basefee
+								.checked_div(U256::from(1_000_000))
+								.unwrap_or(U256::zero());
+							*bf = bf.saturating_sub(U256::from(decrease));
+							Self::deposit_event(Event::NewBaseFeePerGas(*bf));
+						} else {
+							Self::deposit_event(Event::BaseFeeOverflow);
+						}
+					});
+				}
 			}
 		}
 	}
@@ -121,11 +176,210 @@ pub mod pallet {
 			Self::deposit_event(Event::NewBaseFeePerGas(fee));
 			Ok(())
 		}
+
+		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+		pub fn set_is_active(origin: OriginFor<T>, is_active: bool) -> DispatchResult {
+			ensure_root(origin)?;
+			<IsActive<T>>::put(is_active);
+			Self::deposit_event(Event::IsActive(is_active));
+			Ok(())
+		}
 	}
 
 	impl<T: Config> pallet_ethereum::BaseFeeHandler for Pallet<T> {
 		fn base_fee() -> U256 {
 			<BaseFeePerGas<T>>::get()
 		}
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use crate as pallet_base_fee;
+
+	use frame_support::{
+		pallet_prelude::GenesisBuild, parameter_types, traits::OnFinalize, weights::DispatchClass,
+	};
+	use sp_core::{H256, U256};
+	use sp_io::TestExternalities;
+	use sp_runtime::{
+		testing::Header,
+		traits::{BlakeTwo256, IdentityLookup},
+		Permill,
+	};
+
+	pub fn new_test_ext(base_fee: U256) -> TestExternalities {
+		let mut t = frame_system::GenesisConfig::default()
+			.build_storage::<Test>()
+			.unwrap();
+
+		pallet_base_fee::GenesisConfig::<Test>::new(base_fee, true)
+			.assimilate_storage(&mut t)
+			.unwrap();
+		TestExternalities::new(t)
+	}
+
+	type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
+	type Block = frame_system::mocking::MockBlock<Test>;
+
+	parameter_types! {
+		pub const BlockHashCount: u64 = 250;
+		pub BlockWeights: frame_system::limits::BlockWeights =
+			frame_system::limits::BlockWeights::simple_max(1024);
+	}
+	impl frame_system::Config for Test {
+		type BaseCallFilter = frame_support::traits::Everything;
+		type BlockWeights = ();
+		type BlockLength = ();
+		type DbWeight = ();
+		type Origin = Origin;
+		type Index = u64;
+		type BlockNumber = u64;
+		type Call = Call;
+		type Hash = H256;
+		type Hashing = BlakeTwo256;
+		type AccountId = u64;
+		type Lookup = IdentityLookup<Self::AccountId>;
+		type Header = Header;
+		type Event = Event;
+		type BlockHashCount = BlockHashCount;
+		type Version = ();
+		type PalletInfo = PalletInfo;
+		type AccountData = ();
+		type OnNewAccount = ();
+		type OnKilledAccount = ();
+		type SystemWeightInfo = ();
+		type SS58Prefix = ();
+		type OnSetCode = ();
+	}
+
+	frame_support::parameter_types! {
+		pub const Modifier: Permill = Permill::from_parts(125_000);
+		pub const Threshold: (u8, u8) = (0, 100);
+	}
+
+	pub struct BaseFeeThreshold;
+	impl pallet_base_fee::BaseFeeThreshold for BaseFeeThreshold {
+		fn lower() -> Permill {
+			Permill::zero()
+		}
+		fn upper() -> Permill {
+			Permill::from_parts(1_000_000)
+		}
+	}
+
+	impl Config for Test {
+		type Event = Event;
+		type Threshold = BaseFeeThreshold;
+		type Modifier = Modifier;
+	}
+
+	frame_support::construct_runtime!(
+		pub enum Test where
+			Block = Block,
+			NodeBlock = Block,
+			UncheckedExtrinsic = UncheckedExtrinsic,
+		{
+			System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+			BaseFee: pallet_base_fee::{Pallet, Call, Storage, Event},
+		}
+	);
+
+	#[test]
+	fn should_not_overflow_u256() {
+		let base_fee = U256::max_value();
+		new_test_ext(base_fee).execute_with(|| {
+			let init = BaseFee::base_fee_per_gas();
+			System::register_extra_weight_unchecked(1000000000000, DispatchClass::Normal);
+			BaseFee::on_finalize(System::block_number());
+			assert_eq!(BaseFee::base_fee_per_gas(), init);
+		});
+	}
+
+	#[test]
+	fn should_handle_zero() {
+		let base_fee = U256::zero();
+		new_test_ext(base_fee).execute_with(|| {
+			let init = BaseFee::base_fee_per_gas();
+			BaseFee::on_finalize(System::block_number());
+			assert_eq!(BaseFee::base_fee_per_gas(), init);
+		});
+	}
+
+	#[test]
+	fn should_handle_consecutive_empty_blocks() {
+		let base_fee = U256::from(1_000_000_000);
+		new_test_ext(base_fee).execute_with(|| {
+			for _ in 0..10000 {
+				BaseFee::on_finalize(System::block_number());
+				System::set_block_number(System::block_number() + 1);
+			}
+			assert_eq!(
+				BaseFee::base_fee_per_gas(),
+				// 8 is the lowest number which's 12.5% is >= 1.
+				U256::from(7)
+			);
+		});
+	}
+
+	#[test]
+	fn should_handle_consecutive_full_blocks() {
+		let base_fee = U256::from(1_000_000_000);
+		new_test_ext(base_fee).execute_with(|| {
+			for _ in 0..10000 {
+				// Register max weight in block.
+				System::register_extra_weight_unchecked(1000000000000, DispatchClass::Normal);
+				BaseFee::on_finalize(System::block_number());
+				System::set_block_number(System::block_number() + 1);
+			}
+			assert_eq!(
+				BaseFee::base_fee_per_gas(),
+				// Max value allowed in the algorithm before overflowing U256.
+				U256::from_dec_str(
+					"930583037201699994746877284806656508753618758732556029383742480470471799"
+				)
+				.unwrap()
+			);
+		});
+	}
+
+	#[test]
+	fn should_increase_total_base_fee() {
+		let base_fee = U256::from(1_000_000_000);
+		new_test_ext(base_fee).execute_with(|| {
+			assert_eq!(BaseFee::base_fee_per_gas(), U256::from(1000000000));
+			// Register max weight in block.
+			System::register_extra_weight_unchecked(1000000000000, DispatchClass::Normal);
+			BaseFee::on_finalize(System::block_number());
+			// Expect the base fee to increase by 12.5%.
+			assert_eq!(BaseFee::base_fee_per_gas(), U256::from(1125000000));
+		});
+	}
+
+	#[test]
+	fn should_increase_delta_of_base_fee() {
+		let base_fee = U256::from(1_000_000_000);
+		new_test_ext(base_fee).execute_with(|| {
+			assert_eq!(BaseFee::base_fee_per_gas(), U256::from(1000000000));
+			// Register 75% capacity in block weight.
+			System::register_extra_weight_unchecked(750000000000, DispatchClass::Normal);
+			BaseFee::on_finalize(System::block_number());
+			// Expect a 6.25% increase in base fee for a target capacity of 50% ((75/50)-1 = 0.5 * 0.125 = 0.0625).
+			assert_eq!(BaseFee::base_fee_per_gas(), U256::from(1062500000));
+		});
+	}
+
+	#[test]
+	fn should_idle_base_fee() {
+		let base_fee = U256::from(1_000_000_000);
+		new_test_ext(base_fee).execute_with(|| {
+			assert_eq!(BaseFee::base_fee_per_gas(), U256::from(1000000000));
+			// Register half capacity in block weight.
+			System::register_extra_weight_unchecked(500000000000, DispatchClass::Normal);
+			BaseFee::on_finalize(System::block_number());
+			// Expect the base fee to remain unchanged
+			assert_eq!(BaseFee::base_fee_per_gas(), U256::from(1000000000));
+		});
 	}
 }

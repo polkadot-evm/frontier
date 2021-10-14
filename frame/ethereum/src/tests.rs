@@ -57,11 +57,7 @@ fn transaction_should_increment_nonce() {
 
 	ext.execute_with(|| {
 		let t = default_erc20_creation_transaction(alice);
-		assert_ok!(Ethereum::execute(
-			alice.address,
-			&t,
-			None,
-		));
+		assert_ok!(Ethereum::execute(alice.address, &t, None,));
 		assert_eq!(EVM::account_basic(&alice.address).nonce, U256::from(1));
 	});
 }
@@ -114,11 +110,7 @@ fn transaction_with_invalid_nonce_should_not_work() {
 		let t = default_erc20_creation_transaction(alice);
 
 		// nonce is 1
-		assert_ok!(Ethereum::execute(
-			alice.address,
-			&t,
-			None,
-		));
+		assert_ok!(Ethereum::execute(alice.address, &t, None,));
 
 		transaction.nonce = U256::from(0);
 
@@ -143,11 +135,7 @@ fn contract_constructor_should_get_executed() {
 	ext.execute_with(|| {
 		let t = default_erc20_creation_transaction(alice);
 
-		assert_ok!(Ethereum::execute(
-			alice.address,
-			&t,
-			None,
-		));
+		assert_ok!(Ethereum::execute(alice.address, &t, None,));
 		assert_eq!(
 			EVM::account_storages(erc20_address, alice_storage_address),
 			H256::from_str("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")
@@ -189,11 +177,7 @@ fn contract_should_be_created_at_given_address() {
 
 	ext.execute_with(|| {
 		let t = default_erc20_creation_transaction(alice);
-		assert_ok!(Ethereum::execute(
-			alice.address,
-			&t,
-			None,
-		));
+		assert_ok!(Ethereum::execute(alice.address, &t, None,));
 		assert_ne!(EVM::account_codes(erc20_address).len(), 0);
 	});
 }
@@ -207,12 +191,7 @@ fn transaction_should_generate_correct_gas_used() {
 
 	ext.execute_with(|| {
 		let t = default_erc20_creation_transaction(alice);
-		let (_, _, info) = Ethereum::execute(
-			alice.address,
-			&t,
-			None,
-		)
-		.unwrap();
+		let (_, _, info) = Ethereum::execute(alice.address, &t, None).unwrap();
 
 		match info {
 			CallOrCreateInfo::Create(info) => {
@@ -249,11 +228,7 @@ fn call_should_handle_errors() {
 			input: FromHex::from_hex(contract).unwrap(),
 		}
 		.sign(&alice.private_key);
-		assert_ok!(Ethereum::execute(
-			alice.address,
-			&t,
-			None,
-		));
+		assert_ok!(Ethereum::execute(alice.address, &t, None,));
 
 		let contract_address: Vec<u8> =
 			FromHex::from_hex("32dcab0ef3fb2de2fce1d2e0799d36239671f04a").unwrap();
@@ -271,12 +246,7 @@ fn call_should_handle_errors() {
 		.sign(&alice.private_key);
 
 		// calling foo will succeed
-		let (_, _, info) = Ethereum::execute(
-			alice.address,
-			&t2,
-			None,
-		)
-		.unwrap();
+		let (_, _, info) = Ethereum::execute(alice.address, &t2, None).unwrap();
 
 		match info {
 			CallOrCreateInfo::Call(info) => {
@@ -299,12 +269,6 @@ fn call_should_handle_errors() {
 		.sign(&alice.private_key);
 
 		// calling should always succeed even if the inner EVM execution fails.
-		Ethereum::execute(
-			alice.address,
-			&t3,
-			None,
-		)
-		.ok()
-		.unwrap();
+		Ethereum::execute(alice.address, &t3, None).ok().unwrap();
 	});
 }

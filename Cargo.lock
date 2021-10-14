@@ -4223,6 +4223,7 @@ dependencies = [
  "parity-scale-codec",
  "serde",
  "sp-core",
+ "sp-io",
  "sp-runtime",
 ]
 

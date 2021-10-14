@@ -20,6 +20,9 @@ sp-core = { version = "4.0.0-dev", default-features = false, git = "https://gith
 sp-runtime = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
 pallet-ethereum = { path = "../ethereum", default-features = false }
 
+[dev-dependencies]
+sp-io = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
+
 [features]
 default = ["std"]
 std = [

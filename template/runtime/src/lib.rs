@@ -337,7 +337,7 @@ impl pallet_dynamic_fee::Config for Runtime {
 }
 
 frame_support::parameter_types! {
-	pub const Modifier: u32 = 1250; // 12.5%
+	pub const Modifier: Permill = Permill::from_parts(125_000); // 12.5%
 	pub const Threshold: (u8, u8) = (0, 100);
 }
 
@@ -347,7 +347,7 @@ impl pallet_base_fee::BaseFeeThreshold for BaseFeeThreshold {
 		Permill::zero()
 	}
 	fn upper() -> Permill {
-		Permill::one()
+		Permill::from_parts(1_000_000)
 	}
 }
 
