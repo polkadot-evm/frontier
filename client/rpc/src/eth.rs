@@ -42,7 +42,7 @@ use sc_network::{ExHashT, NetworkService};
 use sc_transaction_pool::{ChainApi, Pool};
 use sc_transaction_pool_api::{InPoolTransaction, TransactionPool};
 use sha3::{Digest, Keccak256};
-use sp_api::{BlockId, Core, HeaderT, ProvideRuntimeApi};
+use sp_api::{ApiExt, BlockId, Core, HeaderT, ProvideRuntimeApi};
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 use sp_runtime::{
 	traits::{BlakeTwo256, Block as BlockT, NumberFor, One, Saturating, UniqueSaturatedInto, Zero},
@@ -888,25 +888,50 @@ where
 	}
 
 	fn call(&self, request: CallRequest, _: Option<BlockNumber>) -> Result<Bytes> {
+		// TODO required support for requests with block parameter instead of defaulting to latest.
+		// That's the main reason for creating a new runtime api version for the `call` and `create` methods.
 		let hash = self.client.info().best_hash;
 
 		let CallRequest {
 			from,
 			to,
 			gas_price,
+			max_fee_per_gas,
+			max_priority_fee_per_gas,
 			gas,
 			value,
 			data,
 			nonce,
 		} = request;
 
+		let (gas_price, max_fee_per_gas, max_priority_fee_per_gas) =
+			match (gas_price, max_fee_per_gas, max_priority_fee_per_gas) {
+				(gas_price, None, None) => {
+					// Legacy request, all default to gas price.
+					(gas_price, gas_price, gas_price)
+				}
+				(_, max_fee, max_priority) => {
+					// eip-1559
+					// Ensure `max_priority_fee_per_gas` is less or equal to `max_fee_per_gas`.
+					if let Some(max_priority) = max_priority {
+						let max_fee = max_fee.unwrap_or_default();
+						if max_priority > max_fee {
+							return Err(internal_err(format!(
+							"Invalid input: `max_priority_fee_per_gas` greater than `max_fee_per_gas`"
+						)));
+						}
+					}
+					(max_fee, max_fee, max_priority)
+				}
+			};
+
+		let api = self.client.runtime_api();
+
 		// use given gas limit or query current block's limit
 		let gas_limit = match gas {
 			Some(amount) => amount,
 			None => {
-				let block = self
-					.client
-					.runtime_api()
+				let block = api
 					.current_block(&BlockId::Hash(hash))
 					.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?;
 				if let Some(block) = block {
@@ -920,12 +945,20 @@ where
 		};
 		let data = data.map(|d| d.0).unwrap_or_default();
 
+		let api_version = if let Ok(Some(api_version)) =
+			api.api_version::<dyn EthereumRuntimeRPCApi<B>>(&BlockId::Hash(hash))
+		{
+			api_version
+		} else {
+			return Err(internal_err(format!(
+				"failed to retrieve Runtime Api version"
+			)));
+		};
 		match to {
 			Some(to) => {
-				let info = self
-					.client
-					.runtime_api()
-					.call(
+				if api_version == 1 {
+					#[allow(deprecated)]
+					let info = api.call_before_version_2(
 						&BlockId::Hash(hash),
 						from.unwrap_or_default(),
 						to,
@@ -939,39 +972,86 @@ where
 					.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
 					.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
 
-				error_on_execution_failure(&info.exit_reason, &info.value)?;
+					error_on_execution_failure(&info.exit_reason, &info.value)?;
+					Ok(Bytes(info.value))
+				} else if api_version == 2 {
+					let info = api
+						.call(
+							&BlockId::Hash(hash),
+							from.unwrap_or_default(),
+							to,
+							data,
+							value.unwrap_or_default(),
+							gas_limit,
+							max_fee_per_gas,
+							max_priority_fee_per_gas,
+							nonce,
+							false,
+						)
+						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
+						.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
 
-				Ok(Bytes(info.value))
+					error_on_execution_failure(&info.exit_reason, &info.value)?;
+					Ok(Bytes(info.value))
+				} else {
+					return Err(internal_err(format!(
+						"failed to retrieve Runtime Api version"
+					)));
+				}
 			}
 			None => {
-				let info = self
-					.client
-					.runtime_api()
-					.create(
-						&BlockId::Hash(hash),
-						from.unwrap_or_default(),
-						data,
-						value.unwrap_or_default(),
-						gas_limit,
-						gas_price,
-						nonce,
-						false,
-					)
-					.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
-					.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
+				if api_version == 1 {
+					let info = api
+						.create_before_version_2(
+							&BlockId::Hash(hash),
+							from.unwrap_or_default(),
+							data,
+							value.unwrap_or_default(),
+							gas_limit,
+							gas_price,
+							nonce,
+							false,
+						)
+						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
+						.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
 
-				error_on_execution_failure(&info.exit_reason, &[])?;
+					error_on_execution_failure(&info.exit_reason, &[])?;
+					Ok(Bytes(info.value[..].to_vec()))
+				} else if api_version == 2 {
+					let info = api
+						.create(
+							&BlockId::Hash(hash),
+							from.unwrap_or_default(),
+							data,
+							value.unwrap_or_default(),
+							gas_limit,
+							max_fee_per_gas,
+							max_priority_fee_per_gas,
+							nonce,
+							false,
+						)
+						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
+						.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
 
-				Ok(Bytes(info.value[..].to_vec()))
+					error_on_execution_failure(&info.exit_reason, &[])?;
+					Ok(Bytes(info.value[..].to_vec()))
+				} else {
+					return Err(internal_err(format!(
+						"failed to retrieve Runtime Api version"
+					)));
+				}
 			}
 		}
 	}
 
 	fn estimate_gas(&self, request: CallRequest, _: Option<BlockNumber>) -> Result<U256> {
+		// TODO required support for requests with block parameter instead of defaulting to latest.
+		// That's the main reason for creating a new runtime api version for the `call` and `create` methods.
+		let hash = self.client.info().best_hash;
+
 		let gas_limit = {
 			// query current block's gas limit
-			let substrate_hash = self.client.info().best_hash;
-			let id = BlockId::Hash(substrate_hash);
+			let id = BlockId::Hash(hash);
 			let schema =
 				frontier_backend_client::onchain_storage_schema::<B, C, BE>(&self.client, id);
 			let handler = self
@@ -980,7 +1060,7 @@ where
 				.get(&schema)
 				.unwrap_or(&self.overrides.fallback);
 
-			let block = self.block_data_cache.current_block(handler, substrate_hash);
+			let block = self.block_data_cache.current_block(handler, hash);
 			if let Some(block) = block {
 				block.header.gas_limit
 			} else {
@@ -988,30 +1068,51 @@ where
 			}
 		};
 
-		let calculate_gas_used = |request, gas_limit| -> Result<U256> {
-			let hash = self.client.info().best_hash;
-
+		let calculate_gas_used = |request, gas_limit, api_version| -> Result<U256> {
 			let CallRequest {
 				from,
 				to,
 				gas_price,
+				max_fee_per_gas,
+				max_priority_fee_per_gas,
 				gas,
 				value,
 				data,
 				nonce,
 			} = request;
 
+			let (gas_price, max_fee_per_gas, max_priority_fee_per_gas) =
+				match (gas_price, max_fee_per_gas, max_priority_fee_per_gas) {
+					(gas_price, None, None) => {
+						// Legacy request, all default to gas price.
+						(gas_price, gas_price, gas_price)
+					}
+					(_, max_fee, max_priority) => {
+						// eip-1559
+						// Ensure `max_priority_fee_per_gas` is less or equal to `max_fee_per_gas`.
+						if let Some(max_priority) = max_priority {
+							let max_fee = max_fee.unwrap_or_default();
+							if max_priority > max_fee {
+								return Err(internal_err(format!(
+								"Invalid input: `max_priority_fee_per_gas` greater than `max_fee_per_gas`"
+							)));
+							}
+						}
+						(max_fee, max_fee, max_priority)
+					}
+				};
+
 			// Use request gas limit only if it less than gas_limit parameter
 			let gas_limit = core::cmp::min(gas.unwrap_or(gas_limit), gas_limit);
 
 			let data = data.map(|d| d.0).unwrap_or_default();
 
+			let api = self.client.runtime_api();
+
 			let used_gas = match to {
 				Some(to) => {
-					let info = self
-						.client
-						.runtime_api()
-						.call(
+					let info = if api_version == 1 {
+						api.call_before_version_2(
 							&BlockId::Hash(hash),
 							from.unwrap_or_default(),
 							to,
@@ -1023,17 +1124,35 @@ where
 							true,
 						)
 						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
-						.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
+						.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?
+					} else if api_version == 2 {
+						api.call(
+							&BlockId::Hash(hash),
+							from.unwrap_or_default(),
+							to,
+							data,
+							value.unwrap_or_default(),
+							gas_limit,
+							max_fee_per_gas,
+							max_priority_fee_per_gas,
+							nonce,
+							true,
+						)
+						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
+						.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?
+					} else {
+						return Err(internal_err(format!(
+							"failed to retrieve Runtime Api version"
+						)));
+					};
 
 					error_on_execution_failure(&info.exit_reason, &info.value)?;
 
 					info.used_gas
 				}
 				None => {
-					let info = self
-						.client
-						.runtime_api()
-						.create(
+					let info = if api_version == 1 {
+						api.create_before_version_2(
 							&BlockId::Hash(hash),
 							from.unwrap_or_default(),
 							data,
@@ -1044,7 +1163,26 @@ where
 							true,
 						)
 						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
-						.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
+						.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?
+					} else if api_version == 2 {
+						api.create(
+							&BlockId::Hash(hash),
+							from.unwrap_or_default(),
+							data,
+							value.unwrap_or_default(),
+							gas_limit,
+							max_fee_per_gas,
+							max_priority_fee_per_gas,
+							nonce,
+							true,
+						)
+						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
+						.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?
+					} else {
+						return Err(internal_err(format!(
+							"failed to retrieve Runtime Api version"
+						)));
+					};
 
 					error_on_execution_failure(&info.exit_reason, &[])?;
 
@@ -1054,6 +1192,19 @@ where
 
 			Ok(used_gas)
 		};
+
+		let api_version = if let Ok(Some(api_version)) =
+			self.client
+				.runtime_api()
+				.api_version::<dyn EthereumRuntimeRPCApi<B>>(&BlockId::Hash(hash))
+		{
+			api_version
+		} else {
+			return Err(internal_err(format!(
+				"failed to retrieve Runtime Api version"
+			)));
+		};
+
 		if cfg!(feature = "rpc_binary_search_estimate") {
 			const MAX_OOG_PER_ESTIMATE_QUERY: u32 = 2;
 
@@ -1075,7 +1226,7 @@ where
 			while change_pct > threshold_pct {
 				let mut test_request = request.clone();
 				test_request.gas = Some(mid);
-				match calculate_gas_used(test_request, gas_limit) {
+				match calculate_gas_used(test_request, gas_limit, api_version) {
 					// if Ok -- try to reduce the gas used
 					Ok(used_gas) => {
 						old_best = best;
@@ -1108,7 +1259,7 @@ where
 			}
 			Ok(best)
 		} else {
-			calculate_gas_used(request, gas_limit)
+			calculate_gas_used(request, gas_limit, api_version)
 		}
 	}
 
