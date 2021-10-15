@@ -942,7 +942,7 @@ where
 		}
 	}
 
-	fn estimate_gas(&self, request: CallRequest, _: Option<BlockNumber>) -> Result<U256> {
+	fn estimate_gas(&self, mut request: CallRequest, _: Option<BlockNumber>) -> Result<U256> {
 		// Get best hash
 		let best_hash = self.client.info().best_hash;
 
@@ -1070,12 +1070,17 @@ where
 			}
 		};
 
-		// verify that the transaction suceed with highest capacity
+		// Verify that the transaction suceed with highest capacity
+		// The gas price should not be taken into account for this first iteration,
+		// as the user may not have enough funds for the upper bound but may have
+		// enough for the final estimate.
 		let cap = highest;
+		let req_gas_price = request.gas_price.take();
 		let used_gas = executable(request.clone(), highest)?.ok_or(internal_err(format!(
 			"gas required exceeds allowance {}",
 			cap
 		)))?;
+		request.gas_price = req_gas_price;
 
 		#[cfg(not(feature = "rpc_binary_search_estimate"))]
 		{
@@ -1107,7 +1112,20 @@ where
 				mid = (highest + lowest) / 2;
 			}
 
-			Ok(highest)
+			// If all iterations fails, verify that the sender have enough funds to pay
+			// the highest allowance
+			if highest == cap
+				&& request.gas_price.is_some()
+				&& request.from.is_some()
+				&& executable(request.clone(), highest)?.is_none()
+			{
+				Err(internal_err(format!(
+					"gas required exceeds allowance {}",
+					cap
+				)))
+			} else {
+				Ok(highest)
+			}
 		}
 	}
 
