@@ -9,6 +9,7 @@
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 use codec::{Decode, Encode};
+use pallet_evm::FeeCalculator;
 use pallet_grandpa::{
 	fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
 };
@@ -31,7 +32,6 @@ use sp_std::{marker::PhantomData, prelude::*};
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
-use pallet_evm::FeeCalculator;
 
 // A few exports that help ease life for downstream crates.
 use fp_rpc::TransactionStatus;
@@ -583,7 +583,8 @@ impl_runtime_apis! {
 			data: Vec<u8>,
 			value: U256,
 			gas_limit: U256,
-			gas_price: Option<U256>,
+			max_fee_per_gas: Option<U256>,
+			max_priority_fee_per_gas: Option<U256>,
 			nonce: Option<U256>,
 			estimate: bool,
 		) -> Result<pallet_evm::CallInfo, sp_runtime::DispatchError> {
@@ -601,7 +602,8 @@ impl_runtime_apis! {
 				data,
 				value,
 				gas_limit.low_u64(),
-				gas_price,
+				max_fee_per_gas,
+				max_priority_fee_per_gas,
 				nonce,
 				config.as_ref().unwrap_or(<Runtime as pallet_evm::Config>::config()),
 			).map_err(|err| err.into())
@@ -612,7 +614,8 @@ impl_runtime_apis! {
 			data: Vec<u8>,
 			value: U256,
 			gas_limit: U256,
-			gas_price: Option<U256>,
+			max_fee_per_gas: Option<U256>,
+			max_priority_fee_per_gas: Option<U256>,
 			nonce: Option<U256>,
 			estimate: bool,
 		) -> Result<pallet_evm::CreateInfo, sp_runtime::DispatchError> {
@@ -629,7 +632,8 @@ impl_runtime_apis! {
 				data,
 				value,
 				gas_limit.low_u64(),
-				gas_price,
+				max_fee_per_gas,
+				max_priority_fee_per_gas,
 				nonce,
 				config.as_ref().unwrap_or(<Runtime as pallet_evm::Config>::config()),
 			).map_err(|err| err.into())

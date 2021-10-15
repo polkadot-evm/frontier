@@ -47,7 +47,8 @@ impl<T: Config> Runner<T> {
 		source: H160,
 		value: U256,
 		gas_limit: u64,
-		gas_price: Option<U256>,
+		max_fee_per_gas: Option<U256>,
+		max_priority_fee_per_gas: Option<U256>,
 		nonce: Option<U256>,
 		config: &'config evm::Config,
 		f: F,
@@ -58,19 +59,19 @@ impl<T: Config> Runner<T> {
 		) -> (ExitReason, R),
 	{
 		// Gas price check is skipped when performing a gas estimation.
-		let gas_price = match gas_price {
-			Some(gas_price) => {
+		let max_fee_per_gas = match max_fee_per_gas {
+			Some(max_fee_per_gas) => {
 				ensure!(
-					gas_price >= T::FeeCalculator::min_gas_price(),
+					max_fee_per_gas >= T::FeeCalculator::min_gas_price(),
 					Error::<T>::GasPriceTooLow
 				);
-				gas_price
+				max_fee_per_gas
 			}
 			None => Default::default(),
 		};
 
 		let vicinity = Vicinity {
-			gas_price,
+			gas_price: max_fee_per_gas,
 			origin: source,
 		};
 
@@ -79,9 +80,22 @@ impl<T: Config> Runner<T> {
 		let mut executor =
 			StackExecutor::new_with_precompile(state, config, T::Precompiles::execute);
 
-		let total_fee = gas_price
+		// After eip-1559 we make sure the account can pay both the evm execution and priority fees.
+		let max_base_fee = max_fee_per_gas
 			.checked_mul(U256::from(gas_limit))
 			.ok_or(Error::<T>::FeeOverflow)?;
+		let max_priority_fee = if let Some(max_priority_fee) = max_priority_fee_per_gas {
+			max_priority_fee
+				.checked_mul(U256::from(gas_limit))
+				.ok_or(Error::<T>::FeeOverflow)?
+		} else {
+			U256::zero()
+		};
+
+		let total_fee = max_base_fee
+			.checked_add(max_priority_fee)
+			.ok_or(Error::<T>::FeeOverflow)?;
+
 		let total_payment = value
 			.checked_add(total_fee)
 			.ok_or(Error::<T>::PaymentOverflow)?;
@@ -102,7 +116,7 @@ impl<T: Config> Runner<T> {
 		let (reason, retv) = f(&mut executor);
 
 		let used_gas = U256::from(executor.used_gas());
-		let actual_fee = executor.fee(gas_price);
+		let actual_fee = executor.fee(max_fee_per_gas);
 		log::debug!(
 			target: "evm",
 			"Execution {:?} [source: {:?}, value: {}, gas_limit: {}, actual_fee: {}]",
@@ -113,8 +127,23 @@ impl<T: Config> Runner<T> {
 			actual_fee
 		);
 
-		// Refund fees to the `source` account if deducted more before,
-		T::OnChargeTransaction::correct_and_deposit_fee(&source, actual_fee, fee)?;
+		// Max between the base fee and the used gased fee.
+		let refundable_fee = {
+			let minimum_viable_fee = T::FeeCalculator::min_gas_price()
+				.checked_mul(U256::from(gas_limit))
+				.ok_or(Error::<T>::FeeOverflow)?;
+
+			max_base_fee
+				.checked_sub(minimum_viable_fee.max(actual_fee))
+				// Sanity check, max_base_fee can only be lower than used or base fee when
+				// it wasn't defined (i.e. gas estimation)
+				.unwrap_or(U256::zero())
+		};
+
+		// Refund fees to the `source` account.
+		// After eip-1559 this is the difference between the payed max_fee_per_gas and the max(basefee, usedGasFee).
+		// BaseFee is always burnt - even if not used - and ideally max_priority_fee_per_gas is tipped to the block author (TODO).
+		T::OnChargeTransaction::correct_and_deposit_fee(&source, refundable_fee, fee)?;
 
 		let state = executor.into_state();
 
@@ -162,7 +191,8 @@ impl<T: Config> RunnerT<T> for Runner<T> {
 		input: Vec<u8>,
 		value: U256,
 		gas_limit: u64,
-		gas_price: Option<U256>,
+		max_fee_per_gas: Option<U256>,
+		max_priority_fee_per_gas: Option<U256>,
 		nonce: Option<U256>,
 		config: &evm::Config,
 	) -> Result<CallInfo, Self::Error> {
@@ -170,7 +200,8 @@ impl<T: Config> RunnerT<T> for Runner<T> {
 			source,
 			value,
 			gas_limit,
-			gas_price,
+			max_fee_per_gas,
+			max_priority_fee_per_gas,
 			nonce,
 			config,
 			|executor| executor.transact_call(source, target, value, input, gas_limit),
@@ -182,7 +213,8 @@ impl<T: Config> RunnerT<T> for Runner<T> {
 		init: Vec<u8>,
 		value: U256,
 		gas_limit: u64,
-		gas_price: Option<U256>,
+		max_fee_per_gas: Option<U256>,
+		max_priority_fee_per_gas: Option<U256>,
 		nonce: Option<U256>,
 		config: &evm::Config,
 	) -> Result<CreateInfo, Self::Error> {
@@ -190,7 +222,8 @@ impl<T: Config> RunnerT<T> for Runner<T> {
 			source,
 			value,
 			gas_limit,
-			gas_price,
+			max_fee_per_gas,
+			max_priority_fee_per_gas,
 			nonce,
 			config,
 			|executor| {
@@ -209,7 +242,8 @@ impl<T: Config> RunnerT<T> for Runner<T> {
 		salt: H256,
 		value: U256,
 		gas_limit: u64,
-		gas_price: Option<U256>,
+		max_fee_per_gas: Option<U256>,
+		max_priority_fee_per_gas: Option<U256>,
 		nonce: Option<U256>,
 		config: &evm::Config,
 	) -> Result<CreateInfo, Self::Error> {
@@ -218,7 +252,8 @@ impl<T: Config> RunnerT<T> for Runner<T> {
 			source,
 			value,
 			gas_limit,
-			gas_price,
+			max_fee_per_gas,
+			max_priority_fee_per_gas,
 			nonce,
 			config,
 			|executor| {

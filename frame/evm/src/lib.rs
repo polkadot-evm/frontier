@@ -179,7 +179,8 @@ pub mod pallet {
 			input: Vec<u8>,
 			value: U256,
 			gas_limit: u64,
-			gas_price: U256,
+			max_fee_per_gas: U256,
+			max_priority_fee_per_gas: Option<U256>,
 			nonce: Option<U256>,
 		) -> DispatchResultWithPostInfo {
 			T::CallOrigin::ensure_address_origin(&source, origin)?;
@@ -190,7 +191,8 @@ pub mod pallet {
 				input,
 				value,
 				gas_limit,
-				Some(gas_price),
+				Some(max_fee_per_gas),
+				max_priority_fee_per_gas,
 				nonce,
 				T::config(),
 			)?;
@@ -221,7 +223,8 @@ pub mod pallet {
 			init: Vec<u8>,
 			value: U256,
 			gas_limit: u64,
-			gas_price: U256,
+			max_fee_per_gas: U256,
+			max_priority_fee_per_gas: Option<U256>,
 			nonce: Option<U256>,
 		) -> DispatchResultWithPostInfo {
 			T::CallOrigin::ensure_address_origin(&source, origin)?;
@@ -231,7 +234,8 @@ pub mod pallet {
 				init,
 				value,
 				gas_limit,
-				Some(gas_price),
+				Some(max_fee_per_gas),
+				max_priority_fee_per_gas,
 				nonce,
 				T::config(),
 			)?;
@@ -270,7 +274,8 @@ pub mod pallet {
 			salt: H256,
 			value: U256,
 			gas_limit: u64,
-			gas_price: U256,
+			max_fee_per_gas: U256,
+			max_priority_fee_per_gas: Option<U256>,
 			nonce: Option<U256>,
 		) -> DispatchResultWithPostInfo {
 			T::CallOrigin::ensure_address_origin(&source, origin)?;
@@ -281,7 +286,8 @@ pub mod pallet {
 				salt,
 				value,
 				gas_limit,
-				Some(gas_price),
+				Some(max_fee_per_gas),
+				max_priority_fee_per_gas,
 				nonce,
 				T::config(),
 			)?;

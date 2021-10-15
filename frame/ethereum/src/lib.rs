@@ -613,12 +613,15 @@ impl<T: Config> Pallet<T> {
 		transaction: &Transaction,
 		config: Option<evm::Config>,
 	) -> Result<(Option<H160>, Option<H160>, CallOrCreateInfo), DispatchError> {
-		let (input, value, gas_limit, gas_price, nonce, action) = {
+		let (input, value, gas_limit, max_fee_per_gas, max_priority_fee_per_gas, nonce, action) = {
 			match transaction {
+				// max_fee_per_gas and max_priority_fee_per_gas in legacy and 2930 transactions is
+				// the provided gas_price.
 				Transaction::Legacy(t) => (
 					t.input.clone(),
 					t.value,
 					t.gas_limit,
+					Some(t.gas_price),
 					Some(t.gas_price),
 					Some(t.nonce),
 					t.action,
@@ -628,22 +631,19 @@ impl<T: Config> Pallet<T> {
 					t.value,
 					t.gas_limit,
 					Some(t.gas_price),
+					Some(t.gas_price),
 					Some(t.nonce),
 					t.action,
 				),
-				Transaction::EIP1559(t) => {
-					// For EIP-1559 transactions the `gas_price` is the sum of both the on-chain calculated base fee
-					// plus the optional priority fee.
-					let gas_price = t.max_fee_per_gas.saturating_add(t.max_priority_fee_per_gas);
-					(
-						t.input.clone(),
-						t.value,
-						t.gas_limit,
-						Some(gas_price),
-						Some(t.nonce),
-						t.action,
-					)
-				}
+				Transaction::EIP1559(t) => (
+					t.input.clone(),
+					t.value,
+					t.gas_limit,
+					Some(t.max_fee_per_gas),
+					Some(t.max_priority_fee_per_gas),
+					Some(t.nonce),
+					t.action,
+				),
 			}
 		};
 
@@ -655,7 +655,8 @@ impl<T: Config> Pallet<T> {
 					input.clone(),
 					value,
 					gas_limit.low_u64(),
-					gas_price,
+					max_fee_per_gas,
+					max_priority_fee_per_gas,
 					nonce,
 					config.as_ref().unwrap_or(T::config()),
 				)
@@ -669,7 +670,8 @@ impl<T: Config> Pallet<T> {
 					input.clone(),
 					value,
 					gas_limit.low_u64(),
-					gas_price,
+					max_fee_per_gas,
+					max_priority_fee_per_gas,
 					nonce,
 					config.as_ref().unwrap_or(T::config()),
 				)

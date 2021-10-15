@@ -31,7 +31,8 @@ pub trait Runner<T: Config> {
 		input: Vec<u8>,
 		value: U256,
 		gas_limit: u64,
-		gas_price: Option<U256>,
+		max_fee_per_gas: Option<U256>,
+		max_priority_fee_per_gas: Option<U256>,
 		nonce: Option<U256>,
 		config: &evm::Config,
 	) -> Result<CallInfo, Self::Error>;
@@ -41,7 +42,8 @@ pub trait Runner<T: Config> {
 		init: Vec<u8>,
 		value: U256,
 		gas_limit: u64,
-		gas_price: Option<U256>,
+		max_fee_per_gas: Option<U256>,
+		max_priority_fee_per_gas: Option<U256>,
 		nonce: Option<U256>,
 		config: &evm::Config,
 	) -> Result<CreateInfo, Self::Error>;
@@ -52,7 +54,8 @@ pub trait Runner<T: Config> {
 		salt: H256,
 		value: U256,
 		gas_limit: u64,
-		gas_price: Option<U256>,
+		max_fee_per_gas: Option<U256>,
+		max_priority_fee_per_gas: Option<U256>,
 		nonce: Option<U256>,
 		config: &evm::Config,
 	) -> Result<CreateInfo, Self::Error>;
