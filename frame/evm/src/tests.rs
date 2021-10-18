@@ -77,6 +77,7 @@ fn fail_call_return_ok() {
 			1000000,
 			U256::default(),
 			None,
+			None,
 		));
 
 		assert_ok!(EVM::call(
@@ -87,6 +88,7 @@ fn fail_call_return_ok() {
 			U256::default(),
 			1000000,
 			U256::default(),
+			None,
 			None,
 		));
 	});
