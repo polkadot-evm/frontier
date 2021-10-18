@@ -55,6 +55,8 @@ pub trait StorageOverride<Block: BlockT> {
 		&self,
 		block: &BlockId<Block>,
 	) -> Option<Vec<TransactionStatus>>;
+	/// Return the base fee at the given height.
+	fn base_fee(&self, block: &BlockId<Block>) -> Option<U256>;
 }
 
 fn storage_prefix_build(module: &[u8], storage: &[u8]) -> Vec<u8> {
@@ -150,5 +152,26 @@ where
 			.runtime_api()
 			.current_transaction_statuses(&block)
 			.ok()?
+	}
+
+	/// Return the base fee at the given post-eip1559 height.
+	fn base_fee(
+		&self,
+		block: &BlockId<Block>,
+	) -> Option<U256> {
+		let api = self.client.runtime_api();
+
+		let api_version = if let Ok(Some(api_version)) =
+			api.api_version::<dyn EthereumRuntimeRPCApi<Block>>(&block)
+		{
+			api_version
+		} else {
+			return None;
+		};
+		if api_version >= 2 {
+			api.gas_price(&block).ok()
+		} else {
+			None
+		}
 	}
 }

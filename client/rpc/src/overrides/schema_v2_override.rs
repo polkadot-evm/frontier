@@ -127,4 +127,12 @@ where
 			)),
 		)
 	}
+
+	/// Return the base fee at the given height.
+	fn base_fee(&self, block: &BlockId<Block>) -> Option<U256> {
+		self.query_storage::<U256>(
+			block,
+			&StorageKey(storage_prefix_build(b"BaseFee", b"BaseFeePerGas")),
+		)
+	}
 }

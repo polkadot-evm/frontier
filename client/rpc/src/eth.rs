@@ -118,6 +118,7 @@ fn rich_block_build(
 	statuses: Vec<Option<TransactionStatus>>,
 	hash: Option<H256>,
 	full_transactions: bool,
+	base_fee: Option<U256>,
 ) -> RichBlock {
 	Rich {
 		inner: Block {
@@ -174,6 +175,7 @@ fn rich_block_build(
 				}
 			},
 			size: Some(U256::from(rlp::encode(&block).len() as u32)),
+			base_fee_per_gas: base_fee,
 		},
 		extra_info: BTreeMap::new(),
 	}
@@ -582,12 +584,15 @@ where
 			.block_data_cache
 			.current_transaction_statuses(handler, substrate_hash);
 
+		let base_fee = handler.base_fee(&id);
+
 		match (block, statuses) {
 			(Some(block), Some(statuses)) => Ok(Some(rich_block_build(
 				block,
 				statuses.into_iter().map(|s| Some(s)).collect(),
 				Some(hash),
 				full,
+				base_fee,
 			))),
 			_ => Ok(None),
 		}
@@ -620,6 +625,8 @@ where
 			.block_data_cache
 			.current_transaction_statuses(handler, substrate_hash);
 
+		let base_fee = handler.base_fee(&id);
+
 		match (block, statuses) {
 			(Some(block), Some(statuses)) => {
 				let hash =
@@ -630,6 +637,7 @@ where
 					statuses.into_iter().map(|s| Some(s)).collect(),
 					Some(hash),
 					full,
+					base_fee,
 				)))
 			}
 			_ => Ok(None),
