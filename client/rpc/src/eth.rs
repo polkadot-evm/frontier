@@ -2123,7 +2123,11 @@ where
 	B: BlockT<Hash = H256>,
 {
 	/// Task that caches at which best hash a new EthereumStorageSchema was inserted in the Runtime Storage.
-	pub async fn ethereum_schema_cache_task(client: Arc<C>, backend: Arc<fc_db::Backend<B>>) {
+	pub async fn ethereum_schema_cache_task(
+		client: Arc<C>,
+		backend: Arc<fc_db::Backend<B>>,
+		genesis_schema_version: EthereumStorageSchema,
+	) {
 		use fp_storage::PALLET_ETHEREUM_SCHEMA;
 		use log::warn;
 		use sp_storage::{StorageData, StorageKey};
@@ -2131,7 +2135,7 @@ where
 		if let Ok(None) = frontier_backend_client::load_cached_schema::<B>(backend.as_ref()) {
 			let mut cache: Vec<(EthereumStorageSchema, H256)> = Vec::new();
 			if let Ok(Some(header)) = client.header(BlockId::Number(Zero::zero())) {
-				cache.push((EthereumStorageSchema::V1, header.hash()));
+				cache.push((genesis_schema_version, header.hash()));
 				let _ = frontier_backend_client::write_cached_schema::<B>(backend.as_ref(), cache)
 					.map_err(|err| {
 						warn!("Error schema cache insert for genesis: {:?}", err);
