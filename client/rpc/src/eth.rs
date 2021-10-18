@@ -162,6 +162,7 @@ fn rich_block_build(
 									Some(block.clone()),
 									Some(statuses[index].clone().unwrap_or_default()),
 									is_eip1559,
+									base_fee,
 								)
 							})
 							.collect(),
@@ -188,6 +189,7 @@ fn transaction_build(
 	block: Option<ethereum::Block<EthereumTransaction>>,
 	status: Option<TransactionStatus>,
 	is_eip1559: bool,
+	base_fee: Option<U256>
 ) -> Transaction {
 	let mut transaction: Transaction = ethereum_transaction.clone().into();
 
@@ -198,9 +200,9 @@ fn transaction_build(
 		} else {
 			// If transaction is already mined, gas price is considered base fee + priority fee.
 			// A.k.a. effective gas price.
-			let max_fee_per_gas = transaction.max_fee_per_gas.unwrap_or(U256::zero());
+			let base_fee = base_fee.unwrap_or(U256::zero());
 			let max_priority_fee_per_gas = transaction.max_priority_fee_per_gas.unwrap_or(U256::zero());
-			transaction.gas_price = Some(max_fee_per_gas.checked_add(max_priority_fee_per_gas).unwrap_or(U256::max_value()));
+			transaction.gas_price = Some(base_fee.checked_add(max_priority_fee_per_gas).unwrap_or(U256::max_value()));
 		}
 	} else if !is_eip1559 {
 		// This is a pre-eip1559 support transaction a.k.a. txns on frontier before we introduced EIP1559 support in
@@ -607,20 +609,7 @@ where
 			.current_transaction_statuses(handler, substrate_hash);
 
 		let base_fee = handler.base_fee(&id);
-
-		let is_eip1559 = if let Ok(Some(api_version)) =
-			self.client.runtime_api().api_version::<dyn EthereumRuntimeRPCApi<B>>(&id)
-		{
-			if api_version >= 2 {
-				true
-			} else {
-				false
-			}
-		} else {
-			return Err(internal_err(format!(
-				"failed to retrieve Runtime Api version"
-			)));
-		};
+		let is_eip1559 = handler.is_eip1559(&id);
 
 		match (block, statuses) {
 			(Some(block), Some(statuses)) => Ok(Some(rich_block_build(
@@ -663,20 +652,7 @@ where
 			.current_transaction_statuses(handler, substrate_hash);
 
 		let base_fee = handler.base_fee(&id);
-
-		let is_eip1559 = if let Ok(Some(api_version)) =
-			self.client.runtime_api().api_version::<dyn EthereumRuntimeRPCApi<B>>(&id)
-		{
-			if api_version >= 2 {
-				true
-			} else {
-				false
-			}
-		} else {
-			return Err(internal_err(format!(
-				"failed to retrieve Runtime Api version"
-			)));
-		};
+		let is_eip1559 = handler.is_eip1559(&id);
 
 		match (block, statuses) {
 			(Some(block), Some(statuses)) => {
@@ -1368,7 +1344,7 @@ where
 				for txn in ethereum_transactions {
 					let inner_hash = txn.hash();
 					if hash == inner_hash {
-						return Ok(Some(transaction_build(txn, None, None, true)));
+						return Ok(Some(transaction_build(txn, None, None, true, None)));
 					}
 				}
 				// Unknown transaction.
@@ -1400,19 +1376,8 @@ where
 			.block_data_cache
 			.current_transaction_statuses(handler, substrate_hash);
 
-		let is_eip1559 = if let Ok(Some(api_version)) =
-			self.client.runtime_api().api_version::<dyn EthereumRuntimeRPCApi<B>>(&id)
-		{
-			if api_version >= 2 {
-				true
-			} else {
-				false
-			}
-		} else {
-			return Err(internal_err(format!(
-				"failed to retrieve Runtime Api version"
-			)));
-		};
+		let base_fee = handler.base_fee(&id);
+		let is_eip1559 = handler.is_eip1559(&id);
 
 		match (block, statuses) {
 			(Some(block), Some(statuses)) => Ok(Some(transaction_build(
@@ -1420,6 +1385,7 @@ where
 				Some(block),
 				Some(statuses[index].clone()),
 				is_eip1559,
+				base_fee,
 			))),
 			_ => Ok(None),
 		}
@@ -1456,19 +1422,8 @@ where
 			.block_data_cache
 			.current_transaction_statuses(handler, substrate_hash);
 
-		let is_eip1559 = if let Ok(Some(api_version)) =
-			self.client.runtime_api().api_version::<dyn EthereumRuntimeRPCApi<B>>(&id)
-		{
-			if api_version >= 2 {
-				true
-			} else {
-				false
-			}
-		} else {
-			return Err(internal_err(format!(
-				"failed to retrieve Runtime Api version"
-			)));
-		};
+		let base_fee = handler.base_fee(&id);
+		let is_eip1559 = handler.is_eip1559(&id);
 
 		match (block, statuses) {
 			(Some(block), Some(statuses)) => Ok(Some(transaction_build(
@@ -1476,6 +1431,7 @@ where
 				Some(block),
 				Some(statuses[index].clone()),
 				is_eip1559,
+				base_fee,
 			))),
 			_ => Ok(None),
 		}
@@ -1513,19 +1469,8 @@ where
 			.block_data_cache
 			.current_transaction_statuses(handler, substrate_hash);
 
-		let is_eip1559 = if let Ok(Some(api_version)) =
-			self.client.runtime_api().api_version::<dyn EthereumRuntimeRPCApi<B>>(&id)
-		{
-			if api_version >= 2 {
-				true
-			} else {
-				false
-			}
-		} else {
-			return Err(internal_err(format!(
-				"failed to retrieve Runtime Api version"
-			)));
-		};
+		let base_fee = handler.base_fee(&id);
+		let is_eip1559 = handler.is_eip1559(&id);
 
 		match (block, statuses) {
 			(Some(block), Some(statuses)) => Ok(Some(transaction_build(
@@ -1533,6 +1478,7 @@ where
 				Some(block),
 				Some(statuses[index].clone()),
 				is_eip1559,
+				base_fee,
 			))),
 			_ => Ok(None),
 		}
@@ -1576,6 +1522,8 @@ where
 			.current_transaction_statuses(handler, substrate_hash);
 		let receipts = handler.current_receipts(&id);
 
+		let base_fee = handler.base_fee(&id);
+
 		match (block, statuses, receipts) {
 			(Some(block), Some(statuses), Some(receipts)) => {
 				let block_hash =
@@ -1584,6 +1532,13 @@ where
 				let status = statuses[index].clone();
 				let mut cumulative_receipts = receipts.clone();
 				cumulative_receipts.truncate((status.transaction_index + 1) as usize);
+
+				let transaction = block.transactions[index].clone();
+				let effective_gas_price = match transaction {
+					EthereumTransaction::Legacy(t) => t.gas_price,
+					EthereumTransaction::EIP2930(t) => t.gas_price,
+					EthereumTransaction::EIP1559(t) => base_fee.unwrap().checked_add(t.max_priority_fee_per_gas).unwrap_or(U256::max_value())
+				};
 
 				return Ok(Some(Receipt {
 					transaction_hash: Some(status.transaction_hash),
@@ -1635,6 +1590,7 @@ where
 					status_code: Some(U64::from(receipt.state_root.to_low_u64_be())),
 					logs_bloom: receipt.logs_bloom,
 					state_root: None,
+					effective_gas_price,
 				}));
 			}
 			_ => Ok(None),
