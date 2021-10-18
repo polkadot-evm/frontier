@@ -119,6 +119,7 @@ fn rich_block_build(
 	hash: Option<H256>,
 	full_transactions: bool,
 	base_fee: Option<U256>,
+	is_eip1559: bool,
 ) -> RichBlock {
 	Rich {
 		inner: Block {
@@ -160,6 +161,7 @@ fn rich_block_build(
 									transaction.clone(),
 									Some(block.clone()),
 									Some(statuses[index].clone().unwrap_or_default()),
+									is_eip1559,
 								)
 							})
 							.collect(),
@@ -185,6 +187,7 @@ fn transaction_build(
 	ethereum_transaction: EthereumTransaction,
 	block: Option<ethereum::Block<EthereumTransaction>>,
 	status: Option<TransactionStatus>,
+	is_eip1559: bool,
 ) -> Transaction {
 	let mut transaction: Transaction = ethereum_transaction.clone().into();
 
@@ -199,6 +202,12 @@ fn transaction_build(
 			let max_priority_fee_per_gas = transaction.max_priority_fee_per_gas.unwrap_or(U256::zero());
 			transaction.gas_price = Some(max_fee_per_gas.checked_add(max_priority_fee_per_gas).unwrap_or(U256::max_value()));
 		}
+	} else if !is_eip1559 {
+		// This is a pre-eip1559 support transaction a.k.a. txns on frontier before we introduced EIP1559 support in
+		// pallet-ethereum schema V2.
+		// They do not include `maxFeePerGas` or `maxPriorityFeePerGas` fields.
+		transaction.max_fee_per_gas = None;
+		transaction.max_priority_fee_per_gas = None;
 	}
 
 	let pubkey = match public_key(&ethereum_transaction) {
@@ -599,6 +608,20 @@ where
 
 		let base_fee = handler.base_fee(&id);
 
+		let is_eip1559 = if let Ok(Some(api_version)) =
+			self.client.runtime_api().api_version::<dyn EthereumRuntimeRPCApi<B>>(&id)
+		{
+			if api_version >= 2 {
+				true
+			} else {
+				false
+			}
+		} else {
+			return Err(internal_err(format!(
+				"failed to retrieve Runtime Api version"
+			)));
+		};
+
 		match (block, statuses) {
 			(Some(block), Some(statuses)) => Ok(Some(rich_block_build(
 				block,
@@ -606,6 +629,7 @@ where
 				Some(hash),
 				full,
 				base_fee,
+				is_eip1559,
 			))),
 			_ => Ok(None),
 		}
@@ -640,6 +664,20 @@ where
 
 		let base_fee = handler.base_fee(&id);
 
+		let is_eip1559 = if let Ok(Some(api_version)) =
+			self.client.runtime_api().api_version::<dyn EthereumRuntimeRPCApi<B>>(&id)
+		{
+			if api_version >= 2 {
+				true
+			} else {
+				false
+			}
+		} else {
+			return Err(internal_err(format!(
+				"failed to retrieve Runtime Api version"
+			)));
+		};
+
 		match (block, statuses) {
 			(Some(block), Some(statuses)) => {
 				let hash =
@@ -651,6 +689,7 @@ where
 					Some(hash),
 					full,
 					base_fee,
+					is_eip1559,
 				)))
 			}
 			_ => Ok(None),
@@ -1329,7 +1368,7 @@ where
 				for txn in ethereum_transactions {
 					let inner_hash = txn.hash();
 					if hash == inner_hash {
-						return Ok(Some(transaction_build(txn, None, None)));
+						return Ok(Some(transaction_build(txn, None, None, true)));
 					}
 				}
 				// Unknown transaction.
@@ -1361,11 +1400,26 @@ where
 			.block_data_cache
 			.current_transaction_statuses(handler, substrate_hash);
 
+		let is_eip1559 = if let Ok(Some(api_version)) =
+			self.client.runtime_api().api_version::<dyn EthereumRuntimeRPCApi<B>>(&id)
+		{
+			if api_version >= 2 {
+				true
+			} else {
+				false
+			}
+		} else {
+			return Err(internal_err(format!(
+				"failed to retrieve Runtime Api version"
+			)));
+		};
+
 		match (block, statuses) {
 			(Some(block), Some(statuses)) => Ok(Some(transaction_build(
 				block.transactions[index].clone(),
 				Some(block),
 				Some(statuses[index].clone()),
+				is_eip1559,
 			))),
 			_ => Ok(None),
 		}
@@ -1402,11 +1456,26 @@ where
 			.block_data_cache
 			.current_transaction_statuses(handler, substrate_hash);
 
+		let is_eip1559 = if let Ok(Some(api_version)) =
+			self.client.runtime_api().api_version::<dyn EthereumRuntimeRPCApi<B>>(&id)
+		{
+			if api_version >= 2 {
+				true
+			} else {
+				false
+			}
+		} else {
+			return Err(internal_err(format!(
+				"failed to retrieve Runtime Api version"
+			)));
+		};
+
 		match (block, statuses) {
 			(Some(block), Some(statuses)) => Ok(Some(transaction_build(
 				block.transactions[index].clone(),
 				Some(block),
 				Some(statuses[index].clone()),
+				is_eip1559,
 			))),
 			_ => Ok(None),
 		}
@@ -1444,11 +1513,26 @@ where
 			.block_data_cache
 			.current_transaction_statuses(handler, substrate_hash);
 
+		let is_eip1559 = if let Ok(Some(api_version)) =
+			self.client.runtime_api().api_version::<dyn EthereumRuntimeRPCApi<B>>(&id)
+		{
+			if api_version >= 2 {
+				true
+			} else {
+				false
+			}
+		} else {
+			return Err(internal_err(format!(
+				"failed to retrieve Runtime Api version"
+			)));
+		};
+
 		match (block, statuses) {
 			(Some(block), Some(statuses)) => Ok(Some(transaction_build(
 				block.transactions[index].clone(),
 				Some(block),
 				Some(statuses[index].clone()),
+				is_eip1559,
 			))),
 			_ => Ok(None),
 		}
