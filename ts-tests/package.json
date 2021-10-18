@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "truffle compile",
-    "test": "mocha -r ts-node/register 'tests/test-transaction-version.ts'"
+    "test": "mocha -r ts-node/register 'tests/**/*.ts'"
   },
   "author": "",
   "license": "ISC",
