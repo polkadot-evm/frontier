@@ -135,4 +135,8 @@ where
 			&StorageKey(storage_prefix_build(b"BaseFee", b"BaseFeePerGas")),
 		)
 	}
+
+	fn is_eip1559(&self, block: &BlockId<Block>) -> bool {
+		true
+	}
 }

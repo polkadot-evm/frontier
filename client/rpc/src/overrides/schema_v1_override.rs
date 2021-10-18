@@ -137,4 +137,8 @@ where
 	fn base_fee(&self, block: &BlockId<Block>) -> Option<U256> {
 		None
 	}
+
+	fn is_eip1559(&self, block: &BlockId<Block>) -> bool {
+		false
+	}
 }
