@@ -188,6 +188,19 @@ fn transaction_build(
 ) -> Transaction {
 	let mut transaction: Transaction = ethereum_transaction.clone().into();
 
+	if let EthereumTransaction::EIP1559(_) = ethereum_transaction {
+		if block.is_none() && status.is_none() {
+			// If transaction is not mined yet, gas price is considered just max fee per gas.
+			transaction.gas_price = transaction.max_fee_per_gas;
+		} else {
+			// If transaction is already mined, gas price is considered base fee + priority fee.
+			// A.k.a. effective gas price.
+			let max_fee_per_gas = transaction.max_fee_per_gas.unwrap_or(U256::zero());
+			let max_priority_fee_per_gas = transaction.max_priority_fee_per_gas.unwrap_or(U256::zero());
+			transaction.gas_price = Some(max_fee_per_gas.checked_add(max_priority_fee_per_gas).unwrap_or(U256::max_value()));
+		}
+	}
+
 	let pubkey = match public_key(&ethereum_transaction) {
 		Ok(p) => Some(p),
 		Err(_e) => None,
