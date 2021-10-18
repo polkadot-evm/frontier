@@ -44,6 +44,20 @@ pub trait SelfContainedCall: Dispatchable {
 	/// Validate a self-contained function. Returns `None` if the
 	/// function is not a self-contained.
 	fn validate_self_contained(&self, info: &Self::SignedInfo) -> Option<TransactionValidity>;
+	/// Do any pre-flight stuff for a self-contained call.
+	///
+	/// Note this function by default delegates to `validate_self_contained`, so that
+	/// all checks performed for the transaction queue are also performed during
+	/// the dispatch phase (applying the extrinsic).
+	///
+	/// If you ever override this function, you need to make sure to always
+	/// perform the same validation as in `validate_self_contained`.
+	///
+	/// Returns `None` if the function is not a self-contained.
+	fn pre_dispatch_self_contained(
+		&self,
+		info: &Self::SignedInfo,
+	) -> Option<Result<(), TransactionValidityError>>;
 	/// Apply a self-contained function. Returns `None` if the
 	/// function is not a self-contained.
 	fn apply_self_contained(
