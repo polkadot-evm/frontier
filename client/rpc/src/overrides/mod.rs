@@ -157,10 +157,7 @@ where
 	}
 
 	/// Return the base fee at the given post-eip1559 height.
-	fn base_fee(
-		&self,
-		block: &BlockId<Block>,
-	) -> Option<U256> {
+	fn base_fee(&self, block: &BlockId<Block>) -> Option<U256> {
 		if self.is_eip1559(block) {
 			self.client.runtime_api().gas_price(&block).ok()
 		} else {
@@ -169,8 +166,10 @@ where
 	}
 
 	fn is_eip1559(&self, block: &BlockId<Block>) -> bool {
-		if let Ok(Some(api_version)) =
-			self.client.runtime_api().api_version::<dyn EthereumRuntimeRPCApi<Block>>(&block)
+		if let Ok(Some(api_version)) = self
+			.client
+			.runtime_api()
+			.api_version::<dyn EthereumRuntimeRPCApi<Block>>(&block)
 		{
 			if api_version >= 2 {
 				return true;

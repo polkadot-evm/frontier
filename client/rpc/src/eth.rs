@@ -189,7 +189,7 @@ fn transaction_build(
 	block: Option<ethereum::Block<EthereumTransaction>>,
 	status: Option<TransactionStatus>,
 	is_eip1559: bool,
-	base_fee: Option<U256>
+	base_fee: Option<U256>,
 ) -> Transaction {
 	let mut transaction: Transaction = ethereum_transaction.clone().into();
 
@@ -201,8 +201,13 @@ fn transaction_build(
 			// If transaction is already mined, gas price is considered base fee + priority fee.
 			// A.k.a. effective gas price.
 			let base_fee = base_fee.unwrap_or(U256::zero());
-			let max_priority_fee_per_gas = transaction.max_priority_fee_per_gas.unwrap_or(U256::zero());
-			transaction.gas_price = Some(base_fee.checked_add(max_priority_fee_per_gas).unwrap_or(U256::max_value()));
+			let max_priority_fee_per_gas =
+				transaction.max_priority_fee_per_gas.unwrap_or(U256::zero());
+			transaction.gas_price = Some(
+				base_fee
+					.checked_add(max_priority_fee_per_gas)
+					.unwrap_or(U256::max_value()),
+			);
 		}
 	} else if !is_eip1559 {
 		// This is a pre-eip1559 support transaction a.k.a. txns on frontier before we introduced EIP1559 support in
@@ -1537,7 +1542,10 @@ where
 				let effective_gas_price = match transaction {
 					EthereumTransaction::Legacy(t) => t.gas_price,
 					EthereumTransaction::EIP2930(t) => t.gas_price,
-					EthereumTransaction::EIP1559(t) => base_fee.unwrap().checked_add(t.max_priority_fee_per_gas).unwrap_or(U256::max_value())
+					EthereumTransaction::EIP1559(t) => base_fee
+						.unwrap()
+						.checked_add(t.max_priority_fee_per_gas)
+						.unwrap_or(U256::max_value()),
 				};
 
 				return Ok(Some(Receipt {
