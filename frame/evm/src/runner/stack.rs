@@ -143,7 +143,7 @@ impl<T: Config> Runner<T> {
 		// Refund fees to the `source` account.
 		// After eip-1559 this is the difference between the payed max_fee_per_gas and the max(basefee, usedGasFee).
 		// BaseFee is always burnt - even if not used - and ideally max_priority_fee_per_gas is tipped to the block author (TODO).
-		T::OnChargeTransaction::correct_and_deposit_fee(&source, refundable_fee, fee)?;
+		T::OnChargeTransaction::correct_and_deposit_fee(&source, refundable_fee, fee);
 
 		let state = executor.into_state();
 
