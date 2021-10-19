@@ -28,7 +28,7 @@ describeWithFrontier("Frontier RPC (Priority)", (context) => {
 		await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction]);
 		return tx;
 	}
-	0x3B9ACA07
+
 	step("should prioritize transaction with the higher gasPrice", async function () {
 		this.timeout(15000);
 		const gasPrices = ["0x3B9ACA01","0x3B9ACA00","0x3B9ACA04","0x3B9ACA06","0x3B9ACA01","0x3B9ACA07","0x3B9ACA02","0x3B9ACA05","0x3B9ACA03"];
