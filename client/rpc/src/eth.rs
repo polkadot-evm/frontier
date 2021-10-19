@@ -1065,7 +1065,7 @@ where
 
 			match exit_reason {
 				ExitReason::Succeed(_) => Ok(Some(used_gas)),
-				ExitReason::Revert(_) | ExitReason::Error(evm::ExitError::OutOfGas) => Ok(None),
+				ExitReason::Error(evm::ExitError::OutOfGas) => Ok(None),
 				other => error_on_execution_failure(&other, &data).map(|()| Some(used_gas)),
 			}
 		};
