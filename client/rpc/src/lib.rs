@@ -40,7 +40,7 @@ use sha3::{Digest, Keccak256};
 
 pub mod frontier_backend_client {
 
-	use super::{internal_err, TransactionMessage};
+	use super::internal_err;
 
 	use fc_rpc_core::types::BlockNumber;
 	use fp_storage::PALLET_ETHEREUM_SCHEMA;

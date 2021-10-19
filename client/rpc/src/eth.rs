@@ -899,7 +899,7 @@ where
 	}
 
 	fn send_raw_transaction(&self, bytes: Bytes) -> BoxFuture<Result<H256>> {
-		let mut slice = &bytes.0[..];
+		let slice = &bytes.0[..];
 		if slice.len() == 0 {
 			return Box::pin(future::err(internal_err("transaction data is empty")));
 		}
@@ -1054,6 +1054,7 @@ where
 			}
 			None => {
 				if api_version == 1 {
+					#[allow(deprecated)]
 					let info = api
 						.create_before_version_2(
 							&BlockId::Hash(hash),
@@ -1203,6 +1204,7 @@ where
 				let (exit_reason, data, used_gas) = match to {
 					Some(to) => {
 						let info = if api_version == 1 {
+							#[allow(deprecated)]
 							api.call_before_version_2(
 								&BlockId::Hash(best_hash),
 								from.unwrap_or_default(),
@@ -1237,6 +1239,7 @@ where
 					}
 					None => {
 						let info = if api_version == 1 {
+							#[allow(deprecated)]
 							api.create_before_version_2(
 								&BlockId::Hash(best_hash),
 								from.unwrap_or_default(),

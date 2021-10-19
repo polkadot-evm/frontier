@@ -136,7 +136,7 @@ where
 		)
 	}
 
-	fn is_eip1559(&self, block: &BlockId<Block>) -> bool {
+	fn is_eip1559(&self, _block: &BlockId<Block>) -> bool {
 		true
 	}
 }

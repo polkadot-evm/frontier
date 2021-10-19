@@ -134,11 +134,11 @@ where
 	}
 
 	/// Prior to eip-1559 there is no base fee.
-	fn base_fee(&self, block: &BlockId<Block>) -> Option<U256> {
+	fn base_fee(&self, _block: &BlockId<Block>) -> Option<U256> {
 		None
 	}
 
-	fn is_eip1559(&self, block: &BlockId<Block>) -> bool {
+	fn is_eip1559(&self, _block: &BlockId<Block>) -> bool {
 		false
 	}
 }

@@ -20,7 +20,6 @@ use crate::types::Bytes;
 use ethereum::{AccessListItem, TransactionV2};
 use ethereum_types::{H160, H256, H512, U256, U64};
 use serde::{ser::SerializeStruct, Serialize, Serializer};
-use sha3::{Digest, Keccak256};
 
 /// Transaction
 #[derive(Debug, Default, Clone, PartialEq, Serialize)]
