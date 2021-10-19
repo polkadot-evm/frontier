@@ -71,7 +71,7 @@ pub struct Transaction {
 	pub r: U256,
 	/// The S field of the signature.
 	pub s: U256,
-	/// TODO! Pre-pay to warm storage access.
+	/// Pre-pay to warm storage access.
 	#[cfg_attr(feature = "std", serde(skip_serializing_if = "Option::is_none"))]
 	pub access_list: Option<Vec<AccessListItem>>,
 }
@@ -125,7 +125,7 @@ impl From<TransactionV2> for Transaction {
 				public_key: None,
 				chain_id: Some(U64::from(t.chain_id)),
 				standard_v: U256::from(t.odd_y_parity as u8),
-				v: U256::from(t.odd_y_parity as u8), // TODO,
+				v: U256::from(t.odd_y_parity as u8),
 				r: U256::from(t.r.as_bytes()),
 				s: U256::from(t.s.as_bytes()),
 				access_list: Some(t.access_list),
@@ -149,7 +149,7 @@ impl From<TransactionV2> for Transaction {
 				public_key: None,
 				chain_id: Some(U64::from(t.chain_id)),
 				standard_v: U256::from(t.odd_y_parity as u8),
-				v: U256::from(t.odd_y_parity as u8), // TODO
+				v: U256::from(t.odd_y_parity as u8),
 				r: U256::from(t.r.as_bytes()),
 				s: U256::from(t.s.as_bytes()),
 				access_list: Some(t.access_list),
