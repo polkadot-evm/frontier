@@ -4,7 +4,7 @@ version = "0.0.0"
 authors = ["Substrate DevHub <https://github.com/substrate-developer-hub>"]
 edition = "2018"
 license = "Unlicense"
-homepage = "https://substrate.dev"
+homepage = "https://substrate.io"
 repository = "https://github.com/substrate-developer-hub/frontier-node-template/"
 publish = false
 

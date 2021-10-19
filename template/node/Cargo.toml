@@ -6,7 +6,7 @@ description = "A fresh FRAME-based Substrate node, ready for hacking."
 edition = "2018"
 license = "Unlicense"
 build = "build.rs"
-homepage = "https://substrate.dev"
+homepage = "https://substrate.io"
 repository = "https://github.com/substrate-developer-hub/frontier-node-template/"
 publish = false
 
