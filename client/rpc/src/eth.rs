@@ -832,21 +832,32 @@ where
 			Err(e) => return Box::pin(future::err(e)),
 		};
 
+		let gas_price = request.gas_price;
+		let max_fee_per_gas = request.max_fee_per_gas;
 		let mut message: Option<TransactionMessage> = request.into();
 		message = match message {
 			Some(TransactionMessage::Legacy(mut m)) => {
 				m.nonce = nonce;
 				m.chain_id = Some(chain_id);
+				if gas_price.is_none() {
+					m.gas_price = self.gas_price().unwrap_or(U256::default());
+				}
 				Some(TransactionMessage::Legacy(m))
 			}
 			Some(TransactionMessage::EIP2930(mut m)) => {
 				m.nonce = nonce;
 				m.chain_id = chain_id;
+				if gas_price.is_none() {
+					m.gas_price = self.gas_price().unwrap_or(U256::default());
+				}
 				Some(TransactionMessage::EIP2930(m))
 			}
 			Some(TransactionMessage::EIP1559(mut m)) => {
 				m.nonce = nonce;
 				m.chain_id = chain_id;
+				if max_fee_per_gas.is_none() {
+					m.max_fee_per_gas = self.gas_price().unwrap_or(U256::default());
+				}
 				Some(TransactionMessage::EIP1559(m))
 			}
 			_ => {
