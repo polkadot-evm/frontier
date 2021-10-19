@@ -372,7 +372,7 @@ impl EthSigner for EthDevSigner {
 								value: m.value,
 								input: m.input.clone(),
 								access_list: m.access_list,
-								odd_y_parity: m.chain_id % 2 == 0,
+								odd_y_parity: recid.serialize() != 0,
 								r,
 								s,
 							}));
@@ -395,7 +395,7 @@ impl EthSigner for EthDevSigner {
 								value: m.value,
 								input: m.input.clone(),
 								access_list: m.access_list,
-								odd_y_parity: m.chain_id % 2 == 0,
+								odd_y_parity: recid.serialize() != 0,
 								r,
 								s,
 							}));
