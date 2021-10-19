@@ -662,6 +662,9 @@ pub trait OnChargeEVMTransaction<T: Config> {
 		corrected_fee: U256,
 		already_withdrawn: Self::LiquidityInfo,
 	);
+
+	/// Introduced in EIP1559 to handle the priority tip payment to the block Author.
+	fn pay_priority_fee(tip: U256);
 }
 
 /// Implements the transaction payment for a pallet implementing the `Currency`
@@ -724,6 +727,11 @@ where
 			OU::on_unbalanced(adjusted_paid);
 		}
 	}
+
+	fn pay_priority_fee(tip: U256) {
+		let account_id = T::AddressMapping::into_account_id(<Pallet<T>>::find_author());
+		let _ = C::deposit_into_existing(&account_id, tip.low_u128().unique_saturated_into());
+	}
 }
 
 /// Implementation for () does not specify what to do with imbalance
@@ -750,5 +758,9 @@ impl<T> OnChargeEVMTransaction<T> for ()
 		already_withdrawn: Self::LiquidityInfo,
 	) {
 		<EVMCurrencyAdapter::<<T as Config>::Currency, ()> as OnChargeEVMTransaction<T>>::correct_and_deposit_fee(who, corrected_fee, already_withdrawn)
+	}
+
+	fn pay_priority_fee(tip: U256) {
+		<EVMCurrencyAdapter::<<T as Config>::Currency, ()> as OnChargeEVMTransaction<T>>::pay_priority_fee(tip);
 	}
 }
