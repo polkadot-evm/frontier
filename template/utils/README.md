@@ -35,7 +35,7 @@ $ 0x57d213d0927ccc7596044c6ba013dd05522aacba
 
 > NOTE: the template presently uses the **truncated** H160 address format. Thus this utility is not
 > needed. Instead, you should use the leading 20 bytes of the hex encoded address produced by the
-> [`subkey` tool](https://substrate.dev/docs/en/knowledgebase/integrate/subkey):
+> [`subkey` tool](https://docs.substrate.io/v3/tools/subkey):
 
 ```bash
 subkey inspect "//Alice"
