@@ -57,10 +57,22 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 			],
 		},
 	);
+	accounts.insert(
+		H160::default(), // root
+		GenesisAccount {
+			nonce: U256::from(1),
+			balance: U256::from(1000000),
+			storage: Default::default(),
+			code: vec![],
+		},
+	);
 
-	pallet_balances::GenesisConfig::<Test>::default()
-		.assimilate_storage(&mut t)
-		.unwrap();
+	pallet_balances::GenesisConfig::<Test>{
+		// Create the block author account with some balance. 
+		balances: vec![(H160::from_str("0x1234500000000000000000000000000000000000").unwrap(), 12345)],
+	}
+	.assimilate_storage(&mut t)
+	.expect("Pallet balances storage can be assimilated");
 	GenesisBuild::<Test>::assimilate_storage(&crate::GenesisConfig { accounts }, &mut t).unwrap();
 	t.into()
 }
@@ -144,5 +156,47 @@ fn reducible_balance() {
 		// Reducible is, as currently configured in `account_basic`, (balance - lock + existential).
 		let reducible_balance = EVM::account_basic(&evm_addr).balance;
 		assert_eq!(reducible_balance, (genesis_balance - to_lock + existential));
+	});
+}
+
+#[test]
+fn author_should_get_tip() {
+	new_test_ext().execute_with(|| {
+		let author = EVM::find_author();
+		let before_tip = EVM::account_basic(&author).balance;
+		let _ = EVM::call(
+			Origin::root(),
+			H160::default(),
+			H160::from_str("1000000000000000000000000000000000000001").unwrap(),
+			Vec::new(),
+			U256::default(),
+			1000000,
+			U256::default(),
+			Some(U256::from(1)),
+			None,
+		);
+		let after_tip = EVM::account_basic(&author).balance;
+		assert_eq!(after_tip, (before_tip + 1000000));
+	});
+}
+
+#[test]
+fn author_same_balance_without_tip() {
+	new_test_ext().execute_with(|| {
+		let author = EVM::find_author();
+		let before_tip = EVM::account_basic(&author).balance;
+		let _ = EVM::call(
+			Origin::root(),
+			H160::default(),
+			H160::from_str("1000000000000000000000000000000000000001").unwrap(),
+			Vec::new(),
+			U256::default(),
+			1000000,
+			U256::default(),
+			None,
+			None,
+		);
+		let after_tip = EVM::account_basic(&author).balance;
+		assert_eq!(after_tip, before_tip);
 	});
 }
