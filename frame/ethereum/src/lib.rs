@@ -31,7 +31,6 @@ use fp_evm::CallOrCreateInfo;
 use fp_storage::PALLET_ETHEREUM_SCHEMA;
 use frame_support::{
 	dispatch::DispatchResultWithPostInfo,
-	ensure,
 	traits::{EnsureOrigin, Get},
 	weights::{Pays, PostDispatchInfo, Weight},
 };
@@ -511,7 +510,7 @@ impl<T: Config> Pallet<T> {
 			// If the transaction do not include this optional parameter, priority is now considered zero.
 			priority = max_priority_fee_per_gas.unique_saturated_into();
 			// Add the priority tip to the payable fee.
-			fee.saturating_add(max_priority_fee_per_gas.saturating_mul(gas_limit));
+			fee = fee.saturating_add(max_priority_fee_per_gas.saturating_mul(gas_limit));
 		}
 
 		let account_data = pallet_evm::Pallet::<T>::account_basic(&origin);
@@ -561,7 +560,7 @@ impl<T: Config> Pallet<T> {
 			H256::from_slice(Keccak256::digest(&rlp::encode(&transaction)).as_slice());
 		let transaction_index = Pending::<T>::get().len() as u32;
 
-		let (to, contract_address, info) = Self::execute(source, &transaction, None)
+		let (to, _, info) = Self::execute(source, &transaction, None)
 			.expect("transaction is already validated; error indicates that the block is invalid");
 
 		let (reason, status, used_gas, dest) = match info {

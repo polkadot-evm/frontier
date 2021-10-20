@@ -58,13 +58,11 @@ impl<T: Config> Runner<T> {
 			&mut StackExecutor<'config, SubstrateStackState<'_, 'config, T>>,
 		) -> (ExitReason, R),
 	{
+		let base_fee = T::FeeCalculator::min_gas_price();
 		// Gas price check is skipped when performing a gas estimation.
 		let max_fee_per_gas = match max_fee_per_gas {
 			Some(max_fee_per_gas) => {
-				ensure!(
-					max_fee_per_gas >= T::FeeCalculator::min_gas_price(),
-					Error::<T>::GasPriceTooLow
-				);
+				ensure!(max_fee_per_gas >= base_fee, Error::<T>::GasPriceTooLow);
 				max_fee_per_gas
 			}
 			None => Default::default(),
@@ -108,7 +106,6 @@ impl<T: Config> Runner<T> {
 		if let Some(nonce) = nonce {
 			ensure!(source_account.nonce == nonce, Error::<T>::InvalidNonce);
 		}
-
 		// Deduct fee from the `source` account.
 		let fee = T::OnChargeTransaction::withdraw_fee(&source, total_fee)?;
 
@@ -116,7 +113,19 @@ impl<T: Config> Runner<T> {
 		let (reason, retv) = f(&mut executor);
 
 		let used_gas = U256::from(executor.used_gas());
-		let actual_fee = executor.fee(max_fee_per_gas);
+		let (actual_fee, actual_priority_fee) =
+			if let Some(max_priority_fee) = max_priority_fee_per_gas {
+				let actual_priority_fee = max_priority_fee
+					.checked_mul(U256::from(used_gas))
+					.ok_or(Error::<T>::FeeOverflow)?;
+				let actual_fee = executor
+					.fee(base_fee)
+					.checked_add(actual_priority_fee)
+					.unwrap_or(U256::max_value());
+				(actual_fee, Some(actual_priority_fee))
+			} else {
+				(executor.fee(base_fee), None)
+			};
 		log::debug!(
 			target: "evm",
 			"Execution {:?} [source: {:?}, value: {}, gas_limit: {}, actual_fee: {}]",
@@ -126,26 +135,9 @@ impl<T: Config> Runner<T> {
 			gas_limit,
 			actual_fee
 		);
-
-		// Max between the base fee and the used gased fee.
-		let refundable_fee = {
-			let minimum_viable_fee = T::FeeCalculator::min_gas_price()
-				.checked_mul(U256::from(gas_limit))
-				.ok_or(Error::<T>::FeeOverflow)?;
-
-			max_base_fee
-				.checked_sub(minimum_viable_fee.max(actual_fee))
-				// Sanity check, max_base_fee can only be lower than used or base fee when
-				// it wasn't defined (i.e. gas estimation)
-				.unwrap_or(U256::zero())
-		};
-
-		// Refund fees to the `source` account.
-		// After eip-1559 this is the difference between the payed max_fee_per_gas and the max(basefee, usedGasFee).
-		// BaseFee is always burnt - even if not used - and ideally max_priority_fee_per_gas is tipped to the block author.
-		T::OnChargeTransaction::correct_and_deposit_fee(&source, refundable_fee, fee);
-		if max_priority_fee > U256::zero() {
-			T::OnChargeTransaction::pay_priority_fee(max_priority_fee);
+		T::OnChargeTransaction::correct_and_deposit_fee(&source, actual_fee, fee);
+		if let Some(actual_priority_fee) = actual_priority_fee {
+			T::OnChargeTransaction::pay_priority_fee(actual_priority_fee);
 		}
 
 		let state = executor.into_state();

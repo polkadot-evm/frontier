@@ -61,7 +61,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 		H160::default(), // root
 		GenesisAccount {
 			nonce: U256::from(1),
-			balance: U256::from(1000000),
+			balance: U256::max_value(),
 			storage: Default::default(),
 			code: vec![],
 		},
@@ -90,7 +90,7 @@ fn fail_call_return_ok() {
 			Vec::new(),
 			U256::default(),
 			1000000,
-			U256::default(),
+			U256::from(1_000_000_000),
 			None,
 			None,
 		));
@@ -102,7 +102,7 @@ fn fail_call_return_ok() {
 			Vec::new(),
 			U256::default(),
 			1000000,
-			U256::default(),
+			U256::from(1_000_000_000),
 			None,
 			None,
 		));
@@ -172,14 +172,14 @@ fn author_should_get_tip() {
 			H160::default(),
 			H160::from_str("1000000000000000000000000000000000000001").unwrap(),
 			Vec::new(),
-			U256::default(),
+			U256::from(1),
 			1000000,
-			U256::default(),
+			U256::from(1_000_000_000),
 			Some(U256::from(1)),
 			None,
 		);
 		let after_tip = EVM::account_basic(&author).balance;
-		assert_eq!(after_tip, (before_tip + 1000000));
+		assert_eq!(after_tip, (before_tip + 21000));
 	});
 }
 
@@ -201,5 +201,62 @@ fn author_same_balance_without_tip() {
 		);
 		let after_tip = EVM::account_basic(&author).balance;
 		assert_eq!(after_tip, before_tip);
+	});
+}
+
+#[test]
+fn refunds_should_work() {
+	new_test_ext().execute_with(|| {
+		let before_call = EVM::account_basic(&H160::default()).balance;
+		// Gas price is not part of the actual fee calculations anymore, only the base fee.
+		//
+		// Because we first deduct max_fee_per_gas * gas_limit (2_000_000_000 * 1000000) we need
+		// to ensure that the difference (max fee VS base fee) is refunded.
+		let _ = EVM::call(
+			Origin::root(),
+			H160::default(),
+			H160::from_str("1000000000000000000000000000000000000001").unwrap(),
+			Vec::new(),
+			U256::from(1),
+			1000000,
+			U256::from(2_000_000_000),
+			None,
+			None,
+		);
+		let total_cost =
+			(U256::from(21_000) * <Test as Config>::FeeCalculator::min_gas_price()) + U256::from(1);
+		let after_call = EVM::account_basic(&H160::default()).balance;
+		assert_eq!(after_call, before_call - total_cost);
+	});
+}
+
+#[test]
+fn refunds_and_priority_should_work() {
+	new_test_ext().execute_with(|| {
+		let author = EVM::find_author();
+		let before_tip = EVM::account_basic(&author).balance;
+		let before_call = EVM::account_basic(&H160::default()).balance;
+		let tip = 5;
+		// The tip is deducted but never refunded to the caller.
+		let _ = EVM::call(
+			Origin::root(),
+			H160::default(),
+			H160::from_str("1000000000000000000000000000000000000001").unwrap(),
+			Vec::new(),
+			U256::from(1),
+			1000000,
+			U256::from(2_000_000_000),
+			Some(U256::from(tip)),
+			None,
+		);
+		let tip = tip * 21000;
+		let total_cost = (U256::from(21_000) * <Test as Config>::FeeCalculator::min_gas_price())
+			+ U256::from(1)
+			+ U256::from(tip);
+		let after_call = EVM::account_basic(&H160::default()).balance;
+		assert_eq!(after_call, before_call - total_cost);
+
+		let after_tip = EVM::account_basic(&author).balance;
+		assert_eq!(after_tip, (before_tip + tip));
 	});
 }
