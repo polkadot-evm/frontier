@@ -135,6 +135,27 @@ impl<T: Config> Runner<T> {
 			gas_limit,
 			actual_fee
 		);
+		// The difference between initially withdrawn and the actual cost is refunded.
+		//
+		// Considered the following request:
+		// +-----------+---------+--------------+
+		// | Gas_limit | Max_Fee | Max_Priority |
+		// +-----------+---------+--------------+
+		// |        20 |      10 |            6 |
+		// +-----------+---------+--------------+
+		//
+		// And execution:
+		// +----------+----------+
+		// | Gas_used | Base_Fee |
+		// +----------+----------+
+		// |        5 |        2 |
+		// +----------+----------+
+		//
+		// Initially withdrawn (10 + 6) * 20 = 320.
+		// Actual cost (2 + 6) * 5 = 40.
+		// Refunded 320 - 40 = 280.
+		// Tip 5 * 6 = 30.
+		// Burned 320 - (280 + 30) = 10. Which is equivalent to gas_used * base_fee.
 		T::OnChargeTransaction::correct_and_deposit_fee(&source, actual_fee, fee);
 		if let Some(actual_priority_fee) = actual_priority_fee {
 			T::OnChargeTransaction::pay_priority_fee(actual_priority_fee);
