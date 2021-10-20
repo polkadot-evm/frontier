@@ -67,9 +67,12 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 		},
 	);
 
-	pallet_balances::GenesisConfig::<Test>{
-		// Create the block author account with some balance. 
-		balances: vec![(H160::from_str("0x1234500000000000000000000000000000000000").unwrap(), 12345)],
+	pallet_balances::GenesisConfig::<Test> {
+		// Create the block author account with some balance.
+		balances: vec![(
+			H160::from_str("0x1234500000000000000000000000000000000000").unwrap(),
+			12345,
+		)],
 	}
 	.assimilate_storage(&mut t)
 	.expect("Pallet balances storage can be assimilated");
