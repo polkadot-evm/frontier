@@ -1145,7 +1145,7 @@ where
 					data,
 					exit_reason,
 					used_gas: _,
-				} = executable(request.clone(), highest)?;
+				} = executable(request.clone(), mid)?;
 				match exit_reason {
 					ExitReason::Succeed(_) => {
 						highest = mid;
