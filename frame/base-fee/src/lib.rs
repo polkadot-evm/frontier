@@ -83,21 +83,27 @@ pub mod pallet {
 	}
 
 	#[pallet::type_value]
-	pub fn DefaultBaseFeePerGas() -> U256 { U256::from(1_000_000_000) }
+	pub fn DefaultBaseFeePerGas() -> U256 {
+		U256::from(1_000_000_000)
+	}
 
 	#[pallet::storage]
 	#[pallet::getter(fn base_fee_per_gas)]
 	pub type BaseFeePerGas<T> = StorageValue<_, U256, ValueQuery, DefaultBaseFeePerGas>;
 
 	#[pallet::type_value]
-	pub fn DefaultIsActive() -> bool { true }
+	pub fn DefaultIsActive() -> bool {
+		true
+	}
 
 	#[pallet::storage]
 	#[pallet::getter(fn is_active)]
 	pub type IsActive<T> = StorageValue<_, bool, ValueQuery, DefaultIsActive>;
-	
+
 	#[pallet::type_value]
-	pub fn DefaultElasticity() -> Permill { Permill::from_parts(125_000) }
+	pub fn DefaultElasticity() -> Permill {
+		Permill::from_parts(125_000)
+	}
 
 	#[pallet::storage]
 	#[pallet::getter(fn elasticity)]
