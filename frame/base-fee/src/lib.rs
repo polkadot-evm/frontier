@@ -35,8 +35,6 @@ pub mod pallet {
 		type Event: From<Event> + IsType<<Self as frame_system::Config>::Event>;
 		/// Lower and upper bounds for increasing / decreasing `BaseFeePerGas`.
 		type Threshold: BaseFeeThreshold;
-		/// Coefficient used to increase or decrease `BaseFeePerGas`.
-		type Modifier: Get<Permill>;
 	}
 
 	#[pallet::pallet]
@@ -47,15 +45,17 @@ pub mod pallet {
 	pub struct GenesisConfig<T: Config> {
 		pub base_fee_per_gas: U256,
 		pub is_active: bool,
+		pub elasticity: Permill,
 		_marker: PhantomData<T>,
 	}
 
 	#[cfg(feature = "std")]
 	impl<T: Config> GenesisConfig<T> {
-		pub fn new(base_fee_per_gas: U256, is_active: bool) -> Self {
+		pub fn new(base_fee_per_gas: U256, is_active: bool, elasticity: Permill) -> Self {
 			Self {
 				base_fee_per_gas,
 				is_active,
+				elasticity,
 				_marker: PhantomData,
 			}
 		}
@@ -68,6 +68,7 @@ pub mod pallet {
 				// 1 GWEI
 				base_fee_per_gas: U256::from(1_000_000_000),
 				is_active: true,
+				elasticity: Permill::from_parts(125_000),
 				_marker: PhantomData,
 			}
 		}
@@ -94,6 +95,13 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn is_active)]
 	pub type IsActive<T> = StorageValue<_, bool, ValueQuery, DefaultIsActive>;
+	
+	#[pallet::type_value]
+	pub fn DefaultElasticity() -> Permill { Permill::from_parts(125_000) }
+
+	#[pallet::storage]
+	#[pallet::getter(fn elasticity)]
+	pub type Elasticity<T> = StorageValue<_, Permill, ValueQuery, DefaultElasticity>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -101,6 +109,7 @@ pub mod pallet {
 		NewBaseFeePerGas(U256),
 		BaseFeeOverflow,
 		IsActive(bool),
+		NewElasticity(Permill),
 	}
 
 	#[pallet::hooks]
@@ -111,8 +120,8 @@ pub mod pallet {
 				let upper = T::Threshold::upper();
 				// `target` is the ideal congestion of the network where the base fee should remain unchanged.
 				// Under normal circumstances the `target` should be 50%.
-				// If we go below the `target`, the base fee is linearly decreased by the Modifier delta of lower~target.
-				// If we go above the `target`, the base fee is linearly increased by the Modifier delta of upper~target.
+				// If we go below the `target`, the base fee is linearly decreased by the Elasticity delta of lower~target.
+				// If we go above the `target`, the base fee is linearly increased by the Elasticity delta of upper~target.
 				// The base fee is fully increased (default 12.5%) if the block is upper full (default 100%).
 				// The base fee is fully decreased (default 12.5%) if the block is lower empty (default 0%).
 				let weight = <frame_system::Pallet<T>>::block_weight();
@@ -134,8 +143,8 @@ pub mod pallet {
 					// Above target, increase.
 					let coef =
 						Permill::from_parts((usage.deconstruct() - target.deconstruct()) * 2u32);
-					// How much of the Modifier is used to mutate base fee.
-					let coef = T::Modifier::get() * coef;
+					// How much of the Elasticity is used to mutate base fee.
+					let coef = <Elasticity<T>>::get() * coef;
 					<BaseFeePerGas<T>>::mutate(|bf| {
 						if let Some(scaled_basefee) = bf.checked_mul(U256::from(coef.deconstruct()))
 						{
@@ -153,8 +162,8 @@ pub mod pallet {
 					// Below target, decrease.
 					let coef =
 						Permill::from_parts((target.deconstruct() - usage.deconstruct()) * 2u32);
-					// How much of the Modifier is used to mutate base fee.
-					let coef = T::Modifier::get() * coef;
+					// How much of the Elasticity is used to mutate base fee.
+					let coef = <Elasticity<T>>::get() * coef;
 					<BaseFeePerGas<T>>::mutate(|bf| {
 						if let Some(scaled_basefee) = bf.checked_mul(U256::from(coef.deconstruct()))
 						{
@@ -190,6 +199,14 @@ pub mod pallet {
 			Self::deposit_event(Event::IsActive(is_active));
 			Ok(())
 		}
+
+		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+		pub fn set_elasticity(origin: OriginFor<T>, elasticity: Permill) -> DispatchResult {
+			ensure_root(origin)?;
+			<Elasticity<T>>::put(elasticity);
+			Self::deposit_event(Event::NewElasticity(elasticity));
+			Ok(())
+		}
 	}
 
 	impl<T: Config> pallet_evm::FeeCalculator for Pallet<T> {
@@ -220,7 +237,7 @@ mod tests {
 			.build_storage::<Test>()
 			.unwrap();
 
-		pallet_base_fee::GenesisConfig::<Test>::new(base_fee, true)
+		pallet_base_fee::GenesisConfig::<Test>::new(base_fee, true, Permill::from_parts(125_000))
 			.assimilate_storage(&mut t)
 			.unwrap();
 		TestExternalities::new(t)
@@ -261,7 +278,6 @@ mod tests {
 	}
 
 	frame_support::parameter_types! {
-		pub const Modifier: Permill = Permill::from_parts(125_000);
 		pub const Threshold: (u8, u8) = (0, 100);
 	}
 
@@ -278,7 +294,6 @@ mod tests {
 	impl Config for Test {
 		type Event = Event;
 		type Threshold = BaseFeeThreshold;
-		type Modifier = Modifier;
 	}
 
 	frame_support::construct_runtime!(

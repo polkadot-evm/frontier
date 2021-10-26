@@ -336,11 +336,6 @@ impl pallet_dynamic_fee::Config for Runtime {
 	type MinGasPriceBoundDivisor = BoundDivision;
 }
 
-frame_support::parameter_types! {
-	pub const Modifier: Permill = Permill::from_parts(125_000); // 12.5%
-	pub const Threshold: (u8, u8) = (0, 100);
-}
-
 pub struct BaseFeeThreshold;
 impl pallet_base_fee::BaseFeeThreshold for BaseFeeThreshold {
 	fn lower() -> Permill {
@@ -354,7 +349,6 @@ impl pallet_base_fee::BaseFeeThreshold for BaseFeeThreshold {
 impl pallet_base_fee::Config for Runtime {
 	type Event = Event;
 	type Threshold = BaseFeeThreshold;
-	type Modifier = Modifier;
 }
 
 impl pallet_randomness_collective_flip::Config for Runtime {}
