@@ -228,7 +228,8 @@ mod tests {
 	use crate as pallet_base_fee;
 
 	use frame_support::{
-		pallet_prelude::GenesisBuild, parameter_types, traits::OnFinalize, weights::DispatchClass,
+		assert_ok, pallet_prelude::GenesisBuild, parameter_types, traits::OnFinalize,
+		weights::DispatchClass,
 	};
 	use sp_core::{H256, U256};
 	use sp_io::TestExternalities;
@@ -407,6 +408,39 @@ mod tests {
 			BaseFee::on_finalize(System::block_number());
 			// Expect the base fee to remain unchanged
 			assert_eq!(BaseFee::base_fee_per_gas(), U256::from(1000000000));
+		});
+	}
+
+	#[test]
+	fn set_base_fee_per_gas_dispatchable() {
+		let base_fee = U256::from(1_000_000_000);
+		new_test_ext(base_fee).execute_with(|| {
+			assert_eq!(BaseFee::base_fee_per_gas(), U256::from(1000000000));
+			assert_ok!(BaseFee::set_base_fee_per_gas(Origin::root(), U256::from(1)));
+			assert_eq!(BaseFee::base_fee_per_gas(), U256::from(1));
+		});
+	}
+
+	#[test]
+	fn set_is_active_dispatchable() {
+		let base_fee = U256::from(1_000_000_000);
+		new_test_ext(base_fee).execute_with(|| {
+			assert_eq!(BaseFee::is_active(), true);
+			assert_ok!(BaseFee::set_is_active(Origin::root(), false));
+			assert_eq!(BaseFee::is_active(), false);
+		});
+	}
+
+	#[test]
+	fn set_elasticity_dispatchable() {
+		let base_fee = U256::from(1_000_000_000);
+		new_test_ext(base_fee).execute_with(|| {
+			assert_eq!(BaseFee::elasticity(), Permill::from_parts(125_000));
+			assert_ok!(BaseFee::set_elasticity(
+				Origin::root(),
+				Permill::from_parts(1_000)
+			));
+			assert_eq!(BaseFee::elasticity(), Permill::from_parts(1_000));
 		});
 	}
 }
