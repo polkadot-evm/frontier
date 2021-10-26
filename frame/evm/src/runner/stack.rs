@@ -210,6 +210,7 @@ impl<T: Config> RunnerT<T> for Runner<T> {
 		max_fee_per_gas: Option<U256>,
 		max_priority_fee_per_gas: Option<U256>,
 		nonce: Option<U256>,
+		access_list: Vec<(H160, Vec<H256>)>,
 		config: &evm::Config,
 	) -> Result<CallInfo, Self::Error> {
 		Self::execute(
@@ -220,7 +221,7 @@ impl<T: Config> RunnerT<T> for Runner<T> {
 			max_priority_fee_per_gas,
 			nonce,
 			config,
-			|executor| executor.transact_call(source, target, value, input, gas_limit, vec![]),
+			|executor| executor.transact_call(source, target, value, input, gas_limit, access_list),
 		)
 	}
 
@@ -232,6 +233,7 @@ impl<T: Config> RunnerT<T> for Runner<T> {
 		max_fee_per_gas: Option<U256>,
 		max_priority_fee_per_gas: Option<U256>,
 		nonce: Option<U256>,
+		access_list: Vec<(H160, Vec<H256>)>,
 		config: &evm::Config,
 	) -> Result<CreateInfo, Self::Error> {
 		Self::execute(
@@ -245,7 +247,7 @@ impl<T: Config> RunnerT<T> for Runner<T> {
 			|executor| {
 				let address = executor.create_address(evm::CreateScheme::Legacy { caller: source });
 				(
-					executor.transact_create(source, value, init, gas_limit, vec![]),
+					executor.transact_create(source, value, init, gas_limit, access_list),
 					address,
 				)
 			},
@@ -261,6 +263,7 @@ impl<T: Config> RunnerT<T> for Runner<T> {
 		max_fee_per_gas: Option<U256>,
 		max_priority_fee_per_gas: Option<U256>,
 		nonce: Option<U256>,
+		access_list: Vec<(H160, Vec<H256>)>,
 		config: &evm::Config,
 	) -> Result<CreateInfo, Self::Error> {
 		let code_hash = H256::from_slice(Keccak256::digest(&init).as_slice());
@@ -279,7 +282,7 @@ impl<T: Config> RunnerT<T> for Runner<T> {
 					salt,
 				});
 				(
-					executor.transact_create2(source, value, init, salt, gas_limit, vec![]),
+					executor.transact_create2(source, value, init, salt, gas_limit, access_list),
 					address,
 				)
 			},

@@ -657,7 +657,7 @@ impl<T: Config> Pallet<T> {
 		transaction: &Transaction,
 		config: Option<evm::Config>,
 	) -> Result<(Option<H160>, Option<H160>, CallOrCreateInfo), DispatchError> {
-		let (input, value, gas_limit, max_fee_per_gas, max_priority_fee_per_gas, nonce, action) = {
+		let (input, value, gas_limit, max_fee_per_gas, max_priority_fee_per_gas, nonce, action, access_list) = {
 			match transaction {
 				// max_fee_per_gas and max_priority_fee_per_gas in legacy and 2930 transactions is
 				// the provided gas_price.
@@ -669,25 +669,38 @@ impl<T: Config> Pallet<T> {
 					Some(t.gas_price),
 					Some(t.nonce),
 					t.action,
+					Vec::new(),
 				),
-				Transaction::EIP2930(t) => (
-					t.input.clone(),
-					t.value,
-					t.gas_limit,
-					Some(t.gas_price),
-					Some(t.gas_price),
-					Some(t.nonce),
-					t.action,
-				),
-				Transaction::EIP1559(t) => (
-					t.input.clone(),
-					t.value,
-					t.gas_limit,
-					Some(t.max_fee_per_gas),
-					Some(t.max_priority_fee_per_gas),
-					Some(t.nonce),
-					t.action,
-				),
+				Transaction::EIP2930(t) => {
+					let access_list: Vec<(H160, Vec<H256>)> = t.access_list.iter()
+						.map(|item| (item.address, item.slots))
+						.collect();
+					(
+						t.input.clone(),
+						t.value,
+						t.gas_limit,
+						Some(t.gas_price),
+						Some(t.gas_price),
+						Some(t.nonce),
+						t.action,
+						access_list,
+					)
+				},
+				Transaction::EIP1559(t) => {
+					let access_list: Vec<(H160, Vec<H256>)> = t.access_list.iter()
+						.map(|item| (item.address, item.slots))
+						.collect();
+					(
+						t.input.clone(),
+						t.value,
+						t.gas_limit,
+						Some(t.max_fee_per_gas),
+						Some(t.max_priority_fee_per_gas),
+						Some(t.nonce),
+						t.action,
+						t.access_list,
+					)
+				},
 			}
 		};
 
@@ -702,6 +715,7 @@ impl<T: Config> Pallet<T> {
 					max_fee_per_gas,
 					max_priority_fee_per_gas,
 					nonce,
+					access_list,
 					config.as_ref().unwrap_or(T::config()),
 				)
 				.map_err(Into::into)?;
@@ -717,6 +731,7 @@ impl<T: Config> Pallet<T> {
 					max_fee_per_gas,
 					max_priority_fee_per_gas,
 					nonce,
+					access_list,
 					config.as_ref().unwrap_or(T::config()),
 				)
 				.map_err(Into::into)?;

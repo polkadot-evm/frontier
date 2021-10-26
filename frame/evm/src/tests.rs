@@ -93,6 +93,7 @@ fn fail_call_return_ok() {
 			U256::from(1_000_000_000),
 			None,
 			None,
+			Vec::new(),
 		));
 
 		assert_ok!(EVM::call(
@@ -105,6 +106,7 @@ fn fail_call_return_ok() {
 			U256::from(1_000_000_000),
 			None,
 			None,
+			Vec::new(),
 		));
 	});
 }
@@ -177,6 +179,7 @@ fn author_should_get_tip() {
 			U256::from(1_000_000_000),
 			Some(U256::from(1)),
 			None,
+			Vec::new(),
 		);
 		let after_tip = EVM::account_basic(&author).balance;
 		assert_eq!(after_tip, (before_tip + 21000));
@@ -198,6 +201,7 @@ fn author_same_balance_without_tip() {
 			U256::default(),
 			None,
 			None,
+			Vec::new(),
 		);
 		let after_tip = EVM::account_basic(&author).balance;
 		assert_eq!(after_tip, before_tip);
@@ -222,6 +226,7 @@ fn refunds_should_work() {
 			U256::from(2_000_000_000),
 			None,
 			None,
+			Vec::new(),
 		);
 		let total_cost =
 			(U256::from(21_000) * <Test as Config>::FeeCalculator::min_gas_price()) + U256::from(1);
@@ -248,6 +253,7 @@ fn refunds_and_priority_should_work() {
 			U256::from(2_000_000_000),
 			Some(U256::from(tip)),
 			None,
+			Vec::new(),
 		);
 		let tip = tip * 21000;
 		let total_cost = (U256::from(21_000) * <Test as Config>::FeeCalculator::min_gas_price())
