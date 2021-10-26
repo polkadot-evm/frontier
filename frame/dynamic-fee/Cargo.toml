@@ -17,6 +17,7 @@ sp-inherents = { version = "4.0.0-dev", default-features = false, git = "https:/
 frame-system = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
 frame-support = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
 async-trait = "0.1"
+scale-info = { version = "1.0.0", default-features = false, features = ["derive"] }
 
 [dev-dependencies]
 pallet-timestamp = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
@@ -34,4 +35,5 @@ std = [
 	"frame-system/std",
 	"frame-support/std",
 	"pallet-evm/std",
+	"scale-info/std",
 ]

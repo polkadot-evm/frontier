@@ -220,7 +220,7 @@ impl<T: Config> RunnerT<T> for Runner<T> {
 			max_priority_fee_per_gas,
 			nonce,
 			config,
-			|executor| executor.transact_call(source, target, value, input, gas_limit),
+			|executor| executor.transact_call(source, target, value, input, gas_limit, vec![]),
 		)
 	}
 
@@ -245,7 +245,7 @@ impl<T: Config> RunnerT<T> for Runner<T> {
 			|executor| {
 				let address = executor.create_address(evm::CreateScheme::Legacy { caller: source });
 				(
-					executor.transact_create(source, value, init, gas_limit),
+					executor.transact_create(source, value, init, gas_limit, vec![]),
 					address,
 				)
 			},
@@ -279,7 +279,7 @@ impl<T: Config> RunnerT<T> for Runner<T> {
 					salt,
 				});
 				(
-					executor.transact_create2(source, value, init, salt, gas_limit),
+					executor.transact_create2(source, value, init, salt, gas_limit, vec![]),
 					address,
 				)
 			},
@@ -574,4 +574,8 @@ impl<'vicinity, 'config, T: Config> StackStateT<'config>
 		// only empty and non-empty accounts. This avoids many of the
 		// subtle issues in EIP-161.
 	}
+	// TODO
+	fn is_cold(&self, _: sp_core::H160) -> bool { true }
+	// TODO
+	fn is_storage_cold(&self, _: sp_core::H160, _: sp_core::H256) -> bool { true }
 }

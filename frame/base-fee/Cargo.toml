@@ -19,6 +19,7 @@ frame-system = { version = "4.0.0-dev", default-features = false, git = "https:/
 sp-core = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
 sp-runtime = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
 pallet-evm = { path = "../evm", default-features = false }
+scale-info = { version = "1.0.0", default-features = false, features = ["derive"] }
 
 [dev-dependencies]
 sp-io = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
@@ -33,4 +34,5 @@ std = [
 	"frame-support/std",
 	"frame-system/std",
 	"pallet-evm/std",
+	"scale-info/std",
 ]
