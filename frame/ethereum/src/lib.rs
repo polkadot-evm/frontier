@@ -657,7 +657,16 @@ impl<T: Config> Pallet<T> {
 		transaction: &Transaction,
 		config: Option<evm::Config>,
 	) -> Result<(Option<H160>, Option<H160>, CallOrCreateInfo), DispatchError> {
-		let (input, value, gas_limit, max_fee_per_gas, max_priority_fee_per_gas, nonce, action, access_list) = {
+		let (
+			input,
+			value,
+			gas_limit,
+			max_fee_per_gas,
+			max_priority_fee_per_gas,
+			nonce,
+			action,
+			access_list,
+		) = {
 			match transaction {
 				// max_fee_per_gas and max_priority_fee_per_gas in legacy and 2930 transactions is
 				// the provided gas_price.
@@ -672,7 +681,9 @@ impl<T: Config> Pallet<T> {
 					Vec::new(),
 				),
 				Transaction::EIP2930(t) => {
-					let access_list: Vec<(H160, Vec<H256>)> = t.access_list.iter()
+					let access_list: Vec<(H160, Vec<H256>)> = t
+						.access_list
+						.iter()
 						.map(|item| (item.address, item.slots))
 						.collect();
 					(
@@ -685,9 +696,11 @@ impl<T: Config> Pallet<T> {
 						t.action,
 						access_list,
 					)
-				},
+				}
 				Transaction::EIP1559(t) => {
-					let access_list: Vec<(H160, Vec<H256>)> = t.access_list.iter()
+					let access_list: Vec<(H160, Vec<H256>)> = t
+						.access_list
+						.iter()
 						.map(|item| (item.address, item.slots))
 						.collect();
 					(
@@ -700,7 +713,7 @@ impl<T: Config> Pallet<T> {
 						t.action,
 						t.access_list,
 					)
-				},
+				}
 			}
 		};
 
