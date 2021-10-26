@@ -81,13 +81,19 @@ pub mod pallet {
 		}
 	}
 
+	#[pallet::type_value]
+	pub fn DefaultBaseFeePerGas() -> U256 { U256::from(1_000_000_000) }
+
 	#[pallet::storage]
 	#[pallet::getter(fn base_fee_per_gas)]
-	pub type BaseFeePerGas<T> = StorageValue<_, U256, ValueQuery, GetDefault>;
+	pub type BaseFeePerGas<T> = StorageValue<_, U256, ValueQuery, DefaultBaseFeePerGas>;
+
+	#[pallet::type_value]
+	pub fn DefaultIsActive() -> bool { true }
 
 	#[pallet::storage]
 	#[pallet::getter(fn is_active)]
-	pub type IsActive<T> = StorageValue<_, bool, ValueQuery, GetDefault>;
+	pub type IsActive<T> = StorageValue<_, bool, ValueQuery, DefaultIsActive>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
