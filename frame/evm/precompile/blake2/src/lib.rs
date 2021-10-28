@@ -22,8 +22,7 @@ extern crate alloc;
 mod eip_152;
 
 use core::mem::size_of;
-use evm::{executor::PrecompileOutput, Context, ExitError, ExitSucceed};
-use fp_evm::Precompile;
+use fp_evm::{Context, ExitError, ExitSucceed, Precompile, PrecompileOutput};
 
 pub struct Blake2F;
 

@@ -15,7 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use evm::{executor::PrecompileOutput, Context, ExitError, ExitSucceed};
+pub use evm::{executor::PrecompileOutput, Context, ExitError, ExitSucceed};
 use impl_trait_for_tuples::impl_for_tuples;
 use sp_core::H160;
 use sp_std::vec::Vec;

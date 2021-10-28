@@ -135,6 +135,12 @@ where
 				Ok(res)
 			}
 			CheckedSignature::SelfContained(signed_info) => {
+				// If pre-dispatch fail, the block must be considered invalid
+				self.function
+					.pre_dispatch_self_contained(&signed_info)
+					.ok_or(TransactionValidityError::Invalid(
+						InvalidTransaction::BadProof,
+					))??;
 				Ok(self.function.apply_self_contained(signed_info).ok_or(
 					TransactionValidityError::Invalid(InvalidTransaction::BadProof),
 				)?)

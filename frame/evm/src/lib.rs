@@ -654,7 +654,7 @@ pub trait OnChargeEVMTransaction<T: Config> {
 		who: &H160,
 		corrected_fee: U256,
 		already_withdrawn: Self::LiquidityInfo,
-	) -> Result<(), Error<T>>;
+	);
 }
 
 /// Implements the transaction payment for a pallet implementing the `Currency`
@@ -696,7 +696,7 @@ where
 		who: &H160,
 		corrected_fee: U256,
 		already_withdrawn: Self::LiquidityInfo,
-	) -> Result<(), Error<T>> {
+	) {
 		if let Some(paid) = already_withdrawn {
 			let account_id = T::AddressMapping::into_account_id(*who);
 
@@ -713,10 +713,9 @@ where
 			let adjusted_paid = paid
 				.offset(refund_imbalance)
 				.same()
-				.map_err(|_| Error::<T>::BalanceLow)?;
+				.unwrap_or_else(|_| C::NegativeImbalance::zero());
 			OU::on_unbalanced(adjusted_paid);
 		}
-		Ok(())
 	}
 }
 
@@ -742,7 +741,7 @@ impl<T> OnChargeEVMTransaction<T> for ()
 		who: &H160,
 		corrected_fee: U256,
 		already_withdrawn: Self::LiquidityInfo,
-	) -> Result<(), Error<T>> {
-		EVMCurrencyAdapter::<<T as Config>::Currency, ()>::correct_and_deposit_fee(who, corrected_fee, already_withdrawn)
+	) {
+		<EVMCurrencyAdapter::<<T as Config>::Currency, ()> as OnChargeEVMTransaction<T>>::correct_and_deposit_fee(who, corrected_fee, already_withdrawn)
 	}
 }
