@@ -65,7 +65,7 @@ mod tests {
 	use super::*;
 
 	#[test]
-	fn test_empty_input() -> std::result::Result<(), ExitError> {
+	fn test_empty_input() -> std::result::Result<(), PrecompileFailure> {
 		let input: [u8; 0] = [];
 		let expected = b"\
 			\xa7\xff\xc6\xf8\xbf\x1e\xd7\x66\x51\xc1\x47\x56\xa0\x61\xd6\x62\
@@ -86,7 +86,7 @@ mod tests {
 	}
 
 	#[test]
-	fn hello_sha3_256() -> std::result::Result<(), ExitError> {
+	fn hello_sha3_256() -> std::result::Result<(), PrecompileFailure> {
 		let input = b"hello";
 		let expected = b"\
 			\x33\x38\xbe\x69\x4f\x50\xc5\xf3\x38\x81\x49\x86\xcd\xf0\x68\x64\
@@ -107,7 +107,7 @@ mod tests {
 	}
 
 	#[test]
-	fn long_string_sha3_256() -> std::result::Result<(), ExitError> {
+	fn long_string_sha3_256() -> std::result::Result<(), PrecompileFailure> {
 		let input = b"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
 		let expected = b"\
 			\xbd\xe3\xf2\x69\x17\x5e\x1d\xcd\xa1\x38\x48\x27\x8a\xa6\x04\x6b\
@@ -128,7 +128,7 @@ mod tests {
 	}
 
 	#[test]
-	fn long_string_sha3_512() -> std::result::Result<(), ExitError> {
+	fn long_string_sha3_512() -> std::result::Result<(), PrecompileFailure> {
 		let input = b"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
 		let expected = b"\
 			\xf3\x2a\x94\x23\x55\x13\x51\xdf\x0a\x07\xc0\xb8\xc2\x0e\xb9\x72\
