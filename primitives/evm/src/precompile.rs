@@ -19,8 +19,6 @@ pub use evm::{
 	executor::{PrecompileFailure, PrecompileOutput, PrecompileSet},
 	Context, ExitError, ExitSucceed,
 };
-use impl_trait_for_tuples::impl_for_tuples;
-use sp_core::H160;
 use sp_std::vec::Vec;
 
 pub type PrecompileResult = Result<PrecompileOutput, PrecompileFailure>;

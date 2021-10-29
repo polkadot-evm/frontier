@@ -27,7 +27,7 @@ use sp_core::U256;
 use sp_inherents::{InherentData, InherentIdentifier};
 use std::{
 	cell::RefCell,
-	collections::{BTreeMap, HashMap},
+	collections::BTreeMap,
 	sync::{Arc, Mutex},
 	time::Duration,
 };

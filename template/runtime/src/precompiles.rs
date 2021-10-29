@@ -1,9 +1,5 @@
-use pallet_evm::{
-	AddressMapping, Context, Precompile, PrecompileFailure, PrecompileOutput, PrecompileResult,
-	PrecompileSet,
-};
+use pallet_evm::{Context, Precompile, PrecompileResult, PrecompileSet};
 use sp_core::H160;
-use sp_std::fmt::Debug;
 use sp_std::marker::PhantomData;
 
 use pallet_evm_precompile_modexp::Modexp;

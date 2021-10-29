@@ -22,7 +22,7 @@ extern crate alloc;
 use alloc::vec::Vec;
 use tiny_keccak::Hasher;
 
-use fp_evm::{ExitError, ExitSucceed, LinearCostPrecompile, PrecompileFailure};
+use fp_evm::{ExitSucceed, LinearCostPrecompile, PrecompileFailure};
 
 pub struct Sha3FIPS256;
 

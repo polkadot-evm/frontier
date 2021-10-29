@@ -19,7 +19,7 @@
 
 use crate::{
 	runner::Runner as RunnerT, AccountCodes, AccountStorages, AddressMapping, BlockHashMapping,
-	Config, Error, Event, FeeCalculator, OnChargeEVMTransaction, Pallet, PrecompileSet,
+	Config, Error, Event, FeeCalculator, OnChargeEVMTransaction, Pallet,
 };
 use evm::{
 	backend::Backend as BackendT,
