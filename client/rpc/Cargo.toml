@@ -13,7 +13,7 @@ jsonrpc-core-client = "18.0"
 jsonrpc-pubsub = "18.0"
 log = "0.4.8"
 ethereum-types = "0.12"
-evm = "0.31.1"
+evm = "0.32.0"
 fc-consensus = { version = "2.0.0-dev", path = "../consensus" }
 fc-db = { version = "2.0.0-dev", path = "../db" }
 fc-rpc-core = { version = "1.1.0-dev", path = "../rpc-core" }

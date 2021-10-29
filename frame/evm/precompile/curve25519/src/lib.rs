@@ -24,7 +24,7 @@ use curve25519_dalek::{
 	scalar::Scalar,
 	traits::Identity,
 };
-use fp_evm::{ExitError, ExitSucceed, LinearCostPrecompile};
+use fp_evm::{ExitError, ExitSucceed, LinearCostPrecompile, PrecompileFailure};
 
 // Adds at most 10 curve25519 points and returns the CompressedRistretto bytes representation
 pub struct Curve25519Add;
@@ -33,17 +33,17 @@ impl LinearCostPrecompile for Curve25519Add {
 	const BASE: u64 = 60;
 	const WORD: u64 = 12;
 
-	fn execute(input: &[u8], _: u64) -> core::result::Result<(ExitSucceed, Vec<u8>), ExitError> {
+	fn execute(input: &[u8], _: u64) -> core::result::Result<(ExitSucceed, Vec<u8>), PrecompileFailure> {
 		if input.len() % 32 != 0 {
-			return Err(ExitError::Other(
+			return Err(PrecompileFailure::Error { exit_status: ExitError::Other(
 				"input must contain multiple of 32 bytes".into(),
-			));
+			)});
 		};
 
 		if input.len() > 320 {
-			return Err(ExitError::Other(
+			return Err(PrecompileFailure::Error { exit_status: ExitError::Other(
 				"input cannot be greater than 320 bytes (10 compressed points)".into(),
-			));
+			)});
 		};
 
 		let mut points = Vec::new();
@@ -76,11 +76,11 @@ impl LinearCostPrecompile for Curve25519ScalarMul {
 	const BASE: u64 = 60;
 	const WORD: u64 = 12;
 
-	fn execute(input: &[u8], _: u64) -> core::result::Result<(ExitSucceed, Vec<u8>), ExitError> {
+	fn execute(input: &[u8], _: u64) -> core::result::Result<(ExitSucceed, Vec<u8>), PrecompileFailure> {
 		if input.len() != 64 {
-			return Err(ExitError::Other(
+			return Err(PrecompileFailure::Error { exit_status: ExitError::Other(
 				"input must contain 64 bytes (scalar - 32 bytes, point - 32 bytes)".into(),
-			));
+			)});
 		};
 
 		// first 32 bytes is for the scalar value

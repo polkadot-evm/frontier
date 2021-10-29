@@ -370,18 +370,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "auto_impl"
-version = "0.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "42cbf586c80ada5e5ccdecae80d3ef0854f224e2dd74435f8d87e6831b8d0a38"
-dependencies = [
- "proc-macro-error",
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
 name = "autocfg"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1419,20 +1407,20 @@ checksum = "f7531096570974c3a9dcf9e4b8e1cede1ec26cf5046219fb3b9d897503b9be59"
 
 [[package]]
 name = "evm"
-version = "0.31.1"
+version = "0.32.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ddef7d840592ae19c1392fbec54c9b1425c2534a93e9e512afde571e6ca628c9"
+checksum = "2256030d4b10a5da76f4f6a1f4b7bbf812f351ded74d4b747b4c1414a0023774"
 dependencies = [
- "auto_impl",
  "environmental",
  "ethereum",
- "evm-core 0.31.0",
- "evm-gasometer 0.31.0",
- "evm-runtime 0.31.0",
+ "evm-core 0.32.0",
+ "evm-gasometer 0.32.0",
+ "evm-runtime 0.32.0",
  "log",
  "parity-scale-codec",
  "primitive-types",
  "rlp",
+ "scale-info",
  "serde",
  "sha3 0.8.2",
 ]
@@ -1451,13 +1439,14 @@ dependencies = [
 
 [[package]]
 name = "evm-core"
-version = "0.31.0"
+version = "0.32.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5bb30090cebf1d85781189859bd6de7a759f6c4cffd7cd2a7b05e7eccb769b60"
+checksum = "88acf9bfca4b068b86de667a8e21f531877f10516ffcb9088f1ca7f4e7107747"
 dependencies = [
  "funty",
  "parity-scale-codec",
  "primitive-types",
+ "scale-info",
  "serde",
 ]
 
@@ -1475,13 +1464,13 @@ dependencies = [
 
 [[package]]
 name = "evm-gasometer"
-version = "0.31.0"
+version = "0.32.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9c38e0842db6f66df571675f02018264abf92dbea4d1fb5a92b3a029088663fd"
+checksum = "b1a4a5614709e90bf010d27df99617d271857616efae06c64c3a1ebe50100ee8"
 dependencies = [
  "environmental",
- "evm-core 0.31.0",
- "evm-runtime 0.31.0",
+ "evm-core 0.32.0",
+ "evm-runtime 0.32.0",
  "primitive-types",
 ]
 
@@ -1499,13 +1488,12 @@ dependencies = [
 
 [[package]]
 name = "evm-runtime"
-version = "0.31.0"
+version = "0.32.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "86158aeca104c31ef15b67afc80e8e4f32705bd9f98ac55c6911ab6185a234a4"
+checksum = "c86168e1f038ef31d944b351d66ad8f95204c43ba8fffaf1afb765f21310b4ec"
 dependencies = [
- "auto_impl",
  "environmental",
- "evm-core 0.31.0",
+ "evm-core 0.32.0",
  "primitive-types",
  "sha3 0.8.2",
 ]
@@ -1781,6 +1769,7 @@ dependencies = [
  "ethereum-types",
  "fp-evm",
  "parity-scale-codec",
+ "scale-info",
  "sp-api",
  "sp-core",
  "sp-io",
@@ -2067,6 +2056,7 @@ dependencies = [
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
  "parity-scale-codec",
+ "scale-info",
  "serde",
  "sp-api",
  "sp-block-builder",

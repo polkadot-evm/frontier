@@ -58,7 +58,7 @@ mod mock;
 #[cfg(all(feature = "std", test))]
 mod tests;
 
-#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug)]
+#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, scale_info::TypeInfo)]
 pub enum RawOrigin {
 	EthereumTransaction(H160),
 }
@@ -84,6 +84,7 @@ struct TransactionData {
 	max_priority_fee_per_gas: Option<U256>,
 	value: U256,
 	chain_id: Option<u64>,
+	access_list: Vec<(H160, Vec<H256>)>,
 }
 
 pub struct EnsureEthereumTransaction;
@@ -109,13 +110,13 @@ where
 {
 	pub fn is_self_contained(&self) -> bool {
 		match self {
-			Call::transact(_) => true,
+			Call::transact { .. } => true,
 			_ => false,
 		}
 	}
 
 	pub fn check_self_contained(&self) -> Option<Result<H160, TransactionValidityError>> {
-		if let Call::transact(transaction) = self {
+		if let Call::transact { transaction } = self {
 			let check = || {
 				let origin = Pallet::<T>::recover_signer(&transaction).ok_or_else(|| {
 					InvalidTransaction::Custom(TransactionValidationError::InvalidSignature as u8)
@@ -134,7 +135,7 @@ where
 		&self,
 		origin: &H160,
 	) -> Option<Result<(), TransactionValidityError>> {
-		if let Call::transact(transaction) = self {
+		if let Call::transact { transaction } = self {
 			Some(Pallet::<T>::validate_transaction_in_block(
 				*origin,
 				&transaction,
@@ -145,7 +146,7 @@ where
 	}
 
 	pub fn validate_self_contained(&self, origin: &H160) -> Option<TransactionValidity> {
-		if let Call::transact(transaction) = self {
+		if let Call::transact { transaction } = self {
 			Some(Pallet::<T>::validate_transaction_in_pool(
 				*origin,
 				transaction,
@@ -319,6 +320,7 @@ impl<T: Config> Pallet<T> {
 				max_priority_fee_per_gas: None,
 				value: t.value,
 				chain_id: t.signature.chain_id(),
+				access_list: Vec::new(),
 			},
 			Transaction::EIP2930(t) => TransactionData {
 				action: t.action,
@@ -330,6 +332,7 @@ impl<T: Config> Pallet<T> {
 				max_priority_fee_per_gas: None,
 				value: t.value,
 				chain_id: Some(t.chain_id),
+				access_list: t.access_list.iter().map(|d| (d.address, d.slots.clone())).collect(),
 			},
 			Transaction::EIP1559(t) => TransactionData {
 				action: t.action,
@@ -341,6 +344,7 @@ impl<T: Config> Pallet<T> {
 				max_priority_fee_per_gas: Some(t.max_priority_fee_per_gas),
 				value: t.value,
 				chain_id: Some(t.chain_id),
+				access_list: t.access_list.iter().map(|d| (d.address, d.slots.clone())).collect(),
 			},
 		}
 	}
@@ -457,10 +461,10 @@ impl<T: Config> Pallet<T> {
 		);
 		let transaction_cost = match transaction_data.action {
 			TransactionAction::Call(_) => {
-				evm::gasometer::call_transaction_cost(&transaction_data.input)
+				evm::gasometer::call_transaction_cost(&transaction_data.input, &transaction_data.access_list)
 			}
 			TransactionAction::Create => {
-				evm::gasometer::create_transaction_cost(&transaction_data.input)
+				evm::gasometer::create_transaction_cost(&transaction_data.input, &transaction_data.access_list)
 			}
 		};
 		if gasometer.record_transaction(transaction_cost).is_err() {
@@ -670,28 +674,32 @@ impl<T: Config> Pallet<T> {
 			match transaction {
 				// max_fee_per_gas and max_priority_fee_per_gas in legacy and 2930 transactions is
 				// the provided gas_price.
-				Transaction::Legacy(t) => (
-					t.input.clone(),
-					t.value,
-					t.gas_limit,
-					Some(t.gas_price),
-					Some(t.gas_price),
-					Some(t.nonce),
-					t.action,
-					Vec::new(),
-				),
+				Transaction::Legacy(t) => {
+					let base_fee = T::FeeCalculator::min_gas_price();
+					(
+						t.input.clone(),
+						t.value,
+						t.gas_limit,
+						Some(base_fee),
+						Some(t.gas_price.saturating_sub(base_fee)),
+						Some(t.nonce),
+						t.action,
+						Vec::new(),
+					)
+				},
 				Transaction::EIP2930(t) => {
+					let base_fee = T::FeeCalculator::min_gas_price();
 					let access_list: Vec<(H160, Vec<H256>)> = t
 						.access_list
 						.iter()
-						.map(|item| (item.address, item.slots))
+						.map(|item| (item.address, item.slots.clone()))
 						.collect();
 					(
 						t.input.clone(),
 						t.value,
 						t.gas_limit,
-						Some(t.gas_price),
-						Some(t.gas_price),
+						Some(base_fee),
+						Some(t.gas_price.saturating_sub(base_fee)),
 						Some(t.nonce),
 						t.action,
 						access_list,
@@ -701,7 +709,7 @@ impl<T: Config> Pallet<T> {
 					let access_list: Vec<(H160, Vec<H256>)> = t
 						.access_list
 						.iter()
-						.map(|item| (item.address, item.slots))
+						.map(|item| (item.address, item.slots.clone()))
 						.collect();
 					(
 						t.input.clone(),
@@ -711,7 +719,7 @@ impl<T: Config> Pallet<T> {
 						Some(t.max_priority_fee_per_gas),
 						Some(t.nonce),
 						t.action,
-						t.access_list,
+						access_list,
 					)
 				}
 			}

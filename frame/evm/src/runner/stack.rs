@@ -43,7 +43,7 @@ pub struct Runner<T: Config> {
 
 impl<T: Config> Runner<T> {
 	/// Execute an EVM operation.
-	pub fn execute<'config, F, R>(
+	pub fn execute<'config, 'precompiles, F, R>(
 		source: H160,
 		value: U256,
 		gas_limit: u64,
@@ -51,11 +51,12 @@ impl<T: Config> Runner<T> {
 		max_priority_fee_per_gas: Option<U256>,
 		nonce: Option<U256>,
 		config: &'config evm::Config,
+		precompiles: &'precompiles T::PrecompilesType,
 		f: F,
 	) -> Result<ExecutionInfo<R>, Error<T>>
 	where
 		F: FnOnce(
-			&mut StackExecutor<'config, SubstrateStackState<'_, 'config, T>>,
+			&mut StackExecutor<'config, 'precompiles, SubstrateStackState<'_, 'config, T>, T::PrecompilesType>,
 		) -> (ExitReason, R),
 	{
 		let base_fee = T::FeeCalculator::min_gas_price();
@@ -76,7 +77,7 @@ impl<T: Config> Runner<T> {
 		let metadata = StackSubstateMetadata::new(gas_limit, &config);
 		let state = SubstrateStackState::new(&vicinity, metadata);
 		let mut executor =
-			StackExecutor::new_with_precompile(state, config, T::Precompiles::execute);
+			StackExecutor::new_with_precompiles(state, config, precompiles);
 
 		// After eip-1559 we make sure the account can pay both the evm execution and priority fees.
 		let max_base_fee = max_fee_per_gas
@@ -213,6 +214,7 @@ impl<T: Config> RunnerT<T> for Runner<T> {
 		access_list: Vec<(H160, Vec<H256>)>,
 		config: &evm::Config,
 	) -> Result<CallInfo, Self::Error> {
+		let precompiles = T::PrecompilesValue::get();
 		Self::execute(
 			source,
 			value,
@@ -221,6 +223,7 @@ impl<T: Config> RunnerT<T> for Runner<T> {
 			max_priority_fee_per_gas,
 			nonce,
 			config,
+			&precompiles,
 			|executor| executor.transact_call(source, target, value, input, gas_limit, access_list),
 		)
 	}
@@ -236,6 +239,7 @@ impl<T: Config> RunnerT<T> for Runner<T> {
 		access_list: Vec<(H160, Vec<H256>)>,
 		config: &evm::Config,
 	) -> Result<CreateInfo, Self::Error> {
+		let precompiles = T::PrecompilesValue::get();
 		Self::execute(
 			source,
 			value,
@@ -244,6 +248,7 @@ impl<T: Config> RunnerT<T> for Runner<T> {
 			max_priority_fee_per_gas,
 			nonce,
 			config,
+			&precompiles,
 			|executor| {
 				let address = executor.create_address(evm::CreateScheme::Legacy { caller: source });
 				(
@@ -266,6 +271,7 @@ impl<T: Config> RunnerT<T> for Runner<T> {
 		access_list: Vec<(H160, Vec<H256>)>,
 		config: &evm::Config,
 	) -> Result<CreateInfo, Self::Error> {
+		let precompiles = T::PrecompilesValue::get();
 		let code_hash = H256::from_slice(Keccak256::digest(&init).as_slice());
 		Self::execute(
 			source,
@@ -275,6 +281,7 @@ impl<T: Config> RunnerT<T> for Runner<T> {
 			max_priority_fee_per_gas,
 			nonce,
 			config,
+			&precompiles,
 			|executor| {
 				let address = executor.create_address(evm::CreateScheme::Create2 {
 					caller: source,
@@ -464,6 +471,10 @@ impl<'vicinity, 'config, T: Config> BackendT for SubstrateStackState<'vicinity, 
 	fn original_storage(&self, _address: H160, _index: H256) -> Option<H256> {
 		None
 	}
+
+	fn block_base_fee_per_gas(&self) -> sp_core::U256 {
+		T::FeeCalculator::min_gas_price()
+	}
 }
 
 impl<'vicinity, 'config, T: Config> StackStateT<'config>
@@ -576,5 +587,15 @@ impl<'vicinity, 'config, T: Config> StackStateT<'config>
 		// EVM pallet considers all accounts to exist, and distinguish
 		// only empty and non-empty accounts. This avoids many of the
 		// subtle issues in EIP-161.
+	}
+
+	fn is_cold(&self, address: H160) -> bool {
+		// TODO
+		false
+	}
+
+	fn is_storage_cold(&self, address: H160, key: H256) -> bool {
+		// TODO
+		false
 	}
 }
