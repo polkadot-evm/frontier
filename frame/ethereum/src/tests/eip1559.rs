@@ -59,7 +59,7 @@ fn transaction_without_enough_gas_should_not_work() {
 			_ => {}
 		}
 
-		let call = crate::Call::<Test>::transact(transaction);
+		let call = crate::Call::<Test>::transact { transaction };
 		let source = call.check_self_contained().unwrap().unwrap();
 
 		assert_err!(
@@ -79,7 +79,9 @@ fn transaction_with_to_low_nonce_should_not_work() {
 		let mut transaction = eip1559_erc20_creation_unsigned_transaction();
 		transaction.nonce = U256::from(1);
 		let signed = transaction.sign(&alice.private_key, None);
-		let call = crate::Call::<Test>::transact(signed);
+		let call = crate::Call::<Test>::transact {
+			transaction: signed,
+		};
 		let source = call.check_self_contained().unwrap().unwrap();
 
 		assert_eq!(
@@ -99,7 +101,9 @@ fn transaction_with_to_low_nonce_should_not_work() {
 		transaction.nonce = U256::from(0);
 
 		let signed2 = transaction.sign(&alice.private_key, None);
-		let call2 = crate::Call::<Test>::transact(signed2);
+		let call2 = crate::Call::<Test>::transact {
+			transaction: signed2,
+		};
 		let source2 = call2.check_self_contained().unwrap().unwrap();
 
 		assert_err!(
@@ -119,7 +123,9 @@ fn transaction_with_to_hight_nonce_should_fail_in_block() {
 		transaction.nonce = U256::one();
 
 		let signed = transaction.sign(&alice.private_key, None);
-		let call = crate::Call::<Test>::transact(signed);
+		let call = crate::Call::<Test>::transact {
+			transaction: signed,
+		};
 		let source = call.check_self_contained().unwrap().unwrap();
 		let extrinsic = fp_self_contained::CheckedExtrinsic::<_, _, SignedExtra, _> {
 			signed: fp_self_contained::CheckedSignature::SelfContained(source),
@@ -143,7 +149,7 @@ fn transaction_with_invalid_chain_id_should_fail_in_block() {
 		let transaction =
 			eip1559_erc20_creation_unsigned_transaction().sign(&alice.private_key, Some(1));
 
-		let call = crate::Call::<Test>::transact(transaction);
+		let call = crate::Call::<Test>::transact { transaction };
 		let source = call.check_self_contained().unwrap().unwrap();
 		let extrinsic = fp_self_contained::CheckedExtrinsic::<_, _, SignedExtra, _> {
 			signed: fp_self_contained::CheckedSignature::SelfContained(source),

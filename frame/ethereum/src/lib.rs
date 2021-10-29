@@ -332,7 +332,11 @@ impl<T: Config> Pallet<T> {
 				max_priority_fee_per_gas: None,
 				value: t.value,
 				chain_id: Some(t.chain_id),
-				access_list: t.access_list.iter().map(|d| (d.address, d.slots.clone())).collect(),
+				access_list: t
+					.access_list
+					.iter()
+					.map(|d| (d.address, d.slots.clone()))
+					.collect(),
 			},
 			Transaction::EIP1559(t) => TransactionData {
 				action: t.action,
@@ -344,7 +348,11 @@ impl<T: Config> Pallet<T> {
 				max_priority_fee_per_gas: Some(t.max_priority_fee_per_gas),
 				value: t.value,
 				chain_id: Some(t.chain_id),
-				access_list: t.access_list.iter().map(|d| (d.address, d.slots.clone())).collect(),
+				access_list: t
+					.access_list
+					.iter()
+					.map(|d| (d.address, d.slots.clone()))
+					.collect(),
 			},
 		}
 	}
@@ -460,12 +468,14 @@ impl<T: Config> Pallet<T> {
 			<T as pallet_evm::Config>::config(),
 		);
 		let transaction_cost = match transaction_data.action {
-			TransactionAction::Call(_) => {
-				evm::gasometer::call_transaction_cost(&transaction_data.input, &transaction_data.access_list)
-			}
-			TransactionAction::Create => {
-				evm::gasometer::create_transaction_cost(&transaction_data.input, &transaction_data.access_list)
-			}
+			TransactionAction::Call(_) => evm::gasometer::call_transaction_cost(
+				&transaction_data.input,
+				&transaction_data.access_list,
+			),
+			TransactionAction::Create => evm::gasometer::create_transaction_cost(
+				&transaction_data.input,
+				&transaction_data.access_list,
+			),
 		};
 		if gasometer.record_transaction(transaction_cost).is_err() {
 			return Err(InvalidTransaction::Custom(
@@ -686,7 +696,7 @@ impl<T: Config> Pallet<T> {
 						t.action,
 						Vec::new(),
 					)
-				},
+				}
 				Transaction::EIP2930(t) => {
 					let base_fee = T::FeeCalculator::min_gas_price();
 					let access_list: Vec<(H160, Vec<H256>)> = t

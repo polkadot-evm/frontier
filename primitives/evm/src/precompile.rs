@@ -15,7 +15,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub use evm::{executor::{PrecompileSet, PrecompileOutput, PrecompileFailure}, Context, ExitError, ExitSucceed};
+pub use evm::{
+	executor::{PrecompileFailure, PrecompileOutput, PrecompileSet},
+	Context, ExitError, ExitSucceed,
+};
 use impl_trait_for_tuples::impl_for_tuples;
 use sp_core::H160;
 use sp_std::vec::Vec;
@@ -39,16 +42,14 @@ pub trait LinearCostPrecompile {
 	const BASE: u64;
 	const WORD: u64;
 
-	fn execute(input: &[u8], cost: u64) -> core::result::Result<(ExitSucceed, Vec<u8>), PrecompileFailure>;
+	fn execute(
+		input: &[u8],
+		cost: u64,
+	) -> core::result::Result<(ExitSucceed, Vec<u8>), PrecompileFailure>;
 }
 
 impl<T: LinearCostPrecompile> Precompile for T {
-	fn execute(
-		input: &[u8],
-		target_gas: Option<u64>,
-		_: &Context,
-		_: bool,
-	) -> PrecompileResult {
+	fn execute(input: &[u8], target_gas: Option<u64>, _: &Context, _: bool) -> PrecompileResult {
 		let cost = ensure_linear_cost(target_gas, input.len() as u64, T::BASE, T::WORD)?;
 
 		let (exit_status, output) = T::execute(input, cost)?;
@@ -69,15 +70,20 @@ fn ensure_linear_cost(
 	word: u64,
 ) -> Result<u64, PrecompileFailure> {
 	let cost = base
-		.checked_add(
-			word.checked_mul(len.saturating_add(31) / 32)
-				.ok_or(PrecompileFailure::Error { exit_status: ExitError::OutOfGas })?,
-		)
-		.ok_or(PrecompileFailure::Error { exit_status: ExitError::OutOfGas })?;
+		.checked_add(word.checked_mul(len.saturating_add(31) / 32).ok_or(
+			PrecompileFailure::Error {
+				exit_status: ExitError::OutOfGas,
+			},
+		)?)
+		.ok_or(PrecompileFailure::Error {
+			exit_status: ExitError::OutOfGas,
+		})?;
 
 	if let Some(target_gas) = target_gas {
 		if cost > target_gas {
-			return Err(PrecompileFailure::Error { exit_status: ExitError::OutOfGas });
+			return Err(PrecompileFailure::Error {
+				exit_status: ExitError::OutOfGas,
+			});
 		}
 	}
 

@@ -63,10 +63,10 @@ mod tests;
 pub mod benchmarks;
 
 pub use crate::runner::Runner;
-pub use evm::{ExitError, ExitFatal, ExitReason, ExitRevert, ExitSucceed, Context};
+pub use evm::{Context, ExitError, ExitFatal, ExitReason, ExitRevert, ExitSucceed};
 pub use fp_evm::{
 	Account, CallInfo, CreateInfo, ExecutionInfo, LinearCostPrecompile, Log, Precompile,
-	PrecompileSet, Vicinity, PrecompileResult, PrecompileFailure, PrecompileOutput,
+	PrecompileFailure, PrecompileOutput, PrecompileResult, PrecompileSet, Vicinity,
 };
 
 #[cfg(feature = "std")]

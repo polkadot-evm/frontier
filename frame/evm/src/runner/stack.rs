@@ -56,7 +56,12 @@ impl<T: Config> Runner<T> {
 	) -> Result<ExecutionInfo<R>, Error<T>>
 	where
 		F: FnOnce(
-			&mut StackExecutor<'config, 'precompiles, SubstrateStackState<'_, 'config, T>, T::PrecompilesType>,
+			&mut StackExecutor<
+				'config,
+				'precompiles,
+				SubstrateStackState<'_, 'config, T>,
+				T::PrecompilesType,
+			>,
 		) -> (ExitReason, R),
 	{
 		let base_fee = T::FeeCalculator::min_gas_price();
@@ -76,8 +81,7 @@ impl<T: Config> Runner<T> {
 
 		let metadata = StackSubstateMetadata::new(gas_limit, &config);
 		let state = SubstrateStackState::new(&vicinity, metadata);
-		let mut executor =
-			StackExecutor::new_with_precompiles(state, config, precompiles);
+		let mut executor = StackExecutor::new_with_precompiles(state, config, precompiles);
 
 		// After eip-1559 we make sure the account can pay both the evm execution and priority fees.
 		let max_base_fee = max_fee_per_gas

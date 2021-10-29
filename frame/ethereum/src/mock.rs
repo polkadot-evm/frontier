@@ -155,7 +155,8 @@ impl pallet_evm::Config for Test {
 	type AddressMapping = HashedAddressMapping;
 	type Currency = Balances;
 	type Event = Event;
-	type Precompiles = ();
+	type PrecompilesType = ();
+	type PrecompilesValue = ();
 	type Runner = pallet_evm::runner::stack::Runner<Self>;
 	type ChainId = ChainId;
 	type BlockGasLimit = BlockGasLimit;
@@ -209,7 +210,7 @@ impl fp_self_contained::SelfContainedCall for Call {
 	) -> Option<sp_runtime::DispatchResultWithInfo<sp_runtime::traits::PostDispatchInfoOf<Self>>> {
 		use sp_runtime::traits::Dispatchable as _;
 		match self {
-			call @ Call::Ethereum(crate::Call::transact(_)) => {
+			call @ Call::Ethereum(crate::Call::transact { .. }) => {
 				Some(call.dispatch(Origin::from(crate::RawOrigin::EthereumTransaction(info))))
 			}
 			_ => None,

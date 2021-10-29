@@ -30,7 +30,10 @@ impl LinearCostPrecompile for Sha3FIPS256 {
 	const BASE: u64 = 60;
 	const WORD: u64 = 12;
 
-	fn execute(input: &[u8], _: u64) -> core::result::Result<(ExitSucceed, Vec<u8>), PrecompileFailure> {
+	fn execute(
+		input: &[u8],
+		_: u64,
+	) -> core::result::Result<(ExitSucceed, Vec<u8>), PrecompileFailure> {
 		let mut output = [0; 32];
 		let mut sha3 = tiny_keccak::Sha3::v256();
 		sha3.update(input);
@@ -45,7 +48,10 @@ impl LinearCostPrecompile for Sha3FIPS512 {
 	const BASE: u64 = 60;
 	const WORD: u64 = 12;
 
-	fn execute(input: &[u8], _: u64) -> core::result::Result<(ExitSucceed, Vec<u8>), PrecompileFailure> {
+	fn execute(
+		input: &[u8],
+		_: u64,
+	) -> core::result::Result<(ExitSucceed, Vec<u8>), PrecompileFailure> {
 		let mut output = [0; 64];
 		let mut sha3 = tiny_keccak::Sha3::v512();
 		sha3.update(input);
