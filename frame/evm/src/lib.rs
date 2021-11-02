@@ -715,9 +715,9 @@ where
 			// https://github.com/paritytech/substrate/issues/10117
 			// If we tried to refund something, the account still empty and the ED is set to 0,
 			// we call `make_free_balance_be` with the refunded amount.
-			let refund_imbalance = if C::minimum_balance() == C::Balance::zero()
+			let refund_imbalance = if C::minimum_balance().is_zero()
 				&& refund_amount > C::Balance::zero()
-				&& C::total_balance(&account_id) == C::Balance::zero()
+				&& C::total_balance(&account_id).is_zero()
 			{
 				// Known bug: Substrate tried to refund to a zeroed AccountData, but
 				// interpreted the account to not exist.
