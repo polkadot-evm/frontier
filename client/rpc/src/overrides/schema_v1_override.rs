@@ -100,15 +100,10 @@ where
 
 	/// Return the current block.
 	fn current_block(&self, block: &BlockId<Block>) -> Option<ethereum::BlockV2> {
-		let old_block = self.query_storage::<ethereum::BlockV0>(
+		self.query_storage::<ethereum::BlockV0>(
 			block,
 			&StorageKey(storage_prefix_build(b"Ethereum", b"CurrentBlock")),
-		);
-		if let Some(block) = old_block {
-			Some(block.into())
-		} else {
-			None
-		}
+		).map(Into::into)
 	}
 
 	/// Return the current receipt.
