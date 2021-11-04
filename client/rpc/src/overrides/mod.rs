@@ -171,11 +171,7 @@ where
 			.runtime_api()
 			.api_version::<dyn EthereumRuntimeRPCApi<Block>>(&block)
 		{
-			if api_version >= 2 {
-				return true;
-			} else {
-				return false;
-			}
+			return api_version >= 2;
 		}
 		return false;
 	}
