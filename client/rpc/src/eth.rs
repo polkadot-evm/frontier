@@ -832,13 +832,30 @@ where
 			Err(e) => return Box::pin(future::err(e)),
 		};
 
+		let hash = self.client.info().best_hash;
+
 		let gas_price = request.gas_price;
+		let gas_limit = match request.gas {
+			Some(gas_limit) => gas_limit,
+			None => {
+				let block = self.client.runtime_api()
+					.current_block(&BlockId::Hash(hash));
+				if let Ok(Some(block)) = block {
+					block.header.gas_limit
+				} else {
+					return Box::pin(future::err(internal_err(format!(
+						"block unavailable, cannot query gas limit"
+					))));
+				}
+			}
+		};
 		let max_fee_per_gas = request.max_fee_per_gas;
 		let mut message: Option<TransactionMessage> = request.into();
 		message = match message {
 			Some(TransactionMessage::Legacy(mut m)) => {
 				m.nonce = nonce;
 				m.chain_id = Some(chain_id);
+				m.gas_limit = gas_limit;
 				if gas_price.is_none() {
 					m.gas_price = self.gas_price().unwrap_or(U256::default());
 				}
@@ -847,6 +864,7 @@ where
 			Some(TransactionMessage::EIP2930(mut m)) => {
 				m.nonce = nonce;
 				m.chain_id = chain_id;
+				m.gas_limit = gas_limit;
 				if gas_price.is_none() {
 					m.gas_price = self.gas_price().unwrap_or(U256::default());
 				}
@@ -855,6 +873,7 @@ where
 			Some(TransactionMessage::EIP1559(mut m)) => {
 				m.nonce = nonce;
 				m.chain_id = chain_id;
+				m.gas_limit = gas_limit;
 				if max_fee_per_gas.is_none() {
 					m.max_fee_per_gas = self.gas_price().unwrap_or(U256::default());
 				}
@@ -882,7 +901,6 @@ where
 			None => return Box::pin(future::err(internal_err("no signer available"))),
 		};
 		let transaction_hash = transaction.hash();
-		let hash = self.client.info().best_hash;
 		Box::pin(
 			self.pool
 				.submit_one(

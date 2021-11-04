@@ -73,10 +73,8 @@ impl Into<Option<TransactionMessage>> for TransactionRequest {
 			(Some(_), None, None) => {
 				Some(TransactionMessage::Legacy(LegacyTransactionMessage {
 					nonce: U256::zero(),
-					// TODO the default was wrong, needed min_gas_price (old),
-					// and new will fall back to BaseFeePerGas
-					gas_price: self.gas_price.unwrap_or(U256::from(1)),
-					gas_limit: self.gas.unwrap_or(U256::max_value()),
+					gas_price: self.gas_price.unwrap_or_default(),
+					gas_limit: self.gas.unwrap_or_default(),
 					value: self.value.unwrap_or(U256::zero()),
 					input: self.data.map(|s| s.into_vec()).unwrap_or_default(),
 					action: match self.to {
@@ -90,10 +88,8 @@ impl Into<Option<TransactionMessage>> for TransactionRequest {
 			(_, None, Some(_)) => {
 				Some(TransactionMessage::EIP2930(EIP2930TransactionMessage {
 					nonce: U256::zero(),
-					// TODO the default was wrong, needed min_gas_price (old),
-					// and new will fall back to BaseFeePerGas
-					gas_price: self.gas_price.unwrap_or(U256::from(1)),
-					gas_limit: self.gas.unwrap_or(U256::max_value()),
+					gas_price: self.gas_price.unwrap_or_default(),
+					gas_limit: self.gas.unwrap_or_default(),
 					value: self.value.unwrap_or(U256::zero()),
 					input: self.data.map(|s| s.into_vec()).unwrap_or_default(),
 					action: match self.to {
@@ -114,12 +110,11 @@ impl Into<Option<TransactionMessage>> for TransactionRequest {
 				// Empty fields fall back to the canonical transaction schema.
 				Some(TransactionMessage::EIP1559(EIP1559TransactionMessage {
 					nonce: U256::zero(),
-					// TODO the default must be BaseFeePerGas
-					max_fee_per_gas: self.max_fee_per_gas.unwrap_or(U256::from(1)),
+					max_fee_per_gas: self.max_fee_per_gas.unwrap_or_default(),
 					max_priority_fee_per_gas: self
 						.max_priority_fee_per_gas
 						.unwrap_or(U256::from(0)),
-					gas_limit: self.gas.unwrap_or(U256::max_value()),
+					gas_limit: self.gas.unwrap_or_default(),
 					value: self.value.unwrap_or(U256::zero()),
 					input: self.data.map(|s| s.into_vec()).unwrap_or_default(),
 					action: match self.to {
