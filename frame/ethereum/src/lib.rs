@@ -505,7 +505,9 @@ impl<T: Config> Pallet<T> {
 
 		let gas_price = if let Some(gas_price) = transaction_data.gas_price {
 			// Legacy and EIP-2930 transactions.
-			priority = gas_price.unique_saturated_into();
+			// Handle priority here. On legacy transaction everything in gas_price except
+			// the current base_fee is considered a tip to the miner and thus the priority.
+			priority = gas_price.saturating_sub(base_fee).unique_saturated_into();
 			gas_price
 		} else if let Some(max_fee_per_gas) = transaction_data.max_fee_per_gas {
 			// EIP-1559 transactions.
