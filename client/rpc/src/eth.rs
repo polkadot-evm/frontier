@@ -450,6 +450,46 @@ fn filter_block_logs<'a>(
 	ret
 }
 
+struct FeeDetails {
+	gas_price: Option<U256>,
+	max_fee_per_gas: Option<U256>,
+	max_priority_fee_per_gas: Option<U256>,
+}
+
+fn fee_details(request_gas_price: Option<U256>, request_max_fee: Option<U256>, request_priority: Option<U256>) -> Result<FeeDetails> {
+	match (
+		request_gas_price,
+		request_max_fee,
+		request_priority,
+	) {
+		(gas_price, None, None) => {
+			// Legacy request, all default to gas price.
+			Ok(FeeDetails {
+				gas_price,
+				max_fee_per_gas: gas_price,
+				max_priority_fee_per_gas: gas_price,
+			})
+		}
+		(_, max_fee, max_priority) => {
+			// eip-1559
+			// Ensure `max_priority_fee_per_gas` is less or equal to `max_fee_per_gas`.
+			if let Some(max_priority) = max_priority {
+				let max_fee = max_fee.unwrap_or_default();
+				if max_priority > max_fee {
+					return Err(internal_err(format!(
+							"Invalid input: `max_priority_fee_per_gas` greater than `max_fee_per_gas`"
+						)));
+				}
+			}
+			Ok(FeeDetails {
+				gas_price: max_fee,
+				max_fee_per_gas: max_fee,
+				max_priority_fee_per_gas: max_priority,
+			})
+		}
+	}
+}
+
 impl<B, C, P, CT, BE, H: ExHashT, A> EthApiT for EthApi<B, C, P, CT, BE, H, A>
 where
 	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
@@ -850,8 +890,8 @@ where
 			}
 		};
 		let max_fee_per_gas = request.max_fee_per_gas;
-		let mut message: Option<TransactionMessage> = request.into();
-		message = match message {
+		let message: Option<TransactionMessage> = request.into();
+		let message = match message {
 			Some(TransactionMessage::Legacy(mut m)) => {
 				m.nonce = nonce;
 				m.chain_id = Some(chain_id);
@@ -859,7 +899,7 @@ where
 				if gas_price.is_none() {
 					m.gas_price = self.gas_price().unwrap_or(U256::default());
 				}
-				Some(TransactionMessage::Legacy(m))
+				TransactionMessage::Legacy(m)
 			}
 			Some(TransactionMessage::EIP2930(mut m)) => {
 				m.nonce = nonce;
@@ -868,7 +908,7 @@ where
 				if gas_price.is_none() {
 					m.gas_price = self.gas_price().unwrap_or(U256::default());
 				}
-				Some(TransactionMessage::EIP2930(m))
+				TransactionMessage::EIP2930(m)
 			}
 			Some(TransactionMessage::EIP1559(mut m)) => {
 				m.nonce = nonce;
@@ -877,7 +917,7 @@ where
 				if max_fee_per_gas.is_none() {
 					m.max_fee_per_gas = self.gas_price().unwrap_or(U256::default());
 				}
-				Some(TransactionMessage::EIP1559(m))
+				TransactionMessage::EIP1559(m)
 			}
 			_ => {
 				return Box::pin(future::err(internal_err("invalid transaction parameters")));
@@ -888,7 +928,7 @@ where
 
 		for signer in &self.signers {
 			if signer.accounts().contains(&from) {
-				match signer.sign(message.unwrap(), &from) {
+				match signer.sign(message, &from) {
 					Ok(t) => transaction = Some(t),
 					Err(e) => return Box::pin(future::err(e)),
 				}
@@ -975,26 +1015,10 @@ where
 			nonce,
 		} = request;
 
-		let (gas_price, max_fee_per_gas, max_priority_fee_per_gas) =
-			match (gas_price, max_fee_per_gas, max_priority_fee_per_gas) {
-				(gas_price, None, None) => {
-					// Legacy request, all default to gas price.
-					(gas_price, gas_price, gas_price)
-				}
-				(_, max_fee, max_priority) => {
-					// eip-1559
-					// Ensure `max_priority_fee_per_gas` is less or equal to `max_fee_per_gas`.
-					if let Some(max_priority) = max_priority {
-						let max_fee = max_fee.unwrap_or_default();
-						if max_priority > max_fee {
-							return Err(internal_err(format!(
-							"Invalid input: `max_priority_fee_per_gas` greater than `max_fee_per_gas`"
-						)));
-						}
-					}
-					(max_fee, max_fee, max_priority)
-				}
-			};
+		let (gas_price, max_fee_per_gas, max_priority_fee_per_gas) = {
+			let details = fee_details(gas_price, max_fee_per_gas, max_priority_fee_per_gas)?;
+			(details.gas_price, details.max_fee_per_gas, details.max_priority_fee_per_gas)
+		};
 
 		let api = self.client.runtime_api();
 
@@ -1119,29 +1143,9 @@ where
 		// Get best hash (TODO missing support for estimating gas historically)
 		let best_hash = self.client.info().best_hash;
 
-		// Get gas price
-		let (gas_price, max_fee_per_gas, max_priority_fee_per_gas) = match (
-			request.gas_price,
-			request.max_fee_per_gas,
-			request.max_priority_fee_per_gas,
-		) {
-			(gas_price, None, None) => {
-				// Legacy request, all default to gas price.
-				(gas_price, gas_price, gas_price)
-			}
-			(_, max_fee, max_priority) => {
-				// eip-1559
-				// Ensure `max_priority_fee_per_gas` is less or equal to `max_fee_per_gas`.
-				if let Some(max_priority) = max_priority {
-					let max_fee = max_fee.unwrap_or_default();
-					if max_priority > max_fee {
-						return Err(internal_err(format!(
-								"Invalid input: `max_priority_fee_per_gas` greater than `max_fee_per_gas`"
-							)));
-					}
-				}
-				(max_fee, max_fee, max_priority)
-			}
+		let (gas_price, max_fee_per_gas, max_priority_fee_per_gas) = {
+			let details = fee_details(request.gas_price, request.max_fee_per_gas, request.max_priority_fee_per_gas)?;
+			(details.gas_price, details.max_fee_per_gas, details.max_priority_fee_per_gas)
 		};
 
 		let get_current_block_gas_limit = || -> Result<U256> {
