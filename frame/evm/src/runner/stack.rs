@@ -23,7 +23,7 @@ use crate::{
 };
 use evm::{
 	backend::Backend as BackendT,
-	executor::{StackExecutor, StackState as StackStateT, StackSubstateMetadata},
+	executor::stack::{StackExecutor, StackState as StackStateT, StackSubstateMetadata, Accessed},
 	ExitError, ExitReason, Transfer,
 };
 use fp_evm::{CallInfo, CreateInfo, ExecutionInfo, Log, Vicinity};
@@ -384,6 +384,18 @@ impl<'config> SubstrateStackSubstate<'config> {
 			data,
 		});
 	}
+
+	fn recursive_is_cold<F: Fn(&Accessed) -> bool>(&self, f: &F) -> bool {
+		let local_is_accessed = self.metadata.accessed().as_ref().map(f).unwrap_or(false);
+		if local_is_accessed {
+			false
+		} else {
+			self.parent
+				.as_ref()
+				.map(|p| p.recursive_is_cold(f))
+				.unwrap_or(true)
+		}
+	}
 }
 
 /// Substrate backend for EVM.
@@ -594,12 +606,10 @@ impl<'vicinity, 'config, T: Config> StackStateT<'config>
 	}
 
 	fn is_cold(&self, address: H160) -> bool {
-		// TODO
-		false
+		self.substate.recursive_is_cold(&|a| a.accessed_addresses.contains(&address))
 	}
 
 	fn is_storage_cold(&self, address: H160, key: H256) -> bool {
-		// TODO
-		false
+		self.substate.recursive_is_cold(&|a: &Accessed| a.accessed_storage.contains(&(address, key)))
 	}
 }
