@@ -456,12 +456,12 @@ struct FeeDetails {
 	max_priority_fee_per_gas: Option<U256>,
 }
 
-fn fee_details(request_gas_price: Option<U256>, request_max_fee: Option<U256>, request_priority: Option<U256>) -> Result<FeeDetails> {
-	match (
-		request_gas_price,
-		request_max_fee,
-		request_priority,
-	) {
+fn fee_details(
+	request_gas_price: Option<U256>,
+	request_max_fee: Option<U256>,
+	request_priority: Option<U256>,
+) -> Result<FeeDetails> {
+	match (request_gas_price, request_max_fee, request_priority) {
 		(gas_price, None, None) => {
 			// Legacy request, all default to gas price.
 			Ok(FeeDetails {
@@ -477,8 +477,8 @@ fn fee_details(request_gas_price: Option<U256>, request_max_fee: Option<U256>, r
 				let max_fee = max_fee.unwrap_or_default();
 				if max_priority > max_fee {
 					return Err(internal_err(format!(
-							"Invalid input: `max_priority_fee_per_gas` greater than `max_fee_per_gas`"
-						)));
+						"Invalid input: `max_priority_fee_per_gas` greater than `max_fee_per_gas`"
+					)));
 				}
 			}
 			Ok(FeeDetails {
@@ -878,7 +878,9 @@ where
 		let gas_limit = match request.gas {
 			Some(gas_limit) => gas_limit,
 			None => {
-				let block = self.client.runtime_api()
+				let block = self
+					.client
+					.runtime_api()
 					.current_block(&BlockId::Hash(hash));
 				if let Ok(Some(block)) = block {
 					block.header.gas_limit
@@ -1017,7 +1019,11 @@ where
 
 		let (gas_price, max_fee_per_gas, max_priority_fee_per_gas) = {
 			let details = fee_details(gas_price, max_fee_per_gas, max_priority_fee_per_gas)?;
-			(details.gas_price, details.max_fee_per_gas, details.max_priority_fee_per_gas)
+			(
+				details.gas_price,
+				details.max_fee_per_gas,
+				details.max_priority_fee_per_gas,
+			)
 		};
 
 		let api = self.client.runtime_api();
@@ -1144,8 +1150,16 @@ where
 		let best_hash = self.client.info().best_hash;
 
 		let (gas_price, max_fee_per_gas, max_priority_fee_per_gas) = {
-			let details = fee_details(request.gas_price, request.max_fee_per_gas, request.max_priority_fee_per_gas)?;
-			(details.gas_price, details.max_fee_per_gas, details.max_priority_fee_per_gas)
+			let details = fee_details(
+				request.gas_price,
+				request.max_fee_per_gas,
+				request.max_priority_fee_per_gas,
+			)?;
+			(
+				details.gas_price,
+				details.max_fee_per_gas,
+				details.max_priority_fee_per_gas,
+			)
 		};
 
 		let get_current_block_gas_limit = || -> Result<U256> {

@@ -103,7 +103,8 @@ where
 		self.query_storage::<ethereum::BlockV0>(
 			block,
 			&StorageKey(storage_prefix_build(b"Ethereum", b"CurrentBlock")),
-		).map(Into::into)
+		)
+		.map(Into::into)
 	}
 
 	/// Return the current receipt.

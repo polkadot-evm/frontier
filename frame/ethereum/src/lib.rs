@@ -688,7 +688,10 @@ impl<T: Config> Pallet<T> {
 				// the provided gas_price.
 				Transaction::Legacy(t) => {
 					let base_fee = T::FeeCalculator::min_gas_price();
-					let priority_fee = t.gas_price.checked_sub(base_fee).ok_or_else(|| DispatchError::Other("Gas price too low"))?;
+					let priority_fee = t
+						.gas_price
+						.checked_sub(base_fee)
+						.ok_or_else(|| DispatchError::Other("Gas price too low"))?;
 					(
 						t.input.clone(),
 						t.value,
@@ -702,7 +705,10 @@ impl<T: Config> Pallet<T> {
 				}
 				Transaction::EIP2930(t) => {
 					let base_fee = T::FeeCalculator::min_gas_price();
-					let priority_fee = t.gas_price.checked_sub(base_fee).ok_or_else(|| DispatchError::Other("Gas price too low"))?;
+					let priority_fee = t
+						.gas_price
+						.checked_sub(base_fee)
+						.ok_or_else(|| DispatchError::Other("Gas price too low"))?;
 					let access_list: Vec<(H160, Vec<H256>)> = t
 						.access_list
 						.iter()

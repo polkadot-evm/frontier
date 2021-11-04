@@ -70,41 +70,37 @@ impl Into<Option<TransactionMessage>> for TransactionRequest {
 			self.access_list.clone(),
 		) {
 			// Legacy
-			(Some(_), None, None) => {
-				Some(TransactionMessage::Legacy(LegacyTransactionMessage {
-					nonce: U256::zero(),
-					gas_price: self.gas_price.unwrap_or_default(),
-					gas_limit: self.gas.unwrap_or_default(),
-					value: self.value.unwrap_or(U256::zero()),
-					input: self.data.map(|s| s.into_vec()).unwrap_or_default(),
-					action: match self.to {
-						Some(to) => ethereum::TransactionAction::Call(to),
-						None => ethereum::TransactionAction::Create,
-					},
-					chain_id: None,
-				}))
-			}
+			(Some(_), None, None) => Some(TransactionMessage::Legacy(LegacyTransactionMessage {
+				nonce: U256::zero(),
+				gas_price: self.gas_price.unwrap_or_default(),
+				gas_limit: self.gas.unwrap_or_default(),
+				value: self.value.unwrap_or(U256::zero()),
+				input: self.data.map(|s| s.into_vec()).unwrap_or_default(),
+				action: match self.to {
+					Some(to) => ethereum::TransactionAction::Call(to),
+					None => ethereum::TransactionAction::Create,
+				},
+				chain_id: None,
+			})),
 			// EIP2930
-			(_, None, Some(_)) => {
-				Some(TransactionMessage::EIP2930(EIP2930TransactionMessage {
-					nonce: U256::zero(),
-					gas_price: self.gas_price.unwrap_or_default(),
-					gas_limit: self.gas.unwrap_or_default(),
-					value: self.value.unwrap_or(U256::zero()),
-					input: self.data.map(|s| s.into_vec()).unwrap_or_default(),
-					action: match self.to {
-						Some(to) => ethereum::TransactionAction::Call(to),
-						None => ethereum::TransactionAction::Create,
-					},
-					chain_id: 0,
-					access_list: self
-						.access_list
-						.unwrap()
-						.into_iter()
-						.map(|(address, slots)| AccessListItem { address, slots })
-						.collect(),
-				}))
-			}
+			(_, None, Some(_)) => Some(TransactionMessage::EIP2930(EIP2930TransactionMessage {
+				nonce: U256::zero(),
+				gas_price: self.gas_price.unwrap_or_default(),
+				gas_limit: self.gas.unwrap_or_default(),
+				value: self.value.unwrap_or(U256::zero()),
+				input: self.data.map(|s| s.into_vec()).unwrap_or_default(),
+				action: match self.to {
+					Some(to) => ethereum::TransactionAction::Call(to),
+					None => ethereum::TransactionAction::Create,
+				},
+				chain_id: 0,
+				access_list: self
+					.access_list
+					.unwrap()
+					.into_iter()
+					.map(|(address, slots)| AccessListItem { address, slots })
+					.collect(),
+			})),
 			// EIP1559
 			(None, Some(_), _) | (None, None, None) => {
 				// Empty fields fall back to the canonical transaction schema.

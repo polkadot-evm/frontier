@@ -23,7 +23,7 @@ use crate::{
 };
 use evm::{
 	backend::Backend as BackendT,
-	executor::stack::{StackExecutor, StackState as StackStateT, StackSubstateMetadata, Accessed},
+	executor::stack::{Accessed, StackExecutor, StackState as StackStateT, StackSubstateMetadata},
 	ExitError, ExitReason, Transfer,
 };
 use fp_evm::{CallInfo, CreateInfo, ExecutionInfo, Log, Vicinity};
@@ -606,10 +606,12 @@ impl<'vicinity, 'config, T: Config> StackStateT<'config>
 	}
 
 	fn is_cold(&self, address: H160) -> bool {
-		self.substate.recursive_is_cold(&|a| a.accessed_addresses.contains(&address))
+		self.substate
+			.recursive_is_cold(&|a| a.accessed_addresses.contains(&address))
 	}
 
 	fn is_storage_cold(&self, address: H160, key: H256) -> bool {
-		self.substate.recursive_is_cold(&|a: &Accessed| a.accessed_storage.contains(&(address, key)))
+		self.substate
+			.recursive_is_cold(&|a: &Accessed| a.accessed_storage.contains(&(address, key)))
 	}
 }
