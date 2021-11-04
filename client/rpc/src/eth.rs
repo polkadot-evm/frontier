@@ -828,7 +828,7 @@ where
 
 		let chain_id = match self.chain_id() {
 			Ok(Some(chain_id)) => chain_id.as_u64(),
-			Ok(None) => 27,
+			Ok(None) => return Box::pin(future::err(internal_err("chain id not available"))),
 			Err(e) => return Box::pin(future::err(e)),
 		};
 
