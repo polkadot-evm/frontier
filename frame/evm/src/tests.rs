@@ -140,21 +140,23 @@ fn ed_0_refund_patch_works() {
 		let evm_addr = H160::from_str("1000000000000000000000000000000000000003").unwrap();
 		let substrate_addr = <Test as Config>::AddressMapping::into_account_id(evm_addr);
 
-		let _ = <Test as Config>::Currency::deposit_creating(&substrate_addr, 21777);
-		assert_eq!(Balances::free_balance(&substrate_addr), 21777);
+		let _ = <Test as Config>::Currency::deposit_creating(&substrate_addr, 21_777_000_000_000);
+		assert_eq!(Balances::free_balance(&substrate_addr), 21_777_000_000_000);
 
 		let _ = EVM::call(
 			Origin::root(),
 			evm_addr,
 			H160::from_str("1000000000000000000000000000000000000001").unwrap(),
 			Vec::new(),
-			U256::from(1),
+			U256::from(1_000_000_000),
 			21776,
-			U256::from(1),
+			U256::from(1_000_000_000),
+			None,
 			Some(U256::from(0)),
+			Vec::new(),
 		);
 		// All that was due, was refunded.
-		assert_eq!(Balances::free_balance(&substrate_addr), 776);
+		assert_eq!(Balances::free_balance(&substrate_addr), 776_000_000_000);
 	});
 }
 
