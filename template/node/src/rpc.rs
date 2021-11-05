@@ -145,6 +145,7 @@ where
 		is_authority,
 		max_past_logs,
 		block_data_cache.clone(),
+		fc_rpc::format::Legacy,
 	)));
 
 	if let Some(filter_pool) = filter_pool {
