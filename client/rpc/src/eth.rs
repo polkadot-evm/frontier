@@ -16,8 +16,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 use crate::{
-	error_on_execution_failure, frontier_backend_client, internal_err, public_key, EthSigner,
-	StorageOverride,
+	error_on_execution_failure, format::Formatter, frontier_backend_client, internal_err,
+	public_key, EthSigner, StorageOverride,
 };
 use ethereum::{BlockV0 as EthereumBlock, TransactionV0 as EthereumTransaction};
 use ethereum_types::{H160, H256, H512, H64, U256, U64};
@@ -60,7 +60,7 @@ use codec::{self, Decode, Encode};
 pub use fc_rpc_core::{EthApiServer, EthFilterApiServer, NetApiServer, Web3ApiServer};
 use pallet_ethereum::EthereumStorageSchema;
 
-pub struct EthApi<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> {
+pub struct EthApi<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi, F: Formatter> {
 	pool: Arc<P>,
 	graph: Arc<Pool<A>>,
 	client: Arc<C>,
@@ -72,16 +72,17 @@ pub struct EthApi<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> {
 	backend: Arc<fc_db::Backend<B>>,
 	max_past_logs: u32,
 	block_data_cache: Arc<EthBlockDataCache<B>>,
-	_marker: PhantomData<(B, BE)>,
+	_marker: PhantomData<(B, BE, F)>,
 }
 
-impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> EthApi<B, C, P, CT, BE, H, A>
+impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi, F> EthApi<B, C, P, CT, BE, H, A, F>
 where
 	C: ProvideRuntimeApi<B>,
 	C::Api: EthereumRuntimeRPCApi<B>,
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	A: ChainApi<Block = B> + 'static,
 	C: Send + Sync + 'static,
+	F: Formatter,
 {
 	pub fn new(
 		client: Arc<C>,
@@ -95,6 +96,7 @@ where
 		is_authority: bool,
 		max_past_logs: u32,
 		block_data_cache: Arc<EthBlockDataCache<B>>,
+		_formatter: F,
 	) -> Self {
 		Self {
 			client,
@@ -421,7 +423,7 @@ fn filter_block_logs<'a>(
 	ret
 }
 
-impl<B, C, P, CT, BE, H: ExHashT, A> EthApiT for EthApi<B, C, P, CT, BE, H, A>
+impl<B, C, P, CT, BE, H: ExHashT, A, F> EthApiT for EthApi<B, C, P, CT, BE, H, A, F>
 where
 	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
 	C: HeaderBackend<B> + HeaderMetadata<B, Error = BlockChainError> + 'static,
@@ -433,6 +435,7 @@ where
 	P: TransactionPool<Block = B> + Send + Sync + 'static,
 	A: ChainApi<Block = B> + 'static,
 	CT: ConvertTransaction<<B as BlockT>::Extrinsic> + Send + Sync + 'static,
+	F: Formatter,
 {
 	fn protocol_version(&self) -> Result<u64> {
 		Ok(1)
@@ -833,9 +836,7 @@ where
 						.convert_transaction(transaction.clone()),
 				)
 				.map_ok(move |_| transaction_hash)
-				.map_err(|err| {
-					internal_err(format!("submit transaction to pool failed: {:?}", err))
-				}),
+				.map_err(|err| internal_err(F::pool_error(err))),
 		)
 	}
 
@@ -856,9 +857,7 @@ where
 						.convert_transaction(transaction.clone()),
 				)
 				.map_ok(move |_| transaction_hash)
-				.map_err(|err| {
-					internal_err(format!("submit transaction to pool failed: {:?}", err))
-				}),
+				.map_err(|err| internal_err(F::pool_error(err))),
 		)
 	}
 

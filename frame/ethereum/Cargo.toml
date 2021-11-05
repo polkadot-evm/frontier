@@ -29,6 +29,7 @@ fp-consensus = { version = "2.0.0-dev", path = "../../primitives/consensus", def
 fp-rpc = { version = "3.0.0-dev", path = "../../primitives/rpc", default-features = false }
 fp-storage = { version = "2.0.0", path = "../../primitives/storage", default-features = false }
 fp-self-contained = { version = "1.0.0-dev", path = "../../primitives/self-contained", default-features = false }
+num_enum = { version = "0.5.4", default-features = false }
 
 [dev-dependencies]
 sp-core = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate" }
@@ -62,4 +63,5 @@ std = [
 	"fp-storage/std",
 	"evm/std",
 	"fp-self-contained/std",
+	"num_enum/std",
 ]
