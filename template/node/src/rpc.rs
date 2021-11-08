@@ -192,28 +192,3 @@ where
 
 	io
 }
-
-/// Instantiate all Light RPC extensions.
-pub fn create_light<C, P, M, F>(deps: LightDeps<C, F, P>) -> jsonrpc_core::IoHandler<M>
-where
-	C: sp_blockchain::HeaderBackend<Block>,
-	C: Send + Sync + 'static,
-	F: sc_client_api::light::Fetcher<Block> + 'static,
-	P: TransactionPool + 'static,
-	M: jsonrpc_core::Metadata + Default,
-{
-	use substrate_frame_rpc_system::{LightSystem, SystemApi};
-
-	let LightDeps {
-		client,
-		pool,
-		remote_blockchain,
-		fetcher,
-	} = deps;
-	let mut io = jsonrpc_core::IoHandler::default();
-	io.extend_with(SystemApi::<Hash, AccountId, Index>::to_delegate(
-		LightSystem::new(client, remote_blockchain, fetcher, pool),
-	));
-
-	io
-}

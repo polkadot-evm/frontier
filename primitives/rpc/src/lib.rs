@@ -20,11 +20,12 @@
 use codec::{Decode, Encode};
 use ethereum::{BlockV0 as EthereumBlock, Log};
 use ethereum_types::Bloom;
+use scale_info::TypeInfo;
 use sp_core::{H160, H256, U256};
 use sp_runtime::traits::Block as BlockT;
 use sp_std::vec::Vec;
 
-#[derive(Eq, PartialEq, Clone, Encode, Decode, sp_runtime::RuntimeDebug)]
+#[derive(Eq, PartialEq, Clone, Encode, Decode, sp_runtime::RuntimeDebug, TypeInfo)]
 pub struct TransactionStatus {
 	pub transaction_hash: H256,
 	pub transaction_index: u32,

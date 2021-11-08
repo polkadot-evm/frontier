@@ -36,7 +36,7 @@ use jsonrpc_core::{Error, ErrorCode, Value};
 use pallet_evm::ExitReason;
 use rustc_hex::ToHex;
 use sha3::{Digest, Keccak256};
-
+use libsecp256k1 as secp256k1;
 pub mod frontier_backend_client {
 
 	use super::internal_err;

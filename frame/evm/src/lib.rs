@@ -63,11 +63,14 @@ mod tests;
 pub mod benchmarks;
 
 pub use crate::runner::Runner;
-pub use evm::{ExitError, ExitFatal, ExitReason, ExitRevert, ExitSucceed};
+pub use evm::{
+	executor::stack::PrecompileFn, ExitError, ExitFatal, ExitReason, ExitRevert, ExitSucceed,
+};
 pub use fp_evm::{
 	Account, CallInfo, CreateInfo, ExecutionInfo, LinearCostPrecompile, Log, Precompile,
 	PrecompileSet, Vicinity,
 };
+use sp_std::collections::btree_map::BTreeMap;
 
 #[cfg(feature = "std")]
 use codec::{Decode, Encode};
@@ -91,6 +94,50 @@ use sp_runtime::{
 use sp_std::vec::Vec;
 
 pub use pallet::*;
+
+use pallet_evm_precompile_modexp::Modexp;
+use pallet_evm_precompile_sha3fips::{Sha3FIPS256, Sha3FIPS512};
+use pallet_evm_precompile_simple::{ECRecover, ECRecoverPublicKey, Identity, Ripemd160, Sha256};
+
+use lazy_static::lazy_static;
+lazy_static! {
+	static ref HASHMAP: BTreeMap<H160, PrecompileFn> = {
+		let mut m = BTreeMap::new();
+		// m.insert(
+		// 	H160::from([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]),
+		// 	<ECRecover as Precompile>::execute,
+		// );
+		// m.insert(
+		// 	H160::from([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2]),
+		// 	Sha256,
+		// );
+		// m.insert(
+		// 	H160::from([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3]),
+		// 	Ripemd160,
+		// );
+		// m.insert(
+		// 	H160::from([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4]),
+		// 	Identity,
+		// );
+		// m.insert(
+		// 	H160::from([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5]),
+		// 	Modexp,
+		// );
+		// m.insert(
+		// 	H160::from([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6]),
+		// 	ECRecoverPublicKey,
+		// );
+		// m.insert(
+		// 	H160::from([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0]),
+		// 	Sha3FIPS256,
+		// );
+		// m.insert(
+		// 	H160::from([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 1]),
+		// 	Sha3FIPS512,
+		// );
+		m
+	};
+}
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -125,8 +172,6 @@ pub mod pallet {
 
 		/// The overarching event type.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
-		/// Precompiles associated with this EVM engine.
-		type Precompiles: PrecompileSet;
 		/// Chain ID of EVM.
 		type ChainId: Get<u64>;
 		/// The block gas limit. Can be a simple constant, or an adjustment algorithm in another pallet.
@@ -145,6 +190,11 @@ pub mod pallet {
 		/// EVM config used in the module.
 		fn config() -> &'static EvmConfig {
 			&ISTANBUL_CONFIG
+		}
+
+		/// EVM config used in the module.
+		fn precompiles() -> &'static BTreeMap<H160, PrecompileFn> {
+			&HASHMAP
 		}
 	}
 
@@ -314,7 +364,6 @@ pub mod pallet {
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
-	#[pallet::metadata(T::AccountId = "AccountId")]
 	pub enum Event<T: Config> {
 		/// Ethereum events from contracts.
 		Log(Log),

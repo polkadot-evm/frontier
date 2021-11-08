@@ -17,7 +17,8 @@ sp-core = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrat
 sp-std = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", default-features = false }
 serde = { version = "1.0.101", optional = true, features = ["derive"] }
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false }
-evm = { version = "0.30.0", default-features = false, features = ["with-codec"] }
+scale-info = { version = "1.0.0", default-features = false, features = ["derive"] }
+evm = { version = "0.33.0", default-features = false, features = ["with-codec"] }
 impl-trait-for-tuples = "0.1"
 
 [features]
@@ -27,6 +28,7 @@ std = [
 	"sp-std/std",
 	"serde",
 	"codec/std",
+	"scale-info/std",
 	"evm/std",
 	"evm/with-serde",
 ]

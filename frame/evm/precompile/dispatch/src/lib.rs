@@ -21,7 +21,10 @@ extern crate alloc;
 
 use codec::Decode;
 use core::marker::PhantomData;
-use fp_evm::{Context, ExitError, ExitSucceed, Precompile, PrecompileOutput};
+use fp_evm::{
+	Context, ExitError, ExitSucceed, Precompile, PrecompileFailure, PrecompileOutput,
+	PrecompileResult,
+};
 use frame_support::{
 	dispatch::{Dispatchable, GetDispatchInfo, PostDispatchInfo},
 	weights::{DispatchClass, Pays},
@@ -42,20 +45,26 @@ where
 		input: &[u8],
 		target_gas: Option<u64>,
 		context: &Context,
-	) -> core::result::Result<PrecompileOutput, ExitError> {
-		let call = T::Call::decode(&mut &input[..])
-			.map_err(|_| ExitError::Other("decode failed".into()))?;
+		_is_static: bool,
+	) -> PrecompileResult {
+		let call = T::Call::decode(&mut &input[..]).map_err(|_| PrecompileFailure::Error {
+			exit_status: ExitError::Other("decode failed".into()),
+		})?;
 		let info = call.get_dispatch_info();
 
 		let valid_call = info.pays_fee == Pays::Yes && info.class == DispatchClass::Normal;
 		if !valid_call {
-			return Err(ExitError::Other("invalid call".into()));
+			return Err(PrecompileFailure::Error {
+				exit_status: ExitError::Other("invalid call".into()),
+			});
 		}
 
 		if let Some(gas) = target_gas {
 			let valid_weight = info.weight <= T::GasWeightMapping::gas_to_weight(gas);
 			if !valid_weight {
-				return Err(ExitError::OutOfGas);
+				return Err(PrecompileFailure::Error {
+					exit_status: ExitError::OutOfGas,
+				});
 			}
 		}
 
@@ -73,7 +82,9 @@ where
 					logs: Default::default(),
 				})
 			}
-			Err(_) => Err(ExitError::Other("dispatch execution failed".into())),
+			Err(_) => Err(PrecompileFailure::Error {
+				exit_status: ExitError::Other("dispatch execution failed".into()),
+			}),
 		}
 	}
 }

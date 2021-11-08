@@ -22,17 +22,26 @@ extern crate alloc;
 use alloc::vec::Vec;
 use core::convert::TryFrom;
 use ed25519_dalek::{PublicKey, Signature, Verifier};
-use fp_evm::{ExitError, ExitSucceed, LinearCostPrecompile};
-
+use fp_evm::{
+	Context, ExitError, ExitSucceed, LinearCostPrecompile, PrecompileFailure, PrecompileOutput,
+	PrecompileResult,
+};
 pub struct Ed25519Verify;
 
 impl LinearCostPrecompile for Ed25519Verify {
 	const BASE: u64 = 15;
 	const WORD: u64 = 3;
 
-	fn execute(input: &[u8], _: u64) -> core::result::Result<(ExitSucceed, Vec<u8>), ExitError> {
+	fn execute(
+		input: &[u8],
+		target_gas: u64,
+		_context: &Context,
+		_is_static: bool,
+	) -> PrecompileResult {
 		if input.len() < 128 {
-			return Err(ExitError::Other("input must contain 128 bytes".into()));
+			return Err(PrecompileFailure::Error {
+				exit_status: ExitError::Other("input must contain 128 bytes".into()),
+			});
 		};
 
 		let mut i = [0u8; 128];
@@ -41,10 +50,12 @@ impl LinearCostPrecompile for Ed25519Verify {
 		let mut buf = [0u8; 4];
 
 		let msg = &i[0..32];
-		let pk = PublicKey::from_bytes(&i[32..64])
-			.map_err(|_| ExitError::Other("Public key recover failed".into()))?;
-		let sig = Signature::try_from(&i[64..128])
-			.map_err(|_| ExitError::Other("Signature recover failed".into()))?;
+		let pk = PublicKey::from_bytes(&i[32..64]).map_err(|_| PrecompileFailure::Error {
+			exit_status: ExitError::Other("Public key recover failed".into()),
+		})?;
+		let sig = Signature::try_from(&i[64..128]).map_err(|_| PrecompileFailure::Error {
+			exit_status: ExitError::Other("Signature recover failed".into()),
+		})?;
 
 		// https://docs.rs/rust-crypto/0.2.36/crypto/ed25519/fn.verify.html
 		if pk.verify(msg, &sig).is_ok() {
@@ -53,7 +64,12 @@ impl LinearCostPrecompile for Ed25519Verify {
 			buf[3] = 1u8;
 		};
 
-		Ok((ExitSucceed::Returned, buf.to_vec()))
+		Ok(PrecompileOutput {
+			exit_status: ExitSucceed::Returned,
+			cost: target_gas,
+			output: buf.to_vec(),
+			logs: Default::default(),
+		})
 	}
 }
 

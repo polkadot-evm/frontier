@@ -15,6 +15,7 @@ targets = ["x86_64-unknown-linux-gnu"]
 [dependencies]
 serde = { version = "1.0.101", optional = true, features = ["derive"] }
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false }
+scale-info = { version = "1.0.0", default-features = false, features = ["derive"] }
 frame-support = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
 frame-system = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
 pallet-timestamp = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
@@ -27,18 +28,24 @@ frame-benchmarking = { version = "4.0.0-dev", git = "https://github.com/parityte
 fp-evm = { version = "3.0.0-dev", default-features = false, path = "../../primitives/evm" }
 primitive-types = { version = "0.10.0", default-features = false, features = ["rlp", "byteorder"] }
 rlp = { version = "0.5", default-features = false }
-evm = { version = "0.30.0", default-features = false, features = ["with-codec"] }
-evm-runtime = { version = "0.30.0", default-features = false }
-evm-gasometer = { version = "0.30.0", default-features = false }
+evm = { version = "0.33.0", default-features = false, features = ["with-codec"] }
+evm-runtime = { version = "0.33.0", default-features = false }
+evm-gasometer = { version = "0.33.0", default-features = false }
 sha3 = { version = "0.8", default-features = false }
 log = { version = "0.4", default-features = false }
 hex = { version = "0.4", default-features = false }
+
+pallet-evm-precompile-simple = { default-features = false, path = "./precompile/simple" }
+pallet-evm-precompile-sha3fips = { default-features = false, path = "./precompile/sha3fips" }
+pallet-evm-precompile-modexp = { default-features = false, path = "./precompile/modexp" }
+lazy_static = { version = "1.4.0", features = ["spin_no_std"] }
 
 [features]
 default = ["std"]
 std = [
 	"serde",
 	"codec/std",
+	"scale-info/std",
 	"sp-core/std",
 	"sp-runtime/std",
 	"frame-support/std",
@@ -58,6 +65,9 @@ std = [
 	"pallet-timestamp/std",
 	"log/std",
 	"hex/std",
+	"pallet-evm-precompile-simple/std",
+	"pallet-evm-precompile-sha3fips/std",
+	"pallet-evm-precompile-modexp/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",

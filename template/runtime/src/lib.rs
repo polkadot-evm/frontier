@@ -8,6 +8,8 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
+use sp_std::collections::btree_map::BTreeMap;
+
 use codec::{Decode, Encode};
 use pallet_grandpa::{
 	fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
@@ -221,7 +223,7 @@ impl pallet_grandpa::Config for Runtime {
 	)>>::IdentificationTuple;
 
 	type HandleEquivocation = ();
-
+	type MaxAuthorities = MaxAuthorities;
 	type WeightInfo = ();
 }
 
@@ -269,6 +271,7 @@ impl pallet_transaction_payment::Config for Runtime {
 	type OnChargeTransaction = CurrencyAdapter<Balances, ()>;
 	type TransactionByteFee = TransactionByteFee;
 	type WeightToFee = IdentityFee<Balance>;
+	type OperationalFeeMultiplier = ();
 	type FeeMultiplierUpdate = ();
 }
 
@@ -306,16 +309,6 @@ impl pallet_evm::Config for Runtime {
 	type Currency = Balances;
 	type Event = Event;
 	type Runner = pallet_evm::runner::stack::Runner<Self>;
-	type Precompiles = (
-		pallet_evm_precompile_simple::ECRecover,
-		pallet_evm_precompile_simple::Sha256,
-		pallet_evm_precompile_simple::Ripemd160,
-		pallet_evm_precompile_simple::Identity,
-		pallet_evm_precompile_modexp::Modexp,
-		pallet_evm_precompile_simple::ECRecoverPublicKey,
-		pallet_evm_precompile_sha3fips::Sha3FIPS256,
-		pallet_evm_precompile_sha3fips::Sha3FIPS512,
-	);
 	type ChainId = ChainId;
 	type BlockGasLimit = BlockGasLimit;
 	type OnChargeTransaction = ();
@@ -363,7 +356,7 @@ pub struct TransactionConverter;
 impl fp_rpc::ConvertTransaction<UncheckedExtrinsic> for TransactionConverter {
 	fn convert_transaction(&self, transaction: pallet_ethereum::Transaction) -> UncheckedExtrinsic {
 		UncheckedExtrinsic::new_unsigned(
-			pallet_ethereum::Call::<Runtime>::transact(transaction).into(),
+			pallet_ethereum::Call::<Runtime>::transact { transaction }.into(),
 		)
 	}
 }
@@ -374,7 +367,7 @@ impl fp_rpc::ConvertTransaction<opaque::UncheckedExtrinsic> for TransactionConve
 		transaction: pallet_ethereum::Transaction,
 	) -> opaque::UncheckedExtrinsic {
 		let extrinsic = UncheckedExtrinsic::new_unsigned(
-			pallet_ethereum::Call::<Runtime>::transact(transaction).into(),
+			pallet_ethereum::Call::<Runtime>::transact { transaction }.into(),
 		);
 		let encoded = extrinsic.encode();
 		opaque::UncheckedExtrinsic::decode(&mut &encoded[..])
@@ -455,9 +448,11 @@ impl fp_self_contained::SelfContainedCall for Call {
 		info: Self::SignedInfo,
 	) -> Option<sp_runtime::DispatchResultWithInfo<PostDispatchInfoOf<Self>>> {
 		match self {
-			call @ Call::Ethereum(pallet_ethereum::Call::transact(_)) => Some(call.dispatch(
-				Origin::from(pallet_ethereum::RawOrigin::EthereumTransaction(info)),
-			)),
+			call @ Call::Ethereum(pallet_ethereum::Call::transact { transaction: _ }) => {
+				Some(call.dispatch(Origin::from(
+					pallet_ethereum::RawOrigin::EthereumTransaction(info),
+				)))
+			}
 			_ => None,
 		}
 	}
@@ -480,7 +475,7 @@ impl_runtime_apis! {
 
 	impl sp_api::Metadata<Block> for Runtime {
 		fn metadata() -> OpaqueMetadata {
-			Runtime::metadata().into()
+			OpaqueMetadata::new(Runtime::metadata().into())
 		}
 	}
 
@@ -650,7 +645,7 @@ impl_runtime_apis! {
 			xts: Vec<<Block as BlockT>::Extrinsic>,
 		) -> Vec<EthereumTransaction> {
 			xts.into_iter().filter_map(|xt| match xt.0.function {
-				Call::Ethereum(transact(t)) => Some(t),
+				Call::Ethereum(transact { transaction: t }) => Some(t),
 				_ => None
 			}).collect::<Vec<EthereumTransaction>>()
 		}

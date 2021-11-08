@@ -22,20 +22,32 @@ extern crate alloc;
 use alloc::vec::Vec;
 use tiny_keccak::Hasher;
 
-use fp_evm::{ExitError, ExitSucceed, LinearCostPrecompile};
-
+use fp_evm::{
+	Context, ExitError, ExitSucceed, LinearCostPrecompile, PrecompileFailure, PrecompileOutput,
+	PrecompileResult,
+};
 pub struct Sha3FIPS256;
 
 impl LinearCostPrecompile for Sha3FIPS256 {
 	const BASE: u64 = 60;
 	const WORD: u64 = 12;
 
-	fn execute(input: &[u8], _: u64) -> core::result::Result<(ExitSucceed, Vec<u8>), ExitError> {
+	fn execute(
+		input: &[u8],
+		target_gas: u64,
+		_context: &Context,
+		_is_static: bool,
+	) -> PrecompileResult {
 		let mut output = [0; 32];
 		let mut sha3 = tiny_keccak::Sha3::v256();
 		sha3.update(input);
 		sha3.finalize(&mut output);
-		Ok((ExitSucceed::Returned, output.to_vec()))
+		Ok(PrecompileOutput {
+			exit_status: ExitSucceed::Returned,
+			cost: target_gas,
+			output: output.to_vec(),
+			logs: Default::default(),
+		})
 	}
 }
 
@@ -45,12 +57,22 @@ impl LinearCostPrecompile for Sha3FIPS512 {
 	const BASE: u64 = 60;
 	const WORD: u64 = 12;
 
-	fn execute(input: &[u8], _: u64) -> core::result::Result<(ExitSucceed, Vec<u8>), ExitError> {
+	fn execute(
+		input: &[u8],
+		target_gas: u64,
+		_context: &Context,
+		_is_static: bool,
+	) -> PrecompileResult {
 		let mut output = [0; 64];
 		let mut sha3 = tiny_keccak::Sha3::v512();
 		sha3.update(input);
 		sha3.finalize(&mut output);
-		Ok((ExitSucceed::Returned, output.to_vec()))
+		Ok(PrecompileOutput {
+			exit_status: ExitSucceed::Returned,
+			cost: target_gas,
+			output: output.to_vec(),
+			logs: Default::default(),
+		})
 	}
 }
 
@@ -68,7 +90,7 @@ mod tests {
 
 		let cost: u64 = 1;
 
-		match Sha3FIPS256::execute(&input, cost) {
+		match Sha3FIPS256::execute(&input, cost, &Context::default(), false) {
 			Ok((_, out)) => {
 				assert_eq!(out, expected);
 				Ok(())
@@ -89,7 +111,7 @@ mod tests {
 
 		let cost: u64 = 1;
 
-		match Sha3FIPS256::execute(input, cost) {
+		match Sha3FIPS256::execute(input, cost, &Context::default(), false) {
 			Ok((_, out)) => {
 				assert_eq!(out, expected);
 				Ok(())
@@ -110,7 +132,7 @@ mod tests {
 
 		let cost: u64 = 1;
 
-		match Sha3FIPS256::execute(input, cost) {
+		match Sha3FIPS256::execute(input, cost, &Context::default(), false) {
 			Ok((_, out)) => {
 				assert_eq!(out, expected);
 				Ok(())
@@ -133,7 +155,7 @@ mod tests {
 
 		let cost: u64 = 1;
 
-		match Sha3FIPS512::execute(input, cost) {
+		match Sha3FIPS512::execute(input, cost, &Context::default(), false) {
 			Ok((_, out)) => {
 				assert_eq!(out, expected);
 				Ok(())

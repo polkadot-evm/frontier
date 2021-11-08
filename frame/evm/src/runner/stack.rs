@@ -23,7 +23,9 @@ use crate::{
 };
 use evm::{
 	backend::Backend as BackendT,
-	executor::{StackExecutor, StackState as StackStateT, StackSubstateMetadata},
+	executor::stack::{
+		PrecompileFn, StackExecutor, StackState as StackStateT, StackSubstateMetadata,
+	},
 	ExitError, ExitReason, Transfer,
 };
 use fp_evm::{CallInfo, CreateInfo, ExecutionInfo, Log, Vicinity};
@@ -34,8 +36,13 @@ use frame_support::{
 use sha3::{Digest, Keccak256};
 use sp_core::{H160, H256, U256};
 use sp_runtime::traits::UniqueSaturatedInto;
-use sp_std::{boxed::Box, collections::btree_set::BTreeSet, marker::PhantomData, mem, vec::Vec};
-
+use sp_std::{
+	boxed::Box,
+	collections::{btree_map::BTreeMap, btree_set::BTreeSet},
+	marker::PhantomData,
+	mem,
+	vec::Vec,
+};
 #[derive(Default)]
 pub struct Runner<T: Config> {
 	_marker: PhantomData<T>,
@@ -43,7 +50,7 @@ pub struct Runner<T: Config> {
 
 impl<T: Config> Runner<T> {
 	/// Execute an EVM operation.
-	pub fn execute<'config, F, R>(
+	pub fn execute<'config, 'precompiles, F, R>(
 		source: H160,
 		value: U256,
 		gas_limit: u64,
@@ -54,7 +61,12 @@ impl<T: Config> Runner<T> {
 	) -> Result<ExecutionInfo<R>, Error<T>>
 	where
 		F: FnOnce(
-			&mut StackExecutor<'config, SubstrateStackState<'_, 'config, T>>,
+			&mut StackExecutor<
+				'config,
+				'precompiles,
+				SubstrateStackState<'_, 'config, T>,
+				BTreeMap<H160, PrecompileFn>,
+			>,
 		) -> (ExitReason, R),
 	{
 		// Gas price check is skipped when performing a gas estimation.
@@ -76,8 +88,7 @@ impl<T: Config> Runner<T> {
 
 		let metadata = StackSubstateMetadata::new(gas_limit, &config);
 		let state = SubstrateStackState::new(&vicinity, metadata);
-		let mut executor =
-			StackExecutor::new_with_precompile(state, config, T::Precompiles::execute);
+		let mut executor = StackExecutor::new_with_precompiles(state, config, T::precompiles());
 
 		let total_fee = gas_price
 			.checked_mul(U256::from(gas_limit))
@@ -173,7 +184,12 @@ impl<T: Config> RunnerT<T> for Runner<T> {
 			gas_price,
 			nonce,
 			config,
-			|executor| executor.transact_call(source, target, value, input, gas_limit),
+			|executor: &mut StackExecutor<
+				'_,
+				'_,
+				SubstrateStackState<'_, '_, T>,
+				BTreeMap<H160, PrecompileFn>,
+			>| executor.transact_call(source, target, value, input, gas_limit, Vec::new()),
 		)
 	}
 
@@ -193,10 +209,15 @@ impl<T: Config> RunnerT<T> for Runner<T> {
 			gas_price,
 			nonce,
 			config,
-			|executor| {
+			|executor: &mut StackExecutor<
+				'_,
+				'_,
+				SubstrateStackState<'_, '_, T>,
+				BTreeMap<H160, PrecompileFn>,
+			>| {
 				let address = executor.create_address(evm::CreateScheme::Legacy { caller: source });
 				(
-					executor.transact_create(source, value, init, gas_limit),
+					executor.transact_create(source, value, init, gas_limit, Vec::new()),
 					address,
 				)
 			},
@@ -221,14 +242,19 @@ impl<T: Config> RunnerT<T> for Runner<T> {
 			gas_price,
 			nonce,
 			config,
-			|executor| {
+			|executor: &mut StackExecutor<
+				'_,
+				'_,
+				SubstrateStackState<'_, '_, T>,
+				BTreeMap<H160, PrecompileFn>,
+			>| {
 				let address = executor.create_address(evm::CreateScheme::Create2 {
 					caller: source,
 					code_hash,
 					salt,
 				});
 				(
-					executor.transact_create2(source, value, init, salt, gas_limit),
+					executor.transact_create2(source, value, init, salt, gas_limit, Vec::new()),
 					address,
 				)
 			},
@@ -348,6 +374,11 @@ impl<'vicinity, 'config, T: Config> BackendT for SubstrateStackState<'vicinity, 
 	fn gas_price(&self) -> U256 {
 		self.vicinity.gas_price
 	}
+
+	fn block_base_fee_per_gas(&self) -> U256 {
+		self.vicinity.gas_price
+	}
+
 	fn origin(&self) -> H160 {
 		self.vicinity.origin
 	}
@@ -522,5 +553,12 @@ impl<'vicinity, 'config, T: Config> StackStateT<'config>
 		// EVM pallet considers all accounts to exist, and distinguish
 		// only empty and non-empty accounts. This avoids many of the
 		// subtle issues in EIP-161.
+	}
+
+	fn is_cold(&self, address: H160) -> bool {
+		false
+	}
+	fn is_storage_cold(&self, address: H160, key: H256) -> bool {
+		false
 	}
 }

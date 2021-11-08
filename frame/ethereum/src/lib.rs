@@ -59,7 +59,9 @@ mod mock;
 #[cfg(all(feature = "std", test))]
 mod tests;
 
-#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug)]
+use scale_info::TypeInfo;
+
+#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub enum RawOrigin {
 	EthereumTransaction(H160),
 }
@@ -97,13 +99,13 @@ where
 {
 	pub fn is_self_contained(&self) -> bool {
 		match self {
-			Call::transact(_) => true,
+			Call::transact { transaction: _ } => true,
 			_ => false,
 		}
 	}
 
 	pub fn check_self_contained(&self) -> Option<Result<H160, TransactionValidityError>> {
-		if let Call::transact(transaction) = self {
+		if let Call::transact { transaction } = self {
 			let check = || {
 				let origin = Pallet::<T>::recover_signer(&transaction).ok_or_else(|| {
 					InvalidTransaction::Custom(TransactionValidationError::InvalidSignature as u8)
@@ -122,7 +124,10 @@ where
 		&self,
 		origin: &H160,
 	) -> Option<Result<(), TransactionValidityError>> {
-		if let Call::transact(transaction) = self {
+		if let Call::transact {
+			transaction: transaction,
+		} = self
+		{
 			Some(Pallet::<T>::validate_transaction_in_block(
 				*origin,
 				&transaction,
@@ -133,7 +138,10 @@ where
 	}
 
 	pub fn validate_self_contained(&self, origin: &H160) -> Option<TransactionValidity> {
-		if let Call::transact(transaction) = self {
+		if let Call::transact {
+			transaction: transaction,
+		} = self
+		{
 			Some(Pallet::<T>::validate_transaction_in_pool(
 				*origin,
 				transaction,
@@ -381,9 +389,11 @@ impl<T: Config> Pallet<T> {
 			<T as pallet_evm::Config>::config(),
 		);
 		let transaction_cost = match transaction.action {
-			TransactionAction::Call(_) => evm::gasometer::call_transaction_cost(&transaction.input),
+			TransactionAction::Call(_) => {
+				evm::gasometer::call_transaction_cost(&transaction.input, &vec![])
+			}
 			TransactionAction::Create => {
-				evm::gasometer::create_transaction_cost(&transaction.input)
+				evm::gasometer::create_transaction_cost(&transaction.input, &vec![])
 			}
 		};
 		if gasometer.record_transaction(transaction_cost).is_err() {

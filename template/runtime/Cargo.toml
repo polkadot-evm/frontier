@@ -14,6 +14,7 @@ targets = ["x86_64-unknown-linux-gnu"]
 [dependencies]
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = ["derive"] }
 serde = { version = "1.0.101", optional = true, features = ["derive"] }
+scale-info = { version = "1.0.0", default-features = false, features = ["derive"] }
 
 frame-executive = { default-features = false, git = "https://github.com/paritytech/substrate" }
 frame-support = { default-features = false, git = "https://github.com/paritytech/substrate" }
@@ -65,6 +66,7 @@ manual-seal = []
 std = [
 	"codec/std",
 	"serde",
+	"scale-info/std",
 
 	"frame-executive/std",
 	"frame-support/std",
