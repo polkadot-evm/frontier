@@ -31,7 +31,6 @@ use fp_evm::CallOrCreateInfo;
 use fp_storage::PALLET_ETHEREUM_SCHEMA;
 use frame_support::{
 	dispatch::DispatchResultWithPostInfo,
-	ensure,
 	traits::{EnsureOrigin, Get},
 	weights::{Pays, PostDispatchInfo, Weight},
 };
