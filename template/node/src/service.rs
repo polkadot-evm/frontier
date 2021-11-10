@@ -7,7 +7,7 @@ use async_trait::async_trait;
 use fc_consensus::FrontierBlockImport;
 use fc_mapping_sync::{MappingSyncWorker, SyncStrategy};
 use fc_rpc::EthTask;
-use fc_rpc_core::types::{FilterPool, FeeHistoryCache};
+use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
 use frontier_template_runtime::{self, opaque::Block, RuntimeApi, SLOT_DURATION};
 use futures::StreamExt;
 use sc_cli::SubstrateCli;
@@ -407,7 +407,7 @@ pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, Ser
 			Ok(crate::rpc::create_full(
 				deps,
 				subscription_task_executor.clone(),
-				overrides.clone()
+				overrides.clone(),
 			))
 		})
 	};

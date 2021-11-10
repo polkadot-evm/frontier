@@ -24,10 +24,10 @@ use ethereum_types::{H160, H256, H512, H64, U256, U64};
 use evm::{ExitError, ExitReason};
 use fc_rpc_core::{
 	types::{
-		Block, BlockNumber, BlockTransactions, Bytes, CallRequest, Filter, FilterChanges,
-		FilterPool, FilterPoolItem, FilterType, FilteredParams, Header, Index, Log, PeerCount,
-		Receipt, Rich, RichBlock, SyncInfo, SyncStatus, Transaction, TransactionMessage,
-		TransactionRequest, Work, FeeHistory, FeeHistoryCache, FeeHistoryCacheItem,
+		Block, BlockNumber, BlockTransactions, Bytes, CallRequest, FeeHistory, FeeHistoryCache,
+		FeeHistoryCacheItem, Filter, FilterChanges, FilterPool, FilterPoolItem, FilterType,
+		FilteredParams, Header, Index, Log, PeerCount, Receipt, Rich, RichBlock, SyncInfo,
+		SyncStatus, Transaction, TransactionMessage, TransactionRequest, Work,
 	},
 	EthApi as EthApiT, EthFilterApi as EthFilterApiT, NetApi as NetApiT, Web3Api as Web3ApiT,
 };
@@ -1827,7 +1827,7 @@ where
 		&self,
 		block_count: U256,
 		newest_block: BlockNumber,
-		reward_percentiles: Option<Vec<f64>>
+		reward_percentiles: Option<Vec<f64>>,
 	) -> Result<FeeHistory> {
 		// The max supported range size is 1024 by spec.
 		let range_limit = U256::from(1024);
@@ -1845,13 +1845,12 @@ where
 			let header = self.client.header(id).unwrap().unwrap();
 			// Highest and lowest block number within the requested range.
 			let highest = UniqueSaturatedInto::<u64>::unique_saturated_into(
-				self.client.number(header.hash()).unwrap().unwrap()
+				self.client.number(header.hash()).unwrap().unwrap(),
 			);
 			let lowest = highest.saturating_sub(block_count);
 			// Tip of the chain.
-			let best_number = UniqueSaturatedInto::<u64>::unique_saturated_into(
-				self.client.info().best_number
-			);
+			let best_number =
+				UniqueSaturatedInto::<u64>::unique_saturated_into(self.client.info().best_number);
 			// Only support in-cache queries.
 			if lowest < best_number.saturating_sub(self.fee_history_limit) {
 				return Err(internal_err(format!("Block range out of bounds.")));
@@ -1873,7 +1872,7 @@ where
 						if let Some(ref requested_percentiles) = reward_percentiles {
 							let mut block_rewards = Vec::new();
 							// Resoltion is half a point. I.e. 1.0,1.5
-							let resolution_per_percentile:f64 = 2.0;
+							let resolution_per_percentile: f64 = 2.0;
 							// Get cached reward for each provided percentile.
 							for p in requested_percentiles {
 								// Find the cache index from the user percentile.
@@ -1896,30 +1895,36 @@ where
 					response.reward = Some(rewards);
 				}
 				// Calculate next base fee.
-				if let (Some(last_gas_used), Some(last_fee_per_gas)) = (response.gas_used_ratio.last(), response.base_fee_per_gas.last()) {
+				if let (Some(last_gas_used), Some(last_fee_per_gas)) = (
+					response.gas_used_ratio.last(),
+					response.base_fee_per_gas.last(),
+				) {
 					let last_fee_per_gas = last_fee_per_gas.as_u64() as f64;
 					// TODO we really need this in storage..
 					let modifier = 0.125f64;
 					if last_gas_used > &0.5 {
 						// Increase base gas
 						let increase = ((last_gas_used - 0.5) * 2f64) * modifier;
-						let new_base_fee = (last_fee_per_gas + (last_fee_per_gas * increase)) as u64;
+						let new_base_fee =
+							(last_fee_per_gas + (last_fee_per_gas * increase)) as u64;
 						response.base_fee_per_gas.push(U256::from(new_base_fee));
 					} else if last_gas_used < &0.5 {
 						// Decrease base gas
 						let increase = ((0.5 - last_gas_used) * 2f64) * modifier;
-						let new_base_fee = (last_fee_per_gas - (last_fee_per_gas * increase)) as u64;
+						let new_base_fee =
+							(last_fee_per_gas - (last_fee_per_gas * increase)) as u64;
 						response.base_fee_per_gas.push(U256::from(new_base_fee));
 					} else {
 						// Same base gas
-						response.base_fee_per_gas.push(U256::from(last_fee_per_gas as u64));
+						response
+							.base_fee_per_gas
+							.push(U256::from(last_fee_per_gas as u64));
 					}
 				}
 				return Ok(response);
 			} else {
 				return Err(internal_err(format!("Failed to read fee history cache.")));
 			}
-
 		}
 		Err(internal_err(format!(
 			"Failed to retrieve requested block {:?}.",
@@ -2466,18 +2471,17 @@ where
 	) {
 		struct TransactionHelper {
 			gas_used: u64,
-			effective_reward: u64
+			effective_reward: u64,
 		}
 		let mut notification_st = client.import_notification_stream();
 
 		while let Some(notification) = notification_st.next().await {
 			if notification.is_new_best {
 				let id = BlockId::Hash(notification.hash);
-				let schema = frontier_backend_client::onchain_storage_schema::<
-					B,
-					C,
-					BE,
-				>(client.as_ref(), id);
+				let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(
+					client.as_ref(),
+					id,
+				);
 				let handler = overrides
 					.schemas
 					.get(&schema)
@@ -2489,12 +2493,14 @@ where
 				// fall in between with `(round(n*2)/2)`.
 				let reward_percentiles: Vec<f64> = {
 					let mut percentile: f64 = 0.0;
-					(0..201).into_iter().map(|_| {
-						let val = percentile;
-						percentile += 0.5;
-						val
-					})
-					.collect()
+					(0..201)
+						.into_iter()
+						.map(|_| {
+							let val = percentile;
+							percentile += 0.5;
+							val
+						})
+						.collect()
 				};
 
 				let block = handler.current_block(&id);
@@ -2526,30 +2532,25 @@ where
 					let mut transactions: Vec<TransactionHelper> = receipts
 						.iter()
 						.enumerate()
-						.map(|(i, receipt)| {
-							TransactionHelper {
-								gas_used: receipt.used_gas.as_u64(),
-								effective_reward: match block.transactions.get(i) {
-									Some(&ethereum::TransactionV2::Legacy(ref t)) => {
-										t.gas_price.saturating_sub(base_fee).as_u64()
-									}
-									Some(&ethereum::TransactionV2::EIP2930(ref t)) => {
-										t.gas_price.saturating_sub(base_fee).as_u64()
-									}
-									Some(&ethereum::TransactionV2::EIP1559(ref t)) => {
-										t.max_priority_fee_per_gas.min(
-											t.max_fee_per_gas.saturating_sub(base_fee)
-										).as_u64()
-									},
-									None => 0
+						.map(|(i, receipt)| TransactionHelper {
+							gas_used: receipt.used_gas.as_u64(),
+							effective_reward: match block.transactions.get(i) {
+								Some(&ethereum::TransactionV2::Legacy(ref t)) => {
+									t.gas_price.saturating_sub(base_fee).as_u64()
 								}
-							}
+								Some(&ethereum::TransactionV2::EIP2930(ref t)) => {
+									t.gas_price.saturating_sub(base_fee).as_u64()
+								}
+								Some(&ethereum::TransactionV2::EIP1559(ref t)) => t
+									.max_priority_fee_per_gas
+									.min(t.max_fee_per_gas.saturating_sub(base_fee))
+									.as_u64(),
+								None => 0,
+							},
 						})
 						.collect();
 					// Sort ASC by effective reward.
-					transactions.sort_by(|a, b| {
-						a.effective_reward.cmp(&b.effective_reward)
-					});
+					transactions.sort_by(|a, b| a.effective_reward.cmp(&b.effective_reward));
 
 					// Calculate percentile rewards.
 					result.rewards = reward_percentiles
@@ -2560,7 +2561,7 @@ where
 							for tx in &transactions {
 								sum_gas += tx.gas_used;
 								if target_gas <= sum_gas {
-									return Some(tx.effective_reward)
+									return Some(tx.effective_reward);
 								}
 							}
 							None
@@ -2570,7 +2571,9 @@ where
 				} else {
 					result.rewards = reward_percentiles.iter().map(|_| 0).collect();
 				}
-				if let (Some(block_number), Ok(fee_history_cache)) = (block_number, &mut fee_history_cache.lock()) {
+				if let (Some(block_number), Ok(fee_history_cache)) =
+					(block_number, &mut fee_history_cache.lock())
+				{
 					fee_history_cache.insert(block_number, result);
 					// We want to remain within the configured cache bounds.
 					// The first key out of bounds.

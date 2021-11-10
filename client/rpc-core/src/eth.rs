@@ -23,8 +23,8 @@ use jsonrpc_core::{BoxFuture, Result};
 use jsonrpc_derive::rpc;
 
 use crate::types::{
-	BlockNumber, Bytes, CallRequest, Filter, FilterChanges, Index, Log, Receipt, RichBlock,
-	SyncStatus, Transaction, TransactionRequest, Work, FeeHistory,
+	BlockNumber, Bytes, CallRequest, FeeHistory, Filter, FilterChanges, Index, Log, Receipt,
+	RichBlock, SyncStatus, Transaction, TransactionRequest, Work,
 };
 pub use rpc_impl_EthApi::gen_server::EthApi as EthApiServer;
 pub use rpc_impl_EthFilterApi::gen_server::EthFilterApi as EthFilterApiServer;
@@ -182,7 +182,7 @@ pub trait EthApi {
 		&self,
 		block_count: U256,
 		newest_block: BlockNumber,
-		reward_percentiles: Option<Vec<f64>>
+		reward_percentiles: Option<Vec<f64>>,
 	) -> Result<FeeHistory>;
 }
 

@@ -6,7 +6,7 @@ use fc_rpc::{
 	EthBlockDataCache, OverrideHandle, RuntimeApiStorageOverride, SchemaV1Override,
 	SchemaV2Override, StorageOverride,
 };
-use fc_rpc_core::types::{FilterPool, FeeHistoryCache};
+use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
 use frontier_template_runtime::{opaque::Block, AccountId, Balance, Hash, Index};
 use jsonrpc_pubsub::manager::SubscriptionManager;
 use pallet_ethereum::EthereumStorageSchema;
@@ -78,7 +78,6 @@ where
 	BE: Backend<Block> + 'static,
 	BE::State: StateBackend<BlakeTwo256>,
 {
-
 	let mut overrides_map = BTreeMap::new();
 	overrides_map.insert(
 		EthereumStorageSchema::V1,
