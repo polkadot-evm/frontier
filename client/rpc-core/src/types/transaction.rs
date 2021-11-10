@@ -42,13 +42,13 @@ pub struct Transaction {
 	/// Transfered value
 	pub value: U256,
 	/// Gas Price
-	#[cfg_attr(feature = "std", serde(skip_serializing_if = "Option::is_none"))]
+	#[serde(skip_serializing_if = "Option::is_none")]
 	pub gas_price: Option<U256>,
 	/// Max BaseFeePerGas the user is willing to pay.
-	#[cfg_attr(feature = "std", serde(skip_serializing_if = "Option::is_none"))]
+	#[serde(skip_serializing_if = "Option::is_none")]
 	pub max_fee_per_gas: Option<U256>,
 	/// The miner's tip.
-	#[cfg_attr(feature = "std", serde(skip_serializing_if = "Option::is_none"))]
+	#[serde(skip_serializing_if = "Option::is_none")]
 	pub max_priority_fee_per_gas: Option<U256>,
 	/// Gas
 	pub gas: U256,
