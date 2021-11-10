@@ -54,4 +54,6 @@ pub struct Receipt {
 	// NOTE(niklasad1): Unknown after EIP98 rules, if it's missing then skip serializing it
 	#[serde(skip_serializing_if = "Option::is_none", rename = "status")]
 	pub status_code: Option<U64>,
+	/// Effective gas price. Pre-eip1559 this is just the gasprice. Post-eip1559 this is base fee + priority fee.
+	pub effective_gas_price: U256,
 }

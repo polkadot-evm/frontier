@@ -25,13 +25,14 @@ pub use eth::{
 	NetApiServer, Web3Api, Web3ApiServer,
 };
 pub use eth_pubsub::{EthPubSubApi, EthPubSubApiServer, HexEncodedIdProvider};
-pub use overrides::{OverrideHandle, RuntimeApiStorageOverride, SchemaV1Override, StorageOverride};
-
-use ethereum::{
-	LegacyTransactionMessage as EthereumTransactionMessage, TransactionV0 as EthereumTransaction,
+pub use ethereum::TransactionV2 as EthereumTransaction;
+pub use overrides::{
+	OverrideHandle, RuntimeApiStorageOverride, SchemaV1Override, SchemaV2Override, StorageOverride,
 };
+
 use ethereum_types::{H160, H256};
 use evm::ExitError;
+pub use fc_rpc_core::types::TransactionMessage;
 use jsonrpc_core::{Error, ErrorCode, Value};
 use pallet_evm::ExitReason;
 use rustc_hex::ToHex;
@@ -248,11 +249,26 @@ pub fn error_on_execution_failure(reason: &ExitReason, data: &[u8]) -> Result<()
 pub fn public_key(transaction: &EthereumTransaction) -> Result<[u8; 64], sp_io::EcdsaVerifyError> {
 	let mut sig = [0u8; 65];
 	let mut msg = [0u8; 32];
-	sig[0..32].copy_from_slice(&transaction.signature.r()[..]);
-	sig[32..64].copy_from_slice(&transaction.signature.s()[..]);
-	sig[64] = transaction.signature.standard_v();
-	msg.copy_from_slice(&EthereumTransactionMessage::from(transaction.clone()).hash()[..]);
-
+	match transaction {
+		EthereumTransaction::Legacy(t) => {
+			sig[0..32].copy_from_slice(&t.signature.r()[..]);
+			sig[32..64].copy_from_slice(&t.signature.s()[..]);
+			sig[64] = t.signature.standard_v();
+			msg.copy_from_slice(&ethereum::LegacyTransactionMessage::from(t.clone()).hash()[..]);
+		}
+		EthereumTransaction::EIP2930(t) => {
+			sig[0..32].copy_from_slice(&t.r[..]);
+			sig[32..64].copy_from_slice(&t.s[..]);
+			sig[64] = t.odd_y_parity as u8;
+			msg.copy_from_slice(&ethereum::EIP2930TransactionMessage::from(t.clone()).hash()[..]);
+		}
+		EthereumTransaction::EIP1559(t) => {
+			sig[0..32].copy_from_slice(&t.r[..]);
+			sig[32..64].copy_from_slice(&t.s[..]);
+			sig[64] = t.odd_y_parity as u8;
+			msg.copy_from_slice(&ethereum::EIP1559TransactionMessage::from(t.clone()).hash()[..]);
+		}
+	}
 	sp_io::crypto::secp256k1_ecdsa_recover(&sig, &msg)
 }
 
@@ -263,9 +279,9 @@ pub trait EthSigner: Send + Sync {
 	/// Sign a transaction message using the given account in message.
 	fn sign(
 		&self,
-		message: ethereum::LegacyTransactionMessage,
+		message: TransactionMessage,
 		address: &H160,
-	) -> Result<ethereum::TransactionV0, Error>;
+	) -> Result<EthereumTransaction, Error>;
 }
 
 pub struct EthDevSigner {
@@ -301,9 +317,9 @@ impl EthSigner for EthDevSigner {
 
 	fn sign(
 		&self,
-		message: ethereum::LegacyTransactionMessage,
+		message: TransactionMessage,
 		address: &H160,
-	) -> Result<ethereum::TransactionV0, Error> {
+	) -> Result<EthereumTransaction, Error> {
 		let mut transaction = None;
 
 		for secret in &self.keys {
@@ -315,29 +331,76 @@ impl EthSigner for EthDevSigner {
 			};
 
 			if &key_address == address {
-				let signing_message = secp256k1::Message::parse_slice(&message.hash()[..])
-					.map_err(|_| internal_err("invalid signing message"))?;
-				let (signature, recid) = secp256k1::sign(&signing_message, secret);
-
-				let v = match message.chain_id {
-					None => 27 + recid.serialize() as u64,
-					Some(chain_id) => 2 * chain_id + 35 + recid.serialize() as u64,
-				};
-				let rs = signature.serialize();
-				let r = H256::from_slice(&rs[0..32]);
-				let s = H256::from_slice(&rs[32..64]);
-
-				transaction = Some(ethereum::TransactionV0 {
-					nonce: message.nonce,
-					gas_price: message.gas_price,
-					gas_limit: message.gas_limit,
-					action: message.action,
-					value: message.value,
-					input: message.input.clone(),
-					signature: ethereum::TransactionSignature::new(v, r, s)
-						.ok_or(internal_err("signer generated invalid signature"))?,
-				});
-
+				match message {
+					TransactionMessage::Legacy(m) => {
+						let signing_message = secp256k1::Message::parse_slice(&m.hash()[..])
+							.map_err(|_| internal_err("invalid signing message"))?;
+						let (signature, recid) = secp256k1::sign(&signing_message, secret);
+						let v = match m.chain_id {
+							None => 27 + recid.serialize() as u64,
+							Some(chain_id) => 2 * chain_id + 35 + recid.serialize() as u64,
+						};
+						let rs = signature.serialize();
+						let r = H256::from_slice(&rs[0..32]);
+						let s = H256::from_slice(&rs[32..64]);
+						transaction =
+							Some(EthereumTransaction::Legacy(ethereum::LegacyTransaction {
+								nonce: m.nonce,
+								gas_price: m.gas_price,
+								gas_limit: m.gas_limit,
+								action: m.action,
+								value: m.value,
+								input: m.input.clone(),
+								signature: ethereum::TransactionSignature::new(v, r, s)
+									.ok_or(internal_err("signer generated invalid signature"))?,
+							}));
+					}
+					TransactionMessage::EIP2930(m) => {
+						let signing_message = secp256k1::Message::parse_slice(&m.hash()[..])
+							.map_err(|_| internal_err("invalid signing message"))?;
+						let (signature, recid) = secp256k1::sign(&signing_message, secret);
+						let rs = signature.serialize();
+						let r = H256::from_slice(&rs[0..32]);
+						let s = H256::from_slice(&rs[32..64]);
+						transaction =
+							Some(EthereumTransaction::EIP2930(ethereum::EIP2930Transaction {
+								chain_id: m.chain_id,
+								nonce: m.nonce,
+								gas_price: m.gas_price,
+								gas_limit: m.gas_limit,
+								action: m.action,
+								value: m.value,
+								input: m.input.clone(),
+								access_list: m.access_list,
+								odd_y_parity: recid.serialize() != 0,
+								r,
+								s,
+							}));
+					}
+					TransactionMessage::EIP1559(m) => {
+						let signing_message = secp256k1::Message::parse_slice(&m.hash()[..])
+							.map_err(|_| internal_err("invalid signing message"))?;
+						let (signature, recid) = secp256k1::sign(&signing_message, secret);
+						let rs = signature.serialize();
+						let r = H256::from_slice(&rs[0..32]);
+						let s = H256::from_slice(&rs[32..64]);
+						transaction =
+							Some(EthereumTransaction::EIP1559(ethereum::EIP1559Transaction {
+								chain_id: m.chain_id,
+								nonce: m.nonce,
+								max_priority_fee_per_gas: m.max_priority_fee_per_gas,
+								max_fee_per_gas: m.max_fee_per_gas,
+								gas_limit: m.gas_limit,
+								action: m.action,
+								value: m.value,
+								input: m.input.clone(),
+								access_list: m.access_list,
+								odd_y_parity: recid.serialize() != 0,
+								r,
+								s,
+							}));
+					}
+				}
 				break;
 			}
 		}

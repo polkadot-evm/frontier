@@ -18,13 +18,13 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
-use ethereum::{BlockV0 as EthereumBlock, Log};
+use ethereum::Log;
 use ethereum_types::Bloom;
 use sp_core::{H160, H256, U256};
 use sp_runtime::traits::Block as BlockT;
 use sp_std::vec::Vec;
 
-#[derive(Eq, PartialEq, Clone, Encode, Decode, sp_runtime::RuntimeDebug)]
+#[derive(Eq, PartialEq, Clone, Encode, Decode, sp_runtime::RuntimeDebug, scale_info::TypeInfo)]
 pub struct TransactionStatus {
 	pub transaction_hash: H256,
 	pub transaction_index: u32,
@@ -51,6 +51,7 @@ impl Default for TransactionStatus {
 
 sp_api::decl_runtime_apis! {
 	/// API necessary for Ethereum-compatibility layer.
+	#[api_version(2)]
 	pub trait EthereumRuntimeRPCApi {
 		/// Returns runtime defined pallet_evm::ChainId.
 		fn chain_id() -> u64;
@@ -65,6 +66,7 @@ sp_api::decl_runtime_apis! {
 		/// For a given account address and index, returns pallet_evm::AccountStorages.
 		fn storage_at(address: H160, index: U256) -> H256;
 		/// Returns a frame_ethereum::call response. If `estimate` is true,
+		#[changed_in(2)]
 		fn call(
 			from: H160,
 			to: H160,
@@ -75,7 +77,19 @@ sp_api::decl_runtime_apis! {
 			nonce: Option<U256>,
 			estimate: bool,
 		) -> Result<fp_evm::CallInfo, sp_runtime::DispatchError>;
+		fn call(
+			from: H160,
+			to: H160,
+			data: Vec<u8>,
+			value: U256,
+			gas_limit: U256,
+			max_fee_per_gas: Option<U256>,
+			max_priority_fee_per_gas: Option<U256>,
+			nonce: Option<U256>,
+			estimate: bool,
+		) -> Result<fp_evm::CallInfo, sp_runtime::DispatchError>;
 		/// Returns a frame_ethereum::create response.
+		#[changed_in(2)]
 		fn create(
 			from: H160,
 			data: Vec<u8>,
@@ -85,25 +99,50 @@ sp_api::decl_runtime_apis! {
 			nonce: Option<U256>,
 			estimate: bool,
 		) -> Result<fp_evm::CreateInfo, sp_runtime::DispatchError>;
+		fn create(
+			from: H160,
+			data: Vec<u8>,
+			value: U256,
+			gas_limit: U256,
+			max_fee_per_gas: Option<U256>,
+			max_priority_fee_per_gas: Option<U256>,
+			nonce: Option<U256>,
+			estimate: bool,
+		) -> Result<fp_evm::CreateInfo, sp_runtime::DispatchError>;
+		/// Return the current block. Legacy.
+		#[changed_in(2)]
+		fn current_block() -> Option<ethereum::BlockV0>;
 		/// Return the current block.
-		fn current_block() -> Option<EthereumBlock>;
+		fn current_block() -> Option<ethereum::BlockV2>;
 		/// Return the current receipt.
 		fn current_receipts() -> Option<Vec<ethereum::Receipt>>;
 		/// Return the current transaction status.
 		fn current_transaction_statuses() -> Option<Vec<TransactionStatus>>;
-		/// Return all the current data for a block in a single runtime call.
+		/// Return all the current data for a block in a single runtime call. Legacy.
+		#[changed_in(2)]
 		fn current_all() -> (
-			Option<EthereumBlock>,
+			Option<ethereum::BlockV0>,
 			Option<Vec<ethereum::Receipt>>,
 			Option<Vec<TransactionStatus>>
 		);
-		/// Receives a `Vec<OpaqueExtrinsic>` and filters all the ethereum transactions.
+		/// Return all the current data for a block in a single runtime call.
+		fn current_all() -> (
+			Option<ethereum::BlockV2>,
+			Option<Vec<ethereum::Receipt>>,
+			Option<Vec<TransactionStatus>>
+		);
+		/// Receives a `Vec<OpaqueExtrinsic>` and filters all the ethereum transactions. Legacy.
+		#[changed_in(2)]
 		fn extrinsic_filter(
 			xts: Vec<<Block as BlockT>::Extrinsic>,
 		) -> Vec<ethereum::TransactionV0>;
+		/// Receives a `Vec<OpaqueExtrinsic>` and filters all the ethereum transactions.
+		fn extrinsic_filter(
+			xts: Vec<<Block as BlockT>::Extrinsic>,
+		) -> Vec<ethereum::TransactionV2>;
 	}
 }
 
 pub trait ConvertTransaction<E> {
-	fn convert_transaction(&self, transaction: ethereum::TransactionV0) -> E;
+	fn convert_transaction(&self, transaction: ethereum::TransactionV2) -> E;
 }

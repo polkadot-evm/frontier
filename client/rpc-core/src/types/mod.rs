@@ -52,6 +52,6 @@ pub use self::{
 		Peers, PipProtocolInfo, SyncInfo, SyncStatus, TransactionStats,
 	},
 	transaction::{LocalTransactionStatus, RichRawTransaction, Transaction},
-	transaction_request::TransactionRequest,
+	transaction_request::{TransactionMessage, TransactionRequest},
 	work::Work,
 };

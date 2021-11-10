@@ -55,7 +55,7 @@ pub fn test_precompile_test_vectors<P: Precompile>(
 			apparent_value: From::from(0),
 		};
 
-		match P::execute(&input, Some(cost), &context) {
+		match P::execute(&input, Some(cost), &context, false) {
 			Ok(result) => {
 				let as_hex: String = hex::encode(result.output);
 				assert_eq!(

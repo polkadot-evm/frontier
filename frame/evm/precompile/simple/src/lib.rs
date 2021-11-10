@@ -21,7 +21,7 @@ extern crate alloc;
 
 use alloc::vec::Vec;
 use core::cmp::min;
-use fp_evm::{ExitError, ExitSucceed, LinearCostPrecompile};
+use fp_evm::{ExitError, ExitSucceed, LinearCostPrecompile, PrecompileFailure};
 
 /// The identity precompile.
 pub struct Identity;
@@ -30,7 +30,10 @@ impl LinearCostPrecompile for Identity {
 	const BASE: u64 = 15;
 	const WORD: u64 = 3;
 
-	fn execute(input: &[u8], _: u64) -> core::result::Result<(ExitSucceed, Vec<u8>), ExitError> {
+	fn execute(
+		input: &[u8],
+		_: u64,
+	) -> core::result::Result<(ExitSucceed, Vec<u8>), PrecompileFailure> {
 		Ok((ExitSucceed::Returned, input.to_vec()))
 	}
 }
@@ -42,7 +45,10 @@ impl LinearCostPrecompile for ECRecover {
 	const BASE: u64 = 3000;
 	const WORD: u64 = 0;
 
-	fn execute(i: &[u8], _: u64) -> core::result::Result<(ExitSucceed, Vec<u8>), ExitError> {
+	fn execute(
+		i: &[u8],
+		_: u64,
+	) -> core::result::Result<(ExitSucceed, Vec<u8>), PrecompileFailure> {
 		let mut input = [0u8; 128];
 		input[..min(i.len(), 128)].copy_from_slice(&i[..min(i.len(), 128)]);
 
@@ -77,7 +83,7 @@ impl LinearCostPrecompile for Ripemd160 {
 	fn execute(
 		input: &[u8],
 		_cost: u64,
-	) -> core::result::Result<(ExitSucceed, Vec<u8>), ExitError> {
+	) -> core::result::Result<(ExitSucceed, Vec<u8>), PrecompileFailure> {
 		use ripemd160::Digest;
 
 		let mut ret = [0u8; 32];
@@ -96,7 +102,7 @@ impl LinearCostPrecompile for Sha256 {
 	fn execute(
 		input: &[u8],
 		_cost: u64,
-	) -> core::result::Result<(ExitSucceed, Vec<u8>), ExitError> {
+	) -> core::result::Result<(ExitSucceed, Vec<u8>), PrecompileFailure> {
 		let ret = sp_io::hashing::sha2_256(input);
 		Ok((ExitSucceed::Returned, ret.to_vec()))
 	}
@@ -110,7 +116,10 @@ impl LinearCostPrecompile for ECRecoverPublicKey {
 	const BASE: u64 = 3000;
 	const WORD: u64 = 0;
 
-	fn execute(i: &[u8], _: u64) -> core::result::Result<(ExitSucceed, Vec<u8>), ExitError> {
+	fn execute(
+		i: &[u8],
+		_: u64,
+	) -> core::result::Result<(ExitSucceed, Vec<u8>), PrecompileFailure> {
 		let mut input = [0u8; 128];
 		input[..min(i.len(), 128)].copy_from_slice(&i[..min(i.len(), 128)]);
 
@@ -122,8 +131,11 @@ impl LinearCostPrecompile for ECRecoverPublicKey {
 		sig[32..64].copy_from_slice(&input[96..128]);
 		sig[64] = input[63];
 
-		let pubkey = sp_io::crypto::secp256k1_ecdsa_recover(&sig, &msg)
-			.map_err(|_| ExitError::Other("Public key recover failed".into()))?;
+		let pubkey = sp_io::crypto::secp256k1_ecdsa_recover(&sig, &msg).map_err(|_| {
+			PrecompileFailure::Error {
+				exit_status: ExitError::Other("Public key recover failed".into()),
+			}
+		})?;
 
 		Ok((ExitSucceed::Returned, pubkey.to_vec()))
 	}
