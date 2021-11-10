@@ -68,6 +68,7 @@ fc-mapping-sync = { path = "../../client/mapping-sync" }
 pallet-evm = { path = "../../frame/evm" }
 pallet-ethereum = { path = "../../frame/ethereum" }
 pallet-dynamic-fee = { path = "../../frame/dynamic-fee" }
+pallet-base-fee = { path = "../../frame/base-fee" }
 
 [build-dependencies]
 substrate-build-script-utils = { git = "https://github.com/paritytech/substrate" }

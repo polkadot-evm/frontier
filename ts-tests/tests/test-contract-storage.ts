@@ -22,7 +22,7 @@ describeWithFrontier("Frontier RPC (Contract)", (context) => {
 				from: GENESIS_ACCOUNT,
 				data: TEST_CONTRACT_BYTECODE,
 				value: "0x00",
-				gasPrice: "0x01",
+				gasPrice: "0x3B9ACA00",
 				gas: "0x100000",
 			},
 			GENESIS_ACCOUNT_PRIVATE_KEY
@@ -57,7 +57,7 @@ describeWithFrontier("Frontier RPC (Contract)", (context) => {
 						"0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
 					).encodeABI(),
 				value: "0x00",
-				gasPrice: "0x01",
+				gasPrice: "0x3B9ACA00",
 				gas: "0x500000",
 			},
 			GENESIS_ACCOUNT_PRIVATE_KEY

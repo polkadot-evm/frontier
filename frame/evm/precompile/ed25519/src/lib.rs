@@ -22,7 +22,7 @@ extern crate alloc;
 use alloc::vec::Vec;
 use core::convert::TryFrom;
 use ed25519_dalek::{PublicKey, Signature, Verifier};
-use fp_evm::{ExitError, ExitSucceed, LinearCostPrecompile};
+use fp_evm::{ExitError, ExitSucceed, LinearCostPrecompile, PrecompileFailure};
 
 pub struct Ed25519Verify;
 
@@ -30,9 +30,14 @@ impl LinearCostPrecompile for Ed25519Verify {
 	const BASE: u64 = 15;
 	const WORD: u64 = 3;
 
-	fn execute(input: &[u8], _: u64) -> core::result::Result<(ExitSucceed, Vec<u8>), ExitError> {
+	fn execute(
+		input: &[u8],
+		_: u64,
+	) -> core::result::Result<(ExitSucceed, Vec<u8>), PrecompileFailure> {
 		if input.len() < 128 {
-			return Err(ExitError::Other("input must contain 128 bytes".into()));
+			return Err(PrecompileFailure::Error {
+				exit_status: ExitError::Other("input must contain 128 bytes".into()),
+			});
 		};
 
 		let mut i = [0u8; 128];
@@ -41,10 +46,12 @@ impl LinearCostPrecompile for Ed25519Verify {
 		let mut buf = [0u8; 4];
 
 		let msg = &i[0..32];
-		let pk = PublicKey::from_bytes(&i[32..64])
-			.map_err(|_| ExitError::Other("Public key recover failed".into()))?;
-		let sig = Signature::try_from(&i[64..128])
-			.map_err(|_| ExitError::Other("Signature recover failed".into()))?;
+		let pk = PublicKey::from_bytes(&i[32..64]).map_err(|_| PrecompileFailure::Error {
+			exit_status: ExitError::Other("Public key recover failed".into()),
+		})?;
+		let sig = Signature::try_from(&i[64..128]).map_err(|_| PrecompileFailure::Error {
+			exit_status: ExitError::Other("Signature recover failed".into()),
+		})?;
 
 		// https://docs.rs/rust-crypto/0.2.36/crypto/ed25519/fn.verify.html
 		if pk.verify(msg, &sig).is_ok() {
@@ -63,7 +70,7 @@ mod tests {
 	use ed25519_dalek::{Keypair, SecretKey, Signer};
 
 	#[test]
-	fn test_empty_input() -> std::result::Result<(), ExitError> {
+	fn test_empty_input() -> std::result::Result<(), PrecompileFailure> {
 		let input: [u8; 0] = [];
 		let cost: u64 = 1;
 
@@ -72,14 +79,19 @@ mod tests {
 				panic!("Test not expected to pass");
 			}
 			Err(e) => {
-				assert_eq!(e, ExitError::Other("input must contain 128 bytes".into()));
+				assert_eq!(
+					e,
+					PrecompileFailure::Error {
+						exit_status: ExitError::Other("input must contain 128 bytes".into())
+					}
+				);
 				Ok(())
 			}
 		}
 	}
 
 	#[test]
-	fn test_verify() -> std::result::Result<(), ExitError> {
+	fn test_verify() -> std::result::Result<(), PrecompileFailure> {
 		let secret_key_bytes: [u8; ed25519_dalek::SECRET_KEY_LENGTH] = [
 			157, 097, 177, 157, 239, 253, 090, 096, 186, 132, 074, 244, 146, 236, 044, 196, 068,
 			073, 197, 105, 123, 050, 105, 025, 112, 059, 172, 003, 028, 174, 127, 096,
