@@ -144,6 +144,12 @@
 <span id="144">144</span>
 <span id="145">145</span>
 <span id="146">146</span>
+<span id="147">147</span>
+<span id="148">148</span>
+<span id="149">149</span>
+<span id="150">150</span>
+<span id="151">151</span>
+<span id="152">152</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -168,7 +174,7 @@
 <span class="kw">use</span> <span class="ident">alloc::vec::Vec</span>;
 <span class="kw">use</span> <span class="ident">tiny_keccak::Hasher</span>;
 
-<span class="kw">use</span> <span class="ident">fp_evm</span>::{<span class="ident">ExitError</span>, <span class="ident">ExitSucceed</span>, <span class="ident">LinearCostPrecompile</span>};
+<span class="kw">use</span> <span class="ident">fp_evm</span>::{<span class="ident">ExitSucceed</span>, <span class="ident">LinearCostPrecompile</span>, <span class="ident">PrecompileFailure</span>};
 
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Sha3FIPS256</span>;
 
@@ -176,7 +182,10 @@
 	<span class="kw">const</span> <span class="ident">BASE</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">60</span>;
 	<span class="kw">const</span> <span class="ident">WORD</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">12</span>;
 
-	<span class="kw">fn</span> <span class="ident">execute</span>(<span class="ident">input</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>], <span class="kw">_</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">core::result::Result</span><span class="op">&lt;</span>(<span class="ident">ExitSucceed</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>), <span class="ident">ExitError</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">execute</span>(
+		<span class="ident">input</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>],
+		<span class="kw">_</span>: <span class="ident">u64</span>,
+	) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">core::result::Result</span><span class="op">&lt;</span>(<span class="ident">ExitSucceed</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>), <span class="ident">PrecompileFailure</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">output</span> <span class="op">=</span> [<span class="number">0</span>; <span class="number">32</span>];
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">sha3</span> <span class="op">=</span> <span class="ident">tiny_keccak::Sha3::v256</span>();
 		<span class="ident">sha3</span>.<span class="ident">update</span>(<span class="ident">input</span>);
@@ -191,7 +200,10 @@
 	<span class="kw">const</span> <span class="ident">BASE</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">60</span>;
 	<span class="kw">const</span> <span class="ident">WORD</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">12</span>;
 
-	<span class="kw">fn</span> <span class="ident">execute</span>(<span class="ident">input</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>], <span class="kw">_</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">core::result::Result</span><span class="op">&lt;</span>(<span class="ident">ExitSucceed</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>), <span class="ident">ExitError</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">execute</span>(
+		<span class="ident">input</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>],
+		<span class="kw">_</span>: <span class="ident">u64</span>,
+	) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">core::result::Result</span><span class="op">&lt;</span>(<span class="ident">ExitSucceed</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>), <span class="ident">PrecompileFailure</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">output</span> <span class="op">=</span> [<span class="number">0</span>; <span class="number">64</span>];
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">sha3</span> <span class="op">=</span> <span class="ident">tiny_keccak::Sha3::v512</span>();
 		<span class="ident">sha3</span>.<span class="ident">update</span>(<span class="ident">input</span>);
@@ -205,7 +217,7 @@
 	<span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
 
 	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">test_empty_input</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">std::result::Result</span><span class="op">&lt;</span>(), <span class="ident">ExitError</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">test_empty_input</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">std::result::Result</span><span class="op">&lt;</span>(), <span class="ident">PrecompileFailure</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> <span class="ident">input</span>: [<span class="ident">u8</span>; <span class="number">0</span>] <span class="op">=</span> [];
 		<span class="kw">let</span> <span class="ident">expected</span> <span class="op">=</span> <span class="string">b&quot;\
 			\xa7\xff\xc6\xf8\xbf\x1e\xd7\x66\x51\xc1\x47\x56\xa0\x61\xd6\x62\
@@ -226,7 +238,7 @@
 	}
 
 	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">hello_sha3_256</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">std::result::Result</span><span class="op">&lt;</span>(), <span class="ident">ExitError</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">hello_sha3_256</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">std::result::Result</span><span class="op">&lt;</span>(), <span class="ident">PrecompileFailure</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> <span class="ident">input</span> <span class="op">=</span> <span class="string">b&quot;hello&quot;</span>;
 		<span class="kw">let</span> <span class="ident">expected</span> <span class="op">=</span> <span class="string">b&quot;\
 			\x33\x38\xbe\x69\x4f\x50\xc5\xf3\x38\x81\x49\x86\xcd\xf0\x68\x64\
@@ -247,7 +259,7 @@
 	}
 
 	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">long_string_sha3_256</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">std::result::Result</span><span class="op">&lt;</span>(), <span class="ident">ExitError</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">long_string_sha3_256</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">std::result::Result</span><span class="op">&lt;</span>(), <span class="ident">PrecompileFailure</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> <span class="ident">input</span> <span class="op">=</span> <span class="string">b&quot;Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.&quot;</span>;
 		<span class="kw">let</span> <span class="ident">expected</span> <span class="op">=</span> <span class="string">b&quot;\
 			\xbd\xe3\xf2\x69\x17\x5e\x1d\xcd\xa1\x38\x48\x27\x8a\xa6\x04\x6b\
@@ -268,7 +280,7 @@
 	}
 
 	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">long_string_sha3_512</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">std::result::Result</span><span class="op">&lt;</span>(), <span class="ident">ExitError</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">long_string_sha3_512</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">std::result::Result</span><span class="op">&lt;</span>(), <span class="ident">PrecompileFailure</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> <span class="ident">input</span> <span class="op">=</span> <span class="string">b&quot;Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.&quot;</span>;
 		<span class="kw">let</span> <span class="ident">expected</span> <span class="op">=</span> <span class="string">b&quot;\
 			\xf3\x2a\x94\x23\x55\x13\x51\xdf\x0a\x07\xc0\xb8\xc2\x0e\xb9\x72\

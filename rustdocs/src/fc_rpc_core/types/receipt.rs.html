@@ -55,6 +55,8 @@
 <span id="55">55</span>
 <span id="56">56</span>
 <span id="57">57</span>
+<span id="58">58</span>
+<span id="59">59</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -111,6 +113,8 @@
 	<span class="comment">// NOTE(niklasad1): Unknown after EIP98 rules, if it&#39;s missing then skip serializing it</span>
 	<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">skip_serializing_if</span> <span class="op">=</span> <span class="string">&quot;Option::is_none&quot;</span>, <span class="ident">rename</span> <span class="op">=</span> <span class="string">&quot;status&quot;</span>)]</span>
 	<span class="kw">pub</span> <span class="ident">status_code</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U64</span><span class="op">&gt;</span>,
+	<span class="doccomment">/// Effective gas price. Pre-eip1559 this is just the gasprice. Post-eip1559 this is base fee + priority fee.</span>
+	<span class="kw">pub</span> <span class="ident">effective_gas_price</span>: <span class="ident">U256</span>,
 }
 </code></pre></div>
 </section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="fc_rpc_core" data-search-index-js="../../../search-index.js" data-search-js="../../../search.js"></div>

@@ -145,6 +145,9 @@
 <span id="145">145</span>
 <span id="146">146</span>
 <span id="147">147</span>
+<span id="148">148</span>
+<span id="149">149</span>
+<span id="150">150</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -205,6 +208,9 @@
 	<span class="kw">pub</span> <span class="ident">transactions</span>: <span class="ident">BlockTransactions</span>,
 	<span class="doccomment">/// Size in bytes</span>
 	<span class="kw">pub</span> <span class="ident">size</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
+	<span class="doccomment">/// Base Fee for post-EIP1559 blocks.</span>
+	<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">skip_serializing_if</span> <span class="op">=</span> <span class="string">&quot;Option::is_none&quot;</span>)]</span>
+	<span class="kw">pub</span> <span class="ident">base_fee_per_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
 }
 
 <span class="doccomment">/// Block header representation.</span>
