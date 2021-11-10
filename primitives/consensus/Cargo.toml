@@ -13,7 +13,7 @@ sp-std = { version = "4.0.0-dev", default-features = false, git = "https://githu
 sp-runtime = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
 sp-core = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = ["derive"] }
-ethereum = { version = "0.9.0", default-features = false, features = ["with-codec"] }
+ethereum = { version = "0.10.0", default-features = false, features = ["with-codec"] }
 rlp = { version = "0.5", default-features = false }
 sha3 = { version = "0.8", default-features = false }
 

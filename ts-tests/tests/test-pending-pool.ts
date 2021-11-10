@@ -18,7 +18,7 @@ describeWithFrontier("Frontier RPC (Pending Pool)", (context) => {
 				from: GENESIS_ACCOUNT,
 				data: TEST_CONTRACT_BYTECODE,
 				value: "0x00",
-				gasPrice: "0x01",
+				gasPrice: "0x3B9ACA00",
 				gas: "0x100000",
 			},
 			GENESIS_ACCOUNT_PRIVATE_KEY
@@ -32,8 +32,8 @@ describeWithFrontier("Frontier RPC (Pending Pool)", (context) => {
 			blockNumber: null,
 			hash: tx_hash,
 			publicKey: "0x624f720eae676a04111631c9ca338c11d0f5a80ee42210c6be72983ceb620fbf645a96f951529fa2d70750432d11b7caba5270c4d677255be90b3871c8c58069",
-			r: "0x5431b25e8100a21ced6af01868357b19d58b94afa6f57dc7cbf81f4a922ddecc",
-			s: "0x22e05530d015ea702ffb37af313e691ce4423565c2734c267edd3c74aea0a010",
+			r: "0x8e3759de96b00f8a05a95c24fa905963f86a82a0038cca0fde035762fb2d24f7",
+			s: "0x7131a2c265463f4bb063504f924df4d3d14bdad9cdfff8391041ea78295d186b",
 			v: "0x77",
 		});
 
@@ -43,8 +43,8 @@ describeWithFrontier("Frontier RPC (Pending Pool)", (context) => {
 		expect(processed_transaction).to.include({
 			hash: tx_hash,
 			publicKey: "0x624f720eae676a04111631c9ca338c11d0f5a80ee42210c6be72983ceb620fbf645a96f951529fa2d70750432d11b7caba5270c4d677255be90b3871c8c58069",
-			r: "0x5431b25e8100a21ced6af01868357b19d58b94afa6f57dc7cbf81f4a922ddecc",
-			s: "0x22e05530d015ea702ffb37af313e691ce4423565c2734c267edd3c74aea0a010",
+			r: "0x8e3759de96b00f8a05a95c24fa905963f86a82a0038cca0fde035762fb2d24f7",
+			s: "0x7131a2c265463f4bb063504f924df4d3d14bdad9cdfff8391041ea78295d186b",
 			v: "0x77",
 		});
 	});

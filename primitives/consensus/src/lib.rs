@@ -47,7 +47,7 @@ impl Log {
 #[derive(Decode, Encode, Clone, PartialEq, Eq)]
 pub enum PreLog {
 	#[codec(index = 3)]
-	Block(ethereum::BlockV0),
+	Block(ethereum::BlockV2),
 }
 
 #[derive(Decode, Encode, Clone, PartialEq, Eq)]
@@ -55,7 +55,7 @@ pub enum PostLog {
 	#[codec(index = 1)]
 	Hashes(Hashes),
 	#[codec(index = 2)]
-	Block(ethereum::BlockV0),
+	Block(ethereum::BlockV2),
 }
 
 #[derive(Decode, Encode, Clone, PartialEq, Eq)]
@@ -67,7 +67,7 @@ pub struct Hashes {
 }
 
 impl Hashes {
-	pub fn from_block(block: ethereum::BlockV0) -> Self {
+	pub fn from_block(block: ethereum::BlockV2) -> Self {
 		let mut transaction_hashes = Vec::new();
 
 		for t in &block.transactions {

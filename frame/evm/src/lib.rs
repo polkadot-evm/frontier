@@ -63,10 +63,10 @@ mod tests;
 pub mod benchmarks;
 
 pub use crate::runner::Runner;
-pub use evm::{ExitError, ExitFatal, ExitReason, ExitRevert, ExitSucceed};
+pub use evm::{Context, ExitError, ExitFatal, ExitReason, ExitRevert, ExitSucceed};
 pub use fp_evm::{
 	Account, CallInfo, CreateInfo, ExecutionInfo, LinearCostPrecompile, Log, Precompile,
-	PrecompileSet, Vicinity,
+	PrecompileFailure, PrecompileOutput, PrecompileResult, PrecompileSet, Vicinity,
 };
 
 #[cfg(feature = "std")]
@@ -126,7 +126,8 @@ pub mod pallet {
 		/// The overarching event type.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 		/// Precompiles associated with this EVM engine.
-		type Precompiles: PrecompileSet;
+		type PrecompilesType: PrecompileSet;
+		type PrecompilesValue: Get<Self::PrecompilesType>;
 		/// Chain ID of EVM.
 		type ChainId: Get<u64>;
 		/// The block gas limit. Can be a simple constant, or an adjustment algorithm in another pallet.
@@ -179,8 +180,10 @@ pub mod pallet {
 			input: Vec<u8>,
 			value: U256,
 			gas_limit: u64,
-			gas_price: U256,
+			max_fee_per_gas: U256,
+			max_priority_fee_per_gas: Option<U256>,
 			nonce: Option<U256>,
+			access_list: Vec<(H160, Vec<H256>)>,
 		) -> DispatchResultWithPostInfo {
 			T::CallOrigin::ensure_address_origin(&source, origin)?;
 
@@ -190,8 +193,10 @@ pub mod pallet {
 				input,
 				value,
 				gas_limit,
-				Some(gas_price),
+				Some(max_fee_per_gas),
+				max_priority_fee_per_gas,
 				nonce,
+				access_list,
 				T::config(),
 			)?;
 
@@ -221,8 +226,10 @@ pub mod pallet {
 			init: Vec<u8>,
 			value: U256,
 			gas_limit: u64,
-			gas_price: U256,
+			max_fee_per_gas: U256,
+			max_priority_fee_per_gas: Option<U256>,
 			nonce: Option<U256>,
+			access_list: Vec<(H160, Vec<H256>)>,
 		) -> DispatchResultWithPostInfo {
 			T::CallOrigin::ensure_address_origin(&source, origin)?;
 
@@ -231,8 +238,10 @@ pub mod pallet {
 				init,
 				value,
 				gas_limit,
-				Some(gas_price),
+				Some(max_fee_per_gas),
+				max_priority_fee_per_gas,
 				nonce,
+				access_list,
 				T::config(),
 			)?;
 
@@ -270,8 +279,10 @@ pub mod pallet {
 			salt: H256,
 			value: U256,
 			gas_limit: u64,
-			gas_price: U256,
+			max_fee_per_gas: U256,
+			max_priority_fee_per_gas: Option<U256>,
 			nonce: Option<U256>,
+			access_list: Vec<(H160, Vec<H256>)>,
 		) -> DispatchResultWithPostInfo {
 			T::CallOrigin::ensure_address_origin(&source, origin)?;
 
@@ -281,8 +292,10 @@ pub mod pallet {
 				salt,
 				value,
 				gas_limit,
-				Some(gas_price),
+				Some(max_fee_per_gas),
+				max_priority_fee_per_gas,
 				nonce,
+				access_list,
 				T::config(),
 			)?;
 
@@ -314,7 +327,6 @@ pub mod pallet {
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
-	#[pallet::metadata(T::AccountId = "AccountId")]
 	pub enum Event<T: Config> {
 		/// Ethereum events from contracts.
 		Log(Log),
@@ -656,6 +668,9 @@ pub trait OnChargeEVMTransaction<T: Config> {
 		corrected_fee: U256,
 		already_withdrawn: Self::LiquidityInfo,
 	);
+
+	/// Introduced in EIP1559 to handle the priority tip payment to the block Author.
+	fn pay_priority_fee(tip: U256);
 }
 
 /// Implements the transaction payment for a pallet implementing the `Currency`
@@ -737,6 +752,11 @@ where
 			OU::on_unbalanced(adjusted_paid);
 		}
 	}
+
+	fn pay_priority_fee(tip: U256) {
+		let account_id = T::AddressMapping::into_account_id(<Pallet<T>>::find_author());
+		let _ = C::deposit_into_existing(&account_id, tip.low_u128().unique_saturated_into());
+	}
 }
 
 /// Implementation for () does not specify what to do with imbalance
@@ -763,5 +783,9 @@ impl<T> OnChargeEVMTransaction<T> for ()
 		already_withdrawn: Self::LiquidityInfo,
 	) {
 		<EVMCurrencyAdapter::<<T as Config>::Currency, ()> as OnChargeEVMTransaction<T>>::correct_and_deposit_fee(who, corrected_fee, already_withdrawn)
+	}
+
+	fn pay_priority_fee(tip: U256) {
+		<EVMCurrencyAdapter::<<T as Config>::Currency, ()> as OnChargeEVMTransaction<T>>::pay_priority_fee(tip);
 	}
 }

@@ -20,7 +20,10 @@
 extern crate alloc;
 
 use alloc::vec::Vec;
-use fp_evm::{Context, ExitError, ExitSucceed, Precompile, PrecompileOutput};
+use fp_evm::{
+	Context, ExitError, ExitSucceed, Precompile, PrecompileFailure, PrecompileOutput,
+	PrecompileResult,
+};
 use num::{BigUint, FromPrimitive, One, ToPrimitive, Zero};
 
 use core::{cmp::max, ops::BitAnd};
@@ -98,11 +101,12 @@ impl Precompile for Modexp {
 		input: &[u8],
 		target_gas: Option<u64>,
 		_context: &Context,
-	) -> core::result::Result<PrecompileOutput, ExitError> {
+		_is_static: bool,
+	) -> PrecompileResult {
 		if input.len() < 96 {
-			return Err(ExitError::Other(
-				"input must contain at least 96 bytes".into(),
-			));
+			return Err(PrecompileFailure::Error {
+				exit_status: ExitError::Other("input must contain at least 96 bytes".into()),
+			});
 		};
 
 		// reasonable assumption: this must fit within the Ethereum EVM's max stack size
@@ -112,23 +116,25 @@ impl Precompile for Modexp {
 		buf.copy_from_slice(&input[0..32]);
 		let base_len_big = BigUint::from_bytes_be(&buf);
 		if base_len_big > max_size_big {
-			return Err(ExitError::Other("unreasonably large base length".into()));
+			return Err(PrecompileFailure::Error {
+				exit_status: ExitError::Other("unreasonably large base length".into()),
+			});
 		}
 
 		buf.copy_from_slice(&input[32..64]);
 		let exp_len_big = BigUint::from_bytes_be(&buf);
 		if exp_len_big > max_size_big {
-			return Err(ExitError::Other(
-				"unreasonably large exponent length".into(),
-			));
+			return Err(PrecompileFailure::Error {
+				exit_status: ExitError::Other("unreasonably large exponent length".into()),
+			});
 		}
 
 		buf.copy_from_slice(&input[64..96]);
 		let mod_len_big = BigUint::from_bytes_be(&buf);
 		if mod_len_big > max_size_big {
-			return Err(ExitError::Other(
-				"unreasonably large exponent length".into(),
-			));
+			return Err(PrecompileFailure::Error {
+				exit_status: ExitError::Other("unreasonably large exponent length".into()),
+			});
 		}
 
 		// bounds check handled above
@@ -139,7 +145,9 @@ impl Precompile for Modexp {
 		// input length should be at least 96 + user-specified length of base + exp + mod
 		let total_len = base_len + exp_len + mod_len + 96;
 		if input.len() < total_len {
-			return Err(ExitError::Other("insufficient input size".into()));
+			return Err(PrecompileFailure::Error {
+				exit_status: ExitError::Other("insufficient input size".into()),
+			});
 		}
 
 		// Gas formula allows arbitrary large exp_len when base and modulus are empty, so we need to handle empty base first.
@@ -159,7 +167,9 @@ impl Precompile for Modexp {
 				calculate_gas_cost(base_len as u64, exp_len as u64, mod_len as u64, &exponent);
 			if let Some(gas_left) = target_gas {
 				if gas_left < gas_cost {
-					return Err(ExitError::OutOfGas);
+					return Err(PrecompileFailure::Error {
+						exit_status: ExitError::OutOfGas,
+					});
 				}
 			};
 
@@ -196,7 +206,9 @@ impl Precompile for Modexp {
 				logs: Default::default(),
 			})
 		} else {
-			Err(ExitError::Other("failed".into()))
+			Err(PrecompileFailure::Error {
+				exit_status: ExitError::Other("failed".into()),
+			})
 		}
 	}
 }
@@ -214,7 +226,7 @@ mod tests {
 	}
 
 	#[test]
-	fn test_empty_input() -> std::result::Result<(), ExitError> {
+	fn test_empty_input() -> std::result::Result<(), PrecompileFailure> {
 		let input: [u8; 0] = [];
 
 		let cost: u64 = 1;
@@ -225,14 +237,18 @@ mod tests {
 			apparent_value: From::from(0),
 		};
 
-		match Modexp::execute(&input, Some(cost), &context) {
+		match Modexp::execute(&input, Some(cost), &context, false) {
 			Ok(_) => {
 				panic!("Test not expected to pass");
 			}
 			Err(e) => {
 				assert_eq!(
 					e,
-					ExitError::Other("input must contain at least 96 bytes".into())
+					PrecompileFailure::Error {
+						exit_status: ExitError::Other(
+							"input must contain at least 96 bytes".into()
+						)
+					}
 				);
 				Ok(())
 			}
@@ -240,7 +256,7 @@ mod tests {
 	}
 
 	#[test]
-	fn test_insufficient_input() -> std::result::Result<(), ExitError> {
+	fn test_insufficient_input() -> std::result::Result<(), PrecompileFailure> {
 		let input = hex::decode(
 			"0000000000000000000000000000000000000000000000000000000000000001\
 			0000000000000000000000000000000000000000000000000000000000000001\
@@ -256,19 +272,24 @@ mod tests {
 			apparent_value: From::from(0),
 		};
 
-		match Modexp::execute(&input, Some(cost), &context) {
+		match Modexp::execute(&input, Some(cost), &context, false) {
 			Ok(_) => {
 				panic!("Test not expected to pass");
 			}
 			Err(e) => {
-				assert_eq!(e, ExitError::Other("insufficient input size".into()));
+				assert_eq!(
+					e,
+					PrecompileFailure::Error {
+						exit_status: ExitError::Other("insufficient input size".into())
+					}
+				);
 				Ok(())
 			}
 		}
 	}
 
 	#[test]
-	fn test_excessive_input() -> std::result::Result<(), ExitError> {
+	fn test_excessive_input() -> std::result::Result<(), PrecompileFailure> {
 		let input = hex::decode(
 			"1000000000000000000000000000000000000000000000000000000000000001\
 			0000000000000000000000000000000000000000000000000000000000000001\
@@ -284,12 +305,17 @@ mod tests {
 			apparent_value: From::from(0),
 		};
 
-		match Modexp::execute(&input, Some(cost), &context) {
+		match Modexp::execute(&input, Some(cost), &context, false) {
 			Ok(_) => {
 				panic!("Test not expected to pass");
 			}
 			Err(e) => {
-				assert_eq!(e, ExitError::Other("unreasonably large base length".into()));
+				assert_eq!(
+					e,
+					PrecompileFailure::Error {
+						exit_status: ExitError::Other("unreasonably large base length".into())
+					}
+				);
 				Ok(())
 			}
 		}
@@ -317,7 +343,7 @@ mod tests {
 			apparent_value: From::from(0),
 		};
 
-		match Modexp::execute(&input, Some(cost), &context) {
+		match Modexp::execute(&input, Some(cost), &context, false) {
 			Ok(precompile_result) => {
 				assert_eq!(precompile_result.output.len(), 1); // should be same length as mod
 				let result = BigUint::from_bytes_be(&precompile_result.output[..]);
@@ -352,7 +378,7 @@ mod tests {
 			apparent_value: From::from(0),
 		};
 
-		match Modexp::execute(&input, Some(cost), &context) {
+		match Modexp::execute(&input, Some(cost), &context, false) {
 			Ok(precompile_result) => {
 				assert_eq!(precompile_result.output.len(), 32); // should be same length as mod
 				let result = BigUint::from_bytes_be(&precompile_result.output[..]);
@@ -385,7 +411,7 @@ mod tests {
 			apparent_value: From::from(0),
 		};
 
-		match Modexp::execute(&input, Some(cost), &context) {
+		match Modexp::execute(&input, Some(cost), &context, false) {
 			Ok(precompile_result) => {
 				assert_eq!(precompile_result.output.len(), 32); // should be same length as mod
 				let result = BigUint::from_bytes_be(&precompile_result.output[..]);

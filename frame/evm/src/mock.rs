@@ -101,7 +101,7 @@ impl pallet_timestamp::Config for Test {
 pub struct FixedGasPrice;
 impl FeeCalculator for FixedGasPrice {
 	fn min_gas_price() -> U256 {
-		0.into()
+		1_000_000_000u128.into()
 	}
 }
 
@@ -127,7 +127,8 @@ impl crate::Config for Test {
 	type Runner = crate::runner::stack::Runner<Self>;
 
 	type Event = Event;
-	type Precompiles = ();
+	type PrecompilesType = ();
+	type PrecompilesValue = ();
 	type ChainId = ();
 	type BlockGasLimit = ();
 	type OnChargeTransaction = ();

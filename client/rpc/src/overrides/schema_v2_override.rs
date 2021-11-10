@@ -27,12 +27,12 @@ use std::{marker::PhantomData, sync::Arc};
 use super::{blake2_128_extend, storage_prefix_build, StorageOverride};
 
 /// An override for runtimes that use Schema V1
-pub struct SchemaV1Override<B: BlockT, C, BE> {
+pub struct SchemaV2Override<B: BlockT, C, BE> {
 	client: Arc<C>,
 	_marker: PhantomData<(B, BE)>,
 }
 
-impl<B: BlockT, C, BE> SchemaV1Override<B, C, BE> {
+impl<B: BlockT, C, BE> SchemaV2Override<B, C, BE> {
 	pub fn new(client: Arc<C>) -> Self {
 		Self {
 			client,
@@ -41,7 +41,7 @@ impl<B: BlockT, C, BE> SchemaV1Override<B, C, BE> {
 	}
 }
 
-impl<B, C, BE> SchemaV1Override<B, C, BE>
+impl<B, C, BE> SchemaV2Override<B, C, BE>
 where
 	C: StorageProvider<B, BE> + AuxStore,
 	C: HeaderBackend<B> + HeaderMetadata<B, Error = BlockChainError> + 'static,
@@ -68,7 +68,7 @@ where
 	}
 }
 
-impl<Block, C, BE> StorageOverride<Block> for SchemaV1Override<Block, C, BE>
+impl<Block, C, BE> StorageOverride<Block> for SchemaV2Override<Block, C, BE>
 where
 	C: StorageProvider<Block, BE>,
 	C: AuxStore,
@@ -100,11 +100,10 @@ where
 
 	/// Return the current block.
 	fn current_block(&self, block: &BlockId<Block>) -> Option<ethereum::BlockV2> {
-		self.query_storage::<ethereum::BlockV0>(
+		self.query_storage::<ethereum::BlockV2>(
 			block,
 			&StorageKey(storage_prefix_build(b"Ethereum", b"CurrentBlock")),
 		)
-		.map(Into::into)
 	}
 
 	/// Return the current receipt.
@@ -129,12 +128,15 @@ where
 		)
 	}
 
-	/// Prior to eip-1559 there is no base fee.
-	fn base_fee(&self, _block: &BlockId<Block>) -> Option<U256> {
-		None
+	/// Return the base fee at the given height.
+	fn base_fee(&self, block: &BlockId<Block>) -> Option<U256> {
+		self.query_storage::<U256>(
+			block,
+			&StorageKey(storage_prefix_build(b"BaseFee", b"BaseFeePerGas")),
+		)
 	}
 
 	fn is_eip1559(&self, _block: &BlockId<Block>) -> bool {
-		false
+		true
 	}
 }
