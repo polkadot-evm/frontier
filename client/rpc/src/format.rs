@@ -54,6 +54,7 @@ impl Formatter for Geth {
 			Ok(PError::InvalidTransaction(inner)) => match inner {
 				InvalidTransaction::Stale => "nonce too low".into(),
 				InvalidTransaction::Payment => "insufficient funds for gas * price + value".into(),
+				InvalidTransaction::ExhaustsResources => "gas limit reached".into(),
 				InvalidTransaction::Custom(inner) => match inner.into() {
 					VError::UnknownError => "unknown error".into(),
 					VError::InvalidChainId => "invalid chain id".into(),
