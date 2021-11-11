@@ -452,7 +452,6 @@ fn filter_block_logs<'a>(
 	ret
 }
 
-
 struct FeeDetails {
 	gas_price: Option<U256>,
 	max_fee_per_gas: Option<U256>,
