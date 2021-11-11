@@ -2473,120 +2473,148 @@ where
 			gas_used: u64,
 			effective_reward: u64,
 		}
+		// Calculates the cache for a single block
+		let fee_history_cache_item = |hash: H256| -> (FeeHistoryCacheItem, Option<u64>) {
+			let id = BlockId::Hash(hash);
+			let schema =
+				frontier_backend_client::onchain_storage_schema::<B, C, BE>(client.as_ref(), id);
+			let handler = overrides
+				.schemas
+				.get(&schema)
+				.unwrap_or(&overrides.fallback);
+
+			// Evenly spaced percentile list from 0.0 to 100.0 with a 0.5 resolution.
+			// This means we cache 200 percentile points.
+			// Later in request handling we will approximate by rounding percentiles that
+			// fall in between with `(round(n*2)/2)`.
+			let reward_percentiles: Vec<f64> = {
+				let mut percentile: f64 = 0.0;
+				(0..201)
+					.into_iter()
+					.map(|_| {
+						let val = percentile;
+						percentile += 0.5;
+						val
+					})
+					.collect()
+			};
+
+			let block = handler.current_block(&id);
+			let mut block_number: Option<u64> = None;
+			let base_fee = if let Some(base_fee) = handler.base_fee(&id) {
+				base_fee
+			} else {
+				client.runtime_api().gas_price(&id).unwrap_or(U256::zero())
+			};
+			let receipts = handler.current_receipts(&id);
+			let mut result = FeeHistoryCacheItem {
+				base_fee: base_fee.as_u64(),
+				gas_used_ratio: 0f64,
+				rewards: Vec::new(),
+			};
+			if let (Some(block), Some(receipts)) = (block, receipts) {
+				block_number = Some(block.header.number.as_u64());
+				// Calculate the gas used ratio.
+				// TODO this formula needs the pallet-base-fee configuration.
+				// By now we assume just the default 0.125 (elasticity multiplier 8).
+				let gas_used = block.header.gas_used.as_u64() as f64;
+				let gas_limit = block.header.gas_limit.as_u64() as f64;
+				let elasticity_multiplier = 8 as f64;
+				let gas_target = gas_limit / elasticity_multiplier;
+
+				result.gas_used_ratio = gas_used / (gas_target * elasticity_multiplier);
+
+				// Build a list of relevant transaction information.
+				let mut transactions: Vec<TransactionHelper> = receipts
+					.iter()
+					.enumerate()
+					.map(|(i, receipt)| TransactionHelper {
+						gas_used: receipt.used_gas.as_u64(),
+						effective_reward: match block.transactions.get(i) {
+							Some(&ethereum::TransactionV2::Legacy(ref t)) => {
+								t.gas_price.saturating_sub(base_fee).as_u64()
+							}
+							Some(&ethereum::TransactionV2::EIP2930(ref t)) => {
+								t.gas_price.saturating_sub(base_fee).as_u64()
+							}
+							Some(&ethereum::TransactionV2::EIP1559(ref t)) => t
+								.max_priority_fee_per_gas
+								.min(t.max_fee_per_gas.saturating_sub(base_fee))
+								.as_u64(),
+							None => 0,
+						},
+					})
+					.collect();
+				// Sort ASC by effective reward.
+				transactions.sort_by(|a, b| a.effective_reward.cmp(&b.effective_reward));
+
+				// Calculate percentile rewards.
+				result.rewards = reward_percentiles
+					.into_iter()
+					.filter_map(|p| {
+						let target_gas = (p * gas_used / 100f64) as u64;
+						let mut sum_gas = 0;
+						for tx in &transactions {
+							sum_gas += tx.gas_used;
+							if target_gas <= sum_gas {
+								return Some(tx.effective_reward);
+							}
+						}
+						None
+					})
+					.map(|r| r)
+					.collect();
+			} else {
+				result.rewards = reward_percentiles.iter().map(|_| 0).collect();
+			}
+			(result, block_number)
+		};
+
+		// Commits the result to cache
+		let commit_if_any = |item: FeeHistoryCacheItem, key: Option<u64>| {
+			if let (Some(block_number), Ok(fee_history_cache)) =
+				(key, &mut fee_history_cache.lock())
+			{
+				fee_history_cache.insert(block_number, item);
+				// We want to remain within the configured cache bounds.
+				// The first key out of bounds.
+				let first_out = block_number.saturating_sub(block_limit);
+				// Out of bounds size.
+				let to_remove = (fee_history_cache.len() as u64).saturating_sub(block_limit);
+				// Remove all cache data before `block_limit`.
+				for i in 0..to_remove {
+					// Cannot overflow.
+					let key = first_out - i;
+					fee_history_cache.remove(&key);
+				}
+			}
+		};
+
 		let mut notification_st = client.import_notification_stream();
 
 		while let Some(notification) = notification_st.next().await {
 			if notification.is_new_best {
-				let id = BlockId::Hash(notification.hash);
-				let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(
-					client.as_ref(),
-					id,
-				);
-				let handler = overrides
-					.schemas
-					.get(&schema)
-					.unwrap_or(&overrides.fallback);
-
-				// Evenly spaced percentile list from 0.0 to 100.0 with a 0.5 resolution.
-				// This means we cache 200 percentile points.
-				// Later in request handling we will approximate by rounding percentiles that
-				// fall in between with `(round(n*2)/2)`.
-				let reward_percentiles: Vec<f64> = {
-					let mut percentile: f64 = 0.0;
-					(0..201)
-						.into_iter()
-						.map(|_| {
-							let val = percentile;
-							percentile += 0.5;
-							val
-						})
-						.collect()
-				};
-
-				let block = handler.current_block(&id);
-				let mut block_number: Option<u64> = None;
-				let base_fee = if let Some(base_fee) = handler.base_fee(&id) {
-					base_fee
-				} else {
-					client.runtime_api().gas_price(&id).unwrap_or(U256::zero())
-				};
-				let receipts = handler.current_receipts(&id);
-				let mut result = FeeHistoryCacheItem {
-					base_fee: base_fee.as_u64(),
-					gas_used_ratio: 0f64,
-					rewards: Vec::new(),
-				};
-				if let (Some(block), Some(receipts)) = (block, receipts) {
-					block_number = Some(block.header.number.as_u64());
-					// Calculate the gas used ratio.
-					// TODO this formula needs the pallet-base-fee configuration.
-					// By now we assume just the default 0.125 (elasticity multiplier 8).
-					let gas_used = block.header.gas_used.as_u64() as f64;
-					let gas_limit = block.header.gas_limit.as_u64() as f64;
-					let elasticity_multiplier = 8 as f64;
-					let gas_target = gas_limit / elasticity_multiplier;
-
-					result.gas_used_ratio = gas_used / (gas_target * elasticity_multiplier);
-
-					// Build a list of relevant transaction information.
-					let mut transactions: Vec<TransactionHelper> = receipts
-						.iter()
-						.enumerate()
-						.map(|(i, receipt)| TransactionHelper {
-							gas_used: receipt.used_gas.as_u64(),
-							effective_reward: match block.transactions.get(i) {
-								Some(&ethereum::TransactionV2::Legacy(ref t)) => {
-									t.gas_price.saturating_sub(base_fee).as_u64()
-								}
-								Some(&ethereum::TransactionV2::EIP2930(ref t)) => {
-									t.gas_price.saturating_sub(base_fee).as_u64()
-								}
-								Some(&ethereum::TransactionV2::EIP1559(ref t)) => t
-									.max_priority_fee_per_gas
-									.min(t.max_fee_per_gas.saturating_sub(base_fee))
-									.as_u64(),
-								None => 0,
-							},
-						})
-						.collect();
-					// Sort ASC by effective reward.
-					transactions.sort_by(|a, b| a.effective_reward.cmp(&b.effective_reward));
-
-					// Calculate percentile rewards.
-					result.rewards = reward_percentiles
-						.into_iter()
-						.filter_map(|p| {
-							let target_gas = (p * gas_used / 100f64) as u64;
-							let mut sum_gas = 0;
-							for tx in &transactions {
-								sum_gas += tx.gas_used;
-								if target_gas <= sum_gas {
-									return Some(tx.effective_reward);
-								}
-							}
-							None
-						})
-						.map(|r| r)
-						.collect();
-				} else {
-					result.rewards = reward_percentiles.iter().map(|_| 0).collect();
-				}
-				if let (Some(block_number), Ok(fee_history_cache)) =
-					(block_number, &mut fee_history_cache.lock())
-				{
-					fee_history_cache.insert(block_number, result);
-					// We want to remain within the configured cache bounds.
-					// The first key out of bounds.
-					let first_out = block_number.saturating_sub(block_limit);
-					// Out of bounds size.
-					let to_remove = (fee_history_cache.len() as u64).saturating_sub(block_limit);
-					// Remove all cache data before `block_limit`.
-					for i in 0..to_remove {
-						// Cannot overflow.
-						let key = first_out - i;
-						fee_history_cache.remove(&key);
+				// In case a re-org happened on import.
+				if let Some(tree_route) = notification.tree_route {
+					if let Ok(fee_history_cache) = &mut fee_history_cache.lock() {
+						// Remove retracted.
+						let _ = tree_route.retracted().iter().map(|hash_and_number| {
+							let n = UniqueSaturatedInto::<u64>::unique_saturated_into(
+								hash_and_number.number,
+							);
+							fee_history_cache.remove(&n);
+						});
+						// Insert enacted.
+						let _ = tree_route.enacted().iter().map(|hash_and_number| {
+							let (result, block_number) =
+								fee_history_cache_item(hash_and_number.hash);
+							commit_if_any(result, block_number);
+						});
 					}
 				}
+				// Cache the imported block.
+				let (result, block_number) = fee_history_cache_item(notification.hash);
+				commit_if_any(result, block_number);
 			}
 		}
 	}
