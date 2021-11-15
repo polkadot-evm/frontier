@@ -120,6 +120,16 @@ pub mod pallet {
 
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+		fn on_initialize(_: T::BlockNumber) -> Weight {
+			// Register the Weight used on_finalize.
+			// 	- One storage read to get the block_weight.
+			// 	- One storage read to get the Elasticity.
+			// 	- One write to BaseFeePerGas.
+			let db_weight =
+				<<T as frame_system::Config>::DbWeight as frame_support::traits::Get<_>>::get();
+			db_weight.reads(2).saturating_add(db_weight.write)
+		}
+
 		fn on_finalize(_n: <T as frame_system::Config>::BlockNumber) {
 			if <IsActive<T>>::get() {
 				let lower = T::Threshold::lower();
