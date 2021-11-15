@@ -127,7 +127,7 @@ pub mod pallet {
 			// 	- One write to BaseFeePerGas.
 			let db_weight =
 				<<T as frame_system::Config>::DbWeight as frame_support::traits::Get<_>>::get();
-			(db_weight.read * 2) + db_weight.write
+			db_weight.reads(2).saturating_add(db_weight.write)
 		}
 
 		fn on_finalize(_n: <T as frame_system::Config>::BlockNumber) {
