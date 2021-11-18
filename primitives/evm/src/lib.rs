@@ -27,10 +27,9 @@ use sp_core::{H160, U256};
 use sp_std::vec::Vec;
 
 pub use evm::backend::{Basic as Account, Log};
-
-pub use self::precompile::{
-	Context, ExitError, ExitSucceed, LinearCostPrecompile, Precompile, PrecompileFailure,
-	PrecompileOutput, PrecompileResult, PrecompileSet,
+pub use precompile::{
+	Context, ExitError, ExitRevert, ExitSucceed, LinearCostPrecompile, Precompile,
+	PrecompileFailure, PrecompileOutput, PrecompileResult, PrecompileSet,
 };
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Default)]
