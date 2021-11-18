@@ -337,7 +337,7 @@ impl pallet_base_fee::BaseFeeThreshold for BaseFeeThreshold {
 	fn lower() -> Permill {
 		Permill::zero()
 	}
-	fn mid() -> Permill {
+	fn ideal() -> Permill {
 		Permill::from_parts(500_000)
 	}
 	fn upper() -> Permill {
