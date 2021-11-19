@@ -358,6 +358,8 @@ fn handle_consumer_reference() {
 		// Using storage is not correct as it leads to a consumer reference mismatch.
 		assert_eq!(account.consumers, 0);
 
+		// Assume accounts have at least one provider after some funds have been transfered.
+		let _ = frame_system::Pallet::<Test>::inc_providers(&substrate_addr_2);
 		// Using the create / remove account functions is the correct way to handle it.
 		EVM::create_account(addr_2, vec![1, 2, 3]);
 		let account_2 = frame_system::Account::<Test>::get(substrate_addr_2);

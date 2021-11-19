@@ -392,6 +392,7 @@ pub mod pallet {
 				);
 
 				Pallet::<T>::create_account(*address, account.code.clone());
+				let _ = frame_system::Pallet::<T>::inc_providers(&account_id);
 
 				for (index, value) in &account.storage {
 					<AccountStorages<T>>::insert(address, index, value);
@@ -607,7 +608,6 @@ impl<T: Config> Pallet<T> {
 	pub fn remove_account(address: &H160) {
 		if <AccountCodes<T>>::contains_key(address) {
 			let account_id = T::AddressMapping::into_account_id(*address);
-			let _ = frame_system::Pallet::<T>::dec_providers(&account_id);
 			let _ = frame_system::Pallet::<T>::dec_consumers(&account_id);
 		}
 
@@ -623,7 +623,6 @@ impl<T: Config> Pallet<T> {
 
 		if !<AccountCodes<T>>::contains_key(&address) {
 			let account_id = T::AddressMapping::into_account_id(address);
-			let _ = frame_system::Pallet::<T>::inc_providers(&account_id);
 			let _ = frame_system::Pallet::<T>::inc_consumers(&account_id);
 		}
 
