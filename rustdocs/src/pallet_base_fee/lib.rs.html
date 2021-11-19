@@ -454,6 +454,10 @@
 <span id="454">454</span>
 <span id="455">455</span>
 <span id="456">456</span>
+<span id="457">457</span>
+<span id="458">458</span>
+<span id="459">459</span>
+<span id="460">460</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -483,6 +487,7 @@
 
 	<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">BaseFeeThreshold</span> {
 		<span class="kw">fn</span> <span class="ident">lower</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Permill</span>;
+		<span class="kw">fn</span> <span class="ident">ideal</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Permill</span>;
 		<span class="kw">fn</span> <span class="ident">upper</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Permill</span>;
 	}
 
@@ -609,8 +614,8 @@
 				<span class="comment">// actual percentage within this new scale.</span>
 				<span class="kw">let</span> <span class="ident">usage</span> <span class="op">=</span> (<span class="ident">weight_used</span> <span class="op">-</span> <span class="ident">lower</span>) <span class="op">/</span> (<span class="ident">upper</span> <span class="op">-</span> <span class="ident">lower</span>);
 
-				<span class="comment">// 50% block fullness is our threshold.</span>
-				<span class="kw">let</span> <span class="ident">target</span> <span class="op">=</span> <span class="ident">Permill::from_parts</span>(<span class="number">500_000</span>);
+				<span class="comment">// Target is our ideal block fullness.</span>
+				<span class="kw">let</span> <span class="ident">target</span> <span class="op">=</span> <span class="ident">T::Threshold::ideal</span>();
 				<span class="kw">if</span> <span class="ident">usage</span> <span class="op">&gt;</span> <span class="ident">target</span> {
 					<span class="comment">// Above target, increase.</span>
 					<span class="kw">let</span> <span class="ident">coef</span> <span class="op">=</span>
@@ -758,6 +763,9 @@
 	<span class="kw">impl</span> <span class="ident">pallet_base_fee::BaseFeeThreshold</span> <span class="kw">for</span> <span class="ident">BaseFeeThreshold</span> {
 		<span class="kw">fn</span> <span class="ident">lower</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Permill</span> {
 			<span class="ident">Permill::zero</span>()
+		}
+		<span class="kw">fn</span> <span class="ident">ideal</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Permill</span> {
+			<span class="ident">Permill::from_parts</span>(<span class="number">500_000</span>)
 		}
 		<span class="kw">fn</span> <span class="ident">upper</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Permill</span> {
 			<span class="ident">Permill::from_parts</span>(<span class="number">1_000_000</span>)

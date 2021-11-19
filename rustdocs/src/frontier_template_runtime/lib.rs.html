@@ -757,6 +757,9 @@
 <span id="757">757</span>
 <span id="758">758</span>
 <span id="759">759</span>
+<span id="760">760</span>
+<span id="761">761</span>
+<span id="762">762</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The Substrate Node Template runtime. This can be compiled with `#[no_std]`, ready for Wasm.</span>
 
 <span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
@@ -1095,6 +1098,9 @@
 <span class="kw">impl</span> <span class="ident">pallet_base_fee::BaseFeeThreshold</span> <span class="kw">for</span> <span class="ident">BaseFeeThreshold</span> {
 	<span class="kw">fn</span> <span class="ident">lower</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Permill</span> {
 		<span class="ident">Permill::zero</span>()
+	}
+	<span class="kw">fn</span> <span class="ident">ideal</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Permill</span> {
+		<span class="ident">Permill::from_parts</span>(<span class="number">500_000</span>)
 	}
 	<span class="kw">fn</span> <span class="ident">upper</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Permill</span> {
 		<span class="ident">Permill::from_parts</span>(<span class="number">1_000_000</span>)
