@@ -27,6 +27,7 @@ pub mod pallet {
 
 	pub trait BaseFeeThreshold {
 		fn lower() -> Permill;
+		fn ideal() -> Permill;
 		fn upper() -> Permill;
 	}
 
@@ -153,8 +154,8 @@ pub mod pallet {
 				// actual percentage within this new scale.
 				let usage = (weight_used - lower) / (upper - lower);
 
-				// 50% block fullness is our threshold.
-				let target = Permill::from_parts(500_000);
+				// Target is our ideal block fullness.
+				let target = T::Threshold::ideal();
 				if usage > target {
 					// Above target, increase.
 					let coef =
@@ -302,6 +303,9 @@ mod tests {
 	impl pallet_base_fee::BaseFeeThreshold for BaseFeeThreshold {
 		fn lower() -> Permill {
 			Permill::zero()
+		}
+		fn ideal() -> Permill {
+			Permill::from_parts(500_000)
 		}
 		fn upper() -> Permill {
 			Permill::from_parts(1_000_000)
