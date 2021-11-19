@@ -391,8 +391,8 @@ pub mod pallet {
 					account.balance.low_u128().unique_saturated_into(),
 				);
 
-				Pallet::<T>::create_account(*address, account.code.clone());
 				let _ = frame_system::Pallet::<T>::inc_providers(&account_id);
+				Pallet::<T>::create_account(*address, account.code.clone());
 
 				for (index, value) in &account.storage {
 					<AccountStorages<T>>::insert(address, index, value);
