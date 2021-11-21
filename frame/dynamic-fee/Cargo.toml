@@ -2,7 +2,8 @@
 name = "pallet-dynamic-fee"
 version = "4.0.0-dev"
 authors = ["Parity Technologies <admin@parity.io>"]
-edition = "2018"
+edition = "2021"
+rust-version = "1.56.1"
 description = "Dynamic fee handling for EVM."
 license = "Apache-2.0"
 

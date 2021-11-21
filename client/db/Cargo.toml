@@ -3,7 +3,8 @@ name = "fc-db"
 version = "2.0.0-dev"
 authors = ["Parity Technologies <admin@parity.io>"]
 description = "Frontier database backend"
-edition = "2018"
+edition = "2021"
+rust-version = "1.56.1"
 license = "GPL-3.0-or-later WITH Classpath-exception-2.0"
 repository = "https://github.com/paritytech/frontier/"
 

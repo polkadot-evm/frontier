@@ -2,10 +2,10 @@
 name = "pallet-ethereum"
 version = "4.0.0-dev"
 authors = ["Parity Technologies <admin@parity.io>"]
-edition = "2018"
+edition = "2021"
+rust-version = "1.56.1"
 description = "Ethereum compatibility full block processing emulation pallet for Substrate."
 license = "Apache-2.0"
-resolver = "2"
 
 [dependencies]
 rustc-hex = { version = "2.1.0", default-features = false }
