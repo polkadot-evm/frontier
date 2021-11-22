@@ -942,8 +942,29 @@ where
 	}
 
 	fn estimate_gas(&self, request: CallRequest, _: Option<BlockNumber>) -> Result<U256> {
+		// Define the lower bound of estimate
+		const MIN_GAS_PER_TX: U256 = U256([21_000, 0, 0, 0]);
+
 		// Get best hash
 		let best_hash = self.client.info().best_hash;
+
+		// For simple transfer to simple account, return MIN_GAS_PER_TX directly
+		let is_simple_transfer = match &request.data {
+			None => true,
+			Some(vec) => vec.0.is_empty(),
+		};
+		if is_simple_transfer {
+			if let Some(to) = request.to {
+				let to_code = self
+					.client
+					.runtime_api()
+					.account_code_at(&BlockId::Hash(best_hash), to)
+					.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?;
+				if to_code.is_empty() {
+					return Ok(MIN_GAS_PER_TX);
+				}
+			}
+		}
 
 		// Get gas price
 		let gas_price = request.gas_price.unwrap_or_default();
@@ -1131,7 +1152,6 @@ where
 		#[cfg(feature = "rpc_binary_search_estimate")]
 		{
 			// Define the lower bound of the binary search
-			const MIN_GAS_PER_TX: U256 = U256([21_000, 0, 0, 0]);
 			let mut lowest = MIN_GAS_PER_TX;
 
 			// Start close to the used gas for faster binary search
