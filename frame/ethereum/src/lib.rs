@@ -52,6 +52,8 @@ pub use ethereum::{
 	TransactionV2 as Transaction,
 };
 pub use fp_rpc::TransactionStatus;
+#[cfg(feature = "std")]
+use serde::{Deserialize, Serialize};
 
 #[cfg(all(feature = "std", test))]
 mod mock;
@@ -292,8 +294,18 @@ pub mod pallet {
 	pub(super) type BlockHash<T: Config> = StorageMap<_, Twox64Concat, U256, H256, ValueQuery>;
 
 	#[pallet::genesis_config]
-	#[derive(Default)]
-	pub struct GenesisConfig {}
+	pub struct GenesisConfig {
+		pub storage_schema: EthereumStorageSchema,
+	}
+
+	#[cfg(feature = "std")]
+	impl Default for GenesisConfig {
+		fn default() -> Self {
+			Self {
+				storage_schema: Default::default(),
+			}
+		}
+	}
 
 	#[pallet::genesis_build]
 	impl<T: Config> GenesisBuild<T> for GenesisConfig {
@@ -301,7 +313,7 @@ pub mod pallet {
 			<Pallet<T>>::store_block(false, U256::zero());
 			frame_support::storage::unhashed::put::<EthereumStorageSchema>(
 				&PALLET_ETHEREUM_SCHEMA,
-				&EthereumStorageSchema::V2,
+				&self.storage_schema,
 			);
 		}
 	}
@@ -816,6 +828,7 @@ pub enum ReturnValue {
 
 /// The schema version for Pallet Ethereum's storage
 #[derive(Clone, Copy, Debug, Encode, Decode, PartialEq, Eq, PartialOrd, Ord)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum EthereumStorageSchema {
 	Undefined,
 	V1,
