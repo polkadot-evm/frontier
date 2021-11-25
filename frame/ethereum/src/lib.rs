@@ -235,6 +235,8 @@ pub mod pallet {
 				&PALLET_ETHEREUM_SCHEMA,
 				&EthereumStorageSchema::V2,
 			);
+
+			0
 		}
 	}
 
