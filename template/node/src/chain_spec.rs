@@ -195,9 +195,7 @@ fn testnet_genesis(
 				map
 			},
 		},
-		ethereum: EthereumConfig {
-			storage_schema: pallet_ethereum::EthereumStorageSchema::V2,
-		},
+		ethereum: EthereumConfig {},
 		dynamic_fee: Default::default(),
 		base_fee: Default::default(),
 	}
