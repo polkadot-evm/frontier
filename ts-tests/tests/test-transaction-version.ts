@@ -37,6 +37,9 @@ describeWithFrontier("Frontier RPC (Transaction Version)", (context) => {
 		const latest = await context.web3.eth.getBlock("latest");
 		expect(latest.transactions.length).to.be.eq(1);
 		expect(latest.transactions[0]).to.be.eq(tx_hash);
+
+		let receipt = await context.web3.eth.getTransactionReceipt(tx_hash);
+		expect(receipt.transactionHash).to.be.eq(tx_hash);
 	});
 	
 	step("should handle EIP-1559 transaction type 2", async function () {
@@ -55,5 +58,8 @@ describeWithFrontier("Frontier RPC (Transaction Version)", (context) => {
 		const latest = await context.web3.eth.getBlock("latest");
 		expect(latest.transactions.length).to.be.eq(1);
 		expect(latest.transactions[0]).to.be.eq(tx_hash);
+
+		let receipt = await context.web3.eth.getTransactionReceipt(tx_hash);
+		expect(receipt.transactionHash).to.be.eq(tx_hash);
 	});
 });
