@@ -1665,10 +1665,8 @@ where
 			.current_transaction_statuses(handler, substrate_hash);
 		let receipts = handler.current_receipts(&id);
 
-		let base_fee = handler.base_fee(&id);
-
-		match (block, statuses, receipts, base_fee) {
-			(Some(block), Some(statuses), Some(receipts), Some(base_fee)) => {
+		match (block, statuses, receipts) {
+			(Some(block), Some(statuses), Some(receipts)) => {
 				let block_hash =
 					H256::from_slice(Keccak256::digest(&rlp::encode(&block.header)).as_slice());
 				let receipt = receipts[index].clone();
@@ -1680,7 +1678,9 @@ where
 				let effective_gas_price = match transaction {
 					EthereumTransaction::Legacy(t) => t.gas_price,
 					EthereumTransaction::EIP2930(t) => t.gas_price,
-					EthereumTransaction::EIP1559(t) => base_fee
+					EthereumTransaction::EIP1559(t) => handler
+						.base_fee(&id)
+						.unwrap_or_default()
 						.checked_add(t.max_priority_fee_per_gas)
 						.unwrap_or(U256::max_value()),
 				};
