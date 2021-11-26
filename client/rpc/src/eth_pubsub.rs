@@ -162,10 +162,7 @@ impl SubscriptionResult {
 		for (receipt_index, receipt) in receipts.into_iter().enumerate() {
 			let mut transaction_log_index: u32 = 0;
 			let transaction_hash: Option<H256> = if receipt.logs.len() > 0 {
-				Some(H256::from_slice(
-					Keccak256::digest(&rlp::encode(&block.transactions[receipt_index as usize]))
-						.as_slice(),
-				))
+				Some(block.transactions[receipt_index as usize].hash())
 			} else {
 				None
 			};
@@ -366,9 +363,7 @@ where
 						})
 						.map(|transaction| {
 							return Ok::<Result<PubSubResult, jsonrpc_core::types::error::Error>, ()>(
-								Ok(PubSubResult::TransactionHash(H256::from_slice(
-									Keccak256::digest(&rlp::encode(&transaction)).as_slice(),
-								))),
+								Ok(PubSubResult::TransactionHash(transaction.hash())),
 							);
 						});
 					stream
