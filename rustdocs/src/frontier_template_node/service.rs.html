@@ -774,10 +774,6 @@
 <span id="774">774</span>
 <span id="775">775</span>
 <span id="776">776</span>
-<span id="777">777</span>
-<span id="778">778</span>
-<span id="779">779</span>
-<span id="780">780</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Service and ServiceFactory implementation. Specialized wrapper over substrate service.</span>
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::cli::Cli</span>;
@@ -1221,11 +1217,7 @@
 
 	<span class="ident">task_manager</span>.<span class="ident">spawn_essential_handle</span>().<span class="ident">spawn</span>(
 		<span class="string">&quot;frontier-schema-cache-task&quot;</span>,
-		<span class="ident">EthTask::ethereum_schema_cache_task</span>(
-			<span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span><span class="ident">client</span>),
-			<span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span><span class="ident">frontier_backend</span>),
-			<span class="ident">pallet_ethereum::EthereumStorageSchema::V2</span>,
-		),
+		<span class="ident">EthTask::ethereum_schema_cache_task</span>(<span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span><span class="ident">client</span>), <span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span><span class="ident">frontier_backend</span>)),
 	);
 
 	<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;manual-seal&quot;</span>)]</span>
