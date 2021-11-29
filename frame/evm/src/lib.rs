@@ -391,7 +391,6 @@ pub mod pallet {
 					account.balance.low_u128().unique_saturated_into(),
 				);
 
-				let _ = frame_system::Pallet::<T>::inc_providers(&account_id);
 				Pallet::<T>::create_account(*address, account.code.clone());
 
 				for (index, value) in &account.storage {
@@ -608,7 +607,7 @@ impl<T: Config> Pallet<T> {
 	pub fn remove_account(address: &H160) {
 		if <AccountCodes<T>>::contains_key(address) {
 			let account_id = T::AddressMapping::into_account_id(*address);
-			let _ = frame_system::Pallet::<T>::dec_consumers(&account_id);
+			let _ = frame_system::Pallet::<T>::dec_sufficients(&account_id);
 		}
 
 		<AccountCodes<T>>::remove(address);
@@ -623,7 +622,7 @@ impl<T: Config> Pallet<T> {
 
 		if !<AccountCodes<T>>::contains_key(&address) {
 			let account_id = T::AddressMapping::into_account_id(address);
-			let _ = frame_system::Pallet::<T>::inc_consumers(&account_id);
+			let _ = frame_system::Pallet::<T>::inc_sufficients(&account_id);
 		}
 
 		<AccountCodes<T>>::insert(address, code);

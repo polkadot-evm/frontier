@@ -330,44 +330,27 @@ fn refunds_and_priority_should_work() {
 }
 
 #[test]
-fn must_increase_providers() {
-	new_test_ext().execute_with(|| {
-		let addr = H160::from_str("1230000000000000000000000000000000000001").unwrap();
-		let substrate_addr = <Test as Config>::AddressMapping::into_account_id(addr);
-
-		let r = frame_system::Pallet::<Test>::inc_consumers(&substrate_addr);
-		assert_eq!(r, Err(sp_runtime::DispatchError::NoProviders));
-
-		let _ = frame_system::Pallet::<Test>::inc_providers(&substrate_addr);
-		let r = frame_system::Pallet::<Test>::inc_consumers(&substrate_addr);
-		assert_eq!(r, Ok(()));
-	});
-}
-
-#[test]
-fn handle_consumer_reference() {
+fn handle_sufficient_reference() {
 	new_test_ext().execute_with(|| {
 		let addr = H160::from_str("1230000000000000000000000000000000000001").unwrap();
 		let addr_2 = H160::from_str("1234000000000000000000000000000000000001").unwrap();
 		let substrate_addr = <Test as Config>::AddressMapping::into_account_id(addr);
 		let substrate_addr_2 = <Test as Config>::AddressMapping::into_account_id(addr_2);
 
-		// Consumers should increase when creating EVM accounts.
+		// Sufficients should increase when creating EVM accounts.
 		let _ = <crate::AccountCodes<Test>>::insert(addr, &vec![0]);
 		let account = frame_system::Account::<Test>::get(substrate_addr);
-		// Using storage is not correct as it leads to a consumer reference mismatch.
-		assert_eq!(account.consumers, 0);
+		// Using storage is not correct as it leads to a sufficient reference mismatch.
+		assert_eq!(account.sufficients, 0);
 
-		// Assume accounts have at least one provider after some funds have been transfered.
-		let _ = frame_system::Pallet::<Test>::inc_providers(&substrate_addr_2);
 		// Using the create / remove account functions is the correct way to handle it.
 		EVM::create_account(addr_2, vec![1, 2, 3]);
 		let account_2 = frame_system::Account::<Test>::get(substrate_addr_2);
-		// We increased the consumer reference by 1.
-		assert_eq!(account_2.consumers, 1);
+		// We increased the sufficient reference by 1.
+		assert_eq!(account_2.sufficients, 1);
 		EVM::remove_account(&addr_2);
 		let account_2 = frame_system::Account::<Test>::get(substrate_addr_2);
-		// We decreased the consumer reference by 1 on removing the account.
-		assert_eq!(account_2.consumers, 0);
+		// We decreased the sufficient reference by 1 on removing the account.
+		assert_eq!(account_2.sufficients, 0);
 	});
 }
