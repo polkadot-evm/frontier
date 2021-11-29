@@ -2239,26 +2239,31 @@ where
 	}
 }
 
-pub struct EthTask<B, C>(PhantomData<(B, C)>);
+pub struct EthTask<B, C, BE>(PhantomData<(B, C, BE)>);
 
-impl<B, C> EthTask<B, C>
+impl<B, C, BE> EthTask<B, C, BE>
 where
-	C: ProvideRuntimeApi<B> + BlockchainEvents<B> + HeaderBackend<B>,
+	C: ProvideRuntimeApi<B> + BlockchainEvents<B> + HeaderBackend<B> + StorageProvider<B, BE>,
 	B: BlockT<Hash = H256>,
+	C: Send + Sync + 'static,
+	BE: Backend<B> + 'static,
+	BE::State: StateBackend<BlakeTwo256>,
 {
 	/// Task that caches at which best hash a new EthereumStorageSchema was inserted in the Runtime Storage.
-	pub async fn ethereum_schema_cache_task(
-		client: Arc<C>,
-		backend: Arc<fc_db::Backend<B>>,
-		genesis_schema_version: EthereumStorageSchema,
-	) {
+	pub async fn ethereum_schema_cache_task(client: Arc<C>, backend: Arc<fc_db::Backend<B>>) {
 		use fp_storage::PALLET_ETHEREUM_SCHEMA;
 		use log::warn;
 		use sp_storage::{StorageData, StorageKey};
 
 		if let Ok(None) = frontier_backend_client::load_cached_schema::<B>(backend.as_ref()) {
 			let mut cache: Vec<(EthereumStorageSchema, H256)> = Vec::new();
-			if let Ok(Some(header)) = client.header(BlockId::Number(Zero::zero())) {
+			let id = BlockId::Number(Zero::zero());
+			if let Ok(Some(header)) = client.header(id) {
+				let genesis_schema_version = frontier_backend_client::onchain_storage_schema::<
+					B,
+					C,
+					BE,
+				>(client.as_ref(), id);
 				cache.push((genesis_schema_version, header.hash()));
 				let _ = frontier_backend_client::write_cached_schema::<B>(backend.as_ref(), cache)
 					.map_err(|err| {

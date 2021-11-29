@@ -441,11 +441,7 @@ pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, Ser
 
 	task_manager.spawn_essential_handle().spawn(
 		"frontier-schema-cache-task",
-		EthTask::ethereum_schema_cache_task(
-			Arc::clone(&client),
-			Arc::clone(&frontier_backend),
-			pallet_ethereum::EthereumStorageSchema::V2,
-		),
+		EthTask::ethereum_schema_cache_task(Arc::clone(&client), Arc::clone(&frontier_backend)),
 	);
 
 	#[cfg(feature = "manual-seal")]
