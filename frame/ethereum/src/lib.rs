@@ -229,6 +229,15 @@ pub mod pallet {
 
 			0
 		}
+
+		fn on_runtime_upgrade() -> Weight {
+			frame_support::storage::unhashed::put::<EthereumStorageSchema>(
+				&PALLET_ETHEREUM_SCHEMA,
+				&EthereumStorageSchema::V2,
+			);
+
+			0
+		}
 	}
 
 	#[pallet::call]
