@@ -228,8 +228,12 @@ pub mod pallet {
 					weight = weight.saturating_add(r.actual_weight.unwrap_or(0 as Weight));
 				}
 			}
-
-			weight
+			// Account for `on_finalize` weight:
+			//	- read: frame_system::Pallet::<T>::digest()
+			//	- read: frame_system::Pallet::<T>::block_number()
+			//	- write: <Pallet<T>>::store_block()
+			//	- write: <BlockHash<T>>::remove()
+			weight.saturating_add(T::DbWeight::get().reads_writes(2, 2))
 		}
 
 		fn on_runtime_upgrade() -> Weight {
