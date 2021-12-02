@@ -242,7 +242,7 @@ pub mod pallet {
 				&EthereumStorageSchema::V2,
 			);
 
-			0
+			T::DbWeight::get().write
 		}
 	}
 
