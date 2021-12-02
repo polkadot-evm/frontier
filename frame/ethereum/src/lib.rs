@@ -34,7 +34,7 @@ use frame_support::{
 	traits::{EnsureOrigin, Get},
 	weights::{Pays, PostDispatchInfo, Weight},
 };
-use frame_system::pallet_prelude::OriginFor;
+use frame_system::{pallet_prelude::OriginFor, WeightInfo};
 use pallet_evm::{BlockHashMapping, FeeCalculator, GasWeightMapping, Runner};
 use sha3::{Digest, Keccak256};
 use sp_runtime::{
@@ -209,6 +209,7 @@ pub mod pallet {
 
 		fn on_initialize(_: T::BlockNumber) -> Weight {
 			Pending::<T>::kill();
+			let mut weight = T::SystemWeightInfo::kill_storage(1);
 
 			// If the digest contain an existing ethereum block(encoded as PreLog), If contains,
 			// execute the imported block firstly and disable transact dispatch function.
@@ -223,11 +224,16 @@ pub mod pallet {
 					Self::validate_transaction_in_block(source, &transaction).expect(
 						"pre-block transaction verification failed; the block cannot be built",
 					);
-					Self::apply_validated_transaction(source, transaction);
+					let r = Self::apply_validated_transaction(source, transaction);
+					weight = weight.saturating_add(r.actual_weight.unwrap_or(0 as Weight));
 				}
 			}
-
-			0
+			// Account for `on_finalize` weight:
+			//	- read: frame_system::Pallet::<T>::digest()
+			//	- read: frame_system::Pallet::<T>::block_number()
+			//	- write: <Pallet<T>>::store_block()
+			//	- write: <BlockHash<T>>::remove()
+			weight.saturating_add(T::DbWeight::get().reads_writes(2, 2))
 		}
 
 		fn on_runtime_upgrade() -> Weight {
@@ -236,7 +242,7 @@ pub mod pallet {
 				&EthereumStorageSchema::V2,
 			);
 
-			0
+			T::DbWeight::get().write
 		}
 	}
 
