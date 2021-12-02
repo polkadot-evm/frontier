@@ -200,7 +200,7 @@
 	<span class="kw">fn</span> <span class="ident">execute</span>(
 		<span class="ident">input</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>],
 		<span class="kw">_</span>: <span class="ident">u64</span>,
-	) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">core::result::Result</span><span class="op">&lt;</span>(<span class="ident">ExitSucceed</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>), <span class="ident">PrecompileFailure</span><span class="op">&gt;</span> {
+	) -&gt; <span class="ident">core::result::Result</span><span class="op">&lt;</span>(<span class="ident">ExitSucceed</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>), <span class="ident">PrecompileFailure</span><span class="op">&gt;</span> {
 		<span class="prelude-val">Ok</span>((<span class="ident">ExitSucceed::Returned</span>, <span class="ident">input</span>.<span class="ident">to_vec</span>()))
 	}
 }
@@ -215,7 +215,7 @@
 	<span class="kw">fn</span> <span class="ident">execute</span>(
 		<span class="ident">i</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>],
 		<span class="kw">_</span>: <span class="ident">u64</span>,
-	) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">core::result::Result</span><span class="op">&lt;</span>(<span class="ident">ExitSucceed</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>), <span class="ident">PrecompileFailure</span><span class="op">&gt;</span> {
+	) -&gt; <span class="ident">core::result::Result</span><span class="op">&lt;</span>(<span class="ident">ExitSucceed</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>), <span class="ident">PrecompileFailure</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">input</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">128</span>];
 		<span class="ident">input</span>[..<span class="ident">min</span>(<span class="ident">i</span>.<span class="ident">len</span>(), <span class="number">128</span>)].<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">i</span>[..<span class="ident">min</span>(<span class="ident">i</span>.<span class="ident">len</span>(), <span class="number">128</span>)]);
 
@@ -228,12 +228,12 @@
 		<span class="ident">sig</span>[<span class="number">64</span>] <span class="op">=</span> <span class="ident">input</span>[<span class="number">63</span>];
 
 		<span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">sp_io::crypto::secp256k1_ecdsa_recover</span>(<span class="kw-2">&amp;</span><span class="ident">sig</span>, <span class="kw-2">&amp;</span><span class="ident">msg</span>) {
-			<span class="prelude-val">Ok</span>(<span class="ident">pubkey</span>) <span class="op">=</span><span class="op">&gt;</span> {
+			<span class="prelude-val">Ok</span>(<span class="ident">pubkey</span>) =&gt; {
 				<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">address</span> <span class="op">=</span> <span class="ident">sp_io::hashing::keccak_256</span>(<span class="kw-2">&amp;</span><span class="ident">pubkey</span>);
 				<span class="ident">address</span>[<span class="number">0</span>..<span class="number">12</span>].<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span>[<span class="number">0u8</span>; <span class="number">12</span>]);
 				<span class="ident">address</span>.<span class="ident">to_vec</span>()
 			}
-			<span class="prelude-val">Err</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> [<span class="number">0u8</span>; <span class="number">0</span>].<span class="ident">to_vec</span>(),
+			<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; [<span class="number">0u8</span>; <span class="number">0</span>].<span class="ident">to_vec</span>(),
 		};
 
 		<span class="prelude-val">Ok</span>((<span class="ident">ExitSucceed::Returned</span>, <span class="ident">result</span>))
@@ -250,7 +250,7 @@
 	<span class="kw">fn</span> <span class="ident">execute</span>(
 		<span class="ident">input</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>],
 		<span class="ident">_cost</span>: <span class="ident">u64</span>,
-	) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">core::result::Result</span><span class="op">&lt;</span>(<span class="ident">ExitSucceed</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>), <span class="ident">PrecompileFailure</span><span class="op">&gt;</span> {
+	) -&gt; <span class="ident">core::result::Result</span><span class="op">&lt;</span>(<span class="ident">ExitSucceed</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>), <span class="ident">PrecompileFailure</span><span class="op">&gt;</span> {
 		<span class="kw">use</span> <span class="ident">ripemd160::Digest</span>;
 
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">ret</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">32</span>];
@@ -269,7 +269,7 @@
 	<span class="kw">fn</span> <span class="ident">execute</span>(
 		<span class="ident">input</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>],
 		<span class="ident">_cost</span>: <span class="ident">u64</span>,
-	) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">core::result::Result</span><span class="op">&lt;</span>(<span class="ident">ExitSucceed</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>), <span class="ident">PrecompileFailure</span><span class="op">&gt;</span> {
+	) -&gt; <span class="ident">core::result::Result</span><span class="op">&lt;</span>(<span class="ident">ExitSucceed</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>), <span class="ident">PrecompileFailure</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> <span class="ident">ret</span> <span class="op">=</span> <span class="ident">sp_io::hashing::sha2_256</span>(<span class="ident">input</span>);
 		<span class="prelude-val">Ok</span>((<span class="ident">ExitSucceed::Returned</span>, <span class="ident">ret</span>.<span class="ident">to_vec</span>()))
 	}
@@ -286,7 +286,7 @@
 	<span class="kw">fn</span> <span class="ident">execute</span>(
 		<span class="ident">i</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>],
 		<span class="kw">_</span>: <span class="ident">u64</span>,
-	) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">core::result::Result</span><span class="op">&lt;</span>(<span class="ident">ExitSucceed</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>), <span class="ident">PrecompileFailure</span><span class="op">&gt;</span> {
+	) -&gt; <span class="ident">core::result::Result</span><span class="op">&lt;</span>(<span class="ident">ExitSucceed</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>), <span class="ident">PrecompileFailure</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">input</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">128</span>];
 		<span class="ident">input</span>[..<span class="ident">min</span>(<span class="ident">i</span>.<span class="ident">len</span>(), <span class="number">128</span>)].<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">i</span>[..<span class="ident">min</span>(<span class="ident">i</span>.<span class="ident">len</span>(), <span class="number">128</span>)]);
 
@@ -315,19 +315,19 @@
 
 	<span class="comment">// TODO: this fails on the test &quot;InvalidHighV-bits-1&quot; where it is expected to return &quot;&quot;</span>
 	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">process_consensus_tests_for_ecrecover</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">std::result::Result</span><span class="op">&lt;</span>(), <span class="ident">String</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">process_consensus_tests_for_ecrecover</span>() -&gt; <span class="ident">std::result::Result</span><span class="op">&lt;</span>(), <span class="ident">String</span><span class="op">&gt;</span> {
 		<span class="ident">test_precompile_test_vectors</span>::<span class="op">&lt;</span><span class="ident">ECRecover</span><span class="op">&gt;</span>(<span class="string">&quot;../testdata/ecRecover.json&quot;</span>)<span class="question-mark">?</span>;
 		<span class="prelude-val">Ok</span>(())
 	}
 
 	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">process_consensus_tests_for_sha256</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">std::result::Result</span><span class="op">&lt;</span>(), <span class="ident">String</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">process_consensus_tests_for_sha256</span>() -&gt; <span class="ident">std::result::Result</span><span class="op">&lt;</span>(), <span class="ident">String</span><span class="op">&gt;</span> {
 		<span class="ident">test_precompile_test_vectors</span>::<span class="op">&lt;</span><span class="ident">Sha256</span><span class="op">&gt;</span>(<span class="string">&quot;../testdata/common_sha256.json&quot;</span>)<span class="question-mark">?</span>;
 		<span class="prelude-val">Ok</span>(())
 	}
 
 	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">process_consensus_tests_for_ripemd160</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">std::result::Result</span><span class="op">&lt;</span>(), <span class="ident">String</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">process_consensus_tests_for_ripemd160</span>() -&gt; <span class="ident">std::result::Result</span><span class="op">&lt;</span>(), <span class="ident">String</span><span class="op">&gt;</span> {
 		<span class="ident">test_precompile_test_vectors</span>::<span class="op">&lt;</span><span class="ident">Ripemd160</span><span class="op">&gt;</span>(<span class="string">&quot;../testdata/common_ripemd.json&quot;</span>)<span class="question-mark">?</span>;
 		<span class="prelude-val">Ok</span>(())
 	}

@@ -203,11 +203,11 @@
 }
 
 <span class="kw">impl</span> <span class="ident">Log</span> {
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">into_hashes</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Hashes</span> {
+	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">into_hashes</span>(<span class="self">self</span>) -&gt; <span class="ident">Hashes</span> {
 		<span class="kw">match</span> <span class="self">self</span> {
-			<span class="ident">Log::Post</span>(<span class="ident">PostLog::Hashes</span>(<span class="ident">post_hashes</span>)) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">post_hashes</span>,
-			<span class="ident">Log::Post</span>(<span class="ident">PostLog::Block</span>(<span class="ident">block</span>)) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Hashes::from_block</span>(<span class="ident">block</span>),
-			<span class="ident">Log::Pre</span>(<span class="ident">PreLog::Block</span>(<span class="ident">block</span>)) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Hashes::from_block</span>(<span class="ident">block</span>),
+			<span class="ident">Log::Post</span>(<span class="ident">PostLog::Hashes</span>(<span class="ident">post_hashes</span>)) =&gt; <span class="ident">post_hashes</span>,
+			<span class="ident">Log::Post</span>(<span class="ident">PostLog::Block</span>(<span class="ident">block</span>)) =&gt; <span class="ident">Hashes::from_block</span>(<span class="ident">block</span>),
+			<span class="ident">Log::Pre</span>(<span class="ident">PreLog::Block</span>(<span class="ident">block</span>)) =&gt; <span class="ident">Hashes::from_block</span>(<span class="ident">block</span>),
 		}
 	}
 }
@@ -235,7 +235,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">Hashes</span> {
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_block</span>(<span class="ident">block</span>: <span class="ident">ethereum::BlockV2</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_block</span>(<span class="ident">block</span>: <span class="ident">ethereum::BlockV2</span>) -&gt; <span class="self">Self</span> {
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">transaction_hashes</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
 
 		<span class="kw">for</span> <span class="ident">t</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">block</span>.<span class="ident">transactions</span> {
@@ -257,74 +257,74 @@
 	<span class="ident">MultipleLogs</span>,
 }
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">find_pre_log</span><span class="op">&lt;</span><span class="ident">Hash</span><span class="op">&gt;</span>(<span class="ident">digest</span>: <span class="kw-2">&amp;</span><span class="ident">Digest</span><span class="op">&lt;</span><span class="ident">Hash</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">PreLog</span>, <span class="ident">FindLogError</span><span class="op">&gt;</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">find_pre_log</span><span class="op">&lt;</span><span class="ident">Hash</span><span class="op">&gt;</span>(<span class="ident">digest</span>: <span class="kw-2">&amp;</span><span class="ident">Digest</span><span class="op">&lt;</span><span class="ident">Hash</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">PreLog</span>, <span class="ident">FindLogError</span><span class="op">&gt;</span> {
 	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">found</span> <span class="op">=</span> <span class="prelude-val">None</span>;
 
 	<span class="kw">for</span> <span class="ident">log</span> <span class="kw">in</span> <span class="ident">digest</span>.<span class="ident">logs</span>() {
 		<span class="kw">let</span> <span class="ident">log</span> <span class="op">=</span> <span class="ident">log</span>.<span class="ident">try_to</span>::<span class="op">&lt;</span><span class="ident">PreLog</span><span class="op">&gt;</span>(<span class="ident">OpaqueDigestItemId::PreRuntime</span>(<span class="kw-2">&amp;</span><span class="ident">FRONTIER_ENGINE_ID</span>));
 		<span class="kw">match</span> (<span class="ident">log</span>, <span class="ident">found</span>.<span class="ident">is_some</span>()) {
-			(<span class="prelude-val">Some</span>(<span class="kw">_</span>), <span class="bool-val">true</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">FindLogError::MultipleLogs</span>),
-			(<span class="prelude-val">Some</span>(<span class="ident">log</span>), <span class="bool-val">false</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">found</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">log</span>),
-			(<span class="prelude-val">None</span>, <span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> (),
+			(<span class="prelude-val">Some</span>(<span class="kw">_</span>), <span class="bool-val">true</span>) =&gt; <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">FindLogError::MultipleLogs</span>),
+			(<span class="prelude-val">Some</span>(<span class="ident">log</span>), <span class="bool-val">false</span>) =&gt; <span class="ident">found</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">log</span>),
+			(<span class="prelude-val">None</span>, <span class="kw">_</span>) =&gt; (),
 		}
 	}
 
 	<span class="ident">found</span>.<span class="ident">ok_or</span>(<span class="ident">FindLogError::NotFound</span>)
 }
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">find_post_log</span><span class="op">&lt;</span><span class="ident">Hash</span><span class="op">&gt;</span>(<span class="ident">digest</span>: <span class="kw-2">&amp;</span><span class="ident">Digest</span><span class="op">&lt;</span><span class="ident">Hash</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">PostLog</span>, <span class="ident">FindLogError</span><span class="op">&gt;</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">find_post_log</span><span class="op">&lt;</span><span class="ident">Hash</span><span class="op">&gt;</span>(<span class="ident">digest</span>: <span class="kw-2">&amp;</span><span class="ident">Digest</span><span class="op">&lt;</span><span class="ident">Hash</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">PostLog</span>, <span class="ident">FindLogError</span><span class="op">&gt;</span> {
 	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">found</span> <span class="op">=</span> <span class="prelude-val">None</span>;
 
 	<span class="kw">for</span> <span class="ident">log</span> <span class="kw">in</span> <span class="ident">digest</span>.<span class="ident">logs</span>() {
 		<span class="kw">let</span> <span class="ident">log</span> <span class="op">=</span> <span class="ident">log</span>.<span class="ident">try_to</span>::<span class="op">&lt;</span><span class="ident">PostLog</span><span class="op">&gt;</span>(<span class="ident">OpaqueDigestItemId::Consensus</span>(<span class="kw-2">&amp;</span><span class="ident">FRONTIER_ENGINE_ID</span>));
 		<span class="kw">match</span> (<span class="ident">log</span>, <span class="ident">found</span>.<span class="ident">is_some</span>()) {
-			(<span class="prelude-val">Some</span>(<span class="kw">_</span>), <span class="bool-val">true</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">FindLogError::MultipleLogs</span>),
-			(<span class="prelude-val">Some</span>(<span class="ident">log</span>), <span class="bool-val">false</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">found</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">log</span>),
-			(<span class="prelude-val">None</span>, <span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> (),
+			(<span class="prelude-val">Some</span>(<span class="kw">_</span>), <span class="bool-val">true</span>) =&gt; <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">FindLogError::MultipleLogs</span>),
+			(<span class="prelude-val">Some</span>(<span class="ident">log</span>), <span class="bool-val">false</span>) =&gt; <span class="ident">found</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">log</span>),
+			(<span class="prelude-val">None</span>, <span class="kw">_</span>) =&gt; (),
 		}
 	}
 
 	<span class="ident">found</span>.<span class="ident">ok_or</span>(<span class="ident">FindLogError::NotFound</span>)
 }
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">find_log</span><span class="op">&lt;</span><span class="ident">Hash</span><span class="op">&gt;</span>(<span class="ident">digest</span>: <span class="kw-2">&amp;</span><span class="ident">Digest</span><span class="op">&lt;</span><span class="ident">Hash</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Log</span>, <span class="ident">FindLogError</span><span class="op">&gt;</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">find_log</span><span class="op">&lt;</span><span class="ident">Hash</span><span class="op">&gt;</span>(<span class="ident">digest</span>: <span class="kw-2">&amp;</span><span class="ident">Digest</span><span class="op">&lt;</span><span class="ident">Hash</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Log</span>, <span class="ident">FindLogError</span><span class="op">&gt;</span> {
 	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">found</span> <span class="op">=</span> <span class="prelude-val">None</span>;
 
 	<span class="kw">for</span> <span class="ident">log</span> <span class="kw">in</span> <span class="ident">digest</span>.<span class="ident">logs</span>() {
 		<span class="kw">let</span> <span class="ident">pre_log</span> <span class="op">=</span> <span class="ident">log</span>.<span class="ident">try_to</span>::<span class="op">&lt;</span><span class="ident">PreLog</span><span class="op">&gt;</span>(<span class="ident">OpaqueDigestItemId::PreRuntime</span>(<span class="kw-2">&amp;</span><span class="ident">FRONTIER_ENGINE_ID</span>));
 		<span class="kw">match</span> (<span class="ident">pre_log</span>, <span class="ident">found</span>.<span class="ident">is_some</span>()) {
-			(<span class="prelude-val">Some</span>(<span class="kw">_</span>), <span class="bool-val">true</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">FindLogError::MultipleLogs</span>),
-			(<span class="prelude-val">Some</span>(<span class="ident">pre_log</span>), <span class="bool-val">false</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">found</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">Log::Pre</span>(<span class="ident">pre_log</span>)),
-			(<span class="prelude-val">None</span>, <span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> (),
+			(<span class="prelude-val">Some</span>(<span class="kw">_</span>), <span class="bool-val">true</span>) =&gt; <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">FindLogError::MultipleLogs</span>),
+			(<span class="prelude-val">Some</span>(<span class="ident">pre_log</span>), <span class="bool-val">false</span>) =&gt; <span class="ident">found</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">Log::Pre</span>(<span class="ident">pre_log</span>)),
+			(<span class="prelude-val">None</span>, <span class="kw">_</span>) =&gt; (),
 		}
 
 		<span class="kw">let</span> <span class="ident">post_log</span> <span class="op">=</span> <span class="ident">log</span>.<span class="ident">try_to</span>::<span class="op">&lt;</span><span class="ident">PostLog</span><span class="op">&gt;</span>(<span class="ident">OpaqueDigestItemId::Consensus</span>(<span class="kw-2">&amp;</span><span class="ident">FRONTIER_ENGINE_ID</span>));
 		<span class="kw">match</span> (<span class="ident">post_log</span>, <span class="ident">found</span>.<span class="ident">is_some</span>()) {
-			(<span class="prelude-val">Some</span>(<span class="kw">_</span>), <span class="bool-val">true</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">FindLogError::MultipleLogs</span>),
-			(<span class="prelude-val">Some</span>(<span class="ident">post_log</span>), <span class="bool-val">false</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">found</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">Log::Post</span>(<span class="ident">post_log</span>)),
-			(<span class="prelude-val">None</span>, <span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> (),
+			(<span class="prelude-val">Some</span>(<span class="kw">_</span>), <span class="bool-val">true</span>) =&gt; <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">FindLogError::MultipleLogs</span>),
+			(<span class="prelude-val">Some</span>(<span class="ident">post_log</span>), <span class="bool-val">false</span>) =&gt; <span class="ident">found</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">Log::Post</span>(<span class="ident">post_log</span>)),
+			(<span class="prelude-val">None</span>, <span class="kw">_</span>) =&gt; (),
 		}
 	}
 
 	<span class="ident">found</span>.<span class="ident">ok_or</span>(<span class="ident">FindLogError::NotFound</span>)
 }
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">ensure_log</span><span class="op">&lt;</span><span class="ident">Hash</span><span class="op">&gt;</span>(<span class="ident">digest</span>: <span class="kw-2">&amp;</span><span class="ident">Digest</span><span class="op">&lt;</span><span class="ident">Hash</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">FindLogError</span><span class="op">&gt;</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">ensure_log</span><span class="op">&lt;</span><span class="ident">Hash</span><span class="op">&gt;</span>(<span class="ident">digest</span>: <span class="kw-2">&amp;</span><span class="ident">Digest</span><span class="op">&lt;</span><span class="ident">Hash</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">FindLogError</span><span class="op">&gt;</span> {
 	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">found</span> <span class="op">=</span> <span class="bool-val">false</span>;
 
 	<span class="kw">for</span> <span class="ident">log</span> <span class="kw">in</span> <span class="ident">digest</span>.<span class="ident">logs</span>() {
 		<span class="kw">let</span> <span class="ident">pre_log</span> <span class="op">=</span> <span class="ident">log</span>.<span class="ident">try_to</span>::<span class="op">&lt;</span><span class="ident">PreLog</span><span class="op">&gt;</span>(<span class="ident">OpaqueDigestItemId::PreRuntime</span>(<span class="kw-2">&amp;</span><span class="ident">FRONTIER_ENGINE_ID</span>));
 		<span class="kw">match</span> (<span class="ident">pre_log</span>, <span class="ident">found</span>) {
-			(<span class="prelude-val">Some</span>(<span class="kw">_</span>), <span class="bool-val">true</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">FindLogError::MultipleLogs</span>),
-			(<span class="prelude-val">Some</span>(<span class="kw">_</span>), <span class="bool-val">false</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">found</span> <span class="op">=</span> <span class="bool-val">true</span>,
-			(<span class="prelude-val">None</span>, <span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> (),
+			(<span class="prelude-val">Some</span>(<span class="kw">_</span>), <span class="bool-val">true</span>) =&gt; <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">FindLogError::MultipleLogs</span>),
+			(<span class="prelude-val">Some</span>(<span class="kw">_</span>), <span class="bool-val">false</span>) =&gt; <span class="ident">found</span> <span class="op">=</span> <span class="bool-val">true</span>,
+			(<span class="prelude-val">None</span>, <span class="kw">_</span>) =&gt; (),
 		}
 
 		<span class="kw">let</span> <span class="ident">post_log</span> <span class="op">=</span> <span class="ident">log</span>.<span class="ident">try_to</span>::<span class="op">&lt;</span><span class="ident">PostLog</span><span class="op">&gt;</span>(<span class="ident">OpaqueDigestItemId::Consensus</span>(<span class="kw-2">&amp;</span><span class="ident">FRONTIER_ENGINE_ID</span>));
 		<span class="kw">match</span> (<span class="ident">post_log</span>, <span class="ident">found</span>) {
-			(<span class="prelude-val">Some</span>(<span class="kw">_</span>), <span class="bool-val">true</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">FindLogError::MultipleLogs</span>),
-			(<span class="prelude-val">Some</span>(<span class="kw">_</span>), <span class="bool-val">false</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">found</span> <span class="op">=</span> <span class="bool-val">true</span>,
-			(<span class="prelude-val">None</span>, <span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> (),
+			(<span class="prelude-val">Some</span>(<span class="kw">_</span>), <span class="bool-val">true</span>) =&gt; <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">FindLogError::MultipleLogs</span>),
+			(<span class="prelude-val">Some</span>(<span class="kw">_</span>), <span class="bool-val">false</span>) =&gt; <span class="ident">found</span> <span class="op">=</span> <span class="bool-val">true</span>,
+			(<span class="prelude-val">None</span>, <span class="kw">_</span>) =&gt; (),
 		}
 	}
 

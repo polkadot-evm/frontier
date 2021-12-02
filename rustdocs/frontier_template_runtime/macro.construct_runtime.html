@@ -3,7 +3,7 @@
 and the pallets that are used by the runtime.
 <code>Block</code> is the block type that is used in the runtime and <code>NodeBlock</code> is the block type
 that is used in the node. For instance they can differ in the extrinsics type.</p>
-<h1 id="example" class="section-header"><a href="#example">Example:</a></h1><div class="example-wrap"><pre class="language-nocompile"><code>construct_runtime!(
+<h2 id="example" class="section-header"><a href="#example">Example:</a></h2><div class="example-wrap"><pre class="language-nocompile"><code>construct_runtime!(
     pub enum Runtime where
         Block = Block,
         NodeBlock = node::Block,
@@ -41,11 +41,11 @@ with <code>GenesisConfig</code></li>
 <div class="example-wrap"><pre class="language-nocompile"><code>pallet1 .. = 2,
 pallet2 .., // Here pallet2 is given index 3
 pallet3 .. = 0,
-pallet4 .., // Here pallet4 is given index 1</code></pre></div><h1 id="note" class="section-header"><a href="#note">Note</a></h1>
+pallet4 .., // Here pallet4 is given index 1</code></pre></div><h2 id="note" class="section-header"><a href="#note">Note</a></h2>
 <p>The population of the genesis storage depends on the order of pallets. So, if one of your
 pallets depends on another pallet, the pallet that is depended upon needs to come before
 the pallet depending on it.</p>
-<h1 id="type-definitions" class="section-header"><a href="#type-definitions">Type definitions</a></h1>
+<h2 id="type-definitions" class="section-header"><a href="#type-definitions">Type definitions</a></h2>
 <ul>
 <li>The macro generates a type alias for each pallet to their <code>Module</code> (or <code>Pallet</code>). E.g. <code>type System = frame_system::Pallet&lt;Runtime&gt;</code></li>
 </ul>

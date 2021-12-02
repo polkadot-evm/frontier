@@ -195,56 +195,56 @@
 <span class="kw">use</span> <span class="ident">sc_service::PartialComponents</span>;
 
 <span class="kw">impl</span> <span class="ident">SubstrateCli</span> <span class="kw">for</span> <span class="ident">Cli</span> {
-	<span class="kw">fn</span> <span class="ident">impl_name</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">String</span> {
+	<span class="kw">fn</span> <span class="ident">impl_name</span>() -&gt; <span class="ident">String</span> {
 		<span class="string">&quot;Frontier Node&quot;</span>.<span class="ident">into</span>()
 	}
 
-	<span class="kw">fn</span> <span class="ident">impl_version</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">String</span> {
+	<span class="kw">fn</span> <span class="ident">impl_version</span>() -&gt; <span class="ident">String</span> {
 		<span class="macro">env!</span>(<span class="string">&quot;SUBSTRATE_CLI_IMPL_VERSION&quot;</span>).<span class="ident">into</span>()
 	}
 
-	<span class="kw">fn</span> <span class="ident">description</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">String</span> {
+	<span class="kw">fn</span> <span class="ident">description</span>() -&gt; <span class="ident">String</span> {
 		<span class="macro">env!</span>(<span class="string">&quot;CARGO_PKG_DESCRIPTION&quot;</span>).<span class="ident">into</span>()
 	}
 
-	<span class="kw">fn</span> <span class="ident">author</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">String</span> {
+	<span class="kw">fn</span> <span class="ident">author</span>() -&gt; <span class="ident">String</span> {
 		<span class="macro">env!</span>(<span class="string">&quot;CARGO_PKG_AUTHORS&quot;</span>).<span class="ident">into</span>()
 	}
 
-	<span class="kw">fn</span> <span class="ident">support_url</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">String</span> {
+	<span class="kw">fn</span> <span class="ident">support_url</span>() -&gt; <span class="ident">String</span> {
 		<span class="string">&quot;support.anonymous.an&quot;</span>.<span class="ident">into</span>()
 	}
 
-	<span class="kw">fn</span> <span class="ident">copyright_start_year</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">i32</span> {
+	<span class="kw">fn</span> <span class="ident">copyright_start_year</span>() -&gt; <span class="ident">i32</span> {
 		<span class="number">2021</span>
 	}
 
-	<span class="kw">fn</span> <span class="ident">load_spec</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">id</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">sc_service::ChainSpec</span><span class="op">&gt;</span>, <span class="ident">String</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">load_spec</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">id</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">sc_service::ChainSpec</span><span class="op">&gt;</span>, <span class="ident">String</span><span class="op">&gt;</span> {
 		<span class="prelude-val">Ok</span>(<span class="kw">match</span> <span class="ident">id</span> {
-			<span class="string">&quot;dev&quot;</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Box::new</span>(<span class="ident">chain_spec::development_config</span>()<span class="question-mark">?</span>),
-			<span class="string">&quot;&quot;</span> <span class="op">|</span> <span class="string">&quot;local&quot;</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Box::new</span>(<span class="ident">chain_spec::local_testnet_config</span>()<span class="question-mark">?</span>),
-			<span class="ident">path</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Box::new</span>(<span class="ident">chain_spec::ChainSpec::from_json_file</span>(
+			<span class="string">&quot;dev&quot;</span> =&gt; <span class="ident">Box::new</span>(<span class="ident">chain_spec::development_config</span>()<span class="question-mark">?</span>),
+			<span class="string">&quot;&quot;</span> <span class="op">|</span> <span class="string">&quot;local&quot;</span> =&gt; <span class="ident">Box::new</span>(<span class="ident">chain_spec::local_testnet_config</span>()<span class="question-mark">?</span>),
+			<span class="ident">path</span> =&gt; <span class="ident">Box::new</span>(<span class="ident">chain_spec::ChainSpec::from_json_file</span>(
 				<span class="ident">std::path::PathBuf::from</span>(<span class="ident">path</span>),
 			)<span class="question-mark">?</span>),
 		})
 	}
 
-	<span class="kw">fn</span> <span class="ident">native_runtime_version</span>(<span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">ChainSpec</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">RuntimeVersion</span> {
+	<span class="kw">fn</span> <span class="ident">native_runtime_version</span>(<span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">ChainSpec</span><span class="op">&gt;</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">RuntimeVersion</span> {
 		<span class="kw-2">&amp;</span><span class="ident">frontier_template_runtime::VERSION</span>
 	}
 }
 
 <span class="doccomment">/// Parse and run command line arguments</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">run</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">sc_cli::Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">run</span>() -&gt; <span class="ident">sc_cli::Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
 	<span class="kw">let</span> <span class="ident">cli</span> <span class="op">=</span> <span class="ident">Cli::from_args</span>();
 
 	<span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">cli</span>.<span class="ident">subcommand</span> {
-		<span class="prelude-val">Some</span>(<span class="ident">Subcommand::Key</span>(<span class="ident">cmd</span>)) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">cmd</span>.<span class="ident">run</span>(<span class="kw-2">&amp;</span><span class="ident">cli</span>),
-		<span class="prelude-val">Some</span>(<span class="ident">Subcommand::BuildSpec</span>(<span class="ident">cmd</span>)) <span class="op">=</span><span class="op">&gt;</span> {
+		<span class="prelude-val">Some</span>(<span class="ident">Subcommand::Key</span>(<span class="ident">cmd</span>)) =&gt; <span class="ident">cmd</span>.<span class="ident">run</span>(<span class="kw-2">&amp;</span><span class="ident">cli</span>),
+		<span class="prelude-val">Some</span>(<span class="ident">Subcommand::BuildSpec</span>(<span class="ident">cmd</span>)) =&gt; {
 			<span class="kw">let</span> <span class="ident">runner</span> <span class="op">=</span> <span class="ident">cli</span>.<span class="ident">create_runner</span>(<span class="ident">cmd</span>)<span class="question-mark">?</span>;
 			<span class="ident">runner</span>.<span class="ident">sync_run</span>(<span class="op">|</span><span class="ident">config</span><span class="op">|</span> <span class="ident">cmd</span>.<span class="ident">run</span>(<span class="ident">config</span>.<span class="ident">chain_spec</span>, <span class="ident">config</span>.<span class="ident">network</span>))
 		}
-		<span class="prelude-val">Some</span>(<span class="ident">Subcommand::CheckBlock</span>(<span class="ident">cmd</span>)) <span class="op">=</span><span class="op">&gt;</span> {
+		<span class="prelude-val">Some</span>(<span class="ident">Subcommand::CheckBlock</span>(<span class="ident">cmd</span>)) =&gt; {
 			<span class="kw">let</span> <span class="ident">runner</span> <span class="op">=</span> <span class="ident">cli</span>.<span class="ident">create_runner</span>(<span class="ident">cmd</span>)<span class="question-mark">?</span>;
 			<span class="ident">runner</span>.<span class="ident">async_run</span>(<span class="op">|</span><span class="ident">config</span><span class="op">|</span> {
 				<span class="kw">let</span> <span class="ident">PartialComponents</span> {
@@ -256,7 +256,7 @@
 				<span class="prelude-val">Ok</span>((<span class="ident">cmd</span>.<span class="ident">run</span>(<span class="ident">client</span>, <span class="ident">import_queue</span>), <span class="ident">task_manager</span>))
 			})
 		}
-		<span class="prelude-val">Some</span>(<span class="ident">Subcommand::ExportBlocks</span>(<span class="ident">cmd</span>)) <span class="op">=</span><span class="op">&gt;</span> {
+		<span class="prelude-val">Some</span>(<span class="ident">Subcommand::ExportBlocks</span>(<span class="ident">cmd</span>)) =&gt; {
 			<span class="kw">let</span> <span class="ident">runner</span> <span class="op">=</span> <span class="ident">cli</span>.<span class="ident">create_runner</span>(<span class="ident">cmd</span>)<span class="question-mark">?</span>;
 			<span class="ident">runner</span>.<span class="ident">async_run</span>(<span class="op">|</span><span class="ident">config</span><span class="op">|</span> {
 				<span class="kw">let</span> <span class="ident">PartialComponents</span> {
@@ -267,7 +267,7 @@
 				<span class="prelude-val">Ok</span>((<span class="ident">cmd</span>.<span class="ident">run</span>(<span class="ident">client</span>, <span class="ident">config</span>.<span class="ident">database</span>), <span class="ident">task_manager</span>))
 			})
 		}
-		<span class="prelude-val">Some</span>(<span class="ident">Subcommand::ExportState</span>(<span class="ident">cmd</span>)) <span class="op">=</span><span class="op">&gt;</span> {
+		<span class="prelude-val">Some</span>(<span class="ident">Subcommand::ExportState</span>(<span class="ident">cmd</span>)) =&gt; {
 			<span class="kw">let</span> <span class="ident">runner</span> <span class="op">=</span> <span class="ident">cli</span>.<span class="ident">create_runner</span>(<span class="ident">cmd</span>)<span class="question-mark">?</span>;
 			<span class="ident">runner</span>.<span class="ident">async_run</span>(<span class="op">|</span><span class="ident">config</span><span class="op">|</span> {
 				<span class="kw">let</span> <span class="ident">PartialComponents</span> {
@@ -278,7 +278,7 @@
 				<span class="prelude-val">Ok</span>((<span class="ident">cmd</span>.<span class="ident">run</span>(<span class="ident">client</span>, <span class="ident">config</span>.<span class="ident">chain_spec</span>), <span class="ident">task_manager</span>))
 			})
 		}
-		<span class="prelude-val">Some</span>(<span class="ident">Subcommand::ImportBlocks</span>(<span class="ident">cmd</span>)) <span class="op">=</span><span class="op">&gt;</span> {
+		<span class="prelude-val">Some</span>(<span class="ident">Subcommand::ImportBlocks</span>(<span class="ident">cmd</span>)) =&gt; {
 			<span class="kw">let</span> <span class="ident">runner</span> <span class="op">=</span> <span class="ident">cli</span>.<span class="ident">create_runner</span>(<span class="ident">cmd</span>)<span class="question-mark">?</span>;
 			<span class="ident">runner</span>.<span class="ident">async_run</span>(<span class="op">|</span><span class="ident">config</span><span class="op">|</span> {
 				<span class="kw">let</span> <span class="ident">PartialComponents</span> {
@@ -290,7 +290,7 @@
 				<span class="prelude-val">Ok</span>((<span class="ident">cmd</span>.<span class="ident">run</span>(<span class="ident">client</span>, <span class="ident">import_queue</span>), <span class="ident">task_manager</span>))
 			})
 		}
-		<span class="prelude-val">Some</span>(<span class="ident">Subcommand::PurgeChain</span>(<span class="ident">cmd</span>)) <span class="op">=</span><span class="op">&gt;</span> {
+		<span class="prelude-val">Some</span>(<span class="ident">Subcommand::PurgeChain</span>(<span class="ident">cmd</span>)) =&gt; {
 			<span class="kw">let</span> <span class="ident">runner</span> <span class="op">=</span> <span class="ident">cli</span>.<span class="ident">create_runner</span>(<span class="ident">cmd</span>)<span class="question-mark">?</span>;
 			<span class="ident">runner</span>.<span class="ident">sync_run</span>(<span class="op">|</span><span class="ident">config</span><span class="op">|</span> {
 				<span class="comment">// Remove Frontier offchain db</span>
@@ -302,7 +302,7 @@
 				<span class="ident">cmd</span>.<span class="ident">run</span>(<span class="ident">config</span>.<span class="ident">database</span>)
 			})
 		}
-		<span class="prelude-val">Some</span>(<span class="ident">Subcommand::Revert</span>(<span class="ident">cmd</span>)) <span class="op">=</span><span class="op">&gt;</span> {
+		<span class="prelude-val">Some</span>(<span class="ident">Subcommand::Revert</span>(<span class="ident">cmd</span>)) =&gt; {
 			<span class="kw">let</span> <span class="ident">runner</span> <span class="op">=</span> <span class="ident">cli</span>.<span class="ident">create_runner</span>(<span class="ident">cmd</span>)<span class="question-mark">?</span>;
 			<span class="ident">runner</span>.<span class="ident">async_run</span>(<span class="op">|</span><span class="ident">config</span><span class="op">|</span> {
 				<span class="kw">let</span> <span class="ident">PartialComponents</span> {
@@ -314,7 +314,7 @@
 				<span class="prelude-val">Ok</span>((<span class="ident">cmd</span>.<span class="ident">run</span>(<span class="ident">client</span>, <span class="ident">backend</span>), <span class="ident">task_manager</span>))
 			})
 		}
-		<span class="prelude-val">Some</span>(<span class="ident">Subcommand::Benchmark</span>(<span class="ident">cmd</span>)) <span class="op">=</span><span class="op">&gt;</span> {
+		<span class="prelude-val">Some</span>(<span class="ident">Subcommand::Benchmark</span>(<span class="ident">cmd</span>)) =&gt; {
 			<span class="kw">if</span> <span class="macro">cfg!</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;runtime-benchmarks&quot;</span>) {
 				<span class="kw">let</span> <span class="ident">runner</span> <span class="op">=</span> <span class="ident">cli</span>.<span class="ident">create_runner</span>(<span class="ident">cmd</span>)<span class="question-mark">?</span>;
 
@@ -326,12 +326,12 @@
 				)
 			}
 		}
-		<span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {
+		<span class="prelude-val">None</span> =&gt; {
 			<span class="kw">let</span> <span class="ident">runner</span> <span class="op">=</span> <span class="ident">cli</span>.<span class="ident">create_runner</span>(<span class="kw-2">&amp;</span><span class="ident">cli</span>.<span class="ident">run</span>.<span class="ident">base</span>)<span class="question-mark">?</span>;
 			<span class="ident">runner</span>.<span class="ident">run_node_until_exit</span>(<span class="op">|</span><span class="ident">config</span><span class="op">|</span> <span class="kw">async</span> <span class="kw">move</span> {
 				<span class="kw">match</span> <span class="ident">config</span>.<span class="ident">role</span> {
-					<span class="ident">Role::Light</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">service::new_light</span>(<span class="ident">config</span>),
-					<span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">service::new_full</span>(<span class="ident">config</span>, <span class="kw-2">&amp;</span><span class="ident">cli</span>),
+					<span class="ident">Role::Light</span> =&gt; <span class="ident">service::new_light</span>(<span class="ident">config</span>),
+					<span class="kw">_</span> =&gt; <span class="ident">service::new_full</span>(<span class="ident">config</span>, <span class="kw-2">&amp;</span><span class="ident">cli</span>),
 				}
 				.<span class="ident">map_err</span>(<span class="ident">sc_cli::Error::Service</span>)
 			})

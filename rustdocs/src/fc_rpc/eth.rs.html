@@ -2534,7 +2534,7 @@
 		<span class="ident">is_authority</span>: <span class="ident">bool</span>,
 		<span class="ident">max_past_logs</span>: <span class="ident">u32</span>,
 		<span class="ident">block_data_cache</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">EthBlockDataCache</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-	) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+	) -&gt; <span class="self">Self</span> {
 		<span class="self">Self</span> {
 			<span class="ident">client</span>,
 			<span class="ident">pool</span>,
@@ -2559,7 +2559,7 @@
 	<span class="ident">full_transactions</span>: <span class="ident">bool</span>,
 	<span class="ident">base_fee</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
 	<span class="ident">is_eip1559</span>: <span class="ident">bool</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">RichBlock</span> {
+) -&gt; <span class="ident">RichBlock</span> {
 	<span class="ident">Rich</span> {
 		<span class="ident">inner</span>: <span class="ident">Block</span> {
 			<span class="ident">header</span>: <span class="ident">Header</span> {
@@ -2629,7 +2629,7 @@
 	<span class="ident">status</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">TransactionStatus</span><span class="op">&gt;</span>,
 	<span class="ident">is_eip1559</span>: <span class="ident">bool</span>,
 	<span class="ident">base_fee</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Transaction</span> {
+) -&gt; <span class="ident">Transaction</span> {
 	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">transaction</span>: <span class="ident">Transaction</span> <span class="op">=</span> <span class="ident">ethereum_transaction</span>.<span class="ident">clone</span>().<span class="ident">into</span>();
 
 	<span class="kw">if</span> <span class="kw">let</span> <span class="ident">EthereumTransaction::EIP1559</span>(<span class="kw">_</span>) <span class="op">=</span> <span class="ident">ethereum_transaction</span> {
@@ -2657,8 +2657,8 @@
 	}
 
 	<span class="kw">let</span> <span class="ident">pubkey</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">public_key</span>(<span class="kw-2">&amp;</span><span class="ident">ethereum_transaction</span>) {
-		<span class="prelude-val">Ok</span>(<span class="ident">p</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">p</span>),
-		<span class="prelude-val">Err</span>(<span class="ident">_e</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">None</span>,
+		<span class="prelude-val">Ok</span>(<span class="ident">p</span>) =&gt; <span class="prelude-val">Some</span>(<span class="ident">p</span>),
+		<span class="prelude-val">Err</span>(<span class="ident">_e</span>) =&gt; <span class="prelude-val">None</span>,
 	};
 
 	<span class="comment">// Block hash.</span>
@@ -2679,8 +2679,8 @@
 	<span class="ident">transaction</span>.<span class="ident">from</span> <span class="op">=</span> <span class="ident">status</span>.<span class="ident">as_ref</span>().<span class="ident">map_or</span>(
 		{
 			<span class="kw">match</span> <span class="ident">pubkey</span> {
-				<span class="prelude-val">Some</span>(<span class="ident">pk</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">H160::from</span>(<span class="ident">H256::from_slice</span>(<span class="ident">Keccak256::digest</span>(<span class="kw-2">&amp;</span><span class="ident">pk</span>).<span class="ident">as_slice</span>())),
-				<span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">H160::default</span>(),
+				<span class="prelude-val">Some</span>(<span class="ident">pk</span>) =&gt; <span class="ident">H160::from</span>(<span class="ident">H256::from_slice</span>(<span class="ident">Keccak256::digest</span>(<span class="kw-2">&amp;</span><span class="ident">pk</span>).<span class="ident">as_slice</span>())),
+				<span class="kw">_</span> =&gt; <span class="ident">H160::default</span>(),
 			}
 		},
 		<span class="op">|</span><span class="ident">status</span><span class="op">|</span> <span class="ident">status</span>.<span class="ident">from</span>,
@@ -2689,13 +2689,13 @@
 	<span class="ident">transaction</span>.<span class="ident">to</span> <span class="op">=</span> <span class="ident">status</span>.<span class="ident">as_ref</span>().<span class="ident">map_or</span>(
 		{
 			<span class="kw">let</span> <span class="ident">action</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">ethereum_transaction</span> {
-				<span class="ident">EthereumTransaction::Legacy</span>(<span class="ident">t</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">t</span>.<span class="ident">action</span>,
-				<span class="ident">EthereumTransaction::EIP2930</span>(<span class="ident">t</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">t</span>.<span class="ident">action</span>,
-				<span class="ident">EthereumTransaction::EIP1559</span>(<span class="ident">t</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">t</span>.<span class="ident">action</span>,
+				<span class="ident">EthereumTransaction::Legacy</span>(<span class="ident">t</span>) =&gt; <span class="ident">t</span>.<span class="ident">action</span>,
+				<span class="ident">EthereumTransaction::EIP2930</span>(<span class="ident">t</span>) =&gt; <span class="ident">t</span>.<span class="ident">action</span>,
+				<span class="ident">EthereumTransaction::EIP1559</span>(<span class="ident">t</span>) =&gt; <span class="ident">t</span>.<span class="ident">action</span>,
 			};
 			<span class="kw">match</span> <span class="ident">action</span> {
-				<span class="ident">ethereum::TransactionAction::Call</span>(<span class="ident">to</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">to</span>),
-				<span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">None</span>,
+				<span class="ident">ethereum::TransactionAction::Call</span>(<span class="ident">to</span>) =&gt; <span class="prelude-val">Some</span>(<span class="ident">to</span>),
+				<span class="kw">_</span> =&gt; <span class="prelude-val">None</span>,
 			}
 		},
 		<span class="op">|</span><span class="ident">status</span><span class="op">|</span> <span class="ident">status</span>.<span class="ident">to</span>,
@@ -2720,7 +2720,7 @@
 	<span class="ident">filter</span>: <span class="kw-2">&amp;</span><span class="ident">Filter</span>,
 	<span class="ident">from</span>: <span class="ident">NumberFor</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span>,
 	<span class="ident">to</span>: <span class="ident">NumberFor</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span>
+) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span>
 <span class="kw">where</span>
 	<span class="ident">C</span>: <span class="ident">ProvideRuntimeApi</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">StorageProvider</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">BE</span><span class="op">&gt;</span>,
 	<span class="ident">C</span>: <span class="ident">HeaderBackend</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">HeaderMetadata</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">Error</span> <span class="op">=</span> <span class="ident">BlockChainError</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
@@ -2759,7 +2759,7 @@
 	}
 	<span class="kw">let</span> <span class="ident">cache_keys</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">NumberFor</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">local_cache</span>.<span class="ident">keys</span>().<span class="ident">cloned</span>().<span class="ident">collect</span>();
 	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">default_schema</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">EthereumStorageSchema</span><span class="op">&gt;</span> <span class="op">=</span> <span class="prelude-val">None</span>;
-	<span class="kw">if</span> <span class="ident">cache_keys</span>.<span class="ident">len</span>() <span class="op">=</span><span class="op">=</span> <span class="number">1</span> {
+	<span class="kw">if</span> <span class="ident">cache_keys</span>.<span class="ident">len</span>() <span class="op">==</span> <span class="number">1</span> {
 		<span class="comment">// There is only one schema and that&#39;s the one we use.</span>
 		<span class="ident">default_schema</span> <span class="op">=</span> <span class="ident">local_cache</span>.<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">cache_keys</span>[<span class="number">0</span>]);
 	}
@@ -2772,8 +2772,8 @@
 
 		<span class="kw">let</span> <span class="ident">schema</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">default_schema</span> {
 			<span class="comment">// If there is a single schema, we just assign.</span>
-			<span class="prelude-val">Some</span>(<span class="ident">default_schema</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw-2">*</span><span class="ident">default_schema</span>,
-			<span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> {
+			<span class="prelude-val">Some</span>(<span class="ident">default_schema</span>) =&gt; <span class="kw-2">*</span><span class="ident">default_schema</span>,
+			<span class="kw">_</span> =&gt; {
 				<span class="comment">// If there are multiple schemas, we iterate over the - hopefully short - list</span>
 				<span class="comment">// of keys and assign the one belonging to the current_number.</span>
 				<span class="comment">// Because there are more than 1 schema, and current_number cannot be &lt; 0,</span>
@@ -2785,10 +2785,10 @@
 					}
 				}
 				<span class="kw">match</span> <span class="ident">default_schema</span> {
-					<span class="prelude-val">Some</span>(<span class="ident">schema</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw-2">*</span><span class="ident">schema</span>,
+					<span class="prelude-val">Some</span>(<span class="ident">schema</span>) =&gt; <span class="kw-2">*</span><span class="ident">schema</span>,
 					<span class="comment">// Fallback to DB read. This will happen i.e. when there is no cache</span>
 					<span class="comment">// task configured at service level.</span>
-					<span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">frontier_backend_client::onchain_storage_schema</span>::<span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span>, <span class="ident">BE</span><span class="op">&gt;</span>(<span class="ident">client</span>, <span class="ident">id</span>),
+					<span class="kw">_</span> =&gt; <span class="ident">frontier_backend_client::onchain_storage_schema</span>::<span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span>, <span class="ident">BE</span><span class="op">&gt;</span>(<span class="ident">client</span>, <span class="ident">id</span>),
 				}
 			}
 		};
@@ -2823,7 +2823,7 @@
 				<span class="ident">max_duration</span>.<span class="ident">as_secs</span>()
 			)));
 		}
-		<span class="kw">if</span> <span class="ident">current_number</span> <span class="op">=</span><span class="op">=</span> <span class="ident">Zero::zero</span>() {
+		<span class="kw">if</span> <span class="ident">current_number</span> <span class="op">==</span> <span class="ident">Zero::zero</span>() {
 			<span class="kw">break</span>;
 		} <span class="kw">else</span> {
 			<span class="ident">current_number</span> <span class="op">=</span> <span class="ident">current_number</span>.<span class="ident">saturating_sub</span>(<span class="ident">One::one</span>());
@@ -2837,7 +2837,7 @@
 	<span class="ident">filter</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">Filter</span>,
 	<span class="ident">block</span>: <span class="ident">EthereumBlock</span>,
 	<span class="ident">transaction_statuses</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TransactionStatus</span><span class="op">&gt;</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Log</span><span class="op">&gt;</span> {
+) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Log</span><span class="op">&gt;</span> {
 	<span class="kw">let</span> <span class="ident">params</span> <span class="op">=</span> <span class="ident">FilteredParams::new</span>(<span class="prelude-val">Some</span>(<span class="ident">filter</span>.<span class="ident">clone</span>()));
 	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">block_log_index</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">0</span>;
 	<span class="kw">let</span> <span class="ident">block_hash</span> <span class="op">=</span> <span class="ident">H256::from_slice</span>(<span class="ident">Keccak256::digest</span>(<span class="kw-2">&amp;</span><span class="ident">rlp::encode</span>(<span class="kw-2">&amp;</span><span class="ident">block</span>.<span class="ident">header</span>)).<span class="ident">as_slice</span>());
@@ -2898,9 +2898,9 @@
 	<span class="ident">request_gas_price</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
 	<span class="ident">request_max_fee</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
 	<span class="ident">request_priority</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">FeeDetails</span><span class="op">&gt;</span> {
+) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">FeeDetails</span><span class="op">&gt;</span> {
 	<span class="kw">match</span> (<span class="ident">request_gas_price</span>, <span class="ident">request_max_fee</span>, <span class="ident">request_priority</span>) {
-		(<span class="ident">gas_price</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>) <span class="op">=</span><span class="op">&gt;</span> {
+		(<span class="ident">gas_price</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>) =&gt; {
 			<span class="comment">// Legacy request, all default to gas price.</span>
 			<span class="prelude-val">Ok</span>(<span class="ident">FeeDetails</span> {
 				<span class="ident">gas_price</span>,
@@ -2908,7 +2908,7 @@
 				<span class="ident">max_priority_fee_per_gas</span>: <span class="ident">gas_price</span>,
 			})
 		}
-		(<span class="kw">_</span>, <span class="ident">max_fee</span>, <span class="ident">max_priority</span>) <span class="op">=</span><span class="op">&gt;</span> {
+		(<span class="kw">_</span>, <span class="ident">max_fee</span>, <span class="ident">max_priority</span>) =&gt; {
 			<span class="comment">// eip-1559</span>
 			<span class="comment">// Ensure `max_priority_fee_per_gas` is less or equal to `max_fee_per_gas`.</span>
 			<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">max_priority</span>) <span class="op">=</span> <span class="ident">max_priority</span> {
@@ -2941,11 +2941,11 @@
 	<span class="ident">A</span>: <span class="ident">ChainApi</span><span class="op">&lt;</span><span class="ident">Block</span> <span class="op">=</span> <span class="ident">B</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
 	<span class="ident">CT</span>: <span class="ident">ConvertTransaction</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">B</span> <span class="kw">as</span> <span class="ident">BlockT</span><span class="op">&gt;</span><span class="ident">::Extrinsic</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
 {
-	<span class="kw">fn</span> <span class="ident">protocol_version</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">protocol_version</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span> {
 		<span class="prelude-val">Ok</span>(<span class="number">1</span>)
 	}
 
-	<span class="kw">fn</span> <span class="ident">syncing</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">SyncStatus</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">syncing</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">SyncStatus</span><span class="op">&gt;</span> {
 		<span class="kw">if</span> <span class="self">self</span>.<span class="ident">network</span>.<span class="ident">is_major_syncing</span>() {
 			<span class="kw">let</span> <span class="ident">block_number</span> <span class="op">=</span> <span class="ident">U256::from</span>(<span class="ident">UniqueSaturatedInto</span>::<span class="op">&lt;</span><span class="ident">u128</span><span class="op">&gt;</span><span class="ident">::unique_saturated_into</span>(
 				<span class="self">self</span>.<span class="ident">client</span>.<span class="ident">info</span>().<span class="ident">best_number</span>.<span class="ident">clone</span>(),
@@ -2965,11 +2965,11 @@
 		}
 	}
 
-	<span class="kw">fn</span> <span class="ident">hashrate</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">hashrate</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span> {
 		<span class="prelude-val">Ok</span>(<span class="ident">U256::zero</span>())
 	}
 
-	<span class="kw">fn</span> <span class="ident">author</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">H160</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">author</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">H160</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> <span class="ident">block</span> <span class="op">=</span> <span class="ident">BlockId::Hash</span>(<span class="self">self</span>.<span class="ident">client</span>.<span class="ident">info</span>().<span class="ident">best_hash</span>);
 		<span class="kw">let</span> <span class="ident">schema</span> <span class="op">=</span> <span class="ident">frontier_backend_client::onchain_storage_schema</span>::<span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span>, <span class="ident">BE</span><span class="op">&gt;</span>(
 			<span class="self">self</span>.<span class="ident">client</span>.<span class="ident">as_ref</span>(),
@@ -2987,11 +2987,11 @@
 			.<span class="ident">beneficiary</span>)
 	}
 
-	<span class="kw">fn</span> <span class="ident">is_mining</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">is_mining</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span> {
 		<span class="prelude-val">Ok</span>(<span class="self">self</span>.<span class="ident">is_authority</span>)
 	}
 
-	<span class="kw">fn</span> <span class="ident">chain_id</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U64</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">chain_id</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U64</span><span class="op">&gt;</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> <span class="ident">hash</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">info</span>().<span class="ident">best_hash</span>;
 		<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(
 			<span class="self">self</span>.<span class="ident">client</span>
@@ -3002,7 +3002,7 @@
 		))
 	}
 
-	<span class="kw">fn</span> <span class="ident">gas_price</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">gas_price</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> <span class="ident">block</span> <span class="op">=</span> <span class="ident">BlockId::Hash</span>(<span class="self">self</span>.<span class="ident">client</span>.<span class="ident">info</span>().<span class="ident">best_hash</span>);
 
 		<span class="prelude-val">Ok</span>(<span class="self">self</span>
@@ -3013,7 +3013,7 @@
 			.<span class="ident">into</span>())
 	}
 
-	<span class="kw">fn</span> <span class="ident">accounts</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">H160</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">accounts</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">H160</span><span class="op">&gt;</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">accounts</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
 		<span class="kw">for</span> <span class="ident">signer</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">signers</span> {
 			<span class="ident">accounts</span>.<span class="ident">append</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">signer</span>.<span class="ident">accounts</span>());
@@ -3021,7 +3021,7 @@
 		<span class="prelude-val">Ok</span>(<span class="ident">accounts</span>)
 	}
 
-	<span class="kw">fn</span> <span class="ident">block_number</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">block_number</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span> {
 		<span class="prelude-val">Ok</span>(<span class="ident">U256::from</span>(
 			<span class="ident">UniqueSaturatedInto</span>::<span class="op">&lt;</span><span class="ident">u128</span><span class="op">&gt;</span><span class="ident">::unique_saturated_into</span>(
 				<span class="self">self</span>.<span class="ident">client</span>.<span class="ident">info</span>().<span class="ident">best_number</span>.<span class="ident">clone</span>(),
@@ -3029,7 +3029,7 @@
 		))
 	}
 
-	<span class="kw">fn</span> <span class="ident">balance</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">address</span>: <span class="ident">H160</span>, <span class="ident">number</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">BlockNumber</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">balance</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">address</span>: <span class="ident">H160</span>, <span class="ident">number</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">BlockNumber</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span> {
 		<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">id</span>)) <span class="op">=</span> <span class="ident">frontier_backend_client::native_block_id</span>::<span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span><span class="op">&gt;</span>(
 			<span class="self">self</span>.<span class="ident">client</span>.<span class="ident">as_ref</span>(),
 			<span class="self">self</span>.<span class="ident">backend</span>.<span class="ident">as_ref</span>(),
@@ -3046,7 +3046,7 @@
 		<span class="prelude-val">Ok</span>(<span class="ident">U256::zero</span>())
 	}
 
-	<span class="kw">fn</span> <span class="ident">storage_at</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">address</span>: <span class="ident">H160</span>, <span class="ident">index</span>: <span class="ident">U256</span>, <span class="ident">number</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">BlockNumber</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">storage_at</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">address</span>: <span class="ident">H160</span>, <span class="ident">index</span>: <span class="ident">U256</span>, <span class="ident">number</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">BlockNumber</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span> {
 		<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">id</span>)) <span class="op">=</span> <span class="ident">frontier_backend_client::native_block_id</span>::<span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span><span class="op">&gt;</span>(
 			<span class="self">self</span>.<span class="ident">client</span>.<span class="ident">as_ref</span>(),
 			<span class="self">self</span>.<span class="ident">backend</span>.<span class="ident">as_ref</span>(),
@@ -3067,12 +3067,12 @@
 		<span class="prelude-val">Ok</span>(<span class="ident">H256::default</span>())
 	}
 
-	<span class="kw">fn</span> <span class="ident">block_by_hash</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">hash</span>: <span class="ident">H256</span>, <span class="ident">full</span>: <span class="ident">bool</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">RichBlock</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">block_by_hash</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">hash</span>: <span class="ident">H256</span>, <span class="ident">full</span>: <span class="ident">bool</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">RichBlock</span><span class="op">&gt;</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> <span class="ident">id</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">frontier_backend_client::load_hash</span>::<span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span>(<span class="self">self</span>.<span class="ident">backend</span>.<span class="ident">as_ref</span>(), <span class="ident">hash</span>)
 			.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>
 		{
-			<span class="prelude-val">Some</span>(<span class="ident">hash</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">hash</span>,
-			<span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
+			<span class="prelude-val">Some</span>(<span class="ident">hash</span>) =&gt; <span class="ident">hash</span>,
+			<span class="kw">_</span> =&gt; <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
 		};
 		<span class="kw">let</span> <span class="ident">substrate_hash</span> <span class="op">=</span> <span class="self">self</span>
 			.<span class="ident">client</span>
@@ -3096,7 +3096,7 @@
 		<span class="kw">let</span> <span class="ident">is_eip1559</span> <span class="op">=</span> <span class="ident">handler</span>.<span class="ident">is_eip1559</span>(<span class="kw-2">&amp;</span><span class="ident">id</span>);
 
 		<span class="kw">match</span> (<span class="ident">block</span>, <span class="ident">statuses</span>) {
-			(<span class="prelude-val">Some</span>(<span class="ident">block</span>), <span class="prelude-val">Some</span>(<span class="ident">statuses</span>)) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">rich_block_build</span>(
+			(<span class="prelude-val">Some</span>(<span class="ident">block</span>), <span class="prelude-val">Some</span>(<span class="ident">statuses</span>)) =&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">rich_block_build</span>(
 				<span class="ident">block</span>,
 				<span class="ident">statuses</span>.<span class="ident">into_iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">s</span><span class="op">|</span> <span class="prelude-val">Some</span>(<span class="ident">s</span>)).<span class="ident">collect</span>(),
 				<span class="prelude-val">Some</span>(<span class="ident">hash</span>),
@@ -3104,18 +3104,18 @@
 				<span class="ident">base_fee</span>,
 				<span class="ident">is_eip1559</span>,
 			))),
-			<span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
+			<span class="kw">_</span> =&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
 		}
 	}
 
-	<span class="kw">fn</span> <span class="ident">block_by_number</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">number</span>: <span class="ident">BlockNumber</span>, <span class="ident">full</span>: <span class="ident">bool</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">RichBlock</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">block_by_number</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">number</span>: <span class="ident">BlockNumber</span>, <span class="ident">full</span>: <span class="ident">bool</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">RichBlock</span><span class="op">&gt;</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> <span class="ident">id</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">frontier_backend_client::native_block_id</span>::<span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span><span class="op">&gt;</span>(
 			<span class="self">self</span>.<span class="ident">client</span>.<span class="ident">as_ref</span>(),
 			<span class="self">self</span>.<span class="ident">backend</span>.<span class="ident">as_ref</span>(),
 			<span class="prelude-val">Some</span>(<span class="ident">number</span>),
 		)<span class="question-mark">?</span> {
-			<span class="prelude-val">Some</span>(<span class="ident">id</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">id</span>,
-			<span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
+			<span class="prelude-val">Some</span>(<span class="ident">id</span>) =&gt; <span class="ident">id</span>,
+			<span class="prelude-val">None</span> =&gt; <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
 		};
 		<span class="kw">let</span> <span class="ident">substrate_hash</span> <span class="op">=</span> <span class="self">self</span>
 			.<span class="ident">client</span>
@@ -3139,7 +3139,7 @@
 		<span class="kw">let</span> <span class="ident">is_eip1559</span> <span class="op">=</span> <span class="ident">handler</span>.<span class="ident">is_eip1559</span>(<span class="kw-2">&amp;</span><span class="ident">id</span>);
 
 		<span class="kw">match</span> (<span class="ident">block</span>, <span class="ident">statuses</span>) {
-			(<span class="prelude-val">Some</span>(<span class="ident">block</span>), <span class="prelude-val">Some</span>(<span class="ident">statuses</span>)) <span class="op">=</span><span class="op">&gt;</span> {
+			(<span class="prelude-val">Some</span>(<span class="ident">block</span>), <span class="prelude-val">Some</span>(<span class="ident">statuses</span>)) =&gt; {
 				<span class="kw">let</span> <span class="ident">hash</span> <span class="op">=</span>
 					<span class="ident">H256::from_slice</span>(<span class="ident">Keccak256::digest</span>(<span class="kw-2">&amp;</span><span class="ident">rlp::encode</span>(<span class="kw-2">&amp;</span><span class="ident">block</span>.<span class="ident">header</span>)).<span class="ident">as_slice</span>());
 
@@ -3152,11 +3152,11 @@
 					<span class="ident">is_eip1559</span>,
 				)))
 			}
-			<span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
+			<span class="kw">_</span> =&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
 		}
 	}
 
-	<span class="kw">fn</span> <span class="ident">transaction_count</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">address</span>: <span class="ident">H160</span>, <span class="ident">number</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">BlockNumber</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">transaction_count</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">address</span>: <span class="ident">H160</span>, <span class="ident">number</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">BlockNumber</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span> {
 		<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">BlockNumber::Pending</span>) <span class="op">=</span> <span class="ident">number</span> {
 			<span class="kw">let</span> <span class="ident">block</span> <span class="op">=</span> <span class="ident">BlockId::Hash</span>(<span class="self">self</span>.<span class="ident">client</span>.<span class="ident">info</span>().<span class="ident">best_hash</span>);
 
@@ -3174,7 +3174,7 @@
 			<span class="kw">for</span> <span class="ident">tx</span> <span class="kw">in</span> <span class="self">self</span>.<span class="ident">pool</span>.<span class="ident">ready</span>() {
 				<span class="comment">// since transactions in `ready()` need to be ordered by nonce</span>
 				<span class="comment">// it&#39;s fine to continue with current iterator.</span>
-				<span class="kw">if</span> <span class="ident">tx</span>.<span class="ident">provides</span>().<span class="ident">get</span>(<span class="number">0</span>) <span class="op">=</span><span class="op">=</span> <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span><span class="ident">current_tag</span>) {
+				<span class="kw">if</span> <span class="ident">tx</span>.<span class="ident">provides</span>().<span class="ident">get</span>(<span class="number">0</span>) <span class="op">==</span> <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span><span class="ident">current_tag</span>) {
 					<span class="ident">current_nonce</span> <span class="op">=</span> <span class="ident">current_nonce</span>.<span class="ident">saturating_add</span>(<span class="number">1</span>.<span class="ident">into</span>());
 					<span class="ident">current_tag</span> <span class="op">=</span> (<span class="ident">address</span>, <span class="ident">current_nonce</span>).<span class="ident">encode</span>();
 				}
@@ -3188,8 +3188,8 @@
 			<span class="self">self</span>.<span class="ident">backend</span>.<span class="ident">as_ref</span>(),
 			<span class="ident">number</span>,
 		)<span class="question-mark">?</span> {
-			<span class="prelude-val">Some</span>(<span class="ident">id</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">id</span>,
-			<span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">U256::zero</span>()),
+			<span class="prelude-val">Some</span>(<span class="ident">id</span>) =&gt; <span class="ident">id</span>,
+			<span class="prelude-val">None</span> =&gt; <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">U256::zero</span>()),
 		};
 
 		<span class="kw">let</span> <span class="ident">nonce</span> <span class="op">=</span> <span class="self">self</span>
@@ -3203,12 +3203,12 @@
 		<span class="prelude-val">Ok</span>(<span class="ident">nonce</span>)
 	}
 
-	<span class="kw">fn</span> <span class="ident">block_transaction_count_by_hash</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">hash</span>: <span class="ident">H256</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">block_transaction_count_by_hash</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">hash</span>: <span class="ident">H256</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> <span class="ident">id</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">frontier_backend_client::load_hash</span>::<span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span>(<span class="self">self</span>.<span class="ident">backend</span>.<span class="ident">as_ref</span>(), <span class="ident">hash</span>)
 			.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>
 		{
-			<span class="prelude-val">Some</span>(<span class="ident">hash</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">hash</span>,
-			<span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
+			<span class="prelude-val">Some</span>(<span class="ident">hash</span>) =&gt; <span class="ident">hash</span>,
+			<span class="kw">_</span> =&gt; <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
 		};
 		<span class="kw">let</span> <span class="ident">schema</span> <span class="op">=</span>
 			<span class="ident">frontier_backend_client::onchain_storage_schema</span>::<span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span>, <span class="ident">BE</span><span class="op">&gt;</span>(<span class="self">self</span>.<span class="ident">client</span>.<span class="ident">as_ref</span>(), <span class="ident">id</span>);
@@ -3220,19 +3220,19 @@
 			.<span class="ident">current_block</span>(<span class="kw-2">&amp;</span><span class="ident">id</span>);
 
 		<span class="kw">match</span> <span class="ident">block</span> {
-			<span class="prelude-val">Some</span>(<span class="ident">block</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">U256::from</span>(<span class="ident">block</span>.<span class="ident">transactions</span>.<span class="ident">len</span>()))),
-			<span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
+			<span class="prelude-val">Some</span>(<span class="ident">block</span>) =&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">U256::from</span>(<span class="ident">block</span>.<span class="ident">transactions</span>.<span class="ident">len</span>()))),
+			<span class="prelude-val">None</span> =&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
 		}
 	}
 
-	<span class="kw">fn</span> <span class="ident">block_transaction_count_by_number</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">number</span>: <span class="ident">BlockNumber</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">block_transaction_count_by_number</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">number</span>: <span class="ident">BlockNumber</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> <span class="ident">id</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">frontier_backend_client::native_block_id</span>::<span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span><span class="op">&gt;</span>(
 			<span class="self">self</span>.<span class="ident">client</span>.<span class="ident">as_ref</span>(),
 			<span class="self">self</span>.<span class="ident">backend</span>.<span class="ident">as_ref</span>(),
 			<span class="prelude-val">Some</span>(<span class="ident">number</span>),
 		)<span class="question-mark">?</span> {
-			<span class="prelude-val">Some</span>(<span class="ident">id</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">id</span>,
-			<span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
+			<span class="prelude-val">Some</span>(<span class="ident">id</span>) =&gt; <span class="ident">id</span>,
+			<span class="prelude-val">None</span> =&gt; <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
 		};
 		<span class="kw">let</span> <span class="ident">schema</span> <span class="op">=</span>
 			<span class="ident">frontier_backend_client::onchain_storage_schema</span>::<span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span>, <span class="ident">BE</span><span class="op">&gt;</span>(<span class="self">self</span>.<span class="ident">client</span>.<span class="ident">as_ref</span>(), <span class="ident">id</span>);
@@ -3244,20 +3244,20 @@
 			.<span class="ident">current_block</span>(<span class="kw-2">&amp;</span><span class="ident">id</span>);
 
 		<span class="kw">match</span> <span class="ident">block</span> {
-			<span class="prelude-val">Some</span>(<span class="ident">block</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">U256::from</span>(<span class="ident">block</span>.<span class="ident">transactions</span>.<span class="ident">len</span>()))),
-			<span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
+			<span class="prelude-val">Some</span>(<span class="ident">block</span>) =&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">U256::from</span>(<span class="ident">block</span>.<span class="ident">transactions</span>.<span class="ident">len</span>()))),
+			<span class="prelude-val">None</span> =&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
 		}
 	}
 
-	<span class="kw">fn</span> <span class="ident">block_uncles_count_by_hash</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="kw">_</span>: <span class="ident">H256</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">block_uncles_count_by_hash</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="kw">_</span>: <span class="ident">H256</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span> {
 		<span class="prelude-val">Ok</span>(<span class="ident">U256::zero</span>())
 	}
 
-	<span class="kw">fn</span> <span class="ident">block_uncles_count_by_number</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="kw">_</span>: <span class="ident">BlockNumber</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">block_uncles_count_by_number</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="kw">_</span>: <span class="ident">BlockNumber</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span> {
 		<span class="prelude-val">Ok</span>(<span class="ident">U256::zero</span>())
 	}
 
-	<span class="kw">fn</span> <span class="ident">code_at</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">address</span>: <span class="ident">H160</span>, <span class="ident">number</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">BlockNumber</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Bytes</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">code_at</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">address</span>: <span class="ident">H160</span>, <span class="ident">number</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">BlockNumber</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Bytes</span><span class="op">&gt;</span> {
 		<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">id</span>)) <span class="op">=</span> <span class="ident">frontier_backend_client::native_block_id</span>::<span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span><span class="op">&gt;</span>(
 			<span class="self">self</span>.<span class="ident">client</span>.<span class="ident">as_ref</span>(),
 			<span class="self">self</span>.<span class="ident">backend</span>.<span class="ident">as_ref</span>(),
@@ -3280,42 +3280,42 @@
 		<span class="prelude-val">Ok</span>(<span class="ident">Bytes</span>(<span class="macro">vec!</span>[]))
 	}
 
-	<span class="kw">fn</span> <span class="ident">send_transaction</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">request</span>: <span class="ident">TransactionRequest</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">BoxFuture</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">send_transaction</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">request</span>: <span class="ident">TransactionRequest</span>) -&gt; <span class="ident">BoxFuture</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> <span class="ident">from</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">request</span>.<span class="ident">from</span> {
-			<span class="prelude-val">Some</span>(<span class="ident">from</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">from</span>,
-			<span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {
+			<span class="prelude-val">Some</span>(<span class="ident">from</span>) =&gt; <span class="ident">from</span>,
+			<span class="prelude-val">None</span> =&gt; {
 				<span class="kw">let</span> <span class="ident">accounts</span> <span class="op">=</span> <span class="kw">match</span> <span class="self">self</span>.<span class="ident">accounts</span>() {
-					<span class="prelude-val">Ok</span>(<span class="ident">accounts</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">accounts</span>,
-					<span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="ident">Box::pin</span>(<span class="ident">future::err</span>(<span class="ident">e</span>)),
+					<span class="prelude-val">Ok</span>(<span class="ident">accounts</span>) =&gt; <span class="ident">accounts</span>,
+					<span class="prelude-val">Err</span>(<span class="ident">e</span>) =&gt; <span class="kw">return</span> <span class="ident">Box::pin</span>(<span class="ident">future::err</span>(<span class="ident">e</span>)),
 				};
 
 				<span class="kw">match</span> <span class="ident">accounts</span>.<span class="ident">get</span>(<span class="number">0</span>) {
-					<span class="prelude-val">Some</span>(<span class="ident">account</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">account</span>.<span class="ident">clone</span>(),
-					<span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="ident">Box::pin</span>(<span class="ident">future::err</span>(<span class="ident">internal_err</span>(<span class="string">&quot;no signer available&quot;</span>))),
+					<span class="prelude-val">Some</span>(<span class="ident">account</span>) =&gt; <span class="ident">account</span>.<span class="ident">clone</span>(),
+					<span class="prelude-val">None</span> =&gt; <span class="kw">return</span> <span class="ident">Box::pin</span>(<span class="ident">future::err</span>(<span class="ident">internal_err</span>(<span class="string">&quot;no signer available&quot;</span>))),
 				}
 			}
 		};
 
 		<span class="kw">let</span> <span class="ident">nonce</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">request</span>.<span class="ident">nonce</span> {
-			<span class="prelude-val">Some</span>(<span class="ident">nonce</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">nonce</span>,
-			<span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">match</span> <span class="self">self</span>.<span class="ident">transaction_count</span>(<span class="ident">from</span>, <span class="prelude-val">None</span>) {
-				<span class="prelude-val">Ok</span>(<span class="ident">nonce</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">nonce</span>,
-				<span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="ident">Box::pin</span>(<span class="ident">future::err</span>(<span class="ident">e</span>)),
+			<span class="prelude-val">Some</span>(<span class="ident">nonce</span>) =&gt; <span class="ident">nonce</span>,
+			<span class="prelude-val">None</span> =&gt; <span class="kw">match</span> <span class="self">self</span>.<span class="ident">transaction_count</span>(<span class="ident">from</span>, <span class="prelude-val">None</span>) {
+				<span class="prelude-val">Ok</span>(<span class="ident">nonce</span>) =&gt; <span class="ident">nonce</span>,
+				<span class="prelude-val">Err</span>(<span class="ident">e</span>) =&gt; <span class="kw">return</span> <span class="ident">Box::pin</span>(<span class="ident">future::err</span>(<span class="ident">e</span>)),
 			},
 		};
 
 		<span class="kw">let</span> <span class="ident">chain_id</span> <span class="op">=</span> <span class="kw">match</span> <span class="self">self</span>.<span class="ident">chain_id</span>() {
-			<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">chain_id</span>)) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">chain_id</span>.<span class="ident">as_u64</span>(),
-			<span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="ident">Box::pin</span>(<span class="ident">future::err</span>(<span class="ident">internal_err</span>(<span class="string">&quot;chain id not available&quot;</span>))),
-			<span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="ident">Box::pin</span>(<span class="ident">future::err</span>(<span class="ident">e</span>)),
+			<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">chain_id</span>)) =&gt; <span class="ident">chain_id</span>.<span class="ident">as_u64</span>(),
+			<span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>) =&gt; <span class="kw">return</span> <span class="ident">Box::pin</span>(<span class="ident">future::err</span>(<span class="ident">internal_err</span>(<span class="string">&quot;chain id not available&quot;</span>))),
+			<span class="prelude-val">Err</span>(<span class="ident">e</span>) =&gt; <span class="kw">return</span> <span class="ident">Box::pin</span>(<span class="ident">future::err</span>(<span class="ident">e</span>)),
 		};
 
 		<span class="kw">let</span> <span class="ident">hash</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">info</span>().<span class="ident">best_hash</span>;
 
 		<span class="kw">let</span> <span class="ident">gas_price</span> <span class="op">=</span> <span class="ident">request</span>.<span class="ident">gas_price</span>;
 		<span class="kw">let</span> <span class="ident">gas_limit</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">request</span>.<span class="ident">gas</span> {
-			<span class="prelude-val">Some</span>(<span class="ident">gas_limit</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">gas_limit</span>,
-			<span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {
+			<span class="prelude-val">Some</span>(<span class="ident">gas_limit</span>) =&gt; <span class="ident">gas_limit</span>,
+			<span class="prelude-val">None</span> =&gt; {
 				<span class="kw">let</span> <span class="ident">block</span> <span class="op">=</span> <span class="self">self</span>
 					.<span class="ident">client</span>
 					.<span class="ident">runtime_api</span>()
@@ -3332,7 +3332,7 @@
 		<span class="kw">let</span> <span class="ident">max_fee_per_gas</span> <span class="op">=</span> <span class="ident">request</span>.<span class="ident">max_fee_per_gas</span>;
 		<span class="kw">let</span> <span class="ident">message</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">TransactionMessage</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">request</span>.<span class="ident">into</span>();
 		<span class="kw">let</span> <span class="ident">message</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">message</span> {
-			<span class="prelude-val">Some</span>(<span class="ident">TransactionMessage::Legacy</span>(<span class="kw-2">mut</span> <span class="ident">m</span>)) <span class="op">=</span><span class="op">&gt;</span> {
+			<span class="prelude-val">Some</span>(<span class="ident">TransactionMessage::Legacy</span>(<span class="kw-2">mut</span> <span class="ident">m</span>)) =&gt; {
 				<span class="ident">m</span>.<span class="ident">nonce</span> <span class="op">=</span> <span class="ident">nonce</span>;
 				<span class="ident">m</span>.<span class="ident">chain_id</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">chain_id</span>);
 				<span class="ident">m</span>.<span class="ident">gas_limit</span> <span class="op">=</span> <span class="ident">gas_limit</span>;
@@ -3341,7 +3341,7 @@
 				}
 				<span class="ident">TransactionMessage::Legacy</span>(<span class="ident">m</span>)
 			}
-			<span class="prelude-val">Some</span>(<span class="ident">TransactionMessage::EIP2930</span>(<span class="kw-2">mut</span> <span class="ident">m</span>)) <span class="op">=</span><span class="op">&gt;</span> {
+			<span class="prelude-val">Some</span>(<span class="ident">TransactionMessage::EIP2930</span>(<span class="kw-2">mut</span> <span class="ident">m</span>)) =&gt; {
 				<span class="ident">m</span>.<span class="ident">nonce</span> <span class="op">=</span> <span class="ident">nonce</span>;
 				<span class="ident">m</span>.<span class="ident">chain_id</span> <span class="op">=</span> <span class="ident">chain_id</span>;
 				<span class="ident">m</span>.<span class="ident">gas_limit</span> <span class="op">=</span> <span class="ident">gas_limit</span>;
@@ -3350,7 +3350,7 @@
 				}
 				<span class="ident">TransactionMessage::EIP2930</span>(<span class="ident">m</span>)
 			}
-			<span class="prelude-val">Some</span>(<span class="ident">TransactionMessage::EIP1559</span>(<span class="kw-2">mut</span> <span class="ident">m</span>)) <span class="op">=</span><span class="op">&gt;</span> {
+			<span class="prelude-val">Some</span>(<span class="ident">TransactionMessage::EIP1559</span>(<span class="kw-2">mut</span> <span class="ident">m</span>)) =&gt; {
 				<span class="ident">m</span>.<span class="ident">nonce</span> <span class="op">=</span> <span class="ident">nonce</span>;
 				<span class="ident">m</span>.<span class="ident">chain_id</span> <span class="op">=</span> <span class="ident">chain_id</span>;
 				<span class="ident">m</span>.<span class="ident">gas_limit</span> <span class="op">=</span> <span class="ident">gas_limit</span>;
@@ -3359,7 +3359,7 @@
 				}
 				<span class="ident">TransactionMessage::EIP1559</span>(<span class="ident">m</span>)
 			}
-			<span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> {
+			<span class="kw">_</span> =&gt; {
 				<span class="kw">return</span> <span class="ident">Box::pin</span>(<span class="ident">future::err</span>(<span class="ident">internal_err</span>(<span class="string">&quot;invalid transaction parameters&quot;</span>)));
 			}
 		};
@@ -3369,16 +3369,16 @@
 		<span class="kw">for</span> <span class="ident">signer</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">signers</span> {
 			<span class="kw">if</span> <span class="ident">signer</span>.<span class="ident">accounts</span>().<span class="ident">contains</span>(<span class="kw-2">&amp;</span><span class="ident">from</span>) {
 				<span class="kw">match</span> <span class="ident">signer</span>.<span class="ident">sign</span>(<span class="ident">message</span>, <span class="kw-2">&amp;</span><span class="ident">from</span>) {
-					<span class="prelude-val">Ok</span>(<span class="ident">t</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">transaction</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">t</span>),
-					<span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="ident">Box::pin</span>(<span class="ident">future::err</span>(<span class="ident">e</span>)),
+					<span class="prelude-val">Ok</span>(<span class="ident">t</span>) =&gt; <span class="ident">transaction</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">t</span>),
+					<span class="prelude-val">Err</span>(<span class="ident">e</span>) =&gt; <span class="kw">return</span> <span class="ident">Box::pin</span>(<span class="ident">future::err</span>(<span class="ident">e</span>)),
 				}
 				<span class="kw">break</span>;
 			}
 		}
 
 		<span class="kw">let</span> <span class="ident">transaction</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">transaction</span> {
-			<span class="prelude-val">Some</span>(<span class="ident">transaction</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">transaction</span>,
-			<span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="ident">Box::pin</span>(<span class="ident">future::err</span>(<span class="ident">internal_err</span>(<span class="string">&quot;no signer available&quot;</span>))),
+			<span class="prelude-val">Some</span>(<span class="ident">transaction</span>) =&gt; <span class="ident">transaction</span>,
+			<span class="prelude-val">None</span> =&gt; <span class="kw">return</span> <span class="ident">Box::pin</span>(<span class="ident">future::err</span>(<span class="ident">internal_err</span>(<span class="string">&quot;no signer available&quot;</span>))),
 		};
 		<span class="kw">let</span> <span class="ident">transaction_hash</span> <span class="op">=</span> <span class="ident">transaction</span>.<span class="ident">hash</span>();
 		<span class="ident">Box::pin</span>(
@@ -3396,17 +3396,17 @@
 		)
 	}
 
-	<span class="kw">fn</span> <span class="ident">send_raw_transaction</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">bytes</span>: <span class="ident">Bytes</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">BoxFuture</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">send_raw_transaction</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">bytes</span>: <span class="ident">Bytes</span>) -&gt; <span class="ident">BoxFuture</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> <span class="ident">slice</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">bytes</span>.<span class="number">0</span>[..];
-		<span class="kw">if</span> <span class="ident">slice</span>.<span class="ident">len</span>() <span class="op">=</span><span class="op">=</span> <span class="number">0</span> {
+		<span class="kw">if</span> <span class="ident">slice</span>.<span class="ident">len</span>() <span class="op">==</span> <span class="number">0</span> {
 			<span class="kw">return</span> <span class="ident">Box::pin</span>(<span class="ident">future::err</span>(<span class="ident">internal_err</span>(<span class="string">&quot;transaction data is empty&quot;</span>)));
 		}
 		<span class="kw">let</span> <span class="ident">first</span> <span class="op">=</span> <span class="ident">slice</span>.<span class="ident">get</span>(<span class="number">0</span>).<span class="ident">unwrap</span>();
 		<span class="kw">let</span> <span class="ident">transaction</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">first</span> <span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="number">0x7f</span> {
 			<span class="comment">// Legacy transaction. Decode and wrap in envelope.</span>
 			<span class="kw">match</span> <span class="ident">rlp::decode</span>::<span class="op">&lt;</span><span class="ident">ethereum::TransactionV0</span><span class="op">&gt;</span>(<span class="ident">slice</span>) {
-				<span class="prelude-val">Ok</span>(<span class="ident">transaction</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ethereum::TransactionV2::Legacy</span>(<span class="ident">transaction</span>),
-				<span class="prelude-val">Err</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="ident">Box::pin</span>(<span class="ident">future::err</span>(<span class="ident">internal_err</span>(<span class="string">&quot;decode transaction failed&quot;</span>))),
+				<span class="prelude-val">Ok</span>(<span class="ident">transaction</span>) =&gt; <span class="ident">ethereum::TransactionV2::Legacy</span>(<span class="ident">transaction</span>),
+				<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="kw">return</span> <span class="ident">Box::pin</span>(<span class="ident">future::err</span>(<span class="ident">internal_err</span>(<span class="string">&quot;decode transaction failed&quot;</span>))),
 			}
 		} <span class="kw">else</span> {
 			<span class="comment">// Typed Transaction.</span>
@@ -3416,8 +3416,8 @@
 			<span class="comment">// them to check the transaction version byte.</span>
 			<span class="kw">let</span> <span class="ident">extend</span> <span class="op">=</span> <span class="ident">rlp::encode</span>(<span class="kw-2">&amp;</span><span class="ident">slice</span>);
 			<span class="kw">match</span> <span class="ident">rlp::decode</span>::<span class="op">&lt;</span><span class="ident">ethereum::TransactionV2</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="ident">extend</span>[..]) {
-				<span class="prelude-val">Ok</span>(<span class="ident">transaction</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">transaction</span>,
-				<span class="prelude-val">Err</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="ident">Box::pin</span>(<span class="ident">future::err</span>(<span class="ident">internal_err</span>(<span class="string">&quot;decode transaction failed&quot;</span>))),
+				<span class="prelude-val">Ok</span>(<span class="ident">transaction</span>) =&gt; <span class="ident">transaction</span>,
+				<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="kw">return</span> <span class="ident">Box::pin</span>(<span class="ident">future::err</span>(<span class="ident">internal_err</span>(<span class="string">&quot;decode transaction failed&quot;</span>))),
 			}
 		};
 
@@ -3438,7 +3438,7 @@
 		)
 	}
 
-	<span class="kw">fn</span> <span class="ident">call</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">request</span>: <span class="ident">CallRequest</span>, <span class="kw">_</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">BlockNumber</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Bytes</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">call</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">request</span>: <span class="ident">CallRequest</span>, <span class="kw">_</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">BlockNumber</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Bytes</span><span class="op">&gt;</span> {
 		<span class="comment">// TODO required support for requests with block parameter instead of defaulting to latest.</span>
 		<span class="comment">// That&#39;s the main reason for creating a new runtime api version for the `call` and `create` methods.</span>
 		<span class="kw">let</span> <span class="ident">hash</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">info</span>().<span class="ident">best_hash</span>;
@@ -3468,8 +3468,8 @@
 
 		<span class="comment">// use given gas limit or query current block&#39;s limit</span>
 		<span class="kw">let</span> <span class="ident">gas_limit</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">gas</span> {
-			<span class="prelude-val">Some</span>(<span class="ident">amount</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">amount</span>,
-			<span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {
+			<span class="prelude-val">Some</span>(<span class="ident">amount</span>) =&gt; <span class="ident">amount</span>,
+			<span class="prelude-val">None</span> =&gt; {
 				<span class="kw">let</span> <span class="ident">block</span> <span class="op">=</span> <span class="ident">api</span>
 					.<span class="ident">current_block</span>(<span class="kw-2">&amp;</span><span class="ident">BlockId::Hash</span>(<span class="ident">hash</span>))
 					.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>;
@@ -3494,8 +3494,8 @@
 			)));
 		};
 		<span class="kw">match</span> <span class="ident">to</span> {
-			<span class="prelude-val">Some</span>(<span class="ident">to</span>) <span class="op">=</span><span class="op">&gt;</span> {
-				<span class="kw">if</span> <span class="ident">api_version</span> <span class="op">=</span><span class="op">=</span> <span class="number">1</span> {
+			<span class="prelude-val">Some</span>(<span class="ident">to</span>) =&gt; {
+				<span class="kw">if</span> <span class="ident">api_version</span> <span class="op">==</span> <span class="number">1</span> {
 					<span class="attribute">#[<span class="ident">allow</span>(<span class="ident">deprecated</span>)]</span>
 					<span class="kw">let</span> <span class="ident">info</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">call_before_version_2</span>(
 						<span class="kw-2">&amp;</span><span class="ident">BlockId::Hash</span>(<span class="ident">hash</span>),
@@ -3513,7 +3513,7 @@
 
 					<span class="ident">error_on_execution_failure</span>(<span class="kw-2">&amp;</span><span class="ident">info</span>.<span class="ident">exit_reason</span>, <span class="kw-2">&amp;</span><span class="ident">info</span>.<span class="ident">value</span>)<span class="question-mark">?</span>;
 					<span class="prelude-val">Ok</span>(<span class="ident">Bytes</span>(<span class="ident">info</span>.<span class="ident">value</span>))
-				} <span class="kw">else</span> <span class="kw">if</span> <span class="ident">api_version</span> <span class="op">=</span><span class="op">=</span> <span class="number">2</span> {
+				} <span class="kw">else</span> <span class="kw">if</span> <span class="ident">api_version</span> <span class="op">==</span> <span class="number">2</span> {
 					<span class="kw">let</span> <span class="ident">info</span> <span class="op">=</span> <span class="ident">api</span>
 						.<span class="ident">call</span>(
 							<span class="kw-2">&amp;</span><span class="ident">BlockId::Hash</span>(<span class="ident">hash</span>),
@@ -3538,8 +3538,8 @@
 					)));
 				}
 			}
-			<span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {
-				<span class="kw">if</span> <span class="ident">api_version</span> <span class="op">=</span><span class="op">=</span> <span class="number">1</span> {
+			<span class="prelude-val">None</span> =&gt; {
+				<span class="kw">if</span> <span class="ident">api_version</span> <span class="op">==</span> <span class="number">1</span> {
 					<span class="attribute">#[<span class="ident">allow</span>(<span class="ident">deprecated</span>)]</span>
 					<span class="kw">let</span> <span class="ident">info</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">create_before_version_2</span>(
 						<span class="kw-2">&amp;</span><span class="ident">BlockId::Hash</span>(<span class="ident">hash</span>),
@@ -3556,7 +3556,7 @@
 
 					<span class="ident">error_on_execution_failure</span>(<span class="kw-2">&amp;</span><span class="ident">info</span>.<span class="ident">exit_reason</span>, <span class="kw-2">&amp;</span>[])<span class="question-mark">?</span>;
 					<span class="prelude-val">Ok</span>(<span class="ident">Bytes</span>(<span class="ident">info</span>.<span class="ident">value</span>[..].<span class="ident">to_vec</span>()))
-				} <span class="kw">else</span> <span class="kw">if</span> <span class="ident">api_version</span> <span class="op">=</span><span class="op">=</span> <span class="number">2</span> {
+				} <span class="kw">else</span> <span class="kw">if</span> <span class="ident">api_version</span> <span class="op">==</span> <span class="number">2</span> {
 					<span class="kw">let</span> <span class="ident">info</span> <span class="op">=</span> <span class="ident">api</span>
 						.<span class="ident">create</span>(
 							<span class="kw-2">&amp;</span><span class="ident">BlockId::Hash</span>(<span class="ident">hash</span>),
@@ -3583,7 +3583,7 @@
 		}
 	}
 
-	<span class="kw">fn</span> <span class="ident">estimate_gas</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">request</span>: <span class="ident">CallRequest</span>, <span class="kw">_</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">BlockNumber</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">estimate_gas</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">request</span>: <span class="ident">CallRequest</span>, <span class="kw">_</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">BlockNumber</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span> {
 		<span class="comment">// Define the lower bound of estimate</span>
 		<span class="kw">const</span> <span class="ident">MIN_GAS_PER_TX</span>: <span class="ident">U256</span> <span class="op">=</span> <span class="ident">U256</span>([<span class="number">21_000</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>]);
 
@@ -3592,8 +3592,8 @@
 
 		<span class="comment">// For simple transfer to simple account, return MIN_GAS_PER_TX directly</span>
 		<span class="kw">let</span> <span class="ident">is_simple_transfer</span> <span class="op">=</span> <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">request</span>.<span class="ident">data</span> {
-			<span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="bool-val">true</span>,
-			<span class="prelude-val">Some</span>(<span class="ident">vec</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">vec</span>.<span class="number">0</span>.<span class="ident">is_empty</span>(),
+			<span class="prelude-val">None</span> =&gt; <span class="bool-val">true</span>,
+			<span class="prelude-val">Some</span>(<span class="ident">vec</span>) =&gt; <span class="ident">vec</span>.<span class="number">0</span>.<span class="ident">is_empty</span>(),
 		};
 		<span class="kw">if</span> <span class="ident">is_simple_transfer</span> {
 			<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">to</span>) <span class="op">=</span> <span class="ident">request</span>.<span class="ident">to</span> {
@@ -3621,7 +3621,7 @@
 			)
 		};
 
-		<span class="kw">let</span> <span class="ident">get_current_block_gas_limit</span> <span class="op">=</span> <span class="op">|</span><span class="op">|</span> <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span> {
+		<span class="kw">let</span> <span class="ident">get_current_block_gas_limit</span> <span class="op">=</span> <span class="op">|</span><span class="op">|</span> -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span> {
 			<span class="kw">let</span> <span class="ident">substrate_hash</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">info</span>().<span class="ident">best_hash</span>;
 			<span class="kw">let</span> <span class="ident">id</span> <span class="op">=</span> <span class="ident">BlockId::Hash</span>(<span class="ident">substrate_hash</span>);
 			<span class="kw">let</span> <span class="ident">schema</span> <span class="op">=</span>
@@ -3641,8 +3641,8 @@
 
 		<span class="comment">// Determine the highest possible gas limits</span>
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">highest</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">request</span>.<span class="ident">gas</span> {
-			<span class="prelude-val">Some</span>(<span class="ident">gas</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">gas</span>,
-			<span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {
+			<span class="prelude-val">Some</span>(<span class="ident">gas</span>) =&gt; <span class="ident">gas</span>,
+			<span class="prelude-val">None</span> =&gt; {
 				<span class="comment">// query current block&#39;s gas limit</span>
 				<span class="ident">get_current_block_gas_limit</span>()<span class="question-mark">?</span>
 			}
@@ -3688,7 +3688,7 @@
 
 		<span class="comment">// Create a helper to check if a gas allowance results in an executable transaction</span>
 		<span class="kw">let</span> <span class="ident">executable</span> <span class="op">=</span>
-			<span class="kw">move</span> <span class="op">|</span><span class="ident">request</span>: <span class="ident">CallRequest</span>, <span class="ident">gas_limit</span>, <span class="ident">api_version</span><span class="op">|</span> <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">ExecutableResult</span><span class="op">&gt;</span> {
+			<span class="kw">move</span> <span class="op">|</span><span class="ident">request</span>: <span class="ident">CallRequest</span>, <span class="ident">gas_limit</span>, <span class="ident">api_version</span><span class="op">|</span> -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">ExecutableResult</span><span class="op">&gt;</span> {
 				<span class="kw">let</span> <span class="ident">CallRequest</span> {
 					<span class="ident">from</span>,
 					<span class="ident">to</span>,
@@ -3705,8 +3705,8 @@
 				<span class="kw">let</span> <span class="ident">data</span> <span class="op">=</span> <span class="ident">data</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">d</span><span class="op">|</span> <span class="ident">d</span>.<span class="number">0</span>).<span class="ident">unwrap_or_default</span>();
 
 				<span class="kw">let</span> (<span class="ident">exit_reason</span>, <span class="ident">data</span>, <span class="ident">used_gas</span>) <span class="op">=</span> <span class="kw">match</span> <span class="ident">to</span> {
-					<span class="prelude-val">Some</span>(<span class="ident">to</span>) <span class="op">=</span><span class="op">&gt;</span> {
-						<span class="kw">let</span> <span class="ident">info</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">api_version</span> <span class="op">=</span><span class="op">=</span> <span class="number">1</span> {
+					<span class="prelude-val">Some</span>(<span class="ident">to</span>) =&gt; {
+						<span class="kw">let</span> <span class="ident">info</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">api_version</span> <span class="op">==</span> <span class="number">1</span> {
 							<span class="attribute">#[<span class="ident">allow</span>(<span class="ident">deprecated</span>)]</span>
 							<span class="ident">api</span>.<span class="ident">call_before_version_2</span>(
 								<span class="kw-2">&amp;</span><span class="ident">BlockId::Hash</span>(<span class="ident">best_hash</span>),
@@ -3740,8 +3740,8 @@
 
 						(<span class="ident">info</span>.<span class="ident">exit_reason</span>, <span class="ident">info</span>.<span class="ident">value</span>, <span class="ident">info</span>.<span class="ident">used_gas</span>)
 					}
-					<span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {
-						<span class="kw">let</span> <span class="ident">info</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">api_version</span> <span class="op">=</span><span class="op">=</span> <span class="number">1</span> {
+					<span class="prelude-val">None</span> =&gt; {
+						<span class="kw">let</span> <span class="ident">info</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">api_version</span> <span class="op">==</span> <span class="number">1</span> {
 							<span class="attribute">#[<span class="ident">allow</span>(<span class="ident">deprecated</span>)]</span>
 							<span class="ident">api</span>.<span class="ident">create_before_version_2</span>(
 								<span class="kw-2">&amp;</span><span class="ident">BlockId::Hash</span>(<span class="ident">best_hash</span>),
@@ -3800,8 +3800,8 @@
 			<span class="ident">used_gas</span>,
 		} <span class="op">=</span> <span class="ident">executable</span>(<span class="ident">request</span>.<span class="ident">clone</span>(), <span class="ident">highest</span>, <span class="ident">api_version</span>)<span class="question-mark">?</span>;
 		<span class="kw">match</span> <span class="ident">exit_reason</span> {
-			<span class="ident">ExitReason::Succeed</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> (),
-			<span class="ident">ExitReason::Error</span>(<span class="ident">ExitError::OutOfGas</span>) <span class="op">=</span><span class="op">&gt;</span> {
+			<span class="ident">ExitReason::Succeed</span>(<span class="kw">_</span>) =&gt; (),
+			<span class="ident">ExitReason::Error</span>(<span class="ident">ExitError::OutOfGas</span>) =&gt; {
 				<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="macro">format!</span>(
 					<span class="string">&quot;gas required exceeds allowance {}&quot;</span>,
 					<span class="ident">cap</span>
@@ -3810,7 +3810,7 @@
 			<span class="comment">// If the transaction reverts, there are two possible cases,</span>
 			<span class="comment">// it can revert because the called contract feels that it does not have enough</span>
 			<span class="comment">// gas left to continue, or it can revert for another reason unrelated to gas.</span>
-			<span class="ident">ExitReason::Revert</span>(<span class="ident">revert</span>) <span class="op">=</span><span class="op">&gt;</span> {
+			<span class="ident">ExitReason::Revert</span>(<span class="ident">revert</span>) =&gt; {
 				<span class="kw">if</span> <span class="ident">request</span>.<span class="ident">gas</span>.<span class="ident">is_some</span>() <span class="op">|</span><span class="op">|</span> <span class="ident">request</span>.<span class="ident">gas_price</span>.<span class="ident">is_some</span>() {
 					<span class="comment">// If the user has provided a gas limit or a gas price, then we have executed</span>
 					<span class="comment">// with less block gas limit, so we must reexecute with block gas limit to</span>
@@ -3821,21 +3821,21 @@
 						<span class="ident">used_gas</span>: <span class="kw">_</span>,
 					} <span class="op">=</span> <span class="ident">executable</span>(<span class="ident">request</span>.<span class="ident">clone</span>(), <span class="ident">get_current_block_gas_limit</span>()<span class="question-mark">?</span>, <span class="ident">api_version</span>)<span class="question-mark">?</span>;
 					<span class="kw">match</span> <span class="ident">exit_reason</span> {
-						<span class="ident">ExitReason::Succeed</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
+						<span class="ident">ExitReason::Succeed</span>(<span class="kw">_</span>) =&gt; {
 							<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="macro">format!</span>(
 								<span class="string">&quot;gas required exceeds allowance {}&quot;</span>,
 								<span class="ident">cap</span>
 							)))
 						}
 						<span class="comment">// The execution has been done with block gas limit, so it is not a lack of gas from the user.</span>
-						<span class="ident">other</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">error_on_execution_failure</span>(<span class="kw-2">&amp;</span><span class="ident">other</span>, <span class="kw-2">&amp;</span><span class="ident">data</span>)<span class="question-mark">?</span>,
+						<span class="ident">other</span> =&gt; <span class="ident">error_on_execution_failure</span>(<span class="kw-2">&amp;</span><span class="ident">other</span>, <span class="kw-2">&amp;</span><span class="ident">data</span>)<span class="question-mark">?</span>,
 					}
 				} <span class="kw">else</span> {
 					<span class="comment">// The execution has already been done with block gas limit, so it is not a lack of gas from the user.</span>
 					<span class="ident">error_on_execution_failure</span>(<span class="kw-2">&amp;</span><span class="ident">ExitReason::Revert</span>(<span class="ident">revert</span>), <span class="kw-2">&amp;</span><span class="ident">data</span>)<span class="question-mark">?</span>
 				}
 			}
-			<span class="ident">other</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">error_on_execution_failure</span>(<span class="kw-2">&amp;</span><span class="ident">other</span>, <span class="kw-2">&amp;</span><span class="ident">data</span>)<span class="question-mark">?</span>,
+			<span class="ident">other</span> =&gt; <span class="ident">error_on_execution_failure</span>(<span class="kw-2">&amp;</span><span class="ident">other</span>, <span class="kw-2">&amp;</span><span class="ident">data</span>)<span class="question-mark">?</span>,
 		};
 
 		<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;rpc_binary_search_estimate&quot;</span>))]</span>
@@ -3859,7 +3859,7 @@
 					<span class="ident">used_gas</span>: <span class="kw">_</span>,
 				} <span class="op">=</span> <span class="ident">executable</span>(<span class="ident">request</span>.<span class="ident">clone</span>(), <span class="ident">mid</span>, <span class="ident">api_version</span>)<span class="question-mark">?</span>;
 				<span class="kw">match</span> <span class="ident">exit_reason</span> {
-					<span class="ident">ExitReason::Succeed</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
+					<span class="ident">ExitReason::Succeed</span>(<span class="kw">_</span>) =&gt; {
 						<span class="ident">highest</span> <span class="op">=</span> <span class="ident">mid</span>;
 						<span class="comment">// If the variation in the estimate is less than 10%,</span>
 						<span class="comment">// then the estimate is considered sufficiently accurate.</span>
@@ -3868,10 +3868,10 @@
 						}
 						<span class="ident">previous_highest</span> <span class="op">=</span> <span class="ident">highest</span>;
 					}
-					<span class="ident">ExitReason::Revert</span>(<span class="kw">_</span>) <span class="op">|</span> <span class="ident">ExitReason::Error</span>(<span class="ident">ExitError::OutOfGas</span>) <span class="op">=</span><span class="op">&gt;</span> {
+					<span class="ident">ExitReason::Revert</span>(<span class="kw">_</span>) <span class="op">|</span> <span class="ident">ExitReason::Error</span>(<span class="ident">ExitError::OutOfGas</span>) =&gt; {
 						<span class="ident">lowest</span> <span class="op">=</span> <span class="ident">mid</span>;
 					}
-					<span class="ident">other</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">error_on_execution_failure</span>(<span class="kw-2">&amp;</span><span class="ident">other</span>, <span class="kw-2">&amp;</span><span class="ident">data</span>)<span class="question-mark">?</span>,
+					<span class="ident">other</span> =&gt; <span class="ident">error_on_execution_failure</span>(<span class="kw-2">&amp;</span><span class="ident">other</span>, <span class="kw-2">&amp;</span><span class="ident">data</span>)<span class="question-mark">?</span>,
 				}
 				<span class="ident">mid</span> <span class="op">=</span> (<span class="ident">highest</span> <span class="op">+</span> <span class="ident">lowest</span>) <span class="op">/</span> <span class="number">2</span>;
 			}
@@ -3880,7 +3880,7 @@
 		}
 	}
 
-	<span class="kw">fn</span> <span class="ident">transaction_by_hash</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">hash</span>: <span class="ident">H256</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Transaction</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">transaction_by_hash</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">hash</span>: <span class="ident">H256</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Transaction</span><span class="op">&gt;</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> (<span class="ident">hash</span>, <span class="ident">index</span>) <span class="op">=</span> <span class="kw">match</span> <span class="ident">frontier_backend_client::load_transactions</span>::<span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span><span class="op">&gt;</span>(
 			<span class="self">self</span>.<span class="ident">client</span>.<span class="ident">as_ref</span>(),
 			<span class="self">self</span>.<span class="ident">backend</span>.<span class="ident">as_ref</span>(),
@@ -3889,8 +3889,8 @@
 		)
 		.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>
 		{
-			<span class="prelude-val">Some</span>((<span class="ident">hash</span>, <span class="ident">index</span>)) <span class="op">=</span><span class="op">&gt;</span> (<span class="ident">hash</span>, <span class="ident">index</span> <span class="kw">as</span> <span class="ident">usize</span>),
-			<span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {
+			<span class="prelude-val">Some</span>((<span class="ident">hash</span>, <span class="ident">index</span>)) =&gt; (<span class="ident">hash</span>, <span class="ident">index</span> <span class="kw">as</span> <span class="ident">usize</span>),
+			<span class="prelude-val">None</span> =&gt; {
 				<span class="comment">// If the transaction is not yet mapped in the frontier db,</span>
 				<span class="comment">// check for it in the transaction pool.</span>
 				<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">xts</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">B</span> <span class="kw">as</span> <span class="ident">BlockT</span><span class="op">&gt;</span><span class="ident">::Extrinsic</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
@@ -3924,7 +3924,7 @@
 
 				<span class="kw">for</span> <span class="ident">txn</span> <span class="kw">in</span> <span class="ident">ethereum_transactions</span> {
 					<span class="kw">let</span> <span class="ident">inner_hash</span> <span class="op">=</span> <span class="ident">txn</span>.<span class="ident">hash</span>();
-					<span class="kw">if</span> <span class="ident">hash</span> <span class="op">=</span><span class="op">=</span> <span class="ident">inner_hash</span> {
+					<span class="kw">if</span> <span class="ident">hash</span> <span class="op">==</span> <span class="ident">inner_hash</span> {
 						<span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">transaction_build</span>(<span class="ident">txn</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>, <span class="bool-val">true</span>, <span class="prelude-val">None</span>)));
 					}
 				}
@@ -3936,8 +3936,8 @@
 		<span class="kw">let</span> <span class="ident">id</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">frontier_backend_client::load_hash</span>::<span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span>(<span class="self">self</span>.<span class="ident">backend</span>.<span class="ident">as_ref</span>(), <span class="ident">hash</span>)
 			.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>
 		{
-			<span class="prelude-val">Some</span>(<span class="ident">hash</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">hash</span>,
-			<span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
+			<span class="prelude-val">Some</span>(<span class="ident">hash</span>) =&gt; <span class="ident">hash</span>,
+			<span class="kw">_</span> =&gt; <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
 		};
 		<span class="kw">let</span> <span class="ident">substrate_hash</span> <span class="op">=</span> <span class="self">self</span>
 			.<span class="ident">client</span>
@@ -3961,14 +3961,14 @@
 		<span class="kw">let</span> <span class="ident">is_eip1559</span> <span class="op">=</span> <span class="ident">handler</span>.<span class="ident">is_eip1559</span>(<span class="kw-2">&amp;</span><span class="ident">id</span>);
 
 		<span class="kw">match</span> (<span class="ident">block</span>, <span class="ident">statuses</span>) {
-			(<span class="prelude-val">Some</span>(<span class="ident">block</span>), <span class="prelude-val">Some</span>(<span class="ident">statuses</span>)) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">transaction_build</span>(
+			(<span class="prelude-val">Some</span>(<span class="ident">block</span>), <span class="prelude-val">Some</span>(<span class="ident">statuses</span>)) =&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">transaction_build</span>(
 				<span class="ident">block</span>.<span class="ident">transactions</span>[<span class="ident">index</span>].<span class="ident">clone</span>(),
 				<span class="prelude-val">Some</span>(<span class="ident">block</span>),
 				<span class="prelude-val">Some</span>(<span class="ident">statuses</span>[<span class="ident">index</span>].<span class="ident">clone</span>()),
 				<span class="ident">is_eip1559</span>,
 				<span class="ident">base_fee</span>,
 			))),
-			<span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
+			<span class="kw">_</span> =&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
 		}
 	}
 
@@ -3976,12 +3976,12 @@
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		<span class="ident">hash</span>: <span class="ident">H256</span>,
 		<span class="ident">index</span>: <span class="ident">Index</span>,
-	) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Transaction</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Transaction</span><span class="op">&gt;</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> <span class="ident">id</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">frontier_backend_client::load_hash</span>::<span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span>(<span class="self">self</span>.<span class="ident">backend</span>.<span class="ident">as_ref</span>(), <span class="ident">hash</span>)
 			.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>
 		{
-			<span class="prelude-val">Some</span>(<span class="ident">hash</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">hash</span>,
-			<span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
+			<span class="prelude-val">Some</span>(<span class="ident">hash</span>) =&gt; <span class="ident">hash</span>,
+			<span class="kw">_</span> =&gt; <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
 		};
 		<span class="kw">let</span> <span class="ident">substrate_hash</span> <span class="op">=</span> <span class="self">self</span>
 			.<span class="ident">client</span>
@@ -4007,14 +4007,14 @@
 		<span class="kw">let</span> <span class="ident">is_eip1559</span> <span class="op">=</span> <span class="ident">handler</span>.<span class="ident">is_eip1559</span>(<span class="kw-2">&amp;</span><span class="ident">id</span>);
 
 		<span class="kw">match</span> (<span class="ident">block</span>, <span class="ident">statuses</span>) {
-			(<span class="prelude-val">Some</span>(<span class="ident">block</span>), <span class="prelude-val">Some</span>(<span class="ident">statuses</span>)) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">transaction_build</span>(
+			(<span class="prelude-val">Some</span>(<span class="ident">block</span>), <span class="prelude-val">Some</span>(<span class="ident">statuses</span>)) =&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">transaction_build</span>(
 				<span class="ident">block</span>.<span class="ident">transactions</span>[<span class="ident">index</span>].<span class="ident">clone</span>(),
 				<span class="prelude-val">Some</span>(<span class="ident">block</span>),
 				<span class="prelude-val">Some</span>(<span class="ident">statuses</span>[<span class="ident">index</span>].<span class="ident">clone</span>()),
 				<span class="ident">is_eip1559</span>,
 				<span class="ident">base_fee</span>,
 			))),
-			<span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
+			<span class="kw">_</span> =&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
 		}
 	}
 
@@ -4022,14 +4022,14 @@
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		<span class="ident">number</span>: <span class="ident">BlockNumber</span>,
 		<span class="ident">index</span>: <span class="ident">Index</span>,
-	) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Transaction</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Transaction</span><span class="op">&gt;</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> <span class="ident">id</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">frontier_backend_client::native_block_id</span>::<span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span><span class="op">&gt;</span>(
 			<span class="self">self</span>.<span class="ident">client</span>.<span class="ident">as_ref</span>(),
 			<span class="self">self</span>.<span class="ident">backend</span>.<span class="ident">as_ref</span>(),
 			<span class="prelude-val">Some</span>(<span class="ident">number</span>),
 		)<span class="question-mark">?</span> {
-			<span class="prelude-val">Some</span>(<span class="ident">id</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">id</span>,
-			<span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
+			<span class="prelude-val">Some</span>(<span class="ident">id</span>) =&gt; <span class="ident">id</span>,
+			<span class="prelude-val">None</span> =&gt; <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
 		};
 		<span class="kw">let</span> <span class="ident">substrate_hash</span> <span class="op">=</span> <span class="self">self</span>
 			.<span class="ident">client</span>
@@ -4054,18 +4054,18 @@
 		<span class="kw">let</span> <span class="ident">is_eip1559</span> <span class="op">=</span> <span class="ident">handler</span>.<span class="ident">is_eip1559</span>(<span class="kw-2">&amp;</span><span class="ident">id</span>);
 
 		<span class="kw">match</span> (<span class="ident">block</span>, <span class="ident">statuses</span>) {
-			(<span class="prelude-val">Some</span>(<span class="ident">block</span>), <span class="prelude-val">Some</span>(<span class="ident">statuses</span>)) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">transaction_build</span>(
+			(<span class="prelude-val">Some</span>(<span class="ident">block</span>), <span class="prelude-val">Some</span>(<span class="ident">statuses</span>)) =&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">transaction_build</span>(
 				<span class="ident">block</span>.<span class="ident">transactions</span>[<span class="ident">index</span>].<span class="ident">clone</span>(),
 				<span class="prelude-val">Some</span>(<span class="ident">block</span>),
 				<span class="prelude-val">Some</span>(<span class="ident">statuses</span>[<span class="ident">index</span>].<span class="ident">clone</span>()),
 				<span class="ident">is_eip1559</span>,
 				<span class="ident">base_fee</span>,
 			))),
-			<span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
+			<span class="kw">_</span> =&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
 		}
 	}
 
-	<span class="kw">fn</span> <span class="ident">transaction_receipt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">hash</span>: <span class="ident">H256</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Receipt</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">transaction_receipt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">hash</span>: <span class="ident">H256</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Receipt</span><span class="op">&gt;</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> (<span class="ident">hash</span>, <span class="ident">index</span>) <span class="op">=</span> <span class="kw">match</span> <span class="ident">frontier_backend_client::load_transactions</span>::<span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span><span class="op">&gt;</span>(
 			<span class="self">self</span>.<span class="ident">client</span>.<span class="ident">as_ref</span>(),
 			<span class="self">self</span>.<span class="ident">backend</span>.<span class="ident">as_ref</span>(),
@@ -4074,15 +4074,15 @@
 		)
 		.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>
 		{
-			<span class="prelude-val">Some</span>((<span class="ident">hash</span>, <span class="ident">index</span>)) <span class="op">=</span><span class="op">&gt;</span> (<span class="ident">hash</span>, <span class="ident">index</span> <span class="kw">as</span> <span class="ident">usize</span>),
-			<span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
+			<span class="prelude-val">Some</span>((<span class="ident">hash</span>, <span class="ident">index</span>)) =&gt; (<span class="ident">hash</span>, <span class="ident">index</span> <span class="kw">as</span> <span class="ident">usize</span>),
+			<span class="prelude-val">None</span> =&gt; <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
 		};
 
 		<span class="kw">let</span> <span class="ident">id</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">frontier_backend_client::load_hash</span>::<span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span>(<span class="self">self</span>.<span class="ident">backend</span>.<span class="ident">as_ref</span>(), <span class="ident">hash</span>)
 			.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>
 		{
-			<span class="prelude-val">Some</span>(<span class="ident">hash</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">hash</span>,
-			<span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
+			<span class="prelude-val">Some</span>(<span class="ident">hash</span>) =&gt; <span class="ident">hash</span>,
+			<span class="kw">_</span> =&gt; <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
 		};
 		<span class="kw">let</span> <span class="ident">substrate_hash</span> <span class="op">=</span> <span class="self">self</span>
 			.<span class="ident">client</span>
@@ -4104,7 +4104,7 @@
 		<span class="kw">let</span> <span class="ident">receipts</span> <span class="op">=</span> <span class="ident">handler</span>.<span class="ident">current_receipts</span>(<span class="kw-2">&amp;</span><span class="ident">id</span>);
 
 		<span class="kw">match</span> (<span class="ident">block</span>, <span class="ident">statuses</span>, <span class="ident">receipts</span>) {
-			(<span class="prelude-val">Some</span>(<span class="ident">block</span>), <span class="prelude-val">Some</span>(<span class="ident">statuses</span>), <span class="prelude-val">Some</span>(<span class="ident">receipts</span>)) <span class="op">=</span><span class="op">&gt;</span> {
+			(<span class="prelude-val">Some</span>(<span class="ident">block</span>), <span class="prelude-val">Some</span>(<span class="ident">statuses</span>), <span class="prelude-val">Some</span>(<span class="ident">receipts</span>)) =&gt; {
 				<span class="kw">let</span> <span class="ident">block_hash</span> <span class="op">=</span>
 					<span class="ident">H256::from_slice</span>(<span class="ident">Keccak256::digest</span>(<span class="kw-2">&amp;</span><span class="ident">rlp::encode</span>(<span class="kw-2">&amp;</span><span class="ident">block</span>.<span class="ident">header</span>)).<span class="ident">as_slice</span>());
 				<span class="kw">let</span> <span class="ident">receipt</span> <span class="op">=</span> <span class="ident">receipts</span>[<span class="ident">index</span>].<span class="ident">clone</span>();
@@ -4114,9 +4114,9 @@
 
 				<span class="kw">let</span> <span class="ident">transaction</span> <span class="op">=</span> <span class="ident">block</span>.<span class="ident">transactions</span>[<span class="ident">index</span>].<span class="ident">clone</span>();
 				<span class="kw">let</span> <span class="ident">effective_gas_price</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">transaction</span> {
-					<span class="ident">EthereumTransaction::Legacy</span>(<span class="ident">t</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">t</span>.<span class="ident">gas_price</span>,
-					<span class="ident">EthereumTransaction::EIP2930</span>(<span class="ident">t</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">t</span>.<span class="ident">gas_price</span>,
-					<span class="ident">EthereumTransaction::EIP1559</span>(<span class="ident">t</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">handler</span>
+					<span class="ident">EthereumTransaction::Legacy</span>(<span class="ident">t</span>) =&gt; <span class="ident">t</span>.<span class="ident">gas_price</span>,
+					<span class="ident">EthereumTransaction::EIP2930</span>(<span class="ident">t</span>) =&gt; <span class="ident">t</span>.<span class="ident">gas_price</span>,
+					<span class="ident">EthereumTransaction::EIP1559</span>(<span class="ident">t</span>) =&gt; <span class="ident">handler</span>
 						.<span class="ident">base_fee</span>(<span class="kw-2">&amp;</span><span class="ident">id</span>)
 						.<span class="ident">unwrap_or_default</span>()
 						.<span class="ident">checked_add</span>(<span class="ident">t</span>.<span class="ident">max_priority_fee_per_gas</span>)
@@ -4176,11 +4176,11 @@
 					<span class="ident">effective_gas_price</span>,
 				}));
 			}
-			<span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
+			<span class="kw">_</span> =&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
 		}
 	}
 
-	<span class="kw">fn</span> <span class="ident">uncle_by_block_hash_and_index</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="kw">_</span>: <span class="ident">H256</span>, <span class="kw">_</span>: <span class="ident">Index</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">RichBlock</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">uncle_by_block_hash_and_index</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="kw">_</span>: <span class="ident">H256</span>, <span class="kw">_</span>: <span class="ident">Index</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">RichBlock</span><span class="op">&gt;</span><span class="op">&gt;</span> {
 		<span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>)
 	}
 
@@ -4188,18 +4188,18 @@
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		<span class="kw">_</span>: <span class="ident">BlockNumber</span>,
 		<span class="kw">_</span>: <span class="ident">Index</span>,
-	) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">RichBlock</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">RichBlock</span><span class="op">&gt;</span><span class="op">&gt;</span> {
 		<span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>)
 	}
 
-	<span class="kw">fn</span> <span class="ident">logs</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">filter</span>: <span class="ident">Filter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Log</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">logs</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">filter</span>: <span class="ident">Filter</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Log</span><span class="op">&gt;</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">ret</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Log</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
 		<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">hash</span>) <span class="op">=</span> <span class="ident">filter</span>.<span class="ident">block_hash</span>.<span class="ident">clone</span>() {
 			<span class="kw">let</span> <span class="ident">id</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">frontier_backend_client::load_hash</span>::<span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span>(<span class="self">self</span>.<span class="ident">backend</span>.<span class="ident">as_ref</span>(), <span class="ident">hash</span>)
 				.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>
 			{
-				<span class="prelude-val">Some</span>(<span class="ident">hash</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">hash</span>,
-				<span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">Vec::new</span>()),
+				<span class="prelude-val">Some</span>(<span class="ident">hash</span>) =&gt; <span class="ident">hash</span>,
+				<span class="kw">_</span> =&gt; <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">Vec::new</span>()),
 			};
 			<span class="kw">let</span> <span class="ident">substrate_hash</span> <span class="op">=</span> <span class="self">self</span>
 				.<span class="ident">client</span>
@@ -4258,7 +4258,7 @@
 		<span class="prelude-val">Ok</span>(<span class="ident">ret</span>)
 	}
 
-	<span class="kw">fn</span> <span class="ident">work</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Work</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">work</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Work</span><span class="op">&gt;</span> {
 		<span class="prelude-val">Ok</span>(<span class="ident">Work</span> {
 			<span class="ident">pow_hash</span>: <span class="ident">H256::default</span>(),
 			<span class="ident">seed_hash</span>: <span class="ident">H256::default</span>(),
@@ -4267,11 +4267,11 @@
 		})
 	}
 
-	<span class="kw">fn</span> <span class="ident">submit_work</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="kw">_</span>: <span class="ident">H64</span>, <span class="kw">_</span>: <span class="ident">H256</span>, <span class="kw">_</span>: <span class="ident">H256</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">submit_work</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="kw">_</span>: <span class="ident">H64</span>, <span class="kw">_</span>: <span class="ident">H256</span>, <span class="kw">_</span>: <span class="ident">H256</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span> {
 		<span class="prelude-val">Ok</span>(<span class="bool-val">false</span>)
 	}
 
-	<span class="kw">fn</span> <span class="ident">submit_hashrate</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="kw">_</span>: <span class="ident">U256</span>, <span class="kw">_</span>: <span class="ident">H256</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">submit_hashrate</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="kw">_</span>: <span class="ident">U256</span>, <span class="kw">_</span>: <span class="ident">H256</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span> {
 		<span class="prelude-val">Ok</span>(<span class="bool-val">false</span>)
 	}
 }
@@ -4288,7 +4288,7 @@
 		<span class="ident">client</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
 		<span class="ident">network</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">NetworkService</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">H</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 		<span class="ident">peer_count_as_hex</span>: <span class="ident">bool</span>,
-	) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+	) -&gt; <span class="self">Self</span> {
 		<span class="self">Self</span> {
 			<span class="ident">client</span>,
 			<span class="ident">network</span>,
@@ -4308,19 +4308,19 @@
 	<span class="ident">C</span>: <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
 	<span class="ident">B</span>: <span class="ident">BlockT</span><span class="op">&lt;</span><span class="ident">Hash</span> <span class="op">=</span> <span class="ident">H256</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
 {
-	<span class="kw">fn</span> <span class="ident">is_listening</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">is_listening</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span> {
 		<span class="prelude-val">Ok</span>(<span class="bool-val">true</span>)
 	}
 
-	<span class="kw">fn</span> <span class="ident">peer_count</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">PeerCount</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">peer_count</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">PeerCount</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> <span class="ident">peer_count</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">network</span>.<span class="ident">num_connected</span>();
 		<span class="prelude-val">Ok</span>(<span class="kw">match</span> <span class="self">self</span>.<span class="ident">peer_count_as_hex</span> {
-			<span class="bool-val">true</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">PeerCount::String</span>(<span class="macro">format!</span>(<span class="string">&quot;0x{:x}&quot;</span>, <span class="ident">peer_count</span>)),
-			<span class="bool-val">false</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">PeerCount::U32</span>(<span class="ident">peer_count</span> <span class="kw">as</span> <span class="ident">u32</span>),
+			<span class="bool-val">true</span> =&gt; <span class="ident">PeerCount::String</span>(<span class="macro">format!</span>(<span class="string">&quot;0x{:x}&quot;</span>, <span class="ident">peer_count</span>)),
+			<span class="bool-val">false</span> =&gt; <span class="ident">PeerCount::U32</span>(<span class="ident">peer_count</span> <span class="kw">as</span> <span class="ident">u32</span>),
 		})
 	}
 
-	<span class="kw">fn</span> <span class="ident">version</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">version</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> <span class="ident">hash</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">info</span>().<span class="ident">best_hash</span>;
 		<span class="prelude-val">Ok</span>(<span class="self">self</span>
 			.<span class="ident">client</span>
@@ -4337,7 +4337,7 @@
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span><span class="op">&gt;</span> <span class="ident">Web3Api</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span><span class="op">&gt;</span> {
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">client</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">client</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>) -&gt; <span class="self">Self</span> {
 		<span class="self">Self</span> {
 			<span class="ident">client</span>: <span class="ident">client</span>,
 			<span class="ident">_marker</span>: <span class="ident">PhantomData</span>,
@@ -4353,7 +4353,7 @@
 	<span class="ident">C</span>: <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
 	<span class="ident">B</span>: <span class="ident">BlockT</span><span class="op">&lt;</span><span class="ident">Hash</span> <span class="op">=</span> <span class="ident">H256</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
 {
-	<span class="kw">fn</span> <span class="ident">client_version</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">client_version</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> <span class="ident">hash</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">info</span>().<span class="ident">best_hash</span>;
 		<span class="kw">let</span> <span class="ident">version</span> <span class="op">=</span> <span class="self">self</span>
 			.<span class="ident">client</span>
@@ -4370,7 +4370,7 @@
 		))
 	}
 
-	<span class="kw">fn</span> <span class="ident">sha3</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">input</span>: <span class="ident">Bytes</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">sha3</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">input</span>: <span class="ident">Bytes</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span> {
 		<span class="prelude-val">Ok</span>(<span class="ident">H256::from_slice</span>(
 			<span class="ident">Keccak256::digest</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>.<span class="ident">into_vec</span>()).<span class="ident">as_slice</span>(),
 		))
@@ -4405,7 +4405,7 @@
 		<span class="ident">overrides</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">OverrideHandle</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 		<span class="ident">max_past_logs</span>: <span class="ident">u32</span>,
 		<span class="ident">block_data_cache</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">EthBlockDataCache</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-	) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+	) -&gt; <span class="self">Self</span> {
 		<span class="self">Self</span> {
 			<span class="ident">client</span>,
 			<span class="ident">backend</span>,
@@ -4429,7 +4429,7 @@
 	<span class="ident">BE</span>: <span class="ident">Backend</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
 	<span class="ident">BE::State</span>: <span class="ident">StateBackend</span><span class="op">&lt;</span><span class="ident">BlakeTwo256</span><span class="op">&gt;</span>,
 {
-	<span class="kw">fn</span> <span class="ident">create_filter</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">filter_type</span>: <span class="ident">FilterType</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">create_filter</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">filter_type</span>: <span class="ident">FilterType</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> <span class="ident">block_number</span> <span class="op">=</span>
 			<span class="ident">UniqueSaturatedInto</span>::<span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span><span class="ident">::unique_saturated_into</span>(<span class="self">self</span>.<span class="ident">client</span>.<span class="ident">info</span>().<span class="ident">best_number</span>);
 		<span class="kw">let</span> <span class="ident">pool</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">filter_pool</span>.<span class="ident">clone</span>();
@@ -4441,8 +4441,8 @@
 				)));
 			}
 			<span class="kw">let</span> <span class="ident">last_key</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">locked</span>.<span class="ident">iter</span>().<span class="ident">next_back</span>() {
-				<span class="prelude-val">Some</span>((<span class="ident">k</span>, <span class="kw">_</span>)) <span class="op">=</span><span class="op">&gt;</span> <span class="kw-2">*</span><span class="ident">k</span>,
-				<span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">U256::zero</span>(),
+				<span class="prelude-val">Some</span>((<span class="ident">k</span>, <span class="kw">_</span>)) =&gt; <span class="kw-2">*</span><span class="ident">k</span>,
+				<span class="prelude-val">None</span> =&gt; <span class="ident">U256::zero</span>(),
 			};
 			<span class="comment">// Assume `max_stored_filters` is always &lt; U256::max.</span>
 			<span class="kw">let</span> <span class="ident">key</span> <span class="op">=</span> <span class="ident">last_key</span>.<span class="ident">checked_add</span>(<span class="ident">U256::one</span>()).<span class="ident">unwrap</span>();
@@ -4472,19 +4472,19 @@
 	<span class="ident">BE</span>: <span class="ident">Backend</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
 	<span class="ident">BE::State</span>: <span class="ident">StateBackend</span><span class="op">&lt;</span><span class="ident">BlakeTwo256</span><span class="op">&gt;</span>,
 {
-	<span class="kw">fn</span> <span class="ident">new_filter</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">filter</span>: <span class="ident">Filter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">new_filter</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">filter</span>: <span class="ident">Filter</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span> {
 		<span class="self">self</span>.<span class="ident">create_filter</span>(<span class="ident">FilterType::Log</span>(<span class="ident">filter</span>))
 	}
 
-	<span class="kw">fn</span> <span class="ident">new_block_filter</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">new_block_filter</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span> {
 		<span class="self">self</span>.<span class="ident">create_filter</span>(<span class="ident">FilterType::Block</span>)
 	}
 
-	<span class="kw">fn</span> <span class="ident">new_pending_transaction_filter</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">new_pending_transaction_filter</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span> {
 		<span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="string">&quot;Method not available.&quot;</span>))
 	}
 
-	<span class="kw">fn</span> <span class="ident">filter_changes</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">index</span>: <span class="ident">Index</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">FilterChanges</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">filter_changes</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">index</span>: <span class="ident">Index</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">FilterChanges</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> <span class="ident">key</span> <span class="op">=</span> <span class="ident">U256::from</span>(<span class="ident">index</span>.<span class="ident">value</span>());
 		<span class="kw">let</span> <span class="ident">block_number</span> <span class="op">=</span>
 			<span class="ident">UniqueSaturatedInto</span>::<span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span><span class="ident">::unique_saturated_into</span>(<span class="self">self</span>.<span class="ident">client</span>.<span class="ident">info</span>().<span class="ident">best_number</span>);
@@ -4495,7 +4495,7 @@
 			<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">pool_item</span>) <span class="op">=</span> <span class="ident">locked</span>.<span class="ident">clone</span>().<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">key</span>) {
 				<span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">pool_item</span>.<span class="ident">filter_type</span> {
 					<span class="comment">// For each block created since last poll, get a vector of ethereum hashes.</span>
-					<span class="ident">FilterType::Block</span> <span class="op">=</span><span class="op">&gt;</span> {
+					<span class="ident">FilterType::Block</span> =&gt; {
 						<span class="kw">let</span> <span class="ident">last</span> <span class="op">=</span> <span class="ident">pool_item</span>.<span class="ident">last_poll</span>.<span class="ident">to_min_block_num</span>().<span class="ident">unwrap</span>();
 						<span class="kw">let</span> <span class="ident">next</span> <span class="op">=</span> <span class="ident">block_number</span> <span class="op">+</span> <span class="number">1</span>;
 						<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">ethereum_hashes</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
@@ -4534,7 +4534,7 @@
 						<span class="prelude-val">Ok</span>(<span class="ident">FilterChanges::Hashes</span>(<span class="ident">ethereum_hashes</span>))
 					}
 					<span class="comment">// For each event since last poll, get a vector of ethereum logs.</span>
-					<span class="ident">FilterType::Log</span>(<span class="ident">filter</span>) <span class="op">=</span><span class="op">&gt;</span> {
+					<span class="ident">FilterType::Log</span>(<span class="ident">filter</span>) =&gt; {
 						<span class="comment">// Either the filter-specific `to` block or best block.</span>
 						<span class="kw">let</span> <span class="ident">best_number</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">info</span>().<span class="ident">best_number</span>;
 						<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">current_number</span> <span class="op">=</span> <span class="ident">filter</span>
@@ -4589,7 +4589,7 @@
 						<span class="prelude-val">Ok</span>(<span class="ident">FilterChanges::Logs</span>(<span class="ident">ret</span>))
 					}
 					<span class="comment">// Should never reach here.</span>
-					<span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="string">&quot;Method not available.&quot;</span>)),
+					<span class="kw">_</span> =&gt; <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="string">&quot;Method not available.&quot;</span>)),
 				}
 			} <span class="kw">else</span> {
 				<span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;Filter id {:?} does not exist.&quot;</span>, <span class="ident">key</span>)))
@@ -4600,7 +4600,7 @@
 		<span class="ident">response</span>
 	}
 
-	<span class="kw">fn</span> <span class="ident">filter_logs</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">index</span>: <span class="ident">Index</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Log</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">filter_logs</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">index</span>: <span class="ident">Index</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Log</span><span class="op">&gt;</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> <span class="ident">key</span> <span class="op">=</span> <span class="ident">U256::from</span>(<span class="ident">index</span>.<span class="ident">value</span>());
 		<span class="kw">let</span> <span class="ident">pool</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">filter_pool</span>.<span class="ident">clone</span>();
 		<span class="comment">// Try to lock.</span>
@@ -4608,7 +4608,7 @@
 			<span class="comment">// Try to get key.</span>
 			<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">pool_item</span>) <span class="op">=</span> <span class="ident">locked</span>.<span class="ident">clone</span>().<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">key</span>) {
 				<span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">pool_item</span>.<span class="ident">filter_type</span> {
-					<span class="ident">FilterType::Log</span>(<span class="ident">filter</span>) <span class="op">=</span><span class="op">&gt;</span> {
+					<span class="ident">FilterType::Log</span>(<span class="ident">filter</span>) =&gt; {
 						<span class="kw">let</span> <span class="ident">best_number</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">info</span>().<span class="ident">best_number</span>;
 						<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">current_number</span> <span class="op">=</span> <span class="ident">filter</span>
 							.<span class="ident">to_block</span>
@@ -4646,7 +4646,7 @@
 						)<span class="question-mark">?</span>;
 						<span class="prelude-val">Ok</span>(<span class="ident">ret</span>)
 					}
-					<span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="macro">format!</span>(
+					<span class="kw">_</span> =&gt; <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="macro">format!</span>(
 						<span class="string">&quot;Filter id {:?} is not a Log filter.&quot;</span>,
 						<span class="ident">key</span>
 					))),
@@ -4660,7 +4660,7 @@
 		<span class="ident">response</span>
 	}
 
-	<span class="kw">fn</span> <span class="ident">uninstall_filter</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">index</span>: <span class="ident">Index</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">uninstall_filter</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">index</span>: <span class="ident">Index</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> <span class="ident">key</span> <span class="op">=</span> <span class="ident">U256::from</span>(<span class="ident">index</span>.<span class="ident">value</span>());
 		<span class="kw">let</span> <span class="ident">pool</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">filter_pool</span>.<span class="ident">clone</span>();
 		<span class="comment">// Try to lock.</span>
@@ -4719,7 +4719,7 @@
 		) {
 			<span class="kw">while</span> <span class="kw">let</span> <span class="prelude-val">Some</span>((<span class="ident">hash</span>, <span class="ident">changes</span>)) <span class="op">=</span> <span class="ident">stream</span>.<span class="ident">next</span>().<span class="kw">await</span> {
 				<span class="comment">// Make sure only block hashes marked as best are referencing cache checkpoints.</span>
-				<span class="kw">if</span> <span class="ident">hash</span> <span class="op">=</span><span class="op">=</span> <span class="ident">client</span>.<span class="ident">info</span>().<span class="ident">best_hash</span> {
+				<span class="kw">if</span> <span class="ident">hash</span> <span class="op">==</span> <span class="ident">client</span>.<span class="ident">info</span>().<span class="ident">best_hash</span> {
 					<span class="comment">// Just map the change set to the actual data.</span>
 					<span class="kw">let</span> <span class="ident">storage</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">StorageData</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">changes</span>
 						.<span class="ident">iter</span>()
@@ -4742,13 +4742,13 @@
 							{
 								<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">new_cache</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">EthereumStorageSchema</span>, <span class="ident">H256</span>)<span class="op">&gt;</span> <span class="op">=</span> <span class="ident">old_cache</span>;
 								<span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">new_cache</span>[..] {
-									[.., (<span class="ident">schema</span>, <span class="kw">_</span>)] <span class="kw">if</span> <span class="kw-2">*</span><span class="ident">schema</span> <span class="op">=</span><span class="op">=</span> <span class="ident">new_schema</span> <span class="op">=</span><span class="op">&gt;</span> {
+									[.., (<span class="ident">schema</span>, <span class="kw">_</span>)] <span class="kw">if</span> <span class="kw-2">*</span><span class="ident">schema</span> <span class="op">==</span> <span class="ident">new_schema</span> =&gt; {
 										<span class="macro">warn!</span>(
 											<span class="string">&quot;Schema version already in Frontier database, ignoring: {:?}&quot;</span>,
 											<span class="ident">new_schema</span>
 										);
 									}
-									<span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> {
+									<span class="kw">_</span> =&gt; {
 										<span class="ident">new_cache</span>.<span class="ident">push</span>((<span class="ident">new_schema</span>, <span class="ident">hash</span>));
 										<span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">frontier_backend_client::write_cached_schema</span>::<span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span>(
 											<span class="ident">backend</span>.<span class="ident">as_ref</span>(),
@@ -4819,7 +4819,7 @@
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">B</span>: <span class="ident">BlockT</span><span class="op">&gt;</span> <span class="ident">EthBlockDataCache</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> {
 	<span class="doccomment">/// Create a new cache with provided cache sizes.</span>
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">blocks_cache_size</span>: <span class="ident">usize</span>, <span class="ident">statuses_cache_size</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">blocks_cache_size</span>: <span class="ident">usize</span>, <span class="ident">statuses_cache_size</span>: <span class="ident">usize</span>) -&gt; <span class="self">Self</span> {
 		<span class="self">Self</span> {
 			<span class="ident">blocks</span>: <span class="ident">parking_lot::Mutex::new</span>(<span class="ident">LruCache::new</span>(<span class="ident">blocks_cache_size</span>)),
 			<span class="ident">statuses</span>: <span class="ident">parking_lot::Mutex::new</span>(<span class="ident">LruCache::new</span>(<span class="ident">statuses_cache_size</span>)),
@@ -4831,7 +4831,7 @@
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		<span class="ident">handler</span>: <span class="kw-2">&amp;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">StorageOverride</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span><span class="op">&gt;</span>,
 		<span class="ident">substrate_block_hash</span>: <span class="ident">B::Hash</span>,
-	) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">EthereumBlock</span><span class="op">&gt;</span> {
+	) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">EthereumBlock</span><span class="op">&gt;</span> {
 		{
 			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">cache</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">blocks</span>.<span class="ident">lock</span>();
 			<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">block</span>) <span class="op">=</span> <span class="ident">cache</span>.<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">substrate_block_hash</span>).<span class="ident">cloned</span>() {
@@ -4854,7 +4854,7 @@
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		<span class="ident">handler</span>: <span class="kw-2">&amp;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">StorageOverride</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span><span class="op">&gt;</span>,
 		<span class="ident">substrate_block_hash</span>: <span class="ident">B::Hash</span>,
-	) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TransactionStatus</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+	) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TransactionStatus</span><span class="op">&gt;</span><span class="op">&gt;</span> {
 		{
 			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">cache</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">statuses</span>.<span class="ident">lock</span>();
 			<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">statuses</span>) <span class="op">=</span> <span class="ident">cache</span>.<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">substrate_block_hash</span>).<span class="ident">cloned</span>() {

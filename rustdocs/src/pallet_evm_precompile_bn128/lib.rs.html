@@ -345,7 +345,7 @@
 };
 <span class="kw">use</span> <span class="ident">sp_core::U256</span>;
 
-<span class="kw">fn</span> <span class="ident">read_fr</span>(<span class="ident">input</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>], <span class="ident">start_inx</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">bn::Fr</span>, <span class="ident">PrecompileFailure</span><span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">read_fr</span>(<span class="ident">input</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>], <span class="ident">start_inx</span>: <span class="ident">usize</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">bn::Fr</span>, <span class="ident">PrecompileFailure</span><span class="op">&gt;</span> {
 	<span class="kw">if</span> <span class="ident">input</span>.<span class="ident">len</span>() <span class="op">&lt;</span> <span class="ident">start_inx</span> <span class="op">+</span> <span class="number">32</span> {
 		<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">PrecompileFailure::Error</span> {
 			<span class="ident">exit_status</span>: <span class="ident">ExitError::Other</span>(<span class="string">&quot;Input not long enough&quot;</span>.<span class="ident">into</span>()),
@@ -357,7 +357,7 @@
 	})
 }
 
-<span class="kw">fn</span> <span class="ident">read_point</span>(<span class="ident">input</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>], <span class="ident">start_inx</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">bn::G1</span>, <span class="ident">PrecompileFailure</span><span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">read_point</span>(<span class="ident">input</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>], <span class="ident">start_inx</span>: <span class="ident">usize</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">bn::G1</span>, <span class="ident">PrecompileFailure</span><span class="op">&gt;</span> {
 	<span class="kw">use</span> <span class="ident">bn</span>::{<span class="ident">AffineG1</span>, <span class="ident">Fq</span>, <span class="ident">Group</span>, <span class="ident">G1</span>};
 
 	<span class="kw">if</span> <span class="ident">input</span>.<span class="ident">len</span>() <span class="op">&lt;</span> <span class="ident">start_inx</span> <span class="op">+</span> <span class="number">64</span> {
@@ -376,7 +376,7 @@
 			<span class="ident">exit_status</span>: <span class="ident">ExitError::Other</span>(<span class="string">&quot;Invalid point y coordinate&quot;</span>.<span class="ident">into</span>()),
 		}
 	})<span class="question-mark">?</span>;
-	<span class="prelude-val">Ok</span>(<span class="kw">if</span> <span class="ident">px</span> <span class="op">=</span><span class="op">=</span> <span class="ident">Fq::zero</span>() <span class="op">&amp;&amp;</span> <span class="ident">py</span> <span class="op">=</span><span class="op">=</span> <span class="ident">Fq::zero</span>() {
+	<span class="prelude-val">Ok</span>(<span class="kw">if</span> <span class="ident">px</span> <span class="op">==</span> <span class="ident">Fq::zero</span>() <span class="op">&amp;&amp;</span> <span class="ident">py</span> <span class="op">==</span> <span class="ident">Fq::zero</span>() {
 		<span class="ident">G1::zero</span>()
 	} <span class="kw">else</span> {
 		<span class="ident">AffineG1::new</span>(<span class="ident">px</span>, <span class="ident">py</span>)
@@ -400,7 +400,7 @@
 		<span class="ident">_target_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
 		<span class="ident">_context</span>: <span class="kw-2">&amp;</span><span class="ident">Context</span>,
 		<span class="ident">_is_static</span>: <span class="ident">bool</span>,
-	) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PrecompileResult</span> {
+	) -&gt; <span class="ident">PrecompileResult</span> {
 		<span class="kw">use</span> <span class="ident">bn::AffineG1</span>;
 
 		<span class="kw">let</span> <span class="ident">p1</span> <span class="op">=</span> <span class="ident">read_point</span>(<span class="ident">input</span>, <span class="number">0</span>)<span class="question-mark">?</span>;
@@ -447,7 +447,7 @@
 		<span class="ident">_target_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
 		<span class="ident">_context</span>: <span class="kw-2">&amp;</span><span class="ident">Context</span>,
 		<span class="ident">_is_static</span>: <span class="ident">bool</span>,
-	) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PrecompileResult</span> {
+	) -&gt; <span class="ident">PrecompileResult</span> {
 		<span class="kw">use</span> <span class="ident">bn::AffineG1</span>;
 
 		<span class="kw">let</span> <span class="ident">p</span> <span class="op">=</span> <span class="ident">read_point</span>(<span class="ident">input</span>, <span class="number">0</span>)<span class="question-mark">?</span>;
@@ -496,7 +496,7 @@
 		<span class="ident">target_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
 		<span class="ident">_context</span>: <span class="kw-2">&amp;</span><span class="ident">Context</span>,
 		<span class="ident">_is_static</span>: <span class="ident">bool</span>,
-	) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PrecompileResult</span> {
+	) -&gt; <span class="ident">PrecompileResult</span> {
 		<span class="kw">use</span> <span class="ident">bn</span>::{<span class="ident">pairing_batch</span>, <span class="ident">AffineG1</span>, <span class="ident">AffineG2</span>, <span class="ident">Fq</span>, <span class="ident">Fq2</span>, <span class="ident">Group</span>, <span class="ident">Gt</span>, <span class="ident">G1</span>, <span class="ident">G2</span>};
 
 		<span class="kw">let</span> (<span class="ident">ret_val</span>, <span class="ident">gas_cost</span>) <span class="op">=</span> <span class="kw">if</span> <span class="ident">input</span>.<span class="ident">is_empty</span>() {
@@ -594,7 +594,7 @@
 
 			<span class="kw">let</span> <span class="ident">mul</span> <span class="op">=</span> <span class="ident">pairing_batch</span>(<span class="kw-2">&amp;</span><span class="ident">vals</span>);
 
-			<span class="kw">if</span> <span class="ident">mul</span> <span class="op">=</span><span class="op">=</span> <span class="ident">Gt::one</span>() {
+			<span class="kw">if</span> <span class="ident">mul</span> <span class="op">==</span> <span class="ident">Gt::one</span>() {
 				(<span class="ident">U256::one</span>(), <span class="ident">gas_cost</span>)
 			} <span class="kw">else</span> {
 				(<span class="ident">U256::zero</span>(), <span class="ident">gas_cost</span>)
@@ -619,19 +619,19 @@
 	<span class="kw">use</span> <span class="ident">pallet_evm_test_vector_support::test_precompile_test_vectors</span>;
 
 	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">process_consensus_tests_for_add</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">std::result::Result</span><span class="op">&lt;</span>(), <span class="ident">String</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">process_consensus_tests_for_add</span>() -&gt; <span class="ident">std::result::Result</span><span class="op">&lt;</span>(), <span class="ident">String</span><span class="op">&gt;</span> {
 		<span class="ident">test_precompile_test_vectors</span>::<span class="op">&lt;</span><span class="ident">Bn128Add</span><span class="op">&gt;</span>(<span class="string">&quot;../testdata/common_bnadd.json&quot;</span>)<span class="question-mark">?</span>;
 		<span class="prelude-val">Ok</span>(())
 	}
 
 	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">process_consensus_tests_for_mul</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">std::result::Result</span><span class="op">&lt;</span>(), <span class="ident">String</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">process_consensus_tests_for_mul</span>() -&gt; <span class="ident">std::result::Result</span><span class="op">&lt;</span>(), <span class="ident">String</span><span class="op">&gt;</span> {
 		<span class="ident">test_precompile_test_vectors</span>::<span class="op">&lt;</span><span class="ident">Bn128Mul</span><span class="op">&gt;</span>(<span class="string">&quot;../testdata/common_bnmul.json&quot;</span>)<span class="question-mark">?</span>;
 		<span class="prelude-val">Ok</span>(())
 	}
 
 	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">process_consensus_tests_for_pair</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">std::result::Result</span><span class="op">&lt;</span>(), <span class="ident">String</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">process_consensus_tests_for_pair</span>() -&gt; <span class="ident">std::result::Result</span><span class="op">&lt;</span>(), <span class="ident">String</span><span class="op">&gt;</span> {
 		<span class="ident">test_precompile_test_vectors</span>::<span class="op">&lt;</span><span class="ident">Bn128Pairing</span><span class="op">&gt;</span>(<span class="string">&quot;../testdata/common_bnpair.json&quot;</span>)<span class="question-mark">?</span>;
 		<span class="prelude-val">Ok</span>(())
 	}

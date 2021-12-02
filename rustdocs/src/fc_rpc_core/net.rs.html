@@ -69,16 +69,16 @@
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">NetApi</span> {
 	<span class="doccomment">/// Returns protocol version.</span>
 	<span class="attribute">#[<span class="ident">rpc</span>(<span class="ident">name</span> <span class="op">=</span> <span class="string">&quot;net_version&quot;</span>)]</span>
-	<span class="kw">fn</span> <span class="ident">version</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>;
+	<span class="kw">fn</span> <span class="ident">version</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>;
 
 	<span class="doccomment">/// Returns number of peers connected to node.</span>
 	<span class="attribute">#[<span class="ident">rpc</span>(<span class="ident">name</span> <span class="op">=</span> <span class="string">&quot;net_peerCount&quot;</span>)]</span>
-	<span class="kw">fn</span> <span class="ident">peer_count</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">PeerCount</span><span class="op">&gt;</span>;
+	<span class="kw">fn</span> <span class="ident">peer_count</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">PeerCount</span><span class="op">&gt;</span>;
 
 	<span class="doccomment">/// Returns true if client is actively listening for network connections.</span>
 	<span class="doccomment">/// Otherwise false.</span>
 	<span class="attribute">#[<span class="ident">rpc</span>(<span class="ident">name</span> <span class="op">=</span> <span class="string">&quot;net_listening&quot;</span>)]</span>
-	<span class="kw">fn</span> <span class="ident">is_listening</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span>;
+	<span class="kw">fn</span> <span class="ident">is_listening</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span>;
 }
 </code></pre></div>
 </section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../" data-current-crate="fc_rpc_core" data-search-index-js="../../search-index.js" data-search-js="../../search.js"></div>

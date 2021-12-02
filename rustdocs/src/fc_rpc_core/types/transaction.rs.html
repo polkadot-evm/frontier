@@ -325,12 +325,12 @@
 }
 
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">TransactionV2</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Transaction</span> {
-	<span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">transaction</span>: <span class="ident">TransactionV2</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+	<span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">transaction</span>: <span class="ident">TransactionV2</span>) -&gt; <span class="self">Self</span> {
 		<span class="kw">let</span> <span class="ident">serialized</span> <span class="op">=</span> <span class="ident">rlp::encode</span>(<span class="kw-2">&amp;</span><span class="ident">transaction</span>);
 		<span class="kw">let</span> <span class="ident">hash</span> <span class="op">=</span> <span class="ident">transaction</span>.<span class="ident">hash</span>();
 		<span class="kw">let</span> <span class="ident">raw</span> <span class="op">=</span> <span class="ident">Bytes</span>(<span class="ident">serialized</span>.<span class="ident">to_vec</span>());
 		<span class="kw">match</span> <span class="ident">transaction</span> {
-			<span class="ident">TransactionV2::Legacy</span>(<span class="ident">t</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Transaction</span> {
+			<span class="ident">TransactionV2::Legacy</span>(<span class="ident">t</span>) =&gt; <span class="ident">Transaction</span> {
 				<span class="ident">hash</span>,
 				<span class="ident">nonce</span>: <span class="ident">t</span>.<span class="ident">nonce</span>,
 				<span class="ident">block_hash</span>: <span class="prelude-val">None</span>,
@@ -354,7 +354,7 @@
 				<span class="ident">s</span>: <span class="ident">U256::from</span>(<span class="ident">t</span>.<span class="ident">signature</span>.<span class="ident">s</span>().<span class="ident">as_bytes</span>()),
 				<span class="ident">access_list</span>: <span class="prelude-val">None</span>,
 			},
-			<span class="ident">TransactionV2::EIP2930</span>(<span class="ident">t</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Transaction</span> {
+			<span class="ident">TransactionV2::EIP2930</span>(<span class="ident">t</span>) =&gt; <span class="ident">Transaction</span> {
 				<span class="ident">hash</span>,
 				<span class="ident">nonce</span>: <span class="ident">t</span>.<span class="ident">nonce</span>,
 				<span class="ident">block_hash</span>: <span class="prelude-val">None</span>,
@@ -378,7 +378,7 @@
 				<span class="ident">s</span>: <span class="ident">U256::from</span>(<span class="ident">t</span>.<span class="ident">s</span>.<span class="ident">as_bytes</span>()),
 				<span class="ident">access_list</span>: <span class="prelude-val">Some</span>(<span class="ident">t</span>.<span class="ident">access_list</span>),
 			},
-			<span class="ident">TransactionV2::EIP1559</span>(<span class="ident">t</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Transaction</span> {
+			<span class="ident">TransactionV2::EIP1559</span>(<span class="ident">t</span>) =&gt; <span class="ident">Transaction</span> {
 				<span class="ident">hash</span>,
 				<span class="ident">nonce</span>: <span class="ident">t</span>.<span class="ident">nonce</span>,
 				<span class="ident">block_hash</span>: <span class="prelude-val">None</span>,
@@ -430,17 +430,17 @@
 }
 
 <span class="kw">impl</span> <span class="ident">Serialize</span> <span class="kw">for</span> <span class="ident">LocalTransactionStatus</span> {
-	<span class="kw">fn</span> <span class="ident">serialize</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">serializer</span>: <span class="ident">S</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">S::Ok</span>, <span class="ident">S::Error</span><span class="op">&gt;</span>
+	<span class="kw">fn</span> <span class="ident">serialize</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">serializer</span>: <span class="ident">S</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">S::Ok</span>, <span class="ident">S::Error</span><span class="op">&gt;</span>
 	<span class="kw">where</span>
 		<span class="ident">S</span>: <span class="ident">Serializer</span>,
 	{
 		<span class="kw">use</span> <span class="ident"><span class="self">self</span>::LocalTransactionStatus</span>::<span class="kw-2">*</span>;
 
 		<span class="kw">let</span> <span class="ident">elems</span> <span class="op">=</span> <span class="kw">match</span> <span class="kw-2">*</span><span class="self">self</span> {
-			<span class="ident">Pending</span> <span class="op">|</span> <span class="ident">Future</span> <span class="op">=</span><span class="op">&gt;</span> <span class="number">1</span>,
-			<span class="ident">Mined</span>(..) <span class="op">|</span> <span class="ident">Culled</span>(..) <span class="op">|</span> <span class="ident">Dropped</span>(..) <span class="op">|</span> <span class="ident">Invalid</span>(..) <span class="op">|</span> <span class="ident">Canceled</span>(..) <span class="op">=</span><span class="op">&gt;</span> <span class="number">2</span>,
-			<span class="ident">Rejected</span>(..) <span class="op">=</span><span class="op">&gt;</span> <span class="number">3</span>,
-			<span class="ident">Replaced</span>(..) <span class="op">=</span><span class="op">&gt;</span> <span class="number">4</span>,
+			<span class="ident">Pending</span> <span class="op">|</span> <span class="ident">Future</span> =&gt; <span class="number">1</span>,
+			<span class="ident">Mined</span>(..) <span class="op">|</span> <span class="ident">Culled</span>(..) <span class="op">|</span> <span class="ident">Dropped</span>(..) <span class="op">|</span> <span class="ident">Invalid</span>(..) <span class="op">|</span> <span class="ident">Canceled</span>(..) =&gt; <span class="number">2</span>,
+			<span class="ident">Rejected</span>(..) =&gt; <span class="number">3</span>,
+			<span class="ident">Replaced</span>(..) =&gt; <span class="number">4</span>,
 		};
 
 		<span class="kw">let</span> <span class="ident">status</span> <span class="op">=</span> <span class="string">&quot;status&quot;</span>;
@@ -448,34 +448,34 @@
 
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">struc</span> <span class="op">=</span> <span class="ident">serializer</span>.<span class="ident">serialize_struct</span>(<span class="string">&quot;LocalTransactionStatus&quot;</span>, <span class="ident">elems</span>)<span class="question-mark">?</span>;
 		<span class="kw">match</span> <span class="kw-2">*</span><span class="self">self</span> {
-			<span class="ident">Pending</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">struc</span>.<span class="ident">serialize_field</span>(<span class="ident">status</span>, <span class="string">&quot;pending&quot;</span>)<span class="question-mark">?</span>,
-			<span class="ident">Future</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">struc</span>.<span class="ident">serialize_field</span>(<span class="ident">status</span>, <span class="string">&quot;future&quot;</span>)<span class="question-mark">?</span>,
-			<span class="ident">Mined</span>(<span class="kw-2">ref</span> <span class="ident">tx</span>) <span class="op">=</span><span class="op">&gt;</span> {
+			<span class="ident">Pending</span> =&gt; <span class="ident">struc</span>.<span class="ident">serialize_field</span>(<span class="ident">status</span>, <span class="string">&quot;pending&quot;</span>)<span class="question-mark">?</span>,
+			<span class="ident">Future</span> =&gt; <span class="ident">struc</span>.<span class="ident">serialize_field</span>(<span class="ident">status</span>, <span class="string">&quot;future&quot;</span>)<span class="question-mark">?</span>,
+			<span class="ident">Mined</span>(<span class="kw-2">ref</span> <span class="ident">tx</span>) =&gt; {
 				<span class="ident">struc</span>.<span class="ident">serialize_field</span>(<span class="ident">status</span>, <span class="string">&quot;mined&quot;</span>)<span class="question-mark">?</span>;
 				<span class="ident">struc</span>.<span class="ident">serialize_field</span>(<span class="ident">transaction</span>, <span class="ident">tx</span>)<span class="question-mark">?</span>;
 			}
-			<span class="ident">Culled</span>(<span class="kw-2">ref</span> <span class="ident">tx</span>) <span class="op">=</span><span class="op">&gt;</span> {
+			<span class="ident">Culled</span>(<span class="kw-2">ref</span> <span class="ident">tx</span>) =&gt; {
 				<span class="ident">struc</span>.<span class="ident">serialize_field</span>(<span class="ident">status</span>, <span class="string">&quot;culled&quot;</span>)<span class="question-mark">?</span>;
 				<span class="ident">struc</span>.<span class="ident">serialize_field</span>(<span class="ident">transaction</span>, <span class="ident">tx</span>)<span class="question-mark">?</span>;
 			}
-			<span class="ident">Dropped</span>(<span class="kw-2">ref</span> <span class="ident">tx</span>) <span class="op">=</span><span class="op">&gt;</span> {
+			<span class="ident">Dropped</span>(<span class="kw-2">ref</span> <span class="ident">tx</span>) =&gt; {
 				<span class="ident">struc</span>.<span class="ident">serialize_field</span>(<span class="ident">status</span>, <span class="string">&quot;dropped&quot;</span>)<span class="question-mark">?</span>;
 				<span class="ident">struc</span>.<span class="ident">serialize_field</span>(<span class="ident">transaction</span>, <span class="ident">tx</span>)<span class="question-mark">?</span>;
 			}
-			<span class="ident">Canceled</span>(<span class="kw-2">ref</span> <span class="ident">tx</span>) <span class="op">=</span><span class="op">&gt;</span> {
+			<span class="ident">Canceled</span>(<span class="kw-2">ref</span> <span class="ident">tx</span>) =&gt; {
 				<span class="ident">struc</span>.<span class="ident">serialize_field</span>(<span class="ident">status</span>, <span class="string">&quot;canceled&quot;</span>)<span class="question-mark">?</span>;
 				<span class="ident">struc</span>.<span class="ident">serialize_field</span>(<span class="ident">transaction</span>, <span class="ident">tx</span>)<span class="question-mark">?</span>;
 			}
-			<span class="ident">Invalid</span>(<span class="kw-2">ref</span> <span class="ident">tx</span>) <span class="op">=</span><span class="op">&gt;</span> {
+			<span class="ident">Invalid</span>(<span class="kw-2">ref</span> <span class="ident">tx</span>) =&gt; {
 				<span class="ident">struc</span>.<span class="ident">serialize_field</span>(<span class="ident">status</span>, <span class="string">&quot;invalid&quot;</span>)<span class="question-mark">?</span>;
 				<span class="ident">struc</span>.<span class="ident">serialize_field</span>(<span class="ident">transaction</span>, <span class="ident">tx</span>)<span class="question-mark">?</span>;
 			}
-			<span class="ident">Rejected</span>(<span class="kw-2">ref</span> <span class="ident">tx</span>, <span class="kw-2">ref</span> <span class="ident">reason</span>) <span class="op">=</span><span class="op">&gt;</span> {
+			<span class="ident">Rejected</span>(<span class="kw-2">ref</span> <span class="ident">tx</span>, <span class="kw-2">ref</span> <span class="ident">reason</span>) =&gt; {
 				<span class="ident">struc</span>.<span class="ident">serialize_field</span>(<span class="ident">status</span>, <span class="string">&quot;rejected&quot;</span>)<span class="question-mark">?</span>;
 				<span class="ident">struc</span>.<span class="ident">serialize_field</span>(<span class="ident">transaction</span>, <span class="ident">tx</span>)<span class="question-mark">?</span>;
 				<span class="ident">struc</span>.<span class="ident">serialize_field</span>(<span class="string">&quot;error&quot;</span>, <span class="ident">reason</span>)<span class="question-mark">?</span>;
 			}
-			<span class="ident">Replaced</span>(<span class="kw-2">ref</span> <span class="ident">tx</span>, <span class="kw-2">ref</span> <span class="ident">gas_price</span>, <span class="kw-2">ref</span> <span class="ident">hash</span>) <span class="op">=</span><span class="op">&gt;</span> {
+			<span class="ident">Replaced</span>(<span class="kw-2">ref</span> <span class="ident">tx</span>, <span class="kw-2">ref</span> <span class="ident">gas_price</span>, <span class="kw-2">ref</span> <span class="ident">hash</span>) =&gt; {
 				<span class="ident">struc</span>.<span class="ident">serialize_field</span>(<span class="ident">status</span>, <span class="string">&quot;replaced&quot;</span>)<span class="question-mark">?</span>;
 				<span class="ident">struc</span>.<span class="ident">serialize_field</span>(<span class="ident">transaction</span>, <span class="ident">tx</span>)<span class="question-mark">?</span>;
 				<span class="ident">struc</span>.<span class="ident">serialize_field</span>(<span class="string">&quot;hash&quot;</span>, <span class="ident">hash</span>)<span class="question-mark">?</span>;

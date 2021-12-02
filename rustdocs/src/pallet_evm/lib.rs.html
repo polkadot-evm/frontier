@@ -935,7 +935,7 @@
 		<span class="kw">type</span> <span class="ident">FindAuthor</span>: <span class="ident">FindAuthor</span><span class="op">&lt;</span><span class="ident">H160</span><span class="op">&gt;</span>;
 
 		<span class="doccomment">/// EVM config used in the module.</span>
-		<span class="kw">fn</span> <span class="ident">config</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">EvmConfig</span> {
+		<span class="kw">fn</span> <span class="ident">config</span>() -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">EvmConfig</span> {
 			<span class="kw-2">&amp;</span><span class="ident">ISTANBUL_CONFIG</span>
 		}
 	}
@@ -948,7 +948,7 @@
 			<span class="ident">origin</span>: <span class="ident">OriginFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
 			<span class="ident">address</span>: <span class="ident">H160</span>,
 			<span class="ident">value</span>: <span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
-		) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">DispatchResult</span> {
+		) -&gt; <span class="ident">DispatchResult</span> {
 			<span class="kw">let</span> <span class="ident">destination</span> <span class="op">=</span> <span class="ident">T::WithdrawOrigin::ensure_address_origin</span>(<span class="kw-2">&amp;</span><span class="ident">address</span>, <span class="ident">origin</span>)<span class="question-mark">?</span>;
 			<span class="kw">let</span> <span class="ident">address_account_id</span> <span class="op">=</span> <span class="ident">T::AddressMapping::into_account_id</span>(<span class="ident">address</span>);
 
@@ -975,7 +975,7 @@
 			<span class="ident">max_priority_fee_per_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
 			<span class="ident">nonce</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
 			<span class="ident">access_list</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">H160</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span>)<span class="op">&gt;</span>,
-		) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">DispatchResultWithPostInfo</span> {
+		) -&gt; <span class="ident">DispatchResultWithPostInfo</span> {
 			<span class="ident">T::CallOrigin::ensure_address_origin</span>(<span class="kw-2">&amp;</span><span class="ident">source</span>, <span class="ident">origin</span>)<span class="question-mark">?</span>;
 
 			<span class="kw">let</span> <span class="ident">info</span> <span class="op">=</span> <span class="ident">T::Runner::call</span>(
@@ -992,10 +992,10 @@
 			)<span class="question-mark">?</span>;
 
 			<span class="kw">match</span> <span class="ident">info</span>.<span class="ident">exit_reason</span> {
-				<span class="ident">ExitReason::Succeed</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
+				<span class="ident">ExitReason::Succeed</span>(<span class="kw">_</span>) =&gt; {
 					<span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::deposit_event</span>(<span class="ident">Event</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::Executed</span>(<span class="ident">target</span>));
 				}
-				<span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> {
+				<span class="kw">_</span> =&gt; {
 					<span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::deposit_event</span>(<span class="ident">Event</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::ExecutedFailed</span>(<span class="ident">target</span>));
 				}
 			};
@@ -1021,7 +1021,7 @@
 			<span class="ident">max_priority_fee_per_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
 			<span class="ident">nonce</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
 			<span class="ident">access_list</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">H160</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span>)<span class="op">&gt;</span>,
-		) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">DispatchResultWithPostInfo</span> {
+		) -&gt; <span class="ident">DispatchResultWithPostInfo</span> {
 			<span class="ident">T::CallOrigin::ensure_address_origin</span>(<span class="kw-2">&amp;</span><span class="ident">source</span>, <span class="ident">origin</span>)<span class="question-mark">?</span>;
 
 			<span class="kw">let</span> <span class="ident">info</span> <span class="op">=</span> <span class="ident">T::Runner::create</span>(
@@ -1041,14 +1041,14 @@
 					<span class="ident">exit_reason</span>: <span class="ident">ExitReason::Succeed</span>(<span class="kw">_</span>),
 					<span class="ident">value</span>: <span class="ident">create_address</span>,
 					..
-				} <span class="op">=</span><span class="op">&gt;</span> {
+				} =&gt; {
 					<span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::deposit_event</span>(<span class="ident">Event</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::Created</span>(<span class="ident">create_address</span>));
 				}
 				<span class="ident">CreateInfo</span> {
 					<span class="ident">exit_reason</span>: <span class="kw">_</span>,
 					<span class="ident">value</span>: <span class="ident">create_address</span>,
 					..
-				} <span class="op">=</span><span class="op">&gt;</span> {
+				} =&gt; {
 					<span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::deposit_event</span>(<span class="ident">Event</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::CreatedFailed</span>(<span class="ident">create_address</span>));
 				}
 			}
@@ -1074,7 +1074,7 @@
 			<span class="ident">max_priority_fee_per_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
 			<span class="ident">nonce</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
 			<span class="ident">access_list</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">H160</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span>)<span class="op">&gt;</span>,
-		) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">DispatchResultWithPostInfo</span> {
+		) -&gt; <span class="ident">DispatchResultWithPostInfo</span> {
 			<span class="ident">T::CallOrigin::ensure_address_origin</span>(<span class="kw-2">&amp;</span><span class="ident">source</span>, <span class="ident">origin</span>)<span class="question-mark">?</span>;
 
 			<span class="kw">let</span> <span class="ident">info</span> <span class="op">=</span> <span class="ident">T::Runner::create2</span>(
@@ -1095,14 +1095,14 @@
 					<span class="ident">exit_reason</span>: <span class="ident">ExitReason::Succeed</span>(<span class="kw">_</span>),
 					<span class="ident">value</span>: <span class="ident">create_address</span>,
 					..
-				} <span class="op">=</span><span class="op">&gt;</span> {
+				} =&gt; {
 					<span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::deposit_event</span>(<span class="ident">Event</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::Created</span>(<span class="ident">create_address</span>));
 				}
 				<span class="ident">CreateInfo</span> {
 					<span class="ident">exit_reason</span>: <span class="kw">_</span>,
 					<span class="ident">value</span>: <span class="ident">create_address</span>,
 					..
-				} <span class="op">=</span><span class="op">&gt;</span> {
+				} =&gt; {
 					<span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::deposit_event</span>(<span class="ident">Event</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::CreatedFailed</span>(<span class="ident">create_address</span>));
 				}
 			}
@@ -1158,7 +1158,7 @@
 
 	<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>)]</span>
 	<span class="kw">impl</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">GenesisConfig</span> {
-		<span class="kw">fn</span> <span class="ident">default</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+		<span class="kw">fn</span> <span class="ident">default</span>() -&gt; <span class="self">Self</span> {
 			<span class="self">Self</span> {
 				<span class="ident">accounts</span>: <span class="ident">Default::default</span>(),
 			}
@@ -1212,11 +1212,11 @@
 <span class="doccomment">/// Trait that outputs the current transaction gas price.</span>
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">FeeCalculator</span> {
 	<span class="doccomment">/// Return the minimal required gas price.</span>
-	<span class="kw">fn</span> <span class="ident">min_gas_price</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">U256</span>;
+	<span class="kw">fn</span> <span class="ident">min_gas_price</span>() -&gt; <span class="ident">U256</span>;
 }
 
 <span class="kw">impl</span> <span class="ident">FeeCalculator</span> <span class="kw">for</span> () {
-	<span class="kw">fn</span> <span class="ident">min_gas_price</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">U256</span> {
+	<span class="kw">fn</span> <span class="ident">min_gas_price</span>() -&gt; <span class="ident">U256</span> {
 		<span class="ident">U256::zero</span>()
 	}
 }
@@ -1229,7 +1229,7 @@
 	<span class="kw">fn</span> <span class="ident">ensure_address_origin</span>(
 		<span class="ident">address</span>: <span class="kw-2">&amp;</span><span class="ident">H160</span>,
 		<span class="ident">origin</span>: <span class="ident">OuterOrigin</span>,
-	) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Success</span>, <span class="ident">BadOrigin</span><span class="op">&gt;</span> {
+	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Success</span>, <span class="ident">BadOrigin</span><span class="op">&gt;</span> {
 		<span class="ident"><span class="self">Self</span>::try_address_origin</span>(<span class="ident">address</span>, <span class="ident">origin</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">BadOrigin</span>)
 	}
 
@@ -1237,7 +1237,7 @@
 	<span class="kw">fn</span> <span class="ident">try_address_origin</span>(
 		<span class="ident">address</span>: <span class="kw-2">&amp;</span><span class="ident">H160</span>,
 		<span class="ident">origin</span>: <span class="ident">OuterOrigin</span>,
-	) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Success</span>, <span class="ident">OuterOrigin</span><span class="op">&gt;</span>;
+	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Success</span>, <span class="ident">OuterOrigin</span><span class="op">&gt;</span>;
 }
 
 <span class="doccomment">/// Ensure that the EVM address is the same as the Substrate address. This only works if the account</span>
@@ -1250,10 +1250,10 @@
 {
 	<span class="kw">type</span> <span class="ident">Success</span> <span class="op">=</span> <span class="ident">H160</span>;
 
-	<span class="kw">fn</span> <span class="ident">try_address_origin</span>(<span class="ident">address</span>: <span class="kw-2">&amp;</span><span class="ident">H160</span>, <span class="ident">origin</span>: <span class="ident">OuterOrigin</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">H160</span>, <span class="ident">OuterOrigin</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">try_address_origin</span>(<span class="ident">address</span>: <span class="kw-2">&amp;</span><span class="ident">H160</span>, <span class="ident">origin</span>: <span class="ident">OuterOrigin</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">H160</span>, <span class="ident">OuterOrigin</span><span class="op">&gt;</span> {
 		<span class="ident">origin</span>.<span class="ident">into</span>().<span class="ident">and_then</span>(<span class="op">|</span><span class="ident">o</span><span class="op">|</span> <span class="kw">match</span> <span class="ident">o</span> {
-			<span class="ident">RawOrigin::Signed</span>(<span class="ident">who</span>) <span class="kw">if</span> <span class="kw-2">&amp;</span><span class="ident">who</span> <span class="op">=</span><span class="op">=</span> <span class="ident">address</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">who</span>),
-			<span class="ident">r</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">OuterOrigin::from</span>(<span class="ident">r</span>)),
+			<span class="ident">RawOrigin::Signed</span>(<span class="ident">who</span>) <span class="kw">if</span> <span class="kw-2">&amp;</span><span class="ident">who</span> <span class="op">==</span> <span class="ident">address</span> =&gt; <span class="prelude-val">Ok</span>(<span class="ident">who</span>),
+			<span class="ident">r</span> =&gt; <span class="prelude-val">Err</span>(<span class="ident">OuterOrigin::from</span>(<span class="ident">r</span>)),
 		})
 	}
 }
@@ -1267,10 +1267,10 @@
 {
 	<span class="kw">type</span> <span class="ident">Success</span> <span class="op">=</span> ();
 
-	<span class="kw">fn</span> <span class="ident">try_address_origin</span>(<span class="ident">_address</span>: <span class="kw-2">&amp;</span><span class="ident">H160</span>, <span class="ident">origin</span>: <span class="ident">OuterOrigin</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">OuterOrigin</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">try_address_origin</span>(<span class="ident">_address</span>: <span class="kw-2">&amp;</span><span class="ident">H160</span>, <span class="ident">origin</span>: <span class="ident">OuterOrigin</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">OuterOrigin</span><span class="op">&gt;</span> {
 		<span class="ident">origin</span>.<span class="ident">into</span>().<span class="ident">and_then</span>(<span class="op">|</span><span class="ident">o</span><span class="op">|</span> <span class="kw">match</span> <span class="ident">o</span> {
-			<span class="ident">RawOrigin::Root</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(()),
-			<span class="ident">r</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">OuterOrigin::from</span>(<span class="ident">r</span>)),
+			<span class="ident">RawOrigin::Root</span> =&gt; <span class="prelude-val">Ok</span>(()),
+			<span class="ident">r</span> =&gt; <span class="prelude-val">Err</span>(<span class="ident">OuterOrigin::from</span>(<span class="ident">r</span>)),
 		})
 	}
 }
@@ -1281,7 +1281,7 @@
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">OuterOrigin</span>, <span class="ident">AccountId</span><span class="op">&gt;</span> <span class="ident">EnsureAddressOrigin</span><span class="op">&lt;</span><span class="ident">OuterOrigin</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">EnsureAddressNever</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span> {
 	<span class="kw">type</span> <span class="ident">Success</span> <span class="op">=</span> <span class="ident">AccountId</span>;
 
-	<span class="kw">fn</span> <span class="ident">try_address_origin</span>(<span class="ident">_address</span>: <span class="kw-2">&amp;</span><span class="ident">H160</span>, <span class="ident">origin</span>: <span class="ident">OuterOrigin</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">AccountId</span>, <span class="ident">OuterOrigin</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">try_address_origin</span>(<span class="ident">_address</span>: <span class="kw-2">&amp;</span><span class="ident">H160</span>, <span class="ident">origin</span>: <span class="ident">OuterOrigin</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">AccountId</span>, <span class="ident">OuterOrigin</span><span class="op">&gt;</span> {
 		<span class="prelude-val">Err</span>(<span class="ident">origin</span>)
 	}
 }
@@ -1296,25 +1296,25 @@
 {
 	<span class="kw">type</span> <span class="ident">Success</span> <span class="op">=</span> <span class="ident">AccountId32</span>;
 
-	<span class="kw">fn</span> <span class="ident">try_address_origin</span>(<span class="ident">address</span>: <span class="kw-2">&amp;</span><span class="ident">H160</span>, <span class="ident">origin</span>: <span class="ident">OuterOrigin</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">AccountId32</span>, <span class="ident">OuterOrigin</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">try_address_origin</span>(<span class="ident">address</span>: <span class="kw-2">&amp;</span><span class="ident">H160</span>, <span class="ident">origin</span>: <span class="ident">OuterOrigin</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">AccountId32</span>, <span class="ident">OuterOrigin</span><span class="op">&gt;</span> {
 		<span class="ident">origin</span>.<span class="ident">into</span>().<span class="ident">and_then</span>(<span class="op">|</span><span class="ident">o</span><span class="op">|</span> <span class="kw">match</span> <span class="ident">o</span> {
-			<span class="ident">RawOrigin::Signed</span>(<span class="ident">who</span>) <span class="kw">if</span> <span class="ident">AsRef</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">32</span>]<span class="op">&gt;</span><span class="ident">::as_ref</span>(<span class="kw-2">&amp;</span><span class="ident">who</span>)[<span class="number">0</span>..<span class="number">20</span>] <span class="op">=</span><span class="op">=</span> <span class="ident">address</span>[<span class="number">0</span>..<span class="number">20</span>] <span class="op">=</span><span class="op">&gt;</span> {
+			<span class="ident">RawOrigin::Signed</span>(<span class="ident">who</span>) <span class="kw">if</span> <span class="ident">AsRef</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">32</span>]<span class="op">&gt;</span><span class="ident">::as_ref</span>(<span class="kw-2">&amp;</span><span class="ident">who</span>)[<span class="number">0</span>..<span class="number">20</span>] <span class="op">==</span> <span class="ident">address</span>[<span class="number">0</span>..<span class="number">20</span>] =&gt; {
 				<span class="prelude-val">Ok</span>(<span class="ident">who</span>)
 			}
-			<span class="ident">r</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">OuterOrigin::from</span>(<span class="ident">r</span>)),
+			<span class="ident">r</span> =&gt; <span class="prelude-val">Err</span>(<span class="ident">OuterOrigin::from</span>(<span class="ident">r</span>)),
 		})
 	}
 }
 
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">AddressMapping</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span> {
-	<span class="kw">fn</span> <span class="ident">into_account_id</span>(<span class="ident">address</span>: <span class="ident">H160</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">A</span>;
+	<span class="kw">fn</span> <span class="ident">into_account_id</span>(<span class="ident">address</span>: <span class="ident">H160</span>) -&gt; <span class="ident">A</span>;
 }
 
 <span class="doccomment">/// Identity address mapping.</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">IdentityAddressMapping</span>;
 
 <span class="kw">impl</span> <span class="ident">AddressMapping</span><span class="op">&lt;</span><span class="ident">H160</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">IdentityAddressMapping</span> {
-	<span class="kw">fn</span> <span class="ident">into_account_id</span>(<span class="ident">address</span>: <span class="ident">H160</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">H160</span> {
+	<span class="kw">fn</span> <span class="ident">into_account_id</span>(<span class="ident">address</span>: <span class="ident">H160</span>) -&gt; <span class="ident">H160</span> {
 		<span class="ident">address</span>
 	}
 }
@@ -1323,7 +1323,7 @@
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">HashedAddressMapping</span><span class="op">&lt;</span><span class="ident">H</span><span class="op">&gt;</span>(<span class="ident">sp_std::marker::PhantomData</span><span class="op">&lt;</span><span class="ident">H</span><span class="op">&gt;</span>);
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">H</span>: <span class="ident">Hasher</span><span class="op">&lt;</span><span class="ident">Out</span> <span class="op">=</span> <span class="ident">H256</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="ident">AddressMapping</span><span class="op">&lt;</span><span class="ident">AccountId32</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">HashedAddressMapping</span><span class="op">&lt;</span><span class="ident">H</span><span class="op">&gt;</span> {
-	<span class="kw">fn</span> <span class="ident">into_account_id</span>(<span class="ident">address</span>: <span class="ident">H160</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">AccountId32</span> {
+	<span class="kw">fn</span> <span class="ident">into_account_id</span>(<span class="ident">address</span>: <span class="ident">H160</span>) -&gt; <span class="ident">AccountId32</span> {
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">data</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">24</span>];
 		<span class="ident">data</span>[<span class="number">0</span>..<span class="number">4</span>].<span class="ident">copy_from_slice</span>(<span class="string">b&quot;evm:&quot;</span>);
 		<span class="ident">data</span>[<span class="number">4</span>..<span class="number">24</span>].<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">address</span>[..]);
@@ -1335,13 +1335,13 @@
 
 <span class="doccomment">/// A trait for getting a block hash by number.</span>
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">BlockHashMapping</span> {
-	<span class="kw">fn</span> <span class="ident">block_hash</span>(<span class="ident">number</span>: <span class="ident">u32</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">H256</span>;
+	<span class="kw">fn</span> <span class="ident">block_hash</span>(<span class="ident">number</span>: <span class="ident">u32</span>) -&gt; <span class="ident">H256</span>;
 }
 
 <span class="doccomment">/// Returns the Substrate block hash by number.</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">SubstrateBlockHashMapping</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>(<span class="ident">sp_std::marker::PhantomData</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>);
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">BlockHashMapping</span> <span class="kw">for</span> <span class="ident">SubstrateBlockHashMapping</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-	<span class="kw">fn</span> <span class="ident">block_hash</span>(<span class="ident">number</span>: <span class="ident">u32</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">H256</span> {
+	<span class="kw">fn</span> <span class="ident">block_hash</span>(<span class="ident">number</span>: <span class="ident">u32</span>) -&gt; <span class="ident">H256</span> {
 		<span class="kw">let</span> <span class="ident">number</span> <span class="op">=</span> <span class="ident">T::BlockNumber::from</span>(<span class="ident">number</span>);
 		<span class="ident">H256::from_slice</span>(<span class="ident">frame_system::Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::block_hash</span>(<span class="ident">number</span>).<span class="ident">as_ref</span>())
 	}
@@ -1349,15 +1349,15 @@
 
 <span class="doccomment">/// A mapping function that converts Ethereum gas to Substrate weight</span>
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">GasWeightMapping</span> {
-	<span class="kw">fn</span> <span class="ident">gas_to_weight</span>(<span class="ident">gas</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Weight</span>;
-	<span class="kw">fn</span> <span class="ident">weight_to_gas</span>(<span class="ident">weight</span>: <span class="ident">Weight</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u64</span>;
+	<span class="kw">fn</span> <span class="ident">gas_to_weight</span>(<span class="ident">gas</span>: <span class="ident">u64</span>) -&gt; <span class="ident">Weight</span>;
+	<span class="kw">fn</span> <span class="ident">weight_to_gas</span>(<span class="ident">weight</span>: <span class="ident">Weight</span>) -&gt; <span class="ident">u64</span>;
 }
 
 <span class="kw">impl</span> <span class="ident">GasWeightMapping</span> <span class="kw">for</span> () {
-	<span class="kw">fn</span> <span class="ident">gas_to_weight</span>(<span class="ident">gas</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Weight</span> {
+	<span class="kw">fn</span> <span class="ident">gas_to_weight</span>(<span class="ident">gas</span>: <span class="ident">u64</span>) -&gt; <span class="ident">Weight</span> {
 		<span class="ident">gas</span> <span class="kw">as</span> <span class="ident">Weight</span>
 	}
-	<span class="kw">fn</span> <span class="ident">weight_to_gas</span>(<span class="ident">weight</span>: <span class="ident">Weight</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u64</span> {
+	<span class="kw">fn</span> <span class="ident">weight_to_gas</span>(<span class="ident">weight</span>: <span class="ident">Weight</span>) -&gt; <span class="ident">u64</span> {
 		<span class="ident">weight</span> <span class="kw">as</span> <span class="ident">u64</span>
 	}
 }
@@ -1380,11 +1380,11 @@
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
 	<span class="doccomment">/// Check whether an account is empty.</span>
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_account_empty</span>(<span class="ident">address</span>: <span class="kw-2">&amp;</span><span class="ident">H160</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_account_empty</span>(<span class="ident">address</span>: <span class="kw-2">&amp;</span><span class="ident">H160</span>) -&gt; <span class="ident">bool</span> {
 		<span class="kw">let</span> <span class="ident">account</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::account_basic</span>(<span class="ident">address</span>);
 		<span class="kw">let</span> <span class="ident">code_len</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">AccountCodes</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::decode_len</span>(<span class="ident">address</span>).<span class="ident">unwrap_or</span>(<span class="number">0</span>);
 
-		<span class="ident">account</span>.<span class="ident">nonce</span> <span class="op">=</span><span class="op">=</span> <span class="ident">U256::zero</span>() <span class="op">&amp;&amp;</span> <span class="ident">account</span>.<span class="ident">balance</span> <span class="op">=</span><span class="op">=</span> <span class="ident">U256::zero</span>() <span class="op">&amp;&amp;</span> <span class="ident">code_len</span> <span class="op">=</span><span class="op">=</span> <span class="number">0</span>
+		<span class="ident">account</span>.<span class="ident">nonce</span> <span class="op">==</span> <span class="ident">U256::zero</span>() <span class="op">&amp;&amp;</span> <span class="ident">account</span>.<span class="ident">balance</span> <span class="op">==</span> <span class="ident">U256::zero</span>() <span class="op">&amp;&amp;</span> <span class="ident">code_len</span> <span class="op">==</span> <span class="number">0</span>
 	}
 
 	<span class="doccomment">/// Remove an account if its empty.</span>
@@ -1420,7 +1420,7 @@
 	}
 
 	<span class="doccomment">/// Get the account basic in EVM format.</span>
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">account_basic</span>(<span class="ident">address</span>: <span class="kw-2">&amp;</span><span class="ident">H160</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Account</span> {
+	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">account_basic</span>(<span class="ident">address</span>: <span class="kw-2">&amp;</span><span class="ident">H160</span>) -&gt; <span class="ident">Account</span> {
 		<span class="kw">let</span> <span class="ident">account_id</span> <span class="op">=</span> <span class="ident">T::AddressMapping::into_account_id</span>(<span class="kw-2">*</span><span class="ident">address</span>);
 
 		<span class="kw">let</span> <span class="ident">nonce</span> <span class="op">=</span> <span class="ident">frame_system::Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::account_nonce</span>(<span class="kw-2">&amp;</span><span class="ident">account_id</span>);
@@ -1434,7 +1434,7 @@
 	}
 
 	<span class="doccomment">/// Get the author using the FindAuthor trait.</span>
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">find_author</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">H160</span> {
+	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">find_author</span>() -&gt; <span class="ident">H160</span> {
 		<span class="kw">let</span> <span class="ident">digest</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">frame_system::Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::digest</span>();
 		<span class="kw">let</span> <span class="ident">pre_runtime_digests</span> <span class="op">=</span> <span class="ident">digest</span>.<span class="ident">logs</span>.<span class="ident">iter</span>().<span class="ident">filter_map</span>(<span class="op">|</span><span class="ident">d</span><span class="op">|</span> <span class="ident">d</span>.<span class="ident">as_pre_runtime</span>());
 
@@ -1449,7 +1449,7 @@
 
 	<span class="doccomment">/// Before the transaction is executed the payment of the transaction fees</span>
 	<span class="doccomment">/// need to be secured.</span>
-	<span class="kw">fn</span> <span class="ident">withdraw_fee</span>(<span class="ident">who</span>: <span class="kw-2">&amp;</span><span class="ident">H160</span>, <span class="ident">fee</span>: <span class="ident">U256</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::LiquidityInfo</span>, <span class="ident">Error</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>;
+	<span class="kw">fn</span> <span class="ident">withdraw_fee</span>(<span class="ident">who</span>: <span class="kw-2">&amp;</span><span class="ident">H160</span>, <span class="ident">fee</span>: <span class="ident">U256</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::LiquidityInfo</span>, <span class="ident">Error</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>;
 
 	<span class="doccomment">/// After the transaction was executed the actual fee can be calculated.</span>
 	<span class="doccomment">/// This function should refund any overpaid fees and optionally deposit</span>
@@ -1487,7 +1487,7 @@
 	<span class="comment">// Kept type as Option to satisfy bound of Default</span>
 	<span class="kw">type</span> <span class="ident">LiquidityInfo</span> <span class="op">=</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">NegativeImbalanceOf</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>;
 
-	<span class="kw">fn</span> <span class="ident">withdraw_fee</span>(<span class="ident">who</span>: <span class="kw-2">&amp;</span><span class="ident">H160</span>, <span class="ident">fee</span>: <span class="ident">U256</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::LiquidityInfo</span>, <span class="ident">Error</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">withdraw_fee</span>(<span class="ident">who</span>: <span class="kw-2">&amp;</span><span class="ident">H160</span>, <span class="ident">fee</span>: <span class="ident">U256</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::LiquidityInfo</span>, <span class="ident">Error</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> <span class="ident">account_id</span> <span class="op">=</span> <span class="ident">T::AddressMapping::into_account_id</span>(<span class="kw-2">*</span><span class="ident">who</span>);
 		<span class="kw">let</span> <span class="ident">imbalance</span> <span class="op">=</span> <span class="ident">C::withdraw</span>(
 			<span class="kw-2">&amp;</span><span class="ident">account_id</span>,
@@ -1528,8 +1528,8 @@
 				<span class="comment">// Known bug: Substrate tried to refund to a zeroed AccountData, but</span>
 				<span class="comment">// interpreted the account to not exist.</span>
 				<span class="kw">match</span> <span class="ident">C::make_free_balance_be</span>(<span class="kw-2">&amp;</span><span class="ident">account_id</span>, <span class="ident">refund_amount</span>) {
-					<span class="ident">SignedImbalance::Positive</span>(<span class="ident">p</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">p</span>,
-					<span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">C::PositiveImbalance::zero</span>(),
+					<span class="ident">SignedImbalance::Positive</span>(<span class="ident">p</span>) =&gt; <span class="ident">p</span>,
+					<span class="kw">_</span> =&gt; <span class="ident">C::PositiveImbalance::zero</span>(),
 				}
 			} <span class="kw">else</span> {
 				<span class="ident">refund_imbalance</span>
@@ -1564,7 +1564,7 @@
 	<span class="kw">fn</span> <span class="ident">withdraw_fee</span>(
 		<span class="ident">who</span>: <span class="kw-2">&amp;</span><span class="ident">H160</span>,
 		<span class="ident">fee</span>: <span class="ident">U256</span>,
-	) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::LiquidityInfo</span>, <span class="ident">Error</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::LiquidityInfo</span>, <span class="ident">Error</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span> {
 		<span class="ident">EVMCurrencyAdapter</span>::<span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">Config</span><span class="op">&gt;</span><span class="ident">::Currency</span>, ()<span class="op">&gt;</span><span class="ident">::withdraw_fee</span>(<span class="ident">who</span>, <span class="ident">fee</span>)
 	}
 

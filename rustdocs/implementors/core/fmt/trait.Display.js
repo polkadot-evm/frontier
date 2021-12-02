@@ -1,3 +1,3 @@
 (function() {var implementors = {};
-implementors["fc_consensus"] = [{"text":"impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.56.1/core/fmt/trait.Display.html\" title=\"trait core::fmt::Display\">Display</a> for <a class=\"enum\" href=\"fc_consensus/enum.Error.html\" title=\"enum fc_consensus::Error\">Error</a>","synthetic":false,"types":["fc_consensus::Error"]}];
+implementors["fc_consensus"] = [{"text":"impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.57.0/core/fmt/trait.Display.html\" title=\"trait core::fmt::Display\">Display</a> for <a class=\"enum\" href=\"fc_consensus/enum.Error.html\" title=\"enum fc_consensus::Error\">Error</a>","synthetic":false,"types":["fc_consensus::Error"]}];
 if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

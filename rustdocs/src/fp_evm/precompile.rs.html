@@ -122,7 +122,7 @@
 		<span class="ident">target_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
 		<span class="ident">context</span>: <span class="kw-2">&amp;</span><span class="ident">Context</span>,
 		<span class="ident">is_static</span>: <span class="ident">bool</span>,
-	) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PrecompileResult</span>;
+	) -&gt; <span class="ident">PrecompileResult</span>;
 }
 
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">LinearCostPrecompile</span> {
@@ -132,11 +132,11 @@
 	<span class="kw">fn</span> <span class="ident">execute</span>(
 		<span class="ident">input</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>],
 		<span class="ident">cost</span>: <span class="ident">u64</span>,
-	) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">core::result::Result</span><span class="op">&lt;</span>(<span class="ident">ExitSucceed</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>), <span class="ident">PrecompileFailure</span><span class="op">&gt;</span>;
+	) -&gt; <span class="ident">core::result::Result</span><span class="op">&lt;</span>(<span class="ident">ExitSucceed</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>), <span class="ident">PrecompileFailure</span><span class="op">&gt;</span>;
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">LinearCostPrecompile</span><span class="op">&gt;</span> <span class="ident">Precompile</span> <span class="kw">for</span> <span class="ident">T</span> {
-	<span class="kw">fn</span> <span class="ident">execute</span>(<span class="ident">input</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>], <span class="ident">target_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>, <span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="ident">Context</span>, <span class="kw">_</span>: <span class="ident">bool</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PrecompileResult</span> {
+	<span class="kw">fn</span> <span class="ident">execute</span>(<span class="ident">input</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>], <span class="ident">target_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>, <span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="ident">Context</span>, <span class="kw">_</span>: <span class="ident">bool</span>) -&gt; <span class="ident">PrecompileResult</span> {
 		<span class="kw">let</span> <span class="ident">cost</span> <span class="op">=</span> <span class="ident">ensure_linear_cost</span>(<span class="ident">target_gas</span>, <span class="ident">input</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">u64</span>, <span class="ident">T::BASE</span>, <span class="ident">T::WORD</span>)<span class="question-mark">?</span>;
 
 		<span class="kw">let</span> (<span class="ident">exit_status</span>, <span class="ident">output</span>) <span class="op">=</span> <span class="ident">T::execute</span>(<span class="ident">input</span>, <span class="ident">cost</span>)<span class="question-mark">?</span>;
@@ -155,7 +155,7 @@
 	<span class="ident">len</span>: <span class="ident">u64</span>,
 	<span class="ident">base</span>: <span class="ident">u64</span>,
 	<span class="ident">word</span>: <span class="ident">u64</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">u64</span>, <span class="ident">PrecompileFailure</span><span class="op">&gt;</span> {
+) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">u64</span>, <span class="ident">PrecompileFailure</span><span class="op">&gt;</span> {
 	<span class="kw">let</span> <span class="ident">cost</span> <span class="op">=</span> <span class="ident">base</span>
 		.<span class="ident">checked_add</span>(<span class="ident">word</span>.<span class="ident">checked_mul</span>(<span class="ident">len</span>.<span class="ident">saturating_add</span>(<span class="number">31</span>) <span class="op">/</span> <span class="number">32</span>).<span class="ident">ok_or</span>(
 			<span class="ident">PrecompileFailure::Error</span> {

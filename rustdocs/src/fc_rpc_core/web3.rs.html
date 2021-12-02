@@ -68,11 +68,11 @@
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Web3Api</span> {
 	<span class="doccomment">/// Returns current client version.</span>
 	<span class="attribute">#[<span class="ident">rpc</span>(<span class="ident">name</span> <span class="op">=</span> <span class="string">&quot;web3_clientVersion&quot;</span>)]</span>
-	<span class="kw">fn</span> <span class="ident">client_version</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>;
+	<span class="kw">fn</span> <span class="ident">client_version</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>;
 
 	<span class="doccomment">/// Returns sha3 of the given data</span>
 	<span class="attribute">#[<span class="ident">rpc</span>(<span class="ident">name</span> <span class="op">=</span> <span class="string">&quot;web3_sha3&quot;</span>)]</span>
-	<span class="kw">fn</span> <span class="ident">sha3</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="kw">_</span>: <span class="ident">Bytes</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span>;
+	<span class="kw">fn</span> <span class="ident">sha3</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="kw">_</span>: <span class="ident">Bytes</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span>;
 }
 </code></pre></div>
 </section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../" data-current-crate="fc_rpc_core" data-search-index-js="../../search-index.js" data-search-js="../../search.js"></div>

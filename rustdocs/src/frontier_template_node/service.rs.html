@@ -814,11 +814,11 @@
 <span class="kw">impl</span> <span class="ident">sc_executor::NativeExecutionDispatch</span> <span class="kw">for</span> <span class="ident">ExecutorDispatch</span> {
 	<span class="kw">type</span> <span class="ident">ExtendHostFunctions</span> <span class="op">=</span> <span class="ident">frame_benchmarking::benchmarking::HostFunctions</span>;
 
-	<span class="kw">fn</span> <span class="ident">dispatch</span>(<span class="ident">method</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">data</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">dispatch</span>(<span class="ident">method</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">data</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span> {
 		<span class="ident">frontier_template_runtime::api::dispatch</span>(<span class="ident">method</span>, <span class="ident">data</span>)
 	}
 
-	<span class="kw">fn</span> <span class="ident">native_version</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">sc_executor::NativeVersion</span> {
+	<span class="kw">fn</span> <span class="ident">native_version</span>() -&gt; <span class="ident">sc_executor::NativeVersion</span> {
 		<span class="ident">frontier_template_runtime::native_version</span>()
 	}
 }
@@ -857,7 +857,7 @@
 	<span class="kw">fn</span> <span class="ident">provide_inherent_data</span>(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		<span class="ident">inherent_data</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">InherentData</span>,
-	) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">sp_inherents::Error</span><span class="op">&gt;</span> {
+	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">sp_inherents::Error</span><span class="op">&gt;</span> {
 		<span class="ident">TIMESTAMP</span>.<span class="ident">with</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> {
 			<span class="kw-2">*</span><span class="ident">x</span>.<span class="ident">borrow_mut</span>() <span class="op">+</span><span class="op">=</span> <span class="ident">SLOT_DURATION</span>;
 			<span class="ident">inherent_data</span>.<span class="ident">put_data</span>(<span class="ident">INHERENT_IDENTIFIER</span>, <span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">x</span>.<span class="ident">borrow</span>())
@@ -868,13 +868,13 @@
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		<span class="ident">_identifier</span>: <span class="kw-2">&amp;</span><span class="ident">InherentIdentifier</span>,
 		<span class="ident">_error</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>],
-	) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">sp_inherents::Error</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+	) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">sp_inherents::Error</span><span class="op">&gt;</span><span class="op">&gt;</span> {
 		<span class="comment">// The pallet never reports error.</span>
 		<span class="prelude-val">None</span>
 	}
 }
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">frontier_database_dir</span>(<span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="ident">Configuration</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">std::path::PathBuf</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">frontier_database_dir</span>(<span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="ident">Configuration</span>) -&gt; <span class="ident">std::path::PathBuf</span> {
 	<span class="kw">let</span> <span class="ident">config_dir</span> <span class="op">=</span> <span class="ident">config</span>
 		.<span class="ident">base_path</span>
 		.<span class="ident">as_ref</span>()
@@ -886,7 +886,7 @@
 	<span class="ident">config_dir</span>.<span class="ident">join</span>(<span class="string">&quot;frontier&quot;</span>).<span class="ident">join</span>(<span class="string">&quot;db&quot;</span>)
 }
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">open_frontier_backend</span>(<span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="ident">Configuration</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">fc_db::Backend</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">String</span><span class="op">&gt;</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">open_frontier_backend</span>(<span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="ident">Configuration</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">fc_db::Backend</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">String</span><span class="op">&gt;</span> {
 	<span class="prelude-val">Ok</span>(<span class="ident">Arc::new</span>(<span class="ident">fc_db::Backend</span>::<span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span><span class="ident">::new</span>(
 		<span class="kw-2">&amp;</span><span class="ident">fc_db::DatabaseSettings</span> {
 			<span class="ident">source</span>: <span class="ident">fc_db::DatabaseSettingsSrc::RocksDb</span> {
@@ -900,7 +900,7 @@
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new_partial</span>(
 	<span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="ident">Configuration</span>,
 	<span class="ident">cli</span>: <span class="kw-2">&amp;</span><span class="ident">Cli</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>
+) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>
 	<span class="ident">sc_service::PartialComponents</span><span class="op">&lt;</span>
 		<span class="ident">FullClient</span>,
 		<span class="ident">FullBackend</span>,
@@ -926,7 +926,7 @@
 		.<span class="ident">telemetry_endpoints</span>
 		.<span class="ident">clone</span>()
 		.<span class="ident">filter</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="op">!</span><span class="ident">x</span>.<span class="ident">is_empty</span>())
-		.<span class="ident">map</span>(<span class="op">|</span><span class="ident">endpoints</span><span class="op">|</span> <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">sc_telemetry::Error</span><span class="op">&gt;</span> {
+		.<span class="ident">map</span>(<span class="op">|</span><span class="ident">endpoints</span><span class="op">|</span> -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">sc_telemetry::Error</span><span class="op">&gt;</span> {
 			<span class="kw">let</span> <span class="ident">worker</span> <span class="op">=</span> <span class="ident">TelemetryWorker::new</span>(<span class="number">16</span>)<span class="question-mark">?</span>;
 			<span class="kw">let</span> <span class="ident">telemetry</span> <span class="op">=</span> <span class="ident">worker</span>.<span class="ident">handle</span>().<span class="ident">new_telemetry</span>(<span class="ident">endpoints</span>);
 			<span class="prelude-val">Ok</span>((<span class="ident">worker</span>, <span class="ident">telemetry</span>))
@@ -1060,7 +1060,7 @@
 	}
 }
 
-<span class="kw">fn</span> <span class="ident">remote_keystore</span>(<span class="ident">_url</span>: <span class="kw-2">&amp;</span><span class="ident">String</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">LocalKeystore</span><span class="op">&gt;</span>, <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span><span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">remote_keystore</span>(<span class="ident">_url</span>: <span class="kw-2">&amp;</span><span class="ident">String</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">LocalKeystore</span><span class="op">&gt;</span>, <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span><span class="op">&gt;</span> {
 	<span class="comment">// FIXME: here would the concrete keystore be built,</span>
 	<span class="comment">//        must return a concrete type (NOT `LocalKeystore`) that</span>
 	<span class="comment">//        implements `CryptoStore` and `SyncCryptoStore`</span>
@@ -1068,7 +1068,7 @@
 }
 
 <span class="doccomment">/// Builds a new service for a full client.</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new_full</span>(<span class="kw-2">mut</span> <span class="ident">config</span>: <span class="ident">Configuration</span>, <span class="ident">cli</span>: <span class="kw-2">&amp;</span><span class="ident">Cli</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">TaskManager</span>, <span class="ident">ServiceError</span><span class="op">&gt;</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new_full</span>(<span class="kw-2">mut</span> <span class="ident">config</span>: <span class="ident">Configuration</span>, <span class="ident">cli</span>: <span class="kw-2">&amp;</span><span class="ident">Cli</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">TaskManager</span>, <span class="ident">ServiceError</span><span class="op">&gt;</span> {
 	<span class="kw">let</span> <span class="ident">sc_service::PartialComponents</span> {
 		<span class="ident">client</span>,
 		<span class="ident">backend</span>,
@@ -1082,8 +1082,8 @@
 
 	<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">url</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">config</span>.<span class="ident">keystore_remote</span> {
 		<span class="kw">match</span> <span class="ident">remote_keystore</span>(<span class="ident">url</span>) {
-			<span class="prelude-val">Ok</span>(<span class="ident">k</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">keystore_container</span>.<span class="ident">set_remote_keystore</span>(<span class="ident">k</span>),
-			<span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> {
+			<span class="prelude-val">Ok</span>(<span class="ident">k</span>) =&gt; <span class="ident">keystore_container</span>.<span class="ident">set_remote_keystore</span>(<span class="ident">k</span>),
+			<span class="prelude-val">Err</span>(<span class="ident">e</span>) =&gt; {
 				<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">ServiceError::Other</span>(<span class="macro">format!</span>(
 					<span class="string">&quot;Error hooking up remote keystore for {}: {}&quot;</span>,
 					<span class="ident">url</span>, <span class="ident">e</span>
@@ -1237,7 +1237,7 @@
 
 			<span class="comment">// Background authorship future</span>
 			<span class="kw">match</span> <span class="ident">sealing</span> {
-				<span class="ident">Sealing::Manual</span> <span class="op">=</span><span class="op">&gt;</span> {
+				<span class="ident">Sealing::Manual</span> =&gt; {
 					<span class="kw">let</span> <span class="ident">authorship_future</span> <span class="op">=</span>
 						<span class="ident">manual_seal::run_manual_seal</span>(<span class="ident">manual_seal::ManualSealParams</span> {
 							<span class="ident">block_import</span>,
@@ -1262,7 +1262,7 @@
 						.<span class="ident">spawn_essential_handle</span>()
 						.<span class="ident">spawn_blocking</span>(<span class="string">&quot;manual-seal&quot;</span>, <span class="ident">authorship_future</span>);
 				}
-				<span class="ident">Sealing::Instant</span> <span class="op">=</span><span class="op">&gt;</span> {
+				<span class="ident">Sealing::Instant</span> =&gt; {
 					<span class="kw">let</span> <span class="ident">authorship_future</span> <span class="op">=</span>
 						<span class="ident">manual_seal::run_instant_seal</span>(<span class="ident">manual_seal::InstantSealParams</span> {
 							<span class="ident">block_import</span>,
@@ -1402,12 +1402,12 @@
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;aura&quot;</span>)]</span>
 <span class="doccomment">/// Builds a new service for a light client.</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new_light</span>(<span class="kw-2">mut</span> <span class="ident">config</span>: <span class="ident">Configuration</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">TaskManager</span>, <span class="ident">ServiceError</span><span class="op">&gt;</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new_light</span>(<span class="kw-2">mut</span> <span class="ident">config</span>: <span class="ident">Configuration</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">TaskManager</span>, <span class="ident">ServiceError</span><span class="op">&gt;</span> {
 	<span class="kw">let</span> <span class="ident">telemetry</span> <span class="op">=</span> <span class="ident">config</span>
 		.<span class="ident">telemetry_endpoints</span>
 		.<span class="ident">clone</span>()
 		.<span class="ident">filter</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="op">!</span><span class="ident">x</span>.<span class="ident">is_empty</span>())
-		.<span class="ident">map</span>(<span class="op">|</span><span class="ident">endpoints</span><span class="op">|</span> <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">sc_telemetry::Error</span><span class="op">&gt;</span> {
+		.<span class="ident">map</span>(<span class="op">|</span><span class="ident">endpoints</span><span class="op">|</span> -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">sc_telemetry::Error</span><span class="op">&gt;</span> {
 			<span class="kw">let</span> <span class="ident">worker</span> <span class="op">=</span> <span class="ident">TelemetryWorker::new</span>(<span class="number">16</span>)<span class="question-mark">?</span>;
 			<span class="kw">let</span> <span class="ident">telemetry</span> <span class="op">=</span> <span class="ident">worker</span>.<span class="ident">handle</span>().<span class="ident">new_telemetry</span>(<span class="ident">endpoints</span>);
 			<span class="prelude-val">Ok</span>((<span class="ident">worker</span>, <span class="ident">telemetry</span>))
@@ -1545,7 +1545,7 @@
 }
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;manual-seal&quot;</span>)]</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new_light</span>(<span class="ident">config</span>: <span class="ident">Configuration</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">TaskManager</span>, <span class="ident">ServiceError</span><span class="op">&gt;</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new_light</span>(<span class="ident">config</span>: <span class="ident">Configuration</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">TaskManager</span>, <span class="ident">ServiceError</span><span class="op">&gt;</span> {
 	<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">ServiceError::Other</span>(
 		<span class="string">&quot;Manual seal does not support light client&quot;</span>.<span class="ident">to_string</span>(),
 	));

@@ -177,7 +177,7 @@
 		<span class="ident">target_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
 		<span class="ident">_context</span>: <span class="kw-2">&amp;</span><span class="ident">Context</span>,
 		<span class="ident">_is_static</span>: <span class="ident">bool</span>,
-	) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PrecompileResult</span> {
+	) -&gt; <span class="ident">PrecompileResult</span> {
 		<span class="kw">const</span> <span class="ident">BLAKE2_F_ARG_LEN</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">213</span>;
 
 		<span class="kw">if</span> <span class="ident">input</span>.<span class="ident">len</span>() <span class="op">!</span><span class="op">=</span> <span class="ident">BLAKE2_F_ARG_LEN</span> {
@@ -233,9 +233,9 @@
 		<span class="ident">t_1_buf</span>.<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>[<span class="number">204</span>..<span class="number">212</span>]);
 		<span class="kw">let</span> <span class="ident">t_1</span> <span class="op">=</span> <span class="ident">u64::from_le_bytes</span>(<span class="ident">t_1_buf</span>);
 
-		<span class="kw">let</span> <span class="ident">f</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">input</span>[<span class="number">212</span>] <span class="op">=</span><span class="op">=</span> <span class="number">1</span> {
+		<span class="kw">let</span> <span class="ident">f</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">input</span>[<span class="number">212</span>] <span class="op">==</span> <span class="number">1</span> {
 			<span class="bool-val">true</span>
-		} <span class="kw">else</span> <span class="kw">if</span> <span class="ident">input</span>[<span class="number">212</span>] <span class="op">=</span><span class="op">=</span> <span class="number">0</span> {
+		} <span class="kw">else</span> <span class="kw">if</span> <span class="ident">input</span>[<span class="number">212</span>] <span class="op">==</span> <span class="number">0</span> {
 			<span class="bool-val">false</span>
 		} <span class="kw">else</span> {
 			<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">PrecompileFailure::Error</span> {
@@ -265,7 +265,7 @@
 	<span class="kw">use</span> <span class="ident">pallet_evm_test_vector_support::test_precompile_test_vectors</span>;
 
 	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">process_consensus_tests</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">std::result::Result</span><span class="op">&lt;</span>(), <span class="ident">String</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">process_consensus_tests</span>() -&gt; <span class="ident">std::result::Result</span><span class="op">&lt;</span>(), <span class="ident">String</span><span class="op">&gt;</span> {
 		<span class="ident">test_precompile_test_vectors</span>::<span class="op">&lt;</span><span class="ident">Blake2F</span><span class="op">&gt;</span>(<span class="string">&quot;../testdata/blake2F.json&quot;</span>)<span class="question-mark">?</span>;
 		<span class="prelude-val">Ok</span>(())
 	}

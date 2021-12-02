@@ -173,22 +173,22 @@
 }
 
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">Error</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">String</span> {
-	<span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">error</span>: <span class="ident">Error</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">String</span> {
+	<span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">error</span>: <span class="ident">Error</span>) -&gt; <span class="ident">String</span> {
 		<span class="ident">error</span>.<span class="ident">to_string</span>()
 	}
 }
 
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">FindLogError</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Error</span> {
-	<span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">error</span>: <span class="ident">FindLogError</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Error</span> {
+	<span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">error</span>: <span class="ident">FindLogError</span>) -&gt; <span class="ident">Error</span> {
 		<span class="kw">match</span> <span class="ident">error</span> {
-			<span class="ident">FindLogError::NotFound</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Error::NoRuntimeLog</span>,
-			<span class="ident">FindLogError::MultipleLogs</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Error::MultipleRuntimeLogs</span>,
+			<span class="ident">FindLogError::NotFound</span> =&gt; <span class="ident">Error::NoRuntimeLog</span>,
+			<span class="ident">FindLogError::MultipleLogs</span> =&gt; <span class="ident">Error::MultipleRuntimeLogs</span>,
 		}
 	}
 }
 
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">Error</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">ConsensusError</span> {
-	<span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">error</span>: <span class="ident">Error</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ConsensusError</span> {
+	<span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">error</span>: <span class="ident">Error</span>) -&gt; <span class="ident">ConsensusError</span> {
 		<span class="ident">ConsensusError::ClientImport</span>(<span class="ident">error</span>.<span class="ident">to_string</span>())
 	}
 }
@@ -201,7 +201,7 @@
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">Block</span>: <span class="ident">BlockT</span>, <span class="ident">I</span>: <span class="ident">Clone</span> <span class="op">+</span> <span class="ident">BlockImport</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>, <span class="ident">C</span><span class="op">&gt;</span> <span class="ident">Clone</span> <span class="kw">for</span> <span class="ident">FrontierBlockImport</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">I</span>, <span class="ident">C</span><span class="op">&gt;</span> {
-	<span class="kw">fn</span> <span class="ident">clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+	<span class="kw">fn</span> <span class="ident">clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self</span> {
 		<span class="ident">FrontierBlockImport</span> {
 			<span class="ident">inner</span>: <span class="self">self</span>.<span class="ident">inner</span>.<span class="ident">clone</span>(),
 			<span class="ident">client</span>: <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">clone</span>(),
@@ -220,7 +220,7 @@
 	<span class="ident">C::Api</span>: <span class="ident">EthereumRuntimeRPCApi</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span>,
 	<span class="ident">C::Api</span>: <span class="ident">BlockBuilderApi</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span>,
 {
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">inner</span>: <span class="ident">I</span>, <span class="ident">client</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>, <span class="ident">backend</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">fc_db::Backend</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">inner</span>: <span class="ident">I</span>, <span class="ident">client</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>, <span class="ident">backend</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">fc_db::Backend</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span><span class="op">&gt;</span>) -&gt; <span class="self">Self</span> {
 		<span class="self">Self</span> {
 			<span class="ident">inner</span>,
 			<span class="ident">client</span>,
@@ -246,7 +246,7 @@
 	<span class="kw">async</span> <span class="kw">fn</span> <span class="ident">check_block</span>(
 		<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
 		<span class="ident">block</span>: <span class="ident">BlockCheckParams</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span>,
-	) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">ImportResult</span>, <span class="ident"><span class="self">Self</span>::Error</span><span class="op">&gt;</span> {
+	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">ImportResult</span>, <span class="ident"><span class="self">Self</span>::Error</span><span class="op">&gt;</span> {
 		<span class="self">self</span>.<span class="ident">inner</span>.<span class="ident">check_block</span>(<span class="ident">block</span>).<span class="kw">await</span>.<span class="ident">map_err</span>(<span class="ident">Into::into</span>)
 	}
 
@@ -254,7 +254,7 @@
 		<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
 		<span class="ident">block</span>: <span class="ident">BlockImportParams</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident"><span class="self">Self</span>::Transaction</span><span class="op">&gt;</span>,
 		<span class="ident">new_cache</span>: <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">CacheKeyId</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-	) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">ImportResult</span>, <span class="ident"><span class="self">Self</span>::Error</span><span class="op">&gt;</span> {
+	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">ImportResult</span>, <span class="ident"><span class="self">Self</span>::Error</span><span class="op">&gt;</span> {
 		<span class="comment">// We validate that there are only one frontier log. No other</span>
 		<span class="comment">// actions are needed and mapping syncing is delegated to a separate</span>
 		<span class="comment">// worker.</span>

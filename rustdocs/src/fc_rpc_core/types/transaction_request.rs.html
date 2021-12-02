@@ -195,35 +195,35 @@
 }
 
 <span class="kw">impl</span> <span class="ident">Into</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">TransactionMessage</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">TransactionRequest</span> {
-	<span class="kw">fn</span> <span class="ident">into</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">TransactionMessage</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">into</span>(<span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">TransactionMessage</span><span class="op">&gt;</span> {
 		<span class="kw">match</span> (
 			<span class="self">self</span>.<span class="ident">gas_price</span>,
 			<span class="self">self</span>.<span class="ident">max_fee_per_gas</span>,
 			<span class="self">self</span>.<span class="ident">access_list</span>.<span class="ident">clone</span>(),
 		) {
 			<span class="comment">// Legacy</span>
-			(<span class="prelude-val">Some</span>(<span class="kw">_</span>), <span class="prelude-val">None</span>, <span class="prelude-val">None</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">TransactionMessage::Legacy</span>(<span class="ident">LegacyTransactionMessage</span> {
+			(<span class="prelude-val">Some</span>(<span class="kw">_</span>), <span class="prelude-val">None</span>, <span class="prelude-val">None</span>) =&gt; <span class="prelude-val">Some</span>(<span class="ident">TransactionMessage::Legacy</span>(<span class="ident">LegacyTransactionMessage</span> {
 				<span class="ident">nonce</span>: <span class="ident">U256::zero</span>(),
 				<span class="ident">gas_price</span>: <span class="self">self</span>.<span class="ident">gas_price</span>.<span class="ident">unwrap_or_default</span>(),
 				<span class="ident">gas_limit</span>: <span class="self">self</span>.<span class="ident">gas</span>.<span class="ident">unwrap_or_default</span>(),
 				<span class="ident">value</span>: <span class="self">self</span>.<span class="ident">value</span>.<span class="ident">unwrap_or</span>(<span class="ident">U256::zero</span>()),
 				<span class="ident">input</span>: <span class="self">self</span>.<span class="ident">data</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">s</span><span class="op">|</span> <span class="ident">s</span>.<span class="ident">into_vec</span>()).<span class="ident">unwrap_or_default</span>(),
 				<span class="ident">action</span>: <span class="kw">match</span> <span class="self">self</span>.<span class="ident">to</span> {
-					<span class="prelude-val">Some</span>(<span class="ident">to</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ethereum::TransactionAction::Call</span>(<span class="ident">to</span>),
-					<span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ethereum::TransactionAction::Create</span>,
+					<span class="prelude-val">Some</span>(<span class="ident">to</span>) =&gt; <span class="ident">ethereum::TransactionAction::Call</span>(<span class="ident">to</span>),
+					<span class="prelude-val">None</span> =&gt; <span class="ident">ethereum::TransactionAction::Create</span>,
 				},
 				<span class="ident">chain_id</span>: <span class="prelude-val">None</span>,
 			})),
 			<span class="comment">// EIP2930</span>
-			(<span class="kw">_</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(<span class="kw">_</span>)) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">TransactionMessage::EIP2930</span>(<span class="ident">EIP2930TransactionMessage</span> {
+			(<span class="kw">_</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(<span class="kw">_</span>)) =&gt; <span class="prelude-val">Some</span>(<span class="ident">TransactionMessage::EIP2930</span>(<span class="ident">EIP2930TransactionMessage</span> {
 				<span class="ident">nonce</span>: <span class="ident">U256::zero</span>(),
 				<span class="ident">gas_price</span>: <span class="self">self</span>.<span class="ident">gas_price</span>.<span class="ident">unwrap_or_default</span>(),
 				<span class="ident">gas_limit</span>: <span class="self">self</span>.<span class="ident">gas</span>.<span class="ident">unwrap_or_default</span>(),
 				<span class="ident">value</span>: <span class="self">self</span>.<span class="ident">value</span>.<span class="ident">unwrap_or</span>(<span class="ident">U256::zero</span>()),
 				<span class="ident">input</span>: <span class="self">self</span>.<span class="ident">data</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">s</span><span class="op">|</span> <span class="ident">s</span>.<span class="ident">into_vec</span>()).<span class="ident">unwrap_or_default</span>(),
 				<span class="ident">action</span>: <span class="kw">match</span> <span class="self">self</span>.<span class="ident">to</span> {
-					<span class="prelude-val">Some</span>(<span class="ident">to</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ethereum::TransactionAction::Call</span>(<span class="ident">to</span>),
-					<span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ethereum::TransactionAction::Create</span>,
+					<span class="prelude-val">Some</span>(<span class="ident">to</span>) =&gt; <span class="ident">ethereum::TransactionAction::Call</span>(<span class="ident">to</span>),
+					<span class="prelude-val">None</span> =&gt; <span class="ident">ethereum::TransactionAction::Create</span>,
 				},
 				<span class="ident">chain_id</span>: <span class="number">0</span>,
 				<span class="ident">access_list</span>: <span class="self">self</span>
@@ -234,7 +234,7 @@
 					.<span class="ident">collect</span>(),
 			})),
 			<span class="comment">// EIP1559</span>
-			(<span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(<span class="kw">_</span>), <span class="kw">_</span>) <span class="op">|</span> (<span class="prelude-val">None</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>) <span class="op">=</span><span class="op">&gt;</span> {
+			(<span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(<span class="kw">_</span>), <span class="kw">_</span>) <span class="op">|</span> (<span class="prelude-val">None</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>) =&gt; {
 				<span class="comment">// Empty fields fall back to the canonical transaction schema.</span>
 				<span class="prelude-val">Some</span>(<span class="ident">TransactionMessage::EIP1559</span>(<span class="ident">EIP1559TransactionMessage</span> {
 					<span class="ident">nonce</span>: <span class="ident">U256::zero</span>(),
@@ -246,8 +246,8 @@
 					<span class="ident">value</span>: <span class="self">self</span>.<span class="ident">value</span>.<span class="ident">unwrap_or</span>(<span class="ident">U256::zero</span>()),
 					<span class="ident">input</span>: <span class="self">self</span>.<span class="ident">data</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">s</span><span class="op">|</span> <span class="ident">s</span>.<span class="ident">into_vec</span>()).<span class="ident">unwrap_or_default</span>(),
 					<span class="ident">action</span>: <span class="kw">match</span> <span class="self">self</span>.<span class="ident">to</span> {
-						<span class="prelude-val">Some</span>(<span class="ident">to</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ethereum::TransactionAction::Call</span>(<span class="ident">to</span>),
-						<span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ethereum::TransactionAction::Create</span>,
+						<span class="prelude-val">Some</span>(<span class="ident">to</span>) =&gt; <span class="ident">ethereum::TransactionAction::Call</span>(<span class="ident">to</span>),
+						<span class="prelude-val">None</span> =&gt; <span class="ident">ethereum::TransactionAction::Create</span>,
 					},
 					<span class="ident">chain_id</span>: <span class="number">0</span>,
 					<span class="ident">access_list</span>: <span class="self">self</span>
@@ -258,7 +258,7 @@
 						.<span class="ident">collect</span>(),
 				}))
 			}
-			<span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">None</span>,
+			<span class="kw">_</span> =&gt; <span class="prelude-val">None</span>,
 		}
 	}
 }

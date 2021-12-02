@@ -151,15 +151,15 @@
 }
 
 <span class="kw">impl</span> <span class="ident">Serialize</span> <span class="kw">for</span> <span class="prelude-ty">Result</span> {
-	<span class="kw">fn</span> <span class="ident">serialize</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">serializer</span>: <span class="ident">S</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">::std::result::Result</span><span class="op">&lt;</span><span class="ident">S::Ok</span>, <span class="ident">S::Error</span><span class="op">&gt;</span>
+	<span class="kw">fn</span> <span class="ident">serialize</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">serializer</span>: <span class="ident">S</span>) -&gt; <span class="ident">::std::result::Result</span><span class="op">&lt;</span><span class="ident">S::Ok</span>, <span class="ident">S::Error</span><span class="op">&gt;</span>
 	<span class="kw">where</span>
 		<span class="ident">S</span>: <span class="ident">Serializer</span>,
 	{
 		<span class="kw">match</span> <span class="kw-2">*</span><span class="self">self</span> {
-			<span class="ident">Result::Header</span>(<span class="kw-2">ref</span> <span class="ident">header</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">header</span>.<span class="ident">serialize</span>(<span class="ident">serializer</span>),
-			<span class="ident">Result::Log</span>(<span class="kw-2">ref</span> <span class="ident">log</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">log</span>.<span class="ident">serialize</span>(<span class="ident">serializer</span>),
-			<span class="ident">Result::TransactionHash</span>(<span class="kw-2">ref</span> <span class="ident">hash</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">hash</span>.<span class="ident">serialize</span>(<span class="ident">serializer</span>),
-			<span class="ident">Result::SyncState</span>(<span class="kw-2">ref</span> <span class="ident">sync</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">sync</span>.<span class="ident">serialize</span>(<span class="ident">serializer</span>),
+			<span class="ident">Result::Header</span>(<span class="kw-2">ref</span> <span class="ident">header</span>) =&gt; <span class="ident">header</span>.<span class="ident">serialize</span>(<span class="ident">serializer</span>),
+			<span class="ident">Result::Log</span>(<span class="kw-2">ref</span> <span class="ident">log</span>) =&gt; <span class="ident">log</span>.<span class="ident">serialize</span>(<span class="ident">serializer</span>),
+			<span class="ident">Result::TransactionHash</span>(<span class="kw-2">ref</span> <span class="ident">hash</span>) =&gt; <span class="ident">hash</span>.<span class="ident">serialize</span>(<span class="ident">serializer</span>),
+			<span class="ident">Result::SyncState</span>(<span class="kw-2">ref</span> <span class="ident">sync</span>) =&gt; <span class="ident">sync</span>.<span class="ident">serialize</span>(<span class="ident">serializer</span>),
 		}
 	}
 }
@@ -189,13 +189,13 @@
 }
 
 <span class="kw">impl</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">Params</span> {
-	<span class="kw">fn</span> <span class="ident">default</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+	<span class="kw">fn</span> <span class="ident">default</span>() -&gt; <span class="self">Self</span> {
 		<span class="ident">Params::None</span>
 	}
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">Deserialize</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Params</span> {
-	<span class="kw">fn</span> <span class="ident">deserialize</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span>(<span class="ident">deserializer</span>: <span class="ident">D</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">::std::result::Result</span><span class="op">&lt;</span><span class="ident">Params</span>, <span class="ident">D::Error</span><span class="op">&gt;</span>
+	<span class="kw">fn</span> <span class="ident">deserialize</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span>(<span class="ident">deserializer</span>: <span class="ident">D</span>) -&gt; <span class="ident">::std::result::Result</span><span class="op">&lt;</span><span class="ident">Params</span>, <span class="ident">D::Error</span><span class="op">&gt;</span>
 	<span class="kw">where</span>
 		<span class="ident">D</span>: <span class="ident">Deserializer</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>,
 	{
