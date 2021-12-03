@@ -48,7 +48,7 @@
 //! the exact same transaction / receipt format. However, given one Ethereum transaction and one Substrate account's
 //! private key, one should be able to convert any Ethereum transaction into a transaction compatible with this pallet.
 //!
-//! The gas configurations are configurable. Right now, a pre-defined Istanbul hard fork configuration option is provided.
+//! The gas configurations are configurable. Right now, a pre-defined London hard fork configuration option is provided.
 
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
@@ -145,7 +145,7 @@ pub mod pallet {
 
 		/// EVM config used in the module.
 		fn config() -> &'static EvmConfig {
-			&ISTANBUL_CONFIG
+			&LONDON_CONFIG
 		}
 	}
 
@@ -571,7 +571,7 @@ impl GasWeightMapping for () {
 	}
 }
 
-static ISTANBUL_CONFIG: EvmConfig = EvmConfig::istanbul();
+static LONDON_CONFIG: EvmConfig = EvmConfig::london();
 
 #[cfg(feature = "std")]
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, Serialize, Deserialize)]
