@@ -839,7 +839,7 @@
 <span class="doccomment">//! the exact same transaction / receipt format. However, given one Ethereum transaction and one Substrate account&#39;s</span>
 <span class="doccomment">//! private key, one should be able to convert any Ethereum transaction into a transaction compatible with this pallet.</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//! The gas configurations are configurable. Right now, a pre-defined Istanbul hard fork configuration option is provided.</span>
+<span class="doccomment">//! The gas configurations are configurable. Right now, a pre-defined London hard fork configuration option is provided.</span>
 
 <span class="comment">// Ensure we&#39;re `no_std` when compiling for Wasm.</span>
 <span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
@@ -936,7 +936,7 @@
 
 		<span class="doccomment">/// EVM config used in the module.</span>
 		<span class="kw">fn</span> <span class="ident">config</span>() -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">EvmConfig</span> {
-			<span class="kw-2">&amp;</span><span class="ident">ISTANBUL_CONFIG</span>
+			<span class="kw-2">&amp;</span><span class="ident">LONDON_CONFIG</span>
 		}
 	}
 
@@ -1362,7 +1362,7 @@
 	}
 }
 
-<span class="kw">static</span> <span class="ident">ISTANBUL_CONFIG</span>: <span class="ident">EvmConfig</span> <span class="op">=</span> <span class="ident">EvmConfig::istanbul</span>();
+<span class="kw">static</span> <span class="ident">LONDON_CONFIG</span>: <span class="ident">EvmConfig</span> <span class="op">=</span> <span class="ident">EvmConfig::london</span>();
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>)]</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">Debug</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>)]</span>
