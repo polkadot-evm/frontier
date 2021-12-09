@@ -8,7 +8,7 @@ use fc_rpc::{
 };
 use fc_rpc_core::types::FilterPool;
 use frontier_template_runtime::{opaque::Block, AccountId, Balance, Hash, Index};
-use jsonrpc_pubsub::manager::SubscriptionManager;
+use jsonrpsee::RpcModule;
 use pallet_ethereum::EthereumStorageSchema;
 use sc_client_api::{
 	backend::{AuxStore, Backend, StateBackend, StorageProvider},
@@ -69,7 +69,7 @@ pub struct FullDeps<C, P, A: ChainApi> {
 pub fn create_full<C, P, BE, A>(
 	deps: FullDeps<C, P, A>,
 	subscription_task_executor: SubscriptionTaskExecutor,
-) -> jsonrpc_core::IoHandler<sc_rpc::Metadata>
+) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
 where
 	BE: Backend<Block> + 'static,
 	BE::State: StateBackend<BlakeTwo256>,
@@ -85,14 +85,13 @@ where
 	A: ChainApi<Block = Block> + 'static,
 {
 	use fc_rpc::{
-		EthApi, EthApiServer, EthDevSigner, EthFilterApi, EthFilterApiServer, EthPubSubApi,
-		EthPubSubApiServer, EthSigner, HexEncodedIdProvider, NetApi, NetApiServer, Web3Api,
-		Web3ApiServer,
+		EthApi, EthDevSigner, EthFilterApi, EthFilterApiServer, EthPubSubApi, EthPubSubApiServer,
+		EthSigner, HexEncodedIdProvider, NetApi, NetApiServer, Web3Api, Web3ApiServer,
 	};
 	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApi};
 	use substrate_frame_rpc_system::{FullSystem, SystemApi};
 
-	let mut io = jsonrpc_core::IoHandler::default();
+	let mut io = RpcModule::new(());
 	let FullDeps {
 		client,
 		pool,
@@ -107,14 +106,14 @@ where
 		enable_dev_signer,
 	} = deps;
 
-	io.extend_with(SystemApi::to_delegate(FullSystem::new(
+	io.merge(SystemApi::to_delegate(FullSystem::new(
 		client.clone(),
 		pool.clone(),
 		deny_unsafe,
-	)));
-	io.extend_with(TransactionPaymentApi::to_delegate(TransactionPayment::new(
+	)))?;
+	io.merge(TransactionPaymentApi::to_delegate(TransactionPayment::new(
 		client.clone(),
-	)));
+	)))?;
 
 	let mut signers = Vec::new();
 	if enable_dev_signer {
@@ -139,7 +138,7 @@ where
 
 	let block_data_cache = Arc::new(EthBlockDataCache::new(50, 50));
 
-	io.extend_with(EthApiServer::to_delegate(EthApi::new(
+	io.merge(EthApi::new(
 		client.clone(),
 		pool.clone(),
 		graph,
@@ -151,10 +150,10 @@ where
 		is_authority,
 		max_past_logs,
 		block_data_cache.clone(),
-	)));
+	))?;
 
 	if let Some(filter_pool) = filter_pool {
-		io.extend_with(EthFilterApiServer::to_delegate(EthFilterApi::new(
+		io.merge(EthFilterApi::new(
 			client.clone(),
 			backend,
 			filter_pool.clone(),
@@ -162,32 +161,29 @@ where
 			overrides.clone(),
 			max_past_logs,
 			block_data_cache.clone(),
-		)));
+		))?;
 	}
 
-	io.extend_with(NetApiServer::to_delegate(NetApi::new(
+	io.merge(NetApiServer::to_delegate(NetApi::new(
 		client.clone(),
 		network.clone(),
 		// Whether to format the `peer_count` response as Hex (default) or not.
 		true,
-	)));
+	)))?;
 
-	io.extend_with(Web3ApiServer::to_delegate(Web3Api::new(client.clone())));
+	io.merge(Web3ApiServer::to_delegate(Web3Api::new(client.clone())))?;
 
-	io.extend_with(EthPubSubApiServer::to_delegate(EthPubSubApi::new(
+	io.merge(EthPubSubApiServer::to_delegate(EthPubSubApi::new(
 		pool.clone(),
 		client.clone(),
 		network.clone(),
-		SubscriptionManager::<HexEncodedIdProvider>::with_id_provider(
-			HexEncodedIdProvider::default(),
-			Arc::new(subscription_task_executor),
-		),
+		subscription_task_executor,
 		overrides,
-	)));
+	)))?;
 
 	match command_sink {
 		Some(command_sink) => {
-			io.extend_with(
+			io.merge(
 				// We provide the rpc handler with the sending end of the channel to allow the rpc
 				// send EngineCommands to the background block authorship task.
 				ManualSealApi::to_delegate(ManualSeal::new(command_sink)),
@@ -196,17 +192,18 @@ where
 		_ => {}
 	}
 
-	io
+	Ok(io)
 }
 
 /// Instantiate all Light RPC extensions.
-pub fn create_light<C, P, M, F>(deps: LightDeps<C, F, P>) -> jsonrpc_core::IoHandler<M>
+pub fn create_light<C, P, F>(
+	deps: LightDeps<C, F, P>,
+) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
 where
 	C: sp_blockchain::HeaderBackend<Block>,
 	C: Send + Sync + 'static,
 	F: sc_client_api::light::Fetcher<Block> + 'static,
 	P: TransactionPool + 'static,
-	M: jsonrpc_core::Metadata + Default,
 {
 	use substrate_frame_rpc_system::{LightSystem, SystemApi};
 
@@ -216,10 +213,10 @@ where
 		remote_blockchain,
 		fetcher,
 	} = deps;
-	let mut io = jsonrpc_core::IoHandler::default();
-	io.extend_with(SystemApi::<Hash, AccountId, Index>::to_delegate(
+	let mut io = RpcModule::new(());
+	io.merge(SystemApi::<Hash, AccountId, Index>::to_delegate(
 		LightSystem::new(client, remote_blockchain, fetcher, pool),
-	));
+	))?;
 
 	io
 }

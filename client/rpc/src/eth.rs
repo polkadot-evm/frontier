@@ -29,11 +29,12 @@ use fc_rpc_core::{
 		Receipt, Rich, RichBlock, SyncInfo, SyncStatus, Transaction, TransactionMessage,
 		TransactionRequest, Work,
 	},
-	EthApi as EthApiT, EthFilterApi as EthFilterApiT, NetApi as NetApiT, Web3Api as Web3ApiT,
+	EthApiServer as EthApiT, EthFilterApiServer as EthFilterApiT, NetApiServer as NetApiT,
+	Web3ApiServer as Web3ApiT,
 };
 use fp_rpc::{ConvertTransaction, EthereumRuntimeRPCApi, TransactionStatus};
 use futures::{future::TryFutureExt, StreamExt};
-use jsonrpc_core::{futures::future, BoxFuture, Result};
+use jsonrpsee::types::{async_trait, RpcResult as Result};
 use lru::LruCache;
 use sc_client_api::{
 	backend::{Backend, StateBackend, StorageProvider},
@@ -490,6 +491,7 @@ fn fee_details(
 	}
 }
 
+#[async_trait]
 impl<B, C, P, CT, BE, H: ExHashT, A> EthApiT for EthApi<B, C, P, CT, BE, H, A>
 where
 	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
@@ -842,18 +844,18 @@ where
 		Ok(Bytes(vec![]))
 	}
 
-	fn send_transaction(&self, request: TransactionRequest) -> BoxFuture<Result<H256>> {
+	async fn send_transaction(&self, request: TransactionRequest) -> Result<H256> {
 		let from = match request.from {
 			Some(from) => from,
 			None => {
 				let accounts = match self.accounts() {
 					Ok(accounts) => accounts,
-					Err(e) => return Box::pin(future::err(e)),
+					Err(e) => return Err(e),
 				};
 
 				match accounts.get(0) {
 					Some(account) => account.clone(),
-					None => return Box::pin(future::err(internal_err("no signer available"))),
+					None => return Err(internal_err("no signer available")),
 				}
 			}
 		};
@@ -862,14 +864,14 @@ where
 			Some(nonce) => nonce,
 			None => match self.transaction_count(from, None) {
 				Ok(nonce) => nonce,
-				Err(e) => return Box::pin(future::err(e)),
+				Err(e) => return Err(e),
 			},
 		};
 
 		let chain_id = match self.chain_id() {
 			Ok(Some(chain_id)) => chain_id.as_u64(),
-			Ok(None) => return Box::pin(future::err(internal_err("chain id not available"))),
-			Err(e) => return Box::pin(future::err(e)),
+			Ok(None) => return Err(internal_err("chain id not available")),
+			Err(e) => return Err(e),
 		};
 
 		let hash = self.client.info().best_hash;
@@ -885,9 +887,7 @@ where
 				if let Ok(Some(block)) = block {
 					block.header.gas_limit
 				} else {
-					return Box::pin(future::err(internal_err(format!(
-						"block unavailable, cannot query gas limit"
-					))));
+					return Err(internal_err(format!("block unavailable, cannot query gas limit")));
 				}
 			}
 		};
@@ -922,7 +922,7 @@ where
 				TransactionMessage::EIP1559(m)
 			}
 			_ => {
-				return Box::pin(future::err(internal_err("invalid transaction parameters")));
+				return Err(internal_err("invalid transaction parameters"));
 			}
 		};
 
@@ -932,7 +932,7 @@ where
 			if signer.accounts().contains(&from) {
 				match signer.sign(message, &from) {
 					Ok(t) => transaction = Some(t),
-					Err(e) => return Box::pin(future::err(e)),
+					Err(e) => return Err(e),
 				}
 				break;
 			}
@@ -940,35 +940,32 @@ where
 
 		let transaction = match transaction {
 			Some(transaction) => transaction,
-			None => return Box::pin(future::err(internal_err("no signer available"))),
+			None => return Err(internal_err("no signer available")),
 		};
 		let transaction_hash = transaction.hash();
-		Box::pin(
-			self.pool
-				.submit_one(
-					&BlockId::hash(hash),
-					TransactionSource::Local,
-					self.convert_transaction
-						.convert_transaction(transaction.clone()),
-				)
-				.map_ok(move |_| transaction_hash)
-				.map_err(|err| {
-					internal_err(format!("submit transaction to pool failed: {:?}", err))
-				}),
-		)
+		self.pool
+			.submit_one(
+				&BlockId::hash(hash),
+				TransactionSource::Local,
+				self.convert_transaction
+					.convert_transaction(transaction.clone()),
+			)
+			.map_ok(move |_| transaction_hash)
+			.map_err(|err| internal_err(format!("submit transaction to pool failed: {:?}", err)))
+			.await
 	}
 
-	fn send_raw_transaction(&self, bytes: Bytes) -> BoxFuture<Result<H256>> {
+	async fn send_raw_transaction(&self, bytes: Bytes) -> Result<H256> {
 		let slice = &bytes.0[..];
 		if slice.len() == 0 {
-			return Box::pin(future::err(internal_err("transaction data is empty")));
+			return Err(internal_err("transaction data is empty"));
 		}
 		let first = slice.get(0).unwrap();
 		let transaction = if first > &0x7f {
 			// Legacy transaction. Decode and wrap in envelope.
 			match rlp::decode::<ethereum::TransactionV0>(slice) {
 				Ok(transaction) => ethereum::TransactionV2::Legacy(transaction),
-				Err(_) => return Box::pin(future::err(internal_err("decode transaction failed"))),
+				Err(_) => return Err(internal_err("decode transaction failed")),
 			}
 		} else {
 			// Typed Transaction.
@@ -979,25 +976,22 @@ where
 			let extend = rlp::encode(&slice);
 			match rlp::decode::<ethereum::TransactionV2>(&extend[..]) {
 				Ok(transaction) => transaction,
-				Err(_) => return Box::pin(future::err(internal_err("decode transaction failed"))),
+				Err(_) => return Err(internal_err("decode transaction failed")),
 			}
 		};
 
 		let transaction_hash = transaction.hash();
 		let hash = self.client.info().best_hash;
-		Box::pin(
-			self.pool
-				.submit_one(
-					&BlockId::hash(hash),
-					TransactionSource::Local,
-					self.convert_transaction
-						.convert_transaction(transaction.clone()),
-				)
-				.map_ok(move |_| transaction_hash)
-				.map_err(|err| {
-					internal_err(format!("submit transaction to pool failed: {:?}", err))
-				}),
-		)
+		self.pool
+			.submit_one(
+				&BlockId::hash(hash),
+				TransactionSource::Local,
+				self.convert_transaction
+					.convert_transaction(transaction.clone()),
+			)
+			.map_ok(move |_| transaction_hash)
+			.map_err(|err| internal_err(format!("submit transaction to pool failed: {:?}", err)))
+			.await
 	}
 
 	fn call(&self, request: CallRequest, _: Option<BlockNumber>) -> Result<Bytes> {

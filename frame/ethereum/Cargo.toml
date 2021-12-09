@@ -11,14 +11,14 @@ resolver = "2"
 rustc-hex = { version = "2.1.0", default-features = false }
 serde = { version = "1.0.101", optional = true }
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false }
-frame-support = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
-frame-system = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
-pallet-balances = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
-pallet-timestamp = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
+frame-support = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-jsonrpsee-v0.9.13" }
+frame-system = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-jsonrpsee-v0.9.13" }
+pallet-balances = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-jsonrpsee-v0.9.13" }
+pallet-timestamp = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-jsonrpsee-v0.9.13" }
 pallet-evm = { version = "6.0.0-dev", default-features = false, path = "../evm" }
-sp-runtime = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
-sp-std = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
-sp-io = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
+sp-runtime = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-jsonrpsee-v0.9.13" }
+sp-std = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-jsonrpsee-v0.9.13" }
+sp-io = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-jsonrpsee-v0.9.13" }
 fp-evm = { version = "3.0.0-dev", default-features = false, path = "../../primitives/evm" }
 evm = { version = "0.33.0", features = ["with-codec"], default-features = false }
 ethereum = { version = "0.10.0", default-features = false, features = ["with-codec"] }
@@ -32,7 +32,7 @@ fp-self-contained = { version = "1.0.0-dev", path = "../../primitives/self-conta
 scale-info = { version = "1.0.0", default-features = false, features = ["derive"] }
 
 [dev-dependencies]
-sp-core = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate" }
+sp-core = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "polkadot-jsonrpsee-v0.9.13" }
 libsecp256k1 = { version = "0.5", features = ["static-context", "hmac"] }
 
 [features]

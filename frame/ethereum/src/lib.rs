@@ -450,7 +450,7 @@ impl<T: Config> Pallet<T> {
 		BlockHash::<T>::insert(block_number, block.header.hash());
 
 		if post_log {
-			let digest = DigestItem::<T::Hash>::Consensus(
+			let digest = DigestItem::Consensus(
 				FRONTIER_ENGINE_ID,
 				PostLog::Hashes(fp_consensus::Hashes::from_block(block)).encode(),
 			);

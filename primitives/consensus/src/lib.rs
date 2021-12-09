@@ -18,7 +18,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
-use sha3::{Digest as Sha3Digest, Keccak256};
 use sp_core::H256;
 use sp_runtime::{
 	generic::{Digest, OpaqueDigestItemId},
@@ -89,7 +88,7 @@ pub enum FindLogError {
 	MultipleLogs,
 }
 
-pub fn find_pre_log<Hash>(digest: &Digest<Hash>) -> Result<PreLog, FindLogError> {
+pub fn find_pre_log(digest: &Digest) -> Result<PreLog, FindLogError> {
 	let mut found = None;
 
 	for log in digest.logs() {
@@ -104,7 +103,7 @@ pub fn find_pre_log<Hash>(digest: &Digest<Hash>) -> Result<PreLog, FindLogError>
 	found.ok_or(FindLogError::NotFound)
 }
 
-pub fn find_post_log<Hash>(digest: &Digest<Hash>) -> Result<PostLog, FindLogError> {
+pub fn find_post_log(digest: &Digest) -> Result<PostLog, FindLogError> {
 	let mut found = None;
 
 	for log in digest.logs() {
@@ -119,7 +118,7 @@ pub fn find_post_log<Hash>(digest: &Digest<Hash>) -> Result<PostLog, FindLogErro
 	found.ok_or(FindLogError::NotFound)
 }
 
-pub fn find_log<Hash>(digest: &Digest<Hash>) -> Result<Log, FindLogError> {
+pub fn find_log(digest: &Digest) -> Result<Log, FindLogError> {
 	let mut found = None;
 
 	for log in digest.logs() {
@@ -141,7 +140,7 @@ pub fn find_log<Hash>(digest: &Digest<Hash>) -> Result<Log, FindLogError> {
 	found.ok_or(FindLogError::NotFound)
 }
 
-pub fn ensure_log<Hash>(digest: &Digest<Hash>) -> Result<(), FindLogError> {
+pub fn ensure_log(digest: &Digest) -> Result<(), FindLogError> {
 	let mut found = false;
 
 	for log in digest.logs() {
