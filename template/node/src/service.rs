@@ -487,9 +487,11 @@ pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, Ser
 							},
 						});
 					// we spawn the future on a background thread managed by service.
-					task_manager
-						.spawn_essential_handle()
-						.spawn_blocking("manual-seal", None, authorship_future);
+					task_manager.spawn_essential_handle().spawn_blocking(
+						"manual-seal",
+						None,
+						authorship_future,
+					);
 				}
 				Sealing::Instant => {
 					let authorship_future =
@@ -511,9 +513,11 @@ pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, Ser
 							},
 						});
 					// we spawn the future on a background thread managed by service.
-					task_manager
-						.spawn_essential_handle()
-						.spawn_blocking("instant-seal", None, authorship_future);
+					task_manager.spawn_essential_handle().spawn_blocking(
+						"instant-seal",
+						None,
+						authorship_future,
+					);
 				}
 			};
 		}
