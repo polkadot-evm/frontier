@@ -887,7 +887,9 @@ where
 				if let Ok(Some(block)) = block {
 					block.header.gas_limit
 				} else {
-					return Err(internal_err(format!("block unavailable, cannot query gas limit")));
+					return Err(internal_err(format!(
+						"block unavailable, cannot query gas limit"
+					)));
 				}
 			}
 		};
