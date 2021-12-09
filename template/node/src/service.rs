@@ -370,13 +370,13 @@ pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, Ser
 	let subscription_task_executor =
 		sc_rpc::SubscriptionTaskExecutor::new(task_manager.spawn_handle());
 
-	#[cfg(feature = "manual-seal")]
-	{
-		let (command_sink, commands_stream) = futures::channel::mpsc::channel(1000);
-		let command_sink = Some(command_sink);
-	}
 	#[cfg(not(feature = "manual-seal"))]
 	let command_sink = None;
+	#[cfg(feature = "manual-seal")]
+	let (command_sink, commands_stream) = {
+		let (command_sink, commands_stream) = futures::channel::mpsc::channel(1000);
+		(Some(command_sink), commands_stream)
+	};
 
 	let rpc_extensions_builder = {
 		let client = client.clone();
@@ -489,7 +489,7 @@ pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, Ser
 					// we spawn the future on a background thread managed by service.
 					task_manager
 						.spawn_essential_handle()
-						.spawn_blocking("manual-seal", authorship_future);
+						.spawn_blocking("manual-seal", None, authorship_future);
 				}
 				Sealing::Instant => {
 					let authorship_future =
@@ -513,7 +513,7 @@ pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, Ser
 					// we spawn the future on a background thread managed by service.
 					task_manager
 						.spawn_essential_handle()
-						.spawn_blocking("instant-seal", authorship_future);
+						.spawn_blocking("instant-seal", None, authorship_future);
 				}
 			};
 		}
