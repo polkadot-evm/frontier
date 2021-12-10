@@ -33,7 +33,7 @@ pub use overrides::{
 use ethereum_types::{H160, H256};
 use evm::ExitError;
 pub use fc_rpc_core::types::TransactionMessage;
-use jsonrpsee::types::{v2::ErrorCode, CallError, Error, JsonRawValue};
+use jsonrpsee::types::{v2::ErrorCode, CallError, Error};
 use pallet_evm::ExitReason;
 use rustc_hex::ToHex;
 use sha3::{Digest, Keccak256};
@@ -219,7 +219,7 @@ pub fn error_on_execution_failure(reason: &ExitReason, data: &[u8]) -> Result<()
 				code: ErrorCode::InternalError.code(),
 				message: format!("evm error: {:?}", e),
 				data: Some(
-					JsonRawValue::from_string("0x".to_string()).expect("fail to serialize data"),
+					jsonrpsee::types::to_json_raw_value(&"0x").expect("fail to serialize data"),
 				),
 			})
 		}
@@ -238,16 +238,15 @@ pub fn error_on_execution_failure(reason: &ExitReason, data: &[u8]) -> Result<()
 				code: ErrorCode::InternalError.code(),
 				message,
 				data: Some(
-					JsonRawValue::from_string(data.to_hex()).expect("fail to serialize data"),
+					jsonrpsee::types::to_json_raw_value::<String>(&data.to_hex())
+						.expect("fail to serialize data"),
 				),
 			})
 		}
 		ExitReason::Fatal(e) => Err(CallError::Custom {
 			code: ErrorCode::InternalError.code(),
 			message: format!("evm fatal: {:?}", e),
-			data: Some(
-				JsonRawValue::from_string("0x".to_string()).expect("fail to serialize data"),
-			),
+			data: Some(jsonrpsee::types::to_json_raw_value(&"0x").expect("fail to serialize data")),
 		}),
 	}
 }
