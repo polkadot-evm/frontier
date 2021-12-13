@@ -2511,9 +2511,11 @@ where
 			effective_reward: u64,
 		}
 		// Calculates the cache for a single block
-		let fee_history_cache_item = |hash: H256,
-		                              elasticity: Permill|
-		 -> (FeeHistoryCacheItem, Option<u64>) {
+		#[rustfmt::skip]
+		let fee_history_cache_item = |hash: H256, elasticity: Permill| -> (
+			FeeHistoryCacheItem,
+			Option<u64>
+		) {
 			let id = BlockId::Hash(hash);
 			let schema =
 				frontier_backend_client::onchain_storage_schema::<B, C, BE>(client.as_ref(), id);
