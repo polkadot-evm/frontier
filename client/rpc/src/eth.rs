@@ -1081,7 +1081,7 @@ where
 
 					error_on_execution_failure(&info.exit_reason, &info.value)?;
 					Ok(Bytes(info.value))
-				} else if api_version == 2 {
+				} else if api_version >= 2 {
 					let info = api
 						.call(
 							&BlockId::Hash(hash),
@@ -1124,7 +1124,7 @@ where
 
 					error_on_execution_failure(&info.exit_reason, &[])?;
 					Ok(Bytes(info.value[..].to_vec()))
-				} else if api_version == 2 {
+				} else if api_version >= 2 {
 					let info = api
 						.create(
 							&BlockId::Hash(hash),
