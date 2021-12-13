@@ -1899,18 +1899,31 @@ where
 					response.gas_used_ratio.last(),
 					response.base_fee_per_gas.last(),
 				) {
+					let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(
+						self.client.as_ref(),
+						id,
+					);
+					let handler = self
+						.overrides
+						.schemas
+						.get(&schema)
+						.unwrap_or(&self.overrides.fallback);
+					let default_elasticity = sp_runtime::Permill::from_parts(125_000);
+					let elasticity = handler
+						.elasticity(&id)
+						.unwrap_or(default_elasticity)
+						.deconstruct();
+					let elasticity = elasticity as f64 / 1_000_000f64;
 					let last_fee_per_gas = last_fee_per_gas.as_u64() as f64;
-					// TODO we really need this in storage..
-					let modifier = 0.125f64;
 					if last_gas_used > &0.5 {
 						// Increase base gas
-						let increase = ((last_gas_used - 0.5) * 2f64) * modifier;
+						let increase = ((last_gas_used - 0.5) * 2f64) * elasticity;
 						let new_base_fee =
 							(last_fee_per_gas + (last_fee_per_gas * increase)) as u64;
 						response.base_fee_per_gas.push(U256::from(new_base_fee));
 					} else if last_gas_used < &0.5 {
 						// Decrease base gas
-						let increase = ((0.5 - last_gas_used) * 2f64) * modifier;
+						let increase = ((0.5 - last_gas_used) * 2f64) * elasticity;
 						let new_base_fee =
 							(last_fee_per_gas - (last_fee_per_gas * increase)) as u64;
 						response.base_fee_per_gas.push(U256::from(new_base_fee));
@@ -2469,12 +2482,16 @@ where
 		fee_history_cache: FeeHistoryCache,
 		block_limit: u64,
 	) {
+		use sp_runtime::Permill;
+
 		struct TransactionHelper {
 			gas_used: u64,
 			effective_reward: u64,
 		}
 		// Calculates the cache for a single block
-		let fee_history_cache_item = |hash: H256| -> (FeeHistoryCacheItem, Option<u64>) {
+		let fee_history_cache_item = |hash: H256,
+		                              elasticity: Permill|
+		 -> (FeeHistoryCacheItem, Option<u64>) {
 			let id = BlockId::Hash(hash);
 			let schema =
 				frontier_backend_client::onchain_storage_schema::<B, C, BE>(client.as_ref(), id);
@@ -2519,7 +2536,9 @@ where
 				// By now we assume just the default 0.125 (elasticity multiplier 8).
 				let gas_used = block.header.gas_used.as_u64() as f64;
 				let gas_limit = block.header.gas_limit.as_u64() as f64;
-				let elasticity_multiplier = 8 as f64;
+				let elasticity_multiplier: f64 = (elasticity / Permill::from_parts(1_000_000))
+					.deconstruct()
+					.into();
 				let gas_target = gas_limit / elasticity_multiplier;
 
 				result.gas_used_ratio = gas_used / (gas_target * elasticity_multiplier);
@@ -2594,6 +2613,19 @@ where
 
 		while let Some(notification) = notification_st.next().await {
 			if notification.is_new_best {
+				let hash = notification.hash;
+				let id = BlockId::Hash(hash);
+				let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(
+					client.as_ref(),
+					id,
+				);
+				let handler = overrides
+					.schemas
+					.get(&schema)
+					.unwrap_or(&overrides.fallback);
+
+				let default_elasticity = Permill::from_parts(125_000);
+				let elasticity = handler.elasticity(&id).unwrap_or(default_elasticity);
 				// In case a re-org happened on import.
 				if let Some(tree_route) = notification.tree_route {
 					if let Ok(fee_history_cache) = &mut fee_history_cache.lock() {
@@ -2607,13 +2639,13 @@ where
 						// Insert enacted.
 						let _ = tree_route.enacted().iter().map(|hash_and_number| {
 							let (result, block_number) =
-								fee_history_cache_item(hash_and_number.hash);
+								fee_history_cache_item(hash_and_number.hash, elasticity);
 							commit_if_any(result, block_number);
 						});
 					}
 				}
 				// Cache the imported block.
-				let (result, block_number) = fee_history_cache_item(notification.hash);
+				let (result, block_number) = fee_history_cache_item(hash, elasticity);
 				commit_if_any(result, block_number);
 			}
 		}
