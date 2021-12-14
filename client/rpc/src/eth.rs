@@ -44,6 +44,7 @@ use sc_transaction_pool::{ChainApi, Pool};
 use sc_transaction_pool_api::{InPoolTransaction, TransactionPool};
 use sha3::{Digest, Keccak256};
 use sp_api::{ApiExt, BlockId, Core, HeaderT, ProvideRuntimeApi};
+use sp_block_builder::BlockBuilder;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 use sp_runtime::{
 	traits::{BlakeTwo256, Block as BlockT, NumberFor, One, Saturating, UniqueSaturatedInto, Zero},
@@ -82,6 +83,7 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> EthApi<B, C, P, CT, BE, H
 where
 	C: ProvideRuntimeApi<B>,
 	C::Api: EthereumRuntimeRPCApi<B>,
+	C::Api: BlockBuilder<B>,
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	A: ChainApi<Block = B> + 'static,
 	C: Send + Sync + 'static,
@@ -501,6 +503,7 @@ where
 	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
 	C: HeaderBackend<B> + HeaderMetadata<B, Error = BlockChainError> + 'static,
 	C::Api: EthereumRuntimeRPCApi<B>,
+	C::Api: BlockBuilder<B>,
 	BE: Backend<B> + 'static,
 	BE::State: StateBackend<BlakeTwo256>,
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
@@ -826,10 +829,32 @@ where
 	}
 
 	fn code_at(&self, address: H160, number: Option<BlockNumber>) -> Result<Bytes> {
-		if let Ok(Some(id)) = frontier_backend_client::native_block_id::<B, C>(
+		let number = number.unwrap_or(BlockNumber::Latest);
+		if number == BlockNumber::Pending {
+			// In case of Pending, we need an overlayed state to query over.
+			let api = self.client.runtime_api();
+			let best = BlockId::Hash(self.client.info().best_hash);
+			// Get all transactions in the ready queue.
+			let xts: Vec<<B as BlockT>::Extrinsic> = self
+				.graph
+				.validated_pool()
+				.ready()
+				.map(|in_pool_tx| in_pool_tx.data().clone())
+				.collect::<Vec<<B as BlockT>::Extrinsic>>();
+			// Manually initialize the overlay.
+			let header = self.client.header(best).unwrap().unwrap();
+			api.initialize_block(&best, &header)
+				.map_err(|e| internal_err(format!("Runtime api access error: {:?}", e)))?;
+			// Apply the ready queue to the best block's state.
+			for xt in xts {
+				let _ = api.apply_extrinsic(&best, xt);
+			}
+			// Now we can get the code, if any.
+			return Ok(api.account_code_at(&best, address).unwrap_or(vec![]).into());
+		} else if let Ok(Some(id)) = frontier_backend_client::native_block_id::<B, C>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
-			number,
+			Some(number),
 		) {
 			let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(
 				self.client.as_ref(),
@@ -844,8 +869,9 @@ where
 				.account_code_at(&id, address)
 				.unwrap_or(vec![])
 				.into());
+		} else {
+			Ok(Bytes(vec![]))
 		}
-		Ok(Bytes(vec![]))
 	}
 
 	fn send_transaction(&self, request: TransactionRequest) -> BoxFuture<Result<H256>> {
