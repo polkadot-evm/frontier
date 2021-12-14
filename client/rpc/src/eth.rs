@@ -24,10 +24,10 @@ use ethereum_types::{H160, H256, H512, H64, U256, U64};
 use evm::{ExitError, ExitReason};
 use fc_rpc_core::{
 	types::{
-		Block, BlockNumber, BlockTransactions, Bytes, CallRequest, Filter, FilterChanges,
-		FilterPool, FilterPoolItem, FilterType, FilteredParams, Header, Index, Log, PeerCount,
-		Receipt, Rich, RichBlock, SyncInfo, SyncStatus, Transaction, TransactionMessage,
-		TransactionRequest, Work,
+		Block, BlockNumber, BlockTransactions, Bytes, CallRequest, FeeHistory, FeeHistoryCache,
+		FeeHistoryCacheItem, Filter, FilterChanges, FilterPool, FilterPoolItem, FilterType,
+		FilteredParams, Header, Index, Log, PeerCount, Receipt, Rich, RichBlock, SyncInfo,
+		SyncStatus, Transaction, TransactionMessage, TransactionRequest, Work,
 	},
 	EthApi as EthApiT, EthFilterApi as EthFilterApiT, NetApi as NetApiT, Web3Api as Web3ApiT,
 };
@@ -73,6 +73,8 @@ pub struct EthApi<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> {
 	backend: Arc<fc_db::Backend<B>>,
 	max_past_logs: u32,
 	block_data_cache: Arc<EthBlockDataCache<B>>,
+	fee_history_limit: u64,
+	fee_history_cache: FeeHistoryCache,
 	_marker: PhantomData<(B, BE)>,
 }
 
@@ -96,6 +98,8 @@ where
 		is_authority: bool,
 		max_past_logs: u32,
 		block_data_cache: Arc<EthBlockDataCache<B>>,
+		fee_history_limit: u64,
+		fee_history_cache: FeeHistoryCache,
 	) -> Self {
 		Self {
 			client,
@@ -109,6 +113,8 @@ where
 			backend,
 			max_past_logs,
 			block_data_cache,
+			fee_history_limit,
+			fee_history_cache,
 			_marker: PhantomData,
 		}
 	}
@@ -1075,7 +1081,7 @@ where
 
 					error_on_execution_failure(&info.exit_reason, &info.value)?;
 					Ok(Bytes(info.value))
-				} else if api_version == 2 {
+				} else if api_version >= 2 {
 					let info = api
 						.call(
 							&BlockId::Hash(hash),
@@ -1118,7 +1124,7 @@ where
 
 					error_on_execution_failure(&info.exit_reason, &[])?;
 					Ok(Bytes(info.value[..].to_vec()))
-				} else if api_version == 2 {
+				} else if api_version >= 2 {
 					let info = api
 						.create(
 							&BlockId::Hash(hash),
@@ -1836,6 +1842,128 @@ where
 	fn submit_hashrate(&self, _: U256, _: H256) -> Result<bool> {
 		Ok(false)
 	}
+
+	fn fee_history(
+		&self,
+		block_count: U256,
+		newest_block: BlockNumber,
+		reward_percentiles: Option<Vec<f64>>,
+	) -> Result<FeeHistory> {
+		// The max supported range size is 1024 by spec.
+		let range_limit = U256::from(1024);
+		let block_count = if block_count > range_limit {
+			range_limit.as_u64()
+		} else {
+			block_count.as_u64()
+		};
+
+		if let Ok(Some(id)) = frontier_backend_client::native_block_id::<B, C>(
+			self.client.as_ref(),
+			self.backend.as_ref(),
+			Some(newest_block),
+		) {
+			let header = self.client.header(id).unwrap().unwrap();
+			// Highest and lowest block number within the requested range.
+			let highest = UniqueSaturatedInto::<u64>::unique_saturated_into(
+				self.client.number(header.hash()).unwrap().unwrap(),
+			);
+			let lowest = highest.saturating_sub(block_count);
+			// Tip of the chain.
+			let best_number =
+				UniqueSaturatedInto::<u64>::unique_saturated_into(self.client.info().best_number);
+			// Only support in-cache queries.
+			if lowest < best_number.saturating_sub(self.fee_history_limit) {
+				return Err(internal_err(format!("Block range out of bounds.")));
+			}
+			if let Ok(fee_history_cache) = &self.fee_history_cache.lock() {
+				let mut response = FeeHistory {
+					oldest_block: U256::from(lowest),
+					base_fee_per_gas: Vec::new(),
+					gas_used_ratio: Vec::new(),
+					reward: None,
+				};
+				let mut rewards = Vec::new();
+				// Iterate over the requested block range.
+				for n in lowest..highest + 1 {
+					if let Some(block) = fee_history_cache.get(&n) {
+						response.base_fee_per_gas.push(U256::from(block.base_fee));
+						response.gas_used_ratio.push(block.gas_used_ratio);
+						// If the request includes reward percentiles, get them from the cache.
+						if let Some(ref requested_percentiles) = reward_percentiles {
+							let mut block_rewards = Vec::new();
+							// Resoltion is half a point. I.e. 1.0,1.5
+							let resolution_per_percentile: f64 = 2.0;
+							// Get cached reward for each provided percentile.
+							for p in requested_percentiles {
+								// Find the cache index from the user percentile.
+								let p = p.clamp(0.0, 100.0);
+								let index = ((p.round() / 2f64) * 2f64) * resolution_per_percentile;
+								// Get and push the reward.
+								let reward = if let Some(r) = block.rewards.get(index as usize) {
+									U256::from(*r)
+								} else {
+									U256::zero()
+								};
+								block_rewards.push(reward);
+							}
+							// Push block rewards.
+							rewards.push(block_rewards);
+						}
+					}
+				}
+				if rewards.len() > 0 {
+					response.reward = Some(rewards);
+				}
+				// Calculate next base fee.
+				if let (Some(last_gas_used), Some(last_fee_per_gas)) = (
+					response.gas_used_ratio.last(),
+					response.base_fee_per_gas.last(),
+				) {
+					let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(
+						self.client.as_ref(),
+						id,
+					);
+					let handler = self
+						.overrides
+						.schemas
+						.get(&schema)
+						.unwrap_or(&self.overrides.fallback);
+					let default_elasticity = sp_runtime::Permill::from_parts(125_000);
+					let elasticity = handler
+						.elasticity(&id)
+						.unwrap_or(default_elasticity)
+						.deconstruct();
+					let elasticity = elasticity as f64 / 1_000_000f64;
+					let last_fee_per_gas = last_fee_per_gas.as_u64() as f64;
+					if last_gas_used > &0.5 {
+						// Increase base gas
+						let increase = ((last_gas_used - 0.5) * 2f64) * elasticity;
+						let new_base_fee =
+							(last_fee_per_gas + (last_fee_per_gas * increase)) as u64;
+						response.base_fee_per_gas.push(U256::from(new_base_fee));
+					} else if last_gas_used < &0.5 {
+						// Decrease base gas
+						let increase = ((0.5 - last_gas_used) * 2f64) * elasticity;
+						let new_base_fee =
+							(last_fee_per_gas - (last_fee_per_gas * increase)) as u64;
+						response.base_fee_per_gas.push(U256::from(new_base_fee));
+					} else {
+						// Same base gas
+						response
+							.base_fee_per_gas
+							.push(U256::from(last_fee_per_gas as u64));
+					}
+				}
+				return Ok(response);
+			} else {
+				return Err(internal_err(format!("Failed to read fee history cache.")));
+			}
+		}
+		Err(internal_err(format!(
+			"Failed to retrieve requested block {:?}.",
+			newest_block
+		)))
+	}
 }
 
 pub struct NetApi<B: BlockT, BE, C, H: ExHashT> {
@@ -2245,6 +2373,7 @@ impl<B, C, BE> EthTask<B, C, BE>
 where
 	C: ProvideRuntimeApi<B> + BlockchainEvents<B> + HeaderBackend<B> + StorageProvider<B, BE>,
 	B: BlockT<Hash = H256>,
+	C::Api: EthereumRuntimeRPCApi<B>,
 	C: Send + Sync + 'static,
 	BE: Backend<B> + 'static,
 	BE::State: StateBackend<BlakeTwo256>,
@@ -2365,6 +2494,183 @@ where
 				for key in remove_list {
 					filter_pool.remove(&key);
 				}
+			}
+		}
+	}
+
+	pub async fn fee_history_task(
+		client: Arc<C>,
+		overrides: Arc<OverrideHandle<B>>,
+		fee_history_cache: FeeHistoryCache,
+		block_limit: u64,
+	) {
+		use sp_runtime::Permill;
+
+		struct TransactionHelper {
+			gas_used: u64,
+			effective_reward: u64,
+		}
+		// Calculates the cache for a single block
+		#[rustfmt::skip]
+		let fee_history_cache_item = |hash: H256, elasticity: Permill| -> (
+			FeeHistoryCacheItem,
+			Option<u64>
+		) {
+			let id = BlockId::Hash(hash);
+			let schema =
+				frontier_backend_client::onchain_storage_schema::<B, C, BE>(client.as_ref(), id);
+			let handler = overrides
+				.schemas
+				.get(&schema)
+				.unwrap_or(&overrides.fallback);
+
+			// Evenly spaced percentile list from 0.0 to 100.0 with a 0.5 resolution.
+			// This means we cache 200 percentile points.
+			// Later in request handling we will approximate by rounding percentiles that
+			// fall in between with `(round(n*2)/2)`.
+			let reward_percentiles: Vec<f64> = {
+				let mut percentile: f64 = 0.0;
+				(0..201)
+					.into_iter()
+					.map(|_| {
+						let val = percentile;
+						percentile += 0.5;
+						val
+					})
+					.collect()
+			};
+
+			let block = handler.current_block(&id);
+			let mut block_number: Option<u64> = None;
+			let base_fee = if let Some(base_fee) = handler.base_fee(&id) {
+				base_fee
+			} else {
+				client.runtime_api().gas_price(&id).unwrap_or(U256::zero())
+			};
+			let receipts = handler.current_receipts(&id);
+			let mut result = FeeHistoryCacheItem {
+				base_fee: base_fee.as_u64(),
+				gas_used_ratio: 0f64,
+				rewards: Vec::new(),
+			};
+			if let (Some(block), Some(receipts)) = (block, receipts) {
+				block_number = Some(block.header.number.as_u64());
+				// Calculate the gas used ratio.
+				// TODO this formula needs the pallet-base-fee configuration.
+				// By now we assume just the default 0.125 (elasticity multiplier 8).
+				let gas_used = block.header.gas_used.as_u64() as f64;
+				let gas_limit = block.header.gas_limit.as_u64() as f64;
+				let elasticity_multiplier: f64 = (elasticity / Permill::from_parts(1_000_000))
+					.deconstruct()
+					.into();
+				let gas_target = gas_limit / elasticity_multiplier;
+
+				result.gas_used_ratio = gas_used / (gas_target * elasticity_multiplier);
+
+				// Build a list of relevant transaction information.
+				let mut transactions: Vec<TransactionHelper> = receipts
+					.iter()
+					.enumerate()
+					.map(|(i, receipt)| TransactionHelper {
+						gas_used: receipt.used_gas.as_u64(),
+						effective_reward: match block.transactions.get(i) {
+							Some(&ethereum::TransactionV2::Legacy(ref t)) => {
+								t.gas_price.saturating_sub(base_fee).as_u64()
+							}
+							Some(&ethereum::TransactionV2::EIP2930(ref t)) => {
+								t.gas_price.saturating_sub(base_fee).as_u64()
+							}
+							Some(&ethereum::TransactionV2::EIP1559(ref t)) => t
+								.max_priority_fee_per_gas
+								.min(t.max_fee_per_gas.saturating_sub(base_fee))
+								.as_u64(),
+							None => 0,
+						},
+					})
+					.collect();
+				// Sort ASC by effective reward.
+				transactions.sort_by(|a, b| a.effective_reward.cmp(&b.effective_reward));
+
+				// Calculate percentile rewards.
+				result.rewards = reward_percentiles
+					.into_iter()
+					.filter_map(|p| {
+						let target_gas = (p * gas_used / 100f64) as u64;
+						let mut sum_gas = 0;
+						for tx in &transactions {
+							sum_gas += tx.gas_used;
+							if target_gas <= sum_gas {
+								return Some(tx.effective_reward);
+							}
+						}
+						None
+					})
+					.map(|r| r)
+					.collect();
+			} else {
+				result.rewards = reward_percentiles.iter().map(|_| 0).collect();
+			}
+			(result, block_number)
+		};
+
+		// Commits the result to cache
+		let commit_if_any = |item: FeeHistoryCacheItem, key: Option<u64>| {
+			if let (Some(block_number), Ok(fee_history_cache)) =
+				(key, &mut fee_history_cache.lock())
+			{
+				fee_history_cache.insert(block_number, item);
+				// We want to remain within the configured cache bounds.
+				// The first key out of bounds.
+				let first_out = block_number.saturating_sub(block_limit);
+				// Out of bounds size.
+				let to_remove = (fee_history_cache.len() as u64).saturating_sub(block_limit);
+				// Remove all cache data before `block_limit`.
+				for i in 0..to_remove {
+					// Cannot overflow.
+					let key = first_out - i;
+					fee_history_cache.remove(&key);
+				}
+			}
+		};
+
+		let mut notification_st = client.import_notification_stream();
+
+		while let Some(notification) = notification_st.next().await {
+			if notification.is_new_best {
+				let hash = notification.hash;
+				let id = BlockId::Hash(hash);
+				let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(
+					client.as_ref(),
+					id,
+				);
+				let handler = overrides
+					.schemas
+					.get(&schema)
+					.unwrap_or(&overrides.fallback);
+
+				let default_elasticity = Permill::from_parts(125_000);
+				let elasticity = handler.elasticity(&id).unwrap_or(default_elasticity);
+				// In case a re-org happened on import.
+				if let Some(tree_route) = notification.tree_route {
+					if let Ok(fee_history_cache) = &mut fee_history_cache.lock() {
+						// Remove retracted.
+						let _ = tree_route.retracted().iter().map(|hash_and_number| {
+							let n = UniqueSaturatedInto::<u64>::unique_saturated_into(
+								hash_and_number.number,
+							);
+							fee_history_cache.remove(&n);
+						});
+						// Insert enacted.
+						let _ = tree_route.enacted().iter().map(|hash_and_number| {
+							let (result, block_number) =
+								fee_history_cache_item(hash_and_number.hash, elasticity);
+							commit_if_any(result, block_number);
+						});
+					}
+				}
+				// Cache the imported block.
+				let (result, block_number) = fee_history_cache_item(hash, elasticity);
+				commit_if_any(result, block_number);
 			}
 		}
 	}

@@ -21,7 +21,7 @@ use codec::{Decode, Encode};
 use ethereum::Log;
 use ethereum_types::Bloom;
 use sp_core::{H160, H256, U256};
-use sp_runtime::traits::Block as BlockT;
+use sp_runtime::{traits::Block as BlockT, Permill};
 use sp_std::vec::Vec;
 
 #[derive(Eq, PartialEq, Clone, Encode, Decode, sp_runtime::RuntimeDebug, scale_info::TypeInfo)]
@@ -51,7 +51,7 @@ impl Default for TransactionStatus {
 
 sp_api::decl_runtime_apis! {
 	/// API necessary for Ethereum-compatibility layer.
-	#[api_version(2)]
+	#[api_version(3)]
 	pub trait EthereumRuntimeRPCApi {
 		/// Returns runtime defined pallet_evm::ChainId.
 		fn chain_id() -> u64;
@@ -140,6 +140,8 @@ sp_api::decl_runtime_apis! {
 		fn extrinsic_filter(
 			xts: Vec<<Block as BlockT>::Extrinsic>,
 		) -> Vec<ethereum::TransactionV2>;
+		/// Return the elasticity multiplier.
+		fn elasticity() -> Option<Permill>;
 	}
 }
 
