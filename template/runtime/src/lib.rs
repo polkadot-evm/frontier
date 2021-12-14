@@ -676,6 +676,10 @@ impl_runtime_apis! {
 				_ => None
 			}).collect::<Vec<EthereumTransaction>>()
 		}
+
+		fn elasticity() -> Option<Permill> {
+			Some(BaseFee::elasticity())
+		}
 	}
 
 	impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi<

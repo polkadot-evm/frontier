@@ -23,6 +23,7 @@ mod block;
 mod block_number;
 mod bytes;
 mod call_request;
+mod fee;
 mod filter;
 mod index;
 mod log;
@@ -40,6 +41,7 @@ pub use self::{
 	block_number::BlockNumber,
 	bytes::Bytes,
 	call_request::CallRequest,
+	fee::{FeeHistory, FeeHistoryCache, FeeHistoryCacheItem},
 	filter::{
 		Filter, FilterAddress, FilterChanges, FilterPool, FilterPoolItem, FilterType,
 		FilteredParams, Topic, VariadicValue,
