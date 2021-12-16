@@ -38,6 +38,13 @@ describeWithFrontier("Frontier RPC (Contract)", (context) => {
 			result: "0x",
 		});
 
+		// Verify the contract is in the pending state
+		expect(await customRequest(context.web3, "eth_getCode", [FIRST_CONTRACT_ADDRESS, "pending"])).to.deep.equal({
+			id: 1,
+			jsonrpc: "2.0",
+			result: TEST_CONTRACT_DEPLOYED_BYTECODE,
+		});
+
 		// Verify the contract is stored after the block is produced
 		await createAndFinalizeBlock(context.web3);
 		expect(await customRequest(context.web3, "eth_getCode", [FIRST_CONTRACT_ADDRESS])).to.deep.equal({

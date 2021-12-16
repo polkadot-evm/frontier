@@ -44,6 +44,7 @@ use sc_transaction_pool::{ChainApi, Pool};
 use sc_transaction_pool_api::{InPoolTransaction, TransactionPool};
 use sha3::{Digest, Keccak256};
 use sp_api::{ApiExt, BlockId, Core, HeaderT, ProvideRuntimeApi};
+use sp_block_builder::BlockBuilder;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 use sp_runtime::{
 	traits::{BlakeTwo256, Block as BlockT, NumberFor, One, Saturating, UniqueSaturatedInto, Zero},
@@ -82,6 +83,7 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> EthApi<B, C, P, CT, BE, H
 where
 	C: ProvideRuntimeApi<B>,
 	C::Api: EthereumRuntimeRPCApi<B>,
+	C::Api: BlockBuilder<B>,
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	A: ChainApi<Block = B> + 'static,
 	C: Send + Sync + 'static,
@@ -276,6 +278,41 @@ fn transaction_build(
 	transaction.public_key = pubkey.as_ref().map(|pk| H512::from(pk));
 
 	transaction
+}
+
+fn pending_runtime_api<'a, B: BlockT, C, BE, A: ChainApi>(
+	client: &'a C,
+	graph: &'a Pool<A>,
+) -> Result<sp_api::ApiRef<'a, C::Api>>
+where
+	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
+	C: HeaderBackend<B> + HeaderMetadata<B, Error = BlockChainError> + 'static,
+	C::Api: EthereumRuntimeRPCApi<B>,
+	C::Api: BlockBuilder<B>,
+	BE: Backend<B> + 'static,
+	BE::State: StateBackend<BlakeTwo256>,
+	B: BlockT<Hash = H256> + Send + Sync + 'static,
+	A: ChainApi<Block = B> + 'static,
+	C: Send + Sync + 'static,
+{
+	// In case of Pending, we need an overlayed state to query over.
+	let api = client.runtime_api();
+	let best = BlockId::Hash(client.info().best_hash);
+	// Get all transactions in the ready queue.
+	let xts: Vec<<B as BlockT>::Extrinsic> = graph
+		.validated_pool()
+		.ready()
+		.map(|in_pool_tx| in_pool_tx.data().clone())
+		.collect::<Vec<<B as BlockT>::Extrinsic>>();
+	// Manually initialize the overlay.
+	let header = client.header(best).unwrap().unwrap();
+	api.initialize_block(&best, &header)
+		.map_err(|e| internal_err(format!("Runtime api access error: {:?}", e)))?;
+	// Apply the ready queue to the best block's state.
+	for xt in xts {
+		let _ = api.apply_extrinsic(&best, xt);
+	}
+	Ok(api)
 }
 
 fn filter_range_logs<B: BlockT, C, BE>(
@@ -501,6 +538,7 @@ where
 	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
 	C: HeaderBackend<B> + HeaderMetadata<B, Error = BlockChainError> + 'static,
 	C::Api: EthereumRuntimeRPCApi<B>,
+	C::Api: BlockBuilder<B>,
 	BE: Backend<B> + 'static,
 	BE::State: StateBackend<BlakeTwo256>,
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
@@ -598,10 +636,18 @@ where
 	}
 
 	fn balance(&self, address: H160, number: Option<BlockNumber>) -> Result<U256> {
-		if let Ok(Some(id)) = frontier_backend_client::native_block_id::<B, C>(
+		let number = number.unwrap_or(BlockNumber::Latest);
+		if number == BlockNumber::Pending {
+			let api = pending_runtime_api(self.client.as_ref(), self.graph.as_ref())?;
+			return Ok(api
+				.account_basic(&BlockId::Hash(self.client.info().best_hash), address)
+				.map_err(|err| internal_err(format!("fetch runtime chain id failed: {:?}", err)))?
+				.balance
+				.into());
+		} else if let Ok(Some(id)) = frontier_backend_client::native_block_id::<B, C>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
-			number,
+			Some(number),
 		) {
 			return Ok(self
 				.client
@@ -610,15 +656,22 @@ where
 				.map_err(|err| internal_err(format!("fetch runtime chain id failed: {:?}", err)))?
 				.balance
 				.into());
+		} else {
+			Ok(U256::zero())
 		}
-		Ok(U256::zero())
 	}
 
 	fn storage_at(&self, address: H160, index: U256, number: Option<BlockNumber>) -> Result<H256> {
-		if let Ok(Some(id)) = frontier_backend_client::native_block_id::<B, C>(
+		let number = number.unwrap_or(BlockNumber::Latest);
+		if number == BlockNumber::Pending {
+			let api = pending_runtime_api(self.client.as_ref(), self.graph.as_ref())?;
+			return Ok(api
+				.storage_at(&BlockId::Hash(self.client.info().best_hash), address, index)
+				.unwrap_or_default());
+		} else if let Ok(Some(id)) = frontier_backend_client::native_block_id::<B, C>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
-			number,
+			Some(number),
 		) {
 			let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(
 				self.client.as_ref(),
@@ -631,8 +684,9 @@ where
 				.unwrap_or(&self.overrides.fallback)
 				.storage_at(&id, address, index)
 				.unwrap_or_default());
+		} else {
+			Ok(H256::default())
 		}
-		Ok(H256::default())
 	}
 
 	fn block_by_hash(&self, hash: H256, full: bool) -> Result<Option<RichBlock>> {
@@ -826,10 +880,17 @@ where
 	}
 
 	fn code_at(&self, address: H160, number: Option<BlockNumber>) -> Result<Bytes> {
-		if let Ok(Some(id)) = frontier_backend_client::native_block_id::<B, C>(
+		let number = number.unwrap_or(BlockNumber::Latest);
+		if number == BlockNumber::Pending {
+			let api = pending_runtime_api(self.client.as_ref(), self.graph.as_ref())?;
+			return Ok(api
+				.account_code_at(&BlockId::Hash(self.client.info().best_hash), address)
+				.unwrap_or(vec![])
+				.into());
+		} else if let Ok(Some(id)) = frontier_backend_client::native_block_id::<B, C>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
-			number,
+			Some(number),
 		) {
 			let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(
 				self.client.as_ref(),
@@ -844,8 +905,9 @@ where
 				.account_code_at(&id, address)
 				.unwrap_or(vec![])
 				.into());
+		} else {
+			Ok(Bytes(vec![]))
 		}
-		Ok(Bytes(vec![]))
 	}
 
 	fn send_transaction(&self, request: TransactionRequest) -> BoxFuture<Result<H256>> {
@@ -1006,11 +1068,7 @@ where
 		)
 	}
 
-	fn call(&self, request: CallRequest, _: Option<BlockNumber>) -> Result<Bytes> {
-		// TODO required support for requests with block parameter instead of defaulting to latest.
-		// That's the main reason for creating a new runtime api version for the `call` and `create` methods.
-		let hash = self.client.info().best_hash;
-
+	fn call(&self, request: CallRequest, number: Option<BlockNumber>) -> Result<Bytes> {
 		let CallRequest {
 			from,
 			to,
@@ -1032,14 +1090,26 @@ where
 			)
 		};
 
-		let api = self.client.runtime_api();
+		let (id, api) = match frontier_backend_client::native_block_id::<B, C>(
+			self.client.as_ref(),
+			self.backend.as_ref(),
+			number,
+		)? {
+			Some(id) => (id, self.client.runtime_api()),
+			None => {
+				// Not mapped in the db, assume pending.
+				let id = BlockId::Hash(self.client.info().best_hash);
+				let api = pending_runtime_api(self.client.as_ref(), self.graph.as_ref())?;
+				(id, api)
+			}
+		};
 
 		// use given gas limit or query current block's limit
 		let gas_limit = match gas {
 			Some(amount) => amount,
 			None => {
 				let block = api
-					.current_block(&BlockId::Hash(hash))
+					.current_block(&id)
 					.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?;
 				if let Some(block) = block {
 					block.header.gas_limit
@@ -1052,21 +1122,20 @@ where
 		};
 		let data = data.map(|d| d.0).unwrap_or_default();
 
-		let api_version = if let Ok(Some(api_version)) =
-			api.api_version::<dyn EthereumRuntimeRPCApi<B>>(&BlockId::Hash(hash))
-		{
-			api_version
-		} else {
-			return Err(internal_err(format!(
-				"failed to retrieve Runtime Api version"
-			)));
-		};
+		let api_version =
+			if let Ok(Some(api_version)) = api.api_version::<dyn EthereumRuntimeRPCApi<B>>(&id) {
+				api_version
+			} else {
+				return Err(internal_err(format!(
+					"failed to retrieve Runtime Api version"
+				)));
+			};
 		match to {
 			Some(to) => {
 				if api_version == 1 {
 					#[allow(deprecated)]
 					let info = api.call_before_version_2(
-						&BlockId::Hash(hash),
+						&id,
 						from.unwrap_or_default(),
 						to,
 						data,
@@ -1084,7 +1153,7 @@ where
 				} else if api_version >= 2 {
 					let info = api
 						.call(
-							&BlockId::Hash(hash),
+							&id,
 							from.unwrap_or_default(),
 							to,
 							data,
@@ -1110,7 +1179,7 @@ where
 				if api_version == 1 {
 					#[allow(deprecated)]
 					let info = api.create_before_version_2(
-						&BlockId::Hash(hash),
+						&id,
 						from.unwrap_or_default(),
 						data,
 						value.unwrap_or_default(),
@@ -1127,7 +1196,7 @@ where
 				} else if api_version >= 2 {
 					let info = api
 						.create(
-							&BlockId::Hash(hash),
+							&id,
 							from.unwrap_or_default(),
 							data,
 							value.unwrap_or_default(),
