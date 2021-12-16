@@ -38,6 +38,13 @@ describeWithFrontier("Frontier RPC (Contract)", (context) => {
 			result: "0x",
 		});
 
+		// Verify the contract is in the pending state
+		expect(await customRequest(context.web3, "eth_getCode", [FIRST_CONTRACT_ADDRESS, "pending"])).to.deep.equal({
+			id: 1,
+			jsonrpc: "2.0",
+			result: TEST_CONTRACT_DEPLOYED_BYTECODE,
+		});
+
 		// Verify the contract is stored after the block is produced
 		await createAndFinalizeBlock(context.web3);
 		expect(await customRequest(context.web3, "eth_getCode", [FIRST_CONTRACT_ADDRESS])).to.deep.equal({
@@ -45,31 +52,6 @@ describeWithFrontier("Frontier RPC (Contract)", (context) => {
 			jsonrpc: "2.0",
 			result:
 			TEST_CONTRACT_DEPLOYED_BYTECODE,
-		});
-	});
-
-	it("should get contract code on Pending block", async function () {
-		const tx = await context.web3.eth.accounts.signTransaction(
-			{
-				from: GENESIS_ACCOUNT,
-				data: TEST_CONTRACT_BYTECODE,
-				value: "0x00",
-				gasPrice: "0x3B9ACA00",
-				gas: "0x100000",
-			},
-			GENESIS_ACCOUNT_PRIVATE_KEY
-		);
-
-		expect(await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction])).to.include({
-			id: 1,
-			jsonrpc: "2.0",
-		});
-
-		// Verify the contract is not yet stored
-		expect(await customRequest(context.web3, "eth_getCode", [FIRST_CONTRACT_ADDRESS, "pending"])).to.deep.equal({
-			id: 1,
-			jsonrpc: "2.0",
-			result: TEST_CONTRACT_DEPLOYED_BYTECODE,
 		});
 	});
 });
