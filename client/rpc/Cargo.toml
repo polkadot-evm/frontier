@@ -27,6 +27,7 @@ sp-transaction-pool = { version = "4.0.0-dev", git = "https://github.com/parityt
 sc-transaction-pool = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate" }
 sp-storage = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate" }
 sp-blockchain = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate" }
+sp-block-builder = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate" }
 sc-transaction-pool-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate" }
 sc-service = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate" }
 sc-client-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate" }
