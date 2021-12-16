@@ -204,6 +204,15 @@
 <span id="204">204</span>
 <span id="205">205</span>
 <span id="206">206</span>
+<span id="207">207</span>
+<span id="208">208</span>
+<span id="209">209</span>
+<span id="210">210</span>
+<span id="211">211</span>
+<span id="212">212</span>
+<span id="213">213</span>
+<span id="214">214</span>
+<span id="215">215</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -229,8 +238,8 @@
 <span class="kw">use</span> <span class="ident">jsonrpc_derive::rpc</span>;
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::types</span>::{
-	<span class="ident">BlockNumber</span>, <span class="ident">Bytes</span>, <span class="ident">CallRequest</span>, <span class="ident">Filter</span>, <span class="ident">FilterChanges</span>, <span class="ident">Index</span>, <span class="ident">Log</span>, <span class="ident">Receipt</span>, <span class="ident">RichBlock</span>,
-	<span class="ident">SyncStatus</span>, <span class="ident">Transaction</span>, <span class="ident">TransactionRequest</span>, <span class="ident">Work</span>,
+	<span class="ident">BlockNumber</span>, <span class="ident">Bytes</span>, <span class="ident">CallRequest</span>, <span class="ident">FeeHistory</span>, <span class="ident">Filter</span>, <span class="ident">FilterChanges</span>, <span class="ident">Index</span>, <span class="ident">Log</span>, <span class="ident">Receipt</span>,
+	<span class="ident">RichBlock</span>, <span class="ident">SyncStatus</span>, <span class="ident">Transaction</span>, <span class="ident">TransactionRequest</span>, <span class="ident">Work</span>,
 };
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">rpc_impl_EthApi::gen_server::EthApi</span> <span class="kw">as</span> <span class="ident">EthApiServer</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">rpc_impl_EthFilterApi::gen_server::EthFilterApi</span> <span class="kw">as</span> <span class="ident">EthFilterApiServer</span>;
@@ -381,6 +390,15 @@
 	<span class="doccomment">/// Used for submitting mining hashrate.</span>
 	<span class="attribute">#[<span class="ident">rpc</span>(<span class="ident">name</span> <span class="op">=</span> <span class="string">&quot;eth_submitHashrate&quot;</span>)]</span>
 	<span class="kw">fn</span> <span class="ident">submit_hashrate</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="kw">_</span>: <span class="ident">U256</span>, <span class="kw">_</span>: <span class="ident">H256</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span>;
+
+	<span class="doccomment">/// Introduced in EIP-1159 for getting information on the appropiate priority fee to use.</span>
+	<span class="attribute">#[<span class="ident">rpc</span>(<span class="ident">name</span> <span class="op">=</span> <span class="string">&quot;eth_feeHistory&quot;</span>)]</span>
+	<span class="kw">fn</span> <span class="ident">fee_history</span>(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+		<span class="ident">block_count</span>: <span class="ident">U256</span>,
+		<span class="ident">newest_block</span>: <span class="ident">BlockNumber</span>,
+		<span class="ident">reward_percentiles</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">f64</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">FeeHistory</span><span class="op">&gt;</span>;
 }
 
 <span class="doccomment">/// Eth filters rpc api (polling).</span>

@@ -83,6 +83,10 @@
 <span id="83">83</span>
 <span id="84">84</span>
 <span id="85">85</span>
+<span id="86">86</span>
+<span id="87">87</span>
+<span id="88">88</span>
+<span id="89">89</span>
 </pre><pre class="rust"><code><span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;manual-seal&quot;</span>)]</span>
 <span class="kw">use</span> <span class="ident">structopt::clap::arg_enum</span>;
 <span class="kw">use</span> <span class="ident">structopt::StructOpt</span>;
@@ -124,6 +128,10 @@
 	<span class="doccomment">/// Maximum number of logs in a query.</span>
 	<span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">long</span>, <span class="ident">default_value</span> <span class="op">=</span> <span class="string">&quot;10000&quot;</span>)]</span>
 	<span class="kw">pub</span> <span class="ident">max_past_logs</span>: <span class="ident">u32</span>,
+
+	<span class="doccomment">/// Maximum fee history cache size.</span>
+	<span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">long</span>, <span class="ident">default_value</span> <span class="op">=</span> <span class="string">&quot;2048&quot;</span>)]</span>
+	<span class="kw">pub</span> <span class="ident">fee_history_limit</span>: <span class="ident">u64</span>,
 
 	<span class="doccomment">/// The dynamic-fee pallet target gas price set by block author</span>
 	<span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">long</span>, <span class="ident">default_value</span> <span class="op">=</span> <span class="string">&quot;1&quot;</span>)]</span>

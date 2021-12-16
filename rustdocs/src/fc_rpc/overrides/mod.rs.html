@@ -176,6 +176,17 @@
 <span id="176">176</span>
 <span id="177">177</span>
 <span id="178">178</span>
+<span id="179">179</span>
+<span id="180">180</span>
+<span id="181">181</span>
+<span id="182">182</span>
+<span id="183">183</span>
+<span id="184">184</span>
+<span id="185">185</span>
+<span id="186">186</span>
+<span id="187">187</span>
+<span id="188">188</span>
+<span id="189">189</span>
 </pre><pre class="rust"><code><span class="comment">// Copyright 2017-2020 Parity Technologies (UK) Ltd.</span>
 <span class="comment">// This file is part of Frontier.</span>
 
@@ -198,7 +209,7 @@
 <span class="kw">use</span> <span class="ident">fp_rpc</span>::{<span class="ident">EthereumRuntimeRPCApi</span>, <span class="ident">TransactionStatus</span>};
 <span class="kw">use</span> <span class="ident">sp_api</span>::{<span class="ident">ApiExt</span>, <span class="ident">BlockId</span>, <span class="ident">ProvideRuntimeApi</span>};
 <span class="kw">use</span> <span class="ident">sp_io::hashing</span>::{<span class="ident">blake2_128</span>, <span class="ident">twox_128</span>};
-<span class="kw">use</span> <span class="ident">sp_runtime::traits::Block</span> <span class="kw">as</span> <span class="ident">BlockT</span>;
+<span class="kw">use</span> <span class="ident">sp_runtime</span>::{<span class="ident">traits::Block</span> <span class="kw">as</span> <span class="ident">BlockT</span>, <span class="ident">Permill</span>};
 <span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">marker::PhantomData</span>, <span class="ident">sync::Arc</span>};
 
 <span class="kw">mod</span> <span class="ident">schema_v1_override</span>;
@@ -235,6 +246,8 @@
 	) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TransactionStatus</span><span class="op">&gt;</span><span class="op">&gt;</span>;
 	<span class="doccomment">/// Return the base fee at the given height.</span>
 	<span class="kw">fn</span> <span class="ident">base_fee</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">block</span>: <span class="kw-2">&amp;</span><span class="ident">BlockId</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>;
+	<span class="doccomment">/// Return the base fee at the given height.</span>
+	<span class="kw">fn</span> <span class="ident">elasticity</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">block</span>: <span class="kw-2">&amp;</span><span class="ident">BlockId</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Permill</span><span class="op">&gt;</span>;
 	<span class="doccomment">/// Return `true` if the request BlockId is post-eip1559.</span>
 	<span class="kw">fn</span> <span class="ident">is_eip1559</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">block</span>: <span class="kw-2">&amp;</span><span class="ident">BlockId</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>) -&gt; <span class="ident">bool</span>;
 }
@@ -338,6 +351,15 @@
 	<span class="kw">fn</span> <span class="ident">base_fee</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">block</span>: <span class="kw-2">&amp;</span><span class="ident">BlockId</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span> {
 		<span class="kw">if</span> <span class="self">self</span>.<span class="ident">is_eip1559</span>(<span class="ident">block</span>) {
 			<span class="self">self</span>.<span class="ident">client</span>.<span class="ident">runtime_api</span>().<span class="ident">gas_price</span>(<span class="kw-2">&amp;</span><span class="ident">block</span>).<span class="ident">ok</span>()
+		} <span class="kw">else</span> {
+			<span class="prelude-val">None</span>
+		}
+	}
+
+	<span class="doccomment">/// Return the elasticity multiplier at the give post-eip1559 height.</span>
+	<span class="kw">fn</span> <span class="ident">elasticity</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">block</span>: <span class="kw-2">&amp;</span><span class="ident">BlockId</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Permill</span><span class="op">&gt;</span> {
+		<span class="kw">if</span> <span class="self">self</span>.<span class="ident">is_eip1559</span>(<span class="ident">block</span>) {
+			<span class="self">self</span>.<span class="ident">client</span>.<span class="ident">runtime_api</span>().<span class="ident">elasticity</span>(<span class="kw-2">&amp;</span><span class="ident">block</span>).<span class="ident">ok</span>()<span class="question-mark">?</span>
 		} <span class="kw">else</span> {
 			<span class="prelude-val">None</span>
 		}
