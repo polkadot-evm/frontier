@@ -1644,13 +1644,21 @@ where
 		let is_eip1559 = handler.is_eip1559(&id);
 
 		match (block, statuses) {
-			(Some(block), Some(statuses)) => Ok(Some(transaction_build(
-				block.transactions[index].clone(),
-				Some(block),
-				Some(statuses[index].clone()),
-				is_eip1559,
-				base_fee,
-			))),
+			(Some(block), Some(statuses)) => {
+				if let (Some(transaction), Some(status)) =
+					(block.transactions.get(index), statuses.get(index))
+				{
+					return Ok(Some(transaction_build(
+						transaction.clone(),
+						Some(block),
+						Some(status.clone()),
+						is_eip1559,
+						base_fee,
+					)));
+				} else {
+					return Err(internal_err(format!("{:?} is out of bounds", index)));
+				}
+			}
 			_ => Ok(None),
 		}
 	}
@@ -1691,13 +1699,21 @@ where
 		let is_eip1559 = handler.is_eip1559(&id);
 
 		match (block, statuses) {
-			(Some(block), Some(statuses)) => Ok(Some(transaction_build(
-				block.transactions[index].clone(),
-				Some(block),
-				Some(statuses[index].clone()),
-				is_eip1559,
-				base_fee,
-			))),
+			(Some(block), Some(statuses)) => {
+				if let (Some(transaction), Some(status)) =
+					(block.transactions.get(index), statuses.get(index))
+				{
+					return Ok(Some(transaction_build(
+						transaction.clone(),
+						Some(block),
+						Some(status.clone()),
+						is_eip1559,
+						base_fee,
+					)));
+				} else {
+					return Err(internal_err(format!("{:?} is out of bounds", index)));
+				}
+			}
 			_ => Ok(None),
 		}
 	}
