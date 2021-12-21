@@ -20,12 +20,17 @@ describeWithFrontier("Frontier RPC (Balance)", (context) => {
 			from: GENESIS_ACCOUNT,
 			to: TEST_ACCOUNT,
 			value: "0x200", // Must me higher than ExistentialDeposit (500)
-			gasPrice: "0x01",
+			gasPrice: "0x3B9ACA00",
 			gas: "0x100000",
 		}, GENESIS_ACCOUNT_PRIVATE_KEY);
 		await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction]);
+		const expectedGenesisBalance = "340282366920938463463374586431768210443";
+		const expectedTestBalance = "12";
+		expect(await context.web3.eth.getBalance(GENESIS_ACCOUNT, "pending")).to.equal(expectedGenesisBalance);
+		expect(await context.web3.eth.getBalance(TEST_ACCOUNT, "pending")).to.equal(expectedTestBalance);
 		await createAndFinalizeBlock(context.web3);
-		expect(await context.web3.eth.getBalance(GENESIS_ACCOUNT)).to.equal("340282366920938463463374607431768189443");
-		expect(await context.web3.eth.getBalance(TEST_ACCOUNT)).to.equal("12");
+		// 340282366920938463463374607431768210955 - (21000 * 1000000000) + 512; 
+		expect(await context.web3.eth.getBalance(GENESIS_ACCOUNT)).to.equal(expectedGenesisBalance);
+		expect(await context.web3.eth.getBalance(TEST_ACCOUNT)).to.equal(expectedTestBalance);
 	});
 });

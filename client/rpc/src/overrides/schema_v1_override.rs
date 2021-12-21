@@ -15,13 +15,15 @@
 // along with Substrate.  If not, see <http://www.gnu.org/licenses/>.
 
 use codec::Decode;
-use ethereum::BlockV0 as EthereumBlock;
 use ethereum_types::{H160, H256, U256};
 use fp_rpc::TransactionStatus;
 use sc_client_api::backend::{AuxStore, Backend, StateBackend, StorageProvider};
 use sp_api::BlockId;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
-use sp_runtime::traits::{BlakeTwo256, Block as BlockT};
+use sp_runtime::{
+	traits::{BlakeTwo256, Block as BlockT},
+	Permill,
+};
 use sp_storage::StorageKey;
 use std::{marker::PhantomData, sync::Arc};
 
@@ -100,11 +102,12 @@ where
 	}
 
 	/// Return the current block.
-	fn current_block(&self, block: &BlockId<Block>) -> Option<EthereumBlock> {
+	fn current_block(&self, block: &BlockId<Block>) -> Option<ethereum::BlockV2> {
 		self.query_storage::<ethereum::BlockV0>(
 			block,
 			&StorageKey(storage_prefix_build(b"Ethereum", b"CurrentBlock")),
 		)
+		.map(Into::into)
 	}
 
 	/// Return the current receipt.
@@ -127,5 +130,19 @@ where
 				b"CurrentTransactionStatuses",
 			)),
 		)
+	}
+
+	/// Prior to eip-1559 there is no base fee.
+	fn base_fee(&self, _block: &BlockId<Block>) -> Option<U256> {
+		None
+	}
+
+	/// Prior to eip-1559 there is no base fee.
+	fn elasticity(&self, _block: &BlockId<Block>) -> Option<Permill> {
+		None
+	}
+
+	fn is_eip1559(&self, _block: &BlockId<Block>) -> bool {
+		false
 	}
 }

@@ -4,7 +4,7 @@ version = "0.0.0"
 authors = ["Substrate DevHub <https://github.com/substrate-developer-hub>"]
 edition = "2018"
 license = "Unlicense"
-homepage = "https://substrate.dev"
+homepage = "https://substrate.io"
 repository = "https://github.com/substrate-developer-hub/frontier-node-template/"
 publish = false
 
@@ -34,6 +34,7 @@ pallet-sudo = { default-features = false, git = "https://github.com/paritytech/s
 pallet-timestamp = { default-features = false, git = "https://github.com/paritytech/substrate" }
 pallet-transaction-payment = { default-features = false, git = "https://github.com/paritytech/substrate" }
 pallet-transaction-payment-rpc-runtime-api = { default-features = false, git = "https://github.com/paritytech/substrate" }
+pallet-base-fee = { default-features = false, path = "../../frame/base-fee" }
 
 sp-api = { default-features = false, git = "https://github.com/paritytech/substrate" }
 sp-block-builder = { default-features = false, git = "https://github.com/paritytech/substrate"}
@@ -49,6 +50,9 @@ sp-transaction-pool = { default-features = false, git = "https://github.com/pari
 sp-version = { default-features = false, git = "https://github.com/paritytech/substrate" }
 
 fp-rpc = { default-features = false, path = "../../primitives/rpc" }
+fp-self-contained = { default-features = false, path = "../../primitives/self-contained" }
+
+scale-info = { version = "1.0.0", default-features = false, features = ["derive"] }
 
 # benchmarking dependencies
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true }
@@ -70,6 +74,7 @@ std = [
 	"frame-system-rpc-runtime-api/std",
 	"frame-system/std",
 	"fp-rpc/std",
+	"fp-self-contained/std",
 
 	"pallet-ethereum/std",
 	"pallet-evm/std",
@@ -84,6 +89,7 @@ std = [
 	"pallet-timestamp/std",
 	"pallet-transaction-payment-rpc-runtime-api/std",
 	"pallet-transaction-payment/std",
+	"pallet-base-fee/std",
 
 	"sp-api/std",
 	"sp-block-builder/std",
@@ -99,10 +105,13 @@ std = [
 	"sp-version/std",
 	"frame-benchmarking/std",
 	"frame-system-benchmarking/std",
+
+	"scale-info/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",
 	"frame-system-benchmarking",
 	"frame-system/runtime-benchmarks",
+	"pallet-ethereum/runtime-benchmarks",
 	"pallet-evm/runtime-benchmarks",
 ]

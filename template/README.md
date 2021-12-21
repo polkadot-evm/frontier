@@ -1,7 +1,7 @@
 # Substrate Frontier Node Template
 
-A [FRAME](https://substrate.dev/docs/en/next/conceptual/runtime/frame)-based
-[Substrate](https://substrate.dev/en/) node with the Ethereum RPC support, ready for hacking
+A [FRAME](https://docs.substrate.io/v3/runtime/frame)-based
+[Substrate](https://substrate.io) node with the Ethereum RPC support, ready for hacking
 :rocket:
 
 ## Generation & Upstream
@@ -18,7 +18,7 @@ repository.
 This template was originally forked from the
 [Substrate Node Template](https://github.com/substrate-developer-hub/substrate-node-template). You
 can find more information on features on this template there, and more detailed usage on the
-[Substrate Developer Hub Tutorials](https://substrate.dev/tutorials/) that use this heavily.
+[Substrate Developer Hub Tutorials](https://docs.substrate.io/tutorials/v3/) that use this heavily.
 
 ## Build & Run
 
@@ -63,7 +63,7 @@ docker run -t frontier-node-dev
 
 The development [chain spec](node/src/chain_spec.rs) included with this project defines a genesis
 block that has been pre-configured with an EVM account for
-[Alice](https://substrate.dev/docs/en/knowledgebase/integrate/subkey#well-known-keys). When
+[Alice](https://docs.substrate.io/v3/tools/subkey#well-known-keys). When
 [a development chain is started](https://github.com/substrate-developer-hub/substrate-node-template#run),
 Alice's EVM account will be funded with a large amount of Ether. The
 [Polkadot UI](https://polkadot.js.org/apps/#?rpc=ws://127.0.0.1:9944) can be used to see the details

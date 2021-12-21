@@ -48,7 +48,7 @@
 //! the exact same transaction / receipt format. However, given one Ethereum transaction and one Substrate account's
 //! private key, one should be able to convert any Ethereum transaction into a transaction compatible with this pallet.
 //!
-//! The gas configurations are configurable. Right now, a pre-defined Istanbul hard fork configuration option is provided.
+//! The gas configurations are configurable. Right now, a pre-defined London hard fork configuration option is provided.
 
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
@@ -63,27 +63,29 @@ mod tests;
 pub mod benchmarks;
 
 pub use crate::runner::Runner;
-pub use evm::{ExitError, ExitFatal, ExitReason, ExitRevert, ExitSucceed};
+pub use evm::{Context, ExitError, ExitFatal, ExitReason, ExitRevert, ExitSucceed};
 pub use fp_evm::{
 	Account, CallInfo, CreateInfo, ExecutionInfo, LinearCostPrecompile, Log, Precompile,
-	PrecompileSet, Vicinity,
+	PrecompileFailure, PrecompileOutput, PrecompileResult, PrecompileSet, Vicinity,
 };
 
 #[cfg(feature = "std")]
 use codec::{Decode, Encode};
 use evm::Config as EvmConfig;
-use frame_support::dispatch::DispatchResultWithPostInfo;
-use frame_support::traits::{
-	tokens::fungible::Inspect, Currency, ExistenceRequirement, FindAuthor, Get, Imbalance,
-	OnUnbalanced, WithdrawReasons,
+use frame_support::{
+	dispatch::DispatchResultWithPostInfo,
+	traits::{
+		tokens::fungible::Inspect, Currency, ExistenceRequirement, FindAuthor, Get, Imbalance,
+		OnUnbalanced, SignedImbalance, WithdrawReasons,
+	},
+	weights::{Pays, PostDispatchInfo, Weight},
 };
-use frame_support::weights::{Pays, PostDispatchInfo, Weight};
 use frame_system::RawOrigin;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_core::{Hasher, H160, H256, U256};
 use sp_runtime::{
-	traits::{BadOrigin, Saturating, UniqueSaturatedInto},
+	traits::{BadOrigin, Saturating, UniqueSaturatedInto, Zero},
 	AccountId32,
 };
 use sp_std::vec::Vec;
@@ -124,7 +126,8 @@ pub mod pallet {
 		/// The overarching event type.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 		/// Precompiles associated with this EVM engine.
-		type Precompiles: PrecompileSet;
+		type PrecompilesType: PrecompileSet;
+		type PrecompilesValue: Get<Self::PrecompilesType>;
 		/// Chain ID of EVM.
 		type ChainId: Get<u64>;
 		/// The block gas limit. Can be a simple constant, or an adjustment algorithm in another pallet.
@@ -142,7 +145,7 @@ pub mod pallet {
 
 		/// EVM config used in the module.
 		fn config() -> &'static EvmConfig {
-			&ISTANBUL_CONFIG
+			&LONDON_CONFIG
 		}
 	}
 
@@ -177,8 +180,10 @@ pub mod pallet {
 			input: Vec<u8>,
 			value: U256,
 			gas_limit: u64,
-			gas_price: U256,
+			max_fee_per_gas: U256,
+			max_priority_fee_per_gas: Option<U256>,
 			nonce: Option<U256>,
+			access_list: Vec<(H160, Vec<H256>)>,
 		) -> DispatchResultWithPostInfo {
 			T::CallOrigin::ensure_address_origin(&source, origin)?;
 
@@ -188,8 +193,10 @@ pub mod pallet {
 				input,
 				value,
 				gas_limit,
-				Some(gas_price),
+				Some(max_fee_per_gas),
+				max_priority_fee_per_gas,
 				nonce,
+				access_list,
 				T::config(),
 			)?;
 
@@ -219,8 +226,10 @@ pub mod pallet {
 			init: Vec<u8>,
 			value: U256,
 			gas_limit: u64,
-			gas_price: U256,
+			max_fee_per_gas: U256,
+			max_priority_fee_per_gas: Option<U256>,
 			nonce: Option<U256>,
+			access_list: Vec<(H160, Vec<H256>)>,
 		) -> DispatchResultWithPostInfo {
 			T::CallOrigin::ensure_address_origin(&source, origin)?;
 
@@ -229,8 +238,10 @@ pub mod pallet {
 				init,
 				value,
 				gas_limit,
-				Some(gas_price),
+				Some(max_fee_per_gas),
+				max_priority_fee_per_gas,
 				nonce,
+				access_list,
 				T::config(),
 			)?;
 
@@ -268,8 +279,10 @@ pub mod pallet {
 			salt: H256,
 			value: U256,
 			gas_limit: u64,
-			gas_price: U256,
+			max_fee_per_gas: U256,
+			max_priority_fee_per_gas: Option<U256>,
 			nonce: Option<U256>,
+			access_list: Vec<(H160, Vec<H256>)>,
 		) -> DispatchResultWithPostInfo {
 			T::CallOrigin::ensure_address_origin(&source, origin)?;
 
@@ -279,8 +292,10 @@ pub mod pallet {
 				salt,
 				value,
 				gas_limit,
-				Some(gas_price),
+				Some(max_fee_per_gas),
+				max_priority_fee_per_gas,
 				nonce,
+				access_list,
 				T::config(),
 			)?;
 
@@ -312,7 +327,6 @@ pub mod pallet {
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
-	#[pallet::metadata(T::AccountId = "AccountId")]
 	pub enum Event<T: Config> {
 		/// Ethereum events from contracts.
 		Log(Log),
@@ -377,7 +391,7 @@ pub mod pallet {
 					account.balance.low_u128().unique_saturated_into(),
 				);
 
-				<AccountCodes<T>>::insert(address, &account.code);
+				Pallet::<T>::create_account(*address, account.code.clone());
 
 				for (index, value) in &account.storage {
 					<AccountStorages<T>>::insert(address, index, value);
@@ -557,7 +571,7 @@ impl GasWeightMapping for () {
 	}
 }
 
-static ISTANBUL_CONFIG: EvmConfig = EvmConfig::istanbul();
+static LONDON_CONFIG: EvmConfig = EvmConfig::london();
 
 #[cfg(feature = "std")]
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, Serialize, Deserialize)]
@@ -593,7 +607,7 @@ impl<T: Config> Pallet<T> {
 	pub fn remove_account(address: &H160) {
 		if <AccountCodes<T>>::contains_key(address) {
 			let account_id = T::AddressMapping::into_account_id(*address);
-			let _ = frame_system::Pallet::<T>::dec_consumers(&account_id);
+			let _ = frame_system::Pallet::<T>::dec_sufficients(&account_id);
 		}
 
 		<AccountCodes<T>>::remove(address);
@@ -608,7 +622,7 @@ impl<T: Config> Pallet<T> {
 
 		if !<AccountCodes<T>>::contains_key(&address) {
 			let account_id = T::AddressMapping::into_account_id(address);
-			let _ = frame_system::Pallet::<T>::inc_consumers(&account_id);
+			let _ = frame_system::Pallet::<T>::inc_sufficients(&account_id);
 		}
 
 		<AccountCodes<T>>::insert(address, code);
@@ -653,7 +667,10 @@ pub trait OnChargeEVMTransaction<T: Config> {
 		who: &H160,
 		corrected_fee: U256,
 		already_withdrawn: Self::LiquidityInfo,
-	) -> Result<(), Error<T>>;
+	);
+
+	/// Introduced in EIP1559 to handle the priority tip payment to the block Author.
+	fn pay_priority_fee(tip: U256);
 }
 
 /// Implements the transaction payment for a pallet implementing the `Currency`
@@ -695,7 +712,7 @@ where
 		who: &H160,
 		corrected_fee: U256,
 		already_withdrawn: Self::LiquidityInfo,
-	) -> Result<(), Error<T>> {
+	) {
 		if let Some(paid) = already_withdrawn {
 			let account_id = T::AddressMapping::into_account_id(*who);
 
@@ -708,14 +725,37 @@ where
 			// that case we don't refund anything.
 			let refund_imbalance = C::deposit_into_existing(&account_id, refund_amount)
 				.unwrap_or_else(|_| C::PositiveImbalance::zero());
+
+			// Make sure this works with 0 ExistentialDeposit
+			// https://github.com/paritytech/substrate/issues/10117
+			// If we tried to refund something, the account still empty and the ED is set to 0,
+			// we call `make_free_balance_be` with the refunded amount.
+			let refund_imbalance = if C::minimum_balance().is_zero()
+				&& refund_amount > C::Balance::zero()
+				&& C::total_balance(&account_id).is_zero()
+			{
+				// Known bug: Substrate tried to refund to a zeroed AccountData, but
+				// interpreted the account to not exist.
+				match C::make_free_balance_be(&account_id, refund_amount) {
+					SignedImbalance::Positive(p) => p,
+					_ => C::PositiveImbalance::zero(),
+				}
+			} else {
+				refund_imbalance
+			};
+
 			// merge the imbalance caused by paying the fees and refunding parts of it again.
 			let adjusted_paid = paid
 				.offset(refund_imbalance)
 				.same()
-				.map_err(|_| Error::<T>::BalanceLow)?;
+				.unwrap_or_else(|_| C::NegativeImbalance::zero());
 			OU::on_unbalanced(adjusted_paid);
 		}
-		Ok(())
+	}
+
+	fn pay_priority_fee(tip: U256) {
+		let account_id = T::AddressMapping::into_account_id(<Pallet<T>>::find_author());
+		let _ = C::deposit_into_existing(&account_id, tip.low_u128().unique_saturated_into());
 	}
 }
 
@@ -741,7 +781,11 @@ impl<T> OnChargeEVMTransaction<T> for ()
 		who: &H160,
 		corrected_fee: U256,
 		already_withdrawn: Self::LiquidityInfo,
-	) -> Result<(), Error<T>> {
-		EVMCurrencyAdapter::<<T as Config>::Currency, ()>::correct_and_deposit_fee(who, corrected_fee, already_withdrawn)
+	) {
+		<EVMCurrencyAdapter::<<T as Config>::Currency, ()> as OnChargeEVMTransaction<T>>::correct_and_deposit_fee(who, corrected_fee, already_withdrawn)
+	}
+
+	fn pay_priority_fee(tip: U256) {
+		<EVMCurrencyAdapter::<<T as Config>::Currency, ()> as OnChargeEVMTransaction<T>>::pay_priority_fee(tip);
 	}
 }

@@ -23,6 +23,7 @@ mod block;
 mod block_number;
 mod bytes;
 mod call_request;
+mod fee;
 mod filter;
 mod index;
 mod log;
@@ -34,27 +35,25 @@ mod work;
 
 pub mod pubsub;
 
-pub use self::account_info::{
-	AccountInfo, EthAccount, ExtAccountInfo, RecoveredAccount, StorageProof,
+pub use self::{
+	account_info::{AccountInfo, EthAccount, ExtAccountInfo, RecoveredAccount, StorageProof},
+	block::{Block, BlockTransactions, Header, Rich, RichBlock, RichHeader},
+	block_number::BlockNumber,
+	bytes::Bytes,
+	call_request::CallRequest,
+	fee::{FeeHistory, FeeHistoryCache, FeeHistoryCacheItem},
+	filter::{
+		Filter, FilterAddress, FilterChanges, FilterPool, FilterPoolItem, FilterType,
+		FilteredParams, Topic, VariadicValue,
+	},
+	index::Index,
+	log::Log,
+	receipt::Receipt,
+	sync::{
+		ChainStatus, EthProtocolInfo, PeerCount, PeerInfo, PeerNetworkInfo, PeerProtocolsInfo,
+		Peers, PipProtocolInfo, SyncInfo, SyncStatus, TransactionStats,
+	},
+	transaction::{LocalTransactionStatus, RichRawTransaction, Transaction},
+	transaction_request::{TransactionMessage, TransactionRequest},
+	work::Work,
 };
-pub use self::block::{Block, BlockTransactions, Header, Rich, RichBlock, RichHeader};
-pub use self::block_number::BlockNumber;
-pub use self::bytes::Bytes;
-pub use self::call_request::CallRequest;
-pub use self::filter::{
-	Filter, FilterAddress, FilterChanges, FilterPool, FilterPoolItem, FilterType, FilteredParams,
-	Topic, VariadicValue,
-};
-pub use self::index::Index;
-pub use self::log::Log;
-pub use self::receipt::Receipt;
-pub use self::sync::{
-	ChainStatus, EthProtocolInfo, PeerCount, PeerInfo, PeerNetworkInfo, PeerProtocolsInfo, Peers,
-	PipProtocolInfo, SyncInfo, SyncStatus, TransactionStats,
-};
-pub use self::transaction::{
-	LocalTransactionStatus, PendingTransaction, PendingTransactions, RichRawTransaction,
-	Transaction,
-};
-pub use self::transaction_request::TransactionRequest;
-pub use self::work::Work;

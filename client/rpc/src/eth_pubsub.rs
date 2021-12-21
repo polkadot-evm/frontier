@@ -17,8 +17,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use log::warn;
-use rand::distributions::Alphanumeric;
-use rand::{thread_rng, Rng};
+use rand::{distributions::Alphanumeric, thread_rng, Rng};
 use rustc_hex::ToHex;
 use sc_client_api::{
 	backend::{Backend, StateBackend, StorageProvider},
@@ -29,15 +28,17 @@ use sc_transaction_pool_api::TransactionPool;
 use sp_api::{BlockId, ProvideRuntimeApi};
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 use sp_runtime::traits::{BlakeTwo256, Block as BlockT, UniqueSaturatedInto};
-use std::collections::BTreeMap;
-use std::{iter, marker::PhantomData, sync::Arc};
+use std::{collections::BTreeMap, iter, marker::PhantomData, sync::Arc};
 
+use ethereum::BlockV2 as EthereumBlock;
 use ethereum_types::{H256, U256};
-use fc_rpc_core::types::{
-	pubsub::{Kind, Params, PubSubSyncStatus, Result as PubSubResult},
-	Bytes, FilteredParams, Header, Log, Rich,
+use fc_rpc_core::{
+	types::{
+		pubsub::{Kind, Params, PubSubSyncStatus, Result as PubSubResult},
+		Bytes, FilteredParams, Header, Log, Rich,
+	},
+	EthPubSubApi::{self as EthPubSubApiT},
 };
-use fc_rpc_core::EthPubSubApi::{self as EthPubSubApiT};
 use jsonrpc_pubsub::{
 	manager::{IdProvider, SubscriptionManager},
 	typed::Subscriber,
@@ -118,7 +119,7 @@ impl SubscriptionResult {
 	pub fn new() -> Self {
 		SubscriptionResult {}
 	}
-	pub fn new_heads(&self, block: ethereum::Block) -> PubSubResult {
+	pub fn new_heads(&self, block: EthereumBlock) -> PubSubResult {
 		PubSubResult::Header(Box::new(Rich {
 			inner: Header {
 				hash: Some(H256::from_slice(
@@ -149,7 +150,7 @@ impl SubscriptionResult {
 	}
 	pub fn logs(
 		&self,
-		block: ethereum::BlockV0,
+		block: EthereumBlock,
 		receipts: Vec<ethereum::Receipt>,
 		params: &FilteredParams,
 	) -> Vec<Log> {
@@ -161,10 +162,7 @@ impl SubscriptionResult {
 		for (receipt_index, receipt) in receipts.into_iter().enumerate() {
 			let mut transaction_log_index: u32 = 0;
 			let transaction_hash: Option<H256> = if receipt.logs.len() > 0 {
-				Some(H256::from_slice(
-					Keccak256::digest(&rlp::encode(&block.transactions[receipt_index as usize]))
-						.as_slice(),
-				))
+				Some(block.transactions[receipt_index as usize].hash())
 			} else {
 				None
 			};
@@ -193,7 +191,7 @@ impl SubscriptionResult {
 		&self,
 		block_hash: H256,
 		ethereum_log: &ethereum::Log,
-		block: &ethereum::BlockV0,
+		block: &EthereumBlock,
 		params: &FilteredParams,
 	) -> bool {
 		let log = Log {
@@ -365,9 +363,7 @@ where
 						})
 						.map(|transaction| {
 							return Ok::<Result<PubSubResult, jsonrpc_core::types::error::Error>, ()>(
-								Ok(PubSubResult::TransactionHash(H256::from_slice(
-									Keccak256::digest(&rlp::encode(&transaction)).as_slice(),
-								))),
+								Ok(PubSubResult::TransactionHash(transaction.hash())),
 							);
 						});
 					stream

@@ -23,8 +23,7 @@ use sp_runtime::{
 	generic,
 	traits::{BlakeTwo256, IdentityLookup},
 };
-use sp_std::prelude::*;
-use sp_std::{boxed::Box, str::FromStr};
+use sp_std::{boxed::Box, prelude::*, str::FromStr};
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -48,7 +47,7 @@ parameter_types! {
 		frame_system::limits::BlockWeights::simple_max(1024);
 }
 impl frame_system::Config for Test {
-	type BaseCallFilter = ();
+	type BaseCallFilter = frame_support::traits::Everything;
 	type BlockWeights = ();
 	type BlockLength = ();
 	type DbWeight = ();
@@ -102,7 +101,7 @@ impl pallet_timestamp::Config for Test {
 pub struct FixedGasPrice;
 impl FeeCalculator for FixedGasPrice {
 	fn min_gas_price() -> U256 {
-		0.into()
+		1_000_000_000u128.into()
 	}
 }
 
@@ -128,7 +127,8 @@ impl crate::Config for Test {
 	type Runner = crate::runner::stack::Runner<Self>;
 
 	type Event = Event;
-	type Precompiles = ();
+	type PrecompilesType = ();
+	type PrecompilesValue = ();
 	type ChainId = ();
 	type BlockGasLimit = ();
 	type OnChargeTransaction = ();

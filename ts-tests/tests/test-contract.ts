@@ -20,7 +20,7 @@ describeWithFrontier("Frontier RPC (Contract)", (context) => {
 				from: GENESIS_ACCOUNT,
 				data: TEST_CONTRACT_BYTECODE,
 				value: "0x00",
-				gasPrice: "0x01",
+				gasPrice: "0x3B9ACA00",
 				gas: "0x100000",
 			},
 			GENESIS_ACCOUNT_PRIVATE_KEY
@@ -36,6 +36,13 @@ describeWithFrontier("Frontier RPC (Contract)", (context) => {
 			id: 1,
 			jsonrpc: "2.0",
 			result: "0x",
+		});
+
+		// Verify the contract is in the pending state
+		expect(await customRequest(context.web3, "eth_getCode", [FIRST_CONTRACT_ADDRESS, "pending"])).to.deep.equal({
+			id: 1,
+			jsonrpc: "2.0",
+			result: TEST_CONTRACT_DEPLOYED_BYTECODE,
 		});
 
 		// Verify the contract is stored after the block is produced

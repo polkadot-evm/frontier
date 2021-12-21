@@ -17,36 +17,41 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 use crate::{
 	error_on_execution_failure, frontier_backend_client, internal_err, public_key, EthSigner,
+	StorageOverride,
 };
-use ethereum::{BlockV0 as EthereumBlock, TransactionV0 as EthereumTransaction};
+use ethereum::{BlockV2 as EthereumBlock, TransactionV2 as EthereumTransaction};
 use ethereum_types::{H160, H256, H512, H64, U256, U64};
-use fc_rpc_core::types::{
-	Block, BlockNumber, BlockTransactions, Bytes, CallRequest, Filter, FilterChanges, FilterPool,
-	FilterPoolItem, FilterType, FilteredParams, Index, Log, PeerCount, PendingTransaction,
-	PendingTransactions, Receipt, Rich, RichBlock, SyncInfo, SyncStatus, Transaction,
-	TransactionRequest, Work,
-};
+use evm::{ExitError, ExitReason};
 use fc_rpc_core::{
+	types::{
+		Block, BlockNumber, BlockTransactions, Bytes, CallRequest, FeeHistory, FeeHistoryCache,
+		FeeHistoryCacheItem, Filter, FilterChanges, FilterPool, FilterPoolItem, FilterType,
+		FilteredParams, Header, Index, Log, PeerCount, Receipt, Rich, RichBlock, SyncInfo,
+		SyncStatus, Transaction, TransactionMessage, TransactionRequest, Work,
+	},
 	EthApi as EthApiT, EthFilterApi as EthFilterApiT, NetApi as NetApiT, Web3Api as Web3ApiT,
 };
 use fp_rpc::{ConvertTransaction, EthereumRuntimeRPCApi, TransactionStatus};
 use futures::{future::TryFutureExt, StreamExt};
-use jsonrpc_core::{futures::future, BoxFuture, ErrorCode, Result};
+use jsonrpc_core::{futures::future, BoxFuture, Result};
+use lru::LruCache;
 use sc_client_api::{
-	backend::{AuxStore, Backend, StateBackend, StorageProvider},
+	backend::{Backend, StateBackend, StorageProvider},
 	client::BlockchainEvents,
 };
 use sc_network::{ExHashT, NetworkService};
+use sc_transaction_pool::{ChainApi, Pool};
 use sc_transaction_pool_api::{InPoolTransaction, TransactionPool};
 use sha3::{Digest, Keccak256};
-use sp_api::{BlockId, Core, HeaderT, ProvideRuntimeApi};
+use sp_api::{ApiExt, BlockId, Core, HeaderT, ProvideRuntimeApi};
+use sp_block_builder::BlockBuilder;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 use sp_runtime::{
 	traits::{BlakeTwo256, Block as BlockT, NumberFor, One, Saturating, UniqueSaturatedInto, Zero},
 	transaction_validity::TransactionSource,
 };
-use std::collections::{BTreeMap, HashMap};
 use std::{
+	collections::BTreeMap,
 	marker::PhantomData,
 	sync::{Arc, Mutex},
 	time,
@@ -57,85 +62,101 @@ use codec::{self, Decode, Encode};
 pub use fc_rpc_core::{EthApiServer, EthFilterApiServer, NetApiServer, Web3ApiServer};
 use pallet_ethereum::EthereumStorageSchema;
 
-pub struct EthApi<B: BlockT, C, P, CT, BE, H: ExHashT> {
+pub struct EthApi<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> {
 	pool: Arc<P>,
+	graph: Arc<Pool<A>>,
 	client: Arc<C>,
 	convert_transaction: CT,
 	network: Arc<NetworkService<B, H>>,
 	is_authority: bool,
 	signers: Vec<Box<dyn EthSigner>>,
 	overrides: Arc<OverrideHandle<B>>,
-	pending_transactions: PendingTransactions,
 	backend: Arc<fc_db::Backend<B>>,
 	max_past_logs: u32,
+	block_data_cache: Arc<EthBlockDataCache<B>>,
+	fee_history_limit: u64,
+	fee_history_cache: FeeHistoryCache,
 	_marker: PhantomData<(B, BE)>,
 }
 
-impl<B: BlockT, C, P, CT, BE, H: ExHashT> EthApi<B, C, P, CT, BE, H>
+impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> EthApi<B, C, P, CT, BE, H, A>
 where
 	C: ProvideRuntimeApi<B>,
 	C::Api: EthereumRuntimeRPCApi<B>,
+	C::Api: BlockBuilder<B>,
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
+	A: ChainApi<Block = B> + 'static,
 	C: Send + Sync + 'static,
 {
 	pub fn new(
 		client: Arc<C>,
 		pool: Arc<P>,
+		graph: Arc<Pool<A>>,
 		convert_transaction: CT,
 		network: Arc<NetworkService<B, H>>,
-		pending_transactions: PendingTransactions,
 		signers: Vec<Box<dyn EthSigner>>,
 		overrides: Arc<OverrideHandle<B>>,
 		backend: Arc<fc_db::Backend<B>>,
 		is_authority: bool,
 		max_past_logs: u32,
+		block_data_cache: Arc<EthBlockDataCache<B>>,
+		fee_history_limit: u64,
+		fee_history_cache: FeeHistoryCache,
 	) -> Self {
 		Self {
-			client: client.clone(),
+			client,
 			pool,
+			graph,
 			convert_transaction,
 			network,
 			is_authority,
 			signers,
 			overrides,
-			pending_transactions,
 			backend,
 			max_past_logs,
+			block_data_cache,
+			fee_history_limit,
+			fee_history_cache,
 			_marker: PhantomData,
 		}
 	}
 }
 
 fn rich_block_build(
-	block: ethereum::BlockV0,
+	block: ethereum::Block<EthereumTransaction>,
 	statuses: Vec<Option<TransactionStatus>>,
 	hash: Option<H256>,
 	full_transactions: bool,
+	base_fee: Option<U256>,
+	is_eip1559: bool,
 ) -> RichBlock {
 	Rich {
 		inner: Block {
-			hash: Some(hash.unwrap_or_else(|| {
-				H256::from_slice(Keccak256::digest(&rlp::encode(&block.header)).as_slice())
-			})),
-			parent_hash: block.header.parent_hash,
-			uncles_hash: block.header.ommers_hash,
-			author: block.header.beneficiary,
-			miner: block.header.beneficiary,
-			state_root: block.header.state_root,
-			transactions_root: block.header.transactions_root,
-			receipts_root: block.header.receipts_root,
-			number: Some(block.header.number),
-			gas_used: block.header.gas_used,
-			gas_limit: block.header.gas_limit,
-			extra_data: Bytes(block.header.extra_data.clone()),
-			logs_bloom: Some(block.header.logs_bloom),
-			timestamp: U256::from(block.header.timestamp / 1000),
-			difficulty: block.header.difficulty,
+			header: Header {
+				hash: Some(hash.unwrap_or_else(|| {
+					H256::from_slice(Keccak256::digest(&rlp::encode(&block.header)).as_slice())
+				})),
+				parent_hash: block.header.parent_hash,
+				uncles_hash: block.header.ommers_hash,
+				author: block.header.beneficiary,
+				miner: block.header.beneficiary,
+				state_root: block.header.state_root,
+				transactions_root: block.header.transactions_root,
+				receipts_root: block.header.receipts_root,
+				number: Some(block.header.number),
+				gas_used: block.header.gas_used,
+				gas_limit: block.header.gas_limit,
+				extra_data: Bytes(block.header.extra_data.clone()),
+				logs_bloom: block.header.logs_bloom,
+				timestamp: U256::from(block.header.timestamp / 1000),
+				difficulty: block.header.difficulty,
+				seal_fields: vec![
+					Bytes(block.header.mix_hash.as_bytes().to_vec()),
+					Bytes(block.header.nonce.as_bytes().to_vec()),
+				],
+				size: Some(U256::from(rlp::encode(&block.header).len() as u32)),
+			},
 			total_difficulty: U256::zero(),
-			seal_fields: vec![
-				Bytes(block.header.mix_hash.as_bytes().to_vec()),
-				Bytes(block.header.nonce.as_bytes().to_vec()),
-			],
 			uncles: vec![],
 			transactions: {
 				if full_transactions {
@@ -149,6 +170,8 @@ fn rich_block_build(
 									transaction.clone(),
 									Some(block.clone()),
 									Some(statuses[index].clone().unwrap_or_default()),
+									is_eip1559,
+									base_fee,
 								)
 							})
 							.collect(),
@@ -158,85 +181,145 @@ fn rich_block_build(
 						block
 							.transactions
 							.iter()
-							.map(|transaction| {
-								H256::from_slice(
-									Keccak256::digest(&rlp::encode(&transaction.clone()))
-										.as_slice(),
-								)
-							})
+							.map(|transaction| transaction.hash())
 							.collect(),
 					)
 				}
 			},
 			size: Some(U256::from(rlp::encode(&block).len() as u32)),
+			base_fee_per_gas: base_fee,
 		},
 		extra_info: BTreeMap::new(),
 	}
 }
 
 fn transaction_build(
-	transaction: EthereumTransaction,
-	block: Option<EthereumBlock>,
+	ethereum_transaction: EthereumTransaction,
+	block: Option<ethereum::Block<EthereumTransaction>>,
 	status: Option<TransactionStatus>,
+	is_eip1559: bool,
+	base_fee: Option<U256>,
 ) -> Transaction {
-	let pubkey = match public_key(&transaction) {
+	let mut transaction: Transaction = ethereum_transaction.clone().into();
+
+	if let EthereumTransaction::EIP1559(_) = ethereum_transaction {
+		if block.is_none() && status.is_none() {
+			// If transaction is not mined yet, gas price is considered just max fee per gas.
+			transaction.gas_price = transaction.max_fee_per_gas;
+		} else {
+			// If transaction is already mined, gas price is considered base fee + priority fee.
+			// A.k.a. effective gas price.
+			let base_fee = base_fee.unwrap_or(U256::zero());
+			let max_priority_fee_per_gas =
+				transaction.max_priority_fee_per_gas.unwrap_or(U256::zero());
+			transaction.gas_price = Some(
+				base_fee
+					.checked_add(max_priority_fee_per_gas)
+					.unwrap_or(U256::max_value()),
+			);
+		}
+	} else if !is_eip1559 {
+		// This is a pre-eip1559 support transaction a.k.a. txns on frontier before we introduced EIP1559 support in
+		// pallet-ethereum schema V2.
+		// They do not include `maxFeePerGas` or `maxPriorityFeePerGas` fields.
+		transaction.max_fee_per_gas = None;
+		transaction.max_priority_fee_per_gas = None;
+	}
+
+	let pubkey = match public_key(&ethereum_transaction) {
 		Ok(p) => Some(p),
 		Err(_e) => None,
 	};
 
-	Transaction {
-		hash: H256::from_slice(Keccak256::digest(&rlp::encode(&transaction)).as_slice()),
-		nonce: transaction.nonce,
-		block_hash: block.as_ref().map_or(None, |block| {
-			Some(H256::from_slice(
-				Keccak256::digest(&rlp::encode(&block.header)).as_slice(),
-			))
-		}),
-		block_number: block.as_ref().map(|block| block.header.number),
-		transaction_index: status.as_ref().map(|status| {
-			U256::from(UniqueSaturatedInto::<u32>::unique_saturated_into(
-				status.transaction_index,
-			))
-		}),
-		from: status.as_ref().map_or(
-			{
-				match pubkey {
-					Some(pk) => H160::from(H256::from_slice(Keccak256::digest(&pk).as_slice())),
-					_ => H160::default(),
-				}
-			},
-			|status| status.from,
-		),
-		to: status.as_ref().map_or(
-			{
-				match transaction.action {
-					ethereum::TransactionAction::Call(to) => Some(to),
-					_ => None,
-				}
-			},
-			|status| status.to,
-		),
-		value: transaction.value,
-		gas_price: transaction.gas_price,
-		gas: transaction.gas_limit,
-		input: Bytes(transaction.clone().input),
-		creates: status
-			.as_ref()
-			.map_or(None, |status| status.contract_address),
-		raw: Bytes(rlp::encode(&transaction).to_vec()),
-		public_key: pubkey.as_ref().map(|pk| H512::from(pk)),
-		chain_id: transaction.signature.chain_id().map(U64::from),
-		standard_v: U256::from(transaction.signature.standard_v()),
-		v: U256::from(transaction.signature.v()),
-		r: U256::from(transaction.signature.r().as_bytes()),
-		s: U256::from(transaction.signature.s().as_bytes()),
+	// Block hash.
+	transaction.block_hash = block.as_ref().map_or(None, |block| {
+		Some(H256::from_slice(
+			Keccak256::digest(&rlp::encode(&block.header)).as_slice(),
+		))
+	});
+	// Block number.
+	transaction.block_number = block.as_ref().map(|block| block.header.number);
+	// Transaction index.
+	transaction.transaction_index = status.as_ref().map(|status| {
+		U256::from(UniqueSaturatedInto::<u32>::unique_saturated_into(
+			status.transaction_index,
+		))
+	});
+	// From.
+	transaction.from = status.as_ref().map_or(
+		{
+			match pubkey {
+				Some(pk) => H160::from(H256::from_slice(Keccak256::digest(&pk).as_slice())),
+				_ => H160::default(),
+			}
+		},
+		|status| status.from,
+	);
+	// To.
+	transaction.to = status.as_ref().map_or(
+		{
+			let action = match ethereum_transaction {
+				EthereumTransaction::Legacy(t) => t.action,
+				EthereumTransaction::EIP2930(t) => t.action,
+				EthereumTransaction::EIP1559(t) => t.action,
+			};
+			match action {
+				ethereum::TransactionAction::Call(to) => Some(to),
+				_ => None,
+			}
+		},
+		|status| status.to,
+	);
+	// Creates.
+	transaction.creates = status
+		.as_ref()
+		.map_or(None, |status| status.contract_address);
+	// Public key.
+	transaction.public_key = pubkey.as_ref().map(|pk| H512::from(pk));
+
+	transaction
+}
+
+fn pending_runtime_api<'a, B: BlockT, C, BE, A: ChainApi>(
+	client: &'a C,
+	graph: &'a Pool<A>,
+) -> Result<sp_api::ApiRef<'a, C::Api>>
+where
+	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
+	C: HeaderBackend<B> + HeaderMetadata<B, Error = BlockChainError> + 'static,
+	C::Api: EthereumRuntimeRPCApi<B>,
+	C::Api: BlockBuilder<B>,
+	BE: Backend<B> + 'static,
+	BE::State: StateBackend<BlakeTwo256>,
+	B: BlockT<Hash = H256> + Send + Sync + 'static,
+	A: ChainApi<Block = B> + 'static,
+	C: Send + Sync + 'static,
+{
+	// In case of Pending, we need an overlayed state to query over.
+	let api = client.runtime_api();
+	let best = BlockId::Hash(client.info().best_hash);
+	// Get all transactions in the ready queue.
+	let xts: Vec<<B as BlockT>::Extrinsic> = graph
+		.validated_pool()
+		.ready()
+		.map(|in_pool_tx| in_pool_tx.data().clone())
+		.collect::<Vec<<B as BlockT>::Extrinsic>>();
+	// Manually initialize the overlay.
+	let header = client.header(best).unwrap().unwrap();
+	api.initialize_block(&best, &header)
+		.map_err(|e| internal_err(format!("Runtime api access error: {:?}", e)))?;
+	// Apply the ready queue to the best block's state.
+	for xt in xts {
+		let _ = api.apply_extrinsic(&best, xt);
 	}
+	Ok(api)
 }
 
 fn filter_range_logs<B: BlockT, C, BE>(
 	client: &C,
 	backend: &fc_db::Backend<B>,
 	overrides: &OverrideHandle<B>,
+	block_data_cache: &EthBlockDataCache<B>,
 	ret: &mut Vec<Log>,
 	max_past_logs: u32,
 	filter: &Filter,
@@ -265,9 +348,10 @@ where
 	} else {
 		None
 	};
-	let bloom_filter = FilteredParams::bloom_filter(&filter.address, &topics_input);
+	let address_bloom_filter = FilteredParams::adresses_bloom_filter(&filter.address);
+	let topics_bloom_filter = FilteredParams::topics_bloom_filter(&topics_input);
 
-	// Get schema cache. A single AuxStore read before the block range iteration.
+	// Get schema cache. A single read before the block range iteration.
 	// This prevents having to do an extra DB read per block range iteration to getthe actual schema.
 	let mut local_cache: BTreeMap<NumberFor<B>, EthereumStorageSchema> = BTreeMap::new();
 	if let Ok(Some(schema_cache)) = frontier_backend_client::load_cached_schema::<B>(backend) {
@@ -287,6 +371,10 @@ where
 
 	while current_number >= from {
 		let id = BlockId::Number(current_number);
+		let substrate_hash = client
+			.expect_block_hash_from_id(&id)
+			.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
+
 		let schema = match default_schema {
 			// If there is a single schema, we just assign.
 			Some(default_schema) => *default_schema,
@@ -314,11 +402,14 @@ where
 			.get(&schema)
 			.unwrap_or(&overrides.fallback);
 
-		let block = handler.current_block(&id);
+		let block = block_data_cache.current_block(handler, substrate_hash);
 
 		if let Some(block) = block {
-			if FilteredParams::in_bloom(block.header.logs_bloom, &bloom_filter) {
-				let statuses = handler.current_transaction_statuses(&id);
+			if FilteredParams::address_in_bloom(block.header.logs_bloom, &address_bloom_filter)
+				&& FilteredParams::topics_in_bloom(block.header.logs_bloom, &topics_bloom_filter)
+			{
+				let statuses =
+					block_data_cache.current_transaction_statuses(handler, substrate_hash);
 				if let Some(statuses) = statuses {
 					filter_block_logs(ret, filter, block, statuses);
 				}
@@ -402,16 +493,58 @@ fn filter_block_logs<'a>(
 	ret
 }
 
-impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H>
+struct FeeDetails {
+	gas_price: Option<U256>,
+	max_fee_per_gas: Option<U256>,
+	max_priority_fee_per_gas: Option<U256>,
+}
+
+fn fee_details(
+	request_gas_price: Option<U256>,
+	request_max_fee: Option<U256>,
+	request_priority: Option<U256>,
+) -> Result<FeeDetails> {
+	match (request_gas_price, request_max_fee, request_priority) {
+		(gas_price, None, None) => {
+			// Legacy request, all default to gas price.
+			Ok(FeeDetails {
+				gas_price,
+				max_fee_per_gas: gas_price,
+				max_priority_fee_per_gas: gas_price,
+			})
+		}
+		(_, max_fee, max_priority) => {
+			// eip-1559
+			// Ensure `max_priority_fee_per_gas` is less or equal to `max_fee_per_gas`.
+			if let Some(max_priority) = max_priority {
+				let max_fee = max_fee.unwrap_or_default();
+				if max_priority > max_fee {
+					return Err(internal_err(format!(
+						"Invalid input: `max_priority_fee_per_gas` greater than `max_fee_per_gas`"
+					)));
+				}
+			}
+			Ok(FeeDetails {
+				gas_price: max_fee,
+				max_fee_per_gas: max_fee,
+				max_priority_fee_per_gas: max_priority,
+			})
+		}
+	}
+}
+
+impl<B, C, P, CT, BE, H: ExHashT, A> EthApiT for EthApi<B, C, P, CT, BE, H, A>
 where
-	C: ProvideRuntimeApi<B> + StorageProvider<B, BE> + AuxStore,
+	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
 	C: HeaderBackend<B> + HeaderMetadata<B, Error = BlockChainError> + 'static,
 	C::Api: EthereumRuntimeRPCApi<B>,
+	C::Api: BlockBuilder<B>,
 	BE: Backend<B> + 'static,
 	BE::State: StateBackend<BlakeTwo256>,
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	C: Send + Sync + 'static,
 	P: TransactionPool<Block = B> + Send + Sync + 'static,
+	A: ChainApi<Block = B> + 'static,
 	CT: ConvertTransaction<<B as BlockT>::Extrinsic> + Send + Sync + 'static,
 {
 	fn protocol_version(&self) -> Result<u64> {
@@ -503,10 +636,18 @@ where
 	}
 
 	fn balance(&self, address: H160, number: Option<BlockNumber>) -> Result<U256> {
-		if let Ok(Some(id)) = frontier_backend_client::native_block_id::<B, C>(
+		let number = number.unwrap_or(BlockNumber::Latest);
+		if number == BlockNumber::Pending {
+			let api = pending_runtime_api(self.client.as_ref(), self.graph.as_ref())?;
+			return Ok(api
+				.account_basic(&BlockId::Hash(self.client.info().best_hash), address)
+				.map_err(|err| internal_err(format!("fetch runtime chain id failed: {:?}", err)))?
+				.balance
+				.into());
+		} else if let Ok(Some(id)) = frontier_backend_client::native_block_id::<B, C>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
-			number,
+			Some(number),
 		) {
 			return Ok(self
 				.client
@@ -515,15 +656,22 @@ where
 				.map_err(|err| internal_err(format!("fetch runtime chain id failed: {:?}", err)))?
 				.balance
 				.into());
+		} else {
+			Ok(U256::zero())
 		}
-		Ok(U256::zero())
 	}
 
 	fn storage_at(&self, address: H160, index: U256, number: Option<BlockNumber>) -> Result<H256> {
-		if let Ok(Some(id)) = frontier_backend_client::native_block_id::<B, C>(
+		let number = number.unwrap_or(BlockNumber::Latest);
+		if number == BlockNumber::Pending {
+			let api = pending_runtime_api(self.client.as_ref(), self.graph.as_ref())?;
+			return Ok(api
+				.storage_at(&BlockId::Hash(self.client.info().best_hash), address, index)
+				.unwrap_or_default());
+		} else if let Ok(Some(id)) = frontier_backend_client::native_block_id::<B, C>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
-			number,
+			Some(number),
 		) {
 			let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(
 				self.client.as_ref(),
@@ -536,8 +684,9 @@ where
 				.unwrap_or(&self.overrides.fallback)
 				.storage_at(&id, address, index)
 				.unwrap_or_default());
+		} else {
+			Ok(H256::default())
 		}
-		Ok(H256::default())
 	}
 
 	fn block_by_hash(&self, hash: H256, full: bool) -> Result<Option<RichBlock>> {
@@ -547,6 +696,11 @@ where
 			Some(hash) => hash,
 			_ => return Ok(None),
 		};
+		let substrate_hash = self
+			.client
+			.expect_block_hash_from_id(&id)
+			.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
+
 		let schema =
 			frontier_backend_client::onchain_storage_schema::<B, C, BE>(self.client.as_ref(), id);
 		let handler = self
@@ -555,8 +709,13 @@ where
 			.get(&schema)
 			.unwrap_or(&self.overrides.fallback);
 
-		let block = handler.current_block(&id);
-		let statuses = handler.current_transaction_statuses(&id);
+		let block = self.block_data_cache.current_block(handler, substrate_hash);
+		let statuses = self
+			.block_data_cache
+			.current_transaction_statuses(handler, substrate_hash);
+
+		let base_fee = handler.base_fee(&id);
+		let is_eip1559 = handler.is_eip1559(&id);
 
 		match (block, statuses) {
 			(Some(block), Some(statuses)) => Ok(Some(rich_block_build(
@@ -564,6 +723,8 @@ where
 				statuses.into_iter().map(|s| Some(s)).collect(),
 				Some(hash),
 				full,
+				base_fee,
+				is_eip1559,
 			))),
 			_ => Ok(None),
 		}
@@ -578,6 +739,11 @@ where
 			Some(id) => id,
 			None => return Ok(None),
 		};
+		let substrate_hash = self
+			.client
+			.expect_block_hash_from_id(&id)
+			.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
+
 		let schema =
 			frontier_backend_client::onchain_storage_schema::<B, C, BE>(self.client.as_ref(), id);
 		let handler = self
@@ -586,8 +752,13 @@ where
 			.get(&schema)
 			.unwrap_or(&self.overrides.fallback);
 
-		let block = handler.current_block(&id);
-		let statuses = handler.current_transaction_statuses(&id);
+		let block = self.block_data_cache.current_block(handler, substrate_hash);
+		let statuses = self
+			.block_data_cache
+			.current_transaction_statuses(handler, substrate_hash);
+
+		let base_fee = handler.base_fee(&id);
+		let is_eip1559 = handler.is_eip1559(&id);
 
 		match (block, statuses) {
 			(Some(block), Some(statuses)) => {
@@ -599,6 +770,8 @@ where
 					statuses.into_iter().map(|s| Some(s)).collect(),
 					Some(hash),
 					full,
+					base_fee,
+					is_eip1559,
 				)))
 			}
 			_ => Ok(None),
@@ -707,10 +880,17 @@ where
 	}
 
 	fn code_at(&self, address: H160, number: Option<BlockNumber>) -> Result<Bytes> {
-		if let Ok(Some(id)) = frontier_backend_client::native_block_id::<B, C>(
+		let number = number.unwrap_or(BlockNumber::Latest);
+		if number == BlockNumber::Pending {
+			let api = pending_runtime_api(self.client.as_ref(), self.graph.as_ref())?;
+			return Ok(api
+				.account_code_at(&BlockId::Hash(self.client.info().best_hash), address)
+				.unwrap_or(vec![])
+				.into());
+		} else if let Ok(Some(id)) = frontier_backend_client::native_block_id::<B, C>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
-			number,
+			Some(number),
 		) {
 			let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(
 				self.client.as_ref(),
@@ -725,8 +905,9 @@ where
 				.account_code_at(&id, address)
 				.unwrap_or(vec![])
 				.into());
+		} else {
+			Ok(Bytes(vec![]))
 		}
-		Ok(Bytes(vec![]))
 	}
 
 	fn send_transaction(&self, request: TransactionRequest) -> BoxFuture<Result<H256>> {
@@ -754,21 +935,63 @@ where
 		};
 
 		let chain_id = match self.chain_id() {
-			Ok(chain_id) => chain_id,
+			Ok(Some(chain_id)) => chain_id.as_u64(),
+			Ok(None) => return Box::pin(future::err(internal_err("chain id not available"))),
 			Err(e) => return Box::pin(future::err(e)),
 		};
 
-		let message = ethereum::LegacyTransactionMessage {
-			nonce,
-			gas_price: request.gas_price.unwrap_or(U256::from(1)),
-			gas_limit: request.gas.unwrap_or(U256::max_value()),
-			value: request.value.unwrap_or(U256::zero()),
-			input: request.data.map(|s| s.into_vec()).unwrap_or_default(),
-			action: match request.to {
-				Some(to) => ethereum::TransactionAction::Call(to),
-				None => ethereum::TransactionAction::Create,
-			},
-			chain_id: chain_id.map(|s| s.as_u64()),
+		let hash = self.client.info().best_hash;
+
+		let gas_price = request.gas_price;
+		let gas_limit = match request.gas {
+			Some(gas_limit) => gas_limit,
+			None => {
+				let block = self
+					.client
+					.runtime_api()
+					.current_block(&BlockId::Hash(hash));
+				if let Ok(Some(block)) = block {
+					block.header.gas_limit
+				} else {
+					return Box::pin(future::err(internal_err(format!(
+						"block unavailable, cannot query gas limit"
+					))));
+				}
+			}
+		};
+		let max_fee_per_gas = request.max_fee_per_gas;
+		let message: Option<TransactionMessage> = request.into();
+		let message = match message {
+			Some(TransactionMessage::Legacy(mut m)) => {
+				m.nonce = nonce;
+				m.chain_id = Some(chain_id);
+				m.gas_limit = gas_limit;
+				if gas_price.is_none() {
+					m.gas_price = self.gas_price().unwrap_or(U256::default());
+				}
+				TransactionMessage::Legacy(m)
+			}
+			Some(TransactionMessage::EIP2930(mut m)) => {
+				m.nonce = nonce;
+				m.chain_id = chain_id;
+				m.gas_limit = gas_limit;
+				if gas_price.is_none() {
+					m.gas_price = self.gas_price().unwrap_or(U256::default());
+				}
+				TransactionMessage::EIP2930(m)
+			}
+			Some(TransactionMessage::EIP1559(mut m)) => {
+				m.nonce = nonce;
+				m.chain_id = chain_id;
+				m.gas_limit = gas_limit;
+				if max_fee_per_gas.is_none() {
+					m.max_fee_per_gas = self.gas_price().unwrap_or(U256::default());
+				}
+				TransactionMessage::EIP1559(m)
+			}
+			_ => {
+				return Box::pin(future::err(internal_err("invalid transaction parameters")));
+			}
 		};
 
 		let mut transaction = None;
@@ -787,11 +1010,7 @@ where
 			Some(transaction) => transaction,
 			None => return Box::pin(future::err(internal_err("no signer available"))),
 		};
-		let transaction_hash =
-			H256::from_slice(Keccak256::digest(&rlp::encode(&transaction)).as_slice());
-		let hash = self.client.info().best_hash;
-		let number = self.client.info().best_number;
-		let pending = self.pending_transactions.clone();
+		let transaction_hash = transaction.hash();
 		Box::pin(
 			self.pool
 				.submit_one(
@@ -800,20 +1019,7 @@ where
 					self.convert_transaction
 						.convert_transaction(transaction.clone()),
 				)
-				.map_ok(move |_| {
-					if let Some(pending) = pending {
-						if let Ok(locked) = &mut pending.lock() {
-							locked.insert(
-								transaction_hash,
-								PendingTransaction::new(
-									transaction_build(transaction, None, None),
-									UniqueSaturatedInto::<u64>::unique_saturated_into(number),
-								),
-							);
-						}
-					}
-					transaction_hash
-				})
+				.map_ok(move |_| transaction_hash)
 				.map_err(|err| {
 					internal_err(format!("submit transaction to pool failed: {:?}", err))
 				}),
@@ -821,15 +1027,32 @@ where
 	}
 
 	fn send_raw_transaction(&self, bytes: Bytes) -> BoxFuture<Result<H256>> {
-		let transaction = match rlp::decode::<ethereum::TransactionV0>(&bytes.0[..]) {
-			Ok(transaction) => transaction,
-			Err(_) => return Box::pin(future::err(internal_err("decode transaction failed"))),
+		let slice = &bytes.0[..];
+		if slice.len() == 0 {
+			return Box::pin(future::err(internal_err("transaction data is empty")));
+		}
+		let first = slice.get(0).unwrap();
+		let transaction = if first > &0x7f {
+			// Legacy transaction. Decode and wrap in envelope.
+			match rlp::decode::<ethereum::TransactionV0>(slice) {
+				Ok(transaction) => ethereum::TransactionV2::Legacy(transaction),
+				Err(_) => return Box::pin(future::err(internal_err("decode transaction failed"))),
+			}
+		} else {
+			// Typed Transaction.
+			// `ethereum` crate decode implementation for `TransactionV2` expects a valid rlp input,
+			// and EIP-1559 breaks that assumption by prepending a version byte.
+			// We re-encode the payload input to get a valid rlp, and the decode implementation will strip
+			// them to check the transaction version byte.
+			let extend = rlp::encode(&slice);
+			match rlp::decode::<ethereum::TransactionV2>(&extend[..]) {
+				Ok(transaction) => transaction,
+				Err(_) => return Box::pin(future::err(internal_err("decode transaction failed"))),
+			}
 		};
-		let transaction_hash =
-			H256::from_slice(Keccak256::digest(&rlp::encode(&transaction)).as_slice());
+
+		let transaction_hash = transaction.hash();
 		let hash = self.client.info().best_hash;
-		let number = self.client.info().best_number;
-		let pending = self.pending_transactions.clone();
 		Box::pin(
 			self.pool
 				.submit_one(
@@ -838,47 +1061,55 @@ where
 					self.convert_transaction
 						.convert_transaction(transaction.clone()),
 				)
-				.map_ok(move |_| {
-					if let Some(pending) = pending {
-						if let Ok(locked) = &mut pending.lock() {
-							locked.insert(
-								transaction_hash,
-								PendingTransaction::new(
-									transaction_build(transaction, None, None),
-									UniqueSaturatedInto::<u64>::unique_saturated_into(number),
-								),
-							);
-						}
-					}
-					transaction_hash
-				})
+				.map_ok(move |_| transaction_hash)
 				.map_err(|err| {
 					internal_err(format!("submit transaction to pool failed: {:?}", err))
 				}),
 		)
 	}
 
-	fn call(&self, request: CallRequest, _: Option<BlockNumber>) -> Result<Bytes> {
-		let hash = self.client.info().best_hash;
-
+	fn call(&self, request: CallRequest, number: Option<BlockNumber>) -> Result<Bytes> {
 		let CallRequest {
 			from,
 			to,
 			gas_price,
+			max_fee_per_gas,
+			max_priority_fee_per_gas,
 			gas,
 			value,
 			data,
 			nonce,
 		} = request;
 
+		let (gas_price, max_fee_per_gas, max_priority_fee_per_gas) = {
+			let details = fee_details(gas_price, max_fee_per_gas, max_priority_fee_per_gas)?;
+			(
+				details.gas_price,
+				details.max_fee_per_gas,
+				details.max_priority_fee_per_gas,
+			)
+		};
+
+		let (id, api) = match frontier_backend_client::native_block_id::<B, C>(
+			self.client.as_ref(),
+			self.backend.as_ref(),
+			number,
+		)? {
+			Some(id) => (id, self.client.runtime_api()),
+			None => {
+				// Not mapped in the db, assume pending.
+				let id = BlockId::Hash(self.client.info().best_hash);
+				let api = pending_runtime_api(self.client.as_ref(), self.graph.as_ref())?;
+				(id, api)
+			}
+		};
+
 		// use given gas limit or query current block's limit
 		let gas_limit = match gas {
 			Some(amount) => amount,
 			None => {
-				let block = self
-					.client
-					.runtime_api()
-					.current_block(&BlockId::Hash(hash))
+				let block = api
+					.current_block(&id)
 					.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?;
 				if let Some(block) = block {
 					block.header.gas_limit
@@ -891,13 +1122,20 @@ where
 		};
 		let data = data.map(|d| d.0).unwrap_or_default();
 
+		let api_version =
+			if let Ok(Some(api_version)) = api.api_version::<dyn EthereumRuntimeRPCApi<B>>(&id) {
+				api_version
+			} else {
+				return Err(internal_err(format!(
+					"failed to retrieve Runtime Api version"
+				)));
+			};
 		match to {
 			Some(to) => {
-				let info = self
-					.client
-					.runtime_api()
-					.call(
-						&BlockId::Hash(hash),
+				if api_version == 1 {
+					#[allow(deprecated)]
+					let info = api.call_before_version_2(
+						&id,
 						from.unwrap_or_default(),
 						to,
 						data,
@@ -910,16 +1148,38 @@ where
 					.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
 					.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
 
-				error_on_execution_failure(&info.exit_reason, &info.value)?;
+					error_on_execution_failure(&info.exit_reason, &info.value)?;
+					Ok(Bytes(info.value))
+				} else if api_version >= 2 {
+					let info = api
+						.call(
+							&id,
+							from.unwrap_or_default(),
+							to,
+							data,
+							value.unwrap_or_default(),
+							gas_limit,
+							max_fee_per_gas,
+							max_priority_fee_per_gas,
+							nonce,
+							false,
+						)
+						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
+						.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
 
-				Ok(Bytes(info.value))
+					error_on_execution_failure(&info.exit_reason, &info.value)?;
+					Ok(Bytes(info.value))
+				} else {
+					return Err(internal_err(format!(
+						"failed to retrieve Runtime Api version"
+					)));
+				}
 			}
 			None => {
-				let info = self
-					.client
-					.runtime_api()
-					.create(
-						&BlockId::Hash(hash),
+				if api_version == 1 {
+					#[allow(deprecated)]
+					let info = api.create_before_version_2(
+						&id,
 						from.unwrap_or_default(),
 						data,
 						value.unwrap_or_default(),
@@ -931,17 +1191,76 @@ where
 					.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
 					.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
 
-				error_on_execution_failure(&info.exit_reason, &[])?;
+					error_on_execution_failure(&info.exit_reason, &[])?;
+					Ok(Bytes(info.value[..].to_vec()))
+				} else if api_version >= 2 {
+					let info = api
+						.create(
+							&id,
+							from.unwrap_or_default(),
+							data,
+							value.unwrap_or_default(),
+							gas_limit,
+							max_fee_per_gas,
+							max_priority_fee_per_gas,
+							nonce,
+							false,
+						)
+						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
+						.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
 
-				Ok(Bytes(info.value[..].to_vec()))
+					error_on_execution_failure(&info.exit_reason, &[])?;
+					Ok(Bytes(info.value[..].to_vec()))
+				} else {
+					return Err(internal_err(format!(
+						"failed to retrieve Runtime Api version"
+					)));
+				}
 			}
 		}
 	}
 
 	fn estimate_gas(&self, request: CallRequest, _: Option<BlockNumber>) -> Result<U256> {
-		let gas_limit = {
-			// query current block's gas limit
-			let id = BlockId::Hash(self.client.info().best_hash);
+		// Define the lower bound of estimate
+		const MIN_GAS_PER_TX: U256 = U256([21_000, 0, 0, 0]);
+
+		// Get best hash (TODO missing support for estimating gas historically)
+		let best_hash = self.client.info().best_hash;
+
+		// For simple transfer to simple account, return MIN_GAS_PER_TX directly
+		let is_simple_transfer = match &request.data {
+			None => true,
+			Some(vec) => vec.0.is_empty(),
+		};
+		if is_simple_transfer {
+			if let Some(to) = request.to {
+				let to_code = self
+					.client
+					.runtime_api()
+					.account_code_at(&BlockId::Hash(best_hash), to)
+					.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?;
+				if to_code.is_empty() {
+					return Ok(MIN_GAS_PER_TX);
+				}
+			}
+		}
+
+		let (gas_price, max_fee_per_gas, max_priority_fee_per_gas) = {
+			let details = fee_details(
+				request.gas_price,
+				request.max_fee_per_gas,
+				request.max_priority_fee_per_gas,
+			)?;
+			(
+				details.gas_price,
+				details.max_fee_per_gas,
+				details.max_priority_fee_per_gas,
+			)
+		};
+
+		let get_current_block_gas_limit = || -> Result<U256> {
+			let substrate_hash = self.client.info().best_hash;
+			let id = BlockId::Hash(substrate_hash);
 			let schema =
 				frontier_backend_client::onchain_storage_schema::<B, C, BE>(&self.client, id);
 			let handler = self
@@ -949,136 +1268,252 @@ where
 				.schemas
 				.get(&schema)
 				.unwrap_or(&self.overrides.fallback);
-
-			let block = handler.current_block(&id);
+			let block = self.block_data_cache.current_block(handler, substrate_hash);
 			if let Some(block) = block {
-				block.header.gas_limit
+				Ok(block.header.gas_limit)
 			} else {
 				return Err(internal_err("block unavailable, cannot query gas limit"));
 			}
 		};
 
-		let calculate_gas_used = |request, gas_limit| -> Result<U256> {
-			let hash = self.client.info().best_hash;
-
-			let CallRequest {
-				from,
-				to,
-				gas_price,
-				gas,
-				value,
-				data,
-				nonce,
-			} = request;
-
-			// Use request gas limit only if it less than gas_limit parameter
-			let gas_limit = core::cmp::min(gas.unwrap_or(gas_limit), gas_limit);
-
-			let data = data.map(|d| d.0).unwrap_or_default();
-
-			let used_gas = match to {
-				Some(to) => {
-					let info = self
-						.client
-						.runtime_api()
-						.call(
-							&BlockId::Hash(hash),
-							from.unwrap_or_default(),
-							to,
-							data,
-							value.unwrap_or_default(),
-							gas_limit,
-							gas_price,
-							nonce,
-							true,
-						)
-						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
-						.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
-
-					error_on_execution_failure(&info.exit_reason, &info.value)?;
-
-					info.used_gas
-				}
-				None => {
-					let info = self
-						.client
-						.runtime_api()
-						.create(
-							&BlockId::Hash(hash),
-							from.unwrap_or_default(),
-							data,
-							value.unwrap_or_default(),
-							gas_limit,
-							gas_price,
-							nonce,
-							true,
-						)
-						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
-						.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
-
-					error_on_execution_failure(&info.exit_reason, &[])?;
-
-					info.used_gas
-				}
-			};
-
-			Ok(used_gas)
+		// Determine the highest possible gas limits
+		let mut highest = match request.gas {
+			Some(gas) => gas,
+			None => {
+				// query current block's gas limit
+				get_current_block_gas_limit()?
+			}
 		};
-		if cfg!(feature = "rpc_binary_search_estimate") {
-			const MAX_OOG_PER_ESTIMATE_QUERY: u32 = 2;
 
-			let mut lower = U256::from(21_000);
-			// TODO: get a good upper limit, but below U64::max to operation overflow
-			let mut upper = U256::from(gas_limit);
-			let mut mid = upper;
-			let mut best = mid;
-			let mut old_best: U256;
-			let mut num_oog = 0;
+		let api = self.client.runtime_api();
 
-			// if the gas estimation depends on the gas limit, then we want to binary
-			// search until the change is under some threshold. but if not dependent,
-			// we want to stop immediately.
-			let mut change_pct = U256::from(100);
-			let threshold_pct = U256::from(10);
-
-			// invariant: lower <= mid <= upper
-			while change_pct > threshold_pct {
-				let mut test_request = request.clone();
-				test_request.gas = Some(mid);
-				match calculate_gas_used(test_request, gas_limit) {
-					// if Ok -- try to reduce the gas used
-					Ok(used_gas) => {
-						old_best = best;
-						best = used_gas;
-						change_pct = (U256::from(100) * (old_best - best)) / old_best;
-						upper = mid;
-						mid = (lower + upper + 1) / 2;
+		// Recap the highest gas allowance with account's balance.
+		if let Some(from) = request.from {
+			let gas_price = gas_price.unwrap_or_default();
+			if gas_price > U256::zero() {
+				let balance = api
+					.account_basic(&BlockId::Hash(best_hash), from)
+					.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
+					.balance;
+				let mut available = balance;
+				if let Some(value) = request.value {
+					if value > available {
+						return Err(internal_err("insufficient funds for transfer"));
 					}
-
-					Err(err) => {
-						// if Err == OutofGas, we need more gas
-						if err.code == ErrorCode::ServerError(0) {
-							num_oog += 1;
-							// don't try more than twice if we oog
-							if num_oog >= MAX_OOG_PER_ESTIMATE_QUERY {
-								return Err(err);
-							}
-
-							lower = mid;
-							mid = (lower + upper + 1) / 2;
-							if mid == lower {
-								break;
-							}
-						} else {
-							// Other errors, return directly
-							return Err(err);
-						}
-					}
+					available -= value;
+				}
+				let allowance = available / gas_price;
+				if highest > allowance {
+					log::warn!(
+						"Gas estimation capped by limited funds original {} balance {} sent {} feecap {} fundable {}",
+						highest,
+						balance,
+						request.value.unwrap_or_default(),
+						gas_price,
+						allowance
+					);
+					highest = allowance;
 				}
 			}
-			Ok(best)
+		}
+
+		struct ExecutableResult {
+			data: Vec<u8>,
+			exit_reason: ExitReason,
+			used_gas: U256,
+		}
+
+		// Create a helper to check if a gas allowance results in an executable transaction
+		let executable =
+			move |request: CallRequest, gas_limit, api_version| -> Result<ExecutableResult> {
+				let CallRequest {
+					from,
+					to,
+					gas,
+					value,
+					data,
+					nonce,
+					..
+				} = request;
+
+				// Use request gas limit only if it less than gas_limit parameter
+				let gas_limit = core::cmp::min(gas.unwrap_or(gas_limit), gas_limit);
+
+				let data = data.map(|d| d.0).unwrap_or_default();
+
+				let (exit_reason, data, used_gas) = match to {
+					Some(to) => {
+						let info = if api_version == 1 {
+							#[allow(deprecated)]
+							api.call_before_version_2(
+								&BlockId::Hash(best_hash),
+								from.unwrap_or_default(),
+								to,
+								data,
+								value.unwrap_or_default(),
+								gas_limit,
+								gas_price,
+								nonce,
+								true,
+							)
+							.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
+							.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?
+						} else {
+							api.call(
+								&BlockId::Hash(best_hash),
+								from.unwrap_or_default(),
+								to,
+								data,
+								value.unwrap_or_default(),
+								gas_limit,
+								max_fee_per_gas,
+								max_priority_fee_per_gas,
+								nonce,
+								true,
+							)
+							.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
+							.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?
+						};
+
+						(info.exit_reason, info.value, info.used_gas)
+					}
+					None => {
+						let info = if api_version == 1 {
+							#[allow(deprecated)]
+							api.create_before_version_2(
+								&BlockId::Hash(best_hash),
+								from.unwrap_or_default(),
+								data,
+								value.unwrap_or_default(),
+								gas_limit,
+								gas_price,
+								nonce,
+								true,
+							)
+							.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
+							.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?
+						} else {
+							api.create(
+								&BlockId::Hash(best_hash),
+								from.unwrap_or_default(),
+								data,
+								value.unwrap_or_default(),
+								gas_limit,
+								max_fee_per_gas,
+								max_priority_fee_per_gas,
+								nonce,
+								true,
+							)
+							.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
+							.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?
+						};
+
+						(info.exit_reason, Vec::new(), info.used_gas)
+					}
+				};
+				Ok(ExecutableResult {
+					exit_reason,
+					data,
+					used_gas,
+				})
+			};
+		let api_version = if let Ok(Some(api_version)) =
+			self.client
+				.runtime_api()
+				.api_version::<dyn EthereumRuntimeRPCApi<B>>(&BlockId::Hash(best_hash))
+		{
+			api_version
 		} else {
-			calculate_gas_used(request, gas_limit)
+			return Err(internal_err(format!(
+				"failed to retrieve Runtime Api version"
+			)));
+		};
+
+		// Verify that the transaction succeed with highest capacity
+		let cap = highest;
+		let ExecutableResult {
+			data,
+			exit_reason,
+			used_gas,
+		} = executable(request.clone(), highest, api_version)?;
+		match exit_reason {
+			ExitReason::Succeed(_) => (),
+			ExitReason::Error(ExitError::OutOfGas) => {
+				return Err(internal_err(format!(
+					"gas required exceeds allowance {}",
+					cap
+				)))
+			}
+			// If the transaction reverts, there are two possible cases,
+			// it can revert because the called contract feels that it does not have enough
+			// gas left to continue, or it can revert for another reason unrelated to gas.
+			ExitReason::Revert(revert) => {
+				if request.gas.is_some() || request.gas_price.is_some() {
+					// If the user has provided a gas limit or a gas price, then we have executed
+					// with less block gas limit, so we must reexecute with block gas limit to
+					// know if the revert is due to a lack of gas or not.
+					let ExecutableResult {
+						data,
+						exit_reason,
+						used_gas: _,
+					} = executable(request.clone(), get_current_block_gas_limit()?, api_version)?;
+					match exit_reason {
+						ExitReason::Succeed(_) => {
+							return Err(internal_err(format!(
+								"gas required exceeds allowance {}",
+								cap
+							)))
+						}
+						// The execution has been done with block gas limit, so it is not a lack of gas from the user.
+						other => error_on_execution_failure(&other, &data)?,
+					}
+				} else {
+					// The execution has already been done with block gas limit, so it is not a lack of gas from the user.
+					error_on_execution_failure(&ExitReason::Revert(revert), &data)?
+				}
+			}
+			other => error_on_execution_failure(&other, &data)?,
+		};
+
+		#[cfg(not(feature = "rpc_binary_search_estimate"))]
+		{
+			Ok(used_gas)
+		}
+		#[cfg(feature = "rpc_binary_search_estimate")]
+		{
+			// Define the lower bound of the binary search
+			let mut lowest = MIN_GAS_PER_TX;
+
+			// Start close to the used gas for faster binary search
+			let mut mid = std::cmp::min(used_gas * 3, (highest + lowest) / 2);
+
+			// Execute the binary search and hone in on an executable gas limit.
+			let mut previous_highest = highest;
+			while (highest - lowest) > U256::one() {
+				let ExecutableResult {
+					data,
+					exit_reason,
+					used_gas: _,
+				} = executable(request.clone(), mid, api_version)?;
+				match exit_reason {
+					ExitReason::Succeed(_) => {
+						highest = mid;
+						// If the variation in the estimate is less than 10%,
+						// then the estimate is considered sufficiently accurate.
+						if (previous_highest - highest) * 10 / previous_highest < U256::one() {
+							return Ok(highest);
+						}
+						previous_highest = highest;
+					}
+					ExitReason::Revert(_) | ExitReason::Error(ExitError::OutOfGas) => {
+						lowest = mid;
+					}
+					other => error_on_execution_failure(&other, &data)?,
+				}
+				mid = (highest + lowest) / 2;
+			}
+
+			Ok(highest)
 		}
 	}
 
@@ -1087,18 +1522,50 @@ where
 			self.client.as_ref(),
 			self.backend.as_ref(),
 			hash,
+			true,
 		)
 		.map_err(|err| internal_err(format!("{:?}", err)))?
 		{
 			Some((hash, index)) => (hash, index as usize),
 			None => {
-				if let Some(pending) = &self.pending_transactions {
-					if let Ok(locked) = &mut pending.lock() {
-						if let Some(pending_transaction) = locked.get(&hash) {
-							return Ok(Some(pending_transaction.transaction.clone()));
-						}
+				// If the transaction is not yet mapped in the frontier db,
+				// check for it in the transaction pool.
+				let mut xts: Vec<<B as BlockT>::Extrinsic> = Vec::new();
+				// Collect transactions in the ready validated pool.
+				xts.extend(
+					self.graph
+						.validated_pool()
+						.ready()
+						.map(|in_pool_tx| in_pool_tx.data().clone())
+						.collect::<Vec<<B as BlockT>::Extrinsic>>(),
+				);
+
+				// Collect transactions in the future validated pool.
+				xts.extend(
+					self.graph
+						.validated_pool()
+						.futures()
+						.iter()
+						.map(|(_hash, extrinsic)| extrinsic.clone())
+						.collect::<Vec<<B as BlockT>::Extrinsic>>(),
+				);
+
+				let best_block: BlockId<B> = BlockId::Hash(self.client.info().best_hash);
+				let ethereum_transactions: Vec<EthereumTransaction> = self
+					.client
+					.runtime_api()
+					.extrinsic_filter(&best_block, xts)
+					.map_err(|err| {
+						internal_err(format!("fetch runtime extrinsic filter failed: {:?}", err))
+					})?;
+
+				for txn in ethereum_transactions {
+					let inner_hash = txn.hash();
+					if hash == inner_hash {
+						return Ok(Some(transaction_build(txn, None, None, true, None)));
 					}
 				}
+				// Unknown transaction.
 				return Ok(None);
 			}
 		};
@@ -1109,6 +1576,11 @@ where
 			Some(hash) => hash,
 			_ => return Ok(None),
 		};
+		let substrate_hash = self
+			.client
+			.expect_block_hash_from_id(&id)
+			.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
+
 		let schema =
 			frontier_backend_client::onchain_storage_schema::<B, C, BE>(self.client.as_ref(), id);
 		let handler = self
@@ -1117,14 +1589,21 @@ where
 			.get(&schema)
 			.unwrap_or(&self.overrides.fallback);
 
-		let block = handler.current_block(&id);
-		let statuses = handler.current_transaction_statuses(&id);
+		let block = self.block_data_cache.current_block(handler, substrate_hash);
+		let statuses = self
+			.block_data_cache
+			.current_transaction_statuses(handler, substrate_hash);
+
+		let base_fee = handler.base_fee(&id);
+		let is_eip1559 = handler.is_eip1559(&id);
 
 		match (block, statuses) {
 			(Some(block), Some(statuses)) => Ok(Some(transaction_build(
 				block.transactions[index].clone(),
 				Some(block),
 				Some(statuses[index].clone()),
+				is_eip1559,
+				base_fee,
 			))),
 			_ => Ok(None),
 		}
@@ -1141,6 +1620,11 @@ where
 			Some(hash) => hash,
 			_ => return Ok(None),
 		};
+		let substrate_hash = self
+			.client
+			.expect_block_hash_from_id(&id)
+			.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
+
 		let index = index.value();
 
 		let schema =
@@ -1151,15 +1635,30 @@ where
 			.get(&schema)
 			.unwrap_or(&self.overrides.fallback);
 
-		let block = handler.current_block(&id);
-		let statuses = handler.current_transaction_statuses(&id);
+		let block = self.block_data_cache.current_block(handler, substrate_hash);
+		let statuses = self
+			.block_data_cache
+			.current_transaction_statuses(handler, substrate_hash);
+
+		let base_fee = handler.base_fee(&id);
+		let is_eip1559 = handler.is_eip1559(&id);
 
 		match (block, statuses) {
-			(Some(block), Some(statuses)) => Ok(Some(transaction_build(
-				block.transactions[index].clone(),
-				Some(block),
-				Some(statuses[index].clone()),
-			))),
+			(Some(block), Some(statuses)) => {
+				if let (Some(transaction), Some(status)) =
+					(block.transactions.get(index), statuses.get(index))
+				{
+					return Ok(Some(transaction_build(
+						transaction.clone(),
+						Some(block),
+						Some(status.clone()),
+						is_eip1559,
+						base_fee,
+					)));
+				} else {
+					return Err(internal_err(format!("{:?} is out of bounds", index)));
+				}
+			}
 			_ => Ok(None),
 		}
 	}
@@ -1177,6 +1676,11 @@ where
 			Some(id) => id,
 			None => return Ok(None),
 		};
+		let substrate_hash = self
+			.client
+			.expect_block_hash_from_id(&id)
+			.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
+
 		let index = index.value();
 		let schema =
 			frontier_backend_client::onchain_storage_schema::<B, C, BE>(self.client.as_ref(), id);
@@ -1186,15 +1690,30 @@ where
 			.get(&schema)
 			.unwrap_or(&self.overrides.fallback);
 
-		let block = handler.current_block(&id);
-		let statuses = handler.current_transaction_statuses(&id);
+		let block = self.block_data_cache.current_block(handler, substrate_hash);
+		let statuses = self
+			.block_data_cache
+			.current_transaction_statuses(handler, substrate_hash);
+
+		let base_fee = handler.base_fee(&id);
+		let is_eip1559 = handler.is_eip1559(&id);
 
 		match (block, statuses) {
-			(Some(block), Some(statuses)) => Ok(Some(transaction_build(
-				block.transactions[index].clone(),
-				Some(block),
-				Some(statuses[index].clone()),
-			))),
+			(Some(block), Some(statuses)) => {
+				if let (Some(transaction), Some(status)) =
+					(block.transactions.get(index), statuses.get(index))
+				{
+					return Ok(Some(transaction_build(
+						transaction.clone(),
+						Some(block),
+						Some(status.clone()),
+						is_eip1559,
+						base_fee,
+					)));
+				} else {
+					return Err(internal_err(format!("{:?} is out of bounds", index)));
+				}
+			}
 			_ => Ok(None),
 		}
 	}
@@ -1204,6 +1723,7 @@ where
 			self.client.as_ref(),
 			self.backend.as_ref(),
 			hash,
+			true,
 		)
 		.map_err(|err| internal_err(format!("{:?}", err)))?
 		{
@@ -1217,6 +1737,11 @@ where
 			Some(hash) => hash,
 			_ => return Ok(None),
 		};
+		let substrate_hash = self
+			.client
+			.expect_block_hash_from_id(&id)
+			.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
+
 		let schema =
 			frontier_backend_client::onchain_storage_schema::<B, C, BE>(self.client.as_ref(), id);
 		let handler = self
@@ -1225,8 +1750,10 @@ where
 			.get(&schema)
 			.unwrap_or(&self.overrides.fallback);
 
-		let block = handler.current_block(&id);
-		let statuses = handler.current_transaction_statuses(&id);
+		let block = self.block_data_cache.current_block(handler, substrate_hash);
+		let statuses = self
+			.block_data_cache
+			.current_transaction_statuses(handler, substrate_hash);
 		let receipts = handler.current_receipts(&id);
 
 		match (block, statuses, receipts) {
@@ -1237,6 +1764,17 @@ where
 				let status = statuses[index].clone();
 				let mut cumulative_receipts = receipts.clone();
 				cumulative_receipts.truncate((status.transaction_index + 1) as usize);
+
+				let transaction = block.transactions[index].clone();
+				let effective_gas_price = match transaction {
+					EthereumTransaction::Legacy(t) => t.gas_price,
+					EthereumTransaction::EIP2930(t) => t.gas_price,
+					EthereumTransaction::EIP1559(t) => handler
+						.base_fee(&id)
+						.unwrap_or_default()
+						.checked_add(t.max_priority_fee_per_gas)
+						.unwrap_or(U256::max_value()),
+				};
 
 				return Ok(Some(Receipt {
 					transaction_hash: Some(status.transaction_hash),
@@ -1288,6 +1826,7 @@ where
 					status_code: Some(U64::from(receipt.state_root.to_low_u64_be())),
 					logs_bloom: receipt.logs_bloom,
 					state_root: None,
+					effective_gas_price,
 				}));
 			}
 			_ => Ok(None),
@@ -1315,6 +1854,10 @@ where
 				Some(hash) => hash,
 				_ => return Ok(Vec::new()),
 			};
+			let substrate_hash = self
+				.client
+				.expect_block_hash_from_id(&id)
+				.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
 
 			let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(
 				self.client.as_ref(),
@@ -1326,8 +1869,10 @@ where
 				.get(&schema)
 				.unwrap_or(&self.overrides.fallback);
 
-			let block = handler.current_block(&id);
-			let statuses = handler.current_transaction_statuses(&id);
+			let block = self.block_data_cache.current_block(handler, substrate_hash);
+			let statuses = self
+				.block_data_cache
+				.current_transaction_statuses(handler, substrate_hash);
 			if let (Some(block), Some(statuses)) = (block, statuses) {
 				filter_block_logs(&mut ret, &filter, block, statuses);
 			}
@@ -1355,6 +1900,7 @@ where
 				self.client.as_ref(),
 				self.backend.as_ref(),
 				&self.overrides,
+				&self.block_data_cache,
 				&mut ret,
 				self.max_past_logs,
 				&filter,
@@ -1380,6 +1926,128 @@ where
 
 	fn submit_hashrate(&self, _: U256, _: H256) -> Result<bool> {
 		Ok(false)
+	}
+
+	fn fee_history(
+		&self,
+		block_count: U256,
+		newest_block: BlockNumber,
+		reward_percentiles: Option<Vec<f64>>,
+	) -> Result<FeeHistory> {
+		// The max supported range size is 1024 by spec.
+		let range_limit = U256::from(1024);
+		let block_count = if block_count > range_limit {
+			range_limit.as_u64()
+		} else {
+			block_count.as_u64()
+		};
+
+		if let Ok(Some(id)) = frontier_backend_client::native_block_id::<B, C>(
+			self.client.as_ref(),
+			self.backend.as_ref(),
+			Some(newest_block),
+		) {
+			let header = self.client.header(id).unwrap().unwrap();
+			// Highest and lowest block number within the requested range.
+			let highest = UniqueSaturatedInto::<u64>::unique_saturated_into(
+				self.client.number(header.hash()).unwrap().unwrap(),
+			);
+			let lowest = highest.saturating_sub(block_count);
+			// Tip of the chain.
+			let best_number =
+				UniqueSaturatedInto::<u64>::unique_saturated_into(self.client.info().best_number);
+			// Only support in-cache queries.
+			if lowest < best_number.saturating_sub(self.fee_history_limit) {
+				return Err(internal_err(format!("Block range out of bounds.")));
+			}
+			if let Ok(fee_history_cache) = &self.fee_history_cache.lock() {
+				let mut response = FeeHistory {
+					oldest_block: U256::from(lowest),
+					base_fee_per_gas: Vec::new(),
+					gas_used_ratio: Vec::new(),
+					reward: None,
+				};
+				let mut rewards = Vec::new();
+				// Iterate over the requested block range.
+				for n in lowest..highest + 1 {
+					if let Some(block) = fee_history_cache.get(&n) {
+						response.base_fee_per_gas.push(U256::from(block.base_fee));
+						response.gas_used_ratio.push(block.gas_used_ratio);
+						// If the request includes reward percentiles, get them from the cache.
+						if let Some(ref requested_percentiles) = reward_percentiles {
+							let mut block_rewards = Vec::new();
+							// Resoltion is half a point. I.e. 1.0,1.5
+							let resolution_per_percentile: f64 = 2.0;
+							// Get cached reward for each provided percentile.
+							for p in requested_percentiles {
+								// Find the cache index from the user percentile.
+								let p = p.clamp(0.0, 100.0);
+								let index = ((p.round() / 2f64) * 2f64) * resolution_per_percentile;
+								// Get and push the reward.
+								let reward = if let Some(r) = block.rewards.get(index as usize) {
+									U256::from(*r)
+								} else {
+									U256::zero()
+								};
+								block_rewards.push(reward);
+							}
+							// Push block rewards.
+							rewards.push(block_rewards);
+						}
+					}
+				}
+				if rewards.len() > 0 {
+					response.reward = Some(rewards);
+				}
+				// Calculate next base fee.
+				if let (Some(last_gas_used), Some(last_fee_per_gas)) = (
+					response.gas_used_ratio.last(),
+					response.base_fee_per_gas.last(),
+				) {
+					let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(
+						self.client.as_ref(),
+						id,
+					);
+					let handler = self
+						.overrides
+						.schemas
+						.get(&schema)
+						.unwrap_or(&self.overrides.fallback);
+					let default_elasticity = sp_runtime::Permill::from_parts(125_000);
+					let elasticity = handler
+						.elasticity(&id)
+						.unwrap_or(default_elasticity)
+						.deconstruct();
+					let elasticity = elasticity as f64 / 1_000_000f64;
+					let last_fee_per_gas = last_fee_per_gas.as_u64() as f64;
+					if last_gas_used > &0.5 {
+						// Increase base gas
+						let increase = ((last_gas_used - 0.5) * 2f64) * elasticity;
+						let new_base_fee =
+							(last_fee_per_gas + (last_fee_per_gas * increase)) as u64;
+						response.base_fee_per_gas.push(U256::from(new_base_fee));
+					} else if last_gas_used < &0.5 {
+						// Decrease base gas
+						let increase = ((0.5 - last_gas_used) * 2f64) * elasticity;
+						let new_base_fee =
+							(last_fee_per_gas - (last_fee_per_gas * increase)) as u64;
+						response.base_fee_per_gas.push(U256::from(new_base_fee));
+					} else {
+						// Same base gas
+						response
+							.base_fee_per_gas
+							.push(U256::from(last_fee_per_gas as u64));
+					}
+				}
+				return Ok(response);
+			} else {
+				return Err(internal_err(format!("Failed to read fee history cache.")));
+			}
+		}
+		Err(internal_err(format!(
+			"Failed to retrieve requested block {:?}.",
+			newest_block
+		)))
 	}
 }
 
@@ -1407,7 +2075,7 @@ impl<B: BlockT, BE, C, H: ExHashT> NetApi<B, BE, C, H> {
 
 impl<B: BlockT, BE, C, H: ExHashT> NetApiT for NetApi<B, BE, C, H>
 where
-	C: ProvideRuntimeApi<B> + StorageProvider<B, BE> + AuxStore,
+	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
 	C: HeaderBackend<B> + HeaderMetadata<B, Error = BlockChainError> + 'static,
 	C::Api: EthereumRuntimeRPCApi<B>,
 	BE: Backend<B> + 'static,
@@ -1454,7 +2122,7 @@ impl<B, C> Web3Api<B, C> {
 
 impl<B, C> Web3ApiT for Web3Api<B, C>
 where
-	C: ProvideRuntimeApi<B> + AuxStore,
+	C: ProvideRuntimeApi<B>,
 	C::Api: EthereumRuntimeRPCApi<B>,
 	C: HeaderBackend<B> + HeaderMetadata<B, Error = BlockChainError> + 'static,
 	C: Send + Sync + 'static,
@@ -1491,6 +2159,7 @@ pub struct EthFilterApi<B: BlockT, C, BE> {
 	max_stored_filters: usize,
 	overrides: Arc<OverrideHandle<B>>,
 	max_past_logs: u32,
+	block_data_cache: Arc<EthBlockDataCache<B>>,
 	_marker: PhantomData<(B, BE)>,
 }
 
@@ -1510,14 +2179,16 @@ where
 		max_stored_filters: usize,
 		overrides: Arc<OverrideHandle<B>>,
 		max_past_logs: u32,
+		block_data_cache: Arc<EthBlockDataCache<B>>,
 	) -> Self {
 		Self {
-			client: client.clone(),
-			backend: backend.clone(),
+			client,
+			backend,
 			filter_pool,
 			max_stored_filters,
 			overrides,
 			max_past_logs,
+			block_data_cache,
 			_marker: PhantomData,
 		}
 	}
@@ -1605,6 +2276,10 @@ where
 						let mut ethereum_hashes: Vec<H256> = Vec::new();
 						for n in last..next {
 							let id = BlockId::Number(n.unique_saturated_into());
+							let substrate_hash =
+								self.client.expect_block_hash_from_id(&id).map_err(|_| {
+									internal_err(format!("Expect block number from id: {}", id))
+								})?;
 
 							let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(
 								self.client.as_ref(),
@@ -1616,7 +2291,8 @@ where
 								.get(&schema)
 								.unwrap_or(&self.overrides.fallback);
 
-							let block = handler.current_block(&id);
+							let block =
+								self.block_data_cache.current_block(handler, substrate_hash);
 							if let Some(block) = block {
 								ethereum_hashes.push(block.header.hash())
 							}
@@ -1669,6 +2345,7 @@ where
 							self.client.as_ref(),
 							self.backend.as_ref(),
 							&self.overrides,
+							&self.block_data_cache,
 							&mut ret,
 							self.max_past_logs,
 							&filter,
@@ -1735,6 +2412,7 @@ where
 							self.client.as_ref(),
 							self.backend.as_ref(),
 							&self.overrides,
+							&self.block_data_cache,
 							&mut ret,
 							self.max_past_logs,
 							&filter,
@@ -1774,12 +2452,16 @@ where
 	}
 }
 
-pub struct EthTask<B, C>(PhantomData<(B, C)>);
+pub struct EthTask<B, C, BE>(PhantomData<(B, C, BE)>);
 
-impl<B, C> EthTask<B, C>
+impl<B, C, BE> EthTask<B, C, BE>
 where
-	C: ProvideRuntimeApi<B> + BlockchainEvents<B> + HeaderBackend<B>,
+	C: ProvideRuntimeApi<B> + BlockchainEvents<B> + HeaderBackend<B> + StorageProvider<B, BE>,
 	B: BlockT<Hash = H256>,
+	C::Api: EthereumRuntimeRPCApi<B>,
+	C: Send + Sync + 'static,
+	BE: Backend<B> + 'static,
+	BE::State: StateBackend<BlakeTwo256>,
 {
 	/// Task that caches at which best hash a new EthereumStorageSchema was inserted in the Runtime Storage.
 	pub async fn ethereum_schema_cache_task(client: Arc<C>, backend: Arc<fc_db::Backend<B>>) {
@@ -1789,8 +2471,14 @@ where
 
 		if let Ok(None) = frontier_backend_client::load_cached_schema::<B>(backend.as_ref()) {
 			let mut cache: Vec<(EthereumStorageSchema, H256)> = Vec::new();
-			if let Ok(Some(header)) = client.header(BlockId::Number(Zero::zero())) {
-				cache.push((EthereumStorageSchema::V1, header.hash()));
+			let id = BlockId::Number(Zero::zero());
+			if let Ok(Some(header)) = client.header(id) {
+				let genesis_schema_version = frontier_backend_client::onchain_storage_schema::<
+					B,
+					C,
+					BE,
+				>(client.as_ref(), id);
+				cache.push((genesis_schema_version, header.hash()));
 				let _ = frontier_backend_client::write_cached_schema::<B>(backend.as_ref(), cache)
 					.map_err(|err| {
 						warn!("Error schema cache insert for genesis: {:?}", err);
@@ -1824,7 +2512,7 @@ where
 							// Decode the wrapped blob which's type is known.
 							let new_schema: EthereumStorageSchema =
 								Decode::decode(&mut &data.0[..]).unwrap();
-							// Cache new entry and overwrite the AuxStore value.
+							// Cache new entry and overwrite the old database value.
 							if let Ok(Some(old_cache)) =
 								frontier_backend_client::load_cached_schema::<B>(backend.as_ref())
 							{
@@ -1832,7 +2520,7 @@ where
 								match &new_cache[..] {
 									[.., (schema, _)] if *schema == new_schema => {
 										warn!(
-											"Schema version already in AuxStore, ignoring: {:?}",
+											"Schema version already in Frontier database, ignoring: {:?}",
 											new_schema
 										);
 									}
@@ -1855,42 +2543,6 @@ where
 							}
 						}
 					}
-				}
-			}
-		}
-	}
-
-	pub async fn pending_transaction_task(
-		client: Arc<C>,
-		pending_transactions: Arc<Mutex<HashMap<H256, PendingTransaction>>>,
-		retain_threshold: u64,
-	) {
-		let mut notification_st = client.import_notification_stream();
-
-		while let Some(notification) = notification_st.next().await {
-			if notification.is_new_best {
-				if let Ok(mut pending_transactions) = pending_transactions.lock() {
-					// As pending transactions have a finite lifespan anyway
-					// we can ignore MultiplePostRuntimeLogs error checks.
-					let log = fp_consensus::find_log(&notification.header.digest()).ok();
-					let post_hashes = log.map(|log| log.into_hashes());
-
-					if let Some(post_hashes) = post_hashes {
-						// Retain all pending transactions that were not
-						// processed in the current block.
-						pending_transactions
-							.retain(|&k, _| !post_hashes.transaction_hashes.contains(&k));
-					}
-
-					let imported_number: u64 = UniqueSaturatedInto::<u64>::unique_saturated_into(
-						*notification.header.number(),
-					);
-
-					pending_transactions.retain(|_, v| {
-						// Drop all the transactions that exceeded the given lifespan.
-						let lifespan_limit = v.at_block + retain_threshold;
-						lifespan_limit > imported_number
-					});
 				}
 			}
 		}
@@ -1929,5 +2581,249 @@ where
 				}
 			}
 		}
+	}
+
+	pub async fn fee_history_task(
+		client: Arc<C>,
+		overrides: Arc<OverrideHandle<B>>,
+		fee_history_cache: FeeHistoryCache,
+		block_limit: u64,
+	) {
+		use sp_runtime::Permill;
+
+		struct TransactionHelper {
+			gas_used: u64,
+			effective_reward: u64,
+		}
+		// Calculates the cache for a single block
+		#[rustfmt::skip]
+		let fee_history_cache_item = |hash: H256, elasticity: Permill| -> (
+			FeeHistoryCacheItem,
+			Option<u64>
+		) {
+			let id = BlockId::Hash(hash);
+			let schema =
+				frontier_backend_client::onchain_storage_schema::<B, C, BE>(client.as_ref(), id);
+			let handler = overrides
+				.schemas
+				.get(&schema)
+				.unwrap_or(&overrides.fallback);
+
+			// Evenly spaced percentile list from 0.0 to 100.0 with a 0.5 resolution.
+			// This means we cache 200 percentile points.
+			// Later in request handling we will approximate by rounding percentiles that
+			// fall in between with `(round(n*2)/2)`.
+			let reward_percentiles: Vec<f64> = {
+				let mut percentile: f64 = 0.0;
+				(0..201)
+					.into_iter()
+					.map(|_| {
+						let val = percentile;
+						percentile += 0.5;
+						val
+					})
+					.collect()
+			};
+
+			let block = handler.current_block(&id);
+			let mut block_number: Option<u64> = None;
+			let base_fee = if let Some(base_fee) = handler.base_fee(&id) {
+				base_fee
+			} else {
+				client.runtime_api().gas_price(&id).unwrap_or(U256::zero())
+			};
+			let receipts = handler.current_receipts(&id);
+			let mut result = FeeHistoryCacheItem {
+				base_fee: base_fee.as_u64(),
+				gas_used_ratio: 0f64,
+				rewards: Vec::new(),
+			};
+			if let (Some(block), Some(receipts)) = (block, receipts) {
+				block_number = Some(block.header.number.as_u64());
+				// Calculate the gas used ratio.
+				// TODO this formula needs the pallet-base-fee configuration.
+				// By now we assume just the default 0.125 (elasticity multiplier 8).
+				let gas_used = block.header.gas_used.as_u64() as f64;
+				let gas_limit = block.header.gas_limit.as_u64() as f64;
+				let elasticity_multiplier: f64 = (elasticity / Permill::from_parts(1_000_000))
+					.deconstruct()
+					.into();
+				let gas_target = gas_limit / elasticity_multiplier;
+
+				result.gas_used_ratio = gas_used / (gas_target * elasticity_multiplier);
+
+				// Build a list of relevant transaction information.
+				let mut transactions: Vec<TransactionHelper> = receipts
+					.iter()
+					.enumerate()
+					.map(|(i, receipt)| TransactionHelper {
+						gas_used: receipt.used_gas.as_u64(),
+						effective_reward: match block.transactions.get(i) {
+							Some(&ethereum::TransactionV2::Legacy(ref t)) => {
+								t.gas_price.saturating_sub(base_fee).as_u64()
+							}
+							Some(&ethereum::TransactionV2::EIP2930(ref t)) => {
+								t.gas_price.saturating_sub(base_fee).as_u64()
+							}
+							Some(&ethereum::TransactionV2::EIP1559(ref t)) => t
+								.max_priority_fee_per_gas
+								.min(t.max_fee_per_gas.saturating_sub(base_fee))
+								.as_u64(),
+							None => 0,
+						},
+					})
+					.collect();
+				// Sort ASC by effective reward.
+				transactions.sort_by(|a, b| a.effective_reward.cmp(&b.effective_reward));
+
+				// Calculate percentile rewards.
+				result.rewards = reward_percentiles
+					.into_iter()
+					.filter_map(|p| {
+						let target_gas = (p * gas_used / 100f64) as u64;
+						let mut sum_gas = 0;
+						for tx in &transactions {
+							sum_gas += tx.gas_used;
+							if target_gas <= sum_gas {
+								return Some(tx.effective_reward);
+							}
+						}
+						None
+					})
+					.map(|r| r)
+					.collect();
+			} else {
+				result.rewards = reward_percentiles.iter().map(|_| 0).collect();
+			}
+			(result, block_number)
+		};
+
+		// Commits the result to cache
+		let commit_if_any = |item: FeeHistoryCacheItem, key: Option<u64>| {
+			if let (Some(block_number), Ok(fee_history_cache)) =
+				(key, &mut fee_history_cache.lock())
+			{
+				fee_history_cache.insert(block_number, item);
+				// We want to remain within the configured cache bounds.
+				// The first key out of bounds.
+				let first_out = block_number.saturating_sub(block_limit);
+				// Out of bounds size.
+				let to_remove = (fee_history_cache.len() as u64).saturating_sub(block_limit);
+				// Remove all cache data before `block_limit`.
+				for i in 0..to_remove {
+					// Cannot overflow.
+					let key = first_out - i;
+					fee_history_cache.remove(&key);
+				}
+			}
+		};
+
+		let mut notification_st = client.import_notification_stream();
+
+		while let Some(notification) = notification_st.next().await {
+			if notification.is_new_best {
+				let hash = notification.hash;
+				let id = BlockId::Hash(hash);
+				let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(
+					client.as_ref(),
+					id,
+				);
+				let handler = overrides
+					.schemas
+					.get(&schema)
+					.unwrap_or(&overrides.fallback);
+
+				let default_elasticity = Permill::from_parts(125_000);
+				let elasticity = handler.elasticity(&id).unwrap_or(default_elasticity);
+				// In case a re-org happened on import.
+				if let Some(tree_route) = notification.tree_route {
+					if let Ok(fee_history_cache) = &mut fee_history_cache.lock() {
+						// Remove retracted.
+						let _ = tree_route.retracted().iter().map(|hash_and_number| {
+							let n = UniqueSaturatedInto::<u64>::unique_saturated_into(
+								hash_and_number.number,
+							);
+							fee_history_cache.remove(&n);
+						});
+						// Insert enacted.
+						let _ = tree_route.enacted().iter().map(|hash_and_number| {
+							let (result, block_number) =
+								fee_history_cache_item(hash_and_number.hash, elasticity);
+							commit_if_any(result, block_number);
+						});
+					}
+				}
+				// Cache the imported block.
+				let (result, block_number) = fee_history_cache_item(hash, elasticity);
+				commit_if_any(result, block_number);
+			}
+		}
+	}
+}
+
+/// Stores an LRU cache for block data and their transaction statuses.
+/// These are large and take a lot of time to fetch from the database.
+/// Storing them in an LRU cache will allow to reduce database accesses
+/// when many subsequent requests are related to the same blocks.
+pub struct EthBlockDataCache<B: BlockT> {
+	blocks: parking_lot::Mutex<LruCache<B::Hash, EthereumBlock>>,
+	statuses: parking_lot::Mutex<LruCache<B::Hash, Vec<TransactionStatus>>>,
+}
+
+impl<B: BlockT> EthBlockDataCache<B> {
+	/// Create a new cache with provided cache sizes.
+	pub fn new(blocks_cache_size: usize, statuses_cache_size: usize) -> Self {
+		Self {
+			blocks: parking_lot::Mutex::new(LruCache::new(blocks_cache_size)),
+			statuses: parking_lot::Mutex::new(LruCache::new(statuses_cache_size)),
+		}
+	}
+
+	/// Cache for `handler.current_block`.
+	pub fn current_block(
+		&self,
+		handler: &Box<dyn StorageOverride<B> + Send + Sync>,
+		substrate_block_hash: B::Hash,
+	) -> Option<EthereumBlock> {
+		{
+			let mut cache = self.blocks.lock();
+			if let Some(block) = cache.get(&substrate_block_hash).cloned() {
+				return Some(block);
+			}
+		}
+
+		if let Some(block) = handler.current_block(&BlockId::Hash(substrate_block_hash)) {
+			let mut cache = self.blocks.lock();
+			cache.put(substrate_block_hash, block.clone());
+
+			return Some(block);
+		}
+
+		None
+	}
+
+	/// Cache for `handler.current_transaction_statuses`.
+	pub fn current_transaction_statuses(
+		&self,
+		handler: &Box<dyn StorageOverride<B> + Send + Sync>,
+		substrate_block_hash: B::Hash,
+	) -> Option<Vec<TransactionStatus>> {
+		{
+			let mut cache = self.statuses.lock();
+			if let Some(statuses) = cache.get(&substrate_block_hash).cloned() {
+				return Some(statuses);
+			}
+		}
+
+		if let Some(statuses) =
+			handler.current_transaction_statuses(&BlockId::Hash(substrate_block_hash))
+		{
+			let mut cache = self.statuses.lock();
+			cache.put(substrate_block_hash, statuses.clone());
+
+			return Some(statuses);
+		}
+
+		None
 	}
 }

@@ -17,12 +17,14 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use ethereum_types::H256;
-use serde::de::{Error, MapAccess, Visitor};
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use serde::{
+	de::{Error, MapAccess, Visitor},
+	Deserialize, Deserializer, Serialize, Serializer,
+};
 use std::fmt;
 
 /// Represents rpc api block number param.
-#[derive(Debug, PartialEq, Clone, Hash, Eq)]
+#[derive(Debug, Copy, PartialEq, Clone, Hash, Eq)]
 pub enum BlockNumber {
 	/// Hash
 	Hash {
