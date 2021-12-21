@@ -1338,11 +1338,10 @@ where
 			}
 
 			// Create a helper to check if a gas allowance results in an executable transaction
-			let executable = move |
-				request: CallRequest,
-				gas_limit,
-				api_version
-			| -> Result<ExecutableResult> {
+			let executable = move |request: CallRequest,
+								   gas_limit,
+								   api_version|
+				  -> Result<ExecutableResult> {
 				let CallRequest {
 					from,
 					to,
