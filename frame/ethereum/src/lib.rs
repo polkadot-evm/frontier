@@ -24,7 +24,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
-use ethereum_types::{Bloom, BloomInput, H160, H256, H64, U256};
+use ethereum_types::{Bloom, BloomInput, H160, H256, H64, U256, U64};
 use evm::ExitReason;
 use fp_consensus::{PostLog, PreLog, FRONTIER_ENGINE_ID};
 use fp_evm::CallOrCreateInfo;
@@ -85,6 +85,35 @@ struct TransactionData {
 	value: U256,
 	chain_id: Option<u64>,
 	access_list: Vec<(H160, Vec<H256>)>,
+}
+
+struct EncodeableReceipt<'a> {
+	transaction_type: u8,
+	status: U64,
+	cumulative_gas_used: U256,
+	bloom: Bloom,
+	logs: &'a Vec<Log>,
+}
+
+impl<'a> rlp::Encodable for EncodeableReceipt<'a> {
+	fn rlp_append(&self, s: &mut rlp::RlpStream) {
+		if self.transaction_type == 0 {
+			// Legacy
+			s.begin_list(4);
+			s.append(&self.status);
+			s.append(&self.cumulative_gas_used);
+			s.append(&self.bloom);
+			s.append_list(&self.logs);
+		} else {
+			// Typed transactions are prepended with the envelope byte.
+			s.begin_list(5);
+			s.append(&self.transaction_type);
+			s.append(&self.status);
+			s.append(&self.cumulative_gas_used);
+			s.append(&self.bloom);
+			s.append_list(&self.logs);
+		}
+	}
 }
 
 pub struct EnsureEthereumTransaction;
@@ -420,8 +449,23 @@ impl<T: Config> Pallet<T> {
 		}
 
 		let ommers = Vec::<ethereum::Header>::new();
+		let mut cumulative_gas_used = U256::zero();
 		let receipts_root =
-			ethereum::util::ordered_trie_root(receipts.iter().map(|r| rlp::encode(r)));
+			ethereum::util::ordered_trie_root(receipts.iter().enumerate().map(|(i, r)| {
+				cumulative_gas_used = cumulative_gas_used.saturating_add(r.used_gas);
+				let receipt = EncodeableReceipt {
+					transaction_type: match transactions[i] {
+						Transaction::Legacy(_) => 0,
+						Transaction::EIP2930(_) => 1,
+						Transaction::EIP1559(_) => 2,
+					},
+					status: U64::from(r.state_root.to_low_u64_be()),
+					cumulative_gas_used,
+					bloom: r.logs_bloom,
+					logs: &r.logs,
+				};
+				rlp::encode(&receipt)
+			}));
 		let partial_header = ethereum::PartialHeader {
 			parent_hash: Self::current_block_hash().unwrap_or_default(),
 			beneficiary: pallet_evm::Pallet::<T>::find_author(),
