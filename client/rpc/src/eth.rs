@@ -1761,9 +1761,33 @@ where
 				let block_hash =
 					H256::from_slice(Keccak256::digest(&rlp::encode(&block.header)).as_slice());
 				let receipt = receipts[index].clone();
+
+				let (logs, logs_bloom, state_root, cumulative_gas_used) = match receipt {
+					ethereum::ReceiptV2::Legacy(d) => {
+						(d.logs, d.logs_bloom, d.state_root, d.used_gas)
+					}
+					ethereum::ReceiptV2::EIP2930(d) => {
+						(d.logs, d.logs_bloom, d.state_root, d.used_gas)
+					}
+					ethereum::ReceiptV2::EIP1559(d) => {
+						(d.logs, d.logs_bloom, d.state_root, d.used_gas)
+					}
+				};
+
 				let status = statuses[index].clone();
 				let mut cumulative_receipts = receipts.clone();
 				cumulative_receipts.truncate((status.transaction_index + 1) as usize);
+				let gas_used = if index > 0 {
+					let previous_receipt = receipts[index - 1].clone();
+					let previous_gas_used = match previous_receipt {
+						ethereum::ReceiptV2::Legacy(d) => d.used_gas,
+						ethereum::ReceiptV2::EIP2930(d) => d.used_gas,
+						ethereum::ReceiptV2::EIP1559(d) => d.used_gas,
+					};
+					cumulative_gas_used.saturating_sub(previous_gas_used)
+				} else {
+					cumulative_gas_used
+				};
 
 				let transaction = block.transactions[index].clone();
 				let effective_gas_price = match transaction {
@@ -1783,14 +1807,8 @@ where
 					from: Some(status.from),
 					to: status.to,
 					block_number: Some(block.header.number),
-					cumulative_gas_used: {
-						let cumulative_gas: u32 = cumulative_receipts
-							.iter()
-							.map(|r| r.used_gas.as_u32())
-							.sum();
-						U256::from(cumulative_gas)
-					},
-					gas_used: Some(receipt.used_gas),
+					cumulative_gas_used,
+					gas_used: Some(gas_used),
 					contract_address: status.contract_address,
 					logs: {
 						let mut pre_receipts_log_index = None;
@@ -1799,13 +1817,15 @@ where
 							pre_receipts_log_index = Some(
 								cumulative_receipts
 									.iter()
-									.map(|r| r.logs.len() as u32)
+									.map(|r| match r {
+										ethereum::ReceiptV2::Legacy(d) => d.logs.len() as u32,
+										ethereum::ReceiptV2::EIP2930(d) => d.logs.len() as u32,
+										ethereum::ReceiptV2::EIP1559(d) => d.logs.len() as u32,
+									})
 									.sum::<u32>(),
 							);
 						}
-						receipt
-							.logs
-							.iter()
+						logs.iter()
 							.enumerate()
 							.map(|(i, log)| Log {
 								address: log.address,
@@ -1823,8 +1843,8 @@ where
 							})
 							.collect()
 					},
-					status_code: Some(U64::from(receipt.state_root.to_low_u64_be())),
-					logs_bloom: receipt.logs_bloom,
+					status_code: Some(U64::from(state_root.to_low_u64_be())),
+					logs_bloom: logs_bloom,
 					state_root: None,
 					effective_gas_price,
 				}));
@@ -2652,12 +2672,22 @@ where
 
 				result.gas_used_ratio = gas_used / (gas_target * elasticity_multiplier);
 
+				let mut previous_cumulative_gas = U256::zero();
+				let used_gas = |current: U256, previous: &mut U256| -> u64 {
+					let r = current.saturating_sub(*previous).as_u64();
+					*previous = current;
+					r
+				};
 				// Build a list of relevant transaction information.
 				let mut transactions: Vec<TransactionHelper> = receipts
 					.iter()
 					.enumerate()
 					.map(|(i, receipt)| TransactionHelper {
-						gas_used: receipt.used_gas.as_u64(),
+						gas_used: match receipt {
+							ethereum::ReceiptV2::Legacy(d) => used_gas(d.used_gas, &mut previous_cumulative_gas),
+							ethereum::ReceiptV2::EIP2930(d) => used_gas(d.used_gas, &mut previous_cumulative_gas),
+							ethereum::ReceiptV2::EIP1559(d) => used_gas(d.used_gas, &mut previous_cumulative_gas),
+						},
 						effective_reward: match block.transactions.get(i) {
 							Some(&ethereum::TransactionV2::Legacy(ref t)) => {
 								t.gas_price.saturating_sub(base_fee).as_u64()

@@ -49,7 +49,7 @@ pub trait StorageOverride<Block: BlockT> {
 	/// Return the current block.
 	fn current_block(&self, block: &BlockId<Block>) -> Option<EthereumBlock>;
 	/// Return the current receipt.
-	fn current_receipts(&self, block: &BlockId<Block>) -> Option<Vec<ethereum::Receipt>>;
+	fn current_receipts(&self, block: &BlockId<Block>) -> Option<Vec<ethereum::ReceiptV2>>;
 	/// Return the current transaction status.
 	fn current_transaction_statuses(
 		&self,
@@ -143,8 +143,32 @@ where
 	}
 
 	/// Return the current receipt.
-	fn current_receipts(&self, block: &BlockId<Block>) -> Option<Vec<ethereum::Receipt>> {
-		self.client.runtime_api().current_receipts(&block).ok()?
+	fn current_receipts(&self, block: &BlockId<Block>) -> Option<Vec<ethereum::ReceiptV2>> {
+		let api = self.client.runtime_api();
+
+		let api_version = if let Ok(Some(api_version)) =
+			api.api_version::<dyn EthereumRuntimeRPCApi<Block>>(&block)
+		{
+			api_version
+		} else {
+			return None;
+		};
+		if api_version < 4 {
+			#[allow(deprecated)]
+			let old_receipts = api.current_receipts_before_version_4(&block).ok()?;
+			if let Some(receipts) = old_receipts {
+				Some(
+					receipts
+						.into_iter()
+						.map(|r| ethereum::ReceiptV2::Legacy(r))
+						.collect(),
+				)
+			} else {
+				None
+			}
+		} else {
+			self.client.runtime_api().current_receipts(&block).ok()?
+		}
 	}
 
 	/// Return the current transaction status.

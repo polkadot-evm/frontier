@@ -48,7 +48,7 @@ use sp_runtime::{
 use sp_std::{marker::PhantomData, prelude::*};
 
 pub use ethereum::{
-	BlockV2 as Block, LegacyTransactionMessage, Log, Receipt, TransactionAction,
+	BlockV2 as Block, LegacyTransactionMessage, Log, ReceiptV2 as Receipt, TransactionAction,
 	TransactionV2 as Transaction,
 };
 pub use fp_rpc::TransactionStatus;
@@ -85,35 +85,6 @@ struct TransactionData {
 	value: U256,
 	chain_id: Option<u64>,
 	access_list: Vec<(H160, Vec<H256>)>,
-}
-
-struct EncodeableReceipt<'a> {
-	transaction_type: u8,
-	status: U64,
-	cumulative_gas_used: U256,
-	bloom: Bloom,
-	logs: &'a Vec<Log>,
-}
-
-impl<'a> rlp::Encodable for EncodeableReceipt<'a> {
-	fn rlp_append(&self, s: &mut rlp::RlpStream) {
-		if self.transaction_type == 0 {
-			// Legacy
-			s.begin_list(4);
-			s.append(&self.status);
-			s.append(&self.cumulative_gas_used);
-			s.append(&self.bloom);
-			s.append_list(&self.logs);
-		} else {
-			// Typed transactions are prepended with the envelope byte.
-			s.begin_list(5);
-			s.append(&self.transaction_type);
-			s.append(&self.status);
-			s.append(&self.cumulative_gas_used);
-			s.append(&self.bloom);
-			s.append_list(&self.logs);
-		}
-	}
 }
 
 pub struct EnsureEthereumTransaction;
@@ -317,7 +288,7 @@ pub mod pallet {
 	/// Current building block's transactions and receipts.
 	#[pallet::storage]
 	pub(super) type Pending<T: Config> =
-		StorageValue<_, Vec<(Transaction, TransactionStatus, ethereum::Receipt)>, ValueQuery>;
+		StorageValue<_, Vec<(Transaction, TransactionStatus, Receipt)>, ValueQuery>;
 
 	/// The current Ethereum block.
 	#[pallet::storage]
@@ -325,7 +296,7 @@ pub mod pallet {
 
 	/// The current Ethereum receipts.
 	#[pallet::storage]
-	pub(super) type CurrentReceipts<T: Config> = StorageValue<_, Vec<ethereum::Receipt>>;
+	pub(super) type CurrentReceipts<T: Config> = StorageValue<_, Vec<Receipt>>;
 
 	/// The current transaction statuses.
 	#[pallet::storage]
@@ -441,31 +412,23 @@ impl<T: Config> Pallet<T> {
 		let mut statuses = Vec::new();
 		let mut receipts = Vec::new();
 		let mut logs_bloom = Bloom::default();
+		let mut cumulative_gas_used = U256::zero();
 		for (transaction, status, receipt) in Pending::<T>::get() {
 			transactions.push(transaction);
 			statuses.push(status);
 			receipts.push(receipt.clone());
-			Self::logs_bloom(receipt.logs.clone(), &mut logs_bloom);
+			let (logs, used_gas) = match receipt {
+				Receipt::Legacy(d) => (d.logs.clone(), d.used_gas),
+				Receipt::EIP2930(d) => (d.logs.clone(), d.used_gas),
+				Receipt::EIP1559(d) => (d.logs.clone(), d.used_gas),
+			};
+			cumulative_gas_used = used_gas;
+			Self::logs_bloom(logs, &mut logs_bloom);
 		}
 
 		let ommers = Vec::<ethereum::Header>::new();
-		let mut cumulative_gas_used = U256::zero();
 		let receipts_root =
-			ethereum::util::ordered_trie_root(receipts.iter().enumerate().map(|(i, r)| {
-				cumulative_gas_used = cumulative_gas_used.saturating_add(r.used_gas);
-				let receipt = EncodeableReceipt {
-					transaction_type: match transactions[i] {
-						Transaction::Legacy(_) => 0,
-						Transaction::EIP2930(_) => 1,
-						Transaction::EIP1559(_) => 2,
-					},
-					status: U64::from(r.state_root.to_low_u64_be()),
-					cumulative_gas_used,
-					bloom: r.logs_bloom,
-					logs: &r.logs,
-				};
-				rlp::encode(&receipt)
-			}));
+			ethereum::util::ordered_trie_root(receipts.iter().map(|r| rlp::encode(r)));
 		let partial_header = ethereum::PartialHeader {
 			parent_hash: Self::current_block_hash().unwrap_or_default(),
 			beneficiary: pallet_evm::Pallet::<T>::find_author(),
@@ -475,10 +438,7 @@ impl<T: Config> Pallet<T> {
 			difficulty: U256::zero(),
 			number: block_number,
 			gas_limit: T::BlockGasLimit::get(),
-			gas_used: receipts
-				.clone()
-				.into_iter()
-				.fold(U256::zero(), |acc, r| acc + r.used_gas),
+			gas_used: cumulative_gas_used,
 			timestamp: UniqueSaturatedInto::<u64>::unique_saturated_into(
 				pallet_timestamp::Pallet::<T>::get(),
 			),
@@ -631,8 +591,9 @@ impl<T: Config> Pallet<T> {
 	}
 
 	fn apply_validated_transaction(source: H160, transaction: Transaction) -> PostDispatchInfo {
+		let pending = Pending::<T>::get();
 		let transaction_hash = transaction.hash();
-		let transaction_index = Pending::<T>::get().len() as u32;
+		let transaction_index = pending.len() as u32;
 
 		let (to, _, info) = Self::execute(source, &transaction, None)
 			.expect("transaction is already validated; error indicates that the block is invalid");
@@ -676,16 +637,44 @@ impl<T: Config> Pallet<T> {
 			),
 		};
 
-		let receipt = ethereum::Receipt {
-			state_root: match reason {
+		let receipt = {
+			let state_root = match reason {
 				ExitReason::Succeed(_) => H256::from_low_u64_be(1),
 				ExitReason::Error(_) => H256::from_low_u64_le(0),
 				ExitReason::Revert(_) => H256::from_low_u64_le(0),
 				ExitReason::Fatal(_) => H256::from_low_u64_le(0),
-			},
-			used_gas,
-			logs_bloom: status.clone().logs_bloom,
-			logs: status.clone().logs,
+			};
+			let logs_bloom = status.clone().logs_bloom;
+			let logs = status.clone().logs;
+			let cumulative_gas_used = if let Some((_, _, receipt)) = pending.last() {
+				match receipt {
+					Receipt::Legacy(d) => d.used_gas.saturating_add(used_gas),
+					Receipt::EIP2930(d) => d.used_gas.saturating_add(used_gas),
+					Receipt::EIP1559(d) => d.used_gas.saturating_add(used_gas),
+				}
+			} else {
+				used_gas
+			};
+			match &transaction {
+				Transaction::Legacy(_) => Receipt::Legacy(ethereum::ReceiptData {
+					state_root,
+					used_gas: cumulative_gas_used,
+					logs_bloom,
+					logs,
+				}),
+				Transaction::EIP2930(_) => Receipt::EIP2930(ethereum::ReceiptData {
+					state_root,
+					used_gas: cumulative_gas_used,
+					logs_bloom,
+					logs,
+				}),
+				Transaction::EIP1559(_) => Receipt::EIP1559(ethereum::ReceiptData {
+					state_root,
+					used_gas: cumulative_gas_used.saturating_add(used_gas),
+					logs_bloom,
+					logs,
+				}),
+			}
 		};
 
 		Pending::<T>::append((transaction, status, receipt));
@@ -721,7 +710,7 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Get receipts by number.
-	pub fn current_receipts() -> Option<Vec<ethereum::Receipt>> {
+	pub fn current_receipts() -> Option<Vec<Receipt>> {
 		CurrentReceipts::<T>::get()
 	}
 

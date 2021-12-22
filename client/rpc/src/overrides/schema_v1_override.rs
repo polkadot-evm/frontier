@@ -111,11 +111,17 @@ where
 	}
 
 	/// Return the current receipt.
-	fn current_receipts(&self, block: &BlockId<Block>) -> Option<Vec<ethereum::Receipt>> {
-		self.query_storage::<Vec<ethereum::Receipt>>(
+	fn current_receipts(&self, block: &BlockId<Block>) -> Option<Vec<ethereum::ReceiptV2>> {
+		self.query_storage::<Vec<ethereum::ReceiptV0>>(
 			block,
 			&StorageKey(storage_prefix_build(b"Ethereum", b"CurrentReceipts")),
 		)
+		.map(|receipts| {
+			receipts
+				.into_iter()
+				.map(|r| ethereum::ReceiptV2::Legacy(r))
+				.collect()
+		})
 	}
 
 	/// Return the current transaction status.
