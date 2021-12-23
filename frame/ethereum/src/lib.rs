@@ -24,7 +24,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
-use ethereum_types::{Bloom, BloomInput, H160, H256, H64, U256, U64};
+use ethereum_types::{Bloom, BloomInput, H160, H256, H64, U256};
 use evm::ExitReason;
 use fp_consensus::{PostLog, PreLog, FRONTIER_ENGINE_ID};
 use fp_evm::CallOrCreateInfo;
@@ -48,7 +48,7 @@ use sp_runtime::{
 use sp_std::{marker::PhantomData, prelude::*};
 
 pub use ethereum::{
-	BlockV2 as Block, LegacyTransactionMessage, Log, ReceiptV2 as Receipt, TransactionAction,
+	BlockV2 as Block, LegacyTransactionMessage, Log, ReceiptV3 as Receipt, TransactionAction,
 	TransactionV2 as Transaction,
 };
 pub use fp_rpc::TransactionStatus;
@@ -638,11 +638,9 @@ impl<T: Config> Pallet<T> {
 		};
 
 		let receipt = {
-			let state_root = match reason {
-				ExitReason::Succeed(_) => H256::from_low_u64_be(1),
-				ExitReason::Error(_) => H256::from_low_u64_le(0),
-				ExitReason::Revert(_) => H256::from_low_u64_le(0),
-				ExitReason::Fatal(_) => H256::from_low_u64_le(0),
+			let status_code: u8 = match reason {
+				ExitReason::Succeed(_) => 1,
+				_ => 0,
 			};
 			let logs_bloom = status.clone().logs_bloom;
 			let logs = status.clone().logs;
@@ -656,20 +654,20 @@ impl<T: Config> Pallet<T> {
 				used_gas
 			};
 			match &transaction {
-				Transaction::Legacy(_) => Receipt::Legacy(ethereum::ReceiptData {
-					state_root,
+				Transaction::Legacy(_) => Receipt::Legacy(ethereum::EIP658ReceiptData {
+					status_code,
 					used_gas: cumulative_gas_used,
 					logs_bloom,
 					logs,
 				}),
-				Transaction::EIP2930(_) => Receipt::EIP2930(ethereum::ReceiptData {
-					state_root,
+				Transaction::EIP2930(_) => Receipt::EIP2930(ethereum::EIP2930ReceiptData {
+					status_code,
 					used_gas: cumulative_gas_used,
 					logs_bloom,
 					logs,
 				}),
-				Transaction::EIP1559(_) => Receipt::EIP1559(ethereum::ReceiptData {
-					state_root,
+				Transaction::EIP1559(_) => Receipt::EIP1559(ethereum::EIP2930ReceiptData {
+					status_code,
 					used_gas: cumulative_gas_used.saturating_add(used_gas),
 					logs_bloom,
 					logs,

@@ -111,7 +111,7 @@ where
 	}
 
 	/// Return the current receipt.
-	fn current_receipts(&self, block: &BlockId<Block>) -> Option<Vec<ethereum::ReceiptV2>> {
+	fn current_receipts(&self, block: &BlockId<Block>) -> Option<Vec<ethereum::ReceiptV3>> {
 		self.query_storage::<Vec<ethereum::ReceiptV0>>(
 			block,
 			&StorageKey(storage_prefix_build(b"Ethereum", b"CurrentReceipts")),
@@ -119,7 +119,14 @@ where
 		.map(|receipts| {
 			receipts
 				.into_iter()
-				.map(|r| ethereum::ReceiptV2::Legacy(r))
+				.map(|r| {
+					ethereum::ReceiptV3::Legacy(ethereum::EIP658ReceiptData {
+						status_code: r.state_root.to_low_u64_be() as u8,
+						used_gas: r.used_gas,
+						logs_bloom: r.logs_bloom,
+						logs: r.logs,
+					})
+				})
 				.collect()
 		})
 	}

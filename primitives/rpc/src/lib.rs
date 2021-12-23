@@ -118,7 +118,7 @@ sp_api::decl_runtime_apis! {
 		#[changed_in(4)]
 		fn current_receipts() -> Option<Vec<ethereum::ReceiptV0>>;
 		/// Return the current receipt.
-		fn current_receipts() -> Option<Vec<ethereum::ReceiptV2>>;
+		fn current_receipts() -> Option<Vec<ethereum::ReceiptV3>>;
 		/// Return the current transaction status.
 		fn current_transaction_statuses() -> Option<Vec<TransactionStatus>>;
 		/// Return all the current data for a block in a single runtime call. Legacy.
@@ -137,7 +137,7 @@ sp_api::decl_runtime_apis! {
 		);
 		fn current_all() -> (
 			Option<ethereum::BlockV2>,
-			Option<Vec<ethereum::ReceiptV2>>,
+			Option<Vec<ethereum::ReceiptV3>>,
 			Option<Vec<TransactionStatus>>
 		);
 		/// Receives a `Vec<OpaqueExtrinsic>` and filters all the ethereum transactions. Legacy.
