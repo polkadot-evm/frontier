@@ -36,7 +36,7 @@ sc-network = { version = "0.10.0-dev", git = "https://github.com/paritytech/subs
 pallet-evm = { version = "6.0.0-dev", path = "../../frame/evm" }
 fp-evm = { version = "3.0.0-dev", path = "../../primitives/evm" }
 pallet-ethereum = { version = "4.0.0-dev", path = "../../frame/ethereum" }
-ethereum = { version = "0.10.0", features = ["with-codec"] }
+ethereum = { version = "0.11.0", features = ["with-codec"] }
 codec = { package = "parity-scale-codec", version = "2.0.0" }
 rlp = "0.5"
 futures = { version = "0.3.1", features = ["compat"] }
