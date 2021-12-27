@@ -53,14 +53,6 @@ where
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	C: Send + Sync + 'static,
 {
-	// My attempt using result
-	// fn query_storage<T: Decode>(&self, id: &BlockId<B>, key: &StorageKey) -> Result<T> {
-	// 	let raw_data = self.client.storage(id, key)?
-	// 		.ok_or("Storage provider returned Ok(None)")?;
-	//
-	// 	Decode::decode(&mut &raw_data.0[..]).map_err(|_| "Could not decode data".into())
-	// }
-
 	fn query_storage<T: Decode>(&self, id: &BlockId<B>, key: &StorageKey) -> Option<T> {
 		if let Ok(Some(data)) = self.client.storage(id, key) {
 			if let Ok(result) = Decode::decode(&mut &data.0[..]) {
