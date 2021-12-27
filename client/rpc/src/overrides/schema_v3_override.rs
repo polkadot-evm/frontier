@@ -30,12 +30,12 @@ use std::{marker::PhantomData, sync::Arc};
 use super::{blake2_128_extend, storage_prefix_build, StorageOverride};
 
 /// An override for runtimes that use Schema V1
-pub struct SchemaV2Override<B: BlockT, C, BE> {
+pub struct SchemaV3Override<B: BlockT, C, BE> {
 	client: Arc<C>,
 	_marker: PhantomData<(B, BE)>,
 }
 
-impl<B: BlockT, C, BE> SchemaV2Override<B, C, BE> {
+impl<B: BlockT, C, BE> SchemaV3Override<B, C, BE> {
 	pub fn new(client: Arc<C>) -> Self {
 		Self {
 			client,
@@ -44,7 +44,7 @@ impl<B: BlockT, C, BE> SchemaV2Override<B, C, BE> {
 	}
 }
 
-impl<B, C, BE> SchemaV2Override<B, C, BE>
+impl<B, C, BE> SchemaV3Override<B, C, BE>
 where
 	C: StorageProvider<B, BE> + AuxStore,
 	C: HeaderBackend<B> + HeaderMetadata<B, Error = BlockChainError> + 'static,
@@ -71,7 +71,7 @@ where
 	}
 }
 
-impl<Block, C, BE> StorageOverride<Block> for SchemaV2Override<Block, C, BE>
+impl<Block, C, BE> StorageOverride<Block> for SchemaV3Override<Block, C, BE>
 where
 	C: StorageProvider<Block, BE>,
 	C: AuxStore,
@@ -111,23 +111,10 @@ where
 
 	/// Return the current receipt.
 	fn current_receipts(&self, block: &BlockId<Block>) -> Option<Vec<ethereum::ReceiptV3>> {
-		self.query_storage::<Vec<ethereum::ReceiptV0>>(
+		self.query_storage::<Vec<ethereum::ReceiptV3>>(
 			block,
 			&StorageKey(storage_prefix_build(b"Ethereum", b"CurrentReceipts")),
 		)
-		.map(|receipts| {
-			receipts
-				.into_iter()
-				.map(|r| {
-					ethereum::ReceiptV3::Legacy(ethereum::EIP658ReceiptData {
-						status_code: r.state_root.to_low_u64_be() as u8,
-						used_gas: r.used_gas,
-						logs_bloom: r.logs_bloom,
-						logs: r.logs,
-					})
-				})
-				.collect()
-		})
 	}
 
 	/// Return the current transaction status.

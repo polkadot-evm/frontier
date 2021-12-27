@@ -239,7 +239,7 @@ pub mod pallet {
 		fn on_runtime_upgrade() -> Weight {
 			frame_support::storage::unhashed::put::<EthereumStorageSchema>(
 				&PALLET_ETHEREUM_SCHEMA,
-				&EthereumStorageSchema::V2,
+				&EthereumStorageSchema::V3,
 			);
 
 			T::DbWeight::get().write
@@ -316,7 +316,7 @@ pub mod pallet {
 			<Pallet<T>>::store_block(false, U256::zero());
 			frame_support::storage::unhashed::put::<EthereumStorageSchema>(
 				&PALLET_ETHEREUM_SCHEMA,
-				&EthereumStorageSchema::V2,
+				&EthereumStorageSchema::V3,
 			);
 		}
 	}
@@ -865,6 +865,7 @@ pub enum EthereumStorageSchema {
 	Undefined,
 	V1,
 	V2,
+	V3,
 }
 
 impl Default for EthereumStorageSchema {

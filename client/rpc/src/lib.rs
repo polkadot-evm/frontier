@@ -27,7 +27,8 @@ pub use eth::{
 pub use eth_pubsub::{EthPubSubApi, EthPubSubApiServer, HexEncodedIdProvider};
 pub use ethereum::TransactionV2 as EthereumTransaction;
 pub use overrides::{
-	OverrideHandle, RuntimeApiStorageOverride, SchemaV1Override, SchemaV2Override, StorageOverride,
+	OverrideHandle, RuntimeApiStorageOverride, SchemaV1Override, SchemaV2Override,
+	SchemaV3Override, StorageOverride,
 };
 
 use ethereum_types::{H160, H256};

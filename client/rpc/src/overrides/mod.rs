@@ -25,11 +25,13 @@ use std::{marker::PhantomData, sync::Arc};
 
 mod schema_v1_override;
 mod schema_v2_override;
+mod schema_v3_override;
 
 pub use fc_rpc_core::{EthApiServer, NetApiServer};
 use pallet_ethereum::EthereumStorageSchema;
 pub use schema_v1_override::SchemaV1Override;
 pub use schema_v2_override::SchemaV2Override;
+pub use schema_v3_override::SchemaV3Override;
 
 pub struct OverrideHandle<Block: BlockT> {
 	pub schemas: BTreeMap<EthereumStorageSchema, Box<dyn StorageOverride<Block> + Send + Sync>>,
