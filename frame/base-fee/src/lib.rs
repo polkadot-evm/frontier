@@ -36,6 +36,7 @@ pub mod pallet {
 		type Event: From<Event> + IsType<<Self as frame_system::Config>::Event>;
 		/// Lower and upper bounds for increasing / decreasing `BaseFeePerGas`.
 		type Threshold: BaseFeeThreshold;
+		type IsActive: Get<bool>;
 	}
 
 	#[pallet::pallet]
@@ -93,13 +94,13 @@ pub mod pallet {
 	pub type BaseFeePerGas<T> = StorageValue<_, U256, ValueQuery, DefaultBaseFeePerGas>;
 
 	#[pallet::type_value]
-	pub fn DefaultIsActive() -> bool {
-		true
+	pub fn DefaultIsActive<T: Config>() -> bool {
+		T::IsActive::get()
 	}
 
 	#[pallet::storage]
 	#[pallet::getter(fn is_active)]
-	pub type IsActive<T> = StorageValue<_, bool, ValueQuery, DefaultIsActive>;
+	pub type IsActive<T> = StorageValue<_, bool, ValueQuery, DefaultIsActive<T>>;
 
 	#[pallet::type_value]
 	pub fn DefaultElasticity() -> Permill {
@@ -196,6 +197,11 @@ pub mod pallet {
 					});
 				}
 			}
+		}
+
+		fn on_runtime_upgrade() -> Weight {
+			<IsActive<T>>::put(T::IsActive::get());
+			T::DbWeight::get().write
 		}
 	}
 
