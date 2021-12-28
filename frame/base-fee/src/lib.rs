@@ -302,7 +302,7 @@ mod tests {
 	}
 
 	frame_support::parameter_types! {
-		pub const Threshold: (u8, u8) = (0, 100);
+		pub IsActive: bool = true;
 	}
 
 	pub struct BaseFeeThreshold;
@@ -321,6 +321,7 @@ mod tests {
 	impl Config for Test {
 		type Event = Event;
 		type Threshold = BaseFeeThreshold;
+		type IsActive = IsActive;
 	}
 
 	frame_support::construct_runtime!(
