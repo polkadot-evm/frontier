@@ -339,7 +339,7 @@ where
 	let max_duration = time::Duration::from_secs(10);
 	let begin_request = time::Instant::now();
 
-	let mut current_number = to;
+	let mut current_number = from;
 
 	// Pre-calculate BloomInput for reuse.
 	let topics_input = if let Some(_) = &filter.topics {
@@ -369,7 +369,7 @@ where
 		default_schema = local_cache.get(&cache_keys[0]);
 	}
 
-	while current_number >= from {
+	while current_number <= to {
 		let id = BlockId::Number(current_number);
 		let substrate_hash = client
 			.expect_block_hash_from_id(&id)
@@ -428,10 +428,10 @@ where
 				max_duration.as_secs()
 			)));
 		}
-		if current_number == Zero::zero() {
+		if current_number == to {
 			break;
 		} else {
-			current_number = current_number.saturating_sub(One::one());
+			current_number = current_number.saturating_add(One::one());
 		}
 	}
 	Ok(())
