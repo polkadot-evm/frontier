@@ -764,6 +764,11 @@
 <span id="764">764</span>
 <span id="765">765</span>
 <span id="766">766</span>
+<span id="767">767</span>
+<span id="768">768</span>
+<span id="769">769</span>
+<span id="770">770</span>
+<span id="771">771</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The Substrate Node Template runtime. This can be compiled with `#[no_std]`, ready for Wasm.</span>
 
 <span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
@@ -1098,6 +1103,10 @@
 	<span class="kw">type</span> <span class="ident">MinGasPriceBoundDivisor</span> <span class="op">=</span> <span class="ident">BoundDivision</span>;
 }
 
+<span class="macro">frame_support::parameter_types!</span> {
+	<span class="kw">pub</span> <span class="ident">IsActive</span>: <span class="ident">bool</span> <span class="op">=</span> <span class="bool-val">true</span>;
+}
+
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">BaseFeeThreshold</span>;
 <span class="kw">impl</span> <span class="ident">pallet_base_fee::BaseFeeThreshold</span> <span class="kw">for</span> <span class="ident">BaseFeeThreshold</span> {
 	<span class="kw">fn</span> <span class="ident">lower</span>() -&gt; <span class="ident">Permill</span> {
@@ -1114,6 +1123,7 @@
 <span class="kw">impl</span> <span class="ident">pallet_base_fee::Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
 	<span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
 	<span class="kw">type</span> <span class="ident">Threshold</span> <span class="op">=</span> <span class="ident">BaseFeeThreshold</span>;
+	<span class="kw">type</span> <span class="ident">IsActive</span> <span class="op">=</span> <span class="ident">IsActive</span>;
 }
 
 <span class="kw">impl</span> <span class="ident">pallet_randomness_collective_flip::Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {}

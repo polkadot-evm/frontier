@@ -458,6 +458,13 @@
 <span id="458">458</span>
 <span id="459">459</span>
 <span id="460">460</span>
+<span id="461">461</span>
+<span id="462">462</span>
+<span id="463">463</span>
+<span id="464">464</span>
+<span id="465">465</span>
+<span id="466">466</span>
+<span id="467">467</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -496,6 +503,7 @@
 		<span class="kw">type</span> <span class="ident">Event</span>: <span class="ident">From</span><span class="op">&lt;</span><span class="ident">Event</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">IsType</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="self">Self</span> <span class="kw">as</span> <span class="ident">frame_system::Config</span><span class="op">&gt;</span><span class="ident">::Event</span><span class="op">&gt;</span>;
 		<span class="doccomment">/// Lower and upper bounds for increasing / decreasing `BaseFeePerGas`.</span>
 		<span class="kw">type</span> <span class="ident">Threshold</span>: <span class="ident">BaseFeeThreshold</span>;
+		<span class="kw">type</span> <span class="ident">IsActive</span>: <span class="ident">Get</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span>;
 	}
 
 	<span class="attribute">#[<span class="ident">pallet::pallet</span>]</span>
@@ -553,13 +561,13 @@
 	<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">BaseFeePerGas</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">StorageValue</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">U256</span>, <span class="ident">ValueQuery</span>, <span class="ident">DefaultBaseFeePerGas</span><span class="op">&gt;</span>;
 
 	<span class="attribute">#[<span class="ident">pallet::type_value</span>]</span>
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">DefaultIsActive</span>() -&gt; <span class="ident">bool</span> {
-		<span class="bool-val">true</span>
+	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">DefaultIsActive</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span>() -&gt; <span class="ident">bool</span> {
+		<span class="ident">T::IsActive::get</span>()
 	}
 
 	<span class="attribute">#[<span class="ident">pallet::storage</span>]</span>
 	<span class="attribute">#[<span class="ident">pallet::getter</span>(<span class="kw">fn</span> <span class="ident">is_active</span>)]</span>
-	<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">IsActive</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">StorageValue</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">bool</span>, <span class="ident">ValueQuery</span>, <span class="ident">DefaultIsActive</span><span class="op">&gt;</span>;
+	<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">IsActive</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">StorageValue</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">bool</span>, <span class="ident">ValueQuery</span>, <span class="ident">DefaultIsActive</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>;
 
 	<span class="attribute">#[<span class="ident">pallet::type_value</span>]</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">DefaultElasticity</span>() -&gt; <span class="ident">Permill</span> {
@@ -656,6 +664,11 @@
 					});
 				}
 			}
+		}
+
+		<span class="kw">fn</span> <span class="ident">on_runtime_upgrade</span>() -&gt; <span class="ident">Weight</span> {
+			<span class="op">&lt;</span><span class="ident">IsActive</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::put</span>(<span class="ident">T::IsActive::get</span>());
+			<span class="ident">T::DbWeight::get</span>().<span class="ident">write</span>
 		}
 	}
 
@@ -756,7 +769,7 @@
 	}
 
 	<span class="macro">frame_support::parameter_types!</span> {
-		<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">Threshold</span>: (<span class="ident">u8</span>, <span class="ident">u8</span>) <span class="op">=</span> (<span class="number">0</span>, <span class="number">100</span>);
+		<span class="kw">pub</span> <span class="ident">IsActive</span>: <span class="ident">bool</span> <span class="op">=</span> <span class="bool-val">true</span>;
 	}
 
 	<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">BaseFeeThreshold</span>;
@@ -775,6 +788,7 @@
 	<span class="kw">impl</span> <span class="ident">Config</span> <span class="kw">for</span> <span class="ident">Test</span> {
 		<span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
 		<span class="kw">type</span> <span class="ident">Threshold</span> <span class="op">=</span> <span class="ident">BaseFeeThreshold</span>;
+		<span class="kw">type</span> <span class="ident">IsActive</span> <span class="op">=</span> <span class="ident">IsActive</span>;
 	}
 
 	<span class="macro">frame_support::construct_runtime!</span>(
