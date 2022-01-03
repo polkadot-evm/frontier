@@ -3168,7 +3168,7 @@
 	<span class="kw">let</span> <span class="ident">max_duration</span> <span class="op">=</span> <span class="ident">time::Duration::from_secs</span>(<span class="number">10</span>);
 	<span class="kw">let</span> <span class="ident">begin_request</span> <span class="op">=</span> <span class="ident">time::Instant::now</span>();
 
-	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">current_number</span> <span class="op">=</span> <span class="ident">to</span>;
+	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">current_number</span> <span class="op">=</span> <span class="ident">from</span>;
 
 	<span class="comment">// Pre-calculate BloomInput for reuse.</span>
 	<span class="kw">let</span> <span class="ident">topics_input</span> <span class="op">=</span> <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="kw">_</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">filter</span>.<span class="ident">topics</span> {
@@ -3198,7 +3198,7 @@
 		<span class="ident">default_schema</span> <span class="op">=</span> <span class="ident">local_cache</span>.<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">cache_keys</span>[<span class="number">0</span>]);
 	}
 
-	<span class="kw">while</span> <span class="ident">current_number</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">from</span> {
+	<span class="kw">while</span> <span class="ident">current_number</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">to</span> {
 		<span class="kw">let</span> <span class="ident">id</span> <span class="op">=</span> <span class="ident">BlockId::Number</span>(<span class="ident">current_number</span>);
 		<span class="kw">let</span> <span class="ident">substrate_hash</span> <span class="op">=</span> <span class="ident">client</span>
 			.<span class="ident">expect_block_hash_from_id</span>(<span class="kw-2">&amp;</span><span class="ident">id</span>)
@@ -3257,10 +3257,10 @@
 				<span class="ident">max_duration</span>.<span class="ident">as_secs</span>()
 			)));
 		}
-		<span class="kw">if</span> <span class="ident">current_number</span> <span class="op">==</span> <span class="ident">Zero::zero</span>() {
+		<span class="kw">if</span> <span class="ident">current_number</span> <span class="op">==</span> <span class="ident">to</span> {
 			<span class="kw">break</span>;
 		} <span class="kw">else</span> {
-			<span class="ident">current_number</span> <span class="op">=</span> <span class="ident">current_number</span>.<span class="ident">saturating_sub</span>(<span class="ident">One::one</span>());
+			<span class="ident">current_number</span> <span class="op">=</span> <span class="ident">current_number</span>.<span class="ident">saturating_add</span>(<span class="ident">One::one</span>());
 		}
 	}
 	<span class="prelude-val">Ok</span>(())
