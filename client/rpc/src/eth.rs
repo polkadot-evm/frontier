@@ -1174,6 +1174,7 @@ where
 					Ok(Bytes(info.value))
 				} else if api_version == 4 {
 					// Post-london + access list support
+					let access_list = access_list.unwrap_or_default();
 					let info = api
 						.call(
 							&id,
@@ -1186,7 +1187,12 @@ where
 							max_priority_fee_per_gas,
 							nonce,
 							false,
-							access_list,
+							Some(
+								access_list
+									.into_iter()
+									.map(|item| (item.address, item.slots))
+									.collect(),
+							),
 						)
 						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
 						.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
@@ -1239,6 +1245,7 @@ where
 					Ok(Bytes(info.value[..].to_vec()))
 				} else if api_version == 4 {
 					// Post-london + access list support
+					let access_list = access_list.unwrap_or_default();
 					let info = api
 						.create(
 							&id,
@@ -1250,7 +1257,12 @@ where
 							max_priority_fee_per_gas,
 							nonce,
 							false,
-							access_list,
+							Some(
+								access_list
+									.into_iter()
+									.map(|item| (item.address, item.slots))
+									.collect(),
+							),
 						)
 						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
 						.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
@@ -1425,6 +1437,7 @@ where
 							.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?
 						} else {
 							// Post-london + access list support
+							let access_list = access_list.unwrap_or_default();
 							api.call(
 								&BlockId::Hash(best_hash),
 								from.unwrap_or_default(),
@@ -1436,7 +1449,12 @@ where
 								max_priority_fee_per_gas,
 								nonce,
 								true,
-								access_list,
+								Some(
+									access_list
+										.into_iter()
+										.map(|item| (item.address, item.slots))
+										.collect(),
+								),
 							)
 							.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
 							.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?
@@ -1478,6 +1496,7 @@ where
 							.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?
 						} else {
 							// Post-london + access list support
+							let access_list = access_list.unwrap_or_default();
 							api.create(
 								&BlockId::Hash(best_hash),
 								from.unwrap_or_default(),
@@ -1488,7 +1507,12 @@ where
 								max_priority_fee_per_gas,
 								nonce,
 								true,
-								access_list,
+								Some(
+									access_list
+										.into_iter()
+										.map(|item| (item.address, item.slots))
+										.collect(),
+								),
 							)
 							.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
 							.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?

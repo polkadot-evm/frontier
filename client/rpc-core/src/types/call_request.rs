@@ -17,7 +17,8 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use crate::types::Bytes;
-use ethereum_types::{H160, H256, U256};
+use ethereum::AccessListItem;
+use ethereum_types::{H160, U256};
 use serde::Deserialize;
 
 /// Call request
@@ -44,5 +45,5 @@ pub struct CallRequest {
 	/// Nonce
 	pub nonce: Option<U256>,
 	/// AccessList
-	pub access_list: Option<Vec<(H160, Vec<H256>)>>,
+	pub access_list: Option<Vec<AccessListItem>>,
 }

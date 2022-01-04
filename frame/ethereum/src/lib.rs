@@ -48,8 +48,8 @@ use sp_runtime::{
 use sp_std::{marker::PhantomData, prelude::*};
 
 pub use ethereum::{
-	BlockV2 as Block, LegacyTransactionMessage, Log, ReceiptV3 as Receipt, TransactionAction,
-	TransactionV2 as Transaction,
+	AccessListItem, BlockV2 as Block, LegacyTransactionMessage, Log, ReceiptV3 as Receipt,
+	TransactionAction, TransactionV2 as Transaction,
 };
 pub use fp_rpc::TransactionStatus;
 
