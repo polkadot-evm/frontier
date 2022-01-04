@@ -161,9 +161,9 @@ impl SubscriptionResult {
 		let mut log_index: u32 = 0;
 		for (receipt_index, receipt) in receipts.into_iter().enumerate() {
 			let receipt_logs = match receipt {
-				ethereum::ReceiptV3::Legacy(d) => d.logs,
-				ethereum::ReceiptV3::EIP2930(d) => d.logs,
-				ethereum::ReceiptV3::EIP1559(d) => d.logs,
+				ethereum::ReceiptV3::Legacy(d)
+				| ethereum::ReceiptV3::EIP2930(d)
+				| ethereum::ReceiptV3::EIP1559(d) => d.logs,
 			};
 			let mut transaction_log_index: u32 = 0;
 			let transaction_hash: Option<H256> = if receipt_logs.len() > 0 {

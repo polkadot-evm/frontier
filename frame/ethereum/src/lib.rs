@@ -418,9 +418,9 @@ impl<T: Config> Pallet<T> {
 			statuses.push(status);
 			receipts.push(receipt.clone());
 			let (logs, used_gas) = match receipt {
-				Receipt::Legacy(d) => (d.logs.clone(), d.used_gas),
-				Receipt::EIP2930(d) => (d.logs.clone(), d.used_gas),
-				Receipt::EIP1559(d) => (d.logs.clone(), d.used_gas),
+				Receipt::Legacy(d) | Receipt::EIP2930(d) | Receipt::EIP1559(d) => {
+					(d.logs.clone(), d.used_gas)
+				}
 			};
 			cumulative_gas_used = used_gas;
 			Self::logs_bloom(logs, &mut logs_bloom);

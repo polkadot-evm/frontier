@@ -1873,15 +1873,9 @@ where
 				let receipt = receipts[index].clone();
 
 				let (logs, logs_bloom, status_code, cumulative_gas_used) = match receipt {
-					ethereum::ReceiptV3::Legacy(d) => {
-						(d.logs, d.logs_bloom, d.status_code, d.used_gas)
-					}
-					ethereum::ReceiptV3::EIP2930(d) => {
-						(d.logs, d.logs_bloom, d.status_code, d.used_gas)
-					}
-					ethereum::ReceiptV3::EIP1559(d) => {
-						(d.logs, d.logs_bloom, d.status_code, d.used_gas)
-					}
+					ethereum::ReceiptV3::Legacy(d)
+					| ethereum::ReceiptV3::EIP2930(d)
+					| ethereum::ReceiptV3::EIP1559(d) => (d.logs, d.logs_bloom, d.status_code, d.used_gas),
 				};
 
 				let status = statuses[index].clone();
@@ -1890,9 +1884,9 @@ where
 				let gas_used = if index > 0 {
 					let previous_receipt = receipts[index - 1].clone();
 					let previous_gas_used = match previous_receipt {
-						ethereum::ReceiptV3::Legacy(d) => d.used_gas,
-						ethereum::ReceiptV3::EIP2930(d) => d.used_gas,
-						ethereum::ReceiptV3::EIP1559(d) => d.used_gas,
+						ethereum::ReceiptV3::Legacy(d)
+						| ethereum::ReceiptV3::EIP2930(d)
+						| ethereum::ReceiptV3::EIP1559(d) => d.used_gas,
 					};
 					cumulative_gas_used.saturating_sub(previous_gas_used)
 				} else {
@@ -1928,9 +1922,9 @@ where
 								cumulative_receipts
 									.iter()
 									.map(|r| match r {
-										ethereum::ReceiptV3::Legacy(d) => d.logs.len() as u32,
-										ethereum::ReceiptV3::EIP2930(d) => d.logs.len() as u32,
-										ethereum::ReceiptV3::EIP1559(d) => d.logs.len() as u32,
+										ethereum::ReceiptV3::Legacy(d)
+										| ethereum::ReceiptV3::EIP2930(d)
+										| ethereum::ReceiptV3::EIP1559(d) => d.logs.len() as u32,
 									})
 									.sum::<u32>(),
 							);
@@ -2794,9 +2788,7 @@ where
 					.enumerate()
 					.map(|(i, receipt)| TransactionHelper {
 						gas_used: match receipt {
-							ethereum::ReceiptV3::Legacy(d) => used_gas(d.used_gas, &mut previous_cumulative_gas),
-							ethereum::ReceiptV3::EIP2930(d) => used_gas(d.used_gas, &mut previous_cumulative_gas),
-							ethereum::ReceiptV3::EIP1559(d) => used_gas(d.used_gas, &mut previous_cumulative_gas),
+							ethereum::ReceiptV3::Legacy(d) | ethereum::ReceiptV3::EIP2930(d) | ethereum::ReceiptV3::EIP1559(d) => used_gas(d.used_gas, &mut previous_cumulative_gas),
 						},
 						effective_reward: match block.transactions.get(i) {
 							Some(&ethereum::TransactionV2::Legacy(ref t)) => {
