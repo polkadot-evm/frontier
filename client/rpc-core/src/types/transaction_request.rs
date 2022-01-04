@@ -57,7 +57,7 @@ pub struct TransactionRequest {
 	pub data: Option<Bytes>,
 	/// Transaction's nonce
 	pub nonce: Option<U256>,
-	/// TODO! Pre-pay to warm storage access.
+	/// Pre-pay to warm storage access.
 	#[serde(default)]
 	pub access_list: Option<Vec<(H160, Vec<H256>)>>,
 }

@@ -1079,6 +1079,7 @@ where
 			value,
 			data,
 			nonce,
+			access_list,
 		} = request;
 
 		let (gas_price, max_fee_per_gas, max_priority_fee_per_gas) = {
@@ -1133,6 +1134,7 @@ where
 		match to {
 			Some(to) => {
 				if api_version == 1 {
+					// Legacy pre-london
 					#[allow(deprecated)]
 					let info = api.call_before_version_2(
 						&id,
@@ -1150,7 +1152,28 @@ where
 
 					error_on_execution_failure(&info.exit_reason, &info.value)?;
 					Ok(Bytes(info.value))
-				} else if api_version >= 2 {
+				} else if api_version >= 2 && api_version < 4 {
+					// Post-london
+					#[allow(deprecated)]
+					let info = api.call_before_version_4(
+						&id,
+						from.unwrap_or_default(),
+						to,
+						data,
+						value.unwrap_or_default(),
+						gas_limit,
+						max_fee_per_gas,
+						max_priority_fee_per_gas,
+						nonce,
+						false,
+					)
+					.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
+					.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
+
+					error_on_execution_failure(&info.exit_reason, &info.value)?;
+					Ok(Bytes(info.value))
+				} else if api_version == 4 {
+					// Post-london + access list support
 					let info = api
 						.call(
 							&id,
@@ -1163,6 +1186,7 @@ where
 							max_priority_fee_per_gas,
 							nonce,
 							false,
+							access_list,
 						)
 						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
 						.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
@@ -1177,6 +1201,7 @@ where
 			}
 			None => {
 				if api_version == 1 {
+					// Legacy pre-london
 					#[allow(deprecated)]
 					let info = api.create_before_version_2(
 						&id,
@@ -1193,7 +1218,27 @@ where
 
 					error_on_execution_failure(&info.exit_reason, &[])?;
 					Ok(Bytes(info.value[..].to_vec()))
-				} else if api_version >= 2 {
+				} else if api_version >= 2 && api_version < 4 {
+					// Post-london
+					#[allow(deprecated)]
+					let info = api.create_before_version_4(
+						&id,
+						from.unwrap_or_default(),
+						data,
+						value.unwrap_or_default(),
+						gas_limit,
+						max_fee_per_gas,
+						max_priority_fee_per_gas,
+						nonce,
+						false,
+					)
+					.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
+					.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
+
+					error_on_execution_failure(&info.exit_reason, &[])?;
+					Ok(Bytes(info.value[..].to_vec()))
+				} else if api_version == 4 {
+					// Post-london + access list support
 					let info = api
 						.create(
 							&id,
@@ -1205,6 +1250,7 @@ where
 							max_priority_fee_per_gas,
 							nonce,
 							false,
+							access_list,
 						)
 						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
 						.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
@@ -1333,6 +1379,7 @@ where
 					value,
 					data,
 					nonce,
+					access_list,
 					..
 				} = request;
 
@@ -1344,6 +1391,7 @@ where
 				let (exit_reason, data, used_gas) = match to {
 					Some(to) => {
 						let info = if api_version == 1 {
+							// Legacy pre-london
 							#[allow(deprecated)]
 							api.call_before_version_2(
 								&BlockId::Hash(best_hash),
@@ -1358,8 +1406,10 @@ where
 							)
 							.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
 							.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?
-						} else {
-							api.call(
+						} else if api_version < 4 {
+							// Post-london
+							#[allow(deprecated)]
+							api.call_before_version_4(
 								&BlockId::Hash(best_hash),
 								from.unwrap_or_default(),
 								to,
@@ -1373,12 +1423,30 @@ where
 							)
 							.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
 							.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?
+						} else {
+							// Post-london + access list support
+							api.call(
+								&BlockId::Hash(best_hash),
+								from.unwrap_or_default(),
+								to,
+								data,
+								value.unwrap_or_default(),
+								gas_limit,
+								max_fee_per_gas,
+								max_priority_fee_per_gas,
+								nonce,
+								true,
+								access_list,
+							)
+							.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
+							.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?
 						};
 
 						(info.exit_reason, info.value, info.used_gas)
 					}
 					None => {
 						let info = if api_version == 1 {
+							// Legacy pre-london
 							#[allow(deprecated)]
 							api.create_before_version_2(
 								&BlockId::Hash(best_hash),
@@ -1392,7 +1460,24 @@ where
 							)
 							.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
 							.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?
+						} else if api_version < 4 {
+							// Post-london
+							#[allow(deprecated)]
+							api.create_before_version_4(
+								&BlockId::Hash(best_hash),
+								from.unwrap_or_default(),
+								data,
+								value.unwrap_or_default(),
+								gas_limit,
+								max_fee_per_gas,
+								max_priority_fee_per_gas,
+								nonce,
+								true,
+							)
+							.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
+							.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?
 						} else {
+							// Post-london + access list support
 							api.create(
 								&BlockId::Hash(best_hash),
 								from.unwrap_or_default(),
@@ -1403,6 +1488,7 @@ where
 								max_priority_fee_per_gas,
 								nonce,
 								true,
+								access_list,
 							)
 							.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
 							.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?
