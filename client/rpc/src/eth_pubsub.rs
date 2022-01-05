@@ -151,7 +151,7 @@ impl SubscriptionResult {
 	pub fn logs(
 		&self,
 		block: EthereumBlock,
-		receipts: Vec<ethereum::Receipt>,
+		receipts: Vec<ethereum::ReceiptV3>,
 		params: &FilteredParams,
 	) -> Vec<Log> {
 		let block_hash = Some(H256::from_slice(
@@ -160,13 +160,18 @@ impl SubscriptionResult {
 		let mut logs: Vec<Log> = vec![];
 		let mut log_index: u32 = 0;
 		for (receipt_index, receipt) in receipts.into_iter().enumerate() {
+			let receipt_logs = match receipt {
+				ethereum::ReceiptV3::Legacy(d)
+				| ethereum::ReceiptV3::EIP2930(d)
+				| ethereum::ReceiptV3::EIP1559(d) => d.logs,
+			};
 			let mut transaction_log_index: u32 = 0;
-			let transaction_hash: Option<H256> = if receipt.logs.len() > 0 {
+			let transaction_hash: Option<H256> = if receipt_logs.len() > 0 {
 				Some(block.transactions[receipt_index as usize].hash())
 			} else {
 				None
 			};
-			for log in receipt.logs {
+			for log in receipt_logs {
 				if self.add_log(block_hash.unwrap(), &log, &block, params) {
 					logs.push(Log {
 						address: log.address,

@@ -1,7 +1,7 @@
 import { expect } from "chai";
 
 import Test from "../build/contracts/Test.json"
-import { describeWithFrontier, createAndFinalizeBlock } from "./util";
+import { describeWithFrontier, createAndFinalizeBlock,customRequest } from "./util";
 import { AbiItem } from "web3-utils";
 
 describeWithFrontier("Frontier RPC (Gas)", (context) => {
@@ -56,6 +56,19 @@ describeWithFrontier("Frontier RPC (Gas)", (context) => {
 		});
 
 		expect(await contract.methods.multiply(3).estimateGas()).to.equal(21204);
+	});
+
+	it("eth_estimateGas should handle AccessList alias", async function () {
+		let result = (await customRequest(context.web3, "eth_estimateGas", [{
+			from: GENESIS_ACCOUNT,
+			data: Test.bytecode,
+			accessList: [{
+				address: "0x0000000000000000000000000000000000000000",
+				storageKeys: ["0x0000000000000000000000000000000000000000000000000000000000000000"]
+			}]
+		}])).result;
+		// 4300 == 1900 for one key and 2400 for one storage.
+		expect(result).to.equal(context.web3.utils.numberToHex(196657 + 4300));
 	});
 
 });

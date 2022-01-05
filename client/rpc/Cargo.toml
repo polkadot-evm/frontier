@@ -13,7 +13,7 @@ jsonrpc-core-client = "18.0"
 jsonrpc-pubsub = "18.0"
 log = "0.4.8"
 ethereum-types = "0.12"
-evm = "0.33.0"
+evm = "0.33.1"
 fc-consensus = { version = "2.0.0-dev", path = "../consensus" }
 fc-db = { version = "2.0.0-dev", path = "../db" }
 fc-rpc-core = { version = "1.1.0-dev", path = "../rpc-core" }
@@ -36,7 +36,7 @@ sc-network = { version = "0.10.0-dev", git = "https://github.com/paritytech/subs
 pallet-evm = { version = "6.0.0-dev", path = "../../frame/evm" }
 fp-evm = { version = "3.0.0-dev", path = "../../primitives/evm" }
 pallet-ethereum = { version = "4.0.0-dev", path = "../../frame/ethereum" }
-ethereum = { version = "0.10.0", features = ["with-codec"] }
+ethereum = { version = "0.11.1", features = ["with-codec"] }
 codec = { package = "parity-scale-codec", version = "2.0.0" }
 rlp = "0.5"
 futures = { version = "0.3.1", features = ["compat"] }

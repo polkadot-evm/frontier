@@ -25,11 +25,13 @@ use std::{marker::PhantomData, sync::Arc};
 
 mod schema_v1_override;
 mod schema_v2_override;
+mod schema_v3_override;
 
 pub use fc_rpc_core::{EthApiServer, NetApiServer};
 use pallet_ethereum::EthereumStorageSchema;
 pub use schema_v1_override::SchemaV1Override;
 pub use schema_v2_override::SchemaV2Override;
+pub use schema_v3_override::SchemaV3Override;
 
 pub struct OverrideHandle<Block: BlockT> {
 	pub schemas: BTreeMap<EthereumStorageSchema, Box<dyn StorageOverride<Block> + Send + Sync>>,
@@ -49,7 +51,7 @@ pub trait StorageOverride<Block: BlockT> {
 	/// Return the current block.
 	fn current_block(&self, block: &BlockId<Block>) -> Option<EthereumBlock>;
 	/// Return the current receipt.
-	fn current_receipts(&self, block: &BlockId<Block>) -> Option<Vec<ethereum::Receipt>>;
+	fn current_receipts(&self, block: &BlockId<Block>) -> Option<Vec<ethereum::ReceiptV3>>;
 	/// Return the current transaction status.
 	fn current_transaction_statuses(
 		&self,
@@ -143,8 +145,39 @@ where
 	}
 
 	/// Return the current receipt.
-	fn current_receipts(&self, block: &BlockId<Block>) -> Option<Vec<ethereum::Receipt>> {
-		self.client.runtime_api().current_receipts(&block).ok()?
+	fn current_receipts(&self, block: &BlockId<Block>) -> Option<Vec<ethereum::ReceiptV3>> {
+		let api = self.client.runtime_api();
+
+		let api_version = if let Ok(Some(api_version)) =
+			api.api_version::<dyn EthereumRuntimeRPCApi<Block>>(&block)
+		{
+			api_version
+		} else {
+			return None;
+		};
+		if api_version < 4 {
+			#[allow(deprecated)]
+			let old_receipts = api.current_receipts_before_version_4(&block).ok()?;
+			if let Some(receipts) = old_receipts {
+				Some(
+					receipts
+						.into_iter()
+						.map(|r| {
+							ethereum::ReceiptV3::Legacy(ethereum::EIP658ReceiptData {
+								status_code: r.state_root.to_low_u64_be() as u8,
+								used_gas: r.used_gas,
+								logs_bloom: r.logs_bloom,
+								logs: r.logs,
+							})
+						})
+						.collect(),
+				)
+			} else {
+				None
+			}
+		} else {
+			self.client.runtime_api().current_receipts(&block).ok()?
+		}
 	}
 
 	/// Return the current transaction status.

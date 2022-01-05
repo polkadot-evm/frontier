@@ -1079,6 +1079,7 @@ where
 			value,
 			data,
 			nonce,
+			access_list,
 		} = request;
 
 		let (gas_price, max_fee_per_gas, max_priority_fee_per_gas) = {
@@ -1133,6 +1134,7 @@ where
 		match to {
 			Some(to) => {
 				if api_version == 1 {
+					// Legacy pre-london
 					#[allow(deprecated)]
 					let info = api.call_before_version_2(
 						&id,
@@ -1150,7 +1152,29 @@ where
 
 					error_on_execution_failure(&info.exit_reason, &info.value)?;
 					Ok(Bytes(info.value))
-				} else if api_version >= 2 {
+				} else if api_version >= 2 && api_version < 4 {
+					// Post-london
+					#[allow(deprecated)]
+					let info = api.call_before_version_4(
+						&id,
+						from.unwrap_or_default(),
+						to,
+						data,
+						value.unwrap_or_default(),
+						gas_limit,
+						max_fee_per_gas,
+						max_priority_fee_per_gas,
+						nonce,
+						false,
+					)
+					.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
+					.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
+
+					error_on_execution_failure(&info.exit_reason, &info.value)?;
+					Ok(Bytes(info.value))
+				} else if api_version == 4 {
+					// Post-london + access list support
+					let access_list = access_list.unwrap_or_default();
 					let info = api
 						.call(
 							&id,
@@ -1163,6 +1187,12 @@ where
 							max_priority_fee_per_gas,
 							nonce,
 							false,
+							Some(
+								access_list
+									.into_iter()
+									.map(|item| (item.address, item.slots))
+									.collect(),
+							),
 						)
 						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
 						.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
@@ -1177,6 +1207,7 @@ where
 			}
 			None => {
 				if api_version == 1 {
+					// Legacy pre-london
 					#[allow(deprecated)]
 					let info = api.create_before_version_2(
 						&id,
@@ -1193,7 +1224,28 @@ where
 
 					error_on_execution_failure(&info.exit_reason, &[])?;
 					Ok(Bytes(info.value[..].to_vec()))
-				} else if api_version >= 2 {
+				} else if api_version >= 2 && api_version < 4 {
+					// Post-london
+					#[allow(deprecated)]
+					let info = api.create_before_version_4(
+						&id,
+						from.unwrap_or_default(),
+						data,
+						value.unwrap_or_default(),
+						gas_limit,
+						max_fee_per_gas,
+						max_priority_fee_per_gas,
+						nonce,
+						false,
+					)
+					.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
+					.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
+
+					error_on_execution_failure(&info.exit_reason, &[])?;
+					Ok(Bytes(info.value[..].to_vec()))
+				} else if api_version == 4 {
+					// Post-london + access list support
+					let access_list = access_list.unwrap_or_default();
 					let info = api
 						.create(
 							&id,
@@ -1205,6 +1257,12 @@ where
 							max_priority_fee_per_gas,
 							nonce,
 							false,
+							Some(
+								access_list
+									.into_iter()
+									.map(|item| (item.address, item.slots))
+									.collect(),
+							),
 						)
 						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
 						.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
@@ -1333,6 +1391,7 @@ where
 					value,
 					data,
 					nonce,
+					access_list,
 					..
 				} = request;
 
@@ -1344,6 +1403,7 @@ where
 				let (exit_reason, data, used_gas) = match to {
 					Some(to) => {
 						let info = if api_version == 1 {
+							// Legacy pre-london
 							#[allow(deprecated)]
 							api.call_before_version_2(
 								&BlockId::Hash(best_hash),
@@ -1358,8 +1418,10 @@ where
 							)
 							.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
 							.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?
-						} else {
-							api.call(
+						} else if api_version < 4 {
+							// Post-london
+							#[allow(deprecated)]
+							api.call_before_version_4(
 								&BlockId::Hash(best_hash),
 								from.unwrap_or_default(),
 								to,
@@ -1373,12 +1435,36 @@ where
 							)
 							.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
 							.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?
+						} else {
+							// Post-london + access list support
+							let access_list = access_list.unwrap_or_default();
+							api.call(
+								&BlockId::Hash(best_hash),
+								from.unwrap_or_default(),
+								to,
+								data,
+								value.unwrap_or_default(),
+								gas_limit,
+								max_fee_per_gas,
+								max_priority_fee_per_gas,
+								nonce,
+								true,
+								Some(
+									access_list
+										.into_iter()
+										.map(|item| (item.address, item.slots))
+										.collect(),
+								),
+							)
+							.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
+							.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?
 						};
 
 						(info.exit_reason, info.value, info.used_gas)
 					}
 					None => {
 						let info = if api_version == 1 {
+							// Legacy pre-london
 							#[allow(deprecated)]
 							api.create_before_version_2(
 								&BlockId::Hash(best_hash),
@@ -1392,7 +1478,25 @@ where
 							)
 							.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
 							.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?
+						} else if api_version < 4 {
+							// Post-london
+							#[allow(deprecated)]
+							api.create_before_version_4(
+								&BlockId::Hash(best_hash),
+								from.unwrap_or_default(),
+								data,
+								value.unwrap_or_default(),
+								gas_limit,
+								max_fee_per_gas,
+								max_priority_fee_per_gas,
+								nonce,
+								true,
+							)
+							.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
+							.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?
 						} else {
+							// Post-london + access list support
+							let access_list = access_list.unwrap_or_default();
 							api.create(
 								&BlockId::Hash(best_hash),
 								from.unwrap_or_default(),
@@ -1403,6 +1507,12 @@ where
 								max_priority_fee_per_gas,
 								nonce,
 								true,
+								Some(
+									access_list
+										.into_iter()
+										.map(|item| (item.address, item.slots))
+										.collect(),
+								),
 							)
 							.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
 							.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?
@@ -1761,9 +1871,27 @@ where
 				let block_hash =
 					H256::from_slice(Keccak256::digest(&rlp::encode(&block.header)).as_slice());
 				let receipt = receipts[index].clone();
+
+				let (logs, logs_bloom, status_code, cumulative_gas_used) = match receipt {
+					ethereum::ReceiptV3::Legacy(d)
+					| ethereum::ReceiptV3::EIP2930(d)
+					| ethereum::ReceiptV3::EIP1559(d) => (d.logs, d.logs_bloom, d.status_code, d.used_gas),
+				};
+
 				let status = statuses[index].clone();
 				let mut cumulative_receipts = receipts.clone();
 				cumulative_receipts.truncate((status.transaction_index + 1) as usize);
+				let gas_used = if index > 0 {
+					let previous_receipt = receipts[index - 1].clone();
+					let previous_gas_used = match previous_receipt {
+						ethereum::ReceiptV3::Legacy(d)
+						| ethereum::ReceiptV3::EIP2930(d)
+						| ethereum::ReceiptV3::EIP1559(d) => d.used_gas,
+					};
+					cumulative_gas_used.saturating_sub(previous_gas_used)
+				} else {
+					cumulative_gas_used
+				};
 
 				let transaction = block.transactions[index].clone();
 				let effective_gas_price = match transaction {
@@ -1783,14 +1911,8 @@ where
 					from: Some(status.from),
 					to: status.to,
 					block_number: Some(block.header.number),
-					cumulative_gas_used: {
-						let cumulative_gas: u32 = cumulative_receipts
-							.iter()
-							.map(|r| r.used_gas.as_u32())
-							.sum();
-						U256::from(cumulative_gas)
-					},
-					gas_used: Some(receipt.used_gas),
+					cumulative_gas_used,
+					gas_used: Some(gas_used),
 					contract_address: status.contract_address,
 					logs: {
 						let mut pre_receipts_log_index = None;
@@ -1799,13 +1921,15 @@ where
 							pre_receipts_log_index = Some(
 								cumulative_receipts
 									.iter()
-									.map(|r| r.logs.len() as u32)
+									.map(|r| match r {
+										ethereum::ReceiptV3::Legacy(d)
+										| ethereum::ReceiptV3::EIP2930(d)
+										| ethereum::ReceiptV3::EIP1559(d) => d.logs.len() as u32,
+									})
 									.sum::<u32>(),
 							);
 						}
-						receipt
-							.logs
-							.iter()
+						logs.iter()
 							.enumerate()
 							.map(|(i, log)| Log {
 								address: log.address,
@@ -1823,8 +1947,8 @@ where
 							})
 							.collect()
 					},
-					status_code: Some(U64::from(receipt.state_root.to_low_u64_be())),
-					logs_bloom: receipt.logs_bloom,
+					status_code: Some(U64::from(status_code)),
+					logs_bloom: logs_bloom,
 					state_root: None,
 					effective_gas_price,
 				}));
@@ -2652,12 +2776,20 @@ where
 
 				result.gas_used_ratio = gas_used / (gas_target * elasticity_multiplier);
 
+				let mut previous_cumulative_gas = U256::zero();
+				let used_gas = |current: U256, previous: &mut U256| -> u64 {
+					let r = current.saturating_sub(*previous).as_u64();
+					*previous = current;
+					r
+				};
 				// Build a list of relevant transaction information.
 				let mut transactions: Vec<TransactionHelper> = receipts
 					.iter()
 					.enumerate()
 					.map(|(i, receipt)| TransactionHelper {
-						gas_used: receipt.used_gas.as_u64(),
+						gas_used: match receipt {
+							ethereum::ReceiptV3::Legacy(d) | ethereum::ReceiptV3::EIP2930(d) | ethereum::ReceiptV3::EIP1559(d) => used_gas(d.used_gas, &mut previous_cumulative_gas),
+						},
 						effective_reward: match block.transactions.get(i) {
 							Some(&ethereum::TransactionV2::Legacy(ref t)) => {
 								t.gas_price.saturating_sub(base_fee).as_u64()
