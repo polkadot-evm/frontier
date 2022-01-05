@@ -154,7 +154,7 @@
 <span class="kw">use</span> <span class="ident">ethereum</span>::{
 	<span class="ident">AccessListItem</span>, <span class="ident">EIP1559TransactionMessage</span>, <span class="ident">EIP2930TransactionMessage</span>, <span class="ident">LegacyTransactionMessage</span>,
 };
-<span class="kw">use</span> <span class="ident">ethereum_types</span>::{<span class="ident">H160</span>, <span class="ident">H256</span>, <span class="ident">U256</span>};
+<span class="kw">use</span> <span class="ident">ethereum_types</span>::{<span class="ident">H160</span>, <span class="ident">U256</span>};
 <span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">Deserialize</span>, <span class="ident">Serialize</span>};
 
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">TransactionMessage</span> {
@@ -164,7 +164,7 @@
 }
 
 <span class="doccomment">/// Transaction request coming from RPC</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Default</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">Hash</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Default</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>)]</span>
 <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">deny_unknown_fields</span>)]</span>
 <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;camelCase&quot;</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">TransactionRequest</span> {
@@ -189,9 +189,9 @@
 	<span class="kw">pub</span> <span class="ident">data</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Bytes</span><span class="op">&gt;</span>,
 	<span class="doccomment">/// Transaction&#39;s nonce</span>
 	<span class="kw">pub</span> <span class="ident">nonce</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-	<span class="doccomment">/// TODO! Pre-pay to warm storage access.</span>
+	<span class="doccomment">/// Pre-pay to warm storage access.</span>
 	<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span>)]</span>
-	<span class="kw">pub</span> <span class="ident">access_list</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">H160</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span>)<span class="op">&gt;</span><span class="op">&gt;</span>,
+	<span class="kw">pub</span> <span class="ident">access_list</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">AccessListItem</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">Into</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">TransactionMessage</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">TransactionRequest</span> {
@@ -230,7 +230,7 @@
 					.<span class="ident">access_list</span>
 					.<span class="ident">unwrap</span>()
 					.<span class="ident">into_iter</span>()
-					.<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">address</span>, <span class="ident">slots</span>)<span class="op">|</span> <span class="ident">AccessListItem</span> { <span class="ident">address</span>, <span class="ident">slots</span> })
+					.<span class="ident">map</span>(<span class="op">|</span><span class="ident">item</span><span class="op">|</span> <span class="ident">item</span>)
 					.<span class="ident">collect</span>(),
 			})),
 			<span class="comment">// EIP1559</span>
@@ -254,7 +254,7 @@
 						.<span class="ident">access_list</span>
 						.<span class="ident">unwrap_or</span>(<span class="ident">Vec::new</span>())
 						.<span class="ident">into_iter</span>()
-						.<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">address</span>, <span class="ident">slots</span>)<span class="op">|</span> <span class="ident">AccessListItem</span> { <span class="ident">address</span>, <span class="ident">slots</span> })
+						.<span class="ident">map</span>(<span class="op">|</span><span class="ident">item</span><span class="op">|</span> <span class="ident">item</span>)
 						.<span class="ident">collect</span>(),
 				}))
 			}
