@@ -107,12 +107,7 @@ impl<'vicinity, T: Config> BackendT for Backend<'vicinity, T> {
 	}
 
 	fn basic(&self, address: H160) -> evm::backend::Basic {
-		let account = Pallet::<T>::account_basic(&address);
-
-		evm::backend::Basic {
-			balance: account.balance,
-			nonce: account.nonce,
-		}
+		Pallet::<T>::account_basic(&address)
 	}
 
 	fn code_size(&self, address: H160) -> usize {
