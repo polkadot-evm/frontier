@@ -28,16 +28,6 @@ use sha3::{Keccak256, Digest};
 use evm::backend::{Backend as BackendT, ApplyBackend, Apply};
 use crate::{AccountStorages, AccountCodes, Config, Event, Pallet};
 
-#[derive(Clone, Eq, PartialEq, Encode, Decode, Default)]
-#[cfg_attr(feature = "std", derive(Debug, Serialize, Deserialize))]
-/// Ethereum account nonce, balance and code. Used by storage.
-pub struct Account {
-	/// Account nonce.
-	pub nonce: U256,
-	/// Account balance.
-	pub balance: U256,
-}
-
 #[derive(Clone, Eq, PartialEq, Encode, Decode)]
 #[cfg_attr(feature = "std", derive(Debug, Serialize, Deserialize))]
 /// Ethereum log. Used for `deposit_event`.
