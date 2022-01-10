@@ -22,7 +22,7 @@ use crate::types::Bytes;
 use ethereum::{
 	AccessListItem, EIP1559TransactionMessage, EIP2930TransactionMessage, LegacyTransactionMessage,
 };
-use ethereum_types::{H160, H256, U256};
+use ethereum_types::{H160, U256};
 use serde::{Deserialize, Serialize};
 
 pub enum TransactionMessage {
@@ -32,7 +32,7 @@ pub enum TransactionMessage {
 }
 
 /// Transaction request coming from RPC
-#[derive(Debug, Clone, Default, Eq, PartialEq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct TransactionRequest {
@@ -57,9 +57,9 @@ pub struct TransactionRequest {
 	pub data: Option<Bytes>,
 	/// Transaction's nonce
 	pub nonce: Option<U256>,
-	/// TODO! Pre-pay to warm storage access.
+	/// Pre-pay to warm storage access.
 	#[serde(default)]
-	pub access_list: Option<Vec<(H160, Vec<H256>)>>,
+	pub access_list: Option<Vec<AccessListItem>>,
 }
 
 impl Into<Option<TransactionMessage>> for TransactionRequest {
@@ -98,7 +98,7 @@ impl Into<Option<TransactionMessage>> for TransactionRequest {
 					.access_list
 					.unwrap()
 					.into_iter()
-					.map(|(address, slots)| AccessListItem { address, slots })
+					.map(|item| item)
 					.collect(),
 			})),
 			// EIP1559
@@ -122,7 +122,7 @@ impl Into<Option<TransactionMessage>> for TransactionRequest {
 						.access_list
 						.unwrap_or(Vec::new())
 						.into_iter()
-						.map(|(address, slots)| AccessListItem { address, slots })
+						.map(|item| item)
 						.collect(),
 				}))
 			}
