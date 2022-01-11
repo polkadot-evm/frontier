@@ -18,7 +18,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
-use sha3::{Digest as Sha3Digest, Keccak256};
 use sp_core::H256;
 use sp_runtime::{
 	generic::{Digest, OpaqueDigestItemId},

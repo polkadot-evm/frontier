@@ -1,6 +1,6 @@
 //! A collection of node-specific RPC methods.
 
-use std::sync::Arc;
+use std::{collections::BTreeMap, sync::Arc};
 
 use fc_rpc::{
 	EthBlockDataCache, OverrideHandle, RuntimeApiStorageOverride, SchemaV1Override,
@@ -24,9 +24,9 @@ use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 use sp_runtime::traits::BlakeTwo256;
-use std::collections::BTreeMap;
 
 /// Light client extra dependencies.
+#[allow(dead_code)]
 pub struct LightDeps<C, F, P> {
 	/// The client instance to use.
 	pub client: Arc<C>,
@@ -67,6 +67,10 @@ pub struct FullDeps<C, P, A: ChainApi> {
 	/// Manual seal command sink
 	pub command_sink:
 		Option<futures::channel::mpsc::Sender<sc_consensus_manual_seal::rpc::EngineCommand<Hash>>>,
+	/// Ethereum data access overrides.
+	pub overrides: Arc<OverrideHandle<Block>>,
+	/// Cache for Ethereum block data.
+	pub block_data_cache: Arc<EthBlockDataCache<Block>>,
 }
 
 pub fn overrides_handle<C, BE>(client: Arc<C>) -> Arc<OverrideHandle<Block>>
@@ -105,7 +109,6 @@ where
 pub fn create_full<C, P, BE, A>(
 	deps: FullDeps<C, P, A>,
 	subscription_task_executor: SubscriptionTaskExecutor,
-	overrides: Arc<OverrideHandle<Block>>,
 ) -> jsonrpc_core::IoHandler<sc_rpc::Metadata>
 where
 	BE: Backend<Block> + 'static,
@@ -144,6 +147,8 @@ where
 		fee_history_limit,
 		fee_history_cache,
 		enable_dev_signer,
+		overrides,
+		block_data_cache,
 	} = deps;
 
 	io.extend_with(SystemApi::to_delegate(FullSystem::new(
@@ -159,8 +164,6 @@ where
 	if enable_dev_signer {
 		signers.push(Box::new(EthDevSigner::new()) as Box<dyn EthSigner>);
 	}
-
-	let block_data_cache = Arc::new(EthBlockDataCache::new(50, 50));
 
 	io.extend_with(EthApiServer::to_delegate(EthApi::new(
 		client.clone(),
@@ -184,7 +187,6 @@ where
 			backend,
 			filter_pool.clone(),
 			500 as usize, // max stored filters
-			overrides.clone(),
 			max_past_logs,
 			block_data_cache.clone(),
 		)));
@@ -225,6 +227,7 @@ where
 }
 
 /// Instantiate all Light RPC extensions.
+#[allow(dead_code)]
 pub fn create_light<C, P, M, F>(deps: LightDeps<C, F, P>) -> jsonrpc_core::IoHandler<M>
 where
 	C: sp_blockchain::HeaderBackend<Block>,
