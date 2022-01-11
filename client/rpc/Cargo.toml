@@ -46,6 +46,7 @@ libsecp256k1 = "0.3"
 rand = "0.7"
 lru = "0.6.6"
 parking_lot = "0.11.1"
+tokio = { version = "1.14", features = [ "sync" ] }
 
 [features]
 rpc_binary_search_estimate = []
