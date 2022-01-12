@@ -36,7 +36,6 @@ const MIN_GAS_COST: u64 = 200;
 // https://eips.ethereum.org/EIPS/eip-2565
 fn calculate_gas_cost(
 	base_length: u64,
-	exp_length: u64,
 	mod_length: u64,
 	exponent: &BigUint,
 ) -> u64 {
@@ -47,31 +46,44 @@ fn calculate_gas_cost(
 			words += 1;
 		}
 
-		// TODO: prevent/handle overflow
+		// Note: can't overflow because we take words to be some u64 value / 8, which is
+		// necessarily less than sqrt(u64::MAX).
+		// Additionally, both base_length and mod_length are bounded to 1024, so this has
+		// an upper bound of roughly (1024 / 8) squared
 		words * words
 	}
 
-	fn calculate_iteration_count(exp_length: u64, exponent: &BigUint) -> u64 {
+	fn calculate_iteration_count(exponent: &BigUint) -> u64 {
+		let exp_length_bytes = (exponent.bits() + 7) / 8;
 		let mut iteration_count: u64 = 0;
 
-		if exp_length <= 32 && exponent.is_zero() {
+		if exponent.is_zero() {
 			iteration_count = 0;
-		} else if exp_length <= 32 {
+		} else if exp_length_bytes <= 32 {
 			iteration_count = exponent.bits() - 1;
-		} else if exp_length > 32 {
+		} else if exp_length_bytes > 32 {
 			// construct BigUint to represent (2^256) - 1
 			let bytes: [u8; 32] = [0xFF; 32];
 			let max_256_bit_uint = BigUint::from_bytes_be(&bytes);
 
+			// from the EIP spec:
+			// (8 * (exponent_length - 32)) + ((exponent & (2**256 - 1)).bit_length() - 1)
+			//
+			// Notes:
+			// * exp_length_bytes is bounded to 1024
+			// * exponent can't be 0 because we ensure exp_length_bytes is > 32
+			// * exponent.bitand(max_256_bit_uint) can't be 0, so subtracting one can't underflow
+			// * the addition can't overflow because the terms are both capped at roughly
+			//   8 * max size of exp_length_bytes (1024)
 			iteration_count =
-				(8 * (exp_length - 32)) + ((exponent.bitand(max_256_bit_uint)).bits() - 1);
+				(8 * (exp_length_bytes - 32)) + ((exponent.bitand(max_256_bit_uint)).bits() - 1);
 		}
 
 		max(iteration_count, 1)
 	}
 
 	let multiplication_complexity = calculate_multiplication_complexity(base_length, mod_length);
-	let iteration_count = calculate_iteration_count(exp_length, exponent);
+	let iteration_count = calculate_iteration_count(exponent);
 	let gas = max(
 		MIN_GAS_COST,
 		multiplication_complexity * iteration_count / 3,
@@ -89,7 +101,7 @@ fn calculate_gas_cost(
 // 6) modulus, size as described above
 //
 //
-// NOTE: input sizes are arbitrarily large (up to 256 bits), with the expectation
+// NOTE: input sizes are bound to 1024 bytes, with the expectation
 //       that gas limits would be applied before actual computation.
 //
 //       maximum stack size will also prevent abuse.
@@ -133,7 +145,7 @@ impl Precompile for Modexp {
 		let mod_len_big = BigUint::from_bytes_be(&buf);
 		if mod_len_big > max_size_big {
 			return Err(PrecompileFailure::Error {
-				exit_status: ExitError::Other("unreasonably large exponent length".into()),
+				exit_status: ExitError::Other("unreasonably large modulus length".into()),
 			});
 		}
 
@@ -162,9 +174,8 @@ impl Precompile for Modexp {
 			let exponent = BigUint::from_bytes_be(&input[exp_start..exp_start + exp_len]);
 
 			// do our gas accounting
-			// TODO: we could technically avoid reading base first...
 			let gas_cost =
-				calculate_gas_cost(base_len as u64, exp_len as u64, mod_len as u64, &exponent);
+				calculate_gas_cost(base_len as u64, mod_len as u64, &exponent);
 			if let Some(gas_left) = target_gas {
 				if gas_left < gas_cost {
 					return Err(PrecompileFailure::Error {
@@ -416,6 +427,46 @@ mod tests {
 				assert_eq!(precompile_result.output.len(), 32); // should be same length as mod
 				let result = BigUint::from_bytes_be(&precompile_result.output[..]);
 				let expected = BigUint::parse_bytes(b"1", 10).unwrap();
+				assert_eq!(result, expected);
+			}
+			Err(_) => {
+				panic!("Modexp::execute() returned error"); // TODO: how to pass error on?
+			}
+		}
+	}
+
+	#[test]
+	fn test_zero_exp_with_33_length() {
+		// This is a regression test which ensures that the 'iteration_count' calculation
+		// in 'calculate_iteration_count' cannot underflow.
+		//
+		// In debug mode, this underflow could cause a panic. Otherwise, it causes N**0 to
+		// be calculated at more-than-normal expense.
+		//
+		// TODO: cite security advisory
+
+		let input = vec![
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 33,
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 1];
+
+		let cost: u64 = 100000;
+
+		let context: Context = Context {
+			address: Default::default(),
+			caller: Default::default(),
+			apparent_value: From::from(0),
+		};
+
+		let result = Modexp::execute(&input, Some(cost), &context, false);
+
+		match Modexp::execute(&input, Some(cost), &context, false) {
+			Ok(precompile_result) => {
+				assert_eq!(precompile_result.output.len(), 1); // should be same length as mod
+				let result = BigUint::from_bytes_be(&precompile_result.output[..]);
+				let expected = BigUint::parse_bytes(b"0", 10).unwrap();
 				assert_eq!(result, expected);
 			}
 			Err(_) => {
