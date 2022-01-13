@@ -36,8 +36,8 @@ const MIN_GAS_COST: u64 = 200;
 // https://eips.ethereum.org/EIPS/eip-2565
 fn calculate_gas_cost(
 	base_length: u64,
-	mod_length: u64,
 	exp_length: u64,
+	mod_length: u64,
 	exponent: &BigUint
 ) -> u64 {
 	fn calculate_multiplication_complexity(base_length: u64, mod_length: u64) -> u64 {
@@ -174,7 +174,7 @@ impl Precompile for Modexp {
 			let exponent = BigUint::from_bytes_be(&input[exp_start..exp_start + exp_len]);
 
 			// do our gas accounting
-			let gas_cost = calculate_gas_cost(base_len as u64, mod_len as u64, exp_len as u64, &exponent);
+			let gas_cost = calculate_gas_cost(base_len as u64, exp_len as u64, mod_len as u64, &exponent);
 			if let Some(gas_left) = target_gas {
 				if gas_left < gas_cost {
 					return Err(PrecompileFailure::Error {
@@ -460,9 +460,7 @@ mod tests {
 			apparent_value: From::from(0),
 		};
 
-		let result = Modexp::execute(&input, Some(cost), &context, false);
-
-		let precompile_result = Modexp::execute(&input, Some(cost), &context, false).expect("Modexp::execute() returned error");
+		match Modexp::execute(&input, Some(cost), &context, false) {
 			Ok(precompile_result) => {
 				assert_eq!(precompile_result.output.len(), 1); // should be same length as mod
 				let result = BigUint::from_bytes_be(&precompile_result.output[..]);
@@ -470,7 +468,7 @@ mod tests {
 				assert_eq!(result, expected);
 			}
 			Err(_) => {
-				panic!("Modexp::execute() returned error"); // TODO: how to pass error on?
+				panic!("Modexp::execute() returned error");
 			}
 		}
 	}
