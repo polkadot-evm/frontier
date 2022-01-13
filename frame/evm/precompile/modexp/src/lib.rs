@@ -461,16 +461,12 @@ mod tests {
 			apparent_value: From::from(0),
 		};
 
-		match Modexp::execute(&input, Some(cost), &context, false) {
-			Ok(precompile_result) => {
-				assert_eq!(precompile_result.output.len(), 1); // should be same length as mod
-				let result = BigUint::from_bytes_be(&precompile_result.output[..]);
-				let expected = BigUint::parse_bytes(b"0", 10).unwrap();
-				assert_eq!(result, expected);
-			}
-			Err(_) => {
-				panic!("Modexp::execute() returned error");
-			}
-		}
+		let precompile_result = Modexp::execute(&input, Some(cost), &context, false)
+			.expect("Modexp::execute() returned error");
+
+		assert_eq!(precompile_result.output.len(), 1); // should be same length as mod
+		let result = BigUint::from_bytes_be(&precompile_result.output[..]);
+		let expected = BigUint::parse_bytes(b"0", 10).unwrap();
+		assert_eq!(result, expected);
 	}
 }
