@@ -34,7 +34,12 @@ const MIN_GAS_COST: u64 = 200;
 
 // Calculate gas cost according to EIP 2565:
 // https://eips.ethereum.org/EIPS/eip-2565
-fn calculate_gas_cost(base_length: u64, mod_length: u64, exponent: &BigUint) -> u64 {
+fn calculate_gas_cost(
+	base_length: u64,
+	mod_length: u64,
+	exp_length: u64,
+	exponent: &BigUint
+) -> u64 {
 	fn calculate_multiplication_complexity(base_length: u64, mod_length: u64) -> u64 {
 		let max_length = max(base_length, mod_length);
 		let mut words = max_length / 8;
@@ -49,37 +54,36 @@ fn calculate_gas_cost(base_length: u64, mod_length: u64, exponent: &BigUint) -> 
 		words * words
 	}
 
-	fn calculate_iteration_count(exponent: &BigUint) -> u64 {
-		let exp_length_bytes = (exponent.bits() + 7) / 8;
+	fn calculate_iteration_count(exp_length: u64, exponent: &BigUint) -> u64 {
 		let mut iteration_count: u64 = 0;
 
-		if exponent.is_zero() {
+		if exp_length <= 32 && exponent.is_zero() {
 			iteration_count = 0;
-		} else if exp_length_bytes <= 32 {
+		} else if exp_length <= 32 {
 			iteration_count = exponent.bits() - 1;
-		} else if exp_length_bytes > 32 {
+		} else if exp_length > 32 {
 			// construct BigUint to represent (2^256) - 1
 			let bytes: [u8; 32] = [0xFF; 32];
 			let max_256_bit_uint = BigUint::from_bytes_be(&bytes);
 
 			// from the EIP spec:
-			// (8 * (exponent_length - 32)) + ((exponent & (2**256 - 1)).bit_length() - 1)
+			// (8 * (exp_length - 32)) + ((exponent & (2**256 - 1)).bit_length() - 1)
 			//
 			// Notes:
-			// * exp_length_bytes is bounded to 1024
-			// * exponent can't be 0 because we ensure exp_length_bytes is > 32
-			// * exponent.bitand(max_256_bit_uint) can't be 0, so subtracting one can't underflow
+			// * exp_length is bounded to 1024 and is > 32
+			// * exponent can be zero, so we subtract 1 after adding the other terms (whose sum
+			//   must be > 0)
 			// * the addition can't overflow because the terms are both capped at roughly
-			//   8 * max size of exp_length_bytes (1024)
+			//   8 * max size of exp_length (1024)
 			iteration_count =
-				(8 * (exp_length_bytes - 32)) + ((exponent.bitand(max_256_bit_uint)).bits() - 1);
+				(8 * (exp_length - 32)) + exponent.bitand(max_256_bit_uint).bits() - 1;
 		}
 
 		max(iteration_count, 1)
 	}
 
 	let multiplication_complexity = calculate_multiplication_complexity(base_length, mod_length);
-	let iteration_count = calculate_iteration_count(exponent);
+	let iteration_count = calculate_iteration_count(exp_length, exponent);
 	let gas = max(
 		MIN_GAS_COST,
 		multiplication_complexity * iteration_count / 3,
@@ -170,7 +174,7 @@ impl Precompile for Modexp {
 			let exponent = BigUint::from_bytes_be(&input[exp_start..exp_start + exp_len]);
 
 			// do our gas accounting
-			let gas_cost = calculate_gas_cost(base_len as u64, mod_len as u64, &exponent);
+			let gas_cost = calculate_gas_cost(base_len as u64, mod_len as u64, exp_len as u64, &exponent);
 			if let Some(gas_left) = target_gas {
 				if gas_left < gas_cost {
 					return Err(PrecompileFailure::Error {
