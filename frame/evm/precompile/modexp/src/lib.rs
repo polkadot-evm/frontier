@@ -462,7 +462,7 @@ mod tests {
 
 		let result = Modexp::execute(&input, Some(cost), &context, false);
 
-		match Modexp::execute(&input, Some(cost), &context, false) {
+		let precompile_result = Modexp::execute(&input, Some(cost), &context, false).expect("Modexp::execute() returned error");
 			Ok(precompile_result) => {
 				assert_eq!(precompile_result.output.len(), 1); // should be same length as mod
 				let result = BigUint::from_bytes_be(&precompile_result.output[..]);
