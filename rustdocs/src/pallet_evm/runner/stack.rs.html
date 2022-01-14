@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `frame&#x2F;evm&#x2F;src&#x2F;runner&#x2F;stack.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>stack.rs - source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled ><script id="default-settings" ></script><script src="../../../storage.js"></script><script src="../../../crates.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a href='../../../pallet_evm/index.html'><div class='logo-container rust-logo'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu" title="themes"><img width="18" height="18" alt="Pick another theme!" src="../../../brush.svg"></button><div id="theme-choices" role="menu"></div></div><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" id="help-button" title="help">?</button><a id="settings-menu" href="../../../settings.html" title="settings"><img width="18" height="18" alt="Change settings" src="../../../wheel.svg"></a></div></form></nav><section id="main" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">  1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `frame&#x2F;evm&#x2F;src&#x2F;runner&#x2F;stack.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>stack.rs - source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled ><script id="default-settings" ></script><script src="../../../storage.js"></script><script src="../../../crates.js"></script><script defer src="../../../main.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script>
+    <noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a href='../../../pallet_evm/index.html'><div class='logo-container rust-logo'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu" title="themes"><img width="18" height="18" alt="Pick another theme!" src="../../../brush.svg"></button><div id="theme-choices" role="menu"></div></div><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" id="help-button" title="help">?</button><a id="settings-menu" href="../../../settings.html" title="settings"><img width="18" height="18" alt="Change settings" src="../../../wheel.svg"></a></div></form></nav><section id="main" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -673,7 +674,7 @@
 	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">ExecutionInfo</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>, <span class="ident">Error</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>
 	<span class="kw">where</span>
 		<span class="ident">F</span>: <span class="ident">FnOnce</span>(
-			<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">StackExecutor</span><span class="op">&lt;</span>
+			<span class="kw-2">&amp;mut</span> <span class="ident">StackExecutor</span><span class="op">&lt;</span>
 				<span class="lifetime">&#39;config</span>,
 				<span class="lifetime">&#39;precompiles</span>,
 				<span class="ident">SubstrateStackState</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="lifetime">&#39;config</span>, <span class="ident">T</span><span class="op">&gt;</span>,
@@ -732,7 +733,7 @@
 		<span class="kw">let</span> <span class="ident">fee</span> <span class="op">=</span> <span class="ident">T::OnChargeTransaction::withdraw_fee</span>(<span class="kw-2">&amp;</span><span class="ident">source</span>, <span class="ident">total_fee</span>)<span class="question-mark">?</span>;
 
 		<span class="comment">// Execute the EVM call.</span>
-		<span class="kw">let</span> (<span class="ident">reason</span>, <span class="ident">retv</span>) <span class="op">=</span> <span class="ident">f</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">executor</span>);
+		<span class="kw">let</span> (<span class="ident">reason</span>, <span class="ident">retv</span>) <span class="op">=</span> <span class="ident">f</span>(<span class="kw-2">&amp;mut</span> <span class="ident">executor</span>);
 
 		<span class="kw">let</span> <span class="ident">used_gas</span> <span class="op">=</span> <span class="ident">U256::from</span>(<span class="ident">executor</span>.<span class="ident">used_gas</span>());
 		<span class="kw">let</span> (<span class="ident">actual_fee</span>, <span class="ident">actual_priority_fee</span>) <span class="op">=</span>
@@ -930,48 +931,48 @@
 		<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">metadata</span>
 	}
 
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">metadata_mut</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">StackSubstateMetadata</span><span class="op">&lt;</span><span class="lifetime">&#39;config</span><span class="op">&gt;</span> {
-		<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">metadata</span>
+	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">metadata_mut</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="kw-2">&amp;mut</span> <span class="ident">StackSubstateMetadata</span><span class="op">&lt;</span><span class="lifetime">&#39;config</span><span class="op">&gt;</span> {
+		<span class="kw-2">&amp;mut</span> <span class="self">self</span>.<span class="ident">metadata</span>
 	}
 
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">enter</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">gas_limit</span>: <span class="ident">u64</span>, <span class="ident">is_static</span>: <span class="ident">bool</span>) {
+	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">enter</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">gas_limit</span>: <span class="ident">u64</span>, <span class="ident">is_static</span>: <span class="ident">bool</span>) {
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">entering</span> <span class="op">=</span> <span class="self">Self</span> {
 			<span class="ident">metadata</span>: <span class="self">self</span>.<span class="ident">metadata</span>.<span class="ident">spit_child</span>(<span class="ident">gas_limit</span>, <span class="ident">is_static</span>),
 			<span class="ident">parent</span>: <span class="prelude-val">None</span>,
 			<span class="ident">deletes</span>: <span class="ident">BTreeSet::new</span>(),
 			<span class="ident">logs</span>: <span class="ident">Vec::new</span>(),
 		};
-		<span class="ident">mem::swap</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">entering</span>, <span class="self">self</span>);
+		<span class="ident">mem::swap</span>(<span class="kw-2">&amp;mut</span> <span class="ident">entering</span>, <span class="self">self</span>);
 
 		<span class="self">self</span>.<span class="ident">parent</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">Box::new</span>(<span class="ident">entering</span>));
 
 		<span class="ident">sp_io::storage::start_transaction</span>();
 	}
 
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">exit_commit</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">ExitError</span><span class="op">&gt;</span> {
+	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">exit_commit</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">ExitError</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">exited</span> <span class="op">=</span> <span class="kw-2">*</span><span class="self">self</span>.<span class="ident">parent</span>.<span class="ident">take</span>().<span class="ident">expect</span>(<span class="string">&quot;Cannot commit on root substate&quot;</span>);
-		<span class="ident">mem::swap</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">exited</span>, <span class="self">self</span>);
+		<span class="ident">mem::swap</span>(<span class="kw-2">&amp;mut</span> <span class="ident">exited</span>, <span class="self">self</span>);
 
 		<span class="self">self</span>.<span class="ident">metadata</span>.<span class="ident">swallow_commit</span>(<span class="ident">exited</span>.<span class="ident">metadata</span>)<span class="question-mark">?</span>;
-		<span class="self">self</span>.<span class="ident">logs</span>.<span class="ident">append</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">exited</span>.<span class="ident">logs</span>);
-		<span class="self">self</span>.<span class="ident">deletes</span>.<span class="ident">append</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">exited</span>.<span class="ident">deletes</span>);
+		<span class="self">self</span>.<span class="ident">logs</span>.<span class="ident">append</span>(<span class="kw-2">&amp;mut</span> <span class="ident">exited</span>.<span class="ident">logs</span>);
+		<span class="self">self</span>.<span class="ident">deletes</span>.<span class="ident">append</span>(<span class="kw-2">&amp;mut</span> <span class="ident">exited</span>.<span class="ident">deletes</span>);
 
 		<span class="ident">sp_io::storage::commit_transaction</span>();
 		<span class="prelude-val">Ok</span>(())
 	}
 
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">exit_revert</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">ExitError</span><span class="op">&gt;</span> {
+	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">exit_revert</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">ExitError</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">exited</span> <span class="op">=</span> <span class="kw-2">*</span><span class="self">self</span>.<span class="ident">parent</span>.<span class="ident">take</span>().<span class="ident">expect</span>(<span class="string">&quot;Cannot discard on root substate&quot;</span>);
-		<span class="ident">mem::swap</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">exited</span>, <span class="self">self</span>);
+		<span class="ident">mem::swap</span>(<span class="kw-2">&amp;mut</span> <span class="ident">exited</span>, <span class="self">self</span>);
 		<span class="self">self</span>.<span class="ident">metadata</span>.<span class="ident">swallow_revert</span>(<span class="ident">exited</span>.<span class="ident">metadata</span>)<span class="question-mark">?</span>;
 
 		<span class="ident">sp_io::storage::rollback_transaction</span>();
 		<span class="prelude-val">Ok</span>(())
 	}
 
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">exit_discard</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">ExitError</span><span class="op">&gt;</span> {
+	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">exit_discard</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">ExitError</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">exited</span> <span class="op">=</span> <span class="kw-2">*</span><span class="self">self</span>.<span class="ident">parent</span>.<span class="ident">take</span>().<span class="ident">expect</span>(<span class="string">&quot;Cannot discard on root substate&quot;</span>);
-		<span class="ident">mem::swap</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">exited</span>, <span class="self">self</span>);
+		<span class="ident">mem::swap</span>(<span class="kw-2">&amp;mut</span> <span class="ident">exited</span>, <span class="self">self</span>);
 		<span class="self">self</span>.<span class="ident">metadata</span>.<span class="ident">swallow_discard</span>(<span class="ident">exited</span>.<span class="ident">metadata</span>)<span class="question-mark">?</span>;
 
 		<span class="ident">sp_io::storage::rollback_transaction</span>();
@@ -990,11 +991,11 @@
 		<span class="bool-val">false</span>
 	}
 
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_deleted</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">address</span>: <span class="ident">H160</span>) {
+	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_deleted</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">address</span>: <span class="ident">H160</span>) {
 		<span class="self">self</span>.<span class="ident">deletes</span>.<span class="ident">insert</span>(<span class="ident">address</span>);
 	}
 
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">log</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">address</span>: <span class="ident">H160</span>, <span class="ident">topics</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span>, <span class="ident">data</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>) {
+	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">log</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">address</span>: <span class="ident">H160</span>, <span class="ident">topics</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span>, <span class="ident">data</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>) {
 		<span class="self">self</span>.<span class="ident">logs</span>.<span class="ident">push</span>(<span class="ident">Log</span> {
 			<span class="ident">address</span>,
 			<span class="ident">topics</span>,
@@ -1117,23 +1118,23 @@
 		<span class="self">self</span>.<span class="ident">substate</span>.<span class="ident">metadata</span>()
 	}
 
-	<span class="kw">fn</span> <span class="ident">metadata_mut</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">StackSubstateMetadata</span><span class="op">&lt;</span><span class="lifetime">&#39;config</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">metadata_mut</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="kw-2">&amp;mut</span> <span class="ident">StackSubstateMetadata</span><span class="op">&lt;</span><span class="lifetime">&#39;config</span><span class="op">&gt;</span> {
 		<span class="self">self</span>.<span class="ident">substate</span>.<span class="ident">metadata_mut</span>()
 	}
 
-	<span class="kw">fn</span> <span class="ident">enter</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">gas_limit</span>: <span class="ident">u64</span>, <span class="ident">is_static</span>: <span class="ident">bool</span>) {
+	<span class="kw">fn</span> <span class="ident">enter</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">gas_limit</span>: <span class="ident">u64</span>, <span class="ident">is_static</span>: <span class="ident">bool</span>) {
 		<span class="self">self</span>.<span class="ident">substate</span>.<span class="ident">enter</span>(<span class="ident">gas_limit</span>, <span class="ident">is_static</span>)
 	}
 
-	<span class="kw">fn</span> <span class="ident">exit_commit</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">ExitError</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">exit_commit</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">ExitError</span><span class="op">&gt;</span> {
 		<span class="self">self</span>.<span class="ident">substate</span>.<span class="ident">exit_commit</span>()
 	}
 
-	<span class="kw">fn</span> <span class="ident">exit_revert</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">ExitError</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">exit_revert</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">ExitError</span><span class="op">&gt;</span> {
 		<span class="self">self</span>.<span class="ident">substate</span>.<span class="ident">exit_revert</span>()
 	}
 
-	<span class="kw">fn</span> <span class="ident">exit_discard</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">ExitError</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">exit_discard</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">ExitError</span><span class="op">&gt;</span> {
 		<span class="self">self</span>.<span class="ident">substate</span>.<span class="ident">exit_discard</span>()
 	}
 
@@ -1145,12 +1146,12 @@
 		<span class="self">self</span>.<span class="ident">substate</span>.<span class="ident">deleted</span>(<span class="ident">address</span>)
 	}
 
-	<span class="kw">fn</span> <span class="ident">inc_nonce</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">address</span>: <span class="ident">H160</span>) {
+	<span class="kw">fn</span> <span class="ident">inc_nonce</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">address</span>: <span class="ident">H160</span>) {
 		<span class="kw">let</span> <span class="ident">account_id</span> <span class="op">=</span> <span class="ident">T::AddressMapping::into_account_id</span>(<span class="ident">address</span>);
 		<span class="ident">frame_system::Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::inc_account_nonce</span>(<span class="kw-2">&amp;</span><span class="ident">account_id</span>);
 	}
 
-	<span class="kw">fn</span> <span class="ident">set_storage</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">address</span>: <span class="ident">H160</span>, <span class="ident">index</span>: <span class="ident">H256</span>, <span class="ident">value</span>: <span class="ident">H256</span>) {
+	<span class="kw">fn</span> <span class="ident">set_storage</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">address</span>: <span class="ident">H160</span>, <span class="ident">index</span>: <span class="ident">H256</span>, <span class="ident">value</span>: <span class="ident">H256</span>) {
 		<span class="kw">if</span> <span class="ident">value</span> <span class="op">==</span> <span class="ident">H256::default</span>() {
 			<span class="macro">log::debug!</span>(
 				<span class="ident">target</span>: <span class="string">&quot;evm&quot;</span>,
@@ -1171,19 +1172,19 @@
 		}
 	}
 
-	<span class="kw">fn</span> <span class="ident">reset_storage</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">address</span>: <span class="ident">H160</span>) {
+	<span class="kw">fn</span> <span class="ident">reset_storage</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">address</span>: <span class="ident">H160</span>) {
 		<span class="op">&lt;</span><span class="ident">AccountStorages</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::remove_prefix</span>(<span class="ident">address</span>, <span class="prelude-val">None</span>);
 	}
 
-	<span class="kw">fn</span> <span class="ident">log</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">address</span>: <span class="ident">H160</span>, <span class="ident">topics</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span>, <span class="ident">data</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>) {
+	<span class="kw">fn</span> <span class="ident">log</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">address</span>: <span class="ident">H160</span>, <span class="ident">topics</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span>, <span class="ident">data</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>) {
 		<span class="self">self</span>.<span class="ident">substate</span>.<span class="ident">log</span>(<span class="ident">address</span>, <span class="ident">topics</span>, <span class="ident">data</span>)
 	}
 
-	<span class="kw">fn</span> <span class="ident">set_deleted</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">address</span>: <span class="ident">H160</span>) {
+	<span class="kw">fn</span> <span class="ident">set_deleted</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">address</span>: <span class="ident">H160</span>) {
 		<span class="self">self</span>.<span class="ident">substate</span>.<span class="ident">set_deleted</span>(<span class="ident">address</span>)
 	}
 
-	<span class="kw">fn</span> <span class="ident">set_code</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">address</span>: <span class="ident">H160</span>, <span class="ident">code</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>) {
+	<span class="kw">fn</span> <span class="ident">set_code</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">address</span>: <span class="ident">H160</span>, <span class="ident">code</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>) {
 		<span class="macro">log::debug!</span>(
 			<span class="ident">target</span>: <span class="string">&quot;evm&quot;</span>,
 			<span class="string">&quot;Inserting code ({} bytes) at {:?}&quot;</span>,
@@ -1193,7 +1194,7 @@
 		<span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::create_account</span>(<span class="ident">address</span>, <span class="ident">code</span>);
 	}
 
-	<span class="kw">fn</span> <span class="ident">transfer</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">transfer</span>: <span class="ident">Transfer</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">ExitError</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">transfer</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">transfer</span>: <span class="ident">Transfer</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">ExitError</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> <span class="ident">source</span> <span class="op">=</span> <span class="ident">T::AddressMapping::into_account_id</span>(<span class="ident">transfer</span>.<span class="ident">source</span>);
 		<span class="kw">let</span> <span class="ident">target</span> <span class="op">=</span> <span class="ident">T::AddressMapping::into_account_id</span>(<span class="ident">transfer</span>.<span class="ident">target</span>);
 
@@ -1206,7 +1207,7 @@
 		.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">ExitError::OutOfFund</span>)
 	}
 
-	<span class="kw">fn</span> <span class="ident">reset_balance</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">_address</span>: <span class="ident">H160</span>) {
+	<span class="kw">fn</span> <span class="ident">reset_balance</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">_address</span>: <span class="ident">H160</span>) {
 		<span class="comment">// Do nothing on reset balance in Substrate.</span>
 		<span class="comment">//</span>
 		<span class="comment">// This function exists in EVM because a design issue</span>
@@ -1214,7 +1215,7 @@
 		<span class="comment">// issurance to be reduced. We do not need to replicate this.</span>
 	}
 
-	<span class="kw">fn</span> <span class="ident">touch</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">_address</span>: <span class="ident">H160</span>) {
+	<span class="kw">fn</span> <span class="ident">touch</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">_address</span>: <span class="ident">H160</span>) {
 		<span class="comment">// Do nothing on touch in Substrate.</span>
 		<span class="comment">//</span>
 		<span class="comment">// EVM pallet considers all accounts to exist, and distinguish</span>
@@ -1234,5 +1235,4 @@
 }
 </code></pre></div>
 </section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="pallet_evm" data-search-index-js="../../../search-index.js" data-search-js="../../../search.js"></div>
-    <script src="../../../main.js"></script><script src="../../../source-script.js"></script><script src="../../../source-files.js"></script>
 </body></html>
