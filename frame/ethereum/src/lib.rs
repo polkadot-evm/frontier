@@ -668,7 +668,7 @@ impl<T: Config> Pallet<T> {
 				}),
 				Transaction::EIP1559(_) => Receipt::EIP1559(ethereum::EIP2930ReceiptData {
 					status_code,
-					used_gas: cumulative_gas_used.saturating_add(used_gas),
+					used_gas: cumulative_gas_used,
 					logs_bloom,
 					logs,
 				}),
