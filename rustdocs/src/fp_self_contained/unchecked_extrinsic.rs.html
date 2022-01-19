@@ -166,6 +166,19 @@
 <span id="165">165</span>
 <span id="166">166</span>
 <span id="167">167</span>
+<span id="168">168</span>
+<span id="169">169</span>
+<span id="170">170</span>
+<span id="171">171</span>
+<span id="172">172</span>
+<span id="173">173</span>
+<span id="174">174</span>
+<span id="175">175</span>
+<span id="176">176</span>
+<span id="177">177</span>
+<span id="178">178</span>
+<span id="179">179</span>
+<span id="180">180</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">CheckedExtrinsic</span>, <span class="ident">CheckedSignature</span>, <span class="ident">SelfContainedCall</span>};
 <span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Decode</span>, <span class="ident">Encode</span>};
 <span class="kw">use</span> <span class="ident">frame_support</span>::{
@@ -179,7 +192,7 @@
 		<span class="ident">SignedExtension</span>,
 	},
 	<span class="ident">transaction_validity</span>::{<span class="ident">InvalidTransaction</span>, <span class="ident">TransactionValidityError</span>},
-	<span class="ident">RuntimeDebug</span>,
+	<span class="ident">OpaqueExtrinsic</span>, <span class="ident">RuntimeDebug</span>,
 };
 
 <span class="doccomment">/// A extrinsic right from the external world. This is unchecked and so</span>
@@ -331,6 +344,19 @@
 	{
 		<span class="op">&lt;</span><span class="ident">sp_runtime::generic::UncheckedExtrinsic</span><span class="op">&lt;</span><span class="ident">Address</span>, <span class="ident">Call</span>, <span class="ident">Signature</span>, <span class="ident">Extra</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::deserialize</span>(<span class="ident">de</span>)
 			.<span class="ident">map</span>(<span class="self">Self</span>)
+	}
+}
+
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">Address</span>, <span class="ident">Call</span>, <span class="ident">Signature</span>, <span class="ident">Extra</span><span class="op">&gt;</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">UncheckedExtrinsic</span><span class="op">&lt;</span><span class="ident">Address</span>, <span class="ident">Call</span>, <span class="ident">Signature</span>, <span class="ident">Extra</span><span class="op">&gt;</span><span class="op">&gt;</span>
+	<span class="kw">for</span> <span class="ident">OpaqueExtrinsic</span>
+<span class="kw">where</span>
+	<span class="ident">Address</span>: <span class="ident">Encode</span>,
+	<span class="ident">Signature</span>: <span class="ident">Encode</span>,
+	<span class="ident">Call</span>: <span class="ident">Encode</span>,
+	<span class="ident">Extra</span>: <span class="ident">SignedExtension</span>,
+{
+	<span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">extrinsic</span>: <span class="ident">UncheckedExtrinsic</span><span class="op">&lt;</span><span class="ident">Address</span>, <span class="ident">Call</span>, <span class="ident">Signature</span>, <span class="ident">Extra</span><span class="op">&gt;</span>) -&gt; <span class="self">Self</span> {
+		<span class="ident">extrinsic</span>.<span class="number">0</span>.<span class="ident">into</span>()
 	}
 }
 </code></pre></div>
