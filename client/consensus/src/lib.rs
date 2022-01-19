@@ -28,13 +28,13 @@ use sp_consensus::Error as ConsensusError;
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
 use std::{collections::HashMap, marker::PhantomData, sync::Arc};
 
-#[derive(derive_more::Display, Debug)]
+#[derive(Debug, thiserror::Error)]
 pub enum Error {
-	#[display(fmt = "Multiple runtime Ethereum blocks, rejecting!")]
+	#[error("Multiple runtime Ethereum blocks, rejecting!")]
 	MultipleRuntimeLogs,
-	#[display(fmt = "Runtime Ethereum block not found, rejecting!")]
+	#[error("Runtime Ethereum block not found, rejecting!")]
 	NoRuntimeLog,
-	#[display(fmt = "Cannot access the runtime at genesis, rejecting!")]
+	#[error("Cannot access the runtime at genesis, rejecting!")]
 	RuntimeApiCallFailed,
 }
 

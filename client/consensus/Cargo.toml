@@ -24,6 +24,6 @@ sc-consensus = { version = "0.10.0-dev", git = "https://github.com/paritytech/su
 log = "0.4.8"
 futures = { version = "0.3.17", features = ["compat"] }
 sp-timestamp = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate" }
-derive_more = "0.99.2"
+thiserror = "1.0"
 prometheus-endpoint = { version = "0.9.0", package = "substrate-prometheus-endpoint", git = "https://github.com/paritytech/substrate" }
 async-trait = "0.1"
