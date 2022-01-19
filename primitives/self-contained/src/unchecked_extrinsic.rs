@@ -11,7 +11,7 @@ use sp_runtime::{
 		SignedExtension,
 	},
 	transaction_validity::{InvalidTransaction, TransactionValidityError},
-	RuntimeDebug,
+	OpaqueExtrinsic, RuntimeDebug,
 };
 
 /// A extrinsic right from the external world. This is unchecked and so
@@ -163,5 +163,18 @@ impl<'a, Address: Decode, Signature: Decode, Call: Decode, Extra: SignedExtensio
 	{
 		<sp_runtime::generic::UncheckedExtrinsic<Address, Call, Signature, Extra>>::deserialize(de)
 			.map(Self)
+	}
+}
+
+impl<Address, Call, Signature, Extra> From<UncheckedExtrinsic<Address, Call, Signature, Extra>>
+	for OpaqueExtrinsic
+where
+	Address: Encode,
+	Signature: Encode,
+	Call: Encode,
+	Extra: SignedExtension,
+{
+	fn from(extrinsic: UncheckedExtrinsic<Address, Call, Signature, Extra>) -> Self {
+		extrinsic.0.into()
 	}
 }
