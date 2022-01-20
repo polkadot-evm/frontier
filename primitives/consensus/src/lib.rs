@@ -96,7 +96,10 @@ pub fn find_post_log<Hash>(digest: &Digest<Hash>) -> Result<PostLog, FindLogErro
 	_find_log(digest, OpaqueDigestItemId::Consensus(&FRONTIER_ENGINE_ID))
 }
 
-fn _find_log<Hash, Log: Decode>(digest: &Digest<Hash>, digest_item_id: OpaqueDigestItemId) -> Result<Log, FindLogError> {
+fn _find_log<Hash, Log: Decode>(
+	digest: &Digest<Hash>,
+	digest_item_id: OpaqueDigestItemId,
+) -> Result<Log, FindLogError> {
 	let mut found = None;
 
 	for log in digest.logs() {
