@@ -223,9 +223,10 @@ fn transaction_build(
 	} else if !is_eip1559 {
 		// This is a pre-eip1559 support transaction a.k.a. txns on frontier before we introduced EIP1559 support in
 		// pallet-ethereum schema V2.
-		// They do not include `maxFeePerGas` or `maxPriorityFeePerGas` fields.
+		// They do not include `maxFeePerGas`, `maxPriorityFeePerGas` or `type` fields.
 		transaction.max_fee_per_gas = None;
 		transaction.max_priority_fee_per_gas = None;
+		transaction.transaction_type = None;
 	}
 
 	let pubkey = match public_key(&ethereum_transaction) {
@@ -1092,6 +1093,7 @@ where
 			data,
 			nonce,
 			access_list,
+			..
 		} = request;
 
 		let (gas_price, max_fee_per_gas, max_priority_fee_per_gas) = {

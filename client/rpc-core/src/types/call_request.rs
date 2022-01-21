@@ -46,4 +46,7 @@ pub struct CallRequest {
 	pub nonce: Option<U256>,
 	/// AccessList
 	pub access_list: Option<Vec<AccessListItem>>,
+	/// EIP-2718 type
+	#[serde(rename = "type")]
+	pub transaction_type: Option<U256>,
 }

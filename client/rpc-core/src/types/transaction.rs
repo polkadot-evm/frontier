@@ -73,6 +73,9 @@ pub struct Transaction {
 	/// Pre-pay to warm storage access.
 	#[cfg_attr(feature = "std", serde(skip_serializing_if = "Option::is_none"))]
 	pub access_list: Option<Vec<AccessListItem>>,
+	/// EIP-2718 type
+	#[serde(rename = "type", skip_serializing_if = "Option::is_none")]
+	pub transaction_type: Option<U256>,
 }
 
 impl From<TransactionV2> for Transaction {
@@ -104,6 +107,7 @@ impl From<TransactionV2> for Transaction {
 				r: U256::from(t.signature.r().as_bytes()),
 				s: U256::from(t.signature.s().as_bytes()),
 				access_list: None,
+				transaction_type: Some(U256::from(0)),
 			},
 			TransactionV2::EIP2930(t) => Transaction {
 				hash,
@@ -128,6 +132,7 @@ impl From<TransactionV2> for Transaction {
 				r: U256::from(t.r.as_bytes()),
 				s: U256::from(t.s.as_bytes()),
 				access_list: Some(t.access_list),
+				transaction_type: Some(U256::from(1)),
 			},
 			TransactionV2::EIP1559(t) => Transaction {
 				hash,
@@ -152,6 +157,7 @@ impl From<TransactionV2> for Transaction {
 				r: U256::from(t.r.as_bytes()),
 				s: U256::from(t.s.as_bytes()),
 				access_list: Some(t.access_list),
+				transaction_type: Some(U256::from(2)),
 			},
 		}
 	}
