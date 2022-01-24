@@ -1023,13 +1023,17 @@ where
 			None => return Box::pin(future::err(internal_err("no signer available"))),
 		};
 		let transaction_hash = transaction.hash();
+		let converted_transaction = match self.convert_transaction.convert_transaction(transaction)
+		{
+			Ok(converted_transaction) => converted_transaction,
+			Err(err) => return Box::pin(future::err(internal_err(err.to_string()))),
+		};
 		Box::pin(
 			self.pool
 				.submit_one(
 					&BlockId::hash(hash),
 					TransactionSource::Local,
-					self.convert_transaction
-						.convert_transaction(transaction.clone()),
+					converted_transaction,
 				)
 				.map_ok(move |_| transaction_hash)
 				.map_err(|err| {
@@ -1065,13 +1069,17 @@ where
 
 		let transaction_hash = transaction.hash();
 		let hash = self.client.info().best_hash;
+		let converted_transaction = match self.convert_transaction.convert_transaction(transaction)
+		{
+			Ok(converted_transaction) => converted_transaction,
+			Err(err) => return Box::pin(future::err(internal_err(err.to_string()))),
+		};
 		Box::pin(
 			self.pool
 				.submit_one(
 					&BlockId::hash(hash),
 					TransactionSource::Local,
-					self.convert_transaction
-						.convert_transaction(transaction.clone()),
+					converted_transaction,
 				)
 				.map_ok(move |_| transaction_hash)
 				.map_err(|err| {

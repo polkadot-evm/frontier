@@ -22,7 +22,7 @@ use ethereum::Log;
 use ethereum_types::Bloom;
 use sp_core::{H160, H256, U256};
 use sp_runtime::{traits::Block as BlockT, Permill};
-use sp_std::vec::Vec;
+use sp_std::{fmt::Display, vec::Vec};
 
 #[derive(Eq, PartialEq, Clone, Encode, Decode, sp_runtime::RuntimeDebug, scale_info::TypeInfo)]
 pub struct TransactionStatus {
@@ -179,6 +179,11 @@ sp_api::decl_runtime_apis! {
 	}
 }
 
+/// Ethereum transaction converter to an extrinsic.
 pub trait ConvertTransaction<E> {
-	fn convert_transaction(&self, transaction: ethereum::TransactionV2) -> E;
+	/// An error type.
+	type Error: Display;
+
+	/// Perform transaction convertation.
+	fn convert_transaction(&self, transaction: ethereum::TransactionV2) -> Result<E, Self::Error>;
 }
