@@ -51,6 +51,7 @@ sp-version = { default-features = false, git = "https://github.com/paritytech/su
 
 fp-rpc = { default-features = false, path = "../../primitives/rpc" }
 fp-self-contained = { default-features = false, path = "../../primitives/self-contained" }
+fp-transaction-converter-api = { default-features = false, path = "../../primitives/transaction-converter-api" }
 
 scale-info = { version = "1.0.0", default-features = false, features = ["derive"] }
 
@@ -75,6 +76,7 @@ std = [
 	"frame-system/std",
 	"fp-rpc/std",
 	"fp-self-contained/std",
+	"fp-transaction-converter-api/std",
 
 	"pallet-ethereum/std",
 	"pallet-evm/std",

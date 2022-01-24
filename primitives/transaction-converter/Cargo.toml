@@ -1,0 +1,28 @@
+[package]
+name = "fp-transaction-converter"
+version = "1.0.0"
+authors = ["Parity Technologies <admin@parity.io"]
+edition = "2018"
+description = "Transaction converter primitive"
+license = "Apache-2.0"
+
+[dependencies]
+fp-rpc = { version = "3.0.0-dev", path = "../../primitives/rpc", default-features = false }
+fp-transaction-converter-api = { version = "1.0.0", path = "../transaction-converter-api", default-features = false }
+
+codec = { package = "parity-scale-codec", version = "2.0.0" }
+ethereum = { version = "0.11.1", default-features = false, features = ["with-codec"] }
+sp-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", default-features = false }
+sp-blockchain = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate" }
+sp-runtime = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", default-features = false }
+
+[features]
+default = ["std"]
+std = [
+	"codec/std",
+	"ethereum/std",
+	"sp-api/std",
+	"sp-runtime/std",
+	"fp-rpc/std",
+	"fp-transaction-converter-api/std",
+]

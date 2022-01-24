@@ -1776,6 +1776,28 @@ name = "fp-storage"
 version = "2.0.0"
 
 [[package]]
+name = "fp-transaction-converter"
+version = "1.0.0"
+dependencies = [
+ "ethereum",
+ "fp-rpc",
+ "fp-transaction-converter-api",
+ "parity-scale-codec",
+ "sp-api",
+ "sp-blockchain",
+ "sp-runtime",
+]
+
+[[package]]
+name = "fp-transaction-converter-api"
+version = "1.0.0"
+dependencies = [
+ "ethereum",
+ "sp-api",
+ "sp-std",
+]
+
+[[package]]
 name = "frame-benchmarking"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate#ba153b9ae050eda022f002d74d76f98d1e339a81"
@@ -1963,6 +1985,8 @@ dependencies = [
  "fc-rpc-core",
  "fp-consensus",
  "fp-rpc",
+ "fp-transaction-converter",
+ "fp-transaction-converter-api",
  "frame-benchmarking",
  "frame-benchmarking-cli",
  "frontier-template-runtime",
@@ -2012,6 +2036,7 @@ version = "0.0.0"
 dependencies = [
  "fp-rpc",
  "fp-self-contained",
+ "fp-transaction-converter-api",
  "frame-benchmarking",
  "frame-executive",
  "frame-support",

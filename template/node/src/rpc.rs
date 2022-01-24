@@ -121,6 +121,7 @@ where
 	C::Api: BlockBuilder<Block>,
 	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
 	C::Api: fp_rpc::EthereumRuntimeRPCApi<Block>,
+	C::Api: fp_transaction_converter_api::TransactionConverterApi<Block>,
 	P: TransactionPool<Block = Block> + 'static,
 	A: ChainApi<Block = Block> + 'static,
 {
@@ -169,7 +170,7 @@ where
 		client.clone(),
 		pool.clone(),
 		graph,
-		frontier_template_runtime::TransactionConverter,
+		fp_transaction_converter::RuntimeTransactionConverter::new(Arc::clone(&client)),
 		network.clone(),
 		signers,
 		overrides.clone(),

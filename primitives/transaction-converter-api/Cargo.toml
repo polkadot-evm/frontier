@@ -1,0 +1,20 @@
+[package]
+name = "fp-transaction-converter-api"
+version = "1.0.0"
+authors = ["Parity Technologies <admin@parity.io"]
+edition = "2018"
+description = "Transaction converter api"
+license = "Apache-2.0"
+
+[dependencies]
+ethereum = { version = "0.11.1", default-features = false, features = ["with-codec"] }
+sp-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", default-features = false }
+sp-std = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", default-features = false }
+
+[features]
+default = ["std"]
+std = [
+	"sp-api/std",
+	"sp-std/std",
+	"ethereum/std",
+]

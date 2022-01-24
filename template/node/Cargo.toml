@@ -64,6 +64,8 @@ fp-rpc = { path = "../../primitives/rpc" }
 fc-rpc-core = { path = "../../client/rpc-core" }
 fc-db = { path = "../../client/db" }
 fc-mapping-sync = { path = "../../client/mapping-sync" }
+fp-transaction-converter = { path = "../../primitives/transaction-converter" }
+fp-transaction-converter-api = { path = "../../primitives/transaction-converter-api", default-features = false }
 
 pallet-evm = { path = "../../frame/evm" }
 pallet-ethereum = { path = "../../frame/ethereum" }
