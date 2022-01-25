@@ -177,8 +177,22 @@ sp_api::decl_runtime_apis! {
 		/// Return the elasticity multiplier.
 		fn elasticity() -> Option<Permill>;
 	}
+
+	#[api_version(2)]
+	pub trait ConvertTransactionRuntimeApi {
+		fn convert_transaction(transaction: ethereum::TransactionV2) -> <Block as BlockT>::Extrinsic;
+		#[changed_in(2)]
+		fn convert_transaction(transaction: ethereum::TransactionV0) -> <Block as BlockT>::Extrinsic;
+	}
 }
 
 pub trait ConvertTransaction<E> {
 	fn convert_transaction(&self, transaction: ethereum::TransactionV2) -> E;
+}
+
+pub struct PanicTransactionConverter;
+impl<E> ConvertTransaction<E> for PanicTransactionConverter {
+	fn convert_transaction(&self, _transaction: ethereum::TransactionV2) -> E {
+		panic!("No TransactionConverter is provided and the runtime api ConvertTransactionRuntimeApi is not found")
+	}
 }
