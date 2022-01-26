@@ -28,7 +28,7 @@ use ethereum_types::{Bloom, BloomInput, H160, H256, H64, U256};
 use evm::ExitReason;
 use fp_consensus::{PostLog, PreLog, FRONTIER_ENGINE_ID};
 use fp_evm::CallOrCreateInfo;
-use fp_storage::PALLET_ETHEREUM_SCHEMA;
+use fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA};
 use frame_support::{
 	dispatch::DispatchResultWithPostInfo,
 	traits::{EnsureOrigin, Get},
@@ -857,21 +857,6 @@ impl<T: Config> Pallet<T> {
 pub enum ReturnValue {
 	Bytes(Vec<u8>),
 	Hash(H160),
-}
-
-/// The schema version for Pallet Ethereum's storage
-#[derive(Clone, Copy, Debug, Encode, Decode, PartialEq, Eq, PartialOrd, Ord)]
-pub enum EthereumStorageSchema {
-	Undefined,
-	V1,
-	V2,
-	V3,
-}
-
-impl Default for EthereumStorageSchema {
-	fn default() -> Self {
-		Self::Undefined
-	}
 }
 
 pub struct IntermediateStateRoot;

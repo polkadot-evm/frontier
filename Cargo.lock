@@ -1537,7 +1537,6 @@ dependencies = [
  "fp-storage",
  "kvdb",
  "kvdb-rocksdb",
- "pallet-ethereum",
  "parity-scale-codec",
  "parking_lot 0.11.1",
  "sp-core",
@@ -1774,6 +1773,9 @@ dependencies = [
 [[package]]
 name = "fp-storage"
 version = "2.0.0"
+dependencies = [
+ "parity-scale-codec",
+]
 
 [[package]]
 name = "frame-benchmarking"
@@ -1963,6 +1965,7 @@ dependencies = [
  "fc-rpc-core",
  "fp-consensus",
  "fp-rpc",
+ "fp-storage",
  "frame-benchmarking",
  "frame-benchmarking-cli",
  "frontier-template-runtime",

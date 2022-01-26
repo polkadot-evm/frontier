@@ -6,6 +6,11 @@ edition = "2018"
 description = "Storage primitives for Ethereum RPC (web3) compatibility layer for Substrate."
 license = "Apache-2.0"
 
+[dependencies]
+codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false }
+
 [features]
 default = ["std"]
-std = []
+std = [
+	"codec/std"
+]

@@ -55,7 +55,7 @@ pub mod frontier_backend_client {
 	use jsonrpc_core::Result as RpcResult;
 
 	use ethereum_types::H256;
-	use pallet_ethereum::EthereumStorageSchema;
+	use fp_storage::EthereumStorageSchema;
 
 	pub fn native_block_id<B: BlockT, C>(
 		client: &C,
