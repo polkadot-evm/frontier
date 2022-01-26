@@ -32,10 +32,9 @@ pub use overrides::{
 };
 
 use ethereum_types::{H160, H256};
-use evm::ExitError;
+use evm::{ExitError, ExitReason};
 pub use fc_rpc_core::types::TransactionMessage;
 use jsonrpc_core::{Error, ErrorCode, Value};
-use pallet_evm::ExitReason;
 use rustc_hex::ToHex;
 use sha3::{Digest, Keccak256};
 
