@@ -190,9 +190,13 @@ pub trait ConvertTransaction<E> {
 	fn convert_transaction(&self, transaction: ethereum::TransactionV2) -> E;
 }
 
-pub struct PanicTransactionConverter;
-impl<E> ConvertTransaction<E> for PanicTransactionConverter {
+// `NoTransactionConverter` is a non-instantiable type (an enum with no variants),
+// so we are guaranteed at compile time that `NoTransactionConverter` can never be instantiated.
+pub enum NoTransactionConverter {}
+impl<E> ConvertTransaction<E> for NoTransactionConverter {
+	// `convert_transaction` is a method taking `&self` as a parameter, so it can only be called via an instance of type Self,
+	// so we are guaranteed at compile time that this method can never be called.
 	fn convert_transaction(&self, _transaction: ethereum::TransactionV2) -> E {
-		panic!("No TransactionConverter is provided and the runtime api ConvertTransactionRuntimeApi is not found")
+		unreachable!()
 	}
 }

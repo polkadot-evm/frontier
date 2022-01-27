@@ -68,7 +68,7 @@ pub struct EthApi<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> {
 	pool: Arc<P>,
 	graph: Arc<Pool<A>>,
 	client: Arc<C>,
-	convert_transaction: CT,
+	convert_transaction: Option<CT>,
 	network: Arc<NetworkService<B, H>>,
 	is_authority: bool,
 	signers: Vec<Box<dyn EthSigner>>,
@@ -96,7 +96,7 @@ where
 		client: Arc<C>,
 		pool: Arc<P>,
 		graph: Arc<Pool<A>>,
-		convert_transaction: CT,
+		convert_transaction: Option<CT>,
 		network: Arc<NetworkService<B, H>>,
 		signers: Vec<Box<dyn EthSigner>>,
 		overrides: Arc<OverrideHandle<B>>,
@@ -1067,9 +1067,13 @@ where
 					)));
 				}
 			}
-			None => self
-				.convert_transaction
-				.convert_transaction(transaction.clone()),
+			None => if let Some(ref convert_transaction) = self.convert_transaction {
+					convert_transaction.convert_transaction(transaction.clone())
+				} else {
+					return Box::pin(future::err(internal_err(
+						"No TransactionConverter is provided and the runtime api ConvertTransactionRuntimeApi is not found"
+					)))
+				},
 			_ => {
 				return Box::pin(future::err(internal_err(
 					"ConvertTransactionRuntimeApi version not supported",
@@ -1153,9 +1157,13 @@ where
 					)));
 				}
 			}
-			None => self
-				.convert_transaction
-				.convert_transaction(transaction.clone()),
+			None => if let Some(ref convert_transaction) = self.convert_transaction {
+				convert_transaction.convert_transaction(transaction.clone())
+			} else {
+				return Box::pin(future::err(internal_err(
+					"No TransactionConverter is provided and the runtime api ConvertTransactionRuntimeApi is not found"
+				)))
+			},
 			_ => {
 				return Box::pin(future::err(internal_err(
 					"ConvertTransactionRuntimeApi version not supported",
