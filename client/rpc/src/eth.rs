@@ -1067,13 +1067,15 @@ where
 					)));
 				}
 			}
-			None => if let Some(ref convert_transaction) = self.convert_transaction {
+			None => {
+				if let Some(ref convert_transaction) = self.convert_transaction {
 					convert_transaction.convert_transaction(transaction.clone())
 				} else {
 					return Box::pin(future::err(internal_err(
 						"No TransactionConverter is provided and the runtime api ConvertTransactionRuntimeApi is not found"
-					)))
-				},
+					)));
+				}
+			}
 			_ => {
 				return Box::pin(future::err(internal_err(
 					"ConvertTransactionRuntimeApi version not supported",
@@ -1157,13 +1159,15 @@ where
 					)));
 				}
 			}
-			None => if let Some(ref convert_transaction) = self.convert_transaction {
-				convert_transaction.convert_transaction(transaction.clone())
-			} else {
-				return Box::pin(future::err(internal_err(
+			None => {
+				if let Some(ref convert_transaction) = self.convert_transaction {
+					convert_transaction.convert_transaction(transaction.clone())
+				} else {
+					return Box::pin(future::err(internal_err(
 					"No TransactionConverter is provided and the runtime api ConvertTransactionRuntimeApi is not found"
-				)))
-			},
+				)));
+				}
+			}
 			_ => {
 				return Box::pin(future::err(internal_err(
 					"ConvertTransactionRuntimeApi version not supported",
