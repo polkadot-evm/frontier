@@ -3200,6 +3200,8 @@
 <span id="3199">3199</span>
 <span id="3200">3200</span>
 <span id="3201">3201</span>
+<span id="3202">3202</span>
+<span id="3203">3203</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -3425,9 +3427,10 @@
 	} <span class="kw">else</span> <span class="kw">if</span> <span class="op">!</span><span class="ident">is_eip1559</span> {
 		<span class="comment">// This is a pre-eip1559 support transaction a.k.a. txns on frontier before we introduced EIP1559 support in</span>
 		<span class="comment">// pallet-ethereum schema V2.</span>
-		<span class="comment">// They do not include `maxFeePerGas` or `maxPriorityFeePerGas` fields.</span>
+		<span class="comment">// They do not include `maxFeePerGas`, `maxPriorityFeePerGas` or `type` fields.</span>
 		<span class="ident">transaction</span>.<span class="ident">max_fee_per_gas</span> <span class="op">=</span> <span class="prelude-val">None</span>;
 		<span class="ident">transaction</span>.<span class="ident">max_priority_fee_per_gas</span> <span class="op">=</span> <span class="prelude-val">None</span>;
+		<span class="ident">transaction</span>.<span class="ident">transaction_type</span> <span class="op">=</span> <span class="prelude-val">None</span>;
 	}
 
 	<span class="kw">let</span> <span class="ident">pubkey</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">public_key</span>(<span class="kw-2">&amp;</span><span class="ident">ethereum_transaction</span>) {
@@ -4294,6 +4297,7 @@
 			<span class="ident">data</span>,
 			<span class="ident">nonce</span>,
 			<span class="ident">access_list</span>,
+			..
 		} <span class="op">=</span> <span class="ident">request</span>;
 
 		<span class="kw">let</span> (<span class="ident">gas_price</span>, <span class="ident">max_fee_per_gas</span>, <span class="ident">max_priority_fee_per_gas</span>) <span class="op">=</span> {

@@ -248,6 +248,12 @@
 <span id="247">247</span>
 <span id="248">248</span>
 <span id="249">249</span>
+<span id="250">250</span>
+<span id="251">251</span>
+<span id="252">252</span>
+<span id="253">253</span>
+<span id="254">254</span>
+<span id="255">255</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -323,6 +329,9 @@
 	<span class="doccomment">/// Pre-pay to warm storage access.</span>
 	<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>, <span class="ident">serde</span>(<span class="ident">skip_serializing_if</span> <span class="op">=</span> <span class="string">&quot;Option::is_none&quot;</span>))]</span>
 	<span class="kw">pub</span> <span class="ident">access_list</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">AccessListItem</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+	<span class="doccomment">/// EIP-2718 type</span>
+	<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename</span> <span class="op">=</span> <span class="string">&quot;type&quot;</span>, <span class="ident">skip_serializing_if</span> <span class="op">=</span> <span class="string">&quot;Option::is_none&quot;</span>)]</span>
+	<span class="kw">pub</span> <span class="ident">transaction_type</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">TransactionV2</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Transaction</span> {
@@ -354,6 +363,7 @@
 				<span class="ident">r</span>: <span class="ident">U256::from</span>(<span class="ident">t</span>.<span class="ident">signature</span>.<span class="ident">r</span>().<span class="ident">as_bytes</span>()),
 				<span class="ident">s</span>: <span class="ident">U256::from</span>(<span class="ident">t</span>.<span class="ident">signature</span>.<span class="ident">s</span>().<span class="ident">as_bytes</span>()),
 				<span class="ident">access_list</span>: <span class="prelude-val">None</span>,
+				<span class="ident">transaction_type</span>: <span class="prelude-val">Some</span>(<span class="ident">U256::from</span>(<span class="number">0</span>)),
 			},
 			<span class="ident">TransactionV2::EIP2930</span>(<span class="ident">t</span>) =&gt; <span class="ident">Transaction</span> {
 				<span class="ident">hash</span>,
@@ -378,6 +388,7 @@
 				<span class="ident">r</span>: <span class="ident">U256::from</span>(<span class="ident">t</span>.<span class="ident">r</span>.<span class="ident">as_bytes</span>()),
 				<span class="ident">s</span>: <span class="ident">U256::from</span>(<span class="ident">t</span>.<span class="ident">s</span>.<span class="ident">as_bytes</span>()),
 				<span class="ident">access_list</span>: <span class="prelude-val">Some</span>(<span class="ident">t</span>.<span class="ident">access_list</span>),
+				<span class="ident">transaction_type</span>: <span class="prelude-val">Some</span>(<span class="ident">U256::from</span>(<span class="number">1</span>)),
 			},
 			<span class="ident">TransactionV2::EIP1559</span>(<span class="ident">t</span>) =&gt; <span class="ident">Transaction</span> {
 				<span class="ident">hash</span>,
@@ -402,6 +413,7 @@
 				<span class="ident">r</span>: <span class="ident">U256::from</span>(<span class="ident">t</span>.<span class="ident">r</span>.<span class="ident">as_bytes</span>()),
 				<span class="ident">s</span>: <span class="ident">U256::from</span>(<span class="ident">t</span>.<span class="ident">s</span>.<span class="ident">as_bytes</span>()),
 				<span class="ident">access_list</span>: <span class="prelude-val">Some</span>(<span class="ident">t</span>.<span class="ident">access_list</span>),
+				<span class="ident">transaction_type</span>: <span class="prelude-val">Some</span>(<span class="ident">U256::from</span>(<span class="number">2</span>)),
 			},
 		}
 	}
