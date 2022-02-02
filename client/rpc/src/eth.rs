@@ -1130,13 +1130,11 @@ where
 			Some(amount) => amount,
 			None => {
 				let block = if api_version > 1 {
-					api
-						.current_block(&id)
+					api.current_block(&id)
 						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
 				} else {
 					#[allow(deprecated)]
-					let legacy_block = api
-						.current_block_before_version_2(&id)
+					let legacy_block = api.current_block_before_version_2(&id)
 						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?;
 					if let Some(block) = legacy_block {
 						Some(block.into())
@@ -1675,18 +1673,18 @@ where
 			{
 				Some((hash, index)) => (hash, index as usize),
 				None => {
-
 					let api = client.runtime_api();
 					let best_block: BlockId<B> = BlockId::Hash(client.info().best_hash);
 
-					let api_version =
-						if let Ok(Some(api_version)) = api.api_version::<dyn EthereumRuntimeRPCApi<B>>(&best_block) {
-							api_version
-						} else {
-							return Err(internal_err(format!(
-								"failed to retrieve Runtime Api version"
-							)));
-						};
+					let api_version = if let Ok(Some(api_version)) =
+						api.api_version::<dyn EthereumRuntimeRPCApi<B>>(&best_block)
+					{
+						api_version
+					} else {
+						return Err(internal_err(format!(
+							"failed to retrieve Runtime Api version"
+						)));
+					};
 					// If the transaction is not yet mapped in the frontier db,
 					// check for it in the transaction pool.
 					let mut xts: Vec<<B as BlockT>::Extrinsic> = Vec::new();
@@ -1710,17 +1708,20 @@ where
 					);
 
 					let ethereum_transactions: Vec<EthereumTransaction> = if api_version > 1 {
-						api
-							.extrinsic_filter(&best_block, xts)
-							.map_err(|err| {
-								internal_err(format!("fetch runtime extrinsic filter failed: {:?}", err))
-							})?
+						api.extrinsic_filter(&best_block, xts).map_err(|err| {
+							internal_err(format!(
+								"fetch runtime extrinsic filter failed: {:?}",
+								err
+							))
+						})?
 					} else {
 						#[allow(deprecated)]
-						let legacy = api
-							.extrinsic_filter_before_version_2(&best_block, xts)
+						let legacy = api.extrinsic_filter_before_version_2(&best_block, xts)
 							.map_err(|err| {
-								internal_err(format!("fetch runtime extrinsic filter failed: {:?}", err))
+								internal_err(format!(
+									"fetch runtime extrinsic filter failed: {:?}",
+									err
+								))
 							})?;
 						legacy.into_iter().map(|tx| tx.into()).collect()
 					};
