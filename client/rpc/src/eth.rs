@@ -1119,13 +1119,32 @@ where
 			}
 		};
 
+		let api_version =
+			if let Ok(Some(api_version)) = api.api_version::<dyn EthereumRuntimeRPCApi<B>>(&id) {
+				api_version
+			} else {
+				return Err(internal_err(format!(
+					"failed to retrieve Runtime Api version"
+				)));
+			};
 		// use given gas limit or query current block's limit
 		let gas_limit = match gas {
 			Some(amount) => amount,
 			None => {
-				let block = api
-					.current_block(&id)
-					.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?;
+				let block = if api_version > 1 {
+					api.current_block(&id)
+						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
+				} else {
+					#[allow(deprecated)]
+					let legacy_block = api.current_block_before_version_2(&id)
+						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?;
+					if let Some(block) = legacy_block {
+						Some(block.into())
+					} else {
+						None
+					}
+				};
+
 				if let Some(block) = block {
 					block.header.gas_limit
 				} else {
@@ -1136,15 +1155,6 @@ where
 			}
 		};
 		let data = data.map(|d| d.0).unwrap_or_default();
-
-		let api_version =
-			if let Ok(Some(api_version)) = api.api_version::<dyn EthereumRuntimeRPCApi<B>>(&id) {
-				api_version
-			} else {
-				return Err(internal_err(format!(
-					"failed to retrieve Runtime Api version"
-				)));
-			};
 		match to {
 			Some(to) => {
 				if api_version == 1 {
@@ -1665,6 +1675,18 @@ where
 			{
 				Some((hash, index)) => (hash, index as usize),
 				None => {
+					let api = client.runtime_api();
+					let best_block: BlockId<B> = BlockId::Hash(client.info().best_hash);
+
+					let api_version = if let Ok(Some(api_version)) =
+						api.api_version::<dyn EthereumRuntimeRPCApi<B>>(&best_block)
+					{
+						api_version
+					} else {
+						return Err(internal_err(format!(
+							"failed to retrieve Runtime Api version"
+						)));
+					};
 					// If the transaction is not yet mapped in the frontier db,
 					// check for it in the transaction pool.
 					let mut xts: Vec<<B as BlockT>::Extrinsic> = Vec::new();
@@ -1687,16 +1709,24 @@ where
 							.collect::<Vec<<B as BlockT>::Extrinsic>>(),
 					);
 
-					let best_block: BlockId<B> = BlockId::Hash(client.info().best_hash);
-					let ethereum_transactions: Vec<EthereumTransaction> = client
-						.runtime_api()
-						.extrinsic_filter(&best_block, xts)
-						.map_err(|err| {
+					let ethereum_transactions: Vec<EthereumTransaction> = if api_version > 1 {
+						api.extrinsic_filter(&best_block, xts).map_err(|err| {
 							internal_err(format!(
 								"fetch runtime extrinsic filter failed: {:?}",
 								err
 							))
-						})?;
+						})?
+					} else {
+						#[allow(deprecated)]
+						let legacy = api.extrinsic_filter_before_version_2(&best_block, xts)
+							.map_err(|err| {
+								internal_err(format!(
+									"fetch runtime extrinsic filter failed: {:?}",
+									err
+								))
+							})?;
+						legacy.into_iter().map(|tx| tx.into()).collect()
+					};
 
 					for txn in ethereum_transactions {
 						let inner_hash = txn.hash();
