@@ -33,9 +33,7 @@ sc-service = { version = "0.10.0-dev", git = "https://github.com/paritytech/subs
 sc-client-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate" }
 sc-rpc = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate" }
 sc-network = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate" }
-pallet-evm = { version = "6.0.0-dev", path = "../../frame/evm" }
 fp-evm = { version = "3.0.0-dev", path = "../../primitives/evm" }
-pallet-ethereum = { version = "4.0.0-dev", path = "../../frame/ethereum" }
 ethereum = { version = "0.11.1", features = ["with-codec"] }
 codec = { package = "parity-scale-codec", version = "2.0.0" }
 rlp = "0.5"

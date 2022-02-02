@@ -32,10 +32,9 @@ pub use overrides::{
 };
 
 use ethereum_types::{H160, H256};
-use evm::ExitError;
+use evm::{ExitError, ExitReason};
 pub use fc_rpc_core::types::TransactionMessage;
 use jsonrpc_core::{Error, ErrorCode, Value};
-use pallet_evm::ExitReason;
 use rustc_hex::ToHex;
 use sha3::{Digest, Keccak256};
 
@@ -55,7 +54,7 @@ pub mod frontier_backend_client {
 	use jsonrpc_core::Result as RpcResult;
 
 	use ethereum_types::H256;
-	use pallet_ethereum::EthereumStorageSchema;
+	use fp_storage::EthereumStorageSchema;
 
 	pub fn native_block_id<B: BlockT, C>(
 		client: &C,
