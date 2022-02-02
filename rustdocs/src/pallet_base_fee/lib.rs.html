@@ -466,6 +466,28 @@
 <span id="465">465</span>
 <span id="466">466</span>
 <span id="467">467</span>
+<span id="468">468</span>
+<span id="469">469</span>
+<span id="470">470</span>
+<span id="471">471</span>
+<span id="472">472</span>
+<span id="473">473</span>
+<span id="474">474</span>
+<span id="475">475</span>
+<span id="476">476</span>
+<span id="477">477</span>
+<span id="478">478</span>
+<span id="479">479</span>
+<span id="480">480</span>
+<span id="481">481</span>
+<span id="482">482</span>
+<span id="483">483</span>
+<span id="484">484</span>
+<span id="485">485</span>
+<span id="486">486</span>
+<span id="487">487</span>
+<span id="488">488</span>
+<span id="489">489</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -505,6 +527,7 @@
 		<span class="doccomment">/// Lower and upper bounds for increasing / decreasing `BaseFeePerGas`.</span>
 		<span class="kw">type</span> <span class="ident">Threshold</span>: <span class="ident">BaseFeeThreshold</span>;
 		<span class="kw">type</span> <span class="ident">IsActive</span>: <span class="ident">Get</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span>;
+		<span class="kw">type</span> <span class="ident">DefaultBaseFeePerGas</span>: <span class="ident">Get</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>;
 	}
 
 	<span class="attribute">#[<span class="ident">pallet::pallet</span>]</span>
@@ -535,8 +558,7 @@
 	<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">GenesisConfig</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
 		<span class="kw">fn</span> <span class="ident">default</span>() -&gt; <span class="self">Self</span> {
 			<span class="self">Self</span> {
-				<span class="comment">// 1 GWEI</span>
-				<span class="ident">base_fee_per_gas</span>: <span class="ident">U256::from</span>(<span class="number">1_000_000_000</span>),
+				<span class="ident">base_fee_per_gas</span>: <span class="ident">T::DefaultBaseFeePerGas::get</span>(),
 				<span class="ident">is_active</span>: <span class="bool-val">true</span>,
 				<span class="ident">elasticity</span>: <span class="ident">Permill::from_parts</span>(<span class="number">125_000</span>),
 				<span class="ident">_marker</span>: <span class="ident">PhantomData</span>,
@@ -553,13 +575,13 @@
 	}
 
 	<span class="attribute">#[<span class="ident">pallet::type_value</span>]</span>
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">DefaultBaseFeePerGas</span>() -&gt; <span class="ident">U256</span> {
-		<span class="ident">U256::from</span>(<span class="number">1_000_000_000</span>)
+	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">DefaultBaseFeePerGas</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span>() -&gt; <span class="ident">U256</span> {
+		<span class="ident">T::DefaultBaseFeePerGas::get</span>()
 	}
 
 	<span class="attribute">#[<span class="ident">pallet::storage</span>]</span>
 	<span class="attribute">#[<span class="ident">pallet::getter</span>(<span class="kw">fn</span> <span class="ident">base_fee_per_gas</span>)]</span>
-	<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">BaseFeePerGas</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">StorageValue</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">U256</span>, <span class="ident">ValueQuery</span>, <span class="ident">DefaultBaseFeePerGas</span><span class="op">&gt;</span>;
+	<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">BaseFeePerGas</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">StorageValue</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">U256</span>, <span class="ident">ValueQuery</span>, <span class="ident">DefaultBaseFeePerGas</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>;
 
 	<span class="attribute">#[<span class="ident">pallet::type_value</span>]</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">DefaultIsActive</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span>() -&gt; <span class="ident">bool</span> {
@@ -724,14 +746,24 @@
 		<span class="ident">Permill</span>,
 	};
 
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new_test_ext</span>(<span class="ident">base_fee</span>: <span class="ident">U256</span>) -&gt; <span class="ident">TestExternalities</span> {
+	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new_test_ext</span>(<span class="ident">base_fee</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>) -&gt; <span class="ident">TestExternalities</span> {
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">t</span> <span class="op">=</span> <span class="ident">frame_system::GenesisConfig::default</span>()
 			.<span class="ident">build_storage</span>::<span class="op">&lt;</span><span class="ident">Test</span><span class="op">&gt;</span>()
 			.<span class="ident">unwrap</span>();
 
-		<span class="ident">pallet_base_fee::GenesisConfig</span>::<span class="op">&lt;</span><span class="ident">Test</span><span class="op">&gt;</span><span class="ident">::new</span>(<span class="ident">base_fee</span>, <span class="bool-val">true</span>, <span class="ident">Permill::from_parts</span>(<span class="number">125_000</span>))
+		<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">base_fee</span>) <span class="op">=</span> <span class="ident">base_fee</span> {
+			<span class="ident">pallet_base_fee::GenesisConfig</span>::<span class="op">&lt;</span><span class="ident">Test</span><span class="op">&gt;</span><span class="ident">::new</span>(
+				<span class="ident">base_fee</span>,
+				<span class="bool-val">true</span>,
+				<span class="ident">Permill::from_parts</span>(<span class="number">125_000</span>),
+			)
 			.<span class="ident">assimilate_storage</span>(<span class="kw-2">&amp;mut</span> <span class="ident">t</span>)
 			.<span class="ident">unwrap</span>();
+		} <span class="kw">else</span> {
+			<span class="ident">pallet_base_fee::GenesisConfig</span>::<span class="op">&lt;</span><span class="ident">Test</span><span class="op">&gt;</span><span class="ident">::default</span>()
+				.<span class="ident">assimilate_storage</span>(<span class="kw-2">&amp;mut</span> <span class="ident">t</span>)
+				.<span class="ident">unwrap</span>();
+		}
 		<span class="ident">TestExternalities::new</span>(<span class="ident">t</span>)
 	}
 
@@ -771,6 +803,7 @@
 
 	<span class="macro">frame_support::parameter_types!</span> {
 		<span class="kw">pub</span> <span class="ident">IsActive</span>: <span class="ident">bool</span> <span class="op">=</span> <span class="bool-val">true</span>;
+		<span class="kw">pub</span> <span class="ident">DefaultBaseFeePerGas</span>: <span class="ident">U256</span> <span class="op">=</span> <span class="ident">U256::from</span>(<span class="number">100_000_000_000</span> <span class="kw">as</span> <span class="ident">u128</span>);
 	}
 
 	<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">BaseFeeThreshold</span>;
@@ -790,6 +823,7 @@
 		<span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
 		<span class="kw">type</span> <span class="ident">Threshold</span> <span class="op">=</span> <span class="ident">BaseFeeThreshold</span>;
 		<span class="kw">type</span> <span class="ident">IsActive</span> <span class="op">=</span> <span class="ident">IsActive</span>;
+		<span class="kw">type</span> <span class="ident">DefaultBaseFeePerGas</span> <span class="op">=</span> <span class="ident">DefaultBaseFeePerGas</span>;
 	}
 
 	<span class="macro">frame_support::construct_runtime!</span>(
@@ -804,9 +838,19 @@
 	);
 
 	<span class="attribute">#[<span class="ident">test</span>]</span>
+	<span class="kw">fn</span> <span class="ident">should_default</span>() {
+		<span class="ident">new_test_ext</span>(<span class="prelude-val">None</span>).<span class="ident">execute_with</span>(<span class="op">|</span><span class="op">|</span> {
+			<span class="macro">assert_eq!</span>(
+				<span class="ident">BaseFee::base_fee_per_gas</span>(),
+				<span class="ident">U256::from</span>(<span class="number">100_000_000_000</span> <span class="kw">as</span> <span class="ident">u128</span>)
+			);
+		});
+	}
+
+	<span class="attribute">#[<span class="ident">test</span>]</span>
 	<span class="kw">fn</span> <span class="ident">should_not_overflow_u256</span>() {
 		<span class="kw">let</span> <span class="ident">base_fee</span> <span class="op">=</span> <span class="ident">U256::max_value</span>();
-		<span class="ident">new_test_ext</span>(<span class="ident">base_fee</span>).<span class="ident">execute_with</span>(<span class="op">|</span><span class="op">|</span> {
+		<span class="ident">new_test_ext</span>(<span class="prelude-val">Some</span>(<span class="ident">base_fee</span>)).<span class="ident">execute_with</span>(<span class="op">|</span><span class="op">|</span> {
 			<span class="kw">let</span> <span class="ident">init</span> <span class="op">=</span> <span class="ident">BaseFee::base_fee_per_gas</span>();
 			<span class="ident">System::register_extra_weight_unchecked</span>(<span class="number">1000000000000</span>, <span class="ident">DispatchClass::Normal</span>);
 			<span class="ident">BaseFee::on_finalize</span>(<span class="ident">System::block_number</span>());
@@ -817,7 +861,7 @@
 	<span class="attribute">#[<span class="ident">test</span>]</span>
 	<span class="kw">fn</span> <span class="ident">should_handle_zero</span>() {
 		<span class="kw">let</span> <span class="ident">base_fee</span> <span class="op">=</span> <span class="ident">U256::zero</span>();
-		<span class="ident">new_test_ext</span>(<span class="ident">base_fee</span>).<span class="ident">execute_with</span>(<span class="op">|</span><span class="op">|</span> {
+		<span class="ident">new_test_ext</span>(<span class="prelude-val">Some</span>(<span class="ident">base_fee</span>)).<span class="ident">execute_with</span>(<span class="op">|</span><span class="op">|</span> {
 			<span class="kw">let</span> <span class="ident">init</span> <span class="op">=</span> <span class="ident">BaseFee::base_fee_per_gas</span>();
 			<span class="ident">BaseFee::on_finalize</span>(<span class="ident">System::block_number</span>());
 			<span class="macro">assert_eq!</span>(<span class="ident">BaseFee::base_fee_per_gas</span>(), <span class="ident">init</span>);
@@ -827,7 +871,7 @@
 	<span class="attribute">#[<span class="ident">test</span>]</span>
 	<span class="kw">fn</span> <span class="ident">should_handle_consecutive_empty_blocks</span>() {
 		<span class="kw">let</span> <span class="ident">base_fee</span> <span class="op">=</span> <span class="ident">U256::from</span>(<span class="number">1_000_000_000</span>);
-		<span class="ident">new_test_ext</span>(<span class="ident">base_fee</span>).<span class="ident">execute_with</span>(<span class="op">|</span><span class="op">|</span> {
+		<span class="ident">new_test_ext</span>(<span class="prelude-val">Some</span>(<span class="ident">base_fee</span>)).<span class="ident">execute_with</span>(<span class="op">|</span><span class="op">|</span> {
 			<span class="kw">for</span> <span class="kw">_</span> <span class="kw">in</span> <span class="number">0</span>..<span class="number">10000</span> {
 				<span class="ident">BaseFee::on_finalize</span>(<span class="ident">System::block_number</span>());
 				<span class="ident">System::set_block_number</span>(<span class="ident">System::block_number</span>() <span class="op">+</span> <span class="number">1</span>);
@@ -843,7 +887,7 @@
 	<span class="attribute">#[<span class="ident">test</span>]</span>
 	<span class="kw">fn</span> <span class="ident">should_handle_consecutive_full_blocks</span>() {
 		<span class="kw">let</span> <span class="ident">base_fee</span> <span class="op">=</span> <span class="ident">U256::from</span>(<span class="number">1_000_000_000</span>);
-		<span class="ident">new_test_ext</span>(<span class="ident">base_fee</span>).<span class="ident">execute_with</span>(<span class="op">|</span><span class="op">|</span> {
+		<span class="ident">new_test_ext</span>(<span class="prelude-val">Some</span>(<span class="ident">base_fee</span>)).<span class="ident">execute_with</span>(<span class="op">|</span><span class="op">|</span> {
 			<span class="kw">for</span> <span class="kw">_</span> <span class="kw">in</span> <span class="number">0</span>..<span class="number">10000</span> {
 				<span class="comment">// Register max weight in block.</span>
 				<span class="ident">System::register_extra_weight_unchecked</span>(<span class="number">1000000000000</span>, <span class="ident">DispatchClass::Normal</span>);
@@ -864,7 +908,7 @@
 	<span class="attribute">#[<span class="ident">test</span>]</span>
 	<span class="kw">fn</span> <span class="ident">should_increase_total_base_fee</span>() {
 		<span class="kw">let</span> <span class="ident">base_fee</span> <span class="op">=</span> <span class="ident">U256::from</span>(<span class="number">1_000_000_000</span>);
-		<span class="ident">new_test_ext</span>(<span class="ident">base_fee</span>).<span class="ident">execute_with</span>(<span class="op">|</span><span class="op">|</span> {
+		<span class="ident">new_test_ext</span>(<span class="prelude-val">Some</span>(<span class="ident">base_fee</span>)).<span class="ident">execute_with</span>(<span class="op">|</span><span class="op">|</span> {
 			<span class="macro">assert_eq!</span>(<span class="ident">BaseFee::base_fee_per_gas</span>(), <span class="ident">U256::from</span>(<span class="number">1000000000</span>));
 			<span class="comment">// Register max weight in block.</span>
 			<span class="ident">System::register_extra_weight_unchecked</span>(<span class="number">1000000000000</span>, <span class="ident">DispatchClass::Normal</span>);
@@ -877,7 +921,7 @@
 	<span class="attribute">#[<span class="ident">test</span>]</span>
 	<span class="kw">fn</span> <span class="ident">should_increase_delta_of_base_fee</span>() {
 		<span class="kw">let</span> <span class="ident">base_fee</span> <span class="op">=</span> <span class="ident">U256::from</span>(<span class="number">1_000_000_000</span>);
-		<span class="ident">new_test_ext</span>(<span class="ident">base_fee</span>).<span class="ident">execute_with</span>(<span class="op">|</span><span class="op">|</span> {
+		<span class="ident">new_test_ext</span>(<span class="prelude-val">Some</span>(<span class="ident">base_fee</span>)).<span class="ident">execute_with</span>(<span class="op">|</span><span class="op">|</span> {
 			<span class="macro">assert_eq!</span>(<span class="ident">BaseFee::base_fee_per_gas</span>(), <span class="ident">U256::from</span>(<span class="number">1000000000</span>));
 			<span class="comment">// Register 75% capacity in block weight.</span>
 			<span class="ident">System::register_extra_weight_unchecked</span>(<span class="number">750000000000</span>, <span class="ident">DispatchClass::Normal</span>);
@@ -890,7 +934,7 @@
 	<span class="attribute">#[<span class="ident">test</span>]</span>
 	<span class="kw">fn</span> <span class="ident">should_idle_base_fee</span>() {
 		<span class="kw">let</span> <span class="ident">base_fee</span> <span class="op">=</span> <span class="ident">U256::from</span>(<span class="number">1_000_000_000</span>);
-		<span class="ident">new_test_ext</span>(<span class="ident">base_fee</span>).<span class="ident">execute_with</span>(<span class="op">|</span><span class="op">|</span> {
+		<span class="ident">new_test_ext</span>(<span class="prelude-val">Some</span>(<span class="ident">base_fee</span>)).<span class="ident">execute_with</span>(<span class="op">|</span><span class="op">|</span> {
 			<span class="macro">assert_eq!</span>(<span class="ident">BaseFee::base_fee_per_gas</span>(), <span class="ident">U256::from</span>(<span class="number">1000000000</span>));
 			<span class="comment">// Register half capacity in block weight.</span>
 			<span class="ident">System::register_extra_weight_unchecked</span>(<span class="number">500000000000</span>, <span class="ident">DispatchClass::Normal</span>);
@@ -903,7 +947,7 @@
 	<span class="attribute">#[<span class="ident">test</span>]</span>
 	<span class="kw">fn</span> <span class="ident">set_base_fee_per_gas_dispatchable</span>() {
 		<span class="kw">let</span> <span class="ident">base_fee</span> <span class="op">=</span> <span class="ident">U256::from</span>(<span class="number">1_000_000_000</span>);
-		<span class="ident">new_test_ext</span>(<span class="ident">base_fee</span>).<span class="ident">execute_with</span>(<span class="op">|</span><span class="op">|</span> {
+		<span class="ident">new_test_ext</span>(<span class="prelude-val">Some</span>(<span class="ident">base_fee</span>)).<span class="ident">execute_with</span>(<span class="op">|</span><span class="op">|</span> {
 			<span class="macro">assert_eq!</span>(<span class="ident">BaseFee::base_fee_per_gas</span>(), <span class="ident">U256::from</span>(<span class="number">1000000000</span>));
 			<span class="macro">assert_ok!</span>(<span class="ident">BaseFee::set_base_fee_per_gas</span>(<span class="ident">Origin::root</span>(), <span class="ident">U256::from</span>(<span class="number">1</span>)));
 			<span class="macro">assert_eq!</span>(<span class="ident">BaseFee::base_fee_per_gas</span>(), <span class="ident">U256::from</span>(<span class="number">1</span>));
@@ -913,7 +957,7 @@
 	<span class="attribute">#[<span class="ident">test</span>]</span>
 	<span class="kw">fn</span> <span class="ident">set_is_active_dispatchable</span>() {
 		<span class="kw">let</span> <span class="ident">base_fee</span> <span class="op">=</span> <span class="ident">U256::from</span>(<span class="number">1_000_000_000</span>);
-		<span class="ident">new_test_ext</span>(<span class="ident">base_fee</span>).<span class="ident">execute_with</span>(<span class="op">|</span><span class="op">|</span> {
+		<span class="ident">new_test_ext</span>(<span class="prelude-val">Some</span>(<span class="ident">base_fee</span>)).<span class="ident">execute_with</span>(<span class="op">|</span><span class="op">|</span> {
 			<span class="macro">assert_eq!</span>(<span class="ident">BaseFee::is_active</span>(), <span class="bool-val">true</span>);
 			<span class="macro">assert_ok!</span>(<span class="ident">BaseFee::set_is_active</span>(<span class="ident">Origin::root</span>(), <span class="bool-val">false</span>));
 			<span class="macro">assert_eq!</span>(<span class="ident">BaseFee::is_active</span>(), <span class="bool-val">false</span>);
@@ -923,7 +967,7 @@
 	<span class="attribute">#[<span class="ident">test</span>]</span>
 	<span class="kw">fn</span> <span class="ident">set_elasticity_dispatchable</span>() {
 		<span class="kw">let</span> <span class="ident">base_fee</span> <span class="op">=</span> <span class="ident">U256::from</span>(<span class="number">1_000_000_000</span>);
-		<span class="ident">new_test_ext</span>(<span class="ident">base_fee</span>).<span class="ident">execute_with</span>(<span class="op">|</span><span class="op">|</span> {
+		<span class="ident">new_test_ext</span>(<span class="prelude-val">Some</span>(<span class="ident">base_fee</span>)).<span class="ident">execute_with</span>(<span class="op">|</span><span class="op">|</span> {
 			<span class="macro">assert_eq!</span>(<span class="ident">BaseFee::elasticity</span>(), <span class="ident">Permill::from_parts</span>(<span class="number">125_000</span>));
 			<span class="macro">assert_ok!</span>(<span class="ident">BaseFee::set_elasticity</span>(
 				<span class="ident">Origin::root</span>(),
