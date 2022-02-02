@@ -3202,6 +3202,36 @@
 <span id="3201">3201</span>
 <span id="3202">3202</span>
 <span id="3203">3203</span>
+<span id="3204">3204</span>
+<span id="3205">3205</span>
+<span id="3206">3206</span>
+<span id="3207">3207</span>
+<span id="3208">3208</span>
+<span id="3209">3209</span>
+<span id="3210">3210</span>
+<span id="3211">3211</span>
+<span id="3212">3212</span>
+<span id="3213">3213</span>
+<span id="3214">3214</span>
+<span id="3215">3215</span>
+<span id="3216">3216</span>
+<span id="3217">3217</span>
+<span id="3218">3218</span>
+<span id="3219">3219</span>
+<span id="3220">3220</span>
+<span id="3221">3221</span>
+<span id="3222">3222</span>
+<span id="3223">3223</span>
+<span id="3224">3224</span>
+<span id="3225">3225</span>
+<span id="3226">3226</span>
+<span id="3227">3227</span>
+<span id="3228">3228</span>
+<span id="3229">3229</span>
+<span id="3230">3230</span>
+<span id="3231">3231</span>
+<span id="3232">3232</span>
+<span id="3233">3233</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -4323,13 +4353,32 @@
 			}
 		};
 
+		<span class="kw">let</span> <span class="ident">api_version</span> <span class="op">=</span>
+			<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">api_version</span>)) <span class="op">=</span> <span class="ident">api</span>.<span class="ident">api_version</span>::<span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">EthereumRuntimeRPCApi</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="ident">id</span>) {
+				<span class="ident">api_version</span>
+			} <span class="kw">else</span> {
+				<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="macro">format!</span>(
+					<span class="string">&quot;failed to retrieve Runtime Api version&quot;</span>
+				)));
+			};
 		<span class="comment">// use given gas limit or query current block&#39;s limit</span>
 		<span class="kw">let</span> <span class="ident">gas_limit</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">gas</span> {
 			<span class="prelude-val">Some</span>(<span class="ident">amount</span>) =&gt; <span class="ident">amount</span>,
 			<span class="prelude-val">None</span> =&gt; {
-				<span class="kw">let</span> <span class="ident">block</span> <span class="op">=</span> <span class="ident">api</span>
-					.<span class="ident">current_block</span>(<span class="kw-2">&amp;</span><span class="ident">id</span>)
-					.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>;
+				<span class="kw">let</span> <span class="ident">block</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">api_version</span> <span class="op">&gt;</span> <span class="number">1</span> {
+					<span class="ident">api</span>.<span class="ident">current_block</span>(<span class="kw-2">&amp;</span><span class="ident">id</span>)
+						.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>
+				} <span class="kw">else</span> {
+					<span class="attribute">#[<span class="ident">allow</span>(<span class="ident">deprecated</span>)]</span>
+					<span class="kw">let</span> <span class="ident">legacy_block</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">current_block_before_version_2</span>(<span class="kw-2">&amp;</span><span class="ident">id</span>)
+						.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>;
+					<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">block</span>) <span class="op">=</span> <span class="ident">legacy_block</span> {
+						<span class="prelude-val">Some</span>(<span class="ident">block</span>.<span class="ident">into</span>())
+					} <span class="kw">else</span> {
+						<span class="prelude-val">None</span>
+					}
+				};
+
 				<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">block</span>) <span class="op">=</span> <span class="ident">block</span> {
 					<span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">gas_limit</span>
 				} <span class="kw">else</span> {
@@ -4340,15 +4389,6 @@
 			}
 		};
 		<span class="kw">let</span> <span class="ident">data</span> <span class="op">=</span> <span class="ident">data</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">d</span><span class="op">|</span> <span class="ident">d</span>.<span class="number">0</span>).<span class="ident">unwrap_or_default</span>();
-
-		<span class="kw">let</span> <span class="ident">api_version</span> <span class="op">=</span>
-			<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">api_version</span>)) <span class="op">=</span> <span class="ident">api</span>.<span class="ident">api_version</span>::<span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">EthereumRuntimeRPCApi</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="ident">id</span>) {
-				<span class="ident">api_version</span>
-			} <span class="kw">else</span> {
-				<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="macro">format!</span>(
-					<span class="string">&quot;failed to retrieve Runtime Api version&quot;</span>
-				)));
-			};
 		<span class="kw">match</span> <span class="ident">to</span> {
 			<span class="prelude-val">Some</span>(<span class="ident">to</span>) =&gt; {
 				<span class="kw">if</span> <span class="ident">api_version</span> <span class="op">==</span> <span class="number">1</span> {
@@ -4869,6 +4909,18 @@
 			{
 				<span class="prelude-val">Some</span>((<span class="ident">hash</span>, <span class="ident">index</span>)) =&gt; (<span class="ident">hash</span>, <span class="ident">index</span> <span class="kw">as</span> <span class="ident">usize</span>),
 				<span class="prelude-val">None</span> =&gt; {
+					<span class="kw">let</span> <span class="ident">api</span> <span class="op">=</span> <span class="ident">client</span>.<span class="ident">runtime_api</span>();
+					<span class="kw">let</span> <span class="ident">best_block</span>: <span class="ident">BlockId</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">BlockId::Hash</span>(<span class="ident">client</span>.<span class="ident">info</span>().<span class="ident">best_hash</span>);
+
+					<span class="kw">let</span> <span class="ident">api_version</span> <span class="op">=</span> <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">api_version</span>)) <span class="op">=</span>
+						<span class="ident">api</span>.<span class="ident">api_version</span>::<span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">EthereumRuntimeRPCApi</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="ident">best_block</span>)
+					{
+						<span class="ident">api_version</span>
+					} <span class="kw">else</span> {
+						<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="macro">format!</span>(
+							<span class="string">&quot;failed to retrieve Runtime Api version&quot;</span>
+						)));
+					};
 					<span class="comment">// If the transaction is not yet mapped in the frontier db,</span>
 					<span class="comment">// check for it in the transaction pool.</span>
 					<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">xts</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">B</span> <span class="kw">as</span> <span class="ident">BlockT</span><span class="op">&gt;</span><span class="ident">::Extrinsic</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
@@ -4891,16 +4943,24 @@
 							.<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">B</span> <span class="kw">as</span> <span class="ident">BlockT</span><span class="op">&gt;</span><span class="ident">::Extrinsic</span><span class="op">&gt;</span><span class="op">&gt;</span>(),
 					);
 
-					<span class="kw">let</span> <span class="ident">best_block</span>: <span class="ident">BlockId</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">BlockId::Hash</span>(<span class="ident">client</span>.<span class="ident">info</span>().<span class="ident">best_hash</span>);
-					<span class="kw">let</span> <span class="ident">ethereum_transactions</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">EthereumTransaction</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">client</span>
-						.<span class="ident">runtime_api</span>()
-						.<span class="ident">extrinsic_filter</span>(<span class="kw-2">&amp;</span><span class="ident">best_block</span>, <span class="ident">xts</span>)
-						.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> {
+					<span class="kw">let</span> <span class="ident">ethereum_transactions</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">EthereumTransaction</span><span class="op">&gt;</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">api_version</span> <span class="op">&gt;</span> <span class="number">1</span> {
+						<span class="ident">api</span>.<span class="ident">extrinsic_filter</span>(<span class="kw-2">&amp;</span><span class="ident">best_block</span>, <span class="ident">xts</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> {
 							<span class="ident">internal_err</span>(<span class="macro">format!</span>(
 								<span class="string">&quot;fetch runtime extrinsic filter failed: {:?}&quot;</span>,
 								<span class="ident">err</span>
 							))
-						})<span class="question-mark">?</span>;
+						})<span class="question-mark">?</span>
+					} <span class="kw">else</span> {
+						<span class="attribute">#[<span class="ident">allow</span>(<span class="ident">deprecated</span>)]</span>
+						<span class="kw">let</span> <span class="ident">legacy</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">extrinsic_filter_before_version_2</span>(<span class="kw-2">&amp;</span><span class="ident">best_block</span>, <span class="ident">xts</span>)
+							.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> {
+								<span class="ident">internal_err</span>(<span class="macro">format!</span>(
+									<span class="string">&quot;fetch runtime extrinsic filter failed: {:?}&quot;</span>,
+									<span class="ident">err</span>
+								))
+							})<span class="question-mark">?</span>;
+						<span class="ident">legacy</span>.<span class="ident">into_iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">tx</span><span class="op">|</span> <span class="ident">tx</span>.<span class="ident">into</span>()).<span class="ident">collect</span>()
+					};
 
 					<span class="kw">for</span> <span class="ident">txn</span> <span class="kw">in</span> <span class="ident">ethereum_transactions</span> {
 						<span class="kw">let</span> <span class="ident">inner_hash</span> <span class="op">=</span> <span class="ident">txn</span>.<span class="ident">hash</span>();
