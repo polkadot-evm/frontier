@@ -1117,13 +1117,34 @@ where
 			}
 		};
 
+		let api_version =
+			if let Ok(Some(api_version)) = api.api_version::<dyn EthereumRuntimeRPCApi<B>>(&id) {
+				api_version
+			} else {
+				return Err(internal_err(format!(
+					"failed to retrieve Runtime Api version"
+				)));
+			};
 		// use given gas limit or query current block's limit
 		let gas_limit = match gas {
 			Some(amount) => amount,
 			None => {
-				let block = api
-					.current_block(&id)
-					.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?;
+				let block = if api_version > 1 {
+					api
+						.current_block(&id)
+						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
+				} else {
+					#[allow(deprecated)]
+					let legacy_block = api
+						.current_block_before_version_2(&id)
+						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?;
+					if let Some(block) = legacy_block {
+						Some(block.into())
+					} else {
+						None
+					}
+				};
+
 				if let Some(block) = block {
 					block.header.gas_limit
 				} else {
@@ -1134,15 +1155,6 @@ where
 			}
 		};
 		let data = data.map(|d| d.0).unwrap_or_default();
-
-		let api_version =
-			if let Ok(Some(api_version)) = api.api_version::<dyn EthereumRuntimeRPCApi<B>>(&id) {
-				api_version
-			} else {
-				return Err(internal_err(format!(
-					"failed to retrieve Runtime Api version"
-				)));
-			};
 		match to {
 			Some(to) => {
 				if api_version == 1 {
