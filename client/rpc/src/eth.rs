@@ -1663,6 +1663,18 @@ where
 			{
 				Some((hash, index)) => (hash, index as usize),
 				None => {
+
+					let api = client.runtime_api();
+					let best_block: BlockId<B> = BlockId::Hash(client.info().best_hash);
+
+					let api_version =
+						if let Ok(Some(api_version)) = api.api_version::<dyn EthereumRuntimeRPCApi<B>>(&best_block) {
+							api_version
+						} else {
+							return Err(internal_err(format!(
+								"failed to retrieve Runtime Api version"
+							)));
+						};
 					// If the transaction is not yet mapped in the frontier db,
 					// check for it in the transaction pool.
 					let mut xts: Vec<<B as BlockT>::Extrinsic> = Vec::new();
@@ -1685,16 +1697,21 @@ where
 							.collect::<Vec<<B as BlockT>::Extrinsic>>(),
 					);
 
-					let best_block: BlockId<B> = BlockId::Hash(client.info().best_hash);
-					let ethereum_transactions: Vec<EthereumTransaction> = client
-						.runtime_api()
-						.extrinsic_filter(&best_block, xts)
-						.map_err(|err| {
-							internal_err(format!(
-								"fetch runtime extrinsic filter failed: {:?}",
-								err
-							))
-						})?;
+					let ethereum_transactions: Vec<EthereumTransaction> = if api_version > 1 {
+						api
+							.extrinsic_filter(&best_block, xts)
+							.map_err(|err| {
+								internal_err(format!("fetch runtime extrinsic filter failed: {:?}", err))
+							})?
+					} else {
+						#[allow(deprecated)]
+						let legacy = api
+							.extrinsic_filter_before_version_2(&best_block, xts)
+							.map_err(|err| {
+								internal_err(format!("fetch runtime extrinsic filter failed: {:?}", err))
+							})?;
+						legacy.into_iter().map(|tx| tx.into()).collect()
+					};
 
 					for txn in ethereum_transactions {
 						let inner_hash = txn.hash();
