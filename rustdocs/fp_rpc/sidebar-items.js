@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["TransactionStatus",""]],"trait":[["ConvertTransaction",""],["EthereumRuntimeRPCApi","API necessary for Ethereum-compatibility layer."]]});
+initSidebarItems({"enum":[["NoTransactionConverter",""]],"struct":[["TransactionStatus",""]],"trait":[["ConvertTransaction",""],["ConvertTransactionRuntimeApi",""],["EthereumRuntimeRPCApi","API necessary for Ethereum-compatibility layer."]]});

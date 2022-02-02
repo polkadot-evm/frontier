@@ -183,6 +183,24 @@
 <span id="182">182</span>
 <span id="183">183</span>
 <span id="184">184</span>
+<span id="185">185</span>
+<span id="186">186</span>
+<span id="187">187</span>
+<span id="188">188</span>
+<span id="189">189</span>
+<span id="190">190</span>
+<span id="191">191</span>
+<span id="192">192</span>
+<span id="193">193</span>
+<span id="194">194</span>
+<span id="195">195</span>
+<span id="196">196</span>
+<span id="197">197</span>
+<span id="198">198</span>
+<span id="199">199</span>
+<span id="200">200</span>
+<span id="201">201</span>
+<span id="202">202</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -362,10 +380,28 @@
 		<span class="doccomment">/// Return the elasticity multiplier.</span>
 		<span class="kw">fn</span> <span class="ident">elasticity</span>() -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Permill</span><span class="op">&gt;</span>;
 	}
+
+	<span class="attribute">#[<span class="ident">api_version</span>(<span class="number">2</span>)]</span>
+	<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">ConvertTransactionRuntimeApi</span> {
+		<span class="kw">fn</span> <span class="ident">convert_transaction</span>(<span class="ident">transaction</span>: <span class="ident">ethereum::TransactionV2</span>) -&gt; <span class="op">&lt;</span><span class="ident">Block</span> <span class="kw">as</span> <span class="ident">BlockT</span><span class="op">&gt;</span><span class="ident">::Extrinsic</span>;
+		<span class="attribute">#[<span class="ident">changed_in</span>(<span class="number">2</span>)]</span>
+		<span class="kw">fn</span> <span class="ident">convert_transaction</span>(<span class="ident">transaction</span>: <span class="ident">ethereum::TransactionV0</span>) -&gt; <span class="op">&lt;</span><span class="ident">Block</span> <span class="kw">as</span> <span class="ident">BlockT</span><span class="op">&gt;</span><span class="ident">::Extrinsic</span>;
+	}
 }
 
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">ConvertTransaction</span><span class="op">&lt;</span><span class="ident">E</span><span class="op">&gt;</span> {
 	<span class="kw">fn</span> <span class="ident">convert_transaction</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">transaction</span>: <span class="ident">ethereum::TransactionV2</span>) -&gt; <span class="ident">E</span>;
+}
+
+<span class="comment">// `NoTransactionConverter` is a non-instantiable type (an enum with no variants),</span>
+<span class="comment">// so we are guaranteed at compile time that `NoTransactionConverter` can never be instantiated.</span>
+<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">NoTransactionConverter</span> {}
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">E</span><span class="op">&gt;</span> <span class="ident">ConvertTransaction</span><span class="op">&lt;</span><span class="ident">E</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">NoTransactionConverter</span> {
+	<span class="comment">// `convert_transaction` is a method taking `&amp;self` as a parameter, so it can only be called via an instance of type Self,</span>
+	<span class="comment">// so we are guaranteed at compile time that this method can never be called.</span>
+	<span class="kw">fn</span> <span class="ident">convert_transaction</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">_transaction</span>: <span class="ident">ethereum::TransactionV2</span>) -&gt; <span class="ident">E</span> {
+		<span class="macro">unreachable!</span>()
+	}
 }
 </code></pre></div>
 </section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../" data-current-crate="fp_rpc" data-search-index-js="../../search-index.js" data-search-js="../../search.js"></div>
