@@ -241,6 +241,7 @@
 <span class="kw">use</span> <span class="ident">ethereum::BlockV2</span> <span class="kw">as</span> <span class="ident">EthereumBlock</span>;
 <span class="kw">use</span> <span class="ident">ethereum_types</span>::{<span class="ident">H160</span>, <span class="ident">H256</span>, <span class="ident">U256</span>};
 <span class="kw">use</span> <span class="ident">fp_rpc</span>::{<span class="ident">EthereumRuntimeRPCApi</span>, <span class="ident">TransactionStatus</span>};
+<span class="kw">use</span> <span class="ident">fp_storage::EthereumStorageSchema</span>;
 <span class="kw">use</span> <span class="ident">sp_api</span>::{<span class="ident">ApiExt</span>, <span class="ident">BlockId</span>, <span class="ident">ProvideRuntimeApi</span>};
 <span class="kw">use</span> <span class="ident">sp_io::hashing</span>::{<span class="ident">blake2_128</span>, <span class="ident">twox_128</span>};
 <span class="kw">use</span> <span class="ident">sp_runtime</span>::{<span class="ident">traits::Block</span> <span class="kw">as</span> <span class="ident">BlockT</span>, <span class="ident">Permill</span>};
@@ -251,7 +252,6 @@
 <span class="kw">mod</span> <span class="ident">schema_v3_override</span>;
 
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">fc_rpc_core</span>::{<span class="ident">EthApiServer</span>, <span class="ident">NetApiServer</span>};
-<span class="kw">use</span> <span class="ident">pallet_ethereum::EthereumStorageSchema</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">schema_v1_override::SchemaV1Override</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">schema_v2_override::SchemaV2Override</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">schema_v3_override::SchemaV3Override</span>;

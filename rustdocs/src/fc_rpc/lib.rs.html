@@ -409,7 +409,6 @@
 <span id="408">408</span>
 <span id="409">409</span>
 <span id="410">410</span>
-<span id="411">411</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -444,10 +443,9 @@
 };
 
 <span class="kw">use</span> <span class="ident">ethereum_types</span>::{<span class="ident">H160</span>, <span class="ident">H256</span>};
-<span class="kw">use</span> <span class="ident">evm::ExitError</span>;
+<span class="kw">use</span> <span class="ident">evm</span>::{<span class="ident">ExitError</span>, <span class="ident">ExitReason</span>};
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">fc_rpc_core::types::TransactionMessage</span>;
 <span class="kw">use</span> <span class="ident">jsonrpc_core</span>::{<span class="ident">Error</span>, <span class="ident">ErrorCode</span>, <span class="ident">Value</span>};
-<span class="kw">use</span> <span class="ident">pallet_evm::ExitReason</span>;
 <span class="kw">use</span> <span class="ident">rustc_hex::ToHex</span>;
 <span class="kw">use</span> <span class="ident">sha3</span>::{<span class="ident">Digest</span>, <span class="ident">Keccak256</span>};
 
@@ -467,7 +465,7 @@
 	<span class="kw">use</span> <span class="ident">jsonrpc_core::Result</span> <span class="kw">as</span> <span class="ident">RpcResult</span>;
 
 	<span class="kw">use</span> <span class="ident">ethereum_types::H256</span>;
-	<span class="kw">use</span> <span class="ident">pallet_ethereum::EthereumStorageSchema</span>;
+	<span class="kw">use</span> <span class="ident">fp_storage::EthereumStorageSchema</span>;
 
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">native_block_id</span><span class="op">&lt;</span><span class="ident">B</span>: <span class="ident">BlockT</span>, <span class="ident">C</span><span class="op">&gt;</span>(
 		<span class="ident">client</span>: <span class="kw-2">&amp;</span><span class="ident">C</span>,

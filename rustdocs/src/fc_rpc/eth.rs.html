@@ -3401,7 +3401,7 @@
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::overrides::OverrideHandle</span>;
 <span class="kw">use</span> <span class="ident">codec</span>::{<span class="self">self</span>, <span class="ident">Decode</span>, <span class="ident">Encode</span>};
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">fc_rpc_core</span>::{<span class="ident">EthApiServer</span>, <span class="ident">EthFilterApiServer</span>, <span class="ident">NetApiServer</span>, <span class="ident">Web3ApiServer</span>};
-<span class="kw">use</span> <span class="ident">pallet_ethereum::EthereumStorageSchema</span>;
+<span class="kw">use</span> <span class="ident">fp_storage::EthereumStorageSchema</span>;
 
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">EthApi</span><span class="op">&lt;</span><span class="ident">B</span>: <span class="ident">BlockT</span>, <span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">CT</span>, <span class="ident">BE</span>, <span class="ident">H</span>: <span class="ident">ExHashT</span>, <span class="ident">A</span>: <span class="ident">ChainApi</span><span class="op">&gt;</span> {
 	<span class="ident">pool</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">P</span><span class="op">&gt;</span>,

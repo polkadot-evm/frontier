@@ -264,9 +264,9 @@
 	<span class="ident">SchemaV2Override</span>, <span class="ident">SchemaV3Override</span>, <span class="ident">StorageOverride</span>,
 };
 <span class="kw">use</span> <span class="ident">fc_rpc_core::types</span>::{<span class="ident">FeeHistoryCache</span>, <span class="ident">FilterPool</span>};
+<span class="kw">use</span> <span class="ident">fp_storage::EthereumStorageSchema</span>;
 <span class="kw">use</span> <span class="ident">frontier_template_runtime</span>::{<span class="ident">opaque::Block</span>, <span class="ident">AccountId</span>, <span class="ident">Balance</span>, <span class="ident">Hash</span>, <span class="ident">Index</span>};
 <span class="kw">use</span> <span class="ident">jsonrpc_pubsub::manager::SubscriptionManager</span>;
-<span class="kw">use</span> <span class="ident">pallet_ethereum::EthereumStorageSchema</span>;
 <span class="kw">use</span> <span class="ident">sc_client_api</span>::{
 	<span class="ident">backend</span>::{<span class="ident">AuxStore</span>, <span class="ident">Backend</span>, <span class="ident">StateBackend</span>, <span class="ident">StorageProvider</span>},
 	<span class="ident">client::BlockchainEvents</span>,

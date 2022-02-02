@@ -22,6 +22,23 @@
 <span id="21">21</span>
 <span id="22">22</span>
 <span id="23">23</span>
+<span id="24">24</span>
+<span id="25">25</span>
+<span id="26">26</span>
+<span id="27">27</span>
+<span id="28">28</span>
+<span id="29">29</span>
+<span id="30">30</span>
+<span id="31">31</span>
+<span id="32">32</span>
+<span id="33">33</span>
+<span id="34">34</span>
+<span id="35">35</span>
+<span id="36">36</span>
+<span id="37">37</span>
+<span id="38">38</span>
+<span id="39">39</span>
+<span id="40">40</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -41,10 +58,27 @@
 
 <span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
 
+<span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Decode</span>, <span class="ident">Encode</span>};
+
 <span class="doccomment">/// Current version of pallet Ethereum&#39;s storage schema is stored under this key.</span>
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">PALLET_ETHEREUM_SCHEMA</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> [<span class="ident">u8</span>] <span class="op">=</span> <span class="string">b&quot;:ethereum_schema&quot;</span>;
 <span class="doccomment">/// Cached version of pallet Ethereum&#39;s storage schema is stored under this key in the AuxStore.</span>
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">PALLET_ETHEREUM_SCHEMA_CACHE</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> [<span class="ident">u8</span>] <span class="op">=</span> <span class="string">b&quot;:ethereum_schema_cache&quot;</span>;
+
+<span class="doccomment">/// The schema version for Pallet Ethereum&#39;s storage</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">Debug</span>, <span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>, <span class="ident">PartialOrd</span>, <span class="ident">Ord</span>)]</span>
+<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">EthereumStorageSchema</span> {
+	<span class="ident">Undefined</span>,
+	<span class="ident">V1</span>,
+	<span class="ident">V2</span>,
+	<span class="ident">V3</span>,
+}
+
+<span class="kw">impl</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">EthereumStorageSchema</span> {
+	<span class="kw">fn</span> <span class="ident">default</span>() -&gt; <span class="self">Self</span> {
+		<span class="ident"><span class="self">Self</span>::Undefined</span>
+	}
+}
 </code></pre></div>
 </section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../" data-current-crate="fp_storage" data-search-index-js="../../search-index.js" data-search-js="../../search.js"></div>
 </body></html>

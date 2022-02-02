@@ -289,7 +289,6 @@
 <span id="288">288</span>
 <span id="289">289</span>
 <span id="290">290</span>
-<span id="291">291</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -313,8 +312,7 @@
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">sp_database::Database</span>;
 
 <span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Decode</span>, <span class="ident">Encode</span>};
-<span class="kw">use</span> <span class="ident">fp_storage::PALLET_ETHEREUM_SCHEMA_CACHE</span>;
-<span class="kw">use</span> <span class="ident">pallet_ethereum::EthereumStorageSchema</span>;
+<span class="kw">use</span> <span class="ident">fp_storage</span>::{<span class="ident">EthereumStorageSchema</span>, <span class="ident">PALLET_ETHEREUM_SCHEMA_CACHE</span>};
 <span class="kw">use</span> <span class="ident">parking_lot::Mutex</span>;
 <span class="kw">use</span> <span class="ident">sp_core::H256</span>;
 <span class="kw">use</span> <span class="ident">sp_runtime::traits::Block</span> <span class="kw">as</span> <span class="ident">BlockT</span>;

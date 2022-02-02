@@ -884,21 +884,6 @@
 <span id="883">883</span>
 <span id="884">884</span>
 <span id="885">885</span>
-<span id="886">886</span>
-<span id="887">887</span>
-<span id="888">888</span>
-<span id="889">889</span>
-<span id="890">890</span>
-<span id="891">891</span>
-<span id="892">892</span>
-<span id="893">893</span>
-<span id="894">894</span>
-<span id="895">895</span>
-<span id="896">896</span>
-<span id="897">897</span>
-<span id="898">898</span>
-<span id="899">899</span>
-<span id="900">900</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -929,7 +914,7 @@
 <span class="kw">use</span> <span class="ident">evm::ExitReason</span>;
 <span class="kw">use</span> <span class="ident">fp_consensus</span>::{<span class="ident">PostLog</span>, <span class="ident">PreLog</span>, <span class="ident">FRONTIER_ENGINE_ID</span>};
 <span class="kw">use</span> <span class="ident">fp_evm::CallOrCreateInfo</span>;
-<span class="kw">use</span> <span class="ident">fp_storage::PALLET_ETHEREUM_SCHEMA</span>;
+<span class="kw">use</span> <span class="ident">fp_storage</span>::{<span class="ident">EthereumStorageSchema</span>, <span class="ident">PALLET_ETHEREUM_SCHEMA</span>};
 <span class="kw">use</span> <span class="ident">frame_support</span>::{
 	<span class="ident">dispatch::DispatchResultWithPostInfo</span>,
 	<span class="ident">traits</span>::{<span class="ident">EnsureOrigin</span>, <span class="ident">Get</span>},
@@ -1758,21 +1743,6 @@
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">ReturnValue</span> {
 	<span class="ident">Bytes</span>(<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>),
 	<span class="ident">Hash</span>(<span class="ident">H160</span>),
-}
-
-<span class="doccomment">/// The schema version for Pallet Ethereum&#39;s storage</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">Debug</span>, <span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>, <span class="ident">PartialOrd</span>, <span class="ident">Ord</span>)]</span>
-<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">EthereumStorageSchema</span> {
-	<span class="ident">Undefined</span>,
-	<span class="ident">V1</span>,
-	<span class="ident">V2</span>,
-	<span class="ident">V3</span>,
-}
-
-<span class="kw">impl</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">EthereumStorageSchema</span> {
-	<span class="kw">fn</span> <span class="ident">default</span>() -&gt; <span class="self">Self</span> {
-		<span class="ident"><span class="self">Self</span>::Undefined</span>
-	}
 }
 
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">IntermediateStateRoot</span>;
