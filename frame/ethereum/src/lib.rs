@@ -168,7 +168,6 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config:
 		frame_system::Config
-		+ pallet_balances::Config
 		+ pallet_timestamp::Config
 		+ pallet_evm::Config
 	{
