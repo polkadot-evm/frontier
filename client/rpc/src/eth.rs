@@ -1523,11 +1523,10 @@ where
 			// of time, the RPC response time would degrade a lot, as the VersionedRuntime needs to be compiled.
 			//
 			// To solve that, and if we introduce historical gas estimation, we'd need to increase that default.
-			let executable = move |request,
-			                       gas_limit,
-			                       api_version,
-			                       api: sp_api::ApiRef<'_, C::Api>|
-			      -> Result<ExecutableResult> {
+			#[rustfmt::skip]
+			let executable = move |
+				request, gas_limit, api_version, api: sp_api::ApiRef<'_, C::Api>
+			| -> Result<ExecutableResult> {
 				let CallRequest {
 					from,
 					to,
