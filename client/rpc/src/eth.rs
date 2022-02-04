@@ -1512,8 +1512,22 @@ where
 				used_gas: U256,
 			}
 
-			// Create a helper to check if a gas allowance results in an executable transaction
-			let executable = move |request, gas_limit, api_version| -> Result<ExecutableResult> {
+			// Create a helper to check if a gas allowance results in an executable transaction.
+			//
+			// A new ApiRef instance needs to be used per execution to avoid the overlayed state to affect
+			// the estimation result of subsequent calls.
+			//
+			// Note that this would have a performance penalty if we introduce gas estimation for past
+			// blocks - and thus, past runtime versions. Substrate has a default `runtime_cache_size` of
+			// 2 slots LRU-style, meaning if users were to access multiple runtime versions in a short period
+			// of time, the RPC response time would degrade a lot, as the VersionedRuntime needs to be compiled.
+			//
+			// To solve that, and if we introduce historical gas estimation, we'd need to increase that default.
+			let executable = move |request,
+			                       gas_limit,
+			                       api_version,
+			                       api: sp_api::ApiRef<'_, C::Api>|
+			      -> Result<ExecutableResult> {
 				let CallRequest {
 					from,
 					to,
@@ -1675,7 +1689,7 @@ where
 				data,
 				exit_reason,
 				used_gas,
-			} = executable(request.clone(), highest, api_version)?;
+			} = executable(request.clone(), highest, api_version, client.runtime_api())?;
 			match exit_reason {
 				ExitReason::Succeed(_) => (),
 				ExitReason::Error(ExitError::OutOfGas) => {
@@ -1700,6 +1714,7 @@ where
 							request.clone(),
 							get_current_block_gas_limit().await?,
 							api_version,
+							client.runtime_api(),
 						)?;
 						match exit_reason {
 							ExitReason::Succeed(_) => {
@@ -1738,7 +1753,7 @@ where
 						data,
 						exit_reason,
 						used_gas: _,
-					} = executable(request.clone(), mid, api_version)?;
+					} = executable(request.clone(), mid, api_version, client.runtime_api())?;
 					match exit_reason {
 						ExitReason::Succeed(_) => {
 							highest = mid;
