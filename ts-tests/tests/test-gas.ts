@@ -14,12 +14,11 @@ function binary_search(one_off_estimation) {
 	let lowest = 21000;
 	let mid = Math.min(one_off_estimation * 3, (highest + lowest) / 2);
 	let previous_highest = highest;
-	let exit = false;
-	while(!exit) {
+	while(true) {
 		if(mid >= one_off_estimation) {
 			highest = mid;
 			if((previous_highest - highest) * ESTIMATION_VARIANCE / previous_highest < 1){
-				exit = true;
+				break;
 			}
 			previous_highest = highest;
 		} else {
