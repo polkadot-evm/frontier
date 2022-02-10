@@ -3337,6 +3337,11 @@
 <span id="3336">3336</span>
 <span id="3337">3337</span>
 <span id="3338">3338</span>
+<span id="3339">3339</span>
+<span id="3340">3340</span>
+<span id="3341">3341</span>
+<span id="3342">3342</span>
+<span id="3343">3343</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -4852,7 +4857,8 @@
 			}
 
 			<span class="comment">// Create a helper to check if a gas allowance results in an executable transaction</span>
-			<span class="kw">let</span> <span class="ident">executable</span> <span class="op">=</span> <span class="kw">move</span> <span class="op">|</span><span class="ident">request</span>, <span class="ident">gas_limit</span>, <span class="ident">api_version</span><span class="op">|</span> -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">ExecutableResult</span><span class="op">&gt;</span> {
+			<span class="attribute">#[<span class="ident">rustfmt::skip</span>]</span>
+			<span class="kw">let</span> <span class="ident">executable</span> <span class="op">=</span> <span class="kw">move</span> <span class="op">|</span><span class="ident">request</span>, <span class="ident">gas_limit</span>, <span class="ident">api_version</span>, <span class="ident">estimate_mode</span><span class="op">|</span> -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">ExecutableResult</span><span class="op">&gt;</span> {
 				<span class="kw">let</span> <span class="ident">CallRequest</span> {
 					<span class="ident">from</span>,
 					<span class="ident">to</span>,
@@ -4883,7 +4889,7 @@
 								<span class="ident">gas_limit</span>,
 								<span class="ident">gas_price</span>,
 								<span class="ident">nonce</span>,
-								<span class="bool-val">true</span>,
+								<span class="ident">estimate_mode</span>,
 							)
 							.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>
 							.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>
@@ -4900,7 +4906,7 @@
 								<span class="ident">max_fee_per_gas</span>,
 								<span class="ident">max_priority_fee_per_gas</span>,
 								<span class="ident">nonce</span>,
-								<span class="bool-val">true</span>,
+								<span class="ident">estimate_mode</span>,
 							)
 							.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>
 							.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>
@@ -4917,7 +4923,7 @@
 								<span class="ident">max_fee_per_gas</span>,
 								<span class="ident">max_priority_fee_per_gas</span>,
 								<span class="ident">nonce</span>,
-								<span class="bool-val">true</span>,
+								<span class="ident">estimate_mode</span>,
 								<span class="prelude-val">Some</span>(
 									<span class="ident">access_list</span>
 										.<span class="ident">into_iter</span>()
@@ -4943,7 +4949,7 @@
 								<span class="ident">gas_limit</span>,
 								<span class="ident">gas_price</span>,
 								<span class="ident">nonce</span>,
-								<span class="bool-val">true</span>,
+								<span class="ident">estimate_mode</span>,
 							)
 							.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>
 							.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>
@@ -4959,7 +4965,7 @@
 								<span class="ident">max_fee_per_gas</span>,
 								<span class="ident">max_priority_fee_per_gas</span>,
 								<span class="ident">nonce</span>,
-								<span class="bool-val">true</span>,
+								<span class="ident">estimate_mode</span>,
 							)
 							.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>
 							.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>
@@ -4975,7 +4981,7 @@
 								<span class="ident">max_fee_per_gas</span>,
 								<span class="ident">max_priority_fee_per_gas</span>,
 								<span class="ident">nonce</span>,
-								<span class="bool-val">true</span>,
+								<span class="ident">estimate_mode</span>,
 								<span class="prelude-val">Some</span>(
 									<span class="ident">access_list</span>
 										.<span class="ident">into_iter</span>()
@@ -5010,11 +5016,12 @@
 
 			<span class="comment">// Verify that the transaction succeed with highest capacity</span>
 			<span class="kw">let</span> <span class="ident">cap</span> <span class="op">=</span> <span class="ident">highest</span>;
+			<span class="kw">let</span> <span class="ident">estimate_mode</span> <span class="op">=</span> <span class="bool-val">true</span>;
 			<span class="kw">let</span> <span class="ident">ExecutableResult</span> {
 				<span class="ident">data</span>,
 				<span class="ident">exit_reason</span>,
 				<span class="ident">used_gas</span>,
-			} <span class="op">=</span> <span class="ident">executable</span>(<span class="ident">request</span>.<span class="ident">clone</span>(), <span class="ident">highest</span>, <span class="ident">api_version</span>)<span class="question-mark">?</span>;
+			} <span class="op">=</span> <span class="ident">executable</span>(<span class="ident">request</span>.<span class="ident">clone</span>(), <span class="ident">highest</span>, <span class="ident">api_version</span>, <span class="ident">estimate_mode</span>)<span class="question-mark">?</span>;
 			<span class="kw">match</span> <span class="ident">exit_reason</span> {
 				<span class="ident">ExitReason::Succeed</span>(<span class="kw">_</span>) =&gt; (),
 				<span class="ident">ExitReason::Error</span>(<span class="ident">ExitError::OutOfGas</span>) =&gt; {
@@ -5039,6 +5046,7 @@
 							<span class="ident">request</span>.<span class="ident">clone</span>(),
 							<span class="ident">get_current_block_gas_limit</span>().<span class="kw">await</span><span class="question-mark">?</span>,
 							<span class="ident">api_version</span>,
+							<span class="ident">estimate_mode</span>,
 						)<span class="question-mark">?</span>;
 						<span class="kw">match</span> <span class="ident">exit_reason</span> {
 							<span class="ident">ExitReason::Succeed</span>(<span class="kw">_</span>) =&gt; {
@@ -5064,6 +5072,8 @@
 			}
 			<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;rpc_binary_search_estimate&quot;</span>)]</span>
 			{
+				<span class="comment">// On binary search, evm estimate mode is disabled</span>
+				<span class="kw">let</span> <span class="ident">estimate_mode</span> <span class="op">=</span> <span class="bool-val">false</span>;
 				<span class="comment">// Define the lower bound of the binary search</span>
 				<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">lowest</span> <span class="op">=</span> <span class="ident">MIN_GAS_PER_TX</span>;
 
@@ -5077,7 +5087,7 @@
 						<span class="ident">data</span>,
 						<span class="ident">exit_reason</span>,
 						<span class="ident">used_gas</span>: <span class="kw">_</span>,
-					} <span class="op">=</span> <span class="ident">executable</span>(<span class="ident">request</span>.<span class="ident">clone</span>(), <span class="ident">mid</span>, <span class="ident">api_version</span>)<span class="question-mark">?</span>;
+					} <span class="op">=</span> <span class="ident">executable</span>(<span class="ident">request</span>.<span class="ident">clone</span>(), <span class="ident">mid</span>, <span class="ident">api_version</span>, <span class="ident">estimate_mode</span>)<span class="question-mark">?</span>;
 					<span class="kw">match</span> <span class="ident">exit_reason</span> {
 						<span class="ident">ExitReason::Succeed</span>(<span class="kw">_</span>) =&gt; {
 							<span class="ident">highest</span> <span class="op">=</span> <span class="ident">mid</span>;
