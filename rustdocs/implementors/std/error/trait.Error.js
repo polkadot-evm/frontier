@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["fc_consensus"] = [{"text":"impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.58.1/std/error/trait.Error.html\" title=\"trait std::error::Error\">Error</a> for <a class=\"enum\" href=\"fc_consensus/enum.Error.html\" title=\"enum fc_consensus::Error\">Error</a>","synthetic":false,"types":["fc_consensus::Error"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
