@@ -71,7 +71,7 @@ pub use fp_evm::{
 
 #[cfg(feature = "std")]
 use codec::{Decode, Encode};
-use evm::Config as EvmConfig;
+pub use evm::Config as EvmConfig;
 use frame_support::{
 	dispatch::DispatchResultWithPostInfo,
 	traits::{
