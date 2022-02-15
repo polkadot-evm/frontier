@@ -110,7 +110,7 @@ where
 					Err(err) => err.post_info,
 				};
 				Extra::post_dispatch(
-					pre,
+					Some(pre),
 					info,
 					&post_info,
 					len,
@@ -119,7 +119,7 @@ where
 				Ok(res)
 			}
 			CheckedSignature::Unsigned => {
-				let pre = Extra::pre_dispatch_unsigned(&self.function, info, len)?;
+				let _pre = Extra::pre_dispatch_unsigned(&self.function, info, len)?;
 				U::pre_dispatch(&self.function)?;
 				let maybe_who = None;
 				let res = self.function.dispatch(Origin::from(maybe_who));
@@ -128,7 +128,7 @@ where
 					Err(err) => err.post_info,
 				};
 				Extra::post_dispatch(
-					pre,
+					None,
 					info,
 					&post_info,
 					len,
