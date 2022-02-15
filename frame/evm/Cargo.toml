@@ -24,7 +24,7 @@ rlp = { version = "0.5", default-features = false }
 serde = { version = "1.0.101", optional = true, features = ["derive"] }
 sha3 = { version = "0.8", default-features = false }
 
-codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false }
+codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = ["derive"] }
 scale-info = { version = "1.0.0", default-features = false, features = ["derive"] }
 sp-core = { version = "5.0.0",  git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 sp-runtime = { version = "5.0.0",  git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
