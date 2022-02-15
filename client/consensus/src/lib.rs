@@ -18,7 +18,7 @@
 
 use std::{collections::HashMap, marker::PhantomData, sync::Arc};
 
-use sc_client_api::{self, backend::AuxStore, BlockOf};
+use sc_client_api::{backend::AuxStore, BlockOf};
 use sc_consensus::{BlockCheckParams, BlockImport, BlockImportParams, ImportResult};
 use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder as BlockBuilderApi;

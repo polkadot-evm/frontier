@@ -16,7 +16,6 @@ libsecp256k1 = "0.3"
 log = "0.4.8"
 lru = "0.6.6"
 jsonrpc-core = "18.0"
-jsonrpc-derive = "18.0"
 jsonrpc-core-client = "18.0"
 jsonrpc-pubsub = "18.0"
 rand = "0.7"
@@ -32,7 +31,6 @@ sp-block-builder = { version = "4.0.0-dev",  git = "https://github.com/paritytec
 sp-io = { version = "5.0.0",  git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-runtime = { version = "5.0.0",  git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-storage = { version = "5.0.0",  git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-transaction-pool = { version = "4.0.0-dev",  git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-client-api = { version = "4.0.0-dev",  git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-network = { version = "0.10.0-dev",  git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-rpc = { version = "4.0.0-dev",  git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -40,12 +38,9 @@ sc-service = { version = "0.10.0-dev",  git = "https://github.com/paritytech/sub
 sc-transaction-pool = { version = "4.0.0-dev",  git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-transaction-pool-api = { version = "4.0.0-dev",  git = "https://github.com/paritytech/substrate", branch = "master" }
 
-fp-consensus = { version = "2.0.0-dev", path = "../../primitives/consensus" }
-fc-db = { version = "2.0.0-dev", path = "../db" }
-fp-evm = { version = "3.0.0-dev", path = "../../primitives/evm" }
 fp-rpc = { version = "3.0.0-dev", path = "../../primitives/rpc" }
 fp-storage = { version = "2.0.0-dev", path = "../../primitives/storage" }
-fc-consensus = { version = "2.0.0-dev", path = "../consensus" }
+fc-db = { version = "2.0.0-dev", path = "../db" }
 fc-rpc-core = { version = "1.1.0-dev", path = "../rpc-core" }
 
 [features]

@@ -1548,8 +1548,6 @@ dependencies = [
  "fc-db",
  "fp-consensus",
  "fp-rpc",
- "futures 0.3.17",
- "log",
  "sc-client-api",
  "sc-consensus",
  "sp-api",
@@ -1565,7 +1563,6 @@ name = "fc-db"
 version = "2.0.0-dev"
 dependencies = [
  "fp-storage",
- "kvdb",
  "kvdb-rocksdb",
  "parity-scale-codec",
  "parking_lot 0.11.2",
@@ -1578,7 +1575,6 @@ dependencies = [
 name = "fc-mapping-sync"
 version = "2.0.0-dev"
 dependencies = [
- "fc-consensus",
  "fc-db",
  "fp-consensus",
  "fp-rpc",
@@ -1598,17 +1594,13 @@ dependencies = [
  "ethereum",
  "ethereum-types",
  "evm",
- "fc-consensus",
  "fc-db",
  "fc-rpc-core",
- "fp-consensus",
- "fp-evm",
  "fp-rpc",
  "fp-storage",
  "futures 0.3.17",
  "jsonrpc-core",
  "jsonrpc-core-client",
- "jsonrpc-derive",
  "jsonrpc-pubsub",
  "libsecp256k1 0.3.5",
  "log",
@@ -1630,7 +1622,6 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-storage",
- "sp-transaction-pool",
  "tokio",
 ]
 
@@ -1648,7 +1639,6 @@ dependencies = [
  "rustc-hex",
  "serde",
  "serde_json",
- "sha3 0.8.2",
 ]
 
 [[package]]

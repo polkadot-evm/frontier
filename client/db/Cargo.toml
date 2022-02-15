@@ -9,7 +9,6 @@ license = "GPL-3.0-or-later WITH Classpath-exception-2.0"
 repository = "https://github.com/paritytech/frontier/"
 
 [dependencies]
-kvdb = "0.10.0"
 kvdb-rocksdb = "0.14.0"
 parking_lot = "0.11.2"
 

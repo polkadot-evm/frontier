@@ -10,8 +10,6 @@ repository = "https://github.com/paritytech/frontier/"
 
 [dependencies]
 async-trait = "0.1"
-futures = { version = "0.3.17", features = ["compat"] }
-log = "0.4.8"
 thiserror = "1.0"
 
 sp-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
