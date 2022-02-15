@@ -167,7 +167,7 @@ impl pallet_evm::Config for Test {
 
 impl crate::Config for Test {
 	type Event = Event;
-	type StateRoot = IntermediateStateRoot;
+	type StateRoot = IntermediateStateRoot<Self>;
 }
 
 impl fp_self_contained::SelfContainedCall for Call {
