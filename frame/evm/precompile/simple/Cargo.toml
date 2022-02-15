@@ -2,17 +2,20 @@
 name = "pallet-evm-precompile-simple"
 version = "2.0.0-dev"
 authors = ["Parity Technologies <admin@parity.io>"]
-edition = "2018"
+edition = "2021"
+rust-version = "1.56.1"
 license = "Apache-2.0"
 homepage = "https://substrate.io"
 repository = "https://github.com/paritytech/frontier/"
 description = "Simple precompiles for EVM pallet."
 
 [dependencies]
-sp-core = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
-sp-io = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
-fp-evm = { version = "3.0.0-dev", default-features = false, path = "../../../../primitives/evm" }
 ripemd160 = { version = "0.9", default-features = false }
+
+sp-core = { version = "5.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-io = { version = "5.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+
+fp-evm = { version = "3.0.0-dev", default-features = false, path = "../../../../primitives/evm" }
 
 [dev-dependencies]
 pallet-evm-test-vector-support = { version = "1.0.0-dev", path = "../../test-vector-support" }
@@ -20,8 +23,8 @@ pallet-evm-test-vector-support = { version = "1.0.0-dev", path = "../../test-vec
 [features]
 default = ["std"]
 std = [
+	"ripemd160/std",
 	"sp-core/std",
 	"sp-io/std",
 	"fp-evm/std",
-	"ripemd160/std",
 ]

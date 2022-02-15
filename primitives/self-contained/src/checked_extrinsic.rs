@@ -15,8 +15,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::SelfContainedCall;
 use frame_support::weights::{DispatchInfo, GetDispatchInfo};
+use sp_debug_derive::RuntimeDebug;
 use sp_runtime::{
 	traits::{
 		self, DispatchInfoOf, Dispatchable, MaybeDisplay, Member, PostDispatchInfoOf,
@@ -27,7 +27,9 @@ use sp_runtime::{
 	},
 };
 
-#[derive(PartialEq, Eq, Clone, sp_core::RuntimeDebug)]
+use crate::SelfContainedCall;
+
+#[derive(PartialEq, Eq, Clone, RuntimeDebug)]
 pub enum CheckedSignature<AccountId, Extra, SelfContainedSignedInfo> {
 	Signed(AccountId, Extra),
 	Unsigned,
@@ -37,7 +39,7 @@ pub enum CheckedSignature<AccountId, Extra, SelfContainedSignedInfo> {
 /// Definition of something that the external world might want to say; its
 /// existence implies that it has been checked and is good, particularly with
 /// regards to the signature.
-#[derive(PartialEq, Eq, Clone, sp_core::RuntimeDebug)]
+#[derive(PartialEq, Eq, Clone, RuntimeDebug)]
 pub struct CheckedExtrinsic<AccountId, Call, Extra, SelfContainedSignedInfo> {
 	/// Who this purports to be from and the number of extrinsics have come before
 	/// from the same signer, if anyone (note this is not a signature).

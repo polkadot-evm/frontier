@@ -18,7 +18,9 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use async_trait::async_trait;
+#[cfg(test)]
+mod tests;
+
 use frame_support::inherent::IsFatalError;
 use sp_core::U256;
 use sp_inherents::{InherentData, InherentIdentifier};
@@ -27,10 +29,7 @@ use sp_std::{
 	result,
 };
 
-pub use pallet::*;
-
-#[cfg(test)]
-mod tests;
+pub use self::pallet::*;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -160,7 +159,7 @@ pub type InherentType = U256;
 pub struct InherentDataProvider(pub InherentType);
 
 #[cfg(feature = "std")]
-#[async_trait]
+#[async_trait::async_trait]
 impl sp_inherents::InherentDataProvider for InherentDataProvider {
 	fn provide_inherent_data(
 		&self,
