@@ -12,7 +12,7 @@ description = "ED25519 precompiles for EVM pallet."
 [dependencies]
 ed25519-dalek = { version = "1.0.0", default-features = false, features = ["alloc", "u64_backend"] }
 
-fp-evm = { version = "3.0.0-dev", default-features = false, path = "../../../../primitives/evm" }
+fp-evm = { version = "3.0.0-dev", path = "../../../../primitives/evm", default-features = false }
 
 [features]
 default = ["std"]

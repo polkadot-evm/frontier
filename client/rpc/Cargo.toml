@@ -12,16 +12,16 @@ ethereum = { version = "0.11.1", features = ["with-codec"] }
 ethereum-types = "0.12"
 evm = "0.33.1"
 futures = { version = "0.3.1", features = ["compat"] }
-libsecp256k1 = "0.3"
+hex = "0.4"
+libsecp256k1 = "0.7"
 log = "0.4.8"
 lru = "0.6.6"
 jsonrpc-core = "18.0"
 jsonrpc-core-client = "18.0"
 jsonrpc-pubsub = "18.0"
-rand = "0.7"
+rand = "0.8"
 rlp = "0.5"
-rustc-hex = { version = "2.1.0", default-features = false }
-sha3 = "0.8"
+sha3 = "0.10"
 tokio = { version = "1.14", features = [ "sync" ] }
 
 codec = { package = "parity-scale-codec", version = "2.0.0" }

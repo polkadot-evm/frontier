@@ -15,7 +15,7 @@ hex = { version = "0.4.0", optional = true }
 serde = { version = "1.0.101", features = ["derive"], optional = true }
 serde_json = { version = "1.0", optional = true }
 
-fp-evm = { version = "3.0.0-dev", default-features = false, path = "../../../primitives/evm" }
+fp-evm = { version = "3.0.0-dev", path = "../../../primitives/evm", default-features = false }
 
 [features]
 default = ["std"]

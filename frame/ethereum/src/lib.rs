@@ -158,7 +158,7 @@ where
 	}
 }
 
-pub use pallet::*;
+pub use self::pallet::*;
 
 #[frame_support::pallet]
 pub mod pallet {

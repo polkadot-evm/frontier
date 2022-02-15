@@ -24,10 +24,7 @@ mod tests;
 use frame_support::inherent::IsFatalError;
 use sp_core::U256;
 use sp_inherents::{InherentData, InherentIdentifier};
-use sp_std::{
-	cmp::{max, min},
-	result,
-};
+use sp_std::cmp::{max, min};
 
 pub use self::pallet::*;
 

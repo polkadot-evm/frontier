@@ -12,7 +12,7 @@ description = "MODEXP precompiles for EVM pallet."
 [dependencies]
 num = { version = "0.4", features = ["alloc"], default-features = false }
 
-fp-evm = { version = "3.0.0-dev", default-features = false, path = "../../../../primitives/evm" }
+fp-evm = { version = "3.0.0-dev", path = "../../../../primitives/evm", default-features = false }
 
 [dev-dependencies]
 hex = "0.4.0"

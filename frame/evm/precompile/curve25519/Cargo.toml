@@ -10,9 +10,9 @@ repository = "https://github.com/paritytech/frontier/"
 description = "Curve25519 elliptic curve precompiles for EVM pallet."
 
 [dependencies]
-curve25519-dalek = { version = "4.0.0-dev", default-features = false, features = ["u64_backend", "alloc"] }
+curve25519-dalek = { version = "4.0.0-pre.1", default-features = false, features = ["u64_backend", "alloc"] }
 
-fp-evm = { version = "3.0.0-dev", default-features = false, path = "../../../../primitives/evm" }
+fp-evm = { version = "3.0.0-dev", path = "../../../../primitives/evm", default-features = false }
 
 [features]
 default = ["std"]
