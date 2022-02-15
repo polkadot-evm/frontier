@@ -16,10 +16,10 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 async-trait = "0.1"
+clap = { version = "3.0", features = ["derive"] }
 futures = "0.3"
 log = "0.4.8"
 jsonrpc-pubsub = "18.0.0"
-structopt = "0.3.8"
 
 sc-cli = { git = "https://github.com/paritytech/substrate", branch = "master", features = ["wasmtime"] }
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }

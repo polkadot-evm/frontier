@@ -15,14 +15,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use clap::Parser;
+use frontier_template_runtime::Block;
+use sc_cli::{ChainSpec, RuntimeVersion, SubstrateCli};
+use sc_service::PartialComponents;
+
 use crate::{
 	chain_spec,
 	cli::{Cli, Subcommand},
 	service::{self, frontier_database_dir},
 };
-use frontier_template_runtime::Block;
-use sc_cli::{ChainSpec, RuntimeVersion, SubstrateCli};
-use sc_service::PartialComponents;
 
 impl SubstrateCli for Cli {
 	fn impl_name() -> String {
@@ -66,7 +68,7 @@ impl SubstrateCli for Cli {
 
 /// Parse and run command line arguments
 pub fn run() -> sc_cli::Result<()> {
-	let cli = Cli::from_args();
+	let cli = Cli::parse();
 
 	match &cli.subcommand {
 		Some(Subcommand::Key(cmd)) => cmd.run(&cli),
