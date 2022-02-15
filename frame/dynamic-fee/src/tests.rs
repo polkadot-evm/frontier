@@ -20,7 +20,7 @@ use crate as pallet_dynamic_fee;
 
 use frame_support::{
 	assert_ok, parameter_types,
-	traits::{OnFinalize, OnInitialize},
+	traits::{ConstU32, OnFinalize, OnInitialize},
 };
 use sp_core::{H256, U256};
 use sp_io::TestExternalities;
@@ -68,6 +68,7 @@ impl frame_system::Config for Test {
 	type SystemWeightInfo = ();
 	type SS58Prefix = ();
 	type OnSetCode = ();
+	type MaxConsumers = ConstU32<16>;
 }
 
 frame_support::parameter_types! {

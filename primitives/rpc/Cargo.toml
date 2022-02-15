@@ -26,6 +26,7 @@ default = ["std"]
 std = [
 	"ethereum/std",
 	"ethereum-types/std",
+
 	"codec/std",
 	"scale-info/std",
 	"sp-api/std",
@@ -33,5 +34,6 @@ std = [
 	"sp-io/std",
 	"sp-runtime/std",
 	"sp-std/std",
+
 	"fp-evm/std",
 ]

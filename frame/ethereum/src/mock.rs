@@ -17,13 +17,14 @@
 
 //! Test utilities
 
-use super::*;
-use crate::IntermediateStateRoot;
-use codec::{WrapperTypeDecode, WrapperTypeEncode};
 use ethereum::{TransactionAction, TransactionSignature};
-use frame_support::{parameter_types, traits::FindAuthor, ConsensusEngineId, PalletId};
+use frame_support::{
+	parameter_types,
+	traits::{ConstU32, FindAuthor},
+	ConsensusEngineId, PalletId,
+};
 use pallet_evm::{AddressMapping, EnsureAddressTruncated, FeeCalculator};
-use rlp::*;
+use rlp::RlpStream;
 use sha3::Digest;
 use sp_core::{H160, H256, U256};
 use sp_runtime::{
@@ -31,6 +32,9 @@ use sp_runtime::{
 	traits::{BlakeTwo256, IdentityLookup, SignedExtension},
 	AccountId32,
 };
+
+use super::*;
+use crate::IntermediateStateRoot;
 
 pub type SignedExtra = (frame_system::CheckSpecVersion<Test>,);
 
@@ -81,6 +85,7 @@ impl frame_system::Config for Test {
 	type SystemWeightInfo = ();
 	type SS58Prefix = ();
 	type OnSetCode = ();
+	type MaxConsumers = ConstU32<16>;
 }
 
 parameter_types! {
@@ -406,7 +411,7 @@ impl EIP1559UnsignedTransaction {
 		};
 		let chain_id = chain_id.unwrap_or(ChainId::get());
 		let msg = ethereum::EIP1559TransactionMessage {
-			chain_id: chain_id,
+			chain_id,
 			nonce: self.nonce,
 			max_priority_fee_per_gas: self.max_priority_fee_per_gas,
 			max_fee_per_gas: self.max_fee_per_gas,

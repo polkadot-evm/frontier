@@ -27,6 +27,7 @@ std = [
 	"evm/std",
 	"evm/with-serde",
 	"serde",
+
 	"codec/std",
 	"sp-core/std",
 	"sp-std/std",

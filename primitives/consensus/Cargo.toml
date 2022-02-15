@@ -21,6 +21,7 @@ sp-std = { version = "4.0.0", git = "https://github.com/paritytech/substrate", b
 default = ["std"]
 std = [
 	"ethereum/std",
+
 	"codec/std",
 	"sp-core/std",
 	"sp-runtime/std",

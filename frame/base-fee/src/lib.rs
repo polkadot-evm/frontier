@@ -246,7 +246,10 @@ mod tests {
 	use crate as pallet_base_fee;
 
 	use frame_support::{
-		assert_ok, pallet_prelude::GenesisBuild, parameter_types, traits::OnFinalize,
+		assert_ok,
+		pallet_prelude::GenesisBuild,
+		parameter_types,
+		traits::{ConstU32, OnFinalize},
 		weights::DispatchClass,
 	};
 	use sp_core::{H256, U256};
@@ -310,6 +313,7 @@ mod tests {
 		type SystemWeightInfo = ();
 		type SS58Prefix = ();
 		type OnSetCode = ();
+		type MaxConsumers = ConstU32<16>;
 	}
 
 	frame_support::parameter_types! {

@@ -19,9 +19,9 @@ codec = { package = "parity-scale-codec", version = "2.0.0", default-features = 
 scale-info = { version = "1.0.0", default-features = false, features = ["derive"] }
 sp-core = { version = "5.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 sp-runtime = { version = "5.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-
 frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+
 pallet-evm = { path = "../evm", default-features = false }
 
 [dev-dependencies]
@@ -31,11 +31,13 @@ sp-io = { version = "5.0.0", git = "https://github.com/paritytech/substrate", br
 default = ["std"]
 std = [
 	"serde",
+
 	"codec/std",
 	"scale-info/std",
 	"sp-core/std",
 	"sp-runtime/std",
 	"frame-support/std",
 	"frame-system/std",
+
 	"pallet-evm/std",
 ]

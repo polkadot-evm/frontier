@@ -27,6 +27,7 @@ default = ["std"]
 std = [
 	"ethereum/std",
 	"serde",
+
 	"codec/std",
 	"scale-info/std",
 	"parity-util-mem",
