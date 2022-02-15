@@ -1,12 +1,8 @@
-use ethereum::TransactionSignature;
-use frame_support::{
-	assert_err, assert_noop, assert_ok,
-	unsigned::{TransactionValidityError, ValidateUnsigned},
-};
+use frame_support::{assert_err, assert_ok, unsigned::TransactionValidityError};
 use rustc_hex::{FromHex, ToHex};
 use sp_runtime::{
 	traits::Applyable,
-	transaction_validity::{InvalidTransaction, TransactionSource, ValidTransactionBuilder},
+	transaction_validity::{InvalidTransaction, ValidTransactionBuilder},
 };
 use std::str::FromStr;
 

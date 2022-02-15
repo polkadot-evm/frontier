@@ -15,8 +15,6 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 evm = { version = "0.33.1", default-features = false, features = ["with-codec"] }
-evm-gasometer = { version = "0.33.0", default-features = false }
-evm-runtime = { version = "0.33.0", default-features = false }
 hex = { version = "0.4", default-features = false }
 log = { version = "0.4", default-features = false }
 primitive-types = { version = "0.10.0", default-features = false, features = ["rlp", "byteorder"] }
@@ -44,8 +42,6 @@ default = ["std"]
 std = [
 	"evm/std",
 	"evm/with-serde",
-	"evm-gasometer/std",
-	"evm-runtime/std",
 	"hex/std",
 	"log/std",
 	"primitive-types/std",
