@@ -4451,8 +4451,6 @@ version = "2.0.0-dev"
 dependencies = [
  "fp-evm",
  "pallet-evm-test-vector-support",
- "sp-core",
- "sp-io",
 ]
 
 [[package]]
@@ -4462,7 +4460,6 @@ dependencies = [
  "fp-evm",
  "pallet-evm-test-vector-support",
  "sp-core",
- "sp-io",
  "substrate-bn",
 ]
 
@@ -4472,10 +4469,6 @@ version = "1.0.0-dev"
 dependencies = [
  "curve25519-dalek 4.0.0-pre.1",
  "fp-evm",
- "frame-support",
- "parity-scale-codec",
- "sp-core",
- "sp-io",
 ]
 
 [[package]]
@@ -4485,9 +4478,6 @@ dependencies = [
  "fp-evm",
  "frame-support",
  "pallet-evm",
- "parity-scale-codec",
- "sp-core",
- "sp-io",
 ]
 
 [[package]]
@@ -4496,8 +4486,6 @@ version = "2.0.0-dev"
 dependencies = [
  "ed25519-dalek",
  "fp-evm",
- "sp-core",
- "sp-io",
 ]
 
 [[package]]
@@ -4508,8 +4496,6 @@ dependencies = [
  "hex",
  "num",
  "pallet-evm-test-vector-support",
- "sp-core",
- "sp-io",
 ]
 
 [[package]]
@@ -4517,8 +4503,6 @@ name = "pallet-evm-precompile-sha3fips"
 version = "2.0.0-dev"
 dependencies = [
  "fp-evm",
- "sp-core",
- "sp-io",
  "tiny-keccak",
 ]
 
@@ -4529,7 +4513,6 @@ dependencies = [
  "fp-evm",
  "pallet-evm-test-vector-support",
  "ripemd160",
- "sp-core",
  "sp-io",
 ]
 

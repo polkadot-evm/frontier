@@ -10,18 +10,12 @@ repository = "https://github.com/paritytech/frontier/"
 description = "ED25519 precompiles for EVM pallet."
 
 [dependencies]
-ed25519-dalek = { version = "1.0.0", features = ["alloc", "u64_backend"], default-features = false }
-
-sp-core = { version = "5.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-io = { version = "5.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+ed25519-dalek = { version = "1.0.0", default-features = false, features = ["alloc", "u64_backend"] }
 
 fp-evm = { version = "3.0.0-dev", default-features = false, path = "../../../../primitives/evm" }
 
 [features]
 default = ["std"]
 std = [
-	"ed25519-dalek/std",
-	"sp-core/std",
-	"sp-io/std",
 	"fp-evm/std",
 ]
