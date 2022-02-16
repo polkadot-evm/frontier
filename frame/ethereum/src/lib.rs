@@ -859,8 +859,8 @@ pub enum ReturnValue {
 pub struct IntermediateStateRoot<T>(PhantomData<T>);
 impl<T: Config> Get<H256> for IntermediateStateRoot<T> {
 	fn get() -> H256 {
-		let _version = T::Version::get().state_version();
-		H256::decode(&mut &sp_io::storage::root()[..])
+		let version = T::Version::get().state_version();
+		H256::decode(&mut &sp_io::storage::root(version)[..])
 			.expect("Node is configured to use the same hash; qed")
 	}
 }
