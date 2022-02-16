@@ -3,7 +3,6 @@ name = "pallet-base-fee"
 version = "1.0.0"
 authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2021"
-rust-version = "1.56.1"
 license = "Apache-2.0"
 homepage = "https://substrate.dev"
 repository = "https://github.com/paritytech/frontier/"

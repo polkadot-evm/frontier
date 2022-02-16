@@ -3,7 +3,6 @@ name = "fp-rpc"
 version = "3.0.0-dev"
 authors = ["Parity Technologies <admin@parity.io"]
 edition = "2021"
-rust-version = "1.56.1"
 description = "Runtime primitives for Ethereum RPC (web3) compatibility layer for Substrate."
 license = "Apache-2.0"
 
