@@ -1,11 +1,17 @@
-/// Available Sealing methods.
 #[cfg(feature = "manual-seal")]
-#[derive(Debug, Copy, Clone, clap::ArgEnum)]
-pub enum Sealing {
-	// Seal using rpc method.
-	Manual,
-	// Seal when transaction is executed.
-	Instant,
+use structopt::clap::arg_enum;
+use structopt::StructOpt;
+
+#[cfg(feature = "manual-seal")]
+arg_enum! {
+    /// Available Sealing methods.
+    #[derive(Debug, Copy, Clone, StructOpt)]
+    pub enum Sealing {
+	    // Seal using rpc method.
+    	Manual,
+	    // Seal when transaction is executed.
+    	Instant,
+    }
 }
 
 #[cfg(feature = "manual-seal")]
@@ -16,46 +22,45 @@ impl Default for Sealing {
 }
 
 #[allow(missing_docs)]
-#[derive(Debug, clap::Parser)]
+#[derive(Debug, StructOpt)]
 pub struct RunCmd {
 	#[allow(missing_docs)]
-	#[clap(flatten)]
+	#[structopt(flatten)]
 	pub base: sc_cli::RunCmd,
 
 	/// Choose sealing method.
 	#[cfg(feature = "manual-seal")]
-	#[clap(long, arg_enum, ignore_case = true)]
+	#[structopt(long)]
 	pub sealing: Sealing,
 
-	#[clap(long)]
+	#[structopt(long)]
 	pub enable_dev_signer: bool,
 
 	/// Maximum number of logs in a query.
-	#[clap(long, default_value = "10000")]
+	#[structopt(long, default_value = "10000")]
 	pub max_past_logs: u32,
 
 	/// Maximum fee history cache size.
-	#[clap(long, default_value = "2048")]
+	#[structopt(long, default_value = "2048")]
 	pub fee_history_limit: u64,
 
 	/// The dynamic-fee pallet target gas price set by block author
-	#[clap(long, default_value = "1")]
+	#[structopt(long, default_value = "1")]
 	pub target_gas_price: u64,
 }
 
-#[derive(Debug, clap::Parser)]
+#[derive(Debug, StructOpt)]
 pub struct Cli {
-	#[clap(subcommand)]
+	#[structopt(subcommand)]
 	pub subcommand: Option<Subcommand>,
 
-	#[clap(flatten)]
+	#[structopt(flatten)]
 	pub run: RunCmd,
 }
 
-#[derive(Debug, clap::Subcommand)]
+#[derive(Debug, StructOpt)]
 pub enum Subcommand {
 	/// Key management cli utilities
-	#[clap(subcommand)]
 	Key(sc_cli::KeySubcommand),
 
 	/// Build a chain specification.
@@ -80,6 +85,6 @@ pub enum Subcommand {
 	Revert(sc_cli::RevertCmd),
 
 	/// The custom benchmark subcommmand benchmarking runtime pallets.
-	#[clap(name = "benchmark", about = "Benchmark runtime pallets.")]
+	#[structopt(name = "benchmark", about = "Benchmark runtime pallets.")]
 	Benchmark(frame_benchmarking_cli::BenchmarkCmd),
 }
