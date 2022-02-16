@@ -371,7 +371,7 @@ pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, Ser
 		})?;
 
 	// Channel for the rpc handler to communicate with the authorship task.
-	let (command_sink, _commands_stream) = futures::channel::mpsc::channel(1000);
+	let (command_sink, commands_stream) = futures::channel::mpsc::channel(1000);
 
 	if config.offchain_worker.enabled {
 		sc_service::build_offchain_workers(
@@ -532,9 +532,11 @@ pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, Ser
 							},
 						});
 					// we spawn the future on a background thread managed by service.
-					task_manager
-						.spawn_essential_handle()
-						.spawn_blocking("manual-seal", authorship_future);
+					task_manager.spawn_essential_handle().spawn_blocking(
+						"manual-seal",
+						None,
+						authorship_future,
+					);
 				}
 				Sealing::Instant => {
 					let authorship_future =
@@ -556,9 +558,11 @@ pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, Ser
 							},
 						});
 					// we spawn the future on a background thread managed by service.
-					task_manager
-						.spawn_essential_handle()
-						.spawn_blocking("instant-seal", authorship_future);
+					task_manager.spawn_essential_handle().spawn_blocking(
+						"instant-seal",
+						None,
+						authorship_future,
+					);
 				}
 			};
 		}

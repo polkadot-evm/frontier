@@ -24,7 +24,7 @@ pub struct RunCmd {
 
 	/// Choose sealing method.
 	#[cfg(feature = "manual-seal")]
-	#[clap(long)]
+	#[clap(long, arg_enum)]
 	pub sealing: Sealing,
 
 	#[clap(long)]
