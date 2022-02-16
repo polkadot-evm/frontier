@@ -4,14 +4,14 @@ use structopt::StructOpt;
 
 #[cfg(feature = "manual-seal")]
 arg_enum! {
-	/// Available Sealing methods.
-	#[derive(Debug, Copy, Clone, StructOpt)]
-	pub enum Sealing {
-		// Seal using rpc method.
-		Manual,
-		// Seal when transaction is executed.
-		Instant,
-	}
+    /// Available Sealing methods.
+    #[derive(Debug, Copy, Clone, StructOpt)]
+    pub enum Sealing {
+	    // Seal using rpc method.
+    	Manual,
+	    // Seal when transaction is executed.
+    	Instant,
+    }
 }
 
 #[cfg(feature = "manual-seal")]
