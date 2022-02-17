@@ -18,10 +18,7 @@
 
 pub use pallet::*;
 
-use frame_support::{
-	traits::Get,
-	weights::Weight
-};
+use frame_support::{traits::Get, weights::Weight};
 use sp_core::U256;
 use sp_runtime::Permill;
 
