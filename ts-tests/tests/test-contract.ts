@@ -54,4 +54,10 @@ describeWithFrontier("Frontier RPC (Contract)", (context) => {
 			TEST_CONTRACT_DEPLOYED_BYTECODE,
 		});
 	});
+
+	it("eth_call contract create should return code", async function () {
+		expect(await context.web3.eth.call({
+			data: TEST_CONTRACT_BYTECODE
+		})).to.be.eq(TEST_CONTRACT_DEPLOYED_BYTECODE);
+	});
 });
