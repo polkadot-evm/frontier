@@ -1701,7 +1701,13 @@ where
 				data,
 				exit_reason,
 				used_gas,
-			} = executable(request.clone(), highest, api_version, client.runtime_api(), estimate_mode)?;
+			} = executable(
+				request.clone(),
+				highest,
+				api_version,
+				client.runtime_api(),
+				estimate_mode,
+			)?;
 			match exit_reason {
 				ExitReason::Succeed(_) => (),
 				ExitReason::Error(ExitError::OutOfGas) => {
@@ -1768,7 +1774,13 @@ where
 						data,
 						exit_reason,
 						used_gas: _,
-					} = executable(request.clone(), mid, api_version, client.runtime_api(), estimate_mode)?;
+					} = executable(
+						request.clone(),
+						mid,
+						api_version,
+						client.runtime_api(),
+						estimate_mode,
+					)?;
 					match exit_reason {
 						ExitReason::Succeed(_) => {
 							highest = mid;
