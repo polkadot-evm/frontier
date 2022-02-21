@@ -166,12 +166,7 @@ pub mod pallet {
 	use frame_system::pallet_prelude::*;
 
 	#[pallet::config]
-	pub trait Config:
-		frame_system::Config
-		+ pallet_balances::Config
-		+ pallet_timestamp::Config
-		+ pallet_evm::Config
-	{
+	pub trait Config: frame_system::Config + pallet_timestamp::Config + pallet_evm::Config {
 		/// The overarching event type.
 		type Event: From<Event> + IsType<<Self as frame_system::Config>::Event>;
 		/// How Ethereum state root is calculated.

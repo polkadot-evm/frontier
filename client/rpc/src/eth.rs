@@ -1352,7 +1352,11 @@ where
 					.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
 
 					error_on_execution_failure(&info.exit_reason, &[])?;
-					Ok(Bytes(info.value[..].to_vec()))
+
+					let code = api
+						.account_code_at(&id, info.value)
+						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?;
+					Ok(Bytes(code))
 				} else if api_version >= 2 && api_version < 4 {
 					// Post-london
 					#[allow(deprecated)]
@@ -1371,7 +1375,11 @@ where
 					.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
 
 					error_on_execution_failure(&info.exit_reason, &[])?;
-					Ok(Bytes(info.value[..].to_vec()))
+
+					let code = api
+						.account_code_at(&id, info.value)
+						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?;
+					Ok(Bytes(code))
 				} else if api_version == 4 {
 					// Post-london + access list support
 					let access_list = access_list.unwrap_or_default();
@@ -1397,7 +1405,11 @@ where
 						.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
 
 					error_on_execution_failure(&info.exit_reason, &[])?;
-					Ok(Bytes(info.value[..].to_vec()))
+
+					let code = api
+						.account_code_at(&id, info.value)
+						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?;
+					Ok(Bytes(code))
 				} else {
 					return Err(internal_err(format!(
 						"failed to retrieve Runtime Api version"
@@ -1525,7 +1537,7 @@ where
 			// To solve that, and if we introduce historical gas estimation, we'd need to increase that default.
 			#[rustfmt::skip]
 			let executable = move |
-				request, gas_limit, api_version, api: sp_api::ApiRef<'_, C::Api>
+				request, gas_limit, api_version, api: sp_api::ApiRef<'_, C::Api>, estimate_mode
 			| -> Result<ExecutableResult> {
 				let CallRequest {
 					from,
@@ -1557,7 +1569,7 @@ where
 								gas_limit,
 								gas_price,
 								nonce,
-								true,
+								estimate_mode,
 							)
 							.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
 							.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?
@@ -1574,7 +1586,7 @@ where
 								max_fee_per_gas,
 								max_priority_fee_per_gas,
 								nonce,
-								true,
+								estimate_mode,
 							)
 							.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
 							.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?
@@ -1591,7 +1603,7 @@ where
 								max_fee_per_gas,
 								max_priority_fee_per_gas,
 								nonce,
-								true,
+								estimate_mode,
 								Some(
 									access_list
 										.into_iter()
@@ -1617,7 +1629,7 @@ where
 								gas_limit,
 								gas_price,
 								nonce,
-								true,
+								estimate_mode,
 							)
 							.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
 							.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?
@@ -1633,7 +1645,7 @@ where
 								max_fee_per_gas,
 								max_priority_fee_per_gas,
 								nonce,
-								true,
+								estimate_mode,
 							)
 							.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
 							.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?
@@ -1649,7 +1661,7 @@ where
 								max_fee_per_gas,
 								max_priority_fee_per_gas,
 								nonce,
-								true,
+								estimate_mode,
 								Some(
 									access_list
 										.into_iter()
@@ -1684,11 +1696,12 @@ where
 
 			// Verify that the transaction succeed with highest capacity
 			let cap = highest;
+			let estimate_mode = true;
 			let ExecutableResult {
 				data,
 				exit_reason,
 				used_gas,
-			} = executable(request.clone(), highest, api_version, client.runtime_api())?;
+			} = executable(request.clone(), highest, api_version, client.runtime_api(), estimate_mode)?;
 			match exit_reason {
 				ExitReason::Succeed(_) => (),
 				ExitReason::Error(ExitError::OutOfGas) => {
@@ -1714,6 +1727,7 @@ where
 							get_current_block_gas_limit().await?,
 							api_version,
 							client.runtime_api(),
+							estimate_mode,
 						)?;
 						match exit_reason {
 							ExitReason::Succeed(_) => {
@@ -1739,6 +1753,8 @@ where
 			}
 			#[cfg(feature = "rpc_binary_search_estimate")]
 			{
+				// On binary search, evm estimate mode is disabled
+				let estimate_mode = false;
 				// Define the lower bound of the binary search
 				let mut lowest = MIN_GAS_PER_TX;
 
@@ -1752,7 +1768,7 @@ where
 						data,
 						exit_reason,
 						used_gas: _,
-					} = executable(request.clone(), mid, api_version, client.runtime_api())?;
+					} = executable(request.clone(), mid, api_version, client.runtime_api(), estimate_mode)?;
 					match exit_reason {
 						ExitReason::Succeed(_) => {
 							highest = mid;

@@ -1510,7 +1510,6 @@ name = "fc-consensus"
 version = "2.0.0-dev"
 dependencies = [
  "async-trait",
- "derive_more",
  "fc-db",
  "fp-consensus",
  "fp-rpc",
@@ -1528,6 +1527,7 @@ dependencies = [
  "sp-runtime",
  "sp-timestamp",
  "substrate-prometheus-endpoint",
+ "thiserror",
 ]
 
 [[package]]
