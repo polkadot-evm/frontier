@@ -21,7 +21,7 @@ jobs:
                 cargo +$WASM_BUILD_TOOLCHAIN --version
                 rustc +$WASM_BUILD_TOOLCHAIN --version
               env:
-                WASM_BUILD_TOOLCHAIN: nightly-2021-07-06
+                WASM_BUILD_TOOLCHAIN: nightly-2022-02-07
 
             - name: Build website
               run: |
