@@ -789,7 +789,6 @@
 <span id="788">788</span>
 <span id="789">789</span>
 <span id="790">790</span>
-<span id="791">791</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -845,25 +844,23 @@
 <span class="comment">// Ensure we&#39;re `no_std` when compiling for Wasm.</span>
 <span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">any</span>(<span class="ident">test</span>, <span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;runtime-benchmarks&quot;</span>))]</span>
+<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">benchmarks</span>;
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">any</span>(<span class="ident">test</span>, <span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;runtime-benchmarks&quot;</span>))]</span>
 <span class="kw">mod</span> <span class="ident">mock</span>;
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">runner</span>;
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
 <span class="kw">mod</span> <span class="ident">tests</span>;
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">any</span>(<span class="ident">test</span>, <span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;runtime-benchmarks&quot;</span>))]</span>
-<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">benchmarks</span>;
-
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::runner::Runner</span>;
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">evm</span>::{<span class="ident">Context</span>, <span class="ident">ExitError</span>, <span class="ident">ExitFatal</span>, <span class="ident">ExitReason</span>, <span class="ident">ExitRevert</span>, <span class="ident">ExitSucceed</span>};
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>)]</span>
+<span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Decode</span>, <span class="ident">Encode</span>};
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">evm</span>::{
+	<span class="ident">Config</span> <span class="kw">as</span> <span class="ident">EvmConfig</span>, <span class="ident">Context</span>, <span class="ident">ExitError</span>, <span class="ident">ExitFatal</span>, <span class="ident">ExitReason</span>, <span class="ident">ExitRevert</span>, <span class="ident">ExitSucceed</span>,
+};
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">fp_evm</span>::{
 	<span class="ident">Account</span>, <span class="ident">CallInfo</span>, <span class="ident">CreateInfo</span>, <span class="ident">ExecutionInfo</span>, <span class="ident">LinearCostPrecompile</span>, <span class="ident">Log</span>, <span class="ident">Precompile</span>,
 	<span class="ident">PrecompileFailure</span>, <span class="ident">PrecompileOutput</span>, <span class="ident">PrecompileResult</span>, <span class="ident">PrecompileSet</span>, <span class="ident">Vicinity</span>,
 };
-
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>)]</span>
-<span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Decode</span>, <span class="ident">Encode</span>};
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">evm::Config</span> <span class="kw">as</span> <span class="ident">EvmConfig</span>;
 <span class="kw">use</span> <span class="ident">frame_support</span>::{
 	<span class="ident">dispatch::DispatchResultWithPostInfo</span>,
 	<span class="ident">traits</span>::{
@@ -882,7 +879,7 @@
 };
 <span class="kw">use</span> <span class="ident">sp_std::vec::Vec</span>;
 
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">pallet</span>::<span class="kw-2">*</span>;
+<span class="kw">pub</span> <span class="kw">use</span> <span class="self">self</span>::{<span class="ident">pallet</span>::<span class="kw-2">*</span>, <span class="ident">runner::Runner</span>};
 
 <span class="attribute">#[<span class="ident">frame_support::pallet</span>]</span>
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">pallet</span> {
@@ -892,6 +889,7 @@
 
 	<span class="attribute">#[<span class="ident">pallet::pallet</span>]</span>
 	<span class="attribute">#[<span class="ident">pallet::generate_store</span>(<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">trait</span> <span class="ident">Store</span>)]</span>
+	<span class="attribute">#[<span class="ident">pallet::without_storage_info</span>]</span>
 	<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>(<span class="kw">_</span>);
 
 	<span class="attribute">#[<span class="ident">pallet::config</span>]</span>

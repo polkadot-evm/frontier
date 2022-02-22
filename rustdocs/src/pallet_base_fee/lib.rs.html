@@ -488,6 +488,11 @@
 <span id="487">487</span>
 <span id="488">488</span>
 <span id="489">489</span>
+<span id="490">490</span>
+<span id="491">491</span>
+<span id="492">492</span>
+<span id="493">493</span>
+<span id="494">494</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -506,7 +511,7 @@
 <span class="comment">// limitations under the License.</span>
 <span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
 
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">pallet</span>::<span class="kw-2">*</span>;
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="self">self</span>::pallet</span>::<span class="kw-2">*</span>;
 
 <span class="attribute">#[<span class="ident">frame_support::pallet</span>]</span>
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">pallet</span> {
@@ -532,6 +537,7 @@
 
 	<span class="attribute">#[<span class="ident">pallet::pallet</span>]</span>
 	<span class="attribute">#[<span class="ident">pallet::generate_store</span>(<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">trait</span> <span class="ident">Store</span>)]</span>
+	<span class="attribute">#[<span class="ident">pallet::without_storage_info</span>]</span>
 	<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>(<span class="kw">_</span>);
 
 	<span class="attribute">#[<span class="ident">pallet::genesis_config</span>]</span>
@@ -735,7 +741,10 @@
 	<span class="kw">use</span> <span class="kw">crate</span> <span class="kw">as</span> <span class="ident">pallet_base_fee</span>;
 
 	<span class="kw">use</span> <span class="ident">frame_support</span>::{
-		<span class="ident">assert_ok</span>, <span class="ident">pallet_prelude::GenesisBuild</span>, <span class="ident">parameter_types</span>, <span class="ident">traits::OnFinalize</span>,
+		<span class="ident">assert_ok</span>,
+		<span class="ident">pallet_prelude::GenesisBuild</span>,
+		<span class="ident">parameter_types</span>,
+		<span class="ident">traits</span>::{<span class="ident">ConstU32</span>, <span class="ident">OnFinalize</span>},
 		<span class="ident">weights::DispatchClass</span>,
 	};
 	<span class="kw">use</span> <span class="ident">sp_core</span>::{<span class="ident">H256</span>, <span class="ident">U256</span>};
@@ -799,6 +808,7 @@
 		<span class="kw">type</span> <span class="ident">SystemWeightInfo</span> <span class="op">=</span> ();
 		<span class="kw">type</span> <span class="ident">SS58Prefix</span> <span class="op">=</span> ();
 		<span class="kw">type</span> <span class="ident">OnSetCode</span> <span class="op">=</span> ();
+		<span class="kw">type</span> <span class="ident">MaxConsumers</span> <span class="op">=</span> <span class="ident">ConstU32</span><span class="op">&lt;</span><span class="number">16</span><span class="op">&gt;</span>;
 	}
 
 	<span class="macro">frame_support::parameter_types!</span> {

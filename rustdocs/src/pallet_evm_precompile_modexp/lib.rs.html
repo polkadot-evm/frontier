@@ -471,6 +471,7 @@
 <span id="470">470</span>
 <span id="471">471</span>
 <span id="472">472</span>
+<span id="473">473</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -493,13 +494,14 @@
 <span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">alloc</span>;
 
 <span class="kw">use</span> <span class="ident">alloc::vec::Vec</span>;
+<span class="kw">use</span> <span class="ident">core</span>::{<span class="ident">cmp::max</span>, <span class="ident">ops::BitAnd</span>};
+
+<span class="kw">use</span> <span class="ident">num</span>::{<span class="ident">BigUint</span>, <span class="ident">FromPrimitive</span>, <span class="ident">One</span>, <span class="ident">ToPrimitive</span>, <span class="ident">Zero</span>};
+
 <span class="kw">use</span> <span class="ident">fp_evm</span>::{
 	<span class="ident">Context</span>, <span class="ident">ExitError</span>, <span class="ident">ExitSucceed</span>, <span class="ident">Precompile</span>, <span class="ident">PrecompileFailure</span>, <span class="ident">PrecompileOutput</span>,
 	<span class="ident">PrecompileResult</span>,
 };
-<span class="kw">use</span> <span class="ident">num</span>::{<span class="ident">BigUint</span>, <span class="ident">FromPrimitive</span>, <span class="ident">One</span>, <span class="ident">ToPrimitive</span>, <span class="ident">Zero</span>};
-
-<span class="kw">use</span> <span class="ident">core</span>::{<span class="ident">cmp::max</span>, <span class="ident">ops::BitAnd</span>};
 
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Modexp</span>;
 
@@ -704,13 +706,13 @@
 	<span class="kw">use</span> <span class="ident">pallet_evm_test_vector_support::test_precompile_test_vectors</span>;
 
 	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">process_consensus_tests</span>() -&gt; <span class="ident">std::result::Result</span><span class="op">&lt;</span>(), <span class="ident">String</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">process_consensus_tests</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">String</span><span class="op">&gt;</span> {
 		<span class="ident">test_precompile_test_vectors</span>::<span class="op">&lt;</span><span class="ident">Modexp</span><span class="op">&gt;</span>(<span class="string">&quot;../testdata/modexp_eip2565.json&quot;</span>)<span class="question-mark">?</span>;
 		<span class="prelude-val">Ok</span>(())
 	}
 
 	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">test_empty_input</span>() -&gt; <span class="ident">std::result::Result</span><span class="op">&lt;</span>(), <span class="ident">PrecompileFailure</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">test_empty_input</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">PrecompileFailure</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> <span class="ident">input</span>: [<span class="ident">u8</span>; <span class="number">0</span>] <span class="op">=</span> [];
 
 		<span class="kw">let</span> <span class="ident">cost</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">1</span>;
@@ -740,7 +742,7 @@
 	}
 
 	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">test_insufficient_input</span>() -&gt; <span class="ident">std::result::Result</span><span class="op">&lt;</span>(), <span class="ident">PrecompileFailure</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">test_insufficient_input</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">PrecompileFailure</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> <span class="ident">input</span> <span class="op">=</span> <span class="ident">hex::decode</span>(
 			<span class="string">&quot;0000000000000000000000000000000000000000000000000000000000000001\
 			0000000000000000000000000000000000000000000000000000000000000001\
@@ -773,7 +775,7 @@
 	}
 
 	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">test_excessive_input</span>() -&gt; <span class="ident">std::result::Result</span><span class="op">&lt;</span>(), <span class="ident">PrecompileFailure</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">test_excessive_input</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">PrecompileFailure</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> <span class="ident">input</span> <span class="op">=</span> <span class="ident">hex::decode</span>(
 			<span class="string">&quot;1000000000000000000000000000000000000000000000000000000000000001\
 			0000000000000000000000000000000000000000000000000000000000000001\

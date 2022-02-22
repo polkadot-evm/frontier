@@ -201,6 +201,7 @@
 <span id="200">200</span>
 <span id="201">201</span>
 <span id="202">202</span>
+<span id="203">203</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">frontier_template_runtime</span>::{
 	<span class="ident">AccountId</span>, <span class="ident">AuraConfig</span>, <span class="ident">BalancesConfig</span>, <span class="ident">EVMConfig</span>, <span class="ident">EthereumConfig</span>, <span class="ident">GenesisConfig</span>, <span class="ident">GrandpaConfig</span>,
 	<span class="ident">Signature</span>, <span class="ident">SudoConfig</span>, <span class="ident">SystemConfig</span>, <span class="ident">WASM_BINARY</span>,
@@ -272,6 +273,7 @@
 		<span class="prelude-val">None</span>,
 		<span class="comment">// Protocol ID</span>
 		<span class="prelude-val">None</span>,
+		<span class="prelude-val">None</span>,
 		<span class="comment">// Properties</span>
 		<span class="prelude-val">None</span>,
 		<span class="comment">// Extensions</span>
@@ -322,6 +324,7 @@
 		<span class="prelude-val">None</span>,
 		<span class="comment">// Protocol ID</span>
 		<span class="prelude-val">None</span>,
+		<span class="prelude-val">None</span>,
 		<span class="comment">// Properties</span>
 		<span class="prelude-val">None</span>,
 		<span class="comment">// Extensions</span>
@@ -341,7 +344,6 @@
 		<span class="ident">system</span>: <span class="ident">SystemConfig</span> {
 			<span class="comment">// Add Wasm runtime to storage.</span>
 			<span class="ident">code</span>: <span class="ident">wasm_binary</span>.<span class="ident">to_vec</span>(),
-			<span class="ident">changes_trie_config</span>: <span class="ident">Default::default</span>(),
 		},
 		<span class="ident">balances</span>: <span class="ident">BalancesConfig</span> {
 			<span class="comment">// Configure endowed accounts with initial balance of 1 &lt;&lt; 60.</span>
@@ -362,7 +364,7 @@
 		},
 		<span class="ident">sudo</span>: <span class="ident">SudoConfig</span> {
 			<span class="comment">// Assign network admin rights.</span>
-			<span class="ident">key</span>: <span class="ident">root_key</span>,
+			<span class="ident">key</span>: <span class="prelude-val">Some</span>(<span class="ident">root_key</span>),
 		},
 		<span class="ident">evm</span>: <span class="ident">EVMConfig</span> {
 			<span class="ident">accounts</span>: {

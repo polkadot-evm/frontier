@@ -309,18 +309,18 @@
 
 <span class="kw">mod</span> <span class="ident">utils</span>;
 
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">sp_database::Database</span>;
-
-<span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Decode</span>, <span class="ident">Encode</span>};
-<span class="kw">use</span> <span class="ident">fp_storage</span>::{<span class="ident">EthereumStorageSchema</span>, <span class="ident">PALLET_ETHEREUM_SCHEMA_CACHE</span>};
-<span class="kw">use</span> <span class="ident">parking_lot::Mutex</span>;
-<span class="kw">use</span> <span class="ident">sp_core::H256</span>;
-<span class="kw">use</span> <span class="ident">sp_runtime::traits::Block</span> <span class="kw">as</span> <span class="ident">BlockT</span>;
 <span class="kw">use</span> <span class="ident">std</span>::{
 	<span class="ident">marker::PhantomData</span>,
 	<span class="ident">path</span>::{<span class="ident">Path</span>, <span class="ident">PathBuf</span>},
 	<span class="ident">sync::Arc</span>,
 };
+
+<span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Decode</span>, <span class="ident">Encode</span>};
+<span class="kw">use</span> <span class="ident">fp_storage</span>::{<span class="ident">EthereumStorageSchema</span>, <span class="ident">PALLET_ETHEREUM_SCHEMA_CACHE</span>};
+<span class="kw">use</span> <span class="ident">parking_lot::Mutex</span>;
+<span class="kw">use</span> <span class="ident">sp_core::H256</span>;
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">sp_database::Database</span>;
+<span class="kw">use</span> <span class="ident">sp_runtime::traits::Block</span> <span class="kw">as</span> <span class="ident">BlockT</span>;
 
 <span class="kw">const</span> <span class="ident">DB_HASH_LEN</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">32</span>;
 <span class="doccomment">/// Hash type that this backend uses for the database.</span>

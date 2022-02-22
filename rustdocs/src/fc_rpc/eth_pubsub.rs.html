@@ -438,7 +438,6 @@
 
 <span class="kw">use</span> <span class="ident">log::warn</span>;
 <span class="kw">use</span> <span class="ident">rand</span>::{<span class="ident">distributions::Alphanumeric</span>, <span class="ident">thread_rng</span>, <span class="ident">Rng</span>};
-<span class="kw">use</span> <span class="ident">rustc_hex::ToHex</span>;
 <span class="kw">use</span> <span class="ident">sc_client_api</span>::{
 	<span class="ident">backend</span>::{<span class="ident">Backend</span>, <span class="ident">StateBackend</span>, <span class="ident">StorageProvider</span>},
 	<span class="ident">client::BlockchainEvents</span>,
@@ -493,9 +492,10 @@
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">rng</span> <span class="op">=</span> <span class="ident">thread_rng</span>();
 		<span class="kw">let</span> <span class="ident">id</span>: <span class="ident">String</span> <span class="op">=</span> <span class="ident">iter::repeat</span>(())
 			.<span class="ident">map</span>(<span class="op">|</span>()<span class="op">|</span> <span class="ident">rng</span>.<span class="ident">sample</span>(<span class="ident">Alphanumeric</span>))
+			.<span class="ident">map</span>(<span class="ident">char::from</span>)
 			.<span class="ident">take</span>(<span class="self">self</span>.<span class="ident">len</span>)
 			.<span class="ident">collect</span>();
-		<span class="kw">let</span> <span class="ident">out</span>: <span class="ident">String</span> <span class="op">=</span> <span class="ident">id</span>.<span class="ident">as_bytes</span>().<span class="ident">to_hex</span>();
+		<span class="kw">let</span> <span class="ident">out</span> <span class="op">=</span> <span class="ident">hex::encode</span>(<span class="ident">id</span>);
 		<span class="macro">format!</span>(<span class="string">&quot;0x{}&quot;</span>, <span class="ident">out</span>)
 	}
 }

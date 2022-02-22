@@ -4,51 +4,101 @@
 and the pallets that are used by the runtime.
 <code>Block</code> is the block type that is used in the runtime and <code>NodeBlock</code> is the block type
 that is used in the node. For instance they can differ in the extrinsics type.</p>
-<h2 id="example" class="section-header"><a href="#example">Example:</a></h2><div class="example-wrap"><pre class="language-nocompile"><code>construct_runtime!(
-    pub enum Runtime where
-        Block = Block,
-        NodeBlock = node::Block,
-        UncheckedExtrinsic = UncheckedExtrinsic
+<h2 id="example" class="section-header"><a href="#example">Example:</a></h2>
+<div class='information'><div class='tooltip ignore'>ⓘ</div></div><div class="example-wrap"><pre class="rust rust-example-rendered ignore"><code><span class="macro">construct_runtime!</span>(
+    <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Runtime</span> <span class="kw">where</span>
+        <span class="ident">Block</span> <span class="op">=</span> <span class="ident">Block</span>,
+        <span class="ident">NodeBlock</span> <span class="op">=</span> <span class="ident">node::Block</span>,
+        <span class="ident">UncheckedExtrinsic</span> <span class="op">=</span> <span class="ident">UncheckedExtrinsic</span>
     {
-        System: system::{Pallet, Call, Event&lt;T&gt;, Config&lt;T&gt;} = 0,
-        Test: test::{Pallet, Call} = 1,
-        Test2: test_with_long_module::{Pallet, Event&lt;T&gt;},
+        <span class="ident">System</span>: <span class="ident">frame_system</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">Config</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>} <span class="op">=</span> <span class="number">0</span>,
+        <span class="ident">Test</span>: <span class="ident">path::to::test</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>} <span class="op">=</span> <span class="number">1</span>,
 
-        // Pallets with instances
-        Test3_Instance1: test3::&lt;Instance1&gt;::{Pallet, Call, Storage, Event&lt;T, I&gt;, Config&lt;T, I&gt;, Origin&lt;T, I&gt;},
-        Test3_DefaultInstance: test3::{Pallet, Call, Storage, Event&lt;T&gt;, Config&lt;T&gt;, Origin&lt;T&gt;} = 4,
+        <span class="comment">// Pallets with instances</span>
+        <span class="ident">Test2_Instance1</span>: <span class="ident">test2</span>::<span class="op">&lt;</span><span class="ident">Instance1</span><span class="op">&gt;</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">I</span><span class="op">&gt;</span>, <span class="ident">Config</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">I</span><span class="op">&gt;</span>, <span class="ident">Origin</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">I</span><span class="op">&gt;</span>},
+        <span class="ident">Test2_DefaultInstance</span>: <span class="ident">test2</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">Config</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">Origin</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>} <span class="op">=</span> <span class="number">4</span>,
+
+        <span class="comment">// Pallets declared with `pallet` attribute macro: no need to define the parts</span>
+        <span class="ident">Test3_Instance1</span>: <span class="ident">test3</span>::<span class="op">&lt;</span><span class="ident">Instance1</span><span class="op">&gt;</span>,
+        <span class="ident">Test3_DefaultInstance</span>: <span class="ident">test3</span>,
+
+        <span class="comment">// with `exclude_parts` keyword some part can be excluded.</span>
+        <span class="ident">Test4_Instance1</span>: <span class="ident">test4</span>::<span class="op">&lt;</span><span class="ident">Instance1</span><span class="op">&gt;</span> <span class="ident">exclude_parts</span> { <span class="ident">Call</span>, <span class="ident">Origin</span> },
+        <span class="ident">Test4_DefaultInstance</span>: <span class="ident">test4</span> <span class="ident">exclude_parts</span> { <span class="ident">Storage</span> },
+
+        <span class="comment">// with `use_parts` keyword, a subset of the pallet parts can be specified.</span>
+        <span class="ident">Test4_Instance1</span>: <span class="ident">test4</span>::<span class="op">&lt;</span><span class="ident">Instance1</span><span class="op">&gt;</span> <span class="ident">use_parts</span> { <span class="ident">Pallet</span>, <span class="ident">Call</span>},
+        <span class="ident">Test4_DefaultInstance</span>: <span class="ident">test4</span> <span class="ident">use_parts</span> { <span class="ident">Pallet</span> },
     }
 )</code></pre></div>
-<p>The identifier <code>System</code> is the name of the pallet and the lower case identifier <code>system</code> is the
-name of the Rust module/crate for this Substrate pallet. The identifiers between the braces are
-the pallet parts provided by the pallet. It is important to list these parts here to export
-them correctly in the metadata or to make the pallet usable in the runtime.</p>
-<p>We provide support for the following module parts in a pallet:</p>
+<p>Each pallet is declared as such:</p>
+<ul>
+<li>
+<p><code>Identifier</code>: name given to the pallet that uniquely identifies it.</p>
+</li>
+<li>
+<p><code>:</code>: colon separator</p>
+</li>
+<li>
+<p><code>path::to::pallet</code>: identifiers separated by colons which declare the path to a pallet
+definition.</p>
+</li>
+<li>
+<p><code>::&lt;InstanceN&gt;</code> optional: specify the instance of the pallet to use. If not specified it will
+use the default instance (or the only instance in case of non-instantiable pallets).</p>
+</li>
+<li>
+<p><code>::{ Part1, Part2&lt;T&gt;, .. }</code> optional if pallet declared with <code>frame_support::pallet</code>: Comma
+separated parts declared with their generic. If a pallet is declared with
+<code>frame_support::pallet</code> macro then the parts can be automatically derived if not explicitly
+provided. We provide support for the following module parts in a pallet:</p>
 <ul>
 <li><code>Pallet</code> - Required for all pallets</li>
 <li><code>Call</code> - If the pallet has callable functions</li>
 <li><code>Storage</code> - If the pallet uses storage</li>
 <li><code>Event</code> or <code>Event&lt;T&gt;</code> (if the event is generic) - If the pallet emits events</li>
 <li><code>Origin</code> or <code>Origin&lt;T&gt;</code> (if the origin is generic) - If the pallet has instanciable origins</li>
-<li><code>Config</code> or <code>Config&lt;T&gt;</code> (if the config is generic) - If the pallet builds the genesis storage
-with <code>GenesisConfig</code></li>
+<li><code>Config</code> or <code>Config&lt;T&gt;</code> (if the config is generic) - If the pallet builds the genesis
+storage with <code>GenesisConfig</code></li>
 <li><code>Inherent</code> - If the pallet provides/can check inherents.</li>
 <li><code>ValidateUnsigned</code> - If the pallet validates unsigned extrinsics.</li>
 </ul>
-<p><code>= $n</code> is an optional part allowing to define at which index the pallet variants in
-<code>OriginCaller</code>, <code>Call</code> and <code>Event</code> are encoded, and to define the ModuleToIndex value.</p>
-<p>if <code>= $n</code> is not given, then index is resolved same as fieldless enum in Rust
+<p>It is important to list these parts here to export them correctly in the metadata or to make
+the pallet usable in the runtime.</p>
+</li>
+<li>
+<p><code>exclude_parts { Part1, Part2 }</code> optional: comma separated parts without generics. I.e. one of
+<code>Pallet</code>, <code>Call</code>, <code>Storage</code>, <code>Event</code>, <code>Origin</code>, <code>Config</code>, <code>Inherent</code>, <code>ValidateUnsigned</code>. It
+is incompatible with <code>use_parts</code>. This specifies the part to exclude. In order to select
+subset of the pallet parts.</p>
+<p>For example excluding the part <code>Call</code> can be useful if the runtime doesn’t want to make the
+pallet calls available.</p>
+</li>
+<li>
+<p><code>use_parts { Part1, Part2 }</code> optional: comma separated parts without generics. I.e. one of
+<code>Pallet</code>, <code>Call</code>, <code>Storage</code>, <code>Event</code>, <code>Origin</code>, <code>Config</code>, <code>Inherent</code>, <code>ValidateUnsigned</code>. It
+is incompatible with <code>exclude_parts</code>. This specifies the part to use. In order to select a
+subset of the pallet parts.</p>
+<p>For example not using the part <code>Call</code> can be useful if the runtime doesn’t want to make the
+pallet calls available.</p>
+</li>
+<li>
+<p><code>= $n</code> optional: number to define at which index the pallet variants in <code>OriginCaller</code>, <code>Call</code>
+and <code>Event</code> are encoded, and to define the ModuleToIndex value.</p>
+<p>if <code>= $n</code> is not given, then index is resolved in the same way as fieldless enum in Rust
 (i.e. incrementedly from previous index):</p>
 <div class="example-wrap"><pre class="language-nocompile"><code>pallet1 .. = 2,
 pallet2 .., // Here pallet2 is given index 3
 pallet3 .. = 0,
-pallet4 .., // Here pallet4 is given index 1</code></pre></div><h2 id="note" class="section-header"><a href="#note">Note</a></h2>
+pallet4 .., // Here pallet4 is given index 1</code></pre></div></li>
+</ul>
+<h2 id="note" class="section-header"><a href="#note">Note</a></h2>
 <p>The population of the genesis storage depends on the order of pallets. So, if one of your
 pallets depends on another pallet, the pallet that is depended upon needs to come before
 the pallet depending on it.</p>
 <h2 id="type-definitions" class="section-header"><a href="#type-definitions">Type definitions</a></h2>
 <ul>
-<li>The macro generates a type alias for each pallet to their <code>Module</code> (or <code>Pallet</code>). E.g. <code>type System = frame_system::Pallet&lt;Runtime&gt;</code></li>
+<li>The macro generates a type alias for each pallet to their <code>Pallet</code>. E.g. <code>type System = frame_system::Pallet&lt;Runtime&gt;</code></li>
 </ul>
 </div></details></section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../" data-current-crate="frontier_template_runtime" data-search-index-js="../search-index.js" data-search-js="../search.js"></div>
 </body></html>

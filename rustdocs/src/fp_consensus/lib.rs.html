@@ -256,7 +256,7 @@
 	<span class="ident">MultipleLogs</span>,
 }
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">find_pre_log</span><span class="op">&lt;</span><span class="ident">Hash</span><span class="op">&gt;</span>(<span class="ident">digest</span>: <span class="kw-2">&amp;</span><span class="ident">Digest</span><span class="op">&lt;</span><span class="ident">Hash</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">PreLog</span>, <span class="ident">FindLogError</span><span class="op">&gt;</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">find_pre_log</span>(<span class="ident">digest</span>: <span class="kw-2">&amp;</span><span class="ident">Digest</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">PreLog</span>, <span class="ident">FindLogError</span><span class="op">&gt;</span> {
 	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">found</span> <span class="op">=</span> <span class="prelude-val">None</span>;
 
 	<span class="kw">for</span> <span class="ident">log</span> <span class="kw">in</span> <span class="ident">digest</span>.<span class="ident">logs</span>() {
@@ -271,7 +271,7 @@
 	<span class="ident">found</span>.<span class="ident">ok_or</span>(<span class="ident">FindLogError::NotFound</span>)
 }
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">find_post_log</span><span class="op">&lt;</span><span class="ident">Hash</span><span class="op">&gt;</span>(<span class="ident">digest</span>: <span class="kw-2">&amp;</span><span class="ident">Digest</span><span class="op">&lt;</span><span class="ident">Hash</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">PostLog</span>, <span class="ident">FindLogError</span><span class="op">&gt;</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">find_post_log</span>(<span class="ident">digest</span>: <span class="kw-2">&amp;</span><span class="ident">Digest</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">PostLog</span>, <span class="ident">FindLogError</span><span class="op">&gt;</span> {
 	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">found</span> <span class="op">=</span> <span class="prelude-val">None</span>;
 
 	<span class="kw">for</span> <span class="ident">log</span> <span class="kw">in</span> <span class="ident">digest</span>.<span class="ident">logs</span>() {
@@ -286,7 +286,7 @@
 	<span class="ident">found</span>.<span class="ident">ok_or</span>(<span class="ident">FindLogError::NotFound</span>)
 }
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">find_log</span><span class="op">&lt;</span><span class="ident">Hash</span><span class="op">&gt;</span>(<span class="ident">digest</span>: <span class="kw-2">&amp;</span><span class="ident">Digest</span><span class="op">&lt;</span><span class="ident">Hash</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Log</span>, <span class="ident">FindLogError</span><span class="op">&gt;</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">find_log</span>(<span class="ident">digest</span>: <span class="kw-2">&amp;</span><span class="ident">Digest</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Log</span>, <span class="ident">FindLogError</span><span class="op">&gt;</span> {
 	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">found</span> <span class="op">=</span> <span class="prelude-val">None</span>;
 
 	<span class="kw">for</span> <span class="ident">log</span> <span class="kw">in</span> <span class="ident">digest</span>.<span class="ident">logs</span>() {
@@ -308,7 +308,7 @@
 	<span class="ident">found</span>.<span class="ident">ok_or</span>(<span class="ident">FindLogError::NotFound</span>)
 }
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">ensure_log</span><span class="op">&lt;</span><span class="ident">Hash</span><span class="op">&gt;</span>(<span class="ident">digest</span>: <span class="kw-2">&amp;</span><span class="ident">Digest</span><span class="op">&lt;</span><span class="ident">Hash</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">FindLogError</span><span class="op">&gt;</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">ensure_log</span>(<span class="ident">digest</span>: <span class="kw-2">&amp;</span><span class="ident">Digest</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">FindLogError</span><span class="op">&gt;</span> {
 	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">found</span> <span class="op">=</span> <span class="bool-val">false</span>;
 
 	<span class="kw">for</span> <span class="ident">log</span> <span class="kw">in</span> <span class="ident">digest</span>.<span class="ident">logs</span>() {

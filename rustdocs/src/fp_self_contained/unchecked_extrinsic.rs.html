@@ -179,13 +179,13 @@
 <span id="178">178</span>
 <span id="179">179</span>
 <span id="180">180</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">CheckedExtrinsic</span>, <span class="ident">CheckedSignature</span>, <span class="ident">SelfContainedCall</span>};
-<span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Decode</span>, <span class="ident">Encode</span>};
-<span class="kw">use</span> <span class="ident">frame_support</span>::{
+<span id="181">181</span>
+</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">frame_support</span>::{
+	<span class="ident">codec</span>::{<span class="ident">Decode</span>, <span class="ident">Encode</span>},
+	<span class="ident">scale_info::TypeInfo</span>,
 	<span class="ident">traits::ExtrinsicCall</span>,
 	<span class="ident">weights</span>::{<span class="ident">DispatchInfo</span>, <span class="ident">GetDispatchInfo</span>},
 };
-<span class="kw">use</span> <span class="ident">scale_info::TypeInfo</span>;
 <span class="kw">use</span> <span class="ident">sp_runtime</span>::{
 	<span class="ident">traits</span>::{
 		<span class="self">self</span>, <span class="ident">Checkable</span>, <span class="ident">Extrinsic</span>, <span class="ident">ExtrinsicMetadata</span>, <span class="ident">IdentifyAccount</span>, <span class="ident">MaybeDisplay</span>, <span class="ident">Member</span>,
@@ -194,6 +194,8 @@
 	<span class="ident">transaction_validity</span>::{<span class="ident">InvalidTransaction</span>, <span class="ident">TransactionValidityError</span>},
 	<span class="ident">OpaqueExtrinsic</span>, <span class="ident">RuntimeDebug</span>,
 };
+
+<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">CheckedExtrinsic</span>, <span class="ident">CheckedSignature</span>, <span class="ident">SelfContainedCall</span>};
 
 <span class="doccomment">/// A extrinsic right from the external world. This is unchecked and so</span>
 <span class="doccomment">/// can contain a signature.</span>

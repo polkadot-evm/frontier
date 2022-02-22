@@ -61,6 +61,7 @@
 <span id="60">60</span>
 <span id="61">61</span>
 <span id="62">62</span>
+<span id="63">63</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -90,7 +91,8 @@
 <span class="kw">use</span> <span class="ident">sp_std::vec::Vec</span>;
 
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">evm::backend</span>::{<span class="ident">Basic</span> <span class="kw">as</span> <span class="ident">Account</span>, <span class="ident">Log</span>};
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">precompile</span>::{
+
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="self">self</span>::precompile</span>::{
 	<span class="ident">Context</span>, <span class="ident">ExitError</span>, <span class="ident">ExitSucceed</span>, <span class="ident">LinearCostPrecompile</span>, <span class="ident">Precompile</span>, <span class="ident">PrecompileFailure</span>,
 	<span class="ident">PrecompileOutput</span>, <span class="ident">PrecompileResult</span>, <span class="ident">PrecompileSet</span>,
 };

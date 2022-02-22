@@ -110,13 +110,13 @@
 
 <span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">alloc</span>;
 
-<span class="kw">use</span> <span class="ident">codec::Decode</span>;
 <span class="kw">use</span> <span class="ident">core::marker::PhantomData</span>;
 <span class="kw">use</span> <span class="ident">fp_evm</span>::{
 	<span class="ident">Context</span>, <span class="ident">ExitError</span>, <span class="ident">ExitSucceed</span>, <span class="ident">Precompile</span>, <span class="ident">PrecompileFailure</span>, <span class="ident">PrecompileOutput</span>,
 	<span class="ident">PrecompileResult</span>,
 };
 <span class="kw">use</span> <span class="ident">frame_support</span>::{
+	<span class="ident">codec::Decode</span>,
 	<span class="ident">dispatch</span>::{<span class="ident">Dispatchable</span>, <span class="ident">GetDispatchInfo</span>, <span class="ident">PostDispatchInfo</span>},
 	<span class="ident">weights</span>::{<span class="ident">DispatchClass</span>, <span class="ident">Pays</span>},
 };

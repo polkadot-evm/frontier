@@ -173,12 +173,6 @@
 <span id="172">172</span>
 <span id="173">173</span>
 <span id="174">174</span>
-<span id="175">175</span>
-<span id="176">176</span>
-<span id="177">177</span>
-<span id="178">178</span>
-<span id="179">179</span>
-<span id="180">180</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -199,19 +193,15 @@
 <span class="comment">// Ensure we&#39;re `no_std` when compiling for Wasm.</span>
 <span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
 
-<span class="kw">use</span> <span class="ident">async_trait::async_trait</span>;
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
+<span class="kw">mod</span> <span class="ident">tests</span>;
+
 <span class="kw">use</span> <span class="ident">frame_support::inherent::IsFatalError</span>;
 <span class="kw">use</span> <span class="ident">sp_core::U256</span>;
 <span class="kw">use</span> <span class="ident">sp_inherents</span>::{<span class="ident">InherentData</span>, <span class="ident">InherentIdentifier</span>};
-<span class="kw">use</span> <span class="ident">sp_std</span>::{
-	<span class="ident">cmp</span>::{<span class="ident">max</span>, <span class="ident">min</span>},
-	<span class="ident">result</span>,
-};
+<span class="kw">use</span> <span class="ident">sp_std::cmp</span>::{<span class="ident">max</span>, <span class="ident">min</span>};
 
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">pallet</span>::<span class="kw-2">*</span>;
-
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
-<span class="kw">mod</span> <span class="ident">tests</span>;
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="self">self</span>::pallet</span>::<span class="kw-2">*</span>;
 
 <span class="attribute">#[<span class="ident">frame_support::pallet</span>]</span>
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">pallet</span> {
@@ -221,6 +211,7 @@
 
 	<span class="attribute">#[<span class="ident">pallet::pallet</span>]</span>
 	<span class="attribute">#[<span class="ident">pallet::generate_store</span>(<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">trait</span> <span class="ident">Store</span>)]</span>
+	<span class="attribute">#[<span class="ident">pallet::without_storage_info</span>]</span>
 	<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>(<span class="kw">_</span>);
 
 	<span class="attribute">#[<span class="ident">pallet::config</span>]</span>
@@ -314,10 +305,7 @@
 			<span class="prelude-val">Some</span>(<span class="ident">Call::note_min_gas_price_target</span> { <span class="ident">target</span> })
 		}
 
-		<span class="kw">fn</span> <span class="ident">check_inherent</span>(
-			<span class="ident">_call</span>: <span class="kw-2">&amp;</span><span class="ident"><span class="self">Self</span>::Call</span>,
-			<span class="ident">_data</span>: <span class="kw-2">&amp;</span><span class="ident">InherentData</span>,
-		) -&gt; <span class="ident">result::Result</span><span class="op">&lt;</span>(), <span class="ident"><span class="self">Self</span>::Error</span><span class="op">&gt;</span> {
+		<span class="kw">fn</span> <span class="ident">check_inherent</span>(<span class="ident">_call</span>: <span class="kw-2">&amp;</span><span class="ident"><span class="self">Self</span>::Call</span>, <span class="ident">_data</span>: <span class="kw-2">&amp;</span><span class="ident">InherentData</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident"><span class="self">Self</span>::Error</span><span class="op">&gt;</span> {
 			<span class="prelude-val">Ok</span>(())
 		}
 
@@ -341,7 +329,7 @@
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">InherentDataProvider</span>(<span class="kw">pub</span> <span class="ident">InherentType</span>);
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>)]</span>
-<span class="attribute">#[<span class="ident">async_trait</span>]</span>
+<span class="attribute">#[<span class="ident">async_trait::async_trait</span>]</span>
 <span class="kw">impl</span> <span class="ident">sp_inherents::InherentDataProvider</span> <span class="kw">for</span> <span class="ident">InherentDataProvider</span> {
 	<span class="kw">fn</span> <span class="ident">provide_inherent_data</span>(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,

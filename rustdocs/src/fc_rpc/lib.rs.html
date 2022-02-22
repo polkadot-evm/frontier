@@ -431,26 +431,26 @@
 <span class="kw">mod</span> <span class="ident">eth_pubsub</span>;
 <span class="kw">mod</span> <span class="ident">overrides</span>;
 
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">eth</span>::{
-	<span class="ident">EthApi</span>, <span class="ident">EthApiServer</span>, <span class="ident">EthBlockDataCache</span>, <span class="ident">EthFilterApi</span>, <span class="ident">EthFilterApiServer</span>, <span class="ident">EthTask</span>, <span class="ident">NetApi</span>,
-	<span class="ident">NetApiServer</span>, <span class="ident">Web3Api</span>, <span class="ident">Web3ApiServer</span>,
-};
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">eth_pubsub</span>::{<span class="ident">EthPubSubApi</span>, <span class="ident">EthPubSubApiServer</span>, <span class="ident">HexEncodedIdProvider</span>};
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">ethereum::TransactionV2</span> <span class="kw">as</span> <span class="ident">EthereumTransaction</span>;
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">overrides</span>::{
-	<span class="ident">OverrideHandle</span>, <span class="ident">RuntimeApiStorageOverride</span>, <span class="ident">SchemaV1Override</span>, <span class="ident">SchemaV2Override</span>,
-	<span class="ident">SchemaV3Override</span>, <span class="ident">StorageOverride</span>,
+<span class="kw">pub</span> <span class="kw">use</span> <span class="self">self</span>::{
+	<span class="ident">eth</span>::{
+		<span class="ident">EthApi</span>, <span class="ident">EthApiServer</span>, <span class="ident">EthBlockDataCache</span>, <span class="ident">EthFilterApi</span>, <span class="ident">EthFilterApiServer</span>, <span class="ident">EthTask</span>, <span class="ident">NetApi</span>,
+		<span class="ident">NetApiServer</span>, <span class="ident">Web3Api</span>, <span class="ident">Web3ApiServer</span>,
+	},
+	<span class="ident">eth_pubsub</span>::{<span class="ident">EthPubSubApi</span>, <span class="ident">EthPubSubApiServer</span>, <span class="ident">HexEncodedIdProvider</span>},
+	<span class="ident">overrides</span>::{
+		<span class="ident">OverrideHandle</span>, <span class="ident">RuntimeApiStorageOverride</span>, <span class="ident">SchemaV1Override</span>, <span class="ident">SchemaV2Override</span>,
+		<span class="ident">SchemaV3Override</span>, <span class="ident">StorageOverride</span>,
+	},
 };
 
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">ethereum::TransactionV2</span> <span class="kw">as</span> <span class="ident">EthereumTransaction</span>;
 <span class="kw">use</span> <span class="ident">ethereum_types</span>::{<span class="ident">H160</span>, <span class="ident">H256</span>};
 <span class="kw">use</span> <span class="ident">evm</span>::{<span class="ident">ExitError</span>, <span class="ident">ExitReason</span>};
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">fc_rpc_core::types::TransactionMessage</span>;
 <span class="kw">use</span> <span class="ident">jsonrpc_core</span>::{<span class="ident">Error</span>, <span class="ident">ErrorCode</span>, <span class="ident">Value</span>};
-<span class="kw">use</span> <span class="ident">rustc_hex::ToHex</span>;
 <span class="kw">use</span> <span class="ident">sha3</span>::{<span class="ident">Digest</span>, <span class="ident">Keccak256</span>};
 
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">frontier_backend_client</span> {
-
 	<span class="kw">use</span> <span class="ident"><span class="kw">super</span>::internal_err</span>;
 
 	<span class="kw">use</span> <span class="ident">fc_rpc_core::types::BlockNumber</span>;
@@ -646,7 +646,7 @@
 			<span class="prelude-val">Err</span>(<span class="ident">Error</span> {
 				<span class="ident">code</span>: <span class="ident">ErrorCode::InternalError</span>,
 				<span class="ident">message</span>,
-				<span class="ident">data</span>: <span class="prelude-val">Some</span>(<span class="ident">Value::String</span>(<span class="ident">data</span>.<span class="ident">to_hex</span>())),
+				<span class="ident">data</span>: <span class="prelude-val">Some</span>(<span class="ident">Value::String</span>(<span class="ident">hex::encode</span>(<span class="ident">data</span>))),
 			})
 		}
 		<span class="ident">ExitReason::Fatal</span>(<span class="ident">e</span>) =&gt; <span class="prelude-val">Err</span>(<span class="ident">Error</span> {
@@ -696,13 +696,13 @@
 }
 
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">EthDevSigner</span> {
-	<span class="ident">keys</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">secp256k1::SecretKey</span><span class="op">&gt;</span>,
+	<span class="ident">keys</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">libsecp256k1::SecretKey</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">EthDevSigner</span> {
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>() -&gt; <span class="self">Self</span> {
 		<span class="self">Self</span> {
-			<span class="ident">keys</span>: <span class="macro">vec!</span>[<span class="ident">secp256k1::SecretKey::parse</span>(<span class="kw-2">&amp;</span>[
+			<span class="ident">keys</span>: <span class="macro">vec!</span>[<span class="ident">libsecp256k1::SecretKey::parse</span>(<span class="kw-2">&amp;</span>[
 				<span class="number">0x11</span>, <span class="number">0x11</span>, <span class="number">0x11</span>, <span class="number">0x11</span>, <span class="number">0x11</span>, <span class="number">0x11</span>, <span class="number">0x11</span>, <span class="number">0x11</span>, <span class="number">0x11</span>, <span class="number">0x11</span>, <span class="number">0x11</span>, <span class="number">0x11</span>, <span class="number">0x11</span>, <span class="number">0x11</span>,
 				<span class="number">0x11</span>, <span class="number">0x11</span>, <span class="number">0x11</span>, <span class="number">0x11</span>, <span class="number">0x11</span>, <span class="number">0x11</span>, <span class="number">0x11</span>, <span class="number">0x11</span>, <span class="number">0x11</span>, <span class="number">0x11</span>, <span class="number">0x11</span>, <span class="number">0x11</span>, <span class="number">0x11</span>, <span class="number">0x11</span>,
 				<span class="number">0x11</span>, <span class="number">0x11</span>, <span class="number">0x11</span>, <span class="number">0x11</span>,
@@ -717,7 +717,7 @@
 		<span class="self">self</span>.<span class="ident">keys</span>
 			.<span class="ident">iter</span>()
 			.<span class="ident">map</span>(<span class="op">|</span><span class="ident">secret</span><span class="op">|</span> {
-				<span class="kw">let</span> <span class="ident">public</span> <span class="op">=</span> <span class="ident">secp256k1::PublicKey::from_secret_key</span>(<span class="ident">secret</span>);
+				<span class="kw">let</span> <span class="ident">public</span> <span class="op">=</span> <span class="ident">libsecp256k1::PublicKey::from_secret_key</span>(<span class="ident">secret</span>);
 				<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">res</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">64</span>];
 				<span class="ident">res</span>.<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">public</span>.<span class="ident">serialize</span>()[<span class="number">1</span>..<span class="number">65</span>]);
 
@@ -735,7 +735,7 @@
 
 		<span class="kw">for</span> <span class="ident">secret</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">keys</span> {
 			<span class="kw">let</span> <span class="ident">key_address</span> <span class="op">=</span> {
-				<span class="kw">let</span> <span class="ident">public</span> <span class="op">=</span> <span class="ident">secp256k1::PublicKey::from_secret_key</span>(<span class="ident">secret</span>);
+				<span class="kw">let</span> <span class="ident">public</span> <span class="op">=</span> <span class="ident">libsecp256k1::PublicKey::from_secret_key</span>(<span class="ident">secret</span>);
 				<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">res</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">64</span>];
 				<span class="ident">res</span>.<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">public</span>.<span class="ident">serialize</span>()[<span class="number">1</span>..<span class="number">65</span>]);
 				<span class="ident">H160::from</span>(<span class="ident">H256::from_slice</span>(<span class="ident">Keccak256::digest</span>(<span class="kw-2">&amp;</span><span class="ident">res</span>).<span class="ident">as_slice</span>()))
@@ -744,9 +744,9 @@
 			<span class="kw">if</span> <span class="kw-2">&amp;</span><span class="ident">key_address</span> <span class="op">==</span> <span class="ident">address</span> {
 				<span class="kw">match</span> <span class="ident">message</span> {
 					<span class="ident">TransactionMessage::Legacy</span>(<span class="ident">m</span>) =&gt; {
-						<span class="kw">let</span> <span class="ident">signing_message</span> <span class="op">=</span> <span class="ident">secp256k1::Message::parse_slice</span>(<span class="kw-2">&amp;</span><span class="ident">m</span>.<span class="ident">hash</span>()[..])
+						<span class="kw">let</span> <span class="ident">signing_message</span> <span class="op">=</span> <span class="ident">libsecp256k1::Message::parse_slice</span>(<span class="kw-2">&amp;</span><span class="ident">m</span>.<span class="ident">hash</span>()[..])
 							.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="string">&quot;invalid signing message&quot;</span>))<span class="question-mark">?</span>;
-						<span class="kw">let</span> (<span class="ident">signature</span>, <span class="ident">recid</span>) <span class="op">=</span> <span class="ident">secp256k1::sign</span>(<span class="kw-2">&amp;</span><span class="ident">signing_message</span>, <span class="ident">secret</span>);
+						<span class="kw">let</span> (<span class="ident">signature</span>, <span class="ident">recid</span>) <span class="op">=</span> <span class="ident">libsecp256k1::sign</span>(<span class="kw-2">&amp;</span><span class="ident">signing_message</span>, <span class="ident">secret</span>);
 						<span class="kw">let</span> <span class="ident">v</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">m</span>.<span class="ident">chain_id</span> {
 							<span class="prelude-val">None</span> =&gt; <span class="number">27</span> <span class="op">+</span> <span class="ident">recid</span>.<span class="ident">serialize</span>() <span class="kw">as</span> <span class="ident">u64</span>,
 							<span class="prelude-val">Some</span>(<span class="ident">chain_id</span>) =&gt; <span class="number">2</span> <span class="op">*</span> <span class="ident">chain_id</span> <span class="op">+</span> <span class="number">35</span> <span class="op">+</span> <span class="ident">recid</span>.<span class="ident">serialize</span>() <span class="kw">as</span> <span class="ident">u64</span>,
@@ -767,9 +767,9 @@
 							}));
 					}
 					<span class="ident">TransactionMessage::EIP2930</span>(<span class="ident">m</span>) =&gt; {
-						<span class="kw">let</span> <span class="ident">signing_message</span> <span class="op">=</span> <span class="ident">secp256k1::Message::parse_slice</span>(<span class="kw-2">&amp;</span><span class="ident">m</span>.<span class="ident">hash</span>()[..])
+						<span class="kw">let</span> <span class="ident">signing_message</span> <span class="op">=</span> <span class="ident">libsecp256k1::Message::parse_slice</span>(<span class="kw-2">&amp;</span><span class="ident">m</span>.<span class="ident">hash</span>()[..])
 							.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="string">&quot;invalid signing message&quot;</span>))<span class="question-mark">?</span>;
-						<span class="kw">let</span> (<span class="ident">signature</span>, <span class="ident">recid</span>) <span class="op">=</span> <span class="ident">secp256k1::sign</span>(<span class="kw-2">&amp;</span><span class="ident">signing_message</span>, <span class="ident">secret</span>);
+						<span class="kw">let</span> (<span class="ident">signature</span>, <span class="ident">recid</span>) <span class="op">=</span> <span class="ident">libsecp256k1::sign</span>(<span class="kw-2">&amp;</span><span class="ident">signing_message</span>, <span class="ident">secret</span>);
 						<span class="kw">let</span> <span class="ident">rs</span> <span class="op">=</span> <span class="ident">signature</span>.<span class="ident">serialize</span>();
 						<span class="kw">let</span> <span class="ident">r</span> <span class="op">=</span> <span class="ident">H256::from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">rs</span>[<span class="number">0</span>..<span class="number">32</span>]);
 						<span class="kw">let</span> <span class="ident">s</span> <span class="op">=</span> <span class="ident">H256::from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">rs</span>[<span class="number">32</span>..<span class="number">64</span>]);
@@ -789,9 +789,9 @@
 							}));
 					}
 					<span class="ident">TransactionMessage::EIP1559</span>(<span class="ident">m</span>) =&gt; {
-						<span class="kw">let</span> <span class="ident">signing_message</span> <span class="op">=</span> <span class="ident">secp256k1::Message::parse_slice</span>(<span class="kw-2">&amp;</span><span class="ident">m</span>.<span class="ident">hash</span>()[..])
+						<span class="kw">let</span> <span class="ident">signing_message</span> <span class="op">=</span> <span class="ident">libsecp256k1::Message::parse_slice</span>(<span class="kw-2">&amp;</span><span class="ident">m</span>.<span class="ident">hash</span>()[..])
 							.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="string">&quot;invalid signing message&quot;</span>))<span class="question-mark">?</span>;
-						<span class="kw">let</span> (<span class="ident">signature</span>, <span class="ident">recid</span>) <span class="op">=</span> <span class="ident">secp256k1::sign</span>(<span class="kw-2">&amp;</span><span class="ident">signing_message</span>, <span class="ident">secret</span>);
+						<span class="kw">let</span> (<span class="ident">signature</span>, <span class="ident">recid</span>) <span class="op">=</span> <span class="ident">libsecp256k1::sign</span>(<span class="kw-2">&amp;</span><span class="ident">signing_message</span>, <span class="ident">secret</span>);
 						<span class="kw">let</span> <span class="ident">rs</span> <span class="op">=</span> <span class="ident">signature</span>.<span class="ident">serialize</span>();
 						<span class="kw">let</span> <span class="ident">r</span> <span class="op">=</span> <span class="ident">H256::from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">rs</span>[<span class="number">0</span>..<span class="number">32</span>]);
 						<span class="kw">let</span> <span class="ident">s</span> <span class="op">=</span> <span class="ident">H256::from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">rs</span>[<span class="number">32</span>..<span class="number">64</span>]);
