@@ -129,7 +129,7 @@ mod tests {
 	use pallet_evm_test_vector_support::test_precompile_test_vectors;
 
 	#[test]
-	fn process_consensus_tests() -> std::result::Result<(), String> {
+	fn process_consensus_tests() -> Result<(), String> {
 		test_precompile_test_vectors::<Blake2F>("../testdata/blake2F.json")?;
 		Ok(())
 	}

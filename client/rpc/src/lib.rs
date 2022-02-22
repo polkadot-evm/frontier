@@ -20,26 +20,26 @@ mod eth;
 mod eth_pubsub;
 mod overrides;
 
-pub use eth::{
-	EthApi, EthApiServer, EthBlockDataCache, EthFilterApi, EthFilterApiServer, EthTask, NetApi,
-	NetApiServer, Web3Api, Web3ApiServer,
-};
-pub use eth_pubsub::{EthPubSubApi, EthPubSubApiServer, HexEncodedIdProvider};
-pub use ethereum::TransactionV2 as EthereumTransaction;
-pub use overrides::{
-	OverrideHandle, RuntimeApiStorageOverride, SchemaV1Override, SchemaV2Override,
-	SchemaV3Override, StorageOverride,
+pub use self::{
+	eth::{
+		EthApi, EthApiServer, EthBlockDataCache, EthFilterApi, EthFilterApiServer, EthTask, NetApi,
+		NetApiServer, Web3Api, Web3ApiServer,
+	},
+	eth_pubsub::{EthPubSubApi, EthPubSubApiServer, HexEncodedIdProvider},
+	overrides::{
+		OverrideHandle, RuntimeApiStorageOverride, SchemaV1Override, SchemaV2Override,
+		SchemaV3Override, StorageOverride,
+	},
 };
 
+pub use ethereum::TransactionV2 as EthereumTransaction;
 use ethereum_types::{H160, H256};
 use evm::{ExitError, ExitReason};
 pub use fc_rpc_core::types::TransactionMessage;
 use jsonrpc_core::{Error, ErrorCode, Value};
-use rustc_hex::ToHex;
 use sha3::{Digest, Keccak256};
 
 pub mod frontier_backend_client {
-
 	use super::internal_err;
 
 	use fc_rpc_core::types::BlockNumber;
@@ -235,7 +235,7 @@ pub fn error_on_execution_failure(reason: &ExitReason, data: &[u8]) -> Result<()
 			Err(Error {
 				code: ErrorCode::InternalError,
 				message,
-				data: Some(Value::String(data.to_hex())),
+				data: Some(Value::String(hex::encode(data))),
 			})
 		}
 		ExitReason::Fatal(e) => Err(Error {
@@ -285,13 +285,13 @@ pub trait EthSigner: Send + Sync {
 }
 
 pub struct EthDevSigner {
-	keys: Vec<secp256k1::SecretKey>,
+	keys: Vec<libsecp256k1::SecretKey>,
 }
 
 impl EthDevSigner {
 	pub fn new() -> Self {
 		Self {
-			keys: vec![secp256k1::SecretKey::parse(&[
+			keys: vec![libsecp256k1::SecretKey::parse(&[
 				0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11,
 				0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11,
 				0x11, 0x11, 0x11, 0x11,
@@ -306,7 +306,7 @@ impl EthSigner for EthDevSigner {
 		self.keys
 			.iter()
 			.map(|secret| {
-				let public = secp256k1::PublicKey::from_secret_key(secret);
+				let public = libsecp256k1::PublicKey::from_secret_key(secret);
 				let mut res = [0u8; 64];
 				res.copy_from_slice(&public.serialize()[1..65]);
 
@@ -324,7 +324,7 @@ impl EthSigner for EthDevSigner {
 
 		for secret in &self.keys {
 			let key_address = {
-				let public = secp256k1::PublicKey::from_secret_key(secret);
+				let public = libsecp256k1::PublicKey::from_secret_key(secret);
 				let mut res = [0u8; 64];
 				res.copy_from_slice(&public.serialize()[1..65]);
 				H160::from(H256::from_slice(Keccak256::digest(&res).as_slice()))
@@ -333,9 +333,9 @@ impl EthSigner for EthDevSigner {
 			if &key_address == address {
 				match message {
 					TransactionMessage::Legacy(m) => {
-						let signing_message = secp256k1::Message::parse_slice(&m.hash()[..])
+						let signing_message = libsecp256k1::Message::parse_slice(&m.hash()[..])
 							.map_err(|_| internal_err("invalid signing message"))?;
-						let (signature, recid) = secp256k1::sign(&signing_message, secret);
+						let (signature, recid) = libsecp256k1::sign(&signing_message, secret);
 						let v = match m.chain_id {
 							None => 27 + recid.serialize() as u64,
 							Some(chain_id) => 2 * chain_id + 35 + recid.serialize() as u64,
@@ -356,9 +356,9 @@ impl EthSigner for EthDevSigner {
 							}));
 					}
 					TransactionMessage::EIP2930(m) => {
-						let signing_message = secp256k1::Message::parse_slice(&m.hash()[..])
+						let signing_message = libsecp256k1::Message::parse_slice(&m.hash()[..])
 							.map_err(|_| internal_err("invalid signing message"))?;
-						let (signature, recid) = secp256k1::sign(&signing_message, secret);
+						let (signature, recid) = libsecp256k1::sign(&signing_message, secret);
 						let rs = signature.serialize();
 						let r = H256::from_slice(&rs[0..32]);
 						let s = H256::from_slice(&rs[32..64]);
@@ -378,9 +378,9 @@ impl EthSigner for EthDevSigner {
 							}));
 					}
 					TransactionMessage::EIP1559(m) => {
-						let signing_message = secp256k1::Message::parse_slice(&m.hash()[..])
+						let signing_message = libsecp256k1::Message::parse_slice(&m.hash()[..])
 							.map_err(|_| internal_err("invalid signing message"))?;
-						let (signature, recid) = secp256k1::sign(&signing_message, secret);
+						let (signature, recid) = libsecp256k1::sign(&signing_message, secret);
 						let rs = signature.serialize();
 						let r = H256::from_slice(&rs[0..32]);
 						let s = H256::from_slice(&rs[32..64]);

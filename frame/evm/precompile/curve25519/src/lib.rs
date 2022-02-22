@@ -33,10 +33,7 @@ impl LinearCostPrecompile for Curve25519Add {
 	const BASE: u64 = 60;
 	const WORD: u64 = 12;
 
-	fn execute(
-		input: &[u8],
-		_: u64,
-	) -> core::result::Result<(ExitSucceed, Vec<u8>), PrecompileFailure> {
+	fn execute(input: &[u8], _: u64) -> Result<(ExitSucceed, Vec<u8>), PrecompileFailure> {
 		if input.len() % 32 != 0 {
 			return Err(PrecompileFailure::Error {
 				exit_status: ExitError::Other("input must contain multiple of 32 bytes".into()),
@@ -81,10 +78,7 @@ impl LinearCostPrecompile for Curve25519ScalarMul {
 	const BASE: u64 = 60;
 	const WORD: u64 = 12;
 
-	fn execute(
-		input: &[u8],
-		_: u64,
-	) -> core::result::Result<(ExitSucceed, Vec<u8>), PrecompileFailure> {
+	fn execute(input: &[u8], _: u64) -> Result<(ExitSucceed, Vec<u8>), PrecompileFailure> {
 		if input.len() != 64 {
 			return Err(PrecompileFailure::Error {
 				exit_status: ExitError::Other(
@@ -119,7 +113,7 @@ mod tests {
 	use curve25519_dalek::constants;
 
 	#[test]
-	fn test_sum() -> std::result::Result<(), PrecompileFailure> {
+	fn test_sum() -> Result<(), PrecompileFailure> {
 		let s1 = Scalar::from(999u64);
 		let p1 = &constants::RISTRETTO_BASEPOINT_POINT * &s1;
 
@@ -146,7 +140,7 @@ mod tests {
 	}
 
 	#[test]
-	fn test_empty() -> std::result::Result<(), PrecompileFailure> {
+	fn test_empty() -> Result<(), PrecompileFailure> {
 		// Test that sum works for the empty iterator
 		let input = vec![];
 
@@ -164,7 +158,7 @@ mod tests {
 	}
 
 	#[test]
-	fn test_scalar_mul() -> std::result::Result<(), PrecompileFailure> {
+	fn test_scalar_mul() -> Result<(), PrecompileFailure> {
 		let s1 = Scalar::from(999u64);
 		let s2 = Scalar::from(333u64);
 		let p1 = &constants::RISTRETTO_BASEPOINT_POINT * &s1;
@@ -189,7 +183,7 @@ mod tests {
 	}
 
 	#[test]
-	fn test_scalar_mul_empty_error() -> std::result::Result<(), PrecompileFailure> {
+	fn test_scalar_mul_empty_error() -> Result<(), PrecompileFailure> {
 		let input = vec![];
 
 		let cost: u64 = 1;
@@ -214,7 +208,7 @@ mod tests {
 	}
 
 	#[test]
-	fn test_point_addition_bad_length() -> std::result::Result<(), PrecompileFailure> {
+	fn test_point_addition_bad_length() -> Result<(), PrecompileFailure> {
 		let input: Vec<u8> = [0u8; 33].to_vec();
 
 		let cost: u64 = 1;
@@ -238,7 +232,7 @@ mod tests {
 	}
 
 	#[test]
-	fn test_point_addition_too_many_points() -> std::result::Result<(), PrecompileFailure> {
+	fn test_point_addition_too_many_points() -> Result<(), PrecompileFailure> {
 		let mut input = vec![];
 		input.extend_from_slice(&constants::RISTRETTO_BASEPOINT_POINT.compress().to_bytes()); // 1
 		input.extend_from_slice(&constants::RISTRETTO_BASEPOINT_POINT.compress().to_bytes()); // 2

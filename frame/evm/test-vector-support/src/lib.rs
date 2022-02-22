@@ -35,9 +35,7 @@ struct EthConsensusTest {
 /// The file is expected to be in JSON format and contain an array of test vectors, where each
 /// vector can be deserialized into an "EthConsensusTest".
 #[cfg(feature = "std")]
-pub fn test_precompile_test_vectors<P: Precompile>(
-	filepath: &str,
-) -> std::result::Result<(), String> {
+pub fn test_precompile_test_vectors<P: Precompile>(filepath: &str) -> Result<(), String> {
 	use std::fs;
 
 	let data = fs::read_to_string(&filepath).expect("Failed to read blake2F.json");
