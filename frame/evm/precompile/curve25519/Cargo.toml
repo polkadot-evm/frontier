@@ -2,30 +2,19 @@
 name = "pallet-evm-precompile-curve25519"
 version = "1.0.0-dev"
 authors = ["Parity Technologies <admin@parity.io>", "Drew Stone <drew@webb.tools>"]
-edition = "2018"
+edition = "2021"
 license = "Apache-2.0"
 homepage = "https://substrate.io"
 repository = "https://github.com/paritytech/frontier/"
 description = "Curve25519 elliptic curve precompiles for EVM pallet."
 
 [dependencies]
-sp-core = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
-sp-io = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
-frame-support = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
-fp-evm = { version = "3.0.0-dev", default-features = false, path = "../../../../primitives/evm" }
-codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false }
+curve25519-dalek = { version = "4.0.0-pre.1", default-features = false, features = ["u64_backend", "alloc"] }
 
-[dependencies.curve25519-dalek]
-version = "4.0.0-dev"
-default-features = false
-features = ["u64_backend", "alloc"]
+fp-evm = { version = "3.0.0-dev", path = "../../../../primitives/evm", default-features = false }
 
 [features]
 default = ["std"]
 std = [
-	"sp-core/std",
-	"sp-io/std",
-	"frame-support/std",
 	"fp-evm/std",
-	"codec/std",
 ]

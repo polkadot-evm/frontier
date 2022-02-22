@@ -16,8 +16,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use crate::{Database, DatabaseSettings, DatabaseSettingsSrc, DbHash};
 use std::sync::Arc;
+
+use crate::{Database, DatabaseSettings, DatabaseSettingsSrc, DbHash};
 
 pub fn open_database(config: &DatabaseSettings) -> Result<Arc<dyn Database<DbHash>>, String> {
 	let db: Arc<dyn Database<DbHash>> = match &config.source {

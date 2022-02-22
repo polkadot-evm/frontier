@@ -2,49 +2,45 @@
 name = "fc-rpc"
 version = "2.0.0-dev"
 authors = ["Parity Technologies <admin@parity.io>"]
-edition = "2018"
+edition = "2021"
 description = "Ethereum RPC (web3) compatibility layer for Substrate."
 license = "GPL-3.0-or-later WITH Classpath-exception-2.0"
 
 [dependencies]
-jsonrpc-core = "18.0"
-jsonrpc-derive = "18.0"
-jsonrpc-core-client = "18.0"
-jsonrpc-pubsub = "18.0"
-log = "0.4.8"
+ethereum = { version = "0.11.1", features = ["with-codec"] }
 ethereum-types = "0.12"
 evm = "0.33.1"
-fc-consensus = { version = "2.0.0-dev", path = "../consensus" }
+futures = { version = "0.3.1", features = ["compat"] }
+hex = "0.4"
+libsecp256k1 = "0.7"
+log = "0.4.8"
+lru = "0.6.6"
+jsonrpc-core = "18.0"
+jsonrpc-core-client = "18.0"
+jsonrpc-pubsub = "18.0"
+rand = "0.8"
+rlp = "0.5"
+sha3 = "0.10"
+tokio = { version = "1.14", features = [ "sync" ] }
+
+codec = { package = "parity-scale-codec", version = "2.0.0" }
+sp-api = { version = "4.0.0-dev",  git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-blockchain = { version = "4.0.0-dev",  git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-block-builder = { version = "4.0.0-dev",  git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-io = { version = "5.0.0",  git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-runtime = { version = "5.0.0",  git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-storage = { version = "5.0.0",  git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-client-api = { version = "4.0.0-dev",  git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-network = { version = "0.10.0-dev",  git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-rpc = { version = "4.0.0-dev",  git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-service = { version = "0.10.0-dev",  git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-transaction-pool = { version = "4.0.0-dev",  git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-transaction-pool-api = { version = "4.0.0-dev",  git = "https://github.com/paritytech/substrate", branch = "master" }
+
+fp-rpc = { version = "3.0.0-dev", path = "../../primitives/rpc" }
+fp-storage = { version = "2.0.0-dev", path = "../../primitives/storage" }
 fc-db = { version = "2.0.0-dev", path = "../db" }
 fc-rpc-core = { version = "1.1.0-dev", path = "../rpc-core" }
-fp-consensus = { version = "2.0.0-dev", path = "../../primitives/consensus" }
-fp-rpc = { version = "3.0.0-dev", path = "../../primitives/rpc" }
-fp-storage = { version = "2.0.0-dev", path = "../../primitives/storage"}
-sp-io = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate" }
-sp-runtime = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate" }
-sp-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate" }
-sp-transaction-pool = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate" }
-sc-transaction-pool = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate" }
-sp-storage = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate" }
-sp-blockchain = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate" }
-sp-block-builder = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate" }
-sc-transaction-pool-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate" }
-sc-service = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate" }
-sc-client-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate" }
-sc-rpc = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate" }
-sc-network = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate" }
-fp-evm = { version = "3.0.0-dev", path = "../../primitives/evm" }
-ethereum = { version = "0.11.1", features = ["with-codec"] }
-codec = { package = "parity-scale-codec", version = "2.0.0" }
-rlp = "0.5"
-futures = { version = "0.3.1", features = ["compat"] }
-sha3 = "0.8"
-rustc-hex = { version = "2.1.0", default-features = false }
-libsecp256k1 = "0.3"
-rand = "0.7"
-lru = "0.6.6"
-parking_lot = "0.11.1"
-tokio = { version = "1.14", features = [ "sync" ] }
 
 [features]
 rpc_binary_search_estimate = []

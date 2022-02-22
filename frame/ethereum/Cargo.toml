@@ -2,37 +2,39 @@
 name = "pallet-ethereum"
 version = "4.0.0-dev"
 authors = ["Parity Technologies <admin@parity.io>"]
-edition = "2018"
+edition = "2021"
 description = "Ethereum compatibility full block processing emulation pallet for Substrate."
 license = "Apache-2.0"
 
 [dependencies]
-rustc-hex = { version = "2.1.0", default-features = false }
-serde = { version = "1.0.101", optional = true }
-codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false }
-frame-support = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
-frame-system = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
-pallet-balances = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
-pallet-timestamp = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
-pallet-evm = { version = "6.0.0-dev", default-features = false, path = "../evm" }
-sp-runtime = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
-sp-std = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
-sp-io = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
-fp-evm = { version = "3.0.0-dev", default-features = false, path = "../../primitives/evm" }
-evm = { version = "0.33.1", features = ["with-codec"], default-features = false }
 ethereum = { version = "0.11.1", default-features = false, features = ["with-codec"] }
 ethereum-types = { version = "0.12", default-features = false }
+evm = { version = "0.33.1", features = ["with-codec"], default-features = false }
 rlp = { version = "0.5", default-features = false }
-sha3 = { version = "0.8", default-features = false }
-fp-consensus = { version = "2.0.0-dev", path = "../../primitives/consensus", default-features = false }
-fp-rpc = { version = "3.0.0-dev", path = "../../primitives/rpc", default-features = false }
-fp-storage = { version = "2.0.0", path = "../../primitives/storage", default-features = false }
-fp-self-contained = { version = "1.0.0-dev", path = "../../primitives/self-contained", default-features = false }
+serde = { version = "1.0.101", optional = true }
+sha3 = { version = "0.10", default-features = false }
+
+codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false }
 scale-info = { version = "1.0.0", default-features = false, features = ["derive"] }
+sp-io = { version = "5.0.0",  git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-runtime = { version = "5.0.0",  git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-std = { version = "4.0.0",  git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+frame-support = { version = "4.0.0-dev",  git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+frame-system = { version = "4.0.0-dev",  git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+pallet-balances = { version = "4.0.0-dev",  git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+pallet-timestamp = { version = "4.0.0-dev",  git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+
+fp-consensus = { version = "2.0.0-dev", path = "../../primitives/consensus", default-features = false }
+fp-evm = { version = "3.0.0-dev", default-features = false, path = "../../primitives/evm" }
+fp-rpc = { version = "3.0.0-dev", path = "../../primitives/rpc", default-features = false }
+fp-self-contained = { version = "1.0.0-dev", path = "../../primitives/self-contained", default-features = false }
+fp-storage = { version = "2.0.0", path = "../../primitives/storage", default-features = false }
+pallet-evm = { version = "6.0.0-dev", default-features = false, path = "../evm" }
 
 [dev-dependencies]
-sp-core = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate" }
-libsecp256k1 = { version = "0.5", features = ["static-context", "hmac"] }
+libsecp256k1 = { version = "0.7", features = ["static-context", "hmac"] }
+rustc-hex = { version = "2.1.0", default-features = false }
+sp-core = { version = "5.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
 
 [features]
 default = ["std"]
@@ -41,26 +43,27 @@ runtime-benchmarks = [
 	"frame-system/runtime-benchmarks",
 ]
 std = [
+	"ethereum/std",
+	"ethereum-types/std",
+	"evm/std",
+	"rlp/std",
 	"serde",
-	"rustc-hex/std",
+	"sha3/std",
+	
 	"codec/std",
+	"scale-info/std",
+	"sp-io/std",
 	"sp-runtime/std",
+	"sp-std/std",
 	"frame-support/std",
 	"frame-system/std",
 	"pallet-balances/std",
 	"pallet-timestamp/std",
-	"pallet-evm/std",
-	"sp-io/std",
-	"sp-std/std",
-	"fp-evm/std",
-	"ethereum/std",
-	"ethereum-types/std",
-	"rlp/std",
-	"sha3/std",
+	
 	"fp-consensus/std",
+	"fp-evm/std",
 	"fp-rpc/std",
-	"fp-storage/std",
-	"evm/std",
 	"fp-self-contained/std",
-	"scale-info/std",
+	"fp-storage/std",
+	"pallet-evm/std",
 ]

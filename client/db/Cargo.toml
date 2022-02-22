@@ -3,16 +3,17 @@ name = "fc-db"
 version = "2.0.0-dev"
 authors = ["Parity Technologies <admin@parity.io>"]
 description = "Frontier database backend"
-edition = "2018"
+edition = "2021"
 license = "GPL-3.0-or-later WITH Classpath-exception-2.0"
 repository = "https://github.com/paritytech/frontier/"
 
 [dependencies]
-sp-core = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate" }
-sp-database = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate" }
-sp-runtime = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate" }
-fp-storage = { version = "2.0.0-dev", path = "../../primitives/storage"}
-kvdb = "0.10.0"
 kvdb-rocksdb = "0.14.0"
+parking_lot = "0.11.2"
+
 codec = { package = "parity-scale-codec", version = "2.0.0", features = ["derive"] }
-parking_lot = "0.11.1"
+sp-core = { version = "5.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-database = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-runtime = { version = "5.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
+
+fp-storage = { version = "2.0.0-dev", path = "../../primitives/storage" }

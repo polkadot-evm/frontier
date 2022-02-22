@@ -53,25 +53,23 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-#[cfg(test)]
+#[cfg(any(test, feature = "runtime-benchmarks"))]
+pub mod benchmarks;
+#[cfg(any(test, feature = "runtime-benchmarks"))]
 mod mock;
 pub mod runner;
 #[cfg(test)]
 mod tests;
 
-#[cfg(any(test, feature = "runtime-benchmarks"))]
-pub mod benchmarks;
-
-pub use crate::runner::Runner;
-pub use evm::{Context, ExitError, ExitFatal, ExitReason, ExitRevert, ExitSucceed};
+#[cfg(feature = "std")]
+use codec::{Decode, Encode};
+pub use evm::{
+	Config as EvmConfig, Context, ExitError, ExitFatal, ExitReason, ExitRevert, ExitSucceed,
+};
 pub use fp_evm::{
 	Account, CallInfo, CreateInfo, ExecutionInfo, LinearCostPrecompile, Log, Precompile,
 	PrecompileFailure, PrecompileOutput, PrecompileResult, PrecompileSet, Vicinity,
 };
-
-#[cfg(feature = "std")]
-use codec::{Decode, Encode};
-pub use evm::Config as EvmConfig;
 use frame_support::{
 	dispatch::DispatchResultWithPostInfo,
 	traits::{
@@ -90,7 +88,7 @@ use sp_runtime::{
 };
 use sp_std::vec::Vec;
 
-pub use pallet::*;
+pub use self::{pallet::*, runner::Runner};
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -100,6 +98,7 @@ pub mod pallet {
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
+	#[pallet::without_storage_info]
 	pub struct Pallet<T>(_);
 
 	#[pallet::config]

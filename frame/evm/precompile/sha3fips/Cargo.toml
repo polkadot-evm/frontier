@@ -2,22 +2,19 @@
 name = "pallet-evm-precompile-sha3fips"
 version = "2.0.0-dev"
 authors = ["Parity Technologies <admin@parity.io>", "Drew Stone <drew@commonwealth.im>"]
-edition = "2018"
+edition = "2021"
 license = "Apache-2.0"
 homepage = "https://substrate.io"
 repository = "https://github.com/paritytech/frontier/"
 description = "SHA3 FIPS202 precompile for EVM pallet."
 
 [dependencies]
-sp-core = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
-sp-io = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
-fp-evm = { version = "3.0.0-dev", default-features = false, path = "../../../../primitives/evm" }
 tiny-keccak = { version = "2.0", features = ["fips202"] }
+
+fp-evm = { version = "3.0.0-dev", path = "../../../../primitives/evm", default-features = false }
 
 [features]
 default = ["std"]
 std = [
-	"sp-core/std",
-	"sp-io/std",
 	"fp-evm/std",
 ]

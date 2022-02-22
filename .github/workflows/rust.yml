@@ -22,7 +22,7 @@ jobs:
         cargo +$WASM_BUILD_TOOLCHAIN --version
         rustc +$WASM_BUILD_TOOLCHAIN --version
       env:
-        WASM_BUILD_TOOLCHAIN: nightly-2021-07-06
+        WASM_BUILD_TOOLCHAIN: nightly-2022-02-07
     - name: Run tests
       run: cargo test --locked --verbose --all
   integration:
@@ -40,7 +40,7 @@ jobs:
         cargo +$WASM_BUILD_TOOLCHAIN --version
         rustc +$WASM_BUILD_TOOLCHAIN --version
       env:
-        WASM_BUILD_TOOLCHAIN: nightly-2021-07-06
+        WASM_BUILD_TOOLCHAIN: nightly-2022-02-07
     - name: Build manual seal client
       run: cd template/node && cargo build --release --locked --verbose --no-default-features --features manual-seal,rpc_binary_search_estimate
     - name: Use Node.js 10
@@ -66,6 +66,6 @@ jobs:
         cargo +$WASM_BUILD_TOOLCHAIN --version
         rustc +$WASM_BUILD_TOOLCHAIN --version
       env:
-        WASM_BUILD_TOOLCHAIN: nightly-2021-07-06
+        WASM_BUILD_TOOLCHAIN: nightly-2022-02-07
     - name: Rustfmt
       run: cargo fmt --all -- --check

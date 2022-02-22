@@ -2,33 +2,37 @@
 name = "fp-rpc"
 version = "3.0.0-dev"
 authors = ["Parity Technologies <admin@parity.io"]
-edition = "2018"
+edition = "2021"
 description = "Runtime primitives for Ethereum RPC (web3) compatibility layer for Substrate."
 license = "Apache-2.0"
 
 [dependencies]
-sp-core = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
-sp-api = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
-fp-evm = { version = "3.0.0-dev", default-features = false, path = "../../primitives/evm" }
 ethereum = { version = "0.11.1", default-features = false, features = ["with-codec"] }
 ethereum-types = { version = "0.12", default-features = false }
+
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false }
-sp-runtime = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
-sp-std = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
-sp-io = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
 scale-info = { version = "1.0.0", default-features = false, features = ["derive"] }
+sp-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-core = { version = "5.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-io = { version = "5.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-runtime = { version = "5.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-std = { version = "4.0.0",  git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+
+fp-evm = { version = "3.0.0-dev", default-features = false, path = "../../primitives/evm" }
 
 [features]
 default = ["std"]
 std = [
-	"sp-core/std",
-	"sp-api/std",
-	"fp-evm/std",
 	"ethereum/std",
 	"ethereum-types/std",
+
 	"codec/std",
+	"scale-info/std",
+	"sp-api/std",
+	"sp-core/std",
+	"sp-io/std",
 	"sp-runtime/std",
 	"sp-std/std",
-	"sp-io/std",
-	"scale-info/std",
+
+	"fp-evm/std",
 ]
