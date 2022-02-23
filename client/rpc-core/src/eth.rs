@@ -26,6 +26,7 @@ use crate::types::{
 	BlockNumber, Bytes, CallRequest, FeeHistory, Filter, FilterChanges, Index, Log, Receipt,
 	RichBlock, SyncStatus, Transaction, TransactionRequest, Work,
 };
+
 pub use rpc_impl_EthApi::gen_server::EthApi as EthApiServer;
 pub use rpc_impl_EthFilterApi::gen_server::EthFilterApi as EthFilterApiServer;
 

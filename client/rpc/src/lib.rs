@@ -18,43 +18,46 @@
 
 mod eth;
 mod eth_pubsub;
+mod net;
 mod overrides;
+mod web3;
 
 pub use self::{
-	eth::{
-		EthApi, EthApiServer, EthBlockDataCache, EthFilterApi, EthFilterApiServer, EthTask, NetApi,
-		NetApiServer, Web3Api, Web3ApiServer,
-	},
-	eth_pubsub::{EthPubSubApi, EthPubSubApiServer, HexEncodedIdProvider},
+	eth::{EthApi, EthBlockDataCache, EthFilterApi, EthTask},
+	eth_pubsub::{EthPubSubApi, HexEncodedIdProvider},
+	net::NetApi,
 	overrides::{
 		OverrideHandle, RuntimeApiStorageOverride, SchemaV1Override, SchemaV2Override,
 		SchemaV3Override, StorageOverride,
 	},
+	web3::Web3Api,
 };
 
 pub use ethereum::TransactionV2 as EthereumTransaction;
 use ethereum_types::{H160, H256};
 use evm::{ExitError, ExitReason};
-pub use fc_rpc_core::types::TransactionMessage;
+pub use fc_rpc_core::{
+	types::TransactionMessage, EthApiServer, EthFilterApiServer, EthPubSubApiServer, NetApiServer,
+	Web3ApiServer,
+};
 use jsonrpc_core::{Error, ErrorCode, Value};
-use sha3::{Digest, Keccak256};
+use sp_core::hashing::keccak_256;
 
 pub mod frontier_backend_client {
 	use super::internal_err;
 
-	use fc_rpc_core::types::BlockNumber;
-	use fp_storage::PALLET_ETHEREUM_SCHEMA;
+	use codec::Decode;
+	use ethereum_types::H256;
+	use jsonrpc_core::Result as RpcResult;
+
 	use sc_client_api::backend::{Backend, StateBackend, StorageProvider};
 	use sp_api::{BlockId, HeaderT};
 	use sp_blockchain::HeaderBackend;
 	use sp_runtime::traits::{BlakeTwo256, Block as BlockT, UniqueSaturatedInto, Zero};
 	use sp_storage::StorageKey;
 
-	use codec::Decode;
-	use jsonrpc_core::Result as RpcResult;
-
-	use ethereum_types::H256;
-	use fp_storage::EthereumStorageSchema;
+	use fc_rpc_core::types::BlockNumber;
+	use fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA};
 
 	pub fn native_block_id<B: BlockT, C>(
 		client: &C,
@@ -309,8 +312,7 @@ impl EthSigner for EthDevSigner {
 				let public = libsecp256k1::PublicKey::from_secret_key(secret);
 				let mut res = [0u8; 64];
 				res.copy_from_slice(&public.serialize()[1..65]);
-
-				H160::from(H256::from_slice(Keccak256::digest(&res).as_slice()))
+				H160::from(H256::from(keccak_256(&res)))
 			})
 			.collect()
 	}
@@ -327,7 +329,7 @@ impl EthSigner for EthDevSigner {
 				let public = libsecp256k1::PublicKey::from_secret_key(secret);
 				let mut res = [0u8; 64];
 				res.copy_from_slice(&public.serialize()[1..65]);
-				H160::from(H256::from_slice(Keccak256::digest(&res).as_slice()))
+				H160::from(H256::from(keccak_256(&res)))
 			};
 
 			if &key_address == address {
