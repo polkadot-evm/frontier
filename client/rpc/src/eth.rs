@@ -83,17 +83,7 @@ pub struct EthApi<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> {
 	_marker: PhantomData<(B, BE)>,
 }
 
-impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> EthApi<B, C, P, CT, BE, H, A>
-where
-	C: ProvideRuntimeApi<B>,
-	C::Api: sp_api::ApiExt<B>
-		+ BlockBuilder<B>
-		+ ConvertTransactionRuntimeApi<B>
-		+ EthereumRuntimeRPCApi<B>,
-	B: BlockT<Hash = H256> + Send + Sync + 'static,
-	A: ChainApi<Block = B> + 'static,
-	C: Send + Sync + 'static,
-{
+impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> EthApi<B, C, P, CT, BE, H, A> {
 	pub fn new(
 		client: Arc<C>,
 		pool: Arc<P>,
@@ -290,15 +280,15 @@ fn pending_runtime_api<'a, B: BlockT, C, BE, A: ChainApi>(
 	graph: &'a Pool<A>,
 ) -> Result<sp_api::ApiRef<'a, C::Api>>
 where
+	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
 	C: HeaderBackend<B> + HeaderMetadata<B, Error = BlockChainError> + 'static,
-	C::Api: EthereumRuntimeRPCApi<B>,
+	C: Send + Sync + 'static,
 	C::Api: BlockBuilder<B>,
+	C::Api: EthereumRuntimeRPCApi<B>,
 	BE: Backend<B> + 'static,
 	BE::State: StateBackend<BlakeTwo256>,
-	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	A: ChainApi<Block = B> + 'static,
-	C: Send + Sync + 'static,
 {
 	// In case of Pending, we need an overlayed state to query over.
 	let api = client.runtime_api();
@@ -331,13 +321,13 @@ async fn filter_range_logs<B: BlockT, C, BE>(
 	to: NumberFor<B>,
 ) -> Result<()>
 where
+	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
 	C: HeaderBackend<B> + HeaderMetadata<B, Error = BlockChainError> + 'static,
+	C: Send + Sync + 'static,
 	C::Api: EthereumRuntimeRPCApi<B>,
 	BE: Backend<B> + 'static,
 	BE::State: StateBackend<BlakeTwo256>,
-	B: BlockT<Hash = H256> + Send + Sync + 'static,
-	C: Send + Sync + 'static,
 {
 	// Max request duration of 10 seconds.
 	let max_duration = time::Duration::from_secs(10);
@@ -536,16 +526,16 @@ fn fee_details(
 
 impl<B, C, P, CT, BE, H: ExHashT, A> EthApiT for EthApi<B, C, P, CT, BE, H, A>
 where
+	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
 	C: HeaderBackend<B> + HeaderMetadata<B, Error = BlockChainError> + 'static,
 	C::Api: sp_api::ApiExt<B>
 		+ BlockBuilder<B>
 		+ ConvertTransactionRuntimeApi<B>
 		+ EthereumRuntimeRPCApi<B>,
+	C: Send + Sync + 'static,
 	BE: Backend<B> + 'static,
 	BE::State: StateBackend<BlakeTwo256>,
-	B: BlockT<Hash = H256> + Send + Sync + 'static,
-	C: Send + Sync + 'static,
 	P: TransactionPool<Block = B> + Send + Sync + 'static,
 	A: ChainApi<Block = B> + 'static,
 	CT: fp_rpc::ConvertTransaction<<B as BlockT>::Extrinsic> + Send + Sync + 'static,
@@ -2381,12 +2371,12 @@ pub struct EthFilterApi<B: BlockT, C, BE> {
 
 impl<B: BlockT, C, BE> EthFilterApi<B, C, BE>
 where
-	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
-	C::Api: EthereumRuntimeRPCApi<B>,
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
+	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
+	C: Send + Sync + 'static,
+	C::Api: EthereumRuntimeRPCApi<B>,
 	BE: Backend<B> + 'static,
 	BE::State: StateBackend<BlakeTwo256>,
-	C: Send + Sync + 'static,
 {
 	pub fn new(
 		client: Arc<C>,
@@ -2410,11 +2400,11 @@ where
 
 impl<B, C, BE> EthFilterApi<B, C, BE>
 where
+	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
-	C::Api: EthereumRuntimeRPCApi<B>,
 	C: HeaderBackend<B> + HeaderMetadata<B, Error = BlockChainError> + 'static,
 	C: Send + Sync + 'static,
-	B: BlockT<Hash = H256> + Send + Sync + 'static,
+	C::Api: EthereumRuntimeRPCApi<B>,
 	BE: Backend<B> + 'static,
 	BE::State: StateBackend<BlakeTwo256>,
 {
@@ -2453,11 +2443,11 @@ where
 
 impl<B, C, BE> EthFilterApiT for EthFilterApi<B, C, BE>
 where
+	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
-	C::Api: EthereumRuntimeRPCApi<B>,
 	C: HeaderBackend<B> + HeaderMetadata<B, Error = BlockChainError> + 'static,
 	C: Send + Sync + 'static,
-	B: BlockT<Hash = H256> + Send + Sync + 'static,
+	C::Api: EthereumRuntimeRPCApi<B>,
 	BE: Backend<B> + 'static,
 	BE::State: StateBackend<BlakeTwo256>,
 {
@@ -2723,10 +2713,10 @@ pub struct EthTask<B, C, BE>(PhantomData<(B, C, BE)>);
 
 impl<B, C, BE> EthTask<B, C, BE>
 where
-	C: ProvideRuntimeApi<B> + BlockchainEvents<B> + HeaderBackend<B> + StorageProvider<B, BE>,
 	B: BlockT<Hash = H256>,
-	C::Api: EthereumRuntimeRPCApi<B>,
+	C: ProvideRuntimeApi<B> + BlockchainEvents<B> + HeaderBackend<B> + StorageProvider<B, BE>,
 	C: Send + Sync + 'static,
+	C::Api: EthereumRuntimeRPCApi<B>,
 	BE: Backend<B> + 'static,
 	BE::State: StateBackend<BlakeTwo256>,
 {

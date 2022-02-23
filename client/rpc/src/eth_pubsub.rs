@@ -47,7 +47,7 @@ use fc_rpc_core::{
 		pubsub::{Kind, Params, PubSubSyncStatus, Result as PubSubResult},
 		Bytes, FilteredParams, Header, Log, Rich,
 	},
-	EthPubSubApi::{self as EthPubSubApiT},
+	EthPubSubApi as EthPubSubApiT,
 };
 use fp_rpc::EthereumRuntimeRPCApi;
 
@@ -84,16 +84,10 @@ pub struct EthPubSubApi<B: BlockT, P, C, BE, H: ExHashT> {
 	network: Arc<NetworkService<B, H>>,
 	subscriptions: SubscriptionManager<HexEncodedIdProvider>,
 	overrides: Arc<OverrideHandle<B>>,
-	_marker: PhantomData<(B, BE)>,
+	_marker: PhantomData<BE>,
 }
 
-impl<B: BlockT, P, C, BE, H: ExHashT> EthPubSubApi<B, P, C, BE, H>
-where
-	B: BlockT<Hash = H256> + Send + Sync + 'static,
-	C: ProvideRuntimeApi<B>,
-	C::Api: EthereumRuntimeRPCApi<B>,
-	C: Send + Sync + 'static,
-{
+impl<B: BlockT, P, C, BE, H: ExHashT> EthPubSubApi<B, P, C, BE, H> {
 	pub fn new(
 		pool: Arc<P>,
 		client: Arc<C>,

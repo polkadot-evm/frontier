@@ -65,10 +65,8 @@ pub mod frontier_backend_client {
 		number: Option<BlockNumber>,
 	) -> RpcResult<Option<BlockId<B>>>
 	where
-		B: BlockT,
-		C: HeaderBackend<B> + 'static,
 		B: BlockT<Hash = H256> + Send + Sync + 'static,
-		C: Send + Sync + 'static,
+		C: HeaderBackend<B> + Send + Sync + 'static,
 	{
 		Ok(match number.unwrap_or(BlockNumber::Latest) {
 			BlockNumber::Hash { hash, .. } => load_hash::<B>(backend, hash).unwrap_or(None),
@@ -84,7 +82,6 @@ pub mod frontier_backend_client {
 		hash: H256,
 	) -> RpcResult<Option<BlockId<B>>>
 	where
-		B: BlockT,
 		B: BlockT<Hash = H256> + Send + Sync + 'static,
 	{
 		let substrate_hash = backend
@@ -102,7 +99,6 @@ pub mod frontier_backend_client {
 		backend: &fc_db::Backend<B>,
 	) -> RpcResult<Option<Vec<(EthereumStorageSchema, H256)>>>
 	where
-		B: BlockT,
 		B: BlockT<Hash = H256> + Send + Sync + 'static,
 	{
 		let cache = backend
@@ -117,7 +113,6 @@ pub mod frontier_backend_client {
 		new_cache: Vec<(EthereumStorageSchema, H256)>,
 	) -> RpcResult<()>
 	where
-		B: BlockT,
 		B: BlockT<Hash = H256> + Send + Sync + 'static,
 	{
 		backend
@@ -132,12 +127,10 @@ pub mod frontier_backend_client {
 		at: BlockId<B>,
 	) -> EthereumStorageSchema
 	where
-		B: BlockT,
-		C: StorageProvider<B, BE>,
+		B: BlockT<Hash = H256> + Send + Sync + 'static,
+		C: StorageProvider<B, BE> + Send + Sync + 'static,
 		BE: Backend<B> + 'static,
 		BE::State: StateBackend<BlakeTwo256>,
-		B: BlockT<Hash = H256> + Send + Sync + 'static,
-		C: Send + Sync + 'static,
 	{
 		match client.storage(&at, &StorageKey(PALLET_ETHEREUM_SCHEMA.to_vec())) {
 			Ok(Some(bytes)) => Decode::decode(&mut &bytes.0[..])
@@ -149,10 +142,8 @@ pub mod frontier_backend_client {
 
 	pub fn is_canon<B: BlockT, C>(client: &C, target_hash: H256) -> bool
 	where
-		B: BlockT,
-		C: HeaderBackend<B> + 'static,
 		B: BlockT<Hash = H256> + Send + Sync + 'static,
-		C: Send + Sync + 'static,
+		C: HeaderBackend<B> + Send + Sync + 'static,
 	{
 		if let Ok(Some(number)) = client.number(target_hash) {
 			if let Ok(Some(header)) = client.header(BlockId::Number(number)) {
@@ -169,10 +160,8 @@ pub mod frontier_backend_client {
 		only_canonical: bool,
 	) -> RpcResult<Option<(H256, u32)>>
 	where
-		B: BlockT,
-		C: HeaderBackend<B> + 'static,
 		B: BlockT<Hash = H256> + Send + Sync + 'static,
-		C: Send + Sync + 'static,
+		C: HeaderBackend<B> + Send + Sync + 'static,
 	{
 		let transaction_metadata = backend
 			.mapping()
