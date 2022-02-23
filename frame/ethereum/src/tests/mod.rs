@@ -1,17 +1,14 @@
-use crate::{
-	mock::*, CallOrCreateInfo, Error, RawOrigin, Transaction, TransactionAction, H160, H256, U256,
-};
-use ethereum::TransactionSignature;
-use frame_support::{
-	assert_err, assert_noop, assert_ok,
-	unsigned::{TransactionValidityError, ValidateUnsigned},
-};
+use frame_support::{assert_err, assert_ok, unsigned::TransactionValidityError};
 use rustc_hex::{FromHex, ToHex};
 use sp_runtime::{
 	traits::Applyable,
-	transaction_validity::{InvalidTransaction, TransactionSource, ValidTransactionBuilder},
+	transaction_validity::{InvalidTransaction, ValidTransactionBuilder},
 };
 use std::str::FromStr;
+
+use crate::{
+	mock::*, CallOrCreateInfo, RawOrigin, Transaction, TransactionAction, H160, H256, U256,
+};
 
 mod eip1559;
 mod eip2930;

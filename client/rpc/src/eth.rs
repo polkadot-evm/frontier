@@ -15,10 +15,8 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
-use crate::{
-	error_on_execution_failure, frontier_backend_client, internal_err, public_key, EthSigner,
-	StorageOverride,
-};
+
+use codec::{Decode, Encode};
 use ethereum::{BlockV2 as EthereumBlock, TransactionV2 as EthereumTransaction};
 use ethereum_types::{H160, H256, H512, H64, U256, U64};
 use evm::{ExitError, ExitReason};
@@ -31,7 +29,9 @@ use fc_rpc_core::{
 	},
 	EthApi as EthApiT, EthFilterApi as EthFilterApiT, NetApi as NetApiT, Web3Api as Web3ApiT,
 };
+pub use fc_rpc_core::{EthApiServer, EthFilterApiServer, NetApiServer, Web3ApiServer};
 use fp_rpc::{ConvertTransactionRuntimeApi, EthereumRuntimeRPCApi, TransactionStatus};
+use fp_storage::EthereumStorageSchema;
 use futures::{future::TryFutureExt, StreamExt};
 use jsonrpc_core::{futures::future, BoxFuture, Result};
 use lru::LruCache;
@@ -59,10 +59,10 @@ use std::{
 };
 use tokio::sync::{mpsc, oneshot};
 
-use crate::overrides::OverrideHandle;
-use codec::{self, Decode, Encode};
-pub use fc_rpc_core::{EthApiServer, EthFilterApiServer, NetApiServer, Web3ApiServer};
-use fp_storage::EthereumStorageSchema;
+use crate::{
+	error_on_execution_failure, frontier_backend_client, internal_err, overrides::OverrideHandle,
+	public_key, EthSigner, StorageOverride,
+};
 
 pub struct EthApi<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> {
 	pool: Arc<P>,
@@ -1352,7 +1352,11 @@ where
 					.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
 
 					error_on_execution_failure(&info.exit_reason, &[])?;
-					Ok(Bytes(info.value[..].to_vec()))
+
+					let code = api
+						.account_code_at(&id, info.value)
+						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?;
+					Ok(Bytes(code))
 				} else if api_version >= 2 && api_version < 4 {
 					// Post-london
 					#[allow(deprecated)]
@@ -1371,7 +1375,11 @@ where
 					.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
 
 					error_on_execution_failure(&info.exit_reason, &[])?;
-					Ok(Bytes(info.value[..].to_vec()))
+
+					let code = api
+						.account_code_at(&id, info.value)
+						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?;
+					Ok(Bytes(code))
 				} else if api_version == 4 {
 					// Post-london + access list support
 					let access_list = access_list.unwrap_or_default();
@@ -1397,7 +1405,11 @@ where
 						.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
 
 					error_on_execution_failure(&info.exit_reason, &[])?;
-					Ok(Bytes(info.value[..].to_vec()))
+
+					let code = api
+						.account_code_at(&id, info.value)
+						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?;
+					Ok(Bytes(code))
 				} else {
 					return Err(internal_err(format!(
 						"failed to retrieve Runtime Api version"
@@ -1513,7 +1525,8 @@ where
 			}
 
 			// Create a helper to check if a gas allowance results in an executable transaction
-			let executable = move |request, gas_limit, api_version| -> Result<ExecutableResult> {
+			#[rustfmt::skip]
+			let executable = move |request, gas_limit, api_version, estimate_mode| -> Result<ExecutableResult> {
 				let CallRequest {
 					from,
 					to,
@@ -1544,7 +1557,7 @@ where
 								gas_limit,
 								gas_price,
 								nonce,
-								true,
+								estimate_mode,
 							)
 							.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
 							.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?
@@ -1561,7 +1574,7 @@ where
 								max_fee_per_gas,
 								max_priority_fee_per_gas,
 								nonce,
-								true,
+								estimate_mode,
 							)
 							.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
 							.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?
@@ -1578,7 +1591,7 @@ where
 								max_fee_per_gas,
 								max_priority_fee_per_gas,
 								nonce,
-								true,
+								estimate_mode,
 								Some(
 									access_list
 										.into_iter()
@@ -1604,7 +1617,7 @@ where
 								gas_limit,
 								gas_price,
 								nonce,
-								true,
+								estimate_mode,
 							)
 							.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
 							.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?
@@ -1620,7 +1633,7 @@ where
 								max_fee_per_gas,
 								max_priority_fee_per_gas,
 								nonce,
-								true,
+								estimate_mode,
 							)
 							.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
 							.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?
@@ -1636,7 +1649,7 @@ where
 								max_fee_per_gas,
 								max_priority_fee_per_gas,
 								nonce,
-								true,
+								estimate_mode,
 								Some(
 									access_list
 										.into_iter()
@@ -1671,11 +1684,12 @@ where
 
 			// Verify that the transaction succeed with highest capacity
 			let cap = highest;
+			let estimate_mode = true;
 			let ExecutableResult {
 				data,
 				exit_reason,
 				used_gas,
-			} = executable(request.clone(), highest, api_version)?;
+			} = executable(request.clone(), highest, api_version, estimate_mode)?;
 			match exit_reason {
 				ExitReason::Succeed(_) => (),
 				ExitReason::Error(ExitError::OutOfGas) => {
@@ -1700,6 +1714,7 @@ where
 							request.clone(),
 							get_current_block_gas_limit().await?,
 							api_version,
+							estimate_mode,
 						)?;
 						match exit_reason {
 							ExitReason::Succeed(_) => {
@@ -1725,6 +1740,8 @@ where
 			}
 			#[cfg(feature = "rpc_binary_search_estimate")]
 			{
+				// On binary search, evm estimate mode is disabled
+				let estimate_mode = false;
 				// Define the lower bound of the binary search
 				let mut lowest = MIN_GAS_PER_TX;
 
@@ -1738,7 +1755,7 @@ where
 						data,
 						exit_reason,
 						used_gas: _,
-					} = executable(request.clone(), mid, api_version)?;
+					} = executable(request.clone(), mid, api_version, estimate_mode)?;
 					match exit_reason {
 						ExitReason::Succeed(_) => {
 							highest = mid;
@@ -3161,7 +3178,7 @@ impl<B: BlockT> EthBlockDataCache<B> {
 		let outer_task_tx = task_tx.clone();
 		let outer_spawn_handle = spawn_handle.clone();
 
-		outer_spawn_handle.spawn("EthBlockDataCache", async move {
+		outer_spawn_handle.spawn("EthBlockDataCache", None, async move {
 			let mut blocks_cache = LruCache::<B::Hash, EthereumBlock>::new(blocks_cache_size);
 			let mut statuses_cache =
 				LruCache::<B::Hash, Vec<TransactionStatus>>::new(statuses_cache_size);
@@ -3281,7 +3298,7 @@ impl<B: BlockT> EthBlockDataCache<B> {
 		// the data.
 		wait_list.insert(block_hash.clone(), vec![response_tx]);
 
-		spawn_handle.spawn("EthBlockDataCache Worker", async move {
+		spawn_handle.spawn("EthBlockDataCache Worker", None, async move {
 			let handler = overrides
 				.schemas
 				.get(&schema)

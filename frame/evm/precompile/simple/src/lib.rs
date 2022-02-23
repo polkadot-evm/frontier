@@ -21,6 +21,7 @@ extern crate alloc;
 
 use alloc::vec::Vec;
 use core::cmp::min;
+
 use fp_evm::{ExitError, ExitSucceed, LinearCostPrecompile, PrecompileFailure};
 
 /// The identity precompile.
@@ -30,10 +31,7 @@ impl LinearCostPrecompile for Identity {
 	const BASE: u64 = 15;
 	const WORD: u64 = 3;
 
-	fn execute(
-		input: &[u8],
-		_: u64,
-	) -> core::result::Result<(ExitSucceed, Vec<u8>), PrecompileFailure> {
+	fn execute(input: &[u8], _: u64) -> Result<(ExitSucceed, Vec<u8>), PrecompileFailure> {
 		Ok((ExitSucceed::Returned, input.to_vec()))
 	}
 }
@@ -45,10 +43,7 @@ impl LinearCostPrecompile for ECRecover {
 	const BASE: u64 = 3000;
 	const WORD: u64 = 0;
 
-	fn execute(
-		i: &[u8],
-		_: u64,
-	) -> core::result::Result<(ExitSucceed, Vec<u8>), PrecompileFailure> {
+	fn execute(i: &[u8], _: u64) -> Result<(ExitSucceed, Vec<u8>), PrecompileFailure> {
 		let mut input = [0u8; 128];
 		input[..min(i.len(), 128)].copy_from_slice(&i[..min(i.len(), 128)]);
 
@@ -80,14 +75,11 @@ impl LinearCostPrecompile for Ripemd160 {
 	const BASE: u64 = 600;
 	const WORD: u64 = 120;
 
-	fn execute(
-		input: &[u8],
-		_cost: u64,
-	) -> core::result::Result<(ExitSucceed, Vec<u8>), PrecompileFailure> {
-		use ripemd160::Digest;
+	fn execute(input: &[u8], _cost: u64) -> Result<(ExitSucceed, Vec<u8>), PrecompileFailure> {
+		use ripemd::Digest;
 
 		let mut ret = [0u8; 32];
-		ret[12..32].copy_from_slice(&ripemd160::Ripemd160::digest(input));
+		ret[12..32].copy_from_slice(&ripemd::Ripemd160::digest(input));
 		Ok((ExitSucceed::Returned, ret.to_vec()))
 	}
 }
@@ -99,10 +91,7 @@ impl LinearCostPrecompile for Sha256 {
 	const BASE: u64 = 60;
 	const WORD: u64 = 12;
 
-	fn execute(
-		input: &[u8],
-		_cost: u64,
-	) -> core::result::Result<(ExitSucceed, Vec<u8>), PrecompileFailure> {
+	fn execute(input: &[u8], _cost: u64) -> Result<(ExitSucceed, Vec<u8>), PrecompileFailure> {
 		let ret = sp_io::hashing::sha2_256(input);
 		Ok((ExitSucceed::Returned, ret.to_vec()))
 	}
@@ -116,10 +105,7 @@ impl LinearCostPrecompile for ECRecoverPublicKey {
 	const BASE: u64 = 3000;
 	const WORD: u64 = 0;
 
-	fn execute(
-		i: &[u8],
-		_: u64,
-	) -> core::result::Result<(ExitSucceed, Vec<u8>), PrecompileFailure> {
+	fn execute(i: &[u8], _: u64) -> Result<(ExitSucceed, Vec<u8>), PrecompileFailure> {
 		let mut input = [0u8; 128];
 		input[..min(i.len(), 128)].copy_from_slice(&i[..min(i.len(), 128)]);
 
@@ -148,19 +134,19 @@ mod tests {
 
 	// TODO: this fails on the test "InvalidHighV-bits-1" where it is expected to return ""
 	#[test]
-	fn process_consensus_tests_for_ecrecover() -> std::result::Result<(), String> {
+	fn process_consensus_tests_for_ecrecover() -> Result<(), String> {
 		test_precompile_test_vectors::<ECRecover>("../testdata/ecRecover.json")?;
 		Ok(())
 	}
 
 	#[test]
-	fn process_consensus_tests_for_sha256() -> std::result::Result<(), String> {
+	fn process_consensus_tests_for_sha256() -> Result<(), String> {
 		test_precompile_test_vectors::<Sha256>("../testdata/common_sha256.json")?;
 		Ok(())
 	}
 
 	#[test]
-	fn process_consensus_tests_for_ripemd160() -> std::result::Result<(), String> {
+	fn process_consensus_tests_for_ripemd160() -> Result<(), String> {
 		test_precompile_test_vectors::<Ripemd160>("../testdata/common_ripemd.json")?;
 		Ok(())
 	}

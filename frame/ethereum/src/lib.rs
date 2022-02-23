@@ -23,7 +23,11 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Decode, Encode};
+#[cfg(all(feature = "std", test))]
+mod mock;
+#[cfg(all(feature = "std", test))]
+mod tests;
+
 use ethereum_types::{Bloom, BloomInput, H160, H256, H64, U256};
 use evm::ExitReason;
 use fp_consensus::{PostLog, PreLog, FRONTIER_ENGINE_ID};
@@ -32,7 +36,9 @@ use fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA};
 #[cfg(feature = "try-runtime")]
 use frame_support::traits::OnRuntimeUpgradeHelpersExt;
 use frame_support::{
+	codec::{Decode, Encode},
 	dispatch::DispatchResultWithPostInfo,
+	scale_info::TypeInfo,
 	traits::{EnsureOrigin, Get, PalletInfoAccess},
 	weights::{Pays, PostDispatchInfo, Weight},
 };
@@ -55,12 +61,7 @@ pub use ethereum::{
 };
 pub use fp_rpc::TransactionStatus;
 
-#[cfg(all(feature = "std", test))]
-mod mock;
-#[cfg(all(feature = "std", test))]
-mod tests;
-
-#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, scale_info::TypeInfo)]
+#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub enum RawOrigin {
 	EthereumTransaction(H160),
 }
@@ -159,7 +160,7 @@ where
 	}
 }
 
-pub use pallet::*;
+pub use self::pallet::*;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -168,12 +169,7 @@ pub mod pallet {
 	use frame_system::pallet_prelude::*;
 
 	#[pallet::config]
-	pub trait Config:
-		frame_system::Config
-		+ pallet_balances::Config
-		+ pallet_timestamp::Config
-		+ pallet_evm::Config
-	{
+	pub trait Config: frame_system::Config + pallet_timestamp::Config + pallet_evm::Config {
 		/// The overarching event type.
 		type Event: From<Event> + IsType<<Self as frame_system::Config>::Event>;
 		/// How Ethereum state root is calculated.
@@ -182,6 +178,7 @@ pub mod pallet {
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
+	#[pallet::without_storage_info]
 	pub struct Pallet<T>(PhantomData<T>);
 
 	#[pallet::origin]
@@ -460,7 +457,7 @@ impl<T: Config> Pallet<T> {
 		BlockHash::<T>::insert(block_number, block.header.hash());
 
 		if post_log {
-			let digest = DigestItem::<T::Hash>::Consensus(
+			let digest = DigestItem::Consensus(
 				FRONTIER_ENGINE_ID,
 				PostLog::Hashes(fp_consensus::Hashes::from_block(block)).encode(),
 			);
@@ -922,16 +919,17 @@ impl<T: Config> Pallet<T> {
 	}
 }
 
-#[derive(Eq, PartialEq, Clone, sp_runtime::RuntimeDebug)]
+#[derive(Eq, PartialEq, Clone, RuntimeDebug)]
 pub enum ReturnValue {
 	Bytes(Vec<u8>),
 	Hash(H160),
 }
 
-pub struct IntermediateStateRoot;
-impl Get<H256> for IntermediateStateRoot {
+pub struct IntermediateStateRoot<T>(PhantomData<T>);
+impl<T: Config> Get<H256> for IntermediateStateRoot<T> {
 	fn get() -> H256 {
-		H256::decode(&mut &sp_io::storage::root()[..])
+		let version = T::Version::get().state_version();
+		H256::decode(&mut &sp_io::storage::root(version)[..])
 			.expect("Node is configured to use the same hash; qed")
 	}
 }

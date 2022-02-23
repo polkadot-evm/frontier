@@ -16,14 +16,20 @@
 // limitations under the License.
 
 //! Test mock for unit tests and benchmarking
-use crate::{EnsureAddressNever, EnsureAddressRoot, FeeCalculator, IdentityAddressMapping};
-use frame_support::{parameter_types, traits::FindAuthor, ConsensusEngineId};
+
+use frame_support::{
+	parameter_types,
+	traits::{ConstU32, FindAuthor},
+	ConsensusEngineId,
+};
 use sp_core::{H160, H256, U256};
 use sp_runtime::{
 	generic,
 	traits::{BlakeTwo256, IdentityLookup},
 };
 use sp_std::{boxed::Box, prelude::*, str::FromStr};
+
+use crate::{EnsureAddressNever, EnsureAddressRoot, FeeCalculator, IdentityAddressMapping};
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -70,6 +76,7 @@ impl frame_system::Config for Test {
 	type SystemWeightInfo = ();
 	type SS58Prefix = ();
 	type OnSetCode = ();
+	type MaxConsumers = ConstU32<16>;
 }
 
 parameter_types! {

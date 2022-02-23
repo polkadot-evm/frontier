@@ -18,7 +18,6 @@
 
 use log::warn;
 use rand::{distributions::Alphanumeric, thread_rng, Rng};
-use rustc_hex::ToHex;
 use sc_client_api::{
 	backend::{Backend, StateBackend, StorageProvider},
 	client::BlockchainEvents,
@@ -73,9 +72,10 @@ impl IdProvider for HexEncodedIdProvider {
 		let mut rng = thread_rng();
 		let id: String = iter::repeat(())
 			.map(|()| rng.sample(Alphanumeric))
+			.map(char::from)
 			.take(self.len)
 			.collect();
-		let out: String = id.as_bytes().to_hex();
+		let out = hex::encode(id);
 		format!("0x{}", out)
 	}
 }

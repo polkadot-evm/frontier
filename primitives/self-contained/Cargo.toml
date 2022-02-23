@@ -3,34 +3,34 @@ name = "fp-self-contained"
 version = "1.0.0-dev"
 license = "Apache-2.0"
 authors = ["Parity Technologies <admin@parity.io>"]
-edition = "2018"
+edition = "2021"
 homepage = "https://substrate.io"
 repository = "https://github.com/paritytech/frontier/"
 description = "Primitive Ethereum abstractions for Substrate."
 documentation = "https://docs.rs/fp-ethereum"
 
 [dependencies]
-serde = { version = "1.0.101", optional = true, features = ["derive"] }
-codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false }
 ethereum = { version = "0.11.1", default-features = false, features = ["with-codec"] }
-sp-core = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", default-features = false }
-sp-runtime = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", default-features = false }
-sp-io = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", default-features = false }
+serde = { version = "1.0.101", features = ["derive"], optional = true }
+
+codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false }
 scale-info = { version = "1.0.0", default-features = false, features = ["derive"] }
 parity-util-mem = { version = "0.10", optional = true }
-sha3 = { version = "0.8", default-features = false }
-frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", default-features = false }
+sp-debug-derive = { version = "4.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-runtime = { version = "5.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-io = { version = "5.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 
 [features]
 default = ["std"]
 std = [
-	"serde",
-	"codec/std",
 	"ethereum/std",
-	"sp-core/std",
-	"sp-runtime/std",
+	"serde",
+
+	"codec/std",
 	"scale-info/std",
 	"parity-util-mem",
-	"sha3/std",
+	"sp-debug-derive/std",
+	"sp-runtime/std",
 	"frame-support/std",
 ]

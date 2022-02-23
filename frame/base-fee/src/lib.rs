@@ -16,7 +16,7 @@
 // limitations under the License.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-pub use pallet::*;
+pub use self::pallet::*;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -42,6 +42,7 @@ pub mod pallet {
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
+	#[pallet::without_storage_info]
 	pub struct Pallet<T>(_);
 
 	#[pallet::genesis_config]
@@ -245,7 +246,10 @@ mod tests {
 	use crate as pallet_base_fee;
 
 	use frame_support::{
-		assert_ok, pallet_prelude::GenesisBuild, parameter_types, traits::OnFinalize,
+		assert_ok,
+		pallet_prelude::GenesisBuild,
+		parameter_types,
+		traits::{ConstU32, OnFinalize},
 		weights::DispatchClass,
 	};
 	use sp_core::{H256, U256};
@@ -309,6 +313,7 @@ mod tests {
 		type SystemWeightInfo = ();
 		type SS58Prefix = ();
 		type OnSetCode = ();
+		type MaxConsumers = ConstU32<16>;
 	}
 
 	frame_support::parameter_types! {
