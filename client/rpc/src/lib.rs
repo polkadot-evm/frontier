@@ -301,12 +301,12 @@ impl EthDevSigner {
 	}
 }
 
-fn secret_key_address(secret: &secp256k1::SecretKey) -> H160 {
+fn secret_key_address(secret: &libsecp256k1::SecretKey) -> H160 {
 	let public = libsecp256k1::PublicKey::from_secret_key(secret);
 	public_key_address(&public)
 }
 
-fn public_key_address(public: &secp256k1::PublicKey) -> H160 {
+fn public_key_address(public: &libsecp256k1::PublicKey) -> H160 {
 	let mut res = [0u8; 64];
 	res.copy_from_slice(&public.serialize()[1..65]);
 	H160::from(H256::from_slice(Keccak256::digest(&res).as_slice()))
