@@ -2084,6 +2084,7 @@ where
 				.current_transaction_statuses(schema, substrate_hash)
 				.await;
 			let receipts = handler.current_receipts(&id);
+			let is_eip1559 = handler.is_eip1559(&id);
 
 			match (block, statuses, receipts) {
 				(Some(block), Some(statuses), Some(receipts)) => {
@@ -2091,26 +2092,70 @@ where
 						H256::from_slice(Keccak256::digest(&rlp::encode(&block.header)).as_slice());
 					let receipt = receipts[index].clone();
 
-					let (logs, logs_bloom, status_code, cumulative_gas_used) = match receipt {
-						ethereum::ReceiptV3::Legacy(d)
-						| ethereum::ReceiptV3::EIP2930(d)
-						| ethereum::ReceiptV3::EIP1559(d) => (d.logs, d.logs_bloom, d.status_code, d.used_gas),
-					};
+					let (logs, logs_bloom, status_code, cumulative_gas_used, gas_used) =
+						if !is_eip1559 {
+							// Pre-london frontier update stored receipts require cumulative gas calculation.
+							match receipt {
+								ethereum::ReceiptV3::Legacy(d) => {
+									let index = core::cmp::min(receipts.len(), index + 1);
+									let cumulative_gas: u32 = receipts[..index]
+										.iter()
+										.map(|r| match r {
+											ethereum::ReceiptV3::Legacy(d) => {
+												Ok(d.used_gas.as_u32())
+											}
+											_ => Err(internal_err(format!(
+												"Unknown receipt for request {}",
+												hash
+											))),
+										})
+										.sum::<Result<u32>>()?;
+									(
+										d.logs,
+										d.logs_bloom,
+										d.status_code,
+										U256::from(cumulative_gas),
+										d.used_gas,
+									)
+								}
+								_ => {
+									return Err(internal_err(format!(
+										"Unknown receipt for request {}",
+										hash
+									)))
+								}
+							}
+						} else {
+							match receipt {
+								ethereum::ReceiptV3::Legacy(d)
+								| ethereum::ReceiptV3::EIP2930(d)
+								| ethereum::ReceiptV3::EIP1559(d) => {
+									let cumulative_gas = d.used_gas;
+									let gas_used = if index > 0 {
+										let previous_receipt = receipts[index - 1].clone();
+										let previous_gas_used = match previous_receipt {
+											ethereum::ReceiptV3::Legacy(d)
+											| ethereum::ReceiptV3::EIP2930(d)
+											| ethereum::ReceiptV3::EIP1559(d) => d.used_gas,
+										};
+										cumulative_gas.saturating_sub(previous_gas_used)
+									} else {
+										cumulative_gas
+									};
+									(
+										d.logs,
+										d.logs_bloom,
+										d.status_code,
+										cumulative_gas,
+										gas_used,
+									)
+								}
+							}
+						};
 
 					let status = statuses[index].clone();
 					let mut cumulative_receipts = receipts.clone();
 					cumulative_receipts.truncate((status.transaction_index + 1) as usize);
-					let gas_used = if index > 0 {
-						let previous_receipt = receipts[index - 1].clone();
-						let previous_gas_used = match previous_receipt {
-							ethereum::ReceiptV3::Legacy(d)
-							| ethereum::ReceiptV3::EIP2930(d)
-							| ethereum::ReceiptV3::EIP1559(d) => d.used_gas,
-						};
-						cumulative_gas_used.saturating_sub(previous_gas_used)
-					} else {
-						cumulative_gas_used
-					};
 
 					let transaction = block.transactions[index].clone();
 					let effective_gas_price = match transaction {
