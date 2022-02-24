@@ -2232,12 +2232,7 @@ where
 	}
 
 	fn work(&self) -> Result<Work> {
-		Ok(Work {
-			pow_hash: H256::default(),
-			seed_hash: H256::default(),
-			target: H256::default(),
-			number: None,
-		})
+		Ok(Work::default())
 	}
 
 	fn submit_work(&self, _: H64, _: H256, _: H256) -> Result<bool> {
@@ -2296,7 +2291,7 @@ where
 						// If the request includes reward percentiles, get them from the cache.
 						if let Some(ref requested_percentiles) = reward_percentiles {
 							let mut block_rewards = Vec::new();
-							// Resoltion is half a point. I.e. 1.0,1.5
+							// Resolution is half a point. I.e. 1.0,1.5
 							let resolution_per_percentile: f64 = 2.0;
 							// Get cached reward for each provided percentile.
 							for p in requested_percentiles {
@@ -2403,8 +2398,14 @@ where
 	C: Send + Sync + 'static,
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
 {
-	fn is_listening(&self) -> Result<bool> {
-		Ok(true)
+	fn version(&self) -> Result<String> {
+		let hash = self.client.info().best_hash;
+		Ok(self
+			.client
+			.runtime_api()
+			.chain_id(&BlockId::Hash(hash))
+			.map_err(|_| internal_err("fetch runtime chain id failed"))?
+			.to_string())
 	}
 
 	fn peer_count(&self) -> Result<PeerCount> {
@@ -2415,14 +2416,8 @@ where
 		})
 	}
 
-	fn version(&self) -> Result<String> {
-		let hash = self.client.info().best_hash;
-		Ok(self
-			.client
-			.runtime_api()
-			.chain_id(&BlockId::Hash(hash))
-			.map_err(|_| internal_err("fetch runtime chain id failed"))?
-			.to_string())
+	fn is_listening(&self) -> Result<bool> {
+		Ok(true)
 	}
 }
 
@@ -2434,7 +2429,7 @@ pub struct Web3Api<B, C> {
 impl<B, C> Web3Api<B, C> {
 	pub fn new(client: Arc<C>) -> Self {
 		Self {
-			client: client,
+			client,
 			_marker: PhantomData,
 		}
 	}
@@ -2542,7 +2537,7 @@ where
 				key,
 				FilterPoolItem {
 					last_poll: BlockNumber::Num(block_number),
-					filter_type: filter_type,
+					filter_type,
 					at_block: block_number,
 				},
 			);
@@ -2616,7 +2611,7 @@ where
 							key,
 							FilterPoolItem {
 								last_poll: BlockNumber::Num(next),
-								filter_type: pool_item.clone().filter_type,
+								filter_type: pool_item.filter_type.clone(),
 								at_block: pool_item.at_block,
 							},
 						);
@@ -2630,7 +2625,7 @@ where
 							key,
 							FilterPoolItem {
 								last_poll: BlockNumber::Num(block_number + 1),
-								filter_type: pool_item.clone().filter_type,
+								filter_type: pool_item.filter_type.clone(),
 								at_block: pool_item.at_block,
 							},
 						);
@@ -3161,7 +3156,7 @@ enum EthBlockDataCacheMessage<B: BlockT> {
 	},
 }
 
-/// Manage LRU cachse for block data and their transaction statuses.
+/// Manage LRU caches for block data and their transaction statuses.
 /// These are large and take a lot of time to fetch from the database.
 /// Storing them in an LRU cache will allow to reduce database accesses
 /// when many subsequent requests are related to the same blocks.
