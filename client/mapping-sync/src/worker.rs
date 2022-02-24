@@ -29,8 +29,6 @@ use sp_blockchain::HeaderBackend;
 use sp_runtime::traits::Block as BlockT;
 use std::{pin::Pin, sync::Arc, time::Duration};
 
-const LIMIT: usize = 8;
-
 #[derive(PartialEq, Copy, Clone)]
 pub enum SyncStrategy {
 	Normal,
@@ -47,7 +45,7 @@ pub struct MappingSyncWorker<Block: BlockT, C, B> {
 	frontier_backend: Arc<fc_db::Backend<Block>>,
 
 	have_next: bool,
-
+	retry_times: usize,
 	strategy: SyncStrategy,
 }
 
@@ -58,6 +56,7 @@ impl<Block: BlockT, C, B> MappingSyncWorker<Block, C, B> {
 		client: Arc<C>,
 		substrate_backend: Arc<B>,
 		frontier_backend: Arc<fc_db::Backend<Block>>,
+		retry_times: usize,
 		strategy: SyncStrategy,
 	) -> Self {
 		Self {
@@ -70,7 +69,7 @@ impl<Block: BlockT, C, B> MappingSyncWorker<Block, C, B> {
 			frontier_backend,
 
 			have_next: true,
-
+			retry_times,
 			strategy,
 		}
 	}
@@ -118,7 +117,7 @@ where
 				self.client.as_ref(),
 				self.substrate_backend.blockchain(),
 				self.frontier_backend.as_ref(),
-				LIMIT,
+				self.retry_times,
 				self.strategy,
 			) {
 				Ok(have_next) => {

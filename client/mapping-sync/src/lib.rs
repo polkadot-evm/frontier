@@ -30,32 +30,6 @@ use sp_runtime::{
 	traits::{Block as BlockT, Header as HeaderT, Zero},
 };
 
-pub fn sync_block<Block: BlockT>(
-	backend: &fc_db::Backend<Block>,
-	header: &Block::Header,
-) -> Result<(), String> {
-	match fp_consensus::find_log(header.digest()) {
-		Ok(log) => {
-			let post_hashes = log.into_hashes();
-
-			let mapping_commitment = fc_db::MappingCommitment {
-				block_hash: header.hash(),
-				ethereum_block_hash: post_hashes.block_hash,
-				ethereum_transaction_hashes: post_hashes.transaction_hashes,
-			};
-			backend.mapping().write_hashes(mapping_commitment)?;
-
-			Ok(())
-		}
-		Err(FindLogError::NotFound) => {
-			backend.mapping().write_none(header.hash())?;
-
-			Ok(())
-		}
-		Err(FindLogError::MultipleLogs) => Err("Multiple logs found".to_string()),
-	}
-}
-
 pub fn sync_genesis_block<Block: BlockT, C>(
 	client: &C,
 	backend: &fc_db::Backend<Block>,
@@ -87,8 +61,6 @@ where
 			ethereum_transaction_hashes: Vec::new(),
 		};
 		backend.mapping().write_hashes(mapping_commitment)?;
-	} else {
-		backend.mapping().write_none(header.hash())?;
 	}
 
 	Ok(())
@@ -112,12 +84,10 @@ where
 		if leaves.is_empty() {
 			return Ok(false);
 		}
-
 		current_syncing_tips.append(&mut leaves);
 	}
 
 	let mut operating_tip = None;
-
 	while let Some(checking_tip) = current_syncing_tips.pop() {
 		if !frontier_backend
 			.mapping()
@@ -144,27 +114,45 @@ where
 		.map_err(|e| format!("{:?}", e))?
 		.ok_or("Header not found".to_string())?;
 
+	let mut have_next = true;
 	if operating_header.number() == &Zero::zero() {
 		sync_genesis_block(client, frontier_backend, &operating_header)?;
 
 		frontier_backend
 			.meta()
 			.write_current_syncing_tips(current_syncing_tips)?;
-		Ok(true)
 	} else {
 		if SyncStrategy::Parachain == strategy
 			&& operating_header.number() > &client.info().best_number
 		{
-			return Ok(false);
+			have_next = false;
+			return Ok(have_next);
 		}
-		sync_block(frontier_backend, &operating_header)?;
 
-		current_syncing_tips.push(*operating_header.parent_hash());
+		match fp_consensus::find_log(operating_header.digest()) {
+			Ok(log) => {
+				let post_hashes = log.into_hashes();
+				let mapping_commitment = fc_db::MappingCommitment {
+					block_hash: operating_header.hash(),
+					ethereum_block_hash: post_hashes.block_hash,
+					ethereum_transaction_hashes: post_hashes.transaction_hashes,
+				};
+
+				frontier_backend
+					.mapping()
+					.write_hashes(mapping_commitment)?;
+				current_syncing_tips.push(*operating_header.parent_hash());
+			}
+			Err(FindLogError::NotFound) => {
+				have_next = false;
+			}
+			Err(FindLogError::MultipleLogs) => return Err("Multiple logs found".to_string()),
+		}
 		frontier_backend
 			.meta()
 			.write_current_syncing_tips(current_syncing_tips)?;
-		Ok(true)
 	}
+	Ok(have_next)
 }
 
 pub fn sync_blocks<Block: BlockT, C, B>(
