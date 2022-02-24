@@ -407,9 +407,6 @@
 <span id="405">405</span>
 <span id="406">406</span>
 <span id="407">407</span>
-<span id="408">408</span>
-<span id="409">409</span>
-<span id="410">410</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -713,18 +710,20 @@
 	}
 }
 
+<span class="kw">fn</span> <span class="ident">secret_key_address</span>(<span class="ident">secret</span>: <span class="kw-2">&amp;</span><span class="ident">libsecp256k1::SecretKey</span>) -&gt; <span class="ident">H160</span> {
+	<span class="kw">let</span> <span class="ident">public</span> <span class="op">=</span> <span class="ident">libsecp256k1::PublicKey::from_secret_key</span>(<span class="ident">secret</span>);
+	<span class="ident">public_key_address</span>(<span class="kw-2">&amp;</span><span class="ident">public</span>)
+}
+
+<span class="kw">fn</span> <span class="ident">public_key_address</span>(<span class="ident">public</span>: <span class="kw-2">&amp;</span><span class="ident">libsecp256k1::PublicKey</span>) -&gt; <span class="ident">H160</span> {
+	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">res</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">64</span>];
+	<span class="ident">res</span>.<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">public</span>.<span class="ident">serialize</span>()[<span class="number">1</span>..<span class="number">65</span>]);
+	<span class="ident">H160::from</span>(<span class="ident">H256::from_slice</span>(<span class="ident">Keccak256::digest</span>(<span class="kw-2">&amp;</span><span class="ident">res</span>).<span class="ident">as_slice</span>()))
+}
+
 <span class="kw">impl</span> <span class="ident">EthSigner</span> <span class="kw">for</span> <span class="ident">EthDevSigner</span> {
 	<span class="kw">fn</span> <span class="ident">accounts</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">H160</span><span class="op">&gt;</span> {
-		<span class="self">self</span>.<span class="ident">keys</span>
-			.<span class="ident">iter</span>()
-			.<span class="ident">map</span>(<span class="op">|</span><span class="ident">secret</span><span class="op">|</span> {
-				<span class="kw">let</span> <span class="ident">public</span> <span class="op">=</span> <span class="ident">libsecp256k1::PublicKey::from_secret_key</span>(<span class="ident">secret</span>);
-				<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">res</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">64</span>];
-				<span class="ident">res</span>.<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">public</span>.<span class="ident">serialize</span>()[<span class="number">1</span>..<span class="number">65</span>]);
-
-				<span class="ident">H160::from</span>(<span class="ident">H256::from_slice</span>(<span class="ident">Keccak256::digest</span>(<span class="kw-2">&amp;</span><span class="ident">res</span>).<span class="ident">as_slice</span>()))
-			})
-			.<span class="ident">collect</span>()
+		<span class="self">self</span>.<span class="ident">keys</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="ident">secret_key_address</span>).<span class="ident">collect</span>()
 	}
 
 	<span class="kw">fn</span> <span class="ident">sign</span>(
@@ -735,12 +734,7 @@
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">transaction</span> <span class="op">=</span> <span class="prelude-val">None</span>;
 
 		<span class="kw">for</span> <span class="ident">secret</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">keys</span> {
-			<span class="kw">let</span> <span class="ident">key_address</span> <span class="op">=</span> {
-				<span class="kw">let</span> <span class="ident">public</span> <span class="op">=</span> <span class="ident">libsecp256k1::PublicKey::from_secret_key</span>(<span class="ident">secret</span>);
-				<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">res</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">64</span>];
-				<span class="ident">res</span>.<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">public</span>.<span class="ident">serialize</span>()[<span class="number">1</span>..<span class="number">65</span>]);
-				<span class="ident">H160::from</span>(<span class="ident">H256::from_slice</span>(<span class="ident">Keccak256::digest</span>(<span class="kw-2">&amp;</span><span class="ident">res</span>).<span class="ident">as_slice</span>()))
-			};
+			<span class="kw">let</span> <span class="ident">key_address</span> <span class="op">=</span> <span class="ident">secret_key_address</span>(<span class="ident">secret</span>);
 
 			<span class="kw">if</span> <span class="kw-2">&amp;</span><span class="ident">key_address</span> <span class="op">==</span> <span class="ident">address</span> {
 				<span class="kw">match</span> <span class="ident">message</span> {

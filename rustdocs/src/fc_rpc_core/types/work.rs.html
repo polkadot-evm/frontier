@@ -77,7 +77,7 @@
 
 <span class="doccomment">/// The result of an `eth_getWork` call: it differs based on an option</span>
 <span class="doccomment">/// whether to send the block number.</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>, <span class="ident">Default</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Work</span> {
 	<span class="doccomment">/// The proof-of-work hash.</span>
 	<span class="kw">pub</span> <span class="ident">pow_hash</span>: <span class="ident">H256</span>,
