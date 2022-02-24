@@ -3362,6 +3362,31 @@
 <span id="3360">3360</span>
 <span id="3361">3361</span>
 <span id="3362">3362</span>
+<span id="3363">3363</span>
+<span id="3364">3364</span>
+<span id="3365">3365</span>
+<span id="3366">3366</span>
+<span id="3367">3367</span>
+<span id="3368">3368</span>
+<span id="3369">3369</span>
+<span id="3370">3370</span>
+<span id="3371">3371</span>
+<span id="3372">3372</span>
+<span id="3373">3373</span>
+<span id="3374">3374</span>
+<span id="3375">3375</span>
+<span id="3376">3376</span>
+<span id="3377">3377</span>
+<span id="3378">3378</span>
+<span id="3379">3379</span>
+<span id="3380">3380</span>
+<span id="3381">3381</span>
+<span id="3382">3382</span>
+<span id="3383">3383</span>
+<span id="3384">3384</span>
+<span id="3385">3385</span>
+<span id="3386">3386</span>
+<span id="3387">3387</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -4888,9 +4913,21 @@
 				<span class="ident">used_gas</span>: <span class="ident">U256</span>,
 			}
 
-			<span class="comment">// Create a helper to check if a gas allowance results in an executable transaction</span>
+			<span class="comment">// Create a helper to check if a gas allowance results in an executable transaction.</span>
+			<span class="comment">//</span>
+			<span class="comment">// A new ApiRef instance needs to be used per execution to avoid the overlayed state to affect</span>
+			<span class="comment">// the estimation result of subsequent calls.</span>
+			<span class="comment">//</span>
+			<span class="comment">// Note that this would have a performance penalty if we introduce gas estimation for past</span>
+			<span class="comment">// blocks - and thus, past runtime versions. Substrate has a default `runtime_cache_size` of</span>
+			<span class="comment">// 2 slots LRU-style, meaning if users were to access multiple runtime versions in a short period</span>
+			<span class="comment">// of time, the RPC response time would degrade a lot, as the VersionedRuntime needs to be compiled.</span>
+			<span class="comment">//</span>
+			<span class="comment">// To solve that, and if we introduce historical gas estimation, we&#39;d need to increase that default.</span>
 			<span class="attribute">#[<span class="ident">rustfmt::skip</span>]</span>
-			<span class="kw">let</span> <span class="ident">executable</span> <span class="op">=</span> <span class="kw">move</span> <span class="op">|</span><span class="ident">request</span>, <span class="ident">gas_limit</span>, <span class="ident">api_version</span>, <span class="ident">estimate_mode</span><span class="op">|</span> -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">ExecutableResult</span><span class="op">&gt;</span> {
+			<span class="kw">let</span> <span class="ident">executable</span> <span class="op">=</span> <span class="kw">move</span> <span class="op">|</span>
+				<span class="ident">request</span>, <span class="ident">gas_limit</span>, <span class="ident">api_version</span>, <span class="ident">api</span>: <span class="ident">sp_api::ApiRef</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="ident">C::Api</span><span class="op">&gt;</span>, <span class="ident">estimate_mode</span>
+			<span class="op">|</span> -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">ExecutableResult</span><span class="op">&gt;</span> {
 				<span class="kw">let</span> <span class="ident">CallRequest</span> {
 					<span class="ident">from</span>,
 					<span class="ident">to</span>,
@@ -5053,7 +5090,13 @@
 				<span class="ident">data</span>,
 				<span class="ident">exit_reason</span>,
 				<span class="ident">used_gas</span>,
-			} <span class="op">=</span> <span class="ident">executable</span>(<span class="ident">request</span>.<span class="ident">clone</span>(), <span class="ident">highest</span>, <span class="ident">api_version</span>, <span class="ident">estimate_mode</span>)<span class="question-mark">?</span>;
+			} <span class="op">=</span> <span class="ident">executable</span>(
+				<span class="ident">request</span>.<span class="ident">clone</span>(),
+				<span class="ident">highest</span>,
+				<span class="ident">api_version</span>,
+				<span class="ident">client</span>.<span class="ident">runtime_api</span>(),
+				<span class="ident">estimate_mode</span>,
+			)<span class="question-mark">?</span>;
 			<span class="kw">match</span> <span class="ident">exit_reason</span> {
 				<span class="ident">ExitReason::Succeed</span>(<span class="kw">_</span>) =&gt; (),
 				<span class="ident">ExitReason::Error</span>(<span class="ident">ExitError::OutOfGas</span>) =&gt; {
@@ -5078,6 +5121,7 @@
 							<span class="ident">request</span>.<span class="ident">clone</span>(),
 							<span class="ident">get_current_block_gas_limit</span>().<span class="kw">await</span><span class="question-mark">?</span>,
 							<span class="ident">api_version</span>,
+							<span class="ident">client</span>.<span class="ident">runtime_api</span>(),
 							<span class="ident">estimate_mode</span>,
 						)<span class="question-mark">?</span>;
 						<span class="kw">match</span> <span class="ident">exit_reason</span> {
@@ -5119,7 +5163,13 @@
 						<span class="ident">data</span>,
 						<span class="ident">exit_reason</span>,
 						<span class="ident">used_gas</span>: <span class="kw">_</span>,
-					} <span class="op">=</span> <span class="ident">executable</span>(<span class="ident">request</span>.<span class="ident">clone</span>(), <span class="ident">mid</span>, <span class="ident">api_version</span>, <span class="ident">estimate_mode</span>)<span class="question-mark">?</span>;
+					} <span class="op">=</span> <span class="ident">executable</span>(
+						<span class="ident">request</span>.<span class="ident">clone</span>(),
+						<span class="ident">mid</span>,
+						<span class="ident">api_version</span>,
+						<span class="ident">client</span>.<span class="ident">runtime_api</span>(),
+						<span class="ident">estimate_mode</span>,
+					)<span class="question-mark">?</span>;
 					<span class="kw">match</span> <span class="ident">exit_reason</span> {
 						<span class="ident">ExitReason::Succeed</span>(<span class="kw">_</span>) =&gt; {
 							<span class="ident">highest</span> <span class="op">=</span> <span class="ident">mid</span>;
