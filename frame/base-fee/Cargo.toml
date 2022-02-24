@@ -2,7 +2,7 @@
 name = "pallet-base-fee"
 version = "1.0.0"
 authors = ["Parity Technologies <admin@parity.io>"]
-edition = "2018"
+edition = "2021"
 license = "Apache-2.0"
 homepage = "https://substrate.dev"
 repository = "https://github.com/paritytech/frontier/"
@@ -13,26 +13,30 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 serde = { version = "1.0.101", optional = true }
+
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false }
-frame-support = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
-frame-system = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
-sp-core = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
-sp-runtime = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
-pallet-evm = { path = "../evm", default-features = false }
 scale-info = { version = "1.0.0", default-features = false, features = ["derive"] }
+sp-core = { version = "5.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-runtime = { version = "5.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+
+pallet-evm = { path = "../evm", default-features = false }
 
 [dev-dependencies]
-sp-io = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate" }
+sp-io = { version = "5.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 
 [features]
 default = ["std"]
 std = [
 	"serde",
+
 	"codec/std",
+	"scale-info/std",
 	"sp-core/std",
 	"sp-runtime/std",
 	"frame-support/std",
 	"frame-system/std",
+
 	"pallet-evm/std",
-	"scale-info/std",
 ]

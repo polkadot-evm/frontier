@@ -23,15 +23,23 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Decode, Encode};
+#[cfg(all(feature = "std", test))]
+mod mock;
+#[cfg(all(feature = "std", test))]
+mod tests;
+
 use ethereum_types::{Bloom, BloomInput, H160, H256, H64, U256};
 use evm::ExitReason;
 use fp_consensus::{PostLog, PreLog, FRONTIER_ENGINE_ID};
 use fp_evm::CallOrCreateInfo;
-use fp_storage::PALLET_ETHEREUM_SCHEMA;
+use fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA};
+#[cfg(feature = "try-runtime")]
+use frame_support::traits::OnRuntimeUpgradeHelpersExt;
 use frame_support::{
+	codec::{Decode, Encode},
 	dispatch::DispatchResultWithPostInfo,
-	traits::{EnsureOrigin, Get},
+	scale_info::TypeInfo,
+	traits::{EnsureOrigin, Get, PalletInfoAccess},
 	weights::{Pays, PostDispatchInfo, Weight},
 };
 use frame_system::{pallet_prelude::OriginFor, WeightInfo};
@@ -53,12 +61,7 @@ pub use ethereum::{
 };
 pub use fp_rpc::TransactionStatus;
 
-#[cfg(all(feature = "std", test))]
-mod mock;
-#[cfg(all(feature = "std", test))]
-mod tests;
-
-#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, scale_info::TypeInfo)]
+#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub enum RawOrigin {
 	EthereumTransaction(H160),
 }
@@ -157,7 +160,7 @@ where
 	}
 }
 
-pub use pallet::*;
+pub use self::pallet::*;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -166,12 +169,7 @@ pub mod pallet {
 	use frame_system::pallet_prelude::*;
 
 	#[pallet::config]
-	pub trait Config:
-		frame_system::Config
-		+ pallet_balances::Config
-		+ pallet_timestamp::Config
-		+ pallet_evm::Config
-	{
+	pub trait Config: frame_system::Config + pallet_timestamp::Config + pallet_evm::Config {
 		/// The overarching event type.
 		type Event: From<Event> + IsType<<Self as frame_system::Config>::Event>;
 		/// How Ethereum state root is calculated.
@@ -180,6 +178,7 @@ pub mod pallet {
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
+	#[pallet::without_storage_info]
 	pub struct Pallet<T>(PhantomData<T>);
 
 	#[pallet::origin]
@@ -430,7 +429,11 @@ impl<T: Config> Pallet<T> {
 		let receipts_root =
 			ethereum::util::ordered_trie_root(receipts.iter().map(|r| rlp::encode(r)));
 		let partial_header = ethereum::PartialHeader {
-			parent_hash: Self::current_block_hash().unwrap_or_default(),
+			parent_hash: if block_number > U256::zero() {
+				BlockHash::<T>::get(block_number - 1)
+			} else {
+				H256::default()
+			},
 			beneficiary: pallet_evm::Pallet::<T>::find_author(),
 			state_root: T::StateRoot::get(),
 			receipts_root,
@@ -454,7 +457,7 @@ impl<T: Config> Pallet<T> {
 		BlockHash::<T>::insert(block_number, block.header.hash());
 
 		if post_log {
-			let digest = DigestItem::<T::Hash>::Consensus(
+			let digest = DigestItem::Consensus(
 				FRONTIER_ENGINE_ID,
 				PostLog::Hashes(fp_consensus::Hashes::from_block(block)).encode(),
 			);
@@ -851,33 +854,82 @@ impl<T: Config> Pallet<T> {
 			Ok(())
 		}
 	}
+
+	pub fn migrate_block_v0_to_v2() -> Weight {
+		let db_weights = T::DbWeight::get();
+		let mut weight: Weight = db_weights.read;
+		let item = b"CurrentBlock";
+		let block_v0 = frame_support::storage::migration::get_storage_value::<ethereum::BlockV0>(
+			Self::name().as_bytes(),
+			item,
+			&[],
+		);
+		if let Some(block_v0) = block_v0 {
+			weight = weight.saturating_add(db_weights.write);
+			let block_v2: ethereum::BlockV2 = block_v0.into();
+			frame_support::storage::migration::put_storage_value::<ethereum::BlockV2>(
+				Self::name().as_bytes(),
+				item,
+				&[],
+				block_v2,
+			);
+		}
+		weight
+	}
+
+	#[cfg(feature = "try-runtime")]
+	pub fn pre_migrate_block_v2() -> Result<(), &'static str> {
+		let item = b"CurrentBlock";
+		let block_v0 = frame_support::storage::migration::get_storage_value::<ethereum::BlockV0>(
+			Self::name().as_bytes(),
+			item,
+			&[],
+		);
+		if let Some(block_v0) = block_v0 {
+			Self::set_temp_storage(block_v0.header.number, "number");
+			Self::set_temp_storage(block_v0.header.parent_hash, "parent_hash");
+			Self::set_temp_storage(block_v0.transactions.len() as u64, "transaction_len");
+		}
+		Ok(())
+	}
+
+	#[cfg(feature = "try-runtime")]
+	pub fn post_migrate_block_v2() -> Result<(), &'static str> {
+		let v0_number =
+			Self::get_temp_storage("number").expect("We stored a number; it should be there; qed");
+		let v0_parent_hash = Self::get_temp_storage("parent_hash")
+			.expect("We stored a parent hash; it should be there; qed");
+		let v0_transaction_len: u64 = Self::get_temp_storage("transaction_len")
+			.expect("We stored a transaction count; it should be there; qed");
+
+		let item = b"CurrentBlock";
+		let block_v2 = frame_support::storage::migration::get_storage_value::<ethereum::BlockV2>(
+			Self::name().as_bytes(),
+			item,
+			&[],
+		);
+
+		assert!(block_v2.is_some());
+
+		let block_v2 = block_v2.unwrap();
+		assert_eq!(block_v2.header.number, v0_number);
+		assert_eq!(block_v2.header.parent_hash, v0_parent_hash);
+		assert_eq!(block_v2.transactions.len() as u64, v0_transaction_len);
+		Ok(())
+	}
 }
 
-#[derive(Eq, PartialEq, Clone, sp_runtime::RuntimeDebug)]
+#[derive(Eq, PartialEq, Clone, RuntimeDebug)]
 pub enum ReturnValue {
 	Bytes(Vec<u8>),
 	Hash(H160),
 }
 
-/// The schema version for Pallet Ethereum's storage
-#[derive(Clone, Copy, Debug, Encode, Decode, PartialEq, Eq, PartialOrd, Ord)]
-pub enum EthereumStorageSchema {
-	Undefined,
-	V1,
-	V2,
-	V3,
-}
-
-impl Default for EthereumStorageSchema {
-	fn default() -> Self {
-		Self::Undefined
-	}
-}
-
-pub struct IntermediateStateRoot;
-impl Get<H256> for IntermediateStateRoot {
+pub struct IntermediateStateRoot<T>(PhantomData<T>);
+impl<T: Config> Get<H256> for IntermediateStateRoot<T> {
 	fn get() -> H256 {
-		H256::decode(&mut &sp_io::storage::root()[..])
+		let version = T::Version::get().state_version();
+		H256::decode(&mut &sp_io::storage::root(version)[..])
 			.expect("Node is configured to use the same hash; qed")
 	}
 }

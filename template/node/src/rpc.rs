@@ -7,9 +7,9 @@ use fc_rpc::{
 	SchemaV2Override, SchemaV3Override, StorageOverride,
 };
 use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
+use fp_storage::EthereumStorageSchema;
 use frontier_template_runtime::{opaque::Block, AccountId, Balance, Hash, Index};
 use jsonrpc_pubsub::manager::SubscriptionManager;
-use pallet_ethereum::EthereumStorageSchema;
 use sc_client_api::{
 	backend::{AuxStore, Backend, StateBackend, StorageProvider},
 	client::BlockchainEvents,
@@ -24,19 +24,6 @@ use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 use sp_runtime::traits::BlakeTwo256;
-
-/// Light client extra dependencies.
-#[allow(dead_code)]
-pub struct LightDeps<C, F, P> {
-	/// The client instance to use.
-	pub client: Arc<C>,
-	/// Transaction pool instance.
-	pub pool: Arc<P>,
-	/// Remote access to the blockchain (async).
-	pub remote_blockchain: Arc<dyn sc_client_api::light::RemoteBlockchain<Block>>,
-	/// Fetcher instance.
-	pub fetcher: Arc<F>,
-}
 
 /// Full client dependencies.
 pub struct FullDeps<C, P, A: ChainApi> {
@@ -78,7 +65,9 @@ where
 	C: ProvideRuntimeApi<Block> + StorageProvider<Block, BE> + AuxStore,
 	C: HeaderBackend<Block> + HeaderMetadata<Block, Error = BlockChainError>,
 	C: Send + Sync + 'static,
-	C::Api: fp_rpc::EthereumRuntimeRPCApi<Block>,
+	C::Api: sp_api::ApiExt<Block>
+		+ fp_rpc::EthereumRuntimeRPCApi<Block>
+		+ fp_rpc::ConvertTransactionRuntimeApi<Block>,
 	BE: Backend<Block> + 'static,
 	BE::State: StateBackend<BlakeTwo256>,
 {
@@ -120,6 +109,7 @@ where
 	C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Index>,
 	C::Api: BlockBuilder<Block>,
 	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
+	C::Api: fp_rpc::ConvertTransactionRuntimeApi<Block>,
 	C::Api: fp_rpc::EthereumRuntimeRPCApi<Block>,
 	P: TransactionPool<Block = Block> + 'static,
 	A: ChainApi<Block = Block> + 'static,
@@ -169,7 +159,7 @@ where
 		client.clone(),
 		pool.clone(),
 		graph,
-		frontier_template_runtime::TransactionConverter,
+		Some(frontier_template_runtime::TransactionConverter),
 		network.clone(),
 		signers,
 		overrides.clone(),
@@ -222,32 +212,6 @@ where
 		}
 		_ => {}
 	}
-
-	io
-}
-
-/// Instantiate all Light RPC extensions.
-#[allow(dead_code)]
-pub fn create_light<C, P, M, F>(deps: LightDeps<C, F, P>) -> jsonrpc_core::IoHandler<M>
-where
-	C: sp_blockchain::HeaderBackend<Block>,
-	C: Send + Sync + 'static,
-	F: sc_client_api::light::Fetcher<Block> + 'static,
-	P: TransactionPool + 'static,
-	M: jsonrpc_core::Metadata + Default,
-{
-	use substrate_frame_rpc_system::{LightSystem, SystemApi};
-
-	let LightDeps {
-		client,
-		pool,
-		remote_blockchain,
-		fetcher,
-	} = deps;
-	let mut io = jsonrpc_core::IoHandler::default();
-	io.extend_with(SystemApi::<Hash, AccountId, Index>::to_delegate(
-		LightSystem::new(client, remote_blockchain, fetcher, pool),
-	));
 
 	io
 }
