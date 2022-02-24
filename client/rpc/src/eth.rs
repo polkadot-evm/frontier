@@ -42,7 +42,7 @@ use sc_transaction_pool::{ChainApi, Pool};
 use sc_transaction_pool_api::{InPoolTransaction, TransactionPool};
 use sp_api::{ApiExt, BlockId, Core, HeaderT, ProvideRuntimeApi};
 use sp_block_builder::BlockBuilder;
-use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
+use sp_blockchain::HeaderBackend;
 use sp_core::hashing::keccak_256;
 use sp_runtime::{
 	traits::{BlakeTwo256, Block as BlockT, NumberFor, One, Saturating, UniqueSaturatedInto, Zero},
@@ -282,10 +282,8 @@ fn pending_runtime_api<'a, B: BlockT, C, BE, A: ChainApi>(
 where
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
-	C: HeaderBackend<B> + HeaderMetadata<B, Error = BlockChainError> + 'static,
-	C: Send + Sync + 'static,
-	C::Api: BlockBuilder<B>,
-	C::Api: EthereumRuntimeRPCApi<B>,
+	C: HeaderBackend<B> + Send + Sync + 'static,
+	C::Api: BlockBuilder<B> + EthereumRuntimeRPCApi<B>,
 	BE: Backend<B> + 'static,
 	BE::State: StateBackend<BlakeTwo256>,
 	A: ChainApi<Block = B> + 'static,
@@ -323,8 +321,7 @@ async fn filter_range_logs<B: BlockT, C, BE>(
 where
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
-	C: HeaderBackend<B> + HeaderMetadata<B, Error = BlockChainError> + 'static,
-	C: Send + Sync + 'static,
+	C: HeaderBackend<B> + Send + Sync + 'static,
 	C::Api: EthereumRuntimeRPCApi<B>,
 	BE: Backend<B> + 'static,
 	BE::State: StateBackend<BlakeTwo256>,
@@ -528,12 +525,8 @@ impl<B, C, P, CT, BE, H: ExHashT, A> EthApiT for EthApi<B, C, P, CT, BE, H, A>
 where
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
-	C: HeaderBackend<B> + HeaderMetadata<B, Error = BlockChainError> + 'static,
-	C::Api: sp_api::ApiExt<B>
-		+ BlockBuilder<B>
-		+ ConvertTransactionRuntimeApi<B>
-		+ EthereumRuntimeRPCApi<B>,
-	C: Send + Sync + 'static,
+	C: HeaderBackend<B> + Send + Sync + 'static,
+	C::Api: BlockBuilder<B> + ConvertTransactionRuntimeApi<B> + EthereumRuntimeRPCApi<B>,
 	BE: Backend<B> + 'static,
 	BE::State: StateBackend<BlakeTwo256>,
 	P: TransactionPool<Block = B> + Send + Sync + 'static,
@@ -2130,7 +2123,7 @@ where
 								.collect()
 						},
 						status_code: Some(U64::from(status_code)),
-						logs_bloom: logs_bloom,
+						logs_bloom,
 						state_root: None,
 						effective_gas_price,
 					}));
@@ -2366,18 +2359,10 @@ pub struct EthFilterApi<B: BlockT, C, BE> {
 	max_stored_filters: usize,
 	max_past_logs: u32,
 	block_data_cache: Arc<EthBlockDataCache<B>>,
-	_marker: PhantomData<(B, BE)>,
+	_marker: PhantomData<BE>,
 }
 
-impl<B: BlockT, C, BE> EthFilterApi<B, C, BE>
-where
-	B: BlockT<Hash = H256> + Send + Sync + 'static,
-	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
-	C: Send + Sync + 'static,
-	C::Api: EthereumRuntimeRPCApi<B>,
-	BE: Backend<B> + 'static,
-	BE::State: StateBackend<BlakeTwo256>,
-{
+impl<B: BlockT, C, BE> EthFilterApi<B, C, BE> {
 	pub fn new(
 		client: Arc<C>,
 		backend: Arc<fc_db::Backend<B>>,
@@ -2401,12 +2386,7 @@ where
 impl<B, C, BE> EthFilterApi<B, C, BE>
 where
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
-	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
-	C: HeaderBackend<B> + HeaderMetadata<B, Error = BlockChainError> + 'static,
-	C: Send + Sync + 'static,
-	C::Api: EthereumRuntimeRPCApi<B>,
-	BE: Backend<B> + 'static,
-	BE::State: StateBackend<BlakeTwo256>,
+	C: HeaderBackend<B> + Send + Sync + 'static,
 {
 	fn create_filter(&self, filter_type: FilterType) -> Result<U256> {
 		let block_number =
@@ -2429,7 +2409,7 @@ where
 				key,
 				FilterPoolItem {
 					last_poll: BlockNumber::Num(block_number),
-					filter_type: filter_type,
+					filter_type,
 					at_block: block_number,
 				},
 			);
@@ -2445,8 +2425,7 @@ impl<B, C, BE> EthFilterApiT for EthFilterApi<B, C, BE>
 where
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
-	C: HeaderBackend<B> + HeaderMetadata<B, Error = BlockChainError> + 'static,
-	C: Send + Sync + 'static,
+	C: HeaderBackend<B> + Send + Sync + 'static,
 	C::Api: EthereumRuntimeRPCApi<B>,
 	BE: Backend<B> + 'static,
 	BE::State: StateBackend<BlakeTwo256>,
@@ -2714,8 +2693,8 @@ pub struct EthTask<B, C, BE>(PhantomData<(B, C, BE)>);
 impl<B, C, BE> EthTask<B, C, BE>
 where
 	B: BlockT<Hash = H256>,
-	C: ProvideRuntimeApi<B> + BlockchainEvents<B> + HeaderBackend<B> + StorageProvider<B, BE>,
-	C: Send + Sync + 'static,
+	C: ProvideRuntimeApi<B> + StorageProvider<B, BE> + BlockchainEvents<B>,
+	C: HeaderBackend<B> + Send + Sync + 'static,
 	C::Api: EthereumRuntimeRPCApi<B>,
 	BE: Backend<B> + 'static,
 	BE::State: StateBackend<BlakeTwo256>,

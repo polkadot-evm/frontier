@@ -51,9 +51,11 @@ pub mod frontier_backend_client {
 	use jsonrpc_core::Result as RpcResult;
 
 	use sc_client_api::backend::{Backend, StateBackend, StorageProvider};
-	use sp_api::{BlockId, HeaderT};
 	use sp_blockchain::HeaderBackend;
-	use sp_runtime::traits::{BlakeTwo256, Block as BlockT, UniqueSaturatedInto, Zero};
+	use sp_runtime::{
+		generic::BlockId,
+		traits::{BlakeTwo256, Block as BlockT, Header as HeaderT, UniqueSaturatedInto, Zero},
+	};
 	use sp_storage::StorageKey;
 
 	use fc_rpc_core::types::BlockNumber;
