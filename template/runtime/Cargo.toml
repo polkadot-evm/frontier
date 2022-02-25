@@ -2,7 +2,7 @@
 name = "frontier-template-runtime"
 version = "0.0.0"
 authors = ["Substrate DevHub <https://github.com/substrate-developer-hub>"]
-edition = "2018"
+edition = "2021"
 license = "Unlicense"
 homepage = "https://substrate.io"
 repository = "https://github.com/substrate-developer-hub/frontier-node-template/"
@@ -12,85 +12,62 @@ publish = false
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
+serde = { version = "1.0.101", features = ["derive"], optional = true }
+
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = ["derive"] }
-serde = { version = "1.0.101", optional = true, features = ["derive"] }
+scale-info = { version = "1.0.0", default-features = false, features = ["derive"] }
+sp-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-block-builder = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-consensus-aura = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-core = { version = "5.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-inherents = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-io = { version = "5.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-offchain = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-runtime = { version = "5.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-session = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-std = { version = "4.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-transaction-pool = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-version = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 
-frame-executive = { default-features = false, git = "https://github.com/paritytech/substrate" }
-frame-support = { default-features = false, git = "https://github.com/paritytech/substrate" }
-frame-system = { default-features = false, package = "frame-system", git = "https://github.com/paritytech/substrate" }
-frame-system-rpc-runtime-api = { default-features = false, git = "https://github.com/paritytech/substrate" }
-
-pallet-ethereum = { default-features = false, path = "../../frame/ethereum" }
-pallet-evm = { default-features = false, path = "../../frame/evm" }
-pallet-dynamic-fee = { default-features = false, path = "../../frame/dynamic-fee" }
-pallet-evm-precompile-simple = { default-features = false, path = "../../frame/evm/precompile/simple" }
-pallet-evm-precompile-sha3fips = { default-features = false, path = "../../frame/evm/precompile/sha3fips" }
-pallet-evm-precompile-modexp = { default-features = false, path = "../../frame/evm/precompile/modexp" }
-pallet-aura = { default-features = false, git = "https://github.com/paritytech/substrate" }
-pallet-balances = { default-features = false, git = "https://github.com/paritytech/substrate" }
-pallet-grandpa = { default-features = false, git = "https://github.com/paritytech/substrate" }
-pallet-randomness-collective-flip = { default-features = false, git = "https://github.com/paritytech/substrate" }
-pallet-sudo = { default-features = false, git = "https://github.com/paritytech/substrate" }
-pallet-timestamp = { default-features = false, git = "https://github.com/paritytech/substrate" }
-pallet-transaction-payment = { default-features = false, git = "https://github.com/paritytech/substrate" }
-pallet-transaction-payment-rpc-runtime-api = { default-features = false, git = "https://github.com/paritytech/substrate" }
-pallet-base-fee = { default-features = false, path = "../../frame/base-fee" }
-
-sp-api = { default-features = false, git = "https://github.com/paritytech/substrate" }
-sp-block-builder = { default-features = false, git = "https://github.com/paritytech/substrate"}
-sp-consensus-aura = { default-features = false, git = "https://github.com/paritytech/substrate" }
-sp-core = { default-features = false, git = "https://github.com/paritytech/substrate" }
-sp-inherents = { default-features = false, git = "https://github.com/paritytech/substrate"}
-sp-io = { default-features = false, git = "https://github.com/paritytech/substrate" }
-sp-offchain = { default-features = false, git = "https://github.com/paritytech/substrate" }
-sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate" }
-sp-session = { default-features = false, git = "https://github.com/paritytech/substrate" }
-sp-std = { default-features = false, git = "https://github.com/paritytech/substrate" }
-sp-transaction-pool = { default-features = false, git = "https://github.com/paritytech/substrate" }
-sp-version = { default-features = false, git = "https://github.com/paritytech/substrate" }
+frame-executive = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+frame-system-rpc-runtime-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+pallet-aura = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+pallet-balances = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+pallet-grandpa = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+pallet-randomness-collective-flip = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+pallet-sudo = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+pallet-timestamp = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+pallet-transaction-payment = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+pallet-transaction-payment-rpc-runtime-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 
 fp-rpc = { default-features = false, path = "../../primitives/rpc" }
 fp-self-contained = { default-features = false, path = "../../primitives/self-contained" }
-
-scale-info = { version = "1.0.0", default-features = false, features = ["derive"] }
+pallet-base-fee = { default-features = false, path = "../../frame/base-fee" }
+pallet-dynamic-fee = { default-features = false, path = "../../frame/dynamic-fee" }
+pallet-ethereum = { default-features = false, path = "../../frame/ethereum" }
+pallet-evm = { default-features = false, path = "../../frame/evm" }
+pallet-evm-precompile-simple = { default-features = false, path = "../../frame/evm/precompile/simple" }
+pallet-evm-precompile-sha3fips = { default-features = false, path = "../../frame/evm/precompile/sha3fips" }
+pallet-evm-precompile-modexp = { default-features = false, path = "../../frame/evm/precompile/modexp" }
 
 # benchmarking dependencies
-frame-benchmarking = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true }
-frame-system-benchmarking = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true }
+frame-benchmarking = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false, optional = true }
+frame-system-benchmarking = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false, optional = true }
 
 [build-dependencies]
-substrate-wasm-builder = { git = "https://github.com/paritytech/substrate" }
+substrate-wasm-builder = { version = "5.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 
 [features]
 default = ["std", "aura"]
 aura = []
 manual-seal = []
 std = [
-	"codec/std",
 	"serde",
 
-	"frame-executive/std",
-	"frame-support/std",
-	"frame-system-rpc-runtime-api/std",
-	"frame-system/std",
-	"fp-rpc/std",
-	"fp-self-contained/std",
-
-	"pallet-ethereum/std",
-	"pallet-evm/std",
-	"pallet-dynamic-fee/std",
-	"pallet-evm-precompile-simple/std",
-	"pallet-evm-precompile-sha3fips/std",
-	"pallet-aura/std",
-	"pallet-balances/std",
-	"pallet-grandpa/std",
-	"pallet-randomness-collective-flip/std",
-	"pallet-sudo/std",
-	"pallet-timestamp/std",
-	"pallet-transaction-payment-rpc-runtime-api/std",
-	"pallet-transaction-payment/std",
-	"pallet-base-fee/std",
-
+	"codec/std",
+	"scale-info/std",
 	"sp-api/std",
 	"sp-block-builder/std",
 	"sp-consensus-aura/std",
@@ -103,10 +80,31 @@ std = [
 	"sp-std/std",
 	"sp-transaction-pool/std",
 	"sp-version/std",
+
+	"frame-executive/std",
+	"frame-support/std",
+	"frame-system-rpc-runtime-api/std",
+	"frame-system/std",
+	"pallet-aura/std",
+	"pallet-balances/std",
+	"pallet-grandpa/std",
+	"pallet-randomness-collective-flip/std",
+	"pallet-sudo/std",
+	"pallet-timestamp/std",
+	"pallet-transaction-payment-rpc-runtime-api/std",
+	"pallet-transaction-payment/std",
+
+	"fp-rpc/std",
+	"fp-self-contained/std",
+	"pallet-base-fee/std",
+	"pallet-dynamic-fee/std",
+	"pallet-ethereum/std",
+	"pallet-evm/std",
+	"pallet-evm-precompile-simple/std",
+	"pallet-evm-precompile-sha3fips/std",
+
 	"frame-benchmarking/std",
 	"frame-system-benchmarking/std",
-
-	"scale-info/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",

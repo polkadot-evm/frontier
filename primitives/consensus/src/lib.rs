@@ -88,22 +88,22 @@ pub enum FindLogError {
 	MultipleLogs,
 }
 
-pub fn find_pre_log<Hash>(digest: &Digest<Hash>) -> Result<PreLog, FindLogError> {
+pub fn find_pre_log(digest: &Digest) -> Result<PreLog, FindLogError> {
 	_find_log(digest, OpaqueDigestItemId::PreRuntime(&FRONTIER_ENGINE_ID))
 }
 
-pub fn find_post_log<Hash>(digest: &Digest<Hash>) -> Result<PostLog, FindLogError> {
+pub fn find_post_log(digest: &Digest) -> Result<PostLog, FindLogError> {
 	_find_log(digest, OpaqueDigestItemId::Consensus(&FRONTIER_ENGINE_ID))
 }
 
-fn _find_log<Hash, Log: Decode>(
-	digest: &Digest<Hash>,
+fn _find_log<Log: Decode>(
+	digest: &Digest,
 	digest_item_id: OpaqueDigestItemId,
 ) -> Result<Log, FindLogError> {
 	let mut found = None;
 
 	for log in digest.logs() {
-		let log = log.try_to::<Log>(digest_item_id);
+        let log = log.try_to::<Log>(digest_item_id);
 		match (log, found.is_some()) {
 			(Some(_), true) => return Err(FindLogError::MultipleLogs),
 			(Some(log), false) => found = Some(log),
@@ -114,7 +114,7 @@ fn _find_log<Hash, Log: Decode>(
 	found.ok_or(FindLogError::NotFound)
 }
 
-pub fn find_log<Hash>(digest: &Digest<Hash>) -> Result<Log, FindLogError> {
+pub fn find_log(digest: &Digest) -> Result<Log, FindLogError> {
 	let mut found = None;
 
 	for log in digest.logs() {
@@ -136,6 +136,6 @@ pub fn find_log<Hash>(digest: &Digest<Hash>) -> Result<Log, FindLogError> {
 	found.ok_or(FindLogError::NotFound)
 }
 
-pub fn ensure_log<Hash>(digest: &Digest<Hash>) -> Result<(), FindLogError> {
+pub fn ensure_log(digest: &Digest) -> Result<(), FindLogError> {
 	find_log(digest).map(|_log| ())
 }

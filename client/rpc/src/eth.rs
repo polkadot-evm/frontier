@@ -15,10 +15,8 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
-use crate::{
-	error_on_execution_failure, frontier_backend_client, internal_err, public_key, EthSigner,
-	StorageOverride,
-};
+
+use codec::{Decode, Encode};
 use ethereum::{BlockV2 as EthereumBlock, TransactionV2 as EthereumTransaction};
 use ethereum_types::{H160, H256, H512, H64, U256, U64};
 use evm::{ExitError, ExitReason};
@@ -31,7 +29,9 @@ use fc_rpc_core::{
 	},
 	EthApi as EthApiT, EthFilterApi as EthFilterApiT, NetApi as NetApiT, Web3Api as Web3ApiT,
 };
-use fp_rpc::{ConvertTransaction, EthereumRuntimeRPCApi, TransactionStatus};
+pub use fc_rpc_core::{EthApiServer, EthFilterApiServer, NetApiServer, Web3ApiServer};
+use fp_rpc::{ConvertTransactionRuntimeApi, EthereumRuntimeRPCApi, TransactionStatus};
+use fp_storage::EthereumStorageSchema;
 use futures::{future::TryFutureExt, StreamExt};
 use jsonrpc_core::{futures::future, BoxFuture, Result};
 use lru::LruCache;
@@ -59,16 +59,16 @@ use std::{
 };
 use tokio::sync::{mpsc, oneshot};
 
-use crate::overrides::OverrideHandle;
-use codec::{self, Decode, Encode};
-pub use fc_rpc_core::{EthApiServer, EthFilterApiServer, NetApiServer, Web3ApiServer};
-use pallet_ethereum::EthereumStorageSchema;
+use crate::{
+	error_on_execution_failure, frontier_backend_client, internal_err, overrides::OverrideHandle,
+	public_key, EthSigner, StorageOverride,
+};
 
 pub struct EthApi<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> {
 	pool: Arc<P>,
 	graph: Arc<Pool<A>>,
 	client: Arc<C>,
-	convert_transaction: CT,
+	convert_transaction: Option<CT>,
 	network: Arc<NetworkService<B, H>>,
 	is_authority: bool,
 	signers: Vec<Box<dyn EthSigner>>,
@@ -84,8 +84,10 @@ pub struct EthApi<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> {
 impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> EthApi<B, C, P, CT, BE, H, A>
 where
 	C: ProvideRuntimeApi<B>,
-	C::Api: EthereumRuntimeRPCApi<B>,
-	C::Api: BlockBuilder<B>,
+	C::Api: sp_api::ApiExt<B>
+		+ BlockBuilder<B>
+		+ ConvertTransactionRuntimeApi<B>
+		+ EthereumRuntimeRPCApi<B>,
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	A: ChainApi<Block = B> + 'static,
 	C: Send + Sync + 'static,
@@ -94,7 +96,7 @@ where
 		client: Arc<C>,
 		pool: Arc<P>,
 		graph: Arc<Pool<A>>,
-		convert_transaction: CT,
+		convert_transaction: Option<CT>,
 		network: Arc<NetworkService<B, H>>,
 		signers: Vec<Box<dyn EthSigner>>,
 		overrides: Arc<OverrideHandle<B>>,
@@ -223,9 +225,10 @@ fn transaction_build(
 	} else if !is_eip1559 {
 		// This is a pre-eip1559 support transaction a.k.a. txns on frontier before we introduced EIP1559 support in
 		// pallet-ethereum schema V2.
-		// They do not include `maxFeePerGas` or `maxPriorityFeePerGas` fields.
+		// They do not include `maxFeePerGas`, `maxPriorityFeePerGas` or `type` fields.
 		transaction.max_fee_per_gas = None;
 		transaction.max_priority_fee_per_gas = None;
+		transaction.transaction_type = None;
 	}
 
 	let pubkey = match public_key(&ethereum_transaction) {
@@ -535,15 +538,17 @@ impl<B, C, P, CT, BE, H: ExHashT, A> EthApiT for EthApi<B, C, P, CT, BE, H, A>
 where
 	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
 	C: HeaderBackend<B> + HeaderMetadata<B, Error = BlockChainError> + 'static,
-	C::Api: EthereumRuntimeRPCApi<B>,
-	C::Api: BlockBuilder<B>,
+	C::Api: sp_api::ApiExt<B>
+		+ BlockBuilder<B>
+		+ ConvertTransactionRuntimeApi<B>
+		+ EthereumRuntimeRPCApi<B>,
 	BE: Backend<B> + 'static,
 	BE::State: StateBackend<BlakeTwo256>,
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	C: Send + Sync + 'static,
 	P: TransactionPool<Block = B> + Send + Sync + 'static,
 	A: ChainApi<Block = B> + 'static,
-	CT: ConvertTransaction<<B as BlockT>::Extrinsic> + Send + Sync + 'static,
+	CT: fp_rpc::ConvertTransaction<<B as BlockT>::Extrinsic> + Send + Sync + 'static,
 {
 	fn protocol_version(&self) -> Result<u64> {
 		Ok(1)
@@ -1023,14 +1028,65 @@ where
 			None => return Box::pin(future::err(internal_err("no signer available"))),
 		};
 		let transaction_hash = transaction.hash();
+
+		let block_hash = BlockId::hash(self.client.info().best_hash);
+		let api_version = match self
+			.client
+			.runtime_api()
+			.api_version::<dyn ConvertTransactionRuntimeApi<B>>(&block_hash)
+		{
+			Ok(api_version) => api_version,
+			_ => return Box::pin(future::err(internal_err("cannot access runtime api"))),
+		};
+
+		let extrinsic = match api_version {
+			Some(2) => match self
+				.client
+				.runtime_api()
+				.convert_transaction(&block_hash, transaction)
+			{
+				Ok(extrinsic) => extrinsic,
+				Err(_) => return Box::pin(future::err(internal_err("cannot access runtime api"))),
+			},
+			Some(1) => {
+				if let ethereum::TransactionV2::Legacy(legacy_transaction) = transaction {
+					// To be compatible with runtimes that do not support transactions v2
+					#[allow(deprecated)]
+					match self
+						.client
+						.runtime_api()
+						.convert_transaction_before_version_2(&block_hash, legacy_transaction)
+					{
+						Ok(extrinsic) => extrinsic,
+						Err(_) => {
+							return Box::pin(future::err(internal_err("cannot access runtime api")))
+						}
+					}
+				} else {
+					return Box::pin(future::err(internal_err(
+						"This runtime not support eth transactions v2",
+					)));
+				}
+			}
+			None => {
+				if let Some(ref convert_transaction) = self.convert_transaction {
+					convert_transaction.convert_transaction(transaction.clone())
+				} else {
+					return Box::pin(future::err(internal_err(
+						"No TransactionConverter is provided and the runtime api ConvertTransactionRuntimeApi is not found"
+					)));
+				}
+			}
+			_ => {
+				return Box::pin(future::err(internal_err(
+					"ConvertTransactionRuntimeApi version not supported",
+				)))
+			}
+		};
+
 		Box::pin(
 			self.pool
-				.submit_one(
-					&BlockId::hash(hash),
-					TransactionSource::Local,
-					self.convert_transaction
-						.convert_transaction(transaction.clone()),
-				)
+				.submit_one(&block_hash, TransactionSource::Local, extrinsic)
 				.map_ok(move |_| transaction_hash)
 				.map_err(|err| {
 					internal_err(format!("submit transaction to pool failed: {:?}", err))
@@ -1064,15 +1120,65 @@ where
 		};
 
 		let transaction_hash = transaction.hash();
-		let hash = self.client.info().best_hash;
+
+		let block_hash = BlockId::hash(self.client.info().best_hash);
+		let api_version = match self
+			.client
+			.runtime_api()
+			.api_version::<dyn ConvertTransactionRuntimeApi<B>>(&block_hash)
+		{
+			Ok(api_version) => api_version,
+			_ => return Box::pin(future::err(internal_err("cannot access runtime api"))),
+		};
+
+		let extrinsic = match api_version {
+			Some(2) => match self
+				.client
+				.runtime_api()
+				.convert_transaction(&block_hash, transaction)
+			{
+				Ok(extrinsic) => extrinsic,
+				Err(_) => return Box::pin(future::err(internal_err("cannot access runtime api"))),
+			},
+			Some(1) => {
+				if let ethereum::TransactionV2::Legacy(legacy_transaction) = transaction {
+					// To be compatible with runtimes that do not support transactions v2
+					#[allow(deprecated)]
+					match self
+						.client
+						.runtime_api()
+						.convert_transaction_before_version_2(&block_hash, legacy_transaction)
+					{
+						Ok(extrinsic) => extrinsic,
+						Err(_) => {
+							return Box::pin(future::err(internal_err("cannot access runtime api")))
+						}
+					}
+				} else {
+					return Box::pin(future::err(internal_err(
+						"This runtime not support eth transactions v2",
+					)));
+				}
+			}
+			None => {
+				if let Some(ref convert_transaction) = self.convert_transaction {
+					convert_transaction.convert_transaction(transaction.clone())
+				} else {
+					return Box::pin(future::err(internal_err(
+					"No TransactionConverter is provided and the runtime api ConvertTransactionRuntimeApi is not found"
+				)));
+				}
+			}
+			_ => {
+				return Box::pin(future::err(internal_err(
+					"ConvertTransactionRuntimeApi version not supported",
+				)))
+			}
+		};
+
 		Box::pin(
 			self.pool
-				.submit_one(
-					&BlockId::hash(hash),
-					TransactionSource::Local,
-					self.convert_transaction
-						.convert_transaction(transaction.clone()),
-				)
+				.submit_one(&block_hash, TransactionSource::Local, extrinsic)
 				.map_ok(move |_| transaction_hash)
 				.map_err(|err| {
 					internal_err(format!("submit transaction to pool failed: {:?}", err))
@@ -1092,6 +1198,7 @@ where
 			data,
 			nonce,
 			access_list,
+			..
 		} = request;
 
 		let (gas_price, max_fee_per_gas, max_priority_fee_per_gas) = {
@@ -1117,13 +1224,32 @@ where
 			}
 		};
 
+		let api_version =
+			if let Ok(Some(api_version)) = api.api_version::<dyn EthereumRuntimeRPCApi<B>>(&id) {
+				api_version
+			} else {
+				return Err(internal_err(format!(
+					"failed to retrieve Runtime Api version"
+				)));
+			};
 		// use given gas limit or query current block's limit
 		let gas_limit = match gas {
 			Some(amount) => amount,
 			None => {
-				let block = api
-					.current_block(&id)
-					.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?;
+				let block = if api_version > 1 {
+					api.current_block(&id)
+						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
+				} else {
+					#[allow(deprecated)]
+					let legacy_block = api.current_block_before_version_2(&id)
+						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?;
+					if let Some(block) = legacy_block {
+						Some(block.into())
+					} else {
+						None
+					}
+				};
+
 				if let Some(block) = block {
 					block.header.gas_limit
 				} else {
@@ -1134,15 +1260,6 @@ where
 			}
 		};
 		let data = data.map(|d| d.0).unwrap_or_default();
-
-		let api_version =
-			if let Ok(Some(api_version)) = api.api_version::<dyn EthereumRuntimeRPCApi<B>>(&id) {
-				api_version
-			} else {
-				return Err(internal_err(format!(
-					"failed to retrieve Runtime Api version"
-				)));
-			};
 		match to {
 			Some(to) => {
 				if api_version == 1 {
@@ -1235,7 +1352,11 @@ where
 					.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
 
 					error_on_execution_failure(&info.exit_reason, &[])?;
-					Ok(Bytes(info.value[..].to_vec()))
+
+					let code = api
+						.account_code_at(&id, info.value)
+						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?;
+					Ok(Bytes(code))
 				} else if api_version >= 2 && api_version < 4 {
 					// Post-london
 					#[allow(deprecated)]
@@ -1254,7 +1375,11 @@ where
 					.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
 
 					error_on_execution_failure(&info.exit_reason, &[])?;
-					Ok(Bytes(info.value[..].to_vec()))
+
+					let code = api
+						.account_code_at(&id, info.value)
+						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?;
+					Ok(Bytes(code))
 				} else if api_version == 4 {
 					// Post-london + access list support
 					let access_list = access_list.unwrap_or_default();
@@ -1280,7 +1405,11 @@ where
 						.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
 
 					error_on_execution_failure(&info.exit_reason, &[])?;
-					Ok(Bytes(info.value[..].to_vec()))
+
+					let code = api
+						.account_code_at(&id, info.value)
+						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?;
+					Ok(Bytes(code))
 				} else {
 					return Err(internal_err(format!(
 						"failed to retrieve Runtime Api version"
@@ -1395,8 +1524,21 @@ where
 				used_gas: U256,
 			}
 
-			// Create a helper to check if a gas allowance results in an executable transaction
-			let executable = move |request, gas_limit, api_version| -> Result<ExecutableResult> {
+			// Create a helper to check if a gas allowance results in an executable transaction.
+			//
+			// A new ApiRef instance needs to be used per execution to avoid the overlayed state to affect
+			// the estimation result of subsequent calls.
+			//
+			// Note that this would have a performance penalty if we introduce gas estimation for past
+			// blocks - and thus, past runtime versions. Substrate has a default `runtime_cache_size` of
+			// 2 slots LRU-style, meaning if users were to access multiple runtime versions in a short period
+			// of time, the RPC response time would degrade a lot, as the VersionedRuntime needs to be compiled.
+			//
+			// To solve that, and if we introduce historical gas estimation, we'd need to increase that default.
+			#[rustfmt::skip]
+			let executable = move |
+				request, gas_limit, api_version, api: sp_api::ApiRef<'_, C::Api>, estimate_mode
+			| -> Result<ExecutableResult> {
 				let CallRequest {
 					from,
 					to,
@@ -1427,7 +1569,7 @@ where
 								gas_limit,
 								gas_price,
 								nonce,
-								true,
+								estimate_mode,
 							)
 							.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
 							.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?
@@ -1444,7 +1586,7 @@ where
 								max_fee_per_gas,
 								max_priority_fee_per_gas,
 								nonce,
-								true,
+								estimate_mode,
 							)
 							.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
 							.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?
@@ -1461,7 +1603,7 @@ where
 								max_fee_per_gas,
 								max_priority_fee_per_gas,
 								nonce,
-								true,
+								estimate_mode,
 								Some(
 									access_list
 										.into_iter()
@@ -1487,7 +1629,7 @@ where
 								gas_limit,
 								gas_price,
 								nonce,
-								true,
+								estimate_mode,
 							)
 							.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
 							.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?
@@ -1503,7 +1645,7 @@ where
 								max_fee_per_gas,
 								max_priority_fee_per_gas,
 								nonce,
-								true,
+								estimate_mode,
 							)
 							.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
 							.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?
@@ -1519,7 +1661,7 @@ where
 								max_fee_per_gas,
 								max_priority_fee_per_gas,
 								nonce,
-								true,
+								estimate_mode,
 								Some(
 									access_list
 										.into_iter()
@@ -1554,11 +1696,18 @@ where
 
 			// Verify that the transaction succeed with highest capacity
 			let cap = highest;
+			let estimate_mode = true;
 			let ExecutableResult {
 				data,
 				exit_reason,
 				used_gas,
-			} = executable(request.clone(), highest, api_version)?;
+			} = executable(
+				request.clone(),
+				highest,
+				api_version,
+				client.runtime_api(),
+				estimate_mode,
+			)?;
 			match exit_reason {
 				ExitReason::Succeed(_) => (),
 				ExitReason::Error(ExitError::OutOfGas) => {
@@ -1583,6 +1732,8 @@ where
 							request.clone(),
 							get_current_block_gas_limit().await?,
 							api_version,
+							client.runtime_api(),
+							estimate_mode,
 						)?;
 						match exit_reason {
 							ExitReason::Succeed(_) => {
@@ -1608,6 +1759,8 @@ where
 			}
 			#[cfg(feature = "rpc_binary_search_estimate")]
 			{
+				// On binary search, evm estimate mode is disabled
+				let estimate_mode = false;
 				// Define the lower bound of the binary search
 				let mut lowest = MIN_GAS_PER_TX;
 
@@ -1621,7 +1774,13 @@ where
 						data,
 						exit_reason,
 						used_gas: _,
-					} = executable(request.clone(), mid, api_version)?;
+					} = executable(
+						request.clone(),
+						mid,
+						api_version,
+						client.runtime_api(),
+						estimate_mode,
+					)?;
 					match exit_reason {
 						ExitReason::Succeed(_) => {
 							highest = mid;
@@ -1663,6 +1822,18 @@ where
 			{
 				Some((hash, index)) => (hash, index as usize),
 				None => {
+					let api = client.runtime_api();
+					let best_block: BlockId<B> = BlockId::Hash(client.info().best_hash);
+
+					let api_version = if let Ok(Some(api_version)) =
+						api.api_version::<dyn EthereumRuntimeRPCApi<B>>(&best_block)
+					{
+						api_version
+					} else {
+						return Err(internal_err(format!(
+							"failed to retrieve Runtime Api version"
+						)));
+					};
 					// If the transaction is not yet mapped in the frontier db,
 					// check for it in the transaction pool.
 					let mut xts: Vec<<B as BlockT>::Extrinsic> = Vec::new();
@@ -1685,16 +1856,24 @@ where
 							.collect::<Vec<<B as BlockT>::Extrinsic>>(),
 					);
 
-					let best_block: BlockId<B> = BlockId::Hash(client.info().best_hash);
-					let ethereum_transactions: Vec<EthereumTransaction> = client
-						.runtime_api()
-						.extrinsic_filter(&best_block, xts)
-						.map_err(|err| {
+					let ethereum_transactions: Vec<EthereumTransaction> = if api_version > 1 {
+						api.extrinsic_filter(&best_block, xts).map_err(|err| {
 							internal_err(format!(
 								"fetch runtime extrinsic filter failed: {:?}",
 								err
 							))
-						})?;
+						})?
+					} else {
+						#[allow(deprecated)]
+						let legacy = api.extrinsic_filter_before_version_2(&best_block, xts)
+							.map_err(|err| {
+								internal_err(format!(
+									"fetch runtime extrinsic filter failed: {:?}",
+									err
+								))
+							})?;
+						legacy.into_iter().map(|tx| tx.into()).collect()
+					};
 
 					for txn in ethereum_transactions {
 						let inner_hash = txn.hash();
@@ -1905,6 +2084,7 @@ where
 				.current_transaction_statuses(schema, substrate_hash)
 				.await;
 			let receipts = handler.current_receipts(&id);
+			let is_eip1559 = handler.is_eip1559(&id);
 
 			match (block, statuses, receipts) {
 				(Some(block), Some(statuses), Some(receipts)) => {
@@ -1912,26 +2092,70 @@ where
 						H256::from_slice(Keccak256::digest(&rlp::encode(&block.header)).as_slice());
 					let receipt = receipts[index].clone();
 
-					let (logs, logs_bloom, status_code, cumulative_gas_used) = match receipt {
-						ethereum::ReceiptV3::Legacy(d)
-						| ethereum::ReceiptV3::EIP2930(d)
-						| ethereum::ReceiptV3::EIP1559(d) => (d.logs, d.logs_bloom, d.status_code, d.used_gas),
-					};
+					let (logs, logs_bloom, status_code, cumulative_gas_used, gas_used) =
+						if !is_eip1559 {
+							// Pre-london frontier update stored receipts require cumulative gas calculation.
+							match receipt {
+								ethereum::ReceiptV3::Legacy(d) => {
+									let index = core::cmp::min(receipts.len(), index + 1);
+									let cumulative_gas: u32 = receipts[..index]
+										.iter()
+										.map(|r| match r {
+											ethereum::ReceiptV3::Legacy(d) => {
+												Ok(d.used_gas.as_u32())
+											}
+											_ => Err(internal_err(format!(
+												"Unknown receipt for request {}",
+												hash
+											))),
+										})
+										.sum::<Result<u32>>()?;
+									(
+										d.logs,
+										d.logs_bloom,
+										d.status_code,
+										U256::from(cumulative_gas),
+										d.used_gas,
+									)
+								}
+								_ => {
+									return Err(internal_err(format!(
+										"Unknown receipt for request {}",
+										hash
+									)))
+								}
+							}
+						} else {
+							match receipt {
+								ethereum::ReceiptV3::Legacy(d)
+								| ethereum::ReceiptV3::EIP2930(d)
+								| ethereum::ReceiptV3::EIP1559(d) => {
+									let cumulative_gas = d.used_gas;
+									let gas_used = if index > 0 {
+										let previous_receipt = receipts[index - 1].clone();
+										let previous_gas_used = match previous_receipt {
+											ethereum::ReceiptV3::Legacy(d)
+											| ethereum::ReceiptV3::EIP2930(d)
+											| ethereum::ReceiptV3::EIP1559(d) => d.used_gas,
+										};
+										cumulative_gas.saturating_sub(previous_gas_used)
+									} else {
+										cumulative_gas
+									};
+									(
+										d.logs,
+										d.logs_bloom,
+										d.status_code,
+										cumulative_gas,
+										gas_used,
+									)
+								}
+							}
+						};
 
 					let status = statuses[index].clone();
 					let mut cumulative_receipts = receipts.clone();
 					cumulative_receipts.truncate((status.transaction_index + 1) as usize);
-					let gas_used = if index > 0 {
-						let previous_receipt = receipts[index - 1].clone();
-						let previous_gas_used = match previous_receipt {
-							ethereum::ReceiptV3::Legacy(d)
-							| ethereum::ReceiptV3::EIP2930(d)
-							| ethereum::ReceiptV3::EIP1559(d) => d.used_gas,
-						};
-						cumulative_gas_used.saturating_sub(previous_gas_used)
-					} else {
-						cumulative_gas_used
-					};
 
 					let transaction = block.transactions[index].clone();
 					let effective_gas_price = match transaction {
@@ -2078,12 +2302,7 @@ where
 	}
 
 	fn work(&self) -> Result<Work> {
-		Ok(Work {
-			pow_hash: H256::default(),
-			seed_hash: H256::default(),
-			target: H256::default(),
-			number: None,
-		})
+		Ok(Work::default())
 	}
 
 	fn submit_work(&self, _: H64, _: H256, _: H256) -> Result<bool> {
@@ -2113,11 +2332,23 @@ where
 			self.backend.as_ref(),
 			Some(newest_block),
 		) {
-			let header = self.client.header(id).unwrap().unwrap();
+			let header = match self.client.header(id) {
+				Ok(Some(h)) => h,
+				_ => {
+					return Err(internal_err(format!("Failed to retrieve header at {}", id)));
+				}
+			};
+			let number = match self.client.number(header.hash()) {
+				Ok(Some(n)) => n,
+				_ => {
+					return Err(internal_err(format!(
+						"Failed to retrieve block number at {}",
+						id
+					)));
+				}
+			};
 			// Highest and lowest block number within the requested range.
-			let highest = UniqueSaturatedInto::<u64>::unique_saturated_into(
-				self.client.number(header.hash()).unwrap().unwrap(),
-			);
+			let highest = UniqueSaturatedInto::<u64>::unique_saturated_into(number);
 			let lowest = highest.saturating_sub(block_count);
 			// Tip of the chain.
 			let best_number =
@@ -2142,7 +2373,7 @@ where
 						// If the request includes reward percentiles, get them from the cache.
 						if let Some(ref requested_percentiles) = reward_percentiles {
 							let mut block_rewards = Vec::new();
-							// Resoltion is half a point. I.e. 1.0,1.5
+							// Resolution is half a point. I.e. 1.0,1.5
 							let resolution_per_percentile: f64 = 2.0;
 							// Get cached reward for each provided percentile.
 							for p in requested_percentiles {
@@ -2249,8 +2480,14 @@ where
 	C: Send + Sync + 'static,
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
 {
-	fn is_listening(&self) -> Result<bool> {
-		Ok(true)
+	fn version(&self) -> Result<String> {
+		let hash = self.client.info().best_hash;
+		Ok(self
+			.client
+			.runtime_api()
+			.chain_id(&BlockId::Hash(hash))
+			.map_err(|_| internal_err("fetch runtime chain id failed"))?
+			.to_string())
 	}
 
 	fn peer_count(&self) -> Result<PeerCount> {
@@ -2261,14 +2498,8 @@ where
 		})
 	}
 
-	fn version(&self) -> Result<String> {
-		let hash = self.client.info().best_hash;
-		Ok(self
-			.client
-			.runtime_api()
-			.chain_id(&BlockId::Hash(hash))
-			.map_err(|_| internal_err("fetch runtime chain id failed"))?
-			.to_string())
+	fn is_listening(&self) -> Result<bool> {
+		Ok(true)
 	}
 }
 
@@ -2280,7 +2511,7 @@ pub struct Web3Api<B, C> {
 impl<B, C> Web3Api<B, C> {
 	pub fn new(client: Arc<C>) -> Self {
 		Self {
-			client: client,
+			client,
 			_marker: PhantomData,
 		}
 	}
@@ -2388,7 +2619,7 @@ where
 				key,
 				FilterPoolItem {
 					last_poll: BlockNumber::Num(block_number),
-					filter_type: filter_type,
+					filter_type,
 					at_block: block_number,
 				},
 			);
@@ -2462,7 +2693,7 @@ where
 							key,
 							FilterPoolItem {
 								last_poll: BlockNumber::Num(next),
-								filter_type: pool_item.clone().filter_type,
+								filter_type: pool_item.filter_type.clone(),
 								at_block: pool_item.at_block,
 							},
 						);
@@ -2476,7 +2707,7 @@ where
 							key,
 							FilterPoolItem {
 								last_poll: BlockNumber::Num(block_number + 1),
-								filter_type: pool_item.clone().filter_type,
+								filter_type: pool_item.filter_type.clone(),
 								at_block: pool_item.at_block,
 							},
 						);
@@ -3007,7 +3238,7 @@ enum EthBlockDataCacheMessage<B: BlockT> {
 	},
 }
 
-/// Manage LRU cachse for block data and their transaction statuses.
+/// Manage LRU caches for block data and their transaction statuses.
 /// These are large and take a lot of time to fetch from the database.
 /// Storing them in an LRU cache will allow to reduce database accesses
 /// when many subsequent requests are related to the same blocks.
@@ -3024,7 +3255,7 @@ impl<B: BlockT> EthBlockDataCache<B> {
 		let outer_task_tx = task_tx.clone();
 		let outer_spawn_handle = spawn_handle.clone();
 
-		outer_spawn_handle.spawn("EthBlockDataCache", async move {
+		outer_spawn_handle.spawn("EthBlockDataCache", None, async move {
 			let mut blocks_cache = LruCache::<B::Hash, EthereumBlock>::new(blocks_cache_size);
 			let mut statuses_cache =
 				LruCache::<B::Hash, Vec<TransactionStatus>>::new(statuses_cache_size);
@@ -3144,7 +3375,7 @@ impl<B: BlockT> EthBlockDataCache<B> {
 		// the data.
 		wait_list.insert(block_hash.clone(), vec![response_tx]);
 
-		spawn_handle.spawn("EthBlockDataCache Worker", async move {
+		spawn_handle.spawn("EthBlockDataCache Worker", None, async move {
 			let handler = overrides
 				.schemas
 				.get(&schema)

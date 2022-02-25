@@ -60,6 +60,9 @@ pub struct TransactionRequest {
 	/// Pre-pay to warm storage access.
 	#[serde(default)]
 	pub access_list: Option<Vec<AccessListItem>>,
+	/// EIP-2718 type
+	#[serde(rename = "type")]
+	pub transaction_type: Option<U256>,
 }
 
 impl Into<Option<TransactionMessage>> for TransactionRequest {

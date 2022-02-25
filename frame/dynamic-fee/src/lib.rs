@@ -18,19 +18,15 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use async_trait::async_trait;
+#[cfg(test)]
+mod tests;
+
 use frame_support::inherent::IsFatalError;
 use sp_core::U256;
 use sp_inherents::{InherentData, InherentIdentifier};
-use sp_std::{
-	cmp::{max, min},
-	result,
-};
+use sp_std::cmp::{max, min};
 
-pub use pallet::*;
-
-#[cfg(test)]
-mod tests;
+pub use self::pallet::*;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -40,6 +36,7 @@ pub mod pallet {
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
+	#[pallet::without_storage_info]
 	pub struct Pallet<T>(_);
 
 	#[pallet::config]
@@ -133,10 +130,7 @@ pub mod pallet {
 			Some(Call::note_min_gas_price_target { target })
 		}
 
-		fn check_inherent(
-			_call: &Self::Call,
-			_data: &InherentData,
-		) -> result::Result<(), Self::Error> {
+		fn check_inherent(_call: &Self::Call, _data: &InherentData) -> Result<(), Self::Error> {
 			Ok(())
 		}
 
@@ -160,7 +154,7 @@ pub type InherentType = U256;
 pub struct InherentDataProvider(pub InherentType);
 
 #[cfg(feature = "std")]
-#[async_trait]
+#[async_trait::async_trait]
 impl sp_inherents::InherentDataProvider for InherentDataProvider {
 	fn provide_inherent_data(
 		&self,
