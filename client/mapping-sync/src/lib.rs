@@ -147,7 +147,7 @@ where
 
 		frontier_backend
 			.meta()
-			.write_current_syncing_tips(current_syncing_tips.clone())?;
+			.write_current_syncing_tips(current_syncing_tips)?;
 		Ok(true)
 	} else {
 		let mut have_next = true;
@@ -169,7 +169,7 @@ where
 
 		frontier_backend
 			.meta()
-			.write_current_syncing_tips(current_syncing_tips.clone())?;
+			.write_current_syncing_tips(current_syncing_tips)?;
 		Ok(have_next)
 	}
 }
@@ -190,8 +190,14 @@ where
 	let mut synced_any = false;
 
 	for _ in 0..limit {
-		synced_any =
-			synced_any || sync_one_block(client, substrate_backend, frontier_backend, sync_from, strategy)?;
+		synced_any = synced_any
+			|| sync_one_block(
+				client,
+				substrate_backend,
+				frontier_backend,
+				sync_from,
+				strategy,
+			)?;
 	}
 
 	Ok(synced_any)
