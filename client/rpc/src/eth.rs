@@ -1506,9 +1506,21 @@ where
 				used_gas: U256,
 			}
 
-			// Create a helper to check if a gas allowance results in an executable transaction
+			// Create a helper to check if a gas allowance results in an executable transaction.
+			//
+			// A new ApiRef instance needs to be used per execution to avoid the overlayed state to affect
+			// the estimation result of subsequent calls.
+			//
+			// Note that this would have a performance penalty if we introduce gas estimation for past
+			// blocks - and thus, past runtime versions. Substrate has a default `runtime_cache_size` of
+			// 2 slots LRU-style, meaning if users were to access multiple runtime versions in a short period
+			// of time, the RPC response time would degrade a lot, as the VersionedRuntime needs to be compiled.
+			//
+			// To solve that, and if we introduce historical gas estimation, we'd need to increase that default.
 			#[rustfmt::skip]
-			let executable = move |request, gas_limit, api_version, estimate_mode| -> Result<ExecutableResult> {
+			let executable = move |
+				request, gas_limit, api_version, api: sp_api::ApiRef<'_, C::Api>, estimate_mode
+			| -> Result<ExecutableResult> {
 				let CallRequest {
 					from,
 					to,
@@ -1671,7 +1683,13 @@ where
 				data,
 				exit_reason,
 				used_gas,
-			} = executable(request.clone(), highest, api_version, estimate_mode)?;
+			} = executable(
+				request.clone(),
+				highest,
+				api_version,
+				client.runtime_api(),
+				estimate_mode,
+			)?;
 			match exit_reason {
 				ExitReason::Succeed(_) => (),
 				ExitReason::Error(ExitError::OutOfGas) => {
@@ -1696,6 +1714,7 @@ where
 							request.clone(),
 							get_current_block_gas_limit().await?,
 							api_version,
+							client.runtime_api(),
 							estimate_mode,
 						)?;
 						match exit_reason {
@@ -1737,7 +1756,13 @@ where
 						data,
 						exit_reason,
 						used_gas: _,
-					} = executable(request.clone(), mid, api_version, estimate_mode)?;
+					} = executable(
+						request.clone(),
+						mid,
+						api_version,
+						client.runtime_api(),
+						estimate_mode,
+					)?;
 					match exit_reason {
 						ExitReason::Succeed(_) => {
 							highest = mid;
@@ -2041,32 +2066,77 @@ where
 				.current_transaction_statuses(schema, substrate_hash)
 				.await;
 			let receipts = handler.current_receipts(&id);
+			let is_eip1559 = handler.is_eip1559(&id);
 
 			match (block, statuses, receipts) {
 				(Some(block), Some(statuses), Some(receipts)) => {
 					let block_hash = H256::from(keccak_256(&rlp::encode(&block.header)));
 					let receipt = receipts[index].clone();
 
-					let (logs, logs_bloom, status_code, cumulative_gas_used) = match receipt {
-						ethereum::ReceiptV3::Legacy(d)
-						| ethereum::ReceiptV3::EIP2930(d)
-						| ethereum::ReceiptV3::EIP1559(d) => (d.logs, d.logs_bloom, d.status_code, d.used_gas),
-					};
+					let (logs, logs_bloom, status_code, cumulative_gas_used, gas_used) =
+						if !is_eip1559 {
+							// Pre-london frontier update stored receipts require cumulative gas calculation.
+							match receipt {
+								ethereum::ReceiptV3::Legacy(d) => {
+									let index = core::cmp::min(receipts.len(), index + 1);
+									let cumulative_gas: u32 = receipts[..index]
+										.iter()
+										.map(|r| match r {
+											ethereum::ReceiptV3::Legacy(d) => {
+												Ok(d.used_gas.as_u32())
+											}
+											_ => Err(internal_err(format!(
+												"Unknown receipt for request {}",
+												hash
+											))),
+										})
+										.sum::<Result<u32>>()?;
+									(
+										d.logs,
+										d.logs_bloom,
+										d.status_code,
+										U256::from(cumulative_gas),
+										d.used_gas,
+									)
+								}
+								_ => {
+									return Err(internal_err(format!(
+										"Unknown receipt for request {}",
+										hash
+									)))
+								}
+							}
+						} else {
+							match receipt {
+								ethereum::ReceiptV3::Legacy(d)
+								| ethereum::ReceiptV3::EIP2930(d)
+								| ethereum::ReceiptV3::EIP1559(d) => {
+									let cumulative_gas = d.used_gas;
+									let gas_used = if index > 0 {
+										let previous_receipt = receipts[index - 1].clone();
+										let previous_gas_used = match previous_receipt {
+											ethereum::ReceiptV3::Legacy(d)
+											| ethereum::ReceiptV3::EIP2930(d)
+											| ethereum::ReceiptV3::EIP1559(d) => d.used_gas,
+										};
+										cumulative_gas.saturating_sub(previous_gas_used)
+									} else {
+										cumulative_gas
+									};
+									(
+										d.logs,
+										d.logs_bloom,
+										d.status_code,
+										cumulative_gas,
+										gas_used,
+									)
+								}
+							}
+						};
 
 					let status = statuses[index].clone();
 					let mut cumulative_receipts = receipts.clone();
 					cumulative_receipts.truncate((status.transaction_index + 1) as usize);
-					let gas_used = if index > 0 {
-						let previous_receipt = receipts[index - 1].clone();
-						let previous_gas_used = match previous_receipt {
-							ethereum::ReceiptV3::Legacy(d)
-							| ethereum::ReceiptV3::EIP2930(d)
-							| ethereum::ReceiptV3::EIP1559(d) => d.used_gas,
-						};
-						cumulative_gas_used.saturating_sub(previous_gas_used)
-					} else {
-						cumulative_gas_used
-					};
 
 					let transaction = block.transactions[index].clone();
 					let effective_gas_price = match transaction {
@@ -2213,12 +2283,7 @@ where
 	}
 
 	fn work(&self) -> Result<Work> {
-		Ok(Work {
-			pow_hash: H256::default(),
-			seed_hash: H256::default(),
-			target: H256::default(),
-			number: None,
-		})
+		Ok(Work::default())
 	}
 
 	fn submit_work(&self, _: H64, _: H256, _: H256) -> Result<bool> {
@@ -2248,11 +2313,23 @@ where
 			self.backend.as_ref(),
 			Some(newest_block),
 		) {
-			let header = self.client.header(id).unwrap().unwrap();
+			let header = match self.client.header(id) {
+				Ok(Some(h)) => h,
+				_ => {
+					return Err(internal_err(format!("Failed to retrieve header at {}", id)));
+				}
+			};
+			let number = match self.client.number(header.hash()) {
+				Ok(Some(n)) => n,
+				_ => {
+					return Err(internal_err(format!(
+						"Failed to retrieve block number at {}",
+						id
+					)));
+				}
+			};
 			// Highest and lowest block number within the requested range.
-			let highest = UniqueSaturatedInto::<u64>::unique_saturated_into(
-				self.client.number(header.hash()).unwrap().unwrap(),
-			);
+			let highest = UniqueSaturatedInto::<u64>::unique_saturated_into(number);
 			let lowest = highest.saturating_sub(block_count);
 			// Tip of the chain.
 			let best_number =
@@ -2277,7 +2354,7 @@ where
 						// If the request includes reward percentiles, get them from the cache.
 						if let Some(ref requested_percentiles) = reward_percentiles {
 							let mut block_rewards = Vec::new();
-							// Resoltion is half a point. I.e. 1.0,1.5
+							// Resolution is half a point. I.e. 1.0,1.5
 							let resolution_per_percentile: f64 = 2.0;
 							// Get cached reward for each provided percentile.
 							for p in requested_percentiles {
@@ -2482,7 +2559,7 @@ where
 							key,
 							FilterPoolItem {
 								last_poll: BlockNumber::Num(next),
-								filter_type: pool_item.clone().filter_type,
+								filter_type: pool_item.filter_type.clone(),
 								at_block: pool_item.at_block,
 							},
 						);
@@ -2496,7 +2573,7 @@ where
 							key,
 							FilterPoolItem {
 								last_poll: BlockNumber::Num(block_number + 1),
-								filter_type: pool_item.clone().filter_type,
+								filter_type: pool_item.filter_type.clone(),
 								at_block: pool_item.at_block,
 							},
 						);
@@ -3027,7 +3104,7 @@ enum EthBlockDataCacheMessage<B: BlockT> {
 	},
 }
 
-/// Manage LRU cachse for block data and their transaction statuses.
+/// Manage LRU caches for block data and their transaction statuses.
 /// These are large and take a lot of time to fetch from the database.
 /// Storing them in an LRU cache will allow to reduce database accesses
 /// when many subsequent requests are related to the same blocks.
