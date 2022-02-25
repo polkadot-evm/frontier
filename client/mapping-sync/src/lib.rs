@@ -30,6 +30,32 @@ use sp_runtime::{
 	traits::{Block as BlockT, Header as HeaderT, Zero},
 };
 
+pub fn sync_block<Block: BlockT>(
+	backend: &fc_db::Backend<Block>,
+	header: &Block::Header,
+) -> Result<(), String> {
+	match fp_consensus::find_log(header.digest()) {
+		Ok(log) => {
+			let post_hashes = log.into_hashes();
+
+			let mapping_commitment = fc_db::MappingCommitment {
+				block_hash: header.hash(),
+				ethereum_block_hash: post_hashes.block_hash,
+				ethereum_transaction_hashes: post_hashes.transaction_hashes,
+			};
+			backend.mapping().write_hashes(mapping_commitment)?;
+
+			Ok(())
+		}
+		Err(FindLogError::NotFound) => {
+			backend.mapping().write_none(header.hash())?;
+
+			Ok(())
+		}
+		Err(FindLogError::MultipleLogs) => Err("Multiple logs found".to_string()),
+	}
+}
+
 pub fn sync_genesis_block<Block: BlockT, C>(
 	client: &C,
 	backend: &fc_db::Backend<Block>,
@@ -61,6 +87,8 @@ where
 			ethereum_transaction_hashes: Vec::new(),
 		};
 		backend.mapping().write_hashes(mapping_commitment)?;
+	} else {
+		backend.mapping().write_none(header.hash())?;
 	}
 
 	Ok(())
@@ -70,6 +98,7 @@ pub fn sync_one_block<Block: BlockT, C, B>(
 	client: &C,
 	substrate_backend: &B,
 	frontier_backend: &fc_db::Backend<Block>,
+	sync_from: <Block::Header as HeaderT>::Number,
 	strategy: SyncStrategy,
 ) -> Result<bool, String>
 where
@@ -98,7 +127,6 @@ where
 			break;
 		}
 	}
-
 	let operating_tip = match operating_tip {
 		Some(operating_tip) => operating_tip,
 		None => {
@@ -114,14 +142,15 @@ where
 		.map_err(|e| format!("{:?}", e))?
 		.ok_or("Header not found".to_string())?;
 
-	let mut have_next = true;
 	if operating_header.number() == &Zero::zero() {
 		sync_genesis_block(client, frontier_backend, &operating_header)?;
 
 		frontier_backend
 			.meta()
-			.write_current_syncing_tips(current_syncing_tips)?;
+			.write_current_syncing_tips(current_syncing_tips.clone())?;
+		Ok(true)
 	} else {
+		let mut have_next = true;
 		if SyncStrategy::Parachain == strategy
 			&& operating_header.number() > &client.info().best_number
 		{
@@ -129,30 +158,20 @@ where
 			return Ok(have_next);
 		}
 
-		match fp_consensus::find_log(operating_header.digest()) {
-			Ok(log) => {
-				let post_hashes = log.into_hashes();
-				let mapping_commitment = fc_db::MappingCommitment {
-					block_hash: operating_header.hash(),
-					ethereum_block_hash: post_hashes.block_hash,
-					ethereum_transaction_hashes: post_hashes.transaction_hashes,
-				};
-
-				frontier_backend
-					.mapping()
-					.write_hashes(mapping_commitment)?;
-				current_syncing_tips.push(*operating_header.parent_hash());
-			}
-			Err(FindLogError::NotFound) => {
-				have_next = false;
-			}
-			Err(FindLogError::MultipleLogs) => return Err("Multiple logs found".to_string()),
+		// For chains that join an evm pallet halfway, setting `sync_from` to the runtime upgrade height
+		// can speed up sync process.
+		if operating_header.number() < &sync_from {
+			have_next = false;
+		} else {
+			sync_block(frontier_backend, &operating_header)?;
+			current_syncing_tips.push(*operating_header.parent_hash());
 		}
+
 		frontier_backend
 			.meta()
-			.write_current_syncing_tips(current_syncing_tips)?;
+			.write_current_syncing_tips(current_syncing_tips.clone())?;
+		Ok(have_next)
 	}
-	Ok(have_next)
 }
 
 pub fn sync_blocks<Block: BlockT, C, B>(
@@ -160,6 +179,7 @@ pub fn sync_blocks<Block: BlockT, C, B>(
 	substrate_backend: &B,
 	frontier_backend: &fc_db::Backend<Block>,
 	limit: usize,
+	sync_from: <Block::Header as HeaderT>::Number,
 	strategy: SyncStrategy,
 ) -> Result<bool, String>
 where
@@ -171,7 +191,7 @@ where
 
 	for _ in 0..limit {
 		synced_any =
-			synced_any || sync_one_block(client, substrate_backend, frontier_backend, strategy)?;
+			synced_any || sync_one_block(client, substrate_backend, frontier_backend, sync_from, strategy)?;
 	}
 
 	Ok(synced_any)

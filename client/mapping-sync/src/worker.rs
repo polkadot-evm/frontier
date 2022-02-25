@@ -26,7 +26,7 @@ use log::debug;
 use sc_client_api::{BlockOf, ImportNotifications};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
-use sp_runtime::traits::Block as BlockT;
+use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
 use std::{pin::Pin, sync::Arc, time::Duration};
 
 #[derive(PartialEq, Copy, Clone)]
@@ -46,8 +46,11 @@ pub struct MappingSyncWorker<Block: BlockT, C, B> {
 
 	have_next: bool,
 	retry_times: usize,
+	sync_from: <Block::Header as HeaderT>::Number,
 	strategy: SyncStrategy,
 }
+
+impl<Block: BlockT, C, B> Unpin for MappingSyncWorker<Block, C, B> {}
 
 impl<Block: BlockT, C, B> MappingSyncWorker<Block, C, B> {
 	pub fn new(
@@ -57,6 +60,7 @@ impl<Block: BlockT, C, B> MappingSyncWorker<Block, C, B> {
 		substrate_backend: Arc<B>,
 		frontier_backend: Arc<fc_db::Backend<Block>>,
 		retry_times: usize,
+		sync_from: <Block::Header as HeaderT>::Number,
 		strategy: SyncStrategy,
 	) -> Self {
 		Self {
@@ -70,6 +74,7 @@ impl<Block: BlockT, C, B> MappingSyncWorker<Block, C, B> {
 
 			have_next: true,
 			retry_times,
+			sync_from,
 			strategy,
 		}
 	}
@@ -118,6 +123,7 @@ where
 				self.substrate_backend.blockchain(),
 				self.frontier_backend.as_ref(),
 				self.retry_times,
+				self.sync_from,
 				self.strategy,
 			) {
 				Ok(have_next) => {
