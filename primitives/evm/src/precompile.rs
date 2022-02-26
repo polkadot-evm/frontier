@@ -17,7 +17,7 @@
 
 pub use evm::{
 	executor::stack::{PrecompileFailure, PrecompileOutput, PrecompileSet},
-	Context, ExitError, ExitSucceed,
+	Context, ExitError, ExitRevert, ExitSucceed,
 };
 use sp_std::vec::Vec;
 
