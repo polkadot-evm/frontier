@@ -241,7 +241,7 @@ where
 					convert_transaction.convert_transaction(transaction.clone())
 				} else {
 					return Box::pin(future::err(internal_err(
-                        "No TransactionConverter is provided and the runtime api ConvertTransactionRuntimeApi is not found"
+						"No TransactionConverter is provided and the runtime api ConvertTransactionRuntimeApi is not found"
                     )));
 				}
 			}
@@ -333,7 +333,7 @@ where
 					convert_transaction.convert_transaction(transaction.clone())
 				} else {
 					return Box::pin(future::err(internal_err(
-                        "No TransactionConverter is provided and the runtime api ConvertTransactionRuntimeApi is not found"
+						"No TransactionConverter is provided and the runtime api ConvertTransactionRuntimeApi is not found"
                     )));
 				}
 			}
