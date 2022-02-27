@@ -31,7 +31,7 @@ use fp_rpc::TransactionStatus;
 
 use super::{blake2_128_extend, storage_prefix_build, StorageOverride};
 
-/// An override for runtimes that use Schema V1
+/// An override for runtimes that use Schema V3
 pub struct SchemaV3Override<B: BlockT, C, BE> {
 	client: Arc<C>,
 	_marker: PhantomData<(B, BE)>,
@@ -124,7 +124,7 @@ where
 		)
 	}
 
-	/// Prior to eip-1559 there is no base fee.
+	/// Return the elasticity at the given height.
 	fn elasticity(&self, block: &BlockId<B>) -> Option<Permill> {
 		let default_elasticity = Some(Permill::from_parts(125_000));
 		let elasticity = self.query_storage::<Permill>(
