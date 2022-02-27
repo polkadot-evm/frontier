@@ -81,13 +81,7 @@ pub struct RuntimeApiStorageOverride<B: BlockT, C> {
 	_marker: PhantomData<B>,
 }
 
-impl<B, C> RuntimeApiStorageOverride<B, C>
-where
-	C: ProvideRuntimeApi<B>,
-	C::Api: EthereumRuntimeRPCApi<B>,
-	B: BlockT<Hash = H256> + Send + Sync + 'static,
-	C: Send + Sync + 'static,
-{
+impl<B: BlockT, C> RuntimeApiStorageOverride<B, C> {
 	pub fn new(client: Arc<C>) -> Self {
 		Self {
 			client,
@@ -98,10 +92,9 @@ where
 
 impl<Block, C> StorageOverride<Block> for RuntimeApiStorageOverride<Block, C>
 where
-	C: ProvideRuntimeApi<Block>,
-	C::Api: EthereumRuntimeRPCApi<Block>,
 	Block: BlockT<Hash = H256> + Send + Sync + 'static,
-	C: Send + Sync + 'static,
+	C: ProvideRuntimeApi<Block> + Send + Sync + 'static,
+	C::Api: EthereumRuntimeRPCApi<Block>,
 {
 	/// For a given account address, returns pallet_evm::AccountCodes.
 	fn account_code_at(&self, block: &BlockId<Block>, address: H160) -> Option<Vec<u8>> {
