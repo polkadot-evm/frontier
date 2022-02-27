@@ -158,20 +158,6 @@ where
 		signers.push(Box::new(EthDevSigner::new()) as Box<dyn EthSigner>);
 	}
 
-	// io.extend_with(EthApiServer::to_delegate(EthApi::new(
-	// 	client.clone(),
-	// 	pool.clone(),
-	// 	graph,
-	// 	Some(frontier_template_runtime::TransactionConverter),
-	// 	network.clone(),
-	// 	Arc::new(signers),
-	// 	overrides.clone(),
-	// 	backend.clone(),
-	// 	is_authority,
-	// 	block_data_cache.clone(),
-	// 	fee_history_limit,
-	// 	fee_history_cache,
-	// )));
 	let signers = Arc::new(signers);
 	io.extend_with(EthClientApiServer::to_delegate(EthClientApi::new(
 		client.clone(),
