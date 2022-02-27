@@ -28,7 +28,6 @@ mod schema_v1_override;
 mod schema_v2_override;
 mod schema_v3_override;
 
-pub use fc_rpc_core::{EthApiServer, NetApiServer};
 pub use schema_v1_override::SchemaV1Override;
 pub use schema_v2_override::SchemaV2Override;
 pub use schema_v3_override::SchemaV3Override;

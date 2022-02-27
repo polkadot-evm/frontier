@@ -115,9 +115,12 @@ where
 	A: ChainApi<Block = Block> + 'static,
 {
 	use fc_rpc::{
-		EthApi, EthApiServer, EthDevSigner, EthFilterApi, EthFilterApiServer, EthPubSubApi,
-		EthPubSubApiServer, EthSigner, HexEncodedIdProvider, NetApi, NetApiServer, Web3Api,
-		Web3ApiServer,
+		EthBlockApi, EthBlockApiServer, EthClientApi, EthClientApiServer, EthDevSigner,
+		EthExecuteApi, EthExecuteApiServer, EthFeeApi, EthFeeApiServer, EthFilterApi,
+		EthFilterApiServer, EthMiningApi, EthMiningApiServer, EthPubSubApi, EthPubSubApiServer,
+		EthSigner, EthStateApi, EthStateApiServer, EthSubmitApi, EthSubmitApiServer,
+		EthTransactionApi, EthTransactionApiServer, HexEncodedIdProvider, NetApi, NetApiServer,
+		Web3Api, Web3ApiServer,
 	};
 	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApi};
 	use substrate_frame_rpc_system::{FullSystem, SystemApi};
@@ -155,18 +158,74 @@ where
 		signers.push(Box::new(EthDevSigner::new()) as Box<dyn EthSigner>);
 	}
 
-	io.extend_with(EthApiServer::to_delegate(EthApi::new(
+	// io.extend_with(EthApiServer::to_delegate(EthApi::new(
+	// 	client.clone(),
+	// 	pool.clone(),
+	// 	graph,
+	// 	Some(frontier_template_runtime::TransactionConverter),
+	// 	network.clone(),
+	// 	Arc::new(signers),
+	// 	overrides.clone(),
+	// 	backend.clone(),
+	// 	is_authority,
+	// 	block_data_cache.clone(),
+	// 	fee_history_limit,
+	// 	fee_history_cache,
+	// )));
+	let signers = Arc::new(signers);
+	io.extend_with(EthClientApiServer::to_delegate(EthClientApi::new(
 		client.clone(),
+		overrides.clone(),
+		network.clone(),
+		signers.clone(),
+	)));
+	io.extend_with(EthStateApiServer::to_delegate(EthStateApi::new(
+		client.clone(),
+		overrides.clone(),
+		backend.clone(),
 		pool.clone(),
-		graph,
+		graph.clone(),
+	)));
+	io.extend_with(EthFeeApiServer::to_delegate(EthFeeApi::new(
+		client.clone(),
+		overrides.clone(),
+		backend.clone(),
+		fee_history_limit,
+		fee_history_cache.clone(),
+	)));
+	io.extend_with(EthExecuteApiServer::to_delegate(EthExecuteApi::new(
+		client.clone(),
+		backend.clone(),
+		graph.clone(),
+		block_data_cache.clone(),
+	)));
+	io.extend_with(EthMiningApiServer::to_delegate(EthMiningApi::new(
+		is_authority,
+	)));
+	io.extend_with(EthBlockApiServer::to_delegate(EthBlockApi::new(
+		client.clone(),
+		overrides.clone(),
+		backend.clone(),
+		block_data_cache.clone(),
+	)));
+	io.extend_with(EthTransactionApiServer::to_delegate(
+		EthTransactionApi::new(
+			client.clone(),
+			overrides.clone(),
+			backend.clone(),
+			graph.clone(),
+			block_data_cache.clone(),
+		),
+	));
+	io.extend_with(EthSubmitApiServer::to_delegate(EthSubmitApi::new(
+		client.clone(),
+		overrides.clone(),
+		backend.clone(),
+		pool.clone(),
+		graph.clone(),
 		Some(frontier_template_runtime::TransactionConverter),
 		network.clone(),
 		signers,
-		overrides.clone(),
-		backend.clone(),
-		is_authority,
-		max_past_logs,
-		block_data_cache.clone(),
 		fee_history_limit,
 		fee_history_cache,
 	)));
