@@ -15,7 +15,7 @@ use sp_runtime::{
 use fc_rpc_core::{types::*, EthClientApi as EthClientApiT};
 use fp_rpc::EthereumRuntimeRPCApi;
 
-use crate::{frontier_backend_client, internal_err, overrides::OverrideHandle, EthSigner};
+use crate::{frontier_backend_client, internal_err, overrides::OverrideHandle, signer::EthSigner};
 
 pub struct EthClientApi<B: BlockT, C, BE, H: ExHashT> {
 	client: Arc<C>,
