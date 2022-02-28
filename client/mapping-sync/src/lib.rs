@@ -201,7 +201,7 @@ where
 	}
 
 	match substrate_backend.header(BlockId::Hash(checking_tip)) {
-		Ok(Some(checking_header)) if checking_header.number() > &sync_from => {
+		Ok(Some(checking_header)) if checking_header.number() >= &sync_from => {
 			Ok(Some(checking_header))
 		}
 		Ok(Some(_)) => Ok(None),
