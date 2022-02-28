@@ -116,19 +116,17 @@ where
 		current_syncing_tips.append(&mut leaves);
 	}
 
-	let mut operating_tip = None;
+	let mut operating_header = None;
 	while let Some(checking_tip) = current_syncing_tips.pop() {
-		if !frontier_backend
-			.mapping()
-			.is_synced(&checking_tip)
-			.map_err(|e| format!("{:?}", e))?
+		if let Some(checking_header) =
+			fetch_header(substrate_backend, frontier_backend, checking_tip, sync_from)?
 		{
-			operating_tip = Some(checking_tip);
+			operating_header = Some(checking_header);
 			break;
 		}
 	}
-	let operating_tip = match operating_tip {
-		Some(operating_tip) => operating_tip,
+	let operating_header = match operating_header {
+		Some(operating_header) => operating_header,
 		None => {
 			frontier_backend
 				.meta()
@@ -136,11 +134,6 @@ where
 			return Ok(false);
 		}
 	};
-
-	let operating_header = substrate_backend
-		.header(BlockId::Hash(operating_tip))
-		.map_err(|e| format!("{:?}", e))?
-		.ok_or("Header not found".to_string())?;
 
 	if operating_header.number() == &Zero::zero() {
 		sync_genesis_block(client, frontier_backend, &operating_header)?;
@@ -150,27 +143,18 @@ where
 			.write_current_syncing_tips(current_syncing_tips)?;
 		Ok(true)
 	} else {
-		let mut have_next = true;
 		if SyncStrategy::Parachain == strategy
 			&& operating_header.number() > &client.info().best_number
 		{
-			have_next = false;
-			return Ok(have_next);
+			return Ok(false);
 		}
+		sync_block(frontier_backend, &operating_header)?;
 
-		// For chains that join an evm pallet halfway, setting `sync_from` to the runtime upgrade height
-		// can speed up sync process.
-		if operating_header.number() < &sync_from {
-			have_next = false;
-		} else {
-			sync_block(frontier_backend, &operating_header)?;
-			current_syncing_tips.push(*operating_header.parent_hash());
-		}
-
+		current_syncing_tips.push(*operating_header.parent_hash());
 		frontier_backend
 			.meta()
 			.write_current_syncing_tips(current_syncing_tips)?;
-		Ok(have_next)
+		Ok(true)
 	}
 }
 
@@ -201,4 +185,26 @@ where
 	}
 
 	Ok(synced_any)
+}
+
+pub fn fetch_header<Block: BlockT, B>(
+	substrate_backend: &B,
+	frontier_backend: &fc_db::Backend<Block>,
+	checking_tip: Block::Hash,
+	sync_from: <Block::Header as HeaderT>::Number,
+) -> Result<Option<Block::Header>, String>
+where
+	B: sp_blockchain::HeaderBackend<Block> + sp_blockchain::Backend<Block>,
+{
+	if frontier_backend.mapping().is_synced(&checking_tip)? {
+		return Ok(None);
+	}
+
+	match substrate_backend.header(BlockId::Hash(checking_tip)) {
+		Ok(Some(checking_header)) if checking_header.number() > &sync_from => {
+			Ok(Some(checking_header))
+		}
+		Ok(Some(_)) => Ok(None),
+		Ok(None) | Err(_) => Err("Header not found".to_string()),
+	}
 }
