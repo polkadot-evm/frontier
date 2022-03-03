@@ -16,42 +16,40 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use log::warn;
-use rand::{distributions::Alphanumeric, thread_rng, Rng};
-use sc_client_api::{
-	backend::{Backend, StateBackend, StorageProvider},
-	client::BlockchainEvents,
-};
-use sc_rpc::Metadata;
-use sc_transaction_pool_api::TransactionPool;
-use sp_api::{BlockId, ProvideRuntimeApi};
-use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
-use sp_runtime::traits::{BlakeTwo256, Block as BlockT, UniqueSaturatedInto};
 use std::{collections::BTreeMap, iter, marker::PhantomData, sync::Arc};
 
 use ethereum::BlockV2 as EthereumBlock;
 use ethereum_types::{H256, U256};
-use fc_rpc_core::{
-	types::{
-		pubsub::{Kind, Params, PubSubSyncStatus, Result as PubSubResult},
-		Bytes, FilteredParams, Header, Log, Rich,
-	},
-	EthPubSubApi::{self as EthPubSubApiT},
-};
+use futures::{FutureExt as _, SinkExt as _, StreamExt as _};
+use jsonrpc_core::Result as JsonRpcResult;
 use jsonrpc_pubsub::{
 	manager::{IdProvider, SubscriptionManager},
 	typed::Subscriber,
 	SubscriptionId,
 };
-use sha3::{Digest, Keccak256};
+use log::warn;
+use rand::{distributions::Alphanumeric, thread_rng, Rng};
 
-pub use fc_rpc_core::EthPubSubApiServer;
-use futures::{FutureExt as _, SinkExt as _, StreamExt as _};
-
-use fp_rpc::EthereumRuntimeRPCApi;
-use jsonrpc_core::Result as JsonRpcResult;
-
+use sc_client_api::{
+	backend::{Backend, StateBackend, StorageProvider},
+	client::BlockchainEvents,
+};
 use sc_network::{ExHashT, NetworkService};
+use sc_rpc::Metadata;
+use sc_transaction_pool_api::TransactionPool;
+use sp_api::{BlockId, ProvideRuntimeApi};
+use sp_blockchain::HeaderBackend;
+use sp_core::hashing::keccak_256;
+use sp_runtime::traits::{BlakeTwo256, Block as BlockT, UniqueSaturatedInto};
+
+use fc_rpc_core::{
+	types::{
+		pubsub::{Kind, Params, PubSubSyncStatus, Result as PubSubResult},
+		Bytes, FilteredParams, Header, Log, Rich,
+	},
+	EthPubSubApi as EthPubSubApiT,
+};
+use fp_rpc::EthereumRuntimeRPCApi;
 
 use crate::{frontier_backend_client, overrides::OverrideHandle};
 
@@ -86,16 +84,10 @@ pub struct EthPubSubApi<B: BlockT, P, C, BE, H: ExHashT> {
 	network: Arc<NetworkService<B, H>>,
 	subscriptions: SubscriptionManager<HexEncodedIdProvider>,
 	overrides: Arc<OverrideHandle<B>>,
-	_marker: PhantomData<(B, BE)>,
+	_marker: PhantomData<BE>,
 }
 
-impl<B: BlockT, P, C, BE, H: ExHashT> EthPubSubApi<B, P, C, BE, H>
-where
-	B: BlockT<Hash = H256> + Send + Sync + 'static,
-	C: ProvideRuntimeApi<B>,
-	C::Api: EthereumRuntimeRPCApi<B>,
-	C: Send + Sync + 'static,
-{
+impl<B: BlockT, P, C, BE, H: ExHashT> EthPubSubApi<B, P, C, BE, H> {
 	pub fn new(
 		pool: Arc<P>,
 		client: Arc<C>,
@@ -122,9 +114,7 @@ impl SubscriptionResult {
 	pub fn new_heads(&self, block: EthereumBlock) -> PubSubResult {
 		PubSubResult::Header(Box::new(Rich {
 			inner: Header {
-				hash: Some(H256::from_slice(
-					Keccak256::digest(&rlp::encode(&block.header)).as_slice(),
-				)),
+				hash: Some(H256::from(keccak_256(&rlp::encode(&block.header)))),
 				parent_hash: block.header.parent_hash,
 				uncles_hash: block.header.ommers_hash,
 				author: block.header.beneficiary,
@@ -154,9 +144,7 @@ impl SubscriptionResult {
 		receipts: Vec<ethereum::ReceiptV3>,
 		params: &FilteredParams,
 	) -> Vec<Log> {
-		let block_hash = Some(H256::from_slice(
-			Keccak256::digest(&rlp::encode(&block.header)).as_slice(),
-		));
+		let block_hash = Some(H256::from(keccak_256(&rlp::encode(&block.header))));
 		let mut logs: Vec<Log> = vec![];
 		let mut log_index: u32 = 0;
 		for (receipt_index, receipt) in receipts.into_iter().enumerate() {
@@ -177,9 +165,9 @@ impl SubscriptionResult {
 						address: log.address,
 						topics: log.topics,
 						data: Bytes(log.data),
-						block_hash: block_hash,
+						block_hash,
 						block_number: Some(block.header.number),
-						transaction_hash: transaction_hash,
+						transaction_hash,
 						transaction_index: Some(U256::from(receipt_index)),
 						log_index: Some(U256::from(log_index)),
 						transaction_log_index: Some(U256::from(transaction_log_index)),
@@ -231,8 +219,7 @@ where
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	P: TransactionPool<Block = B> + Send + Sync + 'static,
 	C: ProvideRuntimeApi<B> + StorageProvider<B, BE> + BlockchainEvents<B>,
-	C: HeaderBackend<B> + HeaderMetadata<B, Error = BlockChainError> + 'static,
-	C: Send + Sync + 'static,
+	C: HeaderBackend<B> + Send + Sync + 'static,
 	C::Api: EthereumRuntimeRPCApi<B>,
 	BE: Backend<B> + 'static,
 	BE::State: StateBackend<BlakeTwo256>,
