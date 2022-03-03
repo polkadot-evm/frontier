@@ -138,6 +138,11 @@
 <span id="136">136</span>
 <span id="137">137</span>
 <span id="138">138</span>
+<span id="139">139</span>
+<span id="140">140</span>
+<span id="141">141</span>
+<span id="142">142</span>
+<span id="143">143</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -166,10 +171,8 @@
 <span class="kw">use</span> <span class="ident">sc_client_api</span>::{<span class="ident">BlockOf</span>, <span class="ident">ImportNotifications</span>};
 <span class="kw">use</span> <span class="ident">sp_api::ProvideRuntimeApi</span>;
 <span class="kw">use</span> <span class="ident">sp_blockchain::HeaderBackend</span>;
-<span class="kw">use</span> <span class="ident">sp_runtime::traits::Block</span> <span class="kw">as</span> <span class="ident">BlockT</span>;
+<span class="kw">use</span> <span class="ident">sp_runtime::traits</span>::{<span class="ident">Block</span> <span class="kw">as</span> <span class="ident">BlockT</span>, <span class="ident">Header</span> <span class="kw">as</span> <span class="ident">HeaderT</span>};
 <span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">pin::Pin</span>, <span class="ident">sync::Arc</span>, <span class="ident">time::Duration</span>};
-
-<span class="kw">const</span> <span class="ident">LIMIT</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">8</span>;
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">PartialEq</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">SyncStrategy</span> {
@@ -187,9 +190,12 @@
 	<span class="ident">frontier_backend</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">fc_db::Backend</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 
 	<span class="ident">have_next</span>: <span class="ident">bool</span>,
-
+	<span class="ident">retry_times</span>: <span class="ident">usize</span>,
+	<span class="ident">sync_from</span>: <span class="op">&lt;</span><span class="ident">Block::Header</span> <span class="kw">as</span> <span class="ident">HeaderT</span><span class="op">&gt;</span><span class="ident">::Number</span>,
 	<span class="ident">strategy</span>: <span class="ident">SyncStrategy</span>,
 }
+
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">Block</span>: <span class="ident">BlockT</span>, <span class="ident">C</span>, <span class="ident">B</span><span class="op">&gt;</span> <span class="ident">Unpin</span> <span class="kw">for</span> <span class="ident">MappingSyncWorker</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">C</span>, <span class="ident">B</span><span class="op">&gt;</span> {}
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">Block</span>: <span class="ident">BlockT</span>, <span class="ident">C</span>, <span class="ident">B</span><span class="op">&gt;</span> <span class="ident">MappingSyncWorker</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">C</span>, <span class="ident">B</span><span class="op">&gt;</span> {
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(
@@ -198,6 +204,8 @@
 		<span class="ident">client</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
 		<span class="ident">substrate_backend</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span>,
 		<span class="ident">frontier_backend</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">fc_db::Backend</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+		<span class="ident">retry_times</span>: <span class="ident">usize</span>,
+		<span class="ident">sync_from</span>: <span class="op">&lt;</span><span class="ident">Block::Header</span> <span class="kw">as</span> <span class="ident">HeaderT</span><span class="op">&gt;</span><span class="ident">::Number</span>,
 		<span class="ident">strategy</span>: <span class="ident">SyncStrategy</span>,
 	) -&gt; <span class="self">Self</span> {
 		<span class="self">Self</span> {
@@ -210,7 +218,8 @@
 			<span class="ident">frontier_backend</span>,
 
 			<span class="ident">have_next</span>: <span class="bool-val">true</span>,
-
+			<span class="ident">retry_times</span>,
+			<span class="ident">sync_from</span>,
 			<span class="ident">strategy</span>,
 		}
 	}
@@ -258,7 +267,8 @@
 				<span class="self">self</span>.<span class="ident">client</span>.<span class="ident">as_ref</span>(),
 				<span class="self">self</span>.<span class="ident">substrate_backend</span>.<span class="ident">blockchain</span>(),
 				<span class="self">self</span>.<span class="ident">frontier_backend</span>.<span class="ident">as_ref</span>(),
-				<span class="ident">LIMIT</span>,
+				<span class="self">self</span>.<span class="ident">retry_times</span>,
+				<span class="self">self</span>.<span class="ident">sync_from</span>,
 				<span class="self">self</span>.<span class="ident">strategy</span>,
 			) {
 				<span class="prelude-val">Ok</span>(<span class="ident">have_next</span>) =&gt; {

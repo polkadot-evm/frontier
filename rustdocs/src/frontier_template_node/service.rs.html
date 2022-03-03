@@ -683,6 +683,8 @@
 <span id="681">681</span>
 <span id="682">682</span>
 <span id="683">683</span>
+<span id="684">684</span>
+<span id="685">685</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Service and ServiceFactory implementation. Specialized wrapper over substrate service.</span>
 
 <span class="kw">use</span> <span class="ident">fc_consensus::FrontierBlockImport</span>;
@@ -1145,6 +1147,8 @@
 			<span class="ident">client</span>.<span class="ident">clone</span>(),
 			<span class="ident">backend</span>.<span class="ident">clone</span>(),
 			<span class="ident">frontier_backend</span>.<span class="ident">clone</span>(),
+			<span class="number">3</span>,
+			<span class="number">0</span>,
 			<span class="ident">SyncStrategy::Normal</span>,
 		)
 		.<span class="ident">for_each</span>(<span class="op">|</span>()<span class="op">|</span> <span class="ident">futures::future::ready</span>(())),
