@@ -221,9 +221,11 @@ pub fn error_on_execution_failure(reason: &ExitReason, data: &[u8]) -> Result<()
 			// should contain a utf-8 encoded revert reason.
 			if data.len() > 68 {
 				let message_len = data[36..68].iter().sum::<u8>();
-				let body: &[u8] = &data[68..68 + message_len as usize];
-				if let Ok(reason) = std::str::from_utf8(body) {
-					message = format!("{} {}", message, reason.to_string());
+				if data.len() >= 68 + message_len as usize {
+					let body: &[u8] = &data[68..68 + message_len as usize];
+					if let Ok(reason) = std::str::from_utf8(body) {
+						message = format!("{} {}", message, reason.to_string());
+					}
 				}
 			}
 			Err(Error {
