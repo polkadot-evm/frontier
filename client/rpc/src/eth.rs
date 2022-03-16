@@ -2427,6 +2427,35 @@ where
 			newest_block
 		)))
 	}
+
+	fn max_priority_fee_per_gas(&self) -> Result<U256> {
+		// https://github.com/ethereum/go-ethereum/blob/master/eth/ethconfig/config.go#L44-L51
+		let at_percentile = 60;
+		let block_count = 20;
+		let index = (at_percentile * 2) as usize;
+
+		let highest =
+			UniqueSaturatedInto::<u64>::unique_saturated_into(self.client.info().best_number);
+		let lowest = highest.saturating_sub(block_count - 1);
+
+		// https://github.com/ethereum/go-ethereum/blob/master/eth/gasprice/gasprice.go#L149
+		let mut rewards = Vec::new();
+		if let Ok(fee_history_cache) = &self.fee_history_cache.lock() {
+			for n in lowest..highest + 1 {
+				if let Some(block) = fee_history_cache.get(&n) {
+					let reward = if let Some(r) = block.rewards.get(index as usize) {
+						U256::from(*r)
+					} else {
+						U256::zero()
+					};
+					rewards.push(reward);
+				}
+			}
+		} else {
+			return Err(internal_err(format!("Failed to read fee oracle cache.")));
+		}
+		Ok(*rewards.iter().min().unwrap_or(&U256::zero()))
+	}
 }
 
 pub struct EthFilterApi<B: BlockT, C, BE> {
