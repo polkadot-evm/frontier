@@ -98,6 +98,7 @@ pub fn sync_one_block<Block: BlockT, C, B>(
 	client: &C,
 	substrate_backend: &B,
 	frontier_backend: &fc_db::Backend<Block>,
+	sync_from: <Block::Header as HeaderT>::Number,
 	strategy: SyncStrategy,
 ) -> Result<bool, String>
 where
@@ -112,25 +113,20 @@ where
 		if leaves.is_empty() {
 			return Ok(false);
 		}
-
 		current_syncing_tips.append(&mut leaves);
 	}
 
-	let mut operating_tip = None;
-
+	let mut operating_header = None;
 	while let Some(checking_tip) = current_syncing_tips.pop() {
-		if !frontier_backend
-			.mapping()
-			.is_synced(&checking_tip)
-			.map_err(|e| format!("{:?}", e))?
+		if let Some(checking_header) =
+			fetch_header(substrate_backend, frontier_backend, checking_tip, sync_from)?
 		{
-			operating_tip = Some(checking_tip);
+			operating_header = Some(checking_header);
 			break;
 		}
 	}
-
-	let operating_tip = match operating_tip {
-		Some(operating_tip) => operating_tip,
+	let operating_header = match operating_header {
+		Some(operating_header) => operating_header,
 		None => {
 			frontier_backend
 				.meta()
@@ -138,11 +134,6 @@ where
 			return Ok(false);
 		}
 	};
-
-	let operating_header = substrate_backend
-		.header(BlockId::Hash(operating_tip))
-		.map_err(|e| format!("{:?}", e))?
-		.ok_or("Header not found".to_string())?;
 
 	if operating_header.number() == &Zero::zero() {
 		sync_genesis_block(client, frontier_backend, &operating_header)?;
@@ -172,6 +163,7 @@ pub fn sync_blocks<Block: BlockT, C, B>(
 	substrate_backend: &B,
 	frontier_backend: &fc_db::Backend<Block>,
 	limit: usize,
+	sync_from: <Block::Header as HeaderT>::Number,
 	strategy: SyncStrategy,
 ) -> Result<bool, String>
 where
@@ -182,9 +174,37 @@ where
 	let mut synced_any = false;
 
 	for _ in 0..limit {
-		synced_any =
-			synced_any || sync_one_block(client, substrate_backend, frontier_backend, strategy)?;
+		synced_any = synced_any
+			|| sync_one_block(
+				client,
+				substrate_backend,
+				frontier_backend,
+				sync_from,
+				strategy,
+			)?;
 	}
 
 	Ok(synced_any)
+}
+
+pub fn fetch_header<Block: BlockT, B>(
+	substrate_backend: &B,
+	frontier_backend: &fc_db::Backend<Block>,
+	checking_tip: Block::Hash,
+	sync_from: <Block::Header as HeaderT>::Number,
+) -> Result<Option<Block::Header>, String>
+where
+	B: sp_blockchain::HeaderBackend<Block> + sp_blockchain::Backend<Block>,
+{
+	if frontier_backend.mapping().is_synced(&checking_tip)? {
+		return Ok(None);
+	}
+
+	match substrate_backend.header(BlockId::Hash(checking_tip)) {
+		Ok(Some(checking_header)) if checking_header.number() >= &sync_from => {
+			Ok(Some(checking_header))
+		}
+		Ok(Some(_)) => Ok(None),
+		Ok(None) | Err(_) => Err("Header not found".to_string()),
+	}
 }
