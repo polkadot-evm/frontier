@@ -3298,6 +3298,35 @@
 <span id="3296">3296</span>
 <span id="3297">3297</span>
 <span id="3298">3298</span>
+<span id="3299">3299</span>
+<span id="3300">3300</span>
+<span id="3301">3301</span>
+<span id="3302">3302</span>
+<span id="3303">3303</span>
+<span id="3304">3304</span>
+<span id="3305">3305</span>
+<span id="3306">3306</span>
+<span id="3307">3307</span>
+<span id="3308">3308</span>
+<span id="3309">3309</span>
+<span id="3310">3310</span>
+<span id="3311">3311</span>
+<span id="3312">3312</span>
+<span id="3313">3313</span>
+<span id="3314">3314</span>
+<span id="3315">3315</span>
+<span id="3316">3316</span>
+<span id="3317">3317</span>
+<span id="3318">3318</span>
+<span id="3319">3319</span>
+<span id="3320">3320</span>
+<span id="3321">3321</span>
+<span id="3322">3322</span>
+<span id="3323">3323</span>
+<span id="3324">3324</span>
+<span id="3325">3325</span>
+<span id="3326">3326</span>
+<span id="3327">3327</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -5726,6 +5755,35 @@
 			<span class="string">&quot;Failed to retrieve requested block {:?}.&quot;</span>,
 			<span class="ident">newest_block</span>
 		)))
+	}
+
+	<span class="kw">fn</span> <span class="ident">max_priority_fee_per_gas</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span> {
+		<span class="comment">// https://github.com/ethereum/go-ethereum/blob/master/eth/ethconfig/config.go#L44-L51</span>
+		<span class="kw">let</span> <span class="ident">at_percentile</span> <span class="op">=</span> <span class="number">60</span>;
+		<span class="kw">let</span> <span class="ident">block_count</span> <span class="op">=</span> <span class="number">20</span>;
+		<span class="kw">let</span> <span class="ident">index</span> <span class="op">=</span> (<span class="ident">at_percentile</span> <span class="op">*</span> <span class="number">2</span>) <span class="kw">as</span> <span class="ident">usize</span>;
+
+		<span class="kw">let</span> <span class="ident">highest</span> <span class="op">=</span>
+			<span class="ident">UniqueSaturatedInto</span>::<span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span><span class="ident">::unique_saturated_into</span>(<span class="self">self</span>.<span class="ident">client</span>.<span class="ident">info</span>().<span class="ident">best_number</span>);
+		<span class="kw">let</span> <span class="ident">lowest</span> <span class="op">=</span> <span class="ident">highest</span>.<span class="ident">saturating_sub</span>(<span class="ident">block_count</span> <span class="op">-</span> <span class="number">1</span>);
+
+		<span class="comment">// https://github.com/ethereum/go-ethereum/blob/master/eth/gasprice/gasprice.go#L149</span>
+		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">rewards</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
+		<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">fee_history_cache</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">fee_history_cache</span>.<span class="ident">lock</span>() {
+			<span class="kw">for</span> <span class="ident">n</span> <span class="kw">in</span> <span class="ident">lowest</span>..<span class="ident">highest</span> <span class="op">+</span> <span class="number">1</span> {
+				<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">block</span>) <span class="op">=</span> <span class="ident">fee_history_cache</span>.<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">n</span>) {
+					<span class="kw">let</span> <span class="ident">reward</span> <span class="op">=</span> <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">r</span>) <span class="op">=</span> <span class="ident">block</span>.<span class="ident">rewards</span>.<span class="ident">get</span>(<span class="ident">index</span> <span class="kw">as</span> <span class="ident">usize</span>) {
+						<span class="ident">U256::from</span>(<span class="kw-2">*</span><span class="ident">r</span>)
+					} <span class="kw">else</span> {
+						<span class="ident">U256::zero</span>()
+					};
+					<span class="ident">rewards</span>.<span class="ident">push</span>(<span class="ident">reward</span>);
+				}
+			}
+		} <span class="kw">else</span> {
+			<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;Failed to read fee oracle cache.&quot;</span>)));
+		}
+		<span class="prelude-val">Ok</span>(<span class="kw-2">*</span><span class="ident">rewards</span>.<span class="ident">iter</span>().<span class="ident">min</span>().<span class="ident">unwrap_or</span>(<span class="kw-2">&amp;</span><span class="ident">U256::zero</span>()))
 	}
 }
 

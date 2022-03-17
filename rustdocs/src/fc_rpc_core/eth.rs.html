@@ -219,6 +219,11 @@
 <span id="217">217</span>
 <span id="218">218</span>
 <span id="219">219</span>
+<span id="220">220</span>
+<span id="221">221</span>
+<span id="222">222</span>
+<span id="223">223</span>
+<span id="224">224</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -409,6 +414,11 @@
 		<span class="ident">newest_block</span>: <span class="ident">BlockNumber</span>,
 		<span class="ident">reward_percentiles</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">f64</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">FeeHistory</span><span class="op">&gt;</span>;
+
+	<span class="doccomment">/// Introduced in EIP-1159, a Geth-specific and simplified priority fee oracle.</span>
+	<span class="doccomment">/// Leverages the already existing fee history cache.</span>
+	<span class="attribute">#[<span class="ident">rpc</span>(<span class="ident">name</span> <span class="op">=</span> <span class="string">&quot;eth_maxPriorityFeePerGas&quot;</span>)]</span>
+	<span class="kw">fn</span> <span class="ident">max_priority_fee_per_gas</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>;
 }
 
 <span class="doccomment">/// Eth filters rpc api (polling).</span>
