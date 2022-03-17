@@ -36,7 +36,7 @@ describeWithFrontier("Frontier RPC (Max Priority Fee Per Gas)", (context) => {
 			for(var p = 0; p < priority_fees.length; p++) {
 				await sendTransaction(context, {
 					from: GENESIS_ACCOUNT,
-                    to: "0x0000000000000000000000000000000000000000",
+					to: "0x0000000000000000000000000000000000000000",
 					data: "0x",
 					value: "0x00",
 					maxFeePerGas: "0x3B9ACA00",
