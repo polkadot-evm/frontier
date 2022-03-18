@@ -17,33 +17,25 @@
 
 #![cfg(feature = "runtime-benchmarks")]
 
-//! Benchmarking
-use frame_benchmarking::benchmarks;
-use rlp::RlpStream;
-use sha3::{Digest, Keccak256};
-use sp_core::{H160, U256};
-use sp_std::prelude::*;
+use frame_benchmarking::{benchmarks, impl_benchmark_test_suite};
 
-use crate::{runner::Runner, Config, Pallet};
-
-#[cfg(test)]
-fn new_test_ext() -> sp_io::TestExternalities {
-	let t = frame_system::GenesisConfig::default()
-		.build_storage::<crate::mock::Test>()
-		.unwrap();
-	sp_io::TestExternalities::new(t)
-}
+use super::*;
 
 benchmarks! {
 
+	runner_execute {
 	// This benchmark tests the relationship between gas and weight. It deploys a contract which
 	// has an infinite loop in a public function. We then call this function with varying amounts
 	// of gas, expecting it to OOG. The benchmarking framework measures the amount of time (aka
 	// weight) it takes before OOGing and relates that to the amount of gas provided, leaving us
 	// with an estimate for gas-to-weight mapping.
-	runner_execute {
 
 		let x in 1..10000000;
+
+		use frame_benchmarking::vec;
+		use rlp::RlpStream;
+		use sha3::{Digest, Keccak256};
+		use sp_core::{H160, U256};
 
 		// contract bytecode below is for:
 		//
@@ -128,5 +120,6 @@ benchmarks! {
 		);
 		assert_eq!(call_runner_results.is_ok(), true, "call() failed");
 	}
-	impl_benchmark_test_suite!(Pallet, self::new_test_ext(), crate::mock::Test);
 }
+
+impl_benchmark_test_suite!(Pallet, crate::tests::new_test_ext(), crate::tests::Test);

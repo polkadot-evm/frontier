@@ -455,4 +455,7 @@ where
 		self.fee_api
 			.fee_history(block_count, newest_block, reward_percentiles)
 	}
+	fn max_priority_fee_per_gas(&self) -> Result<U256> {
+		self.fee_api.max_priority_fee_per_gas()
+	}
 }

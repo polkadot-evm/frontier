@@ -175,7 +175,6 @@ pub mod pallet {
 								.checked_div(U256::from(1_000_000))
 								.unwrap_or(U256::zero());
 							*bf = bf.saturating_add(U256::from(increase));
-							Self::deposit_event(Event::NewBaseFeePerGas(*bf));
 						} else {
 							Self::deposit_event(Event::BaseFeeOverflow);
 						}
@@ -194,7 +193,6 @@ pub mod pallet {
 								.checked_div(U256::from(1_000_000))
 								.unwrap_or(U256::zero());
 							*bf = bf.saturating_sub(U256::from(decrease));
-							Self::deposit_event(Event::NewBaseFeePerGas(*bf));
 						} else {
 							Self::deposit_event(Event::BaseFeeOverflow);
 						}
