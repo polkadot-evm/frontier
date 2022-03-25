@@ -18,7 +18,7 @@
 
 use std::{collections::BTreeMap, iter, marker::PhantomData, sync::Arc};
 
-use ethereum::BlockV2 as EthereumBlock;
+use ethereum::{BlockV2 as EthereumBlock, TransactionV2 as EthereumTransaction};
 use ethereum_types::{H256, U256};
 use futures::{FutureExt as _, SinkExt as _, StreamExt as _};
 use jsonrpc_core::Result as JsonRpcResult;
@@ -50,6 +50,8 @@ use fc_rpc_core::{
 	EthPubSubApi as EthPubSubApiT,
 };
 use fp_rpc::EthereumRuntimeRPCApi;
+
+use sp_api::ApiExt;
 
 use crate::{frontier_backend_client, overrides::OverrideHandle};
 
@@ -335,11 +337,34 @@ where
 						.filter_map(move |txhash| {
 							if let Some(xt) = pool.ready_transaction(&txhash) {
 								let best_block: BlockId<B> = BlockId::Hash(client.info().best_hash);
-								let res = match client
-									.runtime_api()
-									.extrinsic_filter(&best_block, vec![xt.data().clone()])
+
+								let api = client.runtime_api();
+
+								let api_version = if let Ok(Some(api_version)) =
+									api.api_version::<dyn EthereumRuntimeRPCApi<B>>(&best_block)
 								{
-									Ok(txs) => {
+									api_version
+								} else {
+									return futures::future::ready(None);
+								};
+
+								let xts = vec![xt.data().clone()];
+
+								let txs: Option<Vec<EthereumTransaction>> = if api_version > 1 {
+									api.extrinsic_filter(&best_block, xts).ok()
+								} else {
+									#[allow(deprecated)]
+									if let Ok(legacy) =
+										api.extrinsic_filter_before_version_2(&best_block, xts)
+									{
+										Some(legacy.into_iter().map(|tx| tx.into()).collect())
+									} else {
+										None
+									}
+								};
+
+								let res = match txs {
+									Some(txs) => {
 										if txs.len() == 1 {
 											Some(txs[0].clone())
 										} else {
