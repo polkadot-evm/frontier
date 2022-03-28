@@ -19,7 +19,7 @@
 
 use crate::{
 	runner::Runner as RunnerT, AccountCodes, AccountStorages, AddressMapping, BlockHashMapping,
-	Config, Error, Event, FeeCalculator, OnChargeEVMTransaction, Pallet,
+	Config, Error, Event, FeeCalculator, GasWeightMapping, OnChargeEVMTransaction, Pallet,
 };
 use evm::{
 	backend::Backend as BackendT,
@@ -64,6 +64,17 @@ impl<T: Config> Runner<T> {
 			>,
 		) -> (ExitReason, R),
 	{
+		// Verify the gas limit is within the system configured limits.
+		if let Some(max_extrinsic) = T::BlockWeights::get()
+			.get(frame_support::weights::DispatchClass::Normal)
+			.max_extrinsic
+		{
+			ensure!(
+				T::GasWeightMapping::weight_to_gas(max_extrinsic) >= gas_limit,
+				Error::<T>::GasLimitTooHigh
+			);
+		}
+
 		let base_fee = T::FeeCalculator::min_gas_price();
 		// Gas price check is skipped when performing a gas estimation.
 		let max_fee_per_gas = match max_fee_per_gas {

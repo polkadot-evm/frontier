@@ -357,6 +357,9 @@ pub mod pallet {
 		GasPriceTooLow,
 		/// Nonce is invalid
 		InvalidNonce,
+		/// Gas limit above the system configured limits.
+		/// See https://crates.parity.io/frame_system/limits/struct.WeightsPerClass.html
+		GasLimitTooHigh,
 	}
 
 	#[pallet::genesis_config]
