@@ -18,12 +18,14 @@ lru = "0.6.6"
 jsonrpc-core = "18.0"
 jsonrpc-core-client = "18.0"
 jsonrpc-pubsub = "18.0"
+prometheus = { version = "0.13.0", default-features = false }
 rand = "0.8"
 rlp = "0.5"
 tokio = { version = "1.14", features = [ "sync" ] }
 
 codec = { package = "parity-scale-codec", version = "2.0.0" }
 sp-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
+prometheus-endpoint = { package = "substrate-prometheus-endpoint",  git = "https://github.com/purestake/substrate", branch = "master" }
 sp-blockchain = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-block-builder = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-core = { version = "5.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }

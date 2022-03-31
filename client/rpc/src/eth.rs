@@ -23,12 +23,12 @@ use std::{
 	time,
 };
 
+use crate::cache::LRUCacheByteLimited;
 use ethereum::{BlockV2 as EthereumBlock, TransactionV2 as EthereumTransaction};
 use ethereum_types::{H160, H256, H512, H64, U256, U64};
 use evm::{ExitError, ExitReason};
 use futures::{future::TryFutureExt, StreamExt};
 use jsonrpc_core::{futures::future, BoxFuture, Result};
-use lru::LruCache;
 use tokio::sync::{mpsc, oneshot};
 
 use codec::{Decode, Encode};
@@ -66,6 +66,8 @@ use crate::{
 	public_key, EthSigner, StorageOverride,
 };
 
+type WaitList<Hash, T> = HashMap<Hash, Vec<oneshot::Sender<Option<T>>>>;
+
 pub struct EthApi<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> {
 	pool: Arc<P>,
 	graph: Arc<Pool<A>>,
@@ -77,7 +79,7 @@ pub struct EthApi<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> {
 	overrides: Arc<OverrideHandle<B>>,
 	backend: Arc<fc_db::Backend<B>>,
 	max_past_logs: u32,
-	block_data_cache: Arc<EthBlockDataCache<B>>,
+	block_data_cache: Arc<EthBlockDataCacheTask<B>>,
 	fee_history_limit: u64,
 	fee_history_cache: FeeHistoryCache,
 	_marker: PhantomData<(B, BE)>,
@@ -95,7 +97,7 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> EthApi<B, C, P, CT, BE, H
 		backend: Arc<fc_db::Backend<B>>,
 		is_authority: bool,
 		max_past_logs: u32,
-		block_data_cache: Arc<EthBlockDataCache<B>>,
+		block_data_cache: Arc<EthBlockDataCacheTask<B>>,
 		fee_history_limit: u64,
 		fee_history_cache: FeeHistoryCache,
 	) -> Self {
@@ -311,7 +313,7 @@ where
 async fn filter_range_logs<B: BlockT, C, BE>(
 	client: &C,
 	backend: &fc_db::Backend<B>,
-	block_data_cache: &EthBlockDataCache<B>,
+	block_data_cache: &EthBlockDataCacheTask<B>,
 	ret: &mut Vec<Log>,
 	max_past_logs: u32,
 	filter: &Filter,
@@ -2464,7 +2466,7 @@ pub struct EthFilterApi<B: BlockT, C, BE> {
 	filter_pool: FilterPool,
 	max_stored_filters: usize,
 	max_past_logs: u32,
-	block_data_cache: Arc<EthBlockDataCache<B>>,
+	block_data_cache: Arc<EthBlockDataCacheTask<B>>,
 	_marker: PhantomData<BE>,
 }
 
@@ -2475,7 +2477,7 @@ impl<B: BlockT, C, BE> EthFilterApi<B, C, BE> {
 		filter_pool: FilterPool,
 		max_stored_filters: usize,
 		max_past_logs: u32,
-		block_data_cache: Arc<EthBlockDataCache<B>>,
+		block_data_cache: Arc<EthBlockDataCacheTask<B>>,
 	) -> Self {
 		Self {
 			client,
@@ -3137,24 +3139,31 @@ enum EthBlockDataCacheMessage<B: BlockT> {
 /// These are large and take a lot of time to fetch from the database.
 /// Storing them in an LRU cache will allow to reduce database accesses
 /// when many subsequent requests are related to the same blocks.
-pub struct EthBlockDataCache<B: BlockT>(mpsc::Sender<EthBlockDataCacheMessage<B>>);
+pub struct EthBlockDataCacheTask<B: BlockT>(mpsc::Sender<EthBlockDataCacheMessage<B>>);
 
-impl<B: BlockT> EthBlockDataCache<B> {
+impl<B: BlockT> EthBlockDataCacheTask<B> {
 	pub fn new(
 		spawn_handle: SpawnTaskHandle,
 		overrides: Arc<OverrideHandle<B>>,
-		blocks_cache_size: usize,
-		statuses_cache_size: usize,
+		blocks_cache_max_size: u64,
+		statuses_cache_max_size: u64,
+		prometheus_registry: Option<prometheus_endpoint::Registry>,
 	) -> Self {
 		let (task_tx, mut task_rx) = mpsc::channel(100);
 		let outer_task_tx = task_tx.clone();
 		let outer_spawn_handle = spawn_handle.clone();
 
-		outer_spawn_handle.spawn("EthBlockDataCache", None, async move {
-			let mut blocks_cache = LruCache::<B::Hash, EthereumBlock>::new(blocks_cache_size);
-			let mut statuses_cache =
-				LruCache::<B::Hash, Vec<TransactionStatus>>::new(statuses_cache_size);
-
+		outer_spawn_handle.spawn("EthBlockDataCacheTask", None, async move {
+			let mut blocks_cache = LRUCacheByteLimited::<B::Hash, EthereumBlock>::new(
+				"blocks_cache",
+				blocks_cache_max_size,
+				prometheus_registry.clone(),
+			);
+			let mut statuses_cache = LRUCacheByteLimited::<B::Hash, Vec<TransactionStatus>>::new(
+				"statuses_cache",
+				statuses_cache_max_size,
+				prometheus_registry,
+			);
 			let mut awaiting_blocks =
 				HashMap::<B::Hash, Vec<oneshot::Sender<Option<EthereumBlock>>>>::new();
 			let mut awaiting_statuses =
@@ -3239,8 +3248,8 @@ impl<B: BlockT> EthBlockDataCache<B> {
 
 	fn request_current<T, F>(
 		spawn_handle: &SpawnTaskHandle,
-		cache: &mut LruCache<B::Hash, T>,
-		wait_list: &mut HashMap<B::Hash, Vec<oneshot::Sender<Option<T>>>>,
+		cache: &mut LRUCacheByteLimited<B::Hash, T>,
+		wait_list: &mut WaitList<B::Hash, T>,
 		overrides: Arc<OverrideHandle<B>>,
 		block_hash: B::Hash,
 		schema: EthereumStorageSchema,
@@ -3248,9 +3257,10 @@ impl<B: BlockT> EthBlockDataCache<B> {
 		task_tx: mpsc::Sender<EthBlockDataCacheMessage<B>>,
 		handler_call: F,
 	) where
-		T: Clone,
-		F: FnOnce(&Box<dyn StorageOverride<B> + Send + Sync>) -> EthBlockDataCacheMessage<B>,
-		F: Send + 'static,
+		T: Clone + Encode,
+		F: 'static
+			+ Send
+			+ FnOnce(&Box<dyn StorageOverride<B> + Send + Sync>) -> EthBlockDataCacheMessage<B>,
 	{
 		// Data is cached, we respond immediately.
 		if let Some(data) = cache.get(&block_hash).cloned() {
@@ -3270,7 +3280,7 @@ impl<B: BlockT> EthBlockDataCache<B> {
 		// the data.
 		wait_list.insert(block_hash.clone(), vec![response_tx]);
 
-		spawn_handle.spawn("EthBlockDataCache Worker", None, async move {
+		spawn_handle.spawn("EthBlockDataCacheTask Worker", None, async move {
 			let handler = overrides
 				.schemas
 				.get(&schema)
