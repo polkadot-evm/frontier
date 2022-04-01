@@ -2146,7 +2146,8 @@ where
 							.base_fee(&id)
 							.unwrap_or_default()
 							.checked_add(t.max_priority_fee_per_gas)
-							.unwrap_or(U256::max_value()),
+							.unwrap_or(U256::max_value())
+							.min(t.max_fee_per_gas),
 					};
 
 					return Ok(Some(Receipt {
@@ -2330,7 +2331,7 @@ where
 			};
 			// Highest and lowest block number within the requested range.
 			let highest = UniqueSaturatedInto::<u64>::unique_saturated_into(number);
-			let lowest = highest.saturating_sub(block_count);
+			let lowest = highest.saturating_sub(block_count - 1);
 			// Tip of the chain.
 			let best_number =
 				UniqueSaturatedInto::<u64>::unique_saturated_into(self.client.info().best_number);
@@ -2369,15 +2370,16 @@ where
 								};
 								block_rewards.push(reward);
 							}
-							// Push block rewards.
-							rewards.push(block_rewards);
+							if !block_rewards.is_empty() {
+								// Push block rewards.
+								rewards.push(block_rewards);
+							}
 						}
 					}
 				}
 				if rewards.len() > 0 {
 					response.reward = Some(rewards);
 				}
-				// Calculate next base fee.
 				if let (Some(last_gas_used), Some(last_fee_per_gas)) = (
 					response.gas_used_ratio.last(),
 					response.base_fee_per_gas.last(),
