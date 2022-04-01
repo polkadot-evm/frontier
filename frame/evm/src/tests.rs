@@ -325,9 +325,7 @@ fn refunds_and_priority_should_work() {
 		);
 		let base_fee = <Test as Config>::FeeCalculator::min_gas_price();
 		let actual_tip = (max_fee_per_gas - base_fee).min(tip) * used_gas;
-		let total_cost = (used_gas * base_fee)
-			+ U256::from(actual_tip)
-			+ U256::from(1);
+		let total_cost = (used_gas * base_fee) + U256::from(actual_tip) + U256::from(1);
 		let after_call = EVM::account_basic(&H160::default()).balance;
 		// The tip is deducted but never refunded to the caller.
 		assert_eq!(after_call, before_call - total_cost);

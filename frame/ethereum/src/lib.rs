@@ -536,7 +536,7 @@ impl<T: Config> Pallet<T> {
 			(Some(gas_price), None, None) => {
 				priority = gas_price.saturating_sub(base_fee).unique_saturated_into();
 				gas_price
-			},
+			}
 			// EIP-1559 transaction without tip.
 			(None, Some(max_fee_per_gas), None) => max_fee_per_gas,
 			// EIP-1559 transaction with tip.
@@ -546,7 +546,7 @@ impl<T: Config> Pallet<T> {
 					.min(max_priority_fee_per_gas)
 					.unique_saturated_into();
 				max_fee_per_gas
-			},
+			}
 			_ => return Err(InvalidTransaction::Payment.into()),
 		};
 
@@ -738,18 +738,16 @@ impl<T: Config> Pallet<T> {
 			match transaction {
 				// max_fee_per_gas and max_priority_fee_per_gas in legacy and 2930 transactions is
 				// the provided gas_price.
-				Transaction::Legacy(t) => {
-					(
-						t.input.clone(),
-						t.value,
-						t.gas_limit,
-						Some(t.gas_price),
-						Some(t.gas_price),
-						Some(t.nonce),
-						t.action,
-						Vec::new(),
-					)
-				}
+				Transaction::Legacy(t) => (
+					t.input.clone(),
+					t.value,
+					t.gas_limit,
+					Some(t.gas_price),
+					Some(t.gas_price),
+					Some(t.nonce),
+					t.action,
+					Vec::new(),
+				),
 				Transaction::EIP2930(t) => {
 					let access_list: Vec<(H160, Vec<H256>)> = t
 						.access_list
