@@ -17,8 +17,8 @@ evm = { version = "0.35.0", default-features = false, features = ["with-codec"] 
 serde = { version = "1.0.101", features = ["derive"], optional = true }
 
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.18", default-features = false }
-sp-std = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.18", default-features = false }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-std = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 
 [features]
 default = ["std"]

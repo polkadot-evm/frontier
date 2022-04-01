@@ -12,8 +12,8 @@ kvdb-rocksdb = "0.15.2"
 parking_lot = "0.12.0"
 
 codec = { package = "parity-scale-codec", version = "3.0.0", features = ["derive"] }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.18" }
-sp-database = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.18" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.18" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-database = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 fp-storage = { version = "2.0.0-dev", path = "../../primitives/storage" }

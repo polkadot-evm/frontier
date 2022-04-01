@@ -11,13 +11,13 @@ repository = "https://github.com/paritytech/frontier/"
 async-trait = "0.1"
 thiserror = "1.0"
 
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.18" }
-sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.18" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.18" }
-sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.18" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.18" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.18" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.18" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 fc-db = { version = "2.0.0-dev", path = "../db" }
 fp-consensus = { version = "2.0.0-dev", path = "../../primitives/consensus" }
