@@ -26,6 +26,8 @@ use sp_core::U256;
 use sp_inherents::{InherentData, InherentIdentifier};
 use sp_std::cmp::{max, min};
 
+use fp_dynamic_fee::{InherentType, INHERENT_IDENTIFIER};
+
 pub use self::pallet::*;
 
 #[frame_support::pallet]
@@ -143,32 +145,5 @@ pub mod pallet {
 impl<T: Config> pallet_evm::FeeCalculator for Pallet<T> {
 	fn min_gas_price() -> U256 {
 		MinGasPrice::<T>::get()
-	}
-}
-
-pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"dynfee0_";
-
-pub type InherentType = U256;
-
-#[cfg(feature = "std")]
-pub struct InherentDataProvider(pub InherentType);
-
-#[cfg(feature = "std")]
-#[async_trait::async_trait]
-impl sp_inherents::InherentDataProvider for InherentDataProvider {
-	fn provide_inherent_data(
-		&self,
-		inherent_data: &mut InherentData,
-	) -> Result<(), sp_inherents::Error> {
-		inherent_data.put_data(INHERENT_IDENTIFIER, &self.0)
-	}
-
-	async fn try_handle_error(
-		&self,
-		_identifier: &InherentIdentifier,
-		_error: &[u8],
-	) -> Option<Result<(), sp_inherents::Error>> {
-		// The pallet never reports error.
-		None
 	}
 }
