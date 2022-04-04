@@ -7,40 +7,40 @@ description = "Ethereum RPC (web3) compatibility layer for Substrate."
 license = "GPL-3.0-or-later WITH Classpath-exception-2.0"
 
 [dependencies]
-ethereum = { version = "0.11.1", features = ["with-codec"] }
-ethereum-types = "0.12"
-evm = "0.33.1"
+ethereum = { version = "0.12.0", features = ["with-codec"] }
+ethereum-types = "0.13.1"
+evm = "0.35.0"
 futures = { version = "0.3.1", features = ["compat"] }
 hex = "0.4"
-libsecp256k1 = "0.7"
-log = "0.4.8"
-lru = "0.6.6"
 jsonrpc-core = "18.0"
 jsonrpc-core-client = "18.0"
 jsonrpc-pubsub = "18.0"
+libsecp256k1 = "0.7"
+log = "0.4.8"
+lru = "0.6.6"
 rand = "0.8"
 rlp = "0.5"
-tokio = { version = "1.14", features = [ "sync" ] }
+tokio = { version = "1.14", features = ["sync"] }
 
-codec = { package = "parity-scale-codec", version = "2.0.0" }
-sp-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-blockchain = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-block-builder = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-core = { version = "5.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-io = { version = "5.0.0",  git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-runtime = { version = "5.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-storage = { version = "5.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
+codec = { package = "parity-scale-codec", version = "3.0.0" }
 sc-client-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-network = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-rpc = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-service = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-transaction-pool = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-transaction-pool-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-block-builder = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-blockchain = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-core = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-io = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-runtime = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-storage = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
 
-fp-rpc = { version = "3.0.0-dev", path = "../../primitives/rpc" }
-fp-storage = { version = "2.0.0-dev", path = "../../primitives/storage" }
 fc-db = { version = "2.0.0-dev", path = "../db" }
 fc-rpc-core = { version = "1.1.0-dev", path = "../rpc-core" }
+fp-rpc = { version = "3.0.0-dev", path = "../../primitives/rpc" }
+fp-storage = { version = "2.0.0-dev", path = "../../primitives/storage" }
 
 [features]
 rpc_binary_search_estimate = []

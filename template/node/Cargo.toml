@@ -15,22 +15,11 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 async-trait = "0.1"
-clap = { version = "3.0", features = ["derive"] }
+clap = { version = "3.1", features = ["derive"] }
 futures = "0.3"
-log = "0.4.8"
 jsonrpc-core = "18.0.0"
 jsonrpc-pubsub = "18.0.0"
-
-sp-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-block-builder = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-blockchain = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-consensus = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-consensus-aura = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-core = { version = "5.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-finality-grandpa = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-runtime = { version = "5.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-timestamp = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-inherents = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
+log = "0.4.8"
 
 sc-basic-authorship = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-cli = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", features = ["wasmtime"] }
@@ -48,26 +37,33 @@ sc-service = { version = "0.10.0-dev", git = "https://github.com/paritytech/subs
 sc-telemetry = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-transaction-pool = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-transaction-pool-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-substrate-frame-rpc-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-block-builder = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-blockchain = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-consensus = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-consensus-aura = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-core = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-finality-grandpa = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-inherents = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-runtime = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-timestamp = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
+# These dependencies are used for RPC
 pallet-transaction-payment-rpc = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-
+substrate-frame-rpc-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 # These dependencies are used for runtime benchmarking
 frame-benchmarking = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 frame-benchmarking-cli = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-
-fp-consensus = { path = "../../primitives/consensus" }
-fp-rpc = { path = "../../primitives/rpc" }
-fp-storage = { path = "../../primitives/storage" }
 
 fc-consensus = { path = "../../client/consensus" }
 fc-db = { path = "../../client/db" }
 fc-mapping-sync = { path = "../../client/mapping-sync" }
 fc-rpc = { path = "../../client/rpc" }
 fc-rpc-core = { path = "../../client/rpc-core" }
+fp-consensus = { path = "../../primitives/consensus" }
+fp-rpc = { path = "../../primitives/rpc" }
+fp-storage = { path = "../../primitives/storage" }
 
-pallet-base-fee = { path = "../../frame/base-fee" }
 pallet-dynamic-fee = { path = "../../frame/dynamic-fee" }
-pallet-ethereum = { path = "../../frame/ethereum" }
 pallet-evm = { path = "../../frame/evm" }
 
 frontier-template-runtime = { path = "../runtime", default-features = false, features = ["std"] }
