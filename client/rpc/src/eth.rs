@@ -2805,13 +2805,14 @@ where
 	BE: Backend<B> + 'static,
 	BE::State: StateBackend<BlakeTwo256>,
 {
-	/// Task that caches at which best hash a new EthereumStorageSchema was inserted in the Runtime Storage.
+	/// Task that caches at which substrate hash a new EthereumStorageSchema was inserted in the Runtime Storage.
 	pub async fn ethereum_schema_cache_task(client: Arc<C>, backend: Arc<fc_db::Backend<B>>) {
 		use fp_storage::PALLET_ETHEREUM_SCHEMA;
 		use log::warn;
 		use sp_storage::{StorageData, StorageKey};
 
 		if let Ok(None) = frontier_backend_client::load_cached_schema::<B>(backend.as_ref()) {
+			// Initialize the schema cache at genesis.
 			let mut cache: Vec<(EthereumStorageSchema, H256)> = Vec::new();
 			let id = BlockId::Number(Zero::zero());
 			if let Ok(Some(header)) = client.header(id) {
@@ -2830,61 +2831,58 @@ where
 			}
 		}
 
-		// Subscribe to changes for the pallet-ethereum Schema.
-		if let Ok(mut stream) = client.storage_changes_notification_stream(
-			Some(&[StorageKey(PALLET_ETHEREUM_SCHEMA.to_vec())]),
-			None,
-		) {
-			while let Some((hash, changes)) = stream.next().await {
-				// Make sure only block hashes marked as best are referencing cache checkpoints.
-				if hash == client.info().best_hash {
-					// Just map the change set to the actual data.
-					let storage: Vec<Option<StorageData>> = changes
+		let mut notification_st = client.import_notification_stream();
+		while let Some(notification) = notification_st.next().await {
+			// Imported block
+			let hash = notification.hash;
+			let id = BlockId::Hash(hash);
+			let new_schema =
+				frontier_backend_client::onchain_storage_schema::<B, C, BE>(client.as_ref(), id);
+			let number = notification.header.number();
+			// Parent
+			let parent_hash = notification.header.parent_hash();
+			let parent_id: BlockId<B> = BlockId::Hash(*parent_hash);
+			let old_schema =
+				frontier_backend_client::onchain_storage_schema::<B, C, BE>(client.as_ref(), id);
+			if new_schema != old_schema {
+				if let Ok(Some(old_cache)) =
+					frontier_backend_client::load_cached_schema::<B>(backend.as_ref())
+				{
+					// Schema has changed.
+					// We make sure to remove reorged blocks from cache, as we want
+					// a single cached schema for a given height.
+					let to_remove = old_cache
 						.iter()
-						.filter_map(|(o_sk, _k, v)| {
-							if o_sk.is_none() {
-								Some(v.cloned())
+						.enumerate()
+						.filter_map(|(index, (schema, hash))| {
+							if let Ok(Some(header)) = client.header(BlockId::Hash(*hash)) {
+								let in_cache_number = header.number();
+								// A cache references the same height as the block being imported.
+								// Add its index to the removal list.
+								if in_cache_number == number {
+									Some(index)
+								} else {
+									None
+								}
 							} else {
 								None
 							}
 						})
-						.collect();
-					for change in storage {
-						if let Some(data) = change {
-							// Decode the wrapped blob which's type is known.
-							let new_schema: EthereumStorageSchema =
-								Decode::decode(&mut &data.0[..]).unwrap();
-							// Cache new entry and overwrite the old database value.
-							if let Ok(Some(old_cache)) =
-								frontier_backend_client::load_cached_schema::<B>(backend.as_ref())
-							{
-								let mut new_cache: Vec<(EthereumStorageSchema, H256)> = old_cache;
-								match &new_cache[..] {
-									[.., (schema, _)] if *schema == new_schema => {
-										warn!(
-											"Schema version already in Frontier database, ignoring: {:?}",
-											new_schema
-										);
-									}
-									_ => {
-										new_cache.push((new_schema, hash));
-										let _ = frontier_backend_client::write_cached_schema::<B>(
-											backend.as_ref(),
-											new_cache,
-										)
-										.map_err(|err| {
-											warn!(
-												"Error schema cache insert for genesis: {:?}",
-												err
-											);
-										});
-									}
-								}
-							} else {
-								warn!("Error schema cache is corrupted");
-							}
-						}
+						.collect::<Vec<_>>();
+					let mut new_cache: Vec<(EthereumStorageSchema, H256)> = old_cache;
+					for index in to_remove {
+						new_cache.remove(index);
 					}
+					new_cache.push((new_schema, hash));
+					let _ = frontier_backend_client::write_cached_schema::<B>(
+						backend.as_ref(),
+						new_cache,
+					)
+					.map_err(|err| {
+						warn!("Error schema cache insert for genesis: {:?}", err);
+					});
+				} else {
+					warn!("Error schema cache is corrupted");
 				}
 			}
 		}
