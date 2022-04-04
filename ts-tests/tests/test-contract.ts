@@ -1,7 +1,10 @@
-import { expect } from "chai";
+import { expect, use as chaiUse } from "chai";
+import chaiAsPromised from "chai-as-promised";
 
 import Test from "../build/contracts/Test.json"
 import { createAndFinalizeBlock, customRequest, describeWithFrontier } from "./util";
+
+chaiUse(chaiAsPromised);
 
 describeWithFrontier("Frontier RPC (Contract)", (context) => {
 	const GENESIS_ACCOUNT = "0x6be02d1d3665660d22ff9624b7be0551ee1ac91b";
@@ -50,8 +53,7 @@ describeWithFrontier("Frontier RPC (Contract)", (context) => {
 		expect(await customRequest(context.web3, "eth_getCode", [FIRST_CONTRACT_ADDRESS])).to.deep.equal({
 			id: 1,
 			jsonrpc: "2.0",
-			result:
-			TEST_CONTRACT_DEPLOYED_BYTECODE,
+			result: TEST_CONTRACT_DEPLOYED_BYTECODE,
 		});
 	});
 
@@ -59,5 +61,12 @@ describeWithFrontier("Frontier RPC (Contract)", (context) => {
 		expect(await context.web3.eth.call({
 			data: TEST_CONTRACT_BYTECODE
 		})).to.be.eq(TEST_CONTRACT_DEPLOYED_BYTECODE);
+	});
+
+	it("eth_call at missing block returns error", async function () {
+		const nonExistingBlockNumber = "999999";
+		await expect(context.web3.eth.call({
+			data: TEST_CONTRACT_BYTECODE,
+		}, nonExistingBlockNumber)).to.eventually.rejectedWith('header not found');
 	});
 });

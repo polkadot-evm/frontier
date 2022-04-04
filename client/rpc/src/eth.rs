@@ -27,7 +27,7 @@ use ethereum::{BlockV2 as EthereumBlock, TransactionV2 as EthereumTransaction};
 use ethereum_types::{H160, H256, H512, H64, U256, U64};
 use evm::{ExitError, ExitReason};
 use futures::{future::TryFutureExt, StreamExt};
-use jsonrpc_core::{futures::future, BoxFuture, Result};
+use jsonrpc_core::{futures::future, BoxFuture, Error, Result};
 use lru::LruCache;
 use tokio::sync::{mpsc, oneshot};
 
@@ -42,6 +42,7 @@ use sc_transaction_pool::{ChainApi, Pool};
 use sc_transaction_pool_api::{InPoolTransaction, TransactionPool};
 use sp_api::{ApiExt, BlockId, Core, HeaderT, ProvideRuntimeApi};
 use sp_block_builder::BlockBuilder;
+use sp_blockchain::BlockStatus;
 use sp_blockchain::HeaderBackend;
 use sp_core::hashing::keccak_256;
 use sp_runtime::{
@@ -65,6 +66,9 @@ use crate::{
 	error_on_execution_failure, frontier_backend_client, internal_err, overrides::OverrideHandle,
 	public_key, EthSigner, StorageOverride,
 };
+
+/// Default JSONRPC error code return by geth
+pub const JSON_RPC_ERROR_DEFAULT: i64 = -32000;
 
 pub struct EthApi<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> {
 	pool: Arc<P>,
@@ -1205,6 +1209,14 @@ where
 				(id, api)
 			}
 		};
+
+		if let Ok(BlockStatus::Unknown) = self.client.status(id) {
+			return Err(Error {
+				code: JSON_RPC_ERROR_DEFAULT.into(),
+				message: String::from("header not found"),
+				data: None,
+			});
+		}
 
 		let api_version =
 			if let Ok(Some(api_version)) = api.api_version::<dyn EthereumRuntimeRPCApi<B>>(&id) {
