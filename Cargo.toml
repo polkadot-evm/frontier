@@ -1,5 +1,6 @@
 [workspace]
 members = [
+	"frame/base-fee",
 	"frame/dynamic-fee",
 	"frame/ethereum",
 	"frame/evm",

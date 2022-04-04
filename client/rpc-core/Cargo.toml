@@ -7,8 +7,8 @@ description = "RPC traits of Ethereum."
 license = "GPL-3.0-or-later WITH Classpath-exception-2.0"
 
 [dependencies]
-ethereum = { version = "0.11.1", features = ["with-codec", "with-serde"] }
-ethereum-types = "0.12"
+ethereum = { version = "0.12.0", features = ["with-codec", "with-serde"] }
+ethereum-types = "0.13.1"
 jsonrpc-core = "18.0"
 jsonrpc-core-client = "18.0"
 jsonrpc-derive = "18.0"

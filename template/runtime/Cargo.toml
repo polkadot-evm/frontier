@@ -14,20 +14,20 @@ targets = ["x86_64-unknown-linux-gnu"]
 [dependencies]
 serde = { version = "1.0.101", features = ["derive"], optional = true }
 
-codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = ["derive"] }
-scale-info = { version = "1.0.0", default-features = false, features = ["derive"] }
+codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
+scale-info = { version = "2.0.0", default-features = false, features = ["derive"] }
 sp-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 sp-block-builder = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 sp-consensus-aura = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-core = { version = "5.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-core = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 sp-inherents = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-io = { version = "5.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-io = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 sp-offchain = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-runtime = { version = "5.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-runtime = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 sp-session = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 sp-std = { version = "4.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 sp-transaction-pool = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-version = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-version = { version = "5.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 
 frame-executive = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
@@ -41,20 +41,20 @@ pallet-sudo = { version = "4.0.0-dev", git = "https://github.com/paritytech/subs
 pallet-timestamp = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 pallet-transaction-payment = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 pallet-transaction-payment-rpc-runtime-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-
-fp-rpc = { default-features = false, path = "../../primitives/rpc" }
-fp-self-contained = { default-features = false, path = "../../primitives/self-contained" }
-pallet-base-fee = { default-features = false, path = "../../frame/base-fee" }
-pallet-dynamic-fee = { default-features = false, path = "../../frame/dynamic-fee" }
-pallet-ethereum = { default-features = false, path = "../../frame/ethereum" }
-pallet-evm = { default-features = false, path = "../../frame/evm" }
-pallet-evm-precompile-simple = { default-features = false, path = "../../frame/evm/precompile/simple" }
-pallet-evm-precompile-sha3fips = { default-features = false, path = "../../frame/evm/precompile/sha3fips" }
-pallet-evm-precompile-modexp = { default-features = false, path = "../../frame/evm/precompile/modexp" }
-
 # benchmarking dependencies
 frame-benchmarking = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false, optional = true }
 frame-system-benchmarking = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false, optional = true }
+
+fp-rpc = { path = "../../primitives/rpc", default-features = false }
+fp-self-contained = { path = "../../primitives/self-contained", default-features = false }
+
+pallet-base-fee = { path = "../../frame/base-fee", default-features = false }
+pallet-dynamic-fee = { path = "../../frame/dynamic-fee", default-features = false }
+pallet-ethereum = { path = "../../frame/ethereum", default-features = false }
+pallet-evm = { path = "../../frame/evm", default-features = false }
+pallet-evm-precompile-modexp = { path = "../../frame/evm/precompile/modexp", default-features = false }
+pallet-evm-precompile-sha3fips = { path = "../../frame/evm/precompile/sha3fips", default-features = false }
+pallet-evm-precompile-simple = { path = "../../frame/evm/precompile/simple", default-features = false }
 
 [build-dependencies]
 substrate-wasm-builder = { version = "5.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -94,17 +94,18 @@ std = [
 	"pallet-transaction-payment-rpc-runtime-api/std",
 	"pallet-transaction-payment/std",
 
+	"frame-benchmarking/std",
+	"frame-system-benchmarking/std",
+
 	"fp-rpc/std",
 	"fp-self-contained/std",
+
 	"pallet-base-fee/std",
 	"pallet-dynamic-fee/std",
 	"pallet-ethereum/std",
 	"pallet-evm/std",
 	"pallet-evm-precompile-simple/std",
 	"pallet-evm-precompile-sha3fips/std",
-
-	"frame-benchmarking/std",
-	"frame-system-benchmarking/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",

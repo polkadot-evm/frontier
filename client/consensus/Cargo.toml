@@ -11,14 +11,14 @@ repository = "https://github.com/paritytech/frontier/"
 async-trait = "0.1"
 thiserror = "1.0"
 
+sc-client-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-consensus = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-block-builder = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-blockchain = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-consensus = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-runtime = { version = "5.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-client-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-consensus = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-runtime = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
 
+fc-db = { version = "2.0.0-dev", path = "../db" }
 fp-consensus = { version = "2.0.0-dev", path = "../../primitives/consensus" }
 fp-rpc = { version = "3.0.0-dev", path = "../../primitives/rpc" }
-fc-db = { version = "2.0.0-dev", path = "../db" }

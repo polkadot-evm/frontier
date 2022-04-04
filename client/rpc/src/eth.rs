@@ -1301,7 +1301,7 @@ where
 							Some(
 								access_list
 									.into_iter()
-									.map(|item| (item.address, item.slots))
+									.map(|item| (item.address, item.storage_keys))
 									.collect(),
 							),
 						)
@@ -1379,7 +1379,7 @@ where
 							Some(
 								access_list
 									.into_iter()
-									.map(|item| (item.address, item.slots))
+									.map(|item| (item.address, item.storage_keys))
 									.collect(),
 							),
 						)
@@ -1589,7 +1589,7 @@ where
 								Some(
 									access_list
 										.into_iter()
-										.map(|item| (item.address, item.slots))
+										.map(|item| (item.address, item.storage_keys))
 										.collect(),
 								),
 							)
@@ -1647,7 +1647,7 @@ where
 								Some(
 									access_list
 										.into_iter()
-										.map(|item| (item.address, item.slots))
+										.map(|item| (item.address, item.storage_keys))
 										.collect(),
 								),
 							)
