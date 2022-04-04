@@ -1965,6 +1965,7 @@ dependencies = [
  "fc-rpc",
  "fc-rpc-core",
  "fp-consensus",
+ "fp-evm",
  "fp-rpc",
  "fp-storage",
  "frame-benchmarking",
@@ -1975,7 +1976,6 @@ dependencies = [
  "jsonrpc-pubsub",
  "log",
  "pallet-dynamic-fee",
- "pallet-evm",
  "pallet-transaction-payment-rpc",
  "sc-basic-authorship",
  "sc-cli",
@@ -4259,9 +4259,9 @@ dependencies = [
 name = "pallet-base-fee"
 version = "1.0.0"
 dependencies = [
+ "fp-evm",
  "frame-support",
  "frame-system",
- "pallet-evm",
  "parity-scale-codec",
  "scale-info",
  "serde",
@@ -4275,9 +4275,9 @@ name = "pallet-dynamic-fee"
 version = "4.0.0-dev"
 dependencies = [
  "async-trait",
+ "fp-evm",
  "frame-support",
  "frame-system",
- "pallet-evm",
  "pallet-timestamp",
  "parity-scale-codec",
  "scale-info",

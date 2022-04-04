@@ -61,3 +61,29 @@ pub enum CallOrCreateInfo {
 	Call(CallInfo),
 	Create(CreateInfo),
 }
+
+/// Account definition used for genesis block construction.
+#[cfg(feature = "std")]
+#[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, Serialize, Deserialize)]
+pub struct GenesisAccount {
+	/// Account nonce.
+	pub nonce: U256,
+	/// Account balance.
+	pub balance: U256,
+	/// Full account storage.
+	pub storage: std::collections::BTreeMap<sp_core::H256, sp_core::H256>,
+	/// Account code.
+	pub code: Vec<u8>,
+}
+
+/// Trait that outputs the current transaction gas price.
+pub trait FeeCalculator {
+	/// Return the minimal required gas price.
+	fn min_gas_price() -> U256;
+}
+
+impl FeeCalculator for () {
+	fn min_gas_price() -> U256 {
+		U256::zero()
+	}
+}
