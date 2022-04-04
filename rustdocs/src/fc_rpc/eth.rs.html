@@ -3327,6 +3327,7 @@
 <span id="3325">3325</span>
 <span id="3326">3326</span>
 <span id="3327">3327</span>
+<span id="3328">3328</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -4630,7 +4631,7 @@
 							<span class="prelude-val">Some</span>(
 								<span class="ident">access_list</span>
 									.<span class="ident">into_iter</span>()
-									.<span class="ident">map</span>(<span class="op">|</span><span class="ident">item</span><span class="op">|</span> (<span class="ident">item</span>.<span class="ident">address</span>, <span class="ident">item</span>.<span class="ident">slots</span>))
+									.<span class="ident">map</span>(<span class="op">|</span><span class="ident">item</span><span class="op">|</span> (<span class="ident">item</span>.<span class="ident">address</span>, <span class="ident">item</span>.<span class="ident">storage_keys</span>))
 									.<span class="ident">collect</span>(),
 							),
 						)
@@ -4708,7 +4709,7 @@
 							<span class="prelude-val">Some</span>(
 								<span class="ident">access_list</span>
 									.<span class="ident">into_iter</span>()
-									.<span class="ident">map</span>(<span class="op">|</span><span class="ident">item</span><span class="op">|</span> (<span class="ident">item</span>.<span class="ident">address</span>, <span class="ident">item</span>.<span class="ident">slots</span>))
+									.<span class="ident">map</span>(<span class="op">|</span><span class="ident">item</span><span class="op">|</span> (<span class="ident">item</span>.<span class="ident">address</span>, <span class="ident">item</span>.<span class="ident">storage_keys</span>))
 									.<span class="ident">collect</span>(),
 							),
 						)
@@ -4918,7 +4919,7 @@
 								<span class="prelude-val">Some</span>(
 									<span class="ident">access_list</span>
 										.<span class="ident">into_iter</span>()
-										.<span class="ident">map</span>(<span class="op">|</span><span class="ident">item</span><span class="op">|</span> (<span class="ident">item</span>.<span class="ident">address</span>, <span class="ident">item</span>.<span class="ident">slots</span>))
+										.<span class="ident">map</span>(<span class="op">|</span><span class="ident">item</span><span class="op">|</span> (<span class="ident">item</span>.<span class="ident">address</span>, <span class="ident">item</span>.<span class="ident">storage_keys</span>))
 										.<span class="ident">collect</span>(),
 								),
 							)
@@ -4976,7 +4977,7 @@
 								<span class="prelude-val">Some</span>(
 									<span class="ident">access_list</span>
 										.<span class="ident">into_iter</span>()
-										.<span class="ident">map</span>(<span class="op">|</span><span class="ident">item</span><span class="op">|</span> (<span class="ident">item</span>.<span class="ident">address</span>, <span class="ident">item</span>.<span class="ident">slots</span>))
+										.<span class="ident">map</span>(<span class="op">|</span><span class="ident">item</span><span class="op">|</span> (<span class="ident">item</span>.<span class="ident">address</span>, <span class="ident">item</span>.<span class="ident">storage_keys</span>))
 										.<span class="ident">collect</span>(),
 								),
 							)
@@ -6164,7 +6165,8 @@
 			<span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>[<span class="ident">StorageKey</span>(<span class="ident">PALLET_ETHEREUM_SCHEMA</span>.<span class="ident">to_vec</span>())]),
 			<span class="prelude-val">None</span>,
 		) {
-			<span class="kw">while</span> <span class="kw">let</span> <span class="prelude-val">Some</span>((<span class="ident">hash</span>, <span class="ident">changes</span>)) <span class="op">=</span> <span class="ident">stream</span>.<span class="ident">next</span>().<span class="kw">await</span> {
+			<span class="kw">while</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">notification</span>) <span class="op">=</span> <span class="ident">stream</span>.<span class="ident">next</span>().<span class="kw">await</span> {
+				<span class="kw">let</span> (<span class="ident">hash</span>, <span class="ident">changes</span>) <span class="op">=</span> (<span class="ident">notification</span>.<span class="ident">block</span>, <span class="ident">notification</span>.<span class="ident">changes</span>);
 				<span class="comment">// Make sure only block hashes marked as best are referencing cache checkpoints.</span>
 				<span class="kw">if</span> <span class="ident">hash</span> <span class="op">==</span> <span class="ident">client</span>.<span class="ident">info</span>().<span class="ident">best_hash</span> {
 					<span class="comment">// Just map the change set to the actual data.</span>
