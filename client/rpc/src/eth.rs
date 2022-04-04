@@ -1301,7 +1301,7 @@ where
 							Some(
 								access_list
 									.into_iter()
-									.map(|item| (item.address, item.slots))
+									.map(|item| (item.address, item.storage_keys))
 									.collect(),
 							),
 						)
@@ -1379,7 +1379,7 @@ where
 							Some(
 								access_list
 									.into_iter()
-									.map(|item| (item.address, item.slots))
+									.map(|item| (item.address, item.storage_keys))
 									.collect(),
 							),
 						)
@@ -1589,7 +1589,7 @@ where
 								Some(
 									access_list
 										.into_iter()
-										.map(|item| (item.address, item.slots))
+										.map(|item| (item.address, item.storage_keys))
 										.collect(),
 								),
 							)
@@ -1647,7 +1647,7 @@ where
 								Some(
 									access_list
 										.into_iter()
-										.map(|item| (item.address, item.slots))
+										.map(|item| (item.address, item.storage_keys))
 										.collect(),
 								),
 							)
@@ -2835,7 +2835,8 @@ where
 			Some(&[StorageKey(PALLET_ETHEREUM_SCHEMA.to_vec())]),
 			None,
 		) {
-			while let Some((hash, changes)) = stream.next().await {
+			while let Some(notification) = stream.next().await {
+				let (hash, changes) = (notification.block, notification.changes);
 				// Make sure only block hashes marked as best are referencing cache checkpoints.
 				if hash == client.info().best_hash {
 					// Just map the change set to the actual data.
