@@ -140,7 +140,7 @@ pub mod pallet {
 	}
 }
 
-impl<T: Config> pallet_evm::FeeCalculator for Pallet<T> {
+impl<T: Config> fp_evm::FeeCalculator for Pallet<T> {
 	fn min_gas_price() -> U256 {
 		MinGasPrice::<T>::get()
 	}
