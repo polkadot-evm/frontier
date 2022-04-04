@@ -233,11 +233,11 @@ pub mod pallet {
 			Ok(())
 		}
 	}
+}
 
-	impl<T: Config> pallet_evm::FeeCalculator for Pallet<T> {
-		fn min_gas_price() -> U256 {
-			<BaseFeePerGas<T>>::get()
-		}
+impl<T: Config> fp_evm::FeeCalculator for Pallet<T> {
+	fn min_gas_price() -> U256 {
+		<BaseFeePerGas<T>>::get()
 	}
 }
 
