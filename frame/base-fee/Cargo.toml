@@ -22,7 +22,7 @@ sp-runtime = { version = "6.0.0", git = "https://github.com/paritytech/substrate
 frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 
-pallet-evm = { version = "6.0.0-dev", path = "../evm", default-features = false }
+fp-evm = { version = "3.0.0-dev", path = "../../primitives/evm", default-features = false }
 
 [dev-dependencies]
 sp-io = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
@@ -39,5 +39,5 @@ std = [
 	"frame-support/std",
 	"frame-system/std",
 
-	"pallet-evm/std",
+	"fp-evm/std",
 ]

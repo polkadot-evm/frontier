@@ -21,7 +21,7 @@ frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/su
 frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 
 fp-dynamic-fee = { version = "1.0.0", path = "../../primitives/dynamic-fee", default-features = false }
-pallet-evm = { version = "6.0.0-dev", path = "../evm", default-features = false }
+fp-evm = { version = "3.0.0-dev", path = "../../primitives/evm", default-features = false }
 
 [dev-dependencies]
 pallet-timestamp = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
@@ -42,5 +42,5 @@ std = [
 	"frame-support/std",
 
 	"fp-dynamic-fee/std",
-	"pallet-evm/std",
+	"fp-evm/std",
 ]

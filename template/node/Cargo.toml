@@ -61,10 +61,9 @@ fc-rpc = { path = "../../client/rpc" }
 fc-rpc-core = { path = "../../client/rpc-core" }
 fp-consensus = { path = "../../primitives/consensus" }
 fp-dynamic-fee = { path = "../../primitives/dynamic-fee" }
+fp-evm = { path = "../../primitives/evm" }
 fp-rpc = { path = "../../primitives/rpc" }
 fp-storage = { path = "../../primitives/storage" }
-
-pallet-evm = { path = "../../frame/evm" }
 
 frontier-template-runtime = { path = "../runtime", default-features = false, features = ["std"] }
 
