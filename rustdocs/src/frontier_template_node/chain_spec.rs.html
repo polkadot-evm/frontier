@@ -378,7 +378,7 @@
 					<span class="comment">// Using the full hex key, truncating to the first 20 bytes (the first 40 hex chars)</span>
 					<span class="ident">H160::from_str</span>(<span class="string">&quot;d43593c715fdd31c61141abd04a99fd6822c8558&quot;</span>)
 						.<span class="ident">expect</span>(<span class="string">&quot;internal H160 is valid; qed&quot;</span>),
-					<span class="ident">pallet_evm::GenesisAccount</span> {
+					<span class="ident">fp_evm::GenesisAccount</span> {
 						<span class="ident">balance</span>: <span class="ident">U256::from_str</span>(<span class="string">&quot;0xffffffffffffffffffffffffffffffff&quot;</span>)
 							.<span class="ident">expect</span>(<span class="string">&quot;internal U256 is valid; qed&quot;</span>),
 						<span class="ident">code</span>: <span class="ident">Default::default</span>(),
@@ -390,7 +390,7 @@
 					<span class="comment">// H160 address of CI test runner account</span>
 					<span class="ident">H160::from_str</span>(<span class="string">&quot;6be02d1d3665660d22ff9624b7be0551ee1ac91b&quot;</span>)
 						.<span class="ident">expect</span>(<span class="string">&quot;internal H160 is valid; qed&quot;</span>),
-					<span class="ident">pallet_evm::GenesisAccount</span> {
+					<span class="ident">fp_evm::GenesisAccount</span> {
 						<span class="ident">balance</span>: <span class="ident">U256::from_str</span>(<span class="string">&quot;0xffffffffffffffffffffffffffffffff&quot;</span>)
 							.<span class="ident">expect</span>(<span class="string">&quot;internal U256 is valid; qed&quot;</span>),
 						<span class="ident">code</span>: <span class="ident">Default::default</span>(),

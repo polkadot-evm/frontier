@@ -763,33 +763,6 @@
 <span id="761">761</span>
 <span id="762">762</span>
 <span id="763">763</span>
-<span id="764">764</span>
-<span id="765">765</span>
-<span id="766">766</span>
-<span id="767">767</span>
-<span id="768">768</span>
-<span id="769">769</span>
-<span id="770">770</span>
-<span id="771">771</span>
-<span id="772">772</span>
-<span id="773">773</span>
-<span id="774">774</span>
-<span id="775">775</span>
-<span id="776">776</span>
-<span id="777">777</span>
-<span id="778">778</span>
-<span id="779">779</span>
-<span id="780">780</span>
-<span id="781">781</span>
-<span id="782">782</span>
-<span id="783">783</span>
-<span id="784">784</span>
-<span id="785">785</span>
-<span id="786">786</span>
-<span id="787">787</span>
-<span id="788">788</span>
-<span id="789">789</span>
-<span id="790">790</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -853,15 +826,6 @@
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
 <span class="kw">mod</span> <span class="ident">tests</span>;
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>)]</span>
-<span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Decode</span>, <span class="ident">Encode</span>};
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">evm</span>::{
-	<span class="ident">Config</span> <span class="kw">as</span> <span class="ident">EvmConfig</span>, <span class="ident">Context</span>, <span class="ident">ExitError</span>, <span class="ident">ExitFatal</span>, <span class="ident">ExitReason</span>, <span class="ident">ExitRevert</span>, <span class="ident">ExitSucceed</span>,
-};
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">fp_evm</span>::{
-	<span class="ident">Account</span>, <span class="ident">CallInfo</span>, <span class="ident">CreateInfo</span>, <span class="ident">ExecutionInfo</span>, <span class="ident">LinearCostPrecompile</span>, <span class="ident">Log</span>, <span class="ident">Precompile</span>,
-	<span class="ident">PrecompileFailure</span>, <span class="ident">PrecompileOutput</span>, <span class="ident">PrecompileResult</span>, <span class="ident">PrecompileSet</span>, <span class="ident">Vicinity</span>,
-};
 <span class="kw">use</span> <span class="ident">frame_support</span>::{
 	<span class="ident">dispatch::DispatchResultWithPostInfo</span>,
 	<span class="ident">traits</span>::{
@@ -871,14 +835,22 @@
 	<span class="ident">weights</span>::{<span class="ident">Pays</span>, <span class="ident">PostDispatchInfo</span>, <span class="ident">Weight</span>},
 };
 <span class="kw">use</span> <span class="ident">frame_system::RawOrigin</span>;
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>)]</span>
-<span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">Deserialize</span>, <span class="ident">Serialize</span>};
 <span class="kw">use</span> <span class="ident">sp_core</span>::{<span class="ident">Hasher</span>, <span class="ident">H160</span>, <span class="ident">H256</span>, <span class="ident">U256</span>};
 <span class="kw">use</span> <span class="ident">sp_runtime</span>::{
 	<span class="ident">traits</span>::{<span class="ident">BadOrigin</span>, <span class="ident">Saturating</span>, <span class="ident">UniqueSaturatedInto</span>, <span class="ident">Zero</span>},
 	<span class="ident">AccountId32</span>,
 };
 <span class="kw">use</span> <span class="ident">sp_std::vec::Vec</span>;
+
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">evm</span>::{
+	<span class="ident">Config</span> <span class="kw">as</span> <span class="ident">EvmConfig</span>, <span class="ident">Context</span>, <span class="ident">ExitError</span>, <span class="ident">ExitFatal</span>, <span class="ident">ExitReason</span>, <span class="ident">ExitRevert</span>, <span class="ident">ExitSucceed</span>,
+};
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>)]</span>
+<span class="kw">use</span> <span class="ident">fp_evm::GenesisAccount</span>;
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">fp_evm</span>::{
+	<span class="ident">Account</span>, <span class="ident">CallInfo</span>, <span class="ident">CreateInfo</span>, <span class="ident">ExecutionInfo</span>, <span class="ident">FeeCalculator</span>, <span class="ident">LinearCostPrecompile</span>, <span class="ident">Log</span>,
+	<span class="ident">Precompile</span>, <span class="ident">PrecompileFailure</span>, <span class="ident">PrecompileOutput</span>, <span class="ident">PrecompileResult</span>, <span class="ident">PrecompileSet</span>, <span class="ident">Vicinity</span>,
+};
 
 <span class="kw">pub</span> <span class="kw">use</span> <span class="self">self</span>::{<span class="ident">pallet</span>::<span class="kw-2">*</span>, <span class="ident">runner::Runner</span>};
 
@@ -1209,18 +1181,6 @@
 <span class="kw">type</span> <span class="ident">NegativeImbalanceOf</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">T</span><span class="op">&gt;</span> <span class="op">=</span>
 	<span class="op">&lt;</span><span class="ident">C</span> <span class="kw">as</span> <span class="ident">Currency</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">frame_system::Config</span><span class="op">&gt;</span><span class="ident">::AccountId</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::NegativeImbalance</span>;
 
-<span class="doccomment">/// Trait that outputs the current transaction gas price.</span>
-<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">FeeCalculator</span> {
-	<span class="doccomment">/// Return the minimal required gas price.</span>
-	<span class="kw">fn</span> <span class="ident">min_gas_price</span>() -&gt; <span class="ident">U256</span>;
-}
-
-<span class="kw">impl</span> <span class="ident">FeeCalculator</span> <span class="kw">for</span> () {
-	<span class="kw">fn</span> <span class="ident">min_gas_price</span>() -&gt; <span class="ident">U256</span> {
-		<span class="ident">U256::zero</span>()
-	}
-}
-
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">EnsureAddressOrigin</span><span class="op">&lt;</span><span class="ident">OuterOrigin</span><span class="op">&gt;</span> {
 	<span class="doccomment">/// Success return type.</span>
 	<span class="kw">type</span> <span class="ident">Success</span>;
@@ -1363,20 +1323,6 @@
 }
 
 <span class="kw">static</span> <span class="ident">LONDON_CONFIG</span>: <span class="ident">EvmConfig</span> <span class="op">=</span> <span class="ident">EvmConfig::london</span>();
-
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>)]</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">Debug</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>)]</span>
-<span class="doccomment">/// Account definition used for genesis block construction.</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">GenesisAccount</span> {
-	<span class="doccomment">/// Account nonce.</span>
-	<span class="kw">pub</span> <span class="ident">nonce</span>: <span class="ident">U256</span>,
-	<span class="doccomment">/// Account balance.</span>
-	<span class="kw">pub</span> <span class="ident">balance</span>: <span class="ident">U256</span>,
-	<span class="doccomment">/// Full account storage.</span>
-	<span class="kw">pub</span> <span class="ident">storage</span>: <span class="ident">std::collections::BTreeMap</span><span class="op">&lt;</span><span class="ident">H256</span>, <span class="ident">H256</span><span class="op">&gt;</span>,
-	<span class="doccomment">/// Account code.</span>
-	<span class="kw">pub</span> <span class="ident">code</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
-}
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
 	<span class="doccomment">/// Check whether an account is empty.</span>
