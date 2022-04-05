@@ -117,7 +117,7 @@ mod tests {
 		executor::block_on(client.import(BlockOrigin::Own, block)).unwrap();
 
 		// Give some time to consume and process the import notification stream.
-		std::thread::sleep(time::Duration::from_millis(10));
+		thread::sleep(time::Duration::from_millis(10));
 
 		// Expect: genesis still cached (V1), latest block cached (V2)
 		assert_eq!(
