@@ -27,13 +27,14 @@ mod state;
 mod submit;
 mod transaction;
 
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, marker::PhantomData, sync::Arc};
 
 use ethereum::{BlockV2 as EthereumBlock, TransactionV2 as EthereumTransaction};
 use ethereum_types::{H160, H256, H512, U256};
 use jsonrpc_core::Result;
 
 use sc_client_api::backend::{Backend, StateBackend, StorageProvider};
+use sc_network::{ExHashT, NetworkService};
 use sc_transaction_pool::{ChainApi, Pool};
 use sc_transaction_pool_api::InPoolTransaction;
 use sp_api::{Core, ProvideRuntimeApi};
@@ -48,20 +49,61 @@ use sp_runtime::{
 use fc_rpc_core::types::*;
 use fp_rpc::{EthereumRuntimeRPCApi, TransactionStatus};
 
-use crate::{internal_err, public_key};
+use crate::{internal_err, overrides::OverrideHandle, public_key, signer::EthSigner};
 
 pub use self::{
-	block::EthBlockApi,
 	cache::{EthBlockDataCache, EthTask},
-	client::EthClientApi,
-	execute::EthExecuteApi,
-	fee::EthFeeApi,
 	filter::EthFilterApi,
-	mining::EthMiningApi,
-	state::EthStateApi,
-	submit::EthSubmitApi,
-	transaction::EthTransactionApi,
 };
+
+pub struct EthApi<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> {
+	pool: Arc<P>,
+	graph: Arc<Pool<A>>,
+	client: Arc<C>,
+	convert_transaction: Option<CT>,
+	network: Arc<NetworkService<B, H>>,
+	is_authority: bool,
+	signers: Vec<Box<dyn EthSigner>>,
+	overrides: Arc<OverrideHandle<B>>,
+	backend: Arc<fc_db::Backend<B>>,
+	block_data_cache: Arc<EthBlockDataCache<B>>,
+	fee_history_limit: u64,
+	fee_history_cache: FeeHistoryCache,
+	_marker: PhantomData<(B, BE)>,
+}
+
+impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> EthApi<B, C, P, CT, BE, H, A> {
+	pub fn new(
+		client: Arc<C>,
+		pool: Arc<P>,
+		graph: Arc<Pool<A>>,
+		convert_transaction: Option<CT>,
+		network: Arc<NetworkService<B, H>>,
+		signers: Vec<Box<dyn EthSigner>>,
+		overrides: Arc<OverrideHandle<B>>,
+		backend: Arc<fc_db::Backend<B>>,
+		is_authority: bool,
+		block_data_cache: Arc<EthBlockDataCache<B>>,
+		fee_history_limit: u64,
+		fee_history_cache: FeeHistoryCache,
+	) -> Self {
+		Self {
+			client,
+			pool,
+			graph,
+			convert_transaction,
+			network,
+			is_authority,
+			signers,
+			overrides,
+			backend,
+			block_data_cache,
+			fee_history_limit,
+			fee_history_cache,
+			_marker: PhantomData,
+		}
+	}
+}
 
 fn rich_block_build(
 	block: EthereumBlock,

@@ -16,15 +16,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use std::sync::Arc;
-
-use ethereum_types::{H160, H256, U256, U64};
+use ethereum_types::{H256, U256};
 use futures::future::TryFutureExt;
 use jsonrpc_core::{futures::future, BoxFuture, Result};
 
 use sc_client_api::backend::{Backend, StateBackend, StorageProvider};
-use sc_network::{ExHashT, NetworkService};
-use sc_transaction_pool::{ChainApi, Pool};
+use sc_network::ExHashT;
+use sc_transaction_pool::ChainApi;
 use sc_transaction_pool_api::TransactionPool;
 use sp_api::{ApiExt, ProvideRuntimeApi};
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
@@ -35,73 +33,12 @@ use sp_runtime::{
 	transaction_validity::TransactionSource,
 };
 
-use fc_rpc_core::{
-	types::*, EthClientApi as EthClientApiT, EthFeeApi as EthFeeApiT, EthStateApi as EthStateApiT,
-	EthSubmitApi as EthSubmitApiT,
-};
+use fc_rpc_core::types::*;
 use fp_rpc::{ConvertTransaction, ConvertTransactionRuntimeApi, EthereumRuntimeRPCApi};
 
-use crate::{
-	eth::{EthClientApi, EthFeeApi, EthStateApi},
-	internal_err,
-	overrides::OverrideHandle,
-	signer::EthSigner,
-};
+use crate::{eth::EthApi, internal_err};
 
-pub struct EthSubmitApi<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> {
-	client: Arc<C>,
-	pool: Arc<P>,
-	convert_transaction: Option<CT>,
-	signers: Arc<Vec<Box<dyn EthSigner>>>,
-
-	client_api: EthClientApi<B, C, BE, H>,
-	state_api: EthStateApi<B, C, BE, P, A>,
-	fee_api: EthFeeApi<B, C, BE>,
-}
-
-impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> EthSubmitApi<B, C, P, CT, BE, H, A> {
-	pub fn new(
-		client: Arc<C>,
-		overrides: Arc<OverrideHandle<B>>,
-		backend: Arc<fc_db::Backend<B>>,
-		pool: Arc<P>,
-		graph: Arc<Pool<A>>,
-		convert_transaction: Option<CT>,
-		network: Arc<NetworkService<B, H>>,
-		signers: Arc<Vec<Box<dyn EthSigner>>>,
-		fee_history_limit: u64,
-		fee_history_cache: FeeHistoryCache,
-	) -> Self {
-		let client_api =
-			EthClientApi::new(client.clone(), overrides.clone(), network, signers.clone());
-		let state_api = EthStateApi::new(
-			client.clone(),
-			overrides.clone(),
-			backend.clone(),
-			pool.clone(),
-			graph.clone(),
-		);
-		let fee_api = EthFeeApi::new(
-			client.clone(),
-			overrides.clone(),
-			backend.clone(),
-			fee_history_limit,
-			fee_history_cache,
-		);
-		Self {
-			client,
-			pool,
-			convert_transaction,
-			signers,
-
-			client_api,
-			state_api,
-			fee_api,
-		}
-	}
-}
-
-impl<B, C, P, CT, BE, H: ExHashT, A> EthSubmitApiT for EthSubmitApi<B, C, P, CT, BE, H, A>
+impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi> EthApi<B, C, P, CT, BE, H, A>
 where
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
@@ -113,7 +50,7 @@ where
 	CT: ConvertTransaction<<B as BlockT>::Extrinsic> + Send + Sync + 'static,
 	A: ChainApi<Block = B> + 'static,
 {
-	fn send_transaction(&self, request: TransactionRequest) -> BoxFuture<Result<H256>> {
+	pub fn send_transaction(&self, request: TransactionRequest) -> BoxFuture<Result<H256>> {
 		let from = match request.from {
 			Some(from) => from,
 			None => {
@@ -280,7 +217,7 @@ where
 		)
 	}
 
-	fn send_raw_transaction(&self, bytes: Bytes) -> BoxFuture<Result<H256>> {
+	pub fn send_raw_transaction(&self, bytes: Bytes) -> BoxFuture<Result<H256>> {
 		let slice = &bytes.0[..];
 		if slice.len() == 0 {
 			return Box::pin(future::err(internal_err("transaction data is empty")));
@@ -370,92 +307,5 @@ where
 					internal_err(format!("submit transaction to pool failed: {:?}", err))
 				}),
 		)
-	}
-}
-
-impl<B, C, P, CT, BE, H: ExHashT, A> EthClientApiT for EthSubmitApi<B, C, P, CT, BE, H, A>
-where
-	B: BlockT<Hash = H256> + Send + Sync + 'static,
-	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
-	C: HeaderBackend<B> + Send + Sync + 'static,
-	C::Api: EthereumRuntimeRPCApi<B>,
-	BE: Backend<B> + 'static,
-	BE::State: StateBackend<BlakeTwo256>,
-	P: Send + Sync + 'static,
-	CT: Send + Sync + 'static,
-	A: ChainApi + 'static,
-{
-	fn protocol_version(&self) -> Result<u64> {
-		self.client_api.protocol_version()
-	}
-	fn syncing(&self) -> Result<SyncStatus> {
-		self.client_api.syncing()
-	}
-	fn author(&self) -> Result<H160> {
-		self.client_api.author()
-	}
-	fn accounts(&self) -> Result<Vec<H160>> {
-		self.client_api.accounts()
-	}
-	fn block_number(&self) -> Result<U256> {
-		self.client_api.block_number()
-	}
-	fn chain_id(&self) -> Result<Option<U64>> {
-		self.client_api.chain_id()
-	}
-}
-
-impl<B, C, P, CT, BE, H: ExHashT, A> EthStateApiT for EthSubmitApi<B, C, P, CT, BE, H, A>
-where
-	B: BlockT<Hash = H256> + Send + Sync + 'static,
-	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
-	C: HeaderBackend<B> + Send + Sync + 'static,
-	C::Api: BlockBuilderApi<B> + EthereumRuntimeRPCApi<B>,
-	BE: Backend<B> + 'static,
-	BE::State: StateBackend<BlakeTwo256>,
-	P: TransactionPool<Block = B> + Send + Sync + 'static,
-	CT: Send + Sync + 'static,
-	A: ChainApi<Block = B> + 'static,
-{
-	fn balance(&self, address: H160, number: Option<BlockNumber>) -> Result<U256> {
-		self.state_api.balance(address, number)
-	}
-	fn storage_at(&self, address: H160, index: U256, number: Option<BlockNumber>) -> Result<H256> {
-		self.state_api.storage_at(address, index, number)
-	}
-	fn transaction_count(&self, address: H160, number: Option<BlockNumber>) -> Result<U256> {
-		self.state_api.transaction_count(address, number)
-	}
-	fn code_at(&self, address: H160, number: Option<BlockNumber>) -> Result<Bytes> {
-		self.state_api.code_at(address, number)
-	}
-}
-
-impl<B, C, P, CT, BE, H: ExHashT, A> EthFeeApiT for EthSubmitApi<B, C, P, CT, BE, H, A>
-where
-	B: BlockT<Hash = H256> + Send + Sync + 'static,
-	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
-	C: HeaderBackend<B> + Send + Sync + 'static,
-	C::Api: EthereumRuntimeRPCApi<B>,
-	BE: Backend<B> + 'static,
-	BE::State: StateBackend<BlakeTwo256>,
-	P: Send + Sync + 'static,
-	CT: Send + Sync + 'static,
-	A: ChainApi<Block = B> + 'static,
-{
-	fn gas_price(&self) -> Result<U256> {
-		self.fee_api.gas_price()
-	}
-	fn fee_history(
-		&self,
-		block_count: U256,
-		newest_block: BlockNumber,
-		reward_percentiles: Option<Vec<f64>>,
-	) -> Result<FeeHistory> {
-		self.fee_api
-			.fee_history(block_count, newest_block, reward_percentiles)
-	}
-	fn max_priority_fee_per_gas(&self) -> Result<U256> {
-		self.fee_api.max_priority_fee_per_gas()
 	}
 }

@@ -24,10 +24,7 @@ mod signer;
 mod web3;
 
 pub use self::{
-	eth::{
-		EthBlockApi, EthBlockDataCache, EthClientApi, EthExecuteApi, EthFeeApi, EthFilterApi,
-		EthMiningApi, EthStateApi, EthSubmitApi, EthTask, EthTransactionApi,
-	},
+	eth::{EthApi, EthBlockDataCache, EthFilterApi, EthTask},
 	eth_pubsub::{EthPubSubApi, HexEncodedIdProvider},
 	net::NetApi,
 	overrides::{
@@ -40,9 +37,7 @@ pub use self::{
 
 pub use ethereum::TransactionV2 as EthereumTransaction;
 pub use fc_rpc_core::{
-	EthBlockApiServer, EthClientApiServer, EthExecuteApiServer, EthFeeApiServer,
-	EthFilterApiServer, EthMiningApiServer, EthPubSubApiServer, EthStateApiServer,
-	EthSubmitApiServer, EthTransactionApiServer, NetApiServer, Web3ApiServer,
+	EthApiServer, EthFilterApiServer, EthPubSubApiServer, NetApiServer, Web3ApiServer,
 };
 
 pub mod frontier_backend_client {

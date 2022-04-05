@@ -24,19 +24,16 @@ use jsonrpc_derive::rpc;
 
 use crate::types::*;
 
-pub use rpc_impl_EthBlockApi::gen_server::EthBlockApi as EthBlockApiServer;
-pub use rpc_impl_EthClientApi::gen_server::EthClientApi as EthClientApiServer;
-pub use rpc_impl_EthExecuteApi::gen_server::EthExecuteApi as EthExecuteApiServer;
-pub use rpc_impl_EthFeeApi::gen_server::EthFeeApi as EthFeeApiServer;
+pub use rpc_impl_EthApi::gen_server::EthApi as EthApiServer;
 pub use rpc_impl_EthFilterApi::gen_server::EthFilterApi as EthFilterApiServer;
-pub use rpc_impl_EthMiningApi::gen_server::EthMiningApi as EthMiningApiServer;
-pub use rpc_impl_EthStateApi::gen_server::EthStateApi as EthStateApiServer;
-pub use rpc_impl_EthSubmitApi::gen_server::EthSubmitApi as EthSubmitApiServer;
-pub use rpc_impl_EthTransactionApi::gen_server::EthTransactionApi as EthTransactionApiServer;
 
-/// Eth client rpc api.
+/// Eth rpc api.
 #[rpc(server)]
-pub trait EthClientApi {
+pub trait EthApi {
+	// ########################################################################
+	// Client
+	// ########################################################################
+
 	/// Returns protocol version encoded as a string (quotes are necessary).
 	#[rpc(name = "eth_protocolVersion")]
 	fn protocol_version(&self) -> Result<u64>;
@@ -62,11 +59,11 @@ pub trait EthClientApi {
 	/// available.
 	#[rpc(name = "eth_chainId")]
 	fn chain_id(&self) -> Result<Option<U64>>;
-}
 
-/// Eth block rpc api.
-#[rpc(server)]
-pub trait EthBlockApi {
+	// ########################################################################
+	// Block
+	// ########################################################################
+
 	/// Returns block with given hash.
 	#[rpc(name = "eth_getBlockByHash")]
 	fn block_by_hash(&self, _: H256, _: bool) -> BoxFuture<Result<Option<RichBlock>>>;
@@ -102,11 +99,11 @@ pub trait EthBlockApi {
 		_: BlockNumber,
 		_: Index,
 	) -> Result<Option<RichBlock>>;
-}
 
-/// Eth transaction rpc api.
-#[rpc(server)]
-pub trait EthTransactionApi {
+	// ########################################################################
+	// Transaction
+	// ########################################################################
+
 	/// Get transaction by its hash.
 	#[rpc(name = "eth_getTransactionByHash")]
 	fn transaction_by_hash(&self, _: H256) -> BoxFuture<Result<Option<Transaction>>>;
@@ -130,11 +127,11 @@ pub trait EthTransactionApi {
 	/// Returns transaction receipt by transaction hash.
 	#[rpc(name = "eth_getTransactionReceipt")]
 	fn transaction_receipt(&self, _: H256) -> BoxFuture<Result<Option<Receipt>>>;
-}
 
-/// Eth state rpc api.
-#[rpc(server)]
-pub trait EthStateApi {
+	// ########################################################################
+	// State
+	// ########################################################################
+
 	/// Returns balance of the given account.
 	#[rpc(name = "eth_getBalance")]
 	fn balance(&self, _: H160, _: Option<BlockNumber>) -> Result<U256>;
@@ -150,11 +147,11 @@ pub trait EthStateApi {
 	/// Returns the code at given address at given time (block number).
 	#[rpc(name = "eth_getCode")]
 	fn code_at(&self, _: H160, _: Option<BlockNumber>) -> Result<Bytes>;
-}
 
-/// Eth execute rpc api.
-#[rpc(server)]
-pub trait EthExecuteApi {
+	// ########################################################################
+	// Execute
+	// ########################################################################
+
 	/// Call contract, returning the output data.
 	#[rpc(name = "eth_call")]
 	fn call(&self, _: CallRequest, _: Option<BlockNumber>) -> Result<Bytes>;
@@ -162,11 +159,11 @@ pub trait EthExecuteApi {
 	/// Estimate gas needed for execution of given contract.
 	#[rpc(name = "eth_estimateGas")]
 	fn estimate_gas(&self, _: CallRequest, _: Option<BlockNumber>) -> BoxFuture<Result<U256>>;
-}
 
-/// Eth fee rpc api.
-#[rpc(server)]
-pub trait EthFeeApi {
+	// ########################################################################
+	// Fee
+	// ########################################################################
+
 	/// Returns current gas_price.
 	#[rpc(name = "eth_gasPrice")]
 	fn gas_price(&self) -> Result<U256>;
@@ -184,11 +181,11 @@ pub trait EthFeeApi {
 	/// Leverages the already existing fee history cache.
 	#[rpc(name = "eth_maxPriorityFeePerGas")]
 	fn max_priority_fee_per_gas(&self) -> Result<U256>;
-}
 
-/// Eth mining rpc api.
-#[rpc(server)]
-pub trait EthMiningApi {
+	// ########################################################################
+	// Mining
+	// ########################################################################
+
 	/// Returns true if client is actively mining new blocks.
 	#[rpc(name = "eth_mining")]
 	fn is_mining(&self) -> Result<bool>;
@@ -208,11 +205,11 @@ pub trait EthMiningApi {
 	/// Used for submitting a proof-of-work solution.
 	#[rpc(name = "eth_submitWork")]
 	fn submit_work(&self, _: H64, _: H256, _: H256) -> Result<bool>;
-}
 
-/// Eth submit rpc api.
-#[rpc(server)]
-pub trait EthSubmitApi {
+	// ########################################################################
+	// Submit
+	// ########################################################################
+
 	/// Sends transaction; will block waiting for signer to return the
 	/// transaction hash.
 	#[rpc(name = "eth_sendTransaction")]

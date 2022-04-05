@@ -16,14 +16,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use std::{marker::PhantomData, sync::Arc};
+use std::sync::Arc;
 
 use ethereum::TransactionV2 as EthereumTransaction;
 use ethereum_types::{H256, U256, U64};
 use jsonrpc_core::{BoxFuture, Result};
 
 use sc_client_api::backend::{Backend, StateBackend, StorageProvider};
-use sc_transaction_pool::{ChainApi, Pool};
+use sc_network::ExHashT;
+use sc_transaction_pool::ChainApi;
 use sc_transaction_pool_api::InPoolTransaction;
 use sp_api::{ApiExt, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
@@ -33,43 +34,15 @@ use sp_runtime::{
 	traits::{BlakeTwo256, Block as BlockT},
 };
 
-use fc_rpc_core::{types::*, EthTransactionApi as EthTransactionApiT};
+use fc_rpc_core::types::*;
 use fp_rpc::EthereumRuntimeRPCApi;
 
 use crate::{
-	eth::transaction_build, frontier_backend_client, internal_err, overrides::OverrideHandle,
-	EthBlockDataCache,
+	eth::{transaction_build, EthApi},
+	frontier_backend_client, internal_err,
 };
 
-pub struct EthTransactionApi<B: BlockT, C, BE, A: ChainApi> {
-	client: Arc<C>,
-	overrides: Arc<OverrideHandle<B>>,
-	backend: Arc<fc_db::Backend<B>>,
-	graph: Arc<Pool<A>>,
-	block_data_cache: Arc<EthBlockDataCache<B>>,
-	_marker: PhantomData<BE>,
-}
-
-impl<B: BlockT, C, BE, A: ChainApi> EthTransactionApi<B, C, BE, A> {
-	pub fn new(
-		client: Arc<C>,
-		overrides: Arc<OverrideHandle<B>>,
-		backend: Arc<fc_db::Backend<B>>,
-		graph: Arc<Pool<A>>,
-		block_data_cache: Arc<EthBlockDataCache<B>>,
-	) -> Self {
-		Self {
-			client,
-			overrides,
-			backend,
-			graph,
-			block_data_cache,
-			_marker: PhantomData,
-		}
-	}
-}
-
-impl<B, C, BE, A> EthTransactionApiT for EthTransactionApi<B, C, BE, A>
+impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi> EthApi<B, C, P, CT, BE, H, A>
 where
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	C: ProvideRuntimeApi<B> + StorageProvider<B, BE> + HeaderBackend<B> + Send + Sync + 'static,
@@ -78,7 +51,7 @@ where
 	BE::State: StateBackend<BlakeTwo256>,
 	A: ChainApi<Block = B> + 'static,
 {
-	fn transaction_by_hash(&self, hash: H256) -> BoxFuture<Result<Option<Transaction>>> {
+	pub fn transaction_by_hash(&self, hash: H256) -> BoxFuture<Result<Option<Transaction>>> {
 		let client = Arc::clone(&self.client);
 		let overrides = Arc::clone(&self.overrides);
 		let block_data_cache = Arc::clone(&self.block_data_cache);
@@ -198,7 +171,7 @@ where
 		})
 	}
 
-	fn transaction_by_block_hash_and_index(
+	pub fn transaction_by_block_hash_and_index(
 		&self,
 		hash: H256,
 		index: Index,
@@ -257,7 +230,7 @@ where
 		})
 	}
 
-	fn transaction_by_block_number_and_index(
+	pub fn transaction_by_block_number_and_index(
 		&self,
 		number: BlockNumber,
 		index: Index,
@@ -317,7 +290,7 @@ where
 		})
 	}
 
-	fn transaction_receipt(&self, hash: H256) -> BoxFuture<Result<Option<Receipt>>> {
+	pub fn transaction_receipt(&self, hash: H256) -> BoxFuture<Result<Option<Receipt>>> {
 		let client = Arc::clone(&self.client);
 		let overrides = Arc::clone(&self.overrides);
 		let block_data_cache = Arc::clone(&self.block_data_cache);

@@ -16,12 +16,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use std::{marker::PhantomData, sync::Arc};
-
 use ethereum_types::{H256, U256};
 use jsonrpc_core::Result;
 
 use sc_client_api::backend::{Backend, StateBackend, StorageProvider};
+use sc_network::ExHashT;
+use sc_transaction_pool::ChainApi;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{
@@ -29,40 +29,12 @@ use sp_runtime::{
 	traits::{BlakeTwo256, Block as BlockT, Header as HeaderT, UniqueSaturatedInto},
 };
 
-use fc_rpc_core::{types::*, EthFeeApi as EthFeeApiT};
+use fc_rpc_core::types::*;
 use fp_rpc::EthereumRuntimeRPCApi;
 
-use crate::{frontier_backend_client, internal_err, overrides::OverrideHandle};
+use crate::{eth::EthApi, frontier_backend_client, internal_err};
 
-pub struct EthFeeApi<B: BlockT, C, BE> {
-	client: Arc<C>,
-	overrides: Arc<OverrideHandle<B>>,
-	backend: Arc<fc_db::Backend<B>>,
-	fee_history_limit: u64,
-	fee_history_cache: FeeHistoryCache,
-	_marker: PhantomData<BE>,
-}
-
-impl<B: BlockT, C, BE> EthFeeApi<B, C, BE> {
-	pub fn new(
-		client: Arc<C>,
-		overrides: Arc<OverrideHandle<B>>,
-		backend: Arc<fc_db::Backend<B>>,
-		fee_history_limit: u64,
-		fee_history_cache: FeeHistoryCache,
-	) -> Self {
-		Self {
-			client,
-			overrides,
-			backend,
-			fee_history_limit,
-			fee_history_cache,
-			_marker: PhantomData,
-		}
-	}
-}
-
-impl<B, C, BE> EthFeeApiT for EthFeeApi<B, C, BE>
+impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi> EthApi<B, C, P, CT, BE, H, A>
 where
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
@@ -71,7 +43,7 @@ where
 	BE: Backend<B> + 'static,
 	BE::State: StateBackend<BlakeTwo256>,
 {
-	fn gas_price(&self) -> Result<U256> {
+	pub fn gas_price(&self) -> Result<U256> {
 		let block = BlockId::Hash(self.client.info().best_hash);
 
 		Ok(self
@@ -82,7 +54,7 @@ where
 			.into())
 	}
 
-	fn fee_history(
+	pub fn fee_history(
 		&self,
 		block_count: U256,
 		newest_block: BlockNumber,
@@ -216,7 +188,7 @@ where
 		)))
 	}
 
-	fn max_priority_fee_per_gas(&self) -> Result<U256> {
+	pub fn max_priority_fee_per_gas(&self) -> Result<U256> {
 		// https://github.com/ethereum/go-ethereum/blob/master/eth/ethconfig/config.go#L44-L51
 		let at_percentile = 60;
 		let block_count = 20;

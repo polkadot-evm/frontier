@@ -16,14 +16,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use std::{marker::PhantomData, sync::Arc};
-
 use ethereum_types::{H160, H256, U256};
 use jsonrpc_core::Result;
 
 use codec::Encode;
 use sc_client_api::backend::{Backend, StateBackend, StorageProvider};
-use sc_transaction_pool::{ChainApi, Pool};
+use sc_network::ExHashT;
+use sc_transaction_pool::ChainApi;
 use sc_transaction_pool_api::{InPoolTransaction, TransactionPool};
 use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
@@ -33,42 +32,15 @@ use sp_runtime::{
 	traits::{BlakeTwo256, Block as BlockT},
 };
 
-use fc_rpc_core::{types::*, EthStateApi as EthStateApiT};
+use fc_rpc_core::types::*;
 use fp_rpc::EthereumRuntimeRPCApi;
 
 use crate::{
-	eth::pending_runtime_api, frontier_backend_client, internal_err, overrides::OverrideHandle,
+	eth::{pending_runtime_api, EthApi},
+	frontier_backend_client, internal_err,
 };
 
-pub struct EthStateApi<B: BlockT, C, BE, P, A: ChainApi> {
-	client: Arc<C>,
-	overrides: Arc<OverrideHandle<B>>,
-	backend: Arc<fc_db::Backend<B>>,
-	pool: Arc<P>,
-	graph: Arc<Pool<A>>,
-	_marker: PhantomData<BE>,
-}
-
-impl<B: BlockT, C, BE, P, A: ChainApi> EthStateApi<B, C, BE, P, A> {
-	pub fn new(
-		client: Arc<C>,
-		overrides: Arc<OverrideHandle<B>>,
-		backend: Arc<fc_db::Backend<B>>,
-		pool: Arc<P>,
-		graph: Arc<Pool<A>>,
-	) -> Self {
-		Self {
-			client,
-			overrides,
-			backend,
-			pool,
-			graph,
-			_marker: PhantomData,
-		}
-	}
-}
-
-impl<B, C, BE, P, A> EthStateApiT for EthStateApi<B, C, BE, P, A>
+impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi> EthApi<B, C, P, CT, BE, H, A>
 where
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
@@ -79,7 +51,7 @@ where
 	P: TransactionPool<Block = B> + Send + Sync + 'static,
 	A: ChainApi<Block = B> + 'static,
 {
-	fn balance(&self, address: H160, number: Option<BlockNumber>) -> Result<U256> {
+	pub fn balance(&self, address: H160, number: Option<BlockNumber>) -> Result<U256> {
 		let number = number.unwrap_or(BlockNumber::Latest);
 		if number == BlockNumber::Pending {
 			let api = pending_runtime_api(self.client.as_ref(), self.graph.as_ref())?;
@@ -105,7 +77,12 @@ where
 		}
 	}
 
-	fn storage_at(&self, address: H160, index: U256, number: Option<BlockNumber>) -> Result<H256> {
+	pub fn storage_at(
+		&self,
+		address: H160,
+		index: U256,
+		number: Option<BlockNumber>,
+	) -> Result<H256> {
 		let number = number.unwrap_or(BlockNumber::Latest);
 		if number == BlockNumber::Pending {
 			let api = pending_runtime_api(self.client.as_ref(), self.graph.as_ref())?;
@@ -133,7 +110,7 @@ where
 		}
 	}
 
-	fn transaction_count(&self, address: H160, number: Option<BlockNumber>) -> Result<U256> {
+	pub fn transaction_count(&self, address: H160, number: Option<BlockNumber>) -> Result<U256> {
 		if let Some(BlockNumber::Pending) = number {
 			let block = BlockId::Hash(self.client.info().best_hash);
 
@@ -180,7 +157,7 @@ where
 		Ok(nonce)
 	}
 
-	fn code_at(&self, address: H160, number: Option<BlockNumber>) -> Result<Bytes> {
+	pub fn code_at(&self, address: H160, number: Option<BlockNumber>) -> Result<Bytes> {
 		let number = number.unwrap_or(BlockNumber::Latest);
 		if number == BlockNumber::Pending {
 			let api = pending_runtime_api(self.client.as_ref(), self.graph.as_ref())?;

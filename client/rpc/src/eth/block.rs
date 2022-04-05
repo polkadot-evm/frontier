@@ -16,56 +16,33 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use std::{marker::PhantomData, sync::Arc};
+use std::sync::Arc;
 
 use ethereum_types::{H256, U256};
 use jsonrpc_core::{BoxFuture, Result};
 
 use sc_client_api::backend::{Backend, StateBackend, StorageProvider};
+use sc_network::ExHashT;
+use sc_transaction_pool::ChainApi;
 use sp_blockchain::HeaderBackend;
 use sp_core::hashing::keccak_256;
 use sp_runtime::traits::{BlakeTwo256, Block as BlockT};
 
-use fc_rpc_core::{types::*, EthBlockApi as EthBlockApiT};
+use fc_rpc_core::types::*;
 
 use crate::{
-	eth::rich_block_build, frontier_backend_client, internal_err, overrides::OverrideHandle,
-	EthBlockDataCache,
+	eth::{rich_block_build, EthApi},
+	frontier_backend_client, internal_err,
 };
 
-pub struct EthBlockApi<B: BlockT, C, BE> {
-	client: Arc<C>,
-	overrides: Arc<OverrideHandle<B>>,
-	backend: Arc<fc_db::Backend<B>>,
-	block_data_cache: Arc<EthBlockDataCache<B>>,
-	_marker: PhantomData<BE>,
-}
-
-impl<B: BlockT, C, BE> EthBlockApi<B, C, BE> {
-	pub fn new(
-		client: Arc<C>,
-		overrides: Arc<OverrideHandle<B>>,
-		backend: Arc<fc_db::Backend<B>>,
-		block_data_cache: Arc<EthBlockDataCache<B>>,
-	) -> Self {
-		Self {
-			client,
-			overrides,
-			backend,
-			block_data_cache,
-			_marker: PhantomData,
-		}
-	}
-}
-
-impl<B, C, BE> EthBlockApiT for EthBlockApi<B, C, BE>
+impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi> EthApi<B, C, P, CT, BE, H, A>
 where
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	C: StorageProvider<B, BE> + HeaderBackend<B> + Send + Sync + 'static,
 	BE: Backend<B> + 'static,
 	BE::State: StateBackend<BlakeTwo256>,
 {
-	fn block_by_hash(&self, hash: H256, full: bool) -> BoxFuture<Result<Option<RichBlock>>> {
+	pub fn block_by_hash(&self, hash: H256, full: bool) -> BoxFuture<Result<Option<RichBlock>>> {
 		let client = Arc::clone(&self.client);
 		let overrides = Arc::clone(&self.overrides);
 		let block_data_cache = Arc::clone(&self.block_data_cache);
@@ -111,7 +88,7 @@ where
 		})
 	}
 
-	fn block_by_number(
+	pub fn block_by_number(
 		&self,
 		number: BlockNumber,
 		full: bool,
@@ -167,7 +144,7 @@ where
 		})
 	}
 
-	fn block_transaction_count_by_hash(&self, hash: H256) -> Result<Option<U256>> {
+	pub fn block_transaction_count_by_hash(&self, hash: H256) -> Result<Option<U256>> {
 		let id = match frontier_backend_client::load_hash::<B>(self.backend.as_ref(), hash)
 			.map_err(|err| internal_err(format!("{:?}", err)))?
 		{
@@ -189,7 +166,7 @@ where
 		}
 	}
 
-	fn block_transaction_count_by_number(&self, number: BlockNumber) -> Result<Option<U256>> {
+	pub fn block_transaction_count_by_number(&self, number: BlockNumber) -> Result<Option<U256>> {
 		let id = match frontier_backend_client::native_block_id::<B, C>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
@@ -213,19 +190,19 @@ where
 		}
 	}
 
-	fn block_uncles_count_by_hash(&self, _: H256) -> Result<U256> {
+	pub fn block_uncles_count_by_hash(&self, _: H256) -> Result<U256> {
 		Ok(U256::zero())
 	}
 
-	fn block_uncles_count_by_number(&self, _: BlockNumber) -> Result<U256> {
+	pub fn block_uncles_count_by_number(&self, _: BlockNumber) -> Result<U256> {
 		Ok(U256::zero())
 	}
 
-	fn uncle_by_block_hash_and_index(&self, _: H256, _: Index) -> Result<Option<RichBlock>> {
+	pub fn uncle_by_block_hash_and_index(&self, _: H256, _: Index) -> Result<Option<RichBlock>> {
 		Ok(None)
 	}
 
-	fn uncle_by_block_number_and_index(
+	pub fn uncle_by_block_number_and_index(
 		&self,
 		_: BlockNumber,
 		_: Index,

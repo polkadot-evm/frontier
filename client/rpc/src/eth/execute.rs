@@ -16,14 +16,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use std::{marker::PhantomData, sync::Arc};
+use std::sync::Arc;
 
 use ethereum_types::{H256, U256};
 use evm::{ExitError, ExitReason};
 use jsonrpc_core::{BoxFuture, Error, ErrorCode, Result, Value};
 
 use sc_client_api::backend::{Backend, StateBackend, StorageProvider};
-use sc_transaction_pool::{ChainApi, Pool};
+use sc_network::ExHashT;
+use sc_transaction_pool::ChainApi;
 use sp_api::{ApiExt, ProvideRuntimeApi};
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
 use sp_blockchain::HeaderBackend;
@@ -32,37 +33,15 @@ use sp_runtime::{
 	traits::{BlakeTwo256, Block as BlockT},
 };
 
-use fc_rpc_core::{types::*, EthExecuteApi as EthExecuteApiT};
+use fc_rpc_core::types::*;
 use fp_rpc::EthereumRuntimeRPCApi;
 
-use crate::{eth::pending_runtime_api, frontier_backend_client, internal_err, EthBlockDataCache};
+use crate::{
+	eth::{pending_runtime_api, EthApi},
+	frontier_backend_client, internal_err,
+};
 
-pub struct EthExecuteApi<B: BlockT, C, BE, A: ChainApi> {
-	client: Arc<C>,
-	backend: Arc<fc_db::Backend<B>>,
-	graph: Arc<Pool<A>>,
-	block_data_cache: Arc<EthBlockDataCache<B>>,
-	_marker: PhantomData<BE>,
-}
-
-impl<B: BlockT, C, BE, A: ChainApi> EthExecuteApi<B, C, BE, A> {
-	pub fn new(
-		client: Arc<C>,
-		backend: Arc<fc_db::Backend<B>>,
-		graph: Arc<Pool<A>>,
-		block_data_cache: Arc<EthBlockDataCache<B>>,
-	) -> Self {
-		Self {
-			client,
-			backend,
-			graph,
-			block_data_cache,
-			_marker: PhantomData,
-		}
-	}
-}
-
-impl<B, C, BE, A> EthExecuteApiT for EthExecuteApi<B, C, BE, A>
+impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi> EthApi<B, C, P, CT, BE, H, A>
 where
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
@@ -72,7 +51,7 @@ where
 	BE::State: StateBackend<BlakeTwo256>,
 	A: ChainApi<Block = B> + 'static,
 {
-	fn call(&self, request: CallRequest, number: Option<BlockNumber>) -> Result<Bytes> {
+	pub fn call(&self, request: CallRequest, number: Option<BlockNumber>) -> Result<Bytes> {
 		let CallRequest {
 			from,
 			to,
@@ -305,7 +284,7 @@ where
 		}
 	}
 
-	fn estimate_gas(
+	pub fn estimate_gas(
 		&self,
 		request: CallRequest,
 		_: Option<BlockNumber>,
