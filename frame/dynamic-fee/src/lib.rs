@@ -27,6 +27,8 @@ use sp_inherents::{InherentData, InherentIdentifier};
 use sp_std::cmp::{max, min};
 
 pub use self::pallet::*;
+#[cfg(feature = "std")]
+pub use fp_dynamic_fee::InherentDataProvider;
 pub use fp_dynamic_fee::{InherentType, INHERENT_IDENTIFIER};
 
 #[frame_support::pallet]
