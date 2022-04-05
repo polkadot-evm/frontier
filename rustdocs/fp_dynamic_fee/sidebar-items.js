@@ -1,0 +1,1 @@
+initSidebarItems({"constant":[["INHERENT_IDENTIFIER",""]],"struct":[["InherentDataProvider",""]],"type":[["InherentType",""]]});

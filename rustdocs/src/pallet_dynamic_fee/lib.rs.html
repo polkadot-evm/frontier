@@ -150,30 +150,6 @@
 <span id="148">148</span>
 <span id="149">149</span>
 <span id="150">150</span>
-<span id="151">151</span>
-<span id="152">152</span>
-<span id="153">153</span>
-<span id="154">154</span>
-<span id="155">155</span>
-<span id="156">156</span>
-<span id="157">157</span>
-<span id="158">158</span>
-<span id="159">159</span>
-<span id="160">160</span>
-<span id="161">161</span>
-<span id="162">162</span>
-<span id="163">163</span>
-<span id="164">164</span>
-<span id="165">165</span>
-<span id="166">166</span>
-<span id="167">167</span>
-<span id="168">168</span>
-<span id="169">169</span>
-<span id="170">170</span>
-<span id="171">171</span>
-<span id="172">172</span>
-<span id="173">173</span>
-<span id="174">174</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -203,6 +179,9 @@
 <span class="kw">use</span> <span class="ident">sp_std::cmp</span>::{<span class="ident">max</span>, <span class="ident">min</span>};
 
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="self">self</span>::pallet</span>::<span class="kw-2">*</span>;
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>)]</span>
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">fp_dynamic_fee::InherentDataProvider</span>;
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">fp_dynamic_fee</span>::{<span class="ident">InherentType</span>, <span class="ident">INHERENT_IDENTIFIER</span>};
 
 <span class="attribute">#[<span class="ident">frame_support::pallet</span>]</span>
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">pallet</span> {
@@ -319,33 +298,6 @@
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">fp_evm::FeeCalculator</span> <span class="kw">for</span> <span class="ident">Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
 	<span class="kw">fn</span> <span class="ident">min_gas_price</span>() -&gt; <span class="ident">U256</span> {
 		<span class="ident">MinGasPrice</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::get</span>()
-	}
-}
-
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">INHERENT_IDENTIFIER</span>: <span class="ident">InherentIdentifier</span> <span class="op">=</span> <span class="kw-2">*</span><span class="string">b&quot;dynfee0_&quot;</span>;
-
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">InherentType</span> <span class="op">=</span> <span class="ident">U256</span>;
-
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">InherentDataProvider</span>(<span class="kw">pub</span> <span class="ident">InherentType</span>);
-
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>)]</span>
-<span class="attribute">#[<span class="ident">async_trait::async_trait</span>]</span>
-<span class="kw">impl</span> <span class="ident">sp_inherents::InherentDataProvider</span> <span class="kw">for</span> <span class="ident">InherentDataProvider</span> {
-	<span class="kw">fn</span> <span class="ident">provide_inherent_data</span>(
-		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		<span class="ident">inherent_data</span>: <span class="kw-2">&amp;mut</span> <span class="ident">InherentData</span>,
-	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">sp_inherents::Error</span><span class="op">&gt;</span> {
-		<span class="ident">inherent_data</span>.<span class="ident">put_data</span>(<span class="ident">INHERENT_IDENTIFIER</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>)
-	}
-
-	<span class="kw">async</span> <span class="kw">fn</span> <span class="ident">try_handle_error</span>(
-		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		<span class="ident">_identifier</span>: <span class="kw-2">&amp;</span><span class="ident">InherentIdentifier</span>,
-		<span class="ident">_error</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>],
-	) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">sp_inherents::Error</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-		<span class="comment">// The pallet never reports error.</span>
-		<span class="prelude-val">None</span>
 	}
 }
 </code></pre></div>

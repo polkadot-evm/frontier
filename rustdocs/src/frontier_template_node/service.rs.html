@@ -948,7 +948,7 @@
 						);
 
 					<span class="kw">let</span> <span class="ident">dynamic_fee</span> <span class="op">=</span>
-						<span class="ident">pallet_dynamic_fee::InherentDataProvider</span>(<span class="ident">U256::from</span>(<span class="ident">target_gas_price</span>));
+						<span class="ident">fp_dynamic_fee::InherentDataProvider</span>(<span class="ident">U256::from</span>(<span class="ident">target_gas_price</span>));
 
 					<span class="prelude-val">Ok</span>((<span class="ident">timestamp</span>, <span class="ident">slot</span>, <span class="ident">dynamic_fee</span>))
 				},
@@ -1210,9 +1210,9 @@
 							<span class="ident">create_inherent_data_providers</span>: <span class="kw">move</span> <span class="op">|</span><span class="kw">_</span>, ()<span class="op">|</span> <span class="kw">async</span> <span class="kw">move</span> {
 								<span class="kw">let</span> <span class="ident">mock_timestamp</span> <span class="op">=</span> <span class="ident">MockTimestampInherentDataProvider</span>;
 
-								<span class="kw">let</span> <span class="ident">dynamic_fee</span> <span class="op">=</span> <span class="ident">pallet_dynamic_fee::InherentDataProvider</span>(
-									<span class="ident">U256::from</span>(<span class="ident">target_gas_price</span>),
-								);
+								<span class="kw">let</span> <span class="ident">dynamic_fee</span> <span class="op">=</span> <span class="ident">fp_dynamic_fee::InherentDataProvider</span>(<span class="ident">U256::from</span>(
+									<span class="ident">target_gas_price</span>,
+								));
 
 								<span class="prelude-val">Ok</span>((<span class="ident">mock_timestamp</span>, <span class="ident">dynamic_fee</span>))
 							},
@@ -1236,9 +1236,9 @@
 							<span class="ident">create_inherent_data_providers</span>: <span class="kw">move</span> <span class="op">|</span><span class="kw">_</span>, ()<span class="op">|</span> <span class="kw">async</span> <span class="kw">move</span> {
 								<span class="kw">let</span> <span class="ident">mock_timestamp</span> <span class="op">=</span> <span class="ident">MockTimestampInherentDataProvider</span>;
 
-								<span class="kw">let</span> <span class="ident">dynamic_fee</span> <span class="op">=</span> <span class="ident">pallet_dynamic_fee::InherentDataProvider</span>(
-									<span class="ident">U256::from</span>(<span class="ident">target_gas_price</span>),
-								);
+								<span class="kw">let</span> <span class="ident">dynamic_fee</span> <span class="op">=</span> <span class="ident">fp_dynamic_fee::InherentDataProvider</span>(<span class="ident">U256::from</span>(
+									<span class="ident">target_gas_price</span>,
+								));
 
 								<span class="prelude-val">Ok</span>((<span class="ident">mock_timestamp</span>, <span class="ident">dynamic_fee</span>))
 							},
@@ -1291,7 +1291,7 @@
 							);
 
 						<span class="kw">let</span> <span class="ident">dynamic_fee</span> <span class="op">=</span>
-							<span class="ident">pallet_dynamic_fee::InherentDataProvider</span>(<span class="ident">U256::from</span>(<span class="ident">target_gas_price</span>));
+							<span class="ident">fp_dynamic_fee::InherentDataProvider</span>(<span class="ident">U256::from</span>(<span class="ident">target_gas_price</span>));
 
 						<span class="prelude-val">Ok</span>((<span class="ident">timestamp</span>, <span class="ident">slot</span>, <span class="ident">dynamic_fee</span>))
 					},
