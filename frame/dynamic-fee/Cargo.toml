@@ -20,6 +20,7 @@ sp-std = { version = "4.0.0", git = "https://github.com/paritytech/substrate", b
 frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 
+fp-dynamic-fee = { version = "1.0.0", path = "../../primitives/dynamic-fee", default-features = false }
 fp-evm = { version = "3.0.0-dev", path = "../../primitives/evm", default-features = false }
 
 [dev-dependencies]
@@ -40,5 +41,6 @@ std = [
 	"frame-system/std",
 	"frame-support/std",
 
+	"fp-dynamic-fee/std",
 	"fp-evm/std",
 ]
