@@ -2,9 +2,9 @@
 mod tests {
 	use crate::{frontier_backend_client, EthTask};
 
+	use codec::Encode;
 	use std::sync::Arc;
 	use tokio::time::{sleep, Duration};
-	use codec::Encode;
 
 	use fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA};
 	use frontier_template_runtime::RuntimeApi;
