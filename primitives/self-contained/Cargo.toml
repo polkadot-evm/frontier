@@ -10,15 +10,16 @@ description = "Primitive Ethereum abstractions for Substrate."
 documentation = "https://docs.rs/fp-ethereum"
 
 [dependencies]
-ethereum = { version = "0.11.1", default-features = false, features = ["with-codec"] }
+ethereum = { version = "0.12.0", default-features = false, features = ["with-codec"] }
 serde = { version = "1.0.101", features = ["derive"], optional = true }
 
-codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false }
-scale-info = { version = "1.0.0", default-features = false, features = ["derive"] }
-parity-util-mem = { version = "0.10", optional = true }
+codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false }
+parity-util-mem = { version = "0.11", optional = true }
+scale-info = { version = "2.0.0", default-features = false, features = ["derive"] }
 sp-debug-derive = { version = "4.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-runtime = { version = "5.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-io = { version = "5.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-io = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-runtime = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+
 frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 
 [features]
@@ -28,8 +29,9 @@ std = [
 	"serde",
 
 	"codec/std",
-	"scale-info/std",
 	"parity-util-mem",
+	"scale-info/std",
+
 	"sp-debug-derive/std",
 	"sp-runtime/std",
 	"frame-support/std",
