@@ -136,7 +136,7 @@ where
 
 		let mut transaction = None;
 
-		for signer in &*self.signers {
+		for signer in &self.signers {
 			if signer.accounts().contains(&from) {
 				match signer.sign(message, &from) {
 					Ok(t) => transaction = Some(t),
