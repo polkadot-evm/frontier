@@ -20,6 +20,7 @@ mod eth;
 mod eth_pubsub;
 mod net;
 mod overrides;
+mod tests;
 mod web3;
 
 pub use self::{
