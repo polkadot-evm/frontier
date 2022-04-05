@@ -60,11 +60,10 @@ fc-mapping-sync = { path = "../../client/mapping-sync" }
 fc-rpc = { path = "../../client/rpc" }
 fc-rpc-core = { path = "../../client/rpc-core" }
 fp-consensus = { path = "../../primitives/consensus" }
+fp-dynamic-fee = { path = "../../primitives/dynamic-fee" }
 fp-evm = { path = "../../primitives/evm" }
 fp-rpc = { path = "../../primitives/rpc" }
 fp-storage = { path = "../../primitives/storage" }
-
-pallet-dynamic-fee = { path = "../../frame/dynamic-fee" }
 
 frontier-template-runtime = { path = "../runtime", default-features = false, features = ["std"] }
 
