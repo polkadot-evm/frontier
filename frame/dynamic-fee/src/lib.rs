@@ -26,9 +26,8 @@ use sp_core::U256;
 use sp_inherents::{InherentData, InherentIdentifier};
 use sp_std::cmp::{max, min};
 
-use fp_dynamic_fee::{InherentType, INHERENT_IDENTIFIER};
-
 pub use self::pallet::*;
+pub use fp_dynamic_fee::{InherentType, INHERENT_IDENTIFIER};
 
 #[frame_support::pallet]
 pub mod pallet {
