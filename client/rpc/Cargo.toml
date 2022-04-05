@@ -43,7 +43,6 @@ fp-rpc = { version = "3.0.0-dev", path = "../../primitives/rpc" }
 fp-storage = { version = "2.0.0-dev", path = "../../primitives/storage" }
 
 [dev-dependencies]
-tokio = { version = "1.14", features = ["sync", "macros", "time"] }
 substrate-test-runtime-client = { version = "2.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
 frontier-template-runtime = { path = "../../template/runtime", default-features = false, features = ["std", "manual-seal"] }
 sc-block-builder = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }

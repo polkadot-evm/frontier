@@ -3,8 +3,7 @@ mod tests {
 	use crate::{frontier_backend_client, EthTask};
 
 	use codec::Encode;
-	use std::sync::Arc;
-	use tokio::time::{sleep, Duration};
+	use std::{sync::Arc, thread, time};
 
 	use fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA};
 	use frontier_template_runtime::RuntimeApi;
@@ -43,8 +42,8 @@ mod tests {
 		}
 	}
 
-	#[tokio::test]
-	async fn should_cache_pallet_ethereum_schema() {
+	#[test]
+	fn should_cache_pallet_ethereum_schema() {
 		// Setup cleansing.
 		let _env = Env;
 
@@ -100,7 +99,8 @@ mod tests {
 		executor::block_on(client.import(BlockOrigin::Own, block)).unwrap();
 
 		// Give some time to consume and process the import notification stream.
-		sleep(Duration::from_millis(10)).await;
+		// sleep(Duration::from_millis(10)).await;
+		std::thread::sleep(time::Duration::from_millis(10));
 
 		// Expect: genesis still cached (V1), latest block cached (V2)
 		assert_eq!(
