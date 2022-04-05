@@ -2842,8 +2842,10 @@ where
 			// Parent
 			let parent_hash = notification.header.parent_hash();
 			let parent_id: BlockId<B> = BlockId::Hash(*parent_hash);
-			let old_schema =
-				frontier_backend_client::onchain_storage_schema::<B, C, BE>(client.as_ref(), id);
+			let old_schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(
+				client.as_ref(),
+				parent_id,
+			);
 			if new_schema != old_schema {
 				if let Ok(Some(old_cache)) =
 					frontier_backend_client::load_cached_schema::<B>(backend.as_ref())
