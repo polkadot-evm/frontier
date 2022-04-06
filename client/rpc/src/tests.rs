@@ -21,7 +21,7 @@ mod tests {
 	use crate::{frontier_backend_client, EthTask};
 
 	use codec::Encode;
-	use std::{sync::Arc, thread, time};
+	use std::{path::PathBuf, sync::Arc, thread, time};
 
 	use fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA};
 	use frontier_template_runtime::RuntimeApi;
@@ -36,41 +36,27 @@ mod tests {
 	use substrate_test_runtime_client::{
 		prelude::*, DefaultTestClientBuilderExt, TestClientBuilder, TestClientBuilderExt,
 	};
+	use tempfile::tempdir;
 
 	type OpaqueBlock =
 		Block<Header<u64, BlakeTwo256>, substrate_test_runtime_client::runtime::Extrinsic>;
 
-	pub const DB_NAME: &str = "testfrontierdb";
-
 	pub fn open_frontier_backend(
-		db_instance: &str,
+		path: PathBuf,
 	) -> Result<Arc<fc_db::Backend<OpaqueBlock>>, String> {
 		Ok(Arc::new(fc_db::Backend::<OpaqueBlock>::new(
 			&fc_db::DatabaseSettings {
 				source: fc_db::DatabaseSettingsSrc::RocksDb {
-					path: std::env::temp_dir().join(DB_NAME).join(db_instance),
+					path,
 					cache_size: 0,
 				},
 			},
 		)?))
 	}
 
-	struct Env<'a> {
-		db_instance: &'a str,
-	}
-	impl<'a> Drop for Env<'a> {
-		fn drop(&mut self) {
-			let _ =
-				std::fs::remove_dir_all(std::env::temp_dir().join(DB_NAME).join(self.db_instance));
-		}
-	}
-
 	#[test]
 	fn should_cache_pallet_ethereum_schema() {
-		// Setup frontier offchain db cleansing.
-		let db_instance = "1";
-		let _env = Env { db_instance };
-
+		let tmp = tempdir().expect("create a temporary directory");
 		// Initialize storage with schema V1.
 		let builder = TestClientBuilder::new().add_extra_storage(
 			PALLET_ETHEREUM_SCHEMA.to_vec(),
@@ -80,7 +66,7 @@ mod tests {
 		let mut client = Arc::new(client);
 
 		// Create a temporary frontier secondary DB.
-		let frontier_backend = open_frontier_backend(db_instance).unwrap();
+		let frontier_backend = open_frontier_backend(tmp.into_path()).unwrap();
 
 		// Spawn `frontier-schema-cache-task` background task.
 		let spawner = sp_core::testing::TaskExecutor::new();
@@ -137,10 +123,7 @@ mod tests {
 
 	#[test]
 	fn should_handle_cache_on_multiple_forks() {
-		// Setup frontier offchain db cleansing.
-		let db_instance = "2";
-		let _env = Env { db_instance };
-
+		let tmp = tempdir().expect("create a temporary directory");
 		// Initialize storage with schema V1.
 		let builder = TestClientBuilder::new().add_extra_storage(
 			PALLET_ETHEREUM_SCHEMA.to_vec(),
@@ -150,7 +133,7 @@ mod tests {
 		let mut client = Arc::new(client);
 
 		// Create a temporary frontier secondary DB.
-		let frontier_backend = open_frontier_backend(db_instance).unwrap();
+		let frontier_backend = open_frontier_backend(tmp.into_path()).unwrap();
 
 		// Spawn `frontier-schema-cache-task` background task.
 		let spawner = sp_core::testing::TaskExecutor::new();
