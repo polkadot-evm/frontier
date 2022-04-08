@@ -84,7 +84,7 @@ pub use evm::{
 use fp_evm::GenesisAccount;
 pub use fp_evm::{
 	Account, CallInfo, CreateInfo, ExecutionInfo, FeeCalculator, LinearCostPrecompile, Log,
-	Precompile, PrecompileFailure, PrecompileOutput, PrecompileResult, PrecompileSet, Vicinity,
+	Precompile, PrecompileFailure, PrecompileOutput, PrecompileResult, DelegatablePrecompileSet, Vicinity,
 };
 
 pub use self::{pallet::*, runner::Runner};
@@ -124,8 +124,7 @@ pub mod pallet {
 		/// The overarching event type.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 		/// Precompiles associated with this EVM engine.
-		type PrecompilesType: PrecompileSet;
-		type PrecompilesValue: Get<Self::PrecompilesType>;
+		type Precompiles: DelegatablePrecompileSet + Default;
 		/// Chain ID of EVM.
 		type ChainId: Get<u64>;
 		/// The block gas limit. Can be a simple constant, or an adjustment algorithm in another pallet.

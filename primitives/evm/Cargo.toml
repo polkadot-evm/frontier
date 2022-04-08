@@ -16,6 +16,7 @@ targets = ["x86_64-unknown-linux-gnu"]
 evm = { version = "0.35.0", default-features = false, features = ["with-codec"] }
 serde = { version = "1.0.101", features = ["derive"], optional = true }
 
+primitive-types = { version = "0.11.1", default-features = false, features = ["rlp", "byteorder"] }
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false }
 sp-core = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 sp-std = { version = "4.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
@@ -27,6 +28,7 @@ std = [
 	"evm/with-serde",
 	"serde",
 
+	"primitive-types/std",
 	"codec/std",
 	"sp-core/std",
 	"sp-std/std",

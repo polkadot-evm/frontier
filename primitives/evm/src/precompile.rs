@@ -20,6 +20,7 @@ pub use evm::{
 	Context, ExitError, ExitRevert, ExitSucceed,
 };
 use sp_std::vec::Vec;
+use primitive_types::H160;
 
 pub type PrecompileResult = Result<PrecompileOutput, PrecompileFailure>;
 
@@ -34,6 +35,10 @@ pub trait Precompile {
 		context: &Context,
 		is_static: bool,
 	) -> PrecompileResult;
+}
+
+pub trait DelegatablePrecompileSet: PrecompileSet {
+	fn is_delegatable_precompile(&self, address: H160) -> bool;
 }
 
 pub trait LinearCostPrecompile {

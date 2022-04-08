@@ -26,3 +26,9 @@ members = [
 	"template/runtime",
 ]
 resolver = "2"
+
+[patch.crates-io]
+evm = { git = "https://github.com/rust-blockchain/evm", branch = "sp-transact-delegatecall" }
+evm-core = { git = "https://github.com/rust-blockchain/evm", branch = "sp-transact-delegatecall" }
+evm-runtime = { git = "https://github.com/rust-blockchain/evm", branch = "sp-transact-delegatecall" }
+evm-gasometer = { git = "https://github.com/rust-blockchain/evm", branch = "sp-transact-delegatecall" }

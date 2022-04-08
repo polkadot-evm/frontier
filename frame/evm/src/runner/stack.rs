@@ -26,7 +26,7 @@ use evm::{
 	executor::stack::{Accessed, StackExecutor, StackState as StackStateT, StackSubstateMetadata},
 	ExitError, ExitReason, Transfer,
 };
-use fp_evm::{CallInfo, CreateInfo, ExecutionInfo, Log, Vicinity};
+use fp_evm::{CallInfo, CreateInfo, ExecutionInfo, Log, Vicinity, DelegatablePrecompileSet};
 use frame_support::{
 	ensure,
 	traits::{Currency, ExistenceRequirement, Get},
@@ -51,7 +51,7 @@ impl<T: Config> Runner<T> {
 		max_priority_fee_per_gas: Option<U256>,
 		nonce: Option<U256>,
 		config: &'config evm::Config,
-		precompiles: &'precompiles T::PrecompilesType,
+		precompiles: &'precompiles T::Precompiles,
 		f: F,
 	) -> Result<ExecutionInfo<R>, Error<T>>
 	where
@@ -60,7 +60,7 @@ impl<T: Config> Runner<T> {
 				'config,
 				'precompiles,
 				SubstrateStackState<'_, 'config, T>,
-				T::PrecompilesType,
+				T::Precompiles,
 			>,
 		) -> (ExitReason, R),
 	{
@@ -218,7 +218,7 @@ impl<T: Config> RunnerT<T> for Runner<T> {
 		access_list: Vec<(H160, Vec<H256>)>,
 		config: &evm::Config,
 	) -> Result<CallInfo, Self::Error> {
-		let precompiles = T::PrecompilesValue::get();
+		let precompiles = T::Precompiles::default();
 		Self::execute(
 			source,
 			value,
@@ -228,7 +228,11 @@ impl<T: Config> RunnerT<T> for Runner<T> {
 			nonce,
 			config,
 			&precompiles,
-			|executor| executor.transact_call(source, target, value, input, gas_limit, access_list),
+			|executor| if precompiles.is_delegatable_precompile(target) {
+				executor.transact_delegatecall(source, target, value, input, gas_limit, access_list)
+			} else {
+				executor.transact_call(source, target, value, input, gas_limit, access_list)
+			},
 		)
 	}
 
@@ -243,7 +247,7 @@ impl<T: Config> RunnerT<T> for Runner<T> {
 		access_list: Vec<(H160, Vec<H256>)>,
 		config: &evm::Config,
 	) -> Result<CreateInfo, Self::Error> {
-		let precompiles = T::PrecompilesValue::get();
+		let precompiles = T::Precompiles::default();
 		Self::execute(
 			source,
 			value,
@@ -274,7 +278,7 @@ impl<T: Config> RunnerT<T> for Runner<T> {
 		access_list: Vec<(H160, Vec<H256>)>,
 		config: &evm::Config,
 	) -> Result<CreateInfo, Self::Error> {
-		let precompiles = T::PrecompilesValue::get();
+		let precompiles = T::Precompiles::default();
 		let code_hash = H256::from_slice(Keccak256::digest(&init).as_slice());
 		Self::execute(
 			source,
