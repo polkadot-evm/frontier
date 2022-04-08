@@ -35,13 +35,22 @@ pub enum Result {
 	/// SyncStatus
 	SyncState(PubSubSyncStatus),
 }
+#[derive(Debug, Serialize, Eq, PartialEq, Clone)]
+#[serde(untagged)]
+pub enum PubSubSyncStatus {
+	Simple(bool),
+	Detailed(SyncStatusMetadata),
+}
 
 /// PubSbub sync status
 #[derive(Debug, Serialize, Eq, PartialEq, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct PubSubSyncStatus {
-	/// is_major_syncing?
+pub struct SyncStatusMetadata {
 	pub syncing: bool,
+	pub starting_block: u64,
+	pub current_block: u64,
+	#[serde(default = "Default::default", skip_serializing_if = "Option::is_none")]
+	pub highest_block: Option<u64>,
 }
 
 impl Serialize for Result {
