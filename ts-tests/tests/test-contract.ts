@@ -65,7 +65,7 @@ describeWithFrontier("Frontier RPC (Contract)", (context) => {
 
 	it("eth_call at missing block returns error", async function () {
 		const nonExistingBlockNumber = "999999";
-		await expect(context.web3.eth.call({
+		return expect(context.web3.eth.call({
 			data: TEST_CONTRACT_BYTECODE,
 		}, nonExistingBlockNumber)).to.eventually.rejectedWith('header not found');
 	});
