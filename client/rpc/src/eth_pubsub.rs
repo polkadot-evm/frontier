@@ -453,7 +453,8 @@ where
 						// in case of reorg, the first event is emited right away.
 						let _ = sink
 							.feed(Ok(PubSubResult::SyncState(
-								status(Arc::clone(&client), Arc::clone(&network), starting_block).await,
+								status(Arc::clone(&client), Arc::clone(&network), starting_block)
+									.await,
 							)))
 							.await;
 
