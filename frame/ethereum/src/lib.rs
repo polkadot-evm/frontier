@@ -793,6 +793,7 @@ impl<T: Config> Pallet<T> {
 			}
 		};
 
+		let is_transactional = true;
 		match action {
 			ethereum::TransactionAction::Call(target) => {
 				let res = T::Runner::call(
@@ -805,6 +806,7 @@ impl<T: Config> Pallet<T> {
 					max_priority_fee_per_gas,
 					nonce,
 					access_list,
+					is_transactional,
 					config.as_ref().unwrap_or(T::config()),
 				)
 				.map_err(Into::into)?;
@@ -821,6 +823,7 @@ impl<T: Config> Pallet<T> {
 					max_priority_fee_per_gas,
 					nonce,
 					access_list,
+					is_transactional,
 					config.as_ref().unwrap_or(T::config()),
 				)
 				.map_err(Into::into)?;

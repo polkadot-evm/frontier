@@ -354,3 +354,121 @@ fn handle_sufficient_reference() {
 		assert_eq!(account_2.sufficients, 0);
 	});
 }
+
+#[test]
+fn runner_non_transactional_calls_with_non_balance_accounts_is_ok_without_gas_price() {
+	// Expect to skip checks for gas price and account balance when both:
+	//	- The call is non transactional (`is_transactional == false`).
+	//	- The `max_fee_per_gas` is None.
+	new_test_ext().execute_with(|| {
+		let non_balance_account =
+			H160::from_str("7700000000000000000000000000000000000001").unwrap();
+		assert_eq!(
+			EVM::account_basic(&non_balance_account).balance,
+			U256::zero()
+		);
+		let _ = <Test as Config>::Runner::call(
+			non_balance_account,
+			H160::from_str("1000000000000000000000000000000000000001").unwrap(),
+			Vec::new(),
+			U256::from(1u32),
+			1000000,
+			None,
+			None,
+			None,
+			Vec::new(),
+			false,
+			&<Test as Config>::config().clone(),
+		)
+		.expect("Non transactional call succeeds");
+		assert_eq!(
+			EVM::account_basic(&non_balance_account).balance,
+			U256::zero()
+		);
+	});
+}
+
+#[test]
+fn runner_non_transactional_calls_with_non_balance_accounts_is_err_with_gas_price() {
+	// In non transactional calls where `Some(gas_price)` is defined, expect it to be
+	// checked against the `BaseFee`, and expect the account to have enough balance
+	// to pay for the call.
+	new_test_ext().execute_with(|| {
+		let non_balance_account =
+			H160::from_str("7700000000000000000000000000000000000001").unwrap();
+		assert_eq!(
+			EVM::account_basic(&non_balance_account).balance,
+			U256::zero()
+		);
+		let res = <Test as Config>::Runner::call(
+			non_balance_account,
+			H160::from_str("1000000000000000000000000000000000000001").unwrap(),
+			Vec::new(),
+			U256::from(1u32),
+			1000000,
+			Some(U256::from(1_000_000_000)),
+			None,
+			None,
+			Vec::new(),
+			false,
+			&<Test as Config>::config().clone(),
+		);
+		assert!(res.is_err());
+	});
+}
+
+#[test]
+fn runner_transactional_call_with_zero_gas_price_fails() {
+	// Transactional calls are rejected when `max_fee_per_gas == None`.
+	new_test_ext().execute_with(|| {
+		let res = <Test as Config>::Runner::call(
+			H160::default(),
+			H160::from_str("1000000000000000000000000000000000000001").unwrap(),
+			Vec::new(),
+			U256::from(1u32),
+			1000000,
+			None,
+			None,
+			None,
+			Vec::new(),
+			true,
+			&<Test as Config>::config().clone(),
+		);
+		assert!(res.is_err());
+	});
+}
+
+#[test]
+fn runner_max_fee_per_gas_gte_max_priority_fee_per_gas() {
+	// Transactional and non transactional calls enforce `max_fee_per_gas >= max_priority_fee_per_gas`.
+	new_test_ext().execute_with(|| {
+		let res = <Test as Config>::Runner::call(
+			H160::default(),
+			H160::from_str("1000000000000000000000000000000000000001").unwrap(),
+			Vec::new(),
+			U256::from(1u32),
+			1000000,
+			Some(U256::from(1_000_000_000)),
+			Some(U256::from(2_000_000_000)),
+			None,
+			Vec::new(),
+			true,
+			&<Test as Config>::config().clone(),
+		);
+		assert!(res.is_err());
+		let res = <Test as Config>::Runner::call(
+			H160::default(),
+			H160::from_str("1000000000000000000000000000000000000001").unwrap(),
+			Vec::new(),
+			U256::from(1u32),
+			1000000,
+			Some(U256::from(1_000_000_000)),
+			Some(U256::from(2_000_000_000)),
+			None,
+			Vec::new(),
+			false,
+			&<Test as Config>::config().clone(),
+		);
+		assert!(res.is_err());
+	});
+}
