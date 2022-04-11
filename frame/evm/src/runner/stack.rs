@@ -110,8 +110,10 @@ impl<T: Config> Runner<T> {
 			.checked_add(total_fee)
 			.ok_or(Error::<T>::PaymentOverflow)?;
 		let source_account = Pallet::<T>::account_basic(&source);
-		// Account balance check and withdraw is skipped if fee is Zero.
-		// This case is previously verified to only happen on non-transactional calls.
+		// Account balance check is skipped if fee is Zero.
+		// This case is previously verified to only happen on either:
+		// 	- Non-transactional calls.
+		//	- BaseFee is configured to be Zero.
 		if total_fee > U256::zero() {
 			ensure!(
 				source_account.balance >= total_payment,
