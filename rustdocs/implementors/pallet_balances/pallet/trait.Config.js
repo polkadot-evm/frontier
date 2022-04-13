@@ -1,3 +1,3 @@
 (function() {var implementors = {};
-implementors["frontier_template_runtime"] = [{"text":"impl Config&lt;<a class=\"primitive\" href=\"https://doc.rust-lang.org/1.59.0/std/primitive.unit.html\">()</a>&gt; for <a class=\"struct\" href=\"frontier_template_runtime/struct.Runtime.html\" title=\"struct frontier_template_runtime::Runtime\">Runtime</a>","synthetic":false,"types":["frontier_template_runtime::Runtime"]}];
+implementors["frontier_template_runtime"] = [{"text":"impl Config&lt;<a class=\"primitive\" href=\"https://doc.rust-lang.org/1.60.0/std/primitive.unit.html\">()</a>&gt; for <a class=\"struct\" href=\"frontier_template_runtime/struct.Runtime.html\" title=\"struct frontier_template_runtime::Runtime\">Runtime</a>","synthetic":false,"types":["frontier_template_runtime::Runtime"]}];
 if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
