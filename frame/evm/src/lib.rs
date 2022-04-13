@@ -61,15 +61,6 @@ pub mod runner;
 #[cfg(test)]
 mod tests;
 
-#[cfg(feature = "std")]
-use codec::{Decode, Encode};
-pub use evm::{
-	Config as EvmConfig, Context, ExitError, ExitFatal, ExitReason, ExitRevert, ExitSucceed,
-};
-pub use fp_evm::{
-	Account, CallInfo, CreateInfo, ExecutionInfo, LinearCostPrecompile, Log, Precompile,
-	PrecompileFailure, PrecompileOutput, PrecompileResult, PrecompileSet, Vicinity,
-};
 use frame_support::{
 	dispatch::DispatchResultWithPostInfo,
 	traits::{
@@ -79,14 +70,22 @@ use frame_support::{
 	weights::{Pays, PostDispatchInfo, Weight},
 };
 use frame_system::RawOrigin;
-#[cfg(feature = "std")]
-use serde::{Deserialize, Serialize};
 use sp_core::{Hasher, H160, H256, U256};
 use sp_runtime::{
 	traits::{BadOrigin, Saturating, UniqueSaturatedInto, Zero},
 	AccountId32,
 };
 use sp_std::vec::Vec;
+
+pub use evm::{
+	Config as EvmConfig, Context, ExitError, ExitFatal, ExitReason, ExitRevert, ExitSucceed,
+};
+#[cfg(feature = "std")]
+use fp_evm::GenesisAccount;
+pub use fp_evm::{
+	Account, CallInfo, CreateInfo, ExecutionInfo, FeeCalculator, LinearCostPrecompile, Log,
+	Precompile, PrecompileFailure, PrecompileOutput, PrecompileResult, PrecompileSet, Vicinity,
+};
 
 pub use self::{pallet::*, runner::Runner};
 
@@ -417,18 +416,6 @@ pub type BalanceOf<T> =
 type NegativeImbalanceOf<C, T> =
 	<C as Currency<<T as frame_system::Config>::AccountId>>::NegativeImbalance;
 
-/// Trait that outputs the current transaction gas price.
-pub trait FeeCalculator {
-	/// Return the minimal required gas price.
-	fn min_gas_price() -> U256;
-}
-
-impl FeeCalculator for () {
-	fn min_gas_price() -> U256 {
-		U256::zero()
-	}
-}
-
 pub trait EnsureAddressOrigin<OuterOrigin> {
 	/// Success return type.
 	type Success;
@@ -571,20 +558,6 @@ impl GasWeightMapping for () {
 }
 
 static LONDON_CONFIG: EvmConfig = EvmConfig::london();
-
-#[cfg(feature = "std")]
-#[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, Serialize, Deserialize)]
-/// Account definition used for genesis block construction.
-pub struct GenesisAccount {
-	/// Account nonce.
-	pub nonce: U256,
-	/// Account balance.
-	pub balance: U256,
-	/// Full account storage.
-	pub storage: std::collections::BTreeMap<H256, H256>,
-	/// Account code.
-	pub code: Vec<u8>,
-}
 
 impl<T: Config> Pallet<T> {
 	/// Check whether an account is empty.

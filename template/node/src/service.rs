@@ -263,7 +263,7 @@ pub fn new_partial(
 						);
 
 					let dynamic_fee =
-						pallet_dynamic_fee::InherentDataProvider(U256::from(target_gas_price));
+						fp_dynamic_fee::InherentDataProvider(U256::from(target_gas_price));
 
 					Ok((timestamp, slot, dynamic_fee))
 				},
@@ -525,9 +525,9 @@ pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, Ser
 							create_inherent_data_providers: move |_, ()| async move {
 								let mock_timestamp = MockTimestampInherentDataProvider;
 
-								let dynamic_fee = pallet_dynamic_fee::InherentDataProvider(
-									U256::from(target_gas_price),
-								);
+								let dynamic_fee = fp_dynamic_fee::InherentDataProvider(U256::from(
+									target_gas_price,
+								));
 
 								Ok((mock_timestamp, dynamic_fee))
 							},
@@ -551,9 +551,9 @@ pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, Ser
 							create_inherent_data_providers: move |_, ()| async move {
 								let mock_timestamp = MockTimestampInherentDataProvider;
 
-								let dynamic_fee = pallet_dynamic_fee::InherentDataProvider(
-									U256::from(target_gas_price),
-								);
+								let dynamic_fee = fp_dynamic_fee::InherentDataProvider(U256::from(
+									target_gas_price,
+								));
 
 								Ok((mock_timestamp, dynamic_fee))
 							},
@@ -606,7 +606,7 @@ pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, Ser
 							);
 
 						let dynamic_fee =
-							pallet_dynamic_fee::InherentDataProvider(U256::from(target_gas_price));
+							fp_dynamic_fee::InherentDataProvider(U256::from(target_gas_price));
 
 						Ok((timestamp, slot, dynamic_fee))
 					},

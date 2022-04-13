@@ -94,9 +94,6 @@ std = [
 	"pallet-transaction-payment-rpc-runtime-api/std",
 	"pallet-transaction-payment/std",
 
-	"frame-benchmarking/std",
-	"frame-system-benchmarking/std",
-
 	"fp-rpc/std",
 	"fp-self-contained/std",
 
