@@ -361,7 +361,7 @@ impl EIP2930UnsignedTransaction {
 		};
 		let chain_id = chain_id.unwrap_or(ChainId::get());
 		let msg = ethereum::EIP2930TransactionMessage {
-			chain_id: chain_id,
+			chain_id,
 			nonce: self.nonce,
 			gas_price: self.gas_price,
 			gas_limit: self.gas_limit,

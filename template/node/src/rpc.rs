@@ -165,7 +165,6 @@ where
 		overrides.clone(),
 		backend.clone(),
 		is_authority,
-		max_past_logs,
 		block_data_cache.clone(),
 		fee_history_limit,
 		fee_history_cache,
