@@ -1710,6 +1710,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "fp-dynamic-fee"
+version = "1.0.0"
+dependencies = [
+ "async-trait",
+ "sp-core",
+ "sp-inherents",
+]
+
+[[package]]
 name = "fp-evm"
 version = "3.0.0-dev"
 dependencies = [
@@ -1965,6 +1974,7 @@ dependencies = [
  "fc-rpc",
  "fc-rpc-core",
  "fp-consensus",
+ "fp-dynamic-fee",
  "fp-evm",
  "fp-rpc",
  "fp-storage",
@@ -1975,7 +1985,6 @@ dependencies = [
  "jsonrpc-core",
  "jsonrpc-pubsub",
  "log",
- "pallet-dynamic-fee",
  "pallet-transaction-payment-rpc",
  "sc-basic-authorship",
  "sc-cli",
@@ -4275,6 +4284,7 @@ name = "pallet-dynamic-fee"
 version = "4.0.0-dev"
 dependencies = [
  "async-trait",
+ "fp-dynamic-fee",
  "fp-evm",
  "frame-support",
  "frame-system",
