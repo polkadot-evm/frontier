@@ -406,9 +406,7 @@ where
 						})
 						.map(|syncing| {
 							return Ok::<Result<PubSubResult, jsonrpc_core::types::error::Error>, ()>(
-								Ok(PubSubResult::SyncState(PubSubSyncStatus {
-									syncing: syncing,
-								})),
+								Ok(PubSubResult::SyncState(PubSubSyncStatus { syncing })),
 							);
 						});
 					stream

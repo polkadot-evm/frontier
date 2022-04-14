@@ -16,8 +16,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-// You should have received a copy of the GNU General Public License
-// along with Substrate.  If not, see <http://www.gnu.org/licenses/>.
 use std::collections::BTreeMap;
 
 use ethereum::BlockV2 as EthereumBlock;
@@ -33,7 +31,6 @@ mod schema_v1_override;
 mod schema_v2_override;
 mod schema_v3_override;
 
-pub use fc_rpc_core::{EthApiServer, NetApiServer};
 pub use schema_v1_override::SchemaV1Override;
 pub use schema_v2_override::SchemaV2Override;
 pub use schema_v3_override::SchemaV3Override;
@@ -87,13 +84,7 @@ pub struct RuntimeApiStorageOverride<B: BlockT, C> {
 	_marker: PhantomData<B>,
 }
 
-impl<B, C> RuntimeApiStorageOverride<B, C>
-where
-	C: ProvideRuntimeApi<B>,
-	C::Api: EthereumRuntimeRPCApi<B>,
-	B: BlockT<Hash = H256> + Send + Sync + 'static,
-	C: Send + Sync + 'static,
-{
+impl<B: BlockT, C> RuntimeApiStorageOverride<B, C> {
 	pub fn new(client: Arc<C>) -> Self {
 		Self {
 			client,
@@ -104,10 +95,9 @@ where
 
 impl<Block, C> StorageOverride<Block> for RuntimeApiStorageOverride<Block, C>
 where
-	C: ProvideRuntimeApi<Block>,
-	C::Api: EthereumRuntimeRPCApi<Block>,
 	Block: BlockT<Hash = H256> + Send + Sync + 'static,
-	C: Send + Sync + 'static,
+	C: ProvideRuntimeApi<Block> + Send + Sync + 'static,
+	C::Api: EthereumRuntimeRPCApi<Block>,
 {
 	/// For a given account address, returns pallet_evm::AccountCodes.
 	fn account_code_at(&self, block: &BlockId<Block>, address: H160) -> Option<Vec<u8>> {
