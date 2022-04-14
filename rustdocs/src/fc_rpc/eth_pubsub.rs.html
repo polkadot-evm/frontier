@@ -432,8 +432,6 @@
 <span id="427">427</span>
 <span id="428">428</span>
 <span id="429">429</span>
-<span id="430">430</span>
-<span id="431">431</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -842,9 +840,7 @@
 						})
 						.<span class="ident">map</span>(<span class="op">|</span><span class="ident">syncing</span><span class="op">|</span> {
 							<span class="kw">return</span> <span class="prelude-val">Ok</span>::<span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">PubSubResult</span>, <span class="ident">jsonrpc_core::types::error::Error</span><span class="op">&gt;</span>, ()<span class="op">&gt;</span>(
-								<span class="prelude-val">Ok</span>(<span class="ident">PubSubResult::SyncState</span>(<span class="ident">PubSubSyncStatus</span> {
-									<span class="ident">syncing</span>: <span class="ident">syncing</span>,
-								})),
+								<span class="prelude-val">Ok</span>(<span class="ident">PubSubResult::SyncState</span>(<span class="ident">PubSubSyncStatus</span> { <span class="ident">syncing</span> })),
 							);
 						});
 					<span class="ident">stream</span>
