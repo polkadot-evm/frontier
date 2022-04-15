@@ -88,9 +88,11 @@ where
 				Ok(valid.combine_with(unsigned_validation))
 			}
 			CheckedSignature::SelfContained(signed_info) => {
-				self.function.validate_self_contained(&signed_info).ok_or(
+				let unsigned_validation = Extra::validate_unsigned( &self.function, info, len)?;
+				let self_contained_validation = self.function.validate_self_contained(&signed_info).ok_or(
 					TransactionValidityError::Invalid(InvalidTransaction::BadProof),
-				)?
+				)??;
+				Ok(unsigned_validation.combine_with(self_contained_validation))
 			}
 		}
 	}
