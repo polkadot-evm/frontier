@@ -204,10 +204,10 @@ pub mod pallet {
 					UniqueSaturatedInto::<u32>::unique_saturated_into(to_remove),
 				));
 			}
+			Pending::<T>::kill();
 		}
 
 		fn on_initialize(_: T::BlockNumber) -> Weight {
-			Pending::<T>::kill();
 			let mut weight = T::SystemWeightInfo::kill_storage(1);
 
 			// If the digest contain an existing ethereum block(encoded as PreLog), If contains,
