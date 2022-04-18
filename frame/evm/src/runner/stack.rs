@@ -120,12 +120,13 @@ impl<T: Config> Runner<T> {
 				Error::<T>::BalanceLow
 			);
 		}
-		// Deduct fee from the `source` account. Returns `None` if `total_fee` is Zero.
-		let fee = T::OnChargeTransaction::withdraw_fee(&source, total_fee)?;
 
 		if let Some(nonce) = nonce {
 			ensure!(source_account.nonce == nonce, Error::<T>::InvalidNonce);
 		}
+
+		// Deduct fee from the `source` account. Returns `None` if `total_fee` is Zero.
+		let fee = T::OnChargeTransaction::withdraw_fee(&source, total_fee)?;
 
 		// Execute the EVM call.
 		let (reason, retv) = f(&mut executor);
