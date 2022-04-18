@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
-// Copyright (c) 2020 Parity Technologies (UK) Ltd.
+// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -349,7 +349,7 @@ impl<T: Config> Pallet<T> {
 				access_list: t
 					.access_list
 					.iter()
-					.map(|d| (d.address, d.slots.clone()))
+					.map(|d| (d.address, d.storage_keys.clone()))
 					.collect(),
 			},
 			Transaction::EIP1559(t) => TransactionData {
@@ -365,7 +365,7 @@ impl<T: Config> Pallet<T> {
 				access_list: t
 					.access_list
 					.iter()
-					.map(|d| (d.address, d.slots.clone()))
+					.map(|d| (d.address, d.storage_keys.clone()))
 					.collect(),
 			},
 		}
@@ -752,7 +752,7 @@ impl<T: Config> Pallet<T> {
 					let access_list: Vec<(H160, Vec<H256>)> = t
 						.access_list
 						.iter()
-						.map(|item| (item.address, item.slots.clone()))
+						.map(|item| (item.address, item.storage_keys.clone()))
 						.collect();
 					(
 						t.input.clone(),
@@ -769,7 +769,7 @@ impl<T: Config> Pallet<T> {
 					let access_list: Vec<(H160, Vec<H256>)> = t
 						.access_list
 						.iter()
-						.map(|item| (item.address, item.slots.clone()))
+						.map(|item| (item.address, item.storage_keys.clone()))
 						.collect();
 					(
 						t.input.clone(),
