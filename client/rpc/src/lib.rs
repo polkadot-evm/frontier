@@ -20,7 +20,6 @@ mod eth;
 mod eth_pubsub;
 mod net;
 mod overrides;
-mod tests;
 mod signer;
 mod web3;
 
