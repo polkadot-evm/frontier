@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
-// Copyright (c) 2015-2022 Parity Technologies (UK) Ltd.
+// Copyright (c) 2022 Parity Technologies (UK) Ltd.
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,28 +16,35 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-//! Net rpc interface.
-
+use ethereum_types::{H256, H64, U256};
 use jsonrpc_core::Result;
-use jsonrpc_derive::rpc;
 
-use crate::types::PeerCount;
+use sc_network::ExHashT;
+use sc_transaction_pool::ChainApi;
+use sp_runtime::traits::Block as BlockT;
 
-pub use rpc_impl_NetApi::gen_server::NetApi as NetApiServer;
+use fc_rpc_core::types::*;
 
-/// Net rpc interface.
-#[rpc(server)]
-pub trait NetApi {
-	/// Returns protocol version.
-	#[rpc(name = "net_version")]
-	fn version(&self) -> Result<String>;
+use crate::eth::EthApi;
 
-	/// Returns number of peers connected to node.
-	#[rpc(name = "net_peerCount")]
-	fn peer_count(&self) -> Result<PeerCount>;
+impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> EthApi<B, C, P, CT, BE, H, A> {
+	pub fn is_mining(&self) -> Result<bool> {
+		Ok(self.is_authority)
+	}
 
-	/// Returns true if client is actively listening for network connections.
-	/// Otherwise false.
-	#[rpc(name = "net_listening")]
-	fn is_listening(&self) -> Result<bool>;
+	pub fn hashrate(&self) -> Result<U256> {
+		Ok(U256::zero())
+	}
+
+	pub fn work(&self) -> Result<Work> {
+		Ok(Work::default())
+	}
+
+	pub fn submit_hashrate(&self, _: U256, _: H256) -> Result<bool> {
+		Ok(false)
+	}
+
+	pub fn submit_work(&self, _: H64, _: H256, _: H256) -> Result<bool> {
+		Ok(false)
+	}
 }
