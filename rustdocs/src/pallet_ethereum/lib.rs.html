@@ -1161,10 +1161,10 @@
 					<span class="ident">UniqueSaturatedInto</span>::<span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span><span class="ident">::unique_saturated_into</span>(<span class="ident">to_remove</span>),
 				));
 			}
+			<span class="ident">Pending</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::kill</span>();
 		}
 
 		<span class="kw">fn</span> <span class="ident">on_initialize</span>(<span class="kw">_</span>: <span class="ident">T::BlockNumber</span>) -&gt; <span class="ident">Weight</span> {
-			<span class="ident">Pending</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::kill</span>();
 			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">weight</span> <span class="op">=</span> <span class="ident">T::SystemWeightInfo::kill_storage</span>(<span class="number">1</span>);
 
 			<span class="comment">// If the digest contain an existing ethereum block(encoded as PreLog), If contains,</span>
