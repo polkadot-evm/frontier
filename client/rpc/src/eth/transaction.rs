@@ -411,7 +411,8 @@ where
 							.base_fee(&id)
 							.unwrap_or_default()
 							.checked_add(t.max_priority_fee_per_gas)
-							.unwrap_or(U256::max_value()),
+							.unwrap_or(U256::max_value())
+							.min(t.max_fee_per_gas),
 					};
 
 					return Ok(Some(Receipt {
