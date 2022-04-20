@@ -618,6 +618,7 @@
 <span id="613">613</span>
 <span id="614">614</span>
 <span id="615">615</span>
+<span id="616">616</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -685,38 +686,27 @@
 		) -&gt; (<span class="ident">ExitReason</span>, <span class="ident">R</span>),
 	{
 		<span class="kw">let</span> <span class="ident">base_fee</span> <span class="op">=</span> <span class="ident">T::FeeCalculator::min_gas_price</span>();
-		<span class="comment">// Gas price check is skipped when performing a gas estimation.</span>
-		<span class="kw">let</span> <span class="ident">max_fee_per_gas</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">max_fee_per_gas</span> {
-			<span class="prelude-val">Some</span>(<span class="ident">max_fee_per_gas</span>) =&gt; {
+
+		<span class="kw">let</span> <span class="ident">max_fee_per_gas</span> <span class="op">=</span> <span class="kw">match</span> (<span class="ident">max_fee_per_gas</span>, <span class="ident">max_priority_fee_per_gas</span>) {
+			(<span class="prelude-val">Some</span>(<span class="ident">max_fee_per_gas</span>), <span class="prelude-val">Some</span>(<span class="ident">max_priority_fee_per_gas</span>)) =&gt; {
+				<span class="macro">ensure!</span>(<span class="ident">max_fee_per_gas</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">base_fee</span>, <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::GasPriceTooLow</span>);
+				<span class="macro">ensure!</span>(
+					<span class="ident">max_fee_per_gas</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">max_priority_fee_per_gas</span>,
+					<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::GasPriceTooLow</span>
+				);
+				<span class="ident">max_fee_per_gas</span>
+			}
+			(<span class="prelude-val">Some</span>(<span class="ident">max_fee_per_gas</span>), <span class="prelude-val">None</span>) =&gt; {
 				<span class="macro">ensure!</span>(<span class="ident">max_fee_per_gas</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">base_fee</span>, <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::GasPriceTooLow</span>);
 				<span class="ident">max_fee_per_gas</span>
 			}
-			<span class="prelude-val">None</span> =&gt; <span class="ident">Default::default</span>(),
+			<span class="comment">// Gas price check is skipped when performing a gas estimation.</span>
+			<span class="kw">_</span> =&gt; <span class="ident">Default::default</span>(),
 		};
-
-		<span class="kw">let</span> <span class="ident">vicinity</span> <span class="op">=</span> <span class="ident">Vicinity</span> {
-			<span class="ident">gas_price</span>: <span class="ident">max_fee_per_gas</span>,
-			<span class="ident">origin</span>: <span class="ident">source</span>,
-		};
-
-		<span class="kw">let</span> <span class="ident">metadata</span> <span class="op">=</span> <span class="ident">StackSubstateMetadata::new</span>(<span class="ident">gas_limit</span>, <span class="kw-2">&amp;</span><span class="ident">config</span>);
-		<span class="kw">let</span> <span class="ident">state</span> <span class="op">=</span> <span class="ident">SubstrateStackState::new</span>(<span class="kw-2">&amp;</span><span class="ident">vicinity</span>, <span class="ident">metadata</span>);
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">executor</span> <span class="op">=</span> <span class="ident">StackExecutor::new_with_precompiles</span>(<span class="ident">state</span>, <span class="ident">config</span>, <span class="ident">precompiles</span>);
 
 		<span class="comment">// After eip-1559 we make sure the account can pay both the evm execution and priority fees.</span>
-		<span class="kw">let</span> <span class="ident">max_base_fee</span> <span class="op">=</span> <span class="ident">max_fee_per_gas</span>
+		<span class="kw">let</span> <span class="ident">total_fee</span> <span class="op">=</span> <span class="ident">max_fee_per_gas</span>
 			.<span class="ident">checked_mul</span>(<span class="ident">U256::from</span>(<span class="ident">gas_limit</span>))
-			.<span class="ident">ok_or</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::FeeOverflow</span>)<span class="question-mark">?</span>;
-		<span class="kw">let</span> <span class="ident">max_priority_fee</span> <span class="op">=</span> <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">max_priority_fee</span>) <span class="op">=</span> <span class="ident">max_priority_fee_per_gas</span> {
-			<span class="ident">max_priority_fee</span>
-				.<span class="ident">checked_mul</span>(<span class="ident">U256::from</span>(<span class="ident">gas_limit</span>))
-				.<span class="ident">ok_or</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::FeeOverflow</span>)<span class="question-mark">?</span>
-		} <span class="kw">else</span> {
-			<span class="ident">U256::zero</span>()
-		};
-
-		<span class="kw">let</span> <span class="ident">total_fee</span> <span class="op">=</span> <span class="ident">max_base_fee</span>
-			.<span class="ident">checked_add</span>(<span class="ident">max_priority_fee</span>)
 			.<span class="ident">ok_or</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::FeeOverflow</span>)<span class="question-mark">?</span>;
 
 		<span class="kw">let</span> <span class="ident">total_payment</span> <span class="op">=</span> <span class="ident">value</span>
@@ -735,12 +725,24 @@
 		<span class="kw">let</span> <span class="ident">fee</span> <span class="op">=</span> <span class="ident">T::OnChargeTransaction::withdraw_fee</span>(<span class="kw-2">&amp;</span><span class="ident">source</span>, <span class="ident">total_fee</span>)<span class="question-mark">?</span>;
 
 		<span class="comment">// Execute the EVM call.</span>
+		<span class="kw">let</span> <span class="ident">vicinity</span> <span class="op">=</span> <span class="ident">Vicinity</span> {
+			<span class="ident">gas_price</span>: <span class="ident">base_fee</span>,
+			<span class="ident">origin</span>: <span class="ident">source</span>,
+		};
+
+		<span class="kw">let</span> <span class="ident">metadata</span> <span class="op">=</span> <span class="ident">StackSubstateMetadata::new</span>(<span class="ident">gas_limit</span>, <span class="kw-2">&amp;</span><span class="ident">config</span>);
+		<span class="kw">let</span> <span class="ident">state</span> <span class="op">=</span> <span class="ident">SubstrateStackState::new</span>(<span class="kw-2">&amp;</span><span class="ident">vicinity</span>, <span class="ident">metadata</span>);
+		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">executor</span> <span class="op">=</span> <span class="ident">StackExecutor::new_with_precompiles</span>(<span class="ident">state</span>, <span class="ident">config</span>, <span class="ident">precompiles</span>);
+
 		<span class="kw">let</span> (<span class="ident">reason</span>, <span class="ident">retv</span>) <span class="op">=</span> <span class="ident">f</span>(<span class="kw-2">&amp;mut</span> <span class="ident">executor</span>);
 
+		<span class="comment">// Post execution.</span>
 		<span class="kw">let</span> <span class="ident">used_gas</span> <span class="op">=</span> <span class="ident">U256::from</span>(<span class="ident">executor</span>.<span class="ident">used_gas</span>());
 		<span class="kw">let</span> (<span class="ident">actual_fee</span>, <span class="ident">actual_priority_fee</span>) <span class="op">=</span>
 			<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">max_priority_fee</span>) <span class="op">=</span> <span class="ident">max_priority_fee_per_gas</span> {
-				<span class="kw">let</span> <span class="ident">actual_priority_fee</span> <span class="op">=</span> <span class="ident">max_priority_fee</span>
+				<span class="kw">let</span> <span class="ident">actual_priority_fee</span> <span class="op">=</span> <span class="ident">max_fee_per_gas</span>
+					.<span class="ident">saturating_sub</span>(<span class="ident">base_fee</span>)
+					.<span class="ident">min</span>(<span class="ident">max_priority_fee</span>)
 					.<span class="ident">checked_mul</span>(<span class="ident">U256::from</span>(<span class="ident">used_gas</span>))
 					.<span class="ident">ok_or</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::FeeOverflow</span>)<span class="question-mark">?</span>;
 				<span class="kw">let</span> <span class="ident">actual_fee</span> <span class="op">=</span> <span class="ident">executor</span>
@@ -776,11 +778,11 @@
 		<span class="comment">// |        5 |        2 |</span>
 		<span class="comment">// +----------+----------+</span>
 		<span class="comment">//</span>
-		<span class="comment">// Initially withdrawn (10 + 6) * 20 = 320.</span>
+		<span class="comment">// Initially withdrawn 10 * 20 = 200.</span>
 		<span class="comment">// Actual cost (2 + 6) * 5 = 40.</span>
-		<span class="comment">// Refunded 320 - 40 = 280.</span>
+		<span class="comment">// Refunded 200 - 40 = 160.</span>
 		<span class="comment">// Tip 5 * 6 = 30.</span>
-		<span class="comment">// Burned 320 - (280 + 30) = 10. Which is equivalent to gas_used * base_fee.</span>
+		<span class="comment">// Burned 200 - (160 + 30) = 10. Which is equivalent to gas_used * base_fee.</span>
 		<span class="ident">T::OnChargeTransaction::correct_and_deposit_fee</span>(<span class="kw-2">&amp;</span><span class="ident">source</span>, <span class="ident">actual_fee</span>, <span class="ident">fee</span>);
 		<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">actual_priority_fee</span>) <span class="op">=</span> <span class="ident">actual_priority_fee</span> {
 			<span class="ident">T::OnChargeTransaction::pay_priority_fee</span>(<span class="ident">actual_priority_fee</span>);

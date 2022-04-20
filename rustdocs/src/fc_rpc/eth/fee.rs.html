@@ -222,6 +222,9 @@
 <span id="217">217</span>
 <span id="218">218</span>
 <span id="219">219</span>
+<span id="220">220</span>
+<span id="221">221</span>
+<span id="222">222</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -314,7 +317,7 @@
 			};
 			<span class="comment">// Highest and lowest block number within the requested range.</span>
 			<span class="kw">let</span> <span class="ident">highest</span> <span class="op">=</span> <span class="ident">UniqueSaturatedInto</span>::<span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span><span class="ident">::unique_saturated_into</span>(<span class="ident">number</span>);
-			<span class="kw">let</span> <span class="ident">lowest</span> <span class="op">=</span> <span class="ident">highest</span>.<span class="ident">saturating_sub</span>(<span class="ident">block_count</span>);
+			<span class="kw">let</span> <span class="ident">lowest</span> <span class="op">=</span> <span class="ident">highest</span>.<span class="ident">saturating_sub</span>(<span class="ident">block_count</span>.<span class="ident">saturating_sub</span>(<span class="number">1</span>));
 			<span class="comment">// Tip of the chain.</span>
 			<span class="kw">let</span> <span class="ident">best_number</span> <span class="op">=</span>
 				<span class="ident">UniqueSaturatedInto</span>::<span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span><span class="ident">::unique_saturated_into</span>(<span class="self">self</span>.<span class="ident">client</span>.<span class="ident">info</span>().<span class="ident">best_number</span>);
@@ -354,7 +357,10 @@
 								<span class="ident">block_rewards</span>.<span class="ident">push</span>(<span class="ident">reward</span>);
 							}
 							<span class="comment">// Push block rewards.</span>
-							<span class="ident">rewards</span>.<span class="ident">push</span>(<span class="ident">block_rewards</span>);
+							<span class="kw">if</span> <span class="op">!</span><span class="ident">block_rewards</span>.<span class="ident">is_empty</span>() {
+								<span class="comment">// Push block rewards.</span>
+								<span class="ident">rewards</span>.<span class="ident">push</span>(<span class="ident">block_rewards</span>);
+							}
 						}
 					}
 				}
