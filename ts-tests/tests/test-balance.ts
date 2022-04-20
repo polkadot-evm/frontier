@@ -19,7 +19,7 @@ describeWithFrontier("Frontier RPC (Balance)", (context) => {
 		const tx = await context.web3.eth.accounts.signTransaction({
 			from: GENESIS_ACCOUNT,
 			to: TEST_ACCOUNT,
-			value: "0x200", // Must me higher than ExistentialDeposit (500)
+			value: "0x200", // Must be higher than ExistentialDeposit (500)
 			gasPrice: "0x3B9ACA00",
 			gas: "0x100000",
 		}, GENESIS_ACCOUNT_PRIVATE_KEY);

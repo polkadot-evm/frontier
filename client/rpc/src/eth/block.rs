@@ -167,6 +167,13 @@ where
 	}
 
 	pub fn block_transaction_count_by_number(&self, number: BlockNumber) -> Result<Option<U256>> {
+		if let BlockNumber::Pending = number {
+			// get the pending transactions count
+			return Ok(Some(U256::from(
+				self.graph.validated_pool().ready().count(),
+			)));
+		}
+
 		let id = match frontier_backend_client::native_block_id::<B, C>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
