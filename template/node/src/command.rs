@@ -16,6 +16,7 @@
 // limitations under the License.
 
 use clap::Parser;
+use frame_benchmarking_cli::BenchmarkCmd;
 use frontier_template_runtime::Block;
 use sc_cli::{ChainSpec, RuntimeVersion, SubstrateCli};
 use sc_service::PartialComponents;
@@ -147,17 +148,32 @@ pub fn run() -> sc_cli::Result<()> {
 			})
 		}
 		Some(Subcommand::Benchmark(cmd)) => {
-			if cfg!(feature = "runtime-benchmarks") {
-				let runner = cli.create_runner(cmd)?;
+			let runner = cli.create_runner(cmd)?;
+			// Switch on the concrete benchmark sub-command-
+			match cmd {
+				BenchmarkCmd::Pallet(cmd) =>
+					if cfg!(feature = "runtime-benchmarks") {
+						runner.sync_run(|config| cmd.run::<Block, service::ExecutorDispatch>(config))
+					} else {
+						Err("Benchmarking wasn't enabled when building the node. \
+					You can enable it with `--features runtime-benchmarks`."
+							.into())
+					},
+				BenchmarkCmd::Block(cmd) => runner.sync_run(|config| {
+					let partials = service::new_partial(&config, &cli)?;
+					cmd.run(partials.client)
+				}),
+				BenchmarkCmd::Storage(cmd) => runner.sync_run(|config| {
+					let partials = service::new_partial(&config, &cli)?;
+					let db = partials.backend.expose_db();
+					let storage = partials.backend.expose_storage();
 
-				runner.sync_run(|config| cmd.run::<Block, service::ExecutorDispatch>(config))
-			} else {
-				Err(
-					"Benchmarking wasn't enabled when building the node. You can enable it with `--features runtime-benchmarks`."
-						.into(),
-				)
+					cmd.run(config, partials.client.clone(), db, storage)
+				}),
+				BenchmarkCmd::Overhead(_) => Err("Unsupported benchmarking command".into()),
 			}
-		}
+		},
+
 		None => {
 			let runner = cli.create_runner(&cli.run.base)?;
 			runner.run_node_until_exit(|config| async move {
