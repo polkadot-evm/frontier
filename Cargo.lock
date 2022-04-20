@@ -1799,6 +1799,7 @@ dependencies = [
  "clap",
  "frame-benchmarking",
  "frame-support",
+ "frame-system",
  "handlebars",
  "hash-db",
  "hex",
@@ -1809,6 +1810,7 @@ dependencies = [
  "memory-db",
  "parity-scale-codec",
  "rand 0.8.4",
+ "sc-block-builder",
  "sc-cli",
  "sc-client-api",
  "sc-client-db",
@@ -1822,12 +1824,14 @@ dependencies = [
  "sp-core",
  "sp-database",
  "sp-externalities",
+ "sp-inherents",
  "sp-keystore",
  "sp-runtime",
  "sp-state-machine",
  "sp-std",
  "sp-storage",
  "sp-trie",
+ "thousands",
 ]
 
 [[package]]
@@ -3983,9 +3987,9 @@ dependencies = [
 
 [[package]]
 name = "names"
-version = "0.12.0"
+version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "10a8690bf09abf659851e58cd666c3d37ac6af07c2bd7a9e332cfba471715775"
+checksum = "e7d66043b25d4a6cccb23619d10c19c25304b355a7dccd4a8e11423dd2382146"
 dependencies = [
  "rand 0.8.4",
 ]
@@ -5918,7 +5922,7 @@ version = "0.10.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=master#174735ea1bb5fc4513519c45181d8df63d86f613"
 dependencies = [
  "lazy_static",
- "lru 0.6.6",
+ "lru 0.7.3",
  "parity-scale-codec",
  "parking_lot 0.12.0",
  "sc-executor-common",
@@ -6224,6 +6228,7 @@ dependencies = [
  "parking_lot 0.12.0",
  "sc-chain-spec",
  "sc-transaction-pool-api",
+ "scale-info",
  "serde",
  "serde_json",
  "sp-core",
@@ -7371,7 +7376,6 @@ dependencies = [
  "sp-trie",
  "thiserror",
  "tracing",
- "trie-db",
  "trie-root",
 ]
 
@@ -7763,6 +7767,12 @@ dependencies = [
  "quote",
  "syn",
 ]
+
+[[package]]
+name = "thousands"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3bf63baf9f5039dadc247375c29eb13706706cfde997d0330d05aa63a77d8820"
 
 [[package]]
 name = "thread_local"
