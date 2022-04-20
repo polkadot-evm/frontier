@@ -151,14 +151,16 @@ pub fn run() -> sc_cli::Result<()> {
 			let runner = cli.create_runner(cmd)?;
 			// Switch on the concrete benchmark sub-command-
 			match cmd {
-				BenchmarkCmd::Pallet(cmd) =>
+				BenchmarkCmd::Pallet(cmd) => {
 					if cfg!(feature = "runtime-benchmarks") {
-						runner.sync_run(|config| cmd.run::<Block, service::ExecutorDispatch>(config))
+						runner
+							.sync_run(|config| cmd.run::<Block, service::ExecutorDispatch>(config))
 					} else {
 						Err("Benchmarking wasn't enabled when building the node. \
 					You can enable it with `--features runtime-benchmarks`."
 							.into())
-					},
+					}
+				}
 				BenchmarkCmd::Block(cmd) => runner.sync_run(|config| {
 					let partials = service::new_partial(&config, &cli)?;
 					cmd.run(partials.client)
@@ -172,7 +174,7 @@ pub fn run() -> sc_cli::Result<()> {
 				}),
 				BenchmarkCmd::Overhead(_) => Err("Unsupported benchmarking command".into()),
 			}
-		},
+		}
 
 		None => {
 			let runner = cli.create_runner(&cli.run.base)?;
