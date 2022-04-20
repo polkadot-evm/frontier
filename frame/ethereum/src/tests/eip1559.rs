@@ -88,7 +88,7 @@ fn transaction_with_to_low_nonce_should_not_work() {
 			call.validate_self_contained(&source).unwrap(),
 			ValidTransactionBuilder::default()
 				.and_provides((alice.address, U256::from(1)))
-				.priority(1u64)
+				.priority(0u64)
 				.and_requires((alice.address, U256::from(0)))
 				.build()
 		);
