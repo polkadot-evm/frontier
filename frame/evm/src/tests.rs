@@ -231,18 +231,19 @@ fn author_should_get_tip() {
 	new_test_ext().execute_with(|| {
 		let author = EVM::find_author();
 		let before_tip = EVM::account_basic(&author).balance;
-		let _ = EVM::call(
+		let result = EVM::call(
 			Origin::root(),
 			H160::default(),
 			H160::from_str("1000000000000000000000000000000000000001").unwrap(),
 			Vec::new(),
 			U256::from(1),
 			1000000,
-			U256::from(1_000_000_000),
+			U256::from(2_000_000_000),
 			Some(U256::from(1)),
 			None,
 			Vec::new(),
 		);
+		result.expect("EVM can be called");
 		let after_tip = EVM::account_basic(&author).balance;
 		assert_eq!(after_tip, (before_tip + 21000));
 	});
@@ -303,29 +304,83 @@ fn refunds_and_priority_should_work() {
 		let author = EVM::find_author();
 		let before_tip = EVM::account_basic(&author).balance;
 		let before_call = EVM::account_basic(&H160::default()).balance;
-		let tip = 5;
-		// The tip is deducted but never refunded to the caller.
-		let _ = EVM::call(
+		// We deliberately set a base fee + max tip > max fee.
+		// The effective priority tip will be 1GWEI instead 1.5GWEI:
+		// 		(max_fee_per_gas - base_fee).min(max_priority_fee)
+		//		(2 - 1).min(1.5)
+		let tip = U256::from(1_500_000_000);
+		let max_fee_per_gas = U256::from(2_000_000_000);
+		let used_gas = U256::from(21_000);
+		let result = EVM::call(
 			Origin::root(),
 			H160::default(),
 			H160::from_str("1000000000000000000000000000000000000001").unwrap(),
 			Vec::new(),
 			U256::from(1),
 			1000000,
-			U256::from(2_000_000_000),
+			max_fee_per_gas,
+			Some(tip),
+			None,
+			Vec::new(),
+		);
+		let base_fee = <Test as Config>::FeeCalculator::min_gas_price();
+		let actual_tip = (max_fee_per_gas - base_fee).min(tip) * used_gas;
+		let total_cost = (used_gas * base_fee) + U256::from(actual_tip) + U256::from(1);
+		let after_call = EVM::account_basic(&H160::default()).balance;
+		// The tip is deducted but never refunded to the caller.
+		assert_eq!(after_call, before_call - total_cost);
+
+		let after_tip = EVM::account_basic(&author).balance;
+		assert_eq!(after_tip, (before_tip + actual_tip.low_u128()));
+	});
+}
+
+#[test]
+fn call_should_fail_with_priority_greater_than_max_fee() {
+	new_test_ext().execute_with(|| {
+		let author = EVM::find_author();
+		let before_tip = EVM::account_basic(&author).balance;
+		let before_call = EVM::account_basic(&H160::default()).balance;
+		// Max priority greater than max fee should fail.
+		let tip: u128 = 1_100_000_000;
+		let result = EVM::call(
+			Origin::root(),
+			H160::default(),
+			H160::from_str("1000000000000000000000000000000000000001").unwrap(),
+			Vec::new(),
+			U256::from(1),
+			1000000,
+			U256::from(1_000_000_000),
 			Some(U256::from(tip)),
 			None,
 			Vec::new(),
 		);
-		let tip = tip * 21000;
-		let total_cost = (U256::from(21_000) * <Test as Config>::FeeCalculator::min_gas_price())
-			+ U256::from(1)
-			+ U256::from(tip);
-		let after_call = EVM::account_basic(&H160::default()).balance;
-		assert_eq!(after_call, before_call - total_cost);
+		assert!(result.is_err());
+	});
+}
 
-		let after_tip = EVM::account_basic(&author).balance;
-		assert_eq!(after_tip, (before_tip + tip));
+#[test]
+fn call_should_succeed_with_priority_equal_to_max_fee() {
+	new_test_ext().execute_with(|| {
+		let author = EVM::find_author();
+		let before_tip = EVM::account_basic(&author).balance;
+		let before_call = EVM::account_basic(&H160::default()).balance;
+		let tip: u128 = 1_000_000_000;
+		// Mimics the input for pre-eip-1559 transaction types where `gas_price`
+		// is used for both `max_fee_per_gas` and `max_priority_fee_per_gas`.
+		let result = EVM::call(
+			Origin::root(),
+			H160::default(),
+			H160::from_str("1000000000000000000000000000000000000001").unwrap(),
+			Vec::new(),
+			U256::from(1),
+			1000000,
+			U256::from(1_000_000_000),
+			Some(U256::from(tip)),
+			None,
+			Vec::new(),
+		);
+		assert!(result.is_ok());
 	});
 }
 

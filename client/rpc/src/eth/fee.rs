@@ -90,7 +90,7 @@ where
 			};
 			// Highest and lowest block number within the requested range.
 			let highest = UniqueSaturatedInto::<u64>::unique_saturated_into(number);
-			let lowest = highest.saturating_sub(block_count);
+			let lowest = highest.saturating_sub(block_count.saturating_sub(1));
 			// Tip of the chain.
 			let best_number =
 				UniqueSaturatedInto::<u64>::unique_saturated_into(self.client.info().best_number);
@@ -130,7 +130,10 @@ where
 								block_rewards.push(reward);
 							}
 							// Push block rewards.
-							rewards.push(block_rewards);
+							if !block_rewards.is_empty() {
+								// Push block rewards.
+								rewards.push(block_rewards);
+							}
 						}
 					}
 				}

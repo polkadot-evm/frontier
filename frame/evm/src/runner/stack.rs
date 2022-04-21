@@ -77,33 +77,16 @@ impl<T: Config> Runner<T> {
 			_ => return Err(Error::<T>::GasPriceTooLow),
 		};
 
-		let vicinity = Vicinity {
-			gas_price: max_fee_per_gas,
-			origin: source,
-		};
-
-		let metadata = StackSubstateMetadata::new(gas_limit, &config);
-		let state = SubstrateStackState::new(&vicinity, metadata);
-		let mut executor = StackExecutor::new_with_precompiles(state, config, precompiles);
-
-		// After eip-1559 we make sure the account can pay both the evm execution and priority fees.
-		let max_base_fee = max_fee_per_gas
-			.checked_mul(U256::from(gas_limit))
-			.ok_or(Error::<T>::FeeOverflow)?;
-		let max_priority_fee = if let Some(max_priority_fee) = max_priority_fee_per_gas {
+		if let Some(max_priority_fee) = max_priority_fee_per_gas {
 			ensure!(
 				max_fee_per_gas >= max_priority_fee,
 				Error::<T>::GasPriceTooLow
 			);
-			max_priority_fee
-				.checked_mul(U256::from(gas_limit))
-				.ok_or(Error::<T>::FeeOverflow)?
-		} else {
-			U256::zero()
-		};
+		}
 
-		let total_fee = max_base_fee
-			.checked_add(max_priority_fee)
+		// After eip-1559 we make sure the account can pay both the evm execution and priority fees.
+		let total_fee = max_fee_per_gas
+			.checked_mul(U256::from(gas_limit))
 			.ok_or(Error::<T>::FeeOverflow)?;
 
 		let total_payment = value
@@ -129,12 +112,24 @@ impl<T: Config> Runner<T> {
 		let fee = T::OnChargeTransaction::withdraw_fee(&source, total_fee)?;
 
 		// Execute the EVM call.
+		let vicinity = Vicinity {
+			gas_price: base_fee,
+			origin: source,
+		};
+
+		let metadata = StackSubstateMetadata::new(gas_limit, &config);
+		let state = SubstrateStackState::new(&vicinity, metadata);
+		let mut executor = StackExecutor::new_with_precompiles(state, config, precompiles);
+
 		let (reason, retv) = f(&mut executor);
 
+		// Post execution.
 		let used_gas = U256::from(executor.used_gas());
 		let (actual_fee, actual_priority_fee) =
 			if let Some(max_priority_fee) = max_priority_fee_per_gas {
-				let actual_priority_fee = max_priority_fee
+				let actual_priority_fee = max_fee_per_gas
+					.saturating_sub(base_fee)
+					.min(max_priority_fee)
 					.checked_mul(U256::from(used_gas))
 					.ok_or(Error::<T>::FeeOverflow)?;
 				let actual_fee = executor
@@ -171,11 +166,11 @@ impl<T: Config> Runner<T> {
 		// |        5 |        2 |
 		// +----------+----------+
 		//
-		// Initially withdrawn (10 + 6) * 20 = 320.
+		// Initially withdrawn 10 * 20 = 200.
 		// Actual cost (2 + 6) * 5 = 40.
-		// Refunded 320 - 40 = 280.
+		// Refunded 200 - 40 = 160.
 		// Tip 5 * 6 = 30.
-		// Burned 320 - (280 + 30) = 10. Which is equivalent to gas_used * base_fee.
+		// Burned 200 - (160 + 30) = 10. Which is equivalent to gas_used * base_fee.
 		T::OnChargeTransaction::correct_and_deposit_fee(&source, actual_fee, fee);
 		if let Some(actual_priority_fee) = actual_priority_fee {
 			T::OnChargeTransaction::pay_priority_fee(actual_priority_fee);
