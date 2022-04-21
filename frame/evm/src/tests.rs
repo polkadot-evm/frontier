@@ -311,7 +311,7 @@ fn refunds_and_priority_should_work() {
 		let tip = U256::from(1_500_000_000);
 		let max_fee_per_gas = U256::from(2_000_000_000);
 		let used_gas = U256::from(21_000);
-		let result = EVM::call(
+		let _ = EVM::call(
 			Origin::root(),
 			H160::default(),
 			H160::from_str("1000000000000000000000000000000000000001").unwrap(),
@@ -338,9 +338,6 @@ fn refunds_and_priority_should_work() {
 #[test]
 fn call_should_fail_with_priority_greater_than_max_fee() {
 	new_test_ext().execute_with(|| {
-		let author = EVM::find_author();
-		let before_tip = EVM::account_basic(&author).balance;
-		let before_call = EVM::account_basic(&H160::default()).balance;
 		// Max priority greater than max fee should fail.
 		let tip: u128 = 1_100_000_000;
 		let result = EVM::call(
@@ -362,9 +359,6 @@ fn call_should_fail_with_priority_greater_than_max_fee() {
 #[test]
 fn call_should_succeed_with_priority_equal_to_max_fee() {
 	new_test_ext().execute_with(|| {
-		let author = EVM::find_author();
-		let before_tip = EVM::account_basic(&author).balance;
-		let before_call = EVM::account_basic(&H160::default()).balance;
 		let tip: u128 = 1_000_000_000;
 		// Mimics the input for pre-eip-1559 transaction types where `gas_price`
 		// is used for both `max_fee_per_gas` and `max_priority_fee_per_gas`.
