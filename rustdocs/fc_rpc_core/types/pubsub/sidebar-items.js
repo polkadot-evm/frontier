@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["Kind","Subscription kind."],["Params","Subscription kind."],["Result","Subscription result."]],"struct":[["PubSubSyncStatus","PubSbub sync status"]]});
+initSidebarItems({"enum":[["Kind","Subscription kind."],["Params","Subscription kind."],["PubSubSyncStatus",""],["Result","Subscription result."]],"struct":[["SyncStatusMetadata","PubSbub sync status"]]});

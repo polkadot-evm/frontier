@@ -947,6 +947,9 @@
 <span id="942">942</span>
 <span id="943">943</span>
 <span id="944">944</span>
+<span id="945">945</span>
+<span id="946">946</span>
+<span id="947">947</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -1734,6 +1737,7 @@
 			}
 		};
 
+		<span class="kw">let</span> <span class="ident">is_transactional</span> <span class="op">=</span> <span class="bool-val">true</span>;
 		<span class="kw">match</span> <span class="ident">action</span> {
 			<span class="ident">ethereum::TransactionAction::Call</span>(<span class="ident">target</span>) =&gt; {
 				<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">T::Runner::call</span>(
@@ -1746,6 +1750,7 @@
 					<span class="ident">max_priority_fee_per_gas</span>,
 					<span class="ident">nonce</span>,
 					<span class="ident">access_list</span>,
+					<span class="ident">is_transactional</span>,
 					<span class="ident">config</span>.<span class="ident">as_ref</span>().<span class="ident">unwrap_or</span>(<span class="ident">T::config</span>()),
 				)
 				.<span class="ident">map_err</span>(<span class="ident">Into::into</span>)<span class="question-mark">?</span>;
@@ -1762,6 +1767,7 @@
 					<span class="ident">max_priority_fee_per_gas</span>,
 					<span class="ident">nonce</span>,
 					<span class="ident">access_list</span>,
+					<span class="ident">is_transactional</span>,
 					<span class="ident">config</span>.<span class="ident">as_ref</span>().<span class="ident">unwrap_or</span>(<span class="ident">T::config</span>()),
 				)
 				.<span class="ident">map_err</span>(<span class="ident">Into::into</span>)<span class="question-mark">?</span>;
