@@ -813,6 +813,10 @@
 <span id="808">808</span>
 <span id="809">809</span>
 <span id="810">810</span>
+<span id="811">811</span>
+<span id="812">812</span>
+<span id="813">813</span>
+<span id="814">814</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The Substrate Node Template runtime. This can be compiled with `#[no_std]`, ready for Wasm.</span>
 
 <span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
@@ -1435,6 +1439,7 @@
 				<span class="prelude-val">None</span>
 			};
 
+			<span class="kw">let</span> <span class="ident">is_transactional</span> <span class="op">=</span> <span class="bool-val">false</span>;
 			<span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">pallet_evm::Config</span><span class="op">&gt;</span><span class="ident">::Runner::call</span>(
 				<span class="ident">from</span>,
 				<span class="ident">to</span>,
@@ -1445,6 +1450,7 @@
 				<span class="ident">max_priority_fee_per_gas</span>,
 				<span class="ident">nonce</span>,
 				<span class="ident">access_list</span>.<span class="ident">unwrap_or_default</span>(),
+				<span class="ident">is_transactional</span>,
 				<span class="ident">config</span>.<span class="ident">as_ref</span>().<span class="ident">unwrap_or</span>(<span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">pallet_evm::Config</span><span class="op">&gt;</span><span class="ident">::config</span>()),
 			).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">err</span>.<span class="ident">into</span>())
 		}
@@ -1468,6 +1474,7 @@
 				<span class="prelude-val">None</span>
 			};
 
+			<span class="kw">let</span> <span class="ident">is_transactional</span> <span class="op">=</span> <span class="bool-val">false</span>;
 			<span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">pallet_evm::Config</span><span class="op">&gt;</span><span class="ident">::Runner::create</span>(
 				<span class="ident">from</span>,
 				<span class="ident">data</span>,
@@ -1477,6 +1484,7 @@
 				<span class="ident">max_priority_fee_per_gas</span>,
 				<span class="ident">nonce</span>,
 				<span class="ident">access_list</span>.<span class="ident">unwrap_or_default</span>(),
+				<span class="ident">is_transactional</span>,
 				<span class="ident">config</span>.<span class="ident">as_ref</span>().<span class="ident">unwrap_or</span>(<span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">pallet_evm::Config</span><span class="op">&gt;</span><span class="ident">::config</span>()),
 			).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">err</span>.<span class="ident">into</span>())
 		}

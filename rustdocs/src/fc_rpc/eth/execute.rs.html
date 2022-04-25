@@ -759,6 +759,18 @@
 <span id="754">754</span>
 <span id="755">755</span>
 <span id="756">756</span>
+<span id="757">757</span>
+<span id="758">758</span>
+<span id="759">759</span>
+<span id="760">760</span>
+<span id="761">761</span>
+<span id="762">762</span>
+<span id="763">763</span>
+<span id="764">764</span>
+<span id="765">765</span>
+<span id="766">766</span>
+<span id="767">767</span>
+<span id="768">768</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -1490,6 +1502,12 @@
 	<span class="kw">match</span> (<span class="ident">request_gas_price</span>, <span class="ident">request_max_fee</span>, <span class="ident">request_priority</span>) {
 		(<span class="ident">gas_price</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>) =&gt; {
 			<span class="comment">// Legacy request, all default to gas price.</span>
+			<span class="comment">// A zero-set gas price is None.</span>
+			<span class="kw">let</span> <span class="ident">gas_price</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">gas_price</span>.<span class="ident">unwrap_or_default</span>().<span class="ident">is_zero</span>() {
+				<span class="prelude-val">None</span>
+			} <span class="kw">else</span> {
+				<span class="ident">gas_price</span>
+			};
 			<span class="prelude-val">Ok</span>(<span class="ident">FeeDetails</span> {
 				<span class="ident">gas_price</span>,
 				<span class="ident">max_fee_per_gas</span>: <span class="ident">gas_price</span>,
@@ -1498,6 +1516,12 @@
 		}
 		(<span class="kw">_</span>, <span class="ident">max_fee</span>, <span class="ident">max_priority</span>) =&gt; {
 			<span class="comment">// eip-1559</span>
+			<span class="comment">// A zero-set max fee is None.</span>
+			<span class="kw">let</span> <span class="ident">max_fee</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">max_fee</span>.<span class="ident">unwrap_or_default</span>().<span class="ident">is_zero</span>() {
+				<span class="prelude-val">None</span>
+			} <span class="kw">else</span> {
+				<span class="ident">max_fee</span>
+			};
 			<span class="comment">// Ensure `max_priority_fee_per_gas` is less or equal to `max_fee_per_gas`.</span>
 			<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">max_priority</span>) <span class="op">=</span> <span class="ident">max_priority</span> {
 				<span class="kw">let</span> <span class="ident">max_fee</span> <span class="op">=</span> <span class="ident">max_fee</span>.<span class="ident">unwrap_or_default</span>();
