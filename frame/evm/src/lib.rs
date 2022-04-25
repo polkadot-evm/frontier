@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
-// Copyright (c) 2020 Parity Technologies (UK) Ltd.
+// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -61,15 +61,6 @@ pub mod runner;
 #[cfg(test)]
 mod tests;
 
-#[cfg(feature = "std")]
-use codec::{Decode, Encode};
-pub use evm::{
-	Config as EvmConfig, Context, ExitError, ExitFatal, ExitReason, ExitRevert, ExitSucceed,
-};
-pub use fp_evm::{
-	Account, CallInfo, CreateInfo, ExecutionInfo, LinearCostPrecompile, Log, Precompile,
-	PrecompileFailure, PrecompileOutput, PrecompileResult, PrecompileSet, Vicinity,
-};
 use frame_support::{
 	dispatch::DispatchResultWithPostInfo,
 	traits::{
@@ -79,14 +70,22 @@ use frame_support::{
 	weights::{Pays, PostDispatchInfo, Weight},
 };
 use frame_system::RawOrigin;
-#[cfg(feature = "std")]
-use serde::{Deserialize, Serialize};
 use sp_core::{Hasher, H160, H256, U256};
 use sp_runtime::{
 	traits::{BadOrigin, Saturating, UniqueSaturatedInto, Zero},
 	AccountId32,
 };
 use sp_std::vec::Vec;
+
+pub use evm::{
+	Config as EvmConfig, Context, ExitError, ExitFatal, ExitReason, ExitRevert, ExitSucceed,
+};
+#[cfg(feature = "std")]
+use fp_evm::GenesisAccount;
+pub use fp_evm::{
+	Account, CallInfo, CreateInfo, ExecutionInfo, FeeCalculator, LinearCostPrecompile, Log,
+	Precompile, PrecompileFailure, PrecompileOutput, PrecompileResult, PrecompileSet, Vicinity,
+};
 
 pub use self::{pallet::*, runner::Runner};
 
@@ -186,6 +185,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			T::CallOrigin::ensure_address_origin(&source, origin)?;
 
+			let is_transactional = true;
 			let info = T::Runner::call(
 				source,
 				target,
@@ -196,6 +196,7 @@ pub mod pallet {
 				max_priority_fee_per_gas,
 				nonce,
 				access_list,
+				is_transactional,
 				T::config(),
 			)?;
 
@@ -232,6 +233,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			T::CallOrigin::ensure_address_origin(&source, origin)?;
 
+			let is_transactional = true;
 			let info = T::Runner::create(
 				source,
 				init,
@@ -241,6 +243,7 @@ pub mod pallet {
 				max_priority_fee_per_gas,
 				nonce,
 				access_list,
+				is_transactional,
 				T::config(),
 			)?;
 
@@ -285,6 +288,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			T::CallOrigin::ensure_address_origin(&source, origin)?;
 
+			let is_transactional = true;
 			let info = T::Runner::create2(
 				source,
 				init,
@@ -295,6 +299,7 @@ pub mod pallet {
 				max_priority_fee_per_gas,
 				nonce,
 				access_list,
+				is_transactional,
 				T::config(),
 			)?;
 
@@ -416,18 +421,6 @@ pub type BalanceOf<T> =
 /// Type alias for negative imbalance during fees
 type NegativeImbalanceOf<C, T> =
 	<C as Currency<<T as frame_system::Config>::AccountId>>::NegativeImbalance;
-
-/// Trait that outputs the current transaction gas price.
-pub trait FeeCalculator {
-	/// Return the minimal required gas price.
-	fn min_gas_price() -> U256;
-}
-
-impl FeeCalculator for () {
-	fn min_gas_price() -> U256 {
-		U256::zero()
-	}
-}
 
 pub trait EnsureAddressOrigin<OuterOrigin> {
 	/// Success return type.
@@ -572,20 +565,6 @@ impl GasWeightMapping for () {
 
 static LONDON_CONFIG: EvmConfig = EvmConfig::london();
 
-#[cfg(feature = "std")]
-#[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, Serialize, Deserialize)]
-/// Account definition used for genesis block construction.
-pub struct GenesisAccount {
-	/// Account nonce.
-	pub nonce: U256,
-	/// Account balance.
-	pub balance: U256,
-	/// Full account storage.
-	pub storage: std::collections::BTreeMap<H256, H256>,
-	/// Account code.
-	pub code: Vec<u8>,
-}
-
 impl<T: Config> Pallet<T> {
 	/// Check whether an account is empty.
 	pub fn is_account_empty(address: &H160) -> bool {
@@ -696,6 +675,9 @@ where
 	type LiquidityInfo = Option<NegativeImbalanceOf<C, T>>;
 
 	fn withdraw_fee(who: &H160, fee: U256) -> Result<Self::LiquidityInfo, Error<T>> {
+		if fee.is_zero() {
+			return Ok(None);
+		}
 		let account_id = T::AddressMapping::into_account_id(*who);
 		let imbalance = C::withdraw(
 			&account_id,

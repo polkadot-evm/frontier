@@ -1,29 +1,35 @@
 # Functional testing for Substrate Frontier Node RPC
 
-This folder contains a set of functional tests desgined to perform functional testing on the Frontier Eth RPC.
+This folder contains a set of functional tests designed to perform functional testing on the Frontier Eth RPC.
 
 It is written in typescript, using Mocha/Chai as Test framework.
 
 ## Test flow
 
-Tests are separated depending of their genesis requirements.
-Each group will start a [frontier test node](frontier-test-node) with a given [spec](substrate-specs) before executing the tests.
+Tests are separated depending on their genesis requirements.
+Each group will start a `frontier test node` with a given `spec` before executing the tests.
+
+## Build the manual seal node for tests
+
+```bash
+cargo build --release --no-default-features --features manual-seal,rpc_binary_search_estimate
+```
 
 ## Installation
 
-```
+```bash
 npm install
 ```
 
 ## Run the tests
 
-```
-npm run test
+```bash
+npm run build && npm run test
 ```
 
 You can also add the Frontier Node logs to the output using the `FRONTIER_LOG` env variable. Ex:
 
-```
+```bash
 FRONTIER_LOG="warn,rpc=trace" npm run test
 ```
 
