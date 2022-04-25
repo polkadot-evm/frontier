@@ -311,7 +311,7 @@ fn refunds_and_priority_should_work() {
 		let tip = U256::from(1_500_000_000);
 		let max_fee_per_gas = U256::from(2_000_000_000);
 		let used_gas = U256::from(21_000);
-		let result = EVM::call(
+		let _ = EVM::call(
 			Origin::root(),
 			H160::default(),
 			H160::from_str("1000000000000000000000000000000000000001").unwrap(),
@@ -338,9 +338,6 @@ fn refunds_and_priority_should_work() {
 #[test]
 fn call_should_fail_with_priority_greater_than_max_fee() {
 	new_test_ext().execute_with(|| {
-		let author = EVM::find_author();
-		let before_tip = EVM::account_basic(&author).balance;
-		let before_call = EVM::account_basic(&H160::default()).balance;
 		// Max priority greater than max fee should fail.
 		let tip: u128 = 1_100_000_000;
 		let result = EVM::call(
@@ -362,9 +359,6 @@ fn call_should_fail_with_priority_greater_than_max_fee() {
 #[test]
 fn call_should_succeed_with_priority_equal_to_max_fee() {
 	new_test_ext().execute_with(|| {
-		let author = EVM::find_author();
-		let before_tip = EVM::account_basic(&author).balance;
-		let before_call = EVM::account_basic(&H160::default()).balance;
 		let tip: u128 = 1_000_000_000;
 		// Mimics the input for pre-eip-1559 transaction types where `gas_price`
 		// is used for both `max_fee_per_gas` and `max_priority_fee_per_gas`.
@@ -407,5 +401,123 @@ fn handle_sufficient_reference() {
 		let account_2 = frame_system::Account::<Test>::get(substrate_addr_2);
 		// We decreased the sufficient reference by 1 on removing the account.
 		assert_eq!(account_2.sufficients, 0);
+	});
+}
+
+#[test]
+fn runner_non_transactional_calls_with_non_balance_accounts_is_ok_without_gas_price() {
+	// Expect to skip checks for gas price and account balance when both:
+	//	- The call is non transactional (`is_transactional == false`).
+	//	- The `max_fee_per_gas` is None.
+	new_test_ext().execute_with(|| {
+		let non_balance_account =
+			H160::from_str("7700000000000000000000000000000000000001").unwrap();
+		assert_eq!(
+			EVM::account_basic(&non_balance_account).balance,
+			U256::zero()
+		);
+		let _ = <Test as Config>::Runner::call(
+			non_balance_account,
+			H160::from_str("1000000000000000000000000000000000000001").unwrap(),
+			Vec::new(),
+			U256::from(1u32),
+			1000000,
+			None,
+			None,
+			None,
+			Vec::new(),
+			false,
+			&<Test as Config>::config().clone(),
+		)
+		.expect("Non transactional call succeeds");
+		assert_eq!(
+			EVM::account_basic(&non_balance_account).balance,
+			U256::zero()
+		);
+	});
+}
+
+#[test]
+fn runner_non_transactional_calls_with_non_balance_accounts_is_err_with_gas_price() {
+	// In non transactional calls where `Some(gas_price)` is defined, expect it to be
+	// checked against the `BaseFee`, and expect the account to have enough balance
+	// to pay for the call.
+	new_test_ext().execute_with(|| {
+		let non_balance_account =
+			H160::from_str("7700000000000000000000000000000000000001").unwrap();
+		assert_eq!(
+			EVM::account_basic(&non_balance_account).balance,
+			U256::zero()
+		);
+		let res = <Test as Config>::Runner::call(
+			non_balance_account,
+			H160::from_str("1000000000000000000000000000000000000001").unwrap(),
+			Vec::new(),
+			U256::from(1u32),
+			1000000,
+			Some(U256::from(1_000_000_000)),
+			None,
+			None,
+			Vec::new(),
+			false,
+			&<Test as Config>::config().clone(),
+		);
+		assert!(res.is_err());
+	});
+}
+
+#[test]
+fn runner_transactional_call_with_zero_gas_price_fails() {
+	// Transactional calls are rejected when `max_fee_per_gas == None`.
+	new_test_ext().execute_with(|| {
+		let res = <Test as Config>::Runner::call(
+			H160::default(),
+			H160::from_str("1000000000000000000000000000000000000001").unwrap(),
+			Vec::new(),
+			U256::from(1u32),
+			1000000,
+			None,
+			None,
+			None,
+			Vec::new(),
+			true,
+			&<Test as Config>::config().clone(),
+		);
+		assert!(res.is_err());
+	});
+}
+
+#[test]
+fn runner_max_fee_per_gas_gte_max_priority_fee_per_gas() {
+	// Transactional and non transactional calls enforce `max_fee_per_gas >= max_priority_fee_per_gas`.
+	new_test_ext().execute_with(|| {
+		let res = <Test as Config>::Runner::call(
+			H160::default(),
+			H160::from_str("1000000000000000000000000000000000000001").unwrap(),
+			Vec::new(),
+			U256::from(1u32),
+			1000000,
+			Some(U256::from(1_000_000_000)),
+			Some(U256::from(2_000_000_000)),
+			None,
+			Vec::new(),
+			true,
+			&<Test as Config>::config().clone(),
+		);
+		assert!(res.is_err());
+		let res = <Test as Config>::Runner::call(
+			H160::default(),
+			H160::from_str("1000000000000000000000000000000000000001").unwrap(),
+			Vec::new(),
+			U256::from(1u32),
+			1000000,
+			Some(U256::from(1_000_000_000)),
+			Some(U256::from(2_000_000_000)),
+			None,
+			Vec::new(),
+			false,
+			&<Test as Config>::config().clone(),
+		);
+		assert!(res.is_err());
 	});
 }

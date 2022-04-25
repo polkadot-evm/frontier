@@ -729,6 +729,12 @@ fn fee_details(
 	match (request_gas_price, request_max_fee, request_priority) {
 		(gas_price, None, None) => {
 			// Legacy request, all default to gas price.
+			// A zero-set gas price is None.
+			let gas_price = if gas_price.unwrap_or_default().is_zero() {
+				None
+			} else {
+				gas_price
+			};
 			Ok(FeeDetails {
 				gas_price,
 				max_fee_per_gas: gas_price,
@@ -737,6 +743,12 @@ fn fee_details(
 		}
 		(_, max_fee, max_priority) => {
 			// eip-1559
+			// A zero-set max fee is None.
+			let max_fee = if max_fee.unwrap_or_default().is_zero() {
+				None
+			} else {
+				max_fee
+			};
 			// Ensure `max_priority_fee_per_gas` is less or equal to `max_fee_per_gas`.
 			if let Some(max_priority) = max_priority {
 				let max_fee = max_fee.unwrap_or_default();
