@@ -125,7 +125,7 @@ where
 					for txn in ethereum_transactions {
 						let inner_hash = txn.hash();
 						if hash == inner_hash {
-							return Ok(Some(transaction_build(txn, None, None, true, None)));
+							return Ok(Some(transaction_build(txn, None, None, None)));
 						}
 					}
 					// Unknown transaction.
@@ -156,14 +156,12 @@ where
 				.await;
 
 			let base_fee = handler.base_fee(&id);
-			let is_eip1559 = handler.is_eip1559(&id);
 
 			match (block, statuses) {
 				(Some(block), Some(statuses)) => Ok(Some(transaction_build(
 					block.transactions[index].clone(),
 					Some(block),
 					Some(statuses[index].clone()),
-					is_eip1559,
 					base_fee,
 				))),
 				_ => Ok(None),
@@ -207,7 +205,6 @@ where
 				.await;
 
 			let base_fee = handler.base_fee(&id);
-			let is_eip1559 = handler.is_eip1559(&id);
 
 			match (block, statuses) {
 				(Some(block), Some(statuses)) => {
@@ -218,7 +215,6 @@ where
 							transaction.clone(),
 							Some(block),
 							Some(status.clone()),
-							is_eip1559,
 							base_fee,
 						)));
 					} else {
@@ -267,7 +263,6 @@ where
 				.await;
 
 			let base_fee = handler.base_fee(&id);
-			let is_eip1559 = handler.is_eip1559(&id);
 
 			match (block, statuses) {
 				(Some(block), Some(statuses)) => {
@@ -278,7 +273,6 @@ where
 							transaction.clone(),
 							Some(block),
 							Some(status.clone()),
-							is_eip1559,
 							base_fee,
 						)));
 					} else {

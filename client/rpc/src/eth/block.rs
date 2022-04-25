@@ -72,7 +72,6 @@ where
 				.await;
 
 			let base_fee = handler.base_fee(&id);
-			let is_eip1559 = handler.is_eip1559(&id);
 
 			match (block, statuses) {
 				(Some(block), Some(statuses)) => Ok(Some(rich_block_build(
@@ -81,7 +80,6 @@ where
 					Some(hash),
 					full,
 					base_fee,
-					is_eip1559,
 				))),
 				_ => Ok(None),
 			}
@@ -124,7 +122,6 @@ where
 				.await;
 
 			let base_fee = handler.base_fee(&id);
-			let is_eip1559 = handler.is_eip1559(&id);
 
 			match (block, statuses) {
 				(Some(block), Some(statuses)) => {
@@ -136,7 +133,6 @@ where
 						Some(hash),
 						full,
 						base_fee,
-						is_eip1559,
 					)))
 				}
 				_ => Ok(None),
