@@ -68,26 +68,16 @@ impl<K: Eq + core::hash::Hash, V: Encode> LRUCacheByteLimited<K, V> {
 	pub fn put(&mut self, k: K, v: V) {
 		// Handle size limit
 		self.size += v.encoded_size() as u64;
-		if self.size > self.max_size {
-			let keys_to_remove = self
-				.cache
-				.iter()
-				.rev()
-				.take_while(|(_k, v)| {
-					if self.size > self.max_size {
-						let v_size = v.encoded_size() as u64;
-						self.size -= v_size;
-						true
-					} else {
-						false
-					}
-				})
-				.map(|(k, _v)| k)
-				.collect::<Vec<_>>();
-			for key in keys_to_remove {
-				self.cache.pop(key);
+
+		while self.size > self.max_size {
+			if let Some((_, v)) = self.cache.pop_lru() {
+				let v_size = v.encoded_size() as u64;
+				self.size -= v_size;
+			} else {
+				break;
 			}
 		}
+
 		// Add entry in cache
 		self.cache.put(k, v);
 		// Update metrics
