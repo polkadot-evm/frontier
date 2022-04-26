@@ -26,6 +26,7 @@ use std::{
 	sync::{Arc, Mutex},
 	time::Duration,
 };
+use fc_db::DatabaseSource;
 
 use crate::cli::Cli;
 #[cfg(feature = "manual-seal")]
@@ -117,10 +118,16 @@ pub fn frontier_database_dir(config: &Configuration) -> std::path::PathBuf {
 pub fn open_frontier_backend(config: &Configuration) -> Result<Arc<fc_db::Backend<Block>>, String> {
 	Ok(Arc::new(fc_db::Backend::<Block>::new(
 		&fc_db::DatabaseSettings {
-			source: fc_db::DatabaseSource::RocksDb {
-				path: frontier_database_dir(&config),
-				cache_size: 0,
-			},
+			source: match config.database {
+				DatabaseSource::RocksDb { .. } => DatabaseSource::RocksDb {
+					path: frontier_database_dir(&config),
+					cache_size: 0,
+				},
+				DatabaseSource::ParityDb { .. } => DatabaseSource::ParityDb {
+					path: frontier_database_dir(&config),
+				},
+				_ => panic!("Supported db sources: `rocksdb` | `paritydb`")
+			}
 		},
 	)?))
 }
