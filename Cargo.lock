@@ -1533,6 +1533,7 @@ dependencies = [
  "kvdb-rocksdb",
  "parity-scale-codec",
  "parking_lot 0.12.0",
+ "sc-client-db",
  "sp-core",
  "sp-database",
  "sp-runtime",

@@ -18,11 +18,11 @@
 
 use std::sync::Arc;
 
-use crate::{Database, DatabaseSettings, DatabaseSettingsSrc, DbHash};
+use crate::{Database, DatabaseSettings, DbHash};
 
 pub fn open_database(config: &DatabaseSettings) -> Result<Arc<dyn Database<DbHash>>, String> {
 	let db: Arc<dyn Database<DbHash>> = match &config.source {
-		DatabaseSettingsSrc::RocksDb {
+		sc_client_db::DatabaseSource::RocksDb {
 			path,
 			cache_size: _,
 		} => {
@@ -34,7 +34,8 @@ pub fn open_database(config: &DatabaseSettings) -> Result<Arc<dyn Database<DbHas
 			let db = kvdb_rocksdb::Database::open(&db_config, &path)
 				.map_err(|err| format!("{}", err))?;
 			sp_database::as_database(db)
-		}
+		},
+		_ => unimplemented!()
 	};
 
 	Ok(db)
