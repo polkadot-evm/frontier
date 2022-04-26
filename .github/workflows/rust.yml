@@ -69,3 +69,5 @@ jobs:
         WASM_BUILD_TOOLCHAIN: nightly-2022-02-07
     - name: Rustfmt
       run: cargo fmt --all -- --check
+    - name: Clippy
+      run: cargo clippy --all -- -D warnings
