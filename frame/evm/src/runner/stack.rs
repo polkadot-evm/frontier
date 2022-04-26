@@ -117,7 +117,7 @@ impl<T: Config> Runner<T> {
 			origin: source,
 		};
 
-		let metadata = StackSubstateMetadata::new(gas_limit, &config);
+		let metadata = StackSubstateMetadata::new(gas_limit, config);
 		let state = SubstrateStackState::new(&vicinity, metadata);
 		let mut executor = StackExecutor::new_with_precompiles(state, config, precompiles);
 
@@ -130,12 +130,12 @@ impl<T: Config> Runner<T> {
 				let actual_priority_fee = max_fee_per_gas
 					.saturating_sub(base_fee)
 					.min(max_priority_fee)
-					.checked_mul(U256::from(used_gas))
+					.checked_mul(used_gas)
 					.ok_or(Error::<T>::FeeOverflow)?;
 				let actual_fee = executor
 					.fee(base_fee)
 					.checked_add(actual_priority_fee)
-					.unwrap_or(U256::max_value());
+					.unwrap_or_else(U256::max_value);
 				(actual_fee, Some(actual_priority_fee))
 			} else {
 				(executor.fee(base_fee), None)

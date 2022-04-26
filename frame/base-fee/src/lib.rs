@@ -16,6 +16,7 @@
 // limitations under the License.
 
 #![cfg_attr(not(feature = "std"), no_std)]
+#![allow(clippy::comparison_chain)]
 
 #[cfg(test)]
 mod tests;
@@ -178,7 +179,7 @@ pub mod pallet {
 							let increase = scaled_basefee
 								.checked_div(U256::from(1_000_000))
 								.unwrap_or(U256::zero());
-							*bf = bf.saturating_add(U256::from(increase));
+							*bf = bf.saturating_add(increase);
 						} else {
 							Self::deposit_event(Event::BaseFeeOverflow);
 						}
@@ -196,7 +197,7 @@ pub mod pallet {
 							let decrease = scaled_basefee
 								.checked_div(U256::from(1_000_000))
 								.unwrap_or(U256::zero());
-							*bf = bf.saturating_sub(U256::from(decrease));
+							*bf = bf.saturating_sub(decrease);
 						} else {
 							Self::deposit_event(Event::BaseFeeOverflow);
 						}

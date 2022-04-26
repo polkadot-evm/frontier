@@ -85,17 +85,9 @@ pub mod pallet {
 	}
 
 	#[pallet::genesis_config]
+	#[cfg_attr(feature = "std", derive(Default))]
 	pub struct GenesisConfig {
 		pub min_gas_price: U256,
-	}
-
-	#[cfg(feature = "std")]
-	impl Default for GenesisConfig {
-		fn default() -> Self {
-			Self {
-				min_gas_price: Default::default(),
-			}
-		}
 	}
 
 	#[pallet::genesis_build]
