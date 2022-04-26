@@ -1,5 +1,6 @@
 //! Substrate Node Template CLI library.
 #![warn(missing_docs)]
+#![allow(clippy::type_complexity)]
 
 mod chain_spec;
 #[macro_use]

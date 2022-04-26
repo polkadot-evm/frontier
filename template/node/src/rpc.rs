@@ -90,7 +90,7 @@ where
 
 	Arc::new(OverrideHandle {
 		schemas: overrides_map,
-		fallback: Box::new(RuntimeApiStorageOverride::new(client.clone())),
+		fallback: Box::new(RuntimeApiStorageOverride::new(client)),
 	})
 }
 
@@ -174,10 +174,10 @@ where
 		io.extend_with(EthFilterApiServer::to_delegate(EthFilterApi::new(
 			client.clone(),
 			backend,
-			filter_pool.clone(),
-			500 as usize, // max stored filters
+			filter_pool,
+			500, // max stored filters
 			max_past_logs,
-			block_data_cache.clone(),
+			block_data_cache,
 		)));
 	}
 
@@ -191,9 +191,9 @@ where
 	io.extend_with(Web3ApiServer::to_delegate(Web3Api::new(client.clone())));
 
 	io.extend_with(EthPubSubApiServer::to_delegate(EthPubSubApi::new(
-		pool.clone(),
-		client.clone(),
-		network.clone(),
+		pool,
+		client,
+		network,
 		SubscriptionManager::<HexEncodedIdProvider>::with_id_provider(
 			HexEncodedIdProvider::default(),
 			Arc::new(subscription_task_executor),
@@ -201,15 +201,12 @@ where
 		overrides,
 	)));
 
-	match command_sink {
-		Some(command_sink) => {
-			io.extend_with(
-				// We provide the rpc handler with the sending end of the channel to allow the rpc
-				// send EngineCommands to the background block authorship task.
-				ManualSealApi::to_delegate(ManualSeal::new(command_sink)),
-			);
-		}
-		_ => {}
+	if let Some(command_sink) = command_sink {
+		io.extend_with(
+			// We provide the rpc handler with the sending end of the channel to allow the rpc
+			// send EngineCommands to the background block authorship task.
+			ManualSealApi::to_delegate(ManualSeal::new(command_sink)),
+		);
 	}
 
 	io
