@@ -18,6 +18,7 @@
 
 #![allow(
 	clippy::too_many_arguments,
+	clippy::large_enum_variant,
 	clippy::manual_range_contains,
 	clippy::explicit_counter_loop,
 	clippy::len_zero,
