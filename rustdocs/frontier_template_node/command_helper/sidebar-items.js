@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["create_benchmark_extrinsic","Create a transaction using the given `call`."],["inherent_benchmark_data","Generates inherent data for the `benchmark overhead` command."]],"struct":[["BenchmarkExtrinsicBuilder","Generates extrinsics for the `benchmark overhead` command."]]});

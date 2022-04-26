@@ -88,6 +88,7 @@
 <span id="83">83</span>
 <span id="84">84</span>
 <span id="85">85</span>
+<span id="86">86</span>
 </pre><pre class="rust"><code><span class="doccomment">/// Available Sealing methods.</span>
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;manual-seal&quot;</span>)]</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">clap::ArgEnum</span>)]</span>
@@ -169,8 +170,9 @@
 	<span class="doccomment">/// Revert the chain to a previous state.</span>
 	<span class="ident">Revert</span>(<span class="ident">sc_cli::RevertCmd</span>),
 
-	<span class="doccomment">/// The custom benchmark subcommmand benchmarking runtime pallets.</span>
-	<span class="attribute">#[<span class="ident">clap</span>(<span class="ident">name</span> <span class="op">=</span> <span class="string">&quot;benchmark&quot;</span>, <span class="ident">about</span> <span class="op">=</span> <span class="string">&quot;Benchmark runtime pallets.&quot;</span>)]</span>
+	<span class="doccomment">/// Sub-commands concerned with benchmarking.</span>
+	<span class="doccomment">/// The pallet benchmarking moved to the `pallet` sub-command.</span>
+	<span class="attribute">#[<span class="ident">clap</span>(<span class="ident">subcommand</span>)]</span>
 	<span class="ident">Benchmark</span>(<span class="ident">frame_benchmarking_cli::BenchmarkCmd</span>),
 }
 </code></pre></div>

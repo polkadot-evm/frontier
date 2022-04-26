@@ -739,7 +739,7 @@
 	}
 }
 
-<span class="kw">type</span> <span class="ident">FullClient</span> <span class="op">=</span>
+<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">FullClient</span> <span class="op">=</span>
 	<span class="ident">sc_service::TFullClient</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">RuntimeApi</span>, <span class="ident">NativeElseWasmExecutor</span><span class="op">&lt;</span><span class="ident">ExecutorDispatch</span><span class="op">&gt;</span><span class="op">&gt;</span>;
 <span class="kw">type</span> <span class="ident">FullBackend</span> <span class="op">=</span> <span class="ident">sc_service::TFullBackend</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>;
 <span class="kw">type</span> <span class="ident">FullSelectChain</span> <span class="op">=</span> <span class="ident">sc_consensus::LongestChain</span><span class="op">&lt;</span><span class="ident">FullBackend</span>, <span class="ident">Block</span><span class="op">&gt;</span>;
