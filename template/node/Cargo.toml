@@ -16,6 +16,7 @@ targets = ["x86_64-unknown-linux-gnu"]
 [dependencies]
 async-trait = "0.1"
 clap = { version = "3.1", features = ["derive"] }
+codec = { package = "parity-scale-codec", version = "3.1", features = ["derive"] }
 futures = "0.3"
 jsonrpc-core = "18.0.0"
 jsonrpc-pubsub = "18.0.0"
@@ -45,6 +46,7 @@ sp-consensus-aura = { version = "0.10.0-dev", git = "https://github.com/parityte
 sp-core = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-finality-grandpa = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-inherents = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-keyring = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-runtime = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-timestamp = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 # These dependencies are used for RPC
@@ -53,6 +55,8 @@ substrate-frame-rpc-system = { version = "4.0.0-dev", git = "https://github.com/
 # These dependencies are used for runtime benchmarking
 frame-benchmarking = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 frame-benchmarking-cli = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
+frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
+pallet-transaction-payment = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 
 fc-consensus = { path = "../../client/consensus" }
 fc-db = { path = "../../client/db" }
