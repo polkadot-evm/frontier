@@ -192,7 +192,7 @@ impl FilteredParams {
 	}
 
 	/// Evaluates if a Bloom contains a provided sequence of topics.
-	pub fn topics_in_bloom(bloom: Bloom, topic_bloom_filters: &Vec<BloomFilter>) -> bool {
+	pub fn topics_in_bloom(bloom: Bloom, topic_bloom_filters: &[BloomFilter]) -> bool {
 		if topic_bloom_filters.is_empty() {
 			// No filter provided, match.
 			return true;
