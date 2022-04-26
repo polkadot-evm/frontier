@@ -76,7 +76,7 @@ where
 			match (block, statuses) {
 				(Some(block), Some(statuses)) => Ok(Some(rich_block_build(
 					block,
-					statuses.into_iter().map(|s| Some(s)).collect(),
+					statuses.into_iter().map(Option::Some).collect(),
 					Some(hash),
 					full,
 					base_fee,
@@ -129,7 +129,7 @@ where
 
 					Ok(Some(rich_block_build(
 						block,
-						statuses.into_iter().map(|s| Some(s)).collect(),
+						statuses.into_iter().map(Option::Some).collect(),
 						Some(hash),
 						full,
 						base_fee,

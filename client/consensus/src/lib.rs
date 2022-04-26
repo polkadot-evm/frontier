@@ -125,7 +125,7 @@ where
 		// We validate that there are only one frontier log. No other
 		// actions are needed and mapping syncing is delegated to a separate
 		// worker.
-		ensure_log(&block.header.digest()).map_err(|e| Error::from(e))?;
+		ensure_log(block.header.digest()).map_err(Error::from)?;
 
 		self.inner
 			.import_block(block, new_cache)

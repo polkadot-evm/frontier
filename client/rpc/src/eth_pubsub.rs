@@ -105,8 +105,8 @@ where
 		let starting_block =
 			UniqueSaturatedInto::<u64>::unique_saturated_into(client.info().best_number);
 		Self {
-			pool: pool.clone(),
-			client: client.clone(),
+			pool,
+			client,
 			network,
 			subscriptions,
 			overrides,
@@ -198,7 +198,7 @@ impl SubscriptionResult {
 		params: &FilteredParams,
 	) -> bool {
 		let log = Log {
-			address: ethereum_log.address.clone(),
+			address: ethereum_log.address,
 			topics: ethereum_log.topics.clone(),
 			data: Bytes(ethereum_log.data.clone()),
 			block_hash: None,
@@ -209,7 +209,7 @@ impl SubscriptionResult {
 			transaction_log_index: None,
 			removed: false,
 		};
-		if let Some(_) = params.filter {
+		if params.filter.is_some() {
 			let block_number =
 				UniqueSaturatedInto::<u64>::unique_saturated_into(block.header.number);
 			if !params.filter_block_range(block_number)
@@ -292,9 +292,9 @@ where
 							))
 						})
 						.map(|x| {
-							return Ok::<Result<PubSubResult, jsonrpc_core::types::error::Error>, ()>(
-								Ok(PubSubResult::Log(Box::new(x))),
-							);
+							Ok::<Result<PubSubResult, jsonrpc_core::types::error::Error>, ()>(Ok(
+								PubSubResult::Log(Box::new(x)),
+							))
 						});
 					stream
 						.forward(
@@ -327,9 +327,7 @@ where
 								futures::future::ready(None)
 							}
 						})
-						.map(|block| {
-							return Ok::<_, ()>(Ok(SubscriptionResult::new().new_heads(block)));
-						});
+						.map(|block| Ok::<_, ()>(Ok(SubscriptionResult::new().new_heads(block))));
 					stream
 						.forward(
 							sink.sink_map_err(|e| warn!("Error sending notifications: {:?}", e)),
@@ -388,9 +386,9 @@ where
 							}
 						})
 						.map(|transaction| {
-							return Ok::<Result<PubSubResult, jsonrpc_core::types::error::Error>, ()>(
-								Ok(PubSubResult::TransactionHash(transaction.hash())),
-							);
+							Ok::<Result<PubSubResult, jsonrpc_core::types::error::Error>, ()>(Ok(
+								PubSubResult::TransactionHash(transaction.hash()),
+							))
 						});
 					stream
 						.forward(
@@ -401,11 +399,11 @@ where
 			}
 			Kind::Syncing => {
 				self.subscriptions.add(subscriber, |sink| {
-					let sink = sink.sink_map_err(|e| warn!("Error sending notifications: {:?}", e));
+					let mut sink =
+						sink.sink_map_err(|e| warn!("Error sending notifications: {:?}", e));
 
 					let client = Arc::clone(&client);
 					let network = Arc::clone(&network);
-					let mut sink = sink.clone();
 					async move {
 						// Gets the node syncing status.
 						// The response is expected to be serialized either as a plain boolean

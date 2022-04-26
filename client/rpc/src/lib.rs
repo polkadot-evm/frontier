@@ -16,6 +16,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+#![allow(
+	clippy::too_many_arguments,
+	clippy::manual_range_contains,
+	clippy::explicit_counter_loop,
+	clippy::len_zero,
+	clippy::new_without_default
+)]
+
 mod eth;
 mod eth_pubsub;
 mod net;
