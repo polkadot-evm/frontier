@@ -30,7 +30,6 @@ use futures::StreamExt;
 use lru::LruCache;
 use tokio::sync::{mpsc, oneshot};
 
-use codec::Decode;
 use sc_client_api::{
 	backend::{Backend, StateBackend, StorageProvider},
 	client::BlockchainEvents,
