@@ -171,10 +171,10 @@ impl<T: Config> Runner<T> {
 		// Refunded 200 - 40 = 160.
 		// Tip 5 * 6 = 30.
 		// Burned 200 - (160 + 30) = 10. Which is equivalent to gas_used * base_fee.
+		//
+		// The `refund` = `fee` - `actual_fee`, and `actual_fee` = `base` + `tip` will be handled by `OnUnbalanced`
+		// The `actual_fee` can be burned or reward to block authors.
 		T::OnChargeTransaction::correct_and_deposit_fee(&source, actual_fee, fee);
-		if let Some(actual_priority_fee) = actual_priority_fee {
-			T::OnChargeTransaction::pay_priority_fee(actual_priority_fee);
-		}
 
 		let state = executor.into_state();
 
