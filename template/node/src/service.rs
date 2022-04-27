@@ -1,6 +1,7 @@
 //! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 
 use fc_consensus::FrontierBlockImport;
+use fc_db::DatabaseSource;
 use fc_mapping_sync::{MappingSyncWorker, SyncStrategy};
 use fc_rpc::EthTask;
 use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
@@ -26,7 +27,6 @@ use std::{
 	sync::{Arc, Mutex},
 	time::Duration,
 };
-use fc_db::DatabaseSource;
 
 use crate::cli::Cli;
 #[cfg(feature = "manual-seal")]
@@ -126,8 +126,8 @@ pub fn open_frontier_backend(config: &Configuration) -> Result<Arc<fc_db::Backen
 				DatabaseSource::ParityDb { .. } => DatabaseSource::ParityDb {
 					path: frontier_database_dir(&config),
 				},
-				_ => panic!("Supported db sources: `rocksdb` | `paritydb`")
-			}
+				_ => panic!("Supported db sources: `rocksdb` | `paritydb`"),
+			},
 		},
 	)?))
 }

@@ -17,14 +17,14 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use crate::Database;
-use sp_database::{ColumnId, error::DatabaseError, Change, Transaction};
+use sp_database::{error::DatabaseError, Change, ColumnId, Transaction};
 
 fn handle_err<T>(result: parity_db::Result<T>) -> T {
 	match result {
 		Ok(r) => r,
 		Err(e) => {
 			panic!("Critical database error: {:?}", e);
-		},
+		}
 	}
 }
 
@@ -32,11 +32,14 @@ pub struct DbAdapter(pub parity_db::Db);
 
 impl<H: Clone + AsRef<[u8]>> Database<H> for DbAdapter {
 	fn commit(&self, transaction: Transaction<H>) -> Result<(), DatabaseError> {
-		handle_err(self.0.commit(transaction.0.into_iter().map(|change| match change {
-			Change::Set(col, key, value) => (col as u8, key, Some(value)),
-			Change::Remove(col, key) => (col as u8, key, None),
-			_ => unimplemented!(),
-		})));
+		handle_err(
+			self.0
+				.commit(transaction.0.into_iter().map(|change| match change {
+					Change::Set(col, key, value) => (col as u8, key, Some(value)),
+					Change::Remove(col, key) => (col as u8, key, None),
+					_ => unimplemented!(),
+				})),
+		);
 
 		Ok(())
 	}

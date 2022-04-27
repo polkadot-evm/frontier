@@ -138,7 +138,9 @@ pub fn run() -> sc_cli::Result<()> {
 					DatabaseSource::ParityDb { .. } => DatabaseSource::ParityDb {
 						path: frontier_database_dir(&config),
 					},
-					_ => return Err(format!("Cannot purge `{:?}` database", config.database).into())
+					_ => {
+						return Err(format!("Cannot purge `{:?}` database", config.database).into())
+					}
 				};
 				cmd.run(frontier_database_config)?;
 				cmd.run(config.database)

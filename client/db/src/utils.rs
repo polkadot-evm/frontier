@@ -21,24 +21,26 @@ use std::sync::Arc;
 use crate::{Database, DatabaseSettings, DatabaseSource, DbHash};
 
 pub fn open_database(config: &DatabaseSettings) -> Result<Arc<dyn Database<DbHash>>, String> {
-
 	#[cfg(feature = "with-kvdb-rocksdb")]
-	if let DatabaseSource::RocksDb { path, cache_size: _ } = &config.source {
+	if let DatabaseSource::RocksDb {
+		path,
+		cache_size: _,
+	} = &config.source
+	{
 		let db_config = kvdb_rocksdb::DatabaseConfig::with_columns(crate::columns::NUM_COLUMNS);
 		let path = path
 			.to_str()
 			.ok_or_else(|| "Invalid database path".to_string())?;
-		
-		let db = kvdb_rocksdb::Database::open(&db_config, &path)
-			.map_err(|err| format!("{}", err))?;
+
+		let db =
+			kvdb_rocksdb::Database::open(&db_config, &path).map_err(|err| format!("{}", err))?;
 		return Ok(sp_database::as_database(db));
 	}
 
 	#[cfg(feature = "with-parity-db")]
 	if let DatabaseSource::ParityDb { path } = &config.source {
 		let config = parity_db::Options::with_columns(path, crate::columns::NUM_COLUMNS as u8);
-		let db = parity_db::Db::open_or_create(&config)
-			.map_err(|err| format!("{}", err))?;
+		let db = parity_db::Db::open_or_create(&config).map_err(|err| format!("{}", err))?;
 		return Ok(Arc::new(crate::parity_db_adapter::DbAdapter(db)));
 	}
 
