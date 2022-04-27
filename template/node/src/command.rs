@@ -21,7 +21,7 @@ use clap::Parser;
 use frame_benchmarking_cli::BenchmarkCmd;
 use frontier_template_runtime::Block;
 use sc_cli::{ChainSpec, RuntimeVersion, SubstrateCli};
-use sc_service::PartialComponents;
+use sc_service::{DatabaseSource, PartialComponents};
 
 use crate::{
 	chain_spec,
@@ -130,9 +130,15 @@ pub fn run() -> sc_cli::Result<()> {
 			let runner = cli.create_runner(cmd)?;
 			runner.sync_run(|config| {
 				// Remove Frontier offchain db
-				let frontier_database_config = sc_service::DatabaseSource::RocksDb {
-					path: frontier_database_dir(&config),
-					cache_size: 0,
+				let frontier_database_config = match config.database {
+					DatabaseSource::RocksDb { .. } => DatabaseSource::RocksDb {
+						path: frontier_database_dir(&config),
+						cache_size: 0,
+					},
+					DatabaseSource::ParityDb { .. } => DatabaseSource::ParityDb {
+						path: frontier_database_dir(&config),
+					},
+					_ => return Err(format!("Cannot purge `{:?}` database", config.database).into())
 				};
 				cmd.run(frontier_database_config)?;
 				cmd.run(config.database)
