@@ -103,7 +103,7 @@ impl sp_inherents::InherentDataProvider for MockTimestampInherentDataProvider {
 	}
 }
 
-pub fn frontier_database_dir(config: &Configuration) -> std::path::PathBuf {
+pub fn frontier_database_dir(config: &Configuration, path: &str) -> std::path::PathBuf {
 	let config_dir = config
 		.base_path
 		.as_ref()
@@ -112,7 +112,7 @@ pub fn frontier_database_dir(config: &Configuration) -> std::path::PathBuf {
 			BasePath::from_project("", "", &crate::cli::Cli::executable_name())
 				.config_dir(config.chain_spec.id())
 		});
-	config_dir.join("frontier").join("db")
+	config_dir.join("frontier").join(path)
 }
 
 pub fn open_frontier_backend(config: &Configuration) -> Result<Arc<fc_db::Backend<Block>>, String> {
@@ -120,13 +120,18 @@ pub fn open_frontier_backend(config: &Configuration) -> Result<Arc<fc_db::Backen
 		&fc_db::DatabaseSettings {
 			source: match config.database {
 				DatabaseSource::RocksDb { .. } => DatabaseSource::RocksDb {
-					path: frontier_database_dir(&config),
+					path: frontier_database_dir(&config, "db"),
 					cache_size: 0,
 				},
 				DatabaseSource::ParityDb { .. } => DatabaseSource::ParityDb {
-					path: frontier_database_dir(&config),
+					path: frontier_database_dir(&config, "paritydb"),
 				},
-				_ => panic!("Supported db sources: `rocksdb` | `paritydb`"),
+				DatabaseSource::Auto { .. } => DatabaseSource::Auto {
+					rocksdb_path: frontier_database_dir(&config, "db"),
+					paritydb_path: frontier_database_dir(&config, "paritydb"),
+					cache_size: 0,
+				},
+				_ => panic!("Supported db sources: `rocksdb` | `paritydb` | `auto`"),
 			},
 		},
 	)?))

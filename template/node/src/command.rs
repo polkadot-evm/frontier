@@ -132,11 +132,11 @@ pub fn run() -> sc_cli::Result<()> {
 				// Remove Frontier offchain db
 				let frontier_database_config = match config.database {
 					DatabaseSource::RocksDb { .. } => DatabaseSource::RocksDb {
-						path: frontier_database_dir(&config),
+						path: frontier_database_dir(&config, "db"),
 						cache_size: 0,
 					},
 					DatabaseSource::ParityDb { .. } => DatabaseSource::ParityDb {
-						path: frontier_database_dir(&config),
+						path: frontier_database_dir(&config, "paritydb"),
 					},
 					_ => {
 						return Err(format!("Cannot purge `{:?}` database", config.database).into())

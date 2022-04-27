@@ -21,11 +21,7 @@ mod utils;
 #[cfg(feature = "with-parity-db")]
 mod parity_db_adapter;
 
-use std::{
-	marker::PhantomData,
-	path::{Path, PathBuf},
-	sync::Arc,
-};
+use std::{marker::PhantomData, sync::Arc};
 
 use codec::{Decode, Encode};
 use fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA_CACHE};
