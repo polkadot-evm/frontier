@@ -556,10 +556,10 @@ pub trait GasWeightMapping {
 
 impl GasWeightMapping for () {
 	fn gas_to_weight(gas: u64) -> Weight {
-		gas as Weight
+		gas.saturating_mul(20000)
 	}
 	fn weight_to_gas(weight: Weight) -> u64 {
-		weight as u64
+		u64::try_from(weight.wrapping_div(20000)).unwrap_or(u32::MAX as u64)
 	}
 }
 
