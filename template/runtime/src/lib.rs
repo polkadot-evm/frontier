@@ -47,6 +47,7 @@ pub use frame_support::{
 pub use pallet_balances::Call as BalancesCall;
 use pallet_ethereum::{Call::transact, Transaction as EthereumTransaction};
 use pallet_evm::{Account as EVMAccount, EnsureAddressTruncated, HashedAddressMapping, Runner};
+use pallet_evm::GasWeightMapping;
 pub use pallet_timestamp::Call as TimestampCall;
 use pallet_transaction_payment::CurrencyAdapter;
 #[cfg(any(feature = "std", test))]
@@ -136,13 +137,15 @@ pub fn native_version() -> NativeVersion {
 }
 
 const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
+/// We allow for 2 seconds of compute with a 6 second average block time.
+pub const MAXIMUM_BLOCK_WEIGHT: Weight = 2 * WEIGHT_PER_SECOND;
+const WEIGHT_PER_GAS: u64 = 20_000;
 
 parameter_types! {
 	pub const Version: RuntimeVersion = VERSION;
 	pub const BlockHashCount: BlockNumber = 256;
-	/// We allow for 2 seconds of compute with a 6 second average block time.
 	pub BlockWeights: frame_system::limits::BlockWeights = frame_system::limits::BlockWeights
-		::with_sensible_defaults(2 * WEIGHT_PER_SECOND, NORMAL_DISPATCH_RATIO);
+		::with_sensible_defaults(MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO);
 	pub BlockLength: frame_system::limits::BlockLength = frame_system::limits::BlockLength
 		::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
 	pub const SS58Prefix: u8 = 42;
@@ -299,15 +302,26 @@ impl<F: FindAuthor<u32>> FindAuthor<H160> for FindAuthorTruncated<F> {
 	}
 }
 
+pub struct FixedGasWeightMapping;
+impl GasWeightMapping for FixedGasWeightMapping {
+	fn gas_to_weight(gas: u64) -> Weight {
+		gas.saturating_mul(WEIGHT_PER_GAS)
+	}
+	fn weight_to_gas(weight: Weight) -> u64 {
+		u64::try_from(weight.wrapping_div(WEIGHT_PER_GAS)).unwrap_or(u32::MAX as u64)
+	}
+}
+
+
 parameter_types! {
 	pub const ChainId: u64 = 42;
-	pub BlockGasLimit: U256 = U256::from(u32::max_value());
+	pub BlockGasLimit: U256 = U256::from(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT / WEIGHT_PER_GAS);
 	pub PrecompilesValue: FrontierPrecompiles<Runtime> = FrontierPrecompiles::<_>::new();
 }
 
 impl pallet_evm::Config for Runtime {
 	type FeeCalculator = BaseFee;
-	type GasWeightMapping = ();
+	type GasWeightMapping = FixedGasWeightMapping;
 	type BlockHashMapping = pallet_ethereum::EthereumBlockHashMapping<Self>;
 	type CallOrigin = EnsureAddressTruncated;
 	type WithdrawOrigin = EnsureAddressTruncated;
