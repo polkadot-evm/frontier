@@ -19,7 +19,7 @@
 
 use frame_support::{
 	parameter_types,
-	traits::{ConstU32, FindAuthor},
+	traits::{ConstU32, Currency, FindAuthor, OnUnbalanced},
 	ConsensusEngineId,
 };
 use sp_core::{H160, H256, U256};
@@ -29,7 +29,10 @@ use sp_runtime::{
 };
 use sp_std::{boxed::Box, prelude::*, str::FromStr};
 
-use crate::{EnsureAddressNever, EnsureAddressRoot, FeeCalculator, IdentityAddressMapping};
+use crate::{
+	EnsureAddressNever, EnsureAddressRoot, EVMCurrencyAdapter,
+	FeeCalculator, IdentityAddressMapping, AddressMapping
+};
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -122,6 +125,32 @@ impl FindAuthor<H160> for FindAuthorTruncated {
 	}
 }
 
+type NegativeImbalance = <Balances as Currency<H160>>::NegativeImbalance;
+
+impl OnUnbalanced<NegativeImbalance> for FindAuthorTruncated {
+	fn on_nonzero_unbalanced(amount: NegativeImbalance) {
+		let author = H160::from_str("1234500000000000000000000000000000000000").unwrap();
+		let author_substrate = <Test as crate::Config>::AddressMapping::into_account_id(author);
+		Balances::resolve_creating(&author_substrate, amount);
+	}
+}
+
+pub struct DealWithFees;
+impl OnUnbalanced<NegativeImbalance> for DealWithFees {
+	fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item = NegativeImbalance>) {
+		if let Some(_fees) = fees_then_tips.next() {
+			// 1. for fee, default to be burned.
+
+			// 2. for tips, if any, 100% to author.
+			if let Some(tips) = fees_then_tips.next() {
+				FindAuthorTruncated::on_unbalanced(tips);
+			}
+
+		}
+	}
+}
+
+
 impl crate::Config for Test {
 	type FeeCalculator = FixedGasPrice;
 	type GasWeightMapping = ();
@@ -138,7 +167,7 @@ impl crate::Config for Test {
 	type PrecompilesValue = ();
 	type ChainId = ();
 	type BlockGasLimit = ();
-	type OnChargeTransaction = ();
+	type OnChargeTransaction = EVMCurrencyAdapter<Balances, DealWithFees>;
 	type BlockHashMapping = crate::SubstrateBlockHashMapping<Self>;
 	type FindAuthor = FindAuthorTruncated;
 }

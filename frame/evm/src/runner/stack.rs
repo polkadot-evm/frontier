@@ -174,7 +174,7 @@ impl<T: Config> Runner<T> {
 		//
 		// The `refund` = `fee` - `actual_fee`, and `actual_fee` = `base` + `tip` will be handled by `OnUnbalanced`
 		// The `actual_fee` can be burned or reward to block authors.
-		T::OnChargeTransaction::correct_and_deposit_fee(&source, actual_fee, fee);
+		T::OnChargeTransaction::correct_and_deposit_fee(&source, actual_fee, actual_priority_fee, fee);
 
 		let state = executor.into_state();
 
