@@ -30,8 +30,8 @@ use sp_runtime::{
 use sp_std::{boxed::Box, prelude::*, str::FromStr};
 
 use crate::{
-	EnsureAddressNever, EnsureAddressRoot, EVMCurrencyAdapter,
-	FeeCalculator, IdentityAddressMapping, AddressMapping
+	AddressMapping, EVMCurrencyAdapter, EnsureAddressNever, EnsureAddressRoot, FeeCalculator,
+	IdentityAddressMapping,
 };
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -145,11 +145,9 @@ impl OnUnbalanced<NegativeImbalance> for DealWithFees {
 			if let Some(tips) = fees_then_tips.next() {
 				FindAuthorTruncated::on_unbalanced(tips);
 			}
-
 		}
 	}
 }
-
 
 impl crate::Config for Test {
 	type FeeCalculator = FixedGasPrice;
