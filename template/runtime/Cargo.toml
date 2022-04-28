@@ -62,7 +62,7 @@ substrate-wasm-builder = { version = "5.0.0-dev", git = "https://github.com/pari
 [features]
 default = ["std", "aura", "with-rocksdb-weights"]
 aura = []
-manual-seal = []
+manual-seal = ["with-rocksdb-weights"]
 with-rocksdb-weights = []
 with-paritydb-weights = []
 std = [
