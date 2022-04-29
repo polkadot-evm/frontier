@@ -46,7 +46,7 @@ mod tests {
 	) -> Result<Arc<fc_db::Backend<OpaqueBlock>>, String> {
 		Ok(Arc::new(fc_db::Backend::<OpaqueBlock>::new(
 			&fc_db::DatabaseSettings {
-				source: fc_db::DatabaseSettingsSrc::RocksDb {
+				source: sc_client_db::DatabaseSource::RocksDb {
 					path,
 					cache_size: 0,
 				},

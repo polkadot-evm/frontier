@@ -1596,6 +1596,7 @@ dependencies = [
  "rlp",
  "sc-block-builder",
  "sc-client-api",
+ "sc-client-db",
  "sc-network",
  "sc-rpc",
  "sc-service",
