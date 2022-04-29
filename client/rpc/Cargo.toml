@@ -43,11 +43,12 @@ fp-rpc = { version = "3.0.0-dev", path = "../../primitives/rpc" }
 fp-storage = { version = "2.0.0-dev", path = "../../primitives/storage" }
 
 [dev-dependencies]
-tempfile = "3.3.0"
-substrate-test-runtime-client = { version = "2.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
+beefy-primitives = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 frontier-template-runtime = { path = "../../template/runtime", default-features = false, features = ["std", "aura"] }
 sc-block-builder = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-consensus = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
+substrate-test-runtime-client = { version = "2.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
+tempfile = "3.3.0"
 
 [features]
 rpc_binary_search_estimate = []
