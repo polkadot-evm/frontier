@@ -109,7 +109,7 @@ mod tests {
 		executor::block_on(client.import(BlockOrigin::Own, block)).unwrap();
 
 		// Give some time to consume and process the import notification stream.
-		thread::sleep(time::Duration::from_millis(1));
+		thread::sleep(time::Duration::from_millis(10));
 
 		// Expect: genesis still cached (V1), latest block cached (V2)
 		assert_eq!(
@@ -168,7 +168,7 @@ mod tests {
 		executor::block_on(client.import(BlockOrigin::Own, a2)).unwrap();
 
 		// Give some time to consume and process the import notification stream.
-		thread::sleep(time::Duration::from_millis(1));
+		thread::sleep(time::Duration::from_millis(10));
 
 		// Expect: genesis with schema V1, A2 with schema V2.
 		assert_eq!(
@@ -203,7 +203,7 @@ mod tests {
 		executor::block_on(client.import(BlockOrigin::Own, b3)).unwrap();
 
 		// Give some time to consume and process the import notification stream.
-		thread::sleep(time::Duration::from_millis(1));
+		thread::sleep(time::Duration::from_millis(10));
 
 		// Expect: A2 to be retracted, genesis with schema V1, B3 with schema V2.
 		assert_eq!(
@@ -230,7 +230,7 @@ mod tests {
 		executor::block_on(client.import(BlockOrigin::Own, c2)).unwrap();
 
 		// Give some time to consume and process the import notification stream.
-		thread::sleep(time::Duration::from_millis(1));
+		thread::sleep(time::Duration::from_millis(10));
 
 		// Expect: genesis with schema V1, B3 still with schema V2.
 		// C2 still not best block and not cached.
@@ -261,7 +261,7 @@ mod tests {
 		executor::block_on(client.import(BlockOrigin::Own, e2)).unwrap();
 
 		// Give some time to consume and process the import notification stream.
-		thread::sleep(time::Duration::from_millis(1));
+		thread::sleep(time::Duration::from_millis(10));
 
 		// Expect: B2 branch to be retracted, genesis with schema V1, C2 with schema V2.
 		// E2 became new best, chain reorged, we expect the C2 ancestor to be cached.
