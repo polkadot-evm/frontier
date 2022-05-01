@@ -74,7 +74,7 @@ jobs:
         toolchain: ${{ matrix.toolchain }}
         target: wasm32-unknown-unknown
         override: true
-        components: rustfmt
+        components: rustfmt, clippy
     - name: Rustfmt
       run: cargo fmt --all -- --check
     - name: Clippy
