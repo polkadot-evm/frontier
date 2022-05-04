@@ -1,4 +1,4 @@
-use pallet_evm::{Context, Precompile, PrecompileResult, PrecompileSet};
+use pallet_evm::{Precompile, PrecompileHandle, PrecompileResult, PrecompileSet};
 use sp_core::H160;
 use sp_std::marker::PhantomData;
 
@@ -26,27 +26,36 @@ impl<R> PrecompileSet for FrontierPrecompiles<R>
 where
 	R: pallet_evm::Config,
 {
-	fn execute(
-		&self,
-		address: H160,
-		input: &[u8],
-		target_gas: Option<u64>,
-		context: &Context,
-		is_static: bool,
-	) -> Option<PrecompileResult> {
+	fn execute(&self, handle: &mut impl PrecompileHandle) -> Option<PrecompileResult> {
+		let address = handle.code_address();
+		let input = &handle.input().to_vec();
+		let target_gas = handle.gas_limit();
+		let context = &handle.context().clone();
+		let is_static = handle.is_static();
+
 		match address {
 			// Ethereum precompiles :
-			a if a == hash(1) => Some(ECRecover::execute(input, target_gas, context, is_static)),
-			a if a == hash(2) => Some(Sha256::execute(input, target_gas, context, is_static)),
-			a if a == hash(3) => Some(Ripemd160::execute(input, target_gas, context, is_static)),
-			a if a == hash(4) => Some(Identity::execute(input, target_gas, context, is_static)),
-			a if a == hash(5) => Some(Modexp::execute(input, target_gas, context, is_static)),
+			a if a == hash(1) => Some(ECRecover::execute(
+				handle, input, target_gas, context, is_static,
+			)),
+			a if a == hash(2) => Some(Sha256::execute(
+				handle, input, target_gas, context, is_static,
+			)),
+			a if a == hash(3) => Some(Ripemd160::execute(
+				handle, input, target_gas, context, is_static,
+			)),
+			a if a == hash(4) => Some(Identity::execute(
+				handle, input, target_gas, context, is_static,
+			)),
+			a if a == hash(5) => Some(Modexp::execute(
+				handle, input, target_gas, context, is_static,
+			)),
 			// Non-Frontier specific nor Ethereum precompiles :
-			a if a == hash(1024) => {
-				Some(Sha3FIPS256::execute(input, target_gas, context, is_static))
-			}
+			a if a == hash(1024) => Some(Sha3FIPS256::execute(
+				handle, input, target_gas, context, is_static,
+			)),
 			a if a == hash(1025) => Some(ECRecoverPublicKey::execute(
-				input, target_gas, context, is_static,
+				handle, input, target_gas, context, is_static,
 			)),
 			_ => None,
 		}

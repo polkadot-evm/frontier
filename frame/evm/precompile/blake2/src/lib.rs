@@ -22,8 +22,8 @@ extern crate alloc;
 mod eip_152;
 
 use fp_evm::{
-	Context, ExitError, ExitSucceed, Precompile, PrecompileFailure, PrecompileOutput,
-	PrecompileResult,
+	Context, ExitError, ExitSucceed, Precompile, PrecompileFailure, PrecompileHandle,
+	PrecompileOutput, PrecompileResult,
 };
 
 pub struct Blake2F;
@@ -36,6 +36,7 @@ impl Precompile for Blake2F {
 	/// Format of `input`:
 	/// [4 bytes for rounds][64 bytes for h][128 bytes for m][8 bytes for t_0][8 bytes for t_1][1 byte for f]
 	fn execute(
+		handle: &mut impl PrecompileHandle,
 		input: &[u8],
 		target_gas: Option<u64>,
 		_context: &Context,
@@ -63,6 +64,8 @@ impl Precompile for Blake2F {
 				});
 			}
 		}
+
+		handle.record_cost(gas_cost)?;
 
 		// we use from_le_bytes below to effectively swap byte order to LE if architecture is BE
 
@@ -115,9 +118,7 @@ impl Precompile for Blake2F {
 
 		Ok(PrecompileOutput {
 			exit_status: ExitSucceed::Returned,
-			cost: gas_cost,
 			output: output_buf.to_vec(),
-			logs: Default::default(),
 		})
 	}
 }
