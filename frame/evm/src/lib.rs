@@ -355,7 +355,7 @@ pub mod pallet {
 
 			Ok(PostDispatchInfo {
 				actual_weight: None,
-				pays_fee: Pays::No,
+				pays_fee: Pays::Yes,
 			})
 		}
 	}
