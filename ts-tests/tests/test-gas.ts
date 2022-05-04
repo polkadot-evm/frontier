@@ -128,4 +128,17 @@ describeWithFrontier("Frontier RPC (Gas)", (context) => {
 		expect(result).to.equal(context.web3.utils.numberToHex(binary_search_estimation));
 	});
 
+	it("eth_estimateGas 0x0 gasPrice is equivalent to not setting one", async function () {
+		let result = (await context.web3.eth.estimateGas({
+			from: GENESIS_ACCOUNT,
+			data: Test.bytecode,
+			gasPrice: "0x0",
+		}));
+		expect(result).to.equal(197690);
+		result = (await context.web3.eth.estimateGas({
+			from: GENESIS_ACCOUNT,
+			data: Test.bytecode,
+		}));
+		expect(result).to.equal(197690);
+	});
 });

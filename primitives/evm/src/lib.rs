@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
-// Copyright (c) 2020 Parity Technologies (UK) Ltd.
+// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -60,4 +60,30 @@ pub type CreateInfo = ExecutionInfo<H160>;
 pub enum CallOrCreateInfo {
 	Call(CallInfo),
 	Create(CreateInfo),
+}
+
+/// Account definition used for genesis block construction.
+#[cfg(feature = "std")]
+#[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, Serialize, Deserialize)]
+pub struct GenesisAccount {
+	/// Account nonce.
+	pub nonce: U256,
+	/// Account balance.
+	pub balance: U256,
+	/// Full account storage.
+	pub storage: std::collections::BTreeMap<sp_core::H256, sp_core::H256>,
+	/// Account code.
+	pub code: Vec<u8>,
+}
+
+/// Trait that outputs the current transaction gas price.
+pub trait FeeCalculator {
+	/// Return the minimal required gas price.
+	fn min_gas_price() -> U256;
+}
+
+impl FeeCalculator for () {
+	fn min_gas_price() -> U256 {
+		U256::zero()
+	}
 }

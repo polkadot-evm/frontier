@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
-// Copyright (c) 2020 Parity Technologies (UK) Ltd.
+// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ pub trait Runner<T: Config> {
 		max_priority_fee_per_gas: Option<U256>,
 		nonce: Option<U256>,
 		access_list: Vec<(H160, Vec<H256>)>,
+		is_transactional: bool,
 		config: &evm::Config,
 	) -> Result<CallInfo, Self::Error>;
 
@@ -47,6 +48,7 @@ pub trait Runner<T: Config> {
 		max_priority_fee_per_gas: Option<U256>,
 		nonce: Option<U256>,
 		access_list: Vec<(H160, Vec<H256>)>,
+		is_transactional: bool,
 		config: &evm::Config,
 	) -> Result<CreateInfo, Self::Error>;
 
@@ -60,6 +62,7 @@ pub trait Runner<T: Config> {
 		max_priority_fee_per_gas: Option<U256>,
 		nonce: Option<U256>,
 		access_list: Vec<(H160, Vec<H256>)>,
+		is_transactional: bool,
 		config: &evm::Config,
 	) -> Result<CreateInfo, Self::Error>;
 }

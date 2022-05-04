@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
-// Copyright (c) 2020 Parity Technologies (UK) Ltd.
+// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -88,7 +88,7 @@ fn transaction_with_to_low_nonce_should_not_work() {
 			call.validate_self_contained(&source).unwrap(),
 			ValidTransactionBuilder::default()
 				.and_provides((alice.address, U256::from(1)))
-				.priority(1u64)
+				.priority(0u64)
 				.and_requires((alice.address, U256::from(0)))
 				.build()
 		);
