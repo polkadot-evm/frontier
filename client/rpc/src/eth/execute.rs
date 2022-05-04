@@ -561,10 +561,7 @@ where
 
 			// Verify that the transaction succeed with highest capacity
 			let cap = highest;
-			#[cfg(feature = "rpc_binary_search_estimate")]
-			let estimate_mode = false;
-			#[cfg(not(feature = "rpc_binary_search_estimate"))]
-			let estimate_mode = true;
+			let estimate_mode = !cfg!(feature = "rpc_binary_search_estimate");
 			let ExecutableResult {
 				data,
 				exit_reason,
