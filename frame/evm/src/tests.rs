@@ -416,7 +416,7 @@ fn test_hotfix_inc_account_sufficients_returns_error_if_max_addresses_exceeded()
 			EVM::hotfix_inc_account_sufficients(Origin::signed(H160::default()), addresses);
 
 		assert!(result.is_err(), "expected error");
-  });
+	});
 }
 
 #[test]
@@ -429,7 +429,7 @@ fn test_hotfix_inc_account_sufficients_requires_signed_origin() {
 		let result = EVM::hotfix_inc_account_sufficients(unsigned_origin, vec![addr]);
 
 		assert!(result.is_err(), "expected error");
-  });
+	});
 }
 
 #[test]
@@ -461,7 +461,7 @@ fn test_hotfix_inc_account_sufficients_increments_if_nonce_nonzero() {
 		assert_eq!(account_1.sufficients, 1);
 		assert_eq!(account_2.nonce, 0);
 		assert_eq!(account_2.sufficients, 0);
-  });
+	});
 }
 
 #[test]
@@ -486,7 +486,7 @@ fn test_hotfix_inc_account_sufficients_increments_with_saturation_if_nonce_nonze
 		let account = frame_system::Account::<Test>::get(substrate_addr);
 		assert_eq!(account.sufficients, u32::MAX);
 		assert_eq!(account.nonce, 1);
-  });
+	});
 }
 
 #[test]
