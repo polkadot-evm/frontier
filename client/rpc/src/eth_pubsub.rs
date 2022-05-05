@@ -37,7 +37,7 @@ use sc_client_api::{
 use sc_network::{ExHashT, NetworkService};
 use sc_rpc::Metadata;
 use sc_transaction_pool_api::TransactionPool;
-use sp_api::{BlockId, ProvideRuntimeApi};
+use sp_api::{ApiExt, BlockId, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
 use sp_core::hashing::keccak_256;
 use sp_runtime::traits::{BlakeTwo256, Block as BlockT, UniqueSaturatedInto};
@@ -47,11 +47,9 @@ use fc_rpc_core::{
 		pubsub::{Kind, Params, PubSubSyncStatus, Result as PubSubResult, SyncStatusMetadata},
 		Bytes, FilteredParams, Header, Log, Rich,
 	},
-	EthPubSubApi as EthPubSubApiT,
+	EthPubSubApi,
 };
 use fp_rpc::EthereumRuntimeRPCApi;
-
-use sp_api::ApiExt;
 
 use crate::{frontier_backend_client, overrides::OverrideHandle};
 
@@ -80,7 +78,7 @@ impl IdProvider for HexEncodedIdProvider {
 	}
 }
 
-pub struct EthPubSubApi<B: BlockT, P, C, BE, H: ExHashT> {
+pub struct EthPubSub<B: BlockT, P, C, BE, H: ExHashT> {
 	pool: Arc<P>,
 	client: Arc<C>,
 	network: Arc<NetworkService<B, H>>,
@@ -90,7 +88,7 @@ pub struct EthPubSubApi<B: BlockT, P, C, BE, H: ExHashT> {
 	_marker: PhantomData<BE>,
 }
 
-impl<B: BlockT, P, C, BE, H: ExHashT> EthPubSubApi<B, P, C, BE, H>
+impl<B: BlockT, P, C, BE, H: ExHashT> EthPubSub<B, P, C, BE, H>
 where
 	C: HeaderBackend<B> + Send + Sync + 'static,
 {
@@ -224,7 +222,7 @@ impl SubscriptionResult {
 	}
 }
 
-impl<B: BlockT, P, C, BE, H: ExHashT> EthPubSubApiT for EthPubSubApi<B, P, C, BE, H>
+impl<B: BlockT, P, C, BE, H: ExHashT> EthPubSubApi for EthPubSub<B, P, C, BE, H>
 where
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	P: TransactionPool<Block = B> + Send + Sync + 'static,
