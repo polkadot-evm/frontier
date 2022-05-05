@@ -195,6 +195,13 @@ pub fn run() -> sc_cli::Result<()> {
 				}
 			})
 		}
+		Some(Subcommand::FrontierDb(cmd)) => {
+			let runner = cli.create_runner(cmd)?;
+			runner.sync_run(|config| {
+				let backend = service::open_frontier_backend(&config)?;
+				cmd.run::<frontier_template_runtime::opaque::Block>(backend)
+			})
+		}
 		None => {
 			let runner = cli.create_runner(&cli.run.base)?;
 			runner.run_node_until_exit(|config| async move {

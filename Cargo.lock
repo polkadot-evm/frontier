@@ -1522,6 +1522,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "fc-commands"
+version = "1.0.0-dev"
+dependencies = [
+ "clap",
+ "ethereum-types",
+ "fc-db",
+ "fp-storage",
+ "sc-cli",
+ "sc-service",
+ "serde",
+ "serde_json",
+ "sp-runtime",
+ "substrate-test-runtime-client",
+ "tempfile",
+]
+
+[[package]]
 name = "fc-consensus"
 version = "2.0.0-dev"
 dependencies = [
@@ -1785,6 +1802,7 @@ name = "fp-storage"
 version = "2.0.0"
 dependencies = [
  "parity-scale-codec",
+ "serde",
 ]
 
 [[package]]
@@ -1992,6 +2010,7 @@ version = "0.0.0"
 dependencies = [
  "async-trait",
  "clap",
+ "fc-commands",
  "fc-consensus",
  "fc-db",
  "fc-mapping-sync",

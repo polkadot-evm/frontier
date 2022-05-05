@@ -71,7 +71,7 @@ pub(crate) mod columns {
 	pub const SYNCED_MAPPING: u32 = 3;
 }
 
-pub(crate) mod static_keys {
+pub mod static_keys {
 	pub const CURRENT_SYNCING_TIPS: &[u8] = b"CURRENT_SYNCING_TIPS";
 }
 
