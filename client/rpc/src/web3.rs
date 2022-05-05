@@ -30,6 +30,7 @@ use fp_rpc::EthereumRuntimeRPCApi;
 
 use crate::internal_err;
 
+/// Web3 API implementation.
 pub struct Web3<B, C> {
 	client: Arc<C>,
 	_marker: PhantomData<B>,

@@ -30,6 +30,7 @@ use fp_rpc::EthereumRuntimeRPCApi;
 
 use crate::internal_err;
 
+/// Net API implementation.
 pub struct Net<B: BlockT, C, H: ExHashT> {
 	client: Arc<C>,
 	network: Arc<NetworkService<B, H>>,

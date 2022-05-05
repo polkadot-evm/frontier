@@ -78,6 +78,7 @@ impl IdProvider for HexEncodedIdProvider {
 	}
 }
 
+/// Eth pub-sub API implementation.
 pub struct EthPubSub<B: BlockT, P, C, BE, H: ExHashT> {
 	pool: Arc<P>,
 	client: Arc<C>,

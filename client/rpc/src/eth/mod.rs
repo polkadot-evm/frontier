@@ -57,6 +57,7 @@ pub use self::{
 	filter::EthFilter,
 };
 
+/// Eth API implementation.
 pub struct Eth<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> {
 	pool: Arc<P>,
 	graph: Arc<Pool<A>>,
