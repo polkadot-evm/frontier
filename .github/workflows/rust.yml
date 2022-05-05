@@ -15,8 +15,6 @@ jobs:
         toolchain: [nightly-2022-05-02]
     steps:
     - uses: actions/checkout@v2
-    - name: Submodules
-      run: git submodule update --init --recursive
     - name: Rust Setup
       uses: actions-rs/toolchain@v1
       with:
@@ -35,8 +33,6 @@ jobs:
         toolchain: [nightly-2022-05-02]
     steps:
     - uses: actions/checkout@v2
-    - name: Submodules
-      run: git submodule update --init --recursive
     - name: Rust Setup
       uses: actions-rs/toolchain@v1
       with:
@@ -65,8 +61,6 @@ jobs:
         toolchain: [nightly-2022-05-02]
     steps:
     - uses: actions/checkout@v2
-    - name: Submodules
-      run: git submodule update --init --recursive
     - name: Rust Setup
       uses: actions-rs/toolchain@v1
       with:
