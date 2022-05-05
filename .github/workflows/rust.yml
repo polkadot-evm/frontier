@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        toolchain: [nightly-2022-04-07]
+        toolchain: [nightly-2022-05-02]
     steps:
     - uses: actions/checkout@v2
     - name: Submodules
@@ -32,7 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        toolchain: [nightly-2022-04-07]
+        toolchain: [nightly-2022-05-02]
     steps:
     - uses: actions/checkout@v2
     - name: Submodules
@@ -62,7 +62,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        toolchain: [nightly-2022-04-07]
+        toolchain: [nightly-2022-05-02]
     steps:
     - uses: actions/checkout@v2
     - name: Submodules

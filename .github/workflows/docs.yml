@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        toolchain: [nightly-2022-04-07]
+        toolchain: [nightly-2022-05-02]
 
     steps:
       - name: Checkout repository
