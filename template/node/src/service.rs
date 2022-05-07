@@ -19,7 +19,7 @@ use sp_core::U256;
 use fc_consensus::FrontierBlockImport;
 use fc_mapping_sync::{MappingSyncWorker, SyncStrategy};
 use fc_rpc::{EthTask, OverrideHandle};
-use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
+use fc_rpc_core::types::{FeeHistoryCache, FeeHistoryCacheLimit, FilterPool};
 // Runtime
 use frontier_template_runtime::{opaque::Block, RuntimeApi};
 
@@ -106,7 +106,7 @@ pub fn new_partial(
 			ConsensusResult,
 			Arc<fc_db::Backend<Block>>,
 			Option<FilterPool>,
-			FeeHistoryCache,
+			(FeeHistoryCache, FeeHistoryCacheLimit),
 		),
 	>,
 	ServiceError,
@@ -163,6 +163,7 @@ pub fn new_partial(
 	let frontier_backend = open_frontier_backend(config)?;
 	let filter_pool: Option<FilterPool> = Some(Arc::new(Mutex::new(BTreeMap::new())));
 	let fee_history_cache: FeeHistoryCache = Arc::new(Mutex::new(BTreeMap::new()));
+	let fee_history_cache_limit: FeeHistoryCacheLimit = cli.run.fee_history_limit;
 
 	#[cfg(feature = "aura")]
 	{
@@ -223,7 +224,7 @@ pub fn new_partial(
 				(frontier_block_import, grandpa_link),
 				frontier_backend,
 				filter_pool,
-				fee_history_cache,
+				(fee_history_cache, fee_history_cache_limit),
 			),
 		})
 	}
@@ -254,7 +255,7 @@ pub fn new_partial(
 				(frontier_block_import, sealing),
 				frontier_backend,
 				filter_pool,
-				fee_history_cache,
+				(fee_history_cache, fee_history_cache_limit),
 			),
 		})
 	}
@@ -282,7 +283,14 @@ pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, Ser
 		mut keystore_container,
 		select_chain,
 		transaction_pool,
-		other: (mut telemetry, consensus_result, frontier_backend, filter_pool, fee_history_cache),
+		other:
+			(
+				mut telemetry,
+				consensus_result,
+				frontier_backend,
+				filter_pool,
+				(fee_history_cache, fee_history_cache_limit),
+			),
 	} = new_partial(&config, &cli)?;
 
 	if let Some(url) = &config.keystore_remote {
@@ -341,17 +349,11 @@ pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, Ser
 	}
 
 	let role = config.role.clone();
-	let is_authority = config.role.is_authority();
 	let force_authoring = config.force_authoring;
-	let backoff_authoring_blocks: Option<()> = None;
 	let name = config.network.node_name.clone();
 	let enable_grandpa = !config.disable_grandpa;
 	let prometheus_registry = config.prometheus_registry().cloned();
-	let subscription_task_executor =
-		sc_rpc::SubscriptionTaskExecutor::new(task_manager.spawn_handle());
 	let overrides = crate::rpc::overrides_handle(client.clone());
-	let enable_dev_signer = cli.run.enable_dev_signer;
-	let fee_history_limit = cli.run.fee_history_limit;
 	let block_data_cache = Arc::new(fc_rpc::EthBlockDataCache::new(
 		task_manager.spawn_handle(),
 		overrides.clone(),
@@ -362,12 +364,16 @@ pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, Ser
 	let rpc_extensions_builder = {
 		let client = client.clone();
 		let pool = transaction_pool.clone();
+		let is_authority = role.is_authority();
+		let enable_dev_signer = cli.run.enable_dev_signer;
 		let network = network.clone();
 		let filter_pool = filter_pool.clone();
 		let frontier_backend = frontier_backend.clone();
 		let overrides = overrides.clone();
 		let fee_history_cache = fee_history_cache.clone();
 		let max_past_logs = cli.run.max_past_logs;
+		let subscription_task_executor =
+			sc_rpc::SubscriptionTaskExecutor::new(task_manager.spawn_handle());
 
 		Box::new(move |deny_unsafe, _| {
 			let deps = crate::rpc::FullDeps {
@@ -381,8 +387,8 @@ pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, Ser
 				filter_pool: filter_pool.clone(),
 				backend: frontier_backend.clone(),
 				max_past_logs,
-				fee_history_limit,
 				fee_history_cache: fee_history_cache.clone(),
+				fee_history_cache_limit,
 				overrides: overrides.clone(),
 				block_data_cache: block_data_cache.clone(),
 			};
@@ -415,7 +421,7 @@ pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, Ser
 		filter_pool,
 		overrides,
 		fee_history_cache,
-		fee_history_limit,
+		fee_history_cache_limit,
 	);
 
 	let (block_import, grandpa_link) = consensus_result;
@@ -452,7 +458,7 @@ pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, Ser
 				justification_sync_link: network.clone(),
 				create_inherent_data_providers,
 				force_authoring,
-				backoff_authoring_blocks,
+				backoff_authoring_blocks: Option::<()>::None,
 				keystore: keystore_container.sync_keystore(),
 				can_author_with: sp_consensus::CanAuthorWithNativeVersion::new(
 					client.executor().clone(),
@@ -528,7 +534,14 @@ pub fn new_full(config: Configuration, cli: &Cli) -> Result<TaskManager, Service
 		mut keystore_container,
 		select_chain,
 		transaction_pool,
-		other: (mut telemetry, consensus_result, frontier_backend, filter_pool, fee_history_cache),
+		other:
+			(
+				mut telemetry,
+				consensus_result,
+				frontier_backend,
+				filter_pool,
+				(fee_history_cache, fee_history_cache_limit),
+			),
 	} = new_partial(&config, &cli)?;
 
 	if let Some(url) = &config.keystore_remote {
@@ -564,13 +577,8 @@ pub fn new_full(config: Configuration, cli: &Cli) -> Result<TaskManager, Service
 	}
 
 	let role = config.role.clone();
-	let is_authority = config.role.is_authority();
 	let prometheus_registry = config.prometheus_registry().cloned();
-	let subscription_task_executor =
-		sc_rpc::SubscriptionTaskExecutor::new(task_manager.spawn_handle());
 	let overrides = crate::rpc::overrides_handle(client.clone());
-	let enable_dev_signer = cli.run.enable_dev_signer;
-	let fee_history_limit = cli.run.fee_history_limit;
 	let block_data_cache = Arc::new(fc_rpc::EthBlockDataCache::new(
 		task_manager.spawn_handle(),
 		overrides.clone(),
@@ -583,12 +591,16 @@ pub fn new_full(config: Configuration, cli: &Cli) -> Result<TaskManager, Service
 	let rpc_extensions_builder = {
 		let client = client.clone();
 		let pool = transaction_pool.clone();
+		let is_authority = role.is_authority();
+		let enable_dev_signer = cli.run.enable_dev_signer;
 		let network = network.clone();
 		let filter_pool = filter_pool.clone();
 		let frontier_backend = frontier_backend.clone();
 		let overrides = overrides.clone();
 		let fee_history_cache = fee_history_cache.clone();
 		let max_past_logs = cli.run.max_past_logs;
+		let subscription_task_executor =
+			sc_rpc::SubscriptionTaskExecutor::new(task_manager.spawn_handle());
 
 		Box::new(move |deny_unsafe, _| {
 			let deps = crate::rpc::FullDeps {
@@ -602,8 +614,8 @@ pub fn new_full(config: Configuration, cli: &Cli) -> Result<TaskManager, Service
 				filter_pool: filter_pool.clone(),
 				backend: frontier_backend.clone(),
 				max_past_logs,
-				fee_history_limit,
 				fee_history_cache: fee_history_cache.clone(),
+				fee_history_cache_limit,
 				overrides: overrides.clone(),
 				block_data_cache: block_data_cache.clone(),
 				command_sink: Some(command_sink.clone()),
@@ -637,7 +649,7 @@ pub fn new_full(config: Configuration, cli: &Cli) -> Result<TaskManager, Service
 		filter_pool,
 		overrides,
 		fee_history_cache,
-		fee_history_limit,
+		fee_history_cache_limit,
 	);
 
 	if role.is_authority() {
@@ -732,7 +744,7 @@ fn spawn_frontier_tasks(
 	filter_pool: Option<FilterPool>,
 	overrides: Arc<OverrideHandle<Block>>,
 	fee_history_cache: FeeHistoryCache,
-	fee_history_limit: u64,
+	fee_history_cache_limit: FeeHistoryCacheLimit,
 ) {
 	task_manager.spawn_essential_handle().spawn(
 		"frontier-mapping-sync-worker",
@@ -769,7 +781,7 @@ fn spawn_frontier_tasks(
 			client.clone(),
 			overrides.clone(),
 			fee_history_cache,
-			fee_history_limit,
+			fee_history_cache_limit,
 		),
 	);
 

@@ -24,7 +24,7 @@ use fc_rpc::{
 	EthBlockDataCache, OverrideHandle, RuntimeApiStorageOverride, SchemaV1Override,
 	SchemaV2Override, SchemaV3Override, StorageOverride,
 };
-use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
+use fc_rpc_core::types::{FeeHistoryCache, FeeHistoryCacheLimit, FilterPool};
 use fp_storage::EthereumStorageSchema;
 // Runtime
 use frontier_template_runtime::{opaque::Block, AccountId, Balance, Hash, Index};
@@ -51,10 +51,10 @@ pub struct FullDeps<C, P, A: ChainApi> {
 	pub backend: Arc<fc_db::Backend<Block>>,
 	/// Maximum number of logs in a query.
 	pub max_past_logs: u32,
-	/// Maximum fee history cache size.
-	pub fee_history_limit: u64,
 	/// Fee history cache.
 	pub fee_history_cache: FeeHistoryCache,
+	/// Maximum fee history cache size.
+	pub fee_history_cache_limit: FeeHistoryCacheLimit,
 	/// Ethereum data access overrides.
 	pub overrides: Arc<OverrideHandle<Block>>,
 	/// Cache for Ethereum block data.
@@ -139,8 +139,8 @@ where
 		filter_pool,
 		backend,
 		max_past_logs,
-		fee_history_limit,
 		fee_history_cache,
+		fee_history_cache_limit,
 		overrides,
 		block_data_cache,
 		#[cfg(feature = "manual-seal")]
@@ -172,8 +172,8 @@ where
 		backend.clone(),
 		is_authority,
 		block_data_cache.clone(),
-		fee_history_limit,
 		fee_history_cache,
+		fee_history_cache_limit,
 	)));
 
 	if let Some(filter_pool) = filter_pool {
