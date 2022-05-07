@@ -305,22 +305,20 @@ pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, Ser
 			.expect("Genesis block exists; qed"),
 		&config.chain_spec,
 	);
+	config
+		.network
+		.extra_sets
+		.push(sc_finality_grandpa::grandpa_peers_set_config(
+			grandpa_protocol_name.clone(),
+		));
 
-	let warp_sync: Option<Arc<dyn WarpSyncProvider<Block>>> = {
-		config
-			.network
-			.extra_sets
-			.push(sc_finality_grandpa::grandpa_peers_set_config(
-				grandpa_protocol_name.clone(),
-			));
-		Some(Arc::new(
-			sc_finality_grandpa::warp_proof::NetworkProvider::new(
-				backend.clone(),
-				consensus_result.1.shared_authority_set().clone(),
-				Vec::default(),
-			),
-		))
-	};
+	let warp_sync: Option<Arc<dyn WarpSyncProvider<Block>>> = Some(Arc::new(
+		sc_finality_grandpa::warp_proof::NetworkProvider::new(
+			backend.clone(),
+			consensus_result.1.shared_authority_set().clone(),
+			Vec::default(),
+		),
+	));
 
 	let (network, system_rpc_tx, network_starter) =
 		sc_service::build_network(sc_service::BuildNetworkParams {
