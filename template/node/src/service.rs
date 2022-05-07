@@ -10,16 +10,10 @@ use futures::{future, StreamExt};
 // Substrate
 use sc_cli::SubstrateCli;
 use sc_client_api::BlockchainEvents;
-#[cfg(feature = "aura")]
-use sc_client_api::{BlockBackend, ExecutorProvider};
 use sc_executor::NativeElseWasmExecutor;
 use sc_keystore::LocalKeystore;
-#[cfg(feature = "aura")]
-use sc_network::warp_request_handler::WarpSyncProvider;
 use sc_service::{error::Error as ServiceError, BasePath, Configuration, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryWorker};
-#[cfg(feature = "aura")]
-use sp_consensus_aura::sr25519::AuthorityPair as AuraPair;
 use sp_core::U256;
 // Frontier
 use fc_consensus::FrontierBlockImport;
@@ -172,6 +166,9 @@ pub fn new_partial(
 
 	#[cfg(feature = "aura")]
 	{
+		use sc_client_api::ExecutorProvider;
+		use sp_consensus_aura::sr25519::AuthorityPair as AuraPair;
+
 		let (grandpa_block_import, grandpa_link) = sc_finality_grandpa::block_import(
 			client.clone(),
 			&(client.clone() as Arc<_>),
@@ -273,6 +270,10 @@ fn remote_keystore(_url: &String) -> Result<Arc<LocalKeystore>, &'static str> {
 /// Builds a new service for a full client.
 #[cfg(feature = "aura")]
 pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, ServiceError> {
+	use sc_client_api::{BlockBackend, ExecutorProvider};
+	use sc_network::warp_request_handler::WarpSyncProvider;
+	use sp_consensus_aura::sr25519::AuthorityPair as AuraPair;
+
 	let sc_service::PartialComponents {
 		client,
 		backend,
