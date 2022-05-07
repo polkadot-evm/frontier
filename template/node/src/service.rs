@@ -501,23 +501,22 @@ pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, Ser
 		// and vote data availability than the observer. The observer has not
 		// been tested extensively yet and having most nodes in a network run it
 		// could lead to finality stalls.
-		let grandpa_config = sc_finality_grandpa::GrandpaParams {
-			config: grandpa_config,
-			link: grandpa_link,
-			network,
-			voting_rule: sc_finality_grandpa::VotingRulesBuilder::default().build(),
-			prometheus_registry,
-			shared_voter_state: sc_finality_grandpa::SharedVoterState::empty(),
-			telemetry: telemetry.as_ref().map(|x| x.handle()),
-		};
+		let grandpa_voter =
+			sc_finality_grandpa::run_grandpa_voter(sc_finality_grandpa::GrandpaParams {
+				config: grandpa_config,
+				link: grandpa_link,
+				network,
+				voting_rule: sc_finality_grandpa::VotingRulesBuilder::default().build(),
+				prometheus_registry,
+				shared_voter_state: sc_finality_grandpa::SharedVoterState::empty(),
+				telemetry: telemetry.as_ref().map(|x| x.handle()),
+			})?;
 
 		// the GRANDPA voter task is considered infallible, i.e.
 		// if it fails we take down the service with it.
-		task_manager.spawn_essential_handle().spawn_blocking(
-			"grandpa-voter",
-			None,
-			sc_finality_grandpa::run_grandpa_voter(grandpa_config)?,
-		);
+		task_manager
+			.spawn_essential_handle()
+			.spawn_blocking("grandpa-voter", None, grandpa_voter);
 	}
 
 	network_starter.start_network();
