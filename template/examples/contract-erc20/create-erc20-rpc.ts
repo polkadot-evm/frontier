@@ -1,7 +1,7 @@
 import Web3 from "web3";
 import * as web3Utils from 'web3-utils';
 
-const web3 = new Web3("http://localhost:9933");
+const web3 = new Web3("http://127.0.0.1:9933");
 const ERC20_BYTECODE = require("./truffle/contracts/MyToken.json").bytecode;
 const STORAGE_SLOT = "0";
 
