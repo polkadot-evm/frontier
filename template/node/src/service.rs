@@ -358,8 +358,6 @@ pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, Ser
 		50,
 		50,
 	));
-	// Channel for the rpc handler to communicate with the authorship task.
-	let (command_sink, _commands_stream) = futures::channel::mpsc::channel(1000);
 
 	let rpc_extensions_builder = {
 		let client = client.clone();
@@ -385,7 +383,6 @@ pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, Ser
 				max_past_logs,
 				fee_history_limit,
 				fee_history_cache: fee_history_cache.clone(),
-				command_sink: Some(command_sink.clone()),
 				overrides: overrides.clone(),
 				block_data_cache: block_data_cache.clone(),
 			};
@@ -607,9 +604,9 @@ pub fn new_full(config: Configuration, cli: &Cli) -> Result<TaskManager, Service
 				max_past_logs,
 				fee_history_limit,
 				fee_history_cache: fee_history_cache.clone(),
-				command_sink: Some(command_sink.clone()),
 				overrides: overrides.clone(),
 				block_data_cache: block_data_cache.clone(),
+				command_sink: Some(command_sink.clone()),
 			};
 
 			Ok(crate::rpc::create_full(
