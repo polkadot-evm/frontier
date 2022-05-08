@@ -1,4 +1,3 @@
 (function() {var implementors = {};
 implementors["fp_dynamic_fee"] = [{"text":"impl InherentDataProvider for <a class=\"struct\" href=\"fp_dynamic_fee/struct.InherentDataProvider.html\" title=\"struct fp_dynamic_fee::InherentDataProvider\">InherentDataProvider</a>","synthetic":false,"types":["fp_dynamic_fee::InherentDataProvider"]}];
-implementors["frontier_template_node"] = [{"text":"impl InherentDataProvider for <a class=\"struct\" href=\"frontier_template_node/service/struct.MockTimestampInherentDataProvider.html\" title=\"struct frontier_template_node::service::MockTimestampInherentDataProvider\">MockTimestampInherentDataProvider</a>","synthetic":false,"types":["frontier_template_node::service::MockTimestampInherentDataProvider"]}];
 if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

@@ -219,22 +219,21 @@
 <span id="214">214</span>
 <span id="215">215</span>
 <span id="216">216</span>
+<span id="217">217</span>
+<span id="218">218</span>
+<span id="219">219</span>
+<span id="220">220</span>
 </pre><pre class="rust"><code><span class="doccomment">//! A collection of node-specific RPC methods.</span>
 
 <span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">collections::BTreeMap</span>, <span class="ident">sync::Arc</span>};
 
-<span class="kw">use</span> <span class="ident">fc_rpc</span>::{
-	<span class="ident">EthBlockDataCache</span>, <span class="ident">OverrideHandle</span>, <span class="ident">RuntimeApiStorageOverride</span>, <span class="ident">SchemaV1Override</span>,
-	<span class="ident">SchemaV2Override</span>, <span class="ident">SchemaV3Override</span>, <span class="ident">StorageOverride</span>,
-};
-<span class="kw">use</span> <span class="ident">fc_rpc_core::types</span>::{<span class="ident">FeeHistoryCache</span>, <span class="ident">FilterPool</span>};
-<span class="kw">use</span> <span class="ident">fp_storage::EthereumStorageSchema</span>;
-<span class="kw">use</span> <span class="ident">frontier_template_runtime</span>::{<span class="ident">opaque::Block</span>, <span class="ident">AccountId</span>, <span class="ident">Balance</span>, <span class="ident">Hash</span>, <span class="ident">Index</span>};
 <span class="kw">use</span> <span class="ident">jsonrpc_pubsub::manager::SubscriptionManager</span>;
+<span class="comment">// Substrate</span>
 <span class="kw">use</span> <span class="ident">sc_client_api</span>::{
 	<span class="ident">backend</span>::{<span class="ident">AuxStore</span>, <span class="ident">Backend</span>, <span class="ident">StateBackend</span>, <span class="ident">StorageProvider</span>},
 	<span class="ident">client::BlockchainEvents</span>,
 };
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;manual-seal&quot;</span>)]</span>
 <span class="kw">use</span> <span class="ident">sc_consensus_manual_seal::rpc</span>::{<span class="ident">ManualSeal</span>, <span class="ident">ManualSealApi</span>};
 <span class="kw">use</span> <span class="ident">sc_network::NetworkService</span>;
 <span class="kw">use</span> <span class="ident">sc_rpc::SubscriptionTaskExecutor</span>;
@@ -245,6 +244,15 @@
 <span class="kw">use</span> <span class="ident">sp_block_builder::BlockBuilder</span>;
 <span class="kw">use</span> <span class="ident">sp_blockchain</span>::{<span class="ident">Error</span> <span class="kw">as</span> <span class="ident">BlockChainError</span>, <span class="ident">HeaderBackend</span>, <span class="ident">HeaderMetadata</span>};
 <span class="kw">use</span> <span class="ident">sp_runtime::traits::BlakeTwo256</span>;
+<span class="comment">// Frontier</span>
+<span class="kw">use</span> <span class="ident">fc_rpc</span>::{
+	<span class="ident">EthBlockDataCache</span>, <span class="ident">OverrideHandle</span>, <span class="ident">RuntimeApiStorageOverride</span>, <span class="ident">SchemaV1Override</span>,
+	<span class="ident">SchemaV2Override</span>, <span class="ident">SchemaV3Override</span>, <span class="ident">StorageOverride</span>,
+};
+<span class="kw">use</span> <span class="ident">fc_rpc_core::types</span>::{<span class="ident">FeeHistoryCache</span>, <span class="ident">FeeHistoryCacheLimit</span>, <span class="ident">FilterPool</span>};
+<span class="kw">use</span> <span class="ident">fp_storage::EthereumStorageSchema</span>;
+<span class="comment">// Runtime</span>
+<span class="kw">use</span> <span class="ident">frontier_template_runtime</span>::{<span class="ident">opaque::Block</span>, <span class="ident">AccountId</span>, <span class="ident">Balance</span>, <span class="ident">Hash</span>, <span class="ident">Index</span>};
 
 <span class="doccomment">/// Full client dependencies.</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">FullDeps</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">A</span>: <span class="ident">ChainApi</span><span class="op">&gt;</span> {
@@ -268,17 +276,18 @@
 	<span class="kw">pub</span> <span class="ident">backend</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">fc_db::Backend</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 	<span class="doccomment">/// Maximum number of logs in a query.</span>
 	<span class="kw">pub</span> <span class="ident">max_past_logs</span>: <span class="ident">u32</span>,
-	<span class="doccomment">/// Maximum fee history cache size.</span>
-	<span class="kw">pub</span> <span class="ident">fee_history_limit</span>: <span class="ident">u64</span>,
 	<span class="doccomment">/// Fee history cache.</span>
 	<span class="kw">pub</span> <span class="ident">fee_history_cache</span>: <span class="ident">FeeHistoryCache</span>,
-	<span class="doccomment">/// Manual seal command sink</span>
-	<span class="kw">pub</span> <span class="ident">command_sink</span>:
-		<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">futures::channel::mpsc::Sender</span><span class="op">&lt;</span><span class="ident">sc_consensus_manual_seal::rpc::EngineCommand</span><span class="op">&lt;</span><span class="ident">Hash</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+	<span class="doccomment">/// Maximum fee history cache size.</span>
+	<span class="kw">pub</span> <span class="ident">fee_history_cache_limit</span>: <span class="ident">FeeHistoryCacheLimit</span>,
 	<span class="doccomment">/// Ethereum data access overrides.</span>
 	<span class="kw">pub</span> <span class="ident">overrides</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">OverrideHandle</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 	<span class="doccomment">/// Cache for Ethereum block data.</span>
 	<span class="kw">pub</span> <span class="ident">block_data_cache</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">EthBlockDataCache</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+	<span class="doccomment">/// Manual seal command sink</span>
+	<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;manual-seal&quot;</span>)]</span>
+	<span class="kw">pub</span> <span class="ident">command_sink</span>:
+		<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">futures::channel::mpsc::Sender</span><span class="op">&lt;</span><span class="ident">sc_consensus_manual_seal::rpc::EngineCommand</span><span class="op">&lt;</span><span class="ident">Hash</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">overrides_handle</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">BE</span><span class="op">&gt;</span>(<span class="ident">client</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>) -&gt; <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">OverrideHandle</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span><span class="op">&gt;</span>
@@ -350,16 +359,17 @@
 		<span class="ident">graph</span>,
 		<span class="ident">deny_unsafe</span>,
 		<span class="ident">is_authority</span>,
+		<span class="ident">enable_dev_signer</span>,
 		<span class="ident">network</span>,
 		<span class="ident">filter_pool</span>,
-		<span class="ident">command_sink</span>,
 		<span class="ident">backend</span>,
 		<span class="ident">max_past_logs</span>,
-		<span class="ident">fee_history_limit</span>,
 		<span class="ident">fee_history_cache</span>,
-		<span class="ident">enable_dev_signer</span>,
+		<span class="ident">fee_history_cache_limit</span>,
 		<span class="ident">overrides</span>,
 		<span class="ident">block_data_cache</span>,
+		<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;manual-seal&quot;</span>)]</span>
+		<span class="ident">command_sink</span>,
 	} <span class="op">=</span> <span class="ident">deps</span>;
 
 	<span class="ident">io</span>.<span class="ident">extend_with</span>(<span class="ident">SystemApi::to_delegate</span>(<span class="ident">FullSystem::new</span>(
@@ -387,8 +397,8 @@
 		<span class="ident">backend</span>.<span class="ident">clone</span>(),
 		<span class="ident">is_authority</span>,
 		<span class="ident">block_data_cache</span>.<span class="ident">clone</span>(),
-		<span class="ident">fee_history_limit</span>,
 		<span class="ident">fee_history_cache</span>,
+		<span class="ident">fee_history_cache_limit</span>,
 	)));
 
 	<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">filter_pool</span>) <span class="op">=</span> <span class="ident">filter_pool</span> {
@@ -422,15 +432,13 @@
 		<span class="ident">overrides</span>,
 	)));
 
-	<span class="kw">match</span> <span class="ident">command_sink</span> {
-		<span class="prelude-val">Some</span>(<span class="ident">command_sink</span>) =&gt; {
-			<span class="ident">io</span>.<span class="ident">extend_with</span>(
-				<span class="comment">// We provide the rpc handler with the sending end of the channel to allow the rpc</span>
-				<span class="comment">// send EngineCommands to the background block authorship task.</span>
-				<span class="ident">ManualSealApi::to_delegate</span>(<span class="ident">ManualSeal::new</span>(<span class="ident">command_sink</span>)),
-			);
-		}
-		<span class="kw">_</span> =&gt; {}
+	<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;manual-seal&quot;</span>)]</span>
+	<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">command_sink</span>) <span class="op">=</span> <span class="ident">command_sink</span> {
+		<span class="ident">io</span>.<span class="ident">extend_with</span>(
+			<span class="comment">// We provide the rpc handler with the sending end of the channel to allow the rpc</span>
+			<span class="comment">// send EngineCommands to the background block authorship task.</span>
+			<span class="ident">ManualSealApi::to_delegate</span>(<span class="ident">ManualSeal::new</span>(<span class="ident">command_sink</span>)),
+		);
 	}
 
 	<span class="ident">io</span>

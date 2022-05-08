@@ -569,8 +569,8 @@
 	<span class="ident">overrides</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">OverrideHandle</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 	<span class="ident">backend</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">fc_db::Backend</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 	<span class="ident">block_data_cache</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">EthBlockDataCache</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-	<span class="ident">fee_history_limit</span>: <span class="ident">u64</span>,
 	<span class="ident">fee_history_cache</span>: <span class="ident">FeeHistoryCache</span>,
+	<span class="ident">fee_history_cache_limit</span>: <span class="ident">FeeHistoryCacheLimit</span>,
 	<span class="ident">_marker</span>: <span class="ident">PhantomData</span><span class="op">&lt;</span>(<span class="ident">B</span>, <span class="ident">BE</span>)<span class="op">&gt;</span>,
 }
 
@@ -586,8 +586,8 @@
 		<span class="ident">backend</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">fc_db::Backend</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 		<span class="ident">is_authority</span>: <span class="ident">bool</span>,
 		<span class="ident">block_data_cache</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">EthBlockDataCache</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-		<span class="ident">fee_history_limit</span>: <span class="ident">u64</span>,
 		<span class="ident">fee_history_cache</span>: <span class="ident">FeeHistoryCache</span>,
+		<span class="ident">fee_history_cache_limit</span>: <span class="ident">FeeHistoryCacheLimit</span>,
 	) -&gt; <span class="self">Self</span> {
 		<span class="self">Self</span> {
 			<span class="ident">client</span>,
@@ -600,8 +600,8 @@
 			<span class="ident">overrides</span>,
 			<span class="ident">backend</span>,
 			<span class="ident">block_data_cache</span>,
-			<span class="ident">fee_history_limit</span>,
 			<span class="ident">fee_history_cache</span>,
+			<span class="ident">fee_history_cache_limit</span>,
 			<span class="ident">_marker</span>: <span class="ident">PhantomData</span>,
 		}
 	}
