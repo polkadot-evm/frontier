@@ -37,7 +37,7 @@ pub fn open_database(config: &DatabaseSettings) -> Result<Arc<dyn Database<DbHas
 	Ok(db)
 }
 
-#[cfg(feature = "with-kvdb-rocksdb")]
+#[cfg(feature = "kvdb-rocksdb")]
 fn open_kvdb_rocksdb(path: &Path, create: bool) -> Result<Arc<dyn Database<DbHash>>, String> {
 	let mut db_config = kvdb_rocksdb::DatabaseConfig::with_columns(crate::columns::NUM_COLUMNS);
 	db_config.create_if_missing = create;
@@ -50,9 +50,9 @@ fn open_kvdb_rocksdb(path: &Path, create: bool) -> Result<Arc<dyn Database<DbHas
 	return Ok(sp_database::as_database(db));
 }
 
-#[cfg(not(feature = "with-kvdb-rocksdb"))]
+#[cfg(not(feature = "kvdb-rocksdb"))]
 fn open_kvdb_rocksdb(_path: &Path, _create: bool) -> Result<Arc<dyn Database<DbHash>>, String> {
-	Err("Missing feature flags `with-kvdb-rocksdb`".to_string())
+	Err("Missing feature flags `kvdb-rocksdb`".to_string())
 }
 
 #[cfg(feature = "with-parity-db")]

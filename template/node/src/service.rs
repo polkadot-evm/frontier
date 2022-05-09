@@ -17,6 +17,7 @@ use sc_telemetry::{Telemetry, TelemetryWorker};
 use sp_core::U256;
 // Frontier
 use fc_consensus::FrontierBlockImport;
+use fc_db::DatabaseSource;
 use fc_mapping_sync::{MappingSyncWorker, SyncStrategy};
 use fc_rpc::{EthTask, OverrideHandle};
 use fc_rpc_core::types::{FeeHistoryCache, FeeHistoryCacheLimit, FilterPool};

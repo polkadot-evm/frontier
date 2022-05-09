@@ -75,12 +75,11 @@ frontier-template-runtime = { path = "../runtime", default-features = false, fea
 substrate-build-script-utils = { version = "3.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
 
 [features]
-default = ["aura", "db"]
+default = ["aura"]
 aura = [
 	"sc-consensus-aura",
 	"frontier-template-runtime/aura",
 ]
-db = ["fc-db/with-parity-db", "fc-db/with-kvdb-rocksdb"]
 manual-seal = [
 	"sc-consensus-manual-seal",
 	"frontier-template-runtime/manual-seal",
