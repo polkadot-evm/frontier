@@ -93,8 +93,8 @@ where
 			let best_number =
 				UniqueSaturatedInto::<u64>::unique_saturated_into(self.client.info().best_number);
 			// Only support in-cache queries.
-			if lowest < best_number.saturating_sub(self.fee_history_limit) {
-				return Err(internal_err("Block range out of bounds."));
+			if lowest < best_number.saturating_sub(self.fee_history_cache_limit) {
+				return Err(internal_err(format!("Block range out of bounds.")));
 			}
 			if let Ok(fee_history_cache) = &self.fee_history_cache.lock() {
 				let mut response = FeeHistory {

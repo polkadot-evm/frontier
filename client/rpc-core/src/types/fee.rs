@@ -43,6 +43,8 @@ pub struct FeeHistory {
 }
 
 pub type FeeHistoryCache = Arc<Mutex<BTreeMap<u64, FeeHistoryCacheItem>>>;
+/// Maximum fee history cache size.
+pub type FeeHistoryCacheLimit = u64;
 
 pub struct FeeHistoryCacheItem {
 	pub base_fee: u64,
