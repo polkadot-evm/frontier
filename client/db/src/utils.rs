@@ -32,7 +32,7 @@ pub fn open_database(config: &DatabaseSettings) -> Result<Arc<dyn Database<DbHas
 			Ok(db) => db,
 			Err(_) => open_parity_db(&paritydb_path)?,
 		},
-		_ => return Err("Missing feature flags `with-parity-db`".to_string()),
+		_ => return Err("Missing feature flags `parity-db`".to_string()),
 	};
 	Ok(db)
 }
@@ -55,14 +55,14 @@ fn open_kvdb_rocksdb(_path: &Path, _create: bool) -> Result<Arc<dyn Database<DbH
 	Err("Missing feature flags `kvdb-rocksdb`".to_string())
 }
 
-#[cfg(feature = "with-parity-db")]
+#[cfg(feature = "parity-db")]
 fn open_parity_db(path: &Path) -> Result<Arc<dyn Database<DbHash>>, String> {
 	let config = parity_db::Options::with_columns(path, crate::columns::NUM_COLUMNS as u8);
 	let db = parity_db::Db::open_or_create(&config).map_err(|err| format!("{}", err))?;
 	return Ok(Arc::new(crate::parity_db_adapter::DbAdapter(db)));
 }
 
-#[cfg(not(feature = "with-parity-db"))]
+#[cfg(not(feature = "parity-db"))]
 fn open_parity_db(_path: &Path) -> Result<Arc<dyn Database<DbHash>>, String> {
-	Err("Missing feature flags `with-parity-db`".to_string())
+	Err("Missing feature flags `parity-db`".to_string())
 }

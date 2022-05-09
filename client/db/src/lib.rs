@@ -18,7 +18,7 @@
 
 mod utils;
 
-#[cfg(feature = "with-parity-db")]
+#[cfg(feature = "parity-db")]
 mod parity_db_adapter;
 
 use std::{marker::PhantomData, sync::Arc};
