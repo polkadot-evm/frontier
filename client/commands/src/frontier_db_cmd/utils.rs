@@ -19,6 +19,7 @@
 use super::{DbValue, Operation};
 
 use serde_json::Deserializer;
+use serde::de::DeserializeOwned;
 use std::{
 	fs,
 	io::{self, Read},
@@ -27,23 +28,32 @@ use std::{
 
 use sp_runtime::traits::Block as BlockT;
 
-/// Deserializes user input to a db known type.
 pub fn maybe_deserialize_value<B: BlockT>(
-	operation: &Operation,
-	value: Option<&PathBuf>,
+    operation: &Operation,
+    value: Option<&PathBuf>,
 ) -> sc_cli::Result<Option<DbValue<B::Hash>>> {
-	if let Operation::Create | Operation::Update = operation {
-		let file: Box<dyn Read + Send> = match &value {
-			Some(filename) => Box::new(fs::File::open(filename)?),
-			None => Box::new(io::stdin()),
-		};
-		let mut stream_deser = Deserializer::from_reader(file).into_iter::<DbValue<B::Hash>>();
-		if let Some(Ok(value)) = stream_deser.next() {
-			return Ok(Some(value));
-		}
-		return Err(format!("Failed to deserialize value data").into());
-	}
-	return Ok(None);
+    fn parse_db_values<H: DeserializeOwned, I: Read + Send>(input: I) -> sc_cli::Result<Option<DbValue<H>>> {
+        let mut stream_deser = Deserializer::from_reader(input).into_iter::<DbValue<H>>();
+        if let Some(Ok(value)) = stream_deser.next() {
+            Ok(Some(value))
+        } else {
+            Err(format!("Failed to deserialize value data").into())
+        }        
+    }
+
+    if let Operation::Create | Operation::Update = operation {
+        match &value {
+            Some(filename) => parse_db_values::<B::Hash, _>(fs::File::open(filename)?),
+            None => {
+				let mut buffer = String::new();
+                let res = parse_db_values(io::stdin());
+                let _ = io::stdin().read_line(&mut buffer);
+                res
+            },
+        }
+    } else {
+        Ok(None)
+    }
 }
 
 /// Messaging and prompt.
