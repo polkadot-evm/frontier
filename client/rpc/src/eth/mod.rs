@@ -69,8 +69,8 @@ pub struct Eth<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> {
 	overrides: Arc<OverrideHandle<B>>,
 	backend: Arc<fc_db::Backend<B>>,
 	block_data_cache: Arc<EthBlockDataCache<B>>,
-	fee_history_limit: u64,
 	fee_history_cache: FeeHistoryCache,
+	fee_history_cache_limit: FeeHistoryCacheLimit,
 	_marker: PhantomData<(B, BE)>,
 }
 
@@ -86,8 +86,8 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> Eth<B, C, P, CT, BE, H, A
 		backend: Arc<fc_db::Backend<B>>,
 		is_authority: bool,
 		block_data_cache: Arc<EthBlockDataCache<B>>,
-		fee_history_limit: u64,
 		fee_history_cache: FeeHistoryCache,
+		fee_history_cache_limit: FeeHistoryCacheLimit,
 	) -> Self {
 		Self {
 			client,
@@ -100,8 +100,8 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> Eth<B, C, P, CT, BE, H, A
 			overrides,
 			backend,
 			block_data_cache,
-			fee_history_limit,
 			fee_history_cache,
+			fee_history_cache_limit,
 			_marker: PhantomData,
 		}
 	}
