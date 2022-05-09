@@ -97,7 +97,9 @@ pub fn open_frontier_backend(config: &Configuration) -> Result<Arc<fc_db::Backen
 					paritydb_path: frontier_database_dir(&config, "paritydb"),
 					cache_size: 0,
 				},
-				_ => panic!("Supported db sources: `rocksdb` | `paritydb` | `auto`"),
+				_ => {
+					return Err("Supported db sources: `rocksdb` | `paritydb` | `auto`".to_string())
+				}
 			},
 		},
 	)?))
