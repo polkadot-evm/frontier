@@ -198,7 +198,7 @@ pub fn new_partial(
 		let import_queue = sc_consensus_aura::import_queue::<AuraPair, _, _, _, _, _, _>(
 			sc_consensus_aura::ImportQueueParams {
 				block_import: frontier_block_import.clone(),
-				justification_import: Some(Box::new(grandpa_block_import.clone())),
+				justification_import: Some(Box::new(grandpa_block_import)),
 				client: client.clone(),
 				create_inherent_data_providers,
 				spawner: &task_manager.spawn_essential_handle(),
@@ -291,7 +291,7 @@ pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, Ser
 				filter_pool,
 				(fee_history_cache, fee_history_cache_limit),
 			),
-	} = new_partial(&config, &cli)?;
+	} = new_partial(&config, cli)?;
 
 	if let Some(url) = &config.keystore_remote {
 		match remote_keystore(url) {
@@ -544,7 +544,7 @@ pub fn new_full(config: Configuration, cli: &Cli) -> Result<TaskManager, Service
 				filter_pool,
 				(fee_history_cache, fee_history_cache_limit),
 			),
-	} = new_partial(&config, &cli)?;
+	} = new_partial(&config, cli)?;
 
 	if let Some(url) = &config.keystore_remote {
 		match remote_keystore(url) {
@@ -631,7 +631,7 @@ pub fn new_full(config: Configuration, cli: &Cli) -> Result<TaskManager, Service
 	};
 
 	let _rpc_handlers = sc_service::spawn_tasks(sc_service::SpawnTasksParams {
-		network: network.clone(),
+		network,
 		client: client.clone(),
 		keystore: keystore_container.sync_keystore(),
 		task_manager: &mut task_manager,
@@ -755,7 +755,7 @@ fn spawn_frontier_tasks(
 			client.import_notification_stream(),
 			Duration::new(6, 0),
 			client.clone(),
-			backend.clone(),
+			backend,
 			frontier_backend.clone(),
 			3,
 			0,
@@ -781,7 +781,7 @@ fn spawn_frontier_tasks(
 		None,
 		EthTask::fee_history_task(
 			client.clone(),
-			overrides.clone(),
+			overrides,
 			fee_history_cache,
 			fee_history_cache_limit,
 		),
@@ -790,6 +790,6 @@ fn spawn_frontier_tasks(
 	task_manager.spawn_essential_handle().spawn(
 		"frontier-schema-cache-task",
 		None,
-		EthTask::ethereum_schema_cache_task(client.clone(), frontier_backend.clone()),
+		EthTask::ethereum_schema_cache_task(client, frontier_backend),
 	);
 }
