@@ -556,7 +556,7 @@
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">internal_err</span>, <span class="ident">overrides::OverrideHandle</span>, <span class="ident">public_key</span>, <span class="ident">signer::EthSigner</span>};
 
 <span class="kw">pub</span> <span class="kw">use</span> <span class="self">self</span>::{
-	<span class="ident">cache</span>::{<span class="ident">EthBlockDataCache</span>, <span class="ident">EthTask</span>},
+	<span class="ident">cache</span>::{<span class="ident">EthBlockDataCacheTask</span>, <span class="ident">EthTask</span>},
 	<span class="ident">filter::EthFilter</span>,
 };
 
@@ -571,7 +571,7 @@
 	<span class="ident">signers</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">EthSigner</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 	<span class="ident">overrides</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">OverrideHandle</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 	<span class="ident">backend</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">fc_db::Backend</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-	<span class="ident">block_data_cache</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">EthBlockDataCache</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+	<span class="ident">block_data_cache</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">EthBlockDataCacheTask</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 	<span class="ident">fee_history_cache</span>: <span class="ident">FeeHistoryCache</span>,
 	<span class="ident">fee_history_cache_limit</span>: <span class="ident">FeeHistoryCacheLimit</span>,
 	<span class="ident">_marker</span>: <span class="ident">PhantomData</span><span class="op">&lt;</span>(<span class="ident">B</span>, <span class="ident">BE</span>)<span class="op">&gt;</span>,
@@ -588,7 +588,7 @@
 		<span class="ident">overrides</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">OverrideHandle</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 		<span class="ident">backend</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">fc_db::Backend</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 		<span class="ident">is_authority</span>: <span class="ident">bool</span>,
-		<span class="ident">block_data_cache</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">EthBlockDataCache</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+		<span class="ident">block_data_cache</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">EthBlockDataCacheTask</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 		<span class="ident">fee_history_cache</span>: <span class="ident">FeeHistoryCache</span>,
 		<span class="ident">fee_history_cache_limit</span>: <span class="ident">FeeHistoryCacheLimit</span>,
 	) -&gt; <span class="self">Self</span> {

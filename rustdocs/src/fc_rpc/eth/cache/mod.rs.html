@@ -599,6 +599,17 @@
 <span id="594">594</span>
 <span id="595">595</span>
 <span id="596">596</span>
+<span id="597">597</span>
+<span id="598">598</span>
+<span id="599">599</span>
+<span id="600">600</span>
+<span id="601">601</span>
+<span id="602">602</span>
+<span id="603">603</span>
+<span id="604">604</span>
+<span id="605">605</span>
+<span id="606">606</span>
+<span id="607">607</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -617,6 +628,7 @@
 <span class="comment">// You should have received a copy of the GNU General Public License</span>
 <span class="comment">// along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.</span>
 
+<span class="kw">mod</span> <span class="ident">lru_cache</span>;
 <span class="kw">mod</span> <span class="ident">tests</span>;
 
 <span class="kw">use</span> <span class="ident">std</span>::{
@@ -625,10 +637,10 @@
 	<span class="ident">sync</span>::{<span class="ident">Arc</span>, <span class="ident">Mutex</span>},
 };
 
+<span class="kw">use</span> <span class="ident"><span class="self">self</span>::lru_cache::LRUCacheByteLimited</span>;
 <span class="kw">use</span> <span class="ident">ethereum::BlockV2</span> <span class="kw">as</span> <span class="ident">EthereumBlock</span>;
 <span class="kw">use</span> <span class="ident">ethereum_types</span>::{<span class="ident">H256</span>, <span class="ident">U256</span>};
 <span class="kw">use</span> <span class="ident">futures::StreamExt</span>;
-<span class="kw">use</span> <span class="ident">lru::LruCache</span>;
 <span class="kw">use</span> <span class="ident">tokio::sync</span>::{<span class="ident">mpsc</span>, <span class="ident">oneshot</span>};
 
 <span class="kw">use</span> <span class="ident">sc_client_api</span>::{
@@ -651,6 +663,8 @@
 	<span class="ident">frontier_backend_client</span>,
 	<span class="ident">overrides</span>::{<span class="ident">OverrideHandle</span>, <span class="ident">StorageOverride</span>},
 };
+
+<span class="kw">type</span> <span class="ident">WaitList</span><span class="op">&lt;</span><span class="ident">Hash</span>, <span class="ident">T</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">Hash</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">oneshot::Sender</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>;
 
 <span class="kw">enum</span> <span class="ident">EthBlockDataCacheMessage</span><span class="op">&lt;</span><span class="ident">B</span>: <span class="ident">BlockT</span><span class="op">&gt;</span> {
 	<span class="ident">RequestCurrentBlock</span> {
@@ -678,23 +692,31 @@
 <span class="doccomment">/// These are large and take a lot of time to fetch from the database.</span>
 <span class="doccomment">/// Storing them in an LRU cache will allow to reduce database accesses</span>
 <span class="doccomment">/// when many subsequent requests are related to the same blocks.</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">EthBlockDataCache</span><span class="op">&lt;</span><span class="ident">B</span>: <span class="ident">BlockT</span><span class="op">&gt;</span>(<span class="ident">mpsc::Sender</span><span class="op">&lt;</span><span class="ident">EthBlockDataCacheMessage</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span><span class="op">&gt;</span>);
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">EthBlockDataCacheTask</span><span class="op">&lt;</span><span class="ident">B</span>: <span class="ident">BlockT</span><span class="op">&gt;</span>(<span class="ident">mpsc::Sender</span><span class="op">&lt;</span><span class="ident">EthBlockDataCacheMessage</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span><span class="op">&gt;</span>);
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">B</span>: <span class="ident">BlockT</span><span class="op">&gt;</span> <span class="ident">EthBlockDataCache</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> {
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">B</span>: <span class="ident">BlockT</span><span class="op">&gt;</span> <span class="ident">EthBlockDataCacheTask</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> {
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(
 		<span class="ident">spawn_handle</span>: <span class="ident">SpawnTaskHandle</span>,
 		<span class="ident">overrides</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">OverrideHandle</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-		<span class="ident">blocks_cache_size</span>: <span class="ident">usize</span>,
-		<span class="ident">statuses_cache_size</span>: <span class="ident">usize</span>,
+		<span class="ident">blocks_cache_max_size</span>: <span class="ident">usize</span>,
+		<span class="ident">statuses_cache_max_size</span>: <span class="ident">usize</span>,
+		<span class="ident">prometheus_registry</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">prometheus_endpoint::Registry</span><span class="op">&gt;</span>,
 	) -&gt; <span class="self">Self</span> {
 		<span class="kw">let</span> (<span class="ident">task_tx</span>, <span class="kw-2">mut</span> <span class="ident">task_rx</span>) <span class="op">=</span> <span class="ident">mpsc::channel</span>(<span class="number">100</span>);
 		<span class="kw">let</span> <span class="ident">outer_task_tx</span> <span class="op">=</span> <span class="ident">task_tx</span>.<span class="ident">clone</span>();
 		<span class="kw">let</span> <span class="ident">outer_spawn_handle</span> <span class="op">=</span> <span class="ident">spawn_handle</span>.<span class="ident">clone</span>();
 
-		<span class="ident">outer_spawn_handle</span>.<span class="ident">spawn</span>(<span class="string">&quot;EthBlockDataCache&quot;</span>, <span class="prelude-val">None</span>, <span class="kw">async</span> <span class="kw">move</span> {
-			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">blocks_cache</span> <span class="op">=</span> <span class="ident">LruCache</span>::<span class="op">&lt;</span><span class="ident">B::Hash</span>, <span class="ident">EthereumBlock</span><span class="op">&gt;</span><span class="ident">::new</span>(<span class="ident">blocks_cache_size</span>);
-			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">statuses_cache</span> <span class="op">=</span>
-				<span class="ident">LruCache</span>::<span class="op">&lt;</span><span class="ident">B::Hash</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TransactionStatus</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::new</span>(<span class="ident">statuses_cache_size</span>);
+		<span class="ident">outer_spawn_handle</span>.<span class="ident">spawn</span>(<span class="string">&quot;EthBlockDataCacheTask&quot;</span>, <span class="prelude-val">None</span>, <span class="kw">async</span> <span class="kw">move</span> {
+			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">blocks_cache</span> <span class="op">=</span> <span class="ident">LRUCacheByteLimited</span>::<span class="op">&lt;</span><span class="ident">B::Hash</span>, <span class="ident">EthereumBlock</span><span class="op">&gt;</span><span class="ident">::new</span>(
+				<span class="string">&quot;blocks_cache&quot;</span>,
+				<span class="ident">blocks_cache_max_size</span> <span class="kw">as</span> <span class="ident">u64</span>,
+				<span class="ident">prometheus_registry</span>.<span class="ident">clone</span>(),
+			);
+			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">statuses_cache</span> <span class="op">=</span> <span class="ident">LRUCacheByteLimited</span>::<span class="op">&lt;</span><span class="ident">B::Hash</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TransactionStatus</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::new</span>(
+				<span class="string">&quot;statuses_cache&quot;</span>,
+				<span class="ident">statuses_cache_max_size</span> <span class="kw">as</span> <span class="ident">u64</span>,
+				<span class="ident">prometheus_registry</span>,
+			);
 
 			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">awaiting_blocks</span> <span class="op">=</span>
 				<span class="ident">HashMap</span>::<span class="op">&lt;</span><span class="ident">B::Hash</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">oneshot::Sender</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">EthereumBlock</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::new</span>();
@@ -780,8 +802,8 @@
 
 	<span class="kw">fn</span> <span class="ident">request_current</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">F</span><span class="op">&gt;</span>(
 		<span class="ident">spawn_handle</span>: <span class="kw-2">&amp;</span><span class="ident">SpawnTaskHandle</span>,
-		<span class="ident">cache</span>: <span class="kw-2">&amp;mut</span> <span class="ident">LruCache</span><span class="op">&lt;</span><span class="ident">B::Hash</span>, <span class="ident">T</span><span class="op">&gt;</span>,
-		<span class="ident">wait_list</span>: <span class="kw-2">&amp;mut</span> <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">B::Hash</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">oneshot::Sender</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+		<span class="ident">cache</span>: <span class="kw-2">&amp;mut</span> <span class="ident">LRUCacheByteLimited</span><span class="op">&lt;</span><span class="ident">B::Hash</span>, <span class="ident">T</span><span class="op">&gt;</span>,
+		<span class="ident">wait_list</span>: <span class="kw-2">&amp;mut</span> <span class="ident">WaitList</span><span class="op">&lt;</span><span class="ident">B::Hash</span>, <span class="ident">T</span><span class="op">&gt;</span>,
 		<span class="ident">overrides</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">OverrideHandle</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 		<span class="ident">block_hash</span>: <span class="ident">B::Hash</span>,
 		<span class="ident">schema</span>: <span class="ident">EthereumStorageSchema</span>,
@@ -789,7 +811,7 @@
 		<span class="ident">task_tx</span>: <span class="ident">mpsc::Sender</span><span class="op">&lt;</span><span class="ident">EthBlockDataCacheMessage</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 		<span class="ident">handler_call</span>: <span class="ident">F</span>,
 	) <span class="kw">where</span>
-		<span class="ident">T</span>: <span class="ident">Clone</span>,
+		<span class="ident">T</span>: <span class="ident">Clone</span> <span class="op">+</span> <span class="ident">codec::Encode</span>,
 		<span class="ident">F</span>: <span class="ident">FnOnce</span>(<span class="kw-2">&amp;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">StorageOverride</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span><span class="op">&gt;</span>) -&gt; <span class="ident">EthBlockDataCacheMessage</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span>,
 		<span class="ident">F</span>: <span class="ident">Send</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
 	{
@@ -811,7 +833,7 @@
 		<span class="comment">// the data.</span>
 		<span class="ident">wait_list</span>.<span class="ident">insert</span>(<span class="ident">block_hash</span>.<span class="ident">clone</span>(), <span class="macro">vec!</span>[<span class="ident">response_tx</span>]);
 
-		<span class="ident">spawn_handle</span>.<span class="ident">spawn</span>(<span class="string">&quot;EthBlockDataCache Worker&quot;</span>, <span class="prelude-val">None</span>, <span class="kw">async</span> <span class="kw">move</span> {
+		<span class="ident">spawn_handle</span>.<span class="ident">spawn</span>(<span class="string">&quot;EthBlockDataCacheTask Worker&quot;</span>, <span class="prelude-val">None</span>, <span class="kw">async</span> <span class="kw">move</span> {
 			<span class="kw">let</span> <span class="ident">handler</span> <span class="op">=</span> <span class="ident">overrides</span>
 				.<span class="ident">schemas</span>
 				.<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">schema</span>)

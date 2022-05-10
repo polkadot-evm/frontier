@@ -245,7 +245,7 @@
 <span class="kw">use</span> <span class="ident">sp_runtime::traits::BlakeTwo256</span>;
 <span class="comment">// Frontier</span>
 <span class="kw">use</span> <span class="ident">fc_rpc</span>::{
-	<span class="ident">EthBlockDataCache</span>, <span class="ident">OverrideHandle</span>, <span class="ident">RuntimeApiStorageOverride</span>, <span class="ident">SchemaV1Override</span>,
+	<span class="ident">EthBlockDataCacheTask</span>, <span class="ident">OverrideHandle</span>, <span class="ident">RuntimeApiStorageOverride</span>, <span class="ident">SchemaV1Override</span>,
 	<span class="ident">SchemaV2Override</span>, <span class="ident">SchemaV3Override</span>, <span class="ident">StorageOverride</span>,
 };
 <span class="kw">use</span> <span class="ident">fc_rpc_core::types</span>::{<span class="ident">FeeHistoryCache</span>, <span class="ident">FeeHistoryCacheLimit</span>, <span class="ident">FilterPool</span>};
@@ -282,7 +282,7 @@
 	<span class="doccomment">/// Ethereum data access overrides.</span>
 	<span class="kw">pub</span> <span class="ident">overrides</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">OverrideHandle</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 	<span class="doccomment">/// Cache for Ethereum block data.</span>
-	<span class="kw">pub</span> <span class="ident">block_data_cache</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">EthBlockDataCache</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+	<span class="kw">pub</span> <span class="ident">block_data_cache</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">EthBlockDataCacheTask</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 	<span class="doccomment">/// Manual seal command sink</span>
 	<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;manual-seal&quot;</span>)]</span>
 	<span class="kw">pub</span> <span class="ident">command_sink</span>:

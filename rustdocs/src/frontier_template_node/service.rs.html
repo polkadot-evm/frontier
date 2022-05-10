@@ -810,6 +810,8 @@
 <span id="805">805</span>
 <span id="806">806</span>
 <span id="807">807</span>
+<span id="808">808</span>
+<span id="809">809</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Service and ServiceFactory implementation. Specialized wrapper over substrate service.</span>
 
 <span class="kw">use</span> <span class="ident">std</span>::{
@@ -1180,11 +1182,12 @@
 	<span class="kw">let</span> <span class="ident">enable_grandpa</span> <span class="op">=</span> <span class="op">!</span><span class="ident">config</span>.<span class="ident">disable_grandpa</span>;
 	<span class="kw">let</span> <span class="ident">prometheus_registry</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">prometheus_registry</span>().<span class="ident">cloned</span>();
 	<span class="kw">let</span> <span class="ident">overrides</span> <span class="op">=</span> <span class="ident"><span class="kw">crate</span>::rpc::overrides_handle</span>(<span class="ident">client</span>.<span class="ident">clone</span>());
-	<span class="kw">let</span> <span class="ident">block_data_cache</span> <span class="op">=</span> <span class="ident">Arc::new</span>(<span class="ident">fc_rpc::EthBlockDataCache::new</span>(
+	<span class="kw">let</span> <span class="ident">block_data_cache</span> <span class="op">=</span> <span class="ident">Arc::new</span>(<span class="ident">fc_rpc::EthBlockDataCacheTask::new</span>(
 		<span class="ident">task_manager</span>.<span class="ident">spawn_handle</span>(),
 		<span class="ident">overrides</span>.<span class="ident">clone</span>(),
 		<span class="number">50</span>,
 		<span class="number">50</span>,
+		<span class="ident">prometheus_registry</span>.<span class="ident">clone</span>(),
 	));
 
 	<span class="kw">let</span> <span class="ident">rpc_extensions_builder</span> <span class="op">=</span> {
@@ -1405,11 +1408,12 @@
 	<span class="kw">let</span> <span class="ident">role</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">role</span>.<span class="ident">clone</span>();
 	<span class="kw">let</span> <span class="ident">prometheus_registry</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">prometheus_registry</span>().<span class="ident">cloned</span>();
 	<span class="kw">let</span> <span class="ident">overrides</span> <span class="op">=</span> <span class="ident"><span class="kw">crate</span>::rpc::overrides_handle</span>(<span class="ident">client</span>.<span class="ident">clone</span>());
-	<span class="kw">let</span> <span class="ident">block_data_cache</span> <span class="op">=</span> <span class="ident">Arc::new</span>(<span class="ident">fc_rpc::EthBlockDataCache::new</span>(
+	<span class="kw">let</span> <span class="ident">block_data_cache</span> <span class="op">=</span> <span class="ident">Arc::new</span>(<span class="ident">fc_rpc::EthBlockDataCacheTask::new</span>(
 		<span class="ident">task_manager</span>.<span class="ident">spawn_handle</span>(),
 		<span class="ident">overrides</span>.<span class="ident">clone</span>(),
 		<span class="number">50</span>,
 		<span class="number">50</span>,
+		<span class="ident">prometheus_registry</span>.<span class="ident">clone</span>(),
 	));
 	<span class="comment">// Channel for the rpc handler to communicate with the authorship task.</span>
 	<span class="kw">let</span> (<span class="ident">command_sink</span>, <span class="ident">commands_stream</span>) <span class="op">=</span> <span class="ident">futures::channel::mpsc::channel</span>(<span class="number">1000</span>);
