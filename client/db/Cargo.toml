@@ -8,12 +8,18 @@ license = "GPL-3.0-or-later WITH Classpath-exception-2.0"
 repository = "https://github.com/paritytech/frontier/"
 
 [dependencies]
-kvdb-rocksdb = "0.15.2"
 parking_lot = "0.12.0"
 
 codec = { package = "parity-scale-codec", version = "3.0.0", features = ["derive"] }
+sc-client-db = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-core = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-database = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-runtime = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
 
 fp-storage = { version = "2.0.0-dev", path = "../../primitives/storage" }
+
+kvdb-rocksdb = { version = "0.15.2", optional = true }
+parity-db = { version = "0.3.9", optional = true }
+
+[features]
+default = ["kvdb-rocksdb", "parity-db"]
