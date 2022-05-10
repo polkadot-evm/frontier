@@ -25,17 +25,18 @@ use sp_blockchain::HeaderBackend;
 use sp_core::keccak_256;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 
-use fc_rpc_core::{types::Bytes, Web3Api as Web3ApiT};
+use fc_rpc_core::{types::Bytes, Web3Api};
 use fp_rpc::EthereumRuntimeRPCApi;
 
 use crate::internal_err;
 
-pub struct Web3Api<B, C> {
+/// Web3 API implementation.
+pub struct Web3<B, C> {
 	client: Arc<C>,
 	_marker: PhantomData<B>,
 }
 
-impl<B, C> Web3Api<B, C> {
+impl<B, C> Web3<B, C> {
 	pub fn new(client: Arc<C>) -> Self {
 		Self {
 			client,
@@ -44,7 +45,7 @@ impl<B, C> Web3Api<B, C> {
 	}
 }
 
-impl<B, C> Web3ApiT for Web3Api<B, C>
+impl<B, C> Web3Api for Web3<B, C>
 where
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	C: HeaderBackend<B> + ProvideRuntimeApi<B> + Send + Sync + 'static,
