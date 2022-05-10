@@ -820,6 +820,12 @@
 <span id="815">815</span>
 <span id="816">816</span>
 <span id="817">817</span>
+<span id="818">818</span>
+<span id="819">819</span>
+<span id="820">820</span>
+<span id="821">821</span>
+<span id="822">822</span>
+<span id="823">823</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The Substrate Node Template runtime. This can be compiled with `#[no_std]`, ready for Wasm.</span>
 
 <span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
@@ -861,11 +867,17 @@
 	<span class="ident">construct_runtime</span>, <span class="ident">parameter_types</span>,
 	<span class="ident">traits</span>::{<span class="ident">ConstU32</span>, <span class="ident">ConstU8</span>, <span class="ident">FindAuthor</span>, <span class="ident">KeyOwnerProofSystem</span>, <span class="ident">Randomness</span>},
 	<span class="ident">weights</span>::{
-		<span class="ident">constants</span>::{<span class="ident">BlockExecutionWeight</span>, <span class="ident">ExtrinsicBaseWeight</span>, <span class="ident">RocksDbWeight</span>, <span class="ident">WEIGHT_PER_SECOND</span>},
+		<span class="ident">constants</span>::{<span class="ident">BlockExecutionWeight</span>, <span class="ident">ExtrinsicBaseWeight</span>, <span class="ident">WEIGHT_PER_SECOND</span>},
 		<span class="ident">ConstantMultiplier</span>, <span class="ident">IdentityFee</span>, <span class="ident">Weight</span>,
 	},
 	<span class="ident">ConsensusEngineId</span>, <span class="ident">StorageValue</span>,
 };
+
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;with-paritydb-weights&quot;</span>)]</span>
+<span class="kw">use</span> <span class="ident">frame_support::weights::constants::ParityDbWeight</span> <span class="kw">as</span> <span class="ident">RuntimeDbWeight</span>;
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;with-rocksdb-weights&quot;</span>)]</span>
+<span class="kw">use</span> <span class="ident">frame_support::weights::constants::RocksDbWeight</span> <span class="kw">as</span> <span class="ident">RuntimeDbWeight</span>;
+
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">pallet_balances::Call</span> <span class="kw">as</span> <span class="ident">BalancesCall</span>;
 <span class="kw">use</span> <span class="ident">pallet_ethereum</span>::{<span class="ident">Call::transact</span>, <span class="ident">Transaction</span> <span class="kw">as</span> <span class="ident">EthereumTransaction</span>};
 <span class="kw">use</span> <span class="ident">pallet_evm</span>::{<span class="ident">Account</span> <span class="kw">as</span> <span class="ident">EVMAccount</span>, <span class="ident">EnsureAddressTruncated</span>, <span class="ident">HashedAddressMapping</span>, <span class="ident">Runner</span>};
@@ -1002,7 +1014,7 @@
 	<span class="doccomment">/// Maximum number of block number to block hash mappings to keep (oldest pruned first).</span>
 	<span class="kw">type</span> <span class="ident">BlockHashCount</span> <span class="op">=</span> <span class="ident">BlockHashCount</span>;
 	<span class="doccomment">/// The weight of database operations that the runtime can invoke.</span>
-	<span class="kw">type</span> <span class="ident">DbWeight</span> <span class="op">=</span> <span class="ident">RocksDbWeight</span>;
+	<span class="kw">type</span> <span class="ident">DbWeight</span> <span class="op">=</span> <span class="ident">RuntimeDbWeight</span>;
 	<span class="doccomment">/// Version of the runtime.</span>
 	<span class="kw">type</span> <span class="ident">Version</span> <span class="op">=</span> <span class="ident">Version</span>;
 	<span class="doccomment">/// Converts a module to the index of the module in `construct_runtime!`.</span>

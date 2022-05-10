@@ -1,6 +1,6 @@
 var N = null;var sourcesIndex = {};
 sourcesIndex["fc_consensus"] = {"name":"","files":["lib.rs"]};
-sourcesIndex["fc_db"] = {"name":"","files":["lib.rs","utils.rs"]};
+sourcesIndex["fc_db"] = {"name":"","files":["lib.rs","parity_db_adapter.rs","utils.rs"]};
 sourcesIndex["fc_mapping_sync"] = {"name":"","files":["lib.rs","worker.rs"]};
 sourcesIndex["fc_rpc"] = {"name":"","dirs":[{"name":"eth","dirs":[{"name":"cache","files":["mod.rs","tests.rs"]}],"files":["block.rs","client.rs","execute.rs","fee.rs","filter.rs","mining.rs","mod.rs","state.rs","submit.rs","transaction.rs"]},{"name":"overrides","files":["mod.rs","schema_v1_override.rs","schema_v2_override.rs","schema_v3_override.rs"]}],"files":["eth_pubsub.rs","lib.rs","net.rs","signer.rs","web3.rs"]};
 sourcesIndex["fc_rpc_core"] = {"name":"","dirs":[{"name":"types","files":["account_info.rs","block.rs","block_number.rs","bytes.rs","call_request.rs","fee.rs","filter.rs","index.rs","log.rs","mod.rs","pubsub.rs","receipt.rs","sync.rs","transaction.rs","transaction_request.rs","work.rs"]}],"files":["eth.rs","eth_pubsub.rs","lib.rs","net.rs","web3.rs"]};

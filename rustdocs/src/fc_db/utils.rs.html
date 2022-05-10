@@ -44,6 +44,33 @@
 <span id="39">39</span>
 <span id="40">40</span>
 <span id="41">41</span>
+<span id="42">42</span>
+<span id="43">43</span>
+<span id="44">44</span>
+<span id="45">45</span>
+<span id="46">46</span>
+<span id="47">47</span>
+<span id="48">48</span>
+<span id="49">49</span>
+<span id="50">50</span>
+<span id="51">51</span>
+<span id="52">52</span>
+<span id="53">53</span>
+<span id="54">54</span>
+<span id="55">55</span>
+<span id="56">56</span>
+<span id="57">57</span>
+<span id="58">58</span>
+<span id="59">59</span>
+<span id="60">60</span>
+<span id="61">61</span>
+<span id="62">62</span>
+<span id="63">63</span>
+<span id="64">64</span>
+<span id="65">65</span>
+<span id="66">66</span>
+<span id="67">67</span>
+<span id="68">68</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -62,28 +89,55 @@
 <span class="comment">// You should have received a copy of the GNU General Public License</span>
 <span class="comment">// along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.</span>
 
-<span class="kw">use</span> <span class="ident">std::sync::Arc</span>;
+<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">path::Path</span>, <span class="ident">sync::Arc</span>};
 
-<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">Database</span>, <span class="ident">DatabaseSettings</span>, <span class="ident">DatabaseSettingsSrc</span>, <span class="ident">DbHash</span>};
+<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">Database</span>, <span class="ident">DatabaseSettings</span>, <span class="ident">DatabaseSource</span>, <span class="ident">DbHash</span>};
 
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">open_database</span>(<span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="ident">DatabaseSettings</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Database</span><span class="op">&lt;</span><span class="ident">DbHash</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">String</span><span class="op">&gt;</span> {
 	<span class="kw">let</span> <span class="ident">db</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Database</span><span class="op">&lt;</span><span class="ident">DbHash</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">=</span> <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">config</span>.<span class="ident">source</span> {
-		<span class="ident">DatabaseSettingsSrc::RocksDb</span> {
-			<span class="ident">path</span>,
-			<span class="ident">cache_size</span>: <span class="kw">_</span>,
-		} =&gt; {
-			<span class="kw">let</span> <span class="ident">db_config</span> <span class="op">=</span> <span class="ident">kvdb_rocksdb::DatabaseConfig::with_columns</span>(<span class="ident"><span class="kw">crate</span>::columns::NUM_COLUMNS</span>);
-			<span class="kw">let</span> <span class="ident">path</span> <span class="op">=</span> <span class="ident">path</span>
-				.<span class="ident">to_str</span>()
-				.<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="string">&quot;Invalid database path&quot;</span>.<span class="ident">to_string</span>())<span class="question-mark">?</span>;
-
-			<span class="kw">let</span> <span class="ident">db</span> <span class="op">=</span> <span class="ident">kvdb_rocksdb::Database::open</span>(<span class="kw-2">&amp;</span><span class="ident">db_config</span>, <span class="kw-2">&amp;</span><span class="ident">path</span>)
-				.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;{}&quot;</span>, <span class="ident">err</span>))<span class="question-mark">?</span>;
-			<span class="ident">sp_database::as_database</span>(<span class="ident">db</span>)
-		}
+		<span class="ident">DatabaseSource::ParityDb</span> { <span class="ident">path</span> } =&gt; <span class="ident">open_parity_db</span>(<span class="kw-2">&amp;</span><span class="ident">path</span>)<span class="question-mark">?</span>,
+		<span class="ident">DatabaseSource::RocksDb</span> { <span class="ident">path</span>, .. } =&gt; <span class="ident">open_kvdb_rocksdb</span>(<span class="kw-2">&amp;</span><span class="ident">path</span>, <span class="bool-val">true</span>)<span class="question-mark">?</span>,
+		<span class="ident">DatabaseSource::Auto</span> {
+			<span class="ident">paritydb_path</span>,
+			<span class="ident">rocksdb_path</span>,
+			..
+		} =&gt; <span class="kw">match</span> <span class="ident">open_kvdb_rocksdb</span>(<span class="kw-2">&amp;</span><span class="ident">rocksdb_path</span>, <span class="bool-val">false</span>) {
+			<span class="prelude-val">Ok</span>(<span class="ident">db</span>) =&gt; <span class="ident">db</span>,
+			<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="ident">open_parity_db</span>(<span class="kw-2">&amp;</span><span class="ident">paritydb_path</span>)<span class="question-mark">?</span>,
+		},
+		<span class="kw">_</span> =&gt; <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;Missing feature flags `parity-db`&quot;</span>.<span class="ident">to_string</span>()),
 	};
-
 	<span class="prelude-val">Ok</span>(<span class="ident">db</span>)
+}
+
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;kvdb-rocksdb&quot;</span>)]</span>
+<span class="kw">fn</span> <span class="ident">open_kvdb_rocksdb</span>(<span class="ident">path</span>: <span class="kw-2">&amp;</span><span class="ident">Path</span>, <span class="ident">create</span>: <span class="ident">bool</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Database</span><span class="op">&lt;</span><span class="ident">DbHash</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">String</span><span class="op">&gt;</span> {
+	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">db_config</span> <span class="op">=</span> <span class="ident">kvdb_rocksdb::DatabaseConfig::with_columns</span>(<span class="ident"><span class="kw">crate</span>::columns::NUM_COLUMNS</span>);
+	<span class="ident">db_config</span>.<span class="ident">create_if_missing</span> <span class="op">=</span> <span class="ident">create</span>;
+
+	<span class="kw">let</span> <span class="ident">path</span> <span class="op">=</span> <span class="ident">path</span>
+		.<span class="ident">to_str</span>()
+		.<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="string">&quot;Invalid database path&quot;</span>.<span class="ident">to_string</span>())<span class="question-mark">?</span>;
+
+	<span class="kw">let</span> <span class="ident">db</span> <span class="op">=</span> <span class="ident">kvdb_rocksdb::Database::open</span>(<span class="kw-2">&amp;</span><span class="ident">db_config</span>, <span class="kw-2">&amp;</span><span class="ident">path</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;{}&quot;</span>, <span class="ident">err</span>))<span class="question-mark">?</span>;
+	<span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">sp_database::as_database</span>(<span class="ident">db</span>));
+}
+
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;kvdb-rocksdb&quot;</span>))]</span>
+<span class="kw">fn</span> <span class="ident">open_kvdb_rocksdb</span>(<span class="ident">_path</span>: <span class="kw-2">&amp;</span><span class="ident">Path</span>, <span class="ident">_create</span>: <span class="ident">bool</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Database</span><span class="op">&lt;</span><span class="ident">DbHash</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">String</span><span class="op">&gt;</span> {
+	<span class="prelude-val">Err</span>(<span class="string">&quot;Missing feature flags `kvdb-rocksdb`&quot;</span>.<span class="ident">to_string</span>())
+}
+
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;parity-db&quot;</span>)]</span>
+<span class="kw">fn</span> <span class="ident">open_parity_db</span>(<span class="ident">path</span>: <span class="kw-2">&amp;</span><span class="ident">Path</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Database</span><span class="op">&lt;</span><span class="ident">DbHash</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">String</span><span class="op">&gt;</span> {
+	<span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">parity_db::Options::with_columns</span>(<span class="ident">path</span>, <span class="ident"><span class="kw">crate</span>::columns::NUM_COLUMNS</span> <span class="kw">as</span> <span class="ident">u8</span>);
+	<span class="kw">let</span> <span class="ident">db</span> <span class="op">=</span> <span class="ident">parity_db::Db::open_or_create</span>(<span class="kw-2">&amp;</span><span class="ident">config</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;{}&quot;</span>, <span class="ident">err</span>))<span class="question-mark">?</span>;
+	<span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">Arc::new</span>(<span class="ident"><span class="kw">crate</span>::parity_db_adapter::DbAdapter</span>(<span class="ident">db</span>)));
+}
+
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;parity-db&quot;</span>))]</span>
+<span class="kw">fn</span> <span class="ident">open_parity_db</span>(<span class="ident">_path</span>: <span class="kw-2">&amp;</span><span class="ident">Path</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Database</span><span class="op">&lt;</span><span class="ident">DbHash</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">String</span><span class="op">&gt;</span> {
+	<span class="prelude-val">Err</span>(<span class="string">&quot;Missing feature flags `parity-db`&quot;</span>.<span class="ident">to_string</span>())
 }
 </code></pre></div>
 </section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="fc_db" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.60.0 (7737e0b5c 2022-04-04)" ></div>
