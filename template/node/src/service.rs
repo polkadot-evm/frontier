@@ -599,7 +599,7 @@ pub fn new_full(config: Configuration, cli: &Cli) -> Result<TaskManager, Service
 		overrides.clone(),
 		50,
 		50,
-		prometheus_registry.clone()
+		prometheus_registry.clone(),
 	));
 	// Channel for the rpc handler to communicate with the authorship task.
 	let (command_sink, commands_stream) = futures::channel::mpsc::channel(1000);
