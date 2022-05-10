@@ -21,7 +21,7 @@ use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 use sp_runtime::traits::BlakeTwo256;
 // Frontier
 use fc_rpc::{
-	EthBlockDataCache, OverrideHandle, RuntimeApiStorageOverride, SchemaV1Override,
+	EthBlockDataCacheTask, OverrideHandle, RuntimeApiStorageOverride, SchemaV1Override,
 	SchemaV2Override, SchemaV3Override, StorageOverride,
 };
 use fc_rpc_core::types::{FeeHistoryCache, FeeHistoryCacheLimit, FilterPool};
@@ -58,7 +58,7 @@ pub struct FullDeps<C, P, A: ChainApi> {
 	/// Ethereum data access overrides.
 	pub overrides: Arc<OverrideHandle<Block>>,
 	/// Cache for Ethereum block data.
-	pub block_data_cache: Arc<EthBlockDataCache<Block>>,
+	pub block_data_cache: Arc<EthBlockDataCacheTask<Block>>,
 	/// Manual seal command sink
 	#[cfg(feature = "manual-seal")]
 	pub command_sink:
