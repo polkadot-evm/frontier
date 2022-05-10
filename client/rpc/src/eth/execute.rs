@@ -37,11 +37,11 @@ use fc_rpc_core::types::*;
 use fp_rpc::EthereumRuntimeRPCApi;
 
 use crate::{
-	eth::{pending_runtime_api, EthApi},
+	eth::{pending_runtime_api, Eth},
 	frontier_backend_client, internal_err,
 };
 
-impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi> EthApi<B, C, P, CT, BE, H, A>
+impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi> Eth<B, C, P, CT, BE, H, A>
 where
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
@@ -547,7 +547,7 @@ where
 
 			// Verify that the transaction succeed with highest capacity
 			let cap = highest;
-			let estimate_mode = true;
+			let estimate_mode = !cfg!(feature = "rpc_binary_search_estimate");
 			let ExecutableResult {
 				data,
 				exit_reason,

@@ -25,18 +25,19 @@ use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 
-use fc_rpc_core::{types::PeerCount, NetApi as NetApiT};
+use fc_rpc_core::{types::PeerCount, NetApi};
 use fp_rpc::EthereumRuntimeRPCApi;
 
 use crate::internal_err;
 
-pub struct NetApi<B: BlockT, C, H: ExHashT> {
+/// Net API implementation.
+pub struct Net<B: BlockT, C, H: ExHashT> {
 	client: Arc<C>,
 	network: Arc<NetworkService<B, H>>,
 	peer_count_as_hex: bool,
 }
 
-impl<B: BlockT, C, H: ExHashT> NetApi<B, C, H> {
+impl<B: BlockT, C, H: ExHashT> Net<B, C, H> {
 	pub fn new(
 		client: Arc<C>,
 		network: Arc<NetworkService<B, H>>,
@@ -50,7 +51,7 @@ impl<B: BlockT, C, H: ExHashT> NetApi<B, C, H> {
 	}
 }
 
-impl<B, C, H: ExHashT> NetApiT for NetApi<B, C, H>
+impl<B, C, H: ExHashT> NetApi for Net<B, C, H>
 where
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	C: HeaderBackend<B> + ProvideRuntimeApi<B> + Send + Sync + 'static,
