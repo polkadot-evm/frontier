@@ -44,7 +44,7 @@ use sp_runtime::traits::{BlakeTwo256, Block as BlockT, UniqueSaturatedInto};
 
 use fc_rpc_core::{
 	types::{
-		pubsub::{Kind, Params, PubSubSyncStatus, Result as PubSubResult},
+		pubsub::{Kind, Params, PubSubSyncStatus, Result as PubSubResult, SyncStatusMetadata},
 		Bytes, FilteredParams, Header, Log, Rich,
 	},
 	EthPubSubApi as EthPubSubApiT,
@@ -86,10 +86,14 @@ pub struct EthPubSubApi<B: BlockT, P, C, BE, H: ExHashT> {
 	network: Arc<NetworkService<B, H>>,
 	subscriptions: SubscriptionManager<HexEncodedIdProvider>,
 	overrides: Arc<OverrideHandle<B>>,
+	starting_block: u64,
 	_marker: PhantomData<BE>,
 }
 
-impl<B: BlockT, P, C, BE, H: ExHashT> EthPubSubApi<B, P, C, BE, H> {
+impl<B: BlockT, P, C, BE, H: ExHashT> EthPubSubApi<B, P, C, BE, H>
+where
+	C: HeaderBackend<B> + Send + Sync + 'static,
+{
 	pub fn new(
 		pool: Arc<P>,
 		client: Arc<C>,
@@ -97,12 +101,16 @@ impl<B: BlockT, P, C, BE, H: ExHashT> EthPubSubApi<B, P, C, BE, H> {
 		subscriptions: SubscriptionManager<HexEncodedIdProvider>,
 		overrides: Arc<OverrideHandle<B>>,
 	) -> Self {
+		// Capture the best block as seen on initialization. Used for syncing subscriptions.
+		let starting_block =
+			UniqueSaturatedInto::<u64>::unique_saturated_into(client.info().best_number);
 		Self {
 			pool: pool.clone(),
 			client: client.clone(),
 			network,
 			subscriptions,
 			overrides,
+			starting_block,
 			_marker: PhantomData,
 		}
 	}
@@ -243,6 +251,7 @@ where
 		let pool = self.pool.clone();
 		let network = self.network.clone();
 		let overrides = self.overrides.clone();
+		let starting_block = self.starting_block;
 		match kind {
 			Kind::Logs => {
 				self.subscriptions.add(subscriber, |sink| {
@@ -392,28 +401,92 @@ where
 			}
 			Kind::Syncing => {
 				self.subscriptions.add(subscriber, |sink| {
-					let mut previous_syncing = network.is_major_syncing();
-					let stream = client
-						.import_notification_stream()
-						.filter_map(move |notification| {
-							let syncing = network.is_major_syncing();
-							if notification.is_new_best && previous_syncing != syncing {
-								previous_syncing = syncing;
-								futures::future::ready(Some(syncing))
+					let sink = sink.sink_map_err(|e| warn!("Error sending notifications: {:?}", e));
+
+					let client = Arc::clone(&client);
+					let network = Arc::clone(&network);
+					let mut sink = sink.clone();
+					async move {
+						// Gets the node syncing status.
+						// The response is expected to be serialized either as a plain boolean
+						// if the node is not syncing, or a structure containing syncing metadata
+						// in case it is.
+						async fn status<
+							C: HeaderBackend<B>,
+							B: BlockT,
+							H: ExHashT + Send + Sync,
+						>(
+							client: Arc<C>,
+							network: Arc<NetworkService<B, H>>,
+							starting_block: u64,
+						) -> PubSubSyncStatus {
+							if network.is_major_syncing() {
+								// Get the target block to sync.
+								// This value is only exposed through substrate async Api
+								// in the `NetworkService`.
+								let highest_block = network
+									.status()
+									.await
+									.ok()
+									.and_then(|res| res.best_seen_block)
+									.map(|res| {
+										UniqueSaturatedInto::<u64>::unique_saturated_into(res)
+									});
+								// Best imported block.
+								let current_block =
+									UniqueSaturatedInto::<u64>::unique_saturated_into(
+										client.info().best_number,
+									);
+
+								PubSubSyncStatus::Detailed(SyncStatusMetadata {
+									syncing: true,
+									starting_block,
+									current_block,
+									highest_block,
+								})
 							} else {
-								futures::future::ready(None)
+								PubSubSyncStatus::Simple(false)
 							}
-						})
-						.map(|syncing| {
-							return Ok::<Result<PubSubResult, jsonrpc_core::types::error::Error>, ()>(
-								Ok(PubSubResult::SyncState(PubSubSyncStatus { syncing })),
-							);
-						});
-					stream
-						.forward(
-							sink.sink_map_err(|e| warn!("Error sending notifications: {:?}", e)),
-						)
-						.map(|_| ())
+						}
+						// On connection subscriber expects a value.
+						// Because import notifications are only emitted when the node is synced or
+						// in case of reorg, the first event is emited right away.
+						let _ = sink
+							.feed(Ok(PubSubResult::SyncState(
+								status(Arc::clone(&client), Arc::clone(&network), starting_block)
+									.await,
+							)))
+							.await;
+
+						// When the node is not under a major syncing (i.e. from genesis), react
+						// normally to import notifications.
+						//
+						// Only send new notifications down the pipe when the syncing status changed.
+						client
+							.import_notification_stream()
+							.fold(
+								network.is_major_syncing(),
+								move |mut last_syncing_status, _| {
+									let client = Arc::clone(&client);
+									let network = Arc::clone(&network);
+									let mut sink = sink.clone();
+									async move {
+										let syncing_status = network.is_major_syncing();
+										if last_syncing_status != syncing_status {
+											last_syncing_status = syncing_status;
+											let _ = sink
+												.feed(Ok(PubSubResult::SyncState(
+													status(client, network, starting_block).await,
+												)))
+												.await;
+										}
+										last_syncing_status
+									}
+								},
+							)
+							.map(|_| ())
+							.await
+					}
 				});
 			}
 		}

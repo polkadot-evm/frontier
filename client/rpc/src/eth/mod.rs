@@ -68,8 +68,8 @@ pub struct EthApi<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> {
 	overrides: Arc<OverrideHandle<B>>,
 	backend: Arc<fc_db::Backend<B>>,
 	block_data_cache: Arc<EthBlockDataCache<B>>,
-	fee_history_limit: u64,
 	fee_history_cache: FeeHistoryCache,
+	fee_history_cache_limit: FeeHistoryCacheLimit,
 	_marker: PhantomData<(B, BE)>,
 }
 
@@ -85,8 +85,8 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> EthApi<B, C, P, CT, BE, H
 		backend: Arc<fc_db::Backend<B>>,
 		is_authority: bool,
 		block_data_cache: Arc<EthBlockDataCache<B>>,
-		fee_history_limit: u64,
 		fee_history_cache: FeeHistoryCache,
+		fee_history_cache_limit: FeeHistoryCacheLimit,
 	) -> Self {
 		Self {
 			client,
@@ -99,8 +99,8 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> EthApi<B, C, P, CT, BE, H
 			overrides,
 			backend,
 			block_data_cache,
-			fee_history_limit,
 			fee_history_cache,
+			fee_history_cache_limit,
 			_marker: PhantomData,
 		}
 	}
@@ -321,7 +321,6 @@ fn rich_block_build(
 	hash: Option<H256>,
 	full_transactions: bool,
 	base_fee: Option<U256>,
-	is_eip1559: bool,
 ) -> RichBlock {
 	Rich {
 		inner: Block {
@@ -363,7 +362,6 @@ fn rich_block_build(
 									transaction.clone(),
 									Some(block.clone()),
 									Some(statuses[index].clone().unwrap_or_default()),
-									is_eip1559,
 									base_fee,
 								)
 							})
@@ -390,7 +388,6 @@ fn transaction_build(
 	ethereum_transaction: EthereumTransaction,
 	block: Option<EthereumBlock>,
 	status: Option<TransactionStatus>,
-	is_eip1559: bool,
 	base_fee: Option<U256>,
 ) -> Transaction {
 	let mut transaction: Transaction = ethereum_transaction.clone().into();
@@ -400,24 +397,17 @@ fn transaction_build(
 			// If transaction is not mined yet, gas price is considered just max fee per gas.
 			transaction.gas_price = transaction.max_fee_per_gas;
 		} else {
-			// If transaction is already mined, gas price is considered base fee + priority fee.
-			// A.k.a. effective gas price.
-			let base_fee = base_fee.unwrap_or(U256::zero());
-			let max_priority_fee_per_gas =
-				transaction.max_priority_fee_per_gas.unwrap_or(U256::zero());
+			let base_fee = base_fee.unwrap_or_default();
+			let max_priority_fee_per_gas = transaction.max_priority_fee_per_gas.unwrap_or_default();
+			let max_fee_per_gas = transaction.max_fee_per_gas.unwrap_or_default();
+			// If transaction is already mined, gas price is the effective gas price.
 			transaction.gas_price = Some(
 				base_fee
 					.checked_add(max_priority_fee_per_gas)
-					.unwrap_or(U256::max_value()),
+					.unwrap_or(U256::max_value())
+					.min(max_fee_per_gas),
 			);
 		}
-	} else if !is_eip1559 {
-		// This is a pre-eip1559 support transaction a.k.a. txns on frontier before we introduced EIP1559 support in
-		// pallet-ethereum schema V2.
-		// They do not include `maxFeePerGas`, `maxPriorityFeePerGas` or `type` fields.
-		transaction.max_fee_per_gas = None;
-		transaction.max_priority_fee_per_gas = None;
-		transaction.transaction_type = None;
 	}
 
 	let pubkey = match public_key(&ethereum_transaction) {
