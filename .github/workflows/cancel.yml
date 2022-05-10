@@ -1,6 +1,11 @@
 name: Cancel
 
-on: [push]
+on:
+  push:
+    branches:
+      - '**'
+      - '!master'
+      - '!polkadot-v**'
 
 jobs:
   cancel:
