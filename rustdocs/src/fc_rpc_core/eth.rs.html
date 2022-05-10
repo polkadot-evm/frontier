@@ -261,9 +261,6 @@
 <span id="256">256</span>
 <span id="257">257</span>
 <span id="258">258</span>
-<span id="259">259</span>
-<span id="260">260</span>
-<span id="261">261</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -289,9 +286,6 @@
 <span class="kw">use</span> <span class="ident">jsonrpc_derive::rpc</span>;
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::types</span>::<span class="kw-2">*</span>;
-
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">rpc_impl_EthApi::gen_server::EthApi</span> <span class="kw">as</span> <span class="ident">EthApiServer</span>;
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">rpc_impl_EthFilterApi::gen_server::EthFilterApi</span> <span class="kw">as</span> <span class="ident">EthFilterApiServer</span>;
 
 <span class="doccomment">/// Eth rpc interface.</span>
 <span class="attribute">#[<span class="ident">rpc</span>(<span class="ident">server</span>)]</span>

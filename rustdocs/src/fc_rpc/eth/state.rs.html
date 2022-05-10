@@ -231,11 +231,11 @@
 <span class="kw">use</span> <span class="ident">fp_rpc::EthereumRuntimeRPCApi</span>;
 
 <span class="kw">use</span> <span class="kw">crate</span>::{
-	<span class="ident">eth</span>::{<span class="ident">pending_runtime_api</span>, <span class="ident">EthApi</span>},
+	<span class="ident">eth</span>::{<span class="ident">pending_runtime_api</span>, <span class="ident">Eth</span>},
 	<span class="ident">frontier_backend_client</span>, <span class="ident">internal_err</span>,
 };
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">CT</span>, <span class="ident">BE</span>, <span class="ident">H</span>: <span class="ident">ExHashT</span>, <span class="ident">A</span>: <span class="ident">ChainApi</span><span class="op">&gt;</span> <span class="ident">EthApi</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">CT</span>, <span class="ident">BE</span>, <span class="ident">H</span>, <span class="ident">A</span><span class="op">&gt;</span>
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">CT</span>, <span class="ident">BE</span>, <span class="ident">H</span>: <span class="ident">ExHashT</span>, <span class="ident">A</span>: <span class="ident">ChainApi</span><span class="op">&gt;</span> <span class="ident">Eth</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">CT</span>, <span class="ident">BE</span>, <span class="ident">H</span>, <span class="ident">A</span><span class="op">&gt;</span>
 <span class="kw">where</span>
 	<span class="ident">B</span>: <span class="ident">BlockT</span><span class="op">&lt;</span><span class="ident">Hash</span> <span class="op">=</span> <span class="ident">H256</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
 	<span class="ident">C</span>: <span class="ident">ProvideRuntimeApi</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">StorageProvider</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">BE</span><span class="op">&gt;</span>,

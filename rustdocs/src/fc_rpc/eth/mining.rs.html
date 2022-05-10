@@ -80,9 +80,9 @@
 
 <span class="kw">use</span> <span class="ident">fc_rpc_core::types</span>::<span class="kw-2">*</span>;
 
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::eth::EthApi</span>;
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::eth::Eth</span>;
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">B</span>: <span class="ident">BlockT</span>, <span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">CT</span>, <span class="ident">BE</span>, <span class="ident">H</span>: <span class="ident">ExHashT</span>, <span class="ident">A</span>: <span class="ident">ChainApi</span><span class="op">&gt;</span> <span class="ident">EthApi</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">CT</span>, <span class="ident">BE</span>, <span class="ident">H</span>, <span class="ident">A</span><span class="op">&gt;</span> {
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">B</span>: <span class="ident">BlockT</span>, <span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">CT</span>, <span class="ident">BE</span>, <span class="ident">H</span>: <span class="ident">ExHashT</span>, <span class="ident">A</span>: <span class="ident">ChainApi</span><span class="op">&gt;</span> <span class="ident">Eth</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">CT</span>, <span class="ident">BE</span>, <span class="ident">H</span>, <span class="ident">A</span><span class="op">&gt;</span> {
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_mining</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span> {
 		<span class="prelude-val">Ok</span>(<span class="self">self</span>.<span class="ident">is_authority</span>)
 	}

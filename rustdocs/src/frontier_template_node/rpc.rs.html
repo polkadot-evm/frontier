@@ -222,7 +222,6 @@
 <span id="217">217</span>
 <span id="218">218</span>
 <span id="219">219</span>
-<span id="220">220</span>
 </pre><pre class="rust"><code><span class="doccomment">//! A collection of node-specific RPC methods.</span>
 
 <span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">collections::BTreeMap</span>, <span class="ident">sync::Arc</span>};
@@ -345,9 +344,8 @@
 	<span class="ident">A</span>: <span class="ident">ChainApi</span><span class="op">&lt;</span><span class="ident">Block</span> <span class="op">=</span> <span class="ident">Block</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
 {
 	<span class="kw">use</span> <span class="ident">fc_rpc</span>::{
-		<span class="ident">EthApi</span>, <span class="ident">EthApiServer</span>, <span class="ident">EthDevSigner</span>, <span class="ident">EthFilterApi</span>, <span class="ident">EthFilterApiServer</span>, <span class="ident">EthPubSubApi</span>,
-		<span class="ident">EthPubSubApiServer</span>, <span class="ident">EthSigner</span>, <span class="ident">HexEncodedIdProvider</span>, <span class="ident">NetApi</span>, <span class="ident">NetApiServer</span>, <span class="ident">Web3Api</span>,
-		<span class="ident">Web3ApiServer</span>,
+		<span class="ident">Eth</span>, <span class="ident">EthApi</span>, <span class="ident">EthDevSigner</span>, <span class="ident">EthFilter</span>, <span class="ident">EthFilterApi</span>, <span class="ident">EthPubSub</span>, <span class="ident">EthPubSubApi</span>, <span class="ident">EthSigner</span>,
+		<span class="ident">HexEncodedIdProvider</span>, <span class="ident">Net</span>, <span class="ident">NetApi</span>, <span class="ident">Web3</span>, <span class="ident">Web3Api</span>,
 	};
 	<span class="kw">use</span> <span class="ident">pallet_transaction_payment_rpc</span>::{<span class="ident">TransactionPayment</span>, <span class="ident">TransactionPaymentApi</span>};
 	<span class="kw">use</span> <span class="ident">substrate_frame_rpc_system</span>::{<span class="ident">FullSystem</span>, <span class="ident">SystemApi</span>};
@@ -386,7 +384,7 @@
 		<span class="ident">signers</span>.<span class="ident">push</span>(<span class="ident">Box::new</span>(<span class="ident">EthDevSigner::new</span>()) <span class="kw">as</span> <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">EthSigner</span><span class="op">&gt;</span>);
 	}
 
-	<span class="ident">io</span>.<span class="ident">extend_with</span>(<span class="ident">EthApiServer::to_delegate</span>(<span class="ident">EthApi::new</span>(
+	<span class="ident">io</span>.<span class="ident">extend_with</span>(<span class="ident">EthApi::to_delegate</span>(<span class="ident">Eth::new</span>(
 		<span class="ident">client</span>.<span class="ident">clone</span>(),
 		<span class="ident">pool</span>.<span class="ident">clone</span>(),
 		<span class="ident">graph</span>,
@@ -402,7 +400,7 @@
 	)));
 
 	<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">filter_pool</span>) <span class="op">=</span> <span class="ident">filter_pool</span> {
-		<span class="ident">io</span>.<span class="ident">extend_with</span>(<span class="ident">EthFilterApiServer::to_delegate</span>(<span class="ident">EthFilterApi::new</span>(
+		<span class="ident">io</span>.<span class="ident">extend_with</span>(<span class="ident">EthFilterApi::to_delegate</span>(<span class="ident">EthFilter::new</span>(
 			<span class="ident">client</span>.<span class="ident">clone</span>(),
 			<span class="ident">backend</span>,
 			<span class="ident">filter_pool</span>.<span class="ident">clone</span>(),
@@ -412,16 +410,16 @@
 		)));
 	}
 
-	<span class="ident">io</span>.<span class="ident">extend_with</span>(<span class="ident">NetApiServer::to_delegate</span>(<span class="ident">NetApi::new</span>(
+	<span class="ident">io</span>.<span class="ident">extend_with</span>(<span class="ident">NetApi::to_delegate</span>(<span class="ident">Net::new</span>(
 		<span class="ident">client</span>.<span class="ident">clone</span>(),
 		<span class="ident">network</span>.<span class="ident">clone</span>(),
 		<span class="comment">// Whether to format the `peer_count` response as Hex (default) or not.</span>
 		<span class="bool-val">true</span>,
 	)));
 
-	<span class="ident">io</span>.<span class="ident">extend_with</span>(<span class="ident">Web3ApiServer::to_delegate</span>(<span class="ident">Web3Api::new</span>(<span class="ident">client</span>.<span class="ident">clone</span>())));
+	<span class="ident">io</span>.<span class="ident">extend_with</span>(<span class="ident">Web3Api::to_delegate</span>(<span class="ident">Web3::new</span>(<span class="ident">client</span>.<span class="ident">clone</span>())));
 
-	<span class="ident">io</span>.<span class="ident">extend_with</span>(<span class="ident">EthPubSubApiServer::to_delegate</span>(<span class="ident">EthPubSubApi::new</span>(
+	<span class="ident">io</span>.<span class="ident">extend_with</span>(<span class="ident">EthPubSubApi::to_delegate</span>(<span class="ident">EthPubSub::new</span>(
 		<span class="ident">pool</span>.<span class="ident">clone</span>(),
 		<span class="ident">client</span>.<span class="ident">clone</span>(),
 		<span class="ident">network</span>.<span class="ident">clone</span>(),

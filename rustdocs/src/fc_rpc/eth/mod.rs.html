@@ -499,6 +499,8 @@
 <span id="494">494</span>
 <span id="495">495</span>
 <span id="496">496</span>
+<span id="497">497</span>
+<span id="498">498</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -548,17 +550,18 @@
 	<span class="ident">traits</span>::{<span class="ident">BlakeTwo256</span>, <span class="ident">Block</span> <span class="kw">as</span> <span class="ident">BlockT</span>, <span class="ident">UniqueSaturatedInto</span>},
 };
 
-<span class="kw">use</span> <span class="ident">fc_rpc_core</span>::{<span class="ident">types</span>::<span class="kw-2">*</span>, <span class="ident">EthApi</span> <span class="kw">as</span> <span class="ident">EthApiT</span>};
+<span class="kw">use</span> <span class="ident">fc_rpc_core</span>::{<span class="ident">types</span>::<span class="kw-2">*</span>, <span class="ident">EthApi</span>};
 <span class="kw">use</span> <span class="ident">fp_rpc</span>::{<span class="ident">ConvertTransactionRuntimeApi</span>, <span class="ident">EthereumRuntimeRPCApi</span>, <span class="ident">TransactionStatus</span>};
 
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">internal_err</span>, <span class="ident">overrides::OverrideHandle</span>, <span class="ident">public_key</span>, <span class="ident">signer::EthSigner</span>};
 
 <span class="kw">pub</span> <span class="kw">use</span> <span class="self">self</span>::{
 	<span class="ident">cache</span>::{<span class="ident">EthBlockDataCache</span>, <span class="ident">EthTask</span>},
-	<span class="ident">filter::EthFilterApi</span>,
+	<span class="ident">filter::EthFilter</span>,
 };
 
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">EthApi</span><span class="op">&lt;</span><span class="ident">B</span>: <span class="ident">BlockT</span>, <span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">CT</span>, <span class="ident">BE</span>, <span class="ident">H</span>: <span class="ident">ExHashT</span>, <span class="ident">A</span>: <span class="ident">ChainApi</span><span class="op">&gt;</span> {
+<span class="doccomment">/// Eth API implementation.</span>
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Eth</span><span class="op">&lt;</span><span class="ident">B</span>: <span class="ident">BlockT</span>, <span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">CT</span>, <span class="ident">BE</span>, <span class="ident">H</span>: <span class="ident">ExHashT</span>, <span class="ident">A</span>: <span class="ident">ChainApi</span><span class="op">&gt;</span> {
 	<span class="ident">pool</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">P</span><span class="op">&gt;</span>,
 	<span class="ident">graph</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">Pool</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 	<span class="ident">client</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
@@ -574,7 +577,7 @@
 	<span class="ident">_marker</span>: <span class="ident">PhantomData</span><span class="op">&lt;</span>(<span class="ident">B</span>, <span class="ident">BE</span>)<span class="op">&gt;</span>,
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">B</span>: <span class="ident">BlockT</span>, <span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">CT</span>, <span class="ident">BE</span>, <span class="ident">H</span>: <span class="ident">ExHashT</span>, <span class="ident">A</span>: <span class="ident">ChainApi</span><span class="op">&gt;</span> <span class="ident">EthApi</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">CT</span>, <span class="ident">BE</span>, <span class="ident">H</span>, <span class="ident">A</span><span class="op">&gt;</span> {
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">B</span>: <span class="ident">BlockT</span>, <span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">CT</span>, <span class="ident">BE</span>, <span class="ident">H</span>: <span class="ident">ExHashT</span>, <span class="ident">A</span>: <span class="ident">ChainApi</span><span class="op">&gt;</span> <span class="ident">Eth</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">CT</span>, <span class="ident">BE</span>, <span class="ident">H</span>, <span class="ident">A</span><span class="op">&gt;</span> {
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(
 		<span class="ident">client</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
 		<span class="ident">pool</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">P</span><span class="op">&gt;</span>,
@@ -607,7 +610,7 @@
 	}
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">CT</span>, <span class="ident">BE</span>, <span class="ident">H</span>: <span class="ident">ExHashT</span>, <span class="ident">A</span><span class="op">&gt;</span> <span class="ident">EthApiT</span> <span class="kw">for</span> <span class="ident">EthApi</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">CT</span>, <span class="ident">BE</span>, <span class="ident">H</span>, <span class="ident">A</span><span class="op">&gt;</span>
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">CT</span>, <span class="ident">BE</span>, <span class="ident">H</span>: <span class="ident">ExHashT</span>, <span class="ident">A</span><span class="op">&gt;</span> <span class="ident">EthApi</span> <span class="kw">for</span> <span class="ident">Eth</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">CT</span>, <span class="ident">BE</span>, <span class="ident">H</span>, <span class="ident">A</span><span class="op">&gt;</span>
 <span class="kw">where</span>
 	<span class="ident">B</span>: <span class="ident">BlockT</span><span class="op">&lt;</span><span class="ident">Hash</span> <span class="op">=</span> <span class="ident">H256</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
 	<span class="ident">C</span>: <span class="ident">ProvideRuntimeApi</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">StorageProvider</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">BE</span><span class="op">&gt;</span>,
@@ -622,6 +625,7 @@
 	<span class="comment">// ########################################################################</span>
 	<span class="comment">// Client</span>
 	<span class="comment">// ########################################################################</span>
+
 	<span class="kw">fn</span> <span class="ident">protocol_version</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span> {
 		<span class="self">self</span>.<span class="ident">protocol_version</span>()
 	}
