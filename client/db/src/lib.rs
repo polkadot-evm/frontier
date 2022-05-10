@@ -18,15 +18,15 @@
 
 mod utils;
 
-use std::{
-	marker::PhantomData,
-	path::{Path, PathBuf},
-	sync::Arc,
-};
+#[cfg(feature = "parity-db")]
+mod parity_db_adapter;
+
+use std::{marker::PhantomData, sync::Arc};
 
 use codec::{Decode, Encode};
 use fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA_CACHE};
 use parking_lot::Mutex;
+pub use sc_client_db::DatabaseSource;
 use sp_core::H256;
 pub use sp_database::Database;
 use sp_runtime::traits::Block as BlockT;
@@ -38,28 +38,7 @@ pub type DbHash = [u8; DB_HASH_LEN];
 /// Database settings.
 pub struct DatabaseSettings {
 	/// Where to find the database.
-	pub source: DatabaseSettingsSrc,
-}
-
-/// Where to find the database.
-#[derive(Debug, Clone)]
-pub enum DatabaseSettingsSrc {
-	/// Load a RocksDB database from a given path. Recommended for most uses.
-	RocksDb {
-		/// Path to the database.
-		path: PathBuf,
-		/// Cache size in MiB.
-		cache_size: usize,
-	},
-}
-
-impl DatabaseSettingsSrc {
-	/// Return dabase path for databases that are on the disk.
-	pub fn path(&self) -> Option<&Path> {
-		match self {
-			DatabaseSettingsSrc::RocksDb { path, .. } => Some(path.as_path()),
-		}
-	}
+	pub source: DatabaseSource,
 }
 
 pub(crate) mod columns {
