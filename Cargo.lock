@@ -1545,8 +1545,10 @@ version = "2.0.0-dev"
 dependencies = [
  "fp-storage",
  "kvdb-rocksdb",
+ "parity-db",
  "parity-scale-codec",
  "parking_lot 0.12.0",
+ "sc-client-db",
  "sp-core",
  "sp-database",
  "sp-runtime",
@@ -1594,6 +1596,7 @@ dependencies = [
  "rlp",
  "sc-block-builder",
  "sc-client-api",
+ "sc-client-db",
  "sc-network",
  "sc-rpc",
  "sc-service",
