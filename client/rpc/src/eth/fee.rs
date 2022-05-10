@@ -32,9 +32,9 @@ use sp_runtime::{
 use fc_rpc_core::types::*;
 use fp_rpc::EthereumRuntimeRPCApi;
 
-use crate::{eth::EthApi, frontier_backend_client, internal_err};
+use crate::{eth::Eth, frontier_backend_client, internal_err};
 
-impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi> EthApi<B, C, P, CT, BE, H, A>
+impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi> Eth<B, C, P, CT, BE, H, A>
 where
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
@@ -95,7 +95,7 @@ where
 			let best_number =
 				UniqueSaturatedInto::<u64>::unique_saturated_into(self.client.info().best_number);
 			// Only support in-cache queries.
-			if lowest < best_number.saturating_sub(self.fee_history_limit) {
+			if lowest < best_number.saturating_sub(self.fee_history_cache_limit) {
 				return Err(internal_err(format!("Block range out of bounds.")));
 			}
 			if let Ok(fee_history_cache) = &self.fee_history_cache.lock() {

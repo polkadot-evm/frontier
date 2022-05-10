@@ -34,13 +34,13 @@ use sp_runtime::{
 	},
 };
 
-use fc_rpc_core::{types::*, EthFilterApi as EthFilterApiT};
+use fc_rpc_core::{types::*, EthFilterApi};
 use fp_rpc::{EthereumRuntimeRPCApi, TransactionStatus};
 use fp_storage::EthereumStorageSchema;
 
 use crate::{eth::cache::EthBlockDataCacheTask, frontier_backend_client, internal_err};
 
-pub struct EthFilterApi<B: BlockT, C, BE> {
+pub struct EthFilter<B: BlockT, C, BE> {
 	client: Arc<C>,
 	backend: Arc<fc_db::Backend<B>>,
 	filter_pool: FilterPool,
@@ -50,7 +50,7 @@ pub struct EthFilterApi<B: BlockT, C, BE> {
 	_marker: PhantomData<BE>,
 }
 
-impl<B: BlockT, C, BE> EthFilterApi<B, C, BE> {
+impl<B: BlockT, C, BE> EthFilter<B, C, BE> {
 	pub fn new(
 		client: Arc<C>,
 		backend: Arc<fc_db::Backend<B>>,
@@ -71,7 +71,7 @@ impl<B: BlockT, C, BE> EthFilterApi<B, C, BE> {
 	}
 }
 
-impl<B, C, BE> EthFilterApi<B, C, BE>
+impl<B, C, BE> EthFilter<B, C, BE>
 where
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	C: HeaderBackend<B> + Send + Sync + 'static,
@@ -109,7 +109,7 @@ where
 	}
 }
 
-impl<B, C, BE> EthFilterApiT for EthFilterApi<B, C, BE>
+impl<B, C, BE> EthFilterApi for EthFilter<B, C, BE>
 where
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,

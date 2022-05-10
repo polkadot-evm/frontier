@@ -415,24 +415,7 @@ where
 					*notification.header.number(),
 				);
 
-				// BTreeMap::retain is unstable :c.
-				// 1. We collect all keys to remove.
-				// 2. We remove them.
-				let remove_list: Vec<_> = filter_pool
-					.iter()
-					.filter_map(|(&k, v)| {
-						let lifespan_limit = v.at_block + retain_threshold;
-						if lifespan_limit <= imported_number {
-							Some(k)
-						} else {
-							None
-						}
-					})
-					.collect();
-
-				for key in remove_list {
-					filter_pool.remove(&key);
-				}
+				filter_pool.retain(|_, v| v.at_block + retain_threshold > imported_number);
 			}
 		}
 	}

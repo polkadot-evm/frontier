@@ -23,8 +23,6 @@ use jsonrpc_derive::rpc;
 
 use crate::types::PeerCount;
 
-pub use rpc_impl_NetApi::gen_server::NetApi as NetApiServer;
-
 /// Net rpc interface.
 #[rpc(server)]
 pub trait NetApi {
