@@ -25,7 +25,9 @@ use sp_runtime::{
 		AccountIdLookup, BlakeTwo256, Block as BlockT, DispatchInfoOf, Dispatchable,
 		IdentifyAccount, NumberFor, PostDispatchInfoOf, Verify,
 	},
-	transaction_validity::{TransactionSource, TransactionValidity, TransactionValidityError, InvalidTransaction},
+	transaction_validity::{
+		InvalidTransaction, TransactionSource, TransactionValidity, TransactionValidityError,
+	},
 	ApplyExtrinsicResult, MultiSignature,
 };
 use sp_std::{marker::PhantomData, prelude::*};
