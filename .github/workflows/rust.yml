@@ -63,6 +63,8 @@ jobs:
         toolchain: nightly-2022-05-02
         target: wasm32-unknown-unknown
         override: true
-        components: rustfmt
+        components: rustfmt, clippy
     - name: Rustfmt
       run: cargo fmt --all -- --check
+    - name: Clippy
+      run: cargo clippy --all -- -D warnings

@@ -16,6 +16,7 @@
 // limitations under the License.
 
 #![cfg_attr(not(feature = "std"), no_std)]
+#![allow(clippy::large_enum_variant)]
 
 use codec::{Decode, Encode};
 use sp_core::H256;

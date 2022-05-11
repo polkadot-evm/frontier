@@ -16,6 +16,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+#![allow(clippy::too_many_arguments)]
+
 mod worker;
 
 pub use worker::{MappingSyncWorker, SyncStrategy};
@@ -78,7 +80,7 @@ where
 			.current_block(&id)
 			.map_err(|e| format!("{:?}", e))?;
 		let block_hash = block
-			.ok_or("Ethereum genesis block not found".to_string())?
+			.ok_or_else(|| "Ethereum genesis block not found".to_string())?
 			.header
 			.hash();
 		let mapping_commitment = fc_db::MappingCommitment::<Block> {

@@ -95,7 +95,7 @@ where
 
 	Arc::new(OverrideHandle {
 		schemas: overrides_map,
-		fallback: Box::new(RuntimeApiStorageOverride::new(client.clone())),
+		fallback: Box::new(RuntimeApiStorageOverride::new(client)),
 	})
 }
 
@@ -179,10 +179,10 @@ where
 		io.extend_with(EthFilterApi::to_delegate(EthFilter::new(
 			client.clone(),
 			backend,
-			filter_pool.clone(),
-			500 as usize, // max stored filters
+			filter_pool,
+			500, // max stored filters
 			max_past_logs,
-			block_data_cache.clone(),
+			block_data_cache,
 		)));
 	}
 
@@ -196,9 +196,9 @@ where
 	io.extend_with(Web3Api::to_delegate(Web3::new(client.clone())));
 
 	io.extend_with(EthPubSubApi::to_delegate(EthPubSub::new(
-		pool.clone(),
-		client.clone(),
-		network.clone(),
+		pool,
+		client,
+		network,
 		SubscriptionManager::<HexEncodedIdProvider>::with_id_provider(
 			HexEncodedIdProvider::default(),
 			Arc::new(subscription_task_executor),
