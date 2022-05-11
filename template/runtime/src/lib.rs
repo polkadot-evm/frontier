@@ -316,7 +316,7 @@ impl GasWeightMapping for FixedGasWeightMapping {
 		gas.saturating_mul(WEIGHT_PER_GAS)
 	}
 	fn weight_to_gas(weight: Weight) -> u64 {
-		u64::try_from(weight.wrapping_div(WEIGHT_PER_GAS)).unwrap_or(u32::MAX as u64)
+		weight.wrapping_div(WEIGHT_PER_GAS)
 	}
 }
 

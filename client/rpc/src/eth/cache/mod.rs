@@ -467,7 +467,7 @@ where
 			let base_fee = if let Some(base_fee) = handler.base_fee(&id) {
 				base_fee
 			} else {
-				client.runtime_api().gas_price(&id).unwrap_or(U256::zero())
+				client.runtime_api().gas_price(&id).unwrap_or_else(|_|U256::zero())
 			};
 			let receipts = handler.current_receipts(&id);
 			let mut result = FeeHistoryCacheItem {
