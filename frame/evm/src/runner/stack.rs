@@ -19,7 +19,7 @@
 
 use crate::{
 	runner::Runner as RunnerT, AccountCodes, AccountStorages, AddressMapping, BlockHashMapping,
-	Config, Error, Event, FeeCalculator, OnChargeEVMTransaction, Pallet,
+	Config, Error, Event, FeeCalculator, OnChargeEVMTransaction, Pallet, RunnerError,
 };
 use evm::{
 	backend::Backend as BackendT,
@@ -54,7 +54,7 @@ impl<T: Config> Runner<T> {
 		precompiles: &'precompiles T::PrecompilesType,
 		is_transactional: bool,
 		f: F,
-	) -> Result<ExecutionInfo<R>, Error<T>>
+	) -> Result<ExecutionInfo<R>, RunnerError<Error<T>>>
 	where
 		F: FnOnce(
 			&mut StackExecutor<
@@ -65,34 +65,53 @@ impl<T: Config> Runner<T> {
 			>,
 		) -> (ExitReason, R),
 	{
-		let base_fee = T::FeeCalculator::min_gas_price();
+		let (base_fee, mut weight) = T::FeeCalculator::min_gas_price();
 		let max_fee_per_gas = match (max_fee_per_gas, is_transactional) {
 			(Some(max_fee_per_gas), _) => {
-				ensure!(max_fee_per_gas >= base_fee, Error::<T>::GasPriceTooLow);
+				ensure!(
+					max_fee_per_gas >= base_fee,
+					RunnerError {
+						error: Error::<T>::GasPriceTooLow,
+						weight,
+					}
+				);
 				max_fee_per_gas
 			}
 			// Gas price check is skipped for non-transactional calls that don't
 			// define a `max_fee_per_gas` input.
 			(None, false) => Default::default(),
-			_ => return Err(Error::<T>::GasPriceTooLow),
+			_ => {
+				return Err(RunnerError {
+					error: Error::<T>::GasPriceTooLow,
+					weight,
+				})
+			}
 		};
 
 		if let Some(max_priority_fee) = max_priority_fee_per_gas {
 			ensure!(
 				max_fee_per_gas >= max_priority_fee,
-				Error::<T>::GasPriceTooLow
+				RunnerError {
+					error: Error::<T>::GasPriceTooLow,
+					weight,
+				}
 			);
 		}
 
 		// After eip-1559 we make sure the account can pay both the evm execution and priority fees.
 		let total_fee = max_fee_per_gas
 			.checked_mul(U256::from(gas_limit))
-			.ok_or(Error::<T>::FeeOverflow)?;
+			.ok_or(RunnerError {
+				error: Error::<T>::FeeOverflow,
+				weight,
+			})?;
 
-		let total_payment = value
-			.checked_add(total_fee)
-			.ok_or(Error::<T>::PaymentOverflow)?;
-		let source_account = Pallet::<T>::account_basic(&source);
+		let total_payment = value.checked_add(total_fee).ok_or(RunnerError {
+			error: Error::<T>::PaymentOverflow,
+			weight,
+		})?;
+		let (source_account, inner_weight) = Pallet::<T>::account_basic(&source);
+		weight = weight.saturating_add(inner_weight);
 		// Account balance check is skipped if fee is Zero.
 		// This case is previously verified to only happen on either:
 		// 	- Non-transactional calls.
@@ -100,16 +119,26 @@ impl<T: Config> Runner<T> {
 		if total_fee > U256::zero() {
 			ensure!(
 				source_account.balance >= total_payment,
-				Error::<T>::BalanceLow
+				RunnerError {
+					error: Error::<T>::BalanceLow,
+					weight,
+				}
 			);
 		}
 
 		if let Some(nonce) = nonce {
-			ensure!(source_account.nonce == nonce, Error::<T>::InvalidNonce);
+			ensure!(
+				source_account.nonce == nonce,
+				RunnerError {
+					error: Error::<T>::InvalidNonce,
+					weight,
+				}
+			);
 		}
 
 		// Deduct fee from the `source` account. Returns `None` if `total_fee` is Zero.
-		let fee = T::OnChargeTransaction::withdraw_fee(&source, total_fee)?;
+		let fee = T::OnChargeTransaction::withdraw_fee(&source, total_fee)
+			.map_err(|e| RunnerError { error: e, weight })?;
 
 		// Execute the EVM call.
 		let vicinity = Vicinity {
@@ -130,8 +159,7 @@ impl<T: Config> Runner<T> {
 				let actual_priority_fee = max_fee_per_gas
 					.saturating_sub(base_fee)
 					.min(max_priority_fee)
-					.checked_mul(used_gas)
-					.ok_or(Error::<T>::FeeOverflow)?;
+					.saturating_mul(used_gas);
 				let actual_fee = executor
 					.fee(base_fee)
 					.checked_add(actual_priority_fee)
@@ -228,7 +256,7 @@ impl<T: Config> RunnerT<T> for Runner<T> {
 		access_list: Vec<(H160, Vec<H256>)>,
 		is_transactional: bool,
 		config: &evm::Config,
-	) -> Result<CallInfo, Self::Error> {
+	) -> Result<CallInfo, RunnerError<Self::Error>> {
 		let precompiles = T::PrecompilesValue::get();
 		Self::execute(
 			source,
@@ -255,7 +283,7 @@ impl<T: Config> RunnerT<T> for Runner<T> {
 		access_list: Vec<(H160, Vec<H256>)>,
 		is_transactional: bool,
 		config: &evm::Config,
-	) -> Result<CreateInfo, Self::Error> {
+	) -> Result<CreateInfo, RunnerError<Self::Error>> {
 		let precompiles = T::PrecompilesValue::get();
 		Self::execute(
 			source,
@@ -288,7 +316,7 @@ impl<T: Config> RunnerT<T> for Runner<T> {
 		access_list: Vec<(H160, Vec<H256>)>,
 		is_transactional: bool,
 		config: &evm::Config,
-	) -> Result<CreateInfo, Self::Error> {
+	) -> Result<CreateInfo, RunnerError<Self::Error>> {
 		let precompiles = T::PrecompilesValue::get();
 		let code_hash = H256::from_slice(Keccak256::digest(&init).as_slice());
 		Self::execute(
@@ -482,7 +510,7 @@ impl<'vicinity, 'config, T: Config> BackendT for SubstrateStackState<'vicinity, 
 	}
 
 	fn basic(&self, address: H160) -> evm::backend::Basic {
-		let account = Pallet::<T>::account_basic(&address);
+		let (account, _) = Pallet::<T>::account_basic(&address);
 
 		evm::backend::Basic {
 			balance: account.balance,
@@ -503,7 +531,8 @@ impl<'vicinity, 'config, T: Config> BackendT for SubstrateStackState<'vicinity, 
 	}
 
 	fn block_base_fee_per_gas(&self) -> sp_core::U256 {
-		T::FeeCalculator::min_gas_price()
+		let (base_fee, _) = T::FeeCalculator::min_gas_price();
+		base_fee
 	}
 }
 

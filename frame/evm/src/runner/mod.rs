@@ -22,6 +22,12 @@ use fp_evm::{CallInfo, CreateInfo};
 use sp_core::{H160, H256, U256};
 use sp_std::vec::Vec;
 
+#[derive(Debug)]
+pub struct RunnerError<E: Into<sp_runtime::DispatchError>> {
+	pub error: E,
+	pub weight: frame_support::weights::Weight,
+}
+
 pub trait Runner<T: Config> {
 	type Error: Into<sp_runtime::DispatchError>;
 
@@ -37,7 +43,7 @@ pub trait Runner<T: Config> {
 		access_list: Vec<(H160, Vec<H256>)>,
 		is_transactional: bool,
 		config: &evm::Config,
-	) -> Result<CallInfo, Self::Error>;
+	) -> Result<CallInfo, RunnerError<Self::Error>>;
 
 	fn create(
 		source: H160,
@@ -50,7 +56,7 @@ pub trait Runner<T: Config> {
 		access_list: Vec<(H160, Vec<H256>)>,
 		is_transactional: bool,
 		config: &evm::Config,
-	) -> Result<CreateInfo, Self::Error>;
+	) -> Result<CreateInfo, RunnerError<Self::Error>>;
 
 	fn create2(
 		source: H160,
@@ -64,5 +70,5 @@ pub trait Runner<T: Config> {
 		access_list: Vec<(H160, Vec<H256>)>,
 		is_transactional: bool,
 		config: &evm::Config,
-	) -> Result<CreateInfo, Self::Error>;
+	) -> Result<CreateInfo, RunnerError<Self::Error>>;
 }

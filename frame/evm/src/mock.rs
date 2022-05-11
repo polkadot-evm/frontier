@@ -20,6 +20,7 @@
 use frame_support::{
 	parameter_types,
 	traits::{ConstU32, FindAuthor},
+	weights::Weight,
 	ConsensusEngineId,
 };
 use sp_core::{H160, H256, U256};
@@ -104,11 +105,11 @@ impl pallet_timestamp::Config for Test {
 	type WeightInfo = ();
 }
 
-/// Fixed gas price of `0`.
 pub struct FixedGasPrice;
 impl FeeCalculator for FixedGasPrice {
-	fn min_gas_price() -> U256 {
-		1_000_000_000u128.into()
+	fn min_gas_price() -> (U256, Weight) {
+		// Return some meaningful gas price and weight
+		(1_000_000_000u128.into(), 7u64)
 	}
 }
 

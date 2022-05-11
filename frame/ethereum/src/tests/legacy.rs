@@ -42,7 +42,7 @@ fn transaction_should_increment_nonce() {
 	ext.execute_with(|| {
 		let t = legacy_erc20_creation_transaction(alice);
 		assert_ok!(Ethereum::execute(alice.address, &t, None,));
-		assert_eq!(EVM::account_basic(&alice.address).nonce, U256::from(1));
+		assert_eq!(EVM::account_basic(&alice.address).0.nonce, U256::from(1));
 	});
 }
 
