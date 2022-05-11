@@ -540,6 +540,12 @@ impl<T: Config> Pallet<T> {
 			(None, Some(max_fee_per_gas), None) => max_fee_per_gas,
 			// EIP-1559 transaction with tip.
 			(None, Some(max_fee_per_gas), Some(max_priority_fee_per_gas)) => {
+				if max_priority_fee_per_gas > max_fee_per_gas {
+					return Err(InvalidTransaction::Custom(
+						TransactionValidationError::MaxFeePerGasTooLow as u8,
+					)
+					.into());
+				}
 				priority = max_fee_per_gas
 					.saturating_sub(base_fee)
 					.min(max_priority_fee_per_gas)
