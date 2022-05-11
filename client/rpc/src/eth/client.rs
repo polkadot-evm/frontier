@@ -50,7 +50,7 @@ where
 	pub fn syncing(&self) -> Result<SyncStatus> {
 		if self.network.is_major_syncing() {
 			let block_number = U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(
-				self.client.info().best_number.clone(),
+				self.client.info().best_number,
 			));
 			Ok(SyncStatus::Info(SyncInfo {
 				starting_block: U256::zero(),
@@ -80,7 +80,7 @@ where
 			.get(&schema)
 			.unwrap_or(&self.overrides.fallback)
 			.current_block(&block)
-			.ok_or(internal_err("fetching author through override failed"))?
+			.ok_or_else(|| internal_err("fetching author through override failed"))?
 			.header
 			.beneficiary)
 	}
@@ -95,9 +95,7 @@ where
 
 	pub fn block_number(&self) -> Result<U256> {
 		Ok(U256::from(
-			UniqueSaturatedInto::<u128>::unique_saturated_into(
-				self.client.info().best_number.clone(),
-			),
+			UniqueSaturatedInto::<u128>::unique_saturated_into(self.client.info().best_number),
 		))
 	}
 

@@ -406,7 +406,7 @@ fn transaction_build(
 			transaction.gas_price = Some(
 				base_fee
 					.checked_add(max_priority_fee_per_gas)
-					.unwrap_or(U256::max_value())
+					.unwrap_or_else(U256::max_value)
 					.min(max_fee_per_gas),
 			);
 		}
@@ -418,9 +418,9 @@ fn transaction_build(
 	};
 
 	// Block hash.
-	transaction.block_hash = block.as_ref().map_or(None, |block| {
-		Some(H256::from(keccak_256(&rlp::encode(&block.header))))
-	});
+	transaction.block_hash = block
+		.as_ref()
+		.map(|block| H256::from(keccak_256(&rlp::encode(&block.header))));
 	// Block number.
 	transaction.block_number = block.as_ref().map(|block| block.header.number);
 	// Transaction index.
@@ -455,11 +455,9 @@ fn transaction_build(
 		|status| status.to,
 	);
 	// Creates.
-	transaction.creates = status
-		.as_ref()
-		.map_or(None, |status| status.contract_address);
+	transaction.creates = status.as_ref().and_then(|status| status.contract_address);
 	// Public key.
-	transaction.public_key = pubkey.as_ref().map(|pk| H512::from(pk));
+	transaction.public_key = pubkey.as_ref().map(H512::from);
 
 	transaction
 }

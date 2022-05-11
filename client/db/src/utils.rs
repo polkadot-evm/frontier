@@ -22,15 +22,15 @@ use crate::{Database, DatabaseSettings, DatabaseSource, DbHash};
 
 pub fn open_database(config: &DatabaseSettings) -> Result<Arc<dyn Database<DbHash>>, String> {
 	let db: Arc<dyn Database<DbHash>> = match &config.source {
-		DatabaseSource::ParityDb { path } => open_parity_db(&path)?,
-		DatabaseSource::RocksDb { path, .. } => open_kvdb_rocksdb(&path, true)?,
+		DatabaseSource::ParityDb { path } => open_parity_db(path)?,
+		DatabaseSource::RocksDb { path, .. } => open_kvdb_rocksdb(path, true)?,
 		DatabaseSource::Auto {
 			paritydb_path,
 			rocksdb_path,
 			..
-		} => match open_kvdb_rocksdb(&rocksdb_path, false) {
+		} => match open_kvdb_rocksdb(rocksdb_path, false) {
 			Ok(db) => db,
-			Err(_) => open_parity_db(&paritydb_path)?,
+			Err(_) => open_parity_db(paritydb_path)?,
 		},
 		_ => return Err("Missing feature flags `parity-db`".to_string()),
 	};
@@ -59,7 +59,7 @@ fn open_kvdb_rocksdb(_path: &Path, _create: bool) -> Result<Arc<dyn Database<DbH
 fn open_parity_db(path: &Path) -> Result<Arc<dyn Database<DbHash>>, String> {
 	let config = parity_db::Options::with_columns(path, crate::columns::NUM_COLUMNS as u8);
 	let db = parity_db::Db::open_or_create(&config).map_err(|err| format!("{}", err))?;
-	return Ok(Arc::new(crate::parity_db_adapter::DbAdapter(db)));
+	Ok(Arc::new(crate::parity_db_adapter::DbAdapter(db)))
 }
 
 #[cfg(not(feature = "parity-db"))]

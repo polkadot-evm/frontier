@@ -20,9 +20,9 @@
 use codec::{Decode, Encode};
 
 /// Current version of pallet Ethereum's storage schema is stored under this key.
-pub const PALLET_ETHEREUM_SCHEMA: &'static [u8] = b":ethereum_schema";
+pub const PALLET_ETHEREUM_SCHEMA: &[u8] = b":ethereum_schema";
 /// Cached version of pallet Ethereum's storage schema is stored under this key in the AuxStore.
-pub const PALLET_ETHEREUM_SCHEMA_CACHE: &'static [u8] = b":ethereum_schema_cache";
+pub const PALLET_ETHEREUM_SCHEMA_CACHE: &[u8] = b":ethereum_schema_cache";
 
 /// The schema version for Pallet Ethereum's storage
 #[derive(Clone, Copy, Debug, Encode, Decode, PartialEq, Eq, PartialOrd, Ord)]

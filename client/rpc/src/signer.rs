@@ -100,9 +100,11 @@ impl EthSigner for EthDevSigner {
 								gas_limit: m.gas_limit,
 								action: m.action,
 								value: m.value,
-								input: m.input.clone(),
+								input: m.input,
 								signature: ethereum::TransactionSignature::new(v, r, s)
-									.ok_or(internal_err("signer generated invalid signature"))?,
+									.ok_or_else(|| {
+										internal_err("signer generated invalid signature")
+									})?,
 							}));
 					}
 					TransactionMessage::EIP2930(m) => {
@@ -155,6 +157,6 @@ impl EthSigner for EthDevSigner {
 			}
 		}
 
-		transaction.ok_or(internal_err("signer not available"))
+		transaction.ok_or_else(|| internal_err("signer not available"))
 	}
 }

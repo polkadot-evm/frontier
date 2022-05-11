@@ -51,15 +51,15 @@ impl<K: Eq + core::hash::Hash, V: Encode> LRUCacheByteLimited<K, V> {
 		}
 	}
 	pub fn get(&mut self, k: &K) -> Option<&V> {
-		if let Some(ref v) = self.cache.get(k) {
+		if let Some(v) = self.cache.get(k) {
 			// Update metrics
-			if let Some(ref metrics) = self.metrics {
+			if let Some(metrics) = &self.metrics {
 				metrics.hits.inc();
 			}
 			Some(v)
 		} else {
 			// Update metrics
-			if let Some(ref metrics) = self.metrics {
+			if let Some(metrics) = &self.metrics {
 				metrics.miss.inc();
 			}
 			None
@@ -81,10 +81,8 @@ impl<K: Eq + core::hash::Hash, V: Encode> LRUCacheByteLimited<K, V> {
 		// Add entry in cache
 		self.cache.put(k, v);
 		// Update metrics
-		if let Some(ref metrics) = self.metrics {
-			metrics
-				.size
-				.set(self.size.try_into().unwrap_or(std::u64::MAX));
+		if let Some(metrics) = &self.metrics {
+			metrics.size.set(self.size);
 		}
 	}
 }
