@@ -768,20 +768,6 @@
 <span id="763">763</span>
 <span id="764">764</span>
 <span id="765">765</span>
-<span id="766">766</span>
-<span id="767">767</span>
-<span id="768">768</span>
-<span id="769">769</span>
-<span id="770">770</span>
-<span id="771">771</span>
-<span id="772">772</span>
-<span id="773">773</span>
-<span id="774">774</span>
-<span id="775">775</span>
-<span id="776">776</span>
-<span id="777">777</span>
-<span id="778">778</span>
-<span id="779">779</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -888,9 +874,7 @@
 			<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">api_version</span>)) <span class="op">=</span> <span class="ident">api</span>.<span class="ident">api_version</span>::<span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">EthereumRuntimeRPCApi</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="ident">id</span>) {
 				<span class="ident">api_version</span>
 			} <span class="kw">else</span> {
-				<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="macro">format!</span>(
-					<span class="string">&quot;failed to retrieve Runtime Api version&quot;</span>
-				)));
+				<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="string">&quot;failed to retrieve Runtime Api version&quot;</span>));
 			};
 		<span class="comment">// use given gas limit or query current block&#39;s limit</span>
 		<span class="kw">let</span> <span class="ident">gas_limit</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">gas</span> {
@@ -903,19 +887,13 @@
 					<span class="attribute">#[<span class="ident">allow</span>(<span class="ident">deprecated</span>)]</span>
 					<span class="kw">let</span> <span class="ident">legacy_block</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">current_block_before_version_2</span>(<span class="kw-2">&amp;</span><span class="ident">id</span>)
 						.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>;
-					<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">block</span>) <span class="op">=</span> <span class="ident">legacy_block</span> {
-						<span class="prelude-val">Some</span>(<span class="ident">block</span>.<span class="ident">into</span>())
-					} <span class="kw">else</span> {
-						<span class="prelude-val">None</span>
-					}
+					<span class="ident">legacy_block</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">block</span><span class="op">|</span> <span class="ident">block</span>.<span class="ident">into</span>())
 				};
 
 				<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">block</span>) <span class="op">=</span> <span class="ident">block</span> {
 					<span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">gas_limit</span>
 				} <span class="kw">else</span> {
-					<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="macro">format!</span>(
-						<span class="string">&quot;block unavailable, cannot query gas limit&quot;</span>
-					)));
+					<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="string">&quot;block unavailable, cannot query gas limit&quot;</span>));
 				}
 			}
 		};
@@ -989,9 +967,7 @@
 					<span class="ident">error_on_execution_failure</span>(<span class="kw-2">&amp;</span><span class="ident">info</span>.<span class="ident">exit_reason</span>, <span class="kw-2">&amp;</span><span class="ident">info</span>.<span class="ident">value</span>)<span class="question-mark">?</span>;
 					<span class="prelude-val">Ok</span>(<span class="ident">Bytes</span>(<span class="ident">info</span>.<span class="ident">value</span>))
 				} <span class="kw">else</span> {
-					<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="macro">format!</span>(
-						<span class="string">&quot;failed to retrieve Runtime Api version&quot;</span>
-					)));
+					<span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="string">&quot;failed to retrieve Runtime Api version&quot;</span>))
 				}
 			}
 			<span class="prelude-val">None</span> =&gt; {
@@ -1071,9 +1047,7 @@
 						.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>;
 					<span class="prelude-val">Ok</span>(<span class="ident">Bytes</span>(<span class="ident">code</span>))
 				} <span class="kw">else</span> {
-					<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="macro">format!</span>(
-						<span class="string">&quot;failed to retrieve Runtime Api version&quot;</span>
-					)));
+					<span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="string">&quot;failed to retrieve Runtime Api version&quot;</span>))
 				}
 			}
 		}
@@ -1133,7 +1107,7 @@
 				<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">block</span>) <span class="op">=</span> <span class="ident">block</span> {
 					<span class="prelude-val">Ok</span>(<span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">gas_limit</span>)
 				} <span class="kw">else</span> {
-					<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="string">&quot;block unavailable, cannot query gas limit&quot;</span>));
+					<span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="string">&quot;block unavailable, cannot query gas limit&quot;</span>))
 				}
 			};
 
@@ -1166,13 +1140,13 @@
 					<span class="kw">let</span> <span class="ident">allowance</span> <span class="op">=</span> <span class="ident">available</span> <span class="op">/</span> <span class="ident">gas_price</span>;
 					<span class="kw">if</span> <span class="ident">highest</span> <span class="op">&gt;</span> <span class="ident">allowance</span> {
 						<span class="macro">log::warn!</span>(
-						<span class="string">&quot;Gas estimation capped by limited funds original {} balance {} sent {} feecap {} fundable {}&quot;</span>,
-						<span class="ident">highest</span>,
-						<span class="ident">balance</span>,
-						<span class="ident">request</span>.<span class="ident">value</span>.<span class="ident">unwrap_or_default</span>(),
-						<span class="ident">gas_price</span>,
-						<span class="ident">allowance</span>
-					);
+							<span class="string">&quot;Gas estimation capped by limited funds original {} balance {} sent {} feecap {} fundable {}&quot;</span>,
+							<span class="ident">highest</span>,
+							<span class="ident">balance</span>,
+							<span class="ident">request</span>.<span class="ident">value</span>.<span class="ident">unwrap_or_default</span>(),
+							<span class="ident">gas_price</span>,
+							<span class="ident">allowance</span>
+						);
 						<span class="ident">highest</span> <span class="op">=</span> <span class="ident">allowance</span>;
 					}
 				}
@@ -1349,9 +1323,7 @@
 			{
 				<span class="ident">api_version</span>
 			} <span class="kw">else</span> {
-				<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="macro">format!</span>(
-					<span class="string">&quot;failed to retrieve Runtime Api version&quot;</span>
-				)));
+				<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="string">&quot;failed to retrieve Runtime Api version&quot;</span>));
 			};
 
 			<span class="comment">// Verify that the transaction succeed with highest capacity</span>
@@ -1473,7 +1445,7 @@
 				<span class="comment">// `ServerError(0)` will be useful in estimate gas</span>
 				<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span> {
 					<span class="ident">code</span>: <span class="ident">ErrorCode::ServerError</span>(<span class="number">0</span>),
-					<span class="ident">message</span>: <span class="macro">format!</span>(<span class="string">&quot;out of gas&quot;</span>),
+					<span class="ident">message</span>: <span class="string">&quot;out of gas&quot;</span>.<span class="ident">to_string</span>(),
 					<span class="ident">data</span>: <span class="prelude-val">None</span>,
 				});
 			}
@@ -1492,7 +1464,7 @@
 				<span class="kw">if</span> <span class="ident">data</span>.<span class="ident">len</span>() <span class="op">&gt;</span><span class="op">=</span> <span class="number">68</span> <span class="op">+</span> <span class="ident">message_len</span> <span class="kw">as</span> <span class="ident">usize</span> {
 					<span class="kw">let</span> <span class="ident">body</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>] <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">data</span>[<span class="number">68</span>..<span class="number">68</span> <span class="op">+</span> <span class="ident">message_len</span> <span class="kw">as</span> <span class="ident">usize</span>];
 					<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">reason</span>) <span class="op">=</span> <span class="ident">std::str::from_utf8</span>(<span class="ident">body</span>) {
-						<span class="ident">message</span> <span class="op">=</span> <span class="macro">format!</span>(<span class="string">&quot;{} {}&quot;</span>, <span class="ident">message</span>, <span class="ident">reason</span>.<span class="ident">to_string</span>());
+						<span class="ident">message</span> <span class="op">=</span> <span class="macro">format!</span>(<span class="string">&quot;{} {}&quot;</span>, <span class="ident">message</span>, <span class="ident">reason</span>);
 					}
 				}
 			}
@@ -1548,9 +1520,9 @@
 			<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">max_priority</span>) <span class="op">=</span> <span class="ident">max_priority</span> {
 				<span class="kw">let</span> <span class="ident">max_fee</span> <span class="op">=</span> <span class="ident">max_fee</span>.<span class="ident">unwrap_or_default</span>();
 				<span class="kw">if</span> <span class="ident">max_priority</span> <span class="op">&gt;</span> <span class="ident">max_fee</span> {
-					<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="macro">format!</span>(
-						<span class="string">&quot;Invalid input: `max_priority_fee_per_gas` greater than `max_fee_per_gas`&quot;</span>
-					)));
+					<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(
+						<span class="string">&quot;Invalid input: `max_priority_fee_per_gas` greater than `max_fee_per_gas`&quot;</span>,
+					));
 				}
 			}
 			<span class="prelude-val">Ok</span>(<span class="ident">FeeDetails</span> {

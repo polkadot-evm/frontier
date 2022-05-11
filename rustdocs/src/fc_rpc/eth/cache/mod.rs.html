@@ -609,7 +609,6 @@
 <span id="604">604</span>
 <span id="605">605</span>
 <span id="606">606</span>
-<span id="607">607</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -831,7 +830,7 @@
 
 		<span class="comment">// Data is neither cached nor already requested, so we start fetching</span>
 		<span class="comment">// the data.</span>
-		<span class="ident">wait_list</span>.<span class="ident">insert</span>(<span class="ident">block_hash</span>.<span class="ident">clone</span>(), <span class="macro">vec!</span>[<span class="ident">response_tx</span>]);
+		<span class="ident">wait_list</span>.<span class="ident">insert</span>(<span class="ident">block_hash</span>, <span class="macro">vec!</span>[<span class="ident">response_tx</span>]);
 
 		<span class="ident">spawn_handle</span>.<span class="ident">spawn</span>(<span class="string">&quot;EthBlockDataCacheTask Worker&quot;</span>, <span class="prelude-val">None</span>, <span class="kw">async</span> <span class="kw">move</span> {
 			<span class="kw">let</span> <span class="ident">handler</span> <span class="op">=</span> <span class="ident">overrides</span>
@@ -1147,7 +1146,6 @@
 						}
 						<span class="prelude-val">None</span>
 					})
-					.<span class="ident">map</span>(<span class="op">|</span><span class="ident">r</span><span class="op">|</span> <span class="ident">r</span>)
 					.<span class="ident">collect</span>();
 			} <span class="kw">else</span> {
 				<span class="ident">result</span>.<span class="ident">rewards</span> <span class="op">=</span> <span class="ident">reward_percentiles</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="number">0</span>).<span class="ident">collect</span>();
@@ -1196,7 +1194,7 @@
 				<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">tree_route</span>) <span class="op">=</span> <span class="ident">notification</span>.<span class="ident">tree_route</span> {
 					<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">fee_history_cache</span>) <span class="op">=</span> <span class="kw-2">&amp;mut</span> <span class="ident">fee_history_cache</span>.<span class="ident">lock</span>() {
 						<span class="comment">// Remove retracted.</span>
-						<span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">tree_route</span>.<span class="ident">retracted</span>().<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">hash_and_number</span><span class="op">|</span> {
+						<span class="kw">let</span> <span class="ident">_lock</span> <span class="op">=</span> <span class="ident">tree_route</span>.<span class="ident">retracted</span>().<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">hash_and_number</span><span class="op">|</span> {
 							<span class="kw">let</span> <span class="ident">n</span> <span class="op">=</span> <span class="ident">UniqueSaturatedInto</span>::<span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span><span class="ident">::unique_saturated_into</span>(
 								<span class="ident">hash_and_number</span>.<span class="ident">number</span>,
 							);

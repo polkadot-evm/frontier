@@ -145,14 +145,6 @@
 <span id="140">140</span>
 <span id="141">141</span>
 <span id="142">142</span>
-<span id="143">143</span>
-<span id="144">144</span>
-<span id="145">145</span>
-<span id="146">146</span>
-<span id="147">147</span>
-<span id="148">148</span>
-<span id="149">149</span>
-<span id="150">150</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -240,17 +232,9 @@
 	}
 
 	<span class="attribute">#[<span class="ident">pallet::genesis_config</span>]</span>
+	<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>, <span class="ident">derive</span>(<span class="ident">Default</span>))]</span>
 	<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">GenesisConfig</span> {
 		<span class="kw">pub</span> <span class="ident">min_gas_price</span>: <span class="ident">U256</span>,
-	}
-
-	<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>)]</span>
-	<span class="kw">impl</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">GenesisConfig</span> {
-		<span class="kw">fn</span> <span class="ident">default</span>() -&gt; <span class="self">Self</span> {
-			<span class="self">Self</span> {
-				<span class="ident">min_gas_price</span>: <span class="ident">Default::default</span>(),
-			}
-		}
 	}
 
 	<span class="attribute">#[<span class="ident">pallet::genesis_build</span>]</span>

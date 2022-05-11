@@ -221,6 +221,15 @@
 <span id="216">216</span>
 <span id="217">217</span>
 <span id="218">218</span>
+<span id="219">219</span>
+<span id="220">220</span>
+<span id="221">221</span>
+<span id="222">222</span>
+<span id="223">223</span>
+<span id="224">224</span>
+<span id="225">225</span>
+<span id="226">226</span>
+<span id="227">227</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -238,6 +247,15 @@
 <span class="comment">//</span>
 <span class="comment">// You should have received a copy of the GNU General Public License</span>
 <span class="comment">// along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.</span>
+
+<span class="attribute">#![<span class="ident">allow</span>(
+	<span class="ident">clippy::too_many_arguments</span>,
+	<span class="ident">clippy::large_enum_variant</span>,
+	<span class="ident">clippy::manual_range_contains</span>,
+	<span class="ident">clippy::explicit_counter_loop</span>,
+	<span class="ident">clippy::len_zero</span>,
+	<span class="ident">clippy::new_without_default</span>
+)]</span>
 
 <span class="kw">mod</span> <span class="ident">eth</span>;
 <span class="kw">mod</span> <span class="ident">eth_pubsub</span>;

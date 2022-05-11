@@ -95,15 +95,15 @@
 
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">open_database</span>(<span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="ident">DatabaseSettings</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Database</span><span class="op">&lt;</span><span class="ident">DbHash</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">String</span><span class="op">&gt;</span> {
 	<span class="kw">let</span> <span class="ident">db</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Database</span><span class="op">&lt;</span><span class="ident">DbHash</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">=</span> <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">config</span>.<span class="ident">source</span> {
-		<span class="ident">DatabaseSource::ParityDb</span> { <span class="ident">path</span> } =&gt; <span class="ident">open_parity_db</span>(<span class="kw-2">&amp;</span><span class="ident">path</span>)<span class="question-mark">?</span>,
-		<span class="ident">DatabaseSource::RocksDb</span> { <span class="ident">path</span>, .. } =&gt; <span class="ident">open_kvdb_rocksdb</span>(<span class="kw-2">&amp;</span><span class="ident">path</span>, <span class="bool-val">true</span>)<span class="question-mark">?</span>,
+		<span class="ident">DatabaseSource::ParityDb</span> { <span class="ident">path</span> } =&gt; <span class="ident">open_parity_db</span>(<span class="ident">path</span>)<span class="question-mark">?</span>,
+		<span class="ident">DatabaseSource::RocksDb</span> { <span class="ident">path</span>, .. } =&gt; <span class="ident">open_kvdb_rocksdb</span>(<span class="ident">path</span>, <span class="bool-val">true</span>)<span class="question-mark">?</span>,
 		<span class="ident">DatabaseSource::Auto</span> {
 			<span class="ident">paritydb_path</span>,
 			<span class="ident">rocksdb_path</span>,
 			..
-		} =&gt; <span class="kw">match</span> <span class="ident">open_kvdb_rocksdb</span>(<span class="kw-2">&amp;</span><span class="ident">rocksdb_path</span>, <span class="bool-val">false</span>) {
+		} =&gt; <span class="kw">match</span> <span class="ident">open_kvdb_rocksdb</span>(<span class="ident">rocksdb_path</span>, <span class="bool-val">false</span>) {
 			<span class="prelude-val">Ok</span>(<span class="ident">db</span>) =&gt; <span class="ident">db</span>,
-			<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="ident">open_parity_db</span>(<span class="kw-2">&amp;</span><span class="ident">paritydb_path</span>)<span class="question-mark">?</span>,
+			<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="ident">open_parity_db</span>(<span class="ident">paritydb_path</span>)<span class="question-mark">?</span>,
 		},
 		<span class="kw">_</span> =&gt; <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;Missing feature flags `parity-db`&quot;</span>.<span class="ident">to_string</span>()),
 	};
@@ -132,7 +132,7 @@
 <span class="kw">fn</span> <span class="ident">open_parity_db</span>(<span class="ident">path</span>: <span class="kw-2">&amp;</span><span class="ident">Path</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Database</span><span class="op">&lt;</span><span class="ident">DbHash</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">String</span><span class="op">&gt;</span> {
 	<span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">parity_db::Options::with_columns</span>(<span class="ident">path</span>, <span class="ident"><span class="kw">crate</span>::columns::NUM_COLUMNS</span> <span class="kw">as</span> <span class="ident">u8</span>);
 	<span class="kw">let</span> <span class="ident">db</span> <span class="op">=</span> <span class="ident">parity_db::Db::open_or_create</span>(<span class="kw-2">&amp;</span><span class="ident">config</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;{}&quot;</span>, <span class="ident">err</span>))<span class="question-mark">?</span>;
-	<span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">Arc::new</span>(<span class="ident"><span class="kw">crate</span>::parity_db_adapter::DbAdapter</span>(<span class="ident">db</span>)));
+	<span class="prelude-val">Ok</span>(<span class="ident">Arc::new</span>(<span class="ident"><span class="kw">crate</span>::parity_db_adapter::DbAdapter</span>(<span class="ident">db</span>)))
 }
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;parity-db&quot;</span>))]</span>

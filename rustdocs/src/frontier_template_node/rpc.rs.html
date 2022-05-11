@@ -319,7 +319,7 @@
 
 	<span class="ident">Arc::new</span>(<span class="ident">OverrideHandle</span> {
 		<span class="ident">schemas</span>: <span class="ident">overrides_map</span>,
-		<span class="ident">fallback</span>: <span class="ident">Box::new</span>(<span class="ident">RuntimeApiStorageOverride::new</span>(<span class="ident">client</span>.<span class="ident">clone</span>())),
+		<span class="ident">fallback</span>: <span class="ident">Box::new</span>(<span class="ident">RuntimeApiStorageOverride::new</span>(<span class="ident">client</span>)),
 	})
 }
 
@@ -403,10 +403,10 @@
 		<span class="ident">io</span>.<span class="ident">extend_with</span>(<span class="ident">EthFilterApi::to_delegate</span>(<span class="ident">EthFilter::new</span>(
 			<span class="ident">client</span>.<span class="ident">clone</span>(),
 			<span class="ident">backend</span>,
-			<span class="ident">filter_pool</span>.<span class="ident">clone</span>(),
-			<span class="number">500</span> <span class="kw">as</span> <span class="ident">usize</span>, <span class="comment">// max stored filters</span>
+			<span class="ident">filter_pool</span>,
+			<span class="number">500</span>, <span class="comment">// max stored filters</span>
 			<span class="ident">max_past_logs</span>,
-			<span class="ident">block_data_cache</span>.<span class="ident">clone</span>(),
+			<span class="ident">block_data_cache</span>,
 		)));
 	}
 
@@ -420,9 +420,9 @@
 	<span class="ident">io</span>.<span class="ident">extend_with</span>(<span class="ident">Web3Api::to_delegate</span>(<span class="ident">Web3::new</span>(<span class="ident">client</span>.<span class="ident">clone</span>())));
 
 	<span class="ident">io</span>.<span class="ident">extend_with</span>(<span class="ident">EthPubSubApi::to_delegate</span>(<span class="ident">EthPubSub::new</span>(
-		<span class="ident">pool</span>.<span class="ident">clone</span>(),
-		<span class="ident">client</span>.<span class="ident">clone</span>(),
-		<span class="ident">network</span>.<span class="ident">clone</span>(),
+		<span class="ident">pool</span>,
+		<span class="ident">client</span>,
+		<span class="ident">network</span>,
 		<span class="ident">SubscriptionManager</span>::<span class="op">&lt;</span><span class="ident">HexEncodedIdProvider</span><span class="op">&gt;</span><span class="ident">::with_id_provider</span>(
 			<span class="ident">HexEncodedIdProvider::default</span>(),
 			<span class="ident">Arc::new</span>(<span class="ident">subscription_task_executor</span>),

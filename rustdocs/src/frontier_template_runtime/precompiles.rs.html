@@ -85,7 +85,7 @@
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">used_addresses</span>() -&gt; <span class="ident">sp_std::vec::Vec</span><span class="op">&lt;</span><span class="ident">H160</span><span class="op">&gt;</span> {
 		<span class="macro">sp_std::vec!</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>, <span class="number">1024</span>, <span class="number">1025</span>]
 			.<span class="ident">into_iter</span>()
-			.<span class="ident">map</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="ident">hash</span>(<span class="ident">x</span>))
+			.<span class="ident">map</span>(<span class="ident">hash</span>)
 			.<span class="ident">collect</span>()
 	}
 }

@@ -193,18 +193,6 @@
 <span id="188">188</span>
 <span id="189">189</span>
 <span id="190">190</span>
-<span id="191">191</span>
-<span id="192">192</span>
-<span id="193">193</span>
-<span id="194">194</span>
-<span id="195">195</span>
-<span id="196">196</span>
-<span id="197">197</span>
-<span id="198">198</span>
-<span id="199">199</span>
-<span id="200">200</span>
-<span id="201">201</span>
-<span id="202">202</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -223,15 +211,17 @@
 <span class="comment">// limitations under the License.</span>
 
 <span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
+<span class="attribute">#![<span class="ident">allow</span>(<span class="ident">clippy::too_many_arguments</span>)]</span>
 
 <span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Decode</span>, <span class="ident">Encode</span>};
 <span class="kw">use</span> <span class="ident">ethereum::Log</span>;
 <span class="kw">use</span> <span class="ident">ethereum_types::Bloom</span>;
+<span class="kw">use</span> <span class="ident">scale_info::TypeInfo</span>;
 <span class="kw">use</span> <span class="ident">sp_core</span>::{<span class="ident">H160</span>, <span class="ident">H256</span>, <span class="ident">U256</span>};
-<span class="kw">use</span> <span class="ident">sp_runtime</span>::{<span class="ident">traits::Block</span> <span class="kw">as</span> <span class="ident">BlockT</span>, <span class="ident">Permill</span>};
+<span class="kw">use</span> <span class="ident">sp_runtime</span>::{<span class="ident">traits::Block</span> <span class="kw">as</span> <span class="ident">BlockT</span>, <span class="ident">Permill</span>, <span class="ident">RuntimeDebug</span>};
 <span class="kw">use</span> <span class="ident">sp_std::vec::Vec</span>;
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">Clone</span>, <span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">sp_runtime::RuntimeDebug</span>, <span class="ident">scale_info::TypeInfo</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">Clone</span>, <span class="ident">Default</span>, <span class="ident">RuntimeDebug</span>, <span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">TypeInfo</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">TransactionStatus</span> {
 	<span class="kw">pub</span> <span class="ident">transaction_hash</span>: <span class="ident">H256</span>,
 	<span class="kw">pub</span> <span class="ident">transaction_index</span>: <span class="ident">u32</span>,
@@ -240,20 +230,6 @@
 	<span class="kw">pub</span> <span class="ident">contract_address</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">H160</span><span class="op">&gt;</span>,
 	<span class="kw">pub</span> <span class="ident">logs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Log</span><span class="op">&gt;</span>,
 	<span class="kw">pub</span> <span class="ident">logs_bloom</span>: <span class="ident">Bloom</span>,
-}
-
-<span class="kw">impl</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">TransactionStatus</span> {
-	<span class="kw">fn</span> <span class="ident">default</span>() -&gt; <span class="self">Self</span> {
-		<span class="ident">TransactionStatus</span> {
-			<span class="ident">transaction_hash</span>: <span class="ident">H256::default</span>(),
-			<span class="ident">transaction_index</span>: <span class="number">0</span> <span class="kw">as</span> <span class="ident">u32</span>,
-			<span class="ident">from</span>: <span class="ident">H160::default</span>(),
-			<span class="ident">to</span>: <span class="prelude-val">None</span>,
-			<span class="ident">contract_address</span>: <span class="prelude-val">None</span>,
-			<span class="ident">logs</span>: <span class="ident">Vec::new</span>(),
-			<span class="ident">logs_bloom</span>: <span class="ident">Bloom::default</span>(),
-		}
-	}
 }
 
 <span class="macro">sp_api::decl_runtime_apis!</span> {

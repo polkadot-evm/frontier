@@ -228,7 +228,7 @@
 			<span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">Params::None</span>);
 		}
 
-		<span class="ident">from_value</span>(<span class="ident">v</span>.<span class="ident">clone</span>())
+		<span class="ident">from_value</span>(<span class="ident">v</span>)
 			.<span class="ident">map</span>(<span class="ident">Params::Logs</span>)
 			.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">D::Error::custom</span>(<span class="macro">format!</span>(<span class="string">&quot;Invalid Pub-Sub parameters: {}&quot;</span>, <span class="ident">e</span>)))
 	}

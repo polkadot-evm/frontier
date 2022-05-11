@@ -245,7 +245,7 @@
 				<span class="prelude-val">Ok</span>(<span class="ident">valid</span>.<span class="ident">combine_with</span>(<span class="ident">unsigned_validation</span>))
 			}
 			<span class="ident">CheckedSignature::SelfContained</span>(<span class="ident">signed_info</span>) =&gt; {
-				<span class="self">self</span>.<span class="ident">function</span>.<span class="ident">validate_self_contained</span>(<span class="kw-2">&amp;</span><span class="ident">signed_info</span>).<span class="ident">ok_or</span>(
+				<span class="self">self</span>.<span class="ident">function</span>.<span class="ident">validate_self_contained</span>(<span class="ident">signed_info</span>).<span class="ident">ok_or</span>(
 					<span class="ident">TransactionValidityError::Invalid</span>(<span class="ident">InvalidTransaction::BadProof</span>),
 				)<span class="question-mark">?</span>
 			}

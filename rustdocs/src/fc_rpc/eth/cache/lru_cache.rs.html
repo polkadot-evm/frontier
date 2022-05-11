@@ -149,8 +149,6 @@
 <span id="144">144</span>
 <span id="145">145</span>
 <span id="146">146</span>
-<span id="147">147</span>
-<span id="148">148</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -204,15 +202,15 @@
 		}
 	}
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">k</span>: <span class="kw-2">&amp;</span><span class="ident">K</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">V</span><span class="op">&gt;</span> {
-		<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="kw-2">ref</span> <span class="ident">v</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">cache</span>.<span class="ident">get</span>(<span class="ident">k</span>) {
+		<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">v</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">cache</span>.<span class="ident">get</span>(<span class="ident">k</span>) {
 			<span class="comment">// Update metrics</span>
-			<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="kw-2">ref</span> <span class="ident">metrics</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">metrics</span> {
+			<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">metrics</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">metrics</span> {
 				<span class="ident">metrics</span>.<span class="ident">hits</span>.<span class="ident">inc</span>();
 			}
 			<span class="prelude-val">Some</span>(<span class="ident">v</span>)
 		} <span class="kw">else</span> {
 			<span class="comment">// Update metrics</span>
-			<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="kw-2">ref</span> <span class="ident">metrics</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">metrics</span> {
+			<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">metrics</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">metrics</span> {
 				<span class="ident">metrics</span>.<span class="ident">miss</span>.<span class="ident">inc</span>();
 			}
 			<span class="prelude-val">None</span>
@@ -234,10 +232,8 @@
 		<span class="comment">// Add entry in cache</span>
 		<span class="self">self</span>.<span class="ident">cache</span>.<span class="ident">put</span>(<span class="ident">k</span>, <span class="ident">v</span>);
 		<span class="comment">// Update metrics</span>
-		<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="kw-2">ref</span> <span class="ident">metrics</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">metrics</span> {
-			<span class="ident">metrics</span>
-				.<span class="ident">size</span>
-				.<span class="ident">set</span>(<span class="self">self</span>.<span class="ident">size</span>.<span class="ident">try_into</span>().<span class="ident">unwrap_or</span>(<span class="ident">std::u64::MAX</span>));
+		<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">metrics</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">metrics</span> {
+			<span class="ident">metrics</span>.<span class="ident">size</span>.<span class="ident">set</span>(<span class="self">self</span>.<span class="ident">size</span>);
 		}
 	}
 }

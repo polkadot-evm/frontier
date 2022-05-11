@@ -768,13 +768,6 @@
 <span id="763">763</span>
 <span id="764">764</span>
 <span id="765">765</span>
-<span id="766">766</span>
-<span id="767">767</span>
-<span id="768">768</span>
-<span id="769">769</span>
-<span id="770">770</span>
-<span id="771">771</span>
-<span id="772">772</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -829,6 +822,7 @@
 
 <span class="comment">// Ensure we&#39;re `no_std` when compiling for Wasm.</span>
 <span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
+<span class="attribute">#![<span class="ident">allow</span>(<span class="ident">clippy::too_many_arguments</span>)]</span>
 
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">benchmarking</span>;
 
@@ -1142,17 +1136,9 @@
 	}
 
 	<span class="attribute">#[<span class="ident">pallet::genesis_config</span>]</span>
+	<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>, <span class="ident">derive</span>(<span class="ident">Default</span>))]</span>
 	<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">GenesisConfig</span> {
 		<span class="kw">pub</span> <span class="ident">accounts</span>: <span class="ident">std::collections::BTreeMap</span><span class="op">&lt;</span><span class="ident">H160</span>, <span class="ident">GenesisAccount</span><span class="op">&gt;</span>,
-	}
-
-	<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>)]</span>
-	<span class="kw">impl</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">GenesisConfig</span> {
-		<span class="kw">fn</span> <span class="ident">default</span>() -&gt; <span class="self">Self</span> {
-			<span class="self">Self</span> {
-				<span class="ident">accounts</span>: <span class="ident">Default::default</span>(),
-			}
-		}
 	}
 
 	<span class="attribute">#[<span class="ident">pallet::genesis_build</span>]</span>

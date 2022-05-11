@@ -296,7 +296,7 @@
 			<span class="kw">match</span> (<span class="ident">block</span>, <span class="ident">statuses</span>) {
 				(<span class="prelude-val">Some</span>(<span class="ident">block</span>), <span class="prelude-val">Some</span>(<span class="ident">statuses</span>)) =&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">rich_block_build</span>(
 					<span class="ident">block</span>,
-					<span class="ident">statuses</span>.<span class="ident">into_iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">s</span><span class="op">|</span> <span class="prelude-val">Some</span>(<span class="ident">s</span>)).<span class="ident">collect</span>(),
+					<span class="ident">statuses</span>.<span class="ident">into_iter</span>().<span class="ident">map</span>(<span class="ident">Option::Some</span>).<span class="ident">collect</span>(),
 					<span class="prelude-val">Some</span>(<span class="ident">hash</span>),
 					<span class="ident">full</span>,
 					<span class="ident">base_fee</span>,
@@ -349,7 +349,7 @@
 
 					<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">rich_block_build</span>(
 						<span class="ident">block</span>,
-						<span class="ident">statuses</span>.<span class="ident">into_iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">s</span><span class="op">|</span> <span class="prelude-val">Some</span>(<span class="ident">s</span>)).<span class="ident">collect</span>(),
+						<span class="ident">statuses</span>.<span class="ident">into_iter</span>().<span class="ident">map</span>(<span class="ident">Option::Some</span>).<span class="ident">collect</span>(),
 						<span class="prelude-val">Some</span>(<span class="ident">hash</span>),
 						<span class="ident">full</span>,
 						<span class="ident">base_fee</span>,

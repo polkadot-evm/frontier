@@ -255,10 +255,10 @@
 	<span class="kw">let</span> <span class="ident">signature</span> <span class="op">=</span> <span class="ident">raw_payload</span>.<span class="ident">using_encoded</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">sender</span>.<span class="ident">sign</span>(<span class="ident">e</span>));
 
 	<span class="ident">runtime::UncheckedExtrinsic::new_signed</span>(
-		<span class="ident">call</span>.<span class="ident">clone</span>(),
+		<span class="ident">call</span>,
 		<span class="ident">AccountId32::from</span>(<span class="ident">sender</span>.<span class="ident">public</span>()).<span class="ident">into</span>(),
-		<span class="ident">runtime::Signature::Sr25519</span>(<span class="ident">signature</span>.<span class="ident">clone</span>()),
-		<span class="ident">extra</span>.<span class="ident">clone</span>(),
+		<span class="ident">runtime::Signature::Sr25519</span>(<span class="ident">signature</span>),
+		<span class="ident">extra</span>,
 	)
 }
 

@@ -269,8 +269,6 @@
 <span id="264">264</span>
 <span id="265">265</span>
 <span id="266">266</span>
-<span id="267">267</span>
-<span id="268">268</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -322,8 +320,8 @@
 		};
 
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">points</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">temp_buf</span> <span class="op">=</span> <span class="ident">input</span>.<span class="ident">clone</span>();
-		<span class="kw">while</span> <span class="ident">temp_buf</span>.<span class="ident">len</span>() <span class="op">&gt;</span> <span class="number">0</span> {
+		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">temp_buf</span> <span class="op">=</span> <span class="op">&lt;</span><span class="kw-2">&amp;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span><span class="ident">::clone</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>);
+		<span class="kw">while</span> <span class="op">!</span><span class="ident">temp_buf</span>.<span class="ident">is_empty</span>() {
 			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">buf</span> <span class="op">=</span> [<span class="number">0</span>; <span class="number">32</span>];
 			<span class="ident">buf</span>.<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">temp_buf</span>[<span class="number">0</span>..<span class="number">32</span>]);
 			<span class="kw">let</span> <span class="ident">point</span> <span class="op">=</span> <span class="ident">CompressedRistretto::from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">buf</span>);
@@ -334,9 +332,7 @@
 		<span class="kw">let</span> <span class="ident">sum</span> <span class="op">=</span> <span class="ident">points</span>
 			.<span class="ident">iter</span>()
 			.<span class="ident">fold</span>(<span class="ident">RistrettoPoint::identity</span>(), <span class="op">|</span><span class="ident">acc</span>, <span class="ident">point</span><span class="op">|</span> {
-				<span class="kw">let</span> <span class="ident">pt</span> <span class="op">=</span> <span class="ident">point</span>
-					.<span class="ident">decompress</span>()
-					.<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">RistrettoPoint::identity</span>());
+				<span class="kw">let</span> <span class="ident">pt</span> <span class="op">=</span> <span class="ident">point</span>.<span class="ident">decompress</span>().<span class="ident">unwrap_or_else</span>(<span class="ident">RistrettoPoint::identity</span>);
 				<span class="ident">acc</span> <span class="op">+</span> <span class="ident">pt</span>
 			});
 
@@ -370,7 +366,7 @@
 		<span class="ident">pt_buf</span>.<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>[<span class="number">32</span>..<span class="number">64</span>]);
 		<span class="kw">let</span> <span class="ident">point</span>: <span class="ident">RistrettoPoint</span> <span class="op">=</span> <span class="ident">CompressedRistretto::from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">pt_buf</span>)
 			.<span class="ident">decompress</span>()
-			.<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">RistrettoPoint::identity</span>());
+			.<span class="ident">unwrap_or_else</span>(<span class="ident">RistrettoPoint::identity</span>);
 
 		<span class="kw">let</span> <span class="ident">scalar_mul</span> <span class="op">=</span> <span class="ident">scalar</span> <span class="op">*</span> <span class="ident">point</span>;
 		<span class="prelude-val">Ok</span>((

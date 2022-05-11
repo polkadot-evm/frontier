@@ -122,22 +122,6 @@
 <span id="117">117</span>
 <span id="118">118</span>
 <span id="119">119</span>
-<span id="120">120</span>
-<span id="121">121</span>
-<span id="122">122</span>
-<span id="123">123</span>
-<span id="124">124</span>
-<span id="125">125</span>
-<span id="126">126</span>
-<span id="127">127</span>
-<span id="128">128</span>
-<span id="129">129</span>
-<span id="130">130</span>
-<span id="131">131</span>
-<span id="132">132</span>
-<span id="133">133</span>
-<span id="134">134</span>
-<span id="135">135</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -205,21 +189,17 @@
 	<span class="kw">pub</span> <span class="ident">transaction_type</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
 }
 
-<span class="kw">impl</span> <span class="ident">Into</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">TransactionMessage</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">TransactionRequest</span> {
-	<span class="kw">fn</span> <span class="ident">into</span>(<span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">TransactionMessage</span><span class="op">&gt;</span> {
-		<span class="kw">match</span> (
-			<span class="self">self</span>.<span class="ident">gas_price</span>,
-			<span class="self">self</span>.<span class="ident">max_fee_per_gas</span>,
-			<span class="self">self</span>.<span class="ident">access_list</span>.<span class="ident">clone</span>(),
-		) {
+<span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">TransactionRequest</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">TransactionMessage</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">req</span>: <span class="ident">TransactionRequest</span>) -&gt; <span class="self">Self</span> {
+		<span class="kw">match</span> (<span class="ident">req</span>.<span class="ident">gas_price</span>, <span class="ident">req</span>.<span class="ident">max_fee_per_gas</span>, <span class="ident">req</span>.<span class="ident">access_list</span>.<span class="ident">clone</span>()) {
 			<span class="comment">// Legacy</span>
 			(<span class="prelude-val">Some</span>(<span class="kw">_</span>), <span class="prelude-val">None</span>, <span class="prelude-val">None</span>) =&gt; <span class="prelude-val">Some</span>(<span class="ident">TransactionMessage::Legacy</span>(<span class="ident">LegacyTransactionMessage</span> {
 				<span class="ident">nonce</span>: <span class="ident">U256::zero</span>(),
-				<span class="ident">gas_price</span>: <span class="self">self</span>.<span class="ident">gas_price</span>.<span class="ident">unwrap_or_default</span>(),
-				<span class="ident">gas_limit</span>: <span class="self">self</span>.<span class="ident">gas</span>.<span class="ident">unwrap_or_default</span>(),
-				<span class="ident">value</span>: <span class="self">self</span>.<span class="ident">value</span>.<span class="ident">unwrap_or</span>(<span class="ident">U256::zero</span>()),
-				<span class="ident">input</span>: <span class="self">self</span>.<span class="ident">data</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">s</span><span class="op">|</span> <span class="ident">s</span>.<span class="ident">into_vec</span>()).<span class="ident">unwrap_or_default</span>(),
-				<span class="ident">action</span>: <span class="kw">match</span> <span class="self">self</span>.<span class="ident">to</span> {
+				<span class="ident">gas_price</span>: <span class="ident">req</span>.<span class="ident">gas_price</span>.<span class="ident">unwrap_or_default</span>(),
+				<span class="ident">gas_limit</span>: <span class="ident">req</span>.<span class="ident">gas</span>.<span class="ident">unwrap_or_default</span>(),
+				<span class="ident">value</span>: <span class="ident">req</span>.<span class="ident">value</span>.<span class="ident">unwrap_or_default</span>(),
+				<span class="ident">input</span>: <span class="ident">req</span>.<span class="ident">data</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">s</span><span class="op">|</span> <span class="ident">s</span>.<span class="ident">into_vec</span>()).<span class="ident">unwrap_or_default</span>(),
+				<span class="ident">action</span>: <span class="kw">match</span> <span class="ident">req</span>.<span class="ident">to</span> {
 					<span class="prelude-val">Some</span>(<span class="ident">to</span>) =&gt; <span class="ident">ethereum::TransactionAction::Call</span>(<span class="ident">to</span>),
 					<span class="prelude-val">None</span> =&gt; <span class="ident">ethereum::TransactionAction::Create</span>,
 				},
@@ -228,45 +208,33 @@
 			<span class="comment">// EIP2930</span>
 			(<span class="kw">_</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(<span class="kw">_</span>)) =&gt; <span class="prelude-val">Some</span>(<span class="ident">TransactionMessage::EIP2930</span>(<span class="ident">EIP2930TransactionMessage</span> {
 				<span class="ident">nonce</span>: <span class="ident">U256::zero</span>(),
-				<span class="ident">gas_price</span>: <span class="self">self</span>.<span class="ident">gas_price</span>.<span class="ident">unwrap_or_default</span>(),
-				<span class="ident">gas_limit</span>: <span class="self">self</span>.<span class="ident">gas</span>.<span class="ident">unwrap_or_default</span>(),
-				<span class="ident">value</span>: <span class="self">self</span>.<span class="ident">value</span>.<span class="ident">unwrap_or</span>(<span class="ident">U256::zero</span>()),
-				<span class="ident">input</span>: <span class="self">self</span>.<span class="ident">data</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">s</span><span class="op">|</span> <span class="ident">s</span>.<span class="ident">into_vec</span>()).<span class="ident">unwrap_or_default</span>(),
-				<span class="ident">action</span>: <span class="kw">match</span> <span class="self">self</span>.<span class="ident">to</span> {
+				<span class="ident">gas_price</span>: <span class="ident">req</span>.<span class="ident">gas_price</span>.<span class="ident">unwrap_or_default</span>(),
+				<span class="ident">gas_limit</span>: <span class="ident">req</span>.<span class="ident">gas</span>.<span class="ident">unwrap_or_default</span>(),
+				<span class="ident">value</span>: <span class="ident">req</span>.<span class="ident">value</span>.<span class="ident">unwrap_or_default</span>(),
+				<span class="ident">input</span>: <span class="ident">req</span>.<span class="ident">data</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">s</span><span class="op">|</span> <span class="ident">s</span>.<span class="ident">into_vec</span>()).<span class="ident">unwrap_or_default</span>(),
+				<span class="ident">action</span>: <span class="kw">match</span> <span class="ident">req</span>.<span class="ident">to</span> {
 					<span class="prelude-val">Some</span>(<span class="ident">to</span>) =&gt; <span class="ident">ethereum::TransactionAction::Call</span>(<span class="ident">to</span>),
 					<span class="prelude-val">None</span> =&gt; <span class="ident">ethereum::TransactionAction::Create</span>,
 				},
 				<span class="ident">chain_id</span>: <span class="number">0</span>,
-				<span class="ident">access_list</span>: <span class="self">self</span>
-					.<span class="ident">access_list</span>
-					.<span class="ident">unwrap</span>()
-					.<span class="ident">into_iter</span>()
-					.<span class="ident">map</span>(<span class="op">|</span><span class="ident">item</span><span class="op">|</span> <span class="ident">item</span>)
-					.<span class="ident">collect</span>(),
+				<span class="ident">access_list</span>: <span class="ident">req</span>.<span class="ident">access_list</span>.<span class="ident">unwrap_or_default</span>(),
 			})),
 			<span class="comment">// EIP1559</span>
 			(<span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(<span class="kw">_</span>), <span class="kw">_</span>) <span class="op">|</span> (<span class="prelude-val">None</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>) =&gt; {
 				<span class="comment">// Empty fields fall back to the canonical transaction schema.</span>
 				<span class="prelude-val">Some</span>(<span class="ident">TransactionMessage::EIP1559</span>(<span class="ident">EIP1559TransactionMessage</span> {
 					<span class="ident">nonce</span>: <span class="ident">U256::zero</span>(),
-					<span class="ident">max_fee_per_gas</span>: <span class="self">self</span>.<span class="ident">max_fee_per_gas</span>.<span class="ident">unwrap_or_default</span>(),
-					<span class="ident">max_priority_fee_per_gas</span>: <span class="self">self</span>
-						.<span class="ident">max_priority_fee_per_gas</span>
-						.<span class="ident">unwrap_or</span>(<span class="ident">U256::from</span>(<span class="number">0</span>)),
-					<span class="ident">gas_limit</span>: <span class="self">self</span>.<span class="ident">gas</span>.<span class="ident">unwrap_or_default</span>(),
-					<span class="ident">value</span>: <span class="self">self</span>.<span class="ident">value</span>.<span class="ident">unwrap_or</span>(<span class="ident">U256::zero</span>()),
-					<span class="ident">input</span>: <span class="self">self</span>.<span class="ident">data</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">s</span><span class="op">|</span> <span class="ident">s</span>.<span class="ident">into_vec</span>()).<span class="ident">unwrap_or_default</span>(),
-					<span class="ident">action</span>: <span class="kw">match</span> <span class="self">self</span>.<span class="ident">to</span> {
+					<span class="ident">max_fee_per_gas</span>: <span class="ident">req</span>.<span class="ident">max_fee_per_gas</span>.<span class="ident">unwrap_or_default</span>(),
+					<span class="ident">max_priority_fee_per_gas</span>: <span class="ident">req</span>.<span class="ident">max_priority_fee_per_gas</span>.<span class="ident">unwrap_or_default</span>(),
+					<span class="ident">gas_limit</span>: <span class="ident">req</span>.<span class="ident">gas</span>.<span class="ident">unwrap_or_default</span>(),
+					<span class="ident">value</span>: <span class="ident">req</span>.<span class="ident">value</span>.<span class="ident">unwrap_or_default</span>(),
+					<span class="ident">input</span>: <span class="ident">req</span>.<span class="ident">data</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">s</span><span class="op">|</span> <span class="ident">s</span>.<span class="ident">into_vec</span>()).<span class="ident">unwrap_or_default</span>(),
+					<span class="ident">action</span>: <span class="kw">match</span> <span class="ident">req</span>.<span class="ident">to</span> {
 						<span class="prelude-val">Some</span>(<span class="ident">to</span>) =&gt; <span class="ident">ethereum::TransactionAction::Call</span>(<span class="ident">to</span>),
 						<span class="prelude-val">None</span> =&gt; <span class="ident">ethereum::TransactionAction::Create</span>,
 					},
 					<span class="ident">chain_id</span>: <span class="number">0</span>,
-					<span class="ident">access_list</span>: <span class="self">self</span>
-						.<span class="ident">access_list</span>
-						.<span class="ident">unwrap_or</span>(<span class="ident">Vec::new</span>())
-						.<span class="ident">into_iter</span>()
-						.<span class="ident">map</span>(<span class="op">|</span><span class="ident">item</span><span class="op">|</span> <span class="ident">item</span>)
-						.<span class="ident">collect</span>(),
+					<span class="ident">access_list</span>: <span class="ident">req</span>.<span class="ident">access_list</span>.<span class="ident">unwrap_or_default</span>(),
 				}))
 			}
 			<span class="kw">_</span> =&gt; <span class="prelude-val">None</span>,
