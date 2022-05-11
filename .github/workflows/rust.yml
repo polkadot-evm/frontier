@@ -2,9 +2,13 @@ name: Rust
 
 on:
   push:
-    branches: [ master ]
+    branches:
+      - master
+      - 'polkadot-v**'
   pull_request:
-    branches: [ master ]
+    branches:
+      - master
+      - 'polkadot-v**'
 
 jobs:
   build:
@@ -15,13 +19,11 @@ jobs:
         toolchain: [nightly-2022-04-07]
     steps:
     - uses: actions/checkout@v2
-    - name: Submodules
-      run: git submodule update --init --recursive
     - name: Rust Setup
       uses: actions-rs/toolchain@v1
       with:
         profile: minimal
-        toolchain: ${{ matrix.toolchain }}
+        toolchain: nightly-2022-05-02
         target: wasm32-unknown-unknown
         override: true
     - name: Run tests
@@ -35,13 +37,11 @@ jobs:
         toolchain: [nightly-2022-04-07]
     steps:
     - uses: actions/checkout@v2
-    - name: Submodules
-      run: git submodule update --init --recursive
     - name: Rust Setup
       uses: actions-rs/toolchain@v1
       with:
         profile: minimal
-        toolchain: ${{ matrix.toolchain }}
+        toolchain: nightly-2022-05-02
         target: wasm32-unknown-unknown
         override: true
     - name: Build manual seal client
@@ -65,13 +65,11 @@ jobs:
         toolchain: [nightly-2022-04-07]
     steps:
     - uses: actions/checkout@v2
-    - name: Submodules
-      run: git submodule update --init --recursive
     - name: Rust Setup
       uses: actions-rs/toolchain@v1
       with:
         profile: minimal
-        toolchain: ${{ matrix.toolchain }}
+        toolchain: nightly-2022-05-02
         target: wasm32-unknown-unknown
         override: true
         components: rustfmt, clippy

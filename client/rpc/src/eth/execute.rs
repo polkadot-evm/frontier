@@ -27,7 +27,7 @@ use sc_network::ExHashT;
 use sc_transaction_pool::ChainApi;
 use sp_api::{ApiExt, ProvideRuntimeApi};
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
-use sp_blockchain::HeaderBackend;
+use sp_blockchain::{BlockStatus, HeaderBackend};
 use sp_runtime::{
 	generic::BlockId,
 	traits::{BlakeTwo256, Block as BlockT},
@@ -40,6 +40,9 @@ use crate::{
 	eth::{pending_runtime_api, Eth},
 	frontier_backend_client, internal_err,
 };
+
+/// Default JSONRPC error code return by geth
+pub const JSON_RPC_ERROR_DEFAULT: i64 = -32000;
 
 impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi> Eth<B, C, P, CT, BE, H, A>
 where
@@ -88,6 +91,14 @@ where
 				(id, api)
 			}
 		};
+
+		if let Ok(BlockStatus::Unknown) = self.client.status(id) {
+			return Err(Error {
+				code: JSON_RPC_ERROR_DEFAULT.into(),
+				message: String::from("header not found"),
+				data: None,
+			});
+		}
 
 		let api_version =
 			if let Ok(Some(api_version)) = api.api_version::<dyn EthereumRuntimeRPCApi<B>>(&id) {

@@ -33,7 +33,7 @@ mod signer;
 mod web3;
 
 pub use self::{
-	eth::{Eth, EthBlockDataCache, EthFilter, EthTask},
+	eth::{Eth, EthBlockDataCacheTask, EthFilter, EthTask},
 	eth_pubsub::{EthPubSub, HexEncodedIdProvider},
 	net::Net,
 	overrides::{
@@ -43,7 +43,6 @@ pub use self::{
 	signer::{EthDevSigner, EthSigner},
 	web3::Web3,
 };
-
 pub use ethereum::TransactionV2 as EthereumTransaction;
 pub use fc_rpc_core::{EthApi, EthFilterApi, EthPubSubApi, NetApi, Web3Api};
 

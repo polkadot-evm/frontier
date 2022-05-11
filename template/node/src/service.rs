@@ -368,11 +368,12 @@ pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, Ser
 	let enable_grandpa = !config.disable_grandpa;
 	let prometheus_registry = config.prometheus_registry().cloned();
 	let overrides = crate::rpc::overrides_handle(client.clone());
-	let block_data_cache = Arc::new(fc_rpc::EthBlockDataCache::new(
+	let block_data_cache = Arc::new(fc_rpc::EthBlockDataCacheTask::new(
 		task_manager.spawn_handle(),
 		overrides.clone(),
 		50,
 		50,
+		prometheus_registry.clone(),
 	));
 
 	let rpc_extensions_builder = {
@@ -595,11 +596,12 @@ pub fn new_full(config: Configuration, cli: &Cli) -> Result<TaskManager, Service
 	let role = config.role.clone();
 	let prometheus_registry = config.prometheus_registry().cloned();
 	let overrides = crate::rpc::overrides_handle(client.clone());
-	let block_data_cache = Arc::new(fc_rpc::EthBlockDataCache::new(
+	let block_data_cache = Arc::new(fc_rpc::EthBlockDataCacheTask::new(
 		task_manager.spawn_handle(),
 		overrides.clone(),
 		50,
 		50,
+		prometheus_registry.clone(),
 	));
 	// Channel for the rpc handler to communicate with the authorship task.
 	let (command_sink, commands_stream) = futures::channel::mpsc::channel(1000);
