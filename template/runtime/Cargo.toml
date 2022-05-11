@@ -60,9 +60,11 @@ pallet-evm-precompile-simple = { path = "../../frame/evm/precompile/simple", def
 substrate-wasm-builder = { version = "5.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 
 [features]
-default = ["std", "aura"]
+default = ["std", "aura", "with-rocksdb-weights"]
 aura = []
-manual-seal = []
+manual-seal = ["with-rocksdb-weights"]
+with-rocksdb-weights = []
+with-paritydb-weights = []
 std = [
 	"serde",
 

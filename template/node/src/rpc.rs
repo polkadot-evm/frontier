@@ -21,7 +21,7 @@ use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 use sp_runtime::traits::BlakeTwo256;
 // Frontier
 use fc_rpc::{
-	EthBlockDataCache, OverrideHandle, RuntimeApiStorageOverride, SchemaV1Override,
+	EthBlockDataCacheTask, OverrideHandle, RuntimeApiStorageOverride, SchemaV1Override,
 	SchemaV2Override, SchemaV3Override, StorageOverride,
 };
 use fc_rpc_core::types::{FeeHistoryCache, FeeHistoryCacheLimit, FilterPool};
@@ -58,7 +58,7 @@ pub struct FullDeps<C, P, A: ChainApi> {
 	/// Ethereum data access overrides.
 	pub overrides: Arc<OverrideHandle<Block>>,
 	/// Cache for Ethereum block data.
-	pub block_data_cache: Arc<EthBlockDataCache<Block>>,
+	pub block_data_cache: Arc<EthBlockDataCacheTask<Block>>,
 	/// Manual seal command sink
 	#[cfg(feature = "manual-seal")]
 	pub command_sink:
@@ -120,9 +120,8 @@ where
 	A: ChainApi<Block = Block> + 'static,
 {
 	use fc_rpc::{
-		EthApi, EthApiServer, EthDevSigner, EthFilterApi, EthFilterApiServer, EthPubSubApi,
-		EthPubSubApiServer, EthSigner, HexEncodedIdProvider, NetApi, NetApiServer, Web3Api,
-		Web3ApiServer,
+		Eth, EthApi, EthDevSigner, EthFilter, EthFilterApi, EthPubSub, EthPubSubApi, EthSigner,
+		HexEncodedIdProvider, Net, NetApi, Web3, Web3Api,
 	};
 	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApi};
 	use substrate_frame_rpc_system::{FullSystem, SystemApi};
@@ -161,7 +160,7 @@ where
 		signers.push(Box::new(EthDevSigner::new()) as Box<dyn EthSigner>);
 	}
 
-	io.extend_with(EthApiServer::to_delegate(EthApi::new(
+	io.extend_with(EthApi::to_delegate(Eth::new(
 		client.clone(),
 		pool.clone(),
 		graph,
@@ -177,7 +176,7 @@ where
 	)));
 
 	if let Some(filter_pool) = filter_pool {
-		io.extend_with(EthFilterApiServer::to_delegate(EthFilterApi::new(
+		io.extend_with(EthFilterApi::to_delegate(EthFilter::new(
 			client.clone(),
 			backend,
 			filter_pool.clone(),
@@ -187,16 +186,16 @@ where
 		)));
 	}
 
-	io.extend_with(NetApiServer::to_delegate(NetApi::new(
+	io.extend_with(NetApi::to_delegate(Net::new(
 		client.clone(),
 		network.clone(),
 		// Whether to format the `peer_count` response as Hex (default) or not.
 		true,
 	)));
 
-	io.extend_with(Web3ApiServer::to_delegate(Web3Api::new(client.clone())));
+	io.extend_with(Web3Api::to_delegate(Web3::new(client.clone())));
 
-	io.extend_with(EthPubSubApiServer::to_delegate(EthPubSubApi::new(
+	io.extend_with(EthPubSubApi::to_delegate(EthPubSub::new(
 		pool.clone(),
 		client.clone(),
 		network.clone(),

@@ -46,7 +46,7 @@ mod tests {
 	) -> Result<Arc<fc_db::Backend<OpaqueBlock>>, String> {
 		Ok(Arc::new(fc_db::Backend::<OpaqueBlock>::new(
 			&fc_db::DatabaseSettings {
-				source: fc_db::DatabaseSettingsSrc::RocksDb {
+				source: sc_client_db::DatabaseSource::RocksDb {
 					path,
 					cache_size: 0,
 				},
@@ -109,7 +109,7 @@ mod tests {
 		executor::block_on(client.import(BlockOrigin::Own, block)).unwrap();
 
 		// Give some time to consume and process the import notification stream.
-		thread::sleep(time::Duration::from_millis(1));
+		thread::sleep(time::Duration::from_millis(10));
 
 		// Expect: genesis still cached (V1), latest block cached (V2)
 		assert_eq!(

@@ -27,7 +27,7 @@ use sc_network::ExHashT;
 use sc_transaction_pool::ChainApi;
 use sp_api::{ApiExt, ProvideRuntimeApi};
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
-use sp_blockchain::HeaderBackend;
+use sp_blockchain::{BlockStatus, HeaderBackend};
 use sp_runtime::{
 	generic::BlockId,
 	traits::{BlakeTwo256, Block as BlockT},
@@ -37,11 +37,14 @@ use fc_rpc_core::types::*;
 use fp_rpc::EthereumRuntimeRPCApi;
 
 use crate::{
-	eth::{pending_runtime_api, EthApi},
+	eth::{pending_runtime_api, Eth},
 	frontier_backend_client, internal_err,
 };
 
-impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi> EthApi<B, C, P, CT, BE, H, A>
+/// Default JSONRPC error code return by geth
+pub const JSON_RPC_ERROR_DEFAULT: i64 = -32000;
+
+impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi> Eth<B, C, P, CT, BE, H, A>
 where
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
@@ -88,6 +91,14 @@ where
 				(id, api)
 			}
 		};
+
+		if let Ok(BlockStatus::Unknown) = self.client.status(id) {
+			return Err(Error {
+				code: JSON_RPC_ERROR_DEFAULT.into(),
+				message: String::from("header not found"),
+				data: None,
+			});
+		}
 
 		let api_version =
 			if let Ok(Some(api_version)) = api.api_version::<dyn EthereumRuntimeRPCApi<B>>(&id) {
@@ -561,7 +572,7 @@ where
 
 			// Verify that the transaction succeed with highest capacity
 			let cap = highest;
-			let estimate_mode = true;
+			let estimate_mode = !cfg!(feature = "rpc_binary_search_estimate");
 			let ExecutableResult {
 				data,
 				exit_reason,
