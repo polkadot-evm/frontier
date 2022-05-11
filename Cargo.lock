@@ -1611,7 +1611,7 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-storage",
- "substrate-prometheus-endpoint 0.10.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
+ "substrate-prometheus-endpoint",
  "substrate-test-runtime-client",
  "tempfile",
  "tokio",
@@ -5661,7 +5661,7 @@ dependencies = [
  "sp-core",
  "sp-inherents",
  "sp-runtime",
- "substrate-prometheus-endpoint 0.10.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.19)",
+ "substrate-prometheus-endpoint",
 ]
 
 [[package]]
@@ -5771,7 +5771,7 @@ dependencies = [
  "sp-state-machine",
  "sp-storage",
  "sp-trie",
- "substrate-prometheus-endpoint 0.10.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.19)",
+ "substrate-prometheus-endpoint",
 ]
 
 [[package]]
@@ -5819,7 +5819,7 @@ dependencies = [
  "sp-core",
  "sp-runtime",
  "sp-state-machine",
- "substrate-prometheus-endpoint 0.10.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.19)",
+ "substrate-prometheus-endpoint",
  "thiserror",
 ]
 
@@ -5848,7 +5848,7 @@ dependencies = [
  "sp-inherents",
  "sp-keystore",
  "sp-runtime",
- "substrate-prometheus-endpoint 0.10.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.19)",
+ "substrate-prometheus-endpoint",
  "thiserror",
 ]
 
@@ -5891,7 +5891,7 @@ dependencies = [
  "sp-keystore",
  "sp-runtime",
  "sp-version",
- "substrate-prometheus-endpoint 0.10.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.19)",
+ "substrate-prometheus-endpoint",
  "thiserror",
 ]
 
@@ -5940,7 +5940,7 @@ dependencies = [
  "sp-keystore",
  "sp-runtime",
  "sp-timestamp",
- "substrate-prometheus-endpoint 0.10.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.19)",
+ "substrate-prometheus-endpoint",
  "thiserror",
 ]
 
@@ -6083,7 +6083,7 @@ dependencies = [
  "sp-finality-grandpa",
  "sp-keystore",
  "sp-runtime",
- "substrate-prometheus-endpoint 0.10.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.19)",
+ "substrate-prometheus-endpoint",
  "thiserror",
 ]
 
@@ -6161,7 +6161,7 @@ dependencies = [
  "sp-core",
  "sp-finality-grandpa",
  "sp-runtime",
- "substrate-prometheus-endpoint 0.10.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.19)",
+ "substrate-prometheus-endpoint",
  "thiserror",
  "unsigned-varint 0.6.0",
  "void",
@@ -6181,7 +6181,7 @@ dependencies = [
  "lru 0.7.3",
  "sc-network",
  "sp-runtime",
- "substrate-prometheus-endpoint 0.10.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.19)",
+ "substrate-prometheus-endpoint",
  "tracing",
 ]
 
@@ -6232,7 +6232,7 @@ version = "0.10.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.19#174735ea1bb5fc4513519c45181d8df63d86f613"
 dependencies = [
  "log",
- "substrate-prometheus-endpoint 0.10.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.19)",
+ "substrate-prometheus-endpoint",
 ]
 
 [[package]]
@@ -6305,7 +6305,7 @@ dependencies = [
  "jsonrpc-ws-server",
  "log",
  "serde_json",
- "substrate-prometheus-endpoint 0.10.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.19)",
+ "substrate-prometheus-endpoint",
  "tokio",
 ]
 
@@ -6365,7 +6365,7 @@ dependencies = [
  "sp-transaction-storage-proof",
  "sp-trie",
  "sp-version",
- "substrate-prometheus-endpoint 0.10.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.19)",
+ "substrate-prometheus-endpoint",
  "tempfile",
  "thiserror",
  "tokio",
@@ -6470,7 +6470,7 @@ dependencies = [
  "sp-runtime",
  "sp-tracing",
  "sp-transaction-pool",
- "substrate-prometheus-endpoint 0.10.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.19)",
+ "substrate-prometheus-endpoint",
  "thiserror",
 ]
 
@@ -7700,19 +7700,6 @@ dependencies = [
  "sp-blockchain",
  "sp-core",
  "sp-runtime",
-]
-
-[[package]]
-name = "substrate-prometheus-endpoint"
-version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#1a5ad4c988c47484fd582e6159ed52a47919247a"
-dependencies = [
- "futures-util",
- "hyper",
- "log",
- "prometheus",
- "thiserror",
- "tokio",
 ]
 
 [[package]]
