@@ -22,10 +22,10 @@ use sp_core::{
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
 	traits::{
-		AccountIdLookup, BlakeTwo256, Block as BlockT, Dispatchable, IdentifyAccount, NumberFor,
-		PostDispatchInfoOf, Verify,
+		AccountIdLookup, BlakeTwo256, Block as BlockT, DispatchInfoOf, Dispatchable,
+		IdentifyAccount, NumberFor, PostDispatchInfoOf, Verify,
 	},
-	transaction_validity::{TransactionSource, TransactionValidity, TransactionValidityError},
+	transaction_validity::{TransactionSource, TransactionValidity, TransactionValidityError, InvalidTransaction},
 	ApplyExtrinsicResult, MultiSignature,
 };
 use sp_std::{marker::PhantomData, prelude::*};
@@ -477,10 +477,17 @@ impl fp_self_contained::SelfContainedCall for Call {
 		}
 	}
 
-	fn validate_self_contained(&self, info: &Self::SignedInfo) -> Option<TransactionValidity> {
+	fn validate_self_contained(
+		&self,
+		info: &Self::SignedInfo,
+		dispatch_info: &DispatchInfoOf<Call>,
+		len: usize,
+	) -> TransactionValidity {
 		match self {
-			Call::Ethereum(call) => call.validate_self_contained(info),
-			_ => None,
+			Call::Ethereum(call) => call.validate_self_contained(info, dispatch_info, len),
+			_ => Err(TransactionValidityError::Invalid(
+				InvalidTransaction::BadProof,
+			)),
 		}
 	}
 
