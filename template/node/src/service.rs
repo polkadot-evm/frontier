@@ -536,7 +536,6 @@ pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, Ser
 	}
 
 	network_starter.start_network();
-
 	Ok(task_manager)
 }
 
