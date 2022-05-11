@@ -16,9 +16,9 @@ targets = ["x86_64-unknown-linux-gnu"]
 evm = { version = "0.33.1", default-features = false, features = ["with-codec"] }
 serde = { version = "1.0.101", features = ["derive"], optional = true }
 
-codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.18", default-features = false }
-sp-std = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.18", default-features = false }
+codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.19", default-features = false }
+sp-std = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.19", default-features = false }
 
 [features]
 default = ["std"]
