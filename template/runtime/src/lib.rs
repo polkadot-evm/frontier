@@ -484,12 +484,10 @@ impl fp_self_contained::SelfContainedCall for Call {
 		info: &Self::SignedInfo,
 		dispatch_info: &DispatchInfoOf<Call>,
 		len: usize,
-	) -> TransactionValidity {
+	) -> Option<TransactionValidity> {
 		match self {
 			Call::Ethereum(call) => call.validate_self_contained(info, dispatch_info, len),
-			_ => Err(TransactionValidityError::Invalid(
-				InvalidTransaction::BadProof,
-			)),
+			_ => None,
 		}
 	}
 

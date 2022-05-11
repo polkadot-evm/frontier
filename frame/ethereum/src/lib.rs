@@ -155,15 +155,18 @@ where
 		origin: &H160,
 		dispatch_info: &DispatchInfoOf<T::Call>,
 		len: usize,
-	) -> TransactionValidity {
+	) -> Option<TransactionValidity> {
 		if let Call::transact { transaction } = self {
-			let weight_validation = CheckWeight::<T>::do_validate(dispatch_info, len)?;
-			let pool_validation = Pallet::<T>::validate_transaction_in_pool(*origin, transaction)?;
-			Ok(weight_validation.combine_with(pool_validation))
-		} else {
-			Err(TransactionValidityError::Invalid(
-				InvalidTransaction::BadProof,
+			if let Err(e) = CheckWeight::<T>::do_validate(dispatch_info, len) {
+				return Some(Err(e));
+			}
+
+			Some(Pallet::<T>::validate_transaction_in_pool(
+				*origin,
+				transaction,
 			))
+		} else {
+			None
 		}
 	}
 }

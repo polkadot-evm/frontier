@@ -48,7 +48,7 @@ pub trait SelfContainedCall: Dispatchable {
 		info: &Self::SignedInfo,
 		dispatch_info: &DispatchInfoOf<Self>,
 		len: usize,
-	) -> TransactionValidity;
+	) -> Option<TransactionValidity>;
 	/// Do any pre-flight stuff for a self-contained call.
 	///
 	/// Note this function by default delegates to `validate_self_contained`, so that
