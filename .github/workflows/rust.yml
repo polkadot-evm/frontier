@@ -10,16 +10,13 @@ jobs:
   build:
     name: 'Run Rust tests'
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        toolchain: [nightly-2022-05-02]
     steps:
     - uses: actions/checkout@v2
     - name: Rust Setup
       uses: actions-rs/toolchain@v1
       with:
         profile: minimal
-        toolchain: ${{ matrix.toolchain }}
+        toolchain: nightly-2022-05-02
         target: wasm32-unknown-unknown
         override: true
     - name: Run tests
@@ -28,16 +25,13 @@ jobs:
   integration:
     name: 'Run integration tests'
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        toolchain: [nightly-2022-05-02]
     steps:
     - uses: actions/checkout@v2
     - name: Rust Setup
       uses: actions-rs/toolchain@v1
       with:
         profile: minimal
-        toolchain: ${{ matrix.toolchain }}
+        toolchain: nightly-2022-05-02
         target: wasm32-unknown-unknown
         override: true
     - name: Build manual seal client
@@ -56,16 +50,13 @@ jobs:
   lint:
     name: 'Run lints'
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        toolchain: [nightly-2022-05-02]
     steps:
     - uses: actions/checkout@v2
     - name: Rust Setup
       uses: actions-rs/toolchain@v1
       with:
         profile: minimal
-        toolchain: ${{ matrix.toolchain }}
+        toolchain: nightly-2022-05-02
         target: wasm32-unknown-unknown
         override: true
         components: rustfmt
