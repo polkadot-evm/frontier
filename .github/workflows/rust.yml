@@ -14,9 +14,6 @@ jobs:
   build:
     name: 'Run Rust tests'
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        toolchain: [nightly-2022-04-07]
     steps:
     - uses: actions/checkout@v2
     - name: Rust Setup
@@ -32,9 +29,6 @@ jobs:
   integration:
     name: 'Run integration tests'
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        toolchain: [nightly-2022-04-07]
     steps:
     - uses: actions/checkout@v2
     - name: Rust Setup
@@ -60,9 +54,6 @@ jobs:
   lint:
     name: 'Run lints'
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        toolchain: [nightly-2022-04-07]
     steps:
     - uses: actions/checkout@v2
     - name: Rust Setup
