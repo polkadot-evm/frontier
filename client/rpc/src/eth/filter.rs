@@ -34,30 +34,30 @@ use sp_runtime::{
 	},
 };
 
-use fc_rpc_core::{types::*, EthFilterApi as EthFilterApiT};
+use fc_rpc_core::{types::*, EthFilterApi};
 use fp_rpc::{EthereumRuntimeRPCApi, TransactionStatus};
 use fp_storage::EthereumStorageSchema;
 
-use crate::{frontier_backend_client, internal_err, EthBlockDataCache};
+use crate::{eth::cache::EthBlockDataCacheTask, frontier_backend_client, internal_err};
 
-pub struct EthFilterApi<B: BlockT, C, BE> {
+pub struct EthFilter<B: BlockT, C, BE> {
 	client: Arc<C>,
 	backend: Arc<fc_db::Backend<B>>,
 	filter_pool: FilterPool,
 	max_stored_filters: usize,
 	max_past_logs: u32,
-	block_data_cache: Arc<EthBlockDataCache<B>>,
+	block_data_cache: Arc<EthBlockDataCacheTask<B>>,
 	_marker: PhantomData<BE>,
 }
 
-impl<B: BlockT, C, BE> EthFilterApi<B, C, BE> {
+impl<B: BlockT, C, BE> EthFilter<B, C, BE> {
 	pub fn new(
 		client: Arc<C>,
 		backend: Arc<fc_db::Backend<B>>,
 		filter_pool: FilterPool,
 		max_stored_filters: usize,
 		max_past_logs: u32,
-		block_data_cache: Arc<EthBlockDataCache<B>>,
+		block_data_cache: Arc<EthBlockDataCacheTask<B>>,
 	) -> Self {
 		Self {
 			client,
@@ -71,7 +71,7 @@ impl<B: BlockT, C, BE> EthFilterApi<B, C, BE> {
 	}
 }
 
-impl<B, C, BE> EthFilterApi<B, C, BE>
+impl<B, C, BE> EthFilter<B, C, BE>
 where
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	C: HeaderBackend<B> + Send + Sync + 'static,
@@ -109,7 +109,7 @@ where
 	}
 }
 
-impl<B, C, BE> EthFilterApiT for EthFilterApi<B, C, BE>
+impl<B, C, BE> EthFilterApi for EthFilter<B, C, BE>
 where
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
@@ -193,7 +193,6 @@ where
 						let best_number = self.client.info().best_number;
 						let mut current_number = filter
 							.to_block
-							.clone()
 							.and_then(|v| v.to_min_block_num())
 							.map(|s| s.unique_saturated_into())
 							.unwrap_or(best_number);
@@ -211,7 +210,6 @@ where
 
 						let filter_from = filter
 							.from_block
-							.clone()
 							.and_then(|v| v.to_min_block_num())
 							.map(|s| s.unique_saturated_into())
 							.unwrap_or(last_poll);
@@ -323,7 +321,6 @@ where
 			let best_number = client.info().best_number;
 			let mut current_number = filter
 				.to_block
-				.clone()
 				.and_then(|v| v.to_min_block_num())
 				.map(|s| s.unique_saturated_into())
 				.unwrap_or(best_number);
@@ -338,7 +335,6 @@ where
 
 			let from_number = filter
 				.from_block
-				.clone()
 				.and_then(|v| v.to_min_block_num())
 				.map(|s| s.unique_saturated_into())
 				.unwrap_or(client.info().best_number);
@@ -364,7 +360,7 @@ where
 		let pool = self.filter_pool.clone();
 		// Try to lock.
 		let response = if let Ok(locked) = &mut pool.lock() {
-			if let Some(_) = locked.remove(&key) {
+			if locked.remove(&key).is_some() {
 				Ok(true)
 			} else {
 				Err(internal_err(format!("Filter id {:?} does not exist.", key)))
@@ -383,7 +379,7 @@ where
 
 		Box::pin(async move {
 			let mut ret: Vec<Log> = Vec::new();
-			if let Some(hash) = filter.block_hash.clone() {
+			if let Some(hash) = filter.block_hash {
 				let id = match frontier_backend_client::load_hash::<B>(backend.as_ref(), hash)
 					.map_err(|err| internal_err(format!("{:?}", err)))?
 				{
@@ -410,7 +406,6 @@ where
 				let best_number = client.info().best_number;
 				let mut current_number = filter
 					.to_block
-					.clone()
 					.and_then(|v| v.to_min_block_num())
 					.map(|s| s.unique_saturated_into())
 					.unwrap_or(best_number);
@@ -421,7 +416,6 @@ where
 
 				let from_number = filter
 					.from_block
-					.clone()
 					.and_then(|v| v.to_min_block_num())
 					.map(|s| s.unique_saturated_into())
 					.unwrap_or(client.info().best_number);
@@ -446,7 +440,7 @@ where
 async fn filter_range_logs<B: BlockT, C, BE>(
 	client: &C,
 	backend: &fc_db::Backend<B>,
-	block_data_cache: &EthBlockDataCache<B>,
+	block_data_cache: &EthBlockDataCacheTask<B>,
 	ret: &mut Vec<Log>,
 	max_past_logs: u32,
 	filter: &Filter,
@@ -468,7 +462,7 @@ where
 	let mut current_number = from;
 
 	// Pre-calculate BloomInput for reuse.
-	let topics_input = if let Some(_) = &filter.topics {
+	let topics_input = if filter.topics.is_some() {
 		let filtered_params = FilteredParams::new(Some(filter.clone()));
 		Some(filtered_params.flat_topics)
 	} else {
@@ -575,7 +569,7 @@ fn filter_block_logs<'a>(
 		let transaction_hash = status.transaction_hash;
 		for ethereum_log in logs {
 			let mut log = Log {
-				address: ethereum_log.address.clone(),
+				address: ethereum_log.address,
 				topics: ethereum_log.topics.clone(),
 				data: Bytes(ethereum_log.data.clone()),
 				block_hash: None,
@@ -587,22 +581,27 @@ fn filter_block_logs<'a>(
 				removed: false,
 			};
 			let mut add: bool = true;
-			if let (Some(_), Some(_)) = (filter.address.clone(), filter.topics.clone()) {
-				if !params.filter_address(&log) || !params.filter_topics(&log) {
-					add = false;
+			match (filter.address.clone(), filter.topics.clone()) {
+				(Some(_), Some(_)) => {
+					if !params.filter_address(&log) || !params.filter_topics(&log) {
+						add = false;
+					}
 				}
-			} else if let Some(_) = filter.address {
-				if !params.filter_address(&log) {
-					add = false;
+				(Some(_), _) => {
+					if !params.filter_address(&log) {
+						add = false;
+					}
 				}
-			} else if let Some(_) = &filter.topics {
-				if !params.filter_topics(&log) {
-					add = false;
+				(_, Some(_)) => {
+					if !params.filter_topics(&log) {
+						add = false;
+					}
 				}
+				_ => {}
 			}
 			if add {
 				log.block_hash = Some(block_hash);
-				log.block_number = Some(block.header.number.clone());
+				log.block_number = Some(block.header.number);
 				log.transaction_hash = Some(transaction_hash);
 				log.transaction_index = Some(U256::from(status.transaction_index));
 				log.log_index = Some(U256::from(block_log_index));

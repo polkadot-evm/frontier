@@ -36,11 +36,11 @@ use fc_rpc_core::types::*;
 use fp_rpc::EthereumRuntimeRPCApi;
 
 use crate::{
-	eth::{pending_runtime_api, EthApi},
+	eth::{pending_runtime_api, Eth},
 	frontier_backend_client, internal_err,
 };
 
-impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi> EthApi<B, C, P, CT, BE, H, A>
+impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi> Eth<B, C, P, CT, BE, H, A>
 where
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
@@ -55,23 +55,21 @@ where
 		let number = number.unwrap_or(BlockNumber::Latest);
 		if number == BlockNumber::Pending {
 			let api = pending_runtime_api(self.client.as_ref(), self.graph.as_ref())?;
-			return Ok(api
+			Ok(api
 				.account_basic(&BlockId::Hash(self.client.info().best_hash), address)
 				.map_err(|err| internal_err(format!("fetch runtime chain id failed: {:?}", err)))?
-				.balance
-				.into());
+				.balance)
 		} else if let Ok(Some(id)) = frontier_backend_client::native_block_id::<B, C>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
 			Some(number),
 		) {
-			return Ok(self
+			Ok(self
 				.client
 				.runtime_api()
 				.account_basic(&id, address)
 				.map_err(|err| internal_err(format!("fetch runtime chain id failed: {:?}", err)))?
-				.balance
-				.into());
+				.balance)
 		} else {
 			Ok(U256::zero())
 		}
@@ -86,9 +84,9 @@ where
 		let number = number.unwrap_or(BlockNumber::Latest);
 		if number == BlockNumber::Pending {
 			let api = pending_runtime_api(self.client.as_ref(), self.graph.as_ref())?;
-			return Ok(api
+			Ok(api
 				.storage_at(&BlockId::Hash(self.client.info().best_hash), address, index)
-				.unwrap_or_default());
+				.unwrap_or_default())
 		} else if let Ok(Some(id)) = frontier_backend_client::native_block_id::<B, C>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
@@ -98,13 +96,13 @@ where
 				self.client.as_ref(),
 				id,
 			);
-			return Ok(self
+			Ok(self
 				.overrides
 				.schemas
 				.get(&schema)
 				.unwrap_or(&self.overrides.fallback)
 				.storage_at(&id, address, index)
-				.unwrap_or_default());
+				.unwrap_or_default())
 		} else {
 			Ok(H256::default())
 		}
@@ -146,25 +144,22 @@ where
 			None => return Ok(U256::zero()),
 		};
 
-		let nonce = self
+		Ok(self
 			.client
 			.runtime_api()
 			.account_basic(&id, address)
 			.map_err(|err| internal_err(format!("fetch runtime account basic failed: {:?}", err)))?
-			.nonce
-			.into();
-
-		Ok(nonce)
+			.nonce)
 	}
 
 	pub fn code_at(&self, address: H160, number: Option<BlockNumber>) -> Result<Bytes> {
 		let number = number.unwrap_or(BlockNumber::Latest);
 		if number == BlockNumber::Pending {
 			let api = pending_runtime_api(self.client.as_ref(), self.graph.as_ref())?;
-			return Ok(api
+			Ok(api
 				.account_code_at(&BlockId::Hash(self.client.info().best_hash), address)
-				.unwrap_or(vec![])
-				.into());
+				.unwrap_or_default()
+				.into())
 		} else if let Ok(Some(id)) = frontier_backend_client::native_block_id::<B, C>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
@@ -175,14 +170,14 @@ where
 				id,
 			);
 
-			return Ok(self
+			Ok(self
 				.overrides
 				.schemas
 				.get(&schema)
 				.unwrap_or(&self.overrides.fallback)
 				.account_code_at(&id, address)
-				.unwrap_or(vec![])
-				.into());
+				.unwrap_or_default()
+				.into())
 		} else {
 			Ok(Bytes(vec![]))
 		}

@@ -47,7 +47,7 @@ where
 		context: &Context,
 		_is_static: bool,
 	) -> PrecompileResult {
-		let call = T::Call::decode(&mut &input[..]).map_err(|_| PrecompileFailure::Error {
+		let call = T::Call::decode(&mut &*input).map_err(|_| PrecompileFailure::Error {
 			exit_status: ExitError::Other("decode failed".into()),
 		})?;
 		let info = call.get_dispatch_info();

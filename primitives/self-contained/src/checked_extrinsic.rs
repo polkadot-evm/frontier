@@ -89,7 +89,7 @@ where
 			}
 			CheckedSignature::SelfContained(signed_info) => self
 				.function
-				.validate_self_contained(&signed_info, info, len)
+				.validate_self_contained(signed_info, info, len)
 				.ok_or(TransactionValidityError::Invalid(
 					InvalidTransaction::BadProof,
 				))?,

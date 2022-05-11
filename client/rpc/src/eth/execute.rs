@@ -27,7 +27,7 @@ use sc_network::ExHashT;
 use sc_transaction_pool::ChainApi;
 use sp_api::{ApiExt, ProvideRuntimeApi};
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
-use sp_blockchain::HeaderBackend;
+use sp_blockchain::{BlockStatus, HeaderBackend};
 use sp_runtime::{
 	generic::BlockId,
 	traits::{BlakeTwo256, Block as BlockT},
@@ -37,11 +37,14 @@ use fc_rpc_core::types::*;
 use fp_rpc::EthereumRuntimeRPCApi;
 
 use crate::{
-	eth::{pending_runtime_api, EthApi},
+	eth::{pending_runtime_api, Eth},
 	frontier_backend_client, internal_err,
 };
 
-impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi> EthApi<B, C, P, CT, BE, H, A>
+/// Default JSONRPC error code return by geth
+pub const JSON_RPC_ERROR_DEFAULT: i64 = -32000;
+
+impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi> Eth<B, C, P, CT, BE, H, A>
 where
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
@@ -89,13 +92,19 @@ where
 			}
 		};
 
+		if let Ok(BlockStatus::Unknown) = self.client.status(id) {
+			return Err(Error {
+				code: JSON_RPC_ERROR_DEFAULT.into(),
+				message: String::from("header not found"),
+				data: None,
+			});
+		}
+
 		let api_version =
 			if let Ok(Some(api_version)) = api.api_version::<dyn EthereumRuntimeRPCApi<B>>(&id) {
 				api_version
 			} else {
-				return Err(internal_err(format!(
-					"failed to retrieve Runtime Api version"
-				)));
+				return Err(internal_err("failed to retrieve Runtime Api version"));
 			};
 		// use given gas limit or query current block's limit
 		let gas_limit = match gas {
@@ -108,19 +117,13 @@ where
 					#[allow(deprecated)]
 					let legacy_block = api.current_block_before_version_2(&id)
 						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?;
-					if let Some(block) = legacy_block {
-						Some(block.into())
-					} else {
-						None
-					}
+					legacy_block.map(|block| block.into())
 				};
 
 				if let Some(block) = block {
 					block.header.gas_limit
 				} else {
-					return Err(internal_err(format!(
-						"block unavailable, cannot query gas limit"
-					)));
+					return Err(internal_err("block unavailable, cannot query gas limit"));
 				}
 			}
 		};
@@ -194,9 +197,7 @@ where
 					error_on_execution_failure(&info.exit_reason, &info.value)?;
 					Ok(Bytes(info.value))
 				} else {
-					return Err(internal_err(format!(
-						"failed to retrieve Runtime Api version"
-					)));
+					Err(internal_err("failed to retrieve Runtime Api version"))
 				}
 			}
 			None => {
@@ -276,9 +277,7 @@ where
 						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?;
 					Ok(Bytes(code))
 				} else {
-					return Err(internal_err(format!(
-						"failed to retrieve Runtime Api version"
-					)));
+					Err(internal_err("failed to retrieve Runtime Api version"))
 				}
 			}
 		}
@@ -338,7 +337,7 @@ where
 				if let Some(block) = block {
 					Ok(block.header.gas_limit)
 				} else {
-					return Err(internal_err("block unavailable, cannot query gas limit"));
+					Err(internal_err("block unavailable, cannot query gas limit"))
 				}
 			};
 
@@ -371,13 +370,13 @@ where
 					let allowance = available / gas_price;
 					if highest > allowance {
 						log::warn!(
-						"Gas estimation capped by limited funds original {} balance {} sent {} feecap {} fundable {}",
-						highest,
-						balance,
-						request.value.unwrap_or_default(),
-						gas_price,
-						allowance
-					);
+							"Gas estimation capped by limited funds original {} balance {} sent {} feecap {} fundable {}",
+							highest,
+							balance,
+							request.value.unwrap_or_default(),
+							gas_price,
+							allowance
+						);
 						highest = allowance;
 					}
 				}
@@ -554,14 +553,12 @@ where
 			{
 				api_version
 			} else {
-				return Err(internal_err(format!(
-					"failed to retrieve Runtime Api version"
-				)));
+				return Err(internal_err("failed to retrieve Runtime Api version"));
 			};
 
 			// Verify that the transaction succeed with highest capacity
 			let cap = highest;
-			let estimate_mode = true;
+			let estimate_mode = !cfg!(feature = "rpc_binary_search_estimate");
 			let ExecutableResult {
 				data,
 				exit_reason,
@@ -678,7 +675,7 @@ pub fn error_on_execution_failure(reason: &ExitReason, data: &[u8]) -> Result<()
 				// `ServerError(0)` will be useful in estimate gas
 				return Err(Error {
 					code: ErrorCode::ServerError(0),
-					message: format!("out of gas"),
+					message: "out of gas".to_string(),
 					data: None,
 				});
 			}
@@ -697,7 +694,7 @@ pub fn error_on_execution_failure(reason: &ExitReason, data: &[u8]) -> Result<()
 				if data.len() >= 68 + message_len as usize {
 					let body: &[u8] = &data[68..68 + message_len as usize];
 					if let Ok(reason) = std::str::from_utf8(body) {
-						message = format!("{} {}", message, reason.to_string());
+						message = format!("{} {}", message, reason);
 					}
 				}
 			}
@@ -753,9 +750,9 @@ fn fee_details(
 			if let Some(max_priority) = max_priority {
 				let max_fee = max_fee.unwrap_or_default();
 				if max_priority > max_fee {
-					return Err(internal_err(format!(
-						"Invalid input: `max_priority_fee_per_gas` greater than `max_fee_per_gas`"
-					)));
+					return Err(internal_err(
+						"Invalid input: `max_priority_fee_per_gas` greater than `max_fee_per_gas`",
+					));
 				}
 			}
 			Ok(FeeDetails {

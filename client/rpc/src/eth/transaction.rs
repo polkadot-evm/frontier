@@ -38,11 +38,11 @@ use fc_rpc_core::types::*;
 use fp_rpc::EthereumRuntimeRPCApi;
 
 use crate::{
-	eth::{transaction_build, EthApi},
+	eth::{transaction_build, Eth},
 	frontier_backend_client, internal_err,
 };
 
-impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi> EthApi<B, C, P, CT, BE, H, A>
+impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi> Eth<B, C, P, CT, BE, H, A>
 where
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	C: ProvideRuntimeApi<B> + StorageProvider<B, BE> + HeaderBackend<B> + Send + Sync + 'static,
@@ -77,9 +77,7 @@ where
 					{
 						api_version
 					} else {
-						return Err(internal_err(format!(
-							"failed to retrieve Runtime Api version"
-						)));
+						return Err(internal_err("failed to retrieve Runtime Api version"));
 					};
 					// If the transaction is not yet mapped in the frontier db,
 					// check for it in the transaction pool.
@@ -211,14 +209,14 @@ where
 					if let (Some(transaction), Some(status)) =
 						(block.transactions.get(index), statuses.get(index))
 					{
-						return Ok(Some(transaction_build(
+						Ok(Some(transaction_build(
 							transaction.clone(),
 							Some(block),
 							Some(status.clone()),
 							base_fee,
-						)));
+						)))
 					} else {
-						return Err(internal_err(format!("{:?} is out of bounds", index)));
+						Err(internal_err(format!("{:?} is out of bounds", index)))
 					}
 				}
 				_ => Ok(None),
@@ -269,14 +267,14 @@ where
 					if let (Some(transaction), Some(status)) =
 						(block.transactions.get(index), statuses.get(index))
 					{
-						return Ok(Some(transaction_build(
+						Ok(Some(transaction_build(
 							transaction.clone(),
 							Some(block),
 							Some(status.clone()),
 							base_fee,
-						)));
+						)))
 					} else {
-						return Err(internal_err(format!("{:?} is out of bounds", index)));
+						Err(internal_err(format!("{:?} is out of bounds", index)))
 					}
 				}
 				_ => Ok(None),
@@ -394,7 +392,7 @@ where
 						};
 
 					let status = statuses[index].clone();
-					let mut cumulative_receipts = receipts.clone();
+					let mut cumulative_receipts = receipts;
 					cumulative_receipts.truncate((status.transaction_index + 1) as usize);
 
 					let transaction = block.transactions[index].clone();
@@ -405,7 +403,7 @@ where
 							.base_fee(&id)
 							.unwrap_or_default()
 							.checked_add(t.max_priority_fee_per_gas)
-							.unwrap_or(U256::max_value())
+							.unwrap_or_else(U256::max_value)
 							.min(t.max_fee_per_gas),
 					};
 

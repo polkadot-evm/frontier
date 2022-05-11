@@ -15,35 +15,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::fs;
+
 use evm::{Context, ExitSucceed};
 use fp_evm::Precompile;
 
-#[cfg(feature = "std")]
-use serde::Deserialize;
-
-#[allow(non_snake_case)]
-#[derive(Deserialize, Debug)]
-#[cfg(feature = "std")]
+#[derive(Debug, serde::Deserialize)]
+#[serde(rename_all = "PascalCase")]
 struct EthConsensusTest {
-	Input: String,
-	Expected: String,
-	Name: String,
-	Gas: Option<u64>,
+	input: String,
+	expected: String,
+	name: String,
+	gas: Option<u64>,
 }
 
 /// Tests a precompile against the ethereum consensus tests defined in the given file at filepath.
 /// The file is expected to be in JSON format and contain an array of test vectors, where each
 /// vector can be deserialized into an "EthConsensusTest".
-#[cfg(feature = "std")]
 pub fn test_precompile_test_vectors<P: Precompile>(filepath: &str) -> Result<(), String> {
-	use std::fs;
-
 	let data = fs::read_to_string(&filepath).expect("Failed to read blake2F.json");
 
 	let tests: Vec<EthConsensusTest> = serde_json::from_str(&data).expect("expected json array");
 
 	for test in tests {
-		let input: Vec<u8> = hex::decode(test.Input).expect("Could not hex-decode test input data");
+		let input: Vec<u8> = hex::decode(test.input).expect("Could not hex-decode test input data");
 
 		let cost: u64 = 10000000;
 
@@ -60,24 +55,24 @@ pub fn test_precompile_test_vectors<P: Precompile>(filepath: &str) -> Result<(),
 					result.exit_status,
 					ExitSucceed::Returned,
 					"test '{}' returned {:?} (expected 'Returned')",
-					test.Name,
+					test.name,
 					result.exit_status
 				);
 				assert_eq!(
-					as_hex, test.Expected,
+					as_hex, test.expected,
 					"test '{}' failed (different output)",
-					test.Name
+					test.name
 				);
-				if let Some(expected_gas) = test.Gas {
+				if let Some(expected_gas) = test.gas {
 					assert_eq!(
 						result.cost, expected_gas,
 						"test '{}' failed (different gas cost)",
-						test.Name
+						test.name
 					);
 				}
 			}
 			Err(err) => {
-				return Err(format!("Test '{}' returned error: {:?}", test.Name, err));
+				return Err(format!("Test '{}' returned error: {:?}", test.name, err));
 			}
 		}
 	}

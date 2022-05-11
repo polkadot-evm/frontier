@@ -3,6 +3,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 #![recursion_limit = "256"]
+#![allow(clippy::new_without_default, clippy::or_fun_call)]
 
 // Make the WASM binary available.
 #[cfg(feature = "std")]
@@ -41,11 +42,17 @@ pub use frame_support::{
 	construct_runtime, parameter_types,
 	traits::{ConstU32, ConstU8, FindAuthor, KeyOwnerProofSystem, Randomness},
 	weights::{
-		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
+		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
 		ConstantMultiplier, IdentityFee, Weight,
 	},
 	ConsensusEngineId, StorageValue,
 };
+
+#[cfg(feature = "with-paritydb-weights")]
+use frame_support::weights::constants::ParityDbWeight as RuntimeDbWeight;
+#[cfg(feature = "with-rocksdb-weights")]
+use frame_support::weights::constants::RocksDbWeight as RuntimeDbWeight;
+
 pub use pallet_balances::Call as BalancesCall;
 use pallet_ethereum::{Call::transact, Transaction as EthereumTransaction};
 use pallet_evm::{
@@ -186,7 +193,7 @@ impl frame_system::Config for Runtime {
 	/// Maximum number of block number to block hash mappings to keep (oldest pruned first).
 	type BlockHashCount = BlockHashCount;
 	/// The weight of database operations that the runtime can invoke.
-	type DbWeight = RocksDbWeight;
+	type DbWeight = RuntimeDbWeight;
 	/// Version of the runtime.
 	type Version = Version;
 	/// Converts a module to the index of the module in `construct_runtime!`.

@@ -83,10 +83,10 @@ impl From<&VariadicValue<H160>> for Vec<Option<Bloom>> {
 				blooms.push(Some(bloom))
 			}
 			VariadicValue::Multiple(addresses) => {
-				if addresses.len() == 0 {
+				if addresses.is_empty() {
 					blooms.push(None);
 				} else {
-					for address in addresses.into_iter() {
+					for address in addresses.iter() {
 						let bloom: Bloom = BloomInput::Raw(address.as_ref()).into();
 						blooms.push(Some(bloom));
 					}
@@ -111,10 +111,10 @@ impl From<&VariadicValue<Option<H256>>> for Vec<Option<Bloom>> {
 				}
 			}
 			VariadicValue::Multiple(topics) => {
-				if topics.len() == 0 {
+				if topics.is_empty() {
 					blooms.push(None);
 				} else {
-					for topic in topics.into_iter() {
+					for topic in topics.iter() {
 						if let Some(topic) = topic {
 							let bloom: Bloom = BloomInput::Raw(topic.as_ref()).into();
 							blooms.push(Some(bloom));
@@ -149,19 +149,10 @@ pub struct Filter {
 
 /// Helper for Filter matching.
 /// Supports conditional indexed parameters and wildcards.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct FilteredParams {
 	pub filter: Option<Filter>,
 	pub flat_topics: Vec<FlatTopic>,
-}
-
-impl Default for FilteredParams {
-	fn default() -> Self {
-		FilteredParams {
-			filter: None,
-			flat_topics: Vec::new(),
-		}
-	}
 }
 
 impl FilteredParams {
@@ -170,7 +161,7 @@ impl FilteredParams {
 			return FilteredParams {
 				filter: Some(f.clone()),
 				flat_topics: {
-					if let Some(t) = f.clone().topics {
+					if let Some(t) = f.topics {
 						Self::flatten(&t)
 					} else {
 						Vec::new()
@@ -182,7 +173,7 @@ impl FilteredParams {
 	}
 
 	/// Build an address-based BloomFilter.
-	pub fn adresses_bloom_filter<'a>(address: &'a Option<FilterAddress>) -> BloomFilter<'a> {
+	pub fn adresses_bloom_filter(address: &Option<FilterAddress>) -> BloomFilter<'_> {
 		if let Some(address) = address {
 			return address.into();
 		}
@@ -190,7 +181,7 @@ impl FilteredParams {
 	}
 
 	/// Build a topic-based BloomFilter.
-	pub fn topics_bloom_filter<'a>(topics: &'a Option<Vec<FlatTopic>>) -> Vec<BloomFilter<'a>> {
+	pub fn topics_bloom_filter(topics: &Option<Vec<FlatTopic>>) -> Vec<BloomFilter<'_>> {
 		let mut output: Vec<BloomFilter> = Vec::new();
 		if let Some(topics) = topics {
 			for flat in topics {
@@ -201,13 +192,13 @@ impl FilteredParams {
 	}
 
 	/// Evaluates if a Bloom contains a provided sequence of topics.
-	pub fn topics_in_bloom(bloom: Bloom, topic_bloom_filters: &Vec<BloomFilter>) -> bool {
-		if topic_bloom_filters.len() == 0 {
+	pub fn topics_in_bloom(bloom: Bloom, topic_bloom_filters: &[BloomFilter]) -> bool {
+		if topic_bloom_filters.is_empty() {
 			// No filter provided, match.
 			return true;
 		}
 		// A logical OR evaluation over `topic_bloom_filters`.
-		for subset in topic_bloom_filters.into_iter() {
+		for subset in topic_bloom_filters.iter() {
 			let mut matches = false;
 			for el in subset {
 				matches = match el {
@@ -230,7 +221,7 @@ impl FilteredParams {
 
 	/// Evaluates if a Bloom contains the provided address(es).
 	pub fn address_in_bloom(bloom: Bloom, address_bloom_filter: &BloomFilter) -> bool {
-		if address_bloom_filter.len() == 0 {
+		if address_bloom_filter.is_empty() {
 			// No filter provided, match.
 			return true;
 		} else {
@@ -251,7 +242,7 @@ impl FilteredParams {
 	/// Executed once on struct instance.
 	/// i.e. `[A,[B,C]]` to `[[A,B],[A,C]]`.
 	fn flatten(topic: &Topic) -> Vec<FlatTopic> {
-		fn cartesian(lists: &Vec<Vec<Option<H256>>>) -> Vec<Vec<Option<H256>>> {
+		fn cartesian(lists: &[Vec<Option<H256>>]) -> Vec<Vec<Option<H256>>> {
 			let mut res = vec![];
 			let mut list_iter = lists.iter();
 			if let Some(first_list) = list_iter.next() {
@@ -275,13 +266,13 @@ impl FilteredParams {
 		let mut out: Vec<FlatTopic> = Vec::new();
 		match topic {
 			VariadicValue::Multiple(multi) => {
-				let mut foo: Vec<Vec<Option<H256>>> = Vec::new();
+				let mut values: Vec<Vec<Option<H256>>> = Vec::new();
 				for v in multi {
-					foo.push({
+					values.push({
 						if let Some(v) = v {
 							match v {
 								VariadicValue::Single(s) => {
-									vec![s.clone()]
+									vec![*s]
 								}
 								VariadicValue::Multiple(s) => s.clone(),
 								VariadicValue::Null => {
@@ -293,7 +284,7 @@ impl FilteredParams {
 						}
 					});
 				}
-				for permut in cartesian(&foo) {
+				for permut in cartesian(&values) {
 					out.push(FlatTopic::Multiple(permut));
 				}
 			}
@@ -313,23 +304,21 @@ impl FilteredParams {
 	pub fn replace(&self, log: &Log, topic: FlatTopic) -> Option<Vec<H256>> {
 		let mut out: Vec<H256> = Vec::new();
 		match topic {
-			VariadicValue::Single(value) => {
-				if let Some(value) = value {
-					out.push(value);
-				}
+			VariadicValue::Single(Some(value)) => {
+				out.push(value);
 			}
 			VariadicValue::Multiple(value) => {
 				for (k, v) in value.into_iter().enumerate() {
 					if let Some(v) = v {
 						out.push(v);
 					} else {
-						out.push(log.topics[k].clone());
+						out.push(log.topics[k]);
 					}
 				}
 			}
 			_ => {}
 		};
-		if out.len() == 0 {
+		if out.is_empty() {
 			return None;
 		}
 		Some(out)
@@ -338,20 +327,15 @@ impl FilteredParams {
 	pub fn filter_block_range(&self, block_number: u64) -> bool {
 		let mut out = true;
 		let filter = self.filter.clone().unwrap();
-		if let Some(from) = filter.from_block {
-			match from {
-				BlockNumber::Num(_) => {
-					if from.to_min_block_num().unwrap_or(0 as u64) > block_number {
-						out = false;
-					}
-				}
-				_ => {}
+		if let Some(BlockNumber::Num(from)) = filter.from_block {
+			if from > block_number {
+				out = false;
 			}
 		}
 		if let Some(to) = filter.to_block {
 			match to {
-				BlockNumber::Num(_) => {
-					if to.to_min_block_num().unwrap_or(0 as u64) < block_number {
+				BlockNumber::Num(to) => {
+					if to < block_number {
 						out = false;
 					}
 				}
@@ -400,7 +384,7 @@ impl FilteredParams {
 			match topic {
 				VariadicValue::Single(single) => {
 					if let Some(single) = single {
-						if !log.topics.starts_with(&vec![single]) {
+						if !log.topics.starts_with(&[single]) {
 							out = false;
 						}
 					}

@@ -101,7 +101,7 @@ where
 			}
 		}
 
-		let timeout = self.timeout.clone();
+		let timeout = self.timeout;
 		let inner_delay = self.inner_delay.get_or_insert_with(|| Delay::new(timeout));
 
 		match Future::poll(Pin::new(inner_delay), cx) {
