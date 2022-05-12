@@ -155,6 +155,7 @@
 <span id="150">150</span>
 <span id="151">151</span>
 <span id="152">152</span>
+<span id="153">153</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -244,11 +245,12 @@
 				<span class="kw">let</span> <span class="ident">unsigned_validation</span> <span class="op">=</span> <span class="ident">U::validate_unsigned</span>(<span class="ident">source</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">function</span>)<span class="question-mark">?</span>;
 				<span class="prelude-val">Ok</span>(<span class="ident">valid</span>.<span class="ident">combine_with</span>(<span class="ident">unsigned_validation</span>))
 			}
-			<span class="ident">CheckedSignature::SelfContained</span>(<span class="ident">signed_info</span>) =&gt; {
-				<span class="self">self</span>.<span class="ident">function</span>.<span class="ident">validate_self_contained</span>(<span class="ident">signed_info</span>).<span class="ident">ok_or</span>(
-					<span class="ident">TransactionValidityError::Invalid</span>(<span class="ident">InvalidTransaction::BadProof</span>),
-				)<span class="question-mark">?</span>
-			}
+			<span class="ident">CheckedSignature::SelfContained</span>(<span class="ident">signed_info</span>) =&gt; <span class="self">self</span>
+				.<span class="ident">function</span>
+				.<span class="ident">validate_self_contained</span>(<span class="ident">signed_info</span>, <span class="ident">info</span>, <span class="ident">len</span>)
+				.<span class="ident">ok_or</span>(<span class="ident">TransactionValidityError::Invalid</span>(
+					<span class="ident">InvalidTransaction::BadProof</span>,
+				))<span class="question-mark">?</span>,
 		}
 	}
 

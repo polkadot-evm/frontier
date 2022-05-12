@@ -168,7 +168,7 @@
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
 <span class="kw">mod</span> <span class="ident">tests</span>;
 
-<span class="kw">use</span> <span class="ident">frame_support::inherent::IsFatalError</span>;
+<span class="kw">use</span> <span class="ident">frame_support</span>::{<span class="ident">inherent::IsFatalError</span>, <span class="ident">traits::Get</span>, <span class="ident">weights::Weight</span>};
 <span class="kw">use</span> <span class="ident">sp_core::U256</span>;
 <span class="kw">use</span> <span class="ident">sp_inherents</span>::{<span class="ident">InherentData</span>, <span class="ident">InherentIdentifier</span>};
 <span class="kw">use</span> <span class="ident">sp_std::cmp</span>::{<span class="ident">max</span>, <span class="ident">min</span>};
@@ -283,8 +283,8 @@
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">fp_evm::FeeCalculator</span> <span class="kw">for</span> <span class="ident">Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-	<span class="kw">fn</span> <span class="ident">min_gas_price</span>() -&gt; <span class="ident">U256</span> {
-		<span class="ident">MinGasPrice</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::get</span>()
+	<span class="kw">fn</span> <span class="ident">min_gas_price</span>() -&gt; (<span class="ident">U256</span>, <span class="ident">Weight</span>) {
+		(<span class="ident">MinGasPrice</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::get</span>(), <span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>(<span class="number">1</span>))
 	}
 }
 </code></pre></div>

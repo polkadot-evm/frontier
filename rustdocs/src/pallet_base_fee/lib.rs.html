@@ -445,7 +445,7 @@
 							<span class="comment">// Normalize to GWEI.</span>
 							<span class="kw">let</span> <span class="ident">increase</span> <span class="op">=</span> <span class="ident">scaled_basefee</span>
 								.<span class="ident">checked_div</span>(<span class="ident">U256::from</span>(<span class="number">1_000_000</span>))
-								.<span class="ident">unwrap_or</span>(<span class="ident">U256::zero</span>());
+								.<span class="ident">unwrap_or_else</span>(<span class="ident">U256::zero</span>);
 							<span class="kw-2">*</span><span class="ident">bf</span> <span class="op">=</span> <span class="ident">bf</span>.<span class="ident">saturating_add</span>(<span class="ident">increase</span>);
 						} <span class="kw">else</span> {
 							<span class="ident"><span class="self">Self</span>::deposit_event</span>(<span class="ident">Event::BaseFeeOverflow</span>);
@@ -463,7 +463,7 @@
 							<span class="comment">// Normalize to GWEI.</span>
 							<span class="kw">let</span> <span class="ident">decrease</span> <span class="op">=</span> <span class="ident">scaled_basefee</span>
 								.<span class="ident">checked_div</span>(<span class="ident">U256::from</span>(<span class="number">1_000_000</span>))
-								.<span class="ident">unwrap_or</span>(<span class="ident">U256::zero</span>());
+								.<span class="ident">unwrap_or_else</span>(<span class="ident">U256::zero</span>);
 							<span class="kw-2">*</span><span class="ident">bf</span> <span class="op">=</span> <span class="ident">bf</span>.<span class="ident">saturating_sub</span>(<span class="ident">decrease</span>);
 						} <span class="kw">else</span> {
 							<span class="ident"><span class="self">Self</span>::deposit_event</span>(<span class="ident">Event::BaseFeeOverflow</span>);
@@ -508,8 +508,8 @@
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">fp_evm::FeeCalculator</span> <span class="kw">for</span> <span class="ident">Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-	<span class="kw">fn</span> <span class="ident">min_gas_price</span>() -&gt; <span class="ident">U256</span> {
-		<span class="op">&lt;</span><span class="ident">BaseFeePerGas</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>()
+	<span class="kw">fn</span> <span class="ident">min_gas_price</span>() -&gt; (<span class="ident">U256</span>, <span class="ident">Weight</span>) {
+		(<span class="op">&lt;</span><span class="ident">BaseFeePerGas</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>(), <span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>(<span class="number">1</span>))
 	}
 }
 
