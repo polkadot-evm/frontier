@@ -142,7 +142,7 @@ impl SubscriptionResult {
 					Bytes(block.header.mix_hash.as_bytes().to_vec()),
 					Bytes(block.header.nonce.as_bytes().to_vec()),
 				],
-				size: Some(U256::from(rlp::encode(&block).len() as u32)),
+				size: Some(U256::from(rlp::encode(&block.header).len() as u32)),
 			},
 			extra_info: BTreeMap::new(),
 		}))
