@@ -54,7 +54,10 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::too_many_arguments)]
 
+#[cfg(any(test, feature = "runtime-benchmarks"))]
 pub mod benchmarking;
+pub mod weights;
+pub use weights::WeightInfo;
 
 #[cfg(test)]
 mod mock;
@@ -144,6 +147,9 @@ pub mod pallet {
 
 		/// Find author for the current block.
 		type FindAuthor: FindAuthor<H160>;
+
+		/// Weight information for extrinsics in this pallet.
+		type WeightInfo: WeightInfo;
 
 		/// EVM config used in the module.
 		fn config() -> &'static EvmConfig {
@@ -364,6 +370,36 @@ pub mod pallet {
 				pays_fee: Pays::No,
 			})
 		}
+
+		/// Increment `sufficients` for existing accounts having a nonzero `nonce` but zero `sufficients` value.
+		#[pallet::weight(
+			<T as pallet::Config>::WeightInfo::hotfix_inc_account_sufficients(addresses.len().try_into().unwrap_or(u32::MAX))
+		)]
+		pub fn hotfix_inc_account_sufficients(
+			origin: OriginFor<T>,
+			addresses: Vec<H160>,
+		) -> DispatchResultWithPostInfo {
+			const MAX_ADDRESS_COUNT: usize = 1000;
+
+			frame_system::ensure_signed(origin)?;
+			ensure!(
+				addresses.len() <= MAX_ADDRESS_COUNT,
+				Error::<T>::MaxAddressCountExceeded
+			);
+
+			for address in addresses {
+				let account_id = T::AddressMapping::into_account_id(address);
+				let nonce = frame_system::Pallet::<T>::account_nonce(&account_id);
+				if !nonce.is_zero() {
+					frame_system::Pallet::<T>::inc_sufficients(&account_id);
+				}
+			}
+
+			Ok(PostDispatchInfo {
+				actual_weight: None,
+				pays_fee: Pays::No,
+			})
+		}
 	}
 
 	#[pallet::event]
@@ -399,6 +435,8 @@ pub mod pallet {
 		GasPriceTooLow,
 		/// Nonce is invalid
 		InvalidNonce,
+		/// Maximum address count exceeded
+		MaxAddressCountExceeded,
 	}
 
 	#[pallet::genesis_config]

@@ -169,6 +169,7 @@ impl pallet_evm::Config for Test {
 	type OnChargeTransaction = ();
 	type FindAuthor = FindAuthorTruncated;
 	type BlockHashMapping = crate::EthereumBlockHashMapping<Self>;
+	type WeightInfo = ();
 }
 
 impl crate::Config for Test {
