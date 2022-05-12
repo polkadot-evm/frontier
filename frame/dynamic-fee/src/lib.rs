@@ -21,7 +21,7 @@
 #[cfg(test)]
 mod tests;
 
-use frame_support::inherent::IsFatalError;
+use frame_support::{inherent::IsFatalError, traits::Get, weights::Weight};
 use sp_core::U256;
 use sp_inherents::{InherentData, InherentIdentifier};
 use sp_std::cmp::{max, min};
@@ -136,7 +136,7 @@ pub mod pallet {
 }
 
 impl<T: Config> fp_evm::FeeCalculator for Pallet<T> {
-	fn min_gas_price() -> U256 {
-		MinGasPrice::<T>::get()
+	fn min_gas_price() -> (U256, Weight) {
+		(MinGasPrice::<T>::get(), T::DbWeight::get().reads(1))
 	}
 }

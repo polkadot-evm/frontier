@@ -21,6 +21,7 @@ use ethereum::{TransactionAction, TransactionSignature};
 use frame_support::{
 	parameter_types,
 	traits::{ConstU32, FindAuthor},
+	weights::Weight,
 	ConsensusEngineId, PalletId,
 };
 use pallet_evm::{AddressMapping, EnsureAddressTruncated, FeeCalculator};
@@ -120,8 +121,8 @@ impl pallet_timestamp::Config for Test {
 
 pub struct FixedGasPrice;
 impl FeeCalculator for FixedGasPrice {
-	fn min_gas_price() -> U256 {
-		1.into()
+	fn min_gas_price() -> (U256, Weight) {
+		(1.into(), 0u64)
 	}
 }
 
