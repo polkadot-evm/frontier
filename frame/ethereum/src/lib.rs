@@ -41,14 +41,14 @@ use frame_support::{
 	dispatch::DispatchResultWithPostInfo,
 	scale_info::TypeInfo,
 	traits::{EnsureOrigin, Get, PalletInfoAccess},
-	weights::{Pays, PostDispatchInfo, Weight},
+	weights::{DispatchInfo, Pays, PostDispatchInfo, Weight},
 };
-use frame_system::{pallet_prelude::OriginFor, WeightInfo};
+use frame_system::{pallet_prelude::OriginFor, CheckWeight, WeightInfo};
 use pallet_evm::{BlockHashMapping, FeeCalculator, GasWeightMapping, Runner};
 use sha3::{Digest, Keccak256};
 use sp_runtime::{
 	generic::DigestItem,
-	traits::{One, Saturating, UniqueSaturatedInto, Zero},
+	traits::{DispatchInfoOf, Dispatchable, One, Saturating, UniqueSaturatedInto, Zero},
 	transaction_validity::{
 		InvalidTransaction, TransactionValidity, TransactionValidityError, ValidTransactionBuilder,
 	},
@@ -108,9 +108,11 @@ impl<O: Into<Result<RawOrigin, O>> + From<RawOrigin>> EnsureOrigin<O>
 	}
 }
 
-impl<T: Config> Call<T>
+impl<T> Call<T>
 where
 	OriginFor<T>: Into<Result<RawOrigin, OriginFor<T>>>,
+	T: Send + Sync + Config,
+	T::Call: Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
 {
 	pub fn is_self_contained(&self) -> bool {
 		matches!(self, Call::transact { .. })
@@ -146,8 +148,17 @@ where
 		}
 	}
 
-	pub fn validate_self_contained(&self, origin: &H160) -> Option<TransactionValidity> {
+	pub fn validate_self_contained(
+		&self,
+		origin: &H160,
+		dispatch_info: &DispatchInfoOf<T::Call>,
+		len: usize,
+	) -> Option<TransactionValidity> {
 		if let Call::transact { transaction } = self {
+			if let Err(e) = CheckWeight::<T>::do_validate(dispatch_info, len) {
+				return Some(Err(e));
+			}
+
 			Some(Pallet::<T>::validate_transaction_in_pool(
 				*origin,
 				transaction,
