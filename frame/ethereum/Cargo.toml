@@ -31,6 +31,7 @@ fp-rpc = { version = "3.0.0-dev", path = "../../primitives/rpc", default-feature
 fp-self-contained = { version = "1.0.0-dev", path = "../../primitives/self-contained", default-features = false }
 fp-storage = { version = "2.0.0", path = "../../primitives/storage", default-features = false }
 pallet-evm = { version = "6.0.0-dev", path = "../evm", default-features = false }
+num_enum = { version = "0.5.4", default-features = false }
 
 [dev-dependencies]
 libsecp256k1 = { version = "0.7", features = ["static-context", "hmac"] }
@@ -67,5 +68,6 @@ std = [
 	"fp-self-contained/std",
 	"fp-storage/std",
 	"pallet-evm/std",
+	"num_enum/std",
 ]
 try-runtime = ["frame-support/try-runtime"]

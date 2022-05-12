@@ -27,7 +27,7 @@ use fc_rpc_core::types::*;
 
 use crate::eth::Eth;
 
-impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> Eth<B, C, P, CT, BE, H, A> {
+impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi, F> Eth<B, C, P, CT, BE, H, A, F> {
 	pub fn is_mining(&self) -> Result<bool> {
 		Ok(self.is_authority)
 	}
