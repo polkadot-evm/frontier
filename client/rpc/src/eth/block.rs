@@ -24,6 +24,7 @@ use jsonrpc_core::{BoxFuture, Result};
 use sc_client_api::backend::{Backend, StateBackend, StorageProvider};
 use sc_network::ExHashT;
 use sc_transaction_pool::ChainApi;
+use sp_api::{BlockId, HeaderT};
 use sp_blockchain::HeaderBackend;
 use sp_core::hashing::keccak_256;
 use sp_runtime::traits::{BlakeTwo256, Block as BlockT};
@@ -74,13 +75,35 @@ where
 			let base_fee = handler.base_fee(&id);
 
 			match (block, statuses) {
-				(Some(block), Some(statuses)) => Ok(Some(rich_block_build(
-					block,
-					statuses.into_iter().map(Option::Some).collect(),
-					Some(hash),
-					full,
-					base_fee,
-				))),
+				(Some(block), Some(statuses)) => {
+					let mut rich_block = rich_block_build(
+						block,
+						statuses.into_iter().map(|s| Some(s)).collect(),
+						Some(hash),
+						full,
+						base_fee,
+					);
+					// Indexers heavily rely on the parent hash.
+					// Moonbase client-level patch for inconsistent runtime 1200 state.
+					let number = rich_block.inner.header.number.unwrap_or_default();
+					if rich_block.inner.header.parent_hash == H256::default()
+						&& number > U256::zero() {
+
+							let id = BlockId::Hash(substrate_hash);
+							if let Ok(Some(header)) = client.header(id) {
+								let parent_hash = *header.parent_hash();
+
+								let parent_id = BlockId::Hash(parent_hash);
+								let schema =
+									frontier_backend_client::onchain_storage_schema::<B, C, BE>(client.as_ref(), parent_id);
+								if let Some(block) = block_data_cache.current_block(schema, parent_hash).await {
+									rich_block.inner.header.parent_hash =
+										H256::from_slice(keccak_256(&rlp::encode(&block.header)).as_slice());
+								}
+							}
+					}
+					Ok(Some(rich_block))
+				},
 				_ => Ok(None),
 			}
 		})
@@ -127,14 +150,34 @@ where
 				(Some(block), Some(statuses)) => {
 					let hash = H256::from(keccak_256(&rlp::encode(&block.header)));
 
-					Ok(Some(rich_block_build(
+					let mut rich_block = rich_block_build(
 						block,
 						statuses.into_iter().map(Option::Some).collect(),
 						Some(hash),
 						full,
 						base_fee,
-					)))
-				}
+					);
+					// Indexers heavily rely on the parent hash.
+					// Moonbase client-level patch for inconsistent runtime 1200 state.
+					let number = rich_block.inner.header.number.unwrap_or_default();
+					if rich_block.inner.header.parent_hash == H256::default()
+						&& number > U256::zero() {
+
+							let id = BlockId::Hash(substrate_hash);
+							if let Ok(Some(header)) = client.header(id) {
+								let parent_hash = *header.parent_hash();
+
+								let parent_id = BlockId::Hash(parent_hash);
+								let schema =
+									frontier_backend_client::onchain_storage_schema::<B, C, BE>(client.as_ref(), parent_id);
+								if let Some(block) = block_data_cache.current_block(schema, parent_hash).await {
+									rich_block.inner.header.parent_hash =
+										H256::from_slice(keccak_256(&rlp::encode(&block.header)).as_slice());
+								}
+							}
+					}
+					Ok(Some(rich_block))
+				},
 				_ => Ok(None),
 			}
 		})
