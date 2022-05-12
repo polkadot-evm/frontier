@@ -305,9 +305,7 @@ where
 			self.pool
 				.submit_one(&block_hash, TransactionSource::Local, extrinsic)
 				.map_ok(move |_| transaction_hash)
-				.map_err(|err| {
-					internal_err(format!("submit transaction to pool failed: {:?}", err))
-				}),
+				.map_err(|err| internal_err(F::pool_error(err))),
 		)
 	}
 }
