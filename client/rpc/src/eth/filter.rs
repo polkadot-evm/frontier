@@ -439,7 +439,7 @@ where
 
 async fn filter_range_logs<B: BlockT, C, BE>(
 	client: &C,
-	backend: &fc_db::Backend<B>,
+	_backend: &fc_db::Backend<B>,
 	block_data_cache: &EthBlockDataCacheTask<B>,
 	ret: &mut Vec<Log>,
 	max_past_logs: u32,
@@ -471,52 +471,16 @@ where
 	let address_bloom_filter = FilteredParams::adresses_bloom_filter(&filter.address);
 	let topics_bloom_filter = FilteredParams::topics_bloom_filter(&topics_input);
 
-	// Get schema cache. A single read before the block range iteration.
-	// This prevents having to do an extra DB read per block range iteration to getthe actual schema.
-	let mut local_cache: BTreeMap<NumberFor<B>, EthereumStorageSchema> = BTreeMap::new();
-	if let Ok(Some(schema_cache)) = frontier_backend_client::load_cached_schema::<B>(backend) {
-		for (schema, hash) in schema_cache {
-			if let Ok(Some(header)) = client.header(BlockId::Hash(hash)) {
-				let number = *header.number();
-				local_cache.insert(number, schema);
-			}
-		}
-	}
-	let cache_keys: Vec<NumberFor<B>> = local_cache.keys().cloned().collect();
-	let mut default_schema: Option<&EthereumStorageSchema> = None;
-	if cache_keys.len() == 1 {
-		// There is only one schema and that's the one we use.
-		default_schema = local_cache.get(&cache_keys[0]);
-	}
-
 	while current_number <= to {
 		let id = BlockId::Number(current_number);
 		let substrate_hash = client
 			.expect_block_hash_from_id(&id)
 			.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
 
-		let schema = match default_schema {
-			// If there is a single schema, we just assign.
-			Some(default_schema) => *default_schema,
-			_ => {
-				// If there are multiple schemas, we iterate over the - hopefully short - list
-				// of keys and assign the one belonging to the current_number.
-				// Because there are more than 1 schema, and current_number cannot be < 0,
-				// (i - 1) will always be >= 0.
-				let mut default_schema: Option<&EthereumStorageSchema> = None;
-				for (i, k) in cache_keys.iter().enumerate() {
-					if &current_number < k {
-						default_schema = local_cache.get(&cache_keys[i - 1]);
-					}
-				}
-				match default_schema {
-					Some(schema) => *schema,
-					// Fallback to DB read. This will happen i.e. when there is no cache
-					// task configured at service level.
-					_ => frontier_backend_client::onchain_storage_schema::<B, C, BE>(client, id),
-				}
-			}
-		};
+		let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(
+			client,
+			id,
+		);
 
 		let block = block_data_cache.current_block(schema, substrate_hash).await;
 
