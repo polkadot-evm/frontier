@@ -35,10 +35,14 @@ function estimation_variance(binary_search_estimation, one_off_estimation) {
 
 describeWithFrontier("Frontier RPC (Gas)", (context) => {
 	const GENESIS_ACCOUNT = "0x6be02d1d3665660d22ff9624b7be0551ee1ac91b";
+	const GENESIS_ACCOUNT_PRIVATE_KEY = "0x99B3C12287537E38C90A9219D4CB074A89A16E9CDB20BF85728EBD97C343E342";
 
 	const TEST_CONTRACT_BYTECODE = Test.bytecode;
 	const TEST_CONTRACT_ABI = Test.abi as AbiItem[];
 	const FIRST_CONTRACT_ADDRESS = "0xc2bf5f29a4384b1ab0c063e1c666f02121b6084a"; // Those test are ordered. In general this should be avoided, but due to the time it takes	// to spin up a frontier node, it saves a lot of time.
+
+	// EXTRINSIC_GAS_LIMIT = [BLOCK_GAS_LIMIT - BLOCK_GAS_LIMIT * (NORMAL_DISPATCH_RATIO - AVERAGE_ON_INITIALIZE_RATIO) - EXTRINSIC_BASE_Weight] / WEIGHT_PER_GAS = (1_000_000_000_000 * 2 * (0.75-0.1) - 125_000_000) / 20000
+	const EXTRINSIC_GAS_LIMIT = 64993750;
 
 	it("eth_estimateGas for contract creation", async function () {
 		// The value returned as an estimation by the evm with estimate mode ON.
@@ -140,5 +144,53 @@ describeWithFrontier("Frontier RPC (Gas)", (context) => {
 			data: Test.bytecode,
 		}));
 		expect(result).to.equal(197690);
+	});
+
+	it("tx gas limit below EXTRINSIC_GAS_LIMIT", async function () {
+		const tx = await context.web3.eth.accounts.signTransaction(
+			{
+				from: GENESIS_ACCOUNT,
+				data: Test.bytecode,
+				gas: EXTRINSIC_GAS_LIMIT - 1,
+				gasPrice: "0x3B9ACA00",
+			},
+			GENESIS_ACCOUNT_PRIVATE_KEY
+		);
+		const createReceipt = await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction]);
+		await createAndFinalizeBlock(context.web3);
+		expect((createReceipt as any).transactionHash).to.be.not.null;
+		expect((createReceipt as any).blockHash).to.be.not.null;
+
+	});
+	it("tx gas limit equal EXTRINSIC_GAS_LIMIT", async function () {
+		const tx = await context.web3.eth.accounts.signTransaction(
+			{
+				from: GENESIS_ACCOUNT,
+				data: Test.bytecode,
+				gas: EXTRINSIC_GAS_LIMIT,
+				gasPrice: "0x3B9ACA00",
+			},
+			GENESIS_ACCOUNT_PRIVATE_KEY
+		);
+		const createReceipt = await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction]);
+		await createAndFinalizeBlock(context.web3);
+		expect((createReceipt as any).transactionHash).to.be.not.null;
+		expect((createReceipt as any).blockHash).to.be.not.null;
+	});
+	it("tx gas limit larger EXTRINSIC_GAS_LIMIT", async function () {
+		const tx = await context.web3.eth.accounts.signTransaction(
+			{
+				from: GENESIS_ACCOUNT,
+				data: Test.bytecode,
+				gas: EXTRINSIC_GAS_LIMIT + 1,
+				gasPrice: "0x3B9ACA00",
+			},
+			GENESIS_ACCOUNT_PRIVATE_KEY
+		);
+		const createReceipt = await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction]);
+		await createAndFinalizeBlock(context.web3);
+		expect((createReceipt as any).error.message).to.equal(
+			"submit transaction to pool failed: Pool(InvalidTransaction(InvalidTransaction::ExhaustsResources))"
+		);
 	});
 });

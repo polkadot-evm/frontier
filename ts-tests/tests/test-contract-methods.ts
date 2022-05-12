@@ -84,7 +84,7 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 			gasPrice: "0x3B9ACA00",
 		});
 		// Max u32
-		expect(await contract.methods.gasLimit().call()).to.eq('4294967295');
+		expect(await contract.methods.gasLimit().call()).to.eq('75000000');
 	});
 
 	// Requires error handling
