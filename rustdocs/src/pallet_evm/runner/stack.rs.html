@@ -634,35 +634,6 @@
 <span id="629">629</span>
 <span id="630">630</span>
 <span id="631">631</span>
-<span id="632">632</span>
-<span id="633">633</span>
-<span id="634">634</span>
-<span id="635">635</span>
-<span id="636">636</span>
-<span id="637">637</span>
-<span id="638">638</span>
-<span id="639">639</span>
-<span id="640">640</span>
-<span id="641">641</span>
-<span id="642">642</span>
-<span id="643">643</span>
-<span id="644">644</span>
-<span id="645">645</span>
-<span id="646">646</span>
-<span id="647">647</span>
-<span id="648">648</span>
-<span id="649">649</span>
-<span id="650">650</span>
-<span id="651">651</span>
-<span id="652">652</span>
-<span id="653">653</span>
-<span id="654">654</span>
-<span id="655">655</span>
-<span id="656">656</span>
-<span id="657">657</span>
-<span id="658">658</span>
-<span id="659">659</span>
-<span id="660">660</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -684,7 +655,7 @@
 
 <span class="kw">use</span> <span class="kw">crate</span>::{
 	<span class="ident">runner::Runner</span> <span class="kw">as</span> <span class="ident">RunnerT</span>, <span class="ident">AccountCodes</span>, <span class="ident">AccountStorages</span>, <span class="ident">AddressMapping</span>, <span class="ident">BlockHashMapping</span>,
-	<span class="ident">Config</span>, <span class="ident">Error</span>, <span class="ident">Event</span>, <span class="ident">FeeCalculator</span>, <span class="ident">OnChargeEVMTransaction</span>, <span class="ident">Pallet</span>, <span class="ident">RunnerError</span>,
+	<span class="ident">Config</span>, <span class="ident">Error</span>, <span class="ident">Event</span>, <span class="ident">FeeCalculator</span>, <span class="ident">OnChargeEVMTransaction</span>, <span class="ident">Pallet</span>,
 };
 <span class="kw">use</span> <span class="ident">evm</span>::{
 	<span class="ident">backend::Backend</span> <span class="kw">as</span> <span class="ident">BackendT</span>,
@@ -719,7 +690,7 @@
 		<span class="ident">precompiles</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;precompiles</span> <span class="ident">T::PrecompilesType</span>,
 		<span class="ident">is_transactional</span>: <span class="ident">bool</span>,
 		<span class="ident">f</span>: <span class="ident">F</span>,
-	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">ExecutionInfo</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>, <span class="ident">RunnerError</span><span class="op">&lt;</span><span class="ident">Error</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>
+	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">ExecutionInfo</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>, <span class="ident">Error</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>
 	<span class="kw">where</span>
 		<span class="ident">F</span>: <span class="ident">FnOnce</span>(
 			<span class="kw-2">&amp;mut</span> <span class="ident">StackExecutor</span><span class="op">&lt;</span>
@@ -730,53 +701,34 @@
 			<span class="op">&gt;</span>,
 		) -&gt; (<span class="ident">ExitReason</span>, <span class="ident">R</span>),
 	{
-		<span class="kw">let</span> (<span class="ident">base_fee</span>, <span class="kw-2">mut</span> <span class="ident">weight</span>) <span class="op">=</span> <span class="ident">T::FeeCalculator::min_gas_price</span>();
+		<span class="kw">let</span> <span class="ident">base_fee</span> <span class="op">=</span> <span class="ident">T::FeeCalculator::min_gas_price</span>();
 		<span class="kw">let</span> <span class="ident">max_fee_per_gas</span> <span class="op">=</span> <span class="kw">match</span> (<span class="ident">max_fee_per_gas</span>, <span class="ident">is_transactional</span>) {
 			(<span class="prelude-val">Some</span>(<span class="ident">max_fee_per_gas</span>), <span class="kw">_</span>) =&gt; {
-				<span class="macro">ensure!</span>(
-					<span class="ident">max_fee_per_gas</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">base_fee</span>,
-					<span class="ident">RunnerError</span> {
-						<span class="ident">error</span>: <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::GasPriceTooLow</span>,
-						<span class="ident">weight</span>,
-					}
-				);
+				<span class="macro">ensure!</span>(<span class="ident">max_fee_per_gas</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">base_fee</span>, <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::GasPriceTooLow</span>);
 				<span class="ident">max_fee_per_gas</span>
 			}
 			<span class="comment">// Gas price check is skipped for non-transactional calls that don&#39;t</span>
 			<span class="comment">// define a `max_fee_per_gas` input.</span>
 			(<span class="prelude-val">None</span>, <span class="bool-val">false</span>) =&gt; <span class="ident">Default::default</span>(),
-			<span class="kw">_</span> =&gt; {
-				<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">RunnerError</span> {
-					<span class="ident">error</span>: <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::GasPriceTooLow</span>,
-					<span class="ident">weight</span>,
-				})
-			}
+			<span class="kw">_</span> =&gt; <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::GasPriceTooLow</span>),
 		};
 
 		<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">max_priority_fee</span>) <span class="op">=</span> <span class="ident">max_priority_fee_per_gas</span> {
 			<span class="macro">ensure!</span>(
 				<span class="ident">max_fee_per_gas</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">max_priority_fee</span>,
-				<span class="ident">RunnerError</span> {
-					<span class="ident">error</span>: <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::GasPriceTooLow</span>,
-					<span class="ident">weight</span>,
-				}
+				<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::GasPriceTooLow</span>
 			);
 		}
 
 		<span class="comment">// After eip-1559 we make sure the account can pay both the evm execution and priority fees.</span>
 		<span class="kw">let</span> <span class="ident">total_fee</span> <span class="op">=</span> <span class="ident">max_fee_per_gas</span>
 			.<span class="ident">checked_mul</span>(<span class="ident">U256::from</span>(<span class="ident">gas_limit</span>))
-			.<span class="ident">ok_or</span>(<span class="ident">RunnerError</span> {
-				<span class="ident">error</span>: <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::FeeOverflow</span>,
-				<span class="ident">weight</span>,
-			})<span class="question-mark">?</span>;
+			.<span class="ident">ok_or</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::FeeOverflow</span>)<span class="question-mark">?</span>;
 
-		<span class="kw">let</span> <span class="ident">total_payment</span> <span class="op">=</span> <span class="ident">value</span>.<span class="ident">checked_add</span>(<span class="ident">total_fee</span>).<span class="ident">ok_or</span>(<span class="ident">RunnerError</span> {
-			<span class="ident">error</span>: <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::PaymentOverflow</span>,
-			<span class="ident">weight</span>,
-		})<span class="question-mark">?</span>;
-		<span class="kw">let</span> (<span class="ident">source_account</span>, <span class="ident">inner_weight</span>) <span class="op">=</span> <span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::account_basic</span>(<span class="kw-2">&amp;</span><span class="ident">source</span>);
-		<span class="ident">weight</span> <span class="op">=</span> <span class="ident">weight</span>.<span class="ident">saturating_add</span>(<span class="ident">inner_weight</span>);
+		<span class="kw">let</span> <span class="ident">total_payment</span> <span class="op">=</span> <span class="ident">value</span>
+			.<span class="ident">checked_add</span>(<span class="ident">total_fee</span>)
+			.<span class="ident">ok_or</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::PaymentOverflow</span>)<span class="question-mark">?</span>;
+		<span class="kw">let</span> <span class="ident">source_account</span> <span class="op">=</span> <span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::account_basic</span>(<span class="kw-2">&amp;</span><span class="ident">source</span>);
 		<span class="comment">// Account balance check is skipped if fee is Zero.</span>
 		<span class="comment">// This case is previously verified to only happen on either:</span>
 		<span class="comment">// 	- Non-transactional calls.</span>
@@ -784,26 +736,16 @@
 		<span class="kw">if</span> <span class="ident">total_fee</span> <span class="op">&gt;</span> <span class="ident">U256::zero</span>() {
 			<span class="macro">ensure!</span>(
 				<span class="ident">source_account</span>.<span class="ident">balance</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">total_payment</span>,
-				<span class="ident">RunnerError</span> {
-					<span class="ident">error</span>: <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::BalanceLow</span>,
-					<span class="ident">weight</span>,
-				}
+				<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::BalanceLow</span>
 			);
 		}
 
 		<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">nonce</span>) <span class="op">=</span> <span class="ident">nonce</span> {
-			<span class="macro">ensure!</span>(
-				<span class="ident">source_account</span>.<span class="ident">nonce</span> <span class="op">==</span> <span class="ident">nonce</span>,
-				<span class="ident">RunnerError</span> {
-					<span class="ident">error</span>: <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::InvalidNonce</span>,
-					<span class="ident">weight</span>,
-				}
-			);
+			<span class="macro">ensure!</span>(<span class="ident">source_account</span>.<span class="ident">nonce</span> <span class="op">==</span> <span class="ident">nonce</span>, <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::InvalidNonce</span>);
 		}
 
 		<span class="comment">// Deduct fee from the `source` account. Returns `None` if `total_fee` is Zero.</span>
-		<span class="kw">let</span> <span class="ident">fee</span> <span class="op">=</span> <span class="ident">T::OnChargeTransaction::withdraw_fee</span>(<span class="kw-2">&amp;</span><span class="ident">source</span>, <span class="ident">total_fee</span>)
-			.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">RunnerError</span> { <span class="ident">error</span>: <span class="ident">e</span>, <span class="ident">weight</span> })<span class="question-mark">?</span>;
+		<span class="kw">let</span> <span class="ident">fee</span> <span class="op">=</span> <span class="ident">T::OnChargeTransaction::withdraw_fee</span>(<span class="kw-2">&amp;</span><span class="ident">source</span>, <span class="ident">total_fee</span>)<span class="question-mark">?</span>;
 
 		<span class="comment">// Execute the EVM call.</span>
 		<span class="kw">let</span> <span class="ident">vicinity</span> <span class="op">=</span> <span class="ident">Vicinity</span> {
@@ -824,7 +766,8 @@
 				<span class="kw">let</span> <span class="ident">actual_priority_fee</span> <span class="op">=</span> <span class="ident">max_fee_per_gas</span>
 					.<span class="ident">saturating_sub</span>(<span class="ident">base_fee</span>)
 					.<span class="ident">min</span>(<span class="ident">max_priority_fee</span>)
-					.<span class="ident">saturating_mul</span>(<span class="ident">used_gas</span>);
+					.<span class="ident">checked_mul</span>(<span class="ident">used_gas</span>)
+					.<span class="ident">ok_or</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::FeeOverflow</span>)<span class="question-mark">?</span>;
 				<span class="kw">let</span> <span class="ident">actual_fee</span> <span class="op">=</span> <span class="ident">executor</span>
 					.<span class="ident">fee</span>(<span class="ident">base_fee</span>)
 					.<span class="ident">checked_add</span>(<span class="ident">actual_priority_fee</span>)
@@ -921,7 +864,7 @@
 		<span class="ident">access_list</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">H160</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span>)<span class="op">&gt;</span>,
 		<span class="ident">is_transactional</span>: <span class="ident">bool</span>,
 		<span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="ident">evm::Config</span>,
-	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">CallInfo</span>, <span class="ident">RunnerError</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Error</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">CallInfo</span>, <span class="ident"><span class="self">Self</span>::Error</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> <span class="ident">precompiles</span> <span class="op">=</span> <span class="ident">T::PrecompilesValue::get</span>();
 		<span class="ident"><span class="self">Self</span>::execute</span>(
 			<span class="ident">source</span>,
@@ -948,7 +891,7 @@
 		<span class="ident">access_list</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">H160</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span>)<span class="op">&gt;</span>,
 		<span class="ident">is_transactional</span>: <span class="ident">bool</span>,
 		<span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="ident">evm::Config</span>,
-	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">CreateInfo</span>, <span class="ident">RunnerError</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Error</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">CreateInfo</span>, <span class="ident"><span class="self">Self</span>::Error</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> <span class="ident">precompiles</span> <span class="op">=</span> <span class="ident">T::PrecompilesValue::get</span>();
 		<span class="ident"><span class="self">Self</span>::execute</span>(
 			<span class="ident">source</span>,
@@ -981,7 +924,7 @@
 		<span class="ident">access_list</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">H160</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span>)<span class="op">&gt;</span>,
 		<span class="ident">is_transactional</span>: <span class="ident">bool</span>,
 		<span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="ident">evm::Config</span>,
-	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">CreateInfo</span>, <span class="ident">RunnerError</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Error</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">CreateInfo</span>, <span class="ident"><span class="self">Self</span>::Error</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> <span class="ident">precompiles</span> <span class="op">=</span> <span class="ident">T::PrecompilesValue::get</span>();
 		<span class="kw">let</span> <span class="ident">code_hash</span> <span class="op">=</span> <span class="ident">H256::from_slice</span>(<span class="ident">Keccak256::digest</span>(<span class="kw-2">&amp;</span><span class="ident">init</span>).<span class="ident">as_slice</span>());
 		<span class="ident"><span class="self">Self</span>::execute</span>(
@@ -1175,7 +1118,7 @@
 	}
 
 	<span class="kw">fn</span> <span class="ident">basic</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">address</span>: <span class="ident">H160</span>) -&gt; <span class="ident">evm::backend::Basic</span> {
-		<span class="kw">let</span> (<span class="ident">account</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::account_basic</span>(<span class="kw-2">&amp;</span><span class="ident">address</span>);
+		<span class="kw">let</span> <span class="ident">account</span> <span class="op">=</span> <span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::account_basic</span>(<span class="kw-2">&amp;</span><span class="ident">address</span>);
 
 		<span class="ident">evm::backend::Basic</span> {
 			<span class="ident">balance</span>: <span class="ident">account</span>.<span class="ident">balance</span>,
@@ -1196,8 +1139,7 @@
 	}
 
 	<span class="kw">fn</span> <span class="ident">block_base_fee_per_gas</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">sp_core::U256</span> {
-		<span class="kw">let</span> (<span class="ident">base_fee</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">T::FeeCalculator::min_gas_price</span>();
-		<span class="ident">base_fee</span>
+		<span class="ident">T::FeeCalculator::min_gas_price</span>()
 	}
 }
 
