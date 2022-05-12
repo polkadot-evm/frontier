@@ -241,8 +241,8 @@ pub mod pallet {
 }
 
 impl<T: Config> fp_evm::FeeCalculator for Pallet<T> {
-	fn min_gas_price() -> U256 {
-		<BaseFeePerGas<T>>::get()
+	fn min_gas_price() -> (U256, Weight) {
+		(<BaseFeePerGas<T>>::get(), T::DbWeight::get().reads(1))
 	}
 }
 

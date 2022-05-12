@@ -74,7 +74,7 @@ use frame_system::RawOrigin;
 use sp_core::{Hasher, H160, H256, U256};
 use sp_runtime::{
 	traits::{BadOrigin, Saturating, UniqueSaturatedInto, Zero},
-	AccountId32,
+	AccountId32, DispatchErrorWithPostInfo,
 };
 use sp_std::vec::Vec;
 
@@ -88,7 +88,10 @@ pub use fp_evm::{
 	Precompile, PrecompileFailure, PrecompileOutput, PrecompileResult, PrecompileSet, Vicinity,
 };
 
-pub use self::{pallet::*, runner::Runner};
+pub use self::{
+	pallet::*,
+	runner::{Runner, RunnerError},
+};
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -187,7 +190,7 @@ pub mod pallet {
 			T::CallOrigin::ensure_address_origin(&source, origin)?;
 
 			let is_transactional = true;
-			let info = T::Runner::call(
+			let info = match T::Runner::call(
 				source,
 				target,
 				input,
@@ -199,7 +202,18 @@ pub mod pallet {
 				access_list,
 				is_transactional,
 				T::config(),
-			)?;
+			) {
+				Ok(info) => info,
+				Err(e) => {
+					return Err(DispatchErrorWithPostInfo {
+						post_info: PostDispatchInfo {
+							actual_weight: Some(e.weight),
+							pays_fee: Pays::Yes,
+						},
+						error: e.error.into(),
+					})
+				}
+			};
 
 			match info.exit_reason {
 				ExitReason::Succeed(_) => {
@@ -235,7 +249,7 @@ pub mod pallet {
 			T::CallOrigin::ensure_address_origin(&source, origin)?;
 
 			let is_transactional = true;
-			let info = T::Runner::create(
+			let info = match T::Runner::create(
 				source,
 				init,
 				value,
@@ -246,7 +260,18 @@ pub mod pallet {
 				access_list,
 				is_transactional,
 				T::config(),
-			)?;
+			) {
+				Ok(info) => info,
+				Err(e) => {
+					return Err(DispatchErrorWithPostInfo {
+						post_info: PostDispatchInfo {
+							actual_weight: Some(e.weight),
+							pays_fee: Pays::Yes,
+						},
+						error: e.error.into(),
+					})
+				}
+			};
 
 			match info {
 				CreateInfo {
@@ -290,7 +315,7 @@ pub mod pallet {
 			T::CallOrigin::ensure_address_origin(&source, origin)?;
 
 			let is_transactional = true;
-			let info = T::Runner::create2(
+			let info = match T::Runner::create2(
 				source,
 				init,
 				salt,
@@ -302,7 +327,18 @@ pub mod pallet {
 				access_list,
 				is_transactional,
 				T::config(),
-			)?;
+			) {
+				Ok(info) => info,
+				Err(e) => {
+					return Err(DispatchErrorWithPostInfo {
+						post_info: PostDispatchInfo {
+							actual_weight: Some(e.weight),
+							pays_fee: Pays::Yes,
+						},
+						error: e.error.into(),
+					})
+				}
+			};
 
 			match info {
 				CreateInfo {
@@ -561,7 +597,7 @@ static LONDON_CONFIG: EvmConfig = EvmConfig::london();
 impl<T: Config> Pallet<T> {
 	/// Check whether an account is empty.
 	pub fn is_account_empty(address: &H160) -> bool {
-		let account = Self::account_basic(address);
+		let (account, _) = Self::account_basic(address);
 		let code_len = <AccountCodes<T>>::decode_len(address).unwrap_or(0);
 
 		account.nonce == U256::zero() && account.balance == U256::zero() && code_len == 0
@@ -600,17 +636,20 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Get the account basic in EVM format.
-	pub fn account_basic(address: &H160) -> Account {
+	pub fn account_basic(address: &H160) -> (Account, frame_support::weights::Weight) {
 		let account_id = T::AddressMapping::into_account_id(*address);
 
 		let nonce = frame_system::Pallet::<T>::account_nonce(&account_id);
 		// keepalive `true` takes into account ExistentialDeposit as part of what's considered liquid balance.
 		let balance = T::Currency::reducible_balance(&account_id, true);
 
-		Account {
-			nonce: U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(nonce)),
-			balance: U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(balance)),
-		}
+		(
+			Account {
+				nonce: U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(nonce)),
+				balance: U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(balance)),
+			},
+			T::DbWeight::get().reads(2),
+		)
 	}
 
 	/// Get the author using the FindAuthor trait.

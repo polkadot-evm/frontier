@@ -213,7 +213,7 @@ fn reducible_balance() {
 		let existential = ExistentialDeposit::get();
 
 		// Genesis Balance.
-		let genesis_balance = EVM::account_basic(&evm_addr).balance;
+		let genesis_balance = EVM::account_basic(&evm_addr).0.balance;
 
 		// Lock identifier.
 		let lock_id: LockIdentifier = *b"te/stlok";
@@ -221,7 +221,7 @@ fn reducible_balance() {
 		let to_lock = 1000;
 		Balances::set_lock(lock_id, &account_id, to_lock, WithdrawReasons::RESERVE);
 		// Reducible is, as currently configured in `account_basic`, (balance - lock - existential).
-		let reducible_balance = EVM::account_basic(&evm_addr).balance;
+		let reducible_balance = EVM::account_basic(&evm_addr).0.balance;
 		assert_eq!(reducible_balance, (genesis_balance - to_lock - existential));
 	});
 }
@@ -230,7 +230,7 @@ fn reducible_balance() {
 fn author_should_get_tip() {
 	new_test_ext().execute_with(|| {
 		let author = EVM::find_author();
-		let before_tip = EVM::account_basic(&author).balance;
+		let before_tip = EVM::account_basic(&author).0.balance;
 		let result = EVM::call(
 			Origin::root(),
 			H160::default(),
@@ -244,7 +244,7 @@ fn author_should_get_tip() {
 			Vec::new(),
 		);
 		result.expect("EVM can be called");
-		let after_tip = EVM::account_basic(&author).balance;
+		let after_tip = EVM::account_basic(&author).0.balance;
 		assert_eq!(after_tip, (before_tip + 21000));
 	});
 }
@@ -253,7 +253,7 @@ fn author_should_get_tip() {
 fn author_same_balance_without_tip() {
 	new_test_ext().execute_with(|| {
 		let author = EVM::find_author();
-		let before_tip = EVM::account_basic(&author).balance;
+		let before_tip = EVM::account_basic(&author).0.balance;
 		let _ = EVM::call(
 			Origin::root(),
 			H160::default(),
@@ -266,7 +266,7 @@ fn author_same_balance_without_tip() {
 			None,
 			Vec::new(),
 		);
-		let after_tip = EVM::account_basic(&author).balance;
+		let after_tip = EVM::account_basic(&author).0.balance;
 		assert_eq!(after_tip, before_tip);
 	});
 }
@@ -274,7 +274,7 @@ fn author_same_balance_without_tip() {
 #[test]
 fn refunds_should_work() {
 	new_test_ext().execute_with(|| {
-		let before_call = EVM::account_basic(&H160::default()).balance;
+		let before_call = EVM::account_basic(&H160::default()).0.balance;
 		// Gas price is not part of the actual fee calculations anymore, only the base fee.
 		//
 		// Because we first deduct max_fee_per_gas * gas_limit (2_000_000_000 * 1000000) we need
@@ -291,9 +291,9 @@ fn refunds_should_work() {
 			None,
 			Vec::new(),
 		);
-		let total_cost =
-			(U256::from(21_000) * <Test as Config>::FeeCalculator::min_gas_price()) + U256::from(1);
-		let after_call = EVM::account_basic(&H160::default()).balance;
+		let (base_fee, _) = <Test as Config>::FeeCalculator::min_gas_price();
+		let total_cost = (U256::from(21_000) * base_fee) + U256::from(1);
+		let after_call = EVM::account_basic(&H160::default()).0.balance;
 		assert_eq!(after_call, before_call - total_cost);
 	});
 }
@@ -302,8 +302,8 @@ fn refunds_should_work() {
 fn refunds_and_priority_should_work() {
 	new_test_ext().execute_with(|| {
 		let author = EVM::find_author();
-		let before_tip = EVM::account_basic(&author).balance;
-		let before_call = EVM::account_basic(&H160::default()).balance;
+		let before_tip = EVM::account_basic(&author).0.balance;
+		let before_call = EVM::account_basic(&H160::default()).0.balance;
 		// We deliberately set a base fee + max tip > max fee.
 		// The effective priority tip will be 1GWEI instead 1.5GWEI:
 		// 		(max_fee_per_gas - base_fee).min(max_priority_fee)
@@ -323,14 +323,14 @@ fn refunds_and_priority_should_work() {
 			None,
 			Vec::new(),
 		);
-		let base_fee = <Test as Config>::FeeCalculator::min_gas_price();
+		let (base_fee, _) = <Test as Config>::FeeCalculator::min_gas_price();
 		let actual_tip = (max_fee_per_gas - base_fee).min(tip) * used_gas;
 		let total_cost = (used_gas * base_fee) + U256::from(actual_tip) + U256::from(1);
-		let after_call = EVM::account_basic(&H160::default()).balance;
+		let after_call = EVM::account_basic(&H160::default()).0.balance;
 		// The tip is deducted but never refunded to the caller.
 		assert_eq!(after_call, before_call - total_cost);
 
-		let after_tip = EVM::account_basic(&author).balance;
+		let after_tip = EVM::account_basic(&author).0.balance;
 		assert_eq!(after_tip, (before_tip + actual_tip.low_u128()));
 	});
 }
@@ -353,6 +353,8 @@ fn call_should_fail_with_priority_greater_than_max_fee() {
 			Vec::new(),
 		);
 		assert!(result.is_err());
+		// Some used weight is returned as part of the error.
+		assert_eq!(result.unwrap_err().post_info.actual_weight, Some(7));
 	});
 }
 
@@ -413,7 +415,7 @@ fn runner_non_transactional_calls_with_non_balance_accounts_is_ok_without_gas_pr
 		let non_balance_account =
 			H160::from_str("7700000000000000000000000000000000000001").unwrap();
 		assert_eq!(
-			EVM::account_basic(&non_balance_account).balance,
+			EVM::account_basic(&non_balance_account).0.balance,
 			U256::zero()
 		);
 		let _ = <Test as Config>::Runner::call(
@@ -431,7 +433,7 @@ fn runner_non_transactional_calls_with_non_balance_accounts_is_ok_without_gas_pr
 		)
 		.expect("Non transactional call succeeds");
 		assert_eq!(
-			EVM::account_basic(&non_balance_account).balance,
+			EVM::account_basic(&non_balance_account).0.balance,
 			U256::zero()
 		);
 	});
@@ -446,7 +448,7 @@ fn runner_non_transactional_calls_with_non_balance_accounts_is_err_with_gas_pric
 		let non_balance_account =
 			H160::from_str("7700000000000000000000000000000000000001").unwrap();
 		assert_eq!(
-			EVM::account_basic(&non_balance_account).balance,
+			EVM::account_basic(&non_balance_account).0.balance,
 			U256::zero()
 		);
 		let res = <Test as Config>::Runner::call(
