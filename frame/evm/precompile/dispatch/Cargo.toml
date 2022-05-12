@@ -9,7 +9,7 @@ repository = "https://github.com/paritytech/frontier/"
 description = "DISPATCH precompiles for EVM pallet."
 
 [dependencies]
-frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.20", default-features = false }
 
 fp-evm = { version = "3.0.0-dev", path = "../../../../primitives/evm", default-features = false }
 pallet-evm = { version = "6.0.0-dev", path = "../..", default-features = false }

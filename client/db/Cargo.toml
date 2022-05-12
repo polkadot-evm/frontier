@@ -11,10 +11,10 @@ repository = "https://github.com/paritytech/frontier/"
 parking_lot = "0.12.0"
 
 codec = { package = "parity-scale-codec", version = "3.0.0", features = ["derive"] }
-sc-client-db = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-core = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-database = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-runtime = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-client-db = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.20" }
+sp-core = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.20" }
+sp-database = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.20" }
+sp-runtime = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.20" }
 
 fp-storage = { version = "2.0.0-dev", path = "../../primitives/storage" }
 

@@ -23,16 +23,16 @@ sha3 = { version = "0.10.1", default-features = false }
 
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
 scale-info = { version = "2.0.0", default-features = false, features = ["derive"] }
-sp-core = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-io = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-runtime = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-std = { version = "4.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-core = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.20", default-features = false }
+sp-io = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.20", default-features = false }
+sp-runtime = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.20", default-features = false }
+sp-std = { version = "4.0.0", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.20", default-features = false }
 
-frame-benchmarking = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false, optional = true }
-frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-pallet-balances = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-pallet-timestamp = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+frame-benchmarking = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.20", default-features = false, optional = true }
+frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.20", default-features = false }
+frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.20", default-features = false }
+pallet-balances = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.20", default-features = false }
+pallet-timestamp = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.20", default-features = false }
 
 fp-evm = { version = "3.0.0-dev", path = "../../primitives/evm", default-features = false }
 
