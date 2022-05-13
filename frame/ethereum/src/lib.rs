@@ -32,7 +32,10 @@ mod tests;
 use ethereum_types::{Bloom, BloomInput, H160, H256, H64, U256};
 use evm::ExitReason;
 use fp_consensus::{PostLog, PreLog, FRONTIER_ENGINE_ID};
-use fp_evm::{CallOrCreateInfo, CheckEvmTransaction, CheckEvmTransactionConfig, CheckEvmTransactionInput, InvalidEvmTransactionError};
+use fp_evm::{
+	CallOrCreateInfo, CheckEvmTransaction, CheckEvmTransactionConfig, CheckEvmTransactionInput,
+	InvalidEvmTransactionError,
+};
 use fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA};
 #[cfg(feature = "try-runtime")]
 use frame_support::traits::OnRuntimeUpgradeHelpersExt;
@@ -522,14 +525,16 @@ impl<T: Config> Pallet<T> {
 			config: CheckEvmTransactionConfig {
 				evm_config: T::config(),
 				block_gas_limit: T::BlockGasLimit::get(),
-				base_fee: base_fee,
+				base_fee,
 				chain_id: T::ChainId::get(),
 			},
 			transaction: transaction_data.clone().into(),
-			_marker: Default::default()
+			_marker: Default::default(),
 		}
-		.with_chain_id().map_err(|e| e.0)?
-		.validate_for(&who).map_err(|e| e.0)?;
+		.with_chain_id()
+		.map_err(|e| e.0)?
+		.validate_for(&who)
+		.map_err(|e| e.0)?;
 
 		let priority = match (
 			transaction_data.gas_price,
@@ -545,12 +550,10 @@ impl<T: Config> Pallet<T> {
 			// EIP-1559 transaction without tip.
 			(None, Some(_), None) => 0,
 			// EIP-1559 transaction with tip.
-			(None, Some(max_fee_per_gas), Some(max_priority_fee_per_gas)) => {
-				max_fee_per_gas
-					.saturating_sub(base_fee)
-					.min(max_priority_fee_per_gas)
-					.unique_saturated_into()
-			}
+			(None, Some(max_fee_per_gas), Some(max_priority_fee_per_gas)) => max_fee_per_gas
+				.saturating_sub(base_fee)
+				.min(max_priority_fee_per_gas)
+				.unique_saturated_into(),
 			// Unreachable because already validated. Gracefully handle.
 			_ => return Err(InvalidTransaction::Payment.into()),
 		};
@@ -833,19 +836,7 @@ impl<T: Config> Pallet<T> {
 		transaction: &Transaction,
 	) -> Result<(), TransactionValidityError> {
 		let transaction_data = Pallet::<T>::transaction_data(transaction);
-		// let (account_nonce, _) = Self::validate_transaction_common(origin, &transaction_data)?;
 
-		// // In the context of the block, a transaction with a nonce that is
-		// // too high should be considered invalid and make the whole block invalid.
-		// if transaction_nonce > account_nonce {
-		// 	Err(TransactionValidityError::Invalid(
-		// 		InvalidTransaction::Future,
-		// 	))
-		// } else if transaction_nonce < account_nonce {
-		// 	Err(TransactionValidityError::Invalid(InvalidTransaction::Stale))
-		// } else {
-		// 	Ok(())
-		// }
 		let (base_fee, _) = T::FeeCalculator::min_gas_price();
 		let (who, _) = pallet_evm::Pallet::<T>::account_basic(&origin);
 
@@ -853,11 +844,11 @@ impl<T: Config> Pallet<T> {
 			config: CheckEvmTransactionConfig {
 				evm_config: T::config(),
 				block_gas_limit: T::BlockGasLimit::get(),
-				base_fee: base_fee,
+				base_fee,
 				chain_id: T::ChainId::get(),
 			},
 			transaction: transaction_data.clone().into(),
-			_marker: Default::default()
+			_marker: Default::default(),
 		}
 		.validate_for(&who)
 		.map_err(|e| TransactionValidityError::Invalid(e.0))
@@ -965,23 +956,33 @@ struct InvalidTransactionWrapper(InvalidTransaction);
 impl From<InvalidEvmTransactionError> for InvalidTransactionWrapper {
 	fn from(validation_error: InvalidEvmTransactionError) -> Self {
 		match validation_error {
-			InvalidEvmTransactionError::GasLimitTooLow => InvalidTransactionWrapper(InvalidTransaction::Custom(
-				TransactionValidationError::InvalidGasLimit as u8,
-			)),
-			InvalidEvmTransactionError::GasLimitTooHigh => InvalidTransactionWrapper(InvalidTransaction::Custom(
-				TransactionValidationError::InvalidGasLimit as u8,
-			)),
-			InvalidEvmTransactionError::GasPriceTooLow => InvalidTransactionWrapper(InvalidTransaction::Payment),
-			InvalidEvmTransactionError::PriorityFeeTooHigh => InvalidTransactionWrapper(InvalidTransaction::Custom(
-				TransactionValidationError::MaxFeePerGasTooLow as u8,
-			)),
-			InvalidEvmTransactionError::BalanceTooLow => InvalidTransactionWrapper(InvalidTransaction::Payment),
-			InvalidEvmTransactionError::TxNonceTooLow => InvalidTransactionWrapper(InvalidTransaction::Stale),
-			InvalidEvmTransactionError::TxNonceTooHigh => InvalidTransactionWrapper(InvalidTransaction::Future),
-			InvalidEvmTransactionError::InvalidPaymentInput => InvalidTransactionWrapper(InvalidTransaction::Payment),
-			InvalidEvmTransactionError::InvalidChainId => InvalidTransactionWrapper(InvalidTransaction::Custom(
-				TransactionValidationError::InvalidChainId as u8,
-			)),
+			InvalidEvmTransactionError::GasLimitTooLow => InvalidTransactionWrapper(
+				InvalidTransaction::Custom(TransactionValidationError::InvalidGasLimit as u8),
+			),
+			InvalidEvmTransactionError::GasLimitTooHigh => InvalidTransactionWrapper(
+				InvalidTransaction::Custom(TransactionValidationError::InvalidGasLimit as u8),
+			),
+			InvalidEvmTransactionError::GasPriceTooLow => {
+				InvalidTransactionWrapper(InvalidTransaction::Payment)
+			}
+			InvalidEvmTransactionError::PriorityFeeTooHigh => InvalidTransactionWrapper(
+				InvalidTransaction::Custom(TransactionValidationError::MaxFeePerGasTooLow as u8),
+			),
+			InvalidEvmTransactionError::BalanceTooLow => {
+				InvalidTransactionWrapper(InvalidTransaction::Payment)
+			}
+			InvalidEvmTransactionError::TxNonceTooLow => {
+				InvalidTransactionWrapper(InvalidTransaction::Stale)
+			}
+			InvalidEvmTransactionError::TxNonceTooHigh => {
+				InvalidTransactionWrapper(InvalidTransaction::Future)
+			}
+			InvalidEvmTransactionError::InvalidPaymentInput => {
+				InvalidTransactionWrapper(InvalidTransaction::Payment)
+			}
+			InvalidEvmTransactionError::InvalidChainId => InvalidTransactionWrapper(
+				InvalidTransaction::Custom(TransactionValidationError::InvalidChainId as u8),
+			),
 		}
 	}
 }

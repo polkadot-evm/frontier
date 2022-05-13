@@ -146,7 +146,7 @@ impl<'config, E: From<InvalidEvmTransactionError>> CheckEvmTransaction<'config, 
 		self.validate(who)
 	}
 
-	pub fn with_chain_id(&self) -> Result<&Self, E>  {
+	pub fn with_chain_id(&self) -> Result<&Self, E> {
 		if let Some(chain_id) = self.transaction.chain_id {
 			if chain_id != self.config.chain_id {
 				return Err(InvalidEvmTransactionError::InvalidChainId.into());
@@ -177,7 +177,7 @@ impl<'config, E: From<InvalidEvmTransactionError>> CheckEvmTransaction<'config, 
 			return Err(InvalidEvmTransactionError::GasLimitTooLow.into());
 		}
 
-		// Transaction gas limit is within the upper bound block gas limit. 
+		// Transaction gas limit is within the upper bound block gas limit.
 		if self.transaction.gas_limit >= self.config.block_gas_limit {
 			return Err(InvalidEvmTransactionError::GasLimitTooHigh.into());
 		}
@@ -189,9 +189,7 @@ impl<'config, E: From<InvalidEvmTransactionError>> CheckEvmTransaction<'config, 
 			self.transaction.max_priority_fee_per_gas,
 		) {
 			// Legacy or EIP-2930 transaction.
-			(Some(gas_price), None, None) => {
-				gas_price
-			}
+			(Some(gas_price), None, None) => gas_price,
 			// EIP-1559 transaction without tip.
 			(None, Some(max_fee_per_gas), None) => max_fee_per_gas,
 			// EIP-1559 transaction with tip.
@@ -204,9 +202,9 @@ impl<'config, E: From<InvalidEvmTransactionError>> CheckEvmTransaction<'config, 
 			_ => return Err(InvalidEvmTransactionError::InvalidPaymentInput.into()),
 		};
 
-		// Transaction max fee is at least the current base fee. 
+		// Transaction max fee is at least the current base fee.
 		if max_fee_per_gas < self.config.base_fee {
-			return Err(InvalidEvmTransactionError::GasPriceTooLow.into())
+			return Err(InvalidEvmTransactionError::GasPriceTooLow.into());
 		}
 
 		// Account has enough funds to pay for the transaction.
