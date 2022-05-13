@@ -850,6 +850,8 @@ impl<T: Config> Pallet<T> {
 			transaction: transaction_data.clone().into(),
 			_marker: Default::default(),
 		}
+		.with_chain_id()
+		.map_err(|e| e.0)?
 		.validate_for(&who)
 		.map_err(|e| TransactionValidityError::Invalid(e.0))
 	}
