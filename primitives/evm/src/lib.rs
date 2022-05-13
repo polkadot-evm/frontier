@@ -112,10 +112,8 @@ pub struct CheckEvmTransactionConfig<'config> {
 pub struct CheckEvmTransaction<'config, E: From<InvalidEvmTransactionError>> {
 	pub config: CheckEvmTransactionConfig<'config>,
 	pub transaction: CheckEvmTransactionInput,
-	pub _marker: sp_std::marker::PhantomData<E>,
+	_marker: sp_std::marker::PhantomData<E>,
 }
-
-type EvmTransactionValidity<E> = Result<(), E>;
 
 pub enum InvalidEvmTransactionError {
 	GasLimitTooLow,
@@ -130,14 +128,25 @@ pub enum InvalidEvmTransactionError {
 }
 
 impl<'config, E: From<InvalidEvmTransactionError>> CheckEvmTransaction<'config, E> {
-	pub fn validate_for(&self, who: &Account) -> EvmTransactionValidity<E> {
+	pub fn new(
+		config: CheckEvmTransactionConfig<'config>,
+		transaction: CheckEvmTransactionInput,
+	) -> Self {
+		CheckEvmTransaction {
+			config,
+			transaction,
+			_marker: Default::default(),
+		}
+	}
+
+	pub fn validate_for(&self, who: &Account) -> Result<&Self, E> {
 		if self.transaction.nonce < who.nonce {
 			return Err(InvalidEvmTransactionError::TxNonceTooLow.into());
 		}
 		self.validate(who)
 	}
 
-	pub fn validate_in_block_for(&self, who: &Account) -> EvmTransactionValidity<E> {
+	pub fn validate_in_block_for(&self, who: &Account) -> Result<&Self, E> {
 		if self.transaction.nonce > who.nonce {
 			return Err(InvalidEvmTransactionError::TxNonceTooHigh.into());
 		} else if self.transaction.nonce < who.nonce {
@@ -155,7 +164,7 @@ impl<'config, E: From<InvalidEvmTransactionError>> CheckEvmTransaction<'config, 
 		Ok(self)
 	}
 
-	fn validate(&self, who: &Account) -> EvmTransactionValidity<E> {
+	fn validate(&self, who: &Account) -> Result<&Self, E> {
 		// We must ensure a transaction can pay the cost of its data bytes.
 		// If it can't it should not be included in a block.
 		let mut gasometer = evm::gasometer::Gasometer::new(
@@ -214,6 +223,6 @@ impl<'config, E: From<InvalidEvmTransactionError>> CheckEvmTransaction<'config, 
 			return Err(InvalidEvmTransactionError::BalanceTooLow.into());
 		}
 
-		Ok(())
+		Ok(self)
 	}
 }

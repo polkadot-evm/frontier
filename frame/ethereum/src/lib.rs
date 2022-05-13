@@ -521,16 +521,15 @@ impl<T: Config> Pallet<T> {
 		let (base_fee, _) = T::FeeCalculator::min_gas_price();
 		let (who, _) = pallet_evm::Pallet::<T>::account_basic(&origin);
 
-		let _ = CheckEvmTransaction::<InvalidTransactionWrapper> {
-			config: CheckEvmTransactionConfig {
+		let _ = CheckEvmTransaction::<InvalidTransactionWrapper>::new(
+			CheckEvmTransactionConfig {
 				evm_config: T::config(),
 				block_gas_limit: T::BlockGasLimit::get(),
 				base_fee,
 				chain_id: T::ChainId::get(),
 			},
-			transaction: transaction_data.clone().into(),
-			_marker: Default::default(),
-		}
+			transaction_data.clone().into(),
+		)
 		.with_chain_id()
 		.map_err(|e| e.0)?
 		.validate_for(&who)
@@ -840,20 +839,21 @@ impl<T: Config> Pallet<T> {
 		let (base_fee, _) = T::FeeCalculator::min_gas_price();
 		let (who, _) = pallet_evm::Pallet::<T>::account_basic(&origin);
 
-		CheckEvmTransaction::<InvalidTransactionWrapper> {
-			config: CheckEvmTransactionConfig {
+		let _ = CheckEvmTransaction::<InvalidTransactionWrapper>::new(
+			CheckEvmTransactionConfig {
 				evm_config: T::config(),
 				block_gas_limit: T::BlockGasLimit::get(),
 				base_fee,
 				chain_id: T::ChainId::get(),
 			},
-			transaction: transaction_data.clone().into(),
-			_marker: Default::default(),
-		}
+			transaction_data.clone().into(),
+		)
 		.with_chain_id()
 		.map_err(|e| e.0)?
 		.validate_for(&who)
-		.map_err(|e| TransactionValidityError::Invalid(e.0))
+		.map_err(|e| TransactionValidityError::Invalid(e.0))?;
+
+		Ok(())
 	}
 
 	pub fn migrate_block_v0_to_v2() -> Weight {
