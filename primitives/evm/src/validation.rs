@@ -14,6 +14,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#![allow(clippy::comparison_chain)]
 
 pub use evm::backend::Basic as Account;
 use sp_core::{H160, H256, U256};
@@ -103,9 +104,7 @@ impl<'config, E: From<InvalidEvmTransactionError>> CheckEvmTransaction<'config, 
 	pub fn with_base_fee(&self) -> Result<&Self, E> {
 		// Get fee data from either a legacy or typed transaction input.
 		let max_fee_per_gas = self.max_fee_per_gas()?;
-		if self.config.is_transactional
-			|| (!self.config.is_transactional && max_fee_per_gas > U256::zero())
-		{
+		if self.config.is_transactional || max_fee_per_gas > U256::zero() {
 			// Transaction max fee is at least the current base fee.
 			if max_fee_per_gas < self.config.base_fee {
 				return Err(InvalidEvmTransactionError::GasPriceTooLow.into());
@@ -122,7 +121,7 @@ impl<'config, E: From<InvalidEvmTransactionError>> CheckEvmTransaction<'config, 
 		// Check is skipped on non-transactional calls that don't provide
 		// a gas price input.
 		let fee = max_fee_per_gas.saturating_mul(self.transaction.gas_limit);
-		if self.config.is_transactional || (!self.config.is_transactional && fee > U256::zero()) {
+		if self.config.is_transactional || fee > U256::zero() {
 			let total_payment = self.transaction.value.saturating_add(fee);
 			if who.balance < total_payment {
 				return Err(InvalidEvmTransactionError::BalanceTooLow.into());
@@ -150,7 +149,7 @@ impl<'config, E: From<InvalidEvmTransactionError>> CheckEvmTransaction<'config, 
 			}
 			_ => {
 				if self.config.is_transactional {
-					return Err(InvalidEvmTransactionError::InvalidPaymentInput.into());
+					Err(InvalidEvmTransactionError::InvalidPaymentInput.into())
 				} else {
 					// Allow non-set fee input for non-transactional calls.
 					Ok(U256::zero())
