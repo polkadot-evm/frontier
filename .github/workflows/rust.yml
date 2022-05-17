@@ -43,7 +43,7 @@ jobs:
         cd template/node
         cargo build --release --locked --verbose --no-default-features --features manual-seal,rpc_binary_search_estimate
     - name: Use Node.js 10
-      uses: actions/setup-node@v1
+      uses: actions/setup-node@v3
       with:
         node-version: 10
     - name: Install functional tests typescript
