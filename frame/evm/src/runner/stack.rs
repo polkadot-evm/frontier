@@ -230,9 +230,9 @@ impl<T: Config> RunnerT<T> for Runner<T> {
 				access_list,
 			},
 		)
-		.with_base_fee()
+		.validate_in_block_for(&source_account)
+		.and_then(|v| v.with_base_fee())
 		.and_then(|v| v.with_balance_for(&source_account))
-		.and_then(|v| v.validate_in_block_for(&source_account))
 		.map_err(|error| RunnerError { error, weight })?;
 		Ok(())
 	}

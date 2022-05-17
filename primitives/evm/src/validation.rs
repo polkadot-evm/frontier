@@ -178,7 +178,7 @@ impl<'config, E: From<InvalidEvmTransactionError>> CheckEvmTransaction<'config, 
 		}
 
 		// Transaction gas limit is within the upper bound block gas limit.
-		if self.transaction.gas_limit >= self.config.block_gas_limit {
+		if self.transaction.gas_limit > self.config.block_gas_limit {
 			return Err(InvalidEvmTransactionError::GasLimitTooHigh.into());
 		}
 
