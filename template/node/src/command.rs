@@ -200,6 +200,7 @@ pub fn run() -> sc_cli::Result<()> {
 							Arc::new(ext_builder),
 						)
 					}
+					BenchmarkCmd::Machine(cmd) => cmd.run(&config),
 				}
 			})
 		}
