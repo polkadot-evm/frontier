@@ -21,12 +21,9 @@ use std::{collections::BTreeMap, iter, marker::PhantomData, sync::Arc};
 use ethereum::{BlockV2 as EthereumBlock, TransactionV2 as EthereumTransaction};
 use ethereum_types::{H256, U256};
 use futures::{FutureExt as _, SinkExt as _, StreamExt as _};
-use jsonrpc_core::Result as JsonRpcResult;
-use jsonrpc_pubsub::{
-	manager::{IdProvider, SubscriptionManager},
-	typed::Subscriber,
-	SubscriptionId,
-};
+use jsonrpsee::core::{Error, RpcResult};
+use jsonrpsee::ws_server::SubscriptionSink;
+use jsonrpsee::PendingSubscription;
 use log::warn;
 use rand::{distributions::Alphanumeric, thread_rng, Rng};
 
@@ -35,7 +32,7 @@ use sc_client_api::{
 	client::BlockchainEvents,
 };
 use sc_network::{ExHashT, NetworkService};
-use sc_rpc::Metadata;
+use sc_rpc::SubscriptionTaskExecutor;
 use sc_transaction_pool_api::TransactionPool;
 use sp_api::{ApiExt, BlockId, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
@@ -47,43 +44,18 @@ use fc_rpc_core::{
 		pubsub::{Kind, Params, PubSubSyncStatus, Result as PubSubResult, SyncStatusMetadata},
 		Bytes, FilteredParams, Header, Log, Rich,
 	},
-	EthPubSubApi,
+	EthPubSubApiServer,
 };
 use fp_rpc::EthereumRuntimeRPCApi;
 
 use crate::{frontier_backend_client, overrides::OverrideHandle};
-
-#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
-pub struct HexEncodedIdProvider {
-	len: usize,
-}
-
-impl Default for HexEncodedIdProvider {
-	fn default() -> Self {
-		Self { len: 16 }
-	}
-}
-
-impl IdProvider for HexEncodedIdProvider {
-	type Id = String;
-	fn next_id(&self) -> Self::Id {
-		let mut rng = thread_rng();
-		let id: String = iter::repeat(())
-			.map(|()| rng.sample(Alphanumeric))
-			.map(char::from)
-			.take(self.len)
-			.collect();
-		let out = hex::encode(id);
-		format!("0x{}", out)
-	}
-}
 
 /// Eth pub-sub API implementation.
 pub struct EthPubSub<B: BlockT, P, C, BE, H: ExHashT> {
 	pool: Arc<P>,
 	client: Arc<C>,
 	network: Arc<NetworkService<B, H>>,
-	subscriptions: SubscriptionManager<HexEncodedIdProvider>,
+	subscriptions: SubscriptionTaskExecutor,
 	overrides: Arc<OverrideHandle<B>>,
 	starting_block: u64,
 	_marker: PhantomData<BE>,
@@ -97,7 +69,7 @@ where
 		pool: Arc<P>,
 		client: Arc<C>,
 		network: Arc<NetworkService<B, H>>,
-		subscriptions: SubscriptionManager<HexEncodedIdProvider>,
+		subscriptions: SubscriptionTaskExecutor,
 		overrides: Arc<OverrideHandle<B>>,
 	) -> Self {
 		// Capture the best block as seen on initialization. Used for syncing subscriptions.
@@ -223,7 +195,7 @@ impl SubscriptionResult {
 	}
 }
 
-impl<B: BlockT, P, C, BE, H: ExHashT> EthPubSubApi for EthPubSub<B, P, C, BE, H>
+impl<B: BlockT, P, C, BE, H: ExHashT> EthPubSubApiServer for EthPubSub<B, P, C, BE, H>
 where
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	P: TransactionPool<Block = B> + Send + Sync + 'static,
@@ -233,14 +205,13 @@ where
 	BE: Backend<B> + 'static,
 	BE::State: StateBackend<BlakeTwo256>,
 {
-	type Metadata = Metadata;
-	fn subscribe(
-		&self,
-		_metadata: Self::Metadata,
-		subscriber: Subscriber<PubSubResult>,
-		kind: Kind,
-		params: Option<Params>,
-	) {
+	fn subscribe(&self, sink: PendingSubscription, kind: Kind, params: Option<Params>) {
+		let sink = if let Some(sink) = sink.accept() {
+			sink
+		} else {
+			return;
+		};
+
 		let filtered_params = match params {
 			Some(Params::Logs(filter)) => FilteredParams::new(Some(filter)),
 			_ => FilteredParams::default(),
@@ -253,247 +224,210 @@ where
 		let starting_block = self.starting_block;
 		match kind {
 			Kind::Logs => {
-				self.subscriptions.add(subscriber, |sink| {
-					let stream = client
-						.import_notification_stream()
-						.filter_map(move |notification| {
-							if notification.is_new_best {
-								let id = BlockId::Hash(notification.hash);
+				let stream = client
+					.import_notification_stream()
+					.filter_map(move |notification| {
+						if notification.is_new_best {
+							let id = BlockId::Hash(notification.hash);
 
-								let schema = frontier_backend_client::onchain_storage_schema::<
-									B,
-									C,
-									BE,
-								>(client.as_ref(), id);
-								let handler = overrides
-									.schemas
-									.get(&schema)
-									.unwrap_or(&overrides.fallback);
+							let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(
+								client.as_ref(),
+								id,
+							);
+							let handler = overrides
+								.schemas
+								.get(&schema)
+								.unwrap_or(&overrides.fallback);
 
-								let block = handler.current_block(&id);
-								let receipts = handler.current_receipts(&id);
+							let block = handler.current_block(&id);
+							let receipts = handler.current_receipts(&id);
 
-								match (receipts, block) {
-									(Some(receipts), Some(block)) => {
-										futures::future::ready(Some((block, receipts)))
-									}
-									_ => futures::future::ready(None),
+							match (receipts, block) {
+								(Some(receipts), Some(block)) => {
+									futures::future::ready(Some((block, receipts)))
 								}
-							} else {
-								futures::future::ready(None)
+								_ => futures::future::ready(None),
 							}
-						})
-						.flat_map(move |(block, receipts)| {
-							futures::stream::iter(SubscriptionResult::new().logs(
-								block,
-								receipts,
-								&filtered_params,
-							))
-						})
-						.map(|x| {
-							Ok::<Result<PubSubResult, jsonrpc_core::types::error::Error>, ()>(Ok(
-								PubSubResult::Log(Box::new(x)),
-							))
-						});
-					stream
-						.forward(
-							sink.sink_map_err(|e| warn!("Error sending notifications: {:?}", e)),
-						)
-						.map(|_| ())
-				});
+						} else {
+							futures::future::ready(None)
+						}
+					})
+					.flat_map(move |(block, receipts)| {
+						futures::stream::iter(SubscriptionResult::new().logs(
+							block,
+							receipts,
+							&filtered_params,
+						))
+					})
+					.map(|x| PubSubResult::Log(Box::new(x)));
+				subscribe_helper(&self.subscriptions, sink, stream)
 			}
 			Kind::NewHeads => {
-				self.subscriptions.add(subscriber, |sink| {
-					let stream = client
-						.import_notification_stream()
-						.filter_map(move |notification| {
-							if notification.is_new_best {
-								let id = BlockId::Hash(notification.hash);
+				let stream = client
+					.import_notification_stream()
+					.filter_map(move |notification| {
+						if notification.is_new_best {
+							let id = BlockId::Hash(notification.hash);
 
-								let schema = frontier_backend_client::onchain_storage_schema::<
-									B,
-									C,
-									BE,
-								>(client.as_ref(), id);
-								let handler = overrides
-									.schemas
-									.get(&schema)
-									.unwrap_or(&overrides.fallback);
+							let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(
+								client.as_ref(),
+								id,
+							);
+							let handler = overrides
+								.schemas
+								.get(&schema)
+								.unwrap_or(&overrides.fallback);
 
-								let block = handler.current_block(&id);
-								futures::future::ready(block)
-							} else {
-								futures::future::ready(None)
-							}
-						})
-						.map(|block| Ok::<_, ()>(Ok(SubscriptionResult::new().new_heads(block))));
-					stream
-						.forward(
-							sink.sink_map_err(|e| warn!("Error sending notifications: {:?}", e)),
-						)
-						.map(|_| ())
-				});
+							let block = handler.current_block(&id);
+							futures::future::ready(block)
+						} else {
+							futures::future::ready(None)
+						}
+					})
+					.map(|block| SubscriptionResult::new().new_heads(block));
+				subscribe_helper(&self.subscriptions, sink, stream)
 			}
 			Kind::NewPendingTransactions => {
 				use sc_transaction_pool_api::InPoolTransaction;
 
-				self.subscriptions.add(subscriber, move |sink| {
-					let stream = pool
-						.import_notification_stream()
-						.filter_map(move |txhash| {
-							if let Some(xt) = pool.ready_transaction(&txhash) {
-								let best_block: BlockId<B> = BlockId::Hash(client.info().best_hash);
+				let stream = pool
+					.import_notification_stream()
+					.filter_map(move |txhash| {
+						if let Some(xt) = pool.ready_transaction(&txhash) {
+							let best_block: BlockId<B> = BlockId::Hash(client.info().best_hash);
 
-								let api = client.runtime_api();
+							let api = client.runtime_api();
 
-								let api_version = if let Ok(Some(api_version)) =
-									api.api_version::<dyn EthereumRuntimeRPCApi<B>>(&best_block)
+							let api_version = if let Ok(Some(api_version)) =
+								api.api_version::<dyn EthereumRuntimeRPCApi<B>>(&best_block)
+							{
+								api_version
+							} else {
+								return futures::future::ready(None);
+							};
+
+							let xts = vec![xt.data().clone()];
+
+							let txs: Option<Vec<EthereumTransaction>> = if api_version > 1 {
+								api.extrinsic_filter(&best_block, xts).ok()
+							} else {
+								#[allow(deprecated)]
+								if let Ok(legacy) =
+									api.extrinsic_filter_before_version_2(&best_block, xts)
 								{
-									api_version
+									Some(legacy.into_iter().map(|tx| tx.into()).collect())
 								} else {
-									return futures::future::ready(None);
-								};
+									None
+								}
+							};
 
-								let xts = vec![xt.data().clone()];
-
-								let txs: Option<Vec<EthereumTransaction>> = if api_version > 1 {
-									api.extrinsic_filter(&best_block, xts).ok()
-								} else {
-									#[allow(deprecated)]
-									if let Ok(legacy) =
-										api.extrinsic_filter_before_version_2(&best_block, xts)
-									{
-										Some(legacy.into_iter().map(|tx| tx.into()).collect())
+							let res = match txs {
+								Some(txs) => {
+									if txs.len() == 1 {
+										Some(txs[0].clone())
 									} else {
 										None
 									}
-								};
-
-								let res = match txs {
-									Some(txs) => {
-										if txs.len() == 1 {
-											Some(txs[0].clone())
-										} else {
-											None
-										}
-									}
-									_ => None,
-								};
-								futures::future::ready(res)
-							} else {
-								futures::future::ready(None)
-							}
-						})
-						.map(|transaction| {
-							Ok::<Result<PubSubResult, jsonrpc_core::types::error::Error>, ()>(Ok(
-								PubSubResult::TransactionHash(transaction.hash()),
-							))
-						});
-					stream
-						.forward(
-							sink.sink_map_err(|e| warn!("Error sending notifications: {:?}", e)),
-						)
-						.map(|_| ())
-				});
+								}
+								_ => None,
+							};
+							futures::future::ready(res)
+						} else {
+							futures::future::ready(None)
+						}
+					})
+					.map(|transaction| PubSubResult::TransactionHash(transaction.hash()));
+				subscribe_helper(&self.subscriptions, sink, stream)
 			}
 			Kind::Syncing => {
-				self.subscriptions.add(subscriber, |sink| {
-					let mut sink =
-						sink.sink_map_err(|e| warn!("Error sending notifications: {:?}", e));
+				let mut sink = sink.sink_map_err(|e| warn!("Error sending notifications: {:?}", e));
 
-					let client = Arc::clone(&client);
-					let network = Arc::clone(&network);
-					async move {
-						// Gets the node syncing status.
-						// The response is expected to be serialized either as a plain boolean
-						// if the node is not syncing, or a structure containing syncing metadata
-						// in case it is.
-						async fn status<
-							C: HeaderBackend<B>,
-							B: BlockT,
-							H: ExHashT + Send + Sync,
-						>(
-							client: Arc<C>,
-							network: Arc<NetworkService<B, H>>,
-							starting_block: u64,
-						) -> PubSubSyncStatus {
-							if network.is_major_syncing() {
-								// Get the target block to sync.
-								// This value is only exposed through substrate async Api
-								// in the `NetworkService`.
-								let highest_block = network
-									.status()
-									.await
-									.ok()
-									.and_then(|res| res.best_seen_block)
-									.map(|res| {
-										UniqueSaturatedInto::<u64>::unique_saturated_into(res)
-									});
-								// Best imported block.
-								let current_block =
-									UniqueSaturatedInto::<u64>::unique_saturated_into(
-										client.info().best_number,
-									);
+				let client = Arc::clone(&client);
+				let network = Arc::clone(&network);
+				async move {
+					// Gets the node syncing status.
+					// The response is expected to be serialized either as a plain boolean
+					// if the node is not syncing, or a structure containing syncing metadata
+					// in case it is.
+					async fn status<C: HeaderBackend<B>, B: BlockT, H: ExHashT + Send + Sync>(
+						client: Arc<C>,
+						network: Arc<NetworkService<B, H>>,
+						starting_block: u64,
+					) -> PubSubSyncStatus {
+						if network.is_major_syncing() {
+							// Get the target block to sync.
+							// This value is only exposed through substrate async Api
+							// in the `NetworkService`.
+							let highest_block = network
+								.status()
+								.await
+								.ok()
+								.and_then(|res| res.best_seen_block)
+								.map(|res| UniqueSaturatedInto::<u64>::unique_saturated_into(res));
+							// Best imported block.
+							let current_block = UniqueSaturatedInto::<u64>::unique_saturated_into(
+								client.info().best_number,
+							);
 
-								PubSubSyncStatus::Detailed(SyncStatusMetadata {
-									syncing: true,
-									starting_block,
-									current_block,
-									highest_block,
-								})
-							} else {
-								PubSubSyncStatus::Simple(false)
-							}
+							PubSubSyncStatus::Detailed(SyncStatusMetadata {
+								syncing: true,
+								starting_block,
+								current_block,
+								highest_block,
+							})
+						} else {
+							PubSubSyncStatus::Simple(false)
 						}
-						// On connection subscriber expects a value.
-						// Because import notifications are only emitted when the node is synced or
-						// in case of reorg, the first event is emited right away.
-						let _ = sink
-							.feed(Ok(PubSubResult::SyncState(
-								status(Arc::clone(&client), Arc::clone(&network), starting_block)
-									.await,
-							)))
-							.await;
-
-						// When the node is not under a major syncing (i.e. from genesis), react
-						// normally to import notifications.
-						//
-						// Only send new notifications down the pipe when the syncing status changed.
-						client
-							.import_notification_stream()
-							.fold(
-								network.is_major_syncing(),
-								move |mut last_syncing_status, _| {
-									let client = Arc::clone(&client);
-									let network = Arc::clone(&network);
-									let mut sink = sink.clone();
-									async move {
-										let syncing_status = network.is_major_syncing();
-										if last_syncing_status != syncing_status {
-											last_syncing_status = syncing_status;
-											let _ = sink
-												.feed(Ok(PubSubResult::SyncState(
-													status(client, network, starting_block).await,
-												)))
-												.await;
-										}
-										last_syncing_status
-									}
-								},
-							)
-							.map(|_| ())
-							.await
 					}
-				});
+					// On connection subscriber expects a value.
+					// Because import notifications are only emitted when the node is synced or
+					// in case of reorg, the first event is emited right away.
+					let _ = sink
+						.send(PubSubResult::SyncState(
+							status(Arc::clone(&client), Arc::clone(&network), starting_block).await,
+						))
+						.await;
+
+					// When the node is not under a major syncing (i.e. from genesis), react
+					// normally to import notifications.
+					//
+					// Only send new notifications down the pipe when the syncing status changed.
+					use std::sync::atomic::{AtomicBool, Ordering};
+					let last_syncing_status = AtomicBool::new(network.is_major_syncing());
+					let stream = client.import_notification_stream().filter_map(|_item| {
+						let syncing_status = network.is_major_syncing();
+						if syncing_status
+							!= last_syncing_status.swap(syncing_status, Ordering::SeqCst)
+						{
+							Some(PubSubResult::SyncState(
+								status(client, network, starting_block).await,
+							))
+						} else {
+							None
+						}
+					});
+
+					subscribe_helper(&self.subscriptions, sink, stream)
+				};
 			}
 		}
 	}
+}
 
-	fn unsubscribe(
-		&self,
-		_metadata: Option<Self::Metadata>,
-		subscription_id: SubscriptionId,
-	) -> JsonRpcResult<bool> {
-		Ok(self.subscriptions.cancel(subscription_id))
+fn subscribe_helper<S, Item>(
+	executor: &SubscriptionTaskExecutor,
+	mut sink: SubscriptionSink,
+	stream: S,
+) where
+	S: futures::stream::Stream<Item = Item> + Send + 'static,
+	Item: Send + sp_runtime::Serialize + 'static,
+{
+	let fut = async move {
+		sink.pipe_from_stream(stream).await;
+	};
+
+	use futures::task::Spawn as _;
+	if let Err(e) = executor.spawn_obj(Box::pin(fut).into()) {
+		sink.close(Error::Custom(e.to_string()));
 	}
 }

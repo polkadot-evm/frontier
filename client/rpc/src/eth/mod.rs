@@ -31,8 +31,7 @@ use std::{collections::BTreeMap, marker::PhantomData, sync::Arc};
 
 use ethereum::{BlockV2 as EthereumBlock, TransactionV2 as EthereumTransaction};
 use ethereum_types::{H160, H256, H512, H64, U256, U64};
-use futures::future::BoxFuture;
-use jsonrpc_core::Result;
+use jsonrpsee::core::{async_trait, RpcResult as Result};
 
 use sc_client_api::backend::{Backend, StateBackend, StorageProvider};
 use sc_network::{ExHashT, NetworkService};
@@ -47,7 +46,7 @@ use sp_runtime::{
 	traits::{BlakeTwo256, Block as BlockT, UniqueSaturatedInto},
 };
 
-use fc_rpc_core::{types::*, EthApi};
+use fc_rpc_core::{types::*, EthApiServer};
 use fp_rpc::{ConvertTransactionRuntimeApi, EthereumRuntimeRPCApi, TransactionStatus};
 
 use crate::{internal_err, overrides::OverrideHandle, public_key, signer::EthSigner};
@@ -107,7 +106,8 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> Eth<B, C, P, CT, BE, H, A
 	}
 }
 
-impl<B, C, P, CT, BE, H: ExHashT, A> EthApi for Eth<B, C, P, CT, BE, H, A>
+#[async_trait]
+impl<B, C, P, CT, BE, H: ExHashT, A> EthApiServer for Eth<B, C, P, CT, BE, H, A>
 where
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
@@ -151,20 +151,12 @@ where
 	// Block
 	// ########################################################################
 
-	fn block_by_hash(
-		&self,
-		hash: H256,
-		full: bool,
-	) -> BoxFuture<'static, Result<Option<RichBlock>>> {
-		self.block_by_hash(hash, full)
+	async fn block_by_hash(&self, hash: H256, full: bool) -> Result<Option<RichBlock>> {
+		self.block_by_hash(hash, full).await
 	}
 
-	fn block_by_number(
-		&self,
-		number: BlockNumber,
-		full: bool,
-	) -> BoxFuture<'static, Result<Option<RichBlock>>> {
-		self.block_by_number(number, full)
+	async fn block_by_number(&self, number: BlockNumber, full: bool) -> Result<Option<RichBlock>> {
+		self.block_by_number(number, full).await
 	}
 
 	fn block_transaction_count_by_hash(&self, hash: H256) -> Result<Option<U256>> {
@@ -199,28 +191,29 @@ where
 	// Transaction
 	// ########################################################################
 
-	fn transaction_by_hash(&self, hash: H256) -> BoxFuture<'static, Result<Option<Transaction>>> {
-		self.transaction_by_hash(hash)
+	async fn transaction_by_hash(&self, hash: H256) -> Result<Option<Transaction>> {
+		self.transaction_by_hash(hash).await
 	}
 
-	fn transaction_by_block_hash_and_index(
+	async fn transaction_by_block_hash_and_index(
 		&self,
 		hash: H256,
 		index: Index,
-	) -> BoxFuture<'static, Result<Option<Transaction>>> {
-		self.transaction_by_block_hash_and_index(hash, index)
+	) -> Result<Option<Transaction>> {
+		self.transaction_by_block_hash_and_index(hash, index).await
 	}
 
-	fn transaction_by_block_number_and_index(
+	async fn transaction_by_block_number_and_index(
 		&self,
 		number: BlockNumber,
 		index: Index,
-	) -> BoxFuture<'static, Result<Option<Transaction>>> {
+	) -> Result<Option<Transaction>> {
 		self.transaction_by_block_number_and_index(number, index)
+			.await
 	}
 
-	fn transaction_receipt(&self, hash: H256) -> BoxFuture<'static, Result<Option<Receipt>>> {
-		self.transaction_receipt(hash)
+	async fn transaction_receipt(&self, hash: H256) -> Result<Option<Receipt>> {
+		self.transaction_receipt(hash).await
 	}
 
 	// ########################################################################
@@ -251,12 +244,12 @@ where
 		self.call(request, number)
 	}
 
-	fn estimate_gas(
+	async fn estimate_gas(
 		&self,
 		request: CallRequest,
 		number: Option<BlockNumber>,
-	) -> BoxFuture<'static, Result<U256>> {
-		self.estimate_gas(request, number)
+	) -> Result<U256> {
+		self.estimate_gas(request, number).await
 	}
 
 	// ########################################################################
@@ -308,11 +301,11 @@ where
 	// Submit
 	// ########################################################################
 
-	fn send_transaction(&self, request: TransactionRequest) -> BoxFuture<'static, Result<H256>> {
+	async fn send_transaction(&self, request: TransactionRequest) -> Result<H256> {
 		self.send_transaction(request)
 	}
 
-	fn send_raw_transaction(&self, bytes: Bytes) -> BoxFuture<'static, Result<H256>> {
+	async fn send_raw_transaction(&self, bytes: Bytes) -> Result<H256> {
 		self.send_raw_transaction(bytes)
 	}
 }
