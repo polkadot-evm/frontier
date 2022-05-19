@@ -26,6 +26,3 @@ members = [
 	"template/runtime",
 ]
 resolver = "2"
-
-[patch.crates-io]
-evm = { git = "https://github.com/rust-blockchain/evm", branch = "master" }
