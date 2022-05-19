@@ -27,36 +27,16 @@ where
 	R: pallet_evm::Config,
 {
 	fn execute(&self, handle: &mut impl PrecompileHandle) -> Option<PrecompileResult> {
-		let address = handle.code_address();
-		let input = &handle.input().to_vec();
-		let target_gas = handle.gas_limit();
-		let context = &handle.context().clone();
-		let is_static = handle.is_static();
-
-		match address {
+		match handle.code_address() {
 			// Ethereum precompiles :
-			a if a == hash(1) => Some(ECRecover::execute(
-				handle, input, target_gas, context, is_static,
-			)),
-			a if a == hash(2) => Some(Sha256::execute(
-				handle, input, target_gas, context, is_static,
-			)),
-			a if a == hash(3) => Some(Ripemd160::execute(
-				handle, input, target_gas, context, is_static,
-			)),
-			a if a == hash(4) => Some(Identity::execute(
-				handle, input, target_gas, context, is_static,
-			)),
-			a if a == hash(5) => Some(Modexp::execute(
-				handle, input, target_gas, context, is_static,
-			)),
+			a if a == hash(1) => Some(ECRecover::execute(handle)),
+			a if a == hash(2) => Some(Sha256::execute(handle)),
+			a if a == hash(3) => Some(Ripemd160::execute(handle)),
+			a if a == hash(4) => Some(Identity::execute(handle)),
+			a if a == hash(5) => Some(Modexp::execute(handle)),
 			// Non-Frontier specific nor Ethereum precompiles :
-			a if a == hash(1024) => Some(Sha3FIPS256::execute(
-				handle, input, target_gas, context, is_static,
-			)),
-			a if a == hash(1025) => Some(ECRecoverPublicKey::execute(
-				handle, input, target_gas, context, is_static,
-			)),
+			a if a == hash(1024) => Some(Sha3FIPS256::execute(handle)),
+			a if a == hash(1025) => Some(ECRecoverPublicKey::execute(handle)),
 			_ => None,
 		}
 	}

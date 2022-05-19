@@ -25,16 +25,9 @@ pub type PrecompileResult = Result<PrecompileOutput, PrecompileFailure>;
 
 /// One single precompile used by EVM engine.
 pub trait Precompile {
-	/// Try to execute the precompile. Calculate the amount of gas needed with given `input` and
-	/// `target_gas`. Return `Ok(status, output, gas_used)` if the execution is
-	/// successful. Otherwise return `Err(_)`.
-	fn execute(
-		handle: &mut impl PrecompileHandle,
-		input: &[u8],
-		target_gas: Option<u64>,
-		context: &Context,
-		is_static: bool,
-	) -> PrecompileResult;
+	/// Try to execute the precompile with given `handle` which provides all call data
+	/// and allow to register costs and logs.
+	fn execute(handle: &mut impl PrecompileHandle) -> PrecompileResult;
 }
 
 pub trait LinearCostPrecompile {
@@ -48,17 +41,12 @@ pub trait LinearCostPrecompile {
 }
 
 impl<T: LinearCostPrecompile> Precompile for T {
-	fn execute(
-		handle: &mut impl PrecompileHandle,
-		input: &[u8],
-		target_gas: Option<u64>,
-		_: &Context,
-		_: bool,
-	) -> PrecompileResult {
-		let cost = ensure_linear_cost(target_gas, input.len() as u64, T::BASE, T::WORD)?;
+	fn execute(handle: &mut impl PrecompileHandle) -> PrecompileResult {
+		let target_gas = handle.gas_limit();
+		let cost = ensure_linear_cost(target_gas, handle.input().len() as u64, T::BASE, T::WORD)?;
 
 		handle.record_cost(cost)?;
-		let (exit_status, output) = T::execute(input, cost)?;
+		let (exit_status, output) = T::execute(handle.input(), cost)?;
 		Ok(PrecompileOutput {
 			exit_status,
 			output,

@@ -21,8 +21,8 @@ extern crate alloc;
 
 use core::marker::PhantomData;
 use fp_evm::{
-	Context, ExitError, ExitSucceed, Precompile, PrecompileFailure, PrecompileHandle,
-	PrecompileOutput, PrecompileResult,
+	ExitError, ExitSucceed, Precompile, PrecompileFailure, PrecompileHandle, PrecompileOutput,
+	PrecompileResult,
 };
 use frame_support::{
 	codec::Decode,
@@ -41,13 +41,11 @@ where
 	T::Call: Dispatchable<PostInfo = PostDispatchInfo> + GetDispatchInfo + Decode,
 	<T::Call as Dispatchable>::Origin: From<Option<T::AccountId>>,
 {
-	fn execute(
-		handle: &mut impl PrecompileHandle,
-		input: &[u8],
-		target_gas: Option<u64>,
-		context: &Context,
-		_is_static: bool,
-	) -> PrecompileResult {
+	fn execute(handle: &mut impl PrecompileHandle) -> PrecompileResult {
+		let input = handle.input();
+		let target_gas = handle.gas_limit();
+		let context = handle.context();
+
 		let call = T::Call::decode(&mut &*input).map_err(|_| PrecompileFailure::Error {
 			exit_status: ExitError::Other("decode failed".into()),
 		})?;

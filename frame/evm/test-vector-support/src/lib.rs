@@ -30,7 +30,25 @@ struct EthConsensusTest {
 	gas: Option<u64>,
 }
 
-pub struct MockHandle(pub u64);
+pub struct MockHandle {
+	pub input: Vec<u8>,
+	pub gas_limit: Option<u64>,
+	pub context: Context,
+	pub is_static: bool,
+	pub gas_used: u64,
+}
+
+impl MockHandle {
+	pub fn new(input: Vec<u8>, gas_limit: Option<u64>, context: Context) -> Self {
+		Self {
+			input,
+			gas_limit,
+			context,
+			is_static: false,
+			gas_used: 0,
+		}
+	}
+}
 
 impl PrecompileHandle for MockHandle {
 	/// Perform subcall in provided context.
@@ -48,7 +66,7 @@ impl PrecompileHandle for MockHandle {
 	}
 
 	fn record_cost(&mut self, cost: u64) -> Result<(), ExitError> {
-		self.0 += cost;
+		self.gas_used += cost;
 		Ok(())
 	}
 
@@ -65,19 +83,19 @@ impl PrecompileHandle for MockHandle {
 	}
 
 	fn input(&self) -> &[u8] {
-		unimplemented!()
+		&self.input
 	}
 
 	fn context(&self) -> &Context {
-		unimplemented!()
+		&self.context
 	}
 
 	fn is_static(&self) -> bool {
-		unimplemented!()
+		self.is_static
 	}
 
 	fn gas_limit(&self) -> Option<u64> {
-		unimplemented!()
+		self.gas_limit
 	}
 }
 
@@ -100,9 +118,9 @@ pub fn test_precompile_test_vectors<P: Precompile>(filepath: &str) -> Result<(),
 			apparent_value: From::from(0),
 		};
 
-		let mut handle = MockHandle(0);
+		let mut handle = MockHandle::new(input, Some(cost), context);
 
-		match P::execute(&mut handle, &input, Some(cost), &context, false) {
+		match P::execute(&mut handle) {
 			Ok(result) => {
 				let as_hex: String = hex::encode(result.output);
 				assert_eq!(
@@ -119,7 +137,7 @@ pub fn test_precompile_test_vectors<P: Precompile>(filepath: &str) -> Result<(),
 				);
 				if let Some(expected_gas) = test.gas {
 					assert_eq!(
-						handle.0, expected_gas,
+						handle.gas_used, expected_gas,
 						"test '{}' failed (different gas cost)",
 						test.name
 					);
