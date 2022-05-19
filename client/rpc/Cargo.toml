@@ -22,7 +22,7 @@ lru = "0.7.5"
 prometheus = { version = "0.13.0", default-features = false }
 rand = "0.8"
 rlp = "0.5"
-tokio = { version = "1.14", features = ["sync"] }
+tokio = { version = "1.18", features = ["sync"] }
 
 prometheus-endpoint = { package = "substrate-prometheus-endpoint", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-client-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
