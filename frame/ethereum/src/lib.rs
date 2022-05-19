@@ -852,7 +852,7 @@ impl<T: Config> Pallet<T> {
 				chain_id: T::ChainId::get(),
 				is_transactional: true,
 			},
-			transaction_data.clone().into(),
+			transaction_data.into(),
 		)
 		.validate_in_block_for(&who)
 		.and_then(|v| v.with_chain_id())
