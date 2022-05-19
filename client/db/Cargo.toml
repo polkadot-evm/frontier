@@ -19,7 +19,7 @@ sp-runtime = { version = "6.0.0", git = "https://github.com/paritytech/substrate
 fp-storage = { version = "2.0.0-dev", path = "../../primitives/storage" }
 
 kvdb-rocksdb = { version = "0.15.2", optional = true }
-parity-db = { version = "0.3.9", optional = true }
+parity-db = { version = "0.3.13", optional = true }
 
 [features]
 default = ["kvdb-rocksdb", "parity-db"]
