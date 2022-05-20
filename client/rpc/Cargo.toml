@@ -17,7 +17,7 @@ jsonrpc-core = "18.0"
 jsonrpc-core-client = "18.0"
 jsonrpc-pubsub = "18.0"
 libsecp256k1 = "0.7"
-log = "0.4.8"
+log = "0.4.17"
 lru = "0.7.5"
 prometheus = { version = "0.13.0", default-features = false }
 rand = "0.8"
