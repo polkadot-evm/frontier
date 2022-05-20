@@ -21,7 +21,7 @@ extern crate alloc;
 
 use alloc::vec::Vec;
 use fp_evm::{
-	Context, ExitError, ExitSucceed, Precompile, PrecompileFailure, PrecompileOutput,
+	ExitError, ExitSucceed, Precompile, PrecompileFailure, PrecompileHandle, PrecompileOutput,
 	PrecompileResult,
 };
 use sp_core::U256;
@@ -76,13 +76,12 @@ impl Bn128Add {
 }
 
 impl Precompile for Bn128Add {
-	fn execute(
-		input: &[u8],
-		_target_gas: Option<u64>,
-		_context: &Context,
-		_is_static: bool,
-	) -> PrecompileResult {
+	fn execute(handle: &mut impl PrecompileHandle) -> PrecompileResult {
 		use bn::AffineG1;
+
+		handle.record_cost(Bn128Add::GAS_COST)?;
+
+		let input = handle.input();
 
 		let p1 = read_point(input, 0)?;
 		let p2 = read_point(input, 64)?;
@@ -108,9 +107,7 @@ impl Precompile for Bn128Add {
 
 		Ok(PrecompileOutput {
 			exit_status: ExitSucceed::Returned,
-			cost: Bn128Add::GAS_COST,
 			output: buf.to_vec(),
-			logs: Default::default(),
 		})
 	}
 }
@@ -123,13 +120,12 @@ impl Bn128Mul {
 }
 
 impl Precompile for Bn128Mul {
-	fn execute(
-		input: &[u8],
-		_target_gas: Option<u64>,
-		_context: &Context,
-		_is_static: bool,
-	) -> PrecompileResult {
+	fn execute(handle: &mut impl PrecompileHandle) -> PrecompileResult {
 		use bn::AffineG1;
+
+		handle.record_cost(Bn128Mul::GAS_COST)?;
+
+		let input = handle.input();
 
 		let p = read_point(input, 0)?;
 		let fr = read_fr(input, 64)?;
@@ -155,9 +151,7 @@ impl Precompile for Bn128Mul {
 
 		Ok(PrecompileOutput {
 			exit_status: ExitSucceed::Returned,
-			cost: Bn128Mul::GAS_COST,
 			output: buf.to_vec(),
-			logs: Default::default(),
 		})
 	}
 }
@@ -172,13 +166,11 @@ impl Bn128Pairing {
 }
 
 impl Precompile for Bn128Pairing {
-	fn execute(
-		input: &[u8],
-		target_gas: Option<u64>,
-		_context: &Context,
-		_is_static: bool,
-	) -> PrecompileResult {
+	fn execute(handle: &mut impl PrecompileHandle) -> PrecompileResult {
 		use bn::{pairing_batch, AffineG1, AffineG2, Fq, Fq2, Group, Gt, G1, G2};
+
+		let input = handle.input();
+		let target_gas = handle.gas_limit();
 
 		let (ret_val, gas_cost) = if input.is_empty() {
 			(U256::one(), Bn128Pairing::BASE_GAS_COST)
@@ -282,14 +274,14 @@ impl Precompile for Bn128Pairing {
 			}
 		};
 
+		handle.record_cost(gas_cost)?;
+
 		let mut buf = [0u8; 32];
 		ret_val.to_big_endian(&mut buf);
 
 		Ok(PrecompileOutput {
 			exit_status: ExitSucceed::Returned,
-			cost: gas_cost,
 			output: buf.to_vec(),
-			logs: Default::default(),
 		})
 	}
 }
