@@ -285,7 +285,7 @@ where
 
 	pub fn estimate_gas(
 		&self,
-		request: CallRequest,
+		mut request: CallRequest,
 		_: Option<BlockNumber>,
 	) -> BoxFuture<Result<U256>> {
 		let client = Arc::clone(&self.client);
@@ -628,6 +628,19 @@ where
 
 				// Start close to the used gas for faster binary search
 				let mut mid = std::cmp::min(used_gas * 3, (highest + lowest) / 2);
+
+				// Redirect any call to batch precompile:
+				// force usage of batchAll method for estimation
+				use sp_core::H160;
+				const BATCH_PRECOMPILE_ADDRESS: H160 = H160(hex_literal::hex!(
+					"0000000000000000000000000000000000000808"
+				));
+				const BATCH_PRECOMPILE_BATCH_ALL_SELECTOR: [u8; 4] = hex_literal::hex!("96e292b8");
+				if request.to == Some(BATCH_PRECOMPILE_ADDRESS) {
+					if let Some(ref mut data) = request.data {
+						data.0[..8].copy_from_slice(&BATCH_PRECOMPILE_BATCH_ALL_SELECTOR);
+					}
+				}
 
 				// Execute the binary search and hone in on an executable gas limit.
 				let mut previous_highest = highest;
