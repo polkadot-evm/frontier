@@ -86,12 +86,6 @@
 <span id="81">81</span>
 <span id="82">82</span>
 <span id="83">83</span>
-<span id="84">84</span>
-<span id="85">85</span>
-<span id="86">86</span>
-<span id="87">87</span>
-<span id="88">88</span>
-<span id="89">89</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -110,8 +104,8 @@
 <span class="comment">// limitations under the License.</span>
 
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">evm</span>::{
-	<span class="ident">executor::stack</span>::{<span class="ident">PrecompileFailure</span>, <span class="ident">PrecompileOutput</span>, <span class="ident">PrecompileSet</span>},
-	<span class="ident">Context</span>, <span class="ident">ExitError</span>, <span class="ident">ExitRevert</span>, <span class="ident">ExitSucceed</span>,
+	<span class="ident">executor::stack</span>::{<span class="ident">PrecompileFailure</span>, <span class="ident">PrecompileHandle</span>, <span class="ident">PrecompileOutput</span>, <span class="ident">PrecompileSet</span>},
+	<span class="ident">Context</span>, <span class="ident">ExitError</span>, <span class="ident">ExitRevert</span>, <span class="ident">ExitSucceed</span>, <span class="ident">Transfer</span>,
 };
 <span class="kw">use</span> <span class="ident">sp_std::vec::Vec</span>;
 
@@ -119,15 +113,9 @@
 
 <span class="doccomment">/// One single precompile used by EVM engine.</span>
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Precompile</span> {
-	<span class="doccomment">/// Try to execute the precompile. Calculate the amount of gas needed with given `input` and</span>
-	<span class="doccomment">/// `target_gas`. Return `Ok(status, output, gas_used)` if the execution is</span>
-	<span class="doccomment">/// successful. Otherwise return `Err(_)`.</span>
-	<span class="kw">fn</span> <span class="ident">execute</span>(
-		<span class="ident">input</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>],
-		<span class="ident">target_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
-		<span class="ident">context</span>: <span class="kw-2">&amp;</span><span class="ident">Context</span>,
-		<span class="ident">is_static</span>: <span class="ident">bool</span>,
-	) -&gt; <span class="ident">PrecompileResult</span>;
+	<span class="doccomment">/// Try to execute the precompile with given `handle` which provides all call data</span>
+	<span class="doccomment">/// and allow to register costs and logs.</span>
+	<span class="kw">fn</span> <span class="ident">execute</span>(<span class="ident">handle</span>: <span class="kw-2">&amp;mut</span> <span class="kw">impl</span> <span class="ident">PrecompileHandle</span>) -&gt; <span class="ident">PrecompileResult</span>;
 }
 
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">LinearCostPrecompile</span> {
@@ -141,15 +129,15 @@
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">LinearCostPrecompile</span><span class="op">&gt;</span> <span class="ident">Precompile</span> <span class="kw">for</span> <span class="ident">T</span> {
-	<span class="kw">fn</span> <span class="ident">execute</span>(<span class="ident">input</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>], <span class="ident">target_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>, <span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="ident">Context</span>, <span class="kw">_</span>: <span class="ident">bool</span>) -&gt; <span class="ident">PrecompileResult</span> {
-		<span class="kw">let</span> <span class="ident">cost</span> <span class="op">=</span> <span class="ident">ensure_linear_cost</span>(<span class="ident">target_gas</span>, <span class="ident">input</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">u64</span>, <span class="ident">T::BASE</span>, <span class="ident">T::WORD</span>)<span class="question-mark">?</span>;
+	<span class="kw">fn</span> <span class="ident">execute</span>(<span class="ident">handle</span>: <span class="kw-2">&amp;mut</span> <span class="kw">impl</span> <span class="ident">PrecompileHandle</span>) -&gt; <span class="ident">PrecompileResult</span> {
+		<span class="kw">let</span> <span class="ident">target_gas</span> <span class="op">=</span> <span class="ident">handle</span>.<span class="ident">gas_limit</span>();
+		<span class="kw">let</span> <span class="ident">cost</span> <span class="op">=</span> <span class="ident">ensure_linear_cost</span>(<span class="ident">target_gas</span>, <span class="ident">handle</span>.<span class="ident">input</span>().<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">u64</span>, <span class="ident">T::BASE</span>, <span class="ident">T::WORD</span>)<span class="question-mark">?</span>;
 
-		<span class="kw">let</span> (<span class="ident">exit_status</span>, <span class="ident">output</span>) <span class="op">=</span> <span class="ident">T::execute</span>(<span class="ident">input</span>, <span class="ident">cost</span>)<span class="question-mark">?</span>;
+		<span class="ident">handle</span>.<span class="ident">record_cost</span>(<span class="ident">cost</span>)<span class="question-mark">?</span>;
+		<span class="kw">let</span> (<span class="ident">exit_status</span>, <span class="ident">output</span>) <span class="op">=</span> <span class="ident">T::execute</span>(<span class="ident">handle</span>.<span class="ident">input</span>(), <span class="ident">cost</span>)<span class="question-mark">?</span>;
 		<span class="prelude-val">Ok</span>(<span class="ident">PrecompileOutput</span> {
 			<span class="ident">exit_status</span>,
-			<span class="ident">cost</span>,
 			<span class="ident">output</span>,
-			<span class="ident">logs</span>: <span class="ident">Default::default</span>(),
 		})
 	}
 }

@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["pallet_evm_test_vector_support"] = [{"text":"impl PrecompileHandle for <a class=\"struct\" href=\"pallet_evm_test_vector_support/struct.MockHandle.html\" title=\"struct pallet_evm_test_vector_support::MockHandle\">MockHandle</a>","synthetic":false,"types":["pallet_evm_test_vector_support::MockHandle"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

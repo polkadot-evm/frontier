@@ -137,7 +137,6 @@
 <span id="132">132</span>
 <span id="133">133</span>
 <span id="134">134</span>
-<span id="135">135</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -162,7 +161,7 @@
 <span class="kw">mod</span> <span class="ident">eip_152</span>;
 
 <span class="kw">use</span> <span class="ident">fp_evm</span>::{
-	<span class="ident">Context</span>, <span class="ident">ExitError</span>, <span class="ident">ExitSucceed</span>, <span class="ident">Precompile</span>, <span class="ident">PrecompileFailure</span>, <span class="ident">PrecompileOutput</span>,
+	<span class="ident">ExitError</span>, <span class="ident">ExitSucceed</span>, <span class="ident">Precompile</span>, <span class="ident">PrecompileFailure</span>, <span class="ident">PrecompileHandle</span>, <span class="ident">PrecompileOutput</span>,
 	<span class="ident">PrecompileResult</span>,
 };
 
@@ -175,13 +174,11 @@
 <span class="kw">impl</span> <span class="ident">Precompile</span> <span class="kw">for</span> <span class="ident">Blake2F</span> {
 	<span class="doccomment">/// Format of `input`:</span>
 	<span class="doccomment">/// [4 bytes for rounds][64 bytes for h][128 bytes for m][8 bytes for t_0][8 bytes for t_1][1 byte for f]</span>
-	<span class="kw">fn</span> <span class="ident">execute</span>(
-		<span class="ident">input</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>],
-		<span class="ident">target_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
-		<span class="ident">_context</span>: <span class="kw-2">&amp;</span><span class="ident">Context</span>,
-		<span class="ident">_is_static</span>: <span class="ident">bool</span>,
-	) -&gt; <span class="ident">PrecompileResult</span> {
+	<span class="kw">fn</span> <span class="ident">execute</span>(<span class="ident">handle</span>: <span class="kw-2">&amp;mut</span> <span class="kw">impl</span> <span class="ident">PrecompileHandle</span>) -&gt; <span class="ident">PrecompileResult</span> {
 		<span class="kw">const</span> <span class="ident">BLAKE2_F_ARG_LEN</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">213</span>;
+
+		<span class="kw">let</span> <span class="ident">input</span> <span class="op">=</span> <span class="ident">handle</span>.<span class="ident">input</span>();
+		<span class="kw">let</span> <span class="ident">target_gas</span> <span class="op">=</span> <span class="ident">handle</span>.<span class="ident">gas_limit</span>();
 
 		<span class="kw">if</span> <span class="ident">input</span>.<span class="ident">len</span>() <span class="op">!</span><span class="op">=</span> <span class="ident">BLAKE2_F_ARG_LEN</span> {
 			<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">PrecompileFailure::Error</span> {
@@ -203,6 +200,9 @@
 				});
 			}
 		}
+
+		<span class="ident">handle</span>.<span class="ident">record_cost</span>(<span class="ident">gas_cost</span>)<span class="question-mark">?</span>;
+		<span class="kw">let</span> <span class="ident">input</span> <span class="op">=</span> <span class="ident">handle</span>.<span class="ident">input</span>();
 
 		<span class="comment">// we use from_le_bytes below to effectively swap byte order to LE if architecture is BE</span>
 
@@ -255,9 +255,7 @@
 
 		<span class="prelude-val">Ok</span>(<span class="ident">PrecompileOutput</span> {
 			<span class="ident">exit_status</span>: <span class="ident">ExitSucceed::Returned</span>,
-			<span class="ident">cost</span>: <span class="ident">gas_cost</span>,
 			<span class="ident">output</span>: <span class="ident">output_buf</span>.<span class="ident">to_vec</span>(),
-			<span class="ident">logs</span>: <span class="ident">Default::default</span>(),
 		})
 	}
 }

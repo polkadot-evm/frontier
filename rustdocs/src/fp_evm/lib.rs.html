@@ -93,6 +93,7 @@
 <span id="88">88</span>
 <span id="89">89</span>
 <span id="90">90</span>
+<span id="91">91</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -126,7 +127,8 @@
 
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="self">self</span>::precompile</span>::{
 	<span class="ident">Context</span>, <span class="ident">ExitError</span>, <span class="ident">ExitRevert</span>, <span class="ident">ExitSucceed</span>, <span class="ident">LinearCostPrecompile</span>, <span class="ident">Precompile</span>,
-	<span class="ident">PrecompileFailure</span>, <span class="ident">PrecompileOutput</span>, <span class="ident">PrecompileResult</span>, <span class="ident">PrecompileSet</span>,
+	<span class="ident">PrecompileFailure</span>, <span class="ident">PrecompileHandle</span>, <span class="ident">PrecompileOutput</span>, <span class="ident">PrecompileResult</span>, <span class="ident">PrecompileSet</span>,
+	<span class="ident">Transfer</span>,
 };
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">Default</span>)]</span>

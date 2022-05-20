@@ -314,14 +314,6 @@
 <span id="309">309</span>
 <span id="310">310</span>
 <span id="311">311</span>
-<span id="312">312</span>
-<span id="313">313</span>
-<span id="314">314</span>
-<span id="315">315</span>
-<span id="316">316</span>
-<span id="317">317</span>
-<span id="318">318</span>
-<span id="319">319</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -345,7 +337,7 @@
 
 <span class="kw">use</span> <span class="ident">alloc::vec::Vec</span>;
 <span class="kw">use</span> <span class="ident">fp_evm</span>::{
-	<span class="ident">Context</span>, <span class="ident">ExitError</span>, <span class="ident">ExitSucceed</span>, <span class="ident">Precompile</span>, <span class="ident">PrecompileFailure</span>, <span class="ident">PrecompileOutput</span>,
+	<span class="ident">ExitError</span>, <span class="ident">ExitSucceed</span>, <span class="ident">Precompile</span>, <span class="ident">PrecompileFailure</span>, <span class="ident">PrecompileHandle</span>, <span class="ident">PrecompileOutput</span>,
 	<span class="ident">PrecompileResult</span>,
 };
 <span class="kw">use</span> <span class="ident">sp_core::U256</span>;
@@ -400,13 +392,12 @@
 }
 
 <span class="kw">impl</span> <span class="ident">Precompile</span> <span class="kw">for</span> <span class="ident">Bn128Add</span> {
-	<span class="kw">fn</span> <span class="ident">execute</span>(
-		<span class="ident">input</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>],
-		<span class="ident">_target_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
-		<span class="ident">_context</span>: <span class="kw-2">&amp;</span><span class="ident">Context</span>,
-		<span class="ident">_is_static</span>: <span class="ident">bool</span>,
-	) -&gt; <span class="ident">PrecompileResult</span> {
+	<span class="kw">fn</span> <span class="ident">execute</span>(<span class="ident">handle</span>: <span class="kw-2">&amp;mut</span> <span class="kw">impl</span> <span class="ident">PrecompileHandle</span>) -&gt; <span class="ident">PrecompileResult</span> {
 		<span class="kw">use</span> <span class="ident">bn::AffineG1</span>;
+
+		<span class="ident">handle</span>.<span class="ident">record_cost</span>(<span class="ident">Bn128Add::GAS_COST</span>)<span class="question-mark">?</span>;
+
+		<span class="kw">let</span> <span class="ident">input</span> <span class="op">=</span> <span class="ident">handle</span>.<span class="ident">input</span>();
 
 		<span class="kw">let</span> <span class="ident">p1</span> <span class="op">=</span> <span class="ident">read_point</span>(<span class="ident">input</span>, <span class="number">0</span>)<span class="question-mark">?</span>;
 		<span class="kw">let</span> <span class="ident">p2</span> <span class="op">=</span> <span class="ident">read_point</span>(<span class="ident">input</span>, <span class="number">64</span>)<span class="question-mark">?</span>;
@@ -432,9 +423,7 @@
 
 		<span class="prelude-val">Ok</span>(<span class="ident">PrecompileOutput</span> {
 			<span class="ident">exit_status</span>: <span class="ident">ExitSucceed::Returned</span>,
-			<span class="ident">cost</span>: <span class="ident">Bn128Add::GAS_COST</span>,
 			<span class="ident">output</span>: <span class="ident">buf</span>.<span class="ident">to_vec</span>(),
-			<span class="ident">logs</span>: <span class="ident">Default::default</span>(),
 		})
 	}
 }
@@ -447,13 +436,12 @@
 }
 
 <span class="kw">impl</span> <span class="ident">Precompile</span> <span class="kw">for</span> <span class="ident">Bn128Mul</span> {
-	<span class="kw">fn</span> <span class="ident">execute</span>(
-		<span class="ident">input</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>],
-		<span class="ident">_target_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
-		<span class="ident">_context</span>: <span class="kw-2">&amp;</span><span class="ident">Context</span>,
-		<span class="ident">_is_static</span>: <span class="ident">bool</span>,
-	) -&gt; <span class="ident">PrecompileResult</span> {
+	<span class="kw">fn</span> <span class="ident">execute</span>(<span class="ident">handle</span>: <span class="kw-2">&amp;mut</span> <span class="kw">impl</span> <span class="ident">PrecompileHandle</span>) -&gt; <span class="ident">PrecompileResult</span> {
 		<span class="kw">use</span> <span class="ident">bn::AffineG1</span>;
+
+		<span class="ident">handle</span>.<span class="ident">record_cost</span>(<span class="ident">Bn128Mul::GAS_COST</span>)<span class="question-mark">?</span>;
+
+		<span class="kw">let</span> <span class="ident">input</span> <span class="op">=</span> <span class="ident">handle</span>.<span class="ident">input</span>();
 
 		<span class="kw">let</span> <span class="ident">p</span> <span class="op">=</span> <span class="ident">read_point</span>(<span class="ident">input</span>, <span class="number">0</span>)<span class="question-mark">?</span>;
 		<span class="kw">let</span> <span class="ident">fr</span> <span class="op">=</span> <span class="ident">read_fr</span>(<span class="ident">input</span>, <span class="number">64</span>)<span class="question-mark">?</span>;
@@ -479,9 +467,7 @@
 
 		<span class="prelude-val">Ok</span>(<span class="ident">PrecompileOutput</span> {
 			<span class="ident">exit_status</span>: <span class="ident">ExitSucceed::Returned</span>,
-			<span class="ident">cost</span>: <span class="ident">Bn128Mul::GAS_COST</span>,
 			<span class="ident">output</span>: <span class="ident">buf</span>.<span class="ident">to_vec</span>(),
-			<span class="ident">logs</span>: <span class="ident">Default::default</span>(),
 		})
 	}
 }
@@ -496,13 +482,11 @@
 }
 
 <span class="kw">impl</span> <span class="ident">Precompile</span> <span class="kw">for</span> <span class="ident">Bn128Pairing</span> {
-	<span class="kw">fn</span> <span class="ident">execute</span>(
-		<span class="ident">input</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>],
-		<span class="ident">target_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
-		<span class="ident">_context</span>: <span class="kw-2">&amp;</span><span class="ident">Context</span>,
-		<span class="ident">_is_static</span>: <span class="ident">bool</span>,
-	) -&gt; <span class="ident">PrecompileResult</span> {
+	<span class="kw">fn</span> <span class="ident">execute</span>(<span class="ident">handle</span>: <span class="kw-2">&amp;mut</span> <span class="kw">impl</span> <span class="ident">PrecompileHandle</span>) -&gt; <span class="ident">PrecompileResult</span> {
 		<span class="kw">use</span> <span class="ident">bn</span>::{<span class="ident">pairing_batch</span>, <span class="ident">AffineG1</span>, <span class="ident">AffineG2</span>, <span class="ident">Fq</span>, <span class="ident">Fq2</span>, <span class="ident">Group</span>, <span class="ident">Gt</span>, <span class="ident">G1</span>, <span class="ident">G2</span>};
+
+		<span class="kw">let</span> <span class="ident">input</span> <span class="op">=</span> <span class="ident">handle</span>.<span class="ident">input</span>();
+		<span class="kw">let</span> <span class="ident">target_gas</span> <span class="op">=</span> <span class="ident">handle</span>.<span class="ident">gas_limit</span>();
 
 		<span class="kw">let</span> (<span class="ident">ret_val</span>, <span class="ident">gas_cost</span>) <span class="op">=</span> <span class="kw">if</span> <span class="ident">input</span>.<span class="ident">is_empty</span>() {
 			(<span class="ident">U256::one</span>(), <span class="ident">Bn128Pairing::BASE_GAS_COST</span>)
@@ -606,14 +590,14 @@
 			}
 		};
 
+		<span class="ident">handle</span>.<span class="ident">record_cost</span>(<span class="ident">gas_cost</span>)<span class="question-mark">?</span>;
+
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">buf</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">32</span>];
 		<span class="ident">ret_val</span>.<span class="ident">to_big_endian</span>(<span class="kw-2">&amp;mut</span> <span class="ident">buf</span>);
 
 		<span class="prelude-val">Ok</span>(<span class="ident">PrecompileOutput</span> {
 			<span class="ident">exit_status</span>: <span class="ident">ExitSucceed::Returned</span>,
-			<span class="ident">cost</span>: <span class="ident">gas_cost</span>,
 			<span class="ident">output</span>: <span class="ident">buf</span>.<span class="ident">to_vec</span>(),
-			<span class="ident">logs</span>: <span class="ident">Default::default</span>(),
 		})
 	}
 }
