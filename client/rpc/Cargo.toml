@@ -10,19 +10,19 @@ license = "GPL-3.0-or-later WITH Classpath-exception-2.0"
 codec = { package = "parity-scale-codec", version = "3.0.0" }
 ethereum = { version = "0.12.0", features = ["with-codec"] }
 ethereum-types = "0.13.1"
-evm = "0.35.0"
+evm = { git = "https://github.com/rust-blockchain/evm", branch = "master" }
 futures = { version = "0.3.1", features = ["compat"] }
 hex = "0.4"
 jsonrpc-core = "18.0"
 jsonrpc-core-client = "18.0"
 jsonrpc-pubsub = "18.0"
 libsecp256k1 = "0.7"
-log = "0.4.8"
+log = "0.4.17"
 lru = "0.7.5"
-prometheus = { version = "0.13.0", default-features = false }
+prometheus = { version = "0.13.1", default-features = false }
 rand = "0.8"
 rlp = "0.5"
-tokio = { version = "1.14", features = ["sync"] }
+tokio = { version = "1.18", features = ["sync"] }
 
 prometheus-endpoint = { package = "substrate-prometheus-endpoint", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-client-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
