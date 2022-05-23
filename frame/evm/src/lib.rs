@@ -676,6 +676,7 @@ pub trait OnChargeEVMTransaction<T: Config> {
 	fn correct_and_deposit_fee(
 		who: &H160,
 		corrected_fee: U256,
+		base_fee: U256,
 		already_withdrawn: Self::LiquidityInfo,
 	);
 
@@ -724,6 +725,7 @@ where
 	fn correct_and_deposit_fee(
 		who: &H160,
 		corrected_fee: U256,
+		base_fee: U256,
 		already_withdrawn: Self::LiquidityInfo,
 	) {
 		if let Some(paid) = already_withdrawn {
@@ -762,11 +764,20 @@ where
 				.offset(refund_imbalance)
 				.same()
 				.unwrap_or_else(|_| C::NegativeImbalance::zero());
-			OU::on_unbalanced(adjusted_paid);
+
+			// Handle base fee. Can be either burned, rationed, etc ...
+			OU::on_unbalanced(
+				C::NegativeImbalance::split(
+					adjusted_paid,
+					base_fee.low_u128().unique_saturated_into(),
+				)
+				.0,
+			);
 		}
 	}
 
 	fn pay_priority_fee(tip: U256) {
+		// Default Ethereum behaviour: issue the tip to the block author.
 		let account_id = T::AddressMapping::into_account_id(<Pallet<T>>::find_author());
 		let _ = C::deposit_into_existing(&account_id, tip.low_u128().unique_saturated_into());
 	}
@@ -793,9 +804,10 @@ impl<T> OnChargeEVMTransaction<T> for ()
 	fn correct_and_deposit_fee(
 		who: &H160,
 		corrected_fee: U256,
+		base_fee: U256,
 		already_withdrawn: Self::LiquidityInfo,
 	) {
-		<EVMCurrencyAdapter::<<T as Config>::Currency, ()> as OnChargeEVMTransaction<T>>::correct_and_deposit_fee(who, corrected_fee, already_withdrawn)
+		<EVMCurrencyAdapter::<<T as Config>::Currency, ()> as OnChargeEVMTransaction<T>>::correct_and_deposit_fee(who, corrected_fee, base_fee, already_withdrawn)
 	}
 
 	fn pay_priority_fee(tip: U256) {
