@@ -673,15 +673,18 @@ pub trait OnChargeEVMTransaction<T: Config> {
 
 	/// After the transaction was executed the actual fee can be calculated.
 	/// This function should refund any overpaid fees and optionally deposit
-	/// the corrected amount.
+	/// the corrected amount, and handles the base fee rationing using the provided
+	/// `OnUnbalanced` implementation.
+	/// Returns the `NegativeImbalance` - if any - produced by the priority fee.
 	fn correct_and_deposit_fee(
 		who: &H160,
 		corrected_fee: U256,
+		base_fee: U256,
 		already_withdrawn: Self::LiquidityInfo,
-	);
+	) -> Self::LiquidityInfo;
 
-	/// Introduced in EIP1559 to handle the priority tip payment to the block Author.
-	fn pay_priority_fee(tip: U256);
+	/// Introduced in EIP1559 to handle the priority tip.
+	fn pay_priority_fee(tip: Self::LiquidityInfo);
 }
 
 /// Implements the transaction payment for a pallet implementing the `Currency`
@@ -725,8 +728,9 @@ where
 	fn correct_and_deposit_fee(
 		who: &H160,
 		corrected_fee: U256,
+		base_fee: U256,
 		already_withdrawn: Self::LiquidityInfo,
-	) {
+	) -> Self::LiquidityInfo {
 		if let Some(paid) = already_withdrawn {
 			let account_id = T::AddressMapping::into_account_id(*who);
 
@@ -763,13 +767,21 @@ where
 				.offset(refund_imbalance)
 				.same()
 				.unwrap_or_else(|_| C::NegativeImbalance::zero());
-			OU::on_unbalanced(adjusted_paid);
+
+			let (base_fee, tip) = adjusted_paid.split(base_fee.low_u128().unique_saturated_into());
+			// Handle base fee. Can be either burned, rationed, etc ...
+			OU::on_unbalanced(base_fee);
+			return Some(tip);
 		}
+		None
 	}
 
-	fn pay_priority_fee(tip: U256) {
-		let account_id = T::AddressMapping::into_account_id(<Pallet<T>>::find_author());
-		let _ = C::deposit_into_existing(&account_id, tip.low_u128().unique_saturated_into());
+	fn pay_priority_fee(tip: Self::LiquidityInfo) {
+		// Default Ethereum behaviour: issue the tip to the block author.
+		if let Some(tip) = tip {
+			let account_id = T::AddressMapping::into_account_id(<Pallet<T>>::find_author());
+			let _ = C::deposit_into_existing(&account_id, tip.peek());
+		}
 	}
 }
 
@@ -794,12 +806,13 @@ impl<T> OnChargeEVMTransaction<T> for ()
 	fn correct_and_deposit_fee(
 		who: &H160,
 		corrected_fee: U256,
+		base_fee: U256,
 		already_withdrawn: Self::LiquidityInfo,
-	) {
-		<EVMCurrencyAdapter::<<T as Config>::Currency, ()> as OnChargeEVMTransaction<T>>::correct_and_deposit_fee(who, corrected_fee, already_withdrawn)
+	) -> Self::LiquidityInfo {
+		<EVMCurrencyAdapter::<<T as Config>::Currency, ()> as OnChargeEVMTransaction<T>>::correct_and_deposit_fee(who, corrected_fee, base_fee, already_withdrawn)
 	}
 
-	fn pay_priority_fee(tip: U256) {
+	fn pay_priority_fee(tip: Self::LiquidityInfo) {
 		<EVMCurrencyAdapter::<<T as Config>::Currency, ()> as OnChargeEVMTransaction<T>>::pay_priority_fee(tip);
 	}
 }

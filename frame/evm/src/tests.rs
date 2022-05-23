@@ -127,7 +127,7 @@ fn fee_deduction() {
 		assert_eq!(Balances::free_balance(&substrate_addr), 90);
 
 		// Refund fees as 5 units
-		<<Test as Config>::OnChargeTransaction as OnChargeEVMTransaction<Test>>::correct_and_deposit_fee(&evm_addr, U256::from(5), imbalance);
+		<<Test as Config>::OnChargeTransaction as OnChargeEVMTransaction<Test>>::correct_and_deposit_fee(&evm_addr, U256::from(5), U256::from(5), imbalance);
 		assert_eq!(Balances::free_balance(&substrate_addr), 95);
 	});
 }
@@ -246,6 +246,30 @@ fn author_should_get_tip() {
 		result.expect("EVM can be called");
 		let after_tip = EVM::account_basic(&author).0.balance;
 		assert_eq!(after_tip, (before_tip + 21000));
+	});
+}
+
+#[test]
+fn issuance_after_tip() {
+	new_test_ext().execute_with(|| {
+		let before_tip = <Test as Config>::Currency::total_issuance();
+		let result = EVM::call(
+			Origin::root(),
+			H160::default(),
+			H160::from_str("1000000000000000000000000000000000000001").unwrap(),
+			Vec::new(),
+			U256::from(1),
+			1000000,
+			U256::from(2_000_000_000),
+			Some(U256::from(1)),
+			None,
+			Vec::new(),
+		);
+		result.expect("EVM can be called");
+		let after_tip = <Test as Config>::Currency::total_issuance();
+		// Only base fee is burned
+		let (base_fee, _) = <Test as Config>::FeeCalculator::min_gas_price();
+		assert_eq!(after_tip, (before_tip - (base_fee.low_u64() * 21_000)));
 	});
 }
 
