@@ -199,7 +199,15 @@ impl<T: Config> Runner<T> {
 		// Refunded 200 - 40 = 160.
 		// Tip 5 * 6 = 30.
 		// Burned 200 - (160 + 30) = 10. Which is equivalent to gas_used * base_fee.
-		T::OnChargeTransaction::correct_and_deposit_fee(&source, actual_fee, fee);
+		T::OnChargeTransaction::correct_and_deposit_fee(
+			&source,
+			// Actual fee after evm execution, including tip.
+			actual_fee,
+			// Base fee.
+			executor.fee(base_fee),
+			// Fee initially withdrawn.
+			fee,
+		);
 		if let Some(actual_priority_fee) = actual_priority_fee {
 			T::OnChargeTransaction::pay_priority_fee(actual_priority_fee);
 		}
