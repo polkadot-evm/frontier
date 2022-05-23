@@ -154,20 +154,18 @@ impl<T: Config> Runner<T> {
 
 		// Post execution.
 		let used_gas = U256::from(executor.used_gas());
-		let actual_fee =
-			if let Some(max_priority_fee) = max_priority_fee_per_gas {
-				let actual_priority_fee = max_fee_per_gas
-					.saturating_sub(base_fee)
-					.min(max_priority_fee)
-					.saturating_mul(used_gas);
-				let actual_fee = executor
-					.fee(base_fee)
-					.checked_add(actual_priority_fee)
-					.unwrap_or_else(U256::max_value);
-				actual_fee
-			} else {
-				executor.fee(base_fee)
-			};
+		let actual_fee = if let Some(max_priority_fee) = max_priority_fee_per_gas {
+			let actual_priority_fee = max_fee_per_gas
+				.saturating_sub(base_fee)
+				.min(max_priority_fee)
+				.saturating_mul(used_gas);
+			executor
+				.fee(base_fee)
+				.checked_add(actual_priority_fee)
+				.unwrap_or_else(U256::max_value)
+		} else {
+			executor.fee(base_fee)
+		};
 		log::debug!(
 			target: "evm",
 			"Execution {:?} [source: {:?}, value: {}, gas_limit: {}, actual_fee: {}, is_transactional: {}]",

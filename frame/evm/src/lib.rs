@@ -674,7 +674,7 @@ pub trait OnChargeEVMTransaction<T: Config> {
 	/// This function should refund any overpaid fees and optionally deposit
 	/// the corrected amount, and handles the base fee rationing using the provided
 	/// `OnUnbalanced` implementation.
-	/// Returns the `NegativeImbalance` - if any - produced by the priority fee. 
+	/// Returns the `NegativeImbalance` - if any - produced by the priority fee.
 	fn correct_and_deposit_fee(
 		who: &H160,
 		corrected_fee: U256,
@@ -767,9 +767,7 @@ where
 				.same()
 				.unwrap_or_else(|_| C::NegativeImbalance::zero());
 
-			let (base_fee, tip) = adjusted_paid.split(
-				base_fee.low_u128().unique_saturated_into(),
-			);
+			let (base_fee, tip) = adjusted_paid.split(base_fee.low_u128().unique_saturated_into());
 			// Handle base fee. Can be either burned, rationed, etc ...
 			OU::on_unbalanced(base_fee);
 			return Some(tip);
