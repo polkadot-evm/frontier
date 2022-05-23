@@ -88,7 +88,8 @@ pub use evm::{
 use fp_evm::GenesisAccount;
 pub use fp_evm::{
 	Account, CallInfo, CreateInfo, ExecutionInfo, FeeCalculator, LinearCostPrecompile, Log,
-	Precompile, PrecompileFailure, PrecompileOutput, PrecompileResult, PrecompileSet, Vicinity,
+	Precompile, PrecompileFailure, PrecompileHandle, PrecompileOutput, PrecompileResult,
+	PrecompileSet, Vicinity,
 };
 
 pub use self::{
