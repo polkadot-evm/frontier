@@ -21,7 +21,7 @@ extern crate alloc;
 
 use core::marker::PhantomData;
 use fp_evm::{
-	Context, ExitError, ExitSucceed, Precompile, PrecompileFailure, PrecompileOutput,
+	ExitError, ExitSucceed, Precompile, PrecompileFailure, PrecompileHandle, PrecompileOutput,
 	PrecompileResult,
 };
 use frame_support::{
@@ -41,12 +41,11 @@ where
 	T::Call: Dispatchable<PostInfo = PostDispatchInfo> + GetDispatchInfo + Decode,
 	<T::Call as Dispatchable>::Origin: From<Option<T::AccountId>>,
 {
-	fn execute(
-		input: &[u8],
-		target_gas: Option<u64>,
-		context: &Context,
-		_is_static: bool,
-	) -> PrecompileResult {
+	fn execute(handle: &mut impl PrecompileHandle) -> PrecompileResult {
+		let input = handle.input();
+		let target_gas = handle.gas_limit();
+		let context = handle.context();
+
 		let call = T::Call::decode(&mut &*input).map_err(|_| PrecompileFailure::Error {
 			exit_status: ExitError::Other("decode failed".into()),
 		})?;
@@ -75,11 +74,12 @@ where
 				let cost = T::GasWeightMapping::weight_to_gas(
 					post_info.actual_weight.unwrap_or(info.weight),
 				);
+
+				handle.record_cost(cost)?;
+
 				Ok(PrecompileOutput {
 					exit_status: ExitSucceed::Stopped,
-					cost,
 					output: Default::default(),
-					logs: Default::default(),
 				})
 			}
 			Err(_) => Err(PrecompileFailure::Error {
