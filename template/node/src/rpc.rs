@@ -178,10 +178,10 @@ where
 			EthFilter::new(
 				client.clone(),
 				backend,
-				filter_pool.clone(),
-				500 as usize, // max stored filters
+				filter_pool,
+				500_usize, // max stored filters
 				max_past_logs,
-				block_data_cache.clone(),
+				block_data_cache,
 			)
 			.into_rpc(),
 		)?;
@@ -200,14 +200,7 @@ where
 	io.merge(Web3::new(client.clone()).into_rpc())?;
 
 	io.merge(
-		EthPubSub::new(
-			pool.clone(),
-			client.clone(),
-			network.clone(),
-			subscription_task_executor,
-			overrides,
-		)
-		.into_rpc(),
+		EthPubSub::new(pool, client, network, subscription_task_executor, overrides).into_rpc(),
 	)?;
 
 	#[cfg(feature = "manual-seal")]

@@ -359,7 +359,7 @@ where
 								.await
 								.ok()
 								.and_then(|res| res.best_seen_block)
-								.map(|res| UniqueSaturatedInto::<u64>::unique_saturated_into(res));
+								.map(UniqueSaturatedInto::<u64>::unique_saturated_into);
 							// Best imported block.
 							let current_block = UniqueSaturatedInto::<u64>::unique_saturated_into(
 								client.info().best_number,
