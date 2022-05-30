@@ -398,33 +398,17 @@ where
 					// normally to import notifications.
 					//
 					// Only send new notifications down the pipe when the syncing status changed.
-					use std::sync::atomic::{AtomicBool, Ordering};
-					let last_syncing_status =
-						AtomicBool::new(Arc::clone(&network).is_major_syncing());
-					let client_clone = Arc::clone(&client);
-					let network_clone = Arc::clone(&network);
-					let stream =
-						client_clone
-							.import_notification_stream()
-							.filter_map(|_item| async {
-								let syncing_status = network_clone.is_major_syncing();
-								if syncing_status
-									!= last_syncing_status.swap(syncing_status, Ordering::SeqCst)
-								{
-									Some(PubSubResult::SyncState(
-										status(
-											client_clone.clone(),
-											network_clone.clone(),
-											starting_block,
-										)
-										.await,
-									))
-								} else {
-									None
-								}
-							});
-
-					sink.pipe_from_stream(Box::pin(stream)).await;
+					let mut stream = client.clone().import_notification_stream();
+					let mut last_syncing_status = network.is_major_syncing();
+					while (stream.next().await).is_some() {
+						let syncing_status = network.is_major_syncing();
+						if syncing_status != last_syncing_status {
+							let _ = sink.send(&PubSubResult::SyncState(
+								status(client.clone(), network.clone(), starting_block).await,
+							));
+						}
+						last_syncing_status = syncing_status;
+					}
 				}
 			}
 		}
