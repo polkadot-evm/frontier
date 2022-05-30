@@ -19,7 +19,7 @@
 //! Eth rpc interface.
 
 use ethereum_types::{H160, H256, H64, U256, U64};
-use jsonrpsee::{core::async_trait, core::RpcResult as Result, proc_macros::rpc};
+use jsonrpsee::{core::RpcResult as Result, proc_macros::rpc};
 
 use crate::types::*;
 
@@ -211,11 +211,11 @@ pub trait EthApi {
 	/// Sends transaction; will block waiting for signer to return the
 	/// transaction hash.
 	#[method(name = "eth_sendTransaction")]
-	fn send_transaction(&self, request: TransactionRequest) -> Result<H256>;
+	async fn send_transaction(&self, request: TransactionRequest) -> Result<H256>;
 
 	/// Sends signed transaction, returning its hash.
 	#[method(name = "eth_sendRawTransaction")]
-	fn send_raw_transaction(&self, bytes: Bytes) -> Result<H256>;
+	async fn send_raw_transaction(&self, bytes: Bytes) -> Result<H256>;
 }
 
 /// Eth filters rpc api (polling).
@@ -235,11 +235,11 @@ pub trait EthFilterApi {
 
 	/// Returns filter changes since last poll.
 	#[method(name = "eth_getFilterChanges")]
-	fn filter_changes(&self, index: Index) -> Result<FilterChanges>;
+	async fn filter_changes(&self, index: Index) -> Result<FilterChanges>;
 
 	/// Returns all logs matching given filter (in a range 'from' - 'to').
 	#[method(name = "eth_getFilterLogs")]
-	fn filter_logs(&self, index: Index) -> Result<Vec<Log>>;
+	async fn filter_logs(&self, index: Index) -> Result<Vec<Log>>;
 
 	/// Uninstalls filter.
 	#[method(name = "eth_uninstallFilter")]
@@ -247,5 +247,5 @@ pub trait EthFilterApi {
 
 	/// Returns logs matching given filter object.
 	#[method(name = "eth_getLogs")]
-	fn logs(&self, filter: Filter) -> Result<Vec<Log>>;
+	async fn logs(&self, filter: Filter) -> Result<Vec<Log>>;
 }

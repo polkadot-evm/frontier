@@ -195,14 +195,16 @@ pub mod frontier_backend_client {
 }
 
 pub fn err<T: ToString>(code: i32, message: T, data: Option<&[u8]>) -> jsonrpsee::core::Error {
-	jsonrpsee::core::Error::Call(jsonrpsee::types::error::CallError::Custom {
-		code: code.into(),
-		message: message.to_string(),
-		data: data.map(|bytes| {
-			jsonrpsee::core::to_json_raw_value(&format!("0x{}", hex::encode(data)))
-				.expect("fail to serialize data")
-		}),
-	})
+	jsonrpsee::core::Error::Call(jsonrpsee::types::error::CallError::Custom(
+		jsonrpsee::types::error::ErrorObject::owned(
+			code.into(),
+			message.to_string(),
+			data.map(|bytes| {
+				jsonrpsee::core::to_json_raw_value(&format!("0x{}", hex::encode(bytes)))
+					.expect("fail to serialize data")
+			}),
+		),
+	))
 }
 
 pub fn internal_err<T: ToString>(message: T) -> jsonrpsee::core::Error {

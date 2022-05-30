@@ -20,7 +20,7 @@ use std::sync::Arc;
 
 use ethereum_types::{H256, U256};
 use evm::{ExitError, ExitReason};
-use jsonrpsee::core::{Error, RpcResult as Result};
+use jsonrpsee::core::RpcResult as Result;
 
 use sc_client_api::backend::{Backend, StateBackend, StorageProvider};
 use sc_network::ExHashT;

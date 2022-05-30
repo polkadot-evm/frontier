@@ -17,7 +17,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use ethereum_types::H256;
-use futures::future::{FutureExt, TryFutureExt};
+use futures::future::TryFutureExt;
 use jsonrpsee::core::RpcResult as Result;
 
 use sc_client_api::backend::{Backend, StateBackend, StorageProvider};

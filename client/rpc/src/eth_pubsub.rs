@@ -16,16 +16,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use std::{collections::BTreeMap, iter, marker::PhantomData, sync::Arc};
+use std::{collections::BTreeMap, marker::PhantomData, sync::Arc};
 
 use ethereum::{BlockV2 as EthereumBlock, TransactionV2 as EthereumTransaction};
 use ethereum_types::{H256, U256};
-use futures::{FutureExt as _, SinkExt as _, StreamExt as _};
-use jsonrpsee::core::{Error, RpcResult};
-use jsonrpsee::ws_server::SubscriptionSink;
+use futures::{FutureExt as _, StreamExt as _};
 use jsonrpsee::PendingSubscription;
-use log::warn;
-use rand::{distributions::Alphanumeric, thread_rng, Rng};
 
 use sc_client_api::{
 	backend::{Backend, StateBackend, StorageProvider},
@@ -206,7 +202,7 @@ where
 	BE::State: StateBackend<BlakeTwo256>,
 {
 	fn subscribe(&self, sink: PendingSubscription, kind: Kind, params: Option<Params>) {
-		let sink = if let Some(sink) = sink.accept() {
+		let mut sink = if let Some(sink) = sink.accept() {
 			sink
 		} else {
 			return;
@@ -222,129 +218,129 @@ where
 		let network = self.network.clone();
 		let overrides = self.overrides.clone();
 		let starting_block = self.starting_block;
-		match kind {
-			Kind::Logs => {
-				let stream = client
-					.import_notification_stream()
-					.filter_map(move |notification| {
-						if notification.is_new_best {
-							let id = BlockId::Hash(notification.hash);
+		let fut = async move {
+			match kind {
+				Kind::Logs => {
+					let stream = client
+						.import_notification_stream()
+						.filter_map(move |notification| {
+							if notification.is_new_best {
+								let id = BlockId::Hash(notification.hash);
 
-							let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(
-								client.as_ref(),
-								id,
-							);
-							let handler = overrides
-								.schemas
-								.get(&schema)
-								.unwrap_or(&overrides.fallback);
+								let schema = frontier_backend_client::onchain_storage_schema::<
+									B,
+									C,
+									BE,
+								>(client.as_ref(), id);
+								let handler = overrides
+									.schemas
+									.get(&schema)
+									.unwrap_or(&overrides.fallback);
 
-							let block = handler.current_block(&id);
-							let receipts = handler.current_receipts(&id);
+								let block = handler.current_block(&id);
+								let receipts = handler.current_receipts(&id);
 
-							match (receipts, block) {
-								(Some(receipts), Some(block)) => {
-									futures::future::ready(Some((block, receipts)))
+								match (receipts, block) {
+									(Some(receipts), Some(block)) => {
+										futures::future::ready(Some((block, receipts)))
+									}
+									_ => futures::future::ready(None),
 								}
-								_ => futures::future::ready(None),
+							} else {
+								futures::future::ready(None)
 							}
-						} else {
-							futures::future::ready(None)
-						}
-					})
-					.flat_map(move |(block, receipts)| {
-						futures::stream::iter(SubscriptionResult::new().logs(
-							block,
-							receipts,
-							&filtered_params,
-						))
-					})
-					.map(|x| PubSubResult::Log(Box::new(x)));
-				subscribe_helper(&self.subscriptions, sink, stream)
-			}
-			Kind::NewHeads => {
-				let stream = client
-					.import_notification_stream()
-					.filter_map(move |notification| {
-						if notification.is_new_best {
-							let id = BlockId::Hash(notification.hash);
+						})
+						.flat_map(move |(block, receipts)| {
+							futures::stream::iter(SubscriptionResult::new().logs(
+								block,
+								receipts,
+								&filtered_params,
+							))
+						})
+						.map(|x| PubSubResult::Log(Box::new(x)));
+					sink.pipe_from_stream(stream).await;
+				}
+				Kind::NewHeads => {
+					let stream = client
+						.import_notification_stream()
+						.filter_map(move |notification| {
+							if notification.is_new_best {
+								let id = BlockId::Hash(notification.hash);
 
-							let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(
-								client.as_ref(),
-								id,
-							);
-							let handler = overrides
-								.schemas
-								.get(&schema)
-								.unwrap_or(&overrides.fallback);
+								let schema = frontier_backend_client::onchain_storage_schema::<
+									B,
+									C,
+									BE,
+								>(client.as_ref(), id);
+								let handler = overrides
+									.schemas
+									.get(&schema)
+									.unwrap_or(&overrides.fallback);
 
-							let block = handler.current_block(&id);
-							futures::future::ready(block)
-						} else {
-							futures::future::ready(None)
-						}
-					})
-					.map(|block| SubscriptionResult::new().new_heads(block));
-				subscribe_helper(&self.subscriptions, sink, stream)
-			}
-			Kind::NewPendingTransactions => {
-				use sc_transaction_pool_api::InPoolTransaction;
-
-				let stream = pool
-					.import_notification_stream()
-					.filter_map(move |txhash| {
-						if let Some(xt) = pool.ready_transaction(&txhash) {
-							let best_block: BlockId<B> = BlockId::Hash(client.info().best_hash);
-
-							let api = client.runtime_api();
-
-							let api_version = if let Ok(Some(api_version)) =
-								api.api_version::<dyn EthereumRuntimeRPCApi<B>>(&best_block)
-							{
-								api_version
+								let block = handler.current_block(&id);
+								futures::future::ready(block)
 							} else {
-								return futures::future::ready(None);
-							};
+								futures::future::ready(None)
+							}
+						})
+						.map(|block| SubscriptionResult::new().new_heads(block));
+					sink.pipe_from_stream(stream).await;
+				}
+				Kind::NewPendingTransactions => {
+					use sc_transaction_pool_api::InPoolTransaction;
 
-							let xts = vec![xt.data().clone()];
+					let stream = pool
+						.import_notification_stream()
+						.filter_map(move |txhash| {
+							if let Some(xt) = pool.ready_transaction(&txhash) {
+								let best_block: BlockId<B> = BlockId::Hash(client.info().best_hash);
 
-							let txs: Option<Vec<EthereumTransaction>> = if api_version > 1 {
-								api.extrinsic_filter(&best_block, xts).ok()
-							} else {
-								#[allow(deprecated)]
-								if let Ok(legacy) =
-									api.extrinsic_filter_before_version_2(&best_block, xts)
+								let api = client.runtime_api();
+
+								let api_version = if let Ok(Some(api_version)) =
+									api.api_version::<dyn EthereumRuntimeRPCApi<B>>(&best_block)
 								{
-									Some(legacy.into_iter().map(|tx| tx.into()).collect())
+									api_version
 								} else {
-									None
-								}
-							};
+									return futures::future::ready(None);
+								};
 
-							let res = match txs {
-								Some(txs) => {
-									if txs.len() == 1 {
-										Some(txs[0].clone())
+								let xts = vec![xt.data().clone()];
+
+								let txs: Option<Vec<EthereumTransaction>> = if api_version > 1 {
+									api.extrinsic_filter(&best_block, xts).ok()
+								} else {
+									#[allow(deprecated)]
+									if let Ok(legacy) =
+										api.extrinsic_filter_before_version_2(&best_block, xts)
+									{
+										Some(legacy.into_iter().map(|tx| tx.into()).collect())
 									} else {
 										None
 									}
-								}
-								_ => None,
-							};
-							futures::future::ready(res)
-						} else {
-							futures::future::ready(None)
-						}
-					})
-					.map(|transaction| PubSubResult::TransactionHash(transaction.hash()));
-				subscribe_helper(&self.subscriptions, sink, stream)
-			}
-			Kind::Syncing => {
-				let mut sink = sink.sink_map_err(|e| warn!("Error sending notifications: {:?}", e));
+								};
 
-				let client = Arc::clone(&client);
-				let network = Arc::clone(&network);
-				async move {
+								let res = match txs {
+									Some(txs) => {
+										if txs.len() == 1 {
+											Some(txs[0].clone())
+										} else {
+											None
+										}
+									}
+									_ => None,
+								};
+								futures::future::ready(res)
+							} else {
+								futures::future::ready(None)
+							}
+						})
+						.map(|transaction| PubSubResult::TransactionHash(transaction.hash()));
+					sink.pipe_from_stream(stream).await;
+				}
+				Kind::Syncing => {
+					let client = Arc::clone(&client);
+					let network = Arc::clone(&network);
 					// Gets the node syncing status.
 					// The response is expected to be serialized either as a plain boolean
 					// if the node is not syncing, or a structure containing syncing metadata
@@ -382,52 +378,49 @@ where
 					// On connection subscriber expects a value.
 					// Because import notifications are only emitted when the node is synced or
 					// in case of reorg, the first event is emited right away.
-					let _ = sink
-						.send(PubSubResult::SyncState(
-							status(Arc::clone(&client), Arc::clone(&network), starting_block).await,
-						))
-						.await;
+					let _ = sink.send(&PubSubResult::SyncState(
+						status(Arc::clone(&client), Arc::clone(&network), starting_block).await,
+					));
 
 					// When the node is not under a major syncing (i.e. from genesis), react
 					// normally to import notifications.
 					//
 					// Only send new notifications down the pipe when the syncing status changed.
 					use std::sync::atomic::{AtomicBool, Ordering};
-					let last_syncing_status = AtomicBool::new(network.is_major_syncing());
-					let stream = client.import_notification_stream().filter_map(|_item| {
-						let syncing_status = network.is_major_syncing();
-						if syncing_status
-							!= last_syncing_status.swap(syncing_status, Ordering::SeqCst)
-						{
-							Some(PubSubResult::SyncState(
-								status(client, network, starting_block).await,
-							))
-						} else {
-							None
-						}
-					});
+					let last_syncing_status =
+						AtomicBool::new(Arc::clone(&network).is_major_syncing());
+					let client_clone = Arc::clone(&client);
+					let network_clone = Arc::clone(&network);
+					let stream =
+						client_clone
+							.import_notification_stream()
+							.filter_map(|_item| async {
+								let syncing_status = network_clone.is_major_syncing();
+								if syncing_status
+									!= last_syncing_status.swap(syncing_status, Ordering::SeqCst)
+								{
+									Some(PubSubResult::SyncState(
+										status(
+											client_clone.clone(),
+											network_clone.clone(),
+											starting_block,
+										)
+										.await,
+									))
+								} else {
+									None
+								}
+							});
 
-					subscribe_helper(&self.subscriptions, sink, stream)
-				};
+					sink.pipe_from_stream(Box::pin(stream)).await;
+				}
 			}
 		}
-	}
-}
-
-fn subscribe_helper<S, Item>(
-	executor: &SubscriptionTaskExecutor,
-	mut sink: SubscriptionSink,
-	stream: S,
-) where
-	S: futures::stream::Stream<Item = Item> + Send + 'static,
-	Item: Send + sp_runtime::Serialize + 'static,
-{
-	let fut = async move {
-		sink.pipe_from_stream(stream).await;
-	};
-
-	use futures::task::Spawn as _;
-	if let Err(e) = executor.spawn_obj(Box::pin(fut).into()) {
-		sink.close(Error::Custom(e.to_string()));
+		.boxed();
+		self.subscriptions.spawn(
+			"frontier-rpc-subscription",
+			Some("rpc"),
+			fut.map(drop).boxed(),
+		);
 	}
 }

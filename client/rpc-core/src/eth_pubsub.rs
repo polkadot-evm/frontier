@@ -18,8 +18,7 @@
 
 //! Eth PUB-SUB rpc interface.
 
-use jsonrpsee::core::RpcResult as Result;
-use jsonrpsee::{core::RpcResult, proc_macros::rpc};
+use jsonrpsee::proc_macros::rpc;
 
 use crate::types::pubsub;
 

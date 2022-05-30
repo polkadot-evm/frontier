@@ -302,11 +302,11 @@ where
 	// ########################################################################
 
 	async fn send_transaction(&self, request: TransactionRequest) -> Result<H256> {
-		self.send_transaction(request)
+		self.send_transaction(request).await
 	}
 
 	async fn send_raw_transaction(&self, bytes: Bytes) -> Result<H256> {
-		self.send_raw_transaction(bytes)
+		self.send_raw_transaction(bytes).await
 	}
 }
 

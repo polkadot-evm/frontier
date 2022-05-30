@@ -131,7 +131,7 @@ where
 		Err(internal_err("Method not available."))
 	}
 
-	fn filter_changes(&self, index: Index) -> Result<FilterChanges> {
+	async fn filter_changes(&self, index: Index) -> Result<FilterChanges> {
 		// There are multiple branches that needs to return async blocks.
 		// Also, each branch need to (synchronously) do stuff with the pool
 		// (behind a lock), and the lock should be released before entering
