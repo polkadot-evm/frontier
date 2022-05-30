@@ -1653,6 +1653,7 @@ dependencies = [
  "prometheus",
  "rand 0.8.5",
  "rlp",
+ "rustc-hex",
  "sc-block-builder",
  "sc-client-api",
  "sc-client-db",

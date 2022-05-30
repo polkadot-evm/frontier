@@ -46,6 +46,18 @@ use fp_rpc::EthereumRuntimeRPCApi;
 
 use crate::{frontier_backend_client, overrides::OverrideHandle};
 
+#[derive(Debug)]
+pub struct EthereumSubIdProvider;
+
+impl jsonrpsee::core::traits::IdProvider for EthereumSubIdProvider {
+	fn next_id(&self) -> jsonrpsee::types::SubscriptionId<'static> {
+		use rustc_hex::ToHex as _;
+		rand::random::<u128>().to_le_bytes()[..]
+			.to_hex::<String>()
+			.into()
+	}
+}
+
 /// Eth pub-sub API implementation.
 pub struct EthPubSub<B: BlockT, P, C, BE, H: ExHashT> {
 	pool: Arc<P>,

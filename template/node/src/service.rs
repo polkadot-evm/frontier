@@ -289,6 +289,9 @@ pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, Ser
 	use sc_network::warp_request_handler::WarpSyncProvider;
 	use sp_consensus_aura::sr25519::AuthorityPair as AuraPair;
 
+	// Use ethereum style for subscription ids
+	config.rpc_id_provider = Some(Box::new(fc_rpc::EthereumSubIdProvider));
+
 	let sc_service::PartialComponents {
 		client,
 		backend,
