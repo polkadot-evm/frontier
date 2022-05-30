@@ -9,7 +9,7 @@ use sc_client_api::{
 	client::BlockchainEvents,
 };
 #[cfg(feature = "manual-seal")]
-use sc_consensus_manual_seal::rpc::{ManualSeal, ManualSealApi};
+use sc_consensus_manual_seal::rpc::{ManualSeal, ManualSealApiServer};
 use sc_network::NetworkService;
 use sc_rpc::SubscriptionTaskExecutor;
 use sc_rpc_api::DenyUnsafe;
