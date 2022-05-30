@@ -631,10 +631,7 @@ pub fn new_full(config: Configuration, cli: &Cli) -> Result<TaskManager, Service
 				command_sink: Some(command_sink.clone()),
 			};
 
-			crate::rpc::create_full(
-				deps,
-				subscription_task_executor,
-			).map_err(Into::into)
+			crate::rpc::create_full(deps, subscription_task_executor).map_err(Into::into)
 		})
 	};
 
