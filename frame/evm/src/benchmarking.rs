@@ -24,11 +24,11 @@ use super::*;
 benchmarks! {
 
 	runner_execute {
-		// This benchmark tests the relationship between gas and weight. It deploys a contract which
-		// has an infinite loop in a public function. We then call this function with varying amounts
-		// of gas, expecting it to OOG. The benchmarking framework measures the amount of time (aka
-		// weight) it takes before OOGing and relates that to the amount of gas provided, leaving us
-		// with an estimate for gas-to-weight mapping.
+	// This benchmark tests the relationship between gas and weight. It deploys a contract which
+	// has an infinite loop in a public function. We then call this function with varying amounts
+	// of gas, expecting it to OOG. The benchmarking framework measures the amount of time (aka
+	// weight) it takes before OOGing and relates that to the amount of gas provided, leaving us
+	// with an estimate for gas-to-weight mapping.
 
 		let x in 1..10000000;
 
