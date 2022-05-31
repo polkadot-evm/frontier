@@ -4512,6 +4512,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-hotfix-sufficients"
+version = "1.0.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "pallet-evm",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-randomness-collective-flip"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=master#174735ea1bb5fc4513519c45181d8df63d86f613"
