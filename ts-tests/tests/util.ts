@@ -59,7 +59,7 @@ export async function createAndFinalizeBlockNowait(web3: Web3) {
 export async function startFrontierNode(provider?: string): Promise<{ web3: Web3; binary: ChildProcess, ethersjs: ethers.providers.JsonRpcProvider }> {
 	var web3;
 	if (!provider || provider == 'http') {
-		web3 = new Web3(`http://localhost:${RPC_PORT}`);
+		web3 = new Web3(`http://127.0.0.1:${RPC_PORT}`);
 	}
 
 	const cmd = BINARY_PATH;
@@ -126,10 +126,10 @@ export async function startFrontierNode(provider?: string): Promise<{ web3: Web3
 	});
 
 	if (provider == 'ws') {
-		web3 = new Web3(`ws://localhost:${WS_PORT}`);
+		web3 = new Web3(`ws://127.0.0.1:${WS_PORT}`);
 	}
 
-	let ethersjs = new ethers.providers.StaticJsonRpcProvider(`http://localhost:${RPC_PORT}`, {
+	let ethersjs = new ethers.providers.StaticJsonRpcProvider(`http://127.0.0.1:${RPC_PORT}`, {
 		chainId: 42,
 		name: "frontier-dev",
 	});

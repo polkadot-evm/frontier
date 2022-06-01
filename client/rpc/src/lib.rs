@@ -16,6 +16,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+#![allow(
+	clippy::too_many_arguments,
+	clippy::large_enum_variant,
+	clippy::manual_range_contains,
+	clippy::explicit_counter_loop,
+	clippy::len_zero,
+	clippy::new_without_default
+)]
+
 mod eth;
 mod eth_pubsub;
 mod net;
@@ -24,21 +33,18 @@ mod signer;
 mod web3;
 
 pub use self::{
-	eth::{EthApi, EthBlockDataCache, EthFilterApi, EthTask},
-	eth_pubsub::{EthPubSubApi, HexEncodedIdProvider},
-	net::NetApi,
+	eth::{Eth, EthBlockDataCacheTask, EthFilter, EthTask},
+	eth_pubsub::{EthPubSub, HexEncodedIdProvider},
+	net::Net,
 	overrides::{
 		OverrideHandle, RuntimeApiStorageOverride, SchemaV1Override, SchemaV2Override,
 		SchemaV3Override, StorageOverride,
 	},
 	signer::{EthDevSigner, EthSigner},
-	web3::Web3Api,
+	web3::Web3,
 };
-
 pub use ethereum::TransactionV2 as EthereumTransaction;
-pub use fc_rpc_core::{
-	EthApiServer, EthFilterApiServer, EthPubSubApiServer, NetApiServer, Web3ApiServer,
-};
+pub use fc_rpc_core::{EthApi, EthFilterApi, EthPubSubApi, NetApi, Web3Api};
 
 pub mod frontier_backend_client {
 	use super::internal_err;

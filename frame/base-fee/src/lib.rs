@@ -16,6 +16,7 @@
 // limitations under the License.
 
 #![cfg_attr(not(feature = "std"), no_std)]
+#![allow(clippy::comparison_chain)]
 
 #[cfg(test)]
 mod tests;
@@ -177,8 +178,8 @@ pub mod pallet {
 							// Normalize to GWEI.
 							let increase = scaled_basefee
 								.checked_div(U256::from(1_000_000))
-								.unwrap_or(U256::zero());
-							*bf = bf.saturating_add(U256::from(increase));
+								.unwrap_or_else(U256::zero);
+							*bf = bf.saturating_add(increase);
 						} else {
 							Self::deposit_event(Event::BaseFeeOverflow);
 						}
@@ -195,8 +196,8 @@ pub mod pallet {
 							// Normalize to GWEI.
 							let decrease = scaled_basefee
 								.checked_div(U256::from(1_000_000))
-								.unwrap_or(U256::zero());
-							*bf = bf.saturating_sub(U256::from(decrease));
+								.unwrap_or_else(U256::zero);
+							*bf = bf.saturating_sub(decrease);
 						} else {
 							Self::deposit_event(Event::BaseFeeOverflow);
 						}
@@ -240,8 +241,8 @@ pub mod pallet {
 }
 
 impl<T: Config> fp_evm::FeeCalculator for Pallet<T> {
-	fn min_gas_price() -> U256 {
-		<BaseFeePerGas<T>>::get()
+	fn min_gas_price() -> (U256, Weight) {
+		(<BaseFeePerGas<T>>::get(), T::DbWeight::get().reads(1))
 	}
 }
 

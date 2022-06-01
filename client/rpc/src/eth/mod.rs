@@ -47,17 +47,18 @@ use sp_runtime::{
 	traits::{BlakeTwo256, Block as BlockT, UniqueSaturatedInto},
 };
 
-use fc_rpc_core::{types::*, EthApi as EthApiT};
+use fc_rpc_core::{types::*, EthApi};
 use fp_rpc::{ConvertTransactionRuntimeApi, EthereumRuntimeRPCApi, TransactionStatus};
 
 use crate::{internal_err, overrides::OverrideHandle, public_key, signer::EthSigner};
 
 pub use self::{
-	cache::{EthBlockDataCache, EthTask},
-	filter::EthFilterApi,
+	cache::{EthBlockDataCacheTask, EthTask},
+	filter::EthFilter,
 };
 
-pub struct EthApi<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> {
+/// Eth API implementation.
+pub struct Eth<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> {
 	pool: Arc<P>,
 	graph: Arc<Pool<A>>,
 	client: Arc<C>,
@@ -67,13 +68,13 @@ pub struct EthApi<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> {
 	signers: Vec<Box<dyn EthSigner>>,
 	overrides: Arc<OverrideHandle<B>>,
 	backend: Arc<fc_db::Backend<B>>,
-	block_data_cache: Arc<EthBlockDataCache<B>>,
-	fee_history_limit: u64,
+	block_data_cache: Arc<EthBlockDataCacheTask<B>>,
 	fee_history_cache: FeeHistoryCache,
+	fee_history_cache_limit: FeeHistoryCacheLimit,
 	_marker: PhantomData<(B, BE)>,
 }
 
-impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> EthApi<B, C, P, CT, BE, H, A> {
+impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> Eth<B, C, P, CT, BE, H, A> {
 	pub fn new(
 		client: Arc<C>,
 		pool: Arc<P>,
@@ -84,9 +85,9 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> EthApi<B, C, P, CT, BE, H
 		overrides: Arc<OverrideHandle<B>>,
 		backend: Arc<fc_db::Backend<B>>,
 		is_authority: bool,
-		block_data_cache: Arc<EthBlockDataCache<B>>,
-		fee_history_limit: u64,
+		block_data_cache: Arc<EthBlockDataCacheTask<B>>,
 		fee_history_cache: FeeHistoryCache,
+		fee_history_cache_limit: FeeHistoryCacheLimit,
 	) -> Self {
 		Self {
 			client,
@@ -99,14 +100,14 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> EthApi<B, C, P, CT, BE, H
 			overrides,
 			backend,
 			block_data_cache,
-			fee_history_limit,
 			fee_history_cache,
+			fee_history_cache_limit,
 			_marker: PhantomData,
 		}
 	}
 }
 
-impl<B, C, P, CT, BE, H: ExHashT, A> EthApiT for EthApi<B, C, P, CT, BE, H, A>
+impl<B, C, P, CT, BE, H: ExHashT, A> EthApi for Eth<B, C, P, CT, BE, H, A>
 where
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
@@ -121,6 +122,7 @@ where
 	// ########################################################################
 	// Client
 	// ########################################################################
+
 	fn protocol_version(&self) -> Result<u64> {
 		self.protocol_version()
 	}
@@ -404,7 +406,7 @@ fn transaction_build(
 			transaction.gas_price = Some(
 				base_fee
 					.checked_add(max_priority_fee_per_gas)
-					.unwrap_or(U256::max_value())
+					.unwrap_or_else(U256::max_value)
 					.min(max_fee_per_gas),
 			);
 		}
@@ -416,9 +418,9 @@ fn transaction_build(
 	};
 
 	// Block hash.
-	transaction.block_hash = block.as_ref().map_or(None, |block| {
-		Some(H256::from(keccak_256(&rlp::encode(&block.header))))
-	});
+	transaction.block_hash = block
+		.as_ref()
+		.map(|block| H256::from(keccak_256(&rlp::encode(&block.header))));
 	// Block number.
 	transaction.block_number = block.as_ref().map(|block| block.header.number);
 	// Transaction index.
@@ -453,11 +455,9 @@ fn transaction_build(
 		|status| status.to,
 	);
 	// Creates.
-	transaction.creates = status
-		.as_ref()
-		.map_or(None, |status| status.contract_address);
+	transaction.creates = status.as_ref().and_then(|status| status.contract_address);
 	// Public key.
-	transaction.public_key = pubkey.as_ref().map(|pk| H512::from(pk));
+	transaction.public_key = pubkey.as_ref().map(H512::from);
 
 	transaction
 }

@@ -37,7 +37,7 @@ use sc_client_api::{
 use sc_network::{ExHashT, NetworkService};
 use sc_rpc::Metadata;
 use sc_transaction_pool_api::TransactionPool;
-use sp_api::{BlockId, ProvideRuntimeApi};
+use sp_api::{ApiExt, BlockId, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
 use sp_core::hashing::keccak_256;
 use sp_runtime::traits::{BlakeTwo256, Block as BlockT, UniqueSaturatedInto};
@@ -47,11 +47,9 @@ use fc_rpc_core::{
 		pubsub::{Kind, Params, PubSubSyncStatus, Result as PubSubResult, SyncStatusMetadata},
 		Bytes, FilteredParams, Header, Log, Rich,
 	},
-	EthPubSubApi as EthPubSubApiT,
+	EthPubSubApi,
 };
 use fp_rpc::EthereumRuntimeRPCApi;
-
-use sp_api::ApiExt;
 
 use crate::{frontier_backend_client, overrides::OverrideHandle};
 
@@ -80,7 +78,8 @@ impl IdProvider for HexEncodedIdProvider {
 	}
 }
 
-pub struct EthPubSubApi<B: BlockT, P, C, BE, H: ExHashT> {
+/// Eth pub-sub API implementation.
+pub struct EthPubSub<B: BlockT, P, C, BE, H: ExHashT> {
 	pool: Arc<P>,
 	client: Arc<C>,
 	network: Arc<NetworkService<B, H>>,
@@ -90,7 +89,7 @@ pub struct EthPubSubApi<B: BlockT, P, C, BE, H: ExHashT> {
 	_marker: PhantomData<BE>,
 }
 
-impl<B: BlockT, P, C, BE, H: ExHashT> EthPubSubApi<B, P, C, BE, H>
+impl<B: BlockT, P, C, BE, H: ExHashT> EthPubSub<B, P, C, BE, H>
 where
 	C: HeaderBackend<B> + Send + Sync + 'static,
 {
@@ -105,8 +104,8 @@ where
 		let starting_block =
 			UniqueSaturatedInto::<u64>::unique_saturated_into(client.info().best_number);
 		Self {
-			pool: pool.clone(),
-			client: client.clone(),
+			pool,
+			client,
 			network,
 			subscriptions,
 			overrides,
@@ -143,7 +142,7 @@ impl SubscriptionResult {
 					Bytes(block.header.mix_hash.as_bytes().to_vec()),
 					Bytes(block.header.nonce.as_bytes().to_vec()),
 				],
-				size: Some(U256::from(rlp::encode(&block).len() as u32)),
+				size: Some(U256::from(rlp::encode(&block.header).len() as u32)),
 			},
 			extra_info: BTreeMap::new(),
 		}))
@@ -198,7 +197,7 @@ impl SubscriptionResult {
 		params: &FilteredParams,
 	) -> bool {
 		let log = Log {
-			address: ethereum_log.address.clone(),
+			address: ethereum_log.address,
 			topics: ethereum_log.topics.clone(),
 			data: Bytes(ethereum_log.data.clone()),
 			block_hash: None,
@@ -209,7 +208,7 @@ impl SubscriptionResult {
 			transaction_log_index: None,
 			removed: false,
 		};
-		if let Some(_) = params.filter {
+		if params.filter.is_some() {
 			let block_number =
 				UniqueSaturatedInto::<u64>::unique_saturated_into(block.header.number);
 			if !params.filter_block_range(block_number)
@@ -224,7 +223,7 @@ impl SubscriptionResult {
 	}
 }
 
-impl<B: BlockT, P, C, BE, H: ExHashT> EthPubSubApiT for EthPubSubApi<B, P, C, BE, H>
+impl<B: BlockT, P, C, BE, H: ExHashT> EthPubSubApi for EthPubSub<B, P, C, BE, H>
 where
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	P: TransactionPool<Block = B> + Send + Sync + 'static,
@@ -292,9 +291,9 @@ where
 							))
 						})
 						.map(|x| {
-							return Ok::<Result<PubSubResult, jsonrpc_core::types::error::Error>, ()>(
-								Ok(PubSubResult::Log(Box::new(x))),
-							);
+							Ok::<Result<PubSubResult, jsonrpc_core::types::error::Error>, ()>(Ok(
+								PubSubResult::Log(Box::new(x)),
+							))
 						});
 					stream
 						.forward(
@@ -327,9 +326,7 @@ where
 								futures::future::ready(None)
 							}
 						})
-						.map(|block| {
-							return Ok::<_, ()>(Ok(SubscriptionResult::new().new_heads(block)));
-						});
+						.map(|block| Ok::<_, ()>(Ok(SubscriptionResult::new().new_heads(block))));
 					stream
 						.forward(
 							sink.sink_map_err(|e| warn!("Error sending notifications: {:?}", e)),
@@ -388,9 +385,9 @@ where
 							}
 						})
 						.map(|transaction| {
-							return Ok::<Result<PubSubResult, jsonrpc_core::types::error::Error>, ()>(
-								Ok(PubSubResult::TransactionHash(transaction.hash())),
-							);
+							Ok::<Result<PubSubResult, jsonrpc_core::types::error::Error>, ()>(Ok(
+								PubSubResult::TransactionHash(transaction.hash()),
+							))
 						});
 					stream
 						.forward(
@@ -401,11 +398,11 @@ where
 			}
 			Kind::Syncing => {
 				self.subscriptions.add(subscriber, |sink| {
-					let sink = sink.sink_map_err(|e| warn!("Error sending notifications: {:?}", e));
+					let mut sink =
+						sink.sink_map_err(|e| warn!("Error sending notifications: {:?}", e));
 
 					let client = Arc::clone(&client);
 					let network = Arc::clone(&network);
-					let mut sink = sink.clone();
 					async move {
 						// Gets the node syncing status.
 						// The response is expected to be serialized either as a plain boolean

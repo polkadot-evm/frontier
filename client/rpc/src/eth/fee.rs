@@ -32,9 +32,9 @@ use sp_runtime::{
 use fc_rpc_core::types::*;
 use fp_rpc::EthereumRuntimeRPCApi;
 
-use crate::{eth::EthApi, frontier_backend_client, internal_err};
+use crate::{eth::Eth, frontier_backend_client, internal_err};
 
-impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi> EthApi<B, C, P, CT, BE, H, A>
+impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi> Eth<B, C, P, CT, BE, H, A>
 where
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
@@ -46,12 +46,10 @@ where
 	pub fn gas_price(&self) -> Result<U256> {
 		let block = BlockId::Hash(self.client.info().best_hash);
 
-		Ok(self
-			.client
+		self.client
 			.runtime_api()
 			.gas_price(&block)
-			.map_err(|err| internal_err(format!("fetch runtime chain id failed: {:?}", err)))?
-			.into())
+			.map_err(|err| internal_err(format!("fetch runtime chain id failed: {:?}", err)))
 	}
 
 	pub fn fee_history(
@@ -95,8 +93,8 @@ where
 			let best_number =
 				UniqueSaturatedInto::<u64>::unique_saturated_into(self.client.info().best_number);
 			// Only support in-cache queries.
-			if lowest < best_number.saturating_sub(self.fee_history_limit) {
-				return Err(internal_err(format!("Block range out of bounds.")));
+			if lowest < best_number.saturating_sub(self.fee_history_cache_limit) {
+				return Err(internal_err("Block range out of bounds."));
 			}
 			if let Ok(fee_history_cache) = &self.fee_history_cache.lock() {
 				let mut response = FeeHistory {
@@ -182,7 +180,7 @@ where
 				}
 				return Ok(response);
 			} else {
-				return Err(internal_err(format!("Failed to read fee history cache.")));
+				return Err(internal_err("Failed to read fee history cache."));
 			}
 		}
 		Err(internal_err(format!(
@@ -215,7 +213,7 @@ where
 				}
 			}
 		} else {
-			return Err(internal_err(format!("Failed to read fee oracle cache.")));
+			return Err(internal_err("Failed to read fee oracle cache."));
 		}
 		Ok(*rewards.iter().min().unwrap_or(&U256::zero()))
 	}

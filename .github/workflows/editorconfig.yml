@@ -2,16 +2,20 @@ name: Editorconfig
 
 on:
   push:
-    branches: [ master ]
+    branches:
+      - master
+      - 'polkadot-v**'
   pull_request:
-    branches: [ master ]
+    branches:
+      - master
+      - 'polkadot-v**'
 
 jobs:
   check:
     name: 'Check editorconfig'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Submodules
         run: git submodule update --init --recursive
       - name: Init

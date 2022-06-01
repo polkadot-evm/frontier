@@ -42,7 +42,7 @@ fn transaction_should_increment_nonce() {
 	ext.execute_with(|| {
 		let t = legacy_erc20_creation_transaction(alice);
 		assert_ok!(Ethereum::execute(alice.address, &t, None,));
-		assert_eq!(EVM::account_basic(&alice.address).nonce, U256::from(1));
+		assert_eq!(EVM::account_basic(&alice.address).0.nonce, U256::from(1));
 	});
 }
 
@@ -60,9 +60,15 @@ fn transaction_without_enough_gas_should_not_work() {
 
 		let call = crate::Call::<Test>::transact { transaction };
 		let source = call.check_self_contained().unwrap().unwrap();
+		let extrinsic = CheckedExtrinsic::<u64, crate::mock::Call, SignedExtra, _> {
+			signed: fp_self_contained::CheckedSignature::SelfContained(source),
+			function: Call::Ethereum(call.clone()),
+		};
+		let dispatch_info = extrinsic.get_dispatch_info();
 
 		assert_err!(
-			call.validate_self_contained(&source).unwrap(),
+			call.validate_self_contained(&source, &dispatch_info, 0)
+				.unwrap(),
 			InvalidTransaction::Payment
 		);
 	});
@@ -83,9 +89,15 @@ fn transaction_with_to_low_nonce_should_not_work() {
 			transaction: signed,
 		};
 		let source = call.check_self_contained().unwrap().unwrap();
+		let extrinsic = CheckedExtrinsic::<u64, crate::mock::Call, SignedExtra, H160> {
+			signed: fp_self_contained::CheckedSignature::SelfContained(source),
+			function: Call::Ethereum(call.clone()),
+		};
+		let dispatch_info = extrinsic.get_dispatch_info();
 
 		assert_eq!(
-			call.validate_self_contained(&source).unwrap(),
+			call.validate_self_contained(&source, &dispatch_info, 0)
+				.unwrap(),
 			ValidTransactionBuilder::default()
 				.and_provides((alice.address, U256::from(1)))
 				.priority(0u64)
@@ -105,9 +117,15 @@ fn transaction_with_to_low_nonce_should_not_work() {
 			transaction: signed2,
 		};
 		let source2 = call2.check_self_contained().unwrap().unwrap();
+		let extrinsic2 = CheckedExtrinsic::<u64, crate::mock::Call, SignedExtra, _> {
+			signed: fp_self_contained::CheckedSignature::SelfContained(source),
+			function: Call::Ethereum(call2.clone()),
+		};
 
 		assert_err!(
-			call2.validate_self_contained(&source2).unwrap(),
+			call2
+				.validate_self_contained(&source2, &extrinsic2.get_dispatch_info(), 0)
+				.unwrap(),
 			InvalidTransaction::Stale
 		);
 	});
