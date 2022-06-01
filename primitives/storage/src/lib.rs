@@ -18,7 +18,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
-use serde::{Deserialize, Serialize};
 
 /// Current version of pallet Ethereum's storage schema is stored under this key.
 pub const PALLET_ETHEREUM_SCHEMA: &[u8] = b":ethereum_schema";
@@ -26,9 +25,8 @@ pub const PALLET_ETHEREUM_SCHEMA: &[u8] = b":ethereum_schema";
 pub const PALLET_ETHEREUM_SCHEMA_CACHE: &[u8] = b":ethereum_schema_cache";
 
 /// The schema version for Pallet Ethereum's storage
-#[derive(
-	Clone, Copy, Debug, Encode, Decode, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize,
-)]
+#[derive(Clone, Copy, Debug, Encode, Decode, PartialEq, Eq, PartialOrd, Ord)]
+#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub enum EthereumStorageSchema {
 	Undefined,
 	V1,
