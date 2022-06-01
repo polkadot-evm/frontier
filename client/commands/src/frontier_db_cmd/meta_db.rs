@@ -84,8 +84,8 @@ impl<'a, B: BlockT> MetaDb<'a, B> {
 				(MetaKey::Schema, Some(MetaValue::Schema(schema_map))) => {
 					if self.backend.meta().ethereum_schema()?.is_none() {
 						let data = schema_map
-							.into_iter()
-							.map(|(key, value)| (value.clone(), key.clone()))
+							.iter()
+							.map(|(key, value)| (*value, *key))
 							.collect::<Vec<(fp_storage::EthereumStorageSchema, H256)>>();
 						let _ = self.backend.meta().write_ethereum_schema(data)?;
 					} else {
@@ -110,7 +110,7 @@ impl<'a, B: BlockT> MetaDb<'a, B> {
 				// Update the static tips key's value.
 				(MetaKey::Tips, Some(MetaValue::Tips(new_value))) => {
 					let value = self.backend.meta().current_syncing_tips()?;
-					self.confirmation_prompt(&self.cmd.operation, key, &value, &new_value)?;
+					self.confirmation_prompt(&self.cmd.operation, key, &value, new_value)?;
 					let _ = self
 						.backend
 						.meta()
@@ -120,8 +120,8 @@ impl<'a, B: BlockT> MetaDb<'a, B> {
 				(MetaKey::Schema, Some(MetaValue::Schema(schema_map))) => {
 					let value = self.backend.meta().ethereum_schema()?;
 					let new_value = schema_map
-						.into_iter()
-						.map(|(key, value)| (value.clone(), key.clone()))
+						.iter()
+						.map(|(key, value)| (*value, *key))
 						.collect::<Vec<(fp_storage::EthereumStorageSchema, H256)>>();
 					self.confirmation_prompt(
 						&self.cmd.operation,

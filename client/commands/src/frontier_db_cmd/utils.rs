@@ -15,6 +15,8 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
+#![allow(clippy::useless_format)]
+#![allow(clippy::format_in_format_args)]
 
 use super::{DbValue, Operation};
 
@@ -39,7 +41,7 @@ pub fn maybe_deserialize_value<B: BlockT>(
 		if let Some(Ok(value)) = stream_deser.next() {
 			Ok(Some(value))
 		} else {
-			Err(format!("Failed to deserialize value data").into())
+			Err("Failed to deserialize value data".to_string().into())
 		}
 	}
 
@@ -118,7 +120,7 @@ pub trait FrontierDbMessage {
 
 		let mut buffer = String::new();
 		io::stdin().read_line(&mut buffer)?;
-		if buffer.trim() != "confirm".to_string() {
+		if buffer.trim() != "confirm" {
 			return Err(format!("-- Cancel exit --").into());
 		}
 		Ok(())

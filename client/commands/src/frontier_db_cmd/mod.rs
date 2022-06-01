@@ -106,7 +106,7 @@ impl FrontierDbCmd {
 		match self.column {
 			Column::Meta => {
 				// New meta db handler
-				let meta_db = MetaDb::new(&self, backend);
+				let meta_db = MetaDb::new(self, backend);
 				// Maybe get a MetaKey
 				let key = MetaKey::from_str(&self.key)?;
 				// Maybe get a MetaValue
@@ -123,7 +123,7 @@ impl FrontierDbCmd {
 			}
 			Column::Block | Column::Transaction => {
 				// New mapping db handler
-				let mapping_db = MappingDb::new(&self, client, backend);
+				let mapping_db = MappingDb::new(self, client, backend);
 				// Maybe get a MappingKey
 				let key = MappingKey::EthBlockOrTransactionHash(
 					H256::from_str(&self.key).expect("H256 provided key"),
