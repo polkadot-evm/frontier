@@ -85,8 +85,8 @@ pub mod pallet {
 				let account_id = T::AddressMapping::into_account_id(address);
 				let nonce = frame_system::Pallet::<T>::account_nonce(&account_id);
 				let refs = frame_system::Pallet::<T>::consumers(&account_id)
-					+ frame_system::Pallet::<T>::providers(&account_id)
-					+ frame_system::Pallet::<T>::sufficients(&account_id);
+					.saturating_add(frame_system::Pallet::<T>::providers(&account_id))
+					.saturating_add(frame_system::Pallet::<T>::sufficients(&account_id));
 
 				if !nonce.is_zero() && refs.is_zero() {
 					frame_system::Pallet::<T>::inc_sufficients(&account_id);
