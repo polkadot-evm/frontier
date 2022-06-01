@@ -60,7 +60,7 @@ pallet-transaction-payment = { version = "4.0.0-dev", git = "https://github.com/
 
 fc-consensus = { path = "../../client/consensus" }
 fc-db = { path = "../../client/db" }
-fc-commands = { path = "../../client/commands" }
+fc-cli = { path = "../../client/cli" }
 fc-mapping-sync = { path = "../../client/mapping-sync" }
 fc-rpc = { path = "../../client/rpc" }
 fc-rpc-core = { path = "../../client/rpc-core" }

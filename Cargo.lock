@@ -1569,7 +1569,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "fc-commands"
+name = "fc-cli"
 version = "1.0.0-dev"
 dependencies = [
  "clap",
@@ -2076,7 +2076,7 @@ version = "0.0.0"
 dependencies = [
  "async-trait",
  "clap",
- "fc-commands",
+ "fc-cli",
  "fc-consensus",
  "fc-db",
  "fc-mapping-sync",

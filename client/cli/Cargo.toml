@@ -1,5 +1,5 @@
 [package]
-name = "fc-commands"
+name = "fc-cli"
 version = "1.0.0-dev"
 authors = ["Parity Technologies <admin@parity.io>"]
 description = "Frontier database backend"
