@@ -23,13 +23,14 @@ mod tests;
 #[cfg(test)]
 mod mock;
 
-#[cfg(any(test, feature = "runtime-benchmarks"))]
+#[cfg(feature = "runtime-benchmarks")]
 pub mod benchmarking;
 pub mod weights;
 pub use weights::WeightInfo;
 
 pub use pallet_evm::AddressMapping;
 use sp_runtime::traits::Zero;
+use sp_std::vec::Vec;
 
 pub use self::pallet::*;
 

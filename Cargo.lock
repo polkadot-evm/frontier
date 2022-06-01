@@ -2066,6 +2066,7 @@ dependencies = [
  "pallet-evm-precompile-sha3fips",
  "pallet-evm-precompile-simple",
  "pallet-grandpa",
+ "pallet-hotfix-sufficients",
  "pallet-randomness-collective-flip",
  "pallet-sudo",
  "pallet-timestamp",

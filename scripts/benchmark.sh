@@ -10,7 +10,7 @@ set -e
 BINARY="./target/release/frontier-template-node"
 
 function choose_and_bench {
-    readarray -t options < <(${BINARY} benchmark --list | sed 1d)
+    readarray -t options < <(${BINARY} benchmark pallet --list | sed 1d)
     options+=('EXIT')
 
     select opt in "${options[@]}"; do
@@ -25,7 +25,7 @@ function choose_and_bench {
 
 function bench {
     echo "benchmarking ${1}::${2}"
-    WASMTIME_BACKTRACE_DETAILS=1 ${BINARY} benchmark \
+    WASMTIME_BACKTRACE_DETAILS=1 ${BINARY} benchmark pallet \
         --chain dev \
         --execution=wasm \
         --wasm-execution=compiled \
