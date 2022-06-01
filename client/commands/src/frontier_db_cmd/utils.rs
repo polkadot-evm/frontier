@@ -106,14 +106,14 @@ pub trait FrontierDbMessage {
 			"{}",
 			format!(
 				r#"
-            ---------------------------------------------
-            Operation: {:?}
-            Key: {:?}
-            Existing value: {:?}
-            New value: {:?}
-            ---------------------------------------------
-            Type `confirm` and press [Enter] to confirm:
-        "#,
+			---------------------------------------------
+			Operation: {:?}
+			Key: {:?}
+			Existing value: {:?}
+			New value: {:?}
+			---------------------------------------------
+			Type `confirm` and press [Enter] to confirm:
+		"#,
 				operation, key, existing_value, new_value
 			)
 		);
