@@ -18,8 +18,8 @@
 
 use super::{DbValue, Operation};
 
-use serde_json::Deserializer;
 use serde::de::DeserializeOwned;
+use serde_json::Deserializer;
 use std::{
 	fs,
 	io::{self, Read},
@@ -29,31 +29,33 @@ use std::{
 use sp_runtime::traits::Block as BlockT;
 
 pub fn maybe_deserialize_value<B: BlockT>(
-    operation: &Operation,
-    value: Option<&PathBuf>,
+	operation: &Operation,
+	value: Option<&PathBuf>,
 ) -> sc_cli::Result<Option<DbValue<B::Hash>>> {
-    fn parse_db_values<H: DeserializeOwned, I: Read + Send>(input: I) -> sc_cli::Result<Option<DbValue<H>>> {
-        let mut stream_deser = Deserializer::from_reader(input).into_iter::<DbValue<H>>();
-        if let Some(Ok(value)) = stream_deser.next() {
-            Ok(Some(value))
-        } else {
-            Err(format!("Failed to deserialize value data").into())
-        }        
-    }
+	fn parse_db_values<H: DeserializeOwned, I: Read + Send>(
+		input: I,
+	) -> sc_cli::Result<Option<DbValue<H>>> {
+		let mut stream_deser = Deserializer::from_reader(input).into_iter::<DbValue<H>>();
+		if let Some(Ok(value)) = stream_deser.next() {
+			Ok(Some(value))
+		} else {
+			Err(format!("Failed to deserialize value data").into())
+		}
+	}
 
-    if let Operation::Create | Operation::Update = operation {
-        match &value {
-            Some(filename) => parse_db_values::<B::Hash, _>(fs::File::open(filename)?),
-            None => {
+	if let Operation::Create | Operation::Update = operation {
+		match &value {
+			Some(filename) => parse_db_values::<B::Hash, _>(fs::File::open(filename)?),
+			None => {
 				let mut buffer = String::new();
-                let res = parse_db_values(io::stdin());
-                let _ = io::stdin().read_line(&mut buffer);
-                res
-            },
-        }
-    } else {
-        Ok(None)
-    }
+				let res = parse_db_values(io::stdin());
+				let _ = io::stdin().read_line(&mut buffer);
+				res
+			}
+		}
+	} else {
+		Ok(None)
+	}
 }
 
 /// Messaging and prompt.
@@ -70,8 +72,24 @@ pub trait FrontierDbMessage {
 		.into()
 	}
 
+	fn key_column_error<K: core::fmt::Debug, V: core::fmt::Debug>(
+		&self,
+		key: K,
+		value: &V,
+	) -> sc_cli::Error {
+		format!(
+			"Key `{:?}` and Column `{:?}` are not compatible with this operation",
+			key, value
+		)
+		.into()
+	}
+
 	fn key_not_empty_error<K: core::fmt::Debug>(&self, key: K) -> sc_cli::Error {
 		format!("Operation not allowed for non-empty Key `{:?}`", key).into()
+	}
+
+	fn one_to_many_error(&self) -> sc_cli::Error {
+		"One-to-many operation not allowed".to_string().into()
 	}
 
 	#[cfg(not(test))]

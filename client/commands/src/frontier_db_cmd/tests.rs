@@ -18,18 +18,29 @@
 
 #[cfg(test)]
 mod tests {
+	use frontier_template_runtime::RuntimeApi;
+	use substrate_test_runtime_client::{
+		BlockBuilderExt, ClientBlockImportExt, ClientExt, DefaultTestClientBuilderExt,
+		TestClientBuilder,
+	};
+
 	use std::{collections::HashMap, path::PathBuf, sync::Arc};
 
+	use crate::frontier_db_cmd::{Column, FrontierDbCmd, Operation};
+	use codec::Encode;
+	use ethereum_types::H256;
 	use fp_storage::EthereumStorageSchema;
+	use futures::executor;
+	use sc_block_builder::BlockBuilderProvider;
+	use serde::Serialize;
+	use sp_consensus::BlockOrigin;
+	use sp_io::hashing::twox_128;
 	use sp_runtime::{
-		generic::{Block, Header},
+		generic::{Block, BlockId, Header},
 		traits::{BlakeTwo256, Block as BlockT},
 	};
+	use std::str::FromStr;
 	use tempfile::tempdir;
-
-	use crate::frontier_db_cmd::{Column, FrontierDbCmd, Operation};
-	use ethereum_types::H256;
-	use serde::Serialize;
 
 	type OpaqueBlock =
 		Block<Header<u64, BlakeTwo256>, substrate_test_runtime_client::runtime::Extrinsic>;
@@ -47,11 +58,16 @@ mod tests {
 		)?))
 	}
 
+	fn storage_prefix_build(module: &[u8], storage: &[u8]) -> Vec<u8> {
+		[twox_128(module), twox_128(storage)].concat().to_vec()
+	}
+
 	#[derive(Debug, Serialize)]
 	#[serde(untagged)]
 	enum TestValue {
 		Schema(HashMap<H256, EthereumStorageSchema>),
 		Tips(Vec<<OpaqueBlock as BlockT>::Hash>),
+		Commitment(<OpaqueBlock as BlockT>::Hash),
 	}
 
 	fn cmd(
@@ -75,6 +91,10 @@ mod tests {
 				tracing_targets: None,
 				tracing_receiver: sc_cli::arg_enums::TracingReceiver::Log,
 				detailed_log_output: false,
+			},
+			pruning_params: sc_cli::PruningParams {
+				pruning: None,
+				keep_blocks: None,
 			},
 		}
 	}
@@ -107,6 +127,9 @@ mod tests {
 
 		// Create a temporary frontier secondary DB.
 		let backend = open_frontier_backend(tmp.into_path()).expect("a temporary db was created");
+		// Test client.
+		let (client, _) =
+			TestClientBuilder::new().build_with_native_executor::<RuntimeApi, _>(None);
 
 		assert_eq!(backend.meta().ethereum_schema(), Ok(None));
 
@@ -117,7 +140,7 @@ mod tests {
 			Operation::Create,
 			Column::Meta
 		)
-		.run(backend.clone())
+		.run(Arc::new(client), backend.clone())
 		.is_ok());
 
 		assert_eq!(
@@ -134,6 +157,9 @@ mod tests {
 
 		// Create a temporary frontier secondary DB.
 		let backend = open_frontier_backend(tmp.into_path()).expect("a temporary db was created");
+		// Test client.
+		let (client, _) =
+			TestClientBuilder::new().build_with_native_executor::<RuntimeApi, _>(None);
 
 		let data_before = vec![(EthereumStorageSchema::V2, H256::default())];
 
@@ -149,7 +175,7 @@ mod tests {
 			Operation::Create,
 			Column::Meta
 		)
-		.run(backend.clone())
+		.run(Arc::new(client), backend.clone())
 		.is_err());
 
 		let data_after = backend.meta().ethereum_schema().unwrap().unwrap();
@@ -162,6 +188,9 @@ mod tests {
 
 		// Create a temporary frontier secondary DB.
 		let backend = open_frontier_backend(tmp.into_path()).expect("a temporary db was created");
+		// Test client.
+		let (client, _) =
+			TestClientBuilder::new().build_with_native_executor::<RuntimeApi, _>(None);
 
 		assert_eq!(backend.meta().ethereum_schema(), Ok(None));
 
@@ -179,7 +208,7 @@ mod tests {
 			Operation::Read,
 			Column::Meta
 		)
-		.run(backend.clone())
+		.run(Arc::new(client), backend.clone())
 		.is_ok());
 	}
 
@@ -191,6 +220,9 @@ mod tests {
 
 		// Create a temporary frontier secondary DB.
 		let backend = open_frontier_backend(tmp.into_path()).expect("a temporary db was created");
+		// Test client.
+		let (client, _) =
+			TestClientBuilder::new().build_with_native_executor::<RuntimeApi, _>(None);
 
 		assert_eq!(backend.meta().ethereum_schema(), Ok(None));
 		// Run the command
@@ -200,7 +232,7 @@ mod tests {
 			Operation::Update,
 			Column::Meta
 		)
-		.run(backend.clone())
+		.run(Arc::new(client), backend.clone())
 		.is_ok());
 
 		assert_eq!(
@@ -215,6 +247,9 @@ mod tests {
 
 		// Create a temporary frontier secondary DB.
 		let backend = open_frontier_backend(tmp.into_path()).expect("a temporary db was created");
+		// Test client.
+		let (client, _) =
+			TestClientBuilder::new().build_with_native_executor::<RuntimeApi, _>(None);
 
 		let data = vec![(EthereumStorageSchema::V2, H256::default())];
 
@@ -229,7 +264,7 @@ mod tests {
 			Operation::Delete,
 			Column::Meta
 		)
-		.run(backend.clone())
+		.run(Arc::new(client), backend.clone())
 		.is_ok());
 
 		assert_eq!(backend.meta().ethereum_schema(), Ok(Some(vec![])));
@@ -243,6 +278,9 @@ mod tests {
 
 		// Create a temporary frontier secondary DB.
 		let backend = open_frontier_backend(tmp.into_path()).expect("a temporary db was created");
+		// Test client.
+		let (client, _) =
+			TestClientBuilder::new().build_with_native_executor::<RuntimeApi, _>(None);
 
 		assert_eq!(backend.meta().current_syncing_tips(), Ok(vec![]));
 		// Run the command
@@ -252,7 +290,7 @@ mod tests {
 			Operation::Create,
 			Column::Meta
 		)
-		.run(backend.clone())
+		.run(Arc::new(client), backend.clone())
 		.is_ok());
 
 		assert_eq!(
@@ -269,6 +307,9 @@ mod tests {
 
 		// Create a temporary frontier secondary DB.
 		let backend = open_frontier_backend(tmp.into_path()).expect("a temporary db was created");
+		// Test client.
+		let (client, _) =
+			TestClientBuilder::new().build_with_native_executor::<RuntimeApi, _>(None);
 
 		let data_before = vec![H256::default()];
 
@@ -283,7 +324,7 @@ mod tests {
 			Operation::Create,
 			Column::Meta
 		)
-		.run(backend.clone())
+		.run(Arc::new(client), backend.clone())
 		.is_err());
 
 		let data_after = backend.meta().current_syncing_tips().unwrap();
@@ -296,6 +337,9 @@ mod tests {
 
 		// Create a temporary frontier secondary DB.
 		let backend = open_frontier_backend(tmp.into_path()).expect("a temporary db was created");
+		// Test client.
+		let (client, _) =
+			TestClientBuilder::new().build_with_native_executor::<RuntimeApi, _>(None);
 
 		assert_eq!(backend.meta().current_syncing_tips(), Ok(vec![]));
 
@@ -312,7 +356,7 @@ mod tests {
 			Operation::Read,
 			Column::Meta
 		)
-		.run(backend.clone())
+		.run(Arc::new(client), backend.clone())
 		.is_ok());
 	}
 
@@ -324,6 +368,9 @@ mod tests {
 
 		// Create a temporary frontier secondary DB.
 		let backend = open_frontier_backend(tmp.into_path()).expect("a temporary db was created");
+		// Test client.
+		let (client, _) =
+			TestClientBuilder::new().build_with_native_executor::<RuntimeApi, _>(None);
 
 		assert_eq!(backend.meta().current_syncing_tips(), Ok(vec![]));
 		// Run the command
@@ -333,7 +380,7 @@ mod tests {
 			Operation::Update,
 			Column::Meta
 		)
-		.run(backend.clone())
+		.run(Arc::new(client), backend.clone())
 		.is_ok());
 
 		assert_eq!(
@@ -348,6 +395,9 @@ mod tests {
 
 		// Create a temporary frontier secondary DB.
 		let backend = open_frontier_backend(tmp.into_path()).expect("a temporary db was created");
+		// Test client.
+		let (client, _) =
+			TestClientBuilder::new().build_with_native_executor::<RuntimeApi, _>(None);
 
 		let data = vec![H256::default()];
 
@@ -362,7 +412,7 @@ mod tests {
 			Operation::Delete,
 			Column::Meta
 		)
-		.run(backend.clone())
+		.run(Arc::new(client), backend.clone())
 		.is_ok());
 
 		assert_eq!(backend.meta().current_syncing_tips(), Ok(vec![]));
@@ -376,6 +426,10 @@ mod tests {
 
 		// Create a temporary frontier secondary DB.
 		let backend = open_frontier_backend(tmp.into_path()).expect("a temporary db was created");
+		// Test client.
+		let (client, _) =
+			TestClientBuilder::new().build_with_native_executor::<RuntimeApi, _>(None);
+		let client = Arc::new(client);
 
 		let data = vec![(EthereumStorageSchema::V1, H256::default())];
 
@@ -391,7 +445,7 @@ mod tests {
 			Operation::Create,
 			Column::Meta
 		)
-		.run(backend.clone())
+		.run(Arc::clone(&client), backend.clone())
 		.is_err());
 
 		assert_eq!(
@@ -401,7 +455,7 @@ mod tests {
 
 		// Run the Read command
 		assert!(cmd(":foo".to_string(), None, Operation::Read, Column::Meta)
-			.run(backend.clone())
+			.run(Arc::clone(&client), backend.clone())
 			.is_err());
 
 		// Run the Update command
@@ -411,7 +465,7 @@ mod tests {
 			Operation::Update,
 			Column::Meta
 		)
-		.run(backend.clone())
+		.run(Arc::clone(&client), backend.clone())
 		.is_err());
 
 		assert_eq!(
@@ -422,7 +476,7 @@ mod tests {
 		// Run the Delete command
 		assert!(
 			cmd(":foo".to_string(), None, Operation::Delete, Column::Meta)
-				.run(backend.clone())
+				.run(Arc::clone(&client), backend.clone())
 				.is_err()
 		);
 
@@ -446,6 +500,10 @@ mod tests {
 
 		// Create a temporary frontier secondary DB.
 		let backend = open_frontier_backend(tmp.into_path()).expect("a temporary db was created");
+		// Test client.
+		let (client, _) =
+			TestClientBuilder::new().build_with_native_executor::<RuntimeApi, _>(None);
+		let client = Arc::new(client);
 
 		// Run the Create command
 		assert!(cmd(
@@ -454,7 +512,7 @@ mod tests {
 			Operation::Create,
 			Column::Meta
 		)
-		.run(backend.clone())
+		.run(Arc::clone(&client), backend.clone())
 		.is_err());
 
 		assert_eq!(backend.meta().ethereum_schema(), Ok(None));
@@ -463,12 +521,275 @@ mod tests {
 		assert!(cmd(
 			":ethereum_schema_cache".to_string(),
 			Some(test_value_path),
-			Operation::Create,
+			Operation::Update,
 			Column::Meta
 		)
-		.run(backend.clone())
+		.run(Arc::clone(&client), backend.clone())
 		.is_err());
 
 		assert_eq!(backend.meta().ethereum_schema(), Ok(None));
+	}
+
+	#[test]
+	fn commitment_create() {
+		let tmp = tempdir().expect("create a temporary directory");
+
+		// Test client.
+		let (c, _) = TestClientBuilder::new().build_with_native_executor::<RuntimeApi, _>(None);
+		let mut client = Arc::new(c);
+
+		// Get some transaction status.
+		let t1 = fp_rpc::TransactionStatus::default();
+		let t1_hash = t1.transaction_hash;
+		let statuses = vec![t1];
+
+		// Build a block and fill the pallet-ethereum status.
+		let key = storage_prefix_build(b"Ethereum", b"CurrentTransactionStatuses");
+		let mut builder = client.new_block(Default::default()).unwrap();
+		builder
+			.push_storage_change(key, Some(statuses.encode()))
+			.unwrap();
+		let block = builder.build().unwrap().block;
+		let block_hash = block.header.hash();
+		executor::block_on(client.import(BlockOrigin::Own, block)).unwrap();
+
+		// Set the substrate block hash as the value for the command.
+		let test_value_path = test_json_file(&tmp, &TestValue::Commitment(block_hash));
+
+		// Create a temporary frontier secondary DB.
+		let backend = open_frontier_backend(tmp.into_path()).expect("a temporary db was created");
+
+		// Run the command using some ethereum block hash as key.
+		let ethereum_block_hash = H256::default();
+		assert!(cmd(
+			format!("{:?}", ethereum_block_hash),
+			Some(test_value_path.clone()),
+			Operation::Create,
+			Column::Block
+		)
+		.run(Arc::clone(&client), backend.clone())
+		.is_ok());
+
+		// Expect the ethereum and substrate block hashes to be mapped.
+		assert_eq!(
+			backend.mapping().block_hash(&ethereum_block_hash),
+			Ok(Some(block_hash))
+		);
+
+		// Expect the offchain-stored transaction metadata to match the one we stored in the runtime.
+		let expected_transaction_metadata = fc_db::TransactionMetadata {
+			block_hash,
+			ethereum_block_hash,
+			ethereum_index: 0,
+		};
+		assert_eq!(
+			backend.mapping().transaction_metadata(&t1_hash),
+			Ok(vec![expected_transaction_metadata])
+		);
+
+		// Expect a second command run to fail, as the key is not empty anymore.
+		assert!(cmd(
+			format!("{:?}", ethereum_block_hash),
+			Some(test_value_path),
+			Operation::Create,
+			Column::Block
+		)
+		.run(Arc::clone(&client), backend.clone())
+		.is_err());
+	}
+
+	#[test]
+	fn commitment_update() {
+		let tmp = tempdir().expect("create a temporary directory");
+
+		// Test client.
+		let (c, _) = TestClientBuilder::new().build_with_native_executor::<RuntimeApi, _>(None);
+		let mut client = Arc::new(c);
+
+		// Get some transaction status.
+		let t1 = fp_rpc::TransactionStatus::default();
+		let mut t2 = fp_rpc::TransactionStatus::default();
+		t2.transaction_hash =
+			H256::from_str("0x2200000000000000000000000000000000000000000000000000000000000000")
+				.unwrap();
+		let t1_hash = t1.transaction_hash;
+		let t2_hash = t2.transaction_hash;
+		let statuses_a1 = vec![t1.clone()];
+		let statuses_a2 = vec![t1, t2];
+
+		let key = storage_prefix_build(b"Ethereum", b"CurrentTransactionStatuses");
+
+		// First we create block and insert data in the offchain db.
+
+		// Build a block A1 and fill the pallet-ethereum status.
+		let mut builder = client
+			.new_block_at(
+				&BlockId::Hash(client.genesis_hash()),
+				Default::default(),
+				false,
+			)
+			.unwrap();
+		builder
+			.push_storage_change(key.clone(), Some(statuses_a1.encode()))
+			.unwrap();
+		let block_a1 = builder.build().unwrap().block;
+		let block_a1_hash = block_a1.header.hash();
+		executor::block_on(client.import(BlockOrigin::Own, block_a1)).unwrap();
+
+		// Set the substrate block hash as the value for the command.
+		let test_value_path = test_json_file(&tmp, &TestValue::Commitment(block_a1_hash));
+
+		// Create a temporary frontier secondary DB.
+		let backend = open_frontier_backend(tmp.into_path()).expect("a temporary db was created");
+
+		// Run the command using some ethereum block hash as key.
+		let ethereum_block_hash = H256::default();
+		assert!(cmd(
+			format!("{:?}", ethereum_block_hash),
+			Some(test_value_path.clone()),
+			Operation::Create,
+			Column::Block
+		)
+		.run(Arc::clone(&client), backend.clone())
+		.is_ok());
+
+		// Expect the ethereum and substrate block hashes to be mapped.
+		assert_eq!(
+			backend.mapping().block_hash(&ethereum_block_hash),
+			Ok(Some(block_a1_hash))
+		);
+
+		// Expect the offchain-stored transaction metadata to match the one we stored in the runtime.
+		let expected_transaction_metadata_a1_t1 = fc_db::TransactionMetadata {
+			block_hash: block_a1_hash,
+			ethereum_block_hash,
+			ethereum_index: 0,
+		};
+		assert_eq!(
+			backend.mapping().transaction_metadata(&t1_hash),
+			Ok(vec![expected_transaction_metadata_a1_t1.clone()])
+		);
+
+		// Next we create a new block and update the offchain db.
+
+		// Build a block A2 and fill the pallet-ethereum status.
+		let tmp = tempdir().expect("create a temporary directory");
+
+		let mut builder = client
+			.new_block_at(
+				&BlockId::Hash(client.genesis_hash()),
+				Default::default(),
+				false,
+			)
+			.unwrap();
+		builder
+			.push_storage_change(key, Some(statuses_a2.encode()))
+			.unwrap();
+		let block_a2 = builder.build().unwrap().block;
+		let block_a2_hash = block_a2.header.hash();
+		executor::block_on(client.import(BlockOrigin::Own, block_a2)).unwrap();
+
+		// Set the substrate block hash as the value for the command.
+		let test_value_path = test_json_file(&tmp, &TestValue::Commitment(block_a2_hash));
+
+		// Run the command using some ethereum block hash as key.
+		let ethereum_block_hash = H256::default();
+		assert!(cmd(
+			format!("{:?}", ethereum_block_hash),
+			Some(test_value_path.clone()),
+			Operation::Update,
+			Column::Block
+		)
+		.run(Arc::clone(&client), backend.clone())
+		.is_ok());
+
+		// Expect the ethereum and substrate block hashes to be mapped.
+		assert_eq!(
+			backend.mapping().block_hash(&ethereum_block_hash),
+			Ok(Some(block_a2_hash))
+		);
+
+		// Expect the offchain-stored transaction metadata to have data for both blocks.
+		let expected_transaction_metadata_a2_t1 = fc_db::TransactionMetadata {
+			block_hash: block_a2_hash,
+			ethereum_block_hash,
+			ethereum_index: 0,
+		};
+		let expected_transaction_metadata_a2_t2 = fc_db::TransactionMetadata {
+			block_hash: block_a2_hash,
+			ethereum_block_hash,
+			ethereum_index: 1,
+		};
+		assert_eq!(
+			backend.mapping().transaction_metadata(&t1_hash),
+			Ok(vec![
+				expected_transaction_metadata_a1_t1,
+				expected_transaction_metadata_a2_t1
+			])
+		);
+		assert_eq!(
+			backend.mapping().transaction_metadata(&t2_hash),
+			Ok(vec![expected_transaction_metadata_a2_t2])
+		);
+	}
+
+	#[test]
+	fn mapping_read_works() {
+		let tmp = tempdir().expect("create a temporary directory");
+
+		// Test client.
+		let (c, _) = TestClientBuilder::new().build_with_native_executor::<RuntimeApi, _>(None);
+		let mut client = Arc::new(c);
+
+		// Get some transaction status.
+		let t1 = fp_rpc::TransactionStatus::default();
+		let t1_hash = t1.transaction_hash;
+		let statuses = vec![t1];
+
+		// Build a block and fill the pallet-ethereum status.
+		let key = storage_prefix_build(b"Ethereum", b"CurrentTransactionStatuses");
+		let mut builder = client.new_block(Default::default()).unwrap();
+		builder
+			.push_storage_change(key, Some(statuses.encode()))
+			.unwrap();
+		let block = builder.build().unwrap().block;
+		let block_hash = block.header.hash();
+		executor::block_on(client.import(BlockOrigin::Own, block)).unwrap();
+
+		// Set the substrate block hash as the value for the command.
+		let test_value_path = test_json_file(&tmp, &TestValue::Commitment(block_hash));
+
+		// Create a temporary frontier secondary DB.
+		let backend = open_frontier_backend(tmp.into_path()).expect("a temporary db was created");
+
+		// Create command using some ethereum block hash as key.
+		let ethereum_block_hash = H256::default();
+		let _ = cmd(
+			format!("{:?}", ethereum_block_hash),
+			Some(test_value_path.clone()),
+			Operation::Create,
+			Column::Block,
+		)
+		.run(Arc::clone(&client), backend.clone());
+
+		// Read block command.
+		assert!(cmd(
+			format!("{:?}", ethereum_block_hash),
+			None,
+			Operation::Read,
+			Column::Block
+		)
+		.run(Arc::clone(&client), backend.clone())
+		.is_ok());
+
+		// Read transaction command.
+		assert!(cmd(
+			format!("{:?}", t1_hash),
+			None,
+			Operation::Read,
+			Column::Transaction
+		)
+		.run(Arc::clone(&client), backend.clone())
+		.is_ok());
 	}
 }

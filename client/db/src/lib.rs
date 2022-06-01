@@ -172,13 +172,14 @@ impl<Block: BlockT> MetaDb<Block> {
 	}
 }
 
+#[derive(Debug)]
 pub struct MappingCommitment<Block: BlockT> {
 	pub block_hash: Block::Hash,
 	pub ethereum_block_hash: H256,
 	pub ethereum_transaction_hashes: Vec<H256>,
 }
 
-#[derive(Clone, Encode, Decode)]
+#[derive(Clone, Encode, Debug, Decode, PartialEq)]
 pub struct TransactionMetadata<Block: BlockT> {
 	pub block_hash: Block::Hash,
 	pub ethereum_block_hash: H256,

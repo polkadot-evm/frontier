@@ -16,18 +16,22 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+mod mapping_db;
 mod meta_db;
 mod tests;
 pub(crate) mod utils;
 
+use mapping_db::{MappingDb, MappingKey, MappingValue};
 use meta_db::{MetaDb, MetaKey, MetaValue};
 
 use clap::ArgEnum;
-use sc_cli::SharedParams;
+use sc_cli::{PruningParams, SharedParams};
 use serde::Deserialize;
 use std::{path::PathBuf, str::FromStr, sync::Arc};
 
 use sp_runtime::traits::Block as BlockT;
+
+use ethereum_types::H256;
 
 /// Cli tool to interact with the Frontier backend db
 #[derive(Debug, Clone, clap::Parser)]
@@ -60,6 +64,10 @@ pub struct FrontierDbCmd {
 	/// Shared parameters
 	#[clap(flatten)]
 	pub shared_params: SharedParams,
+
+	#[allow(missing_docs)]
+	#[clap(flatten)]
+	pub pruning_params: PruningParams,
 }
 
 #[derive(ArgEnum, Debug, Clone)]
@@ -81,11 +89,20 @@ pub enum Column {
 #[serde(untagged)]
 pub enum DbValue<H> {
 	Meta(MetaValue<H>),
-	ToDo,
+	Mapping(MappingValue<H>),
 }
 
 impl FrontierDbCmd {
-	pub fn run<B: BlockT>(&self, backend: Arc<fc_db::Backend<B>>) -> sc_cli::Result<()> {
+	pub fn run<C, B: BlockT>(
+		&self,
+		client: Arc<C>,
+		backend: Arc<fc_db::Backend<B>>,
+	) -> sc_cli::Result<()>
+	where
+		C: sp_api::ProvideRuntimeApi<B>,
+		C::Api: fp_rpc::EthereumRuntimeRPCApi<B>,
+		C: sp_blockchain::HeaderBackend<B>,
+	{
 		match self.column {
 			Column::Meta => {
 				// New meta db handler
@@ -104,7 +121,25 @@ impl FrontierDbCmd {
 				// Run the query
 				meta_db.query(&key, &value)?
 			}
-			_ => return Err(format!("`{:?}` column not supported", self.column).into()),
+			Column::Block | Column::Transaction => {
+				// New mapping db handler
+				let mapping_db = MappingDb::new(&self, client, backend);
+				// Maybe get a MappingKey
+				let key = MappingKey::EthBlockOrTransactionHash(
+					H256::from_str(&self.key).expect("H256 provided key"),
+				);
+				// Maybe get a MappingValue
+				let value = match utils::maybe_deserialize_value::<B>(
+					&self.operation,
+					self.value.as_ref(),
+				)? {
+					Some(DbValue::Mapping(value)) => Some(value),
+					None => None,
+					_ => return Err(format!("Unexpected `{:?}` value", self.value).into()),
+				};
+				// Run the query
+				mapping_db.query(&self.column, &key, &value)?
+			}
 		}
 		Ok(())
 	}
@@ -113,5 +148,9 @@ impl FrontierDbCmd {
 impl sc_cli::CliConfiguration for FrontierDbCmd {
 	fn shared_params(&self) -> &SharedParams {
 		&self.shared_params
+	}
+
+	fn pruning_params(&self) -> Option<&PruningParams> {
+		Some(&self.pruning_params)
 	}
 }

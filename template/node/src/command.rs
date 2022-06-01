@@ -198,8 +198,9 @@ pub fn run() -> sc_cli::Result<()> {
 		Some(Subcommand::FrontierDb(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
 			runner.sync_run(|config| {
-				let backend = service::open_frontier_backend(&config)?;
-				cmd.run::<frontier_template_runtime::opaque::Block>(backend)
+				let PartialComponents { client, other, .. } = service::new_partial(&config, &cli)?;
+				let frontier_backend = other.2;
+				cmd.run::<_, frontier_template_runtime::opaque::Block>(client, frontier_backend)
 			})
 		}
 		None => {
