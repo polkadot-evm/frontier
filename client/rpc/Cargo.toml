@@ -46,7 +46,7 @@ fp-storage = { version = "2.0.0-dev", path = "../../primitives/storage" }
 
 [dev-dependencies]
 beefy-primitives = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-frontier-template-runtime = { path = "../../template/runtime", default-features = false, features = ["std", "aura"] }
+frontier-template-runtime = { path = "../../template/runtime" }
 sc-block-builder = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-client-db = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-consensus = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
