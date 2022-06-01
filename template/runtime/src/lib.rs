@@ -364,7 +364,7 @@ impl pallet_base_fee::Config for Runtime {
 impl pallet_randomness_collective_flip::Config for Runtime {}
 
 impl pallet_hotfix_sufficients::Config for Runtime {
-	type AddressMapping = pallet_evm::HashedAddressMapping<BlakeTwo256>;
+	type AddressMapping = HashedAddressMapping<BlakeTwo256>;
 	type WeightInfo = pallet_hotfix_sufficients::weights::SubstrateWeight<Runtime>;
 }
 

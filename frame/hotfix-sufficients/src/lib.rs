@@ -62,7 +62,10 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		/// Increment `sufficients` for existing accounts having a nonzero `nonce` but zero `sufficients` value.
+		/// Increment `sufficients` for existing accounts having a nonzero `nonce` but zero `sufficients`, `consumers` and `providers` value.
+		/// This state was caused by a previous bug in EVM create account dispatchable.
+		///
+		/// Any accounts in the input list not satisfying the above condition will remain unaffected.
 		#[pallet::weight(
 			<T as pallet::Config>::WeightInfo::hotfix_inc_account_sufficients(addresses.len().try_into().unwrap_or(u32::MAX))
 		)]
@@ -81,7 +84,11 @@ pub mod pallet {
 			for address in addresses {
 				let account_id = T::AddressMapping::into_account_id(address);
 				let nonce = frame_system::Pallet::<T>::account_nonce(&account_id);
-				if !nonce.is_zero() {
+				let refs = frame_system::Pallet::<T>::consumers(&account_id)
+					+ frame_system::Pallet::<T>::providers(&account_id)
+					+ frame_system::Pallet::<T>::sufficients(&account_id);
+
+				if !nonce.is_zero() && refs.is_zero() {
 					frame_system::Pallet::<T>::inc_sufficients(&account_id);
 				}
 			}
