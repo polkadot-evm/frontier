@@ -52,6 +52,7 @@ pallet-base-fee = { path = "../../frame/base-fee", default-features = false }
 pallet-dynamic-fee = { path = "../../frame/dynamic-fee", default-features = false }
 pallet-ethereum = { path = "../../frame/ethereum", default-features = false }
 pallet-evm = { path = "../../frame/evm", default-features = false }
+pallet-hotfix-sufficients = { path = "../../frame/hotfix-sufficients", default-features = false }
 pallet-evm-precompile-modexp = { path = "../../frame/evm/precompile/modexp", default-features = false }
 pallet-evm-precompile-sha3fips = { path = "../../frame/evm/precompile/sha3fips", default-features = false }
 pallet-evm-precompile-simple = { path = "../../frame/evm/precompile/simple", default-features = false }
@@ -112,4 +113,5 @@ runtime-benchmarks = [
 	"frame-system/runtime-benchmarks",
 	"pallet-ethereum/runtime-benchmarks",
 	"pallet-evm/runtime-benchmarks",
+	"pallet-hotfix-sufficients/runtime-benchmarks",
 ]
