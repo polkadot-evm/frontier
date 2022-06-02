@@ -25,4 +25,5 @@ sourcesIndex["pallet_evm_precompile_modexp"] = {"name":"","files":["lib.rs"]};
 sourcesIndex["pallet_evm_precompile_sha3fips"] = {"name":"","files":["lib.rs"]};
 sourcesIndex["pallet_evm_precompile_simple"] = {"name":"","files":["lib.rs"]};
 sourcesIndex["pallet_evm_test_vector_support"] = {"name":"","files":["lib.rs"]};
+sourcesIndex["pallet_hotfix_sufficients"] = {"name":"","files":["lib.rs","weights.rs"]};
 createSourceSidebar();
