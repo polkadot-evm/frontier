@@ -8,7 +8,7 @@ license = "GPL-3.0-or-later WITH Classpath-exception-2.0"
 repository = "https://github.com/paritytech/frontier/"
 
 [dependencies]
-parking_lot = "0.12.0"
+parking_lot = "0.12.1"
 
 codec = { package = "parity-scale-codec", version = "3.0.0", features = ["derive"] }
 sc-client-db = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
