@@ -22,7 +22,6 @@ sp-std = { version = "4.0.0", git = "https://github.com/paritytech/substrate", b
 
 frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-pallet-balances = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 pallet-timestamp = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 
 fp-consensus = { version = "2.0.0-dev", path = "../../primitives/consensus", default-features = false }
@@ -36,6 +35,7 @@ pallet-evm = { version = "6.0.0-dev", path = "../evm", default-features = false 
 libsecp256k1 = { version = "0.7", features = ["static-context", "hmac"] }
 rustc-hex = { version = "2.1.0", default-features = false }
 sp-core = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
+pallet-balances = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 
 [features]
 default = ["std"]

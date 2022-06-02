@@ -16,7 +16,7 @@ hex = "0.4"
 jsonrpsee = { version = "0.13.0", features = ["server", "macros"] }
 libsecp256k1 = "0.7"
 log = "0.4.17"
-lru = "0.7.5"
+lru = "0.7.6"
 prometheus = { version = "0.13.1", default-features = false }
 rand = "0.8"
 rlp = "0.5"
