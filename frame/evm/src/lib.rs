@@ -620,7 +620,7 @@ impl<T: Config> Pallet<T> {
 		}
 
 		<AccountCodes<T>>::remove(address);
-		let _ = <AccountStorages<T>>::clear_prefix(address, u32::MAX, None);
+		let _ = <AccountStorages<T>>::remove_prefix(address, None);
 	}
 
 	/// Create an account.
