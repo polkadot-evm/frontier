@@ -35,7 +35,7 @@ use sc_client_api::{
 	client::BlockchainEvents,
 };
 use sc_network::{ExHashT, NetworkService};
-use sc_rpc::Metadata;
+use sc_rpc_api::Metadata;
 use sc_transaction_pool_api::TransactionPool;
 use sp_api::{ApiExt, BlockId, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
