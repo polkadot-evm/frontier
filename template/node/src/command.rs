@@ -200,7 +200,10 @@ pub fn run() -> sc_cli::Result<()> {
 							Arc::new(ext_builder),
 						)
 					}
-					BenchmarkCmd::Machine(cmd) => cmd.run(&config),
+					BenchmarkCmd::Machine(cmd) => cmd.run(
+						&config,
+						frame_benchmarking_cli::SUBSTRATE_REFERENCE_HARDWARE.clone(),
+					),
 				}
 			})
 		}

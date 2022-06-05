@@ -602,7 +602,7 @@ impl<'vicinity, 'config, T: Config> StackStateT<'config>
 	}
 
 	fn reset_storage(&mut self, address: H160) {
-		<AccountStorages<T>>::remove_prefix(address, None);
+		let _ = <AccountStorages<T>>::remove_prefix(address, None);
 	}
 
 	fn log(&mut self, address: H160, topics: Vec<H256>, data: Vec<u8>) {

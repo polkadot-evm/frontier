@@ -17,7 +17,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use ethereum_types::{H160, H256, U256};
-use jsonrpc_core::Result;
+use jsonrpsee::core::RpcResult as Result;
 
 use codec::Encode;
 use sc_client_api::backend::{Backend, StateBackend, StorageProvider};

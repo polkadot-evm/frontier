@@ -13,15 +13,14 @@ ethereum-types = "0.13.1"
 evm = { git = "https://github.com/rust-blockchain/evm", branch = "master" }
 futures = { version = "0.3.1", features = ["compat"] }
 hex = "0.4"
-jsonrpc-core = "18.0"
-jsonrpc-core-client = "18.0"
-jsonrpc-pubsub = "18.0"
+jsonrpsee = { version = "0.13.0", features = ["server", "macros"] }
 libsecp256k1 = "0.7"
 log = "0.4.17"
 lru = "0.7.6"
 prometheus = { version = "0.13.1", default-features = false }
 rand = "0.8"
 rlp = "0.5"
+rustc-hex = "2.1.0"
 tokio = { version = "1.18", features = ["sync"] }
 
 prometheus-endpoint = { package = "substrate-prometheus-endpoint", git = "https://github.com/paritytech/substrate", branch = "master" }

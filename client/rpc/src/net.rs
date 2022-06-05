@@ -19,13 +19,13 @@
 use std::sync::Arc;
 
 use ethereum_types::H256;
-use jsonrpc_core::Result;
+use jsonrpsee::core::RpcResult as Result;
 use sc_network::{ExHashT, NetworkService};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 
-use fc_rpc_core::{types::PeerCount, NetApi};
+use fc_rpc_core::{types::PeerCount, NetApiServer};
 use fp_rpc::EthereumRuntimeRPCApi;
 
 use crate::internal_err;
@@ -51,7 +51,7 @@ impl<B: BlockT, C, H: ExHashT> Net<B, C, H> {
 	}
 }
 
-impl<B, C, H: ExHashT> NetApi for Net<B, C, H>
+impl<B, C, H: ExHashT> NetApiServer for Net<B, C, H>
 where
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	C: HeaderBackend<B> + ProvideRuntimeApi<B> + Send + Sync + 'static,
