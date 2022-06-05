@@ -38,21 +38,6 @@
 <span id="33">33</span>
 <span id="34">34</span>
 <span id="35">35</span>
-<span id="36">36</span>
-<span id="37">37</span>
-<span id="38">38</span>
-<span id="39">39</span>
-<span id="40">40</span>
-<span id="41">41</span>
-<span id="42">42</span>
-<span id="43">43</span>
-<span id="44">44</span>
-<span id="45">45</span>
-<span id="46">46</span>
-<span id="47">47</span>
-<span id="48">48</span>
-<span id="49">49</span>
-<span id="50">50</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -73,35 +58,20 @@
 
 <span class="doccomment">//! Eth PUB-SUB rpc interface.</span>
 
-<span class="kw">use</span> <span class="ident">jsonrpc_core::Result</span>;
-<span class="kw">use</span> <span class="ident">jsonrpc_derive::rpc</span>;
-<span class="kw">use</span> <span class="ident">jsonrpc_pubsub</span>::{<span class="ident">typed</span>, <span class="ident">SubscriptionId</span>};
+<span class="kw">use</span> <span class="ident">jsonrpsee::proc_macros::rpc</span>;
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::types::pubsub</span>;
 
 <span class="doccomment">/// Eth PUB-SUB rpc interface.</span>
 <span class="attribute">#[<span class="ident">rpc</span>(<span class="ident">server</span>)]</span>
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">EthPubSubApi</span> {
-	<span class="doccomment">/// RPC Metadata</span>
-	<span class="kw">type</span> <span class="ident">Metadata</span>;
-
 	<span class="doccomment">/// Subscribe to Eth subscription.</span>
-	<span class="attribute">#[<span class="ident">pubsub</span>(<span class="ident">subscription</span> <span class="op">=</span> <span class="string">&quot;eth_subscription&quot;</span>, <span class="ident">subscribe</span>, <span class="ident">name</span> <span class="op">=</span> <span class="string">&quot;eth_subscribe&quot;</span>)]</span>
-	<span class="kw">fn</span> <span class="ident">subscribe</span>(
-		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		<span class="kw">_</span>: <span class="ident"><span class="self">Self</span>::Metadata</span>,
-		<span class="kw">_</span>: <span class="ident">typed::Subscriber</span><span class="op">&lt;</span><span class="ident">pubsub::Result</span><span class="op">&gt;</span>,
-		<span class="kw">_</span>: <span class="ident">pubsub::Kind</span>,
-		<span class="kw">_</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">pubsub::Params</span><span class="op">&gt;</span>,
-	);
-
-	<span class="doccomment">/// Unsubscribe from existing Eth subscription.</span>
-	<span class="attribute">#[<span class="ident">pubsub</span>(
-		<span class="ident">subscription</span> <span class="op">=</span> <span class="string">&quot;eth_subscription&quot;</span>,
-		<span class="ident">unsubscribe</span>,
-		<span class="ident">name</span> <span class="op">=</span> <span class="string">&quot;eth_unsubscribe&quot;</span>
+	<span class="attribute">#[<span class="ident">subscription</span>(
+		<span class="ident">name</span> <span class="op">=</span> <span class="string">&quot;eth_subscribe&quot;</span> =&gt; <span class="string">&quot;eth_subscription&quot;</span>,
+		<span class="ident">unsubscribe</span> <span class="op">=</span> <span class="string">&quot;eth_unsubscribe&quot;</span>,
+		<span class="ident">item</span> <span class="op">=</span> <span class="ident">pubsub::Result</span>
 	)]</span>
-	<span class="kw">fn</span> <span class="ident">unsubscribe</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="kw">_</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Metadata</span><span class="op">&gt;</span>, <span class="kw">_</span>: <span class="ident">SubscriptionId</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span>;
+	<span class="kw">fn</span> <span class="ident">subscribe</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">kind</span>: <span class="ident">pubsub::Kind</span>, <span class="ident">params</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">pubsub::Params</span><span class="op">&gt;</span>);
 }
 </code></pre></div>
 </section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="fc_rpc_core" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (4dd8b420c 2022-05-01)" ></div>

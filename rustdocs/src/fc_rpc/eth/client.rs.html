@@ -134,7 +134,7 @@
 <span class="comment">// along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.</span>
 
 <span class="kw">use</span> <span class="ident">ethereum_types</span>::{<span class="ident">H160</span>, <span class="ident">H256</span>, <span class="ident">U256</span>, <span class="ident">U64</span>};
-<span class="kw">use</span> <span class="ident">jsonrpc_core::Result</span>;
+<span class="kw">use</span> <span class="ident">jsonrpsee::core::RpcResult</span> <span class="kw">as</span> <span class="prelude-ty">Result</span>;
 
 <span class="kw">use</span> <span class="ident">sc_client_api::backend</span>::{<span class="ident">Backend</span>, <span class="ident">StateBackend</span>, <span class="ident">StorageProvider</span>};
 <span class="kw">use</span> <span class="ident">sc_network::ExHashT</span>;

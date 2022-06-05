@@ -230,6 +230,25 @@
 <span id="225">225</span>
 <span id="226">226</span>
 <span id="227">227</span>
+<span id="228">228</span>
+<span id="229">229</span>
+<span id="230">230</span>
+<span id="231">231</span>
+<span id="232">232</span>
+<span id="233">233</span>
+<span id="234">234</span>
+<span id="235">235</span>
+<span id="236">236</span>
+<span id="237">237</span>
+<span id="238">238</span>
+<span id="239">239</span>
+<span id="240">240</span>
+<span id="241">241</span>
+<span id="242">242</span>
+<span id="243">243</span>
+<span id="244">244</span>
+<span id="245">245</span>
+<span id="246">246</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -266,7 +285,7 @@
 
 <span class="kw">pub</span> <span class="kw">use</span> <span class="self">self</span>::{
 	<span class="ident">eth</span>::{<span class="ident">Eth</span>, <span class="ident">EthBlockDataCacheTask</span>, <span class="ident">EthFilter</span>, <span class="ident">EthTask</span>},
-	<span class="ident">eth_pubsub</span>::{<span class="ident">EthPubSub</span>, <span class="ident">HexEncodedIdProvider</span>},
+	<span class="ident">eth_pubsub</span>::{<span class="ident">EthPubSub</span>, <span class="ident">EthereumSubIdProvider</span>},
 	<span class="ident">net::Net</span>,
 	<span class="ident">overrides</span>::{
 		<span class="ident">OverrideHandle</span>, <span class="ident">RuntimeApiStorageOverride</span>, <span class="ident">SchemaV1Override</span>, <span class="ident">SchemaV2Override</span>,
@@ -276,14 +295,16 @@
 	<span class="ident">web3::Web3</span>,
 };
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">ethereum::TransactionV2</span> <span class="kw">as</span> <span class="ident">EthereumTransaction</span>;
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">fc_rpc_core</span>::{<span class="ident">EthApi</span>, <span class="ident">EthFilterApi</span>, <span class="ident">EthPubSubApi</span>, <span class="ident">NetApi</span>, <span class="ident">Web3Api</span>};
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">fc_rpc_core</span>::{
+	<span class="ident">EthApiServer</span>, <span class="ident">EthFilterApiServer</span>, <span class="ident">EthPubSubApiServer</span>, <span class="ident">NetApiServer</span>, <span class="ident">Web3ApiServer</span>,
+};
 
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">frontier_backend_client</span> {
 	<span class="kw">use</span> <span class="ident"><span class="kw">super</span>::internal_err</span>;
 
 	<span class="kw">use</span> <span class="ident">codec::Decode</span>;
 	<span class="kw">use</span> <span class="ident">ethereum_types::H256</span>;
-	<span class="kw">use</span> <span class="ident">jsonrpc_core::Result</span> <span class="kw">as</span> <span class="ident">RpcResult</span>;
+	<span class="kw">use</span> <span class="ident">jsonrpsee::core::RpcResult</span>;
 
 	<span class="kw">use</span> <span class="ident">sc_client_api::backend</span>::{<span class="ident">Backend</span>, <span class="ident">StateBackend</span>, <span class="ident">StorageProvider</span>};
 	<span class="kw">use</span> <span class="ident">sp_blockchain::HeaderBackend</span>;
@@ -424,12 +445,29 @@
 	}
 }
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">internal_err</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">ToString</span><span class="op">&gt;</span>(<span class="ident">message</span>: <span class="ident">T</span>) -&gt; <span class="ident">jsonrpc_core::Error</span> {
-	<span class="ident">jsonrpc_core::Error</span> {
-		<span class="ident">code</span>: <span class="ident">jsonrpc_core::ErrorCode::InternalError</span>,
-		<span class="ident">message</span>: <span class="ident">message</span>.<span class="ident">to_string</span>(),
-		<span class="ident">data</span>: <span class="prelude-val">None</span>,
-	}
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">err</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">ToString</span><span class="op">&gt;</span>(<span class="ident">code</span>: <span class="ident">i32</span>, <span class="ident">message</span>: <span class="ident">T</span>, <span class="ident">data</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span>) -&gt; <span class="ident">jsonrpsee::core::Error</span> {
+	<span class="ident">jsonrpsee::core::Error::Call</span>(<span class="ident">jsonrpsee::types::error::CallError::Custom</span>(
+		<span class="ident">jsonrpsee::types::error::ErrorObject::owned</span>(
+			<span class="ident">code</span>,
+			<span class="ident">message</span>.<span class="ident">to_string</span>(),
+			<span class="ident">data</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">bytes</span><span class="op">|</span> {
+				<span class="ident">jsonrpsee::core::to_json_raw_value</span>(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">&quot;0x{}&quot;</span>, <span class="ident">hex::encode</span>(<span class="ident">bytes</span>)))
+					.<span class="ident">expect</span>(<span class="string">&quot;fail to serialize data&quot;</span>)
+			}),
+		),
+	))
+}
+
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">internal_err</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">ToString</span><span class="op">&gt;</span>(<span class="ident">message</span>: <span class="ident">T</span>) -&gt; <span class="ident">jsonrpsee::core::Error</span> {
+	<span class="ident">err</span>(<span class="ident">jsonrpsee::types::error::INTERNAL_ERROR_CODE</span>, <span class="ident">message</span>, <span class="prelude-val">None</span>)
+}
+
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">internal_err_with_data</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">ToString</span><span class="op">&gt;</span>(<span class="ident">message</span>: <span class="ident">T</span>, <span class="ident">data</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) -&gt; <span class="ident">jsonrpsee::core::Error</span> {
+	<span class="ident">err</span>(
+		<span class="ident">jsonrpsee::types::error::INTERNAL_ERROR_CODE</span>,
+		<span class="ident">message</span>,
+		<span class="prelude-val">Some</span>(<span class="ident">data</span>),
+	)
 }
 
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">public_key</span>(<span class="ident">transaction</span>: <span class="kw-2">&amp;</span><span class="ident">EthereumTransaction</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">64</span>], <span class="ident">sp_io::EcdsaVerifyError</span><span class="op">&gt;</span> {

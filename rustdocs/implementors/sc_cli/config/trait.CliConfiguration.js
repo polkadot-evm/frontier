@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["fc_cli"] = [{"text":"impl CliConfiguration&lt;<a class=\"primitive\" href=\"https://doc.rust-lang.org/nightly/std/primitive.unit.html\">()</a>&gt; for <a class=\"struct\" href=\"fc_cli/struct.FrontierDbCmd.html\" title=\"struct fc_cli::FrontierDbCmd\">FrontierDbCmd</a>","synthetic":false,"types":["fc_cli::frontier_db_cmd::FrontierDbCmd"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

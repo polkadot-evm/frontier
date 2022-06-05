@@ -1,4 +1,5 @@
 var N = null;var sourcesIndex = {};
+sourcesIndex["fc_cli"] = {"name":"","dirs":[{"name":"frontier_db_cmd","files":["mapping_db.rs","meta_db.rs","mod.rs","tests.rs","utils.rs"]}],"files":["lib.rs"]};
 sourcesIndex["fc_consensus"] = {"name":"","files":["lib.rs"]};
 sourcesIndex["fc_db"] = {"name":"","files":["lib.rs","parity_db_adapter.rs","utils.rs"]};
 sourcesIndex["fc_mapping_sync"] = {"name":"","files":["lib.rs","worker.rs"]};

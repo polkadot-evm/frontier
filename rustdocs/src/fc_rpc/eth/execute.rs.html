@@ -747,27 +747,6 @@
 <span id="742">742</span>
 <span id="743">743</span>
 <span id="744">744</span>
-<span id="745">745</span>
-<span id="746">746</span>
-<span id="747">747</span>
-<span id="748">748</span>
-<span id="749">749</span>
-<span id="750">750</span>
-<span id="751">751</span>
-<span id="752">752</span>
-<span id="753">753</span>
-<span id="754">754</span>
-<span id="755">755</span>
-<span id="756">756</span>
-<span id="757">757</span>
-<span id="758">758</span>
-<span id="759">759</span>
-<span id="760">760</span>
-<span id="761">761</span>
-<span id="762">762</span>
-<span id="763">763</span>
-<span id="764">764</span>
-<span id="765">765</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -790,7 +769,7 @@
 
 <span class="kw">use</span> <span class="ident">ethereum_types</span>::{<span class="ident">H256</span>, <span class="ident">U256</span>};
 <span class="kw">use</span> <span class="ident">evm</span>::{<span class="ident">ExitError</span>, <span class="ident">ExitReason</span>};
-<span class="kw">use</span> <span class="ident">jsonrpc_core</span>::{<span class="ident">BoxFuture</span>, <span class="ident">Error</span>, <span class="ident">ErrorCode</span>, <span class="prelude-ty">Result</span>, <span class="ident">Value</span>};
+<span class="kw">use</span> <span class="ident">jsonrpsee::core::RpcResult</span> <span class="kw">as</span> <span class="prelude-ty">Result</span>;
 
 <span class="kw">use</span> <span class="ident">sc_client_api::backend</span>::{<span class="ident">Backend</span>, <span class="ident">StateBackend</span>, <span class="ident">StorageProvider</span>};
 <span class="kw">use</span> <span class="ident">sc_network::ExHashT</span>;
@@ -812,7 +791,7 @@
 };
 
 <span class="doccomment">/// Default JSONRPC error code return by geth</span>
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">JSON_RPC_ERROR_DEFAULT</span>: <span class="ident">i64</span> <span class="op">=</span> <span class="op">-</span><span class="number">32000</span>;
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">JSON_RPC_ERROR_DEFAULT</span>: <span class="ident">i32</span> <span class="op">=</span> <span class="op">-</span><span class="number">32000</span>;
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">CT</span>, <span class="ident">BE</span>, <span class="ident">H</span>: <span class="ident">ExHashT</span>, <span class="ident">A</span>: <span class="ident">ChainApi</span><span class="op">&gt;</span> <span class="ident">Eth</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">CT</span>, <span class="ident">BE</span>, <span class="ident">H</span>, <span class="ident">A</span><span class="op">&gt;</span>
 <span class="kw">where</span>
@@ -863,11 +842,7 @@
 		};
 
 		<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">BlockStatus::Unknown</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">status</span>(<span class="ident">id</span>) {
-			<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span> {
-				<span class="ident">code</span>: <span class="ident">JSON_RPC_ERROR_DEFAULT</span>.<span class="ident">into</span>(),
-				<span class="ident">message</span>: <span class="ident">String::from</span>(<span class="string">&quot;header not found&quot;</span>),
-				<span class="ident">data</span>: <span class="prelude-val">None</span>,
-			});
+			<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident"><span class="kw">crate</span>::err</span>(<span class="ident">JSON_RPC_ERROR_DEFAULT</span>, <span class="string">&quot;header not found&quot;</span>, <span class="prelude-val">None</span>));
 		}
 
 		<span class="kw">let</span> <span class="ident">api_version</span> <span class="op">=</span>
@@ -1053,93 +1028,87 @@
 		}
 	}
 
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">estimate_gas</span>(
-		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		<span class="ident">request</span>: <span class="ident">CallRequest</span>,
-		<span class="kw">_</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">BlockNumber</span><span class="op">&gt;</span>,
-	) -&gt; <span class="ident">BoxFuture</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+	<span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">estimate_gas</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">request</span>: <span class="ident">CallRequest</span>, <span class="kw">_</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">BlockNumber</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> <span class="ident">client</span> <span class="op">=</span> <span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">client</span>);
 		<span class="kw">let</span> <span class="ident">block_data_cache</span> <span class="op">=</span> <span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">block_data_cache</span>);
 
-		<span class="ident">Box::pin</span>(<span class="kw">async</span> <span class="kw">move</span> {
-			<span class="comment">// Define the lower bound of estimate</span>
-			<span class="kw">const</span> <span class="ident">MIN_GAS_PER_TX</span>: <span class="ident">U256</span> <span class="op">=</span> <span class="ident">U256</span>([<span class="number">21_000</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>]);
+		<span class="comment">// Define the lower bound of estimate</span>
+		<span class="kw">const</span> <span class="ident">MIN_GAS_PER_TX</span>: <span class="ident">U256</span> <span class="op">=</span> <span class="ident">U256</span>([<span class="number">21_000</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>]);
 
-			<span class="comment">// Get best hash (TODO missing support for estimating gas historically)</span>
-			<span class="kw">let</span> <span class="ident">best_hash</span> <span class="op">=</span> <span class="ident">client</span>.<span class="ident">info</span>().<span class="ident">best_hash</span>;
+		<span class="comment">// Get best hash (TODO missing support for estimating gas historically)</span>
+		<span class="kw">let</span> <span class="ident">best_hash</span> <span class="op">=</span> <span class="ident">client</span>.<span class="ident">info</span>().<span class="ident">best_hash</span>;
 
-			<span class="comment">// For simple transfer to simple account, return MIN_GAS_PER_TX directly</span>
-			<span class="kw">let</span> <span class="ident">is_simple_transfer</span> <span class="op">=</span> <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">request</span>.<span class="ident">data</span> {
-				<span class="prelude-val">None</span> =&gt; <span class="bool-val">true</span>,
-				<span class="prelude-val">Some</span>(<span class="ident">vec</span>) =&gt; <span class="ident">vec</span>.<span class="number">0</span>.<span class="ident">is_empty</span>(),
-			};
-			<span class="kw">if</span> <span class="ident">is_simple_transfer</span> {
-				<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">to</span>) <span class="op">=</span> <span class="ident">request</span>.<span class="ident">to</span> {
-					<span class="kw">let</span> <span class="ident">to_code</span> <span class="op">=</span> <span class="ident">client</span>
-						.<span class="ident">runtime_api</span>()
-						.<span class="ident">account_code_at</span>(<span class="kw-2">&amp;</span><span class="ident">BlockId::Hash</span>(<span class="ident">best_hash</span>), <span class="ident">to</span>)
-						.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>;
-					<span class="kw">if</span> <span class="ident">to_code</span>.<span class="ident">is_empty</span>() {
-						<span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">MIN_GAS_PER_TX</span>);
-					}
+		<span class="comment">// For simple transfer to simple account, return MIN_GAS_PER_TX directly</span>
+		<span class="kw">let</span> <span class="ident">is_simple_transfer</span> <span class="op">=</span> <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">request</span>.<span class="ident">data</span> {
+			<span class="prelude-val">None</span> =&gt; <span class="bool-val">true</span>,
+			<span class="prelude-val">Some</span>(<span class="ident">vec</span>) =&gt; <span class="ident">vec</span>.<span class="number">0</span>.<span class="ident">is_empty</span>(),
+		};
+		<span class="kw">if</span> <span class="ident">is_simple_transfer</span> {
+			<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">to</span>) <span class="op">=</span> <span class="ident">request</span>.<span class="ident">to</span> {
+				<span class="kw">let</span> <span class="ident">to_code</span> <span class="op">=</span> <span class="ident">client</span>
+					.<span class="ident">runtime_api</span>()
+					.<span class="ident">account_code_at</span>(<span class="kw-2">&amp;</span><span class="ident">BlockId::Hash</span>(<span class="ident">best_hash</span>), <span class="ident">to</span>)
+					.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>;
+				<span class="kw">if</span> <span class="ident">to_code</span>.<span class="ident">is_empty</span>() {
+					<span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">MIN_GAS_PER_TX</span>);
 				}
 			}
+		}
 
-			<span class="kw">let</span> (<span class="ident">gas_price</span>, <span class="ident">max_fee_per_gas</span>, <span class="ident">max_priority_fee_per_gas</span>) <span class="op">=</span> {
-				<span class="kw">let</span> <span class="ident">details</span> <span class="op">=</span> <span class="ident">fee_details</span>(
-					<span class="ident">request</span>.<span class="ident">gas_price</span>,
-					<span class="ident">request</span>.<span class="ident">max_fee_per_gas</span>,
-					<span class="ident">request</span>.<span class="ident">max_priority_fee_per_gas</span>,
-				)<span class="question-mark">?</span>;
-				(
-					<span class="ident">details</span>.<span class="ident">gas_price</span>,
-					<span class="ident">details</span>.<span class="ident">max_fee_per_gas</span>,
-					<span class="ident">details</span>.<span class="ident">max_priority_fee_per_gas</span>,
-				)
-			};
+		<span class="kw">let</span> (<span class="ident">gas_price</span>, <span class="ident">max_fee_per_gas</span>, <span class="ident">max_priority_fee_per_gas</span>) <span class="op">=</span> {
+			<span class="kw">let</span> <span class="ident">details</span> <span class="op">=</span> <span class="ident">fee_details</span>(
+				<span class="ident">request</span>.<span class="ident">gas_price</span>,
+				<span class="ident">request</span>.<span class="ident">max_fee_per_gas</span>,
+				<span class="ident">request</span>.<span class="ident">max_priority_fee_per_gas</span>,
+			)<span class="question-mark">?</span>;
+			(
+				<span class="ident">details</span>.<span class="ident">gas_price</span>,
+				<span class="ident">details</span>.<span class="ident">max_fee_per_gas</span>,
+				<span class="ident">details</span>.<span class="ident">max_priority_fee_per_gas</span>,
+			)
+		};
 
-			<span class="kw">let</span> <span class="ident">get_current_block_gas_limit</span> <span class="op">=</span> <span class="op">|</span><span class="op">|</span> <span class="kw">async</span> {
-				<span class="kw">let</span> <span class="ident">substrate_hash</span> <span class="op">=</span> <span class="ident">client</span>.<span class="ident">info</span>().<span class="ident">best_hash</span>;
-				<span class="kw">let</span> <span class="ident">id</span> <span class="op">=</span> <span class="ident">BlockId::Hash</span>(<span class="ident">substrate_hash</span>);
-				<span class="kw">let</span> <span class="ident">schema</span> <span class="op">=</span>
-					<span class="ident">frontier_backend_client::onchain_storage_schema</span>::<span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span>, <span class="ident">BE</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="ident">client</span>, <span class="ident">id</span>);
-				<span class="kw">let</span> <span class="ident">block</span> <span class="op">=</span> <span class="ident">block_data_cache</span>.<span class="ident">current_block</span>(<span class="ident">schema</span>, <span class="ident">substrate_hash</span>).<span class="kw">await</span>;
-				<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">block</span>) <span class="op">=</span> <span class="ident">block</span> {
-					<span class="prelude-val">Ok</span>(<span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">gas_limit</span>)
-				} <span class="kw">else</span> {
-					<span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="string">&quot;block unavailable, cannot query gas limit&quot;</span>))
-				}
-			};
+		<span class="kw">let</span> <span class="ident">get_current_block_gas_limit</span> <span class="op">=</span> <span class="op">|</span><span class="op">|</span> <span class="kw">async</span> {
+			<span class="kw">let</span> <span class="ident">substrate_hash</span> <span class="op">=</span> <span class="ident">client</span>.<span class="ident">info</span>().<span class="ident">best_hash</span>;
+			<span class="kw">let</span> <span class="ident">id</span> <span class="op">=</span> <span class="ident">BlockId::Hash</span>(<span class="ident">substrate_hash</span>);
+			<span class="kw">let</span> <span class="ident">schema</span> <span class="op">=</span> <span class="ident">frontier_backend_client::onchain_storage_schema</span>::<span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span>, <span class="ident">BE</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="ident">client</span>, <span class="ident">id</span>);
+			<span class="kw">let</span> <span class="ident">block</span> <span class="op">=</span> <span class="ident">block_data_cache</span>.<span class="ident">current_block</span>(<span class="ident">schema</span>, <span class="ident">substrate_hash</span>).<span class="kw">await</span>;
+			<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">block</span>) <span class="op">=</span> <span class="ident">block</span> {
+				<span class="prelude-val">Ok</span>(<span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">gas_limit</span>)
+			} <span class="kw">else</span> {
+				<span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="string">&quot;block unavailable, cannot query gas limit&quot;</span>))
+			}
+		};
 
-			<span class="comment">// Determine the highest possible gas limits</span>
-			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">highest</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">request</span>.<span class="ident">gas</span> {
-				<span class="prelude-val">Some</span>(<span class="ident">gas</span>) =&gt; <span class="ident">gas</span>,
-				<span class="prelude-val">None</span> =&gt; {
-					<span class="comment">// query current block&#39;s gas limit</span>
-					<span class="ident">get_current_block_gas_limit</span>().<span class="kw">await</span><span class="question-mark">?</span>
-				}
-			};
+		<span class="comment">// Determine the highest possible gas limits</span>
+		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">highest</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">request</span>.<span class="ident">gas</span> {
+			<span class="prelude-val">Some</span>(<span class="ident">gas</span>) =&gt; <span class="ident">gas</span>,
+			<span class="prelude-val">None</span> =&gt; {
+				<span class="comment">// query current block&#39;s gas limit</span>
+				<span class="ident">get_current_block_gas_limit</span>().<span class="kw">await</span><span class="question-mark">?</span>
+			}
+		};
 
-			<span class="kw">let</span> <span class="ident">api</span> <span class="op">=</span> <span class="ident">client</span>.<span class="ident">runtime_api</span>();
+		<span class="kw">let</span> <span class="ident">api</span> <span class="op">=</span> <span class="ident">client</span>.<span class="ident">runtime_api</span>();
 
-			<span class="comment">// Recap the highest gas allowance with account&#39;s balance.</span>
-			<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">from</span>) <span class="op">=</span> <span class="ident">request</span>.<span class="ident">from</span> {
-				<span class="kw">let</span> <span class="ident">gas_price</span> <span class="op">=</span> <span class="ident">gas_price</span>.<span class="ident">unwrap_or_default</span>();
-				<span class="kw">if</span> <span class="ident">gas_price</span> <span class="op">&gt;</span> <span class="ident">U256::zero</span>() {
-					<span class="kw">let</span> <span class="ident">balance</span> <span class="op">=</span> <span class="ident">api</span>
-						.<span class="ident">account_basic</span>(<span class="kw-2">&amp;</span><span class="ident">BlockId::Hash</span>(<span class="ident">best_hash</span>), <span class="ident">from</span>)
-						.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>
-						.<span class="ident">balance</span>;
-					<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">available</span> <span class="op">=</span> <span class="ident">balance</span>;
-					<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">value</span>) <span class="op">=</span> <span class="ident">request</span>.<span class="ident">value</span> {
-						<span class="kw">if</span> <span class="ident">value</span> <span class="op">&gt;</span> <span class="ident">available</span> {
-							<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="string">&quot;insufficient funds for transfer&quot;</span>));
-						}
-						<span class="ident">available</span> <span class="op">-</span><span class="op">=</span> <span class="ident">value</span>;
+		<span class="comment">// Recap the highest gas allowance with account&#39;s balance.</span>
+		<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">from</span>) <span class="op">=</span> <span class="ident">request</span>.<span class="ident">from</span> {
+			<span class="kw">let</span> <span class="ident">gas_price</span> <span class="op">=</span> <span class="ident">gas_price</span>.<span class="ident">unwrap_or_default</span>();
+			<span class="kw">if</span> <span class="ident">gas_price</span> <span class="op">&gt;</span> <span class="ident">U256::zero</span>() {
+				<span class="kw">let</span> <span class="ident">balance</span> <span class="op">=</span> <span class="ident">api</span>
+					.<span class="ident">account_basic</span>(<span class="kw-2">&amp;</span><span class="ident">BlockId::Hash</span>(<span class="ident">best_hash</span>), <span class="ident">from</span>)
+					.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>
+					.<span class="ident">balance</span>;
+				<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">available</span> <span class="op">=</span> <span class="ident">balance</span>;
+				<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">value</span>) <span class="op">=</span> <span class="ident">request</span>.<span class="ident">value</span> {
+					<span class="kw">if</span> <span class="ident">value</span> <span class="op">&gt;</span> <span class="ident">available</span> {
+						<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="string">&quot;insufficient funds for transfer&quot;</span>));
 					}
-					<span class="kw">let</span> <span class="ident">allowance</span> <span class="op">=</span> <span class="ident">available</span> <span class="op">/</span> <span class="ident">gas_price</span>;
-					<span class="kw">if</span> <span class="ident">highest</span> <span class="op">&gt;</span> <span class="ident">allowance</span> {
-						<span class="macro">log::warn!</span>(
+					<span class="ident">available</span> <span class="op">-</span><span class="op">=</span> <span class="ident">value</span>;
+				}
+				<span class="kw">let</span> <span class="ident">allowance</span> <span class="op">=</span> <span class="ident">available</span> <span class="op">/</span> <span class="ident">gas_price</span>;
+				<span class="kw">if</span> <span class="ident">highest</span> <span class="op">&gt;</span> <span class="ident">allowance</span> {
+					<span class="macro">log::warn!</span>(
 							<span class="string">&quot;Gas estimation capped by limited funds original {} balance {} sent {} feecap {} fundable {}&quot;</span>,
 							<span class="ident">highest</span>,
 							<span class="ident">balance</span>,
@@ -1147,29 +1116,29 @@
 							<span class="ident">gas_price</span>,
 							<span class="ident">allowance</span>
 						);
-						<span class="ident">highest</span> <span class="op">=</span> <span class="ident">allowance</span>;
-					}
+					<span class="ident">highest</span> <span class="op">=</span> <span class="ident">allowance</span>;
 				}
 			}
+		}
 
-			<span class="kw">struct</span> <span class="ident">ExecutableResult</span> {
-				<span class="ident">data</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
-				<span class="ident">exit_reason</span>: <span class="ident">ExitReason</span>,
-				<span class="ident">used_gas</span>: <span class="ident">U256</span>,
-			}
+		<span class="kw">struct</span> <span class="ident">ExecutableResult</span> {
+			<span class="ident">data</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
+			<span class="ident">exit_reason</span>: <span class="ident">ExitReason</span>,
+			<span class="ident">used_gas</span>: <span class="ident">U256</span>,
+		}
 
-			<span class="comment">// Create a helper to check if a gas allowance results in an executable transaction.</span>
-			<span class="comment">//</span>
-			<span class="comment">// A new ApiRef instance needs to be used per execution to avoid the overlayed state to affect</span>
-			<span class="comment">// the estimation result of subsequent calls.</span>
-			<span class="comment">//</span>
-			<span class="comment">// Note that this would have a performance penalty if we introduce gas estimation for past</span>
-			<span class="comment">// blocks - and thus, past runtime versions. Substrate has a default `runtime_cache_size` of</span>
-			<span class="comment">// 2 slots LRU-style, meaning if users were to access multiple runtime versions in a short period</span>
-			<span class="comment">// of time, the RPC response time would degrade a lot, as the VersionedRuntime needs to be compiled.</span>
-			<span class="comment">//</span>
-			<span class="comment">// To solve that, and if we introduce historical gas estimation, we&#39;d need to increase that default.</span>
-			<span class="attribute">#[<span class="ident">rustfmt::skip</span>]</span>
+		<span class="comment">// Create a helper to check if a gas allowance results in an executable transaction.</span>
+		<span class="comment">//</span>
+		<span class="comment">// A new ApiRef instance needs to be used per execution to avoid the overlayed state to affect</span>
+		<span class="comment">// the estimation result of subsequent calls.</span>
+		<span class="comment">//</span>
+		<span class="comment">// Note that this would have a performance penalty if we introduce gas estimation for past</span>
+		<span class="comment">// blocks - and thus, past runtime versions. Substrate has a default `runtime_cache_size` of</span>
+		<span class="comment">// 2 slots LRU-style, meaning if users were to access multiple runtime versions in a short period</span>
+		<span class="comment">// of time, the RPC response time would degrade a lot, as the VersionedRuntime needs to be compiled.</span>
+		<span class="comment">//</span>
+		<span class="comment">// To solve that, and if we introduce historical gas estimation, we&#39;d need to increase that default.</span>
+		<span class="attribute">#[<span class="ident">rustfmt::skip</span>]</span>
 			<span class="kw">let</span> <span class="ident">executable</span> <span class="op">=</span> <span class="kw">move</span> <span class="op">|</span>
 				<span class="ident">request</span>, <span class="ident">gas_limit</span>, <span class="ident">api_version</span>, <span class="ident">api</span>: <span class="ident">sp_api::ApiRef</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="ident">C::Api</span><span class="op">&gt;</span>, <span class="ident">estimate_mode</span>
 			<span class="op">|</span> -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">ExecutableResult</span><span class="op">&gt;</span> {
@@ -1316,124 +1285,123 @@
 					<span class="ident">used_gas</span>,
 				})
 			};
-			<span class="kw">let</span> <span class="ident">api_version</span> <span class="op">=</span> <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">api_version</span>)) <span class="op">=</span>
-				<span class="ident">client</span>
-					.<span class="ident">runtime_api</span>()
-					.<span class="ident">api_version</span>::<span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">EthereumRuntimeRPCApi</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="ident">BlockId::Hash</span>(<span class="ident">best_hash</span>))
-			{
-				<span class="ident">api_version</span>
-			} <span class="kw">else</span> {
-				<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="string">&quot;failed to retrieve Runtime Api version&quot;</span>));
-			};
+		<span class="kw">let</span> <span class="ident">api_version</span> <span class="op">=</span> <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">api_version</span>)) <span class="op">=</span>
+			<span class="ident">client</span>
+				.<span class="ident">runtime_api</span>()
+				.<span class="ident">api_version</span>::<span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">EthereumRuntimeRPCApi</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="ident">BlockId::Hash</span>(<span class="ident">best_hash</span>))
+		{
+			<span class="ident">api_version</span>
+		} <span class="kw">else</span> {
+			<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="string">&quot;failed to retrieve Runtime Api version&quot;</span>));
+		};
 
-			<span class="comment">// Verify that the transaction succeed with highest capacity</span>
-			<span class="kw">let</span> <span class="ident">cap</span> <span class="op">=</span> <span class="ident">highest</span>;
-			<span class="kw">let</span> <span class="ident">estimate_mode</span> <span class="op">=</span> <span class="op">!</span><span class="macro">cfg!</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;rpc_binary_search_estimate&quot;</span>);
-			<span class="kw">let</span> <span class="ident">ExecutableResult</span> {
-				<span class="ident">data</span>,
-				<span class="ident">exit_reason</span>,
-				<span class="ident">used_gas</span>,
-			} <span class="op">=</span> <span class="ident">executable</span>(
-				<span class="ident">request</span>.<span class="ident">clone</span>(),
-				<span class="ident">highest</span>,
-				<span class="ident">api_version</span>,
-				<span class="ident">client</span>.<span class="ident">runtime_api</span>(),
-				<span class="ident">estimate_mode</span>,
-			)<span class="question-mark">?</span>;
-			<span class="kw">match</span> <span class="ident">exit_reason</span> {
-				<span class="ident">ExitReason::Succeed</span>(<span class="kw">_</span>) =&gt; (),
-				<span class="ident">ExitReason::Error</span>(<span class="ident">ExitError::OutOfGas</span>) =&gt; {
-					<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="macro">format!</span>(
-						<span class="string">&quot;gas required exceeds allowance {}&quot;</span>,
-						<span class="ident">cap</span>
-					)))
-				}
-				<span class="comment">// If the transaction reverts, there are two possible cases,</span>
-				<span class="comment">// it can revert because the called contract feels that it does not have enough</span>
-				<span class="comment">// gas left to continue, or it can revert for another reason unrelated to gas.</span>
-				<span class="ident">ExitReason::Revert</span>(<span class="ident">revert</span>) =&gt; {
-					<span class="kw">if</span> <span class="ident">request</span>.<span class="ident">gas</span>.<span class="ident">is_some</span>() <span class="op">|</span><span class="op">|</span> <span class="ident">request</span>.<span class="ident">gas_price</span>.<span class="ident">is_some</span>() {
-						<span class="comment">// If the user has provided a gas limit or a gas price, then we have executed</span>
-						<span class="comment">// with less block gas limit, so we must reexecute with block gas limit to</span>
-						<span class="comment">// know if the revert is due to a lack of gas or not.</span>
-						<span class="kw">let</span> <span class="ident">ExecutableResult</span> {
-							<span class="ident">data</span>,
-							<span class="ident">exit_reason</span>,
-							<span class="ident">used_gas</span>: <span class="kw">_</span>,
-						} <span class="op">=</span> <span class="ident">executable</span>(
-							<span class="ident">request</span>.<span class="ident">clone</span>(),
-							<span class="ident">get_current_block_gas_limit</span>().<span class="kw">await</span><span class="question-mark">?</span>,
-							<span class="ident">api_version</span>,
-							<span class="ident">client</span>.<span class="ident">runtime_api</span>(),
-							<span class="ident">estimate_mode</span>,
-						)<span class="question-mark">?</span>;
-						<span class="kw">match</span> <span class="ident">exit_reason</span> {
-							<span class="ident">ExitReason::Succeed</span>(<span class="kw">_</span>) =&gt; {
-								<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="macro">format!</span>(
-									<span class="string">&quot;gas required exceeds allowance {}&quot;</span>,
-									<span class="ident">cap</span>
-								)))
-							}
-							<span class="comment">// The execution has been done with block gas limit, so it is not a lack of gas from the user.</span>
-							<span class="ident">other</span> =&gt; <span class="ident">error_on_execution_failure</span>(<span class="kw-2">&amp;</span><span class="ident">other</span>, <span class="kw-2">&amp;</span><span class="ident">data</span>)<span class="question-mark">?</span>,
-						}
-					} <span class="kw">else</span> {
-						<span class="comment">// The execution has already been done with block gas limit, so it is not a lack of gas from the user.</span>
-						<span class="ident">error_on_execution_failure</span>(<span class="kw-2">&amp;</span><span class="ident">ExitReason::Revert</span>(<span class="ident">revert</span>), <span class="kw-2">&amp;</span><span class="ident">data</span>)<span class="question-mark">?</span>
-					}
-				}
-				<span class="ident">other</span> =&gt; <span class="ident">error_on_execution_failure</span>(<span class="kw-2">&amp;</span><span class="ident">other</span>, <span class="kw-2">&amp;</span><span class="ident">data</span>)<span class="question-mark">?</span>,
-			};
-
-			<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;rpc_binary_search_estimate&quot;</span>))]</span>
-			{
-				<span class="prelude-val">Ok</span>(<span class="ident">used_gas</span>)
+		<span class="comment">// Verify that the transaction succeed with highest capacity</span>
+		<span class="kw">let</span> <span class="ident">cap</span> <span class="op">=</span> <span class="ident">highest</span>;
+		<span class="kw">let</span> <span class="ident">estimate_mode</span> <span class="op">=</span> <span class="op">!</span><span class="macro">cfg!</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;rpc_binary_search_estimate&quot;</span>);
+		<span class="kw">let</span> <span class="ident">ExecutableResult</span> {
+			<span class="ident">data</span>,
+			<span class="ident">exit_reason</span>,
+			<span class="ident">used_gas</span>,
+		} <span class="op">=</span> <span class="ident">executable</span>(
+			<span class="ident">request</span>.<span class="ident">clone</span>(),
+			<span class="ident">highest</span>,
+			<span class="ident">api_version</span>,
+			<span class="ident">client</span>.<span class="ident">runtime_api</span>(),
+			<span class="ident">estimate_mode</span>,
+		)<span class="question-mark">?</span>;
+		<span class="kw">match</span> <span class="ident">exit_reason</span> {
+			<span class="ident">ExitReason::Succeed</span>(<span class="kw">_</span>) =&gt; (),
+			<span class="ident">ExitReason::Error</span>(<span class="ident">ExitError::OutOfGas</span>) =&gt; {
+				<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="macro">format!</span>(
+					<span class="string">&quot;gas required exceeds allowance {}&quot;</span>,
+					<span class="ident">cap</span>
+				)))
 			}
-			<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;rpc_binary_search_estimate&quot;</span>)]</span>
-			{
-				<span class="comment">// On binary search, evm estimate mode is disabled</span>
-				<span class="kw">let</span> <span class="ident">estimate_mode</span> <span class="op">=</span> <span class="bool-val">false</span>;
-				<span class="comment">// Define the lower bound of the binary search</span>
-				<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">lowest</span> <span class="op">=</span> <span class="ident">MIN_GAS_PER_TX</span>;
-
-				<span class="comment">// Start close to the used gas for faster binary search</span>
-				<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">mid</span> <span class="op">=</span> <span class="ident">std::cmp::min</span>(<span class="ident">used_gas</span> <span class="op">*</span> <span class="number">3</span>, (<span class="ident">highest</span> <span class="op">+</span> <span class="ident">lowest</span>) <span class="op">/</span> <span class="number">2</span>);
-
-				<span class="comment">// Execute the binary search and hone in on an executable gas limit.</span>
-				<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">previous_highest</span> <span class="op">=</span> <span class="ident">highest</span>;
-				<span class="kw">while</span> (<span class="ident">highest</span> <span class="op">-</span> <span class="ident">lowest</span>) <span class="op">&gt;</span> <span class="ident">U256::one</span>() {
+			<span class="comment">// If the transaction reverts, there are two possible cases,</span>
+			<span class="comment">// it can revert because the called contract feels that it does not have enough</span>
+			<span class="comment">// gas left to continue, or it can revert for another reason unrelated to gas.</span>
+			<span class="ident">ExitReason::Revert</span>(<span class="ident">revert</span>) =&gt; {
+				<span class="kw">if</span> <span class="ident">request</span>.<span class="ident">gas</span>.<span class="ident">is_some</span>() <span class="op">|</span><span class="op">|</span> <span class="ident">request</span>.<span class="ident">gas_price</span>.<span class="ident">is_some</span>() {
+					<span class="comment">// If the user has provided a gas limit or a gas price, then we have executed</span>
+					<span class="comment">// with less block gas limit, so we must reexecute with block gas limit to</span>
+					<span class="comment">// know if the revert is due to a lack of gas or not.</span>
 					<span class="kw">let</span> <span class="ident">ExecutableResult</span> {
 						<span class="ident">data</span>,
 						<span class="ident">exit_reason</span>,
 						<span class="ident">used_gas</span>: <span class="kw">_</span>,
 					} <span class="op">=</span> <span class="ident">executable</span>(
 						<span class="ident">request</span>.<span class="ident">clone</span>(),
-						<span class="ident">mid</span>,
+						<span class="ident">get_current_block_gas_limit</span>().<span class="kw">await</span><span class="question-mark">?</span>,
 						<span class="ident">api_version</span>,
 						<span class="ident">client</span>.<span class="ident">runtime_api</span>(),
 						<span class="ident">estimate_mode</span>,
 					)<span class="question-mark">?</span>;
 					<span class="kw">match</span> <span class="ident">exit_reason</span> {
 						<span class="ident">ExitReason::Succeed</span>(<span class="kw">_</span>) =&gt; {
-							<span class="ident">highest</span> <span class="op">=</span> <span class="ident">mid</span>;
-							<span class="comment">// If the variation in the estimate is less than 10%,</span>
-							<span class="comment">// then the estimate is considered sufficiently accurate.</span>
-							<span class="kw">if</span> (<span class="ident">previous_highest</span> <span class="op">-</span> <span class="ident">highest</span>) <span class="op">*</span> <span class="number">10</span> <span class="op">/</span> <span class="ident">previous_highest</span> <span class="op">&lt;</span> <span class="ident">U256::one</span>() {
-								<span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">highest</span>);
-							}
-							<span class="ident">previous_highest</span> <span class="op">=</span> <span class="ident">highest</span>;
+							<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="macro">format!</span>(
+								<span class="string">&quot;gas required exceeds allowance {}&quot;</span>,
+								<span class="ident">cap</span>
+							)))
 						}
-						<span class="ident">ExitReason::Revert</span>(<span class="kw">_</span>) <span class="op">|</span> <span class="ident">ExitReason::Error</span>(<span class="ident">ExitError::OutOfGas</span>) =&gt; {
-							<span class="ident">lowest</span> <span class="op">=</span> <span class="ident">mid</span>;
-						}
+						<span class="comment">// The execution has been done with block gas limit, so it is not a lack of gas from the user.</span>
 						<span class="ident">other</span> =&gt; <span class="ident">error_on_execution_failure</span>(<span class="kw-2">&amp;</span><span class="ident">other</span>, <span class="kw-2">&amp;</span><span class="ident">data</span>)<span class="question-mark">?</span>,
 					}
-					<span class="ident">mid</span> <span class="op">=</span> (<span class="ident">highest</span> <span class="op">+</span> <span class="ident">lowest</span>) <span class="op">/</span> <span class="number">2</span>;
+				} <span class="kw">else</span> {
+					<span class="comment">// The execution has already been done with block gas limit, so it is not a lack of gas from the user.</span>
+					<span class="ident">error_on_execution_failure</span>(<span class="kw-2">&amp;</span><span class="ident">ExitReason::Revert</span>(<span class="ident">revert</span>), <span class="kw-2">&amp;</span><span class="ident">data</span>)<span class="question-mark">?</span>
 				}
-
-				<span class="prelude-val">Ok</span>(<span class="ident">highest</span>)
 			}
-		})
+			<span class="ident">other</span> =&gt; <span class="ident">error_on_execution_failure</span>(<span class="kw-2">&amp;</span><span class="ident">other</span>, <span class="kw-2">&amp;</span><span class="ident">data</span>)<span class="question-mark">?</span>,
+		};
+
+		<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;rpc_binary_search_estimate&quot;</span>))]</span>
+		{
+			<span class="prelude-val">Ok</span>(<span class="ident">used_gas</span>)
+		}
+		<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;rpc_binary_search_estimate&quot;</span>)]</span>
+		{
+			<span class="comment">// On binary search, evm estimate mode is disabled</span>
+			<span class="kw">let</span> <span class="ident">estimate_mode</span> <span class="op">=</span> <span class="bool-val">false</span>;
+			<span class="comment">// Define the lower bound of the binary search</span>
+			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">lowest</span> <span class="op">=</span> <span class="ident">MIN_GAS_PER_TX</span>;
+
+			<span class="comment">// Start close to the used gas for faster binary search</span>
+			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">mid</span> <span class="op">=</span> <span class="ident">std::cmp::min</span>(<span class="ident">used_gas</span> <span class="op">*</span> <span class="number">3</span>, (<span class="ident">highest</span> <span class="op">+</span> <span class="ident">lowest</span>) <span class="op">/</span> <span class="number">2</span>);
+
+			<span class="comment">// Execute the binary search and hone in on an executable gas limit.</span>
+			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">previous_highest</span> <span class="op">=</span> <span class="ident">highest</span>;
+			<span class="kw">while</span> (<span class="ident">highest</span> <span class="op">-</span> <span class="ident">lowest</span>) <span class="op">&gt;</span> <span class="ident">U256::one</span>() {
+				<span class="kw">let</span> <span class="ident">ExecutableResult</span> {
+					<span class="ident">data</span>,
+					<span class="ident">exit_reason</span>,
+					<span class="ident">used_gas</span>: <span class="kw">_</span>,
+				} <span class="op">=</span> <span class="ident">executable</span>(
+					<span class="ident">request</span>.<span class="ident">clone</span>(),
+					<span class="ident">mid</span>,
+					<span class="ident">api_version</span>,
+					<span class="ident">client</span>.<span class="ident">runtime_api</span>(),
+					<span class="ident">estimate_mode</span>,
+				)<span class="question-mark">?</span>;
+				<span class="kw">match</span> <span class="ident">exit_reason</span> {
+					<span class="ident">ExitReason::Succeed</span>(<span class="kw">_</span>) =&gt; {
+						<span class="ident">highest</span> <span class="op">=</span> <span class="ident">mid</span>;
+						<span class="comment">// If the variation in the estimate is less than 10%,</span>
+						<span class="comment">// then the estimate is considered sufficiently accurate.</span>
+						<span class="kw">if</span> (<span class="ident">previous_highest</span> <span class="op">-</span> <span class="ident">highest</span>) <span class="op">*</span> <span class="number">10</span> <span class="op">/</span> <span class="ident">previous_highest</span> <span class="op">&lt;</span> <span class="ident">U256::one</span>() {
+							<span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">highest</span>);
+						}
+						<span class="ident">previous_highest</span> <span class="op">=</span> <span class="ident">highest</span>;
+					}
+					<span class="ident">ExitReason::Revert</span>(<span class="kw">_</span>) <span class="op">|</span> <span class="ident">ExitReason::Error</span>(<span class="ident">ExitError::OutOfGas</span>) =&gt; {
+						<span class="ident">lowest</span> <span class="op">=</span> <span class="ident">mid</span>;
+					}
+					<span class="ident">other</span> =&gt; <span class="ident">error_on_execution_failure</span>(<span class="kw-2">&amp;</span><span class="ident">other</span>, <span class="kw-2">&amp;</span><span class="ident">data</span>)<span class="question-mark">?</span>,
+				}
+				<span class="ident">mid</span> <span class="op">=</span> (<span class="ident">highest</span> <span class="op">+</span> <span class="ident">lowest</span>) <span class="op">/</span> <span class="number">2</span>;
+			}
+
+			<span class="prelude-val">Ok</span>(<span class="ident">highest</span>)
+		}
 	}
 }
 
@@ -1443,17 +1411,12 @@
 		<span class="ident">ExitReason::Error</span>(<span class="ident">e</span>) =&gt; {
 			<span class="kw">if</span> <span class="kw-2">*</span><span class="ident">e</span> <span class="op">==</span> <span class="ident">ExitError::OutOfGas</span> {
 				<span class="comment">// `ServerError(0)` will be useful in estimate gas</span>
-				<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span> {
-					<span class="ident">code</span>: <span class="ident">ErrorCode::ServerError</span>(<span class="number">0</span>),
-					<span class="ident">message</span>: <span class="string">&quot;out of gas&quot;</span>.<span class="ident">to_string</span>(),
-					<span class="ident">data</span>: <span class="prelude-val">None</span>,
-				});
+				<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="string">&quot;out of gas&quot;</span>));
 			}
-			<span class="prelude-val">Err</span>(<span class="ident">Error</span> {
-				<span class="ident">code</span>: <span class="ident">ErrorCode::InternalError</span>,
-				<span class="ident">message</span>: <span class="macro">format!</span>(<span class="string">&quot;evm error: {:?}&quot;</span>, <span class="ident">e</span>),
-				<span class="ident">data</span>: <span class="prelude-val">Some</span>(<span class="ident">Value::String</span>(<span class="string">&quot;0x&quot;</span>.<span class="ident">to_string</span>())),
-			})
+			<span class="prelude-val">Err</span>(<span class="ident"><span class="kw">crate</span>::internal_err_with_data</span>(
+				<span class="macro">format!</span>(<span class="string">&quot;evm error: {:?}&quot;</span>, <span class="ident">e</span>),
+				<span class="kw-2">&amp;</span>[],
+			))
 		}
 		<span class="ident">ExitReason::Revert</span>(<span class="kw">_</span>) =&gt; {
 			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">message</span> <span class="op">=</span> <span class="string">&quot;VM Exception while processing transaction: revert&quot;</span>.<span class="ident">to_string</span>();
@@ -1468,17 +1431,12 @@
 					}
 				}
 			}
-			<span class="prelude-val">Err</span>(<span class="ident">Error</span> {
-				<span class="ident">code</span>: <span class="ident">ErrorCode::InternalError</span>,
-				<span class="ident">message</span>,
-				<span class="ident">data</span>: <span class="prelude-val">Some</span>(<span class="ident">Value::String</span>(<span class="ident">hex::encode</span>(<span class="ident">data</span>))),
-			})
+			<span class="prelude-val">Err</span>(<span class="ident"><span class="kw">crate</span>::internal_err_with_data</span>(<span class="ident">message</span>, <span class="ident">data</span>))
 		}
-		<span class="ident">ExitReason::Fatal</span>(<span class="ident">e</span>) =&gt; <span class="prelude-val">Err</span>(<span class="ident">Error</span> {
-			<span class="ident">code</span>: <span class="ident">ErrorCode::InternalError</span>,
-			<span class="ident">message</span>: <span class="macro">format!</span>(<span class="string">&quot;evm fatal: {:?}&quot;</span>, <span class="ident">e</span>),
-			<span class="ident">data</span>: <span class="prelude-val">Some</span>(<span class="ident">Value::String</span>(<span class="string">&quot;0x&quot;</span>.<span class="ident">to_string</span>())),
-		}),
+		<span class="ident">ExitReason::Fatal</span>(<span class="ident">e</span>) =&gt; <span class="prelude-val">Err</span>(<span class="ident"><span class="kw">crate</span>::internal_err_with_data</span>(
+			<span class="macro">format!</span>(<span class="string">&quot;evm fatal: {:?}&quot;</span>, <span class="ident">e</span>),
+			<span class="kw-2">&amp;</span>[],
+		)),
 	}
 }
 

@@ -43,7 +43,6 @@
 <span id="38">38</span>
 <span id="39">39</span>
 <span id="40">40</span>
-<span id="41">41</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -64,8 +63,7 @@
 
 <span class="doccomment">//! Net rpc interface.</span>
 
-<span class="kw">use</span> <span class="ident">jsonrpc_core::Result</span>;
-<span class="kw">use</span> <span class="ident">jsonrpc_derive::rpc</span>;
+<span class="kw">use</span> <span class="ident">jsonrpsee</span>::{<span class="ident">core::RpcResult</span> <span class="kw">as</span> <span class="prelude-ty">Result</span>, <span class="ident">proc_macros::rpc</span>};
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::types::PeerCount</span>;
 
@@ -73,16 +71,16 @@
 <span class="attribute">#[<span class="ident">rpc</span>(<span class="ident">server</span>)]</span>
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">NetApi</span> {
 	<span class="doccomment">/// Returns protocol version.</span>
-	<span class="attribute">#[<span class="ident">rpc</span>(<span class="ident">name</span> <span class="op">=</span> <span class="string">&quot;net_version&quot;</span>)]</span>
+	<span class="attribute">#[<span class="ident">method</span>(<span class="ident">name</span> <span class="op">=</span> <span class="string">&quot;net_version&quot;</span>)]</span>
 	<span class="kw">fn</span> <span class="ident">version</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>;
 
 	<span class="doccomment">/// Returns number of peers connected to node.</span>
-	<span class="attribute">#[<span class="ident">rpc</span>(<span class="ident">name</span> <span class="op">=</span> <span class="string">&quot;net_peerCount&quot;</span>)]</span>
+	<span class="attribute">#[<span class="ident">method</span>(<span class="ident">name</span> <span class="op">=</span> <span class="string">&quot;net_peerCount&quot;</span>)]</span>
 	<span class="kw">fn</span> <span class="ident">peer_count</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">PeerCount</span><span class="op">&gt;</span>;
 
 	<span class="doccomment">/// Returns true if client is actively listening for network connections.</span>
 	<span class="doccomment">/// Otherwise false.</span>
-	<span class="attribute">#[<span class="ident">rpc</span>(<span class="ident">name</span> <span class="op">=</span> <span class="string">&quot;net_listening&quot;</span>)]</span>
+	<span class="attribute">#[<span class="ident">method</span>(<span class="ident">name</span> <span class="op">=</span> <span class="string">&quot;net_listening&quot;</span>)]</span>
 	<span class="kw">fn</span> <span class="ident">is_listening</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span>;
 }
 </code></pre></div>

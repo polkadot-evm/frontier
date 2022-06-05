@@ -427,81 +427,6 @@
 <span id="422">422</span>
 <span id="423">423</span>
 <span id="424">424</span>
-<span id="425">425</span>
-<span id="426">426</span>
-<span id="427">427</span>
-<span id="428">428</span>
-<span id="429">429</span>
-<span id="430">430</span>
-<span id="431">431</span>
-<span id="432">432</span>
-<span id="433">433</span>
-<span id="434">434</span>
-<span id="435">435</span>
-<span id="436">436</span>
-<span id="437">437</span>
-<span id="438">438</span>
-<span id="439">439</span>
-<span id="440">440</span>
-<span id="441">441</span>
-<span id="442">442</span>
-<span id="443">443</span>
-<span id="444">444</span>
-<span id="445">445</span>
-<span id="446">446</span>
-<span id="447">447</span>
-<span id="448">448</span>
-<span id="449">449</span>
-<span id="450">450</span>
-<span id="451">451</span>
-<span id="452">452</span>
-<span id="453">453</span>
-<span id="454">454</span>
-<span id="455">455</span>
-<span id="456">456</span>
-<span id="457">457</span>
-<span id="458">458</span>
-<span id="459">459</span>
-<span id="460">460</span>
-<span id="461">461</span>
-<span id="462">462</span>
-<span id="463">463</span>
-<span id="464">464</span>
-<span id="465">465</span>
-<span id="466">466</span>
-<span id="467">467</span>
-<span id="468">468</span>
-<span id="469">469</span>
-<span id="470">470</span>
-<span id="471">471</span>
-<span id="472">472</span>
-<span id="473">473</span>
-<span id="474">474</span>
-<span id="475">475</span>
-<span id="476">476</span>
-<span id="477">477</span>
-<span id="478">478</span>
-<span id="479">479</span>
-<span id="480">480</span>
-<span id="481">481</span>
-<span id="482">482</span>
-<span id="483">483</span>
-<span id="484">484</span>
-<span id="485">485</span>
-<span id="486">486</span>
-<span id="487">487</span>
-<span id="488">488</span>
-<span id="489">489</span>
-<span id="490">490</span>
-<span id="491">491</span>
-<span id="492">492</span>
-<span id="493">493</span>
-<span id="494">494</span>
-<span id="495">495</span>
-<span id="496">496</span>
-<span id="497">497</span>
-<span id="498">498</span>
-<span id="499">499</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -520,26 +445,19 @@
 <span class="comment">// You should have received a copy of the GNU General Public License</span>
 <span class="comment">// along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.</span>
 
-<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">collections::BTreeMap</span>, <span class="ident">iter</span>, <span class="ident">marker::PhantomData</span>, <span class="ident">sync::Arc</span>};
+<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">collections::BTreeMap</span>, <span class="ident">marker::PhantomData</span>, <span class="ident">sync::Arc</span>};
 
 <span class="kw">use</span> <span class="ident">ethereum</span>::{<span class="ident">BlockV2</span> <span class="kw">as</span> <span class="ident">EthereumBlock</span>, <span class="ident">TransactionV2</span> <span class="kw">as</span> <span class="ident">EthereumTransaction</span>};
 <span class="kw">use</span> <span class="ident">ethereum_types</span>::{<span class="ident">H256</span>, <span class="ident">U256</span>};
-<span class="kw">use</span> <span class="ident">futures</span>::{<span class="ident">FutureExt</span> <span class="kw">as</span> <span class="kw">_</span>, <span class="ident">SinkExt</span> <span class="kw">as</span> <span class="kw">_</span>, <span class="ident">StreamExt</span> <span class="kw">as</span> <span class="kw">_</span>};
-<span class="kw">use</span> <span class="ident">jsonrpc_core::Result</span> <span class="kw">as</span> <span class="ident">JsonRpcResult</span>;
-<span class="kw">use</span> <span class="ident">jsonrpc_pubsub</span>::{
-	<span class="ident">manager</span>::{<span class="ident">IdProvider</span>, <span class="ident">SubscriptionManager</span>},
-	<span class="ident">typed::Subscriber</span>,
-	<span class="ident">SubscriptionId</span>,
-};
-<span class="kw">use</span> <span class="ident">log::warn</span>;
-<span class="kw">use</span> <span class="ident">rand</span>::{<span class="ident">distributions::Alphanumeric</span>, <span class="ident">thread_rng</span>, <span class="ident">Rng</span>};
+<span class="kw">use</span> <span class="ident">futures</span>::{<span class="ident">FutureExt</span> <span class="kw">as</span> <span class="kw">_</span>, <span class="ident">StreamExt</span> <span class="kw">as</span> <span class="kw">_</span>};
+<span class="kw">use</span> <span class="ident">jsonrpsee::PendingSubscription</span>;
 
 <span class="kw">use</span> <span class="ident">sc_client_api</span>::{
 	<span class="ident">backend</span>::{<span class="ident">Backend</span>, <span class="ident">StateBackend</span>, <span class="ident">StorageProvider</span>},
 	<span class="ident">client::BlockchainEvents</span>,
 };
 <span class="kw">use</span> <span class="ident">sc_network</span>::{<span class="ident">ExHashT</span>, <span class="ident">NetworkService</span>};
-<span class="kw">use</span> <span class="ident">sc_rpc::Metadata</span>;
+<span class="kw">use</span> <span class="ident">sc_rpc::SubscriptionTaskExecutor</span>;
 <span class="kw">use</span> <span class="ident">sc_transaction_pool_api::TransactionPool</span>;
 <span class="kw">use</span> <span class="ident">sp_api</span>::{<span class="ident">ApiExt</span>, <span class="ident">BlockId</span>, <span class="ident">ProvideRuntimeApi</span>};
 <span class="kw">use</span> <span class="ident">sp_blockchain::HeaderBackend</span>;
@@ -551,34 +469,23 @@
 		<span class="ident">pubsub</span>::{<span class="ident">Kind</span>, <span class="ident">Params</span>, <span class="ident">PubSubSyncStatus</span>, <span class="prelude-ty">Result</span> <span class="kw">as</span> <span class="ident">PubSubResult</span>, <span class="ident">SyncStatusMetadata</span>},
 		<span class="ident">Bytes</span>, <span class="ident">FilteredParams</span>, <span class="ident">Header</span>, <span class="ident">Log</span>, <span class="ident">Rich</span>,
 	},
-	<span class="ident">EthPubSubApi</span>,
+	<span class="ident">EthPubSubApiServer</span>,
 };
 <span class="kw">use</span> <span class="ident">fp_rpc::EthereumRuntimeRPCApi</span>;
 
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">frontier_backend_client</span>, <span class="ident">overrides::OverrideHandle</span>};
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">Hash</span>, <span class="ident">Debug</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">HexEncodedIdProvider</span> {
-	<span class="ident">len</span>: <span class="ident">usize</span>,
-}
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">EthereumSubIdProvider</span>;
 
-<span class="kw">impl</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">HexEncodedIdProvider</span> {
-	<span class="kw">fn</span> <span class="ident">default</span>() -&gt; <span class="self">Self</span> {
-		<span class="self">Self</span> { <span class="ident">len</span>: <span class="number">16</span> }
-	}
-}
-
-<span class="kw">impl</span> <span class="ident">IdProvider</span> <span class="kw">for</span> <span class="ident">HexEncodedIdProvider</span> {
-	<span class="kw">type</span> <span class="ident">Id</span> <span class="op">=</span> <span class="ident">String</span>;
-	<span class="kw">fn</span> <span class="ident">next_id</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident"><span class="self">Self</span>::Id</span> {
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">rng</span> <span class="op">=</span> <span class="ident">thread_rng</span>();
-		<span class="kw">let</span> <span class="ident">id</span>: <span class="ident">String</span> <span class="op">=</span> <span class="ident">iter::repeat</span>(())
-			.<span class="ident">map</span>(<span class="op">|</span>()<span class="op">|</span> <span class="ident">rng</span>.<span class="ident">sample</span>(<span class="ident">Alphanumeric</span>))
-			.<span class="ident">map</span>(<span class="ident">char::from</span>)
-			.<span class="ident">take</span>(<span class="self">self</span>.<span class="ident">len</span>)
-			.<span class="ident">collect</span>();
-		<span class="kw">let</span> <span class="ident">out</span> <span class="op">=</span> <span class="ident">hex::encode</span>(<span class="ident">id</span>);
-		<span class="macro">format!</span>(<span class="string">&quot;0x{}&quot;</span>, <span class="ident">out</span>)
+<span class="kw">impl</span> <span class="ident">jsonrpsee::core::traits::IdProvider</span> <span class="kw">for</span> <span class="ident">EthereumSubIdProvider</span> {
+	<span class="kw">fn</span> <span class="ident">next_id</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">jsonrpsee::types::SubscriptionId</span><span class="op">&lt;</span><span class="lifetime">&#39;static</span><span class="op">&gt;</span> {
+		<span class="kw">use</span> <span class="ident">rustc_hex::ToHex</span> <span class="kw">as</span> <span class="kw">_</span>;
+		<span class="macro">format!</span>(
+			<span class="string">&quot;0x{}&quot;</span>,
+			<span class="ident">rand::random</span>::<span class="op">&lt;</span><span class="ident">u128</span><span class="op">&gt;</span>().<span class="ident">to_le_bytes</span>()[..].<span class="ident">to_hex</span>::<span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>()
+		)
+		.<span class="ident">into</span>()
 	}
 }
 
@@ -587,7 +494,7 @@
 	<span class="ident">pool</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">P</span><span class="op">&gt;</span>,
 	<span class="ident">client</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
 	<span class="ident">network</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">NetworkService</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">H</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-	<span class="ident">subscriptions</span>: <span class="ident">SubscriptionManager</span><span class="op">&lt;</span><span class="ident">HexEncodedIdProvider</span><span class="op">&gt;</span>,
+	<span class="ident">subscriptions</span>: <span class="ident">SubscriptionTaskExecutor</span>,
 	<span class="ident">overrides</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">OverrideHandle</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 	<span class="ident">starting_block</span>: <span class="ident">u64</span>,
 	<span class="ident">_marker</span>: <span class="ident">PhantomData</span><span class="op">&lt;</span><span class="ident">BE</span><span class="op">&gt;</span>,
@@ -601,7 +508,7 @@
 		<span class="ident">pool</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">P</span><span class="op">&gt;</span>,
 		<span class="ident">client</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
 		<span class="ident">network</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">NetworkService</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">H</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-		<span class="ident">subscriptions</span>: <span class="ident">SubscriptionManager</span><span class="op">&lt;</span><span class="ident">HexEncodedIdProvider</span><span class="op">&gt;</span>,
+		<span class="ident">subscriptions</span>: <span class="ident">SubscriptionTaskExecutor</span>,
 		<span class="ident">overrides</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">OverrideHandle</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 	) -&gt; <span class="self">Self</span> {
 		<span class="comment">// Capture the best block as seen on initialization. Used for syncing subscriptions.</span>
@@ -727,7 +634,7 @@
 	}
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">B</span>: <span class="ident">BlockT</span>, <span class="ident">P</span>, <span class="ident">C</span>, <span class="ident">BE</span>, <span class="ident">H</span>: <span class="ident">ExHashT</span><span class="op">&gt;</span> <span class="ident">EthPubSubApi</span> <span class="kw">for</span> <span class="ident">EthPubSub</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">P</span>, <span class="ident">C</span>, <span class="ident">BE</span>, <span class="ident">H</span><span class="op">&gt;</span>
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">B</span>: <span class="ident">BlockT</span>, <span class="ident">P</span>, <span class="ident">C</span>, <span class="ident">BE</span>, <span class="ident">H</span>: <span class="ident">ExHashT</span><span class="op">&gt;</span> <span class="ident">EthPubSubApiServer</span> <span class="kw">for</span> <span class="ident">EthPubSub</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">P</span>, <span class="ident">C</span>, <span class="ident">BE</span>, <span class="ident">H</span><span class="op">&gt;</span>
 <span class="kw">where</span>
 	<span class="ident">B</span>: <span class="ident">BlockT</span><span class="op">&lt;</span><span class="ident">Hash</span> <span class="op">=</span> <span class="ident">H256</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
 	<span class="ident">P</span>: <span class="ident">TransactionPool</span><span class="op">&lt;</span><span class="ident">Block</span> <span class="op">=</span> <span class="ident">B</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
@@ -737,14 +644,13 @@
 	<span class="ident">BE</span>: <span class="ident">Backend</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
 	<span class="ident">BE::State</span>: <span class="ident">StateBackend</span><span class="op">&lt;</span><span class="ident">BlakeTwo256</span><span class="op">&gt;</span>,
 {
-	<span class="kw">type</span> <span class="ident">Metadata</span> <span class="op">=</span> <span class="ident">Metadata</span>;
-	<span class="kw">fn</span> <span class="ident">subscribe</span>(
-		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		<span class="ident">_metadata</span>: <span class="ident"><span class="self">Self</span>::Metadata</span>,
-		<span class="ident">subscriber</span>: <span class="ident">Subscriber</span><span class="op">&lt;</span><span class="ident">PubSubResult</span><span class="op">&gt;</span>,
-		<span class="ident">kind</span>: <span class="ident">Kind</span>,
-		<span class="ident">params</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Params</span><span class="op">&gt;</span>,
-	) {
+	<span class="kw">fn</span> <span class="ident">subscribe</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">sink</span>: <span class="ident">PendingSubscription</span>, <span class="ident">kind</span>: <span class="ident">Kind</span>, <span class="ident">params</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Params</span><span class="op">&gt;</span>) {
+		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">sink</span> <span class="op">=</span> <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">sink</span>) <span class="op">=</span> <span class="ident">sink</span>.<span class="ident">accept</span>() {
+			<span class="ident">sink</span>
+		} <span class="kw">else</span> {
+			<span class="kw">return</span>;
+		};
+
 		<span class="kw">let</span> <span class="ident">filtered_params</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">params</span> {
 			<span class="prelude-val">Some</span>(<span class="ident">Params::Logs</span>(<span class="ident">filter</span>)) =&gt; <span class="ident">FilteredParams::new</span>(<span class="prelude-val">Some</span>(<span class="ident">filter</span>)),
 			<span class="kw">_</span> =&gt; <span class="ident">FilteredParams::default</span>(),
@@ -755,9 +661,9 @@
 		<span class="kw">let</span> <span class="ident">network</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">network</span>.<span class="ident">clone</span>();
 		<span class="kw">let</span> <span class="ident">overrides</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">overrides</span>.<span class="ident">clone</span>();
 		<span class="kw">let</span> <span class="ident">starting_block</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">starting_block</span>;
-		<span class="kw">match</span> <span class="ident">kind</span> {
-			<span class="ident">Kind::Logs</span> =&gt; {
-				<span class="self">self</span>.<span class="ident">subscriptions</span>.<span class="ident">add</span>(<span class="ident">subscriber</span>, <span class="op">|</span><span class="ident">sink</span><span class="op">|</span> {
+		<span class="kw">let</span> <span class="ident">fut</span> <span class="op">=</span> <span class="kw">async</span> <span class="kw">move</span> {
+			<span class="kw">match</span> <span class="ident">kind</span> {
+				<span class="ident">Kind::Logs</span> =&gt; {
 					<span class="kw">let</span> <span class="ident">stream</span> <span class="op">=</span> <span class="ident">client</span>
 						.<span class="ident">import_notification_stream</span>()
 						.<span class="ident">filter_map</span>(<span class="kw">move</span> <span class="op">|</span><span class="ident">notification</span><span class="op">|</span> {
@@ -794,20 +700,10 @@
 								<span class="kw-2">&amp;</span><span class="ident">filtered_params</span>,
 							))
 						})
-						.<span class="ident">map</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> {
-							<span class="prelude-val">Ok</span>::<span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">PubSubResult</span>, <span class="ident">jsonrpc_core::types::error::Error</span><span class="op">&gt;</span>, ()<span class="op">&gt;</span>(<span class="prelude-val">Ok</span>(
-								<span class="ident">PubSubResult::Log</span>(<span class="ident">Box::new</span>(<span class="ident">x</span>)),
-							))
-						});
-					<span class="ident">stream</span>
-						.<span class="ident">forward</span>(
-							<span class="ident">sink</span>.<span class="ident">sink_map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">warn!</span>(<span class="string">&quot;Error sending notifications: {:?}&quot;</span>, <span class="ident">e</span>)),
-						)
-						.<span class="ident">map</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> ())
-				});
-			}
-			<span class="ident">Kind::NewHeads</span> =&gt; {
-				<span class="self">self</span>.<span class="ident">subscriptions</span>.<span class="ident">add</span>(<span class="ident">subscriber</span>, <span class="op">|</span><span class="ident">sink</span><span class="op">|</span> {
+						.<span class="ident">map</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="ident">PubSubResult::Log</span>(<span class="ident">Box::new</span>(<span class="ident">x</span>)));
+					<span class="ident">sink</span>.<span class="ident">pipe_from_stream</span>(<span class="ident">stream</span>).<span class="kw">await</span>;
+				}
+				<span class="ident">Kind::NewHeads</span> =&gt; {
 					<span class="kw">let</span> <span class="ident">stream</span> <span class="op">=</span> <span class="ident">client</span>
 						.<span class="ident">import_notification_stream</span>()
 						.<span class="ident">filter_map</span>(<span class="kw">move</span> <span class="op">|</span><span class="ident">notification</span><span class="op">|</span> {
@@ -830,18 +726,12 @@
 								<span class="ident">futures::future::ready</span>(<span class="prelude-val">None</span>)
 							}
 						})
-						.<span class="ident">map</span>(<span class="op">|</span><span class="ident">block</span><span class="op">|</span> <span class="prelude-val">Ok</span>::<span class="op">&lt;</span><span class="kw">_</span>, ()<span class="op">&gt;</span>(<span class="prelude-val">Ok</span>(<span class="ident">SubscriptionResult::new</span>().<span class="ident">new_heads</span>(<span class="ident">block</span>))));
-					<span class="ident">stream</span>
-						.<span class="ident">forward</span>(
-							<span class="ident">sink</span>.<span class="ident">sink_map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">warn!</span>(<span class="string">&quot;Error sending notifications: {:?}&quot;</span>, <span class="ident">e</span>)),
-						)
-						.<span class="ident">map</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> ())
-				});
-			}
-			<span class="ident">Kind::NewPendingTransactions</span> =&gt; {
-				<span class="kw">use</span> <span class="ident">sc_transaction_pool_api::InPoolTransaction</span>;
+						.<span class="ident">map</span>(<span class="op">|</span><span class="ident">block</span><span class="op">|</span> <span class="ident">SubscriptionResult::new</span>().<span class="ident">new_heads</span>(<span class="ident">block</span>));
+					<span class="ident">sink</span>.<span class="ident">pipe_from_stream</span>(<span class="ident">stream</span>).<span class="kw">await</span>;
+				}
+				<span class="ident">Kind::NewPendingTransactions</span> =&gt; {
+					<span class="kw">use</span> <span class="ident">sc_transaction_pool_api::InPoolTransaction</span>;
 
-				<span class="self">self</span>.<span class="ident">subscriptions</span>.<span class="ident">add</span>(<span class="ident">subscriber</span>, <span class="kw">move</span> <span class="op">|</span><span class="ident">sink</span><span class="op">|</span> {
 					<span class="kw">let</span> <span class="ident">stream</span> <span class="op">=</span> <span class="ident">pool</span>
 						.<span class="ident">import_notification_stream</span>()
 						.<span class="ident">filter_map</span>(<span class="kw">move</span> <span class="op">|</span><span class="ident">txhash</span><span class="op">|</span> {
@@ -888,117 +778,77 @@
 								<span class="ident">futures::future::ready</span>(<span class="prelude-val">None</span>)
 							}
 						})
-						.<span class="ident">map</span>(<span class="op">|</span><span class="ident">transaction</span><span class="op">|</span> {
-							<span class="prelude-val">Ok</span>::<span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">PubSubResult</span>, <span class="ident">jsonrpc_core::types::error::Error</span><span class="op">&gt;</span>, ()<span class="op">&gt;</span>(<span class="prelude-val">Ok</span>(
-								<span class="ident">PubSubResult::TransactionHash</span>(<span class="ident">transaction</span>.<span class="ident">hash</span>()),
-							))
-						});
-					<span class="ident">stream</span>
-						.<span class="ident">forward</span>(
-							<span class="ident">sink</span>.<span class="ident">sink_map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">warn!</span>(<span class="string">&quot;Error sending notifications: {:?}&quot;</span>, <span class="ident">e</span>)),
-						)
-						.<span class="ident">map</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> ())
-				});
-			}
-			<span class="ident">Kind::Syncing</span> =&gt; {
-				<span class="self">self</span>.<span class="ident">subscriptions</span>.<span class="ident">add</span>(<span class="ident">subscriber</span>, <span class="op">|</span><span class="ident">sink</span><span class="op">|</span> {
-					<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">sink</span> <span class="op">=</span>
-						<span class="ident">sink</span>.<span class="ident">sink_map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">warn!</span>(<span class="string">&quot;Error sending notifications: {:?}&quot;</span>, <span class="ident">e</span>));
-
+						.<span class="ident">map</span>(<span class="op">|</span><span class="ident">transaction</span><span class="op">|</span> <span class="ident">PubSubResult::TransactionHash</span>(<span class="ident">transaction</span>.<span class="ident">hash</span>()));
+					<span class="ident">sink</span>.<span class="ident">pipe_from_stream</span>(<span class="ident">stream</span>).<span class="kw">await</span>;
+				}
+				<span class="ident">Kind::Syncing</span> =&gt; {
 					<span class="kw">let</span> <span class="ident">client</span> <span class="op">=</span> <span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span><span class="ident">client</span>);
 					<span class="kw">let</span> <span class="ident">network</span> <span class="op">=</span> <span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span><span class="ident">network</span>);
-					<span class="kw">async</span> <span class="kw">move</span> {
-						<span class="comment">// Gets the node syncing status.</span>
-						<span class="comment">// The response is expected to be serialized either as a plain boolean</span>
-						<span class="comment">// if the node is not syncing, or a structure containing syncing metadata</span>
-						<span class="comment">// in case it is.</span>
-						<span class="kw">async</span> <span class="kw">fn</span> <span class="ident">status</span><span class="op">&lt;</span>
-							<span class="ident">C</span>: <span class="ident">HeaderBackend</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span>,
-							<span class="ident">B</span>: <span class="ident">BlockT</span>,
-							<span class="ident">H</span>: <span class="ident">ExHashT</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span>,
-						<span class="op">&gt;</span>(
-							<span class="ident">client</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
-							<span class="ident">network</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">NetworkService</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">H</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-							<span class="ident">starting_block</span>: <span class="ident">u64</span>,
-						) -&gt; <span class="ident">PubSubSyncStatus</span> {
-							<span class="kw">if</span> <span class="ident">network</span>.<span class="ident">is_major_syncing</span>() {
-								<span class="comment">// Get the target block to sync.</span>
-								<span class="comment">// This value is only exposed through substrate async Api</span>
-								<span class="comment">// in the `NetworkService`.</span>
-								<span class="kw">let</span> <span class="ident">highest_block</span> <span class="op">=</span> <span class="ident">network</span>
-									.<span class="ident">status</span>()
-									.<span class="kw">await</span>
-									.<span class="ident">ok</span>()
-									.<span class="ident">and_then</span>(<span class="op">|</span><span class="ident">res</span><span class="op">|</span> <span class="ident">res</span>.<span class="ident">best_seen_block</span>)
-									.<span class="ident">map</span>(<span class="op">|</span><span class="ident">res</span><span class="op">|</span> {
-										<span class="ident">UniqueSaturatedInto</span>::<span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span><span class="ident">::unique_saturated_into</span>(<span class="ident">res</span>)
-									});
-								<span class="comment">// Best imported block.</span>
-								<span class="kw">let</span> <span class="ident">current_block</span> <span class="op">=</span>
-									<span class="ident">UniqueSaturatedInto</span>::<span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span><span class="ident">::unique_saturated_into</span>(
-										<span class="ident">client</span>.<span class="ident">info</span>().<span class="ident">best_number</span>,
-									);
+					<span class="comment">// Gets the node syncing status.</span>
+					<span class="comment">// The response is expected to be serialized either as a plain boolean</span>
+					<span class="comment">// if the node is not syncing, or a structure containing syncing metadata</span>
+					<span class="comment">// in case it is.</span>
+					<span class="kw">async</span> <span class="kw">fn</span> <span class="ident">status</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">HeaderBackend</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span>, <span class="ident">B</span>: <span class="ident">BlockT</span>, <span class="ident">H</span>: <span class="ident">ExHashT</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span><span class="op">&gt;</span>(
+						<span class="ident">client</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
+						<span class="ident">network</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">NetworkService</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">H</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+						<span class="ident">starting_block</span>: <span class="ident">u64</span>,
+					) -&gt; <span class="ident">PubSubSyncStatus</span> {
+						<span class="kw">if</span> <span class="ident">network</span>.<span class="ident">is_major_syncing</span>() {
+							<span class="comment">// Get the target block to sync.</span>
+							<span class="comment">// This value is only exposed through substrate async Api</span>
+							<span class="comment">// in the `NetworkService`.</span>
+							<span class="kw">let</span> <span class="ident">highest_block</span> <span class="op">=</span> <span class="ident">network</span>
+								.<span class="ident">status</span>()
+								.<span class="kw">await</span>
+								.<span class="ident">ok</span>()
+								.<span class="ident">and_then</span>(<span class="op">|</span><span class="ident">res</span><span class="op">|</span> <span class="ident">res</span>.<span class="ident">best_seen_block</span>)
+								.<span class="ident">map</span>(<span class="ident">UniqueSaturatedInto</span>::<span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span><span class="ident">::unique_saturated_into</span>);
+							<span class="comment">// Best imported block.</span>
+							<span class="kw">let</span> <span class="ident">current_block</span> <span class="op">=</span> <span class="ident">UniqueSaturatedInto</span>::<span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span><span class="ident">::unique_saturated_into</span>(
+								<span class="ident">client</span>.<span class="ident">info</span>().<span class="ident">best_number</span>,
+							);
 
-								<span class="ident">PubSubSyncStatus::Detailed</span>(<span class="ident">SyncStatusMetadata</span> {
-									<span class="ident">syncing</span>: <span class="bool-val">true</span>,
-									<span class="ident">starting_block</span>,
-									<span class="ident">current_block</span>,
-									<span class="ident">highest_block</span>,
-								})
-							} <span class="kw">else</span> {
-								<span class="ident">PubSubSyncStatus::Simple</span>(<span class="bool-val">false</span>)
-							}
+							<span class="ident">PubSubSyncStatus::Detailed</span>(<span class="ident">SyncStatusMetadata</span> {
+								<span class="ident">syncing</span>: <span class="bool-val">true</span>,
+								<span class="ident">starting_block</span>,
+								<span class="ident">current_block</span>,
+								<span class="ident">highest_block</span>,
+							})
+						} <span class="kw">else</span> {
+							<span class="ident">PubSubSyncStatus::Simple</span>(<span class="bool-val">false</span>)
 						}
-						<span class="comment">// On connection subscriber expects a value.</span>
-						<span class="comment">// Because import notifications are only emitted when the node is synced or</span>
-						<span class="comment">// in case of reorg, the first event is emited right away.</span>
-						<span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">sink</span>
-							.<span class="ident">feed</span>(<span class="prelude-val">Ok</span>(<span class="ident">PubSubResult::SyncState</span>(
-								<span class="ident">status</span>(<span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span><span class="ident">client</span>), <span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span><span class="ident">network</span>), <span class="ident">starting_block</span>)
-									.<span class="kw">await</span>,
-							)))
-							.<span class="kw">await</span>;
-
-						<span class="comment">// When the node is not under a major syncing (i.e. from genesis), react</span>
-						<span class="comment">// normally to import notifications.</span>
-						<span class="comment">//</span>
-						<span class="comment">// Only send new notifications down the pipe when the syncing status changed.</span>
-						<span class="ident">client</span>
-							.<span class="ident">import_notification_stream</span>()
-							.<span class="ident">fold</span>(
-								<span class="ident">network</span>.<span class="ident">is_major_syncing</span>(),
-								<span class="kw">move</span> <span class="op">|</span><span class="kw-2">mut</span> <span class="ident">last_syncing_status</span>, <span class="kw">_</span><span class="op">|</span> {
-									<span class="kw">let</span> <span class="ident">client</span> <span class="op">=</span> <span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span><span class="ident">client</span>);
-									<span class="kw">let</span> <span class="ident">network</span> <span class="op">=</span> <span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span><span class="ident">network</span>);
-									<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">sink</span> <span class="op">=</span> <span class="ident">sink</span>.<span class="ident">clone</span>();
-									<span class="kw">async</span> <span class="kw">move</span> {
-										<span class="kw">let</span> <span class="ident">syncing_status</span> <span class="op">=</span> <span class="ident">network</span>.<span class="ident">is_major_syncing</span>();
-										<span class="kw">if</span> <span class="ident">last_syncing_status</span> <span class="op">!</span><span class="op">=</span> <span class="ident">syncing_status</span> {
-											<span class="ident">last_syncing_status</span> <span class="op">=</span> <span class="ident">syncing_status</span>;
-											<span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">sink</span>
-												.<span class="ident">feed</span>(<span class="prelude-val">Ok</span>(<span class="ident">PubSubResult::SyncState</span>(
-													<span class="ident">status</span>(<span class="ident">client</span>, <span class="ident">network</span>, <span class="ident">starting_block</span>).<span class="kw">await</span>,
-												)))
-												.<span class="kw">await</span>;
-										}
-										<span class="ident">last_syncing_status</span>
-									}
-								},
-							)
-							.<span class="ident">map</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> ())
-							.<span class="kw">await</span>
 					}
-				});
+					<span class="comment">// On connection subscriber expects a value.</span>
+					<span class="comment">// Because import notifications are only emitted when the node is synced or</span>
+					<span class="comment">// in case of reorg, the first event is emited right away.</span>
+					<span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">sink</span>.<span class="ident">send</span>(<span class="kw-2">&amp;</span><span class="ident">PubSubResult::SyncState</span>(
+						<span class="ident">status</span>(<span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span><span class="ident">client</span>), <span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span><span class="ident">network</span>), <span class="ident">starting_block</span>).<span class="kw">await</span>,
+					));
+
+					<span class="comment">// When the node is not under a major syncing (i.e. from genesis), react</span>
+					<span class="comment">// normally to import notifications.</span>
+					<span class="comment">//</span>
+					<span class="comment">// Only send new notifications down the pipe when the syncing status changed.</span>
+					<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">stream</span> <span class="op">=</span> <span class="ident">client</span>.<span class="ident">clone</span>().<span class="ident">import_notification_stream</span>();
+					<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">last_syncing_status</span> <span class="op">=</span> <span class="ident">network</span>.<span class="ident">is_major_syncing</span>();
+					<span class="kw">while</span> (<span class="ident">stream</span>.<span class="ident">next</span>().<span class="kw">await</span>).<span class="ident">is_some</span>() {
+						<span class="kw">let</span> <span class="ident">syncing_status</span> <span class="op">=</span> <span class="ident">network</span>.<span class="ident">is_major_syncing</span>();
+						<span class="kw">if</span> <span class="ident">syncing_status</span> <span class="op">!</span><span class="op">=</span> <span class="ident">last_syncing_status</span> {
+							<span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">sink</span>.<span class="ident">send</span>(<span class="kw-2">&amp;</span><span class="ident">PubSubResult::SyncState</span>(
+								<span class="ident">status</span>(<span class="ident">client</span>.<span class="ident">clone</span>(), <span class="ident">network</span>.<span class="ident">clone</span>(), <span class="ident">starting_block</span>).<span class="kw">await</span>,
+							));
+						}
+						<span class="ident">last_syncing_status</span> <span class="op">=</span> <span class="ident">syncing_status</span>;
+					}
+				}
 			}
 		}
-	}
-
-	<span class="kw">fn</span> <span class="ident">unsubscribe</span>(
-		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		<span class="ident">_metadata</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Metadata</span><span class="op">&gt;</span>,
-		<span class="ident">subscription_id</span>: <span class="ident">SubscriptionId</span>,
-	) -&gt; <span class="ident">JsonRpcResult</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span> {
-		<span class="prelude-val">Ok</span>(<span class="self">self</span>.<span class="ident">subscriptions</span>.<span class="ident">cancel</span>(<span class="ident">subscription_id</span>))
+		.<span class="ident">boxed</span>();
+		<span class="self">self</span>.<span class="ident">subscriptions</span>.<span class="ident">spawn</span>(
+			<span class="string">&quot;frontier-rpc-subscription&quot;</span>,
+			<span class="prelude-val">Some</span>(<span class="string">&quot;rpc&quot;</span>),
+			<span class="ident">fut</span>.<span class="ident">map</span>(<span class="ident">drop</span>).<span class="ident">boxed</span>(),
+		);
 	}
 }
 </code></pre></div>

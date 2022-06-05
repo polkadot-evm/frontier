@@ -492,13 +492,6 @@
 <span id="487">487</span>
 <span id="488">488</span>
 <span id="489">489</span>
-<span id="490">490</span>
-<span id="491">491</span>
-<span id="492">492</span>
-<span id="493">493</span>
-<span id="494">494</span>
-<span id="495">495</span>
-<span id="496">496</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -532,8 +525,7 @@
 
 <span class="kw">use</span> <span class="ident">ethereum</span>::{<span class="ident">BlockV2</span> <span class="kw">as</span> <span class="ident">EthereumBlock</span>, <span class="ident">TransactionV2</span> <span class="kw">as</span> <span class="ident">EthereumTransaction</span>};
 <span class="kw">use</span> <span class="ident">ethereum_types</span>::{<span class="ident">H160</span>, <span class="ident">H256</span>, <span class="ident">H512</span>, <span class="ident">H64</span>, <span class="ident">U256</span>, <span class="ident">U64</span>};
-<span class="kw">use</span> <span class="ident">futures::future::BoxFuture</span>;
-<span class="kw">use</span> <span class="ident">jsonrpc_core::Result</span>;
+<span class="kw">use</span> <span class="ident">jsonrpsee::core</span>::{<span class="ident">async_trait</span>, <span class="ident">RpcResult</span> <span class="kw">as</span> <span class="prelude-ty">Result</span>};
 
 <span class="kw">use</span> <span class="ident">sc_client_api::backend</span>::{<span class="ident">Backend</span>, <span class="ident">StateBackend</span>, <span class="ident">StorageProvider</span>};
 <span class="kw">use</span> <span class="ident">sc_network</span>::{<span class="ident">ExHashT</span>, <span class="ident">NetworkService</span>};
@@ -548,7 +540,7 @@
 	<span class="ident">traits</span>::{<span class="ident">BlakeTwo256</span>, <span class="ident">Block</span> <span class="kw">as</span> <span class="ident">BlockT</span>, <span class="ident">UniqueSaturatedInto</span>},
 };
 
-<span class="kw">use</span> <span class="ident">fc_rpc_core</span>::{<span class="ident">types</span>::<span class="kw-2">*</span>, <span class="ident">EthApi</span>};
+<span class="kw">use</span> <span class="ident">fc_rpc_core</span>::{<span class="ident">types</span>::<span class="kw-2">*</span>, <span class="ident">EthApiServer</span>};
 <span class="kw">use</span> <span class="ident">fp_rpc</span>::{<span class="ident">ConvertTransactionRuntimeApi</span>, <span class="ident">EthereumRuntimeRPCApi</span>, <span class="ident">TransactionStatus</span>};
 
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">internal_err</span>, <span class="ident">overrides::OverrideHandle</span>, <span class="ident">public_key</span>, <span class="ident">signer::EthSigner</span>};
@@ -608,7 +600,8 @@
 	}
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">CT</span>, <span class="ident">BE</span>, <span class="ident">H</span>: <span class="ident">ExHashT</span>, <span class="ident">A</span><span class="op">&gt;</span> <span class="ident">EthApi</span> <span class="kw">for</span> <span class="ident">Eth</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">CT</span>, <span class="ident">BE</span>, <span class="ident">H</span>, <span class="ident">A</span><span class="op">&gt;</span>
+<span class="attribute">#[<span class="ident">async_trait</span>]</span>
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">CT</span>, <span class="ident">BE</span>, <span class="ident">H</span>: <span class="ident">ExHashT</span>, <span class="ident">A</span><span class="op">&gt;</span> <span class="ident">EthApiServer</span> <span class="kw">for</span> <span class="ident">Eth</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">CT</span>, <span class="ident">BE</span>, <span class="ident">H</span>, <span class="ident">A</span><span class="op">&gt;</span>
 <span class="kw">where</span>
 	<span class="ident">B</span>: <span class="ident">BlockT</span><span class="op">&lt;</span><span class="ident">Hash</span> <span class="op">=</span> <span class="ident">H256</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
 	<span class="ident">C</span>: <span class="ident">ProvideRuntimeApi</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">StorageProvider</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">BE</span><span class="op">&gt;</span>,
@@ -652,20 +645,12 @@
 	<span class="comment">// Block</span>
 	<span class="comment">// ########################################################################</span>
 
-	<span class="kw">fn</span> <span class="ident">block_by_hash</span>(
-		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		<span class="ident">hash</span>: <span class="ident">H256</span>,
-		<span class="ident">full</span>: <span class="ident">bool</span>,
-	) -&gt; <span class="ident">BoxFuture</span><span class="op">&lt;</span><span class="lifetime">&#39;static</span>, <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">RichBlock</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-		<span class="self">self</span>.<span class="ident">block_by_hash</span>(<span class="ident">hash</span>, <span class="ident">full</span>)
+	<span class="kw">async</span> <span class="kw">fn</span> <span class="ident">block_by_hash</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">hash</span>: <span class="ident">H256</span>, <span class="ident">full</span>: <span class="ident">bool</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">RichBlock</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+		<span class="self">self</span>.<span class="ident">block_by_hash</span>(<span class="ident">hash</span>, <span class="ident">full</span>).<span class="kw">await</span>
 	}
 
-	<span class="kw">fn</span> <span class="ident">block_by_number</span>(
-		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		<span class="ident">number</span>: <span class="ident">BlockNumber</span>,
-		<span class="ident">full</span>: <span class="ident">bool</span>,
-	) -&gt; <span class="ident">BoxFuture</span><span class="op">&lt;</span><span class="lifetime">&#39;static</span>, <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">RichBlock</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-		<span class="self">self</span>.<span class="ident">block_by_number</span>(<span class="ident">number</span>, <span class="ident">full</span>)
+	<span class="kw">async</span> <span class="kw">fn</span> <span class="ident">block_by_number</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">number</span>: <span class="ident">BlockNumber</span>, <span class="ident">full</span>: <span class="ident">bool</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">RichBlock</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+		<span class="self">self</span>.<span class="ident">block_by_number</span>(<span class="ident">number</span>, <span class="ident">full</span>).<span class="kw">await</span>
 	}
 
 	<span class="kw">fn</span> <span class="ident">block_transaction_count_by_hash</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">hash</span>: <span class="ident">H256</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span><span class="op">&gt;</span> {
@@ -700,28 +685,29 @@
 	<span class="comment">// Transaction</span>
 	<span class="comment">// ########################################################################</span>
 
-	<span class="kw">fn</span> <span class="ident">transaction_by_hash</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">hash</span>: <span class="ident">H256</span>) -&gt; <span class="ident">BoxFuture</span><span class="op">&lt;</span><span class="lifetime">&#39;static</span>, <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Transaction</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-		<span class="self">self</span>.<span class="ident">transaction_by_hash</span>(<span class="ident">hash</span>)
+	<span class="kw">async</span> <span class="kw">fn</span> <span class="ident">transaction_by_hash</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">hash</span>: <span class="ident">H256</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Transaction</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+		<span class="self">self</span>.<span class="ident">transaction_by_hash</span>(<span class="ident">hash</span>).<span class="kw">await</span>
 	}
 
-	<span class="kw">fn</span> <span class="ident">transaction_by_block_hash_and_index</span>(
+	<span class="kw">async</span> <span class="kw">fn</span> <span class="ident">transaction_by_block_hash_and_index</span>(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		<span class="ident">hash</span>: <span class="ident">H256</span>,
 		<span class="ident">index</span>: <span class="ident">Index</span>,
-	) -&gt; <span class="ident">BoxFuture</span><span class="op">&lt;</span><span class="lifetime">&#39;static</span>, <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Transaction</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-		<span class="self">self</span>.<span class="ident">transaction_by_block_hash_and_index</span>(<span class="ident">hash</span>, <span class="ident">index</span>)
+	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Transaction</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+		<span class="self">self</span>.<span class="ident">transaction_by_block_hash_and_index</span>(<span class="ident">hash</span>, <span class="ident">index</span>).<span class="kw">await</span>
 	}
 
-	<span class="kw">fn</span> <span class="ident">transaction_by_block_number_and_index</span>(
+	<span class="kw">async</span> <span class="kw">fn</span> <span class="ident">transaction_by_block_number_and_index</span>(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		<span class="ident">number</span>: <span class="ident">BlockNumber</span>,
 		<span class="ident">index</span>: <span class="ident">Index</span>,
-	) -&gt; <span class="ident">BoxFuture</span><span class="op">&lt;</span><span class="lifetime">&#39;static</span>, <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Transaction</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Transaction</span><span class="op">&gt;</span><span class="op">&gt;</span> {
 		<span class="self">self</span>.<span class="ident">transaction_by_block_number_and_index</span>(<span class="ident">number</span>, <span class="ident">index</span>)
+			.<span class="kw">await</span>
 	}
 
-	<span class="kw">fn</span> <span class="ident">transaction_receipt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">hash</span>: <span class="ident">H256</span>) -&gt; <span class="ident">BoxFuture</span><span class="op">&lt;</span><span class="lifetime">&#39;static</span>, <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Receipt</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-		<span class="self">self</span>.<span class="ident">transaction_receipt</span>(<span class="ident">hash</span>)
+	<span class="kw">async</span> <span class="kw">fn</span> <span class="ident">transaction_receipt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">hash</span>: <span class="ident">H256</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Receipt</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+		<span class="self">self</span>.<span class="ident">transaction_receipt</span>(<span class="ident">hash</span>).<span class="kw">await</span>
 	}
 
 	<span class="comment">// ########################################################################</span>
@@ -752,12 +738,12 @@
 		<span class="self">self</span>.<span class="ident">call</span>(<span class="ident">request</span>, <span class="ident">number</span>)
 	}
 
-	<span class="kw">fn</span> <span class="ident">estimate_gas</span>(
+	<span class="kw">async</span> <span class="kw">fn</span> <span class="ident">estimate_gas</span>(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		<span class="ident">request</span>: <span class="ident">CallRequest</span>,
 		<span class="ident">number</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">BlockNumber</span><span class="op">&gt;</span>,
-	) -&gt; <span class="ident">BoxFuture</span><span class="op">&lt;</span><span class="lifetime">&#39;static</span>, <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-		<span class="self">self</span>.<span class="ident">estimate_gas</span>(<span class="ident">request</span>, <span class="ident">number</span>)
+	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span> {
+		<span class="self">self</span>.<span class="ident">estimate_gas</span>(<span class="ident">request</span>, <span class="ident">number</span>).<span class="kw">await</span>
 	}
 
 	<span class="comment">// ########################################################################</span>
@@ -809,12 +795,12 @@
 	<span class="comment">// Submit</span>
 	<span class="comment">// ########################################################################</span>
 
-	<span class="kw">fn</span> <span class="ident">send_transaction</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">request</span>: <span class="ident">TransactionRequest</span>) -&gt; <span class="ident">BoxFuture</span><span class="op">&lt;</span><span class="lifetime">&#39;static</span>, <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-		<span class="self">self</span>.<span class="ident">send_transaction</span>(<span class="ident">request</span>)
+	<span class="kw">async</span> <span class="kw">fn</span> <span class="ident">send_transaction</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">request</span>: <span class="ident">TransactionRequest</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span> {
+		<span class="self">self</span>.<span class="ident">send_transaction</span>(<span class="ident">request</span>).<span class="kw">await</span>
 	}
 
-	<span class="kw">fn</span> <span class="ident">send_raw_transaction</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">bytes</span>: <span class="ident">Bytes</span>) -&gt; <span class="ident">BoxFuture</span><span class="op">&lt;</span><span class="lifetime">&#39;static</span>, <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-		<span class="self">self</span>.<span class="ident">send_raw_transaction</span>(<span class="ident">bytes</span>)
+	<span class="kw">async</span> <span class="kw">fn</span> <span class="ident">send_raw_transaction</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">bytes</span>: <span class="ident">Bytes</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span> {
+		<span class="self">self</span>.<span class="ident">send_raw_transaction</span>(<span class="ident">bytes</span>).<span class="kw">await</span>
 	}
 }
 
