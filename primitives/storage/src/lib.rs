@@ -26,6 +26,7 @@ pub const PALLET_ETHEREUM_SCHEMA_CACHE: &[u8] = b":ethereum_schema_cache";
 
 /// The schema version for Pallet Ethereum's storage
 #[derive(Clone, Copy, Debug, Encode, Decode, PartialEq, Eq, PartialOrd, Ord)]
+#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub enum EthereumStorageSchema {
 	Undefined,
 	V1,
