@@ -17,7 +17,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use ethereum_types::{H256, H64, U256};
-use jsonrpc_core::Result;
+use jsonrpsee::core::RpcResult as Result;
 
 use sc_network::ExHashT;
 use sc_transaction_pool::ChainApi;

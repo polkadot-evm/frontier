@@ -89,11 +89,8 @@ mod tests {
 
 		// Expect: only genesis block is cached to schema V1.
 		assert_eq!(
-			frontier_backend_client::load_cached_schema::<_>(frontier_backend.as_ref()),
-			Ok(Some(vec![(
-				EthereumStorageSchema::V1,
-				client.genesis_hash()
-			)]))
+			frontier_backend_client::load_cached_schema::<_>(frontier_backend.as_ref()).unwrap(),
+			Some(vec![(EthereumStorageSchema::V1, client.genesis_hash())])
 		);
 
 		// Create another block and push a schema change (V2).
@@ -113,11 +110,11 @@ mod tests {
 
 		// Expect: genesis still cached (V1), latest block cached (V2)
 		assert_eq!(
-			frontier_backend_client::load_cached_schema::<_>(frontier_backend.as_ref()),
-			Ok(Some(vec![
+			frontier_backend_client::load_cached_schema::<_>(frontier_backend.as_ref()).unwrap(),
+			Some(vec![
 				(EthereumStorageSchema::V1, client.genesis_hash()),
 				(EthereumStorageSchema::V2, block_hash)
-			]))
+			])
 		);
 	}
 
@@ -172,11 +169,11 @@ mod tests {
 
 		// Expect: genesis with schema V1, A2 with schema V2.
 		assert_eq!(
-			frontier_backend_client::load_cached_schema::<_>(frontier_backend.as_ref()),
-			Ok(Some(vec![
+			frontier_backend_client::load_cached_schema::<_>(frontier_backend.as_ref()).unwrap(),
+			Some(vec![
 				(EthereumStorageSchema::V1, client.genesis_hash()),
 				(EthereumStorageSchema::V2, a2_hash)
-			]))
+			])
 		);
 
 		// A1 -> B2. A new block on top of A1.
@@ -207,11 +204,11 @@ mod tests {
 
 		// Expect: A2 to be retracted, genesis with schema V1, B3 with schema V2.
 		assert_eq!(
-			frontier_backend_client::load_cached_schema::<_>(frontier_backend.as_ref()),
-			Ok(Some(vec![
+			frontier_backend_client::load_cached_schema::<_>(frontier_backend.as_ref()).unwrap(),
+			Some(vec![
 				(EthereumStorageSchema::V1, client.genesis_hash()),
 				(EthereumStorageSchema::V2, b3_hash)
-			]))
+			])
 		);
 
 		// A1 -> C2, a wild new block on top of A1.
@@ -235,11 +232,11 @@ mod tests {
 		// Expect: genesis with schema V1, B3 still with schema V2.
 		// C2 still not best block and not cached.
 		assert_eq!(
-			frontier_backend_client::load_cached_schema::<_>(frontier_backend.as_ref()),
-			Ok(Some(vec![
+			frontier_backend_client::load_cached_schema::<_>(frontier_backend.as_ref()).unwrap(),
+			Some(vec![
 				(EthereumStorageSchema::V1, client.genesis_hash()),
 				(EthereumStorageSchema::V2, b3_hash)
-			]))
+			])
 		);
 
 		// Make C2 branch the longest chain.
@@ -266,11 +263,11 @@ mod tests {
 		// Expect: B2 branch to be retracted, genesis with schema V1, C2 with schema V2.
 		// C4 became new best, chain reorged, we expect the C2 ancestor to be cached.
 		assert_eq!(
-			frontier_backend_client::load_cached_schema::<_>(frontier_backend.as_ref()),
-			Ok(Some(vec![
+			frontier_backend_client::load_cached_schema::<_>(frontier_backend.as_ref()).unwrap(),
+			Some(vec![
 				(EthereumStorageSchema::V1, client.genesis_hash()),
 				(EthereumStorageSchema::V2, c2_hash)
-			]))
+			])
 		);
 	}
 }

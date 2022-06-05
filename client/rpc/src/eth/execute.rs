@@ -20,7 +20,7 @@ use std::sync::Arc;
 
 use ethereum_types::{H256, U256};
 use evm::{ExitError, ExitReason};
-use jsonrpc_core::{BoxFuture, Error, ErrorCode, Result, Value};
+use jsonrpsee::core::RpcResult as Result;
 
 use sc_client_api::backend::{Backend, StateBackend, StorageProvider};
 use sc_network::ExHashT;
@@ -42,7 +42,7 @@ use crate::{
 };
 
 /// Default JSONRPC error code return by geth
-pub const JSON_RPC_ERROR_DEFAULT: i64 = -32000;
+pub const JSON_RPC_ERROR_DEFAULT: i32 = -32000;
 
 impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi> Eth<B, C, P, CT, BE, H, A>
 where
@@ -93,11 +93,7 @@ where
 		};
 
 		if let Ok(BlockStatus::Unknown) = self.client.status(id) {
-			return Err(Error {
-				code: JSON_RPC_ERROR_DEFAULT.into(),
-				message: String::from("header not found"),
-				data: None,
-			});
+			return Err(crate::err(JSON_RPC_ERROR_DEFAULT, "header not found", None));
 		}
 
 		let api_version =
@@ -283,93 +279,87 @@ where
 		}
 	}
 
-	pub fn estimate_gas(
-		&self,
-		request: CallRequest,
-		_: Option<BlockNumber>,
-	) -> BoxFuture<Result<U256>> {
+	pub async fn estimate_gas(&self, request: CallRequest, _: Option<BlockNumber>) -> Result<U256> {
 		let client = Arc::clone(&self.client);
 		let block_data_cache = Arc::clone(&self.block_data_cache);
 
-		Box::pin(async move {
-			// Define the lower bound of estimate
-			const MIN_GAS_PER_TX: U256 = U256([21_000, 0, 0, 0]);
+		// Define the lower bound of estimate
+		const MIN_GAS_PER_TX: U256 = U256([21_000, 0, 0, 0]);
 
-			// Get best hash (TODO missing support for estimating gas historically)
-			let best_hash = client.info().best_hash;
+		// Get best hash (TODO missing support for estimating gas historically)
+		let best_hash = client.info().best_hash;
 
-			// For simple transfer to simple account, return MIN_GAS_PER_TX directly
-			let is_simple_transfer = match &request.data {
-				None => true,
-				Some(vec) => vec.0.is_empty(),
-			};
-			if is_simple_transfer {
-				if let Some(to) = request.to {
-					let to_code = client
-						.runtime_api()
-						.account_code_at(&BlockId::Hash(best_hash), to)
-						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?;
-					if to_code.is_empty() {
-						return Ok(MIN_GAS_PER_TX);
-					}
+		// For simple transfer to simple account, return MIN_GAS_PER_TX directly
+		let is_simple_transfer = match &request.data {
+			None => true,
+			Some(vec) => vec.0.is_empty(),
+		};
+		if is_simple_transfer {
+			if let Some(to) = request.to {
+				let to_code = client
+					.runtime_api()
+					.account_code_at(&BlockId::Hash(best_hash), to)
+					.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?;
+				if to_code.is_empty() {
+					return Ok(MIN_GAS_PER_TX);
 				}
 			}
+		}
 
-			let (gas_price, max_fee_per_gas, max_priority_fee_per_gas) = {
-				let details = fee_details(
-					request.gas_price,
-					request.max_fee_per_gas,
-					request.max_priority_fee_per_gas,
-				)?;
-				(
-					details.gas_price,
-					details.max_fee_per_gas,
-					details.max_priority_fee_per_gas,
-				)
-			};
+		let (gas_price, max_fee_per_gas, max_priority_fee_per_gas) = {
+			let details = fee_details(
+				request.gas_price,
+				request.max_fee_per_gas,
+				request.max_priority_fee_per_gas,
+			)?;
+			(
+				details.gas_price,
+				details.max_fee_per_gas,
+				details.max_priority_fee_per_gas,
+			)
+		};
 
-			let get_current_block_gas_limit = || async {
-				let substrate_hash = client.info().best_hash;
-				let id = BlockId::Hash(substrate_hash);
-				let schema =
-					frontier_backend_client::onchain_storage_schema::<B, C, BE>(&client, id);
-				let block = block_data_cache.current_block(schema, substrate_hash).await;
-				if let Some(block) = block {
-					Ok(block.header.gas_limit)
-				} else {
-					Err(internal_err("block unavailable, cannot query gas limit"))
-				}
-			};
+		let get_current_block_gas_limit = || async {
+			let substrate_hash = client.info().best_hash;
+			let id = BlockId::Hash(substrate_hash);
+			let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(&client, id);
+			let block = block_data_cache.current_block(schema, substrate_hash).await;
+			if let Some(block) = block {
+				Ok(block.header.gas_limit)
+			} else {
+				Err(internal_err("block unavailable, cannot query gas limit"))
+			}
+		};
 
-			// Determine the highest possible gas limits
-			let mut highest = match request.gas {
-				Some(gas) => gas,
-				None => {
-					// query current block's gas limit
-					get_current_block_gas_limit().await?
-				}
-			};
+		// Determine the highest possible gas limits
+		let mut highest = match request.gas {
+			Some(gas) => gas,
+			None => {
+				// query current block's gas limit
+				get_current_block_gas_limit().await?
+			}
+		};
 
-			let api = client.runtime_api();
+		let api = client.runtime_api();
 
-			// Recap the highest gas allowance with account's balance.
-			if let Some(from) = request.from {
-				let gas_price = gas_price.unwrap_or_default();
-				if gas_price > U256::zero() {
-					let balance = api
-						.account_basic(&BlockId::Hash(best_hash), from)
-						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
-						.balance;
-					let mut available = balance;
-					if let Some(value) = request.value {
-						if value > available {
-							return Err(internal_err("insufficient funds for transfer"));
-						}
-						available -= value;
+		// Recap the highest gas allowance with account's balance.
+		if let Some(from) = request.from {
+			let gas_price = gas_price.unwrap_or_default();
+			if gas_price > U256::zero() {
+				let balance = api
+					.account_basic(&BlockId::Hash(best_hash), from)
+					.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
+					.balance;
+				let mut available = balance;
+				if let Some(value) = request.value {
+					if value > available {
+						return Err(internal_err("insufficient funds for transfer"));
 					}
-					let allowance = available / gas_price;
-					if highest > allowance {
-						log::warn!(
+					available -= value;
+				}
+				let allowance = available / gas_price;
+				if highest > allowance {
+					log::warn!(
 							"Gas estimation capped by limited funds original {} balance {} sent {} feecap {} fundable {}",
 							highest,
 							balance,
@@ -377,29 +367,29 @@ where
 							gas_price,
 							allowance
 						);
-						highest = allowance;
-					}
+					highest = allowance;
 				}
 			}
+		}
 
-			struct ExecutableResult {
-				data: Vec<u8>,
-				exit_reason: ExitReason,
-				used_gas: U256,
-			}
+		struct ExecutableResult {
+			data: Vec<u8>,
+			exit_reason: ExitReason,
+			used_gas: U256,
+		}
 
-			// Create a helper to check if a gas allowance results in an executable transaction.
-			//
-			// A new ApiRef instance needs to be used per execution to avoid the overlayed state to affect
-			// the estimation result of subsequent calls.
-			//
-			// Note that this would have a performance penalty if we introduce gas estimation for past
-			// blocks - and thus, past runtime versions. Substrate has a default `runtime_cache_size` of
-			// 2 slots LRU-style, meaning if users were to access multiple runtime versions in a short period
-			// of time, the RPC response time would degrade a lot, as the VersionedRuntime needs to be compiled.
-			//
-			// To solve that, and if we introduce historical gas estimation, we'd need to increase that default.
-			#[rustfmt::skip]
+		// Create a helper to check if a gas allowance results in an executable transaction.
+		//
+		// A new ApiRef instance needs to be used per execution to avoid the overlayed state to affect
+		// the estimation result of subsequent calls.
+		//
+		// Note that this would have a performance penalty if we introduce gas estimation for past
+		// blocks - and thus, past runtime versions. Substrate has a default `runtime_cache_size` of
+		// 2 slots LRU-style, meaning if users were to access multiple runtime versions in a short period
+		// of time, the RPC response time would degrade a lot, as the VersionedRuntime needs to be compiled.
+		//
+		// To solve that, and if we introduce historical gas estimation, we'd need to increase that default.
+		#[rustfmt::skip]
 			let executable = move |
 				request, gas_limit, api_version, api: sp_api::ApiRef<'_, C::Api>, estimate_mode
 			| -> Result<ExecutableResult> {
@@ -546,124 +536,123 @@ where
 					used_gas,
 				})
 			};
-			let api_version = if let Ok(Some(api_version)) =
-				client
-					.runtime_api()
-					.api_version::<dyn EthereumRuntimeRPCApi<B>>(&BlockId::Hash(best_hash))
-			{
-				api_version
-			} else {
-				return Err(internal_err("failed to retrieve Runtime Api version"));
-			};
+		let api_version = if let Ok(Some(api_version)) =
+			client
+				.runtime_api()
+				.api_version::<dyn EthereumRuntimeRPCApi<B>>(&BlockId::Hash(best_hash))
+		{
+			api_version
+		} else {
+			return Err(internal_err("failed to retrieve Runtime Api version"));
+		};
 
-			// Verify that the transaction succeed with highest capacity
-			let cap = highest;
-			let estimate_mode = !cfg!(feature = "rpc_binary_search_estimate");
-			let ExecutableResult {
-				data,
-				exit_reason,
-				used_gas,
-			} = executable(
-				request.clone(),
-				highest,
-				api_version,
-				client.runtime_api(),
-				estimate_mode,
-			)?;
-			match exit_reason {
-				ExitReason::Succeed(_) => (),
-				ExitReason::Error(ExitError::OutOfGas) => {
-					return Err(internal_err(format!(
-						"gas required exceeds allowance {}",
-						cap
-					)))
-				}
-				// If the transaction reverts, there are two possible cases,
-				// it can revert because the called contract feels that it does not have enough
-				// gas left to continue, or it can revert for another reason unrelated to gas.
-				ExitReason::Revert(revert) => {
-					if request.gas.is_some() || request.gas_price.is_some() {
-						// If the user has provided a gas limit or a gas price, then we have executed
-						// with less block gas limit, so we must reexecute with block gas limit to
-						// know if the revert is due to a lack of gas or not.
-						let ExecutableResult {
-							data,
-							exit_reason,
-							used_gas: _,
-						} = executable(
-							request.clone(),
-							get_current_block_gas_limit().await?,
-							api_version,
-							client.runtime_api(),
-							estimate_mode,
-						)?;
-						match exit_reason {
-							ExitReason::Succeed(_) => {
-								return Err(internal_err(format!(
-									"gas required exceeds allowance {}",
-									cap
-								)))
-							}
-							// The execution has been done with block gas limit, so it is not a lack of gas from the user.
-							other => error_on_execution_failure(&other, &data)?,
-						}
-					} else {
-						// The execution has already been done with block gas limit, so it is not a lack of gas from the user.
-						error_on_execution_failure(&ExitReason::Revert(revert), &data)?
-					}
-				}
-				other => error_on_execution_failure(&other, &data)?,
-			};
-
-			#[cfg(not(feature = "rpc_binary_search_estimate"))]
-			{
-				Ok(used_gas)
+		// Verify that the transaction succeed with highest capacity
+		let cap = highest;
+		let estimate_mode = !cfg!(feature = "rpc_binary_search_estimate");
+		let ExecutableResult {
+			data,
+			exit_reason,
+			used_gas,
+		} = executable(
+			request.clone(),
+			highest,
+			api_version,
+			client.runtime_api(),
+			estimate_mode,
+		)?;
+		match exit_reason {
+			ExitReason::Succeed(_) => (),
+			ExitReason::Error(ExitError::OutOfGas) => {
+				return Err(internal_err(format!(
+					"gas required exceeds allowance {}",
+					cap
+				)))
 			}
-			#[cfg(feature = "rpc_binary_search_estimate")]
-			{
-				// On binary search, evm estimate mode is disabled
-				let estimate_mode = false;
-				// Define the lower bound of the binary search
-				let mut lowest = MIN_GAS_PER_TX;
-
-				// Start close to the used gas for faster binary search
-				let mut mid = std::cmp::min(used_gas * 3, (highest + lowest) / 2);
-
-				// Execute the binary search and hone in on an executable gas limit.
-				let mut previous_highest = highest;
-				while (highest - lowest) > U256::one() {
+			// If the transaction reverts, there are two possible cases,
+			// it can revert because the called contract feels that it does not have enough
+			// gas left to continue, or it can revert for another reason unrelated to gas.
+			ExitReason::Revert(revert) => {
+				if request.gas.is_some() || request.gas_price.is_some() {
+					// If the user has provided a gas limit or a gas price, then we have executed
+					// with less block gas limit, so we must reexecute with block gas limit to
+					// know if the revert is due to a lack of gas or not.
 					let ExecutableResult {
 						data,
 						exit_reason,
 						used_gas: _,
 					} = executable(
 						request.clone(),
-						mid,
+						get_current_block_gas_limit().await?,
 						api_version,
 						client.runtime_api(),
 						estimate_mode,
 					)?;
 					match exit_reason {
 						ExitReason::Succeed(_) => {
-							highest = mid;
-							// If the variation in the estimate is less than 10%,
-							// then the estimate is considered sufficiently accurate.
-							if (previous_highest - highest) * 10 / previous_highest < U256::one() {
-								return Ok(highest);
-							}
-							previous_highest = highest;
+							return Err(internal_err(format!(
+								"gas required exceeds allowance {}",
+								cap
+							)))
 						}
-						ExitReason::Revert(_) | ExitReason::Error(ExitError::OutOfGas) => {
-							lowest = mid;
-						}
+						// The execution has been done with block gas limit, so it is not a lack of gas from the user.
 						other => error_on_execution_failure(&other, &data)?,
 					}
-					mid = (highest + lowest) / 2;
+				} else {
+					// The execution has already been done with block gas limit, so it is not a lack of gas from the user.
+					error_on_execution_failure(&ExitReason::Revert(revert), &data)?
 				}
-
-				Ok(highest)
 			}
-		})
+			other => error_on_execution_failure(&other, &data)?,
+		};
+
+		#[cfg(not(feature = "rpc_binary_search_estimate"))]
+		{
+			Ok(used_gas)
+		}
+		#[cfg(feature = "rpc_binary_search_estimate")]
+		{
+			// On binary search, evm estimate mode is disabled
+			let estimate_mode = false;
+			// Define the lower bound of the binary search
+			let mut lowest = MIN_GAS_PER_TX;
+
+			// Start close to the used gas for faster binary search
+			let mut mid = std::cmp::min(used_gas * 3, (highest + lowest) / 2);
+
+			// Execute the binary search and hone in on an executable gas limit.
+			let mut previous_highest = highest;
+			while (highest - lowest) > U256::one() {
+				let ExecutableResult {
+					data,
+					exit_reason,
+					used_gas: _,
+				} = executable(
+					request.clone(),
+					mid,
+					api_version,
+					client.runtime_api(),
+					estimate_mode,
+				)?;
+				match exit_reason {
+					ExitReason::Succeed(_) => {
+						highest = mid;
+						// If the variation in the estimate is less than 10%,
+						// then the estimate is considered sufficiently accurate.
+						if (previous_highest - highest) * 10 / previous_highest < U256::one() {
+							return Ok(highest);
+						}
+						previous_highest = highest;
+					}
+					ExitReason::Revert(_) | ExitReason::Error(ExitError::OutOfGas) => {
+						lowest = mid;
+					}
+					other => error_on_execution_failure(&other, &data)?,
+				}
+				mid = (highest + lowest) / 2;
+			}
+
+			Ok(highest)
+		}
 	}
 }
 
@@ -673,17 +662,12 @@ pub fn error_on_execution_failure(reason: &ExitReason, data: &[u8]) -> Result<()
 		ExitReason::Error(e) => {
 			if *e == ExitError::OutOfGas {
 				// `ServerError(0)` will be useful in estimate gas
-				return Err(Error {
-					code: ErrorCode::ServerError(0),
-					message: "out of gas".to_string(),
-					data: None,
-				});
+				return Err(internal_err("out of gas"));
 			}
-			Err(Error {
-				code: ErrorCode::InternalError,
-				message: format!("evm error: {:?}", e),
-				data: Some(Value::String("0x".to_string())),
-			})
+			Err(crate::internal_err_with_data(
+				format!("evm error: {:?}", e),
+				&[],
+			))
 		}
 		ExitReason::Revert(_) => {
 			let mut message = "VM Exception while processing transaction: revert".to_string();
@@ -698,17 +682,12 @@ pub fn error_on_execution_failure(reason: &ExitReason, data: &[u8]) -> Result<()
 					}
 				}
 			}
-			Err(Error {
-				code: ErrorCode::InternalError,
-				message,
-				data: Some(Value::String(hex::encode(data))),
-			})
+			Err(crate::internal_err_with_data(message, data))
 		}
-		ExitReason::Fatal(e) => Err(Error {
-			code: ErrorCode::InternalError,
-			message: format!("evm fatal: {:?}", e),
-			data: Some(Value::String("0x".to_string())),
-		}),
+		ExitReason::Fatal(e) => Err(crate::internal_err_with_data(
+			format!("evm fatal: {:?}", e),
+			&[],
+		)),
 	}
 }
 
