@@ -271,6 +271,38 @@
 <span id="266">266</span>
 <span id="267">267</span>
 <span id="268">268</span>
+<span id="269">269</span>
+<span id="270">270</span>
+<span id="271">271</span>
+<span id="272">272</span>
+<span id="273">273</span>
+<span id="274">274</span>
+<span id="275">275</span>
+<span id="276">276</span>
+<span id="277">277</span>
+<span id="278">278</span>
+<span id="279">279</span>
+<span id="280">280</span>
+<span id="281">281</span>
+<span id="282">282</span>
+<span id="283">283</span>
+<span id="284">284</span>
+<span id="285">285</span>
+<span id="286">286</span>
+<span id="287">287</span>
+<span id="288">288</span>
+<span id="289">289</span>
+<span id="290">290</span>
+<span id="291">291</span>
+<span id="292">292</span>
+<span id="293">293</span>
+<span id="294">294</span>
+<span id="295">295</span>
+<span id="296">296</span>
+<span id="297">297</span>
+<span id="298">298</span>
+<span id="299">299</span>
+<span id="300">300</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -293,7 +325,11 @@
 <span class="kw">mod</span> <span class="ident">parity_db_adapter</span>;
 <span class="kw">mod</span> <span class="ident">utils</span>;
 
-<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">marker::PhantomData</span>, <span class="ident">sync::Arc</span>};
+<span class="kw">use</span> <span class="ident">std</span>::{
+	<span class="ident">marker::PhantomData</span>,
+	<span class="ident">path</span>::{<span class="ident">Path</span>, <span class="ident">PathBuf</span>},
+	<span class="ident">sync::Arc</span>,
+};
 
 <span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Decode</span>, <span class="ident">Encode</span>};
 <span class="kw">use</span> <span class="ident">fp_storage</span>::{<span class="ident">EthereumStorageSchema</span>, <span class="ident">PALLET_ETHEREUM_SCHEMA_CACHE</span>};
@@ -322,7 +358,7 @@
 	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">SYNCED_MAPPING</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">3</span>;
 }
 
-<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">mod</span> <span class="ident">static_keys</span> {
+<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">static_keys</span> {
 	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">CURRENT_SYNCING_TIPS</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>] <span class="op">=</span> <span class="string">b&quot;CURRENT_SYNCING_TIPS&quot;</span>;
 }
 
@@ -331,7 +367,34 @@
 	<span class="ident">mapping</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">MappingDb</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 }
 
+<span class="doccomment">/// Returns the frontier database directory.</span>
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">frontier_database_dir</span>(<span class="ident">db_config_dir</span>: <span class="kw-2">&amp;</span><span class="ident">Path</span>, <span class="ident">db_path</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="ident">PathBuf</span> {
+	<span class="ident">db_config_dir</span>.<span class="ident">join</span>(<span class="string">&quot;frontier&quot;</span>).<span class="ident">join</span>(<span class="ident">db_path</span>)
+}
+
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">Block</span>: <span class="ident">BlockT</span><span class="op">&gt;</span> <span class="ident">Backend</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span> {
+	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">open</span>(<span class="ident">database</span>: <span class="kw-2">&amp;</span><span class="ident">DatabaseSource</span>, <span class="ident">db_config_dir</span>: <span class="kw-2">&amp;</span><span class="ident">Path</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">String</span><span class="op">&gt;</span> {
+		<span class="ident"><span class="self">Self</span>::new</span>(<span class="kw-2">&amp;</span><span class="ident">DatabaseSettings</span> {
+			<span class="ident">source</span>: <span class="kw">match</span> <span class="ident">database</span> {
+				<span class="ident">DatabaseSource::RocksDb</span> { .. } =&gt; <span class="ident">DatabaseSource::RocksDb</span> {
+					<span class="ident">path</span>: <span class="ident">frontier_database_dir</span>(<span class="ident">db_config_dir</span>, <span class="string">&quot;db&quot;</span>),
+					<span class="ident">cache_size</span>: <span class="number">0</span>,
+				},
+				<span class="ident">DatabaseSource::ParityDb</span> { .. } =&gt; <span class="ident">DatabaseSource::ParityDb</span> {
+					<span class="ident">path</span>: <span class="ident">frontier_database_dir</span>(<span class="ident">db_config_dir</span>, <span class="string">&quot;paritydb&quot;</span>),
+				},
+				<span class="ident">DatabaseSource::Auto</span> { .. } =&gt; <span class="ident">DatabaseSource::Auto</span> {
+					<span class="ident">rocksdb_path</span>: <span class="ident">frontier_database_dir</span>(<span class="ident">db_config_dir</span>, <span class="string">&quot;db&quot;</span>),
+					<span class="ident">paritydb_path</span>: <span class="ident">frontier_database_dir</span>(<span class="ident">db_config_dir</span>, <span class="string">&quot;paritydb&quot;</span>),
+					<span class="ident">cache_size</span>: <span class="number">0</span>,
+				},
+				<span class="kw">_</span> =&gt; {
+					<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;Supported db sources: `rocksdb` | `paritydb` | `auto`&quot;</span>.<span class="ident">to_string</span>())
+				}
+			},
+		})
+	}
+
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="ident">DatabaseSettings</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">String</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> <span class="ident">db</span> <span class="op">=</span> <span class="ident">utils::open_database</span>(<span class="ident">config</span>)<span class="question-mark">?</span>;
 
@@ -423,13 +486,14 @@
 	}
 }
 
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">MappingCommitment</span><span class="op">&lt;</span><span class="ident">Block</span>: <span class="ident">BlockT</span><span class="op">&gt;</span> {
 	<span class="kw">pub</span> <span class="ident">block_hash</span>: <span class="ident">Block::Hash</span>,
 	<span class="kw">pub</span> <span class="ident">ethereum_block_hash</span>: <span class="ident">H256</span>,
 	<span class="kw">pub</span> <span class="ident">ethereum_transaction_hashes</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span>,
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Encode</span>, <span class="ident">Decode</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Encode</span>, <span class="ident">Debug</span>, <span class="ident">Decode</span>, <span class="ident">PartialEq</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">TransactionMetadata</span><span class="op">&lt;</span><span class="ident">Block</span>: <span class="ident">BlockT</span><span class="op">&gt;</span> {
 	<span class="kw">pub</span> <span class="ident">block_hash</span>: <span class="ident">Block::Hash</span>,
 	<span class="kw">pub</span> <span class="ident">ethereum_block_hash</span>: <span class="ident">H256</span>,
