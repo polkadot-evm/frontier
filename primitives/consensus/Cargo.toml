@@ -2,16 +2,18 @@
 name = "fp-consensus"
 version = "2.0.0-dev"
 authors = ["Parity Technologies <admin@parity.io>"]
-description = "Primitives for Frontier consensus"
 edition = "2021"
 license = "Apache-2.0"
-homepage = "https://substrate.io"
+description = "Primitives for Frontier consensus"
 repository = "https://github.com/paritytech/frontier/"
 
 [dependencies]
 ethereum = { version = "0.12.0", default-features = false, features = ["with-codec"] }
 
+# Parity
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
+
+# Substrate
 sp-core = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 sp-runtime = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 sp-std = { version = "4.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
@@ -20,8 +22,9 @@ sp-std = { version = "4.0.0", git = "https://github.com/paritytech/substrate", b
 default = ["std"]
 std = [
 	"ethereum/std",
-
+	# Parity
 	"codec/std",
+	# Substrate
 	"sp-core/std",
 	"sp-runtime/std",
 	"sp-std/std",

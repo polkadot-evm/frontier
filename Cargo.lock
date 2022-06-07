@@ -1925,8 +1925,6 @@ dependencies = [
  "parity-util-mem",
  "scale-info",
  "serde",
- "sp-debug-derive",
- "sp-io",
  "sp-runtime",
 ]
 

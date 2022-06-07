@@ -16,7 +16,6 @@
 // limitations under the License.
 
 use frame_support::weights::{DispatchInfo, GetDispatchInfo};
-use sp_debug_derive::RuntimeDebug;
 use sp_runtime::{
 	traits::{
 		self, DispatchInfoOf, Dispatchable, MaybeDisplay, Member, PostDispatchInfoOf,
@@ -25,6 +24,7 @@ use sp_runtime::{
 	transaction_validity::{
 		InvalidTransaction, TransactionSource, TransactionValidity, TransactionValidityError,
 	},
+	RuntimeDebug,
 };
 
 use crate::SelfContainedCall;
