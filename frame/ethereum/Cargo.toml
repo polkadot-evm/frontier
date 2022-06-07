@@ -40,7 +40,7 @@ fp-storage = { version = "2.0.0", path = "../../primitives/storage", default-fea
 pallet-evm = { version = "6.0.0-dev", path = "../evm", default-features = false }
 
 [dev-dependencies]
-rustc-hex = "2.1.0"
+hex = "0.4.3"
 # Parity
 libsecp256k1 = { version = "0.7", features = ["static-context", "hmac"] }
 # Substrate
