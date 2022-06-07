@@ -120,10 +120,7 @@ impl SubscriptionResult {
 				logs_bloom: block.header.logs_bloom,
 				timestamp: U256::from(block.header.timestamp),
 				difficulty: block.header.difficulty,
-				seal_fields: vec![
-					Bytes(block.header.mix_hash.as_bytes().to_vec()),
-					Bytes(block.header.nonce.as_bytes().to_vec()),
-				],
+				nonce: Some(block.header.nonce),
 				size: Some(U256::from(rlp::encode(&block.header).len() as u32)),
 			},
 			extra_info: BTreeMap::new(),

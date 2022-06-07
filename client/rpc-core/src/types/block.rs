@@ -19,7 +19,7 @@
 use std::{collections::BTreeMap, ops::Deref};
 
 use crate::types::{Bytes, Transaction};
-use ethereum_types::{Bloom as H2048, H160, H256, U256};
+use ethereum_types::{Bloom as H2048, H160, H256, H64, U256};
 use serde::{ser::Error, Serialize, Serializer};
 
 /// Block Transactions
@@ -98,8 +98,8 @@ pub struct Header {
 	pub timestamp: U256,
 	/// Difficulty
 	pub difficulty: U256,
-	/// Seal fields
-	pub seal_fields: Vec<Bytes>,
+	/// Nonce
+	pub nonce: Option<H64>,
 	/// Size in bytes
 	pub size: Option<U256>,
 }
