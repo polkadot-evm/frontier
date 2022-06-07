@@ -174,7 +174,7 @@
 <span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">collections::BTreeMap</span>, <span class="ident">ops::Deref</span>};
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::types</span>::{<span class="ident">Bytes</span>, <span class="ident">Transaction</span>};
-<span class="kw">use</span> <span class="ident">ethereum_types</span>::{<span class="ident">Bloom</span> <span class="kw">as</span> <span class="ident">H2048</span>, <span class="ident">H160</span>, <span class="ident">H256</span>, <span class="ident">U256</span>};
+<span class="kw">use</span> <span class="ident">ethereum_types</span>::{<span class="ident">Bloom</span> <span class="kw">as</span> <span class="ident">H2048</span>, <span class="ident">H160</span>, <span class="ident">H256</span>, <span class="ident">H64</span>, <span class="ident">U256</span>};
 <span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">ser::Error</span>, <span class="ident">Serialize</span>, <span class="ident">Serializer</span>};
 
 <span class="doccomment">/// Block Transactions</span>
@@ -253,8 +253,8 @@
 	<span class="kw">pub</span> <span class="ident">timestamp</span>: <span class="ident">U256</span>,
 	<span class="doccomment">/// Difficulty</span>
 	<span class="kw">pub</span> <span class="ident">difficulty</span>: <span class="ident">U256</span>,
-	<span class="doccomment">/// Seal fields</span>
-	<span class="kw">pub</span> <span class="ident">seal_fields</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Bytes</span><span class="op">&gt;</span>,
+	<span class="doccomment">/// Nonce</span>
+	<span class="kw">pub</span> <span class="ident">nonce</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">H64</span><span class="op">&gt;</span>,
 	<span class="doccomment">/// Size in bytes</span>
 	<span class="kw">pub</span> <span class="ident">size</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
 }
