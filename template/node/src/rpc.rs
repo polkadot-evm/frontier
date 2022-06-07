@@ -123,8 +123,8 @@ where
 		Eth, EthApiServer, EthDevSigner, EthFilter, EthFilterApiServer, EthPubSub,
 		EthPubSubApiServer, EthSigner, Net, NetApiServer, Web3, Web3ApiServer,
 	};
-	use pallet_transaction_payment_rpc::{TransactionPaymentApiServer, TransactionPaymentRpc};
-	use substrate_frame_rpc_system::{SystemApiServer, SystemRpc};
+	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
+	use substrate_frame_rpc_system::{System, SystemApiServer};
 
 	let mut io = RpcModule::new(());
 	let FullDeps {
@@ -146,8 +146,8 @@ where
 		command_sink,
 	} = deps;
 
-	io.merge(SystemRpc::new(Arc::clone(&client), Arc::clone(&pool), deny_unsafe).into_rpc())?;
-	io.merge(TransactionPaymentRpc::new(Arc::clone(&client)).into_rpc())?;
+	io.merge(System::new(Arc::clone(&client), Arc::clone(&pool), deny_unsafe).into_rpc())?;
+	io.merge(TransactionPayment::new(Arc::clone(&client)).into_rpc())?;
 
 	let mut signers = Vec::new();
 	if enable_dev_signer {
@@ -188,20 +188,19 @@ where
 	}
 
 	io.merge(
-		Net::new(
+		EthPubSub::new(
+			pool,
 			client.clone(),
 			network.clone(),
-			// Whether to format the `peer_count` response as Hex (default) or not.
-			true,
+			subscription_task_executor,
+			overrides,
 		)
 		.into_rpc(),
 	)?;
 
-	io.merge(Web3::new(client.clone()).into_rpc())?;
+	io.merge(Net::new(client.clone(), network, true).into_rpc())?;
 
-	io.merge(
-		EthPubSub::new(pool, client, network, subscription_task_executor, overrides).into_rpc(),
-	)?;
+	io.merge(Web3::new(client).into_rpc())?;
 
 	#[cfg(feature = "manual-seal")]
 	if let Some(command_sink) = command_sink {
