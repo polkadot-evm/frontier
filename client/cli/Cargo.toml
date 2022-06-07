@@ -2,33 +2,44 @@
 name = "fc-cli"
 version = "1.0.0-dev"
 authors = ["Parity Technologies <admin@parity.io>"]
-description = "Frontier database backend"
 edition = "2021"
 license = "GPL-3.0-or-later WITH Classpath-exception-2.0"
+description = "Frontier database backend"
 repository = "https://github.com/paritytech/frontier/"
 
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
 [dependencies]
+clap = { version = "3.1", features = ["derive"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-clap = { version = "3.1", features = ["derive"] }
 
+# Parity
 ethereum-types = "0.13.1"
+
+# Substrate
 sc-cli = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", features = ["wasmtime"] }
 sc-service = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", features = ["wasmtime"] }
 sp-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-blockchain = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-runtime = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
+
+# Frontier
 fc-db = { path = "../db" }
-fp-storage = { version = "2.0.0-dev", path = "../../primitives/storage" }
 fp-rpc = { version = "3.0.0-dev", path = "../../primitives/rpc" }
+fp-storage = { version = "2.0.0-dev", path = "../../primitives/storage" }
 
 [dev-dependencies]
+futures = "0.3.21"
 tempfile = "3.3.0"
-substrate-test-runtime-client = { version = "2.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
-frontier-template-runtime = { path = "../../template/runtime" }
-sp-io = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-block-builder = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
+# Parity
 codec = { package = "parity-scale-codec", version = "3.0.0" }
-futures = { version = "0.3.1", features = ["compat"] }
-sp-consensus = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
+# Substrate
+sc-block-builder = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-client-db = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-consensus = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-io = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
+substrate-test-runtime-client = { version = "2.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
+# Frontier
+frontier-template-runtime = { path = "../../template/runtime" }
