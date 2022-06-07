@@ -4,37 +4,52 @@ version = "1.0.0"
 authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2021"
 license = "Apache-2.0"
-homepage = "https://substrate.dev"
-repository = "https://github.com/paritytech/frontier/"
 description = "Hotfix zero-value account sufficients with non-zero-value nonces"
+repository = "https://github.com/paritytech/frontier/"
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
+# Parity
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
 scale-info = { version = "2.0.0", default-features = false, features = ["derive"] }
+
+# Substrate
 sp-core = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-io = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 sp-runtime = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 sp-std = { version = "4.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-
+# Substrate FRAME
 frame-benchmarking = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false, optional = true }
 frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+
+# Frontier
 pallet-evm = { path = "../evm", default-features = false }
+
+[dev-dependencies]
+sp-io = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
 
 [features]
 default = ["std"]
 std = [
+	# Parity
 	"codec/std",
 	"scale-info/std",
+	# Substrate
 	"sp-core/std",
 	"sp-runtime/std",
+	"sp-std/std",
+	# Substrate FRAME
 	"frame-benchmarking/std",
 	"frame-support/std",
 	"frame-system/std",
+	# Frontier
+	"pallet-evm/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",
+	"frame-support/runtime-benchmarks",
+	"frame-system/runtime-benchmarks",
+	"pallet-evm/runtime-benchmarks",
 ]

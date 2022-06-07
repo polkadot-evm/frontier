@@ -4,40 +4,42 @@ version = "6.0.0-dev"
 authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2021"
 license = "Apache-2.0"
-homepage = "https://substrate.io"
-repository = "https://github.com/paritytech/frontier/"
-description = "FRAME EVM contracts pallet"
 readme = "README.md"
+description = "FRAME EVM contracts pallet"
+repository = "https://github.com/paritytech/frontier/"
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 evm = { git = "https://github.com/rust-blockchain/evm", branch = "master", default-features = false, features = ["with-codec"] }
-hex = { version = "0.4", default-features = false, features = ["alloc"] }
-log = { version = "0.4", default-features = false }
-primitive-types = { version = "0.11.1", default-features = false, features = ["rlp", "byteorder"] }
-rlp = { version = "0.5", default-features = false }
+hex = { version = "0.4.3", default-features = false, features = ["alloc"] }
+log = { version = "0.4.17", default-features = false }
 serde = { version = "1.0.137", optional = true, features = ["derive"] }
 sha3 = { version = "0.10.1", default-features = false }
 
+# Parity
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
+primitive-types = { version = "0.11.1", default-features = false, features = ["rlp", "byteorder"] }
+rlp = { version = "0.5", default-features = false }
 scale-info = { version = "2.1.2", default-features = false, features = ["derive"] }
+
+# Substate
 sp-core = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 sp-io = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 sp-runtime = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 sp-std = { version = "4.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-
+# Substrate FRAME
 frame-benchmarking = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false, optional = true }
 frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 pallet-timestamp = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 
+# Frontier
 fp-evm = { version = "3.0.0-dev", path = "../../primitives/evm", default-features = false }
 
 [dev-dependencies]
-pallet-balances = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-
+pallet-balances = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 
 [features]
 default = ["std"]
@@ -46,25 +48,29 @@ std = [
 	"evm/with-serde",
 	"hex/std",
 	"log/std",
-	"primitive-types/std",
-	"rlp/std",
 	"serde",
 	"sha3/std",
-
+	# Parity
 	"codec/std",
+	"primitive-types/std",
+	"rlp/std",
 	"scale-info/std",
+	# Substrate
 	"sp-core/std",
 	"sp-io/std",
 	"sp-runtime/std",
 	"sp-std/std",
+	# Substrate FRAME
 	"frame-benchmarking/std",
 	"frame-support/std",
 	"frame-system/std",
-	"pallet-balances/std",
 	"pallet-timestamp/std",
-
+	# Frontier
 	"fp-evm/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",
+	"frame-support/runtime-benchmarks",
+	"frame-system/runtime-benchmarks",
+	"pallet-timestamp/runtime-benchmarks",
 ]
