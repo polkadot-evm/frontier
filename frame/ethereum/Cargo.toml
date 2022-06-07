@@ -14,7 +14,6 @@ targets = ["x86_64-unknown-linux-gnu"]
 ethereum = { version = "0.12.0", default-features = false, features = ["with-codec"] }
 evm = { git = "https://github.com/rust-blockchain/evm", branch = "master", features = ["with-codec"], default-features = false }
 serde = { version = "1.0.137", optional = true }
-sha3 = { version = "0.10", default-features = false }
 
 # Parity
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false }
@@ -54,7 +53,6 @@ std = [
 	"ethereum/std",
 	"evm/std",
 	"serde",
-	"sha3/std",
 	# Parity
 	"codec/std",
 	"ethereum-types/std",

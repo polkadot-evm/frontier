@@ -16,7 +16,6 @@ evm = { git = "https://github.com/rust-blockchain/evm", branch = "master", defau
 hex = { version = "0.4.3", default-features = false, features = ["alloc"] }
 log = { version = "0.4.17", default-features = false }
 serde = { version = "1.0.137", optional = true, features = ["derive"] }
-sha3 = { version = "0.10.1", default-features = false }
 
 # Parity
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
@@ -49,7 +48,6 @@ std = [
 	"hex/std",
 	"log/std",
 	"serde",
-	"sha3/std",
 	# Parity
 	"codec/std",
 	"primitive-types/std",
