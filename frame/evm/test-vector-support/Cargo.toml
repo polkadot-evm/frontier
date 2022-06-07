@@ -14,5 +14,5 @@ hex = "0.4.0"
 serde = { version = "1.0.101", features = ["derive"] }
 serde_json = "1.0"
 
-sp-core = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-core = { version = "6.0.0", git = "https://github.com/paritytech/substrate", default-features = false , branch = "polkadot-v0.9.22" }
 fp-evm = { version = "3.0.0-dev", path = "../../../primitives/evm", default-features = false }
