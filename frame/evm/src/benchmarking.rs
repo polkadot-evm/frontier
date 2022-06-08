@@ -118,7 +118,6 @@ benchmarks! {
 			None,
 			None,
 			Some(nonce_as_u256),
-			None,
 			Vec::new(),
 			is_transactional,
 			T::config(),
