@@ -29,6 +29,8 @@ mod mock;
 #[cfg(all(feature = "std", test))]
 mod tests;
 
+mod xcm;
+
 use ethereum_types::{Bloom, BloomInput, H160, H256, H64, U256};
 use evm::ExitReason;
 use fp_consensus::{PostLog, PreLog, FRONTIER_ENGINE_ID};
@@ -300,6 +302,59 @@ pub mod pallet {
 			);
 
 			Self::apply_validated_transaction(source, transaction)
+		}
+
+		/// Xcm Transact an Ethereum transaction.
+		#[pallet::weight(<T as pallet_evm::Config>::GasWeightMapping::gas_to_weight(
+			xcm_transaction.gas_limit.unique_saturated_into()
+		))]
+		pub fn transact_xcm(
+			origin: OriginFor<T>,
+			xcm_transaction: xcm::EthereumXcmTransaction,
+		) -> DispatchResultWithPostInfo {
+			use xcm::XcmToEthereum;
+			// let source = frame_system::ensure_signed(origin)?;
+			let source = ensure_ethereum_transaction(origin)?;
+
+			let (base_fee, base_fee_weight) = T::FeeCalculator::min_gas_price();
+			let (who, account_weight) = pallet_evm::Pallet::<T>::account_basic(&source);
+
+			let transaction: Option<Transaction> = xcm_transaction.into_transaction_v2(base_fee, who.nonce);
+			if let Some(transaction) = transaction {
+				let transaction_data = Pallet::<T>::transaction_data(&transaction);
+
+				let _ = CheckEvmTransaction::<InvalidTransactionWrapper>::new(
+					CheckEvmTransactionConfig {
+						evm_config: T::config(),
+						block_gas_limit: T::BlockGasLimit::get(),
+						base_fee,
+						chain_id: T::ChainId::get(),
+						is_transactional: true,
+					},
+					transaction_data.into(),
+				)
+				.validate_in_block_for(&who)
+				.and_then(|v| v.with_base_fee())
+				.and_then(|v| v.with_balance_for(&who))
+				.map_err(|e| sp_runtime::DispatchErrorWithPostInfo {
+					post_info: PostDispatchInfo {
+							actual_weight: Some(base_fee_weight.saturating_add(account_weight)),
+							pays_fee: Pays::Yes,
+					},
+					error: sp_runtime::DispatchError::Other("Failed to validate ethereum transaction")
+				})?;
+
+				Self::apply_validated_transaction(source, transaction)
+
+			} else {
+				Err(sp_runtime::DispatchErrorWithPostInfo {
+					post_info: PostDispatchInfo {
+							actual_weight: Some(base_fee_weight.saturating_add(account_weight)),
+							pays_fee: Pays::Yes,
+					},
+					error: sp_runtime::DispatchError::Other("Cannot convert xcm payload to known type")
+				})
+			}
 		}
 	}
 
