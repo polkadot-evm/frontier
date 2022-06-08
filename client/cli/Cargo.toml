@@ -13,8 +13,8 @@ serde_json = "1.0"
 clap = { version = "3.1", features = ["derive"] }
 
 ethereum-types = "0.13.1"
-sc-cli = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", features = ["wasmtime"] , branch = "polkadot-v0.9.22" }
-sc-service = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", features = ["wasmtime"] , branch = "polkadot-v0.9.22" }
+sc-cli = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.22", features = ["wasmtime"] }
+sc-service = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.22", features = ["wasmtime"] }
 sp-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.22" }
 sp-blockchain = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.22" }
 sp-runtime = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.22" }
