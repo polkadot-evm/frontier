@@ -384,6 +384,11 @@ impl pallet_base_fee::Config for Runtime {
 
 impl pallet_randomness_collective_flip::Config for Runtime {}
 
+impl pallet_hotfix_sufficients::Config for Runtime {
+	type AddressMapping = HashedAddressMapping<BlakeTwo256>;
+	type WeightInfo = pallet_hotfix_sufficients::weights::SubstrateWeight<Runtime>;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -403,6 +408,7 @@ construct_runtime!(
 		EVM: pallet_evm::{Pallet, Config, Call, Storage, Event<T>},
 		DynamicFee: pallet_dynamic_fee::{Pallet, Call, Storage, Config, Inherent},
 		BaseFee: pallet_base_fee::{Pallet, Call, Storage, Config<T>, Event},
+		HotfixSufficients: pallet_hotfix_sufficients::{Pallet, Call},
 	}
 );
 
@@ -822,9 +828,11 @@ impl_runtime_apis! {
 		) {
 			use frame_benchmarking::{Benchmarking, BenchmarkList};
 			use frame_support::traits::StorageInfoTrait;
+			use pallet_hotfix_sufficients::Pallet as PalletHotfixSufficients;
 
 			let mut list = Vec::<BenchmarkList>::new();
 			list_benchmarks!(list, extra);
+			list_benchmark!(list, extra, pallet_hotfix_sufficients, PalletHotfixSufficients::<Runtime>);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
 			return (list, storage_info)
@@ -835,6 +843,7 @@ impl_runtime_apis! {
 		) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
 			use frame_benchmarking::{Benchmarking, BenchmarkBatch, add_benchmark, TrackedStorageKey};
 			use pallet_evm::Pallet as PalletEvmBench;
+			use pallet_hotfix_sufficients::Pallet as PalletHotfixSufficients;
 			impl frame_system_benchmarking::Config for Runtime {}
 
 			let whitelist: Vec<TrackedStorageKey> = vec![];
@@ -843,6 +852,7 @@ impl_runtime_apis! {
 			let params = (&config, &whitelist);
 
 			add_benchmark!(params, batches, pallet_evm, PalletEvmBench::<Runtime>);
+			add_benchmark!(params, batches, pallet_hotfix_sufficients, PalletHotfixSufficients::<Runtime>);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)

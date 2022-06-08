@@ -102,20 +102,18 @@ impl<T: Config> Runner<T> {
 
 		// Post execution.
 		let used_gas = U256::from(executor.used_gas());
-		let (actual_fee, actual_priority_fee) =
-			if let Some(max_priority_fee) = max_priority_fee_per_gas {
-				let actual_priority_fee = max_fee_per_gas
-					.saturating_sub(base_fee)
-					.min(max_priority_fee)
-					.saturating_mul(used_gas);
-				let actual_fee = executor
-					.fee(base_fee)
-					.checked_add(actual_priority_fee)
-					.unwrap_or_else(U256::max_value);
-				(actual_fee, Some(actual_priority_fee))
-			} else {
-				(executor.fee(base_fee), None)
-			};
+		let actual_fee = if let Some(max_priority_fee) = max_priority_fee_per_gas {
+			let actual_priority_fee = max_fee_per_gas
+				.saturating_sub(base_fee)
+				.min(max_priority_fee)
+				.saturating_mul(used_gas);
+			executor
+				.fee(base_fee)
+				.checked_add(actual_priority_fee)
+				.unwrap_or_else(U256::max_value)
+		} else {
+			executor.fee(base_fee)
+		};
 		log::debug!(
 			target: "evm",
 			"Execution {:?} [source: {:?}, value: {}, gas_limit: {}, actual_fee: {}, is_transactional: {}]",
@@ -147,10 +145,16 @@ impl<T: Config> Runner<T> {
 		// Refunded 200 - 40 = 160.
 		// Tip 5 * 6 = 30.
 		// Burned 200 - (160 + 30) = 10. Which is equivalent to gas_used * base_fee.
-		T::OnChargeTransaction::correct_and_deposit_fee(&source, actual_fee, fee);
-		if let Some(actual_priority_fee) = actual_priority_fee {
-			T::OnChargeTransaction::pay_priority_fee(actual_priority_fee);
-		}
+		let actual_priority_fee = T::OnChargeTransaction::correct_and_deposit_fee(
+			&source,
+			// Actual fee after evm execution, including tip.
+			actual_fee,
+			// Base fee.
+			executor.fee(base_fee),
+			// Fee initially withdrawn.
+			fee,
+		);
+		T::OnChargeTransaction::pay_priority_fee(actual_priority_fee);
 
 		let state = executor.into_state();
 
@@ -636,7 +640,7 @@ impl<'vicinity, 'config, T: Config> StackStateT<'config>
 	}
 
 	fn reset_storage(&mut self, address: H160) {
-		<AccountStorages<T>>::remove_prefix(address, None);
+		let _ = <AccountStorages<T>>::remove_prefix(address, None);
 	}
 
 	fn log(&mut self, address: H160, topics: Vec<H256>, data: Vec<u8>) {

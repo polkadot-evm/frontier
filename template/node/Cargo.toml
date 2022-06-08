@@ -18,8 +18,7 @@ async-trait = "0.1"
 clap = { version = "3.1", features = ["derive"] }
 codec = { package = "parity-scale-codec", version = "3.1", features = ["derive"] }
 futures = "0.3"
-jsonrpc-core = "18.0.0"
-jsonrpc-pubsub = "18.0.0"
+jsonrpsee = { version = "0.13.0", features = ["server", "macros"] }
 log = "0.4.8"
 
 sc-basic-authorship = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -60,6 +59,7 @@ pallet-transaction-payment = { version = "4.0.0-dev", git = "https://github.com/
 
 fc-consensus = { path = "../../client/consensus" }
 fc-db = { path = "../../client/db" }
+fc-cli = { path = "../../client/cli" }
 fc-mapping-sync = { path = "../../client/mapping-sync" }
 fc-rpc = { path = "../../client/rpc" }
 fc-rpc-core = { path = "../../client/rpc-core" }

@@ -18,7 +18,7 @@
 
 use ethereum::TransactionV2 as EthereumTransaction;
 use ethereum_types::{H160, H256};
-use jsonrpc_core::Error;
+use jsonrpsee::core::Error;
 
 use fc_rpc_core::types::TransactionMessage;
 use sp_core::hashing::keccak_256;

@@ -578,7 +578,7 @@ impl<T: Config> Pallet<T> {
 	fn apply_validated_transaction(
 		source: H160,
 		transaction: Transaction,
-	) -> Result<PostDispatchInfo, DispatchErrorWithPostInfo<PostDispatchInfo>> {
+	) -> DispatchResultWithPostInfo {
 		let (to, _, info) = Self::execute(source, &transaction, None)?;
 
 		let pending = Pending::<T>::get();
