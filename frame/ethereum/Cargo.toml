@@ -12,7 +12,7 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 ethereum = { version = "0.12.0", default-features = false, features = ["with-codec"] }
-evm = { git = "https://github.com/rust-blockchain/evm", branch = "master", features = ["with-codec"], default-features = false }
+evm = { git = "https://github.com/rust-blockchain/evm", rev = "01bcbd2205a212c34451d3b4fabc962793b057d3", features = ["with-codec"], default-features = false }
 serde = { version = "1.0.137", optional = true }
 sha3 = { version = "0.10", default-features = false }
 
