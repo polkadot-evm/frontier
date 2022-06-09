@@ -328,7 +328,7 @@ pub mod pallet {
 						evm_config: T::config(),
 						block_gas_limit: T::BlockGasLimit::get(),
 						base_fee,
-						chain_id: T::ChainId::get(),
+						chain_id: 0u64,
 						is_transactional: true,
 					},
 					transaction_data.into(),
