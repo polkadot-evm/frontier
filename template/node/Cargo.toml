@@ -2,12 +2,10 @@
 name = "frontier-template-node"
 version = "0.0.0"
 authors = ["Substrate DevHub <https://github.com/substrate-developer-hub>"]
-description = "A fresh FRAME-based Substrate node, ready for hacking."
 edition = "2021"
 license = "Unlicense"
 build = "build.rs"
-homepage = "https://substrate.io"
-repository = "https://github.com/substrate-developer-hub/frontier-node-template/"
+description = "A fresh FRAME-based Substrate node, ready for hacking."
 publish = false
 
 [package.metadata.docs.rs]
@@ -16,11 +14,14 @@ targets = ["x86_64-unknown-linux-gnu"]
 [dependencies]
 async-trait = "0.1"
 clap = { version = "3.1", features = ["derive"] }
-codec = { package = "parity-scale-codec", version = "3.1", features = ["derive"] }
-futures = "0.3"
-jsonrpsee = { version = "0.13.0", features = ["server", "macros"] }
-log = "0.4.8"
+futures = "0.3.21"
+log = "0.4.17"
 
+# Parity
+codec = { package = "parity-scale-codec", version = "3.1", features = ["derive"] }
+jsonrpsee = { version = "0.13.0", features = ["server", "macros"] }
+
+# Substrate
 sc-basic-authorship = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-cli = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", features = ["wasmtime"] }
 sc-client-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -57,9 +58,10 @@ frame-benchmarking-cli = { version = "4.0.0-dev", git = "https://github.com/pari
 frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 pallet-transaction-payment = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 
+# Frontier
+fc-cli = { path = "../../client/cli" }
 fc-consensus = { path = "../../client/consensus" }
 fc-db = { path = "../../client/db" }
-fc-cli = { path = "../../client/cli" }
 fc-mapping-sync = { path = "../../client/mapping-sync" }
 fc-rpc = { path = "../../client/rpc" }
 fc-rpc-core = { path = "../../client/rpc-core" }
@@ -84,7 +86,7 @@ manual-seal = [
 	"sc-consensus-manual-seal",
 	"frontier-template-runtime/manual-seal",
 ]
+with-rocksdb-weights = ["frontier-template-runtime/with-rocksdb-weights"]
+with-paritydb-weights = ["frontier-template-runtime/with-paritydb-weights"]
 rpc_binary_search_estimate = ["fc-rpc/rpc_binary_search_estimate"]
-runtime-benchmarks = [
-	"frontier-template-runtime/runtime-benchmarks",
-]
+runtime-benchmarks = ["frontier-template-runtime/runtime-benchmarks"]

@@ -1,24 +1,26 @@
 [package]
 name = "fp-evm"
 version = "3.0.0-dev"
-license = "Apache-2.0"
 authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2021"
-homepage = "https://substrate.io"
-repository = "https://github.com/paritytech/frontier/"
+license = "Apache-2.0"
 description = "Primitive EVM abstractions for Substrate."
-documentation = "https://docs.rs/sp-evm"
+repository = "https://github.com/paritytech/frontier/"
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-evm = { git = "https://github.com/rust-blockchain/evm", branch = "master", default-features = false, features = ["with-codec"] }
+evm = { git = "https://github.com/rust-blockchain/evm", rev = "01bcbd2205a212c34451d3b4fabc962793b057d3", default-features = false, features = ["with-codec"] }
 serde = { version = "1.0.137", features = ["derive"], optional = true }
 
+# Parity
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false }
+
+# Substrate
 sp-core = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 sp-std = { version = "4.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+# Substrate FRAME
 frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 
 [features]
@@ -27,9 +29,11 @@ std = [
 	"evm/std",
 	"evm/with-serde",
 	"serde",
-
+	# Parity
 	"codec/std",
+	# Substrate
 	"sp-core/std",
 	"sp-std/std",
+	# Substrate FRAME
 	"frame-support/std",
 ]

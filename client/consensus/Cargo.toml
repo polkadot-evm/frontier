@@ -2,15 +2,19 @@
 name = "fc-consensus"
 version = "2.0.0-dev"
 authors = ["Parity Technologies <admin@parity.io>"]
-description = "Frontier consensus for substrate"
 edition = "2021"
 license = "GPL-3.0-or-later WITH Classpath-exception-2.0"
+description = "Frontier consensus for substrate"
 repository = "https://github.com/paritytech/frontier/"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 async-trait = "0.1"
 thiserror = "1.0"
 
+# Substrate
 sc-client-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-consensus = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -19,6 +23,7 @@ sp-blockchain = { version = "4.0.0-dev", git = "https://github.com/paritytech/su
 sp-consensus = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-runtime = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
 
+# Frontier
 fc-db = { version = "2.0.0-dev", path = "../db" }
 fp-consensus = { version = "2.0.0-dev", path = "../../primitives/consensus" }
 fp-rpc = { version = "3.0.0-dev", path = "../../primitives/rpc" }

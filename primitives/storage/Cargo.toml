@@ -3,16 +3,23 @@ name = "fp-storage"
 version = "2.0.0"
 authors = ["Parity Technologies <admin@parity.io"]
 edition = "2021"
-description = "Storage primitives for Ethereum RPC (web3) compatibility layer for Substrate."
 license = "Apache-2.0"
+description = "Storage primitives for Ethereum RPC (web3) compatibility layer for Substrate."
+repository = "https://github.com/paritytech/frontier/"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"], optional = true }
+
+# Parity
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
 
 [features]
 default = ["std"]
 std = [
-	"codec/std",
 	"serde",
+	# Parity
+	"codec/std",
 ]

@@ -4,15 +4,16 @@ version = "2.0.0-dev"
 authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2021"
 license = "Apache-2.0"
-homepage = "https://substrate.io"
-repository = "https://github.com/paritytech/frontier/"
 description = "BN128 precompiles for EVM pallet."
+repository = "https://github.com/paritytech/frontier/"
 
 [dependencies]
 bn = { package = "substrate-bn", version = "0.6", default-features = false }
 
+# Substrate
 sp-core = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 
+# Frontier
 fp-evm = { version = "3.0.0-dev", path = "../../../../primitives/evm", default-features = false }
 
 [dev-dependencies]
@@ -21,6 +22,8 @@ pallet-evm-test-vector-support = { version = "1.0.0-dev", path = "../../test-vec
 [features]
 default = ["std"]
 std = [
+	# Substrate
 	"sp-core/std",
+	# Frontier
 	"fp-evm/std",
 ]
