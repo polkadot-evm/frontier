@@ -174,7 +174,6 @@
 <span class="comment">// limitations under the License.</span>
 
 <span class="kw">use</span> <span class="ident">frame_support::weights</span>::{<span class="ident">DispatchInfo</span>, <span class="ident">GetDispatchInfo</span>};
-<span class="kw">use</span> <span class="ident">sp_debug_derive::RuntimeDebug</span>;
 <span class="kw">use</span> <span class="ident">sp_runtime</span>::{
 	<span class="ident">traits</span>::{
 		<span class="self">self</span>, <span class="ident">DispatchInfoOf</span>, <span class="ident">Dispatchable</span>, <span class="ident">MaybeDisplay</span>, <span class="ident">Member</span>, <span class="ident">PostDispatchInfoOf</span>,
@@ -183,6 +182,7 @@
 	<span class="ident">transaction_validity</span>::{
 		<span class="ident">InvalidTransaction</span>, <span class="ident">TransactionSource</span>, <span class="ident">TransactionValidity</span>, <span class="ident">TransactionValidityError</span>,
 	},
+	<span class="ident">RuntimeDebug</span>,
 };
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::SelfContainedCall</span>;
