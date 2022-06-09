@@ -667,6 +667,44 @@
 <span id="662">662</span>
 <span id="663">663</span>
 <span id="664">664</span>
+<span id="665">665</span>
+<span id="666">666</span>
+<span id="667">667</span>
+<span id="668">668</span>
+<span id="669">669</span>
+<span id="670">670</span>
+<span id="671">671</span>
+<span id="672">672</span>
+<span id="673">673</span>
+<span id="674">674</span>
+<span id="675">675</span>
+<span id="676">676</span>
+<span id="677">677</span>
+<span id="678">678</span>
+<span id="679">679</span>
+<span id="680">680</span>
+<span id="681">681</span>
+<span id="682">682</span>
+<span id="683">683</span>
+<span id="684">684</span>
+<span id="685">685</span>
+<span id="686">686</span>
+<span id="687">687</span>
+<span id="688">688</span>
+<span id="689">689</span>
+<span id="690">690</span>
+<span id="691">691</span>
+<span id="692">692</span>
+<span id="693">693</span>
+<span id="694">694</span>
+<span id="695">695</span>
+<span id="696">696</span>
+<span id="697">697</span>
+<span id="698">698</span>
+<span id="699">699</span>
+<span id="700">700</span>
+<span id="701">701</span>
+<span id="702">702</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -696,10 +734,7 @@
 	<span class="ident">ExitError</span>, <span class="ident">ExitReason</span>, <span class="ident">Transfer</span>,
 };
 <span class="kw">use</span> <span class="ident">fp_evm</span>::{<span class="ident">CallInfo</span>, <span class="ident">CreateInfo</span>, <span class="ident">ExecutionInfo</span>, <span class="ident">Log</span>, <span class="ident">Vicinity</span>};
-<span class="kw">use</span> <span class="ident">frame_support</span>::{
-	<span class="ident">ensure</span>,
-	<span class="ident">traits</span>::{<span class="ident">Currency</span>, <span class="ident">ExistenceRequirement</span>, <span class="ident">Get</span>},
-};
+<span class="kw">use</span> <span class="ident">frame_support::traits</span>::{<span class="ident">Currency</span>, <span class="ident">ExistenceRequirement</span>, <span class="ident">Get</span>};
 <span class="kw">use</span> <span class="ident">sha3</span>::{<span class="ident">Digest</span>, <span class="ident">Keccak256</span>};
 <span class="kw">use</span> <span class="ident">sp_core</span>::{<span class="ident">H160</span>, <span class="ident">H256</span>, <span class="ident">U256</span>};
 <span class="kw">use</span> <span class="ident">sp_runtime::traits::UniqueSaturatedInto</span>;
@@ -711,14 +746,13 @@
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">Runner</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-	<span class="doccomment">/// Execute an EVM operation.</span>
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">execute</span><span class="op">&lt;</span><span class="lifetime">&#39;config</span>, <span class="lifetime">&#39;precompiles</span>, <span class="ident">F</span>, <span class="ident">R</span><span class="op">&gt;</span>(
+	<span class="doccomment">/// Execute an already validated EVM operation.</span>
+	<span class="kw">fn</span> <span class="ident">execute</span><span class="op">&lt;</span><span class="lifetime">&#39;config</span>, <span class="lifetime">&#39;precompiles</span>, <span class="ident">F</span>, <span class="ident">R</span><span class="op">&gt;</span>(
 		<span class="ident">source</span>: <span class="ident">H160</span>,
 		<span class="ident">value</span>: <span class="ident">U256</span>,
 		<span class="ident">gas_limit</span>: <span class="ident">u64</span>,
 		<span class="ident">max_fee_per_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
 		<span class="ident">max_priority_fee_per_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-		<span class="ident">nonce</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
 		<span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;config</span> <span class="ident">evm::Config</span>,
 		<span class="ident">precompiles</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;precompiles</span> <span class="ident">T::PrecompilesType</span>,
 		<span class="ident">is_transactional</span>: <span class="ident">bool</span>,
@@ -734,21 +768,13 @@
 			<span class="op">&gt;</span>,
 		) -&gt; (<span class="ident">ExitReason</span>, <span class="ident">R</span>),
 	{
-		<span class="kw">let</span> (<span class="ident">base_fee</span>, <span class="kw-2">mut</span> <span class="ident">weight</span>) <span class="op">=</span> <span class="ident">T::FeeCalculator::min_gas_price</span>();
+		<span class="kw">let</span> (<span class="ident">base_fee</span>, <span class="ident">weight</span>) <span class="op">=</span> <span class="ident">T::FeeCalculator::min_gas_price</span>();
 		<span class="kw">let</span> <span class="ident">max_fee_per_gas</span> <span class="op">=</span> <span class="kw">match</span> (<span class="ident">max_fee_per_gas</span>, <span class="ident">is_transactional</span>) {
-			(<span class="prelude-val">Some</span>(<span class="ident">max_fee_per_gas</span>), <span class="kw">_</span>) =&gt; {
-				<span class="macro">ensure!</span>(
-					<span class="ident">max_fee_per_gas</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">base_fee</span>,
-					<span class="ident">RunnerError</span> {
-						<span class="ident">error</span>: <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::GasPriceTooLow</span>,
-						<span class="ident">weight</span>,
-					}
-				);
-				<span class="ident">max_fee_per_gas</span>
-			}
+			(<span class="prelude-val">Some</span>(<span class="ident">max_fee_per_gas</span>), <span class="kw">_</span>) =&gt; <span class="ident">max_fee_per_gas</span>,
 			<span class="comment">// Gas price check is skipped for non-transactional calls that don&#39;t</span>
 			<span class="comment">// define a `max_fee_per_gas` input.</span>
 			(<span class="prelude-val">None</span>, <span class="bool-val">false</span>) =&gt; <span class="ident">Default::default</span>(),
+			<span class="comment">// Unreachable, previously validated. Handle gracefully.</span>
 			<span class="kw">_</span> =&gt; {
 				<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">RunnerError</span> {
 					<span class="ident">error</span>: <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::GasPriceTooLow</span>,
@@ -757,16 +783,6 @@
 			}
 		};
 
-		<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">max_priority_fee</span>) <span class="op">=</span> <span class="ident">max_priority_fee_per_gas</span> {
-			<span class="macro">ensure!</span>(
-				<span class="ident">max_fee_per_gas</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">max_priority_fee</span>,
-				<span class="ident">RunnerError</span> {
-					<span class="ident">error</span>: <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::GasPriceTooLow</span>,
-					<span class="ident">weight</span>,
-				}
-			);
-		}
-
 		<span class="comment">// After eip-1559 we make sure the account can pay both the evm execution and priority fees.</span>
 		<span class="kw">let</span> <span class="ident">total_fee</span> <span class="op">=</span> <span class="ident">max_fee_per_gas</span>
 			.<span class="ident">checked_mul</span>(<span class="ident">U256::from</span>(<span class="ident">gas_limit</span>))
@@ -774,36 +790,6 @@
 				<span class="ident">error</span>: <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::FeeOverflow</span>,
 				<span class="ident">weight</span>,
 			})<span class="question-mark">?</span>;
-
-		<span class="kw">let</span> <span class="ident">total_payment</span> <span class="op">=</span> <span class="ident">value</span>.<span class="ident">checked_add</span>(<span class="ident">total_fee</span>).<span class="ident">ok_or</span>(<span class="ident">RunnerError</span> {
-			<span class="ident">error</span>: <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::PaymentOverflow</span>,
-			<span class="ident">weight</span>,
-		})<span class="question-mark">?</span>;
-		<span class="kw">let</span> (<span class="ident">source_account</span>, <span class="ident">inner_weight</span>) <span class="op">=</span> <span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::account_basic</span>(<span class="kw-2">&amp;</span><span class="ident">source</span>);
-		<span class="ident">weight</span> <span class="op">=</span> <span class="ident">weight</span>.<span class="ident">saturating_add</span>(<span class="ident">inner_weight</span>);
-		<span class="comment">// Account balance check is skipped if fee is Zero.</span>
-		<span class="comment">// This case is previously verified to only happen on either:</span>
-		<span class="comment">// 	- Non-transactional calls.</span>
-		<span class="comment">//	- BaseFee is configured to be Zero.</span>
-		<span class="kw">if</span> <span class="ident">total_fee</span> <span class="op">&gt;</span> <span class="ident">U256::zero</span>() {
-			<span class="macro">ensure!</span>(
-				<span class="ident">source_account</span>.<span class="ident">balance</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">total_payment</span>,
-				<span class="ident">RunnerError</span> {
-					<span class="ident">error</span>: <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::BalanceLow</span>,
-					<span class="ident">weight</span>,
-				}
-			);
-		}
-
-		<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">nonce</span>) <span class="op">=</span> <span class="ident">nonce</span> {
-			<span class="macro">ensure!</span>(
-				<span class="ident">source_account</span>.<span class="ident">nonce</span> <span class="op">==</span> <span class="ident">nonce</span>,
-				<span class="ident">RunnerError</span> {
-					<span class="ident">error</span>: <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::InvalidNonce</span>,
-					<span class="ident">weight</span>,
-				}
-			);
-		}
 
 		<span class="comment">// Deduct fee from the `source` account. Returns `None` if `total_fee` is Zero.</span>
 		<span class="kw">let</span> <span class="ident">fee</span> <span class="op">=</span> <span class="ident">T::OnChargeTransaction::withdraw_fee</span>(<span class="kw-2">&amp;</span><span class="ident">source</span>, <span class="ident">total_fee</span>)
@@ -917,6 +903,51 @@
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">RunnerT</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Runner</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
 	<span class="kw">type</span> <span class="ident">Error</span> <span class="op">=</span> <span class="ident">Error</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>;
 
+	<span class="kw">fn</span> <span class="ident">validate</span>(
+		<span class="ident">source</span>: <span class="ident">H160</span>,
+		<span class="ident">target</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">H160</span><span class="op">&gt;</span>,
+		<span class="ident">input</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
+		<span class="ident">value</span>: <span class="ident">U256</span>,
+		<span class="ident">gas_limit</span>: <span class="ident">u64</span>,
+		<span class="ident">max_fee_per_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
+		<span class="ident">max_priority_fee_per_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
+		<span class="ident">nonce</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
+		<span class="ident">access_list</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">H160</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span>)<span class="op">&gt;</span>,
+		<span class="ident">is_transactional</span>: <span class="ident">bool</span>,
+		<span class="ident">evm_config</span>: <span class="kw-2">&amp;</span><span class="ident">evm::Config</span>,
+	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">RunnerError</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Error</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+		<span class="kw">let</span> (<span class="ident">base_fee</span>, <span class="kw-2">mut</span> <span class="ident">weight</span>) <span class="op">=</span> <span class="ident">T::FeeCalculator::min_gas_price</span>();
+		<span class="kw">let</span> (<span class="ident">source_account</span>, <span class="ident">inner_weight</span>) <span class="op">=</span> <span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::account_basic</span>(<span class="kw-2">&amp;</span><span class="ident">source</span>);
+		<span class="ident">weight</span> <span class="op">=</span> <span class="ident">weight</span>.<span class="ident">saturating_add</span>(<span class="ident">inner_weight</span>);
+
+		<span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">fp_evm::CheckEvmTransaction</span>::<span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Error</span><span class="op">&gt;</span><span class="ident">::new</span>(
+			<span class="ident">fp_evm::CheckEvmTransactionConfig</span> {
+				<span class="ident">evm_config</span>,
+				<span class="ident">block_gas_limit</span>: <span class="ident">T::BlockGasLimit::get</span>(),
+				<span class="ident">base_fee</span>,
+				<span class="ident">chain_id</span>: <span class="ident">T::ChainId::get</span>(),
+				<span class="ident">is_transactional</span>,
+			},
+			<span class="ident">fp_evm::CheckEvmTransactionInput</span> {
+				<span class="ident">chain_id</span>: <span class="prelude-val">Some</span>(<span class="ident">T::ChainId::get</span>()),
+				<span class="ident">to</span>: <span class="ident">target</span>,
+				<span class="ident">input</span>,
+				<span class="ident">nonce</span>: <span class="ident">nonce</span>.<span class="ident">unwrap_or</span>(<span class="ident">source_account</span>.<span class="ident">nonce</span>),
+				<span class="ident">gas_limit</span>: <span class="ident">gas_limit</span>.<span class="ident">into</span>(),
+				<span class="ident">gas_price</span>: <span class="prelude-val">None</span>,
+				<span class="ident">max_fee_per_gas</span>,
+				<span class="ident">max_priority_fee_per_gas</span>,
+				<span class="ident">value</span>,
+				<span class="ident">access_list</span>,
+			},
+		)
+		.<span class="ident">validate_in_block_for</span>(<span class="kw-2">&amp;</span><span class="ident">source_account</span>)
+		.<span class="ident">and_then</span>(<span class="op">|</span><span class="ident">v</span><span class="op">|</span> <span class="ident">v</span>.<span class="ident">with_base_fee</span>())
+		.<span class="ident">and_then</span>(<span class="op">|</span><span class="ident">v</span><span class="op">|</span> <span class="ident">v</span>.<span class="ident">with_balance_for</span>(<span class="kw-2">&amp;</span><span class="ident">source_account</span>))
+		.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">error</span><span class="op">|</span> <span class="ident">RunnerError</span> { <span class="ident">error</span>, <span class="ident">weight</span> })<span class="question-mark">?</span>;
+		<span class="prelude-val">Ok</span>(())
+	}
+
 	<span class="kw">fn</span> <span class="ident">call</span>(
 		<span class="ident">source</span>: <span class="ident">H160</span>,
 		<span class="ident">target</span>: <span class="ident">H160</span>,
@@ -928,8 +959,24 @@
 		<span class="ident">nonce</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
 		<span class="ident">access_list</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">H160</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span>)<span class="op">&gt;</span>,
 		<span class="ident">is_transactional</span>: <span class="ident">bool</span>,
+		<span class="ident">validate</span>: <span class="ident">bool</span>,
 		<span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="ident">evm::Config</span>,
 	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">CallInfo</span>, <span class="ident">RunnerError</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Error</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+		<span class="kw">if</span> <span class="ident">validate</span> {
+			<span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::validate</span>(
+				<span class="ident">source</span>,
+				<span class="prelude-val">Some</span>(<span class="ident">target</span>),
+				<span class="ident">input</span>.<span class="ident">clone</span>(),
+				<span class="ident">value</span>,
+				<span class="ident">gas_limit</span>,
+				<span class="ident">max_fee_per_gas</span>,
+				<span class="ident">max_priority_fee_per_gas</span>,
+				<span class="ident">nonce</span>,
+				<span class="ident">access_list</span>.<span class="ident">clone</span>(),
+				<span class="ident">is_transactional</span>,
+				<span class="ident">config</span>,
+			)<span class="question-mark">?</span>;
+		}
 		<span class="kw">let</span> <span class="ident">precompiles</span> <span class="op">=</span> <span class="ident">T::PrecompilesValue::get</span>();
 		<span class="ident"><span class="self">Self</span>::execute</span>(
 			<span class="ident">source</span>,
@@ -937,7 +984,6 @@
 			<span class="ident">gas_limit</span>,
 			<span class="ident">max_fee_per_gas</span>,
 			<span class="ident">max_priority_fee_per_gas</span>,
-			<span class="ident">nonce</span>,
 			<span class="ident">config</span>,
 			<span class="kw-2">&amp;</span><span class="ident">precompiles</span>,
 			<span class="ident">is_transactional</span>,
@@ -955,8 +1001,24 @@
 		<span class="ident">nonce</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
 		<span class="ident">access_list</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">H160</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span>)<span class="op">&gt;</span>,
 		<span class="ident">is_transactional</span>: <span class="ident">bool</span>,
+		<span class="ident">validate</span>: <span class="ident">bool</span>,
 		<span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="ident">evm::Config</span>,
 	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">CreateInfo</span>, <span class="ident">RunnerError</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Error</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+		<span class="kw">if</span> <span class="ident">validate</span> {
+			<span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::validate</span>(
+				<span class="ident">source</span>,
+				<span class="prelude-val">None</span>,
+				<span class="ident">init</span>.<span class="ident">clone</span>(),
+				<span class="ident">value</span>,
+				<span class="ident">gas_limit</span>,
+				<span class="ident">max_fee_per_gas</span>,
+				<span class="ident">max_priority_fee_per_gas</span>,
+				<span class="ident">nonce</span>,
+				<span class="ident">access_list</span>.<span class="ident">clone</span>(),
+				<span class="ident">is_transactional</span>,
+				<span class="ident">config</span>,
+			)<span class="question-mark">?</span>;
+		}
 		<span class="kw">let</span> <span class="ident">precompiles</span> <span class="op">=</span> <span class="ident">T::PrecompilesValue::get</span>();
 		<span class="ident"><span class="self">Self</span>::execute</span>(
 			<span class="ident">source</span>,
@@ -964,7 +1026,6 @@
 			<span class="ident">gas_limit</span>,
 			<span class="ident">max_fee_per_gas</span>,
 			<span class="ident">max_priority_fee_per_gas</span>,
-			<span class="ident">nonce</span>,
 			<span class="ident">config</span>,
 			<span class="kw-2">&amp;</span><span class="ident">precompiles</span>,
 			<span class="ident">is_transactional</span>,
@@ -988,8 +1049,24 @@
 		<span class="ident">nonce</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
 		<span class="ident">access_list</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">H160</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span>)<span class="op">&gt;</span>,
 		<span class="ident">is_transactional</span>: <span class="ident">bool</span>,
+		<span class="ident">validate</span>: <span class="ident">bool</span>,
 		<span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="ident">evm::Config</span>,
 	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">CreateInfo</span>, <span class="ident">RunnerError</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Error</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+		<span class="kw">if</span> <span class="ident">validate</span> {
+			<span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::validate</span>(
+				<span class="ident">source</span>,
+				<span class="prelude-val">None</span>,
+				<span class="ident">init</span>.<span class="ident">clone</span>(),
+				<span class="ident">value</span>,
+				<span class="ident">gas_limit</span>,
+				<span class="ident">max_fee_per_gas</span>,
+				<span class="ident">max_priority_fee_per_gas</span>,
+				<span class="ident">nonce</span>,
+				<span class="ident">access_list</span>.<span class="ident">clone</span>(),
+				<span class="ident">is_transactional</span>,
+				<span class="ident">config</span>,
+			)<span class="question-mark">?</span>;
+		}
 		<span class="kw">let</span> <span class="ident">precompiles</span> <span class="op">=</span> <span class="ident">T::PrecompilesValue::get</span>();
 		<span class="kw">let</span> <span class="ident">code_hash</span> <span class="op">=</span> <span class="ident">H256::from_slice</span>(<span class="ident">Keccak256::digest</span>(<span class="kw-2">&amp;</span><span class="ident">init</span>).<span class="ident">as_slice</span>());
 		<span class="ident"><span class="self">Self</span>::execute</span>(
@@ -998,7 +1075,6 @@
 			<span class="ident">gas_limit</span>,
 			<span class="ident">max_fee_per_gas</span>,
 			<span class="ident">max_priority_fee_per_gas</span>,
-			<span class="ident">nonce</span>,
 			<span class="ident">config</span>,
 			<span class="kw-2">&amp;</span><span class="ident">precompiles</span>,
 			<span class="ident">is_transactional</span>,

@@ -858,6 +858,12 @@
 <span id="853">853</span>
 <span id="854">854</span>
 <span id="855">855</span>
+<span id="856">856</span>
+<span id="857">857</span>
+<span id="858">858</span>
+<span id="859">859</span>
+<span id="860">860</span>
+<span id="861">861</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The Substrate Node Template runtime. This can be compiled with `#[no_std]`, ready for Wasm.</span>
 
 <span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
@@ -1518,6 +1524,8 @@
 			};
 
 			<span class="kw">let</span> <span class="ident">is_transactional</span> <span class="op">=</span> <span class="bool-val">false</span>;
+			<span class="kw">let</span> <span class="ident">validate</span> <span class="op">=</span> <span class="bool-val">true</span>;
+			<span class="kw">let</span> <span class="ident">evm_config</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">as_ref</span>().<span class="ident">unwrap_or</span>(<span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">pallet_evm::Config</span><span class="op">&gt;</span><span class="ident">::config</span>());
 			<span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">pallet_evm::Config</span><span class="op">&gt;</span><span class="ident">::Runner::call</span>(
 				<span class="ident">from</span>,
 				<span class="ident">to</span>,
@@ -1529,7 +1537,8 @@
 				<span class="ident">nonce</span>,
 				<span class="ident">access_list</span>.<span class="ident">unwrap_or_default</span>(),
 				<span class="ident">is_transactional</span>,
-				<span class="ident">config</span>.<span class="ident">as_ref</span>().<span class="ident">unwrap_or</span>(<span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">pallet_evm::Config</span><span class="op">&gt;</span><span class="ident">::config</span>()),
+				<span class="ident">validate</span>,
+				<span class="ident">evm_config</span>,
 			).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">err</span>.<span class="ident">error</span>.<span class="ident">into</span>())
 		}
 
@@ -1553,6 +1562,8 @@
 			};
 
 			<span class="kw">let</span> <span class="ident">is_transactional</span> <span class="op">=</span> <span class="bool-val">false</span>;
+			<span class="kw">let</span> <span class="ident">validate</span> <span class="op">=</span> <span class="bool-val">true</span>;
+			<span class="kw">let</span> <span class="ident">evm_config</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">as_ref</span>().<span class="ident">unwrap_or</span>(<span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">pallet_evm::Config</span><span class="op">&gt;</span><span class="ident">::config</span>());
 			<span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">pallet_evm::Config</span><span class="op">&gt;</span><span class="ident">::Runner::create</span>(
 				<span class="ident">from</span>,
 				<span class="ident">data</span>,
@@ -1563,7 +1574,8 @@
 				<span class="ident">nonce</span>,
 				<span class="ident">access_list</span>.<span class="ident">unwrap_or_default</span>(),
 				<span class="ident">is_transactional</span>,
-				<span class="ident">config</span>.<span class="ident">as_ref</span>().<span class="ident">unwrap_or</span>(<span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">pallet_evm::Config</span><span class="op">&gt;</span><span class="ident">::config</span>()),
+				<span class="ident">validate</span>,
+				<span class="ident">evm_config</span>,
 			).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">err</span>.<span class="ident">error</span>.<span class="ident">into</span>())
 		}
 
