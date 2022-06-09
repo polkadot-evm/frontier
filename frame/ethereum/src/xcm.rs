@@ -132,7 +132,12 @@ impl XcmToEthereum for EthereumXcmTransaction {
 						action: self.action,
 						value: self.value,
 						input: self.input.clone(),
-						signature: TransactionSignature::new(42, H256::from_low_u64_be(1u64), H256::from_low_u64_be(1u64)).unwrap(), // TODO
+						signature: TransactionSignature::new(
+							42,
+							H256::from_low_u64_be(1u64),
+							H256::from_low_u64_be(1u64),
+						)
+						.unwrap(), // TODO
 					}))
 				}
 			}

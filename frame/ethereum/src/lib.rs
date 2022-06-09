@@ -49,7 +49,8 @@ use frame_support::{
 	weights::{DispatchInfo, Pays, PostDispatchInfo, Weight},
 };
 use frame_system::{pallet_prelude::OriginFor, CheckWeight, WeightInfo};
-use pallet_evm::{BlockHashMapping, FeeCalculator, GasWeightMapping, Runner};
+use pallet_evm::{BlockHashMapping, EnsureAddressOrigin, FeeCalculator, GasWeightMapping, Runner};
+use sha3::{Digest, Keccak256};
 use sp_runtime::{
 	generic::DigestItem,
 	traits::{DispatchInfoOf, Dispatchable, One, Saturating, UniqueSaturatedInto, Zero},
@@ -208,6 +209,8 @@ pub mod pallet {
 		type Event: From<Event> + IsType<<Self as frame_system::Config>::Event>;
 		/// How Ethereum state root is calculated.
 		type StateRoot: Get<H256>;
+		/// Origin for xcm transact
+		type XcmTransactOrigin: EnsureAddressOrigin<Self::Origin>;
 	}
 
 	#[pallet::pallet]
@@ -310,16 +313,22 @@ pub mod pallet {
 		))]
 		pub fn transact_xcm(
 			origin: OriginFor<T>,
+			from: H160,
 			xcm_transaction: xcm::EthereumXcmTransaction,
 		) -> DispatchResultWithPostInfo {
 			use xcm::XcmToEthereum;
+
+			T::XcmTransactOrigin::ensure_address_origin(&from, origin)?;
 			// let source = frame_system::ensure_signed(origin)?;
-			let source = ensure_ethereum_transaction(origin)?;
+			// let source = ensure_ethereum_transaction(origin)?;
+
+			let source = from;
 
 			let (base_fee, base_fee_weight) = T::FeeCalculator::min_gas_price();
 			let (who, account_weight) = pallet_evm::Pallet::<T>::account_basic(&source);
 
-			let transaction: Option<Transaction> = xcm_transaction.into_transaction_v2(base_fee, who.nonce);
+			let transaction: Option<Transaction> =
+				xcm_transaction.into_transaction_v2(base_fee, who.nonce);
 			if let Some(transaction) = transaction {
 				let transaction_data = Pallet::<T>::transaction_data(&transaction);
 
@@ -338,21 +347,24 @@ pub mod pallet {
 				.and_then(|v| v.with_balance_for(&who))
 				.map_err(|e| sp_runtime::DispatchErrorWithPostInfo {
 					post_info: PostDispatchInfo {
-							actual_weight: Some(base_fee_weight.saturating_add(account_weight)),
-							pays_fee: Pays::Yes,
+						actual_weight: Some(base_fee_weight.saturating_add(account_weight)),
+						pays_fee: Pays::Yes,
 					},
-					error: sp_runtime::DispatchError::Other("Failed to validate ethereum transaction")
+					error: sp_runtime::DispatchError::Other(
+						"Failed to validate ethereum transaction",
+					),
 				})?;
 
 				Self::apply_validated_transaction(source, transaction)
-
 			} else {
 				Err(sp_runtime::DispatchErrorWithPostInfo {
 					post_info: PostDispatchInfo {
-							actual_weight: Some(base_fee_weight.saturating_add(account_weight)),
-							pays_fee: Pays::Yes,
+						actual_weight: Some(base_fee_weight.saturating_add(account_weight)),
+						pays_fee: Pays::Yes,
 					},
-					error: sp_runtime::DispatchError::Other("Cannot convert xcm payload to known type")
+					error: sp_runtime::DispatchError::Other(
+						"Cannot convert xcm payload to known type",
+					),
 				})
 			}
 		}
