@@ -75,7 +75,7 @@ pub trait XcmToEthereum {
 
 impl XcmToEthereum for EthereumXcmTransaction {
 	fn into_transaction_v2(&self, base_fee: U256, nonce: U256) -> Option<TransactionV2> {
-		let from_tuple_to_access_list = |t: Vec<(H160, Vec<H256>)>| -> AccessList {
+		let from_tuple_to_access_list = |t: &Vec<(H160, Vec<H256>)>| -> AccessList {
 			t.iter()
 				.map(|item| AccessListItem {
 					address: item.0.clone(),
@@ -118,7 +118,7 @@ impl XcmToEthereum for EthereumXcmTransaction {
 						action: self.action,
 						value: self.value,
 						input: self.input.clone(),
-						access_list: from_tuple_to_access_list(access_list.to_vec()),
+						access_list: from_tuple_to_access_list(access_list),
 						odd_y_parity: true,
 						r: H256::default(),
 						s: H256::default(),
@@ -148,7 +148,7 @@ impl XcmToEthereum for EthereumXcmTransaction {
 					value: self.value,
 					input: self.input.clone(),
 					access_list: if let Some(ref access_list) = self.access_list {
-						from_tuple_to_access_list(access_list.to_vec())
+						from_tuple_to_access_list(access_list)
 					} else {
 						Vec::new()
 					},
