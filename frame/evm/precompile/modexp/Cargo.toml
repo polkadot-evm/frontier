@@ -4,22 +4,23 @@ version = "2.0.0-dev"
 authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2021"
 license = "Apache-2.0"
-homepage = "https://substrate.io"
-repository = "https://github.com/paritytech/frontier/"
 description = "MODEXP precompiles for EVM pallet."
+repository = "https://github.com/paritytech/frontier/"
 
 [dependencies]
-num = { version = "0.4", features = ["alloc"], default-features = false }
+num = { version = "0.4", default-features = false, features = ["alloc"] }
 
+# Frontier
 fp-evm = { version = "3.0.0-dev", path = "../../../../primitives/evm", default-features = false }
 
 [dev-dependencies]
-hex = "0.4.0"
+hex = "0.4.3"
 pallet-evm-test-vector-support = { version = "1.0.0-dev", path = "../../test-vector-support" }
 
 [features]
 default = ["std"]
 std = [
 	"num/std",
+	# Frontier
 	"fp-evm/std",
 ]
