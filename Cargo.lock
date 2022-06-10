@@ -1885,6 +1885,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "fp-xcm"
+version = "1.0.0-dev"
+dependencies = [
+ "ethereum",
+ "ethereum-types",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-std",
+]
+
+[[package]]
 name = "frame-benchmarking"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=master#fe5bf49290d166b9552f65e751d46ec592173ebd"
@@ -4414,6 +4425,7 @@ dependencies = [
  "fp-rpc",
  "fp-self-contained",
  "fp-storage",
+ "fp-xcm",
  "frame-support",
  "frame-system",
  "hex",

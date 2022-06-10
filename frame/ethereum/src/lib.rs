@@ -29,8 +29,6 @@ mod mock;
 #[cfg(all(feature = "std", test))]
 mod tests;
 
-mod xcm;
-
 use ethereum_types::{Bloom, BloomInput, H160, H256, H64, U256};
 use evm::ExitReason;
 use fp_consensus::{PostLog, PreLog, FRONTIER_ENGINE_ID};
@@ -66,6 +64,7 @@ pub use ethereum::{
 	TransactionAction, TransactionV2 as Transaction,
 };
 pub use fp_rpc::TransactionStatus;
+pub use fp_xcm::{EthereumXcmTransaction, XcmToEthereum};
 
 #[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub enum RawOrigin {
@@ -308,19 +307,18 @@ pub mod pallet {
 		}
 
 		/// Xcm Transact an Ethereum transaction.
-		#[pallet::weight(<T as pallet_evm::Config>::GasWeightMapping::gas_to_weight( {
+		#[pallet::weight(<T as pallet_evm::Config>::GasWeightMapping::gas_to_weight({
 			match xcm_transaction {
-				xcm::EthereumXcmTransaction::V1(v1_tx) =>  v1_tx.gas_limit.unique_saturated_into()
+				EthereumXcmTransaction::V1(v1_tx) =>  v1_tx.gas_limit.unique_saturated_into()
 			}
 		}))]
 		pub fn transact_xcm(
 			origin: OriginFor<T>,
-			xcm_transaction: xcm::EthereumXcmTransaction,
+			xcm_transaction: EthereumXcmTransaction,
 		) -> DispatchResultWithPostInfo {
-			use xcm::XcmToEthereum;
 
 			let source = match &xcm_transaction {
-				xcm::EthereumXcmTransaction::V1(v1_tx) => v1_tx.from,
+				EthereumXcmTransaction::V1(v1_tx) => v1_tx.from,
 			};
 
 			T::XcmTransactOrigin::ensure_address_origin(&source, origin)?;
@@ -346,7 +344,7 @@ pub mod pallet {
 				.validate_in_block_for(&who)
 				.and_then(|v| v.with_base_fee())
 				.and_then(|v| v.with_balance_for(&who))
-				.map_err(|e| sp_runtime::DispatchErrorWithPostInfo {
+				.map_err(|_| sp_runtime::DispatchErrorWithPostInfo {
 					post_info: PostDispatchInfo {
 						actual_weight: Some(base_fee_weight.saturating_add(account_weight)),
 						pays_fee: Pays::Yes,

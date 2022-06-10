@@ -1,0 +1,26 @@
+[package]
+name = "fp-xcm"
+version = "1.0.0-dev"
+authors = ["Parity Technologies <admin@parity.io"]
+edition = "2021"
+description = "Xcm primitives for Ethereum RPC (web3) compatibility layer for Substrate."
+license = "Apache-2.0"
+
+[dependencies]
+codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false }
+ethereum = { version = "0.12.0", default-features = false, features = ["with-codec"] }
+ethereum-types = { version = "0.13.1", default-features = false }
+scale-info = { version = "2.1.2", default-features = false, features = ["derive"] }
+
+sp-std = { version = "4.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+
+[features]
+default = ["std"]
+std = [
+	"codec/std",
+	"ethereum/std",
+	"ethereum-types/std",
+	"scale-info/std",
+
+	"sp-std/std",
+]
