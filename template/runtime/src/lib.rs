@@ -347,7 +347,7 @@ impl pallet_evm::Config for Runtime {
 impl pallet_ethereum::Config for Runtime {
 	type Event = Event;
 	type StateRoot = pallet_ethereum::IntermediateStateRoot<Self>;
-	type XcmTransactOrigin = pallet_evm::EnsureAddressTruncated;
+	type XcmEthereumOrigin = pallet_ethereum::EnsureXcmEthereumTransaction;
 }
 
 frame_support::parameter_types! {

@@ -47,7 +47,7 @@ use frame_support::{
 	weights::{DispatchInfo, Pays, PostDispatchInfo, Weight},
 };
 use frame_system::{pallet_prelude::OriginFor, CheckWeight, WeightInfo};
-use pallet_evm::{BlockHashMapping, EnsureAddressOrigin, FeeCalculator, GasWeightMapping, Runner};
+use pallet_evm::{BlockHashMapping, FeeCalculator, GasWeightMapping, Runner};
 use sha3::{Digest, Keccak256};
 use sp_runtime::{
 	generic::DigestItem,
@@ -239,7 +239,7 @@ pub mod pallet {
 		/// How Ethereum state root is calculated.
 		type StateRoot: Get<H256>;
 		/// Origin for xcm transact
-		type XcmTransactOrigin: EnsureAddressOrigin<Self::Origin>;
+		type XcmEthereumOrigin: EnsureOrigin<Self::Origin>;
 	}
 
 	#[pallet::pallet]
