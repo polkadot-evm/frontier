@@ -308,21 +308,22 @@ pub mod pallet {
 		}
 
 		/// Xcm Transact an Ethereum transaction.
-		#[pallet::weight(<T as pallet_evm::Config>::GasWeightMapping::gas_to_weight(
-			xcm_transaction.gas_limit.unique_saturated_into()
-		))]
+		#[pallet::weight(<T as pallet_evm::Config>::GasWeightMapping::gas_to_weight( {
+			match xcm_transaction {
+				xcm::EthereumXcmTransaction::V1(v1_tx) =>  v1_tx.gas_limit.unique_saturated_into()
+			}
+		}))]
 		pub fn transact_xcm(
 			origin: OriginFor<T>,
-			from: H160,
 			xcm_transaction: xcm::EthereumXcmTransaction,
 		) -> DispatchResultWithPostInfo {
 			use xcm::XcmToEthereum;
 
-			T::XcmTransactOrigin::ensure_address_origin(&from, origin)?;
-			// let source = frame_system::ensure_signed(origin)?;
-			// let source = ensure_ethereum_transaction(origin)?;
+			let source = match &xcm_transaction {
+				xcm::EthereumXcmTransaction::V1(v1_tx) => v1_tx.from,
+			};
 
-			let source = from;
+			T::XcmTransactOrigin::ensure_address_origin(&source, origin)?;
 
 			let (base_fee, base_fee_weight) = T::FeeCalculator::min_gas_price();
 			let (who, account_weight) = pallet_evm::Pallet::<T>::account_basic(&source);

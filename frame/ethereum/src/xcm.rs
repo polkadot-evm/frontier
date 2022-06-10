@@ -52,9 +52,14 @@ pub enum EthereumXcmFee {
 	Auto(AutoEthereumXcmFee),
 }
 
+#[derive(Clone, Debug, Eq, PartialEq, Encode, Decode, scale_info::TypeInfo)]
+pub enum EthereumXcmTransaction {
+	V1(EthereumXcmTransactionV1),
+}
+
 /// Xcm transact's Ethereum transaction.
 #[derive(Clone, Debug, Eq, PartialEq, Encode, Decode, scale_info::TypeInfo)]
-pub struct EthereumXcmTransaction {
+pub struct EthereumXcmTransactionV1 {
 	/// Gas limit to be consumed by EVM execution.
 	pub gas_limit: U256,
 	/// Fee configuration of choice.
@@ -67,6 +72,8 @@ pub struct EthereumXcmTransaction {
 	pub input: Vec<u8>,
 	/// Map of addresses to be pre-paid to warm storage.
 	pub access_list: Option<Vec<(H160, Vec<H256>)>>,
+	/// account calling the dispatchable
+	pub from: H160,
 }
 
 pub trait XcmToEthereum {
@@ -74,6 +81,14 @@ pub trait XcmToEthereum {
 }
 
 impl XcmToEthereum for EthereumXcmTransaction {
+	fn into_transaction_v2(&self, base_fee: U256, nonce: U256) -> Option<TransactionV2> {
+		match self {
+			EthereumXcmTransaction::V1(v1_tx) => v1_tx.into_transaction_v2(base_fee, nonce),
+		}
+	}
+}
+
+impl XcmToEthereum for EthereumXcmTransactionV1 {
 	fn into_transaction_v2(&self, base_fee: U256, nonce: U256) -> Option<TransactionV2> {
 		let from_tuple_to_access_list = |t: &Vec<(H160, Vec<H256>)>| -> AccessList {
 			t.iter()
@@ -120,8 +135,8 @@ impl XcmToEthereum for EthereumXcmTransaction {
 						input: self.input.clone(),
 						access_list: from_tuple_to_access_list(access_list),
 						odd_y_parity: true,
-						r: H256::default(),
-						s: H256::default(),
+						r: H256::from_low_u64_be(1u64),
+						s: H256::from_low_u64_be(1u64),
 					}))
 				} else {
 					// Legacy
@@ -158,8 +173,8 @@ impl XcmToEthereum for EthereumXcmTransaction {
 						Vec::new()
 					},
 					odd_y_parity: true,
-					r: H256::default(),
-					s: H256::default(),
+					r: H256::from_low_u64_be(1u64),
+					s: H256::from_low_u64_be(1u64),
 				}))
 			}
 			_ => return None,
