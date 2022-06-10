@@ -107,7 +107,6 @@ impl<'a> Visitor<'a> for BytesVisitor {
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use rustc_hex::FromHex;
 
 	#[test]
 	fn test_bytes_serialize() {

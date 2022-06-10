@@ -27,7 +27,7 @@ fn eip1559_erc20_creation_unsigned_transaction() -> EIP1559UnsignedTransaction {
 		gas_limit: U256::from(0x100000),
 		action: ethereum::TransactionAction::Create,
 		value: U256::zero(),
-		input: FromHex::from_hex(ERC20_CONTRACT_BYTECODE).unwrap(),
+		input: hex::decode(ERC20_CONTRACT_BYTECODE.trim_end()).unwrap(),
 	}
 }
 
@@ -281,15 +281,14 @@ fn call_should_handle_errors() {
 			gas_limit: U256::from(0x100000),
 			action: ethereum::TransactionAction::Create,
 			value: U256::zero(),
-			input: FromHex::from_hex(contract).unwrap(),
+			input: hex::decode(contract).unwrap(),
 		}
 		.sign(&alice.private_key, None);
 		assert_ok!(Ethereum::execute(alice.address, &t, None,));
 
-		let contract_address: Vec<u8> =
-			FromHex::from_hex("32dcab0ef3fb2de2fce1d2e0799d36239671f04a").unwrap();
-		let foo: Vec<u8> = FromHex::from_hex("c2985578").unwrap();
-		let bar: Vec<u8> = FromHex::from_hex("febb0f7e").unwrap();
+		let contract_address = hex::decode("32dcab0ef3fb2de2fce1d2e0799d36239671f04a").unwrap();
+		let foo = hex::decode("c2985578").unwrap();
+		let bar = hex::decode("febb0f7e").unwrap();
 
 		let t2 = EIP1559UnsignedTransaction {
 			nonce: U256::from(1),
@@ -308,8 +307,8 @@ fn call_should_handle_errors() {
 		match info {
 			CallOrCreateInfo::Call(info) => {
 				assert_eq!(
-					info.value.to_hex::<String>(),
-					"0000000000000000000000000000000000000000000000000000000000000001".to_owned()
+					hex::encode(info.value),
+					"0000000000000000000000000000000000000000000000000000000000000001"
 				);
 			}
 			CallOrCreateInfo::Create(_) => panic!("expected call info"),

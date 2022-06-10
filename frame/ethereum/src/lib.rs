@@ -48,7 +48,6 @@ use frame_support::{
 };
 use frame_system::{pallet_prelude::OriginFor, CheckWeight, WeightInfo};
 use pallet_evm::{BlockHashMapping, FeeCalculator, GasWeightMapping, Runner};
-use sha3::{Digest, Keccak256};
 use sp_runtime::{
 	generic::DigestItem,
 	traits::{DispatchInfoOf, Dispatchable, One, Saturating, UniqueSaturatedInto, Zero},
@@ -436,9 +435,7 @@ impl<T: Config> Pallet<T> {
 			}
 		}
 		let pubkey = sp_io::crypto::secp256k1_ecdsa_recover(&sig, &msg).ok()?;
-		Some(H160::from(H256::from_slice(
-			Keccak256::digest(&pubkey).as_slice(),
-		)))
+		Some(H160::from(H256::from(sp_io::hashing::keccak_256(&pubkey))))
 	}
 
 	fn store_block(post_log: bool, block_number: U256) {
