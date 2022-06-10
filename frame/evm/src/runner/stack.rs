@@ -28,7 +28,6 @@ use evm::{
 };
 use fp_evm::{CallInfo, CreateInfo, ExecutionInfo, Log, Vicinity};
 use frame_support::traits::{Currency, ExistenceRequirement, Get};
-use sha3::{Digest, Keccak256};
 use sp_core::{H160, H256, U256};
 use sp_runtime::traits::UniqueSaturatedInto;
 use sp_std::{boxed::Box, collections::btree_set::BTreeSet, marker::PhantomData, mem, vec::Vec};
@@ -361,7 +360,7 @@ impl<T: Config> RunnerT<T> for Runner<T> {
 			)?;
 		}
 		let precompiles = T::PrecompilesValue::get();
-		let code_hash = H256::from_slice(Keccak256::digest(&init).as_slice());
+		let code_hash = H256::from(sp_io::hashing::keccak_256(&init));
 		Self::execute(
 			source,
 			value,

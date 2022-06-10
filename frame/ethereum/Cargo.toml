@@ -14,7 +14,6 @@ targets = ["x86_64-unknown-linux-gnu"]
 ethereum = { version = "0.12.0", default-features = false, features = ["with-codec"] }
 evm = { git = "https://github.com/rust-blockchain/evm", rev = "01bcbd2205a212c34451d3b4fabc962793b057d3", features = ["with-codec"], default-features = false }
 serde = { version = "1.0.137", optional = true }
-sha3 = { version = "0.10", default-features = false }
 
 # Parity
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false }
@@ -40,7 +39,7 @@ fp-storage = { version = "2.0.0", path = "../../primitives/storage", default-fea
 pallet-evm = { version = "6.0.0-dev", path = "../evm", default-features = false }
 
 [dev-dependencies]
-rustc-hex = "2.1.0"
+hex = "0.4.3"
 # Parity
 libsecp256k1 = { version = "0.7", features = ["static-context", "hmac"] }
 # Substrate
@@ -54,7 +53,6 @@ std = [
 	"ethereum/std",
 	"evm/std",
 	"serde",
-	"sha3/std",
 	# Parity
 	"codec/std",
 	"ethereum-types/std",

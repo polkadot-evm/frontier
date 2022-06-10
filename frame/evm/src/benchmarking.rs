@@ -34,7 +34,6 @@ benchmarks! {
 
 		use frame_benchmarking::vec;
 		use rlp::RlpStream;
-		use sha3::{Digest, Keccak256};
 		use sp_core::{H160, U256};
 
 		// contract bytecode below is for:
@@ -95,11 +94,11 @@ benchmarks! {
 		let mut rlp = RlpStream::new_list(2);
 		rlp.append(&caller);
 		rlp.append(&0u8);
-		let contract_address = H160::from_slice(&Keccak256::digest(&rlp.out())[12..]);
+		let contract_address = H160::from_slice(&sp_io::hashing::keccak_256(&rlp.out())[12..]);
 
 		// derive encoded contract call -- in this case, just the function selector
 		let mut encoded_call = vec![0u8; 4];
-		encoded_call[0..4].copy_from_slice(&Keccak256::digest(b"infinite()")[0..4]);
+		encoded_call[0..4].copy_from_slice(&sp_io::hashing::keccak_256(b"infinite()")[0..4]);
 
 		let gas_limit_call = x as u64;
 

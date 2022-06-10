@@ -19,7 +19,6 @@ log = "0.4.17"
 lru = "0.7.6"
 prometheus = { version = "0.13.1", default-features = false }
 rand = "0.8"
-rustc-hex = "2.1.0"
 tokio = { version = "1.19", features = ["sync"] }
 
 # Parity
