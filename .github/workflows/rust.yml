@@ -64,6 +64,14 @@ jobs:
         target: wasm32-unknown-unknown
         override: true
         components: rustfmt, clippy
+    - name: Check Cargo.toml Format
+      run: |
+        if taplo --version &> /dev/null; then
+          echo "taplo-cli is already installed"
+        else
+          cargo install taplo-cli
+        fi
+        taplo fmt --check
     - name: Rustfmt
       run: cargo fmt --all -- --check
     - name: Clippy

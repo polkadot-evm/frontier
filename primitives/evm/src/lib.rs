@@ -18,6 +18,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 mod precompile;
+mod validation;
 
 use codec::{Decode, Encode};
 pub use evm::ExitReason;
@@ -33,6 +34,11 @@ pub use self::precompile::{
 	Context, ExitError, ExitRevert, ExitSucceed, LinearCostPrecompile, Precompile,
 	PrecompileFailure, PrecompileHandle, PrecompileOutput, PrecompileResult, PrecompileSet,
 	Transfer,
+};
+
+pub use self::validation::{
+	CheckEvmTransaction, CheckEvmTransactionConfig, CheckEvmTransactionInput,
+	InvalidEvmTransactionError,
 };
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Default)]
