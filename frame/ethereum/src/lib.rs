@@ -316,7 +316,6 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			xcm_transaction: EthereumXcmTransaction,
 		) -> DispatchResultWithPostInfo {
-
 			let source = match &xcm_transaction {
 				EthereumXcmTransaction::V1(v1_tx) => v1_tx.from,
 			};

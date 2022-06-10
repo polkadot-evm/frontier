@@ -16,14 +16,14 @@
 // limitations under the License.
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use codec::{Decode, Encode};
 use ethereum::{
 	AccessList, AccessListItem, EIP1559Transaction, EIP2930Transaction, LegacyTransaction,
 	TransactionAction, TransactionSignature, TransactionV2,
 };
 use ethereum_types::{H160, H256, U256};
-use codec::{Decode, Encode};
-use sp_std::vec::Vec;
 use scale_info::TypeInfo;
+use sp_std::vec::Vec;
 
 #[derive(Clone, Debug, Eq, PartialEq, Encode, Decode, TypeInfo)]
 /// Manually sets a gas fee.
@@ -63,7 +63,7 @@ pub enum EthereumXcmTransaction {
 
 /// Value for `r` and `s` for the invalid signature included in Xcm transact's Ethereum transaction.
 pub fn rs_id() -> H256 {
-    H256::from_low_u64_be(1u64)
+	H256::from_low_u64_be(1u64)
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Encode, Decode, TypeInfo)]
@@ -155,12 +155,7 @@ impl XcmToEthereum for EthereumXcmTransactionV1 {
 						action: self.action,
 						value: self.value,
 						input: self.input.clone(),
-						signature: TransactionSignature::new(
-							42,
-							rs_id(),
-							rs_id(),
-						)
-						.unwrap(), // TODO
+						signature: TransactionSignature::new(42, rs_id(), rs_id()).unwrap(), // TODO
 					}))
 				}
 			}
@@ -187,5 +182,111 @@ impl XcmToEthereum for EthereumXcmTransactionV1 {
 			}
 			_ => return None,
 		}
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	#[test]
+	fn test_into_ethereum_tx_with_low_fee() {
+		let xcm_transaction = EthereumXcmTransactionV1 {
+			gas_limit: U256::from(1),
+			fee_payment: EthereumXcmFee::Auto(AutoEthereumXcmFee::Low),
+			action: TransactionAction::Create,
+			value: U256::from(0),
+			input: vec![1u8],
+			access_list: None,
+			from: H160::default(),
+		};
+		let nonce = U256::from(0);
+		let base_fee = U256::from(1);
+		let expected_tx = Some(TransactionV2::EIP1559(EIP1559Transaction {
+			chain_id: 0,
+			nonce,
+			max_fee_per_gas: base_fee,
+			max_priority_fee_per_gas: U256::from(0),
+			gas_limit: U256::from(1),
+			action: TransactionAction::Create,
+			value: U256::from(0),
+			input: vec![1u8],
+			access_list: vec![],
+			odd_y_parity: true,
+			r: H256::from_low_u64_be(1u64),
+			s: H256::from_low_u64_be(1u64),
+		}));
+
+		assert_eq!(
+			xcm_transaction.into_transaction_v2(base_fee, nonce),
+			expected_tx
+		);
+	}
+
+	#[test]
+	fn test_into_ethereum_tx_with_medium_fee() {
+		let xcm_transaction = EthereumXcmTransactionV1 {
+			gas_limit: U256::from(1),
+			fee_payment: EthereumXcmFee::Auto(AutoEthereumXcmFee::Medium),
+			action: TransactionAction::Create,
+			value: U256::from(0),
+			input: vec![1u8],
+			access_list: None,
+			from: H160::default(),
+		};
+		let nonce = U256::from(0);
+		let base_fee = U256::from(1);
+		let expected_tx = Some(TransactionV2::EIP1559(EIP1559Transaction {
+			chain_id: 0,
+			nonce,
+			max_fee_per_gas: base_fee * 2,
+			max_priority_fee_per_gas: base_fee,
+			gas_limit: U256::from(1),
+			action: TransactionAction::Create,
+			value: U256::from(0),
+			input: vec![1u8],
+			access_list: vec![],
+			odd_y_parity: true,
+			r: H256::from_low_u64_be(1u64),
+			s: H256::from_low_u64_be(1u64),
+		}));
+
+		assert_eq!(
+			xcm_transaction.into_transaction_v2(base_fee, nonce),
+			expected_tx
+		);
+	}
+
+	#[test]
+	fn test_into_ethereum_tx_with_high_fee() {
+		let xcm_transaction = EthereumXcmTransactionV1 {
+			gas_limit: U256::from(1),
+			fee_payment: EthereumXcmFee::Auto(AutoEthereumXcmFee::High),
+			action: TransactionAction::Create,
+			value: U256::from(0),
+			input: vec![1u8],
+			access_list: None,
+			from: H160::default(),
+		};
+		let nonce = U256::from(0);
+		let base_fee = U256::from(1);
+		let expected_tx = Some(TransactionV2::EIP1559(EIP1559Transaction {
+			chain_id: 0,
+			nonce,
+			max_fee_per_gas: base_fee * 3,
+			max_priority_fee_per_gas: base_fee * 2,
+			gas_limit: U256::from(1),
+			action: TransactionAction::Create,
+			value: U256::from(0),
+			input: vec![1u8],
+			access_list: vec![],
+			odd_y_parity: true,
+			r: H256::from_low_u64_be(1u64),
+			s: H256::from_low_u64_be(1u64),
+		}));
+
+		assert_eq!(
+			xcm_transaction.into_transaction_v2(base_fee, nonce),
+			expected_tx
+		);
 	}
 }
