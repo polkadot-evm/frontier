@@ -69,6 +69,7 @@ pub use fp_xcm::{EthereumXcmTransaction, XcmToEthereum};
 #[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub enum RawOrigin {
 	EthereumTransaction(H160),
+	XcmEthereumTransaction(H160),
 }
 
 pub fn ensure_ethereum_transaction<OuterOrigin>(o: OuterOrigin) -> Result<H160, &'static str>
@@ -78,6 +79,16 @@ where
 	match o.into() {
 		Ok(RawOrigin::EthereumTransaction(n)) => Ok(n),
 		_ => Err("bad origin: expected to be an Ethereum transaction"),
+	}
+}
+
+pub fn ensure_xcm_ethereum_transaction<OuterOrigin>(o: OuterOrigin) -> Result<H160, &'static str>
+where
+	OuterOrigin: Into<Result<RawOrigin, OuterOrigin>>,
+{
+	match o.into() {
+		Ok(RawOrigin::XcmEthereumTransaction(n)) => Ok(n),
+		_ => Err("bad origin: expected to be a xcm Ethereum transaction"),
 	}
 }
 
@@ -122,14 +133,33 @@ impl<O: Into<Result<RawOrigin, O>> + From<RawOrigin>> EnsureOrigin<O>
 {
 	type Success = H160;
 	fn try_origin(o: O) -> Result<Self::Success, O> {
-		o.into().map(|o| match o {
-			RawOrigin::EthereumTransaction(id) => id,
+		o.into().and_then(|o| match o {
+			RawOrigin::EthereumTransaction(id) => Ok(id),
+			_ => Err(o.into()),
 		})
 	}
 
 	#[cfg(feature = "runtime-benchmarks")]
 	fn successful_origin() -> O {
 		O::from(RawOrigin::EthereumTransaction(Default::default()))
+	}
+}
+
+pub struct EnsureXcmEthereumTransaction;
+impl<O: Into<Result<RawOrigin, O>> + From<RawOrigin>> EnsureOrigin<O>
+	for EnsureXcmEthereumTransaction
+{
+	type Success = H160;
+	fn try_origin(o: O) -> Result<Self::Success, O> {
+		o.into().and_then(|o| match o {
+			RawOrigin::XcmEthereumTransaction(id) => Ok(id),
+			_ => Err(o.into()),
+		})
+	}
+
+	#[cfg(feature = "runtime-benchmarks")]
+	fn successful_origin() -> O {
+		O::from(RawOrigin::XcmEthereumTransaction(Default::default()))
 	}
 }
 
@@ -316,11 +346,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			xcm_transaction: EthereumXcmTransaction,
 		) -> DispatchResultWithPostInfo {
-			let source = match &xcm_transaction {
-				EthereumXcmTransaction::V1(v1_tx) => v1_tx.from,
-			};
-
-			T::XcmTransactOrigin::ensure_address_origin(&source, origin)?;
+			let source = ensure_xcm_ethereum_transaction(origin)?;
 
 			let (base_fee, base_fee_weight) = T::FeeCalculator::min_gas_price();
 			let (who, account_weight) = pallet_evm::Pallet::<T>::account_basic(&source);

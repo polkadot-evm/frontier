@@ -80,8 +80,6 @@ pub struct EthereumXcmTransactionV1 {
 	pub input: Vec<u8>,
 	/// Map of addresses to be pre-paid to warm storage.
 	pub access_list: Option<Vec<(H160, Vec<H256>)>>,
-	/// account calling the dispatchable
-	pub from: H160,
 }
 
 pub trait XcmToEthereum {
@@ -197,7 +195,6 @@ mod tests {
 			value: U256::from(0),
 			input: vec![1u8],
 			access_list: None,
-			from: H160::default(),
 		};
 		let nonce = U256::from(0);
 		let base_fee = U256::from(1);
@@ -231,7 +228,6 @@ mod tests {
 			value: U256::from(0),
 			input: vec![1u8],
 			access_list: None,
-			from: H160::default(),
 		};
 		let nonce = U256::from(0);
 		let base_fee = U256::from(1);
@@ -265,7 +261,6 @@ mod tests {
 			value: U256::from(0),
 			input: vec![1u8],
 			access_list: None,
-			from: H160::default(),
 		};
 		let nonce = U256::from(0);
 		let base_fee = U256::from(1);
