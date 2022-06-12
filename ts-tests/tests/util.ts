@@ -26,7 +26,9 @@ export async function customRequest(web3: Web3, method: string, params: any[]) {
 			(error: Error | null, result?: JsonRpcResponse) => {
 				if (error) {
 					reject(
-						`Failed to send custom request (${method} (${params.join(',')})): ${error.message || error.toString()}`
+						`Failed to send custom request (${method} (${params.join(',')})): ${
+							error.message || error.toString()
+						}`
 					);
 				}
 				resolve(result);
@@ -54,9 +56,11 @@ export async function createAndFinalizeBlockNowait(web3: Web3) {
 	}
 }
 
-export async function startFrontierNode(
-	provider?: string
-): Promise<{ web3: Web3; binary: ChildProcess; ethersjs: ethers.providers.JsonRpcProvider }> {
+export async function startFrontierNode(provider?: string): Promise<{
+	web3: Web3;
+	binary: ChildProcess;
+	ethersjs: ethers.providers.JsonRpcProvider;
+}> {
 	var web3;
 	if (!provider || provider == 'http') {
 		web3 = new Web3(`http://127.0.0.1:${RPC_PORT}`);
@@ -139,7 +143,10 @@ export async function startFrontierNode(
 
 export function describeWithFrontier(title: string, cb: (context: { web3: Web3 }) => void, provider?: string) {
 	describe(title, () => {
-		let context: { web3: Web3; ethersjs: ethers.providers.JsonRpcProvider } = { web3: null, ethersjs: null };
+		let context: {
+			web3: Web3;
+			ethersjs: ethers.providers.JsonRpcProvider;
+		} = { web3: null, ethersjs: null };
 		let binary: ChildProcess;
 		// Making sure the Frontier node has started
 		before('Starting Frontier Test Node', async function () {

@@ -89,10 +89,14 @@ describeWithFrontier('Frontier RPC (Contract Methods)', (context) => {
 
 	// Requires error handling
 	it.skip('should fail for missing parameters', async function () {
-		const contract = new context.web3.eth.Contract([{ ...TEST_CONTRACT_ABI[0], inputs: [] }], FIRST_CONTRACT_ADDRESS, {
-			from: GENESIS_ACCOUNT,
-			gasPrice: '0x3B9ACA00',
-		});
+		const contract = new context.web3.eth.Contract(
+			[{ ...TEST_CONTRACT_ABI[0], inputs: [] }],
+			FIRST_CONTRACT_ADDRESS,
+			{
+				from: GENESIS_ACCOUNT,
+				gasPrice: '0x3B9ACA00',
+			}
+		);
 		await contract.methods
 			.multiply()
 			.call()
