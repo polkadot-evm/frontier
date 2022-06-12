@@ -1,72 +1,79 @@
-import { expect, use as chaiUse } from "chai";
-import chaiAsPromised from "chai-as-promised";
+import { expect, use as chaiUse } from 'chai';
+import chaiAsPromised from 'chai-as-promised';
 
-import Test from "../build/contracts/Test.json"
-import { createAndFinalizeBlock, customRequest, describeWithFrontier } from "./util";
+import Test from '../build/contracts/Test.json';
+import { createAndFinalizeBlock, customRequest, describeWithFrontier } from './util';
 
 chaiUse(chaiAsPromised);
 
-describeWithFrontier("Frontier RPC (Contract)", (context) => {
-	const GENESIS_ACCOUNT = "0x6be02d1d3665660d22ff9624b7be0551ee1ac91b";
-	const GENESIS_ACCOUNT_PRIVATE_KEY = "0x99B3C12287537E38C90A9219D4CB074A89A16E9CDB20BF85728EBD97C343E342";
+describeWithFrontier('Frontier RPC (Contract)', (context) => {
+	const GENESIS_ACCOUNT = '0x6be02d1d3665660d22ff9624b7be0551ee1ac91b';
+	const GENESIS_ACCOUNT_PRIVATE_KEY = '0x99B3C12287537E38C90A9219D4CB074A89A16E9CDB20BF85728EBD97C343E342';
 
 	const TEST_CONTRACT_BYTECODE = Test.bytecode;
-	const TEST_CONTRACT_DEPLOYED_BYTECODE = Test.deployedBytecode
-	const FIRST_CONTRACT_ADDRESS = "0xc2bf5f29a4384b1ab0c063e1c666f02121b6084a";
+	const TEST_CONTRACT_DEPLOYED_BYTECODE = Test.deployedBytecode;
+	const FIRST_CONTRACT_ADDRESS = '0xc2bf5f29a4384b1ab0c063e1c666f02121b6084a';
 	// Those test are ordered. In general this should be avoided, but due to the time it takes
 	// to spin up a frontier node, it saves a lot of time.
 
-	it("contract creation should return transaction hash", async function () {
+	it('contract creation should return transaction hash', async function () {
 		this.timeout(15000);
 		const tx = await context.web3.eth.accounts.signTransaction(
 			{
 				from: GENESIS_ACCOUNT,
 				data: TEST_CONTRACT_BYTECODE,
-				value: "0x00",
-				gasPrice: "0x3B9ACA00",
-				gas: "0x100000",
+				value: '0x00',
+				gasPrice: '0x3B9ACA00',
+				gas: '0x100000',
 			},
 			GENESIS_ACCOUNT_PRIVATE_KEY
 		);
 
-		expect(await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction])).to.include({
+		expect(await customRequest(context.web3, 'eth_sendRawTransaction', [tx.rawTransaction])).to.include({
 			id: 1,
-			jsonrpc: "2.0",
+			jsonrpc: '2.0',
 		});
 
 		// Verify the contract is not yet stored
-		expect(await customRequest(context.web3, "eth_getCode", [FIRST_CONTRACT_ADDRESS])).to.deep.equal({
+		expect(await customRequest(context.web3, 'eth_getCode', [FIRST_CONTRACT_ADDRESS])).to.deep.equal({
 			id: 1,
-			jsonrpc: "2.0",
-			result: "0x",
+			jsonrpc: '2.0',
+			result: '0x',
 		});
 
 		// Verify the contract is in the pending state
-		expect(await customRequest(context.web3, "eth_getCode", [FIRST_CONTRACT_ADDRESS, "pending"])).to.deep.equal({
+		expect(await customRequest(context.web3, 'eth_getCode', [FIRST_CONTRACT_ADDRESS, 'pending'])).to.deep.equal({
 			id: 1,
-			jsonrpc: "2.0",
+			jsonrpc: '2.0',
 			result: TEST_CONTRACT_DEPLOYED_BYTECODE,
 		});
 
 		// Verify the contract is stored after the block is produced
 		await createAndFinalizeBlock(context.web3);
-		expect(await customRequest(context.web3, "eth_getCode", [FIRST_CONTRACT_ADDRESS])).to.deep.equal({
+		expect(await customRequest(context.web3, 'eth_getCode', [FIRST_CONTRACT_ADDRESS])).to.deep.equal({
 			id: 1,
-			jsonrpc: "2.0",
+			jsonrpc: '2.0',
 			result: TEST_CONTRACT_DEPLOYED_BYTECODE,
 		});
 	});
 
-	it("eth_call contract create should return code", async function () {
-		expect(await context.web3.eth.call({
-			data: TEST_CONTRACT_BYTECODE
-		})).to.be.eq(TEST_CONTRACT_DEPLOYED_BYTECODE);
+	it('eth_call contract create should return code', async function () {
+		expect(
+			await context.web3.eth.call({
+				data: TEST_CONTRACT_BYTECODE,
+			})
+		).to.be.eq(TEST_CONTRACT_DEPLOYED_BYTECODE);
 	});
 
-	it("eth_call at missing block returns error", async function () {
-		const nonExistingBlockNumber = "999999";
-		return expect(context.web3.eth.call({
-			data: TEST_CONTRACT_BYTECODE,
-		}, nonExistingBlockNumber)).to.eventually.rejectedWith('header not found');
+	it('eth_call at missing block returns error', async function () {
+		const nonExistingBlockNumber = '999999';
+		return expect(
+			context.web3.eth.call(
+				{
+					data: TEST_CONTRACT_BYTECODE,
+				},
+				nonExistingBlockNumber
+			)
+		).to.eventually.rejectedWith('header not found');
 	});
 });
