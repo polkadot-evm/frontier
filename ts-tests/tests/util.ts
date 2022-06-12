@@ -1,17 +1,17 @@
-import Web3 from 'web3';
-import { ethers } from 'ethers';
-import { JsonRpcResponse } from 'web3-core-helpers';
-import { spawn, ChildProcess } from 'child_process';
+import Web3 from "web3";
+import { ethers } from "ethers";
+import { JsonRpcResponse } from "web3-core-helpers";
+import { spawn, ChildProcess } from "child_process";
 
-import { CHAIN_ID } from './config';
+import { CHAIN_ID } from "./config";
 
 export const PORT = 19931;
 export const RPC_PORT = 19932;
 export const WS_PORT = 19933;
 
 export const DISPLAY_LOG = process.env.FRONTIER_LOG || false;
-export const FRONTIER_LOG = process.env.FRONTIER_LOG || 'info';
-export const FRONTIER_BUILD = process.env.FRONTIER_BUILD || 'release';
+export const FRONTIER_LOG = process.env.FRONTIER_LOG || "info";
+export const FRONTIER_BUILD = process.env.FRONTIER_BUILD || "release";
 
 export const BINARY_PATH = `../target/${FRONTIER_BUILD}/frontier-template-node`;
 export const SPAWNING_TIME = 60000;
@@ -20,7 +20,7 @@ export async function customRequest(web3: Web3, method: string, params: any[]) {
 	return new Promise<JsonRpcResponse>((resolve, reject) => {
 		(web3.currentProvider as any).send(
 			{
-				jsonrpc: '2.0',
+				jsonrpc: "2.0",
 				id: 1,
 				method,
 				params,
@@ -28,7 +28,7 @@ export async function customRequest(web3: Web3, method: string, params: any[]) {
 			(error: Error | null, result?: JsonRpcResponse) => {
 				if (error) {
 					reject(
-						`Failed to send custom request (${method} (${params.join(',')})): ${
+						`Failed to send custom request (${method} (${params.join(",")})): ${
 							error.message || error.toString()
 						}`
 					);
@@ -42,7 +42,7 @@ export async function customRequest(web3: Web3, method: string, params: any[]) {
 // Create a block and finalize it.
 // It will include all previously executed transactions since the last finalized block.
 export async function createAndFinalizeBlock(web3: Web3) {
-	const response = await customRequest(web3, 'engine_createBlock', [true, true, null]);
+	const response = await customRequest(web3, "engine_createBlock", [true, true, null]);
 	if (!response.result) {
 		throw new Error(`Unexpected result: ${JSON.stringify(response)}`);
 	}
@@ -52,7 +52,7 @@ export async function createAndFinalizeBlock(web3: Web3) {
 // Create a block and finalize it.
 // It will include all previously executed transactions since the last finalized block.
 export async function createAndFinalizeBlockNowait(web3: Web3) {
-	const response = await customRequest(web3, 'engine_createBlock', [true, true, null]);
+	const response = await customRequest(web3, "engine_createBlock", [true, true, null]);
 	if (!response.result) {
 		throw new Error(`Unexpected result: ${JSON.stringify(response)}`);
 	}
@@ -64,7 +64,7 @@ export async function startFrontierNode(provider?: string): Promise<{
 	ethersjs: ethers.providers.JsonRpcProvider;
 }> {
 	var web3;
-	if (!provider || provider == 'http') {
+	if (!provider || provider == "http") {
 		web3 = new Web3(`http://127.0.0.1:${RPC_PORT}`);
 	}
 
@@ -86,8 +86,8 @@ export async function startFrontierNode(provider?: string): Promise<{
 	];
 	const binary = spawn(cmd, args);
 
-	binary.on('error', (err) => {
-		if ((err as any).errno == 'ENOENT') {
+	binary.on("error", (err) => {
+		if ((err as any).errno == "ENOENT") {
 			console.error(
 				`\x1b[31mMissing Frontier binary (${BINARY_PATH}).\nPlease compile the Frontier project:\ncargo build\x1b[0m`
 			);
@@ -101,9 +101,9 @@ export async function startFrontierNode(provider?: string): Promise<{
 	await new Promise((resolve) => {
 		const timer = setTimeout(() => {
 			console.error(`\x1b[31m Failed to start Frontier Template Node.\x1b[0m`);
-			console.error(`Command: ${cmd} ${args.join(' ')}`);
+			console.error(`Command: ${cmd} ${args.join(" ")}`);
 			console.error(`Logs:`);
-			console.error(binaryLogs.map((chunk) => chunk.toString()).join('\n'));
+			console.error(binaryLogs.map((chunk) => chunk.toString()).join("\n"));
 			process.exit(1);
 		}, SPAWNING_TIME - 2000);
 
@@ -113,31 +113,31 @@ export async function startFrontierNode(provider?: string): Promise<{
 			}
 			binaryLogs.push(chunk);
 			if (chunk.toString().match(/Manual Seal Ready/)) {
-				if (!provider || provider == 'http') {
+				if (!provider || provider == "http") {
 					// This is needed as the EVM runtime needs to warmup with a first call
 					await web3.eth.getChainId();
 				}
 
 				clearTimeout(timer);
 				if (!DISPLAY_LOG) {
-					binary.stderr.off('data', onData);
-					binary.stdout.off('data', onData);
+					binary.stderr.off("data", onData);
+					binary.stdout.off("data", onData);
 				}
 				// console.log(`\x1b[31m Starting RPC\x1b[0m`);
 				resolve();
 			}
 		};
-		binary.stderr.on('data', onData);
-		binary.stdout.on('data', onData);
+		binary.stderr.on("data", onData);
+		binary.stdout.on("data", onData);
 	});
 
-	if (provider == 'ws') {
+	if (provider == "ws") {
 		web3 = new Web3(`ws://127.0.0.1:${WS_PORT}`);
 	}
 
 	let ethersjs = new ethers.providers.StaticJsonRpcProvider(`http://127.0.0.1:${RPC_PORT}`, {
 		chainId: CHAIN_ID,
-		name: 'frontier-dev',
+		name: "frontier-dev",
 	});
 
 	return { web3, binary, ethersjs };
@@ -151,7 +151,7 @@ export function describeWithFrontier(title: string, cb: (context: { web3: Web3 }
 		} = { web3: null, ethersjs: null };
 		let binary: ChildProcess;
 		// Making sure the Frontier node has started
-		before('Starting Frontier Test Node', async function () {
+		before("Starting Frontier Test Node", async function () {
 			this.timeout(SPAWNING_TIME);
 			const init = await startFrontierNode(provider);
 			context.web3 = init.web3;

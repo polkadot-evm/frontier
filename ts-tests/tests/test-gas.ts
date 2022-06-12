@@ -1,9 +1,9 @@
-import { expect } from 'chai';
-import { AbiItem } from 'web3-utils';
+import { expect } from "chai";
+import { AbiItem } from "web3-utils";
 
-import Test from '../build/contracts/Test.json';
-import { GENESIS_ACCOUNT, GENESIS_ACCOUNT_PRIVATE_KEY, FIRST_CONTRACT_ADDRESS } from './config';
-import { describeWithFrontier, createAndFinalizeBlock, customRequest } from './util';
+import Test from "../build/contracts/Test.json";
+import { GENESIS_ACCOUNT, GENESIS_ACCOUNT_PRIVATE_KEY, FIRST_CONTRACT_ADDRESS } from "./config";
+import { describeWithFrontier, createAndFinalizeBlock, customRequest } from "./util";
 
 // (!) The implementation must match the one in the rpc handler.
 // If the variation in the estimate is less than 10%,
@@ -33,7 +33,7 @@ function estimation_variance(binary_search_estimation, one_off_estimation) {
 	return ((binary_search_estimation - one_off_estimation) * ESTIMATION_VARIANCE) / binary_search_estimation;
 }
 
-describeWithFrontier('Frontier RPC (Gas)', (context) => {
+describeWithFrontier("Frontier RPC (Gas)", (context) => {
 	const TEST_CONTRACT_ABI = Test.abi as AbiItem[];
 
 	// Those test are ordered. In general this should be avoided, but due to the time it takes
@@ -42,7 +42,7 @@ describeWithFrontier('Frontier RPC (Gas)', (context) => {
 	// EXTRINSIC_GAS_LIMIT = [BLOCK_GAS_LIMIT - BLOCK_GAS_LIMIT * (NORMAL_DISPATCH_RATIO - AVERAGE_ON_INITIALIZE_RATIO) - EXTRINSIC_BASE_Weight] / WEIGHT_PER_GAS = (1_000_000_000_000 * 2 * (0.75-0.1) - 125_000_000) / 20000
 	const EXTRINSIC_GAS_LIMIT = 64995685;
 
-	it('eth_estimateGas for contract creation', async function () {
+	it("eth_estimateGas for contract creation", async function () {
 		// The value returned as an estimation by the evm with estimate mode ON.
 		let one_off_estimation = 196657;
 		let binary_search_estimation = binary_search(one_off_estimation);
@@ -56,28 +56,28 @@ describeWithFrontier('Frontier RPC (Gas)', (context) => {
 		).to.equal(binary_search_estimation);
 	});
 
-	it.skip('block gas limit over 5M', async function () {
-		expect((await context.web3.eth.getBlock('latest')).gasLimit).to.be.above(5000000);
+	it.skip("block gas limit over 5M", async function () {
+		expect((await context.web3.eth.getBlock("latest")).gasLimit).to.be.above(5000000);
 	});
 
 	// Testing the gas limit protection, hardcoded to 25M
-	it.skip('gas limit should decrease on next block if gas unused', async function () {
+	it.skip("gas limit should decrease on next block if gas unused", async function () {
 		this.timeout(15000);
 
-		const gasLimit = (await context.web3.eth.getBlock('latest')).gasLimit;
+		const gasLimit = (await context.web3.eth.getBlock("latest")).gasLimit;
 		await createAndFinalizeBlock(context.web3);
 
 		// Gas limit is expected to have decreased as the gasUsed by the block is lower than 2/3 of the previous gas limit
-		const newGasLimit = (await context.web3.eth.getBlock('latest')).gasLimit;
+		const newGasLimit = (await context.web3.eth.getBlock("latest")).gasLimit;
 		expect(newGasLimit).to.be.below(gasLimit);
 	});
 
 	// Testing the gas limit protection, hardcoded to 25M
-	it.skip('gas limit should increase on next block if gas fully used', async function () {
+	it.skip("gas limit should increase on next block if gas fully used", async function () {
 		// TODO: fill a block with many heavy transaction to simulate lot of gas.
 	});
 
-	it('eth_estimateGas for contract call', async function () {
+	it("eth_estimateGas for contract call", async function () {
 		// The value returned as an estimation by the evm with estimate mode ON.
 		let one_off_estimation = 21204;
 		let binary_search_estimation = binary_search(one_off_estimation);
@@ -85,13 +85,13 @@ describeWithFrontier('Frontier RPC (Gas)', (context) => {
 		expect(estimation_variance(binary_search_estimation, one_off_estimation)).to.be.lessThan(1);
 		const contract = new context.web3.eth.Contract(TEST_CONTRACT_ABI, FIRST_CONTRACT_ADDRESS, {
 			from: GENESIS_ACCOUNT,
-			gasPrice: '0x3B9ACA00',
+			gasPrice: "0x3B9ACA00",
 		});
 
 		expect(await contract.methods.multiply(3).estimateGas()).to.equal(binary_search_estimation);
 	});
 
-	it('eth_estimateGas without gas_limit should pass', async function () {
+	it("eth_estimateGas without gas_limit should pass", async function () {
 		// The value returned as an estimation by the evm with estimate mode ON.
 		let one_off_estimation = 21204;
 		let binary_search_estimation = binary_search(one_off_estimation);
@@ -104,7 +104,7 @@ describeWithFrontier('Frontier RPC (Gas)', (context) => {
 		expect(await contract.methods.multiply(3).estimateGas()).to.equal(binary_search_estimation);
 	});
 
-	it('eth_estimateGas should handle AccessList alias', async function () {
+	it("eth_estimateGas should handle AccessList alias", async function () {
 		// The value returned as an estimation by the evm with estimate mode ON.
 		// 4300 == 1900 for one key and 2400 for one storage.
 		let one_off_estimation = 196657 + 4300;
@@ -112,14 +112,14 @@ describeWithFrontier('Frontier RPC (Gas)', (context) => {
 		// Sanity check expect a variance of 10%.
 		expect(estimation_variance(binary_search_estimation, one_off_estimation)).to.be.lessThan(1);
 		let result = (
-			await customRequest(context.web3, 'eth_estimateGas', [
+			await customRequest(context.web3, "eth_estimateGas", [
 				{
 					from: GENESIS_ACCOUNT,
 					data: Test.bytecode,
 					accessList: [
 						{
-							address: '0x0000000000000000000000000000000000000000',
-							storageKeys: ['0x0000000000000000000000000000000000000000000000000000000000000000'],
+							address: "0x0000000000000000000000000000000000000000",
+							storageKeys: ["0x0000000000000000000000000000000000000000000000000000000000000000"],
 						},
 					],
 				},
@@ -128,11 +128,11 @@ describeWithFrontier('Frontier RPC (Gas)', (context) => {
 		expect(result).to.equal(context.web3.utils.numberToHex(binary_search_estimation));
 	});
 
-	it('eth_estimateGas 0x0 gasPrice is equivalent to not setting one', async function () {
+	it("eth_estimateGas 0x0 gasPrice is equivalent to not setting one", async function () {
 		let result = await context.web3.eth.estimateGas({
 			from: GENESIS_ACCOUNT,
 			data: Test.bytecode,
-			gasPrice: '0x0',
+			gasPrice: "0x0",
 		});
 		expect(result).to.equal(197690);
 		result = await context.web3.eth.estimateGas({
@@ -142,50 +142,50 @@ describeWithFrontier('Frontier RPC (Gas)', (context) => {
 		expect(result).to.equal(197690);
 	});
 
-	it('tx gas limit below EXTRINSIC_GAS_LIMIT', async function () {
+	it("tx gas limit below EXTRINSIC_GAS_LIMIT", async function () {
 		const tx = await context.web3.eth.accounts.signTransaction(
 			{
 				from: GENESIS_ACCOUNT,
 				data: Test.bytecode,
 				gas: EXTRINSIC_GAS_LIMIT - 1,
-				gasPrice: '0x3B9ACA00',
+				gasPrice: "0x3B9ACA00",
 			},
 			GENESIS_ACCOUNT_PRIVATE_KEY
 		);
-		const createReceipt = await customRequest(context.web3, 'eth_sendRawTransaction', [tx.rawTransaction]);
+		const createReceipt = await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction]);
 		await createAndFinalizeBlock(context.web3);
 		expect((createReceipt as any).transactionHash).to.be.not.null;
 		expect((createReceipt as any).blockHash).to.be.not.null;
 	});
-	it('tx gas limit equal EXTRINSIC_GAS_LIMIT', async function () {
+	it("tx gas limit equal EXTRINSIC_GAS_LIMIT", async function () {
 		const tx = await context.web3.eth.accounts.signTransaction(
 			{
 				from: GENESIS_ACCOUNT,
 				data: Test.bytecode,
 				gas: EXTRINSIC_GAS_LIMIT,
-				gasPrice: '0x3B9ACA00',
+				gasPrice: "0x3B9ACA00",
 			},
 			GENESIS_ACCOUNT_PRIVATE_KEY
 		);
-		const createReceipt = await customRequest(context.web3, 'eth_sendRawTransaction', [tx.rawTransaction]);
+		const createReceipt = await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction]);
 		await createAndFinalizeBlock(context.web3);
 		expect((createReceipt as any).transactionHash).to.be.not.null;
 		expect((createReceipt as any).blockHash).to.be.not.null;
 	});
-	it('tx gas limit larger EXTRINSIC_GAS_LIMIT', async function () {
+	it("tx gas limit larger EXTRINSIC_GAS_LIMIT", async function () {
 		const tx = await context.web3.eth.accounts.signTransaction(
 			{
 				from: GENESIS_ACCOUNT,
 				data: Test.bytecode,
 				gas: EXTRINSIC_GAS_LIMIT + 1,
-				gasPrice: '0x3B9ACA00',
+				gasPrice: "0x3B9ACA00",
 			},
 			GENESIS_ACCOUNT_PRIVATE_KEY
 		);
-		const createReceipt = await customRequest(context.web3, 'eth_sendRawTransaction', [tx.rawTransaction]);
+		const createReceipt = await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction]);
 		await createAndFinalizeBlock(context.web3);
 		expect((createReceipt as any).error.message).to.equal(
-			'submit transaction to pool failed: Pool(InvalidTransaction(InvalidTransaction::ExhaustsResources))'
+			"submit transaction to pool failed: Pool(InvalidTransaction(InvalidTransaction::ExhaustsResources))"
 		);
 	});
 });
