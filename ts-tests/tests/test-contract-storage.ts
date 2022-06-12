@@ -1,16 +1,13 @@
 import { expect } from 'chai';
-
-import Test from '../build/contracts/Storage.json';
-import { createAndFinalizeBlock, customRequest, describeWithFrontier } from './util';
 import { AbiItem } from 'web3-utils';
 
-describeWithFrontier('Frontier RPC (Contract)', (context) => {
-	const GENESIS_ACCOUNT = '0x6be02d1d3665660d22ff9624b7be0551ee1ac91b';
-	const GENESIS_ACCOUNT_PRIVATE_KEY = '0x99B3C12287537E38C90A9219D4CB074A89A16E9CDB20BF85728EBD97C343E342';
+import Test from '../build/contracts/Storage.json';
+import { GENESIS_ACCOUNT, GENESIS_ACCOUNT_PRIVATE_KEY } from './config';
+import { createAndFinalizeBlock, customRequest, describeWithFrontier } from './util';
 
+describeWithFrontier('Frontier RPC (Contract)', (context) => {
 	const TEST_CONTRACT_BYTECODE = Test.bytecode;
 	const TEST_CONTRACT_ABI = Test.abi as AbiItem[];
-	const TEST_CONTRACT_DEPLOYED_BYTECODE = Test.deployedBytecode;
 
 	it('eth_getStorageAt', async function () {
 		const contract = new context.web3.eth.Contract(TEST_CONTRACT_ABI);
@@ -74,7 +71,6 @@ describeWithFrontier('Frontier RPC (Contract)', (context) => {
 		expect(getStoragePending.result).to.be.eq(expectedStorage);
 
 		await createAndFinalizeBlock(context.web3);
-		let receip1 = await context.web3.eth.getTransactionReceipt(tx1.transactionHash);
 
 		let getStorage1 = await customRequest(context.web3, 'eth_getStorageAt', [
 			contractAddress,

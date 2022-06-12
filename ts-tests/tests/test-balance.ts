@@ -1,12 +1,11 @@
 import { expect } from 'chai';
 import { step } from 'mocha-steps';
 
+import { GENESIS_ACCOUNT, GENESIS_ACCOUNT_PRIVATE_KEY } from './config';
 import { createAndFinalizeBlock, describeWithFrontier, customRequest } from './util';
 
 describeWithFrontier('Frontier RPC (Balance)', (context) => {
-	const GENESIS_ACCOUNT = '0x6be02d1d3665660d22ff9624b7be0551ee1ac91b';
 	const GENESIS_ACCOUNT_BALANCE = '340282366920938463463374607431768210955';
-	const GENESIS_ACCOUNT_PRIVATE_KEY = '0x99B3C12287537E38C90A9219D4CB074A89A16E9CDB20BF85728EBD97C343E342';
 	const TEST_ACCOUNT = '0x1111111111111111111111111111111111111111';
 
 	step('genesis balance is setup correctly', async function () {

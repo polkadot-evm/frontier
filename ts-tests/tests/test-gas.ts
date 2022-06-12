@@ -1,8 +1,9 @@
 import { expect } from 'chai';
+import { AbiItem } from 'web3-utils';
 
 import Test from '../build/contracts/Test.json';
+import { GENESIS_ACCOUNT, GENESIS_ACCOUNT_PRIVATE_KEY, FIRST_CONTRACT_ADDRESS } from './config';
 import { describeWithFrontier, createAndFinalizeBlock, customRequest } from './util';
-import { AbiItem } from 'web3-utils';
 
 // (!) The implementation must match the one in the rpc handler.
 // If the variation in the estimate is less than 10%,
@@ -33,12 +34,10 @@ function estimation_variance(binary_search_estimation, one_off_estimation) {
 }
 
 describeWithFrontier('Frontier RPC (Gas)', (context) => {
-	const GENESIS_ACCOUNT = '0x6be02d1d3665660d22ff9624b7be0551ee1ac91b';
-	const GENESIS_ACCOUNT_PRIVATE_KEY = '0x99B3C12287537E38C90A9219D4CB074A89A16E9CDB20BF85728EBD97C343E342';
-
-	const TEST_CONTRACT_BYTECODE = Test.bytecode;
 	const TEST_CONTRACT_ABI = Test.abi as AbiItem[];
-	const FIRST_CONTRACT_ADDRESS = '0xc2bf5f29a4384b1ab0c063e1c666f02121b6084a'; // Those test are ordered. In general this should be avoided, but due to the time it takes	// to spin up a frontier node, it saves a lot of time.
+
+	// Those test are ordered. In general this should be avoided, but due to the time it takes
+	// to spin up a frontier node, it saves a lot of time.
 
 	// EXTRINSIC_GAS_LIMIT = [BLOCK_GAS_LIMIT - BLOCK_GAS_LIMIT * (NORMAL_DISPATCH_RATIO - AVERAGE_ON_INITIALIZE_RATIO) - EXTRINSIC_BASE_Weight] / WEIGHT_PER_GAS = (1_000_000_000_000 * 2 * (0.75-0.1) - 125_000_000) / 20000
 	const EXTRINSIC_GAS_LIMIT = 64995685;

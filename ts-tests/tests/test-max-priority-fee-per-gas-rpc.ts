@@ -2,13 +2,11 @@ import { ethers } from 'ethers';
 import { expect } from 'chai';
 import { step } from 'mocha-steps';
 
+import { GENESIS_ACCOUNT, GENESIS_ACCOUNT_PRIVATE_KEY, CHAIN_ID } from './config';
 import { createAndFinalizeBlock, describeWithFrontier, customRequest } from './util';
 
 // We use ethers library in this test as apparently web3js's types are not fully EIP-1559 compliant yet.
 describeWithFrontier('Frontier RPC (Max Priority Fee Per Gas)', (context) => {
-	const GENESIS_ACCOUNT = '0x6be02d1d3665660d22ff9624b7be0551ee1ac91b';
-	const GENESIS_ACCOUNT_PRIVATE_KEY = '0x99B3C12287537E38C90A9219D4CB074A89A16E9CDB20BF85728EBD97C343E342';
-
 	async function sendTransaction(context, payload: any) {
 		let signer = new ethers.Wallet(GENESIS_ACCOUNT_PRIVATE_KEY, context.ethersjs);
 		// Ethers internally matches the locally calculated transaction hash against the one returned as a response.
@@ -44,7 +42,7 @@ describeWithFrontier('Frontier RPC (Max Priority Fee Per Gas)', (context) => {
 					accessList: [],
 					nonce: nonce,
 					gasLimit: '0x5208',
-					chainId: 42,
+					chainId: CHAIN_ID,
 				});
 				nonce++;
 			}

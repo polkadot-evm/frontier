@@ -3,6 +3,8 @@ import { ethers } from 'ethers';
 import { JsonRpcResponse } from 'web3-core-helpers';
 import { spawn, ChildProcess } from 'child_process';
 
+import { CHAIN_ID } from './config';
+
 export const PORT = 19931;
 export const RPC_PORT = 19932;
 export const WS_PORT = 19933;
@@ -134,7 +136,7 @@ export async function startFrontierNode(provider?: string): Promise<{
 	}
 
 	let ethersjs = new ethers.providers.StaticJsonRpcProvider(`http://127.0.0.1:${RPC_PORT}`, {
-		chainId: 42,
+		chainId: CHAIN_ID,
 		name: 'frontier-dev',
 	});
 
