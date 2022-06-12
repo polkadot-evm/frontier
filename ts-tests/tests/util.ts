@@ -167,3 +167,7 @@ export function describeWithFrontier(title: string, cb: (context: { web3: Web3 }
 		cb(context);
 	});
 }
+
+export function describeWithFrontierWs(title: string, cb: (context: { web3: Web3 }) => void) {
+	describeWithFrontier(title, cb, "ws");
+}
