@@ -284,4 +284,81 @@ mod tests {
 			expected_tx
 		);
 	}
+	#[test]
+	fn test_legacy() {
+		let xcm_transaction = EthereumXcmTransactionV1 {
+			gas_limit: U256::from(1),
+			fee_payment: EthereumXcmFee::Manual(ManualEthereumXcmFee {
+				gas_price: Some(U256::from(1)),
+				max_fee_per_gas: None,
+				max_priority_fee_per_gas: None,
+			}),
+			action: TransactionAction::Create,
+			value: U256::from(0),
+			input: vec![1u8],
+			access_list: None,
+		};
+		let nonce = U256::from(0);
+		let gas_price = U256::from(1);
+		let expected_tx = Some(TransactionV2::Legacy(LegacyTransaction {
+			nonce,
+			gas_price,
+			gas_limit: U256::from(1),
+			action: TransactionAction::Create,
+			value: U256::from(0),
+			input: vec![1u8],
+			signature: TransactionSignature::new(42, rs_id(), rs_id()).unwrap(),
+		}));
+
+		assert_eq!(
+			xcm_transaction.into_transaction_v2(gas_price, nonce),
+			expected_tx
+		);
+	}
+	#[test]
+	fn test_eip_2930() {
+		let access_list = Some(vec![(H160::default(), vec![H256::default()])]);
+		let from_tuple_to_access_list = |t: &Vec<(H160, Vec<H256>)>| -> AccessList {
+			t.iter()
+				.map(|item| AccessListItem {
+					address: item.0.clone(),
+					storage_keys: item.1.clone(),
+				})
+				.collect::<Vec<AccessListItem>>()
+		};
+
+		let xcm_transaction = EthereumXcmTransactionV1 {
+			gas_limit: U256::from(1),
+			fee_payment: EthereumXcmFee::Manual(ManualEthereumXcmFee {
+				gas_price: Some(U256::from(1)),
+				max_fee_per_gas: None,
+				max_priority_fee_per_gas: None,
+			}),
+			action: TransactionAction::Create,
+			value: U256::from(0),
+			input: vec![1u8],
+			access_list: access_list.clone(),
+		};
+
+		let nonce = U256::from(0);
+		let gas_price = U256::from(1);
+		let expected_tx = Some(TransactionV2::EIP2930(EIP2930Transaction {
+			chain_id: 0,
+			nonce,
+			gas_price,
+			gas_limit: U256::from(1),
+			action: TransactionAction::Create,
+			value: U256::from(0),
+			input: vec![1u8],
+			access_list: from_tuple_to_access_list(&access_list.unwrap()),
+			odd_y_parity: true,
+			r: H256::from_low_u64_be(1u64),
+			s: H256::from_low_u64_be(1u64),
+		}));
+
+		assert_eq!(
+			xcm_transaction.into_transaction_v2(gas_price, nonce),
+			expected_tx
+		);
+	}
 }
