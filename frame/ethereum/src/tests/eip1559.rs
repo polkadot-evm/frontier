@@ -18,6 +18,14 @@
 //! Consensus extension module tests for BABE consensus.
 
 use super::*;
+use fp_xcm::{
+	AutoEthereumXcmFee, EthereumXcmFee, EthereumXcmTransaction, EthereumXcmTransactionV1,
+};
+use frame_support::{
+	assert_noop,
+	weights::{Pays, PostDispatchInfo},
+};
+use sp_runtime::{DispatchError, DispatchErrorWithPostInfo};
 
 fn eip1559_erc20_creation_unsigned_transaction() -> EIP1559UnsignedTransaction {
 	EIP1559UnsignedTransaction {
@@ -29,6 +37,33 @@ fn eip1559_erc20_creation_unsigned_transaction() -> EIP1559UnsignedTransaction {
 		value: U256::zero(),
 		input: hex::decode(ERC20_CONTRACT_BYTECODE.trim_end()).unwrap(),
 	}
+}
+
+fn xcm_evm_transfer_eip_1559_transaction(destination: H160, value: U256) -> EthereumXcmTransaction {
+	let access_list = Some(vec![(H160::default(), vec![H256::default()])]);
+
+	EthereumXcmTransaction::V1(EthereumXcmTransactionV1 {
+		fee_payment: EthereumXcmFee::Auto(AutoEthereumXcmFee::Low),
+		gas_limit: U256::from(0x100000),
+		action: ethereum::TransactionAction::Call(destination),
+		value,
+		input: vec![],
+		access_list: access_list.clone(),
+	})
+}
+
+fn xcm_erc20_creation_eip_1559_transaction() -> EthereumXcmTransaction {
+	let access_list = Some(vec![(H160::default(), vec![H256::default()])]);
+
+	EthereumXcmTransaction::V1(EthereumXcmTransactionV1 {
+		fee_payment: EthereumXcmFee::Auto(AutoEthereumXcmFee::Low),
+
+		gas_limit: U256::from(0x100000),
+		action: ethereum::TransactionAction::Create,
+		value: U256::zero(),
+		input: hex::decode(ERC20_CONTRACT_BYTECODE.trim_end()).unwrap(),
+		access_list: access_list.clone(),
+	})
 }
 
 fn eip1559_erc20_creation_transaction(account: &AccountInfo) -> Transaction {
@@ -327,5 +362,48 @@ fn call_should_handle_errors() {
 
 		// calling should always succeed even if the inner EVM execution fails.
 		Ethereum::execute(alice.address, &t3, None).ok().unwrap();
+	});
+}
+
+#[test]
+fn test_transact_xcm_evm_transfer() {
+	let (pairs, mut ext) = new_test_ext(2);
+	let alice = &pairs[0];
+	let bob = &pairs[1];
+
+	ext.execute_with(|| {
+		let balances_before = System::account(&bob.account_id);
+		Ethereum::transact_xcm(
+			RawOrigin::XcmEthereumTransaction(alice.address).into(),
+			xcm_evm_transfer_eip_1559_transaction(bob.address, U256::from(100)),
+		)
+		.expect("Failed to execute transaction");
+
+		assert_eq!(
+			System::account(&bob.account_id).data.free,
+			balances_before.data.free + 100
+		);
+	});
+}
+
+#[test]
+fn test_transact_xcm_create() {
+	let (pairs, mut ext) = new_test_ext(1);
+	let alice = &pairs[0];
+
+	ext.execute_with(|| {
+		assert_noop!(
+			Ethereum::transact_xcm(
+				RawOrigin::XcmEthereumTransaction(alice.address).into(),
+				xcm_erc20_creation_eip_1559_transaction()
+			),
+			DispatchErrorWithPostInfo {
+				post_info: PostDispatchInfo {
+					actual_weight: Some(0),
+					pays_fee: Pays::Yes,
+				},
+				error: DispatchError::Other("Cannot convert xcm payload to known type"),
+			}
+		);
 	});
 }

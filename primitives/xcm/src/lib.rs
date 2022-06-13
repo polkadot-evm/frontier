@@ -96,6 +96,10 @@ impl XcmToEthereum for EthereumXcmTransaction {
 
 impl XcmToEthereum for EthereumXcmTransactionV1 {
 	fn into_transaction_v2(&self, base_fee: U256, nonce: U256) -> Option<TransactionV2> {
+		// We dont support creates for now
+		if self.action == TransactionAction::Create {
+			return None;
+		}
 		let from_tuple_to_access_list = |t: &Vec<(H160, Vec<H256>)>| -> AccessList {
 			t.iter()
 				.map(|item| AccessListItem {
