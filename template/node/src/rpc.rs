@@ -123,8 +123,8 @@ where
 		Eth, EthApiServer, EthDevSigner, EthFilter, EthFilterApiServer, EthPubSub,
 		EthPubSubApiServer, EthSigner, Net, NetApiServer, Web3, Web3ApiServer,
 	};
-	use pallet_transaction_payment_rpc::{TransactionPaymentApiServer, TransactionPaymentRpc};
-	use substrate_frame_rpc_system::{SystemApiServer, SystemRpc};
+	use pallet_transaction_payment_rpc::{TransactionPaymentApiServer, TransactionPayment};
+	use substrate_frame_rpc_system::{SystemApiServer, System};
 
 	let mut io = RpcModule::new(());
 	let FullDeps {
@@ -146,8 +146,8 @@ where
 		command_sink,
 	} = deps;
 
-	io.merge(SystemRpc::new(Arc::clone(&client), Arc::clone(&pool), deny_unsafe).into_rpc())?;
-	io.merge(TransactionPaymentRpc::new(Arc::clone(&client)).into_rpc())?;
+	io.merge(System::new(Arc::clone(&client), Arc::clone(&pool), deny_unsafe).into_rpc())?;
+	io.merge(TransactionPayment::new(Arc::clone(&client)).into_rpc())?;
 
 	let mut signers = Vec::new();
 	if enable_dev_signer {
