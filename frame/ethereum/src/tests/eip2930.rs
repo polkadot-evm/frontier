@@ -490,3 +490,52 @@ fn test_transact_xcm_evm_call_works() {
 		}
 	});
 }
+
+#[test]
+fn test_transact_xcm_validation_works() {
+	let (pairs, mut ext) = new_test_ext(2);
+	let alice = &pairs[0];
+	let bob = &pairs[1];
+
+	ext.execute_with(|| {
+		// Not enough balance fails to validate.
+		assert_noop!(
+			Ethereum::transact_xcm(
+				RawOrigin::XcmEthereumTransaction(alice.address).into(),
+				xcm_evm_transfer_eip_2930_transaction(bob.address, U256::MAX),
+			),
+			DispatchErrorWithPostInfo {
+				post_info: PostDispatchInfo {
+					actual_weight: Some(0),
+					pays_fee: Pays::Yes,
+				},
+				error: DispatchError::Other("Failed to validate ethereum transaction"),
+			}
+		);
+		// Not enough base fee fails to validate.
+		assert_noop!(
+			Ethereum::transact_xcm(
+				RawOrigin::XcmEthereumTransaction(alice.address).into(),
+				EthereumXcmTransaction::V1(EthereumXcmTransactionV1 {
+					fee_payment: EthereumXcmFee::Manual(fp_xcm::ManualEthereumXcmFee {
+						gas_price: Some(U256::from(0)),
+						max_fee_per_gas: None,
+						max_priority_fee_per_gas: None,
+					}),
+					gas_limit: U256::from(0x100000),
+					action: ethereum::TransactionAction::Call(bob.address),
+					value: U256::from(1),
+					input: vec![],
+					access_list: Some(vec![(H160::default(), vec![H256::default()])]),
+				}),
+			),
+			DispatchErrorWithPostInfo {
+				post_info: PostDispatchInfo {
+					actual_weight: Some(0),
+					pays_fee: Pays::Yes,
+				},
+				error: DispatchError::Other("Failed to validate ethereum transaction"),
+			}
+		);
+	});
+}
