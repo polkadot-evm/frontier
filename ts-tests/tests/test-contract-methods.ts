@@ -1,16 +1,22 @@
 import { expect } from "chai";
-
-import Test from "../build/contracts/Test.json"
-import { createAndFinalizeBlock, createAndFinalizeBlockNowait, customRequest, describeWithFrontier } from "./util";
 import { AbiItem } from "web3-utils";
 
-describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
-	const GENESIS_ACCOUNT = "0x6be02d1d3665660d22ff9624b7be0551ee1ac91b";
-	const GENESIS_ACCOUNT_PRIVATE_KEY = "0x99B3C12287537E38C90A9219D4CB074A89A16E9CDB20BF85728EBD97C343E342";
+import Test from "../build/contracts/Test.json";
+import {
+	GENESIS_ACCOUNT,
+	GENESIS_ACCOUNT_PRIVATE_KEY,
+	FIRST_CONTRACT_ADDRESS,
+	BLOCK_HASH_COUNT,
+	BLOCK_GAS_LIMIT,
+} from "./config";
+import { createAndFinalizeBlock, createAndFinalizeBlockNowait, customRequest, describeWithFrontier } from "./util";
 
+describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 	const TEST_CONTRACT_BYTECODE = Test.bytecode;
 	const TEST_CONTRACT_ABI = Test.abi as AbiItem[];
-	const FIRST_CONTRACT_ADDRESS = "0xc2bf5f29a4384b1ab0c063e1c666f02121b6084a"; // Those test are ordered. In general this should be avoided, but due to the time it takes	// to spin up a frontier node, it saves a lot of time.
+
+	// Those test are ordered. In general this should be avoided, but due to the time it takes
+	// to spin up a frontier node, it saves a lot of time.
 
 	before("create the contract", async function () {
 		this.timeout(15000);
@@ -66,13 +72,13 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 			gasPrice: "0x3B9ACA00",
 		});
 		let number = (await context.web3.eth.getBlock("latest")).number;
-		let last = number + 256;
-		for(let i = number; i <= last; i++) {
+		let last = number + BLOCK_HASH_COUNT;
+		for (let i = number; i <= last; i++) {
 			let hash = (await context.web3.eth.getBlock("latest")).hash;
 			expect(await contract.methods.blockHash(i).call()).to.eq(hash);
 			await createAndFinalizeBlockNowait(context.web3);
 		}
-		// should not store more than 256 hashes
+		// should not store more than `BLOCK_HASH_COUNT` hashes
 		expect(await contract.methods.blockHash(number).call()).to.eq(
 			"0x0000000000000000000000000000000000000000000000000000000000000000"
 		);
@@ -83,16 +89,19 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 			from: GENESIS_ACCOUNT,
 			gasPrice: "0x3B9ACA00",
 		});
-		// Max u32
-		expect(await contract.methods.gasLimit().call()).to.eq('75000000');
+		expect(await contract.methods.gasLimit().call()).to.eq(BLOCK_GAS_LIMIT.toString());
 	});
 
 	// Requires error handling
 	it.skip("should fail for missing parameters", async function () {
-		const contract = new context.web3.eth.Contract([{ ...TEST_CONTRACT_ABI[0], inputs: [] }], FIRST_CONTRACT_ADDRESS, {
-			from: GENESIS_ACCOUNT,
-			gasPrice: "0x3B9ACA00",
-		});
+		const contract = new context.web3.eth.Contract(
+			[{ ...TEST_CONTRACT_ABI[0], inputs: [] }],
+			FIRST_CONTRACT_ADDRESS,
+			{
+				from: GENESIS_ACCOUNT,
+				gasPrice: "0x3B9ACA00",
+			}
+		);
 		await contract.methods
 			.multiply()
 			.call()
@@ -130,7 +139,12 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 	// Requires error handling
 	it.skip("should fail for invalid parameters", async function () {
 		const contract = new context.web3.eth.Contract(
-			[{ ...TEST_CONTRACT_ABI[0], inputs: [{ internalType: "address", name: "a", type: "address" }] }],
+			[
+				{
+					...TEST_CONTRACT_ABI[0],
+					inputs: [{ internalType: "address", name: "a", type: "address" }],
+				},
+			],
 			FIRST_CONTRACT_ADDRESS,
 			{ from: GENESIS_ACCOUNT, gasPrice: "0x3B9ACA00" }
 		);

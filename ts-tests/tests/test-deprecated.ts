@@ -6,7 +6,10 @@ describeWithFrontier("Frontier RPC (Deprecated)", (context) => {
 	// List of deprecated methods
 	[
 		{ method: "eth_getCompilers", params: [] },
-		{ method: "eth_compileLLL", params: ["(returnlll (suicide (caller)))"] },
+		{
+			method: "eth_compileLLL",
+			params: ["(returnlll (suicide (caller)))"],
+		},
 		{
 			method: "eth_compileSolidity",
 			params: ["contract test { function multiply(uint a) returns(uint d) {return a * 7;}}"],

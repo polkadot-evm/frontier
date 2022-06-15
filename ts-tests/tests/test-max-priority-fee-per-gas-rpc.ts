@@ -2,14 +2,11 @@ import { ethers } from "ethers";
 import { expect } from "chai";
 import { step } from "mocha-steps";
 
+import { GENESIS_ACCOUNT, GENESIS_ACCOUNT_PRIVATE_KEY, CHAIN_ID } from "./config";
 import { createAndFinalizeBlock, describeWithFrontier, customRequest } from "./util";
 
 // We use ethers library in this test as apparently web3js's types are not fully EIP-1559 compliant yet.
 describeWithFrontier("Frontier RPC (Max Priority Fee Per Gas)", (context) => {
-
-	const GENESIS_ACCOUNT = "0x6be02d1d3665660d22ff9624b7be0551ee1ac91b";
-	const GENESIS_ACCOUNT_PRIVATE_KEY = "0x99B3C12287537E38C90A9219D4CB074A89A16E9CDB20BF85728EBD97C343E342";
-
 	async function sendTransaction(context, payload: any) {
 		let signer = new ethers.Wallet(GENESIS_ACCOUNT_PRIVATE_KEY, context.ethersjs);
 		// Ethers internally matches the locally calculated transaction hash against the one returned as a response.
@@ -21,19 +18,20 @@ describeWithFrontier("Frontier RPC (Max Priority Fee Per Gas)", (context) => {
 	let nonce = 0;
 
 	function get_percentile(percentile, array) {
-		array.sort(function (a, b) { return a - b; });
-		let index = ((percentile/100) * (array.length))-1;
+		array.sort(function (a, b) {
+			return a - b;
+		});
+		let index = (percentile / 100) * array.length - 1;
 		if (Math.floor(index) == index) {
 			return array[index];
-		}
-		else {
-			return Math.ceil((array[Math.floor(index)] + array[Math.ceil(index)])/2);
+		} else {
+			return Math.ceil((array[Math.floor(index)] + array[Math.ceil(index)]) / 2);
 		}
 	}
 
 	async function createBlocks(block_count, priority_fees) {
-		for(var b = 0; b < block_count; b++) {
-			for(var p = 0; p < priority_fees.length; p++) {
+		for (var b = 0; b < block_count; b++) {
+			for (var p = 0; p < priority_fees.length; p++) {
 				await sendTransaction(context, {
 					from: GENESIS_ACCOUNT,
 					to: "0x0000000000000000000000000000000000000000",
@@ -44,7 +42,7 @@ describeWithFrontier("Frontier RPC (Max Priority Fee Per Gas)", (context) => {
 					accessList: [],
 					nonce: nonce,
 					gasLimit: "0x5208",
-					chainId: 42
+					chainId: CHAIN_ID,
 				});
 				nonce++;
 			}
@@ -75,10 +73,10 @@ describeWithFrontier("Frontier RPC (Max Priority Fee Per Gas)", (context) => {
 
 		let priority_fee = 0;
 
-		for(let i = 0; i < block_count; i++) {
+		for (let i = 0; i < block_count; i++) {
 			let priority_fees = [];
-			for(let j = 0; j < txns_per_block; j++) {
-				priority_fees.push(priority_fee)
+			for (let j = 0; j < txns_per_block; j++) {
+				priority_fees.push(priority_fee);
 				priority_fee++;
 			}
 			await createBlocks(1, priority_fees);
@@ -95,11 +93,11 @@ describeWithFrontier("Frontier RPC (Max Priority Fee Per Gas)", (context) => {
 	step("maxPriorityFeePerGas should suggest zero if there are recent empty blocks", async function () {
 		this.timeout(100000);
 
-		for(let i = 0; i < 10; i++) {
+		for (let i = 0; i < 10; i++) {
 			await createBlocks(1, [0, 1, 2, 3, 4, 5]);
 		}
 		await createAndFinalizeBlock(context.web3);
-		for(let i = 0; i < 9; i++) {
+		for (let i = 0; i < 9; i++) {
 			await createBlocks(1, [0, 1, 2, 3, 4, 5]);
 		}
 

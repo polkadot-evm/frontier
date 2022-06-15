@@ -1,18 +1,16 @@
 import { expect, use as chaiUse } from "chai";
 import chaiAsPromised from "chai-as-promised";
 
-import Test from "../build/contracts/Test.json"
+import Test from "../build/contracts/Test.json";
+import { GENESIS_ACCOUNT, GENESIS_ACCOUNT_PRIVATE_KEY, FIRST_CONTRACT_ADDRESS } from "./config";
 import { createAndFinalizeBlock, customRequest, describeWithFrontier } from "./util";
 
 chaiUse(chaiAsPromised);
 
 describeWithFrontier("Frontier RPC (Contract)", (context) => {
-	const GENESIS_ACCOUNT = "0x6be02d1d3665660d22ff9624b7be0551ee1ac91b";
-	const GENESIS_ACCOUNT_PRIVATE_KEY = "0x99B3C12287537E38C90A9219D4CB074A89A16E9CDB20BF85728EBD97C343E342";
-
 	const TEST_CONTRACT_BYTECODE = Test.bytecode;
-	const TEST_CONTRACT_DEPLOYED_BYTECODE = Test.deployedBytecode
-	const FIRST_CONTRACT_ADDRESS = "0xc2bf5f29a4384b1ab0c063e1c666f02121b6084a";
+	const TEST_CONTRACT_DEPLOYED_BYTECODE = Test.deployedBytecode;
+
 	// Those test are ordered. In general this should be avoided, but due to the time it takes
 	// to spin up a frontier node, it saves a lot of time.
 
@@ -58,15 +56,22 @@ describeWithFrontier("Frontier RPC (Contract)", (context) => {
 	});
 
 	it("eth_call contract create should return code", async function () {
-		expect(await context.web3.eth.call({
-			data: TEST_CONTRACT_BYTECODE
-		})).to.be.eq(TEST_CONTRACT_DEPLOYED_BYTECODE);
+		expect(
+			await context.web3.eth.call({
+				data: TEST_CONTRACT_BYTECODE,
+			})
+		).to.be.eq(TEST_CONTRACT_DEPLOYED_BYTECODE);
 	});
 
 	it("eth_call at missing block returns error", async function () {
 		const nonExistingBlockNumber = "999999";
-		return expect(context.web3.eth.call({
-			data: TEST_CONTRACT_BYTECODE,
-		}, nonExistingBlockNumber)).to.eventually.rejectedWith('header not found');
+		return expect(
+			context.web3.eth.call(
+				{
+					data: TEST_CONTRACT_BYTECODE,
+				},
+				nonExistingBlockNumber
+			)
+		).to.eventually.rejectedWith("header not found");
 	});
 });

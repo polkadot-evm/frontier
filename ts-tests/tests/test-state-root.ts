@@ -9,9 +9,7 @@ describeWithFrontier("Frontier RPC (State root hash)", (context) => {
 		await createAndFinalizeBlock(context.web3);
 		block = await context.web3.eth.getBlock(1);
 		expect(block.stateRoot.length).to.be.equal(66); // 0x prefixed
-		expect(block.stateRoot).to.not.be.equal(
-			"0x0000000000000000000000000000000000000000000000000000000000000000"
-		);
+		expect(block.stateRoot).to.not.be.equal("0x0000000000000000000000000000000000000000000000000000000000000000");
 	});
 
 	step("hash should be unique between blocks", async function () {
