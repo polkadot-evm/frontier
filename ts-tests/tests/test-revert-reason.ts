@@ -1,18 +1,16 @@
 import { expect } from "chai";
-
-import ExplicitRevertReason from "../build/contracts/ExplicitRevertReason.json"
-import { createAndFinalizeBlock, customRequest, describeWithFrontier } from "./util";
 import { AbiItem } from "web3-utils";
 
-describeWithFrontier("Frontier RPC (Revert Reason)", (context) => {
+import ExplicitRevertReason from "../build/contracts/ExplicitRevertReason.json";
+import { GENESIS_ACCOUNT, GENESIS_ACCOUNT_PRIVATE_KEY } from "./config";
+import { createAndFinalizeBlock, customRequest, describeWithFrontier } from "./util";
 
+describeWithFrontier("Frontier RPC (Revert Reason)", (context) => {
 	let contractAddress;
 
-	const GENESIS_ACCOUNT = "0x6be02d1d3665660d22ff9624b7be0551ee1ac91b";
-	const GENESIS_ACCOUNT_PRIVATE_KEY = "0x99B3C12287537E38C90A9219D4CB074A89A16E9CDB20BF85728EBD97C343E342";
 	const REVERT_W_MESSAGE_BYTECODE = ExplicitRevertReason.bytecode;
 
-	const TEST_CONTRACT_ABI= ExplicitRevertReason.abi as AbiItem[];
+	const TEST_CONTRACT_ABI = ExplicitRevertReason.abi as AbiItem[];
 
 	before("create the contract", async function () {
 		this.timeout(15000);

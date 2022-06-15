@@ -3,6 +3,8 @@ import { ethers } from "ethers";
 import { JsonRpcResponse } from "web3-core-helpers";
 import { spawn, ChildProcess } from "child_process";
 
+import { CHAIN_ID } from "./config";
+
 export const PORT = 19931;
 export const RPC_PORT = 19932;
 export const WS_PORT = 19933;
@@ -44,7 +46,7 @@ export async function createAndFinalizeBlock(web3: Web3) {
 	if (!response.result) {
 		throw new Error(`Unexpected result: ${JSON.stringify(response)}`);
 	}
-	await new Promise(resolve => setTimeout(() => resolve(), 500));
+	await new Promise((resolve) => setTimeout(() => resolve(), 500));
 }
 
 // Create a block and finalize it.
@@ -56,9 +58,13 @@ export async function createAndFinalizeBlockNowait(web3: Web3) {
 	}
 }
 
-export async function startFrontierNode(provider?: string): Promise<{ web3: Web3; binary: ChildProcess, ethersjs: ethers.providers.JsonRpcProvider }> {
+export async function startFrontierNode(provider?: string): Promise<{
+	web3: Web3;
+	binary: ChildProcess;
+	ethersjs: ethers.providers.JsonRpcProvider;
+}> {
 	var web3;
-	if (!provider || provider == 'http') {
+	if (!provider || provider == "http") {
 		web3 = new Web3(`http://127.0.0.1:${RPC_PORT}`);
 	}
 
@@ -125,12 +131,12 @@ export async function startFrontierNode(provider?: string): Promise<{ web3: Web3
 		binary.stdout.on("data", onData);
 	});
 
-	if (provider == 'ws') {
+	if (provider == "ws") {
 		web3 = new Web3(`ws://127.0.0.1:${WS_PORT}`);
 	}
 
 	let ethersjs = new ethers.providers.StaticJsonRpcProvider(`http://127.0.0.1:${RPC_PORT}`, {
-		chainId: 42,
+		chainId: CHAIN_ID,
 		name: "frontier-dev",
 	});
 
@@ -139,7 +145,10 @@ export async function startFrontierNode(provider?: string): Promise<{ web3: Web3
 
 export function describeWithFrontier(title: string, cb: (context: { web3: Web3 }) => void, provider?: string) {
 	describe(title, () => {
-		let context: { web3: Web3, ethersjs: ethers.providers.JsonRpcProvider } = { web3: null, ethersjs: null };
+		let context: {
+			web3: Web3;
+			ethersjs: ethers.providers.JsonRpcProvider;
+		} = { web3: null, ethersjs: null };
 		let binary: ChildProcess;
 		// Making sure the Frontier node has started
 		before("Starting Frontier Test Node", async function () {
@@ -157,4 +166,8 @@ export function describeWithFrontier(title: string, cb: (context: { web3: Web3 }
 
 		cb(context);
 	});
+}
+
+export function describeWithFrontierWs(title: string, cb: (context: { web3: Web3 }) => void) {
+	describeWithFrontier(title, cb, "ws");
 }

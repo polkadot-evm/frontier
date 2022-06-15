@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import { step } from "mocha-steps";
 
-import { createAndFinalizeBlock, describeWithFrontier, customRequest } from "./util";
+import { describeWithFrontier, customRequest } from "./util";
 
 describeWithFrontier("Frontier RPC (Net)", (context) => {
 	step("should return `net_version` 42", async function () {
