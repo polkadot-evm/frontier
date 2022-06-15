@@ -238,7 +238,7 @@ pub mod pallet {
 		/// How Ethereum state root is calculated.
 		type StateRoot: Get<H256>;
 		/// Origin for xcm transact
-		type XcmEthereumOrigin: EnsureOrigin<Self::Origin>;
+		type XcmEthereumOrigin: EnsureOrigin<Self::Origin, Success = H160>;
 	}
 
 	#[pallet::pallet]
@@ -345,7 +345,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			xcm_transaction: EthereumXcmTransaction,
 		) -> DispatchResultWithPostInfo {
-			let source = ensure_xcm_ethereum_transaction(origin)?;
+			let source = T::XcmEthereumOrigin::ensure_origin(origin)?;
 
 			let (base_fee, base_fee_weight) = T::FeeCalculator::min_gas_price();
 			let (who, account_weight) = pallet_evm::Pallet::<T>::account_basic(&source);
