@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import { step } from "mocha-steps";
 
-import { BLOCK_GAS_LIMIT } from "./config";
+import { BLOCK_TIMESTAMP, BLOCK_GAS_LIMIT } from "./config";
 import { createAndFinalizeBlock, describeWithFrontier } from "./util";
 
 describeWithFrontier("Frontier RPC (Block)", (context) => {
@@ -65,7 +65,7 @@ describeWithFrontier("Frontier RPC (Block)", (context) => {
 
 	step("should have valid timestamp after block production", async function () {
 		const block = await context.web3.eth.getBlock("latest");
-		expect(block.timestamp).to.be.eq(6);
+		expect(block.timestamp).to.be.eq(BLOCK_TIMESTAMP);
 	});
 
 	it("genesis block should be already available by hash", async function () {
