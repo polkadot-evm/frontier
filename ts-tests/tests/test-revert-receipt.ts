@@ -32,8 +32,7 @@ describeWithFrontier("Frontier RPC (Constructor Revert)", (context) => {
 			GENESIS_ACCOUNT_PRIVATE_KEY
 		);
 
-		const respsonse = await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction]);
-		const txHash = respsonse.result;
+		const txHash = (await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction])).result;
 
 		// Verify the receipt exists after the block is created
 		await createAndFinalizeBlock(context.web3);
@@ -61,8 +60,7 @@ describeWithFrontier("Frontier RPC (Constructor Revert)", (context) => {
 			GENESIS_ACCOUNT_PRIVATE_KEY
 		);
 
-		const respsonse = await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction]);
-		const txHash = respsonse.result;
+		const txHash = (await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction])).result;
 
 		// Verify the receipt exists after the block is created
 		await createAndFinalizeBlock(context.web3);
