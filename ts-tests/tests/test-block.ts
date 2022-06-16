@@ -110,7 +110,7 @@ describeWithFrontier("Frontier RPC (Block)", (context) => {
 			//parentHash: "0x04540257811b46d103d9896e7807040e7de5080e285841c5430d1a81588a0ce4",
 			receiptsRoot: "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
 			size: 507,
-			timestamp: 6,
+			timestamp: BLOCK_TIMESTAMP,
 			totalDifficulty: "0",
 			//transactions: [],
 			transactionsRoot: "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",

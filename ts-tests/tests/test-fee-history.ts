@@ -63,7 +63,7 @@ describeWithFrontier("Frontier RPC (Fee History)", (context) => {
 			.catch((err) => expect(err.message).to.equal("Error getting header at BlockId::Number(1)"));
 	});
 
-	step("result lenght should match spec", async function () {
+	step("result length should match spec", async function () {
 		this.timeout(100000);
 		let block_count = 2;
 		let reward_percentiles = [20, 50, 70];
