@@ -1,12 +1,15 @@
 import { expect } from "chai";
 import { step } from "mocha-steps";
 
+import { RUNTIME_SPEC_NAME, RUNTIME_SPEC_VERSION, RUNTIME_IMPL_VERSION } from "./config";
 import { describeWithFrontier, customRequest } from "./util";
 
 describeWithFrontier("Frontier RPC (Web3Api)", (context) => {
 	step("should get client version", async function () {
 		const version = await context.web3.eth.getNodeInfo();
-		expect(version).to.be.equal("node-frontier-template/v1.1/fc-rpc-2.0.0-dev");
+		expect(version).to.be.equal(
+			`${RUNTIME_SPEC_NAME}/v${RUNTIME_SPEC_VERSION}.${RUNTIME_IMPL_VERSION}/fc-rpc-2.0.0-dev`
+		);
 	});
 
 	step("should remote sha3", async function () {
