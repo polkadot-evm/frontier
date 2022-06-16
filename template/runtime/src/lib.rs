@@ -52,7 +52,9 @@ use frame_support::weights::constants::ParityDbWeight as RuntimeDbWeight;
 use frame_support::weights::constants::RocksDbWeight as RuntimeDbWeight;
 
 pub use pallet_balances::Call as BalancesCall;
-use pallet_ethereum::{Call::transact, Transaction as EthereumTransaction};
+use pallet_ethereum::{
+	Call::transact, EthereumTransactionLongevity, Transaction as EthereumTransaction,
+};
 use pallet_evm::{
 	Account as EVMAccount, EnsureAddressTruncated, GasWeightMapping, HashedAddressMapping, Runner,
 };
@@ -344,9 +346,21 @@ impl pallet_evm::Config for Runtime {
 	type FindAuthor = FindAuthorTruncated<Aura>;
 }
 
+parameter_types! {
+	pub InFutureQueueBounded: EthereumTransactionLongevity = EthereumTransactionLongevity {
+		ready: sp_runtime::transaction_validity::TransactionLongevity::max_value(),
+		future: {
+			// 3 hours
+			let target_lifetime = 10_800_000u64;
+			target_lifetime.saturating_div(MILLISECS_PER_BLOCK)
+		},
+	};
+}
+
 impl pallet_ethereum::Config for Runtime {
 	type Event = Event;
 	type StateRoot = pallet_ethereum::IntermediateStateRoot<Self>;
+	type TransactionLifetime = InFutureQueueBounded;
 }
 
 frame_support::parameter_types! {

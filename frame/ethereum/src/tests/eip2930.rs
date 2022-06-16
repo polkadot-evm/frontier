@@ -101,6 +101,7 @@ fn transaction_with_to_low_nonce_should_not_work() {
 			ValidTransactionBuilder::default()
 				.and_provides((alice.address, U256::from(1)))
 				.priority(0u64)
+				.longevity(1800u64)
 				.and_requires((alice.address, U256::from(0)))
 				.build()
 		);
@@ -328,5 +329,63 @@ fn call_should_handle_errors() {
 
 		// calling should always succeed even if the inner EVM execution fails.
 		Ethereum::execute(alice.address, &t3, None).ok().unwrap();
+	});
+}
+
+#[test]
+fn transaction_longevity_is_properly_set() {
+	let (pairs, mut ext) = new_test_ext(1);
+	let alice = &pairs[0];
+
+	ext.execute_with(|| {
+		const EXPECTED_READY_LIFETIME: u64 = u64::max_value();
+		const EXPECTED_FUTURE_LIFETIME: u64 = 1800; // 6 second blocks, 3 hours
+											// ready queue
+		let mut transaction = eip2930_erc20_creation_unsigned_transaction();
+		transaction.nonce = U256::from(0);
+		let signed = transaction.sign(&alice.private_key, None);
+		let call = crate::Call::<Test>::transact {
+			transaction: signed,
+		};
+		let source = call.check_self_contained().unwrap().unwrap();
+		let extrinsic = CheckedExtrinsic::<u64, crate::mock::Call, SignedExtra, H160> {
+			signed: fp_self_contained::CheckedSignature::SelfContained(source),
+			function: Call::Ethereum(call.clone()),
+		};
+		let dispatch_info = extrinsic.get_dispatch_info();
+
+		assert_eq!(
+			call.validate_self_contained(&source, &dispatch_info, 0)
+				.unwrap(),
+			ValidTransactionBuilder::default()
+				.and_provides((alice.address, U256::from(0)))
+				.priority(0u64)
+				.longevity(EXPECTED_READY_LIFETIME)
+				.build()
+		);
+		// future queue
+		let mut transaction = eip2930_erc20_creation_unsigned_transaction();
+		transaction.nonce = U256::from(2);
+		let signed = transaction.sign(&alice.private_key, None);
+		let call = crate::Call::<Test>::transact {
+			transaction: signed,
+		};
+		let source = call.check_self_contained().unwrap().unwrap();
+		let extrinsic = CheckedExtrinsic::<u64, crate::mock::Call, SignedExtra, H160> {
+			signed: fp_self_contained::CheckedSignature::SelfContained(source),
+			function: Call::Ethereum(call.clone()),
+		};
+		let dispatch_info = extrinsic.get_dispatch_info();
+
+		assert_eq!(
+			call.validate_self_contained(&source, &dispatch_info, 0)
+				.unwrap(),
+			ValidTransactionBuilder::default()
+				.and_provides((alice.address, U256::from(2)))
+				.priority(0u64)
+				.longevity(EXPECTED_FUTURE_LIFETIME)
+				.and_requires((alice.address, U256::from(1)))
+				.build()
+		);
 	});
 }

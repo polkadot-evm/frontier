@@ -34,7 +34,7 @@ use sp_runtime::{
 };
 
 use super::*;
-use crate::IntermediateStateRoot;
+use crate::{EthereumTransactionLongevity, IntermediateStateRoot};
 
 pub type SignedExtra = (frame_system::CheckSpecVersion<Test>,);
 
@@ -170,9 +170,21 @@ impl pallet_evm::Config for Test {
 	type BlockHashMapping = crate::EthereumBlockHashMapping<Self>;
 }
 
+parameter_types! {
+	pub InFutureQueueBounded: EthereumTransactionLongevity = EthereumTransactionLongevity {
+		ready: sp_runtime::transaction_validity::TransactionLongevity::max_value(),
+		future: {
+			// 3 hours
+			let target_lifetime = 10_800_000u64;
+			target_lifetime.saturating_div(6000u64)
+		},
+	};
+}
+
 impl crate::Config for Test {
 	type Event = Event;
 	type StateRoot = IntermediateStateRoot<Self>;
+	type TransactionLifetime = InFutureQueueBounded;
 }
 
 impl fp_self_contained::SelfContainedCall for Call {

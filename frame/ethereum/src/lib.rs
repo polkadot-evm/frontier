@@ -52,7 +52,8 @@ use sp_runtime::{
 	generic::DigestItem,
 	traits::{DispatchInfoOf, Dispatchable, One, Saturating, UniqueSaturatedInto, Zero},
 	transaction_validity::{
-		InvalidTransaction, TransactionValidity, TransactionValidityError, ValidTransactionBuilder,
+		InvalidTransaction, TransactionLongevity, TransactionValidity, TransactionValidityError,
+		ValidTransactionBuilder,
 	},
 	DispatchErrorWithPostInfo, RuntimeDebug,
 };
@@ -192,6 +193,21 @@ where
 	}
 }
 
+/// The given transaction lifetime - in number of blocks - for each transaction queue type.
+pub struct EthereumTransactionLongevity {
+	pub ready: TransactionLongevity,
+	pub future: TransactionLongevity,
+}
+
+impl Default for EthereumTransactionLongevity {
+	fn default() -> Self {
+		EthereumTransactionLongevity {
+			ready: TransactionLongevity::max_value(),
+			future: TransactionLongevity::max_value(),
+		}
+	}
+}
+
 pub use self::pallet::*;
 
 #[frame_support::pallet]
@@ -206,6 +222,8 @@ pub mod pallet {
 		type Event: From<Event> + IsType<<Self as frame_system::Config>::Event>;
 		/// How Ethereum state root is calculated.
 		type StateRoot: Get<H256>;
+		/// The in-pool lifetime for ethereum transactions.
+		type TransactionLifetime: Get<EthereumTransactionLongevity>;
 	}
 
 	#[pallet::pallet]
@@ -565,8 +583,12 @@ impl<T: Config> Pallet<T> {
 		// too high a nonce is still considered valid
 		if transaction_nonce > who.nonce {
 			if let Some(prev_nonce) = transaction_nonce.checked_sub(1.into()) {
-				builder = builder.and_requires((origin, prev_nonce))
+				builder = builder
+					.and_requires((origin, prev_nonce))
+					.longevity(T::TransactionLifetime::get().future);
 			}
+		} else {
+			builder = builder.longevity(T::TransactionLifetime::get().ready);
 		}
 
 		builder.build()
