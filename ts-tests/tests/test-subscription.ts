@@ -39,6 +39,7 @@ describeWithFrontierWs("Frontier RPC (Subscription)", (context) => {
 
 		let connected = false;
 		let subscriptionId = "";
+		expect(subscriptionId).is.empty;
 		await new Promise((resolve) => {
 			subscription.on("connected", function (d: any) {
 				connected = true;
@@ -49,7 +50,7 @@ describeWithFrontierWs("Frontier RPC (Subscription)", (context) => {
 
 		subscription.unsubscribe();
 		expect(connected).to.equal(true);
-		expect(subscriptionId).to.have.lengthOf(34);
+		expect(subscriptionId).not.empty;
 	}).timeout(20000);
 
 	step("should get newHeads stream", async function (done) {
