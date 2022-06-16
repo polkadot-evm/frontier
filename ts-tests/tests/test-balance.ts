@@ -27,6 +27,7 @@ describeWithFrontier("Frontier RPC (Balance)", (context) => {
 			GENESIS_ACCOUNT_PRIVATE_KEY
 		);
 		await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction]);
+
 		// GENESIS_ACCOUNT_BALANCE - (21000 * gasPrice) - value;
 		const expectedGenesisBalance = (
 			BigInt(GENESIS_ACCOUNT_BALANCE) -
