@@ -53,11 +53,12 @@ use crate::{internal_err, overrides::OverrideHandle, public_key, signer::EthSign
 
 pub use self::{
 	cache::{EthBlockDataCacheTask, EthTask},
+	execute::EstimateGasAdapter,
 	filter::EthFilter,
 };
 
 /// Eth API implementation.
-pub struct Eth<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> {
+pub struct Eth<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi, EGA = ()> {
 	pool: Arc<P>,
 	graph: Arc<Pool<A>>,
 	client: Arc<C>,
@@ -70,7 +71,7 @@ pub struct Eth<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> {
 	block_data_cache: Arc<EthBlockDataCacheTask<B>>,
 	fee_history_cache: FeeHistoryCache,
 	fee_history_cache_limit: FeeHistoryCacheLimit,
-	_marker: PhantomData<(B, BE)>,
+	_marker: PhantomData<(B, BE, EGA)>,
 }
 
 impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> Eth<B, C, P, CT, BE, H, A> {

@@ -44,7 +44,25 @@ use crate::{
 /// Default JSONRPC error code return by geth
 pub const JSON_RPC_ERROR_DEFAULT: i32 = -32000;
 
-impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi> Eth<B, C, P, CT, BE, H, A>
+/// Allow to adapt a request for `estimate_gas`.
+/// Can be used to estimate gas of some contracts using a different function
+/// in the case the normal gas estimation doesn't work.
+///
+/// Exemple: a precompile that tries to do a subcall but succeeds regardless of the
+/// success of the subcall. The gas estimation will thus optimize the gas limit down
+/// to the minimum, while we want to estimate a gas limit that will allow the subcall to
+/// have enough gas to succeed.
+pub trait EstimateGasAdapter {
+	fn adapt_request(request: CallRequest) -> CallRequest;
+}
+
+impl EstimateGasAdapter for () {
+	fn adapt_request(request: CallRequest) -> CallRequest {
+		request
+	}
+}
+
+impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi, EGA> Eth<B, C, P, CT, BE, H, A, EGA>
 where
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
@@ -53,6 +71,7 @@ where
 	BE: Backend<B> + 'static,
 	BE::State: StateBackend<BlakeTwo256>,
 	A: ChainApi<Block = B> + 'static,
+	EGA: EstimateGasAdapter,
 {
 	pub fn call(&self, request: CallRequest, number: Option<BlockNumber>) -> Result<Bytes> {
 		let CallRequest {
@@ -288,6 +307,9 @@ where
 
 		// Get best hash (TODO missing support for estimating gas historically)
 		let best_hash = client.info().best_hash;
+
+		// Adapt request for gas estimation.
+		let request = EGA::adapt_request(request);
 
 		// For simple transfer to simple account, return MIN_GAS_PER_TX directly
 		let is_simple_transfer = match &request.data {
