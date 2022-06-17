@@ -22,8 +22,6 @@ use ethereum_types::{H256, U256};
 use jsonrpsee::core::RpcResult as Result;
 
 use sc_client_api::backend::{Backend, StateBackend, StorageProvider};
-use sc_network::ExHashT;
-use sc_transaction_pool::ChainApi;
 use sp_blockchain::HeaderBackend;
 use sp_core::hashing::keccak_256;
 use sp_runtime::traits::{BlakeTwo256, Block as BlockT};
@@ -31,16 +29,17 @@ use sp_runtime::traits::{BlakeTwo256, Block as BlockT};
 use fc_rpc_core::types::*;
 
 use crate::{
-	eth::{rich_block_build, Eth},
+	eth::{rich_block_build, Eth, EthConfig},
 	frontier_backend_client, internal_err,
 };
 
-impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi> Eth<B, C, P, CT, BE, H, A>
+impl<T: EthConfig> Eth<T>
 where
-	B: BlockT<Hash = H256> + Send + Sync + 'static,
-	C: StorageProvider<B, BE> + HeaderBackend<B> + Send + Sync + 'static,
-	BE: Backend<B> + 'static,
-	BE::State: StateBackend<BlakeTwo256>,
+	T::Block: BlockT<Hash = H256> + Send + Sync + 'static,
+	T::Client:
+		StorageProvider<T::Block, T::Backend> + HeaderBackend<T::Block> + Send + Sync + 'static,
+	T::Backend: Backend<T::Block> + 'static,
+	<T::Backend as Backend<T::Block>>::State: StateBackend<BlakeTwo256>,
 {
 	pub async fn block_by_hash(&self, hash: H256, full: bool) -> Result<Option<RichBlock>> {
 		let client = Arc::clone(&self.client);
@@ -48,7 +47,7 @@ where
 		let block_data_cache = Arc::clone(&self.block_data_cache);
 		let backend = Arc::clone(&self.backend);
 
-		let id = match frontier_backend_client::load_hash::<B>(backend.as_ref(), hash)
+		let id = match frontier_backend_client::load_hash::<T::Block>(backend.as_ref(), hash)
 			.map_err(|err| internal_err(format!("{:?}", err)))?
 		{
 			Some(hash) => hash,
@@ -58,8 +57,11 @@ where
 			.expect_block_hash_from_id(&id)
 			.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
 
-		let schema =
-			frontier_backend_client::onchain_storage_schema::<B, C, BE>(client.as_ref(), id);
+		let schema = frontier_backend_client::onchain_storage_schema::<
+			T::Block,
+			T::Client,
+			T::Backend,
+		>(client.as_ref(), id);
 		let handler = overrides
 			.schemas
 			.get(&schema)
@@ -94,7 +96,7 @@ where
 		let block_data_cache = Arc::clone(&self.block_data_cache);
 		let backend = Arc::clone(&self.backend);
 
-		let id = match frontier_backend_client::native_block_id::<B, C>(
+		let id = match frontier_backend_client::native_block_id::<T::Block, T::Client>(
 			client.as_ref(),
 			backend.as_ref(),
 			Some(number),
@@ -106,8 +108,11 @@ where
 			.expect_block_hash_from_id(&id)
 			.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
 
-		let schema =
-			frontier_backend_client::onchain_storage_schema::<B, C, BE>(client.as_ref(), id);
+		let schema = frontier_backend_client::onchain_storage_schema::<
+			T::Block,
+			T::Client,
+			T::Backend,
+		>(client.as_ref(), id);
 		let handler = overrides
 			.schemas
 			.get(&schema)
@@ -137,14 +142,17 @@ where
 	}
 
 	pub fn block_transaction_count_by_hash(&self, hash: H256) -> Result<Option<U256>> {
-		let id = match frontier_backend_client::load_hash::<B>(self.backend.as_ref(), hash)
+		let id = match frontier_backend_client::load_hash::<T::Block>(self.backend.as_ref(), hash)
 			.map_err(|err| internal_err(format!("{:?}", err)))?
 		{
 			Some(hash) => hash,
 			_ => return Ok(None),
 		};
-		let schema =
-			frontier_backend_client::onchain_storage_schema::<B, C, BE>(self.client.as_ref(), id);
+		let schema = frontier_backend_client::onchain_storage_schema::<
+			T::Block,
+			T::Client,
+			T::Backend,
+		>(self.client.as_ref(), id);
 		let block = self
 			.overrides
 			.schemas
@@ -166,7 +174,7 @@ where
 			)));
 		}
 
-		let id = match frontier_backend_client::native_block_id::<B, C>(
+		let id = match frontier_backend_client::native_block_id::<T::Block, T::Client>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
 			Some(number),
@@ -174,8 +182,11 @@ where
 			Some(id) => id,
 			None => return Ok(None),
 		};
-		let schema =
-			frontier_backend_client::onchain_storage_schema::<B, C, BE>(self.client.as_ref(), id);
+		let schema = frontier_backend_client::onchain_storage_schema::<
+			T::Block,
+			T::Client,
+			T::Backend,
+		>(self.client.as_ref(), id);
 		let block = self
 			.overrides
 			.schemas

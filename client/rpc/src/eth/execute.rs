@@ -23,7 +23,6 @@ use evm::{ExitError, ExitReason};
 use jsonrpsee::core::RpcResult as Result;
 
 use sc_client_api::backend::{Backend, StateBackend, StorageProvider};
-use sc_network::ExHashT;
 use sc_transaction_pool::ChainApi;
 use sp_api::{ApiExt, ProvideRuntimeApi};
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
@@ -37,22 +36,23 @@ use fc_rpc_core::types::*;
 use fp_rpc::EthereumRuntimeRPCApi;
 
 use crate::{
-	eth::{pending_runtime_api, Eth},
+	eth::{pending_runtime_api, Eth, EthConfig},
 	frontier_backend_client, internal_err,
 };
 
 /// Default JSONRPC error code return by geth
 pub const JSON_RPC_ERROR_DEFAULT: i32 = -32000;
 
-impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi> Eth<B, C, P, CT, BE, H, A>
+impl<T: EthConfig> Eth<T>
 where
-	B: BlockT<Hash = H256> + Send + Sync + 'static,
-	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
-	C: HeaderBackend<B> + Send + Sync + 'static,
-	C::Api: BlockBuilderApi<B> + EthereumRuntimeRPCApi<B>,
-	BE: Backend<B> + 'static,
-	BE::State: StateBackend<BlakeTwo256>,
-	A: ChainApi<Block = B> + 'static,
+	T::Block: BlockT<Hash = H256> + Send + Sync + 'static,
+	T::Client: ProvideRuntimeApi<T::Block> + StorageProvider<T::Block, T::Backend>,
+	T::Client: HeaderBackend<T::Block> + Send + Sync + 'static,
+	<T::Client as ProvideRuntimeApi<T::Block>>::Api:
+		BlockBuilderApi<T::Block> + EthereumRuntimeRPCApi<T::Block>,
+	T::Backend: Backend<T::Block> + 'static,
+	<T::Backend as Backend<T::Block>>::State: StateBackend<BlakeTwo256>,
+	T::ChainApi: ChainApi<Block = T::Block> + 'static,
 {
 	pub fn call(&self, request: CallRequest, number: Option<BlockNumber>) -> Result<Bytes> {
 		let CallRequest {
@@ -78,7 +78,7 @@ where
 			)
 		};
 
-		let (id, api) = match frontier_backend_client::native_block_id::<B, C>(
+		let (id, api) = match frontier_backend_client::native_block_id::<T::Block, T::Client>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
 			number,
@@ -96,12 +96,13 @@ where
 			return Err(crate::err(JSON_RPC_ERROR_DEFAULT, "header not found", None));
 		}
 
-		let api_version =
-			if let Ok(Some(api_version)) = api.api_version::<dyn EthereumRuntimeRPCApi<B>>(&id) {
-				api_version
-			} else {
-				return Err(internal_err("failed to retrieve Runtime Api version"));
-			};
+		let api_version = if let Ok(Some(api_version)) =
+			api.api_version::<dyn EthereumRuntimeRPCApi<T::Block>>(&id)
+		{
+			api_version
+		} else {
+			return Err(internal_err("failed to retrieve Runtime Api version"));
+		};
 		// use given gas limit or query current block's limit
 		let gas_limit = match gas {
 			Some(amount) => amount,
@@ -322,7 +323,10 @@ where
 		let get_current_block_gas_limit = || async {
 			let substrate_hash = client.info().best_hash;
 			let id = BlockId::Hash(substrate_hash);
-			let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(&client, id);
+			let schema =
+				frontier_backend_client::onchain_storage_schema::<T::Block, T::Client, T::Backend>(
+					&client, id,
+				);
 			let block = block_data_cache.current_block(schema, substrate_hash).await;
 			if let Some(block) = block {
 				Ok(block.header.gas_limit)
@@ -391,7 +395,7 @@ where
 		// To solve that, and if we introduce historical gas estimation, we'd need to increase that default.
 		#[rustfmt::skip]
 			let executable = move |
-				request, gas_limit, api_version, api: sp_api::ApiRef<'_, C::Api>, estimate_mode
+				request, gas_limit, api_version, api: sp_api::ApiRef<'_, <T::Client as ProvideRuntimeApi<T::Block>>::Api>, estimate_mode
 			| -> Result<ExecutableResult> {
 				let CallRequest {
 					from,
@@ -539,7 +543,7 @@ where
 		let api_version = if let Ok(Some(api_version)) =
 			client
 				.runtime_api()
-				.api_version::<dyn EthereumRuntimeRPCApi<B>>(&BlockId::Hash(best_hash))
+				.api_version::<dyn EthereumRuntimeRPCApi<T::Block>>(&BlockId::Hash(best_hash))
 		{
 			api_version
 		} else {

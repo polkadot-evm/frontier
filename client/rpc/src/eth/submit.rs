@@ -21,7 +21,6 @@ use futures::future::TryFutureExt;
 use jsonrpsee::core::RpcResult as Result;
 
 use sc_client_api::backend::{Backend, StateBackend, StorageProvider};
-use sc_network::ExHashT;
 use sc_transaction_pool::ChainApi;
 use sc_transaction_pool_api::TransactionPool;
 use sp_api::{ApiExt, ProvideRuntimeApi};
@@ -36,19 +35,25 @@ use sp_runtime::{
 use fc_rpc_core::types::*;
 use fp_rpc::{ConvertTransaction, ConvertTransactionRuntimeApi, EthereumRuntimeRPCApi};
 
-use crate::{eth::Eth, internal_err};
+use crate::{
+	eth::{Eth, EthConfig},
+	internal_err,
+};
 
-impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi> Eth<B, C, P, CT, BE, H, A>
+impl<T: EthConfig> Eth<T>
 where
-	B: BlockT<Hash = H256> + Send + Sync + 'static,
-	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
-	C: HeaderBackend<B> + Send + Sync + 'static,
-	C::Api: BlockBuilderApi<B> + ConvertTransactionRuntimeApi<B> + EthereumRuntimeRPCApi<B>,
-	BE: Backend<B> + 'static,
-	BE::State: StateBackend<BlakeTwo256>,
-	P: TransactionPool<Block = B> + Send + Sync + 'static,
-	CT: ConvertTransaction<<B as BlockT>::Extrinsic> + Send + Sync + 'static,
-	A: ChainApi<Block = B> + 'static,
+	T::Block: BlockT<Hash = H256> + Send + Sync + 'static,
+	T::Client: ProvideRuntimeApi<T::Block> + StorageProvider<T::Block, T::Backend>,
+	T::Client: HeaderBackend<T::Block> + Send + Sync + 'static,
+	<T::Client as ProvideRuntimeApi<T::Block>>::Api: BlockBuilderApi<T::Block>
+		+ ConvertTransactionRuntimeApi<T::Block>
+		+ EthereumRuntimeRPCApi<T::Block>,
+	T::Backend: Backend<T::Block> + 'static,
+	<T::Backend as Backend<T::Block>>::State: StateBackend<BlakeTwo256>,
+	T::Pool: TransactionPool<Block = T::Block> + Send + Sync + 'static,
+	T::ConvertTransaction:
+		ConvertTransaction<<T::Block as BlockT>::Extrinsic> + Send + Sync + 'static,
+	T::ChainApi: ChainApi<Block = T::Block> + 'static,
 {
 	pub async fn send_transaction(&self, request: TransactionRequest) -> Result<H256> {
 		let from = match request.from {
@@ -152,7 +157,7 @@ where
 		let api_version = match self
 			.client
 			.runtime_api()
-			.api_version::<dyn ConvertTransactionRuntimeApi<B>>(&block_hash)
+			.api_version::<dyn ConvertTransactionRuntimeApi<T::Block>>(&block_hash)
 		{
 			Ok(api_version) => api_version,
 			_ => return Err(internal_err("cannot access runtime api")),
@@ -237,7 +242,7 @@ where
 		let api_version = match self
 			.client
 			.runtime_api()
-			.api_version::<dyn ConvertTransactionRuntimeApi<B>>(&block_hash)
+			.api_version::<dyn ConvertTransactionRuntimeApi<T::Block>>(&block_hash)
 		{
 			Ok(api_version) => api_version,
 			_ => return Err(internal_err("cannot access runtime api")),

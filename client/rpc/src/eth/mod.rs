@@ -27,7 +27,7 @@ mod state;
 mod submit;
 mod transaction;
 
-use std::{collections::BTreeMap, marker::PhantomData, sync::Arc};
+use std::{collections::BTreeMap, sync::Arc};
 
 use ethereum::{BlockV2 as EthereumBlock, TransactionV2 as EthereumTransaction};
 use ethereum_types::{H160, H256, H512, H64, U256, U64};
@@ -56,35 +56,46 @@ pub use self::{
 	filter::EthFilter,
 };
 
-/// Eth API implementation.
-pub struct Eth<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> {
-	pool: Arc<P>,
-	graph: Arc<Pool<A>>,
-	client: Arc<C>,
-	convert_transaction: Option<CT>,
-	network: Arc<NetworkService<B, H>>,
-	is_authority: bool,
-	signers: Vec<Box<dyn EthSigner>>,
-	overrides: Arc<OverrideHandle<B>>,
-	backend: Arc<fc_db::Backend<B>>,
-	block_data_cache: Arc<EthBlockDataCacheTask<B>>,
-	fee_history_cache: FeeHistoryCache,
-	fee_history_cache_limit: FeeHistoryCacheLimit,
-	_marker: PhantomData<(B, BE)>,
+/// Configuration trait for `Eth` struct.
+pub trait EthConfig: 'static {
+	type Pool;
+	type ChainApi: ChainApi;
+	type Client;
+	type ConvertTransaction;
+	type Block: BlockT;
+	type Hash: ExHashT;
+	type Backend;
 }
 
-impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> Eth<B, C, P, CT, BE, H, A> {
+/// Eth API implementation.
+pub struct Eth<T: EthConfig> {
+	pool: Arc<T::Pool>,
+	graph: Arc<Pool<T::ChainApi>>,
+	client: Arc<T::Client>,
+	convert_transaction: Option<T::ConvertTransaction>,
+	network: Arc<NetworkService<T::Block, T::Hash>>,
+	is_authority: bool,
+	signers: Vec<Box<dyn EthSigner>>,
+	overrides: Arc<OverrideHandle<T::Block>>,
+	backend: Arc<fc_db::Backend<T::Block>>,
+	block_data_cache: Arc<EthBlockDataCacheTask<T::Block>>,
+	fee_history_cache: FeeHistoryCache,
+	fee_history_cache_limit: FeeHistoryCacheLimit,
+	// _marker: PhantomData<(B, BE)>,
+}
+
+impl<T: EthConfig> Eth<T> {
 	pub fn new(
-		client: Arc<C>,
-		pool: Arc<P>,
-		graph: Arc<Pool<A>>,
-		convert_transaction: Option<CT>,
-		network: Arc<NetworkService<B, H>>,
+		client: Arc<T::Client>,
+		pool: Arc<T::Pool>,
+		graph: Arc<Pool<T::ChainApi>>,
+		convert_transaction: Option<T::ConvertTransaction>,
+		network: Arc<NetworkService<T::Block, T::Hash>>,
 		signers: Vec<Box<dyn EthSigner>>,
-		overrides: Arc<OverrideHandle<B>>,
-		backend: Arc<fc_db::Backend<B>>,
+		overrides: Arc<OverrideHandle<T::Block>>,
+		backend: Arc<fc_db::Backend<T::Block>>,
 		is_authority: bool,
-		block_data_cache: Arc<EthBlockDataCacheTask<B>>,
+		block_data_cache: Arc<EthBlockDataCacheTask<T::Block>>,
 		fee_history_cache: FeeHistoryCache,
 		fee_history_cache_limit: FeeHistoryCacheLimit,
 	) -> Self {
@@ -101,23 +112,26 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> Eth<B, C, P, CT, BE, H, A
 			block_data_cache,
 			fee_history_cache,
 			fee_history_cache_limit,
-			_marker: PhantomData,
+			// _marker: PhantomData,
 		}
 	}
 }
 
 #[async_trait]
-impl<B, C, P, CT, BE, H: ExHashT, A> EthApiServer for Eth<B, C, P, CT, BE, H, A>
+impl<T: EthConfig> EthApiServer for Eth<T>
 where
-	B: BlockT<Hash = H256> + Send + Sync + 'static,
-	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
-	C: HeaderBackend<B> + Send + Sync + 'static,
-	C::Api: BlockBuilderApi<B> + ConvertTransactionRuntimeApi<B> + EthereumRuntimeRPCApi<B>,
-	P: TransactionPool<Block = B> + Send + Sync + 'static,
-	CT: fp_rpc::ConvertTransaction<<B as BlockT>::Extrinsic> + Send + Sync + 'static,
-	BE: Backend<B> + 'static,
-	BE::State: StateBackend<BlakeTwo256>,
-	A: ChainApi<Block = B> + 'static,
+	T::Block: BlockT<Hash = H256> + Send + Sync + 'static,
+	T::Client: ProvideRuntimeApi<T::Block> + StorageProvider<T::Block, T::Backend>,
+	T::Client: HeaderBackend<T::Block> + Send + Sync + 'static,
+	<T::Client as ProvideRuntimeApi<T::Block>>::Api: BlockBuilderApi<T::Block>
+		+ ConvertTransactionRuntimeApi<T::Block>
+		+ EthereumRuntimeRPCApi<T::Block>,
+	T::Pool: TransactionPool<Block = T::Block> + Send + Sync + 'static,
+	T::ConvertTransaction:
+		fp_rpc::ConvertTransaction<<T::Block as BlockT>::Extrinsic> + Send + Sync + 'static,
+	T::Backend: Backend<T::Block> + 'static,
+	<T::Backend as Backend<T::Block>>::State: StateBackend<BlakeTwo256>,
+	T::ChainApi: ChainApi<Block = T::Block> + 'static,
 {
 	// ########################################################################
 	// Client

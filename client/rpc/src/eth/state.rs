@@ -21,7 +21,6 @@ use jsonrpsee::core::RpcResult as Result;
 
 use codec::Encode;
 use sc_client_api::backend::{Backend, StateBackend, StorageProvider};
-use sc_network::ExHashT;
 use sc_transaction_pool::ChainApi;
 use sc_transaction_pool_api::{InPoolTransaction, TransactionPool};
 use sp_api::ProvideRuntimeApi;
@@ -36,20 +35,21 @@ use fc_rpc_core::types::*;
 use fp_rpc::EthereumRuntimeRPCApi;
 
 use crate::{
-	eth::{pending_runtime_api, Eth},
+	eth::{pending_runtime_api, Eth, EthConfig},
 	frontier_backend_client, internal_err,
 };
 
-impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi> Eth<B, C, P, CT, BE, H, A>
+impl<T: EthConfig> Eth<T>
 where
-	B: BlockT<Hash = H256> + Send + Sync + 'static,
-	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
-	C: HeaderBackend<B> + Send + Sync + 'static,
-	C::Api: BlockBuilderApi<B> + EthereumRuntimeRPCApi<B>,
-	BE: Backend<B> + 'static,
-	BE::State: StateBackend<BlakeTwo256>,
-	P: TransactionPool<Block = B> + Send + Sync + 'static,
-	A: ChainApi<Block = B> + 'static,
+	T::Block: BlockT<Hash = H256> + Send + Sync + 'static,
+	T::Client: ProvideRuntimeApi<T::Block> + StorageProvider<T::Block, T::Backend>,
+	T::Client: HeaderBackend<T::Block> + Send + Sync + 'static,
+	<T::Client as ProvideRuntimeApi<T::Block>>::Api:
+		BlockBuilderApi<T::Block> + EthereumRuntimeRPCApi<T::Block>,
+	T::Backend: Backend<T::Block> + 'static,
+	<T::Backend as Backend<T::Block>>::State: StateBackend<BlakeTwo256>,
+	T::Pool: TransactionPool<Block = T::Block> + Send + Sync + 'static,
+	T::ChainApi: ChainApi<Block = T::Block> + 'static,
 {
 	pub fn balance(&self, address: H160, number: Option<BlockNumber>) -> Result<U256> {
 		let number = number.unwrap_or(BlockNumber::Latest);
@@ -59,7 +59,7 @@ where
 				.account_basic(&BlockId::Hash(self.client.info().best_hash), address)
 				.map_err(|err| internal_err(format!("fetch runtime chain id failed: {:?}", err)))?
 				.balance)
-		} else if let Ok(Some(id)) = frontier_backend_client::native_block_id::<B, C>(
+		} else if let Ok(Some(id)) = frontier_backend_client::native_block_id::<T::Block, T::Client>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
 			Some(number),
@@ -87,15 +87,16 @@ where
 			Ok(api
 				.storage_at(&BlockId::Hash(self.client.info().best_hash), address, index)
 				.unwrap_or_default())
-		} else if let Ok(Some(id)) = frontier_backend_client::native_block_id::<B, C>(
+		} else if let Ok(Some(id)) = frontier_backend_client::native_block_id::<T::Block, T::Client>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
 			Some(number),
 		) {
-			let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(
-				self.client.as_ref(),
-				id,
-			);
+			let schema = frontier_backend_client::onchain_storage_schema::<
+				T::Block,
+				T::Client,
+				T::Backend,
+			>(self.client.as_ref(), id);
 			Ok(self
 				.overrides
 				.schemas
@@ -135,7 +136,7 @@ where
 			return Ok(current_nonce);
 		}
 
-		let id = match frontier_backend_client::native_block_id::<B, C>(
+		let id = match frontier_backend_client::native_block_id::<T::Block, T::Client>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
 			number,
@@ -160,15 +161,16 @@ where
 				.account_code_at(&BlockId::Hash(self.client.info().best_hash), address)
 				.unwrap_or_default()
 				.into())
-		} else if let Ok(Some(id)) = frontier_backend_client::native_block_id::<B, C>(
+		} else if let Ok(Some(id)) = frontier_backend_client::native_block_id::<T::Block, T::Client>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
 			Some(number),
 		) {
-			let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(
-				self.client.as_ref(),
-				id,
-			);
+			let schema = frontier_backend_client::onchain_storage_schema::<
+				T::Block,
+				T::Client,
+				T::Backend,
+			>(self.client.as_ref(), id);
 
 			Ok(self
 				.overrides

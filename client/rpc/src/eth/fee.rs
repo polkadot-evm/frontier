@@ -20,8 +20,6 @@ use ethereum_types::{H256, U256};
 use jsonrpsee::core::RpcResult as Result;
 
 use sc_client_api::backend::{Backend, StateBackend, StorageProvider};
-use sc_network::ExHashT;
-use sc_transaction_pool::ChainApi;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{
@@ -32,16 +30,19 @@ use sp_runtime::{
 use fc_rpc_core::types::*;
 use fp_rpc::EthereumRuntimeRPCApi;
 
-use crate::{eth::Eth, frontier_backend_client, internal_err};
+use crate::{
+	eth::{Eth, EthConfig},
+	frontier_backend_client, internal_err,
+};
 
-impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi> Eth<B, C, P, CT, BE, H, A>
+impl<T: EthConfig> Eth<T>
 where
-	B: BlockT<Hash = H256> + Send + Sync + 'static,
-	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
-	C: HeaderBackend<B> + Send + Sync + 'static,
-	C::Api: EthereumRuntimeRPCApi<B>,
-	BE: Backend<B> + 'static,
-	BE::State: StateBackend<BlakeTwo256>,
+	T::Block: BlockT<Hash = H256> + Send + Sync + 'static,
+	T::Client: ProvideRuntimeApi<T::Block> + StorageProvider<T::Block, T::Backend>,
+	T::Client: HeaderBackend<T::Block> + Send + Sync + 'static,
+	<T::Client as ProvideRuntimeApi<T::Block>>::Api: EthereumRuntimeRPCApi<T::Block>,
+	T::Backend: Backend<T::Block> + 'static,
+	<T::Backend as Backend<T::Block>>::State: StateBackend<BlakeTwo256>,
 {
 	pub fn gas_price(&self) -> Result<U256> {
 		let block = BlockId::Hash(self.client.info().best_hash);
@@ -66,7 +67,7 @@ where
 			block_count.as_u64()
 		};
 
-		if let Ok(Some(id)) = frontier_backend_client::native_block_id::<B, C>(
+		if let Ok(Some(id)) = frontier_backend_client::native_block_id::<T::Block, T::Client>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
 			Some(newest_block),
@@ -143,10 +144,11 @@ where
 					response.gas_used_ratio.last(),
 					response.base_fee_per_gas.last(),
 				) {
-					let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(
-						self.client.as_ref(),
-						id,
-					);
+					let schema = frontier_backend_client::onchain_storage_schema::<
+						T::Block,
+						T::Client,
+						T::Backend,
+					>(self.client.as_ref(), id);
 					let handler = self
 						.overrides
 						.schemas

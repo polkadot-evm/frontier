@@ -23,7 +23,6 @@ use ethereum_types::{H256, U256, U64};
 use jsonrpsee::core::RpcResult as Result;
 
 use sc_client_api::backend::{Backend, StateBackend, StorageProvider};
-use sc_network::ExHashT;
 use sc_transaction_pool::ChainApi;
 use sc_transaction_pool_api::InPoolTransaction;
 use sp_api::{ApiExt, ProvideRuntimeApi};
@@ -38,18 +37,23 @@ use fc_rpc_core::types::*;
 use fp_rpc::EthereumRuntimeRPCApi;
 
 use crate::{
-	eth::{transaction_build, Eth},
+	eth::{transaction_build, Eth, EthConfig},
 	frontier_backend_client, internal_err,
 };
 
-impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi> Eth<B, C, P, CT, BE, H, A>
+impl<T: EthConfig> Eth<T>
 where
-	B: BlockT<Hash = H256> + Send + Sync + 'static,
-	C: ProvideRuntimeApi<B> + StorageProvider<B, BE> + HeaderBackend<B> + Send + Sync + 'static,
-	C::Api: EthereumRuntimeRPCApi<B>,
-	BE: Backend<B> + 'static,
-	BE::State: StateBackend<BlakeTwo256>,
-	A: ChainApi<Block = B> + 'static,
+	T::Block: BlockT<Hash = H256> + Send + Sync + 'static,
+	T::Client: ProvideRuntimeApi<T::Block>
+		+ StorageProvider<T::Block, T::Backend>
+		+ HeaderBackend<T::Block>
+		+ Send
+		+ Sync
+		+ 'static,
+	<T::Client as ProvideRuntimeApi<T::Block>>::Api: EthereumRuntimeRPCApi<T::Block>,
+	T::Backend: Backend<T::Block> + 'static,
+	<T::Backend as Backend<T::Block>>::State: StateBackend<BlakeTwo256>,
+	T::ChainApi: ChainApi<Block = T::Block> + 'static,
 {
 	pub async fn transaction_by_hash(&self, hash: H256) -> Result<Option<Transaction>> {
 		let client = Arc::clone(&self.client);
@@ -58,7 +62,7 @@ where
 		let backend = Arc::clone(&self.backend);
 		let graph = Arc::clone(&self.graph);
 
-		let (hash, index) = match frontier_backend_client::load_transactions::<B, C>(
+		let (hash, index) = match frontier_backend_client::load_transactions::<T::Block, T::Client>(
 			client.as_ref(),
 			backend.as_ref(),
 			hash,
@@ -69,10 +73,10 @@ where
 			Some((hash, index)) => (hash, index as usize),
 			None => {
 				let api = client.runtime_api();
-				let best_block: BlockId<B> = BlockId::Hash(client.info().best_hash);
+				let best_block: BlockId<T::Block> = BlockId::Hash(client.info().best_hash);
 
 				let api_version = if let Ok(Some(api_version)) =
-					api.api_version::<dyn EthereumRuntimeRPCApi<B>>(&best_block)
+					api.api_version::<dyn EthereumRuntimeRPCApi<T::Block>>(&best_block)
 				{
 					api_version
 				} else {
@@ -80,14 +84,14 @@ where
 				};
 				// If the transaction is not yet mapped in the frontier db,
 				// check for it in the transaction pool.
-				let mut xts: Vec<<B as BlockT>::Extrinsic> = Vec::new();
+				let mut xts: Vec<<T::Block as BlockT>::Extrinsic> = Vec::new();
 				// Collect transactions in the ready validated pool.
 				xts.extend(
 					graph
 						.validated_pool()
 						.ready()
 						.map(|in_pool_tx| in_pool_tx.data().clone())
-						.collect::<Vec<<B as BlockT>::Extrinsic>>(),
+						.collect::<Vec<<T::Block as BlockT>::Extrinsic>>(),
 				);
 
 				// Collect transactions in the future validated pool.
@@ -97,7 +101,7 @@ where
 						.futures()
 						.iter()
 						.map(|(_hash, extrinsic)| extrinsic.clone())
-						.collect::<Vec<<B as BlockT>::Extrinsic>>(),
+						.collect::<Vec<<T::Block as BlockT>::Extrinsic>>(),
 				);
 
 				let ethereum_transactions: Vec<EthereumTransaction> = if api_version > 1 {
@@ -127,7 +131,7 @@ where
 			}
 		};
 
-		let id = match frontier_backend_client::load_hash::<B>(backend.as_ref(), hash)
+		let id = match frontier_backend_client::load_hash::<T::Block>(backend.as_ref(), hash)
 			.map_err(|err| internal_err(format!("{:?}", err)))?
 		{
 			Some(hash) => hash,
@@ -137,8 +141,11 @@ where
 			.expect_block_hash_from_id(&id)
 			.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
 
-		let schema =
-			frontier_backend_client::onchain_storage_schema::<B, C, BE>(client.as_ref(), id);
+		let schema = frontier_backend_client::onchain_storage_schema::<
+			T::Block,
+			T::Client,
+			T::Backend,
+		>(client.as_ref(), id);
 		let handler = overrides
 			.schemas
 			.get(&schema)
@@ -172,7 +179,7 @@ where
 		let block_data_cache = Arc::clone(&self.block_data_cache);
 		let backend = Arc::clone(&self.backend);
 
-		let id = match frontier_backend_client::load_hash::<B>(backend.as_ref(), hash)
+		let id = match frontier_backend_client::load_hash::<T::Block>(backend.as_ref(), hash)
 			.map_err(|err| internal_err(format!("{:?}", err)))?
 		{
 			Some(hash) => hash,
@@ -184,8 +191,11 @@ where
 
 		let index = index.value();
 
-		let schema =
-			frontier_backend_client::onchain_storage_schema::<B, C, BE>(client.as_ref(), id);
+		let schema = frontier_backend_client::onchain_storage_schema::<
+			T::Block,
+			T::Client,
+			T::Backend,
+		>(client.as_ref(), id);
 		let handler = overrides
 			.schemas
 			.get(&schema)
@@ -227,7 +237,7 @@ where
 		let block_data_cache = Arc::clone(&self.block_data_cache);
 		let backend = Arc::clone(&self.backend);
 
-		let id = match frontier_backend_client::native_block_id::<B, C>(
+		let id = match frontier_backend_client::native_block_id::<T::Block, T::Client>(
 			client.as_ref(),
 			backend.as_ref(),
 			Some(number),
@@ -240,8 +250,11 @@ where
 			.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
 
 		let index = index.value();
-		let schema =
-			frontier_backend_client::onchain_storage_schema::<B, C, BE>(client.as_ref(), id);
+		let schema = frontier_backend_client::onchain_storage_schema::<
+			T::Block,
+			T::Client,
+			T::Backend,
+		>(client.as_ref(), id);
 		let handler = overrides
 			.schemas
 			.get(&schema)
@@ -279,7 +292,7 @@ where
 		let block_data_cache = Arc::clone(&self.block_data_cache);
 		let backend = Arc::clone(&self.backend);
 
-		let (hash, index) = match frontier_backend_client::load_transactions::<B, C>(
+		let (hash, index) = match frontier_backend_client::load_transactions::<T::Block, T::Client>(
 			client.as_ref(),
 			backend.as_ref(),
 			hash,
@@ -291,7 +304,7 @@ where
 			None => return Ok(None),
 		};
 
-		let id = match frontier_backend_client::load_hash::<B>(backend.as_ref(), hash)
+		let id = match frontier_backend_client::load_hash::<T::Block>(backend.as_ref(), hash)
 			.map_err(|err| internal_err(format!("{:?}", err)))?
 		{
 			Some(hash) => hash,
@@ -301,8 +314,11 @@ where
 			.expect_block_hash_from_id(&id)
 			.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
 
-		let schema =
-			frontier_backend_client::onchain_storage_schema::<B, C, BE>(client.as_ref(), id);
+		let schema = frontier_backend_client::onchain_storage_schema::<
+			T::Block,
+			T::Client,
+			T::Backend,
+		>(client.as_ref(), id);
 		let handler = overrides
 			.schemas
 			.get(&schema)

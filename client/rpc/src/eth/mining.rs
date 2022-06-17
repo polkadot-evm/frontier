@@ -19,15 +19,11 @@
 use ethereum_types::{H256, H64, U256};
 use jsonrpsee::core::RpcResult as Result;
 
-use sc_network::ExHashT;
-use sc_transaction_pool::ChainApi;
-use sp_runtime::traits::Block as BlockT;
-
 use fc_rpc_core::types::*;
 
-use crate::eth::Eth;
+use crate::eth::{Eth, EthConfig};
 
-impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> Eth<B, C, P, CT, BE, H, A> {
+impl<T: EthConfig> Eth<T> {
 	pub fn is_mining(&self) -> Result<bool> {
 		Ok(self.is_authority)
 	}

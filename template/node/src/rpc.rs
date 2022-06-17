@@ -1,6 +1,6 @@
 //! A collection of node-specific RPC methods.
 
-use std::{collections::BTreeMap, sync::Arc};
+use std::{collections::BTreeMap, marker::PhantomData, sync::Arc};
 
 use jsonrpsee::RpcModule;
 // Substrate
@@ -99,6 +99,21 @@ where
 	})
 }
 
+struct Config<C, P, BE, A>(PhantomData<(C, P, BE, A)>);
+impl<C, P, BE, A> fc_rpc::EthConfig for Config<C, P, BE, A>
+where
+	Self: 'static,
+	A: ChainApi + 'static,
+{
+	type Pool = P;
+	type ChainApi = A;
+	type Client = C;
+	type ConvertTransaction = frontier_template_runtime::TransactionConverter;
+	type Block = Block;
+	type Hash = Hash;
+	type Backend = BE;
+}
+
 /// Instantiate all Full RPC extensions.
 pub fn create_full<C, P, BE, A>(
 	deps: FullDeps<C, P, A>,
@@ -155,7 +170,7 @@ where
 	}
 
 	io.merge(
-		Eth::new(
+		Eth::<Config<C, P, BE, A>>::new(
 			client.clone(),
 			pool.clone(),
 			graph,

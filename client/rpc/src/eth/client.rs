@@ -20,8 +20,6 @@ use ethereum_types::{H160, H256, U256, U64};
 use jsonrpsee::core::RpcResult as Result;
 
 use sc_client_api::backend::{Backend, StateBackend, StorageProvider};
-use sc_network::ExHashT;
-use sc_transaction_pool::ChainApi;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{
@@ -32,16 +30,19 @@ use sp_runtime::{
 use fc_rpc_core::types::*;
 use fp_rpc::EthereumRuntimeRPCApi;
 
-use crate::{eth::Eth, frontier_backend_client, internal_err};
+use crate::{
+	eth::{Eth, EthConfig},
+	frontier_backend_client, internal_err,
+};
 
-impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi> Eth<B, C, P, CT, BE, H, A>
+impl<T: EthConfig> Eth<T>
 where
-	B: BlockT<Hash = H256> + Send + Sync + 'static,
-	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
-	C: HeaderBackend<B> + Send + Sync + 'static,
-	C::Api: EthereumRuntimeRPCApi<B>,
-	BE: Backend<B> + 'static,
-	BE::State: StateBackend<BlakeTwo256>,
+	T::Block: BlockT<Hash = H256> + Send + Sync + 'static,
+	T::Client: ProvideRuntimeApi<T::Block> + StorageProvider<T::Block, T::Backend>,
+	T::Client: HeaderBackend<T::Block> + Send + Sync + 'static,
+	<T::Client as ProvideRuntimeApi<T::Block>>::Api: EthereumRuntimeRPCApi<T::Block>,
+	T::Backend: Backend<T::Block> + 'static,
+	<T::Backend as Backend<T::Block>>::State: StateBackend<BlakeTwo256>,
 {
 	pub fn protocol_version(&self) -> Result<u64> {
 		Ok(1)
@@ -69,10 +70,11 @@ where
 
 	pub fn author(&self) -> Result<H160> {
 		let block = BlockId::Hash(self.client.info().best_hash);
-		let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(
-			self.client.as_ref(),
-			block,
-		);
+		let schema = frontier_backend_client::onchain_storage_schema::<
+			T::Block,
+			T::Client,
+			T::Backend,
+		>(self.client.as_ref(), block);
 
 		Ok(self
 			.overrides

@@ -33,7 +33,7 @@ mod signer;
 mod web3;
 
 pub use self::{
-	eth::{Eth, EthBlockDataCacheTask, EthFilter, EthTask},
+	eth::{Eth, EthBlockDataCacheTask, EthConfig, EthFilter, EthTask},
 	eth_pubsub::{EthPubSub, EthereumSubIdProvider},
 	net::Net,
 	overrides::{
