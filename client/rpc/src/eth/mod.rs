@@ -81,7 +81,6 @@ pub struct Eth<T: EthConfig> {
 	block_data_cache: Arc<EthBlockDataCacheTask<T::Block>>,
 	fee_history_cache: FeeHistoryCache,
 	fee_history_cache_limit: FeeHistoryCacheLimit,
-	// _marker: PhantomData<(B, BE)>,
 }
 
 impl<T: EthConfig> Eth<T> {
@@ -112,7 +111,6 @@ impl<T: EthConfig> Eth<T> {
 			block_data_cache,
 			fee_history_cache,
 			fee_history_cache_limit,
-			// _marker: PhantomData,
 		}
 	}
 }
