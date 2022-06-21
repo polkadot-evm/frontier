@@ -1667,6 +1667,7 @@ dependencies = [
  "evm",
  "fc-db",
  "fc-rpc-core",
+ "fp-evm",
  "fp-rpc",
  "fp-storage",
  "frontier-template-runtime",
