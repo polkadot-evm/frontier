@@ -209,6 +209,7 @@ mod tests {
 		TxNonceTooHigh,
 		InvalidPaymentInput,
 		InvalidChainId,
+		InsufficientFundsForTransfer,
 	}
 
 	static LONDON_CONFIG: evm::Config = evm::Config::london();
@@ -225,6 +226,9 @@ mod tests {
 				InvalidEvmTransactionError::TxNonceTooHigh => TestError::TxNonceTooHigh,
 				InvalidEvmTransactionError::InvalidPaymentInput => TestError::InvalidPaymentInput,
 				InvalidEvmTransactionError::InvalidChainId => TestError::InvalidChainId,
+				InvalidEvmTransactionError::InsufficientFundsForTransfer => {
+					TestError::InsufficientFundsForTransfer
+				}
 			}
 		}
 	}
