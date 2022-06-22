@@ -681,6 +681,11 @@ impl<T: Config> Pallet<T> {
 		})
 	}
 
+	/// Get current block hash
+	pub fn current_block_hash() -> Option<H256> {
+		Self::current_block().map(|block| block.header.hash())
+	}
+
 	/// Execute an Ethereum transaction.
 	pub fn execute(
 		from: H160,
