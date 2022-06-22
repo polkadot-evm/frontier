@@ -320,23 +320,28 @@ pub mod pallet {
 
 	/// Current building block's transactions and receipts.
 	#[pallet::storage]
+	#[pallet::getter(fn pending)]
 	pub(super) type Pending<T: Config> =
 		StorageValue<_, Vec<(Transaction, TransactionStatus, Receipt)>, ValueQuery>;
 
 	/// The current Ethereum block.
 	#[pallet::storage]
+	#[pallet::getter(fn current_block)]
 	pub(super) type CurrentBlock<T: Config> = StorageValue<_, ethereum::BlockV2>;
 
 	/// The current Ethereum receipts.
 	#[pallet::storage]
+	#[pallet::getter(fn current_receipts)]
 	pub(super) type CurrentReceipts<T: Config> = StorageValue<_, Vec<Receipt>>;
 
 	/// The current transaction statuses.
 	#[pallet::storage]
+	#[pallet::getter(fn current_transaction_statuses)]
 	pub(super) type CurrentTransactionStatuses<T: Config> = StorageValue<_, Vec<TransactionStatus>>;
 
 	// Mapping for block number and hashes.
 	#[pallet::storage]
+	#[pallet::getter(fn block_hash)]
 	pub(super) type BlockHash<T: Config> = StorageMap<_, Twox64Concat, U256, H256, ValueQuery>;
 
 	#[pallet::genesis_config]
@@ -674,26 +679,6 @@ impl<T: Config> Pallet<T> {
 			)),
 			pays_fee: Pays::No,
 		})
-	}
-
-	/// Get the transaction status with given index.
-	pub fn current_transaction_statuses() -> Option<Vec<TransactionStatus>> {
-		CurrentTransactionStatuses::<T>::get()
-	}
-
-	/// Get current block.
-	pub fn current_block() -> Option<ethereum::BlockV2> {
-		CurrentBlock::<T>::get()
-	}
-
-	/// Get current block hash
-	pub fn current_block_hash() -> Option<H256> {
-		Self::current_block().map(|block| block.header.hash())
-	}
-
-	/// Get receipts by number.
-	pub fn current_receipts() -> Option<Vec<Receipt>> {
-		CurrentReceipts::<T>::get()
 	}
 
 	/// Execute an Ethereum transaction.
