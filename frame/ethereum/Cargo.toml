@@ -32,6 +32,7 @@ pallet-timestamp = { version = "4.0.0-dev", git = "https://github.com/paritytech
 
 # Frontier
 fp-consensus = { version = "2.0.0-dev", path = "../../primitives/consensus", default-features = false }
+fp-ethereum = { version = "1.0.0-dev", path = "../../primitives/ethereum", default-features = false }
 fp-evm = { version = "3.0.0-dev", path = "../../primitives/evm", default-features = false }
 fp-rpc = { version = "3.0.0-dev", path = "../../primitives/rpc", default-features = false }
 fp-self-contained = { version = "1.0.0-dev", path = "../../primitives/self-contained", default-features = false }
@@ -68,6 +69,7 @@ std = [
 	"pallet-timestamp/std",
 	# Frontier
 	"fp-consensus/std",
+	"fp-ethereum/std",
 	"fp-evm/std",
 	"fp-rpc/std",
 	"fp-self-contained/std",
