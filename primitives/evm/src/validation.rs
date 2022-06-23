@@ -385,6 +385,25 @@ mod tests {
 		test_env(input)
 	}
 
+	fn legacy_transaction<'config>() -> CheckEvmTransaction<'config, TestError> {
+		let mut input = TestCase::default();
+		input.gas_price = Some(U256::from(1_000_000_000u128));
+		input.max_fee_per_gas = None;
+		input.max_priority_fee_per_gas = None;
+		test_env(input)
+	}
+
+	fn invalid_transaction_mixed_fees<'config>(
+		is_transactional: bool,
+	) -> CheckEvmTransaction<'config, TestError> {
+		let mut input = TestCase::default();
+		input.max_fee_per_gas = Some(U256::from(1_000_000_000u128));
+		input.gas_price = Some(U256::from(1_000_000_000u128));
+		input.max_priority_fee_per_gas = None;
+		input.is_transactional = is_transactional;
+		test_env(input)
+	}
+
 	// Tests
 	#[test]
 	// Default (valid) transaction succeeds in pool and in block.
@@ -639,6 +658,67 @@ mod tests {
 		let with_tip = true;
 		let test = transaction_max_fee_high(with_tip);
 		let res = test.with_balance_for(&who);
+		assert!(res.is_ok());
+	}
+
+	#[test]
+	// Account balance is matched against the provided gas_price for Legacy transactions.
+	fn validate_balance_for_legacy_transaction_succeeds() {
+		let who = Account {
+			balance: U256::from(21_000_000_000_001u128),
+			nonce: U256::zero(),
+		};
+		let test = legacy_transaction();
+		let res = test.with_balance_for(&who);
+		assert!(res.is_ok());
+	}
+
+	#[test]
+	// Account balance is matched against the provided gas_price for Legacy transactions.
+	fn validate_balance_for_legacy_transaction_fails() {
+		let who = Account {
+			balance: U256::from(21_000_000_000_000u128),
+			nonce: U256::zero(),
+		};
+		let test = legacy_transaction();
+		let res = test.with_balance_for(&who);
+		assert!(res.is_err());
+		assert_eq!(res.unwrap_err(), TestError::BalanceTooLow);
+	}
+
+	#[test]
+	// Transaction with invalid fee input - mixing gas_price and max_fee_per_gas.
+	fn validate_balance_with_invalid_fee_input() {
+		let who = Account {
+			balance: U256::from(21_000_000_000_001u128),
+			nonce: U256::zero(),
+		};
+		// Fails for transactional.
+		let is_transactional = true;
+		let test = invalid_transaction_mixed_fees(is_transactional);
+		let res = test.with_balance_for(&who);
+		assert!(res.is_err());
+		assert_eq!(res.unwrap_err(), TestError::InvalidPaymentInput);
+		// Succeeds for non-transactional.
+		let is_transactional = false;
+		let test = invalid_transaction_mixed_fees(is_transactional);
+		let res = test.with_balance_for(&who);
+		assert!(res.is_ok());
+	}
+
+	#[test]
+	// Transaction with invalid fee input - mixing gas_price and max_fee_per_gas.
+	fn validate_base_fee_with_invalid_fee_input() {
+		// Fails for transactional.
+		let is_transactional = true;
+		let test = invalid_transaction_mixed_fees(is_transactional);
+		let res = test.with_base_fee();
+		assert!(res.is_err());
+		assert_eq!(res.unwrap_err(), TestError::InvalidPaymentInput);
+		// Succeeds for non-transactional.
+		let is_transactional = false;
+		let test = invalid_transaction_mixed_fees(is_transactional);
+		let res = test.with_base_fee();
 		assert!(res.is_ok());
 	}
 }
