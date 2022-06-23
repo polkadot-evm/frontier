@@ -67,4 +67,5 @@ sp-consensus = { version = "0.10.0-dev", git = "https://github.com/paritytech/su
 substrate-test-runtime-client = { version = "2.0.0", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.32" }
 
 [features]
+default = ["rpc_binary_search_estimate"]
 rpc_binary_search_estimate = []
