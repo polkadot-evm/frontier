@@ -115,27 +115,23 @@ impl<'config, E: From<InvalidEvmTransactionError>> CheckEvmTransaction<'config, 
 
 	pub fn with_balance_for(&self, who: &Account) -> Result<&Self, E> {
 		// Get fee data from either a legacy or typed transaction input.
-		let (gas_price, effective_gas_price) = self.transaction_fee_input()?;
+		let (_, effective_gas_price) = self.transaction_fee_input()?;
 
 		// Account has enough funds to pay for the transaction.
 		// Check is skipped on non-transactional calls that don't provide
 		// a gas price input.
-		let fee = if let Some(effective_gas_price) = effective_gas_price {
-			// Fee for EIP-1559 transaction with tip is calculated using
-			// the effective gas price.
-			effective_gas_price.saturating_mul(self.transaction.gas_limit)
-		} else {
-			let base = if self.transaction.max_fee_per_gas.is_some() {
-				// Fee for EIP-1559 transaction without tip is calculated using
-				// the base fee.
-				self.config.base_fee
-			} else {
-				// Fee for Legacy or EIP-2930 transaction is calculated using
-				// the provided `gas_price`.
-				gas_price
-			};
-			base.saturating_mul(self.transaction.gas_limit)
-		};
+		//
+		// Fee for EIP-1559 transaction **with** tip is calculated using
+		// the effective gas price.
+		//
+		// Fee for EIP-1559 transaction **without** tip is calculated using
+		// the base fee.
+		//
+		// Fee for Legacy or EIP-2930 transaction is calculated using
+		// the provided `gas_price`.
+		let fee = effective_gas_price
+			.unwrap_or_default()
+			.saturating_mul(self.transaction.gas_limit);
 		if self.config.is_transactional || fee > U256::zero() {
 			let total_payment = self.transaction.value.saturating_add(fee);
 			if who.balance < total_payment {
@@ -152,9 +148,11 @@ impl<'config, E: From<InvalidEvmTransactionError>> CheckEvmTransaction<'config, 
 			self.transaction.max_priority_fee_per_gas,
 		) {
 			// Legacy or EIP-2930 transaction.
-			(Some(gas_price), None, None) => Ok((gas_price, None)),
+			(Some(gas_price), None, None) => Ok((gas_price, Some(gas_price))),
 			// EIP-1559 transaction without tip.
-			(None, Some(max_fee_per_gas), None) => Ok((max_fee_per_gas, None)),
+			(None, Some(max_fee_per_gas), None) => {
+				Ok((max_fee_per_gas, Some(self.config.base_fee)))
+			}
 			// EIP-1559 tip.
 			(None, Some(max_fee_per_gas), Some(max_priority_fee_per_gas)) => {
 				if max_priority_fee_per_gas > max_fee_per_gas {
