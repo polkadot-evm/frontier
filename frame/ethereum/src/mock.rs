@@ -21,25 +21,27 @@ use ethereum::{TransactionAction, TransactionSignature};
 use frame_support::{
 	dispatch::Dispatchable,
 	parameter_types,
-	traits::{ConstU32, FindAuthor},
+	traits::{ConstU32, FindAuthor, GenesisBuild, IsType},
 	weights::Weight,
 	ConsensusEngineId, PalletId,
 };
-use pallet_evm::{AddressMapping, EnsureAddressTruncated, FeeCalculator};
+use pallet_evm::{AddressMapping, FeeCalculator};
 use rlp::RlpStream;
 use sp_core::{hashing::keccak_256, H160, H256, U256};
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
-	AccountId32,
+	AccountId32, DispatchError,
 };
+use std::{collections::BTreeMap, str::FromStr};
 
 use super::*;
+use crate as pallet_ethereum;
 use crate::IntermediateStateRoot;
 
 pub type SignedExtra = (frame_system::CheckSpecVersion<Test>,);
 
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test, (), SignedExtra>;
+type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
 frame_support::construct_runtime! {
@@ -48,11 +50,11 @@ frame_support::construct_runtime! {
 		NodeBlock = Block,
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
-		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-		Timestamp: pallet_timestamp::{Pallet, Call, Storage},
-		EVM: pallet_evm::{Pallet, Call, Storage, Config, Event<T>},
-		Ethereum: crate::{Pallet, Call, Storage, Event, Origin},
+		System: frame_system,
+		Balances: pallet_balances,
+		Timestamp: pallet_timestamp,
+		EVM: pallet_evm,
+		Ethereum: pallet_ethereum,
 	}
 }
 
@@ -142,13 +144,32 @@ parameter_types! {
 	pub const WeightPerGas: Weight = Weight::from_ref_time(20_000);
 }
 
-pub struct HashedAddressMapping;
+pub struct PairedAddressMapping<T>(sp_std::marker::PhantomData<T>);
 
-impl AddressMapping<AccountId32> for HashedAddressMapping {
-	fn into_account_id(address: H160) -> AccountId32 {
-		let mut data = [0u8; 32];
-		data[0..20].copy_from_slice(&address[..]);
-		AccountId32::from(Into::<[u8; 32]>::into(data))
+impl<T: Config> AddressMapping<T::AccountId> for PairedAddressMapping<T>
+where
+	T::AccountId: IsType<AccountId32>,
+{
+	// Returns the AccountId used go generate the given Eth Address.
+	fn into_account_id(address: H160) -> T::AccountId {
+		if let Some(acct) = pallet_evm::Accounts::<T>::get(address) {
+			return acct;
+		}
+		let mut data: [u8; 32] = [0u8; 32];
+		data[0..4].copy_from_slice(b"evm:");
+		data[4..24].copy_from_slice(&address[..]);
+		AccountId32::from(data).into()
+	}
+
+	fn ensure_address_origin(address: &H160, origin: &T::AccountId) -> Result<(), DispatchError> {
+		if let Some(acct) = pallet_evm::Accounts::<T>::get(address) {
+			if acct == *origin {
+				return Ok(());
+			}
+		}
+		Err(DispatchError::Other(
+			"eth and substrate addresses are not paired",
+		))
 	}
 }
 
@@ -157,9 +178,7 @@ impl pallet_evm::Config for Test {
 	type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
 	type WeightPerGas = WeightPerGas;
 	type BlockHashMapping = crate::EthereumBlockHashMapping<Self>;
-	type CallOrigin = EnsureAddressTruncated;
-	type WithdrawOrigin = EnsureAddressTruncated;
-	type AddressMapping = HashedAddressMapping;
+	type AddressMapping = PairedAddressMapping<Test>;
 	type Currency = Balances;
 	type RuntimeEvent = RuntimeEvent;
 	type PrecompilesType = ();
@@ -267,12 +286,37 @@ pub fn new_test_ext(accounts_len: usize) -> (Vec<AccountInfo>, sp_io::TestExtern
 		.collect::<Vec<_>>();
 
 	let balances: Vec<_> = (0..accounts_len)
-		.map(|i| (pairs[i].account_id.clone(), 10_000_000))
+		.map(|i| (pairs[i].account_id.clone(), 1_000_000_000_000_000))
 		.collect();
 
 	pallet_balances::GenesisConfig::<Test> { balances }
 		.assimilate_storage(&mut ext)
 		.unwrap();
+
+	let mut account_pairs = BTreeMap::new();
+	for i in 0..pairs.len() {
+		account_pairs.insert(pairs[i].address.clone(), pairs[i].account_id.clone());
+	}
+
+	let mut accounts = BTreeMap::new();
+	for i in 0..pairs.len() {
+		accounts.insert(
+			pairs[i].address.clone(),
+			fp_evm::GenesisAccount {
+				nonce: U256::default(),
+				balance: U256::from_str("0x1000000000000000000").unwrap(),
+				storage: Default::default(),
+				code: vec![],
+			},
+		);
+	}
+
+	pallet_evm::GenesisConfig::<Test> {
+		account_pairs,
+		accounts,
+	}
+	.assimilate_storage(&mut ext)
+	.expect("Pallet evm storage can be assimilated");
 
 	(pairs, ext.into())
 }

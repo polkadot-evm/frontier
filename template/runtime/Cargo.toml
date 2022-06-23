@@ -61,6 +61,12 @@ pallet-evm-precompile-sha3fips = { path = "../../frame/evm/precompile/sha3fips",
 pallet-evm-precompile-simple = { path = "../../frame/evm/precompile/simple", default-features = false }
 pallet-hotfix-sufficients = { path = "../../frame/hotfix-sufficients", default-features = false }
 
+pallet-evm-precompile-blake2 = { default-features = false, path = "../../frame/evm/precompile/blake2" }
+pallet-evm-precompile-bn128 = { default-features = false, path = "../../frame/evm/precompile/bn128" }
+pallet-evm-precompile-curve25519 = { default-features = false, path = "../../frame/evm/precompile/curve25519" }
+pallet-evm-precompile-dispatch = { default-features = false, path = "../../frame/evm/precompile/dispatch" }
+pallet-evm-precompile-ed25519 = { default-features = false, path = "../../frame/evm/precompile/ed25519" }
+
 [build-dependencies]
 substrate-wasm-builder = { version = "5.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.32" }
 

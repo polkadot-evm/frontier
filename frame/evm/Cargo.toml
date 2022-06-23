@@ -38,6 +38,8 @@ pallet-timestamp = { version = "4.0.0-dev", git = "https://github.com/paritytech
 # Frontier
 fp-evm = { version = "3.0.0-dev", path = "../../primitives/evm", default-features = false }
 
+libsecp256k1 = { version = "0.7", default-features = false, features = ["hmac", "static-context"], optional = true }
+
 [dev-dependencies]
 pallet-balances = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.32" }
 pallet-evm-precompile-simple = { path = "./precompile/simple" }
@@ -68,8 +70,12 @@ std = [
 	"pallet-timestamp/std",
 	# Frontier
 	"fp-evm/std",
+
+	"libsecp256k1",
+	"libsecp256k1/std",
 ]
 runtime-benchmarks = [
+	"libsecp256k1",
 	"frame-benchmarking",
 	"frame-support/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",

@@ -2255,6 +2255,7 @@ dependencies = [
  "frame-system",
  "frontier-template-runtime",
  "futures",
+ "hex-literal",
  "jsonrpsee",
  "log",
  "pallet-transaction-payment",
@@ -2309,6 +2310,11 @@ dependencies = [
  "pallet-ethereum",
  "pallet-evm",
  "pallet-evm-chain-id",
+ "pallet-evm-precompile-blake2",
+ "pallet-evm-precompile-bn128",
+ "pallet-evm-precompile-curve25519",
+ "pallet-evm-precompile-dispatch",
+ "pallet-evm-precompile-ed25519",
  "pallet-evm-precompile-modexp",
  "pallet-evm-precompile-sha3fips",
  "pallet-evm-precompile-simple",
@@ -2691,6 +2697,12 @@ name = "hex"
 version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
+
+[[package]]
+name = "hex-literal"
+version = "0.3.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7ebdb29d2ea9ed0083cd8cece49bbd968021bd99b0849edb4a9a7ee0fdf6a4e0"
 
 [[package]]
 name = "hmac"
@@ -4494,6 +4506,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "hex",
+ "libsecp256k1",
  "log",
  "pallet-balances",
  "pallet-evm-precompile-simple",

@@ -100,8 +100,8 @@ frame_support::construct_runtime!(
 		NodeBlock = Block,
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
-		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-		BaseFee: pallet_base_fee::{Pallet, Call, Storage, Event},
+		System: frame_system,
+		BaseFee: pallet_base_fee,
 	}
 );
 

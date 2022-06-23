@@ -73,8 +73,14 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	}
 	.assimilate_storage(&mut t)
 	.expect("Pallet balances storage can be assimilated");
-	GenesisBuild::<Test>::assimilate_storage(&pallet_evm::GenesisConfig { accounts }, &mut t)
-		.unwrap();
+	GenesisBuild::<Test>::assimilate_storage(
+		&pallet_evm::GenesisConfig {
+			accounts,
+			account_pairs: BTreeMap::new(),
+		},
+		&mut t,
+	)
+	.unwrap();
 	t.into()
 }
 

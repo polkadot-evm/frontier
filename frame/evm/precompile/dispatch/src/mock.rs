@@ -31,10 +31,7 @@ use sp_runtime::{
 use sp_std::{boxed::Box, prelude::*, str::FromStr};
 
 use fp_evm::{ExitError, ExitReason, Transfer};
-use pallet_evm::{
-	Context, EnsureAddressNever, EnsureAddressRoot, FeeCalculator, IdentityAddressMapping,
-	PrecompileHandle,
-};
+use pallet_evm::{Context, FeeCalculator, IdentityAddressMapping, PrecompileHandle};
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -45,11 +42,11 @@ frame_support::construct_runtime! {
 		NodeBlock = Block,
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
-		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-		Timestamp: pallet_timestamp::{Pallet, Call, Storage},
-		EVM: pallet_evm::{Pallet, Call, Storage, Config, Event<T>},
-		Utility: pallet_utility::{Pallet, Call, Event},
+		System: frame_system,
+		Balances: pallet_balances,
+		Timestamp: pallet_timestamp,
+		EVM: pallet_evm,
+		Utility: pallet_utility,
 	}
 }
 
@@ -144,9 +141,6 @@ impl pallet_evm::Config for Test {
 	type WeightPerGas = WeightPerGas;
 
 	type BlockHashMapping = pallet_evm::SubstrateBlockHashMapping<Self>;
-	type CallOrigin = EnsureAddressRoot<Self::AccountId>;
-
-	type WithdrawOrigin = EnsureAddressNever<Self::AccountId>;
 	type AddressMapping = IdentityAddressMapping;
 	type Currency = Balances;
 

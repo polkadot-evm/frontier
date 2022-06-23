@@ -27,13 +27,13 @@ use sp_core::{H160, H256, U256};
 use sp_runtime::{
 	generic,
 	traits::{BlakeTwo256, IdentityLookup},
-	ConsensusEngineId,
+	AccountId32, ConsensusEngineId,
 };
 use sp_std::{boxed::Box, prelude::*, str::FromStr};
 
+use crate as pallet_evm;
 use crate::{
-	EnsureAddressNever, EnsureAddressRoot, FeeCalculator, IdentityAddressMapping, PrecompileHandle,
-	PrecompileResult, PrecompileSet,
+	FeeCalculator, PairedAddressMapping, PrecompileHandle, PrecompileResult, PrecompileSet,
 };
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -45,10 +45,10 @@ frame_support::construct_runtime! {
 		NodeBlock = Block,
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
-		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-		Timestamp: pallet_timestamp::{Pallet, Call, Storage},
-		EVM: crate::{Pallet, Call, Storage, Config, Event<T>},
+		System: frame_system,
+		Balances: pallet_balances,
+		Timestamp: pallet_timestamp,
+		EVM: pallet_evm,
 	}
 }
 
@@ -67,7 +67,7 @@ impl frame_system::Config for Test {
 	type BlockNumber = u64;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
-	type AccountId = H160;
+	type AccountId = AccountId32;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type Header = generic::Header<u64, BlakeTwo256>;
 	type RuntimeEvent = RuntimeEvent;
@@ -131,16 +131,13 @@ parameter_types! {
 	pub WeightPerGas: Weight = Weight::from_ref_time(20_000);
 	pub MockPrecompiles: MockPrecompileSet = MockPrecompileSet;
 }
-impl crate::Config for Test {
+impl pallet_evm::Config for Test {
 	type FeeCalculator = FixedGasPrice;
-	type GasWeightMapping = crate::FixedGasWeightMapping<Self>;
+	type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
 	type WeightPerGas = WeightPerGas;
 
-	type BlockHashMapping = crate::SubstrateBlockHashMapping<Self>;
-	type CallOrigin = EnsureAddressRoot<Self::AccountId>;
-
-	type WithdrawOrigin = EnsureAddressNever<Self::AccountId>;
-	type AddressMapping = IdentityAddressMapping;
+	type BlockHashMapping = pallet_evm::SubstrateBlockHashMapping<Self>;
+	type AddressMapping = PairedAddressMapping<Test>;
 	type Currency = Balances;
 
 	type RuntimeEvent = RuntimeEvent;
@@ -148,7 +145,7 @@ impl crate::Config for Test {
 	type PrecompilesValue = MockPrecompiles;
 	type ChainId = ();
 	type BlockGasLimit = BlockGasLimit;
-	type Runner = crate::runner::stack::Runner<Self>;
+	type Runner = pallet_evm::runner::stack::Runner<Self>;
 	type OnChargeTransaction = ();
 	type FindAuthor = FindAuthorTruncated;
 }
