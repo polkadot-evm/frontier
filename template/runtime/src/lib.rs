@@ -599,6 +599,30 @@ impl_runtime_apis! {
 		}
 	}
 
+	impl fp_rpc::TxPoolRuntimeRPCApi<Block> for Runtime {
+		fn extrinsic_filter(
+			xts_ready: Vec<<Block as BlockT>::Extrinsic>,
+			xts_future: Vec<<Block as BlockT>::Extrinsic>,
+		) -> fp_rpc::TxPoolResponse {
+			fp_rpc::TxPoolResponse {
+				ready: xts_ready
+					.into_iter()
+					.filter_map(|xt| match xt.0.function {
+						RuntimeCall::Ethereum(transact { transaction }) => Some(transaction),
+						_ => None,
+					})
+					.collect(),
+				future: xts_future
+					.into_iter()
+					.filter_map(|xt| match xt.0.function {
+						RuntimeCall::Ethereum(transact { transaction }) => Some(transaction),
+						_ => None,
+					})
+					.collect(),
+			}
+		}
+	}
+
 	impl fp_rpc::EthereumRuntimeRPCApi<Block> for Runtime {
 		fn chain_id() -> u64 {
 			<Runtime as pallet_evm::Config>::ChainId::get()

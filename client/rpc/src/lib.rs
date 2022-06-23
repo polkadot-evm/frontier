@@ -30,6 +30,7 @@ mod eth_pubsub;
 mod net;
 mod overrides;
 mod signer;
+mod tx_pool;
 mod web3;
 
 pub use self::{
@@ -41,11 +42,12 @@ pub use self::{
 		SchemaV3Override, StorageOverride,
 	},
 	signer::{EthDevSigner, EthSigner},
+	tx_pool::TxPool,
 	web3::Web3,
 };
 pub use ethereum::TransactionV2 as EthereumTransaction;
 pub use fc_rpc_core::{
-	EthApiServer, EthFilterApiServer, EthPubSubApiServer, NetApiServer, Web3ApiServer,
+	EthApiServer, EthFilterApiServer, EthPubSubApiServer, NetApiServer, TxPoolApiServer, Web3ApiServer,
 };
 
 pub mod frontier_backend_client {
