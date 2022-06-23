@@ -54,7 +54,7 @@ impl Precompile for Blake2F {
 
 		let gas_cost: u64 = (rounds as u64) * Blake2F::GAS_COST_PER_ROUND;
 		handle.record_cost(gas_cost)?;
-		
+
 		let input = handle.input();
 
 		// we use from_le_bytes below to effectively swap byte order to LE if architecture is BE
