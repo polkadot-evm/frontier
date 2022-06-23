@@ -241,6 +241,17 @@ pub mod pallet {
 		}
 
 		fn on_runtime_upgrade() -> Weight {
+			let mut weight = T::DbWeight::get().reads_writes(1, 1);
+			if frame_support::storage::unhashed::get::<EthereumStorageSchema>(
+				&PALLET_ETHEREUM_SCHEMA,
+			) < Some(EthereumStorageSchema::V3)
+			{
+				<Pallet<T>>::store_block(false, U256::zero());
+				HeightOffset::<T>::put(UniqueSaturatedInto::<u64>::unique_saturated_into(
+					frame_system::Pallet::<T>::block_number(),
+				));
+				weight += T::DbWeight::get().reads_writes(0, 2)
+			}
 			frame_support::storage::unhashed::put::<EthereumStorageSchema>(
 				PALLET_ETHEREUM_SCHEMA,
 				&EthereumStorageSchema::V3,
@@ -323,6 +334,10 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn block_hash)]
 	pub(super) type BlockHash<T: Config> = StorageMap<_, Twox64Concat, U256, H256, ValueQuery>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn height_offset)]
+	pub type HeightOffset<T: Config> = StorageValue<_, u64, ValueQuery>;
 
 	#[pallet::genesis_config]
 	#[derive(Default)]
