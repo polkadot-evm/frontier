@@ -201,7 +201,7 @@ where
 
 					error_on_execution_failure(&info.exit_reason, &info.value)?;
 					Ok(Bytes(info.value))
-				} else if api_version == 4 {
+				} else if api_version <= 6 {
 					// Post-london + access list support
 					let access_list = access_list.unwrap_or_default();
 					let info = api
@@ -278,7 +278,7 @@ where
 						.account_code_at(&id, info.value)
 						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?;
 					Ok(Bytes(code))
-				} else if api_version == 4 {
+				} else if api_version <= 6 {
 					// Post-london + access list support
 					let access_list = access_list.unwrap_or_default();
 					let info = api

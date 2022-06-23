@@ -1809,6 +1809,7 @@ version = "1.1.0-dev"
 dependencies = [
  "ethereum",
  "ethereum-types",
+ "evm",
  "jsonrpsee",
  "rlp",
  "rustc-hex",
@@ -1986,6 +1987,7 @@ version = "3.0.0-dev"
 dependencies = [
  "ethereum",
  "ethereum-types",
+ "evm",
  "fp-evm",
  "parity-scale-codec",
  "scale-info",

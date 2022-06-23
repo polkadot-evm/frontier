@@ -39,7 +39,7 @@ pub use self::{
 	net::Net,
 	overrides::{
 		OverrideHandle, RuntimeApiStorageOverride, SchemaV1Override, SchemaV2Override,
-		SchemaV3Override, StorageOverride,
+		SchemaV3Override, SchemaV4Override, StorageOverride,
 	},
 	signer::{EthDevSigner, EthSigner},
 	tx_pool::TxPool,
@@ -47,7 +47,8 @@ pub use self::{
 };
 pub use ethereum::TransactionV2 as EthereumTransaction;
 pub use fc_rpc_core::{
-	EthApiServer, EthFilterApiServer, EthPubSubApiServer, NetApiServer, TxPoolApiServer, Web3ApiServer,
+	EthApiServer, EthFilterApiServer, EthPubSubApiServer, NetApiServer, TxPoolApiServer,
+	Web3ApiServer,
 };
 
 pub mod frontier_backend_client {

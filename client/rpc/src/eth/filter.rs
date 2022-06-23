@@ -32,7 +32,7 @@ use sp_runtime::{
 };
 // Frontier
 use fc_rpc_core::{types::*, EthFilterApiServer};
-use fp_rpc::{EthereumRuntimeRPCApi, TransactionStatus};
+use fp_rpc::{EthereumRuntimeRPCApi, TransactionStatusV2};
 
 use crate::{eth::cache::EthBlockDataCacheTask, frontier_backend_client, internal_err};
 
@@ -504,7 +504,7 @@ fn filter_block_logs<'a>(
 	ret: &'a mut Vec<Log>,
 	filter: &'a Filter,
 	block: EthereumBlock,
-	transaction_statuses: Vec<TransactionStatus>,
+	transaction_statuses: Vec<TransactionStatusV2>,
 ) -> &'a Vec<Log> {
 	let params = FilteredParams::new(Some(filter.clone()));
 	let mut block_log_index: u32 = 0;

@@ -125,6 +125,10 @@ pub trait EthApi {
 	#[method(name = "eth_getTransactionReceipt")]
 	async fn transaction_receipt(&self, hash: H256) -> Result<Option<Receipt>>;
 
+	/// Returns transaction status by transaction hash.
+	#[method(name = "eth_getTransactionStatus")]
+	async fn transaction_status(&self, hash: H256) -> Result<Option<Status>>;
+
 	// ########################################################################
 	// State
 	// ########################################################################

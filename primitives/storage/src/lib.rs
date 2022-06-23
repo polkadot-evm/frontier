@@ -48,10 +48,17 @@ pub enum EthereumStorageSchema {
 	V1,
 	V2,
 	V3,
+	V4,
+	// reserved for future
+	V5,
+	V6,
+	V7,
+	V8,
+	V9,
 }
 
 impl Default for EthereumStorageSchema {
 	fn default() -> Self {
-		Self::Undefined
+		Self::V4
 	}
 }

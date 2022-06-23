@@ -49,7 +49,7 @@ use sp_runtime::{
 };
 // Frontier
 use fc_rpc_core::{types::*, EthApiServer};
-use fp_rpc::{ConvertTransactionRuntimeApi, EthereumRuntimeRPCApi, TransactionStatus};
+use fp_rpc::{ConvertTransactionRuntimeApi, EthereumRuntimeRPCApi, TransactionStatusV2};
 
 use crate::{internal_err, overrides::OverrideHandle, public_key, signer::EthSigner};
 
@@ -224,6 +224,10 @@ where
 		self.transaction_receipt(hash).await
 	}
 
+	async fn transaction_status(&self, hash: H256) -> Result<Option<Status>> {
+		self.transaction_status(hash).await
+	}
+
 	// ########################################################################
 	// State
 	// ########################################################################
@@ -320,7 +324,7 @@ where
 
 fn rich_block_build(
 	block: EthereumBlock,
-	statuses: Vec<Option<TransactionStatus>>,
+	statuses: Vec<Option<TransactionStatusV2>>,
 	hash: Option<H256>,
 	full_transactions: bool,
 	base_fee: Option<U256>,
@@ -387,7 +391,7 @@ fn rich_block_build(
 fn transaction_build(
 	ethereum_transaction: EthereumTransaction,
 	block: Option<EthereumBlock>,
-	status: Option<TransactionStatus>,
+	status: Option<TransactionStatusV2>,
 	base_fee: Option<U256>,
 ) -> Transaction {
 	let mut transaction: Transaction = ethereum_transaction.clone().into();

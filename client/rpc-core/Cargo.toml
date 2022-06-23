@@ -20,3 +20,5 @@ serde_json = "1.0"
 ethereum-types = "0.14.1"
 jsonrpsee = { version = "0.15.1", features = ["server", "macros"] }
 rlp = "0.5"
+
+evm = "0.37.0"

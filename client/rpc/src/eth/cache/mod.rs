@@ -42,7 +42,7 @@ use sp_runtime::{
 };
 // Frontier
 use fc_rpc_core::types::*;
-use fp_rpc::{EthereumRuntimeRPCApi, TransactionStatus};
+use fp_rpc::{EthereumRuntimeRPCApi, TransactionStatusV2};
 use fp_storage::EthereumStorageSchema;
 
 use self::lru_cache::LRUCacheByteLimited;
@@ -67,11 +67,11 @@ enum EthBlockDataCacheMessage<B: BlockT> {
 	RequestCurrentTransactionStatuses {
 		block_hash: B::Hash,
 		schema: EthereumStorageSchema,
-		response_tx: oneshot::Sender<Option<Vec<TransactionStatus>>>,
+		response_tx: oneshot::Sender<Option<Vec<TransactionStatusV2>>>,
 	},
 	FetchedCurrentTransactionStatuses {
 		block_hash: B::Hash,
-		statuses: Option<Vec<TransactionStatus>>,
+		statuses: Option<Vec<TransactionStatusV2>>,
 	},
 }
 
@@ -99,7 +99,7 @@ impl<B: BlockT> EthBlockDataCacheTask<B> {
 				blocks_cache_max_size as u64,
 				prometheus_registry.clone(),
 			);
-			let mut statuses_cache = LRUCacheByteLimited::<B::Hash, Vec<TransactionStatus>>::new(
+			let mut statuses_cache = LRUCacheByteLimited::<B::Hash, Vec<TransactionStatusV2>>::new(
 				"statuses_cache",
 				statuses_cache_max_size as u64,
 				prometheus_registry,
@@ -108,7 +108,7 @@ impl<B: BlockT> EthBlockDataCacheTask<B> {
 			let mut awaiting_blocks =
 				HashMap::<B::Hash, Vec<oneshot::Sender<Option<EthereumBlock>>>>::new();
 			let mut awaiting_statuses =
-				HashMap::<B::Hash, Vec<oneshot::Sender<Option<Vec<TransactionStatus>>>>>::new();
+				HashMap::<B::Hash, Vec<oneshot::Sender<Option<Vec<TransactionStatusV2>>>>>::new();
 
 			// Handle all incoming messages.
 			// Exits when there are no more senders.
@@ -256,7 +256,7 @@ impl<B: BlockT> EthBlockDataCacheTask<B> {
 		&self,
 		schema: EthereumStorageSchema,
 		block_hash: B::Hash,
-	) -> Option<Vec<TransactionStatus>> {
+	) -> Option<Vec<TransactionStatusV2>> {
 		let (response_tx, response_rx) = oneshot::channel();
 
 		self.0

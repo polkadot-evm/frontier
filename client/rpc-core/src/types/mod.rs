@@ -30,6 +30,7 @@ mod index;
 mod inspect;
 mod log;
 mod receipt;
+mod status;
 mod sync;
 mod transaction;
 mod transaction_request;
@@ -70,6 +71,7 @@ pub use self::{
 	inspect::Summary,
 	log::Log,
 	receipt::Receipt,
+	status::Status,
 	sync::{
 		ChainStatus, EthProtocolInfo, PeerCount, PeerInfo, PeerNetworkInfo, PeerProtocolsInfo,
 		Peers, PipProtocolInfo, SyncInfo, SyncStatus, TransactionStats,

@@ -20,21 +20,22 @@ use std::{collections::BTreeMap, marker::PhantomData, sync::Arc};
 
 use ethereum::BlockV2 as EthereumBlock;
 use ethereum_types::{H160, H256, U256};
-// Substrate
 use sp_api::{ApiExt, BlockId, ProvideRuntimeApi};
 use sp_io::hashing::{blake2_128, twox_128};
 use sp_runtime::{traits::Block as BlockT, Permill};
 // Frontier
-use fp_rpc::{EthereumRuntimeRPCApi, TransactionStatus};
+use fp_rpc::{EthereumRuntimeRPCApi, TransactionStatusV2};
 use fp_storage::EthereumStorageSchema;
 
 mod schema_v1_override;
 mod schema_v2_override;
 mod schema_v3_override;
+mod schema_v4_override;
 
 pub use schema_v1_override::SchemaV1Override;
 pub use schema_v2_override::SchemaV2Override;
 pub use schema_v3_override::SchemaV3Override;
+pub use schema_v4_override::SchemaV4Override;
 
 pub struct OverrideHandle<Block: BlockT> {
 	pub schemas: BTreeMap<EthereumStorageSchema, Box<dyn StorageOverride<Block> + Send + Sync>>,
@@ -59,7 +60,7 @@ pub trait StorageOverride<Block: BlockT> {
 	fn current_transaction_statuses(
 		&self,
 		block: &BlockId<Block>,
-	) -> Option<Vec<TransactionStatus>>;
+	) -> Option<Vec<TransactionStatusV2>>;
 	/// Return the base fee at the given height.
 	fn elasticity(&self, block: &BlockId<Block>) -> Option<Permill>;
 	/// Return `true` if the request BlockId is post-eip1559.
@@ -170,7 +171,7 @@ where
 	fn current_transaction_statuses(
 		&self,
 		block: &BlockId<Block>,
-	) -> Option<Vec<TransactionStatus>> {
+	) -> Option<Vec<TransactionStatusV2>> {
 		self.client
 			.runtime_api()
 			.current_transaction_statuses(block)

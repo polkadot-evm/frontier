@@ -1,20 +1,17 @@
-// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
-// This file is part of Frontier.
+// Copyright (C) 2022 Deeper Network Inc.
+// SPDX-License-Identifier: Apache-2.0
 //
-// Copyright (c) 2017-2022 Parity Technologies (UK) Ltd.
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+//	http://www.apache.org/licenses/LICENSE-2.0
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program. If not, see <https://www.gnu.org/licenses/>.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 use std::{marker::PhantomData, sync::Arc};
 
@@ -31,17 +28,15 @@ use sp_runtime::{
 use sp_storage::StorageKey;
 // Frontier
 use fp_rpc::TransactionStatusV2;
-use fp_storage::*;
 
 use super::{blake2_128_extend, storage_prefix_build, StorageOverride};
-
-/// An override for runtimes that use Schema V3
-pub struct SchemaV3Override<B: BlockT, C, BE> {
+/// An override for runtimes that use Schema V1
+pub struct SchemaV4Override<B: BlockT, C, BE> {
 	client: Arc<C>,
 	_marker: PhantomData<(B, BE)>,
 }
 
-impl<B: BlockT, C, BE> SchemaV3Override<B, C, BE> {
+impl<B: BlockT, C, BE> SchemaV4Override<B, C, BE> {
 	pub fn new(client: Arc<C>) -> Self {
 		Self {
 			client,
@@ -50,7 +45,7 @@ impl<B: BlockT, C, BE> SchemaV3Override<B, C, BE> {
 	}
 }
 
-impl<B, C, BE> SchemaV3Override<B, C, BE>
+impl<B, C, BE> SchemaV4Override<B, C, BE>
 where
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	C: StorageProvider<B, BE> + HeaderBackend<B> + Send + Sync + 'static,
@@ -69,7 +64,7 @@ where
 	}
 }
 
-impl<B, C, BE> StorageOverride<B> for SchemaV3Override<B, C, BE>
+impl<B, C, BE> StorageOverride<B> for SchemaV4Override<B, C, BE>
 where
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	C: StorageProvider<B, BE> + HeaderBackend<B> + Send + Sync + 'static,
@@ -78,7 +73,7 @@ where
 {
 	/// For a given account address, returns pallet_evm::AccountCodes.
 	fn account_code_at(&self, block: &BlockId<B>, address: H160) -> Option<Vec<u8>> {
-		let mut key: Vec<u8> = storage_prefix_build(PALLET_EVM, EVM_ACCOUNT_CODES);
+		let mut key: Vec<u8> = storage_prefix_build(b"EVM", b"AccountCodes");
 		key.extend(blake2_128_extend(address.as_bytes()));
 		self.query_storage::<Vec<u8>>(block, &StorageKey(key))
 	}
@@ -88,7 +83,7 @@ where
 		let tmp: &mut [u8; 32] = &mut [0; 32];
 		index.to_big_endian(tmp);
 
-		let mut key: Vec<u8> = storage_prefix_build(PALLET_EVM, EVM_ACCOUNT_STORAGES);
+		let mut key: Vec<u8> = storage_prefix_build(b"EVM", b"AccountStorages");
 		key.extend(blake2_128_extend(address.as_bytes()));
 		key.extend(blake2_128_extend(tmp));
 
@@ -99,10 +94,7 @@ where
 	fn current_block(&self, block: &BlockId<B>) -> Option<ethereum::BlockV2> {
 		self.query_storage::<ethereum::BlockV2>(
 			block,
-			&StorageKey(storage_prefix_build(
-				PALLET_ETHEREUM,
-				ETHEREUM_CURRENT_BLOCK,
-			)),
+			&StorageKey(storage_prefix_build(b"Ethereum", b"CurrentBlock")),
 		)
 	}
 
@@ -110,10 +102,7 @@ where
 	fn current_receipts(&self, block: &BlockId<B>) -> Option<Vec<ethereum::ReceiptV3>> {
 		self.query_storage::<Vec<ethereum::ReceiptV3>>(
 			block,
-			&StorageKey(storage_prefix_build(
-				PALLET_ETHEREUM,
-				ETHEREUM_CURRENT_RECEIPTS,
-			)),
+			&StorageKey(storage_prefix_build(b"Ethereum", b"CurrentReceipts")),
 		)
 	}
 
@@ -122,33 +111,18 @@ where
 		self.query_storage::<Vec<TransactionStatusV2>>(
 			block,
 			&StorageKey(storage_prefix_build(
-				PALLET_ETHEREUM,
-				ETHEREUM_CURRENT_TRANSACTION_STATUS,
+				b"Ethereum",
+				b"CurrentTransactionStatuses",
 			)),
 		)
-		.map(|statuses| {
-			statuses
-				.into_iter()
-				.map(|status| TransactionStatusV2 {
-					transaction_hash: status.transaction_hash,
-					transaction_index: status.transaction_index,
-					from: status.from,
-					to: status.to,
-					contract_address: status.contract_address,
-					reason: None,
-					logs: status.logs,
-					logs_bloom: status.logs_bloom,
-				})
-				.collect()
-		})
 	}
 
-	/// Return the elasticity at the given height.
+	/// Prior to eip-1559 there is no base fee.
 	fn elasticity(&self, block: &BlockId<B>) -> Option<Permill> {
 		let default_elasticity = Some(Permill::from_parts(125_000));
 		let elasticity = self.query_storage::<Permill>(
 			block,
-			&StorageKey(storage_prefix_build(PALLET_BASE_FEE, BASE_FEE_ELASTICITY)),
+			&StorageKey(storage_prefix_build(b"BaseFee", b"Elasticity")),
 		);
 		if elasticity.is_some() {
 			elasticity
