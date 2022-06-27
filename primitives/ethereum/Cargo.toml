@@ -1,0 +1,39 @@
+[package]
+name = "fp-ethereum"
+version = "1.0.0-dev"
+authors = ["Parity Technologies <admin@parity.io>"]
+edition = "2021"
+license = "Apache-2.0"
+description = "Primitive Ethereum types."
+repository = "https://github.com/paritytech/frontier/"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+ethereum = { version = "0.12.0", default-features = false, features = ["with-codec"] }
+ethereum-types = { version = "0.13.1", default-features = false }
+fp-evm = { version = "3.0.0-dev", path = "../evm", default-features = false }
+
+# Parity
+codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false }
+
+# Substrate
+sp-core = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-std = { version = "4.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+# Substrate FRAME
+frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+
+[features]
+default = ["std"]
+std = [
+	"ethereum/std",
+	"ethereum-types/std",
+	# Parity
+	"codec/std",
+	# Substrate
+	"sp-core/std",
+	"sp-std/std",
+	# Substrate FRAME
+	"frame-support/std",
+]
