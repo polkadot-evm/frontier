@@ -496,7 +496,7 @@ impl<T: Config> Pallet<T> {
 		// We must ensure a transaction can pay the cost of its data bytes.
 		// If it can't it should not be included in a block.
 		let mut gasometer = evm::gasometer::Gasometer::new(
-			gas_limit.low_u64(),
+			gas_limit.unique_saturated_into(),
 			<T as pallet_evm::Config>::config(),
 		);
 		let transaction_cost = match transaction_data.action {
@@ -823,7 +823,7 @@ impl<T: Config> Pallet<T> {
 					target,
 					input,
 					value,
-					gas_limit.low_u64(),
+					gas_limit.unique_saturated_into(),
 					max_fee_per_gas,
 					max_priority_fee_per_gas,
 					nonce,
@@ -850,7 +850,7 @@ impl<T: Config> Pallet<T> {
 					from,
 					input,
 					value,
-					gas_limit.low_u64(),
+					gas_limit.unique_saturated_into(),
 					max_fee_per_gas,
 					max_priority_fee_per_gas,
 					nonce,

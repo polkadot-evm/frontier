@@ -34,7 +34,14 @@ use frame_support::{
 use sha3::{Digest, Keccak256};
 use sp_core::{H160, H256, U256};
 use sp_runtime::traits::UniqueSaturatedInto;
-use sp_std::{boxed::Box, collections::btree_set::BTreeSet, marker::PhantomData, mem, vec::Vec, convert::{TryFrom, TryInto}};
+use sp_std::{
+	boxed::Box,
+	collections::btree_set::BTreeSet,
+	convert::{TryFrom, TryInto},
+	marker::PhantomData,
+	mem,
+	vec::Vec,
+};
 
 #[derive(Default)]
 pub struct Runner<T: Config> {
@@ -155,20 +162,19 @@ impl<T: Config> Runner<T> {
 
 		// Post execution.
 		let used_gas = U256::from(executor.used_gas());
-		let actual_fee =
-			if let Some(max_priority_fee) = max_priority_fee_per_gas {
-				let actual_priority_fee = max_fee_per_gas
-					.saturating_sub(base_fee)
-					.min(max_priority_fee)
-					.saturating_mul(used_gas);
-				let actual_fee = executor
-					.fee(base_fee)
-					.checked_add(actual_priority_fee)
-					.unwrap_or_else(U256::max_value);
-				actual_fee
-			} else {
-				executor.fee(base_fee)
-			};
+		let actual_fee = if let Some(max_priority_fee) = max_priority_fee_per_gas {
+			let actual_priority_fee = max_fee_per_gas
+				.saturating_sub(base_fee)
+				.min(max_priority_fee)
+				.saturating_mul(used_gas);
+			let actual_fee = executor
+				.fee(base_fee)
+				.checked_add(actual_priority_fee)
+				.unwrap_or_else(U256::max_value);
+			actual_fee
+		} else {
+			executor.fee(base_fee)
+		};
 		log::debug!(
 			target: "evm",
 			"Execution {:?} [source: {:?}, value: {}, gas_limit: {}, actual_fee: {}, is_transactional: {}]",
@@ -249,7 +255,8 @@ impl<T: Config> Runner<T> {
 }
 
 impl<T: Config> RunnerT<T> for Runner<T>
-	where crate::BalanceOf<T>: TryFrom<U256> + Into<U256>
+where
+	crate::BalanceOf<T>: TryFrom<U256> + Into<U256>,
 {
 	type Error = Error<T>;
 
@@ -547,7 +554,8 @@ impl<'vicinity, 'config, T: Config> BackendT for SubstrateStackState<'vicinity, 
 
 impl<'vicinity, 'config, T: Config> StackStateT<'config>
 	for SubstrateStackState<'vicinity, 'config, T>
-	where crate::BalanceOf<T>: TryFrom<U256> + Into<U256>
+where
+	crate::BalanceOf<T>: TryFrom<U256> + Into<U256>,
 {
 	fn metadata(&self) -> &StackSubstateMetadata<'config> {
 		self.substate.metadata()
@@ -633,17 +641,13 @@ impl<'vicinity, 'config, T: Config> StackStateT<'config>
 		let source = T::AddressMapping::into_account_id(transfer.source);
 		let target = T::AddressMapping::into_account_id(transfer.target);
 
-		let amount: crate::BalanceOf<T> = transfer.value
+		let amount: crate::BalanceOf<T> = transfer
+			.value
 			.try_into()
 			.map_err(|_| ExitError::OutOfFund)?;
 
-		T::Currency::transfer(
-			&source,
-			&target,
-			amount,
-			ExistenceRequirement::AllowDeath,
-		)
-		.map_err(|_| ExitError::OutOfFund)
+		T::Currency::transfer(&source, &target, amount, ExistenceRequirement::AllowDeath)
+			.map_err(|_| ExitError::OutOfFund)
 	}
 
 	fn reset_balance(&mut self, _address: H160) {

@@ -269,7 +269,10 @@ fn issuance_after_tip() {
 		let after_tip = <Test as Config>::Currency::total_issuance();
 		// Only base fee is burned
 		let (base_fee, _) = <Test as Config>::FeeCalculator::min_gas_price();
-		assert_eq!(after_tip, (before_tip - (base_fee.low_u64() * 21_000)));
+		assert_eq!(
+			after_tip,
+			(before_tip - (base_fee.low_u64() * 21_000))
+		);
 	});
 }
 
