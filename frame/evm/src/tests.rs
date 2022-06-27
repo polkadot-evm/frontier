@@ -271,7 +271,7 @@ fn issuance_after_tip() {
 		let (base_fee, _) = <Test as Config>::FeeCalculator::min_gas_price();
 		assert_eq!(
 			after_tip,
-			(before_tip - (base_fee.unique_saturated_into() * 21_000))
+			(before_tip - (base_fee.low_u64() * 21_000))
 		);
 	});
 }
