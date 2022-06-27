@@ -160,8 +160,14 @@ where
 	pub fn pre_dispatch_self_contained(
 		&self,
 		origin: &H160,
+		dispatch_info: &DispatchInfoOf<T::Call>,
+		len: usize,
 	) -> Option<Result<(), TransactionValidityError>> {
 		if let Call::transact { transaction } = self {
+			if let Err(e) = CheckWeight::<T>::do_pre_dispatch(dispatch_info, len) {
+				return Some(Err(e));
+			}
+
 			Some(Pallet::<T>::validate_transaction_in_block(
 				*origin,
 				transaction,
