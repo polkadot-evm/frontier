@@ -111,7 +111,6 @@ fn calculate_gas_cost(
 impl Precompile for Modexp {
 	fn execute(handle: &mut impl PrecompileHandle) -> PrecompileResult {
 		let input = handle.input();
-		let target_gas = handle.gas_limit();
 
 		if input.len() < 96 {
 			return Err(PrecompileFailure::Error {
@@ -177,6 +176,7 @@ impl Precompile for Modexp {
 				calculate_gas_cost(base_len as u64, exp_len as u64, mod_len as u64, &exponent);
 
 			handle.record_cost(gas_cost)?;
+			let input = handle.input();
 
 			let mod_start = exp_start + exp_len;
 			let modulus = BigUint::from_bytes_be(&input[mod_start..mod_start + mod_len]);
