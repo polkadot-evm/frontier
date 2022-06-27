@@ -911,82 +911,6 @@
 <span id="906">906</span>
 <span id="907">907</span>
 <span id="908">908</span>
-<span id="909">909</span>
-<span id="910">910</span>
-<span id="911">911</span>
-<span id="912">912</span>
-<span id="913">913</span>
-<span id="914">914</span>
-<span id="915">915</span>
-<span id="916">916</span>
-<span id="917">917</span>
-<span id="918">918</span>
-<span id="919">919</span>
-<span id="920">920</span>
-<span id="921">921</span>
-<span id="922">922</span>
-<span id="923">923</span>
-<span id="924">924</span>
-<span id="925">925</span>
-<span id="926">926</span>
-<span id="927">927</span>
-<span id="928">928</span>
-<span id="929">929</span>
-<span id="930">930</span>
-<span id="931">931</span>
-<span id="932">932</span>
-<span id="933">933</span>
-<span id="934">934</span>
-<span id="935">935</span>
-<span id="936">936</span>
-<span id="937">937</span>
-<span id="938">938</span>
-<span id="939">939</span>
-<span id="940">940</span>
-<span id="941">941</span>
-<span id="942">942</span>
-<span id="943">943</span>
-<span id="944">944</span>
-<span id="945">945</span>
-<span id="946">946</span>
-<span id="947">947</span>
-<span id="948">948</span>
-<span id="949">949</span>
-<span id="950">950</span>
-<span id="951">951</span>
-<span id="952">952</span>
-<span id="953">953</span>
-<span id="954">954</span>
-<span id="955">955</span>
-<span id="956">956</span>
-<span id="957">957</span>
-<span id="958">958</span>
-<span id="959">959</span>
-<span id="960">960</span>
-<span id="961">961</span>
-<span id="962">962</span>
-<span id="963">963</span>
-<span id="964">964</span>
-<span id="965">965</span>
-<span id="966">966</span>
-<span id="967">967</span>
-<span id="968">968</span>
-<span id="969">969</span>
-<span id="970">970</span>
-<span id="971">971</span>
-<span id="972">972</span>
-<span id="973">973</span>
-<span id="974">974</span>
-<span id="975">975</span>
-<span id="976">976</span>
-<span id="977">977</span>
-<span id="978">978</span>
-<span id="979">979</span>
-<span id="980">980</span>
-<span id="981">981</span>
-<span id="982">982</span>
-<span id="983">983</span>
-<span id="984">984</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -1021,9 +945,9 @@
 <span class="kw">use</span> <span class="ident">ethereum_types</span>::{<span class="ident">Bloom</span>, <span class="ident">BloomInput</span>, <span class="ident">H160</span>, <span class="ident">H256</span>, <span class="ident">H64</span>, <span class="ident">U256</span>};
 <span class="kw">use</span> <span class="ident">evm::ExitReason</span>;
 <span class="kw">use</span> <span class="ident">fp_consensus</span>::{<span class="ident">PostLog</span>, <span class="ident">PreLog</span>, <span class="ident">FRONTIER_ENGINE_ID</span>};
+<span class="kw">use</span> <span class="ident">fp_ethereum</span>::{<span class="ident">TransactionData</span>, <span class="ident">ValidatedTransaction</span> <span class="kw">as</span> <span class="ident">ValidatedTransactionT</span>};
 <span class="kw">use</span> <span class="ident">fp_evm</span>::{
-	<span class="ident">CallOrCreateInfo</span>, <span class="ident">CheckEvmTransaction</span>, <span class="ident">CheckEvmTransactionConfig</span>, <span class="ident">CheckEvmTransactionInput</span>,
-	<span class="ident">InvalidEvmTransactionError</span>,
+	<span class="ident">CallOrCreateInfo</span>, <span class="ident">CheckEvmTransaction</span>, <span class="ident">CheckEvmTransactionConfig</span>, <span class="ident">InvalidEvmTransactionError</span>,
 };
 <span class="kw">use</span> <span class="ident">fp_storage</span>::{<span class="ident">EthereumStorageSchema</span>, <span class="ident">PALLET_ETHEREUM_SCHEMA</span>};
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;try-runtime&quot;</span>)]</span>
@@ -1065,41 +989,6 @@
 	<span class="kw">match</span> <span class="ident">o</span>.<span class="ident">into</span>() {
 		<span class="prelude-val">Ok</span>(<span class="ident">RawOrigin::EthereumTransaction</span>(<span class="ident">n</span>)) =&gt; <span class="prelude-val">Ok</span>(<span class="ident">n</span>),
 		<span class="kw">_</span> =&gt; <span class="prelude-val">Err</span>(<span class="string">&quot;bad origin: expected to be an Ethereum transaction&quot;</span>),
-	}
-}
-
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>)]</span>
-<span class="kw">struct</span> <span class="ident">TransactionData</span> {
-	<span class="ident">action</span>: <span class="ident">TransactionAction</span>,
-	<span class="ident">input</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
-	<span class="ident">nonce</span>: <span class="ident">U256</span>,
-	<span class="ident">gas_limit</span>: <span class="ident">U256</span>,
-	<span class="ident">gas_price</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-	<span class="ident">max_fee_per_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-	<span class="ident">max_priority_fee_per_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-	<span class="ident">value</span>: <span class="ident">U256</span>,
-	<span class="ident">chain_id</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
-	<span class="ident">access_list</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">H160</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span>)<span class="op">&gt;</span>,
-}
-
-<span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">TransactionData</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">CheckEvmTransactionInput</span> {
-	<span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">t</span>: <span class="ident">TransactionData</span>) -&gt; <span class="self">Self</span> {
-		<span class="ident">CheckEvmTransactionInput</span> {
-			<span class="ident">to</span>: <span class="kw">if</span> <span class="kw">let</span> <span class="ident">TransactionAction::Call</span>(<span class="ident">to</span>) <span class="op">=</span> <span class="ident">t</span>.<span class="ident">action</span> {
-				<span class="prelude-val">Some</span>(<span class="ident">to</span>)
-			} <span class="kw">else</span> {
-				<span class="prelude-val">None</span>
-			},
-			<span class="ident">chain_id</span>: <span class="ident">t</span>.<span class="ident">chain_id</span>,
-			<span class="ident">input</span>: <span class="ident">t</span>.<span class="ident">input</span>,
-			<span class="ident">nonce</span>: <span class="ident">t</span>.<span class="ident">nonce</span>,
-			<span class="ident">gas_limit</span>: <span class="ident">t</span>.<span class="ident">gas_limit</span>,
-			<span class="ident">gas_price</span>: <span class="ident">t</span>.<span class="ident">gas_price</span>,
-			<span class="ident">max_fee_per_gas</span>: <span class="ident">t</span>.<span class="ident">max_fee_per_gas</span>,
-			<span class="ident">max_priority_fee_per_gas</span>: <span class="ident">t</span>.<span class="ident">max_priority_fee_per_gas</span>,
-			<span class="ident">value</span>: <span class="ident">t</span>.<span class="ident">value</span>,
-			<span class="ident">access_list</span>: <span class="ident">t</span>.<span class="ident">access_list</span>,
-		}
 	}
 }
 
@@ -1274,9 +1163,10 @@
 		<span class="ident">OriginFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>: <span class="ident">Into</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">RawOrigin</span>, <span class="ident">OriginFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 	{
 		<span class="doccomment">/// Transact an Ethereum transaction.</span>
-		<span class="attribute">#[<span class="ident">pallet::weight</span>(<span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">pallet_evm::Config</span><span class="op">&gt;</span><span class="ident">::GasWeightMapping::gas_to_weight</span>(
-			<span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::transaction_data</span>(<span class="ident">transaction</span>).<span class="ident">gas_limit</span>.<span class="ident">unique_saturated_into</span>()
-		))]</span>
+		<span class="attribute">#[<span class="ident">pallet::weight</span>(<span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">pallet_evm::Config</span><span class="op">&gt;</span><span class="ident">::GasWeightMapping::gas_to_weight</span>({
+			<span class="kw">let</span> <span class="ident">transaction_data</span>: <span class="ident">TransactionData</span> <span class="op">=</span> <span class="ident">transaction</span>.<span class="ident">into</span>();
+			<span class="ident">transaction_data</span>.<span class="ident">gas_limit</span>.<span class="ident">unique_saturated_into</span>()
+		}))]</span>
 		<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">transact</span>(
 			<span class="ident">origin</span>: <span class="ident">OriginFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
 			<span class="ident">transaction</span>: <span class="ident">Transaction</span>,
@@ -1350,55 +1240,6 @@
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-	<span class="kw">fn</span> <span class="ident">transaction_data</span>(<span class="ident">transaction</span>: <span class="kw-2">&amp;</span><span class="ident">Transaction</span>) -&gt; <span class="ident">TransactionData</span> {
-		<span class="kw">match</span> <span class="ident">transaction</span> {
-			<span class="ident">Transaction::Legacy</span>(<span class="ident">t</span>) =&gt; <span class="ident">TransactionData</span> {
-				<span class="ident">action</span>: <span class="ident">t</span>.<span class="ident">action</span>,
-				<span class="ident">input</span>: <span class="ident">t</span>.<span class="ident">input</span>.<span class="ident">clone</span>(),
-				<span class="ident">nonce</span>: <span class="ident">t</span>.<span class="ident">nonce</span>,
-				<span class="ident">gas_limit</span>: <span class="ident">t</span>.<span class="ident">gas_limit</span>,
-				<span class="ident">gas_price</span>: <span class="prelude-val">Some</span>(<span class="ident">t</span>.<span class="ident">gas_price</span>),
-				<span class="ident">max_fee_per_gas</span>: <span class="prelude-val">None</span>,
-				<span class="ident">max_priority_fee_per_gas</span>: <span class="prelude-val">None</span>,
-				<span class="ident">value</span>: <span class="ident">t</span>.<span class="ident">value</span>,
-				<span class="ident">chain_id</span>: <span class="ident">t</span>.<span class="ident">signature</span>.<span class="ident">chain_id</span>(),
-				<span class="ident">access_list</span>: <span class="ident">Vec::new</span>(),
-			},
-			<span class="ident">Transaction::EIP2930</span>(<span class="ident">t</span>) =&gt; <span class="ident">TransactionData</span> {
-				<span class="ident">action</span>: <span class="ident">t</span>.<span class="ident">action</span>,
-				<span class="ident">input</span>: <span class="ident">t</span>.<span class="ident">input</span>.<span class="ident">clone</span>(),
-				<span class="ident">nonce</span>: <span class="ident">t</span>.<span class="ident">nonce</span>,
-				<span class="ident">gas_limit</span>: <span class="ident">t</span>.<span class="ident">gas_limit</span>,
-				<span class="ident">gas_price</span>: <span class="prelude-val">Some</span>(<span class="ident">t</span>.<span class="ident">gas_price</span>),
-				<span class="ident">max_fee_per_gas</span>: <span class="prelude-val">None</span>,
-				<span class="ident">max_priority_fee_per_gas</span>: <span class="prelude-val">None</span>,
-				<span class="ident">value</span>: <span class="ident">t</span>.<span class="ident">value</span>,
-				<span class="ident">chain_id</span>: <span class="prelude-val">Some</span>(<span class="ident">t</span>.<span class="ident">chain_id</span>),
-				<span class="ident">access_list</span>: <span class="ident">t</span>
-					.<span class="ident">access_list</span>
-					.<span class="ident">iter</span>()
-					.<span class="ident">map</span>(<span class="op">|</span><span class="ident">d</span><span class="op">|</span> (<span class="ident">d</span>.<span class="ident">address</span>, <span class="ident">d</span>.<span class="ident">storage_keys</span>.<span class="ident">clone</span>()))
-					.<span class="ident">collect</span>(),
-			},
-			<span class="ident">Transaction::EIP1559</span>(<span class="ident">t</span>) =&gt; <span class="ident">TransactionData</span> {
-				<span class="ident">action</span>: <span class="ident">t</span>.<span class="ident">action</span>,
-				<span class="ident">input</span>: <span class="ident">t</span>.<span class="ident">input</span>.<span class="ident">clone</span>(),
-				<span class="ident">nonce</span>: <span class="ident">t</span>.<span class="ident">nonce</span>,
-				<span class="ident">gas_limit</span>: <span class="ident">t</span>.<span class="ident">gas_limit</span>,
-				<span class="ident">gas_price</span>: <span class="prelude-val">None</span>,
-				<span class="ident">max_fee_per_gas</span>: <span class="prelude-val">Some</span>(<span class="ident">t</span>.<span class="ident">max_fee_per_gas</span>),
-				<span class="ident">max_priority_fee_per_gas</span>: <span class="prelude-val">Some</span>(<span class="ident">t</span>.<span class="ident">max_priority_fee_per_gas</span>),
-				<span class="ident">value</span>: <span class="ident">t</span>.<span class="ident">value</span>,
-				<span class="ident">chain_id</span>: <span class="prelude-val">Some</span>(<span class="ident">t</span>.<span class="ident">chain_id</span>),
-				<span class="ident">access_list</span>: <span class="ident">t</span>
-					.<span class="ident">access_list</span>
-					.<span class="ident">iter</span>()
-					.<span class="ident">map</span>(<span class="op">|</span><span class="ident">d</span><span class="op">|</span> (<span class="ident">d</span>.<span class="ident">address</span>, <span class="ident">d</span>.<span class="ident">storage_keys</span>.<span class="ident">clone</span>()))
-					.<span class="ident">collect</span>(),
-			},
-		}
-	}
-
 	<span class="kw">fn</span> <span class="ident">recover_signer</span>(<span class="ident">transaction</span>: <span class="kw-2">&amp;</span><span class="ident">Transaction</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">H160</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">sig</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">65</span>];
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">msg</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">32</span>];
@@ -1506,7 +1347,7 @@
 		<span class="ident">origin</span>: <span class="ident">H160</span>,
 		<span class="ident">transaction</span>: <span class="kw-2">&amp;</span><span class="ident">Transaction</span>,
 	) -&gt; <span class="ident">TransactionValidity</span> {
-		<span class="kw">let</span> <span class="ident">transaction_data</span> <span class="op">=</span> <span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::transaction_data</span>(<span class="ident">transaction</span>);
+		<span class="kw">let</span> <span class="ident">transaction_data</span>: <span class="ident">TransactionData</span> <span class="op">=</span> <span class="ident">transaction</span>.<span class="ident">into</span>();
 		<span class="kw">let</span> <span class="ident">transaction_nonce</span> <span class="op">=</span> <span class="ident">transaction_data</span>.<span class="ident">nonce</span>;
 
 		<span class="kw">let</span> (<span class="ident">base_fee</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">T::FeeCalculator::min_gas_price</span>();
@@ -1815,7 +1656,7 @@
 		<span class="ident">origin</span>: <span class="ident">H160</span>,
 		<span class="ident">transaction</span>: <span class="kw-2">&amp;</span><span class="ident">Transaction</span>,
 	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">TransactionValidityError</span><span class="op">&gt;</span> {
-		<span class="kw">let</span> <span class="ident">transaction_data</span> <span class="op">=</span> <span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::transaction_data</span>(<span class="ident">transaction</span>);
+		<span class="kw">let</span> <span class="ident">transaction_data</span>: <span class="ident">TransactionData</span> <span class="op">=</span> <span class="ident">transaction</span>.<span class="ident">into</span>();
 
 		<span class="kw">let</span> (<span class="ident">base_fee</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">T::FeeCalculator::min_gas_price</span>();
 		<span class="kw">let</span> (<span class="ident">who</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">pallet_evm::Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::account_basic</span>(<span class="kw-2">&amp;</span><span class="ident">origin</span>);
@@ -1900,6 +1741,13 @@
 		<span class="macro">assert_eq!</span>(<span class="ident">block_v2</span>.<span class="ident">header</span>.<span class="ident">parent_hash</span>, <span class="ident">v0_parent_hash</span>);
 		<span class="macro">assert_eq!</span>(<span class="ident">block_v2</span>.<span class="ident">transactions</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">u64</span>, <span class="ident">v0_transaction_len</span>);
 		<span class="prelude-val">Ok</span>(())
+	}
+}
+
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">ValidatedTransaction</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>(<span class="ident">PhantomData</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>);
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">ValidatedTransactionT</span> <span class="kw">for</span> <span class="ident">ValidatedTransaction</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">apply</span>(<span class="ident">source</span>: <span class="ident">H160</span>, <span class="ident">transaction</span>: <span class="ident">Transaction</span>) -&gt; <span class="ident">DispatchResultWithPostInfo</span> {
+		<span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::apply_validated_transaction</span>(<span class="ident">source</span>, <span class="ident">transaction</span>)
 	}
 }
 

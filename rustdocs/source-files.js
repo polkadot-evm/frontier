@@ -7,6 +7,7 @@ sourcesIndex["fc_rpc"] = {"name":"","dirs":[{"name":"eth","dirs":[{"name":"cache
 sourcesIndex["fc_rpc_core"] = {"name":"","dirs":[{"name":"types","files":["account_info.rs","block.rs","block_number.rs","bytes.rs","call_request.rs","fee.rs","filter.rs","index.rs","log.rs","mod.rs","pubsub.rs","receipt.rs","sync.rs","transaction.rs","transaction_request.rs","work.rs"]}],"files":["eth.rs","eth_pubsub.rs","lib.rs","net.rs","web3.rs"]};
 sourcesIndex["fp_consensus"] = {"name":"","files":["lib.rs"]};
 sourcesIndex["fp_dynamic_fee"] = {"name":"","files":["lib.rs"]};
+sourcesIndex["fp_ethereum"] = {"name":"","files":["lib.rs"]};
 sourcesIndex["fp_evm"] = {"name":"","files":["lib.rs","precompile.rs","validation.rs"]};
 sourcesIndex["fp_rpc"] = {"name":"","files":["lib.rs"]};
 sourcesIndex["fp_self_contained"] = {"name":"","files":["checked_extrinsic.rs","lib.rs","unchecked_extrinsic.rs"]};
