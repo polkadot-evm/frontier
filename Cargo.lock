@@ -1836,6 +1836,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "fp-ethereum"
+version = "1.0.0-dev"
+dependencies = [
+ "ethereum",
+ "ethereum-types",
+ "fp-evm",
+ "frame-support",
+ "parity-scale-codec",
+ "sp-core",
+ "sp-std",
+]
+
+[[package]]
 name = "fp-evm"
 version = "3.0.0-dev"
 dependencies = [
@@ -4410,6 +4423,7 @@ dependencies = [
  "ethereum-types",
  "evm",
  "fp-consensus",
+ "fp-ethereum",
  "fp-evm",
  "fp-rpc",
  "fp-self-contained",
