@@ -75,11 +75,6 @@
 <span id="70">70</span>
 <span id="71">71</span>
 <span id="72">72</span>
-<span id="73">73</span>
-<span id="74">74</span>
-<span id="75">75</span>
-<span id="76">76</span>
-<span id="77">77</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -144,12 +139,7 @@
 	<span class="kw">fn</span> <span class="ident">pre_dispatch_self_contained</span>(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		<span class="ident">info</span>: <span class="kw-2">&amp;</span><span class="ident"><span class="self">Self</span>::SignedInfo</span>,
-		<span class="ident">dispatch_info</span>: <span class="kw-2">&amp;</span><span class="ident">DispatchInfoOf</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span>,
-		<span class="ident">len</span>: <span class="ident">usize</span>,
-	) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">TransactionValidityError</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-		<span class="self">self</span>.<span class="ident">validate_self_contained</span>(<span class="ident">info</span>, <span class="ident">dispatch_info</span>, <span class="ident">len</span>)
-			.<span class="ident">map</span>(<span class="op">|</span><span class="ident">res</span><span class="op">|</span> <span class="ident">res</span>.<span class="ident">map</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> ()))
-	}
+	) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">TransactionValidityError</span><span class="op">&gt;</span><span class="op">&gt;</span>;
 	<span class="doccomment">/// Apply a self-contained function. Returns `None` if the</span>
 	<span class="doccomment">/// function is not a self-contained.</span>
 	<span class="kw">fn</span> <span class="ident">apply_self_contained</span>(
