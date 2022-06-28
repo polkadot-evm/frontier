@@ -1938,6 +1938,7 @@ name = "fp-evm"
 version = "3.0.0-dev"
 dependencies = [
  "evm",
+ "evm-runtime",
  "frame-support",
  "parity-scale-codec",
  "serde",
