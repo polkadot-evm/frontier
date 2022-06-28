@@ -26,7 +26,7 @@ use frame_support::{
 };
 use pallet_evm::{AddressMapping, EnsureAddressTruncated, FeeCalculator};
 use rlp::RlpStream;
-use sp_core::{hashing::keccak_256, H160, H256, U256, crypto::ByteArray};
+use sp_core::{crypto::ByteArray, hashing::keccak_256, H160, H256, U256};
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},

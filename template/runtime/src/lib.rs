@@ -10,7 +10,7 @@
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 use codec::{Decode, Encode};
-use pallet_evm::{FeeCalculator, AddressMapping};
+use pallet_evm::{AddressMapping, FeeCalculator};
 use pallet_grandpa::{
 	fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
 };
@@ -297,7 +297,9 @@ impl pallet_sudo::Config for Runtime {
 }
 
 pub struct FindAuthorTruncated<F, M>(PhantomData<(F, M)>);
-impl<F: FindAuthor<u32>, M: AddressMapping<AccountId>> FindAuthor<H160> for FindAuthorTruncated<F, M> {
+impl<F: FindAuthor<u32>, M: AddressMapping<AccountId>> FindAuthor<H160>
+	for FindAuthorTruncated<F, M>
+{
 	fn find_author<'a, I>(digests: I) -> Option<H160>
 	where
 		I: 'a + IntoIterator<Item = (ConsensusEngineId, &'a [u8])>,
