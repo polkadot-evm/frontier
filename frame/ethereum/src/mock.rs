@@ -126,13 +126,13 @@ impl FeeCalculator for FixedGasPrice {
 	}
 }
 
-pub struct FindAuthorTruncated;
-impl FindAuthor<H160> for FindAuthorTruncated {
-	fn find_author<'a, I>(_digests: I) -> Option<H160>
+pub struct FindAuthorGiven;
+impl FindAuthor<AccountId32> for FindAuthorGiven {
+	fn find_author<'a, I>(_digests: I) -> Option<AccountId32>
 	where
 		I: 'a + IntoIterator<Item = (ConsensusEngineId, &'a [u8])>,
 	{
-		Some(address_build(0).address)
+		Some(AccountId32::from([1u8; 32]))
 	}
 }
 
@@ -187,7 +187,7 @@ impl pallet_evm::Config for Test {
 	type BlockGasLimit = BlockGasLimit;
 	type Runner = pallet_evm::runner::stack::Runner<Self>;
 	type OnChargeTransaction = ();
-	type FindAuthor = FindAuthorTruncated;
+	type FindAuthor = FindAuthorGiven;
 }
 
 impl Config for Test {

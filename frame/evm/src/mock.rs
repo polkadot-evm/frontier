@@ -33,7 +33,8 @@ use sp_std::{boxed::Box, prelude::*, str::FromStr};
 
 use crate as pallet_evm;
 use crate::{
-	FeeCalculator, PairedAddressMapping, PrecompileHandle, PrecompileResult, PrecompileSet,
+	AddressMapping, FeeCalculator, PairedAddressMapping, PrecompileHandle, PrecompileResult,
+	PrecompileSet,
 };
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -117,13 +118,15 @@ impl FeeCalculator for FixedGasPrice {
 	}
 }
 
-pub struct FindAuthorTruncated;
-impl FindAuthor<H160> for FindAuthorTruncated {
-	fn find_author<'a, I>(_digests: I) -> Option<H160>
+pub struct FindAuthorPaired;
+impl FindAuthor<AccountId32> for FindAuthorPaired {
+	fn find_author<'a, I>(_digests: I) -> Option<AccountId32>
 	where
 		I: 'a + IntoIterator<Item = (ConsensusEngineId, &'a [u8])>,
 	{
-		Some(H160::from_str("1234500000000000000000000000000000000000").unwrap())
+		Some(<Test as crate::Config>::AddressMapping::into_account_id(
+			H160::from_str("1234500000000000000000000000000000000000").unwrap(),
+		))
 	}
 }
 parameter_types! {
@@ -147,7 +150,7 @@ impl pallet_evm::Config for Test {
 	type BlockGasLimit = BlockGasLimit;
 	type Runner = pallet_evm::runner::stack::Runner<Self>;
 	type OnChargeTransaction = ();
-	type FindAuthor = FindAuthorTruncated;
+	type FindAuthor = FindAuthorPaired;
 }
 
 /// Exemple PrecompileSet with only Identity precompile.

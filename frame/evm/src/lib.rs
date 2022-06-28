@@ -64,6 +64,7 @@ pub mod runner;
 #[cfg(test)]
 mod tests;
 
+use codec::Encode;
 use frame_support::{
 	dispatch::{DispatchResultWithPostInfo, Pays, PostDispatchInfo},
 	traits::{
@@ -148,7 +149,7 @@ pub mod pallet {
 		type OnChargeTransaction: OnChargeEVMTransaction<Self>;
 
 		/// Find author for the current block.
-		type FindAuthor: FindAuthor<H160>;
+		type FindAuthor: FindAuthor<Self::AccountId>;
 
 		/// EVM config used in the module.
 		fn config() -> &'static EvmConfig {
@@ -871,7 +872,15 @@ impl<T: Config> Pallet<T> {
 		let digest = <frame_system::Pallet<T>>::digest();
 		let pre_runtime_digests = digest.logs.iter().filter_map(|d| d.as_pre_runtime());
 
-		T::FindAuthor::find_author(pre_runtime_digests).unwrap_or_default()
+		if let Some(author) = T::FindAuthor::find_author(pre_runtime_digests) {
+			if <EthAddresses<T>>::contains_key(&author) {
+				<EthAddresses<T>>::get(author)
+			} else {
+				H160::from_slice(&author.encode()[4..24])
+			}
+		} else {
+			H160::default()
+		}
 	}
 }
 
@@ -993,8 +1002,12 @@ where
 	fn pay_priority_fee(tip: Self::LiquidityInfo) {
 		// Default Ethereum behaviour: issue the tip to the block author.
 		if let Some(tip) = tip {
-			let account_id = T::AddressMapping::into_account_id(<Pallet<T>>::find_author());
-			let _ = C::deposit_into_existing(&account_id, tip.peek());
+			let digest = <frame_system::Pallet<T>>::digest();
+			let pre_runtime_digests = digest.logs.iter().filter_map(|d| d.as_pre_runtime());
+
+			if let Some(account_id) = T::FindAuthor::find_author(pre_runtime_digests) {
+				let _ = C::deposit_into_existing(&account_id, tip.peek());
+			}
 		}
 	}
 }
