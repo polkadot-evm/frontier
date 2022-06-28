@@ -26,7 +26,7 @@ use frame_support::{
 };
 use pallet_evm::{AddressMapping, EnsureAddressTruncated, FeeCalculator};
 use rlp::RlpStream;
-use sp_core::{hashing::keccak_256, H160, H256, U256};
+use sp_core::{hashing::keccak_256, H160, H256, U256, crypto::ByteArray};
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
@@ -149,6 +149,10 @@ impl AddressMapping<AccountId32> for HashedAddressMapping {
 		let mut data = [0u8; 32];
 		data[0..20].copy_from_slice(&address[..]);
 		AccountId32::from(Into::<[u8; 32]>::into(data))
+	}
+
+	fn from_account_id(account_id: AccountId32) -> H160 {
+		H160::from_slice(&account_id.as_slice()[0..20])
 	}
 }
 

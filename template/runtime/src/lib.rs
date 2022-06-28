@@ -10,7 +10,7 @@
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 use codec::{Decode, Encode};
-use pallet_evm::FeeCalculator;
+use pallet_evm::{FeeCalculator, AddressMapping};
 use pallet_grandpa::{
 	fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
 };
@@ -296,15 +296,19 @@ impl pallet_sudo::Config for Runtime {
 	type Call = Call;
 }
 
-pub struct FindAuthorTruncated<F>(PhantomData<F>);
-impl<F: FindAuthor<u32>> FindAuthor<H160> for FindAuthorTruncated<F> {
+pub struct FindAuthorTruncated<F, M>(PhantomData<(F, M)>);
+impl<F: FindAuthor<u32>, M: AddressMapping<AccountId>> FindAuthor<H160> for FindAuthorTruncated<F, M> {
 	fn find_author<'a, I>(digests: I) -> Option<H160>
 	where
 		I: 'a + IntoIterator<Item = (ConsensusEngineId, &'a [u8])>,
 	{
 		if let Some(author_index) = F::find_author(digests) {
 			let authority_id = Aura::authorities()[author_index as usize].clone();
-			return Some(H160::from_slice(&authority_id.to_raw_vec()[4..24]));
+			if let Ok(account_id) = AccountId::from_slice(&authority_id.to_raw_vec()[4..24]) {
+				return Some(M::from_account_id(account_id));
+			} else {
+				return None;
+			}
 		}
 		None
 	}
@@ -341,7 +345,7 @@ impl pallet_evm::Config for Runtime {
 	type ChainId = ChainId;
 	type BlockGasLimit = BlockGasLimit;
 	type OnChargeTransaction = ();
-	type FindAuthor = FindAuthorTruncated<Aura>;
+	type FindAuthor = FindAuthorTruncated<Aura, HashedAddressMapping<BlakeTwo256>>;
 }
 
 impl pallet_ethereum::Config for Runtime {

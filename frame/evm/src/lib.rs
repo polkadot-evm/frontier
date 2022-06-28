@@ -568,6 +568,7 @@ where
 
 pub trait AddressMapping<A> {
 	fn into_account_id(address: H160) -> A;
+	fn from_account_id(account_id: A) -> H160;
 }
 
 /// Identity address mapping.
@@ -576,6 +577,10 @@ pub struct IdentityAddressMapping;
 impl AddressMapping<H160> for IdentityAddressMapping {
 	fn into_account_id(address: H160) -> H160 {
 		address
+	}
+
+	fn from_account_id(account_id: H160) -> H160 {
+		account_id
 	}
 }
 
@@ -590,6 +595,11 @@ impl<H: Hasher<Out = H256>> AddressMapping<AccountId32> for HashedAddressMapping
 		let hash = H::hash(&data);
 
 		AccountId32::from(Into::<[u8; 32]>::into(hash))
+	}
+
+	/// an hashed evm address can't be decoded as AccountId32
+	fn from_account_id(_account_id: AccountId32) -> H160 {
+		H160::zero()
 	}
 }
 
