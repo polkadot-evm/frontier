@@ -268,8 +268,10 @@ fn issuance_after_tip() {
 		result.expect("EVM can be called");
 		let after_tip = <Test as Config>::Currency::total_issuance();
 		// Only base fee is burned
-		let (base_fee, _) = <Test as Config>::FeeCalculator::min_gas_price();
-		assert_eq!(after_tip, (before_tip - (base_fee.low_u64() * 21_000)));
+		let base_fee: u64 = <Test as Config>::FeeCalculator::min_gas_price()
+			.0
+			.unique_saturated_into();
+		assert_eq!(after_tip, (before_tip - (base_fee * 21_000)));
 	});
 }
 
@@ -355,7 +357,7 @@ fn refunds_and_priority_should_work() {
 		assert_eq!(after_call, before_call - total_cost);
 
 		let after_tip = EVM::account_basic(&author).0.balance;
-		assert_eq!(after_tip, (before_tip + actual_tip.low_u128()));
+		assert_eq!(after_tip, (before_tip + actual_tip));
 	});
 }
 
