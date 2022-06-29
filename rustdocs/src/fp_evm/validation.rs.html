@@ -725,6 +725,7 @@
 <span id="720">720</span>
 <span id="721">721</span>
 <span id="722">722</span>
+<span id="723">723</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -744,6 +745,7 @@
 <span class="attribute">#![<span class="ident">allow</span>(<span class="ident">clippy::comparison_chain</span>)]</span>
 
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">evm::backend::Basic</span> <span class="kw">as</span> <span class="ident">Account</span>;
+<span class="kw">use</span> <span class="ident">frame_support::sp_runtime::traits::UniqueSaturatedInto</span>;
 <span class="kw">use</span> <span class="ident">sp_core</span>::{<span class="ident">H160</span>, <span class="ident">H256</span>, <span class="ident">U256</span>};
 <span class="kw">use</span> <span class="ident">sp_std::vec::Vec</span>;
 
@@ -908,7 +910,7 @@
 		<span class="comment">// We must ensure a transaction can pay the cost of its data bytes.</span>
 		<span class="comment">// If it can&#39;t it should not be included in a block.</span>
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">gasometer</span> <span class="op">=</span> <span class="ident">evm::gasometer::Gasometer::new</span>(
-			<span class="self">self</span>.<span class="ident">transaction</span>.<span class="ident">gas_limit</span>.<span class="ident">low_u64</span>(),
+			<span class="self">self</span>.<span class="ident">transaction</span>.<span class="ident">gas_limit</span>.<span class="ident">unique_saturated_into</span>(),
 			<span class="self">self</span>.<span class="ident">config</span>.<span class="ident">evm_config</span>,
 		);
 		<span class="kw">let</span> <span class="ident">transaction_cost</span> <span class="op">=</span> <span class="kw">if</span> <span class="self">self</span>.<span class="ident">transaction</span>.<span class="ident">to</span>.<span class="ident">is_some</span>() {

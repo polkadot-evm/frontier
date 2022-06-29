@@ -704,6 +704,18 @@
 <span id="699">699</span>
 <span id="700">700</span>
 <span id="701">701</span>
+<span id="702">702</span>
+<span id="703">703</span>
+<span id="704">704</span>
+<span id="705">705</span>
+<span id="706">706</span>
+<span id="707">707</span>
+<span id="708">708</span>
+<span id="709">709</span>
+<span id="710">710</span>
+<span id="711">711</span>
+<span id="712">712</span>
+<span id="713">713</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -724,8 +736,9 @@
 <span class="doccomment">//! EVM stack-based runner.</span>
 
 <span class="kw">use</span> <span class="kw">crate</span>::{
-	<span class="ident">runner::Runner</span> <span class="kw">as</span> <span class="ident">RunnerT</span>, <span class="ident">AccountCodes</span>, <span class="ident">AccountStorages</span>, <span class="ident">AddressMapping</span>, <span class="ident">BlockHashMapping</span>,
-	<span class="ident">Config</span>, <span class="ident">Error</span>, <span class="ident">Event</span>, <span class="ident">FeeCalculator</span>, <span class="ident">OnChargeEVMTransaction</span>, <span class="ident">Pallet</span>, <span class="ident">RunnerError</span>,
+	<span class="ident">runner::Runner</span> <span class="kw">as</span> <span class="ident">RunnerT</span>, <span class="ident">AccountCodes</span>, <span class="ident">AccountStorages</span>, <span class="ident">AddressMapping</span>, <span class="ident">BalanceOf</span>,
+	<span class="ident">BlockHashMapping</span>, <span class="ident">Config</span>, <span class="ident">Error</span>, <span class="ident">Event</span>, <span class="ident">FeeCalculator</span>, <span class="ident">OnChargeEVMTransaction</span>, <span class="ident">Pallet</span>,
+	<span class="ident">RunnerError</span>,
 };
 <span class="kw">use</span> <span class="ident">evm</span>::{
 	<span class="ident">backend::Backend</span> <span class="kw">as</span> <span class="ident">BackendT</span>,
@@ -743,7 +756,10 @@
 	<span class="ident">_marker</span>: <span class="ident">PhantomData</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">Runner</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">Runner</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>
+<span class="kw">where</span>
+	<span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>: <span class="ident">TryFrom</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
+{
 	<span class="doccomment">/// Execute an already validated EVM operation.</span>
 	<span class="kw">fn</span> <span class="ident">execute</span><span class="op">&lt;</span><span class="lifetime">&#39;config</span>, <span class="lifetime">&#39;precompiles</span>, <span class="ident">F</span>, <span class="ident">R</span><span class="op">&gt;</span>(
 		<span class="ident">source</span>: <span class="ident">H160</span>,
@@ -898,7 +914,10 @@
 	}
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">RunnerT</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Runner</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">RunnerT</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Runner</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>
+<span class="kw">where</span>
+	<span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>: <span class="ident">TryFrom</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
+{
 	<span class="kw">type</span> <span class="ident">Error</span> <span class="op">=</span> <span class="ident">Error</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>;
 
 	<span class="kw">fn</span> <span class="ident">validate</span>(
@@ -1285,6 +1304,8 @@
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;vicinity</span>, <span class="lifetime">&#39;config</span>, <span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">StackStateT</span><span class="op">&lt;</span><span class="lifetime">&#39;config</span><span class="op">&gt;</span>
 	<span class="kw">for</span> <span class="ident">SubstrateStackState</span><span class="op">&lt;</span><span class="lifetime">&#39;vicinity</span>, <span class="lifetime">&#39;config</span>, <span class="ident">T</span><span class="op">&gt;</span>
+<span class="kw">where</span>
+	<span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>: <span class="ident">TryFrom</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
 {
 	<span class="kw">fn</span> <span class="ident">metadata</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="ident">StackSubstateMetadata</span><span class="op">&lt;</span><span class="lifetime">&#39;config</span><span class="op">&gt;</span> {
 		<span class="self">self</span>.<span class="ident">substate</span>.<span class="ident">metadata</span>()
@@ -1373,7 +1394,10 @@
 		<span class="ident">T::Currency::transfer</span>(
 			<span class="kw-2">&amp;</span><span class="ident">source</span>,
 			<span class="kw-2">&amp;</span><span class="ident">target</span>,
-			<span class="ident">transfer</span>.<span class="ident">value</span>.<span class="ident">low_u128</span>().<span class="ident">unique_saturated_into</span>(),
+			<span class="ident">transfer</span>
+				.<span class="ident">value</span>
+				.<span class="ident">try_into</span>()
+				.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">ExitError::OutOfFund</span>)<span class="question-mark">?</span>,
 			<span class="ident">ExistenceRequirement::AllowDeath</span>,
 		)
 		.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">ExitError::OutOfFund</span>)
