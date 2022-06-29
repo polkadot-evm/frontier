@@ -17,6 +17,7 @@
 #![allow(clippy::comparison_chain)]
 
 pub use evm::backend::Basic as Account;
+use frame_support::sp_runtime::traits::UniqueSaturatedInto;
 use sp_core::{H160, H256, U256};
 use sp_std::vec::Vec;
 
@@ -181,7 +182,7 @@ impl<'config, E: From<InvalidEvmTransactionError>> CheckEvmTransaction<'config, 
 		// We must ensure a transaction can pay the cost of its data bytes.
 		// If it can't it should not be included in a block.
 		let mut gasometer = evm::gasometer::Gasometer::new(
-			self.transaction.gas_limit.low_u64(),
+			self.transaction.gas_limit.unique_saturated_into(),
 			self.config.evm_config,
 		);
 		let transaction_cost = if self.transaction.to.is_some() {

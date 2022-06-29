@@ -18,8 +18,9 @@
 //! EVM stack-based runner.
 
 use crate::{
-	runner::Runner as RunnerT, AccountCodes, AccountStorages, AddressMapping, BlockHashMapping,
-	Config, Error, Event, FeeCalculator, OnChargeEVMTransaction, Pallet, RunnerError,
+	runner::Runner as RunnerT, AccountCodes, AccountStorages, AddressMapping, BalanceOf,
+	BlockHashMapping, Config, Error, Event, FeeCalculator, OnChargeEVMTransaction, Pallet,
+	RunnerError,
 };
 use evm::{
 	backend::Backend as BackendT,
@@ -37,7 +38,10 @@ pub struct Runner<T: Config> {
 	_marker: PhantomData<T>,
 }
 
-impl<T: Config> Runner<T> {
+impl<T: Config> Runner<T>
+where
+	BalanceOf<T>: TryFrom<U256> + Into<U256>,
+{
 	/// Execute an already validated EVM operation.
 	fn execute<'config, 'precompiles, F, R>(
 		source: H160,
@@ -192,7 +196,10 @@ impl<T: Config> Runner<T> {
 	}
 }
 
-impl<T: Config> RunnerT<T> for Runner<T> {
+impl<T: Config> RunnerT<T> for Runner<T>
+where
+	BalanceOf<T>: TryFrom<U256> + Into<U256>,
+{
 	type Error = Error<T>;
 
 	fn validate(
@@ -579,6 +586,8 @@ impl<'vicinity, 'config, T: Config> BackendT for SubstrateStackState<'vicinity, 
 
 impl<'vicinity, 'config, T: Config> StackStateT<'config>
 	for SubstrateStackState<'vicinity, 'config, T>
+where
+	BalanceOf<T>: TryFrom<U256> + Into<U256>,
 {
 	fn metadata(&self) -> &StackSubstateMetadata<'config> {
 		self.substate.metadata()
@@ -667,7 +676,10 @@ impl<'vicinity, 'config, T: Config> StackStateT<'config>
 		T::Currency::transfer(
 			&source,
 			&target,
-			transfer.value.low_u128().unique_saturated_into(),
+			transfer
+				.value
+				.try_into()
+				.map_err(|_| ExitError::OutOfFund)?,
 			ExistenceRequirement::AllowDeath,
 		)
 		.map_err(|_| ExitError::OutOfFund)
