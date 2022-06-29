@@ -1,0 +1,34 @@
+[package]
+name = "fp-evm-tracing-events"
+edition = "2021"
+license = "GPL-3.0-only"
+repository = "https://github.com/paritytech/frontier"
+version = "0.1.0"
+
+[dependencies]
+environmental = { version = "1.1.2", default-features = false }
+
+# Substrate
+codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false }
+sp-runtime-interface = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.20", default-features = false }
+
+# Ethereum
+ethereum = { version = "0.12.0", default-features = false, features = [ "with-codec" ] }
+ethereum-types = { version = "0.13.1", default-features = false }
+evm = { git = "https://github.com/rust-blockchain/evm", branch = "master", default-features = false, features = [ "with-codec" ] }
+evm-gasometer = { git = "https://github.com/rust-blockchain/evm", branch = "master", default-features = false }
+evm-runtime = { git = "https://github.com/rust-blockchain/evm", branch = "master", default-features = false }
+
+[features]
+default = [ "std" ]
+std = [
+	"codec/std",
+	"environmental/std",
+	"ethereum-types/std",
+	"ethereum/std",
+	"evm-gasometer/std",
+	"evm-runtime/std",
+	"evm/std",
+	"sp-runtime-interface/std",
+]
+evm-tracing = [ "evm-gasometer/tracing", "evm-runtime/tracing", "evm/tracing" ]

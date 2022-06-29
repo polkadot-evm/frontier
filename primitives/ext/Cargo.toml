@@ -1,0 +1,28 @@
+[package]
+name = "fp-ext"
+edition = "2021"
+license = "GPL-3.0-only"
+repository = "https://github.com/paritytech/frontier/"
+version = "0.1.0"
+
+[dependencies]
+ethereum-types = { version = "0.13.1", default-features = false }
+
+evm-tracing-events = { path = "../evm-tracing-events", default-features = false }
+
+# Substrate
+codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false }
+sp-externalities = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.20", default-features = false }
+sp-runtime-interface = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.20", default-features = false }
+sp-std = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.20", default-features = false }
+
+[features]
+default = [ "std" ]
+std = [
+	"codec/std",
+	"ethereum-types/std",
+	"evm-tracing-events/std",
+	"sp-externalities/std",
+	"sp-runtime-interface/std",
+	"sp-std/std",
+]
