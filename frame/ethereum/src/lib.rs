@@ -278,8 +278,8 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event {
-		/// An ethereum transaction was successfully executed. [from, executed_data, transaction_hash, exit_reason]
-		Executed(H160, Vec<u8>, H256, ExitReason),
+		/// An ethereum transaction was successfully executed. [from, to/contract_address, transaction_hash, exit_reason, executed_data]
+		Executed(H160, H160, H256, ExitReason, Vec<u8>),
 	}
 
 	#[pallet::error]
@@ -510,7 +510,7 @@ impl<T: Config> Pallet<T> {
 		let transaction_hash = transaction.hash();
 		let transaction_index = pending.len() as u32;
 
-		let (reason, status, used_gas, data) = match info {
+		let (reason, status, used_gas, dest, executed_data) = match info {
 			CallOrCreateInfo::Call(info) => (
 				info.exit_reason,
 				TransactionStatus {
@@ -527,6 +527,7 @@ impl<T: Config> Pallet<T> {
 					},
 				},
 				info.used_gas,
+				to,
 				info.value,
 			),
 			CallOrCreateInfo::Create(info) => (
@@ -545,7 +546,8 @@ impl<T: Config> Pallet<T> {
 					},
 				},
 				info.used_gas,
-				info.value.as_bytes().to_vec(),
+				Some(info.value),
+				vec![],
 			),
 		};
 
@@ -589,7 +591,13 @@ impl<T: Config> Pallet<T> {
 
 		Pending::<T>::append((transaction, status, receipt));
 
-		Self::deposit_event(Event::Executed(source, data, transaction_hash, reason));
+		Self::deposit_event(Event::Executed(
+			source,
+			dest.unwrap_or_default(),
+			transaction_hash,
+			reason,
+			executed_data,
+		));
 
 		Ok(PostDispatchInfo {
 			actual_weight: Some(T::GasWeightMapping::gas_to_weight(
