@@ -1,0 +1,34 @@
+[package]
+name = "fc-debug"
+edition = "2021"
+license = "GPL-3.0-only"
+repository = "https://github.com/paritytech/frontier"
+version = "0.1.0"
+
+[dependencies]
+futures = { version = "0.3", features = [ "compat" ] }
+hex-literal = "0.3.4"
+jsonrpc-core = "18.0.0"
+tokio = { version = "1.10", features = [ "sync", "time" ] }
+
+fc-evm-tracing = { path = "../evm-tracing" }
+fc-debug-core = { path = "../debug-core" }
+fp-debug = { path = "../primitives/debug" }
+
+# Substrate
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.20" }
+sc-utils = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.20" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.20" }
+sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.20" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.20" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.20" }
+sp-io = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.20" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.20" }
+
+# Frontier
+ethereum = { version = "0.12.0", default-features = false, features = [ "with-codec" ] }
+ethereum-types = "0.13.1"
+fc-consensus = { path = "../consensus" }
+fc-db = { "../db" }
+fc-rpc = { path = "../rpc" }
+fp-rpc = { path = "../primitives/rpc" }

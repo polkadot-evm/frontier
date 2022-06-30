@@ -1,0 +1,18 @@
+[package]
+name = "fc-debug-core"
+edition = "2021"
+license = "GPL-3.0-only"
+repository = "https://github.com/paritytech/frontier"
+version = "0.1.0"
+
+[dependencies]
+ethereum-types = "0.13.1"
+futures = { version = "0.3", features = [ "compat" ] }
+jsonrpc-core = "18.0.0"
+jsonrpc-core-client = "18.0.0"
+jsonrpc-derive = "18.0.0"
+fc-evm-tracing = { path = "../../evm-tracing" }
+serde = { version = "1.0", features = [ "derive" ] }
+serde_json = "1.0"
+
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.20" }
