@@ -877,7 +877,7 @@ enum TransactionValidationError {
 	MaxFeePerGasTooLow,
 }
 
-struct InvalidTransactionWrapper(InvalidTransaction);
+pub struct InvalidTransactionWrapper(InvalidTransaction);
 
 impl From<InvalidEvmTransactionError> for InvalidTransactionWrapper {
 	fn from(validation_error: InvalidEvmTransactionError) -> Self {
