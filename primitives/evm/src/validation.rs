@@ -323,7 +323,9 @@ mod tests {
 		test_env(input)
 	}
 
-	fn transaction_gas_limit_low<'config>(is_transactional: bool) -> CheckEvmTransaction<'config, TestError> {
+	fn transaction_gas_limit_low<'config>(
+		is_transactional: bool,
+	) -> CheckEvmTransaction<'config, TestError> {
 		let mut input = TestCase::default();
 		input.gas_limit = U256::from(1u8);
 		input.is_transactional = is_transactional;
