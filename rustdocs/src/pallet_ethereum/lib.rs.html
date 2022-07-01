@@ -1796,7 +1796,7 @@
 	<span class="ident">MaxFeePerGasTooLow</span>,
 }
 
-<span class="kw">struct</span> <span class="ident">InvalidTransactionWrapper</span>(<span class="ident">InvalidTransaction</span>);
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">InvalidTransactionWrapper</span>(<span class="ident">InvalidTransaction</span>);
 
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">InvalidEvmTransactionError</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">InvalidTransactionWrapper</span> {
 	<span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">validation_error</span>: <span class="ident">InvalidEvmTransactionError</span>) -&gt; <span class="self">Self</span> {
