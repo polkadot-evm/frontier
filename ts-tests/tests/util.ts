@@ -3,7 +3,7 @@ import { ethers } from "ethers";
 import { JsonRpcResponse } from "web3-core-helpers";
 import { spawn, ChildProcess } from "child_process";
 
-import { CHAIN_ID } from "./config";
+import { NODE_BINARY_NAME, CHAIN_ID } from "./config";
 
 export const PORT = 19931;
 export const RPC_PORT = 19932;
@@ -13,7 +13,7 @@ export const DISPLAY_LOG = process.env.FRONTIER_LOG || false;
 export const FRONTIER_LOG = process.env.FRONTIER_LOG || "info";
 export const FRONTIER_BUILD = process.env.FRONTIER_BUILD || "release";
 
-export const BINARY_PATH = `../target/${FRONTIER_BUILD}/frontier-template-node`;
+export const BINARY_PATH = `../target/${FRONTIER_BUILD}/${NODE_BINARY_NAME}`;
 export const SPAWNING_TIME = 60000;
 
 export async function customRequest(web3: Web3, method: string, params: any[]) {

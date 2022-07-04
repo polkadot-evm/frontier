@@ -1,5 +1,6 @@
 import { expect } from "chai";
 
+import { CHAIN_ID } from "./config";
 import { describeWithFrontier } from "./util";
 
 // All test for the RPC
@@ -9,9 +10,9 @@ describeWithFrontier("Frontier RPC (Constant)", (context) => {
 		expect(await context.web3.eth.getHashrate()).to.equal(0);
 	});
 
-	it("should have chainId 42", async function () {
+	it("should have chainId", async function () {
 		// The chainId is defined by the Substrate Chain Id, default to 42
-		expect(await context.web3.eth.getChainId()).to.equal(42);
+		expect(await context.web3.eth.getChainId()).to.equal(CHAIN_ID);
 	});
 
 	it("should have no account", async function () {

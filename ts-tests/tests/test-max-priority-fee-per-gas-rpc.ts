@@ -17,18 +17,6 @@ describeWithFrontier("Frontier RPC (Max Priority Fee Per Gas)", (context) => {
 
 	let nonce = 0;
 
-	function get_percentile(percentile, array) {
-		array.sort(function (a, b) {
-			return a - b;
-		});
-		let index = (percentile / 100) * array.length - 1;
-		if (Math.floor(index) == index) {
-			return array[index];
-		} else {
-			return Math.ceil((array[Math.floor(index)] + array[Math.ceil(index)]) / 2);
-		}
-	}
-
 	async function createBlocks(block_count, priority_fees) {
 		for (var b = 0; b < block_count; b++) {
 			for (var p = 0; p < priority_fees.length; p++) {
