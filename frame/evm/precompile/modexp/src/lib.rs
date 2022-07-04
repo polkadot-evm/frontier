@@ -111,7 +111,6 @@ fn calculate_gas_cost(
 impl Precompile for Modexp {
 	fn execute(handle: &mut impl PrecompileHandle) -> PrecompileResult {
 		let input = handle.input();
-		let target_gas = handle.gas_limit();
 
 		if input.len() < 96 {
 			return Err(PrecompileFailure::Error {
@@ -161,8 +160,9 @@ impl Precompile for Modexp {
 		}
 
 		// Gas formula allows arbitrary large exp_len when base and modulus are empty, so we need to handle empty base first.
-		let (r, gas_cost) = if base_len == 0 && mod_len == 0 {
-			(BigUint::zero(), MIN_GAS_COST)
+		let r = if base_len == 0 && mod_len == 0 {
+			handle.record_cost(MIN_GAS_COST)?;
+			BigUint::zero()
 		} else {
 			// read the numbers themselves.
 			let base_start = 96; // previous 3 32-byte fields
@@ -174,25 +174,19 @@ impl Precompile for Modexp {
 			// do our gas accounting
 			let gas_cost =
 				calculate_gas_cost(base_len as u64, exp_len as u64, mod_len as u64, &exponent);
-			if let Some(gas_left) = target_gas {
-				if gas_left < gas_cost {
-					return Err(PrecompileFailure::Error {
-						exit_status: ExitError::OutOfGas,
-					});
-				}
-			};
+
+			handle.record_cost(gas_cost)?;
+			let input = handle.input();
 
 			let mod_start = exp_start + exp_len;
 			let modulus = BigUint::from_bytes_be(&input[mod_start..mod_start + mod_len]);
 
 			if modulus.is_zero() || modulus.is_one() {
-				(BigUint::zero(), gas_cost)
+				BigUint::zero()
 			} else {
-				(base.modpow(&exponent, &modulus), gas_cost)
+				base.modpow(&exponent, &modulus)
 			}
 		};
-
-		handle.record_cost(gas_cost)?;
 
 		// write output to given memory, left padded and same length as the modulus.
 		let bytes = r.to_bytes_be();
