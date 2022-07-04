@@ -20,7 +20,7 @@ describeWithFrontier("Frontier RPC (Fee History)", (context) => {
 
 	let nonce = 0;
 
-	function get_percentile(percentile, array) {
+	function getPercentile(percentile, array) {
 		array.sort(function (a, b) {
 			return a - b;
 		});
@@ -63,46 +63,44 @@ describeWithFrontier("Frontier RPC (Fee History)", (context) => {
 			.catch((err) => expect(err.message).to.equal("Error getting header at BlockId::Number(1)"));
 	});
 
-	step("result lenght should match spec", async function () {
+	step("result length should match spec", async function () {
 		this.timeout(100000);
-		let block_count = 2;
-		let reward_percentiles = [20, 50, 70];
-		let priority_fees = [1, 2, 3];
-		await createBlocks(block_count, priority_fees);
-		let result = (await customRequest(context.web3, "eth_feeHistory", ["0x2", "latest", reward_percentiles]))
-			.result;
+		let blockCount = 2;
+		let rewardPercentiles = [20, 50, 70];
+		let priorityFees = [1, 2, 3];
+		await createBlocks(blockCount, priorityFees);
+		let result = (await customRequest(context.web3, "eth_feeHistory", ["0x2", "latest", rewardPercentiles])).result;
 
 		// baseFeePerGas is always the requested block range + 1 (the next derived base fee).
-		expect(result.baseFeePerGas.length).to.be.eq(block_count + 1);
+		expect(result.baseFeePerGas.length).to.be.eq(blockCount + 1);
 		// gasUsedRatio for the requested block range.
-		expect(result.gasUsedRatio.length).to.be.eq(block_count);
+		expect(result.gasUsedRatio.length).to.be.eq(blockCount);
 		// two-dimensional reward list for the requested block range.
-		expect(result.reward.length).to.be.eq(block_count);
+		expect(result.reward.length).to.be.eq(blockCount);
 		// each block has a reward list which's size is the requested percentile list.
-		for (let i = 0; i < block_count; i++) {
-			expect(result.reward[i].length).to.be.eq(reward_percentiles.length);
+		for (let i = 0; i < blockCount; i++) {
+			expect(result.reward[i].length).to.be.eq(rewardPercentiles.length);
 		}
 	});
 
 	step("should calculate percentiles", async function () {
 		this.timeout(100000);
-		let block_count = 11;
-		let reward_percentiles = [20, 50, 70, 85, 100];
-		let priority_fees = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-		await createBlocks(block_count, priority_fees);
-		let result = (await customRequest(context.web3, "eth_feeHistory", ["0xA", "latest", reward_percentiles]))
-			.result;
+		let blockCount = 11;
+		let rewardPercentiles = [20, 50, 70, 85, 100];
+		let priorityFees = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+		await createBlocks(blockCount, priorityFees);
+		let result = (await customRequest(context.web3, "eth_feeHistory", ["0xA", "latest", rewardPercentiles])).result;
 
 		// Calculate the percentiles in javascript.
-		let local_rewards = [];
-		for (let i = 0; i < reward_percentiles.length; i++) {
-			local_rewards.push(get_percentile(reward_percentiles[i], priority_fees));
+		let localRewards = [];
+		for (let i = 0; i < rewardPercentiles.length; i++) {
+			localRewards.push(getPercentile(rewardPercentiles[i], priorityFees));
 		}
 		// Compare the rpc result with the javascript percentiles.
 		for (let i = 0; i < result.reward.length; i++) {
-			expect(result.reward[i].length).to.be.eq(local_rewards.length);
-			for (let j = 0; j < local_rewards.length; j++) {
-				expect(context.web3.utils.hexToNumber(result.reward[i][j])).to.be.eq(local_rewards[j]);
+			expect(result.reward[i].length).to.be.eq(localRewards.length);
+			for (let j = 0; j < localRewards.length; j++) {
+				expect(context.web3.utils.hexToNumber(result.reward[i][j])).to.be.eq(localRewards[j]);
 			}
 		}
 	});
