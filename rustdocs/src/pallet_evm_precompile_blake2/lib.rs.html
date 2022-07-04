@@ -129,14 +129,6 @@
 <span id="124">124</span>
 <span id="125">125</span>
 <span id="126">126</span>
-<span id="127">127</span>
-<span id="128">128</span>
-<span id="129">129</span>
-<span id="130">130</span>
-<span id="131">131</span>
-<span id="132">132</span>
-<span id="133">133</span>
-<span id="134">134</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -178,7 +170,6 @@
 		<span class="kw">const</span> <span class="ident">BLAKE2_F_ARG_LEN</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">213</span>;
 
 		<span class="kw">let</span> <span class="ident">input</span> <span class="op">=</span> <span class="ident">handle</span>.<span class="ident">input</span>();
-		<span class="kw">let</span> <span class="ident">target_gas</span> <span class="op">=</span> <span class="ident">handle</span>.<span class="ident">gas_limit</span>();
 
 		<span class="kw">if</span> <span class="ident">input</span>.<span class="ident">len</span>() <span class="op">!</span><span class="op">=</span> <span class="ident">BLAKE2_F_ARG_LEN</span> {
 			<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">PrecompileFailure::Error</span> {
@@ -193,15 +184,8 @@
 		<span class="kw">let</span> <span class="ident">rounds</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="ident">u32::from_be_bytes</span>(<span class="ident">rounds_buf</span>);
 
 		<span class="kw">let</span> <span class="ident">gas_cost</span>: <span class="ident">u64</span> <span class="op">=</span> (<span class="ident">rounds</span> <span class="kw">as</span> <span class="ident">u64</span>) <span class="op">*</span> <span class="ident">Blake2F::GAS_COST_PER_ROUND</span>;
-		<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">gas_left</span>) <span class="op">=</span> <span class="ident">target_gas</span> {
-			<span class="kw">if</span> <span class="ident">gas_left</span> <span class="op">&lt;</span> <span class="ident">gas_cost</span> {
-				<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">PrecompileFailure::Error</span> {
-					<span class="ident">exit_status</span>: <span class="ident">ExitError::OutOfGas</span>,
-				});
-			}
-		}
-
 		<span class="ident">handle</span>.<span class="ident">record_cost</span>(<span class="ident">gas_cost</span>)<span class="question-mark">?</span>;
+
 		<span class="kw">let</span> <span class="ident">input</span> <span class="op">=</span> <span class="ident">handle</span>.<span class="ident">input</span>();
 
 		<span class="comment">// we use from_le_bytes below to effectively swap byte order to LE if architecture is BE</span>

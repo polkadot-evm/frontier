@@ -307,13 +307,6 @@
 <span id="302">302</span>
 <span id="303">303</span>
 <span id="304">304</span>
-<span id="305">305</span>
-<span id="306">306</span>
-<span id="307">307</span>
-<span id="308">308</span>
-<span id="309">309</span>
-<span id="310">310</span>
-<span id="311">311</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -485,24 +478,19 @@
 	<span class="kw">fn</span> <span class="ident">execute</span>(<span class="ident">handle</span>: <span class="kw-2">&amp;mut</span> <span class="kw">impl</span> <span class="ident">PrecompileHandle</span>) -&gt; <span class="ident">PrecompileResult</span> {
 		<span class="kw">use</span> <span class="ident">bn</span>::{<span class="ident">pairing_batch</span>, <span class="ident">AffineG1</span>, <span class="ident">AffineG2</span>, <span class="ident">Fq</span>, <span class="ident">Fq2</span>, <span class="ident">Group</span>, <span class="ident">Gt</span>, <span class="ident">G1</span>, <span class="ident">G2</span>};
 
-		<span class="kw">let</span> <span class="ident">input</span> <span class="op">=</span> <span class="ident">handle</span>.<span class="ident">input</span>();
-		<span class="kw">let</span> <span class="ident">target_gas</span> <span class="op">=</span> <span class="ident">handle</span>.<span class="ident">gas_limit</span>();
-
-		<span class="kw">let</span> (<span class="ident">ret_val</span>, <span class="ident">gas_cost</span>) <span class="op">=</span> <span class="kw">if</span> <span class="ident">input</span>.<span class="ident">is_empty</span>() {
-			(<span class="ident">U256::one</span>(), <span class="ident">Bn128Pairing::BASE_GAS_COST</span>)
+		<span class="kw">let</span> <span class="ident">ret_val</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">handle</span>.<span class="ident">input</span>().<span class="ident">is_empty</span>() {
+			<span class="ident">handle</span>.<span class="ident">record_cost</span>(<span class="ident">Bn128Pairing::BASE_GAS_COST</span>)<span class="question-mark">?</span>;
+			<span class="ident">U256::one</span>()
 		} <span class="kw">else</span> {
 			<span class="comment">// (a, b_a, b_b - each 64-byte affine coordinates)</span>
-			<span class="kw">let</span> <span class="ident">elements</span> <span class="op">=</span> <span class="ident">input</span>.<span class="ident">len</span>() <span class="op">/</span> <span class="number">192</span>;
+			<span class="kw">let</span> <span class="ident">elements</span> <span class="op">=</span> <span class="ident">handle</span>.<span class="ident">input</span>().<span class="ident">len</span>() <span class="op">/</span> <span class="number">192</span>;
 
 			<span class="kw">let</span> <span class="ident">gas_cost</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="ident">Bn128Pairing::BASE_GAS_COST</span>
 				<span class="op">+</span> (<span class="ident">elements</span> <span class="kw">as</span> <span class="ident">u64</span> <span class="op">*</span> <span class="ident">Bn128Pairing::GAS_COST_PER_PAIRING</span>);
-			<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">gas_left</span>) <span class="op">=</span> <span class="ident">target_gas</span> {
-				<span class="kw">if</span> <span class="ident">gas_left</span> <span class="op">&lt;</span> <span class="ident">gas_cost</span> {
-					<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">PrecompileFailure::Error</span> {
-						<span class="ident">exit_status</span>: <span class="ident">ExitError::OutOfGas</span>,
-					});
-				}
-			}
+
+			<span class="ident">handle</span>.<span class="ident">record_cost</span>(<span class="ident">gas_cost</span>)<span class="question-mark">?</span>;
+
+			<span class="kw">let</span> <span class="ident">input</span> <span class="op">=</span> <span class="ident">handle</span>.<span class="ident">input</span>();
 
 			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">vals</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
 			<span class="kw">for</span> <span class="ident">idx</span> <span class="kw">in</span> <span class="number">0</span>..<span class="ident">elements</span> {
@@ -584,13 +572,11 @@
 			<span class="kw">let</span> <span class="ident">mul</span> <span class="op">=</span> <span class="ident">pairing_batch</span>(<span class="kw-2">&amp;</span><span class="ident">vals</span>);
 
 			<span class="kw">if</span> <span class="ident">mul</span> <span class="op">==</span> <span class="ident">Gt::one</span>() {
-				(<span class="ident">U256::one</span>(), <span class="ident">gas_cost</span>)
+				<span class="ident">U256::one</span>()
 			} <span class="kw">else</span> {
-				(<span class="ident">U256::zero</span>(), <span class="ident">gas_cost</span>)
+				<span class="ident">U256::zero</span>()
 			}
 		};
-
-		<span class="ident">handle</span>.<span class="ident">record_cost</span>(<span class="ident">gas_cost</span>)<span class="question-mark">?</span>;
 
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">buf</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">32</span>];
 		<span class="ident">ret_val</span>.<span class="ident">to_big_endian</span>(<span class="kw-2">&amp;mut</span> <span class="ident">buf</span>);

@@ -480,12 +480,6 @@
 <span id="475">475</span>
 <span id="476">476</span>
 <span id="477">477</span>
-<span id="478">478</span>
-<span id="479">479</span>
-<span id="480">480</span>
-<span id="481">481</span>
-<span id="482">482</span>
-<span id="483">483</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -599,7 +593,6 @@
 <span class="kw">impl</span> <span class="ident">Precompile</span> <span class="kw">for</span> <span class="ident">Modexp</span> {
 	<span class="kw">fn</span> <span class="ident">execute</span>(<span class="ident">handle</span>: <span class="kw-2">&amp;mut</span> <span class="kw">impl</span> <span class="ident">PrecompileHandle</span>) -&gt; <span class="ident">PrecompileResult</span> {
 		<span class="kw">let</span> <span class="ident">input</span> <span class="op">=</span> <span class="ident">handle</span>.<span class="ident">input</span>();
-		<span class="kw">let</span> <span class="ident">target_gas</span> <span class="op">=</span> <span class="ident">handle</span>.<span class="ident">gas_limit</span>();
 
 		<span class="kw">if</span> <span class="ident">input</span>.<span class="ident">len</span>() <span class="op">&lt;</span> <span class="number">96</span> {
 			<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">PrecompileFailure::Error</span> {
@@ -649,8 +642,9 @@
 		}
 
 		<span class="comment">// Gas formula allows arbitrary large exp_len when base and modulus are empty, so we need to handle empty base first.</span>
-		<span class="kw">let</span> (<span class="ident">r</span>, <span class="ident">gas_cost</span>) <span class="op">=</span> <span class="kw">if</span> <span class="ident">base_len</span> <span class="op">==</span> <span class="number">0</span> <span class="op">&amp;&amp;</span> <span class="ident">mod_len</span> <span class="op">==</span> <span class="number">0</span> {
-			(<span class="ident">BigUint::zero</span>(), <span class="ident">MIN_GAS_COST</span>)
+		<span class="kw">let</span> <span class="ident">r</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">base_len</span> <span class="op">==</span> <span class="number">0</span> <span class="op">&amp;&amp;</span> <span class="ident">mod_len</span> <span class="op">==</span> <span class="number">0</span> {
+			<span class="ident">handle</span>.<span class="ident">record_cost</span>(<span class="ident">MIN_GAS_COST</span>)<span class="question-mark">?</span>;
+			<span class="ident">BigUint::zero</span>()
 		} <span class="kw">else</span> {
 			<span class="comment">// read the numbers themselves.</span>
 			<span class="kw">let</span> <span class="ident">base_start</span> <span class="op">=</span> <span class="number">96</span>; <span class="comment">// previous 3 32-byte fields</span>
@@ -662,25 +656,19 @@
 			<span class="comment">// do our gas accounting</span>
 			<span class="kw">let</span> <span class="ident">gas_cost</span> <span class="op">=</span>
 				<span class="ident">calculate_gas_cost</span>(<span class="ident">base_len</span> <span class="kw">as</span> <span class="ident">u64</span>, <span class="ident">exp_len</span> <span class="kw">as</span> <span class="ident">u64</span>, <span class="ident">mod_len</span> <span class="kw">as</span> <span class="ident">u64</span>, <span class="kw-2">&amp;</span><span class="ident">exponent</span>);
-			<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">gas_left</span>) <span class="op">=</span> <span class="ident">target_gas</span> {
-				<span class="kw">if</span> <span class="ident">gas_left</span> <span class="op">&lt;</span> <span class="ident">gas_cost</span> {
-					<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">PrecompileFailure::Error</span> {
-						<span class="ident">exit_status</span>: <span class="ident">ExitError::OutOfGas</span>,
-					});
-				}
-			};
+
+			<span class="ident">handle</span>.<span class="ident">record_cost</span>(<span class="ident">gas_cost</span>)<span class="question-mark">?</span>;
+			<span class="kw">let</span> <span class="ident">input</span> <span class="op">=</span> <span class="ident">handle</span>.<span class="ident">input</span>();
 
 			<span class="kw">let</span> <span class="ident">mod_start</span> <span class="op">=</span> <span class="ident">exp_start</span> <span class="op">+</span> <span class="ident">exp_len</span>;
 			<span class="kw">let</span> <span class="ident">modulus</span> <span class="op">=</span> <span class="ident">BigUint::from_bytes_be</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>[<span class="ident">mod_start</span>..<span class="ident">mod_start</span> <span class="op">+</span> <span class="ident">mod_len</span>]);
 
 			<span class="kw">if</span> <span class="ident">modulus</span>.<span class="ident">is_zero</span>() <span class="op">|</span><span class="op">|</span> <span class="ident">modulus</span>.<span class="ident">is_one</span>() {
-				(<span class="ident">BigUint::zero</span>(), <span class="ident">gas_cost</span>)
+				<span class="ident">BigUint::zero</span>()
 			} <span class="kw">else</span> {
-				(<span class="ident">base</span>.<span class="ident">modpow</span>(<span class="kw-2">&amp;</span><span class="ident">exponent</span>, <span class="kw-2">&amp;</span><span class="ident">modulus</span>), <span class="ident">gas_cost</span>)
+				<span class="ident">base</span>.<span class="ident">modpow</span>(<span class="kw-2">&amp;</span><span class="ident">exponent</span>, <span class="kw-2">&amp;</span><span class="ident">modulus</span>)
 			}
 		};
-
-		<span class="ident">handle</span>.<span class="ident">record_cost</span>(<span class="ident">gas_cost</span>)<span class="question-mark">?</span>;
 
 		<span class="comment">// write output to given memory, left padded and same length as the modulus.</span>
 		<span class="kw">let</span> <span class="ident">bytes</span> <span class="op">=</span> <span class="ident">r</span>.<span class="ident">to_bytes_be</span>();
