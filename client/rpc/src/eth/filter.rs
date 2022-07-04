@@ -326,15 +326,11 @@ where
 			current_number = best_number;
 		}
 
-		if current_number > client.info().best_number {
-			current_number = client.info().best_number;
-		}
-
 		let from_number = filter
 			.from_block
 			.and_then(|v| v.to_min_block_num())
 			.map(|s| s.unique_saturated_into())
-			.unwrap_or(client.info().best_number);
+			.unwrap_or(best_number);
 
 		let mut ret: Vec<Log> = Vec::new();
 		let _ = filter_range_logs(
@@ -411,7 +407,7 @@ where
 				.from_block
 				.and_then(|v| v.to_min_block_num())
 				.map(|s| s.unique_saturated_into())
-				.unwrap_or(client.info().best_number);
+				.unwrap_or(best_number);
 
 			let _ = filter_range_logs(
 				client.as_ref(),
