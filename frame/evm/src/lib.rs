@@ -420,7 +420,7 @@ pub mod pallet {
 			match validation_error {
 				InvalidEvmTransactionError::GasLimitTooLow => Error::<T>::GasLimitTooLow,
 				InvalidEvmTransactionError::GasLimitTooHigh => Error::<T>::GasLimitTooHigh,
-				InvalidEvmTransactionError::GasPriceTooLow => Error::<T>::GasLimitTooLow,
+				InvalidEvmTransactionError::GasPriceTooLow => Error::<T>::GasPriceTooLow,
 				InvalidEvmTransactionError::PriorityFeeTooHigh => Error::<T>::GasPriceTooLow,
 				InvalidEvmTransactionError::BalanceTooLow => Error::<T>::BalanceLow,
 				InvalidEvmTransactionError::TxNonceTooLow => Error::<T>::InvalidNonce,
