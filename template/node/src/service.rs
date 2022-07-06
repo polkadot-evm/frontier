@@ -773,10 +773,4 @@ fn spawn_frontier_tasks(
 			fee_history_cache_limit,
 		),
 	);
-
-	task_manager.spawn_essential_handle().spawn(
-		"frontier-schema-cache-task",
-		None,
-		EthTask::ethereum_schema_cache_task(client, frontier_backend),
-	);
 }
