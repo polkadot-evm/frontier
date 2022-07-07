@@ -760,7 +760,7 @@ impl_runtime_apis! {
 				> {
 					#[cfg(feature = "evm-tracing")]
 					{
-						use fp_evm_tracer::tracer::EvmTracer;
+						use fp_evm_tracing_events::tracer::EvmTracer;
 						// Apply the a subset of extrinsics: all the substrate-specific or ethereum
 						// transactions that preceded the requested transaction.
 						for ext in extrinsics.into_iter() {
@@ -796,7 +796,7 @@ impl_runtime_apis! {
 				> {
 					#[cfg(feature = "evm-tracing")]
 					{
-						use moonbeam_evm_tracer::tracer::EvmTracer;
+						use fp_evm_tracing_events::tracer::EvmTracer;
 
 						let mut config = <Runtime as pallet_evm::Config>::config().clone();
 						config.estimate = true;

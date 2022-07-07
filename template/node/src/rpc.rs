@@ -144,6 +144,8 @@ where
 		block_data_cache,
 		#[cfg(feature = "manual-seal")]
 		command_sink,
+		ethapi_debug_targets,
+		ethapi_trace_max_count,
 	} = deps;
 
 	io.merge(System::new(client.clone(), pool.clone(), deny_unsafe).into_rpc())?;
@@ -217,6 +219,20 @@ where
 			// send EngineCommands to the background block authorship task.
 			ManualSeal::new(command_sink).into_rpc(),
 		)?;
+	}
+
+	if ethapi_debug_targets.iter().any(|cmd| matches!(cmd.as_str(), "debug" | "trace")) {
+		if let Some(trace_filter_requester) = rpc_requesters.trace {
+			io.merge(TraceServer::to_delegate(Trace::new(
+				client,
+				trace_filter_requester,
+				ethapi_trace_max_count,
+			)));
+		}
+
+		if let Some(debug_requester) = rpc_requesters.debug {
+			io.merge(DebugServer::to_delegate(Debug::new(debug_requester)));
+		}
 	}
 
 	Ok(io)

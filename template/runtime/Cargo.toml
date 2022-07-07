@@ -124,3 +124,5 @@ runtime-benchmarks = [
 	"pallet-evm/runtime-benchmarks",
 	"pallet-hotfix-sufficients/runtime-benchmarks",
 ]
+
+evm-tracing = ["fp-evm-tracing-events"]

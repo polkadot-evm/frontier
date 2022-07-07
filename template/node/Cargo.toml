@@ -90,3 +90,5 @@ with-rocksdb-weights = ["frontier-template-runtime/with-rocksdb-weights"]
 with-paritydb-weights = ["frontier-template-runtime/with-paritydb-weights"]
 rpc_binary_search_estimate = ["fc-rpc/rpc_binary_search_estimate"]
 runtime-benchmarks = ["frontier-template-runtime/runtime-benchmarks"]
+
+evm-tracing = ["frontier-template-runtime/evm-tracing"]
