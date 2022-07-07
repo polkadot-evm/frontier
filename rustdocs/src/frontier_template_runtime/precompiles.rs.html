@@ -54,6 +54,11 @@
 <span id="49">49</span>
 <span id="50">50</span>
 <span id="51">51</span>
+<span id="52">52</span>
+<span id="53">53</span>
+<span id="54">54</span>
+<span id="55">55</span>
+<span id="56">56</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">pallet_evm</span>::{<span class="ident">Precompile</span>, <span class="ident">PrecompileHandle</span>, <span class="ident">PrecompileResult</span>, <span class="ident">PrecompileSet</span>};
 <span class="kw">use</span> <span class="ident">sp_core::H160</span>;
 <span class="kw">use</span> <span class="ident">sp_std::marker::PhantomData</span>;
@@ -71,11 +76,16 @@
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>() -&gt; <span class="self">Self</span> {
 		<span class="self">Self</span>(<span class="ident">Default::default</span>())
 	}
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">used_addresses</span>() -&gt; <span class="ident">sp_std::vec::Vec</span><span class="op">&lt;</span><span class="ident">H160</span><span class="op">&gt;</span> {
-		<span class="macro">sp_std::vec!</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>, <span class="number">1024</span>, <span class="number">1025</span>]
-			.<span class="ident">into_iter</span>()
-			.<span class="ident">map</span>(<span class="ident">hash</span>)
-			.<span class="ident">collect</span>()
+	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">used_addresses</span>() -&gt; [<span class="ident">H160</span>; <span class="number">7</span>] {
+		[
+			<span class="ident">hash</span>(<span class="number">1</span>),
+			<span class="ident">hash</span>(<span class="number">2</span>),
+			<span class="ident">hash</span>(<span class="number">3</span>),
+			<span class="ident">hash</span>(<span class="number">4</span>),
+			<span class="ident">hash</span>(<span class="number">5</span>),
+			<span class="ident">hash</span>(<span class="number">1024</span>),
+			<span class="ident">hash</span>(<span class="number">1025</span>),
+		]
 	}
 }
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span> <span class="ident">PrecompileSet</span> <span class="kw">for</span> <span class="ident">FrontierPrecompiles</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>
