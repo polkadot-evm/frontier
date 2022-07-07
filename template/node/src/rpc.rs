@@ -221,7 +221,10 @@ where
 		)?;
 	}
 
-	if ethapi_debug_targets.iter().any(|cmd| matches!(cmd.as_str(), "debug" | "trace")) {
+	if ethapi_debug_targets
+		.iter()
+		.any(|cmd| matches!(cmd.as_str(), "debug" | "trace"))
+	{
 		if let Some(trace_filter_requester) = rpc_requesters.trace {
 			io.merge(TraceServer::to_delegate(Trace::new(
 				client,

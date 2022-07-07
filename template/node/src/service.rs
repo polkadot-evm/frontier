@@ -780,37 +780,44 @@ fn spawn_frontier_tasks(
 		EthTask::ethereum_schema_cache_task(client, frontier_backend),
 	);
 
-	if ethapi_debug_targets.iter().any(|cmd| matches!(cmd.as_str(), "debug" | "trace")) {
+	if ethapi_debug_targets
+		.iter()
+		.any(|cmd| matches!(cmd.as_str(), "debug" | "trace"))
+	{
 		let permit_pool = Arc::new(Semaphore::new(ethapi_max_permits as _));
-		let (trace_filter_task, trace_filter_requester) =
-			if ethapi_debug_targets.iter().any(|target| target.as_str() == "trace") {
-				let (trace_filter_task, trace_filter_requester) = CacheTask::create(
-					client.clone(),
-					backend.clone(),
-					Duration::from_secs(ethapi_trace_cache_duration),
-					permit_pool.clone(),
-					overrides.clone(),
-				);
+		let (trace_filter_task, trace_filter_requester) = if ethapi_debug_targets
+			.iter()
+			.any(|target| target.as_str() == "trace")
+		{
+			let (trace_filter_task, trace_filter_requester) = CacheTask::create(
+				client.clone(),
+				backend.clone(),
+				Duration::from_secs(ethapi_trace_cache_duration),
+				permit_pool.clone(),
+				overrides.clone(),
+			);
 
-				(Some(trace_filter_task), Some(trace_filter_requester))
-			} else {
-				(None, None)
-			};
+			(Some(trace_filter_task), Some(trace_filter_requester))
+		} else {
+			(None, None)
+		};
 
-		let (debug_task, debug_requester) =
-			if ethapi_debug_targets.iter().any(|target| target.as_str() == "debug") {
-				let (debug_task, debug_requester) = DebugHandler::task(
-					client.clone(),
-					backend.clone(),
-					frontier_backend.clone(),
-					permit_pool.clone(),
-					overrides.clone(),
-				);
+		let (debug_task, debug_requester) = if ethapi_debug_targets
+			.iter()
+			.any(|target| target.as_str() == "debug")
+		{
+			let (debug_task, debug_requester) = DebugHandler::task(
+				client.clone(),
+				backend.clone(),
+				frontier_backend.clone(),
+				permit_pool.clone(),
+				overrides.clone(),
+			);
 
-				(Some(debug_task), Some(debug_requester))
-			} else {
-				(None, None)
-			};
+			(Some(debug_task), Some(debug_requester))
+		} else {
+			(None, None)
+		};
 
 		// `trace_filter` cache task. Essential.
 		// Proxies rpc requests to it's handler.
@@ -823,11 +830,19 @@ fn spawn_frontier_tasks(
 		// `debug` task if enabled. Essential.
 		// Proxies rpc requests to it's handler.
 		if let Some(debug_task) = debug_task {
-			task_manager.spawn_essential_handle().spawn("ethapi-debug", debug_task);
+			task_manager
+				.spawn_essential_handle()
+				.spawn("ethapi-debug", debug_task);
 		}
 
-		EthRpcRequesters { debug: debug_requester, trace: trace_filter_requester }
+		EthRpcRequesters {
+			debug: debug_requester,
+			trace: trace_filter_requester,
+		}
 	} else {
-		EthRpcRequesters { debug: None, trace: None }
+		EthRpcRequesters {
+			debug: None,
+			trace: None,
+		}
 	}
 }

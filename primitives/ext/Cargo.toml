@@ -21,7 +21,7 @@ default = [ "std" ]
 std = [
 	"codec/std",
 	"ethereum-types/std",
-	"evm-tracing-events/std",
+	"fp-evm-tracing-events/std",
 	"sp-externalities/std",
 	"sp-runtime-interface/std",
 	"sp-std/std",

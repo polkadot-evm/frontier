@@ -50,6 +50,8 @@ frame-system-benchmarking = { version = "4.0.0-dev", git = "https://github.com/p
 # Frontier
 fp-rpc = { path = "../../primitives/rpc", default-features = false }
 fp-self-contained = { path = "../../primitives/self-contained", default-features = false }
+fp-evm-tracing-events = { path = "../../primitives/evm-tracing-events", default-features = false, optional = true }
+fp-debug = { path = "../../primitives/debug", default-features = false }
 # Frontier FRAME
 pallet-base-fee = { path = "../../frame/base-fee", default-features = false }
 pallet-dynamic-fee = { path = "../../frame/dynamic-fee", default-features = false }
