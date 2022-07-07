@@ -15,7 +15,7 @@ targets = ["x86_64-unknown-linux-gnu"]
 evm = { git = "https://github.com/rust-blockchain/evm", rev = "01bcbd2205a212c34451d3b4fabc962793b057d3", default-features = false, features = ["with-codec"] }
 hex = { version = "0.4.3", default-features = false, features = ["alloc"] }
 log = { version = "0.4.17", default-features = false }
-serde = { version = "1.0.137", optional = true, features = ["derive"] }
+serde = { version = "1.0.138", optional = true, features = ["derive"] }
 
 # Parity
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
