@@ -25,19 +25,24 @@ use frame_support::{traits::Get, weights::Weight};
 use sp_core::U256;
 use sp_runtime::Permill;
 
+pub trait BaseFeeThreshold {
+	fn lower() -> Permill;
+	fn ideal() -> Permill;
+	fn upper() -> Permill;
+}
+
 pub use self::pallet::*;
 
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use frame_support::{dispatch::DispatchResult, pallet_prelude::*};
+	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
-	pub trait BaseFeeThreshold {
-		fn lower() -> Permill;
-		fn ideal() -> Permill;
-		fn upper() -> Permill;
-	}
+	#[pallet::pallet]
+	#[pallet::generate_store(pub(super) trait Store)]
+	#[pallet::without_storage_info]
+	pub struct Pallet<T>(PhantomData<T>);
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
@@ -47,11 +52,6 @@ pub mod pallet {
 		type IsActive: Get<bool>;
 		type DefaultBaseFeePerGas: Get<U256>;
 	}
-
-	#[pallet::pallet]
-	#[pallet::generate_store(pub(super) trait Store)]
-	#[pallet::without_storage_info]
-	pub struct Pallet<T>(_);
 
 	#[pallet::genesis_config]
 	pub struct GenesisConfig<T: Config> {
@@ -123,10 +123,10 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event {
-		NewBaseFeePerGas(U256),
+		NewBaseFeePerGas { fee: U256 },
 		BaseFeeOverflow,
-		IsActive(bool),
-		NewElasticity(Permill),
+		IsActive { is_active: bool },
+		NewElasticity { elasticity: Permill },
 	}
 
 	#[pallet::hooks]
@@ -218,7 +218,7 @@ pub mod pallet {
 		pub fn set_base_fee_per_gas(origin: OriginFor<T>, fee: U256) -> DispatchResult {
 			ensure_root(origin)?;
 			let _ = Self::set_base_fee_per_gas_inner(fee);
-			Self::deposit_event(Event::NewBaseFeePerGas(fee));
+			Self::deposit_event(Event::NewBaseFeePerGas { fee });
 			Ok(())
 		}
 
@@ -226,7 +226,7 @@ pub mod pallet {
 		pub fn set_is_active(origin: OriginFor<T>, is_active: bool) -> DispatchResult {
 			ensure_root(origin)?;
 			let _ = Self::set_is_active_inner(is_active);
-			Self::deposit_event(Event::IsActive(is_active));
+			Self::deposit_event(Event::IsActive { is_active });
 			Ok(())
 		}
 
@@ -234,7 +234,7 @@ pub mod pallet {
 		pub fn set_elasticity(origin: OriginFor<T>, elasticity: Permill) -> DispatchResult {
 			ensure_root(origin)?;
 			let _ = Self::set_elasticity_inner(elasticity);
-			Self::deposit_event(Event::NewElasticity(elasticity));
+			Self::deposit_event(Event::NewElasticity { elasticity });
 			Ok(())
 		}
 	}
