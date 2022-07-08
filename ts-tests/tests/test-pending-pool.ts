@@ -21,13 +21,13 @@ describeWithFrontier("Frontier RPC (Pending Pool)", (context) => {
 			GENESIS_ACCOUNT_PRIVATE_KEY
 		);
 
-		const tx_hash = (await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction])).result;
+		const txHash = (await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction])).result;
 
-		const pending_transaction = (await customRequest(context.web3, "eth_getTransactionByHash", [tx_hash])).result;
+		const pendingTransaction = (await customRequest(context.web3, "eth_getTransactionByHash", [txHash])).result;
 		// pending transactions do not know yet to which block they belong to
-		expect(pending_transaction).to.include({
+		expect(pendingTransaction).to.include({
 			blockNumber: null,
-			hash: tx_hash,
+			hash: txHash,
 			publicKey:
 				"0x624f720eae676a04111631c9ca338c11d0f5a80ee42210c6be72983ceb620fbf645a96f951529fa2d70750432d11b7caba5270c4d677255be90b3871c8c58069",
 			r: "0x8e3759de96b00f8a05a95c24fa905963f86a82a0038cca0fde035762fb2d24f7",
@@ -37,9 +37,9 @@ describeWithFrontier("Frontier RPC (Pending Pool)", (context) => {
 
 		await createAndFinalizeBlock(context.web3);
 
-		const processed_transaction = (await customRequest(context.web3, "eth_getTransactionByHash", [tx_hash])).result;
-		expect(processed_transaction).to.include({
-			hash: tx_hash,
+		const processedTransaction = (await customRequest(context.web3, "eth_getTransactionByHash", [txHash])).result;
+		expect(processedTransaction).to.include({
+			hash: txHash,
 			publicKey:
 				"0x624f720eae676a04111631c9ca338c11d0f5a80ee42210c6be72983ceb620fbf645a96f951529fa2d70750432d11b7caba5270c4d677255be90b3871c8c58069",
 			r: "0x8e3759de96b00f8a05a95c24fa905963f86a82a0038cca0fde035762fb2d24f7",
@@ -64,7 +64,7 @@ describeWithFrontier("Frontier RPC (Pending Transaction Count)", (context) => {
 				{
 					from: GENESIS_ACCOUNT,
 					to: TEST_ACCOUNT,
-					value: "0x200", // Must be higher than ExistentialDeposit (500)
+					value: "0x200", // Must be higher than ExistentialDeposit
 					gasPrice: "0x3B9ACA00",
 					gas: "0x100000",
 					nonce: nonce,
@@ -76,32 +76,32 @@ describeWithFrontier("Frontier RPC (Pending Transaction Count)", (context) => {
 		};
 
 		{
-			const pending_transaction_count = (
+			const pendingTransactionCount = (
 				await customRequest(context.web3, "eth_getBlockTransactionCountByNumber", ["pending"])
 			).result;
-			expect(pending_transaction_count).to.eq("0x0");
+			expect(pendingTransactionCount).to.eq("0x0");
 		}
 
 		// block 1 should have 1 transaction
 		await sendTransaction();
 		{
-			const pending_transaction_count = (
+			const pendingTransactionCount = (
 				await customRequest(context.web3, "eth_getBlockTransactionCountByNumber", ["pending"])
 			).result;
-			expect(pending_transaction_count).to.eq("0x1");
+			expect(pendingTransactionCount).to.eq("0x1");
 		}
 
 		await createAndFinalizeBlock(context.web3);
 
 		{
-			const pending_transaction_count = (
+			const pendingTransactionCount = (
 				await customRequest(context.web3, "eth_getBlockTransactionCountByNumber", ["pending"])
 			).result;
-			expect(pending_transaction_count).to.eq("0x0");
-			const processed_transaction_count = (
+			expect(pendingTransactionCount).to.eq("0x0");
+			const processedTransactionCount = (
 				await customRequest(context.web3, "eth_getBlockTransactionCountByNumber", [1])
 			).result;
-			expect(processed_transaction_count).to.eq("0x1");
+			expect(processedTransactionCount).to.eq("0x1");
 		}
 
 		// block 2 should have 5 transactions
@@ -110,23 +110,23 @@ describeWithFrontier("Frontier RPC (Pending Transaction Count)", (context) => {
 		}
 
 		{
-			const pending_transaction_count = (
+			const pendingTransactionCount = (
 				await customRequest(context.web3, "eth_getBlockTransactionCountByNumber", ["pending"])
 			).result;
-			expect(pending_transaction_count).to.eq("0x5");
+			expect(pendingTransactionCount).to.eq("0x5");
 		}
 
 		await createAndFinalizeBlock(context.web3);
 
 		{
-			const pending_transaction_count = (
+			const pendingTransactionCount = (
 				await customRequest(context.web3, "eth_getBlockTransactionCountByNumber", ["pending"])
 			).result;
-			expect(pending_transaction_count).to.eq("0x0");
-			const processed_transaction_count = (
+			expect(pendingTransactionCount).to.eq("0x0");
+			const processedTransactionCount = (
 				await customRequest(context.web3, "eth_getBlockTransactionCountByNumber", [2])
 			).result;
-			expect(processed_transaction_count).to.eq("0x5");
+			expect(processedTransactionCount).to.eq("0x5");
 		}
 	});
 });

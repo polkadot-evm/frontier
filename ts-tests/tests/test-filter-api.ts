@@ -25,7 +25,7 @@ describeWithFrontier("Frontier RPC (EthFilterApi)", (context) => {
 	}
 
 	step("should create a Log filter and return the ID", async function () {
-		let create_filter = await customRequest(context.web3, "eth_newFilter", [
+		let createFilter = await customRequest(context.web3, "eth_newFilter", [
 			{
 				fromBlock: "0x0",
 				toBlock: "latest",
@@ -33,11 +33,11 @@ describeWithFrontier("Frontier RPC (EthFilterApi)", (context) => {
 				topics: ["0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"],
 			},
 		]);
-		expect(create_filter.result).to.be.eq("0x1");
+		expect(createFilter.result).to.be.eq("0x1");
 	});
 
 	step("should increment filter ID", async function () {
-		let create_filter = await customRequest(context.web3, "eth_newFilter", [
+		let createFilter = await customRequest(context.web3, "eth_newFilter", [
 			{
 				fromBlock: "0x1",
 				toBlock: "0x2",
@@ -45,12 +45,12 @@ describeWithFrontier("Frontier RPC (EthFilterApi)", (context) => {
 				topics: ["0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"],
 			},
 		]);
-		expect(create_filter.result).to.be.eq("0x2");
+		expect(createFilter.result).to.be.eq("0x2");
 	});
 
 	step("should create a Block filter and return the ID", async function () {
-		let create_filter = await customRequest(context.web3, "eth_newBlockFilter", []);
-		expect(create_filter.result).to.be.eq("0x3");
+		let createFilter = await customRequest(context.web3, "eth_newBlockFilter", []);
+		expect(createFilter.result).to.be.eq("0x3");
 	});
 
 	step("should return unsupported error for Pending Transaction filter creation", async function () {
@@ -96,7 +96,7 @@ describeWithFrontier("Frontier RPC (EthFilterApi)", (context) => {
 		expect(receipt.logs.length).to.be.eq(1);
 
 		// Create a filter for the created contract.
-		let create_filter = await customRequest(context.web3, "eth_newFilter", [
+		let createFilter = await customRequest(context.web3, "eth_newFilter", [
 			{
 				fromBlock: "0x0",
 				toBlock: "latest",
@@ -104,14 +104,14 @@ describeWithFrontier("Frontier RPC (EthFilterApi)", (context) => {
 				topics: receipt.logs[0].topics,
 			},
 		]);
-		let poll = await customRequest(context.web3, "eth_getFilterChanges", [create_filter.result]);
+		let poll = await customRequest(context.web3, "eth_getFilterChanges", [createFilter.result]);
 
 		expect(poll.result.length).to.be.eq(1);
 		expect(poll.result[0].address.toLowerCase()).to.be.eq(receipt.contractAddress.toLowerCase());
 		expect(poll.result[0].topics).to.be.deep.eq(receipt.logs[0].topics);
 
 		// A subsequent request must be empty.
-		poll = await customRequest(context.web3, "eth_getFilterChanges", [create_filter.result]);
+		poll = await customRequest(context.web3, "eth_getFilterChanges", [createFilter.result]);
 		expect(poll.result.length).to.be.eq(0);
 	});
 
@@ -124,7 +124,7 @@ describeWithFrontier("Frontier RPC (EthFilterApi)", (context) => {
 		expect(receipt.logs.length).to.be.eq(1);
 
 		// Create a filter for the created contract.
-		let create_filter = await customRequest(context.web3, "eth_newFilter", [
+		let createFilter = await customRequest(context.web3, "eth_newFilter", [
 			{
 				fromBlock: "0x0",
 				toBlock: "latest",
@@ -132,14 +132,14 @@ describeWithFrontier("Frontier RPC (EthFilterApi)", (context) => {
 				topics: receipt.logs[0].topics,
 			},
 		]);
-		let poll = await customRequest(context.web3, "eth_getFilterLogs", [create_filter.result]);
+		let poll = await customRequest(context.web3, "eth_getFilterLogs", [createFilter.result]);
 
 		expect(poll.result.length).to.be.eq(1);
 		expect(poll.result[0].address.toLowerCase()).to.be.eq(receipt.contractAddress.toLowerCase());
 		expect(poll.result[0].topics).to.be.deep.eq(receipt.logs[0].topics);
 
 		// A subsequent request must return the same response.
-		poll = await customRequest(context.web3, "eth_getFilterLogs", [create_filter.result]);
+		poll = await customRequest(context.web3, "eth_getFilterLogs", [createFilter.result]);
 
 		expect(poll.result.length).to.be.eq(1);
 		expect(poll.result[0].address.toLowerCase()).to.be.eq(receipt.contractAddress.toLowerCase());
@@ -147,15 +147,15 @@ describeWithFrontier("Frontier RPC (EthFilterApi)", (context) => {
 	});
 
 	step("should uninstall created filters.", async function () {
-		let create_filter = await customRequest(context.web3, "eth_newBlockFilter", []);
-		let filter_id = create_filter.result;
+		let createFilter = await customRequest(context.web3, "eth_newBlockFilter", []);
+		let filterId = createFilter.result;
 
 		// Should return true when removed from the filter pool.
-		let uninstall = await customRequest(context.web3, "eth_uninstallFilter", [filter_id]);
+		let uninstall = await customRequest(context.web3, "eth_uninstallFilter", [filterId]);
 		expect(uninstall.result).to.be.eq(true);
 
 		// Should return error if does not exist.
-		let r = await customRequest(context.web3, "eth_uninstallFilter", [filter_id]);
+		let r = await customRequest(context.web3, "eth_uninstallFilter", [filterId]);
 		expect(r.error).to.include({
 			message: "Filter id 6 does not exist.",
 		});
@@ -163,25 +163,25 @@ describeWithFrontier("Frontier RPC (EthFilterApi)", (context) => {
 
 	step("should drain the filter pool.", async function () {
 		this.timeout(15000);
-		const block_lifespan_threshold = 100;
+		const blockLifespanThreshold = 100;
 
-		let create_filter = await customRequest(context.web3, "eth_newBlockFilter", []);
-		let filter_id = create_filter.result;
+		let createFilter = await customRequest(context.web3, "eth_newBlockFilter", []);
+		let filterId = createFilter.result;
 
-		for (let i = 0; i <= block_lifespan_threshold; i++) {
+		for (let i = 0; i <= blockLifespanThreshold; i++) {
 			await createAndFinalizeBlockNowait(context.web3);
 		}
 
-		let r = await customRequest(context.web3, "eth_getFilterChanges", [filter_id]);
+		let r = await customRequest(context.web3, "eth_getFilterChanges", [filterId]);
 		expect(r.error).to.include({
 			message: "Filter id 6 does not exist.",
 		});
 	});
 
 	step("should have a filter pool max size of 500.", async function () {
-		const max_filter_pool = 500;
+		const maxFilterPool = 500;
 
-		for (let i = 0; i < max_filter_pool; i++) {
+		for (let i = 0; i < maxFilterPool; i++) {
 			await customRequest(context.web3, "eth_newBlockFilter", []);
 		}
 

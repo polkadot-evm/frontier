@@ -39,7 +39,6 @@ impl Precompile for Blake2F {
 		const BLAKE2_F_ARG_LEN: usize = 213;
 
 		let input = handle.input();
-		let target_gas = handle.gas_limit();
 
 		if input.len() != BLAKE2_F_ARG_LEN {
 			return Err(PrecompileFailure::Error {
@@ -54,15 +53,8 @@ impl Precompile for Blake2F {
 		let rounds: u32 = u32::from_be_bytes(rounds_buf);
 
 		let gas_cost: u64 = (rounds as u64) * Blake2F::GAS_COST_PER_ROUND;
-		if let Some(gas_left) = target_gas {
-			if gas_left < gas_cost {
-				return Err(PrecompileFailure::Error {
-					exit_status: ExitError::OutOfGas,
-				});
-			}
-		}
-
 		handle.record_cost(gas_cost)?;
+
 		let input = handle.input();
 
 		// we use from_le_bytes below to effectively swap byte order to LE if architecture is BE

@@ -9,18 +9,18 @@ import { describeWithFrontier, createAndFinalizeBlock, customRequest } from "./u
 // If the variation in the estimate is less than 10%,
 // then the estimate is considered sufficiently accurate.
 const ESTIMATION_VARIANCE = 10;
-function binary_search(one_off_estimation) {
+function binarySearch(oneOffEstimation) {
 	let highest = 4_294_967_295; // max(u32)
 	let lowest = 21000;
-	let mid = Math.min(one_off_estimation * 3, (highest + lowest) / 2);
-	let previous_highest = highest;
+	let mid = Math.min(oneOffEstimation * 3, (highest + lowest) / 2);
+	let previousHighest = highest;
 	while (true) {
-		if (mid >= one_off_estimation) {
+		if (mid >= oneOffEstimation) {
 			highest = mid;
-			if (((previous_highest - highest) * ESTIMATION_VARIANCE) / previous_highest < 1) {
+			if (((previousHighest - highest) * ESTIMATION_VARIANCE) / previousHighest < 1) {
 				break;
 			}
-			previous_highest = highest;
+			previousHighest = highest;
 		} else {
 			lowest = mid;
 		}
@@ -29,8 +29,8 @@ function binary_search(one_off_estimation) {
 	return highest;
 }
 
-function estimation_variance(binary_search_estimation, one_off_estimation) {
-	return ((binary_search_estimation - one_off_estimation) * ESTIMATION_VARIANCE) / binary_search_estimation;
+function estimationVariance(binarySearchEstimation, oneOffEstimation) {
+	return ((binarySearchEstimation - oneOffEstimation) * ESTIMATION_VARIANCE) / binarySearchEstimation;
 }
 
 describeWithFrontier("Frontier RPC (Gas)", (context) => {
@@ -44,16 +44,16 @@ describeWithFrontier("Frontier RPC (Gas)", (context) => {
 
 	it("eth_estimateGas for contract creation", async function () {
 		// The value returned as an estimation by the evm with estimate mode ON.
-		let one_off_estimation = 196657;
-		let binary_search_estimation = binary_search(one_off_estimation);
+		let oneOffEstimation = 196657;
+		let binarySearchEstimation = binarySearch(oneOffEstimation);
 		// Sanity check expect a variance of 10%.
-		expect(estimation_variance(binary_search_estimation, one_off_estimation)).to.be.lessThan(1);
+		expect(estimationVariance(binarySearchEstimation, oneOffEstimation)).to.be.lessThan(1);
 		expect(
 			await context.web3.eth.estimateGas({
 				from: GENESIS_ACCOUNT,
 				data: Test.bytecode,
 			})
-		).to.equal(binary_search_estimation);
+		).to.equal(binarySearchEstimation);
 	});
 
 	it.skip("block gas limit over 5M", async function () {
@@ -79,38 +79,38 @@ describeWithFrontier("Frontier RPC (Gas)", (context) => {
 
 	it("eth_estimateGas for contract call", async function () {
 		// The value returned as an estimation by the evm with estimate mode ON.
-		let one_off_estimation = 21204;
-		let binary_search_estimation = binary_search(one_off_estimation);
+		let oneOffEstimation = 21204;
+		let binarySearchEstimation = binarySearch(oneOffEstimation);
 		// Sanity check expect a variance of 10%.
-		expect(estimation_variance(binary_search_estimation, one_off_estimation)).to.be.lessThan(1);
+		expect(estimationVariance(binarySearchEstimation, oneOffEstimation)).to.be.lessThan(1);
 		const contract = new context.web3.eth.Contract(TEST_CONTRACT_ABI, FIRST_CONTRACT_ADDRESS, {
 			from: GENESIS_ACCOUNT,
 			gasPrice: "0x3B9ACA00",
 		});
 
-		expect(await contract.methods.multiply(3).estimateGas()).to.equal(binary_search_estimation);
+		expect(await contract.methods.multiply(3).estimateGas()).to.equal(binarySearchEstimation);
 	});
 
 	it("eth_estimateGas without gas_limit should pass", async function () {
 		// The value returned as an estimation by the evm with estimate mode ON.
-		let one_off_estimation = 21204;
-		let binary_search_estimation = binary_search(one_off_estimation);
+		let oneOffEstimation = 21204;
+		let binarySearchEstimation = binarySearch(oneOffEstimation);
 		// Sanity check expect a variance of 10%.
-		expect(estimation_variance(binary_search_estimation, one_off_estimation)).to.be.lessThan(1);
+		expect(estimationVariance(binarySearchEstimation, oneOffEstimation)).to.be.lessThan(1);
 		const contract = new context.web3.eth.Contract(TEST_CONTRACT_ABI, FIRST_CONTRACT_ADDRESS, {
 			from: GENESIS_ACCOUNT,
 		});
 
-		expect(await contract.methods.multiply(3).estimateGas()).to.equal(binary_search_estimation);
+		expect(await contract.methods.multiply(3).estimateGas()).to.equal(binarySearchEstimation);
 	});
 
 	it("eth_estimateGas should handle AccessList alias", async function () {
 		// The value returned as an estimation by the evm with estimate mode ON.
 		// 4300 == 1900 for one key and 2400 for one storage.
-		let one_off_estimation = 196657 + 4300;
-		let binary_search_estimation = binary_search(one_off_estimation);
+		let oneOffEstimation = 196657 + 4300;
+		let binarySearchEstimation = binarySearch(oneOffEstimation);
 		// Sanity check expect a variance of 10%.
-		expect(estimation_variance(binary_search_estimation, one_off_estimation)).to.be.lessThan(1);
+		expect(estimationVariance(binarySearchEstimation, oneOffEstimation)).to.be.lessThan(1);
 		let result = (
 			await customRequest(context.web3, "eth_estimateGas", [
 				{
@@ -125,7 +125,7 @@ describeWithFrontier("Frontier RPC (Gas)", (context) => {
 				},
 			])
 		).result;
-		expect(result).to.equal(context.web3.utils.numberToHex(binary_search_estimation));
+		expect(result).to.equal(context.web3.utils.numberToHex(binarySearchEstimation));
 	});
 
 	it("eth_estimateGas 0x0 gasPrice is equivalent to not setting one", async function () {

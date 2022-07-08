@@ -25,6 +25,8 @@ jobs:
         override: true
     - name: Run tests
       run: cargo test --locked --verbose --all
+    - name: Ensure benchmarking compiles
+      run: cargo check --release --features=runtime-benchmarks
 
   integration:
     name: 'Run integration tests'

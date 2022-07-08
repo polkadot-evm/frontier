@@ -24,7 +24,7 @@ use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
 	traits::{
 		AccountIdLookup, BlakeTwo256, Block as BlockT, DispatchInfoOf, Dispatchable,
-		IdentifyAccount, NumberFor, PostDispatchInfoOf, Verify,
+		IdentifyAccount, NumberFor, PostDispatchInfoOf, UniqueSaturatedInto, Verify,
 	},
 	transaction_validity::{TransactionSource, TransactionValidity, TransactionValidityError},
 	ApplyExtrinsicResult, MultiSignature,
@@ -503,9 +503,11 @@ impl fp_self_contained::SelfContainedCall for Call {
 	fn pre_dispatch_self_contained(
 		&self,
 		info: &Self::SignedInfo,
+		dispatch_info: &DispatchInfoOf<Call>,
+		len: usize,
 	) -> Option<Result<(), TransactionValidityError>> {
 		match self {
-			Call::Ethereum(call) => call.pre_dispatch_self_contained(info),
+			Call::Ethereum(call) => call.pre_dispatch_self_contained(info, dispatch_info, len),
 			_ => None,
 		}
 	}
@@ -663,7 +665,7 @@ impl_runtime_apis! {
 				to,
 				data,
 				value,
-				gas_limit.low_u64(),
+				gas_limit.unique_saturated_into(),
 				max_fee_per_gas,
 				max_priority_fee_per_gas,
 				nonce,
@@ -700,7 +702,7 @@ impl_runtime_apis! {
 				from,
 				data,
 				value,
-				gas_limit.low_u64(),
+				gas_limit.unique_saturated_into(),
 				max_fee_per_gas,
 				max_priority_fee_per_gas,
 				nonce,
