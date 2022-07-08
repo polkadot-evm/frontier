@@ -716,6 +716,8 @@
 <span id="711">711</span>
 <span id="712">712</span>
 <span id="713">713</span>
+<span id="714">714</span>
+<span id="715">715</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -898,11 +900,13 @@
 				<span class="ident">log</span>.<span class="ident">data</span>.<span class="ident">len</span>(),
 				<span class="ident">log</span>.<span class="ident">data</span>
 			);
-			<span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::deposit_event</span>(<span class="ident">Event</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::Log</span>(<span class="ident">Log</span> {
-				<span class="ident">address</span>: <span class="ident">log</span>.<span class="ident">address</span>,
-				<span class="ident">topics</span>: <span class="ident">log</span>.<span class="ident">topics</span>.<span class="ident">clone</span>(),
-				<span class="ident">data</span>: <span class="ident">log</span>.<span class="ident">data</span>.<span class="ident">clone</span>(),
-			}));
+			<span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::deposit_event</span>(<span class="ident">Event</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::Log</span> {
+				<span class="ident">log</span>: <span class="ident">Log</span> {
+					<span class="ident">address</span>: <span class="ident">log</span>.<span class="ident">address</span>,
+					<span class="ident">topics</span>: <span class="ident">log</span>.<span class="ident">topics</span>.<span class="ident">clone</span>(),
+					<span class="ident">data</span>: <span class="ident">log</span>.<span class="ident">data</span>.<span class="ident">clone</span>(),
+				},
+			});
 		}
 
 		<span class="prelude-val">Ok</span>(<span class="ident">ExecutionInfo</span> {

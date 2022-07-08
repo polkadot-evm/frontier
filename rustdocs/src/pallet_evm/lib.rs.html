@@ -859,6 +859,10 @@
 <span id="854">854</span>
 <span id="855">855</span>
 <span id="856">856</span>
+<span id="857">857</span>
+<span id="858">858</span>
+<span id="859">859</span>
+<span id="860">860</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -965,7 +969,7 @@
 	<span class="attribute">#[<span class="ident">pallet::pallet</span>]</span>
 	<span class="attribute">#[<span class="ident">pallet::generate_store</span>(<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">trait</span> <span class="ident">Store</span>)]</span>
 	<span class="attribute">#[<span class="ident">pallet::without_storage_info</span>]</span>
-	<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>(<span class="kw">_</span>);
+	<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>(<span class="ident">PhantomData</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>);
 
 	<span class="attribute">#[<span class="ident">pallet::config</span>]</span>
 	<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Config</span>: <span class="ident">frame_system::Config</span> <span class="op">+</span> <span class="ident">pallet_timestamp::Config</span> {
@@ -1082,10 +1086,10 @@
 
 			<span class="kw">match</span> <span class="ident">info</span>.<span class="ident">exit_reason</span> {
 				<span class="ident">ExitReason::Succeed</span>(<span class="kw">_</span>) =&gt; {
-					<span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::deposit_event</span>(<span class="ident">Event</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::Executed</span>(<span class="ident">target</span>));
+					<span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::deposit_event</span>(<span class="ident">Event</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::Executed</span> { <span class="ident">address</span>: <span class="ident">target</span> });
 				}
 				<span class="kw">_</span> =&gt; {
-					<span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::deposit_event</span>(<span class="ident">Event</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::ExecutedFailed</span>(<span class="ident">target</span>));
+					<span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::deposit_event</span>(<span class="ident">Event</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::ExecutedFailed</span> { <span class="ident">address</span>: <span class="ident">target</span> });
 				}
 			};
 
@@ -1146,14 +1150,18 @@
 					<span class="ident">value</span>: <span class="ident">create_address</span>,
 					..
 				} =&gt; {
-					<span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::deposit_event</span>(<span class="ident">Event</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::Created</span>(<span class="ident">create_address</span>));
+					<span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::deposit_event</span>(<span class="ident">Event</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::Created</span> {
+						<span class="ident">address</span>: <span class="ident">create_address</span>,
+					});
 				}
 				<span class="ident">CreateInfo</span> {
 					<span class="ident">exit_reason</span>: <span class="kw">_</span>,
 					<span class="ident">value</span>: <span class="ident">create_address</span>,
 					..
 				} =&gt; {
-					<span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::deposit_event</span>(<span class="ident">Event</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::CreatedFailed</span>(<span class="ident">create_address</span>));
+					<span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::deposit_event</span>(<span class="ident">Event</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::CreatedFailed</span> {
+						<span class="ident">address</span>: <span class="ident">create_address</span>,
+					});
 				}
 			}
 
@@ -1215,14 +1223,18 @@
 					<span class="ident">value</span>: <span class="ident">create_address</span>,
 					..
 				} =&gt; {
-					<span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::deposit_event</span>(<span class="ident">Event</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::Created</span>(<span class="ident">create_address</span>));
+					<span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::deposit_event</span>(<span class="ident">Event</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::Created</span> {
+						<span class="ident">address</span>: <span class="ident">create_address</span>,
+					});
 				}
 				<span class="ident">CreateInfo</span> {
 					<span class="ident">exit_reason</span>: <span class="kw">_</span>,
 					<span class="ident">value</span>: <span class="ident">create_address</span>,
 					..
 				} =&gt; {
-					<span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::deposit_event</span>(<span class="ident">Event</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::CreatedFailed</span>(<span class="ident">create_address</span>));
+					<span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::deposit_event</span>(<span class="ident">Event</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::CreatedFailed</span> {
+						<span class="ident">address</span>: <span class="ident">create_address</span>,
+					});
 				}
 			}
 
@@ -1239,19 +1251,15 @@
 	<span class="attribute">#[<span class="ident">pallet::generate_deposit</span>(<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn</span> <span class="ident">deposit_event</span>)]</span>
 	<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> {
 		<span class="doccomment">/// Ethereum events from contracts.</span>
-		<span class="ident">Log</span>(<span class="ident">Log</span>),
-		<span class="doccomment">/// A contract has been created at given \[address\].</span>
-		<span class="ident">Created</span>(<span class="ident">H160</span>),
-		<span class="doccomment">/// A \[contract\] was attempted to be created, but the execution failed.</span>
-		<span class="ident">CreatedFailed</span>(<span class="ident">H160</span>),
-		<span class="doccomment">/// A \[contract\] has been executed successfully with states applied.</span>
-		<span class="ident">Executed</span>(<span class="ident">H160</span>),
-		<span class="doccomment">/// A \[contract\] has been executed with errors. States are reverted with only gas fees applied.</span>
-		<span class="ident">ExecutedFailed</span>(<span class="ident">H160</span>),
-		<span class="doccomment">/// A deposit has been made at a given address. \[sender, address, value\]</span>
-		<span class="ident">BalanceDeposit</span>(<span class="ident">T::AccountId</span>, <span class="ident">H160</span>, <span class="ident">U256</span>),
-		<span class="doccomment">/// A withdrawal has been made from a given address. \[sender, address, value\]</span>
-		<span class="ident">BalanceWithdraw</span>(<span class="ident">T::AccountId</span>, <span class="ident">H160</span>, <span class="ident">U256</span>),
+		<span class="ident">Log</span> { <span class="ident">log</span>: <span class="ident">Log</span> },
+		<span class="doccomment">/// A contract has been created at given address.</span>
+		<span class="ident">Created</span> { <span class="ident">address</span>: <span class="ident">H160</span> },
+		<span class="doccomment">/// A contract was attempted to be created, but the execution failed.</span>
+		<span class="ident">CreatedFailed</span> { <span class="ident">address</span>: <span class="ident">H160</span> },
+		<span class="doccomment">/// A contract has been executed successfully with states applied.</span>
+		<span class="ident">Executed</span> { <span class="ident">address</span>: <span class="ident">H160</span> },
+		<span class="doccomment">/// A contract has been executed with errors. States are reverted with only gas fees applied.</span>
+		<span class="ident">ExecutedFailed</span> { <span class="ident">address</span>: <span class="ident">H160</span> },
 	}
 
 	<span class="attribute">#[<span class="ident">pallet::error</span>]</span>

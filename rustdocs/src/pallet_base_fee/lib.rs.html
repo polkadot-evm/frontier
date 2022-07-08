@@ -292,19 +292,24 @@
 <span class="kw">use</span> <span class="ident">sp_core::U256</span>;
 <span class="kw">use</span> <span class="ident">sp_runtime::Permill</span>;
 
+<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">BaseFeeThreshold</span> {
+	<span class="kw">fn</span> <span class="ident">lower</span>() -&gt; <span class="ident">Permill</span>;
+	<span class="kw">fn</span> <span class="ident">ideal</span>() -&gt; <span class="ident">Permill</span>;
+	<span class="kw">fn</span> <span class="ident">upper</span>() -&gt; <span class="ident">Permill</span>;
+}
+
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="self">self</span>::pallet</span>::<span class="kw-2">*</span>;
 
 <span class="attribute">#[<span class="ident">frame_support::pallet</span>]</span>
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">pallet</span> {
 	<span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
-	<span class="kw">use</span> <span class="ident">frame_support</span>::{<span class="ident">dispatch::DispatchResult</span>, <span class="ident">pallet_prelude</span>::<span class="kw-2">*</span>};
+	<span class="kw">use</span> <span class="ident">frame_support::pallet_prelude</span>::<span class="kw-2">*</span>;
 	<span class="kw">use</span> <span class="ident">frame_system::pallet_prelude</span>::<span class="kw-2">*</span>;
 
-	<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">BaseFeeThreshold</span> {
-		<span class="kw">fn</span> <span class="ident">lower</span>() -&gt; <span class="ident">Permill</span>;
-		<span class="kw">fn</span> <span class="ident">ideal</span>() -&gt; <span class="ident">Permill</span>;
-		<span class="kw">fn</span> <span class="ident">upper</span>() -&gt; <span class="ident">Permill</span>;
-	}
+	<span class="attribute">#[<span class="ident">pallet::pallet</span>]</span>
+	<span class="attribute">#[<span class="ident">pallet::generate_store</span>(<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">trait</span> <span class="ident">Store</span>)]</span>
+	<span class="attribute">#[<span class="ident">pallet::without_storage_info</span>]</span>
+	<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>(<span class="ident">PhantomData</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>);
 
 	<span class="attribute">#[<span class="ident">pallet::config</span>]</span>
 	<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Config</span>: <span class="ident">frame_system::Config</span> {
@@ -314,11 +319,6 @@
 		<span class="kw">type</span> <span class="ident">IsActive</span>: <span class="ident">Get</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span>;
 		<span class="kw">type</span> <span class="ident">DefaultBaseFeePerGas</span>: <span class="ident">Get</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>;
 	}
-
-	<span class="attribute">#[<span class="ident">pallet::pallet</span>]</span>
-	<span class="attribute">#[<span class="ident">pallet::generate_store</span>(<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">trait</span> <span class="ident">Store</span>)]</span>
-	<span class="attribute">#[<span class="ident">pallet::without_storage_info</span>]</span>
-	<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>(<span class="kw">_</span>);
 
 	<span class="attribute">#[<span class="ident">pallet::genesis_config</span>]</span>
 	<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">GenesisConfig</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> {
@@ -390,10 +390,10 @@
 	<span class="attribute">#[<span class="ident">pallet::event</span>]</span>
 	<span class="attribute">#[<span class="ident">pallet::generate_deposit</span>(<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn</span> <span class="ident">deposit_event</span>)]</span>
 	<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Event</span> {
-		<span class="ident">NewBaseFeePerGas</span>(<span class="ident">U256</span>),
+		<span class="ident">NewBaseFeePerGas</span> { <span class="ident">fee</span>: <span class="ident">U256</span> },
 		<span class="ident">BaseFeeOverflow</span>,
-		<span class="ident">IsActive</span>(<span class="ident">bool</span>),
-		<span class="ident">NewElasticity</span>(<span class="ident">Permill</span>),
+		<span class="ident">IsActive</span> { <span class="ident">is_active</span>: <span class="ident">bool</span> },
+		<span class="ident">NewElasticity</span> { <span class="ident">elasticity</span>: <span class="ident">Permill</span> },
 	}
 
 	<span class="attribute">#[<span class="ident">pallet::hooks</span>]</span>
@@ -485,7 +485,7 @@
 		<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_base_fee_per_gas</span>(<span class="ident">origin</span>: <span class="ident">OriginFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">fee</span>: <span class="ident">U256</span>) -&gt; <span class="ident">DispatchResult</span> {
 			<span class="ident">ensure_root</span>(<span class="ident">origin</span>)<span class="question-mark">?</span>;
 			<span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::set_base_fee_per_gas_inner</span>(<span class="ident">fee</span>);
-			<span class="ident"><span class="self">Self</span>::deposit_event</span>(<span class="ident">Event::NewBaseFeePerGas</span>(<span class="ident">fee</span>));
+			<span class="ident"><span class="self">Self</span>::deposit_event</span>(<span class="ident">Event::NewBaseFeePerGas</span> { <span class="ident">fee</span> });
 			<span class="prelude-val">Ok</span>(())
 		}
 
@@ -493,7 +493,7 @@
 		<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_is_active</span>(<span class="ident">origin</span>: <span class="ident">OriginFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">is_active</span>: <span class="ident">bool</span>) -&gt; <span class="ident">DispatchResult</span> {
 			<span class="ident">ensure_root</span>(<span class="ident">origin</span>)<span class="question-mark">?</span>;
 			<span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::set_is_active_inner</span>(<span class="ident">is_active</span>);
-			<span class="ident"><span class="self">Self</span>::deposit_event</span>(<span class="ident">Event::IsActive</span>(<span class="ident">is_active</span>));
+			<span class="ident"><span class="self">Self</span>::deposit_event</span>(<span class="ident">Event::IsActive</span> { <span class="ident">is_active</span> });
 			<span class="prelude-val">Ok</span>(())
 		}
 
@@ -501,7 +501,7 @@
 		<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_elasticity</span>(<span class="ident">origin</span>: <span class="ident">OriginFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">elasticity</span>: <span class="ident">Permill</span>) -&gt; <span class="ident">DispatchResult</span> {
 			<span class="ident">ensure_root</span>(<span class="ident">origin</span>)<span class="question-mark">?</span>;
 			<span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::set_elasticity_inner</span>(<span class="ident">elasticity</span>);
-			<span class="ident"><span class="self">Self</span>::deposit_event</span>(<span class="ident">Event::NewElasticity</span>(<span class="ident">elasticity</span>));
+			<span class="ident"><span class="self">Self</span>::deposit_event</span>(<span class="ident">Event::NewElasticity</span> { <span class="ident">elasticity</span> });
 			<span class="prelude-val">Ok</span>(())
 		}
 	}
