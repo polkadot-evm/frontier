@@ -71,7 +71,7 @@ fp-evm = { path = "../../primitives/evm" }
 fp-rpc = { path = "../../primitives/rpc" }
 fp-storage = { path = "../../primitives/storage" }
 
-frontier-template-runtime = { path = "../runtime", default-features = false, features = ["std"] }
+frontier-template-runtime = { path = "../runtime", default-features = false, features = ["std", "with-rocksdb-weights"] }
 
 [build-dependencies]
 substrate-build-script-utils = { version = "3.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
