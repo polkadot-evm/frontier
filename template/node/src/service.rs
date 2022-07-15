@@ -743,7 +743,7 @@ fn spawn_frontier_tasks(
 			Duration::new(6, 0),
 			client.clone(),
 			backend,
-			frontier_backend.clone(),
+			frontier_backend,
 			3,
 			0,
 			SyncStrategy::Normal,
@@ -767,16 +767,10 @@ fn spawn_frontier_tasks(
 		"frontier-fee-history",
 		None,
 		EthTask::fee_history_task(
-			client.clone(),
+			client,
 			overrides,
 			fee_history_cache,
 			fee_history_cache_limit,
 		),
-	);
-
-	task_manager.spawn_essential_handle().spawn(
-		"frontier-schema-cache-task",
-		None,
-		EthTask::ethereum_schema_cache_task(client, frontier_backend),
 	);
 }
