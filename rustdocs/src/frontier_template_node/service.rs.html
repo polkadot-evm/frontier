@@ -779,6 +779,12 @@
 <span id="774">774</span>
 <span id="775">775</span>
 <span id="776">776</span>
+<span id="777">777</span>
+<span id="778">778</span>
+<span id="779">779</span>
+<span id="780">780</span>
+<span id="781">781</span>
+<span id="782">782</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Service and ServiceFactory implementation. Specialized wrapper over substrate service.</span>
 
 <span class="kw">use</span> <span class="ident">std</span>::{
@@ -1524,7 +1530,7 @@
 			<span class="ident">Duration::new</span>(<span class="number">6</span>, <span class="number">0</span>),
 			<span class="ident">client</span>.<span class="ident">clone</span>(),
 			<span class="ident">backend</span>,
-			<span class="ident">frontier_backend</span>,
+			<span class="ident">frontier_backend</span>.<span class="ident">clone</span>(),
 			<span class="number">3</span>,
 			<span class="number">0</span>,
 			<span class="ident">SyncStrategy::Normal</span>,
@@ -1548,11 +1554,17 @@
 		<span class="string">&quot;frontier-fee-history&quot;</span>,
 		<span class="prelude-val">None</span>,
 		<span class="ident">EthTask::fee_history_task</span>(
-			<span class="ident">client</span>,
+			<span class="ident">client</span>.<span class="ident">clone</span>(),
 			<span class="ident">overrides</span>,
 			<span class="ident">fee_history_cache</span>,
 			<span class="ident">fee_history_cache_limit</span>,
 		),
+	);
+
+	<span class="ident">task_manager</span>.<span class="ident">spawn_essential_handle</span>().<span class="ident">spawn</span>(
+		<span class="string">&quot;frontier-schema-cache-task&quot;</span>,
+		<span class="prelude-val">None</span>,
+		<span class="ident">EthTask::ethereum_schema_cache_task</span>(<span class="ident">client</span>, <span class="ident">frontier_backend</span>),
 	);
 }
 </code></pre></div>
