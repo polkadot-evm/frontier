@@ -19,36 +19,50 @@
 
 extern crate alloc;
 
+#[cfg(test)]
+mod mock;
+
+#[cfg(test)]
+mod tests;
+
 use core::marker::PhantomData;
 use fp_evm::{
 	ExitError, ExitSucceed, Precompile, PrecompileFailure, PrecompileHandle, PrecompileOutput,
 	PrecompileResult,
 };
 use frame_support::{
-	codec::Decode,
+	codec::{Decode, DecodeLimit as _},
 	dispatch::{Dispatchable, GetDispatchInfo, PostDispatchInfo},
+	traits::{ConstU32, Get},
 	weights::{DispatchClass, Pays},
 };
 use pallet_evm::{AddressMapping, GasWeightMapping};
 
-pub struct Dispatch<T> {
-	_marker: PhantomData<T>,
+// `DecodeLimit` specifies the max depth a call can use when decoding, as unbounded depth
+// can be used to overflow the stack.
+// Default value is 8, which is the same as in XCM call decoding.
+pub struct Dispatch<T, DecodeLimit = ConstU32<8>> {
+	_marker: PhantomData<(T, DecodeLimit)>,
 }
 
-impl<T> Precompile for Dispatch<T>
+impl<T, DecodeLimit> Precompile for Dispatch<T, DecodeLimit>
 where
 	T: pallet_evm::Config,
 	T::Call: Dispatchable<PostInfo = PostDispatchInfo> + GetDispatchInfo + Decode,
 	<T::Call as Dispatchable>::Origin: From<Option<T::AccountId>>,
+	DecodeLimit: Get<u32>,
 {
 	fn execute(handle: &mut impl PrecompileHandle) -> PrecompileResult {
 		let input = handle.input();
 		let target_gas = handle.gas_limit();
 		let context = handle.context();
 
-		let call = T::Call::decode(&mut &*input).map_err(|_| PrecompileFailure::Error {
-			exit_status: ExitError::Other("decode failed".into()),
-		})?;
+		let call =
+			T::Call::decode_with_depth_limit(DecodeLimit::get(), &mut &*input).map_err(|_| {
+				PrecompileFailure::Error {
+					exit_status: ExitError::Other("decode failed".into()),
+				}
+			})?;
 		let info = call.get_dispatch_info();
 
 		let valid_call = info.pays_fee == Pays::Yes && info.class == DispatchClass::Normal;
