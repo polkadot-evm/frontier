@@ -1,7 +1,4 @@
-use frontier_template_runtime::{
-	AccountId, AuraConfig, BalancesConfig, EVMConfig, EthereumConfig, GenesisConfig, GrandpaConfig,
-	Signature, SudoConfig, SystemConfig, WASM_BINARY,
-};
+use frontier_template_runtime::{AccountId, GenesisConfig, Signature, WASM_BINARY};
 use sc_service::ChainType;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::{sr25519, Pair, Public, H160, U256};
@@ -136,6 +133,9 @@ fn testnet_genesis(
 	endowed_accounts: Vec<AccountId>,
 	_enable_println: bool,
 ) -> GenesisConfig {
+	use frontier_template_runtime::{
+		AuraConfig, BalancesConfig, EVMConfig, GrandpaConfig, SudoConfig, SystemConfig,
+	};
 	GenesisConfig {
 		system: SystemConfig {
 			// Add Wasm runtime to storage.
@@ -149,6 +149,7 @@ fn testnet_genesis(
 				.map(|k| (k, 1 << 60))
 				.collect(),
 		},
+		transaction_payment: Default::default(),
 		aura: AuraConfig {
 			authorities: initial_authorities.iter().map(|x| (x.0.clone())).collect(),
 		},
@@ -196,7 +197,7 @@ fn testnet_genesis(
 				map
 			},
 		},
-		ethereum: EthereumConfig {},
+		ethereum: Default::default(),
 		dynamic_fee: Default::default(),
 		base_fee: Default::default(),
 	}
