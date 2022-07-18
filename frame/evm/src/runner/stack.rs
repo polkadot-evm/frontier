@@ -650,6 +650,7 @@ where
 	}
 
 	fn reset_storage(&mut self, address: H160) {
+		#[allow(deprecated)]
 		let _ = <AccountStorages<T>>::remove_prefix(address, None);
 	}
 
