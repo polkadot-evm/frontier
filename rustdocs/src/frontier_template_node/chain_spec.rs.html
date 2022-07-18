@@ -206,10 +206,8 @@
 <span id="201">201</span>
 <span id="202">202</span>
 <span id="203">203</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">frontier_template_runtime</span>::{
-	<span class="ident">AccountId</span>, <span class="ident">AuraConfig</span>, <span class="ident">BalancesConfig</span>, <span class="ident">EVMConfig</span>, <span class="ident">EthereumConfig</span>, <span class="ident">GenesisConfig</span>, <span class="ident">GrandpaConfig</span>,
-	<span class="ident">Signature</span>, <span class="ident">SudoConfig</span>, <span class="ident">SystemConfig</span>, <span class="ident">WASM_BINARY</span>,
-};
+<span id="204">204</span>
+</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">frontier_template_runtime</span>::{<span class="ident">AccountId</span>, <span class="ident">GenesisConfig</span>, <span class="ident">Signature</span>, <span class="ident">WASM_BINARY</span>};
 <span class="kw">use</span> <span class="ident">sc_service::ChainType</span>;
 <span class="kw">use</span> <span class="ident">sp_consensus_aura::sr25519::AuthorityId</span> <span class="kw">as</span> <span class="ident">AuraId</span>;
 <span class="kw">use</span> <span class="ident">sp_core</span>::{<span class="ident">sr25519</span>, <span class="ident">Pair</span>, <span class="ident">Public</span>, <span class="ident">H160</span>, <span class="ident">U256</span>};
@@ -344,6 +342,9 @@
 	<span class="ident">endowed_accounts</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span>,
 	<span class="ident">_enable_println</span>: <span class="ident">bool</span>,
 ) -&gt; <span class="ident">GenesisConfig</span> {
+	<span class="kw">use</span> <span class="ident">frontier_template_runtime</span>::{
+		<span class="ident">AuraConfig</span>, <span class="ident">BalancesConfig</span>, <span class="ident">EVMConfig</span>, <span class="ident">GrandpaConfig</span>, <span class="ident">SudoConfig</span>, <span class="ident">SystemConfig</span>,
+	};
 	<span class="ident">GenesisConfig</span> {
 		<span class="ident">system</span>: <span class="ident">SystemConfig</span> {
 			<span class="comment">// Add Wasm runtime to storage.</span>
@@ -357,6 +358,7 @@
 				.<span class="ident">map</span>(<span class="op">|</span><span class="ident">k</span><span class="op">|</span> (<span class="ident">k</span>, <span class="number">1</span> <span class="op">&lt;</span><span class="op">&lt;</span> <span class="number">60</span>))
 				.<span class="ident">collect</span>(),
 		},
+		<span class="ident">transaction_payment</span>: <span class="ident">Default::default</span>(),
 		<span class="ident">aura</span>: <span class="ident">AuraConfig</span> {
 			<span class="ident">authorities</span>: <span class="ident">initial_authorities</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> (<span class="ident">x</span>.<span class="number">0</span>.<span class="ident">clone</span>())).<span class="ident">collect</span>(),
 		},
@@ -404,7 +406,7 @@
 				<span class="ident">map</span>
 			},
 		},
-		<span class="ident">ethereum</span>: <span class="ident">EthereumConfig</span> {},
+		<span class="ident">ethereum</span>: <span class="ident">Default::default</span>(),
 		<span class="ident">dynamic_fee</span>: <span class="ident">Default::default</span>(),
 		<span class="ident">base_fee</span>: <span class="ident">Default::default</span>(),
 	}
