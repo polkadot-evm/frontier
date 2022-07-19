@@ -78,7 +78,7 @@ pub mod pallet {
 		fn default() -> Self {
 			Self {
 				base_fee_per_gas: T::DefaultBaseFeePerGas::get(),
-				is_active: true,
+				is_active: T::IsActive::get(),
 				elasticity: Permill::from_parts(125_000),
 				_marker: PhantomData,
 			}
