@@ -136,7 +136,7 @@ fn fee_deduction() {
 fn ed_0_refund_patch_works() {
 	new_test_ext().execute_with(|| {
 		// Verifies that the OnChargeEVMTransaction patch is applied and fixes a known bug in Substrate for evm transactions.
-		// https://github.com/paritytech/substrate/issues/10117
+		// https://github.com/cloudwalk/substrate/issues/10117
 		let evm_addr = H160::from_str("1000000000000000000000000000000000000003").unwrap();
 		let substrate_addr = <Test as Config>::AddressMapping::into_account_id(evm_addr);
 
