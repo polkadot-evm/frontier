@@ -18,6 +18,8 @@
 //! Consensus extension module tests for BABE consensus.
 
 use super::*;
+use frame_support::{traits::Get, weights::DispatchClass};
+use pallet_evm::GasWeightMapping;
 
 fn eip1559_erc20_creation_unsigned_transaction() -> EIP1559UnsignedTransaction {
 	EIP1559UnsignedTransaction {
@@ -33,6 +35,82 @@ fn eip1559_erc20_creation_unsigned_transaction() -> EIP1559UnsignedTransaction {
 
 fn eip1559_erc20_creation_transaction(account: &AccountInfo) -> Transaction {
 	eip1559_erc20_creation_unsigned_transaction().sign(&account.private_key, None)
+}
+
+#[test]
+fn transaction_with_max_extrinsic_gas_limit_should_success_pre_dispatch() {
+	let (pairs, mut ext) = new_test_ext_with_initial_balance(2, 10_000_000_000_000);
+	let alice = &pairs[0];
+	let bob = &pairs[1];
+
+	let limits: frame_system::limits::BlockWeights =
+		<Test as frame_system::Config>::BlockWeights::get();
+	let max_extrinsic = limits.get(DispatchClass::Normal).max_extrinsic.unwrap();
+	let max_extrinsic_gas =
+		<Test as pallet_evm::Config>::GasWeightMapping::weight_to_gas(max_extrinsic);
+
+	ext.execute_with(|| {
+		let transaction = EIP1559UnsignedTransaction {
+			nonce: U256::zero(),
+			max_priority_fee_per_gas: U256::from(1),
+			max_fee_per_gas: U256::from(1),
+			gas_limit: U256::from(max_extrinsic_gas),
+			action: ethereum::TransactionAction::Call(bob.address),
+			value: U256::from(1),
+			input: Default::default(),
+		}
+		.sign(&alice.private_key, None);
+
+		let call = crate::Call::<Test>::transact { transaction };
+		let source = call.check_self_contained().unwrap().unwrap();
+		let extrinsic = CheckedExtrinsic::<u64, crate::mock::Call, SignedExtra, _> {
+			signed: fp_self_contained::CheckedSignature::SelfContained(source),
+			function: Call::Ethereum(call.clone()),
+		};
+
+		assert_ok!(call
+			.pre_dispatch_self_contained(&source, &extrinsic.get_dispatch_info(), 0)
+			.unwrap());
+	});
+}
+
+#[test]
+fn transaction_with_gas_limit_greater_than_max_extrinsic_should_fail_pre_dispatch() {
+	let (pairs, mut ext) = new_test_ext_with_initial_balance(2, 10_000_000_000_000);
+	let alice = &pairs[0];
+	let bob = &pairs[1];
+
+	let limits: frame_system::limits::BlockWeights =
+		<Test as frame_system::Config>::BlockWeights::get();
+	let max_extrinsic = limits.get(DispatchClass::Normal).max_extrinsic.unwrap();
+	let max_extrinsic_gas =
+		<Test as pallet_evm::Config>::GasWeightMapping::weight_to_gas(max_extrinsic);
+
+	ext.execute_with(|| {
+		let transaction = EIP1559UnsignedTransaction {
+			nonce: U256::zero(),
+			max_priority_fee_per_gas: U256::from(1),
+			max_fee_per_gas: U256::from(1),
+			gas_limit: U256::from(max_extrinsic_gas + 1),
+			action: ethereum::TransactionAction::Call(bob.address),
+			value: U256::from(1),
+			input: Default::default(),
+		}
+		.sign(&alice.private_key, None);
+
+		let call = crate::Call::<Test>::transact { transaction };
+		let source = call.check_self_contained().unwrap().unwrap();
+		let extrinsic = CheckedExtrinsic::<u64, crate::mock::Call, SignedExtra, _> {
+			signed: fp_self_contained::CheckedSignature::SelfContained(source),
+			function: Call::Ethereum(call.clone()),
+		};
+
+		assert_err!(
+			call.pre_dispatch_self_contained(&source, &extrinsic.get_dispatch_info(), 0)
+				.unwrap(),
+			InvalidTransaction::ExhaustsResources
+		);
+	});
 }
 
 #[test]
