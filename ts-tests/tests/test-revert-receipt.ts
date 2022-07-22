@@ -43,6 +43,7 @@ describeWithFrontier("Frontier RPC (Constructor Revert)", (context) => {
 			transactionHash: txHash,
 			transactionIndex: 0,
 			status: true,
+			type: "0x0",
 		});
 	});
 
