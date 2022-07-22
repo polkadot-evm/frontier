@@ -453,6 +453,11 @@
 <span id="448">448</span>
 <span id="449">449</span>
 <span id="450">450</span>
+<span id="451">451</span>
+<span id="452">452</span>
+<span id="453">453</span>
+<span id="454">454</span>
+<span id="455">455</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -779,7 +784,7 @@
 				{
 					<span class="comment">// Pre-london frontier update stored receipts require cumulative gas calculation.</span>
 					<span class="kw">match</span> <span class="ident">receipt</span> {
-						<span class="ident">ethereum::ReceiptV3::Legacy</span>(<span class="ident">d</span>) =&gt; {
+						<span class="ident">ethereum::ReceiptV3::Legacy</span>(<span class="kw-2">ref</span> <span class="ident">d</span>) =&gt; {
 							<span class="kw">let</span> <span class="ident">index</span> <span class="op">=</span> <span class="ident">core::cmp::min</span>(<span class="ident">receipts</span>.<span class="ident">len</span>(), <span class="ident">index</span> <span class="op">+</span> <span class="number">1</span>);
 							<span class="kw">let</span> <span class="ident">cumulative_gas</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="ident">receipts</span>[..<span class="ident">index</span>]
 								.<span class="ident">iter</span>()
@@ -792,7 +797,7 @@
 								})
 								.<span class="ident">sum</span>::<span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
 							(
-								<span class="ident">d</span>.<span class="ident">logs</span>,
+								<span class="ident">d</span>.<span class="ident">logs</span>.<span class="ident">clone</span>(),
 								<span class="ident">d</span>.<span class="ident">logs_bloom</span>,
 								<span class="ident">d</span>.<span class="ident">status_code</span>,
 								<span class="ident">U256::from</span>(<span class="ident">cumulative_gas</span>),
@@ -808,9 +813,9 @@
 					}
 				} <span class="kw">else</span> {
 					<span class="kw">match</span> <span class="ident">receipt</span> {
-						<span class="ident">ethereum::ReceiptV3::Legacy</span>(<span class="ident">d</span>)
-						<span class="op">|</span> <span class="ident">ethereum::ReceiptV3::EIP2930</span>(<span class="ident">d</span>)
-						<span class="op">|</span> <span class="ident">ethereum::ReceiptV3::EIP1559</span>(<span class="ident">d</span>) =&gt; {
+						<span class="ident">ethereum::ReceiptV3::Legacy</span>(<span class="kw-2">ref</span> <span class="ident">d</span>)
+						<span class="op">|</span> <span class="ident">ethereum::ReceiptV3::EIP2930</span>(<span class="kw-2">ref</span> <span class="ident">d</span>)
+						<span class="op">|</span> <span class="ident">ethereum::ReceiptV3::EIP1559</span>(<span class="kw-2">ref</span> <span class="ident">d</span>) =&gt; {
 							<span class="kw">let</span> <span class="ident">cumulative_gas</span> <span class="op">=</span> <span class="ident">d</span>.<span class="ident">used_gas</span>;
 							<span class="kw">let</span> <span class="ident">gas_used</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">index</span> <span class="op">&gt;</span> <span class="number">0</span> {
 								<span class="kw">let</span> <span class="ident">previous_receipt</span> <span class="op">=</span> <span class="ident">receipts</span>[<span class="ident">index</span> <span class="op">-</span> <span class="number">1</span>].<span class="ident">clone</span>();
@@ -824,7 +829,7 @@
 								<span class="ident">cumulative_gas</span>
 							};
 							(
-								<span class="ident">d</span>.<span class="ident">logs</span>,
+								<span class="ident">d</span>.<span class="ident">logs</span>.<span class="ident">clone</span>(),
 								<span class="ident">d</span>.<span class="ident">logs_bloom</span>,
 								<span class="ident">d</span>.<span class="ident">status_code</span>,
 								<span class="ident">cumulative_gas</span>,
@@ -897,6 +902,11 @@
 					<span class="ident">logs_bloom</span>,
 					<span class="ident">state_root</span>: <span class="prelude-val">None</span>,
 					<span class="ident">effective_gas_price</span>,
+					<span class="ident">transaction_type</span>: <span class="kw">match</span> <span class="ident">receipt</span> {
+						<span class="ident">ethereum::ReceiptV3::Legacy</span>(<span class="kw">_</span>) =&gt; <span class="ident">U256::from</span>(<span class="number">0</span>),
+						<span class="ident">ethereum::ReceiptV3::EIP2930</span>(<span class="kw">_</span>) =&gt; <span class="ident">U256::from</span>(<span class="number">1</span>),
+						<span class="ident">ethereum::ReceiptV3::EIP1559</span>(<span class="kw">_</span>) =&gt; <span class="ident">U256::from</span>(<span class="number">2</span>),
+					},
 				}));
 			}
 			<span class="kw">_</span> =&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
