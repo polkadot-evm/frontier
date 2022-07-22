@@ -17,9 +17,9 @@
 
 #![cfg(feature = "runtime-benchmarks")]
 
-use frame_benchmarking::{benchmarks, impl_benchmark_test_suite};
-
 use super::*;
+use core::str::FromStr;
+use frame_benchmarking::{benchmarks, impl_benchmark_test_suite};
 
 benchmarks! {
 
@@ -68,13 +68,13 @@ benchmarks! {
 			"2eeada8e094193a364736f6c63430008030033"))
 			.expect("Bad hex string");
 
-		let caller = H160::default();
+		let caller = H160::from_str("1000000000000000000000000000000000000001").unwrap();
 
-		let mut nonce: u64 = 0;
+		let mut nonce: u64 = 1;
 		let nonce_as_u256: U256 = nonce.into();
 
 		let value = U256::default();
-		let gas_limit_create: u64 = 1_250_000 * 1_000_000_000;
+		let gas_limit_create: u64 = 1000000;
 		let is_transactional = true;
 		let validate = true;
 		let create_runner_results = T::Runner::create(
@@ -82,8 +82,8 @@ benchmarks! {
 			contract_bytecode,
 			value,
 			gas_limit_create,
-			None,
-			None,
+			Some(U256::from(1_000_000_000)),
+			Some(U256::from(1_000_000_000)),
 			Some(nonce_as_u256),
 			Vec::new(),
 			is_transactional,
@@ -102,7 +102,7 @@ benchmarks! {
 		let mut encoded_call = vec![0u8; 4];
 		encoded_call[0..4].copy_from_slice(&sp_io::hashing::keccak_256(b"infinite()")[0..4]);
 
-		let gas_limit_call = x as u64;
+		let gas_limit_call = gas_limit_create;
 
 	}: {
 
@@ -117,8 +117,8 @@ benchmarks! {
 			encoded_call,
 			value,
 			gas_limit_call,
-			None,
-			None,
+			Some(U256::from(1_000_000_000)),
+			Some(U256::from(1_000_000_000)),
 			Some(nonce_as_u256),
 			Vec::new(),
 			is_transactional,
