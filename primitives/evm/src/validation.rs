@@ -179,27 +179,28 @@ impl<'config, E: From<InvalidEvmTransactionError>> CheckEvmTransaction<'config, 
 	}
 
 	fn validate_common(&self) -> Result<&Self, E> {
-		// We must ensure a transaction can pay the cost of its data bytes.
-		// If it can't it should not be included in a block.
-		let mut gasometer = evm::gasometer::Gasometer::new(
-			self.transaction.gas_limit.unique_saturated_into(),
-			self.config.evm_config,
-		);
-		let transaction_cost = if self.transaction.to.is_some() {
-			evm::gasometer::call_transaction_cost(
-				&self.transaction.input,
-				&self.transaction.access_list,
-			)
-		} else {
-			evm::gasometer::create_transaction_cost(
-				&self.transaction.input,
-				&self.transaction.access_list,
-			)
-		};
-		if gasometer.record_transaction(transaction_cost).is_err() {
-			return Err(InvalidEvmTransactionError::GasLimitTooLow.into());
+		if self.config.is_transactional {
+			// We must ensure a transaction can pay the cost of its data bytes.
+			// If it can't it should not be included in a block.
+			let mut gasometer = evm::gasometer::Gasometer::new(
+				self.transaction.gas_limit.unique_saturated_into(),
+				self.config.evm_config,
+			);
+			let transaction_cost = if self.transaction.to.is_some() {
+				evm::gasometer::call_transaction_cost(
+					&self.transaction.input,
+					&self.transaction.access_list,
+				)
+			} else {
+				evm::gasometer::create_transaction_cost(
+					&self.transaction.input,
+					&self.transaction.access_list,
+				)
+			};
+			if gasometer.record_transaction(transaction_cost).is_err() {
+				return Err(InvalidEvmTransactionError::GasLimitTooLow.into());
+			}
 		}
-
 		// Transaction gas limit is within the upper bound block gas limit.
 		if self.transaction.gas_limit > self.config.block_gas_limit {
 			return Err(InvalidEvmTransactionError::GasLimitTooHigh.into());
@@ -322,9 +323,12 @@ mod tests {
 		test_env(input)
 	}
 
-	fn transaction_gas_limit_low<'config>() -> CheckEvmTransaction<'config, TestError> {
+	fn transaction_gas_limit_low<'config>(
+		is_transactional: bool,
+	) -> CheckEvmTransaction<'config, TestError> {
 		let mut input = TestCase::default();
 		input.gas_limit = U256::from(1u8);
+		input.is_transactional = is_transactional;
 		test_env(input)
 	}
 
@@ -461,13 +465,14 @@ mod tests {
 	}
 
 	#[test]
-	// Gas limit too low fails in pool and in block.
-	fn validate_in_pool_and_block_fails_gas_limit_too_low() {
+	// Gas limit too low transactional fails in pool and in block.
+	fn validate_in_pool_and_block_transactional_fails_gas_limit_too_low() {
 		let who = Account {
 			balance: U256::from(1_000_000u128),
 			nonce: U256::zero(),
 		};
-		let test = transaction_gas_limit_low();
+		let is_transactional = true;
+		let test = transaction_gas_limit_low(is_transactional);
 		// Pool
 		let res = test.validate_in_pool_for(&who);
 		assert!(res.is_err());
@@ -476,6 +481,23 @@ mod tests {
 		let res = test.validate_in_block_for(&who);
 		assert!(res.is_err());
 		assert_eq!(res.unwrap_err(), TestError::GasLimitTooLow);
+	}
+
+	#[test]
+	// Gas limit too low non-transactional succeeds in pool and in block.
+	fn validate_in_pool_and_block_non_transactional_succeeds_gas_limit_too_low() {
+		let who = Account {
+			balance: U256::from(1_000_000u128),
+			nonce: U256::zero(),
+		};
+		let is_transactional = false;
+		let test = transaction_gas_limit_low(is_transactional);
+		// Pool
+		let res = test.validate_in_pool_for(&who);
+		assert!(res.is_ok());
+		// Block
+		let res = test.validate_in_block_for(&who);
+		assert!(res.is_ok());
 	}
 
 	#[test]
