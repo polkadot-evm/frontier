@@ -16,7 +16,7 @@ parking_lot = "0.12.1"
 # Parity
 codec = { package = "parity-scale-codec", version = "3.0.0", features = ["derive"] }
 kvdb-rocksdb = { version = "0.15.2", optional = true }
-parity-db = { version = "0.3.14", optional = true }
+parity-db = { version = "0.3.16", optional = true }
 
 # Substrate
 sc-client-db = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
