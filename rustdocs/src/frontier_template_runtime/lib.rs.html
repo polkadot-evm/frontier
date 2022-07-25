@@ -1701,7 +1701,7 @@
 			<span class="macro">list_benchmark!</span>(<span class="ident">list</span>, <span class="ident">extra</span>, <span class="ident">pallet_hotfix_sufficients</span>, <span class="ident">PalletHotfixSufficients</span>::<span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>);
 
 			<span class="kw">let</span> <span class="ident">storage_info</span> <span class="op">=</span> <span class="ident">AllPalletsWithSystem::storage_info</span>();
-			<span class="kw">return</span> (<span class="ident">list</span>, <span class="ident">storage_info</span>)
+			(<span class="ident">list</span>, <span class="ident">storage_info</span>)
 		}
 
 		<span class="kw">fn</span> <span class="ident">dispatch_benchmark</span>(
