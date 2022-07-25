@@ -21,17 +21,17 @@ use ethereum::{TransactionAction, TransactionSignature};
 use frame_support::{
 	dispatch::Dispatchable,
 	parameter_types,
-	traits::{ConstU32, FindAuthor, GenesisBuild, IsType},
+	traits::{ConstU32, FindAuthor, GenesisBuild},
 	weights::Weight,
 	ConsensusEngineId, PalletId,
 };
-use pallet_evm::{AddressMapping, FeeCalculator};
+use pallet_evm::FeeCalculator;
 use rlp::RlpStream;
 use sp_core::{hashing::keccak_256, H160, H256, U256};
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
-	AccountId32, DispatchError,
+	AccountId32,
 };
 use std::{collections::BTreeMap, str::FromStr};
 
@@ -144,41 +144,12 @@ parameter_types! {
 	pub const WeightPerGas: Weight = Weight::from_ref_time(20_000);
 }
 
-pub struct PairedAddressMapping<T>(sp_std::marker::PhantomData<T>);
-
-impl<T: Config> AddressMapping<T::AccountId> for PairedAddressMapping<T>
-where
-	T::AccountId: IsType<AccountId32>,
-{
-	// Returns the AccountId used go generate the given Eth Address.
-	fn into_account_id(address: H160) -> T::AccountId {
-		if let Some(acct) = pallet_evm::Accounts::<T>::get(address) {
-			return acct;
-		}
-		let mut data: [u8; 32] = [0u8; 32];
-		data[0..4].copy_from_slice(b"evm:");
-		data[4..24].copy_from_slice(&address[..]);
-		AccountId32::from(data).into()
-	}
-
-	fn ensure_address_origin(address: &H160, origin: &T::AccountId) -> Result<(), DispatchError> {
-		if let Some(acct) = pallet_evm::Accounts::<T>::get(address) {
-			if acct == *origin {
-				return Ok(());
-			}
-		}
-		Err(DispatchError::Other(
-			"eth and substrate addresses are not paired",
-		))
-	}
-}
-
 impl pallet_evm::Config for Test {
 	type FeeCalculator = FixedGasPrice;
 	type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
 	type WeightPerGas = WeightPerGas;
 	type BlockHashMapping = crate::EthereumBlockHashMapping<Self>;
-	type AddressMapping = PairedAddressMapping<Test>;
+	type AddressMapping = pallet_evm::PairedAddressMapping<Test>;
 	type Currency = Balances;
 	type RuntimeEvent = RuntimeEvent;
 	type PrecompilesType = ();

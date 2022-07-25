@@ -4657,10 +4657,13 @@ dependencies = [
 name = "pallet-hotfix-sufficients"
 version = "1.0.0"
 dependencies = [
+ "fp-evm",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
+ "pallet-balances",
  "pallet-evm",
+ "pallet-timestamp",
  "parity-scale-codec",
  "scale-info",
  "sp-core",

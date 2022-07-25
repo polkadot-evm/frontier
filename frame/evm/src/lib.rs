@@ -686,28 +686,6 @@ where
 	}
 }
 
-/// Identity address mapping.
-pub struct IdentityAddressMapping;
-
-impl AddressMapping<H160> for IdentityAddressMapping {
-	fn into_account_id(address: H160) -> H160 {
-		address
-	}
-
-	fn ensure_address_origin(_address: &H160, _origin: &H160) -> Result<(), DispatchError> {
-		#[cfg(test)]
-		{
-			Ok(())
-		}
-		#[cfg(not(test))]
-		{
-			Err(DispatchError::Other(
-				"IdentityAddressMapping is for test only",
-			))
-		}
-	}
-}
-
 /// Converts the given binary data into ASCII-encoded hex. It will be twice
 /// the length.
 pub fn to_ascii_hex(data: &[u8]) -> Vec<u8> {

@@ -27,11 +27,12 @@ use sp_core::{H160, H256, U256};
 use sp_runtime::{
 	generic,
 	traits::{BlakeTwo256, IdentityLookup},
+	DispatchError,
 };
 use sp_std::{boxed::Box, prelude::*, str::FromStr};
 
 use fp_evm::{ExitError, ExitReason, Transfer};
-use pallet_evm::{Context, FeeCalculator, IdentityAddressMapping, PrecompileHandle};
+use pallet_evm::{AddressMapping, Context, FeeCalculator, PrecompileHandle};
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -122,6 +123,17 @@ impl FeeCalculator for FixedGasPrice {
 	}
 }
 
+pub struct IdentityAddressMapping;
+impl AddressMapping<H160> for IdentityAddressMapping {
+	fn into_account_id(address: H160) -> H160 {
+		address
+	}
+
+	fn ensure_address_origin(_address: &H160, _origin: &H160) -> Result<(), DispatchError> {
+		Ok(())
+	}
+}
+
 pub struct FindAuthorTruncated;
 impl FindAuthor<H160> for FindAuthorTruncated {
 	fn find_author<'a, I>(_digests: I) -> Option<H160>
@@ -131,6 +143,7 @@ impl FindAuthor<H160> for FindAuthorTruncated {
 		Some(H160::from_str("1234500000000000000000000000000000000000").unwrap())
 	}
 }
+
 parameter_types! {
 	pub BlockGasLimit: U256 = U256::max_value();
 	pub WeightPerGas: Weight = Weight::from_ref_time(20_000);

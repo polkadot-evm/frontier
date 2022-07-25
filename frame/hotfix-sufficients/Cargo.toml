@@ -28,6 +28,9 @@ frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/sub
 pallet-evm = { path = "../evm", default-features = false }
 
 [dev-dependencies]
+fp-evm = { version = "3.0.0-dev", path = "../../primitives/evm", default-features = false }
+pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.32" }
+pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.32", default-features = false }
 sp-io = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.32" }
 
 [features]

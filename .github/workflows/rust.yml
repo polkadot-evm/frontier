@@ -5,10 +5,12 @@ on:
     branches:
       - master
       - 'polkadot-v**'
+      - 'dev/polkadot-v**'
   pull_request:
     branches:
       - master
       - 'polkadot-v**'
+      - 'dev/polkadot-v**'
 
 jobs:
   build:
