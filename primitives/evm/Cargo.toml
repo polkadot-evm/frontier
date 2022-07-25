@@ -11,7 +11,7 @@ repository = "https://github.com/paritytech/frontier/"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-evm = { git = "https://github.com/rust-blockchain/evm", rev = "01bcbd2205a212c34451d3b4fabc962793b057d3", default-features = false, features = ["with-codec"] }
+evm = { git = "https://github.com/rust-blockchain/evm", rev = "51b8c2ce3104265e1fd5bb0fe5cdfd2e0938239c", default-features = false, features = ["with-codec"] }
 serde = { version = "1.0.140", features = ["derive"], optional = true }
 
 # Parity
