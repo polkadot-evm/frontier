@@ -54,7 +54,7 @@ benchmarks! {
 		accounts
 			.iter()
 			.for_each(|id| {
-				assert_eq!(frame_system::Pallet::<T>::sufficients(&id), 1);
+				assert_eq!(frame_system::Pallet::<T>::sufficients(id), 1);
 			});
 	}
 }

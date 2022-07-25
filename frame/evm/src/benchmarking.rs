@@ -106,7 +106,7 @@ benchmarks! {
 
 	}: {
 
-		nonce = nonce + 1;
+		nonce += 1;
 		let nonce_as_u256: U256 = nonce.into();
 
 		let is_transactional = true;
@@ -125,7 +125,7 @@ benchmarks! {
 			validate,
 			T::config(),
 		);
-		assert_eq!(call_runner_results.is_ok(), true, "call() failed");
+		assert!(call_runner_results.is_ok(), "call() failed");
 	}
 }
 
