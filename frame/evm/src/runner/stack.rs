@@ -522,7 +522,7 @@ impl<'vicinity, 'config, T: Config> BackendT for SubstrateStackState<'vicinity, 
 	}
 
 	fn block_hash(&self, number: U256) -> H256 {
-		if number > U256::from(u32::max_value()) {
+		if number > U256::from(u32::MAX) {
 			H256::default()
 		} else {
 			T::BlockHashMapping::block_hash(number.as_u32())
