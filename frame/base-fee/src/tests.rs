@@ -39,7 +39,7 @@ pub fn new_test_ext(base_fee: Option<U256>) -> TestExternalities {
 		.unwrap();
 
 	if let Some(base_fee) = base_fee {
-		pallet_base_fee::GenesisConfig::<Test>::new(base_fee, true, Permill::from_parts(125_000))
+		pallet_base_fee::GenesisConfig::<Test>::new(base_fee, Permill::from_parts(125_000))
 			.assimilate_storage(&mut t)
 			.unwrap();
 	} else {
@@ -85,9 +85,9 @@ impl frame_system::Config for Test {
 	type MaxConsumers = ConstU32<16>;
 }
 
-frame_support::parameter_types! {
-	pub IsActive: bool = true;
+parameter_types! {
 	pub DefaultBaseFeePerGas: U256 = U256::from(100_000_000_000 as u128);
+	pub DefaultElasticity: Permill = Permill::from_parts(125_000);
 }
 
 pub struct BaseFeeThreshold;
@@ -106,8 +106,8 @@ impl pallet_base_fee::BaseFeeThreshold for BaseFeeThreshold {
 impl Config for Test {
 	type Event = Event;
 	type Threshold = BaseFeeThreshold;
-	type IsActive = IsActive;
 	type DefaultBaseFeePerGas = DefaultBaseFeePerGas;
+	type DefaultElasticity = DefaultElasticity;
 }
 
 frame_support::construct_runtime!(
@@ -235,16 +235,6 @@ fn set_base_fee_per_gas_dispatchable() {
 		assert_eq!(BaseFee::base_fee_per_gas(), U256::from(1000000000));
 		assert_ok!(BaseFee::set_base_fee_per_gas(Origin::root(), U256::from(1)));
 		assert_eq!(BaseFee::base_fee_per_gas(), U256::from(1));
-	});
-}
-
-#[test]
-fn set_is_active_dispatchable() {
-	let base_fee = U256::from(1_000_000_000);
-	new_test_ext(Some(base_fee)).execute_with(|| {
-		assert_eq!(BaseFee::is_active(), true);
-		assert_ok!(BaseFee::set_is_active(Origin::root(), false));
-		assert_eq!(BaseFee::is_active(), false);
 	});
 }
 

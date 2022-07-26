@@ -350,7 +350,7 @@ impl pallet_ethereum::Config for Runtime {
 	type StateRoot = pallet_ethereum::IntermediateStateRoot<Self>;
 }
 
-frame_support::parameter_types! {
+parameter_types! {
 	pub BoundDivision: U256 = U256::from(1024);
 }
 
@@ -358,9 +358,9 @@ impl pallet_dynamic_fee::Config for Runtime {
 	type MinGasPriceBoundDivisor = BoundDivision;
 }
 
-frame_support::parameter_types! {
-	pub IsActive: bool = true;
+parameter_types! {
 	pub DefaultBaseFeePerGas: U256 = U256::from(1_000_000_000);
+	pub DefaultElasticity: Permill = Permill::from_parts(125_000);
 }
 
 pub struct BaseFeeThreshold;
@@ -379,8 +379,8 @@ impl pallet_base_fee::BaseFeeThreshold for BaseFeeThreshold {
 impl pallet_base_fee::Config for Runtime {
 	type Event = Event;
 	type Threshold = BaseFeeThreshold;
-	type IsActive = IsActive;
 	type DefaultBaseFeePerGas = DefaultBaseFeePerGas;
+	type DefaultElasticity = DefaultElasticity;
 }
 
 impl pallet_hotfix_sufficients::Config for Runtime {
