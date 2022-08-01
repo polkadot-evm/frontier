@@ -43,9 +43,6 @@ impl Geth {
 					// VError::InvalidSignature => "invalid sender".into(),
 					a if a == VError::GasLimitTooLow as u8 => "intrinsic gas too low".into(),
 					a if a == VError::GasLimitTooHigh as u8 => "exceeds block gas limit".into(),
-					a if a == VError::InsufficientFundsForTransfer as u8 => {
-						"insufficient funds for transfer".into()
-					}
 					_ => "unknown error".into(),
 				},
 				_ => "unknown error".into(),

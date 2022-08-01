@@ -955,7 +955,6 @@ enum TransactionValidationError {
 	InvalidSignature,
 	InvalidGasLimit,
 	MaxFeePerGasTooLow,
-	InsufficientFundsForTransfer,
 }
 
 struct InvalidTransactionWrapper(InvalidTransaction);
@@ -990,11 +989,6 @@ impl From<InvalidEvmTransactionError> for InvalidTransactionWrapper {
 			InvalidEvmTransactionError::InvalidChainId => InvalidTransactionWrapper(
 				InvalidTransaction::Custom(TransactionValidationError::InvalidChainId as u8),
 			),
-			InvalidEvmTransactionError::InsufficientFundsForTransfer => {
-				InvalidTransactionWrapper(InvalidTransaction::Custom(
-					TransactionValidationError::InsufficientFundsForTransfer as u8,
-				))
-			}
 		}
 	}
 }

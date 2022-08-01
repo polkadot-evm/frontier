@@ -61,7 +61,6 @@ pub enum InvalidEvmTransactionError {
 	TxNonceTooHigh,
 	InvalidPaymentInput,
 	InvalidChainId,
-	InsufficientFundsForTransfer,
 }
 
 impl<'config, E: From<InvalidEvmTransactionError>> CheckEvmTransaction<'config, E> {
@@ -123,10 +122,6 @@ impl<'config, E: From<InvalidEvmTransactionError>> CheckEvmTransaction<'config, 
 		// a gas price input.
 		let fee = max_fee_per_gas.saturating_mul(self.transaction.gas_limit);
 		if self.config.is_transactional || fee > U256::zero() {
-			if who.balance < self.transaction.value {
-				return Err(InvalidEvmTransactionError::InsufficientFundsForTransfer.into());
-			}
-
 			let total_payment = self.transaction.value.saturating_add(fee);
 			if who.balance < total_payment {
 				return Err(InvalidEvmTransactionError::BalanceTooLow.into());
@@ -209,7 +204,6 @@ mod tests {
 		TxNonceTooHigh,
 		InvalidPaymentInput,
 		InvalidChainId,
-		InsufficientFundsForTransfer,
 	}
 
 	static LONDON_CONFIG: evm::Config = evm::Config::london();
@@ -226,9 +220,6 @@ mod tests {
 				InvalidEvmTransactionError::TxNonceTooHigh => TestError::TxNonceTooHigh,
 				InvalidEvmTransactionError::InvalidPaymentInput => TestError::InvalidPaymentInput,
 				InvalidEvmTransactionError::InvalidChainId => TestError::InvalidChainId,
-				InvalidEvmTransactionError::InsufficientFundsForTransfer => {
-					TestError::InsufficientFundsForTransfer
-				}
 			}
 		}
 	}
