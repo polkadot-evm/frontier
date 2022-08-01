@@ -34,7 +34,7 @@ impl Geth {
 			// `InvalidTransaction::Stale`. Thus we return the same error.
 			Ok(PError::TemporarilyBanned) => "nonce too low".into(),
 			Ok(PError::TooLowPriority { .. }) => "replacement transaction underpriced".into(),
-			Ok(PError::InvalidTransaction(inner)) => match inner {
+			Ok(ref outer @ PError::InvalidTransaction(inner)) => match inner {
 				InvalidTransaction::Stale => "nonce too low".into(),
 				InvalidTransaction::Payment => "insufficient funds for gas * price + value".into(),
 				InvalidTransaction::ExhaustsResources => "gas limit reached".into(),
@@ -43,9 +43,9 @@ impl Geth {
 					// VError::InvalidSignature => "invalid sender".into(),
 					a if a == VError::GasLimitTooLow as u8 => "intrinsic gas too low".into(),
 					a if a == VError::GasLimitTooHigh as u8 => "exceeds block gas limit".into(),
-					_ => "unknown error".into(),
+					_ => format!("submit transaction to pool failed: {:?}", outer),
 				},
-				_ => "unknown error".into(),
+				_ => format!("submit transaction to pool failed: {:?}", outer),
 			},
 			err => format!("submit transaction to pool failed: {:?}", err),
 		}
