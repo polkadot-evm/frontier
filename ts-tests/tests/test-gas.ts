@@ -44,7 +44,7 @@ describeWithFrontier("Frontier RPC (Gas)", (context) => {
 
 	it("eth_estimateGas for contract creation", async function () {
 		// The value returned as an estimation by the evm with estimate mode ON.
-		let oneOffEstimation = 196657;
+		let oneOffEstimation = 149143;
 		let binarySearchEstimation = binarySearch(oneOffEstimation);
 		// Sanity check expect a variance of 10%.
 		expect(estimationVariance(binarySearchEstimation, oneOffEstimation)).to.be.lessThan(1);
@@ -107,7 +107,7 @@ describeWithFrontier("Frontier RPC (Gas)", (context) => {
 	it("eth_estimateGas should handle AccessList alias", async function () {
 		// The value returned as an estimation by the evm with estimate mode ON.
 		// 4300 == 1900 for one key and 2400 for one storage.
-		let oneOffEstimation = 196657 + 4300;
+		let oneOffEstimation = 149143 + 4300;
 		let binarySearchEstimation = binarySearch(oneOffEstimation);
 		// Sanity check expect a variance of 10%.
 		expect(estimationVariance(binarySearchEstimation, oneOffEstimation)).to.be.lessThan(1);
@@ -134,12 +134,12 @@ describeWithFrontier("Frontier RPC (Gas)", (context) => {
 			data: Test.bytecode,
 			gasPrice: "0x0",
 		});
-		expect(result).to.equal(197690);
+		expect(result).to.equal(150926);
 		result = await context.web3.eth.estimateGas({
 			from: GENESIS_ACCOUNT,
 			data: Test.bytecode,
 		});
-		expect(result).to.equal(197690);
+		expect(result).to.equal(150926);
 	});
 
 	it("tx gas limit below EXTRINSIC_GAS_LIMIT", async function () {
