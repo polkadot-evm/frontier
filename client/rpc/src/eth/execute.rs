@@ -125,7 +125,7 @@ where
 			Some(amount) => {
 				if amount > max_gas_limit {
 					return Err(internal_err(format!(
-						"provided gas limit is to high (can be up to {}x the block gas limit)",
+						"provided gas limit is too high (can be up to {}x the block gas limit)",
 						self.execute_gas_limit_multiplier
 					)));
 				}
@@ -349,7 +349,7 @@ where
 			Some(amount) => {
 				if amount > max_gas_limit {
 					return Err(internal_err(format!(
-						"provided gas limit is to high (can be up to {}x the block gas limit)",
+						"provided gas limit is too high (can be up to {}x the block gas limit)",
 						self.execute_gas_limit_multiplier
 					)));
 				}
