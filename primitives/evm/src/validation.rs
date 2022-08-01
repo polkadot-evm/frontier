@@ -197,13 +197,15 @@ impl<'config, E: From<InvalidEvmTransactionError>> CheckEvmTransaction<'config, 
 					&self.transaction.access_list,
 				)
 			};
+
 			if gasometer.record_transaction(transaction_cost).is_err() {
 				return Err(InvalidEvmTransactionError::GasLimitTooLow.into());
 			}
-		}
-		// Transaction gas limit is within the upper bound block gas limit.
-		if self.transaction.gas_limit > self.config.block_gas_limit {
-			return Err(InvalidEvmTransactionError::GasLimitTooHigh.into());
+
+			// Transaction gas limit is within the upper bound block gas limit.
+			if self.transaction.gas_limit > self.config.block_gas_limit {
+				return Err(InvalidEvmTransactionError::GasLimitTooHigh.into());
+			}
 		}
 
 		Ok(self)

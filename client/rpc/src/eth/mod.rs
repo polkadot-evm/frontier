@@ -70,6 +70,9 @@ pub struct Eth<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> {
 	block_data_cache: Arc<EthBlockDataCacheTask<B>>,
 	fee_history_cache: FeeHistoryCache,
 	fee_history_cache_limit: FeeHistoryCacheLimit,
+	/// When using eth_call/eth_estimateGas, the maximum allowed gas limit will be
+	/// block.gas_limit * execute_gas_limit_multiplier
+	execute_gas_limit_multiplier: u64,
 	_marker: PhantomData<(B, BE)>,
 }
 
@@ -87,6 +90,7 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> Eth<B, C, P, CT, BE, H, A
 		block_data_cache: Arc<EthBlockDataCacheTask<B>>,
 		fee_history_cache: FeeHistoryCache,
 		fee_history_cache_limit: FeeHistoryCacheLimit,
+		execute_gas_limit_multiplier: u64,
 	) -> Self {
 		Self {
 			client,
@@ -101,6 +105,7 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> Eth<B, C, P, CT, BE, H, A
 			block_data_cache,
 			fee_history_cache,
 			fee_history_cache_limit,
+			execute_gas_limit_multiplier,
 			_marker: PhantomData,
 		}
 	}
