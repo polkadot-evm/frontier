@@ -123,7 +123,7 @@ where
 		// use given gas limit or query current block's limit
 		let gas_limit = match gas {
 			Some(amount) => {
-				if amount <= max_gas_limit {
+				if amount > max_gas_limit {
 					return Err(internal_err(format!(
 						"provided gas limit is to high (can be up to {}x the block gas limit)",
 						self.execute_gas_limit_multiplier
@@ -347,7 +347,7 @@ where
 		// Determine the highest possible gas limits
 		let mut highest = match request.gas {
 			Some(amount) => {
-				if amount <= max_gas_limit {
+				if amount > max_gas_limit {
 					return Err(internal_err(format!(
 						"provided gas limit is to high (can be up to {}x the block gas limit)",
 						self.execute_gas_limit_multiplier
