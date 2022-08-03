@@ -218,13 +218,27 @@
 <span id="213">213</span>
 <span id="214">214</span>
 <span id="215">215</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">frontier_template_runtime</span>::{<span class="ident">AccountId</span>, <span class="ident">GenesisConfig</span>, <span class="ident">Signature</span>, <span class="ident">WASM_BINARY</span>};
+<span id="216">216</span>
+<span id="217">217</span>
+<span id="218">218</span>
+<span id="219">219</span>
+<span id="220">220</span>
+<span id="221">221</span>
+<span id="222">222</span>
+<span id="223">223</span>
+<span id="224">224</span>
+<span id="225">225</span>
+<span id="226">226</span>
+<span id="227">227</span>
+</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">collections::BTreeMap</span>, <span class="ident">str::FromStr</span>};
+
 <span class="kw">use</span> <span class="ident">sc_service::ChainType</span>;
 <span class="kw">use</span> <span class="ident">sp_consensus_aura::sr25519::AuthorityId</span> <span class="kw">as</span> <span class="ident">AuraId</span>;
 <span class="kw">use</span> <span class="ident">sp_core</span>::{<span class="ident">sr25519</span>, <span class="ident">Pair</span>, <span class="ident">Public</span>, <span class="ident">H160</span>, <span class="ident">U256</span>};
 <span class="kw">use</span> <span class="ident">sp_finality_grandpa::AuthorityId</span> <span class="kw">as</span> <span class="ident">GrandpaId</span>;
 <span class="kw">use</span> <span class="ident">sp_runtime::traits</span>::{<span class="ident">IdentifyAccount</span>, <span class="ident">Verify</span>};
-<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">collections::BTreeMap</span>, <span class="ident">str::FromStr</span>};
+
+<span class="kw">use</span> <span class="ident">frontier_template_runtime</span>::{<span class="ident">AccountId</span>, <span class="ident">GenesisConfig</span>, <span class="ident">Signature</span>, <span class="ident">WASM_BINARY</span>};
 
 <span class="comment">// The URL for the telemetry server.</span>
 <span class="comment">// const STAGING_TELEMETRY_URL: &amp;str = &quot;wss://telemetry.polkadot.io/submit/&quot;;</span>
@@ -266,8 +280,6 @@
 		<span class="kw">move</span> <span class="op">|</span><span class="op">|</span> {
 			<span class="ident">testnet_genesis</span>(
 				<span class="ident">wasm_binary</span>,
-				<span class="comment">// Initial PoA authorities</span>
-				<span class="macro">vec!</span>[<span class="ident">authority_keys_from_seed</span>(<span class="string">&quot;Alice&quot;</span>)],
 				<span class="comment">// Sudo account</span>
 				<span class="ident">get_account_id_from_seed</span>::<span class="op">&lt;</span><span class="ident">sr25519::Public</span><span class="op">&gt;</span>(<span class="string">&quot;Alice&quot;</span>),
 				<span class="comment">// Pre-funded accounts</span>
@@ -277,7 +289,9 @@
 					<span class="ident">get_account_id_from_seed</span>::<span class="op">&lt;</span><span class="ident">sr25519::Public</span><span class="op">&gt;</span>(<span class="string">&quot;Alice//stash&quot;</span>),
 					<span class="ident">get_account_id_from_seed</span>::<span class="op">&lt;</span><span class="ident">sr25519::Public</span><span class="op">&gt;</span>(<span class="string">&quot;Bob//stash&quot;</span>),
 				],
-				<span class="bool-val">true</span>,
+				<span class="comment">// Initial PoA authorities</span>
+				<span class="macro">vec!</span>[<span class="ident">authority_keys_from_seed</span>(<span class="string">&quot;Alice&quot;</span>)],
+				<span class="number">42</span>,
 			)
 		},
 		<span class="comment">// Bootnodes</span>
@@ -307,10 +321,6 @@
 			<span class="ident">testnet_genesis</span>(
 				<span class="ident">wasm_binary</span>,
 				<span class="comment">// Initial PoA authorities</span>
-				<span class="macro">vec!</span>[
-					<span class="ident">authority_keys_from_seed</span>(<span class="string">&quot;Alice&quot;</span>),
-					<span class="ident">authority_keys_from_seed</span>(<span class="string">&quot;Bob&quot;</span>),
-				],
 				<span class="comment">// Sudo account</span>
 				<span class="ident">get_account_id_from_seed</span>::<span class="op">&lt;</span><span class="ident">sr25519::Public</span><span class="op">&gt;</span>(<span class="string">&quot;Alice&quot;</span>),
 				<span class="comment">// Pre-funded accounts</span>
@@ -328,7 +338,11 @@
 					<span class="ident">get_account_id_from_seed</span>::<span class="op">&lt;</span><span class="ident">sr25519::Public</span><span class="op">&gt;</span>(<span class="string">&quot;Eve//stash&quot;</span>),
 					<span class="ident">get_account_id_from_seed</span>::<span class="op">&lt;</span><span class="ident">sr25519::Public</span><span class="op">&gt;</span>(<span class="string">&quot;Ferdie//stash&quot;</span>),
 				],
-				<span class="bool-val">true</span>,
+				<span class="macro">vec!</span>[
+					<span class="ident">authority_keys_from_seed</span>(<span class="string">&quot;Alice&quot;</span>),
+					<span class="ident">authority_keys_from_seed</span>(<span class="string">&quot;Bob&quot;</span>),
+				],
+				<span class="number">42</span>,
 			)
 		},
 		<span class="comment">// Bootnodes</span>
@@ -348,19 +362,28 @@
 <span class="doccomment">/// Configure initial storage state for FRAME modules.</span>
 <span class="kw">fn</span> <span class="ident">testnet_genesis</span>(
 	<span class="ident">wasm_binary</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>],
-	<span class="ident">initial_authorities</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">AuraId</span>, <span class="ident">GrandpaId</span>)<span class="op">&gt;</span>,
-	<span class="ident">root_key</span>: <span class="ident">AccountId</span>,
+	<span class="ident">sudo_key</span>: <span class="ident">AccountId</span>,
 	<span class="ident">endowed_accounts</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span>,
-	<span class="ident">_enable_println</span>: <span class="ident">bool</span>,
+	<span class="ident">initial_authorities</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">AuraId</span>, <span class="ident">GrandpaId</span>)<span class="op">&gt;</span>,
+	<span class="ident">chain_id</span>: <span class="ident">u64</span>,
 ) -&gt; <span class="ident">GenesisConfig</span> {
 	<span class="kw">use</span> <span class="ident">frontier_template_runtime</span>::{
-		<span class="ident">AuraConfig</span>, <span class="ident">BalancesConfig</span>, <span class="ident">EVMConfig</span>, <span class="ident">GrandpaConfig</span>, <span class="ident">SudoConfig</span>, <span class="ident">SystemConfig</span>,
+		<span class="ident">AuraConfig</span>, <span class="ident">BalancesConfig</span>, <span class="ident">EVMChainIdConfig</span>, <span class="ident">EVMConfig</span>, <span class="ident">GrandpaConfig</span>, <span class="ident">SudoConfig</span>,
+		<span class="ident">SystemConfig</span>,
 	};
+
 	<span class="ident">GenesisConfig</span> {
+		<span class="comment">// System</span>
 		<span class="ident">system</span>: <span class="ident">SystemConfig</span> {
 			<span class="comment">// Add Wasm runtime to storage.</span>
 			<span class="ident">code</span>: <span class="ident">wasm_binary</span>.<span class="ident">to_vec</span>(),
 		},
+		<span class="ident">sudo</span>: <span class="ident">SudoConfig</span> {
+			<span class="comment">// Assign network admin rights.</span>
+			<span class="ident">key</span>: <span class="prelude-val">Some</span>(<span class="ident">sudo_key</span>),
+		},
+
+		<span class="comment">// Monetary</span>
 		<span class="ident">balances</span>: <span class="ident">BalancesConfig</span> {
 			<span class="comment">// Configure endowed accounts with initial balance of 1 &lt;&lt; 60.</span>
 			<span class="ident">balances</span>: <span class="ident">endowed_accounts</span>
@@ -370,6 +393,8 @@
 				.<span class="ident">collect</span>(),
 		},
 		<span class="ident">transaction_payment</span>: <span class="ident">Default::default</span>(),
+
+		<span class="comment">// Consensus</span>
 		<span class="ident">aura</span>: <span class="ident">AuraConfig</span> {
 			<span class="ident">authorities</span>: <span class="ident">initial_authorities</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> (<span class="ident">x</span>.<span class="number">0</span>.<span class="ident">clone</span>())).<span class="ident">collect</span>(),
 		},
@@ -379,10 +404,9 @@
 				.<span class="ident">map</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> (<span class="ident">x</span>.<span class="number">1</span>.<span class="ident">clone</span>(), <span class="number">1</span>))
 				.<span class="ident">collect</span>(),
 		},
-		<span class="ident">sudo</span>: <span class="ident">SudoConfig</span> {
-			<span class="comment">// Assign network admin rights.</span>
-			<span class="ident">key</span>: <span class="prelude-val">Some</span>(<span class="ident">root_key</span>),
-		},
+
+		<span class="comment">// EVM compatibility</span>
+		<span class="ident">evm_chain_id</span>: <span class="ident">EVMChainIdConfig</span> { <span class="ident">chain_id</span> },
 		<span class="ident">evm</span>: <span class="ident">EVMConfig</span> {
 			<span class="ident">accounts</span>: {
 				<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">map</span> <span class="op">=</span> <span class="ident">BTreeMap::new</span>();

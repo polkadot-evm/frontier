@@ -864,6 +864,8 @@
 <span id="859">859</span>
 <span id="860">860</span>
 <span id="861">861</span>
+<span id="862">862</span>
+<span id="863">863</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The Substrate Node Template runtime. This can be compiled with `#[no_std]`, ready for Wasm.</span>
 
 <span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
@@ -889,7 +891,7 @@
 <span class="kw">use</span> <span class="ident">sp_runtime</span>::{
 	<span class="ident">create_runtime_str</span>, <span class="ident">generic</span>, <span class="ident">impl_opaque_keys</span>,
 	<span class="ident">traits</span>::{
-		<span class="ident">AccountIdLookup</span>, <span class="ident">BlakeTwo256</span>, <span class="ident">Block</span> <span class="kw">as</span> <span class="ident">BlockT</span>, <span class="ident">DispatchInfoOf</span>, <span class="ident">Dispatchable</span>,
+		<span class="ident">AccountIdLookup</span>, <span class="ident">BlakeTwo256</span>, <span class="ident">Block</span> <span class="kw">as</span> <span class="ident">BlockT</span>, <span class="ident">DispatchInfoOf</span>, <span class="ident">Dispatchable</span>, <span class="ident">Get</span>,
 		<span class="ident">IdentifyAccount</span>, <span class="ident">NumberFor</span>, <span class="ident">PostDispatchInfoOf</span>, <span class="ident">UniqueSaturatedInto</span>, <span class="ident">Verify</span>,
 	},
 	<span class="ident">transaction_validity</span>::{<span class="ident">TransactionSource</span>, <span class="ident">TransactionValidity</span>, <span class="ident">TransactionValidityError</span>},
@@ -1034,12 +1036,10 @@
 	<span class="kw">type</span> <span class="ident">BlockWeights</span> <span class="op">=</span> <span class="ident">BlockWeights</span>;
 	<span class="doccomment">/// The maximum length of a block (in bytes).</span>
 	<span class="kw">type</span> <span class="ident">BlockLength</span> <span class="op">=</span> <span class="ident">BlockLength</span>;
-	<span class="doccomment">/// The identifier used to distinguish between accounts.</span>
-	<span class="kw">type</span> <span class="ident">AccountId</span> <span class="op">=</span> <span class="ident">AccountId</span>;
+	<span class="doccomment">/// The ubiquitous origin type.</span>
+	<span class="kw">type</span> <span class="ident">Origin</span> <span class="op">=</span> <span class="ident">Origin</span>;
 	<span class="doccomment">/// The aggregated dispatch type that is available for extrinsics.</span>
 	<span class="kw">type</span> <span class="ident">Call</span> <span class="op">=</span> <span class="ident">Call</span>;
-	<span class="doccomment">/// The lookup mechanism to get account ID from whatever is passed in dispatchers.</span>
-	<span class="kw">type</span> <span class="ident">Lookup</span> <span class="op">=</span> <span class="ident">AccountIdLookup</span><span class="op">&lt;</span><span class="ident">AccountId</span>, ()<span class="op">&gt;</span>;
 	<span class="doccomment">/// The index type for storing how many extrinsics an account has signed.</span>
 	<span class="kw">type</span> <span class="ident">Index</span> <span class="op">=</span> <span class="ident">Index</span>;
 	<span class="doccomment">/// The index type for blocks.</span>
@@ -1048,12 +1048,14 @@
 	<span class="kw">type</span> <span class="ident">Hash</span> <span class="op">=</span> <span class="ident">Hash</span>;
 	<span class="doccomment">/// The hashing algorithm used.</span>
 	<span class="kw">type</span> <span class="ident">Hashing</span> <span class="op">=</span> <span class="ident">BlakeTwo256</span>;
+	<span class="doccomment">/// The identifier used to distinguish between accounts.</span>
+	<span class="kw">type</span> <span class="ident">AccountId</span> <span class="op">=</span> <span class="ident">AccountId</span>;
+	<span class="doccomment">/// The lookup mechanism to get account ID from whatever is passed in dispatchers.</span>
+	<span class="kw">type</span> <span class="ident">Lookup</span> <span class="op">=</span> <span class="ident">AccountIdLookup</span><span class="op">&lt;</span><span class="ident">AccountId</span>, ()<span class="op">&gt;</span>;
 	<span class="doccomment">/// The header type.</span>
 	<span class="kw">type</span> <span class="ident">Header</span> <span class="op">=</span> <span class="ident">generic::Header</span><span class="op">&lt;</span><span class="ident">BlockNumber</span>, <span class="ident">BlakeTwo256</span><span class="op">&gt;</span>;
 	<span class="doccomment">/// The ubiquitous event type.</span>
 	<span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
-	<span class="doccomment">/// The ubiquitous origin type.</span>
-	<span class="kw">type</span> <span class="ident">Origin</span> <span class="op">=</span> <span class="ident">Origin</span>;
 	<span class="doccomment">/// Maximum number of block number to block hash mappings to keep (oldest pruned first).</span>
 	<span class="kw">type</span> <span class="ident">BlockHashCount</span> <span class="op">=</span> <span class="ident">BlockHashCount</span>;
 	<span class="doccomment">/// The weight of database operations that the runtime can invoke.</span>
@@ -1064,12 +1066,12 @@
 	<span class="doccomment">///</span>
 	<span class="doccomment">/// This type is being generated by `construct_runtime!`.</span>
 	<span class="kw">type</span> <span class="ident">PalletInfo</span> <span class="op">=</span> <span class="ident">PalletInfo</span>;
+	<span class="doccomment">/// The data to be stored in an account.</span>
+	<span class="kw">type</span> <span class="ident">AccountData</span> <span class="op">=</span> <span class="ident">pallet_balances::AccountData</span><span class="op">&lt;</span><span class="ident">Balance</span><span class="op">&gt;</span>;
 	<span class="doccomment">/// What to do if a new account is created.</span>
 	<span class="kw">type</span> <span class="ident">OnNewAccount</span> <span class="op">=</span> ();
 	<span class="doccomment">/// What to do if an account is fully reaped from the system.</span>
 	<span class="kw">type</span> <span class="ident">OnKilledAccount</span> <span class="op">=</span> ();
-	<span class="doccomment">/// The data to be stored in an account.</span>
-	<span class="kw">type</span> <span class="ident">AccountData</span> <span class="op">=</span> <span class="ident">pallet_balances::AccountData</span><span class="op">&lt;</span><span class="ident">Balance</span><span class="op">&gt;</span>;
 	<span class="doccomment">/// Weight information for the extrinsics of this pallet.</span>
 	<span class="kw">type</span> <span class="ident">SystemWeightInfo</span> <span class="op">=</span> ();
 	<span class="doccomment">/// This is used as an identifier of the chain. 42 is the generic substrate prefix.</span>
@@ -1085,15 +1087,13 @@
 
 <span class="kw">impl</span> <span class="ident">pallet_aura::Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
 	<span class="kw">type</span> <span class="ident">AuthorityId</span> <span class="op">=</span> <span class="ident">AuraId</span>;
-	<span class="kw">type</span> <span class="ident">DisabledValidators</span> <span class="op">=</span> ();
 	<span class="kw">type</span> <span class="ident">MaxAuthorities</span> <span class="op">=</span> <span class="ident">MaxAuthorities</span>;
+	<span class="kw">type</span> <span class="ident">DisabledValidators</span> <span class="op">=</span> ();
 }
 
 <span class="kw">impl</span> <span class="ident">pallet_grandpa::Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
 	<span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
 	<span class="kw">type</span> <span class="ident">Call</span> <span class="op">=</span> <span class="ident">Call</span>;
-
-	<span class="kw">type</span> <span class="ident">KeyOwnerProofSystem</span> <span class="op">=</span> ();
 
 	<span class="kw">type</span> <span class="ident">KeyOwnerProof</span> <span class="op">=</span>
 		<span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::KeyOwnerProofSystem</span> <span class="kw">as</span> <span class="ident">KeyOwnerProofSystem</span><span class="op">&lt;</span>(<span class="ident">KeyTypeId</span>, <span class="ident">GrandpaId</span>)<span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::Proof</span>;
@@ -1102,6 +1102,8 @@
 		<span class="ident">KeyTypeId</span>,
 		<span class="ident">GrandpaId</span>,
 	)<span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::IdentificationTuple</span>;
+
+	<span class="kw">type</span> <span class="ident">KeyOwnerProofSystem</span> <span class="op">=</span> ();
 
 	<span class="kw">type</span> <span class="ident">HandleEquivocation</span> <span class="op">=</span> ();
 
@@ -1116,12 +1118,12 @@
 <span class="kw">impl</span> <span class="ident">pallet_timestamp::Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
 	<span class="doccomment">/// A timestamp: milliseconds since the unix epoch.</span>
 	<span class="kw">type</span> <span class="ident">Moment</span> <span class="op">=</span> <span class="ident">u64</span>;
-	<span class="kw">type</span> <span class="ident">MinimumPeriod</span> <span class="op">=</span> <span class="ident">MinimumPeriod</span>;
-	<span class="kw">type</span> <span class="ident">WeightInfo</span> <span class="op">=</span> ();
 	<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;aura&quot;</span>)]</span>
 	<span class="kw">type</span> <span class="ident">OnTimestampSet</span> <span class="op">=</span> <span class="ident">Aura</span>;
 	<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;manual-seal&quot;</span>)]</span>
 	<span class="kw">type</span> <span class="ident">OnTimestampSet</span> <span class="op">=</span> ();
+	<span class="kw">type</span> <span class="ident">MinimumPeriod</span> <span class="op">=</span> <span class="ident">MinimumPeriod</span>;
+	<span class="kw">type</span> <span class="ident">WeightInfo</span> <span class="op">=</span> ();
 }
 
 <span class="macro">parameter_types!</span> {
@@ -1132,17 +1134,17 @@
 }
 
 <span class="kw">impl</span> <span class="ident">pallet_balances::Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
-	<span class="kw">type</span> <span class="ident">MaxLocks</span> <span class="op">=</span> <span class="ident">MaxLocks</span>;
-	<span class="kw">type</span> <span class="ident">MaxReserves</span> <span class="op">=</span> ();
-	<span class="kw">type</span> <span class="ident">ReserveIdentifier</span> <span class="op">=</span> [<span class="ident">u8</span>; <span class="number">8</span>];
 	<span class="doccomment">/// The type for recording an account&#39;s balance.</span>
 	<span class="kw">type</span> <span class="ident">Balance</span> <span class="op">=</span> <span class="ident">Balance</span>;
+	<span class="kw">type</span> <span class="ident">DustRemoval</span> <span class="op">=</span> ();
 	<span class="doccomment">/// The ubiquitous event type.</span>
 	<span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
-	<span class="kw">type</span> <span class="ident">DustRemoval</span> <span class="op">=</span> ();
 	<span class="kw">type</span> <span class="ident">ExistentialDeposit</span> <span class="op">=</span> <span class="ident">ExistentialDeposit</span>;
 	<span class="kw">type</span> <span class="ident">AccountStore</span> <span class="op">=</span> <span class="ident">System</span>;
 	<span class="kw">type</span> <span class="ident">WeightInfo</span> <span class="op">=</span> ();
+	<span class="kw">type</span> <span class="ident">MaxLocks</span> <span class="op">=</span> <span class="ident">MaxLocks</span>;
+	<span class="kw">type</span> <span class="ident">MaxReserves</span> <span class="op">=</span> ();
+	<span class="kw">type</span> <span class="ident">ReserveIdentifier</span> <span class="op">=</span> [<span class="ident">u8</span>; <span class="number">8</span>];
 }
 
 <span class="macro">parameter_types!</span> {
@@ -1162,6 +1164,8 @@
 	<span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
 	<span class="kw">type</span> <span class="ident">Call</span> <span class="op">=</span> <span class="ident">Call</span>;
 }
+
+<span class="kw">impl</span> <span class="ident">pallet_evm_chain_id::Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {}
 
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">FindAuthorTruncated</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span>(<span class="ident">PhantomData</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span>);
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">F</span>: <span class="ident">FindAuthor</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="ident">FindAuthor</span><span class="op">&lt;</span><span class="ident">H160</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">FindAuthorTruncated</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span> {
@@ -1188,7 +1192,6 @@
 }
 
 <span class="macro">parameter_types!</span> {
-	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">ChainId</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">42</span>;
 	<span class="kw">pub</span> <span class="ident">BlockGasLimit</span>: <span class="ident">U256</span> <span class="op">=</span> <span class="ident">U256::from</span>(<span class="ident">NORMAL_DISPATCH_RATIO</span> <span class="op">*</span> <span class="ident">MAXIMUM_BLOCK_WEIGHT</span> <span class="op">/</span> <span class="ident">WEIGHT_PER_GAS</span>);
 	<span class="kw">pub</span> <span class="ident">PrecompilesValue</span>: <span class="ident">FrontierPrecompiles</span><span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">FrontierPrecompiles</span>::<span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="ident">::new</span>();
 }
@@ -1202,11 +1205,11 @@
 	<span class="kw">type</span> <span class="ident">AddressMapping</span> <span class="op">=</span> <span class="ident">HashedAddressMapping</span><span class="op">&lt;</span><span class="ident">BlakeTwo256</span><span class="op">&gt;</span>;
 	<span class="kw">type</span> <span class="ident">Currency</span> <span class="op">=</span> <span class="ident">Balances</span>;
 	<span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
-	<span class="kw">type</span> <span class="ident">Runner</span> <span class="op">=</span> <span class="ident">pallet_evm::runner::stack::Runner</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span>;
 	<span class="kw">type</span> <span class="ident">PrecompilesType</span> <span class="op">=</span> <span class="ident">FrontierPrecompiles</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span>;
 	<span class="kw">type</span> <span class="ident">PrecompilesValue</span> <span class="op">=</span> <span class="ident">PrecompilesValue</span>;
-	<span class="kw">type</span> <span class="ident">ChainId</span> <span class="op">=</span> <span class="ident">ChainId</span>;
+	<span class="kw">type</span> <span class="ident">ChainId</span> <span class="op">=</span> <span class="ident">EVMChainId</span>;
 	<span class="kw">type</span> <span class="ident">BlockGasLimit</span> <span class="op">=</span> <span class="ident">BlockGasLimit</span>;
+	<span class="kw">type</span> <span class="ident">Runner</span> <span class="op">=</span> <span class="ident">pallet_evm::runner::stack::Runner</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span>;
 	<span class="kw">type</span> <span class="ident">OnChargeTransaction</span> <span class="op">=</span> ();
 	<span class="kw">type</span> <span class="ident">FindAuthor</span> <span class="op">=</span> <span class="ident">FindAuthorTruncated</span><span class="op">&lt;</span><span class="ident">Aura</span><span class="op">&gt;</span>;
 }
@@ -1216,7 +1219,7 @@
 	<span class="kw">type</span> <span class="ident">StateRoot</span> <span class="op">=</span> <span class="ident">pallet_ethereum::IntermediateStateRoot</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span>;
 }
 
-<span class="macro">frame_support::parameter_types!</span> {
+<span class="macro">parameter_types!</span> {
 	<span class="kw">pub</span> <span class="ident">BoundDivision</span>: <span class="ident">U256</span> <span class="op">=</span> <span class="ident">U256::from</span>(<span class="number">1024</span>);
 }
 
@@ -1224,7 +1227,7 @@
 	<span class="kw">type</span> <span class="ident">MinGasPriceBoundDivisor</span> <span class="op">=</span> <span class="ident">BoundDivision</span>;
 }
 
-<span class="macro">frame_support::parameter_types!</span> {
+<span class="macro">parameter_types!</span> {
 	<span class="kw">pub</span> <span class="ident">IsActive</span>: <span class="ident">bool</span> <span class="op">=</span> <span class="bool-val">true</span>;
 	<span class="kw">pub</span> <span class="ident">DefaultBaseFeePerGas</span>: <span class="ident">U256</span> <span class="op">=</span> <span class="ident">U256::from</span>(<span class="number">1_000_000_000</span>);
 }
@@ -1270,6 +1273,7 @@
 		<span class="ident">Sudo</span>: <span class="ident">pallet_sudo</span>,
 		<span class="ident">Ethereum</span>: <span class="ident">pallet_ethereum</span>,
 		<span class="ident">EVM</span>: <span class="ident">pallet_evm</span>,
+		<span class="ident">EVMChainId</span>: <span class="ident">pallet_evm_chain_id</span>,
 		<span class="ident">DynamicFee</span>: <span class="ident">pallet_dynamic_fee</span>,
 		<span class="ident">BaseFee</span>: <span class="ident">pallet_base_fee</span>,
 		<span class="ident">HotfixSufficients</span>: <span class="ident">pallet_hotfix_sufficients</span>,
