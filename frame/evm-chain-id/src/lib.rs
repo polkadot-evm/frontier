@@ -15,7 +15,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//! # EVM chain ID pallet
+//!
 //! The pallet that stores the numeric Ethereum-style chain id in the runtime.
+//! It can simplify setting up multiple networks with different chain ID by configuring the
+//! chain spec without requiring changes to the runtime config.
+//!
+//! **NOTE**: we recommend that the production chains still use the const parameter type, as
+//! this extra storage access would imply some performance penalty.
 
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
