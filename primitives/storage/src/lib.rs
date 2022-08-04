@@ -24,21 +24,21 @@ pub const PALLET_ETHEREUM_SCHEMA: &[u8] = b":ethereum_schema";
 /// Cached version of pallet Ethereum's storage schema is stored under this key in the AuxStore.
 pub const PALLET_ETHEREUM_SCHEMA_CACHE: &[u8] = b":ethereum_schema_cache";
 
-// pallet Evm storage items
+/// Pallet Evm storage items
 pub const PALLET_EVM: &[u8] = b"EVM";
-pub const PALLET_EVM_ACCOUNT_CODES: &[u8] = b"AccountCodes";
-pub const PALLET_EVM_ACCOUNT_STORAGES: &[u8] = b"AccountStorages";
+pub const EVM_ACCOUNT_CODES: &[u8] = b"AccountCodes";
+pub const EVM_ACCOUNT_STORAGES: &[u8] = b"AccountStorages";
 
-// pallet Ethereum storage items
+/// Pallet Ethereum storage items
 pub const PALLET_ETHEREUM: &[u8] = b"Ethereum";
-pub const PALLET_ETHEREUM_CURRENT_BLOCK: &[u8] = b"CurrentBlock";
-pub const PALLET_ETHEREUM_CURRENT_RECEIPTS: &[u8] = b"CurrentReceipts";
-pub const PALLET_ETHEREUM_CURRENT_TRANSACTION_STATUS: &[u8] = b"CurrentTransactionStatuses";
+pub const ETHEREUM_CURRENT_BLOCK: &[u8] = b"CurrentBlock";
+pub const ETHEREUM_CURRENT_RECEIPTS: &[u8] = b"CurrentReceipts";
+pub const ETHEREUM_CURRENT_TRANSACTION_STATUS: &[u8] = b"CurrentTransactionStatuses";
 
-// pallet BaseFee storage items
+/// Pallet BaseFee storage items
 pub const PALLET_BASE_FEE: &[u8] = b"BaseFee";
-pub const PALLET_BASE_FEE_PER_GAS: &[u8] = b"BaseFeePerGas";
-pub const PALLET_BASE_FEE_ELASTICITY: &[u8] = b"Elasticity";
+pub const BASE_FEE_PER_GAS: &[u8] = b"BaseFeePerGas";
+pub const BASE_FEE_ELASTICITY: &[u8] = b"Elasticity";
 
 /// The schema version for Pallet Ethereum's storage
 #[derive(Clone, Copy, Debug, Encode, Decode, PartialEq, Eq, PartialOrd, Ord)]

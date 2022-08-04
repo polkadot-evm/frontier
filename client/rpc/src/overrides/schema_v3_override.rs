@@ -75,7 +75,7 @@ where
 {
 	/// For a given account address, returns pallet_evm::AccountCodes.
 	fn account_code_at(&self, block: &BlockId<B>, address: H160) -> Option<Vec<u8>> {
-		let mut key: Vec<u8> = storage_prefix_build(PALLET_EVM, PALLET_EVM_ACCOUNT_CODES);
+		let mut key: Vec<u8> = storage_prefix_build(PALLET_EVM, EVM_ACCOUNT_CODES);
 		key.extend(blake2_128_extend(address.as_bytes()));
 		self.query_storage::<Vec<u8>>(block, &StorageKey(key))
 	}
@@ -85,7 +85,7 @@ where
 		let tmp: &mut [u8; 32] = &mut [0; 32];
 		index.to_big_endian(tmp);
 
-		let mut key: Vec<u8> = storage_prefix_build(PALLET_EVM, PALLET_EVM_ACCOUNT_STORAGES);
+		let mut key: Vec<u8> = storage_prefix_build(PALLET_EVM, EVM_ACCOUNT_STORAGES);
 		key.extend(blake2_128_extend(address.as_bytes()));
 		key.extend(blake2_128_extend(tmp));
 
@@ -98,7 +98,7 @@ where
 			block,
 			&StorageKey(storage_prefix_build(
 				PALLET_ETHEREUM,
-				PALLET_ETHEREUM_CURRENT_BLOCK,
+				ETHEREUM_CURRENT_BLOCK,
 			)),
 		)
 	}
@@ -109,7 +109,7 @@ where
 			block,
 			&StorageKey(storage_prefix_build(
 				PALLET_ETHEREUM,
-				PALLET_ETHEREUM_CURRENT_RECEIPTS,
+				ETHEREUM_CURRENT_RECEIPTS,
 			)),
 		)
 	}
@@ -120,7 +120,7 @@ where
 			block,
 			&StorageKey(storage_prefix_build(
 				PALLET_ETHEREUM,
-				PALLET_ETHEREUM_CURRENT_TRANSACTION_STATUS,
+				ETHEREUM_CURRENT_TRANSACTION_STATUS,
 			)),
 		)
 	}
@@ -129,10 +129,7 @@ where
 	fn base_fee(&self, block: &BlockId<B>) -> Option<U256> {
 		self.query_storage::<U256>(
 			block,
-			&StorageKey(storage_prefix_build(
-				PALLET_BASE_FEE,
-				PALLET_BASE_FEE_PER_GAS,
-			)),
+			&StorageKey(storage_prefix_build(PALLET_BASE_FEE, BASE_FEE_PER_GAS)),
 		)
 	}
 
@@ -141,10 +138,7 @@ where
 		let default_elasticity = Some(Permill::from_parts(125_000));
 		let elasticity = self.query_storage::<Permill>(
 			block,
-			&StorageKey(storage_prefix_build(
-				PALLET_BASE_FEE,
-				PALLET_BASE_FEE_ELASTICITY,
-			)),
+			&StorageKey(storage_prefix_build(PALLET_BASE_FEE, BASE_FEE_ELASTICITY)),
 		);
 		if elasticity.is_some() {
 			elasticity
