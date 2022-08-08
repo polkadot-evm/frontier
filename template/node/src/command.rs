@@ -15,19 +15,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::sync::Arc;
-
 use clap::Parser;
-use fc_db::frontier_database_dir;
-use frame_benchmarking_cli::BenchmarkCmd;
-use frontier_template_runtime::Block;
+// Substrate
+use frame_benchmarking_cli::{BenchmarkCmd, ExtrinsicFactory};
 use sc_cli::{ChainSpec, RuntimeVersion, SubstrateCli};
 use sc_service::{DatabaseSource, PartialComponents};
+use sp_keyring::Sr25519Keyring;
+// Frontier
+use fc_db::frontier_database_dir;
+use frontier_template_runtime::{Block, ExistentialDeposit};
 
 use crate::{
+	benchmarking::{inherent_benchmark_data, RemarkBuilder, TransferKeepAliveBuilder},
 	chain_spec,
 	cli::{Cli, Subcommand},
-	command_helper::{inherent_benchmark_data, BenchmarkExtrinsicBuilder},
 	service::{self, db_config_dir},
 };
 
@@ -189,18 +190,23 @@ pub fn run() -> sc_cli::Result<()> {
 					BenchmarkCmd::Storage(cmd) => {
 						let db = backend.expose_db();
 						let storage = backend.expose_storage();
-
 						cmd.run(config, client, db, storage)
 					}
 					BenchmarkCmd::Overhead(cmd) => {
-						let ext_builder = BenchmarkExtrinsicBuilder::new(client.clone());
-
-						cmd.run(
-							config,
-							client,
-							inherent_benchmark_data()?,
-							Arc::new(ext_builder),
-						)
+						let ext_builder = RemarkBuilder::new(client.clone());
+						cmd.run(config, client, inherent_benchmark_data()?, &ext_builder)
+					}
+					BenchmarkCmd::Extrinsic(cmd) => {
+						// Register the *Remark* and *TKA* builders.
+						let ext_factory = ExtrinsicFactory(vec![
+							Box::new(RemarkBuilder::new(client.clone())),
+							Box::new(TransferKeepAliveBuilder::new(
+								client.clone(),
+								Sr25519Keyring::Alice.to_account_id(),
+								ExistentialDeposit::get(),
+							)),
+						]);
+						cmd.run(client, inherent_benchmark_data()?, &ext_factory)
 					}
 					BenchmarkCmd::Machine(cmd) => cmd.run(
 						&config,
