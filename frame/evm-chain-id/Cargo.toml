@@ -1,0 +1,36 @@
+[package]
+name = "pallet-evm-chain-id"
+version = "1.0.0-dev"
+authors = ["Parity Technologies <admin@parity.io>"]
+edition = "2021"
+license = "Apache-2.0"
+readme = "README.md"
+description = "EVM chain id storage pallet"
+repository = "https://github.com/paritytech/frontier/"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"], optional = true }
+
+# Parity
+codec = { package = "parity-scale-codec", version = "3.1", default-features = false, features = ["derive"] }
+scale-info = { version = "2.1", default-features = false, features = ["derive"] }
+
+# Substrate FRAME
+frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+
+[features]
+default = ["std"]
+std = [
+	"serde",
+	# Parity
+	"codec/std",
+	"scale-info/std",
+	# Substrate FRAME
+	"frame-support/std",
+	"frame-system/std",
+]
+try-runtime = ["frame-support/try-runtime"]
