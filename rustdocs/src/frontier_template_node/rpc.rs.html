@@ -226,6 +226,7 @@
 <span id="221">221</span>
 <span id="222">222</span>
 <span id="223">223</span>
+<span id="224">224</span>
 </pre><pre class="rust"><code><span class="doccomment">//! A collection of node-specific RPC methods.</span>
 
 <span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">collections::BTreeMap</span>, <span class="ident">sync::Arc</span>};
@@ -397,6 +398,7 @@
 			<span class="ident">block_data_cache</span>.<span class="ident">clone</span>(),
 			<span class="ident">fee_history_cache</span>,
 			<span class="ident">fee_history_cache_limit</span>,
+			<span class="number">10</span>,
 		)
 		.<span class="ident">into_rpc</span>(),
 	)<span class="question-mark">?</span>;

@@ -748,6 +748,8 @@
 <span id="743">743</span>
 <span id="744">744</span>
 <span id="745">745</span>
+<span id="746">746</span>
+<span id="747">747</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -947,13 +949,15 @@
 					<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">transaction</span>.<span class="ident">access_list</span>,
 				)
 			};
+
 			<span class="kw">if</span> <span class="ident">gasometer</span>.<span class="ident">record_transaction</span>(<span class="ident">transaction_cost</span>).<span class="ident">is_err</span>() {
 				<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">InvalidEvmTransactionError::GasLimitTooLow</span>.<span class="ident">into</span>());
 			}
-		}
-		<span class="comment">// Transaction gas limit is within the upper bound block gas limit.</span>
-		<span class="kw">if</span> <span class="self">self</span>.<span class="ident">transaction</span>.<span class="ident">gas_limit</span> <span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">config</span>.<span class="ident">block_gas_limit</span> {
-			<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">InvalidEvmTransactionError::GasLimitTooHigh</span>.<span class="ident">into</span>());
+
+			<span class="comment">// Transaction gas limit is within the upper bound block gas limit.</span>
+			<span class="kw">if</span> <span class="self">self</span>.<span class="ident">transaction</span>.<span class="ident">gas_limit</span> <span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">config</span>.<span class="ident">block_gas_limit</span> {
+				<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">InvalidEvmTransactionError::GasLimitTooHigh</span>.<span class="ident">into</span>());
+			}
 		}
 
 		<span class="prelude-val">Ok</span>(<span class="self">self</span>)
