@@ -11,7 +11,7 @@ publish = false
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-serde = { version = "1.0.140", features = ["derive"], optional = true }
+serde = { version = "1.0.143", features = ["derive"], optional = true }
 
 # Parity
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
@@ -55,6 +55,7 @@ pallet-base-fee = { path = "../../frame/base-fee", default-features = false }
 pallet-dynamic-fee = { path = "../../frame/dynamic-fee", default-features = false }
 pallet-ethereum = { path = "../../frame/ethereum", default-features = false }
 pallet-evm = { path = "../../frame/evm", default-features = false }
+pallet-evm-chain-id = { path = "../../frame/evm-chain-id", default-features = false }
 pallet-evm-precompile-modexp = { path = "../../frame/evm/precompile/modexp", default-features = false }
 pallet-evm-precompile-sha3fips = { path = "../../frame/evm/precompile/sha3fips", default-features = false }
 pallet-evm-precompile-simple = { path = "../../frame/evm/precompile/simple", default-features = false }
@@ -108,6 +109,7 @@ std = [
 	"pallet-dynamic-fee/std",
 	"pallet-ethereum/std",
 	"pallet-evm/std",
+	"pallet-evm-chain-id/std",
 	"pallet-evm-precompile-modexp/std",
 	"pallet-evm-precompile-sha3fips/std",
 	"pallet-evm-precompile-simple/std",

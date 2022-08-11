@@ -57,8 +57,6 @@ frame_support::construct_runtime! {
 
 parameter_types! {
 	pub const BlockHashCount: u64 = 250;
-	pub BlockWeights: frame_system::limits::BlockWeights =
-		frame_system::limits::BlockWeights::simple_max(1024);
 }
 
 impl frame_system::Config for Test {
@@ -266,6 +264,32 @@ pub fn new_test_ext(accounts_len: usize) -> (Vec<AccountInfo>, sp_io::TestExtern
 
 	let balances: Vec<_> = (0..accounts_len)
 		.map(|i| (pairs[i].account_id.clone(), 10_000_000))
+		.collect();
+
+	pallet_balances::GenesisConfig::<Test> { balances }
+		.assimilate_storage(&mut ext)
+		.unwrap();
+
+	(pairs, ext.into())
+}
+
+// This function basically just builds a genesis storage key/value store according to
+// our desired mockup.
+pub fn new_test_ext_with_initial_balance(
+	accounts_len: usize,
+	initial_balance: u64,
+) -> (Vec<AccountInfo>, sp_io::TestExternalities) {
+	// sc_cli::init_logger("");
+	let mut ext = frame_system::GenesisConfig::default()
+		.build_storage::<Test>()
+		.unwrap();
+
+	let pairs = (0..accounts_len)
+		.map(|i| address_build(i as u8))
+		.collect::<Vec<_>>();
+
+	let balances: Vec<_> = (0..accounts_len)
+		.map(|i| (pairs[i].account_id.clone(), initial_balance))
 		.collect();
 
 	pallet_balances::GenesisConfig::<Test> { balances }

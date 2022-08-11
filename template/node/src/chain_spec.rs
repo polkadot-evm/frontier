@@ -1,10 +1,12 @@
-use frontier_template_runtime::{AccountId, GenesisConfig, Signature, WASM_BINARY};
+use std::{collections::BTreeMap, str::FromStr};
+
 use sc_service::ChainType;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::{sr25519, Pair, Public, H160, U256};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::traits::{IdentifyAccount, Verify};
-use std::{collections::BTreeMap, str::FromStr};
+
+use frontier_template_runtime::{AccountId, GenesisConfig, Signature, WASM_BINARY};
 
 // The URL for the telemetry server.
 // const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
@@ -46,8 +48,6 @@ pub fn development_config() -> Result<ChainSpec, String> {
 		move || {
 			testnet_genesis(
 				wasm_binary,
-				// Initial PoA authorities
-				vec![authority_keys_from_seed("Alice")],
 				// Sudo account
 				get_account_id_from_seed::<sr25519::Public>("Alice"),
 				// Pre-funded accounts
@@ -57,7 +57,9 @@ pub fn development_config() -> Result<ChainSpec, String> {
 					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
 				],
-				true,
+				// Initial PoA authorities
+				vec![authority_keys_from_seed("Alice")],
+				42,
 			)
 		},
 		// Bootnodes
@@ -87,10 +89,6 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
 			testnet_genesis(
 				wasm_binary,
 				// Initial PoA authorities
-				vec![
-					authority_keys_from_seed("Alice"),
-					authority_keys_from_seed("Bob"),
-				],
 				// Sudo account
 				get_account_id_from_seed::<sr25519::Public>("Alice"),
 				// Pre-funded accounts
@@ -108,7 +106,11 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
 					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 				],
-				true,
+				vec![
+					authority_keys_from_seed("Alice"),
+					authority_keys_from_seed("Bob"),
+				],
+				42,
 			)
 		},
 		// Bootnodes
@@ -128,19 +130,28 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
 /// Configure initial storage state for FRAME modules.
 fn testnet_genesis(
 	wasm_binary: &[u8],
-	initial_authorities: Vec<(AuraId, GrandpaId)>,
-	root_key: AccountId,
+	sudo_key: AccountId,
 	endowed_accounts: Vec<AccountId>,
-	_enable_println: bool,
+	initial_authorities: Vec<(AuraId, GrandpaId)>,
+	chain_id: u64,
 ) -> GenesisConfig {
 	use frontier_template_runtime::{
-		AuraConfig, BalancesConfig, EVMConfig, GrandpaConfig, SudoConfig, SystemConfig,
+		AuraConfig, BalancesConfig, EVMChainIdConfig, EVMConfig, GrandpaConfig, SudoConfig,
+		SystemConfig,
 	};
+
 	GenesisConfig {
+		// System
 		system: SystemConfig {
 			// Add Wasm runtime to storage.
 			code: wasm_binary.to_vec(),
 		},
+		sudo: SudoConfig {
+			// Assign network admin rights.
+			key: Some(sudo_key),
+		},
+
+		// Monetary
 		balances: BalancesConfig {
 			// Configure endowed accounts with initial balance of 1 << 60.
 			balances: endowed_accounts
@@ -150,6 +161,8 @@ fn testnet_genesis(
 				.collect(),
 		},
 		transaction_payment: Default::default(),
+
+		// Consensus
 		aura: AuraConfig {
 			authorities: initial_authorities.iter().map(|x| (x.0.clone())).collect(),
 		},
@@ -159,10 +172,9 @@ fn testnet_genesis(
 				.map(|x| (x.1.clone(), 1))
 				.collect(),
 		},
-		sudo: SudoConfig {
-			// Assign network admin rights.
-			key: Some(root_key),
-		},
+
+		// EVM compatibility
+		evm_chain_id: EVMChainIdConfig { chain_id },
 		evm: EVMConfig {
 			accounts: {
 				let mut map = BTreeMap::new();
