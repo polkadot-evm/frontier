@@ -102,27 +102,38 @@ where
 			} else {
 				return Err(internal_err("failed to retrieve Runtime Api version"));
 			};
+
+		let block = if api_version > 1 {
+			api.current_block(&id)
+				.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
+		} else {
+			#[allow(deprecated)]
+			let legacy_block = api
+				.current_block_before_version_2(&id)
+				.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?;
+			legacy_block.map(|block| block.into())
+		};
+
+		let block_gas_limit = block
+			.ok_or_else(|| internal_err("block unavailable, cannot query gas limit"))?
+			.header
+			.gas_limit;
+		let max_gas_limit = block_gas_limit * self.execute_gas_limit_multiplier;
+
 		// use given gas limit or query current block's limit
 		let gas_limit = match gas {
-			Some(amount) => amount,
-			None => {
-				let block = if api_version > 1 {
-					api.current_block(&id)
-						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
-				} else {
-					#[allow(deprecated)]
-					let legacy_block = api.current_block_before_version_2(&id)
-						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?;
-					legacy_block.map(|block| block.into())
-				};
-
-				if let Some(block) = block {
-					block.header.gas_limit
-				} else {
-					return Err(internal_err("block unavailable, cannot query gas limit"));
+			Some(amount) => {
+				if amount > max_gas_limit {
+					return Err(internal_err(format!(
+						"provided gas limit is too high (can be up to {}x the block gas limit)",
+						self.execute_gas_limit_multiplier
+					)));
 				}
+				amount
 			}
+			None => max_gas_limit,
 		};
+
 		let data = data.map(|d| d.0).unwrap_or_default();
 		match to {
 			Some(to) => {
@@ -319,25 +330,32 @@ where
 			)
 		};
 
-		let get_current_block_gas_limit = || async {
+		let block_gas_limit = {
 			let substrate_hash = client.info().best_hash;
 			let id = BlockId::Hash(substrate_hash);
 			let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(&client, id);
 			let block = block_data_cache.current_block(schema, substrate_hash).await;
-			if let Some(block) = block {
-				Ok(block.header.gas_limit)
-			} else {
-				Err(internal_err("block unavailable, cannot query gas limit"))
-			}
+
+			block
+				.ok_or_else(|| internal_err("block unavailable, cannot query gas limit"))?
+				.header
+				.gas_limit
 		};
+
+		let max_gas_limit = block_gas_limit * self.execute_gas_limit_multiplier;
 
 		// Determine the highest possible gas limits
 		let mut highest = match request.gas {
-			Some(gas) => gas,
-			None => {
-				// query current block's gas limit
-				get_current_block_gas_limit().await?
+			Some(amount) => {
+				if amount > max_gas_limit {
+					return Err(internal_err(format!(
+						"provided gas limit is too high (can be up to {}x the block gas limit)",
+						self.execute_gas_limit_multiplier
+					)));
+				}
+				amount
 			}
+			None => max_gas_limit,
 		};
 
 		let api = client.runtime_api();
@@ -582,7 +600,7 @@ where
 						used_gas: _,
 					} = executable(
 						request.clone(),
-						get_current_block_gas_limit().await?,
+						max_gas_limit,
 						api_version,
 						client.runtime_api(),
 						estimate_mode,
