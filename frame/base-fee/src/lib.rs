@@ -128,6 +128,11 @@ pub mod pallet {
 		}
 
 		fn on_finalize(_n: <T as frame_system::Config>::BlockNumber) {
+			if <Elasticity<T>>::get().is_zero() {
+				// Zero elasticity means constant BaseFeePerGas.
+				return;
+			}
+
 			let lower = T::Threshold::lower();
 			let upper = T::Threshold::upper();
 			// `target` is the ideal congestion of the network where the base fee should remain unchanged.
@@ -137,9 +142,7 @@ pub mod pallet {
 			// The base fee is fully increased (default 12.5%) if the block is upper full (default 100%).
 			// The base fee is fully decreased (default 12.5%) if the block is lower empty (default 0%).
 			let weight = <frame_system::Pallet<T>>::block_weight();
-			let max_weight =
-				<<T as frame_system::Config>::BlockWeights as frame_support::traits::Get<_>>::get()
-					.max_block;
+			let max_weight = <<T as frame_system::Config>::BlockWeights>::get().max_block;
 
 			// We convert `weight` into block fullness and ensure we are within the lower and upper bound.
 			let weight_used =
