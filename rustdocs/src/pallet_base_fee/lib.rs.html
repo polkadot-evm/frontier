@@ -231,40 +231,6 @@
 <span id="226">226</span>
 <span id="227">227</span>
 <span id="228">228</span>
-<span id="229">229</span>
-<span id="230">230</span>
-<span id="231">231</span>
-<span id="232">232</span>
-<span id="233">233</span>
-<span id="234">234</span>
-<span id="235">235</span>
-<span id="236">236</span>
-<span id="237">237</span>
-<span id="238">238</span>
-<span id="239">239</span>
-<span id="240">240</span>
-<span id="241">241</span>
-<span id="242">242</span>
-<span id="243">243</span>
-<span id="244">244</span>
-<span id="245">245</span>
-<span id="246">246</span>
-<span id="247">247</span>
-<span id="248">248</span>
-<span id="249">249</span>
-<span id="250">250</span>
-<span id="251">251</span>
-<span id="252">252</span>
-<span id="253">253</span>
-<span id="254">254</span>
-<span id="255">255</span>
-<span id="256">256</span>
-<span id="257">257</span>
-<span id="258">258</span>
-<span id="259">259</span>
-<span id="260">260</span>
-<span id="261">261</span>
-<span id="262">262</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -316,24 +282,22 @@
 		<span class="kw">type</span> <span class="ident">Event</span>: <span class="ident">From</span><span class="op">&lt;</span><span class="ident">Event</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">IsType</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="self">Self</span> <span class="kw">as</span> <span class="ident">frame_system::Config</span><span class="op">&gt;</span><span class="ident">::Event</span><span class="op">&gt;</span>;
 		<span class="doccomment">/// Lower and upper bounds for increasing / decreasing `BaseFeePerGas`.</span>
 		<span class="kw">type</span> <span class="ident">Threshold</span>: <span class="ident">BaseFeeThreshold</span>;
-		<span class="kw">type</span> <span class="ident">IsActive</span>: <span class="ident">Get</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span>;
 		<span class="kw">type</span> <span class="ident">DefaultBaseFeePerGas</span>: <span class="ident">Get</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>;
+		<span class="kw">type</span> <span class="ident">DefaultElasticity</span>: <span class="ident">Get</span><span class="op">&lt;</span><span class="ident">Permill</span><span class="op">&gt;</span>;
 	}
 
 	<span class="attribute">#[<span class="ident">pallet::genesis_config</span>]</span>
 	<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">GenesisConfig</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> {
 		<span class="kw">pub</span> <span class="ident">base_fee_per_gas</span>: <span class="ident">U256</span>,
-		<span class="kw">pub</span> <span class="ident">is_active</span>: <span class="ident">bool</span>,
 		<span class="kw">pub</span> <span class="ident">elasticity</span>: <span class="ident">Permill</span>,
 		<span class="ident">_marker</span>: <span class="ident">PhantomData</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
 	}
 
 	<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>)]</span>
 	<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">GenesisConfig</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-		<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">base_fee_per_gas</span>: <span class="ident">U256</span>, <span class="ident">is_active</span>: <span class="ident">bool</span>, <span class="ident">elasticity</span>: <span class="ident">Permill</span>) -&gt; <span class="self">Self</span> {
+		<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">base_fee_per_gas</span>: <span class="ident">U256</span>, <span class="ident">elasticity</span>: <span class="ident">Permill</span>) -&gt; <span class="self">Self</span> {
 			<span class="self">Self</span> {
 				<span class="ident">base_fee_per_gas</span>,
-				<span class="ident">is_active</span>,
 				<span class="ident">elasticity</span>,
 				<span class="ident">_marker</span>: <span class="ident">PhantomData</span>,
 			}
@@ -345,8 +309,7 @@
 		<span class="kw">fn</span> <span class="ident">default</span>() -&gt; <span class="self">Self</span> {
 			<span class="self">Self</span> {
 				<span class="ident">base_fee_per_gas</span>: <span class="ident">T::DefaultBaseFeePerGas::get</span>(),
-				<span class="ident">is_active</span>: <span class="bool-val">true</span>,
-				<span class="ident">elasticity</span>: <span class="ident">Permill::from_parts</span>(<span class="number">125_000</span>),
+				<span class="ident">elasticity</span>: <span class="ident">T::DefaultElasticity::get</span>(),
 				<span class="ident">_marker</span>: <span class="ident">PhantomData</span>,
 			}
 		}
@@ -356,7 +319,7 @@
 	<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">GenesisBuild</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">GenesisConfig</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
 		<span class="kw">fn</span> <span class="ident">build</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) {
 			<span class="op">&lt;</span><span class="ident">BaseFeePerGas</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::put</span>(<span class="self">self</span>.<span class="ident">base_fee_per_gas</span>);
-			<span class="op">&lt;</span><span class="ident">IsActive</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::put</span>(<span class="self">self</span>.<span class="ident">is_active</span>);
+			<span class="op">&lt;</span><span class="ident">Elasticity</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::put</span>(<span class="self">self</span>.<span class="ident">elasticity</span>);
 		}
 	}
 
@@ -370,29 +333,19 @@
 	<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">BaseFeePerGas</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">StorageValue</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">U256</span>, <span class="ident">ValueQuery</span>, <span class="ident">DefaultBaseFeePerGas</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>;
 
 	<span class="attribute">#[<span class="ident">pallet::type_value</span>]</span>
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">DefaultIsActive</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span>() -&gt; <span class="ident">bool</span> {
-		<span class="ident">T::IsActive::get</span>()
-	}
-
-	<span class="attribute">#[<span class="ident">pallet::storage</span>]</span>
-	<span class="attribute">#[<span class="ident">pallet::getter</span>(<span class="kw">fn</span> <span class="ident">is_active</span>)]</span>
-	<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">IsActive</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">StorageValue</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">bool</span>, <span class="ident">ValueQuery</span>, <span class="ident">DefaultIsActive</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>;
-
-	<span class="attribute">#[<span class="ident">pallet::type_value</span>]</span>
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">DefaultElasticity</span>() -&gt; <span class="ident">Permill</span> {
-		<span class="ident">Permill::from_parts</span>(<span class="number">125_000</span>)
+	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">DefaultElasticity</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span>() -&gt; <span class="ident">Permill</span> {
+		<span class="ident">T::DefaultElasticity::get</span>()
 	}
 
 	<span class="attribute">#[<span class="ident">pallet::storage</span>]</span>
 	<span class="attribute">#[<span class="ident">pallet::getter</span>(<span class="kw">fn</span> <span class="ident">elasticity</span>)]</span>
-	<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">Elasticity</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">StorageValue</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">Permill</span>, <span class="ident">ValueQuery</span>, <span class="ident">DefaultElasticity</span><span class="op">&gt;</span>;
+	<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">Elasticity</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">StorageValue</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">Permill</span>, <span class="ident">ValueQuery</span>, <span class="ident">DefaultElasticity</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>;
 
 	<span class="attribute">#[<span class="ident">pallet::event</span>]</span>
 	<span class="attribute">#[<span class="ident">pallet::generate_deposit</span>(<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn</span> <span class="ident">deposit_event</span>)]</span>
 	<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Event</span> {
 		<span class="ident">NewBaseFeePerGas</span> { <span class="ident">fee</span>: <span class="ident">U256</span> },
 		<span class="ident">BaseFeeOverflow</span>,
-		<span class="ident">IsActive</span> { <span class="ident">is_active</span>: <span class="ident">bool</span> },
 		<span class="ident">NewElasticity</span> { <span class="ident">elasticity</span>: <span class="ident">Permill</span> },
 	}
 
@@ -403,79 +356,70 @@
 			<span class="comment">// 	- One storage read to get the block_weight.</span>
 			<span class="comment">// 	- One storage read to get the Elasticity.</span>
 			<span class="comment">// 	- One write to BaseFeePerGas.</span>
-			<span class="kw">let</span> <span class="ident">db_weight</span> <span class="op">=</span>
-				<span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">frame_system::Config</span><span class="op">&gt;</span><span class="ident">::DbWeight</span> <span class="kw">as</span> <span class="ident">frame_support::traits::Get</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>();
+			<span class="kw">let</span> <span class="ident">db_weight</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">frame_system::Config</span><span class="op">&gt;</span><span class="ident">::DbWeight::get</span>();
 			<span class="ident">db_weight</span>.<span class="ident">reads</span>(<span class="number">2</span>).<span class="ident">saturating_add</span>(<span class="ident">db_weight</span>.<span class="ident">write</span>)
 		}
 
 		<span class="kw">fn</span> <span class="ident">on_finalize</span>(<span class="ident">_n</span>: <span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">frame_system::Config</span><span class="op">&gt;</span><span class="ident">::BlockNumber</span>) {
-			<span class="kw">if</span> <span class="op">&lt;</span><span class="ident">IsActive</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>() {
-				<span class="kw">let</span> <span class="ident">lower</span> <span class="op">=</span> <span class="ident">T::Threshold::lower</span>();
-				<span class="kw">let</span> <span class="ident">upper</span> <span class="op">=</span> <span class="ident">T::Threshold::upper</span>();
-				<span class="comment">// `target` is the ideal congestion of the network where the base fee should remain unchanged.</span>
-				<span class="comment">// Under normal circumstances the `target` should be 50%.</span>
-				<span class="comment">// If we go below the `target`, the base fee is linearly decreased by the Elasticity delta of lower~target.</span>
-				<span class="comment">// If we go above the `target`, the base fee is linearly increased by the Elasticity delta of upper~target.</span>
-				<span class="comment">// The base fee is fully increased (default 12.5%) if the block is upper full (default 100%).</span>
-				<span class="comment">// The base fee is fully decreased (default 12.5%) if the block is lower empty (default 0%).</span>
-				<span class="kw">let</span> <span class="ident">weight</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">frame_system::Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::block_weight</span>();
-				<span class="kw">let</span> <span class="ident">max_weight</span> <span class="op">=</span>
-					<span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">frame_system::Config</span><span class="op">&gt;</span><span class="ident">::BlockWeights</span> <span class="kw">as</span> <span class="ident">frame_support::traits::Get</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>()
-						.<span class="ident">max_block</span>;
-
-				<span class="comment">// We convert `weight` into block fullness and ensure we are within the lower and upper bound.</span>
-				<span class="kw">let</span> <span class="ident">weight_used</span> <span class="op">=</span>
-					<span class="ident">Permill::from_rational</span>(<span class="ident">weight</span>.<span class="ident">total</span>(), <span class="ident">max_weight</span>).<span class="ident">clamp</span>(<span class="ident">lower</span>, <span class="ident">upper</span>);
-				<span class="comment">// After clamp `weighted_used` is always between `lower` and `upper`.</span>
-				<span class="comment">// We scale the block fullness range to the lower/upper range, and the usage represents the</span>
-				<span class="comment">// actual percentage within this new scale.</span>
-				<span class="kw">let</span> <span class="ident">usage</span> <span class="op">=</span> (<span class="ident">weight_used</span> <span class="op">-</span> <span class="ident">lower</span>) <span class="op">/</span> (<span class="ident">upper</span> <span class="op">-</span> <span class="ident">lower</span>);
-
-				<span class="comment">// Target is our ideal block fullness.</span>
-				<span class="kw">let</span> <span class="ident">target</span> <span class="op">=</span> <span class="ident">T::Threshold::ideal</span>();
-				<span class="kw">if</span> <span class="ident">usage</span> <span class="op">&gt;</span> <span class="ident">target</span> {
-					<span class="comment">// Above target, increase.</span>
-					<span class="kw">let</span> <span class="ident">coef</span> <span class="op">=</span>
-						<span class="ident">Permill::from_parts</span>((<span class="ident">usage</span>.<span class="ident">deconstruct</span>() <span class="op">-</span> <span class="ident">target</span>.<span class="ident">deconstruct</span>()) <span class="op">*</span> <span class="number">2u32</span>);
-					<span class="comment">// How much of the Elasticity is used to mutate base fee.</span>
-					<span class="kw">let</span> <span class="ident">coef</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Elasticity</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>() <span class="op">*</span> <span class="ident">coef</span>;
-					<span class="op">&lt;</span><span class="ident">BaseFeePerGas</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::mutate</span>(<span class="op">|</span><span class="ident">bf</span><span class="op">|</span> {
-						<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">scaled_basefee</span>) <span class="op">=</span> <span class="ident">bf</span>.<span class="ident">checked_mul</span>(<span class="ident">U256::from</span>(<span class="ident">coef</span>.<span class="ident">deconstruct</span>()))
-						{
-							<span class="comment">// Normalize to GWEI.</span>
-							<span class="kw">let</span> <span class="ident">increase</span> <span class="op">=</span> <span class="ident">scaled_basefee</span>
-								.<span class="ident">checked_div</span>(<span class="ident">U256::from</span>(<span class="number">1_000_000</span>))
-								.<span class="ident">unwrap_or_else</span>(<span class="ident">U256::zero</span>);
-							<span class="kw-2">*</span><span class="ident">bf</span> <span class="op">=</span> <span class="ident">bf</span>.<span class="ident">saturating_add</span>(<span class="ident">increase</span>);
-						} <span class="kw">else</span> {
-							<span class="ident"><span class="self">Self</span>::deposit_event</span>(<span class="ident">Event::BaseFeeOverflow</span>);
-						}
-					});
-				} <span class="kw">else</span> <span class="kw">if</span> <span class="ident">usage</span> <span class="op">&lt;</span> <span class="ident">target</span> {
-					<span class="comment">// Below target, decrease.</span>
-					<span class="kw">let</span> <span class="ident">coef</span> <span class="op">=</span>
-						<span class="ident">Permill::from_parts</span>((<span class="ident">target</span>.<span class="ident">deconstruct</span>() <span class="op">-</span> <span class="ident">usage</span>.<span class="ident">deconstruct</span>()) <span class="op">*</span> <span class="number">2u32</span>);
-					<span class="comment">// How much of the Elasticity is used to mutate base fee.</span>
-					<span class="kw">let</span> <span class="ident">coef</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Elasticity</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>() <span class="op">*</span> <span class="ident">coef</span>;
-					<span class="op">&lt;</span><span class="ident">BaseFeePerGas</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::mutate</span>(<span class="op">|</span><span class="ident">bf</span><span class="op">|</span> {
-						<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">scaled_basefee</span>) <span class="op">=</span> <span class="ident">bf</span>.<span class="ident">checked_mul</span>(<span class="ident">U256::from</span>(<span class="ident">coef</span>.<span class="ident">deconstruct</span>()))
-						{
-							<span class="comment">// Normalize to GWEI.</span>
-							<span class="kw">let</span> <span class="ident">decrease</span> <span class="op">=</span> <span class="ident">scaled_basefee</span>
-								.<span class="ident">checked_div</span>(<span class="ident">U256::from</span>(<span class="number">1_000_000</span>))
-								.<span class="ident">unwrap_or_else</span>(<span class="ident">U256::zero</span>);
-							<span class="kw-2">*</span><span class="ident">bf</span> <span class="op">=</span> <span class="ident">bf</span>.<span class="ident">saturating_sub</span>(<span class="ident">decrease</span>);
-						} <span class="kw">else</span> {
-							<span class="ident"><span class="self">Self</span>::deposit_event</span>(<span class="ident">Event::BaseFeeOverflow</span>);
-						}
-					});
-				}
+			<span class="kw">if</span> <span class="op">&lt;</span><span class="ident">Elasticity</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>().<span class="ident">is_zero</span>() {
+				<span class="comment">// Zero elasticity means constant BaseFeePerGas.</span>
+				<span class="kw">return</span>;
 			}
-		}
 
-		<span class="kw">fn</span> <span class="ident">on_runtime_upgrade</span>() -&gt; <span class="ident">Weight</span> {
-			<span class="op">&lt;</span><span class="ident">IsActive</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::put</span>(<span class="ident">T::IsActive::get</span>());
-			<span class="ident">T::DbWeight::get</span>().<span class="ident">write</span>
+			<span class="kw">let</span> <span class="ident">lower</span> <span class="op">=</span> <span class="ident">T::Threshold::lower</span>();
+			<span class="kw">let</span> <span class="ident">upper</span> <span class="op">=</span> <span class="ident">T::Threshold::upper</span>();
+			<span class="comment">// `target` is the ideal congestion of the network where the base fee should remain unchanged.</span>
+			<span class="comment">// Under normal circumstances the `target` should be 50%.</span>
+			<span class="comment">// If we go below the `target`, the base fee is linearly decreased by the Elasticity delta of lower~target.</span>
+			<span class="comment">// If we go above the `target`, the base fee is linearly increased by the Elasticity delta of upper~target.</span>
+			<span class="comment">// The base fee is fully increased (default 12.5%) if the block is upper full (default 100%).</span>
+			<span class="comment">// The base fee is fully decreased (default 12.5%) if the block is lower empty (default 0%).</span>
+			<span class="kw">let</span> <span class="ident">weight</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">frame_system::Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::block_weight</span>();
+			<span class="kw">let</span> <span class="ident">max_weight</span> <span class="op">=</span> <span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">frame_system::Config</span><span class="op">&gt;</span><span class="ident">::BlockWeights</span><span class="op">&gt;</span><span class="ident">::get</span>().<span class="ident">max_block</span>;
+
+			<span class="comment">// We convert `weight` into block fullness and ensure we are within the lower and upper bound.</span>
+			<span class="kw">let</span> <span class="ident">weight_used</span> <span class="op">=</span>
+				<span class="ident">Permill::from_rational</span>(<span class="ident">weight</span>.<span class="ident">total</span>(), <span class="ident">max_weight</span>).<span class="ident">clamp</span>(<span class="ident">lower</span>, <span class="ident">upper</span>);
+			<span class="comment">// After clamp `weighted_used` is always between `lower` and `upper`.</span>
+			<span class="comment">// We scale the block fullness range to the lower/upper range, and the usage represents the</span>
+			<span class="comment">// actual percentage within this new scale.</span>
+			<span class="kw">let</span> <span class="ident">usage</span> <span class="op">=</span> (<span class="ident">weight_used</span> <span class="op">-</span> <span class="ident">lower</span>) <span class="op">/</span> (<span class="ident">upper</span> <span class="op">-</span> <span class="ident">lower</span>);
+
+			<span class="comment">// Target is our ideal block fullness.</span>
+			<span class="kw">let</span> <span class="ident">target</span> <span class="op">=</span> <span class="ident">T::Threshold::ideal</span>();
+			<span class="kw">if</span> <span class="ident">usage</span> <span class="op">&gt;</span> <span class="ident">target</span> {
+				<span class="comment">// Above target, increase.</span>
+				<span class="kw">let</span> <span class="ident">coef</span> <span class="op">=</span> <span class="ident">Permill::from_parts</span>((<span class="ident">usage</span>.<span class="ident">deconstruct</span>() <span class="op">-</span> <span class="ident">target</span>.<span class="ident">deconstruct</span>()) <span class="op">*</span> <span class="number">2u32</span>);
+				<span class="comment">// How much of the Elasticity is used to mutate base fee.</span>
+				<span class="kw">let</span> <span class="ident">coef</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Elasticity</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>() <span class="op">*</span> <span class="ident">coef</span>;
+				<span class="op">&lt;</span><span class="ident">BaseFeePerGas</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::mutate</span>(<span class="op">|</span><span class="ident">bf</span><span class="op">|</span> {
+					<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">scaled_basefee</span>) <span class="op">=</span> <span class="ident">bf</span>.<span class="ident">checked_mul</span>(<span class="ident">U256::from</span>(<span class="ident">coef</span>.<span class="ident">deconstruct</span>())) {
+						<span class="comment">// Normalize to GWEI.</span>
+						<span class="kw">let</span> <span class="ident">increase</span> <span class="op">=</span> <span class="ident">scaled_basefee</span>
+							.<span class="ident">checked_div</span>(<span class="ident">U256::from</span>(<span class="number">1_000_000</span>))
+							.<span class="ident">unwrap_or_else</span>(<span class="ident">U256::zero</span>);
+						<span class="kw-2">*</span><span class="ident">bf</span> <span class="op">=</span> <span class="ident">bf</span>.<span class="ident">saturating_add</span>(<span class="ident">increase</span>);
+					} <span class="kw">else</span> {
+						<span class="ident"><span class="self">Self</span>::deposit_event</span>(<span class="ident">Event::BaseFeeOverflow</span>);
+					}
+				});
+			} <span class="kw">else</span> <span class="kw">if</span> <span class="ident">usage</span> <span class="op">&lt;</span> <span class="ident">target</span> {
+				<span class="comment">// Below target, decrease.</span>
+				<span class="kw">let</span> <span class="ident">coef</span> <span class="op">=</span> <span class="ident">Permill::from_parts</span>((<span class="ident">target</span>.<span class="ident">deconstruct</span>() <span class="op">-</span> <span class="ident">usage</span>.<span class="ident">deconstruct</span>()) <span class="op">*</span> <span class="number">2u32</span>);
+				<span class="comment">// How much of the Elasticity is used to mutate base fee.</span>
+				<span class="kw">let</span> <span class="ident">coef</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Elasticity</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>() <span class="op">*</span> <span class="ident">coef</span>;
+				<span class="op">&lt;</span><span class="ident">BaseFeePerGas</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::mutate</span>(<span class="op">|</span><span class="ident">bf</span><span class="op">|</span> {
+					<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">scaled_basefee</span>) <span class="op">=</span> <span class="ident">bf</span>.<span class="ident">checked_mul</span>(<span class="ident">U256::from</span>(<span class="ident">coef</span>.<span class="ident">deconstruct</span>())) {
+						<span class="comment">// Normalize to GWEI.</span>
+						<span class="kw">let</span> <span class="ident">decrease</span> <span class="op">=</span> <span class="ident">scaled_basefee</span>
+							.<span class="ident">checked_div</span>(<span class="ident">U256::from</span>(<span class="number">1_000_000</span>))
+							.<span class="ident">unwrap_or_else</span>(<span class="ident">U256::zero</span>);
+						<span class="kw-2">*</span><span class="ident">bf</span> <span class="op">=</span> <span class="ident">bf</span>.<span class="ident">saturating_sub</span>(<span class="ident">decrease</span>);
+					} <span class="kw">else</span> {
+						<span class="ident"><span class="self">Self</span>::deposit_event</span>(<span class="ident">Event::BaseFeeOverflow</span>);
+					}
+				});
+			}
 		}
 	}
 
@@ -486,14 +430,6 @@
 			<span class="ident">ensure_root</span>(<span class="ident">origin</span>)<span class="question-mark">?</span>;
 			<span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::set_base_fee_per_gas_inner</span>(<span class="ident">fee</span>);
 			<span class="ident"><span class="self">Self</span>::deposit_event</span>(<span class="ident">Event::NewBaseFeePerGas</span> { <span class="ident">fee</span> });
-			<span class="prelude-val">Ok</span>(())
-		}
-
-		<span class="attribute">#[<span class="ident">pallet::weight</span>(<span class="number">10_000</span> <span class="op">+</span> <span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>(<span class="number">1</span>))]</span>
-		<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_is_active</span>(<span class="ident">origin</span>: <span class="ident">OriginFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">is_active</span>: <span class="ident">bool</span>) -&gt; <span class="ident">DispatchResult</span> {
-			<span class="ident">ensure_root</span>(<span class="ident">origin</span>)<span class="question-mark">?</span>;
-			<span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::set_is_active_inner</span>(<span class="ident">is_active</span>);
-			<span class="ident"><span class="self">Self</span>::deposit_event</span>(<span class="ident">Event::IsActive</span> { <span class="ident">is_active</span> });
 			<span class="prelude-val">Ok</span>(())
 		}
 
@@ -520,10 +456,6 @@
 	}
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_elasticity_inner</span>(<span class="ident">value</span>: <span class="ident">Permill</span>) -&gt; <span class="ident">Weight</span> {
 		<span class="op">&lt;</span><span class="ident">Elasticity</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::put</span>(<span class="ident">value</span>);
-		<span class="ident">T::DbWeight::get</span>().<span class="ident">write</span>
-	}
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_is_active_inner</span>(<span class="ident">value</span>: <span class="ident">bool</span>) -&gt; <span class="ident">Weight</span> {
-		<span class="op">&lt;</span><span class="ident">IsActive</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::put</span>(<span class="ident">value</span>);
 		<span class="ident">T::DbWeight::get</span>().<span class="ident">write</span>
 	}
 }
