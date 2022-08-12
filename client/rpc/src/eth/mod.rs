@@ -482,7 +482,8 @@ where
 		.collect::<Vec<<B as BlockT>::Extrinsic>>();
 	// Manually initialize the overlay.
 	let header = client.header(best).unwrap().unwrap();
-	api.initialize_block(&best, &header)
+	let parent_hash = BlockId::Hash(header.parent_hash().clone());
+	api.initialize_block(&parent_hash, &header)
 		.map_err(|e| internal_err(format!("Runtime api access error: {:?}", e)))?;
 	// Apply the ready queue to the best block's state.
 	for xt in xts {
