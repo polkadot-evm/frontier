@@ -175,6 +175,25 @@ pub mod pallet {
 			Ok(())
 		}
 
+		#[pallet::weight(0)]
+		pub fn transfer(
+			origin: OriginFor<T>,
+			address: H160,
+			value: BalanceOf<T>,
+		) -> DispatchResult {
+			let sender = ensure_signed(origin)?;
+			let destination = T::AddressMapping::into_account_id(address);
+
+			T::Currency::transfer(
+				&sender,
+				&destination,
+				value,
+				ExistenceRequirement::AllowDeath,
+			)?;
+
+			Ok(())
+		}
+
 		/// Issue an EVM call operation. This is similar to a message call transaction in Ethereum.
 		#[pallet::weight(T::GasWeightMapping::gas_to_weight(*gas_limit))]
 		pub fn call(
