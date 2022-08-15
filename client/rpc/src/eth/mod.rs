@@ -22,7 +22,7 @@ mod client;
 mod execute;
 mod fee;
 mod filter;
-mod format;
+pub mod format;
 mod mining;
 mod state;
 mod submit;
