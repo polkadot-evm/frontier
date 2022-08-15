@@ -696,7 +696,6 @@ pub fn error_on_execution_failure(reason: &ExitReason, data: &[u8]) -> Result<()
 			// A minimum size of error function selector (4) + offset (32) + string length (32)
 			// should contain a utf-8 encoded revert reason.
 			if data.len() > MESSAGE_START {
-				debug_assert!(MESSAGE_START - LEN_START == 32);
 				let message_len =
 					U256::from(&data[LEN_START..MESSAGE_START]).saturated_into::<usize>();
 				let message_end = MESSAGE_START.saturating_add(message_len);
