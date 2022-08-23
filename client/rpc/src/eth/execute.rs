@@ -31,6 +31,7 @@ use sp_blockchain::{BlockStatus, HeaderBackend};
 use sp_runtime::{
 	generic::BlockId,
 	traits::{BlakeTwo256, Block as BlockT},
+	SaturatedConversion,
 };
 
 use fc_rpc_core::types::*;
@@ -121,27 +122,38 @@ where
 			} else {
 				return Err(internal_err("failed to retrieve Runtime Api version"));
 			};
+
+		let block = if api_version > 1 {
+			api.current_block(&id)
+				.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
+		} else {
+			#[allow(deprecated)]
+			let legacy_block = api
+				.current_block_before_version_2(&id)
+				.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?;
+			legacy_block.map(|block| block.into())
+		};
+
+		let block_gas_limit = block
+			.ok_or_else(|| internal_err("block unavailable, cannot query gas limit"))?
+			.header
+			.gas_limit;
+		let max_gas_limit = block_gas_limit * self.execute_gas_limit_multiplier;
+
 		// use given gas limit or query current block's limit
 		let gas_limit = match gas {
-			Some(amount) => amount,
-			None => {
-				let block = if api_version > 1 {
-					api.current_block(&id)
-						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
-				} else {
-					#[allow(deprecated)]
-					let legacy_block = api.current_block_before_version_2(&id)
-						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?;
-					legacy_block.map(|block| block.into())
-				};
-
-				if let Some(block) = block {
-					block.header.gas_limit
-				} else {
-					return Err(internal_err("block unavailable, cannot query gas limit"));
+			Some(amount) => {
+				if amount > max_gas_limit {
+					return Err(internal_err(format!(
+						"provided gas limit is too high (can be up to {}x the block gas limit)",
+						self.execute_gas_limit_multiplier
+					)));
 				}
+				amount
 			}
+			None => max_gas_limit,
 		};
+
 		let data = data.map(|d| d.0).unwrap_or_default();
 		match to {
 			Some(to) => {
@@ -341,25 +353,32 @@ where
 			)
 		};
 
-		let get_current_block_gas_limit = || async {
+		let block_gas_limit = {
 			let substrate_hash = client.info().best_hash;
 			let id = BlockId::Hash(substrate_hash);
 			let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(&client, id);
 			let block = block_data_cache.current_block(schema, substrate_hash).await;
-			if let Some(block) = block {
-				Ok(block.header.gas_limit)
-			} else {
-				Err(internal_err("block unavailable, cannot query gas limit"))
-			}
+
+			block
+				.ok_or_else(|| internal_err("block unavailable, cannot query gas limit"))?
+				.header
+				.gas_limit
 		};
+
+		let max_gas_limit = block_gas_limit * self.execute_gas_limit_multiplier;
 
 		// Determine the highest possible gas limits
 		let mut highest = match request.gas {
-			Some(gas) => gas,
-			None => {
-				// query current block's gas limit
-				get_current_block_gas_limit().await?
+			Some(amount) => {
+				if amount > max_gas_limit {
+					return Err(internal_err(format!(
+						"provided gas limit is too high (can be up to {}x the block gas limit)",
+						self.execute_gas_limit_multiplier
+					)));
+				}
+				amount
 			}
+			None => max_gas_limit,
 		};
 
 		let api = client.runtime_api();
@@ -604,7 +623,7 @@ where
 						used_gas: _,
 					} = executable(
 						request.clone(),
-						get_current_block_gas_limit().await?,
+						max_gas_limit,
 						api_version,
 						client.runtime_api(),
 						estimate_mode,
@@ -692,13 +711,19 @@ pub fn error_on_execution_failure(reason: &ExitReason, data: &[u8]) -> Result<()
 			))
 		}
 		ExitReason::Revert(_) => {
+			const LEN_START: usize = 36;
+			const MESSAGE_START: usize = 68;
+
 			let mut message = "VM Exception while processing transaction: revert".to_string();
 			// A minimum size of error function selector (4) + offset (32) + string length (32)
 			// should contain a utf-8 encoded revert reason.
-			if data.len() > 68 {
-				let message_len = data[36..68].iter().sum::<u8>();
-				if data.len() >= 68 + message_len as usize {
-					let body: &[u8] = &data[68..68 + message_len as usize];
+			if data.len() > MESSAGE_START {
+				let message_len =
+					U256::from(&data[LEN_START..MESSAGE_START]).saturated_into::<usize>();
+				let message_end = MESSAGE_START.saturating_add(message_len);
+
+				if data.len() >= message_end {
+					let body: &[u8] = &data[MESSAGE_START..message_end];
 					if let Ok(reason) = std::str::from_utf8(body) {
 						message = format!("{} {}", message, reason);
 					}

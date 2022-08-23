@@ -20,7 +20,6 @@ describeWithFrontier("Frontier RPC (Constructor Revert)", (context) => {
 
 	it("should provide a tx receipt after successful deployment", async function () {
 		this.timeout(15000);
-		const GOOD_TX_HASH = "0xe73cae1b1105e805ec524b7ffdc4144041e72ff5fb539757ab2d4eef255bfe2d";
 
 		const tx = await context.web3.eth.accounts.signTransaction(
 			{
@@ -33,32 +32,23 @@ describeWithFrontier("Frontier RPC (Constructor Revert)", (context) => {
 			GENESIS_ACCOUNT_PRIVATE_KEY
 		);
 
-		expect(await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction])).to.deep.equal({
-			id: 1,
-			jsonrpc: "2.0",
-			result: GOOD_TX_HASH,
-		});
+		const txHash = (await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction])).result;
 
 		// Verify the receipt exists after the block is created
 		await createAndFinalizeBlock(context.web3);
-		const receipt = await context.web3.eth.getTransactionReceipt(GOOD_TX_HASH);
+		const receipt = await context.web3.eth.getTransactionReceipt(txHash);
 		expect(receipt).to.include({
-			contractAddress: "0xC2Bf5F29a4384b1aB0C063e1c666f02121B6084a",
-			cumulativeGasUsed: 67231,
-			from: "0x6be02d1d3665660d22ff9624b7be0551ee1ac91b",
-			gasUsed: 67231,
+			from: GENESIS_ACCOUNT,
 			to: null,
-			transactionHash: GOOD_TX_HASH,
+			transactionHash: txHash,
 			transactionIndex: 0,
 			status: true,
+			type: "0x0",
 		});
 	});
 
 	it("should provide a tx receipt after failed deployment", async function () {
 		this.timeout(15000);
-		// Transaction hash depends on which nonce we're using
-		//const FAIL_TX_HASH = '0x89a956c4631822f407b3af11f9251796c276655860c892919f848699ed570a8d'; //nonce 1
-		const FAIL_TX_HASH = "0x0aad023a79ccfe0290b8cb47a807720bf4ffcf60225f3fa786eefd95b538d87d"; //nonce 2
 
 		const tx = await context.web3.eth.accounts.signTransaction(
 			{
@@ -71,21 +61,15 @@ describeWithFrontier("Frontier RPC (Constructor Revert)", (context) => {
 			GENESIS_ACCOUNT_PRIVATE_KEY
 		);
 
-		expect(await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction])).to.deep.equal({
-			id: 1,
-			jsonrpc: "2.0",
-			result: FAIL_TX_HASH,
-		});
+		const txHash = (await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction])).result;
 
+		// Verify the receipt exists after the block is created
 		await createAndFinalizeBlock(context.web3);
-		const receipt = await context.web3.eth.getTransactionReceipt(FAIL_TX_HASH);
+		const receipt = await context.web3.eth.getTransactionReceipt(txHash);
 		expect(receipt).to.include({
-			contractAddress: "0x5c4242beB94dE30b922f57241f1D02f36e906915",
-			cumulativeGasUsed: 54600,
-			from: "0x6be02d1d3665660d22ff9624b7be0551ee1ac91b",
-			gasUsed: 54600,
+			from: GENESIS_ACCOUNT,
 			to: null,
-			transactionHash: FAIL_TX_HASH,
+			transactionHash: txHash,
 			transactionIndex: 0,
 			status: false,
 		});

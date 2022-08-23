@@ -11,7 +11,7 @@ repository = "https://github.com/paritytech/frontier/"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-serde = { version = "1.0.137", optional = true }
+serde = { version = "1.0.143", optional = true }
 
 # Parity
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false }

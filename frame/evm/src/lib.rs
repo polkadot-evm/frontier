@@ -77,7 +77,7 @@ use sp_runtime::{
 	traits::{BadOrigin, Saturating, UniqueSaturatedInto, Zero},
 	AccountId32, DispatchErrorWithPostInfo,
 };
-use sp_std::vec::Vec;
+use sp_std::{cmp::min, vec::Vec};
 
 pub use evm::{
 	Config as EvmConfig, Context, ExitError, ExitFatal, ExitReason, ExitRevert, ExitSucceed,
@@ -104,7 +104,7 @@ pub mod pallet {
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
 	#[pallet::without_storage_info]
-	pub struct Pallet<T>(_);
+	pub struct Pallet<T>(PhantomData<T>);
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config + pallet_timestamp::Config {
@@ -221,10 +221,10 @@ pub mod pallet {
 
 			match info.exit_reason {
 				ExitReason::Succeed(_) => {
-					Pallet::<T>::deposit_event(Event::<T>::Executed(target));
+					Pallet::<T>::deposit_event(Event::<T>::Executed { address: target });
 				}
 				_ => {
-					Pallet::<T>::deposit_event(Event::<T>::ExecutedFailed(target));
+					Pallet::<T>::deposit_event(Event::<T>::ExecutedFailed { address: target });
 				}
 			};
 
@@ -285,14 +285,18 @@ pub mod pallet {
 					value: create_address,
 					..
 				} => {
-					Pallet::<T>::deposit_event(Event::<T>::Created(create_address));
+					Pallet::<T>::deposit_event(Event::<T>::Created {
+						address: create_address,
+					});
 				}
 				CreateInfo {
 					exit_reason: _,
 					value: create_address,
 					..
 				} => {
-					Pallet::<T>::deposit_event(Event::<T>::CreatedFailed(create_address));
+					Pallet::<T>::deposit_event(Event::<T>::CreatedFailed {
+						address: create_address,
+					});
 				}
 			}
 
@@ -354,14 +358,18 @@ pub mod pallet {
 					value: create_address,
 					..
 				} => {
-					Pallet::<T>::deposit_event(Event::<T>::Created(create_address));
+					Pallet::<T>::deposit_event(Event::<T>::Created {
+						address: create_address,
+					});
 				}
 				CreateInfo {
 					exit_reason: _,
 					value: create_address,
 					..
 				} => {
-					Pallet::<T>::deposit_event(Event::<T>::CreatedFailed(create_address));
+					Pallet::<T>::deposit_event(Event::<T>::CreatedFailed {
+						address: create_address,
+					});
 				}
 			}
 
@@ -378,19 +386,15 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// Ethereum events from contracts.
-		Log(Log),
-		/// A contract has been created at given \[address\].
-		Created(H160),
-		/// A \[contract\] was attempted to be created, but the execution failed.
-		CreatedFailed(H160),
-		/// A \[contract\] has been executed successfully with states applied.
-		Executed(H160),
-		/// A \[contract\] has been executed with errors. States are reverted with only gas fees applied.
-		ExecutedFailed(H160),
-		/// A deposit has been made at a given address. \[sender, address, value\]
-		BalanceDeposit(T::AccountId, H160, U256),
-		/// A withdrawal has been made from a given address. \[sender, address, value\]
-		BalanceWithdraw(T::AccountId, H160, U256),
+		Log { log: Log },
+		/// A contract has been created at given address.
+		Created { address: H160 },
+		/// A contract was attempted to be created, but the execution failed.
+		CreatedFailed { address: H160 },
+		/// A contract has been executed successfully with states applied.
+		Executed { address: H160 },
+		/// A contract has been executed with errors. States are reverted with only gas fees applied.
+		ExecutedFailed { address: H160 },
 	}
 
 	#[pallet::error]
@@ -420,7 +424,7 @@ pub mod pallet {
 			match validation_error {
 				InvalidEvmTransactionError::GasLimitTooLow => Error::<T>::GasLimitTooLow,
 				InvalidEvmTransactionError::GasLimitTooHigh => Error::<T>::GasLimitTooHigh,
-				InvalidEvmTransactionError::GasPriceTooLow => Error::<T>::GasLimitTooLow,
+				InvalidEvmTransactionError::GasPriceTooLow => Error::<T>::GasPriceTooLow,
 				InvalidEvmTransactionError::PriorityFeeTooHigh => Error::<T>::GasPriceTooLow,
 				InvalidEvmTransactionError::BalanceTooLow => Error::<T>::BalanceLow,
 				InvalidEvmTransactionError::TxNonceTooLow => Error::<T>::InvalidNonce,
@@ -438,21 +442,26 @@ pub mod pallet {
 	}
 
 	#[pallet::genesis_build]
-	impl<T: Config> GenesisBuild<T> for GenesisConfig {
+	impl<T: Config> GenesisBuild<T> for GenesisConfig
+	where
+		U256: UniqueSaturatedInto<BalanceOf<T>>,
+	{
 		fn build(&self) {
+			const MAX_ACCOUNT_NONCE: usize = 100;
+
 			for (address, account) in &self.accounts {
 				let account_id = T::AddressMapping::into_account_id(*address);
 
 				// ASSUME: in one single EVM transaction, the nonce will not increase more than
 				// `u128::max_value()`.
-				for _ in 0..account.nonce.low_u128() {
+				for _ in 0..min(
+					MAX_ACCOUNT_NONCE,
+					UniqueSaturatedInto::<usize>::unique_saturated_into(account.nonce),
+				) {
 					frame_system::Pallet::<T>::inc_account_nonce(&account_id);
 				}
 
-				T::Currency::deposit_creating(
-					&account_id,
-					account.balance.low_u128().unique_saturated_into(),
-				);
+				T::Currency::deposit_creating(&account_id, account.balance.unique_saturated_into());
 
 				Pallet::<T>::create_account(*address, account.code.clone());
 
@@ -648,6 +657,7 @@ impl<T: Config> Pallet<T> {
 		}
 
 		<AccountCodes<T>>::remove(address);
+		#[allow(deprecated)]
 		let _ = <AccountStorages<T>>::remove_prefix(address, None);
 	}
 
@@ -735,6 +745,7 @@ where
 		Opposite = C::PositiveImbalance,
 	>,
 	OU: OnUnbalanced<NegativeImbalanceOf<C, T>>,
+	U256: UniqueSaturatedInto<<C as Currency<<T as frame_system::Config>::AccountId>>::Balance>,
 {
 	// Kept type as Option to satisfy bound of Default
 	type LiquidityInfo = Option<NegativeImbalanceOf<C, T>>;
@@ -746,7 +757,7 @@ where
 		let account_id = T::AddressMapping::into_account_id(*who);
 		let imbalance = C::withdraw(
 			&account_id,
-			fee.low_u128().unique_saturated_into(),
+			fee.unique_saturated_into(),
 			WithdrawReasons::FEE,
 			ExistenceRequirement::AllowDeath,
 		)
@@ -766,7 +777,7 @@ where
 			// Calculate how much refund we should return
 			let refund_amount = paid
 				.peek()
-				.saturating_sub(corrected_fee.low_u128().unique_saturated_into());
+				.saturating_sub(corrected_fee.unique_saturated_into());
 			// refund to the account that paid the fees. If this fails, the
 			// account might have dropped below the existential balance. In
 			// that case we don't refund anything.
@@ -797,7 +808,7 @@ where
 				.same()
 				.unwrap_or_else(|_| C::NegativeImbalance::zero());
 
-			let (base_fee, tip) = adjusted_paid.split(base_fee.low_u128().unique_saturated_into());
+			let (base_fee, tip) = adjusted_paid.split(base_fee.unique_saturated_into());
 			// Handle base fee. Can be either burned, rationed, etc ...
 			OU::on_unbalanced(base_fee);
 			return Some(tip);
@@ -821,7 +832,10 @@ impl<T> OnChargeEVMTransaction<T> for ()
 	<T::Currency as Currency<<T as frame_system::Config>::AccountId>>::PositiveImbalance:
 		Imbalance<<T::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance, Opposite = <T::Currency as Currency<<T as frame_system::Config>::AccountId>>::NegativeImbalance>,
 	<T::Currency as Currency<<T as frame_system::Config>::AccountId>>::NegativeImbalance:
-		Imbalance<<T::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance, Opposite = <T::Currency as Currency<<T as frame_system::Config>::AccountId>>::PositiveImbalance>, {
+Imbalance<<T::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance, Opposite = <T::Currency as Currency<<T as frame_system::Config>::AccountId>>::PositiveImbalance>,
+U256: UniqueSaturatedInto<BalanceOf<T>>,
+
+{
 	// Kept type as Option to satisfy bound of Default
 	type LiquidityInfo = Option<NegativeImbalanceOf<T::Currency, T>>;
 

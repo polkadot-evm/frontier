@@ -15,6 +15,7 @@ describeWithFrontier("Frontier RPC (Contract)", (context) => {
 	// to spin up a frontier node, it saves a lot of time.
 
 	it("contract creation should return transaction hash", async function () {
+		await createAndFinalizeBlock(context.web3);
 		this.timeout(15000);
 		const tx = await context.web3.eth.accounts.signTransaction(
 			{

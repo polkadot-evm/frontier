@@ -12,7 +12,7 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 ethereum = { version = "0.12.0", default-features = false, features = ["with-codec"] }
-serde = { version = "1.0.137", features = ["derive"], optional = true }
+serde = { version = "1.0.143", features = ["derive"], optional = true }
 
 # Parity
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false }

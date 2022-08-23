@@ -30,6 +30,7 @@ use sp_runtime::{
 use sp_storage::StorageKey;
 
 use fp_rpc::TransactionStatus;
+use fp_storage::*;
 
 use super::{blake2_128_extend, storage_prefix_build, StorageOverride};
 
@@ -74,7 +75,7 @@ where
 {
 	/// For a given account address, returns pallet_evm::AccountCodes.
 	fn account_code_at(&self, block: &BlockId<B>, address: H160) -> Option<Vec<u8>> {
-		let mut key: Vec<u8> = storage_prefix_build(b"EVM", b"AccountCodes");
+		let mut key: Vec<u8> = storage_prefix_build(PALLET_EVM, EVM_ACCOUNT_CODES);
 		key.extend(blake2_128_extend(address.as_bytes()));
 		self.query_storage::<Vec<u8>>(block, &StorageKey(key))
 	}
@@ -84,7 +85,7 @@ where
 		let tmp: &mut [u8; 32] = &mut [0; 32];
 		index.to_big_endian(tmp);
 
-		let mut key: Vec<u8> = storage_prefix_build(b"EVM", b"AccountStorages");
+		let mut key: Vec<u8> = storage_prefix_build(PALLET_EVM, EVM_ACCOUNT_STORAGES);
 		key.extend(blake2_128_extend(address.as_bytes()));
 		key.extend(blake2_128_extend(tmp));
 
@@ -95,7 +96,10 @@ where
 	fn current_block(&self, block: &BlockId<B>) -> Option<ethereum::BlockV2> {
 		self.query_storage::<ethereum::BlockV2>(
 			block,
-			&StorageKey(storage_prefix_build(b"Ethereum", b"CurrentBlock")),
+			&StorageKey(storage_prefix_build(
+				PALLET_ETHEREUM,
+				ETHEREUM_CURRENT_BLOCK,
+			)),
 		)
 	}
 
@@ -103,7 +107,10 @@ where
 	fn current_receipts(&self, block: &BlockId<B>) -> Option<Vec<ethereum::ReceiptV3>> {
 		self.query_storage::<Vec<ethereum::ReceiptV0>>(
 			block,
-			&StorageKey(storage_prefix_build(b"Ethereum", b"CurrentReceipts")),
+			&StorageKey(storage_prefix_build(
+				PALLET_ETHEREUM,
+				ETHEREUM_CURRENT_RECEIPTS,
+			)),
 		)
 		.map(|receipts| {
 			receipts
@@ -125,8 +132,8 @@ where
 		self.query_storage::<Vec<TransactionStatus>>(
 			block,
 			&StorageKey(storage_prefix_build(
-				b"Ethereum",
-				b"CurrentTransactionStatuses",
+				PALLET_ETHEREUM,
+				ETHEREUM_CURRENT_TRANSACTION_STATUS,
 			)),
 		)
 	}
@@ -135,7 +142,7 @@ where
 	fn base_fee(&self, block: &BlockId<B>) -> Option<U256> {
 		self.query_storage::<U256>(
 			block,
-			&StorageKey(storage_prefix_build(b"BaseFee", b"BaseFeePerGas")),
+			&StorageKey(storage_prefix_build(PALLET_BASE_FEE, BASE_FEE_PER_GAS)),
 		)
 	}
 
@@ -144,7 +151,7 @@ where
 		let default_elasticity = Some(Permill::from_parts(125_000));
 		let elasticity = self.query_storage::<Permill>(
 			block,
-			&StorageKey(storage_prefix_build(b"BaseFee", b"Elasticity")),
+			&StorageKey(storage_prefix_build(PALLET_BASE_FEE, BASE_FEE_ELASTICITY)),
 		);
 		if elasticity.is_some() {
 			elasticity

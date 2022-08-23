@@ -25,6 +25,8 @@ jobs:
         override: true
     - name: Run tests
       run: cargo test --locked --verbose --all
+    - name: Ensure benchmarking compiles
+      run: cargo check --release --features=runtime-benchmarks
 
   integration:
     name: 'Run integration tests'
@@ -77,4 +79,4 @@ jobs:
     - name: Rustfmt
       run: cargo fmt --all -- --check
     - name: Clippy
-      run: cargo clippy --all -- -D warnings
+      run: cargo clippy --all --features runtime-benchmarks -- -D warnings

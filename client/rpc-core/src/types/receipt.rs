@@ -56,4 +56,7 @@ pub struct Receipt {
 	pub status_code: Option<U64>,
 	/// Effective gas price. Pre-eip1559 this is just the gasprice. Post-eip1559 this is base fee + priority fee.
 	pub effective_gas_price: U256,
+	/// EIP-2718 type
+	#[serde(rename = "type")]
+	pub transaction_type: U256,
 }

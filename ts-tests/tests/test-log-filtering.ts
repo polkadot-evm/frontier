@@ -61,12 +61,12 @@ describeWithFrontier("Frontier RPC (Log filtering)", (context) => {
 		await createAndFinalizeBlock(context.web3);
 		let receipt = await context.web3.eth.getTransactionReceipt(tx.transactionHash);
 
-		const non_matching_cases = getNonMatchingCases(receipt);
+		const nonMatchingCases = getNonMatchingCases(receipt);
 
-		let create_filter;
-		for (var item of non_matching_cases) {
-			create_filter = await customRequest(context.web3, "eth_newFilter", [item]);
-			let poll = await customRequest(context.web3, "eth_getFilterLogs", [create_filter.result]);
+		let createFilter;
+		for (var item of nonMatchingCases) {
+			createFilter = await customRequest(context.web3, "eth_newFilter", [item]);
+			let poll = await customRequest(context.web3, "eth_getFilterLogs", [createFilter.result]);
 			expect(poll.result.length).to.be.eq(0);
 		}
 	});
@@ -76,9 +76,9 @@ describeWithFrontier("Frontier RPC (Log filtering)", (context) => {
 		await createAndFinalizeBlock(context.web3);
 		let receipt = await context.web3.eth.getTransactionReceipt(tx.transactionHash);
 
-		const non_matching_cases = getNonMatchingCases(receipt);
+		const nonMatchingCases = getNonMatchingCases(receipt);
 
-		for (var item of non_matching_cases) {
+		for (var item of nonMatchingCases) {
 			let request = await customRequest(context.web3, "eth_getLogs", [item]);
 			expect(request.result.length).to.be.eq(0);
 		}
