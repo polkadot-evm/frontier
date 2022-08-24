@@ -496,7 +496,6 @@
 <span id="491">491</span>
 <span id="492">492</span>
 <span id="493">493</span>
-<span id="494">494</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -553,12 +552,11 @@
 
 <span class="kw">pub</span> <span class="kw">use</span> <span class="self">self</span>::{
 	<span class="ident">cache</span>::{<span class="ident">EthBlockDataCacheTask</span>, <span class="ident">EthTask</span>},
-	<span class="ident">execute::EstimateGasAdapter</span>,
 	<span class="ident">filter::EthFilter</span>,
 };
 
 <span class="doccomment">/// Eth API implementation.</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Eth</span><span class="op">&lt;</span><span class="ident">B</span>: <span class="ident">BlockT</span>, <span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">CT</span>, <span class="ident">BE</span>, <span class="ident">H</span>: <span class="ident">ExHashT</span>, <span class="ident">A</span>: <span class="ident">ChainApi</span>, <span class="ident">EGA</span> <span class="op">=</span> ()<span class="op">&gt;</span> {
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Eth</span><span class="op">&lt;</span><span class="ident">B</span>: <span class="ident">BlockT</span>, <span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">CT</span>, <span class="ident">BE</span>, <span class="ident">H</span>: <span class="ident">ExHashT</span>, <span class="ident">A</span>: <span class="ident">ChainApi</span><span class="op">&gt;</span> {
 	<span class="ident">pool</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">P</span><span class="op">&gt;</span>,
 	<span class="ident">graph</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">Pool</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 	<span class="ident">client</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
@@ -574,7 +572,7 @@
 	<span class="doccomment">/// When using eth_call/eth_estimateGas, the maximum allowed gas limit will be</span>
 	<span class="doccomment">/// block.gas_limit * execute_gas_limit_multiplier</span>
 	<span class="ident">execute_gas_limit_multiplier</span>: <span class="ident">u64</span>,
-	<span class="ident">_marker</span>: <span class="ident">PhantomData</span><span class="op">&lt;</span>(<span class="ident">B</span>, <span class="ident">BE</span>, <span class="ident">EGA</span>)<span class="op">&gt;</span>,
+	<span class="ident">_marker</span>: <span class="ident">PhantomData</span><span class="op">&lt;</span>(<span class="ident">B</span>, <span class="ident">BE</span>)<span class="op">&gt;</span>,
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">B</span>: <span class="ident">BlockT</span>, <span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">CT</span>, <span class="ident">BE</span>, <span class="ident">H</span>: <span class="ident">ExHashT</span>, <span class="ident">A</span>: <span class="ident">ChainApi</span><span class="op">&gt;</span> <span class="ident">Eth</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">CT</span>, <span class="ident">BE</span>, <span class="ident">H</span>, <span class="ident">A</span><span class="op">&gt;</span> {
