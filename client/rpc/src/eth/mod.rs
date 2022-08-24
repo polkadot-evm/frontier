@@ -54,11 +54,12 @@ use crate::{internal_err, overrides::OverrideHandle, public_key, signer::EthSign
 
 pub use self::{
 	cache::{EthBlockDataCacheTask, EthTask},
+	execute::EstimateGasAdapter,
 	filter::EthFilter,
 };
 
 /// Eth API implementation.
-pub struct Eth<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> {
+pub struct Eth<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi, EGA = ()> {
 	pool: Arc<P>,
 	graph: Arc<Pool<A>>,
 	client: Arc<C>,
@@ -74,7 +75,7 @@ pub struct Eth<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> {
 	/// When using eth_call/eth_estimateGas, the maximum allowed gas limit will be
 	/// block.gas_limit * execute_gas_limit_multiplier
 	execute_gas_limit_multiplier: u64,
-	_marker: PhantomData<(B, BE)>,
+	_marker: PhantomData<(B, BE, EGA)>,
 }
 
 impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> Eth<B, C, P, CT, BE, H, A> {
