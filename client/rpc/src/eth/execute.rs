@@ -31,7 +31,6 @@ use sp_blockchain::{BlockStatus, HeaderBackend};
 use sp_runtime::{
 	generic::BlockId,
 	traits::{BlakeTwo256, Block as BlockT},
-	SaturatedConversion,
 };
 
 use fc_rpc_core::types::*;
@@ -711,19 +710,13 @@ pub fn error_on_execution_failure(reason: &ExitReason, data: &[u8]) -> Result<()
 			))
 		}
 		ExitReason::Revert(_) => {
-			const LEN_START: usize = 36;
-			const MESSAGE_START: usize = 68;
-
 			let mut message = "VM Exception while processing transaction: revert".to_string();
 			// A minimum size of error function selector (4) + offset (32) + string length (32)
 			// should contain a utf-8 encoded revert reason.
-			if data.len() > MESSAGE_START {
-				let message_len =
-					U256::from(&data[LEN_START..MESSAGE_START]).saturated_into::<usize>();
-				let message_end = MESSAGE_START.saturating_add(message_len);
-
-				if data.len() >= message_end {
-					let body: &[u8] = &data[MESSAGE_START..message_end];
+			if data.len() > 68 {
+				let message_len = data[36..68].iter().sum::<u8>();
+				if data.len() >= 68 + message_len as usize {
+					let body: &[u8] = &data[68..68 + message_len as usize];
 					if let Ok(reason) = std::str::from_utf8(body) {
 						message = format!("{} {}", message, reason);
 					}
