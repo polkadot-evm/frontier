@@ -11,5 +11,5 @@ elif [[ $# -ne 2 ]]; then
 else
     from_branch=${1}
     to_branch=${2}
-    rg "substrate" -t toml -T lock -l | xargs sed -i "s/$from_branch/$to_branch/g"
+    rg "https//github.com/paritytech/substrate" -t toml -T lock -l | xargs sed -i "s/$from_branch/$to_branch/g"
 fi
