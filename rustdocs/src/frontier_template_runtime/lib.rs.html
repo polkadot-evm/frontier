@@ -862,10 +862,6 @@
 <span id="857">857</span>
 <span id="858">858</span>
 <span id="859">859</span>
-<span id="860">860</span>
-<span id="861">861</span>
-<span id="862">862</span>
-<span id="863">863</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The Substrate Node Template runtime. This can be compiled with `#[no_std]`, ready for Wasm.</span>
 
 <span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
@@ -878,10 +874,6 @@
 <span class="macro">include!</span>(<span class="macro">concat!</span>(<span class="macro">env!</span>(<span class="string">&quot;OUT_DIR&quot;</span>), <span class="string">&quot;/wasm_binary.rs&quot;</span>));
 
 <span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Decode</span>, <span class="ident">Encode</span>};
-<span class="kw">use</span> <span class="ident">pallet_evm::FeeCalculator</span>;
-<span class="kw">use</span> <span class="ident">pallet_grandpa</span>::{
-	<span class="ident">fg_primitives</span>, <span class="ident">AuthorityId</span> <span class="kw">as</span> <span class="ident">GrandpaId</span>, <span class="ident">AuthorityList</span> <span class="kw">as</span> <span class="ident">GrandpaAuthorityList</span>,
-};
 <span class="kw">use</span> <span class="ident">sp_api::impl_runtime_apis</span>;
 <span class="kw">use</span> <span class="ident">sp_consensus_aura::sr25519::AuthorityId</span> <span class="kw">as</span> <span class="ident">AuraId</span>;
 <span class="kw">use</span> <span class="ident">sp_core</span>::{
@@ -895,15 +887,28 @@
 		<span class="ident">IdentifyAccount</span>, <span class="ident">NumberFor</span>, <span class="ident">PostDispatchInfoOf</span>, <span class="ident">UniqueSaturatedInto</span>, <span class="ident">Verify</span>,
 	},
 	<span class="ident">transaction_validity</span>::{<span class="ident">TransactionSource</span>, <span class="ident">TransactionValidity</span>, <span class="ident">TransactionValidityError</span>},
-	<span class="ident">ApplyExtrinsicResult</span>, <span class="ident">MultiSignature</span>,
+	<span class="ident">ApplyExtrinsicResult</span>, <span class="ident">MultiSignature</span>, <span class="ident">Perbill</span>, <span class="ident">Permill</span>,
 };
 <span class="kw">use</span> <span class="ident">sp_std</span>::{<span class="ident">marker::PhantomData</span>, <span class="ident">prelude</span>::<span class="kw-2">*</span>};
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>)]</span>
-<span class="kw">use</span> <span class="ident">sp_version::NativeVersion</span>;
 <span class="kw">use</span> <span class="ident">sp_version::RuntimeVersion</span>;
+<span class="comment">// Substrate FRAME</span>
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;with-paritydb-weights&quot;</span>)]</span>
+<span class="kw">use</span> <span class="ident">frame_support::weights::constants::ParityDbWeight</span> <span class="kw">as</span> <span class="ident">RuntimeDbWeight</span>;
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;with-rocksdb-weights&quot;</span>)]</span>
+<span class="kw">use</span> <span class="ident">frame_support::weights::constants::RocksDbWeight</span> <span class="kw">as</span> <span class="ident">RuntimeDbWeight</span>;
+<span class="kw">use</span> <span class="ident">pallet_grandpa</span>::{
+	<span class="ident">fg_primitives</span>, <span class="ident">AuthorityId</span> <span class="kw">as</span> <span class="ident">GrandpaId</span>, <span class="ident">AuthorityList</span> <span class="kw">as</span> <span class="ident">GrandpaAuthorityList</span>,
+};
+<span class="kw">use</span> <span class="ident">pallet_transaction_payment::CurrencyAdapter</span>;
+<span class="comment">// Frontier</span>
+<span class="kw">use</span> <span class="ident">fp_rpc::TransactionStatus</span>;
+<span class="kw">use</span> <span class="ident">pallet_ethereum</span>::{<span class="ident">Call::transact</span>, <span class="ident">Transaction</span> <span class="kw">as</span> <span class="ident">EthereumTransaction</span>};
+<span class="kw">use</span> <span class="ident">pallet_evm</span>::{
+	<span class="ident">Account</span> <span class="kw">as</span> <span class="ident">EVMAccount</span>, <span class="ident">EnsureAddressTruncated</span>, <span class="ident">FeeCalculator</span>, <span class="ident">GasWeightMapping</span>,
+	<span class="ident">HashedAddressMapping</span>, <span class="ident">Runner</span>,
+};
 
 <span class="comment">// A few exports that help ease life for downstream crates.</span>
-<span class="kw">use</span> <span class="ident">fp_rpc::TransactionStatus</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">frame_support</span>::{
 	<span class="ident">construct_runtime</span>, <span class="ident">parameter_types</span>,
 	<span class="ident">traits</span>::{<span class="ident">ConstU32</span>, <span class="ident">ConstU8</span>, <span class="ident">FindAuthor</span>, <span class="ident">KeyOwnerProofSystem</span>, <span class="ident">Randomness</span>},
@@ -913,22 +918,9 @@
 	},
 	<span class="ident">ConsensusEngineId</span>, <span class="ident">StorageValue</span>,
 };
-
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;with-paritydb-weights&quot;</span>)]</span>
-<span class="kw">use</span> <span class="ident">frame_support::weights::constants::ParityDbWeight</span> <span class="kw">as</span> <span class="ident">RuntimeDbWeight</span>;
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;with-rocksdb-weights&quot;</span>)]</span>
-<span class="kw">use</span> <span class="ident">frame_support::weights::constants::RocksDbWeight</span> <span class="kw">as</span> <span class="ident">RuntimeDbWeight</span>;
-
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">frame_system::Call</span> <span class="kw">as</span> <span class="ident">SystemCall</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">pallet_balances::Call</span> <span class="kw">as</span> <span class="ident">BalancesCall</span>;
-<span class="kw">use</span> <span class="ident">pallet_ethereum</span>::{<span class="ident">Call::transact</span>, <span class="ident">Transaction</span> <span class="kw">as</span> <span class="ident">EthereumTransaction</span>};
-<span class="kw">use</span> <span class="ident">pallet_evm</span>::{
-	<span class="ident">Account</span> <span class="kw">as</span> <span class="ident">EVMAccount</span>, <span class="ident">EnsureAddressTruncated</span>, <span class="ident">GasWeightMapping</span>, <span class="ident">HashedAddressMapping</span>, <span class="ident">Runner</span>,
-};
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">pallet_timestamp::Call</span> <span class="kw">as</span> <span class="ident">TimestampCall</span>;
-<span class="kw">use</span> <span class="ident">pallet_transaction_payment::CurrencyAdapter</span>;
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">any</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>, <span class="ident">test</span>))]</span>
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">sp_runtime::BuildStorage</span>;
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">sp_runtime</span>::{<span class="ident">Perbill</span>, <span class="ident">Permill</span>};
 
 <span class="kw">mod</span> <span class="ident">precompiles</span>;
 <span class="kw">use</span> <span class="ident">precompiles::FrontierPrecompiles</span>;
@@ -1005,8 +997,8 @@
 
 <span class="doccomment">/// The version information used to identify this runtime when compiled natively.</span>
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>)]</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">native_version</span>() -&gt; <span class="ident">NativeVersion</span> {
-	<span class="ident">NativeVersion</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">native_version</span>() -&gt; <span class="ident">sp_version::NativeVersion</span> {
+	<span class="ident">sp_version::NativeVersion</span> {
 		<span class="ident">runtime_version</span>: <span class="ident">VERSION</span>,
 		<span class="ident">can_author_with</span>: <span class="ident">Default::default</span>(),
 	}
