@@ -27,12 +27,14 @@ use std::{
 };
 
 use codec::{Decode, Encode};
-use fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA_CACHE};
 use parking_lot::Mutex;
+// Substrate
 pub use sc_client_db::DatabaseSource;
 use sp_core::H256;
 pub use sp_database::Database;
 use sp_runtime::traits::Block as BlockT;
+// Frontier
+use fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA_CACHE};
 
 const DB_HASH_LEN: usize = 32;
 /// Hash type that this backend uses for the database.
