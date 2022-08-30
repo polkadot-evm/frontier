@@ -133,8 +133,8 @@ where
 		self.query_storage::<Vec<TransactionStatus>>(
 			block,
 			&StorageKey(storage_prefix_build(
-				b"Ethereum",
-				b"CurrentTransactionStatuses",
+				PALLET_ETHEREUM,
+				ETHEREUM_CURRENT_TRANSACTION_STATUS,
 			)),
 		)
 	}

@@ -38,7 +38,7 @@ mod tests {
 		TestClientBuilder,
 	};
 	// Frontier
-	use fp_storage::EthereumStorageSchema;
+	use fp_storage::{EthereumStorageSchema, ETHEREUM_CURRENT_TRANSACTION_STATUS, PALLET_ETHEREUM};
 	use frontier_template_runtime::RuntimeApi;
 
 	use crate::frontier_db_cmd::{Column, FrontierDbCmd, Operation};
@@ -94,8 +94,8 @@ mod tests {
 				detailed_log_output: false,
 			},
 			pruning_params: sc_cli::PruningParams {
-				pruning: None,
-				keep_blocks: None,
+				state_pruning: None,
+				blocks_pruning: None,
 			},
 		}
 	}
@@ -545,7 +545,7 @@ mod tests {
 		let statuses = vec![t1];
 
 		// Build a block and fill the pallet-ethereum status.
-		let key = storage_prefix_build(b"Ethereum", b"CurrentTransactionStatuses");
+		let key = storage_prefix_build(PALLET_ETHEREUM, ETHEREUM_CURRENT_TRANSACTION_STATUS);
 		let mut builder = client.new_block(Default::default()).unwrap();
 		builder
 			.push_storage_change(key, Some(statuses.encode()))
@@ -618,7 +618,7 @@ mod tests {
 		let statuses_a1 = vec![t1.clone()];
 		let statuses_a2 = vec![t1, t2];
 
-		let key = storage_prefix_build(b"Ethereum", b"CurrentTransactionStatuses");
+		let key = storage_prefix_build(PALLET_ETHEREUM, ETHEREUM_CURRENT_TRANSACTION_STATUS);
 
 		// First we create block and insert data in the offchain db.
 
@@ -748,7 +748,7 @@ mod tests {
 		let statuses = vec![t1];
 
 		// Build a block and fill the pallet-ethereum status.
-		let key = storage_prefix_build(b"Ethereum", b"CurrentTransactionStatuses");
+		let key = storage_prefix_build(PALLET_ETHEREUM, ETHEREUM_CURRENT_TRANSACTION_STATUS);
 		let mut builder = client.new_block(Default::default()).unwrap();
 		builder
 			.push_storage_change(key, Some(statuses.encode()))
