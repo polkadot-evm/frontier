@@ -28,26 +28,30 @@ describeWithFrontier("Frontier RPC (Log BlockNumber tags)", (context) => {
 	}
 
 	before("Send some transactions across blocks", async function () {
-		for(var i = 0; i < EXPECTED_LOGS; i++) {
+		for (var i = 0; i < EXPECTED_LOGS; i++) {
 			await sendTransaction(context);
 			await createAndFinalizeBlock(context.web3);
 		}
 	});
 
 	step("EthFilterApi::getFilterLogs - should handle earliest and latest tags", async function () {
-		let createFilter = await customRequest(context.web3, "eth_newFilter", [{
-			fromBlock: "earliest",
-			toBlock: "latest",
-		}]);
+		let createFilter = await customRequest(context.web3, "eth_newFilter", [
+			{
+				fromBlock: "earliest",
+				toBlock: "latest",
+			},
+		]);
 		let poll = await customRequest(context.web3, "eth_getFilterLogs", [createFilter.result]);
 		expect(poll.result.length).to.be.eq(EXPECTED_LOGS);
 	});
 
 	step("EthApi::getLogs - should handle earliest and latest tags", async function () {
-		let request = await customRequest(context.web3, "eth_getLogs", [{
-			fromBlock: "earliest",
-			toBlock: "latest",
-		}]);
+		let request = await customRequest(context.web3, "eth_getLogs", [
+			{
+				fromBlock: "earliest",
+				toBlock: "latest",
+			},
+		]);
 		expect(request.result.length).to.be.eq(EXPECTED_LOGS);
 	});
 });
