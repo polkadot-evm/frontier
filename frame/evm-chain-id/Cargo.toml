@@ -6,7 +6,7 @@ edition = "2021"
 license = "Apache-2.0"
 readme = "README.md"
 description = "EVM chain id storage pallet"
-repository = "https://github.com/paritytech/frontier/"
+repository = "https://github.com/futureversecom/frontier/"
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
@@ -19,8 +19,8 @@ codec = { package = "parity-scale-codec", version = "3.1", default-features = fa
 scale-info = { version = "2.1", default-features = false, features = ["derive"] }
 
 # Substrate FRAME
-frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27", default-features = false }
-frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27", default-features = false }
+frame-support = { version = "4.0.0-dev", git = "https://github.com/futureversecom/substrate", branch = "polkadot-v0.9.27", default-features = false }
+frame-system = { version = "4.0.0-dev", git = "https://github.com/futureversecom/substrate", branch = "polkadot-v0.9.27", default-features = false }
 
 [features]
 default = ["std"]

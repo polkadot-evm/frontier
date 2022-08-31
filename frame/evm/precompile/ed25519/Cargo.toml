@@ -5,7 +5,7 @@ authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2021"
 license = "Apache-2.0"
 description = "ED25519 precompiles for EVM pallet."
-repository = "https://github.com/paritytech/frontier/"
+repository = "https://github.com/futureversecom/frontier/"
 
 [dependencies]
 ed25519-dalek = { version = "1.0.0", default-features = false, features = ["alloc", "u64_backend"] }

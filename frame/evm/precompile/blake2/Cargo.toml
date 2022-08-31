@@ -5,7 +5,7 @@ authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2021"
 license = "Apache-2.0"
 description = "BLAKE2 precompiles for EVM pallet."
-repository = "https://github.com/paritytech/frontier/"
+repository = "https://github.com/futureversecom/frontier/"
 
 [dependencies]
 # Frontier
