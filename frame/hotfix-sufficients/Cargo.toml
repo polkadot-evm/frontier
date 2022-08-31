@@ -5,7 +5,7 @@ authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2021"
 license = "Apache-2.0"
 description = "Hotfix zero-value account sufficients with non-zero-value nonces"
-repository = "https://github.com/paritytech/frontier/"
+repository = "https://github.com/futureversecom/frontier/"
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
@@ -16,19 +16,19 @@ codec = { package = "parity-scale-codec", version = "3.0.0", default-features = 
 scale-info = { version = "2.0.0", default-features = false, features = ["derive"] }
 
 # Substrate
-sp-core = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27", default-features = false }
-sp-runtime = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27", default-features = false }
-sp-std = { version = "4.0.0", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27", default-features = false }
+sp-core = { version = "6.0.0", git = "https://github.com/futureversecom/substrate", branch = "polkadot-v0.9.27", default-features = false }
+sp-runtime = { version = "6.0.0", git = "https://github.com/futureversecom/substrate", branch = "polkadot-v0.9.27", default-features = false }
+sp-std = { version = "4.0.0", git = "https://github.com/futureversecom/substrate", branch = "polkadot-v0.9.27", default-features = false }
 # Substrate FRAME
-frame-benchmarking = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27", default-features = false, optional = true }
-frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27", default-features = false }
-frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27", default-features = false }
+frame-benchmarking = { version = "4.0.0-dev", git = "https://github.com/futureversecom/substrate", branch = "polkadot-v0.9.27", default-features = false, optional = true }
+frame-support = { version = "4.0.0-dev", git = "https://github.com/futureversecom/substrate", branch = "polkadot-v0.9.27", default-features = false }
+frame-system = { version = "4.0.0-dev", git = "https://github.com/futureversecom/substrate", branch = "polkadot-v0.9.27", default-features = false }
 
 # Frontier
 pallet-evm = { path = "../evm", default-features = false }
 
 [dev-dependencies]
-sp-io = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27" }
+sp-io = { version = "6.0.0", git = "https://github.com/futureversecom/substrate", branch = "polkadot-v0.9.27" }
 
 [features]
 default = ["std"]
