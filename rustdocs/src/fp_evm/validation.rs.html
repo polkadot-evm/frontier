@@ -930,7 +930,7 @@
 		}
 	}
 
-	<span class="kw">fn</span> <span class="ident">validate_common</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="self">Self</span>, <span class="ident">E</span><span class="op">&gt;</span> {
+	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">validate_common</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="self">Self</span>, <span class="ident">E</span><span class="op">&gt;</span> {
 		<span class="kw">if</span> <span class="self">self</span>.<span class="ident">config</span>.<span class="ident">is_transactional</span> {
 			<span class="comment">// We must ensure a transaction can pay the cost of its data bytes.</span>
 			<span class="comment">// If it can&#39;t it should not be included in a block.</span>
