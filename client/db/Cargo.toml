@@ -19,10 +19,10 @@ kvdb-rocksdb = { version = "0.15.2", optional = true }
 parity-db = { version = "0.3.16", optional = true }
 
 # Substrate
-sc-client-db = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-core = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-database = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-runtime = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-client-db = { git = "https://github.com/humanode-network/substrate", branch = "master" }
+sp-core = { git = "https://github.com/humanode-network/substrate", branch = "master" }
+sp-database = { git = "https://github.com/humanode-network/substrate", branch = "master" }
+sp-runtime = { git = "https://github.com/humanode-network/substrate", branch = "master" }
 
 # Frontier
 fp-storage = { version = "2.0.0-dev", path = "../../primitives/storage" }
