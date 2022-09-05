@@ -490,11 +490,11 @@ where
 		for xt in xts {
 			let _ = api.apply_extrinsic(&best, xt);
 		}
-		return Ok(api);
+		Ok(api)
 	} else {
-		return Err(internal_err(format!(
+		Err(internal_err(format!(
 			"Cannot get header for block {:?}",
 			best
-		)));
+		)))
 	}
 }
