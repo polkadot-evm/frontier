@@ -482,13 +482,19 @@ where
 		.map(|in_pool_tx| in_pool_tx.data().clone())
 		.collect::<Vec<<B as BlockT>::Extrinsic>>();
 	// Manually initialize the overlay.
-	let header = client.header(best).unwrap().unwrap();
-	let parent_hash = BlockId::Hash(*header.parent_hash());
-	api.initialize_block(&parent_hash, &header)
-		.map_err(|e| internal_err(format!("Runtime api access error: {:?}", e)))?;
-	// Apply the ready queue to the best block's state.
-	for xt in xts {
-		let _ = api.apply_extrinsic(&best, xt);
+	if let Ok(Some(header)) = client.header(best) {
+		let parent_hash = BlockId::Hash(*header.parent_hash());
+		api.initialize_block(&parent_hash, &header)
+			.map_err(|e| internal_err(format!("Runtime api access error: {:?}", e)))?;
+		// Apply the ready queue to the best block's state.
+		for xt in xts {
+			let _ = api.apply_extrinsic(&best, xt);
+		}
+		return Ok(api);
+	} else {
+		return Err(internal_err(format!(
+			"Cannot get header for block {:?}",
+			best
+		)));
 	}
-	Ok(api)
 }
