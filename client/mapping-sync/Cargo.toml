@@ -11,7 +11,7 @@ repository = "https://github.com/paritytech/frontier/"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-futures = "0.3.21"
+futures = "0.3.24"
 futures-timer = "3.0.1"
 log = "0.4.17"
 
