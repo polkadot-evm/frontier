@@ -151,7 +151,6 @@ where
 					Ok(info) => info,
 					Err(err) => err.post_info,
 				};
-
 				Extra::post_dispatch(
 					None,
 					info,
@@ -159,7 +158,6 @@ where
 					len,
 					&res.map(|_| ()).map_err(|e| e.error),
 				)?;
-
 				Ok(res)
 			}
 		}
