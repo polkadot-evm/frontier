@@ -409,7 +409,7 @@ fn call_should_handle_errors() {
 }
 
 #[test]
-fn transaction_with_extra_gas_should_adjust_weight() {
+fn self_contained_transaction_with_extra_gas_should_adjust_weight_with_post_dispatch() {
 	let (pairs, mut ext) = new_test_ext(1);
 	let alice = &pairs[0];
 	let base_extrinsic_weight = frame_system::limits::BlockWeights::with_sensible_defaults(
