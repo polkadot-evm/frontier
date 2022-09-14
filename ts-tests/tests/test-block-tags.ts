@@ -5,7 +5,6 @@ import { GENESIS_ACCOUNT, GENESIS_ACCOUNT_PRIVATE_KEY, GENESIS_ACCOUNT_BALANCE, 
 import { createAndFinalizeBlock, describeWithFrontier, customRequest } from "./util";
 
 describeWithFrontier("Frontier RPC (BlockNumber tags)", (context) => {
-
 	before("Send some transactions across blocks", async function () {
 		// block #1 finalized
 		await createAndFinalizeBlock(context.web3);
