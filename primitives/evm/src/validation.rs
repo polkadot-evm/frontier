@@ -116,23 +116,18 @@ impl<'config, E: From<InvalidEvmTransactionError>> CheckEvmTransaction<'config, 
 
 	pub fn with_balance_for(&self, who: &Account) -> Result<&Self, E> {
 		// Get fee data from either a legacy or typed transaction input.
-		let (_, effective_gas_price) = self.transaction_fee_input()?;
+		let (max_fee_per_gas, _) = self.transaction_fee_input()?;
 
 		// Account has enough funds to pay for the transaction.
 		// Check is skipped on non-transactional calls that don't provide
 		// a gas price input.
 		//
-		// Fee for EIP-1559 transaction **with** tip is calculated using
-		// the effective gas price.
-		//
-		// Fee for EIP-1559 transaction **without** tip is calculated using
-		// the base fee.
+		// Validation for EIP-1559 is done using the max_fee_per_gas, which is
+		// the most a txn could possibly pay.
 		//
 		// Fee for Legacy or EIP-2930 transaction is calculated using
 		// the provided `gas_price`.
-		let fee = effective_gas_price
-			.unwrap_or_default()
-			.saturating_mul(self.transaction.gas_limit);
+		let fee = max_fee_per_gas.saturating_mul(self.transaction.gas_limit);
 		if self.config.is_transactional || fee > U256::zero() {
 			let total_payment = self.transaction.value.saturating_add(fee);
 			if who.balance < total_payment {
@@ -142,6 +137,9 @@ impl<'config, E: From<InvalidEvmTransactionError>> CheckEvmTransaction<'config, 
 		Ok(self)
 	}
 
+	// Returns the max_fee_per_gas (or gas_price for legacy txns) as well as an optional
+	// effective_gas_price for EIP-1559 transactions. effective_gas_price represents
+	// the total (fee + tip) that would be paid given the current base_fee.
 	fn transaction_fee_input(&self) -> Result<(U256, Option<U256>), E> {
 		match (
 			self.transaction.gas_price,
