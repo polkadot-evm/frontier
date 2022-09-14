@@ -659,29 +659,31 @@ mod tests {
 	}
 
 	#[test]
-	// Account balance is matched against the base fee without tip.
-	fn validate_balance_using_base_fee() {
+	// Account balance is matched against max_fee_per_gas (without txn tip)
+	fn validate_balance_regardless_of_base_fee() {
 		let who = Account {
+			// sufficient for base_fee, but not for max_fee_per_gas
 			balance: U256::from(21_000_000_000_001u128),
 			nonce: U256::zero(),
 		};
 		let with_tip = false;
 		let test = transaction_max_fee_high(with_tip);
 		let res = test.with_balance_for(&who);
-		assert!(res.is_ok());
+		assert!(res.is_err());
 	}
 
 	#[test]
-	// Account balance is matched against the effective gas price with tip.
-	fn validate_balance_using_effective_gas_price() {
+	// Account balance is matched against max_fee_per_gas (with txn tip)
+	fn validate_balance_regardless_of_effective_gas_price() {
 		let who = Account {
+			// sufficient for (base_fee + tip), but not for max_fee_per_gas
 			balance: U256::from(42_000_000_000_001u128),
 			nonce: U256::zero(),
 		};
 		let with_tip = true;
 		let test = transaction_max_fee_high(with_tip);
 		let res = test.with_balance_for(&who);
-		assert!(res.is_ok());
+		assert!(res.is_err());
 	}
 
 	#[test]
