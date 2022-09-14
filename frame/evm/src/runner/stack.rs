@@ -65,11 +65,21 @@ where
 		) -> (ExitReason, R),
 	{
 		let (base_fee, weight) = T::FeeCalculator::min_gas_price();
-		let max_fee_per_gas = match (max_fee_per_gas, is_transactional) {
-			(Some(max_fee_per_gas), _) => max_fee_per_gas,
+		let (total_fee_per_gas, actual_priority_fee_per_gas) = match (max_fee_per_gas, max_priority_fee_per_gas, is_transactional) {
+			// With no tip, we pay exactly the base_fee
+			// TODO: should this fn explicitly check that base_fee <= max_fee_per_gas?
+			(Some(_), None, _) => (base_fee, U256::zero()),
+			// With tip, we include as much of the tip on top of base_fee that we can, never
+			// exceeding max_fee_per_gas
+			(Some(max_fee_per_gas), Some(max_priority_fee_per_gas), _) => {
+				let actual_priority_fee_per_gas = max_fee_per_gas
+					.saturating_sub(base_fee)
+					.min(max_priority_fee_per_gas);
+				(base_fee.saturating_add(actual_priority_fee_per_gas), actual_priority_fee_per_gas)
+			}
 			// Gas price check is skipped for non-transactional calls that don't
 			// define a `max_fee_per_gas` input.
-			(None, false) => Default::default(),
+			(None, _, false) => (Default::default(), U256::zero()),
 			// Unreachable, previously validated. Handle gracefully.
 			_ => {
 				return Err(RunnerError {
@@ -80,7 +90,7 @@ where
 		};
 
 		// After eip-1559 we make sure the account can pay both the evm execution and priority fees.
-		let total_fee = max_fee_per_gas
+		let total_fee = total_fee_per_gas
 			.checked_mul(U256::from(gas_limit))
 			.ok_or(RunnerError {
 				error: Error::<T>::FeeOverflow,
@@ -105,18 +115,12 @@ where
 
 		// Post execution.
 		let used_gas = U256::from(executor.used_gas());
-		let actual_fee = if let Some(max_priority_fee) = max_priority_fee_per_gas {
-			let actual_priority_fee = max_fee_per_gas
-				.saturating_sub(base_fee)
-				.min(max_priority_fee)
-				.saturating_mul(used_gas);
-			executor
-				.fee(base_fee)
-				.checked_add(actual_priority_fee)
-				.unwrap_or_else(U256::max_value)
-		} else {
-			executor.fee(base_fee)
-		};
+		// TODO: after simplifying the logic here, we no longer care about the specified priority
+		// fee except for calculating the total fee paid.
+		// When paying out the priority fee, we let correct_and_deposit_fee() come up with an
+		// arbitrary value that is used as the tip to pay.
+		// Assuming this is ok, actual_priority_fee_per_gas does not need to be returned above.
+		let actual_fee = executor.fee(total_fee_per_gas);
 		log::debug!(
 			target: "evm",
 			"Execution {:?} [source: {:?}, value: {}, gas_limit: {}, actual_fee: {}, is_transactional: {}]",
