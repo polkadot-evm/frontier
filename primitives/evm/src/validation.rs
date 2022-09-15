@@ -178,7 +178,7 @@ impl<'config, E: From<InvalidEvmTransactionError>> CheckEvmTransaction<'config, 
 		}
 	}
 
-	fn validate_common(&self) -> Result<&Self, E> {
+	pub fn validate_common(&self) -> Result<&Self, E> {
 		if self.config.is_transactional {
 			// We must ensure a transaction can pay the cost of its data bytes.
 			// If it can't it should not be included in a block.
