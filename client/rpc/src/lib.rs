@@ -76,7 +76,9 @@ pub mod frontier_backend_client {
 		C: HeaderBackend<B> + Send + Sync + 'static,
 	{
 		Ok(match number.unwrap_or(BlockNumber::Latest) {
-			BlockNumber::Hash { hash, .. } => load_hash::<B, C>(client, backend, hash).unwrap_or(None),
+			BlockNumber::Hash { hash, .. } => {
+				load_hash::<B, C>(client, backend, hash).unwrap_or(None)
+			}
 			BlockNumber::Num(number) => Some(BlockId::Number(number.unique_saturated_into())),
 			BlockNumber::Latest => Some(BlockId::Hash(client.info().best_hash)),
 			BlockNumber::Earliest => Some(BlockId::Number(Zero::zero())),
@@ -271,9 +273,7 @@ mod tests {
 	type OpaqueBlock =
 		Block<Header<u64, BlakeTwo256>, substrate_test_runtime_client::runtime::Extrinsic>;
 
-	fn open_frontier_backend(
-		path: PathBuf,
-	) -> Result<Arc<fc_db::Backend<OpaqueBlock>>, String> {
+	fn open_frontier_backend(path: PathBuf) -> Result<Arc<fc_db::Backend<OpaqueBlock>>, String> {
 		Ok(Arc::new(fc_db::Backend::<OpaqueBlock>::new(
 			&fc_db::DatabaseSettings {
 				source: sc_client_db::DatabaseSource::RocksDb {
@@ -317,14 +317,20 @@ mod tests {
 		// Map B1
 		let commitment = fc_db::MappingCommitment::<OpaqueBlock> {
 			block_hash: b1_hash,
-			ethereum_block_hash: ethereum_block_hash,
+			ethereum_block_hash,
 			ethereum_transaction_hashes: vec![],
 		};
 		let _ = frontier_backend.mapping().write_hashes(commitment);
 
 		// Expect B1 to be canon
 		assert_eq!(
-			super::frontier_backend_client::load_hash(client.as_ref(), frontier_backend.as_ref(), ethereum_block_hash).unwrap().unwrap(),
+			super::frontier_backend_client::load_hash(
+				client.as_ref(),
+				frontier_backend.as_ref(),
+				ethereum_block_hash
+			)
+			.unwrap()
+			.unwrap(),
 			BlockId::Hash(b1_hash),
 		);
 
@@ -340,14 +346,20 @@ mod tests {
 		// Map B2 to same ethereum hash
 		let commitment = fc_db::MappingCommitment::<OpaqueBlock> {
 			block_hash: b2_hash,
-			ethereum_block_hash: ethereum_block_hash,
+			ethereum_block_hash,
 			ethereum_transaction_hashes: vec![],
 		};
 		let _ = frontier_backend.mapping().write_hashes(commitment);
 
 		// Still expect B1 to be canon
 		assert_eq!(
-			super::frontier_backend_client::load_hash(client.as_ref(), frontier_backend.as_ref(), ethereum_block_hash).unwrap().unwrap(),
+			super::frontier_backend_client::load_hash(
+				client.as_ref(),
+				frontier_backend.as_ref(),
+				ethereum_block_hash
+			)
+			.unwrap()
+			.unwrap(),
 			BlockId::Hash(b1_hash),
 		);
 
@@ -361,7 +373,13 @@ mod tests {
 
 		// Expect B2 to be new canon
 		assert_eq!(
-			super::frontier_backend_client::load_hash(client.as_ref(), frontier_backend.as_ref(), ethereum_block_hash).unwrap().unwrap(),
+			super::frontier_backend_client::load_hash(
+				client.as_ref(),
+				frontier_backend.as_ref(),
+				ethereum_block_hash
+			)
+			.unwrap()
+			.unwrap(),
 			BlockId::Hash(b2_hash),
 		);
 	}

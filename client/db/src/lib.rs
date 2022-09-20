@@ -18,8 +18,8 @@
 
 #[cfg(feature = "parity-db")]
 mod parity_db_adapter;
-mod utils;
 mod upgrade;
+mod utils;
 
 use std::{
 	marker::PhantomData,
@@ -213,16 +213,17 @@ impl<Block: BlockT> MappingDb<Block> {
 		}
 	}
 
-	pub fn block_hash(&self, ethereum_block_hash: &H256) -> Result<Option<Vec<Block::Hash>>, String> {
+	pub fn block_hash(
+		&self,
+		ethereum_block_hash: &H256,
+	) -> Result<Option<Vec<Block::Hash>>, String> {
 		match self
 			.db
 			.get(crate::columns::BLOCK_MAPPING, &ethereum_block_hash.encode())
 		{
-			Some(raw) => {
-				Ok(Some(
-					Vec::<Block::Hash>::decode(&mut &raw[..]).map_err(|e| format!("{:?}", e))?,
-				))
-			},
+			Some(raw) => Ok(Some(
+				Vec::<Block::Hash>::decode(&mut &raw[..]).map_err(|e| format!("{:?}", e))?,
+			)),
 			None => Ok(None),
 		}
 	}
@@ -268,8 +269,8 @@ impl<Block: BlockT> MappingDb<Block> {
 			Ok(Some(mut data)) => {
 				data.push(commitment.block_hash);
 				data
-			},
-			_ => vec![commitment.block_hash]
+			}
+			_ => vec![commitment.block_hash],
 		};
 
 		transaction.set(

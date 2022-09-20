@@ -22,7 +22,9 @@ use sp_runtime::traits::Block as BlockT;
 
 use crate::{Database, DatabaseSettings, DatabaseSource, DbHash};
 
-pub fn open_database<Block: BlockT>(config: &DatabaseSettings) -> Result<Arc<dyn Database<DbHash>>, String> {
+pub fn open_database<Block: BlockT>(
+	config: &DatabaseSettings,
+) -> Result<Arc<dyn Database<DbHash>>, String> {
 	let db: Arc<dyn Database<DbHash>> = match &config.source {
 		DatabaseSource::ParityDb { path } => open_parity_db(path)?,
 		DatabaseSource::RocksDb { path, .. } => open_kvdb_rocksdb::<Block>(path, true)?,
@@ -40,7 +42,10 @@ pub fn open_database<Block: BlockT>(config: &DatabaseSettings) -> Result<Arc<dyn
 }
 
 #[cfg(feature = "kvdb-rocksdb")]
-fn open_kvdb_rocksdb<Block: BlockT>(path: &Path, create: bool) -> Result<Arc<dyn Database<DbHash>>, String> {
+fn open_kvdb_rocksdb<Block: BlockT>(
+	path: &Path,
+	create: bool,
+) -> Result<Arc<dyn Database<DbHash>>, String> {
 	// first upgrade database to required version
 	match crate::upgrade::upgrade_db::<Block>(path) {
 		// in case of missing version file, assume that database simply does not exist at given

@@ -16,8 +16,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use sp_runtime::traits::Block as BlockT;
 use codec::{Decode, Encode};
+use sp_runtime::traits::Block as BlockT;
 
 use crate::{Database, DatabaseSettings, DatabaseSource, DbHash};
 
@@ -69,15 +69,22 @@ impl fmt::Display for UpgradeError {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 		match self {
 			UpgradeError::UnknownDatabaseVersion => {
-				write!(f, "Database version cannot be read from existing db_version file")
-			},
+				write!(
+					f,
+					"Database version cannot be read from existing db_version file"
+				)
+			}
 			UpgradeError::MissingDatabaseVersionFile => write!(f, "Missing database version file"),
 			UpgradeError::UnsupportedVersion(version) => {
 				write!(f, "Database version no longer supported: {}", version)
-			},
+			}
 			UpgradeError::FutureDatabaseVersion(version) => {
-				write!(f, "Database version comes from future version of the client: {}", version)
-			},
+				write!(
+					f,
+					"Database version comes from future version of the client: {}",
+					version
+				)
+			}
 			UpgradeError::Io(err) => write!(f, "Io error: {}", err),
 		}
 	}
@@ -91,11 +98,14 @@ pub(crate) fn upgrade_db<Block: BlockT>(db_path: &Path) -> UpgradeResult<()> {
 		1 => {
 			let summary = migrate_1_to_2::<Block>(db_path)?;
 			if summary.error.len() > 0 {
-				panic!("Inconsistent migration from version 1 to 2. Failed on {:?}", summary.error);
+				panic!(
+					"Inconsistent migration from version 1 to 2. Failed on {:?}",
+					summary.error
+				);
 			} else {
 				log::info!("✔️ Successful Frontier DB migration from version 1 to version 2 ({:?} entries).", summary.success);
 			}
-		},
+		}
 		CURRENT_VERSION => (),
 		_ => return Err(UpgradeError::FutureDatabaseVersion(db_version)),
 	}
@@ -112,13 +122,14 @@ pub(crate) fn current_version(path: &Path) -> UpgradeResult<u32> {
 			let mut file = fs::File::create(version_file_path(path))?;
 			file.write_all(format!("{}", 1).as_bytes())?;
 			Ok(1u32)
-		},
+		}
 		Err(_) => Err(UpgradeError::UnknownDatabaseVersion),
 		Ok(mut file) => {
 			let mut s = String::new();
-			file.read_to_string(&mut s).map_err(|_| UpgradeError::UnknownDatabaseVersion)?;
+			file.read_to_string(&mut s)
+				.map_err(|_| UpgradeError::UnknownDatabaseVersion)?;
 			u32::from_str_radix(&s, 10).map_err(|_| UpgradeError::UnknownDatabaseVersion)
-		},
+		}
 	}
 }
 
@@ -141,14 +152,18 @@ fn version_file_path(path: &Path) -> PathBuf {
 /// Migration from version1 to version2:
 /// - The format of the Ethereum<>Substrate block mapping changed to support equivocation.
 /// - Migrating schema from One-to-one to One-to-many (EthHash: Vec<SubstrateHash>) relationship.
-pub(crate) fn migrate_1_to_2<Block: BlockT>(db_path: &Path) -> UpgradeResult<UpgradeVersion1To2Summary> {
+pub(crate) fn migrate_1_to_2<Block: BlockT>(
+	db_path: &Path,
+) -> UpgradeResult<UpgradeVersion1To2Summary> {
 	log::info!("🔨 Running Frontier DB migration from version 1 to version 2. Please wait.");
 	let mut res = UpgradeVersion1To2Summary {
 		success: 0,
 		error: vec![],
 	};
 	// Process a batch of hashes in a single db transaction
-	let mut process_chunk = |db: &kvdb_rocksdb::Database, ethereum_hashes: &[std::boxed::Box<[u8]>]| -> UpgradeResult<()> {
+	let mut process_chunk = |db: &kvdb_rocksdb::Database,
+	                         ethereum_hashes: &[std::boxed::Box<[u8]>]|
+	 -> UpgradeResult<()> {
 		let mut transaction = db.transaction();
 		for ethereum_hash in ethereum_hashes {
 			if let Some(substrate_hash) = db.get(crate::columns::BLOCK_MAPPING, ethereum_hash)? {
@@ -157,7 +172,11 @@ pub(crate) fn migrate_1_to_2<Block: BlockT>(db_path: &Path) -> UpgradeResult<Upg
 				if decoded.is_err() || decoded.unwrap().is_empty() {
 					let mut hashes = Vec::new();
 					hashes.push(sp_core::H256::from_slice(&substrate_hash[..]));
-					transaction.put_vec(crate::columns::BLOCK_MAPPING, ethereum_hash, hashes.encode());
+					transaction.put_vec(
+						crate::columns::BLOCK_MAPPING,
+						ethereum_hash,
+						hashes.encode(),
+					);
 					res.success = res.success + 1;
 				} else {
 					res.error.push(sp_core::H256::from_slice(ethereum_hash));
@@ -166,19 +185,21 @@ pub(crate) fn migrate_1_to_2<Block: BlockT>(db_path: &Path) -> UpgradeResult<Upg
 				res.error.push(sp_core::H256::from_slice(ethereum_hash));
 			}
 		}
-		db.write(transaction).map_err(|_| 
-			io::Error::new(ErrorKind::Other, "Failed to commit on migrate_1_to_2")
-		)?;
+		db.write(transaction)
+			.map_err(|_| io::Error::new(ErrorKind::Other, "Failed to commit on migrate_1_to_2"))?;
 		Ok(())
 	};
 
-    let db_cfg = kvdb_rocksdb::DatabaseConfig::with_columns(V2_NUM_COLUMNS);
+	let db_cfg = kvdb_rocksdb::DatabaseConfig::with_columns(V2_NUM_COLUMNS);
 	let db = kvdb_rocksdb::Database::open(&db_cfg, db_path)?;
 
-    // Get all the block hashes we need to update
-	let ethereum_hashes: Vec<_> = db.iter(crate::columns::BLOCK_MAPPING).map(|entry| entry.0).collect();
+	// Get all the block hashes we need to update
+	let ethereum_hashes: Vec<_> = db
+		.iter(crate::columns::BLOCK_MAPPING)
+		.map(|entry| entry.0)
+		.collect();
 
-    // Read and update each entry in db transaction batches
+	// Read and update each entry in db transaction batches
 	const CHUNK_SIZE: usize = 10_000;
 	let chunks = ethereum_hashes.chunks(CHUNK_SIZE);
 	for chunk in chunks {
@@ -217,44 +238,47 @@ mod tests {
 		)?))
 	}
 
-    #[test]
+	#[test]
 	fn upgrade_1_to_2_works() {
 		let tmp = tempdir().expect("create a temporary directory");
-        let path = tmp.path().to_owned();
-        let mut ethereum_hashes = vec![];
-        let mut substrate_hashes = vec![];
-        {
-            // Create a temporary frontier secondary DB.
-            let backend = open_frontier_backend(path.clone()).expect("a temporary db was created");
-            
-            // Fill the tmp db with some data
-            let mut transaction = sp_database::Transaction::new();
-            for n in 0..20_010 {
-                let ethhash = H256::random();
-				let subhash = H256::random();
-                ethereum_hashes.push(ethhash);
-                substrate_hashes.push(subhash);
-                transaction.set(
-                    crate::columns::BLOCK_MAPPING,
-                    &ethhash.encode(),
-                    &subhash.encode(),
-                );
-            }
-            let _ = backend.mapping().db.commit(transaction);
+		let path = tmp.path().to_owned();
+		let mut ethereum_hashes = vec![];
+		let mut substrate_hashes = vec![];
+		{
+			// Create a temporary frontier secondary DB.
+			let backend = open_frontier_backend(path.clone()).expect("a temporary db was created");
 
-        }
-        // Upgrade database from version 1 to 2
-        let _ = super::upgrade_db::<OpaqueBlock>(&path);
+			// Fill the tmp db with some data
+			let mut transaction = sp_database::Transaction::new();
+			for n in 0..20_010 {
+				let ethhash = H256::random();
+				let subhash = H256::random();
+				ethereum_hashes.push(ethhash);
+				substrate_hashes.push(subhash);
+				transaction.set(
+					crate::columns::BLOCK_MAPPING,
+					&ethhash.encode(),
+					&subhash.encode(),
+				);
+			}
+			let _ = backend.mapping().db.commit(transaction);
+		}
+		// Upgrade database from version 1 to 2
+		let _ = super::upgrade_db::<OpaqueBlock>(&path);
 
 		// Check data
-        let backend = open_frontier_backend(path.clone()).expect("a temporary db was created");
-        for (i, original_ethereum_hash) in ethereum_hashes.iter().enumerate() {
-            let entry = backend.mapping().block_hash(original_ethereum_hash).unwrap().unwrap();
+		let backend = open_frontier_backend(path.clone()).expect("a temporary db was created");
+		for (i, original_ethereum_hash) in ethereum_hashes.iter().enumerate() {
+			let entry = backend
+				.mapping()
+				.block_hash(original_ethereum_hash)
+				.unwrap()
+				.unwrap();
 			// All entries now hold a single element Vec
 			assert_eq!(entry.len(), 1);
 			// The Vec holds the old value
 			assert_eq!(entry.first(), substrate_hashes.get(i));
-        }
+		}
 
 		// Upgrade db version file
 		assert_eq!(super::update_version(&path), Ok(2u32));
