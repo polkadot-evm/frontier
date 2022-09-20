@@ -249,6 +249,8 @@
 <span id="244">244</span>
 <span id="245">245</span>
 <span id="246">246</span>
+<span id="247">247</span>
+<span id="248">248</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -332,6 +334,8 @@
 			<span class="ident">BlockNumber::Latest</span> =&gt; <span class="prelude-val">Some</span>(<span class="ident">BlockId::Hash</span>(<span class="ident">client</span>.<span class="ident">info</span>().<span class="ident">best_hash</span>)),
 			<span class="ident">BlockNumber::Earliest</span> =&gt; <span class="prelude-val">Some</span>(<span class="ident">BlockId::Number</span>(<span class="ident">Zero::zero</span>())),
 			<span class="ident">BlockNumber::Pending</span> =&gt; <span class="prelude-val">None</span>,
+			<span class="ident">BlockNumber::Safe</span> =&gt; <span class="prelude-val">Some</span>(<span class="ident">BlockId::Hash</span>(<span class="ident">client</span>.<span class="ident">info</span>().<span class="ident">finalized_hash</span>)),
+			<span class="ident">BlockNumber::Finalized</span> =&gt; <span class="prelude-val">Some</span>(<span class="ident">BlockId::Hash</span>(<span class="ident">client</span>.<span class="ident">info</span>().<span class="ident">finalized_hash</span>)),
 		})
 	}
 

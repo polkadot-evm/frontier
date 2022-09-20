@@ -223,6 +223,22 @@
 <span id="218">218</span>
 <span id="219">219</span>
 <span id="220">220</span>
+<span id="221">221</span>
+<span id="222">222</span>
+<span id="223">223</span>
+<span id="224">224</span>
+<span id="225">225</span>
+<span id="226">226</span>
+<span id="227">227</span>
+<span id="228">228</span>
+<span id="229">229</span>
+<span id="230">230</span>
+<span id="231">231</span>
+<span id="232">232</span>
+<span id="233">233</span>
+<span id="234">234</span>
+<span id="235">235</span>
+<span id="236">236</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -266,6 +282,12 @@
 	<span class="ident">Earliest</span>,
 	<span class="doccomment">/// Pending block (being mined)</span>
 	<span class="ident">Pending</span>,
+	<span class="doccomment">/// The most recent crypto-economically secure block.</span>
+	<span class="doccomment">/// There is no difference between Ethereum&#39;s `safe` and `finalized`</span>
+	<span class="doccomment">/// in Substrate finality gadget.</span>
+	<span class="ident">Safe</span>,
+	<span class="doccomment">/// The most recent crypto-economically secure block.</span>
+	<span class="ident">Finalized</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">BlockNumber</span> {
@@ -311,6 +333,8 @@
 			<span class="ident">BlockNumber::Latest</span> =&gt; <span class="ident">serializer</span>.<span class="ident">serialize_str</span>(<span class="string">&quot;latest&quot;</span>),
 			<span class="ident">BlockNumber::Earliest</span> =&gt; <span class="ident">serializer</span>.<span class="ident">serialize_str</span>(<span class="string">&quot;earliest&quot;</span>),
 			<span class="ident">BlockNumber::Pending</span> =&gt; <span class="ident">serializer</span>.<span class="ident">serialize_str</span>(<span class="string">&quot;pending&quot;</span>),
+			<span class="ident">BlockNumber::Safe</span> =&gt; <span class="ident">serializer</span>.<span class="ident">serialize_str</span>(<span class="string">&quot;safe&quot;</span>),
+			<span class="ident">BlockNumber::Finalized</span> =&gt; <span class="ident">serializer</span>.<span class="ident">serialize_str</span>(<span class="string">&quot;finalized&quot;</span>),
 		}
 	}
 }
@@ -323,7 +347,7 @@
 	<span class="kw">fn</span> <span class="ident">expecting</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">formatter</span>: <span class="kw-2">&amp;mut</span> <span class="ident">fmt::Formatter</span>) -&gt; <span class="ident">fmt::Result</span> {
 		<span class="macro">write!</span>(
 			<span class="ident">formatter</span>,
-			<span class="string">&quot;a block number or &#39;latest&#39;, &#39;earliest&#39; or &#39;pending&#39;&quot;</span>
+			<span class="string">&quot;a block number or &#39;latest&#39;, &#39;safe&#39;, &#39;finalized&#39;, &#39;earliest&#39; or &#39;pending&#39;&quot;</span>
 		)
 	}
 
@@ -388,6 +412,8 @@
 			<span class="string">&quot;latest&quot;</span> =&gt; <span class="prelude-val">Ok</span>(<span class="ident">BlockNumber::Latest</span>),
 			<span class="string">&quot;earliest&quot;</span> =&gt; <span class="prelude-val">Ok</span>(<span class="ident">BlockNumber::Earliest</span>),
 			<span class="string">&quot;pending&quot;</span> =&gt; <span class="prelude-val">Ok</span>(<span class="ident">BlockNumber::Pending</span>),
+			<span class="string">&quot;safe&quot;</span> =&gt; <span class="prelude-val">Ok</span>(<span class="ident">BlockNumber::Safe</span>),
+			<span class="string">&quot;finalized&quot;</span> =&gt; <span class="prelude-val">Ok</span>(<span class="ident">BlockNumber::Finalized</span>),
 			<span class="kw">_</span> <span class="kw">if</span> <span class="ident">value</span>.<span class="ident">starts_with</span>(<span class="string">&quot;0x&quot;</span>) =&gt; <span class="ident">u64::from_str_radix</span>(<span class="kw-2">&amp;</span><span class="ident">value</span>[<span class="number">2</span>..], <span class="number">16</span>)
 				.<span class="ident">map</span>(<span class="ident">BlockNumber::Num</span>)
 				.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">Error::custom</span>(<span class="macro">format!</span>(<span class="string">&quot;Invalid block number: {}&quot;</span>, <span class="ident">e</span>))),
@@ -421,6 +447,8 @@
 			<span class="ident">BlockNumber::Num</span>(<span class="ident">number</span>) =&gt; <span class="prelude-val">Some</span>(<span class="ident">number</span>),
 			<span class="ident">BlockNumber::Earliest</span> =&gt; <span class="prelude-val">Some</span>(<span class="number">0</span>),
 			<span class="ident">BlockNumber::Latest</span> =&gt; <span class="prelude-val">Some</span>(<span class="number">1000</span>),
+			<span class="ident">BlockNumber::Safe</span> =&gt; <span class="prelude-val">Some</span>(<span class="number">999</span>),
+			<span class="ident">BlockNumber::Finalized</span> =&gt; <span class="prelude-val">Some</span>(<span class="number">999</span>),
 			<span class="ident">BlockNumber::Pending</span> =&gt; <span class="prelude-val">Some</span>(<span class="number">1001</span>),
 			<span class="kw">_</span> =&gt; <span class="prelude-val">None</span>,
 		}
@@ -433,6 +461,8 @@
 		<span class="kw">let</span> <span class="ident">bn_u64</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="ident">serde_json::from_str</span>(<span class="string">r#&quot;420&quot;#</span>).<span class="ident">unwrap</span>();
 		<span class="kw">let</span> <span class="ident">bn_tag_earliest</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="ident">serde_json::from_str</span>(<span class="string">r#&quot;&quot;earliest&quot;&quot;#</span>).<span class="ident">unwrap</span>();
 		<span class="kw">let</span> <span class="ident">bn_tag_latest</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="ident">serde_json::from_str</span>(<span class="string">r#&quot;&quot;latest&quot;&quot;#</span>).<span class="ident">unwrap</span>();
+		<span class="kw">let</span> <span class="ident">bn_tag_safe</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="ident">serde_json::from_str</span>(<span class="string">r#&quot;&quot;safe&quot;&quot;#</span>).<span class="ident">unwrap</span>();
+		<span class="kw">let</span> <span class="ident">bn_tag_finalized</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="ident">serde_json::from_str</span>(<span class="string">r#&quot;&quot;finalized&quot;&quot;#</span>).<span class="ident">unwrap</span>();
 		<span class="kw">let</span> <span class="ident">bn_tag_pending</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="ident">serde_json::from_str</span>(<span class="string">r#&quot;&quot;pending&quot;&quot;#</span>).<span class="ident">unwrap</span>();
 
 		<span class="macro">assert_eq!</span>(<span class="ident">match_block_number</span>(<span class="ident">bn_dec</span>).<span class="ident">unwrap</span>(), <span class="number">42</span>);
@@ -440,6 +470,8 @@
 		<span class="macro">assert_eq!</span>(<span class="ident">match_block_number</span>(<span class="ident">bn_u64</span>).<span class="ident">unwrap</span>(), <span class="number">420</span>);
 		<span class="macro">assert_eq!</span>(<span class="ident">match_block_number</span>(<span class="ident">bn_tag_earliest</span>).<span class="ident">unwrap</span>(), <span class="number">0</span>);
 		<span class="macro">assert_eq!</span>(<span class="ident">match_block_number</span>(<span class="ident">bn_tag_latest</span>).<span class="ident">unwrap</span>(), <span class="number">1000</span>);
+		<span class="macro">assert_eq!</span>(<span class="ident">match_block_number</span>(<span class="ident">bn_tag_safe</span>).<span class="ident">unwrap</span>(), <span class="number">999</span>);
+		<span class="macro">assert_eq!</span>(<span class="ident">match_block_number</span>(<span class="ident">bn_tag_finalized</span>).<span class="ident">unwrap</span>(), <span class="number">999</span>);
 		<span class="macro">assert_eq!</span>(<span class="ident">match_block_number</span>(<span class="ident">bn_tag_pending</span>).<span class="ident">unwrap</span>(), <span class="number">1001</span>);
 	}
 }
