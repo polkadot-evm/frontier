@@ -2,7 +2,7 @@ import { expect } from "chai";
 import { step } from "mocha-steps";
 
 import { BLOCK_TIMESTAMP, BLOCK_GAS_LIMIT } from "./config";
-import { createAndFinalizeBlock, describeWithFrontier } from "./util";
+import { createAndFinalizeBlock, describeWithFrontier, customRequest } from "./util";
 
 describeWithFrontier("Frontier RPC (Block)", (context) => {
 	let previousBlock;

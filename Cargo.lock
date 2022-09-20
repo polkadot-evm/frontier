@@ -1648,6 +1648,7 @@ version = "2.0.0-dev"
 dependencies = [
  "fp-storage",
  "kvdb-rocksdb",
+ "log",
  "parity-db",
  "parity-scale-codec",
  "parking_lot 0.12.1",
@@ -1655,6 +1656,8 @@ dependencies = [
  "sp-core",
  "sp-database",
  "sp-runtime",
+ "substrate-test-runtime-client",
+ "tempfile",
 ]
 
 [[package]]

@@ -19,6 +19,7 @@
 #[cfg(feature = "parity-db")]
 mod parity_db_adapter;
 mod utils;
+mod upgrade;
 
 use std::{
 	marker::PhantomData,
@@ -91,7 +92,7 @@ impl<Block: BlockT> Backend<Block> {
 	}
 
 	pub fn new(config: &DatabaseSettings) -> Result<Self, String> {
-		let db = utils::open_database(config)?;
+		let db = utils::open_database::<Block>(config)?;
 
 		Ok(Self {
 			mapping: Arc::new(MappingDb {
@@ -212,14 +213,16 @@ impl<Block: BlockT> MappingDb<Block> {
 		}
 	}
 
-	pub fn block_hash(&self, ethereum_block_hash: &H256) -> Result<Option<Block::Hash>, String> {
+	pub fn block_hash(&self, ethereum_block_hash: &H256) -> Result<Option<Vec<Block::Hash>>, String> {
 		match self
 			.db
 			.get(crate::columns::BLOCK_MAPPING, &ethereum_block_hash.encode())
 		{
-			Some(raw) => Ok(Some(
-				Block::Hash::decode(&mut &raw[..]).map_err(|e| format!("{:?}", e))?,
-			)),
+			Some(raw) => {
+				Ok(Some(
+					Vec::<Block::Hash>::decode(&mut &raw[..]).map_err(|e| format!("{:?}", e))?,
+				))
+			},
 			None => Ok(None),
 		}
 	}
@@ -261,10 +264,18 @@ impl<Block: BlockT> MappingDb<Block> {
 
 		let mut transaction = sp_database::Transaction::new();
 
+		let mut substrate_hashes = match self.block_hash(&commitment.ethereum_block_hash) {
+			Ok(Some(mut data)) => {
+				data.push(commitment.block_hash);
+				data
+			},
+			_ => vec![commitment.block_hash]
+		};
+
 		transaction.set(
 			crate::columns::BLOCK_MAPPING,
 			&commitment.ethereum_block_hash.encode(),
-			&commitment.block_hash.encode(),
+			&substrate_hashes.encode(),
 		);
 
 		for (i, ethereum_transaction_hash) in commitment

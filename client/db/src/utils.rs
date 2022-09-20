@@ -18,17 +18,19 @@
 
 use std::{path::Path, sync::Arc};
 
+use sp_runtime::traits::Block as BlockT;
+
 use crate::{Database, DatabaseSettings, DatabaseSource, DbHash};
 
-pub fn open_database(config: &DatabaseSettings) -> Result<Arc<dyn Database<DbHash>>, String> {
+pub fn open_database<Block: BlockT>(config: &DatabaseSettings) -> Result<Arc<dyn Database<DbHash>>, String> {
 	let db: Arc<dyn Database<DbHash>> = match &config.source {
 		DatabaseSource::ParityDb { path } => open_parity_db(path)?,
-		DatabaseSource::RocksDb { path, .. } => open_kvdb_rocksdb(path, true)?,
+		DatabaseSource::RocksDb { path, .. } => open_kvdb_rocksdb::<Block>(path, true)?,
 		DatabaseSource::Auto {
 			paritydb_path,
 			rocksdb_path,
 			..
-		} => match open_kvdb_rocksdb(rocksdb_path, false) {
+		} => match open_kvdb_rocksdb::<Block>(rocksdb_path, false) {
 			Ok(db) => db,
 			Err(_) => open_parity_db(paritydb_path)?,
 		},
@@ -38,15 +40,21 @@ pub fn open_database(config: &DatabaseSettings) -> Result<Arc<dyn Database<DbHas
 }
 
 #[cfg(feature = "kvdb-rocksdb")]
-fn open_kvdb_rocksdb(path: &Path, create: bool) -> Result<Arc<dyn Database<DbHash>>, String> {
+fn open_kvdb_rocksdb<Block: BlockT>(path: &Path, create: bool) -> Result<Arc<dyn Database<DbHash>>, String> {
+	// first upgrade database to required version
+	match crate::upgrade::upgrade_db::<Block>(path) {
+		// in case of missing version file, assume that database simply does not exist at given
+		// location
+		Ok(_) | Err(crate::upgrade::UpgradeError::MissingDatabaseVersionFile) => (),
+		Err(err) => return Err("Todo".to_string()),
+	}
+
 	let mut db_config = kvdb_rocksdb::DatabaseConfig::with_columns(crate::columns::NUM_COLUMNS);
 	db_config.create_if_missing = create;
 
-	let path = path
-		.to_str()
-		.ok_or_else(|| "Invalid database path".to_string())?;
-
 	let db = kvdb_rocksdb::Database::open(&db_config, &path).map_err(|err| format!("{}", err))?;
+	// write database version only after the database is succesfully opened
+	crate::upgrade::update_version(path).map_err(|_| "Cannot update db version".to_string());
 	return Ok(sp_database::as_database(db));
 }
 

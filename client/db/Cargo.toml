@@ -12,6 +12,7 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 parking_lot = "0.12.1"
+log = "0.4.17"
 
 # Parity
 codec = { package = "parity-scale-codec", version = "3.0.0", features = ["derive"] }
@@ -28,4 +29,9 @@ sp-runtime = { version = "6.0.0", git = "https://github.com/paritytech/substrate
 fp-storage = { version = "2.0.0-dev", path = "../../primitives/storage" }
 
 [features]
-default = ["kvdb-rocksdb", "parity-db"]
+default = ["kvdb-rocksdb", "parity-db", "sc-client-db/rocksdb"]
+
+[dev-dependencies]
+tempfile = "3.3.0"
+substrate-test-runtime-client = { version = "2.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
+
