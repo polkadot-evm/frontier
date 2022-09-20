@@ -157,9 +157,11 @@ pub(crate) fn migrate_1_to_2<Block: BlockT>(
 		error: vec![],
 	};
 	// Process a batch of hashes in a single db transaction
-	let mut process_chunk = |db: &kvdb_rocksdb::Database,
-	                         ethereum_hashes: &[std::boxed::Box<[u8]>]|
-	 -> UpgradeResult<()> {
+	#[rustfmt::skip]
+	let mut process_chunk = |
+		db: &kvdb_rocksdb::Database,
+		ethereum_hashes: &[std::boxed::Box<[u8]>]
+	| -> UpgradeResult<()> {
 		let mut transaction = db.transaction();
 		for ethereum_hash in ethereum_hashes {
 			if let Some(substrate_hash) = db.get(crate::columns::BLOCK_MAPPING, ethereum_hash)? {
