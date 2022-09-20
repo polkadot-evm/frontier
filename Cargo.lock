@@ -1692,7 +1692,7 @@ dependencies = [
  "jsonrpsee",
  "libsecp256k1",
  "log",
- "lru",
+ "lru 0.8.0",
  "parity-scale-codec",
  "prometheus",
  "rand 0.8.5",
@@ -3311,7 +3311,7 @@ dependencies = [
  "libp2p-core",
  "libp2p-swarm",
  "log",
- "lru",
+ "lru 0.7.8",
  "prost",
  "prost-build",
  "prost-codec",
@@ -3779,6 +3779,15 @@ name = "lru"
 version = "0.7.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e999beba7b6e8345721bd280141ed958096a2e4abdf74f67ff4ce49b4b54e47a"
+dependencies = [
+ "hashbrown 0.12.0",
+]
+
+[[package]]
+name = "lru"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "936d98d2ddd79c18641c6709e7bb09981449694e402d1a0f0f657ea8d61f4a51"
 dependencies = [
  "hashbrown 0.12.0",
 ]
@@ -4833,7 +4842,7 @@ dependencies = [
  "ethereum-types",
  "hashbrown 0.12.0",
  "impl-trait-for-tuples",
- "lru",
+ "lru 0.7.8",
  "parity-util-mem-derive",
  "parking_lot 0.12.1",
  "primitive-types",
@@ -6106,7 +6115,7 @@ version = "0.10.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=master#782e08ed36e3c3e5ffa3a48484267b02ec8b7b6d"
 dependencies = [
  "lazy_static",
- "lru",
+ "lru 0.7.8",
  "parity-scale-codec",
  "parking_lot 0.12.1",
  "sc-executor-common",
@@ -6273,7 +6282,7 @@ dependencies = [
  "linked-hash-map",
  "linked_hash_set",
  "log",
- "lru",
+ "lru 0.7.8",
  "parity-scale-codec",
  "parking_lot 0.12.1",
  "pin-project",
@@ -6329,7 +6338,7 @@ dependencies = [
  "futures-timer",
  "libp2p",
  "log",
- "lru",
+ "lru 0.7.8",
  "sc-network",
  "sp-runtime",
  "substrate-prometheus-endpoint",
@@ -6365,7 +6374,7 @@ dependencies = [
  "futures",
  "libp2p",
  "log",
- "lru",
+ "lru 0.7.8",
  "parity-scale-codec",
  "prost",
  "prost-build",
@@ -7201,7 +7210,7 @@ source = "git+https://github.com/paritytech/substrate?branch=master#782e08ed36e3
 dependencies = [
  "futures",
  "log",
- "lru",
+ "lru 0.7.8",
  "parity-scale-codec",
  "parking_lot 0.12.1",
  "sp-api",
