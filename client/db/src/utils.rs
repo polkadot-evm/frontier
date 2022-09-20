@@ -49,8 +49,6 @@ fn open_kvdb_rocksdb<Block: BlockT>(
 	// first upgrade database to required version
 	#[cfg(not(test))]
 	match crate::upgrade::upgrade_db::<Block>(path) {
-		// in case of missing version file, assume that database simply does not exist at given
-		// location
 		Ok(_) => (),
 		Err(_) => return Err("Frontier DB upgrade error".to_string()),
 	}
