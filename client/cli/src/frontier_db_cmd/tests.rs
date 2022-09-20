@@ -573,7 +573,7 @@ mod tests {
 		// Expect the ethereum and substrate block hashes to be mapped.
 		assert_eq!(
 			backend.mapping().block_hash(&ethereum_block_hash),
-			Ok(Some(block_hash))
+			Ok(Some(vec![block_hash]))
 		);
 
 		// Expect the offchain-stored transaction metadata to match the one we stored in the runtime.
@@ -656,7 +656,7 @@ mod tests {
 		// Expect the ethereum and substrate block hashes to be mapped.
 		assert_eq!(
 			backend.mapping().block_hash(&ethereum_block_hash),
-			Ok(Some(block_a1_hash))
+			Ok(Some(vec![block_a1_hash]))
 		);
 
 		// Expect the offchain-stored transaction metadata to match the one we stored in the runtime.
@@ -706,7 +706,7 @@ mod tests {
 		// Expect the ethereum and substrate block hashes to be mapped.
 		assert_eq!(
 			backend.mapping().block_hash(&ethereum_block_hash),
-			Ok(Some(block_a2_hash))
+			Ok(Some(vec![block_a1_hash, block_a2_hash]))
 		);
 
 		// Expect the offchain-stored transaction metadata to have data for both blocks.

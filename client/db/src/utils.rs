@@ -47,11 +47,12 @@ fn open_kvdb_rocksdb<Block: BlockT>(
 	create: bool,
 ) -> Result<Arc<dyn Database<DbHash>>, String> {
 	// first upgrade database to required version
+	#[cfg(not(test))]
 	match crate::upgrade::upgrade_db::<Block>(path) {
 		// in case of missing version file, assume that database simply does not exist at given
 		// location
-		Ok(_) | Err(crate::upgrade::UpgradeError::MissingDatabaseVersionFile) => (),
-		Err(err) => return Err("Todo".to_string()),
+		Ok(_) => (),
+		Err(_) => return Err("Frontier DB upgrade error".to_string()),
 	}
 
 	let mut db_config = kvdb_rocksdb::DatabaseConfig::with_columns(crate::columns::NUM_COLUMNS);
@@ -59,7 +60,8 @@ fn open_kvdb_rocksdb<Block: BlockT>(
 
 	let db = kvdb_rocksdb::Database::open(&db_config, &path).map_err(|err| format!("{}", err))?;
 	// write database version only after the database is succesfully opened
-	crate::upgrade::update_version(path).map_err(|_| "Cannot update db version".to_string());
+	#[cfg(not(test))]
+	let _ = crate::upgrade::update_version(path).map_err(|_| "Cannot update db version".to_string())?;
 	return Ok(sp_database::as_database(db));
 }
 

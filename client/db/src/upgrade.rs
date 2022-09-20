@@ -19,8 +19,6 @@
 use codec::{Decode, Encode};
 use sp_runtime::traits::Block as BlockT;
 
-use crate::{Database, DatabaseSettings, DatabaseSource, DbHash};
-
 use std::{
 	fmt, fs,
 	io::{self, ErrorKind, Read, Write},
@@ -42,8 +40,6 @@ const V2_NUM_COLUMNS: u32 = 4;
 pub(crate) enum UpgradeError {
 	/// Database version cannot be read from existing db_version file.
 	UnknownDatabaseVersion,
-	/// Missing database version file.
-	MissingDatabaseVersionFile,
 	/// Database version no longer supported.
 	UnsupportedVersion(u32),
 	/// Database version comes from future version of the client.
@@ -54,7 +50,7 @@ pub(crate) enum UpgradeError {
 
 pub(crate) type UpgradeResult<T> = Result<T, UpgradeError>;
 
-struct UpgradeVersion1To2Summary {
+pub(crate) struct UpgradeVersion1To2Summary {
 	pub success: u32,
 	pub error: Vec<sp_core::H256>,
 }
@@ -74,7 +70,6 @@ impl fmt::Display for UpgradeError {
 					"Database version cannot be read from existing db_version file"
 				)
 			}
-			UpgradeError::MissingDatabaseVersionFile => write!(f, "Missing database version file"),
 			UpgradeError::UnsupportedVersion(version) => {
 				write!(f, "Database version no longer supported: {}", version)
 			}
@@ -97,7 +92,7 @@ pub(crate) fn upgrade_db<Block: BlockT>(db_path: &Path) -> UpgradeResult<()> {
 		0 => return Err(UpgradeError::UnsupportedVersion(db_version)),
 		1 => {
 			let summary = migrate_1_to_2::<Block>(db_path)?;
-			if summary.error.len() > 0 {
+			if !summary.error.is_empty() {
 				panic!(
 					"Inconsistent migration from version 1 to 2. Failed on {:?}",
 					summary.error
@@ -128,7 +123,8 @@ pub(crate) fn current_version(path: &Path) -> UpgradeResult<u32> {
 			let mut s = String::new();
 			file.read_to_string(&mut s)
 				.map_err(|_| UpgradeError::UnknownDatabaseVersion)?;
-			u32::from_str_radix(&s, 10).map_err(|_| UpgradeError::UnknownDatabaseVersion)
+			s.parse::<u32>()
+				.map_err(|_| UpgradeError::UnknownDatabaseVersion)
 		}
 	}
 }
@@ -170,14 +166,12 @@ pub(crate) fn migrate_1_to_2<Block: BlockT>(
 				// Only update version1 data
 				let decoded = Vec::<Block::Hash>::decode(&mut &substrate_hash[..]);
 				if decoded.is_err() || decoded.unwrap().is_empty() {
-					let mut hashes = Vec::new();
-					hashes.push(sp_core::H256::from_slice(&substrate_hash[..]));
 					transaction.put_vec(
 						crate::columns::BLOCK_MAPPING,
 						ethereum_hash,
-						hashes.encode(),
+						vec![sp_core::H256::from_slice(&substrate_hash[..])].encode(),
 					);
-					res.success = res.success + 1;
+					res.success += 1;
 				} else {
 					res.error.push(sp_core::H256::from_slice(ethereum_hash));
 				}
@@ -211,15 +205,14 @@ pub(crate) fn migrate_1_to_2<Block: BlockT>(
 #[cfg(test)]
 mod tests {
 
-	use std::{collections::HashMap, path::PathBuf, sync::Arc};
+	use std::{path::PathBuf, sync::Arc};
 
 	use codec::Encode;
 	use sp_core::H256;
 	use sp_runtime::{
-		generic::{Block, BlockId, Header},
-		traits::{BlakeTwo256, Block as BlockT},
+		generic::{Block, Header},
+		traits::BlakeTwo256,
 	};
-	use std::str::FromStr;
 	use tempfile::tempdir;
 
 	type OpaqueBlock =
@@ -250,7 +243,7 @@ mod tests {
 
 			// Fill the tmp db with some data
 			let mut transaction = sp_database::Transaction::new();
-			for n in 0..20_010 {
+			for _ in 0..20_010 {
 				let ethhash = H256::random();
 				let subhash = H256::random();
 				ethereum_hashes.push(ethhash);
@@ -281,6 +274,7 @@ mod tests {
 		}
 
 		// Upgrade db version file
-		assert_eq!(super::update_version(&path), Ok(2u32));
+		// let _ = super::update_version(&path);
+		assert_eq!(super::current_version(&path).expect("version"), 2u32);
 	}
 }
