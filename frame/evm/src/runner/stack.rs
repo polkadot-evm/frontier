@@ -33,6 +33,9 @@ use sp_core::{H160, H256, U256};
 use sp_runtime::traits::UniqueSaturatedInto;
 use sp_std::{boxed::Box, collections::btree_set::BTreeSet, marker::PhantomData, mem, vec::Vec};
 
+#[cfg(feature = "forbid-evm-reentrancy")]
+environmental::thread_local_impl!(static IN_EVM: environmental::RefCell<bool> = environmental::RefCell::new(false));
+
 #[derive(Default)]
 pub struct Runner<T: Config> {
 	_marker: PhantomData<T>,
@@ -65,6 +68,61 @@ where
 		) -> (ExitReason, R),
 	{
 		let (base_fee, weight) = T::FeeCalculator::min_gas_price();
+
+		#[cfg(feature = "forbid-evm-reentrancy")]
+		if IN_EVM.with(|in_evm| in_evm.replace(true)) {
+			return Err(RunnerError {
+				error: Error::<T>::EvmReentrancy,
+				weight,
+			});
+		}
+
+		let res = Self::execute_inner(
+			source,
+			value,
+			gas_limit,
+			max_fee_per_gas,
+			max_priority_fee_per_gas,
+			config,
+			precompiles,
+			is_transactional,
+			f,
+			base_fee,
+			weight,
+		);
+
+		// Set IN_EVM to false
+		// We should make sure that this line is executed whatever the execution path.
+		#[cfg(feature = "forbid-evm-reentrancy")]
+		let _ = IN_EVM.with(|in_evm| in_evm.take());
+
+		res
+	}
+
+	// Execute an already validated EVM operation.
+	fn execute_inner<'config, 'precompiles, F, R>(
+		source: H160,
+		value: U256,
+		gas_limit: u64,
+		max_fee_per_gas: Option<U256>,
+		max_priority_fee_per_gas: Option<U256>,
+		config: &'config evm::Config,
+		precompiles: &'precompiles T::PrecompilesType,
+		is_transactional: bool,
+		f: F,
+		base_fee: U256,
+		weight: crate::Weight,
+	) -> Result<ExecutionInfo<R>, RunnerError<Error<T>>>
+	where
+		F: FnOnce(
+			&mut StackExecutor<
+				'config,
+				'precompiles,
+				SubstrateStackState<'_, 'config, T>,
+				T::PrecompilesType,
+			>,
+		) -> (ExitReason, R),
+	{
 		let max_fee_per_gas = match (max_fee_per_gas, is_transactional) {
 			(Some(max_fee_per_gas), _) => max_fee_per_gas,
 			// Gas price check is skipped for non-transactional calls that don't
@@ -712,5 +770,73 @@ where
 	fn is_storage_cold(&self, address: H160, key: H256) -> bool {
 		self.substate
 			.recursive_is_cold(&|a: &Accessed| a.accessed_storage.contains(&(address, key)))
+	}
+}
+
+#[cfg(feature = "forbid-evm-reentrancy")]
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use crate::mock::Test;
+	use evm::ExitSucceed;
+	use std::assert_matches::assert_matches;
+
+	#[test]
+	fn test_evm_reentrancy() {
+		let config = evm::Config::istanbul();
+
+		// Should fail with the appropriate error if there is reentrancy
+		let res = Runner::<Test>::execute(
+			H160::default(),
+			U256::default(),
+			100_000,
+			None,
+			None,
+			&config,
+			&(),
+			false,
+			|_| {
+				let res = Runner::<Test>::execute(
+					H160::default(),
+					U256::default(),
+					100_000,
+					None,
+					None,
+					&config,
+					&(),
+					false,
+					|_| (ExitReason::Succeed(ExitSucceed::Stopped), ()),
+				);
+				assert_matches!(
+					res,
+					Err(RunnerError {
+						error: Error::<Test>::EvmReentrancy,
+						..
+					})
+				);
+				(ExitReason::Error(ExitError::CallTooDeep), ())
+			},
+		);
+		assert_matches!(
+			res,
+			Ok(ExecutionInfo {
+				exit_reason: ExitReason::Error(ExitError::CallTooDeep),
+				..
+			})
+		);
+
+		// Should succeed if there is no reentrancy
+		let res = Runner::<Test>::execute(
+			H160::default(),
+			U256::default(),
+			100_000,
+			None,
+			None,
+			&config,
+			&(),
+			false,
+			|_| (ExitReason::Succeed(ExitSucceed::Stopped), ()),
+		);
+		assert!(res.is_ok());
 	}
 }

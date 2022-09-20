@@ -53,6 +53,7 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::too_many_arguments)]
+#![cfg_attr(test, feature(assert_matches))]
 
 #[cfg(feature = "runtime-benchmarks")]
 pub mod benchmarking;
@@ -417,6 +418,8 @@ pub mod pallet {
 		GasLimitTooHigh,
 		/// Undefined error.
 		Undefined,
+		/// EVM reentrancy
+		EvmReentrancy,
 	}
 
 	impl<T> From<InvalidEvmTransactionError> for Error<T> {
