@@ -19,6 +19,8 @@
 use codec::{Decode, Encode};
 use sp_runtime::traits::Block as BlockT;
 
+use crate::DatabaseSource;
+
 use std::{
 	fmt, fs,
 	io::{self, ErrorKind, Read, Write},
@@ -86,12 +88,19 @@ impl fmt::Display for UpgradeError {
 }
 
 /// Upgrade database to current version.
-pub(crate) fn upgrade_db<Block: BlockT>(db_path: &Path) -> UpgradeResult<()> {
+pub(crate) fn upgrade_db<Block: BlockT>(
+	db_path: &Path,
+	source: &DatabaseSource,
+) -> UpgradeResult<()> {
 	let db_version = current_version(db_path)?;
 	match db_version {
 		0 => return Err(UpgradeError::UnsupportedVersion(db_version)),
 		1 => {
-			let summary = migrate_1_to_2::<Block>(db_path)?;
+			let summary = match source {
+				DatabaseSource::ParityDb { .. } => migrate_1_to_2_parity_db::<Block>(db_path)?,
+				DatabaseSource::RocksDb { .. } => migrate_1_to_2_rocks_db::<Block>(db_path)?,
+				_ => panic!("DatabaseSource required for upgrade ParityDb | RocksDb"),
+			};
 			if !summary.error.is_empty() {
 				panic!(
 					"Inconsistent migration from version 1 to 2. Failed on {:?}",
@@ -148,7 +157,7 @@ fn version_file_path(path: &Path) -> PathBuf {
 /// Migration from version1 to version2:
 /// - The format of the Ethereum<>Substrate block mapping changed to support equivocation.
 /// - Migrating schema from One-to-one to One-to-many (EthHash: Vec<SubstrateHash>) relationship.
-pub(crate) fn migrate_1_to_2<Block: BlockT>(
+pub(crate) fn migrate_1_to_2_rocks_db<Block: BlockT>(
 	db_path: &Path,
 ) -> UpgradeResult<UpgradeVersion1To2Summary> {
 	log::info!("🔨 Running Frontier DB migration from version 1 to version 2. Please wait.");
@@ -194,6 +203,74 @@ pub(crate) fn migrate_1_to_2<Block: BlockT>(
 		.iter(crate::columns::BLOCK_MAPPING)
 		.map(|entry| entry.0)
 		.collect();
+
+	// Read and update each entry in db transaction batches
+	const CHUNK_SIZE: usize = 10_000;
+	let chunks = ethereum_hashes.chunks(CHUNK_SIZE);
+	for chunk in chunks {
+		process_chunk(&db, chunk)?;
+	}
+	Ok(res)
+}
+
+pub(crate) fn migrate_1_to_2_parity_db<Block: BlockT>(
+	db_path: &Path,
+) -> UpgradeResult<UpgradeVersion1To2Summary> {
+	log::info!("🔨 Running Frontier DB migration from version 1 to version 2. Please wait.");
+	let mut res = UpgradeVersion1To2Summary {
+		success: 0,
+		error: vec![],
+	};
+	// Process a batch of hashes in a single db transaction
+	#[rustfmt::skip]
+	let mut process_chunk = |
+		db: &parity_db::Db,
+		ethereum_hashes: &[Vec<u8>]
+	| -> UpgradeResult<()> {
+		let mut transaction = vec![];
+		for ethereum_hash in ethereum_hashes {
+			if let Some(substrate_hash) = db.get(crate::columns::BLOCK_MAPPING as u8, ethereum_hash).map_err(|_| 
+				io::Error::new(ErrorKind::Other, "Key does not exist")
+			)? {
+				// Only update version1 data
+				let decoded = Vec::<Block::Hash>::decode(&mut &substrate_hash[..]);
+				if decoded.is_err() || decoded.unwrap().is_empty() {
+					transaction.push((
+						crate::columns::BLOCK_MAPPING as u8,
+						ethereum_hash,
+						Some(vec![sp_core::H256::from_slice(&substrate_hash[..])].encode()),
+					));
+					res.success += 1;
+				} else {
+					res.error.push(sp_core::H256::from_slice(ethereum_hash));
+				}
+			} else {
+				res.error.push(sp_core::H256::from_slice(ethereum_hash));
+			}
+		}
+		db.commit(transaction)
+			.map_err(|_| io::Error::new(ErrorKind::Other, "Failed to commit on migrate_1_to_2"))?;
+		Ok(())
+	};
+
+	let db_cfg = parity_db::Options::with_columns(db_path, V2_NUM_COLUMNS as u8);
+	let db = parity_db::Db::open_or_create(&db_cfg)
+		.map_err(|_| io::Error::new(ErrorKind::Other, "Failed to open db"))?;
+
+	// Get all the block hashes we need to update
+	let ethereum_hashes: Vec<_> = match db.iter(crate::columns::BLOCK_MAPPING as u8) {
+		Ok(mut iter) => {
+			let mut hashes = vec![];
+			loop {
+				match iter.next() {
+					Ok(Some((k, _))) => hashes.push(k),
+					_ => break,
+				}
+			}
+			hashes
+		}
+		_ => vec![],
+	};
 
 	// Read and update each entry in db transaction batches
 	const CHUNK_SIZE: usize = 10_000;

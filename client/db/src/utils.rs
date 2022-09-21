@@ -26,15 +26,17 @@ pub fn open_database<Block: BlockT>(
 	config: &DatabaseSettings,
 ) -> Result<Arc<dyn Database<DbHash>>, String> {
 	let db: Arc<dyn Database<DbHash>> = match &config.source {
-		DatabaseSource::ParityDb { path } => open_parity_db(path)?,
-		DatabaseSource::RocksDb { path, .. } => open_kvdb_rocksdb::<Block>(path, true)?,
+		DatabaseSource::ParityDb { path } => open_parity_db::<Block>(path, &config.source)?,
+		DatabaseSource::RocksDb { path, .. } => {
+			open_kvdb_rocksdb::<Block>(path, true, &config.source)?
+		}
 		DatabaseSource::Auto {
 			paritydb_path,
 			rocksdb_path,
 			..
-		} => match open_kvdb_rocksdb::<Block>(rocksdb_path, false) {
+		} => match open_kvdb_rocksdb::<Block>(rocksdb_path, false, &config.source) {
 			Ok(db) => db,
-			Err(_) => open_parity_db(paritydb_path)?,
+			Err(_) => open_parity_db::<Block>(paritydb_path, &config.source)?,
 		},
 		_ => return Err("Missing feature flags `parity-db`".to_string()),
 	};
@@ -45,10 +47,11 @@ pub fn open_database<Block: BlockT>(
 fn open_kvdb_rocksdb<Block: BlockT>(
 	path: &Path,
 	create: bool,
+	source: &DatabaseSource,
 ) -> Result<Arc<dyn Database<DbHash>>, String> {
 	// first upgrade database to required version
 	#[cfg(not(test))]
-	match crate::upgrade::upgrade_db::<Block>(path) {
+	match crate::upgrade::upgrade_db::<Block>(path, source) {
 		Ok(_) => (),
 		Err(_) => return Err("Frontier DB upgrade error".to_string()),
 	}
@@ -64,18 +67,37 @@ fn open_kvdb_rocksdb<Block: BlockT>(
 }
 
 #[cfg(not(feature = "kvdb-rocksdb"))]
-fn open_kvdb_rocksdb(_path: &Path, _create: bool) -> Result<Arc<dyn Database<DbHash>>, String> {
+fn open_kvdb_rocksdb(
+	_path: &Path,
+	_create: bool,
+	_source: &DatabaseSource,
+) -> Result<Arc<dyn Database<DbHash>>, String> {
 	Err("Missing feature flags `kvdb-rocksdb`".to_string())
 }
 
 #[cfg(feature = "parity-db")]
-fn open_parity_db(path: &Path) -> Result<Arc<dyn Database<DbHash>>, String> {
+fn open_parity_db<Block: BlockT>(
+	path: &Path,
+	source: &DatabaseSource,
+) -> Result<Arc<dyn Database<DbHash>>, String> {
+	// first upgrade database to required version
+	#[cfg(not(test))]
+	match crate::upgrade::upgrade_db::<Block>(path, source) {
+		Ok(_) => (),
+		Err(_) => return Err("Frontier DB upgrade error".to_string()),
+	}
 	let config = parity_db::Options::with_columns(path, crate::columns::NUM_COLUMNS as u8);
 	let db = parity_db::Db::open_or_create(&config).map_err(|err| format!("{}", err))?;
+	// write database version only after the database is succesfully opened
+	#[cfg(not(test))]
+	let _ = crate::upgrade::update_version(path).map_err(|_| "Cannot update db version".to_string())?;
 	Ok(Arc::new(crate::parity_db_adapter::DbAdapter(db)))
 }
 
 #[cfg(not(feature = "parity-db"))]
-fn open_parity_db(_path: &Path) -> Result<Arc<dyn Database<DbHash>>, String> {
+fn open_parity_db(
+	_path: &Path,
+	_source: &DatabaseSource,
+) -> Result<Arc<dyn Database<DbHash>>, String> {
 	Err("Missing feature flags `parity-db`".to_string())
 }
