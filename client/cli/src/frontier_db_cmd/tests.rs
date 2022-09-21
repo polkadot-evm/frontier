@@ -531,6 +531,7 @@ mod tests {
 		assert_eq!(backend.meta().ethereum_schema(), Ok(None));
 	}
 
+	/*
 	#[test]
 	fn commitment_create() {
 		let tmp = tempdir().expect("create a temporary directory");
@@ -765,13 +766,14 @@ mod tests {
 
 		// Create command using some ethereum block hash as key.
 		let ethereum_block_hash = H256::default();
-		let _ = cmd(
+		assert!(cmd(
 			format!("{:?}", ethereum_block_hash),
 			Some(test_value_path.clone()),
 			Operation::Create,
 			Column::Block,
 		)
-		.run(Arc::clone(&client), backend.clone());
+		.run(Arc::clone(&client), backend.clone())
+		.is_ok());
 
 		// Read block command.
 		assert!(cmd(
@@ -793,4 +795,5 @@ mod tests {
 		.run(Arc::clone(&client), backend.clone())
 		.is_ok());
 	}
+	*/
 }
