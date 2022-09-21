@@ -228,18 +228,6 @@ impl<Block: BlockT> MappingDb<Block> {
 		}
 	}
 
-	pub fn block_hashb(&self, ethereum_block_hash: &H256) -> Result<Option<Block::Hash>, String> {
-		match self
-			.db
-			.get(crate::columns::BLOCK_MAPPING, &ethereum_block_hash.encode())
-		{
-			Some(raw) => Ok(Some(
-				Block::Hash::decode(&mut &raw[..]).map_err(|e| format!("{:?}", e))?,
-			)),
-			None => Ok(None),
-		}
-	}
-
 	pub fn transaction_metadata(
 		&self,
 		ethereum_transaction_hash: &H256,

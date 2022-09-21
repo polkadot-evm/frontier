@@ -19,6 +19,8 @@
 use codec::{Decode, Encode};
 use sp_runtime::traits::Block as BlockT;
 
+use sp_core::H256;
+
 use crate::DatabaseSource;
 
 use std::{
@@ -54,7 +56,7 @@ pub(crate) type UpgradeResult<T> = Result<T, UpgradeError>;
 
 pub(crate) struct UpgradeVersion1To2Summary {
 	pub success: u32,
-	pub error: Vec<sp_core::H256>,
+	pub error: Vec<H256>,
 }
 
 impl From<io::Error> for UpgradeError {
@@ -180,14 +182,14 @@ pub(crate) fn migrate_1_to_2_rocks_db<Block: BlockT>(
 					transaction.put_vec(
 						crate::columns::BLOCK_MAPPING,
 						ethereum_hash,
-						vec![sp_core::H256::from_slice(&substrate_hash[..])].encode(),
+						vec![H256::from_slice(&substrate_hash[..])].encode(),
 					);
 					res.success += 1;
 				} else {
-					res.error.push(sp_core::H256::from_slice(ethereum_hash));
+					res.error.push(H256::from_slice(ethereum_hash));
 				}
 			} else {
-				res.error.push(sp_core::H256::from_slice(ethereum_hash));
+				res.error.push(H256::from_slice(ethereum_hash));
 			}
 		}
 		db.write(transaction)
@@ -238,14 +240,14 @@ pub(crate) fn migrate_1_to_2_parity_db<Block: BlockT>(
 					transaction.push((
 						crate::columns::BLOCK_MAPPING as u8,
 						ethereum_hash,
-						Some(vec![sp_core::H256::from_slice(&substrate_hash[..])].encode()),
+						Some(vec![H256::from_slice(&substrate_hash[..])].encode()),
 					));
 					res.success += 1;
 				} else {
-					res.error.push(sp_core::H256::from_slice(ethereum_hash));
+					res.error.push(H256::from_slice(ethereum_hash));
 				}
 			} else {
-				res.error.push(sp_core::H256::from_slice(ethereum_hash));
+				res.error.push(H256::from_slice(ethereum_hash));
 			}
 		}
 		db.commit(transaction)
@@ -253,7 +255,9 @@ pub(crate) fn migrate_1_to_2_parity_db<Block: BlockT>(
 		Ok(())
 	};
 
-	let db_cfg = parity_db::Options::with_columns(db_path, V2_NUM_COLUMNS as u8);
+	let mut db_cfg = parity_db::Options::with_columns(db_path, V2_NUM_COLUMNS as u8);
+	db_cfg.columns[crate::columns::BLOCK_MAPPING as usize].btree_index = true;
+
 	let db = parity_db::Db::open_or_create(&db_cfg)
 		.map_err(|_| io::Error::new(ErrorKind::Other, "Failed to open db"))?;
 
@@ -263,15 +267,16 @@ pub(crate) fn migrate_1_to_2_parity_db<Block: BlockT>(
 			let mut hashes = vec![];
 			loop {
 				match iter.next() {
-					Ok(Some((k, _))) => hashes.push(k),
+					Ok(Some((k, _))) => {
+						hashes.push(k);
+					}
 					_ => break,
 				}
 			}
 			hashes
 		}
-		_ => vec![],
+		Err(_) => vec![],
 	};
-
 	// Read and update each entry in db transaction batches
 	const CHUNK_SIZE: usize = 10_000;
 	let chunks = ethereum_hashes.chunks(CHUNK_SIZE);
@@ -284,7 +289,7 @@ pub(crate) fn migrate_1_to_2_parity_db<Block: BlockT>(
 #[cfg(test)]
 mod tests {
 
-	use std::{path::PathBuf, sync::Arc};
+	use std::sync::Arc;
 
 	use codec::Encode;
 	use sp_core::H256;
@@ -298,62 +303,75 @@ mod tests {
 		Block<Header<u64, BlakeTwo256>, substrate_test_runtime_client::runtime::Extrinsic>;
 
 	pub fn open_frontier_backend(
-		path: PathBuf,
+		setting: &crate::DatabaseSettings,
 	) -> Result<Arc<crate::Backend<OpaqueBlock>>, String> {
-		Ok(Arc::new(crate::Backend::<OpaqueBlock>::new(
-			&crate::DatabaseSettings {
-				source: sc_client_db::DatabaseSource::RocksDb {
-					path,
-					cache_size: 0,
-				},
-			},
-		)?))
+		Ok(Arc::new(crate::Backend::<OpaqueBlock>::new(setting)?))
 	}
 
 	#[test]
 	fn upgrade_1_to_2_works() {
-		let tmp = tempdir().expect("create a temporary directory");
-		let path = tmp.path().to_owned();
-		let mut ethereum_hashes = vec![];
-		let mut substrate_hashes = vec![];
-		{
-			// Create a temporary frontier secondary DB.
-			let backend = open_frontier_backend(path.clone()).expect("a temporary db was created");
+		let tmp_1 = tempdir().expect("create a temporary directory");
+		let tmp_2 = tempdir().expect("create a temporary directory");
 
-			// Fill the tmp db with some data
-			let mut transaction = sp_database::Transaction::new();
-			for _ in 0..20_010 {
-				let ethhash = H256::random();
-				let subhash = H256::random();
-				ethereum_hashes.push(ethhash);
-				substrate_hashes.push(subhash);
-				transaction.set(
-					crate::columns::BLOCK_MAPPING,
-					&ethhash.encode(),
-					&subhash.encode(),
-				);
+		let settings = vec![
+			// Rocks db
+			crate::DatabaseSettings {
+				source: sc_client_db::DatabaseSource::RocksDb {
+					path: tmp_1.path().to_owned(),
+					cache_size: 0,
+				},
+			},
+			// Parity db
+			crate::DatabaseSettings {
+				source: sc_client_db::DatabaseSource::ParityDb {
+					path: tmp_2.path().to_owned(),
+				},
+			},
+		];
+
+		for setting in settings {
+			let path = setting.source.path().unwrap();
+
+			let mut ethereum_hashes = vec![];
+			let mut substrate_hashes = vec![];
+			{
+				// Create a temporary frontier secondary DB.
+				let backend = open_frontier_backend(&setting).expect("a temporary db was created");
+
+				// Fill the tmp db with some data
+				let mut transaction = sp_database::Transaction::new();
+				for _ in 0..20_010 {
+					let ethhash = H256::random();
+					let subhash = H256::random();
+					ethereum_hashes.push(ethhash);
+					substrate_hashes.push(subhash);
+					transaction.set(
+						crate::columns::BLOCK_MAPPING,
+						&ethhash.encode(),
+						&subhash.encode(),
+					);
+				}
+				let _ = backend.mapping().db.commit(transaction);
 			}
-			let _ = backend.mapping().db.commit(transaction);
-		}
-		// Upgrade database from version 1 to 2
-		let _ = super::upgrade_db::<OpaqueBlock>(&path);
+			// Upgrade database from version 1 to 2
+			let _ = super::upgrade_db::<OpaqueBlock>(&path, &setting.source);
 
-		// Check data
-		let backend = open_frontier_backend(path.clone()).expect("a temporary db was created");
-		for (i, original_ethereum_hash) in ethereum_hashes.iter().enumerate() {
-			let entry = backend
-				.mapping()
-				.block_hash(original_ethereum_hash)
-				.unwrap()
-				.unwrap();
-			// All entries now hold a single element Vec
-			assert_eq!(entry.len(), 1);
-			// The Vec holds the old value
-			assert_eq!(entry.first(), substrate_hashes.get(i));
-		}
+			// Check data
+			let backend = open_frontier_backend(&setting).expect("a temporary db was created");
+			for (i, original_ethereum_hash) in ethereum_hashes.iter().enumerate() {
+				let entry = backend
+					.mapping()
+					.block_hash(original_ethereum_hash)
+					.unwrap()
+					.unwrap();
+				// All entries now hold a single element Vec
+				assert_eq!(entry.len(), 1);
+				// The Vec holds the old value
+				assert_eq!(entry.first(), substrate_hashes.get(i));
+			}
 
-		// Upgrade db version file
-		// let _ = super::update_version(&path);
-		assert_eq!(super::current_version(&path).expect("version"), 2u32);
+			// Upgrade db version file
+			assert_eq!(super::current_version(&path).expect("version"), 2u32);
+		}
 	}
 }

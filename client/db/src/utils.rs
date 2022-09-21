@@ -47,11 +47,11 @@ pub fn open_database<Block: BlockT>(
 fn open_kvdb_rocksdb<Block: BlockT>(
 	path: &Path,
 	create: bool,
-	source: &DatabaseSource,
+	_source: &DatabaseSource,
 ) -> Result<Arc<dyn Database<DbHash>>, String> {
 	// first upgrade database to required version
 	#[cfg(not(test))]
-	match crate::upgrade::upgrade_db::<Block>(path, source) {
+	match crate::upgrade::upgrade_db::<Block>(path, _source) {
 		Ok(_) => (),
 		Err(_) => return Err("Frontier DB upgrade error".to_string()),
 	}
@@ -78,15 +78,17 @@ fn open_kvdb_rocksdb(
 #[cfg(feature = "parity-db")]
 fn open_parity_db<Block: BlockT>(
 	path: &Path,
-	source: &DatabaseSource,
+	_source: &DatabaseSource,
 ) -> Result<Arc<dyn Database<DbHash>>, String> {
 	// first upgrade database to required version
 	#[cfg(not(test))]
-	match crate::upgrade::upgrade_db::<Block>(path, source) {
+	match crate::upgrade::upgrade_db::<Block>(path, _source) {
 		Ok(_) => (),
 		Err(_) => return Err("Frontier DB upgrade error".to_string()),
 	}
-	let config = parity_db::Options::with_columns(path, crate::columns::NUM_COLUMNS as u8);
+	let mut config = parity_db::Options::with_columns(path, crate::columns::NUM_COLUMNS as u8);
+	config.columns[crate::columns::BLOCK_MAPPING as usize].btree_index = true;
+
 	let db = parity_db::Db::open_or_create(&config).map_err(|err| format!("{}", err))?;
 	// write database version only after the database is succesfully opened
 	#[cfg(not(test))]

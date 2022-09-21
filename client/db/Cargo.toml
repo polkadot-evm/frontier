@@ -34,4 +34,4 @@ default = ["kvdb-rocksdb", "parity-db"]
 [dev-dependencies]
 tempfile = "3.3.0"
 substrate-test-runtime-client = { version = "2.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
-
+sc-client-db= { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", features = ["rocksdb"] }
