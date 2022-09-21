@@ -58,9 +58,10 @@ pub mod static_keys {
 	pub const CURRENT_SYNCING_TIPS: &[u8] = b"CURRENT_SYNCING_TIPS";
 }
 
-pub struct Backend<Block: BlockT> {
+pub struct Backend<Block: BlockT, C> {
 	meta: Arc<MetaDb<Block>>,
 	mapping: Arc<MappingDb<Block>>,
+	_marker: PhantomData<C>,
 }
 
 /// Returns the frontier database directory.
@@ -68,31 +69,43 @@ pub fn frontier_database_dir(db_config_dir: &Path, db_path: &str) -> PathBuf {
 	db_config_dir.join("frontier").join(db_path)
 }
 
-impl<Block: BlockT> Backend<Block> {
-	pub fn open(database: &DatabaseSource, db_config_dir: &Path) -> Result<Self, String> {
-		Self::new(&DatabaseSettings {
-			source: match database {
-				DatabaseSource::RocksDb { .. } => DatabaseSource::RocksDb {
-					path: frontier_database_dir(db_config_dir, "db"),
-					cache_size: 0,
+impl<Block: BlockT, C> Backend<Block, C>
+where
+	C: sp_blockchain::HeaderBackend<Block> + Send + Sync,
+{
+	pub fn open(
+		client: Arc<C>,
+		database: &DatabaseSource,
+		db_config_dir: &Path,
+	) -> Result<Self, String> {
+		Self::new(
+			client,
+			&DatabaseSettings {
+				source: match database {
+					DatabaseSource::RocksDb { .. } => DatabaseSource::RocksDb {
+						path: frontier_database_dir(db_config_dir, "db"),
+						cache_size: 0,
+					},
+					DatabaseSource::ParityDb { .. } => DatabaseSource::ParityDb {
+						path: frontier_database_dir(db_config_dir, "paritydb"),
+					},
+					DatabaseSource::Auto { .. } => DatabaseSource::Auto {
+						rocksdb_path: frontier_database_dir(db_config_dir, "db"),
+						paritydb_path: frontier_database_dir(db_config_dir, "paritydb"),
+						cache_size: 0,
+					},
+					_ => {
+						return Err(
+							"Supported db sources: `rocksdb` | `paritydb` | `auto`".to_string()
+						)
+					}
 				},
-				DatabaseSource::ParityDb { .. } => DatabaseSource::ParityDb {
-					path: frontier_database_dir(db_config_dir, "paritydb"),
-				},
-				DatabaseSource::Auto { .. } => DatabaseSource::Auto {
-					rocksdb_path: frontier_database_dir(db_config_dir, "db"),
-					paritydb_path: frontier_database_dir(db_config_dir, "paritydb"),
-					cache_size: 0,
-				},
-				_ => {
-					return Err("Supported db sources: `rocksdb` | `paritydb` | `auto`".to_string())
-				}
 			},
-		})
+		)
 	}
 
-	pub fn new(config: &DatabaseSettings) -> Result<Self, String> {
-		let db = utils::open_database::<Block>(config)?;
+	pub fn new(client: Arc<C>, config: &DatabaseSettings) -> Result<Self, String> {
+		let db = utils::open_database::<Block, C>(client, config)?;
 
 		Ok(Self {
 			mapping: Arc::new(MappingDb {
@@ -104,6 +117,7 @@ impl<Block: BlockT> Backend<Block> {
 				db: db.clone(),
 				_marker: PhantomData,
 			}),
+			_marker: PhantomData,
 		})
 	}
 

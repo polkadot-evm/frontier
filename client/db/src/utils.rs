@@ -22,36 +22,49 @@ use sp_runtime::traits::Block as BlockT;
 
 use crate::{Database, DatabaseSettings, DatabaseSource, DbHash};
 
-pub fn open_database<Block: BlockT>(
+pub fn open_database<Block: BlockT, C>(
+	client: Arc<C>,
 	config: &DatabaseSettings,
-) -> Result<Arc<dyn Database<DbHash>>, String> {
+) -> Result<Arc<dyn Database<DbHash>>, String>
+where
+	C: sp_blockchain::HeaderBackend<Block> + Send + Sync,
+{
 	let db: Arc<dyn Database<DbHash>> = match &config.source {
-		DatabaseSource::ParityDb { path } => open_parity_db::<Block>(path, &config.source)?,
+		DatabaseSource::ParityDb { path } => {
+			open_parity_db::<Block, C>(client.clone(), path, &config.source)?
+		}
 		DatabaseSource::RocksDb { path, .. } => {
-			open_kvdb_rocksdb::<Block>(path, true, &config.source)?
+			open_kvdb_rocksdb::<Block, C>(client.clone(), path, true, &config.source)?
 		}
 		DatabaseSource::Auto {
 			paritydb_path,
 			rocksdb_path,
 			..
-		} => match open_kvdb_rocksdb::<Block>(rocksdb_path, false, &config.source) {
-			Ok(db) => db,
-			Err(_) => open_parity_db::<Block>(paritydb_path, &config.source)?,
-		},
+		} => {
+			match open_kvdb_rocksdb::<Block, C>(client.clone(), rocksdb_path, false, &config.source)
+			{
+				Ok(db) => db,
+				Err(_) => open_parity_db::<Block, C>(client, paritydb_path, &config.source)?,
+			}
+		}
 		_ => return Err("Missing feature flags `parity-db`".to_string()),
 	};
 	Ok(db)
 }
 
 #[cfg(feature = "kvdb-rocksdb")]
-fn open_kvdb_rocksdb<Block: BlockT>(
+fn open_kvdb_rocksdb<Block: BlockT, C>(
+	client: Arc<C>,
 	path: &Path,
 	create: bool,
 	_source: &DatabaseSource,
-) -> Result<Arc<dyn Database<DbHash>>, String> {
+) -> Result<Arc<dyn Database<DbHash>>, String>
+where
+	C: sp_blockchain::HeaderBackend<Block> + Send + Sync,
+{
 	// first upgrade database to required version
 	#[cfg(not(test))]
-	match crate::upgrade::upgrade_db::<Block>(path, _source) {
+	match crate::upgrade::upgrade_db::<Block, C>(client, path, _source) {
 		Ok(_) => (),
 		Err(_) => return Err("Frontier DB upgrade error".to_string()),
 	}
@@ -67,22 +80,30 @@ fn open_kvdb_rocksdb<Block: BlockT>(
 }
 
 #[cfg(not(feature = "kvdb-rocksdb"))]
-fn open_kvdb_rocksdb(
+fn open_kvdb_rocksdb<Block: BlockT, C>(
+	_client: Arc<C>,
 	_path: &Path,
 	_create: bool,
 	_source: &DatabaseSource,
-) -> Result<Arc<dyn Database<DbHash>>, String> {
+) -> Result<Arc<dyn Database<DbHash>>, String>
+where
+	C: sp_blockchain::HeaderBackend<Block> + Send + Sync,
+{
 	Err("Missing feature flags `kvdb-rocksdb`".to_string())
 }
 
 #[cfg(feature = "parity-db")]
-fn open_parity_db<Block: BlockT>(
+fn open_parity_db<Block: BlockT, C>(
+	client: Arc<C>,
 	path: &Path,
 	_source: &DatabaseSource,
-) -> Result<Arc<dyn Database<DbHash>>, String> {
+) -> Result<Arc<dyn Database<DbHash>>, String>
+where
+	C: sp_blockchain::HeaderBackend<Block> + Send + Sync,
+{
 	// first upgrade database to required version
 	#[cfg(not(test))]
-	match crate::upgrade::upgrade_db::<Block>(path, _source) {
+	match crate::upgrade::upgrade_db::<Block, C>(client, path, _source) {
 		Ok(_) => (),
 		Err(_) => return Err("Frontier DB upgrade error".to_string()),
 	}
@@ -97,9 +118,13 @@ fn open_parity_db<Block: BlockT>(
 }
 
 #[cfg(not(feature = "parity-db"))]
-fn open_parity_db(
+fn open_parity_db<Block: BlockT, C>(
+	_client: Arc<C>,
 	_path: &Path,
 	_source: &DatabaseSource,
-) -> Result<Arc<dyn Database<DbHash>>, String> {
+) -> Result<Arc<dyn Database<DbHash>>, String>
+where
+	C: sp_blockchain::HeaderBackend<Block> + Send + Sync,
+{
 	Err("Missing feature flags `parity-db`".to_string())
 }

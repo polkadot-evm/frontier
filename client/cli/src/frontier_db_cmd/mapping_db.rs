@@ -39,7 +39,7 @@ pub enum MappingKey {
 pub struct MappingDb<'a, C, B: BlockT> {
 	cmd: &'a FrontierDbCmd,
 	client: Arc<C>,
-	backend: Arc<fc_db::Backend<B>>,
+	backend: Arc<fc_db::Backend<B, C>>,
 }
 
 impl<'a, C, B: BlockT> MappingDb<'a, C, B>
@@ -48,7 +48,7 @@ where
 	C::Api: EthereumRuntimeRPCApi<B>,
 	C: sp_blockchain::HeaderBackend<B>,
 {
-	pub fn new(cmd: &'a FrontierDbCmd, client: Arc<C>, backend: Arc<fc_db::Backend<B>>) -> Self {
+	pub fn new(cmd: &'a FrontierDbCmd, client: Arc<C>, backend: Arc<fc_db::Backend<B, C>>) -> Self {
 		Self {
 			cmd,
 			client,

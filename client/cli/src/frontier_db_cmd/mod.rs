@@ -96,7 +96,7 @@ impl FrontierDbCmd {
 	pub fn run<C, B: BlockT>(
 		&self,
 		client: Arc<C>,
-		backend: Arc<fc_db::Backend<B>>,
+		backend: Arc<fc_db::Backend<B, C>>,
 	) -> sc_cli::Result<()>
 	where
 		C: sp_api::ProvideRuntimeApi<B>,

@@ -32,10 +32,13 @@ use sp_runtime::{
 	traits::{Block as BlockT, Header as HeaderT, Zero},
 };
 
-pub fn sync_block<Block: BlockT>(
-	backend: &fc_db::Backend<Block>,
+pub fn sync_block<Block: BlockT, C>(
+	backend: &fc_db::Backend<Block, C>,
 	header: &Block::Header,
-) -> Result<(), String> {
+) -> Result<(), String>
+where
+	C: HeaderBackend<Block> + Send + Sync,
+{
 	match fp_consensus::find_log(header.digest()) {
 		Ok(log) => {
 			let post_hashes = log.into_hashes();
@@ -60,7 +63,7 @@ pub fn sync_block<Block: BlockT>(
 
 pub fn sync_genesis_block<Block: BlockT, C>(
 	client: &C,
-	backend: &fc_db::Backend<Block>,
+	backend: &fc_db::Backend<Block, C>,
 	header: &Block::Header,
 ) -> Result<(), String>
 where
@@ -99,7 +102,7 @@ where
 pub fn sync_one_block<Block: BlockT, C, B>(
 	client: &C,
 	substrate_backend: &B,
-	frontier_backend: &fc_db::Backend<Block>,
+	frontier_backend: &fc_db::Backend<Block, C>,
 	sync_from: <Block::Header as HeaderT>::Number,
 	strategy: SyncStrategy,
 ) -> Result<bool, String>
@@ -121,7 +124,7 @@ where
 	let mut operating_header = None;
 	while let Some(checking_tip) = current_syncing_tips.pop() {
 		if let Some(checking_header) =
-			fetch_header(substrate_backend, frontier_backend, checking_tip, sync_from)?
+			fetch_header(client, frontier_backend, checking_tip, sync_from)?
 		{
 			operating_header = Some(checking_header);
 			break;
@@ -163,7 +166,7 @@ where
 pub fn sync_blocks<Block: BlockT, C, B>(
 	client: &C,
 	substrate_backend: &B,
-	frontier_backend: &fc_db::Backend<Block>,
+	frontier_backend: &fc_db::Backend<Block, C>,
 	limit: usize,
 	sync_from: <Block::Header as HeaderT>::Number,
 	strategy: SyncStrategy,
@@ -189,20 +192,20 @@ where
 	Ok(synced_any)
 }
 
-pub fn fetch_header<Block: BlockT, B>(
-	substrate_backend: &B,
-	frontier_backend: &fc_db::Backend<Block>,
+pub fn fetch_header<Block: BlockT, C>(
+	client: &C,
+	frontier_backend: &fc_db::Backend<Block, C>,
 	checking_tip: Block::Hash,
 	sync_from: <Block::Header as HeaderT>::Number,
 ) -> Result<Option<Block::Header>, String>
 where
-	B: sp_blockchain::HeaderBackend<Block> + sp_blockchain::Backend<Block>,
+	C: sp_blockchain::HeaderBackend<Block>,
 {
 	if frontier_backend.mapping().is_synced(&checking_tip)? {
 		return Ok(None);
 	}
 
-	match substrate_backend.header(BlockId::Hash(checking_tip)) {
+	match client.header(BlockId::Hash(checking_tip)) {
 		Ok(Some(checking_header)) if checking_header.number() >= &sync_from => {
 			Ok(Some(checking_header))
 		}

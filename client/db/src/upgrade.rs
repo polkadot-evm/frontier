@@ -17,7 +17,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use codec::{Decode, Encode};
-use sp_runtime::traits::Block as BlockT;
+use sp_runtime::traits::{Block as BlockT, Header};
 
 use sp_core::H256;
 
@@ -27,6 +27,7 @@ use std::{
 	fmt, fs,
 	io::{self, ErrorKind, Read, Write},
 	path::{Path, PathBuf},
+	sync::Arc,
 };
 
 /// Version file name.
@@ -90,17 +91,25 @@ impl fmt::Display for UpgradeError {
 }
 
 /// Upgrade database to current version.
-pub(crate) fn upgrade_db<Block: BlockT>(
+pub(crate) fn upgrade_db<Block: BlockT, C>(
+	client: Arc<C>,
 	db_path: &Path,
 	source: &DatabaseSource,
-) -> UpgradeResult<()> {
+) -> UpgradeResult<()>
+where
+	C: sp_blockchain::HeaderBackend<Block> + Send + Sync,
+{
 	let db_version = current_version(db_path)?;
 	match db_version {
 		0 => return Err(UpgradeError::UnsupportedVersion(db_version)),
 		1 => {
 			let summary = match source {
-				DatabaseSource::ParityDb { .. } => migrate_1_to_2_parity_db::<Block>(db_path)?,
-				DatabaseSource::RocksDb { .. } => migrate_1_to_2_rocks_db::<Block>(db_path)?,
+				DatabaseSource::ParityDb { .. } => {
+					migrate_1_to_2_parity_db::<Block, C>(client, db_path)?
+				}
+				DatabaseSource::RocksDb { .. } => {
+					migrate_1_to_2_rocks_db::<Block, C>(client, db_path)?
+				}
 				_ => panic!("DatabaseSource required for upgrade ParityDb | RocksDb"),
 			};
 			if !summary.error.is_empty() {
@@ -159,9 +168,13 @@ fn version_file_path(path: &Path) -> PathBuf {
 /// Migration from version1 to version2:
 /// - The format of the Ethereum<>Substrate block mapping changed to support equivocation.
 /// - Migrating schema from One-to-one to One-to-many (EthHash: Vec<SubstrateHash>) relationship.
-pub(crate) fn migrate_1_to_2_rocks_db<Block: BlockT>(
+pub(crate) fn migrate_1_to_2_rocks_db<Block: BlockT, C>(
+	client: Arc<C>,
 	db_path: &Path,
-) -> UpgradeResult<UpgradeVersion1To2Summary> {
+) -> UpgradeResult<UpgradeVersion1To2Summary>
+where
+	C: sp_blockchain::HeaderBackend<Block> + Send + Sync,
+{
 	log::info!("🔨 Running Frontier DB migration from version 1 to version 2. Please wait.");
 	let mut res = UpgradeVersion1To2Summary {
 		success: 0,
@@ -175,20 +188,26 @@ pub(crate) fn migrate_1_to_2_rocks_db<Block: BlockT>(
 	| -> UpgradeResult<()> {
 		let mut transaction = db.transaction();
 		for ethereum_hash in ethereum_hashes {
+			let mut maybe_error = true;
 			if let Some(substrate_hash) = db.get(crate::columns::BLOCK_MAPPING, ethereum_hash)? {
 				// Only update version1 data
 				let decoded = Vec::<Block::Hash>::decode(&mut &substrate_hash[..]);
 				if decoded.is_err() || decoded.unwrap().is_empty() {
-					transaction.put_vec(
-						crate::columns::BLOCK_MAPPING,
-						ethereum_hash,
-						vec![H256::from_slice(&substrate_hash[..])].encode(),
-					);
-					res.success += 1;
-				} else {
-					res.error.push(H256::from_slice(ethereum_hash));
+					// Verify the substrate hash is part of the canonical chain.
+					if let Ok(Some(number)) = client.number(Block::Hash::decode(&mut &substrate_hash[..]).unwrap()) {
+						if let Ok(Some(header)) = client.header(sp_runtime::generic::BlockId::Number(number)) {
+							transaction.put_vec(
+								crate::columns::BLOCK_MAPPING,
+								ethereum_hash,
+								vec![header.hash()].encode(),
+							);
+							res.success += 1;
+							maybe_error = false;
+						}
+					}
 				}
-			} else {
+			}
+			if maybe_error {
 				res.error.push(H256::from_slice(ethereum_hash));
 			}
 		}
@@ -215,9 +234,13 @@ pub(crate) fn migrate_1_to_2_rocks_db<Block: BlockT>(
 	Ok(res)
 }
 
-pub(crate) fn migrate_1_to_2_parity_db<Block: BlockT>(
+pub(crate) fn migrate_1_to_2_parity_db<Block: BlockT, C>(
+	client: Arc<C>,
 	db_path: &Path,
-) -> UpgradeResult<UpgradeVersion1To2Summary> {
+) -> UpgradeResult<UpgradeVersion1To2Summary>
+where
+	C: sp_blockchain::HeaderBackend<Block> + Send + Sync,
+{
 	log::info!("🔨 Running Frontier DB migration from version 1 to version 2. Please wait.");
 	let mut res = UpgradeVersion1To2Summary {
 		success: 0,
@@ -231,22 +254,28 @@ pub(crate) fn migrate_1_to_2_parity_db<Block: BlockT>(
 	| -> UpgradeResult<()> {
 		let mut transaction = vec![];
 		for ethereum_hash in ethereum_hashes {
+			let mut maybe_error = true;
 			if let Some(substrate_hash) = db.get(crate::columns::BLOCK_MAPPING as u8, ethereum_hash).map_err(|_| 
 				io::Error::new(ErrorKind::Other, "Key does not exist")
 			)? {
 				// Only update version1 data
 				let decoded = Vec::<Block::Hash>::decode(&mut &substrate_hash[..]);
 				if decoded.is_err() || decoded.unwrap().is_empty() {
-					transaction.push((
-						crate::columns::BLOCK_MAPPING as u8,
-						ethereum_hash,
-						Some(vec![H256::from_slice(&substrate_hash[..])].encode()),
-					));
-					res.success += 1;
-				} else {
-					res.error.push(H256::from_slice(ethereum_hash));
+					// Verify the substrate hash is part of the canonical chain.
+					if let Ok(Some(number)) = client.number(Block::Hash::decode(&mut &substrate_hash[..]).unwrap()) {
+						if let Ok(Some(header)) = client.header(sp_runtime::generic::BlockId::Number(number)) {
+							transaction.push((
+								crate::columns::BLOCK_MAPPING as u8,
+								ethereum_hash,
+								Some(vec![header.hash()].encode()),
+							));
+							res.success += 1;
+							maybe_error = false;
+						}
+					}
 				}
-			} else {
+			}
+			if maybe_error {
 				res.error.push(H256::from_slice(ethereum_hash));
 			}
 		}

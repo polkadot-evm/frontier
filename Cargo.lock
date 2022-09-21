@@ -1653,6 +1653,7 @@ dependencies = [
  "parity-scale-codec",
  "parking_lot 0.12.1",
  "sc-client-db",
+ "sp-blockchain",
  "sp-core",
  "sp-database",
  "sp-runtime",

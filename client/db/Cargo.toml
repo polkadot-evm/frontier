@@ -24,6 +24,7 @@ sc-client-db = { version = "0.10.0-dev", git = "https://github.com/paritytech/su
 sp-core = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-database = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-runtime = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-blockchain = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Frontier
 fp-storage = { version = "2.0.0-dev", path = "../../primitives/storage" }
