@@ -31,10 +31,10 @@ where
 {
 	let db: Arc<dyn Database<DbHash>> = match &config.source {
 		DatabaseSource::ParityDb { path } => {
-			open_parity_db::<Block, C>(client.clone(), path, &config.source)?
+			open_parity_db::<Block, C>(client, path, &config.source)?
 		}
 		DatabaseSource::RocksDb { path, .. } => {
-			open_kvdb_rocksdb::<Block, C>(client.clone(), path, true, &config.source)?
+			open_kvdb_rocksdb::<Block, C>(client, path, true, &config.source)?
 		}
 		DatabaseSource::Auto {
 			paritydb_path,

@@ -255,7 +255,7 @@ where
 		let mut transaction = vec![];
 		for ethereum_hash in ethereum_hashes {
 			let mut maybe_error = true;
-			if let Some(substrate_hash) = db.get(crate::columns::BLOCK_MAPPING as u8, ethereum_hash).map_err(|_| 
+			if let Some(substrate_hash) = db.get(crate::columns::BLOCK_MAPPING as u8, ethereum_hash).map_err(|_|
 				io::Error::new(ErrorKind::Other, "Key does not exist")
 			)? {
 				// Only update version1 data
@@ -294,13 +294,8 @@ where
 	let ethereum_hashes: Vec<_> = match db.iter(crate::columns::BLOCK_MAPPING as u8) {
 		Ok(mut iter) => {
 			let mut hashes = vec![];
-			loop {
-				match iter.next() {
-					Ok(Some((k, _))) => {
-						hashes.push(k);
-					}
-					_ => break,
-				}
+			while let Ok(Some((k, _))) = iter.next() {
+				hashes.push(k);
 			}
 			hashes
 		}
