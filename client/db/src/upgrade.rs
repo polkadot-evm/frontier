@@ -317,13 +317,20 @@ where
 
 #[cfg(test)]
 mod tests {
+	use frontier_template_runtime::RuntimeApi;
+	use futures::executor;
+	use sc_block_builder::BlockBuilderProvider;
+	use sp_consensus::BlockOrigin;
+	use substrate_test_runtime_client::{
+		prelude::*, DefaultTestClientBuilderExt, TestClientBuilder,
+	};
 
 	use std::sync::Arc;
 
 	use codec::Encode;
 	use sp_core::H256;
 	use sp_runtime::{
-		generic::{Block, Header},
+		generic::{Block, BlockId, Header},
 		traits::BlakeTwo256,
 	};
 	use tempfile::tempdir;
@@ -331,10 +338,16 @@ mod tests {
 	type OpaqueBlock =
 		Block<Header<u64, BlakeTwo256>, substrate_test_runtime_client::runtime::Extrinsic>;
 
-	pub fn open_frontier_backend(
+	pub fn open_frontier_backend<C>(
+		client: Arc<C>,
 		setting: &crate::DatabaseSettings,
-	) -> Result<Arc<crate::Backend<OpaqueBlock>>, String> {
-		Ok(Arc::new(crate::Backend::<OpaqueBlock>::new(setting)?))
+	) -> Result<Arc<crate::Backend<OpaqueBlock, C>>, String>
+	where
+		C: sp_blockchain::HeaderBackend<OpaqueBlock>,
+	{
+		Ok(Arc::new(crate::Backend::<OpaqueBlock, C>::new(
+			client, setting,
+		)?))
 	}
 
 	#[test]
@@ -359,34 +372,77 @@ mod tests {
 		];
 
 		for setting in settings {
+			let (client, _) =
+				TestClientBuilder::new().build_with_native_executor::<RuntimeApi, _>(None);
+			let mut client = Arc::new(client);
+
+			// Genesis block
+			let mut builder = client.new_block(Default::default()).unwrap();
+			builder.push_storage_change(vec![1], None).unwrap();
+			let block = builder.build().unwrap().block;
+			let mut previous_canon_block_hash = block.header.hash();
+			executor::block_on(client.import(BlockOrigin::Own, block)).unwrap();
+
 			let path = setting.source.path().unwrap();
 
 			let mut ethereum_hashes = vec![];
 			let mut substrate_hashes = vec![];
 			{
 				// Create a temporary frontier secondary DB.
-				let backend = open_frontier_backend(&setting).expect("a temporary db was created");
+				let backend = open_frontier_backend(client.clone(), &setting)
+					.expect("a temporary db was created");
 
 				// Fill the tmp db with some data
 				let mut transaction = sp_database::Transaction::new();
-				for _ in 0..20_010 {
+				for _ in 0..1000 {
+					// Ethereum hash
 					let ethhash = H256::random();
-					let subhash = H256::random();
+					// Create two branches, and map the orphan one.
+					// Keep track of the canon hash to later verify the migration replaced it.
+					// A1
+					let mut builder = client
+						.new_block_at(
+							&BlockId::Hash(previous_canon_block_hash),
+							Default::default(),
+							false,
+						)
+						.unwrap();
+					builder.push_storage_change(vec![1], None).unwrap();
+					let block = builder.build().unwrap().block;
+					let next_canon_block_hash = block.header.hash();
+					executor::block_on(client.import(BlockOrigin::Own, block)).unwrap();
+					// A2
+					let mut builder = client
+						.new_block_at(
+							&BlockId::Hash(previous_canon_block_hash),
+							Default::default(),
+							false,
+						)
+						.unwrap();
+					builder.push_storage_change(vec![2], None).unwrap();
+					let block = builder.build().unwrap().block;
+					let orphan_block_hash = block.header.hash();
+					executor::block_on(client.import(BlockOrigin::Own, block)).unwrap();
+
+					// Track canon hash
 					ethereum_hashes.push(ethhash);
-					substrate_hashes.push(subhash);
+					substrate_hashes.push(next_canon_block_hash);
+					// Set orphan hash
 					transaction.set(
 						crate::columns::BLOCK_MAPPING,
 						&ethhash.encode(),
-						&subhash.encode(),
+						&orphan_block_hash.encode(),
 					);
+					previous_canon_block_hash = next_canon_block_hash;
 				}
 				let _ = backend.mapping().db.commit(transaction);
 			}
 			// Upgrade database from version 1 to 2
-			let _ = super::upgrade_db::<OpaqueBlock>(&path, &setting.source);
+			let _ = super::upgrade_db::<OpaqueBlock, _>(client.clone(), &path, &setting.source);
 
 			// Check data
-			let backend = open_frontier_backend(&setting).expect("a temporary db was created");
+			let backend =
+				open_frontier_backend(client, &setting).expect("a temporary db was created");
 			for (i, original_ethereum_hash) in ethereum_hashes.iter().enumerate() {
 				let entry = backend
 					.mapping()
@@ -395,7 +451,7 @@ mod tests {
 					.unwrap();
 				// All entries now hold a single element Vec
 				assert_eq!(entry.len(), 1);
-				// The Vec holds the old value
+				// The Vec holds the canon block hash
 				assert_eq!(entry.first(), substrate_hashes.get(i));
 			}
 
