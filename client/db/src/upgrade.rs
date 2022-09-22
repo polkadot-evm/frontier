@@ -382,6 +382,7 @@ mod tests {
 
 			let mut ethereum_hashes = vec![];
 			let mut substrate_hashes = vec![];
+			let mut transaction_hashes = vec![];
 			{
 				// Create a temporary frontier secondary DB.
 				let backend = open_frontier_backend(client.clone(), &setting)
@@ -422,12 +423,30 @@ mod tests {
 					// Track canon hash
 					ethereum_hashes.push(ethhash);
 					substrate_hashes.push(next_canon_block_hash);
-					// Set orphan hash
+					// Set orphan hash block mapping
 					transaction.set(
 						crate::columns::BLOCK_MAPPING,
 						&ethhash.encode(),
 						&orphan_block_hash.encode(),
 					);
+					// Test also that one-to-many transaction data is not affected by the migration logic.
+					// Map a transaction to both canon and orphan block hashes. This is what would have
+					// happened in case of fork or equivocation.
+					let eth_tx_hash = H256::random();
+					let mut metadata = vec![];
+					for hash in vec![next_canon_block_hash, orphan_block_hash].iter() {
+						metadata.push(crate::TransactionMetadata::<OpaqueBlock> {
+							block_hash: *hash,
+							ethereum_block_hash: ethhash,
+							ethereum_index: 0u32,
+						});
+					}
+					transaction.set(
+						crate::columns::TRANSACTION_MAPPING,
+						&eth_tx_hash.encode(),
+						&metadata.encode(),
+					);
+					transaction_hashes.push(eth_tx_hash);
 					previous_canon_block_hash = next_canon_block_hash;
 				}
 				let _ = backend.mapping().db.commit(transaction);
@@ -435,19 +454,28 @@ mod tests {
 			// Upgrade database from version 1 to 2
 			let _ = super::upgrade_db::<OpaqueBlock, _>(client.clone(), &path, &setting.source);
 
-			// Check data
+			// Check data after migration
 			let backend =
 				open_frontier_backend(client, &setting).expect("a temporary db was created");
 			for (i, original_ethereum_hash) in ethereum_hashes.iter().enumerate() {
-				let entry = backend
+				let canon_substrate_block_hash = substrate_hashes.get(i).expect("Block hash");
+				let mapped_block = backend
 					.mapping()
 					.block_hash(original_ethereum_hash)
 					.unwrap()
 					.unwrap();
 				// All entries now hold a single element Vec
-				assert_eq!(entry.len(), 1);
+				assert_eq!(mapped_block.len(), 1);
 				// The Vec holds the canon block hash
-				assert_eq!(entry.first(), substrate_hashes.get(i));
+				assert_eq!(mapped_block.first(), Some(canon_substrate_block_hash));
+				// Transaction hash still holds canon block data
+				let mapped_transaction = backend
+					.mapping()
+					.transaction_metadata(transaction_hashes.get(i).expect("Transaction hash"))
+					.unwrap();
+				assert!(mapped_transaction
+					.into_iter()
+					.any(|tx| tx.block_hash == *canon_substrate_block_hash));
 			}
 
 			// Upgrade db version file
