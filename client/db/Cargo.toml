@@ -11,8 +11,8 @@ repository = "https://github.com/paritytech/frontier/"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-parking_lot = "0.12.1"
 log = "0.4.17"
+parking_lot = "0.12.1"
 
 # Parity
 codec = { package = "parity-scale-codec", version = "3.0.0", features = ["derive"] }
@@ -21,10 +21,10 @@ parity-db = { version = "0.3.16", optional = true }
 
 # Substrate
 sc-client-db = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-blockchain = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-core = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-database = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-runtime = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-blockchain = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Frontier
 fp-storage = { version = "2.0.0-dev", path = "../../primitives/storage" }
@@ -33,10 +33,10 @@ fp-storage = { version = "2.0.0-dev", path = "../../primitives/storage" }
 default = ["kvdb-rocksdb", "parity-db"]
 
 [dev-dependencies]
-futures = "0.3.24"
-tempfile = "3.3.0"
-substrate-test-runtime-client = { version = "2.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-client-db= { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", features = ["rocksdb"] }
-sc-block-builder = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-consensus = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 frontier-template-runtime = { path = "../../template/runtime" }
+futures = "0.3.24"
+sc-block-builder = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-client-db = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", features = ["rocksdb"] }
+sp-consensus = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
+substrate-test-runtime-client = { version = "2.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
+tempfile = "3.3.0"
