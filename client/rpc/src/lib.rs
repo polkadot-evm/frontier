@@ -275,8 +275,15 @@ mod tests {
 	type OpaqueBlock =
 		Block<Header<u64, BlakeTwo256>, substrate_test_runtime_client::runtime::Extrinsic>;
 
-	fn open_frontier_backend(path: PathBuf) -> Result<Arc<fc_db::Backend<OpaqueBlock>>, String> {
-		Ok(Arc::new(fc_db::Backend::<OpaqueBlock>::new(
+	fn open_frontier_backend<C>(
+		client: Arc<C>,
+		path: PathBuf,
+	) -> Result<Arc<fc_db::Backend<OpaqueBlock, C>>, String>
+	where
+		C: sp_blockchain::HeaderBackend<OpaqueBlock>,
+	{
+		Ok(Arc::new(fc_db::Backend::<OpaqueBlock, C>::new(
+			client,
 			&fc_db::DatabaseSettings {
 				source: sc_client_db::DatabaseSource::RocksDb {
 					path,
@@ -295,7 +302,7 @@ mod tests {
 		let mut client = Arc::new(client);
 
 		// Create a temporary frontier secondary DB.
-		let frontier_backend = open_frontier_backend(tmp.into_path()).unwrap();
+		let frontier_backend = open_frontier_backend(client.clone(), tmp.into_path()).unwrap();
 
 		// A random ethereum block hash to use
 		let ethereum_block_hash = sp_core::H256::random();

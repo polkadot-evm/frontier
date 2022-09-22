@@ -45,10 +45,15 @@ mod tests {
 	type OpaqueBlock =
 		Block<Header<u64, BlakeTwo256>, substrate_test_runtime_client::runtime::Extrinsic>;
 
-	pub fn open_frontier_backend(
+	pub fn open_frontier_backend<C>(
+		client: Arc<C>,
 		path: PathBuf,
-	) -> Result<Arc<fc_db::Backend<OpaqueBlock>>, String> {
-		Ok(Arc::new(fc_db::Backend::<OpaqueBlock>::new(
+	) -> Result<Arc<fc_db::Backend<OpaqueBlock, C>>, String>
+	where
+		C: sp_blockchain::HeaderBackend<OpaqueBlock>,
+	{
+		Ok(Arc::new(fc_db::Backend::<OpaqueBlock, C>::new(
+			client,
 			&fc_db::DatabaseSettings {
 				source: sc_client_db::DatabaseSource::RocksDb {
 					path,
@@ -125,11 +130,13 @@ mod tests {
 		// Write some data in a temp file.
 		let test_value_path = test_json_file(&tmp, &schema_test_value());
 
-		// Create a temporary frontier secondary DB.
-		let backend = open_frontier_backend(tmp.into_path()).expect("a temporary db was created");
 		// Test client.
 		let (client, _) =
 			TestClientBuilder::new().build_with_native_executor::<RuntimeApi, _>(None);
+		let client = Arc::new(client);
+		// Create a temporary frontier secondary DB.
+		let backend = open_frontier_backend(client.clone(), tmp.into_path())
+			.expect("a temporary db was created");
 
 		assert_eq!(backend.meta().ethereum_schema(), Ok(None));
 
@@ -140,7 +147,7 @@ mod tests {
 			Operation::Create,
 			Column::Meta
 		)
-		.run(Arc::new(client), backend.clone())
+		.run(client, backend.clone())
 		.is_ok());
 
 		assert_eq!(
@@ -155,11 +162,13 @@ mod tests {
 		// Write some data in a temp file.
 		let test_value_path = test_json_file(&tmp, &schema_test_value());
 
-		// Create a temporary frontier secondary DB.
-		let backend = open_frontier_backend(tmp.into_path()).expect("a temporary db was created");
 		// Test client.
 		let (client, _) =
 			TestClientBuilder::new().build_with_native_executor::<RuntimeApi, _>(None);
+		let client = Arc::new(client);
+		// Create a temporary frontier secondary DB.
+		let backend = open_frontier_backend(client.clone(), tmp.into_path())
+			.expect("a temporary db was created");
 
 		let data_before = vec![(EthereumStorageSchema::V2, H256::default())];
 
@@ -175,7 +184,7 @@ mod tests {
 			Operation::Create,
 			Column::Meta
 		)
-		.run(Arc::new(client), backend.clone())
+		.run(client, backend.clone())
 		.is_err());
 
 		let data_after = backend.meta().ethereum_schema().unwrap().unwrap();
@@ -185,12 +194,13 @@ mod tests {
 	#[test]
 	fn schema_read_works() {
 		let tmp = tempdir().expect("create a temporary directory");
-
-		// Create a temporary frontier secondary DB.
-		let backend = open_frontier_backend(tmp.into_path()).expect("a temporary db was created");
 		// Test client.
 		let (client, _) =
 			TestClientBuilder::new().build_with_native_executor::<RuntimeApi, _>(None);
+		let client = Arc::new(client);
+		// Create a temporary frontier secondary DB.
+		let backend = open_frontier_backend(client.clone(), tmp.into_path())
+			.expect("a temporary db was created");
 
 		assert_eq!(backend.meta().ethereum_schema(), Ok(None));
 
@@ -208,7 +218,7 @@ mod tests {
 			Operation::Read,
 			Column::Meta
 		)
-		.run(Arc::new(client), backend.clone())
+		.run(client, backend.clone())
 		.is_ok());
 	}
 
@@ -217,12 +227,13 @@ mod tests {
 		let tmp = tempdir().expect("create a temporary directory");
 		// Write some data in a temp file.
 		let test_value_path = test_json_file(&tmp, &schema_test_value());
-
-		// Create a temporary frontier secondary DB.
-		let backend = open_frontier_backend(tmp.into_path()).expect("a temporary db was created");
 		// Test client.
 		let (client, _) =
 			TestClientBuilder::new().build_with_native_executor::<RuntimeApi, _>(None);
+		let client = Arc::new(client);
+		// Create a temporary frontier secondary DB.
+		let backend = open_frontier_backend(client.clone(), tmp.into_path())
+			.expect("a temporary db was created");
 
 		assert_eq!(backend.meta().ethereum_schema(), Ok(None));
 		// Run the command
@@ -232,7 +243,7 @@ mod tests {
 			Operation::Update,
 			Column::Meta
 		)
-		.run(Arc::new(client), backend.clone())
+		.run(client, backend.clone())
 		.is_ok());
 
 		assert_eq!(
@@ -244,12 +255,13 @@ mod tests {
 	#[test]
 	fn schema_delete_works() {
 		let tmp = tempdir().expect("create a temporary directory");
-
-		// Create a temporary frontier secondary DB.
-		let backend = open_frontier_backend(tmp.into_path()).expect("a temporary db was created");
 		// Test client.
 		let (client, _) =
 			TestClientBuilder::new().build_with_native_executor::<RuntimeApi, _>(None);
+		let client = Arc::new(client);
+		// Create a temporary frontier secondary DB.
+		let backend = open_frontier_backend(client.clone(), tmp.into_path())
+			.expect("a temporary db was created");
 
 		let data = vec![(EthereumStorageSchema::V2, H256::default())];
 
@@ -264,7 +276,7 @@ mod tests {
 			Operation::Delete,
 			Column::Meta
 		)
-		.run(Arc::new(client), backend.clone())
+		.run(client, backend.clone())
 		.is_ok());
 
 		assert_eq!(backend.meta().ethereum_schema(), Ok(Some(vec![])));
@@ -275,12 +287,13 @@ mod tests {
 		let tmp = tempdir().expect("create a temporary directory");
 		// Write some data in a temp file.
 		let test_value_path = test_json_file(&tmp, &tips_test_value());
-
-		// Create a temporary frontier secondary DB.
-		let backend = open_frontier_backend(tmp.into_path()).expect("a temporary db was created");
 		// Test client.
 		let (client, _) =
 			TestClientBuilder::new().build_with_native_executor::<RuntimeApi, _>(None);
+		let client = Arc::new(client);
+		// Create a temporary frontier secondary DB.
+		let backend = open_frontier_backend(client.clone(), tmp.into_path())
+			.expect("a temporary db was created");
 
 		assert_eq!(backend.meta().current_syncing_tips(), Ok(vec![]));
 		// Run the command
@@ -290,7 +303,7 @@ mod tests {
 			Operation::Create,
 			Column::Meta
 		)
-		.run(Arc::new(client), backend.clone())
+		.run(client, backend.clone())
 		.is_ok());
 
 		assert_eq!(
@@ -304,12 +317,13 @@ mod tests {
 		let tmp = tempdir().expect("create a temporary directory");
 		// Write some data in a temp file.
 		let test_value_path = test_json_file(&tmp, &tips_test_value());
-
-		// Create a temporary frontier secondary DB.
-		let backend = open_frontier_backend(tmp.into_path()).expect("a temporary db was created");
 		// Test client.
 		let (client, _) =
 			TestClientBuilder::new().build_with_native_executor::<RuntimeApi, _>(None);
+		let client = Arc::new(client);
+		// Create a temporary frontier secondary DB.
+		let backend = open_frontier_backend(client.clone(), tmp.into_path())
+			.expect("a temporary db was created");
 
 		let data_before = vec![H256::default()];
 
@@ -324,7 +338,7 @@ mod tests {
 			Operation::Create,
 			Column::Meta
 		)
-		.run(Arc::new(client), backend.clone())
+		.run(client, backend.clone())
 		.is_err());
 
 		let data_after = backend.meta().current_syncing_tips().unwrap();
@@ -334,12 +348,13 @@ mod tests {
 	#[test]
 	fn tips_read_works() {
 		let tmp = tempdir().expect("create a temporary directory");
-
-		// Create a temporary frontier secondary DB.
-		let backend = open_frontier_backend(tmp.into_path()).expect("a temporary db was created");
 		// Test client.
 		let (client, _) =
 			TestClientBuilder::new().build_with_native_executor::<RuntimeApi, _>(None);
+		let client = Arc::new(client);
+		// Create a temporary frontier secondary DB.
+		let backend = open_frontier_backend(client.clone(), tmp.into_path())
+			.expect("a temporary db was created");
 
 		assert_eq!(backend.meta().current_syncing_tips(), Ok(vec![]));
 
@@ -356,7 +371,7 @@ mod tests {
 			Operation::Read,
 			Column::Meta
 		)
-		.run(Arc::new(client), backend.clone())
+		.run(client, backend.clone())
 		.is_ok());
 	}
 
@@ -365,12 +380,13 @@ mod tests {
 		let tmp = tempdir().expect("create a temporary directory");
 		// Write some data in a temp file.
 		let test_value_path = test_json_file(&tmp, &tips_test_value());
-
-		// Create a temporary frontier secondary DB.
-		let backend = open_frontier_backend(tmp.into_path()).expect("a temporary db was created");
 		// Test client.
 		let (client, _) =
 			TestClientBuilder::new().build_with_native_executor::<RuntimeApi, _>(None);
+		let client = Arc::new(client);
+		// Create a temporary frontier secondary DB.
+		let backend = open_frontier_backend(client.clone(), tmp.into_path())
+			.expect("a temporary db was created");
 
 		assert_eq!(backend.meta().current_syncing_tips(), Ok(vec![]));
 		// Run the command
@@ -380,7 +396,7 @@ mod tests {
 			Operation::Update,
 			Column::Meta
 		)
-		.run(Arc::new(client), backend.clone())
+		.run(client, backend.clone())
 		.is_ok());
 
 		assert_eq!(
@@ -392,12 +408,13 @@ mod tests {
 	#[test]
 	fn tips_delete_works() {
 		let tmp = tempdir().expect("create a temporary directory");
-
-		// Create a temporary frontier secondary DB.
-		let backend = open_frontier_backend(tmp.into_path()).expect("a temporary db was created");
 		// Test client.
 		let (client, _) =
 			TestClientBuilder::new().build_with_native_executor::<RuntimeApi, _>(None);
+		let client = Arc::new(client);
+		// Create a temporary frontier secondary DB.
+		let backend = open_frontier_backend(client.clone(), tmp.into_path())
+			.expect("a temporary db was created");
 
 		let data = vec![H256::default()];
 
@@ -412,7 +429,7 @@ mod tests {
 			Operation::Delete,
 			Column::Meta
 		)
-		.run(Arc::new(client), backend.clone())
+		.run(client, backend.clone())
 		.is_ok());
 
 		assert_eq!(backend.meta().current_syncing_tips(), Ok(vec![]));
@@ -423,13 +440,14 @@ mod tests {
 		let tmp = tempdir().expect("create a temporary directory");
 		// Write some data in a temp file.
 		let test_value_path = test_json_file(&tmp, &schema_test_value());
-
-		// Create a temporary frontier secondary DB.
-		let backend = open_frontier_backend(tmp.into_path()).expect("a temporary db was created");
 		// Test client.
 		let (client, _) =
 			TestClientBuilder::new().build_with_native_executor::<RuntimeApi, _>(None);
 		let client = Arc::new(client);
+		// Create a temporary frontier secondary DB.
+		let backend = open_frontier_backend(client.clone(), tmp.into_path())
+			.expect("a temporary db was created");
+		let client = client;
 
 		let data = vec![(EthereumStorageSchema::V1, H256::default())];
 
@@ -497,13 +515,14 @@ mod tests {
 			serde_json::to_string("im_not_allowed_here").unwrap(),
 		)
 		.expect("write test value json file");
-
-		// Create a temporary frontier secondary DB.
-		let backend = open_frontier_backend(tmp.into_path()).expect("a temporary db was created");
 		// Test client.
 		let (client, _) =
 			TestClientBuilder::new().build_with_native_executor::<RuntimeApi, _>(None);
 		let client = Arc::new(client);
+		// Create a temporary frontier secondary DB.
+		let backend = open_frontier_backend(client.clone(), tmp.into_path())
+			.expect("a temporary db was created");
+		let client = client;
 
 		// Run the Create command
 		assert!(cmd(
@@ -557,7 +576,8 @@ mod tests {
 		let test_value_path = test_json_file(&tmp, &TestValue::Commitment(block_hash));
 
 		// Create a temporary frontier secondary DB.
-		let backend = open_frontier_backend(tmp.into_path()).expect("a temporary db was created");
+		let backend = open_frontier_backend(client.clone(), tmp.into_path())
+			.expect("a temporary db was created");
 
 		// Run the command using some ethereum block hash as key.
 		let ethereum_block_hash = H256::default();
@@ -640,7 +660,8 @@ mod tests {
 		let test_value_path = test_json_file(&tmp, &TestValue::Commitment(block_a1_hash));
 
 		// Create a temporary frontier secondary DB.
-		let backend = open_frontier_backend(tmp.into_path()).expect("a temporary db was created");
+		let backend = open_frontier_backend(client.clone(), tmp.into_path())
+			.expect("a temporary db was created");
 
 		// Run the command using some ethereum block hash as key.
 		let ethereum_block_hash = H256::default();
@@ -760,7 +781,8 @@ mod tests {
 		let test_value_path = test_json_file(&tmp, &TestValue::Commitment(block_hash));
 
 		// Create a temporary frontier secondary DB.
-		let backend = open_frontier_backend(tmp.into_path()).expect("a temporary db was created");
+		let backend = open_frontier_backend(client.clone(), tmp.into_path())
+			.expect("a temporary db was created");
 
 		// Create command using some ethereum block hash as key.
 		let ethereum_block_hash = H256::default();
