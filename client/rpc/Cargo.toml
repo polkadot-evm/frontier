@@ -17,7 +17,7 @@ futures = "0.3.24"
 hex = "0.4.3"
 log = "0.4.17"
 lru = "0.8.0"
-prometheus = { version = "0.13.1", default-features = false }
+prometheus = { version = "0.13.2", default-features = false }
 rand = "0.8"
 tokio = { version = "1.19", features = ["sync"] }
 
