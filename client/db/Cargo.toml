@@ -33,7 +33,6 @@ fp-storage = { version = "2.0.0-dev", path = "../../primitives/storage" }
 default = ["kvdb-rocksdb", "parity-db"]
 
 [dev-dependencies]
-frontier-template-runtime = { path = "../../template/runtime" }
 futures = "0.3.24"
 sc-block-builder = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-client-db = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", features = ["rocksdb"] }

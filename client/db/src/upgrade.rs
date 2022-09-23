@@ -312,7 +312,6 @@ where
 
 #[cfg(test)]
 mod tests {
-	use frontier_template_runtime::RuntimeApi;
 	use futures::executor;
 	use sc_block_builder::BlockBuilderProvider;
 	use sp_consensus::BlockOrigin;
@@ -367,8 +366,10 @@ mod tests {
 		];
 
 		for setting in settings {
-			let (client, _) =
-				TestClientBuilder::new().build_with_native_executor::<RuntimeApi, _>(None);
+			let (client, _) = TestClientBuilder::new()
+				.build_with_native_executor::<substrate_test_runtime_client::runtime::RuntimeApi, _>(
+				None,
+			);
 			let mut client = Arc::new(client);
 
 			// Genesis block

@@ -259,7 +259,6 @@ pub fn public_key(transaction: &EthereumTransaction) -> Result<[u8; 64], sp_io::
 mod tests {
 	use std::{path::PathBuf, sync::Arc};
 
-	use frontier_template_runtime::RuntimeApi;
 	use futures::executor;
 	use sc_block_builder::BlockBuilderProvider;
 	use sp_consensus::BlockOrigin;
@@ -296,8 +295,10 @@ mod tests {
 	#[test]
 	fn substrate_block_hash_one_to_many_works() {
 		let tmp = tempdir().expect("create a temporary directory");
-		let (client, _) =
-			TestClientBuilder::new().build_with_native_executor::<RuntimeApi, _>(None);
+		let (client, _) = TestClientBuilder::new()
+			.build_with_native_executor::<substrate_test_runtime_client::runtime::RuntimeApi, _>(
+			None,
+		);
 
 		let mut client = Arc::new(client);
 
