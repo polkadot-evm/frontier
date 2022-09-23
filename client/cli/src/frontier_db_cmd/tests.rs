@@ -531,7 +531,7 @@ mod tests {
 		assert_eq!(backend.meta().ethereum_schema(), Ok(None));
 	}
 
-	/*
+	#[ignore]
 	#[test]
 	fn commitment_create() {
 		let tmp = tempdir().expect("create a temporary directory");
@@ -600,6 +600,7 @@ mod tests {
 		.is_err());
 	}
 
+    #[ignore]
 	#[test]
 	fn commitment_update() {
 		let tmp = tempdir().expect("create a temporary directory");
@@ -735,6 +736,7 @@ mod tests {
 		);
 	}
 
+    #[ignore]
 	#[test]
 	fn mapping_read_works() {
 		let tmp = tempdir().expect("create a temporary directory");
@@ -795,5 +797,4 @@ mod tests {
 		.run(Arc::clone(&client), backend.clone())
 		.is_ok());
 	}
-	*/
 }
