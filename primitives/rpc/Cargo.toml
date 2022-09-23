@@ -15,7 +15,7 @@ ethereum = { version = "0.12.0", default-features = false, features = ["with-cod
 # Parity
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false }
 ethereum-types = { version = "0.13.1", default-features = false }
-scale-info = { version = "2.1.2", default-features = false, features = ["derive"] }
+scale-info = { version = "2.2.0", default-features = false, features = ["derive"] }
 
 # Substrate
 sp-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
