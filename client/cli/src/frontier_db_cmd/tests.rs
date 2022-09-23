@@ -600,7 +600,7 @@ mod tests {
 		.is_err());
 	}
 
-    #[ignore]
+	#[ignore]
 	#[test]
 	fn commitment_update() {
 		let tmp = tempdir().expect("create a temporary directory");
@@ -736,7 +736,7 @@ mod tests {
 		);
 	}
 
-    #[ignore]
+	#[ignore]
 	#[test]
 	fn mapping_read_works() {
 		let tmp = tempdir().expect("create a temporary directory");
