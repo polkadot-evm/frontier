@@ -21,17 +21,19 @@ mod meta_db;
 mod tests;
 pub(crate) mod utils;
 
-use mapping_db::{MappingDb, MappingKey, MappingValue};
-use meta_db::{MetaDb, MetaKey, MetaValue};
-
-use clap::ArgEnum;
-use sc_cli::{PruningParams, SharedParams};
-use serde::Deserialize;
 use std::{path::PathBuf, str::FromStr, sync::Arc};
 
+use clap::ArgEnum;
+use ethereum_types::H256;
+use serde::Deserialize;
+// Substrate
+use sc_cli::{PruningParams, SharedParams};
 use sp_runtime::traits::Block as BlockT;
 
-use ethereum_types::H256;
+use self::{
+	mapping_db::{MappingDb, MappingKey, MappingValue},
+	meta_db::{MetaDb, MetaKey, MetaValue},
+};
 
 /// Cli tool to interact with the Frontier backend db
 #[derive(Debug, Clone, clap::Parser)]
