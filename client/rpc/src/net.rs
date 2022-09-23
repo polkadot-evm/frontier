@@ -20,11 +20,13 @@ use std::sync::Arc;
 
 use ethereum_types::H256;
 use jsonrpsee::core::RpcResult as Result;
+// Substrate
 use sc_network::{ExHashT, NetworkService};
+use sc_network_common::service::NetworkPeers;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
-
+// Frontier
 use fc_rpc_core::{types::PeerCount, NetApiServer};
 use fp_rpc::EthereumRuntimeRPCApi;
 
@@ -68,7 +70,7 @@ where
 	}
 
 	fn peer_count(&self) -> Result<PeerCount> {
-		let peer_count = self.network.num_connected();
+		let peer_count = self.network.sync_num_connected();
 		Ok(match self.peer_count_as_hex {
 			true => PeerCount::String(format!("0x{:x}", peer_count)),
 			false => PeerCount::U32(peer_count as u32),
