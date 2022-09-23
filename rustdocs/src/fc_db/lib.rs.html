@@ -303,6 +303,8 @@
 <span id="298">298</span>
 <span id="299">299</span>
 <span id="300">300</span>
+<span id="301">301</span>
+<span id="302">302</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -332,12 +334,14 @@
 };
 
 <span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Decode</span>, <span class="ident">Encode</span>};
-<span class="kw">use</span> <span class="ident">fp_storage</span>::{<span class="ident">EthereumStorageSchema</span>, <span class="ident">PALLET_ETHEREUM_SCHEMA_CACHE</span>};
 <span class="kw">use</span> <span class="ident">parking_lot::Mutex</span>;
+<span class="comment">// Substrate</span>
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">sc_client_db::DatabaseSource</span>;
 <span class="kw">use</span> <span class="ident">sp_core::H256</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">sp_database::Database</span>;
 <span class="kw">use</span> <span class="ident">sp_runtime::traits::Block</span> <span class="kw">as</span> <span class="ident">BlockT</span>;
+<span class="comment">// Frontier</span>
+<span class="kw">use</span> <span class="ident">fp_storage</span>::{<span class="ident">EthereumStorageSchema</span>, <span class="ident">PALLET_ETHEREUM_SCHEMA_CACHE</span>};
 
 <span class="kw">const</span> <span class="ident">DB_HASH_LEN</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">32</span>;
 <span class="doccomment">/// Hash type that this backend uses for the database.</span>

@@ -159,6 +159,8 @@
 <span id="154">154</span>
 <span id="155">155</span>
 <span id="156">156</span>
+<span id="157">157</span>
+<span id="158">158</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -182,17 +184,19 @@
 <span class="kw">mod</span> <span class="ident">tests</span>;
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">mod</span> <span class="ident">utils</span>;
 
-<span class="kw">use</span> <span class="ident">mapping_db</span>::{<span class="ident">MappingDb</span>, <span class="ident">MappingKey</span>, <span class="ident">MappingValue</span>};
-<span class="kw">use</span> <span class="ident">meta_db</span>::{<span class="ident">MetaDb</span>, <span class="ident">MetaKey</span>, <span class="ident">MetaValue</span>};
-
-<span class="kw">use</span> <span class="ident">clap::ArgEnum</span>;
-<span class="kw">use</span> <span class="ident">sc_cli</span>::{<span class="ident">PruningParams</span>, <span class="ident">SharedParams</span>};
-<span class="kw">use</span> <span class="ident">serde::Deserialize</span>;
 <span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">path::PathBuf</span>, <span class="ident">str::FromStr</span>, <span class="ident">sync::Arc</span>};
 
+<span class="kw">use</span> <span class="ident">clap::ArgEnum</span>;
+<span class="kw">use</span> <span class="ident">ethereum_types::H256</span>;
+<span class="kw">use</span> <span class="ident">serde::Deserialize</span>;
+<span class="comment">// Substrate</span>
+<span class="kw">use</span> <span class="ident">sc_cli</span>::{<span class="ident">PruningParams</span>, <span class="ident">SharedParams</span>};
 <span class="kw">use</span> <span class="ident">sp_runtime::traits::Block</span> <span class="kw">as</span> <span class="ident">BlockT</span>;
 
-<span class="kw">use</span> <span class="ident">ethereum_types::H256</span>;
+<span class="kw">use</span> <span class="self">self</span>::{
+	<span class="ident">mapping_db</span>::{<span class="ident">MappingDb</span>, <span class="ident">MappingKey</span>, <span class="ident">MappingValue</span>},
+	<span class="ident">meta_db</span>::{<span class="ident">MetaDb</span>, <span class="ident">MetaKey</span>, <span class="ident">MetaValue</span>},
+};
 
 <span class="doccomment">/// Cli tool to interact with the Frontier backend db</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">clap::Parser</span>)]</span>

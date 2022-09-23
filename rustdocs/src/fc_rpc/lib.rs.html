@@ -307,7 +307,7 @@
 	<span class="kw">use</span> <span class="ident">codec::Decode</span>;
 	<span class="kw">use</span> <span class="ident">ethereum_types::H256</span>;
 	<span class="kw">use</span> <span class="ident">jsonrpsee::core::RpcResult</span>;
-
+	<span class="comment">// Substrate</span>
 	<span class="kw">use</span> <span class="ident">sc_client_api::backend</span>::{<span class="ident">Backend</span>, <span class="ident">StateBackend</span>, <span class="ident">StorageProvider</span>};
 	<span class="kw">use</span> <span class="ident">sp_blockchain::HeaderBackend</span>;
 	<span class="kw">use</span> <span class="ident">sp_runtime</span>::{
@@ -315,7 +315,7 @@
 		<span class="ident">traits</span>::{<span class="ident">BlakeTwo256</span>, <span class="ident">Block</span> <span class="kw">as</span> <span class="ident">BlockT</span>, <span class="ident">Header</span> <span class="kw">as</span> <span class="ident">HeaderT</span>, <span class="ident">UniqueSaturatedInto</span>, <span class="ident">Zero</span>},
 	};
 	<span class="kw">use</span> <span class="ident">sp_storage::StorageKey</span>;
-
+	<span class="comment">// Frontier</span>
 	<span class="kw">use</span> <span class="ident">fc_rpc_core::types::BlockNumber</span>;
 	<span class="kw">use</span> <span class="ident">fp_storage</span>::{<span class="ident">EthereumStorageSchema</span>, <span class="ident">PALLET_ETHEREUM_SCHEMA</span>};
 

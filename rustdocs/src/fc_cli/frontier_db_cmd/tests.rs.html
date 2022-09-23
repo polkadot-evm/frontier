@@ -798,6 +798,11 @@
 <span id="793">793</span>
 <span id="794">794</span>
 <span id="795">795</span>
+<span id="796">796</span>
+<span id="797">797</span>
+<span id="798">798</span>
+<span id="799">799</span>
+<span id="800">800</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -818,29 +823,30 @@
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
 <span class="kw">mod</span> <span class="ident">tests</span> {
-	<span class="kw">use</span> <span class="ident">frontier_template_runtime::RuntimeApi</span>;
-	<span class="kw">use</span> <span class="ident">substrate_test_runtime_client</span>::{
-		<span class="ident">BlockBuilderExt</span>, <span class="ident">ClientBlockImportExt</span>, <span class="ident">ClientExt</span>, <span class="ident">DefaultTestClientBuilderExt</span>,
-		<span class="ident">TestClientBuilder</span>,
-	};
+	<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">collections::HashMap</span>, <span class="ident">path::PathBuf</span>, <span class="ident">str::FromStr</span>, <span class="ident">sync::Arc</span>};
 
-	<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">collections::HashMap</span>, <span class="ident">path::PathBuf</span>, <span class="ident">sync::Arc</span>};
-
-	<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::frontier_db_cmd</span>::{<span class="ident">Column</span>, <span class="ident">FrontierDbCmd</span>, <span class="ident">Operation</span>};
 	<span class="kw">use</span> <span class="ident">codec::Encode</span>;
 	<span class="kw">use</span> <span class="ident">ethereum_types::H256</span>;
-	<span class="kw">use</span> <span class="ident">fp_storage::EthereumStorageSchema</span>;
 	<span class="kw">use</span> <span class="ident">futures::executor</span>;
-	<span class="kw">use</span> <span class="ident">sc_block_builder::BlockBuilderProvider</span>;
 	<span class="kw">use</span> <span class="ident">serde::Serialize</span>;
+	<span class="kw">use</span> <span class="ident">tempfile::tempdir</span>;
+	<span class="comment">// Substrate</span>
+	<span class="kw">use</span> <span class="ident">sc_block_builder::BlockBuilderProvider</span>;
 	<span class="kw">use</span> <span class="ident">sp_consensus::BlockOrigin</span>;
 	<span class="kw">use</span> <span class="ident">sp_io::hashing::twox_128</span>;
 	<span class="kw">use</span> <span class="ident">sp_runtime</span>::{
 		<span class="ident">generic</span>::{<span class="ident">Block</span>, <span class="ident">BlockId</span>, <span class="ident">Header</span>},
 		<span class="ident">traits</span>::{<span class="ident">BlakeTwo256</span>, <span class="ident">Block</span> <span class="kw">as</span> <span class="ident">BlockT</span>},
 	};
-	<span class="kw">use</span> <span class="ident">std::str::FromStr</span>;
-	<span class="kw">use</span> <span class="ident">tempfile::tempdir</span>;
+	<span class="kw">use</span> <span class="ident">substrate_test_runtime_client</span>::{
+		<span class="ident">BlockBuilderExt</span>, <span class="ident">ClientBlockImportExt</span>, <span class="ident">ClientExt</span>, <span class="ident">DefaultTestClientBuilderExt</span>,
+		<span class="ident">TestClientBuilder</span>,
+	};
+	<span class="comment">// Frontier</span>
+	<span class="kw">use</span> <span class="ident">fp_storage</span>::{<span class="ident">EthereumStorageSchema</span>, <span class="ident">ETHEREUM_CURRENT_TRANSACTION_STATUS</span>, <span class="ident">PALLET_ETHEREUM</span>};
+	<span class="kw">use</span> <span class="ident">frontier_template_runtime::RuntimeApi</span>;
+
+	<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::frontier_db_cmd</span>::{<span class="ident">Column</span>, <span class="ident">FrontierDbCmd</span>, <span class="ident">Operation</span>};
 
 	<span class="kw">type</span> <span class="ident">OpaqueBlock</span> <span class="op">=</span>
 		<span class="ident">Block</span><span class="op">&lt;</span><span class="ident">Header</span><span class="op">&lt;</span><span class="ident">u64</span>, <span class="ident">BlakeTwo256</span><span class="op">&gt;</span>, <span class="ident">substrate_test_runtime_client::runtime::Extrinsic</span><span class="op">&gt;</span>;
@@ -893,8 +899,8 @@
 				<span class="ident">detailed_log_output</span>: <span class="bool-val">false</span>,
 			},
 			<span class="ident">pruning_params</span>: <span class="ident">sc_cli::PruningParams</span> {
-				<span class="ident">pruning</span>: <span class="prelude-val">None</span>,
-				<span class="ident">keep_blocks</span>: <span class="prelude-val">None</span>,
+				<span class="ident">state_pruning</span>: <span class="prelude-val">None</span>,
+				<span class="ident">blocks_pruning</span>: <span class="prelude-val">None</span>,
 			},
 		}
 	}
@@ -1330,6 +1336,7 @@
 		<span class="macro">assert_eq!</span>(<span class="ident">backend</span>.<span class="ident">meta</span>().<span class="ident">ethereum_schema</span>(), <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>));
 	}
 
+	<span class="attribute">#[<span class="ident">ignore</span>]</span>
 	<span class="attribute">#[<span class="ident">test</span>]</span>
 	<span class="kw">fn</span> <span class="ident">commitment_create</span>() {
 		<span class="kw">let</span> <span class="ident">tmp</span> <span class="op">=</span> <span class="ident">tempdir</span>().<span class="ident">expect</span>(<span class="string">&quot;create a temporary directory&quot;</span>);
@@ -1344,7 +1351,7 @@
 		<span class="kw">let</span> <span class="ident">statuses</span> <span class="op">=</span> <span class="macro">vec!</span>[<span class="ident">t1</span>];
 
 		<span class="comment">// Build a block and fill the pallet-ethereum status.</span>
-		<span class="kw">let</span> <span class="ident">key</span> <span class="op">=</span> <span class="ident">storage_prefix_build</span>(<span class="string">b&quot;Ethereum&quot;</span>, <span class="string">b&quot;CurrentTransactionStatuses&quot;</span>);
+		<span class="kw">let</span> <span class="ident">key</span> <span class="op">=</span> <span class="ident">storage_prefix_build</span>(<span class="ident">PALLET_ETHEREUM</span>, <span class="ident">ETHEREUM_CURRENT_TRANSACTION_STATUS</span>);
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">builder</span> <span class="op">=</span> <span class="ident">client</span>.<span class="ident">new_block</span>(<span class="ident">Default::default</span>()).<span class="ident">unwrap</span>();
 		<span class="ident">builder</span>
 			.<span class="ident">push_storage_change</span>(<span class="ident">key</span>, <span class="prelude-val">Some</span>(<span class="ident">statuses</span>.<span class="ident">encode</span>()))
@@ -1398,6 +1405,7 @@
 		.<span class="ident">is_err</span>());
 	}
 
+	<span class="attribute">#[<span class="ident">ignore</span>]</span>
 	<span class="attribute">#[<span class="ident">test</span>]</span>
 	<span class="kw">fn</span> <span class="ident">commitment_update</span>() {
 		<span class="kw">let</span> <span class="ident">tmp</span> <span class="op">=</span> <span class="ident">tempdir</span>().<span class="ident">expect</span>(<span class="string">&quot;create a temporary directory&quot;</span>);
@@ -1417,7 +1425,7 @@
 		<span class="kw">let</span> <span class="ident">statuses_a1</span> <span class="op">=</span> <span class="macro">vec!</span>[<span class="ident">t1</span>.<span class="ident">clone</span>()];
 		<span class="kw">let</span> <span class="ident">statuses_a2</span> <span class="op">=</span> <span class="macro">vec!</span>[<span class="ident">t1</span>, <span class="ident">t2</span>];
 
-		<span class="kw">let</span> <span class="ident">key</span> <span class="op">=</span> <span class="ident">storage_prefix_build</span>(<span class="string">b&quot;Ethereum&quot;</span>, <span class="string">b&quot;CurrentTransactionStatuses&quot;</span>);
+		<span class="kw">let</span> <span class="ident">key</span> <span class="op">=</span> <span class="ident">storage_prefix_build</span>(<span class="ident">PALLET_ETHEREUM</span>, <span class="ident">ETHEREUM_CURRENT_TRANSACTION_STATUS</span>);
 
 		<span class="comment">// First we create block and insert data in the offchain db.</span>
 
@@ -1533,6 +1541,7 @@
 		);
 	}
 
+	<span class="attribute">#[<span class="ident">ignore</span>]</span>
 	<span class="attribute">#[<span class="ident">test</span>]</span>
 	<span class="kw">fn</span> <span class="ident">mapping_read_works</span>() {
 		<span class="kw">let</span> <span class="ident">tmp</span> <span class="op">=</span> <span class="ident">tempdir</span>().<span class="ident">expect</span>(<span class="string">&quot;create a temporary directory&quot;</span>);
@@ -1547,7 +1556,7 @@
 		<span class="kw">let</span> <span class="ident">statuses</span> <span class="op">=</span> <span class="macro">vec!</span>[<span class="ident">t1</span>];
 
 		<span class="comment">// Build a block and fill the pallet-ethereum status.</span>
-		<span class="kw">let</span> <span class="ident">key</span> <span class="op">=</span> <span class="ident">storage_prefix_build</span>(<span class="string">b&quot;Ethereum&quot;</span>, <span class="string">b&quot;CurrentTransactionStatuses&quot;</span>);
+		<span class="kw">let</span> <span class="ident">key</span> <span class="op">=</span> <span class="ident">storage_prefix_build</span>(<span class="ident">PALLET_ETHEREUM</span>, <span class="ident">ETHEREUM_CURRENT_TRANSACTION_STATUS</span>);
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">builder</span> <span class="op">=</span> <span class="ident">client</span>.<span class="ident">new_block</span>(<span class="ident">Default::default</span>()).<span class="ident">unwrap</span>();
 		<span class="ident">builder</span>
 			.<span class="ident">push_storage_change</span>(<span class="ident">key</span>, <span class="prelude-val">Some</span>(<span class="ident">statuses</span>.<span class="ident">encode</span>()))
@@ -1564,13 +1573,14 @@
 
 		<span class="comment">// Create command using some ethereum block hash as key.</span>
 		<span class="kw">let</span> <span class="ident">ethereum_block_hash</span> <span class="op">=</span> <span class="ident">H256::default</span>();
-		<span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">cmd</span>(
+		<span class="macro">assert!</span>(<span class="ident">cmd</span>(
 			<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">ethereum_block_hash</span>),
 			<span class="prelude-val">Some</span>(<span class="ident">test_value_path</span>.<span class="ident">clone</span>()),
 			<span class="ident">Operation::Create</span>,
 			<span class="ident">Column::Block</span>,
 		)
-		.<span class="ident">run</span>(<span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span><span class="ident">client</span>), <span class="ident">backend</span>.<span class="ident">clone</span>());
+		.<span class="ident">run</span>(<span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span><span class="ident">client</span>), <span class="ident">backend</span>.<span class="ident">clone</span>())
+		.<span class="ident">is_ok</span>());
 
 		<span class="comment">// Read block command.</span>
 		<span class="macro">assert!</span>(<span class="ident">cmd</span>(

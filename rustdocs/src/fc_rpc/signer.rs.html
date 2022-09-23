@@ -165,6 +165,7 @@
 <span id="160">160</span>
 <span id="161">161</span>
 <span id="162">162</span>
+<span id="163">163</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -186,9 +187,10 @@
 <span class="kw">use</span> <span class="ident">ethereum::TransactionV2</span> <span class="kw">as</span> <span class="ident">EthereumTransaction</span>;
 <span class="kw">use</span> <span class="ident">ethereum_types</span>::{<span class="ident">H160</span>, <span class="ident">H256</span>};
 <span class="kw">use</span> <span class="ident">jsonrpsee::core::Error</span>;
-
-<span class="kw">use</span> <span class="ident">fc_rpc_core::types::TransactionMessage</span>;
+<span class="comment">// Substrate</span>
 <span class="kw">use</span> <span class="ident">sp_core::hashing::keccak_256</span>;
+<span class="comment">// Frontier</span>
+<span class="kw">use</span> <span class="ident">fc_rpc_core::types::TransactionMessage</span>;
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::internal_err</span>;
 

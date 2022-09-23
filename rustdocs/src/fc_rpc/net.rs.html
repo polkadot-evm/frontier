@@ -84,6 +84,8 @@
 <span id="79">79</span>
 <span id="80">80</span>
 <span id="81">81</span>
+<span id="82">82</span>
+<span id="83">83</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -106,11 +108,13 @@
 
 <span class="kw">use</span> <span class="ident">ethereum_types::H256</span>;
 <span class="kw">use</span> <span class="ident">jsonrpsee::core::RpcResult</span> <span class="kw">as</span> <span class="prelude-ty">Result</span>;
+<span class="comment">// Substrate</span>
 <span class="kw">use</span> <span class="ident">sc_network</span>::{<span class="ident">ExHashT</span>, <span class="ident">NetworkService</span>};
+<span class="kw">use</span> <span class="ident">sc_network_common::service::NetworkPeers</span>;
 <span class="kw">use</span> <span class="ident">sp_api::ProvideRuntimeApi</span>;
 <span class="kw">use</span> <span class="ident">sp_blockchain::HeaderBackend</span>;
 <span class="kw">use</span> <span class="ident">sp_runtime</span>::{<span class="ident">generic::BlockId</span>, <span class="ident">traits::Block</span> <span class="kw">as</span> <span class="ident">BlockT</span>};
-
+<span class="comment">// Frontier</span>
 <span class="kw">use</span> <span class="ident">fc_rpc_core</span>::{<span class="ident">types::PeerCount</span>, <span class="ident">NetApiServer</span>};
 <span class="kw">use</span> <span class="ident">fp_rpc::EthereumRuntimeRPCApi</span>;
 
@@ -154,7 +158,7 @@
 	}
 
 	<span class="kw">fn</span> <span class="ident">peer_count</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">PeerCount</span><span class="op">&gt;</span> {
-		<span class="kw">let</span> <span class="ident">peer_count</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">network</span>.<span class="ident">num_connected</span>();
+		<span class="kw">let</span> <span class="ident">peer_count</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">network</span>.<span class="ident">sync_num_connected</span>();
 		<span class="prelude-val">Ok</span>(<span class="kw">match</span> <span class="self">self</span>.<span class="ident">peer_count_as_hex</span> {
 			<span class="bool-val">true</span> =&gt; <span class="ident">PeerCount::String</span>(<span class="macro">format!</span>(<span class="string">&quot;0x{:x}&quot;</span>, <span class="ident">peer_count</span>)),
 			<span class="bool-val">false</span> =&gt; <span class="ident">PeerCount::U32</span>(<span class="ident">peer_count</span> <span class="kw">as</span> <span class="ident">u32</span>),

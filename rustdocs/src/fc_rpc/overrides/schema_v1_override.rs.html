@@ -180,7 +180,7 @@
 
 <span class="kw">use</span> <span class="ident">codec::Decode</span>;
 <span class="kw">use</span> <span class="ident">ethereum_types</span>::{<span class="ident">H160</span>, <span class="ident">H256</span>, <span class="ident">U256</span>};
-
+<span class="comment">// Substrate</span>
 <span class="kw">use</span> <span class="ident">sc_client_api::backend</span>::{<span class="ident">Backend</span>, <span class="ident">StateBackend</span>, <span class="ident">StorageProvider</span>};
 <span class="kw">use</span> <span class="ident">sp_api::BlockId</span>;
 <span class="kw">use</span> <span class="ident">sp_runtime</span>::{
@@ -188,7 +188,7 @@
 	<span class="ident">Permill</span>,
 };
 <span class="kw">use</span> <span class="ident">sp_storage::StorageKey</span>;
-
+<span class="comment">// Frontier</span>
 <span class="kw">use</span> <span class="ident">fp_rpc::TransactionStatus</span>;
 <span class="kw">use</span> <span class="ident">fp_storage</span>::<span class="kw-2">*</span>;
 
@@ -293,8 +293,8 @@
 		<span class="self">self</span>.<span class="ident">query_storage</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TransactionStatus</span><span class="op">&gt;</span><span class="op">&gt;</span>(
 			<span class="ident">block</span>,
 			<span class="kw-2">&amp;</span><span class="ident">StorageKey</span>(<span class="ident">storage_prefix_build</span>(
-				<span class="string">b&quot;Ethereum&quot;</span>,
-				<span class="string">b&quot;CurrentTransactionStatuses&quot;</span>,
+				<span class="ident">PALLET_ETHEREUM</span>,
+				<span class="ident">ETHEREUM_CURRENT_TRANSACTION_STATUS</span>,
 			)),
 		)
 	}
