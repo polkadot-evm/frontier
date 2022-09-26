@@ -16,9 +16,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use fp_evm::InvalidEvmTransactionError as VError;
+// Substrate
 use sc_transaction_pool_api::error::{Error as PError, IntoPoolError};
 use sp_runtime::transaction_validity::InvalidTransaction;
+// Frontier
+use fp_evm::InvalidEvmTransactionError as VError;
 
 // Formats the same way Geth node formats responses.
 pub struct Geth;
