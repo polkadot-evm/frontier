@@ -114,6 +114,9 @@ pub mod pallet {
 		/// Maps Ethereum gas to Substrate weight.
 		type GasWeightMapping: GasWeightMapping;
 
+		/// Weight corresponding to a gas unit.
+		type WeightPerGas: Get<u64>;
+
 		/// Block number to block hash.
 		type BlockHashMapping: BlockHashMapping;
 
@@ -622,12 +625,18 @@ pub trait GasWeightMapping {
 	fn weight_to_gas(weight: Weight) -> u64;
 }
 
-impl GasWeightMapping for () {
+pub struct FixedGasWeightMapping<T>(sp_std::marker::PhantomData<T>);
+impl<T: Config> GasWeightMapping for FixedGasWeightMapping<T> {
 	fn gas_to_weight(gas: u64) -> Weight {
-		gas as Weight
+		let weight = gas.saturating_mul(T::WeightPerGas::get());
+		weight.saturating_sub(
+			T::BlockWeights::get()
+				.get(frame_support::weights::DispatchClass::Normal)
+				.base_extrinsic,
+		)
 	}
 	fn weight_to_gas(weight: Weight) -> u64 {
-		weight as u64
+		weight.wrapping_div(T::WeightPerGas::get())
 	}
 }
 
