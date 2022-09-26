@@ -72,7 +72,7 @@ where
 		#[cfg(feature = "forbid-evm-reentrancy")]
 		if IN_EVM.with(|in_evm| in_evm.replace(true)) {
 			return Err(RunnerError {
-				error: Error::<T>::EvmReentrancy,
+				error: Error::<T>::Reentrancy,
 				weight,
 			});
 		}
@@ -810,7 +810,7 @@ mod tests {
 				assert_matches!(
 					res,
 					Err(RunnerError {
-						error: Error::<Test>::EvmReentrancy,
+						error: Error::<Test>::Reentrancy,
 						..
 					})
 				);

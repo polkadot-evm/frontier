@@ -44,7 +44,7 @@ pallet-balances = { version = "4.0.0-dev", git = "https://github.com/paritytech/
 [features]
 default = ["std"]
 std = [
-	"environmental/std",
+	"environmental?/std",
 	"evm/std",
 	"evm/with-serde",
 	"hex/std",
@@ -74,4 +74,4 @@ runtime-benchmarks = [
 	"frame-system/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
 ]
-forbid-evm-reentrancy = ["environmental"]
+forbid-evm-reentrancy = ["dep:environmental"]

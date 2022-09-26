@@ -419,7 +419,7 @@ pub mod pallet {
 		/// Undefined error.
 		Undefined,
 		/// EVM reentrancy
-		EvmReentrancy,
+		Reentrancy,
 	}
 
 	impl<T> From<InvalidEvmTransactionError> for Error<T> {
