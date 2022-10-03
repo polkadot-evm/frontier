@@ -31,7 +31,14 @@ use fp_evm::{CallInfo, CreateInfo, ExecutionInfo, Log, Vicinity};
 use frame_support::traits::{Currency, ExistenceRequirement, Get};
 use sp_core::{H160, H256, U256};
 use sp_runtime::traits::UniqueSaturatedInto;
-use sp_std::{boxed::Box, collections::btree_set::BTreeSet, marker::PhantomData, mem, vec::Vec};
+use sp_std::{
+	boxed::Box,
+	cell::RefCell,
+	collections::{btree_map::BTreeMap, btree_set::BTreeSet},
+	marker::PhantomData,
+	mem,
+	vec::Vec,
+};
 
 #[derive(Default)]
 pub struct Runner<T: Config> {
@@ -495,6 +502,7 @@ pub struct SubstrateStackState<'vicinity, 'config, T> {
 	vicinity: &'vicinity Vicinity,
 	substate: SubstrateStackSubstate<'config>,
 	_marker: PhantomData<T>,
+	original_storage: RefCell<BTreeMap<(H160, H256), H256>>,
 }
 
 impl<'vicinity, 'config, T: Config> SubstrateStackState<'vicinity, 'config, T> {
@@ -509,6 +517,7 @@ impl<'vicinity, 'config, T: Config> SubstrateStackState<'vicinity, 'config, T> {
 				parent: None,
 			},
 			_marker: PhantomData,
+			original_storage: RefCell::new(BTreeMap::new()),
 		}
 	}
 }
@@ -573,11 +582,26 @@ impl<'vicinity, 'config, T: Config> BackendT for SubstrateStackState<'vicinity, 
 	}
 
 	fn storage(&self, address: H160, index: H256) -> H256 {
-		<AccountStorages<T>>::get(address, index)
+		let value = <AccountStorages<T>>::get(address, index);
+
+		let mut original_storage = self.original_storage.borrow_mut();
+		if !original_storage.contains_key(&(address, index)) {
+			let _ = original_storage.insert((address, index), value.clone());
+		}
+
+		value
 	}
 
-	fn original_storage(&self, _address: H160, _index: H256) -> Option<H256> {
-		None
+	fn original_storage(&self, address: H160, index: H256) -> Option<H256> {
+		{
+			let original_storage = self.original_storage.borrow();
+
+			if let Some(value) = original_storage.get(&(address, index)) {
+				return Some(value.clone());
+			}
+		} // original_storage borrow is dropped here
+
+		Some(self.storage(address, index))
 	}
 
 	fn block_base_fee_per_gas(&self) -> sp_core::U256 {
