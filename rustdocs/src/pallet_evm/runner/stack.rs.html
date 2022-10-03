@@ -719,6 +719,133 @@
 <span id="714">714</span>
 <span id="715">715</span>
 <span id="716">716</span>
+<span id="717">717</span>
+<span id="718">718</span>
+<span id="719">719</span>
+<span id="720">720</span>
+<span id="721">721</span>
+<span id="722">722</span>
+<span id="723">723</span>
+<span id="724">724</span>
+<span id="725">725</span>
+<span id="726">726</span>
+<span id="727">727</span>
+<span id="728">728</span>
+<span id="729">729</span>
+<span id="730">730</span>
+<span id="731">731</span>
+<span id="732">732</span>
+<span id="733">733</span>
+<span id="734">734</span>
+<span id="735">735</span>
+<span id="736">736</span>
+<span id="737">737</span>
+<span id="738">738</span>
+<span id="739">739</span>
+<span id="740">740</span>
+<span id="741">741</span>
+<span id="742">742</span>
+<span id="743">743</span>
+<span id="744">744</span>
+<span id="745">745</span>
+<span id="746">746</span>
+<span id="747">747</span>
+<span id="748">748</span>
+<span id="749">749</span>
+<span id="750">750</span>
+<span id="751">751</span>
+<span id="752">752</span>
+<span id="753">753</span>
+<span id="754">754</span>
+<span id="755">755</span>
+<span id="756">756</span>
+<span id="757">757</span>
+<span id="758">758</span>
+<span id="759">759</span>
+<span id="760">760</span>
+<span id="761">761</span>
+<span id="762">762</span>
+<span id="763">763</span>
+<span id="764">764</span>
+<span id="765">765</span>
+<span id="766">766</span>
+<span id="767">767</span>
+<span id="768">768</span>
+<span id="769">769</span>
+<span id="770">770</span>
+<span id="771">771</span>
+<span id="772">772</span>
+<span id="773">773</span>
+<span id="774">774</span>
+<span id="775">775</span>
+<span id="776">776</span>
+<span id="777">777</span>
+<span id="778">778</span>
+<span id="779">779</span>
+<span id="780">780</span>
+<span id="781">781</span>
+<span id="782">782</span>
+<span id="783">783</span>
+<span id="784">784</span>
+<span id="785">785</span>
+<span id="786">786</span>
+<span id="787">787</span>
+<span id="788">788</span>
+<span id="789">789</span>
+<span id="790">790</span>
+<span id="791">791</span>
+<span id="792">792</span>
+<span id="793">793</span>
+<span id="794">794</span>
+<span id="795">795</span>
+<span id="796">796</span>
+<span id="797">797</span>
+<span id="798">798</span>
+<span id="799">799</span>
+<span id="800">800</span>
+<span id="801">801</span>
+<span id="802">802</span>
+<span id="803">803</span>
+<span id="804">804</span>
+<span id="805">805</span>
+<span id="806">806</span>
+<span id="807">807</span>
+<span id="808">808</span>
+<span id="809">809</span>
+<span id="810">810</span>
+<span id="811">811</span>
+<span id="812">812</span>
+<span id="813">813</span>
+<span id="814">814</span>
+<span id="815">815</span>
+<span id="816">816</span>
+<span id="817">817</span>
+<span id="818">818</span>
+<span id="819">819</span>
+<span id="820">820</span>
+<span id="821">821</span>
+<span id="822">822</span>
+<span id="823">823</span>
+<span id="824">824</span>
+<span id="825">825</span>
+<span id="826">826</span>
+<span id="827">827</span>
+<span id="828">828</span>
+<span id="829">829</span>
+<span id="830">830</span>
+<span id="831">831</span>
+<span id="832">832</span>
+<span id="833">833</span>
+<span id="834">834</span>
+<span id="835">835</span>
+<span id="836">836</span>
+<span id="837">837</span>
+<span id="838">838</span>
+<span id="839">839</span>
+<span id="840">840</span>
+<span id="841">841</span>
+<span id="842">842</span>
+<span id="843">843</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -754,6 +881,9 @@
 <span class="kw">use</span> <span class="ident">sp_runtime::traits::UniqueSaturatedInto</span>;
 <span class="kw">use</span> <span class="ident">sp_std</span>::{<span class="ident">boxed::Box</span>, <span class="ident">collections::btree_set::BTreeSet</span>, <span class="ident">marker::PhantomData</span>, <span class="ident">mem</span>, <span class="ident">vec::Vec</span>};
 
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;forbid-evm-reentrancy&quot;</span>)]</span>
+<span class="macro">environmental::thread_local_impl!</span>(<span class="kw">static</span> <span class="ident">IN_EVM</span>: <span class="ident">environmental::RefCell</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">environmental::RefCell::new</span>(<span class="bool-val">false</span>));
+
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Default</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Runner</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> {
 	<span class="ident">_marker</span>: <span class="ident">PhantomData</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
@@ -763,6 +893,7 @@
 <span class="kw">where</span>
 	<span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>: <span class="ident">TryFrom</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
 {
+	<span class="attribute">#[<span class="ident">allow</span>(<span class="ident">clippy::let_and_return</span>)]</span>
 	<span class="doccomment">/// Execute an already validated EVM operation.</span>
 	<span class="kw">fn</span> <span class="ident">execute</span><span class="op">&lt;</span><span class="lifetime">&#39;config</span>, <span class="lifetime">&#39;precompiles</span>, <span class="ident">F</span>, <span class="ident">R</span><span class="op">&gt;</span>(
 		<span class="ident">source</span>: <span class="ident">H160</span>,
@@ -786,6 +917,61 @@
 		) -&gt; (<span class="ident">ExitReason</span>, <span class="ident">R</span>),
 	{
 		<span class="kw">let</span> (<span class="ident">base_fee</span>, <span class="ident">weight</span>) <span class="op">=</span> <span class="ident">T::FeeCalculator::min_gas_price</span>();
+
+		<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;forbid-evm-reentrancy&quot;</span>)]</span>
+		<span class="kw">if</span> <span class="ident">IN_EVM</span>.<span class="ident">with</span>(<span class="op">|</span><span class="ident">in_evm</span><span class="op">|</span> <span class="ident">in_evm</span>.<span class="ident">replace</span>(<span class="bool-val">true</span>)) {
+			<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">RunnerError</span> {
+				<span class="ident">error</span>: <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::Reentrancy</span>,
+				<span class="ident">weight</span>,
+			});
+		}
+
+		<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::execute_inner</span>(
+			<span class="ident">source</span>,
+			<span class="ident">value</span>,
+			<span class="ident">gas_limit</span>,
+			<span class="ident">max_fee_per_gas</span>,
+			<span class="ident">max_priority_fee_per_gas</span>,
+			<span class="ident">config</span>,
+			<span class="ident">precompiles</span>,
+			<span class="ident">is_transactional</span>,
+			<span class="ident">f</span>,
+			<span class="ident">base_fee</span>,
+			<span class="ident">weight</span>,
+		);
+
+		<span class="comment">// Set IN_EVM to false</span>
+		<span class="comment">// We should make sure that this line is executed whatever the execution path.</span>
+		<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;forbid-evm-reentrancy&quot;</span>)]</span>
+		<span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">IN_EVM</span>.<span class="ident">with</span>(<span class="op">|</span><span class="ident">in_evm</span><span class="op">|</span> <span class="ident">in_evm</span>.<span class="ident">take</span>());
+
+		<span class="ident">res</span>
+	}
+
+	<span class="comment">// Execute an already validated EVM operation.</span>
+	<span class="kw">fn</span> <span class="ident">execute_inner</span><span class="op">&lt;</span><span class="lifetime">&#39;config</span>, <span class="lifetime">&#39;precompiles</span>, <span class="ident">F</span>, <span class="ident">R</span><span class="op">&gt;</span>(
+		<span class="ident">source</span>: <span class="ident">H160</span>,
+		<span class="ident">value</span>: <span class="ident">U256</span>,
+		<span class="ident">gas_limit</span>: <span class="ident">u64</span>,
+		<span class="ident">max_fee_per_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
+		<span class="ident">max_priority_fee_per_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
+		<span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;config</span> <span class="ident">evm::Config</span>,
+		<span class="ident">precompiles</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;precompiles</span> <span class="ident">T::PrecompilesType</span>,
+		<span class="ident">is_transactional</span>: <span class="ident">bool</span>,
+		<span class="ident">f</span>: <span class="ident">F</span>,
+		<span class="ident">base_fee</span>: <span class="ident">U256</span>,
+		<span class="ident">weight</span>: <span class="ident"><span class="kw">crate</span>::Weight</span>,
+	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">ExecutionInfo</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>, <span class="ident">RunnerError</span><span class="op">&lt;</span><span class="ident">Error</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>
+	<span class="kw">where</span>
+		<span class="ident">F</span>: <span class="ident">FnOnce</span>(
+			<span class="kw-2">&amp;mut</span> <span class="ident">StackExecutor</span><span class="op">&lt;</span>
+				<span class="lifetime">&#39;config</span>,
+				<span class="lifetime">&#39;precompiles</span>,
+				<span class="ident">SubstrateStackState</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="lifetime">&#39;config</span>, <span class="ident">T</span><span class="op">&gt;</span>,
+				<span class="ident">T::PrecompilesType</span>,
+			<span class="op">&gt;</span>,
+		) -&gt; (<span class="ident">ExitReason</span>, <span class="ident">R</span>),
+	{
 		<span class="kw">let</span> <span class="ident">max_fee_per_gas</span> <span class="op">=</span> <span class="kw">match</span> (<span class="ident">max_fee_per_gas</span>, <span class="ident">is_transactional</span>) {
 			(<span class="prelude-val">Some</span>(<span class="ident">max_fee_per_gas</span>), <span class="kw">_</span>) =&gt; <span class="ident">max_fee_per_gas</span>,
 			<span class="comment">// Gas price check is skipped for non-transactional calls that don&#39;t</span>
@@ -1433,6 +1619,74 @@
 	<span class="kw">fn</span> <span class="ident">is_storage_cold</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">address</span>: <span class="ident">H160</span>, <span class="ident">key</span>: <span class="ident">H256</span>) -&gt; <span class="ident">bool</span> {
 		<span class="self">self</span>.<span class="ident">substate</span>
 			.<span class="ident">recursive_is_cold</span>(<span class="kw-2">&amp;</span><span class="op">|</span><span class="ident">a</span>: <span class="kw-2">&amp;</span><span class="ident">Accessed</span><span class="op">|</span> <span class="ident">a</span>.<span class="ident">accessed_storage</span>.<span class="ident">contains</span>(<span class="kw-2">&amp;</span>(<span class="ident">address</span>, <span class="ident">key</span>)))
+	}
+}
+
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;forbid-evm-reentrancy&quot;</span>)]</span>
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
+<span class="kw">mod</span> <span class="ident">tests</span> {
+	<span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
+	<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::mock::Test</span>;
+	<span class="kw">use</span> <span class="ident">evm::ExitSucceed</span>;
+	<span class="kw">use</span> <span class="ident">std::assert_matches::assert_matches</span>;
+
+	<span class="attribute">#[<span class="ident">test</span>]</span>
+	<span class="kw">fn</span> <span class="ident">test_evm_reentrancy</span>() {
+		<span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">evm::Config::istanbul</span>();
+
+		<span class="comment">// Should fail with the appropriate error if there is reentrancy</span>
+		<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">Runner</span>::<span class="op">&lt;</span><span class="ident">Test</span><span class="op">&gt;</span><span class="ident">::execute</span>(
+			<span class="ident">H160::default</span>(),
+			<span class="ident">U256::default</span>(),
+			<span class="number">100_000</span>,
+			<span class="prelude-val">None</span>,
+			<span class="prelude-val">None</span>,
+			<span class="kw-2">&amp;</span><span class="ident">config</span>,
+			<span class="kw-2">&amp;</span>(),
+			<span class="bool-val">false</span>,
+			<span class="op">|</span><span class="kw">_</span><span class="op">|</span> {
+				<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">Runner</span>::<span class="op">&lt;</span><span class="ident">Test</span><span class="op">&gt;</span><span class="ident">::execute</span>(
+					<span class="ident">H160::default</span>(),
+					<span class="ident">U256::default</span>(),
+					<span class="number">100_000</span>,
+					<span class="prelude-val">None</span>,
+					<span class="prelude-val">None</span>,
+					<span class="kw-2">&amp;</span><span class="ident">config</span>,
+					<span class="kw-2">&amp;</span>(),
+					<span class="bool-val">false</span>,
+					<span class="op">|</span><span class="kw">_</span><span class="op">|</span> (<span class="ident">ExitReason::Succeed</span>(<span class="ident">ExitSucceed::Stopped</span>), ()),
+				);
+				<span class="macro">assert_matches!</span>(
+					<span class="ident">res</span>,
+					<span class="prelude-val">Err</span>(<span class="ident">RunnerError</span> {
+						<span class="ident">error</span>: <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">Test</span><span class="op">&gt;</span><span class="ident">::Reentrancy</span>,
+						..
+					})
+				);
+				(<span class="ident">ExitReason::Error</span>(<span class="ident">ExitError::CallTooDeep</span>), ())
+			},
+		);
+		<span class="macro">assert_matches!</span>(
+			<span class="ident">res</span>,
+			<span class="prelude-val">Ok</span>(<span class="ident">ExecutionInfo</span> {
+				<span class="ident">exit_reason</span>: <span class="ident">ExitReason::Error</span>(<span class="ident">ExitError::CallTooDeep</span>),
+				..
+			})
+		);
+
+		<span class="comment">// Should succeed if there is no reentrancy</span>
+		<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">Runner</span>::<span class="op">&lt;</span><span class="ident">Test</span><span class="op">&gt;</span><span class="ident">::execute</span>(
+			<span class="ident">H160::default</span>(),
+			<span class="ident">U256::default</span>(),
+			<span class="number">100_000</span>,
+			<span class="prelude-val">None</span>,
+			<span class="prelude-val">None</span>,
+			<span class="kw-2">&amp;</span><span class="ident">config</span>,
+			<span class="kw-2">&amp;</span>(),
+			<span class="bool-val">false</span>,
+			<span class="op">|</span><span class="kw">_</span><span class="op">|</span> (<span class="ident">ExitReason::Succeed</span>(<span class="ident">ExitSucceed::Stopped</span>), ()),
+		);
+		<span class="macro">assert!</span>(<span class="ident">res</span>.<span class="ident">is_ok</span>());
 	}
 }
 </code></pre></div>
