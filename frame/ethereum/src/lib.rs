@@ -256,10 +256,13 @@ pub mod pallet {
 		OriginFor<T>: Into<Result<RawOrigin, OriginFor<T>>>,
 	{
 		/// Transact an Ethereum transaction.
-		#[pallet::weight(<T as pallet_evm::Config>::GasWeightMapping::gas_to_weight({
-			let transaction_data: TransactionData = transaction.into();
-			transaction_data.gas_limit.unique_saturated_into()
-		}))]
+		#[pallet::weight({
+			let without_base_extrinsic_weight = true;
+			<T as pallet_evm::Config>::GasWeightMapping::gas_to_weight({
+				let transaction_data: TransactionData = transaction.into();
+				transaction_data.gas_limit.unique_saturated_into()
+			}, without_base_extrinsic_weight)
+		})]
 		pub fn transact(
 			origin: OriginFor<T>,
 			transaction: Transaction,
@@ -604,6 +607,7 @@ impl<T: Config> Pallet<T> {
 		Ok(PostDispatchInfo {
 			actual_weight: Some(T::GasWeightMapping::gas_to_weight(
 				used_gas.unique_saturated_into(),
+				true,
 			)),
 			pays_fee: Pays::No,
 		})
