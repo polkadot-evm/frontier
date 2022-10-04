@@ -590,7 +590,7 @@ impl<'vicinity, 'config, T: Config> BackendT for SubstrateStackState<'vicinity, 
 			let original_storage = self.original_storage.borrow();
 
 			if let Some(value) = original_storage.get(&(address, index)) {
-				return Some(value.clone());
+				return Some(*value);
 			}
 		} // original_storage borrow is dropped here
 
@@ -651,9 +651,11 @@ where
 		// We cache the current value if this is the first time we modify it
 		// in the transaction.
 		let mut original_storage = self.original_storage.borrow_mut();
-		if !original_storage.contains_key(&(address, index)) {
+
+		use sp_std::collections::btree_map::Entry::Vacant;
+		if let Vacant(e) = original_storage.entry((address, index)) {
 			let value = <AccountStorages<T>>::get(address, index);
-			let _ = original_storage.insert((address, index), value);
+			e.insert(value);
 		}
 
 		// Then we insert or remove the entry based on the value.
