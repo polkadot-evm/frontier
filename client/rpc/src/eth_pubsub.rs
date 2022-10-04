@@ -21,20 +21,21 @@ use std::{collections::BTreeMap, marker::PhantomData, sync::Arc};
 use ethereum::{BlockV2 as EthereumBlock, TransactionV2 as EthereumTransaction};
 use ethereum_types::{H256, U256};
 use futures::{FutureExt as _, StreamExt as _};
-use jsonrpsee::PendingSubscription;
-
+use jsonrpsee::{types::SubscriptionResult, SubscriptionSink};
+// Substrate
 use sc_client_api::{
 	backend::{Backend, StateBackend, StorageProvider},
 	client::BlockchainEvents,
 };
-use sc_network::{ExHashT, NetworkService};
+use sc_network::{ExHashT, NetworkService, NetworkStatusProvider};
 use sc_rpc::SubscriptionTaskExecutor;
 use sc_transaction_pool_api::TransactionPool;
 use sp_api::{ApiExt, BlockId, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
+use sp_consensus::SyncOracle;
 use sp_core::hashing::keccak_256;
 use sp_runtime::traits::{BlakeTwo256, Block as BlockT, UniqueSaturatedInto};
-
+// Frontier
 use fc_rpc_core::{
 	types::{
 		pubsub::{Kind, Params, PubSubSyncStatus, Result as PubSubResult, SyncStatusMetadata},
@@ -92,12 +93,9 @@ where
 	}
 }
 
-struct SubscriptionResult {}
-impl SubscriptionResult {
-	pub fn new() -> Self {
-		SubscriptionResult {}
-	}
-	pub fn new_heads(&self, block: EthereumBlock) -> PubSubResult {
+struct EthSubscriptionResult;
+impl EthSubscriptionResult {
+	pub fn new_heads(block: EthereumBlock) -> PubSubResult {
 		PubSubResult::Header(Box::new(Rich {
 			inner: Header {
 				hash: Some(H256::from(keccak_256(&rlp::encode(&block.header)))),
@@ -122,7 +120,6 @@ impl SubscriptionResult {
 		}))
 	}
 	pub fn logs(
-		&self,
 		block: EthereumBlock,
 		receipts: Vec<ethereum::ReceiptV3>,
 		params: &FilteredParams,
@@ -143,7 +140,7 @@ impl SubscriptionResult {
 				None
 			};
 			for log in receipt_logs {
-				if self.add_log(block_hash.unwrap(), &log, &block, params) {
+				if Self::add_log(block_hash.unwrap(), &log, &block, params) {
 					logs.push(Log {
 						address: log.address,
 						topics: log.topics,
@@ -164,7 +161,6 @@ impl SubscriptionResult {
 		logs
 	}
 	fn add_log(
-		&self,
 		block_hash: H256,
 		ethereum_log: &ethereum::Log,
 		block: &EthereumBlock,
@@ -207,12 +203,13 @@ where
 	BE: Backend<B> + 'static,
 	BE::State: StateBackend<BlakeTwo256>,
 {
-	fn subscribe(&self, sink: PendingSubscription, kind: Kind, params: Option<Params>) {
-		let mut sink = if let Some(sink) = sink.accept() {
-			sink
-		} else {
-			return;
-		};
+	fn subscribe(
+		&self,
+		mut sink: SubscriptionSink,
+		kind: Kind,
+		params: Option<Params>,
+	) -> SubscriptionResult {
+		sink.accept()?;
 
 		let filtered_params = match params {
 			Some(Params::Logs(filter)) => FilteredParams::new(Some(filter)),
@@ -257,7 +254,7 @@ where
 							}
 						})
 						.flat_map(move |(block, receipts)| {
-							futures::stream::iter(SubscriptionResult::new().logs(
+							futures::stream::iter(EthSubscriptionResult::logs(
 								block,
 								receipts,
 								&filtered_params,
@@ -289,7 +286,7 @@ where
 								futures::future::ready(None)
 							}
 						})
-						.map(|block| SubscriptionResult::new().new_heads(block));
+						.map(EthSubscriptionResult::new_heads);
 					sink.pipe_from_stream(stream).await;
 				}
 				Kind::NewPendingTransactions => {
@@ -412,5 +409,6 @@ where
 			Some("rpc"),
 			fut.map(drop).boxed(),
 		);
+		Ok(())
 	}
 }
