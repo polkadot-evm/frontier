@@ -185,7 +185,7 @@ describeWithFrontier("Frontier RPC (Gas)", (context) => {
 		);
 		const createReceipt = await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction]);
 		await createAndFinalizeBlock(context.web3);
-		expect((createReceipt as any).error.message).to.equal("gas limit reached");
+		expect((createReceipt as any).error.message).to.equal("exceeds block gas limit");
 	});
 });
 

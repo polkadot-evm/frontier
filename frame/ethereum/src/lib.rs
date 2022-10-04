@@ -32,7 +32,9 @@ mod tests;
 use ethereum_types::{Bloom, BloomInput, H160, H256, H64, U256};
 use evm::ExitReason;
 use fp_consensus::{PostLog, PreLog, FRONTIER_ENGINE_ID};
-use fp_ethereum::{TransactionData, ValidatedTransaction as ValidatedTransactionT};
+use fp_ethereum::{
+	TransactionData, TransactionValidationError, ValidatedTransaction as ValidatedTransactionT,
+};
 use fp_evm::{
 	CallOrCreateInfo, CheckEvmTransaction, CheckEvmTransactionConfig, InvalidEvmTransactionError,
 };
@@ -872,26 +874,16 @@ impl<T: Config> BlockHashMapping for EthereumBlockHashMapping<T> {
 	}
 }
 
-#[repr(u8)]
-enum TransactionValidationError {
-	#[allow(dead_code)]
-	UnknownError,
-	InvalidChainId,
-	InvalidSignature,
-	InvalidGasLimit,
-	MaxFeePerGasTooLow,
-}
-
 pub struct InvalidTransactionWrapper(InvalidTransaction);
 
 impl From<InvalidEvmTransactionError> for InvalidTransactionWrapper {
 	fn from(validation_error: InvalidEvmTransactionError) -> Self {
 		match validation_error {
 			InvalidEvmTransactionError::GasLimitTooLow => InvalidTransactionWrapper(
-				InvalidTransaction::Custom(TransactionValidationError::InvalidGasLimit as u8),
+				InvalidTransaction::Custom(TransactionValidationError::GasLimitTooLow as u8),
 			),
 			InvalidEvmTransactionError::GasLimitTooHigh => InvalidTransactionWrapper(
-				InvalidTransaction::Custom(TransactionValidationError::InvalidGasLimit as u8),
+				InvalidTransaction::Custom(TransactionValidationError::GasLimitTooHigh as u8),
 			),
 			InvalidEvmTransactionError::GasPriceTooLow => {
 				InvalidTransactionWrapper(InvalidTransaction::Payment)
