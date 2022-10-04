@@ -83,8 +83,10 @@ fn transaction_with_gas_limit_greater_than_max_extrinsic_should_fail_pre_dispatc
 	let limits: frame_system::limits::BlockWeights =
 		<Test as frame_system::Config>::BlockWeights::get();
 	let max_extrinsic = limits.get(DispatchClass::Normal).max_extrinsic.unwrap();
-	let max_extrinsic_gas =
-		<Test as pallet_evm::Config>::GasWeightMapping::weight_to_gas(max_extrinsic);
+	let base_extrinsic = limits.get(DispatchClass::Normal).base_extrinsic;
+	let max_extrinsic_gas = <Test as pallet_evm::Config>::GasWeightMapping::weight_to_gas(
+		max_extrinsic + base_extrinsic,
+	);
 
 	ext.execute_with(|| {
 		let transaction = EIP1559UnsignedTransaction {
