@@ -33,7 +33,6 @@ use sp_core::{H160, H256, U256};
 use sp_runtime::traits::UniqueSaturatedInto;
 use sp_std::{
 	boxed::Box,
-	cell::RefCell,
 	collections::{btree_map::BTreeMap, btree_set::BTreeSet},
 	marker::PhantomData,
 	mem,
@@ -501,8 +500,8 @@ impl<'config> SubstrateStackSubstate<'config> {
 pub struct SubstrateStackState<'vicinity, 'config, T> {
 	vicinity: &'vicinity Vicinity,
 	substate: SubstrateStackSubstate<'config>,
+	original_storage: BTreeMap<(H160, H256), H256>,
 	_marker: PhantomData<T>,
-	original_storage: RefCell<BTreeMap<(H160, H256), H256>>,
 }
 
 impl<'vicinity, 'config, T: Config> SubstrateStackState<'vicinity, 'config, T> {
@@ -517,7 +516,7 @@ impl<'vicinity, 'config, T: Config> SubstrateStackState<'vicinity, 'config, T> {
 				parent: None,
 			},
 			_marker: PhantomData,
-			original_storage: RefCell::new(BTreeMap::new()),
+			original_storage: BTreeMap::new(),
 		}
 	}
 }
@@ -586,17 +585,13 @@ impl<'vicinity, 'config, T: Config> BackendT for SubstrateStackState<'vicinity, 
 	}
 
 	fn original_storage(&self, address: H160, index: H256) -> Option<H256> {
-		{
-			let original_storage = self.original_storage.borrow();
-
-			if let Some(value) = original_storage.get(&(address, index)) {
-				return Some(*value);
-			}
-		} // original_storage borrow is dropped here
-
-		// Not being cached means that it was never changed.
-		// We thus fetch it from storage.
-		Some(self.storage(address, index))
+		if let Some(value) = self.original_storage.get(&(address, index)) {
+			Some(*value)
+		} else {
+			// Not being cached means that it was never changed.
+			// We thus fetch it from storage.
+			Some(self.storage(address, index))
+		}
 	}
 
 	fn block_base_fee_per_gas(&self) -> sp_core::U256 {
@@ -650,10 +645,8 @@ where
 	fn set_storage(&mut self, address: H160, index: H256, value: H256) {
 		// We cache the current value if this is the first time we modify it
 		// in the transaction.
-		let mut original_storage = self.original_storage.borrow_mut();
-
 		use sp_std::collections::btree_map::Entry::Vacant;
-		if let Vacant(e) = original_storage.entry((address, index)) {
+		if let Vacant(e) = self.original_storage.entry((address, index)) {
 			let value = <AccountStorages<T>>::get(address, index);
 			e.insert(value);
 		}
@@ -723,7 +716,7 @@ where
 		//
 		// This function exists in EVM because a design issue
 		// (arguably a bug) in SELFDESTRUCT that can cause total
-		// issurance to be reduced. We do not need to replicate this.
+		// issuance to be reduced. We do not need to replicate this.
 	}
 
 	fn touch(&mut self, _address: H160) {
