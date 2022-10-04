@@ -254,7 +254,7 @@ fn transaction_with_invalid_chain_id_should_fail_in_block() {
 		assert_err!(
 			extrinsic.apply::<Test>(&dispatch_info, 0),
 			TransactionValidityError::Invalid(InvalidTransaction::Custom(
-				crate::TransactionValidationError::InvalidChainId as u8,
+				fp_ethereum::TransactionValidationError::InvalidChainId as u8,
 			))
 		);
 	});
