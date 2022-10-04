@@ -606,7 +606,8 @@ impl<T: Config> Pallet<T> {
 
 		Ok(PostDispatchInfo {
 			actual_weight: Some(T::GasWeightMapping::gas_to_weight(
-				used_gas.unique_saturated_into(), true
+				used_gas.unique_saturated_into(),
+				true,
 			)),
 			pays_fee: Pays::No,
 		})

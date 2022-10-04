@@ -236,7 +236,8 @@ pub mod pallet {
 
 			Ok(PostDispatchInfo {
 				actual_weight: Some(T::GasWeightMapping::gas_to_weight(
-					info.used_gas.unique_saturated_into(), true
+					info.used_gas.unique_saturated_into(),
+					true,
 				)),
 				pays_fee: Pays::No,
 			})
@@ -311,7 +312,8 @@ pub mod pallet {
 
 			Ok(PostDispatchInfo {
 				actual_weight: Some(T::GasWeightMapping::gas_to_weight(
-					info.used_gas.unique_saturated_into(), true
+					info.used_gas.unique_saturated_into(),
+					true,
 				)),
 				pays_fee: Pays::No,
 			})
@@ -387,7 +389,8 @@ pub mod pallet {
 
 			Ok(PostDispatchInfo {
 				actual_weight: Some(T::GasWeightMapping::gas_to_weight(
-					info.used_gas.unique_saturated_into(), true
+					info.used_gas.unique_saturated_into(),
+					true,
 				)),
 				pays_fee: Pays::No,
 			})
