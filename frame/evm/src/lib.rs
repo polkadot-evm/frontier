@@ -179,7 +179,10 @@ pub mod pallet {
 		}
 
 		/// Issue an EVM call operation. This is similar to a message call transaction in Ethereum.
-		#[pallet::weight(T::GasWeightMapping::gas_to_weight(*gas_limit))]
+		#[pallet::weight({
+			let without_base_extrinsic_weight = true;
+			T::GasWeightMapping::gas_to_weight(*gas_limit, without_base_extrinsic_weight)
+		})]
 		pub fn call(
 			origin: OriginFor<T>,
 			source: H160,
@@ -233,7 +236,7 @@ pub mod pallet {
 
 			Ok(PostDispatchInfo {
 				actual_weight: Some(T::GasWeightMapping::gas_to_weight(
-					info.used_gas.unique_saturated_into(),
+					info.used_gas.unique_saturated_into(), true
 				)),
 				pays_fee: Pays::No,
 			})
@@ -241,7 +244,10 @@ pub mod pallet {
 
 		/// Issue an EVM create operation. This is similar to a contract creation transaction in
 		/// Ethereum.
-		#[pallet::weight(T::GasWeightMapping::gas_to_weight(*gas_limit))]
+		#[pallet::weight({
+			let without_base_extrinsic_weight = true;
+			T::GasWeightMapping::gas_to_weight(*gas_limit, without_base_extrinsic_weight)
+		})]
 		pub fn create(
 			origin: OriginFor<T>,
 			source: H160,
@@ -305,14 +311,17 @@ pub mod pallet {
 
 			Ok(PostDispatchInfo {
 				actual_weight: Some(T::GasWeightMapping::gas_to_weight(
-					info.used_gas.unique_saturated_into(),
+					info.used_gas.unique_saturated_into(), true
 				)),
 				pays_fee: Pays::No,
 			})
 		}
 
 		/// Issue an EVM create2 operation.
-		#[pallet::weight(T::GasWeightMapping::gas_to_weight(*gas_limit))]
+		#[pallet::weight({
+			let without_base_extrinsic_weight = true;
+			T::GasWeightMapping::gas_to_weight(*gas_limit, without_base_extrinsic_weight)
+		})]
 		pub fn create2(
 			origin: OriginFor<T>,
 			source: H160,
@@ -378,7 +387,7 @@ pub mod pallet {
 
 			Ok(PostDispatchInfo {
 				actual_weight: Some(T::GasWeightMapping::gas_to_weight(
-					info.used_gas.unique_saturated_into(),
+					info.used_gas.unique_saturated_into(), true
 				)),
 				pays_fee: Pays::No,
 			})
@@ -621,19 +630,22 @@ impl<T: Config> BlockHashMapping for SubstrateBlockHashMapping<T> {
 
 /// A mapping function that converts Ethereum gas to Substrate weight
 pub trait GasWeightMapping {
-	fn gas_to_weight(gas: u64) -> Weight;
+	fn gas_to_weight(gas: u64, without_base_weight: bool) -> Weight;
 	fn weight_to_gas(weight: Weight) -> u64;
 }
 
 pub struct FixedGasWeightMapping<T>(sp_std::marker::PhantomData<T>);
 impl<T: Config> GasWeightMapping for FixedGasWeightMapping<T> {
-	fn gas_to_weight(gas: u64) -> Weight {
-		let weight = gas.saturating_mul(T::WeightPerGas::get());
-		weight.saturating_sub(
-			T::BlockWeights::get()
-				.get(frame_support::weights::DispatchClass::Normal)
-				.base_extrinsic,
-		)
+	fn gas_to_weight(gas: u64, without_base_weight: bool) -> Weight {
+		let mut weight = gas.saturating_mul(T::WeightPerGas::get());
+		if without_base_weight {
+			weight = weight.saturating_sub(
+				T::BlockWeights::get()
+					.get(frame_support::weights::DispatchClass::Normal)
+					.base_extrinsic,
+			);
+		}
+		weight
 	}
 	fn weight_to_gas(weight: Weight) -> u64 {
 		weight.wrapping_div(T::WeightPerGas::get())
