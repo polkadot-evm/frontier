@@ -80,7 +80,7 @@
 <span class="kw">use</span> <span class="ident">sc_transaction_pool_api::error</span>::{<span class="ident">Error</span> <span class="kw">as</span> <span class="ident">PError</span>, <span class="ident">IntoPoolError</span>};
 <span class="kw">use</span> <span class="ident">sp_runtime::transaction_validity::InvalidTransaction</span>;
 <span class="comment">// Frontier</span>
-<span class="kw">use</span> <span class="ident">fp_evm::InvalidEvmTransactionError</span> <span class="kw">as</span> <span class="ident">VError</span>;
+<span class="kw">use</span> <span class="ident">fp_ethereum::TransactionValidationError</span> <span class="kw">as</span> <span class="ident">VError</span>;
 
 <span class="comment">// Formats the same way Geth node formats responses.</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Geth</span>;
@@ -91,23 +91,23 @@
 		<span class="comment">// https://github.com/ethereum/go-ethereum/blob/794c6133efa2c7e8376d9d141c900ea541790bce/core/error.go</span>
 		<span class="kw">match</span> <span class="ident">err</span>.<span class="ident">into_pool_error</span>() {
 			<span class="prelude-val">Ok</span>(<span class="ident">PError::AlreadyImported</span>(<span class="kw">_</span>)) =&gt; <span class="string">&quot;already known&quot;</span>.<span class="ident">to_string</span>(),
-			<span class="comment">// In Frontier the only case there is a `TemporarilyBanned` is because</span>
-			<span class="comment">// the same transaction was received before and returned</span>
-			<span class="comment">// `InvalidTransaction::Stale`. Thus we return the same error.</span>
-			<span class="prelude-val">Ok</span>(<span class="ident">PError::TemporarilyBanned</span>) =&gt; <span class="string">&quot;nonce too low&quot;</span>.<span class="ident">into</span>(),
+			<span class="prelude-val">Ok</span>(<span class="ident">PError::TemporarilyBanned</span>) =&gt; <span class="string">&quot;already known&quot;</span>.<span class="ident">into</span>(),
 			<span class="prelude-val">Ok</span>(<span class="ident">PError::TooLowPriority</span> { .. }) =&gt; <span class="string">&quot;replacement transaction underpriced&quot;</span>.<span class="ident">into</span>(),
-			<span class="prelude-val">Ok</span>(<span class="kw-2">ref</span> <span class="ident">outer</span> @ <span class="ident">PError::InvalidTransaction</span>(<span class="ident">inner</span>)) =&gt; <span class="kw">match</span> <span class="ident">inner</span> {
+			<span class="prelude-val">Ok</span>(<span class="ident">PError::InvalidTransaction</span>(<span class="ident">inner</span>)) =&gt; <span class="kw">match</span> <span class="ident">inner</span> {
 				<span class="ident">InvalidTransaction::Stale</span> =&gt; <span class="string">&quot;nonce too low&quot;</span>.<span class="ident">into</span>(),
 				<span class="ident">InvalidTransaction::Payment</span> =&gt; <span class="string">&quot;insufficient funds for gas * price + value&quot;</span>.<span class="ident">into</span>(),
-				<span class="ident">InvalidTransaction::ExhaustsResources</span> =&gt; <span class="string">&quot;gas limit reached&quot;</span>.<span class="ident">into</span>(),
-				<span class="ident">InvalidTransaction::Custom</span>(<span class="ident">inner</span>) =&gt; <span class="kw">match</span> <span class="ident">inner</span> {
-					<span class="ident">a</span> <span class="kw">if</span> <span class="ident">a</span> <span class="op">==</span> <span class="ident">VError::InvalidChainId</span> <span class="kw">as</span> <span class="ident">u8</span> =&gt; <span class="string">&quot;invalid chain id&quot;</span>.<span class="ident">into</span>(),
-					<span class="comment">// VError::InvalidSignature =&gt; &quot;invalid sender&quot;.into(),</span>
-					<span class="ident">a</span> <span class="kw">if</span> <span class="ident">a</span> <span class="op">==</span> <span class="ident">VError::GasLimitTooLow</span> <span class="kw">as</span> <span class="ident">u8</span> =&gt; <span class="string">&quot;intrinsic gas too low&quot;</span>.<span class="ident">into</span>(),
-					<span class="ident">a</span> <span class="kw">if</span> <span class="ident">a</span> <span class="op">==</span> <span class="ident">VError::GasLimitTooHigh</span> <span class="kw">as</span> <span class="ident">u8</span> =&gt; <span class="string">&quot;exceeds block gas limit&quot;</span>.<span class="ident">into</span>(),
-					<span class="kw">_</span> =&gt; <span class="macro">format!</span>(<span class="string">&quot;submit transaction to pool failed: {:?}&quot;</span>, <span class="ident">outer</span>),
+				<span class="ident">InvalidTransaction::ExhaustsResources</span> =&gt; <span class="string">&quot;exceeds block gas limit&quot;</span>.<span class="ident">into</span>(),
+				<span class="ident">InvalidTransaction::Custom</span>(<span class="ident">inner</span>) =&gt; <span class="kw">match</span> <span class="ident">inner</span>.<span class="ident">into</span>() {
+					<span class="ident">VError::UnknownError</span> =&gt; <span class="string">&quot;unknown error&quot;</span>.<span class="ident">into</span>(),
+					<span class="ident">VError::InvalidChainId</span> =&gt; <span class="string">&quot;invalid chain id&quot;</span>.<span class="ident">into</span>(),
+					<span class="ident">VError::InvalidSignature</span> =&gt; <span class="string">&quot;invalid sender&quot;</span>.<span class="ident">into</span>(),
+					<span class="ident">VError::GasLimitTooLow</span> =&gt; <span class="string">&quot;intrinsic gas too low&quot;</span>.<span class="ident">into</span>(),
+					<span class="ident">VError::GasLimitTooHigh</span> =&gt; <span class="string">&quot;exceeds block gas limit&quot;</span>.<span class="ident">into</span>(),
+					<span class="ident">VError::MaxFeePerGasTooLow</span> =&gt; {
+						<span class="string">&quot;max priority fee per gas higher than max fee per gas&quot;</span>.<span class="ident">into</span>()
+					}
 				},
-				<span class="kw">_</span> =&gt; <span class="macro">format!</span>(<span class="string">&quot;submit transaction to pool failed: {:?}&quot;</span>, <span class="ident">outer</span>),
+				<span class="kw">_</span> =&gt; <span class="string">&quot;unknown error&quot;</span>.<span class="ident">into</span>(),
 			},
 			<span class="ident">err</span> =&gt; <span class="macro">format!</span>(<span class="string">&quot;submit transaction to pool failed: {:?}&quot;</span>, <span class="ident">err</span>),
 		}
