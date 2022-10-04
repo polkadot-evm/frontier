@@ -922,6 +922,10 @@
 <span id="917">917</span>
 <span id="918">918</span>
 <span id="919">919</span>
+<span id="920">920</span>
+<span id="921">921</span>
+<span id="922">922</span>
+<span id="923">923</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -1180,10 +1184,13 @@
 		<span class="ident">OriginFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>: <span class="ident">Into</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">RawOrigin</span>, <span class="ident">OriginFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 	{
 		<span class="doccomment">/// Transact an Ethereum transaction.</span>
-		<span class="attribute">#[<span class="ident">pallet::weight</span>(<span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">pallet_evm::Config</span><span class="op">&gt;</span><span class="ident">::GasWeightMapping::gas_to_weight</span>({
-			<span class="kw">let</span> <span class="ident">transaction_data</span>: <span class="ident">TransactionData</span> <span class="op">=</span> <span class="ident">transaction</span>.<span class="ident">into</span>();
-			<span class="ident">transaction_data</span>.<span class="ident">gas_limit</span>.<span class="ident">unique_saturated_into</span>()
-		}))]</span>
+		<span class="attribute">#[<span class="ident">pallet::weight</span>({
+			<span class="kw">let</span> <span class="ident">without_base_extrinsic_weight</span> <span class="op">=</span> <span class="bool-val">true</span>;
+			<span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">pallet_evm::Config</span><span class="op">&gt;</span><span class="ident">::GasWeightMapping::gas_to_weight</span>({
+				<span class="kw">let</span> <span class="ident">transaction_data</span>: <span class="ident">TransactionData</span> <span class="op">=</span> <span class="ident">transaction</span>.<span class="ident">into</span>();
+				<span class="ident">transaction_data</span>.<span class="ident">gas_limit</span>.<span class="ident">unique_saturated_into</span>()
+			}, <span class="ident">without_base_extrinsic_weight</span>)
+		})]</span>
 		<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">transact</span>(
 			<span class="ident">origin</span>: <span class="ident">OriginFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
 			<span class="ident">transaction</span>: <span class="ident">Transaction</span>,
@@ -1528,6 +1535,7 @@
 		<span class="prelude-val">Ok</span>(<span class="ident">PostDispatchInfo</span> {
 			<span class="ident">actual_weight</span>: <span class="prelude-val">Some</span>(<span class="ident">T::GasWeightMapping::gas_to_weight</span>(
 				<span class="ident">used_gas</span>.<span class="ident">unique_saturated_into</span>(),
+				<span class="bool-val">true</span>,
 			)),
 			<span class="ident">pays_fee</span>: <span class="ident">Pays::No</span>,
 		})
