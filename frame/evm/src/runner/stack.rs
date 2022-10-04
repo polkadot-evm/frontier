@@ -582,14 +582,7 @@ impl<'vicinity, 'config, T: Config> BackendT for SubstrateStackState<'vicinity, 
 	}
 
 	fn storage(&self, address: H160, index: H256) -> H256 {
-		let value = <AccountStorages<T>>::get(address, index);
-
-		let mut original_storage = self.original_storage.borrow_mut();
-		if !original_storage.contains_key(&(address, index)) {
-			let _ = original_storage.insert((address, index), value.clone());
-		}
-
-		value
+		<AccountStorages<T>>::get(address, index)
 	}
 
 	fn original_storage(&self, address: H160, index: H256) -> Option<H256> {
@@ -601,6 +594,8 @@ impl<'vicinity, 'config, T: Config> BackendT for SubstrateStackState<'vicinity, 
 			}
 		} // original_storage borrow is dropped here
 
+		// Not being cached means that it was never changed.
+		// We thus fetch it from storage.
 		Some(self.storage(address, index))
 	}
 
@@ -653,6 +648,15 @@ where
 	}
 
 	fn set_storage(&mut self, address: H160, index: H256, value: H256) {
+		// We cache the current value if this is the first time we modify it
+		// in the transaction.
+		let mut original_storage = self.original_storage.borrow_mut();
+		if !original_storage.contains_key(&(address, index)) {
+			let value = <AccountStorages<T>>::get(address, index);
+			let _ = original_storage.insert((address, index), value);
+		}
+
+		// Then we insert or remove the entry based on the value.
 		if value == H256::default() {
 			log::debug!(
 				target: "evm",
