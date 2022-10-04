@@ -65,7 +65,7 @@ where
 		) -> (ExitReason, R),
 	{
 		let (base_fee, weight) = T::FeeCalculator::min_gas_price();
-		let (total_fee_per_gas, actual_priority_fee_per_gas) =
+		let (total_fee_per_gas, _actual_priority_fee_per_gas) =
 			match (max_fee_per_gas, max_priority_fee_per_gas, is_transactional) {
 				// With no tip, we pay exactly the base_fee
 				// TODO: should this fn explicitly check that base_fee <= max_fee_per_gas?
@@ -120,11 +120,6 @@ where
 
 		// Post execution.
 		let used_gas = U256::from(executor.used_gas());
-		// TODO: after simplifying the logic here, we no longer care about the specified priority
-		// fee except for calculating the total fee paid.
-		// When paying out the priority fee, we let correct_and_deposit_fee() come up with an
-		// arbitrary value that is used as the tip to pay.
-		// Assuming this is ok, actual_priority_fee_per_gas does not need to be returned above.
 		let actual_fee = executor.fee(total_fee_per_gas);
 		log::debug!(
 			target: "evm",
