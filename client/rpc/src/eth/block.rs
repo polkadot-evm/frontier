@@ -48,8 +48,12 @@ where
 		let block_data_cache = Arc::clone(&self.block_data_cache);
 		let backend = Arc::clone(&self.backend);
 
-		let id = match frontier_backend_client::load_hash::<B>(backend.as_ref(), hash)
-			.map_err(|err| internal_err(format!("{:?}", err)))?
+		let id = match frontier_backend_client::load_hash::<B, C>(
+			client.as_ref(),
+			backend.as_ref(),
+			hash,
+		)
+		.map_err(|err| internal_err(format!("{:?}", err)))?
 		{
 			Some(hash) => hash,
 			_ => return Ok(None),
@@ -137,8 +141,12 @@ where
 	}
 
 	pub fn block_transaction_count_by_hash(&self, hash: H256) -> Result<Option<U256>> {
-		let id = match frontier_backend_client::load_hash::<B>(self.backend.as_ref(), hash)
-			.map_err(|err| internal_err(format!("{:?}", err)))?
+		let id = match frontier_backend_client::load_hash::<B, C>(
+			self.client.as_ref(),
+			self.backend.as_ref(),
+			hash,
+		)
+		.map_err(|err| internal_err(format!("{:?}", err)))?
 		{
 			Some(hash) => hash,
 			_ => return Ok(None),

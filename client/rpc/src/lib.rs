@@ -76,7 +76,9 @@ pub mod frontier_backend_client {
 		C: HeaderBackend<B> + Send + Sync + 'static,
 	{
 		Ok(match number.unwrap_or(BlockNumber::Latest) {
-			BlockNumber::Hash { hash, .. } => load_hash::<B>(backend, hash).unwrap_or(None),
+			BlockNumber::Hash { hash, .. } => {
+				load_hash::<B, C>(client, backend, hash).unwrap_or(None)
+			}
 			BlockNumber::Num(number) => Some(BlockId::Number(number.unique_saturated_into())),
 			BlockNumber::Latest => Some(BlockId::Hash(client.info().best_hash)),
 			BlockNumber::Earliest => Some(BlockId::Number(Zero::zero())),
@@ -86,29 +88,36 @@ pub mod frontier_backend_client {
 		})
 	}
 
-	pub fn load_hash<B: BlockT>(
+	pub fn load_hash<B: BlockT, C>(
+		client: &C,
 		backend: &fc_db::Backend<B>,
 		hash: H256,
 	) -> RpcResult<Option<BlockId<B>>>
 	where
 		B: BlockT<Hash = H256> + Send + Sync + 'static,
+		C: HeaderBackend<B> + Send + Sync + 'static,
 	{
-		let substrate_hash = backend
+		let substrate_hashes = backend
 			.mapping()
 			.block_hash(&hash)
 			.map_err(|err| internal_err(format!("fetch aux store failed: {:?}", err)))?;
 
-		if let Some(substrate_hash) = substrate_hash {
-			return Ok(Some(BlockId::Hash(substrate_hash)));
+		if let Some(substrate_hashes) = substrate_hashes {
+			for substrate_hash in substrate_hashes {
+				if is_canon::<B, C>(client, substrate_hash) {
+					return Ok(Some(BlockId::Hash(substrate_hash)));
+				}
+			}
 		}
 		Ok(None)
 	}
 
-	pub fn load_cached_schema<B: BlockT>(
+	pub fn load_cached_schema<B: BlockT, C>(
 		backend: &fc_db::Backend<B>,
 	) -> RpcResult<Option<Vec<(EthereumStorageSchema, H256)>>>
 	where
 		B: BlockT<Hash = H256> + Send + Sync + 'static,
+		C: HeaderBackend<B> + Send + Sync + 'static,
 	{
 		let cache = backend
 			.meta()
@@ -117,12 +126,13 @@ pub mod frontier_backend_client {
 		Ok(cache)
 	}
 
-	pub fn write_cached_schema<B: BlockT>(
+	pub fn write_cached_schema<B: BlockT, C>(
 		backend: &fc_db::Backend<B>,
 		new_cache: Vec<(EthereumStorageSchema, H256)>,
 	) -> RpcResult<()>
 	where
 		B: BlockT<Hash = H256> + Send + Sync + 'static,
+		C: HeaderBackend<B> + Send + Sync + 'static,
 	{
 		backend
 			.meta()
@@ -245,4 +255,144 @@ pub fn public_key(transaction: &EthereumTransaction) -> Result<[u8; 64], sp_io::
 		}
 	}
 	sp_io::crypto::secp256k1_ecdsa_recover(&sig, &msg)
+}
+
+#[cfg(test)]
+mod tests {
+	use std::{path::PathBuf, sync::Arc};
+
+	use futures::executor;
+	use sc_block_builder::BlockBuilderProvider;
+	use sp_consensus::BlockOrigin;
+	use sp_runtime::{
+		generic::{Block, BlockId, Header},
+		traits::BlakeTwo256,
+	};
+	use substrate_test_runtime_client::{
+		prelude::*, DefaultTestClientBuilderExt, TestClientBuilder,
+	};
+	use tempfile::tempdir;
+
+	type OpaqueBlock =
+		Block<Header<u64, BlakeTwo256>, substrate_test_runtime_client::runtime::Extrinsic>;
+
+	fn open_frontier_backend<C>(
+		client: Arc<C>,
+		path: PathBuf,
+	) -> Result<Arc<fc_db::Backend<OpaqueBlock>>, String>
+	where
+		C: sp_blockchain::HeaderBackend<OpaqueBlock>,
+	{
+		Ok(Arc::new(fc_db::Backend::<OpaqueBlock>::new(
+			client,
+			&fc_db::DatabaseSettings {
+				source: sc_client_db::DatabaseSource::RocksDb {
+					path,
+					cache_size: 0,
+				},
+			},
+		)?))
+	}
+
+	#[test]
+	fn substrate_block_hash_one_to_many_works() {
+		let tmp = tempdir().expect("create a temporary directory");
+		let (client, _) = TestClientBuilder::new()
+			.build_with_native_executor::<substrate_test_runtime_client::runtime::RuntimeApi, _>(
+			None,
+		);
+
+		let mut client = Arc::new(client);
+
+		// Create a temporary frontier secondary DB.
+		let frontier_backend = open_frontier_backend(client.clone(), tmp.into_path()).unwrap();
+
+		// A random ethereum block hash to use
+		let ethereum_block_hash = sp_core::H256::random();
+
+		// G -> A1.
+		let mut builder = client.new_block(Default::default()).unwrap();
+		builder.push_storage_change(vec![1], None).unwrap();
+		let a1 = builder.build().unwrap().block;
+		let a1_hash = a1.header.hash();
+		executor::block_on(client.import(BlockOrigin::Own, a1)).unwrap();
+
+		// A1 -> B1
+		let mut builder = client
+			.new_block_at(&BlockId::Hash(a1_hash), Default::default(), false)
+			.unwrap();
+		builder.push_storage_change(vec![1], None).unwrap();
+		let b1 = builder.build().unwrap().block;
+		let b1_hash = b1.header.hash();
+		executor::block_on(client.import(BlockOrigin::Own, b1)).unwrap();
+
+		// Map B1
+		let commitment = fc_db::MappingCommitment::<OpaqueBlock> {
+			block_hash: b1_hash,
+			ethereum_block_hash,
+			ethereum_transaction_hashes: vec![],
+		};
+		let _ = frontier_backend.mapping().write_hashes(commitment);
+
+		// Expect B1 to be canon
+		assert_eq!(
+			super::frontier_backend_client::load_hash(
+				client.as_ref(),
+				frontier_backend.as_ref(),
+				ethereum_block_hash
+			)
+			.unwrap()
+			.unwrap(),
+			BlockId::Hash(b1_hash),
+		);
+
+		// A1 -> B2
+		let mut builder = client
+			.new_block_at(&BlockId::Hash(a1_hash), Default::default(), false)
+			.unwrap();
+		builder.push_storage_change(vec![2], None).unwrap();
+		let b2 = builder.build().unwrap().block;
+		let b2_hash = b2.header.hash();
+		executor::block_on(client.import(BlockOrigin::Own, b2)).unwrap();
+
+		// Map B2 to same ethereum hash
+		let commitment = fc_db::MappingCommitment::<OpaqueBlock> {
+			block_hash: b2_hash,
+			ethereum_block_hash,
+			ethereum_transaction_hashes: vec![],
+		};
+		let _ = frontier_backend.mapping().write_hashes(commitment);
+
+		// Still expect B1 to be canon
+		assert_eq!(
+			super::frontier_backend_client::load_hash(
+				client.as_ref(),
+				frontier_backend.as_ref(),
+				ethereum_block_hash
+			)
+			.unwrap()
+			.unwrap(),
+			BlockId::Hash(b1_hash),
+		);
+
+		// B2 -> C1. B2 branch is now canon.
+		let mut builder = client
+			.new_block_at(&BlockId::Hash(b2_hash), Default::default(), false)
+			.unwrap();
+		builder.push_storage_change(vec![1], None).unwrap();
+		let c1 = builder.build().unwrap().block;
+		executor::block_on(client.import(BlockOrigin::Own, c1)).unwrap();
+
+		// Expect B2 to be new canon
+		assert_eq!(
+			super::frontier_backend_client::load_hash(
+				client.as_ref(),
+				frontier_backend.as_ref(),
+				ethereum_block_hash
+			)
+			.unwrap()
+			.unwrap(),
+			BlockId::Hash(b2_hash),
+		);
+	}
 }
