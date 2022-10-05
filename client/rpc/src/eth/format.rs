@@ -16,9 +16,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use fp_evm::InvalidEvmTransactionError as VError;
+// Substrate
 use sc_transaction_pool_api::error::{Error as PError, IntoPoolError};
 use sp_runtime::transaction_validity::InvalidTransaction;
+// Frontier
+use fp_ethereum::TransactionValidationError as VError;
 
 // Formats the same way Geth node formats responses.
 pub struct Geth;
@@ -29,23 +31,23 @@ impl Geth {
 		// https://github.com/ethereum/go-ethereum/blob/794c6133efa2c7e8376d9d141c900ea541790bce/core/error.go
 		match err.into_pool_error() {
 			Ok(PError::AlreadyImported(_)) => "already known".to_string(),
-			// In Frontier the only case there is a `TemporarilyBanned` is because
-			// the same transaction was received before and returned
-			// `InvalidTransaction::Stale`. Thus we return the same error.
-			Ok(PError::TemporarilyBanned) => "nonce too low".into(),
+			Ok(PError::TemporarilyBanned) => "already known".into(),
 			Ok(PError::TooLowPriority { .. }) => "replacement transaction underpriced".into(),
-			Ok(ref outer @ PError::InvalidTransaction(inner)) => match inner {
+			Ok(PError::InvalidTransaction(inner)) => match inner {
 				InvalidTransaction::Stale => "nonce too low".into(),
 				InvalidTransaction::Payment => "insufficient funds for gas * price + value".into(),
-				InvalidTransaction::ExhaustsResources => "gas limit reached".into(),
-				InvalidTransaction::Custom(inner) => match inner {
-					a if a == VError::InvalidChainId as u8 => "invalid chain id".into(),
-					// VError::InvalidSignature => "invalid sender".into(),
-					a if a == VError::GasLimitTooLow as u8 => "intrinsic gas too low".into(),
-					a if a == VError::GasLimitTooHigh as u8 => "exceeds block gas limit".into(),
-					_ => format!("submit transaction to pool failed: {:?}", outer),
+				InvalidTransaction::ExhaustsResources => "exceeds block gas limit".into(),
+				InvalidTransaction::Custom(inner) => match inner.into() {
+					VError::UnknownError => "unknown error".into(),
+					VError::InvalidChainId => "invalid chain id".into(),
+					VError::InvalidSignature => "invalid sender".into(),
+					VError::GasLimitTooLow => "intrinsic gas too low".into(),
+					VError::GasLimitTooHigh => "exceeds block gas limit".into(),
+					VError::MaxFeePerGasTooLow => {
+						"max priority fee per gas higher than max fee per gas".into()
+					}
 				},
-				_ => format!("submit transaction to pool failed: {:?}", outer),
+				_ => "unknown error".into(),
 			},
 			err => format!("submit transaction to pool failed: {:?}", err),
 		}

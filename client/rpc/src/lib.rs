@@ -54,7 +54,7 @@ pub mod frontier_backend_client {
 	use codec::Decode;
 	use ethereum_types::H256;
 	use jsonrpsee::core::RpcResult;
-
+	// Substrate
 	use sc_client_api::backend::{Backend, StateBackend, StorageProvider};
 	use sp_blockchain::HeaderBackend;
 	use sp_runtime::{
@@ -62,7 +62,7 @@ pub mod frontier_backend_client {
 		traits::{BlakeTwo256, Block as BlockT, Header as HeaderT, UniqueSaturatedInto, Zero},
 	};
 	use sp_storage::StorageKey;
-
+	// Frontier
 	use fc_rpc_core::types::BlockNumber;
 	use fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA};
 
@@ -81,6 +81,8 @@ pub mod frontier_backend_client {
 			BlockNumber::Latest => Some(BlockId::Hash(client.info().best_hash)),
 			BlockNumber::Earliest => Some(BlockId::Number(Zero::zero())),
 			BlockNumber::Pending => None,
+			BlockNumber::Safe => Some(BlockId::Hash(client.info().finalized_hash)),
+			BlockNumber::Finalized => Some(BlockId::Hash(client.info().finalized_hash)),
 		})
 	}
 

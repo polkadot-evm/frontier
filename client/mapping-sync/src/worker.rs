@@ -16,18 +16,21 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use fp_rpc::EthereumRuntimeRPCApi;
+use std::{pin::Pin, sync::Arc, time::Duration};
+
 use futures::{
 	prelude::*,
 	task::{Context, Poll},
 };
 use futures_timer::Delay;
 use log::debug;
+// Substrate
 use sc_client_api::{BlockOf, ImportNotifications};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
-use std::{pin::Pin, sync::Arc, time::Duration};
+// Frontier
+use fp_rpc::EthereumRuntimeRPCApi;
 
 #[derive(PartialEq, Copy, Clone)]
 pub enum SyncStrategy {

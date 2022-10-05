@@ -18,17 +18,18 @@
 
 use ethereum_types::{H160, H256, U256, U64};
 use jsonrpsee::core::RpcResult as Result;
-
+// Substrate
 use sc_client_api::backend::{Backend, StateBackend, StorageProvider};
 use sc_network::ExHashT;
 use sc_transaction_pool::ChainApi;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
+use sp_consensus::SyncOracle;
 use sp_runtime::{
 	generic::BlockId,
 	traits::{BlakeTwo256, Block as BlockT, UniqueSaturatedInto},
 };
-
+// Frontier
 use fc_rpc_core::types::*;
 use fp_rpc::EthereumRuntimeRPCApi;
 
