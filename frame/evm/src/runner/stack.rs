@@ -127,7 +127,6 @@ where
 		let (total_fee_per_gas, _actual_priority_fee_per_gas) =
 			match (max_fee_per_gas, max_priority_fee_per_gas, is_transactional) {
 				// With no tip, we pay exactly the base_fee
-				// TODO: should this fn explicitly check that base_fee <= max_fee_per_gas?
 				(Some(_), None, _) => (base_fee, U256::zero()),
 				// With tip, we include as much of the tip on top of base_fee that we can, never
 				// exceeding max_fee_per_gas
