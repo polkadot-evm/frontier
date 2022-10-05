@@ -68,7 +68,7 @@ pub mod frontier_backend_client {
 
 	pub fn native_block_id<B: BlockT, C>(
 		client: &C,
-		backend: &fc_db::Backend<B, C>,
+		backend: &fc_db::Backend<B>,
 		number: Option<BlockNumber>,
 	) -> RpcResult<Option<BlockId<B>>>
 	where
@@ -88,7 +88,7 @@ pub mod frontier_backend_client {
 
 	pub fn load_hash<B: BlockT, C>(
 		client: &C,
-		backend: &fc_db::Backend<B, C>,
+		backend: &fc_db::Backend<B>,
 		hash: H256,
 	) -> RpcResult<Option<BlockId<B>>>
 	where
@@ -111,7 +111,7 @@ pub mod frontier_backend_client {
 	}
 
 	pub fn load_cached_schema<B: BlockT, C>(
-		backend: &fc_db::Backend<B, C>,
+		backend: &fc_db::Backend<B>,
 	) -> RpcResult<Option<Vec<(EthereumStorageSchema, H256)>>>
 	where
 		B: BlockT<Hash = H256> + Send + Sync + 'static,
@@ -125,7 +125,7 @@ pub mod frontier_backend_client {
 	}
 
 	pub fn write_cached_schema<B: BlockT, C>(
-		backend: &fc_db::Backend<B, C>,
+		backend: &fc_db::Backend<B>,
 		new_cache: Vec<(EthereumStorageSchema, H256)>,
 	) -> RpcResult<()>
 	where
@@ -172,7 +172,7 @@ pub mod frontier_backend_client {
 
 	pub fn load_transactions<B: BlockT, C>(
 		client: &C,
-		backend: &fc_db::Backend<B, C>,
+		backend: &fc_db::Backend<B>,
 		transaction_hash: H256,
 		only_canonical: bool,
 	) -> RpcResult<Option<(H256, u32)>>
@@ -277,11 +277,11 @@ mod tests {
 	fn open_frontier_backend<C>(
 		client: Arc<C>,
 		path: PathBuf,
-	) -> Result<Arc<fc_db::Backend<OpaqueBlock, C>>, String>
+	) -> Result<Arc<fc_db::Backend<OpaqueBlock>>, String>
 	where
 		C: sp_blockchain::HeaderBackend<OpaqueBlock>,
 	{
-		Ok(Arc::new(fc_db::Backend::<OpaqueBlock, C>::new(
+		Ok(Arc::new(fc_db::Backend::<OpaqueBlock>::new(
 			client,
 			&fc_db::DatabaseSettings {
 				source: sc_client_db::DatabaseSource::RocksDb {

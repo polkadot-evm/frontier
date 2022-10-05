@@ -335,11 +335,11 @@ mod tests {
 	pub fn open_frontier_backend<C>(
 		client: Arc<C>,
 		setting: &crate::DatabaseSettings,
-	) -> Result<Arc<crate::Backend<OpaqueBlock, C>>, String>
+	) -> Result<Arc<crate::Backend<OpaqueBlock>>, String>
 	where
 		C: sp_blockchain::HeaderBackend<OpaqueBlock>,
 	{
-		Ok(Arc::new(crate::Backend::<OpaqueBlock, C>::new(
+		Ok(Arc::new(crate::Backend::<OpaqueBlock>::new(
 			client, setting,
 		)?))
 	}

@@ -94,7 +94,7 @@ pub fn new_partial(
 		(
 			Option<Telemetry>,
 			ConsensusResult,
-			Arc<FrontierBackend<Block, FullClient>>,
+			Arc<FrontierBackend<Block>>,
 			Option<FilterPool>,
 			(FeeHistoryCache, FeeHistoryCacheLimit),
 		),
@@ -730,7 +730,7 @@ fn spawn_frontier_tasks(
 	task_manager: &TaskManager,
 	client: Arc<FullClient>,
 	backend: Arc<FullBackend>,
-	frontier_backend: Arc<FrontierBackend<Block, FullClient>>,
+	frontier_backend: Arc<FrontierBackend<Block>>,
 	filter_pool: Option<FilterPool>,
 	overrides: Arc<OverrideHandle<Block>>,
 	fee_history_cache: FeeHistoryCache,

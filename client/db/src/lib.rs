@@ -58,10 +58,9 @@ pub mod static_keys {
 	pub const CURRENT_SYNCING_TIPS: &[u8] = b"CURRENT_SYNCING_TIPS";
 }
 
-pub struct Backend<Block: BlockT, C> {
+pub struct Backend<Block: BlockT> {
 	meta: Arc<MetaDb<Block>>,
 	mapping: Arc<MappingDb<Block>>,
-	_marker: PhantomData<C>,
 }
 
 /// Returns the frontier database directory.
@@ -69,11 +68,8 @@ pub fn frontier_database_dir(db_config_dir: &Path, db_path: &str) -> PathBuf {
 	db_config_dir.join("frontier").join(db_path)
 }
 
-impl<Block: BlockT, C> Backend<Block, C>
-where
-	C: sp_blockchain::HeaderBackend<Block> + Send + Sync,
-{
-	pub fn open(
+impl<Block: BlockT> Backend<Block> {
+	pub fn open<C: sp_blockchain::HeaderBackend<Block>>(
 		client: Arc<C>,
 		database: &DatabaseSource,
 		db_config_dir: &Path,
@@ -104,7 +100,10 @@ where
 		)
 	}
 
-	pub fn new(client: Arc<C>, config: &DatabaseSettings) -> Result<Self, String> {
+	pub fn new<C: sp_blockchain::HeaderBackend<Block>>(
+		client: Arc<C>,
+		config: &DatabaseSettings,
+	) -> Result<Self, String> {
 		let db = utils::open_database::<Block, C>(client, config)?;
 
 		Ok(Self {
@@ -117,7 +116,6 @@ where
 				db: db.clone(),
 				_marker: PhantomData,
 			}),
-			_marker: PhantomData,
 		})
 	}
 

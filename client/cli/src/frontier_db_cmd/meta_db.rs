@@ -56,16 +56,13 @@ impl FromStr for MetaKey {
 	}
 }
 
-pub struct MetaDb<'a, B: BlockT, C> {
+pub struct MetaDb<'a, B: BlockT> {
 	cmd: &'a FrontierDbCmd,
-	backend: Arc<fc_db::Backend<B, C>>,
+	backend: Arc<fc_db::Backend<B>>,
 }
 
-impl<'a, B: BlockT, C> MetaDb<'a, B, C>
-where
-	C: sp_blockchain::HeaderBackend<B>,
-{
-	pub fn new(cmd: &'a FrontierDbCmd, backend: Arc<fc_db::Backend<B, C>>) -> Self {
+impl<'a, B: BlockT> MetaDb<'a, B> {
+	pub fn new(cmd: &'a FrontierDbCmd, backend: Arc<fc_db::Backend<B>>) -> Self {
 		Self { cmd, backend }
 	}
 
@@ -155,4 +152,4 @@ where
 	}
 }
 
-impl<'a, B: BlockT, C> FrontierDbMessage for MetaDb<'a, B, C> {}
+impl<'a, B: BlockT> FrontierDbMessage for MetaDb<'a, B> {}
