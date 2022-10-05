@@ -363,8 +363,12 @@ where
 
 		let mut ret: Vec<Log> = Vec::new();
 		if let Some(hash) = filter.block_hash {
-			let id = match frontier_backend_client::load_hash::<B>(backend.as_ref(), hash)
-				.map_err(|err| internal_err(format!("{:?}", err)))?
+			let id = match frontier_backend_client::load_hash::<B, C>(
+				client.as_ref(),
+				backend.as_ref(),
+				hash,
+			)
+			.map_err(|err| internal_err(format!("{:?}", err)))?
 			{
 				Some(hash) => hash,
 				_ => return Ok(Vec::new()),
