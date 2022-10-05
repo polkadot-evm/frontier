@@ -71,6 +71,68 @@
 <span id="66">66</span>
 <span id="67">67</span>
 <span id="68">68</span>
+<span id="69">69</span>
+<span id="70">70</span>
+<span id="71">71</span>
+<span id="72">72</span>
+<span id="73">73</span>
+<span id="74">74</span>
+<span id="75">75</span>
+<span id="76">76</span>
+<span id="77">77</span>
+<span id="78">78</span>
+<span id="79">79</span>
+<span id="80">80</span>
+<span id="81">81</span>
+<span id="82">82</span>
+<span id="83">83</span>
+<span id="84">84</span>
+<span id="85">85</span>
+<span id="86">86</span>
+<span id="87">87</span>
+<span id="88">88</span>
+<span id="89">89</span>
+<span id="90">90</span>
+<span id="91">91</span>
+<span id="92">92</span>
+<span id="93">93</span>
+<span id="94">94</span>
+<span id="95">95</span>
+<span id="96">96</span>
+<span id="97">97</span>
+<span id="98">98</span>
+<span id="99">99</span>
+<span id="100">100</span>
+<span id="101">101</span>
+<span id="102">102</span>
+<span id="103">103</span>
+<span id="104">104</span>
+<span id="105">105</span>
+<span id="106">106</span>
+<span id="107">107</span>
+<span id="108">108</span>
+<span id="109">109</span>
+<span id="110">110</span>
+<span id="111">111</span>
+<span id="112">112</span>
+<span id="113">113</span>
+<span id="114">114</span>
+<span id="115">115</span>
+<span id="116">116</span>
+<span id="117">117</span>
+<span id="118">118</span>
+<span id="119">119</span>
+<span id="120">120</span>
+<span id="121">121</span>
+<span id="122">122</span>
+<span id="123">123</span>
+<span id="124">124</span>
+<span id="125">125</span>
+<span id="126">126</span>
+<span id="127">127</span>
+<span id="128">128</span>
+<span id="129">129</span>
+<span id="130">130</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -91,52 +153,114 @@
 
 <span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">path::Path</span>, <span class="ident">sync::Arc</span>};
 
+<span class="kw">use</span> <span class="ident">sp_runtime::traits::Block</span> <span class="kw">as</span> <span class="ident">BlockT</span>;
+
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">Database</span>, <span class="ident">DatabaseSettings</span>, <span class="ident">DatabaseSource</span>, <span class="ident">DbHash</span>};
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">open_database</span>(<span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="ident">DatabaseSettings</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Database</span><span class="op">&lt;</span><span class="ident">DbHash</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">String</span><span class="op">&gt;</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">open_database</span><span class="op">&lt;</span><span class="ident">Block</span>: <span class="ident">BlockT</span>, <span class="ident">C</span><span class="op">&gt;</span>(
+	<span class="ident">client</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
+	<span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="ident">DatabaseSettings</span>,
+) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Database</span><span class="op">&lt;</span><span class="ident">DbHash</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">String</span><span class="op">&gt;</span>
+<span class="kw">where</span>
+	<span class="ident">C</span>: <span class="ident">sp_blockchain::HeaderBackend</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span>,
+{
 	<span class="kw">let</span> <span class="ident">db</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Database</span><span class="op">&lt;</span><span class="ident">DbHash</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">=</span> <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">config</span>.<span class="ident">source</span> {
-		<span class="ident">DatabaseSource::ParityDb</span> { <span class="ident">path</span> } =&gt; <span class="ident">open_parity_db</span>(<span class="ident">path</span>)<span class="question-mark">?</span>,
-		<span class="ident">DatabaseSource::RocksDb</span> { <span class="ident">path</span>, .. } =&gt; <span class="ident">open_kvdb_rocksdb</span>(<span class="ident">path</span>, <span class="bool-val">true</span>)<span class="question-mark">?</span>,
+		<span class="ident">DatabaseSource::ParityDb</span> { <span class="ident">path</span> } =&gt; {
+			<span class="ident">open_parity_db</span>::<span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">C</span><span class="op">&gt;</span>(<span class="ident">client</span>, <span class="ident">path</span>, <span class="kw-2">&amp;</span><span class="ident">config</span>.<span class="ident">source</span>)<span class="question-mark">?</span>
+		}
+		<span class="ident">DatabaseSource::RocksDb</span> { <span class="ident">path</span>, .. } =&gt; {
+			<span class="ident">open_kvdb_rocksdb</span>::<span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">C</span><span class="op">&gt;</span>(<span class="ident">client</span>, <span class="ident">path</span>, <span class="bool-val">true</span>, <span class="kw-2">&amp;</span><span class="ident">config</span>.<span class="ident">source</span>)<span class="question-mark">?</span>
+		}
 		<span class="ident">DatabaseSource::Auto</span> {
 			<span class="ident">paritydb_path</span>,
 			<span class="ident">rocksdb_path</span>,
 			..
-		} =&gt; <span class="kw">match</span> <span class="ident">open_kvdb_rocksdb</span>(<span class="ident">rocksdb_path</span>, <span class="bool-val">false</span>) {
-			<span class="prelude-val">Ok</span>(<span class="ident">db</span>) =&gt; <span class="ident">db</span>,
-			<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="ident">open_parity_db</span>(<span class="ident">paritydb_path</span>)<span class="question-mark">?</span>,
-		},
+		} =&gt; {
+			<span class="kw">match</span> <span class="ident">open_kvdb_rocksdb</span>::<span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">C</span><span class="op">&gt;</span>(<span class="ident">client</span>.<span class="ident">clone</span>(), <span class="ident">rocksdb_path</span>, <span class="bool-val">false</span>, <span class="kw-2">&amp;</span><span class="ident">config</span>.<span class="ident">source</span>)
+			{
+				<span class="prelude-val">Ok</span>(<span class="ident">db</span>) =&gt; <span class="ident">db</span>,
+				<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="ident">open_parity_db</span>::<span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">C</span><span class="op">&gt;</span>(<span class="ident">client</span>, <span class="ident">paritydb_path</span>, <span class="kw-2">&amp;</span><span class="ident">config</span>.<span class="ident">source</span>)<span class="question-mark">?</span>,
+			}
+		}
 		<span class="kw">_</span> =&gt; <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;Missing feature flags `parity-db`&quot;</span>.<span class="ident">to_string</span>()),
 	};
 	<span class="prelude-val">Ok</span>(<span class="ident">db</span>)
 }
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;kvdb-rocksdb&quot;</span>)]</span>
-<span class="kw">fn</span> <span class="ident">open_kvdb_rocksdb</span>(<span class="ident">path</span>: <span class="kw-2">&amp;</span><span class="ident">Path</span>, <span class="ident">create</span>: <span class="ident">bool</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Database</span><span class="op">&lt;</span><span class="ident">DbHash</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">String</span><span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">open_kvdb_rocksdb</span><span class="op">&lt;</span><span class="ident">Block</span>: <span class="ident">BlockT</span>, <span class="ident">C</span><span class="op">&gt;</span>(
+	<span class="ident">client</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
+	<span class="ident">path</span>: <span class="kw-2">&amp;</span><span class="ident">Path</span>,
+	<span class="ident">create</span>: <span class="ident">bool</span>,
+	<span class="ident">_source</span>: <span class="kw-2">&amp;</span><span class="ident">DatabaseSource</span>,
+) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Database</span><span class="op">&lt;</span><span class="ident">DbHash</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">String</span><span class="op">&gt;</span>
+<span class="kw">where</span>
+	<span class="ident">C</span>: <span class="ident">sp_blockchain::HeaderBackend</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span>,
+{
+	<span class="comment">// first upgrade database to required version</span>
+	<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">test</span>))]</span>
+	<span class="kw">match</span> <span class="ident"><span class="kw">crate</span>::upgrade::upgrade_db</span>::<span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">C</span><span class="op">&gt;</span>(<span class="ident">client</span>, <span class="ident">path</span>, <span class="ident">_source</span>) {
+		<span class="prelude-val">Ok</span>(<span class="kw">_</span>) =&gt; (),
+		<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;Frontier DB upgrade error&quot;</span>.<span class="ident">to_string</span>()),
+	}
+
 	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">db_config</span> <span class="op">=</span> <span class="ident">kvdb_rocksdb::DatabaseConfig::with_columns</span>(<span class="ident"><span class="kw">crate</span>::columns::NUM_COLUMNS</span>);
 	<span class="ident">db_config</span>.<span class="ident">create_if_missing</span> <span class="op">=</span> <span class="ident">create</span>;
 
-	<span class="kw">let</span> <span class="ident">path</span> <span class="op">=</span> <span class="ident">path</span>
-		.<span class="ident">to_str</span>()
-		.<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="string">&quot;Invalid database path&quot;</span>.<span class="ident">to_string</span>())<span class="question-mark">?</span>;
-
 	<span class="kw">let</span> <span class="ident">db</span> <span class="op">=</span> <span class="ident">kvdb_rocksdb::Database::open</span>(<span class="kw-2">&amp;</span><span class="ident">db_config</span>, <span class="kw-2">&amp;</span><span class="ident">path</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;{}&quot;</span>, <span class="ident">err</span>))<span class="question-mark">?</span>;
+	<span class="comment">// write database version only after the database is succesfully opened</span>
+	<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">test</span>))]</span>
+	<span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident"><span class="kw">crate</span>::upgrade::update_version</span>(<span class="ident">path</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="string">&quot;Cannot update db version&quot;</span>.<span class="ident">to_string</span>())<span class="question-mark">?</span>;
 	<span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">sp_database::as_database</span>(<span class="ident">db</span>));
 }
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;kvdb-rocksdb&quot;</span>))]</span>
-<span class="kw">fn</span> <span class="ident">open_kvdb_rocksdb</span>(<span class="ident">_path</span>: <span class="kw-2">&amp;</span><span class="ident">Path</span>, <span class="ident">_create</span>: <span class="ident">bool</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Database</span><span class="op">&lt;</span><span class="ident">DbHash</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">String</span><span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">open_kvdb_rocksdb</span><span class="op">&lt;</span><span class="ident">Block</span>: <span class="ident">BlockT</span>, <span class="ident">C</span><span class="op">&gt;</span>(
+	<span class="ident">_client</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
+	<span class="ident">_path</span>: <span class="kw-2">&amp;</span><span class="ident">Path</span>,
+	<span class="ident">_create</span>: <span class="ident">bool</span>,
+	<span class="ident">_source</span>: <span class="kw-2">&amp;</span><span class="ident">DatabaseSource</span>,
+) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Database</span><span class="op">&lt;</span><span class="ident">DbHash</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">String</span><span class="op">&gt;</span>
+<span class="kw">where</span>
+	<span class="ident">C</span>: <span class="ident">sp_blockchain::HeaderBackend</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span>,
+{
 	<span class="prelude-val">Err</span>(<span class="string">&quot;Missing feature flags `kvdb-rocksdb`&quot;</span>.<span class="ident">to_string</span>())
 }
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;parity-db&quot;</span>)]</span>
-<span class="kw">fn</span> <span class="ident">open_parity_db</span>(<span class="ident">path</span>: <span class="kw-2">&amp;</span><span class="ident">Path</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Database</span><span class="op">&lt;</span><span class="ident">DbHash</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">String</span><span class="op">&gt;</span> {
-	<span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">parity_db::Options::with_columns</span>(<span class="ident">path</span>, <span class="ident"><span class="kw">crate</span>::columns::NUM_COLUMNS</span> <span class="kw">as</span> <span class="ident">u8</span>);
+<span class="kw">fn</span> <span class="ident">open_parity_db</span><span class="op">&lt;</span><span class="ident">Block</span>: <span class="ident">BlockT</span>, <span class="ident">C</span><span class="op">&gt;</span>(
+	<span class="ident">client</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
+	<span class="ident">path</span>: <span class="kw-2">&amp;</span><span class="ident">Path</span>,
+	<span class="ident">_source</span>: <span class="kw-2">&amp;</span><span class="ident">DatabaseSource</span>,
+) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Database</span><span class="op">&lt;</span><span class="ident">DbHash</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">String</span><span class="op">&gt;</span>
+<span class="kw">where</span>
+	<span class="ident">C</span>: <span class="ident">sp_blockchain::HeaderBackend</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span>,
+{
+	<span class="comment">// first upgrade database to required version</span>
+	<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">test</span>))]</span>
+	<span class="kw">match</span> <span class="ident"><span class="kw">crate</span>::upgrade::upgrade_db</span>::<span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">C</span><span class="op">&gt;</span>(<span class="ident">client</span>, <span class="ident">path</span>, <span class="ident">_source</span>) {
+		<span class="prelude-val">Ok</span>(<span class="kw">_</span>) =&gt; (),
+		<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;Frontier DB upgrade error&quot;</span>.<span class="ident">to_string</span>()),
+	}
+	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">parity_db::Options::with_columns</span>(<span class="ident">path</span>, <span class="ident"><span class="kw">crate</span>::columns::NUM_COLUMNS</span> <span class="kw">as</span> <span class="ident">u8</span>);
+	<span class="ident">config</span>.<span class="ident">columns</span>[<span class="ident"><span class="kw">crate</span>::columns::BLOCK_MAPPING</span> <span class="kw">as</span> <span class="ident">usize</span>].<span class="ident">btree_index</span> <span class="op">=</span> <span class="bool-val">true</span>;
+
 	<span class="kw">let</span> <span class="ident">db</span> <span class="op">=</span> <span class="ident">parity_db::Db::open_or_create</span>(<span class="kw-2">&amp;</span><span class="ident">config</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;{}&quot;</span>, <span class="ident">err</span>))<span class="question-mark">?</span>;
+	<span class="comment">// write database version only after the database is succesfully opened</span>
+	<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">test</span>))]</span>
+	<span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident"><span class="kw">crate</span>::upgrade::update_version</span>(<span class="ident">path</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="string">&quot;Cannot update db version&quot;</span>.<span class="ident">to_string</span>())<span class="question-mark">?</span>;
 	<span class="prelude-val">Ok</span>(<span class="ident">Arc::new</span>(<span class="ident"><span class="kw">crate</span>::parity_db_adapter::DbAdapter</span>(<span class="ident">db</span>)))
 }
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;parity-db&quot;</span>))]</span>
-<span class="kw">fn</span> <span class="ident">open_parity_db</span>(<span class="ident">_path</span>: <span class="kw-2">&amp;</span><span class="ident">Path</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Database</span><span class="op">&lt;</span><span class="ident">DbHash</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">String</span><span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">open_parity_db</span><span class="op">&lt;</span><span class="ident">Block</span>: <span class="ident">BlockT</span>, <span class="ident">C</span><span class="op">&gt;</span>(
+	<span class="ident">_client</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
+	<span class="ident">_path</span>: <span class="kw-2">&amp;</span><span class="ident">Path</span>,
+	<span class="ident">_source</span>: <span class="kw-2">&amp;</span><span class="ident">DatabaseSource</span>,
+) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Database</span><span class="op">&lt;</span><span class="ident">DbHash</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">String</span><span class="op">&gt;</span>
+<span class="kw">where</span>
+	<span class="ident">C</span>: <span class="ident">sp_blockchain::HeaderBackend</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span>,
+{
 	<span class="prelude-val">Err</span>(<span class="string">&quot;Missing feature flags `parity-db`&quot;</span>.<span class="ident">to_string</span>())
 }
 </code></pre></div>

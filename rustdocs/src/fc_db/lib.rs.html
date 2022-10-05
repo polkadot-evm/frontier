@@ -305,6 +305,30 @@
 <span id="300">300</span>
 <span id="301">301</span>
 <span id="302">302</span>
+<span id="303">303</span>
+<span id="304">304</span>
+<span id="305">305</span>
+<span id="306">306</span>
+<span id="307">307</span>
+<span id="308">308</span>
+<span id="309">309</span>
+<span id="310">310</span>
+<span id="311">311</span>
+<span id="312">312</span>
+<span id="313">313</span>
+<span id="314">314</span>
+<span id="315">315</span>
+<span id="316">316</span>
+<span id="317">317</span>
+<span id="318">318</span>
+<span id="319">319</span>
+<span id="320">320</span>
+<span id="321">321</span>
+<span id="322">322</span>
+<span id="323">323</span>
+<span id="324">324</span>
+<span id="325">325</span>
+<span id="326">326</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -325,6 +349,7 @@
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;parity-db&quot;</span>)]</span>
 <span class="kw">mod</span> <span class="ident">parity_db_adapter</span>;
+<span class="kw">mod</span> <span class="ident">upgrade</span>;
 <span class="kw">mod</span> <span class="ident">utils</span>;
 
 <span class="kw">use</span> <span class="ident">std</span>::{
@@ -377,30 +402,42 @@
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">Block</span>: <span class="ident">BlockT</span><span class="op">&gt;</span> <span class="ident">Backend</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span> {
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">open</span>(<span class="ident">database</span>: <span class="kw-2">&amp;</span><span class="ident">DatabaseSource</span>, <span class="ident">db_config_dir</span>: <span class="kw-2">&amp;</span><span class="ident">Path</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">String</span><span class="op">&gt;</span> {
-		<span class="ident"><span class="self">Self</span>::new</span>(<span class="kw-2">&amp;</span><span class="ident">DatabaseSettings</span> {
-			<span class="ident">source</span>: <span class="kw">match</span> <span class="ident">database</span> {
-				<span class="ident">DatabaseSource::RocksDb</span> { .. } =&gt; <span class="ident">DatabaseSource::RocksDb</span> {
-					<span class="ident">path</span>: <span class="ident">frontier_database_dir</span>(<span class="ident">db_config_dir</span>, <span class="string">&quot;db&quot;</span>),
-					<span class="ident">cache_size</span>: <span class="number">0</span>,
+	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">open</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">sp_blockchain::HeaderBackend</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span><span class="op">&gt;</span>(
+		<span class="ident">client</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
+		<span class="ident">database</span>: <span class="kw-2">&amp;</span><span class="ident">DatabaseSource</span>,
+		<span class="ident">db_config_dir</span>: <span class="kw-2">&amp;</span><span class="ident">Path</span>,
+	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">String</span><span class="op">&gt;</span> {
+		<span class="ident"><span class="self">Self</span>::new</span>(
+			<span class="ident">client</span>,
+			<span class="kw-2">&amp;</span><span class="ident">DatabaseSettings</span> {
+				<span class="ident">source</span>: <span class="kw">match</span> <span class="ident">database</span> {
+					<span class="ident">DatabaseSource::RocksDb</span> { .. } =&gt; <span class="ident">DatabaseSource::RocksDb</span> {
+						<span class="ident">path</span>: <span class="ident">frontier_database_dir</span>(<span class="ident">db_config_dir</span>, <span class="string">&quot;db&quot;</span>),
+						<span class="ident">cache_size</span>: <span class="number">0</span>,
+					},
+					<span class="ident">DatabaseSource::ParityDb</span> { .. } =&gt; <span class="ident">DatabaseSource::ParityDb</span> {
+						<span class="ident">path</span>: <span class="ident">frontier_database_dir</span>(<span class="ident">db_config_dir</span>, <span class="string">&quot;paritydb&quot;</span>),
+					},
+					<span class="ident">DatabaseSource::Auto</span> { .. } =&gt; <span class="ident">DatabaseSource::Auto</span> {
+						<span class="ident">rocksdb_path</span>: <span class="ident">frontier_database_dir</span>(<span class="ident">db_config_dir</span>, <span class="string">&quot;db&quot;</span>),
+						<span class="ident">paritydb_path</span>: <span class="ident">frontier_database_dir</span>(<span class="ident">db_config_dir</span>, <span class="string">&quot;paritydb&quot;</span>),
+						<span class="ident">cache_size</span>: <span class="number">0</span>,
+					},
+					<span class="kw">_</span> =&gt; {
+						<span class="kw">return</span> <span class="prelude-val">Err</span>(
+							<span class="string">&quot;Supported db sources: `rocksdb` | `paritydb` | `auto`&quot;</span>.<span class="ident">to_string</span>()
+						)
+					}
 				},
-				<span class="ident">DatabaseSource::ParityDb</span> { .. } =&gt; <span class="ident">DatabaseSource::ParityDb</span> {
-					<span class="ident">path</span>: <span class="ident">frontier_database_dir</span>(<span class="ident">db_config_dir</span>, <span class="string">&quot;paritydb&quot;</span>),
-				},
-				<span class="ident">DatabaseSource::Auto</span> { .. } =&gt; <span class="ident">DatabaseSource::Auto</span> {
-					<span class="ident">rocksdb_path</span>: <span class="ident">frontier_database_dir</span>(<span class="ident">db_config_dir</span>, <span class="string">&quot;db&quot;</span>),
-					<span class="ident">paritydb_path</span>: <span class="ident">frontier_database_dir</span>(<span class="ident">db_config_dir</span>, <span class="string">&quot;paritydb&quot;</span>),
-					<span class="ident">cache_size</span>: <span class="number">0</span>,
-				},
-				<span class="kw">_</span> =&gt; {
-					<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;Supported db sources: `rocksdb` | `paritydb` | `auto`&quot;</span>.<span class="ident">to_string</span>())
-				}
 			},
-		})
+		)
 	}
 
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="ident">DatabaseSettings</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">String</span><span class="op">&gt;</span> {
-		<span class="kw">let</span> <span class="ident">db</span> <span class="op">=</span> <span class="ident">utils::open_database</span>(<span class="ident">config</span>)<span class="question-mark">?</span>;
+	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">sp_blockchain::HeaderBackend</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span><span class="op">&gt;</span>(
+		<span class="ident">client</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
+		<span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="ident">DatabaseSettings</span>,
+	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">String</span><span class="op">&gt;</span> {
+		<span class="kw">let</span> <span class="ident">db</span> <span class="op">=</span> <span class="ident">utils::open_database</span>::<span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">C</span><span class="op">&gt;</span>(<span class="ident">client</span>, <span class="ident">config</span>)<span class="question-mark">?</span>;
 
 		<span class="prelude-val">Ok</span>(<span class="self">Self</span> {
 			<span class="ident">mapping</span>: <span class="ident">Arc::new</span>(<span class="ident">MappingDb</span> {
@@ -521,13 +558,16 @@
 		}
 	}
 
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">block_hash</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">ethereum_block_hash</span>: <span class="kw-2">&amp;</span><span class="ident">H256</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Block::Hash</span><span class="op">&gt;</span>, <span class="ident">String</span><span class="op">&gt;</span> {
+	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">block_hash</span>(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+		<span class="ident">ethereum_block_hash</span>: <span class="kw-2">&amp;</span><span class="ident">H256</span>,
+	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Block::Hash</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">String</span><span class="op">&gt;</span> {
 		<span class="kw">match</span> <span class="self">self</span>
 			.<span class="ident">db</span>
 			.<span class="ident">get</span>(<span class="ident"><span class="kw">crate</span>::columns::BLOCK_MAPPING</span>, <span class="kw-2">&amp;</span><span class="ident">ethereum_block_hash</span>.<span class="ident">encode</span>())
 		{
 			<span class="prelude-val">Some</span>(<span class="ident">raw</span>) =&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(
-				<span class="ident">Block::Hash::decode</span>(<span class="kw-2">&amp;mut</span> <span class="kw-2">&amp;</span><span class="ident">raw</span>[..]).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">e</span>))<span class="question-mark">?</span>,
+				<span class="ident">Vec</span>::<span class="op">&lt;</span><span class="ident">Block::Hash</span><span class="op">&gt;</span><span class="ident">::decode</span>(<span class="kw-2">&amp;mut</span> <span class="kw-2">&amp;</span><span class="ident">raw</span>[..]).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">e</span>))<span class="question-mark">?</span>,
 			)),
 			<span class="prelude-val">None</span> =&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
 		}
@@ -570,10 +610,18 @@
 
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">transaction</span> <span class="op">=</span> <span class="ident">sp_database::Transaction::new</span>();
 
+		<span class="kw">let</span> <span class="ident">substrate_hashes</span> <span class="op">=</span> <span class="kw">match</span> <span class="self">self</span>.<span class="ident">block_hash</span>(<span class="kw-2">&amp;</span><span class="ident">commitment</span>.<span class="ident">ethereum_block_hash</span>) {
+			<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="kw-2">mut</span> <span class="ident">data</span>)) =&gt; {
+				<span class="ident">data</span>.<span class="ident">push</span>(<span class="ident">commitment</span>.<span class="ident">block_hash</span>);
+				<span class="ident">data</span>
+			}
+			<span class="kw">_</span> =&gt; <span class="macro">vec!</span>[<span class="ident">commitment</span>.<span class="ident">block_hash</span>],
+		};
+
 		<span class="ident">transaction</span>.<span class="ident">set</span>(
 			<span class="ident"><span class="kw">crate</span>::columns::BLOCK_MAPPING</span>,
 			<span class="kw-2">&amp;</span><span class="ident">commitment</span>.<span class="ident">ethereum_block_hash</span>.<span class="ident">encode</span>(),
-			<span class="kw-2">&amp;</span><span class="ident">commitment</span>.<span class="ident">block_hash</span>.<span class="ident">encode</span>(),
+			<span class="kw-2">&amp;</span><span class="ident">substrate_hashes</span>.<span class="ident">encode</span>(),
 		);
 
 		<span class="kw">for</span> (<span class="ident">i</span>, <span class="ident">ethereum_transaction_hash</span>) <span class="kw">in</span> <span class="ident">commitment</span>

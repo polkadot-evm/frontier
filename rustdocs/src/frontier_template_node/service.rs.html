@@ -779,6 +779,7 @@
 <span id="774">774</span>
 <span id="775">775</span>
 <span id="776">776</span>
+<span id="777">777</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Service and ServiceFactory implementation. Specialized wrapper over substrate service.</span>
 
 <span class="kw">use</span> <span class="ident">std</span>::{
@@ -932,6 +933,7 @@
 	);
 
 	<span class="kw">let</span> <span class="ident">frontier_backend</span> <span class="op">=</span> <span class="ident">Arc::new</span>(<span class="ident">FrontierBackend::open</span>(
+		<span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span><span class="ident">client</span>),
 		<span class="kw-2">&amp;</span><span class="ident">config</span>.<span class="ident">database</span>,
 		<span class="kw-2">&amp;</span><span class="ident">db_config_dir</span>(<span class="ident">config</span>),
 	)<span class="question-mark">?</span>);

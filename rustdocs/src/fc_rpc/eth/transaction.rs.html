@@ -458,6 +458,18 @@
 <span id="453">453</span>
 <span id="454">454</span>
 <span id="455">455</span>
+<span id="456">456</span>
+<span id="457">457</span>
+<span id="458">458</span>
+<span id="459">459</span>
+<span id="460">460</span>
+<span id="461">461</span>
+<span id="462">462</span>
+<span id="463">463</span>
+<span id="464">464</span>
+<span id="465">465</span>
+<span id="466">466</span>
+<span id="467">467</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -587,8 +599,12 @@
 			}
 		};
 
-		<span class="kw">let</span> <span class="ident">id</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">frontier_backend_client::load_hash</span>::<span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span>(<span class="ident">backend</span>.<span class="ident">as_ref</span>(), <span class="ident">hash</span>)
-			.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>
+		<span class="kw">let</span> <span class="ident">id</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">frontier_backend_client::load_hash</span>::<span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span><span class="op">&gt;</span>(
+			<span class="ident">client</span>.<span class="ident">as_ref</span>(),
+			<span class="ident">backend</span>.<span class="ident">as_ref</span>(),
+			<span class="ident">hash</span>,
+		)
+		.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>
 		{
 			<span class="prelude-val">Some</span>(<span class="ident">hash</span>) =&gt; <span class="ident">hash</span>,
 			<span class="kw">_</span> =&gt; <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
@@ -632,8 +648,12 @@
 		<span class="kw">let</span> <span class="ident">block_data_cache</span> <span class="op">=</span> <span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">block_data_cache</span>);
 		<span class="kw">let</span> <span class="ident">backend</span> <span class="op">=</span> <span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">backend</span>);
 
-		<span class="kw">let</span> <span class="ident">id</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">frontier_backend_client::load_hash</span>::<span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span>(<span class="ident">backend</span>.<span class="ident">as_ref</span>(), <span class="ident">hash</span>)
-			.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>
+		<span class="kw">let</span> <span class="ident">id</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">frontier_backend_client::load_hash</span>::<span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span><span class="op">&gt;</span>(
+			<span class="ident">client</span>.<span class="ident">as_ref</span>(),
+			<span class="ident">backend</span>.<span class="ident">as_ref</span>(),
+			<span class="ident">hash</span>,
+		)
+		.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>
 		{
 			<span class="prelude-val">Some</span>(<span class="ident">hash</span>) =&gt; <span class="ident">hash</span>,
 			<span class="kw">_</span> =&gt; <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
@@ -751,8 +771,12 @@
 			<span class="prelude-val">None</span> =&gt; <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
 		};
 
-		<span class="kw">let</span> <span class="ident">id</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">frontier_backend_client::load_hash</span>::<span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span>(<span class="ident">backend</span>.<span class="ident">as_ref</span>(), <span class="ident">hash</span>)
-			.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>
+		<span class="kw">let</span> <span class="ident">id</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">frontier_backend_client::load_hash</span>::<span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span><span class="op">&gt;</span>(
+			<span class="ident">client</span>.<span class="ident">as_ref</span>(),
+			<span class="ident">backend</span>.<span class="ident">as_ref</span>(),
+			<span class="ident">hash</span>,
+		)
+		.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>
 		{
 			<span class="prelude-val">Some</span>(<span class="ident">hash</span>) =&gt; <span class="ident">hash</span>,
 			<span class="kw">_</span> =&gt; <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
