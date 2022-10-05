@@ -585,13 +585,14 @@ impl<'vicinity, 'config, T: Config> BackendT for SubstrateStackState<'vicinity, 
 	}
 
 	fn original_storage(&self, address: H160, index: H256) -> Option<H256> {
-		if let Some(value) = self.original_storage.get(&(address, index)) {
-			Some(*value)
-		} else {
-			// Not being cached means that it was never changed.
-			// We thus fetch it from storage.
-			Some(self.storage(address, index))
-		}
+		// Not being cached means that it was never changed, which means we
+		// can fetch it from storage.
+		Some(
+			self.original_storage
+				.get(&(address, index))
+				.cloned()
+				.unwrap_or_else(|| self.storage(address, index)),
+		)
 	}
 
 	fn block_base_fee_per_gas(&self) -> sp_core::U256 {
@@ -647,8 +648,11 @@ where
 		// in the transaction.
 		use sp_std::collections::btree_map::Entry::Vacant;
 		if let Vacant(e) = self.original_storage.entry((address, index)) {
-			let value = <AccountStorages<T>>::get(address, index);
-			e.insert(value);
+			let original = <AccountStorages<T>>::get(address, index);
+			// No need to cache if same value.
+			if original != value {
+				e.insert(original);
+			}
 		}
 
 		// Then we insert or remove the entry based on the value.
