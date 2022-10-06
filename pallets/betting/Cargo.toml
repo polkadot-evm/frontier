@@ -1,0 +1,49 @@
+[package]
+name = "pallet-betting"
+version = "4.0.0-dev"
+description = "FRAME pallet template for defining custom runtime logic."
+authors = ["Substrate DevHub <https://github.com/substrate-developer-hub>"]
+homepage = "https://substrate.io/"
+edition = "2021"
+license = "Unlicense"
+publish = false
+repository = "https://github.com/substrate-developer-hub/substrate-node-template/"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+codec = { version = "3.0.0", package = "parity-scale-codec", default-features = false, features = ["derive"] }
+hex = { version = "2.1.0", package = "rustc-hex", default-features = false }
+serde = { version = "1.0.127", optional = true }
+scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
+frame-support = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.22", default-features = false }
+frame-system = {  git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.22", default-features = false }
+sp-io = {   git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.22",default-features = false }
+sp-core = {   git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.22", default-features = false }
+sp-std = {   git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.22", default-features = false }
+pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.22", default-features = false }
+pallet-assets = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.22", default-features = false }
+sp-runtime = {   git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.22", default-features = false }
+rand = {default-features = false, version = '0.8.0'}
+rand_chacha = {default-features = false, version = '0.3.0'}
+primitives = { path = "../../primitives", default-features = false}
+
+[features]
+default = ["std"]
+std = [
+    "serde",
+    "hex/std",
+    "codec/std",
+    "rand/std",
+    "rand_chacha/std",
+    "frame-support/std",
+    "frame-system/std",
+    "sp-core/std",
+    "sp-std/std",
+    "sp-io/std",
+    "pallet-balances/std",
+    "sp-runtime/std",
+    "scale-info/std",
+    "pallet-assets/std"
+]

@@ -1,30 +1,9 @@
 [workspace]
 members = [
-	"frame/base-fee",
-	"frame/dynamic-fee",
-	"frame/ethereum",
-	"frame/evm",
-	"frame/evm-chain-id",
-	"frame/hotfix-sufficients",
-	"frame/evm/precompile/sha3fips",
-	"frame/evm/precompile/simple",
-	"frame/evm/precompile/modexp",
-	"frame/evm/precompile/ed25519",
-	"frame/evm/precompile/bn128",
-	"frame/evm/precompile/blake2",
-	"frame/evm/precompile/dispatch",
-	"frame/evm/precompile/curve25519",
-	"client/consensus",
-	"client/rpc-core",
-	"client/rpc",
-	"client/db",
-	"client/mapping-sync",
-	"primitives/consensus",
-	"primitives/dynamic-fee",
-	"primitives/evm",
-	"primitives/rpc",
-	"primitives/self-contained",
-	"template/node",
-	"template/runtime",
+    "node",
+    "pallets/*",
+    "primitives",
+    "runtime",
 ]
-resolver = "2"
+[profile.release]
+panic = "unwind"

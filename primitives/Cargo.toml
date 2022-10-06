@@ -1,0 +1,33 @@
+[package]
+name = "primitives"
+version = "0.1.0"
+edition = "2018"
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["max-encoded-len"] }
+scale-info = { version = "2.1.2", default-features = false, features = ["derive"] }
+serde = { version = "1.0.137", optional = true }
+
+frame-system = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.22" }
+frame-support = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.22" }
+sp-core = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.22" }
+sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.22" }
+sp-application-crypto = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.22" }
+
+[dev-dependencies]
+sp-serializer = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.22" }
+pretty_assertions = "1.2.1"
+
+[features]
+default = ["std"]
+std = [
+    "codec/std",
+    "scale-info/std",
+    "serde",
+    "frame-system/std",
+    "frame-support/std",
+    "sp-application-crypto/std",
+    "sp-core/std",
+    "sp-runtime/std",
+]

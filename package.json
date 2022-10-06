@@ -1,0 +1,12 @@
+{
+    "name": "frontier-template-node",
+    "version": "1.0.0",
+    "scripts": {
+      "build": "cargo build --release",
+      "build:test:evm": "cargo build --release --no-default-features --features manual-seal,rpc_binary_search_estimate",
+      "start": "target/release/frontier-template-node --dev --tmp",
+      "start:debug": "RUST_LOG=runtime=debug target/release/frontier-template-node --dev --tmp --rpc-external --ws-external",
+      "test:evm": "cd ts-tests && yarn test"
+    }
+  }
+  
