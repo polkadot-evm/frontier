@@ -116,23 +116,18 @@ impl<'config, E: From<InvalidEvmTransactionError>> CheckEvmTransaction<'config, 
 
 	pub fn with_balance_for(&self, who: &Account) -> Result<&Self, E> {
 		// Get fee data from either a legacy or typed transaction input.
-		let (_, effective_gas_price) = self.transaction_fee_input()?;
+		let (max_fee_per_gas, _) = self.transaction_fee_input()?;
 
 		// Account has enough funds to pay for the transaction.
 		// Check is skipped on non-transactional calls that don't provide
 		// a gas price input.
 		//
-		// Fee for EIP-1559 transaction **with** tip is calculated using
-		// the effective gas price.
-		//
-		// Fee for EIP-1559 transaction **without** tip is calculated using
-		// the base fee.
+		// Validation for EIP-1559 is done using the max_fee_per_gas, which is
+		// the most a txn could possibly pay.
 		//
 		// Fee for Legacy or EIP-2930 transaction is calculated using
 		// the provided `gas_price`.
-		let fee = effective_gas_price
-			.unwrap_or_default()
-			.saturating_mul(self.transaction.gas_limit);
+		let fee = max_fee_per_gas.saturating_mul(self.transaction.gas_limit);
 		if self.config.is_transactional || fee > U256::zero() {
 			let total_payment = self.transaction.value.saturating_add(fee);
 			if who.balance < total_payment {
@@ -142,6 +137,9 @@ impl<'config, E: From<InvalidEvmTransactionError>> CheckEvmTransaction<'config, 
 		Ok(self)
 	}
 
+	// Returns the max_fee_per_gas (or gas_price for legacy txns) as well as an optional
+	// effective_gas_price for EIP-1559 transactions. effective_gas_price represents
+	// the total (fee + tip) that would be paid given the current base_fee.
 	fn transaction_fee_input(&self) -> Result<(U256, Option<U256>), E> {
 		match (
 			self.transaction.gas_price,
@@ -659,29 +657,31 @@ mod tests {
 	}
 
 	#[test]
-	// Account balance is matched against the base fee without tip.
-	fn validate_balance_using_base_fee() {
+	// Account balance is matched against max_fee_per_gas (without txn tip)
+	fn validate_balance_regardless_of_base_fee() {
 		let who = Account {
+			// sufficient for base_fee, but not for max_fee_per_gas
 			balance: U256::from(21_000_000_000_001u128),
 			nonce: U256::zero(),
 		};
 		let with_tip = false;
 		let test = transaction_max_fee_high(with_tip);
 		let res = test.with_balance_for(&who);
-		assert!(res.is_ok());
+		assert!(res.is_err());
 	}
 
 	#[test]
-	// Account balance is matched against the effective gas price with tip.
-	fn validate_balance_using_effective_gas_price() {
+	// Account balance is matched against max_fee_per_gas (with txn tip)
+	fn validate_balance_regardless_of_effective_gas_price() {
 		let who = Account {
+			// sufficient for (base_fee + tip), but not for max_fee_per_gas
 			balance: U256::from(42_000_000_000_001u128),
 			nonce: U256::zero(),
 		};
 		let with_tip = true;
 		let test = transaction_max_fee_high(with_tip);
 		let res = test.with_balance_for(&who);
-		assert!(res.is_ok());
+		assert!(res.is_err());
 	}
 
 	#[test]
