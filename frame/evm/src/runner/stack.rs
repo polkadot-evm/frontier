@@ -31,7 +31,13 @@ use fp_evm::{CallInfo, CreateInfo, ExecutionInfo, Log, Vicinity};
 use frame_support::traits::{Currency, ExistenceRequirement, Get};
 use sp_core::{H160, H256, U256};
 use sp_runtime::traits::UniqueSaturatedInto;
-use sp_std::{boxed::Box, collections::btree_set::BTreeSet, marker::PhantomData, mem, vec::Vec};
+use sp_std::{
+	boxed::Box,
+	collections::{btree_map::BTreeMap, btree_set::BTreeSet},
+	marker::PhantomData,
+	mem,
+	vec::Vec,
+};
 
 #[cfg(feature = "forbid-evm-reentrancy")]
 environmental::thread_local_impl!(static IN_EVM: environmental::RefCell<bool> = environmental::RefCell::new(false));
@@ -553,6 +559,7 @@ impl<'config> SubstrateStackSubstate<'config> {
 pub struct SubstrateStackState<'vicinity, 'config, T> {
 	vicinity: &'vicinity Vicinity,
 	substate: SubstrateStackSubstate<'config>,
+	original_storage: BTreeMap<(H160, H256), H256>,
 	_marker: PhantomData<T>,
 }
 
@@ -568,6 +575,7 @@ impl<'vicinity, 'config, T: Config> SubstrateStackState<'vicinity, 'config, T> {
 				parent: None,
 			},
 			_marker: PhantomData,
+			original_storage: BTreeMap::new(),
 		}
 	}
 }
@@ -635,8 +643,15 @@ impl<'vicinity, 'config, T: Config> BackendT for SubstrateStackState<'vicinity, 
 		<AccountStorages<T>>::get(address, index)
 	}
 
-	fn original_storage(&self, _address: H160, _index: H256) -> Option<H256> {
-		None
+	fn original_storage(&self, address: H160, index: H256) -> Option<H256> {
+		// Not being cached means that it was never changed, which means we
+		// can fetch it from storage.
+		Some(
+			self.original_storage
+				.get(&(address, index))
+				.cloned()
+				.unwrap_or_else(|| self.storage(address, index)),
+		)
 	}
 
 	fn block_base_fee_per_gas(&self) -> sp_core::U256 {
@@ -688,6 +703,18 @@ where
 	}
 
 	fn set_storage(&mut self, address: H160, index: H256, value: H256) {
+		// We cache the current value if this is the first time we modify it
+		// in the transaction.
+		use sp_std::collections::btree_map::Entry::Vacant;
+		if let Vacant(e) = self.original_storage.entry((address, index)) {
+			let original = <AccountStorages<T>>::get(address, index);
+			// No need to cache if same value.
+			if original != value {
+				e.insert(original);
+			}
+		}
+
+		// Then we insert or remove the entry based on the value.
 		if value == H256::default() {
 			log::debug!(
 				target: "evm",
@@ -752,7 +779,7 @@ where
 		//
 		// This function exists in EVM because a design issue
 		// (arguably a bug) in SELFDESTRUCT that can cause total
-		// issurance to be reduced. We do not need to replicate this.
+		// issuance to be reduced. We do not need to replicate this.
 	}
 
 	fn touch(&mut self, _address: H160) {
