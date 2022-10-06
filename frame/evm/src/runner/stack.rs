@@ -130,27 +130,41 @@ where
 			>,
 		) -> (ExitReason, R),
 	{
-		let max_fee_per_gas = match (max_fee_per_gas, is_transactional) {
-			(Some(max_fee_per_gas), _) => max_fee_per_gas,
-			// Gas price check is skipped for non-transactional calls that don't
-			// define a `max_fee_per_gas` input.
-			(None, false) => Default::default(),
-			// Unreachable, previously validated. Handle gracefully.
-			_ => {
-				return Err(RunnerError {
-					error: Error::<T>::GasPriceTooLow,
-					weight,
-				})
-			}
-		};
+		let (total_fee_per_gas, _actual_priority_fee_per_gas) =
+			match (max_fee_per_gas, max_priority_fee_per_gas, is_transactional) {
+				// With no tip, we pay exactly the base_fee
+				(Some(_), None, _) => (base_fee, U256::zero()),
+				// With tip, we include as much of the tip on top of base_fee that we can, never
+				// exceeding max_fee_per_gas
+				(Some(max_fee_per_gas), Some(max_priority_fee_per_gas), _) => {
+					let actual_priority_fee_per_gas = max_fee_per_gas
+						.saturating_sub(base_fee)
+						.min(max_priority_fee_per_gas);
+					(
+						base_fee.saturating_add(actual_priority_fee_per_gas),
+						actual_priority_fee_per_gas,
+					)
+				}
+				// Gas price check is skipped for non-transactional calls that don't
+				// define a `max_fee_per_gas` input.
+				(None, _, false) => (Default::default(), U256::zero()),
+				// Unreachable, previously validated. Handle gracefully.
+				_ => {
+					return Err(RunnerError {
+						error: Error::<T>::GasPriceTooLow,
+						weight,
+					})
+				}
+			};
 
 		// After eip-1559 we make sure the account can pay both the evm execution and priority fees.
-		let total_fee = max_fee_per_gas
-			.checked_mul(U256::from(gas_limit))
-			.ok_or(RunnerError {
-				error: Error::<T>::FeeOverflow,
-				weight,
-			})?;
+		let total_fee =
+			total_fee_per_gas
+				.checked_mul(U256::from(gas_limit))
+				.ok_or(RunnerError {
+					error: Error::<T>::FeeOverflow,
+					weight,
+				})?;
 
 		// Deduct fee from the `source` account. Returns `None` if `total_fee` is Zero.
 		let fee = T::OnChargeTransaction::withdraw_fee(&source, total_fee)
@@ -170,18 +184,7 @@ where
 
 		// Post execution.
 		let used_gas = U256::from(executor.used_gas());
-		let actual_fee = if let Some(max_priority_fee) = max_priority_fee_per_gas {
-			let actual_priority_fee = max_fee_per_gas
-				.saturating_sub(base_fee)
-				.min(max_priority_fee)
-				.saturating_mul(used_gas);
-			executor
-				.fee(base_fee)
-				.checked_add(actual_priority_fee)
-				.unwrap_or_else(U256::max_value)
-		} else {
-			executor.fee(base_fee)
-		};
+		let actual_fee = executor.fee(total_fee_per_gas);
 		log::debug!(
 			target: "evm",
 			"Execution {:?} [source: {:?}, value: {}, gas_limit: {}, actual_fee: {}, is_transactional: {}]",
