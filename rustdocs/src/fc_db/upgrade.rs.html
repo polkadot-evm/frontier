@@ -489,6 +489,24 @@
 <span id="484">484</span>
 <span id="485">485</span>
 <span id="486">486</span>
+<span id="487">487</span>
+<span id="488">488</span>
+<span id="489">489</span>
+<span id="490">490</span>
+<span id="491">491</span>
+<span id="492">492</span>
+<span id="493">493</span>
+<span id="494">494</span>
+<span id="495">495</span>
+<span id="496">496</span>
+<span id="497">497</span>
+<span id="498">498</span>
+<span id="499">499</span>
+<span id="500">500</span>
+<span id="501">501</span>
+<span id="502">502</span>
+<span id="503">503</span>
+<span id="504">504</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -696,6 +714,11 @@
 							<span class="ident">maybe_error</span> <span class="op">=</span> <span class="bool-val">false</span>;
 						}
 					}
+				} <span class="kw">else</span> {
+					<span class="comment">// If version 2 data, we just consider this hash a success.</span>
+					<span class="comment">// This can happen if the process was closed in the middle of the migration.</span>
+					<span class="ident">res</span>.<span class="ident">success</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
+					<span class="ident">maybe_error</span> <span class="op">=</span> <span class="bool-val">false</span>;
 				}
 			}
 			<span class="kw">if</span> <span class="ident">maybe_error</span> {
@@ -704,6 +727,12 @@
 		}
 		<span class="ident">db</span>.<span class="ident">write</span>(<span class="ident">transaction</span>)
 			.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">io::Error::new</span>(<span class="ident">ErrorKind::Other</span>, <span class="string">&quot;Failed to commit on migrate_1_to_2&quot;</span>))<span class="question-mark">?</span>;
+		<span class="macro">log::debug!</span>(
+			<span class="ident">target</span>: <span class="string">&quot;fc-db-upgrade&quot;</span>,
+			<span class="string">&quot;🔨 Success {}, error {}.&quot;</span>,
+			<span class="ident">res</span>.<span class="ident">success</span>,
+			<span class="ident">res</span>.<span class="ident">error</span>.<span class="ident">len</span>()
+		);
 		<span class="prelude-val">Ok</span>(())
 	};
 
@@ -719,8 +748,15 @@
 	<span class="comment">// Read and update each entry in db transaction batches</span>
 	<span class="kw">const</span> <span class="ident">CHUNK_SIZE</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">10_000</span>;
 	<span class="kw">let</span> <span class="ident">chunks</span> <span class="op">=</span> <span class="ident">ethereum_hashes</span>.<span class="ident">chunks</span>(<span class="ident">CHUNK_SIZE</span>);
-	<span class="kw">for</span> <span class="ident">chunk</span> <span class="kw">in</span> <span class="ident">chunks</span> {
+	<span class="kw">let</span> <span class="ident">all_len</span> <span class="op">=</span> <span class="ident">ethereum_hashes</span>.<span class="ident">len</span>();
+	<span class="kw">for</span> (<span class="ident">i</span>, <span class="ident">chunk</span>) <span class="kw">in</span> <span class="ident">chunks</span>.<span class="ident">enumerate</span>() {
 		<span class="ident">process_chunk</span>(<span class="kw-2">&amp;</span><span class="ident">db</span>, <span class="ident">chunk</span>)<span class="question-mark">?</span>;
+		<span class="macro">log::debug!</span>(
+			<span class="ident">target</span>: <span class="string">&quot;fc-db-upgrade&quot;</span>,
+			<span class="string">&quot;🔨 Processed {} of {} entries.&quot;</span>,
+			(<span class="ident">CHUNK_SIZE</span> <span class="op">*</span> (<span class="ident">i</span> <span class="op">+</span> <span class="number">1</span>)),
+			<span class="ident">all_len</span>
+		);
 	}
 	<span class="prelude-val">Ok</span>(<span class="ident">res</span>)
 }
