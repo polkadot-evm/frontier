@@ -876,6 +876,9 @@
 <span id="871">871</span>
 <span id="872">872</span>
 <span id="873">873</span>
+<span id="874">874</span>
+<span id="875">875</span>
+<span id="876">876</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 <span class="comment">// This file is part of Frontier.</span>
 <span class="comment">//</span>
@@ -1010,6 +1013,9 @@
 	{
 		<span class="kw">let</span> (<span class="ident">total_fee_per_gas</span>, <span class="ident">_actual_priority_fee_per_gas</span>) <span class="op">=</span>
 			<span class="kw">match</span> (<span class="ident">max_fee_per_gas</span>, <span class="ident">max_priority_fee_per_gas</span>, <span class="ident">is_transactional</span>) {
+				<span class="comment">// Zero max_fee_per_gas for validated transactional calls exist in XCM -&gt; EVM</span>
+				<span class="comment">// because fees are already withdrawn in the xcm-executor.</span>
+				(<span class="prelude-val">Some</span>(<span class="ident">max_fee</span>), <span class="kw">_</span>, <span class="bool-val">true</span>) <span class="kw">if</span> <span class="ident">max_fee</span>.<span class="ident">is_zero</span>() =&gt; (<span class="ident">U256::zero</span>(), <span class="ident">U256::zero</span>()),
 				<span class="comment">// With no tip, we pay exactly the base_fee</span>
 				(<span class="prelude-val">Some</span>(<span class="kw">_</span>), <span class="prelude-val">None</span>, <span class="kw">_</span>) =&gt; (<span class="ident">base_fee</span>, <span class="ident">U256::zero</span>()),
 				<span class="comment">// With tip, we include as much of the tip on top of base_fee that we can, never</span>
