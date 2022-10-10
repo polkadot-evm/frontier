@@ -18,6 +18,8 @@
 //! Consensus extension module tests for BABE consensus.
 
 use super::*;
+use fp_ethereum::ValidatedTransaction;
+use pallet_evm::AddressMapping;
 
 fn legacy_erc20_creation_unsigned_transaction() -> LegacyUnsignedTransaction {
 	LegacyUnsignedTransaction {
@@ -372,5 +374,36 @@ fn self_contained_transaction_with_extra_gas_should_adjust_weight_with_post_disp
 			"the block weight was unexpected, excess '{}'",
 			actual_weight as i128 - expected_weight as i128
 		);
+	});
+}
+
+#[test]
+fn validated_transaction_apply_zero_gas_price_works() {
+	let (pairs, mut ext) = new_test_ext_with_initial_balance(2, 1_000);
+	let alice = &pairs[0];
+	let bob = &pairs[1];
+	let substrate_alice =
+		<Test as pallet_evm::Config>::AddressMapping::into_account_id(alice.address);
+	let substrate_bob = <Test as pallet_evm::Config>::AddressMapping::into_account_id(bob.address);
+
+	ext.execute_with(|| {
+		let transaction = LegacyUnsignedTransaction {
+			nonce: U256::zero(),
+			gas_price: U256::zero(),
+			gas_limit: U256::from(21_000),
+			action: ethereum::TransactionAction::Call(bob.address),
+			value: U256::from(100),
+			input: Default::default(),
+		}
+		.sign(&alice.private_key);
+
+		assert_ok!(crate::ValidatedTransaction::<Test>::apply(
+			alice.address,
+			transaction
+		));
+		// Alice didn't pay fees, transfer 100 to Bob.
+		assert_eq!(Balances::free_balance(&substrate_alice), 900);
+		// Bob received 100 from Alice.
+		assert_eq!(Balances::free_balance(&substrate_bob), 1_100);
 	});
 }
