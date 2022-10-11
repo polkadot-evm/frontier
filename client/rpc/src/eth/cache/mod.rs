@@ -349,11 +349,7 @@ where
 
 			let block = handler.current_block(&id);
 			let mut block_number: Option<u64> = None;
-			let base_fee = if let Some(base_fee) = handler.base_fee(&id) {
-				base_fee
-			} else {
-				client.runtime_api().gas_price(&id).unwrap_or_else(|_|U256::zero())
-			};
+			let base_fee = client.runtime_api().gas_price(&id).unwrap_or_default();
 			let receipts = handler.current_receipts(&id);
 			let mut result = FeeHistoryCacheItem {
 				base_fee: base_fee.as_u64(),
