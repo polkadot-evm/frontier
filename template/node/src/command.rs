@@ -222,7 +222,7 @@ pub fn run() -> sc_cli::Result<()> {
 		}
 		#[cfg(not(feature = "runtime-benchmarks"))]
 		Some(Subcommand::Benchmark) => Err("Benchmarking wasn't enabled when building the node. \
-            You can enable it with `--features runtime-benchmarks`."
+			You can enable it with `--features runtime-benchmarks`."
 			.into()),
 		Some(Subcommand::FrontierDb(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
