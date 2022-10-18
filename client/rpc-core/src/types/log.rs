@@ -21,7 +21,7 @@ use ethereum_types::{H160, H256, U256};
 use serde::Serialize;
 
 /// Log
-#[derive(Debug, Serialize, PartialEq, Eq, Hash, Clone)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Log {
 	/// H160

@@ -20,7 +20,7 @@ jobs:
       uses: actions-rs/toolchain@v1
       with:
         profile: minimal
-        toolchain: nightly-2022-05-02
+        toolchain: nightly-2022-07-25
         target: wasm32-unknown-unknown
         override: true
     - name: Run tests
@@ -37,7 +37,7 @@ jobs:
       uses: actions-rs/toolchain@v1
       with:
         profile: minimal
-        toolchain: nightly-2022-05-02
+        toolchain: nightly-2022-07-25
         target: wasm32-unknown-unknown
         override: true
     - name: Build manual seal client
@@ -64,7 +64,7 @@ jobs:
       uses: actions-rs/toolchain@v1
       with:
         profile: minimal
-        toolchain: nightly-2022-05-02
+        toolchain: nightly-2022-07-25
         target: wasm32-unknown-unknown
         override: true
         components: rustfmt, clippy

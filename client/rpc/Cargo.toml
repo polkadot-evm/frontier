@@ -62,8 +62,6 @@ sc-block-builder = { version = "0.10.0-dev", git = "https://github.com/paritytec
 sc-client-db = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-consensus = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 substrate-test-runtime-client = { version = "2.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
-# Frontier
-frontier-template-runtime = { path = "../../template/runtime" }
 
 [features]
 rpc_binary_search_estimate = []

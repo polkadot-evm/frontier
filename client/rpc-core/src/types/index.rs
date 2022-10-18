@@ -23,7 +23,7 @@ use serde::{
 use std::fmt;
 
 /// Represents usize.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct Index(usize);
 
 impl Index {
