@@ -2,7 +2,7 @@
 
 use std::{
 	collections::BTreeMap,
-	path::PathBuf,
+	path::{Path, PathBuf},
 	sync::{Arc, Mutex},
 	time::Duration,
 };
@@ -264,7 +264,7 @@ fn remote_keystore(_url: &str) -> Result<Arc<LocalKeystore>, &'static str> {
 
 /// Builds a new service for a full client.
 #[cfg(feature = "aura")]
-pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, ServiceError> {
+pub async fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, ServiceError> {
 	use sc_client_api::{BlockBackend, ExecutorProvider};
 	use sp_consensus_aura::sr25519::AuthorityPair as AuraPair;
 
@@ -390,6 +390,8 @@ pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, Ser
 		})
 	};
 
+	let db_path = &db_config_dir(&config);
+
 	let _rpc_handlers = sc_service::spawn_tasks(sc_service::SpawnTasksParams {
 		network: network.clone(),
 		client: client.clone(),
@@ -404,6 +406,7 @@ pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, Ser
 	})?;
 
 	spawn_frontier_tasks(
+		&db_path,
 		&task_manager,
 		client.clone(),
 		backend,
@@ -412,7 +415,8 @@ pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, Ser
 		overrides,
 		fee_history_cache,
 		fee_history_cache_limit,
-	);
+	)
+	.await;
 
 	let (block_import, grandpa_link) = consensus_result;
 
@@ -516,7 +520,7 @@ pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, Ser
 
 /// Builds a new service for a full client.
 #[cfg(feature = "manual-seal")]
-pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, ServiceError> {
+pub async fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, ServiceError> {
 	// Use ethereum style for subscription ids
 	config.rpc_id_provider = Some(Box::new(fc_rpc::EthereumSubIdProvider));
 
@@ -618,6 +622,8 @@ pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, Ser
 		})
 	};
 
+	let db_path = &db_config_dir(&config);
+
 	let _rpc_handlers = sc_service::spawn_tasks(sc_service::SpawnTasksParams {
 		network,
 		client: client.clone(),
@@ -632,6 +638,7 @@ pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, Ser
 	})?;
 
 	spawn_frontier_tasks(
+		&db_path,
 		&task_manager,
 		client.clone(),
 		backend,
@@ -640,7 +647,8 @@ pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, Ser
 		overrides,
 		fee_history_cache,
 		fee_history_cache_limit,
-	);
+	)
+	.await;
 
 	if role.is_authority() {
 		let env = sc_basic_authorship::ProposerFactory::new(
@@ -726,7 +734,8 @@ pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, Ser
 	Ok(task_manager)
 }
 
-fn spawn_frontier_tasks(
+async fn spawn_frontier_tasks(
+	db_path: &Path,
 	task_manager: &TaskManager,
 	client: Arc<FullClient>,
 	backend: Arc<FullBackend>,
@@ -743,7 +752,7 @@ fn spawn_frontier_tasks(
 			client.import_notification_stream(),
 			Duration::new(6, 0),
 			client.clone(),
-			backend,
+			backend.clone(),
 			frontier_backend,
 			3,
 			0,
@@ -768,10 +777,40 @@ fn spawn_frontier_tasks(
 		"frontier-fee-history",
 		None,
 		EthTask::fee_history_task(
-			client,
-			overrides,
+			client.clone(),
+			overrides.clone(),
 			fee_history_cache,
 			fee_history_cache_limit,
+		),
+	);
+
+	// Spawn Frontier log indexer task.
+	let indexer_backend = fc_log_indexer::Backend::new(
+		fc_log_indexer::BackendConfig::Sqlite(fc_log_indexer::SqliteBackendConfig {
+			path: Path::new("sqlite:///")
+				.join(db_path.strip_prefix("/").unwrap().to_str().unwrap())
+				.join("frontier")
+				.join("fc-log-indexer.db3")
+				.to_str()
+				.unwrap(),
+			create_if_missing: true,
+		}),
+		100, // pool size
+		client.clone(),
+		overrides,
+	)
+	.await
+	.expect("indexer pool to be created");
+
+	task_manager.spawn_essential_handle().spawn(
+		"indexer-queue-worker",
+		Some("testsqlite"),
+		fc_log_indexer::SyncWorker::run(
+			backend.clone(),
+			Arc::new(indexer_backend),
+			client.clone().import_notification_stream(),
+			1000,                              // batch size
+			std::time::Duration::from_secs(1), // interval duration
 		),
 	);
 }
