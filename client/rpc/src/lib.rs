@@ -68,7 +68,7 @@ pub mod frontier_backend_client {
 
 	pub fn native_block_id<B: BlockT, C>(
 		client: &C,
-		backend: &fc_db::Backend<B>,
+		backend: &(dyn fc_db::BackendReader<B> + Send + Sync),
 		number: Option<BlockNumber>,
 	) -> RpcResult<Option<BlockId<B>>>
 	where
@@ -90,7 +90,7 @@ pub mod frontier_backend_client {
 
 	pub fn load_hash<B: BlockT, C>(
 		client: &C,
-		backend: &fc_db::Backend<B>,
+		backend: &(dyn fc_db::BackendReader<B> + Send + Sync),
 		hash: H256,
 	) -> RpcResult<Option<BlockId<B>>>
 	where
@@ -98,7 +98,6 @@ pub mod frontier_backend_client {
 		C: HeaderBackend<B> + Send + Sync + 'static,
 	{
 		let substrate_hashes = backend
-			.mapping()
 			.block_hash(&hash)
 			.map_err(|err| internal_err(format!("fetch aux store failed: {:?}", err)))?;
 
@@ -110,35 +109,6 @@ pub mod frontier_backend_client {
 			}
 		}
 		Ok(None)
-	}
-
-	pub fn load_cached_schema<B: BlockT, C>(
-		backend: &fc_db::Backend<B>,
-	) -> RpcResult<Option<Vec<(EthereumStorageSchema, H256)>>>
-	where
-		B: BlockT<Hash = H256> + Send + Sync + 'static,
-		C: HeaderBackend<B> + Send + Sync + 'static,
-	{
-		let cache = backend
-			.meta()
-			.ethereum_schema()
-			.map_err(|err| internal_err(format!("fetch backend failed: {:?}", err)))?;
-		Ok(cache)
-	}
-
-	pub fn write_cached_schema<B: BlockT, C>(
-		backend: &fc_db::Backend<B>,
-		new_cache: Vec<(EthereumStorageSchema, H256)>,
-	) -> RpcResult<()>
-	where
-		B: BlockT<Hash = H256> + Send + Sync + 'static,
-		C: HeaderBackend<B> + Send + Sync + 'static,
-	{
-		backend
-			.meta()
-			.write_ethereum_schema(new_cache)
-			.map_err(|err| internal_err(format!("write backend failed: {:?}", err)))?;
-		Ok(())
 	}
 
 	pub fn onchain_storage_schema<B: BlockT, C, BE>(
@@ -174,7 +144,7 @@ pub mod frontier_backend_client {
 
 	pub fn load_transactions<B: BlockT, C>(
 		client: &C,
-		backend: &fc_db::Backend<B>,
+		backend: &(dyn fc_db::BackendReader<B> + Send + Sync),
 		transaction_hash: H256,
 		only_canonical: bool,
 	) -> RpcResult<Option<(H256, u32)>>
@@ -183,7 +153,6 @@ pub mod frontier_backend_client {
 		C: HeaderBackend<B> + Send + Sync + 'static,
 	{
 		let transaction_metadata = backend
-			.mapping()
 			.transaction_metadata(&transaction_hash)
 			.map_err(|err| internal_err(format!("fetch aux store failed: {:?}", err)))?;
 

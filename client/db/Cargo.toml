@@ -11,8 +11,11 @@ repository = "https://github.com/paritytech/frontier/"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
+ethereum = { version = "0.12.0", features = ["with-codec"] }
 log = "0.4.17"
 parking_lot = "0.12.1"
+sqlx = { version = "0.6", features = [ "runtime-tokio-native-tls", "sqlite", "offline" ] }
+tokio = { version = "1.19", features = [ "macros", "sync" ] }
 
 # Parity
 codec = { package = "parity-scale-codec", version = "3.0.0", features = ["derive"] }
@@ -20,11 +23,13 @@ kvdb-rocksdb = { version = "0.15.2", optional = true }
 parity-db = { version = "0.3.16", optional = true }
 
 # Substrate
+sc-client-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-client-db = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-blockchain = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-core = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-database = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-runtime = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-storage = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Frontier
 fp-storage = { version = "2.0.0-dev", path = "../../primitives/storage" }

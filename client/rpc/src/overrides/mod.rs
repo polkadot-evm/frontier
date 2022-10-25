@@ -16,9 +16,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use std::{collections::BTreeMap, marker::PhantomData, sync::Arc};
+use std::{marker::PhantomData, sync::Arc};
 
-use ethereum::BlockV2 as EthereumBlock;
 use ethereum_types::{H160, H256, U256};
 // Substrate
 use sp_api::{ApiExt, BlockId, ProvideRuntimeApi};
@@ -26,7 +25,7 @@ use sp_io::hashing::{blake2_128, twox_128};
 use sp_runtime::{traits::Block as BlockT, Permill};
 // Frontier
 use fp_rpc::{EthereumRuntimeRPCApi, TransactionStatus};
-use fp_storage::EthereumStorageSchema;
+pub use fp_storage::{EthereumStorageSchema, OverrideHandle, StorageOverride};
 
 mod schema_v1_override;
 mod schema_v2_override;
@@ -35,38 +34,6 @@ mod schema_v3_override;
 pub use schema_v1_override::SchemaV1Override;
 pub use schema_v2_override::SchemaV2Override;
 pub use schema_v3_override::SchemaV3Override;
-
-pub struct OverrideHandle<Block: BlockT> {
-	pub schemas: BTreeMap<EthereumStorageSchema, Box<dyn StorageOverride<Block> + Send + Sync>>,
-	pub fallback: Box<dyn StorageOverride<Block> + Send + Sync>,
-}
-
-/// Something that can fetch Ethereum-related data. This trait is quite similar to the runtime API,
-/// and indeed oe implementation of it uses the runtime API.
-/// Having this trait is useful because it allows optimized implementations that fetch data from a
-/// State Backend with some assumptions about pallet-ethereum's storage schema. Using such an
-/// optimized implementation avoids spawning a runtime and the overhead associated with it.
-pub trait StorageOverride<Block: BlockT> {
-	/// For a given account address, returns pallet_evm::AccountCodes.
-	fn account_code_at(&self, block: &BlockId<Block>, address: H160) -> Option<Vec<u8>>;
-	/// For a given account address and index, returns pallet_evm::AccountStorages.
-	fn storage_at(&self, block: &BlockId<Block>, address: H160, index: U256) -> Option<H256>;
-	/// Return the current block.
-	fn current_block(&self, block: &BlockId<Block>) -> Option<EthereumBlock>;
-	/// Return the current receipt.
-	fn current_receipts(&self, block: &BlockId<Block>) -> Option<Vec<ethereum::ReceiptV3>>;
-	/// Return the current transaction status.
-	fn current_transaction_statuses(
-		&self,
-		block: &BlockId<Block>,
-	) -> Option<Vec<TransactionStatus>>;
-	/// Return the base fee at the given height.
-	fn base_fee(&self, block: &BlockId<Block>) -> Option<U256>;
-	/// Return the base fee at the given height.
-	fn elasticity(&self, block: &BlockId<Block>) -> Option<Permill>;
-	/// Return `true` if the request BlockId is post-eip1559.
-	fn is_eip1559(&self, block: &BlockId<Block>) -> bool;
-}
 
 fn storage_prefix_build(module: &[u8], storage: &[u8]) -> Vec<u8> {
 	[twox_128(module), twox_128(storage)].concat().to_vec()

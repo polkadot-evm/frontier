@@ -15,6 +15,21 @@ impl Default for Sealing {
 	}
 }
 
+/// Avalailable Backend types.
+#[derive(Debug, Copy, Clone, clap::ArgEnum)]
+pub enum BackendType {
+	/// Either RocksDb or ParityDb as per inherited from the global backend settings.
+	KeyValue,
+	/// Sql database with custom log indexing.
+	Sql,
+}
+
+impl Default for BackendType {
+	fn default() -> BackendType {
+		BackendType::KeyValue
+	}
+}
+
 #[allow(missing_docs)]
 #[derive(Debug, clap::Parser)]
 pub struct RunCmd {
@@ -41,6 +56,10 @@ pub struct RunCmd {
 	/// The dynamic-fee pallet target gas price set by block author
 	#[clap(long, default_value = "1")]
 	pub target_gas_price: u64,
+
+	/// Sets the backend type (KeyValue or Sql)
+	#[clap(long, arg_enum, ignore_case = true, default_value_t = BackendType::default())]
+	pub frontier_backend_type: BackendType,
 }
 
 #[derive(Debug, clap::Parser)]
@@ -83,7 +102,6 @@ pub enum Subcommand {
 	/// The pallet benchmarking moved to the `pallet` sub-command.
 	#[clap(subcommand)]
 	Benchmark(frame_benchmarking_cli::BenchmarkCmd),
-
-	/// Db meta columns information.
-	FrontierDb(fc_cli::FrontierDbCmd),
+	// /// Db meta columns information.
+	//FrontierDb(fc_cli::FrontierDbCmd),
 }

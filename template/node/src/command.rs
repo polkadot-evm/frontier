@@ -23,7 +23,7 @@ use sc_cli::{ChainSpec, RuntimeVersion, SubstrateCli};
 use sc_service::{DatabaseSource, PartialComponents};
 use sp_keyring::Sr25519Keyring;
 // Frontier
-use fc_db::frontier_database_dir;
+use fc_db::kv::frontier_database_dir;
 use frontier_template_runtime::{Block, ExistentialDeposit};
 
 use crate::{
@@ -216,14 +216,14 @@ pub fn run() -> sc_cli::Result<()> {
 				}
 			})
 		}
-		Some(Subcommand::FrontierDb(cmd)) => {
-			let runner = cli.create_runner(cmd)?;
-			runner.sync_run(|config| {
-				let PartialComponents { client, other, .. } = service::new_partial(&config, &cli)?;
-				let frontier_backend = other.2;
-				cmd.run::<_, frontier_template_runtime::opaque::Block>(client, frontier_backend)
-			})
-		}
+		// Some(Subcommand::FrontierDb(cmd)) => {
+		// 	let runner = cli.create_runner(cmd)?;
+		// 	runner.sync_run(|config| {
+		// 		let PartialComponents { client, other, .. } = service::new_partial(&config, &cli)?;
+		// 		let frontier_backend = other.2;
+		// 		cmd.run::<_, frontier_template_runtime::opaque::Block>(client, frontier_backend)
+		// 	})
+		// }
 		None => {
 			let runner = cli.create_runner(&cli.run.base)?;
 			runner.run_node_until_exit(|config| async move {

@@ -45,7 +45,7 @@ pub struct MappingSyncWorker<Block: BlockT, C, B> {
 
 	client: Arc<C>,
 	substrate_backend: Arc<B>,
-	frontier_backend: Arc<fc_db::Backend<Block>>,
+	frontier_backend: Arc<fc_db::kv::Backend<Block>>,
 
 	have_next: bool,
 	retry_times: usize,
@@ -61,7 +61,7 @@ impl<Block: BlockT, C, B> MappingSyncWorker<Block, C, B> {
 		timeout: Duration,
 		client: Arc<C>,
 		substrate_backend: Arc<B>,
-		frontier_backend: Arc<fc_db::Backend<Block>>,
+		frontier_backend: Arc<fc_db::kv::Backend<Block>>,
 		retry_times: usize,
 		sync_from: <Block::Header as HeaderT>::Number,
 		strategy: SyncStrategy,
@@ -121,7 +121,7 @@ where
 		if fire {
 			self.inner_delay = None;
 
-			match crate::sync_blocks(
+			match super::sync_blocks(
 				self.client.as_ref(),
 				self.substrate_backend.blockchain(),
 				self.frontier_backend.as_ref(),

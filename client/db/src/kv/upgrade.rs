@@ -21,7 +21,7 @@ use sp_runtime::traits::{Block as BlockT, Header};
 
 use sp_core::H256;
 
-use crate::DatabaseSource;
+use super::DatabaseSource;
 
 use std::{
 	fmt, fs,
@@ -189,7 +189,7 @@ where
 		let mut transaction = db.transaction();
 		for ethereum_hash in ethereum_hashes {
 			let mut maybe_error = true;
-			if let Some(substrate_hash) = db.get(crate::columns::BLOCK_MAPPING, ethereum_hash)? {
+			if let Some(substrate_hash) = db.get(super::columns::BLOCK_MAPPING, ethereum_hash)? {
 				// Only update version1 data
 				let decoded = Vec::<Block::Hash>::decode(&mut &substrate_hash[..]);
 				if decoded.is_err() || decoded.unwrap().is_empty() {
@@ -197,7 +197,7 @@ where
 					if let Ok(Some(number)) = client.number(Block::Hash::decode(&mut &substrate_hash[..]).unwrap()) {
 						if let Ok(Some(header)) = client.header(sp_runtime::generic::BlockId::Number(number)) {
 							transaction.put_vec(
-								crate::columns::BLOCK_MAPPING,
+								super::columns::BLOCK_MAPPING,
 								ethereum_hash,
 								vec![header.hash()].encode(),
 							);
@@ -232,7 +232,7 @@ where
 
 	// Get all the block hashes we need to update
 	let ethereum_hashes: Vec<_> = db
-		.iter(crate::columns::BLOCK_MAPPING)
+		.iter(super::columns::BLOCK_MAPPING)
 		.map(|entry| entry.0)
 		.collect();
 
@@ -273,7 +273,7 @@ where
 		let mut transaction = vec![];
 		for ethereum_hash in ethereum_hashes {
 			let mut maybe_error = true;
-			if let Some(substrate_hash) = db.get(crate::columns::BLOCK_MAPPING as u8, ethereum_hash).map_err(|_|
+			if let Some(substrate_hash) = db.get(super::columns::BLOCK_MAPPING as u8, ethereum_hash).map_err(|_|
 				io::Error::new(ErrorKind::Other, "Key does not exist")
 			)? {
 				// Only update version1 data
@@ -283,7 +283,7 @@ where
 					if let Ok(Some(number)) = client.number(Block::Hash::decode(&mut &substrate_hash[..]).unwrap()) {
 						if let Ok(Some(header)) = client.header(sp_runtime::generic::BlockId::Number(number)) {
 							transaction.push((
-								crate::columns::BLOCK_MAPPING as u8,
+								super::columns::BLOCK_MAPPING as u8,
 								ethereum_hash,
 								Some(vec![header.hash()].encode()),
 							));
@@ -303,13 +303,13 @@ where
 	};
 
 	let mut db_cfg = parity_db::Options::with_columns(db_path, V2_NUM_COLUMNS as u8);
-	db_cfg.columns[crate::columns::BLOCK_MAPPING as usize].btree_index = true;
+	db_cfg.columns[super::columns::BLOCK_MAPPING as usize].btree_index = true;
 
 	let db = parity_db::Db::open_or_create(&db_cfg)
 		.map_err(|_| io::Error::new(ErrorKind::Other, "Failed to open db"))?;
 
 	// Get all the block hashes we need to update
-	let ethereum_hashes: Vec<_> = match db.iter(crate::columns::BLOCK_MAPPING as u8) {
+	let ethereum_hashes: Vec<_> = match db.iter(super::columns::BLOCK_MAPPING as u8) {
 		Ok(mut iter) => {
 			let mut hashes = vec![];
 			while let Ok(Some((k, _))) = iter.next() {
@@ -352,12 +352,12 @@ mod tests {
 
 	pub fn open_frontier_backend<C>(
 		client: Arc<C>,
-		setting: &crate::DatabaseSettings,
-	) -> Result<Arc<crate::Backend<OpaqueBlock>>, String>
+		setting: &super::DatabaseSettings,
+	) -> Result<Arc<super::Backend<OpaqueBlock>>, String>
 	where
 		C: sp_blockchain::HeaderBackend<OpaqueBlock>,
 	{
-		Ok(Arc::new(crate::Backend::<OpaqueBlock>::new(
+		Ok(Arc::new(super::Backend::<OpaqueBlock>::new(
 			client, setting,
 		)?))
 	}
@@ -369,14 +369,14 @@ mod tests {
 
 		let settings = vec![
 			// Rocks db
-			crate::DatabaseSettings {
+			super::DatabaseSettings {
 				source: sc_client_db::DatabaseSource::RocksDb {
 					path: tmp_1.path().to_owned(),
 					cache_size: 0,
 				},
 			},
 			// Parity db
-			crate::DatabaseSettings {
+			super::DatabaseSettings {
 				source: sc_client_db::DatabaseSource::ParityDb {
 					path: tmp_2.path().to_owned(),
 				},
@@ -444,7 +444,7 @@ mod tests {
 					substrate_hashes.push(next_canon_block_hash);
 					// Set orphan hash block mapping
 					transaction.set(
-						crate::columns::BLOCK_MAPPING,
+						super::columns::BLOCK_MAPPING,
 						&ethhash.encode(),
 						&orphan_block_hash.encode(),
 					);
@@ -454,14 +454,14 @@ mod tests {
 					let eth_tx_hash = H256::random();
 					let mut metadata = vec![];
 					for hash in vec![next_canon_block_hash, orphan_block_hash].iter() {
-						metadata.push(crate::TransactionMetadata::<OpaqueBlock> {
+						metadata.push(super::TransactionMetadata::<OpaqueBlock> {
 							block_hash: *hash,
 							ethereum_block_hash: ethhash,
 							ethereum_index: 0u32,
 						});
 					}
 					transaction.set(
-						crate::columns::TRANSACTION_MAPPING,
+						super::columns::TRANSACTION_MAPPING,
 						&eth_tx_hash.encode(),
 						&metadata.encode(),
 					);

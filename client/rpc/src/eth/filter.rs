@@ -38,7 +38,7 @@ use crate::{eth::cache::EthBlockDataCacheTask, frontier_backend_client, internal
 
 pub struct EthFilter<B: BlockT, C, BE> {
 	client: Arc<C>,
-	backend: Arc<fc_db::Backend<B>>,
+	backend: Arc<dyn fc_db::BackendReader<B> + Send + Sync>,
 	filter_pool: FilterPool,
 	max_stored_filters: usize,
 	max_past_logs: u32,
@@ -49,7 +49,7 @@ pub struct EthFilter<B: BlockT, C, BE> {
 impl<B: BlockT, C, BE> EthFilter<B, C, BE> {
 	pub fn new(
 		client: Arc<C>,
-		backend: Arc<fc_db::Backend<B>>,
+		backend: Arc<dyn fc_db::BackendReader<B> + Send + Sync>,
 		filter_pool: FilterPool,
 		max_stored_filters: usize,
 		max_past_logs: u32,

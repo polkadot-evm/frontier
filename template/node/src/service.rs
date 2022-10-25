@@ -19,15 +19,14 @@ use sp_core::U256;
 // Frontier
 use fc_consensus::FrontierBlockImport;
 use fc_db::Backend as FrontierBackend;
-use fc_mapping_sync::{MappingSyncWorker, SyncStrategy};
 use fc_rpc::{EthTask, OverrideHandle};
 use fc_rpc_core::types::{FeeHistoryCache, FeeHistoryCacheLimit, FilterPool};
 // Runtime
 use frontier_template_runtime::{opaque::Block, RuntimeApi};
 
-use crate::cli::Cli;
 #[cfg(feature = "manual-seal")]
 use crate::cli::Sealing;
+use crate::cli::{BackendType, Cli};
 
 // Our native executor instance.
 pub struct ExecutorDispatch;
@@ -94,7 +93,7 @@ pub fn new_partial(
 		(
 			Option<Telemetry>,
 			ConsensusResult,
-			Arc<FrontierBackend<Block>>,
+			FrontierBackend<Block>,
 			Option<FilterPool>,
 			(FeeHistoryCache, FeeHistoryCacheLimit),
 		),
@@ -150,11 +149,15 @@ pub fn new_partial(
 		client.clone(),
 	);
 
-	let frontier_backend = Arc::new(FrontierBackend::open(
-		Arc::clone(&client),
-		&config.database,
-		&db_config_dir(config),
-	)?);
+	let frontier_backend = match cli.run.frontier_backend_type {
+		BackendType::KeyValue => FrontierBackend::KeyValue(fc_db::kv::Backend::open(
+			Arc::clone(&client),
+			&config.database,
+			&db_config_dir(config),
+		)?),
+		BackendType::Sql => todo!(),
+	};
+
 	let filter_pool: Option<FilterPool> = Some(Arc::new(Mutex::new(BTreeMap::new())));
 	let fee_history_cache: FeeHistoryCache = Arc::new(Mutex::new(BTreeMap::new()));
 	let fee_history_cache_limit: FeeHistoryCacheLimit = cli.run.fee_history_limit;
@@ -171,11 +174,8 @@ pub fn new_partial(
 			telemetry.as_ref().map(|x| x.handle()),
 		)?;
 
-		let frontier_block_import = FrontierBlockImport::new(
-			grandpa_block_import.clone(),
-			client.clone(),
-			frontier_backend.clone(),
-		);
+		let frontier_block_import =
+			FrontierBlockImport::new(grandpa_block_import.clone(), client.clone());
 
 		let slot_duration = sc_consensus_aura::slot_duration(&*client)?;
 		let target_gas_price = cli.run.target_gas_price;
@@ -227,8 +227,7 @@ pub fn new_partial(
 	{
 		let sealing = cli.run.sealing;
 
-		let frontier_block_import =
-			FrontierBlockImport::new(client.clone(), client.clone(), frontier_backend.clone());
+		let frontier_block_import = FrontierBlockImport::new(client.clone(), client.clone());
 
 		let import_queue = sc_consensus_manual_seal::import_queue(
 			Box::new(frontier_block_import.clone()),
@@ -363,7 +362,9 @@ pub async fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManage
 		let enable_dev_signer = cli.run.enable_dev_signer;
 		let network = network.clone();
 		let filter_pool = filter_pool.clone();
-		let frontier_backend = frontier_backend.clone();
+		let frontier_backend = match frontier_backend.clone() {
+			fc_db::Backend::KeyValue(b) => Arc::new(b),
+		};
 		let overrides = overrides.clone();
 		let fee_history_cache = fee_history_cache.clone();
 		let max_past_logs = cli.run.max_past_logs;
@@ -594,9 +595,12 @@ pub async fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManage
 		let enable_dev_signer = cli.run.enable_dev_signer;
 		let network = network.clone();
 		let filter_pool = filter_pool.clone();
-		let frontier_backend = frontier_backend.clone();
 		let overrides = overrides.clone();
 		let fee_history_cache = fee_history_cache.clone();
+		let frontier_backend = match frontier_backend.clone() {
+			fc_db::Backend::KeyValue(b) => Arc::new(b),
+			fc_db::Backend::Sql(b) => todo!(),
+		};
 		let max_past_logs = cli.run.max_past_logs;
 
 		Box::new(move |deny_unsafe, subscription_task_executor| {
@@ -739,27 +743,30 @@ async fn spawn_frontier_tasks(
 	task_manager: &TaskManager,
 	client: Arc<FullClient>,
 	backend: Arc<FullBackend>,
-	frontier_backend: Arc<FrontierBackend<Block>>,
+	frontier_backend: FrontierBackend<Block>,
 	filter_pool: Option<FilterPool>,
 	overrides: Arc<OverrideHandle<Block>>,
 	fee_history_cache: FeeHistoryCache,
 	fee_history_cache_limit: FeeHistoryCacheLimit,
 ) {
-	task_manager.spawn_essential_handle().spawn(
-		"frontier-mapping-sync-worker",
-		None,
-		MappingSyncWorker::new(
+	let sync_worker = match frontier_backend {
+		fc_db::Backend::KeyValue(b) => fc_mapping_sync::kv::MappingSyncWorker::new(
 			client.import_notification_stream(),
 			Duration::new(6, 0),
 			client.clone(),
 			backend.clone(),
-			frontier_backend,
+			Arc::new(b),
 			3,
 			0,
-			SyncStrategy::Normal,
+			fc_mapping_sync::kv::SyncStrategy::Normal,
 		)
 		.for_each(|()| future::ready(())),
-	);
+		fc_db::Backend::Sql(b) => todo!(),
+	};
+
+	task_manager
+		.spawn_essential_handle()
+		.spawn("frontier-mapping-sync-worker", None, sync_worker);
 
 	// Spawn Frontier EthFilterApi maintenance task.
 	if let Some(filter_pool) = filter_pool {

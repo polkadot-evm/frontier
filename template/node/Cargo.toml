@@ -59,7 +59,7 @@ frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/sub
 pallet-transaction-payment = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Frontier
-fc-cli = { path = "../../client/cli" }
+#fc-cli = { path = "../../client/cli" }
 fc-consensus = { path = "../../client/consensus" }
 fc-db = { path = "../../client/db" }
 fc-mapping-sync = { path = "../../client/mapping-sync" }

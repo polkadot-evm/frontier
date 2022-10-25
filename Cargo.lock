@@ -1650,33 +1650,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "fc-cli"
-version = "1.0.0-dev"
-dependencies = [
- "clap",
- "ethereum-types",
- "fc-db",
- "fp-rpc",
- "fp-storage",
- "frontier-template-runtime",
- "futures",
- "parity-scale-codec",
- "sc-block-builder",
- "sc-cli",
- "sc-client-db",
- "sc-service",
- "serde",
- "serde_json",
- "sp-api",
- "sp-blockchain",
- "sp-consensus",
- "sp-io",
- "sp-runtime",
- "substrate-test-runtime-client",
- "tempfile",
-]
-
-[[package]]
 name = "fc-consensus"
 version = "2.0.0-dev"
 dependencies = [
@@ -1698,6 +1671,7 @@ dependencies = [
 name = "fc-db"
 version = "2.0.0-dev"
 dependencies = [
+ "ethereum",
  "fp-storage",
  "futures",
  "kvdb-rocksdb",
@@ -1706,14 +1680,18 @@ dependencies = [
  "parity-scale-codec",
  "parking_lot 0.12.1",
  "sc-block-builder",
+ "sc-client-api",
  "sc-client-db",
  "sp-blockchain",
  "sp-consensus",
  "sp-core",
  "sp-database",
  "sp-runtime",
+ "sp-storage",
+ "sqlx",
  "substrate-test-runtime-client",
  "tempfile",
+ "tokio",
 ]
 
 [[package]]
@@ -1757,7 +1735,10 @@ dependencies = [
  "sc-client-api",
  "sp-api",
  "sp-blockchain",
+ "sp-core",
  "sp-runtime",
+ "sqlx",
+ "tokio",
 ]
 
 [[package]]
@@ -2039,8 +2020,14 @@ dependencies = [
 name = "fp-storage"
 version = "2.0.0"
 dependencies = [
+ "ethereum",
+ "ethereum-types",
+ "fp-rpc",
  "parity-scale-codec",
  "serde",
+ "sp-api",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
@@ -2256,7 +2243,6 @@ version = "0.0.0"
 dependencies = [
  "async-trait",
  "clap",
- "fc-cli",
  "fc-consensus",
  "fc-db",
  "fc-log-indexer",
