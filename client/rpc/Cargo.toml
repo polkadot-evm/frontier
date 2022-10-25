@@ -12,7 +12,7 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 ethereum = { version = "0.12.0", features = ["with-codec"] }
-evm = { git = "https://github.com/rust-blockchain/evm", rev = "6534c1dd8ad77b53d05032f80e8a5f2de4d37fd2" }
+evm = "0.36.0"
 futures = "0.3.24"
 hex = "0.4.3"
 log = "0.4.17"
