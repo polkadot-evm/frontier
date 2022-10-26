@@ -96,6 +96,7 @@ pub fn new_partial(
 			FrontierBackend<Block>,
 			Option<FilterPool>,
 			(FeeHistoryCache, FeeHistoryCacheLimit),
+			Arc<fc_rpc::OverrideHandle<Block>>,
 		),
 	>,
 	ServiceError,
@@ -149,13 +150,31 @@ pub fn new_partial(
 		client.clone(),
 	);
 
+	let overrides = crate::rpc::overrides_handle(client.clone());
 	let frontier_backend = match cli.run.frontier_backend_type {
 		BackendType::KeyValue => FrontierBackend::KeyValue(fc_db::kv::Backend::open(
 			Arc::clone(&client),
 			&config.database,
 			&db_config_dir(config),
 		)?),
-		BackendType::Sql => todo!(),
+		BackendType::Sql => {
+			let db_path = &db_config_dir(&config);
+			let backend = futures::executor::block_on(fc_db::sql::Backend::new(
+				fc_db::sql::BackendConfig::Sqlite(fc_db::sql::SqliteBackendConfig {
+					path: Path::new("sqlite:///")
+						.join(db_path.strip_prefix("/").unwrap().to_str().unwrap())
+						.join("frontier")
+						.join("fc-log-indexer.db3")
+						.to_str()
+						.unwrap(),
+					create_if_missing: true,
+				}),
+				100, // pool size
+				overrides.clone(),
+			))
+			.expect("indexer pool to be created");
+			FrontierBackend::Sql(backend)
+		}
 	};
 
 	let filter_pool: Option<FilterPool> = Some(Arc::new(Mutex::new(BTreeMap::new())));
@@ -219,6 +238,7 @@ pub fn new_partial(
 				frontier_backend,
 				filter_pool,
 				(fee_history_cache, fee_history_cache_limit),
+				overrides,
 			),
 		})
 	}
@@ -249,6 +269,7 @@ pub fn new_partial(
 				frontier_backend,
 				filter_pool,
 				(fee_history_cache, fee_history_cache_limit),
+				overrides,
 			),
 		})
 	}
@@ -285,6 +306,7 @@ pub async fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManage
 				frontier_backend,
 				filter_pool,
 				(fee_history_cache, fee_history_cache_limit),
+				overrides,
 			),
 	} = new_partial(&config, cli)?;
 
@@ -346,7 +368,6 @@ pub async fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManage
 	let name = config.network.node_name.clone();
 	let enable_grandpa = !config.disable_grandpa;
 	let prometheus_registry = config.prometheus_registry().cloned();
-	let overrides = crate::rpc::overrides_handle(client.clone());
 	let block_data_cache = Arc::new(fc_rpc::EthBlockDataCacheTask::new(
 		task_manager.spawn_handle(),
 		overrides.clone(),
@@ -362,9 +383,7 @@ pub async fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManage
 		let enable_dev_signer = cli.run.enable_dev_signer;
 		let network = network.clone();
 		let filter_pool = filter_pool.clone();
-		let frontier_backend = match frontier_backend.clone() {
-			fc_db::Backend::KeyValue(b) => Arc::new(b),
-		};
+		let frontier_backend = frontier_backend.clone();
 		let overrides = overrides.clone();
 		let fee_history_cache = fee_history_cache.clone();
 		let max_past_logs = cli.run.max_past_logs;
@@ -379,7 +398,10 @@ pub async fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManage
 				enable_dev_signer,
 				network: network.clone(),
 				filter_pool: filter_pool.clone(),
-				backend: frontier_backend.clone(),
+				backend: match frontier_backend.clone() {
+					fc_db::Backend::KeyValue(b) => Arc::new(b),
+					fc_db::Backend::Sql(b) => Arc::new(b),
+				},
 				max_past_logs,
 				fee_history_cache: fee_history_cache.clone(),
 				fee_history_cache_limit,
@@ -390,8 +412,6 @@ pub async fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManage
 			crate::rpc::create_full(deps, subscription_task_executor).map_err(Into::into)
 		})
 	};
-
-	let db_path = &db_config_dir(&config);
 
 	let _rpc_handlers = sc_service::spawn_tasks(sc_service::SpawnTasksParams {
 		network: network.clone(),
@@ -407,7 +427,6 @@ pub async fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManage
 	})?;
 
 	spawn_frontier_tasks(
-		&db_path,
 		&task_manager,
 		client.clone(),
 		backend,
@@ -540,6 +559,7 @@ pub async fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManage
 				frontier_backend,
 				filter_pool,
 				(fee_history_cache, fee_history_cache_limit),
+				overrides,
 			),
 	} = new_partial(&config, cli)?;
 
@@ -577,7 +597,6 @@ pub async fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManage
 
 	let role = config.role.clone();
 	let prometheus_registry = config.prometheus_registry().cloned();
-	let overrides = crate::rpc::overrides_handle(client.clone());
 	let block_data_cache = Arc::new(fc_rpc::EthBlockDataCacheTask::new(
 		task_manager.spawn_handle(),
 		overrides.clone(),
@@ -597,10 +616,7 @@ pub async fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManage
 		let filter_pool = filter_pool.clone();
 		let overrides = overrides.clone();
 		let fee_history_cache = fee_history_cache.clone();
-		let frontier_backend = match frontier_backend.clone() {
-			fc_db::Backend::KeyValue(b) => Arc::new(b),
-			fc_db::Backend::Sql(b) => todo!(),
-		};
+		let frontier_backend = frontier_backend.clone();
 		let max_past_logs = cli.run.max_past_logs;
 
 		Box::new(move |deny_unsafe, subscription_task_executor| {
@@ -613,7 +629,10 @@ pub async fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManage
 				enable_dev_signer,
 				network: network.clone(),
 				filter_pool: filter_pool.clone(),
-				backend: frontier_backend.clone(),
+				backend: match frontier_backend.clone() {
+					fc_db::Backend::KeyValue(b) => Arc::new(b),
+					fc_db::Backend::Sql(b) => Arc::new(b),
+				},
 				max_past_logs,
 				fee_history_cache: fee_history_cache.clone(),
 				fee_history_cache_limit,
@@ -625,8 +644,6 @@ pub async fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManage
 			crate::rpc::create_full(deps, subscription_task_executor).map_err(Into::into)
 		})
 	};
-
-	let db_path = &db_config_dir(&config);
 
 	let _rpc_handlers = sc_service::spawn_tasks(sc_service::SpawnTasksParams {
 		network,
@@ -642,7 +659,6 @@ pub async fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManage
 	})?;
 
 	spawn_frontier_tasks(
-		&db_path,
 		&task_manager,
 		client.clone(),
 		backend,
@@ -739,7 +755,6 @@ pub async fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManage
 }
 
 async fn spawn_frontier_tasks(
-	db_path: &Path,
 	task_manager: &TaskManager,
 	client: Arc<FullClient>,
 	backend: Arc<FullBackend>,
@@ -749,24 +764,40 @@ async fn spawn_frontier_tasks(
 	fee_history_cache: FeeHistoryCache,
 	fee_history_cache_limit: FeeHistoryCacheLimit,
 ) {
-	let sync_worker = match frontier_backend {
-		fc_db::Backend::KeyValue(b) => fc_mapping_sync::kv::MappingSyncWorker::new(
-			client.import_notification_stream(),
-			Duration::new(6, 0),
-			client.clone(),
-			backend.clone(),
-			Arc::new(b),
-			3,
-			0,
-			fc_mapping_sync::kv::SyncStrategy::Normal,
-		)
-		.for_each(|()| future::ready(())),
-		fc_db::Backend::Sql(b) => todo!(),
-	};
-
-	task_manager
-		.spawn_essential_handle()
-		.spawn("frontier-mapping-sync-worker", None, sync_worker);
+	// Spawn main mapping sync worker background task.
+	match frontier_backend {
+		fc_db::Backend::KeyValue(b) => {
+			task_manager.spawn_essential_handle().spawn(
+				"frontier-mapping-sync-worker",
+				None,
+				fc_mapping_sync::kv::MappingSyncWorker::new(
+					client.import_notification_stream(),
+					Duration::new(6, 0),
+					client.clone(),
+					backend.clone(),
+					Arc::new(b),
+					3,
+					0,
+					fc_mapping_sync::kv::SyncStrategy::Normal,
+				)
+				.for_each(|()| future::ready(())),
+			);
+		}
+		fc_db::Backend::Sql(b) => {
+			task_manager.spawn_essential_handle().spawn(
+				"frontier-mapping-sync-worker",
+				None,
+				fc_mapping_sync::sql::SyncWorker::run(
+					client.clone(),
+					backend.clone(),
+					Arc::new(b),
+					client.clone().import_notification_stream(),
+					1000,                              // batch size
+					std::time::Duration::from_secs(1), // interval duration
+				),
+			);
+		}
+	}
 
 	// Spawn Frontier EthFilterApi maintenance task.
 	if let Some(filter_pool) = filter_pool {
@@ -788,36 +819,6 @@ async fn spawn_frontier_tasks(
 			overrides.clone(),
 			fee_history_cache,
 			fee_history_cache_limit,
-		),
-	);
-
-	// Spawn Frontier log indexer task.
-	let indexer_backend = fc_log_indexer::Backend::new(
-		fc_log_indexer::BackendConfig::Sqlite(fc_log_indexer::SqliteBackendConfig {
-			path: Path::new("sqlite:///")
-				.join(db_path.strip_prefix("/").unwrap().to_str().unwrap())
-				.join("frontier")
-				.join("fc-log-indexer.db3")
-				.to_str()
-				.unwrap(),
-			create_if_missing: true,
-		}),
-		100, // pool size
-		client.clone(),
-		overrides,
-	)
-	.await
-	.expect("indexer pool to be created");
-
-	task_manager.spawn_essential_handle().spawn(
-		"indexer-queue-worker",
-		Some("testsqlite"),
-		fc_log_indexer::SyncWorker::run(
-			backend.clone(),
-			Arc::new(indexer_backend),
-			client.clone().import_notification_stream(),
-			1000,                              // batch size
-			std::time::Duration::from_secs(1), // interval duration
 		),
 	);
 }
