@@ -70,7 +70,6 @@ fp-dynamic-fee = { path = "../../primitives/dynamic-fee" }
 fp-evm = { path = "../../primitives/evm" }
 fp-rpc = { path = "../../primitives/rpc" }
 fp-storage = { path = "../../primitives/storage" }
-fc-log-indexer = { path = "../../client/log-indexer" }
 
 frontier-template-runtime = { path = "../runtime", default-features = false, features = ["std"] }
 
