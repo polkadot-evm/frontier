@@ -163,8 +163,7 @@ pub fn new_partial(
 				fc_db::sql::BackendConfig::Sqlite(fc_db::sql::SqliteBackendConfig {
 					path: Path::new("sqlite:///")
 						.join(db_path.strip_prefix("/").unwrap().to_str().unwrap())
-						.join("frontier")
-						.join("fc-log-indexer.db3")
+						.join("frontier.db3")
 						.to_str()
 						.unwrap(),
 					create_if_missing: true,

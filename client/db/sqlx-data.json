@@ -1,14 +1,24 @@
 {
   "db": "SQLite",
-  "475154c4179f001d71dd13494e907f8968d0f04ece597b1f216c9a8079891fa4": {
+  "7be2c6176c37c2e3d09227f7feedefaea743b803cf9500e1853354336e5c7214": {
     "describe": {
       "columns": [],
       "nullable": [],
       "parameters": {
-        "Right": 1
+        "Right": 4
       }
     },
-    "query": "UPDATE sync_status\n\t\t\t\t\t\t\tSET status = 0\n\t\t\t\t\t\t\tWHERE substrate_block_hash = ?"
+    "query": "INSERT OR IGNORE INTO transactions(\n\t\t\t\t\t\t\t\t\tethereum_transaction_hash,\n\t\t\t\t\t\t\t\t\tsubstrate_block_hash,\n\t\t\t\t\t\t\t\t\tethereum_block_hash,\n\t\t\t\t\t\t\t\t\tethereum_transaction_index)\n\t\t\t\t\t\t\t\tVALUES (?, ?, ?, ?)"
+  },
+  "a40bd0ce62ef8366b36dd2b97fe8706640e3c4f6188ca35096aec5c6973a49d3": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 2
+      }
+    },
+    "query": "INSERT OR IGNORE INTO blocks(\n\t\t\t\t\t\t\t\tethereum_block_hash,\n\t\t\t\t\t\t\t\tsubstrate_block_hash)\n\t\t\t\t\t\t\tVALUES (?, ?)"
   },
   "da7b8e4581c57e46ac27b32e3cc382cee9c6fb15d0a2c3b13f85afea92eac838": {
     "describe": {

@@ -176,7 +176,7 @@ where
 				);
 				current_batch.push(hash);
 				let _ = indexer_backend
-					.insert_sync_status(current_batch)
+					.insert_block_metadata(client.clone(), current_batch)
 					.await
 					.map_err(|e| {
 						log::error!(

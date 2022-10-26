@@ -17,13 +17,14 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use codec::Decode;
+use fp_consensus::FindLogError;
 use fp_storage::{EthereumStorageSchema, OverrideHandle, PALLET_ETHEREUM_SCHEMA};
 use sc_client_api::backend::{Backend as BackendT, StateBackend, StorageProvider};
 use sp_blockchain::HeaderBackend;
 use sp_core::H256;
 use sp_runtime::{
 	generic::BlockId,
-	traits::{BlakeTwo256, Block as BlockT, UniqueSaturatedInto},
+	traits::{BlakeTwo256, Block as BlockT, Header as HeaderT, UniqueSaturatedInto},
 };
 use sqlx::{
 	sqlite::{SqliteConnectOptions, SqlitePool, SqlitePoolOptions, SqliteQueryResult},
@@ -96,14 +97,65 @@ where
 		&self.pool
 	}
 
-	pub async fn insert_sync_status(&self, hashes: &Vec<H256>) -> Result<SqliteQueryResult, Error> {
+	pub async fn insert_block_metadata<Client, BE>(&self, client: Arc<Client>, hashes: &Vec<H256>) -> Result<(), Error>
+	where
+		Client: StorageProvider<Block, BE> + HeaderBackend<Block> + Send + Sync + 'static,
+		BE: BackendT<Block> + 'static,
+		BE::State: StateBackend<BlakeTwo256>,
+	{
+		let mut tx = self.pool().begin().await?;
+
+		for &hash in hashes.iter() {
+			if let Ok(Some(header)) = client.header(BlockId::Hash(hash)) {
+				match fp_consensus::find_log(header.digest()) {
+					Ok(log) => {
+						let post_hashes = log.into_hashes();
+						let ethereum_block_hash = post_hashes.block_hash.as_bytes().to_owned();
+						let substrate_block_hash = header.hash().as_bytes().to_owned();
+						let _ = sqlx::query!(
+							"INSERT OR IGNORE INTO blocks(
+								ethereum_block_hash,
+								substrate_block_hash)
+							VALUES (?, ?)",
+							ethereum_block_hash,
+							substrate_block_hash,
+						)
+						.execute(&mut tx)
+						.await?;
+						for (i, &transaction_hash) in post_hashes.transaction_hashes.iter().enumerate() {
+							let ethereum_transaction_hash = transaction_hash.as_bytes().to_owned();
+							let ethereum_transaction_index = i as i32;
+							let _ = sqlx::query!(
+								"INSERT OR IGNORE INTO transactions(
+									ethereum_transaction_hash,
+									substrate_block_hash,
+									ethereum_block_hash,
+									ethereum_transaction_index)
+								VALUES (?, ?, ?, ?)",
+								ethereum_transaction_hash,
+								substrate_block_hash,
+								ethereum_block_hash,
+								ethereum_transaction_index,
+							)
+							.execute(&mut tx)
+							.await?;
+						}
+					}
+					Err(FindLogError::NotFound) => {}
+					Err(FindLogError::MultipleLogs) => return Err(Error::Protocol("Multiple logs found".to_string())),
+				}
+			}
+		}
+
 		let mut builder: QueryBuilder<Sqlite> =
 			QueryBuilder::new("INSERT INTO sync_status(substrate_block_hash) ");
 		builder.push_values(hashes, |mut b, hash| {
 			b.push_bind(hash.as_bytes());
 		});
 		let query = builder.build();
-		query.execute(self.pool()).await
+		query.execute(&mut tx).await?;
+
+		tx.commit().await
 	}
 
 	pub fn spawn_logs_task<Client, BE>(&self, client: Arc<Client>, batch_size: usize)
@@ -324,6 +376,26 @@ where
                     substrate_block_hash
                 )
             );
+            CREATE TABLE IF NOT EXISTS blocks (
+                id INTEGER PRIMARY KEY,
+                ethereum_block_hash BLOB NOT NULL,
+                substrate_block_hash BLOB NOT NULL,
+				UNIQUE (
+					ethereum_block_hash,
+                    substrate_block_hash
+                )
+            );
+            CREATE TABLE IF NOT EXISTS transactions (
+                id INTEGER PRIMARY KEY,
+                ethereum_transaction_hash BLOB NOT NULL,
+                substrate_block_hash BLOB NOT NULL,
+                ethereum_block_hash BLOB NOT NULL,
+                ethereum_transaction_index INTEGER NOT NULL,
+				UNIQUE (
+					ethereum_transaction_hash,
+                    substrate_block_hash
+                )
+            );
             CREATE INDEX IF NOT EXISTS block_number_idx ON logs (
                 block_number,
                 address
@@ -344,6 +416,16 @@ where
                 block_number,
                 topic_4
             );
+            CREATE INDEX IF NOT EXISTS eth_block_hash_idx ON blocks (
+                ethereum_block_hash
+            );
+            CREATE INDEX IF NOT EXISTS eth_tx_hash_idx ON transactions (
+                ethereum_transaction_hash
+            );
+            CREATE INDEX IF NOT EXISTS eth_tx_hash_2_idx ON transactions (
+                ethereum_block_hash,
+				ethereum_transaction_index
+            );
             COMMIT;",
 		)
 		.execute(pool)
@@ -351,14 +433,49 @@ where
 	}
 }
 
-impl<Block: BlockT> crate::BackendReader<Block> for Backend<Block> {
+impl<Block: BlockT<Hash = H256>> crate::BackendReader<Block> for Backend<Block> {
 	fn block_hash(&self, ethereum_block_hash: &H256) -> Result<Option<Vec<Block::Hash>>, String> {
-		todo!()
+		let ethereum_block_hash = ethereum_block_hash.as_bytes().to_owned();
+		let res = match futures::executor::block_on(sqlx::query(
+			"SELECT substrate_block_hash FROM blocks WHERE ethereum_block_hash = ?"
+		)
+		.bind(ethereum_block_hash)
+		.fetch_all(&self.pool)) {
+			Ok(result) => {
+				let mut out = vec![];
+				for row in result {
+					out.push(H256::from_slice(&row.try_get::<Vec<u8>, _>(0).unwrap_or_default()[..]));
+				}
+				Some(out)
+			},
+			_ => None
+		};
+		Ok(res)
 	}
 	fn transaction_metadata(
 		&self,
 		ethereum_transaction_hash: &H256,
 	) -> Result<Vec<crate::TransactionMetadata<Block>>, String> {
-		todo!()
+		let mut out = vec![];
+		let ethereum_transaction_hash = ethereum_transaction_hash.as_bytes().to_owned();
+		if let Ok(result) = futures::executor::block_on(sqlx::query(
+			"SELECT
+				substrate_block_hash, ethereum_block_hash, ethereum_transaction_index
+			FROM transactions WHERE ethereum_transaction_hash = ?"
+		)
+		.bind(ethereum_transaction_hash)
+		.fetch_all(&self.pool)) {
+			for row in result {
+				let substrate_block_hash = H256::from_slice(&row.try_get::<Vec<u8>, _>(0).unwrap_or_default()[..]);
+				let ethereum_block_hash = H256::from_slice(&row.try_get::<Vec<u8>, _>(1).unwrap_or_default()[..]);
+				let ethereum_transaction_index = row.try_get::<i32, _>(2).unwrap_or_default() as u32;
+				out.push(crate::TransactionMetadata {
+					block_hash: substrate_block_hash,
+					ethereum_block_hash,
+					ethereum_index: ethereum_transaction_index,
+				});
+			}
+		}
+		Ok(out)
 	}
 }
