@@ -74,7 +74,7 @@ where
 	A: ChainApi<Block = B> + 'static,
 	EGA: EstimateGasAdapter,
 {
-	pub fn call(&self, request: CallRequest, number: Option<BlockNumber>) -> Result<Bytes> {
+	pub async fn call(&self, request: CallRequest, number: Option<BlockNumber>) -> Result<Bytes> {
 		let CallRequest {
 			from,
 			to,
@@ -102,7 +102,9 @@ where
 			self.client.as_ref(),
 			self.backend.as_ref(),
 			number,
-		)? {
+		)
+		.await?
+		{
 			Some(id) => (id, self.client.runtime_api()),
 			None => {
 				// Not mapped in the db, assume pending.

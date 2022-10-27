@@ -51,7 +51,7 @@ where
 	P: TransactionPool<Block = B> + Send + Sync + 'static,
 	A: ChainApi<Block = B> + 'static,
 {
-	pub fn balance(&self, address: H160, number: Option<BlockNumber>) -> Result<U256> {
+	pub async fn balance(&self, address: H160, number: Option<BlockNumber>) -> Result<U256> {
 		let number = number.unwrap_or(BlockNumber::Latest);
 		if number == BlockNumber::Pending {
 			let api = pending_runtime_api(self.client.as_ref(), self.graph.as_ref())?;
@@ -63,7 +63,9 @@ where
 			self.client.as_ref(),
 			self.backend.as_ref(),
 			Some(number),
-		) {
+		)
+		.await
+		{
 			Ok(self
 				.client
 				.runtime_api()
@@ -75,7 +77,7 @@ where
 		}
 	}
 
-	pub fn storage_at(
+	pub async fn storage_at(
 		&self,
 		address: H160,
 		index: U256,
@@ -91,7 +93,9 @@ where
 			self.client.as_ref(),
 			self.backend.as_ref(),
 			Some(number),
-		) {
+		)
+		.await
+		{
 			let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(
 				self.client.as_ref(),
 				id,
@@ -108,7 +112,11 @@ where
 		}
 	}
 
-	pub fn transaction_count(&self, address: H160, number: Option<BlockNumber>) -> Result<U256> {
+	pub async fn transaction_count(
+		&self,
+		address: H160,
+		number: Option<BlockNumber>,
+	) -> Result<U256> {
 		if let Some(BlockNumber::Pending) = number {
 			let block = BlockId::Hash(self.client.info().best_hash);
 
@@ -139,7 +147,9 @@ where
 			self.client.as_ref(),
 			self.backend.as_ref(),
 			number,
-		)? {
+		)
+		.await?
+		{
 			Some(id) => id,
 			None => return Ok(U256::zero()),
 		};
@@ -152,7 +162,7 @@ where
 			.nonce)
 	}
 
-	pub fn code_at(&self, address: H160, number: Option<BlockNumber>) -> Result<Bytes> {
+	pub async fn code_at(&self, address: H160, number: Option<BlockNumber>) -> Result<Bytes> {
 		let number = number.unwrap_or(BlockNumber::Latest);
 		if number == BlockNumber::Pending {
 			let api = pending_runtime_api(self.client.as_ref(), self.graph.as_ref())?;
@@ -164,7 +174,9 @@ where
 			self.client.as_ref(),
 			self.backend.as_ref(),
 			Some(number),
-		) {
+		)
+		.await
+		{
 			let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(
 				self.client.as_ref(),
 				id,

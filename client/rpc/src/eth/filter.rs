@@ -368,6 +368,7 @@ where
 				backend.as_ref(),
 				hash,
 			)
+			.await
 			.map_err(|err| internal_err(format!("{:?}", err)))?
 			{
 				Some(hash) => hash,

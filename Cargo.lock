@@ -1662,8 +1662,10 @@ dependencies = [
 name = "fc-db"
 version = "2.0.0-dev"
 dependencies = [
+ "async-trait",
  "ethereum",
  "fp-consensus",
+ "fp-rpc",
  "fp-storage",
  "futures",
  "kvdb-rocksdb",
@@ -1674,6 +1676,7 @@ dependencies = [
  "sc-block-builder",
  "sc-client-api",
  "sc-client-db",
+ "sp-api",
  "sp-blockchain",
  "sp-consensus",
  "sp-core",

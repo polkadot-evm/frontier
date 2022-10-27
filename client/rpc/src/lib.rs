@@ -66,7 +66,7 @@ pub mod frontier_backend_client {
 	use fc_rpc_core::types::BlockNumber;
 	use fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA};
 
-	pub fn native_block_id<B: BlockT, C>(
+	pub async fn native_block_id<B: BlockT, C>(
 		client: &C,
 		backend: &(dyn fc_db::BackendReader<B> + Send + Sync),
 		number: Option<BlockNumber>,
@@ -76,9 +76,9 @@ pub mod frontier_backend_client {
 		C: HeaderBackend<B> + Send + Sync + 'static,
 	{
 		Ok(match number.unwrap_or(BlockNumber::Latest) {
-			BlockNumber::Hash { hash, .. } => {
-				load_hash::<B, C>(client, backend, hash).unwrap_or(None)
-			}
+			BlockNumber::Hash { hash, .. } => load_hash::<B, C>(client, backend, hash)
+				.await
+				.unwrap_or(None),
 			BlockNumber::Num(number) => Some(BlockId::Number(number.unique_saturated_into())),
 			BlockNumber::Latest => Some(BlockId::Hash(client.info().best_hash)),
 			BlockNumber::Earliest => Some(BlockId::Number(Zero::zero())),
@@ -88,7 +88,7 @@ pub mod frontier_backend_client {
 		})
 	}
 
-	pub fn load_hash<B: BlockT, C>(
+	pub async fn load_hash<B: BlockT, C>(
 		client: &C,
 		backend: &(dyn fc_db::BackendReader<B> + Send + Sync),
 		hash: H256,
@@ -99,6 +99,7 @@ pub mod frontier_backend_client {
 	{
 		let substrate_hashes = backend
 			.block_hash(&hash)
+			.await
 			.map_err(|err| internal_err(format!("fetch aux store failed: {:?}", err)))?;
 
 		if let Some(substrate_hashes) = substrate_hashes {
@@ -142,7 +143,7 @@ pub mod frontier_backend_client {
 		false
 	}
 
-	pub fn load_transactions<B: BlockT, C>(
+	pub async fn load_transactions<B: BlockT, C>(
 		client: &C,
 		backend: &(dyn fc_db::BackendReader<B> + Send + Sync),
 		transaction_hash: H256,
@@ -154,6 +155,7 @@ pub mod frontier_backend_client {
 	{
 		let transaction_metadata = backend
 			.transaction_metadata(&transaction_hash)
+			.await
 			.map_err(|err| internal_err(format!("fetch aux store failed: {:?}", err)))?;
 
 		transaction_metadata
