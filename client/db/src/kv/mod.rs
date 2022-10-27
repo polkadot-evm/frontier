@@ -67,11 +67,15 @@ pub struct Backend<Block: BlockT> {
 	mapping: Arc<MappingDb<Block>>,
 }
 
+#[async_trait::async_trait]
 impl<Block: BlockT> crate::BackendReader<Block> for Backend<Block> {
-	fn block_hash(&self, ethereum_block_hash: &H256) -> Result<Option<Vec<Block::Hash>>, String> {
+	async fn block_hash(
+		&self,
+		ethereum_block_hash: &H256,
+	) -> Result<Option<Vec<Block::Hash>>, String> {
 		self.mapping().block_hash(ethereum_block_hash)
 	}
-	fn transaction_metadata(
+	async fn transaction_metadata(
 		&self,
 		ethereum_transaction_hash: &H256,
 	) -> Result<Vec<TransactionMetadata<Block>>, String> {

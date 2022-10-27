@@ -16,9 +16,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+use fp_rpc::EthereumRuntimeRPCApi;
 use futures::prelude::*;
 use sc_client_api::backend::{Backend as BackendT, StateBackend, StorageProvider};
-use sp_api::HeaderT;
+use sp_api::{HeaderT, ProvideRuntimeApi};
 use sp_blockchain::{Backend, HeaderBackend};
 use sp_core::H256;
 use sp_runtime::{
@@ -33,6 +34,8 @@ impl<Block: BlockT, Backend, Client> SyncWorker<Block, Backend, Client>
 where
 	Block: BlockT<Hash = H256> + Send + Sync,
 	Client: StorageProvider<Block, Backend> + HeaderBackend<Block> + Send + Sync + 'static,
+	Client: ProvideRuntimeApi<Block>,
+	Client::Api: EthereumRuntimeRPCApi<Block>,
 	Backend: BackendT<Block> + 'static,
 	Backend::State: StateBackend<BlakeTwo256>,
 {
@@ -63,13 +66,24 @@ where
 
 		let mut resume_at: Option<H256> = None;
 		if let Some(hash) = known_hashes.last() {
+			// If there is at least one know hash in the db, set a resume checkpoint
 			if let Ok(Some(number)) = client.number(*hash) {
-				if let Ok(Some(header)) =
-					client.header(sp_runtime::generic::BlockId::Number(number))
-				{
+				if let Ok(Some(header)) = client.header(BlockId::Number(number)) {
 					resume_at = Some(*header.parent_hash())
 				}
 			}
+		} else {
+			// If there is no data in the db, sync genesis.
+			let _ = indexer_backend
+				.insert_genesis_block_metadata(client.clone())
+				.await
+				.map_err(|e| {
+					log::error!(
+						target: "frontier-sql",
+						"💔  Cannot sync genesis block: {}",
+						e,
+					)
+				});
 		}
 
 		futures::pin_mut!(import_interval, notifications);
@@ -80,7 +94,7 @@ where
 					if let Ok(mut leaves) = leaves {
 						if let Some(hash) = resume_at {
 							log::debug!(
-								target: "eth-log-indexer",
+								target: "frontier-sql",
 								"🔄  Resuming index task at {}",
 								hash,
 							);
@@ -164,14 +178,14 @@ where
 			known_hashes.push(hash);
 			if !notified && current_batch.len() < batch_size {
 				log::debug!(
-					target: "eth-log-indexer",
+					target: "frontier-sql",
 					"⤵️  Queued for index {}",
 					hash,
 				);
 				current_batch.push(hash);
 			} else {
 				log::debug!(
-					target: "eth-log-indexer",
+					target: "frontier-sql",
 					"🛠️  Processing batch"
 				);
 				current_batch.push(hash);
@@ -180,7 +194,7 @@ where
 					.await
 					.map_err(|e| {
 						log::error!(
-							target: "eth-log-indexer",
+							target: "frontier-sql",
 							"{}",
 							e,
 						);

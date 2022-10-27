@@ -18,13 +18,15 @@
 
 use codec::Decode;
 use fp_consensus::FindLogError;
+use fp_rpc::EthereumRuntimeRPCApi;
 use fp_storage::{EthereumStorageSchema, OverrideHandle, PALLET_ETHEREUM_SCHEMA};
 use sc_client_api::backend::{Backend as BackendT, StateBackend, StorageProvider};
+use sp_api::{ApiExt, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
 use sp_core::H256;
 use sp_runtime::{
 	generic::BlockId,
-	traits::{BlakeTwo256, Block as BlockT, Header as HeaderT, UniqueSaturatedInto},
+	traits::{BlakeTwo256, Block as BlockT, Header as HeaderT, UniqueSaturatedInto, Zero},
 };
 use sqlx::{
 	sqlite::{SqliteConnectOptions, SqlitePool, SqlitePoolOptions, SqliteQueryResult},
@@ -97,7 +99,56 @@ where
 		&self.pool
 	}
 
-	pub async fn insert_block_metadata<Client, BE>(&self, client: Arc<Client>, hashes: &Vec<H256>) -> Result<(), Error>
+	pub async fn insert_genesis_block_metadata<Client, BE>(
+		&self,
+		client: Arc<Client>,
+	) -> Result<(), Error>
+	where
+		Client: StorageProvider<Block, BE> + HeaderBackend<Block> + Send + Sync + 'static,
+		Client: ProvideRuntimeApi<Block>,
+		Client::Api: EthereumRuntimeRPCApi<Block>,
+		BE: BackendT<Block> + 'static,
+		BE::State: StateBackend<BlakeTwo256>,
+	{
+		let id = BlockId::Number(Zero::zero());
+		if let Ok(Some(genesis_header)) = client.header(id) {
+			let has_api = client
+				.runtime_api()
+				.has_api::<dyn EthereumRuntimeRPCApi<Block>>(&id)
+				.expect("runtime api reachable");
+
+			if has_api {
+				// The chain has frontier support from genesis.
+				// Read from the runtime and store the block metadata.
+				let ethereum_block = client
+					.runtime_api()
+					.current_block(&id)
+					.expect("runtime api reachable")
+					.expect("ethereum genesis block");
+
+				let ethereum_block_hash = ethereum_block.header.hash().as_bytes().to_owned();
+				let substrate_block_hash = genesis_header.hash().as_bytes().to_owned();
+
+				let _ = sqlx::query!(
+					"INSERT OR IGNORE INTO blocks(
+						ethereum_block_hash,
+						substrate_block_hash)
+					VALUES (?, ?)",
+					ethereum_block_hash,
+					substrate_block_hash,
+				)
+				.execute(self.pool())
+				.await?;
+			}
+		}
+		Ok(())
+	}
+
+	pub async fn insert_block_metadata<Client, BE>(
+		&self,
+		client: Arc<Client>,
+		hashes: &Vec<H256>,
+	) -> Result<(), Error>
 	where
 		Client: StorageProvider<Block, BE> + HeaderBackend<Block> + Send + Sync + 'static,
 		BE: BackendT<Block> + 'static,
@@ -105,6 +156,7 @@ where
 	{
 		let mut tx = self.pool().begin().await?;
 
+		// TODO move header retrieval to the blocking thread? depending on the batch size its likely to be necessary
 		for &hash in hashes.iter() {
 			if let Ok(Some(header)) = client.header(BlockId::Hash(hash)) {
 				match fp_consensus::find_log(header.digest()) {
@@ -122,7 +174,9 @@ where
 						)
 						.execute(&mut tx)
 						.await?;
-						for (i, &transaction_hash) in post_hashes.transaction_hashes.iter().enumerate() {
+						for (i, &transaction_hash) in
+							post_hashes.transaction_hashes.iter().enumerate()
+						{
 							let ethereum_transaction_hash = transaction_hash.as_bytes().to_owned();
 							let ethereum_transaction_index = i as i32;
 							let _ = sqlx::query!(
@@ -142,7 +196,9 @@ where
 						}
 					}
 					Err(FindLogError::NotFound) => {}
-					Err(FindLogError::MultipleLogs) => return Err(Error::Protocol("Multiple logs found".to_string())),
+					Err(FindLogError::MultipleLogs) => {
+						return Err(Error::Protocol("Multiple logs found".to_string()))
+					}
 				}
 			}
 		}
@@ -196,7 +252,7 @@ where
 								to_index.push(H256::from_slice(&bytes[..]));
 							} else {
 								log::error!(
-									target: "eth-log-indexer",
+									target: "frontier-sql",
 									"unable to decode row value"
 								);
 							}
@@ -243,7 +299,7 @@ where
 			.await
 			.map_err(|e| {
 				log::error!(
-					target: "eth-log-indexer",
+					target: "frontier-sql",
 					"{}",
 					e
 				)
@@ -268,7 +324,7 @@ where
 					UniqueSaturatedInto::<u32>::unique_saturated_into(number) as i32
 				} else {
 					log::error!(
-						target: "eth-log-indexer",
+						target: "frontier-sql",
 						"Cannot find number for substrate hash {}",
 						substrate_block_hash
 					);
@@ -433,42 +489,55 @@ where
 	}
 }
 
+#[async_trait::async_trait]
 impl<Block: BlockT<Hash = H256>> crate::BackendReader<Block> for Backend<Block> {
-	fn block_hash(&self, ethereum_block_hash: &H256) -> Result<Option<Vec<Block::Hash>>, String> {
+	async fn block_hash(
+		&self,
+		ethereum_block_hash: &H256,
+	) -> Result<Option<Vec<Block::Hash>>, String> {
 		let ethereum_block_hash = ethereum_block_hash.as_bytes().to_owned();
-		let res = match futures::executor::block_on(sqlx::query(
-			"SELECT substrate_block_hash FROM blocks WHERE ethereum_block_hash = ?"
+		let res = match sqlx::query(
+			"SELECT substrate_block_hash FROM blocks WHERE ethereum_block_hash = ?",
 		)
 		.bind(ethereum_block_hash)
-		.fetch_all(&self.pool)) {
+		.fetch_all(&self.pool)
+		.await
+		{
 			Ok(result) => {
 				let mut out = vec![];
 				for row in result {
-					out.push(H256::from_slice(&row.try_get::<Vec<u8>, _>(0).unwrap_or_default()[..]));
+					out.push(H256::from_slice(
+						&row.try_get::<Vec<u8>, _>(0).unwrap_or_default()[..],
+					));
 				}
 				Some(out)
-			},
-			_ => None
+			}
+			_ => None,
 		};
 		Ok(res)
 	}
-	fn transaction_metadata(
+	async fn transaction_metadata(
 		&self,
 		ethereum_transaction_hash: &H256,
 	) -> Result<Vec<crate::TransactionMetadata<Block>>, String> {
 		let mut out = vec![];
 		let ethereum_transaction_hash = ethereum_transaction_hash.as_bytes().to_owned();
-		if let Ok(result) = futures::executor::block_on(sqlx::query(
+		if let Ok(result) = sqlx::query(
 			"SELECT
 				substrate_block_hash, ethereum_block_hash, ethereum_transaction_index
-			FROM transactions WHERE ethereum_transaction_hash = ?"
+			FROM transactions WHERE ethereum_transaction_hash = ?",
 		)
 		.bind(ethereum_transaction_hash)
-		.fetch_all(&self.pool)) {
+		.fetch_all(&self.pool)
+		.await
+		{
 			for row in result {
-				let substrate_block_hash = H256::from_slice(&row.try_get::<Vec<u8>, _>(0).unwrap_or_default()[..]);
-				let ethereum_block_hash = H256::from_slice(&row.try_get::<Vec<u8>, _>(1).unwrap_or_default()[..]);
-				let ethereum_transaction_index = row.try_get::<i32, _>(2).unwrap_or_default() as u32;
+				let substrate_block_hash =
+					H256::from_slice(&row.try_get::<Vec<u8>, _>(0).unwrap_or_default()[..]);
+				let ethereum_block_hash =
+					H256::from_slice(&row.try_get::<Vec<u8>, _>(1).unwrap_or_default()[..]);
+				let ethereum_transaction_index =
+					row.try_get::<i32, _>(2).unwrap_or_default() as u32;
 				out.push(crate::TransactionMetadata {
 					block_hash: substrate_block_hash,
 					ethereum_block_hash,

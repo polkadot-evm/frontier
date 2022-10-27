@@ -37,9 +37,13 @@ pub struct TransactionMetadata<Block: BlockT> {
 	pub ethereum_index: u32,
 }
 
+#[async_trait::async_trait]
 pub trait BackendReader<Block: BlockT> {
-	fn block_hash(&self, ethereum_block_hash: &H256) -> Result<Option<Vec<Block::Hash>>, String>;
-	fn transaction_metadata(
+	async fn block_hash(
+		&self,
+		ethereum_block_hash: &H256,
+	) -> Result<Option<Vec<Block::Hash>>, String>;
+	async fn transaction_metadata(
 		&self,
 		ethereum_transaction_hash: &H256,
 	) -> Result<Vec<TransactionMetadata<Block>>, String>;

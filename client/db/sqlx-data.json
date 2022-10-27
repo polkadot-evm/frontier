@@ -10,6 +10,16 @@
     },
     "query": "INSERT OR IGNORE INTO transactions(\n\t\t\t\t\t\t\t\t\tethereum_transaction_hash,\n\t\t\t\t\t\t\t\t\tsubstrate_block_hash,\n\t\t\t\t\t\t\t\t\tethereum_block_hash,\n\t\t\t\t\t\t\t\t\tethereum_transaction_index)\n\t\t\t\t\t\t\t\tVALUES (?, ?, ?, ?)"
   },
+  "852126c9e86c5f725cc6a6267540e4e2d4b2140c8f286ef679162d19245d4b7e": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 2
+      }
+    },
+    "query": "INSERT OR IGNORE INTO blocks(\n\t\t\t\t\t\tethereum_block_hash,\n\t\t\t\t\t\tsubstrate_block_hash)\n\t\t\t\t\tVALUES (?, ?)"
+  },
   "a40bd0ce62ef8366b36dd2b97fe8706640e3c4f6188ca35096aec5c6973a49d3": {
     "describe": {
       "columns": [],
