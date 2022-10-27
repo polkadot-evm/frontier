@@ -64,59 +64,67 @@ pub enum InvalidEvmTransactionError {
 	InvalidChainId,
 }
 
-impl<'config, E: From<InvalidEvmTransactionError>> CheckEvmTransaction<'config, E> {
-	pub fn new(
-		config: CheckEvmTransactionConfig<'config>,
-		transaction: CheckEvmTransactionInput,
-	) -> Self {
-		CheckEvmTransaction {
-			config,
-			transaction,
-			_marker: Default::default(),
-		}
-	}
+// pub trait HandleTxValidation<'config, E: From<InvalidEvmTransactionError>> {
+// 	fn validate_in_pool_for(&self, who: &Account) -> Result<&Self, E>;
+// 	fn validate_in_block_for(&self, who: &Account) -> Result<&Self, E>;
+// 	fn with_chain_id(&self) -> Result<&Self, E>;// 	fn with_base_fee(&self) -> Result<&Self, E>;
+// 	fn with_balance_for(&self, who: &Account) -> Result<&Self, E>;
+// 	fn transaction_fee_input(&self) -> Result<(U256, Option<U256>), E>;
+// 	fn validate_common(&self) -> Result<&Self, E>;
+// }
 
-	pub fn validate_in_pool_for(&self, who: &Account) -> Result<&Self, E> {
-		if self.transaction.nonce < who.nonce {
+pub trait HandleTxValidation<E: From<InvalidEvmTransactionError>> {
+	fn validate_in_pool_for(evm_config: &CheckEvmTransaction<E>, who: &Account) -> Result<(), E>;
+	fn validate_in_block_for(evm_config: &CheckEvmTransaction<E>, who: &Account) -> Result<(), E>;
+	fn with_chain_id(evm_config: &CheckEvmTransaction<E>) -> Result<(), E>;
+	fn with_base_fee(evm_config: &CheckEvmTransaction<E>) -> Result<(), E>;
+	fn with_balance_for(evm_config: &CheckEvmTransaction<E>, who: &Account) -> Result<(), E>;
+	fn transaction_fee_input(evm_config: &CheckEvmTransaction<E>) -> Result<(U256, Option<U256>), E>;
+	fn validate_common(evm_config: &CheckEvmTransaction<E>) -> Result<(), E>;
+}
+
+impl<'config, E: From<InvalidEvmTransactionError>> HandleTxValidation<E> for () {
+	fn validate_in_pool_for(evm_config: &CheckEvmTransaction<E>, who: &Account) -> Result<(), E> {
+		if evm_config.transaction.nonce < who.nonce {
 			return Err(InvalidEvmTransactionError::TxNonceTooLow.into());
 		}
-		self.validate_common()
+		Self::validate_common(evm_config)
 	}
 
-	pub fn validate_in_block_for(&self, who: &Account) -> Result<&Self, E> {
-		if self.transaction.nonce > who.nonce {
+	fn validate_in_block_for(evm_config: &CheckEvmTransaction<E>, who: &Account) -> Result<(), E> {
+		if evm_config.transaction.nonce > who.nonce {
 			return Err(InvalidEvmTransactionError::TxNonceTooHigh.into());
-		} else if self.transaction.nonce < who.nonce {
+		} else if evm_config.transaction.nonce < who.nonce {
 			return Err(InvalidEvmTransactionError::TxNonceTooLow.into());
 		}
-		self.validate_common()
+		Self::validate_common(evm_config)
 	}
 
-	pub fn with_chain_id(&self) -> Result<&Self, E> {
+	fn with_chain_id(evm_config: &CheckEvmTransaction<E>) -> Result<(), E> {
 		// Chain id matches the one in the signature.
-		if let Some(chain_id) = self.transaction.chain_id {
-			if chain_id != self.config.chain_id {
+		if let Some(chain_id) = evm_config.transaction.chain_id {
+			if chain_id != evm_config.config.chain_id {
 				return Err(InvalidEvmTransactionError::InvalidChainId.into());
 			}
 		}
-		Ok(self)
+		Ok(())
 	}
 
-	pub fn with_base_fee(&self) -> Result<&Self, E> {
+	fn with_base_fee(evm_config: &CheckEvmTransaction<E>) -> Result<(), E> {
 		// Get fee data from either a legacy or typed transaction input.
-		let (gas_price, _) = self.transaction_fee_input()?;
-		if self.config.is_transactional || gas_price > U256::zero() {
+		let (gas_price, _) = Self::transaction_fee_input(&evm_config)?;
+		if evm_config.config.is_transactional || gas_price > U256::zero() {
 			// Transaction max fee is at least the current base fee.
-			if gas_price < self.config.base_fee {
+			if gas_price < evm_config.config.base_fee {
 				return Err(InvalidEvmTransactionError::GasPriceTooLow.into());
 			}
 		}
-		Ok(self)
+		Ok(())
 	}
 
-	pub fn with_balance_for(&self, who: &Account) -> Result<&Self, E> {
+	fn with_balance_for(evm_config: &CheckEvmTransaction<E>, who: &Account) -> Result<(), E> {
 		// Get fee data from either a legacy or typed transaction input.
-		let (_, effective_gas_price) = self.transaction_fee_input()?;
+		let (_, effective_gas_price) = Self::transaction_fee_input(evm_config)?;
 
 		// Account has enough funds to pay for the transaction.
 		// Check is skipped on non-transactional calls that don't provide
@@ -132,34 +140,34 @@ impl<'config, E: From<InvalidEvmTransactionError>> CheckEvmTransaction<'config, 
 		// the provided `gas_price`.
 		let fee = effective_gas_price
 			.unwrap_or_default()
-			.saturating_mul(self.transaction.gas_limit);
-		if self.config.is_transactional || fee > U256::zero() {
-			let total_payment = self.transaction.value.saturating_add(fee);
+			.saturating_mul(evm_config.transaction.gas_limit);
+		if evm_config.config.is_transactional || fee > U256::zero() {
+			let total_payment = evm_config.transaction.value.saturating_add(fee);
 			if who.balance < total_payment {
 				return Err(InvalidEvmTransactionError::BalanceTooLow.into());
 			}
 		}
-		Ok(self)
+		Ok(())
 	}
 
-	fn transaction_fee_input(&self) -> Result<(U256, Option<U256>), E> {
+	fn transaction_fee_input(evm_config: &CheckEvmTransaction<E>) -> Result<(U256, Option<U256>), E> {
 		match (
-			self.transaction.gas_price,
-			self.transaction.max_fee_per_gas,
-			self.transaction.max_priority_fee_per_gas,
+			evm_config.transaction.gas_price,
+			evm_config.transaction.max_fee_per_gas,
+			evm_config.transaction.max_priority_fee_per_gas,
 		) {
 			// Legacy or EIP-2930 transaction.
 			(Some(gas_price), None, None) => Ok((gas_price, Some(gas_price))),
 			// EIP-1559 transaction without tip.
 			(None, Some(max_fee_per_gas), None) => {
-				Ok((max_fee_per_gas, Some(self.config.base_fee)))
+				Ok((max_fee_per_gas, Some(evm_config.config.base_fee)))
 			}
 			// EIP-1559 tip.
 			(None, Some(max_fee_per_gas), Some(max_priority_fee_per_gas)) => {
 				if max_priority_fee_per_gas > max_fee_per_gas {
 					return Err(InvalidEvmTransactionError::PriorityFeeTooHigh.into());
 				}
-				let effective_gas_price = self
+				let effective_gas_price = evm_config
 					.config
 					.base_fee
 					.checked_add(max_priority_fee_per_gas)
@@ -168,7 +176,7 @@ impl<'config, E: From<InvalidEvmTransactionError>> CheckEvmTransaction<'config, 
 				Ok((max_fee_per_gas, Some(effective_gas_price)))
 			}
 			_ => {
-				if self.config.is_transactional {
+				if evm_config.config.is_transactional {
 					Err(InvalidEvmTransactionError::InvalidPaymentInput.into())
 				} else {
 					// Allow non-set fee input for non-transactional calls.
@@ -178,23 +186,23 @@ impl<'config, E: From<InvalidEvmTransactionError>> CheckEvmTransaction<'config, 
 		}
 	}
 
-	fn validate_common(&self) -> Result<&Self, E> {
-		if self.config.is_transactional {
+	fn validate_common(evm_config: &CheckEvmTransaction<E>) -> Result<(), E> {
+		if evm_config.config.is_transactional {
 			// We must ensure a transaction can pay the cost of its data bytes.
 			// If it can't it should not be included in a block.
 			let mut gasometer = evm::gasometer::Gasometer::new(
-				self.transaction.gas_limit.unique_saturated_into(),
-				self.config.evm_config,
+				evm_config.transaction.gas_limit.unique_saturated_into(),
+				evm_config.config.evm_config,
 			);
-			let transaction_cost = if self.transaction.to.is_some() {
+			let transaction_cost = if evm_config.transaction.to.is_some() {
 				evm::gasometer::call_transaction_cost(
-					&self.transaction.input,
-					&self.transaction.access_list,
+					&evm_config.transaction.input,
+					&evm_config.transaction.access_list,
 				)
 			} else {
 				evm::gasometer::create_transaction_cost(
-					&self.transaction.input,
-					&self.transaction.access_list,
+					&evm_config.transaction.input,
+					&evm_config.transaction.access_list,
 				)
 			};
 
@@ -203,14 +211,179 @@ impl<'config, E: From<InvalidEvmTransactionError>> CheckEvmTransaction<'config, 
 			}
 
 			// Transaction gas limit is within the upper bound block gas limit.
-			if self.transaction.gas_limit > self.config.block_gas_limit {
+			if evm_config.transaction.gas_limit > evm_config.config.block_gas_limit {
 				return Err(InvalidEvmTransactionError::GasLimitTooHigh.into());
 			}
 		}
 
-		Ok(self)
+		Ok(())
+	}
+
+
+
+}
+
+impl<'config, E: From<InvalidEvmTransactionError>> CheckEvmTransaction<'config, E> {
+	pub fn new(
+		config: CheckEvmTransactionConfig<'config>,
+		transaction: CheckEvmTransactionInput,
+	) -> Self {
+		CheckEvmTransaction {
+			config,
+			transaction,
+			_marker: Default::default(),
+		}
 	}
 }
+
+
+
+
+// impl<'config, E: From<InvalidEvmTransactionError>> CheckEvmTransaction<'config, E> {
+// 	pub fn new(
+// 		config: CheckEvmTransactionConfig<'config>,
+// 		transaction: CheckEvmTransactionInput,
+// 	) -> Self {
+// 		CheckEvmTransaction {
+// 			config,
+// 			transaction,
+// 			_marker: Default::default(),
+// 		}
+// 	}
+
+// 	pub fn validate_in_pool_for(&self, who: &Account) -> Result<&Self, E> {
+// 		if self.transaction.nonce < who.nonce {
+// 			return Err(InvalidEvmTransactionError::TxNonceTooLow.into());
+// 		}
+// 	}
+
+// 	pub fn validate_in_block_for(&self, who: &Account) -> Result<&Self, E> {
+// 		if self.transaction.nonce > who.nonce {
+// 			return Err(InvalidEvmTransactionError::TxNonceTooHigh.into());
+// 		} else if self.transaction.nonce < who.nonce {
+// 			return Err(InvalidEvmTransactionError::TxNonceTooLow.into());
+// 		}
+// 	}
+
+// 	pub fn with_chain_id(&self) -> Result<&Self, E> {
+// 		// Chain id matches the one in the signature.
+// 		if let Some(chain_id) = self.transaction.chain_id {
+// 			if chain_id != self.config.chain_id {
+// 				return Err(InvalidEvmTransactionError::InvalidChainId.into());
+// 			}
+// 		}
+// 		Ok(self)
+// 	}
+
+// 	pub fn with_base_fee(&self) -> Result<&Self, E> {
+// 		// Get fee data from either a legacy or typed transaction input.
+// 		let (gas_price, _) = self.transaction_fee_input()?;
+// 		if self.config.is_transactional || gas_price > U256::zero() {
+// 			// Transaction max fee is at least the current base fee.
+// 			if gas_price < self.config.base_fee {
+// 				return Err(InvalidEvmTransactionError::GasPriceTooLow.into());
+// 			}
+// 		}
+// 		Ok(self)
+// 	}
+
+// 	pub fn with_balance_for(&self, who: &Account) -> Result<&Self, E> {
+// 		// Get fee data from either a legacy or typed transaction input.
+// 		let (_, effective_gas_price) = self.transaction_fee_input()?;
+
+// 		// Account has enough funds to pay for the transaction.
+// 		// Check is skipped on non-transactional calls that don't provide
+// 		// a gas price input.
+// 		//
+// 		// Fee for EIP-1559 transaction **with** tip is calculated using
+// 		// the effective gas price.
+// 		//
+// 		// Fee for EIP-1559 transaction **without** tip is calculated using
+// 		// the base fee.
+// 		//
+// 		// Fee for Legacy or EIP-2930 transaction is calculated using
+// 		// the provided `gas_price`.
+// 		let fee = effective_gas_price
+// 			.unwrap_or_default()
+// 			.saturating_mul(self.transaction.gas_limit);
+// 		if self.config.is_transactional || fee > U256::zero() {
+// 			let total_payment = self.transaction.value.saturating_add(fee);
+// 			if who.balance < total_payment {
+// 				return Err(InvalidEvmTransactionError::BalanceTooLow.into());
+// 			}
+// 		}
+// 		Ok(self)
+// 	}
+
+// 	fn transaction_fee_input(&self) -> Result<(U256, Option<U256>), E> {
+// 		match (
+// 			self.transaction.gas_price,
+// 			self.transaction.max_fee_per_gas,
+// 			self.transaction.max_priority_fee_per_gas,
+// 		) {
+// 			// Legacy or EIP-2930 transaction.
+// 			(Some(gas_price), None, None) => Ok((gas_price, Some(gas_price))),
+// 			// EIP-1559 transaction without tip.
+// 			(None, Some(max_fee_per_gas), None) => {
+// 				Ok((max_fee_per_gas, Some(self.config.base_fee)))
+// 			}
+// 			// EIP-1559 tip.
+// 			(None, Some(max_fee_per_gas), Some(max_priority_fee_per_gas)) => {
+// 				if max_priority_fee_per_gas > max_fee_per_gas {
+// 					return Err(InvalidEvmTransactionError::PriorityFeeTooHigh.into());
+// 				}
+// 				let effective_gas_price = self
+// 					.config
+// 					.base_fee
+// 					.checked_add(max_priority_fee_per_gas)
+// 					.unwrap_or_else(U256::max_value)
+// 					.min(max_fee_per_gas);
+// 				Ok((max_fee_per_gas, Some(effective_gas_price)))
+// 			}
+// 			_ => {
+// 				if self.config.is_transactional {
+// 					Err(InvalidEvmTransactionError::InvalidPaymentInput.into())
+// 				} else {
+// 					// Allow non-set fee input for non-transactional calls.
+// 					Ok((U256::zero(), None))
+// 				}
+// 			}
+// 		}
+// 	}
+
+// 	fn validate_common(&self) -> Result<&Self, E> {
+// 		if self.config.is_transactional {
+// 			// We must ensure a transaction can pay the cost of its data bytes.
+// 			// If it can't it should not be included in a block.
+// 			let mut gasometer = evm::gasometer::Gasometer::new(
+// 				self.transaction.gas_limit.unique_saturated_into(),
+// 				self.config.evm_config,
+// 			);
+// 			let transaction_cost = if self.transaction.to.is_some() {
+// 				evm::gasometer::call_transaction_cost(
+// 					&self.transaction.input,
+// 					&self.transaction.access_list,
+// 				)
+// 			} else {
+// 				evm::gasometer::create_transaction_cost(
+// 					&self.transaction.input,
+// 					&self.transaction.access_list,
+// 				)
+// 			};
+
+// 			if gasometer.record_transaction(transaction_cost).is_err() {
+// 				return Err(InvalidEvmTransactionError::GasLimitTooLow.into());
+// 			}
+
+// 			// Transaction gas limit is within the upper bound block gas limit.
+// 			if self.transaction.gas_limit > self.config.block_gas_limit {
+// 				return Err(InvalidEvmTransactionError::GasLimitTooHigh.into());
+// 			}
+// 		}
+
+// 		Ok(self)
+// 	}
+// }
 
 #[cfg(test)]
 mod tests {
