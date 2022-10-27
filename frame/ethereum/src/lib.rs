@@ -490,11 +490,6 @@ impl<T: Config> Pallet<T> {
 			},
 			transaction_data.clone().into(),
 		);
-		// .validate_in_pool_for(&who)
-		// .and_then(|v| v.with_chain_id())
-		// .and_then(|v| v.with_base_fee())
-		// .and_then(|v| v.with_balance_for(&who))
-		// .map_err(|e| e.0)?;
 
 		<T as pallet::Config>::HandleTxValidation::validate_in_pool_for(&evm_config, &who)
 			.and_then(|_| <T as pallet::Config>::HandleTxValidation::with_chain_id(&evm_config))
@@ -502,15 +497,6 @@ impl<T: Config> Pallet<T> {
 			.and_then(|_| <T as pallet::Config>::HandleTxValidation::with_balance_for(&evm_config, &who))
 			// .map_err(|e| e.0)?;
 			.map_err(|_| TransactionValidityError::Invalid(InvalidTransaction::Payment))?;
-
-			
-
-		// .validate_in_pool_for(&who)
-		// .and_then(|v| v.with_chain_id())
-		// .and_then(|v| v.with_base_fee())
-		// .and_then(|v| v.with_balance_for(&who))
-		// .map_err(|e| e.0)?;
-
 
 		let priority = match (
 			transaction_data.gas_price,
