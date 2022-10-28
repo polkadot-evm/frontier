@@ -11,7 +11,7 @@ describeWithFrontier("Frontier RPC (Transaction cost)", (context) => {
 			d4afd7aefb4a34b373314fff470bb9db743a84d674a0aa06e5994f2d07eafe1c37b4ce5471caecec29011f6f5b\
 			f0b1a552c55ea348df35f",
 		]);
-		let msg = "submit transaction to pool failed: InvalidTransaction(InvalidTransaction::Custom(3))";
+		let msg = "intrinsic gas too low";
 		expect(tx.error).to.include({
 			message: msg,
 		});

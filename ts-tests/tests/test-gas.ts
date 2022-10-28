@@ -1,6 +1,7 @@
 import { expect } from "chai";
 import { AbiItem } from "web3-utils";
 
+import InvalidOpcode from "../build/contracts/InvalidOpcode.json";
 import Test from "../build/contracts/Test.json";
 import { GENESIS_ACCOUNT, GENESIS_ACCOUNT_PRIVATE_KEY, FIRST_CONTRACT_ADDRESS } from "./config";
 import { describeWithFrontier, createAndFinalizeBlock, customRequest } from "./util";
@@ -39,8 +40,8 @@ describeWithFrontier("Frontier RPC (Gas)", (context) => {
 	// Those test are ordered. In general this should be avoided, but due to the time it takes
 	// to spin up a frontier node, it saves a lot of time.
 
-	// EXTRINSIC_GAS_LIMIT = [BLOCK_GAS_LIMIT - BLOCK_GAS_LIMIT * (NORMAL_DISPATCH_RATIO - AVERAGE_ON_INITIALIZE_RATIO) - EXTRINSIC_BASE_Weight] / WEIGHT_PER_GAS = (1_000_000_000_000 * 2 * (0.75-0.1) - 125_000_000) / 20000
-	const EXTRINSIC_GAS_LIMIT = 64995685;
+	// EXTRINSIC_GAS_LIMIT = [BLOCK_GAS_LIMIT - BLOCK_GAS_LIMIT * (NORMAL_DISPATCH_RATIO - AVERAGE_ON_INITIALIZE_RATIO)] / WEIGHT_PER_GAS = (1_000_000_000_000 * 2 * (0.75-0.1) - 125_000_000) / 20000
+	const EXTRINSIC_GAS_LIMIT = 65000000;
 
 	it("eth_estimateGas for contract creation", async function () {
 		// The value returned as an estimation by the evm with estimate mode ON.
@@ -184,6 +185,38 @@ describeWithFrontier("Frontier RPC (Gas)", (context) => {
 		);
 		const createReceipt = await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction]);
 		await createAndFinalizeBlock(context.web3);
-		expect((createReceipt as any).error.message).to.equal("gas limit reached");
+		expect((createReceipt as any).error.message).to.equal("exceeds block gas limit");
+	});
+});
+
+describeWithFrontier("Frontier RPC (Invalid opcode estimate gas)", (context) => {
+	const INVALID_OPCODE_BYTECODE = InvalidOpcode.bytecode;
+
+	let contractAddess;
+	before(async () => {
+		const tx = await context.web3.eth.accounts.signTransaction(
+			{
+				from: GENESIS_ACCOUNT,
+				data: INVALID_OPCODE_BYTECODE,
+				value: "0x00",
+				gasPrice: "0x3B9ACA00",
+				gas: "0x100000",
+			},
+			GENESIS_ACCOUNT_PRIVATE_KEY
+		);
+		const txHash = (await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction])).result;
+		await createAndFinalizeBlock(context.web3);
+		contractAddess = (await context.web3.eth.getTransactionReceipt(txHash)).contractAddress;
+	});
+
+	it("should estimate gas with invalid opcode", async function () {
+		let estimate = await context.web3.eth.estimateGas({
+			from: GENESIS_ACCOUNT,
+			to: contractAddess,
+			data: "0x28b5e32b", // selector for the contract's `call` method
+		});
+		// The actual estimated value is irrelevant for this test purposes, we just want to verify that
+		// the binary search is not interrupted when an InvalidCode is returned by the evm.
+		expect(estimate).to.equal(85703);
 	});
 });

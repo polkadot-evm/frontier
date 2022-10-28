@@ -33,7 +33,7 @@ use std::{collections::BTreeMap, marker::PhantomData, sync::Arc};
 use ethereum::{BlockV2 as EthereumBlock, TransactionV2 as EthereumTransaction};
 use ethereum_types::{H160, H256, H512, H64, U256, U64};
 use jsonrpsee::core::{async_trait, RpcResult as Result};
-
+// Substrate
 use sc_client_api::backend::{Backend, StateBackend, StorageProvider};
 use sc_network::{ExHashT, NetworkService};
 use sc_transaction_pool::{ChainApi, Pool};
@@ -46,7 +46,7 @@ use sp_runtime::{
 	generic::BlockId,
 	traits::{BlakeTwo256, Block as BlockT, UniqueSaturatedInto},
 };
-
+// Frontier
 use fc_rpc_core::{types::*, EthApiServer};
 use fp_rpc::{ConvertTransactionRuntimeApi, EthereumRuntimeRPCApi, TransactionStatus};
 
@@ -482,13 +482,19 @@ where
 		.map(|in_pool_tx| in_pool_tx.data().clone())
 		.collect::<Vec<<B as BlockT>::Extrinsic>>();
 	// Manually initialize the overlay.
-	let header = client.header(best).unwrap().unwrap();
-	let parent_hash = BlockId::Hash(*header.parent_hash());
-	api.initialize_block(&parent_hash, &header)
-		.map_err(|e| internal_err(format!("Runtime api access error: {:?}", e)))?;
-	// Apply the ready queue to the best block's state.
-	for xt in xts {
-		let _ = api.apply_extrinsic(&best, xt);
+	if let Ok(Some(header)) = client.header(best) {
+		let parent_hash = BlockId::Hash(*header.parent_hash());
+		api.initialize_block(&parent_hash, &header)
+			.map_err(|e| internal_err(format!("Runtime api access error: {:?}", e)))?;
+		// Apply the ready queue to the best block's state.
+		for xt in xts {
+			let _ = api.apply_extrinsic(&best, xt);
+		}
+		Ok(api)
+	} else {
+		Err(internal_err(format!(
+			"Cannot get header for block {:?}",
+			best
+		)))
 	}
-	Ok(api)
 }

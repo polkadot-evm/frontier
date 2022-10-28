@@ -2,7 +2,7 @@ import { expect } from "chai";
 import { AbiItem } from "web3-utils";
 
 import Test from "../build/contracts/Storage.json";
-import { GENESIS_ACCOUNT, GENESIS_ACCOUNT_PRIVATE_KEY } from "./config";
+import { GENESIS_ACCOUNT, GENESIS_ACCOUNT_PRIVATE_KEY, FIRST_CONTRACT_ADDRESS } from "./config";
 import { createAndFinalizeBlock, customRequest, describeWithFrontier } from "./util";
 
 describeWithFrontier("Frontier RPC (Contract)", (context) => {
@@ -79,5 +79,49 @@ describeWithFrontier("Frontier RPC (Contract)", (context) => {
 		]);
 
 		expect(getStorage1.result).to.be.eq(expectedStorage);
+	});
+
+	it("SSTORE cost should properly take into account transaction initial value", async function () {
+		this.timeout(5000);
+
+		let nonce = await context.web3.eth.getTransactionCount(GENESIS_ACCOUNT);
+
+		await context.web3.eth.accounts.wallet.add(GENESIS_ACCOUNT_PRIVATE_KEY);
+		const contract = new context.web3.eth.Contract(TEST_CONTRACT_ABI, FIRST_CONTRACT_ADDRESS, {
+			from: GENESIS_ACCOUNT,
+			gasPrice: "0x3B9ACA00",
+		});
+
+		const promisify = (inner) => new Promise((resolve, reject) => inner(resolve, reject));
+
+		let tx1 = contract.methods
+			.setStorage("0x2A", "0x1")
+			.send({ from: GENESIS_ACCOUNT, gas: "0x100000", nonce: nonce++ });
+
+		let tx2 = contract.methods
+			.setStorage("0x2A", "0x1")
+			.send({ from: GENESIS_ACCOUNT, gas: "0x100000", nonce: nonce++ });
+
+		let tx3 = contract.methods
+			.setStorage("0x2A", "0x2")
+			.send(
+				{ from: GENESIS_ACCOUNT, gas: "0x100000", nonce: nonce++ },
+				async (hash) => await createAndFinalizeBlock(context.web3)
+			);
+
+		tx1 = await tx1;
+		tx2 = await tx2;
+		tx3 = await tx3;
+
+		// cost minus SSTORE
+		const baseCost = 24029;
+
+		// going from unset storage to some value (original = 0)
+		expect(tx1.gasUsed - baseCost).to.be.eq(20000);
+		// in London config, setting back the same value have cost of warm read
+		expect(tx2.gasUsed - baseCost).to.be.eq(100);
+		// - the original storage didn't change in the current transaction
+		// - the original storage is not zero (otherwise tx1)
+		expect(tx3.gasUsed - baseCost).to.be.eq(2900);
 	});
 });

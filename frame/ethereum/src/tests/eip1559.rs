@@ -18,8 +18,9 @@
 //! Consensus extension module tests for BABE consensus.
 
 use super::*;
+use fp_ethereum::ValidatedTransaction;
 use frame_support::{traits::Get, weights::DispatchClass};
-use pallet_evm::GasWeightMapping;
+use pallet_evm::{AddressMapping, GasWeightMapping};
 
 fn eip1559_erc20_creation_unsigned_transaction() -> EIP1559UnsignedTransaction {
 	EIP1559UnsignedTransaction {
@@ -83,8 +84,10 @@ fn transaction_with_gas_limit_greater_than_max_extrinsic_should_fail_pre_dispatc
 	let limits: frame_system::limits::BlockWeights =
 		<Test as frame_system::Config>::BlockWeights::get();
 	let max_extrinsic = limits.get(DispatchClass::Normal).max_extrinsic.unwrap();
-	let max_extrinsic_gas =
-		<Test as pallet_evm::Config>::GasWeightMapping::weight_to_gas(max_extrinsic);
+	let base_extrinsic = limits.get(DispatchClass::Normal).base_extrinsic;
+	let max_extrinsic_gas = <Test as pallet_evm::Config>::GasWeightMapping::weight_to_gas(
+		max_extrinsic + base_extrinsic,
+	);
 
 	ext.execute_with(|| {
 		let transaction = EIP1559UnsignedTransaction {
@@ -252,7 +255,7 @@ fn transaction_with_invalid_chain_id_should_fail_in_block() {
 		assert_err!(
 			extrinsic.apply::<Test>(&dispatch_info, 0),
 			TransactionValidityError::Invalid(InvalidTransaction::Custom(
-				crate::TransactionValidationError::InvalidChainId as u8,
+				fp_ethereum::TransactionValidationError::InvalidChainId as u8,
 			))
 		);
 	});
@@ -405,5 +408,81 @@ fn call_should_handle_errors() {
 
 		// calling should always succeed even if the inner EVM execution fails.
 		Ethereum::execute(alice.address, &t3, None).ok().unwrap();
+	});
+}
+
+#[test]
+fn self_contained_transaction_with_extra_gas_should_adjust_weight_with_post_dispatch() {
+	let (pairs, mut ext) = new_test_ext(1);
+	let alice = &pairs[0];
+	let base_extrinsic_weight = frame_system::limits::BlockWeights::with_sensible_defaults(
+		2000000000000,
+		sp_runtime::Perbill::from_percent(75),
+	)
+	.per_class
+	.get(frame_support::weights::DispatchClass::Normal)
+	.base_extrinsic;
+
+	ext.execute_with(|| {
+		let mut transaction = eip1559_erc20_creation_unsigned_transaction();
+		transaction.gas_limit = 9_000_000.into();
+		let signed = transaction.sign(&alice.private_key, None);
+		let call = crate::Call::<Test>::transact {
+			transaction: signed,
+		};
+		let source = call.check_self_contained().unwrap().unwrap();
+		let extrinsic = CheckedExtrinsic::<_, _, frame_system::CheckWeight<Test>, _> {
+			signed: fp_self_contained::CheckedSignature::SelfContained(source),
+			function: Call::Ethereum(call),
+		};
+		let dispatch_info = extrinsic.get_dispatch_info();
+		let post_dispatch_weight = extrinsic
+			.apply::<Test>(&dispatch_info, 0)
+			.unwrap()
+			.unwrap()
+			.actual_weight
+			.unwrap();
+
+		let expected_weight = base_extrinsic_weight.saturating_add(post_dispatch_weight);
+		let actual_weight = *frame_system::Pallet::<Test>::block_weight()
+			.get(frame_support::weights::DispatchClass::Normal);
+		assert_eq!(
+			expected_weight,
+			actual_weight,
+			"the block weight was unexpected, excess '{}'",
+			actual_weight as i128 - expected_weight as i128
+		);
+	});
+}
+
+#[test]
+fn validated_transaction_apply_zero_gas_price_works() {
+	let (pairs, mut ext) = new_test_ext_with_initial_balance(2, 1_000);
+	let alice = &pairs[0];
+	let bob = &pairs[1];
+	let substrate_alice =
+		<Test as pallet_evm::Config>::AddressMapping::into_account_id(alice.address);
+	let substrate_bob = <Test as pallet_evm::Config>::AddressMapping::into_account_id(bob.address);
+
+	ext.execute_with(|| {
+		let transaction = EIP1559UnsignedTransaction {
+			nonce: U256::zero(),
+			max_priority_fee_per_gas: U256::zero(),
+			max_fee_per_gas: U256::zero(),
+			gas_limit: U256::from(21_000),
+			action: ethereum::TransactionAction::Call(bob.address),
+			value: U256::from(100),
+			input: Default::default(),
+		}
+		.sign(&alice.private_key, None);
+
+		assert_ok!(crate::ValidatedTransaction::<Test>::apply(
+			alice.address,
+			transaction
+		));
+		// Alice didn't pay fees, transfer 100 to Bob.
+		assert_eq!(Balances::free_balance(&substrate_alice), 900);
+		// Bob received 100 from Alice.
+		assert_eq!(Balances::free_balance(&substrate_bob), 1_100);
 	});
 }

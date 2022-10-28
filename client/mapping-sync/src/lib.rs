@@ -22,8 +22,7 @@ mod worker;
 
 pub use worker::{MappingSyncWorker, SyncStrategy};
 
-use fp_consensus::FindLogError;
-use fp_rpc::EthereumRuntimeRPCApi;
+// Substrate
 use sc_client_api::BlockOf;
 use sp_api::{ApiExt, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
@@ -31,6 +30,9 @@ use sp_runtime::{
 	generic::BlockId,
 	traits::{Block as BlockT, Header as HeaderT, Zero},
 };
+// Frontier
+use fp_consensus::FindLogError;
+use fp_rpc::EthereumRuntimeRPCApi;
 
 pub fn sync_block<Block: BlockT>(
 	backend: &fc_db::Backend<Block>,

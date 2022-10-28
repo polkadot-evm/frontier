@@ -41,6 +41,12 @@ pub enum BlockNumber {
 	Earliest,
 	/// Pending block (being mined)
 	Pending,
+	/// The most recent crypto-economically secure block.
+	/// There is no difference between Ethereum's `safe` and `finalized`
+	/// in Substrate finality gadget.
+	Safe,
+	/// The most recent crypto-economically secure block.
+	Finalized,
 }
 
 impl Default for BlockNumber {
@@ -63,6 +69,7 @@ impl BlockNumber {
 	pub fn to_min_block_num(&self) -> Option<u64> {
 		match *self {
 			BlockNumber::Num(ref x) => Some(*x),
+			BlockNumber::Earliest => Some(0),
 			_ => None,
 		}
 	}
@@ -85,6 +92,8 @@ impl Serialize for BlockNumber {
 			BlockNumber::Latest => serializer.serialize_str("latest"),
 			BlockNumber::Earliest => serializer.serialize_str("earliest"),
 			BlockNumber::Pending => serializer.serialize_str("pending"),
+			BlockNumber::Safe => serializer.serialize_str("safe"),
+			BlockNumber::Finalized => serializer.serialize_str("finalized"),
 		}
 	}
 }
@@ -97,7 +106,7 @@ impl<'a> Visitor<'a> for BlockNumberVisitor {
 	fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
 		write!(
 			formatter,
-			"a block number or 'latest', 'earliest' or 'pending'"
+			"a block number or 'latest', 'safe', 'finalized', 'earliest' or 'pending'"
 		)
 	}
 
@@ -162,6 +171,8 @@ impl<'a> Visitor<'a> for BlockNumberVisitor {
 			"latest" => Ok(BlockNumber::Latest),
 			"earliest" => Ok(BlockNumber::Earliest),
 			"pending" => Ok(BlockNumber::Pending),
+			"safe" => Ok(BlockNumber::Safe),
+			"finalized" => Ok(BlockNumber::Finalized),
 			_ if value.starts_with("0x") => u64::from_str_radix(&value[2..], 16)
 				.map(BlockNumber::Num)
 				.map_err(|e| Error::custom(format!("Invalid block number: {}", e))),
@@ -193,6 +204,11 @@ mod tests {
 	fn match_block_number(block_number: BlockNumber) -> Option<u64> {
 		match block_number {
 			BlockNumber::Num(number) => Some(number),
+			BlockNumber::Earliest => Some(0),
+			BlockNumber::Latest => Some(1000),
+			BlockNumber::Safe => Some(999),
+			BlockNumber::Finalized => Some(999),
+			BlockNumber::Pending => Some(1001),
 			_ => None,
 		}
 	}
@@ -202,9 +218,19 @@ mod tests {
 		let bn_dec: BlockNumber = serde_json::from_str(r#""42""#).unwrap();
 		let bn_hex: BlockNumber = serde_json::from_str(r#""0x45""#).unwrap();
 		let bn_u64: BlockNumber = serde_json::from_str(r#"420"#).unwrap();
+		let bn_tag_earliest: BlockNumber = serde_json::from_str(r#""earliest""#).unwrap();
+		let bn_tag_latest: BlockNumber = serde_json::from_str(r#""latest""#).unwrap();
+		let bn_tag_safe: BlockNumber = serde_json::from_str(r#""safe""#).unwrap();
+		let bn_tag_finalized: BlockNumber = serde_json::from_str(r#""finalized""#).unwrap();
+		let bn_tag_pending: BlockNumber = serde_json::from_str(r#""pending""#).unwrap();
 
 		assert_eq!(match_block_number(bn_dec).unwrap(), 42);
 		assert_eq!(match_block_number(bn_hex).unwrap(), 69);
 		assert_eq!(match_block_number(bn_u64).unwrap(), 420);
+		assert_eq!(match_block_number(bn_tag_earliest).unwrap(), 0);
+		assert_eq!(match_block_number(bn_tag_latest).unwrap(), 1000);
+		assert_eq!(match_block_number(bn_tag_safe).unwrap(), 999);
+		assert_eq!(match_block_number(bn_tag_finalized).unwrap(), 999);
+		assert_eq!(match_block_number(bn_tag_pending).unwrap(), 1001);
 	}
 }
