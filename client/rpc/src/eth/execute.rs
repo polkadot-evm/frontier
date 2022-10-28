@@ -21,7 +21,7 @@ use std::sync::Arc;
 use ethereum_types::{H256, U256};
 use evm::{ExitError, ExitReason};
 use jsonrpsee::core::RpcResult as Result;
-
+// Substrate
 use sc_client_api::backend::{Backend, StateBackend, StorageProvider};
 use sc_network::ExHashT;
 use sc_transaction_pool::ChainApi;
@@ -33,7 +33,7 @@ use sp_runtime::{
 	traits::{BlakeTwo256, Block as BlockT},
 	SaturatedConversion,
 };
-
+// Frontier
 use fc_rpc_core::types::*;
 use fp_rpc::EthereumRuntimeRPCApi;
 
@@ -684,7 +684,9 @@ where
 						}
 						previous_highest = highest;
 					}
-					ExitReason::Revert(_) | ExitReason::Error(ExitError::OutOfGas) => {
+					ExitReason::Revert(_)
+					| ExitReason::Error(ExitError::OutOfGas)
+					| ExitReason::Error(ExitError::InvalidCode(_)) => {
 						lowest = mid;
 					}
 					other => error_on_execution_failure(&other, &data)?,

@@ -12,7 +12,8 @@ repository = "https://github.com/paritytech/frontier/"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-evm = { git = "https://github.com/rust-blockchain/evm", rev = "01bcbd2205a212c34451d3b4fabc962793b057d3", default-features = false, features = ["with-codec"] }
+environmental = { version = "1.1.3", default-features = false, optional = true }
+evm = { git = "https://github.com/rust-blockchain/evm", rev = "6534c1dd8ad77b53d05032f80e8a5f2de4d37fd2", default-features = false, features = ["with-codec"] }
 hex = { version = "0.4.3", default-features = false, features = ["alloc"] }
 log = { version = "0.4.17", default-features = false }
 serde = { version = "1.0.144", optional = true, features = ["derive"] }
@@ -43,6 +44,7 @@ pallet-balances = { version = "4.0.0-dev", git = "https://github.com/paritytech/
 [features]
 default = ["std"]
 std = [
+	"environmental?/std",
 	"evm/std",
 	"evm/with-serde",
 	"hex/std",
@@ -72,3 +74,4 @@ runtime-benchmarks = [
 	"frame-system/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
 ]
+forbid-evm-reentrancy = ["dep:environmental"]

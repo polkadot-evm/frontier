@@ -15,20 +15,21 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
-#![allow(clippy::useless_format)]
+
 #![allow(clippy::format_in_format_args)]
 
-use super::{DbValue, Operation};
-
-use serde::de::DeserializeOwned;
-use serde_json::Deserializer;
 use std::{
 	fs,
 	io::{self, Read},
 	path::PathBuf,
 };
 
+use serde::de::DeserializeOwned;
+use serde_json::Deserializer;
+// Substrate
 use sp_runtime::traits::Block as BlockT;
+
+use super::{DbValue, Operation};
 
 pub fn maybe_deserialize_value<B: BlockT>(
 	operation: &Operation,
@@ -41,7 +42,7 @@ pub fn maybe_deserialize_value<B: BlockT>(
 		if let Some(Ok(value)) = stream_deser.next() {
 			Ok(Some(value))
 		} else {
-			Err("Failed to deserialize value data".to_string().into())
+			Err("Failed to deserialize value data".into())
 		}
 	}
 
@@ -91,7 +92,7 @@ pub trait FrontierDbMessage {
 	}
 
 	fn one_to_many_error(&self) -> sc_cli::Error {
-		"One-to-many operation not allowed".to_string().into()
+		"One-to-many operation not allowed".into()
 	}
 
 	#[cfg(not(test))]
@@ -121,7 +122,7 @@ pub trait FrontierDbMessage {
 		let mut buffer = String::new();
 		io::stdin().read_line(&mut buffer)?;
 		if buffer.trim() != "confirm" {
-			return Err(format!("-- Cancel exit --").into());
+			return Err("-- Cancel exit --".into());
 		}
 		Ok(())
 	}

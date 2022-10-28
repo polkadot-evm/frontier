@@ -14,12 +14,12 @@ targets = ["x86_64-unknown-linux-gnu"]
 [dependencies]
 async-trait = "0.1"
 clap = { version = "3.2", features = ["derive"] }
-futures = "0.3.21"
+futures = "0.3.24"
 log = "0.4.17"
 
 # Parity
 codec = { package = "parity-scale-codec", version = "3.1", features = ["derive"] }
-jsonrpsee = { version = "0.14.0", features = ["server", "macros"] }
+jsonrpsee = { version = "0.15.1", features = ["server", "macros"] }
 
 # Substrate
 sc-basic-authorship = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }

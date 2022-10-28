@@ -14,6 +14,7 @@ targets = ["x86_64-unknown-linux-gnu"]
 ethereum = { version = "0.12.0", default-features = false, features = ["with-codec"] }
 ethereum-types = { version = "0.13.1", default-features = false }
 fp-evm = { version = "3.0.0-dev", path = "../evm", default-features = false }
+num_enum = { version = "0.5.4", default-features = false }
 
 # Parity
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false }
@@ -29,6 +30,7 @@ default = ["std"]
 std = [
 	"ethereum/std",
 	"ethereum-types/std",
+	"num_enum/std",
 	# Parity
 	"codec/std",
 	# Substrate

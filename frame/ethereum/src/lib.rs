@@ -32,7 +32,9 @@ mod tests;
 use ethereum_types::{Bloom, BloomInput, H160, H256, H64, U256};
 use evm::ExitReason;
 use fp_consensus::{PostLog, PreLog, FRONTIER_ENGINE_ID};
-use fp_ethereum::{TransactionData, ValidatedTransaction as ValidatedTransactionT};
+use fp_ethereum::{
+	TransactionData, TransactionValidationError, ValidatedTransaction as ValidatedTransactionT,
+};
 use fp_evm::{
 	CallOrCreateInfo, CheckEvmTransaction, CheckEvmTransactionConfig, InvalidEvmTransactionError,
 };
@@ -256,10 +258,13 @@ pub mod pallet {
 		OriginFor<T>: Into<Result<RawOrigin, OriginFor<T>>>,
 	{
 		/// Transact an Ethereum transaction.
-		#[pallet::weight(<T as pallet_evm::Config>::GasWeightMapping::gas_to_weight({
-			let transaction_data: TransactionData = transaction.into();
-			transaction_data.gas_limit.unique_saturated_into()
-		}))]
+		#[pallet::weight({
+			let without_base_extrinsic_weight = true;
+			<T as pallet_evm::Config>::GasWeightMapping::gas_to_weight({
+				let transaction_data: TransactionData = transaction.into();
+				transaction_data.gas_limit.unique_saturated_into()
+			}, without_base_extrinsic_weight)
+		})]
 		pub fn transact(
 			origin: OriginFor<T>,
 			transaction: Transaction,
@@ -604,6 +609,7 @@ impl<T: Config> Pallet<T> {
 		Ok(PostDispatchInfo {
 			actual_weight: Some(T::GasWeightMapping::gas_to_weight(
 				used_gas.unique_saturated_into(),
+				true,
 			)),
 			pays_fee: Pays::No,
 		})
@@ -872,26 +878,16 @@ impl<T: Config> BlockHashMapping for EthereumBlockHashMapping<T> {
 	}
 }
 
-#[repr(u8)]
-enum TransactionValidationError {
-	#[allow(dead_code)]
-	UnknownError,
-	InvalidChainId,
-	InvalidSignature,
-	InvalidGasLimit,
-	MaxFeePerGasTooLow,
-}
-
 pub struct InvalidTransactionWrapper(InvalidTransaction);
 
 impl From<InvalidEvmTransactionError> for InvalidTransactionWrapper {
 	fn from(validation_error: InvalidEvmTransactionError) -> Self {
 		match validation_error {
 			InvalidEvmTransactionError::GasLimitTooLow => InvalidTransactionWrapper(
-				InvalidTransaction::Custom(TransactionValidationError::InvalidGasLimit as u8),
+				InvalidTransaction::Custom(TransactionValidationError::GasLimitTooLow as u8),
 			),
 			InvalidEvmTransactionError::GasLimitTooHigh => InvalidTransactionWrapper(
-				InvalidTransaction::Custom(TransactionValidationError::InvalidGasLimit as u8),
+				InvalidTransaction::Custom(TransactionValidationError::GasLimitTooHigh as u8),
 			),
 			InvalidEvmTransactionError::GasPriceTooLow => {
 				InvalidTransactionWrapper(InvalidTransaction::Payment)

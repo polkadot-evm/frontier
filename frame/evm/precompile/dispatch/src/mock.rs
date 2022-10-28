@@ -136,10 +136,12 @@ impl FindAuthor<H160> for FindAuthorTruncated {
 }
 parameter_types! {
 	pub BlockGasLimit: U256 = U256::max_value();
+	pub WeightPerGas: u64 = 20_000;
 }
 impl pallet_evm::Config for Test {
 	type FeeCalculator = FixedGasPrice;
-	type GasWeightMapping = ();
+	type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
+	type WeightPerGas = WeightPerGas;
 
 	type CallOrigin = EnsureAddressRoot<Self::AccountId>;
 	type WithdrawOrigin = EnsureAddressNever<Self::AccountId>;

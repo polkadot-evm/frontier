@@ -31,7 +31,16 @@ use fp_evm::{CallInfo, CreateInfo, ExecutionInfo, Log, Vicinity};
 use frame_support::traits::{Currency, ExistenceRequirement, Get};
 use sp_core::{H160, H256, U256};
 use sp_runtime::traits::UniqueSaturatedInto;
-use sp_std::{boxed::Box, collections::btree_set::BTreeSet, marker::PhantomData, mem, vec::Vec};
+use sp_std::{
+	boxed::Box,
+	collections::{btree_map::BTreeMap, btree_set::BTreeSet},
+	marker::PhantomData,
+	mem,
+	vec::Vec,
+};
+
+#[cfg(feature = "forbid-evm-reentrancy")]
+environmental::thread_local_impl!(static IN_EVM: environmental::RefCell<bool> = environmental::RefCell::new(false));
 
 #[derive(Default)]
 pub struct Runner<T: Config> {
@@ -42,6 +51,7 @@ impl<T: Config> Runner<T>
 where
 	BalanceOf<T>: TryFrom<U256> + Into<U256>,
 {
+	#[allow(clippy::let_and_return)]
 	/// Execute an already validated EVM operation.
 	fn execute<'config, 'precompiles, F, R>(
 		source: H160,
@@ -65,27 +75,99 @@ where
 		) -> (ExitReason, R),
 	{
 		let (base_fee, weight) = T::FeeCalculator::min_gas_price();
-		let max_fee_per_gas = match (max_fee_per_gas, is_transactional) {
-			(Some(max_fee_per_gas), _) => max_fee_per_gas,
-			// Gas price check is skipped for non-transactional calls that don't
-			// define a `max_fee_per_gas` input.
-			(None, false) => Default::default(),
-			// Unreachable, previously validated. Handle gracefully.
-			_ => {
-				return Err(RunnerError {
-					error: Error::<T>::GasPriceTooLow,
-					weight,
-				})
-			}
-		};
+
+		#[cfg(feature = "forbid-evm-reentrancy")]
+		if IN_EVM.with(|in_evm| in_evm.replace(true)) {
+			return Err(RunnerError {
+				error: Error::<T>::Reentrancy,
+				weight,
+			});
+		}
+
+		let res = Self::execute_inner(
+			source,
+			value,
+			gas_limit,
+			max_fee_per_gas,
+			max_priority_fee_per_gas,
+			config,
+			precompiles,
+			is_transactional,
+			f,
+			base_fee,
+			weight,
+		);
+
+		// Set IN_EVM to false
+		// We should make sure that this line is executed whatever the execution path.
+		#[cfg(feature = "forbid-evm-reentrancy")]
+		let _ = IN_EVM.with(|in_evm| in_evm.take());
+
+		res
+	}
+
+	// Execute an already validated EVM operation.
+	fn execute_inner<'config, 'precompiles, F, R>(
+		source: H160,
+		value: U256,
+		gas_limit: u64,
+		max_fee_per_gas: Option<U256>,
+		max_priority_fee_per_gas: Option<U256>,
+		config: &'config evm::Config,
+		precompiles: &'precompiles T::PrecompilesType,
+		is_transactional: bool,
+		f: F,
+		base_fee: U256,
+		weight: crate::Weight,
+	) -> Result<ExecutionInfo<R>, RunnerError<Error<T>>>
+	where
+		F: FnOnce(
+			&mut StackExecutor<
+				'config,
+				'precompiles,
+				SubstrateStackState<'_, 'config, T>,
+				T::PrecompilesType,
+			>,
+		) -> (ExitReason, R),
+	{
+		let (total_fee_per_gas, _actual_priority_fee_per_gas) =
+			match (max_fee_per_gas, max_priority_fee_per_gas, is_transactional) {
+				// Zero max_fee_per_gas for validated transactional calls exist in XCM -> EVM
+				// because fees are already withdrawn in the xcm-executor.
+				(Some(max_fee), _, true) if max_fee.is_zero() => (U256::zero(), U256::zero()),
+				// With no tip, we pay exactly the base_fee
+				(Some(_), None, _) => (base_fee, U256::zero()),
+				// With tip, we include as much of the tip on top of base_fee that we can, never
+				// exceeding max_fee_per_gas
+				(Some(max_fee_per_gas), Some(max_priority_fee_per_gas), _) => {
+					let actual_priority_fee_per_gas = max_fee_per_gas
+						.saturating_sub(base_fee)
+						.min(max_priority_fee_per_gas);
+					(
+						base_fee.saturating_add(actual_priority_fee_per_gas),
+						actual_priority_fee_per_gas,
+					)
+				}
+				// Gas price check is skipped for non-transactional calls that don't
+				// define a `max_fee_per_gas` input.
+				(None, _, false) => (Default::default(), U256::zero()),
+				// Unreachable, previously validated. Handle gracefully.
+				_ => {
+					return Err(RunnerError {
+						error: Error::<T>::GasPriceTooLow,
+						weight,
+					})
+				}
+			};
 
 		// After eip-1559 we make sure the account can pay both the evm execution and priority fees.
-		let total_fee = max_fee_per_gas
-			.checked_mul(U256::from(gas_limit))
-			.ok_or(RunnerError {
-				error: Error::<T>::FeeOverflow,
-				weight,
-			})?;
+		let total_fee =
+			total_fee_per_gas
+				.checked_mul(U256::from(gas_limit))
+				.ok_or(RunnerError {
+					error: Error::<T>::FeeOverflow,
+					weight,
+				})?;
 
 		// Deduct fee from the `source` account. Returns `None` if `total_fee` is Zero.
 		let fee = T::OnChargeTransaction::withdraw_fee(&source, total_fee)
@@ -105,18 +187,7 @@ where
 
 		// Post execution.
 		let used_gas = U256::from(executor.used_gas());
-		let actual_fee = if let Some(max_priority_fee) = max_priority_fee_per_gas {
-			let actual_priority_fee = max_fee_per_gas
-				.saturating_sub(base_fee)
-				.min(max_priority_fee)
-				.saturating_mul(used_gas);
-			executor
-				.fee(base_fee)
-				.checked_add(actual_priority_fee)
-				.unwrap_or_else(U256::max_value)
-		} else {
-			executor.fee(base_fee)
-		};
+		let actual_fee = executor.fee(total_fee_per_gas);
 		log::debug!(
 			target: "evm",
 			"Execution {:?} [source: {:?}, value: {}, gas_limit: {}, actual_fee: {}, is_transactional: {}]",
@@ -494,6 +565,7 @@ impl<'config> SubstrateStackSubstate<'config> {
 pub struct SubstrateStackState<'vicinity, 'config, T> {
 	vicinity: &'vicinity Vicinity,
 	substate: SubstrateStackSubstate<'config>,
+	original_storage: BTreeMap<(H160, H256), H256>,
 	_marker: PhantomData<T>,
 }
 
@@ -509,6 +581,7 @@ impl<'vicinity, 'config, T: Config> SubstrateStackState<'vicinity, 'config, T> {
 				parent: None,
 			},
 			_marker: PhantomData,
+			original_storage: BTreeMap::new(),
 		}
 	}
 }
@@ -576,8 +649,15 @@ impl<'vicinity, 'config, T: Config> BackendT for SubstrateStackState<'vicinity, 
 		<AccountStorages<T>>::get(address, index)
 	}
 
-	fn original_storage(&self, _address: H160, _index: H256) -> Option<H256> {
-		None
+	fn original_storage(&self, address: H160, index: H256) -> Option<H256> {
+		// Not being cached means that it was never changed, which means we
+		// can fetch it from storage.
+		Some(
+			self.original_storage
+				.get(&(address, index))
+				.cloned()
+				.unwrap_or_else(|| self.storage(address, index)),
+		)
 	}
 
 	fn block_base_fee_per_gas(&self) -> sp_core::U256 {
@@ -629,6 +709,18 @@ where
 	}
 
 	fn set_storage(&mut self, address: H160, index: H256, value: H256) {
+		// We cache the current value if this is the first time we modify it
+		// in the transaction.
+		use sp_std::collections::btree_map::Entry::Vacant;
+		if let Vacant(e) = self.original_storage.entry((address, index)) {
+			let original = <AccountStorages<T>>::get(address, index);
+			// No need to cache if same value.
+			if original != value {
+				e.insert(original);
+			}
+		}
+
+		// Then we insert or remove the entry based on the value.
 		if value == H256::default() {
 			log::debug!(
 				target: "evm",
@@ -693,7 +785,7 @@ where
 		//
 		// This function exists in EVM because a design issue
 		// (arguably a bug) in SELFDESTRUCT that can cause total
-		// issurance to be reduced. We do not need to replicate this.
+		// issuance to be reduced. We do not need to replicate this.
 	}
 
 	fn touch(&mut self, _address: H160) {
@@ -712,5 +804,73 @@ where
 	fn is_storage_cold(&self, address: H160, key: H256) -> bool {
 		self.substate
 			.recursive_is_cold(&|a: &Accessed| a.accessed_storage.contains(&(address, key)))
+	}
+}
+
+#[cfg(feature = "forbid-evm-reentrancy")]
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use crate::mock::Test;
+	use evm::ExitSucceed;
+	use std::assert_matches::assert_matches;
+
+	#[test]
+	fn test_evm_reentrancy() {
+		let config = evm::Config::istanbul();
+
+		// Should fail with the appropriate error if there is reentrancy
+		let res = Runner::<Test>::execute(
+			H160::default(),
+			U256::default(),
+			100_000,
+			None,
+			None,
+			&config,
+			&(),
+			false,
+			|_| {
+				let res = Runner::<Test>::execute(
+					H160::default(),
+					U256::default(),
+					100_000,
+					None,
+					None,
+					&config,
+					&(),
+					false,
+					|_| (ExitReason::Succeed(ExitSucceed::Stopped), ()),
+				);
+				assert_matches!(
+					res,
+					Err(RunnerError {
+						error: Error::<Test>::Reentrancy,
+						..
+					})
+				);
+				(ExitReason::Error(ExitError::CallTooDeep), ())
+			},
+		);
+		assert_matches!(
+			res,
+			Ok(ExecutionInfo {
+				exit_reason: ExitReason::Error(ExitError::CallTooDeep),
+				..
+			})
+		);
+
+		// Should succeed if there is no reentrancy
+		let res = Runner::<Test>::execute(
+			H160::default(),
+			U256::default(),
+			100_000,
+			None,
+			None,
+			&config,
+			&(),
+			false,
+			|_| (ExitReason::Succeed(ExitSucceed::Stopped), ()),
+		);
+		assert!(res.is_ok());
 	}
 }

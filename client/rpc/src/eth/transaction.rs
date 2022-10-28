@@ -21,7 +21,7 @@ use std::sync::Arc;
 use ethereum::TransactionV2 as EthereumTransaction;
 use ethereum_types::{H256, U256, U64};
 use jsonrpsee::core::RpcResult as Result;
-
+// Substrate
 use sc_client_api::backend::{Backend, StateBackend, StorageProvider};
 use sc_network::ExHashT;
 use sc_transaction_pool::ChainApi;
@@ -33,7 +33,7 @@ use sp_runtime::{
 	generic::BlockId,
 	traits::{BlakeTwo256, Block as BlockT},
 };
-
+// Frontier
 use fc_rpc_core::types::*;
 use fp_rpc::EthereumRuntimeRPCApi;
 
@@ -127,8 +127,12 @@ where
 			}
 		};
 
-		let id = match frontier_backend_client::load_hash::<B>(backend.as_ref(), hash)
-			.map_err(|err| internal_err(format!("{:?}", err)))?
+		let id = match frontier_backend_client::load_hash::<B, C>(
+			client.as_ref(),
+			backend.as_ref(),
+			hash,
+		)
+		.map_err(|err| internal_err(format!("{:?}", err)))?
 		{
 			Some(hash) => hash,
 			_ => return Ok(None),
@@ -172,8 +176,12 @@ where
 		let block_data_cache = Arc::clone(&self.block_data_cache);
 		let backend = Arc::clone(&self.backend);
 
-		let id = match frontier_backend_client::load_hash::<B>(backend.as_ref(), hash)
-			.map_err(|err| internal_err(format!("{:?}", err)))?
+		let id = match frontier_backend_client::load_hash::<B, C>(
+			client.as_ref(),
+			backend.as_ref(),
+			hash,
+		)
+		.map_err(|err| internal_err(format!("{:?}", err)))?
 		{
 			Some(hash) => hash,
 			_ => return Ok(None),
@@ -291,8 +299,12 @@ where
 			None => return Ok(None),
 		};
 
-		let id = match frontier_backend_client::load_hash::<B>(backend.as_ref(), hash)
-			.map_err(|err| internal_err(format!("{:?}", err)))?
+		let id = match frontier_backend_client::load_hash::<B, C>(
+			client.as_ref(),
+			backend.as_ref(),
+			hash,
+		)
+		.map_err(|err| internal_err(format!("{:?}", err)))?
 		{
 			Some(hash) => hash,
 			_ => return Ok(None),
