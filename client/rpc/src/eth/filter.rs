@@ -83,7 +83,10 @@ where
 					self.max_stored_filters
 				)));
 			}
-			let last_key = match locked.iter().next_back() {
+			let last_key = match {
+				let mut iter = locked.iter();
+				iter.next_back()
+			} {
 				Some((k, _)) => *k,
 				None => U256::zero(),
 			};

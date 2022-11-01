@@ -21,12 +21,12 @@ use frame_support::{
 	parameter_types,
 	traits::{ConstU32, FindAuthor},
 	weights::Weight,
-	ConsensusEngineId,
 };
 use sp_core::{H160, H256, U256};
 use sp_runtime::{
 	generic,
 	traits::{BlakeTwo256, IdentityLookup},
+	ConsensusEngineId,
 };
 use sp_std::{boxed::Box, prelude::*, str::FromStr};
 
@@ -51,24 +51,24 @@ frame_support::construct_runtime! {
 parameter_types! {
 	pub const BlockHashCount: u64 = 250;
 	pub BlockWeights: frame_system::limits::BlockWeights =
-		frame_system::limits::BlockWeights::simple_max(1024);
+		frame_system::limits::BlockWeights::simple_max(Weight::from_ref_time(1024));
 }
 impl frame_system::Config for Test {
 	type BaseCallFilter = frame_support::traits::Everything;
 	type BlockWeights = ();
 	type BlockLength = ();
-	type DbWeight = ();
-	type Origin = Origin;
+	type RuntimeOrigin = RuntimeOrigin;
+	type RuntimeCall = RuntimeCall;
 	type Index = u64;
 	type BlockNumber = u64;
 	type Hash = H256;
-	type Call = Call;
 	type Hashing = BlakeTwo256;
 	type AccountId = H160;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type Header = generic::Header<u64, BlakeTwo256>;
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type BlockHashCount = BlockHashCount;
+	type DbWeight = ();
 	type Version = ();
 	type PalletInfo = PalletInfo;
 	type AccountData = pallet_balances::AccountData<u64>;
@@ -84,13 +84,13 @@ parameter_types! {
 	pub const ExistentialDeposit: u64 = 0;
 }
 impl pallet_balances::Config for Test {
-	type MaxLocks = ();
 	type Balance = u64;
 	type DustRemoval = ();
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type ExistentialDeposit = ExistentialDeposit;
 	type AccountStore = System;
 	type WeightInfo = ();
+	type MaxLocks = ();
 	type MaxReserves = ();
 	type ReserveIdentifier = ();
 }
@@ -109,7 +109,7 @@ pub struct FixedGasPrice;
 impl FeeCalculator for FixedGasPrice {
 	fn min_gas_price() -> (U256, Weight) {
 		// Return some meaningful gas price and weight
-		(1_000_000_000u128.into(), 7u64)
+		(1_000_000_000u128.into(), Weight::from_ref_time(7u64))
 	}
 }
 
@@ -124,26 +124,26 @@ impl FindAuthor<H160> for FindAuthorTruncated {
 }
 parameter_types! {
 	pub BlockGasLimit: U256 = U256::max_value();
-	pub WeightPerGas: u64 = 20_000;
+	pub WeightPerGas: Weight = Weight::from_ref_time(20_000);
 }
 impl crate::Config for Test {
 	type FeeCalculator = FixedGasPrice;
 	type GasWeightMapping = crate::FixedGasWeightMapping<Self>;
 	type WeightPerGas = WeightPerGas;
 
+	type BlockHashMapping = crate::SubstrateBlockHashMapping<Self>;
 	type CallOrigin = EnsureAddressRoot<Self::AccountId>;
-	type WithdrawOrigin = EnsureAddressNever<Self::AccountId>;
 
+	type WithdrawOrigin = EnsureAddressNever<Self::AccountId>;
 	type AddressMapping = IdentityAddressMapping;
 	type Currency = Balances;
-	type Runner = crate::runner::stack::Runner<Self>;
 
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type PrecompilesType = ();
 	type PrecompilesValue = ();
 	type ChainId = ();
 	type BlockGasLimit = BlockGasLimit;
+	type Runner = crate::runner::stack::Runner<Self>;
 	type OnChargeTransaction = ();
-	type BlockHashMapping = crate::SubstrateBlockHashMapping<Self>;
 	type FindAuthor = FindAuthorTruncated;
 }

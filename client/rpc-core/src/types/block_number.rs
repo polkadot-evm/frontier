@@ -24,7 +24,7 @@ use serde::{
 use std::fmt;
 
 /// Represents rpc api block number param.
-#[derive(Debug, Copy, PartialEq, Clone, Hash, Eq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 pub enum BlockNumber {
 	/// Hash
 	Hash {

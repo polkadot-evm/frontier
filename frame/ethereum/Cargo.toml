@@ -12,14 +12,14 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 ethereum = { version = "0.12.0", default-features = false, features = ["with-codec"] }
-evm = { git = "https://github.com/rust-blockchain/evm", rev = "6534c1dd8ad77b53d05032f80e8a5f2de4d37fd2", features = ["with-codec"], default-features = false }
+evm = { version = "0.36.0", default-features = false, features = ["with-codec"] }
 serde = { version = "1.0.144", optional = true }
 
 # Parity
-codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false }
+codec = { package = "parity-scale-codec", version = "3.2.1", default-features = false }
 ethereum-types = { version = "0.13.1", default-features = false }
 rlp = { version = "0.5", default-features = false }
-scale-info = { version = "2.1.2", default-features = false, features = ["derive"] }
+scale-info = { version = "2.3.0", default-features = false, features = ["derive"] }
 
 # Substrate
 sp-io = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }

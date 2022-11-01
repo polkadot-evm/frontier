@@ -32,7 +32,7 @@ pub enum TransactionMessage {
 }
 
 /// Transaction request coming from RPC
-#[derive(Debug, Clone, Default, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct TransactionRequest {

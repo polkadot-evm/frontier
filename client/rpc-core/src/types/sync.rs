@@ -22,7 +22,7 @@ use ethereum_types::{H512, U256};
 use serde::{Serialize, Serializer};
 
 /// Sync info
-#[derive(Default, Debug, Serialize, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SyncInfo {
 	/// Starting block
@@ -38,7 +38,7 @@ pub struct SyncInfo {
 }
 
 /// Peers info
-#[derive(Default, Debug, Serialize)]
+#[derive(Debug, Default, Serialize)]
 pub struct Peers {
 	/// Number of active peers
 	pub active: usize,
@@ -58,7 +58,7 @@ pub enum PeerCount {
 }
 
 /// Peer connection information
-#[derive(Default, Debug, Serialize)]
+#[derive(Debug, Default, Serialize)]
 pub struct PeerInfo {
 	/// Public node id
 	pub id: Option<String>,
@@ -73,7 +73,7 @@ pub struct PeerInfo {
 }
 
 /// Peer network information
-#[derive(Default, Debug, Serialize)]
+#[derive(Debug, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PeerNetworkInfo {
 	/// Remote endpoint address
@@ -83,7 +83,7 @@ pub struct PeerNetworkInfo {
 }
 
 /// Peer protocols information
-#[derive(Default, Debug, Serialize)]
+#[derive(Debug, Default, Serialize)]
 pub struct PeerProtocolsInfo {
 	/// Ethereum protocol information
 	pub eth: Option<EthProtocolInfo>,
@@ -92,7 +92,7 @@ pub struct PeerProtocolsInfo {
 }
 
 /// Peer Ethereum protocol information
-#[derive(Default, Debug, Serialize)]
+#[derive(Debug, Default, Serialize)]
 pub struct EthProtocolInfo {
 	/// Negotiated ethereum protocol version
 	pub version: u32,
@@ -103,7 +103,7 @@ pub struct EthProtocolInfo {
 }
 
 /// Peer PIP protocol information
-#[derive(Default, Debug, Serialize)]
+#[derive(Debug, Default, Serialize)]
 pub struct PipProtocolInfo {
 	/// Negotiated PIP protocol version
 	pub version: u32,
@@ -114,7 +114,7 @@ pub struct PipProtocolInfo {
 }
 
 /// Sync status
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 pub enum SyncStatus {
 	/// Info when syncing
 	Info(SyncInfo),
@@ -135,7 +135,7 @@ impl Serialize for SyncStatus {
 }
 
 /// Propagation statistics for pending transaction.
-#[derive(Default, Debug, Serialize)]
+#[derive(Debug, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TransactionStats {
 	/// Block no this transaction was first seen.
@@ -145,7 +145,7 @@ pub struct TransactionStats {
 }
 
 /// Chain status.
-#[derive(Default, Debug, Serialize)]
+#[derive(Debug, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ChainStatus {
 	/// Describes the gap in the blockchain, if there is one: (first, last)
