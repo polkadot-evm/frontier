@@ -12,7 +12,7 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 ethereum = { version = "0.12.0", default-features = false, features = ["with-codec"] }
-evm = { version = "0.36.0", features = ["with-codec"], default-features = false }
+evm = { version = "0.36.0", default-features = false, features = ["with-codec"] }
 serde = { version = "1.0.144", optional = true }
 
 # Parity
