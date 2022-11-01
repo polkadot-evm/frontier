@@ -12,17 +12,17 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 ethereum = { version = "0.12.0", features = ["with-codec"] }
-evm = { git = "https://github.com/rust-blockchain/evm", rev = "6534c1dd8ad77b53d05032f80e8a5f2de4d37fd2" }
+evm = "0.36.0"
 futures = "0.3.24"
 hex = "0.4.3"
 log = "0.4.17"
-lru = "0.8.0"
+lru = "0.8.1"
 prometheus = { version = "0.13.1", default-features = false }
 rand = "0.8"
 tokio = { version = "1.19", features = ["sync"] }
 
 # Parity
-codec = { package = "parity-scale-codec", version = "3.0.0" }
+codec = { package = "parity-scale-codec", version = "3.2.1" }
 ethereum-types = "0.13.1"
 jsonrpsee = { version = "0.15.1", features = ["server", "macros"] }
 libsecp256k1 = "0.7"
@@ -62,8 +62,6 @@ sc-block-builder = { version = "0.10.0-dev", git = "https://github.com/paritytec
 sc-client-db = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-consensus = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 substrate-test-runtime-client = { version = "2.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
-# Frontier
-frontier-template-runtime = { path = "../../template/runtime" }
 
 [features]
 rpc_binary_search_estimate = []

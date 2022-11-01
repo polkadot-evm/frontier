@@ -41,7 +41,7 @@ pub use self::validation::{
 	InvalidEvmTransactionError,
 };
 
-#[derive(Clone, Eq, PartialEq, Encode, Decode, Default)]
+#[derive(Clone, Eq, PartialEq, Default, Encode, Decode)]
 #[cfg_attr(feature = "std", derive(Debug, Serialize, Deserialize))]
 /// External input from the transaction.
 pub struct Vicinity {
@@ -92,6 +92,6 @@ pub trait FeeCalculator {
 
 impl FeeCalculator for () {
 	fn min_gas_price() -> (U256, Weight) {
-		(U256::zero(), 0u64)
+		(U256::zero(), Weight::zero())
 	}
 }

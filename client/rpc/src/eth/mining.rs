@@ -19,7 +19,7 @@
 use ethereum_types::{H256, H64, U256};
 use jsonrpsee::core::RpcResult as Result;
 // Substrate
-use sc_network::ExHashT;
+use sc_network_common::ExHashT;
 use sc_transaction_pool::ChainApi;
 use sp_runtime::traits::Block as BlockT;
 // Frontier

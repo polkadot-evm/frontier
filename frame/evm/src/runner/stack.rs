@@ -335,7 +335,7 @@ where
 		config: &evm::Config,
 	) -> Result<CallInfo, RunnerError<Self::Error>> {
 		if validate {
-			let _ = Self::validate(
+			Self::validate(
 				source,
 				Some(target),
 				input.clone(),
@@ -377,7 +377,7 @@ where
 		config: &evm::Config,
 	) -> Result<CreateInfo, RunnerError<Self::Error>> {
 		if validate {
-			let _ = Self::validate(
+			Self::validate(
 				source,
 				None,
 				init.clone(),
@@ -425,7 +425,7 @@ where
 		config: &evm::Config,
 	) -> Result<CreateInfo, RunnerError<Self::Error>> {
 		if validate {
-			let _ = Self::validate(
+			Self::validate(
 				source,
 				None,
 				init.clone(),
