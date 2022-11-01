@@ -18,7 +18,7 @@ futures = "0.3.24"
 log = "0.4.17"
 
 # Parity
-codec = { package = "parity-scale-codec", version = "3.1", features = ["derive"] }
+codec = { package = "parity-scale-codec", version = "3.2.1", features = ["derive"] }
 jsonrpsee = { version = "0.15.1", features = ["server", "macros"] }
 
 # Substrate

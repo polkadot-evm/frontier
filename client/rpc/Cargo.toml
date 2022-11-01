@@ -22,7 +22,7 @@ rand = "0.8"
 tokio = { version = "1.19", features = ["sync"] }
 
 # Parity
-codec = { package = "parity-scale-codec", version = "3.0.0" }
+codec = { package = "parity-scale-codec", version = "3.2.1" }
 ethereum-types = "0.13.1"
 jsonrpsee = { version = "0.15.1", features = ["server", "macros"] }
 libsecp256k1 = "0.7"
