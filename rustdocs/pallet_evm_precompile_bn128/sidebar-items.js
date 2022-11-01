@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["Bn128Add","The Bn128Add builtin"],["Bn128Mul","The Bn128Mul builtin"],["Bn128Pairing","The Bn128Pairing builtin"]]});
+window.SIDEBAR_ITEMS = {"struct":[["Bn128Add","The Bn128Add builtin"],["Bn128Mul","The Bn128Mul builtin"],["Bn128Pairing","The Bn128Pairing builtin"]]};

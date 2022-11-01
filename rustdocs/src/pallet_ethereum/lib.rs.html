@@ -1,9 +1,10 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `frame/ethereum/src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script src="../../crates.js"></script><script defer src="../../main.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script>
-    <noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../pallet_ethereum/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `frame/ethereum/src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../pallet_ethereum/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
         </a><h2 class="location"></h2>
     </nav>
     <nav class="sidebar"><a class="sidebar-logo" href="../../pallet_ethereum/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../pallet_ethereum/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><div class="theme-picker hidden"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu" title="themes"><img width="22" height="22" alt="Pick another theme!" src="../../brush.svg"></button><div id="theme-choices" role="menu"></div></div><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><button type="button" id="help-button" title="help">?</button><a id="settings-menu" href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../pallet_ethereum/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1">
+                                <a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div>
+                        </div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -963,10 +964,10 @@
 <span class="kw">use</span> <span class="ident">frame_support::traits::OnRuntimeUpgradeHelpersExt</span>;
 <span class="kw">use</span> <span class="ident">frame_support</span>::{
 	<span class="ident">codec</span>::{<span class="ident">Decode</span>, <span class="ident">Encode</span>, <span class="ident">MaxEncodedLen</span>},
-	<span class="ident">dispatch::DispatchResultWithPostInfo</span>,
+	<span class="ident">dispatch</span>::{<span class="ident">DispatchInfo</span>, <span class="ident">DispatchResultWithPostInfo</span>, <span class="ident">Pays</span>, <span class="ident">PostDispatchInfo</span>},
 	<span class="ident">scale_info::TypeInfo</span>,
 	<span class="ident">traits</span>::{<span class="ident">EnsureOrigin</span>, <span class="ident">Get</span>, <span class="ident">PalletInfoAccess</span>},
-	<span class="ident">weights</span>::{<span class="ident">DispatchInfo</span>, <span class="ident">Pays</span>, <span class="ident">PostDispatchInfo</span>, <span class="ident">Weight</span>},
+	<span class="ident">weights::Weight</span>,
 };
 <span class="kw">use</span> <span class="ident">frame_system</span>::{<span class="ident">pallet_prelude::OriginFor</span>, <span class="ident">CheckWeight</span>, <span class="ident">WeightInfo</span>};
 <span class="kw">use</span> <span class="ident">pallet_evm</span>::{<span class="ident">BlockHashMapping</span>, <span class="ident">FeeCalculator</span>, <span class="ident">GasWeightMapping</span>, <span class="ident">Runner</span>};
@@ -986,7 +987,7 @@
 };
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">fp_rpc::TransactionStatus</span>;
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">PartialEq</span>, <span class="ident">Eq</span>, <span class="ident">Clone</span>, <span class="ident">RuntimeDebug</span>, <span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">MaxEncodedLen</span>, <span class="ident">TypeInfo</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">RuntimeDebug</span>, <span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">MaxEncodedLen</span>, <span class="ident">TypeInfo</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">RawOrigin</span> {
 	<span class="ident">EthereumTransaction</span>(<span class="ident">H160</span>),
 }
@@ -1022,7 +1023,7 @@
 <span class="kw">where</span>
 	<span class="ident">OriginFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>: <span class="ident">Into</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">RawOrigin</span>, <span class="ident">OriginFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 	<span class="ident">T</span>: <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="ident">Config</span>,
-	<span class="ident">T::Call</span>: <span class="ident">Dispatchable</span><span class="op">&lt;</span><span class="ident">Info</span> <span class="op">=</span> <span class="ident">DispatchInfo</span>, <span class="ident">PostInfo</span> <span class="op">=</span> <span class="ident">PostDispatchInfo</span><span class="op">&gt;</span>,
+	<span class="ident">T::RuntimeCall</span>: <span class="ident">Dispatchable</span><span class="op">&lt;</span><span class="ident">Info</span> <span class="op">=</span> <span class="ident">DispatchInfo</span>, <span class="ident">PostInfo</span> <span class="op">=</span> <span class="ident">PostDispatchInfo</span><span class="op">&gt;</span>,
 {
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_self_contained</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">bool</span> {
 		<span class="macro">matches!</span>(<span class="self">self</span>, <span class="ident">Call::transact</span> { .. })
@@ -1047,7 +1048,7 @@
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">pre_dispatch_self_contained</span>(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		<span class="ident">origin</span>: <span class="kw-2">&amp;</span><span class="ident">H160</span>,
-		<span class="ident">dispatch_info</span>: <span class="kw-2">&amp;</span><span class="ident">DispatchInfoOf</span><span class="op">&lt;</span><span class="ident">T::Call</span><span class="op">&gt;</span>,
+		<span class="ident">dispatch_info</span>: <span class="kw-2">&amp;</span><span class="ident">DispatchInfoOf</span><span class="op">&lt;</span><span class="ident">T::RuntimeCall</span><span class="op">&gt;</span>,
 		<span class="ident">len</span>: <span class="ident">usize</span>,
 	) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">TransactionValidityError</span><span class="op">&gt;</span><span class="op">&gt;</span> {
 		<span class="kw">if</span> <span class="kw">let</span> <span class="ident">Call::transact</span> { <span class="ident">transaction</span> } <span class="op">=</span> <span class="self">self</span> {
@@ -1067,7 +1068,7 @@
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">validate_self_contained</span>(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		<span class="ident">origin</span>: <span class="kw-2">&amp;</span><span class="ident">H160</span>,
-		<span class="ident">dispatch_info</span>: <span class="kw-2">&amp;</span><span class="ident">DispatchInfoOf</span><span class="op">&lt;</span><span class="ident">T::Call</span><span class="op">&gt;</span>,
+		<span class="ident">dispatch_info</span>: <span class="kw-2">&amp;</span><span class="ident">DispatchInfoOf</span><span class="op">&lt;</span><span class="ident">T::RuntimeCall</span><span class="op">&gt;</span>,
 		<span class="ident">len</span>: <span class="ident">usize</span>,
 	) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">TransactionValidity</span><span class="op">&gt;</span> {
 		<span class="kw">if</span> <span class="kw">let</span> <span class="ident">Call::transact</span> { <span class="ident">transaction</span> } <span class="op">=</span> <span class="self">self</span> {
@@ -1104,7 +1105,7 @@
 	<span class="attribute">#[<span class="ident">pallet::config</span>]</span>
 	<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Config</span>: <span class="ident">frame_system::Config</span> <span class="op">+</span> <span class="ident">pallet_timestamp::Config</span> <span class="op">+</span> <span class="ident">pallet_evm::Config</span> {
 		<span class="doccomment">/// The overarching event type.</span>
-		<span class="kw">type</span> <span class="ident">Event</span>: <span class="ident">From</span><span class="op">&lt;</span><span class="ident">Event</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">IsType</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="self">Self</span> <span class="kw">as</span> <span class="ident">frame_system::Config</span><span class="op">&gt;</span><span class="ident">::Event</span><span class="op">&gt;</span>;
+		<span class="kw">type</span> <span class="ident">RuntimeEvent</span>: <span class="ident">From</span><span class="op">&lt;</span><span class="ident">Event</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">IsType</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="self">Self</span> <span class="kw">as</span> <span class="ident">frame_system::Config</span><span class="op">&gt;</span><span class="ident">::RuntimeEvent</span><span class="op">&gt;</span>;
 		<span class="doccomment">/// How Ethereum state root is calculated.</span>
 		<span class="kw">type</span> <span class="ident">StateRoot</span>: <span class="ident">Get</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span>;
 	}
@@ -1151,7 +1152,7 @@
 					<span class="kw">let</span> <span class="ident">r</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::apply_validated_transaction</span>(<span class="ident">source</span>, <span class="ident">transaction</span>)
 						.<span class="ident">expect</span>(<span class="string">&quot;pre-block apply transaction failed; the block cannot be built&quot;</span>);
 
-					<span class="ident">weight</span> <span class="op">=</span> <span class="ident">weight</span>.<span class="ident">saturating_add</span>(<span class="ident">r</span>.<span class="ident">actual_weight</span>.<span class="ident">unwrap_or</span>(<span class="number">0</span>));
+					<span class="ident">weight</span> <span class="op">=</span> <span class="ident">weight</span>.<span class="ident">saturating_add</span>(<span class="ident">r</span>.<span class="ident">actual_weight</span>.<span class="ident">unwrap_or_default</span>());
 				}
 			}
 			<span class="comment">// Account for `on_finalize` weight:</span>
@@ -1168,7 +1169,7 @@
 				<span class="kw-2">&amp;</span><span class="ident">EthereumStorageSchema::V3</span>,
 			);
 
-			<span class="ident">T::DbWeight::get</span>().<span class="ident">write</span>
+			<span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>(<span class="number">1</span>)
 		}
 	}
 
@@ -1706,7 +1707,7 @@
 
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">migrate_block_v0_to_v2</span>() -&gt; <span class="ident">Weight</span> {
 		<span class="kw">let</span> <span class="ident">db_weights</span> <span class="op">=</span> <span class="ident">T::DbWeight::get</span>();
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">weight</span>: <span class="ident">Weight</span> <span class="op">=</span> <span class="ident">db_weights</span>.<span class="ident">read</span>;
+		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">weight</span>: <span class="ident">Weight</span> <span class="op">=</span> <span class="ident">db_weights</span>.<span class="ident">reads</span>(<span class="number">1</span>);
 		<span class="kw">let</span> <span class="ident">item</span> <span class="op">=</span> <span class="string">b&quot;CurrentBlock&quot;</span>;
 		<span class="kw">let</span> <span class="ident">block_v0</span> <span class="op">=</span> <span class="ident">frame_support::storage::migration::get_storage_value</span>::<span class="op">&lt;</span><span class="ident">ethereum::BlockV0</span><span class="op">&gt;</span>(
 			<span class="ident"><span class="self">Self</span>::name</span>().<span class="ident">as_bytes</span>(),
@@ -1714,7 +1715,7 @@
 			<span class="kw-2">&amp;</span>[],
 		);
 		<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">block_v0</span>) <span class="op">=</span> <span class="ident">block_v0</span> {
-			<span class="ident">weight</span> <span class="op">=</span> <span class="ident">weight</span>.<span class="ident">saturating_add</span>(<span class="ident">db_weights</span>.<span class="ident">write</span>);
+			<span class="ident">weight</span> <span class="op">=</span> <span class="ident">weight</span>.<span class="ident">saturating_add</span>(<span class="ident">db_weights</span>.<span class="ident">writes</span>(<span class="number">1</span>));
 			<span class="kw">let</span> <span class="ident">block_v2</span>: <span class="ident">ethereum::BlockV2</span> <span class="op">=</span> <span class="ident">block_v0</span>.<span class="ident">into</span>();
 			<span class="ident">frame_support::storage::migration::put_storage_value</span>::<span class="op">&lt;</span><span class="ident">ethereum::BlockV2</span><span class="op">&gt;</span>(
 				<span class="ident"><span class="self">Self</span>::name</span>().<span class="ident">as_bytes</span>(),
@@ -1834,5 +1835,5 @@
 	}
 }
 </code></pre></div>
-</section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_ethereum" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (4dd8b420c 2022-05-01)" ></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_ethereum" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (7fe022f5a 2022-07-24)" ></div>
 </body></html>

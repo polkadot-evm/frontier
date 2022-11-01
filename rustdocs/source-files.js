@@ -1,4 +1,4 @@
-var N = null;var sourcesIndex = {};
+var sourcesIndex = {};
 sourcesIndex["fc_cli"] = {"name":"","dirs":[{"name":"frontier_db_cmd","files":["mapping_db.rs","meta_db.rs","mod.rs","tests.rs","utils.rs"]}],"files":["lib.rs"]};
 sourcesIndex["fc_consensus"] = {"name":"","files":["lib.rs"]};
 sourcesIndex["fc_db"] = {"name":"","files":["lib.rs","parity_db_adapter.rs","upgrade.rs","utils.rs"]};
@@ -12,7 +12,7 @@ sourcesIndex["fp_evm"] = {"name":"","files":["lib.rs","precompile.rs","validatio
 sourcesIndex["fp_rpc"] = {"name":"","files":["lib.rs"]};
 sourcesIndex["fp_self_contained"] = {"name":"","files":["checked_extrinsic.rs","lib.rs","unchecked_extrinsic.rs"]};
 sourcesIndex["fp_storage"] = {"name":"","files":["lib.rs"]};
-sourcesIndex["frontier_template_node"] = {"name":"","files":["benchmarking.rs","chain_spec.rs","cli.rs","command.rs","main.rs","rpc.rs","service.rs"]};
+sourcesIndex["frontier_template_node"] = {"name":"","files":["chain_spec.rs","cli.rs","command.rs","main.rs","rpc.rs","service.rs"]};
 sourcesIndex["frontier_template_runtime"] = {"name":"","files":["lib.rs","precompiles.rs"]};
 sourcesIndex["pallet_base_fee"] = {"name":"","files":["lib.rs"]};
 sourcesIndex["pallet_dynamic_fee"] = {"name":"","files":["lib.rs"]};

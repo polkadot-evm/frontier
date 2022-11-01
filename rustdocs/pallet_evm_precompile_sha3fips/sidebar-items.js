@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["Sha3FIPS256",""],["Sha3FIPS512",""]]});
+window.SIDEBAR_ITEMS = {"struct":[["Sha3FIPS256",""],["Sha3FIPS512",""]]};

@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["Ed25519Verify",""]]});
+window.SIDEBAR_ITEMS = {"struct":[["Ed25519Verify",""]]};

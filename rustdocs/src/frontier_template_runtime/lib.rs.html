@@ -1,9 +1,10 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `template/runtime/src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script src="../../crates.js"></script><script defer src="../../main.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script>
-    <noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../frontier_template_runtime/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `template/runtime/src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../frontier_template_runtime/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
         </a><h2 class="location"></h2>
     </nav>
     <nav class="sidebar"><a class="sidebar-logo" href="../../frontier_template_runtime/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../frontier_template_runtime/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><div class="theme-picker hidden"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu" title="themes"><img width="22" height="22" alt="Pick another theme!" src="../../brush.svg"></button><div id="theme-choices" role="menu"></div></div><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><button type="button" id="help-button" title="help">?</button><a id="settings-menu" href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../frontier_template_runtime/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1">
+                                <a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div>
+                        </div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -866,6 +867,11 @@
 <span id="861">861</span>
 <span id="862">862</span>
 <span id="863">863</span>
+<span id="864">864</span>
+<span id="865">865</span>
+<span id="866">866</span>
+<span id="867">867</span>
+<span id="868">868</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The Substrate Node Template runtime. This can be compiled with `#[no_std]`, ready for Wasm.</span>
 
 <span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
@@ -1009,8 +1015,8 @@
 
 <span class="kw">const</span> <span class="ident">NORMAL_DISPATCH_RATIO</span>: <span class="ident">Perbill</span> <span class="op">=</span> <span class="ident">Perbill::from_percent</span>(<span class="number">75</span>);
 <span class="doccomment">/// We allow for 2 seconds of compute with a 6 second average block time.</span>
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MAXIMUM_BLOCK_WEIGHT</span>: <span class="ident">Weight</span> <span class="op">=</span> <span class="number">2</span> <span class="op">*</span> <span class="ident">WEIGHT_PER_SECOND</span>;
-<span class="kw">const</span> <span class="ident">WEIGHT_PER_GAS</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">20_000</span>;
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MAXIMUM_BLOCK_WEIGHT</span>: <span class="ident">Weight</span> <span class="op">=</span> <span class="ident">WEIGHT_PER_SECOND</span>.<span class="ident">saturating_mul</span>(<span class="number">2</span>);
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MAXIMUM_BLOCK_LENGTH</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">5</span> <span class="op">*</span> <span class="number">1024</span> <span class="op">*</span> <span class="number">1024</span>;
 
 <span class="macro">parameter_types!</span> {
 	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">Version</span>: <span class="ident">RuntimeVersion</span> <span class="op">=</span> <span class="ident">VERSION</span>;
@@ -1018,7 +1024,7 @@
 	<span class="kw">pub</span> <span class="ident">BlockWeights</span>: <span class="ident">frame_system::limits::BlockWeights</span> <span class="op">=</span> <span class="ident">frame_system::limits::BlockWeights</span>
 		<span class="ident">::with_sensible_defaults</span>(<span class="ident">MAXIMUM_BLOCK_WEIGHT</span>, <span class="ident">NORMAL_DISPATCH_RATIO</span>);
 	<span class="kw">pub</span> <span class="ident">BlockLength</span>: <span class="ident">frame_system::limits::BlockLength</span> <span class="op">=</span> <span class="ident">frame_system::limits::BlockLength</span>
-		<span class="ident">::max_with_normal_ratio</span>(<span class="number">5</span> <span class="op">*</span> <span class="number">1024</span> <span class="op">*</span> <span class="number">1024</span>, <span class="ident">NORMAL_DISPATCH_RATIO</span>);
+		<span class="ident">::max_with_normal_ratio</span>(<span class="ident">MAXIMUM_BLOCK_LENGTH</span>, <span class="ident">NORMAL_DISPATCH_RATIO</span>);
 	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">SS58Prefix</span>: <span class="ident">u8</span> <span class="op">=</span> <span class="number">42</span>;
 }
 
@@ -1032,9 +1038,9 @@
 	<span class="doccomment">/// The maximum length of a block (in bytes).</span>
 	<span class="kw">type</span> <span class="ident">BlockLength</span> <span class="op">=</span> <span class="ident">BlockLength</span>;
 	<span class="doccomment">/// The ubiquitous origin type.</span>
-	<span class="kw">type</span> <span class="ident">Origin</span> <span class="op">=</span> <span class="ident">Origin</span>;
+	<span class="kw">type</span> <span class="ident">RuntimeOrigin</span> <span class="op">=</span> <span class="ident">RuntimeOrigin</span>;
 	<span class="doccomment">/// The aggregated dispatch type that is available for extrinsics.</span>
-	<span class="kw">type</span> <span class="ident">Call</span> <span class="op">=</span> <span class="ident">Call</span>;
+	<span class="kw">type</span> <span class="ident">RuntimeCall</span> <span class="op">=</span> <span class="ident">RuntimeCall</span>;
 	<span class="doccomment">/// The index type for storing how many extrinsics an account has signed.</span>
 	<span class="kw">type</span> <span class="ident">Index</span> <span class="op">=</span> <span class="ident">Index</span>;
 	<span class="doccomment">/// The index type for blocks.</span>
@@ -1050,7 +1056,7 @@
 	<span class="doccomment">/// The header type.</span>
 	<span class="kw">type</span> <span class="ident">Header</span> <span class="op">=</span> <span class="ident">generic::Header</span><span class="op">&lt;</span><span class="ident">BlockNumber</span>, <span class="ident">BlakeTwo256</span><span class="op">&gt;</span>;
 	<span class="doccomment">/// The ubiquitous event type.</span>
-	<span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
+	<span class="kw">type</span> <span class="ident">RuntimeEvent</span> <span class="op">=</span> <span class="ident">RuntimeEvent</span>;
 	<span class="doccomment">/// Maximum number of block number to block hash mappings to keep (oldest pruned first).</span>
 	<span class="kw">type</span> <span class="ident">BlockHashCount</span> <span class="op">=</span> <span class="ident">BlockHashCount</span>;
 	<span class="doccomment">/// The weight of database operations that the runtime can invoke.</span>
@@ -1087,8 +1093,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">pallet_grandpa::Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
-	<span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
-	<span class="kw">type</span> <span class="ident">Call</span> <span class="op">=</span> <span class="ident">Call</span>;
+	<span class="kw">type</span> <span class="ident">RuntimeEvent</span> <span class="op">=</span> <span class="ident">RuntimeEvent</span>;
 
 	<span class="kw">type</span> <span class="ident">KeyOwnerProof</span> <span class="op">=</span>
 		<span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::KeyOwnerProofSystem</span> <span class="kw">as</span> <span class="ident">KeyOwnerProofSystem</span><span class="op">&lt;</span>(<span class="ident">KeyTypeId</span>, <span class="ident">GrandpaId</span>)<span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::Proof</span>;
@@ -1133,10 +1138,10 @@
 	<span class="kw">type</span> <span class="ident">Balance</span> <span class="op">=</span> <span class="ident">Balance</span>;
 	<span class="kw">type</span> <span class="ident">DustRemoval</span> <span class="op">=</span> ();
 	<span class="doccomment">/// The ubiquitous event type.</span>
-	<span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
+	<span class="kw">type</span> <span class="ident">RuntimeEvent</span> <span class="op">=</span> <span class="ident">RuntimeEvent</span>;
 	<span class="kw">type</span> <span class="ident">ExistentialDeposit</span> <span class="op">=</span> <span class="ident">ExistentialDeposit</span>;
 	<span class="kw">type</span> <span class="ident">AccountStore</span> <span class="op">=</span> <span class="ident">System</span>;
-	<span class="kw">type</span> <span class="ident">WeightInfo</span> <span class="op">=</span> ();
+	<span class="kw">type</span> <span class="ident">WeightInfo</span> <span class="op">=</span> <span class="ident">pallet_balances::weights::SubstrateWeight</span><span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>;
 	<span class="kw">type</span> <span class="ident">MaxLocks</span> <span class="op">=</span> <span class="ident">MaxLocks</span>;
 	<span class="kw">type</span> <span class="ident">MaxReserves</span> <span class="op">=</span> ();
 	<span class="kw">type</span> <span class="ident">ReserveIdentifier</span> <span class="op">=</span> [<span class="ident">u8</span>; <span class="number">8</span>];
@@ -1147,7 +1152,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">pallet_transaction_payment::Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
-	<span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
+	<span class="kw">type</span> <span class="ident">RuntimeEvent</span> <span class="op">=</span> <span class="ident">RuntimeEvent</span>;
 	<span class="kw">type</span> <span class="ident">OnChargeTransaction</span> <span class="op">=</span> <span class="ident">CurrencyAdapter</span><span class="op">&lt;</span><span class="ident">Balances</span>, ()<span class="op">&gt;</span>;
 	<span class="kw">type</span> <span class="ident">OperationalFeeMultiplier</span> <span class="op">=</span> <span class="ident">ConstU8</span><span class="op">&lt;</span><span class="number">5</span><span class="op">&gt;</span>;
 	<span class="kw">type</span> <span class="ident">WeightToFee</span> <span class="op">=</span> <span class="ident">IdentityFee</span><span class="op">&lt;</span><span class="ident">Balance</span><span class="op">&gt;</span>;
@@ -1156,8 +1161,8 @@
 }
 
 <span class="kw">impl</span> <span class="ident">pallet_sudo::Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
-	<span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
-	<span class="kw">type</span> <span class="ident">Call</span> <span class="op">=</span> <span class="ident">Call</span>;
+	<span class="kw">type</span> <span class="ident">RuntimeEvent</span> <span class="op">=</span> <span class="ident">RuntimeEvent</span>;
+	<span class="kw">type</span> <span class="ident">RuntimeCall</span> <span class="op">=</span> <span class="ident">RuntimeCall</span>;
 }
 
 <span class="kw">impl</span> <span class="ident">pallet_evm_chain_id::Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {}
@@ -1176,10 +1181,11 @@
 	}
 }
 
+<span class="kw">const</span> <span class="ident">WEIGHT_PER_GAS</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">20_000</span>;
 <span class="macro">parameter_types!</span> {
-	<span class="kw">pub</span> <span class="ident">BlockGasLimit</span>: <span class="ident">U256</span> <span class="op">=</span> <span class="ident">U256::from</span>(<span class="ident">NORMAL_DISPATCH_RATIO</span> <span class="op">*</span> <span class="ident">MAXIMUM_BLOCK_WEIGHT</span> <span class="op">/</span> <span class="ident">WEIGHT_PER_GAS</span>);
+	<span class="kw">pub</span> <span class="ident">BlockGasLimit</span>: <span class="ident">U256</span> <span class="op">=</span> <span class="ident">U256::from</span>(<span class="ident">NORMAL_DISPATCH_RATIO</span> <span class="op">*</span> <span class="ident">MAXIMUM_BLOCK_WEIGHT</span>.<span class="ident">ref_time</span>() <span class="op">/</span> <span class="ident">WEIGHT_PER_GAS</span>);
 	<span class="kw">pub</span> <span class="ident">PrecompilesValue</span>: <span class="ident">FrontierPrecompiles</span><span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">FrontierPrecompiles</span>::<span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="ident">::new</span>();
-	<span class="kw">pub</span> <span class="ident">WeightPerGas</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">20_000</span>;
+	<span class="kw">pub</span> <span class="ident">WeightPerGas</span>: <span class="ident">Weight</span> <span class="op">=</span> <span class="ident">Weight::from_ref_time</span>(<span class="ident">WEIGHT_PER_GAS</span>);
 }
 
 <span class="kw">impl</span> <span class="ident">pallet_evm::Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
@@ -1191,7 +1197,7 @@
 	<span class="kw">type</span> <span class="ident">WithdrawOrigin</span> <span class="op">=</span> <span class="ident">EnsureAddressTruncated</span>;
 	<span class="kw">type</span> <span class="ident">AddressMapping</span> <span class="op">=</span> <span class="ident">HashedAddressMapping</span><span class="op">&lt;</span><span class="ident">BlakeTwo256</span><span class="op">&gt;</span>;
 	<span class="kw">type</span> <span class="ident">Currency</span> <span class="op">=</span> <span class="ident">Balances</span>;
-	<span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
+	<span class="kw">type</span> <span class="ident">RuntimeEvent</span> <span class="op">=</span> <span class="ident">RuntimeEvent</span>;
 	<span class="kw">type</span> <span class="ident">PrecompilesType</span> <span class="op">=</span> <span class="ident">FrontierPrecompiles</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span>;
 	<span class="kw">type</span> <span class="ident">PrecompilesValue</span> <span class="op">=</span> <span class="ident">PrecompilesValue</span>;
 	<span class="kw">type</span> <span class="ident">ChainId</span> <span class="op">=</span> <span class="ident">EVMChainId</span>;
@@ -1202,7 +1208,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">pallet_ethereum::Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
-	<span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
+	<span class="kw">type</span> <span class="ident">RuntimeEvent</span> <span class="op">=</span> <span class="ident">RuntimeEvent</span>;
 	<span class="kw">type</span> <span class="ident">StateRoot</span> <span class="op">=</span> <span class="ident">pallet_ethereum::IntermediateStateRoot</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span>;
 }
 
@@ -1233,7 +1239,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">pallet_base_fee::Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
-	<span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
+	<span class="kw">type</span> <span class="ident">RuntimeEvent</span> <span class="op">=</span> <span class="ident">RuntimeEvent</span>;
 	<span class="kw">type</span> <span class="ident">Threshold</span> <span class="op">=</span> <span class="ident">BaseFeeThreshold</span>;
 	<span class="kw">type</span> <span class="ident">DefaultBaseFeePerGas</span> <span class="op">=</span> <span class="ident">DefaultBaseFeePerGas</span>;
 	<span class="kw">type</span> <span class="ident">DefaultElasticity</span> <span class="op">=</span> <span class="ident">DefaultElasticity</span>;
@@ -1314,11 +1320,12 @@
 );
 <span class="doccomment">/// Unchecked extrinsic type as expected by this runtime.</span>
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">UncheckedExtrinsic</span> <span class="op">=</span>
-	<span class="ident">fp_self_contained::UncheckedExtrinsic</span><span class="op">&lt;</span><span class="ident">Address</span>, <span class="ident">Call</span>, <span class="ident">Signature</span>, <span class="ident">SignedExtra</span><span class="op">&gt;</span>;
+	<span class="ident">fp_self_contained::UncheckedExtrinsic</span><span class="op">&lt;</span><span class="ident">Address</span>, <span class="ident">RuntimeCall</span>, <span class="ident">Signature</span>, <span class="ident">SignedExtra</span><span class="op">&gt;</span>;
 <span class="doccomment">/// Extrinsic type that has already been checked.</span>
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">CheckedExtrinsic</span> <span class="op">=</span> <span class="ident">fp_self_contained::CheckedExtrinsic</span><span class="op">&lt;</span><span class="ident">AccountId</span>, <span class="ident">Call</span>, <span class="ident">SignedExtra</span>, <span class="ident">H160</span><span class="op">&gt;</span>;
+<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">CheckedExtrinsic</span> <span class="op">=</span>
+	<span class="ident">fp_self_contained::CheckedExtrinsic</span><span class="op">&lt;</span><span class="ident">AccountId</span>, <span class="ident">RuntimeCall</span>, <span class="ident">SignedExtra</span>, <span class="ident">H160</span><span class="op">&gt;</span>;
 <span class="doccomment">/// The payload being signed in transactions.</span>
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">SignedPayload</span> <span class="op">=</span> <span class="ident">generic::SignedPayload</span><span class="op">&lt;</span><span class="ident">Call</span>, <span class="ident">SignedExtra</span><span class="op">&gt;</span>;
+<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">SignedPayload</span> <span class="op">=</span> <span class="ident">generic::SignedPayload</span><span class="op">&lt;</span><span class="ident">RuntimeCall</span>, <span class="ident">SignedExtra</span><span class="op">&gt;</span>;
 <span class="doccomment">/// Executive: handles dispatch to the various modules.</span>
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">Executive</span> <span class="op">=</span> <span class="ident">frame_executive::Executive</span><span class="op">&lt;</span>
 	<span class="ident">Runtime</span>,
@@ -1328,19 +1335,19 @@
 	<span class="ident">AllPalletsWithSystem</span>,
 <span class="op">&gt;</span>;
 
-<span class="kw">impl</span> <span class="ident">fp_self_contained::SelfContainedCall</span> <span class="kw">for</span> <span class="ident">Call</span> {
+<span class="kw">impl</span> <span class="ident">fp_self_contained::SelfContainedCall</span> <span class="kw">for</span> <span class="ident">RuntimeCall</span> {
 	<span class="kw">type</span> <span class="ident">SignedInfo</span> <span class="op">=</span> <span class="ident">H160</span>;
 
 	<span class="kw">fn</span> <span class="ident">is_self_contained</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">bool</span> {
 		<span class="kw">match</span> <span class="self">self</span> {
-			<span class="ident">Call::Ethereum</span>(<span class="ident">call</span>) =&gt; <span class="ident">call</span>.<span class="ident">is_self_contained</span>(),
+			<span class="ident">RuntimeCall::Ethereum</span>(<span class="ident">call</span>) =&gt; <span class="ident">call</span>.<span class="ident">is_self_contained</span>(),
 			<span class="kw">_</span> =&gt; <span class="bool-val">false</span>,
 		}
 	}
 
 	<span class="kw">fn</span> <span class="ident">check_self_contained</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::SignedInfo</span>, <span class="ident">TransactionValidityError</span><span class="op">&gt;</span><span class="op">&gt;</span> {
 		<span class="kw">match</span> <span class="self">self</span> {
-			<span class="ident">Call::Ethereum</span>(<span class="ident">call</span>) =&gt; <span class="ident">call</span>.<span class="ident">check_self_contained</span>(),
+			<span class="ident">RuntimeCall::Ethereum</span>(<span class="ident">call</span>) =&gt; <span class="ident">call</span>.<span class="ident">check_self_contained</span>(),
 			<span class="kw">_</span> =&gt; <span class="prelude-val">None</span>,
 		}
 	}
@@ -1348,11 +1355,11 @@
 	<span class="kw">fn</span> <span class="ident">validate_self_contained</span>(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		<span class="ident">info</span>: <span class="kw-2">&amp;</span><span class="ident"><span class="self">Self</span>::SignedInfo</span>,
-		<span class="ident">dispatch_info</span>: <span class="kw-2">&amp;</span><span class="ident">DispatchInfoOf</span><span class="op">&lt;</span><span class="ident">Call</span><span class="op">&gt;</span>,
+		<span class="ident">dispatch_info</span>: <span class="kw-2">&amp;</span><span class="ident">DispatchInfoOf</span><span class="op">&lt;</span><span class="ident">RuntimeCall</span><span class="op">&gt;</span>,
 		<span class="ident">len</span>: <span class="ident">usize</span>,
 	) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">TransactionValidity</span><span class="op">&gt;</span> {
 		<span class="kw">match</span> <span class="self">self</span> {
-			<span class="ident">Call::Ethereum</span>(<span class="ident">call</span>) =&gt; <span class="ident">call</span>.<span class="ident">validate_self_contained</span>(<span class="ident">info</span>, <span class="ident">dispatch_info</span>, <span class="ident">len</span>),
+			<span class="ident">RuntimeCall::Ethereum</span>(<span class="ident">call</span>) =&gt; <span class="ident">call</span>.<span class="ident">validate_self_contained</span>(<span class="ident">info</span>, <span class="ident">dispatch_info</span>, <span class="ident">len</span>),
 			<span class="kw">_</span> =&gt; <span class="prelude-val">None</span>,
 		}
 	}
@@ -1360,11 +1367,13 @@
 	<span class="kw">fn</span> <span class="ident">pre_dispatch_self_contained</span>(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		<span class="ident">info</span>: <span class="kw-2">&amp;</span><span class="ident"><span class="self">Self</span>::SignedInfo</span>,
-		<span class="ident">dispatch_info</span>: <span class="kw-2">&amp;</span><span class="ident">DispatchInfoOf</span><span class="op">&lt;</span><span class="ident">Call</span><span class="op">&gt;</span>,
+		<span class="ident">dispatch_info</span>: <span class="kw-2">&amp;</span><span class="ident">DispatchInfoOf</span><span class="op">&lt;</span><span class="ident">RuntimeCall</span><span class="op">&gt;</span>,
 		<span class="ident">len</span>: <span class="ident">usize</span>,
 	) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">TransactionValidityError</span><span class="op">&gt;</span><span class="op">&gt;</span> {
 		<span class="kw">match</span> <span class="self">self</span> {
-			<span class="ident">Call::Ethereum</span>(<span class="ident">call</span>) =&gt; <span class="ident">call</span>.<span class="ident">pre_dispatch_self_contained</span>(<span class="ident">info</span>, <span class="ident">dispatch_info</span>, <span class="ident">len</span>),
+			<span class="ident">RuntimeCall::Ethereum</span>(<span class="ident">call</span>) =&gt; {
+				<span class="ident">call</span>.<span class="ident">pre_dispatch_self_contained</span>(<span class="ident">info</span>, <span class="ident">dispatch_info</span>, <span class="ident">len</span>)
+			}
 			<span class="kw">_</span> =&gt; <span class="prelude-val">None</span>,
 		}
 	}
@@ -1374,9 +1383,11 @@
 		<span class="ident">info</span>: <span class="ident"><span class="self">Self</span>::SignedInfo</span>,
 	) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">sp_runtime::DispatchResultWithInfo</span><span class="op">&lt;</span><span class="ident">PostDispatchInfoOf</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span> {
 		<span class="kw">match</span> <span class="self">self</span> {
-			<span class="ident">call</span> @ <span class="ident">Call::Ethereum</span>(<span class="ident">pallet_ethereum::Call::transact</span> { .. }) =&gt; <span class="prelude-val">Some</span>(<span class="ident">call</span>.<span class="ident">dispatch</span>(
-				<span class="ident">Origin::from</span>(<span class="ident">pallet_ethereum::RawOrigin::EthereumTransaction</span>(<span class="ident">info</span>)),
-			)),
+			<span class="ident">call</span> @ <span class="ident">RuntimeCall::Ethereum</span>(<span class="ident">pallet_ethereum::Call::transact</span> { .. }) =&gt; {
+				<span class="prelude-val">Some</span>(<span class="ident">call</span>.<span class="ident">dispatch</span>(<span class="ident">RuntimeOrigin::from</span>(
+					<span class="ident">pallet_ethereum::RawOrigin::EthereumTransaction</span>(<span class="ident">info</span>),
+				)))
+			}
 			<span class="kw">_</span> =&gt; <span class="prelude-val">None</span>,
 		}
 	}
@@ -1598,7 +1609,7 @@
 			<span class="ident">xts</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">Block</span> <span class="kw">as</span> <span class="ident">BlockT</span><span class="op">&gt;</span><span class="ident">::Extrinsic</span><span class="op">&gt;</span>,
 		) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">EthereumTransaction</span><span class="op">&gt;</span> {
 			<span class="ident">xts</span>.<span class="ident">into_iter</span>().<span class="ident">filter_map</span>(<span class="op">|</span><span class="ident">xt</span><span class="op">|</span> <span class="kw">match</span> <span class="ident">xt</span>.<span class="number">0</span>.<span class="ident">function</span> {
-				<span class="ident">Call::Ethereum</span>(<span class="ident">transact</span> { <span class="ident">transaction</span> }) =&gt; <span class="prelude-val">Some</span>(<span class="ident">transaction</span>),
+				<span class="ident">RuntimeCall::Ethereum</span>(<span class="ident">transact</span> { <span class="ident">transaction</span> }) =&gt; <span class="prelude-val">Some</span>(<span class="ident">transaction</span>),
 				<span class="kw">_</span> =&gt; <span class="prelude-val">None</span>
 			}).<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">EthereumTransaction</span><span class="op">&gt;</span><span class="op">&gt;</span>()
 		}
@@ -1724,11 +1735,11 @@
 	<span class="kw">fn</span> <span class="ident">configured_base_extrinsic_weight_is_evm_compatible</span>() {
 		<span class="kw">let</span> <span class="ident">min_ethereum_transaction_weight</span> <span class="op">=</span> <span class="ident">WeightPerGas::get</span>() <span class="op">*</span> <span class="number">21_000</span>;
 		<span class="kw">let</span> <span class="ident">base_extrinsic</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">frame_system::Config</span><span class="op">&gt;</span><span class="ident">::BlockWeights::get</span>()
-			.<span class="ident">get</span>(<span class="ident">frame_support::weights::DispatchClass::Normal</span>)
+			.<span class="ident">get</span>(<span class="ident">frame_support::dispatch::DispatchClass::Normal</span>)
 			.<span class="ident">base_extrinsic</span>;
-		<span class="macro">assert!</span>(<span class="ident">base_extrinsic</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">min_ethereum_transaction_weight</span>);
+		<span class="macro">assert!</span>(<span class="ident">base_extrinsic</span>.<span class="ident">ref_time</span>() <span class="op">&lt;</span><span class="op">=</span> <span class="ident">min_ethereum_transaction_weight</span>.<span class="ident">ref_time</span>());
 	}
 }
 </code></pre></div>
-</section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="frontier_template_runtime" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (4dd8b420c 2022-05-01)" ></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="frontier_template_runtime" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (7fe022f5a 2022-07-24)" ></div>
 </body></html>

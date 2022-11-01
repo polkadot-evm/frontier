@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["Subcommand",""]],"struct":[["Cli",""],["RunCmd",""]]});
+window.SIDEBAR_ITEMS = {"enum":[["Subcommand",""]],"struct":[["Cli",""],["RunCmd",""]]};
