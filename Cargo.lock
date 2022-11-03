@@ -4576,6 +4576,7 @@ dependencies = [
  "rlp",
  "scale-info",
  "serde",
+ "sha3 0.10.1",
  "sp-core",
  "sp-io",
  "sp-runtime",

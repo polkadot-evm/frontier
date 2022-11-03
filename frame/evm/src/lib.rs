@@ -73,7 +73,8 @@ use frame_support::{
 	weights::Weight,
 };
 use frame_system::RawOrigin;
-use sp_core::{Hasher, H160, H256, U256};
+use scale_info::TypeInfo;
+use sp_core::{Decode, Encode, Hasher, H160, H256, U256};
 use sp_runtime::{
 	traits::{BadOrigin, Saturating, UniqueSaturatedInto, Zero},
 	AccountId32, DispatchErrorWithPostInfo,
@@ -495,6 +496,11 @@ pub mod pallet {
 	pub type AccountCodes<T: Config> = StorageMap<_, Blake2_128Concat, H160, Vec<u8>, ValueQuery>;
 
 	#[pallet::storage]
+	#[pallet::getter(fn account_codes_metadata)]
+	pub type AccountCodesMetadata<T: Config> =
+		StorageMap<_, Blake2_128Concat, H160, CodeMetadata, OptionQuery>;
+
+	#[pallet::storage]
 	#[pallet::getter(fn account_storages)]
 	pub type AccountStorages<T: Config> =
 		StorageDoubleMap<_, Blake2_128Concat, H160, Blake2_128Concat, H256, H256, ValueQuery>;
@@ -507,6 +513,12 @@ pub type BalanceOf<T> =
 /// Type alias for negative imbalance during fees
 type NegativeImbalanceOf<C, T> =
 	<C as Currency<<T as frame_system::Config>::AccountId>>::NegativeImbalance;
+
+#[derive(Clone, Eq, PartialEq, Encode, Decode, TypeInfo)]
+pub struct CodeMetadata {
+	pub size: u64,
+	pub hash: H256,
+}
 
 pub trait EnsureAddressOrigin<OuterOrigin> {
 	/// Success return type.
@@ -684,6 +696,7 @@ impl<T: Config> Pallet<T> {
 		}
 
 		<AccountCodes<T>>::remove(address);
+		<AccountCodesMetadata<T>>::remove(address);
 		#[allow(deprecated)]
 		let _ = <AccountStorages<T>>::remove_prefix(address, None);
 	}
@@ -700,6 +713,30 @@ impl<T: Config> Pallet<T> {
 		}
 
 		<AccountCodes<T>>::insert(address, code);
+
+		// Update metadata.
+		let _ = Self::account_code_metadata(address);
+	}
+
+	/// Get the account metadata (hash and size) from storage if it exists,
+	/// or compute it from code and store it if it doesn't exist.
+	pub fn account_code_metadata(address: H160) -> CodeMetadata {
+		use sha3::Digest;
+
+		if let Some(meta) = <AccountCodesMetadata<T>>::get(&address) {
+			return meta;
+		}
+
+		let code = <AccountCodes<T>>::get(&address);
+
+		let size = code.len() as u64;
+		let hash = H256::from_slice(sha3::Keccak256::digest(&code).as_slice());
+
+		let meta = CodeMetadata { size, hash };
+
+		<AccountCodesMetadata<T>>::insert(address, meta.clone());
+
+		meta
 	}
 
 	/// Get the account basic in EVM format.

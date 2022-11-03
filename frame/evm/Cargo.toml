@@ -17,6 +17,7 @@ evm = { version = "0.36.0", default-features = false, features = ["with-codec"] 
 hex = { version = "0.4.3", default-features = false, features = ["alloc"] }
 log = { version = "0.4.17", default-features = false }
 serde = { version = "1.0.144", optional = true, features = ["derive"] }
+sha3 = { version = "0.10", default-features = false }
 
 # Parity
 codec = { package = "parity-scale-codec", version = "3.2.1", default-features = false, features = ["derive"] }
