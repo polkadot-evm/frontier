@@ -28,3 +28,20 @@ sp-runtime = { version = "6.0.0", git = "https://github.com/paritytech/substrate
 fc-db = { version = "2.0.0-dev", path = "../db" }
 fp-consensus = { version = "2.0.0-dev", path = "../../primitives/consensus" }
 fp-rpc = { version = "3.0.0-dev", path = "../../primitives/rpc" }
+
+[dev-dependencies]
+ethereum = { version = "0.12.0", features = ["with-codec"] }
+codec = { package = "parity-scale-codec", version = "3.0.0" }
+tempfile = "3.3.0"
+# Frontier
+fp-storage = { version = "2.0.0-dev", path = "../../primitives/storage" }
+# Substrate
+beefy-primitives = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-block-builder = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-client-db = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-io = { git = "https://github.com/paritytech/substrate", branch = "master" }
+substrate-test-runtime-client = { git = "https://github.com/paritytech/substrate", branch = "master" }
+ethereum-types = { version = "0.13.1" }
+fc-rpc = { version = "2.0.0-dev", path = "../../client/rpc" }
+frontier-template-runtime = { path = "../../template/runtime" }

@@ -211,9 +211,9 @@ where
 #[cfg(test)]
 mod test {
 	use codec::Encode;
-	use fc_rpc::{OverrideHandle, SchemaV3Override, StorageOverride};
+	use fc_rpc::{SchemaV3Override, StorageOverride};
 	use fp_storage::{
-		EthereumStorageSchema, ETHEREUM_CURRENT_RECEIPTS, PALLET_ETHEREUM, PALLET_ETHEREUM_SCHEMA,
+		EthereumStorageSchema, ETHEREUM_CURRENT_RECEIPTS, PALLET_ETHEREUM, PALLET_ETHEREUM_SCHEMA, OverrideHandle
 	};
 	use futures::executor;
 	use sc_block_builder::BlockBuilderProvider;
@@ -244,7 +244,7 @@ mod test {
 		let backend = builder.backend();
 		// Client
 		let (client, _) = builder
-			.build_with_native_executor::<substrate_test_runtime_client::runtime::RuntimeApi, _>(
+			.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(
 				None,
 			);
 		let mut client = Arc::new(client);
@@ -260,8 +260,8 @@ mod test {
 			fallback: Box::new(SchemaV3Override::new(client.clone())),
 		});
 		// Indexer backend
-		let indexer_backend = crate::Backend::new(
-			crate::BackendConfig::Sqlite(crate::SqliteBackendConfig {
+		let indexer_backend = fc_db::sql::Backend::new(
+			fc_db::sql::BackendConfig::Sqlite(fc_db::sql::SqliteBackendConfig {
 				path: Path::new("sqlite:///")
 					.join(tmp.path().strip_prefix("/").unwrap().to_str().unwrap())
 					.join("test.db3")
@@ -270,7 +270,6 @@ mod test {
 				create_if_missing: true,
 			}),
 			100,
-			client.clone(),
 			overrides.clone(),
 		)
 		.await
@@ -279,7 +278,7 @@ mod test {
 		let pool = indexer_backend.pool().clone();
 
 		// Create 10 blocks, 2 receipts each, 1 log per receipt
-		let mut logs: Vec<crate::Log> = vec![];
+		let mut logs: Vec<fc_db::sql::Log> = vec![];
 		for block_number in 1..11 {
 			let mut builder = client.new_block(Default::default()).unwrap();
 			// Addresses
@@ -324,7 +323,7 @@ mod test {
 			let block = builder.build().unwrap().block;
 			let block_hash = block.header.hash();
 			executor::block_on(client.import(BlockOrigin::Own, block)).unwrap();
-			logs.push(crate::Log {
+			logs.push(fc_db::sql::Log {
 				block_number: block_number as i32,
 				address: address_1.as_bytes().to_owned(),
 				topic_1: topics_1_1.as_bytes().to_owned(),
@@ -335,7 +334,7 @@ mod test {
 				transaction_index: 0i32,
 				substrate_block_hash: block_hash.as_bytes().to_owned(),
 			});
-			logs.push(crate::Log {
+			logs.push(fc_db::sql::Log {
 				block_number: block_number as i32,
 				address: address_2.as_bytes().to_owned(),
 				topic_1: topics_2_1.as_bytes().to_owned(),
@@ -352,7 +351,8 @@ mod test {
 		// Because the SyncWorker is spawned at service level, in the real world this will only
 		// happen when we are in major syncing (where there is lack of import notificatons).
 		tokio::task::spawn(async move {
-			crate::SyncWorker::run(
+			crate::sql::SyncWorker::run(
+				client.clone(),
 				backend.clone(),
 				Arc::new(indexer_backend),
 				client.clone().import_notification_stream(),
@@ -393,7 +393,7 @@ mod test {
 			let log_index = row.get::<i32, _>(6);
 			let transaction_index = row.get::<i32, _>(7);
 			let substrate_block_hash = row.get::<Vec<u8>, _>(8);
-			crate::Log {
+			fc_db::sql::Log {
 				block_number,
 				address,
 				topic_1,
@@ -405,7 +405,7 @@ mod test {
 				substrate_block_hash,
 			}
 		})
-		.collect::<Vec<crate::Log>>();
+		.collect::<Vec<fc_db::sql::Log>>();
 
 		// Expect the db to contain 20 rows. 10 blocks, 2 logs each.
 		// Db data is sorted ASC by block_number, log_index and transaction_index.
@@ -426,7 +426,7 @@ mod test {
 		let backend = builder.backend();
 		// Client
 		let (client, _) = builder
-			.build_with_native_executor::<substrate_test_runtime_client::runtime::RuntimeApi, _>(
+			.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(
 				None,
 			);
 		let mut client = Arc::new(client);
@@ -442,8 +442,8 @@ mod test {
 			fallback: Box::new(SchemaV3Override::new(client.clone())),
 		});
 		// Indexer backend
-		let indexer_backend = crate::Backend::new(
-			crate::BackendConfig::Sqlite(crate::SqliteBackendConfig {
+		let indexer_backend = fc_db::sql::Backend::new(
+			fc_db::sql::BackendConfig::Sqlite(fc_db::sql::SqliteBackendConfig {
 				path: Path::new("sqlite:///")
 					.join(tmp.path().strip_prefix("/").unwrap().to_str().unwrap())
 					.join("test.db3")
@@ -452,7 +452,6 @@ mod test {
 				create_if_missing: true,
 			}),
 			100,
-			client.clone(),
 			overrides.clone(),
 		)
 		.await
@@ -464,8 +463,10 @@ mod test {
 		// Because the SyncWorker is spawned at service level, in the real world this will only
 		// happen when we are in major syncing (where there is lack of import notificatons).
 		let notification_stream = client.clone().import_notification_stream();
+		let client_inner = client.clone();
 		tokio::task::spawn(async move {
-			crate::SyncWorker::run(
+			crate::sql::SyncWorker::run(
+				client_inner,
 				backend.clone(),
 				Arc::new(indexer_backend),
 				notification_stream,
@@ -474,9 +475,8 @@ mod test {
 			)
 			.await
 		});
-
 		// Create 10 blocks, 2 receipts each, 1 log per receipt
-		let mut logs: Vec<crate::Log> = vec![];
+		let mut logs: Vec<fc_db::sql::Log> = vec![];
 		for block_number in 1..11 {
 			let mut builder = client.new_block(Default::default()).unwrap();
 			// Addresses
@@ -521,7 +521,7 @@ mod test {
 			let block = builder.build().unwrap().block;
 			let block_hash = block.header.hash();
 			executor::block_on(client.import(BlockOrigin::Own, block)).unwrap();
-			logs.push(crate::Log {
+			logs.push(fc_db::sql::Log {
 				block_number: block_number as i32,
 				address: address_1.as_bytes().to_owned(),
 				topic_1: topics_1_1.as_bytes().to_owned(),
@@ -532,7 +532,7 @@ mod test {
 				transaction_index: 0i32,
 				substrate_block_hash: block_hash.as_bytes().to_owned(),
 			});
-			logs.push(crate::Log {
+			logs.push(fc_db::sql::Log {
 				block_number: block_number as i32,
 				address: address_2.as_bytes().to_owned(),
 				topic_1: topics_2_1.as_bytes().to_owned(),
@@ -576,7 +576,7 @@ mod test {
 			let log_index = row.get::<i32, _>(6);
 			let transaction_index = row.get::<i32, _>(7);
 			let substrate_block_hash = row.get::<Vec<u8>, _>(8);
-			crate::Log {
+			fc_db::sql::Log {
 				block_number,
 				address,
 				topic_1,
@@ -588,7 +588,7 @@ mod test {
 				substrate_block_hash,
 			}
 		})
-		.collect::<Vec<crate::Log>>();
+		.collect::<Vec<fc_db::sql::Log>>();
 
 		// Expect the db to contain 20 rows. 10 blocks, 2 logs each.
 		// Db data is sorted ASC by block_number, log_index and transaction_index.
