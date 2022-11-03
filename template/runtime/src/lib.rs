@@ -27,7 +27,6 @@ use sp_runtime::{
 };
 use sp_std::{marker::PhantomData, prelude::*};
 use sp_version::RuntimeVersion;
-// use fp_evm::HandleTxValidation;
 // Substrate FRAME
 #[cfg(feature = "with-paritydb-weights")]
 use frame_support::weights::constants::ParityDbWeight as RuntimeDbWeight;
@@ -324,11 +323,6 @@ parameter_types! {
 	pub BlockGasLimit: U256 = U256::from(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT / WEIGHT_PER_GAS);
 	pub PrecompilesValue: FrontierPrecompiles<Runtime> = FrontierPrecompiles::<_>::new();
 }
-
-// struct HandleTxValidation;
-// impl fp_evm::HandleTxValidation<Runtime> for HandleTxValidation {
-
-// } 
 
 impl pallet_evm::Config for Runtime {
 	type FeeCalculator = BaseFee;

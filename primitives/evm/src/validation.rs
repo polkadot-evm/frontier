@@ -64,15 +64,6 @@ pub enum InvalidEvmTransactionError {
 	InvalidChainId,
 }
 
-// pub trait HandleTxValidation<'config, E: From<InvalidEvmTransactionError>> {
-// 	fn validate_in_pool_for(&self, who: &Account) -> Result<&Self, E>;
-// 	fn validate_in_block_for(&self, who: &Account) -> Result<&Self, E>;
-// 	fn with_chain_id(&self) -> Result<&Self, E>;// 	fn with_base_fee(&self) -> Result<&Self, E>;
-// 	fn with_balance_for(&self, who: &Account) -> Result<&Self, E>;
-// 	fn transaction_fee_input(&self) -> Result<(U256, Option<U256>), E>;
-// 	fn validate_common(&self) -> Result<&Self, E>;
-// }
-
 pub trait HandleTxValidation<E: From<InvalidEvmTransactionError>> {
 	fn validate_in_pool_for(evm_config: &CheckEvmTransaction<E>, who: &Account) -> Result<(), E>;
 	fn validate_in_block_for(evm_config: &CheckEvmTransaction<E>, who: &Account) -> Result<(), E>;

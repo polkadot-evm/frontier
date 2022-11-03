@@ -242,10 +242,6 @@ where
 				access_list,
 			},
 		);
-		// .validate_in_block_for(&source_account)
-		// .and_then(|v| v.with_base_fee())
-		// .and_then(|v| v.with_balance_for(&source_account))
-		// .map_err(|error| RunnerError { error, weight })?;
 
 		T::HandleTxValidation::validate_in_block_for(&evm_config, &source_account)
 			.and_then(|_| T::HandleTxValidation::with_base_fee(&evm_config))
