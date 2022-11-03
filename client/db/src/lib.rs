@@ -47,4 +47,11 @@ pub trait BackendReader<Block: BlockT> {
 		&self,
 		ethereum_transaction_hash: &H256,
 	) -> Result<Vec<TransactionMetadata<Block>>, String>;
+	async fn filter_logs(
+		&self,
+		from_block: u64,
+		to_block: u64,
+		addresses: Vec<sp_core::H160>,
+		topics: Vec<Vec<Option<H256>>>,
+	) -> Result<Vec<Block::Hash>, String>;
 }

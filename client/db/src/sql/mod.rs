@@ -23,14 +23,14 @@ use fp_storage::{EthereumStorageSchema, OverrideHandle, PALLET_ETHEREUM_SCHEMA};
 use sc_client_api::backend::{Backend as BackendT, StateBackend, StorageProvider};
 use sp_api::{ApiExt, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
-use sp_core::H256;
+use sp_core::{H160, H256};
 use sp_runtime::{
 	generic::BlockId,
 	traits::{BlakeTwo256, Block as BlockT, Header as HeaderT, UniqueSaturatedInto, Zero},
 };
 use sqlx::{
 	sqlite::{SqliteConnectOptions, SqlitePool, SqlitePoolOptions, SqliteQueryResult},
-	ConnectOptions, Error, QueryBuilder, Row, Sqlite,
+	ConnectOptions, Error, QueryBuilder, Row, Sqlite, Execute,
 };
 use std::{str::FromStr, sync::Arc};
 
@@ -489,6 +489,11 @@ where
 	}
 }
 
+enum FilterValue {
+    Address(H160),
+    Topic(Option<H256>)
+}
+
 #[async_trait::async_trait]
 impl<Block: BlockT<Hash = H256>> crate::BackendReader<Block> for Backend<Block> {
 	async fn block_hash(
@@ -547,4 +552,99 @@ impl<Block: BlockT<Hash = H256>> crate::BackendReader<Block> for Backend<Block> 
 		}
 		Ok(out)
 	}
+	// Build sql query from rpc filter data
+	async fn filter_logs(
+		&self,
+		from_block: u64,
+		to_block: u64,
+		addresses: Vec<H160>,
+		topics: Vec<Vec<Option<H256>>>,
+	) -> Result<Vec<Block::Hash>, String> {
+		let mut filter_groups: Vec<Vec<FilterValue>> = match (addresses.len(), topics.len()) {
+			(x, 0) if x > 0 => {
+				addresses.iter().map(|address| vec![FilterValue::Address(*address)]).collect()
+			},
+			(0, y) if y > 0 => {
+				topics.iter().map(|topic_group| {
+					topic_group.iter().map(|topic| FilterValue::Topic(*topic)).collect()
+				})
+				.collect()
+			},
+			(x, y) => {
+				let mut out = vec![];
+				for address in addresses.iter() {
+					for topic_group in topics.iter() {
+						let mut inner = vec![FilterValue::Address(*address)];
+						for topic in topic_group.iter() {
+							inner.push(FilterValue::Topic(*topic));
+						}
+						out.push(inner);
+					}
+				}
+				out
+			}
+		};
+		let mut query_builder: QueryBuilder<Sqlite> =
+			QueryBuilder::new("SELECT * FROM logs WHERE block_number BETWEEN ");
+		// Bind `from` and `to` block range 
+		let mut block_number = query_builder.separated(" AND ");
+		block_number.push_bind(from_block as i64);
+		block_number.push_bind(to_block as i64);
+		// Address and topics substatement
+		let mut sub_statement = query_builder.separated(" AND ");
+		if filter_groups.len() > 0 {
+			sub_statement.push_unseparated(" AND ");
+		}
+		for (i, filter_group) in filter_groups.iter().enumerate() {
+			sub_statement.push_unseparated("(");
+			let mut topic_pos = 1;
+			for el in filter_group {
+				match el {
+					FilterValue::Address(address) => {
+						sub_statement.push_unseparated("address = ");
+						let address = address.as_bytes().to_owned();
+						sub_statement.push_bind(address);
+					},
+					FilterValue::Topic(topic) => {
+						if let Some(topic) = topic {
+							let topic = topic.as_bytes().to_owned();
+							match topic_pos {
+								1 => {
+									sub_statement.push_unseparated("topic_1 = ");
+									sub_statement.push_bind(topic);
+								},
+								2 => {
+									sub_statement.push_unseparated("topic_2 = ");
+									sub_statement.push_bind(topic);
+								},
+								3 => {
+									sub_statement.push_unseparated("topic_3 = ");
+									sub_statement.push_bind(topic);
+								},
+								4 => {
+									sub_statement.push_unseparated("topic_4 = ");
+									sub_statement.push_bind(topic);
+								},
+								_ => todo!()
+							}
+						}
+						topic_pos += 1;
+					},
+				}
+			}
+			sub_statement.push_unseparated(")");
+			if i < filter_groups.len() - 1 {
+				sub_statement.push_unseparated(" OR ");
+			}
+		}
+		let mut query = query_builder.build();
+		let sql = query.sql();
+		
+		Ok(vec![])
+	}
+}
+
+#[cfg(test)]
+mod test {
+
 }

@@ -82,6 +82,16 @@ impl<Block: BlockT> crate::BackendReader<Block> for Backend<Block> {
 		self.mapping()
 			.transaction_metadata(&ethereum_transaction_hash)
 	}
+	async fn filter_logs(
+		&self,
+		from_block: u64,
+		to_block: u64,
+		addresses: Vec<sp_core::H160>,
+		topics: Vec<Vec<Option<H256>>>,
+	) -> Result<Vec<Block::Hash>, String> {
+		// KeyValue db does not index logs
+		unimplemented!();
+	}
 }
 
 /// Returns the frontier database directory.
