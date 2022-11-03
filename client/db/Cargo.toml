@@ -49,3 +49,4 @@ sc-client-db = { version = "0.10.0-dev", git = "https://github.com/paritytech/su
 sp-consensus = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 substrate-test-runtime-client = { version = "2.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
 tempfile = "3.3.0"
+fc-rpc = { version = "2.0.0-dev", path = "../../client/rpc" }

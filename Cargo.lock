@@ -1664,6 +1664,7 @@ version = "2.0.0-dev"
 dependencies = [
  "async-trait",
  "ethereum",
+ "fc-rpc",
  "fp-consensus",
  "fp-rpc",
  "fp-storage",
@@ -1693,18 +1694,31 @@ dependencies = [
 name = "fc-mapping-sync"
 version = "2.0.0-dev"
 dependencies = [
+ "beefy-primitives",
+ "ethereum",
+ "ethereum-types",
  "fc-db",
+ "fc-rpc",
  "fp-consensus",
  "fp-rpc",
+ "fp-storage",
+ "frontier-template-runtime",
  "futures",
  "futures-timer",
  "log",
+ "parity-scale-codec",
+ "sc-block-builder",
  "sc-client-api",
+ "sc-client-db",
  "sp-api",
  "sp-blockchain",
+ "sp-consensus",
  "sp-core",
+ "sp-io",
  "sp-runtime",
  "sqlx",
+ "substrate-test-runtime-client",
+ "tempfile",
  "tokio",
 ]
 

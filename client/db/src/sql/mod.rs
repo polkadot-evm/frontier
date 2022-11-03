@@ -488,11 +488,13 @@ where
 		.await
 	}
 }
-
+#[derive(Debug)]
 enum FilterValue {
     Address(H160),
     Topic(Option<H256>)
 }
+
+type FilterLogsResult = Vec<(H256, i32, i32)>;
 
 #[async_trait::async_trait]
 impl<Block: BlockT<Hash = H256>> crate::BackendReader<Block> for Backend<Block> {
@@ -560,6 +562,11 @@ impl<Block: BlockT<Hash = H256>> crate::BackendReader<Block> for Backend<Block> 
 		addresses: Vec<H160>,
 		topics: Vec<Vec<Option<H256>>>,
 	) -> Result<Vec<Block::Hash>, String> {
+
+		// Sanitize topic input
+		let mut topics = topics;
+		topics.retain(|topic_group| !topic_group.iter().all(|x| x.is_none()));
+
 		let mut filter_groups: Vec<Vec<FilterValue>> = match (addresses.len(), topics.len()) {
 			(x, 0) if x > 0 => {
 				addresses.iter().map(|address| vec![FilterValue::Address(*address)]).collect()
@@ -585,60 +592,87 @@ impl<Block: BlockT<Hash = H256>> crate::BackendReader<Block> for Backend<Block> 
 			}
 		};
 		let mut query_builder: QueryBuilder<Sqlite> =
-			QueryBuilder::new("SELECT * FROM logs WHERE block_number BETWEEN ");
+			QueryBuilder::new("SELECT substrate_block_hash, transaction_index, log_index FROM logs WHERE block_number BETWEEN ");
 		// Bind `from` and `to` block range 
 		let mut block_number = query_builder.separated(" AND ");
 		block_number.push_bind(from_block as i64);
 		block_number.push_bind(to_block as i64);
 		// Address and topics substatement
-		let mut sub_statement = query_builder.separated(" AND ");
 		if filter_groups.len() > 0 {
-			sub_statement.push_unseparated(" AND ");
+			query_builder.push(" AND ");
 		}
 		for (i, filter_group) in filter_groups.iter().enumerate() {
-			sub_statement.push_unseparated("(");
+			query_builder.push("(");
 			let mut topic_pos = 1;
-			for el in filter_group {
+			for (j, el) in filter_group.iter().enumerate() {
+				let mut add_separator = false;
 				match el {
 					FilterValue::Address(address) => {
-						sub_statement.push_unseparated("address = ");
+						query_builder.push("address = ");
 						let address = address.as_bytes().to_owned();
-						sub_statement.push_bind(address);
+						query_builder.push_bind(address);
+						add_separator = true;
 					},
 					FilterValue::Topic(topic) => {
 						if let Some(topic) = topic {
 							let topic = topic.as_bytes().to_owned();
 							match topic_pos {
 								1 => {
-									sub_statement.push_unseparated("topic_1 = ");
-									sub_statement.push_bind(topic);
+									query_builder.push("topic_1 = ");
+									query_builder.push_bind(topic);
 								},
 								2 => {
-									sub_statement.push_unseparated("topic_2 = ");
-									sub_statement.push_bind(topic);
+									query_builder.push("topic_2 = ");
+									query_builder.push_bind(topic);
 								},
 								3 => {
-									sub_statement.push_unseparated("topic_3 = ");
-									sub_statement.push_bind(topic);
+									query_builder.push("topic_3 = ");
+									query_builder.push_bind(topic);
 								},
 								4 => {
-									sub_statement.push_unseparated("topic_4 = ");
-									sub_statement.push_bind(topic);
+									query_builder.push("topic_4 = ");
+									query_builder.push_bind(topic);
 								},
 								_ => todo!()
 							}
+							add_separator = true;
 						}
 						topic_pos += 1;
 					},
 				}
+				if add_separator && j < filter_group.len() - 1 {
+					query_builder.push(" AND ");
+				}
 			}
-			sub_statement.push_unseparated(")");
+			query_builder.push(")");
 			if i < filter_groups.len() - 1 {
-				sub_statement.push_unseparated(" OR ");
+				query_builder.push(" OR ");
 			}
 		}
+		query_builder.push(" ORDER BY block_number ASC, transaction_index ASC, log_index ASC");
+
 		let mut query = query_builder.build();
 		let sql = query.sql();
+
+		println!("---> {:?}", sql);
+
+		let mut out: FilterLogsResult = vec![];
+		match query.fetch_all(self.pool()).await {
+			Ok(result) => {
+				for row in result.iter() {
+					let substrate_block_hash = H256::from_slice(&row.try_get::<Vec<u8>, _>(0).unwrap_or_default()[..]);
+					let transaction_index = row.try_get::<i32, _>(1).unwrap_or_default();
+					let log_index = row.try_get::<i32, _>(2).unwrap_or_default();
+					out.push((
+						substrate_block_hash,
+						transaction_index,
+						log_index
+					));
+				}
+			}
+			_ => {println!("fail");},
+		};
+		println!(">>>> {:?}", out);
 		
 		Ok(vec![])
 	}
@@ -647,4 +681,263 @@ impl<Block: BlockT<Hash = H256>> crate::BackendReader<Block> for Backend<Block> 
 #[cfg(test)]
 mod test {
 
+	use codec::Encode;
+	use fc_rpc::{SchemaV3Override, StorageOverride};
+	use fp_storage::{
+		EthereumStorageSchema, ETHEREUM_CURRENT_RECEIPTS, PALLET_ETHEREUM, PALLET_ETHEREUM_SCHEMA, OverrideHandle
+	};
+	use futures::executor;
+	use sc_block_builder::BlockBuilderProvider;
+	use sc_client_api::BlockchainEvents;
+	use sp_core::{H160, H256, U256};
+	use std::{collections::BTreeMap, path::Path, sync::Arc};
+	use substrate_test_runtime_client::{
+		prelude::*, DefaultTestClientBuilderExt, TestClientBuilder, TestClientBuilderExt,
+	};
+	use tempfile::tempdir;
+	use sqlx::QueryBuilder;
+	use crate::BackendReader;
+
+	struct TestFilter {
+		pub from_block: u64,
+		pub to_block: u64,
+		pub addresses: Vec<H160>,
+		pub topics: Vec<Vec<Option<H256>>>,
+		pub expected_result: super::FilterLogsResult,
+	}
+
+	#[tokio::test]
+	async fn foo() {
+		let tmp = tempdir().expect("create a temporary directory");
+		// Initialize storage with schema V3
+		let builder = TestClientBuilder::new().add_extra_storage(
+			PALLET_ETHEREUM_SCHEMA.to_vec(),
+			Encode::encode(&EthereumStorageSchema::V3),
+		);
+		// Backend
+		let backend = builder.backend();
+		// Client
+		let (client, _) = builder
+			.build_with_native_executor::<substrate_test_runtime_client::runtime::RuntimeApi, _>(
+				None,
+			);
+		let mut client = Arc::new(client);
+		// Overrides
+		let mut overrides_map = BTreeMap::new();
+		overrides_map.insert(
+			EthereumStorageSchema::V3,
+			Box::new(SchemaV3Override::new(client.clone()))
+				as Box<dyn StorageOverride<_> + Send + Sync>,
+		);
+		let overrides = Arc::new(OverrideHandle {
+			schemas: overrides_map,
+			fallback: Box::new(SchemaV3Override::new(client.clone())),
+		});
+		// Indexer backend
+		let indexer_backend = super::Backend::new(
+			super::BackendConfig::Sqlite(super::SqliteBackendConfig {
+				path: Path::new("sqlite:///")
+					.join(tmp.path().strip_prefix("/").unwrap().to_str().unwrap())
+					.join("test.db3")
+					.to_str()
+					.unwrap(),
+				create_if_missing: true,
+			}),
+			100,
+			overrides.clone(),
+		)
+		.await
+		.expect("indexer pool to be created");
+
+		// Db setup
+		
+		// Addresses
+		let address_1 = H160::random();
+		let address_2 = H160::random();
+		// Topics
+		let topics_a = H256::random();
+		let topics_b = H256::random();
+		let topics_c = H256::random();
+		let topics_d = H256::random();
+		// Log index
+		let log_index = 0i32;
+		// Transaction index
+		let transaction_index = 0i32;
+		// Substrate block hashes
+		let substrate_hash_1 = H256::random();
+		let substrate_hash_2 = H256::random();
+		let substrate_hash_3 = H256::random();
+
+		let entries = vec![
+			// Block 1
+			(1, address_1, topics_a, topics_b, topics_c, topics_d, 0, 0, substrate_hash_1),
+			(1, address_1, topics_d, topics_c, topics_b, topics_a, 1, 0, substrate_hash_1),
+			(1, address_1, topics_b, topics_a, topics_d, topics_c, 2, 0, substrate_hash_1),
+			// Block 2
+			(2, address_2, topics_a, topics_b, topics_c, topics_d, 0, 0, substrate_hash_2),
+			(2, address_2, topics_d, topics_c, topics_b, topics_a, 1, 0, substrate_hash_2),
+			(2, address_2, topics_b, topics_a, topics_d, topics_c, 2, 0, substrate_hash_2),
+			// Block 3
+			(3, address_2, topics_a, topics_b, topics_c, topics_d, 0, 0, substrate_hash_3),
+			(3, address_2, topics_d, topics_c, topics_b, topics_a, 1, 0, substrate_hash_3),
+			(3, address_2, topics_b, topics_a, topics_d, topics_c, 2, 0, substrate_hash_3),
+		];
+
+		let mut builder: QueryBuilder<sqlx::Sqlite> =
+			QueryBuilder::new("INSERT INTO logs(
+				block_number,
+				address,
+				topic_1,
+				topic_2,
+				topic_3,
+				topic_4,
+				log_index,
+				transaction_index,
+				substrate_block_hash)" 
+			);
+		builder.push_values(entries, |mut b, entry| {
+
+			let block_number = entry.0;
+			let address = entry.1.as_bytes().to_owned();
+			let topic_1 = entry.2.as_bytes().to_owned();
+			let topic_2 = entry.3.as_bytes().to_owned();
+			let topic_3 = entry.4.as_bytes().to_owned();
+			let topic_4 = entry.5.as_bytes().to_owned();
+			let log_index = entry.6;
+			let transaction_index = entry.7;
+			let substrate_block_hash = entry.8.as_bytes().to_owned();
+
+			b.push_bind(block_number);
+			b.push_bind(address);
+			b.push_bind(topic_1);
+			b.push_bind(topic_2);
+			b.push_bind(topic_3);
+			b.push_bind(topic_4);
+			b.push_bind(log_index);
+			b.push_bind(transaction_index);
+			b.push_bind(substrate_block_hash);
+		});
+		let query = builder.build();
+		query.execute(indexer_backend.pool()).await;
+
+		// Test cases
+		let test_filters = vec![
+			// Genesis block, no matches
+			TestFilter {
+				from_block: 0,
+				to_block: 0,
+				addresses: vec![],
+				topics: vec![],
+				expected_result: vec![]
+			},
+			// Genesis block, no matches, sanitized
+			TestFilter {
+				from_block: 0,
+				to_block: 0,
+				addresses: vec![],
+				topics: vec![vec![None]],
+				expected_result: vec![]
+			},
+			// Block 1, no filter, 3 matches
+			TestFilter {
+				from_block: 1,
+				to_block: 1,
+				addresses: vec![],
+				topics: vec![],
+				expected_result: vec![
+					(substrate_hash_1, 0, 0),
+					(substrate_hash_1, 0, 1),
+					(substrate_hash_1, 0, 2),
+				]
+			},
+			// Block 1~3, no filter, 9 matches
+			TestFilter {
+				from_block: 1,
+				to_block: 3,
+				addresses: vec![],
+				topics: vec![],
+				expected_result:  vec![
+					(substrate_hash_1, 0, 0),
+					(substrate_hash_1, 0, 1),
+					(substrate_hash_1, 0, 2),
+					(substrate_hash_2, 0, 0),
+					(substrate_hash_2, 0, 1),
+					(substrate_hash_2, 0, 2),
+					(substrate_hash_3, 0, 0),
+					(substrate_hash_3, 0, 1),
+					(substrate_hash_3, 0, 2),
+				]
+			},
+			// Block 1~3, address_1, 3 matches
+			TestFilter {
+				from_block: 1,
+				to_block: 3,
+				addresses: vec![address_1],
+				topics: vec![],
+				expected_result: vec![
+					(substrate_hash_1, 0, 0),
+					(substrate_hash_1, 0, 1),
+					(substrate_hash_1, 0, 2),
+				]
+			},
+			// Block 1~3, topics_d at position 1, 3 matches
+			TestFilter {
+				from_block: 1,
+				to_block: 3,
+				addresses: vec![],
+				topics: vec![vec![Some(topics_d)]],
+				expected_result: vec![
+					(substrate_hash_1, 0, 1),
+					(substrate_hash_2, 0, 1),
+					(substrate_hash_3, 0, 1),
+				]
+			},
+			// TestFilter {
+			// 	from_block: 0,
+			// 	to_block: 0,
+			// 	addresses: vec![H160::default()],
+			// 	topics: vec![vec![Some(H256::default())]],
+			// 	expected_result: "SELECT * FROM logs WHERE block_number BETWEEN ? AND ? AND (address = ? AND topic_1 = ?)"
+			// },
+			// TestFilter {
+			// 	from_block: 0,
+			// 	to_block: 0,
+			// 	addresses: vec![H160::default(), H160::default()],
+			// 	topics: vec![vec![Some(H256::default())]],
+			// 	expected_result: "SELECT * FROM logs WHERE block_number BETWEEN ? AND ? AND (address = ? AND topic_1 = ?) OR (address = ? AND topic_1 = ?)"
+			// },
+			// TestFilter {
+			// 	from_block: 0,
+			// 	to_block: 0,
+			// 	addresses: vec![H160::default(), H160::default()],
+			// 	topics: vec![vec![Some(H256::default()), Some(H256::default())]],
+			// 	expected_result: "SELECT * FROM logs WHERE block_number BETWEEN ? AND ? AND (address = ? AND topic_1 = ? AND topic_2 = ?) OR (address = ? AND topic_1 = ? AND topic_2 = ?)"
+			// },
+			// TestFilter {
+			// 	from_block: 0,
+			// 	to_block: 0,
+			// 	addresses: vec![H160::default(), H160::default()],
+			// 	topics: vec![vec![Some(H256::default()), None, Some(H256::default())]],
+			// 	expected_result: "SELECT * FROM logs WHERE block_number BETWEEN ? AND ? AND (address = ? AND topic_1 = ? AND topic_3 = ?) OR (address = ? AND topic_1 = ? AND topic_3 = ?)"
+			// },
+			// TestFilter {
+			// 	from_block: 0,
+			// 	to_block: 0,
+			// 	addresses: vec![],
+			// 	topics: vec![vec![Some(H256::default()), None, Some(H256::default())]],
+			// 	expected_result: "SELECT * FROM logs WHERE block_number BETWEEN ? AND ? AND (topic_1 = ? AND topic_3 = ?)"
+			// },
+		];
+
+		for test_filter in test_filters.into_iter() {
+
+			let foo = indexer_backend.filter_logs(
+				test_filter.from_block,
+				test_filter.to_block,
+				test_filter.addresses,
+				test_filter.topics
+			).await;
+
+		}
+	}
 }
