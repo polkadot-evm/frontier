@@ -189,9 +189,6 @@ pub mod pallet {
 		type HandleTxValidation: HandleTxValidation<Error<Self>>;
 	}
 
-
-	// pallet::Error<Self>: From<InvalidEvmTransactionError>
-
 	impl<T: Config> From<InvalidEvmTransactionError> for Error<T> {
 		fn from(err: InvalidEvmTransactionError) -> Self {
 			match err {
@@ -495,7 +492,6 @@ impl<T: Config> Pallet<T> {
 			.and_then(|_| <T as pallet::Config>::HandleTxValidation::with_chain_id(&evm_config))
 			.and_then(|_| <T as pallet::Config>::HandleTxValidation::with_base_fee(&evm_config))
 			.and_then(|_| <T as pallet::Config>::HandleTxValidation::with_balance_for(&evm_config, &who))
-			// .map_err(|e| e.0)?;
 			.map_err(|_| TransactionValidityError::Invalid(InvalidTransaction::Payment))?;
 
 		let priority = match (
@@ -800,11 +796,6 @@ impl<T: Config> Pallet<T> {
 			},
 			transaction_data.into(),
 		);
-		// .validate_in_block_for(&who)
-		// .and_then(|v| v.with_chain_id())
-		// .and_then(|v| v.with_base_fee())
-		// .and_then(|v| v.with_balance_for(&who))
-		// .map_err(|e| TransactionValidityError::Invalid(e.0))?;
 
 		<T as pallet::Config>::HandleTxValidation::validate_in_block_for(&evm_config, &who)
 		.and_then(|_| <T as pallet::Config>::HandleTxValidation::with_base_fee(&evm_config))
