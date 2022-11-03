@@ -16,10 +16,12 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: nightly-2022-05-02
+          toolchain: nightly-2022-07-25
           target: wasm32-unknown-unknown
           override: true
           components: rust-docs
+      - name: Install protoc
+        uses: arduino/setup-protoc@v1
 
       - name: Build website
         run: |

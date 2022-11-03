@@ -32,7 +32,7 @@ use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
 // Frontier
 use fp_rpc::EthereumRuntimeRPCApi;
 
-#[derive(PartialEq, Copy, Clone)]
+#[derive(Copy, Clone, Eq, PartialEq)]
 pub enum SyncStrategy {
 	Normal,
 	Parachain,

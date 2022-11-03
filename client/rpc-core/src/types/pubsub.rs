@@ -24,7 +24,7 @@ use serde::{de::Error, Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::{from_value, Value};
 
 /// Subscription result.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Result {
 	/// New block header.
 	Header(Box<RichHeader>),
@@ -35,7 +35,7 @@ pub enum Result {
 	/// SyncStatus
 	SyncState(PubSubSyncStatus),
 }
-#[derive(Debug, Serialize, Eq, PartialEq, Clone)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum PubSubSyncStatus {
 	Simple(bool),
@@ -43,7 +43,7 @@ pub enum PubSubSyncStatus {
 }
 
 /// PubSbub sync status
-#[derive(Debug, Serialize, Eq, PartialEq, Clone)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SyncStatusMetadata {
 	pub syncing: bool,
@@ -68,7 +68,7 @@ impl Serialize for Result {
 }
 
 /// Subscription kind.
-#[derive(Debug, Deserialize, PartialEq, Eq, Hash, Clone)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash, Deserialize)]
 #[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub enum Kind {
@@ -83,7 +83,7 @@ pub enum Kind {
 }
 
 /// Subscription kind.
-#[derive(Debug, PartialEq, Eq, Hash, Clone)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub enum Params {
 	/// No parameters passed.
 	None,

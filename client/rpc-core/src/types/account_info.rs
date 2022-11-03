@@ -23,14 +23,14 @@ use ethereum_types::{Address, Public, H160, H256, U256};
 use serde::Serialize;
 
 /// Account information.
-#[derive(Debug, Default, Clone, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize)]
 pub struct AccountInfo {
 	/// Account name
 	pub name: String,
 }
 
 /// Data structure with proof for one single storage-entry
-#[derive(Debug, Default, Clone, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct StorageProof {
 	pub key: U256,
@@ -39,7 +39,7 @@ pub struct StorageProof {
 }
 
 /// Account information.
-#[derive(Debug, Default, Clone, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct EthAccount {
 	pub address: H160,
@@ -52,7 +52,7 @@ pub struct EthAccount {
 }
 
 /// Extended account information (used by `parity_allAccountInfo`).
-#[derive(Debug, Default, Clone, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize)]
 pub struct ExtAccountInfo {
 	/// Account name
 	pub name: String,
@@ -66,7 +66,7 @@ pub struct ExtAccountInfo {
 /// account derived from a signature
 /// as well as information that tells if it is valid for
 /// the current chain
-#[derive(Debug, Clone, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RecoveredAccount {
 	/// address of the recovered account

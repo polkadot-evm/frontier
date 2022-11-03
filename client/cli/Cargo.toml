@@ -34,7 +34,7 @@ fp-storage = { version = "2.0.0-dev", path = "../../primitives/storage" }
 futures = "0.3.21"
 tempfile = "3.3.0"
 # Parity
-codec = { package = "parity-scale-codec", version = "3.0.0" }
+codec = { package = "parity-scale-codec", version = "3.2.1" }
 # Substrate
 sc-block-builder = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-client-db = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }

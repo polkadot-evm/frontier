@@ -16,7 +16,7 @@
 // limitations under the License.
 
 use frame_support::{
-	assert_err, assert_ok, unsigned::TransactionValidityError, weights::GetDispatchInfo,
+	assert_err, assert_ok, dispatch::GetDispatchInfo, unsigned::TransactionValidityError,
 };
 use sp_runtime::{
 	traits::Applyable,

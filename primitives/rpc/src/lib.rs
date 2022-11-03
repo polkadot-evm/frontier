@@ -26,7 +26,7 @@ use sp_core::{H160, H256, U256};
 use sp_runtime::{traits::Block as BlockT, Permill, RuntimeDebug};
 use sp_std::vec::Vec;
 
-#[derive(Eq, PartialEq, Clone, Default, RuntimeDebug, Encode, Decode, TypeInfo)]
+#[derive(Clone, Eq, PartialEq, Default, RuntimeDebug, Encode, Decode, TypeInfo)]
 pub struct TransactionStatus {
 	pub transaction_hash: H256,
 	pub transaction_index: u32,
