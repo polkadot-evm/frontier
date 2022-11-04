@@ -37,6 +37,13 @@ pub struct TransactionMetadata<Block: BlockT> {
 	pub ethereum_index: u32,
 }
 
+#[derive(Debug, Eq, PartialEq)]
+pub struct FilteredLog {
+	pub substrate_block_hash: H256,
+	pub transaction_index: usize,
+	pub log_index: usize
+}
+
 #[async_trait::async_trait]
 pub trait BackendReader<Block: BlockT> {
 	async fn block_hash(
@@ -53,5 +60,5 @@ pub trait BackendReader<Block: BlockT> {
 		to_block: u64,
 		addresses: Vec<sp_core::H160>,
 		topics: Vec<Vec<Option<H256>>>,
-	) -> Result<Vec<Block::Hash>, String>;
+	) -> Result<Vec<FilteredLog>, String>;
 }
