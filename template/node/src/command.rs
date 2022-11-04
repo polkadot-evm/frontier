@@ -216,14 +216,17 @@ pub fn run() -> sc_cli::Result<()> {
 				}
 			})
 		}
-		// Some(Subcommand::FrontierDb(cmd)) => {
-		// 	let runner = cli.create_runner(cmd)?;
-		// 	runner.sync_run(|config| {
-		// 		let PartialComponents { client, other, .. } = service::new_partial(&config, &cli)?;
-		// 		let frontier_backend = other.2;
-		// 		cmd.run::<_, frontier_template_runtime::opaque::Block>(client, frontier_backend)
-		// 	})
-		// }
+		Some(Subcommand::FrontierDb(cmd)) => {
+			let runner = cli.create_runner(cmd)?;
+			runner.sync_run(|config| {
+				let PartialComponents { client, other, .. } = service::new_partial(&config, &cli)?;
+				let frontier_backend = match other.2 {
+					fc_db::Backend::KeyValue(kv) => std::sync::Arc::new(kv),
+					_ => panic!("Only fc_db::Backend::KeyValue supported")
+				};
+				cmd.run::<_, frontier_template_runtime::opaque::Block>(client, frontier_backend)
+			})
+		}
 		None => {
 			let runner = cli.create_runner(&cli.run.base)?;
 			runner.run_node_until_exit(|config| async move {

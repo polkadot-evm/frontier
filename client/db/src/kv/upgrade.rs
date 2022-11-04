@@ -352,12 +352,12 @@ mod tests {
 
 	pub fn open_frontier_backend<C>(
 		client: Arc<C>,
-		setting: &super::DatabaseSettings,
-	) -> Result<Arc<super::Backend<OpaqueBlock>>, String>
+		setting: &crate::kv::DatabaseSettings,
+	) -> Result<Arc<crate::kv::Backend<OpaqueBlock>>, String>
 	where
 		C: sp_blockchain::HeaderBackend<OpaqueBlock>,
 	{
-		Ok(Arc::new(super::Backend::<OpaqueBlock>::new(
+		Ok(Arc::new(crate::kv::Backend::<OpaqueBlock>::new(
 			client, setting,
 		)?))
 	}
@@ -369,14 +369,14 @@ mod tests {
 
 		let settings = vec![
 			// Rocks db
-			super::DatabaseSettings {
+			crate::kv::DatabaseSettings {
 				source: sc_client_db::DatabaseSource::RocksDb {
 					path: tmp_1.path().to_owned(),
 					cache_size: 0,
 				},
 			},
 			// Parity db
-			super::DatabaseSettings {
+			crate::kv::DatabaseSettings {
 				source: sc_client_db::DatabaseSource::ParityDb {
 					path: tmp_2.path().to_owned(),
 				},
@@ -444,7 +444,7 @@ mod tests {
 					substrate_hashes.push(next_canon_block_hash);
 					// Set orphan hash block mapping
 					transaction.set(
-						super::columns::BLOCK_MAPPING,
+						crate::kv::columns::BLOCK_MAPPING,
 						&ethhash.encode(),
 						&orphan_block_hash.encode(),
 					);
@@ -454,14 +454,14 @@ mod tests {
 					let eth_tx_hash = H256::random();
 					let mut metadata = vec![];
 					for hash in vec![next_canon_block_hash, orphan_block_hash].iter() {
-						metadata.push(super::TransactionMetadata::<OpaqueBlock> {
+						metadata.push(crate::kv::TransactionMetadata::<OpaqueBlock> {
 							block_hash: *hash,
 							ethereum_block_hash: ethhash,
 							ethereum_index: 0u32,
 						});
 					}
 					transaction.set(
-						super::columns::TRANSACTION_MAPPING,
+						crate::kv::columns::TRANSACTION_MAPPING,
 						&eth_tx_hash.encode(),
 						&metadata.encode(),
 					);

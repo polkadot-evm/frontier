@@ -49,13 +49,13 @@ mod tests {
 	pub fn open_frontier_backend<C>(
 		client: Arc<C>,
 		path: PathBuf,
-	) -> Result<Arc<fc_db::Backend<OpaqueBlock>>, String>
+	) -> Result<Arc<fc_db::kv::Backend<OpaqueBlock>>, String>
 	where
 		C: sp_blockchain::HeaderBackend<OpaqueBlock>,
 	{
-		Ok(Arc::new(fc_db::Backend::<OpaqueBlock>::new(
+		Ok(Arc::new(fc_db::kv::Backend::<OpaqueBlock>::new(
 			client,
-			&fc_db::DatabaseSettings {
+			&fc_db::kv::DatabaseSettings {
 				source: sc_client_db::DatabaseSource::RocksDb {
 					path,
 					cache_size: 0,

@@ -250,13 +250,13 @@ mod tests {
 	fn open_frontier_backend<C>(
 		client: Arc<C>,
 		path: PathBuf,
-	) -> Result<Arc<fc_db::Backend<OpaqueBlock>>, String>
+	) -> Result<Arc<fc_db::kv::Backend<OpaqueBlock>>, String>
 	where
 		C: sp_blockchain::HeaderBackend<OpaqueBlock>,
 	{
-		Ok(Arc::new(fc_db::Backend::<OpaqueBlock>::new(
+		Ok(Arc::new(fc_db::kv::Backend::<OpaqueBlock>::new(
 			client,
-			&fc_db::DatabaseSettings {
+			&fc_db::kv::DatabaseSettings {
 				source: sc_client_db::DatabaseSource::RocksDb {
 					path,
 					cache_size: 0,
@@ -298,7 +298,7 @@ mod tests {
 		executor::block_on(client.import(BlockOrigin::Own, b1)).unwrap();
 
 		// Map B1
-		let commitment = fc_db::MappingCommitment::<OpaqueBlock> {
+		let commitment = fc_db::kv::MappingCommitment::<OpaqueBlock> {
 			block_hash: b1_hash,
 			ethereum_block_hash,
 			ethereum_transaction_hashes: vec![],
@@ -307,11 +307,11 @@ mod tests {
 
 		// Expect B1 to be canon
 		assert_eq!(
-			super::frontier_backend_client::load_hash(
+			futures::executor::block_on(super::frontier_backend_client::load_hash(
 				client.as_ref(),
 				frontier_backend.as_ref(),
 				ethereum_block_hash
-			)
+			))
 			.unwrap()
 			.unwrap(),
 			BlockId::Hash(b1_hash),
@@ -327,7 +327,7 @@ mod tests {
 		executor::block_on(client.import(BlockOrigin::Own, b2)).unwrap();
 
 		// Map B2 to same ethereum hash
-		let commitment = fc_db::MappingCommitment::<OpaqueBlock> {
+		let commitment = fc_db::kv::MappingCommitment::<OpaqueBlock> {
 			block_hash: b2_hash,
 			ethereum_block_hash,
 			ethereum_transaction_hashes: vec![],
@@ -336,11 +336,11 @@ mod tests {
 
 		// Still expect B1 to be canon
 		assert_eq!(
-			super::frontier_backend_client::load_hash(
+			futures::executor::block_on(super::frontier_backend_client::load_hash(
 				client.as_ref(),
 				frontier_backend.as_ref(),
 				ethereum_block_hash
-			)
+			))
 			.unwrap()
 			.unwrap(),
 			BlockId::Hash(b1_hash),
@@ -356,11 +356,11 @@ mod tests {
 
 		// Expect B2 to be new canon
 		assert_eq!(
-			super::frontier_backend_client::load_hash(
+			futures::executor::block_on(super::frontier_backend_client::load_hash(
 				client.as_ref(),
 				frontier_backend.as_ref(),
 				ethereum_block_hash
-			)
+			))
 			.unwrap()
 			.unwrap(),
 			BlockId::Hash(b2_hash),
