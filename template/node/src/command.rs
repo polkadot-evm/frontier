@@ -222,7 +222,7 @@ pub fn run() -> sc_cli::Result<()> {
 				let PartialComponents { client, other, .. } = service::new_partial(&config, &cli)?;
 				let frontier_backend = match other.2 {
 					fc_db::Backend::KeyValue(kv) => std::sync::Arc::new(kv),
-					_ => panic!("Only fc_db::Backend::KeyValue supported")
+					_ => panic!("Only fc_db::Backend::KeyValue supported"),
 				};
 				cmd.run::<_, frontier_template_runtime::opaque::Block>(client, frontier_backend)
 			})

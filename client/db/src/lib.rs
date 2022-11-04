@@ -41,7 +41,7 @@ pub struct TransactionMetadata<Block: BlockT> {
 pub struct FilteredLog {
 	pub substrate_block_hash: H256,
 	pub transaction_index: usize,
-	pub log_index: usize
+	pub log_index: usize,
 }
 
 #[async_trait::async_trait]

@@ -30,7 +30,7 @@ use sp_runtime::{
 };
 use sqlx::{
 	sqlite::{SqliteConnectOptions, SqlitePool, SqlitePoolOptions, SqliteQueryResult},
-	ConnectOptions, Error, QueryBuilder, Row, Sqlite, Execute,
+	ConnectOptions, Error, Execute, QueryBuilder, Row, Sqlite,
 };
 use std::{str::FromStr, sync::Arc};
 
@@ -492,8 +492,8 @@ where
 }
 #[derive(Debug)]
 enum FilterValue {
-    Address(H160),
-    Topic(Option<H256>)
+	Address(H160),
+	Topic(Option<H256>),
 }
 
 #[async_trait::async_trait]
@@ -562,21 +562,24 @@ impl<Block: BlockT<Hash = H256>> crate::BackendReader<Block> for Backend<Block> 
 		addresses: Vec<H160>,
 		topics: Vec<Vec<Option<H256>>>,
 	) -> Result<Vec<FilteredLog>, String> {
-
 		// Sanitize topic input
 		let mut topics = topics;
 		topics.retain(|topic_group| !topic_group.iter().all(|x| x.is_none()));
 
 		let filter_groups: Vec<Vec<FilterValue>> = match (addresses.len(), topics.len()) {
-			(x, 0) if x > 0 => {
-				addresses.iter().map(|address| vec![FilterValue::Address(*address)]).collect()
-			},
-			(0, y) if y > 0 => {
-				topics.iter().map(|topic_group| {
-					topic_group.iter().map(|topic| FilterValue::Topic(*topic)).collect()
+			(x, 0) if x > 0 => addresses
+				.iter()
+				.map(|address| vec![FilterValue::Address(*address)])
+				.collect(),
+			(0, y) if y > 0 => topics
+				.iter()
+				.map(|topic_group| {
+					topic_group
+						.iter()
+						.map(|topic| FilterValue::Topic(*topic))
+						.collect()
 				})
-				.collect()
-			},
+				.collect(),
 			(_, _) => {
 				let mut out = vec![];
 				for address in addresses.iter() {
@@ -593,7 +596,7 @@ impl<Block: BlockT<Hash = H256>> crate::BackendReader<Block> for Backend<Block> 
 		};
 		let mut query_builder: QueryBuilder<Sqlite> =
 			QueryBuilder::new("SELECT substrate_block_hash, transaction_index, log_index FROM logs WHERE block_number BETWEEN ");
-		// Bind `from` and `to` block range 
+		// Bind `from` and `to` block range
 		let mut block_number = query_builder.separated(" AND ");
 		block_number.push_bind(from_block as i64);
 		block_number.push_bind(to_block as i64);
@@ -612,7 +615,7 @@ impl<Block: BlockT<Hash = H256>> crate::BackendReader<Block> for Backend<Block> 
 						let address = address.as_bytes().to_owned();
 						query_builder.push_bind(address);
 						add_separator = true;
-					},
+					}
 					FilterValue::Topic(topic) => {
 						if let Some(topic) = topic {
 							let topic = topic.as_bytes().to_owned();
@@ -620,25 +623,25 @@ impl<Block: BlockT<Hash = H256>> crate::BackendReader<Block> for Backend<Block> 
 								1 => {
 									query_builder.push("topic_1 = ");
 									query_builder.push_bind(topic);
-								},
+								}
 								2 => {
 									query_builder.push("topic_2 = ");
 									query_builder.push_bind(topic);
-								},
+								}
 								3 => {
 									query_builder.push("topic_3 = ");
 									query_builder.push_bind(topic);
-								},
+								}
 								4 => {
 									query_builder.push("topic_4 = ");
 									query_builder.push_bind(topic);
-								},
-								_ => todo!()
+								}
+								_ => todo!(),
 							}
 							add_separator = true;
 						}
 						topic_pos += 1;
-					},
+					}
 				}
 				if add_separator && j < filter_group.len() - 1 {
 					query_builder.push(" AND ");
@@ -652,10 +655,12 @@ impl<Block: BlockT<Hash = H256>> crate::BackendReader<Block> for Backend<Block> 
 		if filter_groups.len() > 0 {
 			query_builder.push(")");
 		}
-		query_builder.push("
+		query_builder.push(
+			"
 			GROUP BY substrate_block_hash, transaction_index, log_index
 			ORDER BY block_number ASC, transaction_index ASC, log_index ASC
-		");
+		",
+		);
 
 		let query = query_builder.build();
 		let sql = query.sql();
@@ -664,13 +669,14 @@ impl<Block: BlockT<Hash = H256>> crate::BackendReader<Block> for Backend<Block> 
 		match query.fetch_all(self.pool()).await {
 			Ok(result) => {
 				for row in result.iter() {
-					let substrate_block_hash = H256::from_slice(&row.try_get::<Vec<u8>, _>(0).unwrap_or_default()[..]);
+					let substrate_block_hash =
+						H256::from_slice(&row.try_get::<Vec<u8>, _>(0).unwrap_or_default()[..]);
 					let transaction_index = row.try_get::<i32, _>(1).unwrap_or_default();
 					let log_index = row.try_get::<i32, _>(2).unwrap_or_default();
 					out.push(FilteredLog {
 						substrate_block_hash,
 						transaction_index: transaction_index as usize,
-						log_index: log_index as usize
+						log_index: log_index as usize,
 					});
 				}
 			}
@@ -680,10 +686,10 @@ impl<Block: BlockT<Hash = H256>> crate::BackendReader<Block> for Backend<Block> 
 					"Failed to query sql db with statement {:?}",
 					sql
 				);
-				return Err("Failed to query sql db with statement".to_string())
-			},
+				return Err("Failed to query sql db with statement".to_string());
+			}
 		};
-		
+
 		Ok(out)
 	}
 }
@@ -693,19 +699,24 @@ mod test {
 
 	use super::FilteredLog;
 
+	use crate::BackendReader;
 	use codec::Encode;
 	use fc_rpc::{SchemaV3Override, StorageOverride};
-	use fp_storage::{
-		EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA, OverrideHandle
-	};
+	use fp_storage::{EthereumStorageSchema, OverrideHandle, PALLET_ETHEREUM_SCHEMA};
 	use sp_core::{H160, H256};
+	use sp_runtime::{
+		generic::{Block, Header},
+		traits::BlakeTwo256,
+	};
+	use sqlx::QueryBuilder;
 	use std::{collections::BTreeMap, path::Path, sync::Arc};
 	use substrate_test_runtime_client::{
 		DefaultTestClientBuilderExt, TestClientBuilder, TestClientBuilderExt,
 	};
 	use tempfile::tempdir;
-	use sqlx::QueryBuilder;
-	use crate::BackendReader;
+
+	type OpaqueBlock =
+		Block<Header<u64, BlakeTwo256>, substrate_test_runtime_client::runtime::Extrinsic>;
 
 	struct TestFilter {
 		pub from_block: u64,
@@ -715,16 +726,31 @@ mod test {
 		pub expected_result: Vec<FilteredLog>,
 	}
 
-	fn to_filtered_log(values: (H256, usize, usize)) -> FilteredLog {
-		FilteredLog {
-			substrate_block_hash: values.0,
-			transaction_index: values.1,
-			log_index: values.2
-		}
-	} 
+	struct TestData {
+		pub alice: H160,
+		pub bob: H160,
+		pub topics_a: H256,
+		pub topics_b: H256,
+		pub topics_c: H256,
+		pub topics_d: H256,
+		pub substrate_hash_1: H256,
+		pub substrate_hash_2: H256,
+		pub substrate_hash_3: H256,
+		pub backend: super::Backend<OpaqueBlock>,
+	}
 
-	#[tokio::test]
-	async fn filter_logs_works() {
+	// From `(substrate_block_hash, transaction_index, log_index)` to FilteredLog
+	impl From<(H256, usize, usize)> for FilteredLog {
+		fn from(values: (H256, usize, usize)) -> Self {
+			Self {
+				substrate_block_hash: values.0,
+				transaction_index: values.1,
+				log_index: values.2,
+			}
+		}
+	}
+
+	async fn prepare() -> TestData {
 		let tmp = tempdir().expect("create a temporary directory");
 		// Initialize storage with schema V3
 		let builder = TestClientBuilder::new().add_extra_storage(
@@ -781,21 +807,111 @@ mod test {
 
 		let entries = vec![
 			// Block 1
-			(1, alice, topics_a, topics_b, topics_c, topics_d, 0, 0, substrate_hash_1),
-			(1, alice, topics_d, topics_c, topics_b, topics_a, 1, 0, substrate_hash_1),
-			(1, alice, topics_b, topics_a, topics_d, topics_c, 2, 0, substrate_hash_1),
+			(
+				1,
+				alice,
+				topics_a,
+				topics_b,
+				topics_c,
+				topics_d,
+				0,
+				0,
+				substrate_hash_1,
+			),
+			(
+				1,
+				alice,
+				topics_d,
+				topics_c,
+				topics_b,
+				topics_a,
+				1,
+				0,
+				substrate_hash_1,
+			),
+			(
+				1,
+				alice,
+				topics_b,
+				topics_a,
+				topics_d,
+				topics_c,
+				2,
+				0,
+				substrate_hash_1,
+			),
 			// Block 2
-			(2, bob, topics_a, topics_b, topics_c, topics_d, 0, 0, substrate_hash_2),
-			(2, bob, topics_d, topics_c, topics_b, topics_a, 1, 0, substrate_hash_2),
-			(2, bob, topics_b, topics_a, topics_d, topics_c, 2, 0, substrate_hash_2),
+			(
+				2,
+				bob,
+				topics_a,
+				topics_b,
+				topics_c,
+				topics_d,
+				0,
+				0,
+				substrate_hash_2,
+			),
+			(
+				2,
+				bob,
+				topics_d,
+				topics_c,
+				topics_b,
+				topics_a,
+				1,
+				0,
+				substrate_hash_2,
+			),
+			(
+				2,
+				bob,
+				topics_b,
+				topics_a,
+				topics_d,
+				topics_c,
+				2,
+				0,
+				substrate_hash_2,
+			),
 			// Block 3
-			(3, bob, topics_a, topics_b, topics_c, topics_d, 0, 0, substrate_hash_3),
-			(3, bob, topics_d, topics_c, topics_b, topics_a, 1, 0, substrate_hash_3),
-			(3, bob, topics_b, topics_a, topics_d, topics_c, 2, 0, substrate_hash_3),
+			(
+				3,
+				bob,
+				topics_a,
+				topics_b,
+				topics_c,
+				topics_d,
+				0,
+				0,
+				substrate_hash_3,
+			),
+			(
+				3,
+				bob,
+				topics_d,
+				topics_c,
+				topics_b,
+				topics_a,
+				1,
+				0,
+				substrate_hash_3,
+			),
+			(
+				3,
+				bob,
+				topics_b,
+				topics_a,
+				topics_d,
+				topics_c,
+				2,
+				0,
+				substrate_hash_3,
+			),
 		];
 
-		let mut builder: QueryBuilder<sqlx::Sqlite> =
-			QueryBuilder::new("INSERT INTO logs(
+		let mut builder: QueryBuilder<sqlx::Sqlite> = QueryBuilder::new(
+			"INSERT INTO logs(
 				block_number,
 				address,
 				topic_1,
@@ -804,8 +920,8 @@ mod test {
 				topic_4,
 				log_index,
 				transaction_index,
-				substrate_block_hash)" 
-			);
+				substrate_block_hash)",
+		);
 		builder.push_values(entries, |mut b, entry| {
 			let block_number = entry.0;
 			let address = entry.1.as_bytes().to_owned();
@@ -830,208 +946,325 @@ mod test {
 		let query = builder.build();
 		let _ = query.execute(indexer_backend.pool()).await;
 
-		// Describe test cases
-		let test_filters = vec![
-			// Genesis block, no matches
-			TestFilter {
-				from_block: 0,
-				to_block: 0,
-				addresses: vec![],
-				topics: vec![],
-				expected_result: vec![]
-			},
-			// Genesis block, no matches, sanitized
-			TestFilter {
-				from_block: 0,
-				to_block: 0,
-				addresses: vec![],
-				topics: vec![vec![None]],
-				expected_result: vec![]
-			},
-			// Block 1, no filter, 3 matches
-			TestFilter {
-				from_block: 1,
-				to_block: 1,
-				addresses: vec![],
-				topics: vec![],
-				expected_result: vec![
-					to_filtered_log((substrate_hash_1, 0, 0)),
-					to_filtered_log((substrate_hash_1, 0, 1)),
-					to_filtered_log((substrate_hash_1, 0, 2)),
-				]
-			},
-			// Block 1~3, no filter, 9 matches
-			TestFilter {
-				from_block: 1,
-				to_block: 3,
-				addresses: vec![],
-				topics: vec![],
-				expected_result:  vec![
-					to_filtered_log((substrate_hash_1, 0, 0)),
-					to_filtered_log((substrate_hash_1, 0, 1)),
-					to_filtered_log((substrate_hash_1, 0, 2)),
-					to_filtered_log((substrate_hash_2, 0, 0)),
-					to_filtered_log((substrate_hash_2, 0, 1)),
-					to_filtered_log((substrate_hash_2, 0, 2)),
-					to_filtered_log((substrate_hash_3, 0, 0)),
-					to_filtered_log((substrate_hash_3, 0, 1)),
-					to_filtered_log((substrate_hash_3, 0, 2)),
-				]
-			},
-			// Block 1~3, alice, 3 matches
-			TestFilter {
-				from_block: 1,
-				to_block: 3,
-				addresses: vec![alice],
-				topics: vec![],
-				expected_result: vec![
-					to_filtered_log((substrate_hash_1, 0, 0)),
-					to_filtered_log((substrate_hash_1, 0, 1)),
-					to_filtered_log((substrate_hash_1, 0, 2)),
-				]
-			},
-			// Block 1~3, topics_d at position 1, 3 matches
-			TestFilter {
-				from_block: 1,
-				to_block: 3,
-				addresses: vec![],
-				topics: vec![vec![Some(topics_d)]],
-				expected_result: vec![
-					to_filtered_log((substrate_hash_1, 0, 1)),
-					to_filtered_log((substrate_hash_2, 0, 1)),
-					to_filtered_log((substrate_hash_3, 0, 1)),
-				]
-			},
-			// Block 1~3, bob, topics_b at position 1, 2 matches
-			TestFilter {
-				from_block: 1,
-				to_block: 3,
-				addresses: vec![bob],
-				topics: vec![vec![Some(topics_b)]],
-				expected_result: vec![
-					to_filtered_log((substrate_hash_2, 0, 2)),
-					to_filtered_log((substrate_hash_3, 0, 2)),
-				]
-			},
-			// Block 1~3, alice or bob, topics_b at position 1, 3 matches
-			TestFilter {
-				from_block: 1,
-				to_block: 3,
-				addresses: vec![alice, bob],
-				topics: vec![vec![Some(topics_b)]],
-				expected_result: vec![
-					to_filtered_log((substrate_hash_1, 0, 2)),
-					to_filtered_log((substrate_hash_2, 0, 2)),
-					to_filtered_log((substrate_hash_3, 0, 2)),
-				]
-			},
-			// Block 1~3, alice or bob, topics_a at position 1, topics_b at position 2, 3 matches
-			TestFilter {
-				from_block: 1,
-				to_block: 3,
-				addresses: vec![alice, bob],
-				topics: vec![vec![Some(topics_a), Some(topics_b)]],
-				expected_result: vec![
-					to_filtered_log((substrate_hash_1, 0, 0)),
-					to_filtered_log((substrate_hash_2, 0, 0)),
-					to_filtered_log((substrate_hash_3, 0, 0)),
-				]
-			},
-			// Block 1, alice or bob, topics_d at position 1, topics_b at position 3, 1 match
-			TestFilter {
-				from_block: 1,
-				to_block: 1,
-				addresses: vec![alice, bob],
-				topics: vec![vec![Some(topics_d), None, Some(topics_b)]],
-				expected_result: vec![
-					to_filtered_log((substrate_hash_1, 0, 1)),
-				]
-			},
-			// Block 1~2, alice or bob, topics_d at position 1, topics_b at position 3, 2 matches
-			TestFilter {
-				from_block: 1,
-				to_block: 2,
-				addresses: vec![alice, bob],
-				topics: vec![vec![Some(topics_d), None, Some(topics_b)]],
-				expected_result: vec![
-					to_filtered_log((substrate_hash_1, 0, 1)),
-					to_filtered_log((substrate_hash_2, 0, 1)),
-				]
-			},
-			// Block 1~3, alice or bob, topics_d at position 1, topics_b at position 3, 3 matches
-			TestFilter {
-				from_block: 1,
-				to_block: 3,
-				addresses: vec![alice, bob],
-				topics: vec![vec![Some(topics_d), None, Some(topics_b)]],
-				expected_result: vec![
-					to_filtered_log((substrate_hash_1, 0, 1)),
-					to_filtered_log((substrate_hash_2, 0, 1)),
-					to_filtered_log((substrate_hash_3, 0, 1)),
-				]
-			},
-			// Block 1~3, topics_d at position 1, topics_b at position 3, 3 matches
-			TestFilter {
-				from_block: 1,
-				to_block: 3,
-				addresses: vec![],
-				topics: vec![vec![Some(topics_d), None, Some(topics_b)]],
-				expected_result: vec![
-					to_filtered_log((substrate_hash_1, 0, 1)),
-					to_filtered_log((substrate_hash_2, 0, 1)),
-					to_filtered_log((substrate_hash_3, 0, 1)),
-				]
-			},
-			// Block 1~3, topics_a at position 1 or topics_d at position 1 or topics_b at position 1, 6 matches
-			TestFilter {
-				from_block: 1,
-				to_block: 3,
-				addresses: vec![],
-				topics: vec![vec![Some(topics_a)], vec![Some(topics_d)], vec![Some(topics_d)]],
-				expected_result: vec![
-					to_filtered_log((substrate_hash_1, 0, 0)),
-					to_filtered_log((substrate_hash_1, 0, 1)),
-					to_filtered_log((substrate_hash_2, 0, 0)),
-					to_filtered_log((substrate_hash_2, 0, 1)),
-					to_filtered_log((substrate_hash_3, 0, 0)),
-					to_filtered_log((substrate_hash_3, 0, 1)),
-				]
-			},
-			// Block 1~1, topics_a at position 1 or topics_b at position 2, 1 match
-			TestFilter {
-				from_block: 1,
-				to_block: 1,
-				addresses: vec![],
-				topics: vec![vec![Some(topics_a)], vec![None, Some(topics_b)]],
-				expected_result: vec![
-					to_filtered_log((substrate_hash_1, 0, 0)),
-				]
-			},
-			// Block 1~3, topics_b at position 3 or topics_c at position 4, 4 matches
-			TestFilter {
-				from_block: 1,
-				to_block: 3,
-				addresses: vec![bob],
-				topics: vec![vec![None, None, Some(topics_b)], vec![None, None, None, Some(topics_c)]],
-				expected_result: vec![
-					to_filtered_log((substrate_hash_2, 0, 1)),
-					to_filtered_log((substrate_hash_2, 0, 2)),
-					to_filtered_log((substrate_hash_3, 0, 1)),
-					to_filtered_log((substrate_hash_3, 0, 2)),
-				]
-			}
-		];
-		
-		// Test
-		for test_filter in test_filters.into_iter() {
-			let result = indexer_backend.filter_logs(
-				test_filter.from_block,
-				test_filter.to_block,
-				test_filter.addresses,
-				test_filter.topics
-			).await;
-			assert!(result.is_ok());
-			assert_eq!(result.unwrap(), test_filter.expected_result);
+		TestData {
+			alice,
+			bob,
+			topics_a,
+			topics_b,
+			topics_c,
+			topics_d,
+			substrate_hash_1,
+			substrate_hash_2,
+			substrate_hash_3,
+			backend: indexer_backend,
 		}
+	}
+
+	async fn run_test_case(
+		backend: super::Backend<OpaqueBlock>,
+		test_case: &TestFilter,
+	) -> Result<Vec<FilteredLog>, String> {
+		backend
+			.filter_logs(
+				test_case.from_block,
+				test_case.to_block,
+				test_case.addresses.clone(),
+				test_case.topics.clone(),
+			)
+			.await
+	}
+
+	#[tokio::test]
+	async fn genesis_works() {
+		let TestData { backend, .. } = prepare().await;
+		let filter = TestFilter {
+			from_block: 0,
+			to_block: 0,
+			addresses: vec![],
+			topics: vec![],
+			expected_result: vec![],
+		};
+		let result = run_test_case(backend, &filter)
+			.await
+			.expect("run test case");
+		assert_eq!(result, filter.expected_result);
+	}
+
+	#[tokio::test]
+	async fn unsanitized_input_works() {
+		let TestData { backend, .. } = prepare().await;
+		let filter = TestFilter {
+			from_block: 0,
+			to_block: 0,
+			addresses: vec![],
+			topics: vec![vec![None]],
+			expected_result: vec![],
+		};
+		let result = run_test_case(backend, &filter)
+			.await
+			.expect("run test case");
+		assert_eq!(result, filter.expected_result);
+	}
+
+	#[tokio::test]
+	async fn block_range_works() {
+		let TestData {
+			backend,
+			substrate_hash_1,
+			substrate_hash_2,
+			..
+		} = prepare().await;
+		let filter = TestFilter {
+			from_block: 0,
+			to_block: 2,
+			addresses: vec![],
+			topics: vec![],
+			expected_result: vec![
+				(substrate_hash_1, 0, 0).into(),
+				(substrate_hash_1, 0, 1).into(),
+				(substrate_hash_1, 0, 2).into(),
+				(substrate_hash_2, 0, 0).into(),
+				(substrate_hash_2, 0, 1).into(),
+				(substrate_hash_2, 0, 2).into(),
+			],
+		};
+		let result = run_test_case(backend, &filter)
+			.await
+			.expect("run test case");
+		assert_eq!(result, filter.expected_result);
+	}
+
+	#[tokio::test]
+	async fn address_filter_works() {
+		let TestData {
+			backend,
+			alice,
+			substrate_hash_1,
+			..
+		} = prepare().await;
+		let filter = TestFilter {
+			from_block: 0,
+			to_block: 3,
+			addresses: vec![alice],
+			topics: vec![],
+			expected_result: vec![
+				(substrate_hash_1, 0, 0).into(),
+				(substrate_hash_1, 0, 1).into(),
+				(substrate_hash_1, 0, 2).into(),
+			],
+		};
+		let result = run_test_case(backend, &filter)
+			.await
+			.expect("run test case");
+		assert_eq!(result, filter.expected_result);
+	}
+
+	#[tokio::test]
+	async fn topic_filter_works() {
+		let TestData {
+			backend,
+			topics_d,
+			substrate_hash_1,
+			substrate_hash_2,
+			substrate_hash_3,
+			..
+		} = prepare().await;
+		let filter = TestFilter {
+			from_block: 0,
+			to_block: 3,
+			addresses: vec![],
+			topics: vec![vec![Some(topics_d)]],
+			expected_result: vec![
+				(substrate_hash_1, 0, 1).into(),
+				(substrate_hash_2, 0, 1).into(),
+				(substrate_hash_3, 0, 1).into(),
+			],
+		};
+		let result = run_test_case(backend, &filter)
+			.await
+			.expect("run test case");
+		assert_eq!(result, filter.expected_result);
+	}
+
+	#[tokio::test]
+	// Test filter that includes one address and one topic.
+	async fn multi_filter_one_one_works() {
+		let TestData {
+			backend,
+			bob,
+			topics_b,
+			substrate_hash_2,
+			substrate_hash_3,
+			..
+		} = prepare().await;
+		let filter = TestFilter {
+			from_block: 0,
+			to_block: 3,
+			addresses: vec![bob],
+			topics: vec![vec![Some(topics_b)]],
+			expected_result: vec![
+				(substrate_hash_2, 0, 2).into(),
+				(substrate_hash_3, 0, 2).into(),
+			],
+		};
+		let result = run_test_case(backend, &filter)
+			.await
+			.expect("run test case");
+		assert_eq!(result, filter.expected_result);
+	}
+
+	#[tokio::test]
+	// Test filter that includes many addresses and one topic.
+	async fn multi_filter_many_one_works() {
+		let TestData {
+			backend,
+			alice,
+			bob,
+			topics_b,
+			substrate_hash_1,
+			substrate_hash_2,
+			substrate_hash_3,
+			..
+		} = prepare().await;
+		let filter = TestFilter {
+			from_block: 0,
+			to_block: 3,
+			addresses: vec![alice, bob],
+			topics: vec![vec![Some(topics_b)]],
+			expected_result: vec![
+				(substrate_hash_1, 0, 2).into(),
+				(substrate_hash_2, 0, 2).into(),
+				(substrate_hash_3, 0, 2).into(),
+			],
+		};
+		let result = run_test_case(backend, &filter)
+			.await
+			.expect("run test case");
+		assert_eq!(result, filter.expected_result);
+	}
+
+	#[tokio::test]
+	// Test filter that includes many addresses and many topics.
+	async fn multi_filter_many_many_works() {
+		let TestData {
+			backend,
+			alice,
+			bob,
+			topics_a,
+			topics_b,
+			substrate_hash_1,
+			substrate_hash_2,
+			substrate_hash_3,
+			..
+		} = prepare().await;
+		let filter = TestFilter {
+			from_block: 0,
+			to_block: 3,
+			addresses: vec![alice, bob],
+			topics: vec![vec![Some(topics_a), Some(topics_b)]],
+			expected_result: vec![
+				(substrate_hash_1, 0, 0).into(),
+				(substrate_hash_2, 0, 0).into(),
+				(substrate_hash_3, 0, 0).into(),
+			],
+		};
+		let result = run_test_case(backend, &filter)
+			.await
+			.expect("run test case");
+		assert_eq!(result, filter.expected_result);
+	}
+
+	#[tokio::test]
+	// Test filter that includes topic wildcards.
+	async fn filter_with_wildcards_works() {
+		let TestData {
+			backend,
+			alice,
+			bob,
+			topics_d,
+			topics_b,
+			substrate_hash_1,
+			..
+		} = prepare().await;
+		let filter = TestFilter {
+			from_block: 0,
+			to_block: 1,
+			addresses: vec![alice, bob],
+			topics: vec![vec![Some(topics_d), None, Some(topics_b)]],
+			expected_result: vec![(substrate_hash_1, 0, 1).into()],
+		};
+		let result = run_test_case(backend, &filter)
+			.await
+			.expect("run test case");
+		assert_eq!(result, filter.expected_result);
+	}
+
+	#[tokio::test]
+	// Test filter that includes topic subsets.
+	async fn filter_with_multiple_topic_subsets_works() {
+		let TestData {
+			backend,
+			topics_a,
+			topics_d,
+			substrate_hash_1,
+			substrate_hash_2,
+			substrate_hash_3,
+			..
+		} = prepare().await;
+		let filter = TestFilter {
+			from_block: 0,
+			to_block: 3,
+			addresses: vec![],
+			topics: vec![
+				vec![Some(topics_a)],
+				vec![Some(topics_d)],
+				vec![Some(topics_d)],
+			],
+			expected_result: vec![
+				(substrate_hash_1, 0, 0).into(),
+				(substrate_hash_1, 0, 1).into(),
+				(substrate_hash_2, 0, 0).into(),
+				(substrate_hash_2, 0, 1).into(),
+				(substrate_hash_3, 0, 0).into(),
+				(substrate_hash_3, 0, 1).into(),
+			],
+		};
+		let result = run_test_case(backend, &filter)
+			.await
+			.expect("run test case");
+		assert_eq!(result, filter.expected_result);
+	}
+
+	#[tokio::test]
+	// Test filter that includes topic subsets and wildcards.
+	async fn filter_with_multiple_topic_subsets_and_wildcards_works() {
+		let TestData {
+			backend,
+			bob,
+			topics_b,
+			topics_c,
+			substrate_hash_2,
+			substrate_hash_3,
+			..
+		} = prepare().await;
+		let filter = TestFilter {
+			from_block: 0,
+			to_block: 3,
+			addresses: vec![bob],
+			topics: vec![
+				vec![None, None, Some(topics_b)],
+				vec![None, None, None, Some(topics_c)],
+			],
+			expected_result: vec![
+				(substrate_hash_2, 0, 1).into(),
+				(substrate_hash_2, 0, 2).into(),
+				(substrate_hash_3, 0, 1).into(),
+				(substrate_hash_3, 0, 2).into(),
+			],
+		};
+		let result = run_test_case(backend, &filter)
+			.await
+			.expect("run test case");
+		assert_eq!(result, filter.expected_result);
 	}
 }

@@ -50,7 +50,11 @@ where
 	C::Api: EthereumRuntimeRPCApi<B>,
 	C: sp_blockchain::HeaderBackend<B>,
 {
-	pub fn new(cmd: &'a FrontierDbCmd, client: Arc<C>, backend: Arc<fc_db::kv::Backend<B>>) -> Self {
+	pub fn new(
+		cmd: &'a FrontierDbCmd,
+		client: Arc<C>,
+		backend: Arc<fc_db::kv::Backend<B>>,
+	) -> Self {
 		Self {
 			cmd,
 			client,

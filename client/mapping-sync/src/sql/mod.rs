@@ -213,7 +213,8 @@ mod test {
 	use codec::Encode;
 	use fc_rpc::{SchemaV3Override, StorageOverride};
 	use fp_storage::{
-		EthereumStorageSchema, ETHEREUM_CURRENT_RECEIPTS, PALLET_ETHEREUM, PALLET_ETHEREUM_SCHEMA, OverrideHandle
+		EthereumStorageSchema, OverrideHandle, ETHEREUM_CURRENT_RECEIPTS, PALLET_ETHEREUM,
+		PALLET_ETHEREUM_SCHEMA,
 	};
 	use futures::executor;
 	use sc_block_builder::BlockBuilderProvider;
@@ -243,10 +244,8 @@ mod test {
 		// Backend
 		let backend = builder.backend();
 		// Client
-		let (client, _) = builder
-			.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(
-				None,
-			);
+		let (client, _) =
+			builder.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(None);
 		let mut client = Arc::new(client);
 		// Overrides
 		let mut overrides_map = BTreeMap::new();
@@ -425,10 +424,8 @@ mod test {
 		// Backend
 		let backend = builder.backend();
 		// Client
-		let (client, _) = builder
-			.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(
-				None,
-			);
+		let (client, _) =
+			builder.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(None);
 		let mut client = Arc::new(client);
 		// Overrides
 		let mut overrides_map = BTreeMap::new();
