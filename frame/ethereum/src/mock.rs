@@ -166,11 +166,13 @@ impl pallet_evm::Config for Test {
 	type OnChargeTransaction = ();
 	type FindAuthor = FindAuthorTruncated;
 	type BlockHashMapping = crate::EthereumBlockHashMapping<Self>;
+	type HandleTxValidation = ();
 }
 
 impl crate::Config for Test {
 	type Event = Event;
 	type StateRoot = IntermediateStateRoot<Self>;
+	type HandleTxValidation = ();
 }
 
 impl fp_self_contained::SelfContainedCall for Call {

@@ -803,7 +803,6 @@ impl<T: Config> Pallet<T> {
 		// TODO: switch to InvalidEvmTransactionError
 		.map_err(|e| TransactionValidityError::Invalid(InvalidTransaction::Payment))?;
 
-
 		Ok(())
 	}
 
