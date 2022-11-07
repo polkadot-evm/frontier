@@ -474,7 +474,7 @@ mod tests {
 			nonce: U256::from(1u8),
 		};
 		let test = transaction_nonce_high();
-		let res = <() as HandleTxValidation<TestError>>::with_chain_id(&test);
+		let res = <() as HandleTxValidation<TestError>>::validate_in_block_for(&test, &who);
 		assert!(res.is_err());
 	}
 
@@ -492,7 +492,7 @@ mod tests {
 		assert!(res.is_err());
 		assert_eq!(res.unwrap_err(), TestError::GasLimitTooLow);
 		// Block
-		let res = <() as HandleTxValidation<TestError>>::with_chain_id(&test);
+		let res = <() as HandleTxValidation<TestError>>::validate_in_block_for(&test, &who);
 
 		assert!(res.is_err());
 		assert_eq!(res.unwrap_err(), TestError::GasLimitTooLow);

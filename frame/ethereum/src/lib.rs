@@ -135,7 +135,7 @@ where
 
 			Some(Pallet::<T>::validate_transaction_in_block(
 				*origin,
-				transaction,
+				transaction, 
 			))
 		} else {
 			None
@@ -186,7 +186,7 @@ pub mod pallet {
 		/// How Ethereum state root is calculated.
 		type StateRoot: Get<H256>;
 
-		type HandleTxValidation: HandleTxValidation<Error<Self>>;
+		type HandleTxValidation: HandleTxValidation<InvalidTransactionWrapper>;
 	}
 
 	impl<T: Config> From<InvalidEvmTransactionError> for Error<T> {
@@ -477,8 +477,9 @@ impl<T: Config> Pallet<T> {
 		let (who, _) = pallet_evm::Pallet::<T>::account_basic(&origin);
 
 		// TODO: Should probably have InvalidTransactionError argument
-		let evm_config = CheckEvmTransaction::<Error<T>>::new(
-			CheckEvmTransactionConfig {
+		// let evm_config = CheckEvmTransaction::<Error<T>>::new(
+			let evm_config = CheckEvmTransaction::<InvalidTransactionWrapper>::new(
+				CheckEvmTransactionConfig {
 				evm_config: T::config(),
 				block_gas_limit: T::BlockGasLimit::get(),
 				base_fee,
@@ -492,7 +493,7 @@ impl<T: Config> Pallet<T> {
 			.and_then(|_| <T as pallet::Config>::HandleTxValidation::with_chain_id(&evm_config))
 			.and_then(|_| <T as pallet::Config>::HandleTxValidation::with_base_fee(&evm_config))
 			.and_then(|_| <T as pallet::Config>::HandleTxValidation::with_balance_for(&evm_config, &who))
-			.map_err(|_| TransactionValidityError::Invalid(InvalidTransaction::Payment))?;
+			.map_err(|e| e.0)?;
 
 		let priority = match (
 			transaction_data.gas_price,
@@ -786,7 +787,7 @@ impl<T: Config> Pallet<T> {
 		let (base_fee, _) = T::FeeCalculator::min_gas_price();
 		let (who, _) = pallet_evm::Pallet::<T>::account_basic(&origin);
 
-		let evm_config = CheckEvmTransaction::<Error<T>>::new(
+		let evm_config = CheckEvmTransaction::<InvalidTransactionWrapper>::new(
 			CheckEvmTransactionConfig {
 				evm_config: T::config(),
 				block_gas_limit: T::BlockGasLimit::get(),
@@ -798,11 +799,10 @@ impl<T: Config> Pallet<T> {
 		);
 
 		<T as pallet::Config>::HandleTxValidation::validate_in_block_for(&evm_config, &who)
-		.and_then(|_| <T as pallet::Config>::HandleTxValidation::with_base_fee(&evm_config))
-		.and_then(|_| <T as pallet::Config>::HandleTxValidation::with_balance_for(&evm_config, &who))
-		// TODO: switch to InvalidEvmTransactionError
-		.map_err(|e| TransactionValidityError::Invalid(InvalidTransaction::Payment))?;
-
+			.and_then(|_| <T as pallet::Config>::HandleTxValidation::with_chain_id(&evm_config))
+			.and_then(|_| <T as pallet::Config>::HandleTxValidation::with_base_fee(&evm_config))
+			.and_then(|_| <T as pallet::Config>::HandleTxValidation::with_balance_for(&evm_config, &who))
+			.map_err(|e| TransactionValidityError::Invalid(e.0))?;
 		Ok(())
 	}
 
