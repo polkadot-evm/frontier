@@ -231,6 +231,7 @@ where
 		};
 
 		let client = Arc::clone(&self.client);
+		let backend = Arc::clone(&self.backend);
 		let block_data_cache = Arc::clone(&self.block_data_cache);
 		let max_past_logs = self.max_past_logs;
 
@@ -262,16 +263,30 @@ where
 				current_number,
 			} => {
 				let mut ret: Vec<Log> = Vec::new();
-				let _ = filter_range_logs(
-					client.as_ref(),
-					&block_data_cache,
-					&mut ret,
-					max_past_logs,
-					&filter,
-					from_number,
-					current_number,
-				)
-				.await?;
+				if backend.is_indexed() {
+					let _ = filter_range_logs_indexed(
+						client.as_ref(),
+						backend.as_ref(),
+						&block_data_cache,
+						&mut ret,
+						max_past_logs,
+						&filter,
+						from_number,
+						current_number,
+					)
+					.await?;
+				} else {
+					let _ = filter_range_logs(
+						client.as_ref(),
+						&block_data_cache,
+						&mut ret,
+						max_past_logs,
+						&filter,
+						from_number,
+						current_number,
+					)
+					.await?;
+				}
 
 				Ok(FilterChanges::Logs(ret))
 			}
@@ -303,6 +318,7 @@ where
 		})();
 
 		let client = Arc::clone(&self.client);
+		let backend = Arc::clone(&self.backend);
 		let block_data_cache = Arc::clone(&self.block_data_cache);
 		let max_past_logs = self.max_past_logs;
 
@@ -326,16 +342,30 @@ where
 			.unwrap_or(best_number);
 
 		let mut ret: Vec<Log> = Vec::new();
-		let _ = filter_range_logs(
-			client.as_ref(),
-			&block_data_cache,
-			&mut ret,
-			max_past_logs,
-			&filter,
-			from_number,
-			current_number,
-		)
-		.await?;
+		if backend.is_indexed() {
+			let _ = filter_range_logs_indexed(
+				client.as_ref(),
+				backend.as_ref(),
+				&block_data_cache,
+				&mut ret,
+				max_past_logs,
+				&filter,
+				from_number,
+				current_number,
+			)
+			.await?;
+		} else {
+			let _ = filter_range_logs(
+				client.as_ref(),
+				&block_data_cache,
+				&mut ret,
+				max_past_logs,
+				&filter,
+				from_number,
+				current_number,
+			)
+			.await?;
+		}
 		Ok(ret)
 	}
 
@@ -406,19 +436,159 @@ where
 				.map(|s| s.unique_saturated_into())
 				.unwrap_or(best_number);
 
-			let _ = filter_range_logs(
-				client.as_ref(),
-				&block_data_cache,
-				&mut ret,
-				max_past_logs,
-				&filter,
-				from_number,
-				current_number,
-			)
-			.await?;
+			if backend.is_indexed() {
+				let _ = filter_range_logs_indexed(
+					client.as_ref(),
+					backend.as_ref(),
+					&block_data_cache,
+					&mut ret,
+					max_past_logs,
+					&filter,
+					from_number,
+					current_number,
+				)
+				.await?;
+			} else {
+				let _ = filter_range_logs(
+					client.as_ref(),
+					&block_data_cache,
+					&mut ret,
+					max_past_logs,
+					&filter,
+					from_number,
+					current_number,
+				)
+				.await?;
+			}
 		}
 		Ok(ret)
 	}
+}
+
+async fn filter_range_logs_indexed<B: BlockT, C, BE>(
+	client: &C,
+	backend: &(dyn fc_db::BackendReader<B> + Send + Sync),
+	block_data_cache: &EthBlockDataCacheTask<B>,
+	ret: &mut Vec<Log>,
+	max_past_logs: u32,
+	filter: &Filter,
+	from: NumberFor<B>,
+	to: NumberFor<B>,
+) -> Result<()>
+where
+	B: BlockT<Hash = H256> + Send + Sync + 'static,
+	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
+	C: HeaderBackend<B> + Send + Sync + 'static,
+	C::Api: EthereumRuntimeRPCApi<B>,
+	BE: Backend<B> + 'static,
+	BE::State: StateBackend<BlakeTwo256>,
+{
+	// Max request duration of 10 seconds.
+	let max_duration = time::Duration::from_secs(10);
+	let begin_request = time::Instant::now();
+
+	let topics_input = if filter.topics.is_some() {
+		let filtered_params = FilteredParams::new(Some(filter.clone()));
+		Some(filtered_params.flat_topics)
+	} else {
+		None
+	};
+
+	// Normalize filter data
+	let addresses = match &filter.address {
+		Some(VariadicValue::Single(item)) => vec![item.clone()],
+		Some(VariadicValue::Multiple(items)) => items.clone(),
+		_ => vec![],
+	};
+	let topics = topics_input
+		.unwrap_or_default()
+		.iter()
+		.map(|flat| match flat {
+			VariadicValue::Single(item) => vec![item.clone()],
+			VariadicValue::Multiple(items) => items.clone(),
+			_ => vec![],
+		})
+		.collect::<Vec<Vec<Option<H256>>>>();
+
+	if let Ok(logs) = backend
+		.filter_logs(
+			UniqueSaturatedInto::<u64>::unique_saturated_into(from),
+			UniqueSaturatedInto::<u64>::unique_saturated_into(to),
+			addresses,
+			topics,
+		)
+		.await
+	{
+		use std::collections::BTreeMap;
+
+		let mut statuses_cache: BTreeMap<H256, Option<Vec<TransactionStatus>>> = BTreeMap::new();
+
+		for log in logs.iter() {
+			let id = BlockId::Hash(log.substrate_block_hash);
+			let substrate_hash = client
+				.expect_block_hash_from_id(&id)
+				.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
+
+			let schema = log.ethereum_storage_schema;
+			let ethereum_block_hash = log.ethereum_block_hash;
+			let block_number = log.block_number;
+			let db_transaction_index = log.transaction_index;
+			let db_log_index = log.log_index;
+
+			let statuses = if let Some(statuses) = statuses_cache.get(&log.substrate_block_hash) {
+				statuses.clone()
+			} else {
+				let statuses = block_data_cache
+					.current_transaction_statuses(schema, substrate_hash)
+					.await;
+				statuses_cache.insert(log.substrate_block_hash, statuses.clone());
+				statuses
+			};
+			if let Some(statuses) = statuses {
+				let mut block_log_index: u32 = 0;
+				for status in statuses.iter() {
+					let logs = status.logs.clone();
+					let mut transaction_log_index: u32 = 0;
+					let transaction_hash = status.transaction_hash;
+					let transaction_index = status.transaction_index;
+					for ethereum_log in logs {
+						if transaction_index == db_transaction_index
+							&& transaction_log_index == db_log_index
+						{
+							ret.push(Log {
+								address: ethereum_log.address,
+								topics: ethereum_log.topics.clone(),
+								data: Bytes(ethereum_log.data.clone()),
+								block_hash: Some(ethereum_block_hash),
+								block_number: Some(U256::from(block_number)),
+								transaction_hash: Some(transaction_hash),
+								transaction_index: Some(U256::from(transaction_index)),
+								log_index: Some(U256::from(block_log_index)),
+								transaction_log_index: Some(U256::from(transaction_log_index)),
+								removed: false,
+							});
+						}
+						transaction_log_index += 1;
+						block_log_index += 1;
+					}
+				}
+			}
+			// Check for restrictions
+			if ret.len() as u32 > max_past_logs {
+				return Err(internal_err(format!(
+					"query returned more than {} results",
+					max_past_logs
+				)));
+			}
+			if begin_request.elapsed() > max_duration {
+				return Err(internal_err(format!(
+					"query timeout of {} seconds exceeded",
+					max_duration.as_secs()
+				)));
+			}
+		}
+	}
+	return Ok(());
 }
 
 async fn filter_range_logs<B: BlockT, C, BE>(

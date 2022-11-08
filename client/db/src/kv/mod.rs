@@ -92,6 +92,10 @@ impl<Block: BlockT> crate::BackendReader<Block> for Backend<Block> {
 		// KeyValue db does not index logs
 		unimplemented!();
 	}
+
+	fn is_indexed(&self) -> bool {
+		false
+	}
 }
 
 /// Returns the frontier database directory.

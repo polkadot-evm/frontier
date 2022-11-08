@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use codec::Decode;
+use codec::{Decode, Encode};
 use fp_consensus::FindLogError;
 use fp_rpc::EthereumRuntimeRPCApi;
 use fp_storage::{EthereumStorageSchema, OverrideHandle, PALLET_ETHEREUM_SCHEMA};
@@ -130,14 +130,17 @@ where
 
 				let ethereum_block_hash = ethereum_block.header.hash().as_bytes().to_owned();
 				let substrate_block_hash = genesis_header.hash().as_bytes().to_owned();
+				let schema = Self::onchain_storage_schema(client.as_ref(), id).encode();
 
 				let _ = sqlx::query!(
 					"INSERT OR IGNORE INTO blocks(
 						ethereum_block_hash,
-						substrate_block_hash)
-					VALUES (?, ?)",
+						substrate_block_hash,
+						ethereum_storage_schema)
+					VALUES (?, ?, ?)",
 					ethereum_block_hash,
 					substrate_block_hash,
+					schema,
 				)
 				.execute(self.pool())
 				.await?;
@@ -166,13 +169,19 @@ where
 						let post_hashes = log.into_hashes();
 						let ethereum_block_hash = post_hashes.block_hash.as_bytes().to_owned();
 						let substrate_block_hash = header.hash().as_bytes().to_owned();
+
+						let id = BlockId::Hash(header.hash());
+						let schema = Self::onchain_storage_schema(client.as_ref(), id).encode();
+
 						let _ = sqlx::query!(
 							"INSERT OR IGNORE INTO blocks(
 								ethereum_block_hash,
-								substrate_block_hash)
-							VALUES (?, ?)",
+								substrate_block_hash,
+								ethereum_storage_schema)
+							VALUES (?, ?, ?)",
 							ethereum_block_hash,
 							substrate_block_hash,
+							schema,
 						)
 						.execute(&mut tx)
 						.await?;
@@ -438,6 +447,7 @@ where
                 id INTEGER PRIMARY KEY,
                 ethereum_block_hash BLOB NOT NULL,
                 substrate_block_hash BLOB NOT NULL,
+                ethereum_storage_schema BLOB NOT NULL,
 				UNIQUE (
 					ethereum_block_hash,
                     substrate_block_hash
@@ -594,8 +604,20 @@ impl<Block: BlockT<Hash = H256>> crate::BackendReader<Block> for Backend<Block> 
 				out
 			}
 		};
-		let mut query_builder: QueryBuilder<Sqlite> =
-			QueryBuilder::new("SELECT substrate_block_hash, transaction_index, log_index FROM logs WHERE block_number BETWEEN ");
+		let mut query_builder: QueryBuilder<Sqlite> = QueryBuilder::new(
+			"
+			SELECT
+				A.substrate_block_hash,
+				B.ethereum_block_hash,
+				A.block_number,
+				B.ethereum_storage_schema,
+				A.transaction_index,
+				A.log_index
+			FROM logs AS A 
+			INNER JOIN blocks AS B 
+			ON A.substrate_block_hash = B.substrate_block_hash 
+			WHERE A.block_number BETWEEN ",
+		);
 		// Bind `from` and `to` block range
 		let mut block_number = query_builder.separated(" AND ");
 		block_number.push_bind(from_block as i64);
@@ -657,7 +679,7 @@ impl<Block: BlockT<Hash = H256>> crate::BackendReader<Block> for Backend<Block> 
 		}
 		query_builder.push(
 			"
-			GROUP BY substrate_block_hash, transaction_index, log_index
+			GROUP BY A.substrate_block_hash, transaction_index, log_index
 			ORDER BY block_number ASC, transaction_index ASC, log_index ASC
 		",
 		);
@@ -669,14 +691,31 @@ impl<Block: BlockT<Hash = H256>> crate::BackendReader<Block> for Backend<Block> 
 		match query.fetch_all(self.pool()).await {
 			Ok(result) => {
 				for row in result.iter() {
+					// Substrate block hash
 					let substrate_block_hash =
 						H256::from_slice(&row.try_get::<Vec<u8>, _>(0).unwrap_or_default()[..]);
-					let transaction_index = row.try_get::<i32, _>(1).unwrap_or_default();
-					let log_index = row.try_get::<i32, _>(2).unwrap_or_default();
+					// Ethereum block hash
+					let ethereum_block_hash =
+						H256::from_slice(&row.try_get::<Vec<u8>, _>(1).unwrap_or_default()[..]);
+					// Block number
+					let block_number = row.try_get::<i32, _>(2).unwrap_or_default() as u32;
+					// Ethereum storage schema
+					let ethereum_storage_schema: EthereumStorageSchema =
+						Decode::decode(&mut &row.try_get::<Vec<u8>, _>(3).unwrap_or_default()[..])
+							.map_err(|_| {
+								"Cannot decode EthereumStorageSchema for block".to_string()
+							})?;
+					// Transaction index
+					let transaction_index = row.try_get::<i32, _>(4).unwrap_or_default() as u32;
+					// Log index
+					let log_index = row.try_get::<i32, _>(5).unwrap_or_default() as u32;
 					out.push(FilteredLog {
 						substrate_block_hash,
-						transaction_index: transaction_index as usize,
-						log_index: log_index as usize,
+						ethereum_block_hash,
+						block_number,
+						ethereum_storage_schema,
+						transaction_index,
+						log_index,
 					});
 				}
 			}
@@ -691,6 +730,10 @@ impl<Block: BlockT<Hash = H256>> crate::BackendReader<Block> for Backend<Block> 
 		};
 
 		Ok(out)
+	}
+
+	fn is_indexed(&self) -> bool {
+		true
 	}
 }
 
@@ -736,20 +779,25 @@ mod test {
 		pub substrate_hash_1: H256,
 		pub substrate_hash_2: H256,
 		pub substrate_hash_3: H256,
+		pub ethereum_hash_1: H256,
+		pub ethereum_hash_2: H256,
+		pub ethereum_hash_3: H256,
 		pub backend: super::Backend<OpaqueBlock>,
 	}
 
 	// From `(substrate_block_hash, transaction_index, log_index)` to FilteredLog
-	impl From<(H256, usize, usize)> for FilteredLog {
-		fn from(values: (H256, usize, usize)) -> Self {
+	impl From<(H256, H256, u32, u32, u32)> for FilteredLog {
+		fn from(values: (H256, H256, u32, u32, u32)) -> Self {
 			Self {
 				substrate_block_hash: values.0,
-				transaction_index: values.1,
-				log_index: values.2,
+				ethereum_block_hash: values.1,
+				block_number: values.2,
+				ethereum_storage_schema: EthereumStorageSchema::V3,
+				transaction_index: values.3,
+				log_index: values.4,
 			}
 		}
 	}
-
 	async fn prepare() -> TestData {
 		let tmp = tempdir().expect("create a temporary directory");
 		// Initialize storage with schema V3
@@ -791,7 +839,6 @@ mod test {
 		.expect("indexer pool to be created");
 
 		// Prepare test db data
-
 		// Addresses
 		let alice = H160::random();
 		let bob = H160::random();
@@ -804,8 +851,40 @@ mod test {
 		let substrate_hash_1 = H256::random();
 		let substrate_hash_2 = H256::random();
 		let substrate_hash_3 = H256::random();
+		// Ethereum block hashes
+		let ethereum_hash_1 = H256::random();
+		let ethereum_hash_2 = H256::random();
+		let ethereum_hash_3 = H256::random();
+		// Ethereum storage schema
+		let ethereum_storage_schema = EthereumStorageSchema::V3;
 
-		let entries = vec![
+		let block_entries = vec![
+			// Block 1
+			(ethereum_hash_1, substrate_hash_1, ethereum_storage_schema),
+			// Block 2
+			(ethereum_hash_2, substrate_hash_2, ethereum_storage_schema),
+			// Block 3
+			(ethereum_hash_3, substrate_hash_3, ethereum_storage_schema),
+		];
+		let mut builder: QueryBuilder<sqlx::Sqlite> = QueryBuilder::new(
+			"INSERT INTO blocks(
+				ethereum_block_hash,
+				substrate_block_hash,
+				ethereum_storage_schema)",
+		);
+		builder.push_values(block_entries, |mut b, entry| {
+			let ethereum_block_hash = entry.0.as_bytes().to_owned();
+			let substrate_block_hash = entry.1.as_bytes().to_owned();
+			let ethereum_storage_schema = entry.2.encode();
+
+			b.push_bind(ethereum_block_hash);
+			b.push_bind(substrate_block_hash);
+			b.push_bind(ethereum_storage_schema);
+		});
+		let query = builder.build();
+		let _ = query.execute(indexer_backend.pool()).await;
+
+		let log_entries = vec![
 			// Block 1
 			(
 				1,
@@ -922,7 +1001,7 @@ mod test {
 				transaction_index,
 				substrate_block_hash)",
 		);
-		builder.push_values(entries, |mut b, entry| {
+		builder.push_values(log_entries, |mut b, entry| {
 			let block_number = entry.0;
 			let address = entry.1.as_bytes().to_owned();
 			let topic_1 = entry.2.as_bytes().to_owned();
@@ -956,6 +1035,9 @@ mod test {
 			substrate_hash_1,
 			substrate_hash_2,
 			substrate_hash_3,
+			ethereum_hash_1,
+			ethereum_hash_2,
+			ethereum_hash_3,
 			backend: indexer_backend,
 		}
 	}
@@ -1012,6 +1094,8 @@ mod test {
 			backend,
 			substrate_hash_1,
 			substrate_hash_2,
+			ethereum_hash_1,
+			ethereum_hash_2,
 			..
 		} = prepare().await;
 		let filter = TestFilter {
@@ -1020,12 +1104,12 @@ mod test {
 			addresses: vec![],
 			topics: vec![],
 			expected_result: vec![
-				(substrate_hash_1, 0, 0).into(),
-				(substrate_hash_1, 0, 1).into(),
-				(substrate_hash_1, 0, 2).into(),
-				(substrate_hash_2, 0, 0).into(),
-				(substrate_hash_2, 0, 1).into(),
-				(substrate_hash_2, 0, 2).into(),
+				(substrate_hash_1, ethereum_hash_1, 1, 0, 0).into(),
+				(substrate_hash_1, ethereum_hash_1, 1, 0, 1).into(),
+				(substrate_hash_1, ethereum_hash_1, 1, 0, 2).into(),
+				(substrate_hash_2, ethereum_hash_2, 2, 0, 0).into(),
+				(substrate_hash_2, ethereum_hash_2, 2, 0, 1).into(),
+				(substrate_hash_2, ethereum_hash_2, 2, 0, 2).into(),
 			],
 		};
 		let result = run_test_case(backend, &filter)
@@ -1040,6 +1124,7 @@ mod test {
 			backend,
 			alice,
 			substrate_hash_1,
+			ethereum_hash_1,
 			..
 		} = prepare().await;
 		let filter = TestFilter {
@@ -1048,9 +1133,9 @@ mod test {
 			addresses: vec![alice],
 			topics: vec![],
 			expected_result: vec![
-				(substrate_hash_1, 0, 0).into(),
-				(substrate_hash_1, 0, 1).into(),
-				(substrate_hash_1, 0, 2).into(),
+				(substrate_hash_1, ethereum_hash_1, 1, 0, 0).into(),
+				(substrate_hash_1, ethereum_hash_1, 1, 0, 1).into(),
+				(substrate_hash_1, ethereum_hash_1, 1, 0, 2).into(),
 			],
 		};
 		let result = run_test_case(backend, &filter)
@@ -1067,6 +1152,9 @@ mod test {
 			substrate_hash_1,
 			substrate_hash_2,
 			substrate_hash_3,
+			ethereum_hash_1,
+			ethereum_hash_2,
+			ethereum_hash_3,
 			..
 		} = prepare().await;
 		let filter = TestFilter {
@@ -1075,9 +1163,9 @@ mod test {
 			addresses: vec![],
 			topics: vec![vec![Some(topics_d)]],
 			expected_result: vec![
-				(substrate_hash_1, 0, 1).into(),
-				(substrate_hash_2, 0, 1).into(),
-				(substrate_hash_3, 0, 1).into(),
+				(substrate_hash_1, ethereum_hash_1, 1, 0, 1).into(),
+				(substrate_hash_2, ethereum_hash_2, 2, 0, 1).into(),
+				(substrate_hash_3, ethereum_hash_3, 3, 0, 1).into(),
 			],
 		};
 		let result = run_test_case(backend, &filter)
@@ -1095,6 +1183,8 @@ mod test {
 			topics_b,
 			substrate_hash_2,
 			substrate_hash_3,
+			ethereum_hash_2,
+			ethereum_hash_3,
 			..
 		} = prepare().await;
 		let filter = TestFilter {
@@ -1103,8 +1193,8 @@ mod test {
 			addresses: vec![bob],
 			topics: vec![vec![Some(topics_b)]],
 			expected_result: vec![
-				(substrate_hash_2, 0, 2).into(),
-				(substrate_hash_3, 0, 2).into(),
+				(substrate_hash_2, ethereum_hash_2, 2, 0, 2).into(),
+				(substrate_hash_3, ethereum_hash_3, 3, 0, 2).into(),
 			],
 		};
 		let result = run_test_case(backend, &filter)
@@ -1124,6 +1214,9 @@ mod test {
 			substrate_hash_1,
 			substrate_hash_2,
 			substrate_hash_3,
+			ethereum_hash_1,
+			ethereum_hash_2,
+			ethereum_hash_3,
 			..
 		} = prepare().await;
 		let filter = TestFilter {
@@ -1132,9 +1225,9 @@ mod test {
 			addresses: vec![alice, bob],
 			topics: vec![vec![Some(topics_b)]],
 			expected_result: vec![
-				(substrate_hash_1, 0, 2).into(),
-				(substrate_hash_2, 0, 2).into(),
-				(substrate_hash_3, 0, 2).into(),
+				(substrate_hash_1, ethereum_hash_1, 1, 0, 2).into(),
+				(substrate_hash_2, ethereum_hash_2, 2, 0, 2).into(),
+				(substrate_hash_3, ethereum_hash_3, 3, 0, 2).into(),
 			],
 		};
 		let result = run_test_case(backend, &filter)
@@ -1155,6 +1248,9 @@ mod test {
 			substrate_hash_1,
 			substrate_hash_2,
 			substrate_hash_3,
+			ethereum_hash_1,
+			ethereum_hash_2,
+			ethereum_hash_3,
 			..
 		} = prepare().await;
 		let filter = TestFilter {
@@ -1163,9 +1259,9 @@ mod test {
 			addresses: vec![alice, bob],
 			topics: vec![vec![Some(topics_a), Some(topics_b)]],
 			expected_result: vec![
-				(substrate_hash_1, 0, 0).into(),
-				(substrate_hash_2, 0, 0).into(),
-				(substrate_hash_3, 0, 0).into(),
+				(substrate_hash_1, ethereum_hash_1, 1, 0, 0).into(),
+				(substrate_hash_2, ethereum_hash_2, 2, 0, 0).into(),
+				(substrate_hash_3, ethereum_hash_3, 3, 0, 0).into(),
 			],
 		};
 		let result = run_test_case(backend, &filter)
@@ -1184,6 +1280,7 @@ mod test {
 			topics_d,
 			topics_b,
 			substrate_hash_1,
+			ethereum_hash_1,
 			..
 		} = prepare().await;
 		let filter = TestFilter {
@@ -1191,7 +1288,7 @@ mod test {
 			to_block: 1,
 			addresses: vec![alice, bob],
 			topics: vec![vec![Some(topics_d), None, Some(topics_b)]],
-			expected_result: vec![(substrate_hash_1, 0, 1).into()],
+			expected_result: vec![(substrate_hash_1, ethereum_hash_1, 1, 0, 1).into()],
 		};
 		let result = run_test_case(backend, &filter)
 			.await
@@ -1209,6 +1306,9 @@ mod test {
 			substrate_hash_1,
 			substrate_hash_2,
 			substrate_hash_3,
+			ethereum_hash_1,
+			ethereum_hash_2,
+			ethereum_hash_3,
 			..
 		} = prepare().await;
 		let filter = TestFilter {
@@ -1221,12 +1321,12 @@ mod test {
 				vec![Some(topics_d)],
 			],
 			expected_result: vec![
-				(substrate_hash_1, 0, 0).into(),
-				(substrate_hash_1, 0, 1).into(),
-				(substrate_hash_2, 0, 0).into(),
-				(substrate_hash_2, 0, 1).into(),
-				(substrate_hash_3, 0, 0).into(),
-				(substrate_hash_3, 0, 1).into(),
+				(substrate_hash_1, ethereum_hash_1, 1, 0, 0).into(),
+				(substrate_hash_1, ethereum_hash_1, 1, 0, 1).into(),
+				(substrate_hash_2, ethereum_hash_2, 2, 0, 0).into(),
+				(substrate_hash_2, ethereum_hash_2, 2, 0, 1).into(),
+				(substrate_hash_3, ethereum_hash_3, 3, 0, 0).into(),
+				(substrate_hash_3, ethereum_hash_3, 3, 0, 1).into(),
 			],
 		};
 		let result = run_test_case(backend, &filter)
@@ -1245,6 +1345,8 @@ mod test {
 			topics_c,
 			substrate_hash_2,
 			substrate_hash_3,
+			ethereum_hash_2,
+			ethereum_hash_3,
 			..
 		} = prepare().await;
 		let filter = TestFilter {
@@ -1256,10 +1358,10 @@ mod test {
 				vec![None, None, None, Some(topics_c)],
 			],
 			expected_result: vec![
-				(substrate_hash_2, 0, 1).into(),
-				(substrate_hash_2, 0, 2).into(),
-				(substrate_hash_3, 0, 1).into(),
-				(substrate_hash_3, 0, 2).into(),
+				(substrate_hash_2, ethereum_hash_2, 2, 0, 1).into(),
+				(substrate_hash_2, ethereum_hash_2, 2, 0, 2).into(),
+				(substrate_hash_3, ethereum_hash_3, 3, 0, 1).into(),
+				(substrate_hash_3, ethereum_hash_3, 3, 0, 2).into(),
 			],
 		};
 		let result = run_test_case(backend, &filter)

@@ -40,8 +40,11 @@ pub struct TransactionMetadata<Block: BlockT> {
 #[derive(Debug, Eq, PartialEq)]
 pub struct FilteredLog {
 	pub substrate_block_hash: H256,
-	pub transaction_index: usize,
-	pub log_index: usize,
+	pub ethereum_block_hash: H256,
+	pub block_number: u32,
+	pub ethereum_storage_schema: fp_storage::EthereumStorageSchema,
+	pub transaction_index: u32,
+	pub log_index: u32,
 }
 
 #[async_trait::async_trait]
@@ -50,10 +53,12 @@ pub trait BackendReader<Block: BlockT> {
 		&self,
 		ethereum_block_hash: &H256,
 	) -> Result<Option<Vec<Block::Hash>>, String>;
+
 	async fn transaction_metadata(
 		&self,
 		ethereum_transaction_hash: &H256,
 	) -> Result<Vec<TransactionMetadata<Block>>, String>;
+
 	async fn filter_logs(
 		&self,
 		from_block: u64,
@@ -61,4 +66,6 @@ pub trait BackendReader<Block: BlockT> {
 		addresses: Vec<sp_core::H160>,
 		topics: Vec<Vec<Option<H256>>>,
 	) -> Result<Vec<FilteredLog>, String>;
+
+	fn is_indexed(&self) -> bool;
 }
