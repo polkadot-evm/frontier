@@ -44,6 +44,8 @@ use crate::{
 
 /// Default JSONRPC error code return by geth
 pub const JSON_RPC_ERROR_DEFAULT: i32 = -32000;
+/// JSONRPC error code for a revertal.
+pub const JSON_RPC_ERROR_REVERT: i32 = 3;
 
 /// Allow to adapt a request for `estimate_gas`.
 /// Can be used to estimate gas of some contracts using a different function
@@ -713,10 +715,15 @@ pub fn error_on_execution_failure(reason: &ExitReason, data: &[u8]) -> Result<()
 			))
 		}
 		ExitReason::Revert(_) => {
+			const OFFSET_START: usize = 4;
 			const LEN_START: usize = 36;
 			const MESSAGE_START: usize = 68;
 
 			let mut message = "VM Exception while processing transaction: revert".to_string();
+			// If error has no selector
+			if data.len() < OFFSET_START {
+				return Err(crate::err(JSON_RPC_ERROR_DEFAULT, message, Some(data)));
+			}
 			// A minimum size of error function selector (4) + offset (32) + string length (32)
 			// should contain a utf-8 encoded revert reason.
 			if data.len() > MESSAGE_START {
@@ -731,7 +738,7 @@ pub fn error_on_execution_failure(reason: &ExitReason, data: &[u8]) -> Result<()
 					}
 				}
 			}
-			Err(crate::internal_err_with_data(message, data))
+			Err(crate::err(JSON_RPC_ERROR_REVERT, message, Some(data)))
 		}
 		ExitReason::Fatal(e) => Err(crate::internal_err_with_data(
 			format!("evm fatal: {:?}", e),
