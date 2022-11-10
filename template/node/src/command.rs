@@ -242,7 +242,6 @@ pub fn run() -> sc_cli::Result<()> {
 				service::new_full(config, &cli)
 					.map_err(sc_cli::Error::Service)
 					.await
-					.map(|r| r)
 					.map_err(Into::into)
 			})
 		}

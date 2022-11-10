@@ -499,7 +499,7 @@ where
 
 	// Normalize filter data
 	let addresses = match &filter.address {
-		Some(VariadicValue::Single(item)) => vec![item.clone()],
+		Some(VariadicValue::Single(item)) => vec![*item],
 		Some(VariadicValue::Multiple(items)) => items.clone(),
 		_ => vec![],
 	};
@@ -507,7 +507,7 @@ where
 		.unwrap_or_default()
 		.iter()
 		.map(|flat| match flat {
-			VariadicValue::Single(item) => vec![item.clone()],
+			VariadicValue::Single(item) => vec![*item],
 			VariadicValue::Multiple(items) => items.clone(),
 			_ => vec![],
 		})
@@ -591,7 +591,7 @@ where
 			}
 		}
 	}
-	return Ok(());
+	Ok(())
 }
 
 async fn filter_range_logs<B: BlockT, C, BE>(

@@ -75,7 +75,7 @@ where
 	let db = kvdb_rocksdb::Database::open(&db_config, &path).map_err(|err| format!("{}", err))?;
 	// write database version only after the database is succesfully opened
 	#[cfg(not(test))]
-	let _ = super::upgrade::update_version(path).map_err(|_| "Cannot update db version".to_string())?;
+	super::upgrade::update_version(path).map_err(|_| "Cannot update db version".to_string())?;
 	return Ok(sp_database::as_database(db));
 }
 
@@ -113,7 +113,7 @@ where
 	let db = parity_db::Db::open_or_create(&config).map_err(|err| format!("{}", err))?;
 	// write database version only after the database is succesfully opened
 	#[cfg(not(test))]
-	let _ = super::upgrade::update_version(path).map_err(|_| "Cannot update db version".to_string())?;
+	super::upgrade::update_version(path).map_err(|_| "Cannot update db version".to_string())?;
 	Ok(Arc::new(super::parity_db_adapter::DbAdapter(db)))
 }
 

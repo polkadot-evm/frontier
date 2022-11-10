@@ -132,7 +132,7 @@ where
 			}
 		}
 	}
-
+	#[allow(clippy::too_many_arguments)]
 	async fn sync_all(
 		leaves: &mut Vec<Block::Hash>,
 		client: Arc<Client>,

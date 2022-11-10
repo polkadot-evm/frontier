@@ -80,7 +80,7 @@ impl<Block: BlockT> crate::BackendReader<Block> for Backend<Block> {
 		ethereum_transaction_hash: &H256,
 	) -> Result<Vec<TransactionMetadata<Block>>, String> {
 		self.mapping()
-			.transaction_metadata(&ethereum_transaction_hash)
+			.transaction_metadata(ethereum_transaction_hash)
 	}
 	async fn filter_logs(
 		&self,

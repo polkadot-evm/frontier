@@ -30,7 +30,7 @@ pub enum Backend<Block: BlockT> {
 	Sql(sql::Backend<Block>),
 }
 
-#[derive(Clone, Encode, Debug, Decode, PartialEq)]
+#[derive(Clone, Encode, Debug, Decode, PartialEq, Eq)]
 pub struct TransactionMetadata<Block: BlockT> {
 	pub block_hash: Block::Hash,
 	pub ethereum_block_hash: H256,

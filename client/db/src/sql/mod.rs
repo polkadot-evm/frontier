@@ -90,8 +90,7 @@ where
 		match config {
 			BackendConfig::Sqlite(config) => {
 				let config = sqlx::sqlite::SqliteConnectOptions::from_str(config.path)?
-					.create_if_missing(config.create_if_missing)
-					.into();
+					.create_if_missing(config.create_if_missing);
 				Ok(config)
 			}
 		}
@@ -321,7 +320,7 @@ where
 	fn spawn_logs_task_inner<Client, BE>(
 		client: Arc<Client>,
 		overrides: Arc<OverrideHandle<Block>>,
-		hashes: &Vec<H256>,
+		hashes: &[H256],
 	) -> Vec<Log>
 	where
 		Client: StorageProvider<Block, BE> + HeaderBackend<Block> + Send + Sync + 'static,
@@ -623,7 +622,7 @@ impl<Block: BlockT<Hash = H256>> crate::BackendReader<Block> for Backend<Block> 
 		block_number.push_bind(from_block as i64);
 		block_number.push_bind(to_block as i64);
 		// Address and topics substatement
-		if filter_groups.len() > 0 {
+		if !filter_groups.is_empty() {
 			query_builder.push(" AND (");
 		}
 		for (i, filter_group) in filter_groups.iter().enumerate() {
@@ -674,7 +673,7 @@ impl<Block: BlockT<Hash = H256>> crate::BackendReader<Block> for Backend<Block> 
 				query_builder.push(" OR ");
 			}
 		}
-		if filter_groups.len() > 0 {
+		if !filter_groups.is_empty() {
 			query_builder.push(")");
 		}
 		query_builder.push(

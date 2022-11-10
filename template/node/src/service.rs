@@ -158,7 +158,7 @@ pub fn new_partial(
 			&db_config_dir(config),
 		)?),
 		BackendType::Sql => {
-			let db_path = &db_config_dir(&config);
+			let db_path = &db_config_dir(config);
 			let backend = futures::executor::block_on(fc_db::sql::Backend::new(
 				fc_db::sql::BackendConfig::Sqlite(fc_db::sql::SqliteBackendConfig {
 					path: Path::new("sqlite:///")
@@ -768,7 +768,7 @@ async fn spawn_frontier_tasks(
 					client.import_notification_stream(),
 					Duration::new(6, 0),
 					client.clone(),
-					backend.clone(),
+					backend,
 					Arc::new(b),
 					3,
 					0,
@@ -783,9 +783,9 @@ async fn spawn_frontier_tasks(
 				None,
 				fc_mapping_sync::sql::SyncWorker::run(
 					client.clone(),
-					backend.clone(),
+					backend,
 					Arc::new(b),
-					client.clone().import_notification_stream(),
+					client.import_notification_stream(),
 					1000,                              // batch size
 					std::time::Duration::from_secs(1), // interval duration
 				),
@@ -809,8 +809,8 @@ async fn spawn_frontier_tasks(
 		"frontier-fee-history",
 		None,
 		EthTask::fee_history_task(
-			client.clone(),
-			overrides.clone(),
+			client,
+			overrides,
 			fee_history_cache,
 			fee_history_cache_limit,
 		),
