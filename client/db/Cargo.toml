@@ -12,12 +12,12 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 async-trait = "0.1"
-futures = "0.3.24"
 ethereum = { version = "0.12.0", features = ["with-codec"] }
+futures = "0.3.24"
 log = "0.4.17"
 parking_lot = "0.12.1"
-sqlx = { version = "0.6", features = [ "runtime-tokio-native-tls", "sqlite", "offline" ] }
-tokio = { version = "1.19", features = [ "macros", "sync" ] }
+sqlx = { version = "0.6", features = ["runtime-tokio-native-tls", "sqlite", "offline"] }
+tokio = { version = "1.19", features = ["macros", "sync"] }
 
 # Parity
 codec = { package = "parity-scale-codec", version = "3.2.1", features = ["derive"] }
@@ -35,18 +35,18 @@ sp-runtime = { version = "6.0.0", git = "https://github.com/paritytech/substrate
 sp-storage = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Frontier
+fp-consensus = { version = "2.0.0-dev", path = "../../primitives/consensus" }
 fp-rpc = { version = "3.0.0-dev", path = "../../primitives/rpc" }
 fp-storage = { version = "2.0.0-dev", path = "../../primitives/storage" }
-fp-consensus = { version = "2.0.0-dev", path = "../../primitives/consensus" }
 
 [features]
 default = ["kvdb-rocksdb", "parity-db"]
 
 [dev-dependencies]
+fc-rpc = { version = "2.0.0-dev", path = "../../client/rpc" }
 futures = "0.3.24"
 sc-block-builder = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-client-db = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", features = ["rocksdb"] }
 sp-consensus = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 substrate-test-runtime-client = { version = "2.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
 tempfile = "3.3.0"
-fc-rpc = { version = "2.0.0-dev", path = "../../client/rpc" }
