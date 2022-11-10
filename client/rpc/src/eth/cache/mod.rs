@@ -239,8 +239,7 @@ impl<B: BlockT> EthBlockDataCacheTask<B> {
 	) -> Option<EthereumBlock> {
 		let (response_tx, response_rx) = oneshot::channel();
 
-		let _ = self
-			.0
+		self.0
 			.send(EthBlockDataCacheMessage::RequestCurrentBlock {
 				block_hash,
 				schema,
@@ -260,8 +259,7 @@ impl<B: BlockT> EthBlockDataCacheTask<B> {
 	) -> Option<Vec<TransactionStatus>> {
 		let (response_tx, response_rx) = oneshot::channel();
 
-		let _ = self
-			.0
+		self.0
 			.send(
 				EthBlockDataCacheMessage::RequestCurrentTransactionStatuses {
 					block_hash,

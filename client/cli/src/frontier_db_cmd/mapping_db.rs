@@ -102,7 +102,7 @@ where
 							ethereum_transaction_hashes: existing_transaction_hashes,
 						};
 
-						let _ = self.backend.mapping().write_hashes(commitment)?;
+						self.backend.mapping().write_hashes(commitment)?;
 					} else {
 						return Err(self.key_not_empty_error(key));
 					}
@@ -161,7 +161,7 @@ where
 							ethereum_transaction_hashes: existing_transaction_hashes,
 						};
 
-						let _ = self.backend.mapping().write_hashes(commitment)?;
+						self.backend.mapping().write_hashes(commitment)?;
 					}
 				}
 				_ => return Err(self.key_value_error(key, value)),

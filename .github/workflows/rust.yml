@@ -20,9 +20,11 @@ jobs:
       uses: actions-rs/toolchain@v1
       with:
         profile: minimal
-        toolchain: nightly-2022-05-02
+        toolchain: nightly-2022-07-25
         target: wasm32-unknown-unknown
         override: true
+    - name: Install protoc
+      uses: arduino/setup-protoc@v1
     - name: Run tests
       run: cargo test --locked --verbose --all
     - name: Ensure benchmarking compiles
@@ -37,9 +39,11 @@ jobs:
       uses: actions-rs/toolchain@v1
       with:
         profile: minimal
-        toolchain: nightly-2022-05-02
+        toolchain: nightly-2022-07-25
         target: wasm32-unknown-unknown
         override: true
+    - name: Install protoc
+      uses: arduino/setup-protoc@v1
     - name: Build manual seal client
       run: |
         cd template/node
@@ -66,10 +70,12 @@ jobs:
       uses: actions-rs/toolchain@v1
       with:
         profile: minimal
-        toolchain: nightly-2022-05-02
+        toolchain: nightly-2022-07-25
         target: wasm32-unknown-unknown
         override: true
         components: rustfmt, clippy
+    - name: Install protoc
+      uses: arduino/setup-protoc@v1
     - name: Check Cargo.toml Format
       run: |
         if taplo --version &> /dev/null; then

@@ -32,9 +32,8 @@ use fp_evm::{
 };
 use frame_support::{
 	codec::{Decode, DecodeLimit as _},
-	dispatch::{Dispatchable, GetDispatchInfo, PostDispatchInfo},
+	dispatch::{DispatchClass, Dispatchable, GetDispatchInfo, Pays, PostDispatchInfo},
 	traits::{ConstU32, Get},
-	weights::{DispatchClass, Pays},
 };
 use pallet_evm::{AddressMapping, GasWeightMapping};
 
@@ -48,8 +47,8 @@ pub struct Dispatch<T, DecodeLimit = ConstU32<8>> {
 impl<T, DecodeLimit> Precompile for Dispatch<T, DecodeLimit>
 where
 	T: pallet_evm::Config,
-	T::Call: Dispatchable<PostInfo = PostDispatchInfo> + GetDispatchInfo + Decode,
-	<T::Call as Dispatchable>::Origin: From<Option<T::AccountId>>,
+	T::RuntimeCall: Dispatchable<PostInfo = PostDispatchInfo> + GetDispatchInfo + Decode,
+	<T::RuntimeCall as Dispatchable>::RuntimeOrigin: From<Option<T::AccountId>>,
 	DecodeLimit: Get<u32>,
 {
 	fn execute(handle: &mut impl PrecompileHandle) -> PrecompileResult {
@@ -57,11 +56,9 @@ where
 		let target_gas = handle.gas_limit();
 		let context = handle.context();
 
-		let call =
-			T::Call::decode_with_depth_limit(DecodeLimit::get(), &mut &*input).map_err(|_| {
-				PrecompileFailure::Error {
-					exit_status: ExitError::Other("decode failed".into()),
-				}
+		let call = T::RuntimeCall::decode_with_depth_limit(DecodeLimit::get(), &mut &*input)
+			.map_err(|_| PrecompileFailure::Error {
+				exit_status: ExitError::Other("decode failed".into()),
 			})?;
 		let info = call.get_dispatch_info();
 
@@ -73,7 +70,8 @@ where
 		}
 
 		if let Some(gas) = target_gas {
-			let valid_weight = info.weight <= T::GasWeightMapping::gas_to_weight(gas, false);
+			let valid_weight =
+				info.weight.ref_time() <= T::GasWeightMapping::gas_to_weight(gas, false).ref_time();
 			if !valid_weight {
 				return Err(PrecompileFailure::Error {
 					exit_status: ExitError::OutOfGas,

@@ -22,7 +22,7 @@ use ethereum_types::{H256, U256};
 use jsonrpsee::core::RpcResult as Result;
 // Substrate
 use sc_client_api::backend::{Backend, StateBackend, StorageProvider};
-use sc_network::ExHashT;
+use sc_network_common::ExHashT;
 use sc_transaction_pool::ChainApi;
 use sp_blockchain::HeaderBackend;
 use sp_core::hashing::keccak_256;

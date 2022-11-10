@@ -26,17 +26,15 @@ function choose_and_bench {
 function bench {
     echo "benchmarking ${1}::${2}"
     WASMTIME_BACKTRACE_DETAILS=1 ${BINARY} benchmark pallet \
-        --chain dev \
+        --chain=dev \
+        --steps=50 \
+        --repeat=20 \
+        --pallet="${1}" \
+        --extrinsic="${2}" \
         --execution=wasm \
         --wasm-execution=compiled \
-        --pallet "${1}" \
-        --extrinsic "${2}" \
-        --steps 32 \
-        --repeat 64 \
-        --template=./benchmarking/frame-weight-template.hbs \
-        --record-proof \
-        --json-file raw.json \
-        --output weights.rs
+        --output=weights.rs \
+        --template=./benchmarking/frame-weight-template.hbs
 }
 
 if  [[ $# -eq 1 && "${1}" == "--help" ]]; then

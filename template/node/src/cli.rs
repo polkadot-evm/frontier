@@ -99,9 +99,14 @@ pub enum Subcommand {
 	Revert(sc_cli::RevertCmd),
 
 	/// Sub-commands concerned with benchmarking.
-	/// The pallet benchmarking moved to the `pallet` sub-command.
+	#[cfg(feature = "runtime-benchmarks")]
 	#[clap(subcommand)]
 	Benchmark(frame_benchmarking_cli::BenchmarkCmd),
+
+	/// Sub-commands concerned with benchmarking.
+	#[cfg(not(feature = "runtime-benchmarks"))]
+	Benchmark,
+
 	/// Db meta columns information.
 	FrontierDb(fc_cli::FrontierDbCmd),
 }

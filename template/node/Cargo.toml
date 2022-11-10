@@ -18,7 +18,7 @@ futures = "0.3.24"
 log = "0.4.17"
 
 # Parity
-codec = { package = "parity-scale-codec", version = "3.1", features = ["derive"] }
+codec = { package = "parity-scale-codec", version = "3.2.1", features = ["derive"] }
 jsonrpsee = { version = "0.15.1", features = ["server", "macros"] }
 
 # Substrate
@@ -41,7 +41,6 @@ sc-transaction-pool-api = { version = "4.0.0-dev", git = "https://github.com/par
 sp-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-block-builder = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-blockchain = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-consensus = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-consensus-aura = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-core = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-finality-grandpa = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -53,8 +52,8 @@ sp-timestamp = { version = "4.0.0-dev", git = "https://github.com/paritytech/sub
 pallet-transaction-payment-rpc = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 substrate-frame-rpc-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 # These dependencies are used for runtime benchmarking
-frame-benchmarking = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-frame-benchmarking-cli = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
+frame-benchmarking = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", optional = true }
+frame-benchmarking-cli = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", optional = true }
 frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 pallet-transaction-payment = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 
@@ -89,4 +88,9 @@ manual-seal = [
 with-rocksdb-weights = ["frontier-template-runtime/with-rocksdb-weights"]
 with-paritydb-weights = ["frontier-template-runtime/with-paritydb-weights"]
 rpc_binary_search_estimate = ["fc-rpc/rpc_binary_search_estimate"]
-runtime-benchmarks = ["frontier-template-runtime/runtime-benchmarks"]
+runtime-benchmarks = [
+	"frame-benchmarking",
+	"frame-benchmarking-cli",
+	"sc-service/runtime-benchmarks",
+	"frontier-template-runtime/runtime-benchmarks",
+]

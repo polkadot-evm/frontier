@@ -20,7 +20,7 @@ sqlx = { version = "0.6", features = [ "runtime-tokio-native-tls", "sqlite", "of
 tokio = { version = "1.19", features = [ "macros", "sync" ] }
 
 # Parity
-codec = { package = "parity-scale-codec", version = "3.0.0", features = ["derive"] }
+codec = { package = "parity-scale-codec", version = "3.2.1", features = ["derive"] }
 kvdb-rocksdb = { version = "0.15.2", optional = true }
 parity-db = { version = "0.3.16", optional = true }
 
