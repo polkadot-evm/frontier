@@ -366,7 +366,7 @@ mod test {
 
 		// Query db
 		let db_logs = sqlx::query(
-			"SELECT 
+			"SELECT
 					block_number,
 					address,
 					topic_1,
@@ -547,7 +547,7 @@ mod test {
 
 		// Query db
 		let db_logs = sqlx::query(
-			"SELECT 
+			"SELECT
 					block_number,
 					address,
 					topic_1,

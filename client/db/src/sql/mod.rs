@@ -247,12 +247,12 @@ where
 				// Update statement returning the substrate block hashes for this batch.
 				let q = format!(
 					"UPDATE sync_status
-                    SET status = 1
-                    WHERE substrate_block_hash IN
-                        (SELECT substrate_block_hash
-                         FROM sync_status
-                         WHERE status = 0
-                         LIMIT {}) RETURNING substrate_block_hash",
+					SET status = 1
+					WHERE substrate_block_hash IN
+						(SELECT substrate_block_hash
+						FROM sync_status
+						WHERE status = 0
+						LIMIT {}) RETURNING substrate_block_hash",
 					batch_size
 				);
 				match sqlx::query(&q).fetch_all(&mut tx).await {
@@ -279,16 +279,16 @@ where
 						for log in logs.iter() {
 							let _ = sqlx::query!(
 								"INSERT OR IGNORE INTO logs(
-							        block_number,
-							        address,
-							        topic_1,
-							        topic_2,
-							        topic_3,
-							        topic_4,
-							        log_index,
-							        transaction_index,
-							        substrate_block_hash)
-							    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+									block_number,
+									address,
+									topic_1,
+									topic_2,
+									topic_3,
+									topic_4,
+									log_index,
+									transaction_index,
+									substrate_block_hash)
+								VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
 								log.block_number,
 								log.address,
 								log.topic_1,
@@ -418,83 +418,83 @@ where
 	async fn create_if_not_exists(pool: &SqlitePool) -> Result<SqliteQueryResult, Error> {
 		sqlx::query(
 			"BEGIN;
-            CREATE TABLE IF NOT EXISTS logs (
-                id INTEGER PRIMARY KEY,
-                block_number INTEGER NOT NULL,
-                address BLOB NOT NULL,
-                topic_1 BLOB NOT NULL,
-                topic_2 BLOB NOT NULL,
-                topic_3 BLOB NOT NULL,
-                topic_4 BLOB NOT NULL,
-                log_index INTEGER NOT NULL,
-                transaction_index INTEGER NOT NULL,
-                substrate_block_hash BLOB NOT NULL,
+			CREATE TABLE IF NOT EXISTS logs (
+				id INTEGER PRIMARY KEY,
+				block_number INTEGER NOT NULL,
+				address BLOB NOT NULL,
+				topic_1 BLOB NOT NULL,
+				topic_2 BLOB NOT NULL,
+				topic_3 BLOB NOT NULL,
+				topic_4 BLOB NOT NULL,
+				log_index INTEGER NOT NULL,
+				transaction_index INTEGER NOT NULL,
+				substrate_block_hash BLOB NOT NULL,
 				UNIQUE (
-                    log_index,
-                    transaction_index,
-                    substrate_block_hash
-                )
-            );
-            CREATE TABLE IF NOT EXISTS sync_status (
-                id INTEGER PRIMARY KEY,
-                substrate_block_hash BLOB NOT NULL,
-                status INTEGER DEFAULT 0 NOT NULL,
+					log_index,
+					transaction_index,
+					substrate_block_hash
+				)
+			);
+			CREATE TABLE IF NOT EXISTS sync_status (
+				id INTEGER PRIMARY KEY,
+				substrate_block_hash BLOB NOT NULL,
+				status INTEGER DEFAULT 0 NOT NULL,
 				UNIQUE (
-                    substrate_block_hash
-                )
-            );
-            CREATE TABLE IF NOT EXISTS blocks (
-                id INTEGER PRIMARY KEY,
-                ethereum_block_hash BLOB NOT NULL,
-                substrate_block_hash BLOB NOT NULL,
-                ethereum_storage_schema BLOB NOT NULL,
+					substrate_block_hash
+				)
+			);
+			CREATE TABLE IF NOT EXISTS blocks (
+				id INTEGER PRIMARY KEY,
+				ethereum_block_hash BLOB NOT NULL,
+				substrate_block_hash BLOB NOT NULL,
+				ethereum_storage_schema BLOB NOT NULL,
 				UNIQUE (
 					ethereum_block_hash,
-                    substrate_block_hash
-                )
-            );
-            CREATE TABLE IF NOT EXISTS transactions (
-                id INTEGER PRIMARY KEY,
-                ethereum_transaction_hash BLOB NOT NULL,
-                substrate_block_hash BLOB NOT NULL,
-                ethereum_block_hash BLOB NOT NULL,
-                ethereum_transaction_index INTEGER NOT NULL,
+					substrate_block_hash
+				)
+			);
+			CREATE TABLE IF NOT EXISTS transactions (
+				id INTEGER PRIMARY KEY,
+				ethereum_transaction_hash BLOB NOT NULL,
+				substrate_block_hash BLOB NOT NULL,
+				ethereum_block_hash BLOB NOT NULL,
+				ethereum_transaction_index INTEGER NOT NULL,
 				UNIQUE (
 					ethereum_transaction_hash,
-                    substrate_block_hash
-                )
-            );
-            CREATE INDEX IF NOT EXISTS block_number_idx ON logs (
-                block_number,
-                address
-            );
-            CREATE INDEX IF NOT EXISTS topic_1_idx ON logs (
-                block_number,
-                topic_1
-            );
-            CREATE INDEX IF NOT EXISTS topic_2_idx ON logs (
-                block_number,
-                topic_2
-            );
-            CREATE INDEX IF NOT EXISTS topic_3_idx ON logs (
-                block_number,
-                topic_3
-            );
-            CREATE INDEX IF NOT EXISTS topic_4_idx ON logs (
-                block_number,
-                topic_4
-            );
-            CREATE INDEX IF NOT EXISTS eth_block_hash_idx ON blocks (
-                ethereum_block_hash
-            );
-            CREATE INDEX IF NOT EXISTS eth_tx_hash_idx ON transactions (
-                ethereum_transaction_hash
-            );
-            CREATE INDEX IF NOT EXISTS eth_tx_hash_2_idx ON transactions (
-                ethereum_block_hash,
+					substrate_block_hash
+				)
+			);
+			CREATE INDEX IF NOT EXISTS block_number_idx ON logs (
+				block_number,
+				address
+			);
+			CREATE INDEX IF NOT EXISTS topic_1_idx ON logs (
+				block_number,
+				topic_1
+			);
+			CREATE INDEX IF NOT EXISTS topic_2_idx ON logs (
+				block_number,
+				topic_2
+			);
+			CREATE INDEX IF NOT EXISTS topic_3_idx ON logs (
+				block_number,
+				topic_3
+			);
+			CREATE INDEX IF NOT EXISTS topic_4_idx ON logs (
+				block_number,
+				topic_4
+			);
+			CREATE INDEX IF NOT EXISTS eth_block_hash_idx ON blocks (
+				ethereum_block_hash
+			);
+			CREATE INDEX IF NOT EXISTS eth_tx_hash_idx ON transactions (
+				ethereum_transaction_hash
+			);
+			CREATE INDEX IF NOT EXISTS eth_tx_hash_2_idx ON transactions (
+				ethereum_block_hash,
 				ethereum_transaction_index
-            );
-            COMMIT;",
+			);
+			COMMIT;",
 		)
 		.execute(pool)
 		.await
@@ -613,9 +613,9 @@ impl<Block: BlockT<Hash = H256>> crate::BackendReader<Block> for Backend<Block> 
 				B.ethereum_storage_schema,
 				A.transaction_index,
 				A.log_index
-			FROM logs AS A 
-			INNER JOIN blocks AS B 
-			ON A.substrate_block_hash = B.substrate_block_hash 
+			FROM logs AS A
+			INNER JOIN blocks AS B
+			ON A.substrate_block_hash = B.substrate_block_hash
 			WHERE A.block_number BETWEEN ",
 		);
 		// Bind `from` and `to` block range

@@ -10,6 +10,16 @@
     },
     "query": "INSERT OR IGNORE INTO blocks(\n\t\t\t\t\t\t\t\tethereum_block_hash,\n\t\t\t\t\t\t\t\tsubstrate_block_hash,\n\t\t\t\t\t\t\t\tethereum_storage_schema)\n\t\t\t\t\t\t\tVALUES (?, ?, ?)"
   },
+  "60aa0661cf99e86feddf0b71a93654ebe8bbe2225cea01390b45312910e862cb": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 9
+      }
+    },
+    "query": "INSERT OR IGNORE INTO logs(\n\t\t\t\t\t\t\t\t\tblock_number,\n\t\t\t\t\t\t\t\t\taddress,\n\t\t\t\t\t\t\t\t\ttopic_1,\n\t\t\t\t\t\t\t\t\ttopic_2,\n\t\t\t\t\t\t\t\t\ttopic_3,\n\t\t\t\t\t\t\t\t\ttopic_4,\n\t\t\t\t\t\t\t\t\tlog_index,\n\t\t\t\t\t\t\t\t\ttransaction_index,\n\t\t\t\t\t\t\t\t\tsubstrate_block_hash)\n\t\t\t\t\t\t\t\tVALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+  },
   "7be2c6176c37c2e3d09227f7feedefaea743b803cf9500e1853354336e5c7214": {
     "describe": {
       "columns": [],
@@ -29,15 +39,5 @@
       }
     },
     "query": "INSERT OR IGNORE INTO blocks(\n\t\t\t\t\t\tethereum_block_hash,\n\t\t\t\t\t\tsubstrate_block_hash,\n\t\t\t\t\t\tethereum_storage_schema)\n\t\t\t\t\tVALUES (?, ?, ?)"
-  },
-  "da7b8e4581c57e46ac27b32e3cc382cee9c6fb15d0a2c3b13f85afea92eac838": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Right": 9
-      }
-    },
-    "query": "INSERT OR IGNORE INTO logs(\n\t\t\t\t\t\t\t        block_number,\n\t\t\t\t\t\t\t        address,\n\t\t\t\t\t\t\t        topic_1,\n\t\t\t\t\t\t\t        topic_2,\n\t\t\t\t\t\t\t        topic_3,\n\t\t\t\t\t\t\t        topic_4,\n\t\t\t\t\t\t\t        log_index,\n\t\t\t\t\t\t\t        transaction_index,\n\t\t\t\t\t\t\t        substrate_block_hash)\n\t\t\t\t\t\t\t    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
   }
 }
