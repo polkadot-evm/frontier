@@ -85,6 +85,7 @@ where
 				});
 		}
 
+		let mut try_create_indexes = true;
 		futures::pin_mut!(import_interval, notifications);
 		loop {
 			futures::select! {
@@ -116,6 +117,17 @@ where
 					import_interval.reset(interval);
 				},
 				notification = notifications.next() => if let Some(notification) = notification {
+					// On first notification try create indexes
+					if try_create_indexes {
+						try_create_indexes = false;
+						let _ = indexer_backend.create_indexes().map_err(|e| {
+							log::error!(
+								target: "frontier-sql",
+								"💔  Cannot create indexes: {}",
+								e,
+							);
+						}).await;
+					}
 					let mut leaves = vec![notification.hash];
 					Self::sync_all(
 						&mut leaves,
