@@ -120,13 +120,17 @@ where
 					// On first notification try create indexes
 					if try_create_indexes {
 						try_create_indexes = false;
-						let _ = indexer_backend.create_indexes().map_err(|e| {
+						if let Ok(_)  = indexer_backend.create_indexes().await {
+							log::debug!(
+								target: "frontier-sql",
+								"✅  Database indexes created"
+							);
+						} else {
 							log::error!(
 								target: "frontier-sql",
-								"💔  Cannot create indexes: {}",
-								e,
+								"❌  Indexes creation failed"
 							);
-						}).await;
+						}
 					}
 					let mut leaves = vec![notification.hash];
 					Self::sync_all(
