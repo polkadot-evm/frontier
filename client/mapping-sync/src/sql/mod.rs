@@ -49,7 +49,8 @@ where
 	) {
 		let mut current_batch: Vec<Block::Hash> = vec![];
 
-		let import_interval = futures_timer::Delay::new(interval);
+		// Always fire the interval future first
+		let import_interval = futures_timer::Delay::new(Duration::from_nanos(1));
 		let backend = substrate_backend.blockchain();
 		let notifications = notifications.fuse();
 
@@ -113,6 +114,7 @@ where
 
 						).await;
 					}
+					// Reset the interval to user-defined Duration
 					import_interval.reset(interval);
 				},
 				notification = notifications.next() => if let Some(notification) = notification {
@@ -177,7 +179,7 @@ where
 		if !current_batch.contains(&hash) && !known_hashes.contains(&hash) {
 			known_hashes.push(hash);
 			if !notified && current_batch.len() < batch_size {
-				log::debug!(
+				log::trace!(
 					target: "frontier-sql",
 					"⤵️  Queued for index {}",
 					hash,
