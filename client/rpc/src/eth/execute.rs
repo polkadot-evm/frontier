@@ -722,7 +722,7 @@ pub fn error_on_execution_failure(reason: &ExitReason, data: &[u8]) -> Result<()
 			let mut message = "VM Exception while processing transaction: revert".to_string();
 			// If error has no selector
 			if data.len() < OFFSET_START {
-				return Err(crate::err(JSON_RPC_ERROR_DEFAULT, message, Some(data)));
+				return Err(crate::err(JSON_RPC_ERROR_REVERT, message, Some(data)));
 			}
 			// A minimum size of error function selector (4) + offset (32) + string length (32)
 			// should contain a utf-8 encoded revert reason.
