@@ -8,7 +8,7 @@ description = "Test vector support for EVM pallet."
 repository = "https://github.com/paritytech/frontier/"
 
 [dependencies]
-evm = { version = "0.36.0", features = ["with-codec"] }
+evm = { version = "0.37.0", features = ["with-codec"] }
 hex = "0.4.3"
 serde = { version = "1.0.101", features = ["derive"] }
 serde_json = "1.0"

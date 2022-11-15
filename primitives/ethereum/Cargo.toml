@@ -11,8 +11,8 @@ repository = "https://github.com/paritytech/frontier/"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-ethereum = { version = "0.12.0", default-features = false, features = ["with-codec"] }
-ethereum-types = { version = "0.13.1", default-features = false }
+ethereum = { version = "0.14.0", default-features = false, features = ["with-codec"] }
+ethereum-types = { version = "0.14", default-features = false }
 fp-evm = { version = "3.0.0-dev", path = "../evm", default-features = false }
 num_enum = { version = "0.5.4", default-features = false }
 
