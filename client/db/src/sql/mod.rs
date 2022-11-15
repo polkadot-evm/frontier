@@ -226,7 +226,7 @@ where
 		tx.commit().await
 	}
 
-	pub fn spawn_logs_task<Client, BE>(&self, client: Arc<Client>, batch_size: usize)
+	pub async fn spawn_logs_task<Client, BE>(&self, client: Arc<Client>, batch_size: usize)
 	where
 		Client: StorageProvider<Block, BE> + HeaderBackend<Block> + Send + Sync + 'static,
 		BE: BackendT<Block> + 'static,
@@ -234,88 +234,86 @@ where
 	{
 		let pool = self.pool().clone();
 		let overrides = self.overrides.clone();
-		tokio::task::spawn(async move {
-			let _ = async {
-				// The overarching db transaction for the task.
-				// Due to the async nature of this task, the same work is likely to happen
-				// more than once. For example when a new batch is scheduled when the previous one
-				// didn't finished yet and the new batch happens to select the same substrate
-				// block hashes for the update.
-				// That is expected, we are exchanging extra work for *acid*ity.
-				// There is no case of unique constrain violation or race condition as already
-				// existing entries are ignored.
-				let mut tx = pool.begin().await?;
-				// Update statement returning the substrate block hashes for this batch.
-				let q = format!(
-					"UPDATE sync_status
-					SET status = 1
-					WHERE substrate_block_hash IN
-						(SELECT substrate_block_hash
-						FROM sync_status
-						WHERE status = 0
-						LIMIT {}) RETURNING substrate_block_hash",
-					batch_size
-				);
-				match sqlx::query(&q).fetch_all(&mut tx).await {
-					Ok(result) => {
-						let mut to_index: Vec<H256> = vec![];
-						for row in result.iter() {
-							if let Ok(bytes) = row.try_get::<Vec<u8>, _>(0) {
-								to_index.push(H256::from_slice(&bytes[..]));
-							} else {
-								log::error!(
-									target: "frontier-sql",
-									"unable to decode row value"
-								);
-							}
+		let _ = async {
+			// The overarching db transaction for the task.
+			// Due to the async nature of this task, the same work is likely to happen
+			// more than once. For example when a new batch is scheduled when the previous one
+			// didn't finished yet and the new batch happens to select the same substrate
+			// block hashes for the update.
+			// That is expected, we are exchanging extra work for *acid*ity.
+			// There is no case of unique constrain violation or race condition as already
+			// existing entries are ignored.
+			let mut tx = pool.begin().await?;
+			// Update statement returning the substrate block hashes for this batch.
+			let q = format!(
+				"UPDATE sync_status
+				SET status = 1
+				WHERE substrate_block_hash IN
+					(SELECT substrate_block_hash
+					FROM sync_status
+					WHERE status = 0
+					LIMIT {}) RETURNING substrate_block_hash",
+				batch_size
+			);
+			match sqlx::query(&q).fetch_all(&mut tx).await {
+				Ok(result) => {
+					let mut to_index: Vec<H256> = vec![];
+					for row in result.iter() {
+						if let Ok(bytes) = row.try_get::<Vec<u8>, _>(0) {
+							to_index.push(H256::from_slice(&bytes[..]));
+						} else {
+							log::error!(
+								target: "frontier-sql",
+								"unable to decode row value"
+							);
 						}
-						// Spawn a blocking task to get log data from substrate backend.
-						let logs = tokio::task::spawn_blocking(move || {
-							Self::spawn_logs_task_inner(client.clone(), overrides, &to_index)
-						})
-						.await
-						.map_err(|_| Error::Protocol("tokio blocking task failed".to_string()))?;
-
-						// TODO VERIFY statements limit per transaction in sqlite if any
-						for log in logs.iter() {
-							let _ = sqlx::query!(
-								"INSERT OR IGNORE INTO logs(
-									block_number,
-									address,
-									topic_1,
-									topic_2,
-									topic_3,
-									topic_4,
-									log_index,
-									transaction_index,
-									substrate_block_hash)
-								VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-								log.block_number,
-								log.address,
-								log.topic_1,
-								log.topic_2,
-								log.topic_3,
-								log.topic_4,
-								log.log_index,
-								log.transaction_index,
-								log.substrate_block_hash,
-							)
-							.execute(&mut tx)
-							.await?;
-						}
-						Ok(tx.commit().await?)
 					}
-					Err(e) => Err(e),
+					// Spawn a blocking task to get log data from substrate backend.
+					let logs = tokio::task::spawn_blocking(move || {
+						Self::spawn_logs_task_inner(client.clone(), overrides, &to_index)
+					})
+					.await
+					.map_err(|_| Error::Protocol("tokio blocking task failed".to_string()))?;
+
+					// TODO VERIFY statements limit per transaction in sqlite if any
+					for log in logs.iter() {
+						let _ = sqlx::query!(
+							"INSERT OR IGNORE INTO logs(
+								block_number,
+								address,
+								topic_1,
+								topic_2,
+								topic_3,
+								topic_4,
+								log_index,
+								transaction_index,
+								substrate_block_hash)
+							VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+							log.block_number,
+							log.address,
+							log.topic_1,
+							log.topic_2,
+							log.topic_3,
+							log.topic_4,
+							log.log_index,
+							log.transaction_index,
+							log.substrate_block_hash,
+						)
+						.execute(&mut tx)
+						.await?;
+					}
+					Ok(tx.commit().await?)
 				}
+				Err(e) => Err(e),
 			}
-			.await
-			.map_err(|e| {
-				log::error!(
-					target: "frontier-sql",
-					"{}",
-					e
-				)
-			});
+		}
+		.await
+		.map_err(|e| {
+			log::error!(
+				target: "frontier-sql",
+				"{}",
+				e
+			)
 		});
 	}
 

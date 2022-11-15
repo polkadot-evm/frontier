@@ -215,7 +215,7 @@ where
 							e,
 						);
 					});
-				indexer_backend.spawn_logs_task(client.clone(), batch_size); // Spawn actual logs task
+				indexer_backend.spawn_logs_task(client.clone(), batch_size).await; // Spawn actual logs task
 				current_batch.clear();
 			}
 			return true;
