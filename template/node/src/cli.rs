@@ -1,6 +1,6 @@
 /// Available Sealing methods.
 #[cfg(feature = "manual-seal")]
-#[derive(Debug, Copy, Clone, clap::ArgEnum)]
+#[derive(Debug, Copy, Clone, clap::ValueEnum)]
 pub enum Sealing {
 	// Seal using rpc method.
 	Manual,
@@ -19,12 +19,12 @@ impl Default for Sealing {
 #[derive(Debug, clap::Parser)]
 pub struct RunCmd {
 	#[allow(missing_docs)]
-	#[clap(flatten)]
+	#[command(flatten)]
 	pub base: sc_cli::RunCmd,
 
 	/// Choose sealing method.
 	#[cfg(feature = "manual-seal")]
-	#[clap(long, arg_enum, ignore_case = true)]
+	#[clap(long, value_enum, ignore_case = true)]
 	pub sealing: Sealing,
 
 	#[clap(long)]
@@ -48,7 +48,7 @@ pub struct Cli {
 	#[clap(subcommand)]
 	pub subcommand: Option<Subcommand>,
 
-	#[clap(flatten)]
+	#[command(flatten)]
 	pub run: RunCmd,
 }
 

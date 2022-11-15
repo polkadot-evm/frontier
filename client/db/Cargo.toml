@@ -13,6 +13,7 @@ targets = ["x86_64-unknown-linux-gnu"]
 [dependencies]
 log = "0.4.17"
 parking_lot = "0.12.1"
+smallvec = "1.8.0"
 
 # Parity
 codec = { package = "parity-scale-codec", version = "3.2.1", features = ["derive"] }

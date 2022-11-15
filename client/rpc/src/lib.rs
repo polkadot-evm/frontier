@@ -148,15 +148,21 @@ pub mod frontier_backend_client {
 	where
 		B: BlockT<Hash = H256> + Send + Sync + 'static,
 		C: StorageProvider<B, BE> + Send + Sync + 'static,
+		C: sp_blockchain::HeaderBackend<B>,
 		BE: Backend<B> + 'static,
 		BE::State: StateBackend<BlakeTwo256>,
 	{
-		match client.storage(&at, &StorageKey(PALLET_ETHEREUM_SCHEMA.to_vec())) {
-			Ok(Some(bytes)) => Decode::decode(&mut &bytes.0[..])
-				.ok()
-				.unwrap_or(EthereumStorageSchema::Undefined),
-			_ => EthereumStorageSchema::Undefined,
+		if let Ok(Some(header)) = client.header(at) {
+			return match client
+				.storage(&header.hash(), &StorageKey(PALLET_ETHEREUM_SCHEMA.to_vec()))
+			{
+				Ok(Some(bytes)) => Decode::decode(&mut &bytes.0[..])
+					.ok()
+					.unwrap_or(EthereumStorageSchema::Undefined),
+				_ => EthereumStorageSchema::Undefined,
+			};
 		}
+		EthereumStorageSchema::Undefined
 	}
 
 	pub fn is_canon<B: BlockT, C>(client: &C, target_hash: H256) -> bool

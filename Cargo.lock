@@ -338,18 +338,6 @@ dependencies = [
 
 [[package]]
 name = "auto_impl"
-version = "0.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7862e21c893d65a1650125d157eaeec691439379a1cee17ee49031b79236ada4"
-dependencies = [
- "proc-macro-error",
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
-name = "auto_impl"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8a8c1df849285fbacd587de7818cc7d13be6cd2cbcd47a04fb1801b0e2706e33"
@@ -814,47 +802,17 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "3.2.22"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "86447ad904c7fb335a790c9d7fe3d0d971dc523b8ccd1561a520de9a85302750"
-dependencies = [
- "atty",
- "bitflags",
- "clap_derive 3.2.18",
- "clap_lex 0.2.4",
- "indexmap",
- "once_cell",
- "strsim",
- "termcolor",
- "textwrap",
-]
-
-[[package]]
-name = "clap"
 version = "4.0.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "60494cedb60cb47462c0ff7be53de32c0e42a6fc2c772184554fa12bd9489c03"
 dependencies = [
  "atty",
  "bitflags",
- "clap_derive 4.0.21",
- "clap_lex 0.3.0",
+ "clap_derive",
+ "clap_lex",
  "once_cell",
  "strsim",
  "termcolor",
-]
-
-[[package]]
-name = "clap_derive"
-version = "3.2.18"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ea0c8bce528c4be4da13ea6fead8965e95b6073585a2f05204bd8f4119f82a65"
-dependencies = [
- "heck",
- "proc-macro-error",
- "proc-macro2",
- "quote",
- "syn",
 ]
 
 [[package]]
@@ -868,15 +826,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
-]
-
-[[package]]
-name = "clap_lex"
-version = "0.2.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2850f2f5a82cbf437dd5af4d49848fbdfc27c157c3d010345776f952765261c5"
-dependencies = [
- "os_str_bytes",
 ]
 
 [[package]]
@@ -1542,7 +1491,6 @@ dependencies = [
  "fixed-hash 0.7.0",
  "impl-codec",
  "impl-rlp",
- "impl-serde 0.3.2",
  "scale-info",
  "tiny-keccak",
 ]
@@ -1557,7 +1505,7 @@ dependencies = [
  "fixed-hash 0.8.0",
  "impl-codec",
  "impl-rlp",
- "impl-serde 0.4.0",
+ "impl-serde",
  "scale-info",
  "tiny-keccak",
 ]
@@ -1609,7 +1557,6 @@ dependencies = [
  "fixed-hash 0.7.0",
  "impl-codec",
  "impl-rlp",
- "impl-serde 0.3.2",
  "primitive-types 0.11.1",
  "scale-info",
  "uint",
@@ -1625,7 +1572,7 @@ dependencies = [
  "fixed-hash 0.8.0",
  "impl-codec",
  "impl-rlp",
- "impl-serde 0.4.0",
+ "impl-serde",
  "primitive-types 0.12.1",
  "scale-info",
  "uint",
@@ -1639,37 +1586,16 @@ checksum = "f7531096570974c3a9dcf9e4b8e1cede1ec26cf5046219fb3b9d897503b9be59"
 
 [[package]]
 name = "evm"
-version = "0.36.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d388bbd18050623b996cc4ba0643971e2978693ad56ca8b7603080cfa5eaf738"
-dependencies = [
- "auto_impl 0.5.0",
- "environmental",
- "ethereum 0.12.0",
- "evm-core 0.36.0",
- "evm-gasometer 0.36.0",
- "evm-runtime 0.36.0",
- "log",
- "parity-scale-codec",
- "primitive-types 0.11.1",
- "rlp",
- "scale-info",
- "serde",
- "sha3",
-]
-
-[[package]]
-name = "evm"
 version = "0.37.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f4448c65b71e8e2b9718232d84d09045eeaaccb2320494e6bd6dbf7e58fec8ff"
 dependencies = [
- "auto_impl 1.0.1",
+ "auto_impl",
  "environmental",
  "ethereum 0.14.0",
- "evm-core 0.37.0",
- "evm-gasometer 0.37.0",
- "evm-runtime 0.37.0",
+ "evm-core",
+ "evm-gasometer",
+ "evm-runtime",
  "log",
  "parity-scale-codec",
  "primitive-types 0.12.1",
@@ -1677,18 +1603,6 @@ dependencies = [
  "scale-info",
  "serde",
  "sha3",
-]
-
-[[package]]
-name = "evm-core"
-version = "0.36.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c5fb3a449a544a67c879d2f74e1c3d9022de3ec31c9a20817015816f687aa2af"
-dependencies = [
- "parity-scale-codec",
- "primitive-types 0.11.1",
- "scale-info",
- "serde",
 ]
 
 [[package]]
@@ -1705,39 +1619,14 @@ dependencies = [
 
 [[package]]
 name = "evm-gasometer"
-version = "0.36.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "170a27b6e49b8279016afffcdc6ebae9225d5acff3a546ad8589929b091e7ac5"
-dependencies = [
- "environmental",
- "evm-core 0.36.0",
- "evm-runtime 0.36.0",
- "primitive-types 0.11.1",
-]
-
-[[package]]
-name = "evm-gasometer"
 version = "0.37.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a8b93c59c54fc26522d842f0e0d3f8e8be331c776df18ff3e540b53c2f64d509"
 dependencies = [
  "environmental",
- "evm-core 0.37.0",
- "evm-runtime 0.37.0",
+ "evm-core",
+ "evm-runtime",
  "primitive-types 0.12.1",
-]
-
-[[package]]
-name = "evm-runtime"
-version = "0.36.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4d48c2545a02e3a4d1a5184a96af11037334dce947b6bdb389b3503b3a6f8dcd"
-dependencies = [
- "auto_impl 0.5.0",
- "environmental",
- "evm-core 0.36.0",
- "primitive-types 0.11.1",
- "sha3",
 ]
 
 [[package]]
@@ -1746,9 +1635,9 @@ version = "0.37.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c79b9459ce64f1a28688397c4013764ce53cd57bb84efc16b5187fa9b05b13ad"
 dependencies = [
- "auto_impl 1.0.1",
+ "auto_impl",
  "environmental",
- "evm-core 0.37.0",
+ "evm-core",
  "primitive-types 0.12.1",
  "sha3",
 ]
@@ -1787,7 +1676,7 @@ dependencies = [
 name = "fc-cli"
 version = "1.0.0-dev"
 dependencies = [
- "clap 4.0.24",
+ "clap",
  "ethereum-types 0.14.0",
  "fc-db",
  "fp-rpc",
@@ -1841,6 +1730,7 @@ dependencies = [
  "parking_lot 0.12.1",
  "sc-block-builder",
  "sc-client-db",
+ "smallvec",
  "sp-blockchain",
  "sp-consensus",
  "sp-core",
@@ -1871,9 +1761,9 @@ name = "fc-rpc"
 version = "2.0.0-dev"
 dependencies = [
  "beefy-primitives",
- "ethereum 0.12.0",
+ "ethereum 0.14.0",
  "ethereum-types 0.14.0",
- "evm 0.37.0",
+ "evm",
  "fc-db",
  "fc-rpc-core",
  "fp-ethereum",
@@ -1917,7 +1807,7 @@ dependencies = [
 name = "fc-rpc-core"
 version = "1.1.0-dev"
 dependencies = [
- "ethereum 0.12.0",
+ "ethereum 0.14.0",
  "ethereum-types 0.14.0",
  "jsonrpsee",
  "rlp",
@@ -2063,7 +1953,7 @@ dependencies = [
 name = "fp-consensus"
 version = "2.0.0-dev"
 dependencies = [
- "ethereum 0.12.0",
+ "ethereum 0.14.0",
  "parity-scale-codec",
  "sp-core",
  "sp-runtime",
@@ -2083,8 +1973,8 @@ dependencies = [
 name = "fp-ethereum"
 version = "1.0.0-dev"
 dependencies = [
- "ethereum 0.12.0",
- "ethereum-types 0.13.1",
+ "ethereum 0.14.0",
+ "ethereum-types 0.14.0",
  "fp-evm",
  "frame-support",
  "num_enum",
@@ -2097,7 +1987,7 @@ dependencies = [
 name = "fp-evm"
 version = "3.0.0-dev"
 dependencies = [
- "evm 0.37.0",
+ "evm",
  "frame-support",
  "parity-scale-codec",
  "serde",
@@ -2109,7 +1999,7 @@ dependencies = [
 name = "fp-rpc"
 version = "3.0.0-dev"
 dependencies = [
- "ethereum 0.12.0",
+ "ethereum 0.14.0",
  "ethereum-types 0.14.0",
  "fp-evm",
  "parity-scale-codec",
@@ -2179,7 +2069,7 @@ dependencies = [
  "Inflector",
  "array-bytes",
  "chrono",
- "clap 4.0.24",
+ "clap",
  "comfy-table",
  "frame-benchmarking",
  "frame-support",
@@ -2365,7 +2255,7 @@ name = "frontier-template-node"
 version = "0.0.0"
 dependencies = [
  "async-trait",
- "clap 3.2.22",
+ "clap",
  "fc-cli",
  "fc-consensus",
  "fc-db",
@@ -2987,15 +2877,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f28220f89297a075ddc7245cd538076ee98b01f2a9c23a53a4f1105d5a322808"
 dependencies = [
  "rlp",
-]
-
-[[package]]
-name = "impl-serde"
-version = "0.3.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4551f042f3438e64dbd6226b20527fc84a6e1fe65688b58746a2f53623f25f5c"
-dependencies = [
- "serde",
 ]
 
 [[package]]
@@ -4517,9 +4398,9 @@ dependencies = [
 name = "pallet-ethereum"
 version = "4.0.0-dev"
 dependencies = [
- "ethereum 0.12.0",
+ "ethereum 0.14.0",
  "ethereum-types 0.14.0",
- "evm 0.37.0",
+ "evm",
  "fp-consensus",
  "fp-ethereum",
  "fp-evm",
@@ -4548,7 +4429,7 @@ name = "pallet-evm"
 version = "6.0.0-dev"
 dependencies = [
  "environmental",
- "evm 0.36.0",
+ "evm",
  "fp-evm",
  "frame-benchmarking",
  "frame-support",
@@ -4664,7 +4545,7 @@ dependencies = [
 name = "pallet-evm-test-vector-support"
 version = "1.0.0-dev"
 dependencies = [
- "evm 0.37.0",
+ "evm",
  "fp-evm",
  "hex",
  "serde",
@@ -5203,7 +5084,6 @@ dependencies = [
  "fixed-hash 0.7.0",
  "impl-codec",
  "impl-rlp",
- "impl-serde 0.3.2",
  "scale-info",
  "uint",
 ]
@@ -5217,7 +5097,7 @@ dependencies = [
  "fixed-hash 0.8.0",
  "impl-codec",
  "impl-rlp",
- "impl-serde 0.4.0",
+ "impl-serde",
  "scale-info",
  "uint",
 ]
@@ -5918,7 +5798,7 @@ source = "git+https://github.com/paritytech/substrate?branch=master#696bdc67af5f
 dependencies = [
  "array-bytes",
  "chrono",
- "clap 4.0.24",
+ "clap",
  "fdlimit",
  "futures",
  "libp2p",
@@ -7450,7 +7330,7 @@ dependencies = [
  "futures",
  "hash-db",
  "hash256-std-hasher",
- "impl-serde 0.4.0",
+ "impl-serde",
  "lazy_static",
  "libsecp256k1",
  "log",
@@ -7801,7 +7681,7 @@ name = "sp-storage"
 version = "6.0.0"
 source = "git+https://github.com/paritytech/substrate?branch=master#696bdc67af5fd83aca318263dbd405593b043ba3"
 dependencies = [
- "impl-serde 0.4.0",
+ "impl-serde",
  "parity-scale-codec",
  "ref-cast",
  "serde",
@@ -7903,7 +7783,7 @@ name = "sp-version"
 version = "5.0.0"
 source = "git+https://github.com/paritytech/substrate?branch=master#696bdc67af5fd83aca318263dbd405593b043ba3"
 dependencies = [
- "impl-serde 0.4.0",
+ "impl-serde",
  "parity-scale-codec",
  "parity-wasm 0.45.0",
  "scale-info",
@@ -8331,12 +8211,6 @@ name = "termtree"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "95059e91184749cb66be6dc994f67f182b6d897cb3df74a5bf66b5e709295fd8"
-
-[[package]]
-name = "textwrap"
-version = "0.15.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "949517c0cf1bf4ee812e2e07e08ab448e3ae0d23472aee8a06c985f0c8815b16"
 
 [[package]]
 name = "thiserror"

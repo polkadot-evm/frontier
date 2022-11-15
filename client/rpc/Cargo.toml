@@ -11,7 +11,7 @@ repository = "https://github.com/paritytech/frontier/"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-ethereum = { version = "0.12.0", features = ["with-codec"] }
+ethereum = { version = "0.14.0", features = ["with-codec"] }
 evm = "0.37.0"
 futures = "0.3.24"
 hex = "0.4.3"

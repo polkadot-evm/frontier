@@ -184,7 +184,7 @@ where
 	#[rustfmt::skip]
 	let mut process_chunk = |
 		db: &kvdb_rocksdb::Database,
-		ethereum_hashes: &[std::boxed::Box<[u8]>]
+		ethereum_hashes: &[smallvec::SmallVec<[u8; 32]>]
 	| -> UpgradeResult<()> {
 		let mut transaction = db.transaction();
 		for ethereum_hash in ethereum_hashes {
@@ -233,7 +233,7 @@ where
 	// Get all the block hashes we need to update
 	let ethereum_hashes: Vec<_> = db
 		.iter(crate::columns::BLOCK_MAPPING)
-		.map(|entry| entry.0)
+		.filter_map(|entry| entry.map_or(None, |r| Some(r.0)))
 		.collect();
 
 	// Read and update each entry in db transaction batches

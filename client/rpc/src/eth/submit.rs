@@ -217,7 +217,7 @@ where
 		let first = slice.first().unwrap();
 		let transaction = if first > &0x7f {
 			// Legacy transaction. Decode and wrap in envelope.
-			match rlp::decode::<ethereum::TransactionV0>(slice) {
+			match ethereum::EnvelopedDecodable::decode(slice) {
 				Ok(transaction) => ethereum::TransactionV2::Legacy(transaction),
 				Err(_) => return Err(internal_err("decode transaction failed")),
 			}
@@ -227,8 +227,7 @@ where
 			// and EIP-1559 breaks that assumption by prepending a version byte.
 			// We re-encode the payload input to get a valid rlp, and the decode implementation will strip
 			// them to check the transaction version byte.
-			let extend = rlp::encode(&slice);
-			match rlp::decode::<ethereum::TransactionV2>(&extend[..]) {
+			match ethereum::EnvelopedDecodable::decode(slice) {
 				Ok(transaction) => transaction,
 				Err(_) => return Err(internal_err("decode transaction failed")),
 			}

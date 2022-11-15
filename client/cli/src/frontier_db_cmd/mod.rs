@@ -23,7 +23,7 @@ pub(crate) mod utils;
 
 use std::{path::PathBuf, str::FromStr, sync::Arc};
 
-use clap::ArgEnum;
+use clap::ValueEnum;
 use ethereum_types::H256;
 use serde::Deserialize;
 // Substrate
@@ -41,13 +41,13 @@ pub struct FrontierDbCmd {
 	/// Specify the operation to perform.
 	///
 	/// Can be one of `create | read | update | delete`.
-	#[clap(arg_enum, ignore_case = true, required = true)]
+	#[clap(value_enum, ignore_case = true, required = true)]
 	pub operation: Operation,
 
 	/// Specify the column to query.
 	///
 	/// Can be one of `meta | block | transaction`.
-	#[clap(arg_enum, ignore_case = true, required = true)]
+	#[clap(value_enum, ignore_case = true, required = true)]
 	pub column: Column,
 
 	/// Specify the key to either read or write.
@@ -60,19 +60,19 @@ pub struct FrontierDbCmd {
 	/// - When `None`, read from stdin.
 	///
 	/// In any case, payload must be serializable to a known type.
-	#[clap(long, parse(from_os_str))]
+	#[arg()]
 	pub value: Option<PathBuf>,
 
 	/// Shared parameters
-	#[clap(flatten)]
+	#[command(flatten)]
 	pub shared_params: SharedParams,
 
 	#[allow(missing_docs)]
-	#[clap(flatten)]
+	#[command(flatten)]
 	pub pruning_params: PruningParams,
 }
 
-#[derive(ArgEnum, Debug, Clone)]
+#[derive(ValueEnum, Debug, Clone)]
 pub enum Operation {
 	Create,
 	Read,
@@ -80,7 +80,7 @@ pub enum Operation {
 	Delete,
 }
 
-#[derive(ArgEnum, Debug, Clone)]
+#[derive(ValueEnum, Debug, Clone)]
 pub enum Column {
 	Meta,
 	Block,
