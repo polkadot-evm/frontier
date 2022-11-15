@@ -90,7 +90,8 @@ where
 		match config {
 			BackendConfig::Sqlite(config) => {
 				let config = sqlx::sqlite::SqliteConnectOptions::from_str(config.path)?
-					.create_if_missing(config.create_if_missing);
+					.create_if_missing(config.create_if_missing)
+					.journal_mode(sqlx::sqlite::SqliteJournalMode::Wal); // https://www.sqlite.org/wal.html
 				Ok(config)
 			}
 		}
