@@ -155,7 +155,7 @@ where
 	}
 
 	io.merge(
-		Eth::<_, _, _, _, _, _, _, ()>::new(
+		Eth::new(
 			client.clone(),
 			pool.clone(),
 			graph,
