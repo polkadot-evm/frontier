@@ -200,11 +200,12 @@ where
 				);
 				current_batch.push(hash);
 			} else {
+				current_batch.push(hash);
 				log::debug!(
 					target: "frontier-sql",
-					"🛠️  Processing batch"
+					"🛠️  Processing batch starting at {:?}",
+					current_batch.first()
 				);
-				current_batch.push(hash);
 				let _ = indexer_backend
 					.insert_block_metadata(client.clone(), current_batch)
 					.await

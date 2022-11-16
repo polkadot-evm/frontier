@@ -91,6 +91,7 @@ where
 			BackendConfig::Sqlite(config) => {
 				let config = sqlx::sqlite::SqliteConnectOptions::from_str(config.path)?
 					.create_if_missing(config.create_if_missing)
+					.busy_timeout(std::time::Duration::from_secs(8))
 					.journal_mode(sqlx::sqlite::SqliteJournalMode::Wal); // https://www.sqlite.org/wal.html
 				Ok(config)
 			}
@@ -316,6 +317,10 @@ where
 				e
 			)
 		});
+		log::debug!(
+			target: "frontier-sql",
+			"🛠️  Batch commited"
+		);
 	}
 
 	fn spawn_logs_task_inner<Client, BE>(
@@ -329,6 +334,8 @@ where
 		BE::State: StateBackend<BlakeTwo256>,
 	{
 		let mut logs: Vec<Log> = vec![];
+		let mut transaction_count: usize = 0;
+		let mut log_count: usize = 0;
 		for substrate_block_hash in hashes.iter() {
 			let substrate_block_number: i32 =
 				if let Ok(Some(number)) = client.number(*substrate_block_hash) {
@@ -349,7 +356,8 @@ where
 				.unwrap_or(&overrides.fallback);
 
 			let receipts = handler.current_receipts(&id).unwrap_or_default();
-
+			
+			transaction_count += receipts.len();
 			for (transaction_index, receipt) in receipts.iter().enumerate() {
 				let receipt_logs = match receipt {
 					ethereum::ReceiptV3::Legacy(d)
@@ -357,6 +365,7 @@ where
 					| ethereum::ReceiptV3::EIP1559(d) => &d.logs,
 				};
 				let transaction_index = transaction_index as i32;
+				log_count += receipt_logs.len();
 				for (log_index, log) in receipt_logs.iter().enumerate() {
 					logs.push(Log {
 						block_number: substrate_block_number,
@@ -392,6 +401,12 @@ where
 				}
 			}
 		}
+		log::debug!(
+			target: "frontier-sql",
+			"🛠️  Ready to commit {} logs from {} transactions",
+			log_count,
+			transaction_count
+		);
 		logs
 	}
 
