@@ -79,7 +79,7 @@ pub struct Eth<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi, EGA = ()> {
 	_marker: PhantomData<(B, BE, EGA)>,
 }
 
-impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi, EGA> Eth<B, C, P, CT, BE, H, A, EGA> {
+impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> Eth<B, C, P, CT, BE, H, A, ()> {
 	pub fn new(
 		client: Arc<C>,
 		pool: Arc<P>,
@@ -96,6 +96,46 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi, EGA> Eth<B, C, P, CT, BE,
 		execute_gas_limit_multiplier: u64,
 	) -> Self {
 		Self {
+			client,
+			pool,
+			graph,
+			convert_transaction,
+			network,
+			is_authority,
+			signers,
+			overrides,
+			backend,
+			block_data_cache,
+			fee_history_cache,
+			fee_history_cache_limit,
+			execute_gas_limit_multiplier,
+			_marker: PhantomData,
+		}
+	}
+}
+
+impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi, EGA> Eth<B, C, P, CT, BE, H, A, EGA> {
+	pub fn with_estimate_gas_adapter<EGA2: EstimateGasAdapter>(
+		self,
+	) -> Eth<B, C, P, CT, BE, H, A, EGA2> {
+		let Self {
+			client,
+			pool,
+			graph,
+			convert_transaction,
+			network,
+			is_authority,
+			signers,
+			overrides,
+			backend,
+			block_data_cache,
+			fee_history_cache,
+			fee_history_cache_limit,
+			execute_gas_limit_multiplier,
+			_marker: _,
+		} = self;
+
+		Eth {
 			client,
 			pool,
 			graph,
