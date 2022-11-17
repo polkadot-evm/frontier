@@ -49,6 +49,13 @@ pub struct Log {
 	pub substrate_block_hash: Vec<u8>,
 }
 
+#[derive(Eq, PartialEq)]
+struct BlockMetadata {
+	pub substrate_block_hash: H256,
+	pub post_hashes: fp_consensus::Hashes,
+	pub schema: EthereumStorageSchema,
+}
+
 pub struct SqliteBackendConfig<'a> {
 	pub path: &'a str,
 	pub create_if_missing: bool,
@@ -163,6 +170,37 @@ where
 		Ok(())
 	}
 
+	fn insert_block_metadata_inner<Client, BE>(
+		client: Arc<Client>,
+		hashes: &Vec<H256>,
+	) -> Result<Vec<BlockMetadata>, Error>
+	where
+		Client: StorageProvider<Block, BE> + HeaderBackend<Block> + Send + Sync + 'static,
+		BE: BackendT<Block> + 'static,
+		BE::State: StateBackend<BlakeTwo256>,
+	{
+		let mut out = Vec::new();
+		for &hash in hashes.iter() {
+			if let Ok(Some(header)) = client.header(hash) {
+				match fp_consensus::find_log(header.digest()) {
+					Ok(log) => {
+						let schema = Self::onchain_storage_schema(client.as_ref(), hash);
+						out.push(BlockMetadata {
+							substrate_block_hash: hash,
+							post_hashes: log.into_hashes(),
+							schema,
+						});
+					},
+					Err(FindLogError::NotFound) => {}
+					Err(FindLogError::MultipleLogs) => {
+						return Err(Error::Protocol("Multiple logs found".to_string()))
+					}
+				}
+			}
+		}
+		Ok(out)
+	}
+
 	pub async fn insert_block_metadata<Client, BE>(
 		&self,
 		client: Arc<Client>,
@@ -173,57 +211,54 @@ where
 		BE: BackendT<Block> + 'static,
 		BE::State: StateBackend<BlakeTwo256>,
 	{
+		// Spawn a blocking task to get block metadata from substrate backend.
+		let hashes_inner = hashes.clone();
+		let block_metadata = tokio::task::spawn_blocking(move || {
+			Self::insert_block_metadata_inner(client.clone(), &hashes_inner)
+		})
+		.await
+		.map_err(|_| Error::Protocol("tokio blocking metadata task failed".to_string()))??;
+
 		let mut tx = self.pool().begin().await?;
 
 		// TODO move header retrieval to the blocking thread? depending on the batch size its likely to be necessary
-		for &hash in hashes.iter() {
-			if let Ok(Some(header)) = client.header(hash) {
-				match fp_consensus::find_log(header.digest()) {
-					Ok(log) => {
-						let post_hashes = log.into_hashes();
-						let ethereum_block_hash = post_hashes.block_hash.as_bytes().to_owned();
-						let substrate_block_hash = header.hash().as_bytes().to_owned();
+		for metadata in block_metadata.into_iter() {
+			let post_hashes = metadata.post_hashes;
+			let ethereum_block_hash = post_hashes.block_hash.as_bytes().to_owned();
+			let substrate_block_hash = metadata.substrate_block_hash.as_bytes().to_owned();
+			let schema = metadata.schema.encode();
 
-						let schema = Self::onchain_storage_schema(client.as_ref(), header.hash()).encode();
-
-						let _ = sqlx::query!(
-							"INSERT OR IGNORE INTO blocks(
-								ethereum_block_hash,
-								substrate_block_hash,
-								ethereum_storage_schema)
-							VALUES (?, ?, ?)",
-							ethereum_block_hash,
-							substrate_block_hash,
-							schema,
-						)
-						.execute(&mut tx)
-						.await?;
-						for (i, &transaction_hash) in
-							post_hashes.transaction_hashes.iter().enumerate()
-						{
-							let ethereum_transaction_hash = transaction_hash.as_bytes().to_owned();
-							let ethereum_transaction_index = i as i32;
-							let _ = sqlx::query!(
-								"INSERT OR IGNORE INTO transactions(
-									ethereum_transaction_hash,
-									substrate_block_hash,
-									ethereum_block_hash,
-									ethereum_transaction_index)
-								VALUES (?, ?, ?, ?)",
-								ethereum_transaction_hash,
-								substrate_block_hash,
-								ethereum_block_hash,
-								ethereum_transaction_index,
-							)
-							.execute(&mut tx)
-							.await?;
-						}
-					}
-					Err(FindLogError::NotFound) => {}
-					Err(FindLogError::MultipleLogs) => {
-						return Err(Error::Protocol("Multiple logs found".to_string()))
-					}
-				}
+			let _ = sqlx::query!(
+				"INSERT OR IGNORE INTO blocks(
+					ethereum_block_hash,
+					substrate_block_hash,
+					ethereum_storage_schema)
+				VALUES (?, ?, ?)",
+				ethereum_block_hash,
+				substrate_block_hash,
+				schema,
+			)
+			.execute(&mut tx)
+			.await?;
+			for (i, &transaction_hash) in
+				post_hashes.transaction_hashes.iter().enumerate()
+			{
+				let ethereum_transaction_hash = transaction_hash.as_bytes().to_owned();
+				let ethereum_transaction_index = i as i32;
+				let _ = sqlx::query!(
+					"INSERT OR IGNORE INTO transactions(
+						ethereum_transaction_hash,
+						substrate_block_hash,
+						ethereum_block_hash,
+						ethereum_transaction_index)
+					VALUES (?, ?, ?, ?)",
+					ethereum_transaction_hash,
+					substrate_block_hash,
+					ethereum_block_hash,
+					ethereum_transaction_index,
+				)
+				.execute(&mut tx)
+				.await?;
 			}
 		}
 
