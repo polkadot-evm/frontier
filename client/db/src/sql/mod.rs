@@ -91,8 +91,18 @@ where
 			BackendConfig::Sqlite(config) => {
 				let config = sqlx::sqlite::SqliteConnectOptions::from_str(config.path)?
 					.create_if_missing(config.create_if_missing)
+					// https://www.sqlite.org/pragma.html#pragma_busy_timeout
 					.busy_timeout(std::time::Duration::from_secs(8))
-					.journal_mode(sqlx::sqlite::SqliteJournalMode::Wal); // https://www.sqlite.org/wal.html
+					// https://www.sqlite.org/pragma.html#pragma_analysis_limit
+					.pragma("analysis_limit", "1000")
+					// https://www.sqlite.org/pragma.html#pragma_threads
+					.pragma("threads", "4")
+					// https://www.sqlite.org/pragma.html#pragma_threads
+					.pragma("temp_store", "memory")
+					// https://www.sqlite.org/wal.html
+					.journal_mode(sqlx::sqlite::SqliteJournalMode::Wal)
+					// https://www.sqlite.org/pragma.html#pragma_synchronous
+					.synchronous(sqlx::sqlite::SqliteSynchronous::Normal);
 				Ok(config)
 			}
 		}
@@ -317,6 +327,8 @@ where
 				e
 			)
 		});
+		// https://www.sqlite.org/pragma.html#pragma_optimize
+		let _ = sqlx::query("PRAGMA optimize").execute(&pool).await;
 		log::debug!(
 			target: "frontier-sql",
 			"🛠️  Batch commited"

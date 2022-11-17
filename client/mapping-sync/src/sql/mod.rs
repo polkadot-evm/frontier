@@ -191,16 +191,13 @@ where
 		notified: bool,
 	) -> bool {
 		if !current_batch.contains(&hash) && !known_hashes.contains(&hash) {
-			known_hashes.push(hash);
-			if !notified && current_batch.len() < batch_size {
-				log::trace!(
-					target: "frontier-sql",
-					"⤵️  Queued for index {}",
-					hash,
-				);
-				current_batch.push(hash);
-			} else {
-				current_batch.push(hash);
+			current_batch.push(hash);
+			log::trace!(
+				target: "frontier-sql",
+				"⤵️  Queued for index {}",
+				hash,
+			);
+			if notified || current_batch.len() == batch_size {
 				log::debug!(
 					target: "frontier-sql",
 					"🛠️  Processing batch starting at {:?}",
@@ -217,6 +214,7 @@ where
 						);
 					});
 				indexer_backend.spawn_logs_task(client.clone(), batch_size).await; // Spawn actual logs task
+				known_hashes.append(current_batch);
 				current_batch.clear();
 			}
 			return true;
