@@ -204,7 +204,7 @@ where
 		if let Ok(fee_history_cache) = &self.fee_history_cache.lock() {
 			for n in lowest..highest + 1 {
 				if let Some(block) = fee_history_cache.get(&n) {
-					let reward = if let Some(r) = block.rewards.get(index as usize) {
+					let reward = if let Some(r) = block.rewards.get(index) {
 						U256::from(*r)
 					} else {
 						U256::zero()
