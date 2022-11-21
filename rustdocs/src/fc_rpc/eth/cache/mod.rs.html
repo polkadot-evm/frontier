@@ -1,10 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `client/rpc/src/eth/cache/mod.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>mod.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../../storage.js"></script><script defer src="../../../../source-script.js"></script><script defer src="../../../../source-files.js"></script><script defer src="../../../../main.js"></script><noscript><link rel="stylesheet" href="../../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../../fc_rpc/index.html"><div class="logo-container"><img class="rust-logo" src="../../../../rust-logo.svg" alt="logo"></div>
-        </a><h2 class="location"></h2>
-    </nav>
-    <nav class="sidebar"><a class="sidebar-logo" href="../../../../fc_rpc/index.html"><div class="logo-container"><img class="rust-logo" src="../../../../rust-logo.svg" alt="logo"></div>
-        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../../fc_rpc/index.html"><img class="rust-logo" src="../../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1">
-                                <a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../wheel.svg"></a></div>
-                        </div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `client/rpc/src/eth/cache/mod.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>mod.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../../../normalize.css"><link rel="stylesheet" href="../../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../../../ayu.css" disabled><link rel="stylesheet" href="../../../../dark.css" disabled><link rel="stylesheet" href="../../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../../storage.js"></script><script defer src="../../../../source-script.js"></script><script defer src="../../../../source-files.js"></script><script defer src="../../../../main.js"></script><noscript><link rel="stylesheet" href="../../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><a class="sidebar-logo" href="../../../../fc_rpc/index.html"><div class="logo-container"><img class="rust-logo" src="../../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../../fc_rpc/index.html"><img class="rust-logo" src="../../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -493,495 +487,494 @@
 <span id="487">487</span>
 <span id="488">488</span>
 <span id="489">489</span>
-</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
-<span class="comment">// This file is part of Frontier.</span>
-<span class="comment">//</span>
-<span class="comment">// Copyright (c) 2022 Parity Technologies (UK) Ltd.</span>
-<span class="comment">//</span>
-<span class="comment">// This program is free software: you can redistribute it and/or modify</span>
-<span class="comment">// it under the terms of the GNU General Public License as published by</span>
-<span class="comment">// the Free Software Foundation, either version 3 of the License, or</span>
-<span class="comment">// (at your option) any later version.</span>
-<span class="comment">//</span>
-<span class="comment">// This program is distributed in the hope that it will be useful,</span>
-<span class="comment">// but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
-<span class="comment">// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the</span>
-<span class="comment">// GNU General Public License for more details.</span>
-<span class="comment">//</span>
-<span class="comment">// You should have received a copy of the GNU General Public License</span>
-<span class="comment">// along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.</span>
+</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
+// This file is part of Frontier.
+//
+// Copyright (c) 2022 Parity Technologies (UK) Ltd.
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.
 
-<span class="kw">mod</span> <span class="ident">lru_cache</span>;
+</span><span class="kw">mod </span>lru_cache;
 
-<span class="kw">use</span> <span class="ident">std</span>::{
-	<span class="ident">collections</span>::{<span class="ident">BTreeMap</span>, <span class="ident">HashMap</span>},
-	<span class="ident">marker::PhantomData</span>,
-	<span class="ident">sync</span>::{<span class="ident">Arc</span>, <span class="ident">Mutex</span>},
+<span class="kw">use </span>std::{
+	collections::{BTreeMap, HashMap},
+	marker::PhantomData,
+	sync::{Arc, Mutex},
 };
 
-<span class="kw">use</span> <span class="ident">ethereum::BlockV2</span> <span class="kw">as</span> <span class="ident">EthereumBlock</span>;
-<span class="kw">use</span> <span class="ident">ethereum_types</span>::{<span class="ident">H256</span>, <span class="ident">U256</span>};
-<span class="kw">use</span> <span class="ident">futures::StreamExt</span>;
-<span class="kw">use</span> <span class="ident">tokio::sync</span>::{<span class="ident">mpsc</span>, <span class="ident">oneshot</span>};
-<span class="comment">// Substrate</span>
-<span class="kw">use</span> <span class="ident">sc_client_api</span>::{
-	<span class="ident">backend</span>::{<span class="ident">Backend</span>, <span class="ident">StateBackend</span>, <span class="ident">StorageProvider</span>},
-	<span class="ident">client::BlockchainEvents</span>,
+<span class="kw">use </span>ethereum::BlockV2 <span class="kw">as </span>EthereumBlock;
+<span class="kw">use </span>ethereum_types::{H256, U256};
+<span class="kw">use </span>futures::StreamExt;
+<span class="kw">use </span>tokio::sync::{mpsc, oneshot};
+<span class="comment">// Substrate
+</span><span class="kw">use </span>sc_client_api::{
+	backend::{Backend, StateBackend, StorageProvider},
+	client::BlockchainEvents,
 };
-<span class="kw">use</span> <span class="ident">sc_service::SpawnTaskHandle</span>;
-<span class="kw">use</span> <span class="ident">sp_api::ProvideRuntimeApi</span>;
-<span class="kw">use</span> <span class="ident">sp_blockchain::HeaderBackend</span>;
-<span class="kw">use</span> <span class="ident">sp_runtime</span>::{
-	<span class="ident">generic::BlockId</span>,
-	<span class="ident">traits</span>::{<span class="ident">BlakeTwo256</span>, <span class="ident">Block</span> <span class="kw">as</span> <span class="ident">BlockT</span>, <span class="ident">Header</span> <span class="kw">as</span> <span class="ident">HeaderT</span>, <span class="ident">UniqueSaturatedInto</span>},
+<span class="kw">use </span>sc_service::SpawnTaskHandle;
+<span class="kw">use </span>sp_api::ProvideRuntimeApi;
+<span class="kw">use </span>sp_blockchain::HeaderBackend;
+<span class="kw">use </span>sp_runtime::{
+	generic::BlockId,
+	traits::{BlakeTwo256, Block <span class="kw">as </span>BlockT, Header <span class="kw">as </span>HeaderT, UniqueSaturatedInto},
 };
-<span class="comment">// Frontier</span>
-<span class="kw">use</span> <span class="ident">fc_rpc_core::types</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident">fp_rpc</span>::{<span class="ident">EthereumRuntimeRPCApi</span>, <span class="ident">TransactionStatus</span>};
-<span class="kw">use</span> <span class="ident">fp_storage::EthereumStorageSchema</span>;
+<span class="comment">// Frontier
+</span><span class="kw">use </span>fc_rpc_core::types::<span class="kw-2">*</span>;
+<span class="kw">use </span>fp_rpc::{EthereumRuntimeRPCApi, TransactionStatus};
+<span class="kw">use </span>fp_storage::EthereumStorageSchema;
 
-<span class="kw">use</span> <span class="ident"><span class="self">self</span>::lru_cache::LRUCacheByteLimited</span>;
-<span class="kw">use</span> <span class="kw">crate</span>::{
-	<span class="ident">frontier_backend_client</span>,
-	<span class="ident">overrides</span>::{<span class="ident">OverrideHandle</span>, <span class="ident">StorageOverride</span>},
+<span class="kw">use </span><span class="self">self</span>::lru_cache::LRUCacheByteLimited;
+<span class="kw">use crate</span>::{
+	frontier_backend_client,
+	overrides::{OverrideHandle, StorageOverride},
 };
 
-<span class="kw">type</span> <span class="ident">WaitList</span><span class="op">&lt;</span><span class="ident">Hash</span>, <span class="ident">T</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">Hash</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">oneshot::Sender</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>;
+<span class="kw">type </span>WaitList&lt;Hash, T&gt; = HashMap&lt;Hash, Vec&lt;oneshot::Sender&lt;<span class="prelude-ty">Option</span>&lt;T&gt;&gt;&gt;&gt;;
 
-<span class="kw">enum</span> <span class="ident">EthBlockDataCacheMessage</span><span class="op">&lt;</span><span class="ident">B</span>: <span class="ident">BlockT</span><span class="op">&gt;</span> {
-	<span class="ident">RequestCurrentBlock</span> {
-		<span class="ident">block_hash</span>: <span class="ident">B::Hash</span>,
-		<span class="ident">schema</span>: <span class="ident">EthereumStorageSchema</span>,
-		<span class="ident">response_tx</span>: <span class="ident">oneshot::Sender</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">EthereumBlock</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+<span class="kw">enum </span>EthBlockDataCacheMessage&lt;B: BlockT&gt; {
+	RequestCurrentBlock {
+		block_hash: B::Hash,
+		schema: EthereumStorageSchema,
+		response_tx: oneshot::Sender&lt;<span class="prelude-ty">Option</span>&lt;EthereumBlock&gt;&gt;,
 	},
-	<span class="ident">FetchedCurrentBlock</span> {
-		<span class="ident">block_hash</span>: <span class="ident">B::Hash</span>,
-		<span class="ident">block</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">EthereumBlock</span><span class="op">&gt;</span>,
+	FetchedCurrentBlock {
+		block_hash: B::Hash,
+		block: <span class="prelude-ty">Option</span>&lt;EthereumBlock&gt;,
 	},
 
-	<span class="ident">RequestCurrentTransactionStatuses</span> {
-		<span class="ident">block_hash</span>: <span class="ident">B::Hash</span>,
-		<span class="ident">schema</span>: <span class="ident">EthereumStorageSchema</span>,
-		<span class="ident">response_tx</span>: <span class="ident">oneshot::Sender</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TransactionStatus</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+	RequestCurrentTransactionStatuses {
+		block_hash: B::Hash,
+		schema: EthereumStorageSchema,
+		response_tx: oneshot::Sender&lt;<span class="prelude-ty">Option</span>&lt;Vec&lt;TransactionStatus&gt;&gt;&gt;,
 	},
-	<span class="ident">FetchedCurrentTransactionStatuses</span> {
-		<span class="ident">block_hash</span>: <span class="ident">B::Hash</span>,
-		<span class="ident">statuses</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TransactionStatus</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+	FetchedCurrentTransactionStatuses {
+		block_hash: B::Hash,
+		statuses: <span class="prelude-ty">Option</span>&lt;Vec&lt;TransactionStatus&gt;&gt;,
 	},
 }
 
-<span class="doccomment">/// Manage LRU caches for block data and their transaction statuses.</span>
-<span class="doccomment">/// These are large and take a lot of time to fetch from the database.</span>
-<span class="doccomment">/// Storing them in an LRU cache will allow to reduce database accesses</span>
-<span class="doccomment">/// when many subsequent requests are related to the same blocks.</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">EthBlockDataCacheTask</span><span class="op">&lt;</span><span class="ident">B</span>: <span class="ident">BlockT</span><span class="op">&gt;</span>(<span class="ident">mpsc::Sender</span><span class="op">&lt;</span><span class="ident">EthBlockDataCacheMessage</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span><span class="op">&gt;</span>);
+<span class="doccomment">/// Manage LRU caches for block data and their transaction statuses.
+/// These are large and take a lot of time to fetch from the database.
+/// Storing them in an LRU cache will allow to reduce database accesses
+/// when many subsequent requests are related to the same blocks.
+</span><span class="kw">pub struct </span>EthBlockDataCacheTask&lt;B: BlockT&gt;(mpsc::Sender&lt;EthBlockDataCacheMessage&lt;B&gt;&gt;);
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">B</span>: <span class="ident">BlockT</span><span class="op">&gt;</span> <span class="ident">EthBlockDataCacheTask</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> {
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(
-		<span class="ident">spawn_handle</span>: <span class="ident">SpawnTaskHandle</span>,
-		<span class="ident">overrides</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">OverrideHandle</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-		<span class="ident">blocks_cache_max_size</span>: <span class="ident">usize</span>,
-		<span class="ident">statuses_cache_max_size</span>: <span class="ident">usize</span>,
-		<span class="ident">prometheus_registry</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">prometheus_endpoint::Registry</span><span class="op">&gt;</span>,
-	) -&gt; <span class="self">Self</span> {
-		<span class="kw">let</span> (<span class="ident">task_tx</span>, <span class="kw-2">mut</span> <span class="ident">task_rx</span>) <span class="op">=</span> <span class="ident">mpsc::channel</span>(<span class="number">100</span>);
-		<span class="kw">let</span> <span class="ident">outer_task_tx</span> <span class="op">=</span> <span class="ident">task_tx</span>.<span class="ident">clone</span>();
-		<span class="kw">let</span> <span class="ident">outer_spawn_handle</span> <span class="op">=</span> <span class="ident">spawn_handle</span>.<span class="ident">clone</span>();
+<span class="kw">impl</span>&lt;B: BlockT&gt; EthBlockDataCacheTask&lt;B&gt; {
+	<span class="kw">pub fn </span>new(
+		spawn_handle: SpawnTaskHandle,
+		overrides: Arc&lt;OverrideHandle&lt;B&gt;&gt;,
+		blocks_cache_max_size: usize,
+		statuses_cache_max_size: usize,
+		prometheus_registry: <span class="prelude-ty">Option</span>&lt;prometheus_endpoint::Registry&gt;,
+	) -&gt; <span class="self">Self </span>{
+		<span class="kw">let </span>(task_tx, <span class="kw-2">mut </span>task_rx) = mpsc::channel(<span class="number">100</span>);
+		<span class="kw">let </span>outer_task_tx = task_tx.clone();
+		<span class="kw">let </span>outer_spawn_handle = spawn_handle.clone();
 
-		<span class="ident">outer_spawn_handle</span>.<span class="ident">spawn</span>(<span class="string">&quot;EthBlockDataCacheTask&quot;</span>, <span class="prelude-val">None</span>, <span class="kw">async</span> <span class="kw">move</span> {
-			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">blocks_cache</span> <span class="op">=</span> <span class="ident">LRUCacheByteLimited</span>::<span class="op">&lt;</span><span class="ident">B::Hash</span>, <span class="ident">EthereumBlock</span><span class="op">&gt;</span><span class="ident">::new</span>(
+		outer_spawn_handle.spawn(<span class="string">&quot;EthBlockDataCacheTask&quot;</span>, <span class="prelude-val">None</span>, <span class="kw">async move </span>{
+			<span class="kw">let </span><span class="kw-2">mut </span>blocks_cache = LRUCacheByteLimited::&lt;B::Hash, EthereumBlock&gt;::new(
 				<span class="string">&quot;blocks_cache&quot;</span>,
-				<span class="ident">blocks_cache_max_size</span> <span class="kw">as</span> <span class="ident">u64</span>,
-				<span class="ident">prometheus_registry</span>.<span class="ident">clone</span>(),
+				blocks_cache_max_size <span class="kw">as </span>u64,
+				prometheus_registry.clone(),
 			);
-			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">statuses_cache</span> <span class="op">=</span> <span class="ident">LRUCacheByteLimited</span>::<span class="op">&lt;</span><span class="ident">B::Hash</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TransactionStatus</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::new</span>(
+			<span class="kw">let </span><span class="kw-2">mut </span>statuses_cache = LRUCacheByteLimited::&lt;B::Hash, Vec&lt;TransactionStatus&gt;&gt;::new(
 				<span class="string">&quot;statuses_cache&quot;</span>,
-				<span class="ident">statuses_cache_max_size</span> <span class="kw">as</span> <span class="ident">u64</span>,
-				<span class="ident">prometheus_registry</span>,
+				statuses_cache_max_size <span class="kw">as </span>u64,
+				prometheus_registry,
 			);
 
-			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">awaiting_blocks</span> <span class="op">=</span>
-				<span class="ident">HashMap</span>::<span class="op">&lt;</span><span class="ident">B::Hash</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">oneshot::Sender</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">EthereumBlock</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::new</span>();
-			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">awaiting_statuses</span> <span class="op">=</span>
-				<span class="ident">HashMap</span>::<span class="op">&lt;</span><span class="ident">B::Hash</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">oneshot::Sender</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TransactionStatus</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::new</span>();
+			<span class="kw">let </span><span class="kw-2">mut </span>awaiting_blocks =
+				HashMap::&lt;B::Hash, Vec&lt;oneshot::Sender&lt;<span class="prelude-ty">Option</span>&lt;EthereumBlock&gt;&gt;&gt;&gt;::new();
+			<span class="kw">let </span><span class="kw-2">mut </span>awaiting_statuses =
+				HashMap::&lt;B::Hash, Vec&lt;oneshot::Sender&lt;<span class="prelude-ty">Option</span>&lt;Vec&lt;TransactionStatus&gt;&gt;&gt;&gt;&gt;::new();
 
-			<span class="comment">// Handle all incoming messages.</span>
-			<span class="comment">// Exits when there are no more senders.</span>
-			<span class="comment">// Any long computation should be spawned in a separate task</span>
-			<span class="comment">// to keep this task handle messages as soon as possible.</span>
-			<span class="kw">while</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">message</span>) <span class="op">=</span> <span class="ident">task_rx</span>.<span class="ident">recv</span>().<span class="kw">await</span> {
-				<span class="kw">use</span> <span class="ident">EthBlockDataCacheMessage</span>::<span class="kw-2">*</span>;
-				<span class="kw">match</span> <span class="ident">message</span> {
-					<span class="ident">RequestCurrentBlock</span> {
-						<span class="ident">block_hash</span>,
-						<span class="ident">schema</span>,
-						<span class="ident">response_tx</span>,
-					} =&gt; <span class="ident"><span class="self">Self</span>::request_current</span>(
-						<span class="kw-2">&amp;</span><span class="ident">spawn_handle</span>,
-						<span class="kw-2">&amp;mut</span> <span class="ident">blocks_cache</span>,
-						<span class="kw-2">&amp;mut</span> <span class="ident">awaiting_blocks</span>,
-						<span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span><span class="ident">overrides</span>),
-						<span class="ident">block_hash</span>,
-						<span class="ident">schema</span>,
-						<span class="ident">response_tx</span>,
-						<span class="ident">task_tx</span>.<span class="ident">clone</span>(),
-						<span class="kw">move</span> <span class="op">|</span><span class="ident">handler</span><span class="op">|</span> <span class="ident">FetchedCurrentBlock</span> {
-							<span class="ident">block_hash</span>,
-							<span class="ident">block</span>: <span class="ident">handler</span>.<span class="ident">current_block</span>(<span class="kw-2">&amp;</span><span class="ident">BlockId::Hash</span>(<span class="ident">block_hash</span>)),
+			<span class="comment">// Handle all incoming messages.
+			// Exits when there are no more senders.
+			// Any long computation should be spawned in a separate task
+			// to keep this task handle messages as soon as possible.
+			</span><span class="kw">while let </span><span class="prelude-val">Some</span>(message) = task_rx.recv().<span class="kw">await </span>{
+				<span class="kw">use </span>EthBlockDataCacheMessage::<span class="kw-2">*</span>;
+				<span class="kw">match </span>message {
+					RequestCurrentBlock {
+						block_hash,
+						schema,
+						response_tx,
+					} =&gt; <span class="self">Self</span>::request_current(
+						<span class="kw-2">&amp;</span>spawn_handle,
+						<span class="kw-2">&amp;mut </span>blocks_cache,
+						<span class="kw-2">&amp;mut </span>awaiting_blocks,
+						Arc::clone(<span class="kw-2">&amp;</span>overrides),
+						block_hash,
+						schema,
+						response_tx,
+						task_tx.clone(),
+						<span class="kw">move </span>|handler| FetchedCurrentBlock {
+							block_hash,
+							block: handler.current_block(<span class="kw-2">&amp;</span>BlockId::Hash(block_hash)),
 						},
 					),
-					<span class="ident">FetchedCurrentBlock</span> { <span class="ident">block_hash</span>, <span class="ident">block</span> } =&gt; {
-						<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">wait_list</span>) <span class="op">=</span> <span class="ident">awaiting_blocks</span>.<span class="ident">remove</span>(<span class="kw-2">&amp;</span><span class="ident">block_hash</span>) {
-							<span class="kw">for</span> <span class="ident">sender</span> <span class="kw">in</span> <span class="ident">wait_list</span> {
-								<span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">sender</span>.<span class="ident">send</span>(<span class="ident">block</span>.<span class="ident">clone</span>());
+					FetchedCurrentBlock { block_hash, block } =&gt; {
+						<span class="kw">if let </span><span class="prelude-val">Some</span>(wait_list) = awaiting_blocks.remove(<span class="kw-2">&amp;</span>block_hash) {
+							<span class="kw">for </span>sender <span class="kw">in </span>wait_list {
+								<span class="kw">let _ </span>= sender.send(block.clone());
 							}
 						}
 
-						<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">block</span>) <span class="op">=</span> <span class="ident">block</span> {
-							<span class="ident">blocks_cache</span>.<span class="ident">put</span>(<span class="ident">block_hash</span>, <span class="ident">block</span>);
+						<span class="kw">if let </span><span class="prelude-val">Some</span>(block) = block {
+							blocks_cache.put(block_hash, block);
 						}
 					}
 
-					<span class="ident">RequestCurrentTransactionStatuses</span> {
-						<span class="ident">block_hash</span>,
-						<span class="ident">schema</span>,
-						<span class="ident">response_tx</span>,
-					} =&gt; <span class="ident"><span class="self">Self</span>::request_current</span>(
-						<span class="kw-2">&amp;</span><span class="ident">spawn_handle</span>,
-						<span class="kw-2">&amp;mut</span> <span class="ident">statuses_cache</span>,
-						<span class="kw-2">&amp;mut</span> <span class="ident">awaiting_statuses</span>,
-						<span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span><span class="ident">overrides</span>),
-						<span class="ident">block_hash</span>,
-						<span class="ident">schema</span>,
-						<span class="ident">response_tx</span>,
-						<span class="ident">task_tx</span>.<span class="ident">clone</span>(),
-						<span class="kw">move</span> <span class="op">|</span><span class="ident">handler</span><span class="op">|</span> <span class="ident">FetchedCurrentTransactionStatuses</span> {
-							<span class="ident">block_hash</span>,
-							<span class="ident">statuses</span>: <span class="ident">handler</span>
-								.<span class="ident">current_transaction_statuses</span>(<span class="kw-2">&amp;</span><span class="ident">BlockId::Hash</span>(<span class="ident">block_hash</span>)),
+					RequestCurrentTransactionStatuses {
+						block_hash,
+						schema,
+						response_tx,
+					} =&gt; <span class="self">Self</span>::request_current(
+						<span class="kw-2">&amp;</span>spawn_handle,
+						<span class="kw-2">&amp;mut </span>statuses_cache,
+						<span class="kw-2">&amp;mut </span>awaiting_statuses,
+						Arc::clone(<span class="kw-2">&amp;</span>overrides),
+						block_hash,
+						schema,
+						response_tx,
+						task_tx.clone(),
+						<span class="kw">move </span>|handler| FetchedCurrentTransactionStatuses {
+							block_hash,
+							statuses: handler
+								.current_transaction_statuses(<span class="kw-2">&amp;</span>BlockId::Hash(block_hash)),
 						},
 					),
-					<span class="ident">FetchedCurrentTransactionStatuses</span> {
-						<span class="ident">block_hash</span>,
-						<span class="ident">statuses</span>,
+					FetchedCurrentTransactionStatuses {
+						block_hash,
+						statuses,
 					} =&gt; {
-						<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">wait_list</span>) <span class="op">=</span> <span class="ident">awaiting_statuses</span>.<span class="ident">remove</span>(<span class="kw-2">&amp;</span><span class="ident">block_hash</span>) {
-							<span class="kw">for</span> <span class="ident">sender</span> <span class="kw">in</span> <span class="ident">wait_list</span> {
-								<span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">sender</span>.<span class="ident">send</span>(<span class="ident">statuses</span>.<span class="ident">clone</span>());
+						<span class="kw">if let </span><span class="prelude-val">Some</span>(wait_list) = awaiting_statuses.remove(<span class="kw-2">&amp;</span>block_hash) {
+							<span class="kw">for </span>sender <span class="kw">in </span>wait_list {
+								<span class="kw">let _ </span>= sender.send(statuses.clone());
 							}
 						}
 
-						<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">statuses</span>) <span class="op">=</span> <span class="ident">statuses</span> {
-							<span class="ident">statuses_cache</span>.<span class="ident">put</span>(<span class="ident">block_hash</span>, <span class="ident">statuses</span>);
+						<span class="kw">if let </span><span class="prelude-val">Some</span>(statuses) = statuses {
+							statuses_cache.put(block_hash, statuses);
 						}
 					}
 				}
 			}
 		});
 
-		<span class="self">Self</span>(<span class="ident">outer_task_tx</span>)
+		<span class="self">Self</span>(outer_task_tx)
 	}
 
-	<span class="kw">fn</span> <span class="ident">request_current</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">F</span><span class="op">&gt;</span>(
-		<span class="ident">spawn_handle</span>: <span class="kw-2">&amp;</span><span class="ident">SpawnTaskHandle</span>,
-		<span class="ident">cache</span>: <span class="kw-2">&amp;mut</span> <span class="ident">LRUCacheByteLimited</span><span class="op">&lt;</span><span class="ident">B::Hash</span>, <span class="ident">T</span><span class="op">&gt;</span>,
-		<span class="ident">wait_list</span>: <span class="kw-2">&amp;mut</span> <span class="ident">WaitList</span><span class="op">&lt;</span><span class="ident">B::Hash</span>, <span class="ident">T</span><span class="op">&gt;</span>,
-		<span class="ident">overrides</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">OverrideHandle</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-		<span class="ident">block_hash</span>: <span class="ident">B::Hash</span>,
-		<span class="ident">schema</span>: <span class="ident">EthereumStorageSchema</span>,
-		<span class="ident">response_tx</span>: <span class="ident">oneshot::Sender</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-		<span class="ident">task_tx</span>: <span class="ident">mpsc::Sender</span><span class="op">&lt;</span><span class="ident">EthBlockDataCacheMessage</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-		<span class="ident">handler_call</span>: <span class="ident">F</span>,
-	) <span class="kw">where</span>
-		<span class="ident">T</span>: <span class="ident">Clone</span> <span class="op">+</span> <span class="ident">codec::Encode</span>,
-		<span class="ident">F</span>: <span class="ident">FnOnce</span>(<span class="kw-2">&amp;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">StorageOverride</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span><span class="op">&gt;</span>) -&gt; <span class="ident">EthBlockDataCacheMessage</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span>,
-		<span class="ident">F</span>: <span class="ident">Send</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
+	<span class="kw">fn </span>request_current&lt;T, F&gt;(
+		spawn_handle: <span class="kw-2">&amp;</span>SpawnTaskHandle,
+		cache: <span class="kw-2">&amp;mut </span>LRUCacheByteLimited&lt;B::Hash, T&gt;,
+		wait_list: <span class="kw-2">&amp;mut </span>WaitList&lt;B::Hash, T&gt;,
+		overrides: Arc&lt;OverrideHandle&lt;B&gt;&gt;,
+		block_hash: B::Hash,
+		schema: EthereumStorageSchema,
+		response_tx: oneshot::Sender&lt;<span class="prelude-ty">Option</span>&lt;T&gt;&gt;,
+		task_tx: mpsc::Sender&lt;EthBlockDataCacheMessage&lt;B&gt;&gt;,
+		handler_call: F,
+	) <span class="kw">where
+		</span>T: Clone + codec::Encode,
+		F: FnOnce(<span class="kw-2">&amp;</span>Box&lt;<span class="kw">dyn </span>StorageOverride&lt;B&gt; + Send + Sync&gt;) -&gt; EthBlockDataCacheMessage&lt;B&gt;,
+		F: Send + <span class="lifetime">&#39;static</span>,
 	{
-		<span class="comment">// Data is cached, we respond immediately.</span>
-		<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">data</span>) <span class="op">=</span> <span class="ident">cache</span>.<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">block_hash</span>).<span class="ident">cloned</span>() {
-			<span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">response_tx</span>.<span class="ident">send</span>(<span class="prelude-val">Some</span>(<span class="ident">data</span>));
+		<span class="comment">// Data is cached, we respond immediately.
+		</span><span class="kw">if let </span><span class="prelude-val">Some</span>(data) = cache.get(<span class="kw-2">&amp;</span>block_hash).cloned() {
+			<span class="kw">let _ </span>= response_tx.send(<span class="prelude-val">Some</span>(data));
 			<span class="kw">return</span>;
 		}
 
-		<span class="comment">// Another request already triggered caching but the</span>
-		<span class="comment">// response is not known yet, we add the sender to the waiting</span>
-		<span class="comment">// list.</span>
-		<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">waiting</span>) <span class="op">=</span> <span class="ident">wait_list</span>.<span class="ident">get_mut</span>(<span class="kw-2">&amp;</span><span class="ident">block_hash</span>) {
-			<span class="ident">waiting</span>.<span class="ident">push</span>(<span class="ident">response_tx</span>);
+		<span class="comment">// Another request already triggered caching but the
+		// response is not known yet, we add the sender to the waiting
+		// list.
+		</span><span class="kw">if let </span><span class="prelude-val">Some</span>(waiting) = wait_list.get_mut(<span class="kw-2">&amp;</span>block_hash) {
+			waiting.push(response_tx);
 			<span class="kw">return</span>;
 		}
 
-		<span class="comment">// Data is neither cached nor already requested, so we start fetching</span>
-		<span class="comment">// the data.</span>
-		<span class="ident">wait_list</span>.<span class="ident">insert</span>(<span class="ident">block_hash</span>, <span class="macro">vec!</span>[<span class="ident">response_tx</span>]);
+		<span class="comment">// Data is neither cached nor already requested, so we start fetching
+		// the data.
+		</span>wait_list.insert(block_hash, <span class="macro">vec!</span>[response_tx]);
 
-		<span class="ident">spawn_handle</span>.<span class="ident">spawn</span>(<span class="string">&quot;EthBlockDataCacheTask Worker&quot;</span>, <span class="prelude-val">None</span>, <span class="kw">async</span> <span class="kw">move</span> {
-			<span class="kw">let</span> <span class="ident">handler</span> <span class="op">=</span> <span class="ident">overrides</span>
-				.<span class="ident">schemas</span>
-				.<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">schema</span>)
-				.<span class="ident">unwrap_or</span>(<span class="kw-2">&amp;</span><span class="ident">overrides</span>.<span class="ident">fallback</span>);
+		spawn_handle.spawn(<span class="string">&quot;EthBlockDataCacheTask Worker&quot;</span>, <span class="prelude-val">None</span>, <span class="kw">async move </span>{
+			<span class="kw">let </span>handler = overrides
+				.schemas
+				.get(<span class="kw-2">&amp;</span>schema)
+				.unwrap_or(<span class="kw-2">&amp;</span>overrides.fallback);
 
-			<span class="kw">let</span> <span class="ident">message</span> <span class="op">=</span> <span class="ident">handler_call</span>(<span class="ident">handler</span>);
-			<span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">task_tx</span>.<span class="ident">send</span>(<span class="ident">message</span>).<span class="kw">await</span>;
+			<span class="kw">let </span>message = handler_call(handler);
+			<span class="kw">let _ </span>= task_tx.send(message).<span class="kw">await</span>;
 		});
 	}
 
-	<span class="doccomment">/// Cache for `handler.current_block`.</span>
-	<span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">current_block</span>(
+	<span class="doccomment">/// Cache for `handler.current_block`.
+	</span><span class="kw">pub async fn </span>current_block(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		<span class="ident">schema</span>: <span class="ident">EthereumStorageSchema</span>,
-		<span class="ident">block_hash</span>: <span class="ident">B::Hash</span>,
-	) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">EthereumBlock</span><span class="op">&gt;</span> {
-		<span class="kw">let</span> (<span class="ident">response_tx</span>, <span class="ident">response_rx</span>) <span class="op">=</span> <span class="ident">oneshot::channel</span>();
+		schema: EthereumStorageSchema,
+		block_hash: B::Hash,
+	) -&gt; <span class="prelude-ty">Option</span>&lt;EthereumBlock&gt; {
+		<span class="kw">let </span>(response_tx, response_rx) = oneshot::channel();
 
-		<span class="self">self</span>.<span class="number">0</span>
-			.<span class="ident">send</span>(<span class="ident">EthBlockDataCacheMessage::RequestCurrentBlock</span> {
-				<span class="ident">block_hash</span>,
-				<span class="ident">schema</span>,
-				<span class="ident">response_tx</span>,
+		<span class="self">self</span>.<span class="number">0
+			</span>.send(EthBlockDataCacheMessage::RequestCurrentBlock {
+				block_hash,
+				schema,
+				response_tx,
 			})
-			.<span class="kw">await</span>
-			.<span class="ident">ok</span>()<span class="question-mark">?</span>;
+			.<span class="kw">await
+			</span>.ok()<span class="question-mark">?</span>;
 
-		<span class="ident">response_rx</span>.<span class="kw">await</span>.<span class="ident">ok</span>()<span class="question-mark">?</span>
-	}
+		response_rx.<span class="kw">await</span>.ok()<span class="question-mark">?
+	</span>}
 
-	<span class="doccomment">/// Cache for `handler.current_transaction_statuses`.</span>
-	<span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">current_transaction_statuses</span>(
+	<span class="doccomment">/// Cache for `handler.current_transaction_statuses`.
+	</span><span class="kw">pub async fn </span>current_transaction_statuses(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		<span class="ident">schema</span>: <span class="ident">EthereumStorageSchema</span>,
-		<span class="ident">block_hash</span>: <span class="ident">B::Hash</span>,
-	) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TransactionStatus</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-		<span class="kw">let</span> (<span class="ident">response_tx</span>, <span class="ident">response_rx</span>) <span class="op">=</span> <span class="ident">oneshot::channel</span>();
+		schema: EthereumStorageSchema,
+		block_hash: B::Hash,
+	) -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;TransactionStatus&gt;&gt; {
+		<span class="kw">let </span>(response_tx, response_rx) = oneshot::channel();
 
-		<span class="self">self</span>.<span class="number">0</span>
-			.<span class="ident">send</span>(
-				<span class="ident">EthBlockDataCacheMessage::RequestCurrentTransactionStatuses</span> {
-					<span class="ident">block_hash</span>,
-					<span class="ident">schema</span>,
-					<span class="ident">response_tx</span>,
+		<span class="self">self</span>.<span class="number">0
+			</span>.send(
+				EthBlockDataCacheMessage::RequestCurrentTransactionStatuses {
+					block_hash,
+					schema,
+					response_tx,
 				},
 			)
-			.<span class="kw">await</span>
-			.<span class="ident">ok</span>()<span class="question-mark">?</span>;
+			.<span class="kw">await
+			</span>.ok()<span class="question-mark">?</span>;
 
-		<span class="ident">response_rx</span>.<span class="kw">await</span>.<span class="ident">ok</span>()<span class="question-mark">?</span>
-	}
+		response_rx.<span class="kw">await</span>.ok()<span class="question-mark">?
+	</span>}
 }
 
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">EthTask</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span>, <span class="ident">BE</span><span class="op">&gt;</span>(<span class="ident">PhantomData</span><span class="op">&lt;</span>(<span class="ident">B</span>, <span class="ident">C</span>, <span class="ident">BE</span>)<span class="op">&gt;</span>);
+<span class="kw">pub struct </span>EthTask&lt;B, C, BE&gt;(PhantomData&lt;(B, C, BE)&gt;);
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span>, <span class="ident">BE</span><span class="op">&gt;</span> <span class="ident">EthTask</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span>, <span class="ident">BE</span><span class="op">&gt;</span>
-<span class="kw">where</span>
-	<span class="ident">B</span>: <span class="ident">BlockT</span><span class="op">&lt;</span><span class="ident">Hash</span> <span class="op">=</span> <span class="ident">H256</span><span class="op">&gt;</span>,
-	<span class="ident">C</span>: <span class="ident">ProvideRuntimeApi</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">StorageProvider</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">BE</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">BlockchainEvents</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span>,
-	<span class="ident">C</span>: <span class="ident">HeaderBackend</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
-	<span class="ident">C::Api</span>: <span class="ident">EthereumRuntimeRPCApi</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span>,
-	<span class="ident">BE</span>: <span class="ident">Backend</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
-	<span class="ident">BE::State</span>: <span class="ident">StateBackend</span><span class="op">&lt;</span><span class="ident">BlakeTwo256</span><span class="op">&gt;</span>,
+<span class="kw">impl</span>&lt;B, C, BE&gt; EthTask&lt;B, C, BE&gt;
+<span class="kw">where
+	</span>B: BlockT&lt;Hash = H256&gt;,
+	C: ProvideRuntimeApi&lt;B&gt; + StorageProvider&lt;B, BE&gt; + BlockchainEvents&lt;B&gt;,
+	C: HeaderBackend&lt;B&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
+	C::Api: EthereumRuntimeRPCApi&lt;B&gt;,
+	BE: Backend&lt;B&gt; + <span class="lifetime">&#39;static</span>,
+	BE::State: StateBackend&lt;BlakeTwo256&gt;,
 {
-	<span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">filter_pool_task</span>(
-		<span class="ident">client</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
-		<span class="ident">filter_pool</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">Mutex</span><span class="op">&lt;</span><span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">U256</span>, <span class="ident">FilterPoolItem</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-		<span class="ident">retain_threshold</span>: <span class="ident">u64</span>,
+	<span class="kw">pub async fn </span>filter_pool_task(
+		client: Arc&lt;C&gt;,
+		filter_pool: Arc&lt;Mutex&lt;BTreeMap&lt;U256, FilterPoolItem&gt;&gt;&gt;,
+		retain_threshold: u64,
 	) {
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">notification_st</span> <span class="op">=</span> <span class="ident">client</span>.<span class="ident">import_notification_stream</span>();
+		<span class="kw">let </span><span class="kw-2">mut </span>notification_st = client.import_notification_stream();
 
-		<span class="kw">while</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">notification</span>) <span class="op">=</span> <span class="ident">notification_st</span>.<span class="ident">next</span>().<span class="kw">await</span> {
-			<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">filter_pool</span>) <span class="op">=</span> <span class="kw-2">&amp;mut</span> <span class="ident">filter_pool</span>.<span class="ident">lock</span>() {
-				<span class="kw">let</span> <span class="ident">imported_number</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="ident">UniqueSaturatedInto</span>::<span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span><span class="ident">::unique_saturated_into</span>(
-					<span class="kw-2">*</span><span class="ident">notification</span>.<span class="ident">header</span>.<span class="ident">number</span>(),
+		<span class="kw">while let </span><span class="prelude-val">Some</span>(notification) = notification_st.next().<span class="kw">await </span>{
+			<span class="kw">if let </span><span class="prelude-val">Ok</span>(filter_pool) = <span class="kw-2">&amp;mut </span>filter_pool.lock() {
+				<span class="kw">let </span>imported_number: u64 = UniqueSaturatedInto::&lt;u64&gt;::unique_saturated_into(
+					<span class="kw-2">*</span>notification.header.number(),
 				);
 
-				<span class="ident">filter_pool</span>.<span class="ident">retain</span>(<span class="op">|</span><span class="kw">_</span>, <span class="ident">v</span><span class="op">|</span> <span class="ident">v</span>.<span class="ident">at_block</span> <span class="op">+</span> <span class="ident">retain_threshold</span> <span class="op">&gt;</span> <span class="ident">imported_number</span>);
+				filter_pool.retain(|<span class="kw">_</span>, v| v.at_block + retain_threshold &gt; imported_number);
 			}
 		}
 	}
 
-	<span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">fee_history_task</span>(
-		<span class="ident">client</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
-		<span class="ident">overrides</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">OverrideHandle</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-		<span class="ident">fee_history_cache</span>: <span class="ident">FeeHistoryCache</span>,
-		<span class="ident">block_limit</span>: <span class="ident">u64</span>,
+	<span class="kw">pub async fn </span>fee_history_task(
+		client: Arc&lt;C&gt;,
+		overrides: Arc&lt;OverrideHandle&lt;B&gt;&gt;,
+		fee_history_cache: FeeHistoryCache,
+		block_limit: u64,
 	) {
-		<span class="kw">use</span> <span class="ident">sp_runtime::Permill</span>;
+		<span class="kw">use </span>sp_runtime::Permill;
 
-		<span class="kw">struct</span> <span class="ident">TransactionHelper</span> {
-			<span class="ident">gas_used</span>: <span class="ident">u64</span>,
-			<span class="ident">effective_reward</span>: <span class="ident">u64</span>,
+		<span class="kw">struct </span>TransactionHelper {
+			gas_used: u64,
+			effective_reward: u64,
 		}
-		<span class="comment">// Calculates the cache for a single block</span>
-		<span class="attribute">#[<span class="ident">rustfmt::skip</span>]</span>
-			<span class="kw">let</span> <span class="ident">fee_history_cache_item</span> <span class="op">=</span> <span class="op">|</span><span class="ident">hash</span>: <span class="ident">H256</span>, <span class="ident">elasticity</span>: <span class="ident">Permill</span><span class="op">|</span> -&gt; (
-			<span class="ident">FeeHistoryCacheItem</span>,
-			<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>
+		<span class="comment">// Calculates the cache for a single block
+		</span><span class="attribute">#[rustfmt::skip]
+			</span><span class="kw">let </span>fee_history_cache_item = |hash: H256, elasticity: Permill| -&gt; (
+			FeeHistoryCacheItem,
+			<span class="prelude-ty">Option</span>&lt;u64&gt;
 		) {
-			<span class="kw">let</span> <span class="ident">id</span> <span class="op">=</span> <span class="ident">BlockId::Hash</span>(<span class="ident">hash</span>);
-			<span class="kw">let</span> <span class="ident">schema</span> <span class="op">=</span>
-				<span class="ident">frontier_backend_client::onchain_storage_schema</span>::<span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span>, <span class="ident">BE</span><span class="op">&gt;</span>(<span class="ident">client</span>.<span class="ident">as_ref</span>(), <span class="ident">id</span>);
-			<span class="kw">let</span> <span class="ident">handler</span> <span class="op">=</span> <span class="ident">overrides</span>
-				.<span class="ident">schemas</span>
-				.<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">schema</span>)
-				.<span class="ident">unwrap_or</span>(<span class="kw-2">&amp;</span><span class="ident">overrides</span>.<span class="ident">fallback</span>);
+			<span class="kw">let </span>id = BlockId::Hash(hash);
+			<span class="kw">let </span>schema =
+				frontier_backend_client::onchain_storage_schema::&lt;B, C, BE&gt;(client.as_ref(), id);
+			<span class="kw">let </span>handler = overrides
+				.schemas
+				.get(<span class="kw-2">&amp;</span>schema)
+				.unwrap_or(<span class="kw-2">&amp;</span>overrides.fallback);
 
-			<span class="comment">// Evenly spaced percentile list from 0.0 to 100.0 with a 0.5 resolution.</span>
-			<span class="comment">// This means we cache 200 percentile points.</span>
-			<span class="comment">// Later in request handling we will approximate by rounding percentiles that</span>
-			<span class="comment">// fall in between with `(round(n*2)/2)`.</span>
-			<span class="kw">let</span> <span class="ident">reward_percentiles</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">f64</span><span class="op">&gt;</span> <span class="op">=</span> {
-				<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">percentile</span>: <span class="ident">f64</span> <span class="op">=</span> <span class="number">0.0</span>;
+			<span class="comment">// Evenly spaced percentile list from 0.0 to 100.0 with a 0.5 resolution.
+			// This means we cache 200 percentile points.
+			// Later in request handling we will approximate by rounding percentiles that
+			// fall in between with `(round(n*2)/2)`.
+			</span><span class="kw">let </span>reward_percentiles: Vec&lt;f64&gt; = {
+				<span class="kw">let </span><span class="kw-2">mut </span>percentile: f64 = <span class="number">0.0</span>;
 				(<span class="number">0</span>..<span class="number">201</span>)
-					.<span class="ident">into_iter</span>()
-					.<span class="ident">map</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> {
-						<span class="kw">let</span> <span class="ident">val</span> <span class="op">=</span> <span class="ident">percentile</span>;
-						<span class="ident">percentile</span> <span class="op">+</span><span class="op">=</span> <span class="number">0.5</span>;
-						<span class="ident">val</span>
+					.into_iter()
+					.map(|<span class="kw">_</span>| {
+						<span class="kw">let </span>val = percentile;
+						percentile += <span class="number">0.5</span>;
+						val
 					})
-					.<span class="ident">collect</span>()
+					.collect()
 			};
 
-			<span class="kw">let</span> <span class="ident">block</span> <span class="op">=</span> <span class="ident">handler</span>.<span class="ident">current_block</span>(<span class="kw-2">&amp;</span><span class="ident">id</span>);
-			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">block_number</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span> <span class="op">=</span> <span class="prelude-val">None</span>;
-			<span class="kw">let</span> <span class="ident">base_fee</span> <span class="op">=</span> <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">base_fee</span>) <span class="op">=</span> <span class="ident">handler</span>.<span class="ident">base_fee</span>(<span class="kw-2">&amp;</span><span class="ident">id</span>) {
-				<span class="ident">base_fee</span>
-			} <span class="kw">else</span> {
-				<span class="ident">client</span>.<span class="ident">runtime_api</span>().<span class="ident">gas_price</span>(<span class="kw-2">&amp;</span><span class="ident">id</span>).<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span><span class="ident">U256::zero</span>())
+			<span class="kw">let </span>block = handler.current_block(<span class="kw-2">&amp;</span>id);
+			<span class="kw">let </span><span class="kw-2">mut </span>block_number: <span class="prelude-ty">Option</span>&lt;u64&gt; = <span class="prelude-val">None</span>;
+			<span class="kw">let </span>base_fee = <span class="kw">if let </span><span class="prelude-val">Some</span>(base_fee) = handler.base_fee(<span class="kw-2">&amp;</span>id) {
+				base_fee
+			} <span class="kw">else </span>{
+				client.runtime_api().gas_price(<span class="kw-2">&amp;</span>id).unwrap_or_else(|<span class="kw">_</span>|U256::zero())
 			};
-			<span class="kw">let</span> <span class="ident">receipts</span> <span class="op">=</span> <span class="ident">handler</span>.<span class="ident">current_receipts</span>(<span class="kw-2">&amp;</span><span class="ident">id</span>);
-			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">result</span> <span class="op">=</span> <span class="ident">FeeHistoryCacheItem</span> {
-				<span class="ident">base_fee</span>: <span class="ident">base_fee</span>.<span class="ident">as_u64</span>(),
-				<span class="ident">gas_used_ratio</span>: <span class="number">0f64</span>,
-				<span class="ident">rewards</span>: <span class="ident">Vec::new</span>(),
+			<span class="kw">let </span>receipts = handler.current_receipts(<span class="kw-2">&amp;</span>id);
+			<span class="kw">let </span><span class="kw-2">mut </span>result = FeeHistoryCacheItem {
+				base_fee: base_fee.as_u64(),
+				gas_used_ratio: <span class="number">0f64</span>,
+				rewards: Vec::new(),
 			};
-			<span class="kw">if</span> <span class="kw">let</span> (<span class="prelude-val">Some</span>(<span class="ident">block</span>), <span class="prelude-val">Some</span>(<span class="ident">receipts</span>)) <span class="op">=</span> (<span class="ident">block</span>, <span class="ident">receipts</span>) {
-				<span class="ident">block_number</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">number</span>.<span class="ident">as_u64</span>());
-				<span class="comment">// Calculate the gas used ratio.</span>
-				<span class="comment">// TODO this formula needs the pallet-base-fee configuration.</span>
-				<span class="comment">// By now we assume just the default 0.125 (elasticity multiplier 8).</span>
-				<span class="kw">let</span> <span class="ident">gas_used</span> <span class="op">=</span> <span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">gas_used</span>.<span class="ident">as_u64</span>() <span class="kw">as</span> <span class="ident">f64</span>;
-				<span class="kw">let</span> <span class="ident">gas_limit</span> <span class="op">=</span> <span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">gas_limit</span>.<span class="ident">as_u64</span>() <span class="kw">as</span> <span class="ident">f64</span>;
-				<span class="kw">let</span> <span class="ident">elasticity_multiplier</span>: <span class="ident">f64</span> <span class="op">=</span> (<span class="ident">elasticity</span> <span class="op">/</span> <span class="ident">Permill::from_parts</span>(<span class="number">1_000_000</span>))
-					.<span class="ident">deconstruct</span>()
-					.<span class="ident">into</span>();
-				<span class="kw">let</span> <span class="ident">gas_target</span> <span class="op">=</span> <span class="ident">gas_limit</span> <span class="op">/</span> <span class="ident">elasticity_multiplier</span>;
+			<span class="kw">if let </span>(<span class="prelude-val">Some</span>(block), <span class="prelude-val">Some</span>(receipts)) = (block, receipts) {
+				block_number = <span class="prelude-val">Some</span>(block.header.number.as_u64());
+				<span class="comment">// Calculate the gas used ratio.
+				// TODO this formula needs the pallet-base-fee configuration.
+				// By now we assume just the default 0.125 (elasticity multiplier 8).
+				</span><span class="kw">let </span>gas_used = block.header.gas_used.as_u64() <span class="kw">as </span>f64;
+				<span class="kw">let </span>gas_limit = block.header.gas_limit.as_u64() <span class="kw">as </span>f64;
+				<span class="kw">let </span>elasticity_multiplier: f64 = (elasticity / Permill::from_parts(<span class="number">1_000_000</span>))
+					.deconstruct()
+					.into();
+				<span class="kw">let </span>gas_target = gas_limit / elasticity_multiplier;
 
-				<span class="ident">result</span>.<span class="ident">gas_used_ratio</span> <span class="op">=</span> <span class="ident">gas_used</span> <span class="op">/</span> (<span class="ident">gas_target</span> <span class="op">*</span> <span class="ident">elasticity_multiplier</span>);
+				result.gas_used_ratio = gas_used / (gas_target * elasticity_multiplier);
 
-				<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">previous_cumulative_gas</span> <span class="op">=</span> <span class="ident">U256::zero</span>();
-				<span class="kw">let</span> <span class="ident">used_gas</span> <span class="op">=</span> <span class="op">|</span><span class="ident">current</span>: <span class="ident">U256</span>, <span class="ident">previous</span>: <span class="kw-2">&amp;mut</span> <span class="ident">U256</span><span class="op">|</span> -&gt; <span class="ident">u64</span> {
-					<span class="kw">let</span> <span class="ident">r</span> <span class="op">=</span> <span class="ident">current</span>.<span class="ident">saturating_sub</span>(<span class="kw-2">*</span><span class="ident">previous</span>).<span class="ident">as_u64</span>();
-					<span class="kw-2">*</span><span class="ident">previous</span> <span class="op">=</span> <span class="ident">current</span>;
-					<span class="ident">r</span>
+				<span class="kw">let </span><span class="kw-2">mut </span>previous_cumulative_gas = U256::zero();
+				<span class="kw">let </span>used_gas = |current: U256, previous: <span class="kw-2">&amp;mut </span>U256| -&gt; u64 {
+					<span class="kw">let </span>r = current.saturating_sub(<span class="kw-2">*</span>previous).as_u64();
+					<span class="kw-2">*</span>previous = current;
+					r
 				};
-				<span class="comment">// Build a list of relevant transaction information.</span>
-				<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">transactions</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TransactionHelper</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">receipts</span>
-					.<span class="ident">iter</span>()
-					.<span class="ident">enumerate</span>()
-					.<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">i</span>, <span class="ident">receipt</span>)<span class="op">|</span> <span class="ident">TransactionHelper</span> {
-						<span class="ident">gas_used</span>: <span class="kw">match</span> <span class="ident">receipt</span> {
-							<span class="ident">ethereum::ReceiptV3::Legacy</span>(<span class="ident">d</span>) <span class="op">|</span> <span class="ident">ethereum::ReceiptV3::EIP2930</span>(<span class="ident">d</span>) <span class="op">|</span> <span class="ident">ethereum::ReceiptV3::EIP1559</span>(<span class="ident">d</span>) =&gt; <span class="ident">used_gas</span>(<span class="ident">d</span>.<span class="ident">used_gas</span>, <span class="kw-2">&amp;mut</span> <span class="ident">previous_cumulative_gas</span>),
+				<span class="comment">// Build a list of relevant transaction information.
+				</span><span class="kw">let </span><span class="kw-2">mut </span>transactions: Vec&lt;TransactionHelper&gt; = receipts
+					.iter()
+					.enumerate()
+					.map(|(i, receipt)| TransactionHelper {
+						gas_used: <span class="kw">match </span>receipt {
+							ethereum::ReceiptV3::Legacy(d) | ethereum::ReceiptV3::EIP2930(d) | ethereum::ReceiptV3::EIP1559(d) =&gt; used_gas(d.used_gas, <span class="kw-2">&amp;mut </span>previous_cumulative_gas),
 						},
-						<span class="ident">effective_reward</span>: <span class="kw">match</span> <span class="ident">block</span>.<span class="ident">transactions</span>.<span class="ident">get</span>(<span class="ident">i</span>) {
-							<span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span><span class="ident">ethereum::TransactionV2::Legacy</span>(<span class="kw-2">ref</span> <span class="ident">t</span>)) =&gt; {
-								<span class="ident">t</span>.<span class="ident">gas_price</span>.<span class="ident">saturating_sub</span>(<span class="ident">base_fee</span>).<span class="ident">as_u64</span>()
+						effective_reward: <span class="kw">match </span>block.transactions.get(i) {
+							<span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>ethereum::TransactionV2::Legacy(<span class="kw-2">ref </span>t)) =&gt; {
+								t.gas_price.saturating_sub(base_fee).as_u64()
 							}
-							<span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span><span class="ident">ethereum::TransactionV2::EIP2930</span>(<span class="kw-2">ref</span> <span class="ident">t</span>)) =&gt; {
-								<span class="ident">t</span>.<span class="ident">gas_price</span>.<span class="ident">saturating_sub</span>(<span class="ident">base_fee</span>).<span class="ident">as_u64</span>()
+							<span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>ethereum::TransactionV2::EIP2930(<span class="kw-2">ref </span>t)) =&gt; {
+								t.gas_price.saturating_sub(base_fee).as_u64()
 							}
-							<span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span><span class="ident">ethereum::TransactionV2::EIP1559</span>(<span class="kw-2">ref</span> <span class="ident">t</span>)) =&gt; <span class="ident">t</span>
-								.<span class="ident">max_priority_fee_per_gas</span>
-								.<span class="ident">min</span>(<span class="ident">t</span>.<span class="ident">max_fee_per_gas</span>.<span class="ident">saturating_sub</span>(<span class="ident">base_fee</span>))
-								.<span class="ident">as_u64</span>(),
-							<span class="prelude-val">None</span> =&gt; <span class="number">0</span>,
+							<span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>ethereum::TransactionV2::EIP1559(<span class="kw-2">ref </span>t)) =&gt; t
+								.max_priority_fee_per_gas
+								.min(t.max_fee_per_gas.saturating_sub(base_fee))
+								.as_u64(),
+							<span class="prelude-val">None </span>=&gt; <span class="number">0</span>,
 						},
 					})
-					.<span class="ident">collect</span>();
-				<span class="comment">// Sort ASC by effective reward.</span>
-				<span class="ident">transactions</span>.<span class="ident">sort_by</span>(<span class="op">|</span><span class="ident">a</span>, <span class="ident">b</span><span class="op">|</span> <span class="ident">a</span>.<span class="ident">effective_reward</span>.<span class="ident">cmp</span>(<span class="kw-2">&amp;</span><span class="ident">b</span>.<span class="ident">effective_reward</span>));
+					.collect();
+				<span class="comment">// Sort ASC by effective reward.
+				</span>transactions.sort_by(|a, b| a.effective_reward.cmp(<span class="kw-2">&amp;</span>b.effective_reward));
 
-				<span class="comment">// Calculate percentile rewards.</span>
-				<span class="ident">result</span>.<span class="ident">rewards</span> <span class="op">=</span> <span class="ident">reward_percentiles</span>
-					.<span class="ident">into_iter</span>()
-					.<span class="ident">filter_map</span>(<span class="op">|</span><span class="ident">p</span><span class="op">|</span> {
-						<span class="kw">let</span> <span class="ident">target_gas</span> <span class="op">=</span> (<span class="ident">p</span> <span class="op">*</span> <span class="ident">gas_used</span> <span class="op">/</span> <span class="number">100f64</span>) <span class="kw">as</span> <span class="ident">u64</span>;
-						<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">sum_gas</span> <span class="op">=</span> <span class="number">0</span>;
-						<span class="kw">for</span> <span class="ident">tx</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">transactions</span> {
-							<span class="ident">sum_gas</span> <span class="op">+</span><span class="op">=</span> <span class="ident">tx</span>.<span class="ident">gas_used</span>;
-							<span class="kw">if</span> <span class="ident">target_gas</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">sum_gas</span> {
-								<span class="kw">return</span> <span class="prelude-val">Some</span>(<span class="ident">tx</span>.<span class="ident">effective_reward</span>);
+				<span class="comment">// Calculate percentile rewards.
+				</span>result.rewards = reward_percentiles
+					.into_iter()
+					.filter_map(|p| {
+						<span class="kw">let </span>target_gas = (p * gas_used / <span class="number">100f64</span>) <span class="kw">as </span>u64;
+						<span class="kw">let </span><span class="kw-2">mut </span>sum_gas = <span class="number">0</span>;
+						<span class="kw">for </span>tx <span class="kw">in </span><span class="kw-2">&amp;</span>transactions {
+							sum_gas += tx.gas_used;
+							<span class="kw">if </span>target_gas &lt;= sum_gas {
+								<span class="kw">return </span><span class="prelude-val">Some</span>(tx.effective_reward);
 							}
 						}
-						<span class="prelude-val">None</span>
-					})
-					.<span class="ident">collect</span>();
-			} <span class="kw">else</span> {
-				<span class="ident">result</span>.<span class="ident">rewards</span> <span class="op">=</span> <span class="ident">reward_percentiles</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="number">0</span>).<span class="ident">collect</span>();
+						<span class="prelude-val">None
+					</span>})
+					.collect();
+			} <span class="kw">else </span>{
+				result.rewards = reward_percentiles.iter().map(|<span class="kw">_</span>| <span class="number">0</span>).collect();
 			}
-			(<span class="ident">result</span>, <span class="ident">block_number</span>)
+			(result, block_number)
 		};
 
-		<span class="comment">// Commits the result to cache</span>
-		<span class="kw">let</span> <span class="ident">commit_if_any</span> <span class="op">=</span> <span class="op">|</span><span class="ident">item</span>: <span class="ident">FeeHistoryCacheItem</span>, <span class="ident">key</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span><span class="op">|</span> {
-			<span class="kw">if</span> <span class="kw">let</span> (<span class="prelude-val">Some</span>(<span class="ident">block_number</span>), <span class="prelude-val">Ok</span>(<span class="ident">fee_history_cache</span>)) <span class="op">=</span>
-				(<span class="ident">key</span>, <span class="kw-2">&amp;mut</span> <span class="ident">fee_history_cache</span>.<span class="ident">lock</span>())
+		<span class="comment">// Commits the result to cache
+		</span><span class="kw">let </span>commit_if_any = |item: FeeHistoryCacheItem, key: <span class="prelude-ty">Option</span>&lt;u64&gt;| {
+			<span class="kw">if let </span>(<span class="prelude-val">Some</span>(block_number), <span class="prelude-val">Ok</span>(fee_history_cache)) =
+				(key, <span class="kw-2">&amp;mut </span>fee_history_cache.lock())
 			{
-				<span class="ident">fee_history_cache</span>.<span class="ident">insert</span>(<span class="ident">block_number</span>, <span class="ident">item</span>);
-				<span class="comment">// We want to remain within the configured cache bounds.</span>
-				<span class="comment">// The first key out of bounds.</span>
-				<span class="kw">let</span> <span class="ident">first_out</span> <span class="op">=</span> <span class="ident">block_number</span>.<span class="ident">saturating_sub</span>(<span class="ident">block_limit</span>);
-				<span class="comment">// Out of bounds size.</span>
-				<span class="kw">let</span> <span class="ident">to_remove</span> <span class="op">=</span> (<span class="ident">fee_history_cache</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">u64</span>).<span class="ident">saturating_sub</span>(<span class="ident">block_limit</span>);
-				<span class="comment">// Remove all cache data before `block_limit`.</span>
-				<span class="kw">for</span> <span class="ident">i</span> <span class="kw">in</span> <span class="number">0</span>..<span class="ident">to_remove</span> {
-					<span class="comment">// Cannot overflow.</span>
-					<span class="kw">let</span> <span class="ident">key</span> <span class="op">=</span> <span class="ident">first_out</span> <span class="op">-</span> <span class="ident">i</span>;
-					<span class="ident">fee_history_cache</span>.<span class="ident">remove</span>(<span class="kw-2">&amp;</span><span class="ident">key</span>);
+				fee_history_cache.insert(block_number, item);
+				<span class="comment">// We want to remain within the configured cache bounds.
+				// The first key out of bounds.
+				</span><span class="kw">let </span>first_out = block_number.saturating_sub(block_limit);
+				<span class="comment">// Out of bounds size.
+				</span><span class="kw">let </span>to_remove = (fee_history_cache.len() <span class="kw">as </span>u64).saturating_sub(block_limit);
+				<span class="comment">// Remove all cache data before `block_limit`.
+				</span><span class="kw">for </span>i <span class="kw">in </span><span class="number">0</span>..to_remove {
+					<span class="comment">// Cannot overflow.
+					</span><span class="kw">let </span>key = first_out - i;
+					fee_history_cache.remove(<span class="kw-2">&amp;</span>key);
 				}
 			}
 		};
 
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">notification_st</span> <span class="op">=</span> <span class="ident">client</span>.<span class="ident">import_notification_stream</span>();
+		<span class="kw">let </span><span class="kw-2">mut </span>notification_st = client.import_notification_stream();
 
-		<span class="kw">while</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">notification</span>) <span class="op">=</span> <span class="ident">notification_st</span>.<span class="ident">next</span>().<span class="kw">await</span> {
-			<span class="kw">if</span> <span class="ident">notification</span>.<span class="ident">is_new_best</span> {
-				<span class="kw">let</span> <span class="ident">hash</span> <span class="op">=</span> <span class="ident">notification</span>.<span class="ident">hash</span>;
-				<span class="kw">let</span> <span class="ident">id</span> <span class="op">=</span> <span class="ident">BlockId::Hash</span>(<span class="ident">hash</span>);
-				<span class="kw">let</span> <span class="ident">schema</span> <span class="op">=</span> <span class="ident">frontier_backend_client::onchain_storage_schema</span>::<span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span>, <span class="ident">BE</span><span class="op">&gt;</span>(
-					<span class="ident">client</span>.<span class="ident">as_ref</span>(),
-					<span class="ident">id</span>,
+		<span class="kw">while let </span><span class="prelude-val">Some</span>(notification) = notification_st.next().<span class="kw">await </span>{
+			<span class="kw">if </span>notification.is_new_best {
+				<span class="kw">let </span>hash = notification.hash;
+				<span class="kw">let </span>id = BlockId::Hash(hash);
+				<span class="kw">let </span>schema = frontier_backend_client::onchain_storage_schema::&lt;B, C, BE&gt;(
+					client.as_ref(),
+					id,
 				);
-				<span class="kw">let</span> <span class="ident">handler</span> <span class="op">=</span> <span class="ident">overrides</span>
-					.<span class="ident">schemas</span>
-					.<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">schema</span>)
-					.<span class="ident">unwrap_or</span>(<span class="kw-2">&amp;</span><span class="ident">overrides</span>.<span class="ident">fallback</span>);
+				<span class="kw">let </span>handler = overrides
+					.schemas
+					.get(<span class="kw-2">&amp;</span>schema)
+					.unwrap_or(<span class="kw-2">&amp;</span>overrides.fallback);
 
-				<span class="kw">let</span> <span class="ident">default_elasticity</span> <span class="op">=</span> <span class="ident">Permill::from_parts</span>(<span class="number">125_000</span>);
-				<span class="kw">let</span> <span class="ident">elasticity</span> <span class="op">=</span> <span class="ident">handler</span>.<span class="ident">elasticity</span>(<span class="kw-2">&amp;</span><span class="ident">id</span>).<span class="ident">unwrap_or</span>(<span class="ident">default_elasticity</span>);
-				<span class="comment">// In case a re-org happened on import.</span>
-				<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">tree_route</span>) <span class="op">=</span> <span class="ident">notification</span>.<span class="ident">tree_route</span> {
-					<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">fee_history_cache</span>) <span class="op">=</span> <span class="kw-2">&amp;mut</span> <span class="ident">fee_history_cache</span>.<span class="ident">lock</span>() {
-						<span class="comment">// Remove retracted.</span>
-						<span class="kw">let</span> <span class="ident">_lock</span> <span class="op">=</span> <span class="ident">tree_route</span>.<span class="ident">retracted</span>().<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">hash_and_number</span><span class="op">|</span> {
-							<span class="kw">let</span> <span class="ident">n</span> <span class="op">=</span> <span class="ident">UniqueSaturatedInto</span>::<span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span><span class="ident">::unique_saturated_into</span>(
-								<span class="ident">hash_and_number</span>.<span class="ident">number</span>,
+				<span class="kw">let </span>default_elasticity = Permill::from_parts(<span class="number">125_000</span>);
+				<span class="kw">let </span>elasticity = handler.elasticity(<span class="kw-2">&amp;</span>id).unwrap_or(default_elasticity);
+				<span class="comment">// In case a re-org happened on import.
+				</span><span class="kw">if let </span><span class="prelude-val">Some</span>(tree_route) = notification.tree_route {
+					<span class="kw">if let </span><span class="prelude-val">Ok</span>(fee_history_cache) = <span class="kw-2">&amp;mut </span>fee_history_cache.lock() {
+						<span class="comment">// Remove retracted.
+						</span><span class="kw">let </span>_lock = tree_route.retracted().iter().map(|hash_and_number| {
+							<span class="kw">let </span>n = UniqueSaturatedInto::&lt;u64&gt;::unique_saturated_into(
+								hash_and_number.number,
 							);
-							<span class="ident">fee_history_cache</span>.<span class="ident">remove</span>(<span class="kw-2">&amp;</span><span class="ident">n</span>);
+							fee_history_cache.remove(<span class="kw-2">&amp;</span>n);
 						});
-						<span class="comment">// Insert enacted.</span>
-						<span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">tree_route</span>.<span class="ident">enacted</span>().<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">hash_and_number</span><span class="op">|</span> {
-							<span class="kw">let</span> (<span class="ident">result</span>, <span class="ident">block_number</span>) <span class="op">=</span>
-								<span class="ident">fee_history_cache_item</span>(<span class="ident">hash_and_number</span>.<span class="ident">hash</span>, <span class="ident">elasticity</span>);
-							<span class="ident">commit_if_any</span>(<span class="ident">result</span>, <span class="ident">block_number</span>);
+						<span class="comment">// Insert enacted.
+						</span><span class="kw">let _ </span>= tree_route.enacted().iter().map(|hash_and_number| {
+							<span class="kw">let </span>(result, block_number) =
+								fee_history_cache_item(hash_and_number.hash, elasticity);
+							commit_if_any(result, block_number);
 						});
 					}
 				}
-				<span class="comment">// Cache the imported block.</span>
-				<span class="kw">let</span> (<span class="ident">result</span>, <span class="ident">block_number</span>) <span class="op">=</span> <span class="ident">fee_history_cache_item</span>(<span class="ident">hash</span>, <span class="ident">elasticity</span>);
-				<span class="ident">commit_if_any</span>(<span class="ident">result</span>, <span class="ident">block_number</span>);
+				<span class="comment">// Cache the imported block.
+				</span><span class="kw">let </span>(result, block_number) = fee_history_cache_item(hash, elasticity);
+				commit_if_any(result, block_number);
 			}
 		}
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../../" data-current-crate="fc_rpc" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (7fe022f5a 2022-07-24)" ></div>
-</body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../../" data-current-crate="fc_rpc" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (81f391930 2022-10-09)" ></div></body></html>

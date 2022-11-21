@@ -1,10 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `client/rpc/src/eth/cache/lru_cache.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lru_cache.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../../storage.js"></script><script defer src="../../../../source-script.js"></script><script defer src="../../../../source-files.js"></script><script defer src="../../../../main.js"></script><noscript><link rel="stylesheet" href="../../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../../fc_rpc/index.html"><div class="logo-container"><img class="rust-logo" src="../../../../rust-logo.svg" alt="logo"></div>
-        </a><h2 class="location"></h2>
-    </nav>
-    <nav class="sidebar"><a class="sidebar-logo" href="../../../../fc_rpc/index.html"><div class="logo-container"><img class="rust-logo" src="../../../../rust-logo.svg" alt="logo"></div>
-        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../../fc_rpc/index.html"><img class="rust-logo" src="../../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1">
-                                <a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../wheel.svg"></a></div>
-                        </div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `client/rpc/src/eth/cache/lru_cache.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lru_cache.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../../../normalize.css"><link rel="stylesheet" href="../../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../../../ayu.css" disabled><link rel="stylesheet" href="../../../../dark.css" disabled><link rel="stylesheet" href="../../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../../storage.js"></script><script defer src="../../../../source-script.js"></script><script defer src="../../../../source-files.js"></script><script defer src="../../../../main.js"></script><noscript><link rel="stylesheet" href="../../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><a class="sidebar-logo" href="../../../../fc_rpc/index.html"><div class="logo-container"><img class="rust-logo" src="../../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../../fc_rpc/index.html"><img class="rust-logo" src="../../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -150,152 +144,151 @@
 <span id="144">144</span>
 <span id="145">145</span>
 <span id="146">146</span>
-</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
-<span class="comment">// This file is part of Frontier.</span>
-<span class="comment">//</span>
-<span class="comment">// Copyright (c) 2022 Parity Technologies (UK) Ltd.</span>
-<span class="comment">//</span>
-<span class="comment">// This program is free software: you can redistribute it and/or modify</span>
-<span class="comment">// it under the terms of the GNU General Public License as published by</span>
-<span class="comment">// the Free Software Foundation, either version 3 of the License, or</span>
-<span class="comment">// (at your option) any later version.</span>
-<span class="comment">//</span>
-<span class="comment">// This program is distributed in the hope that it will be useful,</span>
-<span class="comment">// but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
-<span class="comment">// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the</span>
-<span class="comment">// GNU General Public License for more details.</span>
-<span class="comment">//</span>
-<span class="comment">// You should have received a copy of the GNU General Public License</span>
-<span class="comment">// along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.</span>
+</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
+// This file is part of Frontier.
+//
+// Copyright (c) 2022 Parity Technologies (UK) Ltd.
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.
 
-<span class="kw">use</span> <span class="ident">codec::Encode</span>;
-<span class="kw">use</span> <span class="ident">lru::LruCache</span>;
+</span><span class="kw">use </span>codec::Encode;
+<span class="kw">use </span>lru::LruCache;
 
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">LRUCacheByteLimited</span><span class="op">&lt;</span><span class="ident">K</span>, <span class="ident">V</span><span class="op">&gt;</span> {
-	<span class="ident">cache</span>: <span class="ident">LruCache</span><span class="op">&lt;</span><span class="ident">K</span>, <span class="ident">V</span><span class="op">&gt;</span>,
-	<span class="ident">max_size</span>: <span class="ident">u64</span>,
-	<span class="ident">metrics</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">LRUCacheByteLimitedMetrics</span><span class="op">&gt;</span>,
-	<span class="ident">size</span>: <span class="ident">u64</span>,
+<span class="kw">pub struct </span>LRUCacheByteLimited&lt;K, V&gt; {
+	cache: LruCache&lt;K, V&gt;,
+	max_size: u64,
+	metrics: <span class="prelude-ty">Option</span>&lt;LRUCacheByteLimitedMetrics&gt;,
+	size: u64,
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">K</span>: <span class="ident">Eq</span> <span class="op">+</span> <span class="ident">core::hash::Hash</span>, <span class="ident">V</span>: <span class="ident">Encode</span><span class="op">&gt;</span> <span class="ident">LRUCacheByteLimited</span><span class="op">&lt;</span><span class="ident">K</span>, <span class="ident">V</span><span class="op">&gt;</span> {
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(
-		<span class="ident">cache_name</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span>,
-		<span class="ident">max_size</span>: <span class="ident">u64</span>,
-		<span class="ident">prometheus_registry</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">prometheus_endpoint::Registry</span><span class="op">&gt;</span>,
-	) -&gt; <span class="self">Self</span> {
-		<span class="kw">let</span> <span class="ident">metrics</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">prometheus_registry</span> {
-			<span class="prelude-val">Some</span>(<span class="ident">registry</span>) =&gt; <span class="kw">match</span> <span class="ident">LRUCacheByteLimitedMetrics::register</span>(<span class="ident">cache_name</span>, <span class="kw-2">&amp;</span><span class="ident">registry</span>) {
-				<span class="prelude-val">Ok</span>(<span class="ident">metrics</span>) =&gt; <span class="prelude-val">Some</span>(<span class="ident">metrics</span>),
-				<span class="prelude-val">Err</span>(<span class="ident">e</span>) =&gt; {
-					<span class="macro">log::error!</span>(<span class="ident">target</span>: <span class="string">&quot;eth-cache&quot;</span>, <span class="string">&quot;Failed to register metrics: {:?}&quot;</span>, <span class="ident">e</span>);
-					<span class="prelude-val">None</span>
-				}
+<span class="kw">impl</span>&lt;K: Eq + core::hash::Hash, V: Encode&gt; LRUCacheByteLimited&lt;K, V&gt; {
+	<span class="kw">pub fn </span>new(
+		cache_name: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str,
+		max_size: u64,
+		prometheus_registry: <span class="prelude-ty">Option</span>&lt;prometheus_endpoint::Registry&gt;,
+	) -&gt; <span class="self">Self </span>{
+		<span class="kw">let </span>metrics = <span class="kw">match </span>prometheus_registry {
+			<span class="prelude-val">Some</span>(registry) =&gt; <span class="kw">match </span>LRUCacheByteLimitedMetrics::register(cache_name, <span class="kw-2">&amp;</span>registry) {
+				<span class="prelude-val">Ok</span>(metrics) =&gt; <span class="prelude-val">Some</span>(metrics),
+				<span class="prelude-val">Err</span>(e) =&gt; {
+					<span class="macro">log::error!</span>(target: <span class="string">&quot;eth-cache&quot;</span>, <span class="string">&quot;Failed to register metrics: {:?}&quot;</span>, e);
+					<span class="prelude-val">None
+				</span>}
 			},
-			<span class="prelude-val">None</span> =&gt; <span class="prelude-val">None</span>,
+			<span class="prelude-val">None </span>=&gt; <span class="prelude-val">None</span>,
 		};
 
-		<span class="self">Self</span> {
-			<span class="ident">cache</span>: <span class="ident">LruCache::unbounded</span>(),
-			<span class="ident">max_size</span>,
-			<span class="ident">metrics</span>,
-			<span class="ident">size</span>: <span class="number">0</span>,
+		<span class="self">Self </span>{
+			cache: LruCache::unbounded(),
+			max_size,
+			metrics,
+			size: <span class="number">0</span>,
 		}
 	}
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">k</span>: <span class="kw-2">&amp;</span><span class="ident">K</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">V</span><span class="op">&gt;</span> {
-		<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">v</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">cache</span>.<span class="ident">get</span>(<span class="ident">k</span>) {
-			<span class="comment">// Update metrics</span>
-			<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">metrics</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">metrics</span> {
-				<span class="ident">metrics</span>.<span class="ident">hits</span>.<span class="ident">inc</span>();
+	<span class="kw">pub fn </span>get(<span class="kw-2">&amp;mut </span><span class="self">self</span>, k: <span class="kw-2">&amp;</span>K) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>V&gt; {
+		<span class="kw">if let </span><span class="prelude-val">Some</span>(v) = <span class="self">self</span>.cache.get(k) {
+			<span class="comment">// Update metrics
+			</span><span class="kw">if let </span><span class="prelude-val">Some</span>(metrics) = <span class="kw-2">&amp;</span><span class="self">self</span>.metrics {
+				metrics.hits.inc();
 			}
-			<span class="prelude-val">Some</span>(<span class="ident">v</span>)
-		} <span class="kw">else</span> {
-			<span class="comment">// Update metrics</span>
-			<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">metrics</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">metrics</span> {
-				<span class="ident">metrics</span>.<span class="ident">miss</span>.<span class="ident">inc</span>();
+			<span class="prelude-val">Some</span>(v)
+		} <span class="kw">else </span>{
+			<span class="comment">// Update metrics
+			</span><span class="kw">if let </span><span class="prelude-val">Some</span>(metrics) = <span class="kw-2">&amp;</span><span class="self">self</span>.metrics {
+				metrics.miss.inc();
 			}
-			<span class="prelude-val">None</span>
-		}
+			<span class="prelude-val">None
+		</span>}
 	}
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">put</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">k</span>: <span class="ident">K</span>, <span class="ident">v</span>: <span class="ident">V</span>) {
-		<span class="comment">// Handle size limit</span>
-		<span class="self">self</span>.<span class="ident">size</span> <span class="op">+</span><span class="op">=</span> <span class="ident">v</span>.<span class="ident">encoded_size</span>() <span class="kw">as</span> <span class="ident">u64</span>;
+	<span class="kw">pub fn </span>put(<span class="kw-2">&amp;mut </span><span class="self">self</span>, k: K, v: V) {
+		<span class="comment">// Handle size limit
+		</span><span class="self">self</span>.size += v.encoded_size() <span class="kw">as </span>u64;
 
-		<span class="kw">while</span> <span class="self">self</span>.<span class="ident">size</span> <span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">max_size</span> {
-			<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>((<span class="kw">_</span>, <span class="ident">v</span>)) <span class="op">=</span> <span class="self">self</span>.<span class="ident">cache</span>.<span class="ident">pop_lru</span>() {
-				<span class="kw">let</span> <span class="ident">v_size</span> <span class="op">=</span> <span class="ident">v</span>.<span class="ident">encoded_size</span>() <span class="kw">as</span> <span class="ident">u64</span>;
-				<span class="self">self</span>.<span class="ident">size</span> <span class="op">-</span><span class="op">=</span> <span class="ident">v_size</span>;
-			} <span class="kw">else</span> {
+		<span class="kw">while </span><span class="self">self</span>.size &gt; <span class="self">self</span>.max_size {
+			<span class="kw">if let </span><span class="prelude-val">Some</span>((<span class="kw">_</span>, v)) = <span class="self">self</span>.cache.pop_lru() {
+				<span class="kw">let </span>v_size = v.encoded_size() <span class="kw">as </span>u64;
+				<span class="self">self</span>.size -= v_size;
+			} <span class="kw">else </span>{
 				<span class="kw">break</span>;
 			}
 		}
 
-		<span class="comment">// Add entry in cache</span>
-		<span class="self">self</span>.<span class="ident">cache</span>.<span class="ident">put</span>(<span class="ident">k</span>, <span class="ident">v</span>);
-		<span class="comment">// Update metrics</span>
-		<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">metrics</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">metrics</span> {
-			<span class="ident">metrics</span>.<span class="ident">size</span>.<span class="ident">set</span>(<span class="self">self</span>.<span class="ident">size</span>);
+		<span class="comment">// Add entry in cache
+		</span><span class="self">self</span>.cache.put(k, v);
+		<span class="comment">// Update metrics
+		</span><span class="kw">if let </span><span class="prelude-val">Some</span>(metrics) = <span class="kw-2">&amp;</span><span class="self">self</span>.metrics {
+			metrics.size.set(<span class="self">self</span>.size);
 		}
 	}
 }
 
-<span class="kw">struct</span> <span class="ident">LRUCacheByteLimitedMetrics</span> {
-	<span class="ident">hits</span>: <span class="ident">prometheus::IntCounter</span>,
-	<span class="ident">miss</span>: <span class="ident">prometheus::IntCounter</span>,
-	<span class="ident">size</span>: <span class="ident">prometheus_endpoint::Gauge</span><span class="op">&lt;</span><span class="ident">prometheus_endpoint::U64</span><span class="op">&gt;</span>,
+<span class="kw">struct </span>LRUCacheByteLimitedMetrics {
+	hits: prometheus::IntCounter,
+	miss: prometheus::IntCounter,
+	size: prometheus_endpoint::Gauge&lt;prometheus_endpoint::U64&gt;,
 }
 
-<span class="kw">impl</span> <span class="ident">LRUCacheByteLimitedMetrics</span> {
-	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">register</span>(
-		<span class="ident">cache_name</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span>,
-		<span class="ident">registry</span>: <span class="kw-2">&amp;</span><span class="ident">prometheus_endpoint::Registry</span>,
-	) -&gt; <span class="ident">std::result::Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">prometheus_endpoint::PrometheusError</span><span class="op">&gt;</span> {
-		<span class="prelude-val">Ok</span>(<span class="self">Self</span> {
-			<span class="ident">hits</span>: <span class="ident">prometheus_endpoint::register</span>(
-				<span class="ident">prometheus::IntCounter::new</span>(
-					<span class="macro">format!</span>(<span class="string">&quot;frontier_eth_{}_hits&quot;</span>, <span class="ident">cache_name</span>),
-					<span class="macro">format!</span>(<span class="string">&quot;Hits of eth {} cache.&quot;</span>, <span class="ident">cache_name</span>),
+<span class="kw">impl </span>LRUCacheByteLimitedMetrics {
+	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>register(
+		cache_name: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str,
+		registry: <span class="kw-2">&amp;</span>prometheus_endpoint::Registry,
+	) -&gt; std::result::Result&lt;<span class="self">Self</span>, prometheus_endpoint::PrometheusError&gt; {
+		<span class="prelude-val">Ok</span>(<span class="self">Self </span>{
+			hits: prometheus_endpoint::register(
+				prometheus::IntCounter::new(
+					<span class="macro">format!</span>(<span class="string">&quot;frontier_eth_{}_hits&quot;</span>, cache_name),
+					<span class="macro">format!</span>(<span class="string">&quot;Hits of eth {} cache.&quot;</span>, cache_name),
 				)<span class="question-mark">?</span>,
-				<span class="ident">registry</span>,
+				registry,
 			)<span class="question-mark">?</span>,
-			<span class="ident">miss</span>: <span class="ident">prometheus_endpoint::register</span>(
-				<span class="ident">prometheus::IntCounter::new</span>(
-					<span class="macro">format!</span>(<span class="string">&quot;frontier_eth_{}_miss&quot;</span>, <span class="ident">cache_name</span>),
-					<span class="macro">format!</span>(<span class="string">&quot;Misses of eth {} cache.&quot;</span>, <span class="ident">cache_name</span>),
+			miss: prometheus_endpoint::register(
+				prometheus::IntCounter::new(
+					<span class="macro">format!</span>(<span class="string">&quot;frontier_eth_{}_miss&quot;</span>, cache_name),
+					<span class="macro">format!</span>(<span class="string">&quot;Misses of eth {} cache.&quot;</span>, cache_name),
 				)<span class="question-mark">?</span>,
-				<span class="ident">registry</span>,
+				registry,
 			)<span class="question-mark">?</span>,
-			<span class="ident">size</span>: <span class="ident">prometheus_endpoint::register</span>(
-				<span class="ident">prometheus_endpoint::Gauge::new</span>(
-					<span class="macro">format!</span>(<span class="string">&quot;frontier_eth_{}_size&quot;</span>, <span class="ident">cache_name</span>),
-					<span class="macro">format!</span>(<span class="string">&quot;Size of eth {} data cache.&quot;</span>, <span class="ident">cache_name</span>),
+			size: prometheus_endpoint::register(
+				prometheus_endpoint::Gauge::new(
+					<span class="macro">format!</span>(<span class="string">&quot;frontier_eth_{}_size&quot;</span>, cache_name),
+					<span class="macro">format!</span>(<span class="string">&quot;Size of eth {} data cache.&quot;</span>, cache_name),
 				)<span class="question-mark">?</span>,
-				<span class="ident">registry</span>,
+				registry,
 			)<span class="question-mark">?</span>,
 		})
 	}
 }
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
-<span class="kw">mod</span> <span class="ident">tests</span> {
-	<span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
+<span class="attribute">#[cfg(test)]
+</span><span class="kw">mod </span>tests {
+	<span class="kw">use super</span>::<span class="kw-2">*</span>;
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">test_size_limit</span>() {
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">cache</span> <span class="op">=</span> <span class="ident">LRUCacheByteLimited::new</span>(<span class="string">&quot;name&quot;</span>, <span class="number">10</span>, <span class="prelude-val">None</span>);
-		<span class="ident">cache</span>.<span class="ident">put</span>(<span class="number">0</span>, <span class="string">&quot;abcd&quot;</span>);
-		<span class="macro">assert!</span>(<span class="ident">cache</span>.<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="number">0</span>).<span class="ident">is_some</span>());
-		<span class="ident">cache</span>.<span class="ident">put</span>(<span class="number">1</span>, <span class="string">&quot;efghij&quot;</span>);
-		<span class="macro">assert!</span>(<span class="ident">cache</span>.<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="number">1</span>).<span class="ident">is_some</span>());
-		<span class="ident">cache</span>.<span class="ident">put</span>(<span class="number">2</span>, <span class="string">&quot;k&quot;</span>);
-		<span class="macro">assert!</span>(<span class="ident">cache</span>.<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="number">2</span>).<span class="ident">is_some</span>());
-		<span class="comment">// Entry (0,  &quot;abcd&quot;) should be deleted</span>
-		<span class="macro">assert!</span>(<span class="ident">cache</span>.<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="number">0</span>).<span class="ident">is_none</span>());
-		<span class="comment">// Size should be 7 now, so we should be able to add a value of size 3</span>
-		<span class="ident">cache</span>.<span class="ident">put</span>(<span class="number">3</span>, <span class="string">&quot;lmn&quot;</span>);
-		<span class="macro">assert!</span>(<span class="ident">cache</span>.<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="number">3</span>).<span class="ident">is_some</span>());
+	<span class="attribute">#[test]
+	</span><span class="kw">fn </span>test_size_limit() {
+		<span class="kw">let </span><span class="kw-2">mut </span>cache = LRUCacheByteLimited::new(<span class="string">&quot;name&quot;</span>, <span class="number">10</span>, <span class="prelude-val">None</span>);
+		cache.put(<span class="number">0</span>, <span class="string">&quot;abcd&quot;</span>);
+		<span class="macro">assert!</span>(cache.get(<span class="kw-2">&amp;</span><span class="number">0</span>).is_some());
+		cache.put(<span class="number">1</span>, <span class="string">&quot;efghij&quot;</span>);
+		<span class="macro">assert!</span>(cache.get(<span class="kw-2">&amp;</span><span class="number">1</span>).is_some());
+		cache.put(<span class="number">2</span>, <span class="string">&quot;k&quot;</span>);
+		<span class="macro">assert!</span>(cache.get(<span class="kw-2">&amp;</span><span class="number">2</span>).is_some());
+		<span class="comment">// Entry (0,  &quot;abcd&quot;) should be deleted
+		</span><span class="macro">assert!</span>(cache.get(<span class="kw-2">&amp;</span><span class="number">0</span>).is_none());
+		<span class="comment">// Size should be 7 now, so we should be able to add a value of size 3
+		</span>cache.put(<span class="number">3</span>, <span class="string">&quot;lmn&quot;</span>);
+		<span class="macro">assert!</span>(cache.get(<span class="kw-2">&amp;</span><span class="number">3</span>).is_some());
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../../" data-current-crate="fc_rpc" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (7fe022f5a 2022-07-24)" ></div>
-</body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../../" data-current-crate="fc_rpc" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (81f391930 2022-10-09)" ></div></body></html>

@@ -1,10 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `frame/evm/src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../pallet_evm/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a><h2 class="location"></h2>
-    </nav>
-    <nav class="sidebar"><a class="sidebar-logo" href="../../pallet_evm/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../pallet_evm/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1">
-                                <a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div>
-                        </div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `frame/evm/src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><a class="sidebar-logo" href="../../pallet_evm/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../pallet_evm/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -892,894 +886,893 @@
 <span id="886">886</span>
 <span id="887">887</span>
 <span id="888">888</span>
-</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
-<span class="comment">// This file is part of Frontier.</span>
-<span class="comment">//</span>
-<span class="comment">// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.</span>
-<span class="comment">//</span>
-<span class="comment">// Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
-<span class="comment">// you may not use this file except in compliance with the License.</span>
-<span class="comment">// You may obtain a copy of the License at</span>
-<span class="comment">//</span>
-<span class="comment">// 	http://www.apache.org/licenses/LICENSE-2.0</span>
-<span class="comment">//</span>
-<span class="comment">// Unless required by applicable law or agreed to in writing, software</span>
-<span class="comment">// distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
-<span class="comment">// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
-<span class="comment">// See the License for the specific language governing permissions and</span>
-<span class="comment">// limitations under the License.</span>
+</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
+// This file is part of Frontier.
+//
+// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// 	http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
-<span class="doccomment">//! # EVM Pallet</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! The EVM pallet allows unmodified EVM code to be executed in a Substrate-based blockchain.</span>
-<span class="doccomment">//! - [`evm::Config`]</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! ## EVM Engine</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! The EVM pallet uses [`SputnikVM`](https://github.com/rust-blockchain/evm) as the underlying EVM engine.</span>
-<span class="doccomment">//! The engine is overhauled so that it&#39;s [`modular`](https://github.com/corepaper/evm).</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! ## Execution Lifecycle</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! There are a separate set of accounts managed by the EVM pallet. Substrate based accounts can call the EVM Pallet</span>
-<span class="doccomment">//! to deposit or withdraw balance from the Substrate base-currency into a different balance managed and used by</span>
-<span class="doccomment">//! the EVM pallet. Once a user has populated their balance, they can create and call smart contracts using this pallet.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! There&#39;s one-to-one mapping from Substrate accounts and EVM external accounts that is defined by a conversion function.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! ## EVM Pallet vs Ethereum Network</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! The EVM pallet should be able to produce nearly identical results compared to the Ethereum mainnet,</span>
-<span class="doccomment">//! including gas cost and balance changes.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Observable differences include:</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! - The available length of block hashes may not be 256 depending on the configuration of the System pallet</span>
-<span class="doccomment">//! in the Substrate runtime.</span>
-<span class="doccomment">//! - Difficulty and coinbase, which do not make sense in this pallet and is currently hard coded to zero.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! We currently do not aim to make unobservable behaviors, such as state root, to be the same. We also don&#39;t aim to follow</span>
-<span class="doccomment">//! the exact same transaction / receipt format. However, given one Ethereum transaction and one Substrate account&#39;s</span>
-<span class="doccomment">//! private key, one should be able to convert any Ethereum transaction into a transaction compatible with this pallet.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! The gas configurations are configurable. Right now, a pre-defined London hard fork configuration option is provided.</span>
+</span><span class="doccomment">//! # EVM Pallet
+//!
+//! The EVM pallet allows unmodified EVM code to be executed in a Substrate-based blockchain.
+//! - [`evm::Config`]
+//!
+//! ## EVM Engine
+//!
+//! The EVM pallet uses [`SputnikVM`](https://github.com/rust-blockchain/evm) as the underlying EVM engine.
+//! The engine is overhauled so that it&#39;s [`modular`](https://github.com/corepaper/evm).
+//!
+//! ## Execution Lifecycle
+//!
+//! There are a separate set of accounts managed by the EVM pallet. Substrate based accounts can call the EVM Pallet
+//! to deposit or withdraw balance from the Substrate base-currency into a different balance managed and used by
+//! the EVM pallet. Once a user has populated their balance, they can create and call smart contracts using this pallet.
+//!
+//! There&#39;s one-to-one mapping from Substrate accounts and EVM external accounts that is defined by a conversion function.
+//!
+//! ## EVM Pallet vs Ethereum Network
+//!
+//! The EVM pallet should be able to produce nearly identical results compared to the Ethereum mainnet,
+//! including gas cost and balance changes.
+//!
+//! Observable differences include:
+//!
+//! - The available length of block hashes may not be 256 depending on the configuration of the System pallet
+//! in the Substrate runtime.
+//! - Difficulty and coinbase, which do not make sense in this pallet and is currently hard coded to zero.
+//!
+//! We currently do not aim to make unobservable behaviors, such as state root, to be the same. We also don&#39;t aim to follow
+//! the exact same transaction / receipt format. However, given one Ethereum transaction and one Substrate account&#39;s
+//! private key, one should be able to convert any Ethereum transaction into a transaction compatible with this pallet.
+//!
+//! The gas configurations are configurable. Right now, a pre-defined London hard fork configuration option is provided.
 
-<span class="comment">// Ensure we&#39;re `no_std` when compiling for Wasm.</span>
-<span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
-<span class="attribute">#![<span class="ident">allow</span>(<span class="ident">clippy::too_many_arguments</span>)]</span>
-<span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">test</span>, <span class="ident">feature</span>(<span class="ident">assert_matches</span>))]</span>
+</span><span class="comment">// Ensure we&#39;re `no_std` when compiling for Wasm.
+</span><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
+#![allow(clippy::too_many_arguments)]
+#![cfg_attr(test, feature(assert_matches))]
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;runtime-benchmarks&quot;</span>)]</span>
-<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">benchmarking</span>;
+#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
+</span><span class="kw">pub mod </span>benchmarking;
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
-<span class="kw">mod</span> <span class="ident">mock</span>;
-<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">runner</span>;
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
-<span class="kw">mod</span> <span class="ident">tests</span>;
+<span class="attribute">#[cfg(test)]
+</span><span class="kw">mod </span>mock;
+<span class="kw">pub mod </span>runner;
+<span class="attribute">#[cfg(test)]
+</span><span class="kw">mod </span>tests;
 
-<span class="kw">use</span> <span class="ident">frame_support</span>::{
-	<span class="ident">dispatch</span>::{<span class="ident">DispatchResultWithPostInfo</span>, <span class="ident">Pays</span>, <span class="ident">PostDispatchInfo</span>},
-	<span class="ident">traits</span>::{
-		<span class="ident">tokens::fungible::Inspect</span>, <span class="ident">Currency</span>, <span class="ident">ExistenceRequirement</span>, <span class="ident">FindAuthor</span>, <span class="ident">Get</span>, <span class="ident">Imbalance</span>,
-		<span class="ident">OnUnbalanced</span>, <span class="ident">SignedImbalance</span>, <span class="ident">WithdrawReasons</span>,
+<span class="kw">use </span>frame_support::{
+	dispatch::{DispatchResultWithPostInfo, Pays, PostDispatchInfo},
+	traits::{
+		tokens::fungible::Inspect, Currency, ExistenceRequirement, FindAuthor, Get, Imbalance,
+		OnUnbalanced, SignedImbalance, WithdrawReasons,
 	},
-	<span class="ident">weights::Weight</span>,
+	weights::Weight,
 };
-<span class="kw">use</span> <span class="ident">frame_system::RawOrigin</span>;
-<span class="kw">use</span> <span class="ident">sp_core</span>::{<span class="ident">Hasher</span>, <span class="ident">H160</span>, <span class="ident">H256</span>, <span class="ident">U256</span>};
-<span class="kw">use</span> <span class="ident">sp_runtime</span>::{
-	<span class="ident">traits</span>::{<span class="ident">BadOrigin</span>, <span class="ident">Saturating</span>, <span class="ident">UniqueSaturatedInto</span>, <span class="ident">Zero</span>},
-	<span class="ident">AccountId32</span>, <span class="ident">DispatchErrorWithPostInfo</span>,
+<span class="kw">use </span>frame_system::RawOrigin;
+<span class="kw">use </span>sp_core::{Hasher, H160, H256, U256};
+<span class="kw">use </span>sp_runtime::{
+	traits::{BadOrigin, Saturating, UniqueSaturatedInto, Zero},
+	AccountId32, DispatchErrorWithPostInfo,
 };
-<span class="kw">use</span> <span class="ident">sp_std</span>::{<span class="ident">cmp::min</span>, <span class="ident">vec::Vec</span>};
+<span class="kw">use </span>sp_std::{cmp::min, vec::Vec};
 
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">evm</span>::{
-	<span class="ident">Config</span> <span class="kw">as</span> <span class="ident">EvmConfig</span>, <span class="ident">Context</span>, <span class="ident">ExitError</span>, <span class="ident">ExitFatal</span>, <span class="ident">ExitReason</span>, <span class="ident">ExitRevert</span>, <span class="ident">ExitSucceed</span>,
+<span class="kw">pub use </span>evm::{
+	Config <span class="kw">as </span>EvmConfig, Context, ExitError, ExitFatal, ExitReason, ExitRevert, ExitSucceed,
 };
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>)]</span>
-<span class="kw">use</span> <span class="ident">fp_evm::GenesisAccount</span>;
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">fp_evm</span>::{
-	<span class="ident">Account</span>, <span class="ident">CallInfo</span>, <span class="ident">CreateInfo</span>, <span class="ident">ExecutionInfo</span>, <span class="ident">FeeCalculator</span>, <span class="ident">InvalidEvmTransactionError</span>,
-	<span class="ident">LinearCostPrecompile</span>, <span class="ident">Log</span>, <span class="ident">Precompile</span>, <span class="ident">PrecompileFailure</span>, <span class="ident">PrecompileHandle</span>, <span class="ident">PrecompileOutput</span>,
-	<span class="ident">PrecompileResult</span>, <span class="ident">PrecompileSet</span>, <span class="ident">Vicinity</span>,
-};
-
-<span class="kw">pub</span> <span class="kw">use</span> <span class="self">self</span>::{
-	<span class="ident">pallet</span>::<span class="kw-2">*</span>,
-	<span class="ident">runner</span>::{<span class="ident">Runner</span>, <span class="ident">RunnerError</span>},
+<span class="attribute">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
+</span><span class="kw">use </span>fp_evm::GenesisAccount;
+<span class="kw">pub use </span>fp_evm::{
+	Account, CallInfo, CreateInfo, ExecutionInfo, FeeCalculator, InvalidEvmTransactionError,
+	LinearCostPrecompile, Log, Precompile, PrecompileFailure, PrecompileHandle, PrecompileOutput,
+	PrecompileResult, PrecompileSet, Vicinity,
 };
 
-<span class="attribute">#[<span class="ident">frame_support::pallet</span>]</span>
-<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">pallet</span> {
-	<span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
-	<span class="kw">use</span> <span class="ident">frame_support::pallet_prelude</span>::<span class="kw-2">*</span>;
-	<span class="kw">use</span> <span class="ident">frame_system::pallet_prelude</span>::<span class="kw-2">*</span>;
+<span class="kw">pub use </span><span class="self">self</span>::{
+	pallet::<span class="kw-2">*</span>,
+	runner::{Runner, RunnerError},
+};
 
-	<span class="attribute">#[<span class="ident">pallet::pallet</span>]</span>
-	<span class="attribute">#[<span class="ident">pallet::generate_store</span>(<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">trait</span> <span class="ident">Store</span>)]</span>
-	<span class="attribute">#[<span class="ident">pallet::without_storage_info</span>]</span>
-	<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>(<span class="ident">PhantomData</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>);
+<span class="attribute">#[frame_support::pallet]
+</span><span class="kw">pub mod </span>pallet {
+	<span class="kw">use super</span>::<span class="kw-2">*</span>;
+	<span class="kw">use </span>frame_support::pallet_prelude::<span class="kw-2">*</span>;
+	<span class="kw">use </span>frame_system::pallet_prelude::<span class="kw-2">*</span>;
 
-	<span class="attribute">#[<span class="ident">pallet::config</span>]</span>
-	<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Config</span>: <span class="ident">frame_system::Config</span> <span class="op">+</span> <span class="ident">pallet_timestamp::Config</span> {
-		<span class="doccomment">/// Calculator for current gas price.</span>
-		<span class="kw">type</span> <span class="ident">FeeCalculator</span>: <span class="ident">FeeCalculator</span>;
+	<span class="attribute">#[pallet::pallet]
+	#[pallet::generate_store(<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">trait </span>Store)]
+	#[pallet::without_storage_info]
+	</span><span class="kw">pub struct </span>Pallet&lt;T&gt;(PhantomData&lt;T&gt;);
 
-		<span class="doccomment">/// Maps Ethereum gas to Substrate weight.</span>
-		<span class="kw">type</span> <span class="ident">GasWeightMapping</span>: <span class="ident">GasWeightMapping</span>;
+	<span class="attribute">#[pallet::config]
+	</span><span class="kw">pub trait </span>Config: frame_system::Config + pallet_timestamp::Config {
+		<span class="doccomment">/// Calculator for current gas price.
+		</span><span class="kw">type </span>FeeCalculator: FeeCalculator;
 
-		<span class="doccomment">/// Weight corresponding to a gas unit.</span>
-		<span class="kw">type</span> <span class="ident">WeightPerGas</span>: <span class="ident">Get</span><span class="op">&lt;</span><span class="ident">Weight</span><span class="op">&gt;</span>;
+		<span class="doccomment">/// Maps Ethereum gas to Substrate weight.
+		</span><span class="kw">type </span>GasWeightMapping: GasWeightMapping;
 
-		<span class="doccomment">/// Block number to block hash.</span>
-		<span class="kw">type</span> <span class="ident">BlockHashMapping</span>: <span class="ident">BlockHashMapping</span>;
+		<span class="doccomment">/// Weight corresponding to a gas unit.
+		</span><span class="kw">type </span>WeightPerGas: Get&lt;Weight&gt;;
 
-		<span class="doccomment">/// Allow the origin to call on behalf of given address.</span>
-		<span class="kw">type</span> <span class="ident">CallOrigin</span>: <span class="ident">EnsureAddressOrigin</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::RuntimeOrigin</span><span class="op">&gt;</span>;
-		<span class="doccomment">/// Allow the origin to withdraw on behalf of given address.</span>
-		<span class="kw">type</span> <span class="ident">WithdrawOrigin</span>: <span class="ident">EnsureAddressOrigin</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::RuntimeOrigin</span>, <span class="ident">Success</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::AccountId</span><span class="op">&gt;</span>;
+		<span class="doccomment">/// Block number to block hash.
+		</span><span class="kw">type </span>BlockHashMapping: BlockHashMapping;
 
-		<span class="doccomment">/// Mapping from address to account id.</span>
-		<span class="kw">type</span> <span class="ident">AddressMapping</span>: <span class="ident">AddressMapping</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::AccountId</span><span class="op">&gt;</span>;
-		<span class="doccomment">/// Currency type for withdraw and balance storage.</span>
-		<span class="kw">type</span> <span class="ident">Currency</span>: <span class="ident">Currency</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::AccountId</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Inspect</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::AccountId</span><span class="op">&gt;</span>;
+		<span class="doccomment">/// Allow the origin to call on behalf of given address.
+		</span><span class="kw">type </span>CallOrigin: EnsureAddressOrigin&lt;<span class="self">Self</span>::RuntimeOrigin&gt;;
+		<span class="doccomment">/// Allow the origin to withdraw on behalf of given address.
+		</span><span class="kw">type </span>WithdrawOrigin: EnsureAddressOrigin&lt;<span class="self">Self</span>::RuntimeOrigin, Success = <span class="self">Self</span>::AccountId&gt;;
 
-		<span class="doccomment">/// The overarching event type.</span>
-		<span class="kw">type</span> <span class="ident">RuntimeEvent</span>: <span class="ident">From</span><span class="op">&lt;</span><span class="ident">Event</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">IsType</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="self">Self</span> <span class="kw">as</span> <span class="ident">frame_system::Config</span><span class="op">&gt;</span><span class="ident">::RuntimeEvent</span><span class="op">&gt;</span>;
-		<span class="doccomment">/// Precompiles associated with this EVM engine.</span>
-		<span class="kw">type</span> <span class="ident">PrecompilesType</span>: <span class="ident">PrecompileSet</span>;
-		<span class="kw">type</span> <span class="ident">PrecompilesValue</span>: <span class="ident">Get</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::PrecompilesType</span><span class="op">&gt;</span>;
-		<span class="doccomment">/// Chain ID of EVM.</span>
-		<span class="kw">type</span> <span class="ident">ChainId</span>: <span class="ident">Get</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>;
-		<span class="doccomment">/// The block gas limit. Can be a simple constant, or an adjustment algorithm in another pallet.</span>
-		<span class="kw">type</span> <span class="ident">BlockGasLimit</span>: <span class="ident">Get</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>;
-		<span class="doccomment">/// EVM execution runner.</span>
-		<span class="kw">type</span> <span class="ident">Runner</span>: <span class="ident">Runner</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span>;
+		<span class="doccomment">/// Mapping from address to account id.
+		</span><span class="kw">type </span>AddressMapping: AddressMapping&lt;<span class="self">Self</span>::AccountId&gt;;
+		<span class="doccomment">/// Currency type for withdraw and balance storage.
+		</span><span class="kw">type </span>Currency: Currency&lt;<span class="self">Self</span>::AccountId&gt; + Inspect&lt;<span class="self">Self</span>::AccountId&gt;;
 
-		<span class="doccomment">/// To handle fee deduction for EVM transactions. An example is this pallet being used by `pallet_ethereum`</span>
-		<span class="doccomment">/// where the chain implementing `pallet_ethereum` should be able to configure what happens to the fees</span>
-		<span class="doccomment">/// Similar to `OnChargeTransaction` of `pallet_transaction_payment`</span>
-		<span class="kw">type</span> <span class="ident">OnChargeTransaction</span>: <span class="ident">OnChargeEVMTransaction</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span>;
+		<span class="doccomment">/// The overarching event type.
+		</span><span class="kw">type </span>RuntimeEvent: From&lt;Event&lt;<span class="self">Self</span>&gt;&gt; + IsType&lt;&lt;<span class="self">Self </span><span class="kw">as </span>frame_system::Config&gt;::RuntimeEvent&gt;;
+		<span class="doccomment">/// Precompiles associated with this EVM engine.
+		</span><span class="kw">type </span>PrecompilesType: PrecompileSet;
+		<span class="kw">type </span>PrecompilesValue: Get&lt;<span class="self">Self</span>::PrecompilesType&gt;;
+		<span class="doccomment">/// Chain ID of EVM.
+		</span><span class="kw">type </span>ChainId: Get&lt;u64&gt;;
+		<span class="doccomment">/// The block gas limit. Can be a simple constant, or an adjustment algorithm in another pallet.
+		</span><span class="kw">type </span>BlockGasLimit: Get&lt;U256&gt;;
+		<span class="doccomment">/// EVM execution runner.
+		</span><span class="kw">type </span>Runner: Runner&lt;<span class="self">Self</span>&gt;;
 
-		<span class="doccomment">/// Find author for the current block.</span>
-		<span class="kw">type</span> <span class="ident">FindAuthor</span>: <span class="ident">FindAuthor</span><span class="op">&lt;</span><span class="ident">H160</span><span class="op">&gt;</span>;
+		<span class="doccomment">/// To handle fee deduction for EVM transactions. An example is this pallet being used by `pallet_ethereum`
+		/// where the chain implementing `pallet_ethereum` should be able to configure what happens to the fees
+		/// Similar to `OnChargeTransaction` of `pallet_transaction_payment`
+		</span><span class="kw">type </span>OnChargeTransaction: OnChargeEVMTransaction&lt;<span class="self">Self</span>&gt;;
 
-		<span class="doccomment">/// EVM config used in the module.</span>
-		<span class="kw">fn</span> <span class="ident">config</span>() -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">EvmConfig</span> {
-			<span class="kw-2">&amp;</span><span class="ident">LONDON_CONFIG</span>
+		<span class="doccomment">/// Find author for the current block.
+		</span><span class="kw">type </span>FindAuthor: FindAuthor&lt;H160&gt;;
+
+		<span class="doccomment">/// EVM config used in the module.
+		</span><span class="kw">fn </span>config() -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>EvmConfig {
+			<span class="kw-2">&amp;</span>LONDON_CONFIG
 		}
 	}
 
-	<span class="attribute">#[<span class="ident">pallet::call</span>]</span>
-	<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-		<span class="doccomment">/// Withdraw balance from EVM into currency/balances pallet.</span>
-		<span class="attribute">#[<span class="ident">pallet::weight</span>(<span class="number">0</span>)]</span>
-		<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">withdraw</span>(
-			<span class="ident">origin</span>: <span class="ident">OriginFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
-			<span class="ident">address</span>: <span class="ident">H160</span>,
-			<span class="ident">value</span>: <span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
-		) -&gt; <span class="ident">DispatchResult</span> {
-			<span class="kw">let</span> <span class="ident">destination</span> <span class="op">=</span> <span class="ident">T::WithdrawOrigin::ensure_address_origin</span>(<span class="kw-2">&amp;</span><span class="ident">address</span>, <span class="ident">origin</span>)<span class="question-mark">?</span>;
-			<span class="kw">let</span> <span class="ident">address_account_id</span> <span class="op">=</span> <span class="ident">T::AddressMapping::into_account_id</span>(<span class="ident">address</span>);
+	<span class="attribute">#[pallet::call]
+	</span><span class="kw">impl</span>&lt;T: Config&gt; Pallet&lt;T&gt; {
+		<span class="doccomment">/// Withdraw balance from EVM into currency/balances pallet.
+		</span><span class="attribute">#[pallet::weight(<span class="number">0</span>)]
+		</span><span class="kw">pub fn </span>withdraw(
+			origin: OriginFor&lt;T&gt;,
+			address: H160,
+			value: BalanceOf&lt;T&gt;,
+		) -&gt; DispatchResult {
+			<span class="kw">let </span>destination = T::WithdrawOrigin::ensure_address_origin(<span class="kw-2">&amp;</span>address, origin)<span class="question-mark">?</span>;
+			<span class="kw">let </span>address_account_id = T::AddressMapping::into_account_id(address);
 
-			<span class="ident">T::Currency::transfer</span>(
-				<span class="kw-2">&amp;</span><span class="ident">address_account_id</span>,
-				<span class="kw-2">&amp;</span><span class="ident">destination</span>,
-				<span class="ident">value</span>,
-				<span class="ident">ExistenceRequirement::AllowDeath</span>,
+			T::Currency::transfer(
+				<span class="kw-2">&amp;</span>address_account_id,
+				<span class="kw-2">&amp;</span>destination,
+				value,
+				ExistenceRequirement::AllowDeath,
 			)<span class="question-mark">?</span>;
 
 			<span class="prelude-val">Ok</span>(())
 		}
 
-		<span class="doccomment">/// Issue an EVM call operation. This is similar to a message call transaction in Ethereum.</span>
-		<span class="attribute">#[<span class="ident">pallet::weight</span>({
-			<span class="kw">let</span> <span class="ident">without_base_extrinsic_weight</span> <span class="op">=</span> <span class="bool-val">true</span>;
-			<span class="ident">T::GasWeightMapping::gas_to_weight</span>(<span class="kw-2">*</span><span class="ident">gas_limit</span>, <span class="ident">without_base_extrinsic_weight</span>)
-		})]</span>
-		<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">call</span>(
-			<span class="ident">origin</span>: <span class="ident">OriginFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
-			<span class="ident">source</span>: <span class="ident">H160</span>,
-			<span class="ident">target</span>: <span class="ident">H160</span>,
-			<span class="ident">input</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
-			<span class="ident">value</span>: <span class="ident">U256</span>,
-			<span class="ident">gas_limit</span>: <span class="ident">u64</span>,
-			<span class="ident">max_fee_per_gas</span>: <span class="ident">U256</span>,
-			<span class="ident">max_priority_fee_per_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-			<span class="ident">nonce</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-			<span class="ident">access_list</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">H160</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span>)<span class="op">&gt;</span>,
-		) -&gt; <span class="ident">DispatchResultWithPostInfo</span> {
-			<span class="ident">T::CallOrigin::ensure_address_origin</span>(<span class="kw-2">&amp;</span><span class="ident">source</span>, <span class="ident">origin</span>)<span class="question-mark">?</span>;
+		<span class="doccomment">/// Issue an EVM call operation. This is similar to a message call transaction in Ethereum.
+		</span><span class="attribute">#[pallet::weight({
+			<span class="kw">let </span>without_base_extrinsic_weight = <span class="bool-val">true</span>;
+			T::GasWeightMapping::gas_to_weight(<span class="kw-2">*</span>gas_limit, without_base_extrinsic_weight)
+		})]
+		</span><span class="kw">pub fn </span>call(
+			origin: OriginFor&lt;T&gt;,
+			source: H160,
+			target: H160,
+			input: Vec&lt;u8&gt;,
+			value: U256,
+			gas_limit: u64,
+			max_fee_per_gas: U256,
+			max_priority_fee_per_gas: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+			nonce: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+			access_list: Vec&lt;(H160, Vec&lt;H256&gt;)&gt;,
+		) -&gt; DispatchResultWithPostInfo {
+			T::CallOrigin::ensure_address_origin(<span class="kw-2">&amp;</span>source, origin)<span class="question-mark">?</span>;
 
-			<span class="kw">let</span> <span class="ident">is_transactional</span> <span class="op">=</span> <span class="bool-val">true</span>;
-			<span class="kw">let</span> <span class="ident">validate</span> <span class="op">=</span> <span class="bool-val">true</span>;
-			<span class="kw">let</span> <span class="ident">info</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">T::Runner::call</span>(
-				<span class="ident">source</span>,
-				<span class="ident">target</span>,
-				<span class="ident">input</span>,
-				<span class="ident">value</span>,
-				<span class="ident">gas_limit</span>,
-				<span class="prelude-val">Some</span>(<span class="ident">max_fee_per_gas</span>),
-				<span class="ident">max_priority_fee_per_gas</span>,
-				<span class="ident">nonce</span>,
-				<span class="ident">access_list</span>,
-				<span class="ident">is_transactional</span>,
-				<span class="ident">validate</span>,
-				<span class="ident">T::config</span>(),
+			<span class="kw">let </span>is_transactional = <span class="bool-val">true</span>;
+			<span class="kw">let </span>validate = <span class="bool-val">true</span>;
+			<span class="kw">let </span>info = <span class="kw">match </span>T::Runner::call(
+				source,
+				target,
+				input,
+				value,
+				gas_limit,
+				<span class="prelude-val">Some</span>(max_fee_per_gas),
+				max_priority_fee_per_gas,
+				nonce,
+				access_list,
+				is_transactional,
+				validate,
+				T::config(),
 			) {
-				<span class="prelude-val">Ok</span>(<span class="ident">info</span>) =&gt; <span class="ident">info</span>,
-				<span class="prelude-val">Err</span>(<span class="ident">e</span>) =&gt; {
-					<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">DispatchErrorWithPostInfo</span> {
-						<span class="ident">post_info</span>: <span class="ident">PostDispatchInfo</span> {
-							<span class="ident">actual_weight</span>: <span class="prelude-val">Some</span>(<span class="ident">e</span>.<span class="ident">weight</span>),
-							<span class="ident">pays_fee</span>: <span class="ident">Pays::Yes</span>,
+				<span class="prelude-val">Ok</span>(info) =&gt; info,
+				<span class="prelude-val">Err</span>(e) =&gt; {
+					<span class="kw">return </span><span class="prelude-val">Err</span>(DispatchErrorWithPostInfo {
+						post_info: PostDispatchInfo {
+							actual_weight: <span class="prelude-val">Some</span>(e.weight),
+							pays_fee: Pays::Yes,
 						},
-						<span class="ident">error</span>: <span class="ident">e</span>.<span class="ident">error</span>.<span class="ident">into</span>(),
+						error: e.error.into(),
 					})
 				}
 			};
 
-			<span class="kw">match</span> <span class="ident">info</span>.<span class="ident">exit_reason</span> {
-				<span class="ident">ExitReason::Succeed</span>(<span class="kw">_</span>) =&gt; {
-					<span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::deposit_event</span>(<span class="ident">Event</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::Executed</span> { <span class="ident">address</span>: <span class="ident">target</span> });
+			<span class="kw">match </span>info.exit_reason {
+				ExitReason::Succeed(<span class="kw">_</span>) =&gt; {
+					Pallet::&lt;T&gt;::deposit_event(Event::&lt;T&gt;::Executed { address: target });
 				}
-				<span class="kw">_</span> =&gt; {
-					<span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::deposit_event</span>(<span class="ident">Event</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::ExecutedFailed</span> { <span class="ident">address</span>: <span class="ident">target</span> });
+				<span class="kw">_ </span>=&gt; {
+					Pallet::&lt;T&gt;::deposit_event(Event::&lt;T&gt;::ExecutedFailed { address: target });
 				}
 			};
 
-			<span class="prelude-val">Ok</span>(<span class="ident">PostDispatchInfo</span> {
-				<span class="ident">actual_weight</span>: <span class="prelude-val">Some</span>(<span class="ident">T::GasWeightMapping::gas_to_weight</span>(
-					<span class="ident">info</span>.<span class="ident">used_gas</span>.<span class="ident">unique_saturated_into</span>(),
+			<span class="prelude-val">Ok</span>(PostDispatchInfo {
+				actual_weight: <span class="prelude-val">Some</span>(T::GasWeightMapping::gas_to_weight(
+					info.used_gas.unique_saturated_into(),
 					<span class="bool-val">true</span>,
 				)),
-				<span class="ident">pays_fee</span>: <span class="ident">Pays::No</span>,
+				pays_fee: Pays::No,
 			})
 		}
 
-		<span class="doccomment">/// Issue an EVM create operation. This is similar to a contract creation transaction in</span>
-		<span class="doccomment">/// Ethereum.</span>
-		<span class="attribute">#[<span class="ident">pallet::weight</span>({
-			<span class="kw">let</span> <span class="ident">without_base_extrinsic_weight</span> <span class="op">=</span> <span class="bool-val">true</span>;
-			<span class="ident">T::GasWeightMapping::gas_to_weight</span>(<span class="kw-2">*</span><span class="ident">gas_limit</span>, <span class="ident">without_base_extrinsic_weight</span>)
-		})]</span>
-		<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">create</span>(
-			<span class="ident">origin</span>: <span class="ident">OriginFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
-			<span class="ident">source</span>: <span class="ident">H160</span>,
-			<span class="ident">init</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
-			<span class="ident">value</span>: <span class="ident">U256</span>,
-			<span class="ident">gas_limit</span>: <span class="ident">u64</span>,
-			<span class="ident">max_fee_per_gas</span>: <span class="ident">U256</span>,
-			<span class="ident">max_priority_fee_per_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-			<span class="ident">nonce</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-			<span class="ident">access_list</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">H160</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span>)<span class="op">&gt;</span>,
-		) -&gt; <span class="ident">DispatchResultWithPostInfo</span> {
-			<span class="ident">T::CallOrigin::ensure_address_origin</span>(<span class="kw-2">&amp;</span><span class="ident">source</span>, <span class="ident">origin</span>)<span class="question-mark">?</span>;
+		<span class="doccomment">/// Issue an EVM create operation. This is similar to a contract creation transaction in
+		/// Ethereum.
+		</span><span class="attribute">#[pallet::weight({
+			<span class="kw">let </span>without_base_extrinsic_weight = <span class="bool-val">true</span>;
+			T::GasWeightMapping::gas_to_weight(<span class="kw-2">*</span>gas_limit, without_base_extrinsic_weight)
+		})]
+		</span><span class="kw">pub fn </span>create(
+			origin: OriginFor&lt;T&gt;,
+			source: H160,
+			init: Vec&lt;u8&gt;,
+			value: U256,
+			gas_limit: u64,
+			max_fee_per_gas: U256,
+			max_priority_fee_per_gas: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+			nonce: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+			access_list: Vec&lt;(H160, Vec&lt;H256&gt;)&gt;,
+		) -&gt; DispatchResultWithPostInfo {
+			T::CallOrigin::ensure_address_origin(<span class="kw-2">&amp;</span>source, origin)<span class="question-mark">?</span>;
 
-			<span class="kw">let</span> <span class="ident">is_transactional</span> <span class="op">=</span> <span class="bool-val">true</span>;
-			<span class="kw">let</span> <span class="ident">validate</span> <span class="op">=</span> <span class="bool-val">true</span>;
-			<span class="kw">let</span> <span class="ident">info</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">T::Runner::create</span>(
-				<span class="ident">source</span>,
-				<span class="ident">init</span>,
-				<span class="ident">value</span>,
-				<span class="ident">gas_limit</span>,
-				<span class="prelude-val">Some</span>(<span class="ident">max_fee_per_gas</span>),
-				<span class="ident">max_priority_fee_per_gas</span>,
-				<span class="ident">nonce</span>,
-				<span class="ident">access_list</span>,
-				<span class="ident">is_transactional</span>,
-				<span class="ident">validate</span>,
-				<span class="ident">T::config</span>(),
+			<span class="kw">let </span>is_transactional = <span class="bool-val">true</span>;
+			<span class="kw">let </span>validate = <span class="bool-val">true</span>;
+			<span class="kw">let </span>info = <span class="kw">match </span>T::Runner::create(
+				source,
+				init,
+				value,
+				gas_limit,
+				<span class="prelude-val">Some</span>(max_fee_per_gas),
+				max_priority_fee_per_gas,
+				nonce,
+				access_list,
+				is_transactional,
+				validate,
+				T::config(),
 			) {
-				<span class="prelude-val">Ok</span>(<span class="ident">info</span>) =&gt; <span class="ident">info</span>,
-				<span class="prelude-val">Err</span>(<span class="ident">e</span>) =&gt; {
-					<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">DispatchErrorWithPostInfo</span> {
-						<span class="ident">post_info</span>: <span class="ident">PostDispatchInfo</span> {
-							<span class="ident">actual_weight</span>: <span class="prelude-val">Some</span>(<span class="ident">e</span>.<span class="ident">weight</span>),
-							<span class="ident">pays_fee</span>: <span class="ident">Pays::Yes</span>,
+				<span class="prelude-val">Ok</span>(info) =&gt; info,
+				<span class="prelude-val">Err</span>(e) =&gt; {
+					<span class="kw">return </span><span class="prelude-val">Err</span>(DispatchErrorWithPostInfo {
+						post_info: PostDispatchInfo {
+							actual_weight: <span class="prelude-val">Some</span>(e.weight),
+							pays_fee: Pays::Yes,
 						},
-						<span class="ident">error</span>: <span class="ident">e</span>.<span class="ident">error</span>.<span class="ident">into</span>(),
+						error: e.error.into(),
 					})
 				}
 			};
 
-			<span class="kw">match</span> <span class="ident">info</span> {
-				<span class="ident">CreateInfo</span> {
-					<span class="ident">exit_reason</span>: <span class="ident">ExitReason::Succeed</span>(<span class="kw">_</span>),
-					<span class="ident">value</span>: <span class="ident">create_address</span>,
+			<span class="kw">match </span>info {
+				CreateInfo {
+					exit_reason: ExitReason::Succeed(<span class="kw">_</span>),
+					value: create_address,
 					..
 				} =&gt; {
-					<span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::deposit_event</span>(<span class="ident">Event</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::Created</span> {
-						<span class="ident">address</span>: <span class="ident">create_address</span>,
+					Pallet::&lt;T&gt;::deposit_event(Event::&lt;T&gt;::Created {
+						address: create_address,
 					});
 				}
-				<span class="ident">CreateInfo</span> {
-					<span class="ident">exit_reason</span>: <span class="kw">_</span>,
-					<span class="ident">value</span>: <span class="ident">create_address</span>,
+				CreateInfo {
+					exit_reason: <span class="kw">_</span>,
+					value: create_address,
 					..
 				} =&gt; {
-					<span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::deposit_event</span>(<span class="ident">Event</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::CreatedFailed</span> {
-						<span class="ident">address</span>: <span class="ident">create_address</span>,
+					Pallet::&lt;T&gt;::deposit_event(Event::&lt;T&gt;::CreatedFailed {
+						address: create_address,
 					});
 				}
 			}
 
-			<span class="prelude-val">Ok</span>(<span class="ident">PostDispatchInfo</span> {
-				<span class="ident">actual_weight</span>: <span class="prelude-val">Some</span>(<span class="ident">T::GasWeightMapping::gas_to_weight</span>(
-					<span class="ident">info</span>.<span class="ident">used_gas</span>.<span class="ident">unique_saturated_into</span>(),
+			<span class="prelude-val">Ok</span>(PostDispatchInfo {
+				actual_weight: <span class="prelude-val">Some</span>(T::GasWeightMapping::gas_to_weight(
+					info.used_gas.unique_saturated_into(),
 					<span class="bool-val">true</span>,
 				)),
-				<span class="ident">pays_fee</span>: <span class="ident">Pays::No</span>,
+				pays_fee: Pays::No,
 			})
 		}
 
-		<span class="doccomment">/// Issue an EVM create2 operation.</span>
-		<span class="attribute">#[<span class="ident">pallet::weight</span>({
-			<span class="kw">let</span> <span class="ident">without_base_extrinsic_weight</span> <span class="op">=</span> <span class="bool-val">true</span>;
-			<span class="ident">T::GasWeightMapping::gas_to_weight</span>(<span class="kw-2">*</span><span class="ident">gas_limit</span>, <span class="ident">without_base_extrinsic_weight</span>)
-		})]</span>
-		<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">create2</span>(
-			<span class="ident">origin</span>: <span class="ident">OriginFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
-			<span class="ident">source</span>: <span class="ident">H160</span>,
-			<span class="ident">init</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
-			<span class="ident">salt</span>: <span class="ident">H256</span>,
-			<span class="ident">value</span>: <span class="ident">U256</span>,
-			<span class="ident">gas_limit</span>: <span class="ident">u64</span>,
-			<span class="ident">max_fee_per_gas</span>: <span class="ident">U256</span>,
-			<span class="ident">max_priority_fee_per_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-			<span class="ident">nonce</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-			<span class="ident">access_list</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">H160</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span>)<span class="op">&gt;</span>,
-		) -&gt; <span class="ident">DispatchResultWithPostInfo</span> {
-			<span class="ident">T::CallOrigin::ensure_address_origin</span>(<span class="kw-2">&amp;</span><span class="ident">source</span>, <span class="ident">origin</span>)<span class="question-mark">?</span>;
+		<span class="doccomment">/// Issue an EVM create2 operation.
+		</span><span class="attribute">#[pallet::weight({
+			<span class="kw">let </span>without_base_extrinsic_weight = <span class="bool-val">true</span>;
+			T::GasWeightMapping::gas_to_weight(<span class="kw-2">*</span>gas_limit, without_base_extrinsic_weight)
+		})]
+		</span><span class="kw">pub fn </span>create2(
+			origin: OriginFor&lt;T&gt;,
+			source: H160,
+			init: Vec&lt;u8&gt;,
+			salt: H256,
+			value: U256,
+			gas_limit: u64,
+			max_fee_per_gas: U256,
+			max_priority_fee_per_gas: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+			nonce: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+			access_list: Vec&lt;(H160, Vec&lt;H256&gt;)&gt;,
+		) -&gt; DispatchResultWithPostInfo {
+			T::CallOrigin::ensure_address_origin(<span class="kw-2">&amp;</span>source, origin)<span class="question-mark">?</span>;
 
-			<span class="kw">let</span> <span class="ident">is_transactional</span> <span class="op">=</span> <span class="bool-val">true</span>;
-			<span class="kw">let</span> <span class="ident">validate</span> <span class="op">=</span> <span class="bool-val">true</span>;
-			<span class="kw">let</span> <span class="ident">info</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">T::Runner::create2</span>(
-				<span class="ident">source</span>,
-				<span class="ident">init</span>,
-				<span class="ident">salt</span>,
-				<span class="ident">value</span>,
-				<span class="ident">gas_limit</span>,
-				<span class="prelude-val">Some</span>(<span class="ident">max_fee_per_gas</span>),
-				<span class="ident">max_priority_fee_per_gas</span>,
-				<span class="ident">nonce</span>,
-				<span class="ident">access_list</span>,
-				<span class="ident">is_transactional</span>,
-				<span class="ident">validate</span>,
-				<span class="ident">T::config</span>(),
+			<span class="kw">let </span>is_transactional = <span class="bool-val">true</span>;
+			<span class="kw">let </span>validate = <span class="bool-val">true</span>;
+			<span class="kw">let </span>info = <span class="kw">match </span>T::Runner::create2(
+				source,
+				init,
+				salt,
+				value,
+				gas_limit,
+				<span class="prelude-val">Some</span>(max_fee_per_gas),
+				max_priority_fee_per_gas,
+				nonce,
+				access_list,
+				is_transactional,
+				validate,
+				T::config(),
 			) {
-				<span class="prelude-val">Ok</span>(<span class="ident">info</span>) =&gt; <span class="ident">info</span>,
-				<span class="prelude-val">Err</span>(<span class="ident">e</span>) =&gt; {
-					<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">DispatchErrorWithPostInfo</span> {
-						<span class="ident">post_info</span>: <span class="ident">PostDispatchInfo</span> {
-							<span class="ident">actual_weight</span>: <span class="prelude-val">Some</span>(<span class="ident">e</span>.<span class="ident">weight</span>),
-							<span class="ident">pays_fee</span>: <span class="ident">Pays::Yes</span>,
+				<span class="prelude-val">Ok</span>(info) =&gt; info,
+				<span class="prelude-val">Err</span>(e) =&gt; {
+					<span class="kw">return </span><span class="prelude-val">Err</span>(DispatchErrorWithPostInfo {
+						post_info: PostDispatchInfo {
+							actual_weight: <span class="prelude-val">Some</span>(e.weight),
+							pays_fee: Pays::Yes,
 						},
-						<span class="ident">error</span>: <span class="ident">e</span>.<span class="ident">error</span>.<span class="ident">into</span>(),
+						error: e.error.into(),
 					})
 				}
 			};
 
-			<span class="kw">match</span> <span class="ident">info</span> {
-				<span class="ident">CreateInfo</span> {
-					<span class="ident">exit_reason</span>: <span class="ident">ExitReason::Succeed</span>(<span class="kw">_</span>),
-					<span class="ident">value</span>: <span class="ident">create_address</span>,
+			<span class="kw">match </span>info {
+				CreateInfo {
+					exit_reason: ExitReason::Succeed(<span class="kw">_</span>),
+					value: create_address,
 					..
 				} =&gt; {
-					<span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::deposit_event</span>(<span class="ident">Event</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::Created</span> {
-						<span class="ident">address</span>: <span class="ident">create_address</span>,
+					Pallet::&lt;T&gt;::deposit_event(Event::&lt;T&gt;::Created {
+						address: create_address,
 					});
 				}
-				<span class="ident">CreateInfo</span> {
-					<span class="ident">exit_reason</span>: <span class="kw">_</span>,
-					<span class="ident">value</span>: <span class="ident">create_address</span>,
+				CreateInfo {
+					exit_reason: <span class="kw">_</span>,
+					value: create_address,
 					..
 				} =&gt; {
-					<span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::deposit_event</span>(<span class="ident">Event</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::CreatedFailed</span> {
-						<span class="ident">address</span>: <span class="ident">create_address</span>,
+					Pallet::&lt;T&gt;::deposit_event(Event::&lt;T&gt;::CreatedFailed {
+						address: create_address,
 					});
 				}
 			}
 
-			<span class="prelude-val">Ok</span>(<span class="ident">PostDispatchInfo</span> {
-				<span class="ident">actual_weight</span>: <span class="prelude-val">Some</span>(<span class="ident">T::GasWeightMapping::gas_to_weight</span>(
-					<span class="ident">info</span>.<span class="ident">used_gas</span>.<span class="ident">unique_saturated_into</span>(),
+			<span class="prelude-val">Ok</span>(PostDispatchInfo {
+				actual_weight: <span class="prelude-val">Some</span>(T::GasWeightMapping::gas_to_weight(
+					info.used_gas.unique_saturated_into(),
 					<span class="bool-val">true</span>,
 				)),
-				<span class="ident">pays_fee</span>: <span class="ident">Pays::No</span>,
+				pays_fee: Pays::No,
 			})
 		}
 	}
 
-	<span class="attribute">#[<span class="ident">pallet::event</span>]</span>
-	<span class="attribute">#[<span class="ident">pallet::generate_deposit</span>(<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn</span> <span class="ident">deposit_event</span>)]</span>
-	<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> {
-		<span class="doccomment">/// Ethereum events from contracts.</span>
-		<span class="ident">Log</span> { <span class="ident">log</span>: <span class="ident">Log</span> },
-		<span class="doccomment">/// A contract has been created at given address.</span>
-		<span class="ident">Created</span> { <span class="ident">address</span>: <span class="ident">H160</span> },
-		<span class="doccomment">/// A contract was attempted to be created, but the execution failed.</span>
-		<span class="ident">CreatedFailed</span> { <span class="ident">address</span>: <span class="ident">H160</span> },
-		<span class="doccomment">/// A contract has been executed successfully with states applied.</span>
-		<span class="ident">Executed</span> { <span class="ident">address</span>: <span class="ident">H160</span> },
-		<span class="doccomment">/// A contract has been executed with errors. States are reverted with only gas fees applied.</span>
-		<span class="ident">ExecutedFailed</span> { <span class="ident">address</span>: <span class="ident">H160</span> },
+	<span class="attribute">#[pallet::event]
+	#[pallet::generate_deposit(<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn </span>deposit_event)]
+	</span><span class="kw">pub enum </span>Event&lt;T: Config&gt; {
+		<span class="doccomment">/// Ethereum events from contracts.
+		</span>Log { log: Log },
+		<span class="doccomment">/// A contract has been created at given address.
+		</span>Created { address: H160 },
+		<span class="doccomment">/// A contract was attempted to be created, but the execution failed.
+		</span>CreatedFailed { address: H160 },
+		<span class="doccomment">/// A contract has been executed successfully with states applied.
+		</span>Executed { address: H160 },
+		<span class="doccomment">/// A contract has been executed with errors. States are reverted with only gas fees applied.
+		</span>ExecutedFailed { address: H160 },
 	}
 
-	<span class="attribute">#[<span class="ident">pallet::error</span>]</span>
-	<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Error</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-		<span class="doccomment">/// Not enough balance to perform action</span>
-		<span class="ident">BalanceLow</span>,
-		<span class="doccomment">/// Calculating total fee overflowed</span>
-		<span class="ident">FeeOverflow</span>,
-		<span class="doccomment">/// Calculating total payment overflowed</span>
-		<span class="ident">PaymentOverflow</span>,
-		<span class="doccomment">/// Withdraw fee failed</span>
-		<span class="ident">WithdrawFailed</span>,
-		<span class="doccomment">/// Gas price is too low.</span>
-		<span class="ident">GasPriceTooLow</span>,
-		<span class="doccomment">/// Nonce is invalid</span>
-		<span class="ident">InvalidNonce</span>,
-		<span class="doccomment">/// Gas limit is too low.</span>
-		<span class="ident">GasLimitTooLow</span>,
-		<span class="doccomment">/// Gas limit is too high.</span>
-		<span class="ident">GasLimitTooHigh</span>,
-		<span class="doccomment">/// Undefined error.</span>
-		<span class="ident">Undefined</span>,
-		<span class="doccomment">/// EVM reentrancy</span>
-		<span class="ident">Reentrancy</span>,
+	<span class="attribute">#[pallet::error]
+	</span><span class="kw">pub enum </span>Error&lt;T&gt; {
+		<span class="doccomment">/// Not enough balance to perform action
+		</span>BalanceLow,
+		<span class="doccomment">/// Calculating total fee overflowed
+		</span>FeeOverflow,
+		<span class="doccomment">/// Calculating total payment overflowed
+		</span>PaymentOverflow,
+		<span class="doccomment">/// Withdraw fee failed
+		</span>WithdrawFailed,
+		<span class="doccomment">/// Gas price is too low.
+		</span>GasPriceTooLow,
+		<span class="doccomment">/// Nonce is invalid
+		</span>InvalidNonce,
+		<span class="doccomment">/// Gas limit is too low.
+		</span>GasLimitTooLow,
+		<span class="doccomment">/// Gas limit is too high.
+		</span>GasLimitTooHigh,
+		<span class="doccomment">/// Undefined error.
+		</span>Undefined,
+		<span class="doccomment">/// EVM reentrancy
+		</span>Reentrancy,
 	}
 
-	<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">InvalidEvmTransactionError</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Error</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-		<span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">validation_error</span>: <span class="ident">InvalidEvmTransactionError</span>) -&gt; <span class="self">Self</span> {
-			<span class="kw">match</span> <span class="ident">validation_error</span> {
-				<span class="ident">InvalidEvmTransactionError::GasLimitTooLow</span> =&gt; <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::GasLimitTooLow</span>,
-				<span class="ident">InvalidEvmTransactionError::GasLimitTooHigh</span> =&gt; <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::GasLimitTooHigh</span>,
-				<span class="ident">InvalidEvmTransactionError::GasPriceTooLow</span> =&gt; <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::GasPriceTooLow</span>,
-				<span class="ident">InvalidEvmTransactionError::PriorityFeeTooHigh</span> =&gt; <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::GasPriceTooLow</span>,
-				<span class="ident">InvalidEvmTransactionError::BalanceTooLow</span> =&gt; <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::BalanceLow</span>,
-				<span class="ident">InvalidEvmTransactionError::TxNonceTooLow</span> =&gt; <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::InvalidNonce</span>,
-				<span class="ident">InvalidEvmTransactionError::TxNonceTooHigh</span> =&gt; <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::InvalidNonce</span>,
-				<span class="ident">InvalidEvmTransactionError::InvalidPaymentInput</span> =&gt; <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::GasPriceTooLow</span>,
-				<span class="kw">_</span> =&gt; <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::Undefined</span>,
+	<span class="kw">impl</span>&lt;T&gt; From&lt;InvalidEvmTransactionError&gt; <span class="kw">for </span>Error&lt;T&gt; {
+		<span class="kw">fn </span>from(validation_error: InvalidEvmTransactionError) -&gt; <span class="self">Self </span>{
+			<span class="kw">match </span>validation_error {
+				InvalidEvmTransactionError::GasLimitTooLow =&gt; Error::&lt;T&gt;::GasLimitTooLow,
+				InvalidEvmTransactionError::GasLimitTooHigh =&gt; Error::&lt;T&gt;::GasLimitTooHigh,
+				InvalidEvmTransactionError::GasPriceTooLow =&gt; Error::&lt;T&gt;::GasPriceTooLow,
+				InvalidEvmTransactionError::PriorityFeeTooHigh =&gt; Error::&lt;T&gt;::GasPriceTooLow,
+				InvalidEvmTransactionError::BalanceTooLow =&gt; Error::&lt;T&gt;::BalanceLow,
+				InvalidEvmTransactionError::TxNonceTooLow =&gt; Error::&lt;T&gt;::InvalidNonce,
+				InvalidEvmTransactionError::TxNonceTooHigh =&gt; Error::&lt;T&gt;::InvalidNonce,
+				InvalidEvmTransactionError::InvalidPaymentInput =&gt; Error::&lt;T&gt;::GasPriceTooLow,
+				<span class="kw">_ </span>=&gt; Error::&lt;T&gt;::Undefined,
 			}
 		}
 	}
 
-	<span class="attribute">#[<span class="ident">pallet::genesis_config</span>]</span>
-	<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>, <span class="ident">derive</span>(<span class="ident">Default</span>))]</span>
-	<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">GenesisConfig</span> {
-		<span class="kw">pub</span> <span class="ident">accounts</span>: <span class="ident">std::collections::BTreeMap</span><span class="op">&lt;</span><span class="ident">H160</span>, <span class="ident">GenesisAccount</span><span class="op">&gt;</span>,
+	<span class="attribute">#[pallet::genesis_config]
+	#[cfg_attr(feature = <span class="string">&quot;std&quot;</span>, derive(Default))]
+	</span><span class="kw">pub struct </span>GenesisConfig {
+		<span class="kw">pub </span>accounts: std::collections::BTreeMap&lt;H160, GenesisAccount&gt;,
 	}
 
-	<span class="attribute">#[<span class="ident">pallet::genesis_build</span>]</span>
-	<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">GenesisBuild</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">GenesisConfig</span>
-	<span class="kw">where</span>
-		<span class="ident">U256</span>: <span class="ident">UniqueSaturatedInto</span><span class="op">&lt;</span><span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+	<span class="attribute">#[pallet::genesis_build]
+	</span><span class="kw">impl</span>&lt;T: Config&gt; GenesisBuild&lt;T&gt; <span class="kw">for </span>GenesisConfig
+	<span class="kw">where
+		</span>U256: UniqueSaturatedInto&lt;BalanceOf&lt;T&gt;&gt;,
 	{
-		<span class="kw">fn</span> <span class="ident">build</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) {
-			<span class="kw">const</span> <span class="ident">MAX_ACCOUNT_NONCE</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">100</span>;
+		<span class="kw">fn </span>build(<span class="kw-2">&amp;</span><span class="self">self</span>) {
+			<span class="kw">const </span>MAX_ACCOUNT_NONCE: usize = <span class="number">100</span>;
 
-			<span class="kw">for</span> (<span class="ident">address</span>, <span class="ident">account</span>) <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">accounts</span> {
-				<span class="kw">let</span> <span class="ident">account_id</span> <span class="op">=</span> <span class="ident">T::AddressMapping::into_account_id</span>(<span class="kw-2">*</span><span class="ident">address</span>);
+			<span class="kw">for </span>(address, account) <span class="kw">in </span><span class="kw-2">&amp;</span><span class="self">self</span>.accounts {
+				<span class="kw">let </span>account_id = T::AddressMapping::into_account_id(<span class="kw-2">*</span>address);
 
-				<span class="comment">// ASSUME: in one single EVM transaction, the nonce will not increase more than</span>
-				<span class="comment">// `u128::max_value()`.</span>
-				<span class="kw">for</span> <span class="kw">_</span> <span class="kw">in</span> <span class="number">0</span>..<span class="ident">min</span>(
-					<span class="ident">MAX_ACCOUNT_NONCE</span>,
-					<span class="ident">UniqueSaturatedInto</span>::<span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span><span class="ident">::unique_saturated_into</span>(<span class="ident">account</span>.<span class="ident">nonce</span>),
+				<span class="comment">// ASSUME: in one single EVM transaction, the nonce will not increase more than
+				// `u128::max_value()`.
+				</span><span class="kw">for _ in </span><span class="number">0</span>..min(
+					MAX_ACCOUNT_NONCE,
+					UniqueSaturatedInto::&lt;usize&gt;::unique_saturated_into(account.nonce),
 				) {
-					<span class="ident">frame_system::Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::inc_account_nonce</span>(<span class="kw-2">&amp;</span><span class="ident">account_id</span>);
+					frame_system::Pallet::&lt;T&gt;::inc_account_nonce(<span class="kw-2">&amp;</span>account_id);
 				}
 
-				<span class="ident">T::Currency::deposit_creating</span>(<span class="kw-2">&amp;</span><span class="ident">account_id</span>, <span class="ident">account</span>.<span class="ident">balance</span>.<span class="ident">unique_saturated_into</span>());
+				T::Currency::deposit_creating(<span class="kw-2">&amp;</span>account_id, account.balance.unique_saturated_into());
 
-				<span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::create_account</span>(<span class="kw-2">*</span><span class="ident">address</span>, <span class="ident">account</span>.<span class="ident">code</span>.<span class="ident">clone</span>());
+				Pallet::&lt;T&gt;::create_account(<span class="kw-2">*</span>address, account.code.clone());
 
-				<span class="kw">for</span> (<span class="ident">index</span>, <span class="ident">value</span>) <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">account</span>.<span class="ident">storage</span> {
-					<span class="op">&lt;</span><span class="ident">AccountStorages</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::insert</span>(<span class="ident">address</span>, <span class="ident">index</span>, <span class="ident">value</span>);
+				<span class="kw">for </span>(index, value) <span class="kw">in </span><span class="kw-2">&amp;</span>account.storage {
+					&lt;AccountStorages&lt;T&gt;&gt;::insert(address, index, value);
 				}
 			}
 		}
 	}
 
-	<span class="attribute">#[<span class="ident">pallet::storage</span>]</span>
-	<span class="attribute">#[<span class="ident">pallet::getter</span>(<span class="kw">fn</span> <span class="ident">account_codes</span>)]</span>
-	<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">AccountCodes</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">StorageMap</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">Blake2_128Concat</span>, <span class="ident">H160</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">ValueQuery</span><span class="op">&gt;</span>;
+	<span class="attribute">#[pallet::storage]
+	#[pallet::getter(<span class="kw">fn </span>account_codes)]
+	</span><span class="kw">pub type </span>AccountCodes&lt;T: Config&gt; = StorageMap&lt;<span class="kw">_</span>, Blake2_128Concat, H160, Vec&lt;u8&gt;, ValueQuery&gt;;
 
-	<span class="attribute">#[<span class="ident">pallet::storage</span>]</span>
-	<span class="attribute">#[<span class="ident">pallet::getter</span>(<span class="kw">fn</span> <span class="ident">account_storages</span>)]</span>
-	<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">AccountStorages</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="op">=</span>
-		<span class="ident">StorageDoubleMap</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">Blake2_128Concat</span>, <span class="ident">H160</span>, <span class="ident">Blake2_128Concat</span>, <span class="ident">H256</span>, <span class="ident">H256</span>, <span class="ident">ValueQuery</span><span class="op">&gt;</span>;
+	<span class="attribute">#[pallet::storage]
+	#[pallet::getter(<span class="kw">fn </span>account_storages)]
+	</span><span class="kw">pub type </span>AccountStorages&lt;T: Config&gt; =
+		StorageDoubleMap&lt;<span class="kw">_</span>, Blake2_128Concat, H160, Blake2_128Concat, H256, H256, ValueQuery&gt;;
 }
 
-<span class="doccomment">/// Type alias for currency balance.</span>
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="op">=</span>
-	<span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">Config</span><span class="op">&gt;</span><span class="ident">::Currency</span> <span class="kw">as</span> <span class="ident">Currency</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">frame_system::Config</span><span class="op">&gt;</span><span class="ident">::AccountId</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::Balance</span>;
+<span class="doccomment">/// Type alias for currency balance.
+</span><span class="kw">pub type </span>BalanceOf&lt;T&gt; =
+	&lt;&lt;T <span class="kw">as </span>Config&gt;::Currency <span class="kw">as </span>Currency&lt;&lt;T <span class="kw">as </span>frame_system::Config&gt;::AccountId&gt;&gt;::Balance;
 
-<span class="doccomment">/// Type alias for negative imbalance during fees</span>
-<span class="kw">type</span> <span class="ident">NegativeImbalanceOf</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">T</span><span class="op">&gt;</span> <span class="op">=</span>
-	<span class="op">&lt;</span><span class="ident">C</span> <span class="kw">as</span> <span class="ident">Currency</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">frame_system::Config</span><span class="op">&gt;</span><span class="ident">::AccountId</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::NegativeImbalance</span>;
+<span class="doccomment">/// Type alias for negative imbalance during fees
+</span><span class="kw">type </span>NegativeImbalanceOf&lt;C, T&gt; =
+	&lt;C <span class="kw">as </span>Currency&lt;&lt;T <span class="kw">as </span>frame_system::Config&gt;::AccountId&gt;&gt;::NegativeImbalance;
 
-<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">EnsureAddressOrigin</span><span class="op">&lt;</span><span class="ident">OuterOrigin</span><span class="op">&gt;</span> {
-	<span class="doccomment">/// Success return type.</span>
-	<span class="kw">type</span> <span class="ident">Success</span>;
+<span class="kw">pub trait </span>EnsureAddressOrigin&lt;OuterOrigin&gt; {
+	<span class="doccomment">/// Success return type.
+	</span><span class="kw">type </span>Success;
 
-	<span class="doccomment">/// Perform the origin check.</span>
-	<span class="kw">fn</span> <span class="ident">ensure_address_origin</span>(
-		<span class="ident">address</span>: <span class="kw-2">&amp;</span><span class="ident">H160</span>,
-		<span class="ident">origin</span>: <span class="ident">OuterOrigin</span>,
-	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Success</span>, <span class="ident">BadOrigin</span><span class="op">&gt;</span> {
-		<span class="ident"><span class="self">Self</span>::try_address_origin</span>(<span class="ident">address</span>, <span class="ident">origin</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">BadOrigin</span>)
+	<span class="doccomment">/// Perform the origin check.
+	</span><span class="kw">fn </span>ensure_address_origin(
+		address: <span class="kw-2">&amp;</span>H160,
+		origin: OuterOrigin,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>::Success, BadOrigin&gt; {
+		<span class="self">Self</span>::try_address_origin(address, origin).map_err(|<span class="kw">_</span>| BadOrigin)
 	}
 
-	<span class="doccomment">/// Try with origin.</span>
-	<span class="kw">fn</span> <span class="ident">try_address_origin</span>(
-		<span class="ident">address</span>: <span class="kw-2">&amp;</span><span class="ident">H160</span>,
-		<span class="ident">origin</span>: <span class="ident">OuterOrigin</span>,
-	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Success</span>, <span class="ident">OuterOrigin</span><span class="op">&gt;</span>;
+	<span class="doccomment">/// Try with origin.
+	</span><span class="kw">fn </span>try_address_origin(
+		address: <span class="kw-2">&amp;</span>H160,
+		origin: OuterOrigin,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>::Success, OuterOrigin&gt;;
 }
 
-<span class="doccomment">/// Ensure that the EVM address is the same as the Substrate address. This only works if the account</span>
-<span class="doccomment">/// ID is `H160`.</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">EnsureAddressSame</span>;
+<span class="doccomment">/// Ensure that the EVM address is the same as the Substrate address. This only works if the account
+/// ID is `H160`.
+</span><span class="kw">pub struct </span>EnsureAddressSame;
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">OuterOrigin</span><span class="op">&gt;</span> <span class="ident">EnsureAddressOrigin</span><span class="op">&lt;</span><span class="ident">OuterOrigin</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">EnsureAddressSame</span>
-<span class="kw">where</span>
-	<span class="ident">OuterOrigin</span>: <span class="ident">Into</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">RawOrigin</span><span class="op">&lt;</span><span class="ident">H160</span><span class="op">&gt;</span>, <span class="ident">OuterOrigin</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">RawOrigin</span><span class="op">&lt;</span><span class="ident">H160</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+<span class="kw">impl</span>&lt;OuterOrigin&gt; EnsureAddressOrigin&lt;OuterOrigin&gt; <span class="kw">for </span>EnsureAddressSame
+<span class="kw">where
+	</span>OuterOrigin: Into&lt;<span class="prelude-ty">Result</span>&lt;RawOrigin&lt;H160&gt;, OuterOrigin&gt;&gt; + From&lt;RawOrigin&lt;H160&gt;&gt;,
 {
-	<span class="kw">type</span> <span class="ident">Success</span> <span class="op">=</span> <span class="ident">H160</span>;
+	<span class="kw">type </span>Success = H160;
 
-	<span class="kw">fn</span> <span class="ident">try_address_origin</span>(<span class="ident">address</span>: <span class="kw-2">&amp;</span><span class="ident">H160</span>, <span class="ident">origin</span>: <span class="ident">OuterOrigin</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">H160</span>, <span class="ident">OuterOrigin</span><span class="op">&gt;</span> {
-		<span class="ident">origin</span>.<span class="ident">into</span>().<span class="ident">and_then</span>(<span class="op">|</span><span class="ident">o</span><span class="op">|</span> <span class="kw">match</span> <span class="ident">o</span> {
-			<span class="ident">RawOrigin::Signed</span>(<span class="ident">who</span>) <span class="kw">if</span> <span class="kw-2">&amp;</span><span class="ident">who</span> <span class="op">==</span> <span class="ident">address</span> =&gt; <span class="prelude-val">Ok</span>(<span class="ident">who</span>),
-			<span class="ident">r</span> =&gt; <span class="prelude-val">Err</span>(<span class="ident">OuterOrigin::from</span>(<span class="ident">r</span>)),
+	<span class="kw">fn </span>try_address_origin(address: <span class="kw-2">&amp;</span>H160, origin: OuterOrigin) -&gt; <span class="prelude-ty">Result</span>&lt;H160, OuterOrigin&gt; {
+		origin.into().and_then(|o| <span class="kw">match </span>o {
+			RawOrigin::Signed(who) <span class="kw">if </span><span class="kw-2">&amp;</span>who == address =&gt; <span class="prelude-val">Ok</span>(who),
+			r =&gt; <span class="prelude-val">Err</span>(OuterOrigin::from(r)),
 		})
 	}
 }
 
-<span class="doccomment">/// Ensure that the origin is root.</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">EnsureAddressRoot</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span>(<span class="ident">sp_std::marker::PhantomData</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span>);
+<span class="doccomment">/// Ensure that the origin is root.
+</span><span class="kw">pub struct </span>EnsureAddressRoot&lt;AccountId&gt;(sp_std::marker::PhantomData&lt;AccountId&gt;);
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">OuterOrigin</span>, <span class="ident">AccountId</span><span class="op">&gt;</span> <span class="ident">EnsureAddressOrigin</span><span class="op">&lt;</span><span class="ident">OuterOrigin</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">EnsureAddressRoot</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span>
-<span class="kw">where</span>
-	<span class="ident">OuterOrigin</span>: <span class="ident">Into</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">RawOrigin</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span>, <span class="ident">OuterOrigin</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">RawOrigin</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+<span class="kw">impl</span>&lt;OuterOrigin, AccountId&gt; EnsureAddressOrigin&lt;OuterOrigin&gt; <span class="kw">for </span>EnsureAddressRoot&lt;AccountId&gt;
+<span class="kw">where
+	</span>OuterOrigin: Into&lt;<span class="prelude-ty">Result</span>&lt;RawOrigin&lt;AccountId&gt;, OuterOrigin&gt;&gt; + From&lt;RawOrigin&lt;AccountId&gt;&gt;,
 {
-	<span class="kw">type</span> <span class="ident">Success</span> <span class="op">=</span> ();
+	<span class="kw">type </span>Success = ();
 
-	<span class="kw">fn</span> <span class="ident">try_address_origin</span>(<span class="ident">_address</span>: <span class="kw-2">&amp;</span><span class="ident">H160</span>, <span class="ident">origin</span>: <span class="ident">OuterOrigin</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">OuterOrigin</span><span class="op">&gt;</span> {
-		<span class="ident">origin</span>.<span class="ident">into</span>().<span class="ident">and_then</span>(<span class="op">|</span><span class="ident">o</span><span class="op">|</span> <span class="kw">match</span> <span class="ident">o</span> {
-			<span class="ident">RawOrigin::Root</span> =&gt; <span class="prelude-val">Ok</span>(()),
-			<span class="ident">r</span> =&gt; <span class="prelude-val">Err</span>(<span class="ident">OuterOrigin::from</span>(<span class="ident">r</span>)),
+	<span class="kw">fn </span>try_address_origin(_address: <span class="kw-2">&amp;</span>H160, origin: OuterOrigin) -&gt; <span class="prelude-ty">Result</span>&lt;(), OuterOrigin&gt; {
+		origin.into().and_then(|o| <span class="kw">match </span>o {
+			RawOrigin::Root =&gt; <span class="prelude-val">Ok</span>(()),
+			r =&gt; <span class="prelude-val">Err</span>(OuterOrigin::from(r)),
 		})
 	}
 }
 
-<span class="doccomment">/// Ensure that the origin never happens.</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">EnsureAddressNever</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span>(<span class="ident">sp_std::marker::PhantomData</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span>);
+<span class="doccomment">/// Ensure that the origin never happens.
+</span><span class="kw">pub struct </span>EnsureAddressNever&lt;AccountId&gt;(sp_std::marker::PhantomData&lt;AccountId&gt;);
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">OuterOrigin</span>, <span class="ident">AccountId</span><span class="op">&gt;</span> <span class="ident">EnsureAddressOrigin</span><span class="op">&lt;</span><span class="ident">OuterOrigin</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">EnsureAddressNever</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span> {
-	<span class="kw">type</span> <span class="ident">Success</span> <span class="op">=</span> <span class="ident">AccountId</span>;
+<span class="kw">impl</span>&lt;OuterOrigin, AccountId&gt; EnsureAddressOrigin&lt;OuterOrigin&gt; <span class="kw">for </span>EnsureAddressNever&lt;AccountId&gt; {
+	<span class="kw">type </span>Success = AccountId;
 
-	<span class="kw">fn</span> <span class="ident">try_address_origin</span>(<span class="ident">_address</span>: <span class="kw-2">&amp;</span><span class="ident">H160</span>, <span class="ident">origin</span>: <span class="ident">OuterOrigin</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">AccountId</span>, <span class="ident">OuterOrigin</span><span class="op">&gt;</span> {
-		<span class="prelude-val">Err</span>(<span class="ident">origin</span>)
+	<span class="kw">fn </span>try_address_origin(_address: <span class="kw-2">&amp;</span>H160, origin: OuterOrigin) -&gt; <span class="prelude-ty">Result</span>&lt;AccountId, OuterOrigin&gt; {
+		<span class="prelude-val">Err</span>(origin)
 	}
 }
 
-<span class="doccomment">/// Ensure that the address is truncated hash of the origin. Only works if the account id is</span>
-<span class="doccomment">/// `AccountId32`.</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">EnsureAddressTruncated</span>;
+<span class="doccomment">/// Ensure that the address is truncated hash of the origin. Only works if the account id is
+/// `AccountId32`.
+</span><span class="kw">pub struct </span>EnsureAddressTruncated;
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">OuterOrigin</span><span class="op">&gt;</span> <span class="ident">EnsureAddressOrigin</span><span class="op">&lt;</span><span class="ident">OuterOrigin</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">EnsureAddressTruncated</span>
-<span class="kw">where</span>
-	<span class="ident">OuterOrigin</span>: <span class="ident">Into</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">RawOrigin</span><span class="op">&lt;</span><span class="ident">AccountId32</span><span class="op">&gt;</span>, <span class="ident">OuterOrigin</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">RawOrigin</span><span class="op">&lt;</span><span class="ident">AccountId32</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+<span class="kw">impl</span>&lt;OuterOrigin&gt; EnsureAddressOrigin&lt;OuterOrigin&gt; <span class="kw">for </span>EnsureAddressTruncated
+<span class="kw">where
+	</span>OuterOrigin: Into&lt;<span class="prelude-ty">Result</span>&lt;RawOrigin&lt;AccountId32&gt;, OuterOrigin&gt;&gt; + From&lt;RawOrigin&lt;AccountId32&gt;&gt;,
 {
-	<span class="kw">type</span> <span class="ident">Success</span> <span class="op">=</span> <span class="ident">AccountId32</span>;
+	<span class="kw">type </span>Success = AccountId32;
 
-	<span class="kw">fn</span> <span class="ident">try_address_origin</span>(<span class="ident">address</span>: <span class="kw-2">&amp;</span><span class="ident">H160</span>, <span class="ident">origin</span>: <span class="ident">OuterOrigin</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">AccountId32</span>, <span class="ident">OuterOrigin</span><span class="op">&gt;</span> {
-		<span class="ident">origin</span>.<span class="ident">into</span>().<span class="ident">and_then</span>(<span class="op">|</span><span class="ident">o</span><span class="op">|</span> <span class="kw">match</span> <span class="ident">o</span> {
-			<span class="ident">RawOrigin::Signed</span>(<span class="ident">who</span>) <span class="kw">if</span> <span class="ident">AsRef</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">32</span>]<span class="op">&gt;</span><span class="ident">::as_ref</span>(<span class="kw-2">&amp;</span><span class="ident">who</span>)[<span class="number">0</span>..<span class="number">20</span>] <span class="op">==</span> <span class="ident">address</span>[<span class="number">0</span>..<span class="number">20</span>] =&gt; {
-				<span class="prelude-val">Ok</span>(<span class="ident">who</span>)
+	<span class="kw">fn </span>try_address_origin(address: <span class="kw-2">&amp;</span>H160, origin: OuterOrigin) -&gt; <span class="prelude-ty">Result</span>&lt;AccountId32, OuterOrigin&gt; {
+		origin.into().and_then(|o| <span class="kw">match </span>o {
+			RawOrigin::Signed(who) <span class="kw">if </span>AsRef::&lt;[u8; <span class="number">32</span>]&gt;::as_ref(<span class="kw-2">&amp;</span>who)[<span class="number">0</span>..<span class="number">20</span>] == address[<span class="number">0</span>..<span class="number">20</span>] =&gt; {
+				<span class="prelude-val">Ok</span>(who)
 			}
-			<span class="ident">r</span> =&gt; <span class="prelude-val">Err</span>(<span class="ident">OuterOrigin::from</span>(<span class="ident">r</span>)),
+			r =&gt; <span class="prelude-val">Err</span>(OuterOrigin::from(r)),
 		})
 	}
 }
 
-<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">AddressMapping</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span> {
-	<span class="kw">fn</span> <span class="ident">into_account_id</span>(<span class="ident">address</span>: <span class="ident">H160</span>) -&gt; <span class="ident">A</span>;
+<span class="kw">pub trait </span>AddressMapping&lt;A&gt; {
+	<span class="kw">fn </span>into_account_id(address: H160) -&gt; A;
 }
 
-<span class="doccomment">/// Identity address mapping.</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">IdentityAddressMapping</span>;
+<span class="doccomment">/// Identity address mapping.
+</span><span class="kw">pub struct </span>IdentityAddressMapping;
 
-<span class="kw">impl</span> <span class="ident">AddressMapping</span><span class="op">&lt;</span><span class="ident">H160</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">IdentityAddressMapping</span> {
-	<span class="kw">fn</span> <span class="ident">into_account_id</span>(<span class="ident">address</span>: <span class="ident">H160</span>) -&gt; <span class="ident">H160</span> {
-		<span class="ident">address</span>
+<span class="kw">impl </span>AddressMapping&lt;H160&gt; <span class="kw">for </span>IdentityAddressMapping {
+	<span class="kw">fn </span>into_account_id(address: H160) -&gt; H160 {
+		address
 	}
 }
 
-<span class="doccomment">/// Hashed address mapping.</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">HashedAddressMapping</span><span class="op">&lt;</span><span class="ident">H</span><span class="op">&gt;</span>(<span class="ident">sp_std::marker::PhantomData</span><span class="op">&lt;</span><span class="ident">H</span><span class="op">&gt;</span>);
+<span class="doccomment">/// Hashed address mapping.
+</span><span class="kw">pub struct </span>HashedAddressMapping&lt;H&gt;(sp_std::marker::PhantomData&lt;H&gt;);
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">H</span>: <span class="ident">Hasher</span><span class="op">&lt;</span><span class="ident">Out</span> <span class="op">=</span> <span class="ident">H256</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="ident">AddressMapping</span><span class="op">&lt;</span><span class="ident">AccountId32</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">HashedAddressMapping</span><span class="op">&lt;</span><span class="ident">H</span><span class="op">&gt;</span> {
-	<span class="kw">fn</span> <span class="ident">into_account_id</span>(<span class="ident">address</span>: <span class="ident">H160</span>) -&gt; <span class="ident">AccountId32</span> {
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">data</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">24</span>];
-		<span class="ident">data</span>[<span class="number">0</span>..<span class="number">4</span>].<span class="ident">copy_from_slice</span>(<span class="string">b&quot;evm:&quot;</span>);
-		<span class="ident">data</span>[<span class="number">4</span>..<span class="number">24</span>].<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">address</span>[..]);
-		<span class="kw">let</span> <span class="ident">hash</span> <span class="op">=</span> <span class="ident">H::hash</span>(<span class="kw-2">&amp;</span><span class="ident">data</span>);
+<span class="kw">impl</span>&lt;H: Hasher&lt;Out = H256&gt;&gt; AddressMapping&lt;AccountId32&gt; <span class="kw">for </span>HashedAddressMapping&lt;H&gt; {
+	<span class="kw">fn </span>into_account_id(address: H160) -&gt; AccountId32 {
+		<span class="kw">let </span><span class="kw-2">mut </span>data = [<span class="number">0u8</span>; <span class="number">24</span>];
+		data[<span class="number">0</span>..<span class="number">4</span>].copy_from_slice(<span class="string">b&quot;evm:&quot;</span>);
+		data[<span class="number">4</span>..<span class="number">24</span>].copy_from_slice(<span class="kw-2">&amp;</span>address[..]);
+		<span class="kw">let </span>hash = H::hash(<span class="kw-2">&amp;</span>data);
 
-		<span class="ident">AccountId32::from</span>(<span class="ident">Into</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">32</span>]<span class="op">&gt;</span><span class="ident">::into</span>(<span class="ident">hash</span>))
+		AccountId32::from(Into::&lt;[u8; <span class="number">32</span>]&gt;::into(hash))
 	}
 }
 
-<span class="doccomment">/// A trait for getting a block hash by number.</span>
-<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">BlockHashMapping</span> {
-	<span class="kw">fn</span> <span class="ident">block_hash</span>(<span class="ident">number</span>: <span class="ident">u32</span>) -&gt; <span class="ident">H256</span>;
+<span class="doccomment">/// A trait for getting a block hash by number.
+</span><span class="kw">pub trait </span>BlockHashMapping {
+	<span class="kw">fn </span>block_hash(number: u32) -&gt; H256;
 }
 
-<span class="doccomment">/// Returns the Substrate block hash by number.</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">SubstrateBlockHashMapping</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>(<span class="ident">sp_std::marker::PhantomData</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>);
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">BlockHashMapping</span> <span class="kw">for</span> <span class="ident">SubstrateBlockHashMapping</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-	<span class="kw">fn</span> <span class="ident">block_hash</span>(<span class="ident">number</span>: <span class="ident">u32</span>) -&gt; <span class="ident">H256</span> {
-		<span class="kw">let</span> <span class="ident">number</span> <span class="op">=</span> <span class="ident">T::BlockNumber::from</span>(<span class="ident">number</span>);
-		<span class="ident">H256::from_slice</span>(<span class="ident">frame_system::Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::block_hash</span>(<span class="ident">number</span>).<span class="ident">as_ref</span>())
+<span class="doccomment">/// Returns the Substrate block hash by number.
+</span><span class="kw">pub struct </span>SubstrateBlockHashMapping&lt;T&gt;(sp_std::marker::PhantomData&lt;T&gt;);
+<span class="kw">impl</span>&lt;T: Config&gt; BlockHashMapping <span class="kw">for </span>SubstrateBlockHashMapping&lt;T&gt; {
+	<span class="kw">fn </span>block_hash(number: u32) -&gt; H256 {
+		<span class="kw">let </span>number = T::BlockNumber::from(number);
+		H256::from_slice(frame_system::Pallet::&lt;T&gt;::block_hash(number).as_ref())
 	}
 }
 
-<span class="doccomment">/// A mapping function that converts Ethereum gas to Substrate weight</span>
-<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">GasWeightMapping</span> {
-	<span class="kw">fn</span> <span class="ident">gas_to_weight</span>(<span class="ident">gas</span>: <span class="ident">u64</span>, <span class="ident">without_base_weight</span>: <span class="ident">bool</span>) -&gt; <span class="ident">Weight</span>;
-	<span class="kw">fn</span> <span class="ident">weight_to_gas</span>(<span class="ident">weight</span>: <span class="ident">Weight</span>) -&gt; <span class="ident">u64</span>;
+<span class="doccomment">/// A mapping function that converts Ethereum gas to Substrate weight
+</span><span class="kw">pub trait </span>GasWeightMapping {
+	<span class="kw">fn </span>gas_to_weight(gas: u64, without_base_weight: bool) -&gt; Weight;
+	<span class="kw">fn </span>weight_to_gas(weight: Weight) -&gt; u64;
 }
 
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">FixedGasWeightMapping</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>(<span class="ident">sp_std::marker::PhantomData</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>);
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">GasWeightMapping</span> <span class="kw">for</span> <span class="ident">FixedGasWeightMapping</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-	<span class="kw">fn</span> <span class="ident">gas_to_weight</span>(<span class="ident">gas</span>: <span class="ident">u64</span>, <span class="ident">without_base_weight</span>: <span class="ident">bool</span>) -&gt; <span class="ident">Weight</span> {
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">weight</span> <span class="op">=</span> <span class="ident">T::WeightPerGas::get</span>().<span class="ident">saturating_mul</span>(<span class="ident">gas</span>);
-		<span class="kw">if</span> <span class="ident">without_base_weight</span> {
-			<span class="ident">weight</span> <span class="op">=</span> <span class="ident">weight</span>.<span class="ident">saturating_sub</span>(
-				<span class="ident">T::BlockWeights::get</span>()
-					.<span class="ident">get</span>(<span class="ident">frame_support::dispatch::DispatchClass::Normal</span>)
-					.<span class="ident">base_extrinsic</span>,
+<span class="kw">pub struct </span>FixedGasWeightMapping&lt;T&gt;(sp_std::marker::PhantomData&lt;T&gt;);
+<span class="kw">impl</span>&lt;T: Config&gt; GasWeightMapping <span class="kw">for </span>FixedGasWeightMapping&lt;T&gt; {
+	<span class="kw">fn </span>gas_to_weight(gas: u64, without_base_weight: bool) -&gt; Weight {
+		<span class="kw">let </span><span class="kw-2">mut </span>weight = T::WeightPerGas::get().saturating_mul(gas);
+		<span class="kw">if </span>without_base_weight {
+			weight = weight.saturating_sub(
+				T::BlockWeights::get()
+					.get(frame_support::dispatch::DispatchClass::Normal)
+					.base_extrinsic,
 			);
 		}
-		<span class="ident">weight</span>
+		weight
 	}
-	<span class="kw">fn</span> <span class="ident">weight_to_gas</span>(<span class="ident">weight</span>: <span class="ident">Weight</span>) -&gt; <span class="ident">u64</span> {
-		<span class="ident">weight</span>.<span class="ident">div</span>(<span class="ident">T::WeightPerGas::get</span>().<span class="ident">ref_time</span>()).<span class="ident">ref_time</span>()
+	<span class="kw">fn </span>weight_to_gas(weight: Weight) -&gt; u64 {
+		weight.div(T::WeightPerGas::get().ref_time()).ref_time()
 	}
 }
 
-<span class="kw">static</span> <span class="ident">LONDON_CONFIG</span>: <span class="ident">EvmConfig</span> <span class="op">=</span> <span class="ident">EvmConfig::london</span>();
+<span class="kw">static </span>LONDON_CONFIG: EvmConfig = EvmConfig::london();
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-	<span class="doccomment">/// Check whether an account is empty.</span>
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_account_empty</span>(<span class="ident">address</span>: <span class="kw-2">&amp;</span><span class="ident">H160</span>) -&gt; <span class="ident">bool</span> {
-		<span class="kw">let</span> (<span class="ident">account</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident"><span class="self">Self</span>::account_basic</span>(<span class="ident">address</span>);
-		<span class="kw">let</span> <span class="ident">code_len</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">AccountCodes</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::decode_len</span>(<span class="ident">address</span>).<span class="ident">unwrap_or</span>(<span class="number">0</span>);
+<span class="kw">impl</span>&lt;T: Config&gt; Pallet&lt;T&gt; {
+	<span class="doccomment">/// Check whether an account is empty.
+	</span><span class="kw">pub fn </span>is_account_empty(address: <span class="kw-2">&amp;</span>H160) -&gt; bool {
+		<span class="kw">let </span>(account, <span class="kw">_</span>) = <span class="self">Self</span>::account_basic(address);
+		<span class="kw">let </span>code_len = &lt;AccountCodes&lt;T&gt;&gt;::decode_len(address).unwrap_or(<span class="number">0</span>);
 
-		<span class="ident">account</span>.<span class="ident">nonce</span> <span class="op">==</span> <span class="ident">U256::zero</span>() <span class="op">&amp;&amp;</span> <span class="ident">account</span>.<span class="ident">balance</span> <span class="op">==</span> <span class="ident">U256::zero</span>() <span class="op">&amp;&amp;</span> <span class="ident">code_len</span> <span class="op">==</span> <span class="number">0</span>
-	}
+		account.nonce == U256::zero() &amp;&amp; account.balance == U256::zero() &amp;&amp; code_len == <span class="number">0
+	</span>}
 
-	<span class="doccomment">/// Remove an account if its empty.</span>
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">remove_account_if_empty</span>(<span class="ident">address</span>: <span class="kw-2">&amp;</span><span class="ident">H160</span>) {
-		<span class="kw">if</span> <span class="ident"><span class="self">Self</span>::is_account_empty</span>(<span class="ident">address</span>) {
-			<span class="ident"><span class="self">Self</span>::remove_account</span>(<span class="ident">address</span>);
+	<span class="doccomment">/// Remove an account if its empty.
+	</span><span class="kw">pub fn </span>remove_account_if_empty(address: <span class="kw-2">&amp;</span>H160) {
+		<span class="kw">if </span><span class="self">Self</span>::is_account_empty(address) {
+			<span class="self">Self</span>::remove_account(address);
 		}
 	}
 
-	<span class="doccomment">/// Remove an account.</span>
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">remove_account</span>(<span class="ident">address</span>: <span class="kw-2">&amp;</span><span class="ident">H160</span>) {
-		<span class="kw">if</span> <span class="op">&lt;</span><span class="ident">AccountCodes</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::contains_key</span>(<span class="ident">address</span>) {
-			<span class="kw">let</span> <span class="ident">account_id</span> <span class="op">=</span> <span class="ident">T::AddressMapping::into_account_id</span>(<span class="kw-2">*</span><span class="ident">address</span>);
-			<span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">frame_system::Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::dec_sufficients</span>(<span class="kw-2">&amp;</span><span class="ident">account_id</span>);
+	<span class="doccomment">/// Remove an account.
+	</span><span class="kw">pub fn </span>remove_account(address: <span class="kw-2">&amp;</span>H160) {
+		<span class="kw">if </span>&lt;AccountCodes&lt;T&gt;&gt;::contains_key(address) {
+			<span class="kw">let </span>account_id = T::AddressMapping::into_account_id(<span class="kw-2">*</span>address);
+			<span class="kw">let _ </span>= frame_system::Pallet::&lt;T&gt;::dec_sufficients(<span class="kw-2">&amp;</span>account_id);
 		}
 
-		<span class="op">&lt;</span><span class="ident">AccountCodes</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::remove</span>(<span class="ident">address</span>);
-		<span class="attribute">#[<span class="ident">allow</span>(<span class="ident">deprecated</span>)]</span>
-		<span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">AccountStorages</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::remove_prefix</span>(<span class="ident">address</span>, <span class="prelude-val">None</span>);
+		&lt;AccountCodes&lt;T&gt;&gt;::remove(address);
+		<span class="attribute">#[allow(deprecated)]
+		</span><span class="kw">let _ </span>= &lt;AccountStorages&lt;T&gt;&gt;::remove_prefix(address, <span class="prelude-val">None</span>);
 	}
 
-	<span class="doccomment">/// Create an account.</span>
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">create_account</span>(<span class="ident">address</span>: <span class="ident">H160</span>, <span class="ident">code</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>) {
-		<span class="kw">if</span> <span class="ident">code</span>.<span class="ident">is_empty</span>() {
+	<span class="doccomment">/// Create an account.
+	</span><span class="kw">pub fn </span>create_account(address: H160, code: Vec&lt;u8&gt;) {
+		<span class="kw">if </span>code.is_empty() {
 			<span class="kw">return</span>;
 		}
 
-		<span class="kw">if</span> <span class="op">!</span><span class="op">&lt;</span><span class="ident">AccountCodes</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::contains_key</span>(<span class="kw-2">&amp;</span><span class="ident">address</span>) {
-			<span class="kw">let</span> <span class="ident">account_id</span> <span class="op">=</span> <span class="ident">T::AddressMapping::into_account_id</span>(<span class="ident">address</span>);
-			<span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">frame_system::Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::inc_sufficients</span>(<span class="kw-2">&amp;</span><span class="ident">account_id</span>);
+		<span class="kw">if </span>!&lt;AccountCodes&lt;T&gt;&gt;::contains_key(address) {
+			<span class="kw">let </span>account_id = T::AddressMapping::into_account_id(address);
+			<span class="kw">let _ </span>= frame_system::Pallet::&lt;T&gt;::inc_sufficients(<span class="kw-2">&amp;</span>account_id);
 		}
 
-		<span class="op">&lt;</span><span class="ident">AccountCodes</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::insert</span>(<span class="ident">address</span>, <span class="ident">code</span>);
+		&lt;AccountCodes&lt;T&gt;&gt;::insert(address, code);
 	}
 
-	<span class="doccomment">/// Get the account basic in EVM format.</span>
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">account_basic</span>(<span class="ident">address</span>: <span class="kw-2">&amp;</span><span class="ident">H160</span>) -&gt; (<span class="ident">Account</span>, <span class="ident">frame_support::weights::Weight</span>) {
-		<span class="kw">let</span> <span class="ident">account_id</span> <span class="op">=</span> <span class="ident">T::AddressMapping::into_account_id</span>(<span class="kw-2">*</span><span class="ident">address</span>);
+	<span class="doccomment">/// Get the account basic in EVM format.
+	</span><span class="kw">pub fn </span>account_basic(address: <span class="kw-2">&amp;</span>H160) -&gt; (Account, frame_support::weights::Weight) {
+		<span class="kw">let </span>account_id = T::AddressMapping::into_account_id(<span class="kw-2">*</span>address);
 
-		<span class="kw">let</span> <span class="ident">nonce</span> <span class="op">=</span> <span class="ident">frame_system::Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::account_nonce</span>(<span class="kw-2">&amp;</span><span class="ident">account_id</span>);
-		<span class="comment">// keepalive `true` takes into account ExistentialDeposit as part of what&#39;s considered liquid balance.</span>
-		<span class="kw">let</span> <span class="ident">balance</span> <span class="op">=</span> <span class="ident">T::Currency::reducible_balance</span>(<span class="kw-2">&amp;</span><span class="ident">account_id</span>, <span class="bool-val">true</span>);
+		<span class="kw">let </span>nonce = frame_system::Pallet::&lt;T&gt;::account_nonce(<span class="kw-2">&amp;</span>account_id);
+		<span class="comment">// keepalive `true` takes into account ExistentialDeposit as part of what&#39;s considered liquid balance.
+		</span><span class="kw">let </span>balance = T::Currency::reducible_balance(<span class="kw-2">&amp;</span>account_id, <span class="bool-val">true</span>);
 
 		(
-			<span class="ident">Account</span> {
-				<span class="ident">nonce</span>: <span class="ident">U256::from</span>(<span class="ident">UniqueSaturatedInto</span>::<span class="op">&lt;</span><span class="ident">u128</span><span class="op">&gt;</span><span class="ident">::unique_saturated_into</span>(<span class="ident">nonce</span>)),
-				<span class="ident">balance</span>: <span class="ident">U256::from</span>(<span class="ident">UniqueSaturatedInto</span>::<span class="op">&lt;</span><span class="ident">u128</span><span class="op">&gt;</span><span class="ident">::unique_saturated_into</span>(<span class="ident">balance</span>)),
+			Account {
+				nonce: U256::from(UniqueSaturatedInto::&lt;u128&gt;::unique_saturated_into(nonce)),
+				balance: U256::from(UniqueSaturatedInto::&lt;u128&gt;::unique_saturated_into(balance)),
 			},
-			<span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>(<span class="number">2</span>),
+			T::DbWeight::get().reads(<span class="number">2</span>),
 		)
 	}
 
-	<span class="doccomment">/// Get the author using the FindAuthor trait.</span>
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">find_author</span>() -&gt; <span class="ident">H160</span> {
-		<span class="kw">let</span> <span class="ident">digest</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">frame_system::Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::digest</span>();
-		<span class="kw">let</span> <span class="ident">pre_runtime_digests</span> <span class="op">=</span> <span class="ident">digest</span>.<span class="ident">logs</span>.<span class="ident">iter</span>().<span class="ident">filter_map</span>(<span class="op">|</span><span class="ident">d</span><span class="op">|</span> <span class="ident">d</span>.<span class="ident">as_pre_runtime</span>());
+	<span class="doccomment">/// Get the author using the FindAuthor trait.
+	</span><span class="kw">pub fn </span>find_author() -&gt; H160 {
+		<span class="kw">let </span>digest = &lt;frame_system::Pallet&lt;T&gt;&gt;::digest();
+		<span class="kw">let </span>pre_runtime_digests = digest.logs.iter().filter_map(|d| d.as_pre_runtime());
 
-		<span class="ident">T::FindAuthor::find_author</span>(<span class="ident">pre_runtime_digests</span>).<span class="ident">unwrap_or_default</span>()
+		T::FindAuthor::find_author(pre_runtime_digests).unwrap_or_default()
 	}
 }
 
-<span class="doccomment">/// Handle withdrawing, refunding and depositing of transaction fees.</span>
-<span class="doccomment">/// Similar to `OnChargeTransaction` of `pallet_transaction_payment`</span>
-<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">OnChargeEVMTransaction</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> {
-	<span class="kw">type</span> <span class="ident">LiquidityInfo</span>: <span class="ident">Default</span>;
+<span class="doccomment">/// Handle withdrawing, refunding and depositing of transaction fees.
+/// Similar to `OnChargeTransaction` of `pallet_transaction_payment`
+</span><span class="kw">pub trait </span>OnChargeEVMTransaction&lt;T: Config&gt; {
+	<span class="kw">type </span>LiquidityInfo: Default;
 
-	<span class="doccomment">/// Before the transaction is executed the payment of the transaction fees</span>
-	<span class="doccomment">/// need to be secured.</span>
-	<span class="kw">fn</span> <span class="ident">withdraw_fee</span>(<span class="ident">who</span>: <span class="kw-2">&amp;</span><span class="ident">H160</span>, <span class="ident">fee</span>: <span class="ident">U256</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::LiquidityInfo</span>, <span class="ident">Error</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>;
+	<span class="doccomment">/// Before the transaction is executed the payment of the transaction fees
+	/// need to be secured.
+	</span><span class="kw">fn </span>withdraw_fee(who: <span class="kw-2">&amp;</span>H160, fee: U256) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>::LiquidityInfo, Error&lt;T&gt;&gt;;
 
-	<span class="doccomment">/// After the transaction was executed the actual fee can be calculated.</span>
-	<span class="doccomment">/// This function should refund any overpaid fees and optionally deposit</span>
-	<span class="doccomment">/// the corrected amount, and handles the base fee rationing using the provided</span>
-	<span class="doccomment">/// `OnUnbalanced` implementation.</span>
-	<span class="doccomment">/// Returns the `NegativeImbalance` - if any - produced by the priority fee.</span>
-	<span class="kw">fn</span> <span class="ident">correct_and_deposit_fee</span>(
-		<span class="ident">who</span>: <span class="kw-2">&amp;</span><span class="ident">H160</span>,
-		<span class="ident">corrected_fee</span>: <span class="ident">U256</span>,
-		<span class="ident">base_fee</span>: <span class="ident">U256</span>,
-		<span class="ident">already_withdrawn</span>: <span class="ident"><span class="self">Self</span>::LiquidityInfo</span>,
-	) -&gt; <span class="ident"><span class="self">Self</span>::LiquidityInfo</span>;
+	<span class="doccomment">/// After the transaction was executed the actual fee can be calculated.
+	/// This function should refund any overpaid fees and optionally deposit
+	/// the corrected amount, and handles the base fee rationing using the provided
+	/// `OnUnbalanced` implementation.
+	/// Returns the `NegativeImbalance` - if any - produced by the priority fee.
+	</span><span class="kw">fn </span>correct_and_deposit_fee(
+		who: <span class="kw-2">&amp;</span>H160,
+		corrected_fee: U256,
+		base_fee: U256,
+		already_withdrawn: <span class="self">Self</span>::LiquidityInfo,
+	) -&gt; <span class="self">Self</span>::LiquidityInfo;
 
-	<span class="doccomment">/// Introduced in EIP1559 to handle the priority tip.</span>
-	<span class="kw">fn</span> <span class="ident">pay_priority_fee</span>(<span class="ident">tip</span>: <span class="ident"><span class="self">Self</span>::LiquidityInfo</span>);
+	<span class="doccomment">/// Introduced in EIP1559 to handle the priority tip.
+	</span><span class="kw">fn </span>pay_priority_fee(tip: <span class="self">Self</span>::LiquidityInfo);
 }
 
-<span class="doccomment">/// Implements the transaction payment for a pallet implementing the `Currency`</span>
-<span class="doccomment">/// trait (eg. the pallet_balances) using an unbalance handler (implementing</span>
-<span class="doccomment">/// `OnUnbalanced`).</span>
-<span class="doccomment">/// Similar to `CurrencyAdapter` of `pallet_transaction_payment`</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">EVMCurrencyAdapter</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">OU</span><span class="op">&gt;</span>(<span class="ident">sp_std::marker::PhantomData</span><span class="op">&lt;</span>(<span class="ident">C</span>, <span class="ident">OU</span>)<span class="op">&gt;</span>);
+<span class="doccomment">/// Implements the transaction payment for a pallet implementing the `Currency`
+/// trait (eg. the pallet_balances) using an unbalance handler (implementing
+/// `OnUnbalanced`).
+/// Similar to `CurrencyAdapter` of `pallet_transaction_payment`
+</span><span class="kw">pub struct </span>EVMCurrencyAdapter&lt;C, OU&gt;(sp_std::marker::PhantomData&lt;(C, OU)&gt;);
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">C</span>, <span class="ident">OU</span><span class="op">&gt;</span> <span class="ident">OnChargeEVMTransaction</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">EVMCurrencyAdapter</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">OU</span><span class="op">&gt;</span>
-<span class="kw">where</span>
-	<span class="ident">T</span>: <span class="ident">Config</span>,
-	<span class="ident">C</span>: <span class="ident">Currency</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">frame_system::Config</span><span class="op">&gt;</span><span class="ident">::AccountId</span><span class="op">&gt;</span>,
-	<span class="ident">C::PositiveImbalance</span>: <span class="ident">Imbalance</span><span class="op">&lt;</span>
-		<span class="op">&lt;</span><span class="ident">C</span> <span class="kw">as</span> <span class="ident">Currency</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">frame_system::Config</span><span class="op">&gt;</span><span class="ident">::AccountId</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::Balance</span>,
-		<span class="ident">Opposite</span> <span class="op">=</span> <span class="ident">C::NegativeImbalance</span>,
-	<span class="op">&gt;</span>,
-	<span class="ident">C::NegativeImbalance</span>: <span class="ident">Imbalance</span><span class="op">&lt;</span>
-		<span class="op">&lt;</span><span class="ident">C</span> <span class="kw">as</span> <span class="ident">Currency</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">frame_system::Config</span><span class="op">&gt;</span><span class="ident">::AccountId</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::Balance</span>,
-		<span class="ident">Opposite</span> <span class="op">=</span> <span class="ident">C::PositiveImbalance</span>,
-	<span class="op">&gt;</span>,
-	<span class="ident">OU</span>: <span class="ident">OnUnbalanced</span><span class="op">&lt;</span><span class="ident">NegativeImbalanceOf</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-	<span class="ident">U256</span>: <span class="ident">UniqueSaturatedInto</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">C</span> <span class="kw">as</span> <span class="ident">Currency</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">frame_system::Config</span><span class="op">&gt;</span><span class="ident">::AccountId</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::Balance</span><span class="op">&gt;</span>,
+<span class="kw">impl</span>&lt;T, C, OU&gt; OnChargeEVMTransaction&lt;T&gt; <span class="kw">for </span>EVMCurrencyAdapter&lt;C, OU&gt;
+<span class="kw">where
+	</span>T: Config,
+	C: Currency&lt;&lt;T <span class="kw">as </span>frame_system::Config&gt;::AccountId&gt;,
+	C::PositiveImbalance: Imbalance&lt;
+		&lt;C <span class="kw">as </span>Currency&lt;&lt;T <span class="kw">as </span>frame_system::Config&gt;::AccountId&gt;&gt;::Balance,
+		Opposite = C::NegativeImbalance,
+	&gt;,
+	C::NegativeImbalance: Imbalance&lt;
+		&lt;C <span class="kw">as </span>Currency&lt;&lt;T <span class="kw">as </span>frame_system::Config&gt;::AccountId&gt;&gt;::Balance,
+		Opposite = C::PositiveImbalance,
+	&gt;,
+	OU: OnUnbalanced&lt;NegativeImbalanceOf&lt;C, T&gt;&gt;,
+	U256: UniqueSaturatedInto&lt;&lt;C <span class="kw">as </span>Currency&lt;&lt;T <span class="kw">as </span>frame_system::Config&gt;::AccountId&gt;&gt;::Balance&gt;,
 {
-	<span class="comment">// Kept type as Option to satisfy bound of Default</span>
-	<span class="kw">type</span> <span class="ident">LiquidityInfo</span> <span class="op">=</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">NegativeImbalanceOf</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>;
+	<span class="comment">// Kept type as Option to satisfy bound of Default
+	</span><span class="kw">type </span>LiquidityInfo = <span class="prelude-ty">Option</span>&lt;NegativeImbalanceOf&lt;C, T&gt;&gt;;
 
-	<span class="kw">fn</span> <span class="ident">withdraw_fee</span>(<span class="ident">who</span>: <span class="kw-2">&amp;</span><span class="ident">H160</span>, <span class="ident">fee</span>: <span class="ident">U256</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::LiquidityInfo</span>, <span class="ident">Error</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-		<span class="kw">if</span> <span class="ident">fee</span>.<span class="ident">is_zero</span>() {
-			<span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>);
+	<span class="kw">fn </span>withdraw_fee(who: <span class="kw-2">&amp;</span>H160, fee: U256) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>::LiquidityInfo, Error&lt;T&gt;&gt; {
+		<span class="kw">if </span>fee.is_zero() {
+			<span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>);
 		}
-		<span class="kw">let</span> <span class="ident">account_id</span> <span class="op">=</span> <span class="ident">T::AddressMapping::into_account_id</span>(<span class="kw-2">*</span><span class="ident">who</span>);
-		<span class="kw">let</span> <span class="ident">imbalance</span> <span class="op">=</span> <span class="ident">C::withdraw</span>(
-			<span class="kw-2">&amp;</span><span class="ident">account_id</span>,
-			<span class="ident">fee</span>.<span class="ident">unique_saturated_into</span>(),
-			<span class="ident">WithdrawReasons::FEE</span>,
-			<span class="ident">ExistenceRequirement::AllowDeath</span>,
+		<span class="kw">let </span>account_id = T::AddressMapping::into_account_id(<span class="kw-2">*</span>who);
+		<span class="kw">let </span>imbalance = C::withdraw(
+			<span class="kw-2">&amp;</span>account_id,
+			fee.unique_saturated_into(),
+			WithdrawReasons::FEE,
+			ExistenceRequirement::AllowDeath,
 		)
-		.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::BalanceLow</span>)<span class="question-mark">?</span>;
-		<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">imbalance</span>))
+		.map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::BalanceLow)<span class="question-mark">?</span>;
+		<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(imbalance))
 	}
 
-	<span class="kw">fn</span> <span class="ident">correct_and_deposit_fee</span>(
-		<span class="ident">who</span>: <span class="kw-2">&amp;</span><span class="ident">H160</span>,
-		<span class="ident">corrected_fee</span>: <span class="ident">U256</span>,
-		<span class="ident">base_fee</span>: <span class="ident">U256</span>,
-		<span class="ident">already_withdrawn</span>: <span class="ident"><span class="self">Self</span>::LiquidityInfo</span>,
-	) -&gt; <span class="ident"><span class="self">Self</span>::LiquidityInfo</span> {
-		<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">paid</span>) <span class="op">=</span> <span class="ident">already_withdrawn</span> {
-			<span class="kw">let</span> <span class="ident">account_id</span> <span class="op">=</span> <span class="ident">T::AddressMapping::into_account_id</span>(<span class="kw-2">*</span><span class="ident">who</span>);
+	<span class="kw">fn </span>correct_and_deposit_fee(
+		who: <span class="kw-2">&amp;</span>H160,
+		corrected_fee: U256,
+		base_fee: U256,
+		already_withdrawn: <span class="self">Self</span>::LiquidityInfo,
+	) -&gt; <span class="self">Self</span>::LiquidityInfo {
+		<span class="kw">if let </span><span class="prelude-val">Some</span>(paid) = already_withdrawn {
+			<span class="kw">let </span>account_id = T::AddressMapping::into_account_id(<span class="kw-2">*</span>who);
 
-			<span class="comment">// Calculate how much refund we should return</span>
-			<span class="kw">let</span> <span class="ident">refund_amount</span> <span class="op">=</span> <span class="ident">paid</span>
-				.<span class="ident">peek</span>()
-				.<span class="ident">saturating_sub</span>(<span class="ident">corrected_fee</span>.<span class="ident">unique_saturated_into</span>());
-			<span class="comment">// refund to the account that paid the fees. If this fails, the</span>
-			<span class="comment">// account might have dropped below the existential balance. In</span>
-			<span class="comment">// that case we don&#39;t refund anything.</span>
-			<span class="kw">let</span> <span class="ident">refund_imbalance</span> <span class="op">=</span> <span class="ident">C::deposit_into_existing</span>(<span class="kw-2">&amp;</span><span class="ident">account_id</span>, <span class="ident">refund_amount</span>)
-				.<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">C::PositiveImbalance::zero</span>());
+			<span class="comment">// Calculate how much refund we should return
+			</span><span class="kw">let </span>refund_amount = paid
+				.peek()
+				.saturating_sub(corrected_fee.unique_saturated_into());
+			<span class="comment">// refund to the account that paid the fees. If this fails, the
+			// account might have dropped below the existential balance. In
+			// that case we don&#39;t refund anything.
+			</span><span class="kw">let </span>refund_imbalance = C::deposit_into_existing(<span class="kw-2">&amp;</span>account_id, refund_amount)
+				.unwrap_or_else(|<span class="kw">_</span>| C::PositiveImbalance::zero());
 
-			<span class="comment">// Make sure this works with 0 ExistentialDeposit</span>
-			<span class="comment">// https://github.com/paritytech/substrate/issues/10117</span>
-			<span class="comment">// If we tried to refund something, the account still empty and the ED is set to 0,</span>
-			<span class="comment">// we call `make_free_balance_be` with the refunded amount.</span>
-			<span class="kw">let</span> <span class="ident">refund_imbalance</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">C::minimum_balance</span>().<span class="ident">is_zero</span>()
-				<span class="op">&amp;&amp;</span> <span class="ident">refund_amount</span> <span class="op">&gt;</span> <span class="ident">C::Balance::zero</span>()
-				<span class="op">&amp;&amp;</span> <span class="ident">C::total_balance</span>(<span class="kw-2">&amp;</span><span class="ident">account_id</span>).<span class="ident">is_zero</span>()
+			<span class="comment">// Make sure this works with 0 ExistentialDeposit
+			// https://github.com/paritytech/substrate/issues/10117
+			// If we tried to refund something, the account still empty and the ED is set to 0,
+			// we call `make_free_balance_be` with the refunded amount.
+			</span><span class="kw">let </span>refund_imbalance = <span class="kw">if </span>C::minimum_balance().is_zero()
+				&amp;&amp; refund_amount &gt; C::Balance::zero()
+				&amp;&amp; C::total_balance(<span class="kw-2">&amp;</span>account_id).is_zero()
 			{
-				<span class="comment">// Known bug: Substrate tried to refund to a zeroed AccountData, but</span>
-				<span class="comment">// interpreted the account to not exist.</span>
-				<span class="kw">match</span> <span class="ident">C::make_free_balance_be</span>(<span class="kw-2">&amp;</span><span class="ident">account_id</span>, <span class="ident">refund_amount</span>) {
-					<span class="ident">SignedImbalance::Positive</span>(<span class="ident">p</span>) =&gt; <span class="ident">p</span>,
-					<span class="kw">_</span> =&gt; <span class="ident">C::PositiveImbalance::zero</span>(),
+				<span class="comment">// Known bug: Substrate tried to refund to a zeroed AccountData, but
+				// interpreted the account to not exist.
+				</span><span class="kw">match </span>C::make_free_balance_be(<span class="kw-2">&amp;</span>account_id, refund_amount) {
+					SignedImbalance::Positive(p) =&gt; p,
+					<span class="kw">_ </span>=&gt; C::PositiveImbalance::zero(),
 				}
-			} <span class="kw">else</span> {
-				<span class="ident">refund_imbalance</span>
+			} <span class="kw">else </span>{
+				refund_imbalance
 			};
 
-			<span class="comment">// merge the imbalance caused by paying the fees and refunding parts of it again.</span>
-			<span class="kw">let</span> <span class="ident">adjusted_paid</span> <span class="op">=</span> <span class="ident">paid</span>
-				.<span class="ident">offset</span>(<span class="ident">refund_imbalance</span>)
-				.<span class="ident">same</span>()
-				.<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">C::NegativeImbalance::zero</span>());
+			<span class="comment">// merge the imbalance caused by paying the fees and refunding parts of it again.
+			</span><span class="kw">let </span>adjusted_paid = paid
+				.offset(refund_imbalance)
+				.same()
+				.unwrap_or_else(|<span class="kw">_</span>| C::NegativeImbalance::zero());
 
-			<span class="kw">let</span> (<span class="ident">base_fee</span>, <span class="ident">tip</span>) <span class="op">=</span> <span class="ident">adjusted_paid</span>.<span class="ident">split</span>(<span class="ident">base_fee</span>.<span class="ident">unique_saturated_into</span>());
-			<span class="comment">// Handle base fee. Can be either burned, rationed, etc ...</span>
-			<span class="ident">OU::on_unbalanced</span>(<span class="ident">base_fee</span>);
-			<span class="kw">return</span> <span class="prelude-val">Some</span>(<span class="ident">tip</span>);
+			<span class="kw">let </span>(base_fee, tip) = adjusted_paid.split(base_fee.unique_saturated_into());
+			<span class="comment">// Handle base fee. Can be either burned, rationed, etc ...
+			</span>OU::on_unbalanced(base_fee);
+			<span class="kw">return </span><span class="prelude-val">Some</span>(tip);
 		}
-		<span class="prelude-val">None</span>
-	}
+		<span class="prelude-val">None
+	</span>}
 
-	<span class="kw">fn</span> <span class="ident">pay_priority_fee</span>(<span class="ident">tip</span>: <span class="ident"><span class="self">Self</span>::LiquidityInfo</span>) {
-		<span class="comment">// Default Ethereum behaviour: issue the tip to the block author.</span>
-		<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">tip</span>) <span class="op">=</span> <span class="ident">tip</span> {
-			<span class="kw">let</span> <span class="ident">account_id</span> <span class="op">=</span> <span class="ident">T::AddressMapping::into_account_id</span>(<span class="op">&lt;</span><span class="ident">Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::find_author</span>());
-			<span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">C::deposit_into_existing</span>(<span class="kw-2">&amp;</span><span class="ident">account_id</span>, <span class="ident">tip</span>.<span class="ident">peek</span>());
+	<span class="kw">fn </span>pay_priority_fee(tip: <span class="self">Self</span>::LiquidityInfo) {
+		<span class="comment">// Default Ethereum behaviour: issue the tip to the block author.
+		</span><span class="kw">if let </span><span class="prelude-val">Some</span>(tip) = tip {
+			<span class="kw">let </span>account_id = T::AddressMapping::into_account_id(&lt;Pallet&lt;T&gt;&gt;::find_author());
+			<span class="kw">let _ </span>= C::deposit_into_existing(<span class="kw-2">&amp;</span>account_id, tip.peek());
 		}
 	}
 }
 
-<span class="doccomment">/// Implementation for () does not specify what to do with imbalance</span>
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="ident">OnChargeEVMTransaction</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="kw">for</span> ()
-	<span class="kw">where</span>
-	<span class="ident">T</span>: <span class="ident">Config</span>,
-	<span class="op">&lt;</span><span class="ident">T::Currency</span> <span class="kw">as</span> <span class="ident">Currency</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">frame_system::Config</span><span class="op">&gt;</span><span class="ident">::AccountId</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::PositiveImbalance</span>:
-		<span class="ident">Imbalance</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">T::Currency</span> <span class="kw">as</span> <span class="ident">Currency</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">frame_system::Config</span><span class="op">&gt;</span><span class="ident">::AccountId</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::Balance</span>, <span class="ident">Opposite</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">T::Currency</span> <span class="kw">as</span> <span class="ident">Currency</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">frame_system::Config</span><span class="op">&gt;</span><span class="ident">::AccountId</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::NegativeImbalance</span><span class="op">&gt;</span>,
-	<span class="op">&lt;</span><span class="ident">T::Currency</span> <span class="kw">as</span> <span class="ident">Currency</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">frame_system::Config</span><span class="op">&gt;</span><span class="ident">::AccountId</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::NegativeImbalance</span>:
-<span class="ident">Imbalance</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">T::Currency</span> <span class="kw">as</span> <span class="ident">Currency</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">frame_system::Config</span><span class="op">&gt;</span><span class="ident">::AccountId</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::Balance</span>, <span class="ident">Opposite</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">T::Currency</span> <span class="kw">as</span> <span class="ident">Currency</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">frame_system::Config</span><span class="op">&gt;</span><span class="ident">::AccountId</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::PositiveImbalance</span><span class="op">&gt;</span>,
-<span class="ident">U256</span>: <span class="ident">UniqueSaturatedInto</span><span class="op">&lt;</span><span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+<span class="doccomment">/// Implementation for () does not specify what to do with imbalance
+</span><span class="kw">impl</span>&lt;T&gt; OnChargeEVMTransaction&lt;T&gt; <span class="kw">for </span>()
+	<span class="kw">where
+	</span>T: Config,
+	&lt;T::Currency <span class="kw">as </span>Currency&lt;&lt;T <span class="kw">as </span>frame_system::Config&gt;::AccountId&gt;&gt;::PositiveImbalance:
+		Imbalance&lt;&lt;T::Currency <span class="kw">as </span>Currency&lt;&lt;T <span class="kw">as </span>frame_system::Config&gt;::AccountId&gt;&gt;::Balance, Opposite = &lt;T::Currency <span class="kw">as </span>Currency&lt;&lt;T <span class="kw">as </span>frame_system::Config&gt;::AccountId&gt;&gt;::NegativeImbalance&gt;,
+	&lt;T::Currency <span class="kw">as </span>Currency&lt;&lt;T <span class="kw">as </span>frame_system::Config&gt;::AccountId&gt;&gt;::NegativeImbalance:
+Imbalance&lt;&lt;T::Currency <span class="kw">as </span>Currency&lt;&lt;T <span class="kw">as </span>frame_system::Config&gt;::AccountId&gt;&gt;::Balance, Opposite = &lt;T::Currency <span class="kw">as </span>Currency&lt;&lt;T <span class="kw">as </span>frame_system::Config&gt;::AccountId&gt;&gt;::PositiveImbalance&gt;,
+U256: UniqueSaturatedInto&lt;BalanceOf&lt;T&gt;&gt;,
 
 {
-	<span class="comment">// Kept type as Option to satisfy bound of Default</span>
-	<span class="kw">type</span> <span class="ident">LiquidityInfo</span> <span class="op">=</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">NegativeImbalanceOf</span><span class="op">&lt;</span><span class="ident">T::Currency</span>, <span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>;
+	<span class="comment">// Kept type as Option to satisfy bound of Default
+	</span><span class="kw">type </span>LiquidityInfo = <span class="prelude-ty">Option</span>&lt;NegativeImbalanceOf&lt;T::Currency, T&gt;&gt;;
 
-	<span class="kw">fn</span> <span class="ident">withdraw_fee</span>(
-		<span class="ident">who</span>: <span class="kw-2">&amp;</span><span class="ident">H160</span>,
-		<span class="ident">fee</span>: <span class="ident">U256</span>,
-	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::LiquidityInfo</span>, <span class="ident">Error</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-		<span class="ident">EVMCurrencyAdapter</span>::<span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">Config</span><span class="op">&gt;</span><span class="ident">::Currency</span>, ()<span class="op">&gt;</span><span class="ident">::withdraw_fee</span>(<span class="ident">who</span>, <span class="ident">fee</span>)
+	<span class="kw">fn </span>withdraw_fee(
+		who: <span class="kw-2">&amp;</span>H160,
+		fee: U256,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>::LiquidityInfo, Error&lt;T&gt;&gt; {
+		EVMCurrencyAdapter::&lt;&lt;T <span class="kw">as </span>Config&gt;::Currency, ()&gt;::withdraw_fee(who, fee)
 	}
 
-	<span class="kw">fn</span> <span class="ident">correct_and_deposit_fee</span>(
-		<span class="ident">who</span>: <span class="kw-2">&amp;</span><span class="ident">H160</span>,
-		<span class="ident">corrected_fee</span>: <span class="ident">U256</span>,
-		<span class="ident">base_fee</span>: <span class="ident">U256</span>,
-		<span class="ident">already_withdrawn</span>: <span class="ident"><span class="self">Self</span>::LiquidityInfo</span>,
-	) -&gt; <span class="ident"><span class="self">Self</span>::LiquidityInfo</span> {
-		<span class="op">&lt;</span><span class="ident">EVMCurrencyAdapter</span>::<span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">Config</span><span class="op">&gt;</span><span class="ident">::Currency</span>, ()<span class="op">&gt;</span> <span class="kw">as</span> <span class="ident">OnChargeEVMTransaction</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::correct_and_deposit_fee</span>(<span class="ident">who</span>, <span class="ident">corrected_fee</span>, <span class="ident">base_fee</span>, <span class="ident">already_withdrawn</span>)
+	<span class="kw">fn </span>correct_and_deposit_fee(
+		who: <span class="kw-2">&amp;</span>H160,
+		corrected_fee: U256,
+		base_fee: U256,
+		already_withdrawn: <span class="self">Self</span>::LiquidityInfo,
+	) -&gt; <span class="self">Self</span>::LiquidityInfo {
+		&lt;EVMCurrencyAdapter::&lt;&lt;T <span class="kw">as </span>Config&gt;::Currency, ()&gt; <span class="kw">as </span>OnChargeEVMTransaction&lt;T&gt;&gt;::correct_and_deposit_fee(who, corrected_fee, base_fee, already_withdrawn)
 	}
 
-	<span class="kw">fn</span> <span class="ident">pay_priority_fee</span>(<span class="ident">tip</span>: <span class="ident"><span class="self">Self</span>::LiquidityInfo</span>) {
-		<span class="op">&lt;</span><span class="ident">EVMCurrencyAdapter</span>::<span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">Config</span><span class="op">&gt;</span><span class="ident">::Currency</span>, ()<span class="op">&gt;</span> <span class="kw">as</span> <span class="ident">OnChargeEVMTransaction</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::pay_priority_fee</span>(<span class="ident">tip</span>);
+	<span class="kw">fn </span>pay_priority_fee(tip: <span class="self">Self</span>::LiquidityInfo) {
+		&lt;EVMCurrencyAdapter::&lt;&lt;T <span class="kw">as </span>Config&gt;::Currency, ()&gt; <span class="kw">as </span>OnChargeEVMTransaction&lt;T&gt;&gt;::pay_priority_fee(tip);
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_evm" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (7fe022f5a 2022-07-24)" ></div>
-</body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_evm" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (81f391930 2022-10-09)" ></div></body></html>

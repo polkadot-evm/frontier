@@ -1,10 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `client/rpc/src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../fc_rpc/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a><h2 class="location"></h2>
-    </nav>
-    <nav class="sidebar"><a class="sidebar-logo" href="../../fc_rpc/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../fc_rpc/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1">
-                                <a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div>
-                        </div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `client/rpc/src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><a class="sidebar-logo" href="../../fc_rpc/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../fc_rpc/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -402,404 +396,411 @@
 <span id="396">396</span>
 <span id="397">397</span>
 <span id="398">398</span>
-</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
-<span class="comment">// This file is part of Frontier.</span>
-<span class="comment">//</span>
-<span class="comment">// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.</span>
-<span class="comment">//</span>
-<span class="comment">// This program is free software: you can redistribute it and/or modify</span>
-<span class="comment">// it under the terms of the GNU General Public License as published by</span>
-<span class="comment">// the Free Software Foundation, either version 3 of the License, or</span>
-<span class="comment">// (at your option) any later version.</span>
-<span class="comment">//</span>
-<span class="comment">// This program is distributed in the hope that it will be useful,</span>
-<span class="comment">// but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
-<span class="comment">// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the</span>
-<span class="comment">// GNU General Public License for more details.</span>
-<span class="comment">//</span>
-<span class="comment">// You should have received a copy of the GNU General Public License</span>
-<span class="comment">// along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.</span>
+<span id="399">399</span>
+<span id="400">400</span>
+<span id="401">401</span>
+<span id="402">402</span>
+</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
+// This file is part of Frontier.
+//
+// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.
 
-<span class="attribute">#![<span class="ident">allow</span>(
-	<span class="ident">clippy::too_many_arguments</span>,
-	<span class="ident">clippy::large_enum_variant</span>,
-	<span class="ident">clippy::manual_range_contains</span>,
-	<span class="ident">clippy::explicit_counter_loop</span>,
-	<span class="ident">clippy::len_zero</span>,
-	<span class="ident">clippy::new_without_default</span>
-)]</span>
+</span><span class="attribute">#![allow(
+	clippy::too_many_arguments,
+	clippy::large_enum_variant,
+	clippy::manual_range_contains,
+	clippy::explicit_counter_loop,
+	clippy::len_zero,
+	clippy::new_without_default
+)]
 
-<span class="kw">mod</span> <span class="ident">eth</span>;
-<span class="kw">mod</span> <span class="ident">eth_pubsub</span>;
-<span class="kw">mod</span> <span class="ident">net</span>;
-<span class="kw">mod</span> <span class="ident">overrides</span>;
-<span class="kw">mod</span> <span class="ident">signer</span>;
-<span class="kw">mod</span> <span class="ident">web3</span>;
+</span><span class="kw">mod </span>eth;
+<span class="kw">mod </span>eth_pubsub;
+<span class="kw">mod </span>net;
+<span class="kw">mod </span>overrides;
+<span class="kw">mod </span>signer;
+<span class="kw">mod </span>web3;
 
-<span class="kw">pub</span> <span class="kw">use</span> <span class="self">self</span>::{
-	<span class="ident">eth</span>::{<span class="ident">format</span>, <span class="ident">EstimateGasAdapter</span>, <span class="ident">Eth</span>, <span class="ident">EthBlockDataCacheTask</span>, <span class="ident">EthFilter</span>, <span class="ident">EthTask</span>},
-	<span class="ident">eth_pubsub</span>::{<span class="ident">EthPubSub</span>, <span class="ident">EthereumSubIdProvider</span>},
-	<span class="ident">net::Net</span>,
-	<span class="ident">overrides</span>::{
-		<span class="ident">OverrideHandle</span>, <span class="ident">RuntimeApiStorageOverride</span>, <span class="ident">SchemaV1Override</span>, <span class="ident">SchemaV2Override</span>,
-		<span class="ident">SchemaV3Override</span>, <span class="ident">StorageOverride</span>,
+<span class="kw">pub use </span><span class="self">self</span>::{
+	eth::{format, EstimateGasAdapter, Eth, EthBlockDataCacheTask, EthFilter, EthTask},
+	eth_pubsub::{EthPubSub, EthereumSubIdProvider},
+	net::Net,
+	overrides::{
+		OverrideHandle, RuntimeApiStorageOverride, SchemaV1Override, SchemaV2Override,
+		SchemaV3Override, StorageOverride,
 	},
-	<span class="ident">signer</span>::{<span class="ident">EthDevSigner</span>, <span class="ident">EthSigner</span>},
-	<span class="ident">web3::Web3</span>,
+	signer::{EthDevSigner, EthSigner},
+	web3::Web3,
 };
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">ethereum::TransactionV2</span> <span class="kw">as</span> <span class="ident">EthereumTransaction</span>;
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">fc_rpc_core</span>::{
-	<span class="ident">EthApiServer</span>, <span class="ident">EthFilterApiServer</span>, <span class="ident">EthPubSubApiServer</span>, <span class="ident">NetApiServer</span>, <span class="ident">Web3ApiServer</span>,
+<span class="kw">pub use </span>ethereum::TransactionV2 <span class="kw">as </span>EthereumTransaction;
+<span class="kw">pub use </span>fc_rpc_core::{
+	EthApiServer, EthFilterApiServer, EthPubSubApiServer, NetApiServer, Web3ApiServer,
 };
 
-<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">frontier_backend_client</span> {
-	<span class="kw">use</span> <span class="ident"><span class="kw">super</span>::internal_err</span>;
+<span class="kw">pub mod </span>frontier_backend_client {
+	<span class="kw">use </span><span class="kw">super</span>::internal_err;
 
-	<span class="kw">use</span> <span class="ident">codec::Decode</span>;
-	<span class="kw">use</span> <span class="ident">ethereum_types::H256</span>;
-	<span class="kw">use</span> <span class="ident">jsonrpsee::core::RpcResult</span>;
-	<span class="comment">// Substrate</span>
-	<span class="kw">use</span> <span class="ident">sc_client_api::backend</span>::{<span class="ident">Backend</span>, <span class="ident">StateBackend</span>, <span class="ident">StorageProvider</span>};
-	<span class="kw">use</span> <span class="ident">sp_blockchain::HeaderBackend</span>;
-	<span class="kw">use</span> <span class="ident">sp_runtime</span>::{
-		<span class="ident">generic::BlockId</span>,
-		<span class="ident">traits</span>::{<span class="ident">BlakeTwo256</span>, <span class="ident">Block</span> <span class="kw">as</span> <span class="ident">BlockT</span>, <span class="ident">Header</span> <span class="kw">as</span> <span class="ident">HeaderT</span>, <span class="ident">UniqueSaturatedInto</span>, <span class="ident">Zero</span>},
+	<span class="kw">use </span>codec::Decode;
+	<span class="kw">use </span>ethereum_types::H256;
+	<span class="kw">use </span>jsonrpsee::core::RpcResult;
+	<span class="comment">// Substrate
+	</span><span class="kw">use </span>sc_client_api::backend::{Backend, StateBackend, StorageProvider};
+	<span class="kw">use </span>sp_blockchain::HeaderBackend;
+	<span class="kw">use </span>sp_runtime::{
+		generic::BlockId,
+		traits::{BlakeTwo256, Block <span class="kw">as </span>BlockT, Header <span class="kw">as </span>HeaderT, UniqueSaturatedInto, Zero},
 	};
-	<span class="kw">use</span> <span class="ident">sp_storage::StorageKey</span>;
-	<span class="comment">// Frontier</span>
-	<span class="kw">use</span> <span class="ident">fc_rpc_core::types::BlockNumber</span>;
-	<span class="kw">use</span> <span class="ident">fp_storage</span>::{<span class="ident">EthereumStorageSchema</span>, <span class="ident">PALLET_ETHEREUM_SCHEMA</span>};
+	<span class="kw">use </span>sp_storage::StorageKey;
+	<span class="comment">// Frontier
+	</span><span class="kw">use </span>fc_rpc_core::types::BlockNumber;
+	<span class="kw">use </span>fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA};
 
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">native_block_id</span><span class="op">&lt;</span><span class="ident">B</span>: <span class="ident">BlockT</span>, <span class="ident">C</span><span class="op">&gt;</span>(
-		<span class="ident">client</span>: <span class="kw-2">&amp;</span><span class="ident">C</span>,
-		<span class="ident">backend</span>: <span class="kw-2">&amp;</span><span class="ident">fc_db::Backend</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span>,
-		<span class="ident">number</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">BlockNumber</span><span class="op">&gt;</span>,
-	) -&gt; <span class="ident">RpcResult</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">BlockId</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>
-	<span class="kw">where</span>
-		<span class="ident">B</span>: <span class="ident">BlockT</span><span class="op">&lt;</span><span class="ident">Hash</span> <span class="op">=</span> <span class="ident">H256</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
-		<span class="ident">C</span>: <span class="ident">HeaderBackend</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
+	<span class="kw">pub fn </span>native_block_id&lt;B: BlockT, C&gt;(
+		client: <span class="kw-2">&amp;</span>C,
+		backend: <span class="kw-2">&amp;</span>fc_db::Backend&lt;B&gt;,
+		number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;,
+	) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;BlockId&lt;B&gt;&gt;&gt;
+	<span class="kw">where
+		</span>B: BlockT&lt;Hash = H256&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
+		C: HeaderBackend&lt;B&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
 	{
-		<span class="prelude-val">Ok</span>(<span class="kw">match</span> <span class="ident">number</span>.<span class="ident">unwrap_or</span>(<span class="ident">BlockNumber::Latest</span>) {
-			<span class="ident">BlockNumber::Hash</span> { <span class="ident">hash</span>, .. } =&gt; {
-				<span class="ident">load_hash</span>::<span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span><span class="op">&gt;</span>(<span class="ident">client</span>, <span class="ident">backend</span>, <span class="ident">hash</span>).<span class="ident">unwrap_or</span>(<span class="prelude-val">None</span>)
+		<span class="prelude-val">Ok</span>(<span class="kw">match </span>number.unwrap_or(BlockNumber::Latest) {
+			BlockNumber::Hash { hash, .. } =&gt; {
+				load_hash::&lt;B, C&gt;(client, backend, hash).unwrap_or(<span class="prelude-val">None</span>)
 			}
-			<span class="ident">BlockNumber::Num</span>(<span class="ident">number</span>) =&gt; <span class="prelude-val">Some</span>(<span class="ident">BlockId::Number</span>(<span class="ident">number</span>.<span class="ident">unique_saturated_into</span>())),
-			<span class="ident">BlockNumber::Latest</span> =&gt; <span class="prelude-val">Some</span>(<span class="ident">BlockId::Hash</span>(<span class="ident">client</span>.<span class="ident">info</span>().<span class="ident">best_hash</span>)),
-			<span class="ident">BlockNumber::Earliest</span> =&gt; <span class="prelude-val">Some</span>(<span class="ident">BlockId::Number</span>(<span class="ident">Zero::zero</span>())),
-			<span class="ident">BlockNumber::Pending</span> =&gt; <span class="prelude-val">None</span>,
-			<span class="ident">BlockNumber::Safe</span> =&gt; <span class="prelude-val">Some</span>(<span class="ident">BlockId::Hash</span>(<span class="ident">client</span>.<span class="ident">info</span>().<span class="ident">finalized_hash</span>)),
-			<span class="ident">BlockNumber::Finalized</span> =&gt; <span class="prelude-val">Some</span>(<span class="ident">BlockId::Hash</span>(<span class="ident">client</span>.<span class="ident">info</span>().<span class="ident">finalized_hash</span>)),
+			BlockNumber::Num(number) =&gt; <span class="prelude-val">Some</span>(BlockId::Number(number.unique_saturated_into())),
+			BlockNumber::Latest =&gt; <span class="prelude-val">Some</span>(BlockId::Hash(client.info().best_hash)),
+			BlockNumber::Earliest =&gt; <span class="prelude-val">Some</span>(BlockId::Number(Zero::zero())),
+			BlockNumber::Pending =&gt; <span class="prelude-val">None</span>,
+			BlockNumber::Safe =&gt; <span class="prelude-val">Some</span>(BlockId::Hash(client.info().finalized_hash)),
+			BlockNumber::Finalized =&gt; <span class="prelude-val">Some</span>(BlockId::Hash(client.info().finalized_hash)),
 		})
 	}
 
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">load_hash</span><span class="op">&lt;</span><span class="ident">B</span>: <span class="ident">BlockT</span>, <span class="ident">C</span><span class="op">&gt;</span>(
-		<span class="ident">client</span>: <span class="kw-2">&amp;</span><span class="ident">C</span>,
-		<span class="ident">backend</span>: <span class="kw-2">&amp;</span><span class="ident">fc_db::Backend</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span>,
-		<span class="ident">hash</span>: <span class="ident">H256</span>,
-	) -&gt; <span class="ident">RpcResult</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">BlockId</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>
-	<span class="kw">where</span>
-		<span class="ident">B</span>: <span class="ident">BlockT</span><span class="op">&lt;</span><span class="ident">Hash</span> <span class="op">=</span> <span class="ident">H256</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
-		<span class="ident">C</span>: <span class="ident">HeaderBackend</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
+	<span class="kw">pub fn </span>load_hash&lt;B: BlockT, C&gt;(
+		client: <span class="kw-2">&amp;</span>C,
+		backend: <span class="kw-2">&amp;</span>fc_db::Backend&lt;B&gt;,
+		hash: H256,
+	) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;BlockId&lt;B&gt;&gt;&gt;
+	<span class="kw">where
+		</span>B: BlockT&lt;Hash = H256&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
+		C: HeaderBackend&lt;B&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
 	{
-		<span class="kw">let</span> <span class="ident">substrate_hashes</span> <span class="op">=</span> <span class="ident">backend</span>
-			.<span class="ident">mapping</span>()
-			.<span class="ident">block_hash</span>(<span class="kw-2">&amp;</span><span class="ident">hash</span>)
-			.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;fetch aux store failed: {:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>;
+		<span class="kw">let </span>substrate_hashes = backend
+			.mapping()
+			.block_hash(<span class="kw-2">&amp;</span>hash)
+			.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;fetch aux store failed: {:?}&quot;</span>, err)))<span class="question-mark">?</span>;
 
-		<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">substrate_hashes</span>) <span class="op">=</span> <span class="ident">substrate_hashes</span> {
-			<span class="kw">for</span> <span class="ident">substrate_hash</span> <span class="kw">in</span> <span class="ident">substrate_hashes</span> {
-				<span class="kw">if</span> <span class="ident">is_canon</span>::<span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span><span class="op">&gt;</span>(<span class="ident">client</span>, <span class="ident">substrate_hash</span>) {
-					<span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">BlockId::Hash</span>(<span class="ident">substrate_hash</span>)));
+		<span class="kw">if let </span><span class="prelude-val">Some</span>(substrate_hashes) = substrate_hashes {
+			<span class="kw">for </span>substrate_hash <span class="kw">in </span>substrate_hashes {
+				<span class="kw">if </span>is_canon::&lt;B, C&gt;(client, substrate_hash) {
+					<span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(BlockId::Hash(substrate_hash)));
 				}
 			}
 		}
 		<span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>)
 	}
 
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">load_cached_schema</span><span class="op">&lt;</span><span class="ident">B</span>: <span class="ident">BlockT</span>, <span class="ident">C</span><span class="op">&gt;</span>(
-		<span class="ident">backend</span>: <span class="kw-2">&amp;</span><span class="ident">fc_db::Backend</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span>,
-	) -&gt; <span class="ident">RpcResult</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">EthereumStorageSchema</span>, <span class="ident">H256</span>)<span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>
-	<span class="kw">where</span>
-		<span class="ident">B</span>: <span class="ident">BlockT</span><span class="op">&lt;</span><span class="ident">Hash</span> <span class="op">=</span> <span class="ident">H256</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
-		<span class="ident">C</span>: <span class="ident">HeaderBackend</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
+	<span class="kw">pub fn </span>load_cached_schema&lt;B: BlockT, C&gt;(
+		backend: <span class="kw-2">&amp;</span>fc_db::Backend&lt;B&gt;,
+	) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;Vec&lt;(EthereumStorageSchema, H256)&gt;&gt;&gt;
+	<span class="kw">where
+		</span>B: BlockT&lt;Hash = H256&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
+		C: HeaderBackend&lt;B&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
 	{
-		<span class="kw">let</span> <span class="ident">cache</span> <span class="op">=</span> <span class="ident">backend</span>
-			.<span class="ident">meta</span>()
-			.<span class="ident">ethereum_schema</span>()
-			.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;fetch backend failed: {:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>;
-		<span class="prelude-val">Ok</span>(<span class="ident">cache</span>)
+		<span class="kw">let </span>cache = backend
+			.meta()
+			.ethereum_schema()
+			.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;fetch backend failed: {:?}&quot;</span>, err)))<span class="question-mark">?</span>;
+		<span class="prelude-val">Ok</span>(cache)
 	}
 
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">write_cached_schema</span><span class="op">&lt;</span><span class="ident">B</span>: <span class="ident">BlockT</span>, <span class="ident">C</span><span class="op">&gt;</span>(
-		<span class="ident">backend</span>: <span class="kw-2">&amp;</span><span class="ident">fc_db::Backend</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span>,
-		<span class="ident">new_cache</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">EthereumStorageSchema</span>, <span class="ident">H256</span>)<span class="op">&gt;</span>,
-	) -&gt; <span class="ident">RpcResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span>
-	<span class="kw">where</span>
-		<span class="ident">B</span>: <span class="ident">BlockT</span><span class="op">&lt;</span><span class="ident">Hash</span> <span class="op">=</span> <span class="ident">H256</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
-		<span class="ident">C</span>: <span class="ident">HeaderBackend</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
+	<span class="kw">pub fn </span>write_cached_schema&lt;B: BlockT, C&gt;(
+		backend: <span class="kw-2">&amp;</span>fc_db::Backend&lt;B&gt;,
+		new_cache: Vec&lt;(EthereumStorageSchema, H256)&gt;,
+	) -&gt; RpcResult&lt;()&gt;
+	<span class="kw">where
+		</span>B: BlockT&lt;Hash = H256&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
+		C: HeaderBackend&lt;B&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
 	{
-		<span class="ident">backend</span>
-			.<span class="ident">meta</span>()
-			.<span class="ident">write_ethereum_schema</span>(<span class="ident">new_cache</span>)
-			.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;write backend failed: {:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>;
+		backend
+			.meta()
+			.write_ethereum_schema(new_cache)
+			.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;write backend failed: {:?}&quot;</span>, err)))<span class="question-mark">?</span>;
 		<span class="prelude-val">Ok</span>(())
 	}
 
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">onchain_storage_schema</span><span class="op">&lt;</span><span class="ident">B</span>: <span class="ident">BlockT</span>, <span class="ident">C</span>, <span class="ident">BE</span><span class="op">&gt;</span>(
-		<span class="ident">client</span>: <span class="kw-2">&amp;</span><span class="ident">C</span>,
-		<span class="ident">at</span>: <span class="ident">BlockId</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span>,
-	) -&gt; <span class="ident">EthereumStorageSchema</span>
-	<span class="kw">where</span>
-		<span class="ident">B</span>: <span class="ident">BlockT</span><span class="op">&lt;</span><span class="ident">Hash</span> <span class="op">=</span> <span class="ident">H256</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
-		<span class="ident">C</span>: <span class="ident">StorageProvider</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">BE</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
-		<span class="ident">BE</span>: <span class="ident">Backend</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
-		<span class="ident">BE::State</span>: <span class="ident">StateBackend</span><span class="op">&lt;</span><span class="ident">BlakeTwo256</span><span class="op">&gt;</span>,
+	<span class="kw">pub fn </span>onchain_storage_schema&lt;B: BlockT, C, BE&gt;(
+		client: <span class="kw-2">&amp;</span>C,
+		at: BlockId&lt;B&gt;,
+	) -&gt; EthereumStorageSchema
+	<span class="kw">where
+		</span>B: BlockT&lt;Hash = H256&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
+		C: StorageProvider&lt;B, BE&gt; + HeaderBackend&lt;B&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
+		BE: Backend&lt;B&gt; + <span class="lifetime">&#39;static</span>,
+		BE::State: StateBackend&lt;BlakeTwo256&gt;,
 	{
-		<span class="kw">match</span> <span class="ident">client</span>.<span class="ident">storage</span>(<span class="kw-2">&amp;</span><span class="ident">at</span>, <span class="kw-2">&amp;</span><span class="ident">StorageKey</span>(<span class="ident">PALLET_ETHEREUM_SCHEMA</span>.<span class="ident">to_vec</span>())) {
-			<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">bytes</span>)) =&gt; <span class="ident">Decode::decode</span>(<span class="kw-2">&amp;mut</span> <span class="kw-2">&amp;</span><span class="ident">bytes</span>.<span class="number">0</span>[..])
-				.<span class="ident">ok</span>()
-				.<span class="ident">unwrap_or</span>(<span class="ident">EthereumStorageSchema::Undefined</span>),
-			<span class="kw">_</span> =&gt; <span class="ident">EthereumStorageSchema::Undefined</span>,
+		<span class="kw">if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(header)) = client.header(at) {
+			<span class="kw">match </span>client.storage(header.hash(), <span class="kw-2">&amp;</span>StorageKey(PALLET_ETHEREUM_SCHEMA.to_vec())) {
+				<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(bytes)) =&gt; Decode::decode(<span class="kw-2">&amp;mut &amp;</span>bytes.<span class="number">0</span>[..])
+					.ok()
+					.unwrap_or(EthereumStorageSchema::Undefined),
+				<span class="kw">_ </span>=&gt; EthereumStorageSchema::Undefined,
+			}
+		} <span class="kw">else </span>{
+			EthereumStorageSchema::Undefined
 		}
 	}
 
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_canon</span><span class="op">&lt;</span><span class="ident">B</span>: <span class="ident">BlockT</span>, <span class="ident">C</span><span class="op">&gt;</span>(<span class="ident">client</span>: <span class="kw-2">&amp;</span><span class="ident">C</span>, <span class="ident">target_hash</span>: <span class="ident">H256</span>) -&gt; <span class="ident">bool</span>
-	<span class="kw">where</span>
-		<span class="ident">B</span>: <span class="ident">BlockT</span><span class="op">&lt;</span><span class="ident">Hash</span> <span class="op">=</span> <span class="ident">H256</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
-		<span class="ident">C</span>: <span class="ident">HeaderBackend</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
+	<span class="kw">pub fn </span>is_canon&lt;B: BlockT, C&gt;(client: <span class="kw-2">&amp;</span>C, target_hash: H256) -&gt; bool
+	<span class="kw">where
+		</span>B: BlockT&lt;Hash = H256&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
+		C: HeaderBackend&lt;B&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
 	{
-		<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">number</span>)) <span class="op">=</span> <span class="ident">client</span>.<span class="ident">number</span>(<span class="ident">target_hash</span>) {
-			<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">header</span>)) <span class="op">=</span> <span class="ident">client</span>.<span class="ident">header</span>(<span class="ident">BlockId::Number</span>(<span class="ident">number</span>)) {
-				<span class="kw">return</span> <span class="ident">header</span>.<span class="ident">hash</span>() <span class="op">==</span> <span class="ident">target_hash</span>;
+		<span class="kw">if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(number)) = client.number(target_hash) {
+			<span class="kw">if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(header)) = client.header(BlockId::Number(number)) {
+				<span class="kw">return </span>header.hash() == target_hash;
 			}
 		}
-		<span class="bool-val">false</span>
-	}
+		<span class="bool-val">false
+	</span>}
 
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">load_transactions</span><span class="op">&lt;</span><span class="ident">B</span>: <span class="ident">BlockT</span>, <span class="ident">C</span><span class="op">&gt;</span>(
-		<span class="ident">client</span>: <span class="kw-2">&amp;</span><span class="ident">C</span>,
-		<span class="ident">backend</span>: <span class="kw-2">&amp;</span><span class="ident">fc_db::Backend</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span>,
-		<span class="ident">transaction_hash</span>: <span class="ident">H256</span>,
-		<span class="ident">only_canonical</span>: <span class="ident">bool</span>,
-	) -&gt; <span class="ident">RpcResult</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span>(<span class="ident">H256</span>, <span class="ident">u32</span>)<span class="op">&gt;</span><span class="op">&gt;</span>
-	<span class="kw">where</span>
-		<span class="ident">B</span>: <span class="ident">BlockT</span><span class="op">&lt;</span><span class="ident">Hash</span> <span class="op">=</span> <span class="ident">H256</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
-		<span class="ident">C</span>: <span class="ident">HeaderBackend</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
+	<span class="kw">pub fn </span>load_transactions&lt;B: BlockT, C&gt;(
+		client: <span class="kw-2">&amp;</span>C,
+		backend: <span class="kw-2">&amp;</span>fc_db::Backend&lt;B&gt;,
+		transaction_hash: H256,
+		only_canonical: bool,
+	) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;(H256, u32)&gt;&gt;
+	<span class="kw">where
+		</span>B: BlockT&lt;Hash = H256&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
+		C: HeaderBackend&lt;B&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
 	{
-		<span class="kw">let</span> <span class="ident">transaction_metadata</span> <span class="op">=</span> <span class="ident">backend</span>
-			.<span class="ident">mapping</span>()
-			.<span class="ident">transaction_metadata</span>(<span class="kw-2">&amp;</span><span class="ident">transaction_hash</span>)
-			.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;fetch aux store failed: {:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>;
+		<span class="kw">let </span>transaction_metadata = backend
+			.mapping()
+			.transaction_metadata(<span class="kw-2">&amp;</span>transaction_hash)
+			.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;fetch aux store failed: {:?}&quot;</span>, err)))<span class="question-mark">?</span>;
 
-		<span class="ident">transaction_metadata</span>
-			.<span class="ident">iter</span>()
-			.<span class="ident">find</span>(<span class="op">|</span><span class="ident">meta</span><span class="op">|</span> <span class="ident">is_canon</span>::<span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span><span class="op">&gt;</span>(<span class="ident">client</span>, <span class="ident">meta</span>.<span class="ident">block_hash</span>))
-			.<span class="ident">map_or_else</span>(
-				<span class="op">|</span><span class="op">|</span> {
-					<span class="kw">if</span> <span class="op">!</span><span class="ident">only_canonical</span> <span class="op">&amp;&amp;</span> <span class="ident">transaction_metadata</span>.<span class="ident">len</span>() <span class="op">&gt;</span> <span class="number">0</span> {
+		transaction_metadata
+			.iter()
+			.find(|meta| is_canon::&lt;B, C&gt;(client, meta.block_hash))
+			.map_or_else(
+				|| {
+					<span class="kw">if </span>!only_canonical &amp;&amp; transaction_metadata.len() &gt; <span class="number">0 </span>{
 						<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>((
-							<span class="ident">transaction_metadata</span>[<span class="number">0</span>].<span class="ident">ethereum_block_hash</span>,
-							<span class="ident">transaction_metadata</span>[<span class="number">0</span>].<span class="ident">ethereum_index</span>,
+							transaction_metadata[<span class="number">0</span>].ethereum_block_hash,
+							transaction_metadata[<span class="number">0</span>].ethereum_index,
 						)))
-					} <span class="kw">else</span> {
+					} <span class="kw">else </span>{
 						<span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>)
 					}
 				},
-				<span class="op">|</span><span class="ident">meta</span><span class="op">|</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>((<span class="ident">meta</span>.<span class="ident">ethereum_block_hash</span>, <span class="ident">meta</span>.<span class="ident">ethereum_index</span>))),
+				|meta| <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>((meta.ethereum_block_hash, meta.ethereum_index))),
 			)
 	}
 }
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">err</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">ToString</span><span class="op">&gt;</span>(<span class="ident">code</span>: <span class="ident">i32</span>, <span class="ident">message</span>: <span class="ident">T</span>, <span class="ident">data</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span>) -&gt; <span class="ident">jsonrpsee::core::Error</span> {
-	<span class="ident">jsonrpsee::core::Error::Call</span>(<span class="ident">jsonrpsee::types::error::CallError::Custom</span>(
-		<span class="ident">jsonrpsee::types::error::ErrorObject::owned</span>(
-			<span class="ident">code</span>,
-			<span class="ident">message</span>.<span class="ident">to_string</span>(),
-			<span class="ident">data</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">bytes</span><span class="op">|</span> {
-				<span class="ident">jsonrpsee::core::to_json_raw_value</span>(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">&quot;0x{}&quot;</span>, <span class="ident">hex::encode</span>(<span class="ident">bytes</span>)))
-					.<span class="ident">expect</span>(<span class="string">&quot;fail to serialize data&quot;</span>)
+<span class="kw">pub fn </span>err&lt;T: ToString&gt;(code: i32, message: T, data: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>[u8]&gt;) -&gt; jsonrpsee::core::Error {
+	jsonrpsee::core::Error::Call(jsonrpsee::types::error::CallError::Custom(
+		jsonrpsee::types::error::ErrorObject::owned(
+			code,
+			message.to_string(),
+			data.map(|bytes| {
+				jsonrpsee::core::to_json_raw_value(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">&quot;0x{}&quot;</span>, hex::encode(bytes)))
+					.expect(<span class="string">&quot;fail to serialize data&quot;</span>)
 			}),
 		),
 	))
 }
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">internal_err</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">ToString</span><span class="op">&gt;</span>(<span class="ident">message</span>: <span class="ident">T</span>) -&gt; <span class="ident">jsonrpsee::core::Error</span> {
-	<span class="ident">err</span>(<span class="ident">jsonrpsee::types::error::INTERNAL_ERROR_CODE</span>, <span class="ident">message</span>, <span class="prelude-val">None</span>)
+<span class="kw">pub fn </span>internal_err&lt;T: ToString&gt;(message: T) -&gt; jsonrpsee::core::Error {
+	err(jsonrpsee::types::error::INTERNAL_ERROR_CODE, message, <span class="prelude-val">None</span>)
 }
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">internal_err_with_data</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">ToString</span><span class="op">&gt;</span>(<span class="ident">message</span>: <span class="ident">T</span>, <span class="ident">data</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) -&gt; <span class="ident">jsonrpsee::core::Error</span> {
-	<span class="ident">err</span>(
-		<span class="ident">jsonrpsee::types::error::INTERNAL_ERROR_CODE</span>,
-		<span class="ident">message</span>,
-		<span class="prelude-val">Some</span>(<span class="ident">data</span>),
+<span class="kw">pub fn </span>internal_err_with_data&lt;T: ToString&gt;(message: T, data: <span class="kw-2">&amp;</span>[u8]) -&gt; jsonrpsee::core::Error {
+	err(
+		jsonrpsee::types::error::INTERNAL_ERROR_CODE,
+		message,
+		<span class="prelude-val">Some</span>(data),
 	)
 }
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">public_key</span>(<span class="ident">transaction</span>: <span class="kw-2">&amp;</span><span class="ident">EthereumTransaction</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">64</span>], <span class="ident">sp_io::EcdsaVerifyError</span><span class="op">&gt;</span> {
-	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">sig</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">65</span>];
-	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">msg</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">32</span>];
-	<span class="kw">match</span> <span class="ident">transaction</span> {
-		<span class="ident">EthereumTransaction::Legacy</span>(<span class="ident">t</span>) =&gt; {
-			<span class="ident">sig</span>[<span class="number">0</span>..<span class="number">32</span>].<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">t</span>.<span class="ident">signature</span>.<span class="ident">r</span>()[..]);
-			<span class="ident">sig</span>[<span class="number">32</span>..<span class="number">64</span>].<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">t</span>.<span class="ident">signature</span>.<span class="ident">s</span>()[..]);
-			<span class="ident">sig</span>[<span class="number">64</span>] <span class="op">=</span> <span class="ident">t</span>.<span class="ident">signature</span>.<span class="ident">standard_v</span>();
-			<span class="ident">msg</span>.<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">ethereum::LegacyTransactionMessage::from</span>(<span class="ident">t</span>.<span class="ident">clone</span>()).<span class="ident">hash</span>()[..]);
+<span class="kw">pub fn </span>public_key(transaction: <span class="kw-2">&amp;</span>EthereumTransaction) -&gt; <span class="prelude-ty">Result</span>&lt;[u8; <span class="number">64</span>], sp_io::EcdsaVerifyError&gt; {
+	<span class="kw">let </span><span class="kw-2">mut </span>sig = [<span class="number">0u8</span>; <span class="number">65</span>];
+	<span class="kw">let </span><span class="kw-2">mut </span>msg = [<span class="number">0u8</span>; <span class="number">32</span>];
+	<span class="kw">match </span>transaction {
+		EthereumTransaction::Legacy(t) =&gt; {
+			sig[<span class="number">0</span>..<span class="number">32</span>].copy_from_slice(<span class="kw-2">&amp;</span>t.signature.r()[..]);
+			sig[<span class="number">32</span>..<span class="number">64</span>].copy_from_slice(<span class="kw-2">&amp;</span>t.signature.s()[..]);
+			sig[<span class="number">64</span>] = t.signature.standard_v();
+			msg.copy_from_slice(<span class="kw-2">&amp;</span>ethereum::LegacyTransactionMessage::from(t.clone()).hash()[..]);
 		}
-		<span class="ident">EthereumTransaction::EIP2930</span>(<span class="ident">t</span>) =&gt; {
-			<span class="ident">sig</span>[<span class="number">0</span>..<span class="number">32</span>].<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">t</span>.<span class="ident">r</span>[..]);
-			<span class="ident">sig</span>[<span class="number">32</span>..<span class="number">64</span>].<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">t</span>.<span class="ident">s</span>[..]);
-			<span class="ident">sig</span>[<span class="number">64</span>] <span class="op">=</span> <span class="ident">t</span>.<span class="ident">odd_y_parity</span> <span class="kw">as</span> <span class="ident">u8</span>;
-			<span class="ident">msg</span>.<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">ethereum::EIP2930TransactionMessage::from</span>(<span class="ident">t</span>.<span class="ident">clone</span>()).<span class="ident">hash</span>()[..]);
+		EthereumTransaction::EIP2930(t) =&gt; {
+			sig[<span class="number">0</span>..<span class="number">32</span>].copy_from_slice(<span class="kw-2">&amp;</span>t.r[..]);
+			sig[<span class="number">32</span>..<span class="number">64</span>].copy_from_slice(<span class="kw-2">&amp;</span>t.s[..]);
+			sig[<span class="number">64</span>] = t.odd_y_parity <span class="kw">as </span>u8;
+			msg.copy_from_slice(<span class="kw-2">&amp;</span>ethereum::EIP2930TransactionMessage::from(t.clone()).hash()[..]);
 		}
-		<span class="ident">EthereumTransaction::EIP1559</span>(<span class="ident">t</span>) =&gt; {
-			<span class="ident">sig</span>[<span class="number">0</span>..<span class="number">32</span>].<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">t</span>.<span class="ident">r</span>[..]);
-			<span class="ident">sig</span>[<span class="number">32</span>..<span class="number">64</span>].<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">t</span>.<span class="ident">s</span>[..]);
-			<span class="ident">sig</span>[<span class="number">64</span>] <span class="op">=</span> <span class="ident">t</span>.<span class="ident">odd_y_parity</span> <span class="kw">as</span> <span class="ident">u8</span>;
-			<span class="ident">msg</span>.<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">ethereum::EIP1559TransactionMessage::from</span>(<span class="ident">t</span>.<span class="ident">clone</span>()).<span class="ident">hash</span>()[..]);
+		EthereumTransaction::EIP1559(t) =&gt; {
+			sig[<span class="number">0</span>..<span class="number">32</span>].copy_from_slice(<span class="kw-2">&amp;</span>t.r[..]);
+			sig[<span class="number">32</span>..<span class="number">64</span>].copy_from_slice(<span class="kw-2">&amp;</span>t.s[..]);
+			sig[<span class="number">64</span>] = t.odd_y_parity <span class="kw">as </span>u8;
+			msg.copy_from_slice(<span class="kw-2">&amp;</span>ethereum::EIP1559TransactionMessage::from(t.clone()).hash()[..]);
 		}
 	}
-	<span class="ident">sp_io::crypto::secp256k1_ecdsa_recover</span>(<span class="kw-2">&amp;</span><span class="ident">sig</span>, <span class="kw-2">&amp;</span><span class="ident">msg</span>)
+	sp_io::crypto::secp256k1_ecdsa_recover(<span class="kw-2">&amp;</span>sig, <span class="kw-2">&amp;</span>msg)
 }
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
-<span class="kw">mod</span> <span class="ident">tests</span> {
-	<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">path::PathBuf</span>, <span class="ident">sync::Arc</span>};
+<span class="attribute">#[cfg(test)]
+</span><span class="kw">mod </span>tests {
+	<span class="kw">use </span>std::{path::PathBuf, sync::Arc};
 
-	<span class="kw">use</span> <span class="ident">futures::executor</span>;
-	<span class="kw">use</span> <span class="ident">sc_block_builder::BlockBuilderProvider</span>;
-	<span class="kw">use</span> <span class="ident">sp_consensus::BlockOrigin</span>;
-	<span class="kw">use</span> <span class="ident">sp_runtime</span>::{
-		<span class="ident">generic</span>::{<span class="ident">Block</span>, <span class="ident">BlockId</span>, <span class="ident">Header</span>},
-		<span class="ident">traits::BlakeTwo256</span>,
+	<span class="kw">use </span>futures::executor;
+	<span class="kw">use </span>sc_block_builder::BlockBuilderProvider;
+	<span class="kw">use </span>sp_consensus::BlockOrigin;
+	<span class="kw">use </span>sp_runtime::{
+		generic::{Block, BlockId, Header},
+		traits::BlakeTwo256,
 	};
-	<span class="kw">use</span> <span class="ident">substrate_test_runtime_client</span>::{
-		<span class="ident">prelude</span>::<span class="kw-2">*</span>, <span class="ident">DefaultTestClientBuilderExt</span>, <span class="ident">TestClientBuilder</span>,
+	<span class="kw">use </span>substrate_test_runtime_client::{
+		prelude::<span class="kw-2">*</span>, DefaultTestClientBuilderExt, TestClientBuilder,
 	};
-	<span class="kw">use</span> <span class="ident">tempfile::tempdir</span>;
+	<span class="kw">use </span>tempfile::tempdir;
 
-	<span class="kw">type</span> <span class="ident">OpaqueBlock</span> <span class="op">=</span>
-		<span class="ident">Block</span><span class="op">&lt;</span><span class="ident">Header</span><span class="op">&lt;</span><span class="ident">u64</span>, <span class="ident">BlakeTwo256</span><span class="op">&gt;</span>, <span class="ident">substrate_test_runtime_client::runtime::Extrinsic</span><span class="op">&gt;</span>;
+	<span class="kw">type </span>OpaqueBlock =
+		Block&lt;Header&lt;u64, BlakeTwo256&gt;, substrate_test_runtime_client::runtime::Extrinsic&gt;;
 
-	<span class="kw">fn</span> <span class="ident">open_frontier_backend</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>(
-		<span class="ident">client</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
-		<span class="ident">path</span>: <span class="ident">PathBuf</span>,
-	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">fc_db::Backend</span><span class="op">&lt;</span><span class="ident">OpaqueBlock</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">String</span><span class="op">&gt;</span>
-	<span class="kw">where</span>
-		<span class="ident">C</span>: <span class="ident">sp_blockchain::HeaderBackend</span><span class="op">&lt;</span><span class="ident">OpaqueBlock</span><span class="op">&gt;</span>,
+	<span class="kw">fn </span>open_frontier_backend&lt;C&gt;(
+		client: Arc&lt;C&gt;,
+		path: PathBuf,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;Arc&lt;fc_db::Backend&lt;OpaqueBlock&gt;&gt;, String&gt;
+	<span class="kw">where
+		</span>C: sp_blockchain::HeaderBackend&lt;OpaqueBlock&gt;,
 	{
-		<span class="prelude-val">Ok</span>(<span class="ident">Arc::new</span>(<span class="ident">fc_db::Backend</span>::<span class="op">&lt;</span><span class="ident">OpaqueBlock</span><span class="op">&gt;</span><span class="ident">::new</span>(
-			<span class="ident">client</span>,
-			<span class="kw-2">&amp;</span><span class="ident">fc_db::DatabaseSettings</span> {
-				<span class="ident">source</span>: <span class="ident">sc_client_db::DatabaseSource::RocksDb</span> {
-					<span class="ident">path</span>,
-					<span class="ident">cache_size</span>: <span class="number">0</span>,
+		<span class="prelude-val">Ok</span>(Arc::new(fc_db::Backend::&lt;OpaqueBlock&gt;::new(
+			client,
+			<span class="kw-2">&amp;</span>fc_db::DatabaseSettings {
+				source: sc_client_db::DatabaseSource::RocksDb {
+					path,
+					cache_size: <span class="number">0</span>,
 				},
 			},
 		)<span class="question-mark">?</span>))
 	}
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">substrate_block_hash_one_to_many_works</span>() {
-		<span class="kw">let</span> <span class="ident">tmp</span> <span class="op">=</span> <span class="ident">tempdir</span>().<span class="ident">expect</span>(<span class="string">&quot;create a temporary directory&quot;</span>);
-		<span class="kw">let</span> (<span class="ident">client</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">TestClientBuilder::new</span>()
-			.<span class="ident">build_with_native_executor</span>::<span class="op">&lt;</span><span class="ident">substrate_test_runtime_client::runtime::RuntimeApi</span>, <span class="kw">_</span><span class="op">&gt;</span>(
+	<span class="attribute">#[test]
+	</span><span class="kw">fn </span>substrate_block_hash_one_to_many_works() {
+		<span class="kw">let </span>tmp = tempdir().expect(<span class="string">&quot;create a temporary directory&quot;</span>);
+		<span class="kw">let </span>(client, <span class="kw">_</span>) = TestClientBuilder::new()
+			.build_with_native_executor::&lt;substrate_test_runtime_client::runtime::RuntimeApi, <span class="kw">_</span>&gt;(
 			<span class="prelude-val">None</span>,
 		);
 
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">client</span> <span class="op">=</span> <span class="ident">Arc::new</span>(<span class="ident">client</span>);
+		<span class="kw">let </span><span class="kw-2">mut </span>client = Arc::new(client);
 
-		<span class="comment">// Create a temporary frontier secondary DB.</span>
-		<span class="kw">let</span> <span class="ident">frontier_backend</span> <span class="op">=</span> <span class="ident">open_frontier_backend</span>(<span class="ident">client</span>.<span class="ident">clone</span>(), <span class="ident">tmp</span>.<span class="ident">into_path</span>()).<span class="ident">unwrap</span>();
+		<span class="comment">// Create a temporary frontier secondary DB.
+		</span><span class="kw">let </span>frontier_backend = open_frontier_backend(client.clone(), tmp.into_path()).unwrap();
 
-		<span class="comment">// A random ethereum block hash to use</span>
-		<span class="kw">let</span> <span class="ident">ethereum_block_hash</span> <span class="op">=</span> <span class="ident">sp_core::H256::random</span>();
+		<span class="comment">// A random ethereum block hash to use
+		</span><span class="kw">let </span>ethereum_block_hash = sp_core::H256::random();
 
-		<span class="comment">// G -&gt; A1.</span>
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">builder</span> <span class="op">=</span> <span class="ident">client</span>.<span class="ident">new_block</span>(<span class="ident">Default::default</span>()).<span class="ident">unwrap</span>();
-		<span class="ident">builder</span>.<span class="ident">push_storage_change</span>(<span class="macro">vec!</span>[<span class="number">1</span>], <span class="prelude-val">None</span>).<span class="ident">unwrap</span>();
-		<span class="kw">let</span> <span class="ident">a1</span> <span class="op">=</span> <span class="ident">builder</span>.<span class="ident">build</span>().<span class="ident">unwrap</span>().<span class="ident">block</span>;
-		<span class="kw">let</span> <span class="ident">a1_hash</span> <span class="op">=</span> <span class="ident">a1</span>.<span class="ident">header</span>.<span class="ident">hash</span>();
-		<span class="ident">executor::block_on</span>(<span class="ident">client</span>.<span class="ident">import</span>(<span class="ident">BlockOrigin::Own</span>, <span class="ident">a1</span>)).<span class="ident">unwrap</span>();
+		<span class="comment">// G -&gt; A1.
+		</span><span class="kw">let </span><span class="kw-2">mut </span>builder = client.new_block(Default::default()).unwrap();
+		builder.push_storage_change(<span class="macro">vec!</span>[<span class="number">1</span>], <span class="prelude-val">None</span>).unwrap();
+		<span class="kw">let </span>a1 = builder.build().unwrap().block;
+		<span class="kw">let </span>a1_hash = a1.header.hash();
+		executor::block_on(client.import(BlockOrigin::Own, a1)).unwrap();
 
-		<span class="comment">// A1 -&gt; B1</span>
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">builder</span> <span class="op">=</span> <span class="ident">client</span>
-			.<span class="ident">new_block_at</span>(<span class="kw-2">&amp;</span><span class="ident">BlockId::Hash</span>(<span class="ident">a1_hash</span>), <span class="ident">Default::default</span>(), <span class="bool-val">false</span>)
-			.<span class="ident">unwrap</span>();
-		<span class="ident">builder</span>.<span class="ident">push_storage_change</span>(<span class="macro">vec!</span>[<span class="number">1</span>], <span class="prelude-val">None</span>).<span class="ident">unwrap</span>();
-		<span class="kw">let</span> <span class="ident">b1</span> <span class="op">=</span> <span class="ident">builder</span>.<span class="ident">build</span>().<span class="ident">unwrap</span>().<span class="ident">block</span>;
-		<span class="kw">let</span> <span class="ident">b1_hash</span> <span class="op">=</span> <span class="ident">b1</span>.<span class="ident">header</span>.<span class="ident">hash</span>();
-		<span class="ident">executor::block_on</span>(<span class="ident">client</span>.<span class="ident">import</span>(<span class="ident">BlockOrigin::Own</span>, <span class="ident">b1</span>)).<span class="ident">unwrap</span>();
+		<span class="comment">// A1 -&gt; B1
+		</span><span class="kw">let </span><span class="kw-2">mut </span>builder = client
+			.new_block_at(<span class="kw-2">&amp;</span>BlockId::Hash(a1_hash), Default::default(), <span class="bool-val">false</span>)
+			.unwrap();
+		builder.push_storage_change(<span class="macro">vec!</span>[<span class="number">1</span>], <span class="prelude-val">None</span>).unwrap();
+		<span class="kw">let </span>b1 = builder.build().unwrap().block;
+		<span class="kw">let </span>b1_hash = b1.header.hash();
+		executor::block_on(client.import(BlockOrigin::Own, b1)).unwrap();
 
-		<span class="comment">// Map B1</span>
-		<span class="kw">let</span> <span class="ident">commitment</span> <span class="op">=</span> <span class="ident">fc_db::MappingCommitment</span>::<span class="op">&lt;</span><span class="ident">OpaqueBlock</span><span class="op">&gt;</span> {
-			<span class="ident">block_hash</span>: <span class="ident">b1_hash</span>,
-			<span class="ident">ethereum_block_hash</span>,
-			<span class="ident">ethereum_transaction_hashes</span>: <span class="macro">vec!</span>[],
+		<span class="comment">// Map B1
+		</span><span class="kw">let </span>commitment = fc_db::MappingCommitment::&lt;OpaqueBlock&gt; {
+			block_hash: b1_hash,
+			ethereum_block_hash,
+			ethereum_transaction_hashes: <span class="macro">vec!</span>[],
 		};
-		<span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">frontier_backend</span>.<span class="ident">mapping</span>().<span class="ident">write_hashes</span>(<span class="ident">commitment</span>);
+		<span class="kw">let _ </span>= frontier_backend.mapping().write_hashes(commitment);
 
-		<span class="comment">// Expect B1 to be canon</span>
-		<span class="macro">assert_eq!</span>(
-			<span class="ident"><span class="kw">super</span>::frontier_backend_client::load_hash</span>(
-				<span class="ident">client</span>.<span class="ident">as_ref</span>(),
-				<span class="ident">frontier_backend</span>.<span class="ident">as_ref</span>(),
-				<span class="ident">ethereum_block_hash</span>
+		<span class="comment">// Expect B1 to be canon
+		</span><span class="macro">assert_eq!</span>(
+			<span class="kw">super</span>::frontier_backend_client::load_hash(
+				client.as_ref(),
+				frontier_backend.as_ref(),
+				ethereum_block_hash
 			)
-			.<span class="ident">unwrap</span>()
-			.<span class="ident">unwrap</span>(),
-			<span class="ident">BlockId::Hash</span>(<span class="ident">b1_hash</span>),
+			.unwrap()
+			.unwrap(),
+			BlockId::Hash(b1_hash),
 		);
 
-		<span class="comment">// A1 -&gt; B2</span>
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">builder</span> <span class="op">=</span> <span class="ident">client</span>
-			.<span class="ident">new_block_at</span>(<span class="kw-2">&amp;</span><span class="ident">BlockId::Hash</span>(<span class="ident">a1_hash</span>), <span class="ident">Default::default</span>(), <span class="bool-val">false</span>)
-			.<span class="ident">unwrap</span>();
-		<span class="ident">builder</span>.<span class="ident">push_storage_change</span>(<span class="macro">vec!</span>[<span class="number">2</span>], <span class="prelude-val">None</span>).<span class="ident">unwrap</span>();
-		<span class="kw">let</span> <span class="ident">b2</span> <span class="op">=</span> <span class="ident">builder</span>.<span class="ident">build</span>().<span class="ident">unwrap</span>().<span class="ident">block</span>;
-		<span class="kw">let</span> <span class="ident">b2_hash</span> <span class="op">=</span> <span class="ident">b2</span>.<span class="ident">header</span>.<span class="ident">hash</span>();
-		<span class="ident">executor::block_on</span>(<span class="ident">client</span>.<span class="ident">import</span>(<span class="ident">BlockOrigin::Own</span>, <span class="ident">b2</span>)).<span class="ident">unwrap</span>();
+		<span class="comment">// A1 -&gt; B2
+		</span><span class="kw">let </span><span class="kw-2">mut </span>builder = client
+			.new_block_at(<span class="kw-2">&amp;</span>BlockId::Hash(a1_hash), Default::default(), <span class="bool-val">false</span>)
+			.unwrap();
+		builder.push_storage_change(<span class="macro">vec!</span>[<span class="number">2</span>], <span class="prelude-val">None</span>).unwrap();
+		<span class="kw">let </span>b2 = builder.build().unwrap().block;
+		<span class="kw">let </span>b2_hash = b2.header.hash();
+		executor::block_on(client.import(BlockOrigin::Own, b2)).unwrap();
 
-		<span class="comment">// Map B2 to same ethereum hash</span>
-		<span class="kw">let</span> <span class="ident">commitment</span> <span class="op">=</span> <span class="ident">fc_db::MappingCommitment</span>::<span class="op">&lt;</span><span class="ident">OpaqueBlock</span><span class="op">&gt;</span> {
-			<span class="ident">block_hash</span>: <span class="ident">b2_hash</span>,
-			<span class="ident">ethereum_block_hash</span>,
-			<span class="ident">ethereum_transaction_hashes</span>: <span class="macro">vec!</span>[],
+		<span class="comment">// Map B2 to same ethereum hash
+		</span><span class="kw">let </span>commitment = fc_db::MappingCommitment::&lt;OpaqueBlock&gt; {
+			block_hash: b2_hash,
+			ethereum_block_hash,
+			ethereum_transaction_hashes: <span class="macro">vec!</span>[],
 		};
-		<span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">frontier_backend</span>.<span class="ident">mapping</span>().<span class="ident">write_hashes</span>(<span class="ident">commitment</span>);
+		<span class="kw">let _ </span>= frontier_backend.mapping().write_hashes(commitment);
 
-		<span class="comment">// Still expect B1 to be canon</span>
-		<span class="macro">assert_eq!</span>(
-			<span class="ident"><span class="kw">super</span>::frontier_backend_client::load_hash</span>(
-				<span class="ident">client</span>.<span class="ident">as_ref</span>(),
-				<span class="ident">frontier_backend</span>.<span class="ident">as_ref</span>(),
-				<span class="ident">ethereum_block_hash</span>
+		<span class="comment">// Still expect B1 to be canon
+		</span><span class="macro">assert_eq!</span>(
+			<span class="kw">super</span>::frontier_backend_client::load_hash(
+				client.as_ref(),
+				frontier_backend.as_ref(),
+				ethereum_block_hash
 			)
-			.<span class="ident">unwrap</span>()
-			.<span class="ident">unwrap</span>(),
-			<span class="ident">BlockId::Hash</span>(<span class="ident">b1_hash</span>),
+			.unwrap()
+			.unwrap(),
+			BlockId::Hash(b1_hash),
 		);
 
-		<span class="comment">// B2 -&gt; C1. B2 branch is now canon.</span>
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">builder</span> <span class="op">=</span> <span class="ident">client</span>
-			.<span class="ident">new_block_at</span>(<span class="kw-2">&amp;</span><span class="ident">BlockId::Hash</span>(<span class="ident">b2_hash</span>), <span class="ident">Default::default</span>(), <span class="bool-val">false</span>)
-			.<span class="ident">unwrap</span>();
-		<span class="ident">builder</span>.<span class="ident">push_storage_change</span>(<span class="macro">vec!</span>[<span class="number">1</span>], <span class="prelude-val">None</span>).<span class="ident">unwrap</span>();
-		<span class="kw">let</span> <span class="ident">c1</span> <span class="op">=</span> <span class="ident">builder</span>.<span class="ident">build</span>().<span class="ident">unwrap</span>().<span class="ident">block</span>;
-		<span class="ident">executor::block_on</span>(<span class="ident">client</span>.<span class="ident">import</span>(<span class="ident">BlockOrigin::Own</span>, <span class="ident">c1</span>)).<span class="ident">unwrap</span>();
+		<span class="comment">// B2 -&gt; C1. B2 branch is now canon.
+		</span><span class="kw">let </span><span class="kw-2">mut </span>builder = client
+			.new_block_at(<span class="kw-2">&amp;</span>BlockId::Hash(b2_hash), Default::default(), <span class="bool-val">false</span>)
+			.unwrap();
+		builder.push_storage_change(<span class="macro">vec!</span>[<span class="number">1</span>], <span class="prelude-val">None</span>).unwrap();
+		<span class="kw">let </span>c1 = builder.build().unwrap().block;
+		executor::block_on(client.import(BlockOrigin::Own, c1)).unwrap();
 
-		<span class="comment">// Expect B2 to be new canon</span>
-		<span class="macro">assert_eq!</span>(
-			<span class="ident"><span class="kw">super</span>::frontier_backend_client::load_hash</span>(
-				<span class="ident">client</span>.<span class="ident">as_ref</span>(),
-				<span class="ident">frontier_backend</span>.<span class="ident">as_ref</span>(),
-				<span class="ident">ethereum_block_hash</span>
+		<span class="comment">// Expect B2 to be new canon
+		</span><span class="macro">assert_eq!</span>(
+			<span class="kw">super</span>::frontier_backend_client::load_hash(
+				client.as_ref(),
+				frontier_backend.as_ref(),
+				ethereum_block_hash
 			)
-			.<span class="ident">unwrap</span>()
-			.<span class="ident">unwrap</span>(),
-			<span class="ident">BlockId::Hash</span>(<span class="ident">b2_hash</span>),
+			.unwrap()
+			.unwrap(),
+			BlockId::Hash(b2_hash),
 		);
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="fc_rpc" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (7fe022f5a 2022-07-24)" ></div>
-</body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="fc_rpc" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (81f391930 2022-10-09)" ></div></body></html>

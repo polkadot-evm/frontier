@@ -1,3 +1,3 @@
-(function() {var implementors = {};
-implementors["pallet_ethereum"] = [{"text":"impl&lt;T:&nbsp;<a class=\"trait\" href=\"pallet_ethereum/pallet/trait.Config.html\" title=\"trait pallet_ethereum::pallet::Config\">Config</a>&gt; <a class=\"trait\" href=\"fp_ethereum/trait.ValidatedTransaction.html\" title=\"trait fp_ethereum::ValidatedTransaction\">ValidatedTransaction</a> for <a class=\"struct\" href=\"pallet_ethereum/struct.ValidatedTransaction.html\" title=\"struct pallet_ethereum::ValidatedTransaction\">ValidatedTransaction</a>&lt;T&gt;","synthetic":false,"types":["pallet_ethereum::ValidatedTransaction"]}];
-if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
+(function() {var implementors = {
+"pallet_ethereum":[["impl&lt;T:&nbsp;<a class=\"trait\" href=\"pallet_ethereum/pallet/trait.Config.html\" title=\"trait pallet_ethereum::pallet::Config\">Config</a>&gt; ValidatedTransaction for <a class=\"struct\" href=\"pallet_ethereum/struct.ValidatedTransaction.html\" title=\"struct pallet_ethereum::ValidatedTransaction\">ValidatedTransaction</a>&lt;T&gt;"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

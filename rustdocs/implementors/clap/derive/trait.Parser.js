@@ -1,4 +1,4 @@
-(function() {var implementors = {};
-implementors["fc_cli"] = [{"text":"impl Parser for <a class=\"struct\" href=\"fc_cli/struct.FrontierDbCmd.html\" title=\"struct fc_cli::FrontierDbCmd\">FrontierDbCmd</a>","synthetic":false,"types":["fc_cli::frontier_db_cmd::FrontierDbCmd"]}];
-implementors["frontier_template_node"] = [{"text":"impl Parser for <a class=\"struct\" href=\"frontier_template_node/cli/struct.RunCmd.html\" title=\"struct frontier_template_node::cli::RunCmd\">RunCmd</a>","synthetic":false,"types":["frontier_template_node::cli::RunCmd"]},{"text":"impl Parser for <a class=\"struct\" href=\"frontier_template_node/cli/struct.Cli.html\" title=\"struct frontier_template_node::cli::Cli\">Cli</a>","synthetic":false,"types":["frontier_template_node::cli::Cli"]}];
-if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
+(function() {var implementors = {
+"fc_cli":[["impl Parser for <a class=\"struct\" href=\"fc_cli/struct.FrontierDbCmd.html\" title=\"struct fc_cli::FrontierDbCmd\">FrontierDbCmd</a>"]],
+"frontier_template_node":[["impl Parser for <a class=\"struct\" href=\"frontier_template_node/cli/struct.RunCmd.html\" title=\"struct frontier_template_node::cli::RunCmd\">RunCmd</a>"],["impl Parser for <a class=\"struct\" href=\"frontier_template_node/cli/struct.Cli.html\" title=\"struct frontier_template_node::cli::Cli\">Cli</a>"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

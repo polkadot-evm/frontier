@@ -1,10 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `client/rpc/src/eth/execute.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>execute.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../fc_rpc/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div>
-        </a><h2 class="location"></h2>
-    </nav>
-    <nav class="sidebar"><a class="sidebar-logo" href="../../../fc_rpc/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div>
-        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../fc_rpc/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1">
-                                <a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div>
-                        </div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `client/rpc/src/eth/execute.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>execute.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../../normalize.css"><link rel="stylesheet" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../../ayu.css" disabled><link rel="stylesheet" href="../../../dark.css" disabled><link rel="stylesheet" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><a class="sidebar-logo" href="../../../fc_rpc/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../fc_rpc/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -797,799 +791,798 @@
 <span id="791">791</span>
 <span id="792">792</span>
 <span id="793">793</span>
-</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
-<span class="comment">// This file is part of Frontier.</span>
-<span class="comment">//</span>
-<span class="comment">// Copyright (c) 2022 Parity Technologies (UK) Ltd.</span>
-<span class="comment">//</span>
-<span class="comment">// This program is free software: you can redistribute it and/or modify</span>
-<span class="comment">// it under the terms of the GNU General Public License as published by</span>
-<span class="comment">// the Free Software Foundation, either version 3 of the License, or</span>
-<span class="comment">// (at your option) any later version.</span>
-<span class="comment">//</span>
-<span class="comment">// This program is distributed in the hope that it will be useful,</span>
-<span class="comment">// but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
-<span class="comment">// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the</span>
-<span class="comment">// GNU General Public License for more details.</span>
-<span class="comment">//</span>
-<span class="comment">// You should have received a copy of the GNU General Public License</span>
-<span class="comment">// along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.</span>
+</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
+// This file is part of Frontier.
+//
+// Copyright (c) 2022 Parity Technologies (UK) Ltd.
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.
 
-<span class="kw">use</span> <span class="ident">std::sync::Arc</span>;
+</span><span class="kw">use </span>std::sync::Arc;
 
-<span class="kw">use</span> <span class="ident">ethereum_types</span>::{<span class="ident">H256</span>, <span class="ident">U256</span>};
-<span class="kw">use</span> <span class="ident">evm</span>::{<span class="ident">ExitError</span>, <span class="ident">ExitReason</span>};
-<span class="kw">use</span> <span class="ident">jsonrpsee::core::RpcResult</span> <span class="kw">as</span> <span class="prelude-ty">Result</span>;
-<span class="comment">// Substrate</span>
-<span class="kw">use</span> <span class="ident">sc_client_api::backend</span>::{<span class="ident">Backend</span>, <span class="ident">StateBackend</span>, <span class="ident">StorageProvider</span>};
-<span class="kw">use</span> <span class="ident">sc_network_common::ExHashT</span>;
-<span class="kw">use</span> <span class="ident">sc_transaction_pool::ChainApi</span>;
-<span class="kw">use</span> <span class="ident">sp_api</span>::{<span class="ident">ApiExt</span>, <span class="ident">ProvideRuntimeApi</span>};
-<span class="kw">use</span> <span class="ident">sp_block_builder::BlockBuilder</span> <span class="kw">as</span> <span class="ident">BlockBuilderApi</span>;
-<span class="kw">use</span> <span class="ident">sp_blockchain</span>::{<span class="ident">BlockStatus</span>, <span class="ident">HeaderBackend</span>};
-<span class="kw">use</span> <span class="ident">sp_runtime</span>::{
-	<span class="ident">generic::BlockId</span>,
-	<span class="ident">traits</span>::{<span class="ident">BlakeTwo256</span>, <span class="ident">Block</span> <span class="kw">as</span> <span class="ident">BlockT</span>},
-	<span class="ident">SaturatedConversion</span>,
+<span class="kw">use </span>ethereum_types::{H256, U256};
+<span class="kw">use </span>evm::{ExitError, ExitReason};
+<span class="kw">use </span>jsonrpsee::core::RpcResult <span class="kw">as </span><span class="prelude-ty">Result</span>;
+<span class="comment">// Substrate
+</span><span class="kw">use </span>sc_client_api::backend::{Backend, StateBackend, StorageProvider};
+<span class="kw">use </span>sc_network_common::ExHashT;
+<span class="kw">use </span>sc_transaction_pool::ChainApi;
+<span class="kw">use </span>sp_api::{ApiExt, ProvideRuntimeApi};
+<span class="kw">use </span>sp_block_builder::BlockBuilder <span class="kw">as </span>BlockBuilderApi;
+<span class="kw">use </span>sp_blockchain::{BlockStatus, HeaderBackend};
+<span class="kw">use </span>sp_runtime::{
+	generic::BlockId,
+	traits::{BlakeTwo256, Block <span class="kw">as </span>BlockT},
+	SaturatedConversion,
 };
-<span class="comment">// Frontier</span>
-<span class="kw">use</span> <span class="ident">fc_rpc_core::types</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident">fp_rpc::EthereumRuntimeRPCApi</span>;
+<span class="comment">// Frontier
+</span><span class="kw">use </span>fc_rpc_core::types::<span class="kw-2">*</span>;
+<span class="kw">use </span>fp_rpc::EthereumRuntimeRPCApi;
 
-<span class="kw">use</span> <span class="kw">crate</span>::{
-	<span class="ident">eth</span>::{<span class="ident">pending_runtime_api</span>, <span class="ident">Eth</span>},
-	<span class="ident">frontier_backend_client</span>, <span class="ident">internal_err</span>,
+<span class="kw">use crate</span>::{
+	eth::{pending_runtime_api, Eth},
+	frontier_backend_client, internal_err,
 };
 
-<span class="doccomment">/// Default JSONRPC error code return by geth</span>
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">JSON_RPC_ERROR_DEFAULT</span>: <span class="ident">i32</span> <span class="op">=</span> <span class="op">-</span><span class="number">32000</span>;
+<span class="doccomment">/// Default JSONRPC error code return by geth
+</span><span class="kw">pub const </span>JSON_RPC_ERROR_DEFAULT: i32 = -<span class="number">32000</span>;
 
-<span class="doccomment">/// Allow to adapt a request for `estimate_gas`.</span>
-<span class="doccomment">/// Can be used to estimate gas of some contracts using a different function</span>
-<span class="doccomment">/// in the case the normal gas estimation doesn&#39;t work.</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// Exemple: a precompile that tries to do a subcall but succeeds regardless of the</span>
-<span class="doccomment">/// success of the subcall. The gas estimation will thus optimize the gas limit down</span>
-<span class="doccomment">/// to the minimum, while we want to estimate a gas limit that will allow the subcall to</span>
-<span class="doccomment">/// have enough gas to succeed.</span>
-<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">EstimateGasAdapter</span> {
-	<span class="kw">fn</span> <span class="ident">adapt_request</span>(<span class="ident">request</span>: <span class="ident">CallRequest</span>) -&gt; <span class="ident">CallRequest</span>;
+<span class="doccomment">/// Allow to adapt a request for `estimate_gas`.
+/// Can be used to estimate gas of some contracts using a different function
+/// in the case the normal gas estimation doesn&#39;t work.
+///
+/// Exemple: a precompile that tries to do a subcall but succeeds regardless of the
+/// success of the subcall. The gas estimation will thus optimize the gas limit down
+/// to the minimum, while we want to estimate a gas limit that will allow the subcall to
+/// have enough gas to succeed.
+</span><span class="kw">pub trait </span>EstimateGasAdapter {
+	<span class="kw">fn </span>adapt_request(request: CallRequest) -&gt; CallRequest;
 }
 
-<span class="kw">impl</span> <span class="ident">EstimateGasAdapter</span> <span class="kw">for</span> () {
-	<span class="kw">fn</span> <span class="ident">adapt_request</span>(<span class="ident">request</span>: <span class="ident">CallRequest</span>) -&gt; <span class="ident">CallRequest</span> {
-		<span class="ident">request</span>
+<span class="kw">impl </span>EstimateGasAdapter <span class="kw">for </span>() {
+	<span class="kw">fn </span>adapt_request(request: CallRequest) -&gt; CallRequest {
+		request
 	}
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">CT</span>, <span class="ident">BE</span>, <span class="ident">H</span>: <span class="ident">ExHashT</span>, <span class="ident">A</span>: <span class="ident">ChainApi</span>, <span class="ident">EGA</span><span class="op">&gt;</span> <span class="ident">Eth</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">CT</span>, <span class="ident">BE</span>, <span class="ident">H</span>, <span class="ident">A</span>, <span class="ident">EGA</span><span class="op">&gt;</span>
-<span class="kw">where</span>
-	<span class="ident">B</span>: <span class="ident">BlockT</span><span class="op">&lt;</span><span class="ident">Hash</span> <span class="op">=</span> <span class="ident">H256</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
-	<span class="ident">C</span>: <span class="ident">ProvideRuntimeApi</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">StorageProvider</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">BE</span><span class="op">&gt;</span>,
-	<span class="ident">C</span>: <span class="ident">HeaderBackend</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
-	<span class="ident">C::Api</span>: <span class="ident">BlockBuilderApi</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">EthereumRuntimeRPCApi</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span>,
-	<span class="ident">BE</span>: <span class="ident">Backend</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
-	<span class="ident">BE::State</span>: <span class="ident">StateBackend</span><span class="op">&lt;</span><span class="ident">BlakeTwo256</span><span class="op">&gt;</span>,
-	<span class="ident">A</span>: <span class="ident">ChainApi</span><span class="op">&lt;</span><span class="ident">Block</span> <span class="op">=</span> <span class="ident">B</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
-	<span class="ident">EGA</span>: <span class="ident">EstimateGasAdapter</span>,
+<span class="kw">impl</span>&lt;B, C, P, CT, BE, H: ExHashT, A: ChainApi, EGA&gt; Eth&lt;B, C, P, CT, BE, H, A, EGA&gt;
+<span class="kw">where
+	</span>B: BlockT&lt;Hash = H256&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
+	C: ProvideRuntimeApi&lt;B&gt; + StorageProvider&lt;B, BE&gt;,
+	C: HeaderBackend&lt;B&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
+	C::Api: BlockBuilderApi&lt;B&gt; + EthereumRuntimeRPCApi&lt;B&gt;,
+	BE: Backend&lt;B&gt; + <span class="lifetime">&#39;static</span>,
+	BE::State: StateBackend&lt;BlakeTwo256&gt;,
+	A: ChainApi&lt;Block = B&gt; + <span class="lifetime">&#39;static</span>,
+	EGA: EstimateGasAdapter,
 {
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">call</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">request</span>: <span class="ident">CallRequest</span>, <span class="ident">number</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">BlockNumber</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Bytes</span><span class="op">&gt;</span> {
-		<span class="kw">let</span> <span class="ident">CallRequest</span> {
-			<span class="ident">from</span>,
-			<span class="ident">to</span>,
-			<span class="ident">gas_price</span>,
-			<span class="ident">max_fee_per_gas</span>,
-			<span class="ident">max_priority_fee_per_gas</span>,
-			<span class="ident">gas</span>,
-			<span class="ident">value</span>,
-			<span class="ident">data</span>,
-			<span class="ident">nonce</span>,
-			<span class="ident">access_list</span>,
+	<span class="kw">pub fn </span>call(<span class="kw-2">&amp;</span><span class="self">self</span>, request: CallRequest, number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;Bytes&gt; {
+		<span class="kw">let </span>CallRequest {
+			from,
+			to,
+			gas_price,
+			max_fee_per_gas,
+			max_priority_fee_per_gas,
+			gas,
+			value,
+			data,
+			nonce,
+			access_list,
 			..
-		} <span class="op">=</span> <span class="ident">request</span>;
+		} = request;
 
-		<span class="kw">let</span> (<span class="ident">gas_price</span>, <span class="ident">max_fee_per_gas</span>, <span class="ident">max_priority_fee_per_gas</span>) <span class="op">=</span> {
-			<span class="kw">let</span> <span class="ident">details</span> <span class="op">=</span> <span class="ident">fee_details</span>(<span class="ident">gas_price</span>, <span class="ident">max_fee_per_gas</span>, <span class="ident">max_priority_fee_per_gas</span>)<span class="question-mark">?</span>;
+		<span class="kw">let </span>(gas_price, max_fee_per_gas, max_priority_fee_per_gas) = {
+			<span class="kw">let </span>details = fee_details(gas_price, max_fee_per_gas, max_priority_fee_per_gas)<span class="question-mark">?</span>;
 			(
-				<span class="ident">details</span>.<span class="ident">gas_price</span>,
-				<span class="ident">details</span>.<span class="ident">max_fee_per_gas</span>,
-				<span class="ident">details</span>.<span class="ident">max_priority_fee_per_gas</span>,
+				details.gas_price,
+				details.max_fee_per_gas,
+				details.max_priority_fee_per_gas,
 			)
 		};
 
-		<span class="kw">let</span> (<span class="ident">id</span>, <span class="ident">api</span>) <span class="op">=</span> <span class="kw">match</span> <span class="ident">frontier_backend_client::native_block_id</span>::<span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span><span class="op">&gt;</span>(
-			<span class="self">self</span>.<span class="ident">client</span>.<span class="ident">as_ref</span>(),
-			<span class="self">self</span>.<span class="ident">backend</span>.<span class="ident">as_ref</span>(),
-			<span class="ident">number</span>,
-		)<span class="question-mark">?</span> {
-			<span class="prelude-val">Some</span>(<span class="ident">id</span>) =&gt; (<span class="ident">id</span>, <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">runtime_api</span>()),
-			<span class="prelude-val">None</span> =&gt; {
-				<span class="comment">// Not mapped in the db, assume pending.</span>
-				<span class="kw">let</span> <span class="ident">id</span> <span class="op">=</span> <span class="ident">BlockId::Hash</span>(<span class="self">self</span>.<span class="ident">client</span>.<span class="ident">info</span>().<span class="ident">best_hash</span>);
-				<span class="kw">let</span> <span class="ident">api</span> <span class="op">=</span> <span class="ident">pending_runtime_api</span>(<span class="self">self</span>.<span class="ident">client</span>.<span class="ident">as_ref</span>(), <span class="self">self</span>.<span class="ident">graph</span>.<span class="ident">as_ref</span>())<span class="question-mark">?</span>;
-				(<span class="ident">id</span>, <span class="ident">api</span>)
+		<span class="kw">let </span>(id, api) = <span class="kw">match </span>frontier_backend_client::native_block_id::&lt;B, C&gt;(
+			<span class="self">self</span>.client.as_ref(),
+			<span class="self">self</span>.backend.as_ref(),
+			number,
+		)<span class="question-mark">? </span>{
+			<span class="prelude-val">Some</span>(id) =&gt; (id, <span class="self">self</span>.client.runtime_api()),
+			<span class="prelude-val">None </span>=&gt; {
+				<span class="comment">// Not mapped in the db, assume pending.
+				</span><span class="kw">let </span>id = BlockId::Hash(<span class="self">self</span>.client.info().best_hash);
+				<span class="kw">let </span>api = pending_runtime_api(<span class="self">self</span>.client.as_ref(), <span class="self">self</span>.graph.as_ref())<span class="question-mark">?</span>;
+				(id, api)
 			}
 		};
 
-		<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">BlockStatus::Unknown</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">status</span>(<span class="ident">id</span>) {
-			<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident"><span class="kw">crate</span>::err</span>(<span class="ident">JSON_RPC_ERROR_DEFAULT</span>, <span class="string">&quot;header not found&quot;</span>, <span class="prelude-val">None</span>));
+		<span class="kw">if let </span><span class="prelude-val">Ok</span>(BlockStatus::Unknown) = <span class="self">self</span>.client.status(id) {
+			<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="kw">crate</span>::err(JSON_RPC_ERROR_DEFAULT, <span class="string">&quot;header not found&quot;</span>, <span class="prelude-val">None</span>));
 		}
 
-		<span class="kw">let</span> <span class="ident">api_version</span> <span class="op">=</span>
-			<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">api_version</span>)) <span class="op">=</span> <span class="ident">api</span>.<span class="ident">api_version</span>::<span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">EthereumRuntimeRPCApi</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="ident">id</span>) {
-				<span class="ident">api_version</span>
-			} <span class="kw">else</span> {
-				<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="string">&quot;failed to retrieve Runtime Api version&quot;</span>));
+		<span class="kw">let </span>api_version =
+			<span class="kw">if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(api_version)) = api.api_version::&lt;<span class="kw">dyn </span>EthereumRuntimeRPCApi&lt;B&gt;&gt;(<span class="kw-2">&amp;</span>id) {
+				api_version
+			} <span class="kw">else </span>{
+				<span class="kw">return </span><span class="prelude-val">Err</span>(internal_err(<span class="string">&quot;failed to retrieve Runtime Api version&quot;</span>));
 			};
 
-		<span class="kw">let</span> <span class="ident">block</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">api_version</span> <span class="op">&gt;</span> <span class="number">1</span> {
-			<span class="ident">api</span>.<span class="ident">current_block</span>(<span class="kw-2">&amp;</span><span class="ident">id</span>)
-				.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>
-		} <span class="kw">else</span> {
-			<span class="attribute">#[<span class="ident">allow</span>(<span class="ident">deprecated</span>)]</span>
-			<span class="kw">let</span> <span class="ident">legacy_block</span> <span class="op">=</span> <span class="ident">api</span>
-				.<span class="ident">current_block_before_version_2</span>(<span class="kw-2">&amp;</span><span class="ident">id</span>)
-				.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>;
-			<span class="ident">legacy_block</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">block</span><span class="op">|</span> <span class="ident">block</span>.<span class="ident">into</span>())
+		<span class="kw">let </span>block = <span class="kw">if </span>api_version &gt; <span class="number">1 </span>{
+			api.current_block(<span class="kw-2">&amp;</span>id)
+				.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, err)))<span class="question-mark">?
+		</span>} <span class="kw">else </span>{
+			<span class="attribute">#[allow(deprecated)]
+			</span><span class="kw">let </span>legacy_block = api
+				.current_block_before_version_2(<span class="kw-2">&amp;</span>id)
+				.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, err)))<span class="question-mark">?</span>;
+			legacy_block.map(|block| block.into())
 		};
 
-		<span class="kw">let</span> <span class="ident">block_gas_limit</span> <span class="op">=</span> <span class="ident">block</span>
-			.<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="string">&quot;block unavailable, cannot query gas limit&quot;</span>))<span class="question-mark">?</span>
-			.<span class="ident">header</span>
-			.<span class="ident">gas_limit</span>;
-		<span class="kw">let</span> <span class="ident">max_gas_limit</span> <span class="op">=</span> <span class="ident">block_gas_limit</span> <span class="op">*</span> <span class="self">self</span>.<span class="ident">execute_gas_limit_multiplier</span>;
+		<span class="kw">let </span>block_gas_limit = block
+			.ok_or_else(|| internal_err(<span class="string">&quot;block unavailable, cannot query gas limit&quot;</span>))<span class="question-mark">?
+			</span>.header
+			.gas_limit;
+		<span class="kw">let </span>max_gas_limit = block_gas_limit * <span class="self">self</span>.execute_gas_limit_multiplier;
 
-		<span class="comment">// use given gas limit or query current block&#39;s limit</span>
-		<span class="kw">let</span> <span class="ident">gas_limit</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">gas</span> {
-			<span class="prelude-val">Some</span>(<span class="ident">amount</span>) =&gt; {
-				<span class="kw">if</span> <span class="ident">amount</span> <span class="op">&gt;</span> <span class="ident">max_gas_limit</span> {
-					<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="macro">format!</span>(
+		<span class="comment">// use given gas limit or query current block&#39;s limit
+		</span><span class="kw">let </span>gas_limit = <span class="kw">match </span>gas {
+			<span class="prelude-val">Some</span>(amount) =&gt; {
+				<span class="kw">if </span>amount &gt; max_gas_limit {
+					<span class="kw">return </span><span class="prelude-val">Err</span>(internal_err(<span class="macro">format!</span>(
 						<span class="string">&quot;provided gas limit is too high (can be up to {}x the block gas limit)&quot;</span>,
-						<span class="self">self</span>.<span class="ident">execute_gas_limit_multiplier</span>
+						<span class="self">self</span>.execute_gas_limit_multiplier
 					)));
 				}
-				<span class="ident">amount</span>
+				amount
 			}
-			<span class="prelude-val">None</span> =&gt; <span class="ident">max_gas_limit</span>,
+			<span class="prelude-val">None </span>=&gt; max_gas_limit,
 		};
 
-		<span class="kw">let</span> <span class="ident">data</span> <span class="op">=</span> <span class="ident">data</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">d</span><span class="op">|</span> <span class="ident">d</span>.<span class="number">0</span>).<span class="ident">unwrap_or_default</span>();
-		<span class="kw">match</span> <span class="ident">to</span> {
-			<span class="prelude-val">Some</span>(<span class="ident">to</span>) =&gt; {
-				<span class="kw">if</span> <span class="ident">api_version</span> <span class="op">==</span> <span class="number">1</span> {
-					<span class="comment">// Legacy pre-london</span>
-					<span class="attribute">#[<span class="ident">allow</span>(<span class="ident">deprecated</span>)]</span>
-					<span class="kw">let</span> <span class="ident">info</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">call_before_version_2</span>(
-						<span class="kw-2">&amp;</span><span class="ident">id</span>,
-						<span class="ident">from</span>.<span class="ident">unwrap_or_default</span>(),
-						<span class="ident">to</span>,
-						<span class="ident">data</span>,
-						<span class="ident">value</span>.<span class="ident">unwrap_or_default</span>(),
-						<span class="ident">gas_limit</span>,
-						<span class="ident">gas_price</span>,
-						<span class="ident">nonce</span>,
+		<span class="kw">let </span>data = data.map(|d| d.<span class="number">0</span>).unwrap_or_default();
+		<span class="kw">match </span>to {
+			<span class="prelude-val">Some</span>(to) =&gt; {
+				<span class="kw">if </span>api_version == <span class="number">1 </span>{
+					<span class="comment">// Legacy pre-london
+					</span><span class="attribute">#[allow(deprecated)]
+					</span><span class="kw">let </span>info = api.call_before_version_2(
+						<span class="kw-2">&amp;</span>id,
+						from.unwrap_or_default(),
+						to,
+						data,
+						value.unwrap_or_default(),
+						gas_limit,
+						gas_price,
+						nonce,
 						<span class="bool-val">false</span>,
 					)
-					.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>
-					.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>;
+					.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, err)))<span class="question-mark">?
+					</span>.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {:?}&quot;</span>, err)))<span class="question-mark">?</span>;
 
-					<span class="ident">error_on_execution_failure</span>(<span class="kw-2">&amp;</span><span class="ident">info</span>.<span class="ident">exit_reason</span>, <span class="kw-2">&amp;</span><span class="ident">info</span>.<span class="ident">value</span>)<span class="question-mark">?</span>;
-					<span class="prelude-val">Ok</span>(<span class="ident">Bytes</span>(<span class="ident">info</span>.<span class="ident">value</span>))
-				} <span class="kw">else</span> <span class="kw">if</span> <span class="ident">api_version</span> <span class="op">&gt;</span><span class="op">=</span> <span class="number">2</span> <span class="op">&amp;&amp;</span> <span class="ident">api_version</span> <span class="op">&lt;</span> <span class="number">4</span> {
-					<span class="comment">// Post-london</span>
-					<span class="attribute">#[<span class="ident">allow</span>(<span class="ident">deprecated</span>)]</span>
-					<span class="kw">let</span> <span class="ident">info</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">call_before_version_4</span>(
-						<span class="kw-2">&amp;</span><span class="ident">id</span>,
-						<span class="ident">from</span>.<span class="ident">unwrap_or_default</span>(),
-						<span class="ident">to</span>,
-						<span class="ident">data</span>,
-						<span class="ident">value</span>.<span class="ident">unwrap_or_default</span>(),
-						<span class="ident">gas_limit</span>,
-						<span class="ident">max_fee_per_gas</span>,
-						<span class="ident">max_priority_fee_per_gas</span>,
-						<span class="ident">nonce</span>,
+					error_on_execution_failure(<span class="kw-2">&amp;</span>info.exit_reason, <span class="kw-2">&amp;</span>info.value)<span class="question-mark">?</span>;
+					<span class="prelude-val">Ok</span>(Bytes(info.value))
+				} <span class="kw">else if </span>api_version &gt;= <span class="number">2 </span>&amp;&amp; api_version &lt; <span class="number">4 </span>{
+					<span class="comment">// Post-london
+					</span><span class="attribute">#[allow(deprecated)]
+					</span><span class="kw">let </span>info = api.call_before_version_4(
+						<span class="kw-2">&amp;</span>id,
+						from.unwrap_or_default(),
+						to,
+						data,
+						value.unwrap_or_default(),
+						gas_limit,
+						max_fee_per_gas,
+						max_priority_fee_per_gas,
+						nonce,
 						<span class="bool-val">false</span>,
 					)
-					.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>
-					.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>;
+					.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, err)))<span class="question-mark">?
+					</span>.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {:?}&quot;</span>, err)))<span class="question-mark">?</span>;
 
-					<span class="ident">error_on_execution_failure</span>(<span class="kw-2">&amp;</span><span class="ident">info</span>.<span class="ident">exit_reason</span>, <span class="kw-2">&amp;</span><span class="ident">info</span>.<span class="ident">value</span>)<span class="question-mark">?</span>;
-					<span class="prelude-val">Ok</span>(<span class="ident">Bytes</span>(<span class="ident">info</span>.<span class="ident">value</span>))
-				} <span class="kw">else</span> <span class="kw">if</span> <span class="ident">api_version</span> <span class="op">==</span> <span class="number">4</span> {
-					<span class="comment">// Post-london + access list support</span>
-					<span class="kw">let</span> <span class="ident">access_list</span> <span class="op">=</span> <span class="ident">access_list</span>.<span class="ident">unwrap_or_default</span>();
-					<span class="kw">let</span> <span class="ident">info</span> <span class="op">=</span> <span class="ident">api</span>
-						.<span class="ident">call</span>(
-							<span class="kw-2">&amp;</span><span class="ident">id</span>,
-							<span class="ident">from</span>.<span class="ident">unwrap_or_default</span>(),
-							<span class="ident">to</span>,
-							<span class="ident">data</span>,
-							<span class="ident">value</span>.<span class="ident">unwrap_or_default</span>(),
-							<span class="ident">gas_limit</span>,
-							<span class="ident">max_fee_per_gas</span>,
-							<span class="ident">max_priority_fee_per_gas</span>,
-							<span class="ident">nonce</span>,
+					error_on_execution_failure(<span class="kw-2">&amp;</span>info.exit_reason, <span class="kw-2">&amp;</span>info.value)<span class="question-mark">?</span>;
+					<span class="prelude-val">Ok</span>(Bytes(info.value))
+				} <span class="kw">else if </span>api_version == <span class="number">4 </span>{
+					<span class="comment">// Post-london + access list support
+					</span><span class="kw">let </span>access_list = access_list.unwrap_or_default();
+					<span class="kw">let </span>info = api
+						.call(
+							<span class="kw-2">&amp;</span>id,
+							from.unwrap_or_default(),
+							to,
+							data,
+							value.unwrap_or_default(),
+							gas_limit,
+							max_fee_per_gas,
+							max_priority_fee_per_gas,
+							nonce,
 							<span class="bool-val">false</span>,
 							<span class="prelude-val">Some</span>(
-								<span class="ident">access_list</span>
-									.<span class="ident">into_iter</span>()
-									.<span class="ident">map</span>(<span class="op">|</span><span class="ident">item</span><span class="op">|</span> (<span class="ident">item</span>.<span class="ident">address</span>, <span class="ident">item</span>.<span class="ident">storage_keys</span>))
-									.<span class="ident">collect</span>(),
+								access_list
+									.into_iter()
+									.map(|item| (item.address, item.storage_keys))
+									.collect(),
 							),
 						)
-						.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>
-						.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>;
+						.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, err)))<span class="question-mark">?
+						</span>.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {:?}&quot;</span>, err)))<span class="question-mark">?</span>;
 
-					<span class="ident">error_on_execution_failure</span>(<span class="kw-2">&amp;</span><span class="ident">info</span>.<span class="ident">exit_reason</span>, <span class="kw-2">&amp;</span><span class="ident">info</span>.<span class="ident">value</span>)<span class="question-mark">?</span>;
-					<span class="prelude-val">Ok</span>(<span class="ident">Bytes</span>(<span class="ident">info</span>.<span class="ident">value</span>))
-				} <span class="kw">else</span> {
-					<span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="string">&quot;failed to retrieve Runtime Api version&quot;</span>))
+					error_on_execution_failure(<span class="kw-2">&amp;</span>info.exit_reason, <span class="kw-2">&amp;</span>info.value)<span class="question-mark">?</span>;
+					<span class="prelude-val">Ok</span>(Bytes(info.value))
+				} <span class="kw">else </span>{
+					<span class="prelude-val">Err</span>(internal_err(<span class="string">&quot;failed to retrieve Runtime Api version&quot;</span>))
 				}
 			}
-			<span class="prelude-val">None</span> =&gt; {
-				<span class="kw">if</span> <span class="ident">api_version</span> <span class="op">==</span> <span class="number">1</span> {
-					<span class="comment">// Legacy pre-london</span>
-					<span class="attribute">#[<span class="ident">allow</span>(<span class="ident">deprecated</span>)]</span>
-					<span class="kw">let</span> <span class="ident">info</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">create_before_version_2</span>(
-						<span class="kw-2">&amp;</span><span class="ident">id</span>,
-						<span class="ident">from</span>.<span class="ident">unwrap_or_default</span>(),
-						<span class="ident">data</span>,
-						<span class="ident">value</span>.<span class="ident">unwrap_or_default</span>(),
-						<span class="ident">gas_limit</span>,
-						<span class="ident">gas_price</span>,
-						<span class="ident">nonce</span>,
+			<span class="prelude-val">None </span>=&gt; {
+				<span class="kw">if </span>api_version == <span class="number">1 </span>{
+					<span class="comment">// Legacy pre-london
+					</span><span class="attribute">#[allow(deprecated)]
+					</span><span class="kw">let </span>info = api.create_before_version_2(
+						<span class="kw-2">&amp;</span>id,
+						from.unwrap_or_default(),
+						data,
+						value.unwrap_or_default(),
+						gas_limit,
+						gas_price,
+						nonce,
 						<span class="bool-val">false</span>,
 					)
-					.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>
-					.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>;
+					.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, err)))<span class="question-mark">?
+					</span>.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {:?}&quot;</span>, err)))<span class="question-mark">?</span>;
 
-					<span class="ident">error_on_execution_failure</span>(<span class="kw-2">&amp;</span><span class="ident">info</span>.<span class="ident">exit_reason</span>, <span class="kw-2">&amp;</span>[])<span class="question-mark">?</span>;
+					error_on_execution_failure(<span class="kw-2">&amp;</span>info.exit_reason, <span class="kw-2">&amp;</span>[])<span class="question-mark">?</span>;
 
-					<span class="kw">let</span> <span class="ident">code</span> <span class="op">=</span> <span class="ident">api</span>
-						.<span class="ident">account_code_at</span>(<span class="kw-2">&amp;</span><span class="ident">id</span>, <span class="ident">info</span>.<span class="ident">value</span>)
-						.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>;
-					<span class="prelude-val">Ok</span>(<span class="ident">Bytes</span>(<span class="ident">code</span>))
-				} <span class="kw">else</span> <span class="kw">if</span> <span class="ident">api_version</span> <span class="op">&gt;</span><span class="op">=</span> <span class="number">2</span> <span class="op">&amp;&amp;</span> <span class="ident">api_version</span> <span class="op">&lt;</span> <span class="number">4</span> {
-					<span class="comment">// Post-london</span>
-					<span class="attribute">#[<span class="ident">allow</span>(<span class="ident">deprecated</span>)]</span>
-					<span class="kw">let</span> <span class="ident">info</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">create_before_version_4</span>(
-						<span class="kw-2">&amp;</span><span class="ident">id</span>,
-						<span class="ident">from</span>.<span class="ident">unwrap_or_default</span>(),
-						<span class="ident">data</span>,
-						<span class="ident">value</span>.<span class="ident">unwrap_or_default</span>(),
-						<span class="ident">gas_limit</span>,
-						<span class="ident">max_fee_per_gas</span>,
-						<span class="ident">max_priority_fee_per_gas</span>,
-						<span class="ident">nonce</span>,
+					<span class="kw">let </span>code = api
+						.account_code_at(<span class="kw-2">&amp;</span>id, info.value)
+						.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, err)))<span class="question-mark">?</span>;
+					<span class="prelude-val">Ok</span>(Bytes(code))
+				} <span class="kw">else if </span>api_version &gt;= <span class="number">2 </span>&amp;&amp; api_version &lt; <span class="number">4 </span>{
+					<span class="comment">// Post-london
+					</span><span class="attribute">#[allow(deprecated)]
+					</span><span class="kw">let </span>info = api.create_before_version_4(
+						<span class="kw-2">&amp;</span>id,
+						from.unwrap_or_default(),
+						data,
+						value.unwrap_or_default(),
+						gas_limit,
+						max_fee_per_gas,
+						max_priority_fee_per_gas,
+						nonce,
 						<span class="bool-val">false</span>,
 					)
-					.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>
-					.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>;
+					.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, err)))<span class="question-mark">?
+					</span>.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {:?}&quot;</span>, err)))<span class="question-mark">?</span>;
 
-					<span class="ident">error_on_execution_failure</span>(<span class="kw-2">&amp;</span><span class="ident">info</span>.<span class="ident">exit_reason</span>, <span class="kw-2">&amp;</span>[])<span class="question-mark">?</span>;
+					error_on_execution_failure(<span class="kw-2">&amp;</span>info.exit_reason, <span class="kw-2">&amp;</span>[])<span class="question-mark">?</span>;
 
-					<span class="kw">let</span> <span class="ident">code</span> <span class="op">=</span> <span class="ident">api</span>
-						.<span class="ident">account_code_at</span>(<span class="kw-2">&amp;</span><span class="ident">id</span>, <span class="ident">info</span>.<span class="ident">value</span>)
-						.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>;
-					<span class="prelude-val">Ok</span>(<span class="ident">Bytes</span>(<span class="ident">code</span>))
-				} <span class="kw">else</span> <span class="kw">if</span> <span class="ident">api_version</span> <span class="op">==</span> <span class="number">4</span> {
-					<span class="comment">// Post-london + access list support</span>
-					<span class="kw">let</span> <span class="ident">access_list</span> <span class="op">=</span> <span class="ident">access_list</span>.<span class="ident">unwrap_or_default</span>();
-					<span class="kw">let</span> <span class="ident">info</span> <span class="op">=</span> <span class="ident">api</span>
-						.<span class="ident">create</span>(
-							<span class="kw-2">&amp;</span><span class="ident">id</span>,
-							<span class="ident">from</span>.<span class="ident">unwrap_or_default</span>(),
-							<span class="ident">data</span>,
-							<span class="ident">value</span>.<span class="ident">unwrap_or_default</span>(),
-							<span class="ident">gas_limit</span>,
-							<span class="ident">max_fee_per_gas</span>,
-							<span class="ident">max_priority_fee_per_gas</span>,
-							<span class="ident">nonce</span>,
+					<span class="kw">let </span>code = api
+						.account_code_at(<span class="kw-2">&amp;</span>id, info.value)
+						.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, err)))<span class="question-mark">?</span>;
+					<span class="prelude-val">Ok</span>(Bytes(code))
+				} <span class="kw">else if </span>api_version == <span class="number">4 </span>{
+					<span class="comment">// Post-london + access list support
+					</span><span class="kw">let </span>access_list = access_list.unwrap_or_default();
+					<span class="kw">let </span>info = api
+						.create(
+							<span class="kw-2">&amp;</span>id,
+							from.unwrap_or_default(),
+							data,
+							value.unwrap_or_default(),
+							gas_limit,
+							max_fee_per_gas,
+							max_priority_fee_per_gas,
+							nonce,
 							<span class="bool-val">false</span>,
 							<span class="prelude-val">Some</span>(
-								<span class="ident">access_list</span>
-									.<span class="ident">into_iter</span>()
-									.<span class="ident">map</span>(<span class="op">|</span><span class="ident">item</span><span class="op">|</span> (<span class="ident">item</span>.<span class="ident">address</span>, <span class="ident">item</span>.<span class="ident">storage_keys</span>))
-									.<span class="ident">collect</span>(),
+								access_list
+									.into_iter()
+									.map(|item| (item.address, item.storage_keys))
+									.collect(),
 							),
 						)
-						.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>
-						.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>;
+						.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, err)))<span class="question-mark">?
+						</span>.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {:?}&quot;</span>, err)))<span class="question-mark">?</span>;
 
-					<span class="ident">error_on_execution_failure</span>(<span class="kw-2">&amp;</span><span class="ident">info</span>.<span class="ident">exit_reason</span>, <span class="kw-2">&amp;</span>[])<span class="question-mark">?</span>;
+					error_on_execution_failure(<span class="kw-2">&amp;</span>info.exit_reason, <span class="kw-2">&amp;</span>[])<span class="question-mark">?</span>;
 
-					<span class="kw">let</span> <span class="ident">code</span> <span class="op">=</span> <span class="ident">api</span>
-						.<span class="ident">account_code_at</span>(<span class="kw-2">&amp;</span><span class="ident">id</span>, <span class="ident">info</span>.<span class="ident">value</span>)
-						.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>;
-					<span class="prelude-val">Ok</span>(<span class="ident">Bytes</span>(<span class="ident">code</span>))
-				} <span class="kw">else</span> {
-					<span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="string">&quot;failed to retrieve Runtime Api version&quot;</span>))
+					<span class="kw">let </span>code = api
+						.account_code_at(<span class="kw-2">&amp;</span>id, info.value)
+						.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, err)))<span class="question-mark">?</span>;
+					<span class="prelude-val">Ok</span>(Bytes(code))
+				} <span class="kw">else </span>{
+					<span class="prelude-val">Err</span>(internal_err(<span class="string">&quot;failed to retrieve Runtime Api version&quot;</span>))
 				}
 			}
 		}
 	}
 
-	<span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">estimate_gas</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">request</span>: <span class="ident">CallRequest</span>, <span class="kw">_</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">BlockNumber</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span> {
-		<span class="kw">let</span> <span class="ident">client</span> <span class="op">=</span> <span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">client</span>);
-		<span class="kw">let</span> <span class="ident">block_data_cache</span> <span class="op">=</span> <span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">block_data_cache</span>);
+	<span class="kw">pub async fn </span>estimate_gas(<span class="kw-2">&amp;</span><span class="self">self</span>, request: CallRequest, <span class="kw">_</span>: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;U256&gt; {
+		<span class="kw">let </span>client = Arc::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.client);
+		<span class="kw">let </span>block_data_cache = Arc::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.block_data_cache);
 
-		<span class="comment">// Define the lower bound of estimate</span>
-		<span class="kw">const</span> <span class="ident">MIN_GAS_PER_TX</span>: <span class="ident">U256</span> <span class="op">=</span> <span class="ident">U256</span>([<span class="number">21_000</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>]);
+		<span class="comment">// Define the lower bound of estimate
+		</span><span class="kw">const </span>MIN_GAS_PER_TX: U256 = U256([<span class="number">21_000</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>]);
 
-		<span class="comment">// Get best hash (TODO missing support for estimating gas historically)</span>
-		<span class="kw">let</span> <span class="ident">best_hash</span> <span class="op">=</span> <span class="ident">client</span>.<span class="ident">info</span>().<span class="ident">best_hash</span>;
+		<span class="comment">// Get best hash (TODO missing support for estimating gas historically)
+		</span><span class="kw">let </span>best_hash = client.info().best_hash;
 
-		<span class="comment">// Adapt request for gas estimation.</span>
-		<span class="kw">let</span> <span class="ident">request</span> <span class="op">=</span> <span class="ident">EGA::adapt_request</span>(<span class="ident">request</span>);
+		<span class="comment">// Adapt request for gas estimation.
+		</span><span class="kw">let </span>request = EGA::adapt_request(request);
 
-		<span class="comment">// For simple transfer to simple account, return MIN_GAS_PER_TX directly</span>
-		<span class="kw">let</span> <span class="ident">is_simple_transfer</span> <span class="op">=</span> <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">request</span>.<span class="ident">data</span> {
-			<span class="prelude-val">None</span> =&gt; <span class="bool-val">true</span>,
-			<span class="prelude-val">Some</span>(<span class="ident">vec</span>) =&gt; <span class="ident">vec</span>.<span class="number">0</span>.<span class="ident">is_empty</span>(),
+		<span class="comment">// For simple transfer to simple account, return MIN_GAS_PER_TX directly
+		</span><span class="kw">let </span>is_simple_transfer = <span class="kw">match </span><span class="kw-2">&amp;</span>request.data {
+			<span class="prelude-val">None </span>=&gt; <span class="bool-val">true</span>,
+			<span class="prelude-val">Some</span>(vec) =&gt; vec.<span class="number">0</span>.is_empty(),
 		};
-		<span class="kw">if</span> <span class="ident">is_simple_transfer</span> {
-			<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">to</span>) <span class="op">=</span> <span class="ident">request</span>.<span class="ident">to</span> {
-				<span class="kw">let</span> <span class="ident">to_code</span> <span class="op">=</span> <span class="ident">client</span>
-					.<span class="ident">runtime_api</span>()
-					.<span class="ident">account_code_at</span>(<span class="kw-2">&amp;</span><span class="ident">BlockId::Hash</span>(<span class="ident">best_hash</span>), <span class="ident">to</span>)
-					.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>;
-				<span class="kw">if</span> <span class="ident">to_code</span>.<span class="ident">is_empty</span>() {
-					<span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">MIN_GAS_PER_TX</span>);
+		<span class="kw">if </span>is_simple_transfer {
+			<span class="kw">if let </span><span class="prelude-val">Some</span>(to) = request.to {
+				<span class="kw">let </span>to_code = client
+					.runtime_api()
+					.account_code_at(<span class="kw-2">&amp;</span>BlockId::Hash(best_hash), to)
+					.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, err)))<span class="question-mark">?</span>;
+				<span class="kw">if </span>to_code.is_empty() {
+					<span class="kw">return </span><span class="prelude-val">Ok</span>(MIN_GAS_PER_TX);
 				}
 			}
 		}
 
-		<span class="kw">let</span> (<span class="ident">gas_price</span>, <span class="ident">max_fee_per_gas</span>, <span class="ident">max_priority_fee_per_gas</span>) <span class="op">=</span> {
-			<span class="kw">let</span> <span class="ident">details</span> <span class="op">=</span> <span class="ident">fee_details</span>(
-				<span class="ident">request</span>.<span class="ident">gas_price</span>,
-				<span class="ident">request</span>.<span class="ident">max_fee_per_gas</span>,
-				<span class="ident">request</span>.<span class="ident">max_priority_fee_per_gas</span>,
+		<span class="kw">let </span>(gas_price, max_fee_per_gas, max_priority_fee_per_gas) = {
+			<span class="kw">let </span>details = fee_details(
+				request.gas_price,
+				request.max_fee_per_gas,
+				request.max_priority_fee_per_gas,
 			)<span class="question-mark">?</span>;
 			(
-				<span class="ident">details</span>.<span class="ident">gas_price</span>,
-				<span class="ident">details</span>.<span class="ident">max_fee_per_gas</span>,
-				<span class="ident">details</span>.<span class="ident">max_priority_fee_per_gas</span>,
+				details.gas_price,
+				details.max_fee_per_gas,
+				details.max_priority_fee_per_gas,
 			)
 		};
 
-		<span class="kw">let</span> <span class="ident">block_gas_limit</span> <span class="op">=</span> {
-			<span class="kw">let</span> <span class="ident">substrate_hash</span> <span class="op">=</span> <span class="ident">client</span>.<span class="ident">info</span>().<span class="ident">best_hash</span>;
-			<span class="kw">let</span> <span class="ident">id</span> <span class="op">=</span> <span class="ident">BlockId::Hash</span>(<span class="ident">substrate_hash</span>);
-			<span class="kw">let</span> <span class="ident">schema</span> <span class="op">=</span> <span class="ident">frontier_backend_client::onchain_storage_schema</span>::<span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span>, <span class="ident">BE</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="ident">client</span>, <span class="ident">id</span>);
-			<span class="kw">let</span> <span class="ident">block</span> <span class="op">=</span> <span class="ident">block_data_cache</span>.<span class="ident">current_block</span>(<span class="ident">schema</span>, <span class="ident">substrate_hash</span>).<span class="kw">await</span>;
+		<span class="kw">let </span>block_gas_limit = {
+			<span class="kw">let </span>substrate_hash = client.info().best_hash;
+			<span class="kw">let </span>id = BlockId::Hash(substrate_hash);
+			<span class="kw">let </span>schema = frontier_backend_client::onchain_storage_schema::&lt;B, C, BE&gt;(<span class="kw-2">&amp;</span>client, id);
+			<span class="kw">let </span>block = block_data_cache.current_block(schema, substrate_hash).<span class="kw">await</span>;
 
-			<span class="ident">block</span>
-				.<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="string">&quot;block unavailable, cannot query gas limit&quot;</span>))<span class="question-mark">?</span>
-				.<span class="ident">header</span>
-				.<span class="ident">gas_limit</span>
+			block
+				.ok_or_else(|| internal_err(<span class="string">&quot;block unavailable, cannot query gas limit&quot;</span>))<span class="question-mark">?
+				</span>.header
+				.gas_limit
 		};
 
-		<span class="kw">let</span> <span class="ident">max_gas_limit</span> <span class="op">=</span> <span class="ident">block_gas_limit</span> <span class="op">*</span> <span class="self">self</span>.<span class="ident">execute_gas_limit_multiplier</span>;
+		<span class="kw">let </span>max_gas_limit = block_gas_limit * <span class="self">self</span>.execute_gas_limit_multiplier;
 
-		<span class="comment">// Determine the highest possible gas limits</span>
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">highest</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">request</span>.<span class="ident">gas</span> {
-			<span class="prelude-val">Some</span>(<span class="ident">amount</span>) =&gt; {
-				<span class="kw">if</span> <span class="ident">amount</span> <span class="op">&gt;</span> <span class="ident">max_gas_limit</span> {
-					<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="macro">format!</span>(
+		<span class="comment">// Determine the highest possible gas limits
+		</span><span class="kw">let </span><span class="kw-2">mut </span>highest = <span class="kw">match </span>request.gas {
+			<span class="prelude-val">Some</span>(amount) =&gt; {
+				<span class="kw">if </span>amount &gt; max_gas_limit {
+					<span class="kw">return </span><span class="prelude-val">Err</span>(internal_err(<span class="macro">format!</span>(
 						<span class="string">&quot;provided gas limit is too high (can be up to {}x the block gas limit)&quot;</span>,
-						<span class="self">self</span>.<span class="ident">execute_gas_limit_multiplier</span>
+						<span class="self">self</span>.execute_gas_limit_multiplier
 					)));
 				}
-				<span class="ident">amount</span>
+				amount
 			}
-			<span class="prelude-val">None</span> =&gt; <span class="ident">max_gas_limit</span>,
+			<span class="prelude-val">None </span>=&gt; max_gas_limit,
 		};
 
-		<span class="kw">let</span> <span class="ident">api</span> <span class="op">=</span> <span class="ident">client</span>.<span class="ident">runtime_api</span>();
+		<span class="kw">let </span>api = client.runtime_api();
 
-		<span class="comment">// Recap the highest gas allowance with account&#39;s balance.</span>
-		<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">from</span>) <span class="op">=</span> <span class="ident">request</span>.<span class="ident">from</span> {
-			<span class="kw">let</span> <span class="ident">gas_price</span> <span class="op">=</span> <span class="ident">gas_price</span>.<span class="ident">unwrap_or_default</span>();
-			<span class="kw">if</span> <span class="ident">gas_price</span> <span class="op">&gt;</span> <span class="ident">U256::zero</span>() {
-				<span class="kw">let</span> <span class="ident">balance</span> <span class="op">=</span> <span class="ident">api</span>
-					.<span class="ident">account_basic</span>(<span class="kw-2">&amp;</span><span class="ident">BlockId::Hash</span>(<span class="ident">best_hash</span>), <span class="ident">from</span>)
-					.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>
-					.<span class="ident">balance</span>;
-				<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">available</span> <span class="op">=</span> <span class="ident">balance</span>;
-				<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">value</span>) <span class="op">=</span> <span class="ident">request</span>.<span class="ident">value</span> {
-					<span class="kw">if</span> <span class="ident">value</span> <span class="op">&gt;</span> <span class="ident">available</span> {
-						<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="string">&quot;insufficient funds for transfer&quot;</span>));
+		<span class="comment">// Recap the highest gas allowance with account&#39;s balance.
+		</span><span class="kw">if let </span><span class="prelude-val">Some</span>(from) = request.from {
+			<span class="kw">let </span>gas_price = gas_price.unwrap_or_default();
+			<span class="kw">if </span>gas_price &gt; U256::zero() {
+				<span class="kw">let </span>balance = api
+					.account_basic(<span class="kw-2">&amp;</span>BlockId::Hash(best_hash), from)
+					.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, err)))<span class="question-mark">?
+					</span>.balance;
+				<span class="kw">let </span><span class="kw-2">mut </span>available = balance;
+				<span class="kw">if let </span><span class="prelude-val">Some</span>(value) = request.value {
+					<span class="kw">if </span>value &gt; available {
+						<span class="kw">return </span><span class="prelude-val">Err</span>(internal_err(<span class="string">&quot;insufficient funds for transfer&quot;</span>));
 					}
-					<span class="ident">available</span> <span class="op">-</span><span class="op">=</span> <span class="ident">value</span>;
+					available -= value;
 				}
-				<span class="kw">let</span> <span class="ident">allowance</span> <span class="op">=</span> <span class="ident">available</span> <span class="op">/</span> <span class="ident">gas_price</span>;
-				<span class="kw">if</span> <span class="ident">highest</span> <span class="op">&gt;</span> <span class="ident">allowance</span> {
+				<span class="kw">let </span>allowance = available / gas_price;
+				<span class="kw">if </span>highest &gt; allowance {
 					<span class="macro">log::warn!</span>(
 							<span class="string">&quot;Gas estimation capped by limited funds original {} balance {} sent {} feecap {} fundable {}&quot;</span>,
-							<span class="ident">highest</span>,
-							<span class="ident">balance</span>,
-							<span class="ident">request</span>.<span class="ident">value</span>.<span class="ident">unwrap_or_default</span>(),
-							<span class="ident">gas_price</span>,
-							<span class="ident">allowance</span>
+							highest,
+							balance,
+							request.value.unwrap_or_default(),
+							gas_price,
+							allowance
 						);
-					<span class="ident">highest</span> <span class="op">=</span> <span class="ident">allowance</span>;
+					highest = allowance;
 				}
 			}
 		}
 
-		<span class="kw">struct</span> <span class="ident">ExecutableResult</span> {
-			<span class="ident">data</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
-			<span class="ident">exit_reason</span>: <span class="ident">ExitReason</span>,
-			<span class="ident">used_gas</span>: <span class="ident">U256</span>,
+		<span class="kw">struct </span>ExecutableResult {
+			data: Vec&lt;u8&gt;,
+			exit_reason: ExitReason,
+			used_gas: U256,
 		}
 
-		<span class="comment">// Create a helper to check if a gas allowance results in an executable transaction.</span>
-		<span class="comment">//</span>
-		<span class="comment">// A new ApiRef instance needs to be used per execution to avoid the overlayed state to affect</span>
-		<span class="comment">// the estimation result of subsequent calls.</span>
-		<span class="comment">//</span>
-		<span class="comment">// Note that this would have a performance penalty if we introduce gas estimation for past</span>
-		<span class="comment">// blocks - and thus, past runtime versions. Substrate has a default `runtime_cache_size` of</span>
-		<span class="comment">// 2 slots LRU-style, meaning if users were to access multiple runtime versions in a short period</span>
-		<span class="comment">// of time, the RPC response time would degrade a lot, as the VersionedRuntime needs to be compiled.</span>
-		<span class="comment">//</span>
-		<span class="comment">// To solve that, and if we introduce historical gas estimation, we&#39;d need to increase that default.</span>
-		<span class="attribute">#[<span class="ident">rustfmt::skip</span>]</span>
-			<span class="kw">let</span> <span class="ident">executable</span> <span class="op">=</span> <span class="kw">move</span> <span class="op">|</span>
-				<span class="ident">request</span>, <span class="ident">gas_limit</span>, <span class="ident">api_version</span>, <span class="ident">api</span>: <span class="ident">sp_api::ApiRef</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="ident">C::Api</span><span class="op">&gt;</span>, <span class="ident">estimate_mode</span>
-			<span class="op">|</span> -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">ExecutableResult</span><span class="op">&gt;</span> {
-				<span class="kw">let</span> <span class="ident">CallRequest</span> {
-					<span class="ident">from</span>,
-					<span class="ident">to</span>,
-					<span class="ident">gas</span>,
-					<span class="ident">value</span>,
-					<span class="ident">data</span>,
-					<span class="ident">nonce</span>,
-					<span class="ident">access_list</span>,
+		<span class="comment">// Create a helper to check if a gas allowance results in an executable transaction.
+		//
+		// A new ApiRef instance needs to be used per execution to avoid the overlayed state to affect
+		// the estimation result of subsequent calls.
+		//
+		// Note that this would have a performance penalty if we introduce gas estimation for past
+		// blocks - and thus, past runtime versions. Substrate has a default `runtime_cache_size` of
+		// 2 slots LRU-style, meaning if users were to access multiple runtime versions in a short period
+		// of time, the RPC response time would degrade a lot, as the VersionedRuntime needs to be compiled.
+		//
+		// To solve that, and if we introduce historical gas estimation, we&#39;d need to increase that default.
+		</span><span class="attribute">#[rustfmt::skip]
+			</span><span class="kw">let </span>executable = <span class="kw">move </span>|
+				request, gas_limit, api_version, api: sp_api::ApiRef&lt;<span class="lifetime">&#39;_</span>, C::Api&gt;, estimate_mode
+			| -&gt; <span class="prelude-ty">Result</span>&lt;ExecutableResult&gt; {
+				<span class="kw">let </span>CallRequest {
+					from,
+					to,
+					gas,
+					value,
+					data,
+					nonce,
+					access_list,
 					..
-				} <span class="op">=</span> <span class="ident">request</span>;
+				} = request;
 
-				<span class="comment">// Use request gas limit only if it less than gas_limit parameter</span>
-				<span class="kw">let</span> <span class="ident">gas_limit</span> <span class="op">=</span> <span class="ident">core::cmp::min</span>(<span class="ident">gas</span>.<span class="ident">unwrap_or</span>(<span class="ident">gas_limit</span>), <span class="ident">gas_limit</span>);
+				<span class="comment">// Use request gas limit only if it less than gas_limit parameter
+				</span><span class="kw">let </span>gas_limit = core::cmp::min(gas.unwrap_or(gas_limit), gas_limit);
 
-				<span class="kw">let</span> <span class="ident">data</span> <span class="op">=</span> <span class="ident">data</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">d</span><span class="op">|</span> <span class="ident">d</span>.<span class="number">0</span>).<span class="ident">unwrap_or_default</span>();
+				<span class="kw">let </span>data = data.map(|d| d.<span class="number">0</span>).unwrap_or_default();
 
-				<span class="kw">let</span> (<span class="ident">exit_reason</span>, <span class="ident">data</span>, <span class="ident">used_gas</span>) <span class="op">=</span> <span class="kw">match</span> <span class="ident">to</span> {
-					<span class="prelude-val">Some</span>(<span class="ident">to</span>) =&gt; {
-						<span class="kw">let</span> <span class="ident">info</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">api_version</span> <span class="op">==</span> <span class="number">1</span> {
-							<span class="comment">// Legacy pre-london</span>
-							<span class="attribute">#[<span class="ident">allow</span>(<span class="ident">deprecated</span>)]</span>
-							<span class="ident">api</span>.<span class="ident">call_before_version_2</span>(
-								<span class="kw-2">&amp;</span><span class="ident">BlockId::Hash</span>(<span class="ident">best_hash</span>),
-								<span class="ident">from</span>.<span class="ident">unwrap_or_default</span>(),
-								<span class="ident">to</span>,
-								<span class="ident">data</span>,
-								<span class="ident">value</span>.<span class="ident">unwrap_or_default</span>(),
-								<span class="ident">gas_limit</span>,
-								<span class="ident">gas_price</span>,
-								<span class="ident">nonce</span>,
-								<span class="ident">estimate_mode</span>,
+				<span class="kw">let </span>(exit_reason, data, used_gas) = <span class="kw">match </span>to {
+					<span class="prelude-val">Some</span>(to) =&gt; {
+						<span class="kw">let </span>info = <span class="kw">if </span>api_version == <span class="number">1 </span>{
+							<span class="comment">// Legacy pre-london
+							</span><span class="attribute">#[allow(deprecated)]
+							</span>api.call_before_version_2(
+								<span class="kw-2">&amp;</span>BlockId::Hash(best_hash),
+								from.unwrap_or_default(),
+								to,
+								data,
+								value.unwrap_or_default(),
+								gas_limit,
+								gas_price,
+								nonce,
+								estimate_mode,
 							)
-							.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>
-							.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>
-						} <span class="kw">else</span> <span class="kw">if</span> <span class="ident">api_version</span> <span class="op">&lt;</span> <span class="number">4</span> {
-							<span class="comment">// Post-london</span>
-							<span class="attribute">#[<span class="ident">allow</span>(<span class="ident">deprecated</span>)]</span>
-							<span class="ident">api</span>.<span class="ident">call_before_version_4</span>(
-								<span class="kw-2">&amp;</span><span class="ident">BlockId::Hash</span>(<span class="ident">best_hash</span>),
-								<span class="ident">from</span>.<span class="ident">unwrap_or_default</span>(),
-								<span class="ident">to</span>,
-								<span class="ident">data</span>,
-								<span class="ident">value</span>.<span class="ident">unwrap_or_default</span>(),
-								<span class="ident">gas_limit</span>,
-								<span class="ident">max_fee_per_gas</span>,
-								<span class="ident">max_priority_fee_per_gas</span>,
-								<span class="ident">nonce</span>,
-								<span class="ident">estimate_mode</span>,
+							.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, err)))<span class="question-mark">?
+							</span>.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {:?}&quot;</span>, err)))<span class="question-mark">?
+						</span>} <span class="kw">else if </span>api_version &lt; <span class="number">4 </span>{
+							<span class="comment">// Post-london
+							</span><span class="attribute">#[allow(deprecated)]
+							</span>api.call_before_version_4(
+								<span class="kw-2">&amp;</span>BlockId::Hash(best_hash),
+								from.unwrap_or_default(),
+								to,
+								data,
+								value.unwrap_or_default(),
+								gas_limit,
+								max_fee_per_gas,
+								max_priority_fee_per_gas,
+								nonce,
+								estimate_mode,
 							)
-							.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>
-							.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>
-						} <span class="kw">else</span> {
-							<span class="comment">// Post-london + access list support</span>
-							<span class="kw">let</span> <span class="ident">access_list</span> <span class="op">=</span> <span class="ident">access_list</span>.<span class="ident">unwrap_or_default</span>();
-							<span class="ident">api</span>.<span class="ident">call</span>(
-								<span class="kw-2">&amp;</span><span class="ident">BlockId::Hash</span>(<span class="ident">best_hash</span>),
-								<span class="ident">from</span>.<span class="ident">unwrap_or_default</span>(),
-								<span class="ident">to</span>,
-								<span class="ident">data</span>,
-								<span class="ident">value</span>.<span class="ident">unwrap_or_default</span>(),
-								<span class="ident">gas_limit</span>,
-								<span class="ident">max_fee_per_gas</span>,
-								<span class="ident">max_priority_fee_per_gas</span>,
-								<span class="ident">nonce</span>,
-								<span class="ident">estimate_mode</span>,
+							.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, err)))<span class="question-mark">?
+							</span>.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {:?}&quot;</span>, err)))<span class="question-mark">?
+						</span>} <span class="kw">else </span>{
+							<span class="comment">// Post-london + access list support
+							</span><span class="kw">let </span>access_list = access_list.unwrap_or_default();
+							api.call(
+								<span class="kw-2">&amp;</span>BlockId::Hash(best_hash),
+								from.unwrap_or_default(),
+								to,
+								data,
+								value.unwrap_or_default(),
+								gas_limit,
+								max_fee_per_gas,
+								max_priority_fee_per_gas,
+								nonce,
+								estimate_mode,
 								<span class="prelude-val">Some</span>(
-									<span class="ident">access_list</span>
-										.<span class="ident">into_iter</span>()
-										.<span class="ident">map</span>(<span class="op">|</span><span class="ident">item</span><span class="op">|</span> (<span class="ident">item</span>.<span class="ident">address</span>, <span class="ident">item</span>.<span class="ident">storage_keys</span>))
-										.<span class="ident">collect</span>(),
+									access_list
+										.into_iter()
+										.map(|item| (item.address, item.storage_keys))
+										.collect(),
 								),
 							)
-							.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>
-							.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>
-						};
+							.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, err)))<span class="question-mark">?
+							</span>.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {:?}&quot;</span>, err)))<span class="question-mark">?
+						</span>};
 
-						(<span class="ident">info</span>.<span class="ident">exit_reason</span>, <span class="ident">info</span>.<span class="ident">value</span>, <span class="ident">info</span>.<span class="ident">used_gas</span>)
+						(info.exit_reason, info.value, info.used_gas)
 					}
-					<span class="prelude-val">None</span> =&gt; {
-						<span class="kw">let</span> <span class="ident">info</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">api_version</span> <span class="op">==</span> <span class="number">1</span> {
-							<span class="comment">// Legacy pre-london</span>
-							<span class="attribute">#[<span class="ident">allow</span>(<span class="ident">deprecated</span>)]</span>
-							<span class="ident">api</span>.<span class="ident">create_before_version_2</span>(
-								<span class="kw-2">&amp;</span><span class="ident">BlockId::Hash</span>(<span class="ident">best_hash</span>),
-								<span class="ident">from</span>.<span class="ident">unwrap_or_default</span>(),
-								<span class="ident">data</span>,
-								<span class="ident">value</span>.<span class="ident">unwrap_or_default</span>(),
-								<span class="ident">gas_limit</span>,
-								<span class="ident">gas_price</span>,
-								<span class="ident">nonce</span>,
-								<span class="ident">estimate_mode</span>,
+					<span class="prelude-val">None </span>=&gt; {
+						<span class="kw">let </span>info = <span class="kw">if </span>api_version == <span class="number">1 </span>{
+							<span class="comment">// Legacy pre-london
+							</span><span class="attribute">#[allow(deprecated)]
+							</span>api.create_before_version_2(
+								<span class="kw-2">&amp;</span>BlockId::Hash(best_hash),
+								from.unwrap_or_default(),
+								data,
+								value.unwrap_or_default(),
+								gas_limit,
+								gas_price,
+								nonce,
+								estimate_mode,
 							)
-							.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>
-							.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>
-						} <span class="kw">else</span> <span class="kw">if</span> <span class="ident">api_version</span> <span class="op">&lt;</span> <span class="number">4</span> {
-							<span class="comment">// Post-london</span>
-							<span class="attribute">#[<span class="ident">allow</span>(<span class="ident">deprecated</span>)]</span>
-							<span class="ident">api</span>.<span class="ident">create_before_version_4</span>(
-								<span class="kw-2">&amp;</span><span class="ident">BlockId::Hash</span>(<span class="ident">best_hash</span>),
-								<span class="ident">from</span>.<span class="ident">unwrap_or_default</span>(),
-								<span class="ident">data</span>,
-								<span class="ident">value</span>.<span class="ident">unwrap_or_default</span>(),
-								<span class="ident">gas_limit</span>,
-								<span class="ident">max_fee_per_gas</span>,
-								<span class="ident">max_priority_fee_per_gas</span>,
-								<span class="ident">nonce</span>,
-								<span class="ident">estimate_mode</span>,
+							.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, err)))<span class="question-mark">?
+							</span>.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {:?}&quot;</span>, err)))<span class="question-mark">?
+						</span>} <span class="kw">else if </span>api_version &lt; <span class="number">4 </span>{
+							<span class="comment">// Post-london
+							</span><span class="attribute">#[allow(deprecated)]
+							</span>api.create_before_version_4(
+								<span class="kw-2">&amp;</span>BlockId::Hash(best_hash),
+								from.unwrap_or_default(),
+								data,
+								value.unwrap_or_default(),
+								gas_limit,
+								max_fee_per_gas,
+								max_priority_fee_per_gas,
+								nonce,
+								estimate_mode,
 							)
-							.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>
-							.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>
-						} <span class="kw">else</span> {
-							<span class="comment">// Post-london + access list support</span>
-							<span class="kw">let</span> <span class="ident">access_list</span> <span class="op">=</span> <span class="ident">access_list</span>.<span class="ident">unwrap_or_default</span>();
-							<span class="ident">api</span>.<span class="ident">create</span>(
-								<span class="kw-2">&amp;</span><span class="ident">BlockId::Hash</span>(<span class="ident">best_hash</span>),
-								<span class="ident">from</span>.<span class="ident">unwrap_or_default</span>(),
-								<span class="ident">data</span>,
-								<span class="ident">value</span>.<span class="ident">unwrap_or_default</span>(),
-								<span class="ident">gas_limit</span>,
-								<span class="ident">max_fee_per_gas</span>,
-								<span class="ident">max_priority_fee_per_gas</span>,
-								<span class="ident">nonce</span>,
-								<span class="ident">estimate_mode</span>,
+							.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, err)))<span class="question-mark">?
+							</span>.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {:?}&quot;</span>, err)))<span class="question-mark">?
+						</span>} <span class="kw">else </span>{
+							<span class="comment">// Post-london + access list support
+							</span><span class="kw">let </span>access_list = access_list.unwrap_or_default();
+							api.create(
+								<span class="kw-2">&amp;</span>BlockId::Hash(best_hash),
+								from.unwrap_or_default(),
+								data,
+								value.unwrap_or_default(),
+								gas_limit,
+								max_fee_per_gas,
+								max_priority_fee_per_gas,
+								nonce,
+								estimate_mode,
 								<span class="prelude-val">Some</span>(
-									<span class="ident">access_list</span>
-										.<span class="ident">into_iter</span>()
-										.<span class="ident">map</span>(<span class="op">|</span><span class="ident">item</span><span class="op">|</span> (<span class="ident">item</span>.<span class="ident">address</span>, <span class="ident">item</span>.<span class="ident">storage_keys</span>))
-										.<span class="ident">collect</span>(),
+									access_list
+										.into_iter()
+										.map(|item| (item.address, item.storage_keys))
+										.collect(),
 								),
 							)
-							.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>
-							.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>
-						};
+							.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, err)))<span class="question-mark">?
+							</span>.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {:?}&quot;</span>, err)))<span class="question-mark">?
+						</span>};
 
-						(<span class="ident">info</span>.<span class="ident">exit_reason</span>, <span class="ident">Vec::new</span>(), <span class="ident">info</span>.<span class="ident">used_gas</span>)
+						(info.exit_reason, Vec::new(), info.used_gas)
 					}
 				};
-				<span class="prelude-val">Ok</span>(<span class="ident">ExecutableResult</span> {
-					<span class="ident">exit_reason</span>,
-					<span class="ident">data</span>,
-					<span class="ident">used_gas</span>,
+				<span class="prelude-val">Ok</span>(ExecutableResult {
+					exit_reason,
+					data,
+					used_gas,
 				})
 			};
-		<span class="kw">let</span> <span class="ident">api_version</span> <span class="op">=</span> <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">api_version</span>)) <span class="op">=</span>
-			<span class="ident">client</span>
-				.<span class="ident">runtime_api</span>()
-				.<span class="ident">api_version</span>::<span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">EthereumRuntimeRPCApi</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="ident">BlockId::Hash</span>(<span class="ident">best_hash</span>))
+		<span class="kw">let </span>api_version = <span class="kw">if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(api_version)) =
+			client
+				.runtime_api()
+				.api_version::&lt;<span class="kw">dyn </span>EthereumRuntimeRPCApi&lt;B&gt;&gt;(<span class="kw-2">&amp;</span>BlockId::Hash(best_hash))
 		{
-			<span class="ident">api_version</span>
-		} <span class="kw">else</span> {
-			<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="string">&quot;failed to retrieve Runtime Api version&quot;</span>));
+			api_version
+		} <span class="kw">else </span>{
+			<span class="kw">return </span><span class="prelude-val">Err</span>(internal_err(<span class="string">&quot;failed to retrieve Runtime Api version&quot;</span>));
 		};
 
-		<span class="comment">// Verify that the transaction succeed with highest capacity</span>
-		<span class="kw">let</span> <span class="ident">cap</span> <span class="op">=</span> <span class="ident">highest</span>;
-		<span class="kw">let</span> <span class="ident">estimate_mode</span> <span class="op">=</span> <span class="op">!</span><span class="macro">cfg!</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;rpc_binary_search_estimate&quot;</span>);
-		<span class="kw">let</span> <span class="ident">ExecutableResult</span> {
-			<span class="ident">data</span>,
-			<span class="ident">exit_reason</span>,
-			<span class="ident">used_gas</span>,
-		} <span class="op">=</span> <span class="ident">executable</span>(
-			<span class="ident">request</span>.<span class="ident">clone</span>(),
-			<span class="ident">highest</span>,
-			<span class="ident">api_version</span>,
-			<span class="ident">client</span>.<span class="ident">runtime_api</span>(),
-			<span class="ident">estimate_mode</span>,
+		<span class="comment">// Verify that the transaction succeed with highest capacity
+		</span><span class="kw">let </span>cap = highest;
+		<span class="kw">let </span>estimate_mode = !<span class="macro">cfg!</span>(feature = <span class="string">&quot;rpc_binary_search_estimate&quot;</span>);
+		<span class="kw">let </span>ExecutableResult {
+			data,
+			exit_reason,
+			used_gas,
+		} = executable(
+			request.clone(),
+			highest,
+			api_version,
+			client.runtime_api(),
+			estimate_mode,
 		)<span class="question-mark">?</span>;
-		<span class="kw">match</span> <span class="ident">exit_reason</span> {
-			<span class="ident">ExitReason::Succeed</span>(<span class="kw">_</span>) =&gt; (),
-			<span class="ident">ExitReason::Error</span>(<span class="ident">ExitError::OutOfGas</span>) =&gt; {
-				<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="macro">format!</span>(
+		<span class="kw">match </span>exit_reason {
+			ExitReason::Succeed(<span class="kw">_</span>) =&gt; (),
+			ExitReason::Error(ExitError::OutOfGas) =&gt; {
+				<span class="kw">return </span><span class="prelude-val">Err</span>(internal_err(<span class="macro">format!</span>(
 					<span class="string">&quot;gas required exceeds allowance {}&quot;</span>,
-					<span class="ident">cap</span>
+					cap
 				)))
 			}
-			<span class="comment">// If the transaction reverts, there are two possible cases,</span>
-			<span class="comment">// it can revert because the called contract feels that it does not have enough</span>
-			<span class="comment">// gas left to continue, or it can revert for another reason unrelated to gas.</span>
-			<span class="ident">ExitReason::Revert</span>(<span class="ident">revert</span>) =&gt; {
-				<span class="kw">if</span> <span class="ident">request</span>.<span class="ident">gas</span>.<span class="ident">is_some</span>() <span class="op">|</span><span class="op">|</span> <span class="ident">request</span>.<span class="ident">gas_price</span>.<span class="ident">is_some</span>() {
-					<span class="comment">// If the user has provided a gas limit or a gas price, then we have executed</span>
-					<span class="comment">// with less block gas limit, so we must reexecute with block gas limit to</span>
-					<span class="comment">// know if the revert is due to a lack of gas or not.</span>
-					<span class="kw">let</span> <span class="ident">ExecutableResult</span> {
-						<span class="ident">data</span>,
-						<span class="ident">exit_reason</span>,
-						<span class="ident">used_gas</span>: <span class="kw">_</span>,
-					} <span class="op">=</span> <span class="ident">executable</span>(
-						<span class="ident">request</span>.<span class="ident">clone</span>(),
-						<span class="ident">max_gas_limit</span>,
-						<span class="ident">api_version</span>,
-						<span class="ident">client</span>.<span class="ident">runtime_api</span>(),
-						<span class="ident">estimate_mode</span>,
+			<span class="comment">// If the transaction reverts, there are two possible cases,
+			// it can revert because the called contract feels that it does not have enough
+			// gas left to continue, or it can revert for another reason unrelated to gas.
+			</span>ExitReason::Revert(revert) =&gt; {
+				<span class="kw">if </span>request.gas.is_some() || request.gas_price.is_some() {
+					<span class="comment">// If the user has provided a gas limit or a gas price, then we have executed
+					// with less block gas limit, so we must reexecute with block gas limit to
+					// know if the revert is due to a lack of gas or not.
+					</span><span class="kw">let </span>ExecutableResult {
+						data,
+						exit_reason,
+						used_gas: <span class="kw">_</span>,
+					} = executable(
+						request.clone(),
+						max_gas_limit,
+						api_version,
+						client.runtime_api(),
+						estimate_mode,
 					)<span class="question-mark">?</span>;
-					<span class="kw">match</span> <span class="ident">exit_reason</span> {
-						<span class="ident">ExitReason::Succeed</span>(<span class="kw">_</span>) =&gt; {
-							<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="macro">format!</span>(
+					<span class="kw">match </span>exit_reason {
+						ExitReason::Succeed(<span class="kw">_</span>) =&gt; {
+							<span class="kw">return </span><span class="prelude-val">Err</span>(internal_err(<span class="macro">format!</span>(
 								<span class="string">&quot;gas required exceeds allowance {}&quot;</span>,
-								<span class="ident">cap</span>
+								cap
 							)))
 						}
-						<span class="comment">// The execution has been done with block gas limit, so it is not a lack of gas from the user.</span>
-						<span class="ident">other</span> =&gt; <span class="ident">error_on_execution_failure</span>(<span class="kw-2">&amp;</span><span class="ident">other</span>, <span class="kw-2">&amp;</span><span class="ident">data</span>)<span class="question-mark">?</span>,
+						<span class="comment">// The execution has been done with block gas limit, so it is not a lack of gas from the user.
+						</span>other =&gt; error_on_execution_failure(<span class="kw-2">&amp;</span>other, <span class="kw-2">&amp;</span>data)<span class="question-mark">?</span>,
 					}
-				} <span class="kw">else</span> {
-					<span class="comment">// The execution has already been done with block gas limit, so it is not a lack of gas from the user.</span>
-					<span class="ident">error_on_execution_failure</span>(<span class="kw-2">&amp;</span><span class="ident">ExitReason::Revert</span>(<span class="ident">revert</span>), <span class="kw-2">&amp;</span><span class="ident">data</span>)<span class="question-mark">?</span>
-				}
+				} <span class="kw">else </span>{
+					<span class="comment">// The execution has already been done with block gas limit, so it is not a lack of gas from the user.
+					</span>error_on_execution_failure(<span class="kw-2">&amp;</span>ExitReason::Revert(revert), <span class="kw-2">&amp;</span>data)<span class="question-mark">?
+				</span>}
 			}
-			<span class="ident">other</span> =&gt; <span class="ident">error_on_execution_failure</span>(<span class="kw-2">&amp;</span><span class="ident">other</span>, <span class="kw-2">&amp;</span><span class="ident">data</span>)<span class="question-mark">?</span>,
+			other =&gt; error_on_execution_failure(<span class="kw-2">&amp;</span>other, <span class="kw-2">&amp;</span>data)<span class="question-mark">?</span>,
 		};
 
-		<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;rpc_binary_search_estimate&quot;</span>))]</span>
-		{
-			<span class="prelude-val">Ok</span>(<span class="ident">used_gas</span>)
+		<span class="attribute">#[cfg(not(feature = <span class="string">&quot;rpc_binary_search_estimate&quot;</span>))]
+		</span>{
+			<span class="prelude-val">Ok</span>(used_gas)
 		}
-		<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;rpc_binary_search_estimate&quot;</span>)]</span>
-		{
-			<span class="comment">// On binary search, evm estimate mode is disabled</span>
-			<span class="kw">let</span> <span class="ident">estimate_mode</span> <span class="op">=</span> <span class="bool-val">false</span>;
-			<span class="comment">// Define the lower bound of the binary search</span>
-			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">lowest</span> <span class="op">=</span> <span class="ident">MIN_GAS_PER_TX</span>;
+		<span class="attribute">#[cfg(feature = <span class="string">&quot;rpc_binary_search_estimate&quot;</span>)]
+		</span>{
+			<span class="comment">// On binary search, evm estimate mode is disabled
+			</span><span class="kw">let </span>estimate_mode = <span class="bool-val">false</span>;
+			<span class="comment">// Define the lower bound of the binary search
+			</span><span class="kw">let </span><span class="kw-2">mut </span>lowest = MIN_GAS_PER_TX;
 
-			<span class="comment">// Start close to the used gas for faster binary search</span>
-			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">mid</span> <span class="op">=</span> <span class="ident">std::cmp::min</span>(<span class="ident">used_gas</span> <span class="op">*</span> <span class="number">3</span>, (<span class="ident">highest</span> <span class="op">+</span> <span class="ident">lowest</span>) <span class="op">/</span> <span class="number">2</span>);
+			<span class="comment">// Start close to the used gas for faster binary search
+			</span><span class="kw">let </span><span class="kw-2">mut </span>mid = std::cmp::min(used_gas * <span class="number">3</span>, (highest + lowest) / <span class="number">2</span>);
 
-			<span class="comment">// Execute the binary search and hone in on an executable gas limit.</span>
-			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">previous_highest</span> <span class="op">=</span> <span class="ident">highest</span>;
-			<span class="kw">while</span> (<span class="ident">highest</span> <span class="op">-</span> <span class="ident">lowest</span>) <span class="op">&gt;</span> <span class="ident">U256::one</span>() {
-				<span class="kw">let</span> <span class="ident">ExecutableResult</span> {
-					<span class="ident">data</span>,
-					<span class="ident">exit_reason</span>,
-					<span class="ident">used_gas</span>: <span class="kw">_</span>,
-				} <span class="op">=</span> <span class="ident">executable</span>(
-					<span class="ident">request</span>.<span class="ident">clone</span>(),
-					<span class="ident">mid</span>,
-					<span class="ident">api_version</span>,
-					<span class="ident">client</span>.<span class="ident">runtime_api</span>(),
-					<span class="ident">estimate_mode</span>,
+			<span class="comment">// Execute the binary search and hone in on an executable gas limit.
+			</span><span class="kw">let </span><span class="kw-2">mut </span>previous_highest = highest;
+			<span class="kw">while </span>(highest - lowest) &gt; U256::one() {
+				<span class="kw">let </span>ExecutableResult {
+					data,
+					exit_reason,
+					used_gas: <span class="kw">_</span>,
+				} = executable(
+					request.clone(),
+					mid,
+					api_version,
+					client.runtime_api(),
+					estimate_mode,
 				)<span class="question-mark">?</span>;
-				<span class="kw">match</span> <span class="ident">exit_reason</span> {
-					<span class="ident">ExitReason::Succeed</span>(<span class="kw">_</span>) =&gt; {
-						<span class="ident">highest</span> <span class="op">=</span> <span class="ident">mid</span>;
-						<span class="comment">// If the variation in the estimate is less than 10%,</span>
-						<span class="comment">// then the estimate is considered sufficiently accurate.</span>
-						<span class="kw">if</span> (<span class="ident">previous_highest</span> <span class="op">-</span> <span class="ident">highest</span>) <span class="op">*</span> <span class="number">10</span> <span class="op">/</span> <span class="ident">previous_highest</span> <span class="op">&lt;</span> <span class="ident">U256::one</span>() {
-							<span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">highest</span>);
+				<span class="kw">match </span>exit_reason {
+					ExitReason::Succeed(<span class="kw">_</span>) =&gt; {
+						highest = mid;
+						<span class="comment">// If the variation in the estimate is less than 10%,
+						// then the estimate is considered sufficiently accurate.
+						</span><span class="kw">if </span>(previous_highest - highest) * <span class="number">10 </span>/ previous_highest &lt; U256::one() {
+							<span class="kw">return </span><span class="prelude-val">Ok</span>(highest);
 						}
-						<span class="ident">previous_highest</span> <span class="op">=</span> <span class="ident">highest</span>;
+						previous_highest = highest;
 					}
-					<span class="ident">ExitReason::Revert</span>(<span class="kw">_</span>)
-					<span class="op">|</span> <span class="ident">ExitReason::Error</span>(<span class="ident">ExitError::OutOfGas</span>)
-					<span class="op">|</span> <span class="ident">ExitReason::Error</span>(<span class="ident">ExitError::InvalidCode</span>(<span class="kw">_</span>)) =&gt; {
-						<span class="ident">lowest</span> <span class="op">=</span> <span class="ident">mid</span>;
+					ExitReason::Revert(<span class="kw">_</span>)
+					| ExitReason::Error(ExitError::OutOfGas)
+					| ExitReason::Error(ExitError::InvalidCode(<span class="kw">_</span>)) =&gt; {
+						lowest = mid;
 					}
-					<span class="ident">other</span> =&gt; <span class="ident">error_on_execution_failure</span>(<span class="kw-2">&amp;</span><span class="ident">other</span>, <span class="kw-2">&amp;</span><span class="ident">data</span>)<span class="question-mark">?</span>,
+					other =&gt; error_on_execution_failure(<span class="kw-2">&amp;</span>other, <span class="kw-2">&amp;</span>data)<span class="question-mark">?</span>,
 				}
-				<span class="ident">mid</span> <span class="op">=</span> (<span class="ident">highest</span> <span class="op">+</span> <span class="ident">lowest</span>) <span class="op">/</span> <span class="number">2</span>;
+				mid = (highest + lowest) / <span class="number">2</span>;
 			}
 
-			<span class="prelude-val">Ok</span>(<span class="ident">highest</span>)
+			<span class="prelude-val">Ok</span>(highest)
 		}
 	}
 }
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">error_on_execution_failure</span>(<span class="ident">reason</span>: <span class="kw-2">&amp;</span><span class="ident">ExitReason</span>, <span class="ident">data</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-	<span class="kw">match</span> <span class="ident">reason</span> {
-		<span class="ident">ExitReason::Succeed</span>(<span class="kw">_</span>) =&gt; <span class="prelude-val">Ok</span>(()),
-		<span class="ident">ExitReason::Error</span>(<span class="ident">e</span>) =&gt; {
-			<span class="kw">if</span> <span class="kw-2">*</span><span class="ident">e</span> <span class="op">==</span> <span class="ident">ExitError::OutOfGas</span> {
-				<span class="comment">// `ServerError(0)` will be useful in estimate gas</span>
-				<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="string">&quot;out of gas&quot;</span>));
+<span class="kw">pub fn </span>error_on_execution_failure(reason: <span class="kw-2">&amp;</span>ExitReason, data: <span class="kw-2">&amp;</span>[u8]) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+	<span class="kw">match </span>reason {
+		ExitReason::Succeed(<span class="kw">_</span>) =&gt; <span class="prelude-val">Ok</span>(()),
+		ExitReason::Error(e) =&gt; {
+			<span class="kw">if </span><span class="kw-2">*</span>e == ExitError::OutOfGas {
+				<span class="comment">// `ServerError(0)` will be useful in estimate gas
+				</span><span class="kw">return </span><span class="prelude-val">Err</span>(internal_err(<span class="string">&quot;out of gas&quot;</span>));
 			}
-			<span class="prelude-val">Err</span>(<span class="ident"><span class="kw">crate</span>::internal_err_with_data</span>(
-				<span class="macro">format!</span>(<span class="string">&quot;evm error: {:?}&quot;</span>, <span class="ident">e</span>),
+			<span class="prelude-val">Err</span>(<span class="kw">crate</span>::internal_err_with_data(
+				<span class="macro">format!</span>(<span class="string">&quot;evm error: {:?}&quot;</span>, e),
 				<span class="kw-2">&amp;</span>[],
 			))
 		}
-		<span class="ident">ExitReason::Revert</span>(<span class="kw">_</span>) =&gt; {
-			<span class="kw">const</span> <span class="ident">LEN_START</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">36</span>;
-			<span class="kw">const</span> <span class="ident">MESSAGE_START</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">68</span>;
+		ExitReason::Revert(<span class="kw">_</span>) =&gt; {
+			<span class="kw">const </span>LEN_START: usize = <span class="number">36</span>;
+			<span class="kw">const </span>MESSAGE_START: usize = <span class="number">68</span>;
 
-			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">message</span> <span class="op">=</span> <span class="string">&quot;VM Exception while processing transaction: revert&quot;</span>.<span class="ident">to_string</span>();
-			<span class="comment">// A minimum size of error function selector (4) + offset (32) + string length (32)</span>
-			<span class="comment">// should contain a utf-8 encoded revert reason.</span>
-			<span class="kw">if</span> <span class="ident">data</span>.<span class="ident">len</span>() <span class="op">&gt;</span> <span class="ident">MESSAGE_START</span> {
-				<span class="kw">let</span> <span class="ident">message_len</span> <span class="op">=</span>
-					<span class="ident">U256::from</span>(<span class="kw-2">&amp;</span><span class="ident">data</span>[<span class="ident">LEN_START</span>..<span class="ident">MESSAGE_START</span>]).<span class="ident">saturated_into</span>::<span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span>();
-				<span class="kw">let</span> <span class="ident">message_end</span> <span class="op">=</span> <span class="ident">MESSAGE_START</span>.<span class="ident">saturating_add</span>(<span class="ident">message_len</span>);
+			<span class="kw">let </span><span class="kw-2">mut </span>message = <span class="string">&quot;VM Exception while processing transaction: revert&quot;</span>.to_string();
+			<span class="comment">// A minimum size of error function selector (4) + offset (32) + string length (32)
+			// should contain a utf-8 encoded revert reason.
+			</span><span class="kw">if </span>data.len() &gt; MESSAGE_START {
+				<span class="kw">let </span>message_len =
+					U256::from(<span class="kw-2">&amp;</span>data[LEN_START..MESSAGE_START]).saturated_into::&lt;usize&gt;();
+				<span class="kw">let </span>message_end = MESSAGE_START.saturating_add(message_len);
 
-				<span class="kw">if</span> <span class="ident">data</span>.<span class="ident">len</span>() <span class="op">&gt;</span><span class="op">=</span> <span class="ident">message_end</span> {
-					<span class="kw">let</span> <span class="ident">body</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>] <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">data</span>[<span class="ident">MESSAGE_START</span>..<span class="ident">message_end</span>];
-					<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">reason</span>) <span class="op">=</span> <span class="ident">std::str::from_utf8</span>(<span class="ident">body</span>) {
-						<span class="ident">message</span> <span class="op">=</span> <span class="macro">format!</span>(<span class="string">&quot;{} {}&quot;</span>, <span class="ident">message</span>, <span class="ident">reason</span>);
+				<span class="kw">if </span>data.len() &gt;= message_end {
+					<span class="kw">let </span>body: <span class="kw-2">&amp;</span>[u8] = <span class="kw-2">&amp;</span>data[MESSAGE_START..message_end];
+					<span class="kw">if let </span><span class="prelude-val">Ok</span>(reason) = std::str::from_utf8(body) {
+						message = <span class="macro">format!</span>(<span class="string">&quot;{} {}&quot;</span>, message, reason);
 					}
 				}
 			}
-			<span class="prelude-val">Err</span>(<span class="ident"><span class="kw">crate</span>::internal_err_with_data</span>(<span class="ident">message</span>, <span class="ident">data</span>))
+			<span class="prelude-val">Err</span>(<span class="kw">crate</span>::internal_err_with_data(message, data))
 		}
-		<span class="ident">ExitReason::Fatal</span>(<span class="ident">e</span>) =&gt; <span class="prelude-val">Err</span>(<span class="ident"><span class="kw">crate</span>::internal_err_with_data</span>(
-			<span class="macro">format!</span>(<span class="string">&quot;evm fatal: {:?}&quot;</span>, <span class="ident">e</span>),
+		ExitReason::Fatal(e) =&gt; <span class="prelude-val">Err</span>(<span class="kw">crate</span>::internal_err_with_data(
+			<span class="macro">format!</span>(<span class="string">&quot;evm fatal: {:?}&quot;</span>, e),
 			<span class="kw-2">&amp;</span>[],
 		)),
 	}
 }
 
-<span class="kw">struct</span> <span class="ident">FeeDetails</span> {
-	<span class="ident">gas_price</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-	<span class="ident">max_fee_per_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-	<span class="ident">max_priority_fee_per_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
+<span class="kw">struct </span>FeeDetails {
+	gas_price: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+	max_fee_per_gas: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+	max_priority_fee_per_gas: <span class="prelude-ty">Option</span>&lt;U256&gt;,
 }
 
-<span class="kw">fn</span> <span class="ident">fee_details</span>(
-	<span class="ident">request_gas_price</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-	<span class="ident">request_max_fee</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-	<span class="ident">request_priority</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">FeeDetails</span><span class="op">&gt;</span> {
-	<span class="kw">match</span> (<span class="ident">request_gas_price</span>, <span class="ident">request_max_fee</span>, <span class="ident">request_priority</span>) {
-		(<span class="ident">gas_price</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>) =&gt; {
-			<span class="comment">// Legacy request, all default to gas price.</span>
-			<span class="comment">// A zero-set gas price is None.</span>
-			<span class="kw">let</span> <span class="ident">gas_price</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">gas_price</span>.<span class="ident">unwrap_or_default</span>().<span class="ident">is_zero</span>() {
-				<span class="prelude-val">None</span>
-			} <span class="kw">else</span> {
-				<span class="ident">gas_price</span>
+<span class="kw">fn </span>fee_details(
+	request_gas_price: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+	request_max_fee: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+	request_priority: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+) -&gt; <span class="prelude-ty">Result</span>&lt;FeeDetails&gt; {
+	<span class="kw">match </span>(request_gas_price, request_max_fee, request_priority) {
+		(gas_price, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>) =&gt; {
+			<span class="comment">// Legacy request, all default to gas price.
+			// A zero-set gas price is None.
+			</span><span class="kw">let </span>gas_price = <span class="kw">if </span>gas_price.unwrap_or_default().is_zero() {
+				<span class="prelude-val">None
+			</span>} <span class="kw">else </span>{
+				gas_price
 			};
-			<span class="prelude-val">Ok</span>(<span class="ident">FeeDetails</span> {
-				<span class="ident">gas_price</span>,
-				<span class="ident">max_fee_per_gas</span>: <span class="ident">gas_price</span>,
-				<span class="ident">max_priority_fee_per_gas</span>: <span class="ident">gas_price</span>,
+			<span class="prelude-val">Ok</span>(FeeDetails {
+				gas_price,
+				max_fee_per_gas: gas_price,
+				max_priority_fee_per_gas: gas_price,
 			})
 		}
-		(<span class="kw">_</span>, <span class="ident">max_fee</span>, <span class="ident">max_priority</span>) =&gt; {
-			<span class="comment">// eip-1559</span>
-			<span class="comment">// A zero-set max fee is None.</span>
-			<span class="kw">let</span> <span class="ident">max_fee</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">max_fee</span>.<span class="ident">unwrap_or_default</span>().<span class="ident">is_zero</span>() {
-				<span class="prelude-val">None</span>
-			} <span class="kw">else</span> {
-				<span class="ident">max_fee</span>
+		(<span class="kw">_</span>, max_fee, max_priority) =&gt; {
+			<span class="comment">// eip-1559
+			// A zero-set max fee is None.
+			</span><span class="kw">let </span>max_fee = <span class="kw">if </span>max_fee.unwrap_or_default().is_zero() {
+				<span class="prelude-val">None
+			</span>} <span class="kw">else </span>{
+				max_fee
 			};
-			<span class="comment">// Ensure `max_priority_fee_per_gas` is less or equal to `max_fee_per_gas`.</span>
-			<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">max_priority</span>) <span class="op">=</span> <span class="ident">max_priority</span> {
-				<span class="kw">let</span> <span class="ident">max_fee</span> <span class="op">=</span> <span class="ident">max_fee</span>.<span class="ident">unwrap_or_default</span>();
-				<span class="kw">if</span> <span class="ident">max_priority</span> <span class="op">&gt;</span> <span class="ident">max_fee</span> {
-					<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(
+			<span class="comment">// Ensure `max_priority_fee_per_gas` is less or equal to `max_fee_per_gas`.
+			</span><span class="kw">if let </span><span class="prelude-val">Some</span>(max_priority) = max_priority {
+				<span class="kw">let </span>max_fee = max_fee.unwrap_or_default();
+				<span class="kw">if </span>max_priority &gt; max_fee {
+					<span class="kw">return </span><span class="prelude-val">Err</span>(internal_err(
 						<span class="string">&quot;Invalid input: `max_priority_fee_per_gas` greater than `max_fee_per_gas`&quot;</span>,
 					));
 				}
 			}
-			<span class="prelude-val">Ok</span>(<span class="ident">FeeDetails</span> {
-				<span class="ident">gas_price</span>: <span class="ident">max_fee</span>,
-				<span class="ident">max_fee_per_gas</span>: <span class="ident">max_fee</span>,
-				<span class="ident">max_priority_fee_per_gas</span>: <span class="ident">max_priority</span>,
+			<span class="prelude-val">Ok</span>(FeeDetails {
+				gas_price: max_fee,
+				max_fee_per_gas: max_fee,
+				max_priority_fee_per_gas: max_priority,
 			})
 		}
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="fc_rpc" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (7fe022f5a 2022-07-24)" ></div>
-</body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="fc_rpc" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (81f391930 2022-10-09)" ></div></body></html>

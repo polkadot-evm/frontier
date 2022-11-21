@@ -1,10 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `primitives/self-contained/src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../fp_self_contained/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a><h2 class="location"></h2>
-    </nav>
-    <nav class="sidebar"><a class="sidebar-logo" href="../../fp_self_contained/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../fp_self_contained/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1">
-                                <a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div>
-                        </div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `primitives/self-contained/src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><a class="sidebar-logo" href="../../fp_self_contained/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../fp_self_contained/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -81,83 +75,82 @@
 <span id="75">75</span>
 <span id="76">76</span>
 <span id="77">77</span>
-</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
-<span class="comment">// This file is part of Frontier.</span>
-<span class="comment">//</span>
-<span class="comment">// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.</span>
-<span class="comment">//</span>
-<span class="comment">// Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
-<span class="comment">// you may not use this file except in compliance with the License.</span>
-<span class="comment">// You may obtain a copy of the License at</span>
-<span class="comment">//</span>
-<span class="comment">// 	http://www.apache.org/licenses/LICENSE-2.0</span>
-<span class="comment">//</span>
-<span class="comment">// Unless required by applicable law or agreed to in writing, software</span>
-<span class="comment">// distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
-<span class="comment">// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
-<span class="comment">// See the License for the specific language governing permissions and</span>
-<span class="comment">// limitations under the License.</span>
+</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
+// This file is part of Frontier.
+//
+// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// 	http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
-<span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
+</span><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 
-<span class="kw">mod</span> <span class="ident">checked_extrinsic</span>;
-<span class="kw">mod</span> <span class="ident">unchecked_extrinsic</span>;
+</span><span class="kw">mod </span>checked_extrinsic;
+<span class="kw">mod </span>unchecked_extrinsic;
 
-<span class="kw">pub</span> <span class="kw">use</span> <span class="kw">crate</span>::{
-	<span class="ident">checked_extrinsic</span>::{<span class="ident">CheckedExtrinsic</span>, <span class="ident">CheckedSignature</span>},
-	<span class="ident">unchecked_extrinsic::UncheckedExtrinsic</span>,
+<span class="kw">pub use crate</span>::{
+	checked_extrinsic::{CheckedExtrinsic, CheckedSignature},
+	unchecked_extrinsic::UncheckedExtrinsic,
 };
 
-<span class="kw">use</span> <span class="ident">sp_runtime</span>::{
-	<span class="ident">traits</span>::{<span class="ident">DispatchInfoOf</span>, <span class="ident">Dispatchable</span>, <span class="ident">PostDispatchInfoOf</span>},
-	<span class="ident">transaction_validity</span>::{<span class="ident">TransactionValidity</span>, <span class="ident">TransactionValidityError</span>},
+<span class="kw">use </span>sp_runtime::{
+	traits::{DispatchInfoOf, Dispatchable, PostDispatchInfoOf},
+	transaction_validity::{TransactionValidity, TransactionValidityError},
 };
 
-<span class="doccomment">/// A call that has self-contained functions. A self-contained</span>
-<span class="doccomment">/// function is something that has its signature embedded in its call.</span>
-<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">SelfContainedCall</span>: <span class="ident">Dispatchable</span> {
-	<span class="doccomment">/// Validated signature info.</span>
-	<span class="kw">type</span> <span class="ident">SignedInfo</span>;
+<span class="doccomment">/// A call that has self-contained functions. A self-contained
+/// function is something that has its signature embedded in its call.
+</span><span class="kw">pub trait </span>SelfContainedCall: Dispatchable {
+	<span class="doccomment">/// Validated signature info.
+	</span><span class="kw">type </span>SignedInfo;
 
-	<span class="doccomment">/// Returns whether the current call is a self-contained function.</span>
-	<span class="kw">fn</span> <span class="ident">is_self_contained</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">bool</span>;
-	<span class="doccomment">/// Check signatures of a self-contained function. Returns `None`</span>
-	<span class="doccomment">/// if the function is not a self-contained.</span>
-	<span class="kw">fn</span> <span class="ident">check_self_contained</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::SignedInfo</span>, <span class="ident">TransactionValidityError</span><span class="op">&gt;</span><span class="op">&gt;</span>;
-	<span class="doccomment">/// Validate a self-contained function. Returns `None` if the</span>
-	<span class="doccomment">/// function is not a self-contained.</span>
-	<span class="kw">fn</span> <span class="ident">validate_self_contained</span>(
+	<span class="doccomment">/// Returns whether the current call is a self-contained function.
+	</span><span class="kw">fn </span>is_self_contained(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool;
+	<span class="doccomment">/// Check signatures of a self-contained function. Returns `None`
+	/// if the function is not a self-contained.
+	</span><span class="kw">fn </span>check_self_contained(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>::SignedInfo, TransactionValidityError&gt;&gt;;
+	<span class="doccomment">/// Validate a self-contained function. Returns `None` if the
+	/// function is not a self-contained.
+	</span><span class="kw">fn </span>validate_self_contained(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		<span class="ident">info</span>: <span class="kw-2">&amp;</span><span class="ident"><span class="self">Self</span>::SignedInfo</span>,
-		<span class="ident">dispatch_info</span>: <span class="kw-2">&amp;</span><span class="ident">DispatchInfoOf</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span>,
-		<span class="ident">len</span>: <span class="ident">usize</span>,
-	) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">TransactionValidity</span><span class="op">&gt;</span>;
-	<span class="doccomment">/// Do any pre-flight stuff for a self-contained call.</span>
-	<span class="doccomment">///</span>
-	<span class="doccomment">/// Note this function by default delegates to `validate_self_contained`, so that</span>
-	<span class="doccomment">/// all checks performed for the transaction queue are also performed during</span>
-	<span class="doccomment">/// the dispatch phase (applying the extrinsic).</span>
-	<span class="doccomment">///</span>
-	<span class="doccomment">/// If you ever override this function, you need to make sure to always</span>
-	<span class="doccomment">/// perform the same validation as in `validate_self_contained`.</span>
-	<span class="doccomment">///</span>
-	<span class="doccomment">/// Returns `None` if the function is not a self-contained.</span>
-	<span class="kw">fn</span> <span class="ident">pre_dispatch_self_contained</span>(
+		info: <span class="kw-2">&amp;</span><span class="self">Self</span>::SignedInfo,
+		dispatch_info: <span class="kw-2">&amp;</span>DispatchInfoOf&lt;<span class="self">Self</span>&gt;,
+		len: usize,
+	) -&gt; <span class="prelude-ty">Option</span>&lt;TransactionValidity&gt;;
+	<span class="doccomment">/// Do any pre-flight stuff for a self-contained call.
+	///
+	/// Note this function by default delegates to `validate_self_contained`, so that
+	/// all checks performed for the transaction queue are also performed during
+	/// the dispatch phase (applying the extrinsic).
+	///
+	/// If you ever override this function, you need to make sure to always
+	/// perform the same validation as in `validate_self_contained`.
+	///
+	/// Returns `None` if the function is not a self-contained.
+	</span><span class="kw">fn </span>pre_dispatch_self_contained(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		<span class="ident">info</span>: <span class="kw-2">&amp;</span><span class="ident"><span class="self">Self</span>::SignedInfo</span>,
-		<span class="ident">dispatch_info</span>: <span class="kw-2">&amp;</span><span class="ident">DispatchInfoOf</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span>,
-		<span class="ident">len</span>: <span class="ident">usize</span>,
-	) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">TransactionValidityError</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-		<span class="self">self</span>.<span class="ident">validate_self_contained</span>(<span class="ident">info</span>, <span class="ident">dispatch_info</span>, <span class="ident">len</span>)
-			.<span class="ident">map</span>(<span class="op">|</span><span class="ident">res</span><span class="op">|</span> <span class="ident">res</span>.<span class="ident">map</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> ()))
+		info: <span class="kw-2">&amp;</span><span class="self">Self</span>::SignedInfo,
+		dispatch_info: <span class="kw-2">&amp;</span>DispatchInfoOf&lt;<span class="self">Self</span>&gt;,
+		len: usize,
+	) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="prelude-ty">Result</span>&lt;(), TransactionValidityError&gt;&gt; {
+		<span class="self">self</span>.validate_self_contained(info, dispatch_info, len)
+			.map(|res| res.map(|<span class="kw">_</span>| ()))
 	}
-	<span class="doccomment">/// Apply a self-contained function. Returns `None` if the</span>
-	<span class="doccomment">/// function is not a self-contained.</span>
-	<span class="kw">fn</span> <span class="ident">apply_self_contained</span>(
+	<span class="doccomment">/// Apply a self-contained function. Returns `None` if the
+	/// function is not a self-contained.
+	</span><span class="kw">fn </span>apply_self_contained(
 		<span class="self">self</span>,
-		<span class="ident">info</span>: <span class="ident"><span class="self">Self</span>::SignedInfo</span>,
-	) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">sp_runtime::DispatchResultWithInfo</span><span class="op">&lt;</span><span class="ident">PostDispatchInfoOf</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>;
+		info: <span class="self">Self</span>::SignedInfo,
+	) -&gt; <span class="prelude-ty">Option</span>&lt;sp_runtime::DispatchResultWithInfo&lt;PostDispatchInfoOf&lt;<span class="self">Self</span>&gt;&gt;&gt;;
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="fp_self_contained" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (7fe022f5a 2022-07-24)" ></div>
-</body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="fp_self_contained" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (81f391930 2022-10-09)" ></div></body></html>

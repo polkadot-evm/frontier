@@ -1,10 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `frame/evm/precompile/blake2/src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../pallet_evm_precompile_blake2/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a><h2 class="location"></h2>
-    </nav>
-    <nav class="sidebar"><a class="sidebar-logo" href="../../pallet_evm_precompile_blake2/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../pallet_evm_precompile_blake2/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1">
-                                <a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div>
-                        </div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `frame/evm/precompile/blake2/src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><a class="sidebar-logo" href="../../pallet_evm_precompile_blake2/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../pallet_evm_precompile_blake2/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -130,132 +124,131 @@
 <span id="124">124</span>
 <span id="125">125</span>
 <span id="126">126</span>
-</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
-<span class="comment">// This file is part of Frontier.</span>
-<span class="comment">//</span>
-<span class="comment">// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.</span>
-<span class="comment">//</span>
-<span class="comment">// Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
-<span class="comment">// you may not use this file except in compliance with the License.</span>
-<span class="comment">// You may obtain a copy of the License at</span>
-<span class="comment">//</span>
-<span class="comment">// 	http://www.apache.org/licenses/LICENSE-2.0</span>
-<span class="comment">//</span>
-<span class="comment">// Unless required by applicable law or agreed to in writing, software</span>
-<span class="comment">// distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
-<span class="comment">// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
-<span class="comment">// See the License for the specific language governing permissions and</span>
-<span class="comment">// limitations under the License.</span>
+</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
+// This file is part of Frontier.
+//
+// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// 	http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
-<span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
+</span><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 
-<span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">alloc</span>;
+</span><span class="kw">extern crate </span>alloc;
 
-<span class="kw">mod</span> <span class="ident">eip_152</span>;
+<span class="kw">mod </span>eip_152;
 
-<span class="kw">use</span> <span class="ident">fp_evm</span>::{
-	<span class="ident">ExitError</span>, <span class="ident">ExitSucceed</span>, <span class="ident">Precompile</span>, <span class="ident">PrecompileFailure</span>, <span class="ident">PrecompileHandle</span>, <span class="ident">PrecompileOutput</span>,
-	<span class="ident">PrecompileResult</span>,
+<span class="kw">use </span>fp_evm::{
+	ExitError, ExitSucceed, Precompile, PrecompileFailure, PrecompileHandle, PrecompileOutput,
+	PrecompileResult,
 };
 
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Blake2F</span>;
+<span class="kw">pub struct </span>Blake2F;
 
-<span class="kw">impl</span> <span class="ident">Blake2F</span> {
-	<span class="kw">const</span> <span class="ident">GAS_COST_PER_ROUND</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">1</span>; <span class="comment">// https://eips.ethereum.org/EIPS/eip-152#gas-costs-and-benchmarks</span>
-}
+<span class="kw">impl </span>Blake2F {
+	<span class="kw">const </span>GAS_COST_PER_ROUND: u64 = <span class="number">1</span>; <span class="comment">// https://eips.ethereum.org/EIPS/eip-152#gas-costs-and-benchmarks
+</span>}
 
-<span class="kw">impl</span> <span class="ident">Precompile</span> <span class="kw">for</span> <span class="ident">Blake2F</span> {
-	<span class="doccomment">/// Format of `input`:</span>
-	<span class="doccomment">/// [4 bytes for rounds][64 bytes for h][128 bytes for m][8 bytes for t_0][8 bytes for t_1][1 byte for f]</span>
-	<span class="kw">fn</span> <span class="ident">execute</span>(<span class="ident">handle</span>: <span class="kw-2">&amp;mut</span> <span class="kw">impl</span> <span class="ident">PrecompileHandle</span>) -&gt; <span class="ident">PrecompileResult</span> {
-		<span class="kw">const</span> <span class="ident">BLAKE2_F_ARG_LEN</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">213</span>;
+<span class="kw">impl </span>Precompile <span class="kw">for </span>Blake2F {
+	<span class="doccomment">/// Format of `input`:
+	/// [4 bytes for rounds][64 bytes for h][128 bytes for m][8 bytes for t_0][8 bytes for t_1][1 byte for f]
+	</span><span class="kw">fn </span>execute(handle: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>PrecompileHandle) -&gt; PrecompileResult {
+		<span class="kw">const </span>BLAKE2_F_ARG_LEN: usize = <span class="number">213</span>;
 
-		<span class="kw">let</span> <span class="ident">input</span> <span class="op">=</span> <span class="ident">handle</span>.<span class="ident">input</span>();
+		<span class="kw">let </span>input = handle.input();
 
-		<span class="kw">if</span> <span class="ident">input</span>.<span class="ident">len</span>() <span class="op">!</span><span class="op">=</span> <span class="ident">BLAKE2_F_ARG_LEN</span> {
-			<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">PrecompileFailure::Error</span> {
-				<span class="ident">exit_status</span>: <span class="ident">ExitError::Other</span>(
-					<span class="string">&quot;input length for Blake2 F precompile should be exactly 213 bytes&quot;</span>.<span class="ident">into</span>(),
+		<span class="kw">if </span>input.len() != BLAKE2_F_ARG_LEN {
+			<span class="kw">return </span><span class="prelude-val">Err</span>(PrecompileFailure::Error {
+				exit_status: ExitError::Other(
+					<span class="string">&quot;input length for Blake2 F precompile should be exactly 213 bytes&quot;</span>.into(),
 				),
 			});
 		}
 
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">rounds_buf</span>: [<span class="ident">u8</span>; <span class="number">4</span>] <span class="op">=</span> [<span class="number">0</span>; <span class="number">4</span>];
-		<span class="ident">rounds_buf</span>.<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>[<span class="number">0</span>..<span class="number">4</span>]);
-		<span class="kw">let</span> <span class="ident">rounds</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="ident">u32::from_be_bytes</span>(<span class="ident">rounds_buf</span>);
+		<span class="kw">let </span><span class="kw-2">mut </span>rounds_buf: [u8; <span class="number">4</span>] = [<span class="number">0</span>; <span class="number">4</span>];
+		rounds_buf.copy_from_slice(<span class="kw-2">&amp;</span>input[<span class="number">0</span>..<span class="number">4</span>]);
+		<span class="kw">let </span>rounds: u32 = u32::from_be_bytes(rounds_buf);
 
-		<span class="kw">let</span> <span class="ident">gas_cost</span>: <span class="ident">u64</span> <span class="op">=</span> (<span class="ident">rounds</span> <span class="kw">as</span> <span class="ident">u64</span>) <span class="op">*</span> <span class="ident">Blake2F::GAS_COST_PER_ROUND</span>;
-		<span class="ident">handle</span>.<span class="ident">record_cost</span>(<span class="ident">gas_cost</span>)<span class="question-mark">?</span>;
+		<span class="kw">let </span>gas_cost: u64 = (rounds <span class="kw">as </span>u64) * Blake2F::GAS_COST_PER_ROUND;
+		handle.record_cost(gas_cost)<span class="question-mark">?</span>;
 
-		<span class="kw">let</span> <span class="ident">input</span> <span class="op">=</span> <span class="ident">handle</span>.<span class="ident">input</span>();
+		<span class="kw">let </span>input = handle.input();
 
-		<span class="comment">// we use from_le_bytes below to effectively swap byte order to LE if architecture is BE</span>
+		<span class="comment">// we use from_le_bytes below to effectively swap byte order to LE if architecture is BE
 
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">h_buf</span>: [<span class="ident">u8</span>; <span class="number">64</span>] <span class="op">=</span> [<span class="number">0</span>; <span class="number">64</span>];
-		<span class="ident">h_buf</span>.<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>[<span class="number">4</span>..<span class="number">68</span>]);
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">h</span> <span class="op">=</span> [<span class="number">0u64</span>; <span class="number">8</span>];
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">ctr</span> <span class="op">=</span> <span class="number">0</span>;
-		<span class="kw">for</span> <span class="ident">state_word</span> <span class="kw">in</span> <span class="kw-2">&amp;mut</span> <span class="ident">h</span> {
-			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">temp</span>: [<span class="ident">u8</span>; <span class="number">8</span>] <span class="op">=</span> <span class="ident">Default::default</span>();
-			<span class="ident">temp</span>.<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">h_buf</span>[(<span class="ident">ctr</span> <span class="op">*</span> <span class="number">8</span>)..(<span class="ident">ctr</span> <span class="op">+</span> <span class="number">1</span>) <span class="op">*</span> <span class="number">8</span>]);
-			<span class="kw-2">*</span><span class="ident">state_word</span> <span class="op">=</span> <span class="ident">u64::from_le_bytes</span>(<span class="ident">temp</span>);
-			<span class="ident">ctr</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
+		</span><span class="kw">let </span><span class="kw-2">mut </span>h_buf: [u8; <span class="number">64</span>] = [<span class="number">0</span>; <span class="number">64</span>];
+		h_buf.copy_from_slice(<span class="kw-2">&amp;</span>input[<span class="number">4</span>..<span class="number">68</span>]);
+		<span class="kw">let </span><span class="kw-2">mut </span>h = [<span class="number">0u64</span>; <span class="number">8</span>];
+		<span class="kw">let </span><span class="kw-2">mut </span>ctr = <span class="number">0</span>;
+		<span class="kw">for </span>state_word <span class="kw">in </span><span class="kw-2">&amp;mut </span>h {
+			<span class="kw">let </span><span class="kw-2">mut </span>temp: [u8; <span class="number">8</span>] = Default::default();
+			temp.copy_from_slice(<span class="kw-2">&amp;</span>h_buf[(ctr * <span class="number">8</span>)..(ctr + <span class="number">1</span>) * <span class="number">8</span>]);
+			<span class="kw-2">*</span>state_word = u64::from_le_bytes(temp);
+			ctr += <span class="number">1</span>;
 		}
 
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">m_buf</span>: [<span class="ident">u8</span>; <span class="number">128</span>] <span class="op">=</span> [<span class="number">0</span>; <span class="number">128</span>];
-		<span class="ident">m_buf</span>.<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>[<span class="number">68</span>..<span class="number">196</span>]);
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">m</span> <span class="op">=</span> [<span class="number">0u64</span>; <span class="number">16</span>];
-		<span class="ident">ctr</span> <span class="op">=</span> <span class="number">0</span>;
-		<span class="kw">for</span> <span class="ident">msg_word</span> <span class="kw">in</span> <span class="kw-2">&amp;mut</span> <span class="ident">m</span> {
-			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">temp</span>: [<span class="ident">u8</span>; <span class="number">8</span>] <span class="op">=</span> <span class="ident">Default::default</span>();
-			<span class="ident">temp</span>.<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">m_buf</span>[(<span class="ident">ctr</span> <span class="op">*</span> <span class="number">8</span>)..(<span class="ident">ctr</span> <span class="op">+</span> <span class="number">1</span>) <span class="op">*</span> <span class="number">8</span>]);
-			<span class="kw-2">*</span><span class="ident">msg_word</span> <span class="op">=</span> <span class="ident">u64::from_le_bytes</span>(<span class="ident">temp</span>);
-			<span class="ident">ctr</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
+		<span class="kw">let </span><span class="kw-2">mut </span>m_buf: [u8; <span class="number">128</span>] = [<span class="number">0</span>; <span class="number">128</span>];
+		m_buf.copy_from_slice(<span class="kw-2">&amp;</span>input[<span class="number">68</span>..<span class="number">196</span>]);
+		<span class="kw">let </span><span class="kw-2">mut </span>m = [<span class="number">0u64</span>; <span class="number">16</span>];
+		ctr = <span class="number">0</span>;
+		<span class="kw">for </span>msg_word <span class="kw">in </span><span class="kw-2">&amp;mut </span>m {
+			<span class="kw">let </span><span class="kw-2">mut </span>temp: [u8; <span class="number">8</span>] = Default::default();
+			temp.copy_from_slice(<span class="kw-2">&amp;</span>m_buf[(ctr * <span class="number">8</span>)..(ctr + <span class="number">1</span>) * <span class="number">8</span>]);
+			<span class="kw-2">*</span>msg_word = u64::from_le_bytes(temp);
+			ctr += <span class="number">1</span>;
 		}
 
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">t_0_buf</span>: [<span class="ident">u8</span>; <span class="number">8</span>] <span class="op">=</span> [<span class="number">0</span>; <span class="number">8</span>];
-		<span class="ident">t_0_buf</span>.<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>[<span class="number">196</span>..<span class="number">204</span>]);
-		<span class="kw">let</span> <span class="ident">t_0</span> <span class="op">=</span> <span class="ident">u64::from_le_bytes</span>(<span class="ident">t_0_buf</span>);
+		<span class="kw">let </span><span class="kw-2">mut </span>t_0_buf: [u8; <span class="number">8</span>] = [<span class="number">0</span>; <span class="number">8</span>];
+		t_0_buf.copy_from_slice(<span class="kw-2">&amp;</span>input[<span class="number">196</span>..<span class="number">204</span>]);
+		<span class="kw">let </span>t_0 = u64::from_le_bytes(t_0_buf);
 
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">t_1_buf</span>: [<span class="ident">u8</span>; <span class="number">8</span>] <span class="op">=</span> [<span class="number">0</span>; <span class="number">8</span>];
-		<span class="ident">t_1_buf</span>.<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>[<span class="number">204</span>..<span class="number">212</span>]);
-		<span class="kw">let</span> <span class="ident">t_1</span> <span class="op">=</span> <span class="ident">u64::from_le_bytes</span>(<span class="ident">t_1_buf</span>);
+		<span class="kw">let </span><span class="kw-2">mut </span>t_1_buf: [u8; <span class="number">8</span>] = [<span class="number">0</span>; <span class="number">8</span>];
+		t_1_buf.copy_from_slice(<span class="kw-2">&amp;</span>input[<span class="number">204</span>..<span class="number">212</span>]);
+		<span class="kw">let </span>t_1 = u64::from_le_bytes(t_1_buf);
 
-		<span class="kw">let</span> <span class="ident">f</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">input</span>[<span class="number">212</span>] <span class="op">==</span> <span class="number">1</span> {
-			<span class="bool-val">true</span>
-		} <span class="kw">else</span> <span class="kw">if</span> <span class="ident">input</span>[<span class="number">212</span>] <span class="op">==</span> <span class="number">0</span> {
-			<span class="bool-val">false</span>
-		} <span class="kw">else</span> {
-			<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">PrecompileFailure::Error</span> {
-				<span class="ident">exit_status</span>: <span class="ident">ExitError::Other</span>(<span class="string">&quot;incorrect final block indicator flag&quot;</span>.<span class="ident">into</span>()),
+		<span class="kw">let </span>f = <span class="kw">if </span>input[<span class="number">212</span>] == <span class="number">1 </span>{
+			<span class="bool-val">true
+		</span>} <span class="kw">else if </span>input[<span class="number">212</span>] == <span class="number">0 </span>{
+			<span class="bool-val">false
+		</span>} <span class="kw">else </span>{
+			<span class="kw">return </span><span class="prelude-val">Err</span>(PrecompileFailure::Error {
+				exit_status: ExitError::Other(<span class="string">&quot;incorrect final block indicator flag&quot;</span>.into()),
 			});
 		};
 
-		<span class="ident"><span class="kw">crate</span>::eip_152::compress</span>(<span class="kw-2">&amp;mut</span> <span class="ident">h</span>, <span class="ident">m</span>, [<span class="ident">t_0</span>, <span class="ident">t_1</span>], <span class="ident">f</span>, <span class="ident">rounds</span> <span class="kw">as</span> <span class="ident">usize</span>);
+		<span class="kw">crate</span>::eip_152::compress(<span class="kw-2">&amp;mut </span>h, m, [t_0, t_1], f, rounds <span class="kw">as </span>usize);
 
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">output_buf</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="ident">u64::BITS</span> <span class="kw">as</span> <span class="ident">usize</span>];
-		<span class="kw">for</span> (<span class="ident">i</span>, <span class="ident">state_word</span>) <span class="kw">in</span> <span class="ident">h</span>.<span class="ident">iter</span>().<span class="ident">enumerate</span>() {
-			<span class="ident">output_buf</span>[<span class="ident">i</span> <span class="op">*</span> <span class="number">8</span>..(<span class="ident">i</span> <span class="op">+</span> <span class="number">1</span>) <span class="op">*</span> <span class="number">8</span>].<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">state_word</span>.<span class="ident">to_le_bytes</span>());
+		<span class="kw">let </span><span class="kw-2">mut </span>output_buf = [<span class="number">0u8</span>; u64::BITS <span class="kw">as </span>usize];
+		<span class="kw">for </span>(i, state_word) <span class="kw">in </span>h.iter().enumerate() {
+			output_buf[i * <span class="number">8</span>..(i + <span class="number">1</span>) * <span class="number">8</span>].copy_from_slice(<span class="kw-2">&amp;</span>state_word.to_le_bytes());
 		}
 
-		<span class="prelude-val">Ok</span>(<span class="ident">PrecompileOutput</span> {
-			<span class="ident">exit_status</span>: <span class="ident">ExitSucceed::Returned</span>,
-			<span class="ident">output</span>: <span class="ident">output_buf</span>.<span class="ident">to_vec</span>(),
+		<span class="prelude-val">Ok</span>(PrecompileOutput {
+			exit_status: ExitSucceed::Returned,
+			output: output_buf.to_vec(),
 		})
 	}
 }
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
-<span class="kw">mod</span> <span class="ident">tests</span> {
-	<span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
-	<span class="kw">use</span> <span class="ident">pallet_evm_test_vector_support::test_precompile_test_vectors</span>;
+<span class="attribute">#[cfg(test)]
+</span><span class="kw">mod </span>tests {
+	<span class="kw">use super</span>::<span class="kw-2">*</span>;
+	<span class="kw">use </span>pallet_evm_test_vector_support::test_precompile_test_vectors;
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">process_consensus_tests</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">String</span><span class="op">&gt;</span> {
-		<span class="ident">test_precompile_test_vectors</span>::<span class="op">&lt;</span><span class="ident">Blake2F</span><span class="op">&gt;</span>(<span class="string">&quot;../testdata/blake2F.json&quot;</span>)<span class="question-mark">?</span>;
+	<span class="attribute">#[test]
+	</span><span class="kw">fn </span>process_consensus_tests() -&gt; <span class="prelude-ty">Result</span>&lt;(), String&gt; {
+		test_precompile_test_vectors::&lt;Blake2F&gt;(<span class="string">&quot;../testdata/blake2F.json&quot;</span>)<span class="question-mark">?</span>;
 		<span class="prelude-val">Ok</span>(())
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_evm_precompile_blake2" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (7fe022f5a 2022-07-24)" ></div>
-</body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_evm_precompile_blake2" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (81f391930 2022-10-09)" ></div></body></html>

@@ -1,10 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `client/rpc/src/overrides/schema_v2_override.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>schema_v2_override.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../fc_rpc/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div>
-        </a><h2 class="location"></h2>
-    </nav>
-    <nav class="sidebar"><a class="sidebar-logo" href="../../../fc_rpc/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div>
-        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../fc_rpc/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1">
-                                <a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div>
-                        </div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `client/rpc/src/overrides/schema_v2_override.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>schema_v2_override.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../../normalize.css"><link rel="stylesheet" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../../ayu.css" disabled><link rel="stylesheet" href="../../../dark.css" disabled><link rel="stylesheet" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><a class="sidebar-logo" href="../../../fc_rpc/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../fc_rpc/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -170,172 +164,177 @@
 <span id="164">164</span>
 <span id="165">165</span>
 <span id="166">166</span>
-</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
-<span class="comment">// This file is part of Frontier.</span>
-<span class="comment">//</span>
-<span class="comment">// Copyright (c) 2017-2022 Parity Technologies (UK) Ltd.</span>
-<span class="comment">//</span>
-<span class="comment">// This program is free software: you can redistribute it and/or modify</span>
-<span class="comment">// it under the terms of the GNU General Public License as published by</span>
-<span class="comment">// the Free Software Foundation, either version 3 of the License, or</span>
-<span class="comment">// (at your option) any later version.</span>
-<span class="comment">//</span>
-<span class="comment">// This program is distributed in the hope that it will be useful,</span>
-<span class="comment">// but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
-<span class="comment">// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the</span>
-<span class="comment">// GNU General Public License for more details.</span>
-<span class="comment">//</span>
-<span class="comment">// You should have received a copy of the GNU General Public License</span>
-<span class="comment">// along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.</span>
+<span id="167">167</span>
+<span id="168">168</span>
+<span id="169">169</span>
+</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
+// This file is part of Frontier.
+//
+// Copyright (c) 2017-2022 Parity Technologies (UK) Ltd.
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.
 
-<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">marker::PhantomData</span>, <span class="ident">sync::Arc</span>};
+</span><span class="kw">use </span>std::{marker::PhantomData, sync::Arc};
 
-<span class="kw">use</span> <span class="ident">codec::Decode</span>;
-<span class="kw">use</span> <span class="ident">ethereum_types</span>::{<span class="ident">H160</span>, <span class="ident">H256</span>, <span class="ident">U256</span>};
-<span class="comment">// Substrate</span>
-<span class="kw">use</span> <span class="ident">sc_client_api::backend</span>::{<span class="ident">Backend</span>, <span class="ident">StateBackend</span>, <span class="ident">StorageProvider</span>};
-<span class="kw">use</span> <span class="ident">sp_api::BlockId</span>;
-<span class="kw">use</span> <span class="ident">sp_runtime</span>::{
-	<span class="ident">traits</span>::{<span class="ident">BlakeTwo256</span>, <span class="ident">Block</span> <span class="kw">as</span> <span class="ident">BlockT</span>},
-	<span class="ident">Permill</span>,
+<span class="kw">use </span>codec::Decode;
+<span class="kw">use </span>ethereum_types::{H160, H256, U256};
+<span class="comment">// Substrate
+</span><span class="kw">use </span>sc_client_api::backend::{Backend, StateBackend, StorageProvider};
+<span class="kw">use </span>sp_api::BlockId;
+<span class="kw">use </span>sp_blockchain::HeaderBackend;
+<span class="kw">use </span>sp_runtime::{
+	traits::{BlakeTwo256, Block <span class="kw">as </span>BlockT, Header <span class="kw">as </span>HeaderT},
+	Permill,
 };
-<span class="kw">use</span> <span class="ident">sp_storage::StorageKey</span>;
-<span class="comment">// Frontier</span>
-<span class="kw">use</span> <span class="ident">fp_rpc::TransactionStatus</span>;
-<span class="kw">use</span> <span class="ident">fp_storage</span>::<span class="kw-2">*</span>;
+<span class="kw">use </span>sp_storage::StorageKey;
+<span class="comment">// Frontier
+</span><span class="kw">use </span>fp_rpc::TransactionStatus;
+<span class="kw">use </span>fp_storage::<span class="kw-2">*</span>;
 
-<span class="kw">use</span> <span class="kw">super</span>::{<span class="ident">blake2_128_extend</span>, <span class="ident">storage_prefix_build</span>, <span class="ident">StorageOverride</span>};
+<span class="kw">use super</span>::{blake2_128_extend, storage_prefix_build, StorageOverride};
 
-<span class="doccomment">/// An override for runtimes that use Schema V2</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">SchemaV2Override</span><span class="op">&lt;</span><span class="ident">B</span>: <span class="ident">BlockT</span>, <span class="ident">C</span>, <span class="ident">BE</span><span class="op">&gt;</span> {
-	<span class="ident">client</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
-	<span class="ident">_marker</span>: <span class="ident">PhantomData</span><span class="op">&lt;</span>(<span class="ident">B</span>, <span class="ident">BE</span>)<span class="op">&gt;</span>,
+<span class="doccomment">/// An override for runtimes that use Schema V2
+</span><span class="kw">pub struct </span>SchemaV2Override&lt;B: BlockT, C, BE&gt; {
+	client: Arc&lt;C&gt;,
+	_marker: PhantomData&lt;(B, BE)&gt;,
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">B</span>: <span class="ident">BlockT</span>, <span class="ident">C</span>, <span class="ident">BE</span><span class="op">&gt;</span> <span class="ident">SchemaV2Override</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span>, <span class="ident">BE</span><span class="op">&gt;</span> {
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">client</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>) -&gt; <span class="self">Self</span> {
-		<span class="self">Self</span> {
-			<span class="ident">client</span>,
-			<span class="ident">_marker</span>: <span class="ident">PhantomData</span>,
+<span class="kw">impl</span>&lt;B: BlockT, C, BE&gt; SchemaV2Override&lt;B, C, BE&gt; {
+	<span class="kw">pub fn </span>new(client: Arc&lt;C&gt;) -&gt; <span class="self">Self </span>{
+		<span class="self">Self </span>{
+			client,
+			_marker: PhantomData,
 		}
 	}
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span>, <span class="ident">BE</span><span class="op">&gt;</span> <span class="ident">SchemaV2Override</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span>, <span class="ident">BE</span><span class="op">&gt;</span>
-<span class="kw">where</span>
-	<span class="ident">B</span>: <span class="ident">BlockT</span><span class="op">&lt;</span><span class="ident">Hash</span> <span class="op">=</span> <span class="ident">H256</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
-	<span class="ident">C</span>: <span class="ident">StorageProvider</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">BE</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
-	<span class="ident">BE</span>: <span class="ident">Backend</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
-	<span class="ident">BE::State</span>: <span class="ident">StateBackend</span><span class="op">&lt;</span><span class="ident">BlakeTwo256</span><span class="op">&gt;</span>,
+<span class="kw">impl</span>&lt;B, C, BE&gt; SchemaV2Override&lt;B, C, BE&gt;
+<span class="kw">where
+	</span>B: BlockT&lt;Hash = H256&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
+	C: StorageProvider&lt;B, BE&gt; + HeaderBackend&lt;B&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
+	BE: Backend&lt;B&gt; + <span class="lifetime">&#39;static</span>,
+	BE::State: StateBackend&lt;BlakeTwo256&gt;,
 {
-	<span class="kw">fn</span> <span class="ident">query_storage</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Decode</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">id</span>: <span class="kw-2">&amp;</span><span class="ident">BlockId</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span>, <span class="ident">key</span>: <span class="kw-2">&amp;</span><span class="ident">StorageKey</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-		<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">data</span>)) <span class="op">=</span> <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">storage</span>(<span class="ident">id</span>, <span class="ident">key</span>) {
-			<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">result</span>) <span class="op">=</span> <span class="ident">Decode::decode</span>(<span class="kw-2">&amp;mut</span> <span class="kw-2">&amp;</span><span class="ident">data</span>.<span class="number">0</span>[..]) {
-				<span class="kw">return</span> <span class="prelude-val">Some</span>(<span class="ident">result</span>);
+	<span class="kw">fn </span>query_storage&lt;T: Decode&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, id: <span class="kw-2">&amp;</span>BlockId&lt;B&gt;, key: <span class="kw-2">&amp;</span>StorageKey) -&gt; <span class="prelude-ty">Option</span>&lt;T&gt; {
+		<span class="kw">if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(header)) = <span class="self">self</span>.client.header(<span class="kw-2">*</span>id) {
+			<span class="kw">if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(data)) = <span class="self">self</span>.client.storage(header.hash(), key) {
+				<span class="kw">if let </span><span class="prelude-val">Ok</span>(result) = Decode::decode(<span class="kw-2">&amp;mut &amp;</span>data.<span class="number">0</span>[..]) {
+					<span class="kw">return </span><span class="prelude-val">Some</span>(result);
+				}
 			}
 		}
-		<span class="prelude-val">None</span>
-	}
+		<span class="prelude-val">None
+	</span>}
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span>, <span class="ident">BE</span><span class="op">&gt;</span> <span class="ident">StorageOverride</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">SchemaV2Override</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span>, <span class="ident">BE</span><span class="op">&gt;</span>
-<span class="kw">where</span>
-	<span class="ident">B</span>: <span class="ident">BlockT</span><span class="op">&lt;</span><span class="ident">Hash</span> <span class="op">=</span> <span class="ident">H256</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
-	<span class="ident">C</span>: <span class="ident">StorageProvider</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">BE</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
-	<span class="ident">BE</span>: <span class="ident">Backend</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
-	<span class="ident">BE::State</span>: <span class="ident">StateBackend</span><span class="op">&lt;</span><span class="ident">BlakeTwo256</span><span class="op">&gt;</span>,
+<span class="kw">impl</span>&lt;B, C, BE&gt; StorageOverride&lt;B&gt; <span class="kw">for </span>SchemaV2Override&lt;B, C, BE&gt;
+<span class="kw">where
+	</span>B: BlockT&lt;Hash = H256&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
+	C: StorageProvider&lt;B, BE&gt; + HeaderBackend&lt;B&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
+	BE: Backend&lt;B&gt; + <span class="lifetime">&#39;static</span>,
+	BE::State: StateBackend&lt;BlakeTwo256&gt;,
 {
-	<span class="doccomment">/// For a given account address, returns pallet_evm::AccountCodes.</span>
-	<span class="kw">fn</span> <span class="ident">account_code_at</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">block</span>: <span class="kw-2">&amp;</span><span class="ident">BlockId</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span>, <span class="ident">address</span>: <span class="ident">H160</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">key</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">storage_prefix_build</span>(<span class="ident">PALLET_EVM</span>, <span class="ident">EVM_ACCOUNT_CODES</span>);
-		<span class="ident">key</span>.<span class="ident">extend</span>(<span class="ident">blake2_128_extend</span>(<span class="ident">address</span>.<span class="ident">as_bytes</span>()));
-		<span class="self">self</span>.<span class="ident">query_storage</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="ident">block</span>, <span class="kw-2">&amp;</span><span class="ident">StorageKey</span>(<span class="ident">key</span>))
+	<span class="doccomment">/// For a given account address, returns pallet_evm::AccountCodes.
+	</span><span class="kw">fn </span>account_code_at(<span class="kw-2">&amp;</span><span class="self">self</span>, block: <span class="kw-2">&amp;</span>BlockId&lt;B&gt;, address: H160) -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;u8&gt;&gt; {
+		<span class="kw">let </span><span class="kw-2">mut </span>key: Vec&lt;u8&gt; = storage_prefix_build(PALLET_EVM, EVM_ACCOUNT_CODES);
+		key.extend(blake2_128_extend(address.as_bytes()));
+		<span class="self">self</span>.query_storage::&lt;Vec&lt;u8&gt;&gt;(block, <span class="kw-2">&amp;</span>StorageKey(key))
 	}
 
-	<span class="doccomment">/// For a given account address and index, returns pallet_evm::AccountStorages.</span>
-	<span class="kw">fn</span> <span class="ident">storage_at</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">block</span>: <span class="kw-2">&amp;</span><span class="ident">BlockId</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span>, <span class="ident">address</span>: <span class="ident">H160</span>, <span class="ident">index</span>: <span class="ident">U256</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span> {
-		<span class="kw">let</span> <span class="ident">tmp</span>: <span class="kw-2">&amp;mut</span> [<span class="ident">u8</span>; <span class="number">32</span>] <span class="op">=</span> <span class="kw-2">&amp;mut</span> [<span class="number">0</span>; <span class="number">32</span>];
-		<span class="ident">index</span>.<span class="ident">to_big_endian</span>(<span class="ident">tmp</span>);
+	<span class="doccomment">/// For a given account address and index, returns pallet_evm::AccountStorages.
+	</span><span class="kw">fn </span>storage_at(<span class="kw-2">&amp;</span><span class="self">self</span>, block: <span class="kw-2">&amp;</span>BlockId&lt;B&gt;, address: H160, index: U256) -&gt; <span class="prelude-ty">Option</span>&lt;H256&gt; {
+		<span class="kw">let </span>tmp: <span class="kw-2">&amp;mut </span>[u8; <span class="number">32</span>] = <span class="kw-2">&amp;mut </span>[<span class="number">0</span>; <span class="number">32</span>];
+		index.to_big_endian(tmp);
 
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">key</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">storage_prefix_build</span>(<span class="ident">PALLET_EVM</span>, <span class="ident">EVM_ACCOUNT_STORAGES</span>);
-		<span class="ident">key</span>.<span class="ident">extend</span>(<span class="ident">blake2_128_extend</span>(<span class="ident">address</span>.<span class="ident">as_bytes</span>()));
-		<span class="ident">key</span>.<span class="ident">extend</span>(<span class="ident">blake2_128_extend</span>(<span class="ident">tmp</span>));
+		<span class="kw">let </span><span class="kw-2">mut </span>key: Vec&lt;u8&gt; = storage_prefix_build(PALLET_EVM, EVM_ACCOUNT_STORAGES);
+		key.extend(blake2_128_extend(address.as_bytes()));
+		key.extend(blake2_128_extend(tmp));
 
-		<span class="self">self</span>.<span class="ident">query_storage</span>::<span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span>(<span class="ident">block</span>, <span class="kw-2">&amp;</span><span class="ident">StorageKey</span>(<span class="ident">key</span>))
+		<span class="self">self</span>.query_storage::&lt;H256&gt;(block, <span class="kw-2">&amp;</span>StorageKey(key))
 	}
 
-	<span class="doccomment">/// Return the current block.</span>
-	<span class="kw">fn</span> <span class="ident">current_block</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">block</span>: <span class="kw-2">&amp;</span><span class="ident">BlockId</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">ethereum::BlockV2</span><span class="op">&gt;</span> {
-		<span class="self">self</span>.<span class="ident">query_storage</span>::<span class="op">&lt;</span><span class="ident">ethereum::BlockV2</span><span class="op">&gt;</span>(
-			<span class="ident">block</span>,
-			<span class="kw-2">&amp;</span><span class="ident">StorageKey</span>(<span class="ident">storage_prefix_build</span>(
-				<span class="ident">PALLET_ETHEREUM</span>,
-				<span class="ident">ETHEREUM_CURRENT_BLOCK</span>,
+	<span class="doccomment">/// Return the current block.
+	</span><span class="kw">fn </span>current_block(<span class="kw-2">&amp;</span><span class="self">self</span>, block: <span class="kw-2">&amp;</span>BlockId&lt;B&gt;) -&gt; <span class="prelude-ty">Option</span>&lt;ethereum::BlockV2&gt; {
+		<span class="self">self</span>.query_storage::&lt;ethereum::BlockV2&gt;(
+			block,
+			<span class="kw-2">&amp;</span>StorageKey(storage_prefix_build(
+				PALLET_ETHEREUM,
+				ETHEREUM_CURRENT_BLOCK,
 			)),
 		)
 	}
 
-	<span class="doccomment">/// Return the current receipt.</span>
-	<span class="kw">fn</span> <span class="ident">current_receipts</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">block</span>: <span class="kw-2">&amp;</span><span class="ident">BlockId</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ethereum::ReceiptV3</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-		<span class="self">self</span>.<span class="ident">query_storage</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ethereum::ReceiptV0</span><span class="op">&gt;</span><span class="op">&gt;</span>(
-			<span class="ident">block</span>,
-			<span class="kw-2">&amp;</span><span class="ident">StorageKey</span>(<span class="ident">storage_prefix_build</span>(
-				<span class="ident">PALLET_ETHEREUM</span>,
-				<span class="ident">ETHEREUM_CURRENT_RECEIPTS</span>,
+	<span class="doccomment">/// Return the current receipt.
+	</span><span class="kw">fn </span>current_receipts(<span class="kw-2">&amp;</span><span class="self">self</span>, block: <span class="kw-2">&amp;</span>BlockId&lt;B&gt;) -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;ethereum::ReceiptV3&gt;&gt; {
+		<span class="self">self</span>.query_storage::&lt;Vec&lt;ethereum::ReceiptV0&gt;&gt;(
+			block,
+			<span class="kw-2">&amp;</span>StorageKey(storage_prefix_build(
+				PALLET_ETHEREUM,
+				ETHEREUM_CURRENT_RECEIPTS,
 			)),
 		)
-		.<span class="ident">map</span>(<span class="op">|</span><span class="ident">receipts</span><span class="op">|</span> {
-			<span class="ident">receipts</span>
-				.<span class="ident">into_iter</span>()
-				.<span class="ident">map</span>(<span class="op">|</span><span class="ident">r</span><span class="op">|</span> {
-					<span class="ident">ethereum::ReceiptV3::Legacy</span>(<span class="ident">ethereum::EIP658ReceiptData</span> {
-						<span class="ident">status_code</span>: <span class="ident">r</span>.<span class="ident">state_root</span>.<span class="ident">to_low_u64_be</span>() <span class="kw">as</span> <span class="ident">u8</span>,
-						<span class="ident">used_gas</span>: <span class="ident">r</span>.<span class="ident">used_gas</span>,
-						<span class="ident">logs_bloom</span>: <span class="ident">r</span>.<span class="ident">logs_bloom</span>,
-						<span class="ident">logs</span>: <span class="ident">r</span>.<span class="ident">logs</span>,
+		.map(|receipts| {
+			receipts
+				.into_iter()
+				.map(|r| {
+					ethereum::ReceiptV3::Legacy(ethereum::EIP658ReceiptData {
+						status_code: r.state_root.to_low_u64_be() <span class="kw">as </span>u8,
+						used_gas: r.used_gas,
+						logs_bloom: r.logs_bloom,
+						logs: r.logs,
 					})
 				})
-				.<span class="ident">collect</span>()
+				.collect()
 		})
 	}
 
-	<span class="doccomment">/// Return the current transaction status.</span>
-	<span class="kw">fn</span> <span class="ident">current_transaction_statuses</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">block</span>: <span class="kw-2">&amp;</span><span class="ident">BlockId</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TransactionStatus</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-		<span class="self">self</span>.<span class="ident">query_storage</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TransactionStatus</span><span class="op">&gt;</span><span class="op">&gt;</span>(
-			<span class="ident">block</span>,
-			<span class="kw-2">&amp;</span><span class="ident">StorageKey</span>(<span class="ident">storage_prefix_build</span>(
-				<span class="ident">PALLET_ETHEREUM</span>,
-				<span class="ident">ETHEREUM_CURRENT_TRANSACTION_STATUS</span>,
+	<span class="doccomment">/// Return the current transaction status.
+	</span><span class="kw">fn </span>current_transaction_statuses(<span class="kw-2">&amp;</span><span class="self">self</span>, block: <span class="kw-2">&amp;</span>BlockId&lt;B&gt;) -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;TransactionStatus&gt;&gt; {
+		<span class="self">self</span>.query_storage::&lt;Vec&lt;TransactionStatus&gt;&gt;(
+			block,
+			<span class="kw-2">&amp;</span>StorageKey(storage_prefix_build(
+				PALLET_ETHEREUM,
+				ETHEREUM_CURRENT_TRANSACTION_STATUS,
 			)),
 		)
 	}
 
-	<span class="doccomment">/// Return the base fee at the given height.</span>
-	<span class="kw">fn</span> <span class="ident">base_fee</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">block</span>: <span class="kw-2">&amp;</span><span class="ident">BlockId</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span> {
-		<span class="self">self</span>.<span class="ident">query_storage</span>::<span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>(
-			<span class="ident">block</span>,
-			<span class="kw-2">&amp;</span><span class="ident">StorageKey</span>(<span class="ident">storage_prefix_build</span>(<span class="ident">PALLET_BASE_FEE</span>, <span class="ident">BASE_FEE_PER_GAS</span>)),
+	<span class="doccomment">/// Return the base fee at the given height.
+	</span><span class="kw">fn </span>base_fee(<span class="kw-2">&amp;</span><span class="self">self</span>, block: <span class="kw-2">&amp;</span>BlockId&lt;B&gt;) -&gt; <span class="prelude-ty">Option</span>&lt;U256&gt; {
+		<span class="self">self</span>.query_storage::&lt;U256&gt;(
+			block,
+			<span class="kw-2">&amp;</span>StorageKey(storage_prefix_build(PALLET_BASE_FEE, BASE_FEE_PER_GAS)),
 		)
 	}
 
-	<span class="doccomment">/// Return the elasticity at the given height.</span>
-	<span class="kw">fn</span> <span class="ident">elasticity</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">block</span>: <span class="kw-2">&amp;</span><span class="ident">BlockId</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Permill</span><span class="op">&gt;</span> {
-		<span class="kw">let</span> <span class="ident">default_elasticity</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">Permill::from_parts</span>(<span class="number">125_000</span>));
-		<span class="kw">let</span> <span class="ident">elasticity</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">query_storage</span>::<span class="op">&lt;</span><span class="ident">Permill</span><span class="op">&gt;</span>(
-			<span class="ident">block</span>,
-			<span class="kw-2">&amp;</span><span class="ident">StorageKey</span>(<span class="ident">storage_prefix_build</span>(<span class="ident">PALLET_BASE_FEE</span>, <span class="ident">BASE_FEE_ELASTICITY</span>)),
+	<span class="doccomment">/// Return the elasticity at the given height.
+	</span><span class="kw">fn </span>elasticity(<span class="kw-2">&amp;</span><span class="self">self</span>, block: <span class="kw-2">&amp;</span>BlockId&lt;B&gt;) -&gt; <span class="prelude-ty">Option</span>&lt;Permill&gt; {
+		<span class="kw">let </span>default_elasticity = <span class="prelude-val">Some</span>(Permill::from_parts(<span class="number">125_000</span>));
+		<span class="kw">let </span>elasticity = <span class="self">self</span>.query_storage::&lt;Permill&gt;(
+			block,
+			<span class="kw-2">&amp;</span>StorageKey(storage_prefix_build(PALLET_BASE_FEE, BASE_FEE_ELASTICITY)),
 		);
-		<span class="kw">if</span> <span class="ident">elasticity</span>.<span class="ident">is_some</span>() {
-			<span class="ident">elasticity</span>
-		} <span class="kw">else</span> {
-			<span class="ident">default_elasticity</span>
+		<span class="kw">if </span>elasticity.is_some() {
+			elasticity
+		} <span class="kw">else </span>{
+			default_elasticity
 		}
 	}
 
-	<span class="kw">fn</span> <span class="ident">is_eip1559</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">_block</span>: <span class="kw-2">&amp;</span><span class="ident">BlockId</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span>) -&gt; <span class="ident">bool</span> {
-		<span class="bool-val">true</span>
-	}
+	<span class="kw">fn </span>is_eip1559(<span class="kw-2">&amp;</span><span class="self">self</span>, _block: <span class="kw-2">&amp;</span>BlockId&lt;B&gt;) -&gt; bool {
+		<span class="bool-val">true
+	</span>}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="fc_rpc" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (7fe022f5a 2022-07-24)" ></div>
-</body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="fc_rpc" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (81f391930 2022-10-09)" ></div></body></html>

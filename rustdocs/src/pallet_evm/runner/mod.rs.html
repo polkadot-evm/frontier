@@ -1,10 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `frame/evm/src/runner/mod.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>mod.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../pallet_evm/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div>
-        </a><h2 class="location"></h2>
-    </nav>
-    <nav class="sidebar"><a class="sidebar-logo" href="../../../pallet_evm/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div>
-        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../pallet_evm/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1">
-                                <a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div>
-                        </div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `frame/evm/src/runner/mod.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>mod.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../../normalize.css"><link rel="stylesheet" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../../ayu.css" disabled><link rel="stylesheet" href="../../../dark.css" disabled><link rel="stylesheet" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><a class="sidebar-logo" href="../../../pallet_evm/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../pallet_evm/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -95,97 +89,96 @@
 <span id="89">89</span>
 <span id="90">90</span>
 <span id="91">91</span>
-</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
-<span class="comment">// This file is part of Frontier.</span>
-<span class="comment">//</span>
-<span class="comment">// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.</span>
-<span class="comment">//</span>
-<span class="comment">// Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
-<span class="comment">// you may not use this file except in compliance with the License.</span>
-<span class="comment">// You may obtain a copy of the License at</span>
-<span class="comment">//</span>
-<span class="comment">// 	http://www.apache.org/licenses/LICENSE-2.0</span>
-<span class="comment">//</span>
-<span class="comment">// Unless required by applicable law or agreed to in writing, software</span>
-<span class="comment">// distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
-<span class="comment">// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
-<span class="comment">// See the License for the specific language governing permissions and</span>
-<span class="comment">// limitations under the License.</span>
+</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
+// This file is part of Frontier.
+//
+// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// 	http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
-<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">stack</span>;
+</span><span class="kw">pub mod </span>stack;
 
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::Config</span>;
-<span class="kw">use</span> <span class="ident">fp_evm</span>::{<span class="ident">CallInfo</span>, <span class="ident">CreateInfo</span>};
-<span class="kw">use</span> <span class="ident">sp_core</span>::{<span class="ident">H160</span>, <span class="ident">H256</span>, <span class="ident">U256</span>};
-<span class="kw">use</span> <span class="ident">sp_std::vec::Vec</span>;
+<span class="kw">use </span><span class="kw">crate</span>::Config;
+<span class="kw">use </span>fp_evm::{CallInfo, CreateInfo};
+<span class="kw">use </span>sp_core::{H160, H256, U256};
+<span class="kw">use </span>sp_std::vec::Vec;
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">RunnerError</span><span class="op">&lt;</span><span class="ident">E</span>: <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">sp_runtime::DispatchError</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-	<span class="kw">pub</span> <span class="ident">error</span>: <span class="ident">E</span>,
-	<span class="kw">pub</span> <span class="ident">weight</span>: <span class="ident">frame_support::weights::Weight</span>,
+<span class="attribute">#[derive(Debug)]
+</span><span class="kw">pub struct </span>RunnerError&lt;E: Into&lt;sp_runtime::DispatchError&gt;&gt; {
+	<span class="kw">pub </span>error: E,
+	<span class="kw">pub </span>weight: frame_support::weights::Weight,
 }
 
-<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Runner</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> {
-	<span class="kw">type</span> <span class="ident">Error</span>: <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">sp_runtime::DispatchError</span><span class="op">&gt;</span>;
+<span class="kw">pub trait </span>Runner&lt;T: Config&gt; {
+	<span class="kw">type </span>Error: Into&lt;sp_runtime::DispatchError&gt;;
 
-	<span class="kw">fn</span> <span class="ident">validate</span>(
-		<span class="ident">source</span>: <span class="ident">H160</span>,
-		<span class="ident">target</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">H160</span><span class="op">&gt;</span>,
-		<span class="ident">input</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
-		<span class="ident">value</span>: <span class="ident">U256</span>,
-		<span class="ident">gas_limit</span>: <span class="ident">u64</span>,
-		<span class="ident">max_fee_per_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-		<span class="ident">max_priority_fee_per_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-		<span class="ident">nonce</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-		<span class="ident">access_list</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">H160</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span>)<span class="op">&gt;</span>,
-		<span class="ident">is_transactional</span>: <span class="ident">bool</span>,
-		<span class="ident">evm_config</span>: <span class="kw-2">&amp;</span><span class="ident">evm::Config</span>,
-	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">RunnerError</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Error</span><span class="op">&gt;</span><span class="op">&gt;</span>;
+	<span class="kw">fn </span>validate(
+		source: H160,
+		target: <span class="prelude-ty">Option</span>&lt;H160&gt;,
+		input: Vec&lt;u8&gt;,
+		value: U256,
+		gas_limit: u64,
+		max_fee_per_gas: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+		max_priority_fee_per_gas: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+		nonce: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+		access_list: Vec&lt;(H160, Vec&lt;H256&gt;)&gt;,
+		is_transactional: bool,
+		evm_config: <span class="kw-2">&amp;</span>evm::Config,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;(), RunnerError&lt;<span class="self">Self</span>::Error&gt;&gt;;
 
-	<span class="kw">fn</span> <span class="ident">call</span>(
-		<span class="ident">source</span>: <span class="ident">H160</span>,
-		<span class="ident">target</span>: <span class="ident">H160</span>,
-		<span class="ident">input</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
-		<span class="ident">value</span>: <span class="ident">U256</span>,
-		<span class="ident">gas_limit</span>: <span class="ident">u64</span>,
-		<span class="ident">max_fee_per_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-		<span class="ident">max_priority_fee_per_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-		<span class="ident">nonce</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-		<span class="ident">access_list</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">H160</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span>)<span class="op">&gt;</span>,
-		<span class="ident">is_transactional</span>: <span class="ident">bool</span>,
-		<span class="ident">validate</span>: <span class="ident">bool</span>,
-		<span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="ident">evm::Config</span>,
-	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">CallInfo</span>, <span class="ident">RunnerError</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Error</span><span class="op">&gt;</span><span class="op">&gt;</span>;
+	<span class="kw">fn </span>call(
+		source: H160,
+		target: H160,
+		input: Vec&lt;u8&gt;,
+		value: U256,
+		gas_limit: u64,
+		max_fee_per_gas: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+		max_priority_fee_per_gas: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+		nonce: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+		access_list: Vec&lt;(H160, Vec&lt;H256&gt;)&gt;,
+		is_transactional: bool,
+		validate: bool,
+		config: <span class="kw-2">&amp;</span>evm::Config,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;CallInfo, RunnerError&lt;<span class="self">Self</span>::Error&gt;&gt;;
 
-	<span class="kw">fn</span> <span class="ident">create</span>(
-		<span class="ident">source</span>: <span class="ident">H160</span>,
-		<span class="ident">init</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
-		<span class="ident">value</span>: <span class="ident">U256</span>,
-		<span class="ident">gas_limit</span>: <span class="ident">u64</span>,
-		<span class="ident">max_fee_per_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-		<span class="ident">max_priority_fee_per_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-		<span class="ident">nonce</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-		<span class="ident">access_list</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">H160</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span>)<span class="op">&gt;</span>,
-		<span class="ident">is_transactional</span>: <span class="ident">bool</span>,
-		<span class="ident">validate</span>: <span class="ident">bool</span>,
-		<span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="ident">evm::Config</span>,
-	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">CreateInfo</span>, <span class="ident">RunnerError</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Error</span><span class="op">&gt;</span><span class="op">&gt;</span>;
+	<span class="kw">fn </span>create(
+		source: H160,
+		init: Vec&lt;u8&gt;,
+		value: U256,
+		gas_limit: u64,
+		max_fee_per_gas: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+		max_priority_fee_per_gas: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+		nonce: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+		access_list: Vec&lt;(H160, Vec&lt;H256&gt;)&gt;,
+		is_transactional: bool,
+		validate: bool,
+		config: <span class="kw-2">&amp;</span>evm::Config,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;CreateInfo, RunnerError&lt;<span class="self">Self</span>::Error&gt;&gt;;
 
-	<span class="kw">fn</span> <span class="ident">create2</span>(
-		<span class="ident">source</span>: <span class="ident">H160</span>,
-		<span class="ident">init</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
-		<span class="ident">salt</span>: <span class="ident">H256</span>,
-		<span class="ident">value</span>: <span class="ident">U256</span>,
-		<span class="ident">gas_limit</span>: <span class="ident">u64</span>,
-		<span class="ident">max_fee_per_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-		<span class="ident">max_priority_fee_per_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-		<span class="ident">nonce</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-		<span class="ident">access_list</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">H160</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span>)<span class="op">&gt;</span>,
-		<span class="ident">is_transactional</span>: <span class="ident">bool</span>,
-		<span class="ident">validate</span>: <span class="ident">bool</span>,
-		<span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="ident">evm::Config</span>,
-	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">CreateInfo</span>, <span class="ident">RunnerError</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Error</span><span class="op">&gt;</span><span class="op">&gt;</span>;
+	<span class="kw">fn </span>create2(
+		source: H160,
+		init: Vec&lt;u8&gt;,
+		salt: H256,
+		value: U256,
+		gas_limit: u64,
+		max_fee_per_gas: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+		max_priority_fee_per_gas: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+		nonce: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+		access_list: Vec&lt;(H160, Vec&lt;H256&gt;)&gt;,
+		is_transactional: bool,
+		validate: bool,
+		config: <span class="kw-2">&amp;</span>evm::Config,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;CreateInfo, RunnerError&lt;<span class="self">Self</span>::Error&gt;&gt;;
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="pallet_evm" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (7fe022f5a 2022-07-24)" ></div>
-</body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="pallet_evm" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (81f391930 2022-10-09)" ></div></body></html>

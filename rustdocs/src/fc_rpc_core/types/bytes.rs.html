@@ -1,10 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `client/rpc-core/src/types/bytes.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>bytes.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../fc_rpc_core/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div>
-        </a><h2 class="location"></h2>
-    </nav>
-    <nav class="sidebar"><a class="sidebar-logo" href="../../../fc_rpc_core/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div>
-        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../fc_rpc_core/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1">
-                                <a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div>
-                        </div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `client/rpc-core/src/types/bytes.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>bytes.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../../normalize.css"><link rel="stylesheet" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../../ayu.css" disabled><link rel="stylesheet" href="../../../dark.css" disabled><link rel="stylesheet" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><a class="sidebar-logo" href="../../../fc_rpc_core/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../fc_rpc_core/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -141,143 +135,142 @@
 <span id="135">135</span>
 <span id="136">136</span>
 <span id="137">137</span>
-</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
-<span class="comment">// This file is part of Frontier.</span>
-<span class="comment">//</span>
-<span class="comment">// Copyright (c) 2015-2022 Parity Technologies (UK) Ltd.</span>
-<span class="comment">//</span>
-<span class="comment">// This program is free software: you can redistribute it and/or modify</span>
-<span class="comment">// it under the terms of the GNU General Public License as published by</span>
-<span class="comment">// the Free Software Foundation, either version 3 of the License, or</span>
-<span class="comment">// (at your option) any later version.</span>
-<span class="comment">//</span>
-<span class="comment">// This program is distributed in the hope that it will be useful,</span>
-<span class="comment">// but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
-<span class="comment">// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the</span>
-<span class="comment">// GNU General Public License for more details.</span>
-<span class="comment">//</span>
-<span class="comment">// You should have received a copy of the GNU General Public License</span>
-<span class="comment">// along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.</span>
+</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
+// This file is part of Frontier.
+//
+// Copyright (c) 2015-2022 Parity Technologies (UK) Ltd.
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.
 
-<span class="doccomment">//! Serializable wrapper around vector of bytes</span>
+</span><span class="doccomment">//! Serializable wrapper around vector of bytes
 
-<span class="kw">use</span> <span class="ident">rustc_hex</span>::{<span class="ident">FromHex</span>, <span class="ident">ToHex</span>};
-<span class="kw">use</span> <span class="ident">serde</span>::{
-	<span class="ident">de</span>::{<span class="ident">Error</span>, <span class="ident">Visitor</span>},
-	<span class="ident">Deserialize</span>, <span class="ident">Deserializer</span>, <span class="ident">Serialize</span>, <span class="ident">Serializer</span>,
+</span><span class="kw">use </span>rustc_hex::{FromHex, ToHex};
+<span class="kw">use </span>serde::{
+	de::{Error, Visitor},
+	Deserialize, Deserializer, Serialize, Serializer,
 };
-<span class="kw">use</span> <span class="ident">std::fmt</span>;
+<span class="kw">use </span>std::fmt;
 
-<span class="doccomment">/// Wrapper structure around vector of bytes.</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">Default</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">Hash</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Bytes</span>(<span class="kw">pub</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>);
+<span class="doccomment">/// Wrapper structure around vector of bytes.
+</span><span class="attribute">#[derive(Clone, Debug, Default, Eq, PartialEq, Hash)]
+</span><span class="kw">pub struct </span>Bytes(<span class="kw">pub </span>Vec&lt;u8&gt;);
 
-<span class="kw">impl</span> <span class="ident">Bytes</span> {
-	<span class="doccomment">/// Simple constructor.</span>
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">bytes</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>) -&gt; <span class="ident">Bytes</span> {
-		<span class="ident">Bytes</span>(<span class="ident">bytes</span>)
+<span class="kw">impl </span>Bytes {
+	<span class="doccomment">/// Simple constructor.
+	</span><span class="kw">pub fn </span>new(bytes: Vec&lt;u8&gt;) -&gt; Bytes {
+		Bytes(bytes)
 	}
-	<span class="doccomment">/// Convert back to vector</span>
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">into_vec</span>(<span class="self">self</span>) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> {
-		<span class="self">self</span>.<span class="number">0</span>
+	<span class="doccomment">/// Convert back to vector
+	</span><span class="kw">pub fn </span>into_vec(<span class="self">self</span>) -&gt; Vec&lt;u8&gt; {
+		<span class="self">self</span>.<span class="number">0
+	</span>}
+}
+
+<span class="kw">impl </span>From&lt;Vec&lt;u8&gt;&gt; <span class="kw">for </span>Bytes {
+	<span class="kw">fn </span>from(bytes: Vec&lt;u8&gt;) -&gt; Bytes {
+		Bytes(bytes)
 	}
 }
 
-<span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Bytes</span> {
-	<span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">bytes</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>) -&gt; <span class="ident">Bytes</span> {
-		<span class="ident">Bytes</span>(<span class="ident">bytes</span>)
-	}
+<span class="kw">impl </span>From&lt;Bytes&gt; <span class="kw">for </span>Vec&lt;u8&gt; {
+	<span class="kw">fn </span>from(bytes: Bytes) -&gt; Vec&lt;u8&gt; {
+		bytes.<span class="number">0
+	</span>}
 }
 
-<span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">Bytes</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> {
-	<span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">bytes</span>: <span class="ident">Bytes</span>) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> {
-		<span class="ident">bytes</span>.<span class="number">0</span>
-	}
-}
-
-<span class="kw">impl</span> <span class="ident">Serialize</span> <span class="kw">for</span> <span class="ident">Bytes</span> {
-	<span class="kw">fn</span> <span class="ident">serialize</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">serializer</span>: <span class="ident">S</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">S::Ok</span>, <span class="ident">S::Error</span><span class="op">&gt;</span>
-	<span class="kw">where</span>
-		<span class="ident">S</span>: <span class="ident">Serializer</span>,
+<span class="kw">impl </span>Serialize <span class="kw">for </span>Bytes {
+	<span class="kw">fn </span>serialize&lt;S&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, serializer: S) -&gt; <span class="prelude-ty">Result</span>&lt;S::Ok, S::Error&gt;
+	<span class="kw">where
+		</span>S: Serializer,
 	{
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">serialized</span> <span class="op">=</span> <span class="string">&quot;0x&quot;</span>.<span class="ident">to_owned</span>();
-		<span class="ident">serialized</span>.<span class="ident">push_str</span>(<span class="self">self</span>.<span class="number">0</span>.<span class="ident">to_hex</span>::<span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>().<span class="ident">as_ref</span>());
-		<span class="ident">serializer</span>.<span class="ident">serialize_str</span>(<span class="ident">serialized</span>.<span class="ident">as_ref</span>())
+		<span class="kw">let </span><span class="kw-2">mut </span>serialized = <span class="string">&quot;0x&quot;</span>.to_owned();
+		serialized.push_str(<span class="self">self</span>.<span class="number">0</span>.to_hex::&lt;String&gt;().as_ref());
+		serializer.serialize_str(serialized.as_ref())
 	}
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">Deserialize</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Bytes</span> {
-	<span class="kw">fn</span> <span class="ident">deserialize</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span>(<span class="ident">deserializer</span>: <span class="ident">D</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Bytes</span>, <span class="ident">D::Error</span><span class="op">&gt;</span>
-	<span class="kw">where</span>
-		<span class="ident">D</span>: <span class="ident">Deserializer</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>,
+<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>&gt; Deserialize&lt;<span class="lifetime">&#39;a</span>&gt; <span class="kw">for </span>Bytes {
+	<span class="kw">fn </span>deserialize&lt;D&gt;(deserializer: D) -&gt; <span class="prelude-ty">Result</span>&lt;Bytes, D::Error&gt;
+	<span class="kw">where
+		</span>D: Deserializer&lt;<span class="lifetime">&#39;a</span>&gt;,
 	{
-		<span class="ident">deserializer</span>.<span class="ident">deserialize_any</span>(<span class="ident">BytesVisitor</span>)
+		deserializer.deserialize_any(BytesVisitor)
 	}
 }
 
-<span class="kw">struct</span> <span class="ident">BytesVisitor</span>;
+<span class="kw">struct </span>BytesVisitor;
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">Visitor</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">BytesVisitor</span> {
-	<span class="kw">type</span> <span class="ident">Value</span> <span class="op">=</span> <span class="ident">Bytes</span>;
+<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>&gt; Visitor&lt;<span class="lifetime">&#39;a</span>&gt; <span class="kw">for </span>BytesVisitor {
+	<span class="kw">type </span>Value = Bytes;
 
-	<span class="kw">fn</span> <span class="ident">expecting</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">formatter</span>: <span class="kw-2">&amp;mut</span> <span class="ident">fmt::Formatter</span>) -&gt; <span class="ident">fmt::Result</span> {
-		<span class="macro">write!</span>(<span class="ident">formatter</span>, <span class="string">&quot;a 0x-prefixed, hex-encoded vector of bytes&quot;</span>)
+	<span class="kw">fn </span>expecting(<span class="kw-2">&amp;</span><span class="self">self</span>, formatter: <span class="kw-2">&amp;mut </span>fmt::Formatter) -&gt; fmt::Result {
+		<span class="macro">write!</span>(formatter, <span class="string">&quot;a 0x-prefixed, hex-encoded vector of bytes&quot;</span>)
 	}
 
-	<span class="kw">fn</span> <span class="ident">visit_str</span><span class="op">&lt;</span><span class="ident">E</span><span class="op">&gt;</span>(<span class="self">self</span>, <span class="ident">value</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Value</span>, <span class="ident">E</span><span class="op">&gt;</span>
-	<span class="kw">where</span>
-		<span class="ident">E</span>: <span class="ident">Error</span>,
+	<span class="kw">fn </span>visit_str&lt;E&gt;(<span class="self">self</span>, value: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>::Value, E&gt;
+	<span class="kw">where
+		</span>E: Error,
 	{
-		<span class="kw">if</span> <span class="ident">value</span>.<span class="ident">len</span>() <span class="op">&gt;</span><span class="op">=</span> <span class="number">2</span> <span class="op">&amp;&amp;</span> <span class="ident">value</span>.<span class="ident">starts_with</span>(<span class="string">&quot;0x&quot;</span>) <span class="op">&amp;&amp;</span> <span class="ident">value</span>.<span class="ident">len</span>() <span class="op">&amp;</span> <span class="number">1</span> <span class="op">==</span> <span class="number">0</span> {
-			<span class="prelude-val">Ok</span>(<span class="ident">Bytes::new</span>(<span class="ident">FromHex::from_hex</span>(<span class="kw-2">&amp;</span><span class="ident">value</span>[<span class="number">2</span>..]).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> {
-				<span class="ident">Error::custom</span>(<span class="macro">format!</span>(<span class="string">&quot;Invalid hex: {}&quot;</span>, <span class="ident">e</span>))
+		<span class="kw">if </span>value.len() &gt;= <span class="number">2 </span>&amp;&amp; value.starts_with(<span class="string">&quot;0x&quot;</span>) &amp;&amp; value.len() &amp; <span class="number">1 </span>== <span class="number">0 </span>{
+			<span class="prelude-val">Ok</span>(Bytes::new(FromHex::from_hex(<span class="kw-2">&amp;</span>value[<span class="number">2</span>..]).map_err(|e| {
+				Error::custom(<span class="macro">format!</span>(<span class="string">&quot;Invalid hex: {}&quot;</span>, e))
 			})<span class="question-mark">?</span>))
-		} <span class="kw">else</span> {
-			<span class="prelude-val">Err</span>(<span class="ident">Error::custom</span>(
+		} <span class="kw">else </span>{
+			<span class="prelude-val">Err</span>(Error::custom(
 				<span class="string">&quot;Invalid bytes format. Expected a 0x-prefixed hex string with even length&quot;</span>,
 			))
 		}
 	}
 
-	<span class="kw">fn</span> <span class="ident">visit_string</span><span class="op">&lt;</span><span class="ident">E</span><span class="op">&gt;</span>(<span class="self">self</span>, <span class="ident">value</span>: <span class="ident">String</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Value</span>, <span class="ident">E</span><span class="op">&gt;</span>
-	<span class="kw">where</span>
-		<span class="ident">E</span>: <span class="ident">Error</span>,
+	<span class="kw">fn </span>visit_string&lt;E&gt;(<span class="self">self</span>, value: String) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>::Value, E&gt;
+	<span class="kw">where
+		</span>E: Error,
 	{
-		<span class="self">self</span>.<span class="ident">visit_str</span>(<span class="ident">value</span>.<span class="ident">as_ref</span>())
+		<span class="self">self</span>.visit_str(value.as_ref())
 	}
 }
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
-<span class="kw">mod</span> <span class="ident">tests</span> {
-	<span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
+<span class="attribute">#[cfg(test)]
+</span><span class="kw">mod </span>tests {
+	<span class="kw">use super</span>::<span class="kw-2">*</span>;
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">test_bytes_serialize</span>() {
-		<span class="kw">let</span> <span class="ident">bytes</span> <span class="op">=</span> <span class="ident">Bytes</span>(<span class="string">&quot;0123456789abcdef&quot;</span>.<span class="ident">from_hex</span>().<span class="ident">unwrap</span>());
-		<span class="kw">let</span> <span class="ident">serialized</span> <span class="op">=</span> <span class="ident">serde_json::to_string</span>(<span class="kw-2">&amp;</span><span class="ident">bytes</span>).<span class="ident">unwrap</span>();
-		<span class="macro">assert_eq!</span>(<span class="ident">serialized</span>, <span class="string">r#&quot;&quot;0x0123456789abcdef&quot;&quot;#</span>);
+	<span class="attribute">#[test]
+	</span><span class="kw">fn </span>test_bytes_serialize() {
+		<span class="kw">let </span>bytes = Bytes(<span class="string">&quot;0123456789abcdef&quot;</span>.from_hex().unwrap());
+		<span class="kw">let </span>serialized = serde_json::to_string(<span class="kw-2">&amp;</span>bytes).unwrap();
+		<span class="macro">assert_eq!</span>(serialized, <span class="string">r#&quot;&quot;0x0123456789abcdef&quot;&quot;#</span>);
 	}
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">test_bytes_deserialize</span>() {
-		<span class="kw">let</span> <span class="ident">bytes0</span>: <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Bytes</span>, <span class="ident">serde_json::Error</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">serde_json::from_str</span>(<span class="string">r#&quot;&quot;∀∂&quot;&quot;#</span>);
-		<span class="kw">let</span> <span class="ident">bytes1</span>: <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Bytes</span>, <span class="ident">serde_json::Error</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">serde_json::from_str</span>(<span class="string">r#&quot;&quot;&quot;&quot;#</span>);
-		<span class="kw">let</span> <span class="ident">bytes2</span>: <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Bytes</span>, <span class="ident">serde_json::Error</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">serde_json::from_str</span>(<span class="string">r#&quot;&quot;0x123&quot;&quot;#</span>);
-		<span class="kw">let</span> <span class="ident">bytes3</span>: <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Bytes</span>, <span class="ident">serde_json::Error</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">serde_json::from_str</span>(<span class="string">r#&quot;&quot;0xgg&quot;&quot;#</span>);
+	<span class="attribute">#[test]
+	</span><span class="kw">fn </span>test_bytes_deserialize() {
+		<span class="kw">let </span>bytes0: <span class="prelude-ty">Result</span>&lt;Bytes, serde_json::Error&gt; = serde_json::from_str(<span class="string">r#&quot;&quot;∀∂&quot;&quot;#</span>);
+		<span class="kw">let </span>bytes1: <span class="prelude-ty">Result</span>&lt;Bytes, serde_json::Error&gt; = serde_json::from_str(<span class="string">r#&quot;&quot;&quot;&quot;#</span>);
+		<span class="kw">let </span>bytes2: <span class="prelude-ty">Result</span>&lt;Bytes, serde_json::Error&gt; = serde_json::from_str(<span class="string">r#&quot;&quot;0x123&quot;&quot;#</span>);
+		<span class="kw">let </span>bytes3: <span class="prelude-ty">Result</span>&lt;Bytes, serde_json::Error&gt; = serde_json::from_str(<span class="string">r#&quot;&quot;0xgg&quot;&quot;#</span>);
 
-		<span class="kw">let</span> <span class="ident">bytes4</span>: <span class="ident">Bytes</span> <span class="op">=</span> <span class="ident">serde_json::from_str</span>(<span class="string">r#&quot;&quot;0x&quot;&quot;#</span>).<span class="ident">unwrap</span>();
-		<span class="kw">let</span> <span class="ident">bytes5</span>: <span class="ident">Bytes</span> <span class="op">=</span> <span class="ident">serde_json::from_str</span>(<span class="string">r#&quot;&quot;0x12&quot;&quot;#</span>).<span class="ident">unwrap</span>();
-		<span class="kw">let</span> <span class="ident">bytes6</span>: <span class="ident">Bytes</span> <span class="op">=</span> <span class="ident">serde_json::from_str</span>(<span class="string">r#&quot;&quot;0x0123&quot;&quot;#</span>).<span class="ident">unwrap</span>();
+		<span class="kw">let </span>bytes4: Bytes = serde_json::from_str(<span class="string">r#&quot;&quot;0x&quot;&quot;#</span>).unwrap();
+		<span class="kw">let </span>bytes5: Bytes = serde_json::from_str(<span class="string">r#&quot;&quot;0x12&quot;&quot;#</span>).unwrap();
+		<span class="kw">let </span>bytes6: Bytes = serde_json::from_str(<span class="string">r#&quot;&quot;0x0123&quot;&quot;#</span>).unwrap();
 
-		<span class="macro">assert!</span>(<span class="ident">bytes0</span>.<span class="ident">is_err</span>());
-		<span class="macro">assert!</span>(<span class="ident">bytes1</span>.<span class="ident">is_err</span>());
-		<span class="macro">assert!</span>(<span class="ident">bytes2</span>.<span class="ident">is_err</span>());
-		<span class="macro">assert!</span>(<span class="ident">bytes3</span>.<span class="ident">is_err</span>());
-		<span class="macro">assert_eq!</span>(<span class="ident">bytes4</span>, <span class="ident">Bytes</span>(<span class="macro">vec!</span>[]));
-		<span class="macro">assert_eq!</span>(<span class="ident">bytes5</span>, <span class="ident">Bytes</span>(<span class="macro">vec!</span>[<span class="number">0x12</span>]));
-		<span class="macro">assert_eq!</span>(<span class="ident">bytes6</span>, <span class="ident">Bytes</span>(<span class="macro">vec!</span>[<span class="number">0x1</span>, <span class="number">0x23</span>]));
+		<span class="macro">assert!</span>(bytes0.is_err());
+		<span class="macro">assert!</span>(bytes1.is_err());
+		<span class="macro">assert!</span>(bytes2.is_err());
+		<span class="macro">assert!</span>(bytes3.is_err());
+		<span class="macro">assert_eq!</span>(bytes4, Bytes(<span class="macro">vec!</span>[]));
+		<span class="macro">assert_eq!</span>(bytes5, Bytes(<span class="macro">vec!</span>[<span class="number">0x12</span>]));
+		<span class="macro">assert_eq!</span>(bytes6, Bytes(<span class="macro">vec!</span>[<span class="number">0x1</span>, <span class="number">0x23</span>]));
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="fc_rpc_core" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (7fe022f5a 2022-07-24)" ></div>
-</body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="fc_rpc_core" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (81f391930 2022-10-09)" ></div></body></html>

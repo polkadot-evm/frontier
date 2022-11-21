@@ -1,10 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `primitives/ethereum/src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../fp_ethereum/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a><h2 class="location"></h2>
-    </nav>
-    <nav class="sidebar"><a class="sidebar-logo" href="../../fp_ethereum/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../fp_ethereum/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1">
-                                <a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div>
-                        </div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `primitives/ethereum/src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><a class="sidebar-logo" href="../../fp_ethereum/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../fp_ethereum/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -137,139 +131,138 @@
 <span id="131">131</span>
 <span id="132">132</span>
 <span id="133">133</span>
-</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
-<span class="comment">// This file is part of Frontier.</span>
-<span class="comment">//</span>
-<span class="comment">// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.</span>
-<span class="comment">//</span>
-<span class="comment">// Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
-<span class="comment">// you may not use this file except in compliance with the License.</span>
-<span class="comment">// You may obtain a copy of the License at</span>
-<span class="comment">//</span>
-<span class="comment">// 	http://www.apache.org/licenses/LICENSE-2.0</span>
-<span class="comment">//</span>
-<span class="comment">// Unless required by applicable law or agreed to in writing, software</span>
-<span class="comment">// distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
-<span class="comment">// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
-<span class="comment">// See the License for the specific language governing permissions and</span>
-<span class="comment">// limitations under the License.</span>
+</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
+// This file is part of Frontier.
+//
+// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// 	http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
-<span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
+</span><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 
-<span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Decode</span>, <span class="ident">Encode</span>};
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">ethereum</span>::{
-	<span class="ident">AccessListItem</span>, <span class="ident">BlockV2</span> <span class="kw">as</span> <span class="ident">Block</span>, <span class="ident">LegacyTransactionMessage</span>, <span class="ident">Log</span>, <span class="ident">ReceiptV3</span> <span class="kw">as</span> <span class="ident">Receipt</span>,
-	<span class="ident">TransactionAction</span>, <span class="ident">TransactionV2</span> <span class="kw">as</span> <span class="ident">Transaction</span>,
+</span><span class="kw">use </span>codec::{Decode, Encode};
+<span class="kw">pub use </span>ethereum::{
+	AccessListItem, BlockV2 <span class="kw">as </span>Block, LegacyTransactionMessage, Log, ReceiptV3 <span class="kw">as </span>Receipt,
+	TransactionAction, TransactionV2 <span class="kw">as </span>Transaction,
 };
-<span class="kw">use</span> <span class="ident">ethereum_types</span>::{<span class="ident">H160</span>, <span class="ident">H256</span>, <span class="ident">U256</span>};
-<span class="kw">use</span> <span class="ident">fp_evm::CheckEvmTransactionInput</span>;
-<span class="kw">use</span> <span class="ident">sp_std::vec::Vec</span>;
+<span class="kw">use </span>ethereum_types::{H160, H256, U256};
+<span class="kw">use </span>fp_evm::CheckEvmTransactionInput;
+<span class="kw">use </span>sp_std::vec::Vec;
 
-<span class="attribute">#[<span class="ident">repr</span>(<span class="ident">u8</span>)]</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">num_enum::FromPrimitive</span>, <span class="ident">num_enum::IntoPrimitive</span>)]</span>
-<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">TransactionValidationError</span> {
-	<span class="attribute">#[<span class="ident">allow</span>(<span class="ident">dead_code</span>)]</span>
-	<span class="attribute">#[<span class="ident">num_enum</span>(<span class="ident">default</span>)]</span>
-	<span class="ident">UnknownError</span>,
-	<span class="ident">InvalidChainId</span>,
-	<span class="ident">InvalidSignature</span>,
-	<span class="ident">GasLimitTooLow</span>,
-	<span class="ident">GasLimitTooHigh</span>,
-	<span class="ident">MaxFeePerGasTooLow</span>,
+<span class="attribute">#[repr(u8)]
+#[derive(num_enum::FromPrimitive, num_enum::IntoPrimitive)]
+</span><span class="kw">pub enum </span>TransactionValidationError {
+	<span class="attribute">#[allow(dead_code)]
+	#[num_enum(default)]
+	</span>UnknownError,
+	InvalidChainId,
+	InvalidSignature,
+	GasLimitTooLow,
+	GasLimitTooHigh,
+	MaxFeePerGasTooLow,
 }
 
-<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">ValidatedTransaction</span> {
-	<span class="kw">fn</span> <span class="ident">apply</span>(
-		<span class="ident">source</span>: <span class="ident">H160</span>,
-		<span class="ident">transaction</span>: <span class="ident">Transaction</span>,
-	) -&gt; <span class="ident">frame_support::dispatch::DispatchResultWithPostInfo</span>;
+<span class="kw">pub trait </span>ValidatedTransaction {
+	<span class="kw">fn </span>apply(
+		source: H160,
+		transaction: Transaction,
+	) -&gt; frame_support::dispatch::DispatchResultWithPostInfo;
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">Encode</span>, <span class="ident">Decode</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">TransactionData</span> {
-	<span class="kw">pub</span> <span class="ident">action</span>: <span class="ident">TransactionAction</span>,
-	<span class="kw">pub</span> <span class="ident">input</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
-	<span class="kw">pub</span> <span class="ident">nonce</span>: <span class="ident">U256</span>,
-	<span class="kw">pub</span> <span class="ident">gas_limit</span>: <span class="ident">U256</span>,
-	<span class="kw">pub</span> <span class="ident">gas_price</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-	<span class="kw">pub</span> <span class="ident">max_fee_per_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-	<span class="kw">pub</span> <span class="ident">max_priority_fee_per_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-	<span class="kw">pub</span> <span class="ident">value</span>: <span class="ident">U256</span>,
-	<span class="kw">pub</span> <span class="ident">chain_id</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
-	<span class="kw">pub</span> <span class="ident">access_list</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">H160</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span>)<span class="op">&gt;</span>,
+<span class="attribute">#[derive(Clone, Debug, Eq, PartialEq, Encode, Decode)]
+</span><span class="kw">pub struct </span>TransactionData {
+	<span class="kw">pub </span>action: TransactionAction,
+	<span class="kw">pub </span>input: Vec&lt;u8&gt;,
+	<span class="kw">pub </span>nonce: U256,
+	<span class="kw">pub </span>gas_limit: U256,
+	<span class="kw">pub </span>gas_price: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+	<span class="kw">pub </span>max_fee_per_gas: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+	<span class="kw">pub </span>max_priority_fee_per_gas: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+	<span class="kw">pub </span>value: U256,
+	<span class="kw">pub </span>chain_id: <span class="prelude-ty">Option</span>&lt;u64&gt;,
+	<span class="kw">pub </span>access_list: Vec&lt;(H160, Vec&lt;H256&gt;)&gt;,
 }
 
-<span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">TransactionData</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">CheckEvmTransactionInput</span> {
-	<span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">t</span>: <span class="ident">TransactionData</span>) -&gt; <span class="self">Self</span> {
-		<span class="ident">CheckEvmTransactionInput</span> {
-			<span class="ident">to</span>: <span class="kw">if</span> <span class="kw">let</span> <span class="ident">TransactionAction::Call</span>(<span class="ident">to</span>) <span class="op">=</span> <span class="ident">t</span>.<span class="ident">action</span> {
-				<span class="prelude-val">Some</span>(<span class="ident">to</span>)
-			} <span class="kw">else</span> {
-				<span class="prelude-val">None</span>
-			},
-			<span class="ident">chain_id</span>: <span class="ident">t</span>.<span class="ident">chain_id</span>,
-			<span class="ident">input</span>: <span class="ident">t</span>.<span class="ident">input</span>,
-			<span class="ident">nonce</span>: <span class="ident">t</span>.<span class="ident">nonce</span>,
-			<span class="ident">gas_limit</span>: <span class="ident">t</span>.<span class="ident">gas_limit</span>,
-			<span class="ident">gas_price</span>: <span class="ident">t</span>.<span class="ident">gas_price</span>,
-			<span class="ident">max_fee_per_gas</span>: <span class="ident">t</span>.<span class="ident">max_fee_per_gas</span>,
-			<span class="ident">max_priority_fee_per_gas</span>: <span class="ident">t</span>.<span class="ident">max_priority_fee_per_gas</span>,
-			<span class="ident">value</span>: <span class="ident">t</span>.<span class="ident">value</span>,
-			<span class="ident">access_list</span>: <span class="ident">t</span>.<span class="ident">access_list</span>,
+<span class="kw">impl </span>From&lt;TransactionData&gt; <span class="kw">for </span>CheckEvmTransactionInput {
+	<span class="kw">fn </span>from(t: TransactionData) -&gt; <span class="self">Self </span>{
+		CheckEvmTransactionInput {
+			to: <span class="kw">if let </span>TransactionAction::Call(to) = t.action {
+				<span class="prelude-val">Some</span>(to)
+			} <span class="kw">else </span>{
+				<span class="prelude-val">None
+			</span>},
+			chain_id: t.chain_id,
+			input: t.input,
+			nonce: t.nonce,
+			gas_limit: t.gas_limit,
+			gas_price: t.gas_price,
+			max_fee_per_gas: t.max_fee_per_gas,
+			max_priority_fee_per_gas: t.max_priority_fee_per_gas,
+			value: t.value,
+			access_list: t.access_list,
 		}
 	}
 }
 
-<span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">Transaction</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">TransactionData</span> {
-	<span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">t</span>: <span class="kw-2">&amp;</span><span class="ident">Transaction</span>) -&gt; <span class="self">Self</span> {
-		<span class="kw">match</span> <span class="ident">t</span> {
-			<span class="ident">Transaction::Legacy</span>(<span class="ident">t</span>) =&gt; <span class="ident">TransactionData</span> {
-				<span class="ident">action</span>: <span class="ident">t</span>.<span class="ident">action</span>,
-				<span class="ident">input</span>: <span class="ident">t</span>.<span class="ident">input</span>.<span class="ident">clone</span>(),
-				<span class="ident">nonce</span>: <span class="ident">t</span>.<span class="ident">nonce</span>,
-				<span class="ident">gas_limit</span>: <span class="ident">t</span>.<span class="ident">gas_limit</span>,
-				<span class="ident">gas_price</span>: <span class="prelude-val">Some</span>(<span class="ident">t</span>.<span class="ident">gas_price</span>),
-				<span class="ident">max_fee_per_gas</span>: <span class="prelude-val">None</span>,
-				<span class="ident">max_priority_fee_per_gas</span>: <span class="prelude-val">None</span>,
-				<span class="ident">value</span>: <span class="ident">t</span>.<span class="ident">value</span>,
-				<span class="ident">chain_id</span>: <span class="ident">t</span>.<span class="ident">signature</span>.<span class="ident">chain_id</span>(),
-				<span class="ident">access_list</span>: <span class="ident">Vec::new</span>(),
+<span class="kw">impl </span>From&lt;<span class="kw-2">&amp;</span>Transaction&gt; <span class="kw">for </span>TransactionData {
+	<span class="kw">fn </span>from(t: <span class="kw-2">&amp;</span>Transaction) -&gt; <span class="self">Self </span>{
+		<span class="kw">match </span>t {
+			Transaction::Legacy(t) =&gt; TransactionData {
+				action: t.action,
+				input: t.input.clone(),
+				nonce: t.nonce,
+				gas_limit: t.gas_limit,
+				gas_price: <span class="prelude-val">Some</span>(t.gas_price),
+				max_fee_per_gas: <span class="prelude-val">None</span>,
+				max_priority_fee_per_gas: <span class="prelude-val">None</span>,
+				value: t.value,
+				chain_id: t.signature.chain_id(),
+				access_list: Vec::new(),
 			},
-			<span class="ident">Transaction::EIP2930</span>(<span class="ident">t</span>) =&gt; <span class="ident">TransactionData</span> {
-				<span class="ident">action</span>: <span class="ident">t</span>.<span class="ident">action</span>,
-				<span class="ident">input</span>: <span class="ident">t</span>.<span class="ident">input</span>.<span class="ident">clone</span>(),
-				<span class="ident">nonce</span>: <span class="ident">t</span>.<span class="ident">nonce</span>,
-				<span class="ident">gas_limit</span>: <span class="ident">t</span>.<span class="ident">gas_limit</span>,
-				<span class="ident">gas_price</span>: <span class="prelude-val">Some</span>(<span class="ident">t</span>.<span class="ident">gas_price</span>),
-				<span class="ident">max_fee_per_gas</span>: <span class="prelude-val">None</span>,
-				<span class="ident">max_priority_fee_per_gas</span>: <span class="prelude-val">None</span>,
-				<span class="ident">value</span>: <span class="ident">t</span>.<span class="ident">value</span>,
-				<span class="ident">chain_id</span>: <span class="prelude-val">Some</span>(<span class="ident">t</span>.<span class="ident">chain_id</span>),
-				<span class="ident">access_list</span>: <span class="ident">t</span>
-					.<span class="ident">access_list</span>
-					.<span class="ident">iter</span>()
-					.<span class="ident">map</span>(<span class="op">|</span><span class="ident">d</span><span class="op">|</span> (<span class="ident">d</span>.<span class="ident">address</span>, <span class="ident">d</span>.<span class="ident">storage_keys</span>.<span class="ident">clone</span>()))
-					.<span class="ident">collect</span>(),
+			Transaction::EIP2930(t) =&gt; TransactionData {
+				action: t.action,
+				input: t.input.clone(),
+				nonce: t.nonce,
+				gas_limit: t.gas_limit,
+				gas_price: <span class="prelude-val">Some</span>(t.gas_price),
+				max_fee_per_gas: <span class="prelude-val">None</span>,
+				max_priority_fee_per_gas: <span class="prelude-val">None</span>,
+				value: t.value,
+				chain_id: <span class="prelude-val">Some</span>(t.chain_id),
+				access_list: t
+					.access_list
+					.iter()
+					.map(|d| (d.address, d.storage_keys.clone()))
+					.collect(),
 			},
-			<span class="ident">Transaction::EIP1559</span>(<span class="ident">t</span>) =&gt; <span class="ident">TransactionData</span> {
-				<span class="ident">action</span>: <span class="ident">t</span>.<span class="ident">action</span>,
-				<span class="ident">input</span>: <span class="ident">t</span>.<span class="ident">input</span>.<span class="ident">clone</span>(),
-				<span class="ident">nonce</span>: <span class="ident">t</span>.<span class="ident">nonce</span>,
-				<span class="ident">gas_limit</span>: <span class="ident">t</span>.<span class="ident">gas_limit</span>,
-				<span class="ident">gas_price</span>: <span class="prelude-val">None</span>,
-				<span class="ident">max_fee_per_gas</span>: <span class="prelude-val">Some</span>(<span class="ident">t</span>.<span class="ident">max_fee_per_gas</span>),
-				<span class="ident">max_priority_fee_per_gas</span>: <span class="prelude-val">Some</span>(<span class="ident">t</span>.<span class="ident">max_priority_fee_per_gas</span>),
-				<span class="ident">value</span>: <span class="ident">t</span>.<span class="ident">value</span>,
-				<span class="ident">chain_id</span>: <span class="prelude-val">Some</span>(<span class="ident">t</span>.<span class="ident">chain_id</span>),
-				<span class="ident">access_list</span>: <span class="ident">t</span>
-					.<span class="ident">access_list</span>
-					.<span class="ident">iter</span>()
-					.<span class="ident">map</span>(<span class="op">|</span><span class="ident">d</span><span class="op">|</span> (<span class="ident">d</span>.<span class="ident">address</span>, <span class="ident">d</span>.<span class="ident">storage_keys</span>.<span class="ident">clone</span>()))
-					.<span class="ident">collect</span>(),
+			Transaction::EIP1559(t) =&gt; TransactionData {
+				action: t.action,
+				input: t.input.clone(),
+				nonce: t.nonce,
+				gas_limit: t.gas_limit,
+				gas_price: <span class="prelude-val">None</span>,
+				max_fee_per_gas: <span class="prelude-val">Some</span>(t.max_fee_per_gas),
+				max_priority_fee_per_gas: <span class="prelude-val">Some</span>(t.max_priority_fee_per_gas),
+				value: t.value,
+				chain_id: <span class="prelude-val">Some</span>(t.chain_id),
+				access_list: t
+					.access_list
+					.iter()
+					.map(|d| (d.address, d.storage_keys.clone()))
+					.collect(),
 			},
 		}
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="fp_ethereum" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (7fe022f5a 2022-07-24)" ></div>
-</body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="fp_ethereum" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (81f391930 2022-10-09)" ></div></body></html>

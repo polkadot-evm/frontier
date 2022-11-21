@@ -1,10 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `client/rpc-core/src/types/block_number.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>block_number.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../fc_rpc_core/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div>
-        </a><h2 class="location"></h2>
-    </nav>
-    <nav class="sidebar"><a class="sidebar-logo" href="../../../fc_rpc_core/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div>
-        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../fc_rpc_core/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1">
-                                <a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div>
-                        </div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `client/rpc-core/src/types/block_number.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>block_number.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../../normalize.css"><link rel="stylesheet" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../../ayu.css" disabled><link rel="stylesheet" href="../../../dark.css" disabled><link rel="stylesheet" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><a class="sidebar-logo" href="../../../fc_rpc_core/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../fc_rpc_core/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -240,242 +234,241 @@
 <span id="234">234</span>
 <span id="235">235</span>
 <span id="236">236</span>
-</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
-<span class="comment">// This file is part of Frontier.</span>
-<span class="comment">//</span>
-<span class="comment">// Copyright (c) 2015-2022 Parity Technologies (UK) Ltd.</span>
-<span class="comment">//</span>
-<span class="comment">// This program is free software: you can redistribute it and/or modify</span>
-<span class="comment">// it under the terms of the GNU General Public License as published by</span>
-<span class="comment">// the Free Software Foundation, either version 3 of the License, or</span>
-<span class="comment">// (at your option) any later version.</span>
-<span class="comment">//</span>
-<span class="comment">// This program is distributed in the hope that it will be useful,</span>
-<span class="comment">// but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
-<span class="comment">// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the</span>
-<span class="comment">// GNU General Public License for more details.</span>
-<span class="comment">//</span>
-<span class="comment">// You should have received a copy of the GNU General Public License</span>
-<span class="comment">// along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.</span>
+</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
+// This file is part of Frontier.
+//
+// Copyright (c) 2015-2022 Parity Technologies (UK) Ltd.
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.
 
-<span class="kw">use</span> <span class="ident">ethereum_types::H256</span>;
-<span class="kw">use</span> <span class="ident">serde</span>::{
-	<span class="ident">de</span>::{<span class="ident">Error</span>, <span class="ident">MapAccess</span>, <span class="ident">Visitor</span>},
-	<span class="ident">Deserialize</span>, <span class="ident">Deserializer</span>, <span class="ident">Serialize</span>, <span class="ident">Serializer</span>,
+</span><span class="kw">use </span>ethereum_types::H256;
+<span class="kw">use </span>serde::{
+	de::{Error, MapAccess, Visitor},
+	Deserialize, Deserializer, Serialize, Serializer,
 };
-<span class="kw">use</span> <span class="ident">std::fmt</span>;
+<span class="kw">use </span>std::fmt;
 
-<span class="doccomment">/// Represents rpc api block number param.</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">Hash</span>)]</span>
-<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">BlockNumber</span> {
-	<span class="doccomment">/// Hash</span>
-	<span class="ident">Hash</span> {
-		<span class="doccomment">/// block hash</span>
-		<span class="ident">hash</span>: <span class="ident">H256</span>,
-		<span class="doccomment">/// only return blocks part of the canon chain</span>
-		<span class="ident">require_canonical</span>: <span class="ident">bool</span>,
+<span class="doccomment">/// Represents rpc api block number param.
+</span><span class="attribute">#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
+</span><span class="kw">pub enum </span>BlockNumber {
+	<span class="doccomment">/// Hash
+	</span>Hash {
+		<span class="doccomment">/// block hash
+		</span>hash: H256,
+		<span class="doccomment">/// only return blocks part of the canon chain
+		</span>require_canonical: bool,
 	},
-	<span class="doccomment">/// Number</span>
-	<span class="ident">Num</span>(<span class="ident">u64</span>),
-	<span class="doccomment">/// Latest block</span>
-	<span class="ident">Latest</span>,
-	<span class="doccomment">/// Earliest block (genesis)</span>
-	<span class="ident">Earliest</span>,
-	<span class="doccomment">/// Pending block (being mined)</span>
-	<span class="ident">Pending</span>,
-	<span class="doccomment">/// The most recent crypto-economically secure block.</span>
-	<span class="doccomment">/// There is no difference between Ethereum&#39;s `safe` and `finalized`</span>
-	<span class="doccomment">/// in Substrate finality gadget.</span>
-	<span class="ident">Safe</span>,
-	<span class="doccomment">/// The most recent crypto-economically secure block.</span>
-	<span class="ident">Finalized</span>,
+	<span class="doccomment">/// Number
+	</span>Num(u64),
+	<span class="doccomment">/// Latest block
+	</span>Latest,
+	<span class="doccomment">/// Earliest block (genesis)
+	</span>Earliest,
+	<span class="doccomment">/// Pending block (being mined)
+	</span>Pending,
+	<span class="doccomment">/// The most recent crypto-economically secure block.
+	/// There is no difference between Ethereum&#39;s `safe` and `finalized`
+	/// in Substrate finality gadget.
+	</span>Safe,
+	<span class="doccomment">/// The most recent crypto-economically secure block.
+	</span>Finalized,
 }
 
-<span class="kw">impl</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">BlockNumber</span> {
-	<span class="kw">fn</span> <span class="ident">default</span>() -&gt; <span class="self">Self</span> {
-		<span class="ident">BlockNumber::Latest</span>
+<span class="kw">impl </span>Default <span class="kw">for </span>BlockNumber {
+	<span class="kw">fn </span>default() -&gt; <span class="self">Self </span>{
+		BlockNumber::Latest
 	}
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">Deserialize</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">BlockNumber</span> {
-	<span class="kw">fn</span> <span class="ident">deserialize</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span>(<span class="ident">deserializer</span>: <span class="ident">D</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">BlockNumber</span>, <span class="ident">D::Error</span><span class="op">&gt;</span>
-	<span class="kw">where</span>
-		<span class="ident">D</span>: <span class="ident">Deserializer</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>,
+<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>&gt; Deserialize&lt;<span class="lifetime">&#39;a</span>&gt; <span class="kw">for </span>BlockNumber {
+	<span class="kw">fn </span>deserialize&lt;D&gt;(deserializer: D) -&gt; <span class="prelude-ty">Result</span>&lt;BlockNumber, D::Error&gt;
+	<span class="kw">where
+		</span>D: Deserializer&lt;<span class="lifetime">&#39;a</span>&gt;,
 	{
-		<span class="ident">deserializer</span>.<span class="ident">deserialize_any</span>(<span class="ident">BlockNumberVisitor</span>)
+		deserializer.deserialize_any(BlockNumberVisitor)
 	}
 }
 
-<span class="kw">impl</span> <span class="ident">BlockNumber</span> {
-	<span class="doccomment">/// Convert block number to min block target.</span>
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">to_min_block_num</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span> {
-		<span class="kw">match</span> <span class="kw-2">*</span><span class="self">self</span> {
-			<span class="ident">BlockNumber::Num</span>(<span class="kw-2">ref</span> <span class="ident">x</span>) =&gt; <span class="prelude-val">Some</span>(<span class="kw-2">*</span><span class="ident">x</span>),
-			<span class="ident">BlockNumber::Earliest</span> =&gt; <span class="prelude-val">Some</span>(<span class="number">0</span>),
-			<span class="kw">_</span> =&gt; <span class="prelude-val">None</span>,
+<span class="kw">impl </span>BlockNumber {
+	<span class="doccomment">/// Convert block number to min block target.
+	</span><span class="kw">pub fn </span>to_min_block_num(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;u64&gt; {
+		<span class="kw">match </span><span class="kw-2">*</span><span class="self">self </span>{
+			BlockNumber::Num(<span class="kw-2">ref </span>x) =&gt; <span class="prelude-val">Some</span>(<span class="kw-2">*</span>x),
+			BlockNumber::Earliest =&gt; <span class="prelude-val">Some</span>(<span class="number">0</span>),
+			<span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
 		}
 	}
 }
 
-<span class="kw">impl</span> <span class="ident">Serialize</span> <span class="kw">for</span> <span class="ident">BlockNumber</span> {
-	<span class="kw">fn</span> <span class="ident">serialize</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">serializer</span>: <span class="ident">S</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">S::Ok</span>, <span class="ident">S::Error</span><span class="op">&gt;</span>
-	<span class="kw">where</span>
-		<span class="ident">S</span>: <span class="ident">Serializer</span>,
+<span class="kw">impl </span>Serialize <span class="kw">for </span>BlockNumber {
+	<span class="kw">fn </span>serialize&lt;S&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, serializer: S) -&gt; <span class="prelude-ty">Result</span>&lt;S::Ok, S::Error&gt;
+	<span class="kw">where
+		</span>S: Serializer,
 	{
-		<span class="kw">match</span> <span class="kw-2">*</span><span class="self">self</span> {
-			<span class="ident">BlockNumber::Hash</span> {
-				<span class="ident">hash</span>,
-				<span class="ident">require_canonical</span>,
-			} =&gt; <span class="ident">serializer</span>.<span class="ident">serialize_str</span>(<span class="kw-2">&amp;</span><span class="macro">format!</span>(
+		<span class="kw">match </span><span class="kw-2">*</span><span class="self">self </span>{
+			BlockNumber::Hash {
+				hash,
+				require_canonical,
+			} =&gt; serializer.serialize_str(<span class="kw-2">&amp;</span><span class="macro">format!</span>(
 				<span class="string">&quot;{{ &#39;hash&#39;: &#39;{}&#39;, &#39;requireCanonical&#39;: &#39;{}&#39;  }}&quot;</span>,
-				<span class="ident">hash</span>, <span class="ident">require_canonical</span>
+				hash, require_canonical
 			)),
-			<span class="ident">BlockNumber::Num</span>(<span class="kw-2">ref</span> <span class="ident">x</span>) =&gt; <span class="ident">serializer</span>.<span class="ident">serialize_str</span>(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">&quot;0x{:x}&quot;</span>, <span class="ident">x</span>)),
-			<span class="ident">BlockNumber::Latest</span> =&gt; <span class="ident">serializer</span>.<span class="ident">serialize_str</span>(<span class="string">&quot;latest&quot;</span>),
-			<span class="ident">BlockNumber::Earliest</span> =&gt; <span class="ident">serializer</span>.<span class="ident">serialize_str</span>(<span class="string">&quot;earliest&quot;</span>),
-			<span class="ident">BlockNumber::Pending</span> =&gt; <span class="ident">serializer</span>.<span class="ident">serialize_str</span>(<span class="string">&quot;pending&quot;</span>),
-			<span class="ident">BlockNumber::Safe</span> =&gt; <span class="ident">serializer</span>.<span class="ident">serialize_str</span>(<span class="string">&quot;safe&quot;</span>),
-			<span class="ident">BlockNumber::Finalized</span> =&gt; <span class="ident">serializer</span>.<span class="ident">serialize_str</span>(<span class="string">&quot;finalized&quot;</span>),
+			BlockNumber::Num(<span class="kw-2">ref </span>x) =&gt; serializer.serialize_str(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">&quot;0x{:x}&quot;</span>, x)),
+			BlockNumber::Latest =&gt; serializer.serialize_str(<span class="string">&quot;latest&quot;</span>),
+			BlockNumber::Earliest =&gt; serializer.serialize_str(<span class="string">&quot;earliest&quot;</span>),
+			BlockNumber::Pending =&gt; serializer.serialize_str(<span class="string">&quot;pending&quot;</span>),
+			BlockNumber::Safe =&gt; serializer.serialize_str(<span class="string">&quot;safe&quot;</span>),
+			BlockNumber::Finalized =&gt; serializer.serialize_str(<span class="string">&quot;finalized&quot;</span>),
 		}
 	}
 }
 
-<span class="kw">struct</span> <span class="ident">BlockNumberVisitor</span>;
+<span class="kw">struct </span>BlockNumberVisitor;
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">Visitor</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">BlockNumberVisitor</span> {
-	<span class="kw">type</span> <span class="ident">Value</span> <span class="op">=</span> <span class="ident">BlockNumber</span>;
+<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>&gt; Visitor&lt;<span class="lifetime">&#39;a</span>&gt; <span class="kw">for </span>BlockNumberVisitor {
+	<span class="kw">type </span>Value = BlockNumber;
 
-	<span class="kw">fn</span> <span class="ident">expecting</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">formatter</span>: <span class="kw-2">&amp;mut</span> <span class="ident">fmt::Formatter</span>) -&gt; <span class="ident">fmt::Result</span> {
+	<span class="kw">fn </span>expecting(<span class="kw-2">&amp;</span><span class="self">self</span>, formatter: <span class="kw-2">&amp;mut </span>fmt::Formatter) -&gt; fmt::Result {
 		<span class="macro">write!</span>(
-			<span class="ident">formatter</span>,
-			<span class="string">&quot;a block number or &#39;latest&#39;, &#39;safe&#39;, &#39;finalized&#39;, &#39;earliest&#39; or &#39;pending&#39;&quot;</span>
-		)
+			formatter,
+			<span class="string">&quot;a block number or &#39;latest&#39;, &#39;safe&#39;, &#39;finalized&#39;, &#39;earliest&#39; or &#39;pending&#39;&quot;
+		</span>)
 	}
 
-	<span class="kw">fn</span> <span class="ident">visit_map</span><span class="op">&lt;</span><span class="ident">V</span><span class="op">&gt;</span>(<span class="self">self</span>, <span class="kw-2">mut</span> <span class="ident">visitor</span>: <span class="ident">V</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Value</span>, <span class="ident">V::Error</span><span class="op">&gt;</span>
-	<span class="kw">where</span>
-		<span class="ident">V</span>: <span class="ident">MapAccess</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>,
+	<span class="kw">fn </span>visit_map&lt;V&gt;(<span class="self">self</span>, <span class="kw-2">mut </span>visitor: V) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>::Value, V::Error&gt;
+	<span class="kw">where
+		</span>V: MapAccess&lt;<span class="lifetime">&#39;a</span>&gt;,
 	{
-		<span class="kw">let</span> (<span class="kw-2">mut</span> <span class="ident">require_canonical</span>, <span class="kw-2">mut</span> <span class="ident">block_number</span>, <span class="kw-2">mut</span> <span class="ident">block_hash</span>) <span class="op">=</span>
-			(<span class="bool-val">false</span>, <span class="prelude-val">None</span>::<span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>, <span class="prelude-val">None</span>::<span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span>);
+		<span class="kw">let </span>(<span class="kw-2">mut </span>require_canonical, <span class="kw-2">mut </span>block_number, <span class="kw-2">mut </span>block_hash) =
+			(<span class="bool-val">false</span>, <span class="prelude-val">None</span>::&lt;u64&gt;, <span class="prelude-val">None</span>::&lt;H256&gt;);
 
-		<span class="kw">loop</span> {
-			<span class="kw">let</span> <span class="ident">key_str</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">visitor</span>.<span class="ident">next_key</span>()<span class="question-mark">?</span>;
+		<span class="kw">loop </span>{
+			<span class="kw">let </span>key_str: <span class="prelude-ty">Option</span>&lt;String&gt; = visitor.next_key()<span class="question-mark">?</span>;
 
-			<span class="kw">match</span> <span class="ident">key_str</span> {
-				<span class="prelude-val">Some</span>(<span class="ident">key</span>) =&gt; <span class="kw">match</span> <span class="ident">key</span>.<span class="ident">as_str</span>() {
-					<span class="string">&quot;blockNumber&quot;</span> =&gt; {
-						<span class="kw">let</span> <span class="ident">value</span>: <span class="ident">String</span> <span class="op">=</span> <span class="ident">visitor</span>.<span class="ident">next_value</span>()<span class="question-mark">?</span>;
-						<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">stripped</span>) <span class="op">=</span> <span class="ident">value</span>.<span class="ident">strip_prefix</span>(<span class="string">&quot;0x&quot;</span>) {
-							<span class="kw">let</span> <span class="ident">number</span> <span class="op">=</span> <span class="ident">u64::from_str_radix</span>(<span class="ident">stripped</span>, <span class="number">16</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> {
-								<span class="ident">Error::custom</span>(<span class="macro">format!</span>(<span class="string">&quot;Invalid block number: {}&quot;</span>, <span class="ident">e</span>))
+			<span class="kw">match </span>key_str {
+				<span class="prelude-val">Some</span>(key) =&gt; <span class="kw">match </span>key.as_str() {
+					<span class="string">&quot;blockNumber&quot; </span>=&gt; {
+						<span class="kw">let </span>value: String = visitor.next_value()<span class="question-mark">?</span>;
+						<span class="kw">if let </span><span class="prelude-val">Some</span>(stripped) = value.strip_prefix(<span class="string">&quot;0x&quot;</span>) {
+							<span class="kw">let </span>number = u64::from_str_radix(stripped, <span class="number">16</span>).map_err(|e| {
+								Error::custom(<span class="macro">format!</span>(<span class="string">&quot;Invalid block number: {}&quot;</span>, e))
 							})<span class="question-mark">?</span>;
 
-							<span class="ident">block_number</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">number</span>);
+							block_number = <span class="prelude-val">Some</span>(number);
 							<span class="kw">break</span>;
-						} <span class="kw">else</span> {
-							<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error::custom</span>(
-								<span class="string">&quot;Invalid block number: missing 0x prefix&quot;</span>.<span class="ident">to_string</span>(),
+						} <span class="kw">else </span>{
+							<span class="kw">return </span><span class="prelude-val">Err</span>(Error::custom(
+								<span class="string">&quot;Invalid block number: missing 0x prefix&quot;</span>.to_string(),
 							));
 						}
 					}
-					<span class="string">&quot;blockHash&quot;</span> =&gt; {
-						<span class="ident">block_hash</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">visitor</span>.<span class="ident">next_value</span>()<span class="question-mark">?</span>);
+					<span class="string">&quot;blockHash&quot; </span>=&gt; {
+						block_hash = <span class="prelude-val">Some</span>(visitor.next_value()<span class="question-mark">?</span>);
 					}
-					<span class="string">&quot;requireCanonical&quot;</span> =&gt; {
-						<span class="ident">require_canonical</span> <span class="op">=</span> <span class="ident">visitor</span>.<span class="ident">next_value</span>()<span class="question-mark">?</span>;
+					<span class="string">&quot;requireCanonical&quot; </span>=&gt; {
+						require_canonical = visitor.next_value()<span class="question-mark">?</span>;
 					}
-					<span class="ident">key</span> =&gt; <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error::custom</span>(<span class="macro">format!</span>(<span class="string">&quot;Unknown key: {}&quot;</span>, <span class="ident">key</span>))),
+					key =&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(Error::custom(<span class="macro">format!</span>(<span class="string">&quot;Unknown key: {}&quot;</span>, key))),
 				},
-				<span class="prelude-val">None</span> =&gt; <span class="kw">break</span>,
+				<span class="prelude-val">None </span>=&gt; <span class="kw">break</span>,
 			};
 		}
 
-		<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">number</span>) <span class="op">=</span> <span class="ident">block_number</span> {
-			<span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">BlockNumber::Num</span>(<span class="ident">number</span>));
+		<span class="kw">if let </span><span class="prelude-val">Some</span>(number) = block_number {
+			<span class="kw">return </span><span class="prelude-val">Ok</span>(BlockNumber::Num(number));
 		}
 
-		<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">hash</span>) <span class="op">=</span> <span class="ident">block_hash</span> {
-			<span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">BlockNumber::Hash</span> {
-				<span class="ident">hash</span>,
-				<span class="ident">require_canonical</span>,
+		<span class="kw">if let </span><span class="prelude-val">Some</span>(hash) = block_hash {
+			<span class="kw">return </span><span class="prelude-val">Ok</span>(BlockNumber::Hash {
+				hash,
+				require_canonical,
 			});
 		}
 
-		<span class="prelude-val">Err</span>(<span class="ident">Error::custom</span>(<span class="string">&quot;Invalid input&quot;</span>))
+		<span class="prelude-val">Err</span>(Error::custom(<span class="string">&quot;Invalid input&quot;</span>))
 	}
 
-	<span class="kw">fn</span> <span class="ident">visit_str</span><span class="op">&lt;</span><span class="ident">E</span><span class="op">&gt;</span>(<span class="self">self</span>, <span class="ident">value</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Value</span>, <span class="ident">E</span><span class="op">&gt;</span>
-	<span class="kw">where</span>
-		<span class="ident">E</span>: <span class="ident">Error</span>,
+	<span class="kw">fn </span>visit_str&lt;E&gt;(<span class="self">self</span>, value: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>::Value, E&gt;
+	<span class="kw">where
+		</span>E: Error,
 	{
-		<span class="kw">match</span> <span class="ident">value</span> {
-			<span class="string">&quot;latest&quot;</span> =&gt; <span class="prelude-val">Ok</span>(<span class="ident">BlockNumber::Latest</span>),
-			<span class="string">&quot;earliest&quot;</span> =&gt; <span class="prelude-val">Ok</span>(<span class="ident">BlockNumber::Earliest</span>),
-			<span class="string">&quot;pending&quot;</span> =&gt; <span class="prelude-val">Ok</span>(<span class="ident">BlockNumber::Pending</span>),
-			<span class="string">&quot;safe&quot;</span> =&gt; <span class="prelude-val">Ok</span>(<span class="ident">BlockNumber::Safe</span>),
-			<span class="string">&quot;finalized&quot;</span> =&gt; <span class="prelude-val">Ok</span>(<span class="ident">BlockNumber::Finalized</span>),
-			<span class="kw">_</span> <span class="kw">if</span> <span class="ident">value</span>.<span class="ident">starts_with</span>(<span class="string">&quot;0x&quot;</span>) =&gt; <span class="ident">u64::from_str_radix</span>(<span class="kw-2">&amp;</span><span class="ident">value</span>[<span class="number">2</span>..], <span class="number">16</span>)
-				.<span class="ident">map</span>(<span class="ident">BlockNumber::Num</span>)
-				.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">Error::custom</span>(<span class="macro">format!</span>(<span class="string">&quot;Invalid block number: {}&quot;</span>, <span class="ident">e</span>))),
-			<span class="kw">_</span> =&gt; <span class="ident">value</span>.<span class="ident">parse</span>::<span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>().<span class="ident">map</span>(<span class="ident">BlockNumber::Num</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> {
-				<span class="ident">Error::custom</span>(<span class="string">&quot;Invalid block number: non-decimal or missing 0x prefix&quot;</span>.<span class="ident">to_string</span>())
+		<span class="kw">match </span>value {
+			<span class="string">&quot;latest&quot; </span>=&gt; <span class="prelude-val">Ok</span>(BlockNumber::Latest),
+			<span class="string">&quot;earliest&quot; </span>=&gt; <span class="prelude-val">Ok</span>(BlockNumber::Earliest),
+			<span class="string">&quot;pending&quot; </span>=&gt; <span class="prelude-val">Ok</span>(BlockNumber::Pending),
+			<span class="string">&quot;safe&quot; </span>=&gt; <span class="prelude-val">Ok</span>(BlockNumber::Safe),
+			<span class="string">&quot;finalized&quot; </span>=&gt; <span class="prelude-val">Ok</span>(BlockNumber::Finalized),
+			<span class="kw">_ if </span>value.starts_with(<span class="string">&quot;0x&quot;</span>) =&gt; u64::from_str_radix(<span class="kw-2">&amp;</span>value[<span class="number">2</span>..], <span class="number">16</span>)
+				.map(BlockNumber::Num)
+				.map_err(|e| Error::custom(<span class="macro">format!</span>(<span class="string">&quot;Invalid block number: {}&quot;</span>, e))),
+			<span class="kw">_ </span>=&gt; value.parse::&lt;u64&gt;().map(BlockNumber::Num).map_err(|<span class="kw">_</span>| {
+				Error::custom(<span class="string">&quot;Invalid block number: non-decimal or missing 0x prefix&quot;</span>.to_string())
 			}),
 		}
 	}
 
-	<span class="kw">fn</span> <span class="ident">visit_string</span><span class="op">&lt;</span><span class="ident">E</span><span class="op">&gt;</span>(<span class="self">self</span>, <span class="ident">value</span>: <span class="ident">String</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Value</span>, <span class="ident">E</span><span class="op">&gt;</span>
-	<span class="kw">where</span>
-		<span class="ident">E</span>: <span class="ident">Error</span>,
+	<span class="kw">fn </span>visit_string&lt;E&gt;(<span class="self">self</span>, value: String) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>::Value, E&gt;
+	<span class="kw">where
+		</span>E: Error,
 	{
-		<span class="self">self</span>.<span class="ident">visit_str</span>(<span class="ident">value</span>.<span class="ident">as_ref</span>())
+		<span class="self">self</span>.visit_str(value.as_ref())
 	}
 
-	<span class="kw">fn</span> <span class="ident">visit_u64</span><span class="op">&lt;</span><span class="ident">E</span><span class="op">&gt;</span>(<span class="self">self</span>, <span class="ident">value</span>: <span class="ident">u64</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Value</span>, <span class="ident">E</span><span class="op">&gt;</span>
-	<span class="kw">where</span>
-		<span class="ident">E</span>: <span class="ident">Error</span>,
+	<span class="kw">fn </span>visit_u64&lt;E&gt;(<span class="self">self</span>, value: u64) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>::Value, E&gt;
+	<span class="kw">where
+		</span>E: Error,
 	{
-		<span class="prelude-val">Ok</span>(<span class="ident">BlockNumber::Num</span>(<span class="ident">value</span>))
+		<span class="prelude-val">Ok</span>(BlockNumber::Num(value))
 	}
 }
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
-<span class="kw">mod</span> <span class="ident">tests</span> {
-	<span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
+<span class="attribute">#[cfg(test)]
+</span><span class="kw">mod </span>tests {
+	<span class="kw">use super</span>::<span class="kw-2">*</span>;
 
-	<span class="kw">fn</span> <span class="ident">match_block_number</span>(<span class="ident">block_number</span>: <span class="ident">BlockNumber</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span> {
-		<span class="kw">match</span> <span class="ident">block_number</span> {
-			<span class="ident">BlockNumber::Num</span>(<span class="ident">number</span>) =&gt; <span class="prelude-val">Some</span>(<span class="ident">number</span>),
-			<span class="ident">BlockNumber::Earliest</span> =&gt; <span class="prelude-val">Some</span>(<span class="number">0</span>),
-			<span class="ident">BlockNumber::Latest</span> =&gt; <span class="prelude-val">Some</span>(<span class="number">1000</span>),
-			<span class="ident">BlockNumber::Safe</span> =&gt; <span class="prelude-val">Some</span>(<span class="number">999</span>),
-			<span class="ident">BlockNumber::Finalized</span> =&gt; <span class="prelude-val">Some</span>(<span class="number">999</span>),
-			<span class="ident">BlockNumber::Pending</span> =&gt; <span class="prelude-val">Some</span>(<span class="number">1001</span>),
-			<span class="kw">_</span> =&gt; <span class="prelude-val">None</span>,
+	<span class="kw">fn </span>match_block_number(block_number: BlockNumber) -&gt; <span class="prelude-ty">Option</span>&lt;u64&gt; {
+		<span class="kw">match </span>block_number {
+			BlockNumber::Num(number) =&gt; <span class="prelude-val">Some</span>(number),
+			BlockNumber::Earliest =&gt; <span class="prelude-val">Some</span>(<span class="number">0</span>),
+			BlockNumber::Latest =&gt; <span class="prelude-val">Some</span>(<span class="number">1000</span>),
+			BlockNumber::Safe =&gt; <span class="prelude-val">Some</span>(<span class="number">999</span>),
+			BlockNumber::Finalized =&gt; <span class="prelude-val">Some</span>(<span class="number">999</span>),
+			BlockNumber::Pending =&gt; <span class="prelude-val">Some</span>(<span class="number">1001</span>),
+			<span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
 		}
 	}
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">block_number_deserialize</span>() {
-		<span class="kw">let</span> <span class="ident">bn_dec</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="ident">serde_json::from_str</span>(<span class="string">r#&quot;&quot;42&quot;&quot;#</span>).<span class="ident">unwrap</span>();
-		<span class="kw">let</span> <span class="ident">bn_hex</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="ident">serde_json::from_str</span>(<span class="string">r#&quot;&quot;0x45&quot;&quot;#</span>).<span class="ident">unwrap</span>();
-		<span class="kw">let</span> <span class="ident">bn_u64</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="ident">serde_json::from_str</span>(<span class="string">r#&quot;420&quot;#</span>).<span class="ident">unwrap</span>();
-		<span class="kw">let</span> <span class="ident">bn_tag_earliest</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="ident">serde_json::from_str</span>(<span class="string">r#&quot;&quot;earliest&quot;&quot;#</span>).<span class="ident">unwrap</span>();
-		<span class="kw">let</span> <span class="ident">bn_tag_latest</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="ident">serde_json::from_str</span>(<span class="string">r#&quot;&quot;latest&quot;&quot;#</span>).<span class="ident">unwrap</span>();
-		<span class="kw">let</span> <span class="ident">bn_tag_safe</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="ident">serde_json::from_str</span>(<span class="string">r#&quot;&quot;safe&quot;&quot;#</span>).<span class="ident">unwrap</span>();
-		<span class="kw">let</span> <span class="ident">bn_tag_finalized</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="ident">serde_json::from_str</span>(<span class="string">r#&quot;&quot;finalized&quot;&quot;#</span>).<span class="ident">unwrap</span>();
-		<span class="kw">let</span> <span class="ident">bn_tag_pending</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="ident">serde_json::from_str</span>(<span class="string">r#&quot;&quot;pending&quot;&quot;#</span>).<span class="ident">unwrap</span>();
+	<span class="attribute">#[test]
+	</span><span class="kw">fn </span>block_number_deserialize() {
+		<span class="kw">let </span>bn_dec: BlockNumber = serde_json::from_str(<span class="string">r#&quot;&quot;42&quot;&quot;#</span>).unwrap();
+		<span class="kw">let </span>bn_hex: BlockNumber = serde_json::from_str(<span class="string">r#&quot;&quot;0x45&quot;&quot;#</span>).unwrap();
+		<span class="kw">let </span>bn_u64: BlockNumber = serde_json::from_str(<span class="string">r#&quot;420&quot;#</span>).unwrap();
+		<span class="kw">let </span>bn_tag_earliest: BlockNumber = serde_json::from_str(<span class="string">r#&quot;&quot;earliest&quot;&quot;#</span>).unwrap();
+		<span class="kw">let </span>bn_tag_latest: BlockNumber = serde_json::from_str(<span class="string">r#&quot;&quot;latest&quot;&quot;#</span>).unwrap();
+		<span class="kw">let </span>bn_tag_safe: BlockNumber = serde_json::from_str(<span class="string">r#&quot;&quot;safe&quot;&quot;#</span>).unwrap();
+		<span class="kw">let </span>bn_tag_finalized: BlockNumber = serde_json::from_str(<span class="string">r#&quot;&quot;finalized&quot;&quot;#</span>).unwrap();
+		<span class="kw">let </span>bn_tag_pending: BlockNumber = serde_json::from_str(<span class="string">r#&quot;&quot;pending&quot;&quot;#</span>).unwrap();
 
-		<span class="macro">assert_eq!</span>(<span class="ident">match_block_number</span>(<span class="ident">bn_dec</span>).<span class="ident">unwrap</span>(), <span class="number">42</span>);
-		<span class="macro">assert_eq!</span>(<span class="ident">match_block_number</span>(<span class="ident">bn_hex</span>).<span class="ident">unwrap</span>(), <span class="number">69</span>);
-		<span class="macro">assert_eq!</span>(<span class="ident">match_block_number</span>(<span class="ident">bn_u64</span>).<span class="ident">unwrap</span>(), <span class="number">420</span>);
-		<span class="macro">assert_eq!</span>(<span class="ident">match_block_number</span>(<span class="ident">bn_tag_earliest</span>).<span class="ident">unwrap</span>(), <span class="number">0</span>);
-		<span class="macro">assert_eq!</span>(<span class="ident">match_block_number</span>(<span class="ident">bn_tag_latest</span>).<span class="ident">unwrap</span>(), <span class="number">1000</span>);
-		<span class="macro">assert_eq!</span>(<span class="ident">match_block_number</span>(<span class="ident">bn_tag_safe</span>).<span class="ident">unwrap</span>(), <span class="number">999</span>);
-		<span class="macro">assert_eq!</span>(<span class="ident">match_block_number</span>(<span class="ident">bn_tag_finalized</span>).<span class="ident">unwrap</span>(), <span class="number">999</span>);
-		<span class="macro">assert_eq!</span>(<span class="ident">match_block_number</span>(<span class="ident">bn_tag_pending</span>).<span class="ident">unwrap</span>(), <span class="number">1001</span>);
+		<span class="macro">assert_eq!</span>(match_block_number(bn_dec).unwrap(), <span class="number">42</span>);
+		<span class="macro">assert_eq!</span>(match_block_number(bn_hex).unwrap(), <span class="number">69</span>);
+		<span class="macro">assert_eq!</span>(match_block_number(bn_u64).unwrap(), <span class="number">420</span>);
+		<span class="macro">assert_eq!</span>(match_block_number(bn_tag_earliest).unwrap(), <span class="number">0</span>);
+		<span class="macro">assert_eq!</span>(match_block_number(bn_tag_latest).unwrap(), <span class="number">1000</span>);
+		<span class="macro">assert_eq!</span>(match_block_number(bn_tag_safe).unwrap(), <span class="number">999</span>);
+		<span class="macro">assert_eq!</span>(match_block_number(bn_tag_finalized).unwrap(), <span class="number">999</span>);
+		<span class="macro">assert_eq!</span>(match_block_number(bn_tag_pending).unwrap(), <span class="number">1001</span>);
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="fc_rpc_core" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (7fe022f5a 2022-07-24)" ></div>
-</body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="fc_rpc_core" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (81f391930 2022-10-09)" ></div></body></html>

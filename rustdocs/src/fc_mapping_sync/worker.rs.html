@@ -1,10 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `client/mapping-sync/src/worker.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>worker.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../fc_mapping_sync/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a><h2 class="location"></h2>
-    </nav>
-    <nav class="sidebar"><a class="sidebar-logo" href="../../fc_mapping_sync/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../fc_mapping_sync/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1">
-                                <a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div>
-                        </div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `client/mapping-sync/src/worker.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>worker.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><a class="sidebar-logo" href="../../fc_mapping_sync/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../fc_mapping_sync/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -150,152 +144,151 @@
 <span id="144">144</span>
 <span id="145">145</span>
 <span id="146">146</span>
-</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
-<span class="comment">// This file is part of Frontier.</span>
-<span class="comment">//</span>
-<span class="comment">// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.</span>
-<span class="comment">//</span>
-<span class="comment">// This program is free software: you can redistribute it and/or modify</span>
-<span class="comment">// it under the terms of the GNU General Public License as published by</span>
-<span class="comment">// the Free Software Foundation, either version 3 of the License, or</span>
-<span class="comment">// (at your option) any later version.</span>
-<span class="comment">//</span>
-<span class="comment">// This program is distributed in the hope that it will be useful,</span>
-<span class="comment">// but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
-<span class="comment">// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the</span>
-<span class="comment">// GNU General Public License for more details.</span>
-<span class="comment">//</span>
-<span class="comment">// You should have received a copy of the GNU General Public License</span>
-<span class="comment">// along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.</span>
+</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
+// This file is part of Frontier.
+//
+// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.
 
-<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">pin::Pin</span>, <span class="ident">sync::Arc</span>, <span class="ident">time::Duration</span>};
+</span><span class="kw">use </span>std::{pin::Pin, sync::Arc, time::Duration};
 
-<span class="kw">use</span> <span class="ident">futures</span>::{
-	<span class="ident">prelude</span>::<span class="kw-2">*</span>,
-	<span class="ident">task</span>::{<span class="ident">Context</span>, <span class="ident">Poll</span>},
+<span class="kw">use </span>futures::{
+	prelude::<span class="kw-2">*</span>,
+	task::{Context, Poll},
 };
-<span class="kw">use</span> <span class="ident">futures_timer::Delay</span>;
-<span class="kw">use</span> <span class="ident">log::debug</span>;
-<span class="comment">// Substrate</span>
-<span class="kw">use</span> <span class="ident">sc_client_api</span>::{<span class="ident">BlockOf</span>, <span class="ident">ImportNotifications</span>};
-<span class="kw">use</span> <span class="ident">sp_api::ProvideRuntimeApi</span>;
-<span class="kw">use</span> <span class="ident">sp_blockchain::HeaderBackend</span>;
-<span class="kw">use</span> <span class="ident">sp_runtime::traits</span>::{<span class="ident">Block</span> <span class="kw">as</span> <span class="ident">BlockT</span>, <span class="ident">Header</span> <span class="kw">as</span> <span class="ident">HeaderT</span>};
-<span class="comment">// Frontier</span>
-<span class="kw">use</span> <span class="ident">fp_rpc::EthereumRuntimeRPCApi</span>;
+<span class="kw">use </span>futures_timer::Delay;
+<span class="kw">use </span>log::debug;
+<span class="comment">// Substrate
+</span><span class="kw">use </span>sc_client_api::{BlockOf, ImportNotifications};
+<span class="kw">use </span>sp_api::ProvideRuntimeApi;
+<span class="kw">use </span>sp_blockchain::HeaderBackend;
+<span class="kw">use </span>sp_runtime::traits::{Block <span class="kw">as </span>BlockT, Header <span class="kw">as </span>HeaderT};
+<span class="comment">// Frontier
+</span><span class="kw">use </span>fp_rpc::EthereumRuntimeRPCApi;
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>)]</span>
-<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">SyncStrategy</span> {
-	<span class="ident">Normal</span>,
-	<span class="ident">Parachain</span>,
+<span class="attribute">#[derive(Copy, Clone, Eq, PartialEq)]
+</span><span class="kw">pub enum </span>SyncStrategy {
+	Normal,
+	Parachain,
 }
 
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">MappingSyncWorker</span><span class="op">&lt;</span><span class="ident">Block</span>: <span class="ident">BlockT</span>, <span class="ident">C</span>, <span class="ident">B</span><span class="op">&gt;</span> {
-	<span class="ident">import_notifications</span>: <span class="ident">ImportNotifications</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>,
-	<span class="ident">timeout</span>: <span class="ident">Duration</span>,
-	<span class="ident">inner_delay</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Delay</span><span class="op">&gt;</span>,
+<span class="kw">pub struct </span>MappingSyncWorker&lt;Block: BlockT, C, B&gt; {
+	import_notifications: ImportNotifications&lt;Block&gt;,
+	timeout: Duration,
+	inner_delay: <span class="prelude-ty">Option</span>&lt;Delay&gt;,
 
-	<span class="ident">client</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
-	<span class="ident">substrate_backend</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span>,
-	<span class="ident">frontier_backend</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">fc_db::Backend</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+	client: Arc&lt;C&gt;,
+	substrate_backend: Arc&lt;B&gt;,
+	frontier_backend: Arc&lt;fc_db::Backend&lt;Block&gt;&gt;,
 
-	<span class="ident">have_next</span>: <span class="ident">bool</span>,
-	<span class="ident">retry_times</span>: <span class="ident">usize</span>,
-	<span class="ident">sync_from</span>: <span class="op">&lt;</span><span class="ident">Block::Header</span> <span class="kw">as</span> <span class="ident">HeaderT</span><span class="op">&gt;</span><span class="ident">::Number</span>,
-	<span class="ident">strategy</span>: <span class="ident">SyncStrategy</span>,
+	have_next: bool,
+	retry_times: usize,
+	sync_from: &lt;Block::Header <span class="kw">as </span>HeaderT&gt;::Number,
+	strategy: SyncStrategy,
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">Block</span>: <span class="ident">BlockT</span>, <span class="ident">C</span>, <span class="ident">B</span><span class="op">&gt;</span> <span class="ident">Unpin</span> <span class="kw">for</span> <span class="ident">MappingSyncWorker</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">C</span>, <span class="ident">B</span><span class="op">&gt;</span> {}
+<span class="kw">impl</span>&lt;Block: BlockT, C, B&gt; Unpin <span class="kw">for </span>MappingSyncWorker&lt;Block, C, B&gt; {}
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">Block</span>: <span class="ident">BlockT</span>, <span class="ident">C</span>, <span class="ident">B</span><span class="op">&gt;</span> <span class="ident">MappingSyncWorker</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">C</span>, <span class="ident">B</span><span class="op">&gt;</span> {
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(
-		<span class="ident">import_notifications</span>: <span class="ident">ImportNotifications</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>,
-		<span class="ident">timeout</span>: <span class="ident">Duration</span>,
-		<span class="ident">client</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
-		<span class="ident">substrate_backend</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span>,
-		<span class="ident">frontier_backend</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">fc_db::Backend</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-		<span class="ident">retry_times</span>: <span class="ident">usize</span>,
-		<span class="ident">sync_from</span>: <span class="op">&lt;</span><span class="ident">Block::Header</span> <span class="kw">as</span> <span class="ident">HeaderT</span><span class="op">&gt;</span><span class="ident">::Number</span>,
-		<span class="ident">strategy</span>: <span class="ident">SyncStrategy</span>,
-	) -&gt; <span class="self">Self</span> {
-		<span class="self">Self</span> {
-			<span class="ident">import_notifications</span>,
-			<span class="ident">timeout</span>,
-			<span class="ident">inner_delay</span>: <span class="prelude-val">None</span>,
+<span class="kw">impl</span>&lt;Block: BlockT, C, B&gt; MappingSyncWorker&lt;Block, C, B&gt; {
+	<span class="kw">pub fn </span>new(
+		import_notifications: ImportNotifications&lt;Block&gt;,
+		timeout: Duration,
+		client: Arc&lt;C&gt;,
+		substrate_backend: Arc&lt;B&gt;,
+		frontier_backend: Arc&lt;fc_db::Backend&lt;Block&gt;&gt;,
+		retry_times: usize,
+		sync_from: &lt;Block::Header <span class="kw">as </span>HeaderT&gt;::Number,
+		strategy: SyncStrategy,
+	) -&gt; <span class="self">Self </span>{
+		<span class="self">Self </span>{
+			import_notifications,
+			timeout,
+			inner_delay: <span class="prelude-val">None</span>,
 
-			<span class="ident">client</span>,
-			<span class="ident">substrate_backend</span>,
-			<span class="ident">frontier_backend</span>,
+			client,
+			substrate_backend,
+			frontier_backend,
 
-			<span class="ident">have_next</span>: <span class="bool-val">true</span>,
-			<span class="ident">retry_times</span>,
-			<span class="ident">sync_from</span>,
-			<span class="ident">strategy</span>,
+			have_next: <span class="bool-val">true</span>,
+			retry_times,
+			sync_from,
+			strategy,
 		}
 	}
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">Block</span>: <span class="ident">BlockT</span>, <span class="ident">C</span>, <span class="ident">B</span><span class="op">&gt;</span> <span class="ident">Stream</span> <span class="kw">for</span> <span class="ident">MappingSyncWorker</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">C</span>, <span class="ident">B</span><span class="op">&gt;</span>
-<span class="kw">where</span>
-	<span class="ident">C</span>: <span class="ident">ProvideRuntimeApi</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="ident">HeaderBackend</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">BlockOf</span>,
-	<span class="ident">C::Api</span>: <span class="ident">EthereumRuntimeRPCApi</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>,
-	<span class="ident">B</span>: <span class="ident">sc_client_api::Backend</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>,
+<span class="kw">impl</span>&lt;Block: BlockT, C, B&gt; Stream <span class="kw">for </span>MappingSyncWorker&lt;Block, C, B&gt;
+<span class="kw">where
+	</span>C: ProvideRuntimeApi&lt;Block&gt; + Send + Sync + HeaderBackend&lt;Block&gt; + BlockOf,
+	C::Api: EthereumRuntimeRPCApi&lt;Block&gt;,
+	B: sc_client_api::Backend&lt;Block&gt;,
 {
-	<span class="kw">type</span> <span class="ident">Item</span> <span class="op">=</span> ();
+	<span class="kw">type </span>Item = ();
 
-	<span class="kw">fn</span> <span class="ident">poll_next</span>(<span class="kw-2">mut</span> <span class="self">self</span>: <span class="ident">Pin</span><span class="op">&lt;</span><span class="kw-2">&amp;mut</span> <span class="self">Self</span><span class="op">&gt;</span>, <span class="ident">cx</span>: <span class="kw-2">&amp;mut</span> <span class="ident">Context</span>) -&gt; <span class="ident">Poll</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span>()<span class="op">&gt;</span><span class="op">&gt;</span> {
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">fire</span> <span class="op">=</span> <span class="bool-val">false</span>;
+	<span class="kw">fn </span>poll_next(<span class="kw-2">mut </span><span class="self">self</span>: Pin&lt;<span class="kw-2">&amp;mut </span><span class="self">Self</span>&gt;, cx: <span class="kw-2">&amp;mut </span>Context) -&gt; Poll&lt;<span class="prelude-ty">Option</span>&lt;()&gt;&gt; {
+		<span class="kw">let </span><span class="kw-2">mut </span>fire = <span class="bool-val">false</span>;
 
-		<span class="kw">loop</span> {
-			<span class="kw">match</span> <span class="ident">Stream::poll_next</span>(<span class="ident">Pin::new</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>.<span class="ident">import_notifications</span>), <span class="ident">cx</span>) {
-				<span class="ident">Poll::Pending</span> =&gt; <span class="kw">break</span>,
-				<span class="ident">Poll::Ready</span>(<span class="prelude-val">Some</span>(<span class="kw">_</span>)) =&gt; {
-					<span class="ident">fire</span> <span class="op">=</span> <span class="bool-val">true</span>;
+		<span class="kw">loop </span>{
+			<span class="kw">match </span>Stream::poll_next(Pin::new(<span class="kw-2">&amp;mut </span><span class="self">self</span>.import_notifications), cx) {
+				Poll::Pending =&gt; <span class="kw">break</span>,
+				Poll::Ready(<span class="prelude-val">Some</span>(<span class="kw">_</span>)) =&gt; {
+					fire = <span class="bool-val">true</span>;
 				}
-				<span class="ident">Poll::Ready</span>(<span class="prelude-val">None</span>) =&gt; <span class="kw">return</span> <span class="ident">Poll::Ready</span>(<span class="prelude-val">None</span>),
+				Poll::Ready(<span class="prelude-val">None</span>) =&gt; <span class="kw">return </span>Poll::Ready(<span class="prelude-val">None</span>),
 			}
 		}
 
-		<span class="kw">let</span> <span class="ident">timeout</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">timeout</span>;
-		<span class="kw">let</span> <span class="ident">inner_delay</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">inner_delay</span>.<span class="ident">get_or_insert_with</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">Delay::new</span>(<span class="ident">timeout</span>));
+		<span class="kw">let </span>timeout = <span class="self">self</span>.timeout;
+		<span class="kw">let </span>inner_delay = <span class="self">self</span>.inner_delay.get_or_insert_with(|| Delay::new(timeout));
 
-		<span class="kw">match</span> <span class="ident">Future::poll</span>(<span class="ident">Pin::new</span>(<span class="ident">inner_delay</span>), <span class="ident">cx</span>) {
-			<span class="ident">Poll::Pending</span> =&gt; (),
-			<span class="ident">Poll::Ready</span>(()) =&gt; {
-				<span class="ident">fire</span> <span class="op">=</span> <span class="bool-val">true</span>;
+		<span class="kw">match </span>Future::poll(Pin::new(inner_delay), cx) {
+			Poll::Pending =&gt; (),
+			Poll::Ready(()) =&gt; {
+				fire = <span class="bool-val">true</span>;
 			}
 		}
 
-		<span class="kw">if</span> <span class="self">self</span>.<span class="ident">have_next</span> {
-			<span class="ident">fire</span> <span class="op">=</span> <span class="bool-val">true</span>;
+		<span class="kw">if </span><span class="self">self</span>.have_next {
+			fire = <span class="bool-val">true</span>;
 		}
 
-		<span class="kw">if</span> <span class="ident">fire</span> {
-			<span class="self">self</span>.<span class="ident">inner_delay</span> <span class="op">=</span> <span class="prelude-val">None</span>;
+		<span class="kw">if </span>fire {
+			<span class="self">self</span>.inner_delay = <span class="prelude-val">None</span>;
 
-			<span class="kw">match</span> <span class="ident"><span class="kw">crate</span>::sync_blocks</span>(
-				<span class="self">self</span>.<span class="ident">client</span>.<span class="ident">as_ref</span>(),
-				<span class="self">self</span>.<span class="ident">substrate_backend</span>.<span class="ident">blockchain</span>(),
-				<span class="self">self</span>.<span class="ident">frontier_backend</span>.<span class="ident">as_ref</span>(),
-				<span class="self">self</span>.<span class="ident">retry_times</span>,
-				<span class="self">self</span>.<span class="ident">sync_from</span>,
-				<span class="self">self</span>.<span class="ident">strategy</span>,
+			<span class="kw">match </span><span class="kw">crate</span>::sync_blocks(
+				<span class="self">self</span>.client.as_ref(),
+				<span class="self">self</span>.substrate_backend.blockchain(),
+				<span class="self">self</span>.frontier_backend.as_ref(),
+				<span class="self">self</span>.retry_times,
+				<span class="self">self</span>.sync_from,
+				<span class="self">self</span>.strategy,
 			) {
-				<span class="prelude-val">Ok</span>(<span class="ident">have_next</span>) =&gt; {
-					<span class="self">self</span>.<span class="ident">have_next</span> <span class="op">=</span> <span class="ident">have_next</span>;
-					<span class="ident">Poll::Ready</span>(<span class="prelude-val">Some</span>(()))
+				<span class="prelude-val">Ok</span>(have_next) =&gt; {
+					<span class="self">self</span>.have_next = have_next;
+					Poll::Ready(<span class="prelude-val">Some</span>(()))
 				}
-				<span class="prelude-val">Err</span>(<span class="ident">e</span>) =&gt; {
-					<span class="self">self</span>.<span class="ident">have_next</span> <span class="op">=</span> <span class="bool-val">false</span>;
-					<span class="macro">debug!</span>(<span class="ident">target</span>: <span class="string">&quot;mapping-sync&quot;</span>, <span class="string">&quot;Syncing failed with error {:?}, retrying.&quot;</span>, <span class="ident">e</span>);
-					<span class="ident">Poll::Ready</span>(<span class="prelude-val">Some</span>(()))
+				<span class="prelude-val">Err</span>(e) =&gt; {
+					<span class="self">self</span>.have_next = <span class="bool-val">false</span>;
+					<span class="macro">debug!</span>(target: <span class="string">&quot;mapping-sync&quot;</span>, <span class="string">&quot;Syncing failed with error {:?}, retrying.&quot;</span>, e);
+					Poll::Ready(<span class="prelude-val">Some</span>(()))
 				}
 			}
-		} <span class="kw">else</span> {
-			<span class="ident">Poll::Pending</span>
+		} <span class="kw">else </span>{
+			Poll::Pending
 		}
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="fc_mapping_sync" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (7fe022f5a 2022-07-24)" ></div>
-</body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="fc_mapping_sync" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (81f391930 2022-10-09)" ></div></body></html>

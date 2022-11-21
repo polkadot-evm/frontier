@@ -1,10 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `frame/evm/precompile/bn128/src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../pallet_evm_precompile_bn128/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a><h2 class="location"></h2>
-    </nav>
-    <nav class="sidebar"><a class="sidebar-logo" href="../../pallet_evm_precompile_bn128/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../pallet_evm_precompile_bn128/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1">
-                                <a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div>
-                        </div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `frame/evm/precompile/bn128/src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><a class="sidebar-logo" href="../../pallet_evm_precompile_bn128/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../pallet_evm_precompile_bn128/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -308,310 +302,309 @@
 <span id="302">302</span>
 <span id="303">303</span>
 <span id="304">304</span>
-</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
-<span class="comment">// This file is part of Frontier.</span>
-<span class="comment">//</span>
-<span class="comment">// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.</span>
-<span class="comment">//</span>
-<span class="comment">// Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
-<span class="comment">// you may not use this file except in compliance with the License.</span>
-<span class="comment">// You may obtain a copy of the License at</span>
-<span class="comment">//</span>
-<span class="comment">// 	http://www.apache.org/licenses/LICENSE-2.0</span>
-<span class="comment">//</span>
-<span class="comment">// Unless required by applicable law or agreed to in writing, software</span>
-<span class="comment">// distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
-<span class="comment">// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
-<span class="comment">// See the License for the specific language governing permissions and</span>
-<span class="comment">// limitations under the License.</span>
+</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
+// This file is part of Frontier.
+//
+// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// 	http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
-<span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
+</span><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 
-<span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">alloc</span>;
+</span><span class="kw">extern crate </span>alloc;
 
-<span class="kw">use</span> <span class="ident">alloc::vec::Vec</span>;
-<span class="kw">use</span> <span class="ident">fp_evm</span>::{
-	<span class="ident">ExitError</span>, <span class="ident">ExitSucceed</span>, <span class="ident">Precompile</span>, <span class="ident">PrecompileFailure</span>, <span class="ident">PrecompileHandle</span>, <span class="ident">PrecompileOutput</span>,
-	<span class="ident">PrecompileResult</span>,
+<span class="kw">use </span>alloc::vec::Vec;
+<span class="kw">use </span>fp_evm::{
+	ExitError, ExitSucceed, Precompile, PrecompileFailure, PrecompileHandle, PrecompileOutput,
+	PrecompileResult,
 };
-<span class="kw">use</span> <span class="ident">sp_core::U256</span>;
+<span class="kw">use </span>sp_core::U256;
 
-<span class="kw">fn</span> <span class="ident">read_fr</span>(<span class="ident">input</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>], <span class="ident">start_inx</span>: <span class="ident">usize</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">bn::Fr</span>, <span class="ident">PrecompileFailure</span><span class="op">&gt;</span> {
-	<span class="kw">if</span> <span class="ident">input</span>.<span class="ident">len</span>() <span class="op">&lt;</span> <span class="ident">start_inx</span> <span class="op">+</span> <span class="number">32</span> {
-		<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">PrecompileFailure::Error</span> {
-			<span class="ident">exit_status</span>: <span class="ident">ExitError::Other</span>(<span class="string">&quot;Input not long enough&quot;</span>.<span class="ident">into</span>()),
+<span class="kw">fn </span>read_fr(input: <span class="kw-2">&amp;</span>[u8], start_inx: usize) -&gt; <span class="prelude-ty">Result</span>&lt;bn::Fr, PrecompileFailure&gt; {
+	<span class="kw">if </span>input.len() &lt; start_inx + <span class="number">32 </span>{
+		<span class="kw">return </span><span class="prelude-val">Err</span>(PrecompileFailure::Error {
+			exit_status: ExitError::Other(<span class="string">&quot;Input not long enough&quot;</span>.into()),
 		});
 	}
 
-	<span class="ident">bn::Fr::from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>[<span class="ident">start_inx</span>..(<span class="ident">start_inx</span> <span class="op">+</span> <span class="number">32</span>)]).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">PrecompileFailure::Error</span> {
-		<span class="ident">exit_status</span>: <span class="ident">ExitError::Other</span>(<span class="string">&quot;Invalid field element&quot;</span>.<span class="ident">into</span>()),
+	bn::Fr::from_slice(<span class="kw-2">&amp;</span>input[start_inx..(start_inx + <span class="number">32</span>)]).map_err(|<span class="kw">_</span>| PrecompileFailure::Error {
+		exit_status: ExitError::Other(<span class="string">&quot;Invalid field element&quot;</span>.into()),
 	})
 }
 
-<span class="kw">fn</span> <span class="ident">read_point</span>(<span class="ident">input</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>], <span class="ident">start_inx</span>: <span class="ident">usize</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">bn::G1</span>, <span class="ident">PrecompileFailure</span><span class="op">&gt;</span> {
-	<span class="kw">use</span> <span class="ident">bn</span>::{<span class="ident">AffineG1</span>, <span class="ident">Fq</span>, <span class="ident">Group</span>, <span class="ident">G1</span>};
+<span class="kw">fn </span>read_point(input: <span class="kw-2">&amp;</span>[u8], start_inx: usize) -&gt; <span class="prelude-ty">Result</span>&lt;bn::G1, PrecompileFailure&gt; {
+	<span class="kw">use </span>bn::{AffineG1, Fq, Group, G1};
 
-	<span class="kw">if</span> <span class="ident">input</span>.<span class="ident">len</span>() <span class="op">&lt;</span> <span class="ident">start_inx</span> <span class="op">+</span> <span class="number">64</span> {
-		<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">PrecompileFailure::Error</span> {
-			<span class="ident">exit_status</span>: <span class="ident">ExitError::Other</span>(<span class="string">&quot;Input not long enough&quot;</span>.<span class="ident">into</span>()),
+	<span class="kw">if </span>input.len() &lt; start_inx + <span class="number">64 </span>{
+		<span class="kw">return </span><span class="prelude-val">Err</span>(PrecompileFailure::Error {
+			exit_status: ExitError::Other(<span class="string">&quot;Input not long enough&quot;</span>.into()),
 		});
 	}
 
-	<span class="kw">let</span> <span class="ident">px</span> <span class="op">=</span> <span class="ident">Fq::from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>[<span class="ident">start_inx</span>..(<span class="ident">start_inx</span> <span class="op">+</span> <span class="number">32</span>)]).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> {
-		<span class="ident">PrecompileFailure::Error</span> {
-			<span class="ident">exit_status</span>: <span class="ident">ExitError::Other</span>(<span class="string">&quot;Invalid point x coordinate&quot;</span>.<span class="ident">into</span>()),
+	<span class="kw">let </span>px = Fq::from_slice(<span class="kw-2">&amp;</span>input[start_inx..(start_inx + <span class="number">32</span>)]).map_err(|<span class="kw">_</span>| {
+		PrecompileFailure::Error {
+			exit_status: ExitError::Other(<span class="string">&quot;Invalid point x coordinate&quot;</span>.into()),
 		}
 	})<span class="question-mark">?</span>;
-	<span class="kw">let</span> <span class="ident">py</span> <span class="op">=</span> <span class="ident">Fq::from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>[(<span class="ident">start_inx</span> <span class="op">+</span> <span class="number">32</span>)..(<span class="ident">start_inx</span> <span class="op">+</span> <span class="number">64</span>)]).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> {
-		<span class="ident">PrecompileFailure::Error</span> {
-			<span class="ident">exit_status</span>: <span class="ident">ExitError::Other</span>(<span class="string">&quot;Invalid point y coordinate&quot;</span>.<span class="ident">into</span>()),
+	<span class="kw">let </span>py = Fq::from_slice(<span class="kw-2">&amp;</span>input[(start_inx + <span class="number">32</span>)..(start_inx + <span class="number">64</span>)]).map_err(|<span class="kw">_</span>| {
+		PrecompileFailure::Error {
+			exit_status: ExitError::Other(<span class="string">&quot;Invalid point y coordinate&quot;</span>.into()),
 		}
 	})<span class="question-mark">?</span>;
-	<span class="prelude-val">Ok</span>(<span class="kw">if</span> <span class="ident">px</span> <span class="op">==</span> <span class="ident">Fq::zero</span>() <span class="op">&amp;&amp;</span> <span class="ident">py</span> <span class="op">==</span> <span class="ident">Fq::zero</span>() {
-		<span class="ident">G1::zero</span>()
-	} <span class="kw">else</span> {
-		<span class="ident">AffineG1::new</span>(<span class="ident">px</span>, <span class="ident">py</span>)
-			.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">PrecompileFailure::Error</span> {
-				<span class="ident">exit_status</span>: <span class="ident">ExitError::Other</span>(<span class="string">&quot;Invalid curve point&quot;</span>.<span class="ident">into</span>()),
-			})<span class="question-mark">?</span>
-			.<span class="ident">into</span>()
+	<span class="prelude-val">Ok</span>(<span class="kw">if </span>px == Fq::zero() &amp;&amp; py == Fq::zero() {
+		G1::zero()
+	} <span class="kw">else </span>{
+		AffineG1::new(px, py)
+			.map_err(|<span class="kw">_</span>| PrecompileFailure::Error {
+				exit_status: ExitError::Other(<span class="string">&quot;Invalid curve point&quot;</span>.into()),
+			})<span class="question-mark">?
+			</span>.into()
 	})
 }
 
-<span class="doccomment">/// The Bn128Add builtin</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Bn128Add</span>;
+<span class="doccomment">/// The Bn128Add builtin
+</span><span class="kw">pub struct </span>Bn128Add;
 
-<span class="kw">impl</span> <span class="ident">Bn128Add</span> {
-	<span class="kw">const</span> <span class="ident">GAS_COST</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">150</span>; <span class="comment">// https://eips.ethereum.org/EIPS/eip-1108</span>
-}
+<span class="kw">impl </span>Bn128Add {
+	<span class="kw">const </span>GAS_COST: u64 = <span class="number">150</span>; <span class="comment">// https://eips.ethereum.org/EIPS/eip-1108
+</span>}
 
-<span class="kw">impl</span> <span class="ident">Precompile</span> <span class="kw">for</span> <span class="ident">Bn128Add</span> {
-	<span class="kw">fn</span> <span class="ident">execute</span>(<span class="ident">handle</span>: <span class="kw-2">&amp;mut</span> <span class="kw">impl</span> <span class="ident">PrecompileHandle</span>) -&gt; <span class="ident">PrecompileResult</span> {
-		<span class="kw">use</span> <span class="ident">bn::AffineG1</span>;
+<span class="kw">impl </span>Precompile <span class="kw">for </span>Bn128Add {
+	<span class="kw">fn </span>execute(handle: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>PrecompileHandle) -&gt; PrecompileResult {
+		<span class="kw">use </span>bn::AffineG1;
 
-		<span class="ident">handle</span>.<span class="ident">record_cost</span>(<span class="ident">Bn128Add::GAS_COST</span>)<span class="question-mark">?</span>;
+		handle.record_cost(Bn128Add::GAS_COST)<span class="question-mark">?</span>;
 
-		<span class="kw">let</span> <span class="ident">input</span> <span class="op">=</span> <span class="ident">handle</span>.<span class="ident">input</span>();
+		<span class="kw">let </span>input = handle.input();
 
-		<span class="kw">let</span> <span class="ident">p1</span> <span class="op">=</span> <span class="ident">read_point</span>(<span class="ident">input</span>, <span class="number">0</span>)<span class="question-mark">?</span>;
-		<span class="kw">let</span> <span class="ident">p2</span> <span class="op">=</span> <span class="ident">read_point</span>(<span class="ident">input</span>, <span class="number">64</span>)<span class="question-mark">?</span>;
+		<span class="kw">let </span>p1 = read_point(input, <span class="number">0</span>)<span class="question-mark">?</span>;
+		<span class="kw">let </span>p2 = read_point(input, <span class="number">64</span>)<span class="question-mark">?</span>;
 
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">buf</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">64</span>];
-		<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">sum</span>) <span class="op">=</span> <span class="ident">AffineG1::from_jacobian</span>(<span class="ident">p1</span> <span class="op">+</span> <span class="ident">p2</span>) {
-			<span class="comment">// point not at infinity</span>
-			<span class="ident">sum</span>.<span class="ident">x</span>()
-				.<span class="ident">to_big_endian</span>(<span class="kw-2">&amp;mut</span> <span class="ident">buf</span>[<span class="number">0</span>..<span class="number">32</span>])
-				.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">PrecompileFailure::Error</span> {
-					<span class="ident">exit_status</span>: <span class="ident">ExitError::Other</span>(
-						<span class="string">&quot;Cannot fail since 0..32 is 32-byte length&quot;</span>.<span class="ident">into</span>(),
+		<span class="kw">let </span><span class="kw-2">mut </span>buf = [<span class="number">0u8</span>; <span class="number">64</span>];
+		<span class="kw">if let </span><span class="prelude-val">Some</span>(sum) = AffineG1::from_jacobian(p1 + p2) {
+			<span class="comment">// point not at infinity
+			</span>sum.x()
+				.to_big_endian(<span class="kw-2">&amp;mut </span>buf[<span class="number">0</span>..<span class="number">32</span>])
+				.map_err(|<span class="kw">_</span>| PrecompileFailure::Error {
+					exit_status: ExitError::Other(
+						<span class="string">&quot;Cannot fail since 0..32 is 32-byte length&quot;</span>.into(),
 					),
 				})<span class="question-mark">?</span>;
-			<span class="ident">sum</span>.<span class="ident">y</span>()
-				.<span class="ident">to_big_endian</span>(<span class="kw-2">&amp;mut</span> <span class="ident">buf</span>[<span class="number">32</span>..<span class="number">64</span>])
-				.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">PrecompileFailure::Error</span> {
-					<span class="ident">exit_status</span>: <span class="ident">ExitError::Other</span>(
-						<span class="string">&quot;Cannot fail since 32..64 is 32-byte length&quot;</span>.<span class="ident">into</span>(),
+			sum.y()
+				.to_big_endian(<span class="kw-2">&amp;mut </span>buf[<span class="number">32</span>..<span class="number">64</span>])
+				.map_err(|<span class="kw">_</span>| PrecompileFailure::Error {
+					exit_status: ExitError::Other(
+						<span class="string">&quot;Cannot fail since 32..64 is 32-byte length&quot;</span>.into(),
 					),
 				})<span class="question-mark">?</span>;
 		}
 
-		<span class="prelude-val">Ok</span>(<span class="ident">PrecompileOutput</span> {
-			<span class="ident">exit_status</span>: <span class="ident">ExitSucceed::Returned</span>,
-			<span class="ident">output</span>: <span class="ident">buf</span>.<span class="ident">to_vec</span>(),
+		<span class="prelude-val">Ok</span>(PrecompileOutput {
+			exit_status: ExitSucceed::Returned,
+			output: buf.to_vec(),
 		})
 	}
 }
 
-<span class="doccomment">/// The Bn128Mul builtin</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Bn128Mul</span>;
+<span class="doccomment">/// The Bn128Mul builtin
+</span><span class="kw">pub struct </span>Bn128Mul;
 
-<span class="kw">impl</span> <span class="ident">Bn128Mul</span> {
-	<span class="kw">const</span> <span class="ident">GAS_COST</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">6_000</span>; <span class="comment">// https://eips.ethereum.org/EIPS/eip-1108</span>
-}
+<span class="kw">impl </span>Bn128Mul {
+	<span class="kw">const </span>GAS_COST: u64 = <span class="number">6_000</span>; <span class="comment">// https://eips.ethereum.org/EIPS/eip-1108
+</span>}
 
-<span class="kw">impl</span> <span class="ident">Precompile</span> <span class="kw">for</span> <span class="ident">Bn128Mul</span> {
-	<span class="kw">fn</span> <span class="ident">execute</span>(<span class="ident">handle</span>: <span class="kw-2">&amp;mut</span> <span class="kw">impl</span> <span class="ident">PrecompileHandle</span>) -&gt; <span class="ident">PrecompileResult</span> {
-		<span class="kw">use</span> <span class="ident">bn::AffineG1</span>;
+<span class="kw">impl </span>Precompile <span class="kw">for </span>Bn128Mul {
+	<span class="kw">fn </span>execute(handle: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>PrecompileHandle) -&gt; PrecompileResult {
+		<span class="kw">use </span>bn::AffineG1;
 
-		<span class="ident">handle</span>.<span class="ident">record_cost</span>(<span class="ident">Bn128Mul::GAS_COST</span>)<span class="question-mark">?</span>;
+		handle.record_cost(Bn128Mul::GAS_COST)<span class="question-mark">?</span>;
 
-		<span class="kw">let</span> <span class="ident">input</span> <span class="op">=</span> <span class="ident">handle</span>.<span class="ident">input</span>();
+		<span class="kw">let </span>input = handle.input();
 
-		<span class="kw">let</span> <span class="ident">p</span> <span class="op">=</span> <span class="ident">read_point</span>(<span class="ident">input</span>, <span class="number">0</span>)<span class="question-mark">?</span>;
-		<span class="kw">let</span> <span class="ident">fr</span> <span class="op">=</span> <span class="ident">read_fr</span>(<span class="ident">input</span>, <span class="number">64</span>)<span class="question-mark">?</span>;
+		<span class="kw">let </span>p = read_point(input, <span class="number">0</span>)<span class="question-mark">?</span>;
+		<span class="kw">let </span>fr = read_fr(input, <span class="number">64</span>)<span class="question-mark">?</span>;
 
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">buf</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">64</span>];
-		<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">sum</span>) <span class="op">=</span> <span class="ident">AffineG1::from_jacobian</span>(<span class="ident">p</span> <span class="op">*</span> <span class="ident">fr</span>) {
-			<span class="comment">// point not at infinity</span>
-			<span class="ident">sum</span>.<span class="ident">x</span>()
-				.<span class="ident">to_big_endian</span>(<span class="kw-2">&amp;mut</span> <span class="ident">buf</span>[<span class="number">0</span>..<span class="number">32</span>])
-				.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">PrecompileFailure::Error</span> {
-					<span class="ident">exit_status</span>: <span class="ident">ExitError::Other</span>(
-						<span class="string">&quot;Cannot fail since 0..32 is 32-byte length&quot;</span>.<span class="ident">into</span>(),
+		<span class="kw">let </span><span class="kw-2">mut </span>buf = [<span class="number">0u8</span>; <span class="number">64</span>];
+		<span class="kw">if let </span><span class="prelude-val">Some</span>(sum) = AffineG1::from_jacobian(p * fr) {
+			<span class="comment">// point not at infinity
+			</span>sum.x()
+				.to_big_endian(<span class="kw-2">&amp;mut </span>buf[<span class="number">0</span>..<span class="number">32</span>])
+				.map_err(|<span class="kw">_</span>| PrecompileFailure::Error {
+					exit_status: ExitError::Other(
+						<span class="string">&quot;Cannot fail since 0..32 is 32-byte length&quot;</span>.into(),
 					),
 				})<span class="question-mark">?</span>;
-			<span class="ident">sum</span>.<span class="ident">y</span>()
-				.<span class="ident">to_big_endian</span>(<span class="kw-2">&amp;mut</span> <span class="ident">buf</span>[<span class="number">32</span>..<span class="number">64</span>])
-				.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">PrecompileFailure::Error</span> {
-					<span class="ident">exit_status</span>: <span class="ident">ExitError::Other</span>(
-						<span class="string">&quot;Cannot fail since 32..64 is 32-byte length&quot;</span>.<span class="ident">into</span>(),
+			sum.y()
+				.to_big_endian(<span class="kw-2">&amp;mut </span>buf[<span class="number">32</span>..<span class="number">64</span>])
+				.map_err(|<span class="kw">_</span>| PrecompileFailure::Error {
+					exit_status: ExitError::Other(
+						<span class="string">&quot;Cannot fail since 32..64 is 32-byte length&quot;</span>.into(),
 					),
 				})<span class="question-mark">?</span>;
 		}
 
-		<span class="prelude-val">Ok</span>(<span class="ident">PrecompileOutput</span> {
-			<span class="ident">exit_status</span>: <span class="ident">ExitSucceed::Returned</span>,
-			<span class="ident">output</span>: <span class="ident">buf</span>.<span class="ident">to_vec</span>(),
+		<span class="prelude-val">Ok</span>(PrecompileOutput {
+			exit_status: ExitSucceed::Returned,
+			output: buf.to_vec(),
 		})
 	}
 }
 
-<span class="doccomment">/// The Bn128Pairing builtin</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Bn128Pairing</span>;
+<span class="doccomment">/// The Bn128Pairing builtin
+</span><span class="kw">pub struct </span>Bn128Pairing;
 
-<span class="kw">impl</span> <span class="ident">Bn128Pairing</span> {
-	<span class="comment">// https://eips.ethereum.org/EIPS/eip-1108</span>
-	<span class="kw">const</span> <span class="ident">BASE_GAS_COST</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">45_000</span>;
-	<span class="kw">const</span> <span class="ident">GAS_COST_PER_PAIRING</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">34_000</span>;
+<span class="kw">impl </span>Bn128Pairing {
+	<span class="comment">// https://eips.ethereum.org/EIPS/eip-1108
+	</span><span class="kw">const </span>BASE_GAS_COST: u64 = <span class="number">45_000</span>;
+	<span class="kw">const </span>GAS_COST_PER_PAIRING: u64 = <span class="number">34_000</span>;
 }
 
-<span class="kw">impl</span> <span class="ident">Precompile</span> <span class="kw">for</span> <span class="ident">Bn128Pairing</span> {
-	<span class="kw">fn</span> <span class="ident">execute</span>(<span class="ident">handle</span>: <span class="kw-2">&amp;mut</span> <span class="kw">impl</span> <span class="ident">PrecompileHandle</span>) -&gt; <span class="ident">PrecompileResult</span> {
-		<span class="kw">use</span> <span class="ident">bn</span>::{<span class="ident">pairing_batch</span>, <span class="ident">AffineG1</span>, <span class="ident">AffineG2</span>, <span class="ident">Fq</span>, <span class="ident">Fq2</span>, <span class="ident">Group</span>, <span class="ident">Gt</span>, <span class="ident">G1</span>, <span class="ident">G2</span>};
+<span class="kw">impl </span>Precompile <span class="kw">for </span>Bn128Pairing {
+	<span class="kw">fn </span>execute(handle: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>PrecompileHandle) -&gt; PrecompileResult {
+		<span class="kw">use </span>bn::{pairing_batch, AffineG1, AffineG2, Fq, Fq2, Group, Gt, G1, G2};
 
-		<span class="kw">let</span> <span class="ident">ret_val</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">handle</span>.<span class="ident">input</span>().<span class="ident">is_empty</span>() {
-			<span class="ident">handle</span>.<span class="ident">record_cost</span>(<span class="ident">Bn128Pairing::BASE_GAS_COST</span>)<span class="question-mark">?</span>;
-			<span class="ident">U256::one</span>()
-		} <span class="kw">else</span> {
-			<span class="comment">// (a, b_a, b_b - each 64-byte affine coordinates)</span>
-			<span class="kw">let</span> <span class="ident">elements</span> <span class="op">=</span> <span class="ident">handle</span>.<span class="ident">input</span>().<span class="ident">len</span>() <span class="op">/</span> <span class="number">192</span>;
+		<span class="kw">let </span>ret_val = <span class="kw">if </span>handle.input().is_empty() {
+			handle.record_cost(Bn128Pairing::BASE_GAS_COST)<span class="question-mark">?</span>;
+			U256::one()
+		} <span class="kw">else </span>{
+			<span class="comment">// (a, b_a, b_b - each 64-byte affine coordinates)
+			</span><span class="kw">let </span>elements = handle.input().len() / <span class="number">192</span>;
 
-			<span class="kw">let</span> <span class="ident">gas_cost</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="ident">Bn128Pairing::BASE_GAS_COST</span>
-				<span class="op">+</span> (<span class="ident">elements</span> <span class="kw">as</span> <span class="ident">u64</span> <span class="op">*</span> <span class="ident">Bn128Pairing::GAS_COST_PER_PAIRING</span>);
+			<span class="kw">let </span>gas_cost: u64 = Bn128Pairing::BASE_GAS_COST
+				+ (elements <span class="kw">as </span>u64 * Bn128Pairing::GAS_COST_PER_PAIRING);
 
-			<span class="ident">handle</span>.<span class="ident">record_cost</span>(<span class="ident">gas_cost</span>)<span class="question-mark">?</span>;
+			handle.record_cost(gas_cost)<span class="question-mark">?</span>;
 
-			<span class="kw">let</span> <span class="ident">input</span> <span class="op">=</span> <span class="ident">handle</span>.<span class="ident">input</span>();
+			<span class="kw">let </span>input = handle.input();
 
-			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">vals</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
-			<span class="kw">for</span> <span class="ident">idx</span> <span class="kw">in</span> <span class="number">0</span>..<span class="ident">elements</span> {
-				<span class="kw">let</span> <span class="ident">a_x</span> <span class="op">=</span> <span class="ident">Fq::from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>[<span class="ident">idx</span> <span class="op">*</span> <span class="number">192</span>..<span class="ident">idx</span> <span class="op">*</span> <span class="number">192</span> <span class="op">+</span> <span class="number">32</span>]).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> {
-					<span class="ident">PrecompileFailure::Error</span> {
-						<span class="ident">exit_status</span>: <span class="ident">ExitError::Other</span>(<span class="string">&quot;Invalid a argument x coordinate&quot;</span>.<span class="ident">into</span>()),
+			<span class="kw">let </span><span class="kw-2">mut </span>vals = Vec::new();
+			<span class="kw">for </span>idx <span class="kw">in </span><span class="number">0</span>..elements {
+				<span class="kw">let </span>a_x = Fq::from_slice(<span class="kw-2">&amp;</span>input[idx * <span class="number">192</span>..idx * <span class="number">192 </span>+ <span class="number">32</span>]).map_err(|<span class="kw">_</span>| {
+					PrecompileFailure::Error {
+						exit_status: ExitError::Other(<span class="string">&quot;Invalid a argument x coordinate&quot;</span>.into()),
 					}
 				})<span class="question-mark">?</span>;
 
-				<span class="kw">let</span> <span class="ident">a_y</span> <span class="op">=</span> <span class="ident">Fq::from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>[<span class="ident">idx</span> <span class="op">*</span> <span class="number">192</span> <span class="op">+</span> <span class="number">32</span>..<span class="ident">idx</span> <span class="op">*</span> <span class="number">192</span> <span class="op">+</span> <span class="number">64</span>]).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> {
-					<span class="ident">PrecompileFailure::Error</span> {
-						<span class="ident">exit_status</span>: <span class="ident">ExitError::Other</span>(<span class="string">&quot;Invalid a argument y coordinate&quot;</span>.<span class="ident">into</span>()),
+				<span class="kw">let </span>a_y = Fq::from_slice(<span class="kw-2">&amp;</span>input[idx * <span class="number">192 </span>+ <span class="number">32</span>..idx * <span class="number">192 </span>+ <span class="number">64</span>]).map_err(|<span class="kw">_</span>| {
+					PrecompileFailure::Error {
+						exit_status: ExitError::Other(<span class="string">&quot;Invalid a argument y coordinate&quot;</span>.into()),
 					}
 				})<span class="question-mark">?</span>;
 
-				<span class="kw">let</span> <span class="ident">b_a_y</span> <span class="op">=</span>
-					<span class="ident">Fq::from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>[<span class="ident">idx</span> <span class="op">*</span> <span class="number">192</span> <span class="op">+</span> <span class="number">64</span>..<span class="ident">idx</span> <span class="op">*</span> <span class="number">192</span> <span class="op">+</span> <span class="number">96</span>]).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> {
-						<span class="ident">PrecompileFailure::Error</span> {
-							<span class="ident">exit_status</span>: <span class="ident">ExitError::Other</span>(
-								<span class="string">&quot;Invalid b argument imaginary coeff x coordinate&quot;</span>.<span class="ident">into</span>(),
+				<span class="kw">let </span>b_a_y =
+					Fq::from_slice(<span class="kw-2">&amp;</span>input[idx * <span class="number">192 </span>+ <span class="number">64</span>..idx * <span class="number">192 </span>+ <span class="number">96</span>]).map_err(|<span class="kw">_</span>| {
+						PrecompileFailure::Error {
+							exit_status: ExitError::Other(
+								<span class="string">&quot;Invalid b argument imaginary coeff x coordinate&quot;</span>.into(),
 							),
 						}
 					})<span class="question-mark">?</span>;
 
-				<span class="kw">let</span> <span class="ident">b_a_x</span> <span class="op">=</span>
-					<span class="ident">Fq::from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>[<span class="ident">idx</span> <span class="op">*</span> <span class="number">192</span> <span class="op">+</span> <span class="number">96</span>..<span class="ident">idx</span> <span class="op">*</span> <span class="number">192</span> <span class="op">+</span> <span class="number">128</span>]).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> {
-						<span class="ident">PrecompileFailure::Error</span> {
-							<span class="ident">exit_status</span>: <span class="ident">ExitError::Other</span>(
-								<span class="string">&quot;Invalid b argument imaginary coeff y coordinate&quot;</span>.<span class="ident">into</span>(),
+				<span class="kw">let </span>b_a_x =
+					Fq::from_slice(<span class="kw-2">&amp;</span>input[idx * <span class="number">192 </span>+ <span class="number">96</span>..idx * <span class="number">192 </span>+ <span class="number">128</span>]).map_err(|<span class="kw">_</span>| {
+						PrecompileFailure::Error {
+							exit_status: ExitError::Other(
+								<span class="string">&quot;Invalid b argument imaginary coeff y coordinate&quot;</span>.into(),
 							),
 						}
 					})<span class="question-mark">?</span>;
 
-				<span class="kw">let</span> <span class="ident">b_b_y</span> <span class="op">=</span>
-					<span class="ident">Fq::from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>[<span class="ident">idx</span> <span class="op">*</span> <span class="number">192</span> <span class="op">+</span> <span class="number">128</span>..<span class="ident">idx</span> <span class="op">*</span> <span class="number">192</span> <span class="op">+</span> <span class="number">160</span>]).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> {
-						<span class="ident">PrecompileFailure::Error</span> {
-							<span class="ident">exit_status</span>: <span class="ident">ExitError::Other</span>(
-								<span class="string">&quot;Invalid b argument real coeff x coordinate&quot;</span>.<span class="ident">into</span>(),
+				<span class="kw">let </span>b_b_y =
+					Fq::from_slice(<span class="kw-2">&amp;</span>input[idx * <span class="number">192 </span>+ <span class="number">128</span>..idx * <span class="number">192 </span>+ <span class="number">160</span>]).map_err(|<span class="kw">_</span>| {
+						PrecompileFailure::Error {
+							exit_status: ExitError::Other(
+								<span class="string">&quot;Invalid b argument real coeff x coordinate&quot;</span>.into(),
 							),
 						}
 					})<span class="question-mark">?</span>;
 
-				<span class="kw">let</span> <span class="ident">b_b_x</span> <span class="op">=</span>
-					<span class="ident">Fq::from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>[<span class="ident">idx</span> <span class="op">*</span> <span class="number">192</span> <span class="op">+</span> <span class="number">160</span>..<span class="ident">idx</span> <span class="op">*</span> <span class="number">192</span> <span class="op">+</span> <span class="number">192</span>]).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> {
-						<span class="ident">PrecompileFailure::Error</span> {
-							<span class="ident">exit_status</span>: <span class="ident">ExitError::Other</span>(
-								<span class="string">&quot;Invalid b argument real coeff y coordinate&quot;</span>.<span class="ident">into</span>(),
+				<span class="kw">let </span>b_b_x =
+					Fq::from_slice(<span class="kw-2">&amp;</span>input[idx * <span class="number">192 </span>+ <span class="number">160</span>..idx * <span class="number">192 </span>+ <span class="number">192</span>]).map_err(|<span class="kw">_</span>| {
+						PrecompileFailure::Error {
+							exit_status: ExitError::Other(
+								<span class="string">&quot;Invalid b argument real coeff y coordinate&quot;</span>.into(),
 							),
 						}
 					})<span class="question-mark">?</span>;
 
-				<span class="kw">let</span> <span class="ident">b_a</span> <span class="op">=</span> <span class="ident">Fq2::new</span>(<span class="ident">b_a_x</span>, <span class="ident">b_a_y</span>);
-				<span class="kw">let</span> <span class="ident">b_b</span> <span class="op">=</span> <span class="ident">Fq2::new</span>(<span class="ident">b_b_x</span>, <span class="ident">b_b_y</span>);
-				<span class="kw">let</span> <span class="ident">b</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">b_a</span>.<span class="ident">is_zero</span>() <span class="op">&amp;&amp;</span> <span class="ident">b_b</span>.<span class="ident">is_zero</span>() {
-					<span class="ident">G2::zero</span>()
-				} <span class="kw">else</span> {
-					<span class="ident">G2::from</span>(
-						<span class="ident">AffineG2::new</span>(<span class="ident">b_a</span>, <span class="ident">b_b</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">PrecompileFailure::Error</span> {
-							<span class="ident">exit_status</span>: <span class="ident">ExitError::Other</span>(
-								<span class="string">&quot;Invalid b argument - not on curve&quot;</span>.<span class="ident">into</span>(),
+				<span class="kw">let </span>b_a = Fq2::new(b_a_x, b_a_y);
+				<span class="kw">let </span>b_b = Fq2::new(b_b_x, b_b_y);
+				<span class="kw">let </span>b = <span class="kw">if </span>b_a.is_zero() &amp;&amp; b_b.is_zero() {
+					G2::zero()
+				} <span class="kw">else </span>{
+					G2::from(
+						AffineG2::new(b_a, b_b).map_err(|<span class="kw">_</span>| PrecompileFailure::Error {
+							exit_status: ExitError::Other(
+								<span class="string">&quot;Invalid b argument - not on curve&quot;</span>.into(),
 							),
 						})<span class="question-mark">?</span>,
 					)
 				};
-				<span class="kw">let</span> <span class="ident">a</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">a_x</span>.<span class="ident">is_zero</span>() <span class="op">&amp;&amp;</span> <span class="ident">a_y</span>.<span class="ident">is_zero</span>() {
-					<span class="ident">G1::zero</span>()
-				} <span class="kw">else</span> {
-					<span class="ident">G1::from</span>(
-						<span class="ident">AffineG1::new</span>(<span class="ident">a_x</span>, <span class="ident">a_y</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">PrecompileFailure::Error</span> {
-							<span class="ident">exit_status</span>: <span class="ident">ExitError::Other</span>(
-								<span class="string">&quot;Invalid a argument - not on curve&quot;</span>.<span class="ident">into</span>(),
+				<span class="kw">let </span>a = <span class="kw">if </span>a_x.is_zero() &amp;&amp; a_y.is_zero() {
+					G1::zero()
+				} <span class="kw">else </span>{
+					G1::from(
+						AffineG1::new(a_x, a_y).map_err(|<span class="kw">_</span>| PrecompileFailure::Error {
+							exit_status: ExitError::Other(
+								<span class="string">&quot;Invalid a argument - not on curve&quot;</span>.into(),
 							),
 						})<span class="question-mark">?</span>,
 					)
 				};
-				<span class="ident">vals</span>.<span class="ident">push</span>((<span class="ident">a</span>, <span class="ident">b</span>));
+				vals.push((a, b));
 			}
 
-			<span class="kw">let</span> <span class="ident">mul</span> <span class="op">=</span> <span class="ident">pairing_batch</span>(<span class="kw-2">&amp;</span><span class="ident">vals</span>);
+			<span class="kw">let </span>mul = pairing_batch(<span class="kw-2">&amp;</span>vals);
 
-			<span class="kw">if</span> <span class="ident">mul</span> <span class="op">==</span> <span class="ident">Gt::one</span>() {
-				<span class="ident">U256::one</span>()
-			} <span class="kw">else</span> {
-				<span class="ident">U256::zero</span>()
+			<span class="kw">if </span>mul == Gt::one() {
+				U256::one()
+			} <span class="kw">else </span>{
+				U256::zero()
 			}
 		};
 
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">buf</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">32</span>];
-		<span class="ident">ret_val</span>.<span class="ident">to_big_endian</span>(<span class="kw-2">&amp;mut</span> <span class="ident">buf</span>);
+		<span class="kw">let </span><span class="kw-2">mut </span>buf = [<span class="number">0u8</span>; <span class="number">32</span>];
+		ret_val.to_big_endian(<span class="kw-2">&amp;mut </span>buf);
 
-		<span class="prelude-val">Ok</span>(<span class="ident">PrecompileOutput</span> {
-			<span class="ident">exit_status</span>: <span class="ident">ExitSucceed::Returned</span>,
-			<span class="ident">output</span>: <span class="ident">buf</span>.<span class="ident">to_vec</span>(),
+		<span class="prelude-val">Ok</span>(PrecompileOutput {
+			exit_status: ExitSucceed::Returned,
+			output: buf.to_vec(),
 		})
 	}
 }
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
-<span class="kw">mod</span> <span class="ident">tests</span> {
-	<span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
-	<span class="kw">use</span> <span class="ident">pallet_evm_test_vector_support::test_precompile_test_vectors</span>;
+<span class="attribute">#[cfg(test)]
+</span><span class="kw">mod </span>tests {
+	<span class="kw">use super</span>::<span class="kw-2">*</span>;
+	<span class="kw">use </span>pallet_evm_test_vector_support::test_precompile_test_vectors;
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">process_consensus_tests_for_add</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">String</span><span class="op">&gt;</span> {
-		<span class="ident">test_precompile_test_vectors</span>::<span class="op">&lt;</span><span class="ident">Bn128Add</span><span class="op">&gt;</span>(<span class="string">&quot;../testdata/common_bnadd.json&quot;</span>)<span class="question-mark">?</span>;
+	<span class="attribute">#[test]
+	</span><span class="kw">fn </span>process_consensus_tests_for_add() -&gt; <span class="prelude-ty">Result</span>&lt;(), String&gt; {
+		test_precompile_test_vectors::&lt;Bn128Add&gt;(<span class="string">&quot;../testdata/common_bnadd.json&quot;</span>)<span class="question-mark">?</span>;
 		<span class="prelude-val">Ok</span>(())
 	}
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">process_consensus_tests_for_mul</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">String</span><span class="op">&gt;</span> {
-		<span class="ident">test_precompile_test_vectors</span>::<span class="op">&lt;</span><span class="ident">Bn128Mul</span><span class="op">&gt;</span>(<span class="string">&quot;../testdata/common_bnmul.json&quot;</span>)<span class="question-mark">?</span>;
+	<span class="attribute">#[test]
+	</span><span class="kw">fn </span>process_consensus_tests_for_mul() -&gt; <span class="prelude-ty">Result</span>&lt;(), String&gt; {
+		test_precompile_test_vectors::&lt;Bn128Mul&gt;(<span class="string">&quot;../testdata/common_bnmul.json&quot;</span>)<span class="question-mark">?</span>;
 		<span class="prelude-val">Ok</span>(())
 	}
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">process_consensus_tests_for_pair</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">String</span><span class="op">&gt;</span> {
-		<span class="ident">test_precompile_test_vectors</span>::<span class="op">&lt;</span><span class="ident">Bn128Pairing</span><span class="op">&gt;</span>(<span class="string">&quot;../testdata/common_bnpair.json&quot;</span>)<span class="question-mark">?</span>;
+	<span class="attribute">#[test]
+	</span><span class="kw">fn </span>process_consensus_tests_for_pair() -&gt; <span class="prelude-ty">Result</span>&lt;(), String&gt; {
+		test_precompile_test_vectors::&lt;Bn128Pairing&gt;(<span class="string">&quot;../testdata/common_bnpair.json&quot;</span>)<span class="question-mark">?</span>;
 		<span class="prelude-val">Ok</span>(())
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_evm_precompile_bn128" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (7fe022f5a 2022-07-24)" ></div>
-</body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_evm_precompile_bn128" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (81f391930 2022-10-09)" ></div></body></html>

@@ -1,0 +1,3 @@
+(function() {var implementors = {
+"frontier_template_runtime":[["impl CallerTrait&lt;&lt;<a class=\"struct\" href=\"frontier_template_runtime/struct.Runtime.html\" title=\"struct frontier_template_runtime::Runtime\">Runtime</a> as Config&gt;::AccountId&gt; for <a class=\"enum\" href=\"frontier_template_runtime/enum.OriginCaller.html\" title=\"enum frontier_template_runtime::OriginCaller\">OriginCaller</a>"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

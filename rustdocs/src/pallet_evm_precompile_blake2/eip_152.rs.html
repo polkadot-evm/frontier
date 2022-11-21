@@ -1,10 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `frame/evm/precompile/blake2/src/eip_152.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>eip_152.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../pallet_evm_precompile_blake2/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a><h2 class="location"></h2>
-    </nav>
-    <nav class="sidebar"><a class="sidebar-logo" href="../../pallet_evm_precompile_blake2/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../pallet_evm_precompile_blake2/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1">
-                                <a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div>
-                        </div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `frame/evm/precompile/blake2/src/eip_152.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>eip_152.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><a class="sidebar-logo" href="../../pallet_evm_precompile_blake2/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../pallet_evm_precompile_blake2/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -96,27 +90,27 @@
 <span id="90">90</span>
 <span id="91">91</span>
 <span id="92">92</span>
-</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
-<span class="comment">// This file is part of Frontier.</span>
-<span class="comment">//</span>
-<span class="comment">// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.</span>
-<span class="comment">//</span>
-<span class="comment">// Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
-<span class="comment">// you may not use this file except in compliance with the License.</span>
-<span class="comment">// You may obtain a copy of the License at</span>
-<span class="comment">//</span>
-<span class="comment">// 	http://www.apache.org/licenses/LICENSE-2.0</span>
-<span class="comment">//</span>
-<span class="comment">// Unless required by applicable law or agreed to in writing, software</span>
-<span class="comment">// distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
-<span class="comment">// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
-<span class="comment">// See the License for the specific language governing permissions and</span>
-<span class="comment">// limitations under the License.</span>
+</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
+// This file is part of Frontier.
+//
+// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// 	http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
-<span class="doccomment">/// The precomputed values for BLAKE2b [from the spec](https://tools.ietf.org/html/rfc7693#section-2.7)</span>
-<span class="doccomment">/// There are 10 16-byte arrays - one for each round</span>
-<span class="doccomment">/// the entries are calculated from the sigma constants.</span>
-<span class="kw">const</span> <span class="ident">SIGMA</span>: [[<span class="ident">usize</span>; <span class="number">16</span>]; <span class="number">10</span>] <span class="op">=</span> [
+</span><span class="doccomment">/// The precomputed values for BLAKE2b [from the spec](https://tools.ietf.org/html/rfc7693#section-2.7)
+/// There are 10 16-byte arrays - one for each round
+/// the entries are calculated from the sigma constants.
+</span><span class="kw">const </span>SIGMA: [[usize; <span class="number">16</span>]; <span class="number">10</span>] = [
 	[<span class="number">0</span>, <span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>, <span class="number">6</span>, <span class="number">7</span>, <span class="number">8</span>, <span class="number">9</span>, <span class="number">10</span>, <span class="number">11</span>, <span class="number">12</span>, <span class="number">13</span>, <span class="number">14</span>, <span class="number">15</span>],
 	[<span class="number">14</span>, <span class="number">10</span>, <span class="number">4</span>, <span class="number">8</span>, <span class="number">9</span>, <span class="number">15</span>, <span class="number">13</span>, <span class="number">6</span>, <span class="number">1</span>, <span class="number">12</span>, <span class="number">0</span>, <span class="number">2</span>, <span class="number">11</span>, <span class="number">7</span>, <span class="number">5</span>, <span class="number">3</span>],
 	[<span class="number">11</span>, <span class="number">8</span>, <span class="number">12</span>, <span class="number">0</span>, <span class="number">5</span>, <span class="number">2</span>, <span class="number">15</span>, <span class="number">13</span>, <span class="number">10</span>, <span class="number">14</span>, <span class="number">3</span>, <span class="number">6</span>, <span class="number">7</span>, <span class="number">1</span>, <span class="number">9</span>, <span class="number">4</span>],
@@ -129,9 +123,9 @@
 	[<span class="number">10</span>, <span class="number">2</span>, <span class="number">8</span>, <span class="number">4</span>, <span class="number">7</span>, <span class="number">6</span>, <span class="number">1</span>, <span class="number">5</span>, <span class="number">15</span>, <span class="number">11</span>, <span class="number">9</span>, <span class="number">14</span>, <span class="number">3</span>, <span class="number">12</span>, <span class="number">13</span>, <span class="number">0</span>],
 ];
 
-<span class="doccomment">/// IV is the initialization vector for BLAKE2b. See https://tools.ietf.org/html/rfc7693#section-2.6</span>
-<span class="doccomment">/// for details.</span>
-<span class="kw">const</span> <span class="ident">IV</span>: [<span class="ident">u64</span>; <span class="number">8</span>] <span class="op">=</span> [
+<span class="doccomment">/// IV is the initialization vector for BLAKE2b. See https://tools.ietf.org/html/rfc7693#section-2.6
+/// for details.
+</span><span class="kw">const </span>IV: [u64; <span class="number">8</span>] = [
 	<span class="number">0x6a09e667f3bcc908</span>,
 	<span class="number">0xbb67ae8584caa73b</span>,
 	<span class="number">0x3c6ef372fe94f82b</span>,
@@ -142,52 +136,51 @@
 	<span class="number">0x5be0cd19137e2179</span>,
 ];
 
-<span class="attribute">#[<span class="ident">inline</span>(<span class="ident">always</span>)]</span>
-<span class="doccomment">/// The G mixing function. See https://tools.ietf.org/html/rfc7693#section-3.1</span>
-<span class="kw">fn</span> <span class="ident">g</span>(<span class="ident">v</span>: <span class="kw-2">&amp;mut</span> [<span class="ident">u64</span>], <span class="ident">a</span>: <span class="ident">usize</span>, <span class="ident">b</span>: <span class="ident">usize</span>, <span class="ident">c</span>: <span class="ident">usize</span>, <span class="ident">d</span>: <span class="ident">usize</span>, <span class="ident">x</span>: <span class="ident">u64</span>, <span class="ident">y</span>: <span class="ident">u64</span>) {
-	<span class="ident">v</span>[<span class="ident">a</span>] <span class="op">=</span> <span class="ident">v</span>[<span class="ident">a</span>].<span class="ident">wrapping_add</span>(<span class="ident">v</span>[<span class="ident">b</span>]).<span class="ident">wrapping_add</span>(<span class="ident">x</span>);
-	<span class="ident">v</span>[<span class="ident">d</span>] <span class="op">=</span> (<span class="ident">v</span>[<span class="ident">d</span>] <span class="op">^</span> <span class="ident">v</span>[<span class="ident">a</span>]).<span class="ident">rotate_right</span>(<span class="number">32</span>);
-	<span class="ident">v</span>[<span class="ident">c</span>] <span class="op">=</span> <span class="ident">v</span>[<span class="ident">c</span>].<span class="ident">wrapping_add</span>(<span class="ident">v</span>[<span class="ident">d</span>]);
-	<span class="ident">v</span>[<span class="ident">b</span>] <span class="op">=</span> (<span class="ident">v</span>[<span class="ident">b</span>] <span class="op">^</span> <span class="ident">v</span>[<span class="ident">c</span>]).<span class="ident">rotate_right</span>(<span class="number">24</span>);
-	<span class="ident">v</span>[<span class="ident">a</span>] <span class="op">=</span> <span class="ident">v</span>[<span class="ident">a</span>].<span class="ident">wrapping_add</span>(<span class="ident">v</span>[<span class="ident">b</span>]).<span class="ident">wrapping_add</span>(<span class="ident">y</span>);
-	<span class="ident">v</span>[<span class="ident">d</span>] <span class="op">=</span> (<span class="ident">v</span>[<span class="ident">d</span>] <span class="op">^</span> <span class="ident">v</span>[<span class="ident">a</span>]).<span class="ident">rotate_right</span>(<span class="number">16</span>);
-	<span class="ident">v</span>[<span class="ident">c</span>] <span class="op">=</span> <span class="ident">v</span>[<span class="ident">c</span>].<span class="ident">wrapping_add</span>(<span class="ident">v</span>[<span class="ident">d</span>]);
-	<span class="ident">v</span>[<span class="ident">b</span>] <span class="op">=</span> (<span class="ident">v</span>[<span class="ident">b</span>] <span class="op">^</span> <span class="ident">v</span>[<span class="ident">c</span>]).<span class="ident">rotate_right</span>(<span class="number">63</span>);
+<span class="attribute">#[inline(always)]
+</span><span class="doccomment">/// The G mixing function. See https://tools.ietf.org/html/rfc7693#section-3.1
+</span><span class="kw">fn </span>g(v: <span class="kw-2">&amp;mut </span>[u64], a: usize, b: usize, c: usize, d: usize, x: u64, y: u64) {
+	v[a] = v[a].wrapping_add(v[b]).wrapping_add(x);
+	v[d] = (v[d] ^ v[a]).rotate_right(<span class="number">32</span>);
+	v[c] = v[c].wrapping_add(v[d]);
+	v[b] = (v[b] ^ v[c]).rotate_right(<span class="number">24</span>);
+	v[a] = v[a].wrapping_add(v[b]).wrapping_add(y);
+	v[d] = (v[d] ^ v[a]).rotate_right(<span class="number">16</span>);
+	v[c] = v[c].wrapping_add(v[d]);
+	v[b] = (v[b] ^ v[c]).rotate_right(<span class="number">63</span>);
 }
 
-<span class="doccomment">/// The Blake2 compression function F. See https://tools.ietf.org/html/rfc7693#section-3.2</span>
-<span class="doccomment">/// Takes as an argument the state vector `h`, message block vector `m`, offset counter `t`, final</span>
-<span class="doccomment">/// block indicator flag `f`, and number of rounds `rounds`. The state vector provided as the first</span>
-<span class="doccomment">/// parameter is modified by the function.</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">compress</span>(<span class="ident">h</span>: <span class="kw-2">&amp;mut</span> [<span class="ident">u64</span>; <span class="number">8</span>], <span class="ident">m</span>: [<span class="ident">u64</span>; <span class="number">16</span>], <span class="ident">t</span>: [<span class="ident">u64</span>; <span class="number">2</span>], <span class="ident">f</span>: <span class="ident">bool</span>, <span class="ident">rounds</span>: <span class="ident">usize</span>) {
-	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">v</span> <span class="op">=</span> [<span class="number">0u64</span>; <span class="number">16</span>];
-	<span class="ident">v</span>[..<span class="ident">h</span>.<span class="ident">len</span>()].<span class="ident">copy_from_slice</span>(<span class="ident">h</span>); <span class="comment">// First half from state.</span>
-	<span class="ident">v</span>[<span class="ident">h</span>.<span class="ident">len</span>()..].<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">IV</span>); <span class="comment">// Second half from IV.</span>
+<span class="doccomment">/// The Blake2 compression function F. See https://tools.ietf.org/html/rfc7693#section-3.2
+/// Takes as an argument the state vector `h`, message block vector `m`, offset counter `t`, final
+/// block indicator flag `f`, and number of rounds `rounds`. The state vector provided as the first
+/// parameter is modified by the function.
+</span><span class="kw">pub fn </span>compress(h: <span class="kw-2">&amp;mut </span>[u64; <span class="number">8</span>], m: [u64; <span class="number">16</span>], t: [u64; <span class="number">2</span>], f: bool, rounds: usize) {
+	<span class="kw">let </span><span class="kw-2">mut </span>v = [<span class="number">0u64</span>; <span class="number">16</span>];
+	v[..h.len()].copy_from_slice(h); <span class="comment">// First half from state.
+	</span>v[h.len()..].copy_from_slice(<span class="kw-2">&amp;</span>IV); <span class="comment">// Second half from IV.
 
-	<span class="ident">v</span>[<span class="number">12</span>] <span class="op">^</span><span class="op">=</span> <span class="ident">t</span>[<span class="number">0</span>];
-	<span class="ident">v</span>[<span class="number">13</span>] <span class="op">^</span><span class="op">=</span> <span class="ident">t</span>[<span class="number">1</span>];
+	</span>v[<span class="number">12</span>] ^= t[<span class="number">0</span>];
+	v[<span class="number">13</span>] ^= t[<span class="number">1</span>];
 
-	<span class="kw">if</span> <span class="ident">f</span> {
-		<span class="ident">v</span>[<span class="number">14</span>] <span class="op">=</span> <span class="op">!</span><span class="ident">v</span>[<span class="number">14</span>] <span class="comment">// Invert all bits if the last-block-flag is set.</span>
+	<span class="kw">if </span>f {
+		v[<span class="number">14</span>] = !v[<span class="number">14</span>] <span class="comment">// Invert all bits if the last-block-flag is set.
+	</span>}
+	<span class="kw">for </span>i <span class="kw">in </span><span class="number">0</span>..rounds {
+		<span class="comment">// Message word selection permutation for this round.
+		</span><span class="kw">let </span>s = <span class="kw-2">&amp;</span>SIGMA[i % <span class="number">10</span>];
+		g(<span class="kw-2">&amp;mut </span>v, <span class="number">0</span>, <span class="number">4</span>, <span class="number">8</span>, <span class="number">12</span>, m[s[<span class="number">0</span>]], m[s[<span class="number">1</span>]]);
+		g(<span class="kw-2">&amp;mut </span>v, <span class="number">1</span>, <span class="number">5</span>, <span class="number">9</span>, <span class="number">13</span>, m[s[<span class="number">2</span>]], m[s[<span class="number">3</span>]]);
+		g(<span class="kw-2">&amp;mut </span>v, <span class="number">2</span>, <span class="number">6</span>, <span class="number">10</span>, <span class="number">14</span>, m[s[<span class="number">4</span>]], m[s[<span class="number">5</span>]]);
+		g(<span class="kw-2">&amp;mut </span>v, <span class="number">3</span>, <span class="number">7</span>, <span class="number">11</span>, <span class="number">15</span>, m[s[<span class="number">6</span>]], m[s[<span class="number">7</span>]]);
+
+		g(<span class="kw-2">&amp;mut </span>v, <span class="number">0</span>, <span class="number">5</span>, <span class="number">10</span>, <span class="number">15</span>, m[s[<span class="number">8</span>]], m[s[<span class="number">9</span>]]);
+		g(<span class="kw-2">&amp;mut </span>v, <span class="number">1</span>, <span class="number">6</span>, <span class="number">11</span>, <span class="number">12</span>, m[s[<span class="number">10</span>]], m[s[<span class="number">11</span>]]);
+		g(<span class="kw-2">&amp;mut </span>v, <span class="number">2</span>, <span class="number">7</span>, <span class="number">8</span>, <span class="number">13</span>, m[s[<span class="number">12</span>]], m[s[<span class="number">13</span>]]);
+		g(<span class="kw-2">&amp;mut </span>v, <span class="number">3</span>, <span class="number">4</span>, <span class="number">9</span>, <span class="number">14</span>, m[s[<span class="number">14</span>]], m[s[<span class="number">15</span>]]);
 	}
-	<span class="kw">for</span> <span class="ident">i</span> <span class="kw">in</span> <span class="number">0</span>..<span class="ident">rounds</span> {
-		<span class="comment">// Message word selection permutation for this round.</span>
-		<span class="kw">let</span> <span class="ident">s</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">SIGMA</span>[<span class="ident">i</span> <span class="op">%</span> <span class="number">10</span>];
-		<span class="ident">g</span>(<span class="kw-2">&amp;mut</span> <span class="ident">v</span>, <span class="number">0</span>, <span class="number">4</span>, <span class="number">8</span>, <span class="number">12</span>, <span class="ident">m</span>[<span class="ident">s</span>[<span class="number">0</span>]], <span class="ident">m</span>[<span class="ident">s</span>[<span class="number">1</span>]]);
-		<span class="ident">g</span>(<span class="kw-2">&amp;mut</span> <span class="ident">v</span>, <span class="number">1</span>, <span class="number">5</span>, <span class="number">9</span>, <span class="number">13</span>, <span class="ident">m</span>[<span class="ident">s</span>[<span class="number">2</span>]], <span class="ident">m</span>[<span class="ident">s</span>[<span class="number">3</span>]]);
-		<span class="ident">g</span>(<span class="kw-2">&amp;mut</span> <span class="ident">v</span>, <span class="number">2</span>, <span class="number">6</span>, <span class="number">10</span>, <span class="number">14</span>, <span class="ident">m</span>[<span class="ident">s</span>[<span class="number">4</span>]], <span class="ident">m</span>[<span class="ident">s</span>[<span class="number">5</span>]]);
-		<span class="ident">g</span>(<span class="kw-2">&amp;mut</span> <span class="ident">v</span>, <span class="number">3</span>, <span class="number">7</span>, <span class="number">11</span>, <span class="number">15</span>, <span class="ident">m</span>[<span class="ident">s</span>[<span class="number">6</span>]], <span class="ident">m</span>[<span class="ident">s</span>[<span class="number">7</span>]]);
 
-		<span class="ident">g</span>(<span class="kw-2">&amp;mut</span> <span class="ident">v</span>, <span class="number">0</span>, <span class="number">5</span>, <span class="number">10</span>, <span class="number">15</span>, <span class="ident">m</span>[<span class="ident">s</span>[<span class="number">8</span>]], <span class="ident">m</span>[<span class="ident">s</span>[<span class="number">9</span>]]);
-		<span class="ident">g</span>(<span class="kw-2">&amp;mut</span> <span class="ident">v</span>, <span class="number">1</span>, <span class="number">6</span>, <span class="number">11</span>, <span class="number">12</span>, <span class="ident">m</span>[<span class="ident">s</span>[<span class="number">10</span>]], <span class="ident">m</span>[<span class="ident">s</span>[<span class="number">11</span>]]);
-		<span class="ident">g</span>(<span class="kw-2">&amp;mut</span> <span class="ident">v</span>, <span class="number">2</span>, <span class="number">7</span>, <span class="number">8</span>, <span class="number">13</span>, <span class="ident">m</span>[<span class="ident">s</span>[<span class="number">12</span>]], <span class="ident">m</span>[<span class="ident">s</span>[<span class="number">13</span>]]);
-		<span class="ident">g</span>(<span class="kw-2">&amp;mut</span> <span class="ident">v</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">9</span>, <span class="number">14</span>, <span class="ident">m</span>[<span class="ident">s</span>[<span class="number">14</span>]], <span class="ident">m</span>[<span class="ident">s</span>[<span class="number">15</span>]]);
-	}
-
-	<span class="kw">for</span> <span class="ident">i</span> <span class="kw">in</span> <span class="number">0</span>..<span class="number">8</span> {
-		<span class="ident">h</span>[<span class="ident">i</span>] <span class="op">^</span><span class="op">=</span> <span class="ident">v</span>[<span class="ident">i</span>] <span class="op">^</span> <span class="ident">v</span>[<span class="ident">i</span> <span class="op">+</span> <span class="number">8</span>];
+	<span class="kw">for </span>i <span class="kw">in </span><span class="number">0</span>..<span class="number">8 </span>{
+		h[i] ^= v[i] ^ v[i + <span class="number">8</span>];
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_evm_precompile_blake2" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (7fe022f5a 2022-07-24)" ></div>
-</body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_evm_precompile_blake2" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (81f391930 2022-10-09)" ></div></body></html>

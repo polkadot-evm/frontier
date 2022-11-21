@@ -1,3 +1,3 @@
-(function() {var implementors = {};
-implementors["frontier_template_node"] = [{"text":"impl NativeExecutionDispatch for <a class=\"struct\" href=\"frontier_template_node/service/struct.ExecutorDispatch.html\" title=\"struct frontier_template_node::service::ExecutorDispatch\">ExecutorDispatch</a>","synthetic":false,"types":["frontier_template_node::service::ExecutorDispatch"]}];
-if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
+(function() {var implementors = {
+"frontier_template_node":[["impl NativeExecutionDispatch for <a class=\"struct\" href=\"frontier_template_node/service/struct.ExecutorDispatch.html\" title=\"struct frontier_template_node::service::ExecutorDispatch\">ExecutorDispatch</a>"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

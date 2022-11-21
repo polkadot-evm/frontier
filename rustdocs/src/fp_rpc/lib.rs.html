@@ -1,10 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `primitives/rpc/src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../fp_rpc/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a><h2 class="location"></h2>
-    </nav>
-    <nav class="sidebar"><a class="sidebar-logo" href="../../fp_rpc/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../fp_rpc/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1">
-                                <a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div>
-                        </div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `primitives/rpc/src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><a class="sidebar-logo" href="../../fp_rpc/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../fp_rpc/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -194,196 +188,195 @@
 <span id="188">188</span>
 <span id="189">189</span>
 <span id="190">190</span>
-</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
-<span class="comment">// This file is part of Frontier.</span>
-<span class="comment">//</span>
-<span class="comment">// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.</span>
-<span class="comment">//</span>
-<span class="comment">// Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
-<span class="comment">// you may not use this file except in compliance with the License.</span>
-<span class="comment">// You may obtain a copy of the License at</span>
-<span class="comment">//</span>
-<span class="comment">// 	http://www.apache.org/licenses/LICENSE-2.0</span>
-<span class="comment">//</span>
-<span class="comment">// Unless required by applicable law or agreed to in writing, software</span>
-<span class="comment">// distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
-<span class="comment">// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
-<span class="comment">// See the License for the specific language governing permissions and</span>
-<span class="comment">// limitations under the License.</span>
+</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
+// This file is part of Frontier.
+//
+// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// 	http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
-<span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
-<span class="attribute">#![<span class="ident">allow</span>(<span class="ident">clippy::too_many_arguments</span>)]</span>
+</span><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
+#![allow(clippy::too_many_arguments)]
 
-<span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Decode</span>, <span class="ident">Encode</span>};
-<span class="kw">use</span> <span class="ident">ethereum::Log</span>;
-<span class="kw">use</span> <span class="ident">ethereum_types::Bloom</span>;
-<span class="kw">use</span> <span class="ident">scale_info::TypeInfo</span>;
-<span class="kw">use</span> <span class="ident">sp_core</span>::{<span class="ident">H160</span>, <span class="ident">H256</span>, <span class="ident">U256</span>};
-<span class="kw">use</span> <span class="ident">sp_runtime</span>::{<span class="ident">traits::Block</span> <span class="kw">as</span> <span class="ident">BlockT</span>, <span class="ident">Permill</span>, <span class="ident">RuntimeDebug</span>};
-<span class="kw">use</span> <span class="ident">sp_std::vec::Vec</span>;
+</span><span class="kw">use </span>codec::{Decode, Encode};
+<span class="kw">use </span>ethereum::Log;
+<span class="kw">use </span>ethereum_types::Bloom;
+<span class="kw">use </span>scale_info::TypeInfo;
+<span class="kw">use </span>sp_core::{H160, H256, U256};
+<span class="kw">use </span>sp_runtime::{traits::Block <span class="kw">as </span>BlockT, Permill, RuntimeDebug};
+<span class="kw">use </span>sp_std::vec::Vec;
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">Default</span>, <span class="ident">RuntimeDebug</span>, <span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">TypeInfo</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">TransactionStatus</span> {
-	<span class="kw">pub</span> <span class="ident">transaction_hash</span>: <span class="ident">H256</span>,
-	<span class="kw">pub</span> <span class="ident">transaction_index</span>: <span class="ident">u32</span>,
-	<span class="kw">pub</span> <span class="ident">from</span>: <span class="ident">H160</span>,
-	<span class="kw">pub</span> <span class="ident">to</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">H160</span><span class="op">&gt;</span>,
-	<span class="kw">pub</span> <span class="ident">contract_address</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">H160</span><span class="op">&gt;</span>,
-	<span class="kw">pub</span> <span class="ident">logs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Log</span><span class="op">&gt;</span>,
-	<span class="kw">pub</span> <span class="ident">logs_bloom</span>: <span class="ident">Bloom</span>,
+<span class="attribute">#[derive(Clone, Eq, PartialEq, Default, RuntimeDebug, Encode, Decode, TypeInfo)]
+</span><span class="kw">pub struct </span>TransactionStatus {
+	<span class="kw">pub </span>transaction_hash: H256,
+	<span class="kw">pub </span>transaction_index: u32,
+	<span class="kw">pub </span>from: H160,
+	<span class="kw">pub </span>to: <span class="prelude-ty">Option</span>&lt;H160&gt;,
+	<span class="kw">pub </span>contract_address: <span class="prelude-ty">Option</span>&lt;H160&gt;,
+	<span class="kw">pub </span>logs: Vec&lt;Log&gt;,
+	<span class="kw">pub </span>logs_bloom: Bloom,
 }
 
-<span class="macro">sp_api::decl_runtime_apis!</span> {
-	<span class="doccomment">/// API necessary for Ethereum-compatibility layer.</span>
-	<span class="attribute">#[<span class="ident">api_version</span>(<span class="number">4</span>)]</span>
-	<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">EthereumRuntimeRPCApi</span> {
-		<span class="doccomment">/// Returns runtime defined pallet_evm::ChainId.</span>
-		<span class="kw">fn</span> <span class="ident">chain_id</span>() -&gt; <span class="ident">u64</span>;
-		<span class="doccomment">/// Returns pallet_evm::Accounts by address.</span>
-		<span class="kw">fn</span> <span class="ident">account_basic</span>(<span class="ident">address</span>: <span class="ident">H160</span>) -&gt; <span class="ident">fp_evm::Account</span>;
-		<span class="doccomment">/// Returns FixedGasPrice::min_gas_price</span>
-		<span class="kw">fn</span> <span class="ident">gas_price</span>() -&gt; <span class="ident">U256</span>;
-		<span class="doccomment">/// For a given account address, returns pallet_evm::AccountCodes.</span>
-		<span class="kw">fn</span> <span class="ident">account_code_at</span>(<span class="ident">address</span>: <span class="ident">H160</span>) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>;
-		<span class="doccomment">/// Returns the converted FindAuthor::find_author authority id.</span>
-		<span class="kw">fn</span> <span class="ident">author</span>() -&gt; <span class="ident">H160</span>;
-		<span class="doccomment">/// For a given account address and index, returns pallet_evm::AccountStorages.</span>
-		<span class="kw">fn</span> <span class="ident">storage_at</span>(<span class="ident">address</span>: <span class="ident">H160</span>, <span class="ident">index</span>: <span class="ident">U256</span>) -&gt; <span class="ident">H256</span>;
-		<span class="doccomment">/// Returns a frame_ethereum::call response. If `estimate` is true,</span>
-		<span class="attribute">#[<span class="ident">changed_in</span>(<span class="number">2</span>)]</span>
-		<span class="kw">fn</span> <span class="ident">call</span>(
-			<span class="ident">from</span>: <span class="ident">H160</span>,
-			<span class="ident">to</span>: <span class="ident">H160</span>,
-			<span class="ident">data</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
-			<span class="ident">value</span>: <span class="ident">U256</span>,
-			<span class="ident">gas_limit</span>: <span class="ident">U256</span>,
-			<span class="ident">gas_price</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-			<span class="ident">nonce</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-			<span class="ident">estimate</span>: <span class="ident">bool</span>,
-		) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">fp_evm::CallInfo</span>, <span class="ident">sp_runtime::DispatchError</span><span class="op">&gt;</span>;
-		<span class="attribute">#[<span class="ident">changed_in</span>(<span class="number">4</span>)]</span>
-		<span class="kw">fn</span> <span class="ident">call</span>(
-			<span class="ident">from</span>: <span class="ident">H160</span>,
-			<span class="ident">to</span>: <span class="ident">H160</span>,
-			<span class="ident">data</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
-			<span class="ident">value</span>: <span class="ident">U256</span>,
-			<span class="ident">gas_limit</span>: <span class="ident">U256</span>,
-			<span class="ident">max_fee_per_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-			<span class="ident">max_priority_fee_per_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-			<span class="ident">nonce</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-			<span class="ident">estimate</span>: <span class="ident">bool</span>,
-		) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">fp_evm::CallInfo</span>, <span class="ident">sp_runtime::DispatchError</span><span class="op">&gt;</span>;
-		<span class="kw">fn</span> <span class="ident">call</span>(
-			<span class="ident">from</span>: <span class="ident">H160</span>,
-			<span class="ident">to</span>: <span class="ident">H160</span>,
-			<span class="ident">data</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
-			<span class="ident">value</span>: <span class="ident">U256</span>,
-			<span class="ident">gas_limit</span>: <span class="ident">U256</span>,
-			<span class="ident">max_fee_per_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-			<span class="ident">max_priority_fee_per_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-			<span class="ident">nonce</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-			<span class="ident">estimate</span>: <span class="ident">bool</span>,
-			<span class="ident">access_list</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">H160</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span>)<span class="op">&gt;</span><span class="op">&gt;</span>,
-		) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">fp_evm::CallInfo</span>, <span class="ident">sp_runtime::DispatchError</span><span class="op">&gt;</span>;
-		<span class="doccomment">/// Returns a frame_ethereum::create response.</span>
-		<span class="attribute">#[<span class="ident">changed_in</span>(<span class="number">2</span>)]</span>
-		<span class="kw">fn</span> <span class="ident">create</span>(
-			<span class="ident">from</span>: <span class="ident">H160</span>,
-			<span class="ident">data</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
-			<span class="ident">value</span>: <span class="ident">U256</span>,
-			<span class="ident">gas_limit</span>: <span class="ident">U256</span>,
-			<span class="ident">gas_price</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-			<span class="ident">nonce</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-			<span class="ident">estimate</span>: <span class="ident">bool</span>,
-		) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">fp_evm::CreateInfo</span>, <span class="ident">sp_runtime::DispatchError</span><span class="op">&gt;</span>;
-		<span class="attribute">#[<span class="ident">changed_in</span>(<span class="number">4</span>)]</span>
-		<span class="kw">fn</span> <span class="ident">create</span>(
-			<span class="ident">from</span>: <span class="ident">H160</span>,
-			<span class="ident">data</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
-			<span class="ident">value</span>: <span class="ident">U256</span>,
-			<span class="ident">gas_limit</span>: <span class="ident">U256</span>,
-			<span class="ident">max_fee_per_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-			<span class="ident">max_priority_fee_per_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-			<span class="ident">nonce</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-			<span class="ident">estimate</span>: <span class="ident">bool</span>,
-		) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">fp_evm::CreateInfo</span>, <span class="ident">sp_runtime::DispatchError</span><span class="op">&gt;</span>;
-		<span class="kw">fn</span> <span class="ident">create</span>(
-			<span class="ident">from</span>: <span class="ident">H160</span>,
-			<span class="ident">data</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
-			<span class="ident">value</span>: <span class="ident">U256</span>,
-			<span class="ident">gas_limit</span>: <span class="ident">U256</span>,
-			<span class="ident">max_fee_per_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-			<span class="ident">max_priority_fee_per_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-			<span class="ident">nonce</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-			<span class="ident">estimate</span>: <span class="ident">bool</span>,
-			<span class="ident">access_list</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">H160</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span>)<span class="op">&gt;</span><span class="op">&gt;</span>,
-		) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">fp_evm::CreateInfo</span>, <span class="ident">sp_runtime::DispatchError</span><span class="op">&gt;</span>;
-		<span class="doccomment">/// Return the current block. Legacy.</span>
-		<span class="attribute">#[<span class="ident">changed_in</span>(<span class="number">2</span>)]</span>
-		<span class="kw">fn</span> <span class="ident">current_block</span>() -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">ethereum::BlockV0</span><span class="op">&gt;</span>;
-		<span class="doccomment">/// Return the current block.</span>
-		<span class="kw">fn</span> <span class="ident">current_block</span>() -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">ethereum::BlockV2</span><span class="op">&gt;</span>;
-		<span class="doccomment">/// Return the current receipt.</span>
-		<span class="attribute">#[<span class="ident">changed_in</span>(<span class="number">4</span>)]</span>
-		<span class="kw">fn</span> <span class="ident">current_receipts</span>() -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ethereum::ReceiptV0</span><span class="op">&gt;</span><span class="op">&gt;</span>;
-		<span class="doccomment">/// Return the current receipt.</span>
-		<span class="kw">fn</span> <span class="ident">current_receipts</span>() -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ethereum::ReceiptV3</span><span class="op">&gt;</span><span class="op">&gt;</span>;
-		<span class="doccomment">/// Return the current transaction status.</span>
-		<span class="kw">fn</span> <span class="ident">current_transaction_statuses</span>() -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TransactionStatus</span><span class="op">&gt;</span><span class="op">&gt;</span>;
-		<span class="doccomment">/// Return all the current data for a block in a single runtime call. Legacy.</span>
-		<span class="attribute">#[<span class="ident">changed_in</span>(<span class="number">2</span>)]</span>
-		<span class="kw">fn</span> <span class="ident">current_all</span>() -&gt; (
-			<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">ethereum::BlockV0</span><span class="op">&gt;</span>,
-			<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ethereum::ReceiptV0</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-			<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TransactionStatus</span><span class="op">&gt;</span><span class="op">&gt;</span>
+<span class="macro">sp_api::decl_runtime_apis! </span>{
+	<span class="doccomment">/// API necessary for Ethereum-compatibility layer.
+	</span><span class="attribute">#[api_version(<span class="number">4</span>)]
+	</span><span class="kw">pub trait </span>EthereumRuntimeRPCApi {
+		<span class="doccomment">/// Returns runtime defined pallet_evm::ChainId.
+		</span><span class="kw">fn </span>chain_id() -&gt; u64;
+		<span class="doccomment">/// Returns pallet_evm::Accounts by address.
+		</span><span class="kw">fn </span>account_basic(address: H160) -&gt; fp_evm::Account;
+		<span class="doccomment">/// Returns FixedGasPrice::min_gas_price
+		</span><span class="kw">fn </span>gas_price() -&gt; U256;
+		<span class="doccomment">/// For a given account address, returns pallet_evm::AccountCodes.
+		</span><span class="kw">fn </span>account_code_at(address: H160) -&gt; Vec&lt;u8&gt;;
+		<span class="doccomment">/// Returns the converted FindAuthor::find_author authority id.
+		</span><span class="kw">fn </span>author() -&gt; H160;
+		<span class="doccomment">/// For a given account address and index, returns pallet_evm::AccountStorages.
+		</span><span class="kw">fn </span>storage_at(address: H160, index: U256) -&gt; H256;
+		<span class="doccomment">/// Returns a frame_ethereum::call response. If `estimate` is true,
+		</span><span class="attribute">#[changed_in(<span class="number">2</span>)]
+		</span><span class="kw">fn </span>call(
+			from: H160,
+			to: H160,
+			data: Vec&lt;u8&gt;,
+			value: U256,
+			gas_limit: U256,
+			gas_price: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+			nonce: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+			estimate: bool,
+		) -&gt; <span class="prelude-ty">Result</span>&lt;fp_evm::CallInfo, sp_runtime::DispatchError&gt;;
+		<span class="attribute">#[changed_in(<span class="number">4</span>)]
+		</span><span class="kw">fn </span>call(
+			from: H160,
+			to: H160,
+			data: Vec&lt;u8&gt;,
+			value: U256,
+			gas_limit: U256,
+			max_fee_per_gas: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+			max_priority_fee_per_gas: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+			nonce: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+			estimate: bool,
+		) -&gt; <span class="prelude-ty">Result</span>&lt;fp_evm::CallInfo, sp_runtime::DispatchError&gt;;
+		<span class="kw">fn </span>call(
+			from: H160,
+			to: H160,
+			data: Vec&lt;u8&gt;,
+			value: U256,
+			gas_limit: U256,
+			max_fee_per_gas: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+			max_priority_fee_per_gas: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+			nonce: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+			estimate: bool,
+			access_list: <span class="prelude-ty">Option</span>&lt;Vec&lt;(H160, Vec&lt;H256&gt;)&gt;&gt;,
+		) -&gt; <span class="prelude-ty">Result</span>&lt;fp_evm::CallInfo, sp_runtime::DispatchError&gt;;
+		<span class="doccomment">/// Returns a frame_ethereum::create response.
+		</span><span class="attribute">#[changed_in(<span class="number">2</span>)]
+		</span><span class="kw">fn </span>create(
+			from: H160,
+			data: Vec&lt;u8&gt;,
+			value: U256,
+			gas_limit: U256,
+			gas_price: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+			nonce: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+			estimate: bool,
+		) -&gt; <span class="prelude-ty">Result</span>&lt;fp_evm::CreateInfo, sp_runtime::DispatchError&gt;;
+		<span class="attribute">#[changed_in(<span class="number">4</span>)]
+		</span><span class="kw">fn </span>create(
+			from: H160,
+			data: Vec&lt;u8&gt;,
+			value: U256,
+			gas_limit: U256,
+			max_fee_per_gas: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+			max_priority_fee_per_gas: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+			nonce: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+			estimate: bool,
+		) -&gt; <span class="prelude-ty">Result</span>&lt;fp_evm::CreateInfo, sp_runtime::DispatchError&gt;;
+		<span class="kw">fn </span>create(
+			from: H160,
+			data: Vec&lt;u8&gt;,
+			value: U256,
+			gas_limit: U256,
+			max_fee_per_gas: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+			max_priority_fee_per_gas: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+			nonce: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+			estimate: bool,
+			access_list: <span class="prelude-ty">Option</span>&lt;Vec&lt;(H160, Vec&lt;H256&gt;)&gt;&gt;,
+		) -&gt; <span class="prelude-ty">Result</span>&lt;fp_evm::CreateInfo, sp_runtime::DispatchError&gt;;
+		<span class="doccomment">/// Return the current block. Legacy.
+		</span><span class="attribute">#[changed_in(<span class="number">2</span>)]
+		</span><span class="kw">fn </span>current_block() -&gt; <span class="prelude-ty">Option</span>&lt;ethereum::BlockV0&gt;;
+		<span class="doccomment">/// Return the current block.
+		</span><span class="kw">fn </span>current_block() -&gt; <span class="prelude-ty">Option</span>&lt;ethereum::BlockV2&gt;;
+		<span class="doccomment">/// Return the current receipt.
+		</span><span class="attribute">#[changed_in(<span class="number">4</span>)]
+		</span><span class="kw">fn </span>current_receipts() -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;ethereum::ReceiptV0&gt;&gt;;
+		<span class="doccomment">/// Return the current receipt.
+		</span><span class="kw">fn </span>current_receipts() -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;ethereum::ReceiptV3&gt;&gt;;
+		<span class="doccomment">/// Return the current transaction status.
+		</span><span class="kw">fn </span>current_transaction_statuses() -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;TransactionStatus&gt;&gt;;
+		<span class="doccomment">/// Return all the current data for a block in a single runtime call. Legacy.
+		</span><span class="attribute">#[changed_in(<span class="number">2</span>)]
+		</span><span class="kw">fn </span>current_all() -&gt; (
+			<span class="prelude-ty">Option</span>&lt;ethereum::BlockV0&gt;,
+			<span class="prelude-ty">Option</span>&lt;Vec&lt;ethereum::ReceiptV0&gt;&gt;,
+			<span class="prelude-ty">Option</span>&lt;Vec&lt;TransactionStatus&gt;&gt;
 		);
-		<span class="doccomment">/// Return all the current data for a block in a single runtime call.</span>
-		<span class="attribute">#[<span class="ident">changed_in</span>(<span class="number">4</span>)]</span>
-		<span class="kw">fn</span> <span class="ident">current_all</span>() -&gt; (
-			<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">ethereum::BlockV2</span><span class="op">&gt;</span>,
-			<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ethereum::ReceiptV0</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-			<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TransactionStatus</span><span class="op">&gt;</span><span class="op">&gt;</span>
+		<span class="doccomment">/// Return all the current data for a block in a single runtime call.
+		</span><span class="attribute">#[changed_in(<span class="number">4</span>)]
+		</span><span class="kw">fn </span>current_all() -&gt; (
+			<span class="prelude-ty">Option</span>&lt;ethereum::BlockV2&gt;,
+			<span class="prelude-ty">Option</span>&lt;Vec&lt;ethereum::ReceiptV0&gt;&gt;,
+			<span class="prelude-ty">Option</span>&lt;Vec&lt;TransactionStatus&gt;&gt;
 		);
-		<span class="kw">fn</span> <span class="ident">current_all</span>() -&gt; (
-			<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">ethereum::BlockV2</span><span class="op">&gt;</span>,
-			<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ethereum::ReceiptV3</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-			<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TransactionStatus</span><span class="op">&gt;</span><span class="op">&gt;</span>
+		<span class="kw">fn </span>current_all() -&gt; (
+			<span class="prelude-ty">Option</span>&lt;ethereum::BlockV2&gt;,
+			<span class="prelude-ty">Option</span>&lt;Vec&lt;ethereum::ReceiptV3&gt;&gt;,
+			<span class="prelude-ty">Option</span>&lt;Vec&lt;TransactionStatus&gt;&gt;
 		);
-		<span class="doccomment">/// Receives a `Vec&lt;OpaqueExtrinsic&gt;` and filters all the ethereum transactions. Legacy.</span>
-		<span class="attribute">#[<span class="ident">changed_in</span>(<span class="number">2</span>)]</span>
-		<span class="kw">fn</span> <span class="ident">extrinsic_filter</span>(
-			<span class="ident">xts</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">Block</span> <span class="kw">as</span> <span class="ident">BlockT</span><span class="op">&gt;</span><span class="ident">::Extrinsic</span><span class="op">&gt;</span>,
-		) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ethereum::TransactionV0</span><span class="op">&gt;</span>;
-		<span class="doccomment">/// Receives a `Vec&lt;OpaqueExtrinsic&gt;` and filters all the ethereum transactions.</span>
-		<span class="kw">fn</span> <span class="ident">extrinsic_filter</span>(
-			<span class="ident">xts</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">Block</span> <span class="kw">as</span> <span class="ident">BlockT</span><span class="op">&gt;</span><span class="ident">::Extrinsic</span><span class="op">&gt;</span>,
-		) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ethereum::TransactionV2</span><span class="op">&gt;</span>;
-		<span class="doccomment">/// Return the elasticity multiplier.</span>
-		<span class="kw">fn</span> <span class="ident">elasticity</span>() -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Permill</span><span class="op">&gt;</span>;
+		<span class="doccomment">/// Receives a `Vec&lt;OpaqueExtrinsic&gt;` and filters all the ethereum transactions. Legacy.
+		</span><span class="attribute">#[changed_in(<span class="number">2</span>)]
+		</span><span class="kw">fn </span>extrinsic_filter(
+			xts: Vec&lt;&lt;Block <span class="kw">as </span>BlockT&gt;::Extrinsic&gt;,
+		) -&gt; Vec&lt;ethereum::TransactionV0&gt;;
+		<span class="doccomment">/// Receives a `Vec&lt;OpaqueExtrinsic&gt;` and filters all the ethereum transactions.
+		</span><span class="kw">fn </span>extrinsic_filter(
+			xts: Vec&lt;&lt;Block <span class="kw">as </span>BlockT&gt;::Extrinsic&gt;,
+		) -&gt; Vec&lt;ethereum::TransactionV2&gt;;
+		<span class="doccomment">/// Return the elasticity multiplier.
+		</span><span class="kw">fn </span>elasticity() -&gt; <span class="prelude-ty">Option</span>&lt;Permill&gt;;
 	}
 
-	<span class="attribute">#[<span class="ident">api_version</span>(<span class="number">2</span>)]</span>
-	<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">ConvertTransactionRuntimeApi</span> {
-		<span class="kw">fn</span> <span class="ident">convert_transaction</span>(<span class="ident">transaction</span>: <span class="ident">ethereum::TransactionV2</span>) -&gt; <span class="op">&lt;</span><span class="ident">Block</span> <span class="kw">as</span> <span class="ident">BlockT</span><span class="op">&gt;</span><span class="ident">::Extrinsic</span>;
-		<span class="attribute">#[<span class="ident">changed_in</span>(<span class="number">2</span>)]</span>
-		<span class="kw">fn</span> <span class="ident">convert_transaction</span>(<span class="ident">transaction</span>: <span class="ident">ethereum::TransactionV0</span>) -&gt; <span class="op">&lt;</span><span class="ident">Block</span> <span class="kw">as</span> <span class="ident">BlockT</span><span class="op">&gt;</span><span class="ident">::Extrinsic</span>;
+	<span class="attribute">#[api_version(<span class="number">2</span>)]
+	</span><span class="kw">pub trait </span>ConvertTransactionRuntimeApi {
+		<span class="kw">fn </span>convert_transaction(transaction: ethereum::TransactionV2) -&gt; &lt;Block <span class="kw">as </span>BlockT&gt;::Extrinsic;
+		<span class="attribute">#[changed_in(<span class="number">2</span>)]
+		</span><span class="kw">fn </span>convert_transaction(transaction: ethereum::TransactionV0) -&gt; &lt;Block <span class="kw">as </span>BlockT&gt;::Extrinsic;
 	}
 }
 
-<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">ConvertTransaction</span><span class="op">&lt;</span><span class="ident">E</span><span class="op">&gt;</span> {
-	<span class="kw">fn</span> <span class="ident">convert_transaction</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">transaction</span>: <span class="ident">ethereum::TransactionV2</span>) -&gt; <span class="ident">E</span>;
+<span class="kw">pub trait </span>ConvertTransaction&lt;E&gt; {
+	<span class="kw">fn </span>convert_transaction(<span class="kw-2">&amp;</span><span class="self">self</span>, transaction: ethereum::TransactionV2) -&gt; E;
 }
 
-<span class="comment">// `NoTransactionConverter` is a non-instantiable type (an enum with no variants),</span>
-<span class="comment">// so we are guaranteed at compile time that `NoTransactionConverter` can never be instantiated.</span>
-<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">NoTransactionConverter</span> {}
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">E</span><span class="op">&gt;</span> <span class="ident">ConvertTransaction</span><span class="op">&lt;</span><span class="ident">E</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">NoTransactionConverter</span> {
-	<span class="comment">// `convert_transaction` is a method taking `&amp;self` as a parameter, so it can only be called via an instance of type Self,</span>
-	<span class="comment">// so we are guaranteed at compile time that this method can never be called.</span>
-	<span class="kw">fn</span> <span class="ident">convert_transaction</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">_transaction</span>: <span class="ident">ethereum::TransactionV2</span>) -&gt; <span class="ident">E</span> {
+<span class="comment">// `NoTransactionConverter` is a non-instantiable type (an enum with no variants),
+// so we are guaranteed at compile time that `NoTransactionConverter` can never be instantiated.
+</span><span class="kw">pub enum </span>NoTransactionConverter {}
+<span class="kw">impl</span>&lt;E&gt; ConvertTransaction&lt;E&gt; <span class="kw">for </span>NoTransactionConverter {
+	<span class="comment">// `convert_transaction` is a method taking `&amp;self` as a parameter, so it can only be called via an instance of type Self,
+	// so we are guaranteed at compile time that this method can never be called.
+	</span><span class="kw">fn </span>convert_transaction(<span class="kw-2">&amp;</span><span class="self">self</span>, _transaction: ethereum::TransactionV2) -&gt; E {
 		<span class="macro">unreachable!</span>()
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="fp_rpc" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (7fe022f5a 2022-07-24)" ></div>
-</body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="fp_rpc" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (81f391930 2022-10-09)" ></div></body></html>

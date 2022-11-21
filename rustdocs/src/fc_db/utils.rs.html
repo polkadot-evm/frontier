@@ -1,10 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `client/db/src/utils.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>utils.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../fc_db/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a><h2 class="location"></h2>
-    </nav>
-    <nav class="sidebar"><a class="sidebar-logo" href="../../fc_db/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../fc_db/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1">
-                                <a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div>
-                        </div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `client/db/src/utils.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>utils.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><a class="sidebar-logo" href="../../fc_db/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../fc_db/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -134,136 +128,135 @@
 <span id="128">128</span>
 <span id="129">129</span>
 <span id="130">130</span>
-</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
-<span class="comment">// This file is part of Frontier.</span>
-<span class="comment">//</span>
-<span class="comment">// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.</span>
-<span class="comment">//</span>
-<span class="comment">// This program is free software: you can redistribute it and/or modify</span>
-<span class="comment">// it under the terms of the GNU General Public License as published by</span>
-<span class="comment">// the Free Software Foundation, either version 3 of the License, or</span>
-<span class="comment">// (at your option) any later version.</span>
-<span class="comment">//</span>
-<span class="comment">// This program is distributed in the hope that it will be useful,</span>
-<span class="comment">// but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
-<span class="comment">// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the</span>
-<span class="comment">// GNU General Public License for more details.</span>
-<span class="comment">//</span>
-<span class="comment">// You should have received a copy of the GNU General Public License</span>
-<span class="comment">// along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.</span>
+</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
+// This file is part of Frontier.
+//
+// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.
 
-<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">path::Path</span>, <span class="ident">sync::Arc</span>};
+</span><span class="kw">use </span>std::{path::Path, sync::Arc};
 
-<span class="kw">use</span> <span class="ident">sp_runtime::traits::Block</span> <span class="kw">as</span> <span class="ident">BlockT</span>;
+<span class="kw">use </span>sp_runtime::traits::Block <span class="kw">as </span>BlockT;
 
-<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">Database</span>, <span class="ident">DatabaseSettings</span>, <span class="ident">DatabaseSource</span>, <span class="ident">DbHash</span>};
+<span class="kw">use crate</span>::{Database, DatabaseSettings, DatabaseSource, DbHash};
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">open_database</span><span class="op">&lt;</span><span class="ident">Block</span>: <span class="ident">BlockT</span>, <span class="ident">C</span><span class="op">&gt;</span>(
-	<span class="ident">client</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
-	<span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="ident">DatabaseSettings</span>,
-) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Database</span><span class="op">&lt;</span><span class="ident">DbHash</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">String</span><span class="op">&gt;</span>
-<span class="kw">where</span>
-	<span class="ident">C</span>: <span class="ident">sp_blockchain::HeaderBackend</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span>,
+<span class="kw">pub fn </span>open_database&lt;Block: BlockT, C&gt;(
+	client: Arc&lt;C&gt;,
+	config: <span class="kw-2">&amp;</span>DatabaseSettings,
+) -&gt; <span class="prelude-ty">Result</span>&lt;Arc&lt;<span class="kw">dyn </span>Database&lt;DbHash&gt;&gt;, String&gt;
+<span class="kw">where
+	</span>C: sp_blockchain::HeaderBackend&lt;Block&gt; + Send + Sync,
 {
-	<span class="kw">let</span> <span class="ident">db</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Database</span><span class="op">&lt;</span><span class="ident">DbHash</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">=</span> <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">config</span>.<span class="ident">source</span> {
-		<span class="ident">DatabaseSource::ParityDb</span> { <span class="ident">path</span> } =&gt; {
-			<span class="ident">open_parity_db</span>::<span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">C</span><span class="op">&gt;</span>(<span class="ident">client</span>, <span class="ident">path</span>, <span class="kw-2">&amp;</span><span class="ident">config</span>.<span class="ident">source</span>)<span class="question-mark">?</span>
-		}
-		<span class="ident">DatabaseSource::RocksDb</span> { <span class="ident">path</span>, .. } =&gt; {
-			<span class="ident">open_kvdb_rocksdb</span>::<span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">C</span><span class="op">&gt;</span>(<span class="ident">client</span>, <span class="ident">path</span>, <span class="bool-val">true</span>, <span class="kw-2">&amp;</span><span class="ident">config</span>.<span class="ident">source</span>)<span class="question-mark">?</span>
-		}
-		<span class="ident">DatabaseSource::Auto</span> {
-			<span class="ident">paritydb_path</span>,
-			<span class="ident">rocksdb_path</span>,
+	<span class="kw">let </span>db: Arc&lt;<span class="kw">dyn </span>Database&lt;DbHash&gt;&gt; = <span class="kw">match </span><span class="kw-2">&amp;</span>config.source {
+		DatabaseSource::ParityDb { path } =&gt; {
+			open_parity_db::&lt;Block, C&gt;(client, path, <span class="kw-2">&amp;</span>config.source)<span class="question-mark">?
+		</span>}
+		DatabaseSource::RocksDb { path, .. } =&gt; {
+			open_kvdb_rocksdb::&lt;Block, C&gt;(client, path, <span class="bool-val">true</span>, <span class="kw-2">&amp;</span>config.source)<span class="question-mark">?
+		</span>}
+		DatabaseSource::Auto {
+			paritydb_path,
+			rocksdb_path,
 			..
 		} =&gt; {
-			<span class="kw">match</span> <span class="ident">open_kvdb_rocksdb</span>::<span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">C</span><span class="op">&gt;</span>(<span class="ident">client</span>.<span class="ident">clone</span>(), <span class="ident">rocksdb_path</span>, <span class="bool-val">false</span>, <span class="kw-2">&amp;</span><span class="ident">config</span>.<span class="ident">source</span>)
+			<span class="kw">match </span>open_kvdb_rocksdb::&lt;Block, C&gt;(client.clone(), rocksdb_path, <span class="bool-val">false</span>, <span class="kw-2">&amp;</span>config.source)
 			{
-				<span class="prelude-val">Ok</span>(<span class="ident">db</span>) =&gt; <span class="ident">db</span>,
-				<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="ident">open_parity_db</span>::<span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">C</span><span class="op">&gt;</span>(<span class="ident">client</span>, <span class="ident">paritydb_path</span>, <span class="kw-2">&amp;</span><span class="ident">config</span>.<span class="ident">source</span>)<span class="question-mark">?</span>,
+				<span class="prelude-val">Ok</span>(db) =&gt; db,
+				<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; open_parity_db::&lt;Block, C&gt;(client, paritydb_path, <span class="kw-2">&amp;</span>config.source)<span class="question-mark">?</span>,
 			}
 		}
-		<span class="kw">_</span> =&gt; <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;Missing feature flags `parity-db`&quot;</span>.<span class="ident">to_string</span>()),
+		<span class="kw">_ </span>=&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">&quot;Missing feature flags `parity-db`&quot;</span>.to_string()),
 	};
-	<span class="prelude-val">Ok</span>(<span class="ident">db</span>)
+	<span class="prelude-val">Ok</span>(db)
 }
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;kvdb-rocksdb&quot;</span>)]</span>
-<span class="kw">fn</span> <span class="ident">open_kvdb_rocksdb</span><span class="op">&lt;</span><span class="ident">Block</span>: <span class="ident">BlockT</span>, <span class="ident">C</span><span class="op">&gt;</span>(
-	<span class="ident">client</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
-	<span class="ident">path</span>: <span class="kw-2">&amp;</span><span class="ident">Path</span>,
-	<span class="ident">create</span>: <span class="ident">bool</span>,
-	<span class="ident">_source</span>: <span class="kw-2">&amp;</span><span class="ident">DatabaseSource</span>,
-) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Database</span><span class="op">&lt;</span><span class="ident">DbHash</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">String</span><span class="op">&gt;</span>
-<span class="kw">where</span>
-	<span class="ident">C</span>: <span class="ident">sp_blockchain::HeaderBackend</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span>,
+<span class="attribute">#[cfg(feature = <span class="string">&quot;kvdb-rocksdb&quot;</span>)]
+</span><span class="kw">fn </span>open_kvdb_rocksdb&lt;Block: BlockT, C&gt;(
+	client: Arc&lt;C&gt;,
+	path: <span class="kw-2">&amp;</span>Path,
+	create: bool,
+	_source: <span class="kw-2">&amp;</span>DatabaseSource,
+) -&gt; <span class="prelude-ty">Result</span>&lt;Arc&lt;<span class="kw">dyn </span>Database&lt;DbHash&gt;&gt;, String&gt;
+<span class="kw">where
+	</span>C: sp_blockchain::HeaderBackend&lt;Block&gt; + Send + Sync,
 {
-	<span class="comment">// first upgrade database to required version</span>
-	<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">test</span>))]</span>
-	<span class="kw">match</span> <span class="ident"><span class="kw">crate</span>::upgrade::upgrade_db</span>::<span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">C</span><span class="op">&gt;</span>(<span class="ident">client</span>, <span class="ident">path</span>, <span class="ident">_source</span>) {
+	<span class="comment">// first upgrade database to required version
+	</span><span class="attribute">#[cfg(not(test))]
+	</span><span class="kw">match </span><span class="kw">crate</span>::upgrade::upgrade_db::&lt;Block, C&gt;(client, path, _source) {
 		<span class="prelude-val">Ok</span>(<span class="kw">_</span>) =&gt; (),
-		<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;Frontier DB upgrade error&quot;</span>.<span class="ident">to_string</span>()),
+		<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">&quot;Frontier DB upgrade error&quot;</span>.to_string()),
 	}
 
-	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">db_config</span> <span class="op">=</span> <span class="ident">kvdb_rocksdb::DatabaseConfig::with_columns</span>(<span class="ident"><span class="kw">crate</span>::columns::NUM_COLUMNS</span>);
-	<span class="ident">db_config</span>.<span class="ident">create_if_missing</span> <span class="op">=</span> <span class="ident">create</span>;
+	<span class="kw">let </span><span class="kw-2">mut </span>db_config = kvdb_rocksdb::DatabaseConfig::with_columns(<span class="kw">crate</span>::columns::NUM_COLUMNS);
+	db_config.create_if_missing = create;
 
-	<span class="kw">let</span> <span class="ident">db</span> <span class="op">=</span> <span class="ident">kvdb_rocksdb::Database::open</span>(<span class="kw-2">&amp;</span><span class="ident">db_config</span>, <span class="kw-2">&amp;</span><span class="ident">path</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;{}&quot;</span>, <span class="ident">err</span>))<span class="question-mark">?</span>;
-	<span class="comment">// write database version only after the database is succesfully opened</span>
-	<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">test</span>))]</span>
-	<span class="ident"><span class="kw">crate</span>::upgrade::update_version</span>(<span class="ident">path</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="string">&quot;Cannot update db version&quot;</span>.<span class="ident">to_string</span>())<span class="question-mark">?</span>;
-	<span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">sp_database::as_database</span>(<span class="ident">db</span>));
+	<span class="kw">let </span>db = kvdb_rocksdb::Database::open(<span class="kw-2">&amp;</span>db_config, path).map_err(|err| <span class="macro">format!</span>(<span class="string">&quot;{}&quot;</span>, err))<span class="question-mark">?</span>;
+	<span class="comment">// write database version only after the database is succesfully opened
+	</span><span class="attribute">#[cfg(not(test))]
+	</span><span class="kw">crate</span>::upgrade::update_version(path).map_err(|<span class="kw">_</span>| <span class="string">&quot;Cannot update db version&quot;</span>.to_string())<span class="question-mark">?</span>;
+	<span class="kw">return </span><span class="prelude-val">Ok</span>(sp_database::as_database(db));
 }
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;kvdb-rocksdb&quot;</span>))]</span>
-<span class="kw">fn</span> <span class="ident">open_kvdb_rocksdb</span><span class="op">&lt;</span><span class="ident">Block</span>: <span class="ident">BlockT</span>, <span class="ident">C</span><span class="op">&gt;</span>(
-	<span class="ident">_client</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
-	<span class="ident">_path</span>: <span class="kw-2">&amp;</span><span class="ident">Path</span>,
-	<span class="ident">_create</span>: <span class="ident">bool</span>,
-	<span class="ident">_source</span>: <span class="kw-2">&amp;</span><span class="ident">DatabaseSource</span>,
-) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Database</span><span class="op">&lt;</span><span class="ident">DbHash</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">String</span><span class="op">&gt;</span>
-<span class="kw">where</span>
-	<span class="ident">C</span>: <span class="ident">sp_blockchain::HeaderBackend</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span>,
+<span class="attribute">#[cfg(not(feature = <span class="string">&quot;kvdb-rocksdb&quot;</span>))]
+</span><span class="kw">fn </span>open_kvdb_rocksdb&lt;Block: BlockT, C&gt;(
+	_client: Arc&lt;C&gt;,
+	_path: <span class="kw-2">&amp;</span>Path,
+	_create: bool,
+	_source: <span class="kw-2">&amp;</span>DatabaseSource,
+) -&gt; <span class="prelude-ty">Result</span>&lt;Arc&lt;<span class="kw">dyn </span>Database&lt;DbHash&gt;&gt;, String&gt;
+<span class="kw">where
+	</span>C: sp_blockchain::HeaderBackend&lt;Block&gt; + Send + Sync,
 {
-	<span class="prelude-val">Err</span>(<span class="string">&quot;Missing feature flags `kvdb-rocksdb`&quot;</span>.<span class="ident">to_string</span>())
+	<span class="prelude-val">Err</span>(<span class="string">&quot;Missing feature flags `kvdb-rocksdb`&quot;</span>.to_string())
 }
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;parity-db&quot;</span>)]</span>
-<span class="kw">fn</span> <span class="ident">open_parity_db</span><span class="op">&lt;</span><span class="ident">Block</span>: <span class="ident">BlockT</span>, <span class="ident">C</span><span class="op">&gt;</span>(
-	<span class="ident">client</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
-	<span class="ident">path</span>: <span class="kw-2">&amp;</span><span class="ident">Path</span>,
-	<span class="ident">_source</span>: <span class="kw-2">&amp;</span><span class="ident">DatabaseSource</span>,
-) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Database</span><span class="op">&lt;</span><span class="ident">DbHash</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">String</span><span class="op">&gt;</span>
-<span class="kw">where</span>
-	<span class="ident">C</span>: <span class="ident">sp_blockchain::HeaderBackend</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span>,
+<span class="attribute">#[cfg(feature = <span class="string">&quot;parity-db&quot;</span>)]
+</span><span class="kw">fn </span>open_parity_db&lt;Block: BlockT, C&gt;(
+	client: Arc&lt;C&gt;,
+	path: <span class="kw-2">&amp;</span>Path,
+	_source: <span class="kw-2">&amp;</span>DatabaseSource,
+) -&gt; <span class="prelude-ty">Result</span>&lt;Arc&lt;<span class="kw">dyn </span>Database&lt;DbHash&gt;&gt;, String&gt;
+<span class="kw">where
+	</span>C: sp_blockchain::HeaderBackend&lt;Block&gt; + Send + Sync,
 {
-	<span class="comment">// first upgrade database to required version</span>
-	<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">test</span>))]</span>
-	<span class="kw">match</span> <span class="ident"><span class="kw">crate</span>::upgrade::upgrade_db</span>::<span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">C</span><span class="op">&gt;</span>(<span class="ident">client</span>, <span class="ident">path</span>, <span class="ident">_source</span>) {
+	<span class="comment">// first upgrade database to required version
+	</span><span class="attribute">#[cfg(not(test))]
+	</span><span class="kw">match </span><span class="kw">crate</span>::upgrade::upgrade_db::&lt;Block, C&gt;(client, path, _source) {
 		<span class="prelude-val">Ok</span>(<span class="kw">_</span>) =&gt; (),
-		<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;Frontier DB upgrade error&quot;</span>.<span class="ident">to_string</span>()),
+		<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">&quot;Frontier DB upgrade error&quot;</span>.to_string()),
 	}
-	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">parity_db::Options::with_columns</span>(<span class="ident">path</span>, <span class="ident"><span class="kw">crate</span>::columns::NUM_COLUMNS</span> <span class="kw">as</span> <span class="ident">u8</span>);
-	<span class="ident">config</span>.<span class="ident">columns</span>[<span class="ident"><span class="kw">crate</span>::columns::BLOCK_MAPPING</span> <span class="kw">as</span> <span class="ident">usize</span>].<span class="ident">btree_index</span> <span class="op">=</span> <span class="bool-val">true</span>;
+	<span class="kw">let </span><span class="kw-2">mut </span>config = parity_db::Options::with_columns(path, <span class="kw">crate</span>::columns::NUM_COLUMNS <span class="kw">as </span>u8);
+	config.columns[<span class="kw">crate</span>::columns::BLOCK_MAPPING <span class="kw">as </span>usize].btree_index = <span class="bool-val">true</span>;
 
-	<span class="kw">let</span> <span class="ident">db</span> <span class="op">=</span> <span class="ident">parity_db::Db::open_or_create</span>(<span class="kw-2">&amp;</span><span class="ident">config</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;{}&quot;</span>, <span class="ident">err</span>))<span class="question-mark">?</span>;
-	<span class="comment">// write database version only after the database is succesfully opened</span>
-	<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">test</span>))]</span>
-	<span class="ident"><span class="kw">crate</span>::upgrade::update_version</span>(<span class="ident">path</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="string">&quot;Cannot update db version&quot;</span>.<span class="ident">to_string</span>())<span class="question-mark">?</span>;
-	<span class="prelude-val">Ok</span>(<span class="ident">Arc::new</span>(<span class="ident"><span class="kw">crate</span>::parity_db_adapter::DbAdapter</span>(<span class="ident">db</span>)))
+	<span class="kw">let </span>db = parity_db::Db::open_or_create(<span class="kw-2">&amp;</span>config).map_err(|err| <span class="macro">format!</span>(<span class="string">&quot;{}&quot;</span>, err))<span class="question-mark">?</span>;
+	<span class="comment">// write database version only after the database is succesfully opened
+	</span><span class="attribute">#[cfg(not(test))]
+	</span><span class="kw">crate</span>::upgrade::update_version(path).map_err(|<span class="kw">_</span>| <span class="string">&quot;Cannot update db version&quot;</span>.to_string())<span class="question-mark">?</span>;
+	<span class="prelude-val">Ok</span>(Arc::new(<span class="kw">crate</span>::parity_db_adapter::DbAdapter(db)))
 }
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;parity-db&quot;</span>))]</span>
-<span class="kw">fn</span> <span class="ident">open_parity_db</span><span class="op">&lt;</span><span class="ident">Block</span>: <span class="ident">BlockT</span>, <span class="ident">C</span><span class="op">&gt;</span>(
-	<span class="ident">_client</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
-	<span class="ident">_path</span>: <span class="kw-2">&amp;</span><span class="ident">Path</span>,
-	<span class="ident">_source</span>: <span class="kw-2">&amp;</span><span class="ident">DatabaseSource</span>,
-) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Database</span><span class="op">&lt;</span><span class="ident">DbHash</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">String</span><span class="op">&gt;</span>
-<span class="kw">where</span>
-	<span class="ident">C</span>: <span class="ident">sp_blockchain::HeaderBackend</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span>,
+<span class="attribute">#[cfg(not(feature = <span class="string">&quot;parity-db&quot;</span>))]
+</span><span class="kw">fn </span>open_parity_db&lt;Block: BlockT, C&gt;(
+	_client: Arc&lt;C&gt;,
+	_path: <span class="kw-2">&amp;</span>Path,
+	_source: <span class="kw-2">&amp;</span>DatabaseSource,
+) -&gt; <span class="prelude-ty">Result</span>&lt;Arc&lt;<span class="kw">dyn </span>Database&lt;DbHash&gt;&gt;, String&gt;
+<span class="kw">where
+	</span>C: sp_blockchain::HeaderBackend&lt;Block&gt; + Send + Sync,
 {
-	<span class="prelude-val">Err</span>(<span class="string">&quot;Missing feature flags `parity-db`&quot;</span>.<span class="ident">to_string</span>())
+	<span class="prelude-val">Err</span>(<span class="string">&quot;Missing feature flags `parity-db`&quot;</span>.to_string())
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="fc_db" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (7fe022f5a 2022-07-24)" ></div>
-</body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="fc_db" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (81f391930 2022-10-09)" ></div></body></html>

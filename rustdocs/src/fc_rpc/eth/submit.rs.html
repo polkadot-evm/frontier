@@ -1,10 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `client/rpc/src/eth/submit.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>submit.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../fc_rpc/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div>
-        </a><h2 class="location"></h2>
-    </nav>
-    <nav class="sidebar"><a class="sidebar-logo" href="../../../fc_rpc/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div>
-        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../fc_rpc/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1">
-                                <a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div>
-                        </div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `client/rpc/src/eth/submit.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>submit.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../../normalize.css"><link rel="stylesheet" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../../ayu.css" disabled><link rel="stylesheet" href="../../../dark.css" disabled><link rel="stylesheet" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><a class="sidebar-logo" href="../../../fc_rpc/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../fc_rpc/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -288,318 +282,289 @@
 <span id="282">282</span>
 <span id="283">283</span>
 <span id="284">284</span>
-<span id="285">285</span>
-<span id="286">286</span>
-<span id="287">287</span>
-<span id="288">288</span>
-<span id="289">289</span>
-<span id="290">290</span>
-<span id="291">291</span>
-<span id="292">292</span>
-<span id="293">293</span>
-<span id="294">294</span>
-<span id="295">295</span>
-<span id="296">296</span>
-<span id="297">297</span>
-<span id="298">298</span>
-</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
-<span class="comment">// This file is part of Frontier.</span>
-<span class="comment">//</span>
-<span class="comment">// Copyright (c) 2022 Parity Technologies (UK) Ltd.</span>
-<span class="comment">//</span>
-<span class="comment">// This program is free software: you can redistribute it and/or modify</span>
-<span class="comment">// it under the terms of the GNU General Public License as published by</span>
-<span class="comment">// the Free Software Foundation, either version 3 of the License, or</span>
-<span class="comment">// (at your option) any later version.</span>
-<span class="comment">//</span>
-<span class="comment">// This program is distributed in the hope that it will be useful,</span>
-<span class="comment">// but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
-<span class="comment">// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the</span>
-<span class="comment">// GNU General Public License for more details.</span>
-<span class="comment">//</span>
-<span class="comment">// You should have received a copy of the GNU General Public License</span>
-<span class="comment">// along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.</span>
+</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
+// This file is part of Frontier.
+//
+// Copyright (c) 2022 Parity Technologies (UK) Ltd.
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.
 
-<span class="kw">use</span> <span class="ident">ethereum_types::H256</span>;
-<span class="kw">use</span> <span class="ident">futures::future::TryFutureExt</span>;
-<span class="kw">use</span> <span class="ident">jsonrpsee::core::RpcResult</span> <span class="kw">as</span> <span class="prelude-ty">Result</span>;
-<span class="comment">// Substrate</span>
-<span class="kw">use</span> <span class="ident">sc_client_api::backend</span>::{<span class="ident">Backend</span>, <span class="ident">StateBackend</span>, <span class="ident">StorageProvider</span>};
-<span class="kw">use</span> <span class="ident">sc_network_common::ExHashT</span>;
-<span class="kw">use</span> <span class="ident">sc_transaction_pool::ChainApi</span>;
-<span class="kw">use</span> <span class="ident">sc_transaction_pool_api::TransactionPool</span>;
-<span class="kw">use</span> <span class="ident">sp_api</span>::{<span class="ident">ApiExt</span>, <span class="ident">ProvideRuntimeApi</span>};
-<span class="kw">use</span> <span class="ident">sp_block_builder::BlockBuilder</span> <span class="kw">as</span> <span class="ident">BlockBuilderApi</span>;
-<span class="kw">use</span> <span class="ident">sp_blockchain::HeaderBackend</span>;
-<span class="kw">use</span> <span class="ident">sp_runtime</span>::{
-	<span class="ident">generic::BlockId</span>,
-	<span class="ident">traits</span>::{<span class="ident">BlakeTwo256</span>, <span class="ident">Block</span> <span class="kw">as</span> <span class="ident">BlockT</span>},
-	<span class="ident">transaction_validity::TransactionSource</span>,
+</span><span class="kw">use </span>ethereum_types::H256;
+<span class="kw">use </span>futures::future::TryFutureExt;
+<span class="kw">use </span>jsonrpsee::core::RpcResult <span class="kw">as </span><span class="prelude-ty">Result</span>;
+<span class="comment">// Substrate
+</span><span class="kw">use </span>sc_client_api::backend::{Backend, StateBackend, StorageProvider};
+<span class="kw">use </span>sc_network_common::ExHashT;
+<span class="kw">use </span>sc_transaction_pool::ChainApi;
+<span class="kw">use </span>sc_transaction_pool_api::TransactionPool;
+<span class="kw">use </span>sp_api::{ApiExt, ProvideRuntimeApi};
+<span class="kw">use </span>sp_block_builder::BlockBuilder <span class="kw">as </span>BlockBuilderApi;
+<span class="kw">use </span>sp_blockchain::HeaderBackend;
+<span class="kw">use </span>sp_runtime::{
+	generic::BlockId,
+	traits::{BlakeTwo256, Block <span class="kw">as </span>BlockT},
+	transaction_validity::TransactionSource,
 };
-<span class="comment">// Frontier</span>
-<span class="kw">use</span> <span class="ident">fc_rpc_core::types</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident">fp_rpc</span>::{<span class="ident">ConvertTransaction</span>, <span class="ident">ConvertTransactionRuntimeApi</span>, <span class="ident">EthereumRuntimeRPCApi</span>};
+<span class="comment">// Frontier
+</span><span class="kw">use </span>fc_rpc_core::types::<span class="kw-2">*</span>;
+<span class="kw">use </span>fp_rpc::{ConvertTransaction, ConvertTransactionRuntimeApi, EthereumRuntimeRPCApi};
 
-<span class="kw">use</span> <span class="kw">crate</span>::{
-	<span class="ident">eth</span>::{<span class="ident">format</span>, <span class="ident">Eth</span>},
-	<span class="ident">internal_err</span>,
+<span class="kw">use crate</span>::{
+	eth::{format, Eth},
+	internal_err,
 };
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">CT</span>, <span class="ident">BE</span>, <span class="ident">H</span>: <span class="ident">ExHashT</span>, <span class="ident">A</span>: <span class="ident">ChainApi</span><span class="op">&gt;</span> <span class="ident">Eth</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">CT</span>, <span class="ident">BE</span>, <span class="ident">H</span>, <span class="ident">A</span><span class="op">&gt;</span>
-<span class="kw">where</span>
-	<span class="ident">B</span>: <span class="ident">BlockT</span><span class="op">&lt;</span><span class="ident">Hash</span> <span class="op">=</span> <span class="ident">H256</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
-	<span class="ident">C</span>: <span class="ident">ProvideRuntimeApi</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">StorageProvider</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">BE</span><span class="op">&gt;</span>,
-	<span class="ident">C</span>: <span class="ident">HeaderBackend</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
-	<span class="ident">C::Api</span>: <span class="ident">BlockBuilderApi</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">ConvertTransactionRuntimeApi</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">EthereumRuntimeRPCApi</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span>,
-	<span class="ident">BE</span>: <span class="ident">Backend</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
-	<span class="ident">BE::State</span>: <span class="ident">StateBackend</span><span class="op">&lt;</span><span class="ident">BlakeTwo256</span><span class="op">&gt;</span>,
-	<span class="ident">P</span>: <span class="ident">TransactionPool</span><span class="op">&lt;</span><span class="ident">Block</span> <span class="op">=</span> <span class="ident">B</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
-	<span class="ident">CT</span>: <span class="ident">ConvertTransaction</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">B</span> <span class="kw">as</span> <span class="ident">BlockT</span><span class="op">&gt;</span><span class="ident">::Extrinsic</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
-	<span class="ident">A</span>: <span class="ident">ChainApi</span><span class="op">&lt;</span><span class="ident">Block</span> <span class="op">=</span> <span class="ident">B</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
+<span class="kw">impl</span>&lt;B, C, P, CT, BE, H: ExHashT, A: ChainApi&gt; Eth&lt;B, C, P, CT, BE, H, A&gt;
+<span class="kw">where
+	</span>B: BlockT&lt;Hash = H256&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
+	C: ProvideRuntimeApi&lt;B&gt; + StorageProvider&lt;B, BE&gt;,
+	C: HeaderBackend&lt;B&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
+	C::Api: BlockBuilderApi&lt;B&gt; + ConvertTransactionRuntimeApi&lt;B&gt; + EthereumRuntimeRPCApi&lt;B&gt;,
+	BE: Backend&lt;B&gt; + <span class="lifetime">&#39;static</span>,
+	BE::State: StateBackend&lt;BlakeTwo256&gt;,
+	P: TransactionPool&lt;Block = B&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
+	CT: ConvertTransaction&lt;&lt;B <span class="kw">as </span>BlockT&gt;::Extrinsic&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
+	A: ChainApi&lt;Block = B&gt; + <span class="lifetime">&#39;static</span>,
 {
-	<span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">send_transaction</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">request</span>: <span class="ident">TransactionRequest</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span> {
-		<span class="kw">let</span> <span class="ident">from</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">request</span>.<span class="ident">from</span> {
-			<span class="prelude-val">Some</span>(<span class="ident">from</span>) =&gt; <span class="ident">from</span>,
-			<span class="prelude-val">None</span> =&gt; {
-				<span class="kw">let</span> <span class="ident">accounts</span> <span class="op">=</span> <span class="kw">match</span> <span class="self">self</span>.<span class="ident">accounts</span>() {
-					<span class="prelude-val">Ok</span>(<span class="ident">accounts</span>) =&gt; <span class="ident">accounts</span>,
-					<span class="prelude-val">Err</span>(<span class="ident">e</span>) =&gt; <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>),
+	<span class="kw">pub async fn </span>send_transaction(<span class="kw-2">&amp;</span><span class="self">self</span>, request: TransactionRequest) -&gt; <span class="prelude-ty">Result</span>&lt;H256&gt; {
+		<span class="kw">let </span>from = <span class="kw">match </span>request.from {
+			<span class="prelude-val">Some</span>(from) =&gt; from,
+			<span class="prelude-val">None </span>=&gt; {
+				<span class="kw">let </span>accounts = <span class="kw">match </span><span class="self">self</span>.accounts() {
+					<span class="prelude-val">Ok</span>(accounts) =&gt; accounts,
+					<span class="prelude-val">Err</span>(e) =&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(e),
 				};
 
-				<span class="kw">match</span> <span class="ident">accounts</span>.<span class="ident">get</span>(<span class="number">0</span>) {
-					<span class="prelude-val">Some</span>(<span class="ident">account</span>) =&gt; <span class="kw-2">*</span><span class="ident">account</span>,
-					<span class="prelude-val">None</span> =&gt; <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="string">&quot;no signer available&quot;</span>)),
+				<span class="kw">match </span>accounts.get(<span class="number">0</span>) {
+					<span class="prelude-val">Some</span>(account) =&gt; <span class="kw-2">*</span>account,
+					<span class="prelude-val">None </span>=&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(internal_err(<span class="string">&quot;no signer available&quot;</span>)),
 				}
 			}
 		};
 
-		<span class="kw">let</span> <span class="ident">nonce</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">request</span>.<span class="ident">nonce</span> {
-			<span class="prelude-val">Some</span>(<span class="ident">nonce</span>) =&gt; <span class="ident">nonce</span>,
-			<span class="prelude-val">None</span> =&gt; <span class="kw">match</span> <span class="self">self</span>.<span class="ident">transaction_count</span>(<span class="ident">from</span>, <span class="prelude-val">None</span>) {
-				<span class="prelude-val">Ok</span>(<span class="ident">nonce</span>) =&gt; <span class="ident">nonce</span>,
-				<span class="prelude-val">Err</span>(<span class="ident">e</span>) =&gt; <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>),
+		<span class="kw">let </span>nonce = <span class="kw">match </span>request.nonce {
+			<span class="prelude-val">Some</span>(nonce) =&gt; nonce,
+			<span class="prelude-val">None </span>=&gt; <span class="kw">match </span><span class="self">self</span>.transaction_count(from, <span class="prelude-val">None</span>) {
+				<span class="prelude-val">Ok</span>(nonce) =&gt; nonce,
+				<span class="prelude-val">Err</span>(e) =&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(e),
 			},
 		};
 
-		<span class="kw">let</span> <span class="ident">chain_id</span> <span class="op">=</span> <span class="kw">match</span> <span class="self">self</span>.<span class="ident">chain_id</span>() {
-			<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">chain_id</span>)) =&gt; <span class="ident">chain_id</span>.<span class="ident">as_u64</span>(),
-			<span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>) =&gt; <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="string">&quot;chain id not available&quot;</span>)),
-			<span class="prelude-val">Err</span>(<span class="ident">e</span>) =&gt; <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>),
+		<span class="kw">let </span>chain_id = <span class="kw">match </span><span class="self">self</span>.chain_id() {
+			<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(chain_id)) =&gt; chain_id.as_u64(),
+			<span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>) =&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(internal_err(<span class="string">&quot;chain id not available&quot;</span>)),
+			<span class="prelude-val">Err</span>(e) =&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(e),
 		};
 
-		<span class="kw">let</span> <span class="ident">hash</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">info</span>().<span class="ident">best_hash</span>;
+		<span class="kw">let </span>hash = <span class="self">self</span>.client.info().best_hash;
 
-		<span class="kw">let</span> <span class="ident">gas_price</span> <span class="op">=</span> <span class="ident">request</span>.<span class="ident">gas_price</span>;
-		<span class="kw">let</span> <span class="ident">gas_limit</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">request</span>.<span class="ident">gas</span> {
-			<span class="prelude-val">Some</span>(<span class="ident">gas_limit</span>) =&gt; <span class="ident">gas_limit</span>,
-			<span class="prelude-val">None</span> =&gt; {
-				<span class="kw">let</span> <span class="ident">block</span> <span class="op">=</span> <span class="self">self</span>
-					.<span class="ident">client</span>
-					.<span class="ident">runtime_api</span>()
-					.<span class="ident">current_block</span>(<span class="kw-2">&amp;</span><span class="ident">BlockId::Hash</span>(<span class="ident">hash</span>));
-				<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">block</span>)) <span class="op">=</span> <span class="ident">block</span> {
-					<span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">gas_limit</span>
-				} <span class="kw">else</span> {
-					<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="string">&quot;block unavailable, cannot query gas limit&quot;</span>));
+		<span class="kw">let </span>gas_price = request.gas_price;
+		<span class="kw">let </span>gas_limit = <span class="kw">match </span>request.gas {
+			<span class="prelude-val">Some</span>(gas_limit) =&gt; gas_limit,
+			<span class="prelude-val">None </span>=&gt; {
+				<span class="kw">let </span>block = <span class="self">self
+					</span>.client
+					.runtime_api()
+					.current_block(<span class="kw-2">&amp;</span>BlockId::Hash(hash));
+				<span class="kw">if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(block)) = block {
+					block.header.gas_limit
+				} <span class="kw">else </span>{
+					<span class="kw">return </span><span class="prelude-val">Err</span>(internal_err(<span class="string">&quot;block unavailable, cannot query gas limit&quot;</span>));
 				}
 			}
 		};
-		<span class="kw">let</span> <span class="ident">max_fee_per_gas</span> <span class="op">=</span> <span class="ident">request</span>.<span class="ident">max_fee_per_gas</span>;
-		<span class="kw">let</span> <span class="ident">message</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">TransactionMessage</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">request</span>.<span class="ident">into</span>();
-		<span class="kw">let</span> <span class="ident">message</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">message</span> {
-			<span class="prelude-val">Some</span>(<span class="ident">TransactionMessage::Legacy</span>(<span class="kw-2">mut</span> <span class="ident">m</span>)) =&gt; {
-				<span class="ident">m</span>.<span class="ident">nonce</span> <span class="op">=</span> <span class="ident">nonce</span>;
-				<span class="ident">m</span>.<span class="ident">chain_id</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">chain_id</span>);
-				<span class="ident">m</span>.<span class="ident">gas_limit</span> <span class="op">=</span> <span class="ident">gas_limit</span>;
-				<span class="kw">if</span> <span class="ident">gas_price</span>.<span class="ident">is_none</span>() {
-					<span class="ident">m</span>.<span class="ident">gas_price</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">gas_price</span>().<span class="ident">unwrap_or_default</span>();
+		<span class="kw">let </span>max_fee_per_gas = request.max_fee_per_gas;
+		<span class="kw">let </span>message: <span class="prelude-ty">Option</span>&lt;TransactionMessage&gt; = request.into();
+		<span class="kw">let </span>message = <span class="kw">match </span>message {
+			<span class="prelude-val">Some</span>(TransactionMessage::Legacy(<span class="kw-2">mut </span>m)) =&gt; {
+				m.nonce = nonce;
+				m.chain_id = <span class="prelude-val">Some</span>(chain_id);
+				m.gas_limit = gas_limit;
+				<span class="kw">if </span>gas_price.is_none() {
+					m.gas_price = <span class="self">self</span>.gas_price().unwrap_or_default();
 				}
-				<span class="ident">TransactionMessage::Legacy</span>(<span class="ident">m</span>)
+				TransactionMessage::Legacy(m)
 			}
-			<span class="prelude-val">Some</span>(<span class="ident">TransactionMessage::EIP2930</span>(<span class="kw-2">mut</span> <span class="ident">m</span>)) =&gt; {
-				<span class="ident">m</span>.<span class="ident">nonce</span> <span class="op">=</span> <span class="ident">nonce</span>;
-				<span class="ident">m</span>.<span class="ident">chain_id</span> <span class="op">=</span> <span class="ident">chain_id</span>;
-				<span class="ident">m</span>.<span class="ident">gas_limit</span> <span class="op">=</span> <span class="ident">gas_limit</span>;
-				<span class="kw">if</span> <span class="ident">gas_price</span>.<span class="ident">is_none</span>() {
-					<span class="ident">m</span>.<span class="ident">gas_price</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">gas_price</span>().<span class="ident">unwrap_or_default</span>();
+			<span class="prelude-val">Some</span>(TransactionMessage::EIP2930(<span class="kw-2">mut </span>m)) =&gt; {
+				m.nonce = nonce;
+				m.chain_id = chain_id;
+				m.gas_limit = gas_limit;
+				<span class="kw">if </span>gas_price.is_none() {
+					m.gas_price = <span class="self">self</span>.gas_price().unwrap_or_default();
 				}
-				<span class="ident">TransactionMessage::EIP2930</span>(<span class="ident">m</span>)
+				TransactionMessage::EIP2930(m)
 			}
-			<span class="prelude-val">Some</span>(<span class="ident">TransactionMessage::EIP1559</span>(<span class="kw-2">mut</span> <span class="ident">m</span>)) =&gt; {
-				<span class="ident">m</span>.<span class="ident">nonce</span> <span class="op">=</span> <span class="ident">nonce</span>;
-				<span class="ident">m</span>.<span class="ident">chain_id</span> <span class="op">=</span> <span class="ident">chain_id</span>;
-				<span class="ident">m</span>.<span class="ident">gas_limit</span> <span class="op">=</span> <span class="ident">gas_limit</span>;
-				<span class="kw">if</span> <span class="ident">max_fee_per_gas</span>.<span class="ident">is_none</span>() {
-					<span class="ident">m</span>.<span class="ident">max_fee_per_gas</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">gas_price</span>().<span class="ident">unwrap_or_default</span>();
+			<span class="prelude-val">Some</span>(TransactionMessage::EIP1559(<span class="kw-2">mut </span>m)) =&gt; {
+				m.nonce = nonce;
+				m.chain_id = chain_id;
+				m.gas_limit = gas_limit;
+				<span class="kw">if </span>max_fee_per_gas.is_none() {
+					m.max_fee_per_gas = <span class="self">self</span>.gas_price().unwrap_or_default();
 				}
-				<span class="ident">TransactionMessage::EIP1559</span>(<span class="ident">m</span>)
+				TransactionMessage::EIP1559(m)
 			}
-			<span class="kw">_</span> =&gt; <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="string">&quot;invalid transaction parameters&quot;</span>)),
+			<span class="kw">_ </span>=&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(internal_err(<span class="string">&quot;invalid transaction parameters&quot;</span>)),
 		};
 
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">transaction</span> <span class="op">=</span> <span class="prelude-val">None</span>;
+		<span class="kw">let </span><span class="kw-2">mut </span>transaction = <span class="prelude-val">None</span>;
 
-		<span class="kw">for</span> <span class="ident">signer</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">signers</span> {
-			<span class="kw">if</span> <span class="ident">signer</span>.<span class="ident">accounts</span>().<span class="ident">contains</span>(<span class="kw-2">&amp;</span><span class="ident">from</span>) {
-				<span class="kw">match</span> <span class="ident">signer</span>.<span class="ident">sign</span>(<span class="ident">message</span>, <span class="kw-2">&amp;</span><span class="ident">from</span>) {
-					<span class="prelude-val">Ok</span>(<span class="ident">t</span>) =&gt; <span class="ident">transaction</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">t</span>),
-					<span class="prelude-val">Err</span>(<span class="ident">e</span>) =&gt; <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>),
+		<span class="kw">for </span>signer <span class="kw">in </span><span class="kw-2">&amp;</span><span class="self">self</span>.signers {
+			<span class="kw">if </span>signer.accounts().contains(<span class="kw-2">&amp;</span>from) {
+				<span class="kw">match </span>signer.sign(message, <span class="kw-2">&amp;</span>from) {
+					<span class="prelude-val">Ok</span>(t) =&gt; transaction = <span class="prelude-val">Some</span>(t),
+					<span class="prelude-val">Err</span>(e) =&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(e),
 				}
 				<span class="kw">break</span>;
 			}
 		}
 
-		<span class="kw">let</span> <span class="ident">transaction</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">transaction</span> {
-			<span class="prelude-val">Some</span>(<span class="ident">transaction</span>) =&gt; <span class="ident">transaction</span>,
-			<span class="prelude-val">None</span> =&gt; <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="string">&quot;no signer available&quot;</span>)),
+		<span class="kw">let </span>transaction = <span class="kw">match </span>transaction {
+			<span class="prelude-val">Some</span>(transaction) =&gt; transaction,
+			<span class="prelude-val">None </span>=&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(internal_err(<span class="string">&quot;no signer available&quot;</span>)),
 		};
-		<span class="kw">let</span> <span class="ident">transaction_hash</span> <span class="op">=</span> <span class="ident">transaction</span>.<span class="ident">hash</span>();
+		<span class="kw">let </span>transaction_hash = transaction.hash();
 
-		<span class="kw">let</span> <span class="ident">block_hash</span> <span class="op">=</span> <span class="ident">BlockId::hash</span>(<span class="self">self</span>.<span class="ident">client</span>.<span class="ident">info</span>().<span class="ident">best_hash</span>);
-		<span class="kw">let</span> <span class="ident">api_version</span> <span class="op">=</span> <span class="kw">match</span> <span class="self">self</span>
-			.<span class="ident">client</span>
-			.<span class="ident">runtime_api</span>()
-			.<span class="ident">api_version</span>::<span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">ConvertTransactionRuntimeApi</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="ident">block_hash</span>)
+		<span class="kw">let </span>block_hash = BlockId::hash(<span class="self">self</span>.client.info().best_hash);
+		<span class="kw">let </span>api_version = <span class="kw">match </span><span class="self">self
+			</span>.client
+			.runtime_api()
+			.api_version::&lt;<span class="kw">dyn </span>ConvertTransactionRuntimeApi&lt;B&gt;&gt;(<span class="kw-2">&amp;</span>block_hash)
 		{
-			<span class="prelude-val">Ok</span>(<span class="ident">api_version</span>) =&gt; <span class="ident">api_version</span>,
-			<span class="kw">_</span> =&gt; <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="string">&quot;cannot access runtime api&quot;</span>)),
+			<span class="prelude-val">Ok</span>(api_version) =&gt; api_version,
+			<span class="kw">_ </span>=&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(internal_err(<span class="string">&quot;cannot access runtime api&quot;</span>)),
 		};
 
-		<span class="kw">let</span> <span class="ident">extrinsic</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">api_version</span> {
-			<span class="prelude-val">Some</span>(<span class="number">2</span>) =&gt; <span class="kw">match</span> <span class="self">self</span>
-				.<span class="ident">client</span>
-				.<span class="ident">runtime_api</span>()
-				.<span class="ident">convert_transaction</span>(<span class="kw-2">&amp;</span><span class="ident">block_hash</span>, <span class="ident">transaction</span>)
+		<span class="kw">let </span>extrinsic = <span class="kw">match </span>api_version {
+			<span class="prelude-val">Some</span>(<span class="number">2</span>) =&gt; <span class="kw">match </span><span class="self">self
+				</span>.client
+				.runtime_api()
+				.convert_transaction(<span class="kw-2">&amp;</span>block_hash, transaction)
 			{
-				<span class="prelude-val">Ok</span>(<span class="ident">extrinsic</span>) =&gt; <span class="ident">extrinsic</span>,
-				<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="string">&quot;cannot access runtime api&quot;</span>)),
+				<span class="prelude-val">Ok</span>(extrinsic) =&gt; extrinsic,
+				<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(internal_err(<span class="string">&quot;cannot access runtime api&quot;</span>)),
 			},
 			<span class="prelude-val">Some</span>(<span class="number">1</span>) =&gt; {
-				<span class="kw">if</span> <span class="kw">let</span> <span class="ident">ethereum::TransactionV2::Legacy</span>(<span class="ident">legacy_transaction</span>) <span class="op">=</span> <span class="ident">transaction</span> {
-					<span class="comment">// To be compatible with runtimes that do not support transactions v2</span>
-					<span class="attribute">#[<span class="ident">allow</span>(<span class="ident">deprecated</span>)]</span>
-					<span class="kw">match</span> <span class="self">self</span>
-						.<span class="ident">client</span>
-						.<span class="ident">runtime_api</span>()
-						.<span class="ident">convert_transaction_before_version_2</span>(<span class="kw-2">&amp;</span><span class="ident">block_hash</span>, <span class="ident">legacy_transaction</span>)
+				<span class="kw">if let </span>ethereum::TransactionV2::Legacy(legacy_transaction) = transaction {
+					<span class="comment">// To be compatible with runtimes that do not support transactions v2
+					</span><span class="attribute">#[allow(deprecated)]
+					</span><span class="kw">match </span><span class="self">self
+						</span>.client
+						.runtime_api()
+						.convert_transaction_before_version_2(<span class="kw-2">&amp;</span>block_hash, legacy_transaction)
 					{
-						<span class="prelude-val">Ok</span>(<span class="ident">extrinsic</span>) =&gt; <span class="ident">extrinsic</span>,
-						<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="string">&quot;cannot access runtime api&quot;</span>)),
+						<span class="prelude-val">Ok</span>(extrinsic) =&gt; extrinsic,
+						<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(internal_err(<span class="string">&quot;cannot access runtime api&quot;</span>)),
 					}
-				} <span class="kw">else</span> {
-					<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="string">&quot;This runtime not support eth transactions v2&quot;</span>));
+				} <span class="kw">else </span>{
+					<span class="kw">return </span><span class="prelude-val">Err</span>(internal_err(<span class="string">&quot;This runtime not support eth transactions v2&quot;</span>));
 				}
 			}
-			<span class="prelude-val">None</span> =&gt; {
-				<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="kw-2">ref</span> <span class="ident">convert_transaction</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">convert_transaction</span> {
-					<span class="ident">convert_transaction</span>.<span class="ident">convert_transaction</span>(<span class="ident">transaction</span>.<span class="ident">clone</span>())
-				} <span class="kw">else</span> {
-					<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(
-						<span class="string">&quot;No TransactionConverter is provided and the runtime api ConvertTransactionRuntimeApi is not found&quot;</span>
-					));
+			<span class="prelude-val">None </span>=&gt; {
+				<span class="kw">if let </span><span class="prelude-val">Some</span>(<span class="kw-2">ref </span>convert_transaction) = <span class="self">self</span>.convert_transaction {
+					convert_transaction.convert_transaction(transaction.clone())
+				} <span class="kw">else </span>{
+					<span class="kw">return </span><span class="prelude-val">Err</span>(internal_err(
+						<span class="string">&quot;No TransactionConverter is provided and the runtime api ConvertTransactionRuntimeApi is not found&quot;
+					</span>));
 				}
 			}
-			<span class="kw">_</span> =&gt; {
-				<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(
+			<span class="kw">_ </span>=&gt; {
+				<span class="kw">return </span><span class="prelude-val">Err</span>(internal_err(
 					<span class="string">&quot;ConvertTransactionRuntimeApi version not supported&quot;</span>,
 				))
 			}
 		};
 
-		<span class="self">self</span>.<span class="ident">pool</span>
-			.<span class="ident">submit_one</span>(<span class="kw-2">&amp;</span><span class="ident">block_hash</span>, <span class="ident">TransactionSource::Local</span>, <span class="ident">extrinsic</span>)
-			.<span class="ident">map_ok</span>(<span class="kw">move</span> <span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">transaction_hash</span>)
-			.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="ident">format::Geth::pool_error</span>(<span class="ident">err</span>)))
-			.<span class="kw">await</span>
-	}
+		<span class="self">self</span>.pool
+			.submit_one(<span class="kw-2">&amp;</span>block_hash, TransactionSource::Local, extrinsic)
+			.map_ok(<span class="kw">move </span>|<span class="kw">_</span>| transaction_hash)
+			.map_err(|err| internal_err(format::Geth::pool_error(err)))
+			.<span class="kw">await
+	</span>}
 
-	<span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">send_raw_transaction</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">bytes</span>: <span class="ident">Bytes</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span> {
-		<span class="kw">let</span> <span class="ident">slice</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">bytes</span>.<span class="number">0</span>[..];
-		<span class="kw">if</span> <span class="ident">slice</span>.<span class="ident">is_empty</span>() {
-			<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="string">&quot;transaction data is empty&quot;</span>));
+	<span class="kw">pub async fn </span>send_raw_transaction(<span class="kw-2">&amp;</span><span class="self">self</span>, bytes: Bytes) -&gt; <span class="prelude-ty">Result</span>&lt;H256&gt; {
+		<span class="kw">let </span>slice = <span class="kw-2">&amp;</span>bytes.<span class="number">0</span>[..];
+		<span class="kw">if </span>slice.is_empty() {
+			<span class="kw">return </span><span class="prelude-val">Err</span>(internal_err(<span class="string">&quot;transaction data is empty&quot;</span>));
 		}
-		<span class="kw">let</span> <span class="ident">first</span> <span class="op">=</span> <span class="ident">slice</span>.<span class="ident">first</span>().<span class="ident">unwrap</span>();
-		<span class="kw">let</span> <span class="ident">transaction</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">first</span> <span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="number">0x7f</span> {
-			<span class="comment">// Legacy transaction. Decode and wrap in envelope.</span>
-			<span class="kw">match</span> <span class="ident">rlp::decode</span>::<span class="op">&lt;</span><span class="ident">ethereum::TransactionV0</span><span class="op">&gt;</span>(<span class="ident">slice</span>) {
-				<span class="prelude-val">Ok</span>(<span class="ident">transaction</span>) =&gt; <span class="ident">ethereum::TransactionV2::Legacy</span>(<span class="ident">transaction</span>),
-				<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="string">&quot;decode transaction failed&quot;</span>)),
-			}
-		} <span class="kw">else</span> {
-			<span class="comment">// Typed Transaction.</span>
-			<span class="comment">// `ethereum` crate decode implementation for `TransactionV2` expects a valid rlp input,</span>
-			<span class="comment">// and EIP-1559 breaks that assumption by prepending a version byte.</span>
-			<span class="comment">// We re-encode the payload input to get a valid rlp, and the decode implementation will strip</span>
-			<span class="comment">// them to check the transaction version byte.</span>
-			<span class="kw">let</span> <span class="ident">extend</span> <span class="op">=</span> <span class="ident">rlp::encode</span>(<span class="kw-2">&amp;</span><span class="ident">slice</span>);
-			<span class="kw">match</span> <span class="ident">rlp::decode</span>::<span class="op">&lt;</span><span class="ident">ethereum::TransactionV2</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="ident">extend</span>[..]) {
-				<span class="prelude-val">Ok</span>(<span class="ident">transaction</span>) =&gt; <span class="ident">transaction</span>,
-				<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="string">&quot;decode transaction failed&quot;</span>)),
-			}
-		};
-
-		<span class="kw">let</span> <span class="ident">transaction_hash</span> <span class="op">=</span> <span class="ident">transaction</span>.<span class="ident">hash</span>();
-
-		<span class="kw">let</span> <span class="ident">block_hash</span> <span class="op">=</span> <span class="ident">BlockId::hash</span>(<span class="self">self</span>.<span class="ident">client</span>.<span class="ident">info</span>().<span class="ident">best_hash</span>);
-		<span class="kw">let</span> <span class="ident">api_version</span> <span class="op">=</span> <span class="kw">match</span> <span class="self">self</span>
-			.<span class="ident">client</span>
-			.<span class="ident">runtime_api</span>()
-			.<span class="ident">api_version</span>::<span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">ConvertTransactionRuntimeApi</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="ident">block_hash</span>)
+		<span class="kw">let </span>transaction: ethereum::TransactionV2 = <span class="kw">match </span>ethereum::EnvelopedDecodable::decode(slice)
 		{
-			<span class="prelude-val">Ok</span>(<span class="ident">api_version</span>) =&gt; <span class="ident">api_version</span>,
-			<span class="kw">_</span> =&gt; <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="string">&quot;cannot access runtime api&quot;</span>)),
+			<span class="prelude-val">Ok</span>(transaction) =&gt; transaction,
+			<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(internal_err(<span class="string">&quot;decode transaction failed&quot;</span>)),
 		};
 
-		<span class="kw">let</span> <span class="ident">extrinsic</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">api_version</span> {
-			<span class="prelude-val">Some</span>(<span class="number">2</span>) =&gt; <span class="kw">match</span> <span class="self">self</span>
-				.<span class="ident">client</span>
-				.<span class="ident">runtime_api</span>()
-				.<span class="ident">convert_transaction</span>(<span class="kw-2">&amp;</span><span class="ident">block_hash</span>, <span class="ident">transaction</span>)
+		<span class="kw">let </span>transaction_hash = transaction.hash();
+
+		<span class="kw">let </span>block_hash = BlockId::hash(<span class="self">self</span>.client.info().best_hash);
+		<span class="kw">let </span>api_version = <span class="kw">match </span><span class="self">self
+			</span>.client
+			.runtime_api()
+			.api_version::&lt;<span class="kw">dyn </span>ConvertTransactionRuntimeApi&lt;B&gt;&gt;(<span class="kw-2">&amp;</span>block_hash)
+		{
+			<span class="prelude-val">Ok</span>(api_version) =&gt; api_version,
+			<span class="kw">_ </span>=&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(internal_err(<span class="string">&quot;cannot access runtime api&quot;</span>)),
+		};
+
+		<span class="kw">let </span>extrinsic = <span class="kw">match </span>api_version {
+			<span class="prelude-val">Some</span>(<span class="number">2</span>) =&gt; <span class="kw">match </span><span class="self">self
+				</span>.client
+				.runtime_api()
+				.convert_transaction(<span class="kw-2">&amp;</span>block_hash, transaction)
 			{
-				<span class="prelude-val">Ok</span>(<span class="ident">extrinsic</span>) =&gt; <span class="ident">extrinsic</span>,
-				<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="string">&quot;cannot access runtime api&quot;</span>)),
+				<span class="prelude-val">Ok</span>(extrinsic) =&gt; extrinsic,
+				<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(internal_err(<span class="string">&quot;cannot access runtime api&quot;</span>)),
 			},
 			<span class="prelude-val">Some</span>(<span class="number">1</span>) =&gt; {
-				<span class="kw">if</span> <span class="kw">let</span> <span class="ident">ethereum::TransactionV2::Legacy</span>(<span class="ident">legacy_transaction</span>) <span class="op">=</span> <span class="ident">transaction</span> {
-					<span class="comment">// To be compatible with runtimes that do not support transactions v2</span>
-					<span class="attribute">#[<span class="ident">allow</span>(<span class="ident">deprecated</span>)]</span>
-					<span class="kw">match</span> <span class="self">self</span>
-						.<span class="ident">client</span>
-						.<span class="ident">runtime_api</span>()
-						.<span class="ident">convert_transaction_before_version_2</span>(<span class="kw-2">&amp;</span><span class="ident">block_hash</span>, <span class="ident">legacy_transaction</span>)
+				<span class="kw">if let </span>ethereum::TransactionV2::Legacy(legacy_transaction) = transaction {
+					<span class="comment">// To be compatible with runtimes that do not support transactions v2
+					</span><span class="attribute">#[allow(deprecated)]
+					</span><span class="kw">match </span><span class="self">self
+						</span>.client
+						.runtime_api()
+						.convert_transaction_before_version_2(<span class="kw-2">&amp;</span>block_hash, legacy_transaction)
 					{
-						<span class="prelude-val">Ok</span>(<span class="ident">extrinsic</span>) =&gt; <span class="ident">extrinsic</span>,
+						<span class="prelude-val">Ok</span>(extrinsic) =&gt; extrinsic,
 						<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; {
-							<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="string">&quot;cannot access runtime api&quot;</span>));
+							<span class="kw">return </span><span class="prelude-val">Err</span>(internal_err(<span class="string">&quot;cannot access runtime api&quot;</span>));
 						}
 					}
-				} <span class="kw">else</span> {
-					<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="string">&quot;This runtime not support eth transactions v2&quot;</span>));
+				} <span class="kw">else </span>{
+					<span class="kw">return </span><span class="prelude-val">Err</span>(internal_err(<span class="string">&quot;This runtime not support eth transactions v2&quot;</span>));
 				}
 			}
-			<span class="prelude-val">None</span> =&gt; {
-				<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="kw-2">ref</span> <span class="ident">convert_transaction</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">convert_transaction</span> {
-					<span class="ident">convert_transaction</span>.<span class="ident">convert_transaction</span>(<span class="ident">transaction</span>.<span class="ident">clone</span>())
-				} <span class="kw">else</span> {
-					<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(
-						<span class="string">&quot;No TransactionConverter is provided and the runtime api ConvertTransactionRuntimeApi is not found&quot;</span>
-					));
+			<span class="prelude-val">None </span>=&gt; {
+				<span class="kw">if let </span><span class="prelude-val">Some</span>(<span class="kw-2">ref </span>convert_transaction) = <span class="self">self</span>.convert_transaction {
+					convert_transaction.convert_transaction(transaction.clone())
+				} <span class="kw">else </span>{
+					<span class="kw">return </span><span class="prelude-val">Err</span>(internal_err(
+						<span class="string">&quot;No TransactionConverter is provided and the runtime api ConvertTransactionRuntimeApi is not found&quot;
+					</span>));
 				}
 			}
-			<span class="kw">_</span> =&gt; {
-				<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(
+			<span class="kw">_ </span>=&gt; {
+				<span class="kw">return </span><span class="prelude-val">Err</span>(internal_err(
 					<span class="string">&quot;ConvertTransactionRuntimeApi version not supported&quot;</span>,
 				))
 			}
 		};
 
-		<span class="self">self</span>.<span class="ident">pool</span>
-			.<span class="ident">submit_one</span>(<span class="kw-2">&amp;</span><span class="ident">block_hash</span>, <span class="ident">TransactionSource::Local</span>, <span class="ident">extrinsic</span>)
-			.<span class="ident">map_ok</span>(<span class="kw">move</span> <span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">transaction_hash</span>)
-			.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="ident">format::Geth::pool_error</span>(<span class="ident">err</span>)))
-			.<span class="kw">await</span>
-	}
+		<span class="self">self</span>.pool
+			.submit_one(<span class="kw-2">&amp;</span>block_hash, TransactionSource::Local, extrinsic)
+			.map_ok(<span class="kw">move </span>|<span class="kw">_</span>| transaction_hash)
+			.map_err(|err| internal_err(format::Geth::pool_error(err)))
+			.<span class="kw">await
+	</span>}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="fc_rpc" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (7fe022f5a 2022-07-24)" ></div>
-</body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="fc_rpc" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (81f391930 2022-10-09)" ></div></body></html>

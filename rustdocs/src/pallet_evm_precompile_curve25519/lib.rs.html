@@ -1,10 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `frame/evm/precompile/curve25519/src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../pallet_evm_precompile_curve25519/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a><h2 class="location"></h2>
-    </nav>
-    <nav class="sidebar"><a class="sidebar-logo" href="../../pallet_evm_precompile_curve25519/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../pallet_evm_precompile_curve25519/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1">
-                                <a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div>
-                        </div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `frame/evm/precompile/curve25519/src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><a class="sidebar-logo" href="../../pallet_evm_precompile_curve25519/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../pallet_evm_precompile_curve25519/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -270,205 +264,205 @@
 <span id="264">264</span>
 <span id="265">265</span>
 <span id="266">266</span>
-</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
-<span class="comment">// This file is part of Frontier.</span>
-<span class="comment">//</span>
-<span class="comment">// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.</span>
-<span class="comment">//</span>
-<span class="comment">// Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
-<span class="comment">// you may not use this file except in compliance with the License.</span>
-<span class="comment">// You may obtain a copy of the License at</span>
-<span class="comment">//</span>
-<span class="comment">// 	http://www.apache.org/licenses/LICENSE-2.0</span>
-<span class="comment">//</span>
-<span class="comment">// Unless required by applicable law or agreed to in writing, software</span>
-<span class="comment">// distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
-<span class="comment">// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
-<span class="comment">// See the License for the specific language governing permissions and</span>
-<span class="comment">// limitations under the License.</span>
+</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
+// This file is part of Frontier.
+//
+// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// 	http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
-<span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
+</span><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 
-<span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">alloc</span>;
-<span class="kw">use</span> <span class="ident">alloc::vec::Vec</span>;
-<span class="kw">use</span> <span class="ident">curve25519_dalek</span>::{
-	<span class="ident">ristretto</span>::{<span class="ident">CompressedRistretto</span>, <span class="ident">RistrettoPoint</span>},
-	<span class="ident">scalar::Scalar</span>,
-	<span class="ident">traits::Identity</span>,
+</span><span class="kw">extern crate </span>alloc;
+<span class="kw">use </span>alloc::vec::Vec;
+<span class="kw">use </span>curve25519_dalek::{
+	ristretto::{CompressedRistretto, RistrettoPoint},
+	scalar::Scalar,
+	traits::Identity,
 };
-<span class="kw">use</span> <span class="ident">fp_evm</span>::{<span class="ident">ExitError</span>, <span class="ident">ExitSucceed</span>, <span class="ident">LinearCostPrecompile</span>, <span class="ident">PrecompileFailure</span>};
+<span class="kw">use </span>fp_evm::{ExitError, ExitSucceed, LinearCostPrecompile, PrecompileFailure};
 
-<span class="comment">// Adds at most 10 curve25519 points and returns the CompressedRistretto bytes representation</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Curve25519Add</span>;
+<span class="comment">// Adds at most 10 curve25519 points and returns the CompressedRistretto bytes representation
+</span><span class="kw">pub struct </span>Curve25519Add;
 
-<span class="kw">impl</span> <span class="ident">LinearCostPrecompile</span> <span class="kw">for</span> <span class="ident">Curve25519Add</span> {
-	<span class="kw">const</span> <span class="ident">BASE</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">60</span>;
-	<span class="kw">const</span> <span class="ident">WORD</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">12</span>;
+<span class="kw">impl </span>LinearCostPrecompile <span class="kw">for </span>Curve25519Add {
+	<span class="kw">const </span>BASE: u64 = <span class="number">60</span>;
+	<span class="kw">const </span>WORD: u64 = <span class="number">12</span>;
 
-	<span class="kw">fn</span> <span class="ident">execute</span>(<span class="ident">input</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>], <span class="kw">_</span>: <span class="ident">u64</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">ExitSucceed</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>), <span class="ident">PrecompileFailure</span><span class="op">&gt;</span> {
-		<span class="kw">if</span> <span class="ident">input</span>.<span class="ident">len</span>() <span class="op">%</span> <span class="number">32</span> <span class="op">!</span><span class="op">=</span> <span class="number">0</span> {
-			<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">PrecompileFailure::Error</span> {
-				<span class="ident">exit_status</span>: <span class="ident">ExitError::Other</span>(<span class="string">&quot;input must contain multiple of 32 bytes&quot;</span>.<span class="ident">into</span>()),
+	<span class="kw">fn </span>execute(input: <span class="kw-2">&amp;</span>[u8], <span class="kw">_</span>: u64) -&gt; <span class="prelude-ty">Result</span>&lt;(ExitSucceed, Vec&lt;u8&gt;), PrecompileFailure&gt; {
+		<span class="kw">if </span>input.len() % <span class="number">32 </span>!= <span class="number">0 </span>{
+			<span class="kw">return </span><span class="prelude-val">Err</span>(PrecompileFailure::Error {
+				exit_status: ExitError::Other(<span class="string">&quot;input must contain multiple of 32 bytes&quot;</span>.into()),
 			});
 		};
 
-		<span class="kw">if</span> <span class="ident">input</span>.<span class="ident">len</span>() <span class="op">&gt;</span> <span class="number">320</span> {
-			<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">PrecompileFailure::Error</span> {
-				<span class="ident">exit_status</span>: <span class="ident">ExitError::Other</span>(
-					<span class="string">&quot;input cannot be greater than 320 bytes (10 compressed points)&quot;</span>.<span class="ident">into</span>(),
+		<span class="kw">if </span>input.len() &gt; <span class="number">320 </span>{
+			<span class="kw">return </span><span class="prelude-val">Err</span>(PrecompileFailure::Error {
+				exit_status: ExitError::Other(
+					<span class="string">&quot;input cannot be greater than 320 bytes (10 compressed points)&quot;</span>.into(),
 				),
 			});
 		};
 
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">points</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">temp_buf</span> <span class="op">=</span> <span class="op">&lt;</span><span class="kw-2">&amp;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span><span class="ident">::clone</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>);
-		<span class="kw">while</span> <span class="op">!</span><span class="ident">temp_buf</span>.<span class="ident">is_empty</span>() {
-			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">buf</span> <span class="op">=</span> [<span class="number">0</span>; <span class="number">32</span>];
-			<span class="ident">buf</span>.<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">temp_buf</span>[<span class="number">0</span>..<span class="number">32</span>]);
-			<span class="kw">let</span> <span class="ident">point</span> <span class="op">=</span> <span class="ident">CompressedRistretto::from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">buf</span>);
-			<span class="ident">points</span>.<span class="ident">push</span>(<span class="ident">point</span>);
-			<span class="ident">temp_buf</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">temp_buf</span>[<span class="number">32</span>..];
+		<span class="kw">let </span><span class="kw-2">mut </span>points = Vec::new();
+		<span class="kw">let </span><span class="kw-2">mut </span>temp_buf = &lt;<span class="kw-2">&amp;</span>[u8]&gt;::clone(<span class="kw-2">&amp;</span>input);
+		<span class="kw">while </span>!temp_buf.is_empty() {
+			<span class="kw">let </span><span class="kw-2">mut </span>buf = [<span class="number">0</span>; <span class="number">32</span>];
+			buf.copy_from_slice(<span class="kw-2">&amp;</span>temp_buf[<span class="number">0</span>..<span class="number">32</span>]);
+			<span class="kw">let </span>point = CompressedRistretto::from_slice(<span class="kw-2">&amp;</span>buf);
+			points.push(point);
+			temp_buf = <span class="kw-2">&amp;</span>temp_buf[<span class="number">32</span>..];
 		}
 
-		<span class="kw">let</span> <span class="ident">sum</span> <span class="op">=</span> <span class="ident">points</span>
-			.<span class="ident">iter</span>()
-			.<span class="ident">fold</span>(<span class="ident">RistrettoPoint::identity</span>(), <span class="op">|</span><span class="ident">acc</span>, <span class="ident">point</span><span class="op">|</span> {
-				<span class="kw">let</span> <span class="ident">pt</span> <span class="op">=</span> <span class="ident">point</span>.<span class="ident">decompress</span>().<span class="ident">unwrap_or_else</span>(<span class="ident">RistrettoPoint::identity</span>);
-				<span class="ident">acc</span> <span class="op">+</span> <span class="ident">pt</span>
+		<span class="kw">let </span>sum = points
+			.iter()
+			.fold(RistrettoPoint::identity(), |acc, point| {
+				<span class="kw">let </span>pt = point.decompress().unwrap_or_else(RistrettoPoint::identity);
+				acc + pt
 			});
 
-		<span class="prelude-val">Ok</span>((<span class="ident">ExitSucceed::Returned</span>, <span class="ident">sum</span>.<span class="ident">compress</span>().<span class="ident">to_bytes</span>().<span class="ident">to_vec</span>()))
+		<span class="prelude-val">Ok</span>((ExitSucceed::Returned, sum.compress().to_bytes().to_vec()))
 	}
 }
 
-<span class="comment">// Multiplies a scalar field element with an elliptic curve point</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Curve25519ScalarMul</span>;
+<span class="comment">// Multiplies a scalar field element with an elliptic curve point
+</span><span class="kw">pub struct </span>Curve25519ScalarMul;
 
-<span class="kw">impl</span> <span class="ident">LinearCostPrecompile</span> <span class="kw">for</span> <span class="ident">Curve25519ScalarMul</span> {
-	<span class="kw">const</span> <span class="ident">BASE</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">60</span>;
-	<span class="kw">const</span> <span class="ident">WORD</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">12</span>;
+<span class="kw">impl </span>LinearCostPrecompile <span class="kw">for </span>Curve25519ScalarMul {
+	<span class="kw">const </span>BASE: u64 = <span class="number">60</span>;
+	<span class="kw">const </span>WORD: u64 = <span class="number">12</span>;
 
-	<span class="kw">fn</span> <span class="ident">execute</span>(<span class="ident">input</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>], <span class="kw">_</span>: <span class="ident">u64</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">ExitSucceed</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>), <span class="ident">PrecompileFailure</span><span class="op">&gt;</span> {
-		<span class="kw">if</span> <span class="ident">input</span>.<span class="ident">len</span>() <span class="op">!</span><span class="op">=</span> <span class="number">64</span> {
-			<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">PrecompileFailure::Error</span> {
-				<span class="ident">exit_status</span>: <span class="ident">ExitError::Other</span>(
-					<span class="string">&quot;input must contain 64 bytes (scalar - 32 bytes, point - 32 bytes)&quot;</span>.<span class="ident">into</span>(),
+	<span class="kw">fn </span>execute(input: <span class="kw-2">&amp;</span>[u8], <span class="kw">_</span>: u64) -&gt; <span class="prelude-ty">Result</span>&lt;(ExitSucceed, Vec&lt;u8&gt;), PrecompileFailure&gt; {
+		<span class="kw">if </span>input.len() != <span class="number">64 </span>{
+			<span class="kw">return </span><span class="prelude-val">Err</span>(PrecompileFailure::Error {
+				exit_status: ExitError::Other(
+					<span class="string">&quot;input must contain 64 bytes (scalar - 32 bytes, point - 32 bytes)&quot;</span>.into(),
 				),
 			});
 		};
 
-		<span class="comment">// first 32 bytes is for the scalar value</span>
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">scalar_buf</span> <span class="op">=</span> [<span class="number">0</span>; <span class="number">32</span>];
-		<span class="ident">scalar_buf</span>.<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>[<span class="number">0</span>..<span class="number">32</span>]);
-		<span class="kw">let</span> <span class="ident">scalar</span> <span class="op">=</span> <span class="ident">Scalar::from_bytes_mod_order</span>(<span class="ident">scalar_buf</span>);
+		<span class="comment">// first 32 bytes is for the scalar value
+		</span><span class="kw">let </span><span class="kw-2">mut </span>scalar_buf = [<span class="number">0</span>; <span class="number">32</span>];
+		scalar_buf.copy_from_slice(<span class="kw-2">&amp;</span>input[<span class="number">0</span>..<span class="number">32</span>]);
+		<span class="kw">let </span>scalar = Scalar::from_bytes_mod_order(scalar_buf);
 
-		<span class="comment">// second 32 bytes is for the compressed ristretto point bytes</span>
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">pt_buf</span> <span class="op">=</span> [<span class="number">0</span>; <span class="number">32</span>];
-		<span class="ident">pt_buf</span>.<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>[<span class="number">32</span>..<span class="number">64</span>]);
-		<span class="kw">let</span> <span class="ident">point</span>: <span class="ident">RistrettoPoint</span> <span class="op">=</span> <span class="ident">CompressedRistretto::from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">pt_buf</span>)
-			.<span class="ident">decompress</span>()
-			.<span class="ident">unwrap_or_else</span>(<span class="ident">RistrettoPoint::identity</span>);
+		<span class="comment">// second 32 bytes is for the compressed ristretto point bytes
+		</span><span class="kw">let </span><span class="kw-2">mut </span>pt_buf = [<span class="number">0</span>; <span class="number">32</span>];
+		pt_buf.copy_from_slice(<span class="kw-2">&amp;</span>input[<span class="number">32</span>..<span class="number">64</span>]);
+		<span class="kw">let </span>point: RistrettoPoint = CompressedRistretto::from_slice(<span class="kw-2">&amp;</span>pt_buf)
+			.decompress()
+			.unwrap_or_else(RistrettoPoint::identity);
 
-		<span class="kw">let</span> <span class="ident">scalar_mul</span> <span class="op">=</span> <span class="ident">scalar</span> <span class="op">*</span> <span class="ident">point</span>;
+		<span class="kw">let </span>scalar_mul = scalar * point;
 		<span class="prelude-val">Ok</span>((
-			<span class="ident">ExitSucceed::Returned</span>,
-			<span class="ident">scalar_mul</span>.<span class="ident">compress</span>().<span class="ident">to_bytes</span>().<span class="ident">to_vec</span>(),
+			ExitSucceed::Returned,
+			scalar_mul.compress().to_bytes().to_vec(),
 		))
 	}
 }
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
-<span class="kw">mod</span> <span class="ident">tests</span> {
-	<span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
-	<span class="kw">use</span> <span class="ident">curve25519_dalek::constants</span>;
+<span class="attribute">#[cfg(test)]
+</span><span class="kw">mod </span>tests {
+	<span class="kw">use super</span>::<span class="kw-2">*</span>;
+	<span class="kw">use </span>curve25519_dalek::constants;
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">test_sum</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">PrecompileFailure</span><span class="op">&gt;</span> {
-		<span class="kw">let</span> <span class="ident">s1</span> <span class="op">=</span> <span class="ident">Scalar::from</span>(<span class="number">999u64</span>);
-		<span class="kw">let</span> <span class="ident">p1</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">constants::RISTRETTO_BASEPOINT_POINT</span> <span class="op">*</span> <span class="kw-2">&amp;</span><span class="ident">s1</span>;
+	<span class="attribute">#[test]
+	</span><span class="kw">fn </span>test_sum() -&gt; <span class="prelude-ty">Result</span>&lt;(), PrecompileFailure&gt; {
+		<span class="kw">let </span>s1 = Scalar::from(<span class="number">999u64</span>);
+		<span class="kw">let </span>p1 = <span class="kw-2">&amp;</span>constants::RISTRETTO_BASEPOINT_POINT * <span class="kw-2">&amp;</span>s1;
 
-		<span class="kw">let</span> <span class="ident">s2</span> <span class="op">=</span> <span class="ident">Scalar::from</span>(<span class="number">333u64</span>);
-		<span class="kw">let</span> <span class="ident">p2</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">constants::RISTRETTO_BASEPOINT_POINT</span> <span class="op">*</span> <span class="kw-2">&amp;</span><span class="ident">s2</span>;
+		<span class="kw">let </span>s2 = Scalar::from(<span class="number">333u64</span>);
+		<span class="kw">let </span>p2 = <span class="kw-2">&amp;</span>constants::RISTRETTO_BASEPOINT_POINT * <span class="kw-2">&amp;</span>s2;
 
-		<span class="kw">let</span> <span class="ident">vec</span> <span class="op">=</span> <span class="macro">vec!</span>[<span class="ident">p1</span>.<span class="ident">clone</span>(), <span class="ident">p2</span>.<span class="ident">clone</span>()];
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">input</span> <span class="op">=</span> <span class="macro">vec!</span>[];
-		<span class="ident">input</span>.<span class="ident">extend_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">p1</span>.<span class="ident">compress</span>().<span class="ident">to_bytes</span>());
-		<span class="ident">input</span>.<span class="ident">extend_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">p2</span>.<span class="ident">compress</span>().<span class="ident">to_bytes</span>());
+		<span class="kw">let </span>vec = <span class="macro">vec!</span>[p1.clone(), p2.clone()];
+		<span class="kw">let </span><span class="kw-2">mut </span>input = <span class="macro">vec!</span>[];
+		input.extend_from_slice(<span class="kw-2">&amp;</span>p1.compress().to_bytes());
+		input.extend_from_slice(<span class="kw-2">&amp;</span>p2.compress().to_bytes());
 
-		<span class="kw">let</span> <span class="ident">sum</span>: <span class="ident">RistrettoPoint</span> <span class="op">=</span> <span class="ident">vec</span>.<span class="ident">iter</span>().<span class="ident">sum</span>();
-		<span class="kw">let</span> <span class="ident">cost</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">1</span>;
+		<span class="kw">let </span>sum: RistrettoPoint = vec.iter().sum();
+		<span class="kw">let </span>cost: u64 = <span class="number">1</span>;
 
-		<span class="kw">match</span> <span class="ident">Curve25519Add::execute</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>, <span class="ident">cost</span>) {
-			<span class="prelude-val">Ok</span>((<span class="kw">_</span>, <span class="ident">out</span>)) =&gt; {
-				<span class="macro">assert_eq!</span>(<span class="ident">out</span>, <span class="ident">sum</span>.<span class="ident">compress</span>().<span class="ident">to_bytes</span>());
+		<span class="kw">match </span>Curve25519Add::execute(<span class="kw-2">&amp;</span>input, cost) {
+			<span class="prelude-val">Ok</span>((<span class="kw">_</span>, out)) =&gt; {
+				<span class="macro">assert_eq!</span>(out, sum.compress().to_bytes());
 				<span class="prelude-val">Ok</span>(())
 			}
-			<span class="prelude-val">Err</span>(<span class="ident">e</span>) =&gt; {
-				<span class="macro">panic!</span>(<span class="string">&quot;Test not expected to fail: {:?}&quot;</span>, <span class="ident">e</span>);
+			<span class="prelude-val">Err</span>(e) =&gt; {
+				<span class="macro">panic!</span>(<span class="string">&quot;Test not expected to fail: {:?}&quot;</span>, e);
 			}
 		}
 	}
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">test_empty</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">PrecompileFailure</span><span class="op">&gt;</span> {
-		<span class="comment">// Test that sum works for the empty iterator</span>
-		<span class="kw">let</span> <span class="ident">input</span> <span class="op">=</span> <span class="macro">vec!</span>[];
+	<span class="attribute">#[test]
+	</span><span class="kw">fn </span>test_empty() -&gt; <span class="prelude-ty">Result</span>&lt;(), PrecompileFailure&gt; {
+		<span class="comment">// Test that sum works for the empty iterator
+		</span><span class="kw">let </span>input = <span class="macro">vec!</span>[];
 
-		<span class="kw">let</span> <span class="ident">cost</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">1</span>;
+		<span class="kw">let </span>cost: u64 = <span class="number">1</span>;
 
-		<span class="kw">match</span> <span class="ident">Curve25519Add::execute</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>, <span class="ident">cost</span>) {
-			<span class="prelude-val">Ok</span>((<span class="kw">_</span>, <span class="ident">out</span>)) =&gt; {
-				<span class="macro">assert_eq!</span>(<span class="ident">out</span>, <span class="ident">RistrettoPoint::identity</span>().<span class="ident">compress</span>().<span class="ident">to_bytes</span>());
+		<span class="kw">match </span>Curve25519Add::execute(<span class="kw-2">&amp;</span>input, cost) {
+			<span class="prelude-val">Ok</span>((<span class="kw">_</span>, out)) =&gt; {
+				<span class="macro">assert_eq!</span>(out, RistrettoPoint::identity().compress().to_bytes());
 				<span class="prelude-val">Ok</span>(())
 			}
-			<span class="prelude-val">Err</span>(<span class="ident">e</span>) =&gt; {
-				<span class="macro">panic!</span>(<span class="string">&quot;Test not expected to fail: {:?}&quot;</span>, <span class="ident">e</span>);
+			<span class="prelude-val">Err</span>(e) =&gt; {
+				<span class="macro">panic!</span>(<span class="string">&quot;Test not expected to fail: {:?}&quot;</span>, e);
 			}
 		}
 	}
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">test_scalar_mul</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">PrecompileFailure</span><span class="op">&gt;</span> {
-		<span class="kw">let</span> <span class="ident">s1</span> <span class="op">=</span> <span class="ident">Scalar::from</span>(<span class="number">999u64</span>);
-		<span class="kw">let</span> <span class="ident">s2</span> <span class="op">=</span> <span class="ident">Scalar::from</span>(<span class="number">333u64</span>);
-		<span class="kw">let</span> <span class="ident">p1</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">constants::RISTRETTO_BASEPOINT_POINT</span> <span class="op">*</span> <span class="kw-2">&amp;</span><span class="ident">s1</span>;
-		<span class="kw">let</span> <span class="ident">p2</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">constants::RISTRETTO_BASEPOINT_POINT</span> <span class="op">*</span> <span class="kw-2">&amp;</span><span class="ident">s2</span>;
+	<span class="attribute">#[test]
+	</span><span class="kw">fn </span>test_scalar_mul() -&gt; <span class="prelude-ty">Result</span>&lt;(), PrecompileFailure&gt; {
+		<span class="kw">let </span>s1 = Scalar::from(<span class="number">999u64</span>);
+		<span class="kw">let </span>s2 = Scalar::from(<span class="number">333u64</span>);
+		<span class="kw">let </span>p1 = <span class="kw-2">&amp;</span>constants::RISTRETTO_BASEPOINT_POINT * <span class="kw-2">&amp;</span>s1;
+		<span class="kw">let </span>p2 = <span class="kw-2">&amp;</span>constants::RISTRETTO_BASEPOINT_POINT * <span class="kw-2">&amp;</span>s2;
 
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">input</span> <span class="op">=</span> <span class="macro">vec!</span>[];
-		<span class="ident">input</span>.<span class="ident">extend_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">s1</span>.<span class="ident">to_bytes</span>());
-		<span class="ident">input</span>.<span class="ident">extend_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">constants::RISTRETTO_BASEPOINT_POINT</span>.<span class="ident">compress</span>().<span class="ident">to_bytes</span>());
+		<span class="kw">let </span><span class="kw-2">mut </span>input = <span class="macro">vec!</span>[];
+		input.extend_from_slice(<span class="kw-2">&amp;</span>s1.to_bytes());
+		input.extend_from_slice(<span class="kw-2">&amp;</span>constants::RISTRETTO_BASEPOINT_POINT.compress().to_bytes());
 
-		<span class="kw">let</span> <span class="ident">cost</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">1</span>;
+		<span class="kw">let </span>cost: u64 = <span class="number">1</span>;
 
-		<span class="kw">match</span> <span class="ident">Curve25519ScalarMul::execute</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>, <span class="ident">cost</span>) {
-			<span class="prelude-val">Ok</span>((<span class="kw">_</span>, <span class="ident">out</span>)) =&gt; {
-				<span class="macro">assert_eq!</span>(<span class="ident">out</span>, <span class="ident">p1</span>.<span class="ident">compress</span>().<span class="ident">to_bytes</span>());
-				<span class="macro">assert_ne!</span>(<span class="ident">out</span>, <span class="ident">p2</span>.<span class="ident">compress</span>().<span class="ident">to_bytes</span>());
+		<span class="kw">match </span>Curve25519ScalarMul::execute(<span class="kw-2">&amp;</span>input, cost) {
+			<span class="prelude-val">Ok</span>((<span class="kw">_</span>, out)) =&gt; {
+				<span class="macro">assert_eq!</span>(out, p1.compress().to_bytes());
+				<span class="macro">assert_ne!</span>(out, p2.compress().to_bytes());
 				<span class="prelude-val">Ok</span>(())
 			}
-			<span class="prelude-val">Err</span>(<span class="ident">e</span>) =&gt; {
-				<span class="macro">panic!</span>(<span class="string">&quot;Test not expected to fail: {:?}&quot;</span>, <span class="ident">e</span>);
+			<span class="prelude-val">Err</span>(e) =&gt; {
+				<span class="macro">panic!</span>(<span class="string">&quot;Test not expected to fail: {:?}&quot;</span>, e);
 			}
 		}
 	}
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">test_scalar_mul_empty_error</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">PrecompileFailure</span><span class="op">&gt;</span> {
-		<span class="kw">let</span> <span class="ident">input</span> <span class="op">=</span> <span class="macro">vec!</span>[];
+	<span class="attribute">#[test]
+	</span><span class="kw">fn </span>test_scalar_mul_empty_error() -&gt; <span class="prelude-ty">Result</span>&lt;(), PrecompileFailure&gt; {
+		<span class="kw">let </span>input = <span class="macro">vec!</span>[];
 
-		<span class="kw">let</span> <span class="ident">cost</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">1</span>;
+		<span class="kw">let </span>cost: u64 = <span class="number">1</span>;
 
-		<span class="kw">match</span> <span class="ident">Curve25519ScalarMul::execute</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>, <span class="ident">cost</span>) {
-			<span class="prelude-val">Ok</span>((<span class="kw">_</span>, <span class="ident">_out</span>)) =&gt; {
+		<span class="kw">match </span>Curve25519ScalarMul::execute(<span class="kw-2">&amp;</span>input, cost) {
+			<span class="prelude-val">Ok</span>((<span class="kw">_</span>, _out)) =&gt; {
 				<span class="macro">panic!</span>(<span class="string">&quot;Test not expected to work&quot;</span>);
 			}
-			<span class="prelude-val">Err</span>(<span class="ident">e</span>) =&gt; {
+			<span class="prelude-val">Err</span>(e) =&gt; {
 				<span class="macro">assert_eq!</span>(
-					<span class="ident">e</span>,
-					<span class="ident">PrecompileFailure::Error</span> {
-						<span class="ident">exit_status</span>: <span class="ident">ExitError::Other</span>(
-							<span class="string">&quot;input must contain 64 bytes (scalar - 32 bytes, point - 32 bytes)&quot;</span>
-								.<span class="ident">into</span>()
+					e,
+					PrecompileFailure::Error {
+						exit_status: ExitError::Other(
+							<span class="string">&quot;input must contain 64 bytes (scalar - 32 bytes, point - 32 bytes)&quot;
+								</span>.into()
 						)
 					}
 				);
@@ -477,22 +471,22 @@
 		}
 	}
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">test_point_addition_bad_length</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">PrecompileFailure</span><span class="op">&gt;</span> {
-		<span class="kw">let</span> <span class="ident">input</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">33</span>].<span class="ident">to_vec</span>();
+	<span class="attribute">#[test]
+	</span><span class="kw">fn </span>test_point_addition_bad_length() -&gt; <span class="prelude-ty">Result</span>&lt;(), PrecompileFailure&gt; {
+		<span class="kw">let </span>input: Vec&lt;u8&gt; = [<span class="number">0u8</span>; <span class="number">33</span>].to_vec();
 
-		<span class="kw">let</span> <span class="ident">cost</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">1</span>;
+		<span class="kw">let </span>cost: u64 = <span class="number">1</span>;
 
-		<span class="kw">match</span> <span class="ident">Curve25519Add::execute</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>, <span class="ident">cost</span>) {
-			<span class="prelude-val">Ok</span>((<span class="kw">_</span>, <span class="ident">_out</span>)) =&gt; {
+		<span class="kw">match </span>Curve25519Add::execute(<span class="kw-2">&amp;</span>input, cost) {
+			<span class="prelude-val">Ok</span>((<span class="kw">_</span>, _out)) =&gt; {
 				<span class="macro">panic!</span>(<span class="string">&quot;Test not expected to work&quot;</span>);
 			}
-			<span class="prelude-val">Err</span>(<span class="ident">e</span>) =&gt; {
+			<span class="prelude-val">Err</span>(e) =&gt; {
 				<span class="macro">assert_eq!</span>(
-					<span class="ident">e</span>,
-					<span class="ident">PrecompileFailure::Error</span> {
-						<span class="ident">exit_status</span>: <span class="ident">ExitError::Other</span>(
-							<span class="string">&quot;input must contain multiple of 32 bytes&quot;</span>.<span class="ident">into</span>()
+					e,
+					PrecompileFailure::Error {
+						exit_status: ExitError::Other(
+							<span class="string">&quot;input must contain multiple of 32 bytes&quot;</span>.into()
 						)
 					}
 				);
@@ -501,33 +495,33 @@
 		}
 	}
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">test_point_addition_too_many_points</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">PrecompileFailure</span><span class="op">&gt;</span> {
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">input</span> <span class="op">=</span> <span class="macro">vec!</span>[];
-		<span class="ident">input</span>.<span class="ident">extend_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">constants::RISTRETTO_BASEPOINT_POINT</span>.<span class="ident">compress</span>().<span class="ident">to_bytes</span>()); <span class="comment">// 1</span>
-		<span class="ident">input</span>.<span class="ident">extend_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">constants::RISTRETTO_BASEPOINT_POINT</span>.<span class="ident">compress</span>().<span class="ident">to_bytes</span>()); <span class="comment">// 2</span>
-		<span class="ident">input</span>.<span class="ident">extend_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">constants::RISTRETTO_BASEPOINT_POINT</span>.<span class="ident">compress</span>().<span class="ident">to_bytes</span>()); <span class="comment">// 3</span>
-		<span class="ident">input</span>.<span class="ident">extend_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">constants::RISTRETTO_BASEPOINT_POINT</span>.<span class="ident">compress</span>().<span class="ident">to_bytes</span>()); <span class="comment">// 4</span>
-		<span class="ident">input</span>.<span class="ident">extend_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">constants::RISTRETTO_BASEPOINT_POINT</span>.<span class="ident">compress</span>().<span class="ident">to_bytes</span>()); <span class="comment">// 5</span>
-		<span class="ident">input</span>.<span class="ident">extend_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">constants::RISTRETTO_BASEPOINT_POINT</span>.<span class="ident">compress</span>().<span class="ident">to_bytes</span>()); <span class="comment">// 6</span>
-		<span class="ident">input</span>.<span class="ident">extend_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">constants::RISTRETTO_BASEPOINT_POINT</span>.<span class="ident">compress</span>().<span class="ident">to_bytes</span>()); <span class="comment">// 7</span>
-		<span class="ident">input</span>.<span class="ident">extend_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">constants::RISTRETTO_BASEPOINT_POINT</span>.<span class="ident">compress</span>().<span class="ident">to_bytes</span>()); <span class="comment">// 8</span>
-		<span class="ident">input</span>.<span class="ident">extend_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">constants::RISTRETTO_BASEPOINT_POINT</span>.<span class="ident">compress</span>().<span class="ident">to_bytes</span>()); <span class="comment">// 9</span>
-		<span class="ident">input</span>.<span class="ident">extend_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">constants::RISTRETTO_BASEPOINT_POINT</span>.<span class="ident">compress</span>().<span class="ident">to_bytes</span>()); <span class="comment">// 10</span>
-		<span class="ident">input</span>.<span class="ident">extend_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">constants::RISTRETTO_BASEPOINT_POINT</span>.<span class="ident">compress</span>().<span class="ident">to_bytes</span>()); <span class="comment">// 11</span>
+	<span class="attribute">#[test]
+	</span><span class="kw">fn </span>test_point_addition_too_many_points() -&gt; <span class="prelude-ty">Result</span>&lt;(), PrecompileFailure&gt; {
+		<span class="kw">let </span><span class="kw-2">mut </span>input = <span class="macro">vec!</span>[];
+		input.extend_from_slice(<span class="kw-2">&amp;</span>constants::RISTRETTO_BASEPOINT_POINT.compress().to_bytes()); <span class="comment">// 1
+		</span>input.extend_from_slice(<span class="kw-2">&amp;</span>constants::RISTRETTO_BASEPOINT_POINT.compress().to_bytes()); <span class="comment">// 2
+		</span>input.extend_from_slice(<span class="kw-2">&amp;</span>constants::RISTRETTO_BASEPOINT_POINT.compress().to_bytes()); <span class="comment">// 3
+		</span>input.extend_from_slice(<span class="kw-2">&amp;</span>constants::RISTRETTO_BASEPOINT_POINT.compress().to_bytes()); <span class="comment">// 4
+		</span>input.extend_from_slice(<span class="kw-2">&amp;</span>constants::RISTRETTO_BASEPOINT_POINT.compress().to_bytes()); <span class="comment">// 5
+		</span>input.extend_from_slice(<span class="kw-2">&amp;</span>constants::RISTRETTO_BASEPOINT_POINT.compress().to_bytes()); <span class="comment">// 6
+		</span>input.extend_from_slice(<span class="kw-2">&amp;</span>constants::RISTRETTO_BASEPOINT_POINT.compress().to_bytes()); <span class="comment">// 7
+		</span>input.extend_from_slice(<span class="kw-2">&amp;</span>constants::RISTRETTO_BASEPOINT_POINT.compress().to_bytes()); <span class="comment">// 8
+		</span>input.extend_from_slice(<span class="kw-2">&amp;</span>constants::RISTRETTO_BASEPOINT_POINT.compress().to_bytes()); <span class="comment">// 9
+		</span>input.extend_from_slice(<span class="kw-2">&amp;</span>constants::RISTRETTO_BASEPOINT_POINT.compress().to_bytes()); <span class="comment">// 10
+		</span>input.extend_from_slice(<span class="kw-2">&amp;</span>constants::RISTRETTO_BASEPOINT_POINT.compress().to_bytes()); <span class="comment">// 11
 
-		<span class="kw">let</span> <span class="ident">cost</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">1</span>;
+		</span><span class="kw">let </span>cost: u64 = <span class="number">1</span>;
 
-		<span class="kw">match</span> <span class="ident">Curve25519Add::execute</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>, <span class="ident">cost</span>) {
-			<span class="prelude-val">Ok</span>((<span class="kw">_</span>, <span class="ident">_out</span>)) =&gt; {
+		<span class="kw">match </span>Curve25519Add::execute(<span class="kw-2">&amp;</span>input, cost) {
+			<span class="prelude-val">Ok</span>((<span class="kw">_</span>, _out)) =&gt; {
 				<span class="macro">panic!</span>(<span class="string">&quot;Test not expected to work&quot;</span>);
 			}
-			<span class="prelude-val">Err</span>(<span class="ident">e</span>) =&gt; {
+			<span class="prelude-val">Err</span>(e) =&gt; {
 				<span class="macro">assert_eq!</span>(
-					<span class="ident">e</span>,
-					<span class="ident">PrecompileFailure::Error</span> {
-						<span class="ident">exit_status</span>: <span class="ident">ExitError::Other</span>(
-							<span class="string">&quot;input cannot be greater than 320 bytes (10 compressed points)&quot;</span>.<span class="ident">into</span>()
+					e,
+					PrecompileFailure::Error {
+						exit_status: ExitError::Other(
+							<span class="string">&quot;input cannot be greater than 320 bytes (10 compressed points)&quot;</span>.into()
 						)
 					}
 				);
@@ -537,5 +531,4 @@
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_evm_precompile_curve25519" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (7fe022f5a 2022-07-24)" ></div>
-</body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_evm_precompile_curve25519" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (81f391930 2022-10-09)" ></div></body></html>

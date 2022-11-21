@@ -1,10 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `client/rpc/src/overrides/mod.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>mod.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../fc_rpc/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div>
-        </a><h2 class="location"></h2>
-    </nav>
-    <nav class="sidebar"><a class="sidebar-logo" href="../../../fc_rpc/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div>
-        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../fc_rpc/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1">
-                                <a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div>
-                        </div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `client/rpc/src/overrides/mod.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>mod.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../../normalize.css"><link rel="stylesheet" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../../ayu.css" disabled><link rel="stylesheet" href="../../../dark.css" disabled><link rel="stylesheet" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><a class="sidebar-logo" href="../../../fc_rpc/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../fc_rpc/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -214,216 +208,215 @@
 <span id="208">208</span>
 <span id="209">209</span>
 <span id="210">210</span>
-</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
-<span class="comment">// This file is part of Frontier.</span>
-<span class="comment">//</span>
-<span class="comment">// Copyright (c) 2017-2022 Parity Technologies (UK) Ltd.</span>
-<span class="comment">//</span>
-<span class="comment">// This program is free software: you can redistribute it and/or modify</span>
-<span class="comment">// it under the terms of the GNU General Public License as published by</span>
-<span class="comment">// the Free Software Foundation, either version 3 of the License, or</span>
-<span class="comment">// (at your option) any later version.</span>
-<span class="comment">//</span>
-<span class="comment">// This program is distributed in the hope that it will be useful,</span>
-<span class="comment">// but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
-<span class="comment">// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the</span>
-<span class="comment">// GNU General Public License for more details.</span>
-<span class="comment">//</span>
-<span class="comment">// You should have received a copy of the GNU General Public License</span>
-<span class="comment">// along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.</span>
+</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
+// This file is part of Frontier.
+//
+// Copyright (c) 2017-2022 Parity Technologies (UK) Ltd.
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.
 
-<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">collections::BTreeMap</span>, <span class="ident">marker::PhantomData</span>, <span class="ident">sync::Arc</span>};
+</span><span class="kw">use </span>std::{collections::BTreeMap, marker::PhantomData, sync::Arc};
 
-<span class="kw">use</span> <span class="ident">ethereum::BlockV2</span> <span class="kw">as</span> <span class="ident">EthereumBlock</span>;
-<span class="kw">use</span> <span class="ident">ethereum_types</span>::{<span class="ident">H160</span>, <span class="ident">H256</span>, <span class="ident">U256</span>};
-<span class="comment">// Substrate</span>
-<span class="kw">use</span> <span class="ident">sp_api</span>::{<span class="ident">ApiExt</span>, <span class="ident">BlockId</span>, <span class="ident">ProvideRuntimeApi</span>};
-<span class="kw">use</span> <span class="ident">sp_io::hashing</span>::{<span class="ident">blake2_128</span>, <span class="ident">twox_128</span>};
-<span class="kw">use</span> <span class="ident">sp_runtime</span>::{<span class="ident">traits::Block</span> <span class="kw">as</span> <span class="ident">BlockT</span>, <span class="ident">Permill</span>};
-<span class="comment">// Frontier</span>
-<span class="kw">use</span> <span class="ident">fp_rpc</span>::{<span class="ident">EthereumRuntimeRPCApi</span>, <span class="ident">TransactionStatus</span>};
-<span class="kw">use</span> <span class="ident">fp_storage::EthereumStorageSchema</span>;
+<span class="kw">use </span>ethereum::BlockV2 <span class="kw">as </span>EthereumBlock;
+<span class="kw">use </span>ethereum_types::{H160, H256, U256};
+<span class="comment">// Substrate
+</span><span class="kw">use </span>sp_api::{ApiExt, BlockId, ProvideRuntimeApi};
+<span class="kw">use </span>sp_io::hashing::{blake2_128, twox_128};
+<span class="kw">use </span>sp_runtime::{traits::Block <span class="kw">as </span>BlockT, Permill};
+<span class="comment">// Frontier
+</span><span class="kw">use </span>fp_rpc::{EthereumRuntimeRPCApi, TransactionStatus};
+<span class="kw">use </span>fp_storage::EthereumStorageSchema;
 
-<span class="kw">mod</span> <span class="ident">schema_v1_override</span>;
-<span class="kw">mod</span> <span class="ident">schema_v2_override</span>;
-<span class="kw">mod</span> <span class="ident">schema_v3_override</span>;
+<span class="kw">mod </span>schema_v1_override;
+<span class="kw">mod </span>schema_v2_override;
+<span class="kw">mod </span>schema_v3_override;
 
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">schema_v1_override::SchemaV1Override</span>;
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">schema_v2_override::SchemaV2Override</span>;
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">schema_v3_override::SchemaV3Override</span>;
+<span class="kw">pub use </span>schema_v1_override::SchemaV1Override;
+<span class="kw">pub use </span>schema_v2_override::SchemaV2Override;
+<span class="kw">pub use </span>schema_v3_override::SchemaV3Override;
 
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">OverrideHandle</span><span class="op">&lt;</span><span class="ident">Block</span>: <span class="ident">BlockT</span><span class="op">&gt;</span> {
-	<span class="kw">pub</span> <span class="ident">schemas</span>: <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">EthereumStorageSchema</span>, <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">StorageOverride</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-	<span class="kw">pub</span> <span class="ident">fallback</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">StorageOverride</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span><span class="op">&gt;</span>,
+<span class="kw">pub struct </span>OverrideHandle&lt;Block: BlockT&gt; {
+	<span class="kw">pub </span>schemas: BTreeMap&lt;EthereumStorageSchema, Box&lt;<span class="kw">dyn </span>StorageOverride&lt;Block&gt; + Send + Sync&gt;&gt;,
+	<span class="kw">pub </span>fallback: Box&lt;<span class="kw">dyn </span>StorageOverride&lt;Block&gt; + Send + Sync&gt;,
 }
 
-<span class="doccomment">/// Something that can fetch Ethereum-related data. This trait is quite similar to the runtime API,</span>
-<span class="doccomment">/// and indeed oe implementation of it uses the runtime API.</span>
-<span class="doccomment">/// Having this trait is useful because it allows optimized implementations that fetch data from a</span>
-<span class="doccomment">/// State Backend with some assumptions about pallet-ethereum&#39;s storage schema. Using such an</span>
-<span class="doccomment">/// optimized implementation avoids spawning a runtime and the overhead associated with it.</span>
-<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">StorageOverride</span><span class="op">&lt;</span><span class="ident">Block</span>: <span class="ident">BlockT</span><span class="op">&gt;</span> {
-	<span class="doccomment">/// For a given account address, returns pallet_evm::AccountCodes.</span>
-	<span class="kw">fn</span> <span class="ident">account_code_at</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">block</span>: <span class="kw-2">&amp;</span><span class="ident">BlockId</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>, <span class="ident">address</span>: <span class="ident">H160</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>;
-	<span class="doccomment">/// For a given account address and index, returns pallet_evm::AccountStorages.</span>
-	<span class="kw">fn</span> <span class="ident">storage_at</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">block</span>: <span class="kw-2">&amp;</span><span class="ident">BlockId</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>, <span class="ident">address</span>: <span class="ident">H160</span>, <span class="ident">index</span>: <span class="ident">U256</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span>;
-	<span class="doccomment">/// Return the current block.</span>
-	<span class="kw">fn</span> <span class="ident">current_block</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">block</span>: <span class="kw-2">&amp;</span><span class="ident">BlockId</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">EthereumBlock</span><span class="op">&gt;</span>;
-	<span class="doccomment">/// Return the current receipt.</span>
-	<span class="kw">fn</span> <span class="ident">current_receipts</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">block</span>: <span class="kw-2">&amp;</span><span class="ident">BlockId</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ethereum::ReceiptV3</span><span class="op">&gt;</span><span class="op">&gt;</span>;
-	<span class="doccomment">/// Return the current transaction status.</span>
-	<span class="kw">fn</span> <span class="ident">current_transaction_statuses</span>(
+<span class="doccomment">/// Something that can fetch Ethereum-related data. This trait is quite similar to the runtime API,
+/// and indeed oe implementation of it uses the runtime API.
+/// Having this trait is useful because it allows optimized implementations that fetch data from a
+/// State Backend with some assumptions about pallet-ethereum&#39;s storage schema. Using such an
+/// optimized implementation avoids spawning a runtime and the overhead associated with it.
+</span><span class="kw">pub trait </span>StorageOverride&lt;Block: BlockT&gt; {
+	<span class="doccomment">/// For a given account address, returns pallet_evm::AccountCodes.
+	</span><span class="kw">fn </span>account_code_at(<span class="kw-2">&amp;</span><span class="self">self</span>, block: <span class="kw-2">&amp;</span>BlockId&lt;Block&gt;, address: H160) -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;u8&gt;&gt;;
+	<span class="doccomment">/// For a given account address and index, returns pallet_evm::AccountStorages.
+	</span><span class="kw">fn </span>storage_at(<span class="kw-2">&amp;</span><span class="self">self</span>, block: <span class="kw-2">&amp;</span>BlockId&lt;Block&gt;, address: H160, index: U256) -&gt; <span class="prelude-ty">Option</span>&lt;H256&gt;;
+	<span class="doccomment">/// Return the current block.
+	</span><span class="kw">fn </span>current_block(<span class="kw-2">&amp;</span><span class="self">self</span>, block: <span class="kw-2">&amp;</span>BlockId&lt;Block&gt;) -&gt; <span class="prelude-ty">Option</span>&lt;EthereumBlock&gt;;
+	<span class="doccomment">/// Return the current receipt.
+	</span><span class="kw">fn </span>current_receipts(<span class="kw-2">&amp;</span><span class="self">self</span>, block: <span class="kw-2">&amp;</span>BlockId&lt;Block&gt;) -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;ethereum::ReceiptV3&gt;&gt;;
+	<span class="doccomment">/// Return the current transaction status.
+	</span><span class="kw">fn </span>current_transaction_statuses(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		<span class="ident">block</span>: <span class="kw-2">&amp;</span><span class="ident">BlockId</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>,
-	) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TransactionStatus</span><span class="op">&gt;</span><span class="op">&gt;</span>;
-	<span class="doccomment">/// Return the base fee at the given height.</span>
-	<span class="kw">fn</span> <span class="ident">base_fee</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">block</span>: <span class="kw-2">&amp;</span><span class="ident">BlockId</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>;
-	<span class="doccomment">/// Return the base fee at the given height.</span>
-	<span class="kw">fn</span> <span class="ident">elasticity</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">block</span>: <span class="kw-2">&amp;</span><span class="ident">BlockId</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Permill</span><span class="op">&gt;</span>;
-	<span class="doccomment">/// Return `true` if the request BlockId is post-eip1559.</span>
-	<span class="kw">fn</span> <span class="ident">is_eip1559</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">block</span>: <span class="kw-2">&amp;</span><span class="ident">BlockId</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>) -&gt; <span class="ident">bool</span>;
+		block: <span class="kw-2">&amp;</span>BlockId&lt;Block&gt;,
+	) -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;TransactionStatus&gt;&gt;;
+	<span class="doccomment">/// Return the base fee at the given height.
+	</span><span class="kw">fn </span>base_fee(<span class="kw-2">&amp;</span><span class="self">self</span>, block: <span class="kw-2">&amp;</span>BlockId&lt;Block&gt;) -&gt; <span class="prelude-ty">Option</span>&lt;U256&gt;;
+	<span class="doccomment">/// Return the base fee at the given height.
+	</span><span class="kw">fn </span>elasticity(<span class="kw-2">&amp;</span><span class="self">self</span>, block: <span class="kw-2">&amp;</span>BlockId&lt;Block&gt;) -&gt; <span class="prelude-ty">Option</span>&lt;Permill&gt;;
+	<span class="doccomment">/// Return `true` if the request BlockId is post-eip1559.
+	</span><span class="kw">fn </span>is_eip1559(<span class="kw-2">&amp;</span><span class="self">self</span>, block: <span class="kw-2">&amp;</span>BlockId&lt;Block&gt;) -&gt; bool;
 }
 
-<span class="kw">fn</span> <span class="ident">storage_prefix_build</span>(<span class="ident">module</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>], <span class="ident">storage</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> {
-	[<span class="ident">twox_128</span>(<span class="ident">module</span>), <span class="ident">twox_128</span>(<span class="ident">storage</span>)].<span class="ident">concat</span>().<span class="ident">to_vec</span>()
+<span class="kw">fn </span>storage_prefix_build(module: <span class="kw-2">&amp;</span>[u8], storage: <span class="kw-2">&amp;</span>[u8]) -&gt; Vec&lt;u8&gt; {
+	[twox_128(module), twox_128(storage)].concat().to_vec()
 }
 
-<span class="kw">fn</span> <span class="ident">blake2_128_extend</span>(<span class="ident">bytes</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> {
-	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">ext</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">blake2_128</span>(<span class="ident">bytes</span>).<span class="ident">to_vec</span>();
-	<span class="ident">ext</span>.<span class="ident">extend_from_slice</span>(<span class="ident">bytes</span>);
-	<span class="ident">ext</span>
+<span class="kw">fn </span>blake2_128_extend(bytes: <span class="kw-2">&amp;</span>[u8]) -&gt; Vec&lt;u8&gt; {
+	<span class="kw">let </span><span class="kw-2">mut </span>ext: Vec&lt;u8&gt; = blake2_128(bytes).to_vec();
+	ext.extend_from_slice(bytes);
+	ext
 }
 
-<span class="doccomment">/// A wrapper type for the Runtime API. This type implements `StorageOverride`, so it can be used</span>
-<span class="doccomment">/// when calling the runtime API is desired but a `dyn StorageOverride` is required.</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">RuntimeApiStorageOverride</span><span class="op">&lt;</span><span class="ident">B</span>: <span class="ident">BlockT</span>, <span class="ident">C</span><span class="op">&gt;</span> {
-	<span class="ident">client</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
-	<span class="ident">_marker</span>: <span class="ident">PhantomData</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span>,
+<span class="doccomment">/// A wrapper type for the Runtime API. This type implements `StorageOverride`, so it can be used
+/// when calling the runtime API is desired but a `dyn StorageOverride` is required.
+</span><span class="kw">pub struct </span>RuntimeApiStorageOverride&lt;B: BlockT, C&gt; {
+	client: Arc&lt;C&gt;,
+	_marker: PhantomData&lt;B&gt;,
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">B</span>: <span class="ident">BlockT</span>, <span class="ident">C</span><span class="op">&gt;</span> <span class="ident">RuntimeApiStorageOverride</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span><span class="op">&gt;</span> {
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">client</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>) -&gt; <span class="self">Self</span> {
-		<span class="self">Self</span> {
-			<span class="ident">client</span>,
-			<span class="ident">_marker</span>: <span class="ident">PhantomData</span>,
+<span class="kw">impl</span>&lt;B: BlockT, C&gt; RuntimeApiStorageOverride&lt;B, C&gt; {
+	<span class="kw">pub fn </span>new(client: Arc&lt;C&gt;) -&gt; <span class="self">Self </span>{
+		<span class="self">Self </span>{
+			client,
+			_marker: PhantomData,
 		}
 	}
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">C</span><span class="op">&gt;</span> <span class="ident">StorageOverride</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">RuntimeApiStorageOverride</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">C</span><span class="op">&gt;</span>
-<span class="kw">where</span>
-	<span class="ident">Block</span>: <span class="ident">BlockT</span><span class="op">&lt;</span><span class="ident">Hash</span> <span class="op">=</span> <span class="ident">H256</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
-	<span class="ident">C</span>: <span class="ident">ProvideRuntimeApi</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
-	<span class="ident">C::Api</span>: <span class="ident">EthereumRuntimeRPCApi</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>,
+<span class="kw">impl</span>&lt;Block, C&gt; StorageOverride&lt;Block&gt; <span class="kw">for </span>RuntimeApiStorageOverride&lt;Block, C&gt;
+<span class="kw">where
+	</span>Block: BlockT&lt;Hash = H256&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
+	C: ProvideRuntimeApi&lt;Block&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
+	C::Api: EthereumRuntimeRPCApi&lt;Block&gt;,
 {
-	<span class="doccomment">/// For a given account address, returns pallet_evm::AccountCodes.</span>
-	<span class="kw">fn</span> <span class="ident">account_code_at</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">block</span>: <span class="kw-2">&amp;</span><span class="ident">BlockId</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>, <span class="ident">address</span>: <span class="ident">H160</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-		<span class="self">self</span>.<span class="ident">client</span>
-			.<span class="ident">runtime_api</span>()
-			.<span class="ident">account_code_at</span>(<span class="ident">block</span>, <span class="ident">address</span>)
-			.<span class="ident">ok</span>()
+	<span class="doccomment">/// For a given account address, returns pallet_evm::AccountCodes.
+	</span><span class="kw">fn </span>account_code_at(<span class="kw-2">&amp;</span><span class="self">self</span>, block: <span class="kw-2">&amp;</span>BlockId&lt;Block&gt;, address: H160) -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;u8&gt;&gt; {
+		<span class="self">self</span>.client
+			.runtime_api()
+			.account_code_at(block, address)
+			.ok()
 	}
 
-	<span class="doccomment">/// For a given account address and index, returns pallet_evm::AccountStorages.</span>
-	<span class="kw">fn</span> <span class="ident">storage_at</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">block</span>: <span class="kw-2">&amp;</span><span class="ident">BlockId</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>, <span class="ident">address</span>: <span class="ident">H160</span>, <span class="ident">index</span>: <span class="ident">U256</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span> {
-		<span class="self">self</span>.<span class="ident">client</span>
-			.<span class="ident">runtime_api</span>()
-			.<span class="ident">storage_at</span>(<span class="ident">block</span>, <span class="ident">address</span>, <span class="ident">index</span>)
-			.<span class="ident">ok</span>()
+	<span class="doccomment">/// For a given account address and index, returns pallet_evm::AccountStorages.
+	</span><span class="kw">fn </span>storage_at(<span class="kw-2">&amp;</span><span class="self">self</span>, block: <span class="kw-2">&amp;</span>BlockId&lt;Block&gt;, address: H160, index: U256) -&gt; <span class="prelude-ty">Option</span>&lt;H256&gt; {
+		<span class="self">self</span>.client
+			.runtime_api()
+			.storage_at(block, address, index)
+			.ok()
 	}
 
-	<span class="doccomment">/// Return the current block.</span>
-	<span class="kw">fn</span> <span class="ident">current_block</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">block</span>: <span class="kw-2">&amp;</span><span class="ident">BlockId</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">ethereum::BlockV2</span><span class="op">&gt;</span> {
-		<span class="kw">let</span> <span class="ident">api</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">runtime_api</span>();
+	<span class="doccomment">/// Return the current block.
+	</span><span class="kw">fn </span>current_block(<span class="kw-2">&amp;</span><span class="self">self</span>, block: <span class="kw-2">&amp;</span>BlockId&lt;Block&gt;) -&gt; <span class="prelude-ty">Option</span>&lt;ethereum::BlockV2&gt; {
+		<span class="kw">let </span>api = <span class="self">self</span>.client.runtime_api();
 
-		<span class="kw">let</span> <span class="ident">api_version</span> <span class="op">=</span> <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">api_version</span>)) <span class="op">=</span>
-			<span class="ident">api</span>.<span class="ident">api_version</span>::<span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">EthereumRuntimeRPCApi</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="ident">block</span>)
+		<span class="kw">let </span>api_version = <span class="kw">if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(api_version)) =
+			api.api_version::&lt;<span class="kw">dyn </span>EthereumRuntimeRPCApi&lt;Block&gt;&gt;(block)
 		{
-			<span class="ident">api_version</span>
-		} <span class="kw">else</span> {
-			<span class="kw">return</span> <span class="prelude-val">None</span>;
+			api_version
+		} <span class="kw">else </span>{
+			<span class="kw">return </span><span class="prelude-val">None</span>;
 		};
-		<span class="kw">if</span> <span class="ident">api_version</span> <span class="op">==</span> <span class="number">1</span> {
-			<span class="attribute">#[<span class="ident">allow</span>(<span class="ident">deprecated</span>)]</span>
-			<span class="kw">let</span> <span class="ident">old_block</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">current_block_before_version_2</span>(<span class="ident">block</span>).<span class="ident">ok</span>()<span class="question-mark">?</span>;
-			<span class="ident">old_block</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">block</span><span class="op">|</span> <span class="ident">block</span>.<span class="ident">into</span>())
-		} <span class="kw">else</span> {
-			<span class="ident">api</span>.<span class="ident">current_block</span>(<span class="ident">block</span>).<span class="ident">ok</span>()<span class="question-mark">?</span>
-		}
+		<span class="kw">if </span>api_version == <span class="number">1 </span>{
+			<span class="attribute">#[allow(deprecated)]
+			</span><span class="kw">let </span>old_block = api.current_block_before_version_2(block).ok()<span class="question-mark">?</span>;
+			old_block.map(|block| block.into())
+		} <span class="kw">else </span>{
+			api.current_block(block).ok()<span class="question-mark">?
+		</span>}
 	}
 
-	<span class="doccomment">/// Return the current receipt.</span>
-	<span class="kw">fn</span> <span class="ident">current_receipts</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">block</span>: <span class="kw-2">&amp;</span><span class="ident">BlockId</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ethereum::ReceiptV3</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-		<span class="kw">let</span> <span class="ident">api</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">runtime_api</span>();
+	<span class="doccomment">/// Return the current receipt.
+	</span><span class="kw">fn </span>current_receipts(<span class="kw-2">&amp;</span><span class="self">self</span>, block: <span class="kw-2">&amp;</span>BlockId&lt;Block&gt;) -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;ethereum::ReceiptV3&gt;&gt; {
+		<span class="kw">let </span>api = <span class="self">self</span>.client.runtime_api();
 
-		<span class="kw">let</span> <span class="ident">api_version</span> <span class="op">=</span> <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">api_version</span>)) <span class="op">=</span>
-			<span class="ident">api</span>.<span class="ident">api_version</span>::<span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">EthereumRuntimeRPCApi</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="ident">block</span>)
+		<span class="kw">let </span>api_version = <span class="kw">if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(api_version)) =
+			api.api_version::&lt;<span class="kw">dyn </span>EthereumRuntimeRPCApi&lt;Block&gt;&gt;(block)
 		{
-			<span class="ident">api_version</span>
-		} <span class="kw">else</span> {
-			<span class="kw">return</span> <span class="prelude-val">None</span>;
+			api_version
+		} <span class="kw">else </span>{
+			<span class="kw">return </span><span class="prelude-val">None</span>;
 		};
-		<span class="kw">if</span> <span class="ident">api_version</span> <span class="op">&lt;</span> <span class="number">4</span> {
-			<span class="attribute">#[<span class="ident">allow</span>(<span class="ident">deprecated</span>)]</span>
-			<span class="kw">let</span> <span class="ident">old_receipts</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">current_receipts_before_version_4</span>(<span class="ident">block</span>).<span class="ident">ok</span>()<span class="question-mark">?</span>;
-			<span class="ident">old_receipts</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">receipts</span><span class="op">|</span> {
-				<span class="ident">receipts</span>
-					.<span class="ident">into_iter</span>()
-					.<span class="ident">map</span>(<span class="op">|</span><span class="ident">r</span><span class="op">|</span> {
-						<span class="ident">ethereum::ReceiptV3::Legacy</span>(<span class="ident">ethereum::EIP658ReceiptData</span> {
-							<span class="ident">status_code</span>: <span class="ident">r</span>.<span class="ident">state_root</span>.<span class="ident">to_low_u64_be</span>() <span class="kw">as</span> <span class="ident">u8</span>,
-							<span class="ident">used_gas</span>: <span class="ident">r</span>.<span class="ident">used_gas</span>,
-							<span class="ident">logs_bloom</span>: <span class="ident">r</span>.<span class="ident">logs_bloom</span>,
-							<span class="ident">logs</span>: <span class="ident">r</span>.<span class="ident">logs</span>,
+		<span class="kw">if </span>api_version &lt; <span class="number">4 </span>{
+			<span class="attribute">#[allow(deprecated)]
+			</span><span class="kw">let </span>old_receipts = api.current_receipts_before_version_4(block).ok()<span class="question-mark">?</span>;
+			old_receipts.map(|receipts| {
+				receipts
+					.into_iter()
+					.map(|r| {
+						ethereum::ReceiptV3::Legacy(ethereum::EIP658ReceiptData {
+							status_code: r.state_root.to_low_u64_be() <span class="kw">as </span>u8,
+							used_gas: r.used_gas,
+							logs_bloom: r.logs_bloom,
+							logs: r.logs,
 						})
 					})
-					.<span class="ident">collect</span>()
+					.collect()
 			})
-		} <span class="kw">else</span> {
-			<span class="self">self</span>.<span class="ident">client</span>.<span class="ident">runtime_api</span>().<span class="ident">current_receipts</span>(<span class="ident">block</span>).<span class="ident">ok</span>()<span class="question-mark">?</span>
-		}
+		} <span class="kw">else </span>{
+			<span class="self">self</span>.client.runtime_api().current_receipts(block).ok()<span class="question-mark">?
+		</span>}
 	}
 
-	<span class="doccomment">/// Return the current transaction status.</span>
-	<span class="kw">fn</span> <span class="ident">current_transaction_statuses</span>(
+	<span class="doccomment">/// Return the current transaction status.
+	</span><span class="kw">fn </span>current_transaction_statuses(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		<span class="ident">block</span>: <span class="kw-2">&amp;</span><span class="ident">BlockId</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>,
-	) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TransactionStatus</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-		<span class="self">self</span>.<span class="ident">client</span>
-			.<span class="ident">runtime_api</span>()
-			.<span class="ident">current_transaction_statuses</span>(<span class="ident">block</span>)
-			.<span class="ident">ok</span>()<span class="question-mark">?</span>
+		block: <span class="kw-2">&amp;</span>BlockId&lt;Block&gt;,
+	) -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;TransactionStatus&gt;&gt; {
+		<span class="self">self</span>.client
+			.runtime_api()
+			.current_transaction_statuses(block)
+			.ok()<span class="question-mark">?
+	</span>}
+
+	<span class="doccomment">/// Return the base fee at the given post-eip1559 height.
+	</span><span class="kw">fn </span>base_fee(<span class="kw-2">&amp;</span><span class="self">self</span>, block: <span class="kw-2">&amp;</span>BlockId&lt;Block&gt;) -&gt; <span class="prelude-ty">Option</span>&lt;U256&gt; {
+		<span class="kw">if </span><span class="self">self</span>.is_eip1559(block) {
+			<span class="self">self</span>.client.runtime_api().gas_price(block).ok()
+		} <span class="kw">else </span>{
+			<span class="prelude-val">None
+		</span>}
 	}
 
-	<span class="doccomment">/// Return the base fee at the given post-eip1559 height.</span>
-	<span class="kw">fn</span> <span class="ident">base_fee</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">block</span>: <span class="kw-2">&amp;</span><span class="ident">BlockId</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span> {
-		<span class="kw">if</span> <span class="self">self</span>.<span class="ident">is_eip1559</span>(<span class="ident">block</span>) {
-			<span class="self">self</span>.<span class="ident">client</span>.<span class="ident">runtime_api</span>().<span class="ident">gas_price</span>(<span class="ident">block</span>).<span class="ident">ok</span>()
-		} <span class="kw">else</span> {
-			<span class="prelude-val">None</span>
-		}
+	<span class="doccomment">/// Return the elasticity multiplier at the give post-eip1559 height.
+	</span><span class="kw">fn </span>elasticity(<span class="kw-2">&amp;</span><span class="self">self</span>, block: <span class="kw-2">&amp;</span>BlockId&lt;Block&gt;) -&gt; <span class="prelude-ty">Option</span>&lt;Permill&gt; {
+		<span class="kw">if </span><span class="self">self</span>.is_eip1559(block) {
+			<span class="self">self</span>.client.runtime_api().elasticity(block).ok()<span class="question-mark">?
+		</span>} <span class="kw">else </span>{
+			<span class="prelude-val">None
+		</span>}
 	}
 
-	<span class="doccomment">/// Return the elasticity multiplier at the give post-eip1559 height.</span>
-	<span class="kw">fn</span> <span class="ident">elasticity</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">block</span>: <span class="kw-2">&amp;</span><span class="ident">BlockId</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Permill</span><span class="op">&gt;</span> {
-		<span class="kw">if</span> <span class="self">self</span>.<span class="ident">is_eip1559</span>(<span class="ident">block</span>) {
-			<span class="self">self</span>.<span class="ident">client</span>.<span class="ident">runtime_api</span>().<span class="ident">elasticity</span>(<span class="ident">block</span>).<span class="ident">ok</span>()<span class="question-mark">?</span>
-		} <span class="kw">else</span> {
-			<span class="prelude-val">None</span>
-		}
-	}
-
-	<span class="kw">fn</span> <span class="ident">is_eip1559</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">block</span>: <span class="kw-2">&amp;</span><span class="ident">BlockId</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>) -&gt; <span class="ident">bool</span> {
-		<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">api_version</span>)) <span class="op">=</span> <span class="self">self</span>
-			.<span class="ident">client</span>
-			.<span class="ident">runtime_api</span>()
-			.<span class="ident">api_version</span>::<span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">EthereumRuntimeRPCApi</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="ident">block</span>)
+	<span class="kw">fn </span>is_eip1559(<span class="kw-2">&amp;</span><span class="self">self</span>, block: <span class="kw-2">&amp;</span>BlockId&lt;Block&gt;) -&gt; bool {
+		<span class="kw">if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(api_version)) = <span class="self">self
+			</span>.client
+			.runtime_api()
+			.api_version::&lt;<span class="kw">dyn </span>EthereumRuntimeRPCApi&lt;Block&gt;&gt;(block)
 		{
-			<span class="kw">return</span> <span class="ident">api_version</span> <span class="op">&gt;</span><span class="op">=</span> <span class="number">2</span>;
+			<span class="kw">return </span>api_version &gt;= <span class="number">2</span>;
 		}
-		<span class="bool-val">false</span>
-	}
+		<span class="bool-val">false
+	</span>}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="fc_rpc" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (7fe022f5a 2022-07-24)" ></div>
-</body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="fc_rpc" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (81f391930 2022-10-09)" ></div></body></html>

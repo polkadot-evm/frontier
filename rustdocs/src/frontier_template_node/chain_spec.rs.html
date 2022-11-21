@@ -1,10 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `template/node/src/chain_spec.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>chain_spec.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../frontier_template_node/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a><h2 class="location"></h2>
-    </nav>
-    <nav class="sidebar"><a class="sidebar-logo" href="../../frontier_template_node/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../frontier_template_node/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1">
-                                <a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div>
-                        </div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `template/node/src/chain_spec.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>chain_spec.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><a class="sidebar-logo" href="../../frontier_template_node/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../frontier_template_node/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -231,233 +225,232 @@
 <span id="225">225</span>
 <span id="226">226</span>
 <span id="227">227</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">collections::BTreeMap</span>, <span class="ident">str::FromStr</span>};
+</pre><pre class="rust"><code><span class="kw">use </span>std::{collections::BTreeMap, str::FromStr};
 
-<span class="kw">use</span> <span class="ident">sc_service::ChainType</span>;
-<span class="kw">use</span> <span class="ident">sp_consensus_aura::sr25519::AuthorityId</span> <span class="kw">as</span> <span class="ident">AuraId</span>;
-<span class="kw">use</span> <span class="ident">sp_core</span>::{<span class="ident">sr25519</span>, <span class="ident">Pair</span>, <span class="ident">Public</span>, <span class="ident">H160</span>, <span class="ident">U256</span>};
-<span class="kw">use</span> <span class="ident">sp_finality_grandpa::AuthorityId</span> <span class="kw">as</span> <span class="ident">GrandpaId</span>;
-<span class="kw">use</span> <span class="ident">sp_runtime::traits</span>::{<span class="ident">IdentifyAccount</span>, <span class="ident">Verify</span>};
+<span class="kw">use </span>sc_service::ChainType;
+<span class="kw">use </span>sp_consensus_aura::sr25519::AuthorityId <span class="kw">as </span>AuraId;
+<span class="kw">use </span>sp_core::{sr25519, Pair, Public, H160, U256};
+<span class="kw">use </span>sp_finality_grandpa::AuthorityId <span class="kw">as </span>GrandpaId;
+<span class="kw">use </span>sp_runtime::traits::{IdentifyAccount, Verify};
 
-<span class="kw">use</span> <span class="ident">frontier_template_runtime</span>::{<span class="ident">AccountId</span>, <span class="ident">GenesisConfig</span>, <span class="ident">Signature</span>, <span class="ident">WASM_BINARY</span>};
+<span class="kw">use </span>frontier_template_runtime::{AccountId, GenesisConfig, Signature, WASM_BINARY};
 
-<span class="comment">// The URL for the telemetry server.</span>
-<span class="comment">// const STAGING_TELEMETRY_URL: &amp;str = &quot;wss://telemetry.polkadot.io/submit/&quot;;</span>
+<span class="comment">// The URL for the telemetry server.
+// const STAGING_TELEMETRY_URL: &amp;str = &quot;wss://telemetry.polkadot.io/submit/&quot;;
 
-<span class="doccomment">/// Specialized `ChainSpec`. This is a specialization of the general Substrate ChainSpec type.</span>
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">ChainSpec</span> <span class="op">=</span> <span class="ident">sc_service::GenericChainSpec</span><span class="op">&lt;</span><span class="ident">GenesisConfig</span><span class="op">&gt;</span>;
+</span><span class="doccomment">/// Specialized `ChainSpec`. This is a specialization of the general Substrate ChainSpec type.
+</span><span class="kw">pub type </span>ChainSpec = sc_service::GenericChainSpec&lt;GenesisConfig&gt;;
 
-<span class="doccomment">/// Generate a crypto pair from seed.</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_from_seed</span><span class="op">&lt;</span><span class="ident">TPublic</span>: <span class="ident">Public</span><span class="op">&gt;</span>(<span class="ident">seed</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="op">&lt;</span><span class="ident">TPublic::Pair</span> <span class="kw">as</span> <span class="ident">Pair</span><span class="op">&gt;</span><span class="ident">::Public</span> {
-	<span class="ident">TPublic::Pair::from_string</span>(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">&quot;//{}&quot;</span>, <span class="ident">seed</span>), <span class="prelude-val">None</span>)
-		.<span class="ident">expect</span>(<span class="string">&quot;static values are valid; qed&quot;</span>)
-		.<span class="ident">public</span>()
+<span class="doccomment">/// Generate a crypto pair from seed.
+</span><span class="kw">pub fn </span>get_from_seed&lt;TPublic: Public&gt;(seed: <span class="kw-2">&amp;</span>str) -&gt; &lt;TPublic::Pair <span class="kw">as </span>Pair&gt;::Public {
+	TPublic::Pair::from_string(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">&quot;//{}&quot;</span>, seed), <span class="prelude-val">None</span>)
+		.expect(<span class="string">&quot;static values are valid; qed&quot;</span>)
+		.public()
 }
 
-<span class="kw">type</span> <span class="ident">AccountPublic</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Signature</span> <span class="kw">as</span> <span class="ident">Verify</span><span class="op">&gt;</span><span class="ident">::Signer</span>;
+<span class="kw">type </span>AccountPublic = &lt;Signature <span class="kw">as </span>Verify&gt;::Signer;
 
-<span class="doccomment">/// Generate an account ID from seed.</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_account_id_from_seed</span><span class="op">&lt;</span><span class="ident">TPublic</span>: <span class="ident">Public</span><span class="op">&gt;</span>(<span class="ident">seed</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="ident">AccountId</span>
-<span class="kw">where</span>
-	<span class="ident">AccountPublic</span>: <span class="ident">From</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">TPublic::Pair</span> <span class="kw">as</span> <span class="ident">Pair</span><span class="op">&gt;</span><span class="ident">::Public</span><span class="op">&gt;</span>,
+<span class="doccomment">/// Generate an account ID from seed.
+</span><span class="kw">pub fn </span>get_account_id_from_seed&lt;TPublic: Public&gt;(seed: <span class="kw-2">&amp;</span>str) -&gt; AccountId
+<span class="kw">where
+	</span>AccountPublic: From&lt;&lt;TPublic::Pair <span class="kw">as </span>Pair&gt;::Public&gt;,
 {
-	<span class="ident">AccountPublic::from</span>(<span class="ident">get_from_seed</span>::<span class="op">&lt;</span><span class="ident">TPublic</span><span class="op">&gt;</span>(<span class="ident">seed</span>)).<span class="ident">into_account</span>()
+	AccountPublic::from(get_from_seed::&lt;TPublic&gt;(seed)).into_account()
 }
 
-<span class="doccomment">/// Generate an Aura authority key.</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">authority_keys_from_seed</span>(<span class="ident">s</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; (<span class="ident">AuraId</span>, <span class="ident">GrandpaId</span>) {
-	(<span class="ident">get_from_seed</span>::<span class="op">&lt;</span><span class="ident">AuraId</span><span class="op">&gt;</span>(<span class="ident">s</span>), <span class="ident">get_from_seed</span>::<span class="op">&lt;</span><span class="ident">GrandpaId</span><span class="op">&gt;</span>(<span class="ident">s</span>))
+<span class="doccomment">/// Generate an Aura authority key.
+</span><span class="kw">pub fn </span>authority_keys_from_seed(s: <span class="kw-2">&amp;</span>str) -&gt; (AuraId, GrandpaId) {
+	(get_from_seed::&lt;AuraId&gt;(s), get_from_seed::&lt;GrandpaId&gt;(s))
 }
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">development_config</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">ChainSpec</span>, <span class="ident">String</span><span class="op">&gt;</span> {
-	<span class="kw">let</span> <span class="ident">wasm_binary</span> <span class="op">=</span> <span class="ident">WASM_BINARY</span>.<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="string">&quot;Development wasm not available&quot;</span>.<span class="ident">to_string</span>())<span class="question-mark">?</span>;
+<span class="kw">pub fn </span>development_config() -&gt; <span class="prelude-ty">Result</span>&lt;ChainSpec, String&gt; {
+	<span class="kw">let </span>wasm_binary = WASM_BINARY.ok_or_else(|| <span class="string">&quot;Development wasm not available&quot;</span>.to_string())<span class="question-mark">?</span>;
 
-	<span class="prelude-val">Ok</span>(<span class="ident">ChainSpec::from_genesis</span>(
-		<span class="comment">// Name</span>
-		<span class="string">&quot;Development&quot;</span>,
-		<span class="comment">// ID</span>
-		<span class="string">&quot;dev&quot;</span>,
-		<span class="ident">ChainType::Development</span>,
-		<span class="kw">move</span> <span class="op">|</span><span class="op">|</span> {
-			<span class="ident">testnet_genesis</span>(
-				<span class="ident">wasm_binary</span>,
-				<span class="comment">// Sudo account</span>
-				<span class="ident">get_account_id_from_seed</span>::<span class="op">&lt;</span><span class="ident">sr25519::Public</span><span class="op">&gt;</span>(<span class="string">&quot;Alice&quot;</span>),
-				<span class="comment">// Pre-funded accounts</span>
-				<span class="macro">vec!</span>[
-					<span class="ident">get_account_id_from_seed</span>::<span class="op">&lt;</span><span class="ident">sr25519::Public</span><span class="op">&gt;</span>(<span class="string">&quot;Alice&quot;</span>),
-					<span class="ident">get_account_id_from_seed</span>::<span class="op">&lt;</span><span class="ident">sr25519::Public</span><span class="op">&gt;</span>(<span class="string">&quot;Bob&quot;</span>),
-					<span class="ident">get_account_id_from_seed</span>::<span class="op">&lt;</span><span class="ident">sr25519::Public</span><span class="op">&gt;</span>(<span class="string">&quot;Alice//stash&quot;</span>),
-					<span class="ident">get_account_id_from_seed</span>::<span class="op">&lt;</span><span class="ident">sr25519::Public</span><span class="op">&gt;</span>(<span class="string">&quot;Bob//stash&quot;</span>),
+	<span class="prelude-val">Ok</span>(ChainSpec::from_genesis(
+		<span class="comment">// Name
+		</span><span class="string">&quot;Development&quot;</span>,
+		<span class="comment">// ID
+		</span><span class="string">&quot;dev&quot;</span>,
+		ChainType::Development,
+		<span class="kw">move </span>|| {
+			testnet_genesis(
+				wasm_binary,
+				<span class="comment">// Sudo account
+				</span>get_account_id_from_seed::&lt;sr25519::Public&gt;(<span class="string">&quot;Alice&quot;</span>),
+				<span class="comment">// Pre-funded accounts
+				</span><span class="macro">vec!</span>[
+					get_account_id_from_seed::&lt;sr25519::Public&gt;(<span class="string">&quot;Alice&quot;</span>),
+					get_account_id_from_seed::&lt;sr25519::Public&gt;(<span class="string">&quot;Bob&quot;</span>),
+					get_account_id_from_seed::&lt;sr25519::Public&gt;(<span class="string">&quot;Alice//stash&quot;</span>),
+					get_account_id_from_seed::&lt;sr25519::Public&gt;(<span class="string">&quot;Bob//stash&quot;</span>),
 				],
-				<span class="comment">// Initial PoA authorities</span>
-				<span class="macro">vec!</span>[<span class="ident">authority_keys_from_seed</span>(<span class="string">&quot;Alice&quot;</span>)],
+				<span class="comment">// Initial PoA authorities
+				</span><span class="macro">vec!</span>[authority_keys_from_seed(<span class="string">&quot;Alice&quot;</span>)],
 				<span class="number">42</span>,
 			)
 		},
-		<span class="comment">// Bootnodes</span>
-		<span class="macro">vec!</span>[],
-		<span class="comment">// Telemetry</span>
+		<span class="comment">// Bootnodes
+		</span><span class="macro">vec!</span>[],
+		<span class="comment">// Telemetry
+		</span><span class="prelude-val">None</span>,
+		<span class="comment">// Protocol ID
+		</span><span class="prelude-val">None</span>,
 		<span class="prelude-val">None</span>,
-		<span class="comment">// Protocol ID</span>
-		<span class="prelude-val">None</span>,
-		<span class="prelude-val">None</span>,
-		<span class="comment">// Properties</span>
-		<span class="prelude-val">None</span>,
-		<span class="comment">// Extensions</span>
-		<span class="prelude-val">None</span>,
+		<span class="comment">// Properties
+		</span><span class="prelude-val">None</span>,
+		<span class="comment">// Extensions
+		</span><span class="prelude-val">None</span>,
 	))
 }
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">local_testnet_config</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">ChainSpec</span>, <span class="ident">String</span><span class="op">&gt;</span> {
-	<span class="kw">let</span> <span class="ident">wasm_binary</span> <span class="op">=</span> <span class="ident">WASM_BINARY</span>.<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="string">&quot;Development wasm not available&quot;</span>.<span class="ident">to_string</span>())<span class="question-mark">?</span>;
+<span class="kw">pub fn </span>local_testnet_config() -&gt; <span class="prelude-ty">Result</span>&lt;ChainSpec, String&gt; {
+	<span class="kw">let </span>wasm_binary = WASM_BINARY.ok_or_else(|| <span class="string">&quot;Development wasm not available&quot;</span>.to_string())<span class="question-mark">?</span>;
 
-	<span class="prelude-val">Ok</span>(<span class="ident">ChainSpec::from_genesis</span>(
-		<span class="comment">// Name</span>
-		<span class="string">&quot;Local Testnet&quot;</span>,
-		<span class="comment">// ID</span>
-		<span class="string">&quot;local_testnet&quot;</span>,
-		<span class="ident">ChainType::Local</span>,
-		<span class="kw">move</span> <span class="op">|</span><span class="op">|</span> {
-			<span class="ident">testnet_genesis</span>(
-				<span class="ident">wasm_binary</span>,
-				<span class="comment">// Initial PoA authorities</span>
-				<span class="comment">// Sudo account</span>
-				<span class="ident">get_account_id_from_seed</span>::<span class="op">&lt;</span><span class="ident">sr25519::Public</span><span class="op">&gt;</span>(<span class="string">&quot;Alice&quot;</span>),
-				<span class="comment">// Pre-funded accounts</span>
-				<span class="macro">vec!</span>[
-					<span class="ident">get_account_id_from_seed</span>::<span class="op">&lt;</span><span class="ident">sr25519::Public</span><span class="op">&gt;</span>(<span class="string">&quot;Alice&quot;</span>),
-					<span class="ident">get_account_id_from_seed</span>::<span class="op">&lt;</span><span class="ident">sr25519::Public</span><span class="op">&gt;</span>(<span class="string">&quot;Bob&quot;</span>),
-					<span class="ident">get_account_id_from_seed</span>::<span class="op">&lt;</span><span class="ident">sr25519::Public</span><span class="op">&gt;</span>(<span class="string">&quot;Charlie&quot;</span>),
-					<span class="ident">get_account_id_from_seed</span>::<span class="op">&lt;</span><span class="ident">sr25519::Public</span><span class="op">&gt;</span>(<span class="string">&quot;Dave&quot;</span>),
-					<span class="ident">get_account_id_from_seed</span>::<span class="op">&lt;</span><span class="ident">sr25519::Public</span><span class="op">&gt;</span>(<span class="string">&quot;Eve&quot;</span>),
-					<span class="ident">get_account_id_from_seed</span>::<span class="op">&lt;</span><span class="ident">sr25519::Public</span><span class="op">&gt;</span>(<span class="string">&quot;Ferdie&quot;</span>),
-					<span class="ident">get_account_id_from_seed</span>::<span class="op">&lt;</span><span class="ident">sr25519::Public</span><span class="op">&gt;</span>(<span class="string">&quot;Alice//stash&quot;</span>),
-					<span class="ident">get_account_id_from_seed</span>::<span class="op">&lt;</span><span class="ident">sr25519::Public</span><span class="op">&gt;</span>(<span class="string">&quot;Bob//stash&quot;</span>),
-					<span class="ident">get_account_id_from_seed</span>::<span class="op">&lt;</span><span class="ident">sr25519::Public</span><span class="op">&gt;</span>(<span class="string">&quot;Charlie//stash&quot;</span>),
-					<span class="ident">get_account_id_from_seed</span>::<span class="op">&lt;</span><span class="ident">sr25519::Public</span><span class="op">&gt;</span>(<span class="string">&quot;Dave//stash&quot;</span>),
-					<span class="ident">get_account_id_from_seed</span>::<span class="op">&lt;</span><span class="ident">sr25519::Public</span><span class="op">&gt;</span>(<span class="string">&quot;Eve//stash&quot;</span>),
-					<span class="ident">get_account_id_from_seed</span>::<span class="op">&lt;</span><span class="ident">sr25519::Public</span><span class="op">&gt;</span>(<span class="string">&quot;Ferdie//stash&quot;</span>),
+	<span class="prelude-val">Ok</span>(ChainSpec::from_genesis(
+		<span class="comment">// Name
+		</span><span class="string">&quot;Local Testnet&quot;</span>,
+		<span class="comment">// ID
+		</span><span class="string">&quot;local_testnet&quot;</span>,
+		ChainType::Local,
+		<span class="kw">move </span>|| {
+			testnet_genesis(
+				wasm_binary,
+				<span class="comment">// Initial PoA authorities
+				// Sudo account
+				</span>get_account_id_from_seed::&lt;sr25519::Public&gt;(<span class="string">&quot;Alice&quot;</span>),
+				<span class="comment">// Pre-funded accounts
+				</span><span class="macro">vec!</span>[
+					get_account_id_from_seed::&lt;sr25519::Public&gt;(<span class="string">&quot;Alice&quot;</span>),
+					get_account_id_from_seed::&lt;sr25519::Public&gt;(<span class="string">&quot;Bob&quot;</span>),
+					get_account_id_from_seed::&lt;sr25519::Public&gt;(<span class="string">&quot;Charlie&quot;</span>),
+					get_account_id_from_seed::&lt;sr25519::Public&gt;(<span class="string">&quot;Dave&quot;</span>),
+					get_account_id_from_seed::&lt;sr25519::Public&gt;(<span class="string">&quot;Eve&quot;</span>),
+					get_account_id_from_seed::&lt;sr25519::Public&gt;(<span class="string">&quot;Ferdie&quot;</span>),
+					get_account_id_from_seed::&lt;sr25519::Public&gt;(<span class="string">&quot;Alice//stash&quot;</span>),
+					get_account_id_from_seed::&lt;sr25519::Public&gt;(<span class="string">&quot;Bob//stash&quot;</span>),
+					get_account_id_from_seed::&lt;sr25519::Public&gt;(<span class="string">&quot;Charlie//stash&quot;</span>),
+					get_account_id_from_seed::&lt;sr25519::Public&gt;(<span class="string">&quot;Dave//stash&quot;</span>),
+					get_account_id_from_seed::&lt;sr25519::Public&gt;(<span class="string">&quot;Eve//stash&quot;</span>),
+					get_account_id_from_seed::&lt;sr25519::Public&gt;(<span class="string">&quot;Ferdie//stash&quot;</span>),
 				],
 				<span class="macro">vec!</span>[
-					<span class="ident">authority_keys_from_seed</span>(<span class="string">&quot;Alice&quot;</span>),
-					<span class="ident">authority_keys_from_seed</span>(<span class="string">&quot;Bob&quot;</span>),
+					authority_keys_from_seed(<span class="string">&quot;Alice&quot;</span>),
+					authority_keys_from_seed(<span class="string">&quot;Bob&quot;</span>),
 				],
 				<span class="number">42</span>,
 			)
 		},
-		<span class="comment">// Bootnodes</span>
-		<span class="macro">vec!</span>[],
-		<span class="comment">// Telemetry</span>
+		<span class="comment">// Bootnodes
+		</span><span class="macro">vec!</span>[],
+		<span class="comment">// Telemetry
+		</span><span class="prelude-val">None</span>,
+		<span class="comment">// Protocol ID
+		</span><span class="prelude-val">None</span>,
 		<span class="prelude-val">None</span>,
-		<span class="comment">// Protocol ID</span>
-		<span class="prelude-val">None</span>,
-		<span class="prelude-val">None</span>,
-		<span class="comment">// Properties</span>
-		<span class="prelude-val">None</span>,
-		<span class="comment">// Extensions</span>
-		<span class="prelude-val">None</span>,
+		<span class="comment">// Properties
+		</span><span class="prelude-val">None</span>,
+		<span class="comment">// Extensions
+		</span><span class="prelude-val">None</span>,
 	))
 }
 
-<span class="doccomment">/// Configure initial storage state for FRAME modules.</span>
-<span class="kw">fn</span> <span class="ident">testnet_genesis</span>(
-	<span class="ident">wasm_binary</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>],
-	<span class="ident">sudo_key</span>: <span class="ident">AccountId</span>,
-	<span class="ident">endowed_accounts</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span>,
-	<span class="ident">initial_authorities</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">AuraId</span>, <span class="ident">GrandpaId</span>)<span class="op">&gt;</span>,
-	<span class="ident">chain_id</span>: <span class="ident">u64</span>,
-) -&gt; <span class="ident">GenesisConfig</span> {
-	<span class="kw">use</span> <span class="ident">frontier_template_runtime</span>::{
-		<span class="ident">AuraConfig</span>, <span class="ident">BalancesConfig</span>, <span class="ident">EVMChainIdConfig</span>, <span class="ident">EVMConfig</span>, <span class="ident">GrandpaConfig</span>, <span class="ident">SudoConfig</span>,
-		<span class="ident">SystemConfig</span>,
+<span class="doccomment">/// Configure initial storage state for FRAME modules.
+</span><span class="kw">fn </span>testnet_genesis(
+	wasm_binary: <span class="kw-2">&amp;</span>[u8],
+	sudo_key: AccountId,
+	endowed_accounts: Vec&lt;AccountId&gt;,
+	initial_authorities: Vec&lt;(AuraId, GrandpaId)&gt;,
+	chain_id: u64,
+) -&gt; GenesisConfig {
+	<span class="kw">use </span>frontier_template_runtime::{
+		AuraConfig, BalancesConfig, EVMChainIdConfig, EVMConfig, GrandpaConfig, SudoConfig,
+		SystemConfig,
 	};
 
-	<span class="ident">GenesisConfig</span> {
-		<span class="comment">// System</span>
-		<span class="ident">system</span>: <span class="ident">SystemConfig</span> {
-			<span class="comment">// Add Wasm runtime to storage.</span>
-			<span class="ident">code</span>: <span class="ident">wasm_binary</span>.<span class="ident">to_vec</span>(),
+	GenesisConfig {
+		<span class="comment">// System
+		</span>system: SystemConfig {
+			<span class="comment">// Add Wasm runtime to storage.
+			</span>code: wasm_binary.to_vec(),
 		},
-		<span class="ident">sudo</span>: <span class="ident">SudoConfig</span> {
-			<span class="comment">// Assign network admin rights.</span>
-			<span class="ident">key</span>: <span class="prelude-val">Some</span>(<span class="ident">sudo_key</span>),
-		},
-
-		<span class="comment">// Monetary</span>
-		<span class="ident">balances</span>: <span class="ident">BalancesConfig</span> {
-			<span class="comment">// Configure endowed accounts with initial balance of 1 &lt;&lt; 60.</span>
-			<span class="ident">balances</span>: <span class="ident">endowed_accounts</span>
-				.<span class="ident">iter</span>()
-				.<span class="ident">cloned</span>()
-				.<span class="ident">map</span>(<span class="op">|</span><span class="ident">k</span><span class="op">|</span> (<span class="ident">k</span>, <span class="number">1</span> <span class="op">&lt;</span><span class="op">&lt;</span> <span class="number">60</span>))
-				.<span class="ident">collect</span>(),
-		},
-		<span class="ident">transaction_payment</span>: <span class="ident">Default::default</span>(),
-
-		<span class="comment">// Consensus</span>
-		<span class="ident">aura</span>: <span class="ident">AuraConfig</span> {
-			<span class="ident">authorities</span>: <span class="ident">initial_authorities</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> (<span class="ident">x</span>.<span class="number">0</span>.<span class="ident">clone</span>())).<span class="ident">collect</span>(),
-		},
-		<span class="ident">grandpa</span>: <span class="ident">GrandpaConfig</span> {
-			<span class="ident">authorities</span>: <span class="ident">initial_authorities</span>
-				.<span class="ident">iter</span>()
-				.<span class="ident">map</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> (<span class="ident">x</span>.<span class="number">1</span>.<span class="ident">clone</span>(), <span class="number">1</span>))
-				.<span class="ident">collect</span>(),
+		sudo: SudoConfig {
+			<span class="comment">// Assign network admin rights.
+			</span>key: <span class="prelude-val">Some</span>(sudo_key),
 		},
 
-		<span class="comment">// EVM compatibility</span>
-		<span class="ident">evm_chain_id</span>: <span class="ident">EVMChainIdConfig</span> { <span class="ident">chain_id</span> },
-		<span class="ident">evm</span>: <span class="ident">EVMConfig</span> {
-			<span class="ident">accounts</span>: {
-				<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">map</span> <span class="op">=</span> <span class="ident">BTreeMap::new</span>();
-				<span class="ident">map</span>.<span class="ident">insert</span>(
-					<span class="comment">// H160 address of Alice dev account</span>
-					<span class="comment">// Derived from SS58 (42 prefix) address</span>
-					<span class="comment">// SS58: 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY</span>
-					<span class="comment">// hex: 0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d</span>
-					<span class="comment">// Using the full hex key, truncating to the first 20 bytes (the first 40 hex chars)</span>
-					<span class="ident">H160::from_str</span>(<span class="string">&quot;d43593c715fdd31c61141abd04a99fd6822c8558&quot;</span>)
-						.<span class="ident">expect</span>(<span class="string">&quot;internal H160 is valid; qed&quot;</span>),
-					<span class="ident">fp_evm::GenesisAccount</span> {
-						<span class="ident">balance</span>: <span class="ident">U256::from_str</span>(<span class="string">&quot;0xffffffffffffffffffffffffffffffff&quot;</span>)
-							.<span class="ident">expect</span>(<span class="string">&quot;internal U256 is valid; qed&quot;</span>),
-						<span class="ident">code</span>: <span class="ident">Default::default</span>(),
-						<span class="ident">nonce</span>: <span class="ident">Default::default</span>(),
-						<span class="ident">storage</span>: <span class="ident">Default::default</span>(),
+		<span class="comment">// Monetary
+		</span>balances: BalancesConfig {
+			<span class="comment">// Configure endowed accounts with initial balance of 1 &lt;&lt; 60.
+			</span>balances: endowed_accounts
+				.iter()
+				.cloned()
+				.map(|k| (k, <span class="number">1 </span>&lt;&lt; <span class="number">60</span>))
+				.collect(),
+		},
+		transaction_payment: Default::default(),
+
+		<span class="comment">// Consensus
+		</span>aura: AuraConfig {
+			authorities: initial_authorities.iter().map(|x| (x.<span class="number">0</span>.clone())).collect(),
+		},
+		grandpa: GrandpaConfig {
+			authorities: initial_authorities
+				.iter()
+				.map(|x| (x.<span class="number">1</span>.clone(), <span class="number">1</span>))
+				.collect(),
+		},
+
+		<span class="comment">// EVM compatibility
+		</span>evm_chain_id: EVMChainIdConfig { chain_id },
+		evm: EVMConfig {
+			accounts: {
+				<span class="kw">let </span><span class="kw-2">mut </span>map = BTreeMap::new();
+				map.insert(
+					<span class="comment">// H160 address of Alice dev account
+					// Derived from SS58 (42 prefix) address
+					// SS58: 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY
+					// hex: 0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d
+					// Using the full hex key, truncating to the first 20 bytes (the first 40 hex chars)
+					</span>H160::from_str(<span class="string">&quot;d43593c715fdd31c61141abd04a99fd6822c8558&quot;</span>)
+						.expect(<span class="string">&quot;internal H160 is valid; qed&quot;</span>),
+					fp_evm::GenesisAccount {
+						balance: U256::from_str(<span class="string">&quot;0xffffffffffffffffffffffffffffffff&quot;</span>)
+							.expect(<span class="string">&quot;internal U256 is valid; qed&quot;</span>),
+						code: Default::default(),
+						nonce: Default::default(),
+						storage: Default::default(),
 					},
 				);
-				<span class="ident">map</span>.<span class="ident">insert</span>(
-					<span class="comment">// H160 address of CI test runner account</span>
-					<span class="ident">H160::from_str</span>(<span class="string">&quot;6be02d1d3665660d22ff9624b7be0551ee1ac91b&quot;</span>)
-						.<span class="ident">expect</span>(<span class="string">&quot;internal H160 is valid; qed&quot;</span>),
-					<span class="ident">fp_evm::GenesisAccount</span> {
-						<span class="ident">balance</span>: <span class="ident">U256::from_str</span>(<span class="string">&quot;0xffffffffffffffffffffffffffffffff&quot;</span>)
-							.<span class="ident">expect</span>(<span class="string">&quot;internal U256 is valid; qed&quot;</span>),
-						<span class="ident">code</span>: <span class="ident">Default::default</span>(),
-						<span class="ident">nonce</span>: <span class="ident">Default::default</span>(),
-						<span class="ident">storage</span>: <span class="ident">Default::default</span>(),
+				map.insert(
+					<span class="comment">// H160 address of CI test runner account
+					</span>H160::from_str(<span class="string">&quot;6be02d1d3665660d22ff9624b7be0551ee1ac91b&quot;</span>)
+						.expect(<span class="string">&quot;internal H160 is valid; qed&quot;</span>),
+					fp_evm::GenesisAccount {
+						balance: U256::from_str(<span class="string">&quot;0xffffffffffffffffffffffffffffffff&quot;</span>)
+							.expect(<span class="string">&quot;internal U256 is valid; qed&quot;</span>),
+						code: Default::default(),
+						nonce: Default::default(),
+						storage: Default::default(),
 					},
 				);
-				<span class="ident">map</span>.<span class="ident">insert</span>(
-					<span class="comment">// H160 address for benchmark usage</span>
-					<span class="ident">H160::from_str</span>(<span class="string">&quot;1000000000000000000000000000000000000001&quot;</span>)
-						.<span class="ident">expect</span>(<span class="string">&quot;internal H160 is valid; qed&quot;</span>),
-					<span class="ident">fp_evm::GenesisAccount</span> {
-						<span class="ident">nonce</span>: <span class="ident">U256::from</span>(<span class="number">1</span>),
-						<span class="ident">balance</span>: <span class="ident">U256::from</span>(<span class="number">1_000_000_000_000_000_000_000_000u128</span>),
-						<span class="ident">storage</span>: <span class="ident">Default::default</span>(),
-						<span class="ident">code</span>: <span class="macro">vec!</span>[<span class="number">0x00</span>],
+				map.insert(
+					<span class="comment">// H160 address for benchmark usage
+					</span>H160::from_str(<span class="string">&quot;1000000000000000000000000000000000000001&quot;</span>)
+						.expect(<span class="string">&quot;internal H160 is valid; qed&quot;</span>),
+					fp_evm::GenesisAccount {
+						nonce: U256::from(<span class="number">1</span>),
+						balance: U256::from(<span class="number">1_000_000_000_000_000_000_000_000u128</span>),
+						storage: Default::default(),
+						code: <span class="macro">vec!</span>[<span class="number">0x00</span>],
 					},
 				);
-				<span class="ident">map</span>
+				map
 			},
 		},
-		<span class="ident">ethereum</span>: <span class="ident">Default::default</span>(),
-		<span class="ident">dynamic_fee</span>: <span class="ident">Default::default</span>(),
-		<span class="ident">base_fee</span>: <span class="ident">Default::default</span>(),
+		ethereum: Default::default(),
+		dynamic_fee: Default::default(),
+		base_fee: Default::default(),
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="frontier_template_node" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (7fe022f5a 2022-07-24)" ></div>
-</body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="frontier_template_node" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (81f391930 2022-10-09)" ></div></body></html>

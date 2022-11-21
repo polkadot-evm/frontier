@@ -1,10 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `client/cli/src/frontier_db_cmd/tests.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>tests.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../fc_cli/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div>
-        </a><h2 class="location"></h2>
-    </nav>
-    <nav class="sidebar"><a class="sidebar-logo" href="../../../fc_cli/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div>
-        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../fc_cli/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1">
-                                <a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div>
-                        </div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `client/cli/src/frontier_db_cmd/tests.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>tests.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../../normalize.css"><link rel="stylesheet" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../../ayu.css" disabled><link rel="stylesheet" href="../../../dark.css" disabled><link rel="stylesheet" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><a class="sidebar-logo" href="../../../fc_cli/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../fc_cli/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -826,828 +820,827 @@
 <span id="820">820</span>
 <span id="821">821</span>
 <span id="822">822</span>
-</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
-<span class="comment">// This file is part of Frontier.</span>
-<span class="comment">//</span>
-<span class="comment">// Copyright (c) 2020 Parity Technologies (UK) Ltd.</span>
-<span class="comment">//</span>
-<span class="comment">// This program is free software: you can redistribute it and/or modify</span>
-<span class="comment">// it under the terms of the GNU General Public License as published by</span>
-<span class="comment">// the Free Software Foundation, either version 3 of the License, or</span>
-<span class="comment">// (at your option) any later version.</span>
-<span class="comment">//</span>
-<span class="comment">// This program is distributed in the hope that it will be useful,</span>
-<span class="comment">// but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
-<span class="comment">// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the</span>
-<span class="comment">// GNU General Public License for more details.</span>
-<span class="comment">//</span>
-<span class="comment">// You should have received a copy of the GNU General Public License</span>
-<span class="comment">// along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.</span>
+</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
+// This file is part of Frontier.
+//
+// Copyright (c) 2020 Parity Technologies (UK) Ltd.
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
-<span class="kw">mod</span> <span class="ident">tests</span> {
-	<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">collections::HashMap</span>, <span class="ident">path::PathBuf</span>, <span class="ident">str::FromStr</span>, <span class="ident">sync::Arc</span>};
+</span><span class="attribute">#[cfg(test)]
+</span><span class="kw">mod </span>tests {
+	<span class="kw">use </span>std::{collections::HashMap, path::PathBuf, str::FromStr, sync::Arc};
 
-	<span class="kw">use</span> <span class="ident">codec::Encode</span>;
-	<span class="kw">use</span> <span class="ident">ethereum_types::H256</span>;
-	<span class="kw">use</span> <span class="ident">futures::executor</span>;
-	<span class="kw">use</span> <span class="ident">serde::Serialize</span>;
-	<span class="kw">use</span> <span class="ident">tempfile::tempdir</span>;
-	<span class="comment">// Substrate</span>
-	<span class="kw">use</span> <span class="ident">sc_block_builder::BlockBuilderProvider</span>;
-	<span class="kw">use</span> <span class="ident">sp_consensus::BlockOrigin</span>;
-	<span class="kw">use</span> <span class="ident">sp_io::hashing::twox_128</span>;
-	<span class="kw">use</span> <span class="ident">sp_runtime</span>::{
-		<span class="ident">generic</span>::{<span class="ident">Block</span>, <span class="ident">BlockId</span>, <span class="ident">Header</span>},
-		<span class="ident">traits</span>::{<span class="ident">BlakeTwo256</span>, <span class="ident">Block</span> <span class="kw">as</span> <span class="ident">BlockT</span>},
+	<span class="kw">use </span>codec::Encode;
+	<span class="kw">use </span>ethereum_types::H256;
+	<span class="kw">use </span>futures::executor;
+	<span class="kw">use </span>serde::Serialize;
+	<span class="kw">use </span>tempfile::tempdir;
+	<span class="comment">// Substrate
+	</span><span class="kw">use </span>sc_block_builder::BlockBuilderProvider;
+	<span class="kw">use </span>sp_consensus::BlockOrigin;
+	<span class="kw">use </span>sp_io::hashing::twox_128;
+	<span class="kw">use </span>sp_runtime::{
+		generic::{Block, BlockId, Header},
+		traits::{BlakeTwo256, Block <span class="kw">as </span>BlockT},
 	};
-	<span class="kw">use</span> <span class="ident">substrate_test_runtime_client</span>::{
-		<span class="ident">BlockBuilderExt</span>, <span class="ident">ClientBlockImportExt</span>, <span class="ident">ClientExt</span>, <span class="ident">DefaultTestClientBuilderExt</span>,
-		<span class="ident">TestClientBuilder</span>,
+	<span class="kw">use </span>substrate_test_runtime_client::{
+		BlockBuilderExt, ClientBlockImportExt, ClientExt, DefaultTestClientBuilderExt,
+		TestClientBuilder,
 	};
-	<span class="comment">// Frontier</span>
-	<span class="kw">use</span> <span class="ident">fp_storage</span>::{<span class="ident">EthereumStorageSchema</span>, <span class="ident">ETHEREUM_CURRENT_TRANSACTION_STATUS</span>, <span class="ident">PALLET_ETHEREUM</span>};
-	<span class="kw">use</span> <span class="ident">frontier_template_runtime::RuntimeApi</span>;
+	<span class="comment">// Frontier
+	</span><span class="kw">use </span>fp_storage::{EthereumStorageSchema, ETHEREUM_CURRENT_TRANSACTION_STATUS, PALLET_ETHEREUM};
+	<span class="kw">use </span>frontier_template_runtime::RuntimeApi;
 
-	<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::frontier_db_cmd</span>::{<span class="ident">Column</span>, <span class="ident">FrontierDbCmd</span>, <span class="ident">Operation</span>};
+	<span class="kw">use </span><span class="kw">crate</span>::frontier_db_cmd::{Column, FrontierDbCmd, Operation};
 
-	<span class="kw">type</span> <span class="ident">OpaqueBlock</span> <span class="op">=</span>
-		<span class="ident">Block</span><span class="op">&lt;</span><span class="ident">Header</span><span class="op">&lt;</span><span class="ident">u64</span>, <span class="ident">BlakeTwo256</span><span class="op">&gt;</span>, <span class="ident">substrate_test_runtime_client::runtime::Extrinsic</span><span class="op">&gt;</span>;
+	<span class="kw">type </span>OpaqueBlock =
+		Block&lt;Header&lt;u64, BlakeTwo256&gt;, substrate_test_runtime_client::runtime::Extrinsic&gt;;
 
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">open_frontier_backend</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>(
-		<span class="ident">client</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
-		<span class="ident">path</span>: <span class="ident">PathBuf</span>,
-	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">fc_db::Backend</span><span class="op">&lt;</span><span class="ident">OpaqueBlock</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">String</span><span class="op">&gt;</span>
-	<span class="kw">where</span>
-		<span class="ident">C</span>: <span class="ident">sp_blockchain::HeaderBackend</span><span class="op">&lt;</span><span class="ident">OpaqueBlock</span><span class="op">&gt;</span>,
+	<span class="kw">pub fn </span>open_frontier_backend&lt;C&gt;(
+		client: Arc&lt;C&gt;,
+		path: PathBuf,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;Arc&lt;fc_db::Backend&lt;OpaqueBlock&gt;&gt;, String&gt;
+	<span class="kw">where
+		</span>C: sp_blockchain::HeaderBackend&lt;OpaqueBlock&gt;,
 	{
-		<span class="prelude-val">Ok</span>(<span class="ident">Arc::new</span>(<span class="ident">fc_db::Backend</span>::<span class="op">&lt;</span><span class="ident">OpaqueBlock</span><span class="op">&gt;</span><span class="ident">::new</span>(
-			<span class="ident">client</span>,
-			<span class="kw-2">&amp;</span><span class="ident">fc_db::DatabaseSettings</span> {
-				<span class="ident">source</span>: <span class="ident">sc_client_db::DatabaseSource::RocksDb</span> {
-					<span class="ident">path</span>,
-					<span class="ident">cache_size</span>: <span class="number">0</span>,
+		<span class="prelude-val">Ok</span>(Arc::new(fc_db::Backend::&lt;OpaqueBlock&gt;::new(
+			client,
+			<span class="kw-2">&amp;</span>fc_db::DatabaseSettings {
+				source: sc_client_db::DatabaseSource::RocksDb {
+					path,
+					cache_size: <span class="number">0</span>,
 				},
 			},
 		)<span class="question-mark">?</span>))
 	}
 
-	<span class="kw">fn</span> <span class="ident">storage_prefix_build</span>(<span class="ident">module</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>], <span class="ident">storage</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> {
-		[<span class="ident">twox_128</span>(<span class="ident">module</span>), <span class="ident">twox_128</span>(<span class="ident">storage</span>)].<span class="ident">concat</span>().<span class="ident">to_vec</span>()
+	<span class="kw">fn </span>storage_prefix_build(module: <span class="kw-2">&amp;</span>[u8], storage: <span class="kw-2">&amp;</span>[u8]) -&gt; Vec&lt;u8&gt; {
+		[twox_128(module), twox_128(storage)].concat().to_vec()
 	}
 
-	<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Serialize</span>)]</span>
-	<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">untagged</span>)]</span>
-	<span class="kw">enum</span> <span class="ident">TestValue</span> {
-		<span class="ident">Schema</span>(<span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">H256</span>, <span class="ident">EthereumStorageSchema</span><span class="op">&gt;</span>),
-		<span class="ident">Tips</span>(<span class="ident">Vec</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">OpaqueBlock</span> <span class="kw">as</span> <span class="ident">BlockT</span><span class="op">&gt;</span><span class="ident">::Hash</span><span class="op">&gt;</span>),
-		<span class="ident">Commitment</span>(<span class="op">&lt;</span><span class="ident">OpaqueBlock</span> <span class="kw">as</span> <span class="ident">BlockT</span><span class="op">&gt;</span><span class="ident">::Hash</span>),
+	<span class="attribute">#[derive(Debug, Serialize)]
+	#[serde(untagged)]
+	</span><span class="kw">enum </span>TestValue {
+		Schema(HashMap&lt;H256, EthereumStorageSchema&gt;),
+		Tips(Vec&lt;&lt;OpaqueBlock <span class="kw">as </span>BlockT&gt;::Hash&gt;),
+		Commitment(&lt;OpaqueBlock <span class="kw">as </span>BlockT&gt;::Hash),
 	}
 
-	<span class="kw">fn</span> <span class="ident">cmd</span>(
-		<span class="ident">key</span>: <span class="ident">String</span>,
-		<span class="ident">value</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">PathBuf</span><span class="op">&gt;</span>,
-		<span class="ident">operation</span>: <span class="ident">Operation</span>,
-		<span class="ident">column</span>: <span class="ident">Column</span>,
-	) -&gt; <span class="ident">FrontierDbCmd</span> {
-		<span class="ident">FrontierDbCmd</span> {
-			<span class="ident">operation</span>,
-			<span class="ident">column</span>,
-			<span class="ident">key</span>,
-			<span class="ident">value</span>,
-			<span class="ident">shared_params</span>: <span class="ident">sc_cli::SharedParams</span> {
-				<span class="ident">chain</span>: <span class="prelude-val">None</span>,
-				<span class="ident">dev</span>: <span class="bool-val">true</span>,
-				<span class="ident">base_path</span>: <span class="prelude-val">None</span>,
-				<span class="ident">log</span>: <span class="macro">vec!</span>[],
-				<span class="ident">disable_log_color</span>: <span class="bool-val">true</span>,
-				<span class="ident">enable_log_reloading</span>: <span class="bool-val">true</span>,
-				<span class="ident">tracing_targets</span>: <span class="prelude-val">None</span>,
-				<span class="ident">tracing_receiver</span>: <span class="ident">sc_cli::arg_enums::TracingReceiver::Log</span>,
-				<span class="ident">detailed_log_output</span>: <span class="bool-val">false</span>,
+	<span class="kw">fn </span>cmd(
+		key: String,
+		value: <span class="prelude-ty">Option</span>&lt;PathBuf&gt;,
+		operation: Operation,
+		column: Column,
+	) -&gt; FrontierDbCmd {
+		FrontierDbCmd {
+			operation,
+			column,
+			key,
+			value,
+			shared_params: sc_cli::SharedParams {
+				chain: <span class="prelude-val">None</span>,
+				dev: <span class="bool-val">true</span>,
+				base_path: <span class="prelude-val">None</span>,
+				log: <span class="macro">vec!</span>[],
+				disable_log_color: <span class="bool-val">true</span>,
+				enable_log_reloading: <span class="bool-val">true</span>,
+				tracing_targets: <span class="prelude-val">None</span>,
+				tracing_receiver: sc_cli::arg_enums::TracingReceiver::Log,
+				detailed_log_output: <span class="bool-val">false</span>,
 			},
-			<span class="ident">pruning_params</span>: <span class="ident">sc_cli::PruningParams</span> {
-				<span class="ident">state_pruning</span>: <span class="prelude-val">None</span>,
-				<span class="ident">blocks_pruning</span>: <span class="prelude-val">None</span>,
+			pruning_params: sc_cli::PruningParams {
+				state_pruning: <span class="prelude-val">None</span>,
+				blocks_pruning: <span class="prelude-val">None</span>,
 			},
 		}
 	}
 
-	<span class="kw">fn</span> <span class="ident">schema_test_value</span>() -&gt; <span class="ident">TestValue</span> {
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">inner</span> <span class="op">=</span> <span class="ident">HashMap::new</span>();
-		<span class="ident">inner</span>.<span class="ident">insert</span>(<span class="ident">H256::default</span>(), <span class="ident">EthereumStorageSchema::V1</span>);
-		<span class="ident">TestValue::Schema</span>(<span class="ident">inner</span>)
+	<span class="kw">fn </span>schema_test_value() -&gt; TestValue {
+		<span class="kw">let </span><span class="kw-2">mut </span>inner = HashMap::new();
+		inner.insert(H256::default(), EthereumStorageSchema::V1);
+		TestValue::Schema(inner)
 	}
 
-	<span class="kw">fn</span> <span class="ident">tips_test_value</span>() -&gt; <span class="ident">TestValue</span> {
-		<span class="ident">TestValue::Tips</span>(<span class="macro">vec!</span>[<span class="ident">H256::default</span>()])
+	<span class="kw">fn </span>tips_test_value() -&gt; TestValue {
+		TestValue::Tips(<span class="macro">vec!</span>[H256::default()])
 	}
 
-	<span class="kw">fn</span> <span class="ident">test_json_file</span>(<span class="ident">tmp</span>: <span class="kw-2">&amp;</span><span class="ident">tempfile::TempDir</span>, <span class="ident">value</span>: <span class="kw-2">&amp;</span><span class="ident">TestValue</span>) -&gt; <span class="ident">PathBuf</span> {
-		<span class="kw">let</span> <span class="ident">test_value_path</span> <span class="op">=</span> <span class="ident">tmp</span>.<span class="ident">path</span>().<span class="ident">join</span>(<span class="string">&quot;test.json&quot;</span>);
-		<span class="ident">std::fs::write</span>(
-			<span class="ident">test_value_path</span>.<span class="ident">clone</span>(),
-			<span class="ident">serde_json::to_string_pretty</span>(<span class="ident">value</span>).<span class="ident">unwrap</span>(),
+	<span class="kw">fn </span>test_json_file(tmp: <span class="kw-2">&amp;</span>tempfile::TempDir, value: <span class="kw-2">&amp;</span>TestValue) -&gt; PathBuf {
+		<span class="kw">let </span>test_value_path = tmp.path().join(<span class="string">&quot;test.json&quot;</span>);
+		std::fs::write(
+			test_value_path.clone(),
+			serde_json::to_string_pretty(value).unwrap(),
 		)
-		.<span class="ident">expect</span>(<span class="string">&quot;write test value json file&quot;</span>);
-		<span class="ident">test_value_path</span>
+		.expect(<span class="string">&quot;write test value json file&quot;</span>);
+		test_value_path
 	}
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">schema_create_success_if_value_is_empty</span>() {
-		<span class="kw">let</span> <span class="ident">tmp</span> <span class="op">=</span> <span class="ident">tempdir</span>().<span class="ident">expect</span>(<span class="string">&quot;create a temporary directory&quot;</span>);
-		<span class="comment">// Write some data in a temp file.</span>
-		<span class="kw">let</span> <span class="ident">test_value_path</span> <span class="op">=</span> <span class="ident">test_json_file</span>(<span class="kw-2">&amp;</span><span class="ident">tmp</span>, <span class="kw-2">&amp;</span><span class="ident">schema_test_value</span>());
+	<span class="attribute">#[test]
+	</span><span class="kw">fn </span>schema_create_success_if_value_is_empty() {
+		<span class="kw">let </span>tmp = tempdir().expect(<span class="string">&quot;create a temporary directory&quot;</span>);
+		<span class="comment">// Write some data in a temp file.
+		</span><span class="kw">let </span>test_value_path = test_json_file(<span class="kw-2">&amp;</span>tmp, <span class="kw-2">&amp;</span>schema_test_value());
 
-		<span class="comment">// Test client.</span>
-		<span class="kw">let</span> (<span class="ident">client</span>, <span class="kw">_</span>) <span class="op">=</span>
-			<span class="ident">TestClientBuilder::new</span>().<span class="ident">build_with_native_executor</span>::<span class="op">&lt;</span><span class="ident">RuntimeApi</span>, <span class="kw">_</span><span class="op">&gt;</span>(<span class="prelude-val">None</span>);
-		<span class="kw">let</span> <span class="ident">client</span> <span class="op">=</span> <span class="ident">Arc::new</span>(<span class="ident">client</span>);
-		<span class="comment">// Create a temporary frontier secondary DB.</span>
-		<span class="kw">let</span> <span class="ident">backend</span> <span class="op">=</span> <span class="ident">open_frontier_backend</span>(<span class="ident">client</span>.<span class="ident">clone</span>(), <span class="ident">tmp</span>.<span class="ident">into_path</span>())
-			.<span class="ident">expect</span>(<span class="string">&quot;a temporary db was created&quot;</span>);
+		<span class="comment">// Test client.
+		</span><span class="kw">let </span>(client, <span class="kw">_</span>) =
+			TestClientBuilder::new().build_with_native_executor::&lt;RuntimeApi, <span class="kw">_</span>&gt;(<span class="prelude-val">None</span>);
+		<span class="kw">let </span>client = Arc::new(client);
+		<span class="comment">// Create a temporary frontier secondary DB.
+		</span><span class="kw">let </span>backend = open_frontier_backend(client.clone(), tmp.into_path())
+			.expect(<span class="string">&quot;a temporary db was created&quot;</span>);
 
-		<span class="macro">assert_eq!</span>(<span class="ident">backend</span>.<span class="ident">meta</span>().<span class="ident">ethereum_schema</span>(), <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>));
+		<span class="macro">assert_eq!</span>(backend.meta().ethereum_schema(), <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>));
 
-		<span class="comment">// Run the command</span>
-		<span class="macro">assert!</span>(<span class="ident">cmd</span>(
-			<span class="string">&quot;:ethereum_schema_cache&quot;</span>.<span class="ident">to_string</span>(),
-			<span class="prelude-val">Some</span>(<span class="ident">test_value_path</span>),
-			<span class="ident">Operation::Create</span>,
-			<span class="ident">Column::Meta</span>
+		<span class="comment">// Run the command
+		</span><span class="macro">assert!</span>(cmd(
+			<span class="string">&quot;:ethereum_schema_cache&quot;</span>.to_string(),
+			<span class="prelude-val">Some</span>(test_value_path),
+			Operation::Create,
+			Column::Meta
 		)
-		.<span class="ident">run</span>(<span class="ident">client</span>, <span class="ident">backend</span>.<span class="ident">clone</span>())
-		.<span class="ident">is_ok</span>());
+		.run(client, backend.clone())
+		.is_ok());
 
 		<span class="macro">assert_eq!</span>(
-			<span class="ident">backend</span>.<span class="ident">meta</span>().<span class="ident">ethereum_schema</span>(),
-			<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="macro">vec!</span>[(<span class="ident">EthereumStorageSchema::V1</span>, <span class="ident">H256::default</span>())]))
+			backend.meta().ethereum_schema(),
+			<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="macro">vec!</span>[(EthereumStorageSchema::V1, H256::default())]))
 		);
 	}
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">schema_create_fails_if_value_is_not_empty</span>() {
-		<span class="kw">let</span> <span class="ident">tmp</span> <span class="op">=</span> <span class="ident">tempdir</span>().<span class="ident">expect</span>(<span class="string">&quot;create a temporary directory&quot;</span>);
-		<span class="comment">// Write some data in a temp file.</span>
-		<span class="kw">let</span> <span class="ident">test_value_path</span> <span class="op">=</span> <span class="ident">test_json_file</span>(<span class="kw-2">&amp;</span><span class="ident">tmp</span>, <span class="kw-2">&amp;</span><span class="ident">schema_test_value</span>());
+	<span class="attribute">#[test]
+	</span><span class="kw">fn </span>schema_create_fails_if_value_is_not_empty() {
+		<span class="kw">let </span>tmp = tempdir().expect(<span class="string">&quot;create a temporary directory&quot;</span>);
+		<span class="comment">// Write some data in a temp file.
+		</span><span class="kw">let </span>test_value_path = test_json_file(<span class="kw-2">&amp;</span>tmp, <span class="kw-2">&amp;</span>schema_test_value());
 
-		<span class="comment">// Test client.</span>
-		<span class="kw">let</span> (<span class="ident">client</span>, <span class="kw">_</span>) <span class="op">=</span>
-			<span class="ident">TestClientBuilder::new</span>().<span class="ident">build_with_native_executor</span>::<span class="op">&lt;</span><span class="ident">RuntimeApi</span>, <span class="kw">_</span><span class="op">&gt;</span>(<span class="prelude-val">None</span>);
-		<span class="kw">let</span> <span class="ident">client</span> <span class="op">=</span> <span class="ident">Arc::new</span>(<span class="ident">client</span>);
-		<span class="comment">// Create a temporary frontier secondary DB.</span>
-		<span class="kw">let</span> <span class="ident">backend</span> <span class="op">=</span> <span class="ident">open_frontier_backend</span>(<span class="ident">client</span>.<span class="ident">clone</span>(), <span class="ident">tmp</span>.<span class="ident">into_path</span>())
-			.<span class="ident">expect</span>(<span class="string">&quot;a temporary db was created&quot;</span>);
+		<span class="comment">// Test client.
+		</span><span class="kw">let </span>(client, <span class="kw">_</span>) =
+			TestClientBuilder::new().build_with_native_executor::&lt;RuntimeApi, <span class="kw">_</span>&gt;(<span class="prelude-val">None</span>);
+		<span class="kw">let </span>client = Arc::new(client);
+		<span class="comment">// Create a temporary frontier secondary DB.
+		</span><span class="kw">let </span>backend = open_frontier_backend(client.clone(), tmp.into_path())
+			.expect(<span class="string">&quot;a temporary db was created&quot;</span>);
 
-		<span class="kw">let</span> <span class="ident">data_before</span> <span class="op">=</span> <span class="macro">vec!</span>[(<span class="ident">EthereumStorageSchema::V2</span>, <span class="ident">H256::default</span>())];
+		<span class="kw">let </span>data_before = <span class="macro">vec!</span>[(EthereumStorageSchema::V2, H256::default())];
 
-		<span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">backend</span>
-			.<span class="ident">meta</span>()
-			.<span class="ident">write_ethereum_schema</span>(<span class="ident">data_before</span>.<span class="ident">clone</span>())
-			.<span class="ident">expect</span>(<span class="string">&quot;data inserted in temporary db&quot;</span>);
+		<span class="kw">let _ </span>= backend
+			.meta()
+			.write_ethereum_schema(data_before.clone())
+			.expect(<span class="string">&quot;data inserted in temporary db&quot;</span>);
 
-		<span class="comment">// Run the command</span>
-		<span class="macro">assert!</span>(<span class="ident">cmd</span>(
-			<span class="string">&quot;:ethereum_schema_cache&quot;</span>.<span class="ident">to_string</span>(),
-			<span class="prelude-val">Some</span>(<span class="ident">test_value_path</span>),
-			<span class="ident">Operation::Create</span>,
-			<span class="ident">Column::Meta</span>
+		<span class="comment">// Run the command
+		</span><span class="macro">assert!</span>(cmd(
+			<span class="string">&quot;:ethereum_schema_cache&quot;</span>.to_string(),
+			<span class="prelude-val">Some</span>(test_value_path),
+			Operation::Create,
+			Column::Meta
 		)
-		.<span class="ident">run</span>(<span class="ident">client</span>, <span class="ident">backend</span>.<span class="ident">clone</span>())
-		.<span class="ident">is_err</span>());
+		.run(client, backend.clone())
+		.is_err());
 
-		<span class="kw">let</span> <span class="ident">data_after</span> <span class="op">=</span> <span class="ident">backend</span>.<span class="ident">meta</span>().<span class="ident">ethereum_schema</span>().<span class="ident">unwrap</span>().<span class="ident">unwrap</span>();
-		<span class="macro">assert_eq!</span>(<span class="ident">data_after</span>, <span class="ident">data_before</span>);
+		<span class="kw">let </span>data_after = backend.meta().ethereum_schema().unwrap().unwrap();
+		<span class="macro">assert_eq!</span>(data_after, data_before);
 	}
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">schema_read_works</span>() {
-		<span class="kw">let</span> <span class="ident">tmp</span> <span class="op">=</span> <span class="ident">tempdir</span>().<span class="ident">expect</span>(<span class="string">&quot;create a temporary directory&quot;</span>);
-		<span class="comment">// Test client.</span>
-		<span class="kw">let</span> (<span class="ident">client</span>, <span class="kw">_</span>) <span class="op">=</span>
-			<span class="ident">TestClientBuilder::new</span>().<span class="ident">build_with_native_executor</span>::<span class="op">&lt;</span><span class="ident">RuntimeApi</span>, <span class="kw">_</span><span class="op">&gt;</span>(<span class="prelude-val">None</span>);
-		<span class="kw">let</span> <span class="ident">client</span> <span class="op">=</span> <span class="ident">Arc::new</span>(<span class="ident">client</span>);
-		<span class="comment">// Create a temporary frontier secondary DB.</span>
-		<span class="kw">let</span> <span class="ident">backend</span> <span class="op">=</span> <span class="ident">open_frontier_backend</span>(<span class="ident">client</span>.<span class="ident">clone</span>(), <span class="ident">tmp</span>.<span class="ident">into_path</span>())
-			.<span class="ident">expect</span>(<span class="string">&quot;a temporary db was created&quot;</span>);
+	<span class="attribute">#[test]
+	</span><span class="kw">fn </span>schema_read_works() {
+		<span class="kw">let </span>tmp = tempdir().expect(<span class="string">&quot;create a temporary directory&quot;</span>);
+		<span class="comment">// Test client.
+		</span><span class="kw">let </span>(client, <span class="kw">_</span>) =
+			TestClientBuilder::new().build_with_native_executor::&lt;RuntimeApi, <span class="kw">_</span>&gt;(<span class="prelude-val">None</span>);
+		<span class="kw">let </span>client = Arc::new(client);
+		<span class="comment">// Create a temporary frontier secondary DB.
+		</span><span class="kw">let </span>backend = open_frontier_backend(client.clone(), tmp.into_path())
+			.expect(<span class="string">&quot;a temporary db was created&quot;</span>);
 
-		<span class="macro">assert_eq!</span>(<span class="ident">backend</span>.<span class="ident">meta</span>().<span class="ident">ethereum_schema</span>(), <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>));
+		<span class="macro">assert_eq!</span>(backend.meta().ethereum_schema(), <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>));
 
-		<span class="kw">let</span> <span class="ident">data</span> <span class="op">=</span> <span class="macro">vec!</span>[(<span class="ident">EthereumStorageSchema::V2</span>, <span class="ident">H256::default</span>())];
+		<span class="kw">let </span>data = <span class="macro">vec!</span>[(EthereumStorageSchema::V2, H256::default())];
 
-		<span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">backend</span>
-			.<span class="ident">meta</span>()
-			.<span class="ident">write_ethereum_schema</span>(<span class="ident">data</span>.<span class="ident">clone</span>())
-			.<span class="ident">expect</span>(<span class="string">&quot;data inserted in temporary db&quot;</span>);
+		<span class="kw">let _ </span>= backend
+			.meta()
+			.write_ethereum_schema(data.clone())
+			.expect(<span class="string">&quot;data inserted in temporary db&quot;</span>);
 
-		<span class="comment">// Run the command</span>
-		<span class="macro">assert!</span>(<span class="ident">cmd</span>(
-			<span class="string">&quot;:ethereum_schema_cache&quot;</span>.<span class="ident">to_string</span>(),
+		<span class="comment">// Run the command
+		</span><span class="macro">assert!</span>(cmd(
+			<span class="string">&quot;:ethereum_schema_cache&quot;</span>.to_string(),
 			<span class="prelude-val">None</span>,
-			<span class="ident">Operation::Read</span>,
-			<span class="ident">Column::Meta</span>
+			Operation::Read,
+			Column::Meta
 		)
-		.<span class="ident">run</span>(<span class="ident">client</span>, <span class="ident">backend</span>.<span class="ident">clone</span>())
-		.<span class="ident">is_ok</span>());
+		.run(client, backend.clone())
+		.is_ok());
 	}
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">schema_update_works</span>() {
-		<span class="kw">let</span> <span class="ident">tmp</span> <span class="op">=</span> <span class="ident">tempdir</span>().<span class="ident">expect</span>(<span class="string">&quot;create a temporary directory&quot;</span>);
-		<span class="comment">// Write some data in a temp file.</span>
-		<span class="kw">let</span> <span class="ident">test_value_path</span> <span class="op">=</span> <span class="ident">test_json_file</span>(<span class="kw-2">&amp;</span><span class="ident">tmp</span>, <span class="kw-2">&amp;</span><span class="ident">schema_test_value</span>());
-		<span class="comment">// Test client.</span>
-		<span class="kw">let</span> (<span class="ident">client</span>, <span class="kw">_</span>) <span class="op">=</span>
-			<span class="ident">TestClientBuilder::new</span>().<span class="ident">build_with_native_executor</span>::<span class="op">&lt;</span><span class="ident">RuntimeApi</span>, <span class="kw">_</span><span class="op">&gt;</span>(<span class="prelude-val">None</span>);
-		<span class="kw">let</span> <span class="ident">client</span> <span class="op">=</span> <span class="ident">Arc::new</span>(<span class="ident">client</span>);
-		<span class="comment">// Create a temporary frontier secondary DB.</span>
-		<span class="kw">let</span> <span class="ident">backend</span> <span class="op">=</span> <span class="ident">open_frontier_backend</span>(<span class="ident">client</span>.<span class="ident">clone</span>(), <span class="ident">tmp</span>.<span class="ident">into_path</span>())
-			.<span class="ident">expect</span>(<span class="string">&quot;a temporary db was created&quot;</span>);
+	<span class="attribute">#[test]
+	</span><span class="kw">fn </span>schema_update_works() {
+		<span class="kw">let </span>tmp = tempdir().expect(<span class="string">&quot;create a temporary directory&quot;</span>);
+		<span class="comment">// Write some data in a temp file.
+		</span><span class="kw">let </span>test_value_path = test_json_file(<span class="kw-2">&amp;</span>tmp, <span class="kw-2">&amp;</span>schema_test_value());
+		<span class="comment">// Test client.
+		</span><span class="kw">let </span>(client, <span class="kw">_</span>) =
+			TestClientBuilder::new().build_with_native_executor::&lt;RuntimeApi, <span class="kw">_</span>&gt;(<span class="prelude-val">None</span>);
+		<span class="kw">let </span>client = Arc::new(client);
+		<span class="comment">// Create a temporary frontier secondary DB.
+		</span><span class="kw">let </span>backend = open_frontier_backend(client.clone(), tmp.into_path())
+			.expect(<span class="string">&quot;a temporary db was created&quot;</span>);
 
-		<span class="macro">assert_eq!</span>(<span class="ident">backend</span>.<span class="ident">meta</span>().<span class="ident">ethereum_schema</span>(), <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>));
-		<span class="comment">// Run the command</span>
-		<span class="macro">assert!</span>(<span class="ident">cmd</span>(
-			<span class="string">&quot;:ethereum_schema_cache&quot;</span>.<span class="ident">to_string</span>(),
-			<span class="prelude-val">Some</span>(<span class="ident">test_value_path</span>),
-			<span class="ident">Operation::Update</span>,
-			<span class="ident">Column::Meta</span>
+		<span class="macro">assert_eq!</span>(backend.meta().ethereum_schema(), <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>));
+		<span class="comment">// Run the command
+		</span><span class="macro">assert!</span>(cmd(
+			<span class="string">&quot;:ethereum_schema_cache&quot;</span>.to_string(),
+			<span class="prelude-val">Some</span>(test_value_path),
+			Operation::Update,
+			Column::Meta
 		)
-		.<span class="ident">run</span>(<span class="ident">client</span>, <span class="ident">backend</span>.<span class="ident">clone</span>())
-		.<span class="ident">is_ok</span>());
+		.run(client, backend.clone())
+		.is_ok());
 
 		<span class="macro">assert_eq!</span>(
-			<span class="ident">backend</span>.<span class="ident">meta</span>().<span class="ident">ethereum_schema</span>(),
-			<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="macro">vec!</span>[(<span class="ident">EthereumStorageSchema::V1</span>, <span class="ident">H256::default</span>())]))
+			backend.meta().ethereum_schema(),
+			<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="macro">vec!</span>[(EthereumStorageSchema::V1, H256::default())]))
 		);
 	}
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">schema_delete_works</span>() {
-		<span class="kw">let</span> <span class="ident">tmp</span> <span class="op">=</span> <span class="ident">tempdir</span>().<span class="ident">expect</span>(<span class="string">&quot;create a temporary directory&quot;</span>);
-		<span class="comment">// Test client.</span>
-		<span class="kw">let</span> (<span class="ident">client</span>, <span class="kw">_</span>) <span class="op">=</span>
-			<span class="ident">TestClientBuilder::new</span>().<span class="ident">build_with_native_executor</span>::<span class="op">&lt;</span><span class="ident">RuntimeApi</span>, <span class="kw">_</span><span class="op">&gt;</span>(<span class="prelude-val">None</span>);
-		<span class="kw">let</span> <span class="ident">client</span> <span class="op">=</span> <span class="ident">Arc::new</span>(<span class="ident">client</span>);
-		<span class="comment">// Create a temporary frontier secondary DB.</span>
-		<span class="kw">let</span> <span class="ident">backend</span> <span class="op">=</span> <span class="ident">open_frontier_backend</span>(<span class="ident">client</span>.<span class="ident">clone</span>(), <span class="ident">tmp</span>.<span class="ident">into_path</span>())
-			.<span class="ident">expect</span>(<span class="string">&quot;a temporary db was created&quot;</span>);
+	<span class="attribute">#[test]
+	</span><span class="kw">fn </span>schema_delete_works() {
+		<span class="kw">let </span>tmp = tempdir().expect(<span class="string">&quot;create a temporary directory&quot;</span>);
+		<span class="comment">// Test client.
+		</span><span class="kw">let </span>(client, <span class="kw">_</span>) =
+			TestClientBuilder::new().build_with_native_executor::&lt;RuntimeApi, <span class="kw">_</span>&gt;(<span class="prelude-val">None</span>);
+		<span class="kw">let </span>client = Arc::new(client);
+		<span class="comment">// Create a temporary frontier secondary DB.
+		</span><span class="kw">let </span>backend = open_frontier_backend(client.clone(), tmp.into_path())
+			.expect(<span class="string">&quot;a temporary db was created&quot;</span>);
 
-		<span class="kw">let</span> <span class="ident">data</span> <span class="op">=</span> <span class="macro">vec!</span>[(<span class="ident">EthereumStorageSchema::V2</span>, <span class="ident">H256::default</span>())];
+		<span class="kw">let </span>data = <span class="macro">vec!</span>[(EthereumStorageSchema::V2, H256::default())];
 
-		<span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">backend</span>
-			.<span class="ident">meta</span>()
-			.<span class="ident">write_ethereum_schema</span>(<span class="ident">data</span>.<span class="ident">clone</span>())
-			.<span class="ident">expect</span>(<span class="string">&quot;data inserted in temporary db&quot;</span>);
-		<span class="comment">// Run the command</span>
-		<span class="macro">assert!</span>(<span class="ident">cmd</span>(
-			<span class="string">&quot;:ethereum_schema_cache&quot;</span>.<span class="ident">to_string</span>(),
+		<span class="kw">let _ </span>= backend
+			.meta()
+			.write_ethereum_schema(data.clone())
+			.expect(<span class="string">&quot;data inserted in temporary db&quot;</span>);
+		<span class="comment">// Run the command
+		</span><span class="macro">assert!</span>(cmd(
+			<span class="string">&quot;:ethereum_schema_cache&quot;</span>.to_string(),
 			<span class="prelude-val">None</span>,
-			<span class="ident">Operation::Delete</span>,
-			<span class="ident">Column::Meta</span>
+			Operation::Delete,
+			Column::Meta
 		)
-		.<span class="ident">run</span>(<span class="ident">client</span>, <span class="ident">backend</span>.<span class="ident">clone</span>())
-		.<span class="ident">is_ok</span>());
+		.run(client, backend.clone())
+		.is_ok());
 
-		<span class="macro">assert_eq!</span>(<span class="ident">backend</span>.<span class="ident">meta</span>().<span class="ident">ethereum_schema</span>(), <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="macro">vec!</span>[])));
+		<span class="macro">assert_eq!</span>(backend.meta().ethereum_schema(), <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="macro">vec!</span>[])));
 	}
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">tips_create_success_if_value_is_empty</span>() {
-		<span class="kw">let</span> <span class="ident">tmp</span> <span class="op">=</span> <span class="ident">tempdir</span>().<span class="ident">expect</span>(<span class="string">&quot;create a temporary directory&quot;</span>);
-		<span class="comment">// Write some data in a temp file.</span>
-		<span class="kw">let</span> <span class="ident">test_value_path</span> <span class="op">=</span> <span class="ident">test_json_file</span>(<span class="kw-2">&amp;</span><span class="ident">tmp</span>, <span class="kw-2">&amp;</span><span class="ident">tips_test_value</span>());
-		<span class="comment">// Test client.</span>
-		<span class="kw">let</span> (<span class="ident">client</span>, <span class="kw">_</span>) <span class="op">=</span>
-			<span class="ident">TestClientBuilder::new</span>().<span class="ident">build_with_native_executor</span>::<span class="op">&lt;</span><span class="ident">RuntimeApi</span>, <span class="kw">_</span><span class="op">&gt;</span>(<span class="prelude-val">None</span>);
-		<span class="kw">let</span> <span class="ident">client</span> <span class="op">=</span> <span class="ident">Arc::new</span>(<span class="ident">client</span>);
-		<span class="comment">// Create a temporary frontier secondary DB.</span>
-		<span class="kw">let</span> <span class="ident">backend</span> <span class="op">=</span> <span class="ident">open_frontier_backend</span>(<span class="ident">client</span>.<span class="ident">clone</span>(), <span class="ident">tmp</span>.<span class="ident">into_path</span>())
-			.<span class="ident">expect</span>(<span class="string">&quot;a temporary db was created&quot;</span>);
+	<span class="attribute">#[test]
+	</span><span class="kw">fn </span>tips_create_success_if_value_is_empty() {
+		<span class="kw">let </span>tmp = tempdir().expect(<span class="string">&quot;create a temporary directory&quot;</span>);
+		<span class="comment">// Write some data in a temp file.
+		</span><span class="kw">let </span>test_value_path = test_json_file(<span class="kw-2">&amp;</span>tmp, <span class="kw-2">&amp;</span>tips_test_value());
+		<span class="comment">// Test client.
+		</span><span class="kw">let </span>(client, <span class="kw">_</span>) =
+			TestClientBuilder::new().build_with_native_executor::&lt;RuntimeApi, <span class="kw">_</span>&gt;(<span class="prelude-val">None</span>);
+		<span class="kw">let </span>client = Arc::new(client);
+		<span class="comment">// Create a temporary frontier secondary DB.
+		</span><span class="kw">let </span>backend = open_frontier_backend(client.clone(), tmp.into_path())
+			.expect(<span class="string">&quot;a temporary db was created&quot;</span>);
 
-		<span class="macro">assert_eq!</span>(<span class="ident">backend</span>.<span class="ident">meta</span>().<span class="ident">current_syncing_tips</span>(), <span class="prelude-val">Ok</span>(<span class="macro">vec!</span>[]));
-		<span class="comment">// Run the command</span>
-		<span class="macro">assert!</span>(<span class="ident">cmd</span>(
-			<span class="string">&quot;CURRENT_SYNCING_TIPS&quot;</span>.<span class="ident">to_string</span>(),
-			<span class="prelude-val">Some</span>(<span class="ident">test_value_path</span>),
-			<span class="ident">Operation::Create</span>,
-			<span class="ident">Column::Meta</span>
+		<span class="macro">assert_eq!</span>(backend.meta().current_syncing_tips(), <span class="prelude-val">Ok</span>(<span class="macro">vec!</span>[]));
+		<span class="comment">// Run the command
+		</span><span class="macro">assert!</span>(cmd(
+			<span class="string">&quot;CURRENT_SYNCING_TIPS&quot;</span>.to_string(),
+			<span class="prelude-val">Some</span>(test_value_path),
+			Operation::Create,
+			Column::Meta
 		)
-		.<span class="ident">run</span>(<span class="ident">client</span>, <span class="ident">backend</span>.<span class="ident">clone</span>())
-		.<span class="ident">is_ok</span>());
+		.run(client, backend.clone())
+		.is_ok());
 
 		<span class="macro">assert_eq!</span>(
-			<span class="ident">backend</span>.<span class="ident">meta</span>().<span class="ident">current_syncing_tips</span>(),
-			<span class="prelude-val">Ok</span>(<span class="macro">vec!</span>[<span class="ident">H256::default</span>()])
+			backend.meta().current_syncing_tips(),
+			<span class="prelude-val">Ok</span>(<span class="macro">vec!</span>[H256::default()])
 		);
 	}
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">tips_create_fails_if_value_is_not_empty</span>() {
-		<span class="kw">let</span> <span class="ident">tmp</span> <span class="op">=</span> <span class="ident">tempdir</span>().<span class="ident">expect</span>(<span class="string">&quot;create a temporary directory&quot;</span>);
-		<span class="comment">// Write some data in a temp file.</span>
-		<span class="kw">let</span> <span class="ident">test_value_path</span> <span class="op">=</span> <span class="ident">test_json_file</span>(<span class="kw-2">&amp;</span><span class="ident">tmp</span>, <span class="kw-2">&amp;</span><span class="ident">tips_test_value</span>());
-		<span class="comment">// Test client.</span>
-		<span class="kw">let</span> (<span class="ident">client</span>, <span class="kw">_</span>) <span class="op">=</span>
-			<span class="ident">TestClientBuilder::new</span>().<span class="ident">build_with_native_executor</span>::<span class="op">&lt;</span><span class="ident">RuntimeApi</span>, <span class="kw">_</span><span class="op">&gt;</span>(<span class="prelude-val">None</span>);
-		<span class="kw">let</span> <span class="ident">client</span> <span class="op">=</span> <span class="ident">Arc::new</span>(<span class="ident">client</span>);
-		<span class="comment">// Create a temporary frontier secondary DB.</span>
-		<span class="kw">let</span> <span class="ident">backend</span> <span class="op">=</span> <span class="ident">open_frontier_backend</span>(<span class="ident">client</span>.<span class="ident">clone</span>(), <span class="ident">tmp</span>.<span class="ident">into_path</span>())
-			.<span class="ident">expect</span>(<span class="string">&quot;a temporary db was created&quot;</span>);
+	<span class="attribute">#[test]
+	</span><span class="kw">fn </span>tips_create_fails_if_value_is_not_empty() {
+		<span class="kw">let </span>tmp = tempdir().expect(<span class="string">&quot;create a temporary directory&quot;</span>);
+		<span class="comment">// Write some data in a temp file.
+		</span><span class="kw">let </span>test_value_path = test_json_file(<span class="kw-2">&amp;</span>tmp, <span class="kw-2">&amp;</span>tips_test_value());
+		<span class="comment">// Test client.
+		</span><span class="kw">let </span>(client, <span class="kw">_</span>) =
+			TestClientBuilder::new().build_with_native_executor::&lt;RuntimeApi, <span class="kw">_</span>&gt;(<span class="prelude-val">None</span>);
+		<span class="kw">let </span>client = Arc::new(client);
+		<span class="comment">// Create a temporary frontier secondary DB.
+		</span><span class="kw">let </span>backend = open_frontier_backend(client.clone(), tmp.into_path())
+			.expect(<span class="string">&quot;a temporary db was created&quot;</span>);
 
-		<span class="kw">let</span> <span class="ident">data_before</span> <span class="op">=</span> <span class="macro">vec!</span>[<span class="ident">H256::default</span>()];
+		<span class="kw">let </span>data_before = <span class="macro">vec!</span>[H256::default()];
 
-		<span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">backend</span>
-			.<span class="ident">meta</span>()
-			.<span class="ident">write_current_syncing_tips</span>(<span class="ident">data_before</span>.<span class="ident">clone</span>())
-			.<span class="ident">expect</span>(<span class="string">&quot;data inserted in temporary db&quot;</span>);
-		<span class="comment">// Run the command</span>
-		<span class="macro">assert!</span>(<span class="ident">cmd</span>(
-			<span class="string">&quot;CURRENT_SYNCING_TIPS&quot;</span>.<span class="ident">to_string</span>(),
-			<span class="prelude-val">Some</span>(<span class="ident">test_value_path</span>),
-			<span class="ident">Operation::Create</span>,
-			<span class="ident">Column::Meta</span>
+		<span class="kw">let _ </span>= backend
+			.meta()
+			.write_current_syncing_tips(data_before.clone())
+			.expect(<span class="string">&quot;data inserted in temporary db&quot;</span>);
+		<span class="comment">// Run the command
+		</span><span class="macro">assert!</span>(cmd(
+			<span class="string">&quot;CURRENT_SYNCING_TIPS&quot;</span>.to_string(),
+			<span class="prelude-val">Some</span>(test_value_path),
+			Operation::Create,
+			Column::Meta
 		)
-		.<span class="ident">run</span>(<span class="ident">client</span>, <span class="ident">backend</span>.<span class="ident">clone</span>())
-		.<span class="ident">is_err</span>());
+		.run(client, backend.clone())
+		.is_err());
 
-		<span class="kw">let</span> <span class="ident">data_after</span> <span class="op">=</span> <span class="ident">backend</span>.<span class="ident">meta</span>().<span class="ident">current_syncing_tips</span>().<span class="ident">unwrap</span>();
-		<span class="macro">assert_eq!</span>(<span class="ident">data_after</span>, <span class="ident">data_before</span>);
+		<span class="kw">let </span>data_after = backend.meta().current_syncing_tips().unwrap();
+		<span class="macro">assert_eq!</span>(data_after, data_before);
 	}
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">tips_read_works</span>() {
-		<span class="kw">let</span> <span class="ident">tmp</span> <span class="op">=</span> <span class="ident">tempdir</span>().<span class="ident">expect</span>(<span class="string">&quot;create a temporary directory&quot;</span>);
-		<span class="comment">// Test client.</span>
-		<span class="kw">let</span> (<span class="ident">client</span>, <span class="kw">_</span>) <span class="op">=</span>
-			<span class="ident">TestClientBuilder::new</span>().<span class="ident">build_with_native_executor</span>::<span class="op">&lt;</span><span class="ident">RuntimeApi</span>, <span class="kw">_</span><span class="op">&gt;</span>(<span class="prelude-val">None</span>);
-		<span class="kw">let</span> <span class="ident">client</span> <span class="op">=</span> <span class="ident">Arc::new</span>(<span class="ident">client</span>);
-		<span class="comment">// Create a temporary frontier secondary DB.</span>
-		<span class="kw">let</span> <span class="ident">backend</span> <span class="op">=</span> <span class="ident">open_frontier_backend</span>(<span class="ident">client</span>.<span class="ident">clone</span>(), <span class="ident">tmp</span>.<span class="ident">into_path</span>())
-			.<span class="ident">expect</span>(<span class="string">&quot;a temporary db was created&quot;</span>);
+	<span class="attribute">#[test]
+	</span><span class="kw">fn </span>tips_read_works() {
+		<span class="kw">let </span>tmp = tempdir().expect(<span class="string">&quot;create a temporary directory&quot;</span>);
+		<span class="comment">// Test client.
+		</span><span class="kw">let </span>(client, <span class="kw">_</span>) =
+			TestClientBuilder::new().build_with_native_executor::&lt;RuntimeApi, <span class="kw">_</span>&gt;(<span class="prelude-val">None</span>);
+		<span class="kw">let </span>client = Arc::new(client);
+		<span class="comment">// Create a temporary frontier secondary DB.
+		</span><span class="kw">let </span>backend = open_frontier_backend(client.clone(), tmp.into_path())
+			.expect(<span class="string">&quot;a temporary db was created&quot;</span>);
 
-		<span class="macro">assert_eq!</span>(<span class="ident">backend</span>.<span class="ident">meta</span>().<span class="ident">current_syncing_tips</span>(), <span class="prelude-val">Ok</span>(<span class="macro">vec!</span>[]));
+		<span class="macro">assert_eq!</span>(backend.meta().current_syncing_tips(), <span class="prelude-val">Ok</span>(<span class="macro">vec!</span>[]));
 
-		<span class="kw">let</span> <span class="ident">data</span> <span class="op">=</span> <span class="macro">vec!</span>[<span class="ident">H256::default</span>()];
+		<span class="kw">let </span>data = <span class="macro">vec!</span>[H256::default()];
 
-		<span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">backend</span>
-			.<span class="ident">meta</span>()
-			.<span class="ident">write_current_syncing_tips</span>(<span class="ident">data</span>.<span class="ident">clone</span>())
-			.<span class="ident">expect</span>(<span class="string">&quot;data inserted in temporary db&quot;</span>);
-		<span class="comment">// Run the command</span>
-		<span class="macro">assert!</span>(<span class="ident">cmd</span>(
-			<span class="string">&quot;CURRENT_SYNCING_TIPS&quot;</span>.<span class="ident">to_string</span>(),
+		<span class="kw">let _ </span>= backend
+			.meta()
+			.write_current_syncing_tips(data.clone())
+			.expect(<span class="string">&quot;data inserted in temporary db&quot;</span>);
+		<span class="comment">// Run the command
+		</span><span class="macro">assert!</span>(cmd(
+			<span class="string">&quot;CURRENT_SYNCING_TIPS&quot;</span>.to_string(),
 			<span class="prelude-val">None</span>,
-			<span class="ident">Operation::Read</span>,
-			<span class="ident">Column::Meta</span>
+			Operation::Read,
+			Column::Meta
 		)
-		.<span class="ident">run</span>(<span class="ident">client</span>, <span class="ident">backend</span>.<span class="ident">clone</span>())
-		.<span class="ident">is_ok</span>());
+		.run(client, backend.clone())
+		.is_ok());
 	}
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">tips_update_works</span>() {
-		<span class="kw">let</span> <span class="ident">tmp</span> <span class="op">=</span> <span class="ident">tempdir</span>().<span class="ident">expect</span>(<span class="string">&quot;create a temporary directory&quot;</span>);
-		<span class="comment">// Write some data in a temp file.</span>
-		<span class="kw">let</span> <span class="ident">test_value_path</span> <span class="op">=</span> <span class="ident">test_json_file</span>(<span class="kw-2">&amp;</span><span class="ident">tmp</span>, <span class="kw-2">&amp;</span><span class="ident">tips_test_value</span>());
-		<span class="comment">// Test client.</span>
-		<span class="kw">let</span> (<span class="ident">client</span>, <span class="kw">_</span>) <span class="op">=</span>
-			<span class="ident">TestClientBuilder::new</span>().<span class="ident">build_with_native_executor</span>::<span class="op">&lt;</span><span class="ident">RuntimeApi</span>, <span class="kw">_</span><span class="op">&gt;</span>(<span class="prelude-val">None</span>);
-		<span class="kw">let</span> <span class="ident">client</span> <span class="op">=</span> <span class="ident">Arc::new</span>(<span class="ident">client</span>);
-		<span class="comment">// Create a temporary frontier secondary DB.</span>
-		<span class="kw">let</span> <span class="ident">backend</span> <span class="op">=</span> <span class="ident">open_frontier_backend</span>(<span class="ident">client</span>.<span class="ident">clone</span>(), <span class="ident">tmp</span>.<span class="ident">into_path</span>())
-			.<span class="ident">expect</span>(<span class="string">&quot;a temporary db was created&quot;</span>);
+	<span class="attribute">#[test]
+	</span><span class="kw">fn </span>tips_update_works() {
+		<span class="kw">let </span>tmp = tempdir().expect(<span class="string">&quot;create a temporary directory&quot;</span>);
+		<span class="comment">// Write some data in a temp file.
+		</span><span class="kw">let </span>test_value_path = test_json_file(<span class="kw-2">&amp;</span>tmp, <span class="kw-2">&amp;</span>tips_test_value());
+		<span class="comment">// Test client.
+		</span><span class="kw">let </span>(client, <span class="kw">_</span>) =
+			TestClientBuilder::new().build_with_native_executor::&lt;RuntimeApi, <span class="kw">_</span>&gt;(<span class="prelude-val">None</span>);
+		<span class="kw">let </span>client = Arc::new(client);
+		<span class="comment">// Create a temporary frontier secondary DB.
+		</span><span class="kw">let </span>backend = open_frontier_backend(client.clone(), tmp.into_path())
+			.expect(<span class="string">&quot;a temporary db was created&quot;</span>);
 
-		<span class="macro">assert_eq!</span>(<span class="ident">backend</span>.<span class="ident">meta</span>().<span class="ident">current_syncing_tips</span>(), <span class="prelude-val">Ok</span>(<span class="macro">vec!</span>[]));
-		<span class="comment">// Run the command</span>
-		<span class="macro">assert!</span>(<span class="ident">cmd</span>(
-			<span class="string">&quot;CURRENT_SYNCING_TIPS&quot;</span>.<span class="ident">to_string</span>(),
-			<span class="prelude-val">Some</span>(<span class="ident">test_value_path</span>),
-			<span class="ident">Operation::Update</span>,
-			<span class="ident">Column::Meta</span>
+		<span class="macro">assert_eq!</span>(backend.meta().current_syncing_tips(), <span class="prelude-val">Ok</span>(<span class="macro">vec!</span>[]));
+		<span class="comment">// Run the command
+		</span><span class="macro">assert!</span>(cmd(
+			<span class="string">&quot;CURRENT_SYNCING_TIPS&quot;</span>.to_string(),
+			<span class="prelude-val">Some</span>(test_value_path),
+			Operation::Update,
+			Column::Meta
 		)
-		.<span class="ident">run</span>(<span class="ident">client</span>, <span class="ident">backend</span>.<span class="ident">clone</span>())
-		.<span class="ident">is_ok</span>());
+		.run(client, backend.clone())
+		.is_ok());
 
 		<span class="macro">assert_eq!</span>(
-			<span class="ident">backend</span>.<span class="ident">meta</span>().<span class="ident">current_syncing_tips</span>(),
-			<span class="prelude-val">Ok</span>(<span class="macro">vec!</span>[<span class="ident">H256::default</span>()])
+			backend.meta().current_syncing_tips(),
+			<span class="prelude-val">Ok</span>(<span class="macro">vec!</span>[H256::default()])
 		);
 	}
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">tips_delete_works</span>() {
-		<span class="kw">let</span> <span class="ident">tmp</span> <span class="op">=</span> <span class="ident">tempdir</span>().<span class="ident">expect</span>(<span class="string">&quot;create a temporary directory&quot;</span>);
-		<span class="comment">// Test client.</span>
-		<span class="kw">let</span> (<span class="ident">client</span>, <span class="kw">_</span>) <span class="op">=</span>
-			<span class="ident">TestClientBuilder::new</span>().<span class="ident">build_with_native_executor</span>::<span class="op">&lt;</span><span class="ident">RuntimeApi</span>, <span class="kw">_</span><span class="op">&gt;</span>(<span class="prelude-val">None</span>);
-		<span class="kw">let</span> <span class="ident">client</span> <span class="op">=</span> <span class="ident">Arc::new</span>(<span class="ident">client</span>);
-		<span class="comment">// Create a temporary frontier secondary DB.</span>
-		<span class="kw">let</span> <span class="ident">backend</span> <span class="op">=</span> <span class="ident">open_frontier_backend</span>(<span class="ident">client</span>.<span class="ident">clone</span>(), <span class="ident">tmp</span>.<span class="ident">into_path</span>())
-			.<span class="ident">expect</span>(<span class="string">&quot;a temporary db was created&quot;</span>);
+	<span class="attribute">#[test]
+	</span><span class="kw">fn </span>tips_delete_works() {
+		<span class="kw">let </span>tmp = tempdir().expect(<span class="string">&quot;create a temporary directory&quot;</span>);
+		<span class="comment">// Test client.
+		</span><span class="kw">let </span>(client, <span class="kw">_</span>) =
+			TestClientBuilder::new().build_with_native_executor::&lt;RuntimeApi, <span class="kw">_</span>&gt;(<span class="prelude-val">None</span>);
+		<span class="kw">let </span>client = Arc::new(client);
+		<span class="comment">// Create a temporary frontier secondary DB.
+		</span><span class="kw">let </span>backend = open_frontier_backend(client.clone(), tmp.into_path())
+			.expect(<span class="string">&quot;a temporary db was created&quot;</span>);
 
-		<span class="kw">let</span> <span class="ident">data</span> <span class="op">=</span> <span class="macro">vec!</span>[<span class="ident">H256::default</span>()];
+		<span class="kw">let </span>data = <span class="macro">vec!</span>[H256::default()];
 
-		<span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">backend</span>
-			.<span class="ident">meta</span>()
-			.<span class="ident">write_current_syncing_tips</span>(<span class="ident">data</span>.<span class="ident">clone</span>())
-			.<span class="ident">expect</span>(<span class="string">&quot;data inserted in temporary db&quot;</span>);
-		<span class="comment">// Run the command</span>
-		<span class="macro">assert!</span>(<span class="ident">cmd</span>(
-			<span class="string">&quot;CURRENT_SYNCING_TIPS&quot;</span>.<span class="ident">to_string</span>(),
+		<span class="kw">let _ </span>= backend
+			.meta()
+			.write_current_syncing_tips(data.clone())
+			.expect(<span class="string">&quot;data inserted in temporary db&quot;</span>);
+		<span class="comment">// Run the command
+		</span><span class="macro">assert!</span>(cmd(
+			<span class="string">&quot;CURRENT_SYNCING_TIPS&quot;</span>.to_string(),
 			<span class="prelude-val">None</span>,
-			<span class="ident">Operation::Delete</span>,
-			<span class="ident">Column::Meta</span>
+			Operation::Delete,
+			Column::Meta
 		)
-		.<span class="ident">run</span>(<span class="ident">client</span>, <span class="ident">backend</span>.<span class="ident">clone</span>())
-		.<span class="ident">is_ok</span>());
+		.run(client, backend.clone())
+		.is_ok());
 
-		<span class="macro">assert_eq!</span>(<span class="ident">backend</span>.<span class="ident">meta</span>().<span class="ident">current_syncing_tips</span>(), <span class="prelude-val">Ok</span>(<span class="macro">vec!</span>[]));
+		<span class="macro">assert_eq!</span>(backend.meta().current_syncing_tips(), <span class="prelude-val">Ok</span>(<span class="macro">vec!</span>[]));
 	}
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">non_existent_meta_static_keys_are_no_op</span>() {
-		<span class="kw">let</span> <span class="ident">tmp</span> <span class="op">=</span> <span class="ident">tempdir</span>().<span class="ident">expect</span>(<span class="string">&quot;create a temporary directory&quot;</span>);
-		<span class="comment">// Write some data in a temp file.</span>
-		<span class="kw">let</span> <span class="ident">test_value_path</span> <span class="op">=</span> <span class="ident">test_json_file</span>(<span class="kw-2">&amp;</span><span class="ident">tmp</span>, <span class="kw-2">&amp;</span><span class="ident">schema_test_value</span>());
-		<span class="comment">// Test client.</span>
-		<span class="kw">let</span> (<span class="ident">client</span>, <span class="kw">_</span>) <span class="op">=</span>
-			<span class="ident">TestClientBuilder::new</span>().<span class="ident">build_with_native_executor</span>::<span class="op">&lt;</span><span class="ident">RuntimeApi</span>, <span class="kw">_</span><span class="op">&gt;</span>(<span class="prelude-val">None</span>);
-		<span class="kw">let</span> <span class="ident">client</span> <span class="op">=</span> <span class="ident">Arc::new</span>(<span class="ident">client</span>);
-		<span class="comment">// Create a temporary frontier secondary DB.</span>
-		<span class="kw">let</span> <span class="ident">backend</span> <span class="op">=</span> <span class="ident">open_frontier_backend</span>(<span class="ident">client</span>.<span class="ident">clone</span>(), <span class="ident">tmp</span>.<span class="ident">into_path</span>())
-			.<span class="ident">expect</span>(<span class="string">&quot;a temporary db was created&quot;</span>);
-		<span class="kw">let</span> <span class="ident">client</span> <span class="op">=</span> <span class="ident">client</span>;
+	<span class="attribute">#[test]
+	</span><span class="kw">fn </span>non_existent_meta_static_keys_are_no_op() {
+		<span class="kw">let </span>tmp = tempdir().expect(<span class="string">&quot;create a temporary directory&quot;</span>);
+		<span class="comment">// Write some data in a temp file.
+		</span><span class="kw">let </span>test_value_path = test_json_file(<span class="kw-2">&amp;</span>tmp, <span class="kw-2">&amp;</span>schema_test_value());
+		<span class="comment">// Test client.
+		</span><span class="kw">let </span>(client, <span class="kw">_</span>) =
+			TestClientBuilder::new().build_with_native_executor::&lt;RuntimeApi, <span class="kw">_</span>&gt;(<span class="prelude-val">None</span>);
+		<span class="kw">let </span>client = Arc::new(client);
+		<span class="comment">// Create a temporary frontier secondary DB.
+		</span><span class="kw">let </span>backend = open_frontier_backend(client.clone(), tmp.into_path())
+			.expect(<span class="string">&quot;a temporary db was created&quot;</span>);
+		<span class="kw">let </span>client = client;
 
-		<span class="kw">let</span> <span class="ident">data</span> <span class="op">=</span> <span class="macro">vec!</span>[(<span class="ident">EthereumStorageSchema::V1</span>, <span class="ident">H256::default</span>())];
+		<span class="kw">let </span>data = <span class="macro">vec!</span>[(EthereumStorageSchema::V1, H256::default())];
 
-		<span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">backend</span>
-			.<span class="ident">meta</span>()
-			.<span class="ident">write_ethereum_schema</span>(<span class="ident">data</span>.<span class="ident">clone</span>())
-			.<span class="ident">expect</span>(<span class="string">&quot;data inserted in temporary db&quot;</span>);
+		<span class="kw">let _ </span>= backend
+			.meta()
+			.write_ethereum_schema(data.clone())
+			.expect(<span class="string">&quot;data inserted in temporary db&quot;</span>);
 
-		<span class="comment">// Run the Create command</span>
-		<span class="macro">assert!</span>(<span class="ident">cmd</span>(
-			<span class="string">&quot;:foo&quot;</span>.<span class="ident">to_string</span>(),
-			<span class="prelude-val">Some</span>(<span class="ident">test_value_path</span>.<span class="ident">clone</span>()),
-			<span class="ident">Operation::Create</span>,
-			<span class="ident">Column::Meta</span>
+		<span class="comment">// Run the Create command
+		</span><span class="macro">assert!</span>(cmd(
+			<span class="string">&quot;:foo&quot;</span>.to_string(),
+			<span class="prelude-val">Some</span>(test_value_path.clone()),
+			Operation::Create,
+			Column::Meta
 		)
-		.<span class="ident">run</span>(<span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span><span class="ident">client</span>), <span class="ident">backend</span>.<span class="ident">clone</span>())
-		.<span class="ident">is_err</span>());
+		.run(Arc::clone(<span class="kw-2">&amp;</span>client), backend.clone())
+		.is_err());
 
 		<span class="macro">assert_eq!</span>(
-			<span class="ident">backend</span>.<span class="ident">meta</span>().<span class="ident">ethereum_schema</span>(),
-			<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="macro">vec!</span>[(<span class="ident">EthereumStorageSchema::V1</span>, <span class="ident">H256::default</span>())]))
+			backend.meta().ethereum_schema(),
+			<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="macro">vec!</span>[(EthereumStorageSchema::V1, H256::default())]))
 		);
 
-		<span class="comment">// Run the Read command</span>
-		<span class="macro">assert!</span>(<span class="ident">cmd</span>(<span class="string">&quot;:foo&quot;</span>.<span class="ident">to_string</span>(), <span class="prelude-val">None</span>, <span class="ident">Operation::Read</span>, <span class="ident">Column::Meta</span>)
-			.<span class="ident">run</span>(<span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span><span class="ident">client</span>), <span class="ident">backend</span>.<span class="ident">clone</span>())
-			.<span class="ident">is_err</span>());
+		<span class="comment">// Run the Read command
+		</span><span class="macro">assert!</span>(cmd(<span class="string">&quot;:foo&quot;</span>.to_string(), <span class="prelude-val">None</span>, Operation::Read, Column::Meta)
+			.run(Arc::clone(<span class="kw-2">&amp;</span>client), backend.clone())
+			.is_err());
 
-		<span class="comment">// Run the Update command</span>
-		<span class="macro">assert!</span>(<span class="ident">cmd</span>(
-			<span class="string">&quot;:foo&quot;</span>.<span class="ident">to_string</span>(),
-			<span class="prelude-val">Some</span>(<span class="ident">test_value_path</span>),
-			<span class="ident">Operation::Update</span>,
-			<span class="ident">Column::Meta</span>
+		<span class="comment">// Run the Update command
+		</span><span class="macro">assert!</span>(cmd(
+			<span class="string">&quot;:foo&quot;</span>.to_string(),
+			<span class="prelude-val">Some</span>(test_value_path),
+			Operation::Update,
+			Column::Meta
 		)
-		.<span class="ident">run</span>(<span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span><span class="ident">client</span>), <span class="ident">backend</span>.<span class="ident">clone</span>())
-		.<span class="ident">is_err</span>());
+		.run(Arc::clone(<span class="kw-2">&amp;</span>client), backend.clone())
+		.is_err());
 
 		<span class="macro">assert_eq!</span>(
-			<span class="ident">backend</span>.<span class="ident">meta</span>().<span class="ident">ethereum_schema</span>(),
-			<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="macro">vec!</span>[(<span class="ident">EthereumStorageSchema::V1</span>, <span class="ident">H256::default</span>())]))
+			backend.meta().ethereum_schema(),
+			<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="macro">vec!</span>[(EthereumStorageSchema::V1, H256::default())]))
 		);
 
-		<span class="comment">// Run the Delete command</span>
-		<span class="macro">assert!</span>(
-			<span class="ident">cmd</span>(<span class="string">&quot;:foo&quot;</span>.<span class="ident">to_string</span>(), <span class="prelude-val">None</span>, <span class="ident">Operation::Delete</span>, <span class="ident">Column::Meta</span>)
-				.<span class="ident">run</span>(<span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span><span class="ident">client</span>), <span class="ident">backend</span>.<span class="ident">clone</span>())
-				.<span class="ident">is_err</span>()
+		<span class="comment">// Run the Delete command
+		</span><span class="macro">assert!</span>(
+			cmd(<span class="string">&quot;:foo&quot;</span>.to_string(), <span class="prelude-val">None</span>, Operation::Delete, Column::Meta)
+				.run(Arc::clone(<span class="kw-2">&amp;</span>client), backend.clone())
+				.is_err()
 		);
 
 		<span class="macro">assert_eq!</span>(
-			<span class="ident">backend</span>.<span class="ident">meta</span>().<span class="ident">ethereum_schema</span>(),
-			<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="macro">vec!</span>[(<span class="ident">EthereumStorageSchema::V1</span>, <span class="ident">H256::default</span>())]))
+			backend.meta().ethereum_schema(),
+			<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="macro">vec!</span>[(EthereumStorageSchema::V1, H256::default())]))
 		);
 	}
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">not_deserializable_input_value_is_no_op</span>() {
-		<span class="kw">let</span> <span class="ident">tmp</span> <span class="op">=</span> <span class="ident">tempdir</span>().<span class="ident">expect</span>(<span class="string">&quot;create a temporary directory&quot;</span>);
-		<span class="comment">// Write some data in a temp file.</span>
-		<span class="kw">let</span> <span class="ident">test_value_path</span> <span class="op">=</span> <span class="ident">tmp</span>.<span class="ident">path</span>().<span class="ident">join</span>(<span class="string">&quot;test.json&quot;</span>);
+	<span class="attribute">#[test]
+	</span><span class="kw">fn </span>not_deserializable_input_value_is_no_op() {
+		<span class="kw">let </span>tmp = tempdir().expect(<span class="string">&quot;create a temporary directory&quot;</span>);
+		<span class="comment">// Write some data in a temp file.
+		</span><span class="kw">let </span>test_value_path = tmp.path().join(<span class="string">&quot;test.json&quot;</span>);
 
-		<span class="ident">std::fs::write</span>(
-			<span class="ident">test_value_path</span>.<span class="ident">clone</span>(),
-			<span class="ident">serde_json::to_string</span>(<span class="string">&quot;im_not_allowed_here&quot;</span>).<span class="ident">unwrap</span>(),
+		std::fs::write(
+			test_value_path.clone(),
+			serde_json::to_string(<span class="string">&quot;im_not_allowed_here&quot;</span>).unwrap(),
 		)
-		.<span class="ident">expect</span>(<span class="string">&quot;write test value json file&quot;</span>);
-		<span class="comment">// Test client.</span>
-		<span class="kw">let</span> (<span class="ident">client</span>, <span class="kw">_</span>) <span class="op">=</span>
-			<span class="ident">TestClientBuilder::new</span>().<span class="ident">build_with_native_executor</span>::<span class="op">&lt;</span><span class="ident">RuntimeApi</span>, <span class="kw">_</span><span class="op">&gt;</span>(<span class="prelude-val">None</span>);
-		<span class="kw">let</span> <span class="ident">client</span> <span class="op">=</span> <span class="ident">Arc::new</span>(<span class="ident">client</span>);
-		<span class="comment">// Create a temporary frontier secondary DB.</span>
-		<span class="kw">let</span> <span class="ident">backend</span> <span class="op">=</span> <span class="ident">open_frontier_backend</span>(<span class="ident">client</span>.<span class="ident">clone</span>(), <span class="ident">tmp</span>.<span class="ident">into_path</span>())
-			.<span class="ident">expect</span>(<span class="string">&quot;a temporary db was created&quot;</span>);
-		<span class="kw">let</span> <span class="ident">client</span> <span class="op">=</span> <span class="ident">client</span>;
+		.expect(<span class="string">&quot;write test value json file&quot;</span>);
+		<span class="comment">// Test client.
+		</span><span class="kw">let </span>(client, <span class="kw">_</span>) =
+			TestClientBuilder::new().build_with_native_executor::&lt;RuntimeApi, <span class="kw">_</span>&gt;(<span class="prelude-val">None</span>);
+		<span class="kw">let </span>client = Arc::new(client);
+		<span class="comment">// Create a temporary frontier secondary DB.
+		</span><span class="kw">let </span>backend = open_frontier_backend(client.clone(), tmp.into_path())
+			.expect(<span class="string">&quot;a temporary db was created&quot;</span>);
+		<span class="kw">let </span>client = client;
 
-		<span class="comment">// Run the Create command</span>
-		<span class="macro">assert!</span>(<span class="ident">cmd</span>(
-			<span class="string">&quot;:ethereum_schema_cache&quot;</span>.<span class="ident">to_string</span>(),
-			<span class="prelude-val">Some</span>(<span class="ident">test_value_path</span>.<span class="ident">clone</span>()),
-			<span class="ident">Operation::Create</span>,
-			<span class="ident">Column::Meta</span>
+		<span class="comment">// Run the Create command
+		</span><span class="macro">assert!</span>(cmd(
+			<span class="string">&quot;:ethereum_schema_cache&quot;</span>.to_string(),
+			<span class="prelude-val">Some</span>(test_value_path.clone()),
+			Operation::Create,
+			Column::Meta
 		)
-		.<span class="ident">run</span>(<span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span><span class="ident">client</span>), <span class="ident">backend</span>.<span class="ident">clone</span>())
-		.<span class="ident">is_err</span>());
+		.run(Arc::clone(<span class="kw-2">&amp;</span>client), backend.clone())
+		.is_err());
 
-		<span class="macro">assert_eq!</span>(<span class="ident">backend</span>.<span class="ident">meta</span>().<span class="ident">ethereum_schema</span>(), <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>));
+		<span class="macro">assert_eq!</span>(backend.meta().ethereum_schema(), <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>));
 
-		<span class="comment">// Run the Update command</span>
-		<span class="macro">assert!</span>(<span class="ident">cmd</span>(
-			<span class="string">&quot;:ethereum_schema_cache&quot;</span>.<span class="ident">to_string</span>(),
-			<span class="prelude-val">Some</span>(<span class="ident">test_value_path</span>),
-			<span class="ident">Operation::Update</span>,
-			<span class="ident">Column::Meta</span>
+		<span class="comment">// Run the Update command
+		</span><span class="macro">assert!</span>(cmd(
+			<span class="string">&quot;:ethereum_schema_cache&quot;</span>.to_string(),
+			<span class="prelude-val">Some</span>(test_value_path),
+			Operation::Update,
+			Column::Meta
 		)
-		.<span class="ident">run</span>(<span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span><span class="ident">client</span>), <span class="ident">backend</span>.<span class="ident">clone</span>())
-		.<span class="ident">is_err</span>());
+		.run(Arc::clone(<span class="kw-2">&amp;</span>client), backend.clone())
+		.is_err());
 
-		<span class="macro">assert_eq!</span>(<span class="ident">backend</span>.<span class="ident">meta</span>().<span class="ident">ethereum_schema</span>(), <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>));
+		<span class="macro">assert_eq!</span>(backend.meta().ethereum_schema(), <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>));
 	}
 
-	<span class="attribute">#[<span class="ident">ignore</span>]</span>
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">commitment_create</span>() {
-		<span class="kw">let</span> <span class="ident">tmp</span> <span class="op">=</span> <span class="ident">tempdir</span>().<span class="ident">expect</span>(<span class="string">&quot;create a temporary directory&quot;</span>);
+	<span class="attribute">#[ignore]
+	#[test]
+	</span><span class="kw">fn </span>commitment_create() {
+		<span class="kw">let </span>tmp = tempdir().expect(<span class="string">&quot;create a temporary directory&quot;</span>);
 
-		<span class="comment">// Test client.</span>
-		<span class="kw">let</span> (<span class="ident">c</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">TestClientBuilder::new</span>().<span class="ident">build_with_native_executor</span>::<span class="op">&lt;</span><span class="ident">RuntimeApi</span>, <span class="kw">_</span><span class="op">&gt;</span>(<span class="prelude-val">None</span>);
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">client</span> <span class="op">=</span> <span class="ident">Arc::new</span>(<span class="ident">c</span>);
+		<span class="comment">// Test client.
+		</span><span class="kw">let </span>(c, <span class="kw">_</span>) = TestClientBuilder::new().build_with_native_executor::&lt;RuntimeApi, <span class="kw">_</span>&gt;(<span class="prelude-val">None</span>);
+		<span class="kw">let </span><span class="kw-2">mut </span>client = Arc::new(c);
 
-		<span class="comment">// Get some transaction status.</span>
-		<span class="kw">let</span> <span class="ident">t1</span> <span class="op">=</span> <span class="ident">fp_rpc::TransactionStatus::default</span>();
-		<span class="kw">let</span> <span class="ident">t1_hash</span> <span class="op">=</span> <span class="ident">t1</span>.<span class="ident">transaction_hash</span>;
-		<span class="kw">let</span> <span class="ident">statuses</span> <span class="op">=</span> <span class="macro">vec!</span>[<span class="ident">t1</span>];
+		<span class="comment">// Get some transaction status.
+		</span><span class="kw">let </span>t1 = fp_rpc::TransactionStatus::default();
+		<span class="kw">let </span>t1_hash = t1.transaction_hash;
+		<span class="kw">let </span>statuses = <span class="macro">vec!</span>[t1];
 
-		<span class="comment">// Build a block and fill the pallet-ethereum status.</span>
-		<span class="kw">let</span> <span class="ident">key</span> <span class="op">=</span> <span class="ident">storage_prefix_build</span>(<span class="ident">PALLET_ETHEREUM</span>, <span class="ident">ETHEREUM_CURRENT_TRANSACTION_STATUS</span>);
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">builder</span> <span class="op">=</span> <span class="ident">client</span>.<span class="ident">new_block</span>(<span class="ident">Default::default</span>()).<span class="ident">unwrap</span>();
-		<span class="ident">builder</span>
-			.<span class="ident">push_storage_change</span>(<span class="ident">key</span>, <span class="prelude-val">Some</span>(<span class="ident">statuses</span>.<span class="ident">encode</span>()))
-			.<span class="ident">unwrap</span>();
-		<span class="kw">let</span> <span class="ident">block</span> <span class="op">=</span> <span class="ident">builder</span>.<span class="ident">build</span>().<span class="ident">unwrap</span>().<span class="ident">block</span>;
-		<span class="kw">let</span> <span class="ident">block_hash</span> <span class="op">=</span> <span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">hash</span>();
-		<span class="ident">executor::block_on</span>(<span class="ident">client</span>.<span class="ident">import</span>(<span class="ident">BlockOrigin::Own</span>, <span class="ident">block</span>)).<span class="ident">unwrap</span>();
+		<span class="comment">// Build a block and fill the pallet-ethereum status.
+		</span><span class="kw">let </span>key = storage_prefix_build(PALLET_ETHEREUM, ETHEREUM_CURRENT_TRANSACTION_STATUS);
+		<span class="kw">let </span><span class="kw-2">mut </span>builder = client.new_block(Default::default()).unwrap();
+		builder
+			.push_storage_change(key, <span class="prelude-val">Some</span>(statuses.encode()))
+			.unwrap();
+		<span class="kw">let </span>block = builder.build().unwrap().block;
+		<span class="kw">let </span>block_hash = block.header.hash();
+		executor::block_on(client.import(BlockOrigin::Own, block)).unwrap();
 
-		<span class="comment">// Set the substrate block hash as the value for the command.</span>
-		<span class="kw">let</span> <span class="ident">test_value_path</span> <span class="op">=</span> <span class="ident">test_json_file</span>(<span class="kw-2">&amp;</span><span class="ident">tmp</span>, <span class="kw-2">&amp;</span><span class="ident">TestValue::Commitment</span>(<span class="ident">block_hash</span>));
+		<span class="comment">// Set the substrate block hash as the value for the command.
+		</span><span class="kw">let </span>test_value_path = test_json_file(<span class="kw-2">&amp;</span>tmp, <span class="kw-2">&amp;</span>TestValue::Commitment(block_hash));
 
-		<span class="comment">// Create a temporary frontier secondary DB.</span>
-		<span class="kw">let</span> <span class="ident">backend</span> <span class="op">=</span> <span class="ident">open_frontier_backend</span>(<span class="ident">client</span>.<span class="ident">clone</span>(), <span class="ident">tmp</span>.<span class="ident">into_path</span>())
-			.<span class="ident">expect</span>(<span class="string">&quot;a temporary db was created&quot;</span>);
+		<span class="comment">// Create a temporary frontier secondary DB.
+		</span><span class="kw">let </span>backend = open_frontier_backend(client.clone(), tmp.into_path())
+			.expect(<span class="string">&quot;a temporary db was created&quot;</span>);
 
-		<span class="comment">// Run the command using some ethereum block hash as key.</span>
-		<span class="kw">let</span> <span class="ident">ethereum_block_hash</span> <span class="op">=</span> <span class="ident">H256::default</span>();
-		<span class="macro">assert!</span>(<span class="ident">cmd</span>(
-			<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">ethereum_block_hash</span>),
-			<span class="prelude-val">Some</span>(<span class="ident">test_value_path</span>.<span class="ident">clone</span>()),
-			<span class="ident">Operation::Create</span>,
-			<span class="ident">Column::Block</span>
+		<span class="comment">// Run the command using some ethereum block hash as key.
+		</span><span class="kw">let </span>ethereum_block_hash = H256::default();
+		<span class="macro">assert!</span>(cmd(
+			<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, ethereum_block_hash),
+			<span class="prelude-val">Some</span>(test_value_path.clone()),
+			Operation::Create,
+			Column::Block
 		)
-		.<span class="ident">run</span>(<span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span><span class="ident">client</span>), <span class="ident">backend</span>.<span class="ident">clone</span>())
-		.<span class="ident">is_ok</span>());
+		.run(Arc::clone(<span class="kw-2">&amp;</span>client), backend.clone())
+		.is_ok());
 
-		<span class="comment">// Expect the ethereum and substrate block hashes to be mapped.</span>
-		<span class="macro">assert_eq!</span>(
-			<span class="ident">backend</span>.<span class="ident">mapping</span>().<span class="ident">block_hash</span>(<span class="kw-2">&amp;</span><span class="ident">ethereum_block_hash</span>),
-			<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="macro">vec!</span>[<span class="ident">block_hash</span>]))
+		<span class="comment">// Expect the ethereum and substrate block hashes to be mapped.
+		</span><span class="macro">assert_eq!</span>(
+			backend.mapping().block_hash(<span class="kw-2">&amp;</span>ethereum_block_hash),
+			<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="macro">vec!</span>[block_hash]))
 		);
 
-		<span class="comment">// Expect the offchain-stored transaction metadata to match the one we stored in the runtime.</span>
-		<span class="kw">let</span> <span class="ident">expected_transaction_metadata</span> <span class="op">=</span> <span class="ident">fc_db::TransactionMetadata</span> {
-			<span class="ident">block_hash</span>,
-			<span class="ident">ethereum_block_hash</span>,
-			<span class="ident">ethereum_index</span>: <span class="number">0</span>,
+		<span class="comment">// Expect the offchain-stored transaction metadata to match the one we stored in the runtime.
+		</span><span class="kw">let </span>expected_transaction_metadata = fc_db::TransactionMetadata {
+			block_hash,
+			ethereum_block_hash,
+			ethereum_index: <span class="number">0</span>,
 		};
 		<span class="macro">assert_eq!</span>(
-			<span class="ident">backend</span>.<span class="ident">mapping</span>().<span class="ident">transaction_metadata</span>(<span class="kw-2">&amp;</span><span class="ident">t1_hash</span>),
-			<span class="prelude-val">Ok</span>(<span class="macro">vec!</span>[<span class="ident">expected_transaction_metadata</span>])
+			backend.mapping().transaction_metadata(<span class="kw-2">&amp;</span>t1_hash),
+			<span class="prelude-val">Ok</span>(<span class="macro">vec!</span>[expected_transaction_metadata])
 		);
 
-		<span class="comment">// Expect a second command run to fail, as the key is not empty anymore.</span>
-		<span class="macro">assert!</span>(<span class="ident">cmd</span>(
-			<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">ethereum_block_hash</span>),
-			<span class="prelude-val">Some</span>(<span class="ident">test_value_path</span>),
-			<span class="ident">Operation::Create</span>,
-			<span class="ident">Column::Block</span>
+		<span class="comment">// Expect a second command run to fail, as the key is not empty anymore.
+		</span><span class="macro">assert!</span>(cmd(
+			<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, ethereum_block_hash),
+			<span class="prelude-val">Some</span>(test_value_path),
+			Operation::Create,
+			Column::Block
 		)
-		.<span class="ident">run</span>(<span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span><span class="ident">client</span>), <span class="ident">backend</span>.<span class="ident">clone</span>())
-		.<span class="ident">is_err</span>());
+		.run(Arc::clone(<span class="kw-2">&amp;</span>client), backend.clone())
+		.is_err());
 	}
 
-	<span class="attribute">#[<span class="ident">ignore</span>]</span>
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">commitment_update</span>() {
-		<span class="kw">let</span> <span class="ident">tmp</span> <span class="op">=</span> <span class="ident">tempdir</span>().<span class="ident">expect</span>(<span class="string">&quot;create a temporary directory&quot;</span>);
+	<span class="attribute">#[ignore]
+	#[test]
+	</span><span class="kw">fn </span>commitment_update() {
+		<span class="kw">let </span>tmp = tempdir().expect(<span class="string">&quot;create a temporary directory&quot;</span>);
 
-		<span class="comment">// Test client.</span>
-		<span class="kw">let</span> (<span class="ident">c</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">TestClientBuilder::new</span>().<span class="ident">build_with_native_executor</span>::<span class="op">&lt;</span><span class="ident">RuntimeApi</span>, <span class="kw">_</span><span class="op">&gt;</span>(<span class="prelude-val">None</span>);
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">client</span> <span class="op">=</span> <span class="ident">Arc::new</span>(<span class="ident">c</span>);
+		<span class="comment">// Test client.
+		</span><span class="kw">let </span>(c, <span class="kw">_</span>) = TestClientBuilder::new().build_with_native_executor::&lt;RuntimeApi, <span class="kw">_</span>&gt;(<span class="prelude-val">None</span>);
+		<span class="kw">let </span><span class="kw-2">mut </span>client = Arc::new(c);
 
-		<span class="comment">// Get some transaction status.</span>
-		<span class="kw">let</span> <span class="ident">t1</span> <span class="op">=</span> <span class="ident">fp_rpc::TransactionStatus::default</span>();
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">t2</span> <span class="op">=</span> <span class="ident">fp_rpc::TransactionStatus::default</span>();
-		<span class="ident">t2</span>.<span class="ident">transaction_hash</span> <span class="op">=</span>
-			<span class="ident">H256::from_str</span>(<span class="string">&quot;0x2200000000000000000000000000000000000000000000000000000000000000&quot;</span>)
-				.<span class="ident">unwrap</span>();
-		<span class="kw">let</span> <span class="ident">t1_hash</span> <span class="op">=</span> <span class="ident">t1</span>.<span class="ident">transaction_hash</span>;
-		<span class="kw">let</span> <span class="ident">t2_hash</span> <span class="op">=</span> <span class="ident">t2</span>.<span class="ident">transaction_hash</span>;
-		<span class="kw">let</span> <span class="ident">statuses_a1</span> <span class="op">=</span> <span class="macro">vec!</span>[<span class="ident">t1</span>.<span class="ident">clone</span>()];
-		<span class="kw">let</span> <span class="ident">statuses_a2</span> <span class="op">=</span> <span class="macro">vec!</span>[<span class="ident">t1</span>, <span class="ident">t2</span>];
+		<span class="comment">// Get some transaction status.
+		</span><span class="kw">let </span>t1 = fp_rpc::TransactionStatus::default();
+		<span class="kw">let </span><span class="kw-2">mut </span>t2 = fp_rpc::TransactionStatus::default();
+		t2.transaction_hash =
+			H256::from_str(<span class="string">&quot;0x2200000000000000000000000000000000000000000000000000000000000000&quot;</span>)
+				.unwrap();
+		<span class="kw">let </span>t1_hash = t1.transaction_hash;
+		<span class="kw">let </span>t2_hash = t2.transaction_hash;
+		<span class="kw">let </span>statuses_a1 = <span class="macro">vec!</span>[t1.clone()];
+		<span class="kw">let </span>statuses_a2 = <span class="macro">vec!</span>[t1, t2];
 
-		<span class="kw">let</span> <span class="ident">key</span> <span class="op">=</span> <span class="ident">storage_prefix_build</span>(<span class="ident">PALLET_ETHEREUM</span>, <span class="ident">ETHEREUM_CURRENT_TRANSACTION_STATUS</span>);
+		<span class="kw">let </span>key = storage_prefix_build(PALLET_ETHEREUM, ETHEREUM_CURRENT_TRANSACTION_STATUS);
 
-		<span class="comment">// First we create block and insert data in the offchain db.</span>
+		<span class="comment">// First we create block and insert data in the offchain db.
 
-		<span class="comment">// Build a block A1 and fill the pallet-ethereum status.</span>
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">builder</span> <span class="op">=</span> <span class="ident">client</span>
-			.<span class="ident">new_block_at</span>(
-				<span class="kw-2">&amp;</span><span class="ident">BlockId::Hash</span>(<span class="ident">client</span>.<span class="ident">genesis_hash</span>()),
-				<span class="ident">Default::default</span>(),
+		// Build a block A1 and fill the pallet-ethereum status.
+		</span><span class="kw">let </span><span class="kw-2">mut </span>builder = client
+			.new_block_at(
+				<span class="kw-2">&amp;</span>BlockId::Hash(client.genesis_hash()),
+				Default::default(),
 				<span class="bool-val">false</span>,
 			)
-			.<span class="ident">unwrap</span>();
-		<span class="ident">builder</span>
-			.<span class="ident">push_storage_change</span>(<span class="ident">key</span>.<span class="ident">clone</span>(), <span class="prelude-val">Some</span>(<span class="ident">statuses_a1</span>.<span class="ident">encode</span>()))
-			.<span class="ident">unwrap</span>();
-		<span class="kw">let</span> <span class="ident">block_a1</span> <span class="op">=</span> <span class="ident">builder</span>.<span class="ident">build</span>().<span class="ident">unwrap</span>().<span class="ident">block</span>;
-		<span class="kw">let</span> <span class="ident">block_a1_hash</span> <span class="op">=</span> <span class="ident">block_a1</span>.<span class="ident">header</span>.<span class="ident">hash</span>();
-		<span class="ident">executor::block_on</span>(<span class="ident">client</span>.<span class="ident">import</span>(<span class="ident">BlockOrigin::Own</span>, <span class="ident">block_a1</span>)).<span class="ident">unwrap</span>();
+			.unwrap();
+		builder
+			.push_storage_change(key.clone(), <span class="prelude-val">Some</span>(statuses_a1.encode()))
+			.unwrap();
+		<span class="kw">let </span>block_a1 = builder.build().unwrap().block;
+		<span class="kw">let </span>block_a1_hash = block_a1.header.hash();
+		executor::block_on(client.import(BlockOrigin::Own, block_a1)).unwrap();
 
-		<span class="comment">// Set the substrate block hash as the value for the command.</span>
-		<span class="kw">let</span> <span class="ident">test_value_path</span> <span class="op">=</span> <span class="ident">test_json_file</span>(<span class="kw-2">&amp;</span><span class="ident">tmp</span>, <span class="kw-2">&amp;</span><span class="ident">TestValue::Commitment</span>(<span class="ident">block_a1_hash</span>));
+		<span class="comment">// Set the substrate block hash as the value for the command.
+		</span><span class="kw">let </span>test_value_path = test_json_file(<span class="kw-2">&amp;</span>tmp, <span class="kw-2">&amp;</span>TestValue::Commitment(block_a1_hash));
 
-		<span class="comment">// Create a temporary frontier secondary DB.</span>
-		<span class="kw">let</span> <span class="ident">backend</span> <span class="op">=</span> <span class="ident">open_frontier_backend</span>(<span class="ident">client</span>.<span class="ident">clone</span>(), <span class="ident">tmp</span>.<span class="ident">into_path</span>())
-			.<span class="ident">expect</span>(<span class="string">&quot;a temporary db was created&quot;</span>);
+		<span class="comment">// Create a temporary frontier secondary DB.
+		</span><span class="kw">let </span>backend = open_frontier_backend(client.clone(), tmp.into_path())
+			.expect(<span class="string">&quot;a temporary db was created&quot;</span>);
 
-		<span class="comment">// Run the command using some ethereum block hash as key.</span>
-		<span class="kw">let</span> <span class="ident">ethereum_block_hash</span> <span class="op">=</span> <span class="ident">H256::default</span>();
-		<span class="macro">assert!</span>(<span class="ident">cmd</span>(
-			<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">ethereum_block_hash</span>),
-			<span class="prelude-val">Some</span>(<span class="ident">test_value_path</span>.<span class="ident">clone</span>()),
-			<span class="ident">Operation::Create</span>,
-			<span class="ident">Column::Block</span>
+		<span class="comment">// Run the command using some ethereum block hash as key.
+		</span><span class="kw">let </span>ethereum_block_hash = H256::default();
+		<span class="macro">assert!</span>(cmd(
+			<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, ethereum_block_hash),
+			<span class="prelude-val">Some</span>(test_value_path.clone()),
+			Operation::Create,
+			Column::Block
 		)
-		.<span class="ident">run</span>(<span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span><span class="ident">client</span>), <span class="ident">backend</span>.<span class="ident">clone</span>())
-		.<span class="ident">is_ok</span>());
+		.run(Arc::clone(<span class="kw-2">&amp;</span>client), backend.clone())
+		.is_ok());
 
-		<span class="comment">// Expect the ethereum and substrate block hashes to be mapped.</span>
-		<span class="macro">assert_eq!</span>(
-			<span class="ident">backend</span>.<span class="ident">mapping</span>().<span class="ident">block_hash</span>(<span class="kw-2">&amp;</span><span class="ident">ethereum_block_hash</span>),
-			<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="macro">vec!</span>[<span class="ident">block_a1_hash</span>]))
+		<span class="comment">// Expect the ethereum and substrate block hashes to be mapped.
+		</span><span class="macro">assert_eq!</span>(
+			backend.mapping().block_hash(<span class="kw-2">&amp;</span>ethereum_block_hash),
+			<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="macro">vec!</span>[block_a1_hash]))
 		);
 
-		<span class="comment">// Expect the offchain-stored transaction metadata to match the one we stored in the runtime.</span>
-		<span class="kw">let</span> <span class="ident">expected_transaction_metadata_a1_t1</span> <span class="op">=</span> <span class="ident">fc_db::TransactionMetadata</span> {
-			<span class="ident">block_hash</span>: <span class="ident">block_a1_hash</span>,
-			<span class="ident">ethereum_block_hash</span>,
-			<span class="ident">ethereum_index</span>: <span class="number">0</span>,
+		<span class="comment">// Expect the offchain-stored transaction metadata to match the one we stored in the runtime.
+		</span><span class="kw">let </span>expected_transaction_metadata_a1_t1 = fc_db::TransactionMetadata {
+			block_hash: block_a1_hash,
+			ethereum_block_hash,
+			ethereum_index: <span class="number">0</span>,
 		};
 		<span class="macro">assert_eq!</span>(
-			<span class="ident">backend</span>.<span class="ident">mapping</span>().<span class="ident">transaction_metadata</span>(<span class="kw-2">&amp;</span><span class="ident">t1_hash</span>),
-			<span class="prelude-val">Ok</span>(<span class="macro">vec!</span>[<span class="ident">expected_transaction_metadata_a1_t1</span>.<span class="ident">clone</span>()])
+			backend.mapping().transaction_metadata(<span class="kw-2">&amp;</span>t1_hash),
+			<span class="prelude-val">Ok</span>(<span class="macro">vec!</span>[expected_transaction_metadata_a1_t1.clone()])
 		);
 
-		<span class="comment">// Next we create a new block and update the offchain db.</span>
+		<span class="comment">// Next we create a new block and update the offchain db.
 
-		<span class="comment">// Build a block A2 and fill the pallet-ethereum status.</span>
-		<span class="kw">let</span> <span class="ident">tmp</span> <span class="op">=</span> <span class="ident">tempdir</span>().<span class="ident">expect</span>(<span class="string">&quot;create a temporary directory&quot;</span>);
+		// Build a block A2 and fill the pallet-ethereum status.
+		</span><span class="kw">let </span>tmp = tempdir().expect(<span class="string">&quot;create a temporary directory&quot;</span>);
 
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">builder</span> <span class="op">=</span> <span class="ident">client</span>
-			.<span class="ident">new_block_at</span>(
-				<span class="kw-2">&amp;</span><span class="ident">BlockId::Hash</span>(<span class="ident">client</span>.<span class="ident">genesis_hash</span>()),
-				<span class="ident">Default::default</span>(),
+		<span class="kw">let </span><span class="kw-2">mut </span>builder = client
+			.new_block_at(
+				<span class="kw-2">&amp;</span>BlockId::Hash(client.genesis_hash()),
+				Default::default(),
 				<span class="bool-val">false</span>,
 			)
-			.<span class="ident">unwrap</span>();
-		<span class="ident">builder</span>
-			.<span class="ident">push_storage_change</span>(<span class="ident">key</span>, <span class="prelude-val">Some</span>(<span class="ident">statuses_a2</span>.<span class="ident">encode</span>()))
-			.<span class="ident">unwrap</span>();
-		<span class="kw">let</span> <span class="ident">block_a2</span> <span class="op">=</span> <span class="ident">builder</span>.<span class="ident">build</span>().<span class="ident">unwrap</span>().<span class="ident">block</span>;
-		<span class="kw">let</span> <span class="ident">block_a2_hash</span> <span class="op">=</span> <span class="ident">block_a2</span>.<span class="ident">header</span>.<span class="ident">hash</span>();
-		<span class="ident">executor::block_on</span>(<span class="ident">client</span>.<span class="ident">import</span>(<span class="ident">BlockOrigin::Own</span>, <span class="ident">block_a2</span>)).<span class="ident">unwrap</span>();
+			.unwrap();
+		builder
+			.push_storage_change(key, <span class="prelude-val">Some</span>(statuses_a2.encode()))
+			.unwrap();
+		<span class="kw">let </span>block_a2 = builder.build().unwrap().block;
+		<span class="kw">let </span>block_a2_hash = block_a2.header.hash();
+		executor::block_on(client.import(BlockOrigin::Own, block_a2)).unwrap();
 
-		<span class="comment">// Set the substrate block hash as the value for the command.</span>
-		<span class="kw">let</span> <span class="ident">test_value_path</span> <span class="op">=</span> <span class="ident">test_json_file</span>(<span class="kw-2">&amp;</span><span class="ident">tmp</span>, <span class="kw-2">&amp;</span><span class="ident">TestValue::Commitment</span>(<span class="ident">block_a2_hash</span>));
+		<span class="comment">// Set the substrate block hash as the value for the command.
+		</span><span class="kw">let </span>test_value_path = test_json_file(<span class="kw-2">&amp;</span>tmp, <span class="kw-2">&amp;</span>TestValue::Commitment(block_a2_hash));
 
-		<span class="comment">// Run the command using some ethereum block hash as key.</span>
-		<span class="kw">let</span> <span class="ident">ethereum_block_hash</span> <span class="op">=</span> <span class="ident">H256::default</span>();
-		<span class="macro">assert!</span>(<span class="ident">cmd</span>(
-			<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">ethereum_block_hash</span>),
-			<span class="prelude-val">Some</span>(<span class="ident">test_value_path</span>.<span class="ident">clone</span>()),
-			<span class="ident">Operation::Update</span>,
-			<span class="ident">Column::Block</span>
+		<span class="comment">// Run the command using some ethereum block hash as key.
+		</span><span class="kw">let </span>ethereum_block_hash = H256::default();
+		<span class="macro">assert!</span>(cmd(
+			<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, ethereum_block_hash),
+			<span class="prelude-val">Some</span>(test_value_path.clone()),
+			Operation::Update,
+			Column::Block
 		)
-		.<span class="ident">run</span>(<span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span><span class="ident">client</span>), <span class="ident">backend</span>.<span class="ident">clone</span>())
-		.<span class="ident">is_ok</span>());
+		.run(Arc::clone(<span class="kw-2">&amp;</span>client), backend.clone())
+		.is_ok());
 
-		<span class="comment">// Expect the ethereum and substrate block hashes to be mapped.</span>
-		<span class="macro">assert_eq!</span>(
-			<span class="ident">backend</span>.<span class="ident">mapping</span>().<span class="ident">block_hash</span>(<span class="kw-2">&amp;</span><span class="ident">ethereum_block_hash</span>),
-			<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="macro">vec!</span>[<span class="ident">block_a1_hash</span>, <span class="ident">block_a2_hash</span>]))
+		<span class="comment">// Expect the ethereum and substrate block hashes to be mapped.
+		</span><span class="macro">assert_eq!</span>(
+			backend.mapping().block_hash(<span class="kw-2">&amp;</span>ethereum_block_hash),
+			<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="macro">vec!</span>[block_a1_hash, block_a2_hash]))
 		);
 
-		<span class="comment">// Expect the offchain-stored transaction metadata to have data for both blocks.</span>
-		<span class="kw">let</span> <span class="ident">expected_transaction_metadata_a2_t1</span> <span class="op">=</span> <span class="ident">fc_db::TransactionMetadata</span> {
-			<span class="ident">block_hash</span>: <span class="ident">block_a2_hash</span>,
-			<span class="ident">ethereum_block_hash</span>,
-			<span class="ident">ethereum_index</span>: <span class="number">0</span>,
+		<span class="comment">// Expect the offchain-stored transaction metadata to have data for both blocks.
+		</span><span class="kw">let </span>expected_transaction_metadata_a2_t1 = fc_db::TransactionMetadata {
+			block_hash: block_a2_hash,
+			ethereum_block_hash,
+			ethereum_index: <span class="number">0</span>,
 		};
-		<span class="kw">let</span> <span class="ident">expected_transaction_metadata_a2_t2</span> <span class="op">=</span> <span class="ident">fc_db::TransactionMetadata</span> {
-			<span class="ident">block_hash</span>: <span class="ident">block_a2_hash</span>,
-			<span class="ident">ethereum_block_hash</span>,
-			<span class="ident">ethereum_index</span>: <span class="number">1</span>,
+		<span class="kw">let </span>expected_transaction_metadata_a2_t2 = fc_db::TransactionMetadata {
+			block_hash: block_a2_hash,
+			ethereum_block_hash,
+			ethereum_index: <span class="number">1</span>,
 		};
 		<span class="macro">assert_eq!</span>(
-			<span class="ident">backend</span>.<span class="ident">mapping</span>().<span class="ident">transaction_metadata</span>(<span class="kw-2">&amp;</span><span class="ident">t1_hash</span>),
+			backend.mapping().transaction_metadata(<span class="kw-2">&amp;</span>t1_hash),
 			<span class="prelude-val">Ok</span>(<span class="macro">vec!</span>[
-				<span class="ident">expected_transaction_metadata_a1_t1</span>,
-				<span class="ident">expected_transaction_metadata_a2_t1</span>
+				expected_transaction_metadata_a1_t1,
+				expected_transaction_metadata_a2_t1
 			])
 		);
 		<span class="macro">assert_eq!</span>(
-			<span class="ident">backend</span>.<span class="ident">mapping</span>().<span class="ident">transaction_metadata</span>(<span class="kw-2">&amp;</span><span class="ident">t2_hash</span>),
-			<span class="prelude-val">Ok</span>(<span class="macro">vec!</span>[<span class="ident">expected_transaction_metadata_a2_t2</span>])
+			backend.mapping().transaction_metadata(<span class="kw-2">&amp;</span>t2_hash),
+			<span class="prelude-val">Ok</span>(<span class="macro">vec!</span>[expected_transaction_metadata_a2_t2])
 		);
 	}
 
-	<span class="attribute">#[<span class="ident">ignore</span>]</span>
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">mapping_read_works</span>() {
-		<span class="kw">let</span> <span class="ident">tmp</span> <span class="op">=</span> <span class="ident">tempdir</span>().<span class="ident">expect</span>(<span class="string">&quot;create a temporary directory&quot;</span>);
+	<span class="attribute">#[ignore]
+	#[test]
+	</span><span class="kw">fn </span>mapping_read_works() {
+		<span class="kw">let </span>tmp = tempdir().expect(<span class="string">&quot;create a temporary directory&quot;</span>);
 
-		<span class="comment">// Test client.</span>
-		<span class="kw">let</span> (<span class="ident">c</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">TestClientBuilder::new</span>().<span class="ident">build_with_native_executor</span>::<span class="op">&lt;</span><span class="ident">RuntimeApi</span>, <span class="kw">_</span><span class="op">&gt;</span>(<span class="prelude-val">None</span>);
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">client</span> <span class="op">=</span> <span class="ident">Arc::new</span>(<span class="ident">c</span>);
+		<span class="comment">// Test client.
+		</span><span class="kw">let </span>(c, <span class="kw">_</span>) = TestClientBuilder::new().build_with_native_executor::&lt;RuntimeApi, <span class="kw">_</span>&gt;(<span class="prelude-val">None</span>);
+		<span class="kw">let </span><span class="kw-2">mut </span>client = Arc::new(c);
 
-		<span class="comment">// Get some transaction status.</span>
-		<span class="kw">let</span> <span class="ident">t1</span> <span class="op">=</span> <span class="ident">fp_rpc::TransactionStatus::default</span>();
-		<span class="kw">let</span> <span class="ident">t1_hash</span> <span class="op">=</span> <span class="ident">t1</span>.<span class="ident">transaction_hash</span>;
-		<span class="kw">let</span> <span class="ident">statuses</span> <span class="op">=</span> <span class="macro">vec!</span>[<span class="ident">t1</span>];
+		<span class="comment">// Get some transaction status.
+		</span><span class="kw">let </span>t1 = fp_rpc::TransactionStatus::default();
+		<span class="kw">let </span>t1_hash = t1.transaction_hash;
+		<span class="kw">let </span>statuses = <span class="macro">vec!</span>[t1];
 
-		<span class="comment">// Build a block and fill the pallet-ethereum status.</span>
-		<span class="kw">let</span> <span class="ident">key</span> <span class="op">=</span> <span class="ident">storage_prefix_build</span>(<span class="ident">PALLET_ETHEREUM</span>, <span class="ident">ETHEREUM_CURRENT_TRANSACTION_STATUS</span>);
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">builder</span> <span class="op">=</span> <span class="ident">client</span>.<span class="ident">new_block</span>(<span class="ident">Default::default</span>()).<span class="ident">unwrap</span>();
-		<span class="ident">builder</span>
-			.<span class="ident">push_storage_change</span>(<span class="ident">key</span>, <span class="prelude-val">Some</span>(<span class="ident">statuses</span>.<span class="ident">encode</span>()))
-			.<span class="ident">unwrap</span>();
-		<span class="kw">let</span> <span class="ident">block</span> <span class="op">=</span> <span class="ident">builder</span>.<span class="ident">build</span>().<span class="ident">unwrap</span>().<span class="ident">block</span>;
-		<span class="kw">let</span> <span class="ident">block_hash</span> <span class="op">=</span> <span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">hash</span>();
-		<span class="ident">executor::block_on</span>(<span class="ident">client</span>.<span class="ident">import</span>(<span class="ident">BlockOrigin::Own</span>, <span class="ident">block</span>)).<span class="ident">unwrap</span>();
+		<span class="comment">// Build a block and fill the pallet-ethereum status.
+		</span><span class="kw">let </span>key = storage_prefix_build(PALLET_ETHEREUM, ETHEREUM_CURRENT_TRANSACTION_STATUS);
+		<span class="kw">let </span><span class="kw-2">mut </span>builder = client.new_block(Default::default()).unwrap();
+		builder
+			.push_storage_change(key, <span class="prelude-val">Some</span>(statuses.encode()))
+			.unwrap();
+		<span class="kw">let </span>block = builder.build().unwrap().block;
+		<span class="kw">let </span>block_hash = block.header.hash();
+		executor::block_on(client.import(BlockOrigin::Own, block)).unwrap();
 
-		<span class="comment">// Set the substrate block hash as the value for the command.</span>
-		<span class="kw">let</span> <span class="ident">test_value_path</span> <span class="op">=</span> <span class="ident">test_json_file</span>(<span class="kw-2">&amp;</span><span class="ident">tmp</span>, <span class="kw-2">&amp;</span><span class="ident">TestValue::Commitment</span>(<span class="ident">block_hash</span>));
+		<span class="comment">// Set the substrate block hash as the value for the command.
+		</span><span class="kw">let </span>test_value_path = test_json_file(<span class="kw-2">&amp;</span>tmp, <span class="kw-2">&amp;</span>TestValue::Commitment(block_hash));
 
-		<span class="comment">// Create a temporary frontier secondary DB.</span>
-		<span class="kw">let</span> <span class="ident">backend</span> <span class="op">=</span> <span class="ident">open_frontier_backend</span>(<span class="ident">client</span>.<span class="ident">clone</span>(), <span class="ident">tmp</span>.<span class="ident">into_path</span>())
-			.<span class="ident">expect</span>(<span class="string">&quot;a temporary db was created&quot;</span>);
+		<span class="comment">// Create a temporary frontier secondary DB.
+		</span><span class="kw">let </span>backend = open_frontier_backend(client.clone(), tmp.into_path())
+			.expect(<span class="string">&quot;a temporary db was created&quot;</span>);
 
-		<span class="comment">// Create command using some ethereum block hash as key.</span>
-		<span class="kw">let</span> <span class="ident">ethereum_block_hash</span> <span class="op">=</span> <span class="ident">H256::default</span>();
-		<span class="macro">assert!</span>(<span class="ident">cmd</span>(
-			<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">ethereum_block_hash</span>),
-			<span class="prelude-val">Some</span>(<span class="ident">test_value_path</span>.<span class="ident">clone</span>()),
-			<span class="ident">Operation::Create</span>,
-			<span class="ident">Column::Block</span>,
+		<span class="comment">// Create command using some ethereum block hash as key.
+		</span><span class="kw">let </span>ethereum_block_hash = H256::default();
+		<span class="macro">assert!</span>(cmd(
+			<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, ethereum_block_hash),
+			<span class="prelude-val">Some</span>(test_value_path.clone()),
+			Operation::Create,
+			Column::Block,
 		)
-		.<span class="ident">run</span>(<span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span><span class="ident">client</span>), <span class="ident">backend</span>.<span class="ident">clone</span>())
-		.<span class="ident">is_ok</span>());
+		.run(Arc::clone(<span class="kw-2">&amp;</span>client), backend.clone())
+		.is_ok());
 
-		<span class="comment">// Read block command.</span>
-		<span class="macro">assert!</span>(<span class="ident">cmd</span>(
-			<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">ethereum_block_hash</span>),
+		<span class="comment">// Read block command.
+		</span><span class="macro">assert!</span>(cmd(
+			<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, ethereum_block_hash),
 			<span class="prelude-val">None</span>,
-			<span class="ident">Operation::Read</span>,
-			<span class="ident">Column::Block</span>
+			Operation::Read,
+			Column::Block
 		)
-		.<span class="ident">run</span>(<span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span><span class="ident">client</span>), <span class="ident">backend</span>.<span class="ident">clone</span>())
-		.<span class="ident">is_ok</span>());
+		.run(Arc::clone(<span class="kw-2">&amp;</span>client), backend.clone())
+		.is_ok());
 
-		<span class="comment">// Read transaction command.</span>
-		<span class="macro">assert!</span>(<span class="ident">cmd</span>(
-			<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">t1_hash</span>),
+		<span class="comment">// Read transaction command.
+		</span><span class="macro">assert!</span>(cmd(
+			<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, t1_hash),
 			<span class="prelude-val">None</span>,
-			<span class="ident">Operation::Read</span>,
-			<span class="ident">Column::Transaction</span>
+			Operation::Read,
+			Column::Transaction
 		)
-		.<span class="ident">run</span>(<span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span><span class="ident">client</span>), <span class="ident">backend</span>.<span class="ident">clone</span>())
-		.<span class="ident">is_ok</span>());
+		.run(Arc::clone(<span class="kw-2">&amp;</span>client), backend.clone())
+		.is_ok());
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="fc_cli" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (7fe022f5a 2022-07-24)" ></div>
-</body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="fc_cli" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (81f391930 2022-10-09)" ></div></body></html>

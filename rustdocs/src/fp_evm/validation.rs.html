@@ -1,10 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `primitives/evm/src/validation.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>validation.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../fp_evm/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a><h2 class="location"></h2>
-    </nav>
-    <nav class="sidebar"><a class="sidebar-logo" href="../../fp_evm/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../fp_evm/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1">
-                                <a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div>
-                        </div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `primitives/evm/src/validation.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>validation.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><a class="sidebar-logo" href="../../fp_evm/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../fp_evm/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -751,211 +745,211 @@
 <span id="745">745</span>
 <span id="746">746</span>
 <span id="747">747</span>
-</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
-<span class="comment">// This file is part of Frontier.</span>
-<span class="comment">//</span>
-<span class="comment">// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.</span>
-<span class="comment">//</span>
-<span class="comment">// Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
-<span class="comment">// you may not use this file except in compliance with the License.</span>
-<span class="comment">// You may obtain a copy of the License at</span>
-<span class="comment">//</span>
-<span class="comment">// 	http://www.apache.org/licenses/LICENSE-2.0</span>
-<span class="comment">//</span>
-<span class="comment">// Unless required by applicable law or agreed to in writing, software</span>
-<span class="comment">// distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
-<span class="comment">// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
-<span class="comment">// See the License for the specific language governing permissions and</span>
-<span class="comment">// limitations under the License.</span>
-<span class="attribute">#![<span class="ident">allow</span>(<span class="ident">clippy::comparison_chain</span>)]</span>
+</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
+// This file is part of Frontier.
+//
+// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// 	http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+</span><span class="attribute">#![allow(clippy::comparison_chain)]
 
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">evm::backend::Basic</span> <span class="kw">as</span> <span class="ident">Account</span>;
-<span class="kw">use</span> <span class="ident">frame_support::sp_runtime::traits::UniqueSaturatedInto</span>;
-<span class="kw">use</span> <span class="ident">sp_core</span>::{<span class="ident">H160</span>, <span class="ident">H256</span>, <span class="ident">U256</span>};
-<span class="kw">use</span> <span class="ident">sp_std::vec::Vec</span>;
+</span><span class="kw">pub use </span>evm::backend::Basic <span class="kw">as </span>Account;
+<span class="kw">use </span>frame_support::sp_runtime::traits::UniqueSaturatedInto;
+<span class="kw">use </span>sp_core::{H160, H256, U256};
+<span class="kw">use </span>sp_std::vec::Vec;
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">CheckEvmTransactionInput</span> {
-	<span class="kw">pub</span> <span class="ident">chain_id</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
-	<span class="kw">pub</span> <span class="ident">to</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">H160</span><span class="op">&gt;</span>,
-	<span class="kw">pub</span> <span class="ident">input</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
-	<span class="kw">pub</span> <span class="ident">nonce</span>: <span class="ident">U256</span>,
-	<span class="kw">pub</span> <span class="ident">gas_limit</span>: <span class="ident">U256</span>,
-	<span class="kw">pub</span> <span class="ident">gas_price</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-	<span class="kw">pub</span> <span class="ident">max_fee_per_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-	<span class="kw">pub</span> <span class="ident">max_priority_fee_per_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-	<span class="kw">pub</span> <span class="ident">value</span>: <span class="ident">U256</span>,
-	<span class="kw">pub</span> <span class="ident">access_list</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">H160</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span>)<span class="op">&gt;</span>,
+<span class="attribute">#[derive(Debug)]
+</span><span class="kw">pub struct </span>CheckEvmTransactionInput {
+	<span class="kw">pub </span>chain_id: <span class="prelude-ty">Option</span>&lt;u64&gt;,
+	<span class="kw">pub </span>to: <span class="prelude-ty">Option</span>&lt;H160&gt;,
+	<span class="kw">pub </span>input: Vec&lt;u8&gt;,
+	<span class="kw">pub </span>nonce: U256,
+	<span class="kw">pub </span>gas_limit: U256,
+	<span class="kw">pub </span>gas_price: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+	<span class="kw">pub </span>max_fee_per_gas: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+	<span class="kw">pub </span>max_priority_fee_per_gas: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+	<span class="kw">pub </span>value: U256,
+	<span class="kw">pub </span>access_list: Vec&lt;(H160, Vec&lt;H256&gt;)&gt;,
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">CheckEvmTransactionConfig</span><span class="op">&lt;</span><span class="lifetime">&#39;config</span><span class="op">&gt;</span> {
-	<span class="kw">pub</span> <span class="ident">evm_config</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;config</span> <span class="ident">evm::Config</span>,
-	<span class="kw">pub</span> <span class="ident">block_gas_limit</span>: <span class="ident">U256</span>,
-	<span class="kw">pub</span> <span class="ident">base_fee</span>: <span class="ident">U256</span>,
-	<span class="kw">pub</span> <span class="ident">chain_id</span>: <span class="ident">u64</span>,
-	<span class="kw">pub</span> <span class="ident">is_transactional</span>: <span class="ident">bool</span>,
+<span class="attribute">#[derive(Debug)]
+</span><span class="kw">pub struct </span>CheckEvmTransactionConfig&lt;<span class="lifetime">&#39;config</span>&gt; {
+	<span class="kw">pub </span>evm_config: <span class="kw-2">&amp;</span><span class="lifetime">&#39;config </span>evm::Config,
+	<span class="kw">pub </span>block_gas_limit: U256,
+	<span class="kw">pub </span>base_fee: U256,
+	<span class="kw">pub </span>chain_id: u64,
+	<span class="kw">pub </span>is_transactional: bool,
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">CheckEvmTransaction</span><span class="op">&lt;</span><span class="lifetime">&#39;config</span>, <span class="ident">E</span>: <span class="ident">From</span><span class="op">&lt;</span><span class="ident">InvalidEvmTransactionError</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-	<span class="kw">pub</span> <span class="ident">config</span>: <span class="ident">CheckEvmTransactionConfig</span><span class="op">&lt;</span><span class="lifetime">&#39;config</span><span class="op">&gt;</span>,
-	<span class="kw">pub</span> <span class="ident">transaction</span>: <span class="ident">CheckEvmTransactionInput</span>,
-	<span class="ident">_marker</span>: <span class="ident">sp_std::marker::PhantomData</span><span class="op">&lt;</span><span class="ident">E</span><span class="op">&gt;</span>,
+<span class="attribute">#[derive(Debug)]
+</span><span class="kw">pub struct </span>CheckEvmTransaction&lt;<span class="lifetime">&#39;config</span>, E: From&lt;InvalidEvmTransactionError&gt;&gt; {
+	<span class="kw">pub </span>config: CheckEvmTransactionConfig&lt;<span class="lifetime">&#39;config</span>&gt;,
+	<span class="kw">pub </span>transaction: CheckEvmTransactionInput,
+	_marker: sp_std::marker::PhantomData&lt;E&gt;,
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
-<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">InvalidEvmTransactionError</span> {
-	<span class="ident">GasLimitTooLow</span>,
-	<span class="ident">GasLimitTooHigh</span>,
-	<span class="ident">GasPriceTooLow</span>,
-	<span class="ident">PriorityFeeTooHigh</span>,
-	<span class="ident">BalanceTooLow</span>,
-	<span class="ident">TxNonceTooLow</span>,
-	<span class="ident">TxNonceTooHigh</span>,
-	<span class="ident">InvalidPaymentInput</span>,
-	<span class="ident">InvalidChainId</span>,
+<span class="attribute">#[derive(Debug)]
+</span><span class="kw">pub enum </span>InvalidEvmTransactionError {
+	GasLimitTooLow,
+	GasLimitTooHigh,
+	GasPriceTooLow,
+	PriorityFeeTooHigh,
+	BalanceTooLow,
+	TxNonceTooLow,
+	TxNonceTooHigh,
+	InvalidPaymentInput,
+	InvalidChainId,
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;config</span>, <span class="ident">E</span>: <span class="ident">From</span><span class="op">&lt;</span><span class="ident">InvalidEvmTransactionError</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="ident">CheckEvmTransaction</span><span class="op">&lt;</span><span class="lifetime">&#39;config</span>, <span class="ident">E</span><span class="op">&gt;</span> {
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(
-		<span class="ident">config</span>: <span class="ident">CheckEvmTransactionConfig</span><span class="op">&lt;</span><span class="lifetime">&#39;config</span><span class="op">&gt;</span>,
-		<span class="ident">transaction</span>: <span class="ident">CheckEvmTransactionInput</span>,
-	) -&gt; <span class="self">Self</span> {
-		<span class="ident">CheckEvmTransaction</span> {
-			<span class="ident">config</span>,
-			<span class="ident">transaction</span>,
-			<span class="ident">_marker</span>: <span class="ident">Default::default</span>(),
+<span class="kw">impl</span>&lt;<span class="lifetime">&#39;config</span>, E: From&lt;InvalidEvmTransactionError&gt;&gt; CheckEvmTransaction&lt;<span class="lifetime">&#39;config</span>, E&gt; {
+	<span class="kw">pub fn </span>new(
+		config: CheckEvmTransactionConfig&lt;<span class="lifetime">&#39;config</span>&gt;,
+		transaction: CheckEvmTransactionInput,
+	) -&gt; <span class="self">Self </span>{
+		CheckEvmTransaction {
+			config,
+			transaction,
+			_marker: Default::default(),
 		}
 	}
 
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">validate_in_pool_for</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">who</span>: <span class="kw-2">&amp;</span><span class="ident">Account</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="self">Self</span>, <span class="ident">E</span><span class="op">&gt;</span> {
-		<span class="kw">if</span> <span class="self">self</span>.<span class="ident">transaction</span>.<span class="ident">nonce</span> <span class="op">&lt;</span> <span class="ident">who</span>.<span class="ident">nonce</span> {
-			<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">InvalidEvmTransactionError::TxNonceTooLow</span>.<span class="ident">into</span>());
+	<span class="kw">pub fn </span>validate_in_pool_for(<span class="kw-2">&amp;</span><span class="self">self</span>, who: <span class="kw-2">&amp;</span>Account) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="kw-2">&amp;</span><span class="self">Self</span>, E&gt; {
+		<span class="kw">if </span><span class="self">self</span>.transaction.nonce &lt; who.nonce {
+			<span class="kw">return </span><span class="prelude-val">Err</span>(InvalidEvmTransactionError::TxNonceTooLow.into());
 		}
-		<span class="self">self</span>.<span class="ident">validate_common</span>()
+		<span class="self">self</span>.validate_common()
 	}
 
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">validate_in_block_for</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">who</span>: <span class="kw-2">&amp;</span><span class="ident">Account</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="self">Self</span>, <span class="ident">E</span><span class="op">&gt;</span> {
-		<span class="kw">if</span> <span class="self">self</span>.<span class="ident">transaction</span>.<span class="ident">nonce</span> <span class="op">&gt;</span> <span class="ident">who</span>.<span class="ident">nonce</span> {
-			<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">InvalidEvmTransactionError::TxNonceTooHigh</span>.<span class="ident">into</span>());
-		} <span class="kw">else</span> <span class="kw">if</span> <span class="self">self</span>.<span class="ident">transaction</span>.<span class="ident">nonce</span> <span class="op">&lt;</span> <span class="ident">who</span>.<span class="ident">nonce</span> {
-			<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">InvalidEvmTransactionError::TxNonceTooLow</span>.<span class="ident">into</span>());
+	<span class="kw">pub fn </span>validate_in_block_for(<span class="kw-2">&amp;</span><span class="self">self</span>, who: <span class="kw-2">&amp;</span>Account) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="kw-2">&amp;</span><span class="self">Self</span>, E&gt; {
+		<span class="kw">if </span><span class="self">self</span>.transaction.nonce &gt; who.nonce {
+			<span class="kw">return </span><span class="prelude-val">Err</span>(InvalidEvmTransactionError::TxNonceTooHigh.into());
+		} <span class="kw">else if </span><span class="self">self</span>.transaction.nonce &lt; who.nonce {
+			<span class="kw">return </span><span class="prelude-val">Err</span>(InvalidEvmTransactionError::TxNonceTooLow.into());
 		}
-		<span class="self">self</span>.<span class="ident">validate_common</span>()
+		<span class="self">self</span>.validate_common()
 	}
 
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">with_chain_id</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="self">Self</span>, <span class="ident">E</span><span class="op">&gt;</span> {
-		<span class="comment">// Chain id matches the one in the signature.</span>
-		<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">chain_id</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">transaction</span>.<span class="ident">chain_id</span> {
-			<span class="kw">if</span> <span class="ident">chain_id</span> <span class="op">!</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">config</span>.<span class="ident">chain_id</span> {
-				<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">InvalidEvmTransactionError::InvalidChainId</span>.<span class="ident">into</span>());
+	<span class="kw">pub fn </span>with_chain_id(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="kw-2">&amp;</span><span class="self">Self</span>, E&gt; {
+		<span class="comment">// Chain id matches the one in the signature.
+		</span><span class="kw">if let </span><span class="prelude-val">Some</span>(chain_id) = <span class="self">self</span>.transaction.chain_id {
+			<span class="kw">if </span>chain_id != <span class="self">self</span>.config.chain_id {
+				<span class="kw">return </span><span class="prelude-val">Err</span>(InvalidEvmTransactionError::InvalidChainId.into());
 			}
 		}
 		<span class="prelude-val">Ok</span>(<span class="self">self</span>)
 	}
 
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">with_base_fee</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="self">Self</span>, <span class="ident">E</span><span class="op">&gt;</span> {
-		<span class="comment">// Get fee data from either a legacy or typed transaction input.</span>
-		<span class="kw">let</span> (<span class="ident">gas_price</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">transaction_fee_input</span>()<span class="question-mark">?</span>;
-		<span class="kw">if</span> <span class="self">self</span>.<span class="ident">config</span>.<span class="ident">is_transactional</span> <span class="op">|</span><span class="op">|</span> <span class="ident">gas_price</span> <span class="op">&gt;</span> <span class="ident">U256::zero</span>() {
-			<span class="comment">// Transaction max fee is at least the current base fee.</span>
-			<span class="kw">if</span> <span class="ident">gas_price</span> <span class="op">&lt;</span> <span class="self">self</span>.<span class="ident">config</span>.<span class="ident">base_fee</span> {
-				<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">InvalidEvmTransactionError::GasPriceTooLow</span>.<span class="ident">into</span>());
+	<span class="kw">pub fn </span>with_base_fee(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="kw-2">&amp;</span><span class="self">Self</span>, E&gt; {
+		<span class="comment">// Get fee data from either a legacy or typed transaction input.
+		</span><span class="kw">let </span>(gas_price, <span class="kw">_</span>) = <span class="self">self</span>.transaction_fee_input()<span class="question-mark">?</span>;
+		<span class="kw">if </span><span class="self">self</span>.config.is_transactional || gas_price &gt; U256::zero() {
+			<span class="comment">// Transaction max fee is at least the current base fee.
+			</span><span class="kw">if </span>gas_price &lt; <span class="self">self</span>.config.base_fee {
+				<span class="kw">return </span><span class="prelude-val">Err</span>(InvalidEvmTransactionError::GasPriceTooLow.into());
 			}
 		}
 		<span class="prelude-val">Ok</span>(<span class="self">self</span>)
 	}
 
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">with_balance_for</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">who</span>: <span class="kw-2">&amp;</span><span class="ident">Account</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="self">Self</span>, <span class="ident">E</span><span class="op">&gt;</span> {
-		<span class="comment">// Get fee data from either a legacy or typed transaction input.</span>
-		<span class="kw">let</span> (<span class="ident">max_fee_per_gas</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">transaction_fee_input</span>()<span class="question-mark">?</span>;
+	<span class="kw">pub fn </span>with_balance_for(<span class="kw-2">&amp;</span><span class="self">self</span>, who: <span class="kw-2">&amp;</span>Account) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="kw-2">&amp;</span><span class="self">Self</span>, E&gt; {
+		<span class="comment">// Get fee data from either a legacy or typed transaction input.
+		</span><span class="kw">let </span>(max_fee_per_gas, <span class="kw">_</span>) = <span class="self">self</span>.transaction_fee_input()<span class="question-mark">?</span>;
 
-		<span class="comment">// Account has enough funds to pay for the transaction.</span>
-		<span class="comment">// Check is skipped on non-transactional calls that don&#39;t provide</span>
-		<span class="comment">// a gas price input.</span>
-		<span class="comment">//</span>
-		<span class="comment">// Validation for EIP-1559 is done using the max_fee_per_gas, which is</span>
-		<span class="comment">// the most a txn could possibly pay.</span>
-		<span class="comment">//</span>
-		<span class="comment">// Fee for Legacy or EIP-2930 transaction is calculated using</span>
-		<span class="comment">// the provided `gas_price`.</span>
-		<span class="kw">let</span> <span class="ident">fee</span> <span class="op">=</span> <span class="ident">max_fee_per_gas</span>.<span class="ident">saturating_mul</span>(<span class="self">self</span>.<span class="ident">transaction</span>.<span class="ident">gas_limit</span>);
-		<span class="kw">if</span> <span class="self">self</span>.<span class="ident">config</span>.<span class="ident">is_transactional</span> <span class="op">|</span><span class="op">|</span> <span class="ident">fee</span> <span class="op">&gt;</span> <span class="ident">U256::zero</span>() {
-			<span class="kw">let</span> <span class="ident">total_payment</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">transaction</span>.<span class="ident">value</span>.<span class="ident">saturating_add</span>(<span class="ident">fee</span>);
-			<span class="kw">if</span> <span class="ident">who</span>.<span class="ident">balance</span> <span class="op">&lt;</span> <span class="ident">total_payment</span> {
-				<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">InvalidEvmTransactionError::BalanceTooLow</span>.<span class="ident">into</span>());
+		<span class="comment">// Account has enough funds to pay for the transaction.
+		// Check is skipped on non-transactional calls that don&#39;t provide
+		// a gas price input.
+		//
+		// Validation for EIP-1559 is done using the max_fee_per_gas, which is
+		// the most a txn could possibly pay.
+		//
+		// Fee for Legacy or EIP-2930 transaction is calculated using
+		// the provided `gas_price`.
+		</span><span class="kw">let </span>fee = max_fee_per_gas.saturating_mul(<span class="self">self</span>.transaction.gas_limit);
+		<span class="kw">if </span><span class="self">self</span>.config.is_transactional || fee &gt; U256::zero() {
+			<span class="kw">let </span>total_payment = <span class="self">self</span>.transaction.value.saturating_add(fee);
+			<span class="kw">if </span>who.balance &lt; total_payment {
+				<span class="kw">return </span><span class="prelude-val">Err</span>(InvalidEvmTransactionError::BalanceTooLow.into());
 			}
 		}
 		<span class="prelude-val">Ok</span>(<span class="self">self</span>)
 	}
 
-	<span class="comment">// Returns the max_fee_per_gas (or gas_price for legacy txns) as well as an optional</span>
-	<span class="comment">// effective_gas_price for EIP-1559 transactions. effective_gas_price represents</span>
-	<span class="comment">// the total (fee + tip) that would be paid given the current base_fee.</span>
-	<span class="kw">fn</span> <span class="ident">transaction_fee_input</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">U256</span>, <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>), <span class="ident">E</span><span class="op">&gt;</span> {
-		<span class="kw">match</span> (
-			<span class="self">self</span>.<span class="ident">transaction</span>.<span class="ident">gas_price</span>,
-			<span class="self">self</span>.<span class="ident">transaction</span>.<span class="ident">max_fee_per_gas</span>,
-			<span class="self">self</span>.<span class="ident">transaction</span>.<span class="ident">max_priority_fee_per_gas</span>,
+	<span class="comment">// Returns the max_fee_per_gas (or gas_price for legacy txns) as well as an optional
+	// effective_gas_price for EIP-1559 transactions. effective_gas_price represents
+	// the total (fee + tip) that would be paid given the current base_fee.
+	</span><span class="kw">fn </span>transaction_fee_input(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;(U256, <span class="prelude-ty">Option</span>&lt;U256&gt;), E&gt; {
+		<span class="kw">match </span>(
+			<span class="self">self</span>.transaction.gas_price,
+			<span class="self">self</span>.transaction.max_fee_per_gas,
+			<span class="self">self</span>.transaction.max_priority_fee_per_gas,
 		) {
-			<span class="comment">// Legacy or EIP-2930 transaction.</span>
-			(<span class="prelude-val">Some</span>(<span class="ident">gas_price</span>), <span class="prelude-val">None</span>, <span class="prelude-val">None</span>) =&gt; <span class="prelude-val">Ok</span>((<span class="ident">gas_price</span>, <span class="prelude-val">Some</span>(<span class="ident">gas_price</span>))),
-			<span class="comment">// EIP-1559 transaction without tip.</span>
-			(<span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(<span class="ident">max_fee_per_gas</span>), <span class="prelude-val">None</span>) =&gt; {
-				<span class="prelude-val">Ok</span>((<span class="ident">max_fee_per_gas</span>, <span class="prelude-val">Some</span>(<span class="self">self</span>.<span class="ident">config</span>.<span class="ident">base_fee</span>)))
+			<span class="comment">// Legacy or EIP-2930 transaction.
+			</span>(<span class="prelude-val">Some</span>(gas_price), <span class="prelude-val">None</span>, <span class="prelude-val">None</span>) =&gt; <span class="prelude-val">Ok</span>((gas_price, <span class="prelude-val">Some</span>(gas_price))),
+			<span class="comment">// EIP-1559 transaction without tip.
+			</span>(<span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(max_fee_per_gas), <span class="prelude-val">None</span>) =&gt; {
+				<span class="prelude-val">Ok</span>((max_fee_per_gas, <span class="prelude-val">Some</span>(<span class="self">self</span>.config.base_fee)))
 			}
-			<span class="comment">// EIP-1559 tip.</span>
-			(<span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(<span class="ident">max_fee_per_gas</span>), <span class="prelude-val">Some</span>(<span class="ident">max_priority_fee_per_gas</span>)) =&gt; {
-				<span class="kw">if</span> <span class="ident">max_priority_fee_per_gas</span> <span class="op">&gt;</span> <span class="ident">max_fee_per_gas</span> {
-					<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">InvalidEvmTransactionError::PriorityFeeTooHigh</span>.<span class="ident">into</span>());
+			<span class="comment">// EIP-1559 tip.
+			</span>(<span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(max_fee_per_gas), <span class="prelude-val">Some</span>(max_priority_fee_per_gas)) =&gt; {
+				<span class="kw">if </span>max_priority_fee_per_gas &gt; max_fee_per_gas {
+					<span class="kw">return </span><span class="prelude-val">Err</span>(InvalidEvmTransactionError::PriorityFeeTooHigh.into());
 				}
-				<span class="kw">let</span> <span class="ident">effective_gas_price</span> <span class="op">=</span> <span class="self">self</span>
-					.<span class="ident">config</span>
-					.<span class="ident">base_fee</span>
-					.<span class="ident">checked_add</span>(<span class="ident">max_priority_fee_per_gas</span>)
-					.<span class="ident">unwrap_or_else</span>(<span class="ident">U256::max_value</span>)
-					.<span class="ident">min</span>(<span class="ident">max_fee_per_gas</span>);
-				<span class="prelude-val">Ok</span>((<span class="ident">max_fee_per_gas</span>, <span class="prelude-val">Some</span>(<span class="ident">effective_gas_price</span>)))
+				<span class="kw">let </span>effective_gas_price = <span class="self">self
+					</span>.config
+					.base_fee
+					.checked_add(max_priority_fee_per_gas)
+					.unwrap_or_else(U256::max_value)
+					.min(max_fee_per_gas);
+				<span class="prelude-val">Ok</span>((max_fee_per_gas, <span class="prelude-val">Some</span>(effective_gas_price)))
 			}
-			<span class="kw">_</span> =&gt; {
-				<span class="kw">if</span> <span class="self">self</span>.<span class="ident">config</span>.<span class="ident">is_transactional</span> {
-					<span class="prelude-val">Err</span>(<span class="ident">InvalidEvmTransactionError::InvalidPaymentInput</span>.<span class="ident">into</span>())
-				} <span class="kw">else</span> {
-					<span class="comment">// Allow non-set fee input for non-transactional calls.</span>
-					<span class="prelude-val">Ok</span>((<span class="ident">U256::zero</span>(), <span class="prelude-val">None</span>))
+			<span class="kw">_ </span>=&gt; {
+				<span class="kw">if </span><span class="self">self</span>.config.is_transactional {
+					<span class="prelude-val">Err</span>(InvalidEvmTransactionError::InvalidPaymentInput.into())
+				} <span class="kw">else </span>{
+					<span class="comment">// Allow non-set fee input for non-transactional calls.
+					</span><span class="prelude-val">Ok</span>((U256::zero(), <span class="prelude-val">None</span>))
 				}
 			}
 		}
 	}
 
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">validate_common</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="self">Self</span>, <span class="ident">E</span><span class="op">&gt;</span> {
-		<span class="kw">if</span> <span class="self">self</span>.<span class="ident">config</span>.<span class="ident">is_transactional</span> {
-			<span class="comment">// We must ensure a transaction can pay the cost of its data bytes.</span>
-			<span class="comment">// If it can&#39;t it should not be included in a block.</span>
-			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">gasometer</span> <span class="op">=</span> <span class="ident">evm::gasometer::Gasometer::new</span>(
-				<span class="self">self</span>.<span class="ident">transaction</span>.<span class="ident">gas_limit</span>.<span class="ident">unique_saturated_into</span>(),
-				<span class="self">self</span>.<span class="ident">config</span>.<span class="ident">evm_config</span>,
+	<span class="kw">pub fn </span>validate_common(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="kw-2">&amp;</span><span class="self">Self</span>, E&gt; {
+		<span class="kw">if </span><span class="self">self</span>.config.is_transactional {
+			<span class="comment">// We must ensure a transaction can pay the cost of its data bytes.
+			// If it can&#39;t it should not be included in a block.
+			</span><span class="kw">let </span><span class="kw-2">mut </span>gasometer = evm::gasometer::Gasometer::new(
+				<span class="self">self</span>.transaction.gas_limit.unique_saturated_into(),
+				<span class="self">self</span>.config.evm_config,
 			);
-			<span class="kw">let</span> <span class="ident">transaction_cost</span> <span class="op">=</span> <span class="kw">if</span> <span class="self">self</span>.<span class="ident">transaction</span>.<span class="ident">to</span>.<span class="ident">is_some</span>() {
-				<span class="ident">evm::gasometer::call_transaction_cost</span>(
-					<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">transaction</span>.<span class="ident">input</span>,
-					<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">transaction</span>.<span class="ident">access_list</span>,
+			<span class="kw">let </span>transaction_cost = <span class="kw">if </span><span class="self">self</span>.transaction.to.is_some() {
+				evm::gasometer::call_transaction_cost(
+					<span class="kw-2">&amp;</span><span class="self">self</span>.transaction.input,
+					<span class="kw-2">&amp;</span><span class="self">self</span>.transaction.access_list,
 				)
-			} <span class="kw">else</span> {
-				<span class="ident">evm::gasometer::create_transaction_cost</span>(
-					<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">transaction</span>.<span class="ident">input</span>,
-					<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">transaction</span>.<span class="ident">access_list</span>,
+			} <span class="kw">else </span>{
+				evm::gasometer::create_transaction_cost(
+					<span class="kw-2">&amp;</span><span class="self">self</span>.transaction.input,
+					<span class="kw-2">&amp;</span><span class="self">self</span>.transaction.access_list,
 				)
 			};
 
-			<span class="kw">if</span> <span class="ident">gasometer</span>.<span class="ident">record_transaction</span>(<span class="ident">transaction_cost</span>).<span class="ident">is_err</span>() {
-				<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">InvalidEvmTransactionError::GasLimitTooLow</span>.<span class="ident">into</span>());
+			<span class="kw">if </span>gasometer.record_transaction(transaction_cost).is_err() {
+				<span class="kw">return </span><span class="prelude-val">Err</span>(InvalidEvmTransactionError::GasLimitTooLow.into());
 			}
 
-			<span class="comment">// Transaction gas limit is within the upper bound block gas limit.</span>
-			<span class="kw">if</span> <span class="self">self</span>.<span class="ident">transaction</span>.<span class="ident">gas_limit</span> <span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">config</span>.<span class="ident">block_gas_limit</span> {
-				<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">InvalidEvmTransactionError::GasLimitTooHigh</span>.<span class="ident">into</span>());
+			<span class="comment">// Transaction gas limit is within the upper bound block gas limit.
+			</span><span class="kw">if </span><span class="self">self</span>.transaction.gas_limit &gt; <span class="self">self</span>.config.block_gas_limit {
+				<span class="kw">return </span><span class="prelude-val">Err</span>(InvalidEvmTransactionError::GasLimitTooHigh.into());
 			}
 		}
 
@@ -963,541 +957,540 @@
 	}
 }
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
-<span class="kw">mod</span> <span class="ident">tests</span> {
-	<span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
+<span class="attribute">#[cfg(test)]
+</span><span class="kw">mod </span>tests {
+	<span class="kw">use super</span>::<span class="kw-2">*</span>;
 
-	<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">PartialEq</span>)]</span>
-	<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">TestError</span> {
-		<span class="ident">GasLimitTooLow</span>,
-		<span class="ident">GasLimitTooHigh</span>,
-		<span class="ident">GasPriceTooLow</span>,
-		<span class="ident">PriorityFeeTooHigh</span>,
-		<span class="ident">BalanceTooLow</span>,
-		<span class="ident">TxNonceTooLow</span>,
-		<span class="ident">TxNonceTooHigh</span>,
-		<span class="ident">InvalidPaymentInput</span>,
-		<span class="ident">InvalidChainId</span>,
+	<span class="attribute">#[derive(Debug, PartialEq)]
+	</span><span class="kw">pub enum </span>TestError {
+		GasLimitTooLow,
+		GasLimitTooHigh,
+		GasPriceTooLow,
+		PriorityFeeTooHigh,
+		BalanceTooLow,
+		TxNonceTooLow,
+		TxNonceTooHigh,
+		InvalidPaymentInput,
+		InvalidChainId,
 	}
 
-	<span class="kw">static</span> <span class="ident">LONDON_CONFIG</span>: <span class="ident">evm::Config</span> <span class="op">=</span> <span class="ident">evm::Config::london</span>();
+	<span class="kw">static </span>LONDON_CONFIG: evm::Config = evm::Config::london();
 
-	<span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">InvalidEvmTransactionError</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">TestError</span> {
-		<span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">e</span>: <span class="ident">InvalidEvmTransactionError</span>) -&gt; <span class="self">Self</span> {
-			<span class="kw">match</span> <span class="ident">e</span> {
-				<span class="ident">InvalidEvmTransactionError::GasLimitTooLow</span> =&gt; <span class="ident">TestError::GasLimitTooLow</span>,
-				<span class="ident">InvalidEvmTransactionError::GasLimitTooHigh</span> =&gt; <span class="ident">TestError::GasLimitTooHigh</span>,
-				<span class="ident">InvalidEvmTransactionError::GasPriceTooLow</span> =&gt; <span class="ident">TestError::GasPriceTooLow</span>,
-				<span class="ident">InvalidEvmTransactionError::PriorityFeeTooHigh</span> =&gt; <span class="ident">TestError::PriorityFeeTooHigh</span>,
-				<span class="ident">InvalidEvmTransactionError::BalanceTooLow</span> =&gt; <span class="ident">TestError::BalanceTooLow</span>,
-				<span class="ident">InvalidEvmTransactionError::TxNonceTooLow</span> =&gt; <span class="ident">TestError::TxNonceTooLow</span>,
-				<span class="ident">InvalidEvmTransactionError::TxNonceTooHigh</span> =&gt; <span class="ident">TestError::TxNonceTooHigh</span>,
-				<span class="ident">InvalidEvmTransactionError::InvalidPaymentInput</span> =&gt; <span class="ident">TestError::InvalidPaymentInput</span>,
-				<span class="ident">InvalidEvmTransactionError::InvalidChainId</span> =&gt; <span class="ident">TestError::InvalidChainId</span>,
+	<span class="kw">impl </span>From&lt;InvalidEvmTransactionError&gt; <span class="kw">for </span>TestError {
+		<span class="kw">fn </span>from(e: InvalidEvmTransactionError) -&gt; <span class="self">Self </span>{
+			<span class="kw">match </span>e {
+				InvalidEvmTransactionError::GasLimitTooLow =&gt; TestError::GasLimitTooLow,
+				InvalidEvmTransactionError::GasLimitTooHigh =&gt; TestError::GasLimitTooHigh,
+				InvalidEvmTransactionError::GasPriceTooLow =&gt; TestError::GasPriceTooLow,
+				InvalidEvmTransactionError::PriorityFeeTooHigh =&gt; TestError::PriorityFeeTooHigh,
+				InvalidEvmTransactionError::BalanceTooLow =&gt; TestError::BalanceTooLow,
+				InvalidEvmTransactionError::TxNonceTooLow =&gt; TestError::TxNonceTooLow,
+				InvalidEvmTransactionError::TxNonceTooHigh =&gt; TestError::TxNonceTooHigh,
+				InvalidEvmTransactionError::InvalidPaymentInput =&gt; TestError::InvalidPaymentInput,
+				InvalidEvmTransactionError::InvalidChainId =&gt; TestError::InvalidChainId,
 			}
 		}
 	}
 
-	<span class="kw">struct</span> <span class="ident">TestCase</span> {
-		<span class="kw">pub</span> <span class="ident">blockchain_gas_limit</span>: <span class="ident">U256</span>,
-		<span class="kw">pub</span> <span class="ident">blockchain_base_fee</span>: <span class="ident">U256</span>,
-		<span class="kw">pub</span> <span class="ident">blockchain_chain_id</span>: <span class="ident">u64</span>,
-		<span class="kw">pub</span> <span class="ident">is_transactional</span>: <span class="ident">bool</span>,
-		<span class="kw">pub</span> <span class="ident">chain_id</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
-		<span class="kw">pub</span> <span class="ident">nonce</span>: <span class="ident">U256</span>,
-		<span class="kw">pub</span> <span class="ident">gas_limit</span>: <span class="ident">U256</span>,
-		<span class="kw">pub</span> <span class="ident">gas_price</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-		<span class="kw">pub</span> <span class="ident">max_fee_per_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-		<span class="kw">pub</span> <span class="ident">max_priority_fee_per_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-		<span class="kw">pub</span> <span class="ident">value</span>: <span class="ident">U256</span>,
+	<span class="kw">struct </span>TestCase {
+		<span class="kw">pub </span>blockchain_gas_limit: U256,
+		<span class="kw">pub </span>blockchain_base_fee: U256,
+		<span class="kw">pub </span>blockchain_chain_id: u64,
+		<span class="kw">pub </span>is_transactional: bool,
+		<span class="kw">pub </span>chain_id: <span class="prelude-ty">Option</span>&lt;u64&gt;,
+		<span class="kw">pub </span>nonce: U256,
+		<span class="kw">pub </span>gas_limit: U256,
+		<span class="kw">pub </span>gas_price: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+		<span class="kw">pub </span>max_fee_per_gas: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+		<span class="kw">pub </span>max_priority_fee_per_gas: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+		<span class="kw">pub </span>value: U256,
 	}
 
-	<span class="kw">impl</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">TestCase</span> {
-		<span class="kw">fn</span> <span class="ident">default</span>() -&gt; <span class="self">Self</span> {
-			<span class="ident">TestCase</span> {
-				<span class="ident">blockchain_gas_limit</span>: <span class="ident">U256::max_value</span>(),
-				<span class="ident">blockchain_base_fee</span>: <span class="ident">U256::from</span>(<span class="number">1_000_000_000u128</span>),
-				<span class="ident">blockchain_chain_id</span>: <span class="number">42u64</span>,
-				<span class="ident">is_transactional</span>: <span class="bool-val">true</span>,
-				<span class="ident">chain_id</span>: <span class="prelude-val">Some</span>(<span class="number">42u64</span>),
-				<span class="ident">nonce</span>: <span class="ident">U256::zero</span>(),
-				<span class="ident">gas_limit</span>: <span class="ident">U256::from</span>(<span class="number">21_000u64</span>),
-				<span class="ident">gas_price</span>: <span class="prelude-val">None</span>,
-				<span class="ident">max_fee_per_gas</span>: <span class="prelude-val">Some</span>(<span class="ident">U256::from</span>(<span class="number">1_000_000_000u128</span>)),
-				<span class="ident">max_priority_fee_per_gas</span>: <span class="prelude-val">Some</span>(<span class="ident">U256::from</span>(<span class="number">1_000_000_000u128</span>)),
-				<span class="ident">value</span>: <span class="ident">U256::from</span>(<span class="number">1u8</span>),
+	<span class="kw">impl </span>Default <span class="kw">for </span>TestCase {
+		<span class="kw">fn </span>default() -&gt; <span class="self">Self </span>{
+			TestCase {
+				blockchain_gas_limit: U256::max_value(),
+				blockchain_base_fee: U256::from(<span class="number">1_000_000_000u128</span>),
+				blockchain_chain_id: <span class="number">42u64</span>,
+				is_transactional: <span class="bool-val">true</span>,
+				chain_id: <span class="prelude-val">Some</span>(<span class="number">42u64</span>),
+				nonce: U256::zero(),
+				gas_limit: U256::from(<span class="number">21_000u64</span>),
+				gas_price: <span class="prelude-val">None</span>,
+				max_fee_per_gas: <span class="prelude-val">Some</span>(U256::from(<span class="number">1_000_000_000u128</span>)),
+				max_priority_fee_per_gas: <span class="prelude-val">Some</span>(U256::from(<span class="number">1_000_000_000u128</span>)),
+				value: U256::from(<span class="number">1u8</span>),
 			}
 		}
 	}
 
-	<span class="kw">fn</span> <span class="ident">test_env</span><span class="op">&lt;</span><span class="lifetime">&#39;config</span><span class="op">&gt;</span>(<span class="ident">input</span>: <span class="ident">TestCase</span>) -&gt; <span class="ident">CheckEvmTransaction</span><span class="op">&lt;</span><span class="lifetime">&#39;config</span>, <span class="ident">TestError</span><span class="op">&gt;</span> {
-		<span class="kw">let</span> <span class="ident">TestCase</span> {
-			<span class="ident">blockchain_gas_limit</span>,
-			<span class="ident">blockchain_base_fee</span>,
-			<span class="ident">blockchain_chain_id</span>,
-			<span class="ident">is_transactional</span>,
-			<span class="ident">chain_id</span>,
-			<span class="ident">nonce</span>,
-			<span class="ident">gas_limit</span>,
-			<span class="ident">gas_price</span>,
-			<span class="ident">max_fee_per_gas</span>,
-			<span class="ident">max_priority_fee_per_gas</span>,
-			<span class="ident">value</span>,
-		} <span class="op">=</span> <span class="ident">input</span>;
-		<span class="ident">CheckEvmTransaction</span>::<span class="op">&lt;</span><span class="ident">TestError</span><span class="op">&gt;</span><span class="ident">::new</span>(
-			<span class="ident">CheckEvmTransactionConfig</span> {
-				<span class="ident">evm_config</span>: <span class="kw-2">&amp;</span><span class="ident">LONDON_CONFIG</span>,
-				<span class="ident">block_gas_limit</span>: <span class="ident">blockchain_gas_limit</span>,
-				<span class="ident">base_fee</span>: <span class="ident">blockchain_base_fee</span>,
-				<span class="ident">chain_id</span>: <span class="ident">blockchain_chain_id</span>,
-				<span class="ident">is_transactional</span>,
+	<span class="kw">fn </span>test_env&lt;<span class="lifetime">&#39;config</span>&gt;(input: TestCase) -&gt; CheckEvmTransaction&lt;<span class="lifetime">&#39;config</span>, TestError&gt; {
+		<span class="kw">let </span>TestCase {
+			blockchain_gas_limit,
+			blockchain_base_fee,
+			blockchain_chain_id,
+			is_transactional,
+			chain_id,
+			nonce,
+			gas_limit,
+			gas_price,
+			max_fee_per_gas,
+			max_priority_fee_per_gas,
+			value,
+		} = input;
+		CheckEvmTransaction::&lt;TestError&gt;::new(
+			CheckEvmTransactionConfig {
+				evm_config: <span class="kw-2">&amp;</span>LONDON_CONFIG,
+				block_gas_limit: blockchain_gas_limit,
+				base_fee: blockchain_base_fee,
+				chain_id: blockchain_chain_id,
+				is_transactional,
 			},
-			<span class="ident">CheckEvmTransactionInput</span> {
-				<span class="ident">chain_id</span>,
-				<span class="ident">to</span>: <span class="prelude-val">Some</span>(<span class="ident">H160::default</span>()),
-				<span class="ident">input</span>: <span class="macro">vec!</span>[],
-				<span class="ident">nonce</span>,
-				<span class="ident">gas_limit</span>,
-				<span class="ident">gas_price</span>,
-				<span class="ident">max_fee_per_gas</span>,
-				<span class="ident">max_priority_fee_per_gas</span>,
-				<span class="ident">value</span>,
-				<span class="ident">access_list</span>: <span class="macro">vec!</span>[],
+			CheckEvmTransactionInput {
+				chain_id,
+				to: <span class="prelude-val">Some</span>(H160::default()),
+				input: <span class="macro">vec!</span>[],
+				nonce,
+				gas_limit,
+				gas_price,
+				max_fee_per_gas,
+				max_priority_fee_per_gas,
+				value,
+				access_list: <span class="macro">vec!</span>[],
 			},
 		)
 	}
 
-	<span class="comment">// Transaction settings</span>
-	<span class="kw">fn</span> <span class="ident">default_transaction</span><span class="op">&lt;</span><span class="lifetime">&#39;config</span><span class="op">&gt;</span>(
-		<span class="ident">is_transactional</span>: <span class="ident">bool</span>,
-	) -&gt; <span class="ident">CheckEvmTransaction</span><span class="op">&lt;</span><span class="lifetime">&#39;config</span>, <span class="ident">TestError</span><span class="op">&gt;</span> {
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">input</span> <span class="op">=</span> <span class="ident">TestCase::default</span>();
-		<span class="ident">input</span>.<span class="ident">is_transactional</span> <span class="op">=</span> <span class="ident">is_transactional</span>;
-		<span class="ident">test_env</span>(<span class="ident">input</span>)
+	<span class="comment">// Transaction settings
+	</span><span class="kw">fn </span>default_transaction&lt;<span class="lifetime">&#39;config</span>&gt;(
+		is_transactional: bool,
+	) -&gt; CheckEvmTransaction&lt;<span class="lifetime">&#39;config</span>, TestError&gt; {
+		<span class="kw">let </span><span class="kw-2">mut </span>input = TestCase::default();
+		input.is_transactional = is_transactional;
+		test_env(input)
 	}
 
-	<span class="kw">fn</span> <span class="ident">transaction_gas_limit_low</span><span class="op">&lt;</span><span class="lifetime">&#39;config</span><span class="op">&gt;</span>(
-		<span class="ident">is_transactional</span>: <span class="ident">bool</span>,
-	) -&gt; <span class="ident">CheckEvmTransaction</span><span class="op">&lt;</span><span class="lifetime">&#39;config</span>, <span class="ident">TestError</span><span class="op">&gt;</span> {
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">input</span> <span class="op">=</span> <span class="ident">TestCase::default</span>();
-		<span class="ident">input</span>.<span class="ident">gas_limit</span> <span class="op">=</span> <span class="ident">U256::from</span>(<span class="number">1u8</span>);
-		<span class="ident">input</span>.<span class="ident">is_transactional</span> <span class="op">=</span> <span class="ident">is_transactional</span>;
-		<span class="ident">test_env</span>(<span class="ident">input</span>)
+	<span class="kw">fn </span>transaction_gas_limit_low&lt;<span class="lifetime">&#39;config</span>&gt;(
+		is_transactional: bool,
+	) -&gt; CheckEvmTransaction&lt;<span class="lifetime">&#39;config</span>, TestError&gt; {
+		<span class="kw">let </span><span class="kw-2">mut </span>input = TestCase::default();
+		input.gas_limit = U256::from(<span class="number">1u8</span>);
+		input.is_transactional = is_transactional;
+		test_env(input)
 	}
 
-	<span class="kw">fn</span> <span class="ident">transaction_gas_limit_high</span><span class="op">&lt;</span><span class="lifetime">&#39;config</span><span class="op">&gt;</span>() -&gt; <span class="ident">CheckEvmTransaction</span><span class="op">&lt;</span><span class="lifetime">&#39;config</span>, <span class="ident">TestError</span><span class="op">&gt;</span> {
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">input</span> <span class="op">=</span> <span class="ident">TestCase::default</span>();
-		<span class="ident">input</span>.<span class="ident">blockchain_gas_limit</span> <span class="op">=</span> <span class="ident">U256::from</span>(<span class="number">1u8</span>);
-		<span class="ident">test_env</span>(<span class="ident">input</span>)
+	<span class="kw">fn </span>transaction_gas_limit_high&lt;<span class="lifetime">&#39;config</span>&gt;() -&gt; CheckEvmTransaction&lt;<span class="lifetime">&#39;config</span>, TestError&gt; {
+		<span class="kw">let </span><span class="kw-2">mut </span>input = TestCase::default();
+		input.blockchain_gas_limit = U256::from(<span class="number">1u8</span>);
+		test_env(input)
 	}
 
-	<span class="kw">fn</span> <span class="ident">transaction_nonce_high</span><span class="op">&lt;</span><span class="lifetime">&#39;config</span><span class="op">&gt;</span>() -&gt; <span class="ident">CheckEvmTransaction</span><span class="op">&lt;</span><span class="lifetime">&#39;config</span>, <span class="ident">TestError</span><span class="op">&gt;</span> {
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">input</span> <span class="op">=</span> <span class="ident">TestCase::default</span>();
-		<span class="ident">input</span>.<span class="ident">nonce</span> <span class="op">=</span> <span class="ident">U256::from</span>(<span class="number">10u8</span>);
-		<span class="ident">test_env</span>(<span class="ident">input</span>)
+	<span class="kw">fn </span>transaction_nonce_high&lt;<span class="lifetime">&#39;config</span>&gt;() -&gt; CheckEvmTransaction&lt;<span class="lifetime">&#39;config</span>, TestError&gt; {
+		<span class="kw">let </span><span class="kw-2">mut </span>input = TestCase::default();
+		input.nonce = U256::from(<span class="number">10u8</span>);
+		test_env(input)
 	}
 
-	<span class="kw">fn</span> <span class="ident">transaction_invalid_chain_id</span><span class="op">&lt;</span><span class="lifetime">&#39;config</span><span class="op">&gt;</span>() -&gt; <span class="ident">CheckEvmTransaction</span><span class="op">&lt;</span><span class="lifetime">&#39;config</span>, <span class="ident">TestError</span><span class="op">&gt;</span> {
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">input</span> <span class="op">=</span> <span class="ident">TestCase::default</span>();
-		<span class="ident">input</span>.<span class="ident">chain_id</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="number">555u64</span>);
-		<span class="ident">test_env</span>(<span class="ident">input</span>)
+	<span class="kw">fn </span>transaction_invalid_chain_id&lt;<span class="lifetime">&#39;config</span>&gt;() -&gt; CheckEvmTransaction&lt;<span class="lifetime">&#39;config</span>, TestError&gt; {
+		<span class="kw">let </span><span class="kw-2">mut </span>input = TestCase::default();
+		input.chain_id = <span class="prelude-val">Some</span>(<span class="number">555u64</span>);
+		test_env(input)
 	}
 
-	<span class="kw">fn</span> <span class="ident">transaction_none_fee</span><span class="op">&lt;</span><span class="lifetime">&#39;config</span><span class="op">&gt;</span>(
-		<span class="ident">is_transactional</span>: <span class="ident">bool</span>,
-	) -&gt; <span class="ident">CheckEvmTransaction</span><span class="op">&lt;</span><span class="lifetime">&#39;config</span>, <span class="ident">TestError</span><span class="op">&gt;</span> {
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">input</span> <span class="op">=</span> <span class="ident">TestCase::default</span>();
-		<span class="ident">input</span>.<span class="ident">max_fee_per_gas</span> <span class="op">=</span> <span class="prelude-val">None</span>;
-		<span class="ident">input</span>.<span class="ident">max_priority_fee_per_gas</span> <span class="op">=</span> <span class="prelude-val">None</span>;
-		<span class="ident">input</span>.<span class="ident">is_transactional</span> <span class="op">=</span> <span class="ident">is_transactional</span>;
-		<span class="ident">test_env</span>(<span class="ident">input</span>)
+	<span class="kw">fn </span>transaction_none_fee&lt;<span class="lifetime">&#39;config</span>&gt;(
+		is_transactional: bool,
+	) -&gt; CheckEvmTransaction&lt;<span class="lifetime">&#39;config</span>, TestError&gt; {
+		<span class="kw">let </span><span class="kw-2">mut </span>input = TestCase::default();
+		input.max_fee_per_gas = <span class="prelude-val">None</span>;
+		input.max_priority_fee_per_gas = <span class="prelude-val">None</span>;
+		input.is_transactional = is_transactional;
+		test_env(input)
 	}
 
-	<span class="kw">fn</span> <span class="ident">transaction_max_fee_low</span><span class="op">&lt;</span><span class="lifetime">&#39;config</span><span class="op">&gt;</span>(
-		<span class="ident">is_transactional</span>: <span class="ident">bool</span>,
-	) -&gt; <span class="ident">CheckEvmTransaction</span><span class="op">&lt;</span><span class="lifetime">&#39;config</span>, <span class="ident">TestError</span><span class="op">&gt;</span> {
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">input</span> <span class="op">=</span> <span class="ident">TestCase::default</span>();
-		<span class="ident">input</span>.<span class="ident">max_fee_per_gas</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">U256::from</span>(<span class="number">1u8</span>));
-		<span class="ident">input</span>.<span class="ident">max_priority_fee_per_gas</span> <span class="op">=</span> <span class="prelude-val">None</span>;
-		<span class="ident">input</span>.<span class="ident">is_transactional</span> <span class="op">=</span> <span class="ident">is_transactional</span>;
-		<span class="ident">test_env</span>(<span class="ident">input</span>)
+	<span class="kw">fn </span>transaction_max_fee_low&lt;<span class="lifetime">&#39;config</span>&gt;(
+		is_transactional: bool,
+	) -&gt; CheckEvmTransaction&lt;<span class="lifetime">&#39;config</span>, TestError&gt; {
+		<span class="kw">let </span><span class="kw-2">mut </span>input = TestCase::default();
+		input.max_fee_per_gas = <span class="prelude-val">Some</span>(U256::from(<span class="number">1u8</span>));
+		input.max_priority_fee_per_gas = <span class="prelude-val">None</span>;
+		input.is_transactional = is_transactional;
+		test_env(input)
 	}
 
-	<span class="kw">fn</span> <span class="ident">transaction_priority_fee_high</span><span class="op">&lt;</span><span class="lifetime">&#39;config</span><span class="op">&gt;</span>(
-		<span class="ident">is_transactional</span>: <span class="ident">bool</span>,
-	) -&gt; <span class="ident">CheckEvmTransaction</span><span class="op">&lt;</span><span class="lifetime">&#39;config</span>, <span class="ident">TestError</span><span class="op">&gt;</span> {
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">input</span> <span class="op">=</span> <span class="ident">TestCase::default</span>();
-		<span class="ident">input</span>.<span class="ident">max_priority_fee_per_gas</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">U256::from</span>(<span class="number">1_100_000_000</span>));
-		<span class="ident">input</span>.<span class="ident">is_transactional</span> <span class="op">=</span> <span class="ident">is_transactional</span>;
-		<span class="ident">test_env</span>(<span class="ident">input</span>)
+	<span class="kw">fn </span>transaction_priority_fee_high&lt;<span class="lifetime">&#39;config</span>&gt;(
+		is_transactional: bool,
+	) -&gt; CheckEvmTransaction&lt;<span class="lifetime">&#39;config</span>, TestError&gt; {
+		<span class="kw">let </span><span class="kw-2">mut </span>input = TestCase::default();
+		input.max_priority_fee_per_gas = <span class="prelude-val">Some</span>(U256::from(<span class="number">1_100_000_000</span>));
+		input.is_transactional = is_transactional;
+		test_env(input)
 	}
 
-	<span class="kw">fn</span> <span class="ident">transaction_max_fee_high</span><span class="op">&lt;</span><span class="lifetime">&#39;config</span><span class="op">&gt;</span>(<span class="ident">tip</span>: <span class="ident">bool</span>) -&gt; <span class="ident">CheckEvmTransaction</span><span class="op">&lt;</span><span class="lifetime">&#39;config</span>, <span class="ident">TestError</span><span class="op">&gt;</span> {
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">input</span> <span class="op">=</span> <span class="ident">TestCase::default</span>();
-		<span class="ident">input</span>.<span class="ident">max_fee_per_gas</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">U256::from</span>(<span class="number">5_000_000_000u128</span>));
-		<span class="kw">if</span> <span class="op">!</span><span class="ident">tip</span> {
-			<span class="ident">input</span>.<span class="ident">max_priority_fee_per_gas</span> <span class="op">=</span> <span class="prelude-val">None</span>;
+	<span class="kw">fn </span>transaction_max_fee_high&lt;<span class="lifetime">&#39;config</span>&gt;(tip: bool) -&gt; CheckEvmTransaction&lt;<span class="lifetime">&#39;config</span>, TestError&gt; {
+		<span class="kw">let </span><span class="kw-2">mut </span>input = TestCase::default();
+		input.max_fee_per_gas = <span class="prelude-val">Some</span>(U256::from(<span class="number">5_000_000_000u128</span>));
+		<span class="kw">if </span>!tip {
+			input.max_priority_fee_per_gas = <span class="prelude-val">None</span>;
 		}
-		<span class="ident">test_env</span>(<span class="ident">input</span>)
+		test_env(input)
 	}
 
-	<span class="kw">fn</span> <span class="ident">legacy_transaction</span><span class="op">&lt;</span><span class="lifetime">&#39;config</span><span class="op">&gt;</span>() -&gt; <span class="ident">CheckEvmTransaction</span><span class="op">&lt;</span><span class="lifetime">&#39;config</span>, <span class="ident">TestError</span><span class="op">&gt;</span> {
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">input</span> <span class="op">=</span> <span class="ident">TestCase::default</span>();
-		<span class="ident">input</span>.<span class="ident">gas_price</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">U256::from</span>(<span class="number">1_000_000_000u128</span>));
-		<span class="ident">input</span>.<span class="ident">max_fee_per_gas</span> <span class="op">=</span> <span class="prelude-val">None</span>;
-		<span class="ident">input</span>.<span class="ident">max_priority_fee_per_gas</span> <span class="op">=</span> <span class="prelude-val">None</span>;
-		<span class="ident">test_env</span>(<span class="ident">input</span>)
+	<span class="kw">fn </span>legacy_transaction&lt;<span class="lifetime">&#39;config</span>&gt;() -&gt; CheckEvmTransaction&lt;<span class="lifetime">&#39;config</span>, TestError&gt; {
+		<span class="kw">let </span><span class="kw-2">mut </span>input = TestCase::default();
+		input.gas_price = <span class="prelude-val">Some</span>(U256::from(<span class="number">1_000_000_000u128</span>));
+		input.max_fee_per_gas = <span class="prelude-val">None</span>;
+		input.max_priority_fee_per_gas = <span class="prelude-val">None</span>;
+		test_env(input)
 	}
 
-	<span class="kw">fn</span> <span class="ident">invalid_transaction_mixed_fees</span><span class="op">&lt;</span><span class="lifetime">&#39;config</span><span class="op">&gt;</span>(
-		<span class="ident">is_transactional</span>: <span class="ident">bool</span>,
-	) -&gt; <span class="ident">CheckEvmTransaction</span><span class="op">&lt;</span><span class="lifetime">&#39;config</span>, <span class="ident">TestError</span><span class="op">&gt;</span> {
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">input</span> <span class="op">=</span> <span class="ident">TestCase::default</span>();
-		<span class="ident">input</span>.<span class="ident">max_fee_per_gas</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">U256::from</span>(<span class="number">1_000_000_000u128</span>));
-		<span class="ident">input</span>.<span class="ident">gas_price</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">U256::from</span>(<span class="number">1_000_000_000u128</span>));
-		<span class="ident">input</span>.<span class="ident">max_priority_fee_per_gas</span> <span class="op">=</span> <span class="prelude-val">None</span>;
-		<span class="ident">input</span>.<span class="ident">is_transactional</span> <span class="op">=</span> <span class="ident">is_transactional</span>;
-		<span class="ident">test_env</span>(<span class="ident">input</span>)
+	<span class="kw">fn </span>invalid_transaction_mixed_fees&lt;<span class="lifetime">&#39;config</span>&gt;(
+		is_transactional: bool,
+	) -&gt; CheckEvmTransaction&lt;<span class="lifetime">&#39;config</span>, TestError&gt; {
+		<span class="kw">let </span><span class="kw-2">mut </span>input = TestCase::default();
+		input.max_fee_per_gas = <span class="prelude-val">Some</span>(U256::from(<span class="number">1_000_000_000u128</span>));
+		input.gas_price = <span class="prelude-val">Some</span>(U256::from(<span class="number">1_000_000_000u128</span>));
+		input.max_priority_fee_per_gas = <span class="prelude-val">None</span>;
+		input.is_transactional = is_transactional;
+		test_env(input)
 	}
 
-	<span class="comment">// Tests</span>
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="comment">// Default (valid) transaction succeeds in pool and in block.</span>
-	<span class="kw">fn</span> <span class="ident">validate_in_pool_and_block_succeeds</span>() {
-		<span class="kw">let</span> <span class="ident">who</span> <span class="op">=</span> <span class="ident">Account</span> {
-			<span class="ident">balance</span>: <span class="ident">U256::from</span>(<span class="number">1_000_000u128</span>),
-			<span class="ident">nonce</span>: <span class="ident">U256::zero</span>(),
+	<span class="comment">// Tests
+	</span><span class="attribute">#[test]
+	</span><span class="comment">// Default (valid) transaction succeeds in pool and in block.
+	</span><span class="kw">fn </span>validate_in_pool_and_block_succeeds() {
+		<span class="kw">let </span>who = Account {
+			balance: U256::from(<span class="number">1_000_000u128</span>),
+			nonce: U256::zero(),
 		};
-		<span class="kw">let</span> <span class="ident">test</span> <span class="op">=</span> <span class="ident">default_transaction</span>(<span class="bool-val">true</span>);
-		<span class="comment">// Pool</span>
-		<span class="macro">assert!</span>(<span class="ident">test</span>.<span class="ident">validate_in_pool_for</span>(<span class="kw-2">&amp;</span><span class="ident">who</span>).<span class="ident">is_ok</span>());
-		<span class="comment">// Block</span>
-		<span class="macro">assert!</span>(<span class="ident">test</span>.<span class="ident">validate_in_block_for</span>(<span class="kw-2">&amp;</span><span class="ident">who</span>).<span class="ident">is_ok</span>());
+		<span class="kw">let </span>test = default_transaction(<span class="bool-val">true</span>);
+		<span class="comment">// Pool
+		</span><span class="macro">assert!</span>(test.validate_in_pool_for(<span class="kw-2">&amp;</span>who).is_ok());
+		<span class="comment">// Block
+		</span><span class="macro">assert!</span>(test.validate_in_block_for(<span class="kw-2">&amp;</span>who).is_ok());
 	}
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="comment">// Nonce too low fails in pool and in block.</span>
-	<span class="kw">fn</span> <span class="ident">validate_in_pool_and_block_fails_nonce_too_low</span>() {
-		<span class="kw">let</span> <span class="ident">who</span> <span class="op">=</span> <span class="ident">Account</span> {
-			<span class="ident">balance</span>: <span class="ident">U256::from</span>(<span class="number">1_000_000u128</span>),
-			<span class="ident">nonce</span>: <span class="ident">U256::from</span>(<span class="number">1u8</span>),
+	<span class="attribute">#[test]
+	</span><span class="comment">// Nonce too low fails in pool and in block.
+	</span><span class="kw">fn </span>validate_in_pool_and_block_fails_nonce_too_low() {
+		<span class="kw">let </span>who = Account {
+			balance: U256::from(<span class="number">1_000_000u128</span>),
+			nonce: U256::from(<span class="number">1u8</span>),
 		};
-		<span class="kw">let</span> <span class="ident">test</span> <span class="op">=</span> <span class="ident">default_transaction</span>(<span class="bool-val">true</span>);
-		<span class="comment">// Pool</span>
-		<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">test</span>.<span class="ident">validate_in_pool_for</span>(<span class="kw-2">&amp;</span><span class="ident">who</span>);
-		<span class="macro">assert!</span>(<span class="ident">res</span>.<span class="ident">is_err</span>());
-		<span class="macro">assert_eq!</span>(<span class="ident">res</span>.<span class="ident">unwrap_err</span>(), <span class="ident">TestError::TxNonceTooLow</span>);
-		<span class="comment">// Block</span>
-		<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">test</span>.<span class="ident">validate_in_block_for</span>(<span class="kw-2">&amp;</span><span class="ident">who</span>);
-		<span class="macro">assert!</span>(<span class="ident">res</span>.<span class="ident">is_err</span>());
-		<span class="macro">assert_eq!</span>(<span class="ident">res</span>.<span class="ident">unwrap_err</span>(), <span class="ident">TestError::TxNonceTooLow</span>);
+		<span class="kw">let </span>test = default_transaction(<span class="bool-val">true</span>);
+		<span class="comment">// Pool
+		</span><span class="kw">let </span>res = test.validate_in_pool_for(<span class="kw-2">&amp;</span>who);
+		<span class="macro">assert!</span>(res.is_err());
+		<span class="macro">assert_eq!</span>(res.unwrap_err(), TestError::TxNonceTooLow);
+		<span class="comment">// Block
+		</span><span class="kw">let </span>res = test.validate_in_block_for(<span class="kw-2">&amp;</span>who);
+		<span class="macro">assert!</span>(res.is_err());
+		<span class="macro">assert_eq!</span>(res.unwrap_err(), TestError::TxNonceTooLow);
 	}
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="comment">// Nonce too high succeeds in pool.</span>
-	<span class="kw">fn</span> <span class="ident">validate_in_pool_succeeds_nonce_too_high</span>() {
-		<span class="kw">let</span> <span class="ident">who</span> <span class="op">=</span> <span class="ident">Account</span> {
-			<span class="ident">balance</span>: <span class="ident">U256::from</span>(<span class="number">1_000_000u128</span>),
-			<span class="ident">nonce</span>: <span class="ident">U256::from</span>(<span class="number">1u8</span>),
+	<span class="attribute">#[test]
+	</span><span class="comment">// Nonce too high succeeds in pool.
+	</span><span class="kw">fn </span>validate_in_pool_succeeds_nonce_too_high() {
+		<span class="kw">let </span>who = Account {
+			balance: U256::from(<span class="number">1_000_000u128</span>),
+			nonce: U256::from(<span class="number">1u8</span>),
 		};
-		<span class="kw">let</span> <span class="ident">test</span> <span class="op">=</span> <span class="ident">transaction_nonce_high</span>();
-		<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">test</span>.<span class="ident">validate_in_pool_for</span>(<span class="kw-2">&amp;</span><span class="ident">who</span>);
-		<span class="macro">assert!</span>(<span class="ident">res</span>.<span class="ident">is_ok</span>());
+		<span class="kw">let </span>test = transaction_nonce_high();
+		<span class="kw">let </span>res = test.validate_in_pool_for(<span class="kw-2">&amp;</span>who);
+		<span class="macro">assert!</span>(res.is_ok());
 	}
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="comment">// Nonce too high fails in block.</span>
-	<span class="kw">fn</span> <span class="ident">validate_in_block_fails_nonce_too_high</span>() {
-		<span class="kw">let</span> <span class="ident">who</span> <span class="op">=</span> <span class="ident">Account</span> {
-			<span class="ident">balance</span>: <span class="ident">U256::from</span>(<span class="number">1_000_000u128</span>),
-			<span class="ident">nonce</span>: <span class="ident">U256::from</span>(<span class="number">1u8</span>),
+	<span class="attribute">#[test]
+	</span><span class="comment">// Nonce too high fails in block.
+	</span><span class="kw">fn </span>validate_in_block_fails_nonce_too_high() {
+		<span class="kw">let </span>who = Account {
+			balance: U256::from(<span class="number">1_000_000u128</span>),
+			nonce: U256::from(<span class="number">1u8</span>),
 		};
-		<span class="kw">let</span> <span class="ident">test</span> <span class="op">=</span> <span class="ident">transaction_nonce_high</span>();
-		<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">test</span>.<span class="ident">validate_in_block_for</span>(<span class="kw-2">&amp;</span><span class="ident">who</span>);
-		<span class="macro">assert!</span>(<span class="ident">res</span>.<span class="ident">is_err</span>());
+		<span class="kw">let </span>test = transaction_nonce_high();
+		<span class="kw">let </span>res = test.validate_in_block_for(<span class="kw-2">&amp;</span>who);
+		<span class="macro">assert!</span>(res.is_err());
 	}
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="comment">// Gas limit too low transactional fails in pool and in block.</span>
-	<span class="kw">fn</span> <span class="ident">validate_in_pool_and_block_transactional_fails_gas_limit_too_low</span>() {
-		<span class="kw">let</span> <span class="ident">who</span> <span class="op">=</span> <span class="ident">Account</span> {
-			<span class="ident">balance</span>: <span class="ident">U256::from</span>(<span class="number">1_000_000u128</span>),
-			<span class="ident">nonce</span>: <span class="ident">U256::zero</span>(),
+	<span class="attribute">#[test]
+	</span><span class="comment">// Gas limit too low transactional fails in pool and in block.
+	</span><span class="kw">fn </span>validate_in_pool_and_block_transactional_fails_gas_limit_too_low() {
+		<span class="kw">let </span>who = Account {
+			balance: U256::from(<span class="number">1_000_000u128</span>),
+			nonce: U256::zero(),
 		};
-		<span class="kw">let</span> <span class="ident">is_transactional</span> <span class="op">=</span> <span class="bool-val">true</span>;
-		<span class="kw">let</span> <span class="ident">test</span> <span class="op">=</span> <span class="ident">transaction_gas_limit_low</span>(<span class="ident">is_transactional</span>);
-		<span class="comment">// Pool</span>
-		<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">test</span>.<span class="ident">validate_in_pool_for</span>(<span class="kw-2">&amp;</span><span class="ident">who</span>);
-		<span class="macro">assert!</span>(<span class="ident">res</span>.<span class="ident">is_err</span>());
-		<span class="macro">assert_eq!</span>(<span class="ident">res</span>.<span class="ident">unwrap_err</span>(), <span class="ident">TestError::GasLimitTooLow</span>);
-		<span class="comment">// Block</span>
-		<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">test</span>.<span class="ident">validate_in_block_for</span>(<span class="kw-2">&amp;</span><span class="ident">who</span>);
-		<span class="macro">assert!</span>(<span class="ident">res</span>.<span class="ident">is_err</span>());
-		<span class="macro">assert_eq!</span>(<span class="ident">res</span>.<span class="ident">unwrap_err</span>(), <span class="ident">TestError::GasLimitTooLow</span>);
+		<span class="kw">let </span>is_transactional = <span class="bool-val">true</span>;
+		<span class="kw">let </span>test = transaction_gas_limit_low(is_transactional);
+		<span class="comment">// Pool
+		</span><span class="kw">let </span>res = test.validate_in_pool_for(<span class="kw-2">&amp;</span>who);
+		<span class="macro">assert!</span>(res.is_err());
+		<span class="macro">assert_eq!</span>(res.unwrap_err(), TestError::GasLimitTooLow);
+		<span class="comment">// Block
+		</span><span class="kw">let </span>res = test.validate_in_block_for(<span class="kw-2">&amp;</span>who);
+		<span class="macro">assert!</span>(res.is_err());
+		<span class="macro">assert_eq!</span>(res.unwrap_err(), TestError::GasLimitTooLow);
 	}
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="comment">// Gas limit too low non-transactional succeeds in pool and in block.</span>
-	<span class="kw">fn</span> <span class="ident">validate_in_pool_and_block_non_transactional_succeeds_gas_limit_too_low</span>() {
-		<span class="kw">let</span> <span class="ident">who</span> <span class="op">=</span> <span class="ident">Account</span> {
-			<span class="ident">balance</span>: <span class="ident">U256::from</span>(<span class="number">1_000_000u128</span>),
-			<span class="ident">nonce</span>: <span class="ident">U256::zero</span>(),
+	<span class="attribute">#[test]
+	</span><span class="comment">// Gas limit too low non-transactional succeeds in pool and in block.
+	</span><span class="kw">fn </span>validate_in_pool_and_block_non_transactional_succeeds_gas_limit_too_low() {
+		<span class="kw">let </span>who = Account {
+			balance: U256::from(<span class="number">1_000_000u128</span>),
+			nonce: U256::zero(),
 		};
-		<span class="kw">let</span> <span class="ident">is_transactional</span> <span class="op">=</span> <span class="bool-val">false</span>;
-		<span class="kw">let</span> <span class="ident">test</span> <span class="op">=</span> <span class="ident">transaction_gas_limit_low</span>(<span class="ident">is_transactional</span>);
-		<span class="comment">// Pool</span>
-		<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">test</span>.<span class="ident">validate_in_pool_for</span>(<span class="kw-2">&amp;</span><span class="ident">who</span>);
-		<span class="macro">assert!</span>(<span class="ident">res</span>.<span class="ident">is_ok</span>());
-		<span class="comment">// Block</span>
-		<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">test</span>.<span class="ident">validate_in_block_for</span>(<span class="kw-2">&amp;</span><span class="ident">who</span>);
-		<span class="macro">assert!</span>(<span class="ident">res</span>.<span class="ident">is_ok</span>());
+		<span class="kw">let </span>is_transactional = <span class="bool-val">false</span>;
+		<span class="kw">let </span>test = transaction_gas_limit_low(is_transactional);
+		<span class="comment">// Pool
+		</span><span class="kw">let </span>res = test.validate_in_pool_for(<span class="kw-2">&amp;</span>who);
+		<span class="macro">assert!</span>(res.is_ok());
+		<span class="comment">// Block
+		</span><span class="kw">let </span>res = test.validate_in_block_for(<span class="kw-2">&amp;</span>who);
+		<span class="macro">assert!</span>(res.is_ok());
 	}
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="comment">// Gas limit too high fails in pool and in block.</span>
-	<span class="kw">fn</span> <span class="ident">validate_in_pool_for_fails_gas_limit_too_high</span>() {
-		<span class="kw">let</span> <span class="ident">who</span> <span class="op">=</span> <span class="ident">Account</span> {
-			<span class="ident">balance</span>: <span class="ident">U256::from</span>(<span class="number">1_000_000u128</span>),
-			<span class="ident">nonce</span>: <span class="ident">U256::zero</span>(),
+	<span class="attribute">#[test]
+	</span><span class="comment">// Gas limit too high fails in pool and in block.
+	</span><span class="kw">fn </span>validate_in_pool_for_fails_gas_limit_too_high() {
+		<span class="kw">let </span>who = Account {
+			balance: U256::from(<span class="number">1_000_000u128</span>),
+			nonce: U256::zero(),
 		};
-		<span class="kw">let</span> <span class="ident">test</span> <span class="op">=</span> <span class="ident">transaction_gas_limit_high</span>();
-		<span class="comment">// Pool</span>
-		<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">test</span>.<span class="ident">validate_in_pool_for</span>(<span class="kw-2">&amp;</span><span class="ident">who</span>);
-		<span class="macro">assert!</span>(<span class="ident">res</span>.<span class="ident">is_err</span>());
-		<span class="macro">assert_eq!</span>(<span class="ident">res</span>.<span class="ident">unwrap_err</span>(), <span class="ident">TestError::GasLimitTooHigh</span>);
-		<span class="comment">// Block</span>
-		<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">test</span>.<span class="ident">validate_in_block_for</span>(<span class="kw-2">&amp;</span><span class="ident">who</span>);
-		<span class="macro">assert!</span>(<span class="ident">res</span>.<span class="ident">is_err</span>());
-		<span class="macro">assert_eq!</span>(<span class="ident">res</span>.<span class="ident">unwrap_err</span>(), <span class="ident">TestError::GasLimitTooHigh</span>);
+		<span class="kw">let </span>test = transaction_gas_limit_high();
+		<span class="comment">// Pool
+		</span><span class="kw">let </span>res = test.validate_in_pool_for(<span class="kw-2">&amp;</span>who);
+		<span class="macro">assert!</span>(res.is_err());
+		<span class="macro">assert_eq!</span>(res.unwrap_err(), TestError::GasLimitTooHigh);
+		<span class="comment">// Block
+		</span><span class="kw">let </span>res = test.validate_in_block_for(<span class="kw-2">&amp;</span>who);
+		<span class="macro">assert!</span>(res.is_err());
+		<span class="macro">assert_eq!</span>(res.unwrap_err(), TestError::GasLimitTooHigh);
 	}
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="comment">// Valid chain id succeeds.</span>
-	<span class="kw">fn</span> <span class="ident">validate_chain_id_succeeds</span>() {
-		<span class="kw">let</span> <span class="ident">test</span> <span class="op">=</span> <span class="ident">default_transaction</span>(<span class="bool-val">true</span>);
-		<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">test</span>.<span class="ident">with_chain_id</span>();
-		<span class="macro">assert!</span>(<span class="ident">res</span>.<span class="ident">is_ok</span>());
+	<span class="attribute">#[test]
+	</span><span class="comment">// Valid chain id succeeds.
+	</span><span class="kw">fn </span>validate_chain_id_succeeds() {
+		<span class="kw">let </span>test = default_transaction(<span class="bool-val">true</span>);
+		<span class="kw">let </span>res = test.with_chain_id();
+		<span class="macro">assert!</span>(res.is_ok());
 	}
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="comment">// Invalid chain id fails.</span>
-	<span class="kw">fn</span> <span class="ident">validate_chain_id_fails</span>() {
-		<span class="kw">let</span> <span class="ident">test</span> <span class="op">=</span> <span class="ident">transaction_invalid_chain_id</span>();
-		<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">test</span>.<span class="ident">with_chain_id</span>();
-		<span class="macro">assert!</span>(<span class="ident">res</span>.<span class="ident">is_err</span>());
-		<span class="macro">assert_eq!</span>(<span class="ident">res</span>.<span class="ident">unwrap_err</span>(), <span class="ident">TestError::InvalidChainId</span>);
+	<span class="attribute">#[test]
+	</span><span class="comment">// Invalid chain id fails.
+	</span><span class="kw">fn </span>validate_chain_id_fails() {
+		<span class="kw">let </span>test = transaction_invalid_chain_id();
+		<span class="kw">let </span>res = test.with_chain_id();
+		<span class="macro">assert!</span>(res.is_err());
+		<span class="macro">assert_eq!</span>(res.unwrap_err(), TestError::InvalidChainId);
 	}
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="comment">// Valid max fee per gas succeeds.</span>
-	<span class="kw">fn</span> <span class="ident">validate_base_fee_succeeds</span>() {
-		<span class="comment">// Transactional</span>
-		<span class="kw">let</span> <span class="ident">test</span> <span class="op">=</span> <span class="ident">default_transaction</span>(<span class="bool-val">true</span>);
-		<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">test</span>.<span class="ident">with_base_fee</span>();
-		<span class="macro">assert!</span>(<span class="ident">res</span>.<span class="ident">is_ok</span>());
-		<span class="comment">// Non-transactional</span>
-		<span class="kw">let</span> <span class="ident">test</span> <span class="op">=</span> <span class="ident">default_transaction</span>(<span class="bool-val">false</span>);
-		<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">test</span>.<span class="ident">with_base_fee</span>();
-		<span class="macro">assert!</span>(<span class="ident">res</span>.<span class="ident">is_ok</span>());
+	<span class="attribute">#[test]
+	</span><span class="comment">// Valid max fee per gas succeeds.
+	</span><span class="kw">fn </span>validate_base_fee_succeeds() {
+		<span class="comment">// Transactional
+		</span><span class="kw">let </span>test = default_transaction(<span class="bool-val">true</span>);
+		<span class="kw">let </span>res = test.with_base_fee();
+		<span class="macro">assert!</span>(res.is_ok());
+		<span class="comment">// Non-transactional
+		</span><span class="kw">let </span>test = default_transaction(<span class="bool-val">false</span>);
+		<span class="kw">let </span>res = test.with_base_fee();
+		<span class="macro">assert!</span>(res.is_ok());
 	}
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="comment">// Transactional call with unset fee data fails.</span>
-	<span class="kw">fn</span> <span class="ident">validate_base_fee_with_none_fee_fails</span>() {
-		<span class="kw">let</span> <span class="ident">test</span> <span class="op">=</span> <span class="ident">transaction_none_fee</span>(<span class="bool-val">true</span>);
-		<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">test</span>.<span class="ident">with_base_fee</span>();
-		<span class="macro">assert!</span>(<span class="ident">res</span>.<span class="ident">is_err</span>());
-		<span class="macro">assert_eq!</span>(<span class="ident">res</span>.<span class="ident">unwrap_err</span>(), <span class="ident">TestError::InvalidPaymentInput</span>);
+	<span class="attribute">#[test]
+	</span><span class="comment">// Transactional call with unset fee data fails.
+	</span><span class="kw">fn </span>validate_base_fee_with_none_fee_fails() {
+		<span class="kw">let </span>test = transaction_none_fee(<span class="bool-val">true</span>);
+		<span class="kw">let </span>res = test.with_base_fee();
+		<span class="macro">assert!</span>(res.is_err());
+		<span class="macro">assert_eq!</span>(res.unwrap_err(), TestError::InvalidPaymentInput);
 	}
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="comment">// Non-transactional call with unset fee data succeeds.</span>
-	<span class="kw">fn</span> <span class="ident">validate_base_fee_with_none_fee_non_transactional_succeeds</span>() {
-		<span class="kw">let</span> <span class="ident">test</span> <span class="op">=</span> <span class="ident">transaction_none_fee</span>(<span class="bool-val">false</span>);
-		<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">test</span>.<span class="ident">with_base_fee</span>();
-		<span class="macro">assert!</span>(<span class="ident">res</span>.<span class="ident">is_ok</span>());
+	<span class="attribute">#[test]
+	</span><span class="comment">// Non-transactional call with unset fee data succeeds.
+	</span><span class="kw">fn </span>validate_base_fee_with_none_fee_non_transactional_succeeds() {
+		<span class="kw">let </span>test = transaction_none_fee(<span class="bool-val">false</span>);
+		<span class="kw">let </span>res = test.with_base_fee();
+		<span class="macro">assert!</span>(res.is_ok());
 	}
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="comment">// Max fee per gas too low fails.</span>
-	<span class="kw">fn</span> <span class="ident">validate_base_fee_with_max_fee_too_low_fails</span>() {
-		<span class="comment">// Transactional</span>
-		<span class="kw">let</span> <span class="ident">test</span> <span class="op">=</span> <span class="ident">transaction_max_fee_low</span>(<span class="bool-val">true</span>);
-		<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">test</span>.<span class="ident">with_base_fee</span>();
-		<span class="macro">assert!</span>(<span class="ident">res</span>.<span class="ident">is_err</span>());
-		<span class="macro">assert_eq!</span>(<span class="ident">res</span>.<span class="ident">unwrap_err</span>(), <span class="ident">TestError::GasPriceTooLow</span>);
-		<span class="comment">// Non-transactional</span>
-		<span class="kw">let</span> <span class="ident">test</span> <span class="op">=</span> <span class="ident">transaction_max_fee_low</span>(<span class="bool-val">false</span>);
-		<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">test</span>.<span class="ident">with_base_fee</span>();
-		<span class="macro">assert!</span>(<span class="ident">res</span>.<span class="ident">is_err</span>());
-		<span class="macro">assert_eq!</span>(<span class="ident">res</span>.<span class="ident">unwrap_err</span>(), <span class="ident">TestError::GasPriceTooLow</span>);
+	<span class="attribute">#[test]
+	</span><span class="comment">// Max fee per gas too low fails.
+	</span><span class="kw">fn </span>validate_base_fee_with_max_fee_too_low_fails() {
+		<span class="comment">// Transactional
+		</span><span class="kw">let </span>test = transaction_max_fee_low(<span class="bool-val">true</span>);
+		<span class="kw">let </span>res = test.with_base_fee();
+		<span class="macro">assert!</span>(res.is_err());
+		<span class="macro">assert_eq!</span>(res.unwrap_err(), TestError::GasPriceTooLow);
+		<span class="comment">// Non-transactional
+		</span><span class="kw">let </span>test = transaction_max_fee_low(<span class="bool-val">false</span>);
+		<span class="kw">let </span>res = test.with_base_fee();
+		<span class="macro">assert!</span>(res.is_err());
+		<span class="macro">assert_eq!</span>(res.unwrap_err(), TestError::GasPriceTooLow);
 	}
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="comment">// Priority fee too high fails.</span>
-	<span class="kw">fn</span> <span class="ident">validate_base_fee_with_priority_fee_too_high_fails</span>() {
-		<span class="comment">// Transactional</span>
-		<span class="kw">let</span> <span class="ident">test</span> <span class="op">=</span> <span class="ident">transaction_priority_fee_high</span>(<span class="bool-val">true</span>);
-		<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">test</span>.<span class="ident">with_base_fee</span>();
-		<span class="macro">assert!</span>(<span class="ident">res</span>.<span class="ident">is_err</span>());
-		<span class="macro">assert_eq!</span>(<span class="ident">res</span>.<span class="ident">unwrap_err</span>(), <span class="ident">TestError::PriorityFeeTooHigh</span>);
-		<span class="comment">// Non-transactional</span>
-		<span class="kw">let</span> <span class="ident">test</span> <span class="op">=</span> <span class="ident">transaction_priority_fee_high</span>(<span class="bool-val">false</span>);
-		<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">test</span>.<span class="ident">with_base_fee</span>();
-		<span class="macro">assert!</span>(<span class="ident">res</span>.<span class="ident">is_err</span>());
-		<span class="macro">assert_eq!</span>(<span class="ident">res</span>.<span class="ident">unwrap_err</span>(), <span class="ident">TestError::PriorityFeeTooHigh</span>);
+	<span class="attribute">#[test]
+	</span><span class="comment">// Priority fee too high fails.
+	</span><span class="kw">fn </span>validate_base_fee_with_priority_fee_too_high_fails() {
+		<span class="comment">// Transactional
+		</span><span class="kw">let </span>test = transaction_priority_fee_high(<span class="bool-val">true</span>);
+		<span class="kw">let </span>res = test.with_base_fee();
+		<span class="macro">assert!</span>(res.is_err());
+		<span class="macro">assert_eq!</span>(res.unwrap_err(), TestError::PriorityFeeTooHigh);
+		<span class="comment">// Non-transactional
+		</span><span class="kw">let </span>test = transaction_priority_fee_high(<span class="bool-val">false</span>);
+		<span class="kw">let </span>res = test.with_base_fee();
+		<span class="macro">assert!</span>(res.is_err());
+		<span class="macro">assert_eq!</span>(res.unwrap_err(), TestError::PriorityFeeTooHigh);
 	}
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="comment">// Sufficient balance succeeds.</span>
-	<span class="kw">fn</span> <span class="ident">validate_balance_succeeds</span>() {
-		<span class="kw">let</span> <span class="ident">who</span> <span class="op">=</span> <span class="ident">Account</span> {
-			<span class="ident">balance</span>: <span class="ident">U256::from</span>(<span class="number">21_000_000_000_001u128</span>),
-			<span class="ident">nonce</span>: <span class="ident">U256::zero</span>(),
+	<span class="attribute">#[test]
+	</span><span class="comment">// Sufficient balance succeeds.
+	</span><span class="kw">fn </span>validate_balance_succeeds() {
+		<span class="kw">let </span>who = Account {
+			balance: U256::from(<span class="number">21_000_000_000_001u128</span>),
+			nonce: U256::zero(),
 		};
-		<span class="comment">// Transactional</span>
-		<span class="kw">let</span> <span class="ident">test</span> <span class="op">=</span> <span class="ident">default_transaction</span>(<span class="bool-val">true</span>);
-		<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">test</span>.<span class="ident">with_balance_for</span>(<span class="kw-2">&amp;</span><span class="ident">who</span>);
-		<span class="macro">assert!</span>(<span class="ident">res</span>.<span class="ident">is_ok</span>());
-		<span class="comment">// Non-transactional</span>
-		<span class="kw">let</span> <span class="ident">test</span> <span class="op">=</span> <span class="ident">default_transaction</span>(<span class="bool-val">false</span>);
-		<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">test</span>.<span class="ident">with_balance_for</span>(<span class="kw-2">&amp;</span><span class="ident">who</span>);
-		<span class="macro">assert!</span>(<span class="ident">res</span>.<span class="ident">is_ok</span>());
+		<span class="comment">// Transactional
+		</span><span class="kw">let </span>test = default_transaction(<span class="bool-val">true</span>);
+		<span class="kw">let </span>res = test.with_balance_for(<span class="kw-2">&amp;</span>who);
+		<span class="macro">assert!</span>(res.is_ok());
+		<span class="comment">// Non-transactional
+		</span><span class="kw">let </span>test = default_transaction(<span class="bool-val">false</span>);
+		<span class="kw">let </span>res = test.with_balance_for(<span class="kw-2">&amp;</span>who);
+		<span class="macro">assert!</span>(res.is_ok());
 	}
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="comment">// Insufficient balance fails.</span>
-	<span class="kw">fn</span> <span class="ident">validate_insufficient_balance_fails</span>() {
-		<span class="kw">let</span> <span class="ident">who</span> <span class="op">=</span> <span class="ident">Account</span> {
-			<span class="ident">balance</span>: <span class="ident">U256::from</span>(<span class="number">21_000_000_000_000u128</span>),
-			<span class="ident">nonce</span>: <span class="ident">U256::zero</span>(),
+	<span class="attribute">#[test]
+	</span><span class="comment">// Insufficient balance fails.
+	</span><span class="kw">fn </span>validate_insufficient_balance_fails() {
+		<span class="kw">let </span>who = Account {
+			balance: U256::from(<span class="number">21_000_000_000_000u128</span>),
+			nonce: U256::zero(),
 		};
-		<span class="comment">// Transactional</span>
-		<span class="kw">let</span> <span class="ident">test</span> <span class="op">=</span> <span class="ident">default_transaction</span>(<span class="bool-val">true</span>);
-		<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">test</span>.<span class="ident">with_balance_for</span>(<span class="kw-2">&amp;</span><span class="ident">who</span>);
-		<span class="macro">assert!</span>(<span class="ident">res</span>.<span class="ident">is_err</span>());
-		<span class="macro">assert_eq!</span>(<span class="ident">res</span>.<span class="ident">unwrap_err</span>(), <span class="ident">TestError::BalanceTooLow</span>);
-		<span class="comment">// Non-transactional</span>
-		<span class="kw">let</span> <span class="ident">test</span> <span class="op">=</span> <span class="ident">default_transaction</span>(<span class="bool-val">false</span>);
-		<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">test</span>.<span class="ident">with_balance_for</span>(<span class="kw-2">&amp;</span><span class="ident">who</span>);
-		<span class="macro">assert!</span>(<span class="ident">res</span>.<span class="ident">is_err</span>());
-		<span class="macro">assert_eq!</span>(<span class="ident">res</span>.<span class="ident">unwrap_err</span>(), <span class="ident">TestError::BalanceTooLow</span>);
+		<span class="comment">// Transactional
+		</span><span class="kw">let </span>test = default_transaction(<span class="bool-val">true</span>);
+		<span class="kw">let </span>res = test.with_balance_for(<span class="kw-2">&amp;</span>who);
+		<span class="macro">assert!</span>(res.is_err());
+		<span class="macro">assert_eq!</span>(res.unwrap_err(), TestError::BalanceTooLow);
+		<span class="comment">// Non-transactional
+		</span><span class="kw">let </span>test = default_transaction(<span class="bool-val">false</span>);
+		<span class="kw">let </span>res = test.with_balance_for(<span class="kw-2">&amp;</span>who);
+		<span class="macro">assert!</span>(res.is_err());
+		<span class="macro">assert_eq!</span>(res.unwrap_err(), TestError::BalanceTooLow);
 	}
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="comment">// Fee not set on transactional fails.</span>
-	<span class="kw">fn</span> <span class="ident">validate_non_fee_transactional_fails</span>() {
-		<span class="kw">let</span> <span class="ident">who</span> <span class="op">=</span> <span class="ident">Account</span> {
-			<span class="ident">balance</span>: <span class="ident">U256::from</span>(<span class="number">21_000_000_000_001u128</span>),
-			<span class="ident">nonce</span>: <span class="ident">U256::zero</span>(),
+	<span class="attribute">#[test]
+	</span><span class="comment">// Fee not set on transactional fails.
+	</span><span class="kw">fn </span>validate_non_fee_transactional_fails() {
+		<span class="kw">let </span>who = Account {
+			balance: U256::from(<span class="number">21_000_000_000_001u128</span>),
+			nonce: U256::zero(),
 		};
-		<span class="kw">let</span> <span class="ident">test</span> <span class="op">=</span> <span class="ident">transaction_none_fee</span>(<span class="bool-val">true</span>);
-		<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">test</span>.<span class="ident">with_balance_for</span>(<span class="kw-2">&amp;</span><span class="ident">who</span>);
-		<span class="macro">assert!</span>(<span class="ident">res</span>.<span class="ident">is_err</span>());
-		<span class="macro">assert_eq!</span>(<span class="ident">res</span>.<span class="ident">unwrap_err</span>(), <span class="ident">TestError::InvalidPaymentInput</span>);
+		<span class="kw">let </span>test = transaction_none_fee(<span class="bool-val">true</span>);
+		<span class="kw">let </span>res = test.with_balance_for(<span class="kw-2">&amp;</span>who);
+		<span class="macro">assert!</span>(res.is_err());
+		<span class="macro">assert_eq!</span>(res.unwrap_err(), TestError::InvalidPaymentInput);
 	}
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="comment">// Fee not set on non-transactional succeeds.</span>
-	<span class="kw">fn</span> <span class="ident">validate_non_fee_non_transactional_succeeds</span>() {
-		<span class="kw">let</span> <span class="ident">who</span> <span class="op">=</span> <span class="ident">Account</span> {
-			<span class="ident">balance</span>: <span class="ident">U256::from</span>(<span class="number">0u8</span>),
-			<span class="ident">nonce</span>: <span class="ident">U256::zero</span>(),
+	<span class="attribute">#[test]
+	</span><span class="comment">// Fee not set on non-transactional succeeds.
+	</span><span class="kw">fn </span>validate_non_fee_non_transactional_succeeds() {
+		<span class="kw">let </span>who = Account {
+			balance: U256::from(<span class="number">0u8</span>),
+			nonce: U256::zero(),
 		};
-		<span class="kw">let</span> <span class="ident">test</span> <span class="op">=</span> <span class="ident">transaction_none_fee</span>(<span class="bool-val">false</span>);
-		<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">test</span>.<span class="ident">with_balance_for</span>(<span class="kw-2">&amp;</span><span class="ident">who</span>);
-		<span class="macro">assert!</span>(<span class="ident">res</span>.<span class="ident">is_ok</span>());
+		<span class="kw">let </span>test = transaction_none_fee(<span class="bool-val">false</span>);
+		<span class="kw">let </span>res = test.with_balance_for(<span class="kw-2">&amp;</span>who);
+		<span class="macro">assert!</span>(res.is_ok());
 	}
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="comment">// Account balance is matched against max_fee_per_gas (without txn tip)</span>
-	<span class="kw">fn</span> <span class="ident">validate_balance_regardless_of_base_fee</span>() {
-		<span class="kw">let</span> <span class="ident">who</span> <span class="op">=</span> <span class="ident">Account</span> {
-			<span class="comment">// sufficient for base_fee, but not for max_fee_per_gas</span>
-			<span class="ident">balance</span>: <span class="ident">U256::from</span>(<span class="number">21_000_000_000_001u128</span>),
-			<span class="ident">nonce</span>: <span class="ident">U256::zero</span>(),
+	<span class="attribute">#[test]
+	</span><span class="comment">// Account balance is matched against max_fee_per_gas (without txn tip)
+	</span><span class="kw">fn </span>validate_balance_regardless_of_base_fee() {
+		<span class="kw">let </span>who = Account {
+			<span class="comment">// sufficient for base_fee, but not for max_fee_per_gas
+			</span>balance: U256::from(<span class="number">21_000_000_000_001u128</span>),
+			nonce: U256::zero(),
 		};
-		<span class="kw">let</span> <span class="ident">with_tip</span> <span class="op">=</span> <span class="bool-val">false</span>;
-		<span class="kw">let</span> <span class="ident">test</span> <span class="op">=</span> <span class="ident">transaction_max_fee_high</span>(<span class="ident">with_tip</span>);
-		<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">test</span>.<span class="ident">with_balance_for</span>(<span class="kw-2">&amp;</span><span class="ident">who</span>);
-		<span class="macro">assert!</span>(<span class="ident">res</span>.<span class="ident">is_err</span>());
+		<span class="kw">let </span>with_tip = <span class="bool-val">false</span>;
+		<span class="kw">let </span>test = transaction_max_fee_high(with_tip);
+		<span class="kw">let </span>res = test.with_balance_for(<span class="kw-2">&amp;</span>who);
+		<span class="macro">assert!</span>(res.is_err());
 	}
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="comment">// Account balance is matched against max_fee_per_gas (with txn tip)</span>
-	<span class="kw">fn</span> <span class="ident">validate_balance_regardless_of_effective_gas_price</span>() {
-		<span class="kw">let</span> <span class="ident">who</span> <span class="op">=</span> <span class="ident">Account</span> {
-			<span class="comment">// sufficient for (base_fee + tip), but not for max_fee_per_gas</span>
-			<span class="ident">balance</span>: <span class="ident">U256::from</span>(<span class="number">42_000_000_000_001u128</span>),
-			<span class="ident">nonce</span>: <span class="ident">U256::zero</span>(),
+	<span class="attribute">#[test]
+	</span><span class="comment">// Account balance is matched against max_fee_per_gas (with txn tip)
+	</span><span class="kw">fn </span>validate_balance_regardless_of_effective_gas_price() {
+		<span class="kw">let </span>who = Account {
+			<span class="comment">// sufficient for (base_fee + tip), but not for max_fee_per_gas
+			</span>balance: U256::from(<span class="number">42_000_000_000_001u128</span>),
+			nonce: U256::zero(),
 		};
-		<span class="kw">let</span> <span class="ident">with_tip</span> <span class="op">=</span> <span class="bool-val">true</span>;
-		<span class="kw">let</span> <span class="ident">test</span> <span class="op">=</span> <span class="ident">transaction_max_fee_high</span>(<span class="ident">with_tip</span>);
-		<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">test</span>.<span class="ident">with_balance_for</span>(<span class="kw-2">&amp;</span><span class="ident">who</span>);
-		<span class="macro">assert!</span>(<span class="ident">res</span>.<span class="ident">is_err</span>());
+		<span class="kw">let </span>with_tip = <span class="bool-val">true</span>;
+		<span class="kw">let </span>test = transaction_max_fee_high(with_tip);
+		<span class="kw">let </span>res = test.with_balance_for(<span class="kw-2">&amp;</span>who);
+		<span class="macro">assert!</span>(res.is_err());
 	}
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="comment">// Account balance is matched against the provided gas_price for Legacy transactions.</span>
-	<span class="kw">fn</span> <span class="ident">validate_balance_for_legacy_transaction_succeeds</span>() {
-		<span class="kw">let</span> <span class="ident">who</span> <span class="op">=</span> <span class="ident">Account</span> {
-			<span class="ident">balance</span>: <span class="ident">U256::from</span>(<span class="number">21_000_000_000_001u128</span>),
-			<span class="ident">nonce</span>: <span class="ident">U256::zero</span>(),
+	<span class="attribute">#[test]
+	</span><span class="comment">// Account balance is matched against the provided gas_price for Legacy transactions.
+	</span><span class="kw">fn </span>validate_balance_for_legacy_transaction_succeeds() {
+		<span class="kw">let </span>who = Account {
+			balance: U256::from(<span class="number">21_000_000_000_001u128</span>),
+			nonce: U256::zero(),
 		};
-		<span class="kw">let</span> <span class="ident">test</span> <span class="op">=</span> <span class="ident">legacy_transaction</span>();
-		<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">test</span>.<span class="ident">with_balance_for</span>(<span class="kw-2">&amp;</span><span class="ident">who</span>);
-		<span class="macro">assert!</span>(<span class="ident">res</span>.<span class="ident">is_ok</span>());
+		<span class="kw">let </span>test = legacy_transaction();
+		<span class="kw">let </span>res = test.with_balance_for(<span class="kw-2">&amp;</span>who);
+		<span class="macro">assert!</span>(res.is_ok());
 	}
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="comment">// Account balance is matched against the provided gas_price for Legacy transactions.</span>
-	<span class="kw">fn</span> <span class="ident">validate_balance_for_legacy_transaction_fails</span>() {
-		<span class="kw">let</span> <span class="ident">who</span> <span class="op">=</span> <span class="ident">Account</span> {
-			<span class="ident">balance</span>: <span class="ident">U256::from</span>(<span class="number">21_000_000_000_000u128</span>),
-			<span class="ident">nonce</span>: <span class="ident">U256::zero</span>(),
+	<span class="attribute">#[test]
+	</span><span class="comment">// Account balance is matched against the provided gas_price for Legacy transactions.
+	</span><span class="kw">fn </span>validate_balance_for_legacy_transaction_fails() {
+		<span class="kw">let </span>who = Account {
+			balance: U256::from(<span class="number">21_000_000_000_000u128</span>),
+			nonce: U256::zero(),
 		};
-		<span class="kw">let</span> <span class="ident">test</span> <span class="op">=</span> <span class="ident">legacy_transaction</span>();
-		<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">test</span>.<span class="ident">with_balance_for</span>(<span class="kw-2">&amp;</span><span class="ident">who</span>);
-		<span class="macro">assert!</span>(<span class="ident">res</span>.<span class="ident">is_err</span>());
-		<span class="macro">assert_eq!</span>(<span class="ident">res</span>.<span class="ident">unwrap_err</span>(), <span class="ident">TestError::BalanceTooLow</span>);
+		<span class="kw">let </span>test = legacy_transaction();
+		<span class="kw">let </span>res = test.with_balance_for(<span class="kw-2">&amp;</span>who);
+		<span class="macro">assert!</span>(res.is_err());
+		<span class="macro">assert_eq!</span>(res.unwrap_err(), TestError::BalanceTooLow);
 	}
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="comment">// Transaction with invalid fee input - mixing gas_price and max_fee_per_gas.</span>
-	<span class="kw">fn</span> <span class="ident">validate_balance_with_invalid_fee_input</span>() {
-		<span class="kw">let</span> <span class="ident">who</span> <span class="op">=</span> <span class="ident">Account</span> {
-			<span class="ident">balance</span>: <span class="ident">U256::from</span>(<span class="number">21_000_000_000_001u128</span>),
-			<span class="ident">nonce</span>: <span class="ident">U256::zero</span>(),
+	<span class="attribute">#[test]
+	</span><span class="comment">// Transaction with invalid fee input - mixing gas_price and max_fee_per_gas.
+	</span><span class="kw">fn </span>validate_balance_with_invalid_fee_input() {
+		<span class="kw">let </span>who = Account {
+			balance: U256::from(<span class="number">21_000_000_000_001u128</span>),
+			nonce: U256::zero(),
 		};
-		<span class="comment">// Fails for transactional.</span>
-		<span class="kw">let</span> <span class="ident">is_transactional</span> <span class="op">=</span> <span class="bool-val">true</span>;
-		<span class="kw">let</span> <span class="ident">test</span> <span class="op">=</span> <span class="ident">invalid_transaction_mixed_fees</span>(<span class="ident">is_transactional</span>);
-		<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">test</span>.<span class="ident">with_balance_for</span>(<span class="kw-2">&amp;</span><span class="ident">who</span>);
-		<span class="macro">assert!</span>(<span class="ident">res</span>.<span class="ident">is_err</span>());
-		<span class="macro">assert_eq!</span>(<span class="ident">res</span>.<span class="ident">unwrap_err</span>(), <span class="ident">TestError::InvalidPaymentInput</span>);
-		<span class="comment">// Succeeds for non-transactional.</span>
-		<span class="kw">let</span> <span class="ident">is_transactional</span> <span class="op">=</span> <span class="bool-val">false</span>;
-		<span class="kw">let</span> <span class="ident">test</span> <span class="op">=</span> <span class="ident">invalid_transaction_mixed_fees</span>(<span class="ident">is_transactional</span>);
-		<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">test</span>.<span class="ident">with_balance_for</span>(<span class="kw-2">&amp;</span><span class="ident">who</span>);
-		<span class="macro">assert!</span>(<span class="ident">res</span>.<span class="ident">is_ok</span>());
+		<span class="comment">// Fails for transactional.
+		</span><span class="kw">let </span>is_transactional = <span class="bool-val">true</span>;
+		<span class="kw">let </span>test = invalid_transaction_mixed_fees(is_transactional);
+		<span class="kw">let </span>res = test.with_balance_for(<span class="kw-2">&amp;</span>who);
+		<span class="macro">assert!</span>(res.is_err());
+		<span class="macro">assert_eq!</span>(res.unwrap_err(), TestError::InvalidPaymentInput);
+		<span class="comment">// Succeeds for non-transactional.
+		</span><span class="kw">let </span>is_transactional = <span class="bool-val">false</span>;
+		<span class="kw">let </span>test = invalid_transaction_mixed_fees(is_transactional);
+		<span class="kw">let </span>res = test.with_balance_for(<span class="kw-2">&amp;</span>who);
+		<span class="macro">assert!</span>(res.is_ok());
 	}
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="comment">// Transaction with invalid fee input - mixing gas_price and max_fee_per_gas.</span>
-	<span class="kw">fn</span> <span class="ident">validate_base_fee_with_invalid_fee_input</span>() {
-		<span class="comment">// Fails for transactional.</span>
-		<span class="kw">let</span> <span class="ident">is_transactional</span> <span class="op">=</span> <span class="bool-val">true</span>;
-		<span class="kw">let</span> <span class="ident">test</span> <span class="op">=</span> <span class="ident">invalid_transaction_mixed_fees</span>(<span class="ident">is_transactional</span>);
-		<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">test</span>.<span class="ident">with_base_fee</span>();
-		<span class="macro">assert!</span>(<span class="ident">res</span>.<span class="ident">is_err</span>());
-		<span class="macro">assert_eq!</span>(<span class="ident">res</span>.<span class="ident">unwrap_err</span>(), <span class="ident">TestError::InvalidPaymentInput</span>);
-		<span class="comment">// Succeeds for non-transactional.</span>
-		<span class="kw">let</span> <span class="ident">is_transactional</span> <span class="op">=</span> <span class="bool-val">false</span>;
-		<span class="kw">let</span> <span class="ident">test</span> <span class="op">=</span> <span class="ident">invalid_transaction_mixed_fees</span>(<span class="ident">is_transactional</span>);
-		<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">test</span>.<span class="ident">with_base_fee</span>();
-		<span class="macro">assert!</span>(<span class="ident">res</span>.<span class="ident">is_ok</span>());
+	<span class="attribute">#[test]
+	</span><span class="comment">// Transaction with invalid fee input - mixing gas_price and max_fee_per_gas.
+	</span><span class="kw">fn </span>validate_base_fee_with_invalid_fee_input() {
+		<span class="comment">// Fails for transactional.
+		</span><span class="kw">let </span>is_transactional = <span class="bool-val">true</span>;
+		<span class="kw">let </span>test = invalid_transaction_mixed_fees(is_transactional);
+		<span class="kw">let </span>res = test.with_base_fee();
+		<span class="macro">assert!</span>(res.is_err());
+		<span class="macro">assert_eq!</span>(res.unwrap_err(), TestError::InvalidPaymentInput);
+		<span class="comment">// Succeeds for non-transactional.
+		</span><span class="kw">let </span>is_transactional = <span class="bool-val">false</span>;
+		<span class="kw">let </span>test = invalid_transaction_mixed_fees(is_transactional);
+		<span class="kw">let </span>res = test.with_base_fee();
+		<span class="macro">assert!</span>(res.is_ok());
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="fp_evm" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (7fe022f5a 2022-07-24)" ></div>
-</body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="fp_evm" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (81f391930 2022-10-09)" ></div></body></html>

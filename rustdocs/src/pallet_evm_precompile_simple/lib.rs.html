@@ -1,10 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `frame/evm/precompile/simple/src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../pallet_evm_precompile_simple/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a><h2 class="location"></h2>
-    </nav>
-    <nav class="sidebar"><a class="sidebar-logo" href="../../pallet_evm_precompile_simple/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../pallet_evm_precompile_simple/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1">
-                                <a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div>
-                        </div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `frame/evm/precompile/simple/src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><a class="sidebar-logo" href="../../pallet_evm_precompile_simple/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../pallet_evm_precompile_simple/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -157,159 +151,158 @@
 <span id="151">151</span>
 <span id="152">152</span>
 <span id="153">153</span>
-</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
-<span class="comment">// This file is part of Frontier.</span>
-<span class="comment">//</span>
-<span class="comment">// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.</span>
-<span class="comment">//</span>
-<span class="comment">// Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
-<span class="comment">// you may not use this file except in compliance with the License.</span>
-<span class="comment">// You may obtain a copy of the License at</span>
-<span class="comment">//</span>
-<span class="comment">// 	http://www.apache.org/licenses/LICENSE-2.0</span>
-<span class="comment">//</span>
-<span class="comment">// Unless required by applicable law or agreed to in writing, software</span>
-<span class="comment">// distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
-<span class="comment">// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
-<span class="comment">// See the License for the specific language governing permissions and</span>
-<span class="comment">// limitations under the License.</span>
+</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
+// This file is part of Frontier.
+//
+// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// 	http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
-<span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
+</span><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 
-<span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">alloc</span>;
+</span><span class="kw">extern crate </span>alloc;
 
-<span class="kw">use</span> <span class="ident">alloc::vec::Vec</span>;
-<span class="kw">use</span> <span class="ident">core::cmp::min</span>;
+<span class="kw">use </span>alloc::vec::Vec;
+<span class="kw">use </span>core::cmp::min;
 
-<span class="kw">use</span> <span class="ident">fp_evm</span>::{<span class="ident">ExitError</span>, <span class="ident">ExitSucceed</span>, <span class="ident">LinearCostPrecompile</span>, <span class="ident">PrecompileFailure</span>};
+<span class="kw">use </span>fp_evm::{ExitError, ExitSucceed, LinearCostPrecompile, PrecompileFailure};
 
-<span class="doccomment">/// The identity precompile.</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Identity</span>;
+<span class="doccomment">/// The identity precompile.
+</span><span class="kw">pub struct </span>Identity;
 
-<span class="kw">impl</span> <span class="ident">LinearCostPrecompile</span> <span class="kw">for</span> <span class="ident">Identity</span> {
-	<span class="kw">const</span> <span class="ident">BASE</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">15</span>;
-	<span class="kw">const</span> <span class="ident">WORD</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">3</span>;
+<span class="kw">impl </span>LinearCostPrecompile <span class="kw">for </span>Identity {
+	<span class="kw">const </span>BASE: u64 = <span class="number">15</span>;
+	<span class="kw">const </span>WORD: u64 = <span class="number">3</span>;
 
-	<span class="kw">fn</span> <span class="ident">execute</span>(<span class="ident">input</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>], <span class="kw">_</span>: <span class="ident">u64</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">ExitSucceed</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>), <span class="ident">PrecompileFailure</span><span class="op">&gt;</span> {
-		<span class="prelude-val">Ok</span>((<span class="ident">ExitSucceed::Returned</span>, <span class="ident">input</span>.<span class="ident">to_vec</span>()))
+	<span class="kw">fn </span>execute(input: <span class="kw-2">&amp;</span>[u8], <span class="kw">_</span>: u64) -&gt; <span class="prelude-ty">Result</span>&lt;(ExitSucceed, Vec&lt;u8&gt;), PrecompileFailure&gt; {
+		<span class="prelude-val">Ok</span>((ExitSucceed::Returned, input.to_vec()))
 	}
 }
 
-<span class="doccomment">/// The ecrecover precompile.</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">ECRecover</span>;
+<span class="doccomment">/// The ecrecover precompile.
+</span><span class="kw">pub struct </span>ECRecover;
 
-<span class="kw">impl</span> <span class="ident">LinearCostPrecompile</span> <span class="kw">for</span> <span class="ident">ECRecover</span> {
-	<span class="kw">const</span> <span class="ident">BASE</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">3000</span>;
-	<span class="kw">const</span> <span class="ident">WORD</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">0</span>;
+<span class="kw">impl </span>LinearCostPrecompile <span class="kw">for </span>ECRecover {
+	<span class="kw">const </span>BASE: u64 = <span class="number">3000</span>;
+	<span class="kw">const </span>WORD: u64 = <span class="number">0</span>;
 
-	<span class="kw">fn</span> <span class="ident">execute</span>(<span class="ident">i</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>], <span class="kw">_</span>: <span class="ident">u64</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">ExitSucceed</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>), <span class="ident">PrecompileFailure</span><span class="op">&gt;</span> {
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">input</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">128</span>];
-		<span class="ident">input</span>[..<span class="ident">min</span>(<span class="ident">i</span>.<span class="ident">len</span>(), <span class="number">128</span>)].<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">i</span>[..<span class="ident">min</span>(<span class="ident">i</span>.<span class="ident">len</span>(), <span class="number">128</span>)]);
+	<span class="kw">fn </span>execute(i: <span class="kw-2">&amp;</span>[u8], <span class="kw">_</span>: u64) -&gt; <span class="prelude-ty">Result</span>&lt;(ExitSucceed, Vec&lt;u8&gt;), PrecompileFailure&gt; {
+		<span class="kw">let </span><span class="kw-2">mut </span>input = [<span class="number">0u8</span>; <span class="number">128</span>];
+		input[..min(i.len(), <span class="number">128</span>)].copy_from_slice(<span class="kw-2">&amp;</span>i[..min(i.len(), <span class="number">128</span>)]);
 
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">msg</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">32</span>];
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">sig</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">65</span>];
+		<span class="kw">let </span><span class="kw-2">mut </span>msg = [<span class="number">0u8</span>; <span class="number">32</span>];
+		<span class="kw">let </span><span class="kw-2">mut </span>sig = [<span class="number">0u8</span>; <span class="number">65</span>];
 
-		<span class="ident">msg</span>[<span class="number">0</span>..<span class="number">32</span>].<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>[<span class="number">0</span>..<span class="number">32</span>]);
-		<span class="ident">sig</span>[<span class="number">0</span>..<span class="number">32</span>].<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>[<span class="number">64</span>..<span class="number">96</span>]);
-		<span class="ident">sig</span>[<span class="number">32</span>..<span class="number">64</span>].<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>[<span class="number">96</span>..<span class="number">128</span>]);
-		<span class="ident">sig</span>[<span class="number">64</span>] <span class="op">=</span> <span class="ident">input</span>[<span class="number">63</span>];
+		msg[<span class="number">0</span>..<span class="number">32</span>].copy_from_slice(<span class="kw-2">&amp;</span>input[<span class="number">0</span>..<span class="number">32</span>]);
+		sig[<span class="number">0</span>..<span class="number">32</span>].copy_from_slice(<span class="kw-2">&amp;</span>input[<span class="number">64</span>..<span class="number">96</span>]);
+		sig[<span class="number">32</span>..<span class="number">64</span>].copy_from_slice(<span class="kw-2">&amp;</span>input[<span class="number">96</span>..<span class="number">128</span>]);
+		sig[<span class="number">64</span>] = input[<span class="number">63</span>];
 
-		<span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">sp_io::crypto::secp256k1_ecdsa_recover</span>(<span class="kw-2">&amp;</span><span class="ident">sig</span>, <span class="kw-2">&amp;</span><span class="ident">msg</span>) {
-			<span class="prelude-val">Ok</span>(<span class="ident">pubkey</span>) =&gt; {
-				<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">address</span> <span class="op">=</span> <span class="ident">sp_io::hashing::keccak_256</span>(<span class="kw-2">&amp;</span><span class="ident">pubkey</span>);
-				<span class="ident">address</span>[<span class="number">0</span>..<span class="number">12</span>].<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span>[<span class="number">0u8</span>; <span class="number">12</span>]);
-				<span class="ident">address</span>.<span class="ident">to_vec</span>()
+		<span class="kw">let </span>result = <span class="kw">match </span>sp_io::crypto::secp256k1_ecdsa_recover(<span class="kw-2">&amp;</span>sig, <span class="kw-2">&amp;</span>msg) {
+			<span class="prelude-val">Ok</span>(pubkey) =&gt; {
+				<span class="kw">let </span><span class="kw-2">mut </span>address = sp_io::hashing::keccak_256(<span class="kw-2">&amp;</span>pubkey);
+				address[<span class="number">0</span>..<span class="number">12</span>].copy_from_slice(<span class="kw-2">&amp;</span>[<span class="number">0u8</span>; <span class="number">12</span>]);
+				address.to_vec()
 			}
-			<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; [<span class="number">0u8</span>; <span class="number">0</span>].<span class="ident">to_vec</span>(),
+			<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; [<span class="number">0u8</span>; <span class="number">0</span>].to_vec(),
 		};
 
-		<span class="prelude-val">Ok</span>((<span class="ident">ExitSucceed::Returned</span>, <span class="ident">result</span>))
+		<span class="prelude-val">Ok</span>((ExitSucceed::Returned, result))
 	}
 }
 
-<span class="doccomment">/// The ripemd precompile.</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Ripemd160</span>;
+<span class="doccomment">/// The ripemd precompile.
+</span><span class="kw">pub struct </span>Ripemd160;
 
-<span class="kw">impl</span> <span class="ident">LinearCostPrecompile</span> <span class="kw">for</span> <span class="ident">Ripemd160</span> {
-	<span class="kw">const</span> <span class="ident">BASE</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">600</span>;
-	<span class="kw">const</span> <span class="ident">WORD</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">120</span>;
+<span class="kw">impl </span>LinearCostPrecompile <span class="kw">for </span>Ripemd160 {
+	<span class="kw">const </span>BASE: u64 = <span class="number">600</span>;
+	<span class="kw">const </span>WORD: u64 = <span class="number">120</span>;
 
-	<span class="kw">fn</span> <span class="ident">execute</span>(<span class="ident">input</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>], <span class="ident">_cost</span>: <span class="ident">u64</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">ExitSucceed</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>), <span class="ident">PrecompileFailure</span><span class="op">&gt;</span> {
-		<span class="kw">use</span> <span class="ident">ripemd::Digest</span>;
+	<span class="kw">fn </span>execute(input: <span class="kw-2">&amp;</span>[u8], _cost: u64) -&gt; <span class="prelude-ty">Result</span>&lt;(ExitSucceed, Vec&lt;u8&gt;), PrecompileFailure&gt; {
+		<span class="kw">use </span>ripemd::Digest;
 
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">ret</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">32</span>];
-		<span class="ident">ret</span>[<span class="number">12</span>..<span class="number">32</span>].<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">ripemd::Ripemd160::digest</span>(<span class="ident">input</span>));
-		<span class="prelude-val">Ok</span>((<span class="ident">ExitSucceed::Returned</span>, <span class="ident">ret</span>.<span class="ident">to_vec</span>()))
+		<span class="kw">let </span><span class="kw-2">mut </span>ret = [<span class="number">0u8</span>; <span class="number">32</span>];
+		ret[<span class="number">12</span>..<span class="number">32</span>].copy_from_slice(<span class="kw-2">&amp;</span>ripemd::Ripemd160::digest(input));
+		<span class="prelude-val">Ok</span>((ExitSucceed::Returned, ret.to_vec()))
 	}
 }
 
-<span class="doccomment">/// The sha256 precompile.</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Sha256</span>;
+<span class="doccomment">/// The sha256 precompile.
+</span><span class="kw">pub struct </span>Sha256;
 
-<span class="kw">impl</span> <span class="ident">LinearCostPrecompile</span> <span class="kw">for</span> <span class="ident">Sha256</span> {
-	<span class="kw">const</span> <span class="ident">BASE</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">60</span>;
-	<span class="kw">const</span> <span class="ident">WORD</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">12</span>;
+<span class="kw">impl </span>LinearCostPrecompile <span class="kw">for </span>Sha256 {
+	<span class="kw">const </span>BASE: u64 = <span class="number">60</span>;
+	<span class="kw">const </span>WORD: u64 = <span class="number">12</span>;
 
-	<span class="kw">fn</span> <span class="ident">execute</span>(<span class="ident">input</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>], <span class="ident">_cost</span>: <span class="ident">u64</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">ExitSucceed</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>), <span class="ident">PrecompileFailure</span><span class="op">&gt;</span> {
-		<span class="kw">let</span> <span class="ident">ret</span> <span class="op">=</span> <span class="ident">sp_io::hashing::sha2_256</span>(<span class="ident">input</span>);
-		<span class="prelude-val">Ok</span>((<span class="ident">ExitSucceed::Returned</span>, <span class="ident">ret</span>.<span class="ident">to_vec</span>()))
+	<span class="kw">fn </span>execute(input: <span class="kw-2">&amp;</span>[u8], _cost: u64) -&gt; <span class="prelude-ty">Result</span>&lt;(ExitSucceed, Vec&lt;u8&gt;), PrecompileFailure&gt; {
+		<span class="kw">let </span>ret = sp_io::hashing::sha2_256(input);
+		<span class="prelude-val">Ok</span>((ExitSucceed::Returned, ret.to_vec()))
 	}
 }
 
-<span class="doccomment">/// The ECRecoverPublicKey precompile.</span>
-<span class="doccomment">/// Similar to ECRecover, but returns the pubkey (not the corresponding Ethereum address)</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">ECRecoverPublicKey</span>;
+<span class="doccomment">/// The ECRecoverPublicKey precompile.
+/// Similar to ECRecover, but returns the pubkey (not the corresponding Ethereum address)
+</span><span class="kw">pub struct </span>ECRecoverPublicKey;
 
-<span class="kw">impl</span> <span class="ident">LinearCostPrecompile</span> <span class="kw">for</span> <span class="ident">ECRecoverPublicKey</span> {
-	<span class="kw">const</span> <span class="ident">BASE</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">3000</span>;
-	<span class="kw">const</span> <span class="ident">WORD</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">0</span>;
+<span class="kw">impl </span>LinearCostPrecompile <span class="kw">for </span>ECRecoverPublicKey {
+	<span class="kw">const </span>BASE: u64 = <span class="number">3000</span>;
+	<span class="kw">const </span>WORD: u64 = <span class="number">0</span>;
 
-	<span class="kw">fn</span> <span class="ident">execute</span>(<span class="ident">i</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>], <span class="kw">_</span>: <span class="ident">u64</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">ExitSucceed</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>), <span class="ident">PrecompileFailure</span><span class="op">&gt;</span> {
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">input</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">128</span>];
-		<span class="ident">input</span>[..<span class="ident">min</span>(<span class="ident">i</span>.<span class="ident">len</span>(), <span class="number">128</span>)].<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">i</span>[..<span class="ident">min</span>(<span class="ident">i</span>.<span class="ident">len</span>(), <span class="number">128</span>)]);
+	<span class="kw">fn </span>execute(i: <span class="kw-2">&amp;</span>[u8], <span class="kw">_</span>: u64) -&gt; <span class="prelude-ty">Result</span>&lt;(ExitSucceed, Vec&lt;u8&gt;), PrecompileFailure&gt; {
+		<span class="kw">let </span><span class="kw-2">mut </span>input = [<span class="number">0u8</span>; <span class="number">128</span>];
+		input[..min(i.len(), <span class="number">128</span>)].copy_from_slice(<span class="kw-2">&amp;</span>i[..min(i.len(), <span class="number">128</span>)]);
 
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">msg</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">32</span>];
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">sig</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">65</span>];
+		<span class="kw">let </span><span class="kw-2">mut </span>msg = [<span class="number">0u8</span>; <span class="number">32</span>];
+		<span class="kw">let </span><span class="kw-2">mut </span>sig = [<span class="number">0u8</span>; <span class="number">65</span>];
 
-		<span class="ident">msg</span>[<span class="number">0</span>..<span class="number">32</span>].<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>[<span class="number">0</span>..<span class="number">32</span>]);
-		<span class="ident">sig</span>[<span class="number">0</span>..<span class="number">32</span>].<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>[<span class="number">64</span>..<span class="number">96</span>]);
-		<span class="ident">sig</span>[<span class="number">32</span>..<span class="number">64</span>].<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>[<span class="number">96</span>..<span class="number">128</span>]);
-		<span class="ident">sig</span>[<span class="number">64</span>] <span class="op">=</span> <span class="ident">input</span>[<span class="number">63</span>];
+		msg[<span class="number">0</span>..<span class="number">32</span>].copy_from_slice(<span class="kw-2">&amp;</span>input[<span class="number">0</span>..<span class="number">32</span>]);
+		sig[<span class="number">0</span>..<span class="number">32</span>].copy_from_slice(<span class="kw-2">&amp;</span>input[<span class="number">64</span>..<span class="number">96</span>]);
+		sig[<span class="number">32</span>..<span class="number">64</span>].copy_from_slice(<span class="kw-2">&amp;</span>input[<span class="number">96</span>..<span class="number">128</span>]);
+		sig[<span class="number">64</span>] = input[<span class="number">63</span>];
 
-		<span class="kw">let</span> <span class="ident">pubkey</span> <span class="op">=</span> <span class="ident">sp_io::crypto::secp256k1_ecdsa_recover</span>(<span class="kw-2">&amp;</span><span class="ident">sig</span>, <span class="kw-2">&amp;</span><span class="ident">msg</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> {
-			<span class="ident">PrecompileFailure::Error</span> {
-				<span class="ident">exit_status</span>: <span class="ident">ExitError::Other</span>(<span class="string">&quot;Public key recover failed&quot;</span>.<span class="ident">into</span>()),
+		<span class="kw">let </span>pubkey = sp_io::crypto::secp256k1_ecdsa_recover(<span class="kw-2">&amp;</span>sig, <span class="kw-2">&amp;</span>msg).map_err(|<span class="kw">_</span>| {
+			PrecompileFailure::Error {
+				exit_status: ExitError::Other(<span class="string">&quot;Public key recover failed&quot;</span>.into()),
 			}
 		})<span class="question-mark">?</span>;
 
-		<span class="prelude-val">Ok</span>((<span class="ident">ExitSucceed::Returned</span>, <span class="ident">pubkey</span>.<span class="ident">to_vec</span>()))
+		<span class="prelude-val">Ok</span>((ExitSucceed::Returned, pubkey.to_vec()))
 	}
 }
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
-<span class="kw">mod</span> <span class="ident">tests</span> {
-	<span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
-	<span class="kw">use</span> <span class="ident">pallet_evm_test_vector_support::test_precompile_test_vectors</span>;
+<span class="attribute">#[cfg(test)]
+</span><span class="kw">mod </span>tests {
+	<span class="kw">use super</span>::<span class="kw-2">*</span>;
+	<span class="kw">use </span>pallet_evm_test_vector_support::test_precompile_test_vectors;
 
-	<span class="comment">// TODO: this fails on the test &quot;InvalidHighV-bits-1&quot; where it is expected to return &quot;&quot;</span>
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">process_consensus_tests_for_ecrecover</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">String</span><span class="op">&gt;</span> {
-		<span class="ident">test_precompile_test_vectors</span>::<span class="op">&lt;</span><span class="ident">ECRecover</span><span class="op">&gt;</span>(<span class="string">&quot;../testdata/ecRecover.json&quot;</span>)<span class="question-mark">?</span>;
+	<span class="comment">// TODO: this fails on the test &quot;InvalidHighV-bits-1&quot; where it is expected to return &quot;&quot;
+	</span><span class="attribute">#[test]
+	</span><span class="kw">fn </span>process_consensus_tests_for_ecrecover() -&gt; <span class="prelude-ty">Result</span>&lt;(), String&gt; {
+		test_precompile_test_vectors::&lt;ECRecover&gt;(<span class="string">&quot;../testdata/ecRecover.json&quot;</span>)<span class="question-mark">?</span>;
 		<span class="prelude-val">Ok</span>(())
 	}
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">process_consensus_tests_for_sha256</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">String</span><span class="op">&gt;</span> {
-		<span class="ident">test_precompile_test_vectors</span>::<span class="op">&lt;</span><span class="ident">Sha256</span><span class="op">&gt;</span>(<span class="string">&quot;../testdata/common_sha256.json&quot;</span>)<span class="question-mark">?</span>;
+	<span class="attribute">#[test]
+	</span><span class="kw">fn </span>process_consensus_tests_for_sha256() -&gt; <span class="prelude-ty">Result</span>&lt;(), String&gt; {
+		test_precompile_test_vectors::&lt;Sha256&gt;(<span class="string">&quot;../testdata/common_sha256.json&quot;</span>)<span class="question-mark">?</span>;
 		<span class="prelude-val">Ok</span>(())
 	}
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">process_consensus_tests_for_ripemd160</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">String</span><span class="op">&gt;</span> {
-		<span class="ident">test_precompile_test_vectors</span>::<span class="op">&lt;</span><span class="ident">Ripemd160</span><span class="op">&gt;</span>(<span class="string">&quot;../testdata/common_ripemd.json&quot;</span>)<span class="question-mark">?</span>;
+	<span class="attribute">#[test]
+	</span><span class="kw">fn </span>process_consensus_tests_for_ripemd160() -&gt; <span class="prelude-ty">Result</span>&lt;(), String&gt; {
+		test_precompile_test_vectors::&lt;Ripemd160&gt;(<span class="string">&quot;../testdata/common_ripemd.json&quot;</span>)<span class="question-mark">?</span>;
 		<span class="prelude-val">Ok</span>(())
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_evm_precompile_simple" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (7fe022f5a 2022-07-24)" ></div>
-</body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_evm_precompile_simple" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (81f391930 2022-10-09)" ></div></body></html>

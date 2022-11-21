@@ -1,10 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `frame/dynamic-fee/src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../pallet_dynamic_fee/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a><h2 class="location"></h2>
-    </nav>
-    <nav class="sidebar"><a class="sidebar-logo" href="../../pallet_dynamic_fee/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../pallet_dynamic_fee/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1">
-                                <a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div>
-                        </div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `frame/dynamic-fee/src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><a class="sidebar-logo" href="../../pallet_dynamic_fee/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../pallet_dynamic_fee/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -146,148 +140,147 @@
 <span id="140">140</span>
 <span id="141">141</span>
 <span id="142">142</span>
-</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
-<span class="comment">// This file is part of Frontier.</span>
-<span class="comment">//</span>
-<span class="comment">// Copyright (c) 2021-2022 Parity Technologies (UK) Ltd.</span>
-<span class="comment">//</span>
-<span class="comment">// Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
-<span class="comment">// you may not use this file except in compliance with the License.</span>
-<span class="comment">// You may obtain a copy of the License at</span>
-<span class="comment">//</span>
-<span class="comment">// 	http://www.apache.org/licenses/LICENSE-2.0</span>
-<span class="comment">//</span>
-<span class="comment">// Unless required by applicable law or agreed to in writing, software</span>
-<span class="comment">// distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
-<span class="comment">// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
-<span class="comment">// See the License for the specific language governing permissions and</span>
-<span class="comment">// limitations under the License.</span>
+</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
+// This file is part of Frontier.
+//
+// Copyright (c) 2021-2022 Parity Technologies (UK) Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// 	http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
-<span class="comment">// Ensure we&#39;re `no_std` when compiling for Wasm.</span>
-<span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
+// Ensure we&#39;re `no_std` when compiling for Wasm.
+</span><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
-<span class="kw">mod</span> <span class="ident">tests</span>;
+#[cfg(test)]
+</span><span class="kw">mod </span>tests;
 
-<span class="kw">use</span> <span class="ident">frame_support</span>::{<span class="ident">inherent::IsFatalError</span>, <span class="ident">traits::Get</span>, <span class="ident">weights::Weight</span>};
-<span class="kw">use</span> <span class="ident">sp_core::U256</span>;
-<span class="kw">use</span> <span class="ident">sp_inherents</span>::{<span class="ident">InherentData</span>, <span class="ident">InherentIdentifier</span>};
-<span class="kw">use</span> <span class="ident">sp_std::cmp</span>::{<span class="ident">max</span>, <span class="ident">min</span>};
+<span class="kw">use </span>frame_support::{inherent::IsFatalError, traits::Get, weights::Weight};
+<span class="kw">use </span>sp_core::U256;
+<span class="kw">use </span>sp_inherents::{InherentData, InherentIdentifier};
+<span class="kw">use </span>sp_std::cmp::{max, min};
 
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="self">self</span>::pallet</span>::<span class="kw-2">*</span>;
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>)]</span>
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">fp_dynamic_fee::InherentDataProvider</span>;
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">fp_dynamic_fee</span>::{<span class="ident">InherentType</span>, <span class="ident">INHERENT_IDENTIFIER</span>};
+<span class="kw">pub use </span><span class="self">self</span>::pallet::<span class="kw-2">*</span>;
+<span class="attribute">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
+</span><span class="kw">pub use </span>fp_dynamic_fee::InherentDataProvider;
+<span class="kw">pub use </span>fp_dynamic_fee::{InherentType, INHERENT_IDENTIFIER};
 
-<span class="attribute">#[<span class="ident">frame_support::pallet</span>]</span>
-<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">pallet</span> {
-	<span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
-	<span class="kw">use</span> <span class="ident">frame_support::pallet_prelude</span>::<span class="kw-2">*</span>;
-	<span class="kw">use</span> <span class="ident">frame_system::pallet_prelude</span>::<span class="kw-2">*</span>;
+<span class="attribute">#[frame_support::pallet]
+</span><span class="kw">pub mod </span>pallet {
+	<span class="kw">use super</span>::<span class="kw-2">*</span>;
+	<span class="kw">use </span>frame_support::pallet_prelude::<span class="kw-2">*</span>;
+	<span class="kw">use </span>frame_system::pallet_prelude::<span class="kw-2">*</span>;
 
-	<span class="attribute">#[<span class="ident">pallet::pallet</span>]</span>
-	<span class="attribute">#[<span class="ident">pallet::generate_store</span>(<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">trait</span> <span class="ident">Store</span>)]</span>
-	<span class="attribute">#[<span class="ident">pallet::without_storage_info</span>]</span>
-	<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>(<span class="ident">PhantomData</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>);
+	<span class="attribute">#[pallet::pallet]
+	#[pallet::generate_store(<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">trait </span>Store)]
+	#[pallet::without_storage_info]
+	</span><span class="kw">pub struct </span>Pallet&lt;T&gt;(PhantomData&lt;T&gt;);
 
-	<span class="attribute">#[<span class="ident">pallet::config</span>]</span>
-	<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Config</span>: <span class="ident">frame_system::Config</span> {
-		<span class="doccomment">/// Bound divisor for min gas price.</span>
-		<span class="kw">type</span> <span class="ident">MinGasPriceBoundDivisor</span>: <span class="ident">Get</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>;
+	<span class="attribute">#[pallet::config]
+	</span><span class="kw">pub trait </span>Config: frame_system::Config {
+		<span class="doccomment">/// Bound divisor for min gas price.
+		</span><span class="kw">type </span>MinGasPriceBoundDivisor: Get&lt;U256&gt;;
 	}
 
-	<span class="attribute">#[<span class="ident">pallet::hooks</span>]</span>
-	<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">Hooks</span><span class="op">&lt;</span><span class="ident">BlockNumberFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-		<span class="kw">fn</span> <span class="ident">on_initialize</span>(<span class="ident">_n</span>: <span class="ident">BlockNumberFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>) -&gt; <span class="ident">Weight</span> {
-			<span class="ident">TargetMinGasPrice</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::kill</span>();
+	<span class="attribute">#[pallet::hooks]
+	</span><span class="kw">impl</span>&lt;T: Config&gt; Hooks&lt;BlockNumberFor&lt;T&gt;&gt; <span class="kw">for </span>Pallet&lt;T&gt; {
+		<span class="kw">fn </span>on_initialize(_n: BlockNumberFor&lt;T&gt;) -&gt; Weight {
+			TargetMinGasPrice::&lt;T&gt;::kill();
 
-			<span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>(<span class="number">1</span>)
+			T::DbWeight::get().writes(<span class="number">1</span>)
 		}
 
-		<span class="kw">fn</span> <span class="ident">on_finalize</span>(<span class="ident">_n</span>: <span class="ident">BlockNumberFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>) {
-			<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">target</span>) <span class="op">=</span> <span class="ident">TargetMinGasPrice</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::take</span>() {
-				<span class="kw">let</span> <span class="ident">bound</span> <span class="op">=</span>
-					<span class="ident">MinGasPrice</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::get</span>() <span class="op">/</span> <span class="ident">T::MinGasPriceBoundDivisor::get</span>() <span class="op">+</span> <span class="ident">U256::one</span>();
+		<span class="kw">fn </span>on_finalize(_n: BlockNumberFor&lt;T&gt;) {
+			<span class="kw">if let </span><span class="prelude-val">Some</span>(target) = TargetMinGasPrice::&lt;T&gt;::take() {
+				<span class="kw">let </span>bound =
+					MinGasPrice::&lt;T&gt;::get() / T::MinGasPriceBoundDivisor::get() + U256::one();
 
-				<span class="kw">let</span> <span class="ident">upper_limit</span> <span class="op">=</span> <span class="ident">MinGasPrice</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::get</span>().<span class="ident">saturating_add</span>(<span class="ident">bound</span>);
-				<span class="kw">let</span> <span class="ident">lower_limit</span> <span class="op">=</span> <span class="ident">MinGasPrice</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::get</span>().<span class="ident">saturating_sub</span>(<span class="ident">bound</span>);
+				<span class="kw">let </span>upper_limit = MinGasPrice::&lt;T&gt;::get().saturating_add(bound);
+				<span class="kw">let </span>lower_limit = MinGasPrice::&lt;T&gt;::get().saturating_sub(bound);
 
-				<span class="ident">MinGasPrice</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::set</span>(<span class="ident">min</span>(<span class="ident">upper_limit</span>, <span class="ident">max</span>(<span class="ident">lower_limit</span>, <span class="ident">target</span>)));
+				MinGasPrice::&lt;T&gt;::set(min(upper_limit, max(lower_limit, target)));
 			}
 		}
 	}
 
-	<span class="attribute">#[<span class="ident">pallet::call</span>]</span>
-	<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-		<span class="attribute">#[<span class="ident">pallet::weight</span>((<span class="ident">T::DbWeight::get</span>().<span class="ident">writes</span>(<span class="number">1</span>), <span class="ident">DispatchClass::Mandatory</span>))]</span>
-		<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">note_min_gas_price_target</span>(<span class="ident">origin</span>: <span class="ident">OriginFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">target</span>: <span class="ident">U256</span>) -&gt; <span class="ident">DispatchResult</span> {
-			<span class="ident">ensure_none</span>(<span class="ident">origin</span>)<span class="question-mark">?</span>;
+	<span class="attribute">#[pallet::call]
+	</span><span class="kw">impl</span>&lt;T: Config&gt; Pallet&lt;T&gt; {
+		<span class="attribute">#[pallet::weight((T::DbWeight::get().writes(<span class="number">1</span>), DispatchClass::Mandatory))]
+		</span><span class="kw">pub fn </span>note_min_gas_price_target(origin: OriginFor&lt;T&gt;, target: U256) -&gt; DispatchResult {
+			ensure_none(origin)<span class="question-mark">?</span>;
 			<span class="macro">assert!</span>(
-				<span class="ident">TargetMinGasPrice</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::get</span>().<span class="ident">is_none</span>(),
+				TargetMinGasPrice::&lt;T&gt;::get().is_none(),
 				<span class="string">&quot;TargetMinGasPrice must be updated only once in the block&quot;</span>,
 			);
 
-			<span class="ident">TargetMinGasPrice</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::set</span>(<span class="prelude-val">Some</span>(<span class="ident">target</span>));
+			TargetMinGasPrice::&lt;T&gt;::set(<span class="prelude-val">Some</span>(target));
 			<span class="prelude-val">Ok</span>(())
 		}
 	}
 
-	<span class="attribute">#[<span class="ident">pallet::genesis_config</span>]</span>
-	<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>, <span class="ident">derive</span>(<span class="ident">Default</span>))]</span>
-	<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">GenesisConfig</span> {
-		<span class="kw">pub</span> <span class="ident">min_gas_price</span>: <span class="ident">U256</span>,
+	<span class="attribute">#[pallet::genesis_config]
+	#[cfg_attr(feature = <span class="string">&quot;std&quot;</span>, derive(Default))]
+	</span><span class="kw">pub struct </span>GenesisConfig {
+		<span class="kw">pub </span>min_gas_price: U256,
 	}
 
-	<span class="attribute">#[<span class="ident">pallet::genesis_build</span>]</span>
-	<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">GenesisBuild</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">GenesisConfig</span> {
-		<span class="kw">fn</span> <span class="ident">build</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) {
-			<span class="ident">MinGasPrice</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::put</span>(<span class="self">self</span>.<span class="ident">min_gas_price</span>);
+	<span class="attribute">#[pallet::genesis_build]
+	</span><span class="kw">impl</span>&lt;T: Config&gt; GenesisBuild&lt;T&gt; <span class="kw">for </span>GenesisConfig {
+		<span class="kw">fn </span>build(<span class="kw-2">&amp;</span><span class="self">self</span>) {
+			MinGasPrice::&lt;T&gt;::put(<span class="self">self</span>.min_gas_price);
 		}
 	}
 
-	<span class="attribute">#[<span class="ident">pallet::storage</span>]</span>
-	<span class="attribute">#[<span class="ident">pallet::getter</span>(<span class="kw">fn</span> <span class="ident">min_gas_price</span>)]</span>
-	<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type</span> <span class="ident">MinGasPrice</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">StorageValue</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">U256</span>, <span class="ident">ValueQuery</span><span class="op">&gt;</span>;
+	<span class="attribute">#[pallet::storage]
+	#[pallet::getter(<span class="kw">fn </span>min_gas_price)]
+	</span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type </span>MinGasPrice&lt;T: Config&gt; = StorageValue&lt;<span class="kw">_</span>, U256, ValueQuery&gt;;
 
-	<span class="attribute">#[<span class="ident">pallet::storage</span>]</span>
-	<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type</span> <span class="ident">TargetMinGasPrice</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">StorageValue</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">U256</span><span class="op">&gt;</span>;
+	<span class="attribute">#[pallet::storage]
+	</span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type </span>TargetMinGasPrice&lt;T: Config&gt; = StorageValue&lt;<span class="kw">_</span>, U256&gt;;
 
-	<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">RuntimeDebug</span>)]</span>
-	<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">InherentError</span> {}
+	<span class="attribute">#[derive(Encode, Decode, RuntimeDebug)]
+	</span><span class="kw">pub enum </span>InherentError {}
 
-	<span class="kw">impl</span> <span class="ident">IsFatalError</span> <span class="kw">for</span> <span class="ident">InherentError</span> {
-		<span class="kw">fn</span> <span class="ident">is_fatal_error</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">bool</span> {
-			<span class="kw">match</span> <span class="kw-2">*</span><span class="self">self</span> {}
+	<span class="kw">impl </span>IsFatalError <span class="kw">for </span>InherentError {
+		<span class="kw">fn </span>is_fatal_error(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
+			<span class="kw">match </span><span class="kw-2">*</span><span class="self">self </span>{}
 		}
 	}
 
-	<span class="attribute">#[<span class="ident">pallet::inherent</span>]</span>
-	<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">ProvideInherent</span> <span class="kw">for</span> <span class="ident">Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-		<span class="kw">type</span> <span class="ident">Call</span> <span class="op">=</span> <span class="ident">Call</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>;
-		<span class="kw">type</span> <span class="ident">Error</span> <span class="op">=</span> <span class="ident">InherentError</span>;
-		<span class="kw">const</span> <span class="ident">INHERENT_IDENTIFIER</span>: <span class="ident">InherentIdentifier</span> <span class="op">=</span> <span class="ident">INHERENT_IDENTIFIER</span>;
+	<span class="attribute">#[pallet::inherent]
+	</span><span class="kw">impl</span>&lt;T: Config&gt; ProvideInherent <span class="kw">for </span>Pallet&lt;T&gt; {
+		<span class="kw">type </span>Call = Call&lt;T&gt;;
+		<span class="kw">type </span>Error = InherentError;
+		<span class="kw">const </span>INHERENT_IDENTIFIER: InherentIdentifier = INHERENT_IDENTIFIER;
 
-		<span class="kw">fn</span> <span class="ident">create_inherent</span>(<span class="ident">data</span>: <span class="kw-2">&amp;</span><span class="ident">InherentData</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Call</span><span class="op">&gt;</span> {
-			<span class="kw">let</span> <span class="ident">target</span> <span class="op">=</span> <span class="ident">data</span>.<span class="ident">get_data</span>::<span class="op">&lt;</span><span class="ident">InherentType</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="ident">INHERENT_IDENTIFIER</span>).<span class="ident">ok</span>()<span class="question-mark">?</span><span class="question-mark">?</span>;
+		<span class="kw">fn </span>create_inherent(data: <span class="kw-2">&amp;</span>InherentData) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>::Call&gt; {
+			<span class="kw">let </span>target = data.get_data::&lt;InherentType&gt;(<span class="kw-2">&amp;</span>INHERENT_IDENTIFIER).ok()<span class="question-mark">??</span>;
 
-			<span class="prelude-val">Some</span>(<span class="ident">Call::note_min_gas_price_target</span> { <span class="ident">target</span> })
+			<span class="prelude-val">Some</span>(Call::note_min_gas_price_target { target })
 		}
 
-		<span class="kw">fn</span> <span class="ident">check_inherent</span>(<span class="ident">_call</span>: <span class="kw-2">&amp;</span><span class="ident"><span class="self">Self</span>::Call</span>, <span class="ident">_data</span>: <span class="kw-2">&amp;</span><span class="ident">InherentData</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident"><span class="self">Self</span>::Error</span><span class="op">&gt;</span> {
+		<span class="kw">fn </span>check_inherent(_call: <span class="kw-2">&amp;</span><span class="self">Self</span>::Call, _data: <span class="kw-2">&amp;</span>InherentData) -&gt; <span class="prelude-ty">Result</span>&lt;(), <span class="self">Self</span>::Error&gt; {
 			<span class="prelude-val">Ok</span>(())
 		}
 
-		<span class="kw">fn</span> <span class="ident">is_inherent</span>(<span class="ident">call</span>: <span class="kw-2">&amp;</span><span class="ident"><span class="self">Self</span>::Call</span>) -&gt; <span class="ident">bool</span> {
-			<span class="macro">matches!</span>(<span class="ident">call</span>, <span class="ident">Call::note_min_gas_price_target</span> { .. })
+		<span class="kw">fn </span>is_inherent(call: <span class="kw-2">&amp;</span><span class="self">Self</span>::Call) -&gt; bool {
+			<span class="macro">matches!</span>(call, Call::note_min_gas_price_target { .. })
 		}
 	}
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">fp_evm::FeeCalculator</span> <span class="kw">for</span> <span class="ident">Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-	<span class="kw">fn</span> <span class="ident">min_gas_price</span>() -&gt; (<span class="ident">U256</span>, <span class="ident">Weight</span>) {
-		(<span class="ident">MinGasPrice</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::get</span>(), <span class="ident">T::DbWeight::get</span>().<span class="ident">reads</span>(<span class="number">1</span>))
+<span class="kw">impl</span>&lt;T: Config&gt; fp_evm::FeeCalculator <span class="kw">for </span>Pallet&lt;T&gt; {
+	<span class="kw">fn </span>min_gas_price() -&gt; (U256, Weight) {
+		(MinGasPrice::&lt;T&gt;::get(), T::DbWeight::get().reads(<span class="number">1</span>))
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_dynamic_fee" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (7fe022f5a 2022-07-24)" ></div>
-</body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_dynamic_fee" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (81f391930 2022-10-09)" ></div></body></html>

@@ -1,10 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `primitives/self-contained/src/unchecked_extrinsic.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>unchecked_extrinsic.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../fp_self_contained/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a><h2 class="location"></h2>
-    </nav>
-    <nav class="sidebar"><a class="sidebar-logo" href="../../fp_self_contained/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../fp_self_contained/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1">
-                                <a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div>
-                        </div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `primitives/self-contained/src/unchecked_extrinsic.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>unchecked_extrinsic.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><a class="sidebar-logo" href="../../fp_self_contained/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../fp_self_contained/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -202,204 +196,203 @@
 <span id="196">196</span>
 <span id="197">197</span>
 <span id="198">198</span>
-</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
-<span class="comment">// This file is part of Frontier.</span>
-<span class="comment">//</span>
-<span class="comment">// Copyright (c) 2017-2020 Parity Technologies (UK) Ltd.</span>
-<span class="comment">//</span>
-<span class="comment">// Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
-<span class="comment">// you may not use this file except in compliance with the License.</span>
-<span class="comment">// You may obtain a copy of the License at</span>
-<span class="comment">//</span>
-<span class="comment">// 	http://www.apache.org/licenses/LICENSE-2.0</span>
-<span class="comment">//</span>
-<span class="comment">// Unless required by applicable law or agreed to in writing, software</span>
-<span class="comment">// distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
-<span class="comment">// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
-<span class="comment">// See the License for the specific language governing permissions and</span>
-<span class="comment">// limitations under the License.</span>
+</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
+// This file is part of Frontier.
+//
+// Copyright (c) 2017-2020 Parity Technologies (UK) Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// 	http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
-<span class="kw">use</span> <span class="ident">frame_support</span>::{
-	<span class="ident">codec</span>::{<span class="ident">Decode</span>, <span class="ident">Encode</span>},
-	<span class="ident">dispatch</span>::{<span class="ident">DispatchInfo</span>, <span class="ident">GetDispatchInfo</span>},
-	<span class="ident">scale_info::TypeInfo</span>,
-	<span class="ident">traits::ExtrinsicCall</span>,
+</span><span class="kw">use </span>frame_support::{
+	codec::{Decode, Encode},
+	dispatch::{DispatchInfo, GetDispatchInfo},
+	scale_info::TypeInfo,
+	traits::ExtrinsicCall,
 };
-<span class="kw">use</span> <span class="ident">sp_runtime</span>::{
-	<span class="ident">traits</span>::{
-		<span class="self">self</span>, <span class="ident">Checkable</span>, <span class="ident">Extrinsic</span>, <span class="ident">ExtrinsicMetadata</span>, <span class="ident">IdentifyAccount</span>, <span class="ident">MaybeDisplay</span>, <span class="ident">Member</span>,
-		<span class="ident">SignedExtension</span>,
+<span class="kw">use </span>sp_runtime::{
+	traits::{
+		<span class="self">self</span>, Checkable, Extrinsic, ExtrinsicMetadata, IdentifyAccount, MaybeDisplay, Member,
+		SignedExtension,
 	},
-	<span class="ident">transaction_validity</span>::{<span class="ident">InvalidTransaction</span>, <span class="ident">TransactionValidityError</span>},
-	<span class="ident">OpaqueExtrinsic</span>, <span class="ident">RuntimeDebug</span>,
+	transaction_validity::{InvalidTransaction, TransactionValidityError},
+	OpaqueExtrinsic, RuntimeDebug,
 };
 
-<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">CheckedExtrinsic</span>, <span class="ident">CheckedSignature</span>, <span class="ident">SelfContainedCall</span>};
+<span class="kw">use crate</span>::{CheckedExtrinsic, CheckedSignature, SelfContainedCall};
 
-<span class="doccomment">/// A extrinsic right from the external world. This is unchecked and so</span>
-<span class="doccomment">/// can contain a signature.</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">PartialEq</span>, <span class="ident">Eq</span>, <span class="ident">Clone</span>, <span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">RuntimeDebug</span>, <span class="ident">TypeInfo</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">UncheckedExtrinsic</span><span class="op">&lt;</span><span class="ident">Address</span>, <span class="ident">Call</span>, <span class="ident">Signature</span>, <span class="ident">Extra</span>: <span class="ident">SignedExtension</span><span class="op">&gt;</span>(
-	<span class="kw">pub</span> <span class="ident">sp_runtime::generic::UncheckedExtrinsic</span><span class="op">&lt;</span><span class="ident">Address</span>, <span class="ident">Call</span>, <span class="ident">Signature</span>, <span class="ident">Extra</span><span class="op">&gt;</span>,
+<span class="doccomment">/// A extrinsic right from the external world. This is unchecked and so
+/// can contain a signature.
+</span><span class="attribute">#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
+</span><span class="kw">pub struct </span>UncheckedExtrinsic&lt;Address, Call, Signature, Extra: SignedExtension&gt;(
+	<span class="kw">pub </span>sp_runtime::generic::UncheckedExtrinsic&lt;Address, Call, Signature, Extra&gt;,
 );
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>)]</span>
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">Address</span>, <span class="ident">Call</span>, <span class="ident">Signature</span>, <span class="ident">Extra</span><span class="op">&gt;</span> <span class="ident">parity_util_mem::MallocSizeOf</span>
-	<span class="kw">for</span> <span class="ident">UncheckedExtrinsic</span><span class="op">&lt;</span><span class="ident">Address</span>, <span class="ident">Call</span>, <span class="ident">Signature</span>, <span class="ident">Extra</span><span class="op">&gt;</span>
-<span class="kw">where</span>
-	<span class="ident">Extra</span>: <span class="ident">SignedExtension</span>,
+<span class="attribute">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
+</span><span class="kw">impl</span>&lt;Address, Call, Signature, Extra&gt; parity_util_mem::MallocSizeOf
+	<span class="kw">for </span>UncheckedExtrinsic&lt;Address, Call, Signature, Extra&gt;
+<span class="kw">where
+	</span>Extra: SignedExtension,
 {
-	<span class="kw">fn</span> <span class="ident">size_of</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">ops</span>: <span class="kw-2">&amp;mut</span> <span class="ident">parity_util_mem::MallocSizeOfOps</span>) -&gt; <span class="ident">usize</span> {
-		<span class="self">self</span>.<span class="number">0</span>.<span class="ident">size_of</span>(<span class="ident">ops</span>)
+	<span class="kw">fn </span>size_of(<span class="kw-2">&amp;</span><span class="self">self</span>, ops: <span class="kw-2">&amp;mut </span>parity_util_mem::MallocSizeOfOps) -&gt; usize {
+		<span class="self">self</span>.<span class="number">0</span>.size_of(ops)
 	}
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">Address</span>, <span class="ident">Call</span>, <span class="ident">Signature</span>, <span class="ident">Extra</span>: <span class="ident">SignedExtension</span><span class="op">&gt;</span>
-	<span class="ident">UncheckedExtrinsic</span><span class="op">&lt;</span><span class="ident">Address</span>, <span class="ident">Call</span>, <span class="ident">Signature</span>, <span class="ident">Extra</span><span class="op">&gt;</span>
+<span class="kw">impl</span>&lt;Address, Call, Signature, Extra: SignedExtension&gt;
+	UncheckedExtrinsic&lt;Address, Call, Signature, Extra&gt;
 {
-	<span class="doccomment">/// New instance of a signed extrinsic aka &quot;transaction&quot;.</span>
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new_signed</span>(<span class="ident">function</span>: <span class="ident">Call</span>, <span class="ident">signed</span>: <span class="ident">Address</span>, <span class="ident">signature</span>: <span class="ident">Signature</span>, <span class="ident">extra</span>: <span class="ident">Extra</span>) -&gt; <span class="self">Self</span> {
-		<span class="self">Self</span>(<span class="ident">sp_runtime::generic::UncheckedExtrinsic::new_signed</span>(
-			<span class="ident">function</span>, <span class="ident">signed</span>, <span class="ident">signature</span>, <span class="ident">extra</span>,
+	<span class="doccomment">/// New instance of a signed extrinsic aka &quot;transaction&quot;.
+	</span><span class="kw">pub fn </span>new_signed(function: Call, signed: Address, signature: Signature, extra: Extra) -&gt; <span class="self">Self </span>{
+		<span class="self">Self</span>(sp_runtime::generic::UncheckedExtrinsic::new_signed(
+			function, signed, signature, extra,
 		))
 	}
 
-	<span class="doccomment">/// New instance of an unsigned extrinsic aka &quot;inherent&quot;.</span>
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new_unsigned</span>(<span class="ident">function</span>: <span class="ident">Call</span>) -&gt; <span class="self">Self</span> {
-		<span class="self">Self</span>(<span class="ident">sp_runtime::generic::UncheckedExtrinsic::new_unsigned</span>(
-			<span class="ident">function</span>,
+	<span class="doccomment">/// New instance of an unsigned extrinsic aka &quot;inherent&quot;.
+	</span><span class="kw">pub fn </span>new_unsigned(function: Call) -&gt; <span class="self">Self </span>{
+		<span class="self">Self</span>(sp_runtime::generic::UncheckedExtrinsic::new_unsigned(
+			function,
 		))
 	}
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">Address</span>, <span class="ident">Call</span>: <span class="ident">SelfContainedCall</span>, <span class="ident">Signature</span>, <span class="ident">Extra</span>: <span class="ident">SignedExtension</span><span class="op">&gt;</span> <span class="ident">Extrinsic</span>
-	<span class="kw">for</span> <span class="ident">UncheckedExtrinsic</span><span class="op">&lt;</span><span class="ident">Address</span>, <span class="ident">Call</span>, <span class="ident">Signature</span>, <span class="ident">Extra</span><span class="op">&gt;</span>
+<span class="kw">impl</span>&lt;Address, Call: SelfContainedCall, Signature, Extra: SignedExtension&gt; Extrinsic
+	<span class="kw">for </span>UncheckedExtrinsic&lt;Address, Call, Signature, Extra&gt;
 {
-	<span class="kw">type</span> <span class="ident">Call</span> <span class="op">=</span> <span class="ident">Call</span>;
+	<span class="kw">type </span>Call = Call;
 
-	<span class="kw">type</span> <span class="ident">SignaturePayload</span> <span class="op">=</span> (<span class="ident">Address</span>, <span class="ident">Signature</span>, <span class="ident">Extra</span>);
+	<span class="kw">type </span>SignaturePayload = (Address, Signature, Extra);
 
-	<span class="kw">fn</span> <span class="ident">is_signed</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span> {
-		<span class="kw">if</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">function</span>.<span class="ident">is_self_contained</span>() {
+	<span class="kw">fn </span>is_signed(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;bool&gt; {
+		<span class="kw">if </span><span class="self">self</span>.<span class="number">0</span>.function.is_self_contained() {
 			<span class="prelude-val">Some</span>(<span class="bool-val">true</span>)
-		} <span class="kw">else</span> {
-			<span class="self">self</span>.<span class="number">0</span>.<span class="ident">is_signed</span>()
+		} <span class="kw">else </span>{
+			<span class="self">self</span>.<span class="number">0</span>.is_signed()
 		}
 	}
 
-	<span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">function</span>: <span class="ident">Call</span>, <span class="ident">signed_data</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::SignaturePayload</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
-		<span class="ident">sp_runtime::generic::UncheckedExtrinsic::new</span>(<span class="ident">function</span>, <span class="ident">signed_data</span>).<span class="ident">map</span>(<span class="self">Self</span>)
+	<span class="kw">fn </span>new(function: Call, signed_data: <span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>::SignaturePayload&gt;) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>&gt; {
+		sp_runtime::generic::UncheckedExtrinsic::new(function, signed_data).map(<span class="self">Self</span>)
 	}
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">Address</span>, <span class="ident">AccountId</span>, <span class="ident">Call</span>, <span class="ident">Signature</span>, <span class="ident">Extra</span>, <span class="ident">Lookup</span><span class="op">&gt;</span> <span class="ident">Checkable</span><span class="op">&lt;</span><span class="ident">Lookup</span><span class="op">&gt;</span>
-	<span class="kw">for</span> <span class="ident">UncheckedExtrinsic</span><span class="op">&lt;</span><span class="ident">Address</span>, <span class="ident">Call</span>, <span class="ident">Signature</span>, <span class="ident">Extra</span><span class="op">&gt;</span>
-<span class="kw">where</span>
-	<span class="ident">Address</span>: <span class="ident">Member</span> <span class="op">+</span> <span class="ident">MaybeDisplay</span>,
-	<span class="ident">Call</span>: <span class="ident">Encode</span> <span class="op">+</span> <span class="ident">Member</span> <span class="op">+</span> <span class="ident">SelfContainedCall</span>,
-	<span class="ident">Signature</span>: <span class="ident">Member</span> <span class="op">+</span> <span class="ident">traits::Verify</span>,
-	<span class="op">&lt;</span><span class="ident">Signature</span> <span class="kw">as</span> <span class="ident">traits::Verify</span><span class="op">&gt;</span><span class="ident">::Signer</span>: <span class="ident">IdentifyAccount</span><span class="op">&lt;</span><span class="ident">AccountId</span> <span class="op">=</span> <span class="ident">AccountId</span><span class="op">&gt;</span>,
-	<span class="ident">Extra</span>: <span class="ident">SignedExtension</span><span class="op">&lt;</span><span class="ident">AccountId</span> <span class="op">=</span> <span class="ident">AccountId</span><span class="op">&gt;</span>,
-	<span class="ident">AccountId</span>: <span class="ident">Member</span> <span class="op">+</span> <span class="ident">MaybeDisplay</span>,
-	<span class="ident">Lookup</span>: <span class="ident">traits::Lookup</span><span class="op">&lt;</span><span class="ident">Source</span> <span class="op">=</span> <span class="ident">Address</span>, <span class="ident">Target</span> <span class="op">=</span> <span class="ident">AccountId</span><span class="op">&gt;</span>,
+<span class="kw">impl</span>&lt;Address, AccountId, Call, Signature, Extra, Lookup&gt; Checkable&lt;Lookup&gt;
+	<span class="kw">for </span>UncheckedExtrinsic&lt;Address, Call, Signature, Extra&gt;
+<span class="kw">where
+	</span>Address: Member + MaybeDisplay,
+	Call: Encode + Member + SelfContainedCall,
+	Signature: Member + traits::Verify,
+	&lt;Signature <span class="kw">as </span>traits::Verify&gt;::Signer: IdentifyAccount&lt;AccountId = AccountId&gt;,
+	Extra: SignedExtension&lt;AccountId = AccountId&gt;,
+	AccountId: Member + MaybeDisplay,
+	Lookup: traits::Lookup&lt;Source = Address, Target = AccountId&gt;,
 {
-	<span class="kw">type</span> <span class="ident">Checked</span> <span class="op">=</span>
-		<span class="ident">CheckedExtrinsic</span><span class="op">&lt;</span><span class="ident">AccountId</span>, <span class="ident">Call</span>, <span class="ident">Extra</span>, <span class="op">&lt;</span><span class="ident">Call</span> <span class="kw">as</span> <span class="ident">SelfContainedCall</span><span class="op">&gt;</span><span class="ident">::SignedInfo</span><span class="op">&gt;</span>;
+	<span class="kw">type </span>Checked =
+		CheckedExtrinsic&lt;AccountId, Call, Extra, &lt;Call <span class="kw">as </span>SelfContainedCall&gt;::SignedInfo&gt;;
 
-	<span class="kw">fn</span> <span class="ident">check</span>(<span class="self">self</span>, <span class="ident">lookup</span>: <span class="kw-2">&amp;</span><span class="ident">Lookup</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Checked</span>, <span class="ident">TransactionValidityError</span><span class="op">&gt;</span> {
-		<span class="kw">if</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">function</span>.<span class="ident">is_self_contained</span>() {
-			<span class="kw">if</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">signature</span>.<span class="ident">is_some</span>() {
-				<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">TransactionValidityError::Invalid</span>(
-					<span class="ident">InvalidTransaction::BadProof</span>,
+	<span class="kw">fn </span>check(<span class="self">self</span>, lookup: <span class="kw-2">&amp;</span>Lookup) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>::Checked, TransactionValidityError&gt; {
+		<span class="kw">if </span><span class="self">self</span>.<span class="number">0</span>.function.is_self_contained() {
+			<span class="kw">if </span><span class="self">self</span>.<span class="number">0</span>.signature.is_some() {
+				<span class="kw">return </span><span class="prelude-val">Err</span>(TransactionValidityError::Invalid(
+					InvalidTransaction::BadProof,
 				));
 			}
 
-			<span class="kw">let</span> <span class="ident">signed_info</span> <span class="op">=</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">function</span>.<span class="ident">check_self_contained</span>().<span class="ident">ok_or</span>(
-				<span class="ident">TransactionValidityError::Invalid</span>(<span class="ident">InvalidTransaction::BadProof</span>),
-			)<span class="question-mark">?</span><span class="question-mark">?</span>;
-			<span class="prelude-val">Ok</span>(<span class="ident">CheckedExtrinsic</span> {
-				<span class="ident">signed</span>: <span class="ident">CheckedSignature::SelfContained</span>(<span class="ident">signed_info</span>),
-				<span class="ident">function</span>: <span class="self">self</span>.<span class="number">0</span>.<span class="ident">function</span>,
+			<span class="kw">let </span>signed_info = <span class="self">self</span>.<span class="number">0</span>.function.check_self_contained().ok_or(
+				TransactionValidityError::Invalid(InvalidTransaction::BadProof),
+			)<span class="question-mark">??</span>;
+			<span class="prelude-val">Ok</span>(CheckedExtrinsic {
+				signed: CheckedSignature::SelfContained(signed_info),
+				function: <span class="self">self</span>.<span class="number">0</span>.function,
 			})
-		} <span class="kw">else</span> {
-			<span class="kw">let</span> <span class="ident">checked</span> <span class="op">=</span> <span class="ident">Checkable</span>::<span class="op">&lt;</span><span class="ident">Lookup</span><span class="op">&gt;</span><span class="ident">::check</span>(<span class="self">self</span>.<span class="number">0</span>, <span class="ident">lookup</span>)<span class="question-mark">?</span>;
-			<span class="prelude-val">Ok</span>(<span class="ident">CheckedExtrinsic</span> {
-				<span class="ident">signed</span>: <span class="kw">match</span> <span class="ident">checked</span>.<span class="ident">signed</span> {
-					<span class="prelude-val">Some</span>((<span class="ident">id</span>, <span class="ident">extra</span>)) =&gt; <span class="ident">CheckedSignature::Signed</span>(<span class="ident">id</span>, <span class="ident">extra</span>),
-					<span class="prelude-val">None</span> =&gt; <span class="ident">CheckedSignature::Unsigned</span>,
+		} <span class="kw">else </span>{
+			<span class="kw">let </span>checked = Checkable::&lt;Lookup&gt;::check(<span class="self">self</span>.<span class="number">0</span>, lookup)<span class="question-mark">?</span>;
+			<span class="prelude-val">Ok</span>(CheckedExtrinsic {
+				signed: <span class="kw">match </span>checked.signed {
+					<span class="prelude-val">Some</span>((id, extra)) =&gt; CheckedSignature::Signed(id, extra),
+					<span class="prelude-val">None </span>=&gt; CheckedSignature::Unsigned,
 				},
-				<span class="ident">function</span>: <span class="ident">checked</span>.<span class="ident">function</span>,
+				function: checked.function,
 			})
 		}
 	}
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">Address</span>, <span class="ident">Call</span>, <span class="ident">Signature</span>, <span class="ident">Extra</span><span class="op">&gt;</span> <span class="ident">ExtrinsicMetadata</span>
-	<span class="kw">for</span> <span class="ident">UncheckedExtrinsic</span><span class="op">&lt;</span><span class="ident">Address</span>, <span class="ident">Call</span>, <span class="ident">Signature</span>, <span class="ident">Extra</span><span class="op">&gt;</span>
-<span class="kw">where</span>
-	<span class="ident">Extra</span>: <span class="ident">SignedExtension</span>,
+<span class="kw">impl</span>&lt;Address, Call, Signature, Extra&gt; ExtrinsicMetadata
+	<span class="kw">for </span>UncheckedExtrinsic&lt;Address, Call, Signature, Extra&gt;
+<span class="kw">where
+	</span>Extra: SignedExtension,
 {
-	<span class="kw">const</span> <span class="ident">VERSION</span>: <span class="ident">u8</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">sp_runtime::generic::UncheckedExtrinsic</span><span class="op">&lt;</span><span class="ident">Address</span>, <span class="ident">Call</span>, <span class="ident">Signature</span>, <span class="ident">Extra</span><span class="op">&gt;</span> <span class="kw">as</span> <span class="ident">ExtrinsicMetadata</span><span class="op">&gt;</span><span class="ident">::VERSION</span>;
-	<span class="kw">type</span> <span class="ident">SignedExtensions</span> <span class="op">=</span> <span class="ident">Extra</span>;
+	<span class="kw">const </span>VERSION: u8 = &lt;sp_runtime::generic::UncheckedExtrinsic&lt;Address, Call, Signature, Extra&gt; <span class="kw">as </span>ExtrinsicMetadata&gt;::VERSION;
+	<span class="kw">type </span>SignedExtensions = Extra;
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">Address</span>, <span class="ident">Call</span>: <span class="ident">SelfContainedCall</span>, <span class="ident">Signature</span>, <span class="ident">Extra</span><span class="op">&gt;</span> <span class="ident">ExtrinsicCall</span>
-	<span class="kw">for</span> <span class="ident">UncheckedExtrinsic</span><span class="op">&lt;</span><span class="ident">Address</span>, <span class="ident">Call</span>, <span class="ident">Signature</span>, <span class="ident">Extra</span><span class="op">&gt;</span>
-<span class="kw">where</span>
-	<span class="ident">Extra</span>: <span class="ident">SignedExtension</span>,
+<span class="kw">impl</span>&lt;Address, Call: SelfContainedCall, Signature, Extra&gt; ExtrinsicCall
+	<span class="kw">for </span>UncheckedExtrinsic&lt;Address, Call, Signature, Extra&gt;
+<span class="kw">where
+	</span>Extra: SignedExtension,
 {
-	<span class="kw">fn</span> <span class="ident">call</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="ident"><span class="self">Self</span>::Call</span> {
-		<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>.<span class="ident">function</span>
+	<span class="kw">fn </span>call(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="self">Self</span>::Call {
+		<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>.function
 	}
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">Address</span>, <span class="ident">Call</span>: <span class="ident">GetDispatchInfo</span>, <span class="ident">Signature</span>, <span class="ident">Extra</span><span class="op">&gt;</span> <span class="ident">GetDispatchInfo</span>
-	<span class="kw">for</span> <span class="ident">UncheckedExtrinsic</span><span class="op">&lt;</span><span class="ident">Address</span>, <span class="ident">Call</span>, <span class="ident">Signature</span>, <span class="ident">Extra</span><span class="op">&gt;</span>
-<span class="kw">where</span>
-	<span class="ident">Extra</span>: <span class="ident">SignedExtension</span>,
+<span class="kw">impl</span>&lt;Address, Call: GetDispatchInfo, Signature, Extra&gt; GetDispatchInfo
+	<span class="kw">for </span>UncheckedExtrinsic&lt;Address, Call, Signature, Extra&gt;
+<span class="kw">where
+	</span>Extra: SignedExtension,
 {
-	<span class="kw">fn</span> <span class="ident">get_dispatch_info</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">DispatchInfo</span> {
-		<span class="self">self</span>.<span class="number">0</span>.<span class="ident">function</span>.<span class="ident">get_dispatch_info</span>()
+	<span class="kw">fn </span>get_dispatch_info(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; DispatchInfo {
+		<span class="self">self</span>.<span class="number">0</span>.function.get_dispatch_info()
 	}
 }
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>)]</span>
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">Address</span>: <span class="ident">Encode</span>, <span class="ident">Signature</span>: <span class="ident">Encode</span>, <span class="ident">Call</span>: <span class="ident">Encode</span>, <span class="ident">Extra</span>: <span class="ident">SignedExtension</span><span class="op">&gt;</span> <span class="ident">serde::Serialize</span>
-	<span class="kw">for</span> <span class="ident">UncheckedExtrinsic</span><span class="op">&lt;</span><span class="ident">Address</span>, <span class="ident">Call</span>, <span class="ident">Signature</span>, <span class="ident">Extra</span><span class="op">&gt;</span>
+<span class="attribute">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
+</span><span class="kw">impl</span>&lt;Address: Encode, Signature: Encode, Call: Encode, Extra: SignedExtension&gt; serde::Serialize
+	<span class="kw">for </span>UncheckedExtrinsic&lt;Address, Call, Signature, Extra&gt;
 {
-	<span class="kw">fn</span> <span class="ident">serialize</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">seq</span>: <span class="ident">S</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">S::Ok</span>, <span class="ident">S::Error</span><span class="op">&gt;</span>
-	<span class="kw">where</span>
-		<span class="ident">S</span>: <span class="ident">::serde::Serializer</span>,
+	<span class="kw">fn </span>serialize&lt;S&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, seq: S) -&gt; <span class="prelude-ty">Result</span>&lt;S::Ok, S::Error&gt;
+	<span class="kw">where
+		</span>S: ::serde::Serializer,
 	{
-		<span class="self">self</span>.<span class="number">0</span>.<span class="ident">serialize</span>(<span class="ident">seq</span>)
+		<span class="self">self</span>.<span class="number">0</span>.serialize(seq)
 	}
 }
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>)]</span>
-<span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">Address</span>: <span class="ident">Decode</span>, <span class="ident">Signature</span>: <span class="ident">Decode</span>, <span class="ident">Call</span>: <span class="ident">Decode</span>, <span class="ident">Extra</span>: <span class="ident">SignedExtension</span><span class="op">&gt;</span>
-	<span class="ident">serde::Deserialize</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">UncheckedExtrinsic</span><span class="op">&lt;</span><span class="ident">Address</span>, <span class="ident">Call</span>, <span class="ident">Signature</span>, <span class="ident">Extra</span><span class="op">&gt;</span>
+<span class="attribute">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
+</span><span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, Address: Decode, Signature: Decode, Call: Decode, Extra: SignedExtension&gt;
+	serde::Deserialize&lt;<span class="lifetime">&#39;a</span>&gt; <span class="kw">for </span>UncheckedExtrinsic&lt;Address, Call, Signature, Extra&gt;
 {
-	<span class="kw">fn</span> <span class="ident">deserialize</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span>(<span class="ident">de</span>: <span class="ident">D</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">D::Error</span><span class="op">&gt;</span>
-	<span class="kw">where</span>
-		<span class="ident">D</span>: <span class="ident">serde::Deserializer</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>,
+	<span class="kw">fn </span>deserialize&lt;D&gt;(de: D) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, D::Error&gt;
+	<span class="kw">where
+		</span>D: serde::Deserializer&lt;<span class="lifetime">&#39;a</span>&gt;,
 	{
-		<span class="op">&lt;</span><span class="ident">sp_runtime::generic::UncheckedExtrinsic</span><span class="op">&lt;</span><span class="ident">Address</span>, <span class="ident">Call</span>, <span class="ident">Signature</span>, <span class="ident">Extra</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::deserialize</span>(<span class="ident">de</span>)
-			.<span class="ident">map</span>(<span class="self">Self</span>)
+		&lt;sp_runtime::generic::UncheckedExtrinsic&lt;Address, Call, Signature, Extra&gt;&gt;::deserialize(de)
+			.map(<span class="self">Self</span>)
 	}
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">Address</span>, <span class="ident">Call</span>, <span class="ident">Signature</span>, <span class="ident">Extra</span><span class="op">&gt;</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">UncheckedExtrinsic</span><span class="op">&lt;</span><span class="ident">Address</span>, <span class="ident">Call</span>, <span class="ident">Signature</span>, <span class="ident">Extra</span><span class="op">&gt;</span><span class="op">&gt;</span>
-	<span class="kw">for</span> <span class="ident">OpaqueExtrinsic</span>
-<span class="kw">where</span>
-	<span class="ident">Address</span>: <span class="ident">Encode</span>,
-	<span class="ident">Signature</span>: <span class="ident">Encode</span>,
-	<span class="ident">Call</span>: <span class="ident">Encode</span>,
-	<span class="ident">Extra</span>: <span class="ident">SignedExtension</span>,
+<span class="kw">impl</span>&lt;Address, Call, Signature, Extra&gt; From&lt;UncheckedExtrinsic&lt;Address, Call, Signature, Extra&gt;&gt;
+	<span class="kw">for </span>OpaqueExtrinsic
+<span class="kw">where
+	</span>Address: Encode,
+	Signature: Encode,
+	Call: Encode,
+	Extra: SignedExtension,
 {
-	<span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">extrinsic</span>: <span class="ident">UncheckedExtrinsic</span><span class="op">&lt;</span><span class="ident">Address</span>, <span class="ident">Call</span>, <span class="ident">Signature</span>, <span class="ident">Extra</span><span class="op">&gt;</span>) -&gt; <span class="self">Self</span> {
-		<span class="ident">extrinsic</span>.<span class="number">0</span>.<span class="ident">into</span>()
+	<span class="kw">fn </span>from(extrinsic: UncheckedExtrinsic&lt;Address, Call, Signature, Extra&gt;) -&gt; <span class="self">Self </span>{
+		extrinsic.<span class="number">0</span>.into()
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="fp_self_contained" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (7fe022f5a 2022-07-24)" ></div>
-</body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="fp_self_contained" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (81f391930 2022-10-09)" ></div></body></html>

@@ -1,10 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `template/node/src/command.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>command.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../frontier_template_node/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a><h2 class="location"></h2>
-    </nav>
-    <nav class="sidebar"><a class="sidebar-logo" href="../../frontier_template_node/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../frontier_template_node/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1">
-                                <a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div>
-                        </div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `template/node/src/command.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>command.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><a class="sidebar-logo" href="../../frontier_template_node/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../frontier_template_node/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -246,248 +240,247 @@
 <span id="240">240</span>
 <span id="241">241</span>
 <span id="242">242</span>
-</pre><pre class="rust"><code><span class="comment">// This file is part of Substrate.</span>
+</pre><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
-<span class="comment">// Copyright (C) 2017-2021 Parity Technologies (UK) Ltd.</span>
-<span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
+// Copyright (C) 2017-2021 Parity Technologies (UK) Ltd.
+// SPDX-License-Identifier: Apache-2.0
 
-<span class="comment">// Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
-<span class="comment">// you may not use this file except in compliance with the License.</span>
-<span class="comment">// You may obtain a copy of the License at</span>
-<span class="comment">//</span>
-<span class="comment">// 	http://www.apache.org/licenses/LICENSE-2.0</span>
-<span class="comment">//</span>
-<span class="comment">// Unless required by applicable law or agreed to in writing, software</span>
-<span class="comment">// distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
-<span class="comment">// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
-<span class="comment">// See the License for the specific language governing permissions and</span>
-<span class="comment">// limitations under the License.</span>
+// Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// 	http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
-<span class="kw">use</span> <span class="ident">clap::Parser</span>;
-<span class="comment">// Substrate</span>
-<span class="kw">use</span> <span class="ident">sc_cli</span>::{<span class="ident">ChainSpec</span>, <span class="ident">RuntimeVersion</span>, <span class="ident">SubstrateCli</span>};
-<span class="kw">use</span> <span class="ident">sc_service</span>::{<span class="ident">DatabaseSource</span>, <span class="ident">PartialComponents</span>};
-<span class="comment">// Frontier</span>
-<span class="kw">use</span> <span class="ident">fc_db::frontier_database_dir</span>;
+</span><span class="kw">use </span>clap::Parser;
+<span class="comment">// Substrate
+</span><span class="kw">use </span>sc_cli::{ChainSpec, RuntimeVersion, SubstrateCli};
+<span class="kw">use </span>sc_service::{DatabaseSource, PartialComponents};
+<span class="comment">// Frontier
+</span><span class="kw">use </span>fc_db::frontier_database_dir;
 
-<span class="kw">use</span> <span class="kw">crate</span>::{
-	<span class="ident">chain_spec</span>,
-	<span class="ident">cli</span>::{<span class="ident">Cli</span>, <span class="ident">Subcommand</span>},
-	<span class="ident">service</span>::{<span class="self">self</span>, <span class="ident">db_config_dir</span>},
+<span class="kw">use crate</span>::{
+	chain_spec,
+	cli::{Cli, Subcommand},
+	service::{<span class="self">self</span>, db_config_dir},
 };
 
-<span class="kw">impl</span> <span class="ident">SubstrateCli</span> <span class="kw">for</span> <span class="ident">Cli</span> {
-	<span class="kw">fn</span> <span class="ident">impl_name</span>() -&gt; <span class="ident">String</span> {
-		<span class="string">&quot;Frontier Node&quot;</span>.<span class="ident">into</span>()
+<span class="kw">impl </span>SubstrateCli <span class="kw">for </span>Cli {
+	<span class="kw">fn </span>impl_name() -&gt; String {
+		<span class="string">&quot;Frontier Node&quot;</span>.into()
 	}
 
-	<span class="kw">fn</span> <span class="ident">impl_version</span>() -&gt; <span class="ident">String</span> {
-		<span class="macro">env!</span>(<span class="string">&quot;SUBSTRATE_CLI_IMPL_VERSION&quot;</span>).<span class="ident">into</span>()
+	<span class="kw">fn </span>impl_version() -&gt; String {
+		<span class="macro">env!</span>(<span class="string">&quot;SUBSTRATE_CLI_IMPL_VERSION&quot;</span>).into()
 	}
 
-	<span class="kw">fn</span> <span class="ident">description</span>() -&gt; <span class="ident">String</span> {
-		<span class="macro">env!</span>(<span class="string">&quot;CARGO_PKG_DESCRIPTION&quot;</span>).<span class="ident">into</span>()
+	<span class="kw">fn </span>description() -&gt; String {
+		<span class="macro">env!</span>(<span class="string">&quot;CARGO_PKG_DESCRIPTION&quot;</span>).into()
 	}
 
-	<span class="kw">fn</span> <span class="ident">author</span>() -&gt; <span class="ident">String</span> {
-		<span class="macro">env!</span>(<span class="string">&quot;CARGO_PKG_AUTHORS&quot;</span>).<span class="ident">into</span>()
+	<span class="kw">fn </span>author() -&gt; String {
+		<span class="macro">env!</span>(<span class="string">&quot;CARGO_PKG_AUTHORS&quot;</span>).into()
 	}
 
-	<span class="kw">fn</span> <span class="ident">support_url</span>() -&gt; <span class="ident">String</span> {
-		<span class="string">&quot;support.anonymous.an&quot;</span>.<span class="ident">into</span>()
+	<span class="kw">fn </span>support_url() -&gt; String {
+		<span class="string">&quot;support.anonymous.an&quot;</span>.into()
 	}
 
-	<span class="kw">fn</span> <span class="ident">copyright_start_year</span>() -&gt; <span class="ident">i32</span> {
-		<span class="number">2021</span>
-	}
+	<span class="kw">fn </span>copyright_start_year() -&gt; i32 {
+		<span class="number">2021
+	</span>}
 
-	<span class="kw">fn</span> <span class="ident">load_spec</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">id</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">sc_service::ChainSpec</span><span class="op">&gt;</span>, <span class="ident">String</span><span class="op">&gt;</span> {
-		<span class="prelude-val">Ok</span>(<span class="kw">match</span> <span class="ident">id</span> {
-			<span class="string">&quot;dev&quot;</span> =&gt; <span class="ident">Box::new</span>(<span class="ident">chain_spec::development_config</span>()<span class="question-mark">?</span>),
-			<span class="string">&quot;&quot;</span> <span class="op">|</span> <span class="string">&quot;local&quot;</span> =&gt; <span class="ident">Box::new</span>(<span class="ident">chain_spec::local_testnet_config</span>()<span class="question-mark">?</span>),
-			<span class="ident">path</span> =&gt; <span class="ident">Box::new</span>(<span class="ident">chain_spec::ChainSpec::from_json_file</span>(
-				<span class="ident">std::path::PathBuf::from</span>(<span class="ident">path</span>),
+	<span class="kw">fn </span>load_spec(<span class="kw-2">&amp;</span><span class="self">self</span>, id: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;Box&lt;<span class="kw">dyn </span>sc_service::ChainSpec&gt;, String&gt; {
+		<span class="prelude-val">Ok</span>(<span class="kw">match </span>id {
+			<span class="string">&quot;dev&quot; </span>=&gt; Box::new(chain_spec::development_config()<span class="question-mark">?</span>),
+			<span class="string">&quot;&quot; </span>| <span class="string">&quot;local&quot; </span>=&gt; Box::new(chain_spec::local_testnet_config()<span class="question-mark">?</span>),
+			path =&gt; Box::new(chain_spec::ChainSpec::from_json_file(
+				std::path::PathBuf::from(path),
 			)<span class="question-mark">?</span>),
 		})
 	}
 
-	<span class="kw">fn</span> <span class="ident">native_runtime_version</span>(<span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">ChainSpec</span><span class="op">&gt;</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">RuntimeVersion</span> {
-		<span class="kw-2">&amp;</span><span class="ident">frontier_template_runtime::VERSION</span>
+	<span class="kw">fn </span>native_runtime_version(<span class="kw">_</span>: <span class="kw-2">&amp;</span>Box&lt;<span class="kw">dyn </span>ChainSpec&gt;) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>RuntimeVersion {
+		<span class="kw-2">&amp;</span>frontier_template_runtime::VERSION
 	}
 }
 
-<span class="doccomment">/// Parse and run command line arguments</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">run</span>() -&gt; <span class="ident">sc_cli::Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-	<span class="kw">let</span> <span class="ident">cli</span> <span class="op">=</span> <span class="ident">Cli::parse</span>();
+<span class="doccomment">/// Parse and run command line arguments
+</span><span class="kw">pub fn </span>run() -&gt; sc_cli::Result&lt;()&gt; {
+	<span class="kw">let </span>cli = Cli::parse();
 
-	<span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">cli</span>.<span class="ident">subcommand</span> {
-		<span class="prelude-val">Some</span>(<span class="ident">Subcommand::Key</span>(<span class="ident">cmd</span>)) =&gt; <span class="ident">cmd</span>.<span class="ident">run</span>(<span class="kw-2">&amp;</span><span class="ident">cli</span>),
-		<span class="prelude-val">Some</span>(<span class="ident">Subcommand::BuildSpec</span>(<span class="ident">cmd</span>)) =&gt; {
-			<span class="kw">let</span> <span class="ident">runner</span> <span class="op">=</span> <span class="ident">cli</span>.<span class="ident">create_runner</span>(<span class="ident">cmd</span>)<span class="question-mark">?</span>;
-			<span class="ident">runner</span>.<span class="ident">sync_run</span>(<span class="op">|</span><span class="ident">config</span><span class="op">|</span> <span class="ident">cmd</span>.<span class="ident">run</span>(<span class="ident">config</span>.<span class="ident">chain_spec</span>, <span class="ident">config</span>.<span class="ident">network</span>))
+	<span class="kw">match </span><span class="kw-2">&amp;</span>cli.subcommand {
+		<span class="prelude-val">Some</span>(Subcommand::Key(cmd)) =&gt; cmd.run(<span class="kw-2">&amp;</span>cli),
+		<span class="prelude-val">Some</span>(Subcommand::BuildSpec(cmd)) =&gt; {
+			<span class="kw">let </span>runner = cli.create_runner(cmd)<span class="question-mark">?</span>;
+			runner.sync_run(|config| cmd.run(config.chain_spec, config.network))
 		}
-		<span class="prelude-val">Some</span>(<span class="ident">Subcommand::CheckBlock</span>(<span class="ident">cmd</span>)) =&gt; {
-			<span class="kw">let</span> <span class="ident">runner</span> <span class="op">=</span> <span class="ident">cli</span>.<span class="ident">create_runner</span>(<span class="ident">cmd</span>)<span class="question-mark">?</span>;
-			<span class="ident">runner</span>.<span class="ident">async_run</span>(<span class="op">|</span><span class="ident">config</span><span class="op">|</span> {
-				<span class="kw">let</span> <span class="ident">PartialComponents</span> {
-					<span class="ident">client</span>,
-					<span class="ident">task_manager</span>,
-					<span class="ident">import_queue</span>,
+		<span class="prelude-val">Some</span>(Subcommand::CheckBlock(cmd)) =&gt; {
+			<span class="kw">let </span>runner = cli.create_runner(cmd)<span class="question-mark">?</span>;
+			runner.async_run(|config| {
+				<span class="kw">let </span>PartialComponents {
+					client,
+					task_manager,
+					import_queue,
 					..
-				} <span class="op">=</span> <span class="ident">service::new_partial</span>(<span class="kw-2">&amp;</span><span class="ident">config</span>, <span class="kw-2">&amp;</span><span class="ident">cli</span>)<span class="question-mark">?</span>;
-				<span class="prelude-val">Ok</span>((<span class="ident">cmd</span>.<span class="ident">run</span>(<span class="ident">client</span>, <span class="ident">import_queue</span>), <span class="ident">task_manager</span>))
+				} = service::new_partial(<span class="kw-2">&amp;</span>config, <span class="kw-2">&amp;</span>cli)<span class="question-mark">?</span>;
+				<span class="prelude-val">Ok</span>((cmd.run(client, import_queue), task_manager))
 			})
 		}
-		<span class="prelude-val">Some</span>(<span class="ident">Subcommand::ExportBlocks</span>(<span class="ident">cmd</span>)) =&gt; {
-			<span class="kw">let</span> <span class="ident">runner</span> <span class="op">=</span> <span class="ident">cli</span>.<span class="ident">create_runner</span>(<span class="ident">cmd</span>)<span class="question-mark">?</span>;
-			<span class="ident">runner</span>.<span class="ident">async_run</span>(<span class="op">|</span><span class="ident">config</span><span class="op">|</span> {
-				<span class="kw">let</span> <span class="ident">PartialComponents</span> {
-					<span class="ident">client</span>,
-					<span class="ident">task_manager</span>,
+		<span class="prelude-val">Some</span>(Subcommand::ExportBlocks(cmd)) =&gt; {
+			<span class="kw">let </span>runner = cli.create_runner(cmd)<span class="question-mark">?</span>;
+			runner.async_run(|config| {
+				<span class="kw">let </span>PartialComponents {
+					client,
+					task_manager,
 					..
-				} <span class="op">=</span> <span class="ident">service::new_partial</span>(<span class="kw-2">&amp;</span><span class="ident">config</span>, <span class="kw-2">&amp;</span><span class="ident">cli</span>)<span class="question-mark">?</span>;
-				<span class="prelude-val">Ok</span>((<span class="ident">cmd</span>.<span class="ident">run</span>(<span class="ident">client</span>, <span class="ident">config</span>.<span class="ident">database</span>), <span class="ident">task_manager</span>))
+				} = service::new_partial(<span class="kw-2">&amp;</span>config, <span class="kw-2">&amp;</span>cli)<span class="question-mark">?</span>;
+				<span class="prelude-val">Ok</span>((cmd.run(client, config.database), task_manager))
 			})
 		}
-		<span class="prelude-val">Some</span>(<span class="ident">Subcommand::ExportState</span>(<span class="ident">cmd</span>)) =&gt; {
-			<span class="kw">let</span> <span class="ident">runner</span> <span class="op">=</span> <span class="ident">cli</span>.<span class="ident">create_runner</span>(<span class="ident">cmd</span>)<span class="question-mark">?</span>;
-			<span class="ident">runner</span>.<span class="ident">async_run</span>(<span class="op">|</span><span class="ident">config</span><span class="op">|</span> {
-				<span class="kw">let</span> <span class="ident">PartialComponents</span> {
-					<span class="ident">client</span>,
-					<span class="ident">task_manager</span>,
+		<span class="prelude-val">Some</span>(Subcommand::ExportState(cmd)) =&gt; {
+			<span class="kw">let </span>runner = cli.create_runner(cmd)<span class="question-mark">?</span>;
+			runner.async_run(|config| {
+				<span class="kw">let </span>PartialComponents {
+					client,
+					task_manager,
 					..
-				} <span class="op">=</span> <span class="ident">service::new_partial</span>(<span class="kw-2">&amp;</span><span class="ident">config</span>, <span class="kw-2">&amp;</span><span class="ident">cli</span>)<span class="question-mark">?</span>;
-				<span class="prelude-val">Ok</span>((<span class="ident">cmd</span>.<span class="ident">run</span>(<span class="ident">client</span>, <span class="ident">config</span>.<span class="ident">chain_spec</span>), <span class="ident">task_manager</span>))
+				} = service::new_partial(<span class="kw-2">&amp;</span>config, <span class="kw-2">&amp;</span>cli)<span class="question-mark">?</span>;
+				<span class="prelude-val">Ok</span>((cmd.run(client, config.chain_spec), task_manager))
 			})
 		}
-		<span class="prelude-val">Some</span>(<span class="ident">Subcommand::ImportBlocks</span>(<span class="ident">cmd</span>)) =&gt; {
-			<span class="kw">let</span> <span class="ident">runner</span> <span class="op">=</span> <span class="ident">cli</span>.<span class="ident">create_runner</span>(<span class="ident">cmd</span>)<span class="question-mark">?</span>;
-			<span class="ident">runner</span>.<span class="ident">async_run</span>(<span class="op">|</span><span class="ident">config</span><span class="op">|</span> {
-				<span class="kw">let</span> <span class="ident">PartialComponents</span> {
-					<span class="ident">client</span>,
-					<span class="ident">task_manager</span>,
-					<span class="ident">import_queue</span>,
+		<span class="prelude-val">Some</span>(Subcommand::ImportBlocks(cmd)) =&gt; {
+			<span class="kw">let </span>runner = cli.create_runner(cmd)<span class="question-mark">?</span>;
+			runner.async_run(|config| {
+				<span class="kw">let </span>PartialComponents {
+					client,
+					task_manager,
+					import_queue,
 					..
-				} <span class="op">=</span> <span class="ident">service::new_partial</span>(<span class="kw-2">&amp;</span><span class="ident">config</span>, <span class="kw-2">&amp;</span><span class="ident">cli</span>)<span class="question-mark">?</span>;
-				<span class="prelude-val">Ok</span>((<span class="ident">cmd</span>.<span class="ident">run</span>(<span class="ident">client</span>, <span class="ident">import_queue</span>), <span class="ident">task_manager</span>))
+				} = service::new_partial(<span class="kw-2">&amp;</span>config, <span class="kw-2">&amp;</span>cli)<span class="question-mark">?</span>;
+				<span class="prelude-val">Ok</span>((cmd.run(client, import_queue), task_manager))
 			})
 		}
-		<span class="prelude-val">Some</span>(<span class="ident">Subcommand::PurgeChain</span>(<span class="ident">cmd</span>)) =&gt; {
-			<span class="kw">let</span> <span class="ident">runner</span> <span class="op">=</span> <span class="ident">cli</span>.<span class="ident">create_runner</span>(<span class="ident">cmd</span>)<span class="question-mark">?</span>;
-			<span class="ident">runner</span>.<span class="ident">sync_run</span>(<span class="op">|</span><span class="ident">config</span><span class="op">|</span> {
-				<span class="comment">// Remove Frontier offchain db</span>
-				<span class="kw">let</span> <span class="ident">db_config_dir</span> <span class="op">=</span> <span class="ident">db_config_dir</span>(<span class="kw-2">&amp;</span><span class="ident">config</span>);
-				<span class="kw">let</span> <span class="ident">frontier_database_config</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">config</span>.<span class="ident">database</span> {
-					<span class="ident">DatabaseSource::RocksDb</span> { .. } =&gt; <span class="ident">DatabaseSource::RocksDb</span> {
-						<span class="ident">path</span>: <span class="ident">frontier_database_dir</span>(<span class="kw-2">&amp;</span><span class="ident">db_config_dir</span>, <span class="string">&quot;db&quot;</span>),
-						<span class="ident">cache_size</span>: <span class="number">0</span>,
+		<span class="prelude-val">Some</span>(Subcommand::PurgeChain(cmd)) =&gt; {
+			<span class="kw">let </span>runner = cli.create_runner(cmd)<span class="question-mark">?</span>;
+			runner.sync_run(|config| {
+				<span class="comment">// Remove Frontier offchain db
+				</span><span class="kw">let </span>db_config_dir = db_config_dir(<span class="kw-2">&amp;</span>config);
+				<span class="kw">let </span>frontier_database_config = <span class="kw">match </span>config.database {
+					DatabaseSource::RocksDb { .. } =&gt; DatabaseSource::RocksDb {
+						path: frontier_database_dir(<span class="kw-2">&amp;</span>db_config_dir, <span class="string">&quot;db&quot;</span>),
+						cache_size: <span class="number">0</span>,
 					},
-					<span class="ident">DatabaseSource::ParityDb</span> { .. } =&gt; <span class="ident">DatabaseSource::ParityDb</span> {
-						<span class="ident">path</span>: <span class="ident">frontier_database_dir</span>(<span class="kw-2">&amp;</span><span class="ident">db_config_dir</span>, <span class="string">&quot;paritydb&quot;</span>),
+					DatabaseSource::ParityDb { .. } =&gt; DatabaseSource::ParityDb {
+						path: frontier_database_dir(<span class="kw-2">&amp;</span>db_config_dir, <span class="string">&quot;paritydb&quot;</span>),
 					},
-					<span class="kw">_</span> =&gt; {
-						<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="macro">format!</span>(<span class="string">&quot;Cannot purge `{:?}` database&quot;</span>, <span class="ident">config</span>.<span class="ident">database</span>).<span class="ident">into</span>())
+					<span class="kw">_ </span>=&gt; {
+						<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="macro">format!</span>(<span class="string">&quot;Cannot purge `{:?}` database&quot;</span>, config.database).into())
 					}
 				};
-				<span class="ident">cmd</span>.<span class="ident">run</span>(<span class="ident">frontier_database_config</span>)<span class="question-mark">?</span>;
-				<span class="ident">cmd</span>.<span class="ident">run</span>(<span class="ident">config</span>.<span class="ident">database</span>)
+				cmd.run(frontier_database_config)<span class="question-mark">?</span>;
+				cmd.run(config.database)
 			})
 		}
-		<span class="prelude-val">Some</span>(<span class="ident">Subcommand::Revert</span>(<span class="ident">cmd</span>)) =&gt; {
-			<span class="kw">let</span> <span class="ident">runner</span> <span class="op">=</span> <span class="ident">cli</span>.<span class="ident">create_runner</span>(<span class="ident">cmd</span>)<span class="question-mark">?</span>;
-			<span class="ident">runner</span>.<span class="ident">async_run</span>(<span class="op">|</span><span class="ident">config</span><span class="op">|</span> {
-				<span class="kw">let</span> <span class="ident">PartialComponents</span> {
-					<span class="ident">client</span>,
-					<span class="ident">task_manager</span>,
-					<span class="ident">backend</span>,
+		<span class="prelude-val">Some</span>(Subcommand::Revert(cmd)) =&gt; {
+			<span class="kw">let </span>runner = cli.create_runner(cmd)<span class="question-mark">?</span>;
+			runner.async_run(|config| {
+				<span class="kw">let </span>PartialComponents {
+					client,
+					task_manager,
+					backend,
 					..
-				} <span class="op">=</span> <span class="ident">service::new_partial</span>(<span class="kw-2">&amp;</span><span class="ident">config</span>, <span class="kw-2">&amp;</span><span class="ident">cli</span>)<span class="question-mark">?</span>;
-				<span class="kw">let</span> <span class="ident">aux_revert</span> <span class="op">=</span> <span class="ident">Box::new</span>(<span class="kw">move</span> <span class="op">|</span><span class="ident">client</span>, <span class="kw">_</span>, <span class="ident">blocks</span><span class="op">|</span> {
-					<span class="ident">sc_finality_grandpa::revert</span>(<span class="ident">client</span>, <span class="ident">blocks</span>)<span class="question-mark">?</span>;
+				} = service::new_partial(<span class="kw-2">&amp;</span>config, <span class="kw-2">&amp;</span>cli)<span class="question-mark">?</span>;
+				<span class="kw">let </span>aux_revert = Box::new(<span class="kw">move </span>|client, <span class="kw">_</span>, blocks| {
+					sc_finality_grandpa::revert(client, blocks)<span class="question-mark">?</span>;
 					<span class="prelude-val">Ok</span>(())
 				});
-				<span class="prelude-val">Ok</span>((<span class="ident">cmd</span>.<span class="ident">run</span>(<span class="ident">client</span>, <span class="ident">backend</span>, <span class="prelude-val">Some</span>(<span class="ident">aux_revert</span>)), <span class="ident">task_manager</span>))
+				<span class="prelude-val">Ok</span>((cmd.run(client, backend, <span class="prelude-val">Some</span>(aux_revert)), task_manager))
 			})
 		}
-		<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;runtime-benchmarks&quot;</span>)]</span>
-		<span class="prelude-val">Some</span>(<span class="ident">Subcommand::Benchmark</span>(<span class="ident">cmd</span>)) =&gt; {
-			<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::benchmarking</span>::{
-				<span class="ident">inherent_benchmark_data</span>, <span class="ident">RemarkBuilder</span>, <span class="ident">TransferKeepAliveBuilder</span>,
+		<span class="attribute">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
+		</span><span class="prelude-val">Some</span>(Subcommand::Benchmark(cmd)) =&gt; {
+			<span class="kw">use </span><span class="kw">crate</span>::benchmarking::{
+				inherent_benchmark_data, RemarkBuilder, TransferKeepAliveBuilder,
 			};
-			<span class="kw">use</span> <span class="ident">frame_benchmarking_cli</span>::{
-				<span class="ident">BenchmarkCmd</span>, <span class="ident">ExtrinsicFactory</span>, <span class="ident">SUBSTRATE_REFERENCE_HARDWARE</span>,
+			<span class="kw">use </span>frame_benchmarking_cli::{
+				BenchmarkCmd, ExtrinsicFactory, SUBSTRATE_REFERENCE_HARDWARE,
 			};
-			<span class="kw">use</span> <span class="ident">frontier_template_runtime</span>::{<span class="ident">Block</span>, <span class="ident">ExistentialDeposit</span>};
+			<span class="kw">use </span>frontier_template_runtime::{Block, ExistentialDeposit};
 
-			<span class="kw">let</span> <span class="ident">runner</span> <span class="op">=</span> <span class="ident">cli</span>.<span class="ident">create_runner</span>(<span class="ident">cmd</span>)<span class="question-mark">?</span>;
-			<span class="kw">match</span> <span class="ident">cmd</span> {
-				<span class="ident">BenchmarkCmd::Pallet</span>(<span class="ident">cmd</span>) =&gt; {
-					<span class="ident">runner</span>.<span class="ident">sync_run</span>(<span class="op">|</span><span class="ident">config</span><span class="op">|</span> <span class="ident">cmd</span>.<span class="ident">run</span>::<span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">service::ExecutorDispatch</span><span class="op">&gt;</span>(<span class="ident">config</span>))
+			<span class="kw">let </span>runner = cli.create_runner(cmd)<span class="question-mark">?</span>;
+			<span class="kw">match </span>cmd {
+				BenchmarkCmd::Pallet(cmd) =&gt; {
+					runner.sync_run(|config| cmd.run::&lt;Block, service::ExecutorDispatch&gt;(config))
 				}
-				<span class="ident">BenchmarkCmd::Block</span>(<span class="ident">cmd</span>) =&gt; <span class="ident">runner</span>.<span class="ident">sync_run</span>(<span class="op">|</span><span class="ident">config</span><span class="op">|</span> {
-					<span class="kw">let</span> <span class="ident">PartialComponents</span> { <span class="ident">client</span>, .. } <span class="op">=</span> <span class="ident">service::new_partial</span>(<span class="kw-2">&amp;</span><span class="ident">config</span>, <span class="kw-2">&amp;</span><span class="ident">cli</span>)<span class="question-mark">?</span>;
-					<span class="ident">cmd</span>.<span class="ident">run</span>(<span class="ident">client</span>)
+				BenchmarkCmd::Block(cmd) =&gt; runner.sync_run(|config| {
+					<span class="kw">let </span>PartialComponents { client, .. } = service::new_partial(<span class="kw-2">&amp;</span>config, <span class="kw-2">&amp;</span>cli)<span class="question-mark">?</span>;
+					cmd.run(client)
 				}),
-				<span class="ident">BenchmarkCmd::Storage</span>(<span class="ident">cmd</span>) =&gt; <span class="ident">runner</span>.<span class="ident">sync_run</span>(<span class="op">|</span><span class="ident">config</span><span class="op">|</span> {
-					<span class="kw">let</span> <span class="ident">PartialComponents</span> {
-						<span class="ident">client</span>, <span class="ident">backend</span>, ..
-					} <span class="op">=</span> <span class="ident">service::new_partial</span>(<span class="kw-2">&amp;</span><span class="ident">config</span>, <span class="kw-2">&amp;</span><span class="ident">cli</span>)<span class="question-mark">?</span>;
-					<span class="kw">let</span> <span class="ident">db</span> <span class="op">=</span> <span class="ident">backend</span>.<span class="ident">expose_db</span>();
-					<span class="kw">let</span> <span class="ident">storage</span> <span class="op">=</span> <span class="ident">backend</span>.<span class="ident">expose_storage</span>();
+				BenchmarkCmd::Storage(cmd) =&gt; runner.sync_run(|config| {
+					<span class="kw">let </span>PartialComponents {
+						client, backend, ..
+					} = service::new_partial(<span class="kw-2">&amp;</span>config, <span class="kw-2">&amp;</span>cli)<span class="question-mark">?</span>;
+					<span class="kw">let </span>db = backend.expose_db();
+					<span class="kw">let </span>storage = backend.expose_storage();
 
-					<span class="ident">cmd</span>.<span class="ident">run</span>(<span class="ident">config</span>, <span class="ident">client</span>, <span class="ident">db</span>, <span class="ident">storage</span>)
+					cmd.run(config, client, db, storage)
 				}),
-				<span class="ident">BenchmarkCmd::Overhead</span>(<span class="ident">cmd</span>) =&gt; <span class="ident">runner</span>.<span class="ident">sync_run</span>(<span class="op">|</span><span class="ident">config</span><span class="op">|</span> {
-					<span class="kw">let</span> <span class="ident">PartialComponents</span> { <span class="ident">client</span>, .. } <span class="op">=</span> <span class="ident">service::new_partial</span>(<span class="kw-2">&amp;</span><span class="ident">config</span>, <span class="kw-2">&amp;</span><span class="ident">cli</span>)<span class="question-mark">?</span>;
-					<span class="kw">let</span> <span class="ident">ext_builder</span> <span class="op">=</span> <span class="ident">RemarkBuilder::new</span>(<span class="ident">client</span>.<span class="ident">clone</span>());
+				BenchmarkCmd::Overhead(cmd) =&gt; runner.sync_run(|config| {
+					<span class="kw">let </span>PartialComponents { client, .. } = service::new_partial(<span class="kw-2">&amp;</span>config, <span class="kw-2">&amp;</span>cli)<span class="question-mark">?</span>;
+					<span class="kw">let </span>ext_builder = RemarkBuilder::new(client.clone());
 
-					<span class="ident">cmd</span>.<span class="ident">run</span>(
-						<span class="ident">config</span>,
-						<span class="ident">client</span>,
-						<span class="ident">inherent_benchmark_data</span>()<span class="question-mark">?</span>,
-						<span class="ident">Vec::new</span>(),
-						<span class="kw-2">&amp;</span><span class="ident">ext_builder</span>,
+					cmd.run(
+						config,
+						client,
+						inherent_benchmark_data()<span class="question-mark">?</span>,
+						Vec::new(),
+						<span class="kw-2">&amp;</span>ext_builder,
 					)
 				}),
-				<span class="ident">BenchmarkCmd::Extrinsic</span>(<span class="ident">cmd</span>) =&gt; <span class="ident">runner</span>.<span class="ident">sync_run</span>(<span class="op">|</span><span class="ident">config</span><span class="op">|</span> {
-					<span class="kw">let</span> <span class="ident">PartialComponents</span> { <span class="ident">client</span>, .. } <span class="op">=</span> <span class="ident">service::new_partial</span>(<span class="kw-2">&amp;</span><span class="ident">config</span>, <span class="kw-2">&amp;</span><span class="ident">cli</span>)<span class="question-mark">?</span>;
-					<span class="comment">// Register the *Remark* and *TKA* builders.</span>
-					<span class="kw">let</span> <span class="ident">ext_factory</span> <span class="op">=</span> <span class="ident">ExtrinsicFactory</span>(<span class="macro">vec!</span>[
-						<span class="ident">Box::new</span>(<span class="ident">RemarkBuilder::new</span>(<span class="ident">client</span>.<span class="ident">clone</span>())),
-						<span class="ident">Box::new</span>(<span class="ident">TransferKeepAliveBuilder::new</span>(
-							<span class="ident">client</span>.<span class="ident">clone</span>(),
-							<span class="ident">sp_keyring::Sr25519Keyring::Alice</span>.<span class="ident">to_account_id</span>(),
-							<span class="ident">ExistentialDeposit::get</span>(),
+				BenchmarkCmd::Extrinsic(cmd) =&gt; runner.sync_run(|config| {
+					<span class="kw">let </span>PartialComponents { client, .. } = service::new_partial(<span class="kw-2">&amp;</span>config, <span class="kw-2">&amp;</span>cli)<span class="question-mark">?</span>;
+					<span class="comment">// Register the *Remark* and *TKA* builders.
+					</span><span class="kw">let </span>ext_factory = ExtrinsicFactory(<span class="macro">vec!</span>[
+						Box::new(RemarkBuilder::new(client.clone())),
+						Box::new(TransferKeepAliveBuilder::new(
+							client.clone(),
+							sp_keyring::Sr25519Keyring::Alice.to_account_id(),
+							ExistentialDeposit::get(),
 						)),
 					]);
 
-					<span class="ident">cmd</span>.<span class="ident">run</span>(<span class="ident">client</span>, <span class="ident">inherent_benchmark_data</span>()<span class="question-mark">?</span>, <span class="ident">Vec::new</span>(), <span class="kw-2">&amp;</span><span class="ident">ext_factory</span>)
+					cmd.run(client, inherent_benchmark_data()<span class="question-mark">?</span>, Vec::new(), <span class="kw-2">&amp;</span>ext_factory)
 				}),
-				<span class="ident">BenchmarkCmd::Machine</span>(<span class="ident">cmd</span>) =&gt; {
-					<span class="ident">runner</span>.<span class="ident">sync_run</span>(<span class="op">|</span><span class="ident">config</span><span class="op">|</span> <span class="ident">cmd</span>.<span class="ident">run</span>(<span class="kw-2">&amp;</span><span class="ident">config</span>, <span class="ident">SUBSTRATE_REFERENCE_HARDWARE</span>.<span class="ident">clone</span>()))
+				BenchmarkCmd::Machine(cmd) =&gt; {
+					runner.sync_run(|config| cmd.run(<span class="kw-2">&amp;</span>config, SUBSTRATE_REFERENCE_HARDWARE.clone()))
 				}
 			}
 		}
-		<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;runtime-benchmarks&quot;</span>))]</span>
-		<span class="prelude-val">Some</span>(<span class="ident">Subcommand::Benchmark</span>) =&gt; <span class="prelude-val">Err</span>(<span class="string">&quot;Benchmarking wasn&#39;t enabled when building the node. \
-			You can enable it with `--features runtime-benchmarks`.&quot;</span>
-			.<span class="ident">into</span>()),
-		<span class="prelude-val">Some</span>(<span class="ident">Subcommand::FrontierDb</span>(<span class="ident">cmd</span>)) =&gt; {
-			<span class="kw">let</span> <span class="ident">runner</span> <span class="op">=</span> <span class="ident">cli</span>.<span class="ident">create_runner</span>(<span class="ident">cmd</span>)<span class="question-mark">?</span>;
-			<span class="ident">runner</span>.<span class="ident">sync_run</span>(<span class="op">|</span><span class="ident">config</span><span class="op">|</span> {
-				<span class="kw">let</span> <span class="ident">PartialComponents</span> { <span class="ident">client</span>, <span class="ident">other</span>, .. } <span class="op">=</span> <span class="ident">service::new_partial</span>(<span class="kw-2">&amp;</span><span class="ident">config</span>, <span class="kw-2">&amp;</span><span class="ident">cli</span>)<span class="question-mark">?</span>;
-				<span class="kw">let</span> <span class="ident">frontier_backend</span> <span class="op">=</span> <span class="ident">other</span>.<span class="number">2</span>;
-				<span class="ident">cmd</span>.<span class="ident">run</span>::<span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">frontier_template_runtime::opaque::Block</span><span class="op">&gt;</span>(<span class="ident">client</span>, <span class="ident">frontier_backend</span>)
+		<span class="attribute">#[cfg(not(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>))]
+		</span><span class="prelude-val">Some</span>(Subcommand::Benchmark) =&gt; <span class="prelude-val">Err</span>(<span class="string">&quot;Benchmarking wasn&#39;t enabled when building the node. \
+			You can enable it with `--features runtime-benchmarks`.&quot;
+			</span>.into()),
+		<span class="prelude-val">Some</span>(Subcommand::FrontierDb(cmd)) =&gt; {
+			<span class="kw">let </span>runner = cli.create_runner(cmd)<span class="question-mark">?</span>;
+			runner.sync_run(|config| {
+				<span class="kw">let </span>PartialComponents { client, other, .. } = service::new_partial(<span class="kw-2">&amp;</span>config, <span class="kw-2">&amp;</span>cli)<span class="question-mark">?</span>;
+				<span class="kw">let </span>frontier_backend = other.<span class="number">2</span>;
+				cmd.run::&lt;<span class="kw">_</span>, frontier_template_runtime::opaque::Block&gt;(client, frontier_backend)
 			})
 		}
-		<span class="prelude-val">None</span> =&gt; {
-			<span class="kw">let</span> <span class="ident">runner</span> <span class="op">=</span> <span class="ident">cli</span>.<span class="ident">create_runner</span>(<span class="kw-2">&amp;</span><span class="ident">cli</span>.<span class="ident">run</span>.<span class="ident">base</span>)<span class="question-mark">?</span>;
-			<span class="ident">runner</span>.<span class="ident">run_node_until_exit</span>(<span class="op">|</span><span class="ident">config</span><span class="op">|</span> <span class="kw">async</span> <span class="kw">move</span> {
-				<span class="ident">service::new_full</span>(<span class="ident">config</span>, <span class="kw-2">&amp;</span><span class="ident">cli</span>).<span class="ident">map_err</span>(<span class="ident">sc_cli::Error::Service</span>)
+		<span class="prelude-val">None </span>=&gt; {
+			<span class="kw">let </span>runner = cli.create_runner(<span class="kw-2">&amp;</span>cli.run.base)<span class="question-mark">?</span>;
+			runner.run_node_until_exit(|config| <span class="kw">async move </span>{
+				service::new_full(config, <span class="kw-2">&amp;</span>cli).map_err(sc_cli::Error::Service)
 			})
 		}
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="frontier_template_node" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (7fe022f5a 2022-07-24)" ></div>
-</body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="frontier_template_node" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (81f391930 2022-10-09)" ></div></body></html>

@@ -1,10 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `client/db/src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../fc_db/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a><h2 class="location"></h2>
-    </nav>
-    <nav class="sidebar"><a class="sidebar-logo" href="../../fc_db/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../fc_db/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1">
-                                <a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div>
-                        </div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `client/db/src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><a class="sidebar-logo" href="../../fc_db/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../fc_db/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -336,103 +330,103 @@
 <span id="330">330</span>
 <span id="331">331</span>
 <span id="332">332</span>
-</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
-<span class="comment">// This file is part of Frontier.</span>
-<span class="comment">//</span>
-<span class="comment">// Copyright (c) 2021-2022 Parity Technologies (UK) Ltd.</span>
-<span class="comment">//</span>
-<span class="comment">// This program is free software: you can redistribute it and/or modify</span>
-<span class="comment">// it under the terms of the GNU General Public License as published by</span>
-<span class="comment">// the Free Software Foundation, either version 3 of the License, or</span>
-<span class="comment">// (at your option) any later version.</span>
-<span class="comment">//</span>
-<span class="comment">// This program is distributed in the hope that it will be useful,</span>
-<span class="comment">// but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
-<span class="comment">// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the</span>
-<span class="comment">// GNU General Public License for more details.</span>
-<span class="comment">//</span>
-<span class="comment">// You should have received a copy of the GNU General Public License</span>
-<span class="comment">// along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.</span>
+</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
+// This file is part of Frontier.
+//
+// Copyright (c) 2021-2022 Parity Technologies (UK) Ltd.
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;parity-db&quot;</span>)]</span>
-<span class="kw">mod</span> <span class="ident">parity_db_adapter</span>;
-<span class="kw">mod</span> <span class="ident">upgrade</span>;
-<span class="kw">mod</span> <span class="ident">utils</span>;
+</span><span class="attribute">#[cfg(feature = <span class="string">&quot;parity-db&quot;</span>)]
+</span><span class="kw">mod </span>parity_db_adapter;
+<span class="kw">mod </span>upgrade;
+<span class="kw">mod </span>utils;
 
-<span class="kw">use</span> <span class="ident">std</span>::{
-	<span class="ident">marker::PhantomData</span>,
-	<span class="ident">path</span>::{<span class="ident">Path</span>, <span class="ident">PathBuf</span>},
-	<span class="ident">sync::Arc</span>,
+<span class="kw">use </span>std::{
+	marker::PhantomData,
+	path::{Path, PathBuf},
+	sync::Arc,
 };
 
-<span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Decode</span>, <span class="ident">Encode</span>};
-<span class="kw">use</span> <span class="ident">parking_lot::Mutex</span>;
-<span class="comment">// Substrate</span>
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">sc_client_db::DatabaseSource</span>;
-<span class="kw">use</span> <span class="ident">sp_core::H256</span>;
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">sp_database::Database</span>;
-<span class="kw">use</span> <span class="ident">sp_runtime::traits::Block</span> <span class="kw">as</span> <span class="ident">BlockT</span>;
-<span class="comment">// Frontier</span>
-<span class="kw">use</span> <span class="ident">fp_storage</span>::{<span class="ident">EthereumStorageSchema</span>, <span class="ident">PALLET_ETHEREUM_SCHEMA_CACHE</span>};
+<span class="kw">use </span>codec::{Decode, Encode};
+<span class="kw">use </span>parking_lot::Mutex;
+<span class="comment">// Substrate
+</span><span class="kw">pub use </span>sc_client_db::DatabaseSource;
+<span class="kw">use </span>sp_core::H256;
+<span class="kw">pub use </span>sp_database::Database;
+<span class="kw">use </span>sp_runtime::traits::Block <span class="kw">as </span>BlockT;
+<span class="comment">// Frontier
+</span><span class="kw">use </span>fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA_CACHE};
 
-<span class="kw">const</span> <span class="ident">DB_HASH_LEN</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">32</span>;
-<span class="doccomment">/// Hash type that this backend uses for the database.</span>
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">DbHash</span> <span class="op">=</span> [<span class="ident">u8</span>; <span class="ident">DB_HASH_LEN</span>];
+<span class="kw">const </span>DB_HASH_LEN: usize = <span class="number">32</span>;
+<span class="doccomment">/// Hash type that this backend uses for the database.
+</span><span class="kw">pub type </span>DbHash = [u8; DB_HASH_LEN];
 
-<span class="doccomment">/// Database settings.</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">DatabaseSettings</span> {
-	<span class="doccomment">/// Where to find the database.</span>
-	<span class="kw">pub</span> <span class="ident">source</span>: <span class="ident">DatabaseSource</span>,
+<span class="doccomment">/// Database settings.
+</span><span class="kw">pub struct </span>DatabaseSettings {
+	<span class="doccomment">/// Where to find the database.
+	</span><span class="kw">pub </span>source: DatabaseSource,
 }
 
-<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">mod</span> <span class="ident">columns</span> {
-	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NUM_COLUMNS</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">4</span>;
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">mod </span>columns {
+	<span class="kw">pub const </span>NUM_COLUMNS: u32 = <span class="number">4</span>;
 
-	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">META</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">0</span>;
-	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">BLOCK_MAPPING</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">1</span>;
-	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">TRANSACTION_MAPPING</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">2</span>;
-	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">SYNCED_MAPPING</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">3</span>;
+	<span class="kw">pub const </span>META: u32 = <span class="number">0</span>;
+	<span class="kw">pub const </span>BLOCK_MAPPING: u32 = <span class="number">1</span>;
+	<span class="kw">pub const </span>TRANSACTION_MAPPING: u32 = <span class="number">2</span>;
+	<span class="kw">pub const </span>SYNCED_MAPPING: u32 = <span class="number">3</span>;
 }
 
-<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">static_keys</span> {
-	<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">CURRENT_SYNCING_TIPS</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>] <span class="op">=</span> <span class="string">b&quot;CURRENT_SYNCING_TIPS&quot;</span>;
+<span class="kw">pub mod </span>static_keys {
+	<span class="kw">pub const </span>CURRENT_SYNCING_TIPS: <span class="kw-2">&amp;</span>[u8] = <span class="string">b&quot;CURRENT_SYNCING_TIPS&quot;</span>;
 }
 
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Backend</span><span class="op">&lt;</span><span class="ident">Block</span>: <span class="ident">BlockT</span><span class="op">&gt;</span> {
-	<span class="ident">meta</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">MetaDb</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-	<span class="ident">mapping</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">MappingDb</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+<span class="kw">pub struct </span>Backend&lt;Block: BlockT&gt; {
+	meta: Arc&lt;MetaDb&lt;Block&gt;&gt;,
+	mapping: Arc&lt;MappingDb&lt;Block&gt;&gt;,
 }
 
-<span class="doccomment">/// Returns the frontier database directory.</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">frontier_database_dir</span>(<span class="ident">db_config_dir</span>: <span class="kw-2">&amp;</span><span class="ident">Path</span>, <span class="ident">db_path</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="ident">PathBuf</span> {
-	<span class="ident">db_config_dir</span>.<span class="ident">join</span>(<span class="string">&quot;frontier&quot;</span>).<span class="ident">join</span>(<span class="ident">db_path</span>)
+<span class="doccomment">/// Returns the frontier database directory.
+</span><span class="kw">pub fn </span>frontier_database_dir(db_config_dir: <span class="kw-2">&amp;</span>Path, db_path: <span class="kw-2">&amp;</span>str) -&gt; PathBuf {
+	db_config_dir.join(<span class="string">&quot;frontier&quot;</span>).join(db_path)
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">Block</span>: <span class="ident">BlockT</span><span class="op">&gt;</span> <span class="ident">Backend</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span> {
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">open</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">sp_blockchain::HeaderBackend</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span><span class="op">&gt;</span>(
-		<span class="ident">client</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
-		<span class="ident">database</span>: <span class="kw-2">&amp;</span><span class="ident">DatabaseSource</span>,
-		<span class="ident">db_config_dir</span>: <span class="kw-2">&amp;</span><span class="ident">Path</span>,
-	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">String</span><span class="op">&gt;</span> {
-		<span class="ident"><span class="self">Self</span>::new</span>(
-			<span class="ident">client</span>,
-			<span class="kw-2">&amp;</span><span class="ident">DatabaseSettings</span> {
-				<span class="ident">source</span>: <span class="kw">match</span> <span class="ident">database</span> {
-					<span class="ident">DatabaseSource::RocksDb</span> { .. } =&gt; <span class="ident">DatabaseSource::RocksDb</span> {
-						<span class="ident">path</span>: <span class="ident">frontier_database_dir</span>(<span class="ident">db_config_dir</span>, <span class="string">&quot;db&quot;</span>),
-						<span class="ident">cache_size</span>: <span class="number">0</span>,
+<span class="kw">impl</span>&lt;Block: BlockT&gt; Backend&lt;Block&gt; {
+	<span class="kw">pub fn </span>open&lt;C: sp_blockchain::HeaderBackend&lt;Block&gt;&gt;(
+		client: Arc&lt;C&gt;,
+		database: <span class="kw-2">&amp;</span>DatabaseSource,
+		db_config_dir: <span class="kw-2">&amp;</span>Path,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, String&gt; {
+		<span class="self">Self</span>::new(
+			client,
+			<span class="kw-2">&amp;</span>DatabaseSettings {
+				source: <span class="kw">match </span>database {
+					DatabaseSource::RocksDb { .. } =&gt; DatabaseSource::RocksDb {
+						path: frontier_database_dir(db_config_dir, <span class="string">&quot;db&quot;</span>),
+						cache_size: <span class="number">0</span>,
 					},
-					<span class="ident">DatabaseSource::ParityDb</span> { .. } =&gt; <span class="ident">DatabaseSource::ParityDb</span> {
-						<span class="ident">path</span>: <span class="ident">frontier_database_dir</span>(<span class="ident">db_config_dir</span>, <span class="string">&quot;paritydb&quot;</span>),
+					DatabaseSource::ParityDb { .. } =&gt; DatabaseSource::ParityDb {
+						path: frontier_database_dir(db_config_dir, <span class="string">&quot;paritydb&quot;</span>),
 					},
-					<span class="ident">DatabaseSource::Auto</span> { .. } =&gt; <span class="ident">DatabaseSource::Auto</span> {
-						<span class="ident">rocksdb_path</span>: <span class="ident">frontier_database_dir</span>(<span class="ident">db_config_dir</span>, <span class="string">&quot;db&quot;</span>),
-						<span class="ident">paritydb_path</span>: <span class="ident">frontier_database_dir</span>(<span class="ident">db_config_dir</span>, <span class="string">&quot;paritydb&quot;</span>),
-						<span class="ident">cache_size</span>: <span class="number">0</span>,
+					DatabaseSource::Auto { .. } =&gt; DatabaseSource::Auto {
+						rocksdb_path: frontier_database_dir(db_config_dir, <span class="string">&quot;db&quot;</span>),
+						paritydb_path: frontier_database_dir(db_config_dir, <span class="string">&quot;paritydb&quot;</span>),
+						cache_size: <span class="number">0</span>,
 					},
-					<span class="kw">_</span> =&gt; {
-						<span class="kw">return</span> <span class="prelude-val">Err</span>(
-							<span class="string">&quot;Supported db sources: `rocksdb` | `paritydb` | `auto`&quot;</span>.<span class="ident">to_string</span>()
+					<span class="kw">_ </span>=&gt; {
+						<span class="kw">return </span><span class="prelude-val">Err</span>(
+							<span class="string">&quot;Supported db sources: `rocksdb` | `paritydb` | `auto`&quot;</span>.to_string()
 						)
 					}
 				},
@@ -440,234 +434,233 @@
 		)
 	}
 
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">sp_blockchain::HeaderBackend</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span><span class="op">&gt;</span>(
-		<span class="ident">client</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
-		<span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="ident">DatabaseSettings</span>,
-	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">String</span><span class="op">&gt;</span> {
-		<span class="kw">let</span> <span class="ident">db</span> <span class="op">=</span> <span class="ident">utils::open_database</span>::<span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">C</span><span class="op">&gt;</span>(<span class="ident">client</span>, <span class="ident">config</span>)<span class="question-mark">?</span>;
+	<span class="kw">pub fn </span>new&lt;C: sp_blockchain::HeaderBackend&lt;Block&gt;&gt;(
+		client: Arc&lt;C&gt;,
+		config: <span class="kw-2">&amp;</span>DatabaseSettings,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, String&gt; {
+		<span class="kw">let </span>db = utils::open_database::&lt;Block, C&gt;(client, config)<span class="question-mark">?</span>;
 
-		<span class="prelude-val">Ok</span>(<span class="self">Self</span> {
-			<span class="ident">mapping</span>: <span class="ident">Arc::new</span>(<span class="ident">MappingDb</span> {
-				<span class="ident">db</span>: <span class="ident">db</span>.<span class="ident">clone</span>(),
-				<span class="ident">write_lock</span>: <span class="ident">Arc::new</span>(<span class="ident">Mutex::new</span>(())),
-				<span class="ident">_marker</span>: <span class="ident">PhantomData</span>,
+		<span class="prelude-val">Ok</span>(<span class="self">Self </span>{
+			mapping: Arc::new(MappingDb {
+				db: db.clone(),
+				write_lock: Arc::new(Mutex::new(())),
+				_marker: PhantomData,
 			}),
-			<span class="ident">meta</span>: <span class="ident">Arc::new</span>(<span class="ident">MetaDb</span> {
-				<span class="ident">db</span>: <span class="ident">db</span>.<span class="ident">clone</span>(),
-				<span class="ident">_marker</span>: <span class="ident">PhantomData</span>,
+			meta: Arc::new(MetaDb {
+				db: db.clone(),
+				_marker: PhantomData,
 			}),
 		})
 	}
 
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">mapping</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">MappingDb</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-		<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">mapping</span>
+	<span class="kw">pub fn </span>mapping(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>Arc&lt;MappingDb&lt;Block&gt;&gt; {
+		<span class="kw-2">&amp;</span><span class="self">self</span>.mapping
 	}
 
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">meta</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">MetaDb</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-		<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">meta</span>
+	<span class="kw">pub fn </span>meta(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>Arc&lt;MetaDb&lt;Block&gt;&gt; {
+		<span class="kw-2">&amp;</span><span class="self">self</span>.meta
 	}
 }
 
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">MetaDb</span><span class="op">&lt;</span><span class="ident">Block</span>: <span class="ident">BlockT</span><span class="op">&gt;</span> {
-	<span class="ident">db</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Database</span><span class="op">&lt;</span><span class="ident">DbHash</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-	<span class="ident">_marker</span>: <span class="ident">PhantomData</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>,
+<span class="kw">pub struct </span>MetaDb&lt;Block: BlockT&gt; {
+	db: Arc&lt;<span class="kw">dyn </span>Database&lt;DbHash&gt;&gt;,
+	_marker: PhantomData&lt;Block&gt;,
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">Block</span>: <span class="ident">BlockT</span><span class="op">&gt;</span> <span class="ident">MetaDb</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span> {
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">current_syncing_tips</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Block::Hash</span><span class="op">&gt;</span>, <span class="ident">String</span><span class="op">&gt;</span> {
-		<span class="kw">match</span> <span class="self">self</span>.<span class="ident">db</span>.<span class="ident">get</span>(
-			<span class="ident"><span class="kw">crate</span>::columns::META</span>,
-			<span class="ident"><span class="kw">crate</span>::static_keys::CURRENT_SYNCING_TIPS</span>,
+<span class="kw">impl</span>&lt;Block: BlockT&gt; MetaDb&lt;Block&gt; {
+	<span class="kw">pub fn </span>current_syncing_tips(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;Block::Hash&gt;, String&gt; {
+		<span class="kw">match </span><span class="self">self</span>.db.get(
+			<span class="kw">crate</span>::columns::META,
+			<span class="kw">crate</span>::static_keys::CURRENT_SYNCING_TIPS,
 		) {
-			<span class="prelude-val">Some</span>(<span class="ident">raw</span>) =&gt; {
-				<span class="prelude-val">Ok</span>(<span class="ident">Vec</span>::<span class="op">&lt;</span><span class="ident">Block::Hash</span><span class="op">&gt;</span><span class="ident">::decode</span>(<span class="kw-2">&amp;mut</span> <span class="kw-2">&amp;</span><span class="ident">raw</span>[..]).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">e</span>))<span class="question-mark">?</span>)
+			<span class="prelude-val">Some</span>(raw) =&gt; {
+				<span class="prelude-val">Ok</span>(Vec::&lt;Block::Hash&gt;::decode(<span class="kw-2">&amp;mut &amp;</span>raw[..]).map_err(|e| <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, e))<span class="question-mark">?</span>)
 			}
-			<span class="prelude-val">None</span> =&gt; <span class="prelude-val">Ok</span>(<span class="ident">Vec::new</span>()),
+			<span class="prelude-val">None </span>=&gt; <span class="prelude-val">Ok</span>(Vec::new()),
 		}
 	}
 
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">write_current_syncing_tips</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">tips</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Block::Hash</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">String</span><span class="op">&gt;</span> {
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">transaction</span> <span class="op">=</span> <span class="ident">sp_database::Transaction::new</span>();
+	<span class="kw">pub fn </span>write_current_syncing_tips(<span class="kw-2">&amp;</span><span class="self">self</span>, tips: Vec&lt;Block::Hash&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;(), String&gt; {
+		<span class="kw">let </span><span class="kw-2">mut </span>transaction = sp_database::Transaction::new();
 
-		<span class="ident">transaction</span>.<span class="ident">set</span>(
-			<span class="ident"><span class="kw">crate</span>::columns::META</span>,
-			<span class="ident"><span class="kw">crate</span>::static_keys::CURRENT_SYNCING_TIPS</span>,
-			<span class="kw-2">&amp;</span><span class="ident">tips</span>.<span class="ident">encode</span>(),
+		transaction.set(
+			<span class="kw">crate</span>::columns::META,
+			<span class="kw">crate</span>::static_keys::CURRENT_SYNCING_TIPS,
+			<span class="kw-2">&amp;</span>tips.encode(),
 		);
 
-		<span class="self">self</span>.<span class="ident">db</span>
-			.<span class="ident">commit</span>(<span class="ident">transaction</span>)
-			.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
+		<span class="self">self</span>.db
+			.commit(transaction)
+			.map_err(|e| <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, e))<span class="question-mark">?</span>;
 
 		<span class="prelude-val">Ok</span>(())
 	}
 
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">ethereum_schema</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">EthereumStorageSchema</span>, <span class="ident">H256</span>)<span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">String</span><span class="op">&gt;</span> {
-		<span class="kw">match</span> <span class="self">self</span>
-			.<span class="ident">db</span>
-			.<span class="ident">get</span>(<span class="ident"><span class="kw">crate</span>::columns::META</span>, <span class="kw-2">&amp;</span><span class="ident">PALLET_ETHEREUM_SCHEMA_CACHE</span>.<span class="ident">encode</span>())
+	<span class="kw">pub fn </span>ethereum_schema(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;Vec&lt;(EthereumStorageSchema, H256)&gt;&gt;, String&gt; {
+		<span class="kw">match </span><span class="self">self
+			</span>.db
+			.get(<span class="kw">crate</span>::columns::META, <span class="kw-2">&amp;</span>PALLET_ETHEREUM_SCHEMA_CACHE.encode())
 		{
-			<span class="prelude-val">Some</span>(<span class="ident">raw</span>) =&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(
-				<span class="ident">Decode::decode</span>(<span class="kw-2">&amp;mut</span> <span class="kw-2">&amp;</span><span class="ident">raw</span>[..]).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">e</span>))<span class="question-mark">?</span>,
+			<span class="prelude-val">Some</span>(raw) =&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(
+				Decode::decode(<span class="kw-2">&amp;mut &amp;</span>raw[..]).map_err(|e| <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, e))<span class="question-mark">?</span>,
 			)),
-			<span class="prelude-val">None</span> =&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
+			<span class="prelude-val">None </span>=&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
 		}
 	}
 
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">write_ethereum_schema</span>(
+	<span class="kw">pub fn </span>write_ethereum_schema(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		<span class="ident">new_cache</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">EthereumStorageSchema</span>, <span class="ident">H256</span>)<span class="op">&gt;</span>,
-	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">String</span><span class="op">&gt;</span> {
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">transaction</span> <span class="op">=</span> <span class="ident">sp_database::Transaction::new</span>();
+		new_cache: Vec&lt;(EthereumStorageSchema, H256)&gt;,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;(), String&gt; {
+		<span class="kw">let </span><span class="kw-2">mut </span>transaction = sp_database::Transaction::new();
 
-		<span class="ident">transaction</span>.<span class="ident">set</span>(
-			<span class="ident"><span class="kw">crate</span>::columns::META</span>,
-			<span class="kw-2">&amp;</span><span class="ident">PALLET_ETHEREUM_SCHEMA_CACHE</span>.<span class="ident">encode</span>(),
-			<span class="kw-2">&amp;</span><span class="ident">new_cache</span>.<span class="ident">encode</span>(),
+		transaction.set(
+			<span class="kw">crate</span>::columns::META,
+			<span class="kw-2">&amp;</span>PALLET_ETHEREUM_SCHEMA_CACHE.encode(),
+			<span class="kw-2">&amp;</span>new_cache.encode(),
 		);
 
-		<span class="self">self</span>.<span class="ident">db</span>
-			.<span class="ident">commit</span>(<span class="ident">transaction</span>)
-			.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
+		<span class="self">self</span>.db
+			.commit(transaction)
+			.map_err(|e| <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, e))<span class="question-mark">?</span>;
 
 		<span class="prelude-val">Ok</span>(())
 	}
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">MappingCommitment</span><span class="op">&lt;</span><span class="ident">Block</span>: <span class="ident">BlockT</span><span class="op">&gt;</span> {
-	<span class="kw">pub</span> <span class="ident">block_hash</span>: <span class="ident">Block::Hash</span>,
-	<span class="kw">pub</span> <span class="ident">ethereum_block_hash</span>: <span class="ident">H256</span>,
-	<span class="kw">pub</span> <span class="ident">ethereum_transaction_hashes</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span>,
+<span class="attribute">#[derive(Debug)]
+</span><span class="kw">pub struct </span>MappingCommitment&lt;Block: BlockT&gt; {
+	<span class="kw">pub </span>block_hash: Block::Hash,
+	<span class="kw">pub </span>ethereum_block_hash: H256,
+	<span class="kw">pub </span>ethereum_transaction_hashes: Vec&lt;H256&gt;,
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">Encode</span>, <span class="ident">Decode</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">TransactionMetadata</span><span class="op">&lt;</span><span class="ident">Block</span>: <span class="ident">BlockT</span><span class="op">&gt;</span> {
-	<span class="kw">pub</span> <span class="ident">block_hash</span>: <span class="ident">Block::Hash</span>,
-	<span class="kw">pub</span> <span class="ident">ethereum_block_hash</span>: <span class="ident">H256</span>,
-	<span class="kw">pub</span> <span class="ident">ethereum_index</span>: <span class="ident">u32</span>,
+<span class="attribute">#[derive(Clone, Debug, Eq, PartialEq, Encode, Decode)]
+</span><span class="kw">pub struct </span>TransactionMetadata&lt;Block: BlockT&gt; {
+	<span class="kw">pub </span>block_hash: Block::Hash,
+	<span class="kw">pub </span>ethereum_block_hash: H256,
+	<span class="kw">pub </span>ethereum_index: u32,
 }
 
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">MappingDb</span><span class="op">&lt;</span><span class="ident">Block</span>: <span class="ident">BlockT</span><span class="op">&gt;</span> {
-	<span class="ident">db</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Database</span><span class="op">&lt;</span><span class="ident">DbHash</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-	<span class="ident">write_lock</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">Mutex</span><span class="op">&lt;</span>()<span class="op">&gt;</span><span class="op">&gt;</span>,
-	<span class="ident">_marker</span>: <span class="ident">PhantomData</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>,
+<span class="kw">pub struct </span>MappingDb&lt;Block: BlockT&gt; {
+	db: Arc&lt;<span class="kw">dyn </span>Database&lt;DbHash&gt;&gt;,
+	write_lock: Arc&lt;Mutex&lt;()&gt;&gt;,
+	_marker: PhantomData&lt;Block&gt;,
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">Block</span>: <span class="ident">BlockT</span><span class="op">&gt;</span> <span class="ident">MappingDb</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span> {
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_synced</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">block_hash</span>: <span class="kw-2">&amp;</span><span class="ident">Block::Hash</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">bool</span>, <span class="ident">String</span><span class="op">&gt;</span> {
-		<span class="kw">match</span> <span class="self">self</span>
-			.<span class="ident">db</span>
-			.<span class="ident">get</span>(<span class="ident"><span class="kw">crate</span>::columns::SYNCED_MAPPING</span>, <span class="kw-2">&amp;</span><span class="ident">block_hash</span>.<span class="ident">encode</span>())
+<span class="kw">impl</span>&lt;Block: BlockT&gt; MappingDb&lt;Block&gt; {
+	<span class="kw">pub fn </span>is_synced(<span class="kw-2">&amp;</span><span class="self">self</span>, block_hash: <span class="kw-2">&amp;</span>Block::Hash) -&gt; <span class="prelude-ty">Result</span>&lt;bool, String&gt; {
+		<span class="kw">match </span><span class="self">self
+			</span>.db
+			.get(<span class="kw">crate</span>::columns::SYNCED_MAPPING, <span class="kw-2">&amp;</span>block_hash.encode())
 		{
-			<span class="prelude-val">Some</span>(<span class="ident">raw</span>) =&gt; <span class="prelude-val">Ok</span>(<span class="ident">bool::decode</span>(<span class="kw-2">&amp;mut</span> <span class="kw-2">&amp;</span><span class="ident">raw</span>[..]).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">e</span>))<span class="question-mark">?</span>),
-			<span class="prelude-val">None</span> =&gt; <span class="prelude-val">Ok</span>(<span class="bool-val">false</span>),
+			<span class="prelude-val">Some</span>(raw) =&gt; <span class="prelude-val">Ok</span>(bool::decode(<span class="kw-2">&amp;mut &amp;</span>raw[..]).map_err(|e| <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, e))<span class="question-mark">?</span>),
+			<span class="prelude-val">None </span>=&gt; <span class="prelude-val">Ok</span>(<span class="bool-val">false</span>),
 		}
 	}
 
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">block_hash</span>(
+	<span class="kw">pub fn </span>block_hash(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		<span class="ident">ethereum_block_hash</span>: <span class="kw-2">&amp;</span><span class="ident">H256</span>,
-	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Block::Hash</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">String</span><span class="op">&gt;</span> {
-		<span class="kw">match</span> <span class="self">self</span>
-			.<span class="ident">db</span>
-			.<span class="ident">get</span>(<span class="ident"><span class="kw">crate</span>::columns::BLOCK_MAPPING</span>, <span class="kw-2">&amp;</span><span class="ident">ethereum_block_hash</span>.<span class="ident">encode</span>())
+		ethereum_block_hash: <span class="kw-2">&amp;</span>H256,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;Vec&lt;Block::Hash&gt;&gt;, String&gt; {
+		<span class="kw">match </span><span class="self">self
+			</span>.db
+			.get(<span class="kw">crate</span>::columns::BLOCK_MAPPING, <span class="kw-2">&amp;</span>ethereum_block_hash.encode())
 		{
-			<span class="prelude-val">Some</span>(<span class="ident">raw</span>) =&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(
-				<span class="ident">Vec</span>::<span class="op">&lt;</span><span class="ident">Block::Hash</span><span class="op">&gt;</span><span class="ident">::decode</span>(<span class="kw-2">&amp;mut</span> <span class="kw-2">&amp;</span><span class="ident">raw</span>[..]).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">e</span>))<span class="question-mark">?</span>,
+			<span class="prelude-val">Some</span>(raw) =&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(
+				Vec::&lt;Block::Hash&gt;::decode(<span class="kw-2">&amp;mut &amp;</span>raw[..]).map_err(|e| <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, e))<span class="question-mark">?</span>,
 			)),
-			<span class="prelude-val">None</span> =&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
+			<span class="prelude-val">None </span>=&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
 		}
 	}
 
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">transaction_metadata</span>(
+	<span class="kw">pub fn </span>transaction_metadata(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		<span class="ident">ethereum_transaction_hash</span>: <span class="kw-2">&amp;</span><span class="ident">H256</span>,
-	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TransactionMetadata</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">String</span><span class="op">&gt;</span> {
-		<span class="kw">match</span> <span class="self">self</span>.<span class="ident">db</span>.<span class="ident">get</span>(
-			<span class="ident"><span class="kw">crate</span>::columns::TRANSACTION_MAPPING</span>,
-			<span class="kw-2">&amp;</span><span class="ident">ethereum_transaction_hash</span>.<span class="ident">encode</span>(),
+		ethereum_transaction_hash: <span class="kw-2">&amp;</span>H256,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;TransactionMetadata&lt;Block&gt;&gt;, String&gt; {
+		<span class="kw">match </span><span class="self">self</span>.db.get(
+			<span class="kw">crate</span>::columns::TRANSACTION_MAPPING,
+			<span class="kw-2">&amp;</span>ethereum_transaction_hash.encode(),
 		) {
-			<span class="prelude-val">Some</span>(<span class="ident">raw</span>) =&gt; <span class="prelude-val">Ok</span>(<span class="ident">Vec</span>::<span class="op">&lt;</span><span class="ident">TransactionMetadata</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::decode</span>(<span class="kw-2">&amp;mut</span> <span class="kw-2">&amp;</span><span class="ident">raw</span>[..])
-				.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">e</span>))<span class="question-mark">?</span>),
-			<span class="prelude-val">None</span> =&gt; <span class="prelude-val">Ok</span>(<span class="ident">Vec::new</span>()),
+			<span class="prelude-val">Some</span>(raw) =&gt; <span class="prelude-val">Ok</span>(Vec::&lt;TransactionMetadata&lt;Block&gt;&gt;::decode(<span class="kw-2">&amp;mut &amp;</span>raw[..])
+				.map_err(|e| <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, e))<span class="question-mark">?</span>),
+			<span class="prelude-val">None </span>=&gt; <span class="prelude-val">Ok</span>(Vec::new()),
 		}
 	}
 
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">write_none</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">block_hash</span>: <span class="ident">Block::Hash</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">String</span><span class="op">&gt;</span> {
-		<span class="kw">let</span> <span class="ident">_lock</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">write_lock</span>.<span class="ident">lock</span>();
+	<span class="kw">pub fn </span>write_none(<span class="kw-2">&amp;</span><span class="self">self</span>, block_hash: Block::Hash) -&gt; <span class="prelude-ty">Result</span>&lt;(), String&gt; {
+		<span class="kw">let </span>_lock = <span class="self">self</span>.write_lock.lock();
 
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">transaction</span> <span class="op">=</span> <span class="ident">sp_database::Transaction::new</span>();
+		<span class="kw">let </span><span class="kw-2">mut </span>transaction = sp_database::Transaction::new();
 
-		<span class="ident">transaction</span>.<span class="ident">set</span>(
-			<span class="ident"><span class="kw">crate</span>::columns::SYNCED_MAPPING</span>,
-			<span class="kw-2">&amp;</span><span class="ident">block_hash</span>.<span class="ident">encode</span>(),
-			<span class="kw-2">&amp;</span><span class="bool-val">true</span>.<span class="ident">encode</span>(),
+		transaction.set(
+			<span class="kw">crate</span>::columns::SYNCED_MAPPING,
+			<span class="kw-2">&amp;</span>block_hash.encode(),
+			<span class="kw-2">&amp;</span><span class="bool-val">true</span>.encode(),
 		);
 
-		<span class="self">self</span>.<span class="ident">db</span>
-			.<span class="ident">commit</span>(<span class="ident">transaction</span>)
-			.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
+		<span class="self">self</span>.db
+			.commit(transaction)
+			.map_err(|e| <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, e))<span class="question-mark">?</span>;
 
 		<span class="prelude-val">Ok</span>(())
 	}
 
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">write_hashes</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">commitment</span>: <span class="ident">MappingCommitment</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">String</span><span class="op">&gt;</span> {
-		<span class="kw">let</span> <span class="ident">_lock</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">write_lock</span>.<span class="ident">lock</span>();
+	<span class="kw">pub fn </span>write_hashes(<span class="kw-2">&amp;</span><span class="self">self</span>, commitment: MappingCommitment&lt;Block&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;(), String&gt; {
+		<span class="kw">let </span>_lock = <span class="self">self</span>.write_lock.lock();
 
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">transaction</span> <span class="op">=</span> <span class="ident">sp_database::Transaction::new</span>();
+		<span class="kw">let </span><span class="kw-2">mut </span>transaction = sp_database::Transaction::new();
 
-		<span class="kw">let</span> <span class="ident">substrate_hashes</span> <span class="op">=</span> <span class="kw">match</span> <span class="self">self</span>.<span class="ident">block_hash</span>(<span class="kw-2">&amp;</span><span class="ident">commitment</span>.<span class="ident">ethereum_block_hash</span>) {
-			<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="kw-2">mut</span> <span class="ident">data</span>)) =&gt; {
-				<span class="ident">data</span>.<span class="ident">push</span>(<span class="ident">commitment</span>.<span class="ident">block_hash</span>);
+		<span class="kw">let </span>substrate_hashes = <span class="kw">match </span><span class="self">self</span>.block_hash(<span class="kw-2">&amp;</span>commitment.ethereum_block_hash) {
+			<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="kw-2">mut </span>data)) =&gt; {
+				data.push(commitment.block_hash);
 				<span class="macro">log::warn!</span>(
-					<span class="ident">target</span>: <span class="string">&quot;fc-db&quot;</span>,
+					target: <span class="string">&quot;fc-db&quot;</span>,
 					<span class="string">&quot;Possible equivocation at ethereum block hash {} {:?}&quot;</span>,
-					<span class="kw-2">&amp;</span><span class="ident">commitment</span>.<span class="ident">ethereum_block_hash</span>,
-					<span class="kw-2">&amp;</span><span class="ident">data</span>
+					<span class="kw-2">&amp;</span>commitment.ethereum_block_hash,
+					<span class="kw-2">&amp;</span>data
 				);
-				<span class="ident">data</span>
+				data
 			}
-			<span class="kw">_</span> =&gt; <span class="macro">vec!</span>[<span class="ident">commitment</span>.<span class="ident">block_hash</span>],
+			<span class="kw">_ </span>=&gt; <span class="macro">vec!</span>[commitment.block_hash],
 		};
 
-		<span class="ident">transaction</span>.<span class="ident">set</span>(
-			<span class="ident"><span class="kw">crate</span>::columns::BLOCK_MAPPING</span>,
-			<span class="kw-2">&amp;</span><span class="ident">commitment</span>.<span class="ident">ethereum_block_hash</span>.<span class="ident">encode</span>(),
-			<span class="kw-2">&amp;</span><span class="ident">substrate_hashes</span>.<span class="ident">encode</span>(),
+		transaction.set(
+			<span class="kw">crate</span>::columns::BLOCK_MAPPING,
+			<span class="kw-2">&amp;</span>commitment.ethereum_block_hash.encode(),
+			<span class="kw-2">&amp;</span>substrate_hashes.encode(),
 		);
 
-		<span class="kw">for</span> (<span class="ident">i</span>, <span class="ident">ethereum_transaction_hash</span>) <span class="kw">in</span> <span class="ident">commitment</span>
-			.<span class="ident">ethereum_transaction_hashes</span>
-			.<span class="ident">into_iter</span>()
-			.<span class="ident">enumerate</span>()
+		<span class="kw">for </span>(i, ethereum_transaction_hash) <span class="kw">in </span>commitment
+			.ethereum_transaction_hashes
+			.into_iter()
+			.enumerate()
 		{
-			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">metadata</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">transaction_metadata</span>(<span class="kw-2">&amp;</span><span class="ident">ethereum_transaction_hash</span>)<span class="question-mark">?</span>;
-			<span class="ident">metadata</span>.<span class="ident">push</span>(<span class="ident">TransactionMetadata</span>::<span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span> {
-				<span class="ident">block_hash</span>: <span class="ident">commitment</span>.<span class="ident">block_hash</span>,
-				<span class="ident">ethereum_block_hash</span>: <span class="ident">commitment</span>.<span class="ident">ethereum_block_hash</span>,
-				<span class="ident">ethereum_index</span>: <span class="ident">i</span> <span class="kw">as</span> <span class="ident">u32</span>,
+			<span class="kw">let </span><span class="kw-2">mut </span>metadata = <span class="self">self</span>.transaction_metadata(<span class="kw-2">&amp;</span>ethereum_transaction_hash)<span class="question-mark">?</span>;
+			metadata.push(TransactionMetadata::&lt;Block&gt; {
+				block_hash: commitment.block_hash,
+				ethereum_block_hash: commitment.ethereum_block_hash,
+				ethereum_index: i <span class="kw">as </span>u32,
 			});
-			<span class="ident">transaction</span>.<span class="ident">set</span>(
-				<span class="ident"><span class="kw">crate</span>::columns::TRANSACTION_MAPPING</span>,
-				<span class="kw-2">&amp;</span><span class="ident">ethereum_transaction_hash</span>.<span class="ident">encode</span>(),
-				<span class="kw-2">&amp;</span><span class="ident">metadata</span>.<span class="ident">encode</span>(),
+			transaction.set(
+				<span class="kw">crate</span>::columns::TRANSACTION_MAPPING,
+				<span class="kw-2">&amp;</span>ethereum_transaction_hash.encode(),
+				<span class="kw-2">&amp;</span>metadata.encode(),
 			);
 		}
 
-		<span class="ident">transaction</span>.<span class="ident">set</span>(
-			<span class="ident"><span class="kw">crate</span>::columns::SYNCED_MAPPING</span>,
-			<span class="kw-2">&amp;</span><span class="ident">commitment</span>.<span class="ident">block_hash</span>.<span class="ident">encode</span>(),
-			<span class="kw-2">&amp;</span><span class="bool-val">true</span>.<span class="ident">encode</span>(),
+		transaction.set(
+			<span class="kw">crate</span>::columns::SYNCED_MAPPING,
+			<span class="kw-2">&amp;</span>commitment.block_hash.encode(),
+			<span class="kw-2">&amp;</span><span class="bool-val">true</span>.encode(),
 		);
 
-		<span class="self">self</span>.<span class="ident">db</span>
-			.<span class="ident">commit</span>(<span class="ident">transaction</span>)
-			.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
+		<span class="self">self</span>.db
+			.commit(transaction)
+			.map_err(|e| <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, e))<span class="question-mark">?</span>;
 
 		<span class="prelude-val">Ok</span>(())
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="fc_db" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (7fe022f5a 2022-07-24)" ></div>
-</body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="fc_db" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (81f391930 2022-10-09)" ></div></body></html>

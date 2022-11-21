@@ -1,10 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `frame/evm/src/runner/stack.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>stack.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../pallet_evm/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div>
-        </a><h2 class="location"></h2>
-    </nav>
-    <nav class="sidebar"><a class="sidebar-logo" href="../../../pallet_evm/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div>
-        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../pallet_evm/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1">
-                                <a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div>
-                        </div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `frame/evm/src/runner/stack.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>stack.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../../normalize.css"><link rel="stylesheet" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../../ayu.css" disabled><link rel="stylesheet" href="../../../dark.css" disabled><link rel="stylesheet" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><a class="sidebar-logo" href="../../../pallet_evm/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../pallet_evm/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -880,882 +874,881 @@
 <span id="874">874</span>
 <span id="875">875</span>
 <span id="876">876</span>
-</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
-<span class="comment">// This file is part of Frontier.</span>
-<span class="comment">//</span>
-<span class="comment">// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.</span>
-<span class="comment">//</span>
-<span class="comment">// Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
-<span class="comment">// you may not use this file except in compliance with the License.</span>
-<span class="comment">// You may obtain a copy of the License at</span>
-<span class="comment">//</span>
-<span class="comment">// 	http://www.apache.org/licenses/LICENSE-2.0</span>
-<span class="comment">//</span>
-<span class="comment">// Unless required by applicable law or agreed to in writing, software</span>
-<span class="comment">// distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
-<span class="comment">// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
-<span class="comment">// See the License for the specific language governing permissions and</span>
-<span class="comment">// limitations under the License.</span>
+</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
+// This file is part of Frontier.
+//
+// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// 	http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
-<span class="doccomment">//! EVM stack-based runner.</span>
+</span><span class="doccomment">//! EVM stack-based runner.
 
-<span class="kw">use</span> <span class="kw">crate</span>::{
-	<span class="ident">runner::Runner</span> <span class="kw">as</span> <span class="ident">RunnerT</span>, <span class="ident">AccountCodes</span>, <span class="ident">AccountStorages</span>, <span class="ident">AddressMapping</span>, <span class="ident">BalanceOf</span>,
-	<span class="ident">BlockHashMapping</span>, <span class="ident">Config</span>, <span class="ident">Error</span>, <span class="ident">Event</span>, <span class="ident">FeeCalculator</span>, <span class="ident">OnChargeEVMTransaction</span>, <span class="ident">Pallet</span>,
-	<span class="ident">RunnerError</span>,
+</span><span class="kw">use crate</span>::{
+	runner::Runner <span class="kw">as </span>RunnerT, AccountCodes, AccountStorages, AddressMapping, BalanceOf,
+	BlockHashMapping, Config, Error, Event, FeeCalculator, OnChargeEVMTransaction, Pallet,
+	RunnerError,
 };
-<span class="kw">use</span> <span class="ident">evm</span>::{
-	<span class="ident">backend::Backend</span> <span class="kw">as</span> <span class="ident">BackendT</span>,
-	<span class="ident">executor::stack</span>::{<span class="ident">Accessed</span>, <span class="ident">StackExecutor</span>, <span class="ident">StackState</span> <span class="kw">as</span> <span class="ident">StackStateT</span>, <span class="ident">StackSubstateMetadata</span>},
-	<span class="ident">ExitError</span>, <span class="ident">ExitReason</span>, <span class="ident">Transfer</span>,
+<span class="kw">use </span>evm::{
+	backend::Backend <span class="kw">as </span>BackendT,
+	executor::stack::{Accessed, StackExecutor, StackState <span class="kw">as </span>StackStateT, StackSubstateMetadata},
+	ExitError, ExitReason, Transfer,
 };
-<span class="kw">use</span> <span class="ident">fp_evm</span>::{<span class="ident">CallInfo</span>, <span class="ident">CreateInfo</span>, <span class="ident">ExecutionInfo</span>, <span class="ident">Log</span>, <span class="ident">Vicinity</span>};
-<span class="kw">use</span> <span class="ident">frame_support::traits</span>::{<span class="ident">Currency</span>, <span class="ident">ExistenceRequirement</span>, <span class="ident">Get</span>};
-<span class="kw">use</span> <span class="ident">sp_core</span>::{<span class="ident">H160</span>, <span class="ident">H256</span>, <span class="ident">U256</span>};
-<span class="kw">use</span> <span class="ident">sp_runtime::traits::UniqueSaturatedInto</span>;
-<span class="kw">use</span> <span class="ident">sp_std</span>::{
-	<span class="ident">boxed::Box</span>,
-	<span class="ident">collections</span>::{<span class="ident">btree_map::BTreeMap</span>, <span class="ident">btree_set::BTreeSet</span>},
-	<span class="ident">marker::PhantomData</span>,
-	<span class="ident">mem</span>,
-	<span class="ident">vec::Vec</span>,
+<span class="kw">use </span>fp_evm::{CallInfo, CreateInfo, ExecutionInfo, Log, Vicinity};
+<span class="kw">use </span>frame_support::traits::{Currency, ExistenceRequirement, Get};
+<span class="kw">use </span>sp_core::{H160, H256, U256};
+<span class="kw">use </span>sp_runtime::traits::UniqueSaturatedInto;
+<span class="kw">use </span>sp_std::{
+	boxed::Box,
+	collections::{btree_map::BTreeMap, btree_set::BTreeSet},
+	marker::PhantomData,
+	mem,
+	vec::Vec,
 };
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;forbid-evm-reentrancy&quot;</span>)]</span>
-<span class="macro">environmental::thread_local_impl!</span>(<span class="kw">static</span> <span class="ident">IN_EVM</span>: <span class="ident">environmental::RefCell</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">environmental::RefCell::new</span>(<span class="bool-val">false</span>));
+<span class="attribute">#[cfg(feature = <span class="string">&quot;forbid-evm-reentrancy&quot;</span>)]
+</span><span class="macro">environmental::thread_local_impl!</span>(<span class="kw">static </span>IN_EVM: environmental::RefCell&lt;bool&gt; = environmental::RefCell::new(<span class="bool-val">false</span>));
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Default</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Runner</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> {
-	<span class="ident">_marker</span>: <span class="ident">PhantomData</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
+<span class="attribute">#[derive(Default)]
+</span><span class="kw">pub struct </span>Runner&lt;T: Config&gt; {
+	_marker: PhantomData&lt;T&gt;,
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">Runner</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>
-<span class="kw">where</span>
-	<span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>: <span class="ident">TryFrom</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
+<span class="kw">impl</span>&lt;T: Config&gt; Runner&lt;T&gt;
+<span class="kw">where
+	</span>BalanceOf&lt;T&gt;: TryFrom&lt;U256&gt; + Into&lt;U256&gt;,
 {
-	<span class="attribute">#[<span class="ident">allow</span>(<span class="ident">clippy::let_and_return</span>)]</span>
-	<span class="doccomment">/// Execute an already validated EVM operation.</span>
-	<span class="kw">fn</span> <span class="ident">execute</span><span class="op">&lt;</span><span class="lifetime">&#39;config</span>, <span class="lifetime">&#39;precompiles</span>, <span class="ident">F</span>, <span class="ident">R</span><span class="op">&gt;</span>(
-		<span class="ident">source</span>: <span class="ident">H160</span>,
-		<span class="ident">value</span>: <span class="ident">U256</span>,
-		<span class="ident">gas_limit</span>: <span class="ident">u64</span>,
-		<span class="ident">max_fee_per_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-		<span class="ident">max_priority_fee_per_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-		<span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;config</span> <span class="ident">evm::Config</span>,
-		<span class="ident">precompiles</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;precompiles</span> <span class="ident">T::PrecompilesType</span>,
-		<span class="ident">is_transactional</span>: <span class="ident">bool</span>,
-		<span class="ident">f</span>: <span class="ident">F</span>,
-	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">ExecutionInfo</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>, <span class="ident">RunnerError</span><span class="op">&lt;</span><span class="ident">Error</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>
-	<span class="kw">where</span>
-		<span class="ident">F</span>: <span class="ident">FnOnce</span>(
-			<span class="kw-2">&amp;mut</span> <span class="ident">StackExecutor</span><span class="op">&lt;</span>
+	<span class="attribute">#[allow(clippy::let_and_return)]
+	</span><span class="doccomment">/// Execute an already validated EVM operation.
+	</span><span class="kw">fn </span>execute&lt;<span class="lifetime">&#39;config</span>, <span class="lifetime">&#39;precompiles</span>, F, R&gt;(
+		source: H160,
+		value: U256,
+		gas_limit: u64,
+		max_fee_per_gas: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+		max_priority_fee_per_gas: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+		config: <span class="kw-2">&amp;</span><span class="lifetime">&#39;config </span>evm::Config,
+		precompiles: <span class="kw-2">&amp;</span><span class="lifetime">&#39;precompiles </span>T::PrecompilesType,
+		is_transactional: bool,
+		f: F,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;ExecutionInfo&lt;R&gt;, RunnerError&lt;Error&lt;T&gt;&gt;&gt;
+	<span class="kw">where
+		</span>F: FnOnce(
+			<span class="kw-2">&amp;mut </span>StackExecutor&lt;
 				<span class="lifetime">&#39;config</span>,
 				<span class="lifetime">&#39;precompiles</span>,
-				<span class="ident">SubstrateStackState</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="lifetime">&#39;config</span>, <span class="ident">T</span><span class="op">&gt;</span>,
-				<span class="ident">T::PrecompilesType</span>,
-			<span class="op">&gt;</span>,
-		) -&gt; (<span class="ident">ExitReason</span>, <span class="ident">R</span>),
+				SubstrateStackState&lt;<span class="lifetime">&#39;_</span>, <span class="lifetime">&#39;config</span>, T&gt;,
+				T::PrecompilesType,
+			&gt;,
+		) -&gt; (ExitReason, R),
 	{
-		<span class="kw">let</span> (<span class="ident">base_fee</span>, <span class="ident">weight</span>) <span class="op">=</span> <span class="ident">T::FeeCalculator::min_gas_price</span>();
+		<span class="kw">let </span>(base_fee, weight) = T::FeeCalculator::min_gas_price();
 
-		<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;forbid-evm-reentrancy&quot;</span>)]</span>
-		<span class="kw">if</span> <span class="ident">IN_EVM</span>.<span class="ident">with</span>(<span class="op">|</span><span class="ident">in_evm</span><span class="op">|</span> <span class="ident">in_evm</span>.<span class="ident">replace</span>(<span class="bool-val">true</span>)) {
-			<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">RunnerError</span> {
-				<span class="ident">error</span>: <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::Reentrancy</span>,
-				<span class="ident">weight</span>,
+		<span class="attribute">#[cfg(feature = <span class="string">&quot;forbid-evm-reentrancy&quot;</span>)]
+		</span><span class="kw">if </span>IN_EVM.with(|in_evm| in_evm.replace(<span class="bool-val">true</span>)) {
+			<span class="kw">return </span><span class="prelude-val">Err</span>(RunnerError {
+				error: Error::&lt;T&gt;::Reentrancy,
+				weight,
 			});
 		}
 
-		<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::execute_inner</span>(
-			<span class="ident">source</span>,
-			<span class="ident">value</span>,
-			<span class="ident">gas_limit</span>,
-			<span class="ident">max_fee_per_gas</span>,
-			<span class="ident">max_priority_fee_per_gas</span>,
-			<span class="ident">config</span>,
-			<span class="ident">precompiles</span>,
-			<span class="ident">is_transactional</span>,
-			<span class="ident">f</span>,
-			<span class="ident">base_fee</span>,
-			<span class="ident">weight</span>,
+		<span class="kw">let </span>res = <span class="self">Self</span>::execute_inner(
+			source,
+			value,
+			gas_limit,
+			max_fee_per_gas,
+			max_priority_fee_per_gas,
+			config,
+			precompiles,
+			is_transactional,
+			f,
+			base_fee,
+			weight,
 		);
 
-		<span class="comment">// Set IN_EVM to false</span>
-		<span class="comment">// We should make sure that this line is executed whatever the execution path.</span>
-		<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;forbid-evm-reentrancy&quot;</span>)]</span>
-		<span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">IN_EVM</span>.<span class="ident">with</span>(<span class="op">|</span><span class="ident">in_evm</span><span class="op">|</span> <span class="ident">in_evm</span>.<span class="ident">take</span>());
+		<span class="comment">// Set IN_EVM to false
+		// We should make sure that this line is executed whatever the execution path.
+		</span><span class="attribute">#[cfg(feature = <span class="string">&quot;forbid-evm-reentrancy&quot;</span>)]
+		</span><span class="kw">let _ </span>= IN_EVM.with(|in_evm| in_evm.take());
 
-		<span class="ident">res</span>
+		res
 	}
 
-	<span class="comment">// Execute an already validated EVM operation.</span>
-	<span class="kw">fn</span> <span class="ident">execute_inner</span><span class="op">&lt;</span><span class="lifetime">&#39;config</span>, <span class="lifetime">&#39;precompiles</span>, <span class="ident">F</span>, <span class="ident">R</span><span class="op">&gt;</span>(
-		<span class="ident">source</span>: <span class="ident">H160</span>,
-		<span class="ident">value</span>: <span class="ident">U256</span>,
-		<span class="ident">gas_limit</span>: <span class="ident">u64</span>,
-		<span class="ident">max_fee_per_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-		<span class="ident">max_priority_fee_per_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-		<span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;config</span> <span class="ident">evm::Config</span>,
-		<span class="ident">precompiles</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;precompiles</span> <span class="ident">T::PrecompilesType</span>,
-		<span class="ident">is_transactional</span>: <span class="ident">bool</span>,
-		<span class="ident">f</span>: <span class="ident">F</span>,
-		<span class="ident">base_fee</span>: <span class="ident">U256</span>,
-		<span class="ident">weight</span>: <span class="ident"><span class="kw">crate</span>::Weight</span>,
-	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">ExecutionInfo</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>, <span class="ident">RunnerError</span><span class="op">&lt;</span><span class="ident">Error</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>
-	<span class="kw">where</span>
-		<span class="ident">F</span>: <span class="ident">FnOnce</span>(
-			<span class="kw-2">&amp;mut</span> <span class="ident">StackExecutor</span><span class="op">&lt;</span>
+	<span class="comment">// Execute an already validated EVM operation.
+	</span><span class="kw">fn </span>execute_inner&lt;<span class="lifetime">&#39;config</span>, <span class="lifetime">&#39;precompiles</span>, F, R&gt;(
+		source: H160,
+		value: U256,
+		gas_limit: u64,
+		max_fee_per_gas: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+		max_priority_fee_per_gas: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+		config: <span class="kw-2">&amp;</span><span class="lifetime">&#39;config </span>evm::Config,
+		precompiles: <span class="kw-2">&amp;</span><span class="lifetime">&#39;precompiles </span>T::PrecompilesType,
+		is_transactional: bool,
+		f: F,
+		base_fee: U256,
+		weight: <span class="kw">crate</span>::Weight,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;ExecutionInfo&lt;R&gt;, RunnerError&lt;Error&lt;T&gt;&gt;&gt;
+	<span class="kw">where
+		</span>F: FnOnce(
+			<span class="kw-2">&amp;mut </span>StackExecutor&lt;
 				<span class="lifetime">&#39;config</span>,
 				<span class="lifetime">&#39;precompiles</span>,
-				<span class="ident">SubstrateStackState</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="lifetime">&#39;config</span>, <span class="ident">T</span><span class="op">&gt;</span>,
-				<span class="ident">T::PrecompilesType</span>,
-			<span class="op">&gt;</span>,
-		) -&gt; (<span class="ident">ExitReason</span>, <span class="ident">R</span>),
+				SubstrateStackState&lt;<span class="lifetime">&#39;_</span>, <span class="lifetime">&#39;config</span>, T&gt;,
+				T::PrecompilesType,
+			&gt;,
+		) -&gt; (ExitReason, R),
 	{
-		<span class="kw">let</span> (<span class="ident">total_fee_per_gas</span>, <span class="ident">_actual_priority_fee_per_gas</span>) <span class="op">=</span>
-			<span class="kw">match</span> (<span class="ident">max_fee_per_gas</span>, <span class="ident">max_priority_fee_per_gas</span>, <span class="ident">is_transactional</span>) {
-				<span class="comment">// Zero max_fee_per_gas for validated transactional calls exist in XCM -&gt; EVM</span>
-				<span class="comment">// because fees are already withdrawn in the xcm-executor.</span>
-				(<span class="prelude-val">Some</span>(<span class="ident">max_fee</span>), <span class="kw">_</span>, <span class="bool-val">true</span>) <span class="kw">if</span> <span class="ident">max_fee</span>.<span class="ident">is_zero</span>() =&gt; (<span class="ident">U256::zero</span>(), <span class="ident">U256::zero</span>()),
-				<span class="comment">// With no tip, we pay exactly the base_fee</span>
-				(<span class="prelude-val">Some</span>(<span class="kw">_</span>), <span class="prelude-val">None</span>, <span class="kw">_</span>) =&gt; (<span class="ident">base_fee</span>, <span class="ident">U256::zero</span>()),
-				<span class="comment">// With tip, we include as much of the tip on top of base_fee that we can, never</span>
-				<span class="comment">// exceeding max_fee_per_gas</span>
-				(<span class="prelude-val">Some</span>(<span class="ident">max_fee_per_gas</span>), <span class="prelude-val">Some</span>(<span class="ident">max_priority_fee_per_gas</span>), <span class="kw">_</span>) =&gt; {
-					<span class="kw">let</span> <span class="ident">actual_priority_fee_per_gas</span> <span class="op">=</span> <span class="ident">max_fee_per_gas</span>
-						.<span class="ident">saturating_sub</span>(<span class="ident">base_fee</span>)
-						.<span class="ident">min</span>(<span class="ident">max_priority_fee_per_gas</span>);
+		<span class="kw">let </span>(total_fee_per_gas, _actual_priority_fee_per_gas) =
+			<span class="kw">match </span>(max_fee_per_gas, max_priority_fee_per_gas, is_transactional) {
+				<span class="comment">// Zero max_fee_per_gas for validated transactional calls exist in XCM -&gt; EVM
+				// because fees are already withdrawn in the xcm-executor.
+				</span>(<span class="prelude-val">Some</span>(max_fee), <span class="kw">_</span>, <span class="bool-val">true</span>) <span class="kw">if </span>max_fee.is_zero() =&gt; (U256::zero(), U256::zero()),
+				<span class="comment">// With no tip, we pay exactly the base_fee
+				</span>(<span class="prelude-val">Some</span>(<span class="kw">_</span>), <span class="prelude-val">None</span>, <span class="kw">_</span>) =&gt; (base_fee, U256::zero()),
+				<span class="comment">// With tip, we include as much of the tip on top of base_fee that we can, never
+				// exceeding max_fee_per_gas
+				</span>(<span class="prelude-val">Some</span>(max_fee_per_gas), <span class="prelude-val">Some</span>(max_priority_fee_per_gas), <span class="kw">_</span>) =&gt; {
+					<span class="kw">let </span>actual_priority_fee_per_gas = max_fee_per_gas
+						.saturating_sub(base_fee)
+						.min(max_priority_fee_per_gas);
 					(
-						<span class="ident">base_fee</span>.<span class="ident">saturating_add</span>(<span class="ident">actual_priority_fee_per_gas</span>),
-						<span class="ident">actual_priority_fee_per_gas</span>,
+						base_fee.saturating_add(actual_priority_fee_per_gas),
+						actual_priority_fee_per_gas,
 					)
 				}
-				<span class="comment">// Gas price check is skipped for non-transactional calls that don&#39;t</span>
-				<span class="comment">// define a `max_fee_per_gas` input.</span>
-				(<span class="prelude-val">None</span>, <span class="kw">_</span>, <span class="bool-val">false</span>) =&gt; (<span class="ident">Default::default</span>(), <span class="ident">U256::zero</span>()),
-				<span class="comment">// Unreachable, previously validated. Handle gracefully.</span>
-				<span class="kw">_</span> =&gt; {
-					<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">RunnerError</span> {
-						<span class="ident">error</span>: <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::GasPriceTooLow</span>,
-						<span class="ident">weight</span>,
+				<span class="comment">// Gas price check is skipped for non-transactional calls that don&#39;t
+				// define a `max_fee_per_gas` input.
+				</span>(<span class="prelude-val">None</span>, <span class="kw">_</span>, <span class="bool-val">false</span>) =&gt; (Default::default(), U256::zero()),
+				<span class="comment">// Unreachable, previously validated. Handle gracefully.
+				</span><span class="kw">_ </span>=&gt; {
+					<span class="kw">return </span><span class="prelude-val">Err</span>(RunnerError {
+						error: Error::&lt;T&gt;::GasPriceTooLow,
+						weight,
 					})
 				}
 			};
 
-		<span class="comment">// After eip-1559 we make sure the account can pay both the evm execution and priority fees.</span>
-		<span class="kw">let</span> <span class="ident">total_fee</span> <span class="op">=</span>
-			<span class="ident">total_fee_per_gas</span>
-				.<span class="ident">checked_mul</span>(<span class="ident">U256::from</span>(<span class="ident">gas_limit</span>))
-				.<span class="ident">ok_or</span>(<span class="ident">RunnerError</span> {
-					<span class="ident">error</span>: <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::FeeOverflow</span>,
-					<span class="ident">weight</span>,
+		<span class="comment">// After eip-1559 we make sure the account can pay both the evm execution and priority fees.
+		</span><span class="kw">let </span>total_fee =
+			total_fee_per_gas
+				.checked_mul(U256::from(gas_limit))
+				.ok_or(RunnerError {
+					error: Error::&lt;T&gt;::FeeOverflow,
+					weight,
 				})<span class="question-mark">?</span>;
 
-		<span class="comment">// Deduct fee from the `source` account. Returns `None` if `total_fee` is Zero.</span>
-		<span class="kw">let</span> <span class="ident">fee</span> <span class="op">=</span> <span class="ident">T::OnChargeTransaction::withdraw_fee</span>(<span class="kw-2">&amp;</span><span class="ident">source</span>, <span class="ident">total_fee</span>)
-			.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">RunnerError</span> { <span class="ident">error</span>: <span class="ident">e</span>, <span class="ident">weight</span> })<span class="question-mark">?</span>;
+		<span class="comment">// Deduct fee from the `source` account. Returns `None` if `total_fee` is Zero.
+		</span><span class="kw">let </span>fee = T::OnChargeTransaction::withdraw_fee(<span class="kw-2">&amp;</span>source, total_fee)
+			.map_err(|e| RunnerError { error: e, weight })<span class="question-mark">?</span>;
 
-		<span class="comment">// Execute the EVM call.</span>
-		<span class="kw">let</span> <span class="ident">vicinity</span> <span class="op">=</span> <span class="ident">Vicinity</span> {
-			<span class="ident">gas_price</span>: <span class="ident">base_fee</span>,
-			<span class="ident">origin</span>: <span class="ident">source</span>,
+		<span class="comment">// Execute the EVM call.
+		</span><span class="kw">let </span>vicinity = Vicinity {
+			gas_price: base_fee,
+			origin: source,
 		};
 
-		<span class="kw">let</span> <span class="ident">metadata</span> <span class="op">=</span> <span class="ident">StackSubstateMetadata::new</span>(<span class="ident">gas_limit</span>, <span class="ident">config</span>);
-		<span class="kw">let</span> <span class="ident">state</span> <span class="op">=</span> <span class="ident">SubstrateStackState::new</span>(<span class="kw-2">&amp;</span><span class="ident">vicinity</span>, <span class="ident">metadata</span>);
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">executor</span> <span class="op">=</span> <span class="ident">StackExecutor::new_with_precompiles</span>(<span class="ident">state</span>, <span class="ident">config</span>, <span class="ident">precompiles</span>);
+		<span class="kw">let </span>metadata = StackSubstateMetadata::new(gas_limit, config);
+		<span class="kw">let </span>state = SubstrateStackState::new(<span class="kw-2">&amp;</span>vicinity, metadata);
+		<span class="kw">let </span><span class="kw-2">mut </span>executor = StackExecutor::new_with_precompiles(state, config, precompiles);
 
-		<span class="kw">let</span> (<span class="ident">reason</span>, <span class="ident">retv</span>) <span class="op">=</span> <span class="ident">f</span>(<span class="kw-2">&amp;mut</span> <span class="ident">executor</span>);
+		<span class="kw">let </span>(reason, retv) = f(<span class="kw-2">&amp;mut </span>executor);
 
-		<span class="comment">// Post execution.</span>
-		<span class="kw">let</span> <span class="ident">used_gas</span> <span class="op">=</span> <span class="ident">U256::from</span>(<span class="ident">executor</span>.<span class="ident">used_gas</span>());
-		<span class="kw">let</span> <span class="ident">actual_fee</span> <span class="op">=</span> <span class="ident">executor</span>.<span class="ident">fee</span>(<span class="ident">total_fee_per_gas</span>);
+		<span class="comment">// Post execution.
+		</span><span class="kw">let </span>used_gas = U256::from(executor.used_gas());
+		<span class="kw">let </span>actual_fee = executor.fee(total_fee_per_gas);
 		<span class="macro">log::debug!</span>(
-			<span class="ident">target</span>: <span class="string">&quot;evm&quot;</span>,
+			target: <span class="string">&quot;evm&quot;</span>,
 			<span class="string">&quot;Execution {:?} [source: {:?}, value: {}, gas_limit: {}, actual_fee: {}, is_transactional: {}]&quot;</span>,
-			<span class="ident">reason</span>,
-			<span class="ident">source</span>,
-			<span class="ident">value</span>,
-			<span class="ident">gas_limit</span>,
-			<span class="ident">actual_fee</span>,
-			<span class="ident">is_transactional</span>
+			reason,
+			source,
+			value,
+			gas_limit,
+			actual_fee,
+			is_transactional
 		);
-		<span class="comment">// The difference between initially withdrawn and the actual cost is refunded.</span>
-		<span class="comment">//</span>
-		<span class="comment">// Considered the following request:</span>
-		<span class="comment">// +-----------+---------+--------------+</span>
-		<span class="comment">// | Gas_limit | Max_Fee | Max_Priority |</span>
-		<span class="comment">// +-----------+---------+--------------+</span>
-		<span class="comment">// |        20 |      10 |            6 |</span>
-		<span class="comment">// +-----------+---------+--------------+</span>
-		<span class="comment">//</span>
-		<span class="comment">// And execution:</span>
-		<span class="comment">// +----------+----------+</span>
-		<span class="comment">// | Gas_used | Base_Fee |</span>
-		<span class="comment">// +----------+----------+</span>
-		<span class="comment">// |        5 |        2 |</span>
-		<span class="comment">// +----------+----------+</span>
-		<span class="comment">//</span>
-		<span class="comment">// Initially withdrawn 10 * 20 = 200.</span>
-		<span class="comment">// Actual cost (2 + 6) * 5 = 40.</span>
-		<span class="comment">// Refunded 200 - 40 = 160.</span>
-		<span class="comment">// Tip 5 * 6 = 30.</span>
-		<span class="comment">// Burned 200 - (160 + 30) = 10. Which is equivalent to gas_used * base_fee.</span>
-		<span class="kw">let</span> <span class="ident">actual_priority_fee</span> <span class="op">=</span> <span class="ident">T::OnChargeTransaction::correct_and_deposit_fee</span>(
-			<span class="kw-2">&amp;</span><span class="ident">source</span>,
-			<span class="comment">// Actual fee after evm execution, including tip.</span>
-			<span class="ident">actual_fee</span>,
-			<span class="comment">// Base fee.</span>
-			<span class="ident">executor</span>.<span class="ident">fee</span>(<span class="ident">base_fee</span>),
-			<span class="comment">// Fee initially withdrawn.</span>
-			<span class="ident">fee</span>,
+		<span class="comment">// The difference between initially withdrawn and the actual cost is refunded.
+		//
+		// Considered the following request:
+		// +-----------+---------+--------------+
+		// | Gas_limit | Max_Fee | Max_Priority |
+		// +-----------+---------+--------------+
+		// |        20 |      10 |            6 |
+		// +-----------+---------+--------------+
+		//
+		// And execution:
+		// +----------+----------+
+		// | Gas_used | Base_Fee |
+		// +----------+----------+
+		// |        5 |        2 |
+		// +----------+----------+
+		//
+		// Initially withdrawn 10 * 20 = 200.
+		// Actual cost (2 + 6) * 5 = 40.
+		// Refunded 200 - 40 = 160.
+		// Tip 5 * 6 = 30.
+		// Burned 200 - (160 + 30) = 10. Which is equivalent to gas_used * base_fee.
+		</span><span class="kw">let </span>actual_priority_fee = T::OnChargeTransaction::correct_and_deposit_fee(
+			<span class="kw-2">&amp;</span>source,
+			<span class="comment">// Actual fee after evm execution, including tip.
+			</span>actual_fee,
+			<span class="comment">// Base fee.
+			</span>executor.fee(base_fee),
+			<span class="comment">// Fee initially withdrawn.
+			</span>fee,
 		);
-		<span class="ident">T::OnChargeTransaction::pay_priority_fee</span>(<span class="ident">actual_priority_fee</span>);
+		T::OnChargeTransaction::pay_priority_fee(actual_priority_fee);
 
-		<span class="kw">let</span> <span class="ident">state</span> <span class="op">=</span> <span class="ident">executor</span>.<span class="ident">into_state</span>();
+		<span class="kw">let </span>state = executor.into_state();
 
-		<span class="kw">for</span> <span class="ident">address</span> <span class="kw">in</span> <span class="ident">state</span>.<span class="ident">substate</span>.<span class="ident">deletes</span> {
+		<span class="kw">for </span>address <span class="kw">in </span>state.substate.deletes {
 			<span class="macro">log::debug!</span>(
-				<span class="ident">target</span>: <span class="string">&quot;evm&quot;</span>,
+				target: <span class="string">&quot;evm&quot;</span>,
 				<span class="string">&quot;Deleting account at {:?}&quot;</span>,
-				<span class="ident">address</span>
+				address
 			);
-			<span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::remove_account</span>(<span class="kw-2">&amp;</span><span class="ident">address</span>)
+			Pallet::&lt;T&gt;::remove_account(<span class="kw-2">&amp;</span>address)
 		}
 
-		<span class="kw">for</span> <span class="ident">log</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">state</span>.<span class="ident">substate</span>.<span class="ident">logs</span> {
+		<span class="kw">for </span>log <span class="kw">in </span><span class="kw-2">&amp;</span>state.substate.logs {
 			<span class="macro">log::trace!</span>(
-				<span class="ident">target</span>: <span class="string">&quot;evm&quot;</span>,
+				target: <span class="string">&quot;evm&quot;</span>,
 				<span class="string">&quot;Inserting log for {:?}, topics ({}) {:?}, data ({}): {:?}]&quot;</span>,
-				<span class="ident">log</span>.<span class="ident">address</span>,
-				<span class="ident">log</span>.<span class="ident">topics</span>.<span class="ident">len</span>(),
-				<span class="ident">log</span>.<span class="ident">topics</span>,
-				<span class="ident">log</span>.<span class="ident">data</span>.<span class="ident">len</span>(),
-				<span class="ident">log</span>.<span class="ident">data</span>
+				log.address,
+				log.topics.len(),
+				log.topics,
+				log.data.len(),
+				log.data
 			);
-			<span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::deposit_event</span>(<span class="ident">Event</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::Log</span> {
-				<span class="ident">log</span>: <span class="ident">Log</span> {
-					<span class="ident">address</span>: <span class="ident">log</span>.<span class="ident">address</span>,
-					<span class="ident">topics</span>: <span class="ident">log</span>.<span class="ident">topics</span>.<span class="ident">clone</span>(),
-					<span class="ident">data</span>: <span class="ident">log</span>.<span class="ident">data</span>.<span class="ident">clone</span>(),
+			Pallet::&lt;T&gt;::deposit_event(Event::&lt;T&gt;::Log {
+				log: Log {
+					address: log.address,
+					topics: log.topics.clone(),
+					data: log.data.clone(),
 				},
 			});
 		}
 
-		<span class="prelude-val">Ok</span>(<span class="ident">ExecutionInfo</span> {
-			<span class="ident">value</span>: <span class="ident">retv</span>,
-			<span class="ident">exit_reason</span>: <span class="ident">reason</span>,
-			<span class="ident">used_gas</span>,
-			<span class="ident">logs</span>: <span class="ident">state</span>.<span class="ident">substate</span>.<span class="ident">logs</span>,
+		<span class="prelude-val">Ok</span>(ExecutionInfo {
+			value: retv,
+			exit_reason: reason,
+			used_gas,
+			logs: state.substate.logs,
 		})
 	}
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">RunnerT</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Runner</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>
-<span class="kw">where</span>
-	<span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>: <span class="ident">TryFrom</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
+<span class="kw">impl</span>&lt;T: Config&gt; RunnerT&lt;T&gt; <span class="kw">for </span>Runner&lt;T&gt;
+<span class="kw">where
+	</span>BalanceOf&lt;T&gt;: TryFrom&lt;U256&gt; + Into&lt;U256&gt;,
 {
-	<span class="kw">type</span> <span class="ident">Error</span> <span class="op">=</span> <span class="ident">Error</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>;
+	<span class="kw">type </span>Error = Error&lt;T&gt;;
 
-	<span class="kw">fn</span> <span class="ident">validate</span>(
-		<span class="ident">source</span>: <span class="ident">H160</span>,
-		<span class="ident">target</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">H160</span><span class="op">&gt;</span>,
-		<span class="ident">input</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
-		<span class="ident">value</span>: <span class="ident">U256</span>,
-		<span class="ident">gas_limit</span>: <span class="ident">u64</span>,
-		<span class="ident">max_fee_per_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-		<span class="ident">max_priority_fee_per_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-		<span class="ident">nonce</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-		<span class="ident">access_list</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">H160</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span>)<span class="op">&gt;</span>,
-		<span class="ident">is_transactional</span>: <span class="ident">bool</span>,
-		<span class="ident">evm_config</span>: <span class="kw-2">&amp;</span><span class="ident">evm::Config</span>,
-	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">RunnerError</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Error</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-		<span class="kw">let</span> (<span class="ident">base_fee</span>, <span class="kw-2">mut</span> <span class="ident">weight</span>) <span class="op">=</span> <span class="ident">T::FeeCalculator::min_gas_price</span>();
-		<span class="kw">let</span> (<span class="ident">source_account</span>, <span class="ident">inner_weight</span>) <span class="op">=</span> <span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::account_basic</span>(<span class="kw-2">&amp;</span><span class="ident">source</span>);
-		<span class="ident">weight</span> <span class="op">=</span> <span class="ident">weight</span>.<span class="ident">saturating_add</span>(<span class="ident">inner_weight</span>);
+	<span class="kw">fn </span>validate(
+		source: H160,
+		target: <span class="prelude-ty">Option</span>&lt;H160&gt;,
+		input: Vec&lt;u8&gt;,
+		value: U256,
+		gas_limit: u64,
+		max_fee_per_gas: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+		max_priority_fee_per_gas: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+		nonce: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+		access_list: Vec&lt;(H160, Vec&lt;H256&gt;)&gt;,
+		is_transactional: bool,
+		evm_config: <span class="kw-2">&amp;</span>evm::Config,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;(), RunnerError&lt;<span class="self">Self</span>::Error&gt;&gt; {
+		<span class="kw">let </span>(base_fee, <span class="kw-2">mut </span>weight) = T::FeeCalculator::min_gas_price();
+		<span class="kw">let </span>(source_account, inner_weight) = Pallet::&lt;T&gt;::account_basic(<span class="kw-2">&amp;</span>source);
+		weight = weight.saturating_add(inner_weight);
 
-		<span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">fp_evm::CheckEvmTransaction</span>::<span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Error</span><span class="op">&gt;</span><span class="ident">::new</span>(
-			<span class="ident">fp_evm::CheckEvmTransactionConfig</span> {
-				<span class="ident">evm_config</span>,
-				<span class="ident">block_gas_limit</span>: <span class="ident">T::BlockGasLimit::get</span>(),
-				<span class="ident">base_fee</span>,
-				<span class="ident">chain_id</span>: <span class="ident">T::ChainId::get</span>(),
-				<span class="ident">is_transactional</span>,
+		<span class="kw">let _ </span>= fp_evm::CheckEvmTransaction::&lt;<span class="self">Self</span>::Error&gt;::new(
+			fp_evm::CheckEvmTransactionConfig {
+				evm_config,
+				block_gas_limit: T::BlockGasLimit::get(),
+				base_fee,
+				chain_id: T::ChainId::get(),
+				is_transactional,
 			},
-			<span class="ident">fp_evm::CheckEvmTransactionInput</span> {
-				<span class="ident">chain_id</span>: <span class="prelude-val">Some</span>(<span class="ident">T::ChainId::get</span>()),
-				<span class="ident">to</span>: <span class="ident">target</span>,
-				<span class="ident">input</span>,
-				<span class="ident">nonce</span>: <span class="ident">nonce</span>.<span class="ident">unwrap_or</span>(<span class="ident">source_account</span>.<span class="ident">nonce</span>),
-				<span class="ident">gas_limit</span>: <span class="ident">gas_limit</span>.<span class="ident">into</span>(),
-				<span class="ident">gas_price</span>: <span class="prelude-val">None</span>,
-				<span class="ident">max_fee_per_gas</span>,
-				<span class="ident">max_priority_fee_per_gas</span>,
-				<span class="ident">value</span>,
-				<span class="ident">access_list</span>,
+			fp_evm::CheckEvmTransactionInput {
+				chain_id: <span class="prelude-val">Some</span>(T::ChainId::get()),
+				to: target,
+				input,
+				nonce: nonce.unwrap_or(source_account.nonce),
+				gas_limit: gas_limit.into(),
+				gas_price: <span class="prelude-val">None</span>,
+				max_fee_per_gas,
+				max_priority_fee_per_gas,
+				value,
+				access_list,
 			},
 		)
-		.<span class="ident">validate_in_block_for</span>(<span class="kw-2">&amp;</span><span class="ident">source_account</span>)
-		.<span class="ident">and_then</span>(<span class="op">|</span><span class="ident">v</span><span class="op">|</span> <span class="ident">v</span>.<span class="ident">with_base_fee</span>())
-		.<span class="ident">and_then</span>(<span class="op">|</span><span class="ident">v</span><span class="op">|</span> <span class="ident">v</span>.<span class="ident">with_balance_for</span>(<span class="kw-2">&amp;</span><span class="ident">source_account</span>))
-		.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">error</span><span class="op">|</span> <span class="ident">RunnerError</span> { <span class="ident">error</span>, <span class="ident">weight</span> })<span class="question-mark">?</span>;
+		.validate_in_block_for(<span class="kw-2">&amp;</span>source_account)
+		.and_then(|v| v.with_base_fee())
+		.and_then(|v| v.with_balance_for(<span class="kw-2">&amp;</span>source_account))
+		.map_err(|error| RunnerError { error, weight })<span class="question-mark">?</span>;
 		<span class="prelude-val">Ok</span>(())
 	}
 
-	<span class="kw">fn</span> <span class="ident">call</span>(
-		<span class="ident">source</span>: <span class="ident">H160</span>,
-		<span class="ident">target</span>: <span class="ident">H160</span>,
-		<span class="ident">input</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
-		<span class="ident">value</span>: <span class="ident">U256</span>,
-		<span class="ident">gas_limit</span>: <span class="ident">u64</span>,
-		<span class="ident">max_fee_per_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-		<span class="ident">max_priority_fee_per_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-		<span class="ident">nonce</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-		<span class="ident">access_list</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">H160</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span>)<span class="op">&gt;</span>,
-		<span class="ident">is_transactional</span>: <span class="ident">bool</span>,
-		<span class="ident">validate</span>: <span class="ident">bool</span>,
-		<span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="ident">evm::Config</span>,
-	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">CallInfo</span>, <span class="ident">RunnerError</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Error</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-		<span class="kw">if</span> <span class="ident">validate</span> {
-			<span class="ident"><span class="self">Self</span>::validate</span>(
-				<span class="ident">source</span>,
-				<span class="prelude-val">Some</span>(<span class="ident">target</span>),
-				<span class="ident">input</span>.<span class="ident">clone</span>(),
-				<span class="ident">value</span>,
-				<span class="ident">gas_limit</span>,
-				<span class="ident">max_fee_per_gas</span>,
-				<span class="ident">max_priority_fee_per_gas</span>,
-				<span class="ident">nonce</span>,
-				<span class="ident">access_list</span>.<span class="ident">clone</span>(),
-				<span class="ident">is_transactional</span>,
-				<span class="ident">config</span>,
+	<span class="kw">fn </span>call(
+		source: H160,
+		target: H160,
+		input: Vec&lt;u8&gt;,
+		value: U256,
+		gas_limit: u64,
+		max_fee_per_gas: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+		max_priority_fee_per_gas: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+		nonce: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+		access_list: Vec&lt;(H160, Vec&lt;H256&gt;)&gt;,
+		is_transactional: bool,
+		validate: bool,
+		config: <span class="kw-2">&amp;</span>evm::Config,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;CallInfo, RunnerError&lt;<span class="self">Self</span>::Error&gt;&gt; {
+		<span class="kw">if </span>validate {
+			<span class="self">Self</span>::validate(
+				source,
+				<span class="prelude-val">Some</span>(target),
+				input.clone(),
+				value,
+				gas_limit,
+				max_fee_per_gas,
+				max_priority_fee_per_gas,
+				nonce,
+				access_list.clone(),
+				is_transactional,
+				config,
 			)<span class="question-mark">?</span>;
 		}
-		<span class="kw">let</span> <span class="ident">precompiles</span> <span class="op">=</span> <span class="ident">T::PrecompilesValue::get</span>();
-		<span class="ident"><span class="self">Self</span>::execute</span>(
-			<span class="ident">source</span>,
-			<span class="ident">value</span>,
-			<span class="ident">gas_limit</span>,
-			<span class="ident">max_fee_per_gas</span>,
-			<span class="ident">max_priority_fee_per_gas</span>,
-			<span class="ident">config</span>,
-			<span class="kw-2">&amp;</span><span class="ident">precompiles</span>,
-			<span class="ident">is_transactional</span>,
-			<span class="op">|</span><span class="ident">executor</span><span class="op">|</span> <span class="ident">executor</span>.<span class="ident">transact_call</span>(<span class="ident">source</span>, <span class="ident">target</span>, <span class="ident">value</span>, <span class="ident">input</span>, <span class="ident">gas_limit</span>, <span class="ident">access_list</span>),
+		<span class="kw">let </span>precompiles = T::PrecompilesValue::get();
+		<span class="self">Self</span>::execute(
+			source,
+			value,
+			gas_limit,
+			max_fee_per_gas,
+			max_priority_fee_per_gas,
+			config,
+			<span class="kw-2">&amp;</span>precompiles,
+			is_transactional,
+			|executor| executor.transact_call(source, target, value, input, gas_limit, access_list),
 		)
 	}
 
-	<span class="kw">fn</span> <span class="ident">create</span>(
-		<span class="ident">source</span>: <span class="ident">H160</span>,
-		<span class="ident">init</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
-		<span class="ident">value</span>: <span class="ident">U256</span>,
-		<span class="ident">gas_limit</span>: <span class="ident">u64</span>,
-		<span class="ident">max_fee_per_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-		<span class="ident">max_priority_fee_per_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-		<span class="ident">nonce</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-		<span class="ident">access_list</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">H160</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span>)<span class="op">&gt;</span>,
-		<span class="ident">is_transactional</span>: <span class="ident">bool</span>,
-		<span class="ident">validate</span>: <span class="ident">bool</span>,
-		<span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="ident">evm::Config</span>,
-	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">CreateInfo</span>, <span class="ident">RunnerError</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Error</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-		<span class="kw">if</span> <span class="ident">validate</span> {
-			<span class="ident"><span class="self">Self</span>::validate</span>(
-				<span class="ident">source</span>,
+	<span class="kw">fn </span>create(
+		source: H160,
+		init: Vec&lt;u8&gt;,
+		value: U256,
+		gas_limit: u64,
+		max_fee_per_gas: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+		max_priority_fee_per_gas: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+		nonce: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+		access_list: Vec&lt;(H160, Vec&lt;H256&gt;)&gt;,
+		is_transactional: bool,
+		validate: bool,
+		config: <span class="kw-2">&amp;</span>evm::Config,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;CreateInfo, RunnerError&lt;<span class="self">Self</span>::Error&gt;&gt; {
+		<span class="kw">if </span>validate {
+			<span class="self">Self</span>::validate(
+				source,
 				<span class="prelude-val">None</span>,
-				<span class="ident">init</span>.<span class="ident">clone</span>(),
-				<span class="ident">value</span>,
-				<span class="ident">gas_limit</span>,
-				<span class="ident">max_fee_per_gas</span>,
-				<span class="ident">max_priority_fee_per_gas</span>,
-				<span class="ident">nonce</span>,
-				<span class="ident">access_list</span>.<span class="ident">clone</span>(),
-				<span class="ident">is_transactional</span>,
-				<span class="ident">config</span>,
+				init.clone(),
+				value,
+				gas_limit,
+				max_fee_per_gas,
+				max_priority_fee_per_gas,
+				nonce,
+				access_list.clone(),
+				is_transactional,
+				config,
 			)<span class="question-mark">?</span>;
 		}
-		<span class="kw">let</span> <span class="ident">precompiles</span> <span class="op">=</span> <span class="ident">T::PrecompilesValue::get</span>();
-		<span class="ident"><span class="self">Self</span>::execute</span>(
-			<span class="ident">source</span>,
-			<span class="ident">value</span>,
-			<span class="ident">gas_limit</span>,
-			<span class="ident">max_fee_per_gas</span>,
-			<span class="ident">max_priority_fee_per_gas</span>,
-			<span class="ident">config</span>,
-			<span class="kw-2">&amp;</span><span class="ident">precompiles</span>,
-			<span class="ident">is_transactional</span>,
-			<span class="op">|</span><span class="ident">executor</span><span class="op">|</span> {
-				<span class="kw">let</span> <span class="ident">address</span> <span class="op">=</span> <span class="ident">executor</span>.<span class="ident">create_address</span>(<span class="ident">evm::CreateScheme::Legacy</span> { <span class="ident">caller</span>: <span class="ident">source</span> });
-				<span class="kw">let</span> (<span class="ident">reason</span>, <span class="kw">_</span>) <span class="op">=</span>
-					<span class="ident">executor</span>.<span class="ident">transact_create</span>(<span class="ident">source</span>, <span class="ident">value</span>, <span class="ident">init</span>, <span class="ident">gas_limit</span>, <span class="ident">access_list</span>);
-				(<span class="ident">reason</span>, <span class="ident">address</span>)
+		<span class="kw">let </span>precompiles = T::PrecompilesValue::get();
+		<span class="self">Self</span>::execute(
+			source,
+			value,
+			gas_limit,
+			max_fee_per_gas,
+			max_priority_fee_per_gas,
+			config,
+			<span class="kw-2">&amp;</span>precompiles,
+			is_transactional,
+			|executor| {
+				<span class="kw">let </span>address = executor.create_address(evm::CreateScheme::Legacy { caller: source });
+				<span class="kw">let </span>(reason, <span class="kw">_</span>) =
+					executor.transact_create(source, value, init, gas_limit, access_list);
+				(reason, address)
 			},
 		)
 	}
 
-	<span class="kw">fn</span> <span class="ident">create2</span>(
-		<span class="ident">source</span>: <span class="ident">H160</span>,
-		<span class="ident">init</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
-		<span class="ident">salt</span>: <span class="ident">H256</span>,
-		<span class="ident">value</span>: <span class="ident">U256</span>,
-		<span class="ident">gas_limit</span>: <span class="ident">u64</span>,
-		<span class="ident">max_fee_per_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-		<span class="ident">max_priority_fee_per_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-		<span class="ident">nonce</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
-		<span class="ident">access_list</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">H160</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span>)<span class="op">&gt;</span>,
-		<span class="ident">is_transactional</span>: <span class="ident">bool</span>,
-		<span class="ident">validate</span>: <span class="ident">bool</span>,
-		<span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="ident">evm::Config</span>,
-	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">CreateInfo</span>, <span class="ident">RunnerError</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Error</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-		<span class="kw">if</span> <span class="ident">validate</span> {
-			<span class="ident"><span class="self">Self</span>::validate</span>(
-				<span class="ident">source</span>,
+	<span class="kw">fn </span>create2(
+		source: H160,
+		init: Vec&lt;u8&gt;,
+		salt: H256,
+		value: U256,
+		gas_limit: u64,
+		max_fee_per_gas: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+		max_priority_fee_per_gas: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+		nonce: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+		access_list: Vec&lt;(H160, Vec&lt;H256&gt;)&gt;,
+		is_transactional: bool,
+		validate: bool,
+		config: <span class="kw-2">&amp;</span>evm::Config,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;CreateInfo, RunnerError&lt;<span class="self">Self</span>::Error&gt;&gt; {
+		<span class="kw">if </span>validate {
+			<span class="self">Self</span>::validate(
+				source,
 				<span class="prelude-val">None</span>,
-				<span class="ident">init</span>.<span class="ident">clone</span>(),
-				<span class="ident">value</span>,
-				<span class="ident">gas_limit</span>,
-				<span class="ident">max_fee_per_gas</span>,
-				<span class="ident">max_priority_fee_per_gas</span>,
-				<span class="ident">nonce</span>,
-				<span class="ident">access_list</span>.<span class="ident">clone</span>(),
-				<span class="ident">is_transactional</span>,
-				<span class="ident">config</span>,
+				init.clone(),
+				value,
+				gas_limit,
+				max_fee_per_gas,
+				max_priority_fee_per_gas,
+				nonce,
+				access_list.clone(),
+				is_transactional,
+				config,
 			)<span class="question-mark">?</span>;
 		}
-		<span class="kw">let</span> <span class="ident">precompiles</span> <span class="op">=</span> <span class="ident">T::PrecompilesValue::get</span>();
-		<span class="kw">let</span> <span class="ident">code_hash</span> <span class="op">=</span> <span class="ident">H256::from</span>(<span class="ident">sp_io::hashing::keccak_256</span>(<span class="kw-2">&amp;</span><span class="ident">init</span>));
-		<span class="ident"><span class="self">Self</span>::execute</span>(
-			<span class="ident">source</span>,
-			<span class="ident">value</span>,
-			<span class="ident">gas_limit</span>,
-			<span class="ident">max_fee_per_gas</span>,
-			<span class="ident">max_priority_fee_per_gas</span>,
-			<span class="ident">config</span>,
-			<span class="kw-2">&amp;</span><span class="ident">precompiles</span>,
-			<span class="ident">is_transactional</span>,
-			<span class="op">|</span><span class="ident">executor</span><span class="op">|</span> {
-				<span class="kw">let</span> <span class="ident">address</span> <span class="op">=</span> <span class="ident">executor</span>.<span class="ident">create_address</span>(<span class="ident">evm::CreateScheme::Create2</span> {
-					<span class="ident">caller</span>: <span class="ident">source</span>,
-					<span class="ident">code_hash</span>,
-					<span class="ident">salt</span>,
+		<span class="kw">let </span>precompiles = T::PrecompilesValue::get();
+		<span class="kw">let </span>code_hash = H256::from(sp_io::hashing::keccak_256(<span class="kw-2">&amp;</span>init));
+		<span class="self">Self</span>::execute(
+			source,
+			value,
+			gas_limit,
+			max_fee_per_gas,
+			max_priority_fee_per_gas,
+			config,
+			<span class="kw-2">&amp;</span>precompiles,
+			is_transactional,
+			|executor| {
+				<span class="kw">let </span>address = executor.create_address(evm::CreateScheme::Create2 {
+					caller: source,
+					code_hash,
+					salt,
 				});
-				<span class="kw">let</span> (<span class="ident">reason</span>, <span class="kw">_</span>) <span class="op">=</span>
-					<span class="ident">executor</span>.<span class="ident">transact_create2</span>(<span class="ident">source</span>, <span class="ident">value</span>, <span class="ident">init</span>, <span class="ident">salt</span>, <span class="ident">gas_limit</span>, <span class="ident">access_list</span>);
-				(<span class="ident">reason</span>, <span class="ident">address</span>)
+				<span class="kw">let </span>(reason, <span class="kw">_</span>) =
+					executor.transact_create2(source, value, init, salt, gas_limit, access_list);
+				(reason, address)
 			},
 		)
 	}
 }
 
-<span class="kw">struct</span> <span class="ident">SubstrateStackSubstate</span><span class="op">&lt;</span><span class="lifetime">&#39;config</span><span class="op">&gt;</span> {
-	<span class="ident">metadata</span>: <span class="ident">StackSubstateMetadata</span><span class="op">&lt;</span><span class="lifetime">&#39;config</span><span class="op">&gt;</span>,
-	<span class="ident">deletes</span>: <span class="ident">BTreeSet</span><span class="op">&lt;</span><span class="ident">H160</span><span class="op">&gt;</span>,
-	<span class="ident">logs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Log</span><span class="op">&gt;</span>,
-	<span class="ident">parent</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="ident">SubstrateStackSubstate</span><span class="op">&lt;</span><span class="lifetime">&#39;config</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+<span class="kw">struct </span>SubstrateStackSubstate&lt;<span class="lifetime">&#39;config</span>&gt; {
+	metadata: StackSubstateMetadata&lt;<span class="lifetime">&#39;config</span>&gt;,
+	deletes: BTreeSet&lt;H160&gt;,
+	logs: Vec&lt;Log&gt;,
+	parent: <span class="prelude-ty">Option</span>&lt;Box&lt;SubstrateStackSubstate&lt;<span class="lifetime">&#39;config</span>&gt;&gt;&gt;,
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;config</span><span class="op">&gt;</span> <span class="ident">SubstrateStackSubstate</span><span class="op">&lt;</span><span class="lifetime">&#39;config</span><span class="op">&gt;</span> {
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">metadata</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="ident">StackSubstateMetadata</span><span class="op">&lt;</span><span class="lifetime">&#39;config</span><span class="op">&gt;</span> {
-		<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">metadata</span>
+<span class="kw">impl</span>&lt;<span class="lifetime">&#39;config</span>&gt; SubstrateStackSubstate&lt;<span class="lifetime">&#39;config</span>&gt; {
+	<span class="kw">pub fn </span>metadata(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>StackSubstateMetadata&lt;<span class="lifetime">&#39;config</span>&gt; {
+		<span class="kw-2">&amp;</span><span class="self">self</span>.metadata
 	}
 
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">metadata_mut</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="kw-2">&amp;mut</span> <span class="ident">StackSubstateMetadata</span><span class="op">&lt;</span><span class="lifetime">&#39;config</span><span class="op">&gt;</span> {
-		<span class="kw-2">&amp;mut</span> <span class="self">self</span>.<span class="ident">metadata</span>
+	<span class="kw">pub fn </span>metadata_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;mut </span>StackSubstateMetadata&lt;<span class="lifetime">&#39;config</span>&gt; {
+		<span class="kw-2">&amp;mut </span><span class="self">self</span>.metadata
 	}
 
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">enter</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">gas_limit</span>: <span class="ident">u64</span>, <span class="ident">is_static</span>: <span class="ident">bool</span>) {
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">entering</span> <span class="op">=</span> <span class="self">Self</span> {
-			<span class="ident">metadata</span>: <span class="self">self</span>.<span class="ident">metadata</span>.<span class="ident">spit_child</span>(<span class="ident">gas_limit</span>, <span class="ident">is_static</span>),
-			<span class="ident">parent</span>: <span class="prelude-val">None</span>,
-			<span class="ident">deletes</span>: <span class="ident">BTreeSet::new</span>(),
-			<span class="ident">logs</span>: <span class="ident">Vec::new</span>(),
+	<span class="kw">pub fn </span>enter(<span class="kw-2">&amp;mut </span><span class="self">self</span>, gas_limit: u64, is_static: bool) {
+		<span class="kw">let </span><span class="kw-2">mut </span>entering = <span class="self">Self </span>{
+			metadata: <span class="self">self</span>.metadata.spit_child(gas_limit, is_static),
+			parent: <span class="prelude-val">None</span>,
+			deletes: BTreeSet::new(),
+			logs: Vec::new(),
 		};
-		<span class="ident">mem::swap</span>(<span class="kw-2">&amp;mut</span> <span class="ident">entering</span>, <span class="self">self</span>);
+		mem::swap(<span class="kw-2">&amp;mut </span>entering, <span class="self">self</span>);
 
-		<span class="self">self</span>.<span class="ident">parent</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">Box::new</span>(<span class="ident">entering</span>));
+		<span class="self">self</span>.parent = <span class="prelude-val">Some</span>(Box::new(entering));
 
-		<span class="ident">sp_io::storage::start_transaction</span>();
+		sp_io::storage::start_transaction();
 	}
 
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">exit_commit</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">ExitError</span><span class="op">&gt;</span> {
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">exited</span> <span class="op">=</span> <span class="kw-2">*</span><span class="self">self</span>.<span class="ident">parent</span>.<span class="ident">take</span>().<span class="ident">expect</span>(<span class="string">&quot;Cannot commit on root substate&quot;</span>);
-		<span class="ident">mem::swap</span>(<span class="kw-2">&amp;mut</span> <span class="ident">exited</span>, <span class="self">self</span>);
+	<span class="kw">pub fn </span>exit_commit(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;(), ExitError&gt; {
+		<span class="kw">let </span><span class="kw-2">mut </span>exited = <span class="kw-2">*</span><span class="self">self</span>.parent.take().expect(<span class="string">&quot;Cannot commit on root substate&quot;</span>);
+		mem::swap(<span class="kw-2">&amp;mut </span>exited, <span class="self">self</span>);
 
-		<span class="self">self</span>.<span class="ident">metadata</span>.<span class="ident">swallow_commit</span>(<span class="ident">exited</span>.<span class="ident">metadata</span>)<span class="question-mark">?</span>;
-		<span class="self">self</span>.<span class="ident">logs</span>.<span class="ident">append</span>(<span class="kw-2">&amp;mut</span> <span class="ident">exited</span>.<span class="ident">logs</span>);
-		<span class="self">self</span>.<span class="ident">deletes</span>.<span class="ident">append</span>(<span class="kw-2">&amp;mut</span> <span class="ident">exited</span>.<span class="ident">deletes</span>);
+		<span class="self">self</span>.metadata.swallow_commit(exited.metadata)<span class="question-mark">?</span>;
+		<span class="self">self</span>.logs.append(<span class="kw-2">&amp;mut </span>exited.logs);
+		<span class="self">self</span>.deletes.append(<span class="kw-2">&amp;mut </span>exited.deletes);
 
-		<span class="ident">sp_io::storage::commit_transaction</span>();
+		sp_io::storage::commit_transaction();
 		<span class="prelude-val">Ok</span>(())
 	}
 
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">exit_revert</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">ExitError</span><span class="op">&gt;</span> {
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">exited</span> <span class="op">=</span> <span class="kw-2">*</span><span class="self">self</span>.<span class="ident">parent</span>.<span class="ident">take</span>().<span class="ident">expect</span>(<span class="string">&quot;Cannot discard on root substate&quot;</span>);
-		<span class="ident">mem::swap</span>(<span class="kw-2">&amp;mut</span> <span class="ident">exited</span>, <span class="self">self</span>);
-		<span class="self">self</span>.<span class="ident">metadata</span>.<span class="ident">swallow_revert</span>(<span class="ident">exited</span>.<span class="ident">metadata</span>)<span class="question-mark">?</span>;
+	<span class="kw">pub fn </span>exit_revert(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;(), ExitError&gt; {
+		<span class="kw">let </span><span class="kw-2">mut </span>exited = <span class="kw-2">*</span><span class="self">self</span>.parent.take().expect(<span class="string">&quot;Cannot discard on root substate&quot;</span>);
+		mem::swap(<span class="kw-2">&amp;mut </span>exited, <span class="self">self</span>);
+		<span class="self">self</span>.metadata.swallow_revert(exited.metadata)<span class="question-mark">?</span>;
 
-		<span class="ident">sp_io::storage::rollback_transaction</span>();
+		sp_io::storage::rollback_transaction();
 		<span class="prelude-val">Ok</span>(())
 	}
 
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">exit_discard</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">ExitError</span><span class="op">&gt;</span> {
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">exited</span> <span class="op">=</span> <span class="kw-2">*</span><span class="self">self</span>.<span class="ident">parent</span>.<span class="ident">take</span>().<span class="ident">expect</span>(<span class="string">&quot;Cannot discard on root substate&quot;</span>);
-		<span class="ident">mem::swap</span>(<span class="kw-2">&amp;mut</span> <span class="ident">exited</span>, <span class="self">self</span>);
-		<span class="self">self</span>.<span class="ident">metadata</span>.<span class="ident">swallow_discard</span>(<span class="ident">exited</span>.<span class="ident">metadata</span>)<span class="question-mark">?</span>;
+	<span class="kw">pub fn </span>exit_discard(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;(), ExitError&gt; {
+		<span class="kw">let </span><span class="kw-2">mut </span>exited = <span class="kw-2">*</span><span class="self">self</span>.parent.take().expect(<span class="string">&quot;Cannot discard on root substate&quot;</span>);
+		mem::swap(<span class="kw-2">&amp;mut </span>exited, <span class="self">self</span>);
+		<span class="self">self</span>.metadata.swallow_discard(exited.metadata)<span class="question-mark">?</span>;
 
-		<span class="ident">sp_io::storage::rollback_transaction</span>();
+		sp_io::storage::rollback_transaction();
 		<span class="prelude-val">Ok</span>(())
 	}
 
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">deleted</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">address</span>: <span class="ident">H160</span>) -&gt; <span class="ident">bool</span> {
-		<span class="kw">if</span> <span class="self">self</span>.<span class="ident">deletes</span>.<span class="ident">contains</span>(<span class="kw-2">&amp;</span><span class="ident">address</span>) {
-			<span class="kw">return</span> <span class="bool-val">true</span>;
+	<span class="kw">pub fn </span>deleted(<span class="kw-2">&amp;</span><span class="self">self</span>, address: H160) -&gt; bool {
+		<span class="kw">if </span><span class="self">self</span>.deletes.contains(<span class="kw-2">&amp;</span>address) {
+			<span class="kw">return </span><span class="bool-val">true</span>;
 		}
 
-		<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">parent</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">parent</span>.<span class="ident">as_ref</span>() {
-			<span class="kw">return</span> <span class="ident">parent</span>.<span class="ident">deleted</span>(<span class="ident">address</span>);
+		<span class="kw">if let </span><span class="prelude-val">Some</span>(parent) = <span class="self">self</span>.parent.as_ref() {
+			<span class="kw">return </span>parent.deleted(address);
 		}
 
-		<span class="bool-val">false</span>
+		<span class="bool-val">false
+	</span>}
+
+	<span class="kw">pub fn </span>set_deleted(<span class="kw-2">&amp;mut </span><span class="self">self</span>, address: H160) {
+		<span class="self">self</span>.deletes.insert(address);
 	}
 
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_deleted</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">address</span>: <span class="ident">H160</span>) {
-		<span class="self">self</span>.<span class="ident">deletes</span>.<span class="ident">insert</span>(<span class="ident">address</span>);
-	}
-
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">log</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">address</span>: <span class="ident">H160</span>, <span class="ident">topics</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span>, <span class="ident">data</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>) {
-		<span class="self">self</span>.<span class="ident">logs</span>.<span class="ident">push</span>(<span class="ident">Log</span> {
-			<span class="ident">address</span>,
-			<span class="ident">topics</span>,
-			<span class="ident">data</span>,
+	<span class="kw">pub fn </span>log(<span class="kw-2">&amp;mut </span><span class="self">self</span>, address: H160, topics: Vec&lt;H256&gt;, data: Vec&lt;u8&gt;) {
+		<span class="self">self</span>.logs.push(Log {
+			address,
+			topics,
+			data,
 		});
 	}
 
-	<span class="kw">fn</span> <span class="ident">recursive_is_cold</span><span class="op">&lt;</span><span class="ident">F</span>: <span class="ident">Fn</span>(<span class="kw-2">&amp;</span><span class="ident">Accessed</span>) -&gt; <span class="ident">bool</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="ident">F</span>) -&gt; <span class="ident">bool</span> {
-		<span class="kw">let</span> <span class="ident">local_is_accessed</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">metadata</span>.<span class="ident">accessed</span>().<span class="ident">as_ref</span>().<span class="ident">map</span>(<span class="ident">f</span>).<span class="ident">unwrap_or</span>(<span class="bool-val">false</span>);
-		<span class="kw">if</span> <span class="ident">local_is_accessed</span> {
-			<span class="bool-val">false</span>
-		} <span class="kw">else</span> {
-			<span class="self">self</span>.<span class="ident">parent</span>
-				.<span class="ident">as_ref</span>()
-				.<span class="ident">map</span>(<span class="op">|</span><span class="ident">p</span><span class="op">|</span> <span class="ident">p</span>.<span class="ident">recursive_is_cold</span>(<span class="ident">f</span>))
-				.<span class="ident">unwrap_or</span>(<span class="bool-val">true</span>)
+	<span class="kw">fn </span>recursive_is_cold&lt;F: Fn(<span class="kw-2">&amp;</span>Accessed) -&gt; bool&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;</span>F) -&gt; bool {
+		<span class="kw">let </span>local_is_accessed = <span class="self">self</span>.metadata.accessed().as_ref().map(f).unwrap_or(<span class="bool-val">false</span>);
+		<span class="kw">if </span>local_is_accessed {
+			<span class="bool-val">false
+		</span>} <span class="kw">else </span>{
+			<span class="self">self</span>.parent
+				.as_ref()
+				.map(|p| p.recursive_is_cold(f))
+				.unwrap_or(<span class="bool-val">true</span>)
 		}
 	}
 }
 
-<span class="doccomment">/// Substrate backend for EVM.</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">SubstrateStackState</span><span class="op">&lt;</span><span class="lifetime">&#39;vicinity</span>, <span class="lifetime">&#39;config</span>, <span class="ident">T</span><span class="op">&gt;</span> {
-	<span class="ident">vicinity</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;vicinity</span> <span class="ident">Vicinity</span>,
-	<span class="ident">substate</span>: <span class="ident">SubstrateStackSubstate</span><span class="op">&lt;</span><span class="lifetime">&#39;config</span><span class="op">&gt;</span>,
-	<span class="ident">original_storage</span>: <span class="ident">BTreeMap</span><span class="op">&lt;</span>(<span class="ident">H160</span>, <span class="ident">H256</span>), <span class="ident">H256</span><span class="op">&gt;</span>,
-	<span class="ident">_marker</span>: <span class="ident">PhantomData</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
+<span class="doccomment">/// Substrate backend for EVM.
+</span><span class="kw">pub struct </span>SubstrateStackState&lt;<span class="lifetime">&#39;vicinity</span>, <span class="lifetime">&#39;config</span>, T&gt; {
+	vicinity: <span class="kw-2">&amp;</span><span class="lifetime">&#39;vicinity </span>Vicinity,
+	substate: SubstrateStackSubstate&lt;<span class="lifetime">&#39;config</span>&gt;,
+	original_storage: BTreeMap&lt;(H160, H256), H256&gt;,
+	_marker: PhantomData&lt;T&gt;,
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;vicinity</span>, <span class="lifetime">&#39;config</span>, <span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">SubstrateStackState</span><span class="op">&lt;</span><span class="lifetime">&#39;vicinity</span>, <span class="lifetime">&#39;config</span>, <span class="ident">T</span><span class="op">&gt;</span> {
-	<span class="doccomment">/// Create a new backend with given vicinity.</span>
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">vicinity</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;vicinity</span> <span class="ident">Vicinity</span>, <span class="ident">metadata</span>: <span class="ident">StackSubstateMetadata</span><span class="op">&lt;</span><span class="lifetime">&#39;config</span><span class="op">&gt;</span>) -&gt; <span class="self">Self</span> {
-		<span class="self">Self</span> {
-			<span class="ident">vicinity</span>,
-			<span class="ident">substate</span>: <span class="ident">SubstrateStackSubstate</span> {
-				<span class="ident">metadata</span>,
-				<span class="ident">deletes</span>: <span class="ident">BTreeSet::new</span>(),
-				<span class="ident">logs</span>: <span class="ident">Vec::new</span>(),
-				<span class="ident">parent</span>: <span class="prelude-val">None</span>,
+<span class="kw">impl</span>&lt;<span class="lifetime">&#39;vicinity</span>, <span class="lifetime">&#39;config</span>, T: Config&gt; SubstrateStackState&lt;<span class="lifetime">&#39;vicinity</span>, <span class="lifetime">&#39;config</span>, T&gt; {
+	<span class="doccomment">/// Create a new backend with given vicinity.
+	</span><span class="kw">pub fn </span>new(vicinity: <span class="kw-2">&amp;</span><span class="lifetime">&#39;vicinity </span>Vicinity, metadata: StackSubstateMetadata&lt;<span class="lifetime">&#39;config</span>&gt;) -&gt; <span class="self">Self </span>{
+		<span class="self">Self </span>{
+			vicinity,
+			substate: SubstrateStackSubstate {
+				metadata,
+				deletes: BTreeSet::new(),
+				logs: Vec::new(),
+				parent: <span class="prelude-val">None</span>,
 			},
-			<span class="ident">_marker</span>: <span class="ident">PhantomData</span>,
-			<span class="ident">original_storage</span>: <span class="ident">BTreeMap::new</span>(),
+			_marker: PhantomData,
+			original_storage: BTreeMap::new(),
 		}
 	}
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;vicinity</span>, <span class="lifetime">&#39;config</span>, <span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">BackendT</span> <span class="kw">for</span> <span class="ident">SubstrateStackState</span><span class="op">&lt;</span><span class="lifetime">&#39;vicinity</span>, <span class="lifetime">&#39;config</span>, <span class="ident">T</span><span class="op">&gt;</span> {
-	<span class="kw">fn</span> <span class="ident">gas_price</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">U256</span> {
-		<span class="self">self</span>.<span class="ident">vicinity</span>.<span class="ident">gas_price</span>
+<span class="kw">impl</span>&lt;<span class="lifetime">&#39;vicinity</span>, <span class="lifetime">&#39;config</span>, T: Config&gt; BackendT <span class="kw">for </span>SubstrateStackState&lt;<span class="lifetime">&#39;vicinity</span>, <span class="lifetime">&#39;config</span>, T&gt; {
+	<span class="kw">fn </span>gas_price(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; U256 {
+		<span class="self">self</span>.vicinity.gas_price
 	}
-	<span class="kw">fn</span> <span class="ident">origin</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">H160</span> {
-		<span class="self">self</span>.<span class="ident">vicinity</span>.<span class="ident">origin</span>
+	<span class="kw">fn </span>origin(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; H160 {
+		<span class="self">self</span>.vicinity.origin
 	}
 
-	<span class="kw">fn</span> <span class="ident">block_hash</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">number</span>: <span class="ident">U256</span>) -&gt; <span class="ident">H256</span> {
-		<span class="kw">if</span> <span class="ident">number</span> <span class="op">&gt;</span> <span class="ident">U256::from</span>(<span class="ident">u32::MAX</span>) {
-			<span class="ident">H256::default</span>()
-		} <span class="kw">else</span> {
-			<span class="ident">T::BlockHashMapping::block_hash</span>(<span class="ident">number</span>.<span class="ident">as_u32</span>())
+	<span class="kw">fn </span>block_hash(<span class="kw-2">&amp;</span><span class="self">self</span>, number: U256) -&gt; H256 {
+		<span class="kw">if </span>number &gt; U256::from(u32::MAX) {
+			H256::default()
+		} <span class="kw">else </span>{
+			T::BlockHashMapping::block_hash(number.as_u32())
 		}
 	}
 
-	<span class="kw">fn</span> <span class="ident">block_number</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">U256</span> {
-		<span class="kw">let</span> <span class="ident">number</span>: <span class="ident">u128</span> <span class="op">=</span> <span class="ident">frame_system::Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::block_number</span>().<span class="ident">unique_saturated_into</span>();
-		<span class="ident">U256::from</span>(<span class="ident">number</span>)
+	<span class="kw">fn </span>block_number(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; U256 {
+		<span class="kw">let </span>number: u128 = frame_system::Pallet::&lt;T&gt;::block_number().unique_saturated_into();
+		U256::from(number)
 	}
 
-	<span class="kw">fn</span> <span class="ident">block_coinbase</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">H160</span> {
-		<span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::find_author</span>()
+	<span class="kw">fn </span>block_coinbase(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; H160 {
+		Pallet::&lt;T&gt;::find_author()
 	}
 
-	<span class="kw">fn</span> <span class="ident">block_timestamp</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">U256</span> {
-		<span class="kw">let</span> <span class="ident">now</span>: <span class="ident">u128</span> <span class="op">=</span> <span class="ident">pallet_timestamp::Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::get</span>().<span class="ident">unique_saturated_into</span>();
-		<span class="ident">U256::from</span>(<span class="ident">now</span> <span class="op">/</span> <span class="number">1000</span>)
+	<span class="kw">fn </span>block_timestamp(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; U256 {
+		<span class="kw">let </span>now: u128 = pallet_timestamp::Pallet::&lt;T&gt;::get().unique_saturated_into();
+		U256::from(now / <span class="number">1000</span>)
 	}
 
-	<span class="kw">fn</span> <span class="ident">block_difficulty</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">U256</span> {
-		<span class="ident">U256::zero</span>()
+	<span class="kw">fn </span>block_difficulty(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; U256 {
+		U256::zero()
 	}
 
-	<span class="kw">fn</span> <span class="ident">block_gas_limit</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">U256</span> {
-		<span class="ident">T::BlockGasLimit::get</span>()
+	<span class="kw">fn </span>block_gas_limit(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; U256 {
+		T::BlockGasLimit::get()
 	}
 
-	<span class="kw">fn</span> <span class="ident">chain_id</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">U256</span> {
-		<span class="ident">U256::from</span>(<span class="ident">T::ChainId::get</span>())
+	<span class="kw">fn </span>chain_id(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; U256 {
+		U256::from(T::ChainId::get())
 	}
 
-	<span class="kw">fn</span> <span class="ident">exists</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">_address</span>: <span class="ident">H160</span>) -&gt; <span class="ident">bool</span> {
-		<span class="bool-val">true</span>
-	}
+	<span class="kw">fn </span>exists(<span class="kw-2">&amp;</span><span class="self">self</span>, _address: H160) -&gt; bool {
+		<span class="bool-val">true
+	</span>}
 
-	<span class="kw">fn</span> <span class="ident">basic</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">address</span>: <span class="ident">H160</span>) -&gt; <span class="ident">evm::backend::Basic</span> {
-		<span class="kw">let</span> (<span class="ident">account</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::account_basic</span>(<span class="kw-2">&amp;</span><span class="ident">address</span>);
+	<span class="kw">fn </span>basic(<span class="kw-2">&amp;</span><span class="self">self</span>, address: H160) -&gt; evm::backend::Basic {
+		<span class="kw">let </span>(account, <span class="kw">_</span>) = Pallet::&lt;T&gt;::account_basic(<span class="kw-2">&amp;</span>address);
 
-		<span class="ident">evm::backend::Basic</span> {
-			<span class="ident">balance</span>: <span class="ident">account</span>.<span class="ident">balance</span>,
-			<span class="ident">nonce</span>: <span class="ident">account</span>.<span class="ident">nonce</span>,
+		evm::backend::Basic {
+			balance: account.balance,
+			nonce: account.nonce,
 		}
 	}
 
-	<span class="kw">fn</span> <span class="ident">code</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">address</span>: <span class="ident">H160</span>) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> {
-		<span class="op">&lt;</span><span class="ident">AccountCodes</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>(<span class="kw-2">&amp;</span><span class="ident">address</span>)
+	<span class="kw">fn </span>code(<span class="kw-2">&amp;</span><span class="self">self</span>, address: H160) -&gt; Vec&lt;u8&gt; {
+		&lt;AccountCodes&lt;T&gt;&gt;::get(address)
 	}
 
-	<span class="kw">fn</span> <span class="ident">storage</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">address</span>: <span class="ident">H160</span>, <span class="ident">index</span>: <span class="ident">H256</span>) -&gt; <span class="ident">H256</span> {
-		<span class="op">&lt;</span><span class="ident">AccountStorages</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>(<span class="ident">address</span>, <span class="ident">index</span>)
+	<span class="kw">fn </span>storage(<span class="kw-2">&amp;</span><span class="self">self</span>, address: H160, index: H256) -&gt; H256 {
+		&lt;AccountStorages&lt;T&gt;&gt;::get(address, index)
 	}
 
-	<span class="kw">fn</span> <span class="ident">original_storage</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">address</span>: <span class="ident">H160</span>, <span class="ident">index</span>: <span class="ident">H256</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span> {
-		<span class="comment">// Not being cached means that it was never changed, which means we</span>
-		<span class="comment">// can fetch it from storage.</span>
-		<span class="prelude-val">Some</span>(
-			<span class="self">self</span>.<span class="ident">original_storage</span>
-				.<span class="ident">get</span>(<span class="kw-2">&amp;</span>(<span class="ident">address</span>, <span class="ident">index</span>))
-				.<span class="ident">cloned</span>()
-				.<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">storage</span>(<span class="ident">address</span>, <span class="ident">index</span>)),
+	<span class="kw">fn </span>original_storage(<span class="kw-2">&amp;</span><span class="self">self</span>, address: H160, index: H256) -&gt; <span class="prelude-ty">Option</span>&lt;H256&gt; {
+		<span class="comment">// Not being cached means that it was never changed, which means we
+		// can fetch it from storage.
+		</span><span class="prelude-val">Some</span>(
+			<span class="self">self</span>.original_storage
+				.get(<span class="kw-2">&amp;</span>(address, index))
+				.cloned()
+				.unwrap_or_else(|| <span class="self">self</span>.storage(address, index)),
 		)
 	}
 
-	<span class="kw">fn</span> <span class="ident">block_base_fee_per_gas</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">sp_core::U256</span> {
-		<span class="kw">let</span> (<span class="ident">base_fee</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">T::FeeCalculator::min_gas_price</span>();
-		<span class="ident">base_fee</span>
+	<span class="kw">fn </span>block_base_fee_per_gas(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; sp_core::U256 {
+		<span class="kw">let </span>(base_fee, <span class="kw">_</span>) = T::FeeCalculator::min_gas_price();
+		base_fee
 	}
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;vicinity</span>, <span class="lifetime">&#39;config</span>, <span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">StackStateT</span><span class="op">&lt;</span><span class="lifetime">&#39;config</span><span class="op">&gt;</span>
-	<span class="kw">for</span> <span class="ident">SubstrateStackState</span><span class="op">&lt;</span><span class="lifetime">&#39;vicinity</span>, <span class="lifetime">&#39;config</span>, <span class="ident">T</span><span class="op">&gt;</span>
-<span class="kw">where</span>
-	<span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>: <span class="ident">TryFrom</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
+<span class="kw">impl</span>&lt;<span class="lifetime">&#39;vicinity</span>, <span class="lifetime">&#39;config</span>, T: Config&gt; StackStateT&lt;<span class="lifetime">&#39;config</span>&gt;
+	<span class="kw">for </span>SubstrateStackState&lt;<span class="lifetime">&#39;vicinity</span>, <span class="lifetime">&#39;config</span>, T&gt;
+<span class="kw">where
+	</span>BalanceOf&lt;T&gt;: TryFrom&lt;U256&gt; + Into&lt;U256&gt;,
 {
-	<span class="kw">fn</span> <span class="ident">metadata</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="ident">StackSubstateMetadata</span><span class="op">&lt;</span><span class="lifetime">&#39;config</span><span class="op">&gt;</span> {
-		<span class="self">self</span>.<span class="ident">substate</span>.<span class="ident">metadata</span>()
+	<span class="kw">fn </span>metadata(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>StackSubstateMetadata&lt;<span class="lifetime">&#39;config</span>&gt; {
+		<span class="self">self</span>.substate.metadata()
 	}
 
-	<span class="kw">fn</span> <span class="ident">metadata_mut</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="kw-2">&amp;mut</span> <span class="ident">StackSubstateMetadata</span><span class="op">&lt;</span><span class="lifetime">&#39;config</span><span class="op">&gt;</span> {
-		<span class="self">self</span>.<span class="ident">substate</span>.<span class="ident">metadata_mut</span>()
+	<span class="kw">fn </span>metadata_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;mut </span>StackSubstateMetadata&lt;<span class="lifetime">&#39;config</span>&gt; {
+		<span class="self">self</span>.substate.metadata_mut()
 	}
 
-	<span class="kw">fn</span> <span class="ident">enter</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">gas_limit</span>: <span class="ident">u64</span>, <span class="ident">is_static</span>: <span class="ident">bool</span>) {
-		<span class="self">self</span>.<span class="ident">substate</span>.<span class="ident">enter</span>(<span class="ident">gas_limit</span>, <span class="ident">is_static</span>)
+	<span class="kw">fn </span>enter(<span class="kw-2">&amp;mut </span><span class="self">self</span>, gas_limit: u64, is_static: bool) {
+		<span class="self">self</span>.substate.enter(gas_limit, is_static)
 	}
 
-	<span class="kw">fn</span> <span class="ident">exit_commit</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">ExitError</span><span class="op">&gt;</span> {
-		<span class="self">self</span>.<span class="ident">substate</span>.<span class="ident">exit_commit</span>()
+	<span class="kw">fn </span>exit_commit(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;(), ExitError&gt; {
+		<span class="self">self</span>.substate.exit_commit()
 	}
 
-	<span class="kw">fn</span> <span class="ident">exit_revert</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">ExitError</span><span class="op">&gt;</span> {
-		<span class="self">self</span>.<span class="ident">substate</span>.<span class="ident">exit_revert</span>()
+	<span class="kw">fn </span>exit_revert(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;(), ExitError&gt; {
+		<span class="self">self</span>.substate.exit_revert()
 	}
 
-	<span class="kw">fn</span> <span class="ident">exit_discard</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">ExitError</span><span class="op">&gt;</span> {
-		<span class="self">self</span>.<span class="ident">substate</span>.<span class="ident">exit_discard</span>()
+	<span class="kw">fn </span>exit_discard(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;(), ExitError&gt; {
+		<span class="self">self</span>.substate.exit_discard()
 	}
 
-	<span class="kw">fn</span> <span class="ident">is_empty</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">address</span>: <span class="ident">H160</span>) -&gt; <span class="ident">bool</span> {
-		<span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::is_account_empty</span>(<span class="kw-2">&amp;</span><span class="ident">address</span>)
+	<span class="kw">fn </span>is_empty(<span class="kw-2">&amp;</span><span class="self">self</span>, address: H160) -&gt; bool {
+		Pallet::&lt;T&gt;::is_account_empty(<span class="kw-2">&amp;</span>address)
 	}
 
-	<span class="kw">fn</span> <span class="ident">deleted</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">address</span>: <span class="ident">H160</span>) -&gt; <span class="ident">bool</span> {
-		<span class="self">self</span>.<span class="ident">substate</span>.<span class="ident">deleted</span>(<span class="ident">address</span>)
+	<span class="kw">fn </span>deleted(<span class="kw-2">&amp;</span><span class="self">self</span>, address: H160) -&gt; bool {
+		<span class="self">self</span>.substate.deleted(address)
 	}
 
-	<span class="kw">fn</span> <span class="ident">inc_nonce</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">address</span>: <span class="ident">H160</span>) {
-		<span class="kw">let</span> <span class="ident">account_id</span> <span class="op">=</span> <span class="ident">T::AddressMapping::into_account_id</span>(<span class="ident">address</span>);
-		<span class="ident">frame_system::Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::inc_account_nonce</span>(<span class="kw-2">&amp;</span><span class="ident">account_id</span>);
+	<span class="kw">fn </span>inc_nonce(<span class="kw-2">&amp;mut </span><span class="self">self</span>, address: H160) {
+		<span class="kw">let </span>account_id = T::AddressMapping::into_account_id(address);
+		frame_system::Pallet::&lt;T&gt;::inc_account_nonce(<span class="kw-2">&amp;</span>account_id);
 	}
 
-	<span class="kw">fn</span> <span class="ident">set_storage</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">address</span>: <span class="ident">H160</span>, <span class="ident">index</span>: <span class="ident">H256</span>, <span class="ident">value</span>: <span class="ident">H256</span>) {
-		<span class="comment">// We cache the current value if this is the first time we modify it</span>
-		<span class="comment">// in the transaction.</span>
-		<span class="kw">use</span> <span class="ident">sp_std::collections::btree_map::Entry::Vacant</span>;
-		<span class="kw">if</span> <span class="kw">let</span> <span class="ident">Vacant</span>(<span class="ident">e</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">original_storage</span>.<span class="ident">entry</span>((<span class="ident">address</span>, <span class="ident">index</span>)) {
-			<span class="kw">let</span> <span class="ident">original</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">AccountStorages</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>(<span class="ident">address</span>, <span class="ident">index</span>);
-			<span class="comment">// No need to cache if same value.</span>
-			<span class="kw">if</span> <span class="ident">original</span> <span class="op">!</span><span class="op">=</span> <span class="ident">value</span> {
-				<span class="ident">e</span>.<span class="ident">insert</span>(<span class="ident">original</span>);
+	<span class="kw">fn </span>set_storage(<span class="kw-2">&amp;mut </span><span class="self">self</span>, address: H160, index: H256, value: H256) {
+		<span class="comment">// We cache the current value if this is the first time we modify it
+		// in the transaction.
+		</span><span class="kw">use </span>sp_std::collections::btree_map::Entry::Vacant;
+		<span class="kw">if let </span>Vacant(e) = <span class="self">self</span>.original_storage.entry((address, index)) {
+			<span class="kw">let </span>original = &lt;AccountStorages&lt;T&gt;&gt;::get(address, index);
+			<span class="comment">// No need to cache if same value.
+			</span><span class="kw">if </span>original != value {
+				e.insert(original);
 			}
 		}
 
-		<span class="comment">// Then we insert or remove the entry based on the value.</span>
-		<span class="kw">if</span> <span class="ident">value</span> <span class="op">==</span> <span class="ident">H256::default</span>() {
+		<span class="comment">// Then we insert or remove the entry based on the value.
+		</span><span class="kw">if </span>value == H256::default() {
 			<span class="macro">log::debug!</span>(
-				<span class="ident">target</span>: <span class="string">&quot;evm&quot;</span>,
+				target: <span class="string">&quot;evm&quot;</span>,
 				<span class="string">&quot;Removing storage for {:?} [index: {:?}]&quot;</span>,
-				<span class="ident">address</span>,
-				<span class="ident">index</span>,
+				address,
+				index,
 			);
-			<span class="op">&lt;</span><span class="ident">AccountStorages</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::remove</span>(<span class="ident">address</span>, <span class="ident">index</span>);
-		} <span class="kw">else</span> {
+			&lt;AccountStorages&lt;T&gt;&gt;::remove(address, index);
+		} <span class="kw">else </span>{
 			<span class="macro">log::debug!</span>(
-				<span class="ident">target</span>: <span class="string">&quot;evm&quot;</span>,
+				target: <span class="string">&quot;evm&quot;</span>,
 				<span class="string">&quot;Updating storage for {:?} [index: {:?}, value: {:?}]&quot;</span>,
-				<span class="ident">address</span>,
-				<span class="ident">index</span>,
-				<span class="ident">value</span>,
+				address,
+				index,
+				value,
 			);
-			<span class="op">&lt;</span><span class="ident">AccountStorages</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::insert</span>(<span class="ident">address</span>, <span class="ident">index</span>, <span class="ident">value</span>);
+			&lt;AccountStorages&lt;T&gt;&gt;::insert(address, index, value);
 		}
 	}
 
-	<span class="kw">fn</span> <span class="ident">reset_storage</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">address</span>: <span class="ident">H160</span>) {
-		<span class="attribute">#[<span class="ident">allow</span>(<span class="ident">deprecated</span>)]</span>
-		<span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">AccountStorages</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::remove_prefix</span>(<span class="ident">address</span>, <span class="prelude-val">None</span>);
+	<span class="kw">fn </span>reset_storage(<span class="kw-2">&amp;mut </span><span class="self">self</span>, address: H160) {
+		<span class="attribute">#[allow(deprecated)]
+		</span><span class="kw">let _ </span>= &lt;AccountStorages&lt;T&gt;&gt;::remove_prefix(address, <span class="prelude-val">None</span>);
 	}
 
-	<span class="kw">fn</span> <span class="ident">log</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">address</span>: <span class="ident">H160</span>, <span class="ident">topics</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span>, <span class="ident">data</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>) {
-		<span class="self">self</span>.<span class="ident">substate</span>.<span class="ident">log</span>(<span class="ident">address</span>, <span class="ident">topics</span>, <span class="ident">data</span>)
+	<span class="kw">fn </span>log(<span class="kw-2">&amp;mut </span><span class="self">self</span>, address: H160, topics: Vec&lt;H256&gt;, data: Vec&lt;u8&gt;) {
+		<span class="self">self</span>.substate.log(address, topics, data)
 	}
 
-	<span class="kw">fn</span> <span class="ident">set_deleted</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">address</span>: <span class="ident">H160</span>) {
-		<span class="self">self</span>.<span class="ident">substate</span>.<span class="ident">set_deleted</span>(<span class="ident">address</span>)
+	<span class="kw">fn </span>set_deleted(<span class="kw-2">&amp;mut </span><span class="self">self</span>, address: H160) {
+		<span class="self">self</span>.substate.set_deleted(address)
 	}
 
-	<span class="kw">fn</span> <span class="ident">set_code</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">address</span>: <span class="ident">H160</span>, <span class="ident">code</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>) {
+	<span class="kw">fn </span>set_code(<span class="kw-2">&amp;mut </span><span class="self">self</span>, address: H160, code: Vec&lt;u8&gt;) {
 		<span class="macro">log::debug!</span>(
-			<span class="ident">target</span>: <span class="string">&quot;evm&quot;</span>,
+			target: <span class="string">&quot;evm&quot;</span>,
 			<span class="string">&quot;Inserting code ({} bytes) at {:?}&quot;</span>,
-			<span class="ident">code</span>.<span class="ident">len</span>(),
-			<span class="ident">address</span>
+			code.len(),
+			address
 		);
-		<span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::create_account</span>(<span class="ident">address</span>, <span class="ident">code</span>);
+		Pallet::&lt;T&gt;::create_account(address, code);
 	}
 
-	<span class="kw">fn</span> <span class="ident">transfer</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">transfer</span>: <span class="ident">Transfer</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">ExitError</span><span class="op">&gt;</span> {
-		<span class="kw">let</span> <span class="ident">source</span> <span class="op">=</span> <span class="ident">T::AddressMapping::into_account_id</span>(<span class="ident">transfer</span>.<span class="ident">source</span>);
-		<span class="kw">let</span> <span class="ident">target</span> <span class="op">=</span> <span class="ident">T::AddressMapping::into_account_id</span>(<span class="ident">transfer</span>.<span class="ident">target</span>);
+	<span class="kw">fn </span>transfer(<span class="kw-2">&amp;mut </span><span class="self">self</span>, transfer: Transfer) -&gt; <span class="prelude-ty">Result</span>&lt;(), ExitError&gt; {
+		<span class="kw">let </span>source = T::AddressMapping::into_account_id(transfer.source);
+		<span class="kw">let </span>target = T::AddressMapping::into_account_id(transfer.target);
 
-		<span class="ident">T::Currency::transfer</span>(
-			<span class="kw-2">&amp;</span><span class="ident">source</span>,
-			<span class="kw-2">&amp;</span><span class="ident">target</span>,
-			<span class="ident">transfer</span>
-				.<span class="ident">value</span>
-				.<span class="ident">try_into</span>()
-				.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">ExitError::OutOfFund</span>)<span class="question-mark">?</span>,
-			<span class="ident">ExistenceRequirement::AllowDeath</span>,
+		T::Currency::transfer(
+			<span class="kw-2">&amp;</span>source,
+			<span class="kw-2">&amp;</span>target,
+			transfer
+				.value
+				.try_into()
+				.map_err(|<span class="kw">_</span>| ExitError::OutOfFund)<span class="question-mark">?</span>,
+			ExistenceRequirement::AllowDeath,
 		)
-		.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">ExitError::OutOfFund</span>)
+		.map_err(|<span class="kw">_</span>| ExitError::OutOfFund)
 	}
 
-	<span class="kw">fn</span> <span class="ident">reset_balance</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">_address</span>: <span class="ident">H160</span>) {
-		<span class="comment">// Do nothing on reset balance in Substrate.</span>
-		<span class="comment">//</span>
-		<span class="comment">// This function exists in EVM because a design issue</span>
-		<span class="comment">// (arguably a bug) in SELFDESTRUCT that can cause total</span>
-		<span class="comment">// issuance to be reduced. We do not need to replicate this.</span>
+	<span class="kw">fn </span>reset_balance(<span class="kw-2">&amp;mut </span><span class="self">self</span>, _address: H160) {
+		<span class="comment">// Do nothing on reset balance in Substrate.
+		//
+		// This function exists in EVM because a design issue
+		// (arguably a bug) in SELFDESTRUCT that can cause total
+		// issuance to be reduced. We do not need to replicate this.
+	</span>}
+
+	<span class="kw">fn </span>touch(<span class="kw-2">&amp;mut </span><span class="self">self</span>, _address: H160) {
+		<span class="comment">// Do nothing on touch in Substrate.
+		//
+		// EVM pallet considers all accounts to exist, and distinguish
+		// only empty and non-empty accounts. This avoids many of the
+		// subtle issues in EIP-161.
+	</span>}
+
+	<span class="kw">fn </span>is_cold(<span class="kw-2">&amp;</span><span class="self">self</span>, address: H160) -&gt; bool {
+		<span class="self">self</span>.substate
+			.recursive_is_cold(<span class="kw-2">&amp;</span>|a| a.accessed_addresses.contains(<span class="kw-2">&amp;</span>address))
 	}
 
-	<span class="kw">fn</span> <span class="ident">touch</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">_address</span>: <span class="ident">H160</span>) {
-		<span class="comment">// Do nothing on touch in Substrate.</span>
-		<span class="comment">//</span>
-		<span class="comment">// EVM pallet considers all accounts to exist, and distinguish</span>
-		<span class="comment">// only empty and non-empty accounts. This avoids many of the</span>
-		<span class="comment">// subtle issues in EIP-161.</span>
-	}
-
-	<span class="kw">fn</span> <span class="ident">is_cold</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">address</span>: <span class="ident">H160</span>) -&gt; <span class="ident">bool</span> {
-		<span class="self">self</span>.<span class="ident">substate</span>
-			.<span class="ident">recursive_is_cold</span>(<span class="kw-2">&amp;</span><span class="op">|</span><span class="ident">a</span><span class="op">|</span> <span class="ident">a</span>.<span class="ident">accessed_addresses</span>.<span class="ident">contains</span>(<span class="kw-2">&amp;</span><span class="ident">address</span>))
-	}
-
-	<span class="kw">fn</span> <span class="ident">is_storage_cold</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">address</span>: <span class="ident">H160</span>, <span class="ident">key</span>: <span class="ident">H256</span>) -&gt; <span class="ident">bool</span> {
-		<span class="self">self</span>.<span class="ident">substate</span>
-			.<span class="ident">recursive_is_cold</span>(<span class="kw-2">&amp;</span><span class="op">|</span><span class="ident">a</span>: <span class="kw-2">&amp;</span><span class="ident">Accessed</span><span class="op">|</span> <span class="ident">a</span>.<span class="ident">accessed_storage</span>.<span class="ident">contains</span>(<span class="kw-2">&amp;</span>(<span class="ident">address</span>, <span class="ident">key</span>)))
+	<span class="kw">fn </span>is_storage_cold(<span class="kw-2">&amp;</span><span class="self">self</span>, address: H160, key: H256) -&gt; bool {
+		<span class="self">self</span>.substate
+			.recursive_is_cold(<span class="kw-2">&amp;</span>|a: <span class="kw-2">&amp;</span>Accessed| a.accessed_storage.contains(<span class="kw-2">&amp;</span>(address, key)))
 	}
 }
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;forbid-evm-reentrancy&quot;</span>)]</span>
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
-<span class="kw">mod</span> <span class="ident">tests</span> {
-	<span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
-	<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::mock::Test</span>;
-	<span class="kw">use</span> <span class="ident">evm::ExitSucceed</span>;
-	<span class="kw">use</span> <span class="ident">std::assert_matches::assert_matches</span>;
+<span class="attribute">#[cfg(feature = <span class="string">&quot;forbid-evm-reentrancy&quot;</span>)]
+#[cfg(test)]
+</span><span class="kw">mod </span>tests {
+	<span class="kw">use super</span>::<span class="kw-2">*</span>;
+	<span class="kw">use </span><span class="kw">crate</span>::mock::Test;
+	<span class="kw">use </span>evm::ExitSucceed;
+	<span class="kw">use </span>std::assert_matches::assert_matches;
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">test_evm_reentrancy</span>() {
-		<span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">evm::Config::istanbul</span>();
+	<span class="attribute">#[test]
+	</span><span class="kw">fn </span>test_evm_reentrancy() {
+		<span class="kw">let </span>config = evm::Config::istanbul();
 
-		<span class="comment">// Should fail with the appropriate error if there is reentrancy</span>
-		<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">Runner</span>::<span class="op">&lt;</span><span class="ident">Test</span><span class="op">&gt;</span><span class="ident">::execute</span>(
-			<span class="ident">H160::default</span>(),
-			<span class="ident">U256::default</span>(),
+		<span class="comment">// Should fail with the appropriate error if there is reentrancy
+		</span><span class="kw">let </span>res = Runner::&lt;Test&gt;::execute(
+			H160::default(),
+			U256::default(),
 			<span class="number">100_000</span>,
 			<span class="prelude-val">None</span>,
 			<span class="prelude-val">None</span>,
-			<span class="kw-2">&amp;</span><span class="ident">config</span>,
+			<span class="kw-2">&amp;</span>config,
 			<span class="kw-2">&amp;</span>(),
 			<span class="bool-val">false</span>,
-			<span class="op">|</span><span class="kw">_</span><span class="op">|</span> {
-				<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">Runner</span>::<span class="op">&lt;</span><span class="ident">Test</span><span class="op">&gt;</span><span class="ident">::execute</span>(
-					<span class="ident">H160::default</span>(),
-					<span class="ident">U256::default</span>(),
+			|<span class="kw">_</span>| {
+				<span class="kw">let </span>res = Runner::&lt;Test&gt;::execute(
+					H160::default(),
+					U256::default(),
 					<span class="number">100_000</span>,
 					<span class="prelude-val">None</span>,
 					<span class="prelude-val">None</span>,
-					<span class="kw-2">&amp;</span><span class="ident">config</span>,
+					<span class="kw-2">&amp;</span>config,
 					<span class="kw-2">&amp;</span>(),
 					<span class="bool-val">false</span>,
-					<span class="op">|</span><span class="kw">_</span><span class="op">|</span> (<span class="ident">ExitReason::Succeed</span>(<span class="ident">ExitSucceed::Stopped</span>), ()),
+					|<span class="kw">_</span>| (ExitReason::Succeed(ExitSucceed::Stopped), ()),
 				);
 				<span class="macro">assert_matches!</span>(
-					<span class="ident">res</span>,
-					<span class="prelude-val">Err</span>(<span class="ident">RunnerError</span> {
-						<span class="ident">error</span>: <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">Test</span><span class="op">&gt;</span><span class="ident">::Reentrancy</span>,
+					res,
+					<span class="prelude-val">Err</span>(RunnerError {
+						error: Error::&lt;Test&gt;::Reentrancy,
 						..
 					})
 				);
-				(<span class="ident">ExitReason::Error</span>(<span class="ident">ExitError::CallTooDeep</span>), ())
+				(ExitReason::Error(ExitError::CallTooDeep), ())
 			},
 		);
 		<span class="macro">assert_matches!</span>(
-			<span class="ident">res</span>,
-			<span class="prelude-val">Ok</span>(<span class="ident">ExecutionInfo</span> {
-				<span class="ident">exit_reason</span>: <span class="ident">ExitReason::Error</span>(<span class="ident">ExitError::CallTooDeep</span>),
+			res,
+			<span class="prelude-val">Ok</span>(ExecutionInfo {
+				exit_reason: ExitReason::Error(ExitError::CallTooDeep),
 				..
 			})
 		);
 
-		<span class="comment">// Should succeed if there is no reentrancy</span>
-		<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">Runner</span>::<span class="op">&lt;</span><span class="ident">Test</span><span class="op">&gt;</span><span class="ident">::execute</span>(
-			<span class="ident">H160::default</span>(),
-			<span class="ident">U256::default</span>(),
+		<span class="comment">// Should succeed if there is no reentrancy
+		</span><span class="kw">let </span>res = Runner::&lt;Test&gt;::execute(
+			H160::default(),
+			U256::default(),
 			<span class="number">100_000</span>,
 			<span class="prelude-val">None</span>,
 			<span class="prelude-val">None</span>,
-			<span class="kw-2">&amp;</span><span class="ident">config</span>,
+			<span class="kw-2">&amp;</span>config,
 			<span class="kw-2">&amp;</span>(),
 			<span class="bool-val">false</span>,
-			<span class="op">|</span><span class="kw">_</span><span class="op">|</span> (<span class="ident">ExitReason::Succeed</span>(<span class="ident">ExitSucceed::Stopped</span>), ()),
+			|<span class="kw">_</span>| (ExitReason::Succeed(ExitSucceed::Stopped), ()),
 		);
-		<span class="macro">assert!</span>(<span class="ident">res</span>.<span class="ident">is_ok</span>());
+		<span class="macro">assert!</span>(res.is_ok());
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="pallet_evm" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (7fe022f5a 2022-07-24)" ></div>
-</body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="pallet_evm" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (81f391930 2022-10-09)" ></div></body></html>

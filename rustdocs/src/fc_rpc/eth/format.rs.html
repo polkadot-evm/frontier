@@ -1,10 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `client/rpc/src/eth/format.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>format.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../fc_rpc/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div>
-        </a><h2 class="location"></h2>
-    </nav>
-    <nav class="sidebar"><a class="sidebar-logo" href="../../../fc_rpc/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div>
-        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../fc_rpc/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1">
-                                <a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div>
-                        </div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `client/rpc/src/eth/format.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>format.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../../normalize.css"><link rel="stylesheet" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../../ayu.css" disabled><link rel="stylesheet" href="../../../dark.css" disabled><link rel="stylesheet" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><a class="sidebar-logo" href="../../../fc_rpc/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../fc_rpc/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -59,61 +53,60 @@
 <span id="53">53</span>
 <span id="54">54</span>
 <span id="55">55</span>
-</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
-<span class="comment">// This file is part of Frontier.</span>
-<span class="comment">//</span>
-<span class="comment">// Copyright (c) 2020 Parity Technologies (UK) Ltd.</span>
-<span class="comment">//</span>
-<span class="comment">// This program is free software: you can redistribute it and/or modify</span>
-<span class="comment">// it under the terms of the GNU General Public License as published by</span>
-<span class="comment">// the Free Software Foundation, either version 3 of the License, or</span>
-<span class="comment">// (at your option) any later version.</span>
-<span class="comment">//</span>
-<span class="comment">// This program is distributed in the hope that it will be useful,</span>
-<span class="comment">// but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
-<span class="comment">// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the</span>
-<span class="comment">// GNU General Public License for more details.</span>
-<span class="comment">//</span>
-<span class="comment">// You should have received a copy of the GNU General Public License</span>
-<span class="comment">// along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.</span>
+</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
+// This file is part of Frontier.
+//
+// Copyright (c) 2020 Parity Technologies (UK) Ltd.
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.
 
-<span class="comment">// Substrate</span>
-<span class="kw">use</span> <span class="ident">sc_transaction_pool_api::error</span>::{<span class="ident">Error</span> <span class="kw">as</span> <span class="ident">PError</span>, <span class="ident">IntoPoolError</span>};
-<span class="kw">use</span> <span class="ident">sp_runtime::transaction_validity::InvalidTransaction</span>;
-<span class="comment">// Frontier</span>
-<span class="kw">use</span> <span class="ident">fp_ethereum::TransactionValidationError</span> <span class="kw">as</span> <span class="ident">VError</span>;
+// Substrate
+</span><span class="kw">use </span>sc_transaction_pool_api::error::{Error <span class="kw">as </span>PError, IntoPoolError};
+<span class="kw">use </span>sp_runtime::transaction_validity::InvalidTransaction;
+<span class="comment">// Frontier
+</span><span class="kw">use </span>fp_ethereum::TransactionValidationError <span class="kw">as </span>VError;
 
-<span class="comment">// Formats the same way Geth node formats responses.</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Geth</span>;
+<span class="comment">// Formats the same way Geth node formats responses.
+</span><span class="kw">pub struct </span>Geth;
 
-<span class="kw">impl</span> <span class="ident">Geth</span> {
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">pool_error</span>(<span class="ident">err</span>: <span class="kw">impl</span> <span class="ident">IntoPoolError</span>) -&gt; <span class="ident">String</span> {
-		<span class="comment">// Error strings from :</span>
-		<span class="comment">// https://github.com/ethereum/go-ethereum/blob/794c6133efa2c7e8376d9d141c900ea541790bce/core/error.go</span>
-		<span class="kw">match</span> <span class="ident">err</span>.<span class="ident">into_pool_error</span>() {
-			<span class="prelude-val">Ok</span>(<span class="ident">PError::AlreadyImported</span>(<span class="kw">_</span>)) =&gt; <span class="string">&quot;already known&quot;</span>.<span class="ident">to_string</span>(),
-			<span class="prelude-val">Ok</span>(<span class="ident">PError::TemporarilyBanned</span>) =&gt; <span class="string">&quot;already known&quot;</span>.<span class="ident">into</span>(),
-			<span class="prelude-val">Ok</span>(<span class="ident">PError::TooLowPriority</span> { .. }) =&gt; <span class="string">&quot;replacement transaction underpriced&quot;</span>.<span class="ident">into</span>(),
-			<span class="prelude-val">Ok</span>(<span class="ident">PError::InvalidTransaction</span>(<span class="ident">inner</span>)) =&gt; <span class="kw">match</span> <span class="ident">inner</span> {
-				<span class="ident">InvalidTransaction::Stale</span> =&gt; <span class="string">&quot;nonce too low&quot;</span>.<span class="ident">into</span>(),
-				<span class="ident">InvalidTransaction::Payment</span> =&gt; <span class="string">&quot;insufficient funds for gas * price + value&quot;</span>.<span class="ident">into</span>(),
-				<span class="ident">InvalidTransaction::ExhaustsResources</span> =&gt; <span class="string">&quot;exceeds block gas limit&quot;</span>.<span class="ident">into</span>(),
-				<span class="ident">InvalidTransaction::Custom</span>(<span class="ident">inner</span>) =&gt; <span class="kw">match</span> <span class="ident">inner</span>.<span class="ident">into</span>() {
-					<span class="ident">VError::UnknownError</span> =&gt; <span class="string">&quot;unknown error&quot;</span>.<span class="ident">into</span>(),
-					<span class="ident">VError::InvalidChainId</span> =&gt; <span class="string">&quot;invalid chain id&quot;</span>.<span class="ident">into</span>(),
-					<span class="ident">VError::InvalidSignature</span> =&gt; <span class="string">&quot;invalid sender&quot;</span>.<span class="ident">into</span>(),
-					<span class="ident">VError::GasLimitTooLow</span> =&gt; <span class="string">&quot;intrinsic gas too low&quot;</span>.<span class="ident">into</span>(),
-					<span class="ident">VError::GasLimitTooHigh</span> =&gt; <span class="string">&quot;exceeds block gas limit&quot;</span>.<span class="ident">into</span>(),
-					<span class="ident">VError::MaxFeePerGasTooLow</span> =&gt; {
-						<span class="string">&quot;max priority fee per gas higher than max fee per gas&quot;</span>.<span class="ident">into</span>()
+<span class="kw">impl </span>Geth {
+	<span class="kw">pub fn </span>pool_error(err: <span class="kw">impl </span>IntoPoolError) -&gt; String {
+		<span class="comment">// Error strings from :
+		// https://github.com/ethereum/go-ethereum/blob/794c6133efa2c7e8376d9d141c900ea541790bce/core/error.go
+		</span><span class="kw">match </span>err.into_pool_error() {
+			<span class="prelude-val">Ok</span>(PError::AlreadyImported(<span class="kw">_</span>)) =&gt; <span class="string">&quot;already known&quot;</span>.to_string(),
+			<span class="prelude-val">Ok</span>(PError::TemporarilyBanned) =&gt; <span class="string">&quot;already known&quot;</span>.into(),
+			<span class="prelude-val">Ok</span>(PError::TooLowPriority { .. }) =&gt; <span class="string">&quot;replacement transaction underpriced&quot;</span>.into(),
+			<span class="prelude-val">Ok</span>(PError::InvalidTransaction(inner)) =&gt; <span class="kw">match </span>inner {
+				InvalidTransaction::Stale =&gt; <span class="string">&quot;nonce too low&quot;</span>.into(),
+				InvalidTransaction::Payment =&gt; <span class="string">&quot;insufficient funds for gas * price + value&quot;</span>.into(),
+				InvalidTransaction::ExhaustsResources =&gt; <span class="string">&quot;exceeds block gas limit&quot;</span>.into(),
+				InvalidTransaction::Custom(inner) =&gt; <span class="kw">match </span>inner.into() {
+					VError::UnknownError =&gt; <span class="string">&quot;unknown error&quot;</span>.into(),
+					VError::InvalidChainId =&gt; <span class="string">&quot;invalid chain id&quot;</span>.into(),
+					VError::InvalidSignature =&gt; <span class="string">&quot;invalid sender&quot;</span>.into(),
+					VError::GasLimitTooLow =&gt; <span class="string">&quot;intrinsic gas too low&quot;</span>.into(),
+					VError::GasLimitTooHigh =&gt; <span class="string">&quot;exceeds block gas limit&quot;</span>.into(),
+					VError::MaxFeePerGasTooLow =&gt; {
+						<span class="string">&quot;max priority fee per gas higher than max fee per gas&quot;</span>.into()
 					}
 				},
-				<span class="kw">_</span> =&gt; <span class="string">&quot;unknown error&quot;</span>.<span class="ident">into</span>(),
+				<span class="kw">_ </span>=&gt; <span class="string">&quot;unknown error&quot;</span>.into(),
 			},
-			<span class="ident">err</span> =&gt; <span class="macro">format!</span>(<span class="string">&quot;submit transaction to pool failed: {:?}&quot;</span>, <span class="ident">err</span>),
+			err =&gt; <span class="macro">format!</span>(<span class="string">&quot;submit transaction to pool failed: {:?}&quot;</span>, err),
 		}
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="fc_rpc" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (7fe022f5a 2022-07-24)" ></div>
-</body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="fc_rpc" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (81f391930 2022-10-09)" ></div></body></html>

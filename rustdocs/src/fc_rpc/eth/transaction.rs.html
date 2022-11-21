@@ -1,10 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `client/rpc/src/eth/transaction.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>transaction.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../fc_rpc/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div>
-        </a><h2 class="location"></h2>
-    </nav>
-    <nav class="sidebar"><a class="sidebar-logo" href="../../../fc_rpc/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div>
-        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../fc_rpc/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1">
-                                <a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div>
-                        </div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `client/rpc/src/eth/transaction.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>transaction.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../../normalize.css"><link rel="stylesheet" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../../ayu.css" disabled><link rel="stylesheet" href="../../../dark.css" disabled><link rel="stylesheet" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><a class="sidebar-logo" href="../../../fc_rpc/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../fc_rpc/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -471,473 +465,472 @@
 <span id="465">465</span>
 <span id="466">466</span>
 <span id="467">467</span>
-</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
-<span class="comment">// This file is part of Frontier.</span>
-<span class="comment">//</span>
-<span class="comment">// Copyright (c) 2022 Parity Technologies (UK) Ltd.</span>
-<span class="comment">//</span>
-<span class="comment">// This program is free software: you can redistribute it and/or modify</span>
-<span class="comment">// it under the terms of the GNU General Public License as published by</span>
-<span class="comment">// the Free Software Foundation, either version 3 of the License, or</span>
-<span class="comment">// (at your option) any later version.</span>
-<span class="comment">//</span>
-<span class="comment">// This program is distributed in the hope that it will be useful,</span>
-<span class="comment">// but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
-<span class="comment">// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the</span>
-<span class="comment">// GNU General Public License for more details.</span>
-<span class="comment">//</span>
-<span class="comment">// You should have received a copy of the GNU General Public License</span>
-<span class="comment">// along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.</span>
+</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
+// This file is part of Frontier.
+//
+// Copyright (c) 2022 Parity Technologies (UK) Ltd.
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.
 
-<span class="kw">use</span> <span class="ident">std::sync::Arc</span>;
+</span><span class="kw">use </span>std::sync::Arc;
 
-<span class="kw">use</span> <span class="ident">ethereum::TransactionV2</span> <span class="kw">as</span> <span class="ident">EthereumTransaction</span>;
-<span class="kw">use</span> <span class="ident">ethereum_types</span>::{<span class="ident">H256</span>, <span class="ident">U256</span>, <span class="ident">U64</span>};
-<span class="kw">use</span> <span class="ident">jsonrpsee::core::RpcResult</span> <span class="kw">as</span> <span class="prelude-ty">Result</span>;
-<span class="comment">// Substrate</span>
-<span class="kw">use</span> <span class="ident">sc_client_api::backend</span>::{<span class="ident">Backend</span>, <span class="ident">StateBackend</span>, <span class="ident">StorageProvider</span>};
-<span class="kw">use</span> <span class="ident">sc_network_common::ExHashT</span>;
-<span class="kw">use</span> <span class="ident">sc_transaction_pool::ChainApi</span>;
-<span class="kw">use</span> <span class="ident">sc_transaction_pool_api::InPoolTransaction</span>;
-<span class="kw">use</span> <span class="ident">sp_api</span>::{<span class="ident">ApiExt</span>, <span class="ident">ProvideRuntimeApi</span>};
-<span class="kw">use</span> <span class="ident">sp_blockchain::HeaderBackend</span>;
-<span class="kw">use</span> <span class="ident">sp_core::hashing::keccak_256</span>;
-<span class="kw">use</span> <span class="ident">sp_runtime</span>::{
-	<span class="ident">generic::BlockId</span>,
-	<span class="ident">traits</span>::{<span class="ident">BlakeTwo256</span>, <span class="ident">Block</span> <span class="kw">as</span> <span class="ident">BlockT</span>},
+<span class="kw">use </span>ethereum::TransactionV2 <span class="kw">as </span>EthereumTransaction;
+<span class="kw">use </span>ethereum_types::{H256, U256, U64};
+<span class="kw">use </span>jsonrpsee::core::RpcResult <span class="kw">as </span><span class="prelude-ty">Result</span>;
+<span class="comment">// Substrate
+</span><span class="kw">use </span>sc_client_api::backend::{Backend, StateBackend, StorageProvider};
+<span class="kw">use </span>sc_network_common::ExHashT;
+<span class="kw">use </span>sc_transaction_pool::ChainApi;
+<span class="kw">use </span>sc_transaction_pool_api::InPoolTransaction;
+<span class="kw">use </span>sp_api::{ApiExt, ProvideRuntimeApi};
+<span class="kw">use </span>sp_blockchain::HeaderBackend;
+<span class="kw">use </span>sp_core::hashing::keccak_256;
+<span class="kw">use </span>sp_runtime::{
+	generic::BlockId,
+	traits::{BlakeTwo256, Block <span class="kw">as </span>BlockT},
 };
-<span class="comment">// Frontier</span>
-<span class="kw">use</span> <span class="ident">fc_rpc_core::types</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident">fp_rpc::EthereumRuntimeRPCApi</span>;
+<span class="comment">// Frontier
+</span><span class="kw">use </span>fc_rpc_core::types::<span class="kw-2">*</span>;
+<span class="kw">use </span>fp_rpc::EthereumRuntimeRPCApi;
 
-<span class="kw">use</span> <span class="kw">crate</span>::{
-	<span class="ident">eth</span>::{<span class="ident">transaction_build</span>, <span class="ident">Eth</span>},
-	<span class="ident">frontier_backend_client</span>, <span class="ident">internal_err</span>,
+<span class="kw">use crate</span>::{
+	eth::{transaction_build, Eth},
+	frontier_backend_client, internal_err,
 };
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">CT</span>, <span class="ident">BE</span>, <span class="ident">H</span>: <span class="ident">ExHashT</span>, <span class="ident">A</span>: <span class="ident">ChainApi</span><span class="op">&gt;</span> <span class="ident">Eth</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">CT</span>, <span class="ident">BE</span>, <span class="ident">H</span>, <span class="ident">A</span><span class="op">&gt;</span>
-<span class="kw">where</span>
-	<span class="ident">B</span>: <span class="ident">BlockT</span><span class="op">&lt;</span><span class="ident">Hash</span> <span class="op">=</span> <span class="ident">H256</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
-	<span class="ident">C</span>: <span class="ident">ProvideRuntimeApi</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">StorageProvider</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">BE</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">HeaderBackend</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
-	<span class="ident">C::Api</span>: <span class="ident">EthereumRuntimeRPCApi</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span>,
-	<span class="ident">BE</span>: <span class="ident">Backend</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
-	<span class="ident">BE::State</span>: <span class="ident">StateBackend</span><span class="op">&lt;</span><span class="ident">BlakeTwo256</span><span class="op">&gt;</span>,
-	<span class="ident">A</span>: <span class="ident">ChainApi</span><span class="op">&lt;</span><span class="ident">Block</span> <span class="op">=</span> <span class="ident">B</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
+<span class="kw">impl</span>&lt;B, C, P, CT, BE, H: ExHashT, A: ChainApi&gt; Eth&lt;B, C, P, CT, BE, H, A&gt;
+<span class="kw">where
+	</span>B: BlockT&lt;Hash = H256&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
+	C: ProvideRuntimeApi&lt;B&gt; + StorageProvider&lt;B, BE&gt; + HeaderBackend&lt;B&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
+	C::Api: EthereumRuntimeRPCApi&lt;B&gt;,
+	BE: Backend&lt;B&gt; + <span class="lifetime">&#39;static</span>,
+	BE::State: StateBackend&lt;BlakeTwo256&gt;,
+	A: ChainApi&lt;Block = B&gt; + <span class="lifetime">&#39;static</span>,
 {
-	<span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">transaction_by_hash</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">hash</span>: <span class="ident">H256</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Transaction</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-		<span class="kw">let</span> <span class="ident">client</span> <span class="op">=</span> <span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">client</span>);
-		<span class="kw">let</span> <span class="ident">overrides</span> <span class="op">=</span> <span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">overrides</span>);
-		<span class="kw">let</span> <span class="ident">block_data_cache</span> <span class="op">=</span> <span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">block_data_cache</span>);
-		<span class="kw">let</span> <span class="ident">backend</span> <span class="op">=</span> <span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">backend</span>);
-		<span class="kw">let</span> <span class="ident">graph</span> <span class="op">=</span> <span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">graph</span>);
+	<span class="kw">pub async fn </span>transaction_by_hash(<span class="kw-2">&amp;</span><span class="self">self</span>, hash: H256) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;Transaction&gt;&gt; {
+		<span class="kw">let </span>client = Arc::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.client);
+		<span class="kw">let </span>overrides = Arc::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.overrides);
+		<span class="kw">let </span>block_data_cache = Arc::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.block_data_cache);
+		<span class="kw">let </span>backend = Arc::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.backend);
+		<span class="kw">let </span>graph = Arc::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.graph);
 
-		<span class="kw">let</span> (<span class="ident">hash</span>, <span class="ident">index</span>) <span class="op">=</span> <span class="kw">match</span> <span class="ident">frontier_backend_client::load_transactions</span>::<span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span><span class="op">&gt;</span>(
-			<span class="ident">client</span>.<span class="ident">as_ref</span>(),
-			<span class="ident">backend</span>.<span class="ident">as_ref</span>(),
-			<span class="ident">hash</span>,
+		<span class="kw">let </span>(hash, index) = <span class="kw">match </span>frontier_backend_client::load_transactions::&lt;B, C&gt;(
+			client.as_ref(),
+			backend.as_ref(),
+			hash,
 			<span class="bool-val">true</span>,
 		)
-		.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>
-		{
-			<span class="prelude-val">Some</span>((<span class="ident">hash</span>, <span class="ident">index</span>)) =&gt; (<span class="ident">hash</span>, <span class="ident">index</span> <span class="kw">as</span> <span class="ident">usize</span>),
-			<span class="prelude-val">None</span> =&gt; {
-				<span class="kw">let</span> <span class="ident">api</span> <span class="op">=</span> <span class="ident">client</span>.<span class="ident">runtime_api</span>();
-				<span class="kw">let</span> <span class="ident">best_block</span>: <span class="ident">BlockId</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">BlockId::Hash</span>(<span class="ident">client</span>.<span class="ident">info</span>().<span class="ident">best_hash</span>);
+		.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, err)))<span class="question-mark">?
+		</span>{
+			<span class="prelude-val">Some</span>((hash, index)) =&gt; (hash, index <span class="kw">as </span>usize),
+			<span class="prelude-val">None </span>=&gt; {
+				<span class="kw">let </span>api = client.runtime_api();
+				<span class="kw">let </span>best_block: BlockId&lt;B&gt; = BlockId::Hash(client.info().best_hash);
 
-				<span class="kw">let</span> <span class="ident">api_version</span> <span class="op">=</span> <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">api_version</span>)) <span class="op">=</span>
-					<span class="ident">api</span>.<span class="ident">api_version</span>::<span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">EthereumRuntimeRPCApi</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="ident">best_block</span>)
+				<span class="kw">let </span>api_version = <span class="kw">if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(api_version)) =
+					api.api_version::&lt;<span class="kw">dyn </span>EthereumRuntimeRPCApi&lt;B&gt;&gt;(<span class="kw-2">&amp;</span>best_block)
 				{
-					<span class="ident">api_version</span>
-				} <span class="kw">else</span> {
-					<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="string">&quot;failed to retrieve Runtime Api version&quot;</span>));
+					api_version
+				} <span class="kw">else </span>{
+					<span class="kw">return </span><span class="prelude-val">Err</span>(internal_err(<span class="string">&quot;failed to retrieve Runtime Api version&quot;</span>));
 				};
-				<span class="comment">// If the transaction is not yet mapped in the frontier db,</span>
-				<span class="comment">// check for it in the transaction pool.</span>
-				<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">xts</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">B</span> <span class="kw">as</span> <span class="ident">BlockT</span><span class="op">&gt;</span><span class="ident">::Extrinsic</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
-				<span class="comment">// Collect transactions in the ready validated pool.</span>
-				<span class="ident">xts</span>.<span class="ident">extend</span>(
-					<span class="ident">graph</span>
-						.<span class="ident">validated_pool</span>()
-						.<span class="ident">ready</span>()
-						.<span class="ident">map</span>(<span class="op">|</span><span class="ident">in_pool_tx</span><span class="op">|</span> <span class="ident">in_pool_tx</span>.<span class="ident">data</span>().<span class="ident">clone</span>())
-						.<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">B</span> <span class="kw">as</span> <span class="ident">BlockT</span><span class="op">&gt;</span><span class="ident">::Extrinsic</span><span class="op">&gt;</span><span class="op">&gt;</span>(),
+				<span class="comment">// If the transaction is not yet mapped in the frontier db,
+				// check for it in the transaction pool.
+				</span><span class="kw">let </span><span class="kw-2">mut </span>xts: Vec&lt;&lt;B <span class="kw">as </span>BlockT&gt;::Extrinsic&gt; = Vec::new();
+				<span class="comment">// Collect transactions in the ready validated pool.
+				</span>xts.extend(
+					graph
+						.validated_pool()
+						.ready()
+						.map(|in_pool_tx| in_pool_tx.data().clone())
+						.collect::&lt;Vec&lt;&lt;B <span class="kw">as </span>BlockT&gt;::Extrinsic&gt;&gt;(),
 				);
 
-				<span class="comment">// Collect transactions in the future validated pool.</span>
-				<span class="ident">xts</span>.<span class="ident">extend</span>(
-					<span class="ident">graph</span>
-						.<span class="ident">validated_pool</span>()
-						.<span class="ident">futures</span>()
-						.<span class="ident">iter</span>()
-						.<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">_hash</span>, <span class="ident">extrinsic</span>)<span class="op">|</span> <span class="ident">extrinsic</span>.<span class="ident">clone</span>())
-						.<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">B</span> <span class="kw">as</span> <span class="ident">BlockT</span><span class="op">&gt;</span><span class="ident">::Extrinsic</span><span class="op">&gt;</span><span class="op">&gt;</span>(),
+				<span class="comment">// Collect transactions in the future validated pool.
+				</span>xts.extend(
+					graph
+						.validated_pool()
+						.futures()
+						.iter()
+						.map(|(_hash, extrinsic)| extrinsic.clone())
+						.collect::&lt;Vec&lt;&lt;B <span class="kw">as </span>BlockT&gt;::Extrinsic&gt;&gt;(),
 				);
 
-				<span class="kw">let</span> <span class="ident">ethereum_transactions</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">EthereumTransaction</span><span class="op">&gt;</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">api_version</span> <span class="op">&gt;</span> <span class="number">1</span> {
-					<span class="ident">api</span>.<span class="ident">extrinsic_filter</span>(<span class="kw-2">&amp;</span><span class="ident">best_block</span>, <span class="ident">xts</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> {
-						<span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;fetch runtime extrinsic filter failed: {:?}&quot;</span>, <span class="ident">err</span>))
-					})<span class="question-mark">?</span>
-				} <span class="kw">else</span> {
-					<span class="attribute">#[<span class="ident">allow</span>(<span class="ident">deprecated</span>)]</span>
-					<span class="kw">let</span> <span class="ident">legacy</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">extrinsic_filter_before_version_2</span>(<span class="kw-2">&amp;</span><span class="ident">best_block</span>, <span class="ident">xts</span>)
-						.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> {
-							<span class="ident">internal_err</span>(<span class="macro">format!</span>(
+				<span class="kw">let </span>ethereum_transactions: Vec&lt;EthereumTransaction&gt; = <span class="kw">if </span>api_version &gt; <span class="number">1 </span>{
+					api.extrinsic_filter(<span class="kw-2">&amp;</span>best_block, xts).map_err(|err| {
+						internal_err(<span class="macro">format!</span>(<span class="string">&quot;fetch runtime extrinsic filter failed: {:?}&quot;</span>, err))
+					})<span class="question-mark">?
+				</span>} <span class="kw">else </span>{
+					<span class="attribute">#[allow(deprecated)]
+					</span><span class="kw">let </span>legacy = api.extrinsic_filter_before_version_2(<span class="kw-2">&amp;</span>best_block, xts)
+						.map_err(|err| {
+							internal_err(<span class="macro">format!</span>(
 								<span class="string">&quot;fetch runtime extrinsic filter failed: {:?}&quot;</span>,
-								<span class="ident">err</span>
+								err
 							))
 						})<span class="question-mark">?</span>;
-					<span class="ident">legacy</span>.<span class="ident">into_iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">tx</span><span class="op">|</span> <span class="ident">tx</span>.<span class="ident">into</span>()).<span class="ident">collect</span>()
+					legacy.into_iter().map(|tx| tx.into()).collect()
 				};
 
-				<span class="kw">for</span> <span class="ident">txn</span> <span class="kw">in</span> <span class="ident">ethereum_transactions</span> {
-					<span class="kw">let</span> <span class="ident">inner_hash</span> <span class="op">=</span> <span class="ident">txn</span>.<span class="ident">hash</span>();
-					<span class="kw">if</span> <span class="ident">hash</span> <span class="op">==</span> <span class="ident">inner_hash</span> {
-						<span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">transaction_build</span>(<span class="ident">txn</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>)));
+				<span class="kw">for </span>txn <span class="kw">in </span>ethereum_transactions {
+					<span class="kw">let </span>inner_hash = txn.hash();
+					<span class="kw">if </span>hash == inner_hash {
+						<span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(transaction_build(txn, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>)));
 					}
 				}
-				<span class="comment">// Unknown transaction.</span>
-				<span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>);
+				<span class="comment">// Unknown transaction.
+				</span><span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>);
 			}
 		};
 
-		<span class="kw">let</span> <span class="ident">id</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">frontier_backend_client::load_hash</span>::<span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span><span class="op">&gt;</span>(
-			<span class="ident">client</span>.<span class="ident">as_ref</span>(),
-			<span class="ident">backend</span>.<span class="ident">as_ref</span>(),
-			<span class="ident">hash</span>,
+		<span class="kw">let </span>id = <span class="kw">match </span>frontier_backend_client::load_hash::&lt;B, C&gt;(
+			client.as_ref(),
+			backend.as_ref(),
+			hash,
 		)
-		.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>
-		{
-			<span class="prelude-val">Some</span>(<span class="ident">hash</span>) =&gt; <span class="ident">hash</span>,
-			<span class="kw">_</span> =&gt; <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
+		.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, err)))<span class="question-mark">?
+		</span>{
+			<span class="prelude-val">Some</span>(hash) =&gt; hash,
+			<span class="kw">_ </span>=&gt; <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
 		};
-		<span class="kw">let</span> <span class="ident">substrate_hash</span> <span class="op">=</span> <span class="ident">client</span>
-			.<span class="ident">expect_block_hash_from_id</span>(<span class="kw-2">&amp;</span><span class="ident">id</span>)
-			.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;Expect block number from id: {}&quot;</span>, <span class="ident">id</span>)))<span class="question-mark">?</span>;
+		<span class="kw">let </span>substrate_hash = client
+			.expect_block_hash_from_id(<span class="kw-2">&amp;</span>id)
+			.map_err(|<span class="kw">_</span>| internal_err(<span class="macro">format!</span>(<span class="string">&quot;Expect block number from id: {}&quot;</span>, id)))<span class="question-mark">?</span>;
 
-		<span class="kw">let</span> <span class="ident">schema</span> <span class="op">=</span>
-			<span class="ident">frontier_backend_client::onchain_storage_schema</span>::<span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span>, <span class="ident">BE</span><span class="op">&gt;</span>(<span class="ident">client</span>.<span class="ident">as_ref</span>(), <span class="ident">id</span>);
-		<span class="kw">let</span> <span class="ident">handler</span> <span class="op">=</span> <span class="ident">overrides</span>
-			.<span class="ident">schemas</span>
-			.<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">schema</span>)
-			.<span class="ident">unwrap_or</span>(<span class="kw-2">&amp;</span><span class="ident">overrides</span>.<span class="ident">fallback</span>);
+		<span class="kw">let </span>schema =
+			frontier_backend_client::onchain_storage_schema::&lt;B, C, BE&gt;(client.as_ref(), id);
+		<span class="kw">let </span>handler = overrides
+			.schemas
+			.get(<span class="kw-2">&amp;</span>schema)
+			.unwrap_or(<span class="kw-2">&amp;</span>overrides.fallback);
 
-		<span class="kw">let</span> <span class="ident">block</span> <span class="op">=</span> <span class="ident">block_data_cache</span>.<span class="ident">current_block</span>(<span class="ident">schema</span>, <span class="ident">substrate_hash</span>).<span class="kw">await</span>;
-		<span class="kw">let</span> <span class="ident">statuses</span> <span class="op">=</span> <span class="ident">block_data_cache</span>
-			.<span class="ident">current_transaction_statuses</span>(<span class="ident">schema</span>, <span class="ident">substrate_hash</span>)
+		<span class="kw">let </span>block = block_data_cache.current_block(schema, substrate_hash).<span class="kw">await</span>;
+		<span class="kw">let </span>statuses = block_data_cache
+			.current_transaction_statuses(schema, substrate_hash)
 			.<span class="kw">await</span>;
 
-		<span class="kw">let</span> <span class="ident">base_fee</span> <span class="op">=</span> <span class="ident">handler</span>.<span class="ident">base_fee</span>(<span class="kw-2">&amp;</span><span class="ident">id</span>);
+		<span class="kw">let </span>base_fee = handler.base_fee(<span class="kw-2">&amp;</span>id);
 
-		<span class="kw">match</span> (<span class="ident">block</span>, <span class="ident">statuses</span>) {
-			(<span class="prelude-val">Some</span>(<span class="ident">block</span>), <span class="prelude-val">Some</span>(<span class="ident">statuses</span>)) =&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">transaction_build</span>(
-				<span class="ident">block</span>.<span class="ident">transactions</span>[<span class="ident">index</span>].<span class="ident">clone</span>(),
-				<span class="prelude-val">Some</span>(<span class="ident">block</span>),
-				<span class="prelude-val">Some</span>(<span class="ident">statuses</span>[<span class="ident">index</span>].<span class="ident">clone</span>()),
-				<span class="ident">base_fee</span>,
+		<span class="kw">match </span>(block, statuses) {
+			(<span class="prelude-val">Some</span>(block), <span class="prelude-val">Some</span>(statuses)) =&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(transaction_build(
+				block.transactions[index].clone(),
+				<span class="prelude-val">Some</span>(block),
+				<span class="prelude-val">Some</span>(statuses[index].clone()),
+				base_fee,
 			))),
-			<span class="kw">_</span> =&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
+			<span class="kw">_ </span>=&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
 		}
 	}
 
-	<span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">transaction_by_block_hash_and_index</span>(
+	<span class="kw">pub async fn </span>transaction_by_block_hash_and_index(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		<span class="ident">hash</span>: <span class="ident">H256</span>,
-		<span class="ident">index</span>: <span class="ident">Index</span>,
-	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Transaction</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-		<span class="kw">let</span> <span class="ident">client</span> <span class="op">=</span> <span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">client</span>);
-		<span class="kw">let</span> <span class="ident">overrides</span> <span class="op">=</span> <span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">overrides</span>);
-		<span class="kw">let</span> <span class="ident">block_data_cache</span> <span class="op">=</span> <span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">block_data_cache</span>);
-		<span class="kw">let</span> <span class="ident">backend</span> <span class="op">=</span> <span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">backend</span>);
+		hash: H256,
+		index: Index,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;Transaction&gt;&gt; {
+		<span class="kw">let </span>client = Arc::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.client);
+		<span class="kw">let </span>overrides = Arc::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.overrides);
+		<span class="kw">let </span>block_data_cache = Arc::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.block_data_cache);
+		<span class="kw">let </span>backend = Arc::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.backend);
 
-		<span class="kw">let</span> <span class="ident">id</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">frontier_backend_client::load_hash</span>::<span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span><span class="op">&gt;</span>(
-			<span class="ident">client</span>.<span class="ident">as_ref</span>(),
-			<span class="ident">backend</span>.<span class="ident">as_ref</span>(),
-			<span class="ident">hash</span>,
+		<span class="kw">let </span>id = <span class="kw">match </span>frontier_backend_client::load_hash::&lt;B, C&gt;(
+			client.as_ref(),
+			backend.as_ref(),
+			hash,
 		)
-		.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>
-		{
-			<span class="prelude-val">Some</span>(<span class="ident">hash</span>) =&gt; <span class="ident">hash</span>,
-			<span class="kw">_</span> =&gt; <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
+		.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, err)))<span class="question-mark">?
+		</span>{
+			<span class="prelude-val">Some</span>(hash) =&gt; hash,
+			<span class="kw">_ </span>=&gt; <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
 		};
-		<span class="kw">let</span> <span class="ident">substrate_hash</span> <span class="op">=</span> <span class="ident">client</span>
-			.<span class="ident">expect_block_hash_from_id</span>(<span class="kw-2">&amp;</span><span class="ident">id</span>)
-			.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;Expect block number from id: {}&quot;</span>, <span class="ident">id</span>)))<span class="question-mark">?</span>;
+		<span class="kw">let </span>substrate_hash = client
+			.expect_block_hash_from_id(<span class="kw-2">&amp;</span>id)
+			.map_err(|<span class="kw">_</span>| internal_err(<span class="macro">format!</span>(<span class="string">&quot;Expect block number from id: {}&quot;</span>, id)))<span class="question-mark">?</span>;
 
-		<span class="kw">let</span> <span class="ident">index</span> <span class="op">=</span> <span class="ident">index</span>.<span class="ident">value</span>();
+		<span class="kw">let </span>index = index.value();
 
-		<span class="kw">let</span> <span class="ident">schema</span> <span class="op">=</span>
-			<span class="ident">frontier_backend_client::onchain_storage_schema</span>::<span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span>, <span class="ident">BE</span><span class="op">&gt;</span>(<span class="ident">client</span>.<span class="ident">as_ref</span>(), <span class="ident">id</span>);
-		<span class="kw">let</span> <span class="ident">handler</span> <span class="op">=</span> <span class="ident">overrides</span>
-			.<span class="ident">schemas</span>
-			.<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">schema</span>)
-			.<span class="ident">unwrap_or</span>(<span class="kw-2">&amp;</span><span class="ident">overrides</span>.<span class="ident">fallback</span>);
+		<span class="kw">let </span>schema =
+			frontier_backend_client::onchain_storage_schema::&lt;B, C, BE&gt;(client.as_ref(), id);
+		<span class="kw">let </span>handler = overrides
+			.schemas
+			.get(<span class="kw-2">&amp;</span>schema)
+			.unwrap_or(<span class="kw-2">&amp;</span>overrides.fallback);
 
-		<span class="kw">let</span> <span class="ident">block</span> <span class="op">=</span> <span class="ident">block_data_cache</span>.<span class="ident">current_block</span>(<span class="ident">schema</span>, <span class="ident">substrate_hash</span>).<span class="kw">await</span>;
-		<span class="kw">let</span> <span class="ident">statuses</span> <span class="op">=</span> <span class="ident">block_data_cache</span>
-			.<span class="ident">current_transaction_statuses</span>(<span class="ident">schema</span>, <span class="ident">substrate_hash</span>)
+		<span class="kw">let </span>block = block_data_cache.current_block(schema, substrate_hash).<span class="kw">await</span>;
+		<span class="kw">let </span>statuses = block_data_cache
+			.current_transaction_statuses(schema, substrate_hash)
 			.<span class="kw">await</span>;
 
-		<span class="kw">let</span> <span class="ident">base_fee</span> <span class="op">=</span> <span class="ident">handler</span>.<span class="ident">base_fee</span>(<span class="kw-2">&amp;</span><span class="ident">id</span>);
+		<span class="kw">let </span>base_fee = handler.base_fee(<span class="kw-2">&amp;</span>id);
 
-		<span class="kw">match</span> (<span class="ident">block</span>, <span class="ident">statuses</span>) {
-			(<span class="prelude-val">Some</span>(<span class="ident">block</span>), <span class="prelude-val">Some</span>(<span class="ident">statuses</span>)) =&gt; {
-				<span class="kw">if</span> <span class="kw">let</span> (<span class="prelude-val">Some</span>(<span class="ident">transaction</span>), <span class="prelude-val">Some</span>(<span class="ident">status</span>)) <span class="op">=</span>
-					(<span class="ident">block</span>.<span class="ident">transactions</span>.<span class="ident">get</span>(<span class="ident">index</span>), <span class="ident">statuses</span>.<span class="ident">get</span>(<span class="ident">index</span>))
+		<span class="kw">match </span>(block, statuses) {
+			(<span class="prelude-val">Some</span>(block), <span class="prelude-val">Some</span>(statuses)) =&gt; {
+				<span class="kw">if let </span>(<span class="prelude-val">Some</span>(transaction), <span class="prelude-val">Some</span>(status)) =
+					(block.transactions.get(index), statuses.get(index))
 				{
-					<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">transaction_build</span>(
-						<span class="ident">transaction</span>.<span class="ident">clone</span>(),
-						<span class="prelude-val">Some</span>(<span class="ident">block</span>),
-						<span class="prelude-val">Some</span>(<span class="ident">status</span>.<span class="ident">clone</span>()),
-						<span class="ident">base_fee</span>,
+					<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(transaction_build(
+						transaction.clone(),
+						<span class="prelude-val">Some</span>(block),
+						<span class="prelude-val">Some</span>(status.clone()),
+						base_fee,
 					)))
-				} <span class="kw">else</span> {
-					<span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;{:?} is out of bounds&quot;</span>, <span class="ident">index</span>)))
+				} <span class="kw">else </span>{
+					<span class="prelude-val">Err</span>(internal_err(<span class="macro">format!</span>(<span class="string">&quot;{:?} is out of bounds&quot;</span>, index)))
 				}
 			}
-			<span class="kw">_</span> =&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
+			<span class="kw">_ </span>=&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
 		}
 	}
 
-	<span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">transaction_by_block_number_and_index</span>(
+	<span class="kw">pub async fn </span>transaction_by_block_number_and_index(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		<span class="ident">number</span>: <span class="ident">BlockNumber</span>,
-		<span class="ident">index</span>: <span class="ident">Index</span>,
-	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Transaction</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-		<span class="kw">let</span> <span class="ident">client</span> <span class="op">=</span> <span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">client</span>);
-		<span class="kw">let</span> <span class="ident">overrides</span> <span class="op">=</span> <span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">overrides</span>);
-		<span class="kw">let</span> <span class="ident">block_data_cache</span> <span class="op">=</span> <span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">block_data_cache</span>);
-		<span class="kw">let</span> <span class="ident">backend</span> <span class="op">=</span> <span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">backend</span>);
+		number: BlockNumber,
+		index: Index,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;Transaction&gt;&gt; {
+		<span class="kw">let </span>client = Arc::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.client);
+		<span class="kw">let </span>overrides = Arc::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.overrides);
+		<span class="kw">let </span>block_data_cache = Arc::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.block_data_cache);
+		<span class="kw">let </span>backend = Arc::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.backend);
 
-		<span class="kw">let</span> <span class="ident">id</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">frontier_backend_client::native_block_id</span>::<span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span><span class="op">&gt;</span>(
-			<span class="ident">client</span>.<span class="ident">as_ref</span>(),
-			<span class="ident">backend</span>.<span class="ident">as_ref</span>(),
-			<span class="prelude-val">Some</span>(<span class="ident">number</span>),
-		)<span class="question-mark">?</span> {
-			<span class="prelude-val">Some</span>(<span class="ident">id</span>) =&gt; <span class="ident">id</span>,
-			<span class="prelude-val">None</span> =&gt; <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
+		<span class="kw">let </span>id = <span class="kw">match </span>frontier_backend_client::native_block_id::&lt;B, C&gt;(
+			client.as_ref(),
+			backend.as_ref(),
+			<span class="prelude-val">Some</span>(number),
+		)<span class="question-mark">? </span>{
+			<span class="prelude-val">Some</span>(id) =&gt; id,
+			<span class="prelude-val">None </span>=&gt; <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
 		};
-		<span class="kw">let</span> <span class="ident">substrate_hash</span> <span class="op">=</span> <span class="ident">client</span>
-			.<span class="ident">expect_block_hash_from_id</span>(<span class="kw-2">&amp;</span><span class="ident">id</span>)
-			.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;Expect block number from id: {}&quot;</span>, <span class="ident">id</span>)))<span class="question-mark">?</span>;
+		<span class="kw">let </span>substrate_hash = client
+			.expect_block_hash_from_id(<span class="kw-2">&amp;</span>id)
+			.map_err(|<span class="kw">_</span>| internal_err(<span class="macro">format!</span>(<span class="string">&quot;Expect block number from id: {}&quot;</span>, id)))<span class="question-mark">?</span>;
 
-		<span class="kw">let</span> <span class="ident">index</span> <span class="op">=</span> <span class="ident">index</span>.<span class="ident">value</span>();
-		<span class="kw">let</span> <span class="ident">schema</span> <span class="op">=</span>
-			<span class="ident">frontier_backend_client::onchain_storage_schema</span>::<span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span>, <span class="ident">BE</span><span class="op">&gt;</span>(<span class="ident">client</span>.<span class="ident">as_ref</span>(), <span class="ident">id</span>);
-		<span class="kw">let</span> <span class="ident">handler</span> <span class="op">=</span> <span class="ident">overrides</span>
-			.<span class="ident">schemas</span>
-			.<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">schema</span>)
-			.<span class="ident">unwrap_or</span>(<span class="kw-2">&amp;</span><span class="ident">overrides</span>.<span class="ident">fallback</span>);
+		<span class="kw">let </span>index = index.value();
+		<span class="kw">let </span>schema =
+			frontier_backend_client::onchain_storage_schema::&lt;B, C, BE&gt;(client.as_ref(), id);
+		<span class="kw">let </span>handler = overrides
+			.schemas
+			.get(<span class="kw-2">&amp;</span>schema)
+			.unwrap_or(<span class="kw-2">&amp;</span>overrides.fallback);
 
-		<span class="kw">let</span> <span class="ident">block</span> <span class="op">=</span> <span class="ident">block_data_cache</span>.<span class="ident">current_block</span>(<span class="ident">schema</span>, <span class="ident">substrate_hash</span>).<span class="kw">await</span>;
-		<span class="kw">let</span> <span class="ident">statuses</span> <span class="op">=</span> <span class="ident">block_data_cache</span>
-			.<span class="ident">current_transaction_statuses</span>(<span class="ident">schema</span>, <span class="ident">substrate_hash</span>)
+		<span class="kw">let </span>block = block_data_cache.current_block(schema, substrate_hash).<span class="kw">await</span>;
+		<span class="kw">let </span>statuses = block_data_cache
+			.current_transaction_statuses(schema, substrate_hash)
 			.<span class="kw">await</span>;
 
-		<span class="kw">let</span> <span class="ident">base_fee</span> <span class="op">=</span> <span class="ident">handler</span>.<span class="ident">base_fee</span>(<span class="kw-2">&amp;</span><span class="ident">id</span>);
+		<span class="kw">let </span>base_fee = handler.base_fee(<span class="kw-2">&amp;</span>id);
 
-		<span class="kw">match</span> (<span class="ident">block</span>, <span class="ident">statuses</span>) {
-			(<span class="prelude-val">Some</span>(<span class="ident">block</span>), <span class="prelude-val">Some</span>(<span class="ident">statuses</span>)) =&gt; {
-				<span class="kw">if</span> <span class="kw">let</span> (<span class="prelude-val">Some</span>(<span class="ident">transaction</span>), <span class="prelude-val">Some</span>(<span class="ident">status</span>)) <span class="op">=</span>
-					(<span class="ident">block</span>.<span class="ident">transactions</span>.<span class="ident">get</span>(<span class="ident">index</span>), <span class="ident">statuses</span>.<span class="ident">get</span>(<span class="ident">index</span>))
+		<span class="kw">match </span>(block, statuses) {
+			(<span class="prelude-val">Some</span>(block), <span class="prelude-val">Some</span>(statuses)) =&gt; {
+				<span class="kw">if let </span>(<span class="prelude-val">Some</span>(transaction), <span class="prelude-val">Some</span>(status)) =
+					(block.transactions.get(index), statuses.get(index))
 				{
-					<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">transaction_build</span>(
-						<span class="ident">transaction</span>.<span class="ident">clone</span>(),
-						<span class="prelude-val">Some</span>(<span class="ident">block</span>),
-						<span class="prelude-val">Some</span>(<span class="ident">status</span>.<span class="ident">clone</span>()),
-						<span class="ident">base_fee</span>,
+					<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(transaction_build(
+						transaction.clone(),
+						<span class="prelude-val">Some</span>(block),
+						<span class="prelude-val">Some</span>(status.clone()),
+						base_fee,
 					)))
-				} <span class="kw">else</span> {
-					<span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;{:?} is out of bounds&quot;</span>, <span class="ident">index</span>)))
+				} <span class="kw">else </span>{
+					<span class="prelude-val">Err</span>(internal_err(<span class="macro">format!</span>(<span class="string">&quot;{:?} is out of bounds&quot;</span>, index)))
 				}
 			}
-			<span class="kw">_</span> =&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
+			<span class="kw">_ </span>=&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
 		}
 	}
 
-	<span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">transaction_receipt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">hash</span>: <span class="ident">H256</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Receipt</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-		<span class="kw">let</span> <span class="ident">client</span> <span class="op">=</span> <span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">client</span>);
-		<span class="kw">let</span> <span class="ident">overrides</span> <span class="op">=</span> <span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">overrides</span>);
-		<span class="kw">let</span> <span class="ident">block_data_cache</span> <span class="op">=</span> <span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">block_data_cache</span>);
-		<span class="kw">let</span> <span class="ident">backend</span> <span class="op">=</span> <span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">backend</span>);
+	<span class="kw">pub async fn </span>transaction_receipt(<span class="kw-2">&amp;</span><span class="self">self</span>, hash: H256) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;Receipt&gt;&gt; {
+		<span class="kw">let </span>client = Arc::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.client);
+		<span class="kw">let </span>overrides = Arc::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.overrides);
+		<span class="kw">let </span>block_data_cache = Arc::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.block_data_cache);
+		<span class="kw">let </span>backend = Arc::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.backend);
 
-		<span class="kw">let</span> (<span class="ident">hash</span>, <span class="ident">index</span>) <span class="op">=</span> <span class="kw">match</span> <span class="ident">frontier_backend_client::load_transactions</span>::<span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span><span class="op">&gt;</span>(
-			<span class="ident">client</span>.<span class="ident">as_ref</span>(),
-			<span class="ident">backend</span>.<span class="ident">as_ref</span>(),
-			<span class="ident">hash</span>,
+		<span class="kw">let </span>(hash, index) = <span class="kw">match </span>frontier_backend_client::load_transactions::&lt;B, C&gt;(
+			client.as_ref(),
+			backend.as_ref(),
+			hash,
 			<span class="bool-val">true</span>,
 		)
-		.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>
-		{
-			<span class="prelude-val">Some</span>((<span class="ident">hash</span>, <span class="ident">index</span>)) =&gt; (<span class="ident">hash</span>, <span class="ident">index</span> <span class="kw">as</span> <span class="ident">usize</span>),
-			<span class="prelude-val">None</span> =&gt; <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
+		.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, err)))<span class="question-mark">?
+		</span>{
+			<span class="prelude-val">Some</span>((hash, index)) =&gt; (hash, index <span class="kw">as </span>usize),
+			<span class="prelude-val">None </span>=&gt; <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
 		};
 
-		<span class="kw">let</span> <span class="ident">id</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">frontier_backend_client::load_hash</span>::<span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span><span class="op">&gt;</span>(
-			<span class="ident">client</span>.<span class="ident">as_ref</span>(),
-			<span class="ident">backend</span>.<span class="ident">as_ref</span>(),
-			<span class="ident">hash</span>,
+		<span class="kw">let </span>id = <span class="kw">match </span>frontier_backend_client::load_hash::&lt;B, C&gt;(
+			client.as_ref(),
+			backend.as_ref(),
+			hash,
 		)
-		.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">err</span>)))<span class="question-mark">?</span>
-		{
-			<span class="prelude-val">Some</span>(<span class="ident">hash</span>) =&gt; <span class="ident">hash</span>,
-			<span class="kw">_</span> =&gt; <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
+		.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, err)))<span class="question-mark">?
+		</span>{
+			<span class="prelude-val">Some</span>(hash) =&gt; hash,
+			<span class="kw">_ </span>=&gt; <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
 		};
-		<span class="kw">let</span> <span class="ident">substrate_hash</span> <span class="op">=</span> <span class="ident">client</span>
-			.<span class="ident">expect_block_hash_from_id</span>(<span class="kw-2">&amp;</span><span class="ident">id</span>)
-			.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">internal_err</span>(<span class="macro">format!</span>(<span class="string">&quot;Expect block number from id: {}&quot;</span>, <span class="ident">id</span>)))<span class="question-mark">?</span>;
+		<span class="kw">let </span>substrate_hash = client
+			.expect_block_hash_from_id(<span class="kw-2">&amp;</span>id)
+			.map_err(|<span class="kw">_</span>| internal_err(<span class="macro">format!</span>(<span class="string">&quot;Expect block number from id: {}&quot;</span>, id)))<span class="question-mark">?</span>;
 
-		<span class="kw">let</span> <span class="ident">schema</span> <span class="op">=</span>
-			<span class="ident">frontier_backend_client::onchain_storage_schema</span>::<span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">C</span>, <span class="ident">BE</span><span class="op">&gt;</span>(<span class="ident">client</span>.<span class="ident">as_ref</span>(), <span class="ident">id</span>);
-		<span class="kw">let</span> <span class="ident">handler</span> <span class="op">=</span> <span class="ident">overrides</span>
-			.<span class="ident">schemas</span>
-			.<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">schema</span>)
-			.<span class="ident">unwrap_or</span>(<span class="kw-2">&amp;</span><span class="ident">overrides</span>.<span class="ident">fallback</span>);
+		<span class="kw">let </span>schema =
+			frontier_backend_client::onchain_storage_schema::&lt;B, C, BE&gt;(client.as_ref(), id);
+		<span class="kw">let </span>handler = overrides
+			.schemas
+			.get(<span class="kw-2">&amp;</span>schema)
+			.unwrap_or(<span class="kw-2">&amp;</span>overrides.fallback);
 
-		<span class="kw">let</span> <span class="ident">block</span> <span class="op">=</span> <span class="ident">block_data_cache</span>.<span class="ident">current_block</span>(<span class="ident">schema</span>, <span class="ident">substrate_hash</span>).<span class="kw">await</span>;
-		<span class="kw">let</span> <span class="ident">statuses</span> <span class="op">=</span> <span class="ident">block_data_cache</span>
-			.<span class="ident">current_transaction_statuses</span>(<span class="ident">schema</span>, <span class="ident">substrate_hash</span>)
+		<span class="kw">let </span>block = block_data_cache.current_block(schema, substrate_hash).<span class="kw">await</span>;
+		<span class="kw">let </span>statuses = block_data_cache
+			.current_transaction_statuses(schema, substrate_hash)
 			.<span class="kw">await</span>;
-		<span class="kw">let</span> <span class="ident">receipts</span> <span class="op">=</span> <span class="ident">handler</span>.<span class="ident">current_receipts</span>(<span class="kw-2">&amp;</span><span class="ident">id</span>);
-		<span class="kw">let</span> <span class="ident">is_eip1559</span> <span class="op">=</span> <span class="ident">handler</span>.<span class="ident">is_eip1559</span>(<span class="kw-2">&amp;</span><span class="ident">id</span>);
+		<span class="kw">let </span>receipts = handler.current_receipts(<span class="kw-2">&amp;</span>id);
+		<span class="kw">let </span>is_eip1559 = handler.is_eip1559(<span class="kw-2">&amp;</span>id);
 
-		<span class="kw">match</span> (<span class="ident">block</span>, <span class="ident">statuses</span>, <span class="ident">receipts</span>) {
-			(<span class="prelude-val">Some</span>(<span class="ident">block</span>), <span class="prelude-val">Some</span>(<span class="ident">statuses</span>), <span class="prelude-val">Some</span>(<span class="ident">receipts</span>)) =&gt; {
-				<span class="kw">let</span> <span class="ident">block_hash</span> <span class="op">=</span> <span class="ident">H256::from</span>(<span class="ident">keccak_256</span>(<span class="kw-2">&amp;</span><span class="ident">rlp::encode</span>(<span class="kw-2">&amp;</span><span class="ident">block</span>.<span class="ident">header</span>)));
-				<span class="kw">let</span> <span class="ident">receipt</span> <span class="op">=</span> <span class="ident">receipts</span>[<span class="ident">index</span>].<span class="ident">clone</span>();
+		<span class="kw">match </span>(block, statuses, receipts) {
+			(<span class="prelude-val">Some</span>(block), <span class="prelude-val">Some</span>(statuses), <span class="prelude-val">Some</span>(receipts)) =&gt; {
+				<span class="kw">let </span>block_hash = H256::from(keccak_256(<span class="kw-2">&amp;</span>rlp::encode(<span class="kw-2">&amp;</span>block.header)));
+				<span class="kw">let </span>receipt = receipts[index].clone();
 
-				<span class="kw">let</span> (<span class="ident">logs</span>, <span class="ident">logs_bloom</span>, <span class="ident">status_code</span>, <span class="ident">cumulative_gas_used</span>, <span class="ident">gas_used</span>) <span class="op">=</span> <span class="kw">if</span> <span class="op">!</span><span class="ident">is_eip1559</span>
+				<span class="kw">let </span>(logs, logs_bloom, status_code, cumulative_gas_used, gas_used) = <span class="kw">if </span>!is_eip1559
 				{
-					<span class="comment">// Pre-london frontier update stored receipts require cumulative gas calculation.</span>
-					<span class="kw">match</span> <span class="ident">receipt</span> {
-						<span class="ident">ethereum::ReceiptV3::Legacy</span>(<span class="kw-2">ref</span> <span class="ident">d</span>) =&gt; {
-							<span class="kw">let</span> <span class="ident">index</span> <span class="op">=</span> <span class="ident">core::cmp::min</span>(<span class="ident">receipts</span>.<span class="ident">len</span>(), <span class="ident">index</span> <span class="op">+</span> <span class="number">1</span>);
-							<span class="kw">let</span> <span class="ident">cumulative_gas</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="ident">receipts</span>[..<span class="ident">index</span>]
-								.<span class="ident">iter</span>()
-								.<span class="ident">map</span>(<span class="op">|</span><span class="ident">r</span><span class="op">|</span> <span class="kw">match</span> <span class="ident">r</span> {
-									<span class="ident">ethereum::ReceiptV3::Legacy</span>(<span class="ident">d</span>) =&gt; <span class="prelude-val">Ok</span>(<span class="ident">d</span>.<span class="ident">used_gas</span>.<span class="ident">as_u32</span>()),
-									<span class="kw">_</span> =&gt; <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="macro">format!</span>(
+					<span class="comment">// Pre-london frontier update stored receipts require cumulative gas calculation.
+					</span><span class="kw">match </span>receipt {
+						ethereum::ReceiptV3::Legacy(<span class="kw-2">ref </span>d) =&gt; {
+							<span class="kw">let </span>index = core::cmp::min(receipts.len(), index + <span class="number">1</span>);
+							<span class="kw">let </span>cumulative_gas: u32 = receipts[..index]
+								.iter()
+								.map(|r| <span class="kw">match </span>r {
+									ethereum::ReceiptV3::Legacy(d) =&gt; <span class="prelude-val">Ok</span>(d.used_gas.as_u32()),
+									<span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(internal_err(<span class="macro">format!</span>(
 										<span class="string">&quot;Unknown receipt for request {}&quot;</span>,
-										<span class="ident">hash</span>
+										hash
 									))),
 								})
-								.<span class="ident">sum</span>::<span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
+								.sum::&lt;<span class="prelude-ty">Result</span>&lt;u32&gt;&gt;()<span class="question-mark">?</span>;
 							(
-								<span class="ident">d</span>.<span class="ident">logs</span>.<span class="ident">clone</span>(),
-								<span class="ident">d</span>.<span class="ident">logs_bloom</span>,
-								<span class="ident">d</span>.<span class="ident">status_code</span>,
-								<span class="ident">U256::from</span>(<span class="ident">cumulative_gas</span>),
-								<span class="ident">d</span>.<span class="ident">used_gas</span>,
+								d.logs.clone(),
+								d.logs_bloom,
+								d.status_code,
+								U256::from(cumulative_gas),
+								d.used_gas,
 							)
 						}
-						<span class="kw">_</span> =&gt; {
-							<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">internal_err</span>(<span class="macro">format!</span>(
+						<span class="kw">_ </span>=&gt; {
+							<span class="kw">return </span><span class="prelude-val">Err</span>(internal_err(<span class="macro">format!</span>(
 								<span class="string">&quot;Unknown receipt for request {}&quot;</span>,
-								<span class="ident">hash</span>
+								hash
 							)))
 						}
 					}
-				} <span class="kw">else</span> {
-					<span class="kw">match</span> <span class="ident">receipt</span> {
-						<span class="ident">ethereum::ReceiptV3::Legacy</span>(<span class="kw-2">ref</span> <span class="ident">d</span>)
-						<span class="op">|</span> <span class="ident">ethereum::ReceiptV3::EIP2930</span>(<span class="kw-2">ref</span> <span class="ident">d</span>)
-						<span class="op">|</span> <span class="ident">ethereum::ReceiptV3::EIP1559</span>(<span class="kw-2">ref</span> <span class="ident">d</span>) =&gt; {
-							<span class="kw">let</span> <span class="ident">cumulative_gas</span> <span class="op">=</span> <span class="ident">d</span>.<span class="ident">used_gas</span>;
-							<span class="kw">let</span> <span class="ident">gas_used</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">index</span> <span class="op">&gt;</span> <span class="number">0</span> {
-								<span class="kw">let</span> <span class="ident">previous_receipt</span> <span class="op">=</span> <span class="ident">receipts</span>[<span class="ident">index</span> <span class="op">-</span> <span class="number">1</span>].<span class="ident">clone</span>();
-								<span class="kw">let</span> <span class="ident">previous_gas_used</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">previous_receipt</span> {
-									<span class="ident">ethereum::ReceiptV3::Legacy</span>(<span class="ident">d</span>)
-									<span class="op">|</span> <span class="ident">ethereum::ReceiptV3::EIP2930</span>(<span class="ident">d</span>)
-									<span class="op">|</span> <span class="ident">ethereum::ReceiptV3::EIP1559</span>(<span class="ident">d</span>) =&gt; <span class="ident">d</span>.<span class="ident">used_gas</span>,
+				} <span class="kw">else </span>{
+					<span class="kw">match </span>receipt {
+						ethereum::ReceiptV3::Legacy(<span class="kw-2">ref </span>d)
+						| ethereum::ReceiptV3::EIP2930(<span class="kw-2">ref </span>d)
+						| ethereum::ReceiptV3::EIP1559(<span class="kw-2">ref </span>d) =&gt; {
+							<span class="kw">let </span>cumulative_gas = d.used_gas;
+							<span class="kw">let </span>gas_used = <span class="kw">if </span>index &gt; <span class="number">0 </span>{
+								<span class="kw">let </span>previous_receipt = receipts[index - <span class="number">1</span>].clone();
+								<span class="kw">let </span>previous_gas_used = <span class="kw">match </span>previous_receipt {
+									ethereum::ReceiptV3::Legacy(d)
+									| ethereum::ReceiptV3::EIP2930(d)
+									| ethereum::ReceiptV3::EIP1559(d) =&gt; d.used_gas,
 								};
-								<span class="ident">cumulative_gas</span>.<span class="ident">saturating_sub</span>(<span class="ident">previous_gas_used</span>)
-							} <span class="kw">else</span> {
-								<span class="ident">cumulative_gas</span>
+								cumulative_gas.saturating_sub(previous_gas_used)
+							} <span class="kw">else </span>{
+								cumulative_gas
 							};
 							(
-								<span class="ident">d</span>.<span class="ident">logs</span>.<span class="ident">clone</span>(),
-								<span class="ident">d</span>.<span class="ident">logs_bloom</span>,
-								<span class="ident">d</span>.<span class="ident">status_code</span>,
-								<span class="ident">cumulative_gas</span>,
-								<span class="ident">gas_used</span>,
+								d.logs.clone(),
+								d.logs_bloom,
+								d.status_code,
+								cumulative_gas,
+								gas_used,
 							)
 						}
 					}
 				};
 
-				<span class="kw">let</span> <span class="ident">status</span> <span class="op">=</span> <span class="ident">statuses</span>[<span class="ident">index</span>].<span class="ident">clone</span>();
-				<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">cumulative_receipts</span> <span class="op">=</span> <span class="ident">receipts</span>;
-				<span class="ident">cumulative_receipts</span>.<span class="ident">truncate</span>((<span class="ident">status</span>.<span class="ident">transaction_index</span> <span class="op">+</span> <span class="number">1</span>) <span class="kw">as</span> <span class="ident">usize</span>);
+				<span class="kw">let </span>status = statuses[index].clone();
+				<span class="kw">let </span><span class="kw-2">mut </span>cumulative_receipts = receipts;
+				cumulative_receipts.truncate((status.transaction_index + <span class="number">1</span>) <span class="kw">as </span>usize);
 
-				<span class="kw">let</span> <span class="ident">transaction</span> <span class="op">=</span> <span class="ident">block</span>.<span class="ident">transactions</span>[<span class="ident">index</span>].<span class="ident">clone</span>();
-				<span class="kw">let</span> <span class="ident">effective_gas_price</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">transaction</span> {
-					<span class="ident">EthereumTransaction::Legacy</span>(<span class="ident">t</span>) =&gt; <span class="ident">t</span>.<span class="ident">gas_price</span>,
-					<span class="ident">EthereumTransaction::EIP2930</span>(<span class="ident">t</span>) =&gt; <span class="ident">t</span>.<span class="ident">gas_price</span>,
-					<span class="ident">EthereumTransaction::EIP1559</span>(<span class="ident">t</span>) =&gt; <span class="ident">handler</span>
-						.<span class="ident">base_fee</span>(<span class="kw-2">&amp;</span><span class="ident">id</span>)
-						.<span class="ident">unwrap_or_default</span>()
-						.<span class="ident">checked_add</span>(<span class="ident">t</span>.<span class="ident">max_priority_fee_per_gas</span>)
-						.<span class="ident">unwrap_or_else</span>(<span class="ident">U256::max_value</span>)
-						.<span class="ident">min</span>(<span class="ident">t</span>.<span class="ident">max_fee_per_gas</span>),
+				<span class="kw">let </span>transaction = block.transactions[index].clone();
+				<span class="kw">let </span>effective_gas_price = <span class="kw">match </span>transaction {
+					EthereumTransaction::Legacy(t) =&gt; t.gas_price,
+					EthereumTransaction::EIP2930(t) =&gt; t.gas_price,
+					EthereumTransaction::EIP1559(t) =&gt; handler
+						.base_fee(<span class="kw-2">&amp;</span>id)
+						.unwrap_or_default()
+						.checked_add(t.max_priority_fee_per_gas)
+						.unwrap_or_else(U256::max_value)
+						.min(t.max_fee_per_gas),
 				};
 
-				<span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">Receipt</span> {
-					<span class="ident">transaction_hash</span>: <span class="prelude-val">Some</span>(<span class="ident">status</span>.<span class="ident">transaction_hash</span>),
-					<span class="ident">transaction_index</span>: <span class="prelude-val">Some</span>(<span class="ident">status</span>.<span class="ident">transaction_index</span>.<span class="ident">into</span>()),
-					<span class="ident">block_hash</span>: <span class="prelude-val">Some</span>(<span class="ident">block_hash</span>),
-					<span class="ident">from</span>: <span class="prelude-val">Some</span>(<span class="ident">status</span>.<span class="ident">from</span>),
-					<span class="ident">to</span>: <span class="ident">status</span>.<span class="ident">to</span>,
-					<span class="ident">block_number</span>: <span class="prelude-val">Some</span>(<span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">number</span>),
-					<span class="ident">cumulative_gas_used</span>,
-					<span class="ident">gas_used</span>: <span class="prelude-val">Some</span>(<span class="ident">gas_used</span>),
-					<span class="ident">contract_address</span>: <span class="ident">status</span>.<span class="ident">contract_address</span>,
-					<span class="ident">logs</span>: {
-						<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">pre_receipts_log_index</span> <span class="op">=</span> <span class="prelude-val">None</span>;
-						<span class="kw">if</span> <span class="ident">cumulative_receipts</span>.<span class="ident">len</span>() <span class="op">&gt;</span> <span class="number">0</span> {
-							<span class="ident">cumulative_receipts</span>.<span class="ident">truncate</span>(<span class="ident">cumulative_receipts</span>.<span class="ident">len</span>() <span class="op">-</span> <span class="number">1</span>);
-							<span class="ident">pre_receipts_log_index</span> <span class="op">=</span> <span class="prelude-val">Some</span>(
-								<span class="ident">cumulative_receipts</span>
-									.<span class="ident">iter</span>()
-									.<span class="ident">map</span>(<span class="op">|</span><span class="ident">r</span><span class="op">|</span> <span class="kw">match</span> <span class="ident">r</span> {
-										<span class="ident">ethereum::ReceiptV3::Legacy</span>(<span class="ident">d</span>)
-										<span class="op">|</span> <span class="ident">ethereum::ReceiptV3::EIP2930</span>(<span class="ident">d</span>)
-										<span class="op">|</span> <span class="ident">ethereum::ReceiptV3::EIP1559</span>(<span class="ident">d</span>) =&gt; <span class="ident">d</span>.<span class="ident">logs</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">u32</span>,
+				<span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(Receipt {
+					transaction_hash: <span class="prelude-val">Some</span>(status.transaction_hash),
+					transaction_index: <span class="prelude-val">Some</span>(status.transaction_index.into()),
+					block_hash: <span class="prelude-val">Some</span>(block_hash),
+					from: <span class="prelude-val">Some</span>(status.from),
+					to: status.to,
+					block_number: <span class="prelude-val">Some</span>(block.header.number),
+					cumulative_gas_used,
+					gas_used: <span class="prelude-val">Some</span>(gas_used),
+					contract_address: status.contract_address,
+					logs: {
+						<span class="kw">let </span><span class="kw-2">mut </span>pre_receipts_log_index = <span class="prelude-val">None</span>;
+						<span class="kw">if </span>cumulative_receipts.len() &gt; <span class="number">0 </span>{
+							cumulative_receipts.truncate(cumulative_receipts.len() - <span class="number">1</span>);
+							pre_receipts_log_index = <span class="prelude-val">Some</span>(
+								cumulative_receipts
+									.iter()
+									.map(|r| <span class="kw">match </span>r {
+										ethereum::ReceiptV3::Legacy(d)
+										| ethereum::ReceiptV3::EIP2930(d)
+										| ethereum::ReceiptV3::EIP1559(d) =&gt; d.logs.len() <span class="kw">as </span>u32,
 									})
-									.<span class="ident">sum</span>::<span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>(),
+									.sum::&lt;u32&gt;(),
 							);
 						}
-						<span class="ident">logs</span>.<span class="ident">iter</span>()
-							.<span class="ident">enumerate</span>()
-							.<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">i</span>, <span class="ident">log</span>)<span class="op">|</span> <span class="ident">Log</span> {
-								<span class="ident">address</span>: <span class="ident">log</span>.<span class="ident">address</span>,
-								<span class="ident">topics</span>: <span class="ident">log</span>.<span class="ident">topics</span>.<span class="ident">clone</span>(),
-								<span class="ident">data</span>: <span class="ident">Bytes</span>(<span class="ident">log</span>.<span class="ident">data</span>.<span class="ident">clone</span>()),
-								<span class="ident">block_hash</span>: <span class="prelude-val">Some</span>(<span class="ident">block_hash</span>),
-								<span class="ident">block_number</span>: <span class="prelude-val">Some</span>(<span class="ident">block</span>.<span class="ident">header</span>.<span class="ident">number</span>),
-								<span class="ident">transaction_hash</span>: <span class="prelude-val">Some</span>(<span class="ident">status</span>.<span class="ident">transaction_hash</span>),
-								<span class="ident">transaction_index</span>: <span class="prelude-val">Some</span>(<span class="ident">status</span>.<span class="ident">transaction_index</span>.<span class="ident">into</span>()),
-								<span class="ident">log_index</span>: <span class="prelude-val">Some</span>(<span class="ident">U256::from</span>(
-									(<span class="ident">pre_receipts_log_index</span>.<span class="ident">unwrap_or</span>(<span class="number">0</span>)) <span class="op">+</span> <span class="ident">i</span> <span class="kw">as</span> <span class="ident">u32</span>,
+						logs.iter()
+							.enumerate()
+							.map(|(i, log)| Log {
+								address: log.address,
+								topics: log.topics.clone(),
+								data: Bytes(log.data.clone()),
+								block_hash: <span class="prelude-val">Some</span>(block_hash),
+								block_number: <span class="prelude-val">Some</span>(block.header.number),
+								transaction_hash: <span class="prelude-val">Some</span>(status.transaction_hash),
+								transaction_index: <span class="prelude-val">Some</span>(status.transaction_index.into()),
+								log_index: <span class="prelude-val">Some</span>(U256::from(
+									(pre_receipts_log_index.unwrap_or(<span class="number">0</span>)) + i <span class="kw">as </span>u32,
 								)),
-								<span class="ident">transaction_log_index</span>: <span class="prelude-val">Some</span>(<span class="ident">U256::from</span>(<span class="ident">i</span>)),
-								<span class="ident">removed</span>: <span class="bool-val">false</span>,
+								transaction_log_index: <span class="prelude-val">Some</span>(U256::from(i)),
+								removed: <span class="bool-val">false</span>,
 							})
-							.<span class="ident">collect</span>()
+							.collect()
 					},
-					<span class="ident">status_code</span>: <span class="prelude-val">Some</span>(<span class="ident">U64::from</span>(<span class="ident">status_code</span>)),
-					<span class="ident">logs_bloom</span>,
-					<span class="ident">state_root</span>: <span class="prelude-val">None</span>,
-					<span class="ident">effective_gas_price</span>,
-					<span class="ident">transaction_type</span>: <span class="kw">match</span> <span class="ident">receipt</span> {
-						<span class="ident">ethereum::ReceiptV3::Legacy</span>(<span class="kw">_</span>) =&gt; <span class="ident">U256::from</span>(<span class="number">0</span>),
-						<span class="ident">ethereum::ReceiptV3::EIP2930</span>(<span class="kw">_</span>) =&gt; <span class="ident">U256::from</span>(<span class="number">1</span>),
-						<span class="ident">ethereum::ReceiptV3::EIP1559</span>(<span class="kw">_</span>) =&gt; <span class="ident">U256::from</span>(<span class="number">2</span>),
+					status_code: <span class="prelude-val">Some</span>(U64::from(status_code)),
+					logs_bloom,
+					state_root: <span class="prelude-val">None</span>,
+					effective_gas_price,
+					transaction_type: <span class="kw">match </span>receipt {
+						ethereum::ReceiptV3::Legacy(<span class="kw">_</span>) =&gt; U256::from(<span class="number">0</span>),
+						ethereum::ReceiptV3::EIP2930(<span class="kw">_</span>) =&gt; U256::from(<span class="number">1</span>),
+						ethereum::ReceiptV3::EIP1559(<span class="kw">_</span>) =&gt; U256::from(<span class="number">2</span>),
 					},
 				}));
 			}
-			<span class="kw">_</span> =&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
+			<span class="kw">_ </span>=&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
 		}
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="fc_rpc" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (7fe022f5a 2022-07-24)" ></div>
-</body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="fc_rpc" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (81f391930 2022-10-09)" ></div></body></html>

@@ -1,10 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `frame/evm/test-vector-support/src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../pallet_evm_test_vector_support/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a><h2 class="location"></h2>
-    </nav>
-    <nav class="sidebar"><a class="sidebar-logo" href="../../pallet_evm_test_vector_support/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../pallet_evm_test_vector_support/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1">
-                                <a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div>
-                        </div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `frame/evm/test-vector-support/src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><a class="sidebar-logo" href="../../pallet_evm_test_vector_support/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../pallet_evm_test_vector_support/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -157,153 +151,153 @@
 <span id="151">151</span>
 <span id="152">152</span>
 <span id="153">153</span>
-</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
-<span class="comment">// This file is part of Frontier.</span>
-<span class="comment">//</span>
-<span class="comment">// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.</span>
-<span class="comment">//</span>
-<span class="comment">// Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
-<span class="comment">// you may not use this file except in compliance with the License.</span>
-<span class="comment">// You may obtain a copy of the License at</span>
-<span class="comment">//</span>
-<span class="comment">// 	http://www.apache.org/licenses/LICENSE-2.0</span>
-<span class="comment">//</span>
-<span class="comment">// Unless required by applicable law or agreed to in writing, software</span>
-<span class="comment">// distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
-<span class="comment">// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
-<span class="comment">// See the License for the specific language governing permissions and</span>
-<span class="comment">// limitations under the License.</span>
+</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
+// This file is part of Frontier.
+//
+// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// 	http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
-<span class="kw">use</span> <span class="ident">std::fs</span>;
+</span><span class="kw">use </span>std::fs;
 
-<span class="kw">use</span> <span class="ident">evm</span>::{<span class="ident">Context</span>, <span class="ident">ExitError</span>, <span class="ident">ExitReason</span>, <span class="ident">ExitSucceed</span>, <span class="ident">Transfer</span>};
-<span class="kw">use</span> <span class="ident">fp_evm</span>::{<span class="ident">Precompile</span>, <span class="ident">PrecompileHandle</span>};
-<span class="kw">use</span> <span class="ident">sp_core</span>::{<span class="ident">H160</span>, <span class="ident">H256</span>};
+<span class="kw">use </span>evm::{Context, ExitError, ExitReason, ExitSucceed, Transfer};
+<span class="kw">use </span>fp_evm::{Precompile, PrecompileHandle};
+<span class="kw">use </span>sp_core::{H160, H256};
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">serde::Deserialize</span>)]</span>
-<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;PascalCase&quot;</span>)]</span>
-<span class="kw">struct</span> <span class="ident">EthConsensusTest</span> {
-	<span class="ident">input</span>: <span class="ident">String</span>,
-	<span class="ident">expected</span>: <span class="ident">String</span>,
-	<span class="ident">name</span>: <span class="ident">String</span>,
-	<span class="ident">gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
+<span class="attribute">#[derive(Debug, serde::Deserialize)]
+#[serde(rename_all = <span class="string">&quot;PascalCase&quot;</span>)]
+</span><span class="kw">struct </span>EthConsensusTest {
+	input: String,
+	expected: String,
+	name: String,
+	gas: <span class="prelude-ty">Option</span>&lt;u64&gt;,
 }
 
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">MockHandle</span> {
-	<span class="kw">pub</span> <span class="ident">input</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
-	<span class="kw">pub</span> <span class="ident">gas_limit</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
-	<span class="kw">pub</span> <span class="ident">context</span>: <span class="ident">Context</span>,
-	<span class="kw">pub</span> <span class="ident">is_static</span>: <span class="ident">bool</span>,
-	<span class="kw">pub</span> <span class="ident">gas_used</span>: <span class="ident">u64</span>,
+<span class="kw">pub struct </span>MockHandle {
+	<span class="kw">pub </span>input: Vec&lt;u8&gt;,
+	<span class="kw">pub </span>gas_limit: <span class="prelude-ty">Option</span>&lt;u64&gt;,
+	<span class="kw">pub </span>context: Context,
+	<span class="kw">pub </span>is_static: bool,
+	<span class="kw">pub </span>gas_used: u64,
 }
 
-<span class="kw">impl</span> <span class="ident">MockHandle</span> {
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">input</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">gas_limit</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>, <span class="ident">context</span>: <span class="ident">Context</span>) -&gt; <span class="self">Self</span> {
-		<span class="self">Self</span> {
-			<span class="ident">input</span>,
-			<span class="ident">gas_limit</span>,
-			<span class="ident">context</span>,
-			<span class="ident">is_static</span>: <span class="bool-val">false</span>,
-			<span class="ident">gas_used</span>: <span class="number">0</span>,
+<span class="kw">impl </span>MockHandle {
+	<span class="kw">pub fn </span>new(input: Vec&lt;u8&gt;, gas_limit: <span class="prelude-ty">Option</span>&lt;u64&gt;, context: Context) -&gt; <span class="self">Self </span>{
+		<span class="self">Self </span>{
+			input,
+			gas_limit,
+			context,
+			is_static: <span class="bool-val">false</span>,
+			gas_used: <span class="number">0</span>,
 		}
 	}
 }
 
-<span class="kw">impl</span> <span class="ident">PrecompileHandle</span> <span class="kw">for</span> <span class="ident">MockHandle</span> {
-	<span class="doccomment">/// Perform subcall in provided context.</span>
-	<span class="doccomment">/// Precompile specifies in which context the subcall is executed.</span>
-	<span class="kw">fn</span> <span class="ident">call</span>(
-		<span class="kw-2">&amp;mut</span> <span class="self">self</span>,
-		<span class="kw">_</span>: <span class="ident">H160</span>,
-		<span class="kw">_</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Transfer</span><span class="op">&gt;</span>,
-		<span class="kw">_</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
-		<span class="kw">_</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
-		<span class="kw">_</span>: <span class="ident">bool</span>,
-		<span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="ident">Context</span>,
-	) -&gt; (<span class="ident">ExitReason</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>) {
+<span class="kw">impl </span>PrecompileHandle <span class="kw">for </span>MockHandle {
+	<span class="doccomment">/// Perform subcall in provided context.
+	/// Precompile specifies in which context the subcall is executed.
+	</span><span class="kw">fn </span>call(
+		<span class="kw-2">&amp;mut </span><span class="self">self</span>,
+		<span class="kw">_</span>: H160,
+		<span class="kw">_</span>: <span class="prelude-ty">Option</span>&lt;Transfer&gt;,
+		<span class="kw">_</span>: Vec&lt;u8&gt;,
+		<span class="kw">_</span>: <span class="prelude-ty">Option</span>&lt;u64&gt;,
+		<span class="kw">_</span>: bool,
+		<span class="kw">_</span>: <span class="kw-2">&amp;</span>Context,
+	) -&gt; (ExitReason, Vec&lt;u8&gt;) {
 		<span class="macro">unimplemented!</span>()
 	}
 
-	<span class="kw">fn</span> <span class="ident">record_cost</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">cost</span>: <span class="ident">u64</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">ExitError</span><span class="op">&gt;</span> {
-		<span class="self">self</span>.<span class="ident">gas_used</span> <span class="op">+</span><span class="op">=</span> <span class="ident">cost</span>;
+	<span class="kw">fn </span>record_cost(<span class="kw-2">&amp;mut </span><span class="self">self</span>, cost: u64) -&gt; <span class="prelude-ty">Result</span>&lt;(), ExitError&gt; {
+		<span class="self">self</span>.gas_used += cost;
 		<span class="prelude-val">Ok</span>(())
 	}
 
-	<span class="kw">fn</span> <span class="ident">log</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="kw">_</span>: <span class="ident">H160</span>, <span class="kw">_</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span>, <span class="kw">_</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">ExitError</span><span class="op">&gt;</span> {
+	<span class="kw">fn </span>log(<span class="kw-2">&amp;mut </span><span class="self">self</span>, <span class="kw">_</span>: H160, <span class="kw">_</span>: Vec&lt;H256&gt;, <span class="kw">_</span>: Vec&lt;u8&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;(), ExitError&gt; {
 		<span class="macro">unimplemented!</span>()
 	}
 
-	<span class="kw">fn</span> <span class="ident">remaining_gas</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">u64</span> {
+	<span class="kw">fn </span>remaining_gas(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; u64 {
 		<span class="macro">unimplemented!</span>()
 	}
 
-	<span class="kw">fn</span> <span class="ident">code_address</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">H160</span> {
+	<span class="kw">fn </span>code_address(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; H160 {
 		<span class="macro">unimplemented!</span>()
 	}
 
-	<span class="kw">fn</span> <span class="ident">input</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>[<span class="ident">u8</span>] {
-		<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">input</span>
+	<span class="kw">fn </span>input(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>[u8] {
+		<span class="kw-2">&amp;</span><span class="self">self</span>.input
 	}
 
-	<span class="kw">fn</span> <span class="ident">context</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="ident">Context</span> {
-		<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">context</span>
+	<span class="kw">fn </span>context(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>Context {
+		<span class="kw-2">&amp;</span><span class="self">self</span>.context
 	}
 
-	<span class="kw">fn</span> <span class="ident">is_static</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">bool</span> {
-		<span class="self">self</span>.<span class="ident">is_static</span>
+	<span class="kw">fn </span>is_static(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
+		<span class="self">self</span>.is_static
 	}
 
-	<span class="kw">fn</span> <span class="ident">gas_limit</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span> {
-		<span class="self">self</span>.<span class="ident">gas_limit</span>
+	<span class="kw">fn </span>gas_limit(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;u64&gt; {
+		<span class="self">self</span>.gas_limit
 	}
 }
 
-<span class="doccomment">/// Tests a precompile against the ethereum consensus tests defined in the given file at filepath.</span>
-<span class="doccomment">/// The file is expected to be in JSON format and contain an array of test vectors, where each</span>
-<span class="doccomment">/// vector can be deserialized into an &quot;EthConsensusTest&quot;.</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">test_precompile_test_vectors</span><span class="op">&lt;</span><span class="ident">P</span>: <span class="ident">Precompile</span><span class="op">&gt;</span>(<span class="ident">filepath</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">String</span><span class="op">&gt;</span> {
-	<span class="kw">let</span> <span class="ident">data</span> <span class="op">=</span> <span class="ident">fs::read_to_string</span>(<span class="kw-2">&amp;</span><span class="ident">filepath</span>).<span class="ident">expect</span>(<span class="string">&quot;Failed to read blake2F.json&quot;</span>);
+<span class="doccomment">/// Tests a precompile against the ethereum consensus tests defined in the given file at filepath.
+/// The file is expected to be in JSON format and contain an array of test vectors, where each
+/// vector can be deserialized into an &quot;EthConsensusTest&quot;.
+</span><span class="kw">pub fn </span>test_precompile_test_vectors&lt;P: Precompile&gt;(filepath: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;(), String&gt; {
+	<span class="kw">let </span>data = fs::read_to_string(filepath).expect(<span class="string">&quot;Failed to read blake2F.json&quot;</span>);
 
-	<span class="kw">let</span> <span class="ident">tests</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">EthConsensusTest</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">serde_json::from_str</span>(<span class="kw-2">&amp;</span><span class="ident">data</span>).<span class="ident">expect</span>(<span class="string">&quot;expected json array&quot;</span>);
+	<span class="kw">let </span>tests: Vec&lt;EthConsensusTest&gt; = serde_json::from_str(<span class="kw-2">&amp;</span>data).expect(<span class="string">&quot;expected json array&quot;</span>);
 
-	<span class="kw">for</span> <span class="ident">test</span> <span class="kw">in</span> <span class="ident">tests</span> {
-		<span class="kw">let</span> <span class="ident">input</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">hex::decode</span>(<span class="ident">test</span>.<span class="ident">input</span>).<span class="ident">expect</span>(<span class="string">&quot;Could not hex-decode test input data&quot;</span>);
+	<span class="kw">for </span>test <span class="kw">in </span>tests {
+		<span class="kw">let </span>input: Vec&lt;u8&gt; = hex::decode(test.input).expect(<span class="string">&quot;Could not hex-decode test input data&quot;</span>);
 
-		<span class="kw">let</span> <span class="ident">cost</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">10000000</span>;
+		<span class="kw">let </span>cost: u64 = <span class="number">10000000</span>;
 
-		<span class="kw">let</span> <span class="ident">context</span>: <span class="ident">Context</span> <span class="op">=</span> <span class="ident">Context</span> {
-			<span class="ident">address</span>: <span class="ident">Default::default</span>(),
-			<span class="ident">caller</span>: <span class="ident">Default::default</span>(),
-			<span class="ident">apparent_value</span>: <span class="ident">From::from</span>(<span class="number">0</span>),
+		<span class="kw">let </span>context: Context = Context {
+			address: Default::default(),
+			caller: Default::default(),
+			apparent_value: From::from(<span class="number">0</span>),
 		};
 
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">handle</span> <span class="op">=</span> <span class="ident">MockHandle::new</span>(<span class="ident">input</span>, <span class="prelude-val">Some</span>(<span class="ident">cost</span>), <span class="ident">context</span>);
+		<span class="kw">let </span><span class="kw-2">mut </span>handle = MockHandle::new(input, <span class="prelude-val">Some</span>(cost), context);
 
-		<span class="kw">match</span> <span class="ident">P::execute</span>(<span class="kw-2">&amp;mut</span> <span class="ident">handle</span>) {
-			<span class="prelude-val">Ok</span>(<span class="ident">result</span>) =&gt; {
-				<span class="kw">let</span> <span class="ident">as_hex</span>: <span class="ident">String</span> <span class="op">=</span> <span class="ident">hex::encode</span>(<span class="ident">result</span>.<span class="ident">output</span>);
+		<span class="kw">match </span>P::execute(<span class="kw-2">&amp;mut </span>handle) {
+			<span class="prelude-val">Ok</span>(result) =&gt; {
+				<span class="kw">let </span>as_hex: String = hex::encode(result.output);
 				<span class="macro">assert_eq!</span>(
-					<span class="ident">result</span>.<span class="ident">exit_status</span>,
-					<span class="ident">ExitSucceed::Returned</span>,
+					result.exit_status,
+					ExitSucceed::Returned,
 					<span class="string">&quot;test &#39;{}&#39; returned {:?} (expected &#39;Returned&#39;)&quot;</span>,
-					<span class="ident">test</span>.<span class="ident">name</span>,
-					<span class="ident">result</span>.<span class="ident">exit_status</span>
+					test.name,
+					result.exit_status
 				);
 				<span class="macro">assert_eq!</span>(
-					<span class="ident">as_hex</span>, <span class="ident">test</span>.<span class="ident">expected</span>,
+					as_hex, test.expected,
 					<span class="string">&quot;test &#39;{}&#39; failed (different output)&quot;</span>,
-					<span class="ident">test</span>.<span class="ident">name</span>
+					test.name
 				);
-				<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">expected_gas</span>) <span class="op">=</span> <span class="ident">test</span>.<span class="ident">gas</span> {
+				<span class="kw">if let </span><span class="prelude-val">Some</span>(expected_gas) = test.gas {
 					<span class="macro">assert_eq!</span>(
-						<span class="ident">handle</span>.<span class="ident">gas_used</span>, <span class="ident">expected_gas</span>,
+						handle.gas_used, expected_gas,
 						<span class="string">&quot;test &#39;{}&#39; failed (different gas cost)&quot;</span>,
-						<span class="ident">test</span>.<span class="ident">name</span>
+						test.name
 					);
 				}
 			}
-			<span class="prelude-val">Err</span>(<span class="ident">err</span>) =&gt; {
-				<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="macro">format!</span>(<span class="string">&quot;Test &#39;{}&#39; returned error: {:?}&quot;</span>, <span class="ident">test</span>.<span class="ident">name</span>, <span class="ident">err</span>));
+			<span class="prelude-val">Err</span>(err) =&gt; {
+				<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="macro">format!</span>(<span class="string">&quot;Test &#39;{}&#39; returned error: {:?}&quot;</span>, test.name, err));
 			}
 		}
 	}
@@ -311,5 +305,4 @@
 	<span class="prelude-val">Ok</span>(())
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_evm_test_vector_support" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (7fe022f5a 2022-07-24)" ></div>
-</body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_evm_test_vector_support" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (81f391930 2022-10-09)" ></div></body></html>

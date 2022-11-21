@@ -1,10 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `client/rpc-core/src/types/pubsub.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>pubsub.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../fc_rpc_core/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div>
-        </a><h2 class="location"></h2>
-    </nav>
-    <nav class="sidebar"><a class="sidebar-logo" href="../../../fc_rpc_core/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div>
-        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../fc_rpc_core/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1">
-                                <a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div>
-                        </div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `client/rpc-core/src/types/pubsub.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>pubsub.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../../normalize.css"><link rel="stylesheet" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../../ayu.css" disabled><link rel="stylesheet" href="../../../dark.css" disabled><link rel="stylesheet" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><a class="sidebar-logo" href="../../../fc_rpc_core/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../fc_rpc_core/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -119,121 +113,120 @@
 <span id="113">113</span>
 <span id="114">114</span>
 <span id="115">115</span>
-</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0</span>
-<span class="comment">// This file is part of Frontier.</span>
-<span class="comment">//</span>
-<span class="comment">// Copyright (c) 2015-2022 Parity Technologies (UK) Ltd.</span>
-<span class="comment">//</span>
-<span class="comment">// This program is free software: you can redistribute it and/or modify</span>
-<span class="comment">// it under the terms of the GNU General Public License as published by</span>
-<span class="comment">// the Free Software Foundation, either version 3 of the License, or</span>
-<span class="comment">// (at your option) any later version.</span>
-<span class="comment">//</span>
-<span class="comment">// This program is distributed in the hope that it will be useful,</span>
-<span class="comment">// but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
-<span class="comment">// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the</span>
-<span class="comment">// GNU General Public License for more details.</span>
-<span class="comment">//</span>
-<span class="comment">// You should have received a copy of the GNU General Public License</span>
-<span class="comment">// along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.</span>
+</pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
+// This file is part of Frontier.
+//
+// Copyright (c) 2015-2022 Parity Technologies (UK) Ltd.
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.
 
-<span class="doccomment">//! Pub-Sub types.</span>
+</span><span class="doccomment">//! Pub-Sub types.
 
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::types</span>::{<span class="ident">Filter</span>, <span class="ident">Log</span>, <span class="ident">RichHeader</span>};
-<span class="kw">use</span> <span class="ident">ethereum_types::H256</span>;
-<span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">de::Error</span>, <span class="ident">Deserialize</span>, <span class="ident">Deserializer</span>, <span class="ident">Serialize</span>, <span class="ident">Serializer</span>};
-<span class="kw">use</span> <span class="ident">serde_json</span>::{<span class="ident">from_value</span>, <span class="ident">Value</span>};
+</span><span class="kw">use </span><span class="kw">crate</span>::types::{Filter, Log, RichHeader};
+<span class="kw">use </span>ethereum_types::H256;
+<span class="kw">use </span>serde::{de::Error, Deserialize, Deserializer, Serialize, Serializer};
+<span class="kw">use </span>serde_json::{from_value, Value};
 
-<span class="doccomment">/// Subscription result.</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>)]</span>
-<span class="kw">pub</span> <span class="kw">enum</span> <span class="prelude-ty">Result</span> {
-	<span class="doccomment">/// New block header.</span>
-	<span class="ident">Header</span>(<span class="ident">Box</span><span class="op">&lt;</span><span class="ident">RichHeader</span><span class="op">&gt;</span>),
-	<span class="doccomment">/// Log</span>
-	<span class="ident">Log</span>(<span class="ident">Box</span><span class="op">&lt;</span><span class="ident">Log</span><span class="op">&gt;</span>),
-	<span class="doccomment">/// Transaction hash</span>
-	<span class="ident">TransactionHash</span>(<span class="ident">H256</span>),
-	<span class="doccomment">/// SyncStatus</span>
-	<span class="ident">SyncState</span>(<span class="ident">PubSubSyncStatus</span>),
+<span class="doccomment">/// Subscription result.
+</span><span class="attribute">#[derive(Clone, Debug, Eq, PartialEq)]
+</span><span class="kw">pub enum </span><span class="prelude-ty">Result </span>{
+	<span class="doccomment">/// New block header.
+	</span>Header(Box&lt;RichHeader&gt;),
+	<span class="doccomment">/// Log
+	</span>Log(Box&lt;Log&gt;),
+	<span class="doccomment">/// Transaction hash
+	</span>TransactionHash(H256),
+	<span class="doccomment">/// SyncStatus
+	</span>SyncState(PubSubSyncStatus),
 }
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">Serialize</span>)]</span>
-<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">untagged</span>)]</span>
-<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">PubSubSyncStatus</span> {
-	<span class="ident">Simple</span>(<span class="ident">bool</span>),
-	<span class="ident">Detailed</span>(<span class="ident">SyncStatusMetadata</span>),
-}
-
-<span class="doccomment">/// PubSbub sync status</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">Serialize</span>)]</span>
-<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;camelCase&quot;</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">SyncStatusMetadata</span> {
-	<span class="kw">pub</span> <span class="ident">syncing</span>: <span class="ident">bool</span>,
-	<span class="kw">pub</span> <span class="ident">starting_block</span>: <span class="ident">u64</span>,
-	<span class="kw">pub</span> <span class="ident">current_block</span>: <span class="ident">u64</span>,
-	<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span> <span class="op">=</span> <span class="string">&quot;Default::default&quot;</span>, <span class="ident">skip_serializing_if</span> <span class="op">=</span> <span class="string">&quot;Option::is_none&quot;</span>)]</span>
-	<span class="kw">pub</span> <span class="ident">highest_block</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
+<span class="attribute">#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(untagged)]
+</span><span class="kw">pub enum </span>PubSubSyncStatus {
+	Simple(bool),
+	Detailed(SyncStatusMetadata),
 }
 
-<span class="kw">impl</span> <span class="ident">Serialize</span> <span class="kw">for</span> <span class="prelude-ty">Result</span> {
-	<span class="kw">fn</span> <span class="ident">serialize</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">serializer</span>: <span class="ident">S</span>) -&gt; <span class="ident">::std::result::Result</span><span class="op">&lt;</span><span class="ident">S::Ok</span>, <span class="ident">S::Error</span><span class="op">&gt;</span>
-	<span class="kw">where</span>
-		<span class="ident">S</span>: <span class="ident">Serializer</span>,
+<span class="doccomment">/// PubSbub sync status
+</span><span class="attribute">#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
+</span><span class="kw">pub struct </span>SyncStatusMetadata {
+	<span class="kw">pub </span>syncing: bool,
+	<span class="kw">pub </span>starting_block: u64,
+	<span class="kw">pub </span>current_block: u64,
+	<span class="attribute">#[serde(default = <span class="string">&quot;Default::default&quot;</span>, skip_serializing_if = <span class="string">&quot;Option::is_none&quot;</span>)]
+	</span><span class="kw">pub </span>highest_block: <span class="prelude-ty">Option</span>&lt;u64&gt;,
+}
+
+<span class="kw">impl </span>Serialize <span class="kw">for </span><span class="prelude-ty">Result </span>{
+	<span class="kw">fn </span>serialize&lt;S&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, serializer: S) -&gt; ::std::result::Result&lt;S::Ok, S::Error&gt;
+	<span class="kw">where
+		</span>S: Serializer,
 	{
-		<span class="kw">match</span> <span class="kw-2">*</span><span class="self">self</span> {
-			<span class="ident">Result::Header</span>(<span class="kw-2">ref</span> <span class="ident">header</span>) =&gt; <span class="ident">header</span>.<span class="ident">serialize</span>(<span class="ident">serializer</span>),
-			<span class="ident">Result::Log</span>(<span class="kw-2">ref</span> <span class="ident">log</span>) =&gt; <span class="ident">log</span>.<span class="ident">serialize</span>(<span class="ident">serializer</span>),
-			<span class="ident">Result::TransactionHash</span>(<span class="kw-2">ref</span> <span class="ident">hash</span>) =&gt; <span class="ident">hash</span>.<span class="ident">serialize</span>(<span class="ident">serializer</span>),
-			<span class="ident">Result::SyncState</span>(<span class="kw-2">ref</span> <span class="ident">sync</span>) =&gt; <span class="ident">sync</span>.<span class="ident">serialize</span>(<span class="ident">serializer</span>),
+		<span class="kw">match </span><span class="kw-2">*</span><span class="self">self </span>{
+			Result::Header(<span class="kw-2">ref </span>header) =&gt; header.serialize(serializer),
+			Result::Log(<span class="kw-2">ref </span>log) =&gt; log.serialize(serializer),
+			Result::TransactionHash(<span class="kw-2">ref </span>hash) =&gt; hash.serialize(serializer),
+			Result::SyncState(<span class="kw-2">ref </span>sync) =&gt; sync.serialize(serializer),
 		}
 	}
 }
 
-<span class="doccomment">/// Subscription kind.</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">Hash</span>, <span class="ident">Deserialize</span>)]</span>
-<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">deny_unknown_fields</span>)]</span>
-<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;camelCase&quot;</span>)]</span>
-<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Kind</span> {
-	<span class="doccomment">/// New block headers subscription.</span>
-	<span class="ident">NewHeads</span>,
-	<span class="doccomment">/// Logs subscription.</span>
-	<span class="ident">Logs</span>,
-	<span class="doccomment">/// New Pending Transactions subscription.</span>
-	<span class="ident">NewPendingTransactions</span>,
-	<span class="doccomment">/// Node syncing status subscription.</span>
-	<span class="ident">Syncing</span>,
+<span class="doccomment">/// Subscription kind.
+</span><span class="attribute">#[derive(Clone, Debug, Eq, PartialEq, Hash, Deserialize)]
+#[serde(deny_unknown_fields)]
+#[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
+</span><span class="kw">pub enum </span>Kind {
+	<span class="doccomment">/// New block headers subscription.
+	</span>NewHeads,
+	<span class="doccomment">/// Logs subscription.
+	</span>Logs,
+	<span class="doccomment">/// New Pending Transactions subscription.
+	</span>NewPendingTransactions,
+	<span class="doccomment">/// Node syncing status subscription.
+	</span>Syncing,
 }
 
-<span class="doccomment">/// Subscription kind.</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">Hash</span>)]</span>
-<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Params</span> {
-	<span class="doccomment">/// No parameters passed.</span>
-	<span class="prelude-val">None</span>,
-	<span class="doccomment">/// Log parameters.</span>
-	<span class="ident">Logs</span>(<span class="ident">Filter</span>),
+<span class="doccomment">/// Subscription kind.
+</span><span class="attribute">#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+</span><span class="kw">pub enum </span>Params {
+	<span class="doccomment">/// No parameters passed.
+	</span><span class="prelude-val">None</span>,
+	<span class="doccomment">/// Log parameters.
+	</span>Logs(Filter),
 }
 
-<span class="kw">impl</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">Params</span> {
-	<span class="kw">fn</span> <span class="ident">default</span>() -&gt; <span class="self">Self</span> {
-		<span class="ident">Params::None</span>
+<span class="kw">impl </span>Default <span class="kw">for </span>Params {
+	<span class="kw">fn </span>default() -&gt; <span class="self">Self </span>{
+		Params::None
 	}
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">Deserialize</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Params</span> {
-	<span class="kw">fn</span> <span class="ident">deserialize</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span>(<span class="ident">deserializer</span>: <span class="ident">D</span>) -&gt; <span class="ident">::std::result::Result</span><span class="op">&lt;</span><span class="ident">Params</span>, <span class="ident">D::Error</span><span class="op">&gt;</span>
-	<span class="kw">where</span>
-		<span class="ident">D</span>: <span class="ident">Deserializer</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>,
+<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>&gt; Deserialize&lt;<span class="lifetime">&#39;a</span>&gt; <span class="kw">for </span>Params {
+	<span class="kw">fn </span>deserialize&lt;D&gt;(deserializer: D) -&gt; ::std::result::Result&lt;Params, D::Error&gt;
+	<span class="kw">where
+		</span>D: Deserializer&lt;<span class="lifetime">&#39;a</span>&gt;,
 	{
-		<span class="kw">let</span> <span class="ident">v</span>: <span class="ident">Value</span> <span class="op">=</span> <span class="ident">Deserialize::deserialize</span>(<span class="ident">deserializer</span>)<span class="question-mark">?</span>;
+		<span class="kw">let </span>v: Value = Deserialize::deserialize(deserializer)<span class="question-mark">?</span>;
 
-		<span class="kw">if</span> <span class="ident">v</span>.<span class="ident">is_null</span>() {
-			<span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">Params::None</span>);
+		<span class="kw">if </span>v.is_null() {
+			<span class="kw">return </span><span class="prelude-val">Ok</span>(Params::None);
 		}
 
-		<span class="ident">from_value</span>(<span class="ident">v</span>)
-			.<span class="ident">map</span>(<span class="ident">Params::Logs</span>)
-			.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">D::Error::custom</span>(<span class="macro">format!</span>(<span class="string">&quot;Invalid Pub-Sub parameters: {}&quot;</span>, <span class="ident">e</span>)))
+		from_value(v)
+			.map(Params::Logs)
+			.map_err(|e| D::Error::custom(<span class="macro">format!</span>(<span class="string">&quot;Invalid Pub-Sub parameters: {}&quot;</span>, e)))
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="fc_rpc_core" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (7fe022f5a 2022-07-24)" ></div>
-</body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="fc_rpc_core" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (81f391930 2022-10-09)" ></div></body></html>
