@@ -555,6 +555,12 @@ where
 				block_number,
 				topic_4
 			);
+			CREATE INDEX IF NOT EXISTS sub_block_hash_idx_logs ON logs (
+				substrate_block_hash
+			);
+			CREATE INDEX IF NOT EXISTS sub_block_hash_idx_blocks ON blocks (
+				substrate_block_hash
+			);
 			CREATE INDEX IF NOT EXISTS eth_block_hash_idx ON blocks (
 				ethereum_block_hash
 			);
@@ -686,16 +692,16 @@ impl<Block: BlockT<Hash = H256>> crate::BackendReader<Block> for Backend<Block> 
 				A.log_index
 			FROM logs AS A
 			INNER JOIN blocks AS B
-			ON A.substrate_block_hash = B.substrate_block_hash
-			WHERE A.block_number BETWEEN ",
+			ON A.block_number BETWEEN ",
 		);
 		// Bind `from` and `to` block range
 		let mut block_number = query_builder.separated(" AND ");
 		block_number.push_bind(from_block as i64);
 		block_number.push_bind(to_block as i64);
-		// Address and topics substatement
+		query_builder.push(" AND A.substrate_block_hash = B.substrate_block_hash");
+
 		if !filter_groups.is_empty() {
-			query_builder.push(" AND (");
+			query_builder.push(" WHERE ");
 		}
 		for (i, filter_group) in filter_groups.iter().enumerate() {
 			query_builder.push("(");
@@ -745,13 +751,11 @@ impl<Block: BlockT<Hash = H256>> crate::BackendReader<Block> for Backend<Block> 
 				query_builder.push(" OR ");
 			}
 		}
-		if !filter_groups.is_empty() {
-			query_builder.push(")");
-		}
 		query_builder.push(
 			"
 			GROUP BY A.substrate_block_hash, transaction_index, log_index
 			ORDER BY block_number ASC, transaction_index ASC, log_index ASC
+			LIMIT 10001
 		",
 		);
 
