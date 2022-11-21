@@ -11,8 +11,8 @@ repository = "https://github.com/paritytech/frontier/"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-ethereum = { version = "0.12.0", features = ["with-codec"] }
-evm = "0.36.0"
+ethereum = { version = "0.14.0", features = ["with-codec"] }
+evm = "0.37.0"
 futures = "0.3.24"
 hex = "0.4.3"
 log = "0.4.17"
@@ -23,7 +23,7 @@ tokio = { version = "1.19", features = ["sync"] }
 
 # Parity
 codec = { package = "parity-scale-codec", version = "3.2.1" }
-ethereum-types = "0.13.1"
+ethereum-types = "0.14.0"
 jsonrpsee = { version = "0.15.1", features = ["server", "macros"] }
 libsecp256k1 = "0.7"
 rlp = "0.5"

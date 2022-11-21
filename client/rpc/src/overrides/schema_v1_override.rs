@@ -23,8 +23,9 @@ use ethereum_types::{H160, H256, U256};
 // Substrate
 use sc_client_api::backend::{Backend, StateBackend, StorageProvider};
 use sp_api::BlockId;
+use sp_blockchain::HeaderBackend;
 use sp_runtime::{
-	traits::{BlakeTwo256, Block as BlockT},
+	traits::{BlakeTwo256, Block as BlockT, Header as HeaderT},
 	Permill,
 };
 use sp_storage::StorageKey;
@@ -52,14 +53,16 @@ impl<B: BlockT, C, BE> SchemaV1Override<B, C, BE> {
 impl<B, C, BE> SchemaV1Override<B, C, BE>
 where
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
-	C: StorageProvider<B, BE> + Send + Sync + 'static,
+	C: StorageProvider<B, BE> + HeaderBackend<B> + Send + Sync + 'static,
 	BE: Backend<B> + 'static,
 	BE::State: StateBackend<BlakeTwo256>,
 {
 	fn query_storage<T: Decode>(&self, id: &BlockId<B>, key: &StorageKey) -> Option<T> {
-		if let Ok(Some(data)) = self.client.storage(id, key) {
-			if let Ok(result) = Decode::decode(&mut &data.0[..]) {
-				return Some(result);
+		if let Ok(Some(header)) = self.client.header(*id) {
+			if let Ok(Some(data)) = self.client.storage(header.hash(), key) {
+				if let Ok(result) = Decode::decode(&mut &data.0[..]) {
+					return Some(result);
+				}
 			}
 		}
 		None
@@ -69,7 +72,7 @@ where
 impl<B, C, BE> StorageOverride<B> for SchemaV1Override<B, C, BE>
 where
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
-	C: StorageProvider<B, BE> + Send + Sync + 'static,
+	C: StorageProvider<B, BE> + HeaderBackend<B> + Send + Sync + 'static,
 	BE: Backend<B> + 'static,
 	BE::State: StateBackend<BlakeTwo256>,
 {
