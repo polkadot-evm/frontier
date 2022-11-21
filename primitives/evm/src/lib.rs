@@ -21,24 +21,27 @@ mod precompile;
 mod validation;
 
 use codec::{Decode, Encode};
-pub use evm::ExitReason;
 use frame_support::weights::Weight;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_core::{H160, U256};
 use sp_std::vec::Vec;
 
-pub use evm::backend::{Basic as Account, Log};
-
-pub use self::precompile::{
-	Context, ExitError, ExitRevert, ExitSucceed, LinearCostPrecompile, Precompile,
-	PrecompileFailure, PrecompileHandle, PrecompileOutput, PrecompileResult, PrecompileSet,
-	Transfer,
+pub use evm::{
+	backend::{Basic as Account, Log},
+	Config, ExitReason,
 };
 
-pub use self::validation::{
-	CheckEvmTransaction, CheckEvmTransactionConfig, CheckEvmTransactionInput,
-	InvalidEvmTransactionError,
+pub use self::{
+	precompile::{
+		Context, ExitError, ExitRevert, ExitSucceed, LinearCostPrecompile, Precompile,
+		PrecompileFailure, PrecompileHandle, PrecompileOutput, PrecompileResult, PrecompileSet,
+		Transfer,
+	},
+	validation::{
+		CheckEvmTransaction, CheckEvmTransactionConfig, CheckEvmTransactionInput,
+		InvalidEvmTransactionError,
+	},
 };
 
 #[derive(Clone, Eq, PartialEq, Default, Encode, Decode)]
