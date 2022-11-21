@@ -54,3 +54,7 @@ std = [
 	"fp-dynamic-fee/std",
 	"fp-evm/std",
 ]
+try-runtime = [
+	"frame-support/try-runtime",
+	"frame-system/try-runtime",
+]
