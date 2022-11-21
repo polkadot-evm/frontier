@@ -1,6 +1,6 @@
 /// Available Sealing methods.
 #[cfg(feature = "manual-seal")]
-#[derive(Debug, Copy, Clone, clap::ArgEnum)]
+#[derive(Debug, Copy, Clone, clap::ValueEnum)]
 pub enum Sealing {
 	// Seal using rpc method.
 	Manual,
@@ -19,43 +19,43 @@ impl Default for Sealing {
 #[derive(Debug, clap::Parser)]
 pub struct RunCmd {
 	#[allow(missing_docs)]
-	#[clap(flatten)]
+	#[command(flatten)]
 	pub base: sc_cli::RunCmd,
 
 	/// Choose sealing method.
 	#[cfg(feature = "manual-seal")]
-	#[clap(long, arg_enum, ignore_case = true)]
+	#[arg(long, value_enum, ignore_case = true)]
 	pub sealing: Sealing,
 
-	#[clap(long)]
+	#[arg(long)]
 	pub enable_dev_signer: bool,
 
 	/// Maximum number of logs in a query.
-	#[clap(long, default_value = "10000")]
+	#[arg(long, default_value = "10000")]
 	pub max_past_logs: u32,
 
 	/// Maximum fee history cache size.
-	#[clap(long, default_value = "2048")]
+	#[arg(long, default_value = "2048")]
 	pub fee_history_limit: u64,
 
 	/// The dynamic-fee pallet target gas price set by block author
-	#[clap(long, default_value = "1")]
+	#[arg(long, default_value = "1")]
 	pub target_gas_price: u64,
 }
 
 #[derive(Debug, clap::Parser)]
 pub struct Cli {
-	#[clap(subcommand)]
+	#[command(subcommand)]
 	pub subcommand: Option<Subcommand>,
 
-	#[clap(flatten)]
+	#[command(flatten)]
 	pub run: RunCmd,
 }
 
 #[derive(Debug, clap::Subcommand)]
 pub enum Subcommand {
 	/// Key management cli utilities
-	#[clap(subcommand)]
+	#[command(subcommand)]
 	Key(sc_cli::KeySubcommand),
 
 	/// Build a chain specification.
@@ -81,7 +81,7 @@ pub enum Subcommand {
 
 	/// Sub-commands concerned with benchmarking.
 	#[cfg(feature = "runtime-benchmarks")]
-	#[clap(subcommand)]
+	#[command(subcommand)]
 	Benchmark(frame_benchmarking_cli::BenchmarkCmd),
 
 	/// Sub-commands concerned with benchmarking.

@@ -694,7 +694,7 @@ impl<T: Config> Pallet<T> {
 			return;
 		}
 
-		if !<AccountCodes<T>>::contains_key(&address) {
+		if !<AccountCodes<T>>::contains_key(address) {
 			let account_id = T::AddressMapping::into_account_id(address);
 			let _ = frame_system::Pallet::<T>::inc_sufficients(&account_id);
 		}
