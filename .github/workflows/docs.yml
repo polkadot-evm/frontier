@@ -16,7 +16,7 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: nightly-2022-07-25
+          toolchain: nightly-2022-10-10
           target: wasm32-unknown-unknown
           override: true
           components: rust-docs
