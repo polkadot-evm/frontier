@@ -11,7 +11,7 @@ repository = "https://github.com/paritytech/frontier/"
 ripemd = { version = "0.1", default-features = false }
 
 # Substrate
-sp-io = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-io = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-11-23", default-features = false }
 
 # Frontier
 fp-evm = { version = "3.0.0-dev", path = "../../../../primitives/evm", default-features = false }

@@ -14,7 +14,7 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 
 # Substrate
-sp-core = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-core = { git = "https://github.com/humanode-network/substrate", branch = "locked/humanode-2022-11-23" }
 
 # Frontier
 fp-evm = { version = "3.0.0-dev", path = "../../../primitives/evm" }
