@@ -450,21 +450,6 @@
 <span id="450">450</span>
 <span id="451">451</span>
 <span id="452">452</span>
-<span id="453">453</span>
-<span id="454">454</span>
-<span id="455">455</span>
-<span id="456">456</span>
-<span id="457">457</span>
-<span id="458">458</span>
-<span id="459">459</span>
-<span id="460">460</span>
-<span id="461">461</span>
-<span id="462">462</span>
-<span id="463">463</span>
-<span id="464">464</span>
-<span id="465">465</span>
-<span id="466">466</span>
-<span id="467">467</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -520,7 +505,6 @@
 {
 	<span class="kw">pub async fn </span>transaction_by_hash(<span class="kw-2">&amp;</span><span class="self">self</span>, hash: H256) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;Transaction&gt;&gt; {
 		<span class="kw">let </span>client = Arc::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.client);
-		<span class="kw">let </span>overrides = Arc::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.overrides);
 		<span class="kw">let </span>block_data_cache = Arc::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.block_data_cache);
 		<span class="kw">let </span>backend = Arc::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.backend);
 		<span class="kw">let </span>graph = Arc::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.graph);
@@ -610,24 +594,20 @@
 
 		<span class="kw">let </span>schema =
 			frontier_backend_client::onchain_storage_schema::&lt;B, C, BE&gt;(client.as_ref(), id);
-		<span class="kw">let </span>handler = overrides
-			.schemas
-			.get(<span class="kw-2">&amp;</span>schema)
-			.unwrap_or(<span class="kw-2">&amp;</span>overrides.fallback);
 
 		<span class="kw">let </span>block = block_data_cache.current_block(schema, substrate_hash).<span class="kw">await</span>;
 		<span class="kw">let </span>statuses = block_data_cache
 			.current_transaction_statuses(schema, substrate_hash)
 			.<span class="kw">await</span>;
 
-		<span class="kw">let </span>base_fee = handler.base_fee(<span class="kw-2">&amp;</span>id);
+		<span class="kw">let </span>base_fee = client.runtime_api().gas_price(<span class="kw-2">&amp;</span>id).unwrap_or_default();
 
 		<span class="kw">match </span>(block, statuses) {
 			(<span class="prelude-val">Some</span>(block), <span class="prelude-val">Some</span>(statuses)) =&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(transaction_build(
 				block.transactions[index].clone(),
 				<span class="prelude-val">Some</span>(block),
 				<span class="prelude-val">Some</span>(statuses[index].clone()),
-				base_fee,
+				<span class="prelude-val">Some</span>(base_fee),
 			))),
 			<span class="kw">_ </span>=&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
 		}
@@ -639,7 +619,6 @@
 		index: Index,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;Transaction&gt;&gt; {
 		<span class="kw">let </span>client = Arc::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.client);
-		<span class="kw">let </span>overrides = Arc::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.overrides);
 		<span class="kw">let </span>block_data_cache = Arc::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.block_data_cache);
 		<span class="kw">let </span>backend = Arc::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.backend);
 
@@ -661,17 +640,13 @@
 
 		<span class="kw">let </span>schema =
 			frontier_backend_client::onchain_storage_schema::&lt;B, C, BE&gt;(client.as_ref(), id);
-		<span class="kw">let </span>handler = overrides
-			.schemas
-			.get(<span class="kw-2">&amp;</span>schema)
-			.unwrap_or(<span class="kw-2">&amp;</span>overrides.fallback);
 
 		<span class="kw">let </span>block = block_data_cache.current_block(schema, substrate_hash).<span class="kw">await</span>;
 		<span class="kw">let </span>statuses = block_data_cache
 			.current_transaction_statuses(schema, substrate_hash)
 			.<span class="kw">await</span>;
 
-		<span class="kw">let </span>base_fee = handler.base_fee(<span class="kw-2">&amp;</span>id);
+		<span class="kw">let </span>base_fee = client.runtime_api().gas_price(<span class="kw-2">&amp;</span>id).unwrap_or_default();
 
 		<span class="kw">match </span>(block, statuses) {
 			(<span class="prelude-val">Some</span>(block), <span class="prelude-val">Some</span>(statuses)) =&gt; {
@@ -682,7 +657,7 @@
 						transaction.clone(),
 						<span class="prelude-val">Some</span>(block),
 						<span class="prelude-val">Some</span>(status.clone()),
-						base_fee,
+						<span class="prelude-val">Some</span>(base_fee),
 					)))
 				} <span class="kw">else </span>{
 					<span class="prelude-val">Err</span>(internal_err(<span class="macro">format!</span>(<span class="string">&quot;{:?} is out of bounds&quot;</span>, index)))
@@ -698,7 +673,6 @@
 		index: Index,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;Transaction&gt;&gt; {
 		<span class="kw">let </span>client = Arc::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.client);
-		<span class="kw">let </span>overrides = Arc::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.overrides);
 		<span class="kw">let </span>block_data_cache = Arc::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.block_data_cache);
 		<span class="kw">let </span>backend = Arc::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.backend);
 
@@ -717,17 +691,13 @@
 		<span class="kw">let </span>index = index.value();
 		<span class="kw">let </span>schema =
 			frontier_backend_client::onchain_storage_schema::&lt;B, C, BE&gt;(client.as_ref(), id);
-		<span class="kw">let </span>handler = overrides
-			.schemas
-			.get(<span class="kw-2">&amp;</span>schema)
-			.unwrap_or(<span class="kw-2">&amp;</span>overrides.fallback);
 
 		<span class="kw">let </span>block = block_data_cache.current_block(schema, substrate_hash).<span class="kw">await</span>;
 		<span class="kw">let </span>statuses = block_data_cache
 			.current_transaction_statuses(schema, substrate_hash)
 			.<span class="kw">await</span>;
 
-		<span class="kw">let </span>base_fee = handler.base_fee(<span class="kw-2">&amp;</span>id);
+		<span class="kw">let </span>base_fee = client.runtime_api().gas_price(<span class="kw-2">&amp;</span>id).unwrap_or_default();
 
 		<span class="kw">match </span>(block, statuses) {
 			(<span class="prelude-val">Some</span>(block), <span class="prelude-val">Some</span>(statuses)) =&gt; {
@@ -738,7 +708,7 @@
 						transaction.clone(),
 						<span class="prelude-val">Some</span>(block),
 						<span class="prelude-val">Some</span>(status.clone()),
-						base_fee,
+						<span class="prelude-val">Some</span>(base_fee),
 					)))
 				} <span class="kw">else </span>{
 					<span class="prelude-val">Err</span>(internal_err(<span class="macro">format!</span>(<span class="string">&quot;{:?} is out of bounds&quot;</span>, index)))
@@ -861,13 +831,13 @@
 				<span class="kw">let </span>status = statuses[index].clone();
 				<span class="kw">let </span><span class="kw-2">mut </span>cumulative_receipts = receipts;
 				cumulative_receipts.truncate((status.transaction_index + <span class="number">1</span>) <span class="kw">as </span>usize);
-
 				<span class="kw">let </span>transaction = block.transactions[index].clone();
 				<span class="kw">let </span>effective_gas_price = <span class="kw">match </span>transaction {
 					EthereumTransaction::Legacy(t) =&gt; t.gas_price,
 					EthereumTransaction::EIP2930(t) =&gt; t.gas_price,
-					EthereumTransaction::EIP1559(t) =&gt; handler
-						.base_fee(<span class="kw-2">&amp;</span>id)
+					EthereumTransaction::EIP1559(t) =&gt; client
+						.runtime_api()
+						.gas_price(<span class="kw-2">&amp;</span>id)
 						.unwrap_or_default()
 						.checked_add(t.max_priority_fee_per_gas)
 						.unwrap_or_else(U256::max_value)

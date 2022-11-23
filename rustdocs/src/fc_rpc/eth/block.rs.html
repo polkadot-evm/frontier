@@ -211,12 +211,6 @@
 <span id="211">211</span>
 <span id="212">212</span>
 <span id="213">213</span>
-<span id="214">214</span>
-<span id="215">215</span>
-<span id="216">216</span>
-<span id="217">217</span>
-<span id="218">218</span>
-<span id="219">219</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -243,11 +237,13 @@
 </span><span class="kw">use </span>sc_client_api::backend::{Backend, StateBackend, StorageProvider};
 <span class="kw">use </span>sc_network_common::ExHashT;
 <span class="kw">use </span>sc_transaction_pool::ChainApi;
+<span class="kw">use </span>sp_api::ProvideRuntimeApi;
 <span class="kw">use </span>sp_blockchain::HeaderBackend;
 <span class="kw">use </span>sp_core::hashing::keccak_256;
 <span class="kw">use </span>sp_runtime::traits::{BlakeTwo256, Block <span class="kw">as </span>BlockT};
 <span class="comment">// Frontier
 </span><span class="kw">use </span>fc_rpc_core::types::<span class="kw-2">*</span>;
+<span class="kw">use </span>fp_rpc::EthereumRuntimeRPCApi;
 
 <span class="kw">use crate</span>::{
 	eth::{rich_block_build, Eth},
@@ -258,12 +254,13 @@
 <span class="kw">where
 	</span>B: BlockT&lt;Hash = H256&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
 	C: StorageProvider&lt;B, BE&gt; + HeaderBackend&lt;B&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
+	C: ProvideRuntimeApi&lt;B&gt;,
+	C::Api: EthereumRuntimeRPCApi&lt;B&gt;,
 	BE: Backend&lt;B&gt; + <span class="lifetime">&#39;static</span>,
 	BE::State: StateBackend&lt;BlakeTwo256&gt;,
 {
 	<span class="kw">pub async fn </span>block_by_hash(<span class="kw-2">&amp;</span><span class="self">self</span>, hash: H256, full: bool) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;RichBlock&gt;&gt; {
 		<span class="kw">let </span>client = Arc::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.client);
-		<span class="kw">let </span>overrides = Arc::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.overrides);
 		<span class="kw">let </span>block_data_cache = Arc::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.block_data_cache);
 		<span class="kw">let </span>backend = Arc::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.backend);
 
@@ -283,17 +280,13 @@
 
 		<span class="kw">let </span>schema =
 			frontier_backend_client::onchain_storage_schema::&lt;B, C, BE&gt;(client.as_ref(), id);
-		<span class="kw">let </span>handler = overrides
-			.schemas
-			.get(<span class="kw-2">&amp;</span>schema)
-			.unwrap_or(<span class="kw-2">&amp;</span>overrides.fallback);
 
 		<span class="kw">let </span>block = block_data_cache.current_block(schema, substrate_hash).<span class="kw">await</span>;
 		<span class="kw">let </span>statuses = block_data_cache
 			.current_transaction_statuses(schema, substrate_hash)
 			.<span class="kw">await</span>;
 
-		<span class="kw">let </span>base_fee = handler.base_fee(<span class="kw-2">&amp;</span>id);
+		<span class="kw">let </span>base_fee = client.runtime_api().gas_price(<span class="kw-2">&amp;</span>id).unwrap_or_default();
 
 		<span class="kw">match </span>(block, statuses) {
 			(<span class="prelude-val">Some</span>(block), <span class="prelude-val">Some</span>(statuses)) =&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(rich_block_build(
@@ -301,7 +294,7 @@
 				statuses.into_iter().map(Option::Some).collect(),
 				<span class="prelude-val">Some</span>(hash),
 				full,
-				base_fee,
+				<span class="prelude-val">Some</span>(base_fee),
 			))),
 			<span class="kw">_ </span>=&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
 		}
@@ -313,7 +306,6 @@
 		full: bool,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;RichBlock&gt;&gt; {
 		<span class="kw">let </span>client = Arc::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.client);
-		<span class="kw">let </span>overrides = Arc::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.overrides);
 		<span class="kw">let </span>block_data_cache = Arc::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.block_data_cache);
 		<span class="kw">let </span>backend = Arc::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.backend);
 
@@ -331,17 +323,13 @@
 
 		<span class="kw">let </span>schema =
 			frontier_backend_client::onchain_storage_schema::&lt;B, C, BE&gt;(client.as_ref(), id);
-		<span class="kw">let </span>handler = overrides
-			.schemas
-			.get(<span class="kw-2">&amp;</span>schema)
-			.unwrap_or(<span class="kw-2">&amp;</span>overrides.fallback);
 
 		<span class="kw">let </span>block = block_data_cache.current_block(schema, substrate_hash).<span class="kw">await</span>;
 		<span class="kw">let </span>statuses = block_data_cache
 			.current_transaction_statuses(schema, substrate_hash)
 			.<span class="kw">await</span>;
 
-		<span class="kw">let </span>base_fee = handler.base_fee(<span class="kw-2">&amp;</span>id);
+		<span class="kw">let </span>base_fee = client.runtime_api().gas_price(<span class="kw-2">&amp;</span>id).unwrap_or_default();
 
 		<span class="kw">match </span>(block, statuses) {
 			(<span class="prelude-val">Some</span>(block), <span class="prelude-val">Some</span>(statuses)) =&gt; {
@@ -352,7 +340,7 @@
 					statuses.into_iter().map(Option::Some).collect(),
 					<span class="prelude-val">Some</span>(hash),
 					full,
-					base_fee,
+					<span class="prelude-val">Some</span>(base_fee),
 				)))
 			}
 			<span class="kw">_ </span>=&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),

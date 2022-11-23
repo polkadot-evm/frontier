@@ -159,14 +159,6 @@
 <span id="159">159</span>
 <span id="160">160</span>
 <span id="161">161</span>
-<span id="162">162</span>
-<span id="163">163</span>
-<span id="164">164</span>
-<span id="165">165</span>
-<span id="166">166</span>
-<span id="167">167</span>
-<span id="168">168</span>
-<span id="169">169</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -307,14 +299,6 @@
 				PALLET_ETHEREUM,
 				ETHEREUM_CURRENT_TRANSACTION_STATUS,
 			)),
-		)
-	}
-
-	<span class="doccomment">/// Return the base fee at the given height.
-	</span><span class="kw">fn </span>base_fee(<span class="kw-2">&amp;</span><span class="self">self</span>, block: <span class="kw-2">&amp;</span>BlockId&lt;B&gt;) -&gt; <span class="prelude-ty">Option</span>&lt;U256&gt; {
-		<span class="self">self</span>.query_storage::&lt;U256&gt;(
-			block,
-			<span class="kw-2">&amp;</span>StorageKey(storage_prefix_build(PALLET_BASE_FEE, BASE_FEE_PER_GAS)),
 		)
 	}
 

@@ -151,11 +151,6 @@
 <span id="151">151</span>
 <span id="152">152</span>
 <span id="153">153</span>
-<span id="154">154</span>
-<span id="155">155</span>
-<span id="156">156</span>
-<span id="157">157</span>
-<span id="158">158</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -299,11 +294,6 @@
 			)),
 		)
 	}
-
-	<span class="doccomment">/// Prior to eip-1559 there is no base fee.
-	</span><span class="kw">fn </span>base_fee(<span class="kw-2">&amp;</span><span class="self">self</span>, _block: <span class="kw-2">&amp;</span>BlockId&lt;B&gt;) -&gt; <span class="prelude-ty">Option</span>&lt;U256&gt; {
-		<span class="prelude-val">None
-	</span>}
 
 	<span class="doccomment">/// Prior to eip-1559 there is no elasticity.
 	</span><span class="kw">fn </span>elasticity(<span class="kw-2">&amp;</span><span class="self">self</span>, _block: <span class="kw-2">&amp;</span>BlockId&lt;B&gt;) -&gt; <span class="prelude-ty">Option</span>&lt;Permill&gt; {

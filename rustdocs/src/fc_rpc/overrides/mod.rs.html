@@ -197,17 +197,6 @@
 <span id="197">197</span>
 <span id="198">198</span>
 <span id="199">199</span>
-<span id="200">200</span>
-<span id="201">201</span>
-<span id="202">202</span>
-<span id="203">203</span>
-<span id="204">204</span>
-<span id="205">205</span>
-<span id="206">206</span>
-<span id="207">207</span>
-<span id="208">208</span>
-<span id="209">209</span>
-<span id="210">210</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -270,8 +259,6 @@
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		block: <span class="kw-2">&amp;</span>BlockId&lt;Block&gt;,
 	) -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;TransactionStatus&gt;&gt;;
-	<span class="doccomment">/// Return the base fee at the given height.
-	</span><span class="kw">fn </span>base_fee(<span class="kw-2">&amp;</span><span class="self">self</span>, block: <span class="kw-2">&amp;</span>BlockId&lt;Block&gt;) -&gt; <span class="prelude-ty">Option</span>&lt;U256&gt;;
 	<span class="doccomment">/// Return the base fee at the given height.
 	</span><span class="kw">fn </span>elasticity(<span class="kw-2">&amp;</span><span class="self">self</span>, block: <span class="kw-2">&amp;</span>BlockId&lt;Block&gt;) -&gt; <span class="prelude-ty">Option</span>&lt;Permill&gt;;
 	<span class="doccomment">/// Return `true` if the request BlockId is post-eip1559.
@@ -388,15 +375,6 @@
 			.current_transaction_statuses(block)
 			.ok()<span class="question-mark">?
 	</span>}
-
-	<span class="doccomment">/// Return the base fee at the given post-eip1559 height.
-	</span><span class="kw">fn </span>base_fee(<span class="kw-2">&amp;</span><span class="self">self</span>, block: <span class="kw-2">&amp;</span>BlockId&lt;Block&gt;) -&gt; <span class="prelude-ty">Option</span>&lt;U256&gt; {
-		<span class="kw">if </span><span class="self">self</span>.is_eip1559(block) {
-			<span class="self">self</span>.client.runtime_api().gas_price(block).ok()
-		} <span class="kw">else </span>{
-			<span class="prelude-val">None
-		</span>}
-	}
 
 	<span class="doccomment">/// Return the elasticity multiplier at the give post-eip1559 height.
 	</span><span class="kw">fn </span>elasticity(<span class="kw-2">&amp;</span><span class="self">self</span>, block: <span class="kw-2">&amp;</span>BlockId&lt;Block&gt;) -&gt; <span class="prelude-ty">Option</span>&lt;Permill&gt; {
