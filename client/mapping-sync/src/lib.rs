@@ -71,10 +71,11 @@ where
 {
 	let id = BlockId::Hash(header.hash());
 
-	if let Some(_) = client
+	if client
 		.runtime_api()
 		.api_version::<dyn EthereumRuntimeRPCApi<Block>>(&id)
 		.map_err(|e| format!("{:?}", e))?
+		.is_some()
 	{
 		let block = client
 			.runtime_api()
