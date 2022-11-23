@@ -24,11 +24,13 @@ use jsonrpsee::core::RpcResult as Result;
 use sc_client_api::backend::{Backend, StateBackend, StorageProvider};
 use sc_network_common::ExHashT;
 use sc_transaction_pool::ChainApi;
+use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_core::hashing::keccak_256;
 use sp_runtime::traits::{BlakeTwo256, Block as BlockT};
 // Frontier
 use fc_rpc_core::types::*;
+use fp_rpc::EthereumRuntimeRPCApi;
 
 use crate::{
 	eth::{rich_block_build, Eth},
@@ -39,12 +41,13 @@ impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi> Eth<B, C, P, CT, BE, H, A>
 where
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	C: StorageProvider<B, BE> + HeaderBackend<B> + Send + Sync + 'static,
+	C: ProvideRuntimeApi<B>,
+	C::Api: EthereumRuntimeRPCApi<B>,
 	BE: Backend<B> + 'static,
 	BE::State: StateBackend<BlakeTwo256>,
 {
 	pub async fn block_by_hash(&self, hash: H256, full: bool) -> Result<Option<RichBlock>> {
 		let client = Arc::clone(&self.client);
-		let overrides = Arc::clone(&self.overrides);
 		let block_data_cache = Arc::clone(&self.block_data_cache);
 		let backend = Arc::clone(&self.backend);
 
@@ -64,17 +67,13 @@ where
 
 		let schema =
 			frontier_backend_client::onchain_storage_schema::<B, C, BE>(client.as_ref(), id);
-		let handler = overrides
-			.schemas
-			.get(&schema)
-			.unwrap_or(&overrides.fallback);
 
 		let block = block_data_cache.current_block(schema, substrate_hash).await;
 		let statuses = block_data_cache
 			.current_transaction_statuses(schema, substrate_hash)
 			.await;
 
-		let base_fee = handler.base_fee(&id);
+		let base_fee = client.runtime_api().gas_price(&id).unwrap_or_default();
 
 		match (block, statuses) {
 			(Some(block), Some(statuses)) => Ok(Some(rich_block_build(
@@ -82,7 +81,7 @@ where
 				statuses.into_iter().map(Option::Some).collect(),
 				Some(hash),
 				full,
-				base_fee,
+				Some(base_fee),
 			))),
 			_ => Ok(None),
 		}
@@ -94,7 +93,6 @@ where
 		full: bool,
 	) -> Result<Option<RichBlock>> {
 		let client = Arc::clone(&self.client);
-		let overrides = Arc::clone(&self.overrides);
 		let block_data_cache = Arc::clone(&self.block_data_cache);
 		let backend = Arc::clone(&self.backend);
 
@@ -112,17 +110,13 @@ where
 
 		let schema =
 			frontier_backend_client::onchain_storage_schema::<B, C, BE>(client.as_ref(), id);
-		let handler = overrides
-			.schemas
-			.get(&schema)
-			.unwrap_or(&overrides.fallback);
 
 		let block = block_data_cache.current_block(schema, substrate_hash).await;
 		let statuses = block_data_cache
 			.current_transaction_statuses(schema, substrate_hash)
 			.await;
 
-		let base_fee = handler.base_fee(&id);
+		let base_fee = client.runtime_api().gas_price(&id).unwrap_or_default();
 
 		match (block, statuses) {
 			(Some(block), Some(statuses)) => {
@@ -133,7 +127,7 @@ where
 					statuses.into_iter().map(Option::Some).collect(),
 					Some(hash),
 					full,
-					base_fee,
+					Some(base_fee),
 				)))
 			}
 			_ => Ok(None),
