@@ -71,12 +71,11 @@ where
 {
 	let id = BlockId::Hash(header.hash());
 
-	let has_api = client
+	if let Some(_) = client
 		.runtime_api()
-		.has_api::<dyn EthereumRuntimeRPCApi<Block>>(&id)
-		.map_err(|e| format!("{:?}", e))?;
-
-	if has_api {
+		.api_version::<dyn EthereumRuntimeRPCApi<Block>>(&id)
+		.map_err(|e| format!("{:?}", e))?
+	{
 		let block = client
 			.runtime_api()
 			.current_block(&id)
@@ -93,7 +92,7 @@ where
 		backend.mapping().write_hashes(mapping_commitment)?;
 	} else {
 		backend.mapping().write_none(header.hash())?;
-	}
+	};
 
 	Ok(())
 }
