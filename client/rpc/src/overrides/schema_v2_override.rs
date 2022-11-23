@@ -141,14 +141,6 @@ where
 		)
 	}
 
-	/// Return the base fee at the given height.
-	fn base_fee(&self, block: &BlockId<B>) -> Option<U256> {
-		self.query_storage::<U256>(
-			block,
-			&StorageKey(storage_prefix_build(PALLET_BASE_FEE, BASE_FEE_PER_GAS)),
-		)
-	}
-
 	/// Return the elasticity at the given height.
 	fn elasticity(&self, block: &BlockId<B>) -> Option<Permill> {
 		let default_elasticity = Some(Permill::from_parts(125_000));

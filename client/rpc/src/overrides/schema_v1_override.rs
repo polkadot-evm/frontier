@@ -142,11 +142,6 @@ where
 		)
 	}
 
-	/// Prior to eip-1559 there is no base fee.
-	fn base_fee(&self, _block: &BlockId<B>) -> Option<U256> {
-		None
-	}
-
 	/// Prior to eip-1559 there is no elasticity.
 	fn elasticity(&self, _block: &BlockId<B>) -> Option<Permill> {
 		None
