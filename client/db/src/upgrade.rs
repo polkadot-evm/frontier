@@ -135,8 +135,8 @@ pub(crate) fn current_version(path: &Path) -> UpgradeResult<u32> {
 		Err(ref err) if err.kind() == ErrorKind::NotFound => {
 			fs::create_dir_all(path)?;
 			let mut file = fs::File::create(version_file_path(path))?;
-			file.write_all(format!("{}", 1).as_bytes())?;
-			Ok(1u32)
+			file.write_all(format!("{}", CURRENT_VERSION).as_bytes())?;
+			Ok(CURRENT_VERSION)
 		}
 		Err(_) => Err(UpgradeError::UnknownDatabaseVersion),
 		Ok(mut file) => {
@@ -337,7 +337,10 @@ mod tests {
 		prelude::*, DefaultTestClientBuilderExt, TestClientBuilder,
 	};
 
-	use std::sync::Arc;
+	use std::{
+		io::{Read, Write},
+		sync::Arc,
+	};
 
 	use codec::Encode;
 	use sp_core::H256;
@@ -470,6 +473,17 @@ mod tests {
 				}
 				let _ = backend.mapping().db.commit(transaction);
 			}
+
+			// Writes version 1 to file.
+			let _ = std::fs::create_dir_all(&path).expect("db path created");
+			let mut version_path = &mut path.to_owned();
+			version_path.push("db_version");
+			let mut version_file =
+				std::fs::File::create(version_path).expect("db version file path created");
+			version_file
+				.write_all(format!("{}", 1).as_bytes())
+				.expect("write version 1");
+
 			// Upgrade database from version 1 to 2
 			let _ = super::upgrade_db::<OpaqueBlock, _>(client.clone(), &path, &setting.source);
 
@@ -500,5 +514,32 @@ mod tests {
 			// Upgrade db version file
 			assert_eq!(super::current_version(&path).expect("version"), 2u32);
 		}
+	}
+
+	#[test]
+	fn create_db_with_current_version_works() {
+		let tmp = tempdir().expect("create a temporary directory");
+
+		let (client, _) = TestClientBuilder::new()
+			.build_with_native_executor::<substrate_test_runtime_client::runtime::RuntimeApi, _>(
+			None,
+		);
+		let mut client = Arc::new(client);
+
+		let setting = crate::DatabaseSettings {
+			source: sc_client_db::DatabaseSource::RocksDb {
+				path: tmp.path().to_owned(),
+				cache_size: 0,
+			},
+		};
+		let path = setting.source.path().unwrap();
+		let _ = super::upgrade_db::<OpaqueBlock, _>(client.clone(), &path, &setting.source);
+
+		let mut file =
+			std::fs::File::open(crate::upgrade::version_file_path(&path)).expect("file exist");
+
+		let mut s = String::new();
+		file.read_to_string(&mut s).expect("read file contents");
+		assert_eq!(s.parse::<u32>().expect("parse file contents"), 2u32);
 	}
 }
