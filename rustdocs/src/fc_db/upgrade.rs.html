@@ -502,6 +502,47 @@
 <span id="502">502</span>
 <span id="503">503</span>
 <span id="504">504</span>
+<span id="505">505</span>
+<span id="506">506</span>
+<span id="507">507</span>
+<span id="508">508</span>
+<span id="509">509</span>
+<span id="510">510</span>
+<span id="511">511</span>
+<span id="512">512</span>
+<span id="513">513</span>
+<span id="514">514</span>
+<span id="515">515</span>
+<span id="516">516</span>
+<span id="517">517</span>
+<span id="518">518</span>
+<span id="519">519</span>
+<span id="520">520</span>
+<span id="521">521</span>
+<span id="522">522</span>
+<span id="523">523</span>
+<span id="524">524</span>
+<span id="525">525</span>
+<span id="526">526</span>
+<span id="527">527</span>
+<span id="528">528</span>
+<span id="529">529</span>
+<span id="530">530</span>
+<span id="531">531</span>
+<span id="532">532</span>
+<span id="533">533</span>
+<span id="534">534</span>
+<span id="535">535</span>
+<span id="536">536</span>
+<span id="537">537</span>
+<span id="538">538</span>
+<span id="539">539</span>
+<span id="540">540</span>
+<span id="541">541</span>
+<span id="542">542</span>
+<span id="543">543</span>
+<span id="544">544</span>
+<span id="545">545</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -639,8 +680,8 @@
 		<span class="prelude-val">Err</span>(<span class="kw-2">ref </span>err) <span class="kw">if </span>err.kind() == ErrorKind::NotFound =&gt; {
 			fs::create_dir_all(path)<span class="question-mark">?</span>;
 			<span class="kw">let </span><span class="kw-2">mut </span>file = fs::File::create(version_file_path(path))<span class="question-mark">?</span>;
-			file.write_all(<span class="macro">format!</span>(<span class="string">&quot;{}&quot;</span>, <span class="number">1</span>).as_bytes())<span class="question-mark">?</span>;
-			<span class="prelude-val">Ok</span>(<span class="number">1u32</span>)
+			file.write_all(<span class="macro">format!</span>(<span class="string">&quot;{}&quot;</span>, CURRENT_VERSION).as_bytes())<span class="question-mark">?</span>;
+			<span class="prelude-val">Ok</span>(CURRENT_VERSION)
 		}
 		<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="prelude-val">Err</span>(UpgradeError::UnknownDatabaseVersion),
 		<span class="prelude-val">Ok</span>(<span class="kw-2">mut </span>file) =&gt; {
@@ -841,7 +882,10 @@
 		prelude::<span class="kw-2">*</span>, DefaultTestClientBuilderExt, TestClientBuilder,
 	};
 
-	<span class="kw">use </span>std::sync::Arc;
+	<span class="kw">use </span>std::{
+		io::{Read, Write},
+		sync::Arc,
+	};
 
 	<span class="kw">use </span>codec::Encode;
 	<span class="kw">use </span>sp_core::H256;
@@ -974,6 +1018,17 @@
 				}
 				<span class="kw">let _ </span>= backend.mapping().db.commit(transaction);
 			}
+
+			<span class="comment">// Writes version 1 to file.
+			</span><span class="kw">let _ </span>= std::fs::create_dir_all(<span class="kw-2">&amp;</span>path).expect(<span class="string">&quot;db path created&quot;</span>);
+			<span class="kw">let </span><span class="kw-2">mut </span>version_path = <span class="kw-2">&amp;mut </span>path.to_owned();
+			version_path.push(<span class="string">&quot;db_version&quot;</span>);
+			<span class="kw">let </span><span class="kw-2">mut </span>version_file =
+				std::fs::File::create(version_path).expect(<span class="string">&quot;db version file path created&quot;</span>);
+			version_file
+				.write_all(<span class="macro">format!</span>(<span class="string">&quot;{}&quot;</span>, <span class="number">1</span>).as_bytes())
+				.expect(<span class="string">&quot;write version 1&quot;</span>);
+
 			<span class="comment">// Upgrade database from version 1 to 2
 			</span><span class="kw">let _ </span>= <span class="kw">super</span>::upgrade_db::&lt;OpaqueBlock, <span class="kw">_</span>&gt;(client.clone(), <span class="kw-2">&amp;</span>path, <span class="kw-2">&amp;</span>setting.source);
 
@@ -1004,6 +1059,33 @@
 			<span class="comment">// Upgrade db version file
 			</span><span class="macro">assert_eq!</span>(<span class="kw">super</span>::current_version(<span class="kw-2">&amp;</span>path).expect(<span class="string">&quot;version&quot;</span>), <span class="number">2u32</span>);
 		}
+	}
+
+	<span class="attribute">#[test]
+	</span><span class="kw">fn </span>create_db_with_current_version_works() {
+		<span class="kw">let </span>tmp = tempdir().expect(<span class="string">&quot;create a temporary directory&quot;</span>);
+
+		<span class="kw">let </span>(client, <span class="kw">_</span>) = TestClientBuilder::new()
+			.build_with_native_executor::&lt;substrate_test_runtime_client::runtime::RuntimeApi, <span class="kw">_</span>&gt;(
+			<span class="prelude-val">None</span>,
+		);
+		<span class="kw">let </span><span class="kw-2">mut </span>client = Arc::new(client);
+
+		<span class="kw">let </span>setting = <span class="kw">crate</span>::DatabaseSettings {
+			source: sc_client_db::DatabaseSource::RocksDb {
+				path: tmp.path().to_owned(),
+				cache_size: <span class="number">0</span>,
+			},
+		};
+		<span class="kw">let </span>path = setting.source.path().unwrap();
+		<span class="kw">let _ </span>= <span class="kw">super</span>::upgrade_db::&lt;OpaqueBlock, <span class="kw">_</span>&gt;(client.clone(), <span class="kw-2">&amp;</span>path, <span class="kw-2">&amp;</span>setting.source);
+
+		<span class="kw">let </span><span class="kw-2">mut </span>file =
+			std::fs::File::open(<span class="kw">crate</span>::upgrade::version_file_path(<span class="kw-2">&amp;</span>path)).expect(<span class="string">&quot;file exist&quot;</span>);
+
+		<span class="kw">let </span><span class="kw-2">mut </span>s = String::new();
+		file.read_to_string(<span class="kw-2">&amp;mut </span>s).expect(<span class="string">&quot;read file contents&quot;</span>);
+		<span class="macro">assert_eq!</span>(s.parse::&lt;u32&gt;().expect(<span class="string">&quot;parse file contents&quot;</span>), <span class="number">2u32</span>);
 	}
 }
 </code></pre></div>
