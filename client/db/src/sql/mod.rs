@@ -535,30 +535,18 @@ where
 	pub async fn create_indexes(&self) -> Result<SqliteQueryResult, Error> {
 		sqlx::query(
 			"BEGIN;
-			CREATE INDEX IF NOT EXISTS block_number_idx ON logs (
+			CREATE INDEX IF NOT EXISTS logs_main_idx ON logs (
 				block_number,
-				address
-			);
-			CREATE INDEX IF NOT EXISTS topic_1_idx ON logs (
-				block_number,
-				topic_1
-			);
-			CREATE INDEX IF NOT EXISTS topic_2_idx ON logs (
-				block_number,
-				topic_2
-			);
-			CREATE INDEX IF NOT EXISTS topic_3_idx ON logs (
-				block_number,
-				topic_3
-			);
-			CREATE INDEX IF NOT EXISTS topic_4_idx ON logs (
-				block_number,
+				address,
+				topic_1,
+				topic_2,
+				topic_3,
 				topic_4
 			);
-			CREATE INDEX IF NOT EXISTS sub_block_hash_idx_logs ON logs (
+			CREATE INDEX IF NOT EXISTS logs_substrate_index ON logs (
 				substrate_block_hash
 			);
-			CREATE INDEX IF NOT EXISTS sub_block_hash_idx_blocks ON blocks (
+			CREATE INDEX IF NOT EXISTS blocks_substrate_index ON blocks (
 				substrate_block_hash
 			);
 			CREATE INDEX IF NOT EXISTS eth_block_hash_idx ON blocks (
