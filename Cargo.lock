@@ -1712,7 +1712,7 @@ version = "2.0.0-dev"
 dependencies = [
  "fp-storage",
  "futures",
- "kvdb-rocksdb",
+ "kvdb-rocksdb 0.17.0",
  "log",
  "parity-db",
  "parity-scale-codec",
@@ -2055,7 +2055,7 @@ dependencies = [
  "handlebars",
  "hash-db",
  "itertools",
- "kvdb",
+ "kvdb 0.12.0",
  "lazy_static",
  "linked-hash-map",
  "log",
@@ -3123,12 +3123,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "kvdb"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e7d770dcb02bf6835887c3a979b5107a04ff4bbde97a5f0928d27404a155add9"
+dependencies = [
+ "smallvec",
+]
+
+[[package]]
 name = "kvdb-memorydb"
 version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "40d109c87bfb7759edd2a49b2649c1afe25af785d930ad6a38479b4dc70dd873"
 dependencies = [
- "kvdb",
+ "kvdb 0.12.0",
  "parity-util-mem",
  "parking_lot 0.12.1",
 ]
@@ -3139,10 +3148,24 @@ version = "0.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c076cc2cdbac89b9910c853a36c957d3862a779f31c2661174222cefb49ee597"
 dependencies = [
- "kvdb",
+ "kvdb 0.12.0",
  "log",
  "num_cpus",
  "parity-util-mem",
+ "parking_lot 0.12.1",
+ "regex",
+ "rocksdb",
+ "smallvec",
+]
+
+[[package]]
+name = "kvdb-rocksdb"
+version = "0.17.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2182b8219fee6bd83aacaab7344e840179ae079d5216aa4e249b4d704646a844"
+dependencies = [
+ "kvdb 0.13.0",
+ "num_cpus",
  "parking_lot 0.12.1",
  "regex",
  "rocksdb",
@@ -5793,9 +5816,9 @@ version = "0.10.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=master#e7cb51b325c19012cc5c269105c43717093f45b0"
 dependencies = [
  "hash-db",
- "kvdb",
+ "kvdb 0.12.0",
  "kvdb-memorydb",
- "kvdb-rocksdb",
+ "kvdb-rocksdb 0.16.0",
  "linked-hash-map",
  "log",
  "parity-db",
@@ -7323,7 +7346,7 @@ name = "sp-database"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=master#e7cb51b325c19012cc5c269105c43717093f45b0"
 dependencies = [
- "kvdb",
+ "kvdb 0.12.0",
  "parking_lot 0.12.1",
 ]
 
