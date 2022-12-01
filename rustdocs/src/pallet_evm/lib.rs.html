@@ -886,6 +886,8 @@
 <span id="886">886</span>
 <span id="887">887</span>
 <span id="888">888</span>
+<span id="889">889</span>
+<span id="890">890</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
@@ -1323,6 +1325,8 @@
 		</span>Undefined,
 		<span class="doccomment">/// EVM reentrancy
 		</span>Reentrancy,
+		<span class="doccomment">/// EIP-3607,
+		</span>TransactionMustComeFromEOA,
 	}
 
 	<span class="kw">impl</span>&lt;T&gt; From&lt;InvalidEvmTransactionError&gt; <span class="kw">for </span>Error&lt;T&gt; {
