@@ -435,6 +435,8 @@ pub mod pallet {
 		Undefined,
 		/// EVM reentrancy
 		Reentrancy,
+		/// EIP-3607,
+		TransactionMustComeFromEOA,
 	}
 
 	impl<T> From<InvalidEvmTransactionError> for Error<T> {
