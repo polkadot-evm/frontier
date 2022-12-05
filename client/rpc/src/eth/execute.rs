@@ -155,8 +155,8 @@ where
 			// or fallback to the block gas limit.
 			None => match api.gas_limit_multiplier_support(&id) {
 				Ok(_) => max_gas_limit,
-				_ => block_gas_limit
-			}
+				_ => block_gas_limit,
+			},
 		};
 
 		let data = data.map(|d| d.0).unwrap_or_default();
@@ -389,8 +389,8 @@ where
 			// or fallback to the block gas limit.
 			None => match api.gas_limit_multiplier_support(&BlockId::Hash(best_hash)) {
 				Ok(_) => max_gas_limit,
-				_ => block_gas_limit
-			}
+				_ => block_gas_limit,
+			},
 		};
 
 		// Recap the highest gas allowance with account's balance.
