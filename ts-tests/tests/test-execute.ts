@@ -116,21 +116,21 @@ describeWithFrontier("Frontier RPC (RPC execution)", (context) => {
 
 		let receipt = await context.web3.eth.getTransactionReceipt(tx.transactionHash);
 		let contractAddress = receipt.contractAddress;
-		
+
 		// When not specifying gas we expect the gas limit to default to a 10x block gas limit
 		// non-transactional call. The contract's method used requires close to block gas limit * 10.
 		const result = await customRequest(context.web3, "eth_call", [
 			{
 				to: contractAddress,
 				// require something close to the block gas limit * 10
-				data: contract.methods.force_gas((block.gasLimit * 10) - 500_000).encodeABI(),
+				data: contract.methods.force_gas(block.gasLimit * 10 - 500_000).encodeABI(),
 			},
 		]);
 
 		expect(result).to.include({
-			jsonrpc: '2.0',
-			result: '0x0000000000000000000000000000000000000000000000000000000000000001',
-			id: 1
+			jsonrpc: "2.0",
+			result: "0x0000000000000000000000000000000000000000000000000000000000000001",
+			id: 1,
 		});
 	});
 });
