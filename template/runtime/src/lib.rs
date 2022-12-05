@@ -745,9 +745,7 @@ impl_runtime_apis! {
 			Some(BaseFee::elasticity())
 		}
 
-		fn gas_limit_multiplier_support() -> () {
-			()
-		}
+		fn gas_limit_multiplier_support() {}
 	}
 
 	impl fp_rpc::ConvertTransactionRuntimeApi<Block> for Runtime {

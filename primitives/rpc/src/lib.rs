@@ -166,7 +166,7 @@ sp_api::decl_runtime_apis! {
 		fn elasticity() -> Option<Permill>;
 		/// Used to determine if gas limit multiplier for non-transactional calls (eth_call/estimateGas)
 		/// is supported.
-		fn gas_limit_multiplier_support() -> ();
+		fn gas_limit_multiplier_support();
 	}
 
 	#[api_version(2)]
