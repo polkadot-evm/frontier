@@ -1027,7 +1027,7 @@
 		// of a precompile. While mainnet Ethereum currently only has stateless precompiles,
 		// projects using Frontier can have stateful precompiles that can manage funds or
 		// which calls other contracts that expects this precompile address to be trustworthy.
-		</span><span class="kw">if </span>!&lt;AccountCodes&lt;T&gt;&gt;::get(<span class="kw-2">&amp;</span>source).is_empty() || precompiles.is_precompile(source) {
+		</span><span class="kw">if </span>!&lt;AccountCodes&lt;T&gt;&gt;::get(source).is_empty() || precompiles.is_precompile(source) {
 			<span class="kw">return </span><span class="prelude-val">Err</span>(RunnerError {
 				error: Error::&lt;T&gt;::TransactionMustComeFromEOA,
 				weight,
