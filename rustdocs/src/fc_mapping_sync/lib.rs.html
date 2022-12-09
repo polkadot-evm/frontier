@@ -212,6 +212,14 @@
 <span id="212">212</span>
 <span id="213">213</span>
 <span id="214">214</span>
+<span id="215">215</span>
+<span id="216">216</span>
+<span id="217">217</span>
+<span id="218">218</span>
+<span id="219">219</span>
+<span id="220">220</span>
+<span id="221">221</span>
+<span id="222">222</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -285,16 +293,24 @@
 {
 	<span class="kw">let </span>id = BlockId::Hash(header.hash());
 
-	<span class="kw">let </span>has_api = client
+	<span class="kw">if let </span><span class="prelude-val">Some</span>(api_version) = client
 		.runtime_api()
-		.has_api::&lt;<span class="kw">dyn </span>EthereumRuntimeRPCApi&lt;Block&gt;&gt;(<span class="kw-2">&amp;</span>id)
-		.map_err(|e| <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, e))<span class="question-mark">?</span>;
-
-	<span class="kw">if </span>has_api {
-		<span class="kw">let </span>block = client
-			.runtime_api()
-			.current_block(<span class="kw-2">&amp;</span>id)
-			.map_err(|e| <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, e))<span class="question-mark">?</span>;
+		.api_version::&lt;<span class="kw">dyn </span>EthereumRuntimeRPCApi&lt;Block&gt;&gt;(<span class="kw-2">&amp;</span>id)
+		.map_err(|e| <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, e))<span class="question-mark">?
+	</span>{
+		<span class="kw">let </span>block = <span class="kw">if </span>api_version &gt; <span class="number">1 </span>{
+			client
+				.runtime_api()
+				.current_block(<span class="kw-2">&amp;</span>id)
+				.map_err(|e| <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, e))<span class="question-mark">?
+		</span>} <span class="kw">else </span>{
+			<span class="attribute">#[allow(deprecated)]
+			</span><span class="kw">let </span>legacy_block = client
+				.runtime_api()
+				.current_block_before_version_2(<span class="kw-2">&amp;</span>id)
+				.map_err(|e| <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, e))<span class="question-mark">?</span>;
+			legacy_block.map(|block| block.into())
+		};
 		<span class="kw">let </span>block_hash = block
 			.ok_or_else(|| <span class="string">&quot;Ethereum genesis block not found&quot;</span>.to_string())<span class="question-mark">?
 			</span>.header
@@ -307,7 +323,7 @@
 		backend.mapping().write_hashes(mapping_commitment)<span class="question-mark">?</span>;
 	} <span class="kw">else </span>{
 		backend.mapping().write_none(header.hash())<span class="question-mark">?</span>;
-	}
+	};
 
 	<span class="prelude-val">Ok</span>(())
 }
