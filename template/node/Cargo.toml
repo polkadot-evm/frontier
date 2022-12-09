@@ -23,18 +23,18 @@ jsonrpsee = { version = "0.15.1", features = ["server", "macros"] }
 
 # Substrate
 sc-basic-authorship = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-cli = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", features = ["wasmtime"] }
+sc-cli = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-client-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-consensus = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-consensus-aura = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", optional = true }
 sc-consensus-manual-seal = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", optional = true }
-sc-executor = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", features = ["wasmtime"] }
+sc-executor = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-finality-grandpa = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-keystore = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-network = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-rpc = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-rpc-api = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-service = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", features = ["wasmtime"] }
+sc-service = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-telemetry = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-transaction-pool = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-transaction-pool-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -42,11 +42,11 @@ sp-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate
 sp-block-builder = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-blockchain = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-consensus-aura = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-core = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-core = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-finality-grandpa = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-inherents = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-keyring = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-runtime = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-keyring = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-runtime = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-timestamp = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 # These dependencies are used for RPC
 pallet-transaction-payment-rpc = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
