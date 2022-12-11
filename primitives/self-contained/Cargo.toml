@@ -20,9 +20,9 @@ parity-util-mem = { version = "0.12", optional = true }
 scale-info = { version = "2.3.0", default-features = false, features = ["derive"] }
 
 # Substrate
-sp-runtime = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-runtime = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.32", default-features = false }
 # Substrate FRAME
-frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.32", default-features = false }
 
 [features]
 default = ["std"]
