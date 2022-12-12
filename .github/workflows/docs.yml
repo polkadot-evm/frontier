@@ -2,7 +2,7 @@ name: Docs
 
 on:
   push:
-    branches: [ master ]
+    branches: [master]
 
 jobs:
   release:
@@ -12,15 +12,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-      - name: Rust Setup
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: nightly-2022-10-10
-          target: wasm32-unknown-unknown
-          override: true
-          components: rust-docs
-      - name: Install protoc
+
+      - name: Setup rust toolchain
+        run: |
+          rustup show
+          rustup component add rust-docs
+      - name: Setup protoc
         uses: arduino/setup-protoc@v1
 
       - name: Build website

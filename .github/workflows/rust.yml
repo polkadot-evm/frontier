@@ -17,74 +17,66 @@ jobs:
     name: 'Run Rust tests'
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - name: Rust Setup
-      uses: actions-rs/toolchain@v1
-      with:
-        profile: minimal
-        toolchain: nightly-2022-10-10
-        target: wasm32-unknown-unknown
-        override: true
-    - name: Install protoc
-      uses: arduino/setup-protoc@v1
-    - name: Run tests
-      run: cargo test --locked --verbose --all
-    - name: Ensure runtime-benchmarks and try-runtime features compiles
-      run: cargo check --release --features=runtime-benchmarks,try-runtime
+      - uses: actions/checkout@v3
+
+      - name: Setup rust toolchain
+        run: rustup show
+      - name: Setup protoc
+        uses: arduino/setup-protoc@v1
+
+      - name: Run tests
+        run: cargo test --locked --verbose --all
+      - name: Ensure runtime-benchmarks and try-runtime features compiles
+        run: cargo check --release --features=runtime-benchmarks,try-runtime
 
   integration:
     name: 'Run integration tests'
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - name: Rust Setup
-      uses: actions-rs/toolchain@v1
-      with:
-        profile: minimal
-        toolchain: nightly-2022-10-10
-        target: wasm32-unknown-unknown
-        override: true
-    - name: Install protoc
-      uses: arduino/setup-protoc@v1
-    - name: Build manual seal client
-      run: |
-        cd template/node
-        cargo build --release --locked --verbose --no-default-features --features manual-seal,rpc_binary_search_estimate
-    - name: Use Node.js 10
-      uses: actions/setup-node@v3
-      with:
-        node-version: 10
-    - name: Install functional tests typescript
-      run: cd ts-tests && npm install
-    - name: Check functional tests format
-      run: cd ts-tests && npm run fmt-check
-    - name: Run functional tests
-      run: cd ts-tests && npm run build && npm run test
+      - uses: actions/checkout@v3
+
+      - name: Setup rust toolchain
+        run: rustup show
+      - name: Setup protoc
+        uses: arduino/setup-protoc@v1
+
+      - name: Build manual seal client
+        run: |
+          cd template/node
+          cargo build --release --locked --verbose --no-default-features --features manual-seal,rpc_binary_search_estimate
+      - name: Use Node.js 10
+        uses: actions/setup-node@v3
+        with:
+          node-version: 10
+      - name: Install functional tests typescript
+        run: cd ts-tests && npm install
+      - name: Check functional tests format
+        run: cd ts-tests && npm run fmt-check
+      - name: Run functional tests
+        run: cd ts-tests && npm run build && npm run test
 
   lint:
     name: 'Run lints'
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - name: Rust Setup
-      uses: actions-rs/toolchain@v1
-      with:
-        profile: minimal
-        toolchain: nightly-2022-10-10
-        target: wasm32-unknown-unknown
-        override: true
-        components: rustfmt, clippy
-    - name: Install protoc
-      uses: arduino/setup-protoc@v1
-    - name: Check Cargo.toml Format
-      run: |
-        if taplo --version &> /dev/null; then
-          echo "taplo-cli is already installed"
-        else
-          cargo install taplo-cli
-        fi
-        taplo fmt --check
-    - name: Rustfmt
-      run: cargo fmt --all -- --check
-    - name: Clippy
-      run: cargo clippy --all --features runtime-benchmarks,try-runtime -- -D warnings
+      - uses: actions/checkout@v3
+
+      - name: Setup rust toolchain
+        run: |
+          rustup show
+          rustup component add rustfmt clippy
+      - name: Setup protoc
+        uses: arduino/setup-protoc@v1
+
+      - name: Check Cargo.toml Format
+        run: |
+          if taplo --version &> /dev/null; then
+            echo "taplo-cli is already installed"
+          else
+            cargo install taplo-cli
+          fi
+          taplo fmt --check
+      - name: Rustfmt
+        run: cargo fmt --all -- --check
+      - name: Clippy
+        run: cargo clippy --all --features runtime-benchmarks,try-runtime -- -D warnings
