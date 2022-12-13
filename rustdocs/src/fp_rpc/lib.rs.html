@@ -188,6 +188,9 @@
 <span id="188">188</span>
 <span id="189">189</span>
 <span id="190">190</span>
+<span id="191">191</span>
+<span id="192">192</span>
+<span id="193">193</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
@@ -354,6 +357,9 @@
 		) -&gt; Vec&lt;ethereum::TransactionV2&gt;;
 		<span class="doccomment">/// Return the elasticity multiplier.
 		</span><span class="kw">fn </span>elasticity() -&gt; <span class="prelude-ty">Option</span>&lt;Permill&gt;;
+		<span class="doccomment">/// Used to determine if gas limit multiplier for non-transactional calls (eth_call/estimateGas)
+		/// is supported.
+		</span><span class="kw">fn </span>gas_limit_multiplier_support();
 	}
 
 	<span class="attribute">#[api_version(<span class="number">2</span>)]
