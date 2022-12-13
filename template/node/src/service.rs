@@ -659,7 +659,7 @@ pub fn new_full(mut config: Configuration, cli: &Cli) -> Result<TaskManager, Ser
 
 		#[async_trait::async_trait]
 		impl sp_inherents::InherentDataProvider for MockTimestampInherentDataProvider {
-			fn provide_inherent_data(
+			async fn provide_inherent_data(
 				&self,
 				inherent_data: &mut sp_inherents::InherentData,
 			) -> Result<(), sp_inherents::Error> {
