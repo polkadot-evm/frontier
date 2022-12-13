@@ -19,10 +19,10 @@ scale-info = { version = "2.3.0", default-features = false, features = ["derive"
 
 # Substrate
 sp-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-core = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-io = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-runtime = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-std = { version = "4.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-core = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-io = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-runtime = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-std = { version = "5.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 
 # Frontier
 fp-evm = { version = "3.0.0-dev", path = "../../primitives/evm", default-features = false }
