@@ -164,6 +164,9 @@ sp_api::decl_runtime_apis! {
 		) -> Vec<ethereum::TransactionV2>;
 		/// Return the elasticity multiplier.
 		fn elasticity() -> Option<Permill>;
+		/// Used to determine if gas limit multiplier for non-transactional calls (eth_call/estimateGas)
+		/// is supported.
+		fn gas_limit_multiplier_support();
 	}
 
 	#[api_version(2)]
