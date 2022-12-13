@@ -82,7 +82,7 @@
 <span class="attribute">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
 #[async_trait::async_trait]
 </span><span class="kw">impl </span>sp_inherents::InherentDataProvider <span class="kw">for </span>InherentDataProvider {
-	<span class="kw">fn </span>provide_inherent_data(<span class="kw-2">&amp;</span><span class="self">self</span>, inherent_data: <span class="kw-2">&amp;mut </span>InherentData) -&gt; <span class="prelude-ty">Result</span>&lt;(), Error&gt; {
+	<span class="kw">async fn </span>provide_inherent_data(<span class="kw-2">&amp;</span><span class="self">self</span>, inherent_data: <span class="kw-2">&amp;mut </span>InherentData) -&gt; <span class="prelude-ty">Result</span>&lt;(), Error&gt; {
 		inherent_data.put_data(INHERENT_IDENTIFIER, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>)
 	}
 

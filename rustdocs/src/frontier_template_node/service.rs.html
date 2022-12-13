@@ -1433,7 +1433,7 @@
 
 		<span class="attribute">#[async_trait::async_trait]
 		</span><span class="kw">impl </span>sp_inherents::InherentDataProvider <span class="kw">for </span>MockTimestampInherentDataProvider {
-			<span class="kw">fn </span>provide_inherent_data(
+			<span class="kw">async fn </span>provide_inherent_data(
 				<span class="kw-2">&amp;</span><span class="self">self</span>,
 				inherent_data: <span class="kw-2">&amp;mut </span>sp_inherents::InherentData,
 			) -&gt; <span class="prelude-ty">Result</span>&lt;(), sp_inherents::Error&gt; {
