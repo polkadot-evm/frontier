@@ -25,6 +25,8 @@ jobs:
         override: true
     - name: Install protoc
       uses: arduino/setup-protoc@v1
+      with:
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
     - name: Run tests
       run: cargo test --locked --verbose --all
     - name: Ensure runtime-benchmarks and try-runtime features compiles
@@ -44,6 +46,8 @@ jobs:
         override: true
     - name: Install protoc
       uses: arduino/setup-protoc@v1
+      with:
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
     - name: Build manual seal client
       run: |
         cd template/node
@@ -74,6 +78,8 @@ jobs:
         components: rustfmt, clippy
     - name: Install protoc
       uses: arduino/setup-protoc@v1
+      with:
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
     - name: Check Cargo.toml Format
       run: |
         if taplo --version &> /dev/null; then
