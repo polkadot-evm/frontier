@@ -16,7 +16,6 @@ serde = { version = "1.0", features = ["derive"], optional = true }
 
 # Parity
 codec = { package = "parity-scale-codec", version = "3.2.1", default-features = false }
-parity-util-mem = { version = "0.12", optional = true }
 scale-info = { version = "2.3.0", default-features = false, features = ["derive"] }
 
 # Substrate
@@ -31,7 +30,6 @@ std = [
 	"serde",
 	# Parity
 	"codec/std",
-	"parity-util-mem",
 	"scale-info/std",
 	# Substrate
 	"sp-runtime/std",
