@@ -22,6 +22,8 @@ jobs:
           components: rust-docs
       - name: Install protoc
         uses: arduino/setup-protoc@v1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build website
         run: |
