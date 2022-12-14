@@ -22,7 +22,7 @@ serde = { version = "1.0", optional = true, features = ["derive"] }
 codec = { package = "parity-scale-codec", version = "3.2.1", default-features = false, features = ["derive"] }
 primitive-types = { version = "0.12.1", default-features = false, features = ["rlp", "byteorder"] }
 rlp = { version = "0.5", default-features = false }
-scale-info = { version = "2.3.0", default-features = false, features = ["derive"] }
+scale-info = { version = "2.3.1", default-features = false, features = ["derive"] }
 
 # Substate
 sp-core = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
