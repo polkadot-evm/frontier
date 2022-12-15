@@ -39,17 +39,6 @@ pub struct UncheckedExtrinsic<Address, Call, Signature, Extra: SignedExtension>(
 	pub sp_runtime::generic::UncheckedExtrinsic<Address, Call, Signature, Extra>,
 );
 
-#[cfg(feature = "std")]
-impl<Address, Call, Signature, Extra> parity_util_mem::MallocSizeOf
-	for UncheckedExtrinsic<Address, Call, Signature, Extra>
-where
-	Extra: SignedExtension,
-{
-	fn size_of(&self, ops: &mut parity_util_mem::MallocSizeOfOps) -> usize {
-		self.0.size_of(ops)
-	}
-}
-
 impl<Address, Call, Signature, Extra: SignedExtension>
 	UncheckedExtrinsic<Address, Call, Signature, Extra>
 {

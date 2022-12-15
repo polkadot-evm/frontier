@@ -476,7 +476,7 @@ mod tests {
 
 			// Writes version 1 to file.
 			let _ = std::fs::create_dir_all(&path).expect("db path created");
-			let mut version_path = &mut path.to_owned();
+			let mut version_path = path.to_owned();
 			version_path.push("db_version");
 			let mut version_file =
 				std::fs::File::create(version_path).expect("db version file path created");
@@ -524,7 +524,7 @@ mod tests {
 			.build_with_native_executor::<substrate_test_runtime_client::runtime::RuntimeApi, _>(
 			None,
 		);
-		let mut client = Arc::new(client);
+		let client = Arc::new(client);
 
 		let setting = crate::DatabaseSettings {
 			source: sc_client_db::DatabaseSource::RocksDb {

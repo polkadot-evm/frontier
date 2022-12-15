@@ -18,6 +18,7 @@
 
 mod mapping_db;
 mod meta_db;
+#[cfg(test)]
 mod tests;
 pub(crate) mod utils;
 
