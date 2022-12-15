@@ -156,6 +156,7 @@
 <span id="156">156</span>
 <span id="157">157</span>
 <span id="158">158</span>
+<span id="159">159</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -176,7 +177,8 @@
 
 </span><span class="kw">mod </span>mapping_db;
 <span class="kw">mod </span>meta_db;
-<span class="kw">mod </span>tests;
+<span class="attribute">#[cfg(test)]
+</span><span class="kw">mod </span>tests;
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">mod </span>utils;
 
 <span class="kw">use </span>std::{path::PathBuf, str::FromStr, sync::Arc};

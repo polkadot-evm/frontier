@@ -185,17 +185,6 @@
 <span id="185">185</span>
 <span id="186">186</span>
 <span id="187">187</span>
-<span id="188">188</span>
-<span id="189">189</span>
-<span id="190">190</span>
-<span id="191">191</span>
-<span id="192">192</span>
-<span id="193">193</span>
-<span id="194">194</span>
-<span id="195">195</span>
-<span id="196">196</span>
-<span id="197">197</span>
-<span id="198">198</span>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
@@ -236,17 +225,6 @@
 </span><span class="kw">pub struct </span>UncheckedExtrinsic&lt;Address, Call, Signature, Extra: SignedExtension&gt;(
 	<span class="kw">pub </span>sp_runtime::generic::UncheckedExtrinsic&lt;Address, Call, Signature, Extra&gt;,
 );
-
-<span class="attribute">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
-</span><span class="kw">impl</span>&lt;Address, Call, Signature, Extra&gt; parity_util_mem::MallocSizeOf
-	<span class="kw">for </span>UncheckedExtrinsic&lt;Address, Call, Signature, Extra&gt;
-<span class="kw">where
-	</span>Extra: SignedExtension,
-{
-	<span class="kw">fn </span>size_of(<span class="kw-2">&amp;</span><span class="self">self</span>, ops: <span class="kw-2">&amp;mut </span>parity_util_mem::MallocSizeOfOps) -&gt; usize {
-		<span class="self">self</span>.<span class="number">0</span>.size_of(ops)
-	}
-}
 
 <span class="kw">impl</span>&lt;Address, Call, Signature, Extra: SignedExtension&gt;
 	UncheckedExtrinsic&lt;Address, Call, Signature, Extra&gt;

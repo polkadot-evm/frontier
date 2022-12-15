@@ -1,5 +1,5 @@
 var sourcesIndex = JSON.parse('{\
-"fc_cli":["",[["frontier_db_cmd",[],["mapping_db.rs","meta_db.rs","mod.rs","tests.rs","utils.rs"]]],["lib.rs"]],\
+"fc_cli":["",[["frontier_db_cmd",[],["mapping_db.rs","meta_db.rs","mod.rs","utils.rs"]]],["lib.rs"]],\
 "fc_consensus":["",[],["lib.rs"]],\
 "fc_db":["",[],["lib.rs","parity_db_adapter.rs","upgrade.rs","utils.rs"]],\
 "fc_mapping_sync":["",[],["lib.rs","worker.rs"]],\

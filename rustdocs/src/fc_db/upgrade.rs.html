@@ -1021,7 +1021,7 @@
 
 			<span class="comment">// Writes version 1 to file.
 			</span><span class="kw">let _ </span>= std::fs::create_dir_all(<span class="kw-2">&amp;</span>path).expect(<span class="string">&quot;db path created&quot;</span>);
-			<span class="kw">let </span><span class="kw-2">mut </span>version_path = <span class="kw-2">&amp;mut </span>path.to_owned();
+			<span class="kw">let </span><span class="kw-2">mut </span>version_path = path.to_owned();
 			version_path.push(<span class="string">&quot;db_version&quot;</span>);
 			<span class="kw">let </span><span class="kw-2">mut </span>version_file =
 				std::fs::File::create(version_path).expect(<span class="string">&quot;db version file path created&quot;</span>);
@@ -1069,7 +1069,7 @@
 			.build_with_native_executor::&lt;substrate_test_runtime_client::runtime::RuntimeApi, <span class="kw">_</span>&gt;(
 			<span class="prelude-val">None</span>,
 		);
-		<span class="kw">let </span><span class="kw-2">mut </span>client = Arc::new(client);
+		<span class="kw">let </span>client = Arc::new(client);
 
 		<span class="kw">let </span>setting = <span class="kw">crate</span>::DatabaseSettings {
 			source: sc_client_db::DatabaseSource::RocksDb {
