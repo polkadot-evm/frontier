@@ -179,6 +179,11 @@ where
 		BE: BackendT<Block> + 'static,
 		BE::State: StateBackend<BlakeTwo256>,
 	{
+		log::debug!(
+			target: "frontier-sql",
+			"🛠️  [Metadata] Retrieving digest data for {:?} block hashes",
+			hashes.len()
+		);
 		let mut out = Vec::new();
 		for &hash in hashes.iter() {
 			if let Ok(Some(header)) = client.header(hash) {
@@ -198,6 +203,10 @@ where
 				}
 			}
 		}
+		log::debug!(
+			target: "frontier-sql",
+			"🛠️  [Metadata] Retrieved digest data",
+		);
 		Ok(out)
 	}
 
@@ -221,7 +230,10 @@ where
 
 		let mut tx = self.pool().begin().await?;
 
-		// TODO move header retrieval to the blocking thread? depending on the batch size its likely to be necessary
+		log::debug!(
+			target: "frontier-sql",
+			"🛠️  [Metadata] Starting execution of statements on db transaction"
+		);
 		for metadata in block_metadata.into_iter() {
 			let post_hashes = metadata.post_hashes;
 			let ethereum_block_hash = post_hashes.block_hash.as_bytes().to_owned();
@@ -270,6 +282,10 @@ where
 		let query = builder.build();
 		query.execute(&mut tx).await?;
 
+		log::debug!(
+			target: "frontier-sql",
+			"🛠️  [Metadata] Ready to commit",
+		);
 		tx.commit().await
 	}
 
