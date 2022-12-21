@@ -66,6 +66,7 @@ pub mod pallet {
 		/// This state was caused by a previous bug in EVM create account dispatchable.
 		///
 		/// Any accounts in the input list not satisfying the above condition will remain unaffected.
+		#[pallet::call_index(0)]
 		#[pallet::weight(
 			<T as pallet::Config>::WeightInfo::hotfix_inc_account_sufficients(addresses.len().try_into().unwrap_or(u32::MAX))
 		)]
