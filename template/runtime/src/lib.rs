@@ -400,6 +400,7 @@ construct_runtime!(
 	}
 );
 
+#[derive(Clone)]
 pub struct TransactionConverter;
 
 impl fp_rpc::ConvertTransaction<UncheckedExtrinsic> for TransactionConverter {

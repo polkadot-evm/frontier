@@ -12,7 +12,6 @@ publish = false
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-async-trait = "0.1"
 clap = { version = "4.0", features = ["derive"] }
 futures = "0.3.25"
 log = "0.4.17"
@@ -26,11 +25,10 @@ sc-basic-authorship = { version = "0.10.0-dev", git = "https://github.com/parity
 sc-cli = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-client-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-consensus = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-consensus-aura = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", optional = true }
-sc-consensus-manual-seal = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", optional = true }
+sc-consensus-aura = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-consensus-manual-seal = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-executor = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-finality-grandpa = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-keystore = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-network = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-rpc = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-rpc-api = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -46,10 +44,17 @@ sp-core = { version = "7.0.0", git = "https://github.com/paritytech/substrate", 
 sp-finality-grandpa = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-inherents = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-keyring = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-offchain = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-runtime = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-session = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-timestamp = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-transaction-pool = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-trie = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
+substrate-prometheus-endpoint = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 # These dependencies are used for RPC
+frame-system-rpc-runtime-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 pallet-transaction-payment-rpc = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
+pallet-transaction-payment-rpc-runtime-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 substrate-frame-rpc-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 # These dependencies are used for runtime benchmarking
 frame-benchmarking = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", optional = true }
@@ -64,7 +69,6 @@ fc-db = { path = "../../client/db" }
 fc-mapping-sync = { path = "../../client/mapping-sync" }
 fc-rpc = { path = "../../client/rpc" }
 fc-rpc-core = { path = "../../client/rpc-core" }
-fp-consensus = { path = "../../primitives/consensus" }
 fp-dynamic-fee = { path = "../../primitives/dynamic-fee" }
 fp-evm = { path = "../../primitives/evm" }
 fp-rpc = { path = "../../primitives/rpc" }
@@ -77,14 +81,8 @@ substrate-build-script-utils = { version = "3.0.0", git = "https://github.com/pa
 
 [features]
 default = ["aura", "with-rocksdb-weights"]
-aura = [
-	"sc-consensus-aura",
-	"frontier-template-runtime/aura",
-]
-manual-seal = [
-	"sc-consensus-manual-seal",
-	"frontier-template-runtime/manual-seal",
-]
+aura = ["frontier-template-runtime/aura"]
+manual-seal = ["frontier-template-runtime/manual-seal"]
 with-rocksdb-weights = ["frontier-template-runtime/with-rocksdb-weights"]
 with-paritydb-weights = ["frontier-template-runtime/with-paritydb-weights"]
 rpc_binary_search_estimate = ["fc-rpc/rpc_binary_search_estimate"]
