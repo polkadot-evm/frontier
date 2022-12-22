@@ -1,6 +1,6 @@
 //! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 
-use std::{sync::Arc, time::Duration};
+use std::{cell::RefCell, sync::Arc, time::Duration};
 
 use futures::{channel::mpsc, prelude::*};
 // Substrate
@@ -557,9 +557,37 @@ where
 		telemetry.as_ref().map(|x| x.handle()),
 	);
 
+	thread_local!(static TIMESTAMP: RefCell<u64> = RefCell::new(0));
+
+	/// Provide a mock duration starting at 0 in millisecond for timestamp inherent.
+	/// Each call will increment timestamp by slot_duration making Aura think time has passed.
+	struct MockTimestampInherentDataProvider;
+
+	#[async_trait::async_trait]
+	impl sp_inherents::InherentDataProvider for MockTimestampInherentDataProvider {
+		async fn provide_inherent_data(
+			&self,
+			inherent_data: &mut sp_inherents::InherentData,
+		) -> Result<(), sp_inherents::Error> {
+			TIMESTAMP.with(|x| {
+				*x.borrow_mut() += frontier_template_runtime::SLOT_DURATION;
+				inherent_data.put_data(sp_timestamp::INHERENT_IDENTIFIER, &*x.borrow())
+			})
+		}
+
+		async fn try_handle_error(
+			&self,
+			_identifier: &sp_inherents::InherentIdentifier,
+			_error: &[u8],
+		) -> Option<Result<(), sp_inherents::Error>> {
+			// The pallet never reports error.
+			None
+		}
+	}
+
 	let target_gas_price = eth_config.target_gas_price;
 	let create_inherent_data_providers = move |_, ()| async move {
-		let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
+		let timestamp = MockTimestampInherentDataProvider;
 		let dynamic_fee = fp_dynamic_fee::InherentDataProvider(U256::from(target_gas_price));
 		Ok((timestamp, dynamic_fee))
 	};
