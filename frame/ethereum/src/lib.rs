@@ -389,7 +389,7 @@ impl<T: Config> Pallet<T> {
 					(d.logs.clone(), d.used_gas)
 				}
 			};
-			cumulative_gas_used.saturating_accrue(used_gas);
+			cumulative_gas_used += used_gas;
 			Self::logs_bloom(logs, &mut logs_bloom);
 		}
 
