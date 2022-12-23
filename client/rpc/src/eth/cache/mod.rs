@@ -402,7 +402,17 @@ where
 								return Some(tx.effective_reward);
 							}
 						}
-						None
+
+						// TODO: Should this really be filter_map?
+						// It seems that some values are processed while some will be discarded.
+						//
+						// Not sure how can a discard happen though - if we're here it means there are transactions.
+						// And if there are transactions, we should always have some concrete percentile value.\
+						//
+						// And given how this vector is accessed (directly via index), having it prunned isn't good.
+						// There must always be exactly 200 entries.
+
+						transactions.last().map(|tx| tx.effective_reward)
 					})
 					.collect();
 			} else {

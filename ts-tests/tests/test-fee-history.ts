@@ -74,7 +74,7 @@ describeWithFrontier("Frontier RPC (Fee History)", (context) => {
 		// baseFeePerGas is always the requested block range + 1 (the next derived base fee).
 		expect(result.baseFeePerGas.length).to.be.eq(blockCount + 1);
 		// gasUsedRatio for the requested block range.
-		expect(result.gasUsedRatio).to.be.deep.eq(Array(blockCount).fill(0.03575712));
+		expect(result.gasUsedRatio).to.be.deep.eq(Array(blockCount).fill(0.07151424));
 		// two-dimensional reward list for the requested block range.
 		expect(result.reward.length).to.be.eq(blockCount);
 		// each block has a reward list which's size is the requested percentile list.
@@ -90,6 +90,8 @@ describeWithFrontier("Frontier RPC (Fee History)", (context) => {
 		let priorityFees = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 		await createBlocks(blockCount, priorityFees);
 		let result = (await customRequest(context.web3, "eth_feeHistory", ["0xA", "latest", rewardPercentiles])).result;
+
+		console.log(result); // TODO: remove this later
 
 		// Calculate the percentiles in javascript.
 		let localRewards = [];
