@@ -195,7 +195,7 @@ where
 							post_hashes: log.into_hashes(),
 							schema,
 						});
-					},
+					}
 					Err(FindLogError::NotFound) => {}
 					Err(FindLogError::MultipleLogs) => {
 						return Err(Error::Protocol("Multiple logs found".to_string()))
@@ -252,9 +252,7 @@ where
 			)
 			.execute(&mut tx)
 			.await?;
-			for (i, &transaction_hash) in
-				post_hashes.transaction_hashes.iter().enumerate()
-			{
+			for (i, &transaction_hash) in post_hashes.transaction_hashes.iter().enumerate() {
 				let ethereum_transaction_hash = transaction_hash.as_bytes().to_owned();
 				let ethereum_transaction_index = i as i32;
 				let _ = sqlx::query!(
@@ -419,7 +417,7 @@ where
 				.unwrap_or(&overrides.fallback);
 
 			let receipts = handler.current_receipts(&id).unwrap_or_default();
-			
+
 			transaction_count += receipts.len();
 			for (transaction_index, receipt) in receipts.iter().enumerate() {
 				let receipt_logs = match receipt {
@@ -654,8 +652,15 @@ impl<Block: BlockT<Hash = H256>> crate::BackendReader<Block> for Backend<Block> 
 		topics: Vec<Vec<Option<H256>>>,
 	) -> Result<Vec<FilteredLog>, String> {
 		// Sanitize topic input
+
+		// Remove empty groups.
 		let mut topics = topics;
 		topics.retain(|topic_group| !topic_group.iter().all(|x| x.is_none()));
+
+		// Make sure no topic group's size is larger than 4.
+		if topics.iter().any(|topic_group| topic_group.len() > 4) {
+			return Err("Invalid topic input. Maximum length is 4.".to_string());
+		}
 
 		let filter_groups: Vec<Vec<FilterValue>> = match (addresses.len(), topics.len()) {
 			(x, 0) if x > 0 => addresses
@@ -708,6 +713,7 @@ impl<Block: BlockT<Hash = H256>> crate::BackendReader<Block> for Backend<Block> 
 			query_builder.push(" WHERE ");
 		}
 		for (i, filter_group) in filter_groups.iter().enumerate() {
+			let last_index = filter_group.len() - 1;
 			query_builder.push("(");
 			let mut topic_pos = 1;
 			for (j, el) in filter_group.iter().enumerate() {
@@ -746,7 +752,14 @@ impl<Block: BlockT<Hash = H256>> crate::BackendReader<Block> for Backend<Block> 
 						topic_pos += 1;
 					}
 				}
-				if add_separator && j < filter_group.len() - 1 {
+				if add_separator && j < last_index {
+					// Prevent trailing None to append separator.
+					let next_index = j + 1;
+					if next_index == last_index {
+						if let Some(FilterValue::Topic(None)) = filter_group.get(next_index) {
+							continue;
+						}
+					}
 					query_builder.push(" AND ");
 				}
 			}
@@ -1168,6 +1181,47 @@ mod test {
 	}
 
 	#[tokio::test]
+	async fn invalid_topic_input_fails() {
+		let TestData {
+			backend, topics_a, ..
+		} = prepare().await;
+		let filter = TestFilter {
+			from_block: 0,
+			to_block: 0,
+			addresses: vec![],
+			topics: vec![
+				vec![Some(topics_a), None, None, None, None],
+				vec![Some(topics_a), None, None, None],
+			],
+			expected_result: vec![],
+		};
+		let _result = run_test_case(backend, &filter)
+			.await
+			.expect_err("Invalid topic input. Maximum length is 4.");
+	}
+
+	#[tokio::test]
+	async fn malformed_topic_product_does_not_panic() {
+		let TestData {
+			backend, topics_a, ..
+		} = prepare().await;
+		let filter = TestFilter {
+			from_block: 0,
+			to_block: 0,
+			addresses: vec![],
+			topics: vec![
+				vec![Some(topics_a), None, Some(topics_a)],
+				vec![None],
+				vec![Some(topics_a), Some(topics_a)],
+			],
+			expected_result: vec![],
+		};
+		let _result = run_test_case(backend, &filter)
+			.await
+			.expect("run test case");
+	}
+
+	#[tokio::test]
 	async fn block_range_works() {
 		let TestData {
 			backend,
@@ -1359,20 +1413,47 @@ mod test {
 			topics_d,
 			topics_b,
 			substrate_hash_1,
+			substrate_hash_2,
+			substrate_hash_3,
 			ethereum_hash_1,
+			ethereum_hash_2,
+			ethereum_hash_3,
 			..
 		} = prepare().await;
 		let filter = TestFilter {
 			from_block: 0,
-			to_block: 1,
+			to_block: 3,
 			addresses: vec![alice, bob],
 			topics: vec![vec![Some(topics_d), None, Some(topics_b)]],
-			expected_result: vec![(substrate_hash_1, ethereum_hash_1, 1, 0, 1).into()],
+			expected_result: vec![
+				(substrate_hash_1, ethereum_hash_1, 1, 0, 1).into(),
+				(substrate_hash_2, ethereum_hash_2, 2, 0, 1).into(),
+				(substrate_hash_3, ethereum_hash_3, 3, 0, 1).into(),
+			],
 		};
 		let result = run_test_case(backend, &filter)
 			.await
 			.expect("run test case");
 		assert_eq!(result, filter.expected_result);
+	}
+
+	#[tokio::test]
+	async fn trailing_wildcard_is_useless_but_correctly_handled() {
+		let TestData {
+			backend,
+			topics_c,
+			..
+		} = prepare().await;
+		let filter = TestFilter {
+			from_block: 0,
+			to_block: 0,
+			addresses: vec![],
+			topics: vec![vec![None, None, Some(topics_c), None]],
+			expected_result: vec![],
+		};
+		let _result = run_test_case(backend, &filter)
+			.await
+			.expect("run test case");
 	}
 
 	#[tokio::test]
@@ -1420,8 +1501,10 @@ mod test {
 		let TestData {
 			backend,
 			bob,
+			topics_a,
 			topics_b,
 			topics_c,
+			topics_d,
 			substrate_hash_2,
 			substrate_hash_3,
 			ethereum_hash_2,
@@ -1432,9 +1515,12 @@ mod test {
 			from_block: 0,
 			to_block: 3,
 			addresses: vec![bob],
+			// Product on input [null,null,(b,d),(a,c)].
 			topics: vec![
-				vec![None, None, Some(topics_b)],
-				vec![None, None, None, Some(topics_c)],
+				vec![None, None, Some(topics_b), Some(topics_a)],
+				vec![None, None, Some(topics_b), Some(topics_c)],
+				vec![None, None, Some(topics_d), Some(topics_a)],
+				vec![None, None, Some(topics_d), Some(topics_c)],
 			],
 			expected_result: vec![
 				(substrate_hash_2, ethereum_hash_2, 2, 0, 1).into(),
