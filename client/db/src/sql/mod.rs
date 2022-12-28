@@ -38,7 +38,6 @@ use crate::FilteredLog;
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct Log {
-	pub block_number: i32,
 	pub address: Vec<u8>,
 	pub topic_1: Vec<u8>,
 	pub topic_2: Vec<u8>,
@@ -52,6 +51,7 @@ pub struct Log {
 #[derive(Eq, PartialEq)]
 struct BlockMetadata {
 	pub substrate_block_hash: H256,
+	pub block_number: i32,
 	pub post_hashes: fp_consensus::Hashes,
 	pub schema: EthereumStorageSchema,
 }
@@ -151,16 +151,19 @@ where
 
 				let ethereum_block_hash = ethereum_block.header.hash().as_bytes().to_owned();
 				let substrate_block_hash = genesis_header.hash().as_bytes().to_owned();
+				let block_number = 0i32;
 				let schema = Self::onchain_storage_schema(client.as_ref(), substrate_hash).encode();
 
 				let _ = sqlx::query!(
 					"INSERT OR IGNORE INTO blocks(
 						ethereum_block_hash,
 						substrate_block_hash,
+						block_number,
 						ethereum_storage_schema)
-					VALUES (?, ?, ?)",
+					VALUES (?, ?, ?, ?)",
 					ethereum_block_hash,
 					substrate_block_hash,
+					block_number,
 					schema,
 				)
 				.execute(self.pool())
@@ -189,16 +192,18 @@ where
 			if let Ok(Some(header)) = client.header(hash) {
 				match fp_consensus::find_log(header.digest()) {
 					Ok(log) => {
+						let block_number: i32 = UniqueSaturatedInto::<u32>::unique_saturated_into(*header.number()) as i32;
 						let schema = Self::onchain_storage_schema(client.as_ref(), hash);
 						out.push(BlockMetadata {
 							substrate_block_hash: hash,
+							block_number, 
 							post_hashes: log.into_hashes(),
 							schema,
 						});
 					}
 					Err(FindLogError::NotFound) => {}
 					Err(FindLogError::MultipleLogs) => {
-						return Err(Error::Protocol("Multiple logs found".to_string()))
+						return Err(Error::Protocol("[Metadata] Multiple logs found".to_string()))
 					}
 				}
 			}
@@ -239,15 +244,18 @@ where
 			let ethereum_block_hash = post_hashes.block_hash.as_bytes().to_owned();
 			let substrate_block_hash = metadata.substrate_block_hash.as_bytes().to_owned();
 			let schema = metadata.schema.encode();
+			let block_number = metadata.block_number;
 
 			let _ = sqlx::query!(
 				"INSERT OR IGNORE INTO blocks(
 					ethereum_block_hash,
 					substrate_block_hash,
+					block_number,
 					ethereum_storage_schema)
-				VALUES (?, ?, ?)",
+				VALUES (?, ?, ?, ?)",
 				ethereum_block_hash,
 				substrate_block_hash,
+				block_number,
 				schema,
 			)
 			.execute(&mut tx)
@@ -340,7 +348,6 @@ where
 					for log in logs.iter() {
 						let _ = sqlx::query!(
 							"INSERT OR IGNORE INTO logs(
-								block_number,
 								address,
 								topic_1,
 								topic_2,
@@ -349,8 +356,7 @@ where
 								log_index,
 								transaction_index,
 								substrate_block_hash)
-							VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-							log.block_number,
+							VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
 							log.address,
 							log.topic_1,
 							log.topic_2,
@@ -398,17 +404,6 @@ where
 		let mut transaction_count: usize = 0;
 		let mut log_count: usize = 0;
 		for substrate_block_hash in hashes.iter() {
-			let substrate_block_number: i32 =
-				if let Ok(Some(number)) = client.number(*substrate_block_hash) {
-					UniqueSaturatedInto::<u32>::unique_saturated_into(number) as i32
-				} else {
-					log::error!(
-						target: "frontier-sql",
-						"Cannot find number for substrate hash {}",
-						substrate_block_hash
-					);
-					0i32
-				};
 			let id = BlockId::Hash(*substrate_block_hash);
 			let schema = Self::onchain_storage_schema(client.as_ref(), *substrate_block_hash);
 			let handler = overrides
@@ -429,7 +424,6 @@ where
 				log_count += receipt_logs.len();
 				for (log_index, log) in receipt_logs.iter().enumerate() {
 					logs.push(Log {
-						block_number: substrate_block_number,
 						address: log.address.as_bytes().to_owned(),
 						topic_1: log
 							.topics
@@ -496,7 +490,6 @@ where
 			"BEGIN;
 			CREATE TABLE IF NOT EXISTS logs (
 				id INTEGER PRIMARY KEY,
-				block_number INTEGER NOT NULL,
 				address BLOB NOT NULL,
 				topic_1 BLOB NOT NULL,
 				topic_2 BLOB NOT NULL,
@@ -521,6 +514,7 @@ where
 			);
 			CREATE TABLE IF NOT EXISTS blocks (
 				id INTEGER PRIMARY KEY,
+				block_number INTEGER NOT NULL,
 				ethereum_block_hash BLOB NOT NULL,
 				substrate_block_hash BLOB NOT NULL,
 				ethereum_storage_schema BLOB NOT NULL,
@@ -550,7 +544,6 @@ where
 		sqlx::query(
 			"BEGIN;
 			CREATE INDEX IF NOT EXISTS logs_main_idx ON logs (
-				block_number,
 				address,
 				topic_1,
 				topic_2,
@@ -559,6 +552,9 @@ where
 			);
 			CREATE INDEX IF NOT EXISTS logs_substrate_index ON logs (
 				substrate_block_hash
+			);
+			CREATE INDEX IF NOT EXISTS blocks_number_index ON blocks (
+				block_number
 			);
 			CREATE INDEX IF NOT EXISTS blocks_substrate_index ON blocks (
 				substrate_block_hash
@@ -704,19 +700,19 @@ impl<Block: BlockT<Hash = H256>> crate::BackendReader<Block> for Backend<Block> 
 			SELECT
 				A.substrate_block_hash,
 				B.ethereum_block_hash,
-				A.block_number,
+				B.block_number,
 				B.ethereum_storage_schema,
 				A.transaction_index,
 				A.log_index
 			FROM logs AS A
 			INNER JOIN blocks AS B
-			ON A.block_number BETWEEN ",
+			ON B.block_number BETWEEN ",
 		);
 		// Bind `from` and `to` block range
 		let mut block_number = query_builder.separated(" AND ");
 		block_number.push_bind(from_block as i64);
 		block_number.push_bind(to_block as i64);
-		query_builder.push(" AND A.substrate_block_hash = B.substrate_block_hash");
+		query_builder.push(" AND B.substrate_block_hash = A.substrate_block_hash");
 
 		if !filter_groups.is_empty() {
 			query_builder.push(" WHERE ");
@@ -773,7 +769,7 @@ impl<Block: BlockT<Hash = H256>> crate::BackendReader<Block> for Backend<Block> 
 		query_builder.push(
 			"
 			GROUP BY A.substrate_block_hash, transaction_index, log_index
-			ORDER BY block_number ASC, transaction_index ASC, log_index ASC
+			ORDER BY B.block_number ASC, A.transaction_index ASC, A.log_index ASC
 			LIMIT 10001
 		",
 		);
@@ -954,23 +950,26 @@ mod test {
 
 		let block_entries = vec![
 			// Block 1
-			(ethereum_hash_1, substrate_hash_1, ethereum_storage_schema),
+			(1i32, ethereum_hash_1, substrate_hash_1, ethereum_storage_schema),
 			// Block 2
-			(ethereum_hash_2, substrate_hash_2, ethereum_storage_schema),
+			(2i32, ethereum_hash_2, substrate_hash_2, ethereum_storage_schema),
 			// Block 3
-			(ethereum_hash_3, substrate_hash_3, ethereum_storage_schema),
+			(3i32, ethereum_hash_3, substrate_hash_3, ethereum_storage_schema),
 		];
 		let mut builder: QueryBuilder<sqlx::Sqlite> = QueryBuilder::new(
 			"INSERT INTO blocks(
+				block_number,
 				ethereum_block_hash,
 				substrate_block_hash,
 				ethereum_storage_schema)",
 		);
 		builder.push_values(block_entries, |mut b, entry| {
-			let ethereum_block_hash = entry.0.as_bytes().to_owned();
-			let substrate_block_hash = entry.1.as_bytes().to_owned();
-			let ethereum_storage_schema = entry.2.encode();
+			let block_number = entry.0;
+			let ethereum_block_hash = entry.1.as_bytes().to_owned();
+			let substrate_block_hash = entry.2.as_bytes().to_owned();
+			let ethereum_storage_schema = entry.3.encode();
 
+			b.push_bind(block_number);
 			b.push_bind(ethereum_block_hash);
 			b.push_bind(substrate_block_hash);
 			b.push_bind(ethereum_storage_schema);
@@ -981,7 +980,6 @@ mod test {
 		let log_entries = vec![
 			// Block 1
 			(
-				1,
 				alice,
 				topics_a,
 				topics_b,
@@ -992,7 +990,6 @@ mod test {
 				substrate_hash_1,
 			),
 			(
-				1,
 				alice,
 				topics_d,
 				topics_c,
@@ -1003,7 +1000,6 @@ mod test {
 				substrate_hash_1,
 			),
 			(
-				1,
 				alice,
 				topics_b,
 				topics_a,
@@ -1015,7 +1011,6 @@ mod test {
 			),
 			// Block 2
 			(
-				2,
 				bob,
 				topics_a,
 				topics_b,
@@ -1026,7 +1021,6 @@ mod test {
 				substrate_hash_2,
 			),
 			(
-				2,
 				bob,
 				topics_d,
 				topics_c,
@@ -1037,7 +1031,6 @@ mod test {
 				substrate_hash_2,
 			),
 			(
-				2,
 				bob,
 				topics_b,
 				topics_a,
@@ -1049,7 +1042,6 @@ mod test {
 			),
 			// Block 3
 			(
-				3,
 				bob,
 				topics_a,
 				topics_b,
@@ -1060,7 +1052,6 @@ mod test {
 				substrate_hash_3,
 			),
 			(
-				3,
 				bob,
 				topics_d,
 				topics_c,
@@ -1071,7 +1062,6 @@ mod test {
 				substrate_hash_3,
 			),
 			(
-				3,
 				bob,
 				topics_b,
 				topics_a,
@@ -1085,7 +1075,6 @@ mod test {
 
 		let mut builder: QueryBuilder<sqlx::Sqlite> = QueryBuilder::new(
 			"INSERT INTO logs(
-				block_number,
 				address,
 				topic_1,
 				topic_2,
@@ -1096,17 +1085,15 @@ mod test {
 				substrate_block_hash)",
 		);
 		builder.push_values(log_entries, |mut b, entry| {
-			let block_number = entry.0;
-			let address = entry.1.as_bytes().to_owned();
-			let topic_1 = entry.2.as_bytes().to_owned();
-			let topic_2 = entry.3.as_bytes().to_owned();
-			let topic_3 = entry.4.as_bytes().to_owned();
-			let topic_4 = entry.5.as_bytes().to_owned();
-			let log_index = entry.6;
-			let transaction_index = entry.7;
-			let substrate_block_hash = entry.8.as_bytes().to_owned();
+			let address = entry.0.as_bytes().to_owned();
+			let topic_1 = entry.1.as_bytes().to_owned();
+			let topic_2 = entry.2.as_bytes().to_owned();
+			let topic_3 = entry.3.as_bytes().to_owned();
+			let topic_4 = entry.4.as_bytes().to_owned();
+			let log_index = entry.5;
+			let transaction_index = entry.6;
+			let substrate_block_hash = entry.7.as_bytes().to_owned();
 
-			b.push_bind(block_number);
 			b.push_bind(address);
 			b.push_bind(topic_1);
 			b.push_bind(topic_2);
