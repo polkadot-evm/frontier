@@ -643,7 +643,6 @@ impl<Block: BlockT<Hash = H256>> crate::BackendReader<Block> for Backend<Block> 
 		}
 		Ok(out)
 	}
-	// Build sql query from rpc filter data
 	async fn filter_logs(
 		&self,
 		from_block: u64,
@@ -651,16 +650,26 @@ impl<Block: BlockT<Hash = H256>> crate::BackendReader<Block> for Backend<Block> 
 		addresses: Vec<H160>,
 		topics: Vec<Vec<Option<H256>>>,
 	) -> Result<Vec<FilteredLog>, String> {
-		// Sanitize topic input
+		let topics = {
+			// Remove empty groups.
+			let mut topics = topics;
+			topics.retain(|topic_group| !topic_group.iter().all(|x| x.is_none()));
 
-		// Remove empty groups.
-		let mut topics = topics;
-		topics.retain(|topic_group| !topic_group.iter().all(|x| x.is_none()));
+			// Remove trailing wildcards.
+			let mut topics_iter = topics.iter_mut();
+			while let Some(topic_group) = topics_iter.next() {
+				if let Some(None) = topic_group.last() {
+					let _ = topic_group.pop();
+				}
+			}
 
-		// Make sure no topic group's size is larger than 4.
-		if topics.iter().any(|topic_group| topic_group.len() > 4) {
-			return Err("Invalid topic input. Maximum length is 4.".to_string());
-		}
+			// Check topic group's size does not exceed 4.
+			// TODO by now we do this, we should change this type at rpc level to BoundedVec.
+			if topics.iter().any(|topic_group| topic_group.len() > 4) {
+				return Err("Invalid topic input. Maximum length is 4.".to_string());
+			}
+			topics
+		};
 
 		let filter_groups: Vec<Vec<FilterValue>> = match (addresses.len(), topics.len()) {
 			(x, 0) if x > 0 => addresses
@@ -713,9 +722,9 @@ impl<Block: BlockT<Hash = H256>> crate::BackendReader<Block> for Backend<Block> 
 			query_builder.push(" WHERE ");
 		}
 		for (i, filter_group) in filter_groups.iter().enumerate() {
-			let last_index = filter_group.len() - 1;
 			query_builder.push("(");
 			let mut topic_pos = 1;
+			let last_index = filter_group.len() - 1;
 			for (j, el) in filter_group.iter().enumerate() {
 				let mut add_separator = false;
 				match el {
@@ -753,13 +762,6 @@ impl<Block: BlockT<Hash = H256>> crate::BackendReader<Block> for Backend<Block> 
 					}
 				}
 				if add_separator && j < last_index {
-					// Prevent trailing None to append separator.
-					let next_index = j + 1;
-					if next_index == last_index {
-						if let Some(FilterValue::Topic(None)) = filter_group.get(next_index) {
-							continue;
-						}
-					}
 					query_builder.push(" AND ");
 				}
 			}
@@ -1171,7 +1173,7 @@ mod test {
 			from_block: 0,
 			to_block: 0,
 			addresses: vec![],
-			topics: vec![vec![None]],
+			topics: vec![vec![None], vec![None, None, None]],
 			expected_result: vec![],
 		};
 		let result = run_test_case(backend, &filter)
@@ -1181,7 +1183,7 @@ mod test {
 	}
 
 	#[tokio::test]
-	async fn invalid_topic_input_fails() {
+	async fn invalid_topic_input_size_fails() {
 		let TestData {
 			backend, topics_a, ..
 		} = prepare().await;
@@ -1438,22 +1440,26 @@ mod test {
 	}
 
 	#[tokio::test]
-	async fn trailing_wildcard_is_useless_but_correctly_handled() {
+	async fn trailing_wildcard_is_useless_but_works() {
 		let TestData {
+			alice,
 			backend,
-			topics_c,
+			topics_b,
+			substrate_hash_1,
+			ethereum_hash_1,
 			..
 		} = prepare().await;
 		let filter = TestFilter {
 			from_block: 0,
-			to_block: 0,
-			addresses: vec![],
-			topics: vec![vec![None, None, Some(topics_c), None]],
-			expected_result: vec![],
+			to_block: 1,
+			addresses: vec![alice],
+			topics: vec![vec![None, None, Some(topics_b), None]],
+			expected_result: vec![(substrate_hash_1, ethereum_hash_1, 1, 0, 1).into()],
 		};
-		let _result = run_test_case(backend, &filter)
+		let result = run_test_case(backend, &filter)
 			.await
 			.expect("run test case");
+		assert_eq!(result, filter.expected_result);
 	}
 
 	#[tokio::test]
