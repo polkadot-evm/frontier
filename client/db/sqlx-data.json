@@ -1,5 +1,25 @@
 {
   "db": "SQLite",
+  "20b9ce6b9f5af7d66e282dc2aa1f58a3979bc05d954ad67cf1dbdd4cf49efe5e": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 5
+      }
+    },
+    "query": "INSERT OR IGNORE INTO blocks(\n\t\t\t\t\tethereum_block_hash,\n\t\t\t\t\tsubstrate_block_hash,\n\t\t\t\t\tblock_number,\n\t\t\t\t\tethereum_storage_schema,\n\t\t\t\t\tis_canon)\n\t\t\t\tVALUES (?, ?, ?, ?, ?)"
+  },
+  "3a5871c0eb0af741ae39903c1482201a5a3984ba201ad6a357e4f1dc4476b1c8": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 1
+      }
+    },
+    "query": "UPDATE blocks SET is_canon = 0 WHERE block_number = ? AND is_canon = 1"
+  },
   "65c981dd6b96fe60d1c37067aa450eacd2eaf5ffe1e42f4d1e1ec49915a9fefe": {
     "describe": {
       "columns": [],
@@ -10,26 +30,6 @@
     },
     "query": "INSERT OR IGNORE INTO transactions(\n\t\t\t\t\t\tethereum_transaction_hash,\n\t\t\t\t\t\tsubstrate_block_hash,\n\t\t\t\t\t\tethereum_block_hash,\n\t\t\t\t\t\tethereum_transaction_index)\n\t\t\t\t\tVALUES (?, ?, ?, ?)"
   },
-  "8d34679b0fd838de27d4c07d70b238f89b35925d5a4bfd909bbc30dc0c682002": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Right": 4
-      }
-    },
-    "query": "INSERT OR IGNORE INTO blocks(\n\t\t\t\t\t\tethereum_block_hash,\n\t\t\t\t\t\tsubstrate_block_hash,\n\t\t\t\t\t\tblock_number,\n\t\t\t\t\t\tethereum_storage_schema)\n\t\t\t\t\tVALUES (?, ?, ?, ?)"
-  },
-  "c092570735ad574275397d88c7a0891dd7a7765d12e2ab7396c7fe0cf92efce1": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Right": 4
-      }
-    },
-    "query": "INSERT OR IGNORE INTO blocks(\n\t\t\t\t\tethereum_block_hash,\n\t\t\t\t\tsubstrate_block_hash,\n\t\t\t\t\tblock_number,\n\t\t\t\t\tethereum_storage_schema)\n\t\t\t\tVALUES (?, ?, ?, ?)"
-  },
   "e837fff899557cf9f83821486164eb6638feb04000a3e550d82356ebc4f0cdb4": {
     "describe": {
       "columns": [],
@@ -39,5 +39,15 @@
       }
     },
     "query": "INSERT OR IGNORE INTO logs(\n\t\t\t\t\t\t\t\taddress,\n\t\t\t\t\t\t\t\ttopic_1,\n\t\t\t\t\t\t\t\ttopic_2,\n\t\t\t\t\t\t\t\ttopic_3,\n\t\t\t\t\t\t\t\ttopic_4,\n\t\t\t\t\t\t\t\tlog_index,\n\t\t\t\t\t\t\t\ttransaction_index,\n\t\t\t\t\t\t\t\tsubstrate_block_hash)\n\t\t\t\t\t\t\tVALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+  },
+  "ec40f5edc274b6f592c9331b147a9c1da0d69fd8095273d8b6599449f2e39dcb": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 5
+      }
+    },
+    "query": "INSERT OR IGNORE INTO blocks(\n\t\t\t\t\t\tethereum_block_hash,\n\t\t\t\t\t\tsubstrate_block_hash,\n\t\t\t\t\t\tblock_number,\n\t\t\t\t\t\tethereum_storage_schema,\n\t\t\t\t\t\tis_canon)\n\t\t\t\t\tVALUES (?, ?, ?, ?, ?)"
   }
 }

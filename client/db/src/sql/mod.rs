@@ -54,6 +54,7 @@ struct BlockMetadata {
 	pub block_number: i32,
 	pub post_hashes: fp_consensus::Hashes,
 	pub schema: EthereumStorageSchema,
+	pub is_canon: i32,
 }
 
 pub struct SqliteBackendConfig<'a> {
@@ -153,18 +154,21 @@ where
 				let substrate_block_hash = genesis_header.hash().as_bytes().to_owned();
 				let block_number = 0i32;
 				let schema = Self::onchain_storage_schema(client.as_ref(), substrate_hash).encode();
+				let is_canon = 1i32;
 
 				let _ = sqlx::query!(
 					"INSERT OR IGNORE INTO blocks(
 						ethereum_block_hash,
 						substrate_block_hash,
 						block_number,
-						ethereum_storage_schema)
-					VALUES (?, ?, ?, ?)",
+						ethereum_storage_schema,
+						is_canon)
+					VALUES (?, ?, ?, ?, ?)",
 					ethereum_block_hash,
 					substrate_block_hash,
 					block_number,
 					schema,
+					is_canon,
 				)
 				.execute(self.pool())
 				.await?;
@@ -192,18 +196,29 @@ where
 			if let Ok(Some(header)) = client.header(hash) {
 				match fp_consensus::find_log(header.digest()) {
 					Ok(log) => {
-						let block_number: i32 = UniqueSaturatedInto::<u32>::unique_saturated_into(*header.number()) as i32;
+						let block_number = *header.number();
+						let is_canon: i32 = if let Ok(Some(inner_hash)) = client.hash(block_number) {
+							if inner_hash == hash {
+								1
+							} else {
+								0
+							}
+						} else {
+							return Err(Error::Protocol(format!("[Metadata] Failed to retrieve header for number {}", block_number)));
+						};
+						let block_number: i32 = UniqueSaturatedInto::<u32>::unique_saturated_into(block_number) as i32;
 						let schema = Self::onchain_storage_schema(client.as_ref(), hash);
 						out.push(BlockMetadata {
 							substrate_block_hash: hash,
 							block_number, 
 							post_hashes: log.into_hashes(),
 							schema,
+							is_canon,
 						});
 					}
 					Err(FindLogError::NotFound) => {}
 					Err(FindLogError::MultipleLogs) => {
-						return Err(Error::Protocol("[Metadata] Multiple logs found".to_string()))
+						return Err(Error::Protocol(format!("[Metadata] Multiple logs found for hash {}", hash)))
 					}
 				}
 			}
@@ -245,18 +260,30 @@ where
 			let substrate_block_hash = metadata.substrate_block_hash.as_bytes().to_owned();
 			let schema = metadata.schema.encode();
 			let block_number = metadata.block_number;
+			let is_canon = metadata.is_canon;
+			
+			if is_canon == 1 {
+				let _ = sqlx::query!(
+					"UPDATE blocks SET is_canon = 0 WHERE block_number = ? AND is_canon = 1",
+					block_number,
+				)
+				.execute(&mut tx)
+				.await?;
+			}
 
 			let _ = sqlx::query!(
 				"INSERT OR IGNORE INTO blocks(
 					ethereum_block_hash,
 					substrate_block_hash,
 					block_number,
-					ethereum_storage_schema)
-				VALUES (?, ?, ?, ?)",
+					ethereum_storage_schema,
+					is_canon)
+				VALUES (?, ?, ?, ?, ?)",
 				ethereum_block_hash,
 				substrate_block_hash,
 				block_number,
 				schema,
+				is_canon,
 			)
 			.execute(&mut tx)
 			.await?;
@@ -518,6 +545,7 @@ where
 				ethereum_block_hash BLOB NOT NULL,
 				substrate_block_hash BLOB NOT NULL,
 				ethereum_storage_schema BLOB NOT NULL,
+				is_canon INTEGER NOT NULL,
 				UNIQUE (
 					ethereum_block_hash,
 					substrate_block_hash
@@ -961,7 +989,8 @@ mod test {
 				block_number,
 				ethereum_block_hash,
 				substrate_block_hash,
-				ethereum_storage_schema)",
+				ethereum_storage_schema,
+				is_canon)",
 		);
 		builder.push_values(block_entries, |mut b, entry| {
 			let block_number = entry.0;
@@ -973,6 +1002,7 @@ mod test {
 			b.push_bind(ethereum_block_hash);
 			b.push_bind(substrate_block_hash);
 			b.push_bind(ethereum_storage_schema);
+			b.push_bind(1i32);
 		});
 		let query = builder.build();
 		let _ = query.execute(indexer_backend.pool()).await;
