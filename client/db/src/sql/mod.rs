@@ -120,10 +120,40 @@ where
 		&self.pool
 	}
 
+	pub async fn canonicalize(&self, retracted: &[H256], enacted: &[H256]) -> Result<(), Error> {
+		let mut tx = self.pool().begin().await?;
+
+		// Retracted
+		let mut builder: QueryBuilder<Sqlite> =
+			QueryBuilder::new("UPDATE blocks SET is_canon = 0 WHERE substrate_block_hash IN (");
+		let mut retracted_hashes = builder.separated(", ");
+		for hash in retracted.iter() {
+			let hash = hash.as_bytes().to_owned();
+			retracted_hashes.push_bind(hash);
+		}
+		retracted_hashes.push_unseparated(")");
+		let query = builder.build();
+		query.execute(&mut tx).await?;
+
+		// Enacted
+		let mut builder: QueryBuilder<Sqlite> =
+			QueryBuilder::new("UPDATE blocks SET is_canon = 1 WHERE substrate_block_hash IN (");
+		let mut enacted_hashes = builder.separated(", ");
+		for hash in enacted.iter() {
+			let hash = hash.as_bytes().to_owned();
+			enacted_hashes.push_bind(hash);
+		}
+		enacted_hashes.push_unseparated(")");
+		let query = builder.build();
+		query.execute(&mut tx).await?;
+
+		tx.commit().await
+	}
+
 	pub async fn insert_genesis_block_metadata<Client, BE>(
 		&self,
 		client: Arc<Client>,
-	) -> Result<(), Error>
+	) -> Result<Option<H256>, Error>
 	where
 		Client: StorageProvider<Block, BE> + HeaderBackend<Block> + Send + Sync + 'static,
 		Client: ProvideRuntimeApi<Block>,
@@ -132,10 +162,11 @@ where
 		BE::State: StateBackend<BlakeTwo256>,
 	{
 		let id = BlockId::Number(Zero::zero());
-		let substrate_hash = client
+		let substrate_genesis_hash = client
 			.expect_block_hash_from_id(&id)
 			.map_err(|_| Error::Protocol("Cannot resolve genesis hash".to_string()))?;
-		if let Ok(Some(genesis_header)) = client.header(substrate_hash) {
+		let maybe_substrate_hash: Option<H256> = if let Ok(Some(_)) = client.header(substrate_genesis_hash)
+		{
 			let has_api = client
 				.runtime_api()
 				.has_api::<dyn EthereumRuntimeRPCApi<Block>>(&id)
@@ -150,10 +181,10 @@ where
 					.expect("runtime api reachable")
 					.expect("ethereum genesis block");
 
+				let schema = Self::onchain_storage_schema(client.as_ref(), substrate_genesis_hash).encode();
 				let ethereum_block_hash = ethereum_block.header.hash().as_bytes().to_owned();
-				let substrate_block_hash = genesis_header.hash().as_bytes().to_owned();
+				let substrate_block_hash = substrate_genesis_hash.as_bytes().to_owned();
 				let block_number = 0i32;
-				let schema = Self::onchain_storage_schema(client.as_ref(), substrate_hash).encode();
 				let is_canon = 1i32;
 
 				let _ = sqlx::query!(
@@ -173,8 +204,11 @@ where
 				.execute(self.pool())
 				.await?;
 			}
-		}
-		Ok(())
+			Some(substrate_genesis_hash)
+		} else {
+			None
+		};
+		Ok(maybe_substrate_hash)
 	}
 
 	fn insert_block_metadata_inner<Client, BE>(
@@ -204,13 +238,16 @@ where
 								0
 							}
 						} else {
-							return Err(Error::Protocol(format!("[Metadata] Failed to retrieve header for number {}", block_number)));
+							return Err(Error::Protocol(format!(
+								"[Metadata] Failed to retrieve header for number {}",
+								block_number
+							)));
 						};
 						let block_number: i32 = UniqueSaturatedInto::<u32>::unique_saturated_into(block_number) as i32;
 						let schema = Self::onchain_storage_schema(client.as_ref(), hash);
 						out.push(BlockMetadata {
 							substrate_block_hash: hash,
-							block_number, 
+							block_number,
 							post_hashes: log.into_hashes(),
 							schema,
 							is_canon,
@@ -218,7 +255,10 @@ where
 					}
 					Err(FindLogError::NotFound) => {}
 					Err(FindLogError::MultipleLogs) => {
-						return Err(Error::Protocol(format!("[Metadata] Multiple logs found for hash {}", hash)))
+						return Err(Error::Protocol(format!(
+							"[Metadata] Multiple logs found for hash {}",
+							hash
+						)))
 					}
 				}
 			}
@@ -261,15 +301,6 @@ where
 			let schema = metadata.schema.encode();
 			let block_number = metadata.block_number;
 			let is_canon = metadata.is_canon;
-			
-			if is_canon == 1 {
-				let _ = sqlx::query!(
-					"UPDATE blocks SET is_canon = 0 WHERE block_number = ? AND is_canon = 1",
-					block_number,
-				)
-				.execute(&mut tx)
-				.await?;
-			}
 
 			let _ = sqlx::query!(
 				"INSERT OR IGNORE INTO blocks(
@@ -741,6 +772,7 @@ impl<Block: BlockT<Hash = H256>> crate::BackendReader<Block> for Backend<Block> 
 		block_number.push_bind(from_block as i64);
 		block_number.push_bind(to_block as i64);
 		query_builder.push(" AND B.substrate_block_hash = A.substrate_block_hash");
+		query_builder.push(" AND B.is_canon = 1");
 
 		if !filter_groups.is_empty() {
 			query_builder.push(" WHERE ");
@@ -978,11 +1010,26 @@ mod test {
 
 		let block_entries = vec![
 			// Block 1
-			(1i32, ethereum_hash_1, substrate_hash_1, ethereum_storage_schema),
+			(
+				1i32,
+				ethereum_hash_1,
+				substrate_hash_1,
+				ethereum_storage_schema,
+			),
 			// Block 2
-			(2i32, ethereum_hash_2, substrate_hash_2, ethereum_storage_schema),
+			(
+				2i32,
+				ethereum_hash_2,
+				substrate_hash_2,
+				ethereum_storage_schema,
+			),
 			// Block 3
-			(3i32, ethereum_hash_3, substrate_hash_3, ethereum_storage_schema),
+			(
+				3i32,
+				ethereum_hash_3,
+				substrate_hash_3,
+				ethereum_storage_schema,
+			),
 		];
 		let mut builder: QueryBuilder<sqlx::Sqlite> = QueryBuilder::new(
 			"INSERT INTO blocks(
