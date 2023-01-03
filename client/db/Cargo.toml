@@ -17,7 +17,7 @@ futures = "0.3.25"
 log = "0.4.17"
 parking_lot = "0.12.1"
 smallvec = "1.10"
-sqlx = { version = "0.6", features = ["runtime-tokio-native-tls", "sqlite", "offline"] }
+sqlx = { features = ["runtime-tokio-native-tls", "sqlite", "offline"], git = "https://github.com/PureStake/sqlx", branch = "v0.6.2-timeout" }
 tokio = { version = "1.19", features = ["macros", "sync"] }
 
 # Parity

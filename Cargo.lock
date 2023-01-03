@@ -8424,8 +8424,7 @@ dependencies = [
 [[package]]
 name = "sqlx"
 version = "0.6.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9249290c05928352f71c077cc44a464d880c63f26f7534728cca008e135c0428"
+source = "git+https://github.com/PureStake/sqlx?branch=v0.6.2-timeout#607635f001c948b6db2347d30aaa56930cbf3cca"
 dependencies = [
  "sqlx-core",
  "sqlx-macros",
@@ -8434,8 +8433,7 @@ dependencies = [
 [[package]]
 name = "sqlx-core"
 version = "0.6.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dcbc16ddba161afc99e14d1713a453747a2b07fc097d2009f4c300ec99286105"
+source = "git+https://github.com/PureStake/sqlx?branch=v0.6.2-timeout#607635f001c948b6db2347d30aaa56930cbf3cca"
 dependencies = [
  "ahash",
  "atoi",
@@ -8478,8 +8476,7 @@ dependencies = [
 [[package]]
 name = "sqlx-macros"
 version = "0.6.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b850fa514dc11f2ee85be9d055c512aa866746adfacd1cb42d867d68e6a5b0d9"
+source = "git+https://github.com/PureStake/sqlx?branch=v0.6.2-timeout#607635f001c948b6db2347d30aaa56930cbf3cca"
 dependencies = [
  "dotenvy",
  "either",
@@ -8500,8 +8497,7 @@ dependencies = [
 [[package]]
 name = "sqlx-rt"
 version = "0.6.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "24c5b2d25fa654cc5f841750b8e1cdedbe21189bf9a9382ee90bfa9dd3562396"
+source = "git+https://github.com/PureStake/sqlx?branch=v0.6.2-timeout#607635f001c948b6db2347d30aaa56930cbf3cca"
 dependencies = [
  "native-tls",
  "once_cell",

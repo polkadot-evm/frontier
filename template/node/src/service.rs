@@ -143,6 +143,7 @@ where
 					create_if_missing: true,
 				}),
 				100, // pool size
+				eth_config.frontier_sql_backend_num_ops_timeout,
 				overrides.clone(),
 			))
 			.expect("indexer pool to be created");
