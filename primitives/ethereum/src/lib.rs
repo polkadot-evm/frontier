@@ -46,7 +46,7 @@ pub trait ValidatedTransaction {
 	) -> frame_support::dispatch::DispatchResultWithPostInfo;
 }
 
-#[derive(Clone, Debug, Encode, Decode, PartialEq, Eq)]
+#[derive(Clone, Debug, Eq, PartialEq, Encode, Decode)]
 pub struct TransactionData {
 	pub action: TransactionAction,
 	pub input: Vec<u8>,

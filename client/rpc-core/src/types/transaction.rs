@@ -22,7 +22,7 @@ use ethereum_types::{H160, H256, H512, U256, U64};
 use serde::{ser::SerializeStruct, Serialize, Serializer};
 
 /// Transaction
-#[derive(Debug, Default, Clone, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Transaction {
 	/// Hash
@@ -80,7 +80,7 @@ pub struct Transaction {
 
 impl From<TransactionV2> for Transaction {
 	fn from(transaction: TransactionV2) -> Self {
-		let serialized = rlp::encode(&transaction);
+		let serialized = ethereum::EnvelopedEncodable::encode(&transaction);
 		let hash = transaction.hash();
 		let raw = Bytes(serialized.to_vec());
 		match transaction {
@@ -245,7 +245,7 @@ impl Serialize for LocalTransactionStatus {
 }
 
 /// Geth-compatible output for eth_signTransaction method
-#[derive(Debug, Default, Clone, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize)]
 pub struct RichRawTransaction {
 	/// Raw transaction RLP
 	pub raw: Bytes,

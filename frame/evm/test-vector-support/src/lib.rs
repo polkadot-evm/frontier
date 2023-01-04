@@ -103,7 +103,7 @@ impl PrecompileHandle for MockHandle {
 /// The file is expected to be in JSON format and contain an array of test vectors, where each
 /// vector can be deserialized into an "EthConsensusTest".
 pub fn test_precompile_test_vectors<P: Precompile>(filepath: &str) -> Result<(), String> {
-	let data = fs::read_to_string(&filepath).expect("Failed to read blake2F.json");
+	let data = fs::read_to_string(filepath).expect("Failed to read blake2F.json");
 
 	let tests: Vec<EthConsensusTest> = serde_json::from_str(&data).expect("expected json array");
 

@@ -84,7 +84,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 fn fail_call_return_ok() {
 	new_test_ext().execute_with(|| {
 		assert_ok!(EVM::call(
-			Origin::root(),
+			RuntimeOrigin::root(),
 			H160::default(),
 			H160::from_str("1000000000000000000000000000000000000001").unwrap(),
 			Vec::new(),
@@ -97,7 +97,7 @@ fn fail_call_return_ok() {
 		));
 
 		assert_ok!(EVM::call(
-			Origin::root(),
+			RuntimeOrigin::root(),
 			H160::default(),
 			H160::from_str("1000000000000000000000000000000000000002").unwrap(),
 			Vec::new(),
@@ -144,7 +144,7 @@ fn ed_0_refund_patch_works() {
 		assert_eq!(Balances::free_balance(&substrate_addr), 21_777_000_000_000);
 
 		let _ = EVM::call(
-			Origin::root(),
+			RuntimeOrigin::root(),
 			evm_addr,
 			H160::from_str("1000000000000000000000000000000000000001").unwrap(),
 			Vec::new(),
@@ -232,7 +232,7 @@ fn author_should_get_tip() {
 		let author = EVM::find_author();
 		let before_tip = EVM::account_basic(&author).0.balance;
 		let result = EVM::call(
-			Origin::root(),
+			RuntimeOrigin::root(),
 			H160::default(),
 			H160::from_str("1000000000000000000000000000000000000001").unwrap(),
 			Vec::new(),
@@ -254,7 +254,7 @@ fn issuance_after_tip() {
 	new_test_ext().execute_with(|| {
 		let before_tip = <Test as Config>::Currency::total_issuance();
 		let result = EVM::call(
-			Origin::root(),
+			RuntimeOrigin::root(),
 			H160::default(),
 			H160::from_str("1000000000000000000000000000000000000001").unwrap(),
 			Vec::new(),
@@ -281,7 +281,7 @@ fn author_same_balance_without_tip() {
 		let author = EVM::find_author();
 		let before_tip = EVM::account_basic(&author).0.balance;
 		let _ = EVM::call(
-			Origin::root(),
+			RuntimeOrigin::root(),
 			H160::default(),
 			H160::from_str("1000000000000000000000000000000000000001").unwrap(),
 			Vec::new(),
@@ -306,7 +306,7 @@ fn refunds_should_work() {
 		// Because we first deduct max_fee_per_gas * gas_limit (2_000_000_000 * 1000000) we need
 		// to ensure that the difference (max fee VS base fee) is refunded.
 		let _ = EVM::call(
-			Origin::root(),
+			RuntimeOrigin::root(),
 			H160::default(),
 			H160::from_str("1000000000000000000000000000000000000001").unwrap(),
 			Vec::new(),
@@ -338,7 +338,7 @@ fn refunds_and_priority_should_work() {
 		let max_fee_per_gas = U256::from(2_000_000_000);
 		let used_gas = U256::from(21_000);
 		let _ = EVM::call(
-			Origin::root(),
+			RuntimeOrigin::root(),
 			H160::default(),
 			H160::from_str("1000000000000000000000000000000000000001").unwrap(),
 			Vec::new(),
@@ -367,7 +367,7 @@ fn call_should_fail_with_priority_greater_than_max_fee() {
 		// Max priority greater than max fee should fail.
 		let tip: u128 = 1_100_000_000;
 		let result = EVM::call(
-			Origin::root(),
+			RuntimeOrigin::root(),
 			H160::default(),
 			H160::from_str("1000000000000000000000000000000000000001").unwrap(),
 			Vec::new(),
@@ -380,7 +380,10 @@ fn call_should_fail_with_priority_greater_than_max_fee() {
 		);
 		assert!(result.is_err());
 		// Some used weight is returned as part of the error.
-		assert_eq!(result.unwrap_err().post_info.actual_weight, Some(7));
+		assert_eq!(
+			result.unwrap_err().post_info.actual_weight,
+			Some(Weight::from_ref_time(7))
+		);
 	});
 }
 
@@ -391,7 +394,7 @@ fn call_should_succeed_with_priority_equal_to_max_fee() {
 		// Mimics the input for pre-eip-1559 transaction types where `gas_price`
 		// is used for both `max_fee_per_gas` and `max_priority_fee_per_gas`.
 		let result = EVM::call(
-			Origin::root(),
+			RuntimeOrigin::root(),
 			H160::default(),
 			H160::from_str("1000000000000000000000000000000000000001").unwrap(),
 			Vec::new(),
@@ -552,5 +555,59 @@ fn runner_max_fee_per_gas_gte_max_priority_fee_per_gas() {
 			&<Test as Config>::config().clone(),
 		);
 		assert!(res.is_err());
+	});
+}
+
+#[test]
+fn eip3607_transaction_from_contract_should_fail() {
+	new_test_ext().execute_with(|| {
+		match <Test as Config>::Runner::call(
+			// Contract address.
+			H160::from_str("1000000000000000000000000000000000000001").unwrap(),
+			H160::from_str("1000000000000000000000000000000000000001").unwrap(),
+			Vec::new(),
+			U256::from(1u32),
+			1000000,
+			None,
+			None,
+			None,
+			Vec::new(),
+			false, // non-transactional
+			true,  // must be validated
+			&<Test as Config>::config().clone(),
+		) {
+			Err(RunnerError {
+				error: Error::TransactionMustComeFromEOA,
+				..
+			}) => (),
+			_ => panic!("Should have failed"),
+		}
+	});
+}
+
+#[test]
+fn eip3607_transaction_from_precompile_should_fail() {
+	new_test_ext().execute_with(|| {
+		match <Test as Config>::Runner::call(
+			// Precompile address.
+			H160::from_str("0000000000000000000000000000000000000001").unwrap(),
+			H160::from_str("1000000000000000000000000000000000000001").unwrap(),
+			Vec::new(),
+			U256::from(1u32),
+			1000000,
+			None,
+			None,
+			None,
+			Vec::new(),
+			false, // non-transactional
+			true,  // must be validated
+			&<Test as Config>::config().clone(),
+		) {
+			Err(RunnerError {
+				error: Error::TransactionMustComeFromEOA,
+				..
+			}) => (),
+			_ => panic!("Should have failed"),
+		}
 	});
 }

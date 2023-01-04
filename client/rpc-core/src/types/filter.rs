@@ -31,7 +31,7 @@ use std::{
 use crate::types::{BlockNumber, Log};
 
 /// Variadic value
-#[derive(Debug, PartialEq, Eq, Clone, Hash)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub enum VariadicValue<T>
 where
 	T: DeserializeOwned,
@@ -131,7 +131,7 @@ impl From<&VariadicValue<Option<H256>>> for Vec<Option<Bloom>> {
 }
 
 /// Filter
-#[derive(Debug, PartialEq, Clone, Deserialize, Eq, Hash)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash, Deserialize)]
 #[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct Filter {
@@ -425,7 +425,7 @@ impl FilteredParams {
 }
 
 /// Results of the filter_changes RPC.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 pub enum FilterChanges {
 	/// New logs.
 	Logs(Vec<Log>),
@@ -448,14 +448,14 @@ impl Serialize for FilterChanges {
 	}
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub enum FilterType {
 	Block,
 	PendingTransaction,
 	Log(Filter),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct FilterPoolItem {
 	pub last_poll: BlockNumber,
 	pub filter_type: FilterType,

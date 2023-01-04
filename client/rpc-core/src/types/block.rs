@@ -64,7 +64,7 @@ pub struct Block {
 }
 
 /// Block header representation.
-#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Header {
 	/// Hash of the block
@@ -111,7 +111,7 @@ pub type RichBlock = Rich<Block>;
 pub type RichHeader = Rich<Header>;
 
 /// Value representation with additional info
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Rich<T> {
 	/// Standard value.
 	pub inner: T,

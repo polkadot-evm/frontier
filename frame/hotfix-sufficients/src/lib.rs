@@ -17,18 +17,19 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+#[cfg(feature = "runtime-benchmarks")]
+pub mod benchmarking;
+#[cfg(test)]
+mod mock;
 #[cfg(test)]
 mod tests;
 
-#[cfg(test)]
-mod mock;
-
-#[cfg(feature = "runtime-benchmarks")]
-pub mod benchmarking;
 pub mod weights;
 pub use weights::WeightInfo;
 
+use frame_support::dispatch::PostDispatchInfo;
 pub use pallet_evm::AddressMapping;
+use sp_core::H160;
 use sp_runtime::traits::Zero;
 use sp_std::vec::Vec;
 
@@ -37,9 +38,8 @@ pub use self::pallet::*;
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use frame_support::{dispatch::PostDispatchInfo, pallet_prelude::*};
+	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
-	use sp_core::H160;
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
@@ -66,6 +66,7 @@ pub mod pallet {
 		/// This state was caused by a previous bug in EVM create account dispatchable.
 		///
 		/// Any accounts in the input list not satisfying the above condition will remain unaffected.
+		#[pallet::call_index(0)]
 		#[pallet::weight(
 			<T as pallet::Config>::WeightInfo::hotfix_inc_account_sufficients(addresses.len().try_into().unwrap_or(u32::MAX))
 		)]

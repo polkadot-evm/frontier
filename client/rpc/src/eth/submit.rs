@@ -21,7 +21,7 @@ use futures::future::TryFutureExt;
 use jsonrpsee::core::RpcResult as Result;
 // Substrate
 use sc_client_api::backend::{Backend, StateBackend, StorageProvider};
-use sc_network::ExHashT;
+use sc_network_common::ExHashT;
 use sc_transaction_pool::ChainApi;
 use sc_transaction_pool_api::TransactionPool;
 use sp_api::{ApiExt, ProvideRuntimeApi};
@@ -214,24 +214,10 @@ where
 		if slice.is_empty() {
 			return Err(internal_err("transaction data is empty"));
 		}
-		let first = slice.get(0).unwrap();
-		let transaction = if first > &0x7f {
-			// Legacy transaction. Decode and wrap in envelope.
-			match rlp::decode::<ethereum::TransactionV0>(slice) {
-				Ok(transaction) => ethereum::TransactionV2::Legacy(transaction),
-				Err(_) => return Err(internal_err("decode transaction failed")),
-			}
-		} else {
-			// Typed Transaction.
-			// `ethereum` crate decode implementation for `TransactionV2` expects a valid rlp input,
-			// and EIP-1559 breaks that assumption by prepending a version byte.
-			// We re-encode the payload input to get a valid rlp, and the decode implementation will strip
-			// them to check the transaction version byte.
-			let extend = rlp::encode(&slice);
-			match rlp::decode::<ethereum::TransactionV2>(&extend[..]) {
-				Ok(transaction) => transaction,
-				Err(_) => return Err(internal_err("decode transaction failed")),
-			}
+		let transaction: ethereum::TransactionV2 = match ethereum::EnvelopedDecodable::decode(slice)
+		{
+			Ok(transaction) => transaction,
+			Err(_) => return Err(internal_err("decode transaction failed")),
 		};
 
 		let transaction_hash = transaction.hash();
