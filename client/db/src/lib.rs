@@ -203,7 +203,7 @@ pub struct MappingCommitment<Block: BlockT> {
 	pub ethereum_transaction_hashes: Vec<H256>,
 }
 
-#[derive(Clone, Encode, Debug, Decode, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Encode, Decode)]
 pub struct TransactionMetadata<Block: BlockT> {
 	pub block_hash: Block::Hash,
 	pub ethereum_block_hash: H256,
@@ -282,6 +282,12 @@ impl<Block: BlockT> MappingDb<Block> {
 		let substrate_hashes = match self.block_hash(&commitment.ethereum_block_hash) {
 			Ok(Some(mut data)) => {
 				data.push(commitment.block_hash);
+				log::warn!(
+					target: "fc-db",
+					"Possible equivocation at ethereum block hash {} {:?}",
+					&commitment.ethereum_block_hash,
+					&data
+				);
 				data
 			}
 			_ => vec![commitment.block_hash],

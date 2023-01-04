@@ -18,7 +18,6 @@
 #![cfg(feature = "runtime-benchmarks")]
 
 use super::*;
-use core::str::FromStr;
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite};
 
 benchmarks! {
@@ -68,7 +67,7 @@ benchmarks! {
 			"2eeada8e094193a364736f6c63430008030033"))
 			.expect("Bad hex string");
 
-		let caller = H160::from_str("1000000000000000000000000000000000000001").unwrap();
+		let caller = "1000000000000000000000000000000000000001".parse::<H160>().unwrap();
 
 		let mut nonce: u64 = 1;
 		let nonce_as_u256: U256 = nonce.into();
@@ -90,7 +89,7 @@ benchmarks! {
 			validate,
 			T::config(),
 		);
-		assert_eq!(create_runner_results.is_ok(), true, "create() failed");
+		assert!(create_runner_results.is_ok(), "create() failed");
 
 		// derive the resulting contract address from our create
 		let mut rlp = RlpStream::new_list(2);
@@ -129,4 +128,4 @@ benchmarks! {
 	}
 }
 
-impl_benchmark_test_suite!(Pallet, crate::tests::new_test_ext(), crate::tests::Test);
+impl_benchmark_test_suite!(Pallet, crate::tests::new_test_ext(), crate::mock::Test);

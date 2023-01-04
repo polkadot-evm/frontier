@@ -35,7 +35,8 @@ use ethereum_types::{H160, H256, H512, H64, U256, U64};
 use jsonrpsee::core::{async_trait, RpcResult as Result};
 // Substrate
 use sc_client_api::backend::{Backend, StateBackend, StorageProvider};
-use sc_network::{ExHashT, NetworkService};
+use sc_network::NetworkService;
+use sc_network_common::ExHashT;
 use sc_transaction_pool::{ChainApi, Pool};
 use sc_transaction_pool_api::{InPoolTransaction, TransactionPool};
 use sp_api::{Core, HeaderT, ProvideRuntimeApi};

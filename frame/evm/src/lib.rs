@@ -65,12 +65,12 @@ pub mod runner;
 mod tests;
 
 use frame_support::{
-	dispatch::DispatchResultWithPostInfo,
+	dispatch::{DispatchResultWithPostInfo, Pays, PostDispatchInfo},
 	traits::{
 		tokens::fungible::Inspect, Currency, ExistenceRequirement, FindAuthor, Get, Imbalance,
 		OnUnbalanced, SignedImbalance, WithdrawReasons,
 	},
-	weights::{Pays, PostDispatchInfo, Weight},
+	weights::Weight,
 };
 use frame_system::RawOrigin;
 use sp_core::{Hasher, H160, H256, U256};
@@ -116,15 +116,15 @@ pub mod pallet {
 		type GasWeightMapping: GasWeightMapping;
 
 		/// Weight corresponding to a gas unit.
-		type WeightPerGas: Get<u64>;
+		type WeightPerGas: Get<Weight>;
 
 		/// Block number to block hash.
 		type BlockHashMapping: BlockHashMapping;
 
 		/// Allow the origin to call on behalf of given address.
-		type CallOrigin: EnsureAddressOrigin<Self::Origin>;
+		type CallOrigin: EnsureAddressOrigin<Self::RuntimeOrigin>;
 		/// Allow the origin to withdraw on behalf of given address.
-		type WithdrawOrigin: EnsureAddressOrigin<Self::Origin, Success = Self::AccountId>;
+		type WithdrawOrigin: EnsureAddressOrigin<Self::RuntimeOrigin, Success = Self::AccountId>;
 
 		/// Mapping from address to account id.
 		type AddressMapping: AddressMapping<Self::AccountId>;
@@ -132,7 +132,7 @@ pub mod pallet {
 		type Currency: Currency<Self::AccountId> + Inspect<Self::AccountId>;
 
 		/// The overarching event type.
-		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// Precompiles associated with this EVM engine.
 		type PrecompilesType: PrecompileSet;
 		type PrecompilesValue: Get<Self::PrecompilesType>;
@@ -160,6 +160,7 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		/// Withdraw balance from EVM into currency/balances pallet.
+		#[pallet::call_index(0)]
 		#[pallet::weight(0)]
 		pub fn withdraw(
 			origin: OriginFor<T>,
@@ -180,6 +181,7 @@ pub mod pallet {
 		}
 
 		/// Issue an EVM call operation. This is similar to a message call transaction in Ethereum.
+		#[pallet::call_index(1)]
 		#[pallet::weight({
 			let without_base_extrinsic_weight = true;
 			T::GasWeightMapping::gas_to_weight(*gas_limit, without_base_extrinsic_weight)
@@ -246,6 +248,7 @@ pub mod pallet {
 
 		/// Issue an EVM create operation. This is similar to a contract creation transaction in
 		/// Ethereum.
+		#[pallet::call_index(2)]
 		#[pallet::weight({
 			let without_base_extrinsic_weight = true;
 			T::GasWeightMapping::gas_to_weight(*gas_limit, without_base_extrinsic_weight)
@@ -321,6 +324,7 @@ pub mod pallet {
 		}
 
 		/// Issue an EVM create2 operation.
+		#[pallet::call_index(3)]
 		#[pallet::weight({
 			let without_base_extrinsic_weight = true;
 			T::GasWeightMapping::gas_to_weight(*gas_limit, without_base_extrinsic_weight)
@@ -435,6 +439,8 @@ pub mod pallet {
 		Undefined,
 		/// EVM reentrancy
 		Reentrancy,
+		/// EIP-3607,
+		TransactionMustComeFromEOA,
 	}
 
 	impl<T> From<InvalidEvmTransactionError> for Error<T> {
@@ -643,18 +649,18 @@ pub trait GasWeightMapping {
 pub struct FixedGasWeightMapping<T>(sp_std::marker::PhantomData<T>);
 impl<T: Config> GasWeightMapping for FixedGasWeightMapping<T> {
 	fn gas_to_weight(gas: u64, without_base_weight: bool) -> Weight {
-		let mut weight = gas.saturating_mul(T::WeightPerGas::get());
+		let mut weight = T::WeightPerGas::get().saturating_mul(gas);
 		if without_base_weight {
 			weight = weight.saturating_sub(
 				T::BlockWeights::get()
-					.get(frame_support::weights::DispatchClass::Normal)
+					.get(frame_support::dispatch::DispatchClass::Normal)
 					.base_extrinsic,
 			);
 		}
 		weight
 	}
 	fn weight_to_gas(weight: Weight) -> u64 {
-		weight.wrapping_div(T::WeightPerGas::get())
+		weight.div(T::WeightPerGas::get().ref_time()).ref_time()
 	}
 }
 
@@ -694,7 +700,7 @@ impl<T: Config> Pallet<T> {
 			return;
 		}
 
-		if !<AccountCodes<T>>::contains_key(&address) {
+		if !<AccountCodes<T>>::contains_key(address) {
 			let account_id = T::AddressMapping::into_account_id(address);
 			let _ = frame_system::Pallet::<T>::inc_sufficients(&account_id);
 		}

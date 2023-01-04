@@ -26,7 +26,7 @@ use serde::{
 use std::fmt;
 
 /// Wrapper structure around vector of bytes.
-#[derive(Debug, PartialEq, Eq, Default, Hash, Clone)]
+#[derive(Clone, Debug, Default, Eq, PartialEq, Hash)]
 pub struct Bytes(pub Vec<u8>);
 
 impl Bytes {

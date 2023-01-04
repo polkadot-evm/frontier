@@ -27,7 +27,8 @@ use sc_client_api::{
 	backend::{Backend, StateBackend, StorageProvider},
 	client::BlockchainEvents,
 };
-use sc_network::{ExHashT, NetworkService, NetworkStatusProvider};
+use sc_network::{NetworkService, NetworkStatusProvider};
+use sc_network_common::ExHashT;
 use sc_rpc::SubscriptionTaskExecutor;
 use sc_transaction_pool_api::TransactionPool;
 use sp_api::{ApiExt, BlockId, ProvideRuntimeApi};
@@ -135,7 +136,7 @@ impl EthSubscriptionResult {
 			};
 			let mut transaction_log_index: u32 = 0;
 			let transaction_hash: Option<H256> = if receipt_logs.len() > 0 {
-				Some(block.transactions[receipt_index as usize].hash())
+				Some(block.transactions[receipt_index].hash())
 			} else {
 				None
 			};

@@ -10,19 +10,19 @@ license = "Apache-2.0"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-ethereum = { version = "0.12.0", default-features = false, features = ["with-codec"] }
+ethereum = { version = "0.14.0", default-features = false, features = ["with-codec"] }
 
 # Parity
-codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false }
-ethereum-types = { version = "0.13.1", default-features = false }
-scale-info = { version = "2.1.2", default-features = false, features = ["derive"] }
+codec = { package = "parity-scale-codec", version = "3.2.1", default-features = false }
+ethereum-types = { version = "0.14.1", default-features = false }
+scale-info = { version = "2.3.0", default-features = false, features = ["derive"] }
 
 # Substrate
 sp-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-core = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-io = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-runtime = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-std = { version = "4.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-core = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-io = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-runtime = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-std = { version = "5.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 
 # Frontier
 fp-evm = { version = "3.0.0-dev", path = "../../primitives/evm", default-features = false }

@@ -15,7 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use frame_support::weights::{DispatchInfo, GetDispatchInfo};
+use frame_support::dispatch::{DispatchInfo, GetDispatchInfo};
 use sp_runtime::{
 	traits::{
 		self, DispatchInfoOf, Dispatchable, MaybeDisplay, Member, PostDispatchInfoOf,
@@ -29,7 +29,7 @@ use sp_runtime::{
 
 use crate::SelfContainedCall;
 
-#[derive(PartialEq, Eq, Clone, RuntimeDebug)]
+#[derive(Clone, Eq, PartialEq, RuntimeDebug)]
 pub enum CheckedSignature<AccountId, Extra, SelfContainedSignedInfo> {
 	Signed(AccountId, Extra),
 	Unsigned,
@@ -39,7 +39,7 @@ pub enum CheckedSignature<AccountId, Extra, SelfContainedSignedInfo> {
 /// Definition of something that the external world might want to say; its
 /// existence implies that it has been checked and is good, particularly with
 /// regards to the signature.
-#[derive(PartialEq, Eq, Clone, RuntimeDebug)]
+#[derive(Clone, Eq, PartialEq, RuntimeDebug)]
 pub struct CheckedExtrinsic<AccountId, Call, Extra, SelfContainedSignedInfo> {
 	/// Who this purports to be from and the number of extrinsics have come before
 	/// from the same signer, if anyone (note this is not a signature).
@@ -62,7 +62,7 @@ impl<AccountId, Call, Extra, SelfContainedSignedInfo, Origin> traits::Applyable
 where
 	AccountId: Member + MaybeDisplay,
 	Call: Member
-		+ Dispatchable<Origin = Origin>
+		+ Dispatchable<RuntimeOrigin = Origin>
 		+ SelfContainedCall<SignedInfo = SelfContainedSignedInfo>,
 	Extra: SignedExtension<AccountId = AccountId, Call = Call>,
 	Origin: From<Option<AccountId>>,
@@ -120,7 +120,7 @@ where
 				Ok(res)
 			}
 			CheckedSignature::Unsigned => {
-				let _pre = Extra::pre_dispatch_unsigned(&self.function, info, len)?;
+				Extra::pre_dispatch_unsigned(&self.function, info, len)?;
 				U::pre_dispatch(&self.function)?;
 				let maybe_who = None;
 				let res = self.function.dispatch(Origin::from(maybe_who));
