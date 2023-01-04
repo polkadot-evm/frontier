@@ -27,13 +27,11 @@ use fp_evm::{
 use sp_core::U256;
 
 fn read_fr(input: &[u8], start_inx: usize) -> Result<bn::Fr, PrecompileFailure> {
-	if input.len() < start_inx + 32 {
-		return Err(PrecompileFailure::Error {
-			exit_status: ExitError::Other("Input not long enough".into()),
-		});
-	}
+	let mut buf = [0u8; 32];
+	let mut input_iter = input[start_inx..].iter().copied();
+	buf.fill_with(|| input_iter.next().unwrap_or(0));
 
-	bn::Fr::from_slice(&input[start_inx..(start_inx + 32)]).map_err(|_| PrecompileFailure::Error {
+	bn::Fr::from_slice(&buf).map_err(|_| PrecompileFailure::Error {
 		exit_status: ExitError::Other("Invalid field element".into()),
 	})
 }
@@ -41,22 +39,20 @@ fn read_fr(input: &[u8], start_inx: usize) -> Result<bn::Fr, PrecompileFailure> 
 fn read_point(input: &[u8], start_inx: usize) -> Result<bn::G1, PrecompileFailure> {
 	use bn::{AffineG1, Fq, Group, G1};
 
-	if input.len() < start_inx + 64 {
-		return Err(PrecompileFailure::Error {
-			exit_status: ExitError::Other("Input not long enough".into()),
-		});
-	}
+	let mut px_buf = [0u8; 32];
+	let mut py_buf = [0u8; 32];
+	let mut input_iter = input[start_inx..].iter().copied();
+	px_buf.fill_with(|| input_iter.next().unwrap_or(0));
+	py_buf.fill_with(|| input_iter.next().unwrap_or(0));
 
-	let px = Fq::from_slice(&input[start_inx..(start_inx + 32)]).map_err(|_| {
-		PrecompileFailure::Error {
-			exit_status: ExitError::Other("Invalid point x coordinate".into()),
-		}
+	let px = Fq::from_slice(&px_buf).map_err(|_| PrecompileFailure::Error {
+		exit_status: ExitError::Other("Invalid point x coordinate".into()),
 	})?;
-	let py = Fq::from_slice(&input[(start_inx + 32)..(start_inx + 64)]).map_err(|_| {
-		PrecompileFailure::Error {
-			exit_status: ExitError::Other("Invalid point y coordinate".into()),
-		}
+
+	let py = Fq::from_slice(&py_buf).map_err(|_| PrecompileFailure::Error {
+		exit_status: ExitError::Other("Invalid point y coordinate".into()),
 	})?;
+
 	Ok(if px == Fq::zero() && py == Fq::zero() {
 		G1::zero()
 	} else {
