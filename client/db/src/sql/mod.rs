@@ -29,9 +29,13 @@ use sp_runtime::{
 	traits::{BlakeTwo256, Block as BlockT, Header as HeaderT, UniqueSaturatedInto, Zero},
 };
 use sqlx::{
-	sqlite::{SqliteConnectOptions, SqlitePool, SqlitePoolOptions, SqliteQueryResult},
+	query::Query,
+	sqlite::{
+		SqliteArguments, SqliteConnectOptions, SqlitePool, SqlitePoolOptions, SqliteQueryResult,
+	},
 	ConnectOptions, Error, Execute, QueryBuilder, Row, Sqlite,
 };
+
 use std::{str::FromStr, sync::Arc};
 
 use crate::FilteredLog;
@@ -708,136 +712,11 @@ impl<Block: BlockT<Hash = H256>> crate::BackendReader<Block> for Backend<Block> 
 		addresses: Vec<H160>,
 		topics: Vec<Vec<Option<H256>>>,
 	) -> Result<Vec<FilteredLog>, String> {
-		let topics = {
-			// Remove empty groups.
-			let mut topics = topics;
-			topics.retain(|topic_group| !topic_group.iter().all(|x| x.is_none()));
+		let key = format!("{}-{}-{:?}-{:?}", from_block, to_block, addresses, topics);
+		log::info!("FILTER {}", key);
 
-			// Remove trailing wildcards.
-			let mut topics_iter = topics.iter_mut();
-			while let Some(topic_group) = topics_iter.next() {
-				if let Some(None) = topic_group.last() {
-					let _ = topic_group.pop();
-				}
-			}
-
-			// Check topic group's size does not exceed 4.
-			// TODO by now we do this, we should change this type at rpc level to BoundedVec.
-			if topics.iter().any(|topic_group| topic_group.len() > 4) {
-				return Err("Invalid topic input. Maximum length is 4.".to_string());
-			}
-			topics
-		};
-
-		let filter_groups: Vec<Vec<FilterValue>> = match (addresses.len(), topics.len()) {
-			(x, 0) if x > 0 => addresses
-				.iter()
-				.map(|address| vec![FilterValue::Address(*address)])
-				.collect(),
-			(0, y) if y > 0 => topics
-				.iter()
-				.map(|topic_group| {
-					topic_group
-						.iter()
-						.map(|topic| FilterValue::Topic(*topic))
-						.collect()
-				})
-				.collect(),
-			(_, _) => {
-				let mut out = vec![];
-				for address in addresses.iter() {
-					for topic_group in topics.iter() {
-						let mut inner = vec![FilterValue::Address(*address)];
-						for topic in topic_group.iter() {
-							inner.push(FilterValue::Topic(*topic));
-						}
-						out.push(inner);
-					}
-				}
-				out
-			}
-		};
-		let mut query_builder: QueryBuilder<Sqlite> = QueryBuilder::new(
-			"
-			SELECT
-				A.substrate_block_hash,
-				B.ethereum_block_hash,
-				B.block_number,
-				B.ethereum_storage_schema,
-				A.transaction_index,
-				A.log_index
-			FROM logs AS A
-			INNER JOIN blocks AS B
-			ON B.block_number BETWEEN ",
-		);
-		// Bind `from` and `to` block range
-		let mut block_number = query_builder.separated(" AND ");
-		block_number.push_bind(from_block as i64);
-		block_number.push_bind(to_block as i64);
-		query_builder.push(" AND B.substrate_block_hash = A.substrate_block_hash");
-		query_builder.push(" AND B.is_canon = 1");
-
-		if !filter_groups.is_empty() {
-			query_builder.push(" WHERE ");
-		}
-		for (i, filter_group) in filter_groups.iter().enumerate() {
-			query_builder.push("(");
-			let mut topic_pos = 1;
-			let last_index = filter_group.len() - 1;
-			for (j, el) in filter_group.iter().enumerate() {
-				let mut add_separator = false;
-				match el {
-					FilterValue::Address(address) => {
-						query_builder.push("address = ");
-						let address = address.as_bytes().to_owned();
-						query_builder.push_bind(address);
-						add_separator = true;
-					}
-					FilterValue::Topic(topic) => {
-						if let Some(topic) = topic {
-							let topic = topic.as_bytes().to_owned();
-							match topic_pos {
-								1 => {
-									query_builder.push("topic_1 = ");
-									query_builder.push_bind(topic);
-								}
-								2 => {
-									query_builder.push("topic_2 = ");
-									query_builder.push_bind(topic);
-								}
-								3 => {
-									query_builder.push("topic_3 = ");
-									query_builder.push_bind(topic);
-								}
-								4 => {
-									query_builder.push("topic_4 = ");
-									query_builder.push_bind(topic);
-								}
-								_ => todo!(),
-							}
-							add_separator = true;
-						}
-						topic_pos += 1;
-					}
-				}
-				if add_separator && j < last_index {
-					query_builder.push(" AND ");
-				}
-			}
-			query_builder.push(")");
-			if i < filter_groups.len() - 1 {
-				query_builder.push(" OR ");
-			}
-		}
-		query_builder.push(
-			"
-			GROUP BY A.substrate_block_hash, transaction_index, log_index
-			ORDER BY B.block_number ASC, A.transaction_index ASC, A.log_index ASC
-			LIMIT 10001
-		",
-		);
-
-		let query = query_builder.build();
+		let mut qb = QueryBuilder::new("");
+		let query = build_sqlite_query(&mut qb, from_block, to_block, addresses, topics);
 		let sql = query.sql();
 
 		let mut out: Vec<FilteredLog> = vec![];
@@ -846,8 +725,28 @@ impl<Block: BlockT<Hash = H256>> crate::BackendReader<Block> for Backend<Block> 
 			.acquire()
 			.await
 			.map_err(|err| format!("failed acquiring sqlite connection: {}", err))?;
-		conn.set_progress_handler(self.num_ops_timeout, || false)
-			.await;
+		let y = key.clone();
+		conn.set_progress_handler(self.num_ops_timeout, move || {
+			log::info!(
+				target: "frontier-sql",
+				"TRIGGER sqlite progress_handler_triggered after {}",
+				y,
+			);
+			false
+		})
+		.await;
+		log::info!(
+			target: "frontier-sql",
+			"🛠️  Using num_ops_timeout = {} - {}",
+			self.num_ops_timeout,
+			key,
+		);
+
+		log::info!(
+			target: "frontier-sql",
+			"SQL {:?}",
+			sql,
+		);
 
 		match query.fetch_all(&mut conn).await {
 			Ok(result) => {
@@ -880,24 +779,94 @@ impl<Block: BlockT<Hash = H256>> crate::BackendReader<Block> for Backend<Block> 
 					});
 				}
 			}
-			_ => {
+			Err(err) => {
 				conn.remove_progress_handler().await;
 				log::error!(
 					target: "frontier-sql",
-					"Failed to query sql db with statement {:?}",
-					sql
+					"Failed to query sql db with statement {:?} : {:?} - {}",
+					// sql,
+					"SQL",
+					err,
+					key,
 				);
 				return Err("Failed to query sql db with statement".to_string());
 			}
 		};
 
 		conn.remove_progress_handler().await;
+		log::info!(
+			target: "frontier-sql",
+			"FILTER remove handler - {}",
+			key,
+		);
 		Ok(out)
 	}
 
 	fn is_indexed(&self) -> bool {
 		true
 	}
+}
+
+fn build_sqlite_query<'a>(
+	qb: &'a mut QueryBuilder<Sqlite>,
+	from_block: u64,
+	to_block: u64,
+	addresses: Vec<H160>,
+	topics: Vec<Vec<Option<H256>>>,
+) -> Query<'a, Sqlite, SqliteArguments<'a>> {
+	qb.push(
+		"
+SELECT
+	l.substrate_block_hash,
+	b.ethereum_block_hash,
+	b.block_number,
+	b.ethereum_storage_schema,
+	l.transaction_index,
+	l.log_index
+FROM logs AS l
+INNER JOIN blocks AS b
+ON (b.block_number BETWEEN ",
+	);
+	qb.separated(" AND ")
+		.push_bind(from_block as i64)
+		.push_bind(to_block as i64)
+		.push_unseparated(")");
+	qb.push(" AND b.substrate_block_hash = l.substrate_block_hash")
+		.push(" AND b.is_canon = 1")
+		.push("\nWHERE l.address IN (");
+	let mut qb_addr = qb.separated(", ");
+	addresses.iter().for_each(|addr| {
+		qb_addr.push_bind(addr.as_bytes().to_owned());
+	});
+	qb_addr.push_unseparated(")");
+
+	for (i, topic_options) in topics.iter().enumerate() {
+		let valid_topic_options = topic_options
+			.iter()
+			.filter(|x| x.is_some())
+			.map(|x| x.expect("value must exist as `Some` filtered above; qed"))
+			.collect::<Vec<_>>();
+		if valid_topic_options.len() == 1 {
+			qb.push(format!(" AND l.topic_{} = ", i + 1))
+				.push_bind(valid_topic_options[0].as_bytes().to_owned());
+		} else if valid_topic_options.len() > 1 {
+			qb.push(format!(" AND l.topic_{} IN (", i + 1));
+			let mut qb_topic = qb.separated(", ");
+			valid_topic_options.iter().for_each(|t| {
+				qb_topic.push_bind(t.as_bytes().to_owned());
+			});
+			qb_topic.push_unseparated(")");
+		}
+	}
+
+	qb.push(
+		"
+GROUP BY l.substrate_block_hash, l.transaction_index, l.log_index
+ORDER BY l.block_number ASC, l.transaction_index ASC, l.log_index ASC
+LIMIT 10001",
+	);
+
+	qb.build()
 }
 
 #[cfg(test)]
@@ -915,7 +884,7 @@ mod test {
 		traits::BlakeTwo256,
 	};
 	use sqlx::QueryBuilder;
-	use std::{collections::BTreeMap, path::Path, sync::Arc};
+	use std::{collections::BTreeMap, path::Path, str::FromStr, sync::Arc};
 	use substrate_test_runtime_client::{
 		DefaultTestClientBuilderExt, TestClientBuilder, TestClientBuilderExt,
 	};
@@ -996,6 +965,7 @@ mod test {
 				create_if_missing: true,
 			}),
 			100,
+			0,
 			overrides.clone(),
 		)
 		.await
@@ -1616,5 +1586,74 @@ mod test {
 			.await
 			.expect("run test case");
 		assert_eq!(result, filter.expected_result);
+	}
+
+	#[test]
+	fn test_query_should_be_generated_correctly() {
+		use sqlx::{Execute, Sqlite};
+
+		let from_block: u64 = 100;
+		let to_block: u64 = 500;
+		let addresses: Vec<H160> = vec![
+			H160::from_str("0x75e76b29a6c48f6e1aeeda4e52d3d4fa6e9355c0").unwrap(),
+			H160::from_str("0x42b15a11cc295be6f97aa4518e850b064b64fb11").unwrap(),
+			H160::from_str("0xf02d804b19b0665690f6b312691b2eb8f80cd3b8").unwrap(),
+		];
+		let topics: Vec<Vec<Option<H256>>> = vec![
+			vec![
+				Some(
+					H256::from_str(
+						"0x4dec04e750ca11537cabcd8a9eab06494de08da3735bc8871cd41250e190bc04",
+					)
+					.unwrap(),
+				),
+				Some(
+					H256::from_str(
+						"0x2caecd17d02f56fa897705dcc740da2d237c373f70686f4e0d9bd3bf0400ea7a",
+					)
+					.unwrap(),
+				),
+			],
+			vec![
+				None, // None should be omitted, leaving only a single value here
+				Some(
+					H256::from_str(
+						"0x00000000000000000000000081e42baeee09de2880d4a8842edb1911755ac48d",
+					)
+					.unwrap(),
+				),
+				None,
+			],
+			vec![
+				None, // topic_3 should be omitted from query
+			],
+			vec![Some(
+				H256::from_str(
+					"0x000000000000000000000000aa342baeee09de2880d4a8842edb1911755ac123",
+				)
+				.unwrap(),
+			)],
+		];
+
+		let expected_query_sql = "
+SELECT
+	l.substrate_block_hash,
+	b.ethereum_block_hash,
+	b.block_number,
+	b.ethereum_storage_schema,
+	l.transaction_index,
+	l.log_index
+FROM logs AS l
+INNER JOIN blocks AS b
+ON (b.block_number BETWEEN ? AND ?) AND b.substrate_block_hash = l.substrate_block_hash AND b.is_canon = 1
+WHERE l.address IN (?, ?, ?) AND l.topic_1 IN (?, ?) AND l.topic_2 = ? AND l.topic_4 = ?
+GROUP BY l.substrate_block_hash, l.transaction_index, l.log_index
+ORDER BY l.block_number ASC, l.transaction_index ASC, l.log_index ASC
+LIMIT 10001";
+
+		let mut qb = QueryBuilder::new("");
+		let actual_query_sql =
+			super::build_sqlite_query(&mut qb, from_block, to_block, addresses, topics).sql();
+		assert_eq!(expected_query_sql, actual_query_sql);
 	}
 }
