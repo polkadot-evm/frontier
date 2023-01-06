@@ -112,11 +112,13 @@ impl Precompile for Modexp {
 	fn execute(handle: &mut impl PrecompileHandle) -> PrecompileResult {
 		let input = handle.input();
 
-		let base_len_buf = [0u8; 32];
-		let exp_len_buf = [0u8; 32];
-		let mod_len_buf = [0u8; 32];
+		// Yellowpaper: whenever the input is too short, the missing bytes are
+		// considered to be zero.
+		let mut base_len_buf = [0u8; 32];
+		let mut exp_len_buf = [0u8; 32];
+		let mut mod_len_buf = [0u8; 32];
 
-		let mut input_iter = input[start_inx..].iter().copied();
+		let mut input_iter = input.iter().copied();
 		base_len_buf.fill_with(|| input_iter.next().unwrap_or(0));
 		exp_len_buf.fill_with(|| input_iter.next().unwrap_or(0));
 		mod_len_buf.fill_with(|| input_iter.next().unwrap_or(0));
@@ -150,11 +152,11 @@ impl Precompile for Modexp {
 		let exp_len = exp_len_big.to_usize().expect("exp_len out of bounds");
 		let mod_len = mod_len_big.to_usize().expect("mod_len out of bounds");
 
-		// input length should be at least 96 + user-specified length of base + exp + mod
-		let total_len = base_len + exp_len + mod_len + 96;
-		if input.len() < total_len {
-			return Err(PrecompileFailure::Error {
-				exit_status: ExitError::Other("insufficient input size".into()),
+		// if mod_len is 0 output must be empty
+		if mod_len == 0 {
+			return Ok(PrecompileOutput {
+				exit_status: ExitSucceed::Returned,
+				output: vec![],
 			});
 		}
 
@@ -164,21 +166,23 @@ impl Precompile for Modexp {
 			BigUint::zero()
 		} else {
 			// read the numbers themselves.
-			let base_start = 96; // previous 3 32-byte fields
-			let base = BigUint::from_bytes_be(&input[base_start..base_start + base_len]);
+			let mut base_buf = vec![0u8; base_len];
+			base_buf.fill_with(|| input_iter.next().unwrap_or(0));
+			let base = BigUint::from_bytes_be(&base_buf);
 
-			let exp_start = base_start + base_len;
-			let exponent = BigUint::from_bytes_be(&input[exp_start..exp_start + exp_len]);
+			let mut exp_buf = vec![0u8; exp_len];
+			exp_buf.fill_with(|| input_iter.next().unwrap_or(0));
+			let exponent = BigUint::from_bytes_be(&exp_buf);
+
+			let mut mod_buf = vec![0u8; mod_len];
+			mod_buf.fill_with(|| input_iter.next().unwrap_or(0));
+			let modulus = BigUint::from_bytes_be(&mod_buf);
 
 			// do our gas accounting
 			let gas_cost =
 				calculate_gas_cost(base_len as u64, exp_len as u64, mod_len as u64, &exponent);
 
 			handle.record_cost(gas_cost)?;
-			let input = handle.input();
-
-			let mod_start = exp_start + exp_len;
-			let modulus = BigUint::from_bytes_be(&input[mod_start..mod_start + mod_len]);
 
 			if modulus.is_zero() || modulus.is_one() {
 				BigUint::zero()
@@ -197,7 +201,7 @@ impl Precompile for Modexp {
 				exit_status: ExitSucceed::Returned,
 				output: bytes.to_vec(),
 			})
-		} else if bytes.len() < mod_len {
+		} else if dbg!(bytes.len()) < mod_len {
 			let mut ret = Vec::with_capacity(mod_len);
 			ret.extend(core::iter::repeat(0).take(mod_len - bytes.len()));
 			ret.extend_from_slice(&bytes[..]);
@@ -227,7 +231,7 @@ mod tests {
 	}
 
 	#[test]
-	fn test_empty_input() -> Result<(), PrecompileFailure> {
+	fn test_empty_input() {
 		let input = Vec::new();
 
 		let cost: u64 = 1;
@@ -241,25 +245,17 @@ mod tests {
 		let mut handle = MockHandle::new(input, Some(cost), context);
 
 		match Modexp::execute(&mut handle) {
-			Ok(_) => {
-				panic!("Test not expected to pass");
+			Ok(precompile_result) => {
+				assert_eq!(precompile_result.output.len(), 0);
 			}
-			Err(e) => {
-				assert_eq!(
-					e,
-					PrecompileFailure::Error {
-						exit_status: ExitError::Other(
-							"input must contain at least 96 bytes".into()
-						)
-					}
-				);
-				Ok(())
+			Err(_) => {
+				panic!("Modexp::execute() returned error"); // TODO: how to pass error on?
 			}
 		}
 	}
 
 	#[test]
-	fn test_insufficient_input() -> Result<(), PrecompileFailure> {
+	fn test_insufficient_input() {
 		let input = hex::decode(
 			"0000000000000000000000000000000000000000000000000000000000000001\
 			0000000000000000000000000000000000000000000000000000000000000001\
@@ -278,17 +274,12 @@ mod tests {
 		let mut handle = MockHandle::new(input, Some(cost), context);
 
 		match Modexp::execute(&mut handle) {
-			Ok(_) => {
-				panic!("Test not expected to pass");
+			Ok(precompile_result) => {
+				assert_eq!(precompile_result.output.len(), 1);
+				assert_eq!(precompile_result.output, vec![0x00]);
 			}
-			Err(e) => {
-				assert_eq!(
-					e,
-					PrecompileFailure::Error {
-						exit_status: ExitError::Other("insufficient input size".into())
-					}
-				);
-				Ok(())
+			Err(_) => {
+				panic!("Modexp::execute() returned error"); // TODO: how to pass error on?
 			}
 		}
 	}
