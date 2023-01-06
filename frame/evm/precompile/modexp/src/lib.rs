@@ -211,7 +211,7 @@ impl Precompile for Modexp {
 				exit_status: ExitSucceed::Returned,
 				output: bytes.to_vec(),
 			})
-		} else if dbg!(bytes.len()) < mod_len {
+		} else if bytes.len() < mod_len {
 			let mut ret = Vec::with_capacity(mod_len);
 			ret.extend(core::iter::repeat(0).take(mod_len - bytes.len()));
 			ret.extend_from_slice(&bytes[..]);
