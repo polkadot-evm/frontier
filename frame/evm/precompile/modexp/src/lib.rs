@@ -20,7 +20,7 @@
 
 extern crate alloc;
 
-use alloc::vec::Vec;
+use alloc::{vec, vec::Vec};
 use core::cmp::max;
 
 use num::{BigUint, FromPrimitive, One, ToPrimitive, Zero};
@@ -38,7 +38,6 @@ const MIN_GAS_COST: u64 = 200;
 // https://eips.ethereum.org/EIPS/eip-2565
 fn calculate_gas_cost(
 	base_length: u64,
-	exp_length: u64,
 	mod_length: u64,
 	exponent: &BigUint,
 	exponent_bytes: &[u8],
@@ -57,12 +56,9 @@ fn calculate_gas_cost(
 		words * words
 	}
 
-	fn calculate_iteration_count(
-		exp_length: u64,
-		exponent: &BigUint,
-		exponent_bytes: &[u8],
-	) -> u64 {
+	fn calculate_iteration_count(exponent: &BigUint, exponent_bytes: &[u8]) -> u64 {
 		let mut iteration_count: u64 = 0;
+		let exp_length = exponent_bytes.len() as u64;
 
 		if exp_length <= 32 && exponent.is_zero() {
 			iteration_count = 0;
@@ -90,7 +86,7 @@ fn calculate_gas_cost(
 	}
 
 	let multiplication_complexity = calculate_multiplication_complexity(base_length, mod_length);
-	let iteration_count = calculate_iteration_count(exp_length, exponent, exponent_bytes);
+	let iteration_count = calculate_iteration_count(exponent, exponent_bytes);
 	max(
 		MIN_GAS_COST,
 		multiplication_complexity * iteration_count / 3,
@@ -184,13 +180,7 @@ impl Precompile for Modexp {
 			let modulus = BigUint::from_bytes_be(&mod_buf);
 
 			// do our gas accounting
-			let gas_cost = calculate_gas_cost(
-				base_len as u64,
-				exp_len as u64,
-				mod_len as u64,
-				&exponent,
-				&exp_buf,
-			);
+			let gas_cost = calculate_gas_cost(base_len as u64, mod_len as u64, &exponent, &exp_buf);
 
 			handle.record_cost(gas_cost)?;
 
