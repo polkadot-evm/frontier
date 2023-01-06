@@ -21,7 +21,7 @@
 extern crate alloc;
 
 use alloc::vec::Vec;
-use core::{cmp::max, ops::BitAnd};
+use core::cmp::max;
 
 use num::{BigUint, FromPrimitive, One, ToPrimitive, Zero};
 
@@ -41,6 +41,7 @@ fn calculate_gas_cost(
 	exp_length: u64,
 	mod_length: u64,
 	exponent: &BigUint,
+	exponent_bytes: &[u8],
 ) -> u64 {
 	fn calculate_multiplication_complexity(base_length: u64, mod_length: u64) -> u64 {
 		let max_length = max(base_length, mod_length);
@@ -56,7 +57,11 @@ fn calculate_gas_cost(
 		words * words
 	}
 
-	fn calculate_iteration_count(exp_length: u64, exponent: &BigUint) -> u64 {
+	fn calculate_iteration_count(
+		exp_length: u64,
+		exponent: &BigUint,
+		exponent_bytes: &[u8],
+	) -> u64 {
 		let mut iteration_count: u64 = 0;
 
 		if exp_length <= 32 && exponent.is_zero() {
@@ -64,10 +69,6 @@ fn calculate_gas_cost(
 		} else if exp_length <= 32 {
 			iteration_count = exponent.bits() - 1;
 		} else if exp_length > 32 {
-			// construct BigUint to represent (2^256) - 1
-			let bytes: [u8; 32] = [0xFF; 32];
-			let max_256_bit_uint = BigUint::from_bytes_be(&bytes);
-
 			// from the EIP spec:
 			// (8 * (exp_length - 32)) + ((exponent & (2**256 - 1)).bit_length() - 1)
 			//
@@ -77,15 +78,19 @@ fn calculate_gas_cost(
 			//   must be > 0)
 			// * the addition can't overflow because the terms are both capped at roughly
 			//   8 * max size of exp_length (1024)
-			iteration_count =
-				(8 * (exp_length - 32)) + exponent.bitand(max_256_bit_uint).bits() - 1;
+			// * the EIP spec is written in python, in which (exponent & (2**256 - 1)) takes the
+			//   FIRST 32 bytes. However this `BigUint` `&` operator takes the LAST 32 bytes.
+			//   We thus instead take the bytes manually.
+			let exponent_head = BigUint::from_bytes_be(&exponent_bytes[..32]);
+
+			iteration_count = (8 * (exp_length - 32)) + exponent_head.bits() - 1;
 		}
 
 		max(iteration_count, 1)
 	}
 
 	let multiplication_complexity = calculate_multiplication_complexity(base_length, mod_length);
-	let iteration_count = calculate_iteration_count(exp_length, exponent);
+	let iteration_count = calculate_iteration_count(exp_length, exponent, exponent_bytes);
 	max(
 		MIN_GAS_COST,
 		multiplication_complexity * iteration_count / 3,
@@ -179,8 +184,13 @@ impl Precompile for Modexp {
 			let modulus = BigUint::from_bytes_be(&mod_buf);
 
 			// do our gas accounting
-			let gas_cost =
-				calculate_gas_cost(base_len as u64, exp_len as u64, mod_len as u64, &exponent);
+			let gas_cost = calculate_gas_cost(
+				base_len as u64,
+				exp_len as u64,
+				mod_len as u64,
+				&exponent,
+				&exp_buf,
+			);
 
 			handle.record_cost(gas_cost)?;
 
@@ -463,5 +473,37 @@ mod tests {
 		let result = BigUint::from_bytes_be(&precompile_result.output[..]);
 		let expected = BigUint::parse_bytes(b"0", 10).unwrap();
 		assert_eq!(result, expected);
+	}
+
+	#[test]
+	fn test_long_exp_gas_cost_matches_specs() {
+		let input = vec![
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 38, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 96, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			16, 0, 0, 0, 255, 255, 255, 2, 0, 0, 179, 0, 0, 2, 0, 0, 122, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 255, 251, 0, 0, 0, 0, 4, 38, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 96, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 16, 0, 0, 0, 255, 255, 255, 2, 0, 0, 179, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255,
+			255, 255, 255, 249,
+		];
+
+		let context: Context = Context {
+			address: Default::default(),
+			caller: Default::default(),
+			apparent_value: From::from(0),
+		};
+
+		let mut handle = MockHandle::new(input, Some(100_000), context);
+
+		let _ = Modexp::execute(&mut handle).expect("Modexp::execute() returned error");
+
+		assert_eq!(handle.gas_used, 7104); // gas used when ran in geth
 	}
 }
