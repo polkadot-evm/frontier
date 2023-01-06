@@ -112,34 +112,33 @@ impl Precompile for Modexp {
 	fn execute(handle: &mut impl PrecompileHandle) -> PrecompileResult {
 		let input = handle.input();
 
-		if input.len() < 96 {
-			return Err(PrecompileFailure::Error {
-				exit_status: ExitError::Other("input must contain at least 96 bytes".into()),
-			});
-		};
+		let base_len_buf = [0u8; 32];
+		let exp_len_buf = [0u8; 32];
+		let mod_len_buf = [0u8; 32];
+
+		let mut input_iter = input[start_inx..].iter().copied();
+		base_len_buf.fill_with(|| input_iter.next().unwrap_or(0));
+		exp_len_buf.fill_with(|| input_iter.next().unwrap_or(0));
+		mod_len_buf.fill_with(|| input_iter.next().unwrap_or(0));
 
 		// reasonable assumption: this must fit within the Ethereum EVM's max stack size
 		let max_size_big = BigUint::from_u32(1024).expect("can't create BigUint");
 
-		let mut buf = [0; 32];
-		buf.copy_from_slice(&input[0..32]);
-		let base_len_big = BigUint::from_bytes_be(&buf);
+		let base_len_big = BigUint::from_bytes_be(&base_len_buf);
 		if base_len_big > max_size_big {
 			return Err(PrecompileFailure::Error {
 				exit_status: ExitError::Other("unreasonably large base length".into()),
 			});
 		}
 
-		buf.copy_from_slice(&input[32..64]);
-		let exp_len_big = BigUint::from_bytes_be(&buf);
+		let exp_len_big = BigUint::from_bytes_be(&exp_len_buf);
 		if exp_len_big > max_size_big {
 			return Err(PrecompileFailure::Error {
 				exit_status: ExitError::Other("unreasonably large exponent length".into()),
 			});
 		}
 
-		buf.copy_from_slice(&input[64..96]);
-		let mod_len_big = BigUint::from_bytes_be(&buf);
+		let mod_len_big = BigUint::from_bytes_be(&mod_len_buf);
 		if mod_len_big > max_size_big {
 			return Err(PrecompileFailure::Error {
 				exit_status: ExitError::Other("unreasonably large modulus length".into()),
