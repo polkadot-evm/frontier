@@ -151,6 +151,12 @@
 <a href="#151" id="151">151</a>
 <a href="#152" id="152">152</a>
 <a href="#153" id="153">153</a>
+<a href="#154" id="154">154</a>
+<a href="#155" id="155">155</a>
+<a href="#156" id="156">156</a>
+<a href="#157" id="157">157</a>
+<a href="#158" id="158">158</a>
+<a href="#159" id="159">159</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
@@ -204,9 +210,15 @@
 		<span class="kw">let </span><span class="kw-2">mut </span>sig = [<span class="number">0u8</span>; <span class="number">65</span>];
 
 		msg[<span class="number">0</span>..<span class="number">32</span>].copy_from_slice(<span class="kw-2">&amp;</span>input[<span class="number">0</span>..<span class="number">32</span>]);
-		sig[<span class="number">0</span>..<span class="number">32</span>].copy_from_slice(<span class="kw-2">&amp;</span>input[<span class="number">64</span>..<span class="number">96</span>]);
-		sig[<span class="number">32</span>..<span class="number">64</span>].copy_from_slice(<span class="kw-2">&amp;</span>input[<span class="number">96</span>..<span class="number">128</span>]);
-		sig[<span class="number">64</span>] = input[<span class="number">63</span>];
+		sig[<span class="number">0</span>..<span class="number">32</span>].copy_from_slice(<span class="kw-2">&amp;</span>input[<span class="number">64</span>..<span class="number">96</span>]); <span class="comment">// r
+		</span>sig[<span class="number">32</span>..<span class="number">64</span>].copy_from_slice(<span class="kw-2">&amp;</span>input[<span class="number">96</span>..<span class="number">128</span>]); <span class="comment">// s
+		</span>sig[<span class="number">64</span>] = input[<span class="number">63</span>]; <span class="comment">// v
+
+		// v can only be 27 or 28 on the full 32 bytes value.
+		// https://github.com/ethereum/go-ethereum/blob/a907d7e81aaeea15d80b2d3209ad8e08e3bf49e0/core/vm/contracts.go#L177
+		</span><span class="kw">if </span>input[<span class="number">32</span>..<span class="number">63</span>] != [<span class="number">0u8</span>; <span class="number">31</span>] || ![<span class="number">27</span>, <span class="number">28</span>].contains(<span class="kw-2">&amp;</span>input[<span class="number">63</span>]) {
+			<span class="kw">return </span><span class="prelude-val">Ok</span>((ExitSucceed::Returned, [<span class="number">0u8</span>; <span class="number">0</span>].to_vec()));
+		}
 
 		<span class="kw">let </span>result = <span class="kw">match </span>sp_io::crypto::secp256k1_ecdsa_recover(<span class="kw-2">&amp;</span>sig, <span class="kw-2">&amp;</span>msg) {
 			<span class="prelude-val">Ok</span>(pubkey) =&gt; {
