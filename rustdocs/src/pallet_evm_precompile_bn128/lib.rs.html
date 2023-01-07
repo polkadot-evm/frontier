@@ -302,6 +302,12 @@
 <a href="#302" id="302">302</a>
 <a href="#303" id="303">303</a>
 <a href="#304" id="304">304</a>
+<a href="#305" id="305">305</a>
+<a href="#306" id="306">306</a>
+<a href="#307" id="307">307</a>
+<a href="#308" id="308">308</a>
+<a href="#309" id="309">309</a>
+<a href="#310" id="310">310</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
@@ -477,6 +483,12 @@
 			handle.record_cost(Bn128Pairing::BASE_GAS_COST)<span class="question-mark">?</span>;
 			U256::one()
 		} <span class="kw">else </span>{
+			<span class="kw">if </span>handle.input().len() % <span class="number">192 </span>&gt; <span class="number">0 </span>{
+				<span class="kw">return </span><span class="prelude-val">Err</span>(PrecompileFailure::Error {
+					exit_status: ExitError::Other(<span class="string">&quot;bad elliptic curve pairing size&quot;</span>.into()),
+				});
+			}
+
 			<span class="comment">// (a, b_a, b_b - each 64-byte affine coordinates)
 			</span><span class="kw">let </span>elements = handle.input().len() / <span class="number">192</span>;
 
