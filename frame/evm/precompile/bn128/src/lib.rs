@@ -26,10 +26,21 @@ use fp_evm::{
 };
 use sp_core::U256;
 
+/// Copy bytes from input to target.
+fn read_input(source: &[u8], target: &mut [u8], offset: usize) {
+	// Out of bounds, nothing to copy.
+	if source.len() <= offset {
+		return;
+	}
+
+	// Find len to copy up to target len, but not out of bounds.
+	let len = core::cmp::min(target.len(), source.len() - offset);
+	target[..len].copy_from_slice(&source[offset..][..len]);
+}
+
 fn read_fr(input: &[u8], start_inx: usize) -> Result<bn::Fr, PrecompileFailure> {
 	let mut buf = [0u8; 32];
-	let mut input_iter = input[start_inx..].iter().copied();
-	buf.fill_with(|| input_iter.next().unwrap_or(0));
+	read_input(&input, &mut buf, start_inx);
 
 	bn::Fr::from_slice(&buf).map_err(|_| PrecompileFailure::Error {
 		exit_status: ExitError::Other("Invalid field element".into()),
@@ -41,9 +52,8 @@ fn read_point(input: &[u8], start_inx: usize) -> Result<bn::G1, PrecompileFailur
 
 	let mut px_buf = [0u8; 32];
 	let mut py_buf = [0u8; 32];
-	let mut input_iter = input[start_inx..].iter().copied();
-	px_buf.fill_with(|| input_iter.next().unwrap_or(0));
-	py_buf.fill_with(|| input_iter.next().unwrap_or(0));
+	read_input(&input, &mut px_buf, start_inx);
+	read_input(&input, &mut py_buf, start_inx + 32);
 
 	let px = Fq::from_slice(&px_buf).map_err(|_| PrecompileFailure::Error {
 		exit_status: ExitError::Other("Invalid point x coordinate".into()),

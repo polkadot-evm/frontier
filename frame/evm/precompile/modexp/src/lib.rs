@@ -93,6 +93,23 @@ fn calculate_gas_cost(
 	)
 }
 
+/// Copy bytes from input to target.
+fn read_input(source: &[u8], target: &mut [u8], source_offset: &mut usize) {
+	// We move the offset by the len of the target, regardless of what we
+	// actually copy.
+	let offset = *source_offset;
+	*source_offset += target.len();
+
+	// Out of bounds, nothing to copy.
+	if source.len() <= offset {
+		return;
+	}
+
+	// Find len to copy up to target len, but not out of bounds.
+	let len = core::cmp::min(target.len(), source.len() - offset);
+	target[..len].copy_from_slice(&source[offset..][..len]);
+}
+
 // ModExp expects the following as inputs:
 // 1) 32 bytes expressing the length of base
 // 2) 32 bytes expressing the length of exponent
@@ -112,17 +129,16 @@ fn calculate_gas_cost(
 impl Precompile for Modexp {
 	fn execute(handle: &mut impl PrecompileHandle) -> PrecompileResult {
 		let input = handle.input();
+		let mut input_offset = 0;
 
 		// Yellowpaper: whenever the input is too short, the missing bytes are
 		// considered to be zero.
 		let mut base_len_buf = [0u8; 32];
+		read_input(&input, &mut base_len_buf, &mut input_offset);
 		let mut exp_len_buf = [0u8; 32];
+		read_input(&input, &mut exp_len_buf, &mut input_offset);
 		let mut mod_len_buf = [0u8; 32];
-
-		let mut input_iter = input.iter().copied();
-		base_len_buf.fill_with(|| input_iter.next().unwrap_or(0));
-		exp_len_buf.fill_with(|| input_iter.next().unwrap_or(0));
-		mod_len_buf.fill_with(|| input_iter.next().unwrap_or(0));
+		read_input(&input, &mut mod_len_buf, &mut input_offset);
 
 		// reasonable assumption: this must fit within the Ethereum EVM's max stack size
 		let max_size_big = BigUint::from_u32(1024).expect("can't create BigUint");
@@ -168,15 +184,15 @@ impl Precompile for Modexp {
 		} else {
 			// read the numbers themselves.
 			let mut base_buf = vec![0u8; base_len];
-			base_buf.fill_with(|| input_iter.next().unwrap_or(0));
+			read_input(&input, &mut base_buf, &mut input_offset);
 			let base = BigUint::from_bytes_be(&base_buf);
 
 			let mut exp_buf = vec![0u8; exp_len];
-			exp_buf.fill_with(|| input_iter.next().unwrap_or(0));
+			read_input(&input, &mut exp_buf, &mut input_offset);
 			let exponent = BigUint::from_bytes_be(&exp_buf);
 
 			let mut mod_buf = vec![0u8; mod_len];
-			mod_buf.fill_with(|| input_iter.next().unwrap_or(0));
+			read_input(&input, &mut mod_buf, &mut input_offset);
 			let modulus = BigUint::from_bytes_be(&mod_buf);
 
 			// do our gas accounting
