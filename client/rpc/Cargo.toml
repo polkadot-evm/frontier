@@ -19,7 +19,7 @@ log = "0.4.17"
 lru = "0.8.1"
 prometheus = { version = "0.13.1", default-features = false }
 rand = "0.8"
-tokio = { version = "1.19", features = ["sync"] }
+tokio = { version = "1.24", features = ["sync"] }
 
 # Parity
 codec = { package = "parity-scale-codec", version = "3.2.1" }
