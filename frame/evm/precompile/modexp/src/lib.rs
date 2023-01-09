@@ -134,11 +134,11 @@ impl Precompile for Modexp {
 		// Yellowpaper: whenever the input is too short, the missing bytes are
 		// considered to be zero.
 		let mut base_len_buf = [0u8; 32];
-		read_input(&input, &mut base_len_buf, &mut input_offset);
+		read_input(input, &mut base_len_buf, &mut input_offset);
 		let mut exp_len_buf = [0u8; 32];
-		read_input(&input, &mut exp_len_buf, &mut input_offset);
+		read_input(input, &mut exp_len_buf, &mut input_offset);
 		let mut mod_len_buf = [0u8; 32];
-		read_input(&input, &mut mod_len_buf, &mut input_offset);
+		read_input(input, &mut mod_len_buf, &mut input_offset);
 
 		// reasonable assumption: this must fit within the Ethereum EVM's max stack size
 		let max_size_big = BigUint::from_u32(1024).expect("can't create BigUint");
@@ -184,15 +184,15 @@ impl Precompile for Modexp {
 		} else {
 			// read the numbers themselves.
 			let mut base_buf = vec![0u8; base_len];
-			read_input(&input, &mut base_buf, &mut input_offset);
+			read_input(input, &mut base_buf, &mut input_offset);
 			let base = BigUint::from_bytes_be(&base_buf);
 
 			let mut exp_buf = vec![0u8; exp_len];
-			read_input(&input, &mut exp_buf, &mut input_offset);
+			read_input(input, &mut exp_buf, &mut input_offset);
 			let exponent = BigUint::from_bytes_be(&exp_buf);
 
 			let mut mod_buf = vec![0u8; mod_len];
-			read_input(&input, &mut mod_buf, &mut input_offset);
+			read_input(input, &mut mod_buf, &mut input_offset);
 			let modulus = BigUint::from_bytes_be(&mod_buf);
 
 			// do our gas accounting
