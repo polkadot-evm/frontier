@@ -121,31 +121,30 @@ where
 	#[cfg(feature = "try-runtime")]
 	fn unchecked_into_checked_i_know_what_i_am_doing(
 		self,
-		lookup: &Lookup
+		lookup: &Lookup,
 	) -> Result<Self::Checked, TransactionValidityError> {
 		if self.0.function.is_self_contained() {
 			match self.0.function.check_self_contained() {
-				Some(signed_info) => {
-					Ok(CheckedExtrinsic {
-						signed: match signed_info {
-							Ok(info) => CheckedSignature::SelfContained(info),
-							_ => CheckedSignature::Unsigned
-						},
-						function: self.0.function
-					})
-				}
+				Some(signed_info) => Ok(CheckedExtrinsic {
+					signed: match signed_info {
+						Ok(info) => CheckedSignature::SelfContained(info),
+						_ => CheckedSignature::Unsigned,
+					},
+					function: self.0.function,
+				}),
 				None => Ok(CheckedExtrinsic {
 					signed: CheckedSignature::Unsigned,
-					function: self.0.function
-				})
+					function: self.0.function,
+				}),
 			}
 		} else {
-			let checked = Checkable::<Lookup>::unchecked_into_checked_i_know_what_i_am_doing(self.0, lookup)?;
+			let checked =
+				Checkable::<Lookup>::unchecked_into_checked_i_know_what_i_am_doing(self.0, lookup)?;
 			Ok(CheckedExtrinsic {
-				signed:  match checked.signed {
-						Some((id, extra)) => CheckedSignature::Signed(id, extra),
-						None => CheckedSignature::Unsigned,
-					},
+				signed: match checked.signed {
+					Some((id, extra)) => CheckedSignature::Signed(id, extra),
+					None => CheckedSignature::Unsigned,
+				},
 				function: checked.function,
 			})
 		}
