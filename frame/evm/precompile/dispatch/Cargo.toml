@@ -15,7 +15,7 @@ fp-evm = { workspace = true }
 pallet-evm = { workspace = true }
 
 [dev-dependencies]
-codec = { package = "parity-scale-codec", workspace = true }
+scale-codec = { package = "parity-scale-codec", workspace = true }
 scale-info = { workspace = true }
 # Substrate
 frame-system = { workspace = true }

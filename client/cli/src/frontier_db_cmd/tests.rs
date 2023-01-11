@@ -18,9 +18,9 @@
 
 use std::{collections::HashMap, path::PathBuf, str::FromStr, sync::Arc};
 
-use codec::Encode;
 use ethereum_types::H256;
 use futures::executor;
+use scale_codec::Encode;
 use serde::Serialize;
 use tempfile::tempdir;
 // Substrate

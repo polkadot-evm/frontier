@@ -198,7 +198,7 @@ impl<B: BlockT> EthBlockDataCacheTask<B> {
 		task_tx: mpsc::Sender<EthBlockDataCacheMessage<B>>,
 		handler_call: F,
 	) where
-		T: Clone + codec::Encode,
+		T: Clone + scale_codec::Encode,
 		F: FnOnce(&Box<dyn StorageOverride<B> + Send + Sync>) -> EthBlockDataCacheMessage<B>,
 		F: Send + 'static,
 	{

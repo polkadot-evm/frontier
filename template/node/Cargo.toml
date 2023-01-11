@@ -15,10 +15,10 @@ targets = ["x86_64-unknown-linux-gnu"]
 [dependencies]
 async-trait = "0.1"
 clap = { version = "4.0", features = ["derive"] }
-codec = { package = "parity-scale-codec", workspace = true }
 futures = "0.3.25"
 jsonrpsee = { workspace = true, features = ["server", "macros"] }
 log = "0.4.17"
+scale-codec = { package = "parity-scale-codec", workspace = true }
 
 # Substrate
 sc-basic-authorship = { workspace = true }

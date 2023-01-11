@@ -11,10 +11,10 @@ repository = { workspace = true }
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-codec = { package = "parity-scale-codec", workspace = true }
 ethereum = { workspace = true, features = ["with-codec"] }
 ethereum-types = { workspace = true }
 num_enum = { version = "0.5.4", default-features = false }
+scale-codec = { package = "parity-scale-codec", workspace = true }
 # Substrate
 frame-support = { workspace = true }
 sp-std = { workspace = true }
@@ -24,10 +24,10 @@ fp-evm = { workspace = true }
 [features]
 default = ["std"]
 std = [
-	"codec/std",
 	"ethereum/std",
 	"ethereum-types/std",
 	"num_enum/std",
+	"scale-codec/std",
 	# Substrate
 	"frame-support/std",
 	"sp-std/std",
