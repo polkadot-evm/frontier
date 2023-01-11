@@ -36,3 +36,6 @@ std = [
 	# Substrate FRAME
 	"frame-support/std",
 ]
+try-runtime = [
+	"sp-runtime/try-runtime",
+]
