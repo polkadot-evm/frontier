@@ -8,36 +8,31 @@ edition = { workspace = true }
 repository = { workspace = true }
 
 [dependencies]
-# substrate frame
+# Substrate
 frame-support = { workspace = true }
-
-# frontier primitives
+# Frontier
 fp-evm = { workspace = true }
-# frontier frame
 pallet-evm = { workspace = true }
 
 [dev-dependencies]
 codec = { package = "parity-scale-codec", workspace = true }
 scale-info = { workspace = true }
-
-# substrate primitives
-sp-core = { workspace = true }
-sp-io = { workspace = true }
-sp-runtime = { workspace = true }
-sp-std = { workspace = true }
-# substrate frame
+# Substrate
 frame-system = { workspace = true }
 pallet-balances = { workspace = true, features = ["std"] }
 pallet-timestamp = { workspace = true }
 pallet-utility = { workspace = true }
+sp-core = { workspace = true }
+sp-io = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
 
 [features]
 default = ["std"]
 std = [
-	# substrate frame
+	# Substrate
 	"frame-support/std",
-	# frontier primitives
+	# Frontier
 	"fp-evm/std",
-	# frontier frame
 	"pallet-evm/std",
 ]

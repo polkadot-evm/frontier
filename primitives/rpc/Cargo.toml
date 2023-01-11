@@ -15,14 +15,12 @@ codec = { package = "parity-scale-codec", workspace = true }
 ethereum = { workspace = true, features = ["with-codec"] }
 ethereum-types = { workspace = true }
 scale-info = { workspace = true }
-
-# substrate primitives
+# Substrate
 sp-api = { workspace = true }
 sp-core = { workspace = true }
 sp-runtime = { workspace = true }
 sp-std = { workspace = true }
-
-# frontier primitives
+# Frontier
 fp-evm = { workspace = true }
 
 [features]
@@ -32,11 +30,11 @@ std = [
 	"ethereum/std",
 	"ethereum-types/std",
 	"scale-info/std",
-	# substrate primitives
+	# Substrate
 	"sp-api/std",
 	"sp-core/std",
 	"sp-runtime/std",
 	"sp-std/std",
-	# frontier primitives
+	# Frontier
 	"fp-evm/std",
 ]

@@ -49,7 +49,7 @@ rlp = { version = "0.5", default-features = false }
 scale-info = { version = "2.3.1", default-features = false, features = ["derive"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-# substrate client
+# Substrate Client
 sc-block-builder = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-cli = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-client-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -61,7 +61,7 @@ sc-rpc = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate
 sc-service = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-transaction-pool = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-transaction-pool-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-# substrate primitives
+# Substrate Primitive
 sp-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 sp-block-builder = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 sp-blockchain = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -73,21 +73,21 @@ sp-io = { version = "7.0.0", git = "https://github.com/paritytech/substrate", br
 sp-runtime = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 sp-std = { version = "5.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 sp-storage = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-# substrate frame
+# Substrate FRAME
 frame-benchmarking = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 pallet-balances = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 pallet-timestamp = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 pallet-utility = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-# substrate utility
+# Substrate Utility
 prometheus-endpoint = { package = "substrate-prometheus-endpoint", git = "https://github.com/paritytech/substrate", branch = "master" }
 substrate-test-runtime-client = { version = "2.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
-# frontier client
+# Frontier Client
 fc-db = { version = "2.0.0-dev", path = "client/db" }
 fc-rpc = { version = "2.0.0-dev", path = "client/rpc" }
 fc-rpc-core = { version = "1.1.0-dev", path = "client/rpc-core" }
-# frontier primitives
+# Frontier Primitive
 fp-consensus = { version = "2.0.0-dev", path = "primitives/consensus", default-features = false }
 fp-dynamic-fee = { version = "1.0.0", path = "primitives/dynamic-fee", default-features = false }
 fp-ethereum = { version = "1.0.0-dev", path = "primitives/ethereum", default-features = false }
@@ -95,7 +95,7 @@ fp-evm = { version = "3.0.0-dev", path = "primitives/evm", default-features = fa
 fp-rpc = { version = "3.0.0-dev", path = "primitives/rpc", default-features = false }
 fp-self-contained = { version = "1.0.0-dev", path = "primitives/self-contained", default-features = false }
 fp-storage = { version = "2.0.0", path = "primitives/storage", default-features = false }
-# frontier frame
+# Frontier FRAME
 pallet-evm = { version = "6.0.0-dev", path = "frame/evm", default-features = false }
 pallet-evm-precompile-simple = { version = "2.0.0-dev", path = "frame/evm/precompile/simple", default-features = false }
 pallet-evm-test-vector-support = { version = "1.0.0-dev", path = "frame/evm/test-vector-support" }

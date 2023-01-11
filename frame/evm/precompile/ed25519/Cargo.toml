@@ -9,13 +9,12 @@ repository = { workspace = true }
 
 [dependencies]
 ed25519-dalek = { version = "1.0.0", default-features = false, features = ["alloc", "u64_backend"] }
-
-# frontier primitives
+# Frontier
 fp-evm = { workspace = true }
 
 [features]
 default = ["std"]
 std = [
-	# frontier primitives
+	# Frontier
 	"fp-evm/std",
 ]

@@ -13,8 +13,7 @@ targets = ["x86_64-unknown-linux-gnu"]
 [dependencies]
 codec = { package = "parity-scale-codec", workspace = true }
 scale-info = { workspace = true }
-
-# substrate frame
+# Substrate
 frame-support = { workspace = true }
 frame-system = { workspace = true }
 
@@ -23,7 +22,7 @@ default = ["std"]
 std = [
 	"codec/std",
 	"scale-info/std",
-	# substrate frame
+	# Substrate
 	"frame-support/std",
 	"frame-system/std",
 ]

@@ -12,9 +12,7 @@ evm = { workspace = true, features = ["with-codec"] }
 hex = "0.4.3"
 serde = { workspace = true }
 serde_json = { workspace = true }
-
-# substrate primitives
+# Substrate
 sp-core = { workspace = true }
-
-# frontier primitives
+# Frontier
 fp-evm = { workspace = true, features = ["std"] }

@@ -8,22 +8,21 @@ repository = { workspace = true }
 
 [dependencies]
 ripemd = { version = "0.1", default-features = false }
-
-# substrate primitives
+# Substrate
 sp-io = { workspace = true }
-
-# frontier primitives
+# Frontier
 fp-evm = { workspace = true }
 
 [dev-dependencies]
+# Frontier
 pallet-evm-test-vector-support = { workspace = true }
 
 [features]
 default = ["std"]
 std = [
 	"ripemd/std",
-	# substrate primitives
+	# Substrate
 	"sp-io/std",
-	# frontier primitives
+	# Frontier
 	"fp-evm/std",
 ]

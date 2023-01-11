@@ -14,11 +14,9 @@ targets = ["x86_64-unknown-linux-gnu"]
 codec = { package = "parity-scale-codec", workspace = true }
 scale-info = { workspace = true }
 serde = { workspace = true, optional = true }
-
-# substrate primitives
-sp-runtime = { workspace = true }
-# substrate frame
+# Substrate
 frame-support = { workspace = true }
+sp-runtime = { workspace = true }
 
 [features]
 default = ["std"]
@@ -26,8 +24,7 @@ std = [
 	"codec/std",
 	"scale-info/std",
 	"serde",
-	# substrate primitives
-	"sp-runtime/std",
-	# substrate frame
+	# Substrate
 	"frame-support/std",
+	"sp-runtime/std",
 ]

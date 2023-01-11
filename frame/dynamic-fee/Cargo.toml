@@ -13,21 +13,19 @@ targets = ["x86_64-unknown-linux-gnu"]
 [dependencies]
 codec = { package = "parity-scale-codec", workspace = true }
 scale-info = { workspace = true }
-
-# substrate primitives
+# Substrate
+frame-support = { workspace = true }
+frame-system = { workspace = true }
 sp-core = { workspace = true }
 sp-inherents = { workspace = true }
 sp-runtime = { workspace = true }
 sp-std = { workspace = true }
-# substrate frame
-frame-support = { workspace = true }
-frame-system = { workspace = true }
-
-# frontier primitives
+# Frontier
 fp-dynamic-fee = { workspace = true }
 fp-evm = { workspace = true }
 
 [dev-dependencies]
+# Substrate
 pallet-timestamp = { workspace = true }
 sp-io = { workspace = true }
 
@@ -36,15 +34,15 @@ default = ["std"]
 std = [
 	"codec/std",
 	"scale-info/std",
-	# substrate primitives
+	# Substrate
 	"sp-core/std",
 	"sp-inherents/std",
 	"sp-runtime/std",
 	"sp-std/std",
-	# substrate frame
+	# Substrate
 	"frame-system/std",
 	"frame-support/std",
-	# frontier primitives
+	# Frontier
 	"fp-dynamic-fee/std",
 	"fp-evm/std",
 ]

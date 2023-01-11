@@ -18,32 +18,29 @@ evm = { workspace = true, features = ["with-codec"] }
 rlp = { workspace = true }
 scale-info = { workspace = true }
 
-# substrate primitives
-sp-io = { workspace = true }
-sp-runtime = { workspace = true }
-sp-std = { workspace = true }
-# substrate frame
+# Substrate
 frame-support = { workspace = true }
 frame-system = { workspace = true }
 pallet-timestamp = { workspace = true }
+sp-io = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
 
-# frontier primitives
+# Frontier
 fp-consensus = { workspace = true }
 fp-ethereum = { workspace = true }
 fp-evm = { workspace = true }
 fp-rpc = { workspace = true }
 fp-self-contained = { workspace = true }
 fp-storage = { workspace = true }
-# frontier frame
 pallet-evm = { workspace = true }
 
 [dev-dependencies]
 hex = "0.4.3"
 libsecp256k1 = { workspace = true, features = ["static-context", "hmac"] }
 # Substrate
-sp-core = { workspace = true }
-# Substrate FRAME
 pallet-balances = { workspace = true, features = ["std"] }
+sp-core = { workspace = true }
 
 [features]
 default = ["std"]
@@ -54,22 +51,20 @@ std = [
 	"ethereum-types/std",
 	"rlp/std",
 	"scale-info/std",
-	# substrate primitives
-	"sp-io/std",
-	"sp-runtime/std",
-	"sp-std/std",
-	# substrate frame
+	# Substrate
 	"frame-support/std",
 	"frame-system/std",
 	"pallet-timestamp/std",
-	# frontier primitives
+	"sp-io/std",
+	"sp-runtime/std",
+	"sp-std/std",
+	# Frontier
 	"fp-consensus/std",
 	"fp-ethereum/std",
 	"fp-evm/std",
 	"fp-rpc/std",
 	"fp-self-contained/std",
 	"fp-storage/std",
-	# frontier frame
 	"pallet-evm/std",
 ]
 runtime-benchmarks = [

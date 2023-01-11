@@ -14,16 +14,12 @@ targets = ["x86_64-unknown-linux-gnu"]
 futures = "0.3.25"
 futures-timer = "3.0.1"
 log = "0.4.17"
-
-# substrate client
+# Substrate
 sc-client-api = { workspace = true }
-# substrate primitives
 sp-api = { workspace = true }
 sp-blockchain = { workspace = true }
 sp-runtime = { workspace = true }
-
-# frontier client
+# Frontier
 fc-db = { workspace = true }
-# frontier primitives
 fp-consensus = { workspace = true, features = ["std"] }
 fp-rpc = { workspace = true, features = ["std"] }

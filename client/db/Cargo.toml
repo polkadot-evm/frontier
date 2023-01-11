@@ -17,16 +17,13 @@ log = "0.4.17"
 parity-db = { workspace = true, optional = true }
 parking_lot = "0.12.1"
 smallvec = "1.10"
-
-# substrate client
+# Substrate
 sc-client-db = { workspace = true, features = ["rocksdb"] }
-# substrate primitives
 sp-blockchain = { workspace = true }
 sp-core = { workspace = true }
 sp-database = { workspace = true }
 sp-runtime = { workspace = true }
-
-# frontier primitives
+# Frontier
 fp-storage = { workspace = true, features = ["std"] }
 
 [features]

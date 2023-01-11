@@ -19,22 +19,20 @@ hex = { version = "0.4.3", default-features = false, features = ["alloc"] }
 log = { version = "0.4.17", default-features = false }
 rlp = { workspace = true }
 scale-info = { workspace = true }
-
-# substate primitives
-sp-core = { workspace = true }
-sp-io = { workspace = true }
-sp-runtime = { workspace = true }
-sp-std = { workspace = true }
-# substrate frame
+# Substrate
 frame-benchmarking = { workspace = true, optional = true }
 frame-support = { workspace = true }
 frame-system = { workspace = true }
 pallet-timestamp = { workspace = true }
-
-# frontier primitives
+sp-core = { workspace = true }
+sp-io = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
+# Frontier
 fp-evm = { workspace = true }
 
 [dev-dependencies]
+# Substrate
 pallet-balances = { workspace = true, features = ["std"] }
 pallet-evm-precompile-simple = { workspace = true }
 
@@ -49,17 +47,16 @@ std = [
 	"log/std",
 	"rlp/std",
 	"scale-info/std",
-	# substate primitives
-	"sp-core/std",
-	"sp-io/std",
-	"sp-runtime/std",
-	"sp-std/std",
-	# substrate frame
+	# Substrate
 	"frame-benchmarking/std",
 	"frame-support/std",
 	"frame-system/std",
 	"pallet-timestamp/std",
-	# frontier primitives
+	"sp-core/std",
+	"sp-io/std",
+	"sp-runtime/std",
+	"sp-std/std",
+	# Frontier
 	"fp-evm/std",
 ]
 runtime-benchmarks = [

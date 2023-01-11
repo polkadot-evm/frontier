@@ -9,18 +9,18 @@ repository = { workspace = true }
 
 [dependencies]
 num = { version = "0.4", default-features = false, features = ["alloc"] }
-
-# frontier primitives
+# Frontier
 fp-evm = { workspace = true }
 
 [dev-dependencies]
 hex = "0.4.3"
+# Frontier
 pallet-evm-test-vector-support = { workspace = true }
 
 [features]
 default = ["std"]
 std = [
 	"num/std",
-	# frontier primitives
+	# Frontier
 	"fp-evm/std",
 ]

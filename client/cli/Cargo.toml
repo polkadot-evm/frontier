@@ -15,17 +15,13 @@ clap = { version = "4.0", features = ["derive"] }
 ethereum-types = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-
-# substrate client
+# Substrate
 sc-cli = { workspace = true }
-# substrate primitives
 sp-api = { workspace = true }
 sp-blockchain = { workspace = true }
 sp-runtime = { workspace = true }
-
-# frontier client
+# Frontier
 fc-db = { workspace = true }
-# frontier primitives
 fp-rpc = { workspace = true, features = ["std"] }
 fp-storage = { workspace = true, features = ["std"] }
 

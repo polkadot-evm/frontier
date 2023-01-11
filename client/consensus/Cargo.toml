@@ -13,19 +13,15 @@ targets = ["x86_64-unknown-linux-gnu"]
 [dependencies]
 async-trait = "0.1"
 thiserror = "1.0"
-
-# substrate client
+# Substrate
 sc-client-api = { workspace = true }
 sc-consensus = { workspace = true }
-# substrate primitives
 sp-api = { workspace = true }
 sp-block-builder = { workspace = true, features = ["std"] }
 sp-blockchain = { workspace = true }
 sp-consensus = { workspace = true }
 sp-runtime = { workspace = true }
-
-# frontier client
+# Frontier
 fc-db = { workspace = true }
-# frontier primitives
 fp-consensus = { workspace = true, features = ["std"] }
 fp-rpc = { workspace = true, features = ["std"] }
