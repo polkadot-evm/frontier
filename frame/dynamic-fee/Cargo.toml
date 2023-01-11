@@ -28,8 +28,8 @@ fp-dynamic-fee = { workspace = true }
 fp-evm = { workspace = true }
 
 [dev-dependencies]
-pallet-timestamp = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-io = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
+pallet-timestamp = { workspace = true }
+sp-io = { workspace = true }
 
 [features]
 default = ["std"]

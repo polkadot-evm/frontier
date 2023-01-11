@@ -77,7 +77,9 @@ sp-storage = { version = "7.0.0", git = "https://github.com/paritytech/substrate
 frame-benchmarking = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+pallet-balances = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 pallet-timestamp = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+pallet-utility = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 # substrate utility
 prometheus-endpoint = { package = "substrate-prometheus-endpoint", git = "https://github.com/paritytech/substrate", branch = "master" }
 substrate-test-runtime-client = { version = "2.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -95,3 +97,5 @@ fp-self-contained = { version = "1.0.0-dev", path = "primitives/self-contained",
 fp-storage = { version = "2.0.0", path = "primitives/storage", default-features = false }
 # frontier frame
 pallet-evm = { version = "6.0.0-dev", path = "frame/evm", default-features = false }
+pallet-evm-precompile-simple = { version = "2.0.0-dev", path = "frame/evm/precompile/simple", default-features = false }
+pallet-evm-test-vector-support = { version = "1.0.0-dev", path = "frame/evm/test-vector-support" }

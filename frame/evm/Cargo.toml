@@ -35,8 +35,8 @@ pallet-timestamp = { workspace = true }
 fp-evm = { workspace = true }
 
 [dev-dependencies]
-pallet-balances = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-pallet-evm-precompile-simple = { path = "./precompile/simple" }
+pallet-balances = { workspace = true, features = ["std"] }
+pallet-evm-precompile-simple = { workspace = true }
 
 [features]
 default = ["std"]

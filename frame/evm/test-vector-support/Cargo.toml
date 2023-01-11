@@ -14,7 +14,7 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 
 # substrate primitives
-sp-core = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-core = { workspace = true }
 
 # frontier primitives
-fp-evm = { version = "3.0.0-dev", path = "../../../primitives/evm" }
+fp-evm = { workspace = true, features = ["std"] }

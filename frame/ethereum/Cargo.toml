@@ -39,12 +39,11 @@ pallet-evm = { workspace = true }
 
 [dev-dependencies]
 hex = "0.4.3"
-# Parity
-libsecp256k1 = { version = "0.7", features = ["static-context", "hmac"] }
+libsecp256k1 = { workspace = true, features = ["static-context", "hmac"] }
 # Substrate
-sp-core = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-core = { workspace = true }
 # Substrate FRAME
-pallet-balances = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
+pallet-balances = { workspace = true, features = ["std"] }
 
 [features]
 default = ["std"]

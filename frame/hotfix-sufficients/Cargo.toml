@@ -28,7 +28,7 @@ frame-system = { workspace = true }
 pallet-evm = { workspace = true }
 
 [dev-dependencies]
-sp-io = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-io = { workspace = true }
 
 [features]
 default = ["std"]

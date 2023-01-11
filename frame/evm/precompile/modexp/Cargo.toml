@@ -15,7 +15,7 @@ fp-evm = { workspace = true }
 
 [dev-dependencies]
 hex = "0.4.3"
-pallet-evm-test-vector-support = { version = "1.0.0-dev", path = "../../test-vector-support" }
+pallet-evm-test-vector-support = { workspace = true }
 
 [features]
 default = ["std"]

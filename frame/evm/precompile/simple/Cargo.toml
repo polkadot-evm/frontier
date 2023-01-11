@@ -16,7 +16,7 @@ sp-io = { workspace = true }
 fp-evm = { workspace = true }
 
 [dev-dependencies]
-pallet-evm-test-vector-support = { version = "1.0.0-dev", path = "../../test-vector-support" }
+pallet-evm-test-vector-support = { workspace = true }
 
 [features]
 default = ["std"]
