@@ -1,11 +1,11 @@
 [package]
 name = "pallet-evm-precompile-dispatch"
 version = "2.0.0-dev"
-authors = ["Parity Technologies <admin@parity.io>"]
-edition = "2021"
 license = "Apache-2.0"
 description = "DISPATCH precompiles for EVM pallet."
-repository = "https://github.com/paritytech/frontier/"
+authors = { workspace = true }
+edition = { workspace = true }
+repository = { workspace = true }
 
 [dependencies]
 # Substrate FRAME

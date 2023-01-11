@@ -1,12 +1,11 @@
 [package]
 name = "pallet-evm-chain-id"
 version = "1.0.0-dev"
-authors = ["Parity Technologies <admin@parity.io>"]
-edition = "2021"
 license = "Apache-2.0"
-readme = "README.md"
-description = "EVM chain id storage pallet"
-repository = "https://github.com/paritytech/frontier/"
+description = "EVM chain id storage pallet."
+authors = { workspace = true }
+edition = { workspace = true }
+repository = { workspace = true }
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]

@@ -1,11 +1,11 @@
 [package]
 name = "pallet-base-fee"
 version = "1.0.0"
-authors = ["Parity Technologies <admin@parity.io>"]
-edition = "2021"
 license = "Apache-2.0"
-description = "EIP-1559 fee utils"
-repository = "https://github.com/paritytech/frontier/"
+description = "EIP-1559 fee utils."
+authors = { workspace = true }
+edition = { workspace = true }
+repository = { workspace = true }
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
