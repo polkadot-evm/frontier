@@ -8,22 +8,24 @@ edition = { workspace = true }
 repository = { workspace = true }
 
 [dependencies]
-# Substrate FRAME
-frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+# substrate frame
+frame-support = { workspace = true }
 
-# Frontier
-fp-evm = { version = "3.0.0-dev", path = "../../../../primitives/evm", default-features = false }
-pallet-evm = { version = "6.0.0-dev", path = "../..", default-features = false }
+# frontier primitives
+fp-evm = { workspace = true }
+# frontier frame
+pallet-evm = { workspace = true }
 
 [dev-dependencies]
 codec = { package = "parity-scale-codec", version = "3.2.1", features = ["derive"] }
 scale-info = { version = "2.3.0", features = ["derive"] }
 
+# substrate primitives
 sp-core = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-io = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-runtime = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-std = { version = "5.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
-
+# substrate frame
 frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 pallet-balances = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 pallet-timestamp = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -32,9 +34,10 @@ pallet-utility = { version = "4.0.0-dev", git = "https://github.com/paritytech/s
 [features]
 default = ["std"]
 std = [
-	# Substrate FRAME
+	# substrate frame
 	"frame-support/std",
-	# Frontier
+	# frontier primitives
 	"fp-evm/std",
+	# frontier frame
 	"pallet-evm/std",
 ]

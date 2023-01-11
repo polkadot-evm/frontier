@@ -8,13 +8,13 @@ edition = { workspace = true }
 repository = { workspace = true }
 
 [dependencies]
-bn = { package = "substrate-bn", version = "0.6", default-features = false }
+bn = { workspace = true }
 
-# Substrate
-sp-core = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+# substrate primitives
+sp-core = { workspace = true }
 
-# Frontier
-fp-evm = { version = "3.0.0-dev", path = "../../../../primitives/evm", default-features = false }
+# frontier primitives
+fp-evm = { workspace = true }
 
 [dev-dependencies]
 pallet-evm-test-vector-support = { version = "1.0.0-dev", path = "../../test-vector-support" }
@@ -22,8 +22,8 @@ pallet-evm-test-vector-support = { version = "1.0.0-dev", path = "../../test-vec
 [features]
 default = ["std"]
 std = [
-	# Substrate
+	# substrate primitives
 	"sp-core/std",
-	# Frontier
+	# frontier primitives
 	"fp-evm/std",
 ]

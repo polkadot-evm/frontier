@@ -9,11 +9,11 @@ repository = { workspace = true }
 [dependencies]
 ripemd = { version = "0.1", default-features = false }
 
-# Substrate
-sp-io = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+# substrate primitives
+sp-io = { workspace = true }
 
-# Frontier
-fp-evm = { version = "3.0.0-dev", path = "../../../../primitives/evm", default-features = false }
+# frontier primitives
+fp-evm = { workspace = true }
 
 [dev-dependencies]
 pallet-evm-test-vector-support = { version = "1.0.0-dev", path = "../../test-vector-support" }
@@ -22,8 +22,8 @@ pallet-evm-test-vector-support = { version = "1.0.0-dev", path = "../../test-vec
 default = ["std"]
 std = [
 	"ripemd/std",
-	# Substrate
+	# substrate primitives
 	"sp-io/std",
-	# Frontier
+	# frontier primitives
 	"fp-evm/std",
 ]

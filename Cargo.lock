@@ -4224,7 +4224,6 @@ dependencies = [
  "frame-system",
  "parity-scale-codec",
  "scale-info",
- "serde",
  "sp-core",
  "sp-io",
  "sp-runtime",
@@ -4234,7 +4233,6 @@ dependencies = [
 name = "pallet-dynamic-fee"
 version = "4.0.0-dev"
 dependencies = [
- "async-trait",
  "fp-dynamic-fee",
  "fp-evm",
  "frame-support",
@@ -4242,7 +4240,6 @@ dependencies = [
  "pallet-timestamp",
  "parity-scale-codec",
  "scale-info",
- "serde",
  "sp-core",
  "sp-inherents",
  "sp-io",
@@ -4273,7 +4270,6 @@ dependencies = [
  "parity-scale-codec",
  "rlp",
  "scale-info",
- "serde",
  "sp-core",
  "sp-io",
  "sp-runtime",
@@ -4296,10 +4292,8 @@ dependencies = [
  "pallet-evm-precompile-simple",
  "pallet-timestamp",
  "parity-scale-codec",
- "primitive-types",
  "rlp",
  "scale-info",
- "serde",
  "sp-core",
  "sp-io",
  "sp-runtime",
@@ -4314,7 +4308,6 @@ dependencies = [
  "frame-system",
  "parity-scale-codec",
  "scale-info",
- "serde",
 ]
 
 [[package]]
