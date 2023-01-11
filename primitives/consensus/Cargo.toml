@@ -9,7 +9,7 @@ repository = { workspace = true }
 
 [dependencies]
 codec = { package = "parity-scale-codec", workspace = true }
-ethereum = { workspace = true }
+ethereum = { workspace = true, features = ["with-codec"] }
 
 # substrate primitives
 sp-core = { workspace = true }
