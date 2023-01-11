@@ -1869,7 +1869,6 @@ dependencies = [
  "frame-support",
  "num_enum",
  "parity-scale-codec",
- "sp-core",
  "sp-std",
 ]
 
@@ -1896,7 +1895,6 @@ dependencies = [
  "scale-info",
  "sp-api",
  "sp-core",
- "sp-io",
  "sp-runtime",
  "sp-std",
 ]
@@ -1905,7 +1903,6 @@ dependencies = [
 name = "fp-self-contained"
 version = "1.0.0-dev"
 dependencies = [
- "ethereum",
  "frame-support",
  "parity-scale-codec",
  "scale-info",

@@ -11,7 +11,7 @@ repository = { workspace = true }
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-codec = { workspace = true }
+codec = { package = "parity-scale-codec", workspace = true }
 ethereum = { workspace = true }
 ethereum-types = { workspace = true }
 scale-info = { workspace = true }
@@ -19,11 +19,10 @@ scale-info = { workspace = true }
 # substrate primitives
 sp-api = { workspace = true }
 sp-core = { workspace = true }
-sp-io = { workspace = true }
 sp-runtime = { workspace = true }
 sp-std = { workspace = true }
 
-# frontier
+# frontier primitives
 fp-evm = { workspace = true }
 
 [features]
@@ -36,9 +35,8 @@ std = [
 	# substrate primitives
 	"sp-api/std",
 	"sp-core/std",
-	"sp-io/std",
 	"sp-runtime/std",
 	"sp-std/std",
-	# frontier
+	# frontier primitives
 	"fp-evm/std",
 ]
