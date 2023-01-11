@@ -8,23 +8,20 @@ edition = { workspace = true }
 repository = { workspace = true }
 
 [dependencies]
-ethereum = { version = "0.14.0", default-features = false, features = ["with-codec"] }
+codec = { workspace = true }
+ethereum = { workspace = true }
 
-# Parity
-codec = { package = "parity-scale-codec", version = "3.2.1", default-features = false, features = ["derive"] }
-
-# Substrate
-sp-core = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-runtime = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-std = { version = "5.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+# substrate primitives
+sp-core = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
 
 [features]
 default = ["std"]
 std = [
 	"ethereum/std",
-	# Parity
 	"codec/std",
-	# Substrate
+	# substrate primitives
 	"sp-core/std",
 	"sp-runtime/std",
 	"sp-std/std",

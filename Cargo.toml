@@ -33,3 +33,24 @@ resolver = "2"
 authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2021"
 repository = "https://github.com/paritytech/frontier/"
+
+[workspace.dependencies]
+codec = { package = "parity-scale-codec", version = "3.2.1", default-features = false, features = ["derive"] }
+ethereum = { version = "0.14.0", default-features = false, features = ["with-codec"] }
+ethereum-types = { version = "0.14.1", default-features = false }
+evm = { version = "0.37.0", default-features = false, features = ["with-codec"] }
+scale-info = { version = "2.3.1", default-features = false, features = ["derive"] }
+serde = { version = "1.0", features = ["derive"] }
+# substrate client
+
+# substrate primitives
+sp-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-core = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-inherents = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-io = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-runtime = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-std = { version = "5.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+# substrate frame
+frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+# frontier
+fp-evm = { version = "3.0.0-dev", path = "primitives/evm", default-features = false }

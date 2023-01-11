@@ -11,31 +11,32 @@ repository = { workspace = true }
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-ethereum = { version = "0.14.0", default-features = false, features = ["with-codec"] }
-ethereum-types = { version = "0.14.0", default-features = false }
-fp-evm = { version = "3.0.0-dev", path = "../evm", default-features = false }
+codec = { workspace = true }
+ethereum = { workspace = true }
+ethereum-types = { workspace = true }
 num_enum = { version = "0.5.4", default-features = false }
 
-# Parity
-codec = { package = "parity-scale-codec", version = "3.2.1", default-features = false }
+# substrate primitives
+sp-core = { workspace = true }
+sp-std = { workspace = true }
+# substrate frame
+frame-support = { workspace = true }
 
-# Substrate
-sp-core = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-std = { version = "5.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-# Substrate FRAME
-frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+# frontier
+fp-evm = { workspace = true }
 
 [features]
 default = ["std"]
 std = [
+	"codec/std",
 	"ethereum/std",
 	"ethereum-types/std",
 	"num_enum/std",
-	# Parity
-	"codec/std",
-	# Substrate
+	# substrate primitives
 	"sp-core/std",
 	"sp-std/std",
-	# Substrate FRAME
+	# substrate frame
 	"frame-support/std",
+	# frontier
+	"fp-evm/std",
 ]

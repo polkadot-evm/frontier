@@ -11,28 +11,25 @@ repository = { workspace = true }
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-ethereum = { version = "0.14.0", default-features = false, features = ["with-codec"] }
-serde = { version = "1.0", features = ["derive"], optional = true }
+codec = { workspace = true }
+ethereum = { workspace = true }
+scale-info = { workspace = true }
+serde = { workspace = true, optional = true }
 
-# Parity
-codec = { package = "parity-scale-codec", version = "3.2.1", default-features = false }
-scale-info = { version = "2.3.0", default-features = false, features = ["derive"] }
-
-# Substrate
-sp-runtime = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-# Substrate FRAME
-frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+# substrate primitives
+sp-runtime = { workspace = true }
+# substrate frame
+frame-support = { workspace = true }
 
 [features]
 default = ["std"]
 std = [
-	"ethereum/std",
-	"serde",
-	# Parity
 	"codec/std",
+	"ethereum/std",
 	"scale-info/std",
-	# Substrate
+	"serde",
+	# substrate primitives
 	"sp-runtime/std",
-	# Substrate FRAME
+	# substrate frame
 	"frame-support/std",
 ]
