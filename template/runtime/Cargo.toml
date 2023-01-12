@@ -1,11 +1,12 @@
 [package]
 name = "frontier-template-runtime"
 version = "0.0.0"
-authors = ["Substrate DevHub <https://github.com/substrate-developer-hub>"]
-edition = "2021"
 license = "Unlicense"
 description = "A fresh FRAME-based Substrate runtime, ready for hacking."
 publish = false
+authors = { workspace = true }
+edition = { workspace = true }
+repository = { workspace = true }
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]

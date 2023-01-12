@@ -1,11 +1,12 @@
 [package]
 name = "pallet-hotfix-sufficients"
 version = "1.0.0"
-authors = ["Parity Technologies <admin@parity.io>"]
-edition = "2021"
 license = "Apache-2.0"
-description = "Hotfix zero-value account sufficients with non-zero-value nonces"
-repository = "https://github.com/paritytech/frontier/"
+readme = "README.md"
+description = "Hotfix zero-value account sufficients with non-zero-value nonces."
+authors = { workspace = true }
+edition = { workspace = true }
+repository = { workspace = true }
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]

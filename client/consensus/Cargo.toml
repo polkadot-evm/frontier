@@ -1,11 +1,11 @@
 [package]
 name = "fc-consensus"
 version = "2.0.0-dev"
-authors = ["Parity Technologies <admin@parity.io>"]
-edition = "2021"
 license = "GPL-3.0-or-later WITH Classpath-exception-2.0"
-description = "Frontier consensus for substrate"
-repository = "https://github.com/paritytech/frontier/"
+description = "Frontier consensus for substrate."
+authors = { workspace = true }
+edition = { workspace = true }
+repository = { workspace = true }
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
