@@ -150,13 +150,13 @@
 
 </span><span class="attr">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 
-</span><span class="kw">use </span>codec::{Decode, Encode};
-<span class="kw">pub use </span>ethereum::{
+</span><span class="kw">pub use </span>ethereum::{
 	AccessListItem, BlockV2 <span class="kw">as </span>Block, LegacyTransactionMessage, Log, ReceiptV3 <span class="kw">as </span>Receipt,
 	TransactionAction, TransactionV2 <span class="kw">as </span>Transaction,
 };
 <span class="kw">use </span>ethereum_types::{H160, H256, U256};
 <span class="kw">use </span>fp_evm::CheckEvmTransactionInput;
+<span class="kw">use </span>scale_codec::{Decode, Encode};
 <span class="kw">use </span>sp_std::vec::Vec;
 
 <span class="attr">#[repr(u8)]

@@ -660,7 +660,7 @@
 		task_tx: mpsc::Sender&lt;EthBlockDataCacheMessage&lt;B&gt;&gt;,
 		handler_call: F,
 	) <span class="kw">where
-		</span>T: Clone + codec::Encode,
+		</span>T: Clone + scale_codec::Encode,
 		F: FnOnce(<span class="kw-2">&amp;</span>Box&lt;<span class="kw">dyn </span>StorageOverride&lt;B&gt; + Send + Sync&gt;) -&gt; EthBlockDataCacheMessage&lt;B&gt;,
 		F: Send + <span class="lifetime">&#39;static</span>,
 	{

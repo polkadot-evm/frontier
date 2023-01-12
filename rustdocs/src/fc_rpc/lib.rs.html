@@ -453,9 +453,9 @@
 <span class="kw">pub mod </span>frontier_backend_client {
 	<span class="kw">use </span><span class="kw">super</span>::internal_err;
 
-	<span class="kw">use </span>codec::Decode;
 	<span class="kw">use </span>ethereum_types::H256;
 	<span class="kw">use </span>jsonrpsee::core::RpcResult;
+	<span class="kw">use </span>scale_codec::Decode;
 	<span class="comment">// Substrate
 	</span><span class="kw">use </span>sc_client_api::backend::{Backend, StateBackend, StorageProvider};
 	<span class="kw">use </span>sp_blockchain::HeaderBackend;

@@ -120,8 +120,8 @@
 </span><span class="kw">mod </span>precompile;
 <span class="kw">mod </span>validation;
 
-<span class="kw">use </span>codec::{Decode, Encode};
 <span class="kw">use </span>frame_support::weights::Weight;
+<span class="kw">use </span>scale_codec::{Decode, Encode};
 <span class="attr">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
 </span><span class="kw">use </span>serde::{Deserialize, Serialize};
 <span class="kw">use </span>sp_core::{H160, U256};
