@@ -9,9 +9,8 @@ repository = { workspace = true }
 
 [dependencies]
 tiny-keccak = { version = "2.0", features = ["fips202"] }
-
 # Frontier
-fp-evm = { version = "3.0.0-dev", path = "../../../../primitives/evm", default-features = false }
+fp-evm = { workspace = true }
 
 [features]
 default = ["std"]

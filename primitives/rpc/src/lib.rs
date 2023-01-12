@@ -18,10 +18,11 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::too_many_arguments)]
 
-use codec::{Decode, Encode};
 use ethereum::Log;
 use ethereum_types::Bloom;
+use scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
+// Substrate
 use sp_core::{H160, H256, U256};
 use sp_runtime::{traits::Block as BlockT, Permill, RuntimeDebug};
 use sp_std::vec::Vec;

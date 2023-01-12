@@ -51,9 +51,9 @@ pub use fc_rpc_core::{
 pub mod frontier_backend_client {
 	use super::internal_err;
 
-	use codec::Decode;
 	use ethereum_types::H256;
 	use jsonrpsee::core::RpcResult;
+	use scale_codec::Decode;
 	// Substrate
 	use sc_client_api::backend::{Backend, StateBackend, StorageProvider};
 	use sp_blockchain::HeaderBackend;

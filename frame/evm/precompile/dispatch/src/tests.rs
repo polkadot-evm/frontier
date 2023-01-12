@@ -20,9 +20,9 @@
 use super::*;
 use crate::mock::*;
 
-use codec::Encode;
 use fp_evm::{Context, GenesisAccount};
 use frame_support::{assert_ok, traits::GenesisBuild};
+use scale_codec::Encode;
 use sp_core::{H160, U256};
 use std::{collections::BTreeMap, str::FromStr};
 

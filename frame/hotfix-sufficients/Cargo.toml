@@ -12,44 +12,39 @@ repository = { workspace = true }
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-# Parity
-codec = { package = "parity-scale-codec", version = "3.2.1", default-features = false, features = ["derive"] }
-scale-info = { version = "2.3.0", default-features = false, features = ["derive"] }
-
+scale-codec = { package = "parity-scale-codec", workspace = true }
+scale-info = { workspace = true }
 # Substrate
-sp-core = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-runtime = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-std = { version = "5.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-# Substrate FRAME
-frame-benchmarking = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false, optional = true }
-frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-
+frame-benchmarking = { workspace = true, optional = true }
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+sp-core = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
 # Frontier
-pallet-evm = { path = "../evm", default-features = false }
+pallet-evm = { workspace = true }
 
 [dev-dependencies]
-sp-io = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
+# Substrate
+sp-io = { workspace = true }
 
 [features]
 default = ["std"]
 std = [
-	# Parity
-	"codec/std",
+	"scale-codec/std",
 	"scale-info/std",
 	# Substrate
-	"sp-core/std",
-	"sp-runtime/std",
-	"sp-std/std",
-	# Substrate FRAME
 	"frame-benchmarking/std",
 	"frame-support/std",
 	"frame-system/std",
+	"sp-core/std",
+	"sp-runtime/std",
+	"sp-std/std",
 	# Frontier
 	"pallet-evm/std",
 ]
 runtime-benchmarks = [
-	"frame-benchmarking",
+	"frame-benchmarking/runtime-benchmarks",
 	"frame-support/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
 	"pallet-evm/runtime-benchmarks",

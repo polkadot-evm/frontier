@@ -17,7 +17,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Decode, Encode};
+use scale_codec::{Decode, Encode};
 
 /// Current version of pallet Ethereum's storage schema is stored under this key.
 pub const PALLET_ETHEREUM_SCHEMA: &[u8] = b":ethereum_schema";

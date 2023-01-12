@@ -27,8 +27,8 @@ use std::{
 	sync::Arc,
 };
 
-use codec::{Decode, Encode};
 use parking_lot::Mutex;
+use scale_codec::{Decode, Encode};
 // Substrate
 pub use sc_client_db::DatabaseSource;
 use sp_core::H256;

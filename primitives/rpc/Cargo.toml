@@ -11,35 +11,28 @@ repository = { workspace = true }
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-ethereum = { version = "0.14.0", default-features = false, features = ["with-codec"] }
-
-# Parity
-codec = { package = "parity-scale-codec", version = "3.2.1", default-features = false }
-ethereum-types = { version = "0.14.1", default-features = false }
-scale-info = { version = "2.3.0", default-features = false, features = ["derive"] }
-
+ethereum = { workspace = true, features = ["with-codec"] }
+ethereum-types = { workspace = true }
+scale-codec = { package = "parity-scale-codec", workspace = true }
+scale-info = { workspace = true }
 # Substrate
-sp-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-core = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-io = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-runtime = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-std = { version = "5.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-
+sp-api = { workspace = true }
+sp-core = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
 # Frontier
-fp-evm = { version = "3.0.0-dev", path = "../../primitives/evm", default-features = false }
+fp-evm = { workspace = true }
 
 [features]
 default = ["std"]
 std = [
 	"ethereum/std",
-	# Parity
-	"codec/std",
 	"ethereum-types/std",
+	"scale-codec/std",
 	"scale-info/std",
 	# Substrate
 	"sp-api/std",
 	"sp-core/std",
-	"sp-io/std",
 	"sp-runtime/std",
 	"sp-std/std",
 	# Frontier
