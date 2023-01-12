@@ -40,7 +40,7 @@ fn read_input(source: &[u8], target: &mut [u8], offset: usize) {
 
 fn read_fr(input: &[u8], start_inx: usize) -> Result<bn::Fr, PrecompileFailure> {
 	let mut buf = [0u8; 32];
-	read_input(&input, &mut buf, start_inx);
+	read_input(input, &mut buf, start_inx);
 
 	bn::Fr::from_slice(&buf).map_err(|_| PrecompileFailure::Error {
 		exit_status: ExitError::Other("Invalid field element".into()),
@@ -52,8 +52,8 @@ fn read_point(input: &[u8], start_inx: usize) -> Result<bn::G1, PrecompileFailur
 
 	let mut px_buf = [0u8; 32];
 	let mut py_buf = [0u8; 32];
-	read_input(&input, &mut px_buf, start_inx);
-	read_input(&input, &mut py_buf, start_inx + 32);
+	read_input(input, &mut px_buf, start_inx);
+	read_input(input, &mut py_buf, start_inx + 32);
 
 	let px = Fq::from_slice(&px_buf).map_err(|_| PrecompileFailure::Error {
 		exit_status: ExitError::Other("Invalid point x coordinate".into()),
