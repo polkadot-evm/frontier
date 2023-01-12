@@ -28,8 +28,8 @@ default = ["std"]
 std = [
 	"ethereum/std",
 	"ethereum-types/std",
-	"scale-info/std",
 	"scale-codec/std",
+	"scale-info/std",
 	# Substrate
 	"sp-api/std",
 	"sp-core/std",
