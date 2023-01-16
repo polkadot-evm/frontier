@@ -308,6 +308,12 @@
 <a href="#308" id="308">308</a>
 <a href="#309" id="309">309</a>
 <a href="#310" id="310">310</a>
+<a href="#311" id="311">311</a>
+<a href="#312" id="312">312</a>
+<a href="#313" id="313">313</a>
+<a href="#314" id="314">314</a>
+<a href="#315" id="315">315</a>
+<a href="#316" id="316">316</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
@@ -336,14 +342,23 @@
 };
 <span class="kw">use </span>sp_core::U256;
 
-<span class="kw">fn </span>read_fr(input: <span class="kw-2">&amp;</span>[u8], start_inx: usize) -&gt; <span class="prelude-ty">Result</span>&lt;bn::Fr, PrecompileFailure&gt; {
-	<span class="kw">if </span>input.len() &lt; start_inx + <span class="number">32 </span>{
-		<span class="kw">return </span><span class="prelude-val">Err</span>(PrecompileFailure::Error {
-			exit_status: ExitError::Other(<span class="string">&quot;Input not long enough&quot;</span>.into()),
-		});
+<span class="doccomment">/// Copy bytes from input to target.
+</span><span class="kw">fn </span>read_input(source: <span class="kw-2">&amp;</span>[u8], target: <span class="kw-2">&amp;mut </span>[u8], offset: usize) {
+	<span class="comment">// Out of bounds, nothing to copy.
+	</span><span class="kw">if </span>source.len() &lt;= offset {
+		<span class="kw">return</span>;
 	}
 
-	bn::Fr::from_slice(<span class="kw-2">&amp;</span>input[start_inx..(start_inx + <span class="number">32</span>)]).map_err(|<span class="kw">_</span>| PrecompileFailure::Error {
+	<span class="comment">// Find len to copy up to target len, but not out of bounds.
+	</span><span class="kw">let </span>len = core::cmp::min(target.len(), source.len() - offset);
+	target[..len].copy_from_slice(<span class="kw-2">&amp;</span>source[offset..][..len]);
+}
+
+<span class="kw">fn </span>read_fr(input: <span class="kw-2">&amp;</span>[u8], start_inx: usize) -&gt; <span class="prelude-ty">Result</span>&lt;bn::Fr, PrecompileFailure&gt; {
+	<span class="kw">let </span><span class="kw-2">mut </span>buf = [<span class="number">0u8</span>; <span class="number">32</span>];
+	read_input(input, <span class="kw-2">&amp;mut </span>buf, start_inx);
+
+	bn::Fr::from_slice(<span class="kw-2">&amp;</span>buf).map_err(|<span class="kw">_</span>| PrecompileFailure::Error {
 		exit_status: ExitError::Other(<span class="string">&quot;Invalid field element&quot;</span>.into()),
 	})
 }
@@ -351,22 +366,19 @@
 <span class="kw">fn </span>read_point(input: <span class="kw-2">&amp;</span>[u8], start_inx: usize) -&gt; <span class="prelude-ty">Result</span>&lt;bn::G1, PrecompileFailure&gt; {
 	<span class="kw">use </span>bn::{AffineG1, Fq, Group, G1};
 
-	<span class="kw">if </span>input.len() &lt; start_inx + <span class="number">64 </span>{
-		<span class="kw">return </span><span class="prelude-val">Err</span>(PrecompileFailure::Error {
-			exit_status: ExitError::Other(<span class="string">&quot;Input not long enough&quot;</span>.into()),
-		});
-	}
+	<span class="kw">let </span><span class="kw-2">mut </span>px_buf = [<span class="number">0u8</span>; <span class="number">32</span>];
+	<span class="kw">let </span><span class="kw-2">mut </span>py_buf = [<span class="number">0u8</span>; <span class="number">32</span>];
+	read_input(input, <span class="kw-2">&amp;mut </span>px_buf, start_inx);
+	read_input(input, <span class="kw-2">&amp;mut </span>py_buf, start_inx + <span class="number">32</span>);
 
-	<span class="kw">let </span>px = Fq::from_slice(<span class="kw-2">&amp;</span>input[start_inx..(start_inx + <span class="number">32</span>)]).map_err(|<span class="kw">_</span>| {
-		PrecompileFailure::Error {
-			exit_status: ExitError::Other(<span class="string">&quot;Invalid point x coordinate&quot;</span>.into()),
-		}
+	<span class="kw">let </span>px = Fq::from_slice(<span class="kw-2">&amp;</span>px_buf).map_err(|<span class="kw">_</span>| PrecompileFailure::Error {
+		exit_status: ExitError::Other(<span class="string">&quot;Invalid point x coordinate&quot;</span>.into()),
 	})<span class="question-mark">?</span>;
-	<span class="kw">let </span>py = Fq::from_slice(<span class="kw-2">&amp;</span>input[(start_inx + <span class="number">32</span>)..(start_inx + <span class="number">64</span>)]).map_err(|<span class="kw">_</span>| {
-		PrecompileFailure::Error {
-			exit_status: ExitError::Other(<span class="string">&quot;Invalid point y coordinate&quot;</span>.into()),
-		}
+
+	<span class="kw">let </span>py = Fq::from_slice(<span class="kw-2">&amp;</span>py_buf).map_err(|<span class="kw">_</span>| PrecompileFailure::Error {
+		exit_status: ExitError::Other(<span class="string">&quot;Invalid point y coordinate&quot;</span>.into()),
 	})<span class="question-mark">?</span>;
+
 	<span class="prelude-val">Ok</span>(<span class="kw">if </span>px == Fq::zero() &amp;&amp; py == Fq::zero() {
 		G1::zero()
 	} <span class="kw">else </span>{
