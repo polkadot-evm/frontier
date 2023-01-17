@@ -59,4 +59,4 @@ sp-consensus = { workspace = true }
 substrate-test-runtime-client = { workspace = true }
 
 [features]
-rpc_binary_search_estimate = []
+rpc-binary-search-estimate = []

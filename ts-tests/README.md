@@ -12,7 +12,7 @@ Each group will start a `frontier test node` with a given `spec` before executin
 ## Build the node for tests
 
 ```bash
-cargo build --release --features rpc_binary_search_estimate
+cargo build --release --features rpc-binary-search-estimate
 ```
 
 ## Installation
