@@ -18,8 +18,8 @@ clap = { version = "4.1", features = ["derive", "deprecated"] }
 futures = "0.3.25"
 jsonrpsee = { workspace = true, features = ["server", "macros"] }
 log = "0.4.17"
-serde = { workspace = true }
 scale-codec = { package = "parity-scale-codec", workspace = true }
+serde = { workspace = true }
 
 # Substrate
 prometheus-endpoint = { package = "substrate-prometheus-endpoint", workspace = true }
