@@ -60,9 +60,7 @@ pallet-hotfix-sufficients = { workspace = true }
 substrate-wasm-builder = { workspace = true }
 
 [features]
-default = ["std", "aura", "with-rocksdb-weights"]
-aura = []
-manual-seal = ["with-rocksdb-weights"]
+default = ["std", "with-rocksdb-weights"]
 with-rocksdb-weights = []
 with-paritydb-weights = []
 std = [

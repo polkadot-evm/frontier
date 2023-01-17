@@ -51,7 +51,7 @@ jobs:
     - name: Build manual seal client
       run: |
         cd template/node
-        cargo build --release --locked --verbose --no-default-features --features manual-seal,rpc_binary_search_estimate
+        cargo build --release --locked --verbose --features rpc_binary_search_estimate
     - name: Use Node.js 18
       uses: actions/setup-node@v3
       with:

@@ -53,10 +53,13 @@ impl SubstrateCli for Cli {
 		2021
 	}
 
-	fn load_spec(&self, id: &str) -> Result<Box<dyn sc_service::ChainSpec>, String> {
+	fn load_spec(&self, id: &str) -> Result<Box<dyn ChainSpec>, String> {
 		Ok(match id {
-			"dev" => Box::new(chain_spec::development_config()?),
-			"" | "local" => Box::new(chain_spec::local_testnet_config()?),
+			"dev" => {
+				let enable_manual_seal = self.sealing.map(|_| true);
+				Box::new(chain_spec::development_config(enable_manual_seal))
+			}
+			"" | "local" => Box::new(chain_spec::local_testnet_config()),
 			path => Box::new(chain_spec::ChainSpec::from_json_file(
 				std::path::PathBuf::from(path),
 			)?),
