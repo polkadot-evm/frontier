@@ -1,12 +1,13 @@
 [package]
 name = "frontier-template-node"
 version = "0.0.0"
-authors = ["Substrate DevHub <https://github.com/substrate-developer-hub>"]
-edition = "2021"
 license = "Unlicense"
 build = "build.rs"
 description = "A fresh FRAME-based Substrate node, ready for hacking."
 publish = false
+authors = { workspace = true }
+edition = { workspace = true }
+repository = { workspace = true }
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
@@ -15,70 +16,67 @@ targets = ["x86_64-unknown-linux-gnu"]
 async-trait = "0.1"
 clap = { version = "4.0", features = ["derive"] }
 futures = "0.3.25"
+jsonrpsee = { workspace = true, features = ["server", "macros"] }
 log = "0.4.17"
-
-# Parity
-codec = { package = "parity-scale-codec", version = "3.2.1", features = ["derive"] }
-jsonrpsee = { version = "0.16.2", features = ["server", "macros"] }
+scale-codec = { package = "parity-scale-codec", workspace = true }
 
 # Substrate
-sc-basic-authorship = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-cli = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-client-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-consensus = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-consensus-aura = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-consensus-manual-seal = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-executor = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-finality-grandpa = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-network = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-rpc = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-rpc-api = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-service = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-telemetry = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-transaction-pool = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-transaction-pool-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-block-builder = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-blockchain = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-consensus-aura = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-core = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-finality-grandpa = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-inherents = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-keyring = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-offchain = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-runtime = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-session = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-timestamp = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-transaction-pool = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-trie = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
-substrate-prometheus-endpoint = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
+prometheus-endpoint = { package = "substrate-prometheus-endpoint", workspace = true }
+sc-basic-authorship = { workspace = true }
+sc-cli = { workspace = true }
+sc-client-api = { workspace = true }
+sc-consensus = { workspace = true }
+sc-consensus-aura = { workspace = true }
+sc-consensus-manual-seal = { workspace = true }
+sc-executor = { workspace = true }
+sc-finality-grandpa = { workspace = true }
+sc-network = { workspace = true }
+sc-rpc = { workspace = true }
+sc-rpc-api = { workspace = true }
+sc-service = { workspace = true }
+sc-telemetry = { workspace = true }
+sc-transaction-pool = { workspace = true }
+sc-transaction-pool-api = { workspace = true }
+sp-api = { workspace = true, features = ["std"] }
+sp-block-builder = { workspace = true }
+sp-blockchain = { workspace = true }
+sp-consensus-aura = { workspace = true, features = ["std"] }
+sp-core = { workspace = true, features = ["std"] }
+sp-finality-grandpa = { workspace = true, features = ["std"] }
+sp-inherents = { workspace = true, features = ["std"] }
+sp-keyring = { workspace = true }
+sp-offchain = { workspace = true, features = ["std"] }
+sp-runtime = { workspace = true, features = ["std"] }
+sp-session = { workspace = true, features = ["std"] }
+sp-timestamp = { workspace = true, features = ["std"] }
+sp-transaction-pool = { workspace = true, features = ["std"] }
+sp-trie = { workspace = true, features = ["std"] }
 # These dependencies are used for RPC
-frame-system-rpc-runtime-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-pallet-transaction-payment-rpc = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-pallet-transaction-payment-rpc-runtime-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-substrate-frame-rpc-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
+frame-system-rpc-runtime-api = { workspace = true }
+pallet-transaction-payment-rpc = { workspace = true }
+pallet-transaction-payment-rpc-runtime-api = { workspace = true }
+substrate-frame-rpc-system = { workspace = true }
 # These dependencies are used for runtime benchmarking
-frame-benchmarking = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", optional = true }
-frame-benchmarking-cli = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", optional = true }
-frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-pallet-transaction-payment = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
+frame-benchmarking = { workspace = true, optional = true }
+frame-benchmarking-cli = { workspace = true, optional = true }
+frame-system = { workspace = true }
+pallet-transaction-payment = { workspace = true }
 
 # Frontier
-fc-cli = { path = "../../client/cli" }
-fc-consensus = { path = "../../client/consensus" }
-fc-db = { path = "../../client/db" }
-fc-mapping-sync = { path = "../../client/mapping-sync" }
-fc-rpc = { path = "../../client/rpc" }
-fc-rpc-core = { path = "../../client/rpc-core" }
-fp-dynamic-fee = { path = "../../primitives/dynamic-fee" }
-fp-evm = { path = "../../primitives/evm" }
-fp-rpc = { path = "../../primitives/rpc" }
-fp-storage = { path = "../../primitives/storage" }
-
-frontier-template-runtime = { path = "../runtime", default-features = false, features = ["std"] }
+fc-cli = { workspace = true }
+fc-consensus = { workspace = true }
+fc-db = { workspace = true }
+fc-mapping-sync = { workspace = true }
+fc-rpc = { workspace = true }
+fc-rpc-core = { workspace = true }
+fp-dynamic-fee = { workspace = true, features = ["std"] }
+fp-evm = { workspace = true, features = ["std"] }
+fp-rpc = { workspace = true, features = ["std"] }
+fp-storage = { workspace = true, features = ["std"] }
+frontier-template-runtime = { workspace = true, features = ["std"] }
 
 [build-dependencies]
-substrate-build-script-utils = { version = "3.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
+substrate-build-script-utils = { workspace = true }
 
 [features]
 default = ["aura", "with-rocksdb-weights"]
@@ -88,8 +86,8 @@ with-rocksdb-weights = ["frontier-template-runtime/with-rocksdb-weights"]
 with-paritydb-weights = ["frontier-template-runtime/with-paritydb-weights"]
 rpc_binary_search_estimate = ["fc-rpc/rpc_binary_search_estimate"]
 runtime-benchmarks = [
-	"frame-benchmarking",
-	"frame-benchmarking-cli",
+	"frame-benchmarking/runtime-benchmarks",
+	"frame-benchmarking-cli/runtime-benchmarks",
 	"sc-service/runtime-benchmarks",
 	"frontier-template-runtime/runtime-benchmarks",
 ]

@@ -1589,7 +1589,6 @@ dependencies = [
  "sc-block-builder",
  "sc-cli",
  "sc-client-db",
- "sc-service",
  "serde",
  "serde_json",
  "sp-api",
@@ -1668,7 +1667,6 @@ dependencies = [
  "fc-db",
  "fc-rpc-core",
  "fp-ethereum",
- "fp-evm",
  "fp-rpc",
  "fp-storage",
  "futures",
@@ -1691,7 +1689,6 @@ dependencies = [
  "sc-transaction-pool",
  "sc-transaction-pool-api",
  "sp-api",
- "sp-beefy",
  "sp-block-builder",
  "sp-blockchain",
  "sp-consensus",
@@ -1712,7 +1709,6 @@ dependencies = [
  "ethereum",
  "ethereum-types",
  "jsonrpsee",
- "rlp",
  "rustc-hex",
  "serde",
  "serde_json",
@@ -1869,7 +1865,6 @@ dependencies = [
  "frame-support",
  "num_enum",
  "parity-scale-codec",
- "sp-core",
  "sp-std",
 ]
 
@@ -1896,7 +1891,6 @@ dependencies = [
  "scale-info",
  "sp-api",
  "sp-core",
- "sp-io",
  "sp-runtime",
  "sp-std",
 ]
@@ -1905,7 +1899,6 @@ dependencies = [
 name = "fp-self-contained"
 version = "1.0.0-dev"
 dependencies = [
- "ethereum",
  "frame-support",
  "parity-scale-codec",
  "scale-info",
@@ -2232,13 +2225,11 @@ dependencies = [
  "pallet-transaction-payment-rpc-runtime-api",
  "parity-scale-codec",
  "scale-info",
- "serde",
  "sp-api",
  "sp-block-builder",
  "sp-consensus-aura",
  "sp-core",
  "sp-inherents",
- "sp-io",
  "sp-offchain",
  "sp-runtime",
  "sp-session",
@@ -4229,7 +4220,6 @@ dependencies = [
  "frame-system",
  "parity-scale-codec",
  "scale-info",
- "serde",
  "sp-core",
  "sp-io",
  "sp-runtime",
@@ -4239,7 +4229,6 @@ dependencies = [
 name = "pallet-dynamic-fee"
 version = "4.0.0-dev"
 dependencies = [
- "async-trait",
  "fp-dynamic-fee",
  "fp-evm",
  "frame-support",
@@ -4247,7 +4236,6 @@ dependencies = [
  "pallet-timestamp",
  "parity-scale-codec",
  "scale-info",
- "serde",
  "sp-core",
  "sp-inherents",
  "sp-io",
@@ -4278,7 +4266,6 @@ dependencies = [
  "parity-scale-codec",
  "rlp",
  "scale-info",
- "serde",
  "sp-core",
  "sp-io",
  "sp-runtime",
@@ -4301,10 +4288,8 @@ dependencies = [
  "pallet-evm-precompile-simple",
  "pallet-timestamp",
  "parity-scale-codec",
- "primitive-types",
  "rlp",
  "scale-info",
- "serde",
  "sp-core",
  "sp-io",
  "sp-runtime",
@@ -4319,7 +4304,6 @@ dependencies = [
  "frame-system",
  "parity-scale-codec",
  "scale-info",
- "serde",
 ]
 
 [[package]]
@@ -4556,7 +4540,6 @@ name = "pallet-utility"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=master#cb4f2491b00af7d7817f3a54209c26b20faa1f51"
 dependencies = [
- "frame-benchmarking",
  "frame-support",
  "frame-system",
  "parity-scale-codec",

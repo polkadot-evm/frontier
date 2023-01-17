@@ -1,72 +1,63 @@
 [package]
 name = "pallet-ethereum"
 version = "4.0.0-dev"
-authors = ["Parity Technologies <admin@parity.io>"]
-edition = "2021"
 license = "Apache-2.0"
 description = "Ethereum compatibility full block processing emulation pallet for Substrate."
-repository = "https://github.com/paritytech/frontier/"
+authors = { workspace = true }
+edition = { workspace = true }
+repository = { workspace = true }
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-ethereum = { version = "0.14.0", default-features = false, features = ["with-codec"] }
-evm = { version = "0.37.0", default-features = false, features = ["with-codec"] }
-serde = { version = "1.0", optional = true }
-
-# Parity
-codec = { package = "parity-scale-codec", version = "3.2.1", default-features = false }
-ethereum-types = { version = "0.14.1", default-features = false }
-rlp = { version = "0.5", default-features = false }
-scale-info = { version = "2.3.0", default-features = false, features = ["derive"] }
+ethereum = { workspace = true, features = ["with-codec"] }
+ethereum-types = { workspace = true }
+evm = { workspace = true, features = ["with-codec"] }
+rlp = { workspace = true }
+scale-codec = { package = "parity-scale-codec", workspace = true }
+scale-info = { workspace = true }
 
 # Substrate
-sp-io = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-runtime = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-std = { version = "5.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-# Substrate FRAME
-frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-pallet-timestamp = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+pallet-timestamp = { workspace = true }
+sp-io = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
 
 # Frontier
-fp-consensus = { version = "2.0.0-dev", path = "../../primitives/consensus", default-features = false }
-fp-ethereum = { version = "1.0.0-dev", path = "../../primitives/ethereum", default-features = false }
-fp-evm = { version = "3.0.0-dev", path = "../../primitives/evm", default-features = false }
-fp-rpc = { version = "3.0.0-dev", path = "../../primitives/rpc", default-features = false }
-fp-self-contained = { version = "1.0.0-dev", path = "../../primitives/self-contained", default-features = false }
-fp-storage = { version = "2.0.0", path = "../../primitives/storage", default-features = false }
-pallet-evm = { version = "6.0.0-dev", path = "../evm", default-features = false }
+fp-consensus = { workspace = true }
+fp-ethereum = { workspace = true }
+fp-evm = { workspace = true }
+fp-rpc = { workspace = true }
+fp-self-contained = { workspace = true }
+fp-storage = { workspace = true }
+pallet-evm = { workspace = true }
 
 [dev-dependencies]
 hex = "0.4.3"
-# Parity
-libsecp256k1 = { version = "0.7", features = ["static-context", "hmac"] }
+libsecp256k1 = { workspace = true, features = ["static-context", "hmac"] }
 # Substrate
-sp-core = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
-# Substrate FRAME
-pallet-balances = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
+pallet-balances = { workspace = true, features = ["std"] }
+sp-core = { workspace = true }
 
 [features]
 default = ["std"]
 std = [
 	"ethereum/std",
 	"evm/std",
-	"serde",
-	# Parity
-	"codec/std",
 	"ethereum-types/std",
 	"rlp/std",
+	"scale-codec/std",
 	"scale-info/std",
 	# Substrate
-	"sp-io/std",
-	"sp-runtime/std",
-	"sp-std/std",
-	# Substrate FRAME
 	"frame-support/std",
 	"frame-system/std",
 	"pallet-timestamp/std",
+	"sp-io/std",
+	"sp-runtime/std",
+	"sp-std/std",
 	# Frontier
 	"fp-consensus/std",
 	"fp-ethereum/std",

@@ -1,29 +1,25 @@
 [package]
 name = "fp-ethereum"
 version = "1.0.0-dev"
-authors = ["Parity Technologies <admin@parity.io>"]
-edition = "2021"
 license = "Apache-2.0"
 description = "Primitive Ethereum types."
-repository = "https://github.com/paritytech/frontier/"
+authors = { workspace = true }
+edition = { workspace = true }
+repository = { workspace = true }
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-ethereum = { version = "0.14.0", default-features = false, features = ["with-codec"] }
-ethereum-types = { version = "0.14.0", default-features = false }
-fp-evm = { version = "3.0.0-dev", path = "../evm", default-features = false }
+ethereum = { workspace = true, features = ["with-codec"] }
+ethereum-types = { workspace = true }
 num_enum = { version = "0.5.4", default-features = false }
-
-# Parity
-codec = { package = "parity-scale-codec", version = "3.2.1", default-features = false }
-
+scale-codec = { package = "parity-scale-codec", workspace = true }
 # Substrate
-sp-core = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-std = { version = "5.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-# Substrate FRAME
-frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+frame-support = { workspace = true }
+sp-std = { workspace = true }
+# Frontier
+fp-evm = { workspace = true }
 
 [features]
 default = ["std"]
@@ -31,11 +27,10 @@ std = [
 	"ethereum/std",
 	"ethereum-types/std",
 	"num_enum/std",
-	# Parity
-	"codec/std",
+	"scale-codec/std",
 	# Substrate
-	"sp-core/std",
-	"sp-std/std",
-	# Substrate FRAME
 	"frame-support/std",
+	"sp-std/std",
+	# Frontier
+	"fp-evm/std",
 ]

@@ -13,6 +13,6 @@
   },
   "license": "Apache-2.0",
   "dependencies": {
-    "vuepress": "^1.9.7"
+    "vuepress": "^1.9.8"
   }
 }

@@ -1,21 +1,21 @@
 [package]
 name = "pallet-evm-precompile-modexp"
 version = "2.0.0-dev"
-authors = ["Parity Technologies <admin@parity.io>"]
-edition = "2021"
 license = "Apache-2.0"
 description = "MODEXP precompiles for EVM pallet."
-repository = "https://github.com/paritytech/frontier/"
+authors = { workspace = true }
+edition = { workspace = true }
+repository = { workspace = true }
 
 [dependencies]
 num = { version = "0.4", default-features = false, features = ["alloc"] }
-
 # Frontier
-fp-evm = { version = "3.0.0-dev", path = "../../../../primitives/evm", default-features = false }
+fp-evm = { workspace = true }
 
 [dev-dependencies]
 hex = "0.4.3"
-pallet-evm-test-vector-support = { version = "1.0.0-dev", path = "../../test-vector-support" }
+# Frontier
+pallet-evm-test-vector-support = { workspace = true }
 
 [features]
 default = ["std"]

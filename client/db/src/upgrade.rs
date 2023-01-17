@@ -16,19 +16,18 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use codec::{Decode, Encode};
-use sp_runtime::traits::{Block as BlockT, Header};
-
-use sp_core::H256;
-
-use crate::DatabaseSource;
-
 use std::{
 	fmt, fs,
 	io::{self, ErrorKind, Read, Write},
 	path::{Path, PathBuf},
 	sync::Arc,
 };
+
+use scale_codec::{Decode, Encode};
+use sp_core::H256;
+use sp_runtime::traits::{Block as BlockT, Header};
+
+use crate::DatabaseSource;
 
 /// Version file name.
 const VERSION_FILE_NAME: &str = "db_version";
@@ -342,7 +341,7 @@ mod tests {
 		sync::Arc,
 	};
 
-	use codec::Encode;
+	use scale_codec::Encode;
 	use sp_core::H256;
 	use sp_runtime::{
 		generic::{Block, BlockId, Header},

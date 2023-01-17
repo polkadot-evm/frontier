@@ -1,20 +1,18 @@
 [package]
 name = "pallet-evm-test-vector-support"
 version = "1.0.0-dev"
-authors = ["Parity Technologies <admin@parity.io>"]
-edition = "2021"
 license = "Apache-2.0"
 description = "Test vector support for EVM pallet."
-repository = "https://github.com/paritytech/frontier/"
+authors = { workspace = true }
+edition = { workspace = true }
+repository = { workspace = true }
 
 [dependencies]
-evm = { version = "0.37.0", features = ["with-codec"] }
+evm = { workspace = true, features = ["with-codec"] }
 hex = "0.4.3"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-
+serde = { workspace = true }
+serde_json = { workspace = true }
 # Substrate
-sp-core = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
-
+sp-core = { workspace = true }
 # Frontier
-fp-evm = { version = "3.0.0-dev", path = "../../../primitives/evm" }
+fp-evm = { workspace = true, features = ["std"] }

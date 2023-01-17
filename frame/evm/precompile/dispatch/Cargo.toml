@@ -1,38 +1,36 @@
 [package]
 name = "pallet-evm-precompile-dispatch"
 version = "2.0.0-dev"
-authors = ["Parity Technologies <admin@parity.io>"]
-edition = "2021"
 license = "Apache-2.0"
 description = "DISPATCH precompiles for EVM pallet."
-repository = "https://github.com/paritytech/frontier/"
+authors = { workspace = true }
+edition = { workspace = true }
+repository = { workspace = true }
 
 [dependencies]
-# Substrate FRAME
-frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-
+# Substrate
+frame-support = { workspace = true }
 # Frontier
-fp-evm = { version = "3.0.0-dev", path = "../../../../primitives/evm", default-features = false }
-pallet-evm = { version = "6.0.0-dev", path = "../..", default-features = false }
+fp-evm = { workspace = true }
+pallet-evm = { workspace = true }
 
 [dev-dependencies]
-codec = { package = "parity-scale-codec", version = "3.2.1", features = ["derive"] }
-scale-info = { version = "2.3.0", features = ["derive"] }
-
-sp-core = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-io = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-runtime = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-std = { version = "5.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
-
-frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-pallet-balances = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-pallet-timestamp = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-pallet-utility = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
+scale-codec = { package = "parity-scale-codec", workspace = true }
+scale-info = { workspace = true }
+# Substrate
+frame-system = { workspace = true }
+pallet-balances = { workspace = true, features = ["std"] }
+pallet-timestamp = { workspace = true }
+pallet-utility = { workspace = true }
+sp-core = { workspace = true }
+sp-io = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
 
 [features]
 default = ["std"]
 std = [
-	# Substrate FRAME
+	# Substrate
 	"frame-support/std",
 	# Frontier
 	"fp-evm/std",

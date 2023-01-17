@@ -4,6 +4,7 @@ use std::{cell::RefCell, sync::Arc, time::Duration};
 
 use futures::{channel::mpsc, prelude::*};
 // Substrate
+use prometheus_endpoint::Registry;
 use sc_client_api::{BlockBackend, StateBackendFor};
 use sc_consensus::BasicQueue;
 use sc_executor::{NativeElseWasmExecutor, NativeExecutionDispatch};
@@ -14,7 +15,6 @@ use sp_consensus_aura::sr25519::AuthorityPair as AuraPair;
 use sp_core::U256;
 use sp_runtime::traits::BlakeTwo256;
 use sp_trie::PrefixedMemoryDB;
-use substrate_prometheus_endpoint::Registry;
 // Runtime
 use frontier_template_runtime::{opaque::Block, Hash, TransactionConverter};
 

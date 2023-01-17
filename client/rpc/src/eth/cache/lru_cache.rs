@@ -16,8 +16,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use codec::Encode;
 use lru::LruCache;
+use scale_codec::Encode;
 
 pub struct LRUCacheByteLimited<K, V> {
 	cache: LruCache<K, V>,

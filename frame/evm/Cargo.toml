@@ -1,46 +1,40 @@
 [package]
 name = "pallet-evm"
 version = "6.0.0-dev"
-authors = ["Parity Technologies <admin@parity.io>"]
-edition = "2021"
 license = "Apache-2.0"
 readme = "README.md"
-description = "FRAME EVM contracts pallet"
-repository = "https://github.com/paritytech/frontier/"
+description = "FRAME EVM contracts pallet."
+authors = { workspace = true }
+edition = { workspace = true }
+repository = { workspace = true }
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-environmental = { version = "1.1.3", default-features = false, optional = true }
-evm = { version = "0.37.0", default-features = false, features = ["with-codec"] }
+environmental = { workspace = true, optional = true }
+evm = { workspace = true, features = ["with-codec"] }
 hex = { version = "0.4.3", default-features = false, features = ["alloc"] }
 log = { version = "0.4.17", default-features = false }
-serde = { version = "1.0", optional = true, features = ["derive"] }
-
-# Parity
-codec = { package = "parity-scale-codec", version = "3.2.1", default-features = false, features = ["derive"] }
-primitive-types = { version = "0.12.1", default-features = false, features = ["rlp", "byteorder"] }
-rlp = { version = "0.5", default-features = false }
-scale-info = { version = "2.3.0", default-features = false, features = ["derive"] }
-
-# Substate
-sp-core = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-io = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-runtime = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-std = { version = "5.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-# Substrate FRAME
-frame-benchmarking = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false, optional = true }
-frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-pallet-timestamp = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-
+rlp = { workspace = true }
+scale-codec = { package = "parity-scale-codec", workspace = true }
+scale-info = { workspace = true }
+# Substrate
+frame-benchmarking = { workspace = true, optional = true }
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+pallet-timestamp = { workspace = true }
+sp-core = { workspace = true }
+sp-io = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
 # Frontier
-fp-evm = { version = "3.0.0-dev", path = "../../primitives/evm", default-features = false }
+fp-evm = { workspace = true }
 
 [dev-dependencies]
-pallet-balances = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-pallet-evm-precompile-simple = { path = "./precompile/simple" }
+# Substrate
+pallet-balances = { workspace = true, features = ["std"] }
+pallet-evm-precompile-simple = { workspace = true }
 
 [features]
 default = ["std"]
@@ -50,27 +44,23 @@ std = [
 	"evm/with-serde",
 	"hex/std",
 	"log/std",
-	"serde",
-	# Parity
-	"codec/std",
-	"primitive-types/std",
 	"rlp/std",
+	"scale-codec/std",
 	"scale-info/std",
 	# Substrate
-	"sp-core/std",
-	"sp-io/std",
-	"sp-runtime/std",
-	"sp-std/std",
-	# Substrate FRAME
 	"frame-benchmarking/std",
 	"frame-support/std",
 	"frame-system/std",
 	"pallet-timestamp/std",
+	"sp-core/std",
+	"sp-io/std",
+	"sp-runtime/std",
+	"sp-std/std",
 	# Frontier
 	"fp-evm/std",
 ]
 runtime-benchmarks = [
-	"frame-benchmarking",
+	"frame-benchmarking/runtime-benchmarks",
 	"frame-support/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",

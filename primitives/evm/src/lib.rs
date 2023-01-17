@@ -20,8 +20,8 @@
 mod precompile;
 mod validation;
 
-use codec::{Decode, Encode};
 use frame_support::weights::Weight;
+use scale_codec::{Decode, Encode};
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_core::{H160, U256};

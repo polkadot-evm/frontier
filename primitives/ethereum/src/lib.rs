@@ -17,13 +17,13 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Decode, Encode};
 pub use ethereum::{
 	AccessListItem, BlockV2 as Block, LegacyTransactionMessage, Log, ReceiptV3 as Receipt,
 	TransactionAction, TransactionV2 as Transaction,
 };
 use ethereum_types::{H160, H256, U256};
 use fp_evm::CheckEvmTransactionInput;
+use scale_codec::{Decode, Encode};
 use sp_std::vec::Vec;
 
 #[repr(u8)]

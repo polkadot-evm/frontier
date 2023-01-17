@@ -21,7 +21,7 @@
 
 use std::{sync::Arc, time::Duration};
 
-use codec::Encode;
+use scale_codec::Encode;
 // Substrate
 use sc_cli::Result;
 use sc_client_api::BlockBackend;

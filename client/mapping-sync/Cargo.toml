@@ -1,11 +1,11 @@
 [package]
 name = "fc-mapping-sync"
 version = "2.0.0-dev"
-authors = ["Parity Technologies <admin@parity.io>"]
-edition = "2021"
 license = "GPL-3.0-or-later WITH Classpath-exception-2.0"
 description = "Mapping sync logic for Frontier."
-repository = "https://github.com/paritytech/frontier/"
+authors = { workspace = true }
+edition = { workspace = true }
+repository = { workspace = true }
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
@@ -14,14 +14,12 @@ targets = ["x86_64-unknown-linux-gnu"]
 futures = "0.3.25"
 futures-timer = "3.0.1"
 log = "0.4.17"
-
 # Substrate
-sc-client-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-blockchain = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-runtime = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
-
+sc-client-api = { workspace = true }
+sp-api = { workspace = true }
+sp-blockchain = { workspace = true }
+sp-runtime = { workspace = true }
 # Frontier
-fc-db = { version = "2.0.0-dev", path = "../db" }
-fp-consensus = { version = "2.0.0-dev", path = "../../primitives/consensus" }
-fp-rpc = { version = "3.0.0-dev", path = "../../primitives/rpc" }
+fc-db = { workspace = true }
+fp-consensus = { workspace = true, features = ["std"] }
+fp-rpc = { workspace = true, features = ["std"] }

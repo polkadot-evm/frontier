@@ -1,23 +1,21 @@
 [package]
 name = "pallet-evm-precompile-simple"
 version = "2.0.0-dev"
-authors = ["Parity Technologies <admin@parity.io>"]
-edition = "2021"
 license = "Apache-2.0"
 description = "Simple precompiles for EVM pallet."
-repository = "https://github.com/paritytech/frontier/"
+edition = { workspace = true }
+repository = { workspace = true }
 
 [dependencies]
 ripemd = { version = "0.1", default-features = false }
-
 # Substrate
-sp-io = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-
+sp-io = { workspace = true }
 # Frontier
-fp-evm = { version = "3.0.0-dev", path = "../../../../primitives/evm", default-features = false }
+fp-evm = { workspace = true }
 
 [dev-dependencies]
-pallet-evm-test-vector-support = { version = "1.0.0-dev", path = "../../test-vector-support" }
+# Frontier
+pallet-evm-test-vector-support = { workspace = true }
 
 [features]
 default = ["std"]

@@ -26,14 +26,23 @@ use fp_evm::{
 };
 use sp_core::U256;
 
-fn read_fr(input: &[u8], start_inx: usize) -> Result<bn::Fr, PrecompileFailure> {
-	if input.len() < start_inx + 32 {
-		return Err(PrecompileFailure::Error {
-			exit_status: ExitError::Other("Input not long enough".into()),
-		});
+/// Copy bytes from input to target.
+fn read_input(source: &[u8], target: &mut [u8], offset: usize) {
+	// Out of bounds, nothing to copy.
+	if source.len() <= offset {
+		return;
 	}
 
-	bn::Fr::from_slice(&input[start_inx..(start_inx + 32)]).map_err(|_| PrecompileFailure::Error {
+	// Find len to copy up to target len, but not out of bounds.
+	let len = core::cmp::min(target.len(), source.len() - offset);
+	target[..len].copy_from_slice(&source[offset..][..len]);
+}
+
+fn read_fr(input: &[u8], start_inx: usize) -> Result<bn::Fr, PrecompileFailure> {
+	let mut buf = [0u8; 32];
+	read_input(input, &mut buf, start_inx);
+
+	bn::Fr::from_slice(&buf).map_err(|_| PrecompileFailure::Error {
 		exit_status: ExitError::Other("Invalid field element".into()),
 	})
 }
@@ -41,22 +50,19 @@ fn read_fr(input: &[u8], start_inx: usize) -> Result<bn::Fr, PrecompileFailure> 
 fn read_point(input: &[u8], start_inx: usize) -> Result<bn::G1, PrecompileFailure> {
 	use bn::{AffineG1, Fq, Group, G1};
 
-	if input.len() < start_inx + 64 {
-		return Err(PrecompileFailure::Error {
-			exit_status: ExitError::Other("Input not long enough".into()),
-		});
-	}
+	let mut px_buf = [0u8; 32];
+	let mut py_buf = [0u8; 32];
+	read_input(input, &mut px_buf, start_inx);
+	read_input(input, &mut py_buf, start_inx + 32);
 
-	let px = Fq::from_slice(&input[start_inx..(start_inx + 32)]).map_err(|_| {
-		PrecompileFailure::Error {
-			exit_status: ExitError::Other("Invalid point x coordinate".into()),
-		}
+	let px = Fq::from_slice(&px_buf).map_err(|_| PrecompileFailure::Error {
+		exit_status: ExitError::Other("Invalid point x coordinate".into()),
 	})?;
-	let py = Fq::from_slice(&input[(start_inx + 32)..(start_inx + 64)]).map_err(|_| {
-		PrecompileFailure::Error {
-			exit_status: ExitError::Other("Invalid point y coordinate".into()),
-		}
+
+	let py = Fq::from_slice(&py_buf).map_err(|_| PrecompileFailure::Error {
+		exit_status: ExitError::Other("Invalid point y coordinate".into()),
 	})?;
+
 	Ok(if px == Fq::zero() && py == Fq::zero() {
 		G1::zero()
 	} else {
@@ -173,6 +179,12 @@ impl Precompile for Bn128Pairing {
 			handle.record_cost(Bn128Pairing::BASE_GAS_COST)?;
 			U256::one()
 		} else {
+			if handle.input().len() % 192 > 0 {
+				return Err(PrecompileFailure::Error {
+					exit_status: ExitError::Other("bad elliptic curve pairing size".into()),
+				});
+			}
+
 			// (a, b_a, b_b - each 64-byte affine coordinates)
 			let elements = handle.input().len() / 192;
 

@@ -1,48 +1,40 @@
 [package]
 name = "pallet-base-fee"
 version = "1.0.0"
-authors = ["Parity Technologies <admin@parity.io>"]
-edition = "2021"
 license = "Apache-2.0"
-description = "EIP-1559 fee utils"
-repository = "https://github.com/paritytech/frontier/"
+description = "EIP-1559 fee utils."
+authors = { workspace = true }
+edition = { workspace = true }
+repository = { workspace = true }
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-serde = { version = "1.0", optional = true }
-
-# Parity
-codec = { package = "parity-scale-codec", version = "3.2.1", default-features = false }
-scale-info = { version = "2.3.0", default-features = false, features = ["derive"] }
-
+scale-codec = { package = "parity-scale-codec", workspace = true }
+scale-info = { workspace = true }
 # Substrate
-sp-core = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-runtime = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-# Substrate FRAME
-frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+sp-core = { workspace = true }
+sp-runtime = { workspace = true }
 # Frontier
-fp-evm = { version = "3.0.0-dev", path = "../../primitives/evm", default-features = false }
+fp-evm = { workspace = true }
 
 [dev-dependencies]
-sp-io = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
+# Substrate
+sp-io = { workspace = true }
 
 [features]
 default = ["std"]
 std = [
-	"serde",
-	# Parity
-	"codec/std",
+	"scale-codec/std",
 	"scale-info/std",
 	# Substrate
-	"sp-core/std",
-	"sp-runtime/std",
-	# Substrate FRAME
 	"frame-support/std",
 	"frame-system/std",
+	"sp-core/std",
+	"sp-runtime/std",
 	# Frontier
 	"fp-evm/std",
 ]
