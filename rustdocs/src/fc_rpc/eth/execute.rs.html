@@ -1402,7 +1402,7 @@
 
 		<span class="comment">// Verify that the transaction succeed with highest capacity
 		</span><span class="kw">let </span>cap = highest;
-		<span class="kw">let </span>estimate_mode = !<span class="macro">cfg!</span>(feature = <span class="string">&quot;rpc_binary_search_estimate&quot;</span>);
+		<span class="kw">let </span>estimate_mode = !<span class="macro">cfg!</span>(feature = <span class="string">&quot;rpc-binary-search-estimate&quot;</span>);
 		<span class="kw">let </span>ExecutableResult {
 			data,
 			exit_reason,
@@ -1459,11 +1459,11 @@
 			other =&gt; error_on_execution_failure(<span class="kw-2">&amp;</span>other, <span class="kw-2">&amp;</span>data)<span class="question-mark">?</span>,
 		};
 
-		<span class="attr">#[cfg(not(feature = <span class="string">&quot;rpc_binary_search_estimate&quot;</span>))]
+		<span class="attr">#[cfg(not(feature = <span class="string">&quot;rpc-binary-search-estimate&quot;</span>))]
 		</span>{
 			<span class="prelude-val">Ok</span>(used_gas)
 		}
-		<span class="attr">#[cfg(feature = <span class="string">&quot;rpc_binary_search_estimate&quot;</span>)]
+		<span class="attr">#[cfg(feature = <span class="string">&quot;rpc-binary-search-estimate&quot;</span>)]
 		</span>{
 			<span class="comment">// On binary search, evm estimate mode is disabled
 			</span><span class="kw">let </span>estimate_mode = <span class="bool-val">false</span>;

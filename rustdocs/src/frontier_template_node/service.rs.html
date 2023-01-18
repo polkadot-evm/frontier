@@ -663,224 +663,90 @@
 <a href="#663" id="663">663</a>
 <a href="#664" id="664">664</a>
 <a href="#665" id="665">665</a>
-<a href="#666" id="666">666</a>
-<a href="#667" id="667">667</a>
-<a href="#668" id="668">668</a>
-<a href="#669" id="669">669</a>
-<a href="#670" id="670">670</a>
-<a href="#671" id="671">671</a>
-<a href="#672" id="672">672</a>
-<a href="#673" id="673">673</a>
-<a href="#674" id="674">674</a>
-<a href="#675" id="675">675</a>
-<a href="#676" id="676">676</a>
-<a href="#677" id="677">677</a>
-<a href="#678" id="678">678</a>
-<a href="#679" id="679">679</a>
-<a href="#680" id="680">680</a>
-<a href="#681" id="681">681</a>
-<a href="#682" id="682">682</a>
-<a href="#683" id="683">683</a>
-<a href="#684" id="684">684</a>
-<a href="#685" id="685">685</a>
-<a href="#686" id="686">686</a>
-<a href="#687" id="687">687</a>
-<a href="#688" id="688">688</a>
-<a href="#689" id="689">689</a>
-<a href="#690" id="690">690</a>
-<a href="#691" id="691">691</a>
-<a href="#692" id="692">692</a>
-<a href="#693" id="693">693</a>
-<a href="#694" id="694">694</a>
-<a href="#695" id="695">695</a>
-<a href="#696" id="696">696</a>
-<a href="#697" id="697">697</a>
-<a href="#698" id="698">698</a>
-<a href="#699" id="699">699</a>
-<a href="#700" id="700">700</a>
-<a href="#701" id="701">701</a>
-<a href="#702" id="702">702</a>
-<a href="#703" id="703">703</a>
-<a href="#704" id="704">704</a>
-<a href="#705" id="705">705</a>
-<a href="#706" id="706">706</a>
-<a href="#707" id="707">707</a>
-<a href="#708" id="708">708</a>
-<a href="#709" id="709">709</a>
-<a href="#710" id="710">710</a>
-<a href="#711" id="711">711</a>
-<a href="#712" id="712">712</a>
-<a href="#713" id="713">713</a>
-<a href="#714" id="714">714</a>
-<a href="#715" id="715">715</a>
-<a href="#716" id="716">716</a>
-<a href="#717" id="717">717</a>
-<a href="#718" id="718">718</a>
-<a href="#719" id="719">719</a>
-<a href="#720" id="720">720</a>
-<a href="#721" id="721">721</a>
-<a href="#722" id="722">722</a>
-<a href="#723" id="723">723</a>
-<a href="#724" id="724">724</a>
-<a href="#725" id="725">725</a>
-<a href="#726" id="726">726</a>
-<a href="#727" id="727">727</a>
-<a href="#728" id="728">728</a>
-<a href="#729" id="729">729</a>
-<a href="#730" id="730">730</a>
-<a href="#731" id="731">731</a>
-<a href="#732" id="732">732</a>
-<a href="#733" id="733">733</a>
-<a href="#734" id="734">734</a>
-<a href="#735" id="735">735</a>
-<a href="#736" id="736">736</a>
-<a href="#737" id="737">737</a>
-<a href="#738" id="738">738</a>
-<a href="#739" id="739">739</a>
-<a href="#740" id="740">740</a>
-<a href="#741" id="741">741</a>
-<a href="#742" id="742">742</a>
-<a href="#743" id="743">743</a>
-<a href="#744" id="744">744</a>
-<a href="#745" id="745">745</a>
-<a href="#746" id="746">746</a>
-<a href="#747" id="747">747</a>
-<a href="#748" id="748">748</a>
-<a href="#749" id="749">749</a>
-<a href="#750" id="750">750</a>
-<a href="#751" id="751">751</a>
-<a href="#752" id="752">752</a>
-<a href="#753" id="753">753</a>
-<a href="#754" id="754">754</a>
-<a href="#755" id="755">755</a>
-<a href="#756" id="756">756</a>
-<a href="#757" id="757">757</a>
-<a href="#758" id="758">758</a>
-<a href="#759" id="759">759</a>
-<a href="#760" id="760">760</a>
-<a href="#761" id="761">761</a>
-<a href="#762" id="762">762</a>
-<a href="#763" id="763">763</a>
-<a href="#764" id="764">764</a>
-<a href="#765" id="765">765</a>
-<a href="#766" id="766">766</a>
-<a href="#767" id="767">767</a>
-<a href="#768" id="768">768</a>
-<a href="#769" id="769">769</a>
-<a href="#770" id="770">770</a>
-<a href="#771" id="771">771</a>
-<a href="#772" id="772">772</a>
-<a href="#773" id="773">773</a>
-<a href="#774" id="774">774</a>
 </pre><pre class="rust"><code><span class="doccomment">//! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 
-</span><span class="kw">use </span>std::{
-	collections::BTreeMap,
-	path::PathBuf,
-	sync::{Arc, Mutex},
-	time::Duration,
+</span><span class="kw">use </span>std::{cell::RefCell, sync::Arc, time::Duration};
+
+<span class="kw">use </span>futures::{channel::mpsc, prelude::<span class="kw-2">*</span>};
+<span class="comment">// Substrate
+</span><span class="kw">use </span>prometheus_endpoint::Registry;
+<span class="kw">use </span>sc_client_api::{BlockBackend, StateBackendFor};
+<span class="kw">use </span>sc_consensus::BasicQueue;
+<span class="kw">use </span>sc_executor::{NativeElseWasmExecutor, NativeExecutionDispatch};
+<span class="kw">use </span>sc_service::{error::Error <span class="kw">as </span>ServiceError, Configuration, PartialComponents, TaskManager};
+<span class="kw">use </span>sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker};
+<span class="kw">use </span>sp_api::{ConstructRuntimeApi, TransactionFor};
+<span class="kw">use </span>sp_consensus_aura::sr25519::AuthorityPair <span class="kw">as </span>AuraPair;
+<span class="kw">use </span>sp_core::U256;
+<span class="kw">use </span>sp_runtime::traits::BlakeTwo256;
+<span class="kw">use </span>sp_trie::PrefixedMemoryDB;
+<span class="comment">// Runtime
+</span><span class="kw">use </span>frontier_template_runtime::{opaque::Block, Hash, TransactionConverter};
+
+<span class="kw">use crate</span>::{
+	cli::Sealing,
+	client::{BaseRuntimeApiCollection, FullBackend, FullClient, RuntimeApiCollection},
+	eth::{
+		new_frontier_partial, spawn_frontier_tasks, FrontierBackend, FrontierBlockImport,
+		FrontierPartialComponents,
+	},
+};
+<span class="kw">pub use crate</span>::{
+	client::{Client, TemplateRuntimeExecutor},
+	eth::{db_config_dir, EthConfiguration},
 };
 
-<span class="kw">use </span>futures::{future, StreamExt};
-<span class="comment">// Substrate
-</span><span class="kw">use </span>sc_cli::SubstrateCli;
-<span class="kw">use </span>sc_client_api::BlockchainEvents;
-<span class="kw">use </span>sc_executor::NativeElseWasmExecutor;
-<span class="kw">use </span>sc_keystore::LocalKeystore;
-<span class="kw">use </span>sc_service::{error::Error <span class="kw">as </span>ServiceError, BasePath, Configuration, TaskManager};
-<span class="kw">use </span>sc_telemetry::{Telemetry, TelemetryWorker};
-<span class="kw">use </span>sp_core::U256;
-<span class="comment">// Frontier
-</span><span class="kw">use </span>fc_consensus::FrontierBlockImport;
-<span class="kw">use </span>fc_db::Backend <span class="kw">as </span>FrontierBackend;
-<span class="kw">use </span>fc_mapping_sync::{MappingSyncWorker, SyncStrategy};
-<span class="kw">use </span>fc_rpc::{EthTask, OverrideHandle};
-<span class="kw">use </span>fc_rpc_core::types::{FeeHistoryCache, FeeHistoryCacheLimit, FilterPool};
-<span class="comment">// Runtime
-</span><span class="kw">use </span>frontier_template_runtime::{opaque::Block, RuntimeApi};
-
-<span class="kw">use </span><span class="kw">crate</span>::cli::Cli;
-<span class="attr">#[cfg(feature = <span class="string">&quot;manual-seal&quot;</span>)]
-</span><span class="kw">use </span><span class="kw">crate</span>::cli::Sealing;
-
-<span class="comment">// Our native executor instance.
-</span><span class="kw">pub struct </span>ExecutorDispatch;
-
-<span class="kw">impl </span>sc_executor::NativeExecutionDispatch <span class="kw">for </span>ExecutorDispatch {
-	<span class="doccomment">/// Only enable the benchmarking host functions when we actually want to benchmark.
-	</span><span class="attr">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
-	</span><span class="kw">type </span>ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
-	<span class="doccomment">/// Otherwise we only use the default Substrate host functions.
-	</span><span class="attr">#[cfg(not(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>))]
-	</span><span class="kw">type </span>ExtendHostFunctions = ();
-
-	<span class="kw">fn </span>dispatch(method: <span class="kw-2">&amp;</span>str, data: <span class="kw-2">&amp;</span>[u8]) -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;u8&gt;&gt; {
-		frontier_template_runtime::api::dispatch(method, data)
-	}
-
-	<span class="kw">fn </span>native_version() -&gt; sc_executor::NativeVersion {
-		frontier_template_runtime::native_version()
-	}
-}
-
-<span class="kw">pub type </span>FullClient =
-	sc_service::TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;ExecutorDispatch&gt;&gt;;
-<span class="kw">type </span>FullBackend = sc_service::TFullBackend&lt;Block&gt;;
+<span class="kw">type </span>BasicImportQueue&lt;Client&gt; = sc_consensus::DefaultImportQueue&lt;Block, Client&gt;;
+<span class="kw">type </span>FullPool&lt;Client&gt; = sc_transaction_pool::FullPool&lt;Block, Client&gt;;
 <span class="kw">type </span>FullSelectChain = sc_consensus::LongestChain&lt;FullBackend, Block&gt;;
 
-<span class="attr">#[cfg(feature = <span class="string">&quot;aura&quot;</span>)]
-</span><span class="kw">pub type </span>ConsensusResult = (
-	FrontierBlockImport&lt;
-		Block,
-		sc_finality_grandpa::GrandpaBlockImport&lt;FullBackend, Block, FullClient, FullSelectChain&gt;,
-		FullClient,
-	&gt;,
-	sc_finality_grandpa::LinkHalf&lt;Block, FullClient, FullSelectChain&gt;,
-);
+<span class="kw">type </span>GrandpaBlockImport&lt;Client&gt; =
+	sc_finality_grandpa::GrandpaBlockImport&lt;FullBackend, Block, Client, FullSelectChain&gt;;
+<span class="kw">type </span>GrandpaLinkHalf&lt;Client&gt; = sc_finality_grandpa::LinkHalf&lt;Block, Client, FullSelectChain&gt;;
+<span class="kw">type </span>BoxBlockImport&lt;Client&gt; = sc_consensus::BoxBlockImport&lt;Block, TransactionFor&lt;Client, Block&gt;&gt;;
 
-<span class="attr">#[cfg(feature = <span class="string">&quot;manual-seal&quot;</span>)]
-</span><span class="kw">pub type </span>ConsensusResult = (
-	FrontierBlockImport&lt;Block, Arc&lt;FullClient&gt;, FullClient&gt;,
-	Sealing,
-);
-
-<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>db_config_dir(config: <span class="kw-2">&amp;</span>Configuration) -&gt; PathBuf {
-	config
-		.base_path
-		.as_ref()
-		.map(|base_path| base_path.config_dir(config.chain_spec.id()))
-		.unwrap_or_else(|| {
-			BasePath::from_project(<span class="string">&quot;&quot;</span>, <span class="string">&quot;&quot;</span>, <span class="kw-2">&amp;</span>Cli::executable_name())
-				.config_dir(config.chain_spec.id())
-		})
-}
-
-<span class="kw">pub fn </span>new_partial(
+<span class="kw">pub fn </span>new_partial&lt;RuntimeApi, Executor, BIQ&gt;(
 	config: <span class="kw-2">&amp;</span>Configuration,
-	cli: <span class="kw-2">&amp;</span>Cli,
+	eth_config: <span class="kw-2">&amp;</span>EthConfiguration,
+	build_import_queue: BIQ,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;
-	sc_service::PartialComponents&lt;
-		FullClient,
+	PartialComponents&lt;
+		FullClient&lt;RuntimeApi, Executor&gt;,
 		FullBackend,
 		FullSelectChain,
-		sc_consensus::DefaultImportQueue&lt;Block, FullClient&gt;,
-		sc_transaction_pool::FullPool&lt;Block, FullClient&gt;,
+		BasicImportQueue&lt;FullClient&lt;RuntimeApi, Executor&gt;&gt;,
+		FullPool&lt;FullClient&lt;RuntimeApi, Executor&gt;&gt;,
 		(
 			<span class="prelude-ty">Option</span>&lt;Telemetry&gt;,
-			ConsensusResult,
-			Arc&lt;FrontierBackend&lt;Block&gt;&gt;,
-			<span class="prelude-ty">Option</span>&lt;FilterPool&gt;,
-			(FeeHistoryCache, FeeHistoryCacheLimit),
+			BoxBlockImport&lt;FullClient&lt;RuntimeApi, Executor&gt;&gt;,
+			GrandpaLinkHalf&lt;FullClient&lt;RuntimeApi, Executor&gt;&gt;,
+			Arc&lt;FrontierBackend&gt;,
 		),
 	&gt;,
 	ServiceError,
-&gt; {
-	<span class="kw">if </span>config.keystore_remote.is_some() {
-		<span class="kw">return </span><span class="prelude-val">Err</span>(ServiceError::Other(
-			<span class="string">&quot;Remote Keystores are not supported.&quot;</span>.to_string(),
-		));
-	}
-
+&gt;
+<span class="kw">where
+	</span>RuntimeApi: ConstructRuntimeApi&lt;Block, FullClient&lt;RuntimeApi, Executor&gt;&gt;,
+	RuntimeApi: Send + Sync + <span class="lifetime">&#39;static</span>,
+	RuntimeApi::RuntimeApi:
+		BaseRuntimeApiCollection&lt;StateBackend = StateBackendFor&lt;FullBackend, Block&gt;&gt;,
+	Executor: NativeExecutionDispatch + <span class="lifetime">&#39;static</span>,
+	BIQ: FnOnce(
+		Arc&lt;FullClient&lt;RuntimeApi, Executor&gt;&gt;,
+		<span class="kw-2">&amp;</span>Configuration,
+		<span class="kw-2">&amp;</span>EthConfiguration,
+		<span class="kw-2">&amp;</span>TaskManager,
+		<span class="prelude-ty">Option</span>&lt;TelemetryHandle&gt;,
+		GrandpaBlockImport&lt;FullClient&lt;RuntimeApi, Executor&gt;&gt;,
+		Arc&lt;FrontierBackend&gt;,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;
+		(
+			BasicImportQueue&lt;FullClient&lt;RuntimeApi, Executor&gt;&gt;,
+			BoxBlockImport&lt;FullClient&lt;RuntimeApi, Executor&gt;&gt;,
+		),
+		ServiceError,
+	&gt;,
+{
 	<span class="kw">let </span>telemetry = config
 		.telemetry_endpoints
 		.clone()
@@ -892,7 +758,7 @@
 		})
 		.transpose()<span class="question-mark">?</span>;
 
-	<span class="kw">let </span>executor = NativeElseWasmExecutor::&lt;ExecutorDispatch&gt;::new(
+	<span class="kw">let </span>executor = NativeElseWasmExecutor::&lt;Executor&gt;::new(
 		config.wasm_method,
 		config.default_heap_pages,
 		config.max_runtime_instances,
@@ -915,6 +781,27 @@
 	});
 
 	<span class="kw">let </span>select_chain = sc_consensus::LongestChain::new(backend.clone());
+	<span class="kw">let </span>(grandpa_block_import, grandpa_link) = sc_finality_grandpa::block_import(
+		client.clone(),
+		<span class="kw-2">&amp;</span>(client.clone() <span class="kw">as </span>Arc&lt;<span class="kw">_</span>&gt;),
+		select_chain.clone(),
+		telemetry.as_ref().map(|x| x.handle()),
+	)<span class="question-mark">?</span>;
+
+	<span class="kw">let </span>frontier_backend = Arc::new(FrontierBackend::open(
+		client.clone(),
+		<span class="kw-2">&amp;</span>config.database,
+		<span class="kw-2">&amp;</span>db_config_dir(config),
+	)<span class="question-mark">?</span>);
+	<span class="kw">let </span>(import_queue, block_import) = build_import_queue(
+		client.clone(),
+		config,
+		eth_config,
+		<span class="kw-2">&amp;</span>task_manager,
+		telemetry.as_ref().map(|x| x.handle()),
+		grandpa_block_import,
+		frontier_backend.clone(),
+	)<span class="question-mark">?</span>;
 
 	<span class="kw">let </span>transaction_pool = sc_transaction_pool::BasicPool::new_full(
 		config.transaction_pool.clone(),
@@ -924,174 +811,171 @@
 		client.clone(),
 	);
 
-	<span class="kw">let </span>frontier_backend = Arc::new(FrontierBackend::open(
-		Arc::clone(<span class="kw-2">&amp;</span>client),
-		<span class="kw-2">&amp;</span>config.database,
-		<span class="kw-2">&amp;</span>db_config_dir(config),
-	)<span class="question-mark">?</span>);
-	<span class="kw">let </span>filter_pool: <span class="prelude-ty">Option</span>&lt;FilterPool&gt; = <span class="prelude-val">Some</span>(Arc::new(Mutex::new(BTreeMap::new())));
-	<span class="kw">let </span>fee_history_cache: FeeHistoryCache = Arc::new(Mutex::new(BTreeMap::new()));
-	<span class="kw">let </span>fee_history_cache_limit: FeeHistoryCacheLimit = cli.run.fee_history_limit;
+	<span class="prelude-val">Ok</span>(PartialComponents {
+		client,
+		backend,
+		keystore_container,
+		task_manager,
+		select_chain,
+		import_queue,
+		transaction_pool,
+		other: (telemetry, block_import, grandpa_link, frontier_backend),
+	})
+}
 
-	<span class="attr">#[cfg(feature = <span class="string">&quot;aura&quot;</span>)]
-	</span>{
-		<span class="kw">use </span>sp_consensus_aura::sr25519::AuthorityPair <span class="kw">as </span>AuraPair;
+<span class="doccomment">/// Build the import queue for the template runtime (aura + grandpa).
+</span><span class="kw">pub fn </span>build_aura_grandpa_import_queue&lt;RuntimeApi, Executor&gt;(
+	client: Arc&lt;FullClient&lt;RuntimeApi, Executor&gt;&gt;,
+	config: <span class="kw-2">&amp;</span>Configuration,
+	eth_config: <span class="kw-2">&amp;</span>EthConfiguration,
+	task_manager: <span class="kw-2">&amp;</span>TaskManager,
+	telemetry: <span class="prelude-ty">Option</span>&lt;TelemetryHandle&gt;,
+	grandpa_block_import: GrandpaBlockImport&lt;FullClient&lt;RuntimeApi, Executor&gt;&gt;,
+	frontier_backend: Arc&lt;FrontierBackend&gt;,
+) -&gt; <span class="prelude-ty">Result</span>&lt;
+	(
+		BasicImportQueue&lt;FullClient&lt;RuntimeApi, Executor&gt;&gt;,
+		BoxBlockImport&lt;FullClient&lt;RuntimeApi, Executor&gt;&gt;,
+	),
+	ServiceError,
+&gt;
+<span class="kw">where
+	</span>RuntimeApi: ConstructRuntimeApi&lt;Block, FullClient&lt;RuntimeApi, Executor&gt;&gt;,
+	RuntimeApi: Send + Sync + <span class="lifetime">&#39;static</span>,
+	RuntimeApi::RuntimeApi:
+		RuntimeApiCollection&lt;StateBackend = StateBackendFor&lt;FullBackend, Block&gt;&gt;,
+	Executor: NativeExecutionDispatch + <span class="lifetime">&#39;static</span>,
+{
+	<span class="kw">let </span>frontier_block_import = FrontierBlockImport::new(
+		grandpa_block_import.clone(),
+		client.clone(),
+		frontier_backend,
+	);
 
-		<span class="kw">let </span>(grandpa_block_import, grandpa_link) = sc_finality_grandpa::block_import(
-			client.clone(),
-			<span class="kw-2">&amp;</span>(client.clone() <span class="kw">as </span>Arc&lt;<span class="kw">_</span>&gt;),
-			select_chain.clone(),
-			telemetry.as_ref().map(|x| x.handle()),
-		)<span class="question-mark">?</span>;
-
-		<span class="kw">let </span>frontier_block_import = FrontierBlockImport::new(
-			grandpa_block_import.clone(),
-			client.clone(),
-			frontier_backend.clone(),
-		);
-
-		<span class="kw">let </span>slot_duration = sc_consensus_aura::slot_duration(<span class="kw-2">&amp;*</span>client)<span class="question-mark">?</span>;
-		<span class="kw">let </span>target_gas_price = cli.run.target_gas_price;
-		<span class="kw">let </span>create_inherent_data_providers = <span class="kw">move </span>|<span class="kw">_</span>, ()| <span class="kw">async move </span>{
-			<span class="kw">let </span>timestamp = sp_timestamp::InherentDataProvider::from_system_time();
-			<span class="kw">let </span>slot = sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
+	<span class="kw">let </span>slot_duration = sc_consensus_aura::slot_duration(<span class="kw-2">&amp;*</span>client)<span class="question-mark">?</span>;
+	<span class="kw">let </span>target_gas_price = eth_config.target_gas_price;
+	<span class="kw">let </span>create_inherent_data_providers = <span class="kw">move </span>|<span class="kw">_</span>, ()| <span class="kw">async move </span>{
+		<span class="kw">let </span>timestamp = sp_timestamp::InherentDataProvider::from_system_time();
+		<span class="kw">let </span>slot =
+			sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
 				<span class="kw-2">*</span>timestamp,
 				slot_duration,
 			);
-			<span class="kw">let </span>dynamic_fee = fp_dynamic_fee::InherentDataProvider(U256::from(target_gas_price));
-			<span class="prelude-val">Ok</span>((slot, timestamp, dynamic_fee))
-		};
+		<span class="kw">let </span>dynamic_fee = fp_dynamic_fee::InherentDataProvider(U256::from(target_gas_price));
+		<span class="prelude-val">Ok</span>((slot, timestamp, dynamic_fee))
+	};
 
-		<span class="kw">let </span>import_queue = sc_consensus_aura::import_queue::&lt;AuraPair, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>&gt;(
-			sc_consensus_aura::ImportQueueParams {
-				block_import: frontier_block_import.clone(),
-				justification_import: <span class="prelude-val">Some</span>(Box::new(grandpa_block_import)),
-				client: client.clone(),
-				create_inherent_data_providers,
-				spawner: <span class="kw-2">&amp;</span>task_manager.spawn_essential_handle(),
-				registry: config.prometheus_registry(),
-				check_for_equivocation: Default::default(),
-				telemetry: telemetry.as_ref().map(|x| x.handle()),
-				compatibility_mode: sc_consensus_aura::CompatibilityMode::None,
-			},
-		)<span class="question-mark">?</span>;
-
-		<span class="prelude-val">Ok</span>(sc_service::PartialComponents {
+	<span class="kw">let </span>import_queue = sc_consensus_aura::import_queue::&lt;AuraPair, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>&gt;(
+		sc_consensus_aura::ImportQueueParams {
+			block_import: frontier_block_import.clone(),
+			justification_import: <span class="prelude-val">Some</span>(Box::new(grandpa_block_import)),
 			client,
-			backend,
-			task_manager,
-			import_queue,
-			keystore_container,
-			select_chain,
-			transaction_pool,
-			other: (
-				telemetry,
-				(frontier_block_import, grandpa_link),
-				frontier_backend,
-				filter_pool,
-				(fee_history_cache, fee_history_cache_limit),
-			),
-		})
-	}
+			create_inherent_data_providers,
+			spawner: <span class="kw-2">&amp;</span>task_manager.spawn_essential_handle(),
+			registry: config.prometheus_registry(),
+			check_for_equivocation: Default::default(),
+			telemetry,
+			compatibility_mode: sc_consensus_aura::CompatibilityMode::None,
+		},
+	)
+	.map_err::&lt;ServiceError, <span class="kw">_</span>&gt;(Into::into)<span class="question-mark">?</span>;
 
-	<span class="attr">#[cfg(feature = <span class="string">&quot;manual-seal&quot;</span>)]
-	</span>{
-		<span class="kw">let </span>sealing = cli.run.sealing;
+	<span class="prelude-val">Ok</span>((import_queue, Box::new(frontier_block_import)))
+}
 
-		<span class="kw">let </span>frontier_block_import =
-			FrontierBlockImport::new(client.clone(), client.clone(), frontier_backend.clone());
-
-		<span class="kw">let </span>import_queue = sc_consensus_manual_seal::import_queue(
+<span class="doccomment">/// Build the import queue for the template runtime (manual seal).
+</span><span class="kw">pub fn </span>build_manual_seal_import_queue&lt;RuntimeApi, Executor&gt;(
+	client: Arc&lt;FullClient&lt;RuntimeApi, Executor&gt;&gt;,
+	config: <span class="kw-2">&amp;</span>Configuration,
+	_eth_config: <span class="kw-2">&amp;</span>EthConfiguration,
+	task_manager: <span class="kw-2">&amp;</span>TaskManager,
+	_telemetry: <span class="prelude-ty">Option</span>&lt;TelemetryHandle&gt;,
+	_grandpa_block_import: GrandpaBlockImport&lt;FullClient&lt;RuntimeApi, Executor&gt;&gt;,
+	frontier_backend: Arc&lt;FrontierBackend&gt;,
+) -&gt; <span class="prelude-ty">Result</span>&lt;
+	(
+		BasicImportQueue&lt;FullClient&lt;RuntimeApi, Executor&gt;&gt;,
+		BoxBlockImport&lt;FullClient&lt;RuntimeApi, Executor&gt;&gt;,
+	),
+	ServiceError,
+&gt;
+<span class="kw">where
+	</span>RuntimeApi: ConstructRuntimeApi&lt;Block, FullClient&lt;RuntimeApi, Executor&gt;&gt;,
+	RuntimeApi: Send + Sync + <span class="lifetime">&#39;static</span>,
+	RuntimeApi::RuntimeApi:
+		RuntimeApiCollection&lt;StateBackend = StateBackendFor&lt;FullBackend, Block&gt;&gt;,
+	Executor: NativeExecutionDispatch + <span class="lifetime">&#39;static</span>,
+{
+	<span class="kw">let </span>frontier_block_import = FrontierBlockImport::new(client.clone(), client, frontier_backend);
+	<span class="prelude-val">Ok</span>((
+		sc_consensus_manual_seal::import_queue(
 			Box::new(frontier_block_import.clone()),
 			<span class="kw-2">&amp;</span>task_manager.spawn_essential_handle(),
 			config.prometheus_registry(),
-		);
-
-		<span class="prelude-val">Ok</span>(sc_service::PartialComponents {
-			client,
-			backend,
-			task_manager,
-			import_queue,
-			keystore_container,
-			select_chain,
-			transaction_pool,
-			other: (
-				telemetry,
-				(frontier_block_import, sealing),
-				frontier_backend,
-				filter_pool,
-				(fee_history_cache, fee_history_cache_limit),
-			),
-		})
-	}
-}
-
-<span class="kw">fn </span>remote_keystore(_url: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;Arc&lt;LocalKeystore&gt;, <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str&gt; {
-	<span class="comment">// FIXME: here would the concrete keystore be built,
-	//        must return a concrete type (NOT `LocalKeystore`) that
-	//        implements `CryptoStore` and `SyncCryptoStore`
-	</span><span class="prelude-val">Err</span>(<span class="string">&quot;Remote Keystore not supported.&quot;</span>)
+		),
+		Box::new(frontier_block_import),
+	))
 }
 
 <span class="doccomment">/// Builds a new service for a full client.
-</span><span class="attr">#[cfg(feature = <span class="string">&quot;aura&quot;</span>)]
-</span><span class="kw">pub fn </span>new_full(<span class="kw-2">mut </span>config: Configuration, cli: <span class="kw-2">&amp;</span>Cli) -&gt; <span class="prelude-ty">Result</span>&lt;TaskManager, ServiceError&gt; {
-	<span class="kw">use </span>sc_client_api::BlockBackend;
-	<span class="kw">use </span>sp_consensus_aura::sr25519::AuthorityPair <span class="kw">as </span>AuraPair;
+</span><span class="kw">pub fn </span>new_full&lt;RuntimeApi, Executor&gt;(
+	<span class="kw-2">mut </span>config: Configuration,
+	eth_config: EthConfiguration,
+	sealing: <span class="prelude-ty">Option</span>&lt;Sealing&gt;,
+) -&gt; <span class="prelude-ty">Result</span>&lt;TaskManager, ServiceError&gt;
+<span class="kw">where
+	</span>RuntimeApi: ConstructRuntimeApi&lt;Block, FullClient&lt;RuntimeApi, Executor&gt;&gt;,
+	RuntimeApi: Send + Sync + <span class="lifetime">&#39;static</span>,
+	RuntimeApi::RuntimeApi:
+		RuntimeApiCollection&lt;StateBackend = StateBackendFor&lt;FullBackend, Block&gt;&gt;,
+	Executor: NativeExecutionDispatch + <span class="lifetime">&#39;static</span>,
+{
+	<span class="kw">let </span>build_import_queue = <span class="kw">if </span>sealing.is_some() {
+		build_manual_seal_import_queue::&lt;RuntimeApi, Executor&gt;
+	} <span class="kw">else </span>{
+		build_aura_grandpa_import_queue::&lt;RuntimeApi, Executor&gt;
+	};
 
-	<span class="comment">// Use ethereum style for subscription ids
-	</span>config.rpc_id_provider = <span class="prelude-val">Some</span>(Box::new(fc_rpc::EthereumSubIdProvider));
-
-	<span class="kw">let </span>sc_service::PartialComponents {
+	<span class="kw">let </span>PartialComponents {
 		client,
 		backend,
 		<span class="kw-2">mut </span>task_manager,
 		import_queue,
-		<span class="kw-2">mut </span>keystore_container,
+		keystore_container,
 		select_chain,
 		transaction_pool,
-		other:
-			(
-				<span class="kw-2">mut </span>telemetry,
-				consensus_result,
-				frontier_backend,
-				filter_pool,
-				(fee_history_cache, fee_history_cache_limit),
-			),
-	} = new_partial(<span class="kw-2">&amp;</span>config, cli)<span class="question-mark">?</span>;
+		other: (<span class="kw-2">mut </span>telemetry, block_import, grandpa_link, frontier_backend),
+	} = new_partial(<span class="kw-2">&amp;</span>config, <span class="kw-2">&amp;</span>eth_config, build_import_queue)<span class="question-mark">?</span>;
 
-	<span class="kw">if let </span><span class="prelude-val">Some</span>(url) = <span class="kw-2">&amp;</span>config.keystore_remote {
-		<span class="kw">match </span>remote_keystore(url) {
-			<span class="prelude-val">Ok</span>(k) =&gt; keystore_container.set_remote_keystore(k),
-			<span class="prelude-val">Err</span>(e) =&gt; {
-				<span class="kw">return </span><span class="prelude-val">Err</span>(ServiceError::Other(<span class="macro">format!</span>(
-					<span class="string">&quot;Error hooking up remote keystore for {}: {}&quot;</span>,
-					url, e
-				)))
-			}
-		};
-	}
+	<span class="kw">let </span>FrontierPartialComponents {
+		filter_pool,
+		fee_history_cache,
+		fee_history_cache_limit,
+	} = new_frontier_partial(<span class="kw-2">&amp;</span>eth_config)<span class="question-mark">?</span>;
 
 	<span class="kw">let </span>grandpa_protocol_name = sc_finality_grandpa::protocol_standard_name(
-		<span class="kw-2">&amp;</span>client
-			.block_hash(<span class="number">0</span>)
-			.ok()
-			.flatten()
-			.expect(<span class="string">&quot;Genesis block exists; qed&quot;</span>),
+		<span class="kw-2">&amp;</span>client.block_hash(<span class="number">0</span>)<span class="question-mark">?</span>.expect(<span class="string">&quot;Genesis block exists; qed&quot;</span>),
 		<span class="kw-2">&amp;</span>config.chain_spec,
 	);
-	config
-		.network
-		.extra_sets
-		.push(sc_finality_grandpa::grandpa_peers_set_config(
-			grandpa_protocol_name.clone(),
-		));
 
-	<span class="kw">let </span>warp_sync = Arc::new(sc_finality_grandpa::warp_proof::NetworkProvider::new(
-		backend.clone(),
-		consensus_result.<span class="number">1</span>.shared_authority_set().clone(),
-		Vec::default(),
-	));
+	<span class="kw">let </span>warp_sync: <span class="prelude-ty">Option</span>&lt;Arc&lt;<span class="kw">dyn </span>sc_network::config::WarpSyncProvider&lt;Block&gt;&gt;&gt; =
+		<span class="kw">if </span>sealing.is_some() {
+			<span class="prelude-val">None
+		</span>} <span class="kw">else </span>{
+			config
+				.network
+				.extra_sets
+				.push(sc_finality_grandpa::grandpa_peers_set_config(
+					grandpa_protocol_name.clone(),
+				));
+			<span class="prelude-val">Some</span>(Arc::new(
+				sc_finality_grandpa::warp_proof::NetworkProvider::new(
+					backend.clone(),
+					grandpa_link.shared_authority_set().clone(),
+					Vec::default(),
+				),
+			))
+		};
 
 	<span class="kw">let </span>(network, system_rpc_tx, tx_handler_controller, network_starter) =
 		sc_service::build_network(sc_service::BuildNetworkParams {
@@ -1101,7 +985,7 @@
 			spawn_handle: task_manager.spawn_handle(),
 			import_queue,
 			block_announce_validator_builder: <span class="prelude-val">None</span>,
-			warp_sync: <span class="prelude-val">Some</span>(warp_sync),
+			warp_sync,
 		})<span class="question-mark">?</span>;
 
 	<span class="kw">if </span>config.offchain_worker.enabled {
@@ -1116,45 +1000,54 @@
 	<span class="kw">let </span>role = config.role.clone();
 	<span class="kw">let </span>force_authoring = config.force_authoring;
 	<span class="kw">let </span>name = config.network.node_name.clone();
-	<span class="kw">let </span>enable_grandpa = !config.disable_grandpa;
+	<span class="kw">let </span>enable_grandpa = !config.disable_grandpa &amp;&amp; sealing.is_none();
 	<span class="kw">let </span>prometheus_registry = config.prometheus_registry().cloned();
+
+	<span class="comment">// Channel for the rpc handler to communicate with the authorship task.
+	</span><span class="kw">let </span>(command_sink, commands_stream) = mpsc::channel(<span class="number">1000</span>);
+
+	<span class="comment">// for ethereum-compatibility rpc.
+	</span>config.rpc_id_provider = <span class="prelude-val">Some</span>(Box::new(fc_rpc::EthereumSubIdProvider));
 	<span class="kw">let </span>overrides = <span class="kw">crate</span>::rpc::overrides_handle(client.clone());
-	<span class="kw">let </span>block_data_cache = Arc::new(fc_rpc::EthBlockDataCacheTask::new(
-		task_manager.spawn_handle(),
-		overrides.clone(),
-		<span class="number">50</span>,
-		<span class="number">50</span>,
-		prometheus_registry.clone(),
-	));
+	<span class="kw">let </span>eth_rpc_params = <span class="kw">crate</span>::rpc::EthDeps {
+		client: client.clone(),
+		pool: transaction_pool.clone(),
+		graph: transaction_pool.pool().clone(),
+		converter: <span class="prelude-val">Some</span>(TransactionConverter),
+		is_authority: config.role.is_authority(),
+		enable_dev_signer: eth_config.enable_dev_signer,
+		network: network.clone(),
+		frontier_backend: frontier_backend.clone(),
+		overrides: overrides.clone(),
+		block_data_cache: Arc::new(fc_rpc::EthBlockDataCacheTask::new(
+			task_manager.spawn_handle(),
+			overrides.clone(),
+			eth_config.eth_log_block_cache,
+			eth_config.eth_statuses_cache,
+			prometheus_registry.clone(),
+		)),
+		filter_pool: filter_pool.clone(),
+		max_past_logs: eth_config.max_past_logs,
+		fee_history_cache: fee_history_cache.clone(),
+		fee_history_cache_limit,
+		execute_gas_limit_multiplier: eth_config.execute_gas_limit_multiplier,
+	};
 
 	<span class="kw">let </span>rpc_builder = {
 		<span class="kw">let </span>client = client.clone();
 		<span class="kw">let </span>pool = transaction_pool.clone();
-		<span class="kw">let </span>is_authority = role.is_authority();
-		<span class="kw">let </span>enable_dev_signer = cli.run.enable_dev_signer;
-		<span class="kw">let </span>network = network.clone();
-		<span class="kw">let </span>filter_pool = filter_pool.clone();
-		<span class="kw">let </span>frontier_backend = frontier_backend.clone();
-		<span class="kw">let </span>overrides = overrides.clone();
-		<span class="kw">let </span>fee_history_cache = fee_history_cache.clone();
-		<span class="kw">let </span>max_past_logs = cli.run.max_past_logs;
 
 		Box::new(<span class="kw">move </span>|deny_unsafe, subscription_task_executor| {
 			<span class="kw">let </span>deps = <span class="kw">crate</span>::rpc::FullDeps {
 				client: client.clone(),
 				pool: pool.clone(),
-				graph: pool.pool().clone(),
 				deny_unsafe,
-				is_authority,
-				enable_dev_signer,
-				network: network.clone(),
-				filter_pool: filter_pool.clone(),
-				backend: frontier_backend.clone(),
-				max_past_logs,
-				fee_history_cache: fee_history_cache.clone(),
-				fee_history_cache_limit,
-				overrides: overrides.clone(),
-				block_data_cache: block_data_cache.clone(),
+				command_sink: <span class="kw">if </span>sealing.is_some() {
+					<span class="prelude-val">Some</span>(command_sink.clone())
+				} <span class="kw">else </span>{
+					<span class="prelude-val">None
+				</span>},
+				eth: eth_rpc_params.clone(),
 			};
 
 			<span class="kw">crate</span>::rpc::create_full(deps, subscription_task_executor).map_err(Into::into)
@@ -1186,9 +1079,27 @@
 		fee_history_cache_limit,
 	);
 
-	<span class="kw">let </span>(block_import, grandpa_link) = consensus_result;
-
 	<span class="kw">if </span>role.is_authority() {
+		<span class="comment">// manual-seal authorship
+		</span><span class="kw">if let </span><span class="prelude-val">Some</span>(sealing) = sealing {
+			run_manual_seal_authorship(
+				<span class="kw-2">&amp;</span>eth_config,
+				sealing,
+				client,
+				transaction_pool,
+				select_chain,
+				block_import,
+				<span class="kw-2">&amp;</span>task_manager,
+				prometheus_registry.as_ref(),
+				telemetry.as_ref(),
+				commands_stream,
+			)<span class="question-mark">?</span>;
+
+			network_starter.start_network();
+			<span class="macro">log::info!</span>(<span class="string">&quot;Manual Seal Ready&quot;</span>);
+			<span class="kw">return </span><span class="prelude-val">Ok</span>(task_manager);
+		}
+
 		<span class="kw">let </span>proposer_factory = sc_basic_authorship::ProposerFactory::new(
 			task_manager.spawn_handle(),
 			client.clone(),
@@ -1198,7 +1109,7 @@
 		);
 
 		<span class="kw">let </span>slot_duration = sc_consensus_aura::slot_duration(<span class="kw-2">&amp;*</span>client)<span class="question-mark">?</span>;
-		<span class="kw">let </span>target_gas_price = cli.run.target_gas_price;
+		<span class="kw">let </span>target_gas_price = eth_config.target_gas_price;
 		<span class="kw">let </span>create_inherent_data_providers = <span class="kw">move </span>|<span class="kw">_</span>, ()| <span class="kw">async move </span>{
 			<span class="kw">let </span>timestamp = sp_timestamp::InherentDataProvider::from_system_time();
 			<span class="kw">let </span>slot = sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
@@ -1284,267 +1195,138 @@
 	<span class="prelude-val">Ok</span>(task_manager)
 }
 
-<span class="doccomment">/// Builds a new service for a full client.
-</span><span class="attr">#[cfg(feature = <span class="string">&quot;manual-seal&quot;</span>)]
-</span><span class="kw">pub fn </span>new_full(<span class="kw-2">mut </span>config: Configuration, cli: <span class="kw-2">&amp;</span>Cli) -&gt; <span class="prelude-ty">Result</span>&lt;TaskManager, ServiceError&gt; {
-	<span class="comment">// Use ethereum style for subscription ids
-	</span>config.rpc_id_provider = <span class="prelude-val">Some</span>(Box::new(fc_rpc::EthereumSubIdProvider));
-
-	<span class="kw">let </span>sc_service::PartialComponents {
-		client,
-		backend,
-		<span class="kw-2">mut </span>task_manager,
-		import_queue,
-		<span class="kw-2">mut </span>keystore_container,
-		select_chain,
-		transaction_pool,
-		other:
-			(
-				<span class="kw-2">mut </span>telemetry,
-				consensus_result,
-				frontier_backend,
-				filter_pool,
-				(fee_history_cache, fee_history_cache_limit),
-			),
-	} = new_partial(<span class="kw-2">&amp;</span>config, cli)<span class="question-mark">?</span>;
-
-	<span class="kw">if let </span><span class="prelude-val">Some</span>(url) = <span class="kw-2">&amp;</span>config.keystore_remote {
-		<span class="kw">match </span>remote_keystore(url) {
-			<span class="prelude-val">Ok</span>(k) =&gt; keystore_container.set_remote_keystore(k),
-			<span class="prelude-val">Err</span>(e) =&gt; {
-				<span class="kw">return </span><span class="prelude-val">Err</span>(ServiceError::Other(<span class="macro">format!</span>(
-					<span class="string">&quot;Error hooking up remote keystore for {}: {}&quot;</span>,
-					url, e
-				)))
-			}
-		};
-	}
-
-	<span class="kw">let </span>(network, system_rpc_tx, tx_handler_controller, network_starter) =
-		sc_service::build_network(sc_service::BuildNetworkParams {
-			config: <span class="kw-2">&amp;</span>config,
-			client: client.clone(),
-			transaction_pool: transaction_pool.clone(),
-			spawn_handle: task_manager.spawn_handle(),
-			import_queue,
-			block_announce_validator_builder: <span class="prelude-val">None</span>,
-			warp_sync: <span class="prelude-val">None</span>,
-		})<span class="question-mark">?</span>;
-
-	<span class="kw">if </span>config.offchain_worker.enabled {
-		sc_service::build_offchain_workers(
-			<span class="kw-2">&amp;</span>config,
-			task_manager.spawn_handle(),
-			client.clone(),
-			network.clone(),
-		);
-	}
-
-	<span class="kw">let </span>role = config.role.clone();
-	<span class="kw">let </span>prometheus_registry = config.prometheus_registry().cloned();
-	<span class="kw">let </span>overrides = <span class="kw">crate</span>::rpc::overrides_handle(client.clone());
-	<span class="kw">let </span>block_data_cache = Arc::new(fc_rpc::EthBlockDataCacheTask::new(
+<span class="kw">fn </span>run_manual_seal_authorship&lt;RuntimeApi, Executor&gt;(
+	eth_config: <span class="kw-2">&amp;</span>EthConfiguration,
+	sealing: Sealing,
+	client: Arc&lt;FullClient&lt;RuntimeApi, Executor&gt;&gt;,
+	transaction_pool: Arc&lt;FullPool&lt;FullClient&lt;RuntimeApi, Executor&gt;&gt;&gt;,
+	select_chain: FullSelectChain,
+	block_import: BoxBlockImport&lt;FullClient&lt;RuntimeApi, Executor&gt;&gt;,
+	task_manager: <span class="kw-2">&amp;</span>TaskManager,
+	prometheus_registry: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>Registry&gt;,
+	telemetry: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>Telemetry&gt;,
+	commands_stream: mpsc::Receiver&lt;sc_consensus_manual_seal::rpc::EngineCommand&lt;Hash&gt;&gt;,
+) -&gt; <span class="prelude-ty">Result</span>&lt;(), ServiceError&gt;
+<span class="kw">where
+	</span>RuntimeApi: ConstructRuntimeApi&lt;Block, FullClient&lt;RuntimeApi, Executor&gt;&gt;,
+	RuntimeApi: Send + Sync + <span class="lifetime">&#39;static</span>,
+	RuntimeApi::RuntimeApi:
+		RuntimeApiCollection&lt;StateBackend = StateBackendFor&lt;FullBackend, Block&gt;&gt;,
+	Executor: NativeExecutionDispatch + <span class="lifetime">&#39;static</span>,
+{
+	<span class="kw">let </span>proposer_factory = sc_basic_authorship::ProposerFactory::new(
 		task_manager.spawn_handle(),
-		overrides.clone(),
-		<span class="number">50</span>,
-		<span class="number">50</span>,
-		prometheus_registry.clone(),
-	));
-	<span class="comment">// Channel for the rpc handler to communicate with the authorship task.
-	</span><span class="kw">let </span>(command_sink, commands_stream) = futures::channel::mpsc::channel(<span class="number">1000</span>);
-
-	<span class="kw">let </span>rpc_builder = {
-		<span class="kw">let </span>client = client.clone();
-		<span class="kw">let </span>pool = transaction_pool.clone();
-		<span class="kw">let </span>is_authority = role.is_authority();
-		<span class="kw">let </span>enable_dev_signer = cli.run.enable_dev_signer;
-		<span class="kw">let </span>network = network.clone();
-		<span class="kw">let </span>filter_pool = filter_pool.clone();
-		<span class="kw">let </span>frontier_backend = frontier_backend.clone();
-		<span class="kw">let </span>overrides = overrides.clone();
-		<span class="kw">let </span>fee_history_cache = fee_history_cache.clone();
-		<span class="kw">let </span>max_past_logs = cli.run.max_past_logs;
-
-		Box::new(<span class="kw">move </span>|deny_unsafe, subscription_task_executor| {
-			<span class="kw">let </span>deps = <span class="kw">crate</span>::rpc::FullDeps {
-				client: client.clone(),
-				pool: pool.clone(),
-				graph: pool.pool().clone(),
-				deny_unsafe,
-				is_authority,
-				enable_dev_signer,
-				network: network.clone(),
-				filter_pool: filter_pool.clone(),
-				backend: frontier_backend.clone(),
-				max_past_logs,
-				fee_history_cache: fee_history_cache.clone(),
-				fee_history_cache_limit,
-				overrides: overrides.clone(),
-				block_data_cache: block_data_cache.clone(),
-				command_sink: <span class="prelude-val">Some</span>(command_sink.clone()),
-			};
-
-			<span class="kw">crate</span>::rpc::create_full(deps, subscription_task_executor).map_err(Into::into)
-		})
-	};
-
-	<span class="kw">let </span>_rpc_handlers = sc_service::spawn_tasks(sc_service::SpawnTasksParams {
-		config,
-		client: client.clone(),
-		backend: backend.clone(),
-		task_manager: <span class="kw-2">&amp;mut </span>task_manager,
-		keystore: keystore_container.sync_keystore(),
-		transaction_pool: transaction_pool.clone(),
-		rpc_builder,
-		network,
-		system_rpc_tx,
-		tx_handler_controller,
-		telemetry: telemetry.as_mut(),
-	})<span class="question-mark">?</span>;
-
-	spawn_frontier_tasks(
-		<span class="kw-2">&amp;</span>task_manager,
 		client.clone(),
-		backend,
-		frontier_backend,
-		filter_pool,
-		overrides,
-		fee_history_cache,
-		fee_history_cache_limit,
+		transaction_pool.clone(),
+		prometheus_registry,
+		telemetry.as_ref().map(|x| x.handle()),
 	);
 
-	<span class="kw">if </span>role.is_authority() {
-		<span class="kw">let </span>env = sc_basic_authorship::ProposerFactory::new(
-			task_manager.spawn_handle(),
-			client.clone(),
-			transaction_pool.clone(),
-			prometheus_registry.as_ref(),
-			telemetry.as_ref().map(|x| x.handle()),
-		);
+	<span class="macro">thread_local!</span>(<span class="kw">static </span>TIMESTAMP: RefCell&lt;u64&gt; = RefCell::new(<span class="number">0</span>));
 
-		<span class="kw">let </span>(block_import, sealing) = consensus_result;
+	<span class="doccomment">/// Provide a mock duration starting at 0 in millisecond for timestamp inherent.
+	/// Each call will increment timestamp by slot_duration making Aura think time has passed.
+	</span><span class="kw">struct </span>MockTimestampInherentDataProvider;
 
-		<span class="kw">const </span>INHERENT_IDENTIFIER: sp_inherents::InherentIdentifier = <span class="kw-2">*</span><span class="string">b&quot;timstap0&quot;</span>;
-		<span class="macro">thread_local!</span>(<span class="kw">static </span>TIMESTAMP: std::cell::RefCell&lt;u64&gt; = std::cell::RefCell::new(<span class="number">0</span>));
-
-		<span class="doccomment">/// Provide a mock duration starting at 0 in millisecond for timestamp inherent.
-		/// Each call will increment timestamp by slot_duration making Aura think time has passed.
-		</span><span class="kw">struct </span>MockTimestampInherentDataProvider;
-
-		<span class="attr">#[async_trait::async_trait]
-		</span><span class="kw">impl </span>sp_inherents::InherentDataProvider <span class="kw">for </span>MockTimestampInherentDataProvider {
-			<span class="kw">async fn </span>provide_inherent_data(
-				<span class="kw-2">&amp;</span><span class="self">self</span>,
-				inherent_data: <span class="kw-2">&amp;mut </span>sp_inherents::InherentData,
-			) -&gt; <span class="prelude-ty">Result</span>&lt;(), sp_inherents::Error&gt; {
-				TIMESTAMP.with(|x| {
-					<span class="kw-2">*</span>x.borrow_mut() += frontier_template_runtime::SLOT_DURATION;
-					inherent_data.put_data(INHERENT_IDENTIFIER, <span class="kw-2">&amp;*</span>x.borrow())
-				})
-			}
-
-			<span class="kw">async fn </span>try_handle_error(
-				<span class="kw-2">&amp;</span><span class="self">self</span>,
-				_identifier: <span class="kw-2">&amp;</span>sp_inherents::InherentIdentifier,
-				_error: <span class="kw-2">&amp;</span>[u8],
-			) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="prelude-ty">Result</span>&lt;(), sp_inherents::Error&gt;&gt; {
-				<span class="comment">// The pallet never reports error.
-				</span><span class="prelude-val">None
-			</span>}
+	<span class="attr">#[async_trait::async_trait]
+	</span><span class="kw">impl </span>sp_inherents::InherentDataProvider <span class="kw">for </span>MockTimestampInherentDataProvider {
+		<span class="kw">async fn </span>provide_inherent_data(
+			<span class="kw-2">&amp;</span><span class="self">self</span>,
+			inherent_data: <span class="kw-2">&amp;mut </span>sp_inherents::InherentData,
+		) -&gt; <span class="prelude-ty">Result</span>&lt;(), sp_inherents::Error&gt; {
+			TIMESTAMP.with(|x| {
+				<span class="kw-2">*</span>x.borrow_mut() += frontier_template_runtime::SLOT_DURATION;
+				inherent_data.put_data(sp_timestamp::INHERENT_IDENTIFIER, <span class="kw-2">&amp;*</span>x.borrow())
+			})
 		}
 
-		<span class="kw">let </span>target_gas_price = cli.run.target_gas_price;
-		<span class="kw">let </span>create_inherent_data_providers = <span class="kw">move </span>|<span class="kw">_</span>, ()| <span class="kw">async move </span>{
-			<span class="kw">let </span>mock_timestamp = MockTimestampInherentDataProvider;
-			<span class="kw">let </span>dynamic_fee = fp_dynamic_fee::InherentDataProvider(U256::from(target_gas_price));
-			<span class="prelude-val">Ok</span>((mock_timestamp, dynamic_fee))
-		};
-
-		<span class="kw">let </span>manual_seal = <span class="kw">match </span>sealing {
-			Sealing::Manual =&gt; future::Either::Left(sc_consensus_manual_seal::run_manual_seal(
-				sc_consensus_manual_seal::ManualSealParams {
-					block_import,
-					env,
-					client,
-					pool: transaction_pool,
-					commands_stream,
-					select_chain,
-					consensus_data_provider: <span class="prelude-val">None</span>,
-					create_inherent_data_providers,
-				},
-			)),
-			Sealing::Instant =&gt; future::Either::Right(sc_consensus_manual_seal::run_instant_seal(
-				sc_consensus_manual_seal::InstantSealParams {
-					block_import,
-					env,
-					client,
-					pool: transaction_pool,
-					select_chain,
-					consensus_data_provider: <span class="prelude-val">None</span>,
-					create_inherent_data_providers,
-				},
-			)),
-		};
-		<span class="comment">// we spawn the future on a background thread managed by service.
-		</span>task_manager
-			.spawn_essential_handle()
-			.spawn_blocking(<span class="string">&quot;manual-seal&quot;</span>, <span class="prelude-val">None</span>, manual_seal);
+		<span class="kw">async fn </span>try_handle_error(
+			<span class="kw-2">&amp;</span><span class="self">self</span>,
+			_identifier: <span class="kw-2">&amp;</span>sp_inherents::InherentIdentifier,
+			_error: <span class="kw-2">&amp;</span>[u8],
+		) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="prelude-ty">Result</span>&lt;(), sp_inherents::Error&gt;&gt; {
+			<span class="comment">// The pallet never reports error.
+			</span><span class="prelude-val">None
+		</span>}
 	}
 
-	<span class="macro">log::info!</span>(<span class="string">&quot;Manual Seal Ready&quot;</span>);
+	<span class="kw">let </span>target_gas_price = eth_config.target_gas_price;
+	<span class="kw">let </span>create_inherent_data_providers = <span class="kw">move </span>|<span class="kw">_</span>, ()| <span class="kw">async move </span>{
+		<span class="kw">let </span>timestamp = MockTimestampInherentDataProvider;
+		<span class="kw">let </span>dynamic_fee = fp_dynamic_fee::InherentDataProvider(U256::from(target_gas_price));
+		<span class="prelude-val">Ok</span>((timestamp, dynamic_fee))
+	};
 
-	network_starter.start_network();
-	<span class="prelude-val">Ok</span>(task_manager)
+	<span class="kw">let </span>manual_seal = <span class="kw">match </span>sealing {
+		Sealing::Manual =&gt; future::Either::Left(sc_consensus_manual_seal::run_manual_seal(
+			sc_consensus_manual_seal::ManualSealParams {
+				block_import,
+				env: proposer_factory,
+				client,
+				pool: transaction_pool,
+				commands_stream,
+				select_chain,
+				consensus_data_provider: <span class="prelude-val">None</span>,
+				create_inherent_data_providers,
+			},
+		)),
+		Sealing::Instant =&gt; future::Either::Right(sc_consensus_manual_seal::run_instant_seal(
+			sc_consensus_manual_seal::InstantSealParams {
+				block_import,
+				env: proposer_factory,
+				client,
+				pool: transaction_pool,
+				select_chain,
+				consensus_data_provider: <span class="prelude-val">None</span>,
+				create_inherent_data_providers,
+			},
+		)),
+	};
+
+	<span class="comment">// we spawn the future on a background thread managed by service.
+	</span>task_manager
+		.spawn_essential_handle()
+		.spawn_blocking(<span class="string">&quot;manual-seal&quot;</span>, <span class="prelude-val">None</span>, manual_seal);
+	<span class="prelude-val">Ok</span>(())
 }
 
-<span class="kw">fn </span>spawn_frontier_tasks(
-	task_manager: <span class="kw-2">&amp;</span>TaskManager,
-	client: Arc&lt;FullClient&gt;,
-	backend: Arc&lt;FullBackend&gt;,
-	frontier_backend: Arc&lt;FrontierBackend&lt;Block&gt;&gt;,
-	filter_pool: <span class="prelude-ty">Option</span>&lt;FilterPool&gt;,
-	overrides: Arc&lt;OverrideHandle&lt;Block&gt;&gt;,
-	fee_history_cache: FeeHistoryCache,
-	fee_history_cache_limit: FeeHistoryCacheLimit,
-) {
-	task_manager.spawn_essential_handle().spawn(
-		<span class="string">&quot;frontier-mapping-sync-worker&quot;</span>,
-		<span class="prelude-val">None</span>,
-		MappingSyncWorker::new(
-			client.import_notification_stream(),
-			Duration::new(<span class="number">6</span>, <span class="number">0</span>),
-			client.clone(),
-			backend,
-			frontier_backend,
-			<span class="number">3</span>,
-			<span class="number">0</span>,
-			SyncStrategy::Normal,
-		)
-		.for_each(|()| future::ready(())),
-	);
+<span class="kw">pub fn </span>build_full(
+	config: Configuration,
+	eth_config: EthConfiguration,
+	sealing: <span class="prelude-ty">Option</span>&lt;Sealing&gt;,
+) -&gt; <span class="prelude-ty">Result</span>&lt;TaskManager, ServiceError&gt; {
+	new_full::&lt;frontier_template_runtime::RuntimeApi, TemplateRuntimeExecutor&gt;(
+		config, eth_config, sealing,
+	)
+}
 
-	<span class="comment">// Spawn Frontier EthFilterApi maintenance task.
-	</span><span class="kw">if let </span><span class="prelude-val">Some</span>(filter_pool) = filter_pool {
-		<span class="comment">// Each filter is allowed to stay in the pool for 100 blocks.
-		</span><span class="kw">const </span>FILTER_RETAIN_THRESHOLD: u64 = <span class="number">100</span>;
-		task_manager.spawn_essential_handle().spawn(
-			<span class="string">&quot;frontier-filter-pool&quot;</span>,
-			<span class="prelude-val">None</span>,
-			EthTask::filter_pool_task(client.clone(), filter_pool, FILTER_RETAIN_THRESHOLD),
-		);
-	}
-
-	<span class="comment">// Spawn Frontier FeeHistory cache maintenance task.
-	</span>task_manager.spawn_essential_handle().spawn(
-		<span class="string">&quot;frontier-fee-history&quot;</span>,
-		<span class="prelude-val">None</span>,
-		EthTask::fee_history_task(
-			client,
-			overrides,
-			fee_history_cache,
-			fee_history_cache_limit,
-		),
-	);
+<span class="kw">pub fn </span>new_chain_ops(
+	<span class="kw-2">mut </span>config: <span class="kw-2">&amp;mut </span>Configuration,
+	eth_config: <span class="kw-2">&amp;</span>EthConfiguration,
+) -&gt; <span class="prelude-ty">Result</span>&lt;
+	(
+		Arc&lt;Client&gt;,
+		Arc&lt;FullBackend&gt;,
+		BasicQueue&lt;Block, PrefixedMemoryDB&lt;BlakeTwo256&gt;&gt;,
+		TaskManager,
+		Arc&lt;FrontierBackend&gt;,
+	),
+	ServiceError,
+&gt; {
+	config.keystore = sc_service::config::KeystoreConfig::InMemory;
+	<span class="kw">let </span>PartialComponents {
+		client,
+		backend,
+		import_queue,
+		task_manager,
+		other,
+		..
+	} = new_partial::&lt;frontier_template_runtime::RuntimeApi, TemplateRuntimeExecutor, <span class="kw">_</span>&gt;(
+		config,
+		eth_config,
+		build_aura_grandpa_import_queue,
+	)<span class="question-mark">?</span>;
+	<span class="prelude-val">Ok</span>((client, backend, import_queue, task_manager, other.<span class="number">3</span>))
 }
 </code></pre></div>
 </section></div></main><div id="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="frontier_template_node" data-themes="" data-resource-suffix="" data-rustdoc-version="1.67.0-nightly (a00f8ba7f 2022-11-15)" data-search-js="search-df80cc3cb87b6482.js" data-settings-js="settings-7873449fa8c00e11.js" data-settings-css="settings-af96d9e2fc13e081.css" ></div></body></html>

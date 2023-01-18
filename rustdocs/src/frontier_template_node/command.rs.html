@@ -220,26 +220,6 @@
 <a href="#220" id="220">220</a>
 <a href="#221" id="221">221</a>
 <a href="#222" id="222">222</a>
-<a href="#223" id="223">223</a>
-<a href="#224" id="224">224</a>
-<a href="#225" id="225">225</a>
-<a href="#226" id="226">226</a>
-<a href="#227" id="227">227</a>
-<a href="#228" id="228">228</a>
-<a href="#229" id="229">229</a>
-<a href="#230" id="230">230</a>
-<a href="#231" id="231">231</a>
-<a href="#232" id="232">232</a>
-<a href="#233" id="233">233</a>
-<a href="#234" id="234">234</a>
-<a href="#235" id="235">235</a>
-<a href="#236" id="236">236</a>
-<a href="#237" id="237">237</a>
-<a href="#238" id="238">238</a>
-<a href="#239" id="239">239</a>
-<a href="#240" id="240">240</a>
-<a href="#241" id="241">241</a>
-<a href="#242" id="242">242</a>
 </pre><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) 2017-2021 Parity Technologies (UK) Ltd.
@@ -260,7 +240,7 @@
 </span><span class="kw">use </span>clap::Parser;
 <span class="comment">// Substrate
 </span><span class="kw">use </span>sc_cli::{ChainSpec, RuntimeVersion, SubstrateCli};
-<span class="kw">use </span>sc_service::{DatabaseSource, PartialComponents};
+<span class="kw">use </span>sc_service::DatabaseSource;
 <span class="comment">// Frontier
 </span><span class="kw">use </span>fc_db::frontier_database_dir;
 
@@ -295,10 +275,13 @@
 		<span class="number">2021
 	</span>}
 
-	<span class="kw">fn </span>load_spec(<span class="kw-2">&amp;</span><span class="self">self</span>, id: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;Box&lt;<span class="kw">dyn </span>sc_service::ChainSpec&gt;, String&gt; {
+	<span class="kw">fn </span>load_spec(<span class="kw-2">&amp;</span><span class="self">self</span>, id: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;Box&lt;<span class="kw">dyn </span>ChainSpec&gt;, String&gt; {
 		<span class="prelude-val">Ok</span>(<span class="kw">match </span>id {
-			<span class="string">&quot;dev&quot; </span>=&gt; Box::new(chain_spec::development_config()<span class="question-mark">?</span>),
-			<span class="string">&quot;&quot; </span>| <span class="string">&quot;local&quot; </span>=&gt; Box::new(chain_spec::local_testnet_config()<span class="question-mark">?</span>),
+			<span class="string">&quot;dev&quot; </span>=&gt; {
+				<span class="kw">let </span>enable_manual_seal = <span class="self">self</span>.sealing.map(|<span class="kw">_</span>| <span class="bool-val">true</span>);
+				Box::new(chain_spec::development_config(enable_manual_seal))
+			}
+			<span class="string">&quot;&quot; </span>| <span class="string">&quot;local&quot; </span>=&gt; Box::new(chain_spec::local_testnet_config()),
 			path =&gt; Box::new(chain_spec::ChainSpec::from_json_file(
 				std::path::PathBuf::from(path),
 			)<span class="question-mark">?</span>),
@@ -322,47 +305,33 @@
 		}
 		<span class="prelude-val">Some</span>(Subcommand::CheckBlock(cmd)) =&gt; {
 			<span class="kw">let </span>runner = cli.create_runner(cmd)<span class="question-mark">?</span>;
-			runner.async_run(|config| {
-				<span class="kw">let </span>PartialComponents {
-					client,
-					task_manager,
-					import_queue,
-					..
-				} = service::new_partial(<span class="kw-2">&amp;</span>config, <span class="kw-2">&amp;</span>cli)<span class="question-mark">?</span>;
+			runner.async_run(|<span class="kw-2">mut </span>config| {
+				<span class="kw">let </span>(client, <span class="kw">_</span>, import_queue, task_manager, <span class="kw">_</span>) =
+					service::new_chain_ops(<span class="kw-2">&amp;mut </span>config, <span class="kw-2">&amp;</span>cli.eth)<span class="question-mark">?</span>;
 				<span class="prelude-val">Ok</span>((cmd.run(client, import_queue), task_manager))
 			})
 		}
 		<span class="prelude-val">Some</span>(Subcommand::ExportBlocks(cmd)) =&gt; {
 			<span class="kw">let </span>runner = cli.create_runner(cmd)<span class="question-mark">?</span>;
-			runner.async_run(|config| {
-				<span class="kw">let </span>PartialComponents {
-					client,
-					task_manager,
-					..
-				} = service::new_partial(<span class="kw-2">&amp;</span>config, <span class="kw-2">&amp;</span>cli)<span class="question-mark">?</span>;
+			runner.async_run(|<span class="kw-2">mut </span>config| {
+				<span class="kw">let </span>(client, <span class="kw">_</span>, <span class="kw">_</span>, task_manager, <span class="kw">_</span>) =
+					service::new_chain_ops(<span class="kw-2">&amp;mut </span>config, <span class="kw-2">&amp;</span>cli.eth)<span class="question-mark">?</span>;
 				<span class="prelude-val">Ok</span>((cmd.run(client, config.database), task_manager))
 			})
 		}
 		<span class="prelude-val">Some</span>(Subcommand::ExportState(cmd)) =&gt; {
 			<span class="kw">let </span>runner = cli.create_runner(cmd)<span class="question-mark">?</span>;
-			runner.async_run(|config| {
-				<span class="kw">let </span>PartialComponents {
-					client,
-					task_manager,
-					..
-				} = service::new_partial(<span class="kw-2">&amp;</span>config, <span class="kw-2">&amp;</span>cli)<span class="question-mark">?</span>;
+			runner.async_run(|<span class="kw-2">mut </span>config| {
+				<span class="kw">let </span>(client, <span class="kw">_</span>, <span class="kw">_</span>, task_manager, <span class="kw">_</span>) =
+					service::new_chain_ops(<span class="kw-2">&amp;mut </span>config, <span class="kw-2">&amp;</span>cli.eth)<span class="question-mark">?</span>;
 				<span class="prelude-val">Ok</span>((cmd.run(client, config.chain_spec), task_manager))
 			})
 		}
 		<span class="prelude-val">Some</span>(Subcommand::ImportBlocks(cmd)) =&gt; {
 			<span class="kw">let </span>runner = cli.create_runner(cmd)<span class="question-mark">?</span>;
-			runner.async_run(|config| {
-				<span class="kw">let </span>PartialComponents {
-					client,
-					task_manager,
-					import_queue,
-					..
-				} = service::new_partial(<span class="kw-2">&amp;</span>config, <span class="kw-2">&amp;</span>cli)<span class="question-mark">?</span>;
+			runner.async_run(|<span class="kw-2">mut </span>config| {
+				<span class="kw">let </span>(client, <span class="kw">_</span>, import_queue, task_manager, <span class="kw">_</span>) =
+					service::new_chain_ops(<span class="kw-2">&amp;mut </span>config, <span class="kw-2">&amp;</span>cli.eth)<span class="question-mark">?</span>;
 				<span class="prelude-val">Ok</span>((cmd.run(client, import_queue), task_manager))
 			})
 		}
@@ -389,13 +358,9 @@
 		}
 		<span class="prelude-val">Some</span>(Subcommand::Revert(cmd)) =&gt; {
 			<span class="kw">let </span>runner = cli.create_runner(cmd)<span class="question-mark">?</span>;
-			runner.async_run(|config| {
-				<span class="kw">let </span>PartialComponents {
-					client,
-					task_manager,
-					backend,
-					..
-				} = service::new_partial(<span class="kw-2">&amp;</span>config, <span class="kw-2">&amp;</span>cli)<span class="question-mark">?</span>;
+			runner.async_run(|<span class="kw-2">mut </span>config| {
+				<span class="kw">let </span>(client, backend, <span class="kw">_</span>, task_manager, <span class="kw">_</span>) =
+					service::new_chain_ops(<span class="kw-2">&amp;mut </span>config, <span class="kw-2">&amp;</span>cli.eth)<span class="question-mark">?</span>;
 				<span class="kw">let </span>aux_revert = Box::new(<span class="kw">move </span>|client, <span class="kw">_</span>, blocks| {
 					sc_finality_grandpa::revert(client, blocks)<span class="question-mark">?</span>;
 					<span class="prelude-val">Ok</span>(())
@@ -415,26 +380,21 @@
 
 			<span class="kw">let </span>runner = cli.create_runner(cmd)<span class="question-mark">?</span>;
 			<span class="kw">match </span>cmd {
-				BenchmarkCmd::Pallet(cmd) =&gt; {
-					runner.sync_run(|config| cmd.run::&lt;Block, service::ExecutorDispatch&gt;(config))
-				}
-				BenchmarkCmd::Block(cmd) =&gt; runner.sync_run(|config| {
-					<span class="kw">let </span>PartialComponents { client, .. } = service::new_partial(<span class="kw-2">&amp;</span>config, <span class="kw-2">&amp;</span>cli)<span class="question-mark">?</span>;
+				BenchmarkCmd::Pallet(cmd) =&gt; runner
+					.sync_run(|config| cmd.run::&lt;Block, service::TemplateRuntimeExecutor&gt;(config)),
+				BenchmarkCmd::Block(cmd) =&gt; runner.sync_run(|<span class="kw-2">mut </span>config| {
+					<span class="kw">let </span>(client, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>) = service::new_chain_ops(<span class="kw-2">&amp;mut </span>config, <span class="kw-2">&amp;</span>cli.eth)<span class="question-mark">?</span>;
 					cmd.run(client)
 				}),
-				BenchmarkCmd::Storage(cmd) =&gt; runner.sync_run(|config| {
-					<span class="kw">let </span>PartialComponents {
-						client, backend, ..
-					} = service::new_partial(<span class="kw-2">&amp;</span>config, <span class="kw-2">&amp;</span>cli)<span class="question-mark">?</span>;
+				BenchmarkCmd::Storage(cmd) =&gt; runner.sync_run(|<span class="kw-2">mut </span>config| {
+					<span class="kw">let </span>(client, backend, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>) = service::new_chain_ops(<span class="kw-2">&amp;mut </span>config, <span class="kw-2">&amp;</span>cli.eth)<span class="question-mark">?</span>;
 					<span class="kw">let </span>db = backend.expose_db();
 					<span class="kw">let </span>storage = backend.expose_storage();
-
 					cmd.run(config, client, db, storage)
 				}),
-				BenchmarkCmd::Overhead(cmd) =&gt; runner.sync_run(|config| {
-					<span class="kw">let </span>PartialComponents { client, .. } = service::new_partial(<span class="kw-2">&amp;</span>config, <span class="kw-2">&amp;</span>cli)<span class="question-mark">?</span>;
+				BenchmarkCmd::Overhead(cmd) =&gt; runner.sync_run(|<span class="kw-2">mut </span>config| {
+					<span class="kw">let </span>(client, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>) = service::new_chain_ops(<span class="kw-2">&amp;mut </span>config, <span class="kw-2">&amp;</span>cli.eth)<span class="question-mark">?</span>;
 					<span class="kw">let </span>ext_builder = RemarkBuilder::new(client.clone());
-
 					cmd.run(
 						config,
 						client,
@@ -443,8 +403,8 @@
 						<span class="kw-2">&amp;</span>ext_builder,
 					)
 				}),
-				BenchmarkCmd::Extrinsic(cmd) =&gt; runner.sync_run(|config| {
-					<span class="kw">let </span>PartialComponents { client, .. } = service::new_partial(<span class="kw-2">&amp;</span>config, <span class="kw-2">&amp;</span>cli)<span class="question-mark">?</span>;
+				BenchmarkCmd::Extrinsic(cmd) =&gt; runner.sync_run(|<span class="kw-2">mut </span>config| {
+					<span class="kw">let </span>(client, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>) = service::new_chain_ops(<span class="kw-2">&amp;mut </span>config, <span class="kw-2">&amp;</span>cli.eth)<span class="question-mark">?</span>;
 					<span class="comment">// Register the *Remark* and *TKA* builders.
 					</span><span class="kw">let </span>ext_factory = ExtrinsicFactory(<span class="macro">vec!</span>[
 						Box::new(RemarkBuilder::new(client.clone())),
@@ -468,16 +428,16 @@
 			</span>.into()),
 		<span class="prelude-val">Some</span>(Subcommand::FrontierDb(cmd)) =&gt; {
 			<span class="kw">let </span>runner = cli.create_runner(cmd)<span class="question-mark">?</span>;
-			runner.sync_run(|config| {
-				<span class="kw">let </span>PartialComponents { client, other, .. } = service::new_partial(<span class="kw-2">&amp;</span>config, <span class="kw-2">&amp;</span>cli)<span class="question-mark">?</span>;
-				<span class="kw">let </span>frontier_backend = other.<span class="number">2</span>;
-				cmd.run::&lt;<span class="kw">_</span>, frontier_template_runtime::opaque::Block&gt;(client, frontier_backend)
+			runner.sync_run(|<span class="kw-2">mut </span>config| {
+				<span class="kw">let </span>(client, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, frontier_backend) =
+					service::new_chain_ops(<span class="kw-2">&amp;mut </span>config, <span class="kw-2">&amp;</span>cli.eth)<span class="question-mark">?</span>;
+				cmd.run(client, frontier_backend)
 			})
 		}
 		<span class="prelude-val">None </span>=&gt; {
-			<span class="kw">let </span>runner = cli.create_runner(<span class="kw-2">&amp;</span>cli.run.base)<span class="question-mark">?</span>;
+			<span class="kw">let </span>runner = cli.create_runner(<span class="kw-2">&amp;</span>cli.run)<span class="question-mark">?</span>;
 			runner.run_node_until_exit(|config| <span class="kw">async move </span>{
-				service::new_full(config, <span class="kw-2">&amp;</span>cli).map_err(sc_cli::Error::Service)
+				service::build_full(config, cli.eth, cli.sealing).map_err(Into::into)
 			})
 		}
 	}

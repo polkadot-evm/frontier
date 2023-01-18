@@ -12,7 +12,7 @@ var sourcesIndex = JSON.parse('{\
 "fp_rpc":["",[],["lib.rs"]],\
 "fp_self_contained":["",[],["checked_extrinsic.rs","lib.rs","unchecked_extrinsic.rs"]],\
 "fp_storage":["",[],["lib.rs"]],\
-"frontier_template_node":["",[],["chain_spec.rs","cli.rs","command.rs","main.rs","rpc.rs","service.rs"]],\
+"frontier_template_node":["",[["rpc",[],["eth.rs","mod.rs"]]],["chain_spec.rs","cli.rs","client.rs","command.rs","eth.rs","main.rs","service.rs"]],\
 "frontier_template_runtime":["",[],["lib.rs","precompiles.rs"]],\
 "pallet_base_fee":["",[],["lib.rs"]],\
 "pallet_dynamic_fee":["",[],["lib.rs"]],\
