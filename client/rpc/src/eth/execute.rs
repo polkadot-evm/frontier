@@ -599,7 +599,7 @@ where
 
 		// Verify that the transaction succeed with highest capacity
 		let cap = highest;
-		let estimate_mode = !cfg!(feature = "rpc_binary_search_estimate");
+		let estimate_mode = !cfg!(feature = "rpc-binary-search-estimate");
 		let ExecutableResult {
 			data,
 			exit_reason,
@@ -656,11 +656,11 @@ where
 			other => error_on_execution_failure(&other, &data)?,
 		};
 
-		#[cfg(not(feature = "rpc_binary_search_estimate"))]
+		#[cfg(not(feature = "rpc-binary-search-estimate"))]
 		{
 			Ok(used_gas)
 		}
-		#[cfg(feature = "rpc_binary_search_estimate")]
+		#[cfg(feature = "rpc-binary-search-estimate")]
 		{
 			// On binary search, evm estimate mode is disabled
 			let estimate_mode = false;

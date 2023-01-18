@@ -24,7 +24,7 @@ prometheus = { version = "0.13.1", default-features = false }
 rand = "0.8"
 rlp = { workspace = true }
 scale-codec = { package = "parity-scale-codec", workspace = true }
-tokio = { version = "1.19", features = ["sync"] }
+tokio = { version = "1.24", features = ["sync"] }
 
 # Substrate
 prometheus-endpoint = { workspace = true }
@@ -59,4 +59,4 @@ sp-consensus = { workspace = true }
 substrate-test-runtime-client = { workspace = true }
 
 [features]
-rpc_binary_search_estimate = []
+rpc-binary-search-estimate = []
