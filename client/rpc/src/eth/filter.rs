@@ -486,6 +486,10 @@ where
 	BE: Backend<B> + 'static,
 	BE::State: StateBackend<BlakeTwo256>,
 {
+	use std::time::Instant;
+	let timer_start = Instant::now();
+	let timer_prepare = Instant::now();
+
 	// Max request duration of 10 seconds.
 	let max_duration = time::Duration::from_secs(10);
 	let begin_request = time::Instant::now();
@@ -513,6 +517,8 @@ where
 		})
 		.collect::<Vec<Vec<Option<H256>>>>();
 
+	let time_prepare = timer_prepare.elapsed().as_millis();
+	let timer_fetch = Instant::now();
 	if let Ok(logs) = backend
 		.filter_logs(
 			UniqueSaturatedInto::<u64>::unique_saturated_into(from),
@@ -522,6 +528,8 @@ where
 		)
 		.await
 	{
+		let time_fetch = timer_fetch.elapsed().as_millis();
+		let timer_post = Instant::now();
 		use std::collections::BTreeMap;
 
 		let mut statuses_cache: BTreeMap<H256, Option<Vec<TransactionStatus>>> = BTreeMap::new();
@@ -550,11 +558,10 @@ where
 			if let Some(statuses) = statuses {
 				let mut block_log_index: u32 = 0;
 				for status in statuses.iter() {
-					let logs = status.logs.clone();
 					let mut transaction_log_index: u32 = 0;
 					let transaction_hash = status.transaction_hash;
 					let transaction_index = status.transaction_index;
-					for ethereum_log in logs {
+					for ethereum_log in &status.logs {
 						if transaction_index == db_transaction_index
 							&& transaction_log_index == db_log_index
 						{
@@ -590,7 +597,24 @@ where
 				)));
 			}
 		}
+
+		let time_post = timer_post.elapsed().as_millis();
+
+		log::info!(
+			target: "frontier-sql",
+			"OUTER-TIMER fetch={}, post={}",
+			time_fetch,
+			time_post,
+		);
 	}
+
+	log::info!(
+		target: "frontier-sql",
+		"OUTER-TIMER start={}, prepare={}, all_fetch = {}",
+		timer_start.elapsed().as_millis(),
+		time_prepare,
+		timer_fetch.elapsed().as_millis(),
+	);
 	Ok(())
 }
 
@@ -681,10 +705,9 @@ fn filter_block_logs<'a>(
 	let mut block_log_index: u32 = 0;
 	let block_hash = H256::from(keccak_256(&rlp::encode(&block.header)));
 	for status in transaction_statuses.iter() {
-		let logs = status.logs.clone();
 		let mut transaction_log_index: u32 = 0;
 		let transaction_hash = status.transaction_hash;
-		for ethereum_log in logs {
+		for ethereum_log in &status.logs {
 			let mut log = Log {
 				address: ethereum_log.address,
 				topics: ethereum_log.topics.clone(),

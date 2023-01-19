@@ -20,6 +20,7 @@ use scale_codec::{Decode, Encode};
 use fp_consensus::FindLogError;
 use fp_rpc::EthereumRuntimeRPCApi;
 use fp_storage::{EthereumStorageSchema, OverrideHandle, PALLET_ETHEREUM_SCHEMA};
+use futures::TryStreamExt;
 use sc_client_api::backend::{Backend as BackendT, StateBackend, StorageProvider};
 use sp_api::{ApiExt, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
@@ -36,10 +37,11 @@ use sqlx::{
 	ConnectOptions, Error, Execute, QueryBuilder, Row, Sqlite,
 };
 
-use std::{str::FromStr, sync::Arc};
+use std::{collections::HashSet, str::FromStr, sync::Arc};
 
 use crate::FilteredLog;
 
+/// Represents a log item.
 #[derive(Debug, Eq, PartialEq)]
 pub struct Log {
 	pub address: Vec<u8>,
@@ -52,6 +54,7 @@ pub struct Log {
 	pub substrate_block_hash: Vec<u8>,
 }
 
+/// Represents the block metadata.
 #[derive(Eq, PartialEq)]
 struct BlockMetadata {
 	pub substrate_block_hash: H256,
@@ -61,11 +64,18 @@ struct BlockMetadata {
 	pub is_canon: i32,
 }
 
+/// Represents the Sqlite connection options that are
+/// used to establish a database connection.
+#[derive(Debug)]
 pub struct SqliteBackendConfig<'a> {
 	pub path: &'a str,
 	pub create_if_missing: bool,
+	pub thread_count: u32,
+	pub cache_size: u64,
 }
 
+/// Represents the backend configurations.
+#[derive(Debug)]
 pub enum BackendConfig<'a> {
 	Sqlite(SqliteBackendConfig<'a>),
 }
@@ -104,14 +114,21 @@ where
 	fn connect_options(config: &BackendConfig) -> Result<SqliteConnectOptions, Error> {
 		match config {
 			BackendConfig::Sqlite(config) => {
+				log::info!(
+					target: "frontier-sql",
+					"📑 Connection configuration: {:?}",
+					config,
+				);
 				let config = sqlx::sqlite::SqliteConnectOptions::from_str(config.path)?
 					.create_if_missing(config.create_if_missing)
 					// https://www.sqlite.org/pragma.html#pragma_busy_timeout
 					.busy_timeout(std::time::Duration::from_secs(8))
+					// 200MB, https://www.sqlite.org/pragma.html#pragma_cache_size
+					.pragma("cache_size", format!("-{}", config.cache_size))
 					// https://www.sqlite.org/pragma.html#pragma_analysis_limit
 					.pragma("analysis_limit", "1000")
 					// https://www.sqlite.org/pragma.html#pragma_threads
-					.pragma("threads", "4")
+					.pragma("threads", config.thread_count.to_string())
 					// https://www.sqlite.org/pragma.html#pragma_threads
 					.pragma("temp_store", "memory")
 					// https://www.sqlite.org/wal.html
@@ -229,29 +246,45 @@ where
 	{
 		log::debug!(
 			target: "frontier-sql",
-			"🛠️  [Metadata] Retrieving digest data for {:?} block hashes",
-			hashes.len()
+			"🛠️  [Metadata] Retrieving digest data for {:?} block hashes: {:?}",
+			hashes.len(),
+			hashes,
 		);
 		let mut out = Vec::new();
 		for &hash in hashes.iter() {
 			if let Ok(Some(header)) = client.header(hash) {
 				match fp_consensus::find_log(header.digest()) {
 					Ok(log) => {
-						let block_number = *header.number();
-						let is_canon: i32 = if let Ok(Some(inner_hash)) = client.hash(block_number) {
-							if inner_hash == hash {
-								1
-							} else {
+						let header_number = *header.number();
+						let block_number =
+							UniqueSaturatedInto::<u32>::unique_saturated_into(header_number) as i32;
+						let is_canon = match client.hash(header_number) {
+							Ok(Some(inner_hash)) => (inner_hash == hash) as i32,
+							Ok(None) => {
+								log::debug!(
+									target: "frontier-sql",
+									"[Metadata] Missing header for block #{} ({:?})",
+									block_number, hash,
+								);
 								0
 							}
-						} else {
-							return Err(Error::Protocol(format!(
-								"[Metadata] Failed to retrieve header for number {}",
-								block_number
-							)));
+							Err(err) => {
+								log::debug!(
+									"[Metadata] Failed to retrieve header for block #{} ({:?}): {:?}",
+									block_number, hash, err,
+								);
+								0
+							}
 						};
-						let block_number: i32 = UniqueSaturatedInto::<u32>::unique_saturated_into(block_number) as i32;
+
 						let schema = Self::onchain_storage_schema(client.as_ref(), hash);
+						log::trace!(
+							target: "frontier-sql",
+							"🛠️  [Metadata] Prepared block metadata for #{} ({:?}) canon={}",
+							block_number,
+							hash,
+							is_canon,
+						);
 						out.push(BlockMetadata {
 							substrate_block_hash: hash,
 							block_number,
@@ -263,7 +296,7 @@ where
 					Err(FindLogError::NotFound) => {}
 					Err(FindLogError::MultipleLogs) => {
 						return Err(Error::Protocol(format!(
-							"[Metadata] Multiple logs found for hash {}",
+							"[Metadata] Multiple logs found for hash {:?}",
 							hash
 						)))
 					}
@@ -328,6 +361,13 @@ where
 			for (i, &transaction_hash) in post_hashes.transaction_hashes.iter().enumerate() {
 				let ethereum_transaction_hash = transaction_hash.as_bytes().to_owned();
 				let ethereum_transaction_index = i as i32;
+				log::trace!(
+					target: "frontier-sql",
+					"🛠️  [Metadata] Inserting TX for block #{} - {:?} index {}",
+					block_number,
+					transaction_hash,
+					ethereum_transaction_index,
+				);
 				let _ = sqlx::query!(
 					"INSERT OR IGNORE INTO transactions(
 						ethereum_transaction_hash,
@@ -641,11 +681,6 @@ where
 		.await
 	}
 }
-#[derive(Debug)]
-enum FilterValue {
-	Address(H160),
-	Topic(Option<H256>),
-}
 
 #[async_trait::async_trait]
 impl<Block: BlockT<Hash = H256>> crate::BackendReader<Block> for Backend<Block> {
@@ -654,33 +689,27 @@ impl<Block: BlockT<Hash = H256>> crate::BackendReader<Block> for Backend<Block> 
 		ethereum_block_hash: &H256,
 	) -> Result<Option<Vec<Block::Hash>>, String> {
 		let ethereum_block_hash = ethereum_block_hash.as_bytes().to_owned();
-		let res = match sqlx::query(
-			"SELECT substrate_block_hash FROM blocks WHERE ethereum_block_hash = ?",
-		)
-		.bind(ethereum_block_hash)
-		.fetch_all(&self.pool)
-		.await
-		{
-			Ok(result) => {
-				let mut out = vec![];
-				for row in result {
-					out.push(H256::from_slice(
-						&row.try_get::<Vec<u8>, _>(0).unwrap_or_default()[..],
-					));
-				}
-				Some(out)
-			}
-			_ => None,
-		};
+		let res =
+			sqlx::query("SELECT substrate_block_hash FROM blocks WHERE ethereum_block_hash = ?")
+				.bind(ethereum_block_hash)
+				.fetch_all(&self.pool)
+				.await
+				.ok()
+				.map(|rows| {
+					rows.iter()
+						.map(|row| {
+							H256::from_slice(&row.try_get::<Vec<u8>, _>(0).unwrap_or_default()[..])
+						})
+						.collect()
+				});
 		Ok(res)
 	}
 	async fn transaction_metadata(
 		&self,
 		ethereum_transaction_hash: &H256,
 	) -> Result<Vec<crate::TransactionMetadata<Block>>, String> {
-		let mut out = vec![];
 		let ethereum_transaction_hash = ethereum_transaction_hash.as_bytes().to_owned();
-		if let Ok(result) = sqlx::query(
+		let out = sqlx::query(
 			"SELECT
 				substrate_block_hash, ethereum_block_hash, ethereum_transaction_index
 			FROM transactions WHERE ethereum_transaction_hash = ?",
@@ -688,23 +717,25 @@ impl<Block: BlockT<Hash = H256>> crate::BackendReader<Block> for Backend<Block> 
 		.bind(ethereum_transaction_hash)
 		.fetch_all(&self.pool)
 		.await
-		{
-			for row in result {
-				let substrate_block_hash =
-					H256::from_slice(&row.try_get::<Vec<u8>, _>(0).unwrap_or_default()[..]);
-				let ethereum_block_hash =
-					H256::from_slice(&row.try_get::<Vec<u8>, _>(1).unwrap_or_default()[..]);
-				let ethereum_transaction_index =
-					row.try_get::<i32, _>(2).unwrap_or_default() as u32;
-				out.push(crate::TransactionMetadata {
-					block_hash: substrate_block_hash,
-					ethereum_block_hash,
-					ethereum_index: ethereum_transaction_index,
-				});
+		.unwrap_or(vec![])
+		.iter()
+		.map(|row| {
+			let substrate_block_hash =
+				H256::from_slice(&row.try_get::<Vec<u8>, _>(0).unwrap_or_default()[..]);
+			let ethereum_block_hash =
+				H256::from_slice(&row.try_get::<Vec<u8>, _>(1).unwrap_or_default()[..]);
+			let ethereum_transaction_index = row.try_get::<i32, _>(2).unwrap_or_default() as u32;
+			crate::TransactionMetadata {
+				block_hash: substrate_block_hash,
+				ethereum_block_hash,
+				ethereum_index: ethereum_transaction_index,
 			}
-		}
+		})
+		.collect();
+
 		Ok(out)
 	}
+
 	async fn filter_logs(
 		&self,
 		from_block: u64,
@@ -712,11 +743,26 @@ impl<Block: BlockT<Hash = H256>> crate::BackendReader<Block> for Backend<Block> 
 		addresses: Vec<H160>,
 		topics: Vec<Vec<Option<H256>>>,
 	) -> Result<Vec<FilteredLog>, String> {
-		let key = format!("{}-{}-{:?}-{:?}", from_block, to_block, addresses, topics);
-		log::info!("FILTER {}", key);
+		let mut unique_topics: [HashSet<H256>; 4] = [
+			HashSet::new(),
+			HashSet::new(),
+			HashSet::new(),
+			HashSet::new(),
+		];
+		for topic_combination in topics.into_iter() {
+			for (topic_index, topic) in topic_combination.into_iter().enumerate() {
+				if let Some(topic) = topic {
+					unique_topics[topic_index].insert(topic);
+				}
+			}
+		}
 
+		let log_key = format!(
+			"{}-{}-{:?}-{:?}",
+			from_block, to_block, addresses, unique_topics
+		);
 		let mut qb = QueryBuilder::new("");
-		let query = build_sqlite_query(&mut qb, from_block, to_block, addresses, topics);
+		let query = build_query(&mut qb, from_block, to_block, addresses, unique_topics);
 		let sql = query.sql();
 
 		let mut out: Vec<FilteredLog> = vec![];
@@ -725,32 +771,27 @@ impl<Block: BlockT<Hash = H256>> crate::BackendReader<Block> for Backend<Block> 
 			.acquire()
 			.await
 			.map_err(|err| format!("failed acquiring sqlite connection: {}", err))?;
-		let y = key.clone();
+		let log_key2 = log_key.clone();
 		conn.set_progress_handler(self.num_ops_timeout, move || {
-			log::info!(
+			log::debug!(
 				target: "frontier-sql",
-				"TRIGGER sqlite progress_handler_triggered after {}",
-				y,
+				"Sqlite progress_handler triggered for {}",
+				log_key2,
 			);
 			false
 		})
 		.await;
-		log::info!(
+		log::debug!(
 			target: "frontier-sql",
-			"🛠️  Using num_ops_timeout = {} - {}",
-			self.num_ops_timeout,
-			key,
-		);
-
-		log::info!(
-			target: "frontier-sql",
-			"SQL {:?}",
+			"Query: {:?} - {}",
 			sql,
+			log_key,
 		);
 
-		match query.fetch_all(&mut conn).await {
-			Ok(result) => {
-				for row in result.iter() {
+		let mut rows = query.fetch(&mut conn);
+		let maybe_err = loop {
+			match rows.try_next().await {
+				Ok(Some(row)) => {
 					// Substrate block hash
 					let substrate_block_hash =
 						H256::from_slice(&row.try_get::<Vec<u8>, _>(0).unwrap_or_default()[..]);
@@ -778,26 +819,27 @@ impl<Block: BlockT<Hash = H256>> crate::BackendReader<Block> for Backend<Block> 
 						log_index,
 					});
 				}
-			}
-			Err(err) => {
-				conn.remove_progress_handler().await;
-				log::error!(
-					target: "frontier-sql",
-					"Failed to query sql db with statement {:?} : {:?} - {}",
-					// sql,
-					"SQL",
-					err,
-					key,
-				);
-				return Err("Failed to query sql db with statement".to_string());
-			}
+				Ok(None) => break None, // no more rows
+				Err(err) => break Some(err),
+			};
 		};
-
+		drop(rows);
 		conn.remove_progress_handler().await;
+
+		if let Some(err) = maybe_err {
+			log::error!(
+				target: "frontier-sql",
+				"Failed to query sql db: {:?} - {}",
+				err,
+				log_key,
+			);
+			return Err("Failed to query sql db with statement".to_string());
+		}
+
 		log::info!(
 			target: "frontier-sql",
 			"FILTER remove handler - {}",
-			key,
+			log_key,
 		);
 		Ok(out)
 	}
@@ -807,12 +849,13 @@ impl<Block: BlockT<Hash = H256>> crate::BackendReader<Block> for Backend<Block> 
 	}
 }
 
-fn build_sqlite_query<'a>(
+/// Build a SQL query to retrieve a list of logs given certain constraints.
+fn build_query<'a>(
 	qb: &'a mut QueryBuilder<Sqlite>,
 	from_block: u64,
 	to_block: u64,
 	addresses: Vec<H160>,
-	topics: Vec<Vec<Option<H256>>>,
+	topics: [HashSet<H256>; 4],
 ) -> Query<'a, Sqlite, SqliteArguments<'a>> {
 	qb.push(
 		"
@@ -833,26 +876,31 @@ ON (b.block_number BETWEEN ",
 		.push_unseparated(")");
 	qb.push(" AND b.substrate_block_hash = l.substrate_block_hash")
 		.push(" AND b.is_canon = 1")
-		.push("\nWHERE l.address IN (");
-	let mut qb_addr = qb.separated(", ");
-	addresses.iter().for_each(|addr| {
-		qb_addr.push_bind(addr.as_bytes().to_owned());
-	});
-	qb_addr.push_unseparated(")");
+		.push("\nWHERE 1");
+
+	if !addresses.is_empty() {
+		qb.push(" AND l.address IN (");
+		let mut qb_addr = qb.separated(", ");
+		addresses.iter().for_each(|addr| {
+			qb_addr.push_bind(addr.as_bytes().to_owned());
+		});
+		qb_addr.push_unseparated(")");
+	}
 
 	for (i, topic_options) in topics.iter().enumerate() {
-		let valid_topic_options = topic_options
-			.iter()
-			.filter(|x| x.is_some())
-			.map(|x| x.expect("value must exist as `Some` filtered above; qed"))
-			.collect::<Vec<_>>();
-		if valid_topic_options.len() == 1 {
-			qb.push(format!(" AND l.topic_{} = ", i + 1))
-				.push_bind(valid_topic_options[0].as_bytes().to_owned());
-		} else if valid_topic_options.len() > 1 {
+		if topic_options.len() == 1 {
+			qb.push(format!(" AND l.topic_{} = ", i + 1)).push_bind(
+				topic_options
+					.iter()
+					.next()
+					.expect("length is 1, must exist; qed")
+					.as_bytes()
+					.to_owned(),
+			);
+		} else if topic_options.len() > 1 {
 			qb.push(format!(" AND l.topic_{} IN (", i + 1));
 			let mut qb_topic = qb.separated(", ");
-			valid_topic_options.iter().for_each(|t| {
+			topic_options.iter().for_each(|t| {
 				qb_topic.push_bind(t.as_bytes().to_owned());
 			});
 			qb_topic.push_unseparated(")");
@@ -862,7 +910,7 @@ ON (b.block_number BETWEEN ",
 	qb.push(
 		"
 GROUP BY l.substrate_block_hash, l.transaction_index, l.log_index
-ORDER BY l.block_number ASC, l.transaction_index ASC, l.log_index ASC
+ORDER BY b.block_number ASC, l.transaction_index ASC, l.log_index ASC
 LIMIT 10001",
 	);
 
@@ -1646,14 +1694,14 @@ SELECT
 FROM logs AS l
 INNER JOIN blocks AS b
 ON (b.block_number BETWEEN ? AND ?) AND b.substrate_block_hash = l.substrate_block_hash AND b.is_canon = 1
-WHERE l.address IN (?, ?, ?) AND l.topic_1 IN (?, ?) AND l.topic_2 = ? AND l.topic_4 = ?
+WHERE 1 AND l.address IN (?, ?, ?) AND l.topic_1 IN (?, ?) AND l.topic_2 = ? AND l.topic_4 = ?
 GROUP BY l.substrate_block_hash, l.transaction_index, l.log_index
 ORDER BY l.block_number ASC, l.transaction_index ASC, l.log_index ASC
 LIMIT 10001";
 
 		let mut qb = QueryBuilder::new("");
 		let actual_query_sql =
-			super::build_sqlite_query(&mut qb, from_block, to_block, addresses, topics).sql();
+			super::build_query(&mut qb, from_block, to_block, addresses, topics).sql();
 		assert_eq!(expected_query_sql, actual_query_sql);
 	}
 }
