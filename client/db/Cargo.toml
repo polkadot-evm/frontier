@@ -44,6 +44,7 @@ fp-storage = { workspace = true, features = ["std"] }
 default = ["kvdb-rocksdb", "parity-db"]
 
 [dev-dependencies]
+maplit = "1.0.2"
 tempfile = "3.3.0"
 fc-rpc = { workspace = true }
 sc-block-builder = { workspace = true }

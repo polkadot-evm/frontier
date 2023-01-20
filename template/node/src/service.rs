@@ -136,7 +136,7 @@ where
 			let backend = futures::executor::block_on(fc_db::sql::Backend::new(
 				fc_db::sql::BackendConfig::Sqlite(fc_db::sql::SqliteBackendConfig {
 					path: Path::new("sqlite:///")
-						.join(db_path.strip_prefix("/").unwrap().to_str().unwrap())
+						.join(db_path)
 						.join("frontier.db3")
 						.to_str()
 						.unwrap(),

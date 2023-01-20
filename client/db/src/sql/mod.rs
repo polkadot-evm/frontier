@@ -41,6 +41,9 @@ use std::{collections::HashSet, str::FromStr, sync::Arc};
 
 use crate::FilteredLog;
 
+/// Maximum number to topics allowed to be filtered upon
+const MAX_TOPIC_COUNT: u16 = 4;
+
 /// Represents a log item.
 #[derive(Debug, Eq, PartialEq)]
 pub struct Log {
@@ -152,7 +155,7 @@ where
 			QueryBuilder::new("UPDATE blocks SET is_canon = 0 WHERE substrate_block_hash IN (");
 		let mut retracted_hashes = builder.separated(", ");
 		for hash in retracted.iter() {
-			let hash = hash.as_bytes().to_owned();
+			let hash = hash.as_bytes();
 			retracted_hashes.push_bind(hash);
 		}
 		retracted_hashes.push_unseparated(")");
@@ -164,7 +167,7 @@ where
 			QueryBuilder::new("UPDATE blocks SET is_canon = 1 WHERE substrate_block_hash IN (");
 		let mut enacted_hashes = builder.separated(", ");
 		for hash in enacted.iter() {
-			let hash = hash.as_bytes().to_owned();
+			let hash = hash.as_bytes();
 			enacted_hashes.push_bind(hash);
 		}
 		enacted_hashes.push_unseparated(")");
@@ -207,7 +210,7 @@ where
 
 				let schema = Self::onchain_storage_schema(client.as_ref(), substrate_genesis_hash).encode();
 				let ethereum_block_hash = ethereum_block.header.hash().as_bytes().to_owned();
-				let substrate_block_hash = substrate_genesis_hash.as_bytes().to_owned();
+				let substrate_block_hash = substrate_genesis_hash.as_bytes();
 				let block_number = 0i32;
 				let is_canon = 1i32;
 
@@ -336,8 +339,8 @@ where
 		);
 		for metadata in block_metadata.into_iter() {
 			let post_hashes = metadata.post_hashes;
-			let ethereum_block_hash = post_hashes.block_hash.as_bytes().to_owned();
-			let substrate_block_hash = metadata.substrate_block_hash.as_bytes().to_owned();
+			let ethereum_block_hash = post_hashes.block_hash.as_bytes();
+			let substrate_block_hash = metadata.substrate_block_hash.as_bytes();
 			let schema = metadata.schema.encode();
 			let block_number = metadata.block_number;
 			let is_canon = metadata.is_canon;
@@ -359,7 +362,7 @@ where
 			.execute(&mut tx)
 			.await?;
 			for (i, &transaction_hash) in post_hashes.transaction_hashes.iter().enumerate() {
-				let ethereum_transaction_hash = transaction_hash.as_bytes().to_owned();
+				let ethereum_transaction_hash = transaction_hash.as_bytes();
 				let ethereum_transaction_index = i as i32;
 				log::trace!(
 					target: "frontier-sql",
@@ -688,7 +691,7 @@ impl<Block: BlockT<Hash = H256>> crate::BackendReader<Block> for Backend<Block> 
 		&self,
 		ethereum_block_hash: &H256,
 	) -> Result<Option<Vec<Block::Hash>>, String> {
-		let ethereum_block_hash = ethereum_block_hash.as_bytes().to_owned();
+		let ethereum_block_hash = ethereum_block_hash.as_bytes();
 		let res =
 			sqlx::query("SELECT substrate_block_hash FROM blocks WHERE ethereum_block_hash = ?")
 				.bind(ethereum_block_hash)
@@ -708,7 +711,7 @@ impl<Block: BlockT<Hash = H256>> crate::BackendReader<Block> for Backend<Block> 
 		&self,
 		ethereum_transaction_hash: &H256,
 	) -> Result<Vec<crate::TransactionMetadata<Block>>, String> {
-		let ethereum_transaction_hash = ethereum_transaction_hash.as_bytes().to_owned();
+		let ethereum_transaction_hash = ethereum_transaction_hash.as_bytes();
 		let out = sqlx::query(
 			"SELECT
 				substrate_block_hash, ethereum_block_hash, ethereum_transaction_index
@@ -751,6 +754,10 @@ impl<Block: BlockT<Hash = H256>> crate::BackendReader<Block> for Backend<Block> 
 		];
 		for topic_combination in topics.into_iter() {
 			for (topic_index, topic) in topic_combination.into_iter().enumerate() {
+				if topic_index == MAX_TOPIC_COUNT as usize {
+					return Err("Invalid topic input. Maximum length is 4.".to_string());
+				}
+
 				if let Some(topic) = topic {
 					unique_topics[topic_index].insert(topic);
 				}
@@ -765,7 +772,6 @@ impl<Block: BlockT<Hash = H256>> crate::BackendReader<Block> for Backend<Block> 
 		let query = build_query(&mut qb, from_block, to_block, addresses, unique_topics);
 		let sql = query.sql();
 
-		let mut out: Vec<FilteredLog> = vec![];
 		let mut conn = self
 			.pool()
 			.acquire()
@@ -788,6 +794,7 @@ impl<Block: BlockT<Hash = H256>> crate::BackendReader<Block> for Backend<Block> 
 			log_key,
 		);
 
+		let mut out: Vec<FilteredLog> = vec![];
 		let mut rows = query.fetch(&mut conn);
 		let maybe_err = loop {
 			match rows.try_next().await {
@@ -919,20 +926,20 @@ LIMIT 10001",
 
 #[cfg(test)]
 mod test {
-
 	use super::FilteredLog;
 
 	use crate::BackendReader;
 	use codec::Encode;
 	use fc_rpc::{SchemaV3Override, StorageOverride};
 	use fp_storage::{EthereumStorageSchema, OverrideHandle, PALLET_ETHEREUM_SCHEMA};
+	use maplit::hashset;
 	use sp_core::{H160, H256};
 	use sp_runtime::{
 		generic::{Block, Header},
 		traits::BlakeTwo256,
 	};
-	use sqlx::QueryBuilder;
-	use std::{collections::BTreeMap, path::Path, str::FromStr, sync::Arc};
+	use sqlx::{sqlite::SqliteRow, QueryBuilder, Row, SqlitePool};
+	use std::{collections::BTreeMap, path::Path, sync::Arc};
 	use substrate_test_runtime_client::{
 		DefaultTestClientBuilderExt, TestClientBuilder, TestClientBuilderExt,
 	};
@@ -949,35 +956,56 @@ mod test {
 		pub expected_result: Vec<FilteredLog>,
 	}
 
-	struct TestData {
-		pub alice: H160,
-		pub bob: H160,
-		pub topics_a: H256,
-		pub topics_b: H256,
-		pub topics_c: H256,
-		pub topics_d: H256,
-		pub substrate_hash_1: H256,
-		pub substrate_hash_2: H256,
-		pub substrate_hash_3: H256,
-		pub ethereum_hash_1: H256,
-		pub ethereum_hash_2: H256,
-		pub ethereum_hash_3: H256,
-		pub backend: super::Backend<OpaqueBlock>,
+	#[derive(Debug, Clone)]
+	struct Log {
+		block_number: u32,
+		address: H160,
+		topics: [H256; 4],
+		substrate_block_hash: H256,
+		ethereum_block_hash: H256,
+		transaction_index: u32,
+		log_index: u32,
 	}
 
-	// From `(substrate_block_hash, transaction_index, log_index)` to FilteredLog
-	impl From<(H256, H256, u32, u32, u32)> for FilteredLog {
-		fn from(values: (H256, H256, u32, u32, u32)) -> Self {
+	#[allow(unused)]
+	struct TestData {
+		backend: super::Backend<OpaqueBlock>,
+		alice: H160,
+		bob: H160,
+		topics_a: H256,
+		topics_b: H256,
+		topics_c: H256,
+		topics_d: H256,
+		substrate_hash_1: H256,
+		substrate_hash_2: H256,
+		substrate_hash_3: H256,
+		ethereum_hash_1: H256,
+		ethereum_hash_2: H256,
+		ethereum_hash_3: H256,
+		log_1_abcd_0_0_alice: Log,
+		log_1_dcba_1_0_alice: Log,
+		log_1_badc_2_0_alice: Log,
+		log_2_abcd_0_0_bob: Log,
+		log_2_dcba_1_0_bob: Log,
+		log_2_badc_2_0_bob: Log,
+		log_3_abcd_0_0_bob: Log,
+		log_3_dcba_1_0_bob: Log,
+		log_3_badc_2_0_bob: Log,
+	}
+
+	impl From<Log> for FilteredLog {
+		fn from(value: Log) -> Self {
 			Self {
-				substrate_block_hash: values.0,
-				ethereum_block_hash: values.1,
-				block_number: values.2,
+				substrate_block_hash: value.substrate_block_hash,
+				ethereum_block_hash: value.ethereum_block_hash,
+				block_number: value.block_number,
 				ethereum_storage_schema: EthereumStorageSchema::V3,
-				transaction_index: values.3,
-				log_index: values.4,
+				transaction_index: value.transaction_index,
+				log_index: value.log_index,
 			}
 		}
 	}
+
 	async fn prepare() -> TestData {
 		let tmp = tempdir().expect("create a temporary directory");
 		// Initialize storage with schema V3
@@ -1002,15 +1030,18 @@ mod test {
 			schemas: overrides_map,
 			fallback: Box::new(SchemaV3Override::new(client.clone())),
 		});
+
 		// Indexer backend
 		let indexer_backend = super::Backend::new(
 			super::BackendConfig::Sqlite(super::SqliteBackendConfig {
 				path: Path::new("sqlite:///")
-					.join(tmp.path().strip_prefix("/").unwrap().to_str().unwrap())
+					.join(tmp.path())
 					.join("test.db3")
 					.to_str()
 					.unwrap(),
 				create_if_missing: true,
+				cache_size: 204800,
+				thread_count: 4,
 			}),
 			100,
 			0,
@@ -1021,21 +1052,21 @@ mod test {
 
 		// Prepare test db data
 		// Addresses
-		let alice = H160::random();
-		let bob = H160::random();
+		let alice = H160::repeat_byte(0x01);
+		let bob = H160::repeat_byte(0x02);
 		// Topics
-		let topics_a = H256::random();
-		let topics_b = H256::random();
-		let topics_c = H256::random();
-		let topics_d = H256::random();
+		let topics_a = H256::repeat_byte(0x01);
+		let topics_b = H256::repeat_byte(0x02);
+		let topics_c = H256::repeat_byte(0x03);
+		let topics_d = H256::repeat_byte(0x04);
 		// Substrate block hashes
-		let substrate_hash_1 = H256::random();
-		let substrate_hash_2 = H256::random();
-		let substrate_hash_3 = H256::random();
+		let substrate_hash_1 = H256::repeat_byte(0x05);
+		let substrate_hash_2 = H256::repeat_byte(0x06);
+		let substrate_hash_3 = H256::repeat_byte(0x07);
 		// Ethereum block hashes
-		let ethereum_hash_1 = H256::random();
-		let ethereum_hash_2 = H256::random();
-		let ethereum_hash_3 = H256::random();
+		let ethereum_hash_1 = H256::repeat_byte(0x08);
+		let ethereum_hash_2 = H256::repeat_byte(0x09);
+		let ethereum_hash_3 = H256::repeat_byte(0x0a);
 		// Ethereum storage schema
 		let ethereum_storage_schema = EthereumStorageSchema::V3;
 
@@ -1062,13 +1093,14 @@ mod test {
 				ethereum_storage_schema,
 			),
 		];
-		let mut builder: QueryBuilder<sqlx::Sqlite> = QueryBuilder::new(
+		let mut builder = QueryBuilder::new(
 			"INSERT INTO blocks(
 				block_number,
 				ethereum_block_hash,
 				substrate_block_hash,
 				ethereum_storage_schema,
-				is_canon)",
+				is_canon
+			)",
 		);
 		builder.push_values(block_entries, |mut b, entry| {
 			let block_number = entry.0;
@@ -1083,102 +1115,108 @@ mod test {
 			b.push_bind(1i32);
 		});
 		let query = builder.build();
-		let _ = query.execute(indexer_backend.pool()).await;
+		let _ = query
+			.execute(indexer_backend.pool())
+			.await
+			.expect("insert should succeed");
+
+		// log_{BLOCK}_{TOPICS}_{LOG_INDEX}_{TX_INDEX}
+		let log_1_abcd_0_0_alice = Log {
+			block_number: 1,
+			address: alice,
+			topics: [topics_a, topics_b, topics_c, topics_d],
+			log_index: 0,
+			transaction_index: 0,
+			substrate_block_hash: substrate_hash_1,
+			ethereum_block_hash: ethereum_hash_1,
+		};
+		let log_1_dcba_1_0_alice = Log {
+			block_number: 1,
+			address: alice,
+			topics: [topics_d, topics_c, topics_b, topics_a],
+			log_index: 1,
+			transaction_index: 0,
+			substrate_block_hash: substrate_hash_1,
+			ethereum_block_hash: ethereum_hash_1,
+		};
+		let log_1_badc_2_0_alice = Log {
+			block_number: 1,
+			address: alice,
+			topics: [topics_b, topics_a, topics_d, topics_c],
+			log_index: 2,
+			transaction_index: 0,
+			substrate_block_hash: substrate_hash_1,
+			ethereum_block_hash: ethereum_hash_1,
+		};
+		let log_2_abcd_0_0_bob = Log {
+			block_number: 2,
+			address: bob,
+			topics: [topics_a, topics_b, topics_c, topics_d],
+			log_index: 0,
+			transaction_index: 0,
+			substrate_block_hash: substrate_hash_2,
+			ethereum_block_hash: ethereum_hash_2,
+		};
+		let log_2_dcba_1_0_bob = Log {
+			block_number: 2,
+			address: bob,
+			topics: [topics_d, topics_c, topics_b, topics_a],
+			log_index: 1,
+			transaction_index: 0,
+			substrate_block_hash: substrate_hash_2,
+			ethereum_block_hash: ethereum_hash_2,
+		};
+		let log_2_badc_2_0_bob = Log {
+			block_number: 2,
+			address: bob,
+			topics: [topics_b, topics_a, topics_d, topics_c],
+			log_index: 2,
+			transaction_index: 0,
+			substrate_block_hash: substrate_hash_2,
+			ethereum_block_hash: ethereum_hash_2,
+		};
+
+		let log_3_abcd_0_0_bob = Log {
+			block_number: 3,
+			address: bob,
+			topics: [topics_a, topics_b, topics_c, topics_d],
+			log_index: 0,
+			transaction_index: 0,
+			substrate_block_hash: substrate_hash_3,
+			ethereum_block_hash: ethereum_hash_3,
+		};
+		let log_3_dcba_1_0_bob = Log {
+			block_number: 3,
+			address: bob,
+			topics: [topics_d, topics_c, topics_b, topics_a],
+			log_index: 1,
+			transaction_index: 0,
+			substrate_block_hash: substrate_hash_3,
+			ethereum_block_hash: ethereum_hash_3,
+		};
+		let log_3_badc_2_0_bob = Log {
+			block_number: 3,
+			address: bob,
+			topics: [topics_b, topics_a, topics_d, topics_c],
+			log_index: 2,
+			transaction_index: 0,
+			substrate_block_hash: substrate_hash_3,
+			ethereum_block_hash: ethereum_hash_3,
+		};
 
 		let log_entries = vec![
 			// Block 1
-			(
-				alice,
-				topics_a,
-				topics_b,
-				topics_c,
-				topics_d,
-				0,
-				0,
-				substrate_hash_1,
-			),
-			(
-				alice,
-				topics_d,
-				topics_c,
-				topics_b,
-				topics_a,
-				1,
-				0,
-				substrate_hash_1,
-			),
-			(
-				alice,
-				topics_b,
-				topics_a,
-				topics_d,
-				topics_c,
-				2,
-				0,
-				substrate_hash_1,
-			),
+			log_1_abcd_0_0_alice.clone(),
+			log_1_dcba_1_0_alice.clone(),
+			log_1_badc_2_0_alice.clone(),
 			// Block 2
-			(
-				bob,
-				topics_a,
-				topics_b,
-				topics_c,
-				topics_d,
-				0,
-				0,
-				substrate_hash_2,
-			),
-			(
-				bob,
-				topics_d,
-				topics_c,
-				topics_b,
-				topics_a,
-				1,
-				0,
-				substrate_hash_2,
-			),
-			(
-				bob,
-				topics_b,
-				topics_a,
-				topics_d,
-				topics_c,
-				2,
-				0,
-				substrate_hash_2,
-			),
+			log_2_abcd_0_0_bob.clone(),
+			log_2_dcba_1_0_bob.clone(),
+			log_2_badc_2_0_bob.clone(),
 			// Block 3
-			(
-				bob,
-				topics_a,
-				topics_b,
-				topics_c,
-				topics_d,
-				0,
-				0,
-				substrate_hash_3,
-			),
-			(
-				bob,
-				topics_d,
-				topics_c,
-				topics_b,
-				topics_a,
-				1,
-				0,
-				substrate_hash_3,
-			),
-			(
-				bob,
-				topics_b,
-				topics_a,
-				topics_d,
-				topics_c,
-				2,
-				0,
-				substrate_hash_3,
-			),
+			log_3_abcd_0_0_bob.clone(),
+			log_3_dcba_1_0_bob.clone(),
+			log_3_badc_2_0_bob.clone(),
 		];
 
 		let mut builder: QueryBuilder<sqlx::Sqlite> = QueryBuilder::new(
@@ -1190,17 +1228,18 @@ mod test {
 				topic_4,
 				log_index,
 				transaction_index,
-				substrate_block_hash)",
+				substrate_block_hash
+			)",
 		);
 		builder.push_values(log_entries, |mut b, entry| {
-			let address = entry.0.as_bytes().to_owned();
-			let topic_1 = entry.1.as_bytes().to_owned();
-			let topic_2 = entry.2.as_bytes().to_owned();
-			let topic_3 = entry.3.as_bytes().to_owned();
-			let topic_4 = entry.4.as_bytes().to_owned();
-			let log_index = entry.5;
-			let transaction_index = entry.6;
-			let substrate_block_hash = entry.7.as_bytes().to_owned();
+			let address = entry.address.as_bytes().to_owned();
+			let topic_1 = entry.topics[0].as_bytes().to_owned();
+			let topic_2 = entry.topics[1].as_bytes().to_owned();
+			let topic_3 = entry.topics[2].as_bytes().to_owned();
+			let topic_4 = entry.topics[3].as_bytes().to_owned();
+			let log_index = entry.log_index;
+			let transaction_index = entry.transaction_index;
+			let substrate_block_hash = entry.substrate_block_hash.as_bytes().to_owned();
 
 			b.push_bind(address);
 			b.push_bind(topic_1);
@@ -1228,6 +1267,15 @@ mod test {
 			ethereum_hash_2,
 			ethereum_hash_3,
 			backend: indexer_backend,
+			log_1_abcd_0_0_alice,
+			log_1_dcba_1_0_alice,
+			log_1_badc_2_0_alice,
+			log_2_abcd_0_0_bob,
+			log_2_dcba_1_0_bob,
+			log_2_badc_2_0_bob,
+			log_3_abcd_0_0_bob,
+			log_3_dcba_1_0_bob,
+			log_3_badc_2_0_bob,
 		}
 	}
 
@@ -1245,6 +1293,16 @@ mod test {
 			.await
 	}
 
+	async fn assert_blocks_canon(pool: &SqlitePool, expected: Vec<(H256, u32)>) {
+		let actual: Vec<(H256, u32)> =
+			sqlx::query("SELECT substrate_block_hash, is_canon FROM blocks")
+				.map(|row: SqliteRow| (H256::from_slice(&row.get::<Vec<u8>, _>(0)[..]), row.get(1)))
+				.fetch_all(pool)
+				.await
+				.expect("sql query must succeed");
+		assert_eq!(expected, actual);
+	}
+
 	#[tokio::test]
 	async fn genesis_works() {
 		let TestData { backend, .. } = prepare().await;
@@ -1255,9 +1313,7 @@ mod test {
 			topics: vec![],
 			expected_result: vec![],
 		};
-		let result = run_test_case(backend, &filter)
-			.await
-			.expect("run test case");
+		let result = run_test_case(backend, &filter).await.expect("must succeed");
 		assert_eq!(result, filter.expected_result);
 	}
 
@@ -1271,9 +1327,7 @@ mod test {
 			topics: vec![vec![None], vec![None, None, None]],
 			expected_result: vec![],
 		};
-		let result = run_test_case(backend, &filter)
-			.await
-			.expect("run test case");
+		let result = run_test_case(backend, &filter).await.expect("must succeed");
 		assert_eq!(result, filter.expected_result);
 	}
 
@@ -1292,59 +1346,67 @@ mod test {
 			],
 			expected_result: vec![],
 		};
-		let _result = run_test_case(backend, &filter)
+		run_test_case(backend, &filter)
 			.await
 			.expect_err("Invalid topic input. Maximum length is 4.");
 	}
 
 	#[tokio::test]
-	async fn malformed_topic_product_does_not_panic() {
+	async fn test_malformed_topic_cleans_invalid_options() {
 		let TestData {
-			backend, topics_a, ..
+			backend,
+			topics_a,
+			topics_b,
+			topics_d,
+			log_1_badc_2_0_alice,
+			..
 		} = prepare().await;
+
+		// [(a,null,b), (a, null), (d,null), null] -> [(a,b), a, d]
 		let filter = TestFilter {
 			from_block: 0,
-			to_block: 0,
+			to_block: 1,
 			addresses: vec![],
 			topics: vec![
-				vec![Some(topics_a), None, Some(topics_a)],
-				vec![None],
-				vec![Some(topics_a), Some(topics_a)],
+				vec![Some(topics_a), None, Some(topics_d)],
+				vec![None], // not considered
+				vec![Some(topics_b), Some(topics_a), None],
+				vec![None, None, None, None], // not considered
 			],
-			expected_result: vec![],
+			expected_result: vec![log_1_badc_2_0_alice.into()],
 		};
-		let _result = run_test_case(backend, &filter)
-			.await
-			.expect("run test case");
+		let result = run_test_case(backend, &filter).await.expect("must succeed");
+		assert_eq!(result, filter.expected_result);
 	}
 
 	#[tokio::test]
 	async fn block_range_works() {
 		let TestData {
 			backend,
-			substrate_hash_1,
-			substrate_hash_2,
-			ethereum_hash_1,
-			ethereum_hash_2,
+			log_1_abcd_0_0_alice,
+			log_1_dcba_1_0_alice,
+			log_1_badc_2_0_alice,
+			log_2_abcd_0_0_bob,
+			log_2_dcba_1_0_bob,
+			log_2_badc_2_0_bob,
 			..
 		} = prepare().await;
+
 		let filter = TestFilter {
 			from_block: 0,
 			to_block: 2,
 			addresses: vec![],
 			topics: vec![],
 			expected_result: vec![
-				(substrate_hash_1, ethereum_hash_1, 1, 0, 0).into(),
-				(substrate_hash_1, ethereum_hash_1, 1, 0, 1).into(),
-				(substrate_hash_1, ethereum_hash_1, 1, 0, 2).into(),
-				(substrate_hash_2, ethereum_hash_2, 2, 0, 0).into(),
-				(substrate_hash_2, ethereum_hash_2, 2, 0, 1).into(),
-				(substrate_hash_2, ethereum_hash_2, 2, 0, 2).into(),
+				log_1_abcd_0_0_alice.into(),
+				log_1_dcba_1_0_alice.into(),
+				log_1_badc_2_0_alice.into(),
+				log_2_abcd_0_0_bob.into(),
+				log_2_dcba_1_0_bob.into(),
+				log_2_badc_2_0_bob.into(),
 			],
 		};
-		let result = run_test_case(backend, &filter)
-			.await
-			.expect("run test case");
+		let result = run_test_case(backend, &filter).await.expect("must succeed");
 		assert_eq!(result, filter.expected_result);
 	}
 
@@ -1353,8 +1415,9 @@ mod test {
 		let TestData {
 			backend,
 			alice,
-			substrate_hash_1,
-			ethereum_hash_1,
+			log_1_abcd_0_0_alice,
+			log_1_dcba_1_0_alice,
+			log_1_badc_2_0_alice,
 			..
 		} = prepare().await;
 		let filter = TestFilter {
@@ -1363,14 +1426,12 @@ mod test {
 			addresses: vec![alice],
 			topics: vec![],
 			expected_result: vec![
-				(substrate_hash_1, ethereum_hash_1, 1, 0, 0).into(),
-				(substrate_hash_1, ethereum_hash_1, 1, 0, 1).into(),
-				(substrate_hash_1, ethereum_hash_1, 1, 0, 2).into(),
+				log_1_abcd_0_0_alice.into(),
+				log_1_dcba_1_0_alice.into(),
+				log_1_badc_2_0_alice.into(),
 			],
 		};
-		let result = run_test_case(backend, &filter)
-			.await
-			.expect("run test case");
+		let result = run_test_case(backend, &filter).await.expect("must succeed");
 		assert_eq!(result, filter.expected_result);
 	}
 
@@ -1379,12 +1440,9 @@ mod test {
 		let TestData {
 			backend,
 			topics_d,
-			substrate_hash_1,
-			substrate_hash_2,
-			substrate_hash_3,
-			ethereum_hash_1,
-			ethereum_hash_2,
-			ethereum_hash_3,
+			log_1_dcba_1_0_alice,
+			log_2_dcba_1_0_bob,
+			log_3_dcba_1_0_bob,
 			..
 		} = prepare().await;
 		let filter = TestFilter {
@@ -1393,28 +1451,23 @@ mod test {
 			addresses: vec![],
 			topics: vec![vec![Some(topics_d)]],
 			expected_result: vec![
-				(substrate_hash_1, ethereum_hash_1, 1, 0, 1).into(),
-				(substrate_hash_2, ethereum_hash_2, 2, 0, 1).into(),
-				(substrate_hash_3, ethereum_hash_3, 3, 0, 1).into(),
+				log_1_dcba_1_0_alice.into(),
+				log_2_dcba_1_0_bob.into(),
+				log_3_dcba_1_0_bob.into(),
 			],
 		};
-		let result = run_test_case(backend, &filter)
-			.await
-			.expect("run test case");
+		let result = run_test_case(backend, &filter).await.expect("must succeed");
 		assert_eq!(result, filter.expected_result);
 	}
 
 	#[tokio::test]
-	// Test filter that includes one address and one topic.
-	async fn multi_filter_one_one_works() {
+	async fn test_filters_address_and_topic() {
 		let TestData {
 			backend,
 			bob,
 			topics_b,
-			substrate_hash_2,
-			substrate_hash_3,
-			ethereum_hash_2,
-			ethereum_hash_3,
+			log_2_badc_2_0_bob,
+			log_3_badc_2_0_bob,
 			..
 		} = prepare().await;
 		let filter = TestFilter {
@@ -1422,31 +1475,22 @@ mod test {
 			to_block: 3,
 			addresses: vec![bob],
 			topics: vec![vec![Some(topics_b)]],
-			expected_result: vec![
-				(substrate_hash_2, ethereum_hash_2, 2, 0, 2).into(),
-				(substrate_hash_3, ethereum_hash_3, 3, 0, 2).into(),
-			],
+			expected_result: vec![log_2_badc_2_0_bob.into(), log_3_badc_2_0_bob.into()],
 		};
-		let result = run_test_case(backend, &filter)
-			.await
-			.expect("run test case");
+		let result = run_test_case(backend, &filter).await.expect("must succeed");
 		assert_eq!(result, filter.expected_result);
 	}
 
 	#[tokio::test]
-	// Test filter that includes many addresses and one topic.
-	async fn multi_filter_many_one_works() {
+	async fn test_filters_multi_address_and_topic() {
 		let TestData {
 			backend,
 			alice,
 			bob,
 			topics_b,
-			substrate_hash_1,
-			substrate_hash_2,
-			substrate_hash_3,
-			ethereum_hash_1,
-			ethereum_hash_2,
-			ethereum_hash_3,
+			log_1_badc_2_0_alice,
+			log_2_badc_2_0_bob,
+			log_3_badc_2_0_bob,
 			..
 		} = prepare().await;
 		let filter = TestFilter {
@@ -1455,32 +1499,26 @@ mod test {
 			addresses: vec![alice, bob],
 			topics: vec![vec![Some(topics_b)]],
 			expected_result: vec![
-				(substrate_hash_1, ethereum_hash_1, 1, 0, 2).into(),
-				(substrate_hash_2, ethereum_hash_2, 2, 0, 2).into(),
-				(substrate_hash_3, ethereum_hash_3, 3, 0, 2).into(),
+				log_1_badc_2_0_alice.into(),
+				log_2_badc_2_0_bob.into(),
+				log_3_badc_2_0_bob.into(),
 			],
 		};
-		let result = run_test_case(backend, &filter)
-			.await
-			.expect("run test case");
+		let result = run_test_case(backend, &filter).await.expect("must succeed");
 		assert_eq!(result, filter.expected_result);
 	}
 
 	#[tokio::test]
-	// Test filter that includes many addresses and many topics.
-	async fn multi_filter_many_many_works() {
+	async fn test_filters_multi_address_and_multi_topic() {
 		let TestData {
 			backend,
 			alice,
 			bob,
 			topics_a,
 			topics_b,
-			substrate_hash_1,
-			substrate_hash_2,
-			substrate_hash_3,
-			ethereum_hash_1,
-			ethereum_hash_2,
-			ethereum_hash_3,
+			log_1_abcd_0_0_alice,
+			log_2_abcd_0_0_bob,
+			log_3_abcd_0_0_bob,
 			..
 		} = prepare().await;
 		let filter = TestFilter {
@@ -1489,32 +1527,26 @@ mod test {
 			addresses: vec![alice, bob],
 			topics: vec![vec![Some(topics_a), Some(topics_b)]],
 			expected_result: vec![
-				(substrate_hash_1, ethereum_hash_1, 1, 0, 0).into(),
-				(substrate_hash_2, ethereum_hash_2, 2, 0, 0).into(),
-				(substrate_hash_3, ethereum_hash_3, 3, 0, 0).into(),
+				log_1_abcd_0_0_alice.into(),
+				log_2_abcd_0_0_bob.into(),
+				log_3_abcd_0_0_bob.into(),
 			],
 		};
-		let result = run_test_case(backend, &filter)
-			.await
-			.expect("run test case");
+		let result = run_test_case(backend, &filter).await.expect("must succeed");
 		assert_eq!(result, filter.expected_result);
 	}
 
 	#[tokio::test]
-	// Test filter that includes topic wildcards.
-	async fn filter_with_wildcards_works() {
+	async fn filter_with_topic_wildcards_works() {
 		let TestData {
 			backend,
 			alice,
 			bob,
 			topics_d,
 			topics_b,
-			substrate_hash_1,
-			substrate_hash_2,
-			substrate_hash_3,
-			ethereum_hash_1,
-			ethereum_hash_2,
-			ethereum_hash_3,
+			log_1_dcba_1_0_alice,
+			log_2_dcba_1_0_bob,
+			log_3_dcba_1_0_bob,
 			..
 		} = prepare().await;
 		let filter = TestFilter {
@@ -1523,14 +1555,12 @@ mod test {
 			addresses: vec![alice, bob],
 			topics: vec![vec![Some(topics_d), None, Some(topics_b)]],
 			expected_result: vec![
-				(substrate_hash_1, ethereum_hash_1, 1, 0, 1).into(),
-				(substrate_hash_2, ethereum_hash_2, 2, 0, 1).into(),
-				(substrate_hash_3, ethereum_hash_3, 3, 0, 1).into(),
+				log_1_dcba_1_0_alice.into(),
+				log_2_dcba_1_0_bob.into(),
+				log_3_dcba_1_0_bob.into(),
 			],
 		};
-		let result = run_test_case(backend, &filter)
-			.await
-			.expect("run test case");
+		let result = run_test_case(backend, &filter).await.expect("must succeed");
 		assert_eq!(result, filter.expected_result);
 	}
 
@@ -1540,8 +1570,7 @@ mod test {
 			alice,
 			backend,
 			topics_b,
-			substrate_hash_1,
-			ethereum_hash_1,
+			log_1_dcba_1_0_alice,
 			..
 		} = prepare().await;
 		let filter = TestFilter {
@@ -1549,27 +1578,24 @@ mod test {
 			to_block: 1,
 			addresses: vec![alice],
 			topics: vec![vec![None, None, Some(topics_b), None]],
-			expected_result: vec![(substrate_hash_1, ethereum_hash_1, 1, 0, 1).into()],
+			expected_result: vec![log_1_dcba_1_0_alice.into()],
 		};
-		let result = run_test_case(backend, &filter)
-			.await
-			.expect("run test case");
+		let result = run_test_case(backend, &filter).await.expect("must succeed");
 		assert_eq!(result, filter.expected_result);
 	}
 
 	#[tokio::test]
-	// Test filter that includes topic subsets.
-	async fn filter_with_multiple_topic_subsets_works() {
+	async fn filter_with_multi_topic_options_works() {
 		let TestData {
 			backend,
 			topics_a,
 			topics_d,
-			substrate_hash_1,
-			substrate_hash_2,
-			substrate_hash_3,
-			ethereum_hash_1,
-			ethereum_hash_2,
-			ethereum_hash_3,
+			log_1_abcd_0_0_alice,
+			log_1_dcba_1_0_alice,
+			log_2_abcd_0_0_bob,
+			log_2_dcba_1_0_bob,
+			log_3_abcd_0_0_bob,
+			log_3_dcba_1_0_bob,
 			..
 		} = prepare().await;
 		let filter = TestFilter {
@@ -1579,26 +1605,23 @@ mod test {
 			topics: vec![
 				vec![Some(topics_a)],
 				vec![Some(topics_d)],
-				vec![Some(topics_d)],
+				vec![Some(topics_d)], // duplicate, ignored
 			],
 			expected_result: vec![
-				(substrate_hash_1, ethereum_hash_1, 1, 0, 0).into(),
-				(substrate_hash_1, ethereum_hash_1, 1, 0, 1).into(),
-				(substrate_hash_2, ethereum_hash_2, 2, 0, 0).into(),
-				(substrate_hash_2, ethereum_hash_2, 2, 0, 1).into(),
-				(substrate_hash_3, ethereum_hash_3, 3, 0, 0).into(),
-				(substrate_hash_3, ethereum_hash_3, 3, 0, 1).into(),
+				log_1_abcd_0_0_alice.into(),
+				log_1_dcba_1_0_alice.into(),
+				log_2_abcd_0_0_bob.into(),
+				log_2_dcba_1_0_bob.into(),
+				log_3_abcd_0_0_bob.into(),
+				log_3_dcba_1_0_bob.into(),
 			],
 		};
-		let result = run_test_case(backend, &filter)
-			.await
-			.expect("run test case");
+		let result = run_test_case(backend, &filter).await.expect("must succeed");
 		assert_eq!(result, filter.expected_result);
 	}
 
 	#[tokio::test]
-	// Test filter that includes topic subsets and wildcards.
-	async fn filter_with_multiple_topic_subsets_and_wildcards_works() {
+	async fn filter_with_multi_topic_options_and_wildcards_works() {
 		let TestData {
 			backend,
 			bob,
@@ -1606,10 +1629,10 @@ mod test {
 			topics_b,
 			topics_c,
 			topics_d,
-			substrate_hash_2,
-			substrate_hash_3,
-			ethereum_hash_2,
-			ethereum_hash_3,
+			log_2_dcba_1_0_bob,
+			log_2_badc_2_0_bob,
+			log_3_dcba_1_0_bob,
+			log_3_badc_2_0_bob,
 			..
 		} = prepare().await;
 		let filter = TestFilter {
@@ -1624,63 +1647,78 @@ mod test {
 				vec![None, None, Some(topics_d), Some(topics_c)],
 			],
 			expected_result: vec![
-				(substrate_hash_2, ethereum_hash_2, 2, 0, 1).into(),
-				(substrate_hash_2, ethereum_hash_2, 2, 0, 2).into(),
-				(substrate_hash_3, ethereum_hash_3, 3, 0, 1).into(),
-				(substrate_hash_3, ethereum_hash_3, 3, 0, 2).into(),
+				log_2_dcba_1_0_bob.into(),
+				log_2_badc_2_0_bob.into(),
+				log_3_dcba_1_0_bob.into(),
+				log_3_badc_2_0_bob.into(),
 			],
 		};
-		let result = run_test_case(backend, &filter)
-			.await
-			.expect("run test case");
+		let result = run_test_case(backend, &filter).await.expect("must succeed");
 		assert_eq!(result, filter.expected_result);
+	}
+
+	#[tokio::test]
+	async fn test_canonicalize_sets_canon_flag_for_redacted_and_enacted_blocks_correctly() {
+		let TestData {
+			backend,
+			substrate_hash_1,
+			substrate_hash_2,
+			substrate_hash_3,
+			..
+		} = prepare().await;
+
+		// set block #1 to non canon
+		sqlx::query("UPDATE blocks SET is_canon = 0 WHERE substrate_block_hash = ?")
+			.bind(substrate_hash_1.as_bytes())
+			.execute(backend.pool())
+			.await
+			.expect("sql query must succeed");
+		assert_blocks_canon(
+			backend.pool(),
+			vec![
+				(substrate_hash_1, 0),
+				(substrate_hash_2, 1),
+				(substrate_hash_3, 1),
+			],
+		)
+		.await;
+
+		backend
+			.canonicalize(&[substrate_hash_2], &[substrate_hash_1])
+			.await
+			.expect("must succeed");
+
+		assert_blocks_canon(
+			backend.pool(),
+			vec![
+				(substrate_hash_1, 1),
+				(substrate_hash_2, 0),
+				(substrate_hash_3, 1),
+			],
+		)
+		.await;
 	}
 
 	#[test]
 	fn test_query_should_be_generated_correctly() {
-		use sqlx::{Execute, Sqlite};
+		use sqlx::Execute;
 
 		let from_block: u64 = 100;
 		let to_block: u64 = 500;
 		let addresses: Vec<H160> = vec![
-			H160::from_str("0x75e76b29a6c48f6e1aeeda4e52d3d4fa6e9355c0").unwrap(),
-			H160::from_str("0x42b15a11cc295be6f97aa4518e850b064b64fb11").unwrap(),
-			H160::from_str("0xf02d804b19b0665690f6b312691b2eb8f80cd3b8").unwrap(),
+			H160::repeat_byte(0x01),
+			H160::repeat_byte(0x02),
+			H160::repeat_byte(0x03),
 		];
-		let topics: Vec<Vec<Option<H256>>> = vec![
-			vec![
-				Some(
-					H256::from_str(
-						"0x4dec04e750ca11537cabcd8a9eab06494de08da3735bc8871cd41250e190bc04",
-					)
-					.unwrap(),
-				),
-				Some(
-					H256::from_str(
-						"0x2caecd17d02f56fa897705dcc740da2d237c373f70686f4e0d9bd3bf0400ea7a",
-					)
-					.unwrap(),
-				),
+		let topics = [
+			hashset![
+				H256::repeat_byte(0x01),
+				H256::repeat_byte(0x02),
+				H256::repeat_byte(0x03),
 			],
-			vec![
-				None, // None should be omitted, leaving only a single value here
-				Some(
-					H256::from_str(
-						"0x00000000000000000000000081e42baeee09de2880d4a8842edb1911755ac48d",
-					)
-					.unwrap(),
-				),
-				None,
-			],
-			vec![
-				None, // topic_3 should be omitted from query
-			],
-			vec![Some(
-				H256::from_str(
-					"0x000000000000000000000000aa342baeee09de2880d4a8842edb1911755ac123",
-				)
-				.unwrap(),
-			)],
+			hashset![H256::repeat_byte(0x04), H256::repeat_byte(0x05),],
+			hashset![],
+			hashset![H256::repeat_byte(0x06)],
 		];
 
 		let expected_query_sql = "
@@ -1694,9 +1732,9 @@ SELECT
 FROM logs AS l
 INNER JOIN blocks AS b
 ON (b.block_number BETWEEN ? AND ?) AND b.substrate_block_hash = l.substrate_block_hash AND b.is_canon = 1
-WHERE 1 AND l.address IN (?, ?, ?) AND l.topic_1 IN (?, ?) AND l.topic_2 = ? AND l.topic_4 = ?
+WHERE 1 AND l.address IN (?, ?, ?) AND l.topic_1 IN (?, ?, ?) AND l.topic_2 IN (?, ?) AND l.topic_4 = ?
 GROUP BY l.substrate_block_hash, l.transaction_index, l.log_index
-ORDER BY l.block_number ASC, l.transaction_index ASC, l.log_index ASC
+ORDER BY b.block_number ASC, l.transaction_index ASC, l.log_index ASC
 LIMIT 10001";
 
 		let mut qb = QueryBuilder::new("");

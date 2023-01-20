@@ -1929,6 +1929,7 @@ dependencies = [
  "futures",
  "kvdb-rocksdb",
  "log",
+ "maplit",
  "parity-db",
  "parity-scale-codec",
  "parking_lot 0.12.1",
