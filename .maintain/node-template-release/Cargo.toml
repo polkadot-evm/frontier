@@ -12,7 +12,7 @@ glob = "0.2"
 structopt = "0.3"
 tempfile = "3"
 fs_extra = "1"
-git2 = "0.8"
+git2 = "0.16"
 flate2 = "1.0"
 
 [workspace]
