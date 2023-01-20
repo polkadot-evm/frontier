@@ -77,7 +77,7 @@
 
 <span class="kw">use </span><span class="kw">crate</span>::eth::Eth;
 
-<span class="kw">impl</span>&lt;B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi&gt; Eth&lt;B, C, P, CT, BE, H, A&gt; {
+<span class="kw">impl</span>&lt;B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi, EGA&gt; Eth&lt;B, C, P, CT, BE, H, A, EGA&gt; {
 	<span class="kw">pub fn </span>is_mining(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;bool&gt; {
 		<span class="prelude-val">Ok</span>(<span class="self">self</span>.is_authority)
 	}
