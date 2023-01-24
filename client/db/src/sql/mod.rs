@@ -199,6 +199,13 @@ where
 				.has_api::<dyn EthereumRuntimeRPCApi<Block>>(&id)
 				.expect("runtime api reachable");
 
+			log::debug!(
+				target: "frontier-sql",
+				"Index genesis block, has_api={}, hash={:?}",
+				has_api,
+				substrate_genesis_hash,
+			);
+
 			if has_api {
 				// The chain has frontier support from genesis.
 				// Read from the runtime and store the block metadata.
@@ -247,7 +254,7 @@ where
 		BE: BackendT<Block> + 'static,
 		BE::State: StateBackend<BlakeTwo256>,
 	{
-		log::debug!(
+		log::trace!(
 			target: "frontier-sql",
 			"🛠️  [Metadata] Retrieving digest data for {:?} block hashes: {:?}",
 			hashes.len(),
@@ -403,8 +410,11 @@ where
 		tx.commit().await
 	}
 
-	pub async fn spawn_logs_task<Client, BE>(&self, client: Arc<Client>, batch_size: usize)
-	where
+	pub async fn index_pending_block_logs<Client, BE>(
+		&self,
+		client: Arc<Client>,
+		max_pending_blocks: usize,
+	) where
 		Client: StorageProvider<Block, BE> + HeaderBackend<Block> + Send + Sync + 'static,
 		BE: BackendT<Block> + 'static,
 		BE::State: StateBackend<BlakeTwo256>,
@@ -430,14 +440,14 @@ where
 					FROM sync_status
 					WHERE status = 0
 					LIMIT {}) RETURNING substrate_block_hash",
-				batch_size
+				max_pending_blocks
 			);
 			match sqlx::query(&q).fetch_all(&mut tx).await {
 				Ok(result) => {
-					let mut to_index: Vec<H256> = vec![];
+					let mut block_hashes: Vec<H256> = vec![];
 					for row in result.iter() {
 						if let Ok(bytes) = row.try_get::<Vec<u8>, _>(0) {
-							to_index.push(H256::from_slice(&bytes[..]));
+							block_hashes.push(H256::from_slice(&bytes[..]));
 						} else {
 							log::error!(
 								target: "frontier-sql",
@@ -447,7 +457,7 @@ where
 					}
 					// Spawn a blocking task to get log data from substrate backend.
 					let logs = tokio::task::spawn_blocking(move || {
-						Self::spawn_logs_task_inner(client.clone(), overrides, &to_index)
+						Self::get_logs(client.clone(), overrides, &block_hashes)
 					})
 					.await
 					.map_err(|_| Error::Protocol("tokio blocking task failed".to_string()))?;
@@ -498,10 +508,10 @@ where
 		);
 	}
 
-	fn spawn_logs_task_inner<Client, BE>(
+	fn get_logs<Client, BE>(
 		client: Arc<Client>,
 		overrides: Arc<OverrideHandle<Block>>,
-		hashes: &[H256],
+		substrate_block_hashes: &[H256],
 	) -> Vec<Log>
 	where
 		Client: StorageProvider<Block, BE> + HeaderBackend<Block> + Send + Sync + 'static,
@@ -511,7 +521,7 @@ where
 		let mut logs: Vec<Log> = vec![];
 		let mut transaction_count: usize = 0;
 		let mut log_count: usize = 0;
-		for substrate_block_hash in hashes.iter() {
+		for substrate_block_hash in substrate_block_hashes.iter() {
 			let id = BlockId::Hash(*substrate_block_hash);
 			let schema = Self::onchain_storage_schema(client.as_ref(), *substrate_block_hash);
 			let handler = overrides

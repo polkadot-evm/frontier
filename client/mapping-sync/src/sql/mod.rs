@@ -24,7 +24,7 @@ use sp_blockchain::{Backend, HeaderBackend};
 use sp_core::H256;
 use sp_runtime::{
 	generic::BlockId,
-	traits::{BlakeTwo256, Block as BlockT},
+	traits::{BlakeTwo256, Block as BlockT, UniqueSaturatedInto},
 };
 use sqlx::{Row, SqlitePool};
 use std::{collections::VecDeque, sync::Arc, time::Duration};
@@ -42,16 +42,16 @@ impl IndexedBlocks {
 	/// Retrieves and populates the cache with upto N last indexed blocks, where N is the `cache_size`.
 	pub async fn populate_cache(&mut self, pool: &SqlitePool) -> Result<(), sqlx::Error> {
 		sqlx::query(&format!(
-			"SELECT substrate_block_hash FROM sync_status ORDER BY id DESC LIMIT {}",
-			self.cache_size
-		))
-		.fetch_all(pool)
-		.await?
-		.iter()
-		.for_each(|any_row| {
-			let hash = H256::from_slice(&any_row.try_get::<Vec<u8>, _>(0).unwrap_or_default()[..]);
-			self.cache.push_back(hash);
-		});
+            "SELECT substrate_block_hash FROM sync_status WHERE status = 1 ORDER BY id DESC LIMIT {}",
+            self.cache_size
+        ))
+        .fetch_all(pool)
+        .await?
+        .iter()
+        .for_each(|any_row| {
+            let hash = H256::from_slice(&any_row.try_get::<Vec<u8>, _>(0).unwrap_or_default()[..]);
+            self.cache.push_back(hash);
+        });
 		Ok(())
 	}
 
@@ -100,15 +100,51 @@ impl IndexedBlocks {
 	}
 
 	/// Retrieves the most recent indexed block.
-	pub fn latest(&self) -> Option<&H256> {
+	pub fn last_indexed(&self) -> Option<&H256> {
 		self.cache.front()
+	}
+
+	/// Retrieves the first missing block number in decreasing order that hasn't been indexed yet.
+	/// If no unindexed block exists or the table or the rows do not exist, then the function
+	/// returns `None`.
+	pub async fn get_first_missing_block(&self, pool: &SqlitePool) -> Option<u32> {
+		match sqlx::query(
+			"SELECT b1.block_number-1
+			FROM blocks as b1
+			WHERE b1.block_number > 0 AND NOT EXISTS (
+				SELECT 1 FROM blocks AS b2
+				WHERE b2.block_number = b1.block_number-1
+				AND b1.is_canon=1
+				AND b2.is_canon=1
+			)
+			ORDER BY block_number LIMIT 1",
+		)
+		.fetch_optional(pool)
+		.await
+		{
+			Ok(result) => {
+				if let Some(row) = result {
+					let block_number: u32 = row.get(0);
+					return Some(block_number);
+				}
+			}
+			Err(err) => {
+				log::debug!(
+					target: "frontier-sql",
+					"Failed retrieving missing block {:?}",
+					err
+				);
+			}
+		}
+
+		return None;
 	}
 }
 
 /// Implements an indexer that imports blocks and their transactions.
 pub struct SyncWorker<Block, Backend, Client> {
 	_phantom: std::marker::PhantomData<(Block, Backend, Client)>,
-	imported_blocks: IndexedBlocks,
+	indexed_blocks: IndexedBlocks,
 	current_batch: Vec<H256>,
 	batch_size: usize,
 }
@@ -132,24 +168,23 @@ where
 	) {
 		let mut worker = Self::new(batch_size);
 		worker
-			.imported_blocks
+			.indexed_blocks
 			.populate_cache(indexer_backend.pool())
 			.await
 			.expect("query `sync_status` table");
 
-		// Always fire the interval future first
-		let import_interval = futures_timer::Delay::new(Duration::from_nanos(1));
-		let backend = substrate_backend.blockchain();
-		let notifications = import_notifications.fuse();
+		log::debug!(
+			target: "frontier-sql",
+			"Last indexed block {:?}",
+			worker.indexed_blocks.last_indexed(),
+		);
 
-		let mut resume_at: Option<H256> = None;
-		if let Some(hash) = worker.imported_blocks.latest() {
-			// If there is at least one know hash in the db, set a resume checkpoint
-			if let Ok(Some(header)) = client.header(*hash) {
-				resume_at = Some(*header.parent_hash())
-			}
-		} else {
-			// If there is no data in the db, sync genesis.
+		// If there is no data in the db, sync genesis.
+		if worker.indexed_blocks.last_indexed().is_none() {
+			log::info!(
+				target: "frontier-sql",
+				"import genesis",
+			);
 			if let Ok(Some(substrate_genesis_hash)) = indexer_backend
 				.insert_genesis_block_metadata(client.clone())
 				.await
@@ -160,12 +195,22 @@ where
 						e,
 					)
 				}) {
-				worker.imported_blocks.insert(substrate_genesis_hash);
+				log::debug!(
+					target: "frontier-sql",
+					"Imported genesis block {:?}",
+					substrate_genesis_hash,
+				);
+				worker.indexed_blocks.insert(substrate_genesis_hash);
 			}
 		}
 
-		let mut try_create_indexes = true;
+		// Try firing the interval future first, this isn't guaranteed but is usually desirable.
+		let import_interval = futures_timer::Delay::new(Duration::from_nanos(1));
+		let backend = substrate_backend.blockchain();
+		let notifications = import_notifications.fuse();
 		futures::pin_mut!(import_interval, notifications);
+
+		let mut try_create_indexes = true;
 		loop {
 			futures::select! {
 				_ = (&mut import_interval).fuse() => {
@@ -173,25 +218,20 @@ where
 						target: "frontier-sql",
 						"🕐  New interval"
 					);
+
+					// Index any missing past blocks
+					worker
+					.try_index_past_missing_blocks(client.clone(), indexer_backend.clone(), &backend)
+					.await;
+
 					let leaves = backend.leaves();
 					if let Ok(mut leaves) = leaves {
-						if let Some(hash) = resume_at {
-							log::debug!(
-								target: "frontier-sql",
-								"🔄  Resuming index task at {}",
-								hash,
-							);
-							leaves.push(hash);
-							resume_at = None;
-						}
-
 						// If a known leaf is still present when kicking an interval
 						// means the chain is slow or stall.
 						// If this is the case we want to remove it to move to
 						// its potential siblings.
-						leaves.retain(|leaf| !worker.imported_blocks.contains_cached(leaf));
-
-						worker.index(
+						leaves.retain(|leaf| !worker.indexed_blocks.contains_cached(leaf));
+						worker.index_blocks(
 							client.clone(),
 							indexer_backend.clone(),
 							backend,
@@ -199,6 +239,7 @@ where
 							false
 						).await;
 					}
+
 					// Reset the interval to user-defined Duration
 					import_interval.reset(interval);
 				},
@@ -235,7 +276,7 @@ where
 								);
 							}
 						}
-						worker.index(
+						worker.index_blocks(
 							client.clone(),
 							indexer_backend.clone(),
 							backend,
@@ -248,16 +289,63 @@ where
 		}
 	}
 
+	/// Creates a new instance of the worker.
 	fn new(batch_size: usize) -> Self {
 		SyncWorker {
 			_phantom: Default::default(),
-			imported_blocks: Default::default(),
+			indexed_blocks: Default::default(),
 			current_batch: Default::default(),
 			batch_size,
 		}
 	}
 
-	pub async fn index(
+	/// Attempts to index any missing blocks that are in the past. This fixes any gaps that may
+	/// be present in the indexing strategy, since the indexer only walks the parent hashes until
+	/// it finds the first ancestor that has already been indexed.
+	async fn try_index_past_missing_blocks(
+		&mut self,
+		client: Arc<Client>,
+		indexer_backend: Arc<fc_db::sql::Backend<Block>>,
+		blockchain_backend: &Backend::Blockchain,
+	) {
+		if let Some(block_number) = self
+			.indexed_blocks
+			.get_first_missing_block(indexer_backend.pool())
+			.await
+		{
+			if let Ok(Some(header)) =
+				client.header(BlockId::Number(block_number.unique_saturated_into()))
+			{
+				let block_hash = header.hash();
+				log::debug!(
+					target: "frontier-sql",
+					"Indexing past blocks from #{} {:?}",
+					block_number,
+					block_hash,
+				);
+				self.index_blocks(
+					client.clone(),
+					indexer_backend.clone(),
+					blockchain_backend,
+					&mut vec![block_hash],
+					false,
+				)
+				.await;
+			} else {
+				log::debug!(
+					target: "frontier-sql",
+					"Failed retrieving hash for block #{}",
+					block_number,
+				);
+			}
+		}
+	}
+
+	/// Index the provided blocks. The function loops over the ancestors of the provided nodes
+	/// until it encounters the genesis block, or a block that has already been imported, or
+	/// is already in the active set. The `hashes` parameter is populated with any parent blocks
+	/// that is scheduled to be indexed.
+	async fn index_blocks(
 		&mut self,
 		client: Arc<Client>,
 		indexer_backend: Arc<fc_db::sql::Backend<Block>>,
@@ -273,7 +361,7 @@ where
 
 			// exit if block is already imported
 			if self
-				.imported_blocks
+				.indexed_blocks
 				.contains(&hash, indexer_backend.pool())
 				.await
 			{
@@ -305,6 +393,9 @@ where
 		}
 	}
 
+	/// Indexes a specific block. The blocks are batched until it meets the specified size or the
+	/// parameter `force_sync` is set to `true`. If either of the previous conditions are met, then
+	/// then entire batch of blocks is indexed.
 	async fn index_block(
 		&mut self,
 		client: Arc<Client>,
@@ -315,7 +406,7 @@ where
 		if !self.current_batch.contains(&hash) {
 			log::debug!(
 				target: "frontier-sql",
-				"⤵️  Queued for index {}, (batch {}/{}) force={}",
+				"⤵️  Queued for index {:?}, (batch {}/{}) force={}",
 				hash,
 				self.current_batch.len()+1,
 				self.batch_size,
@@ -333,7 +424,9 @@ where
 		true
 	}
 
-	pub async fn index_current_batch(
+	/// Indexes the current batch of blocks. This includes populating the SQL tables with the
+	/// block metadata and any transactions or logs associated with those blocks.
+	async fn index_current_batch(
 		&mut self,
 		client: Arc<Client>,
 		indexer_backend: Arc<fc_db::sql::Backend<Block>>,
@@ -358,13 +451,15 @@ where
 			"🛠️  Inserted block metadata"
 		);
 		indexer_backend
-			.spawn_logs_task(client.clone(), self.batch_size)
+			.index_pending_block_logs(client.clone(), self.batch_size)
 			.await; // Spawn actual logs task
-		self.imported_blocks
+		self.indexed_blocks
 			.append(self.current_batch.iter().cloned());
 		self.current_batch.clear();
 	}
 
+	/// Canonicalizes the database by setting the `is_canon` field for the retracted blocks to `0`,
+	/// and `1` if they are enacted.
 	async fn canonicalize(
 		indexer_backend: Arc<fc_db::sql::Backend<Block>>,
 		tree_route: Arc<sp_blockchain::TreeRoute<Block>>,
