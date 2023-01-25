@@ -112,7 +112,11 @@ where
 			}
 		};
 
-		if let Ok(BlockStatus::Unknown) = self.client.status(id) {
+		let Ok(hash) = self.client.expect_block_hash_from_id(&id) else {
+			return Err(crate::err(JSON_RPC_ERROR_DEFAULT, "block not found", None));
+		};
+
+		if let Ok(BlockStatus::Unknown) = self.client.status(hash) {
 			return Err(crate::err(JSON_RPC_ERROR_DEFAULT, "header not found", None));
 		}
 
