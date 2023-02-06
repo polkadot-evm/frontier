@@ -810,7 +810,7 @@
 			<span class="kw">let </span>base_fee = client.runtime_api().gas_price(<span class="kw-2">&amp;</span>id).unwrap_or_default();
 			<span class="kw">let </span>receipts = handler.current_receipts(<span class="kw-2">&amp;</span>id);
 			<span class="kw">let </span><span class="kw-2">mut </span>result = FeeHistoryCacheItem {
-				base_fee: base_fee.as_u64(),
+				base_fee: <span class="kw">if </span>base_fee &gt; U256::from(u64::MAX) { u64::MAX } <span class="kw">else </span>{ base_fee.low_u64() },
 				gas_used_ratio: <span class="number">0f64</span>,
 				rewards: Vec::new(),
 			};
