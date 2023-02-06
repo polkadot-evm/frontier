@@ -25,6 +25,7 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
+use alloc::format;
 use core::marker::PhantomData;
 use fp_evm::{
 	ExitError, ExitSucceed, Precompile, PrecompileFailure, PrecompileHandle, PrecompileOutput,
