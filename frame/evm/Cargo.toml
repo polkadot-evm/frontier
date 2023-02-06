@@ -15,6 +15,7 @@ targets = ["x86_64-unknown-linux-gnu"]
 environmental = { workspace = true, optional = true }
 evm = { workspace = true, features = ["with-codec"] }
 hex = { version = "0.4.3", default-features = false, features = ["alloc"] }
+impl-trait-for-tuples = "0.2.2"
 log = { version = "0.4.17", default-features = false }
 rlp = { workspace = true }
 scale-codec = { package = "parity-scale-codec", workspace = true }

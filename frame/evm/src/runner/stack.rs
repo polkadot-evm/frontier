@@ -19,8 +19,8 @@
 
 use crate::{
 	runner::Runner as RunnerT, AccountCodes, AccountStorages, AddressMapping, BalanceOf,
-	BlockHashMapping, Config, Error, Event, FeeCalculator, OnChargeEVMTransaction, Pallet,
-	RunnerError,
+	BlockHashMapping, Config, Error, Event, FeeCalculator, OnChargeEVMTransaction, OnCreate,
+	Pallet, RunnerError,
 };
 use evm::{
 	backend::Backend as BackendT,
@@ -417,6 +417,7 @@ where
 			is_transactional,
 			|executor| {
 				let address = executor.create_address(evm::CreateScheme::Legacy { caller: source });
+				T::OnCreate::on_create(source, address);
 				let (reason, _) =
 					executor.transact_create(source, value, init, gas_limit, access_list);
 				(reason, address)
@@ -470,6 +471,7 @@ where
 					code_hash,
 					salt,
 				});
+				T::OnCreate::on_create(source, address);
 				let (reason, _) =
 					executor.transact_create2(source, value, init, salt, gas_limit, access_list);
 				(reason, address)

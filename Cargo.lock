@@ -4285,6 +4285,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "hex",
+ "impl-trait-for-tuples",
  "log",
  "pallet-balances",
  "pallet-evm-precompile-simple",
