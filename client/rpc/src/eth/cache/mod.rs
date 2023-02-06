@@ -348,7 +348,7 @@ where
 			let base_fee = client.runtime_api().gas_price(&id).unwrap_or_default();
 			let receipts = handler.current_receipts(&id);
 			let mut result = FeeHistoryCacheItem {
-				base_fee: base_fee.as_u64(),
+				base_fee: if base_fee > U256::from(u64::MAX) { u64::MAX } else { base_fee.low_u64() },
 				gas_used_ratio: 0f64,
 				rewards: Vec::new(),
 			};
