@@ -193,8 +193,8 @@ where
 				let decoded = Vec::<Block::Hash>::decode(&mut &substrate_hash[..]);
 				if decoded.is_err() || decoded.unwrap().is_empty() {
 					// Verify the substrate hash is part of the canonical chain.
-					if let Ok(Some(number)) = client.number(Block::Hash::decode(&mut &substrate_hash[..]).unwrap()) {
-						if let Ok(Some(header)) = client.header(sp_runtime::generic::BlockId::Number(number)) {
+					if let Ok(hash) =  Block::Hash::decode(&mut &substrate_hash[..]) {
+						if let Ok(Some(header)) = client.header(hash) {
 							transaction.put_vec(
 								crate::columns::BLOCK_MAPPING,
 								ethereum_hash,
@@ -279,8 +279,8 @@ where
 				let decoded = Vec::<Block::Hash>::decode(&mut &substrate_hash[..]);
 				if decoded.is_err() || decoded.unwrap().is_empty() {
 					// Verify the substrate hash is part of the canonical chain.
-					if let Ok(Some(number)) = client.number(Block::Hash::decode(&mut &substrate_hash[..]).unwrap()) {
-						if let Ok(Some(header)) = client.header(sp_runtime::generic::BlockId::Number(number)) {
+					if let Ok(hash) =  Block::Hash::decode(&mut &substrate_hash[..]) {
+						if let Ok(Some(header)) = client.header(hash) {
 							transaction.push((
 								crate::columns::BLOCK_MAPPING as u8,
 								ethereum_hash,

@@ -54,6 +54,7 @@ pallet-evm-chain-id = { workspace = true }
 pallet-evm-precompile-modexp = { workspace = true }
 pallet-evm-precompile-sha3fips = { workspace = true }
 pallet-evm-precompile-simple = { workspace = true }
+pallet-evm-precompile-czk-precompiles = { workspace = true }
 pallet-hotfix-sufficients = { workspace = true }
 
 [build-dependencies]

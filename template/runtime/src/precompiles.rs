@@ -2,6 +2,7 @@ use pallet_evm::{Precompile, PrecompileHandle, PrecompileResult, PrecompileSet};
 use sp_core::H160;
 use sp_std::marker::PhantomData;
 
+use pallet_evm_precompile_czk_precompiles::{AnemoiJive, AnonymousVerifier};
 use pallet_evm_precompile_modexp::Modexp;
 use pallet_evm_precompile_sha3fips::Sha3FIPS256;
 use pallet_evm_precompile_simple::{ECRecover, ECRecoverPublicKey, Identity, Ripemd160, Sha256};
@@ -24,6 +25,8 @@ where
 			hash(5),
 			hash(1024),
 			hash(1025),
+			hash(5000),
+			hash(5001),
 		]
 	}
 }
@@ -42,6 +45,8 @@ where
 			// Non-Frontier specific nor Ethereum precompiles :
 			a if a == hash(1024) => Some(Sha3FIPS256::execute(handle)),
 			a if a == hash(1025) => Some(ECRecoverPublicKey::execute(handle)),
+			a if a == hash(5000) => Some(AnemoiJive::execute(handle)),
+			a if a == hash(5001) => Some(AnonymousVerifier::execute(handle)),
 			_ => None,
 		}
 	}

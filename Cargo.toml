@@ -14,6 +14,7 @@ members = [
 	"frame/evm/precompile/blake2",
 	"frame/evm/precompile/dispatch",
 	"frame/evm/precompile/curve25519",
+	"frame/evm/precompile/czk-precompiles",
 	"client/consensus",
 	"client/rpc-core",
 	"client/rpc",
@@ -139,6 +140,7 @@ pallet-evm-precompile-modexp = { version = "2.0.0-dev", path = "frame/evm/precom
 pallet-evm-precompile-sha3fips = { version = "2.0.0-dev", path = "frame/evm/precompile/sha3fips", default-features = false }
 pallet-evm-precompile-simple = { version = "2.0.0-dev", path = "frame/evm/precompile/simple", default-features = false }
 pallet-evm-test-vector-support = { version = "1.0.0-dev", path = "frame/evm/test-vector-support" }
+pallet-evm-precompile-czk-precompiles = { version = "0.1.0-dev", path = "frame/evm/precompile/czk-precompiles" }
 pallet-hotfix-sufficients = { version = "1.0.0", path = "frame/hotfix-sufficients", default-features = false }
 # Frontier Template
 frontier-template-runtime = { path = "template/runtime", default-features = false }
