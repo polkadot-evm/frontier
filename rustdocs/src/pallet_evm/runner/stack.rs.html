@@ -888,8 +888,6 @@
 <a href="#888" id="888">888</a>
 <a href="#889" id="889">889</a>
 <a href="#890" id="890">890</a>
-<a href="#891" id="891">891</a>
-<a href="#892" id="892">892</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
@@ -911,8 +909,8 @@
 
 </span><span class="kw">use crate</span>::{
 	runner::Runner <span class="kw">as </span>RunnerT, AccountCodes, AccountStorages, AddressMapping, BalanceOf,
-	BlockHashMapping, Config, Error, Event, FeeCalculator, OnChargeEVMTransaction, OnCreate,
-	Pallet, RunnerError,
+	BlockHashMapping, Config, Error, Event, FeeCalculator, OnChargeEVMTransaction, Pallet,
+	RunnerError,
 };
 <span class="kw">use </span>evm::{
 	backend::Backend <span class="kw">as </span>BackendT,
@@ -1309,7 +1307,6 @@
 			is_transactional,
 			|executor| {
 				<span class="kw">let </span>address = executor.create_address(evm::CreateScheme::Legacy { caller: source });
-				T::OnCreate::on_create(source, address);
 				<span class="kw">let </span>(reason, <span class="kw">_</span>) =
 					executor.transact_create(source, value, init, gas_limit, access_list);
 				(reason, address)
@@ -1363,7 +1360,6 @@
 					code_hash,
 					salt,
 				});
-				T::OnCreate::on_create(source, address);
 				<span class="kw">let </span>(reason, <span class="kw">_</span>) =
 					executor.transact_create2(source, value, init, salt, gas_limit, access_list);
 				(reason, address)
