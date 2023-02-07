@@ -1,6 +1,6 @@
 import { assert, expect } from "chai";
 import { step } from "mocha-steps";
-import { BLOCK_GAS_LIMIT, GENESIS_ACCOUNT, GENESIS_ACCOUNT_PRIVATE_KEY } from "./config";
+import { ETH_BLOCK_GAS_LIMIT, GENESIS_ACCOUNT, GENESIS_ACCOUNT_PRIVATE_KEY } from "./config";
 
 import { describeWithFrontier, customRequest, createAndFinalizeBlock } from "./util";
 import { AbiItem } from "web3-utils";
@@ -20,7 +20,7 @@ describeWithFrontier("Frontier RPC (RPC execution)", (context) => {
 		const result = await customRequest(context.web3, "eth_call", [
 			{
 				from: GENESIS_ACCOUNT,
-				gas: `0x${(BLOCK_GAS_LIMIT - 1).toString(16)}`,
+				gas: `0x${(ETH_BLOCK_GAS_LIMIT - 1).toString(16)}`,
 				data: TEST_CONTRACT_BYTECODE,
 			},
 		]);
@@ -32,7 +32,7 @@ describeWithFrontier("Frontier RPC (RPC execution)", (context) => {
 		const result = await customRequest(context.web3, "eth_call", [
 			{
 				from: GENESIS_ACCOUNT,
-				gas: `0x${(BLOCK_GAS_LIMIT * 10).toString(16)}`,
+				gas: `0x${(ETH_BLOCK_GAS_LIMIT * 10).toString(16)}`,
 				data: TEST_CONTRACT_BYTECODE,
 			},
 		]);
@@ -44,7 +44,7 @@ describeWithFrontier("Frontier RPC (RPC execution)", (context) => {
 		const result = await customRequest(context.web3, "eth_call", [
 			{
 				from: GENESIS_ACCOUNT,
-				gas: `0x${(BLOCK_GAS_LIMIT * 10 + 1).toString(16)}`,
+				gas: `0x${(ETH_BLOCK_GAS_LIMIT * 10 + 1).toString(16)}`,
 				data: TEST_CONTRACT_BYTECODE,
 			},
 		]);
@@ -58,7 +58,7 @@ describeWithFrontier("Frontier RPC (RPC execution)", (context) => {
 		const result = await customRequest(context.web3, "eth_estimateGas", [
 			{
 				from: GENESIS_ACCOUNT,
-				gas: `0x${BLOCK_GAS_LIMIT.toString(16)}`,
+				gas: `0x${ETH_BLOCK_GAS_LIMIT.toString(16)}`,
 				data: TEST_CONTRACT_BYTECODE,
 			},
 		]);
@@ -70,7 +70,7 @@ describeWithFrontier("Frontier RPC (RPC execution)", (context) => {
 		const result = await customRequest(context.web3, "eth_estimateGas", [
 			{
 				from: GENESIS_ACCOUNT,
-				gas: `0x${(BLOCK_GAS_LIMIT * 10).toString(16)}`,
+				gas: `0x${(ETH_BLOCK_GAS_LIMIT * 10).toString(16)}`,
 				data: TEST_CONTRACT_BYTECODE,
 			},
 		]);
@@ -82,7 +82,7 @@ describeWithFrontier("Frontier RPC (RPC execution)", (context) => {
 		const result = await customRequest(context.web3, "eth_estimateGas", [
 			{
 				from: GENESIS_ACCOUNT,
-				gas: `0x${(BLOCK_GAS_LIMIT * 20 + 1).toString(16)}`,
+				gas: `0x${(ETH_BLOCK_GAS_LIMIT * 20 + 1).toString(16)}`,
 				data: TEST_CONTRACT_BYTECODE,
 			},
 		]);

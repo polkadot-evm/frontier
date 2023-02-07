@@ -3,7 +3,7 @@ import { AbiItem } from "web3-utils";
 
 import InvalidOpcode from "../build/contracts/InvalidOpcode.json";
 import Test from "../build/contracts/Test.json";
-import { GENESIS_ACCOUNT, GENESIS_ACCOUNT_PRIVATE_KEY, FIRST_CONTRACT_ADDRESS, BLOCK_GAS_LIMIT } from "./config";
+import { GENESIS_ACCOUNT, GENESIS_ACCOUNT_PRIVATE_KEY, FIRST_CONTRACT_ADDRESS, ETH_BLOCK_GAS_LIMIT } from "./config";
 import { describeWithFrontier, createAndFinalizeBlock, customRequest } from "./util";
 
 // (!) The implementation must match the one in the rpc handler.
@@ -140,12 +140,12 @@ describeWithFrontier("Frontier RPC (Gas)", (context) => {
 		expect(result).to.equal(197690);
 	});
 
-	it("tx gas limit below BLOCK_GAS_LIMIT", async function () {
+	it("tx gas limit below ETH_BLOCK_GAS_LIMIT", async function () {
 		const tx = await context.web3.eth.accounts.signTransaction(
 			{
 				from: GENESIS_ACCOUNT,
 				data: Test.bytecode,
-				gas: BLOCK_GAS_LIMIT - 1,
+				gas: ETH_BLOCK_GAS_LIMIT - 1,
 				gasPrice: "0x3B9ACA00",
 			},
 			GENESIS_ACCOUNT_PRIVATE_KEY
@@ -155,12 +155,12 @@ describeWithFrontier("Frontier RPC (Gas)", (context) => {
 		expect((createReceipt as any).transactionHash).to.be.not.null;
 		expect((createReceipt as any).blockHash).to.be.not.null;
 	});
-	it("tx gas limit equal BLOCK_GAS_LIMIT", async function () {
+	it("tx gas limit equal ETH_BLOCK_GAS_LIMIT", async function () {
 		const tx = await context.web3.eth.accounts.signTransaction(
 			{
 				from: GENESIS_ACCOUNT,
 				data: Test.bytecode,
-				gas: BLOCK_GAS_LIMIT,
+				gas: ETH_BLOCK_GAS_LIMIT,
 				gasPrice: "0x3B9ACA00",
 			},
 			GENESIS_ACCOUNT_PRIVATE_KEY
@@ -170,12 +170,12 @@ describeWithFrontier("Frontier RPC (Gas)", (context) => {
 		expect((createReceipt as any).transactionHash).to.be.not.null;
 		expect((createReceipt as any).blockHash).to.be.not.null;
 	});
-	it("tx gas limit larger BLOCK_GAS_LIMIT", async function () {
+	it("tx gas limit larger ETH_BLOCK_GAS_LIMIT", async function () {
 		const tx = await context.web3.eth.accounts.signTransaction(
 			{
 				from: GENESIS_ACCOUNT,
 				data: Test.bytecode,
-				gas: BLOCK_GAS_LIMIT + 1,
+				gas: ETH_BLOCK_GAS_LIMIT + 1,
 				gasPrice: "0x3B9ACA00",
 			},
 			GENESIS_ACCOUNT_PRIVATE_KEY
