@@ -33,7 +33,9 @@ use frame_support::weights::constants::ParityDbWeight as RuntimeDbWeight;
 #[cfg(feature = "with-rocksdb-weights")]
 use frame_support::weights::constants::RocksDbWeight as RuntimeDbWeight;
 use frame_support::{
-	construct_runtime, parameter_types,
+	construct_runtime,
+	dispatch::DispatchClass,
+	parameter_types,
 	traits::{ConstU32, ConstU8, FindAuthor, KeyOwnerProofSystem, OnTimestampSet},
 	weights::{constants::WEIGHT_REF_TIME_PER_SECOND, ConstantMultiplier, IdentityFee, Weight},
 };
@@ -314,7 +316,7 @@ impl<F: FindAuthor<u32>> FindAuthor<H160> for FindAuthorTruncated<F> {
 
 const WEIGHT_PER_GAS: u64 = 20_000;
 parameter_types! {
-	pub BlockGasLimit: U256 = U256::from(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT.ref_time() / WEIGHT_PER_GAS);
+	pub BlockGasLimit: U256 = (<Runtime as frame_system::Config>::BlockWeights::get().get(DispatchClass::Normal).max_extrinsic.unwrap_or_default().ref_time() / WEIGHT_PER_GAS).into();
 	pub PrecompilesValue: FrontierPrecompiles<Runtime> = FrontierPrecompiles::<_>::new();
 	pub WeightPerGas: Weight = Weight::from_ref_time(WEIGHT_PER_GAS);
 }
@@ -870,7 +872,7 @@ mod tests {
 	fn configured_base_extrinsic_weight_is_evm_compatible() {
 		let min_ethereum_transaction_weight = WeightPerGas::get() * 21_000;
 		let base_extrinsic = <Runtime as frame_system::Config>::BlockWeights::get()
-			.get(frame_support::dispatch::DispatchClass::Normal)
+			.get(DispatchClass::Normal)
 			.base_extrinsic;
 		assert!(base_extrinsic.ref_time() <= min_ethereum_transaction_weight.ref_time());
 	}

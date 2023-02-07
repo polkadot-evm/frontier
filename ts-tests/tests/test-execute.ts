@@ -8,8 +8,6 @@ import { AbiItem } from "web3-utils";
 import Test from "../build/contracts/Test.json";
 import ForceGasLimit from "../build/contracts/ForceGasLimit.json";
 
-// EXTRINSIC_GAS_LIMIT = [BLOCK_GAS_LIMIT - BLOCK_GAS_LIMIT * (NORMAL_DISPATCH_RATIO - AVERAGE_ON_INITIALIZE_RATIO) - EXTRINSIC_BASE_Weight] / WEIGHT_PER_GAS = (1_000_000_000_000 * 2 * (0.75-0.1) - 125_000_000) / 20000
-const EXTRINSIC_GAS_LIMIT = 64995685;
 const TEST_CONTRACT_BYTECODE = Test.bytecode;
 const TEST_CONTRACT_DEPLOYED_BYTECODE = Test.deployedBytecode;
 
@@ -22,7 +20,7 @@ describeWithFrontier("Frontier RPC (RPC execution)", (context) => {
 		const result = await customRequest(context.web3, "eth_call", [
 			{
 				from: GENESIS_ACCOUNT,
-				gas: `0x${BLOCK_GAS_LIMIT.toString(16)}`,
+				gas: `0x${(BLOCK_GAS_LIMIT - 1).toString(16)}`,
 				data: TEST_CONTRACT_BYTECODE,
 			},
 		]);

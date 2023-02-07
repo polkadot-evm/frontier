@@ -14,4 +14,5 @@ export const CHAIN_ID = 42;
 export const BLOCK_TIMESTAMP = 6; // 6 seconds per block
 export const BLOCK_HASH_COUNT = 256;
 export const EXISTENTIAL_DEPOSIT = 500; // The minimum amount required to keep an account open
-export const BLOCK_GAS_LIMIT = 75000000;
+// Ethereum_BLOCK_GAS_LIMIT = [BLOCK_GAS_LIMIT - BLOCK_GAS_LIMIT * (NORMAL_DISPATCH_RATIO - AVERAGE_ON_INITIALIZE_RATIO)] / WEIGHT_PER_GAS = (1_000_000_000_000 * 2 * (0.75-0.1) - 98_974_000) / 20000
+export const BLOCK_GAS_LIMIT = 64995051;
