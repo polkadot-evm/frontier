@@ -111,8 +111,20 @@ where
 				(id, api)
 			}
 		};
+		let hash = match id {
+			BlockId::Hash(hash) => hash,
+			BlockId::Number(num) => match self.client.hash(num) {
+				Ok(hash) => match hash {
+					Some(h) => h,
+					None => {
+						return Err(crate::err(JSON_RPC_ERROR_DEFAULT, "header not found", None))
+					}
+				},
+				Err(_) => return Err(crate::err(JSON_RPC_ERROR_DEFAULT, "header not found", None)),
+			},
+		};
 
-		if let Ok(BlockStatus::Unknown) = self.client.status(id) {
+		if let Ok(BlockStatus::Unknown) = self.client.status(hash) {
 			return Err(crate::err(JSON_RPC_ERROR_DEFAULT, "header not found", None));
 		}
 

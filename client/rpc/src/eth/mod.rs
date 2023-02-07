@@ -516,7 +516,7 @@ where
 {
 	// In case of Pending, we need an overlayed state to query over.
 	let api = client.runtime_api();
-	let best = BlockId::Hash(client.info().best_hash);
+	let best = client.info().best_hash;
 	// Get all transactions in the ready queue.
 	let xts: Vec<<B as BlockT>::Extrinsic> = graph
 		.validated_pool()
@@ -530,7 +530,7 @@ where
 			.map_err(|e| internal_err(format!("Runtime api access error: {:?}", e)))?;
 		// Apply the ready queue to the best block's state.
 		for xt in xts {
-			let _ = api.apply_extrinsic(&best, xt);
+			let _ = api.apply_extrinsic(&BlockId::Hash(best), xt);
 		}
 		Ok(api)
 	} else {

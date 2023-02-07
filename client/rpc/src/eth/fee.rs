@@ -71,13 +71,30 @@ where
 			self.backend.as_ref(),
 			Some(newest_block),
 		) {
-			let header = match self.client.header(id) {
+			let hash = match id {
+				BlockId::Hash(hash) => hash,
+				BlockId::Number(number) => match HeaderBackend::hash(&*self.client, number) {
+					Ok(hash) => match hash {
+						Some(h) => h,
+						None => {
+							return Err(internal_err(format!(
+								"Failed to retrieve header at {}",
+								id
+							)));
+						}
+					},
+					Err(_) => {
+						return Err(internal_err(format!("Failed to retrieve header at {}", id)));
+					}
+				},
+			};
+			let header = match self.client.header(hash) {
 				Ok(Some(h)) => h,
 				_ => {
 					return Err(internal_err(format!("Failed to retrieve header at {}", id)));
 				}
 			};
-			let number = match self.client.number(header.hash()) {
+			let number = match HeaderBackend::number(&*self.client, header.hash()) {
 				Ok(Some(n)) => n,
 				_ => {
 					return Err(internal_err(format!(

@@ -8,3 +8,9 @@ edition = "2021"
 [dependencies]
 czk-precompiles = { git = "ssh://git@github.com.chainzk/Chainzk-org/czk-precompiles.git", branch = "deps" } 
 fp-evm = { workspace = true }
+
+[features]
+default = ["std"]
+std = [
+	"fp-evm/std",
+]

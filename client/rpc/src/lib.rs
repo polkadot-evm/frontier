@@ -151,7 +151,17 @@ pub mod frontier_backend_client {
 		BE: Backend<B> + 'static,
 		BE::State: StateBackend<BlakeTwo256>,
 	{
-		if let Ok(Some(header)) = client.header(at) {
+		let hash = match at {
+			BlockId::Hash(hash) => hash.clone(),
+			BlockId::Number(number) => match HeaderBackend::hash(client, number) {
+				Ok(hash) => match hash {
+					Some(h) => h,
+					None => return EthereumStorageSchema::Undefined,
+				},
+				Err(_) => return EthereumStorageSchema::Undefined,
+			},
+		};
+		if let Ok(Some(header)) = client.header(hash) {
 			match client.storage(header.hash(), &StorageKey(PALLET_ETHEREUM_SCHEMA.to_vec())) {
 				Ok(Some(bytes)) => Decode::decode(&mut &bytes.0[..])
 					.ok()
@@ -168,10 +178,8 @@ pub mod frontier_backend_client {
 		B: BlockT<Hash = H256> + Send + Sync + 'static,
 		C: HeaderBackend<B> + Send + Sync + 'static,
 	{
-		if let Ok(Some(number)) = client.number(target_hash) {
-			if let Ok(Some(header)) = client.header(BlockId::Number(number)) {
-				return header.hash() == target_hash;
-			}
+		if let Ok(Some(header)) = client.header(target_hash) {
+			return header.hash() == target_hash;
 		}
 		false
 	}

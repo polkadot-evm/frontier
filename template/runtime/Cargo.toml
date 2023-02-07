@@ -56,6 +56,7 @@ pallet-evm-precompile-sha3fips = { workspace = true }
 pallet-evm-precompile-simple = { workspace = true }
 pallet-evm-precompile-czk-precompiles = { workspace = true }
 pallet-hotfix-sufficients = { workspace = true }
+getrandom = { version = "0.2", features = ["js"] }
 
 [build-dependencies]
 substrate-wasm-builder = { workspace = true }
