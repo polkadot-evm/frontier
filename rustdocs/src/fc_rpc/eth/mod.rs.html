@@ -540,6 +540,7 @@
 <a href="#540" id="540">540</a>
 <a href="#541" id="541">541</a>
 <a href="#542" id="542">542</a>
+<a href="#543" id="543">543</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -1058,7 +1059,8 @@
 {
 	<span class="comment">// In case of Pending, we need an overlayed state to query over.
 	</span><span class="kw">let </span>api = client.runtime_api();
-	<span class="kw">let </span>best = BlockId::Hash(client.info().best_hash);
+	<span class="kw">let </span>best_hash = client.info().best_hash;
+	<span class="kw">let </span>best = BlockId::Hash(best_hash);
 	<span class="comment">// Get all transactions in the ready queue.
 	</span><span class="kw">let </span>xts: Vec&lt;&lt;B <span class="kw">as </span>BlockT&gt;::Extrinsic&gt; = graph
 		.validated_pool()
@@ -1066,7 +1068,7 @@
 		.map(|in_pool_tx| in_pool_tx.data().clone())
 		.collect::&lt;Vec&lt;&lt;B <span class="kw">as </span>BlockT&gt;::Extrinsic&gt;&gt;();
 	<span class="comment">// Manually initialize the overlay.
-	</span><span class="kw">if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(header)) = client.header(best) {
+	</span><span class="kw">if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(header)) = client.header(best_hash) {
 		<span class="kw">let </span>parent_hash = BlockId::Hash(<span class="kw-2">*</span>header.parent_hash());
 		api.initialize_block(<span class="kw-2">&amp;</span>parent_hash, <span class="kw-2">&amp;</span>header)
 			.map_err(|e| internal_err(<span class="macro">format!</span>(<span class="string">&quot;Runtime api access error: {:?}&quot;</span>, e)))<span class="question-mark">?</span>;

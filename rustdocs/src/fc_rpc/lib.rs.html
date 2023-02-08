@@ -400,6 +400,9 @@
 <a href="#400" id="400">400</a>
 <a href="#401" id="401">401</a>
 <a href="#402" id="402">402</a>
+<a href="#403" id="403">403</a>
+<a href="#404" id="404">404</a>
+<a href="#405" id="405">405</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -553,6 +556,9 @@
 		BE: Backend&lt;B&gt; + <span class="lifetime">&#39;static</span>,
 		BE::State: StateBackend&lt;BlakeTwo256&gt;,
 	{
+		<span class="kw">let </span><span class="prelude-val">Ok</span>(at) = client.expect_block_hash_from_id(<span class="kw-2">&amp;</span>at) <span class="kw">else </span>{
+			<span class="kw">return </span>EthereumStorageSchema::Undefined
+		};
 		<span class="kw">if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(header)) = client.header(at) {
 			<span class="kw">match </span>client.storage(header.hash(), <span class="kw-2">&amp;</span>StorageKey(PALLET_ETHEREUM_SCHEMA.to_vec())) {
 				<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(bytes)) =&gt; Decode::decode(<span class="kw-2">&amp;mut &amp;</span>bytes.<span class="number">0</span>[..])
@@ -571,8 +577,8 @@
 		C: HeaderBackend&lt;B&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
 	{
 		<span class="kw">if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(number)) = client.number(target_hash) {
-			<span class="kw">if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(header)) = client.header(BlockId::Number(number)) {
-				<span class="kw">return </span>header.hash() == target_hash;
+			<span class="kw">if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(hash)) = client.hash(number) {
+				<span class="kw">return </span>hash == target_hash;
 			}
 		}
 		<span class="bool-val">false
