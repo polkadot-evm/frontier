@@ -25,7 +25,7 @@ use sc_client_api::backend::{Backend, StateBackend, StorageProvider};
 use sp_api::BlockId;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{
-	traits::{BlakeTwo256, Block as BlockT, Header as HeaderT},
+	traits::{BlakeTwo256, Block as BlockT},
 	Permill,
 };
 use sp_storage::StorageKey;
@@ -58,8 +58,8 @@ where
 	BE::State: StateBackend<BlakeTwo256>,
 {
 	fn query_storage<T: Decode>(&self, id: &BlockId<B>, key: &StorageKey) -> Option<T> {
-		if let Ok(Some(header)) = self.client.header(*id) {
-			if let Ok(Some(data)) = self.client.storage(header.hash(), key) {
+		if let Ok(Some(hash)) = self.client.block_hash_from_id(id) {
+			if let Ok(Some(data)) = self.client.storage(hash, key) {
 				if let Ok(result) = Decode::decode(&mut &data.0[..]) {
 					return Some(result);
 				}

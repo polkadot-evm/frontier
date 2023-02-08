@@ -71,12 +71,16 @@ where
 			self.backend.as_ref(),
 			Some(newest_block),
 		) {
-			let header = match self.client.header(id) {
+			let Ok(hash) = self.client.expect_block_hash_from_id(&id) else {
+				return Err(internal_err(format!("Failed to retrieve block hash at {id}")));
+			};
+			let header = match self.client.header(hash) {
 				Ok(Some(h)) => h,
 				_ => {
 					return Err(internal_err(format!("Failed to retrieve header at {}", id)));
 				}
 			};
+			// Canonical chain block number.
 			let number = match self.client.number(header.hash()) {
 				Ok(Some(n)) => n,
 				_ => {

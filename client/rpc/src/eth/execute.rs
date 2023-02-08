@@ -27,7 +27,7 @@ use sc_network_common::ExHashT;
 use sc_transaction_pool::ChainApi;
 use sp_api::{ApiExt, ProvideRuntimeApi};
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
-use sp_blockchain::{BlockStatus, HeaderBackend};
+use sp_blockchain::HeaderBackend;
 use sp_runtime::{
 	generic::BlockId,
 	traits::{BlakeTwo256, Block as BlockT},
@@ -112,9 +112,9 @@ where
 			}
 		};
 
-		if let Ok(BlockStatus::Unknown) = self.client.status(id) {
+		let Ok(_hash) = self.client.expect_block_hash_from_id(&id) else {
 			return Err(crate::err(JSON_RPC_ERROR_DEFAULT, "header not found", None));
-		}
+		};
 
 		let api_version =
 			if let Ok(Some(api_version)) = api.api_version::<dyn EthereumRuntimeRPCApi<B>>(&id) {
