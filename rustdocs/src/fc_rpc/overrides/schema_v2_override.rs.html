@@ -186,7 +186,7 @@
 <span class="kw">use </span>sp_api::BlockId;
 <span class="kw">use </span>sp_blockchain::HeaderBackend;
 <span class="kw">use </span>sp_runtime::{
-	traits::{BlakeTwo256, Block <span class="kw">as </span>BlockT},
+	traits::{BlakeTwo256, Block <span class="kw">as </span>BlockT, Header <span class="kw">as </span>HeaderT},
 	Permill,
 };
 <span class="kw">use </span>sp_storage::StorageKey;
@@ -219,8 +219,8 @@
 	BE::State: StateBackend&lt;BlakeTwo256&gt;,
 {
 	<span class="kw">fn </span>query_storage&lt;T: Decode&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, id: <span class="kw-2">&amp;</span>BlockId&lt;B&gt;, key: <span class="kw-2">&amp;</span>StorageKey) -&gt; <span class="prelude-ty">Option</span>&lt;T&gt; {
-		<span class="kw">if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(hash)) = <span class="self">self</span>.client.block_hash_from_id(id) {
-			<span class="kw">if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(data)) = <span class="self">self</span>.client.storage(hash, key) {
+		<span class="kw">if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(header)) = <span class="self">self</span>.client.header(<span class="kw-2">*</span>id) {
+			<span class="kw">if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(data)) = <span class="self">self</span>.client.storage(header.hash(), key) {
 				<span class="kw">if let </span><span class="prelude-val">Ok</span>(result) = Decode::decode(<span class="kw-2">&amp;mut &amp;</span>data.<span class="number">0</span>[..]) {
 					<span class="kw">return </span><span class="prelude-val">Some</span>(result);
 				}
