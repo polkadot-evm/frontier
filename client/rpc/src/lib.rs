@@ -151,10 +151,7 @@ pub mod frontier_backend_client {
 		BE: Backend<B> + 'static,
 		BE::State: StateBackend<BlakeTwo256>,
 	{
-		let Ok(at) = client.expect_block_hash_from_id(&at) else {
-			return EthereumStorageSchema::Undefined
-		};
-		if let Ok(Some(header)) = client.header(at) {
+		if let Ok(Some(hash)) = client.block_hash_from_id(&at) {
 			match client.storage(header.hash(), &StorageKey(PALLET_ETHEREUM_SCHEMA.to_vec())) {
 				Ok(Some(bytes)) => Decode::decode(&mut &bytes.0[..])
 					.ok()
