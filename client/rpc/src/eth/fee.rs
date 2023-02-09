@@ -26,7 +26,7 @@ use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{
 	generic::BlockId,
-	traits::{BlakeTwo256, Block as BlockT, Header as HeaderT, UniqueSaturatedInto},
+	traits::{BlakeTwo256, Block as BlockT, UniqueSaturatedInto},
 };
 // Frontier
 use fc_rpc_core::types::*;

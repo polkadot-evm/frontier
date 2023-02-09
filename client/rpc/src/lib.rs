@@ -59,7 +59,7 @@ pub mod frontier_backend_client {
 	use sp_blockchain::HeaderBackend;
 	use sp_runtime::{
 		generic::BlockId,
-		traits::{BlakeTwo256, Block as BlockT, Header as HeaderT, UniqueSaturatedInto, Zero},
+		traits::{BlakeTwo256, Block as BlockT, UniqueSaturatedInto, Zero},
 	};
 	use sp_storage::StorageKey;
 	// Frontier
@@ -152,7 +152,7 @@ pub mod frontier_backend_client {
 		BE::State: StateBackend<BlakeTwo256>,
 	{
 		if let Ok(Some(hash)) = client.block_hash_from_id(&at) {
-			match client.storage(header.hash(), &StorageKey(PALLET_ETHEREUM_SCHEMA.to_vec())) {
+			match client.storage(hash, &StorageKey(PALLET_ETHEREUM_SCHEMA.to_vec())) {
 				Ok(Some(bytes)) => Decode::decode(&mut &bytes.0[..])
 					.ok()
 					.unwrap_or(EthereumStorageSchema::Undefined),
