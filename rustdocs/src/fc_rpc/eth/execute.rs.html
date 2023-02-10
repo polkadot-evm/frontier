@@ -801,6 +801,8 @@
 <a href="#801" id="801">801</a>
 <a href="#802" id="802">802</a>
 <a href="#803" id="803">803</a>
+<a href="#804" id="804">804</a>
+<a href="#805" id="805">805</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -915,9 +917,11 @@
 			}
 		};
 
-		<span class="kw">let </span><span class="prelude-val">Ok</span>(_hash) = <span class="self">self</span>.client.expect_block_hash_from_id(<span class="kw-2">&amp;</span>id) <span class="kw">else </span>{
+		<span class="kw">if let </span><span class="prelude-val">Err</span>(sp_blockchain::Error::UnknownBlock(<span class="kw">_</span>)) =
+			<span class="self">self</span>.client.expect_block_hash_from_id(<span class="kw-2">&amp;</span>id)
+		{
 			<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="kw">crate</span>::err(JSON_RPC_ERROR_DEFAULT, <span class="string">&quot;header not found&quot;</span>, <span class="prelude-val">None</span>));
-		};
+		}
 
 		<span class="kw">let </span>api_version =
 			<span class="kw">if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(api_version)) = api.api_version::&lt;<span class="kw">dyn </span>EthereumRuntimeRPCApi&lt;B&gt;&gt;(<span class="kw-2">&amp;</span>id) {
