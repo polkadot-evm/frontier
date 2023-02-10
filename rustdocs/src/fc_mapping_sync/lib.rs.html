@@ -434,7 +434,7 @@
 		<span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>);
 	}
 
-	<span class="kw">match </span>substrate_backend.header(BlockId::Hash(checking_tip)) {
+	<span class="kw">match </span>substrate_backend.header(checking_tip) {
 		<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(checking_header)) <span class="kw">if </span>checking_header.number() &gt;= <span class="kw-2">&amp;</span>sync_from =&gt; {
 			<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(checking_header))
 		}

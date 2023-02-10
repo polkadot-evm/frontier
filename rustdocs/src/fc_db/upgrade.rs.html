@@ -569,7 +569,7 @@
 
 <span class="kw">use </span>scale_codec::{Decode, Encode};
 <span class="kw">use </span>sp_core::H256;
-<span class="kw">use </span>sp_runtime::traits::{Block <span class="kw">as </span>BlockT, Header};
+<span class="kw">use </span>sp_runtime::traits::Block <span class="kw">as </span>BlockT;
 
 <span class="kw">use </span><span class="kw">crate</span>::DatabaseSource;
 
@@ -738,11 +738,11 @@
 				<span class="kw">if </span>decoded.is_err() || decoded.unwrap().is_empty() {
 					<span class="comment">// Verify the substrate hash is part of the canonical chain.
 					</span><span class="kw">if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(number)) = client.number(Block::Hash::decode(<span class="kw-2">&amp;mut &amp;</span>substrate_hash[..]).unwrap()) {
-						<span class="kw">if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(header)) = client.header(sp_runtime::generic::BlockId::Number(number)) {
+						<span class="kw">if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(hash)) = client.hash(number) {
 							transaction.put_vec(
 								<span class="kw">crate</span>::columns::BLOCK_MAPPING,
 								ethereum_hash,
-								<span class="macro">vec!</span>[header.hash()].encode(),
+								<span class="macro">vec!</span>[hash].encode(),
 							);
 							res.success += <span class="number">1</span>;
 							maybe_error = <span class="bool-val">false</span>;
@@ -824,11 +824,11 @@
 				<span class="kw">if </span>decoded.is_err() || decoded.unwrap().is_empty() {
 					<span class="comment">// Verify the substrate hash is part of the canonical chain.
 					</span><span class="kw">if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(number)) = client.number(Block::Hash::decode(<span class="kw-2">&amp;mut &amp;</span>substrate_hash[..]).unwrap()) {
-						<span class="kw">if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(header)) = client.header(sp_runtime::generic::BlockId::Number(number)) {
+						<span class="kw">if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(hash)) = client.hash(number) {
 							transaction.push((
 								<span class="kw">crate</span>::columns::BLOCK_MAPPING <span class="kw">as </span>u8,
 								ethereum_hash,
-								<span class="prelude-val">Some</span>(<span class="macro">vec!</span>[header.hash()].encode()),
+								<span class="prelude-val">Some</span>(<span class="macro">vec!</span>[hash].encode()),
 							));
 							res.success += <span class="number">1</span>;
 							maybe_error = <span class="bool-val">false</span>;
