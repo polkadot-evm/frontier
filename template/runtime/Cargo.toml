@@ -57,7 +57,7 @@ pallet-evm-precompile-simple = { workspace = true }
 pallet-hotfix-sufficients = { workspace = true }
 
 [build-dependencies]
-substrate-wasm-builder = { workspace = true }
+substrate-wasm-builder = { workspace = true, optional = true }
 
 [features]
 default = ["std", "with-rocksdb-weights"]
@@ -78,6 +78,7 @@ std = [
 	"sp-std/std",
 	"sp-transaction-pool/std",
 	"sp-version/std",
+	"substrate-wasm-builder",
 	# Substrate FRAME
 	"frame-benchmarking/std",
 	"frame-executive/std",
