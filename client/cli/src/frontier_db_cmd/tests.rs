@@ -93,7 +93,7 @@ fn cmd(key: String, value: Option<PathBuf>, operation: Operation, column: Column
 			detailed_log_output: false,
 		},
 		pruning_params: sc_cli::PruningParams {
-			state_pruning: DatabasePruningMode::Archive,
+			state_pruning: Some(DatabasePruningMode::Archive),
 			blocks_pruning: DatabasePruningMode::Archive,
 		},
 	}

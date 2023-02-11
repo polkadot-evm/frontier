@@ -25,7 +25,7 @@ use std::{
 
 use scale_codec::{Decode, Encode};
 use sp_core::H256;
-use sp_runtime::traits::{Block as BlockT, Header};
+use sp_runtime::traits::Block as BlockT;
 
 use crate::DatabaseSource;
 
@@ -194,11 +194,11 @@ where
 				if decoded.is_err() || decoded.unwrap().is_empty() {
 					// Verify the substrate hash is part of the canonical chain.
 					if let Ok(Some(number)) = client.number(Block::Hash::decode(&mut &substrate_hash[..]).unwrap()) {
-						if let Ok(Some(header)) = client.header(sp_runtime::generic::BlockId::Number(number)) {
+						if let Ok(Some(hash)) = client.hash(number) {
 							transaction.put_vec(
 								crate::columns::BLOCK_MAPPING,
 								ethereum_hash,
-								vec![header.hash()].encode(),
+								vec![hash].encode(),
 							);
 							res.success += 1;
 							maybe_error = false;
@@ -280,11 +280,11 @@ where
 				if decoded.is_err() || decoded.unwrap().is_empty() {
 					// Verify the substrate hash is part of the canonical chain.
 					if let Ok(Some(number)) = client.number(Block::Hash::decode(&mut &substrate_hash[..]).unwrap()) {
-						if let Ok(Some(header)) = client.header(sp_runtime::generic::BlockId::Number(number)) {
+						if let Ok(Some(hash)) = client.hash(number) {
 							transaction.push((
 								crate::columns::BLOCK_MAPPING as u8,
 								ethereum_hash,
-								Some(vec![header.hash()].encode()),
+								Some(vec![hash].encode()),
 							));
 							res.success += 1;
 							maybe_error = false;
