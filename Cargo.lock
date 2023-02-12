@@ -2134,6 +2134,7 @@ dependencies = [
  "parity-scale-codec",
  "serde",
  "sp-core",
+ "sp-runtime",
  "sp-std",
 ]
 
@@ -2453,6 +2454,7 @@ dependencies = [
 name = "frontier-template-runtime"
 version = "0.0.0"
 dependencies = [
+ "fp-evm",
  "fp-rpc",
  "fp-self-contained",
  "frame-benchmarking",
