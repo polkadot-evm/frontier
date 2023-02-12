@@ -42,6 +42,7 @@ use pallet_grandpa::{
 };
 use pallet_transaction_payment::CurrencyAdapter;
 // Frontier
+use fp_evm::weight_per_gas;
 use fp_rpc::TransactionStatus;
 use pallet_ethereum::{Call::transact, Transaction as EthereumTransaction};
 use pallet_evm::{
@@ -313,30 +314,6 @@ impl<F: FindAuthor<u32>> FindAuthor<H160> for FindAuthorTruncated<F> {
 		}
 		None
 	}
-}
-
-/// `WeightPerGas` is an approximate ratio of the amount of Weight per Gas.
-/// u64 works for approximations because Weight is a very small unit compared to gas.
-///
-/// `GAS_PER_MILLIS * WEIGHT_MILLIS_PER_BLOCK * TXN_RATIO ~= BLOCK_GAS_LIMIT`
-/// `WEIGHT_PER_GAS = WEIGHT_REF_TIME_PER_MILLIS / GAS_PER_MILLIS
-///                 = WEIGHT_REF_TIME_PER_MILLIS / (BLOCK_GAS_LIMIT / TXN_RATIO / WEIGHT_MILLIS_PER_BLOCK)
-///                 = TXN_RATIO * (WEIGHT_REF_TIME_PER_MILLIS * WEIGHT_MILLIS_PER_BLOCK) / BLOCK_GAS_LIMIT`
-///
-/// For example, given the 2000ms Weight, from which 75% only are used for transactions,
-/// the total EVM execution gas limit is `GAS_PER_MILLIS * 2000 * 75% = BLOCK_GAS_LIMIT`.
-pub fn weight_per_gas(
-	block_gas_limit: u64,
-	txn_ratio: Perbill,
-	weight_millis_per_block: u64,
-) -> u64 {
-	let weight_per_block = WEIGHT_REF_TIME_PER_MILLIS.saturating_mul(weight_millis_per_block);
-	let weight_per_gas = (txn_ratio * weight_per_block).saturating_div(block_gas_limit);
-	assert!(
-		weight_per_gas >= 1,
-		"WeightPerGas must greater than or equal with 1"
-	);
-	weight_per_gas
 }
 
 const BLOCK_GAS_LIMIT: u64 = 75_000_000;
