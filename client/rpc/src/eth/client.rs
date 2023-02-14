@@ -69,18 +69,16 @@ where
 	}
 
 	pub fn author(&self) -> Result<H160> {
-		let block = BlockId::Hash(self.client.info().best_hash);
-		let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(
-			self.client.as_ref(),
-			block,
-		);
+		let hash = self.client.info().best_hash;
+		let schema =
+			frontier_backend_client::onchain_storage_schema::<B, C, BE>(self.client.as_ref(), hash);
 
 		Ok(self
 			.overrides
 			.schemas
 			.get(&schema)
 			.unwrap_or(&self.overrides.fallback)
-			.current_block(&block)
+			.current_block(hash)
 			.ok_or_else(|| internal_err("fetching author through override failed"))?
 			.header
 			.beneficiary)
