@@ -1,17 +1,16 @@
 [package]
 name = "pallet-evm-precompile-ed25519"
 version = "2.0.0-dev"
-authors = ["Parity Technologies <admin@parity.io>"]
-edition = "2021"
 license = "Apache-2.0"
 description = "ED25519 precompiles for EVM pallet."
-repository = "https://github.com/paritytech/frontier/"
+authors = { workspace = true }
+edition = { workspace = true }
+repository = { workspace = true }
 
 [dependencies]
 ed25519-dalek = { version = "1.0.0", default-features = false, features = ["alloc", "u64_backend"] }
-
 # Frontier
-fp-evm = { version = "3.0.0-dev", path = "../../../../primitives/evm", default-features = false }
+fp-evm = { workspace = true }
 
 [features]
 default = ["std"]

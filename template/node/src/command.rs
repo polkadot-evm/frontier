@@ -19,7 +19,7 @@ use clap::Parser;
 use futures::TryFutureExt;
 // Substrate
 use sc_cli::{ChainSpec, RuntimeVersion, SubstrateCli};
-use sc_service::{DatabaseSource, PartialComponents};
+use sc_service::DatabaseSource;
 // Frontier
 use fc_db::kv::frontier_database_dir;
 
@@ -54,10 +54,13 @@ impl SubstrateCli for Cli {
 		2021
 	}
 
-	fn load_spec(&self, id: &str) -> Result<Box<dyn sc_service::ChainSpec>, String> {
+	fn load_spec(&self, id: &str) -> Result<Box<dyn ChainSpec>, String> {
 		Ok(match id {
-			"dev" => Box::new(chain_spec::development_config()?),
-			"" | "local" => Box::new(chain_spec::local_testnet_config()?),
+			"dev" => {
+				let enable_manual_seal = self.sealing.map(|_| true);
+				Box::new(chain_spec::development_config(enable_manual_seal))
+			}
+			"" | "local" => Box::new(chain_spec::local_testnet_config()),
 			path => Box::new(chain_spec::ChainSpec::from_json_file(
 				std::path::PathBuf::from(path),
 			)?),
@@ -81,47 +84,33 @@ pub fn run() -> sc_cli::Result<()> {
 		}
 		Some(Subcommand::CheckBlock(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
-			runner.async_run(|config| {
-				let PartialComponents {
-					client,
-					task_manager,
-					import_queue,
-					..
-				} = service::new_partial(&config, &cli)?;
+			runner.async_run(|mut config| {
+				let (client, _, import_queue, task_manager, _) =
+					service::new_chain_ops(&mut config, &cli.eth)?;
 				Ok((cmd.run(client, import_queue), task_manager))
 			})
 		}
 		Some(Subcommand::ExportBlocks(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
-			runner.async_run(|config| {
-				let PartialComponents {
-					client,
-					task_manager,
-					..
-				} = service::new_partial(&config, &cli)?;
+			runner.async_run(|mut config| {
+				let (client, _, _, task_manager, _) =
+					service::new_chain_ops(&mut config, &cli.eth)?;
 				Ok((cmd.run(client, config.database), task_manager))
 			})
 		}
 		Some(Subcommand::ExportState(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
-			runner.async_run(|config| {
-				let PartialComponents {
-					client,
-					task_manager,
-					..
-				} = service::new_partial(&config, &cli)?;
+			runner.async_run(|mut config| {
+				let (client, _, _, task_manager, _) =
+					service::new_chain_ops(&mut config, &cli.eth)?;
 				Ok((cmd.run(client, config.chain_spec), task_manager))
 			})
 		}
 		Some(Subcommand::ImportBlocks(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
-			runner.async_run(|config| {
-				let PartialComponents {
-					client,
-					task_manager,
-					import_queue,
-					..
-				} = service::new_partial(&config, &cli)?;
+			runner.async_run(|mut config| {
+				let (client, _, import_queue, task_manager, _) =
+					service::new_chain_ops(&mut config, &cli.eth)?;
 				Ok((cmd.run(client, import_queue), task_manager))
 			})
 		}
@@ -148,13 +137,9 @@ pub fn run() -> sc_cli::Result<()> {
 		}
 		Some(Subcommand::Revert(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
-			runner.async_run(|config| {
-				let PartialComponents {
-					client,
-					task_manager,
-					backend,
-					..
-				} = service::new_partial(&config, &cli)?;
+			runner.async_run(|mut config| {
+				let (client, backend, _, task_manager, _) =
+					service::new_chain_ops(&mut config, &cli.eth)?;
 				let aux_revert = Box::new(move |client, _, blocks| {
 					sc_finality_grandpa::revert(client, blocks)?;
 					Ok(())
@@ -174,26 +159,21 @@ pub fn run() -> sc_cli::Result<()> {
 
 			let runner = cli.create_runner(cmd)?;
 			match cmd {
-				BenchmarkCmd::Pallet(cmd) => {
-					runner.sync_run(|config| cmd.run::<Block, service::ExecutorDispatch>(config))
-				}
-				BenchmarkCmd::Block(cmd) => runner.sync_run(|config| {
-					let PartialComponents { client, .. } = service::new_partial(&config, &cli)?;
+				BenchmarkCmd::Pallet(cmd) => runner
+					.sync_run(|config| cmd.run::<Block, service::TemplateRuntimeExecutor>(config)),
+				BenchmarkCmd::Block(cmd) => runner.sync_run(|mut config| {
+					let (client, _, _, _, _) = service::new_chain_ops(&mut config, &cli.eth)?;
 					cmd.run(client)
 				}),
-				BenchmarkCmd::Storage(cmd) => runner.sync_run(|config| {
-					let PartialComponents {
-						client, backend, ..
-					} = service::new_partial(&config, &cli)?;
+				BenchmarkCmd::Storage(cmd) => runner.sync_run(|mut config| {
+					let (client, backend, _, _, _) = service::new_chain_ops(&mut config, &cli.eth)?;
 					let db = backend.expose_db();
 					let storage = backend.expose_storage();
-
 					cmd.run(config, client, db, storage)
 				}),
-				BenchmarkCmd::Overhead(cmd) => runner.sync_run(|config| {
-					let PartialComponents { client, .. } = service::new_partial(&config, &cli)?;
+				BenchmarkCmd::Overhead(cmd) => runner.sync_run(|mut config| {
+					let (client, _, _, _, _) = service::new_chain_ops(&mut config, &cli.eth)?;
 					let ext_builder = RemarkBuilder::new(client.clone());
-
 					cmd.run(
 						config,
 						client,
@@ -202,8 +182,8 @@ pub fn run() -> sc_cli::Result<()> {
 						&ext_builder,
 					)
 				}),
-				BenchmarkCmd::Extrinsic(cmd) => runner.sync_run(|config| {
-					let PartialComponents { client, .. } = service::new_partial(&config, &cli)?;
+				BenchmarkCmd::Extrinsic(cmd) => runner.sync_run(|mut config| {
+					let (client, _, _, _, _) = service::new_chain_ops(&mut config, &cli.eth)?;
 					// Register the *Remark* and *TKA* builders.
 					let ext_factory = ExtrinsicFactory(vec![
 						Box::new(RemarkBuilder::new(client.clone())),
@@ -227,22 +207,20 @@ pub fn run() -> sc_cli::Result<()> {
 			.into()),
 		Some(Subcommand::FrontierDb(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
-			runner.sync_run(|config| {
-				let PartialComponents { client, other, .. } = service::new_partial(&config, &cli)?;
-				let frontier_backend = match other.2 {
+			runner.sync_run(|mut config| {
+				let (client, _, _, _, frontier_backend) =
+					service::new_chain_ops(&mut config, &cli.eth)?;
+				let frontier_backend = match frontier_backend {
 					fc_db::Backend::KeyValue(kv) => std::sync::Arc::new(kv),
 					_ => panic!("Only fc_db::Backend::KeyValue supported"),
 				};
-				cmd.run::<_, frontier_template_runtime::opaque::Block>(client, frontier_backend)
+				cmd.run(client, frontier_backend)
 			})
 		}
 		None => {
-			let runner = cli.create_runner(&cli.run.base)?;
+			let runner = cli.create_runner(&cli.run)?;
 			runner.run_node_until_exit(|config| async move {
-				service::new_full(config, &cli)
-					.map_err(sc_cli::Error::Service)
-					.await
-					.map_err(Into::into)
+				service::build_full(config, cli.eth, cli.sealing).map_err(Into::into).await
 			})
 		}
 	}

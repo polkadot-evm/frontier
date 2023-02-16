@@ -73,6 +73,7 @@ use frame_support::{
 	weights::Weight,
 };
 use frame_system::RawOrigin;
+use impl_trait_for_tuples::impl_for_tuples;
 use sp_core::{Hasher, H160, H256, U256};
 use sp_runtime::{
 	traits::{BadOrigin, Saturating, UniqueSaturatedInto, Zero},
@@ -148,6 +149,9 @@ pub mod pallet {
 		/// Similar to `OnChargeTransaction` of `pallet_transaction_payment`
 		type OnChargeTransaction: OnChargeEVMTransaction<Self>;
 
+		/// Called on create calls, used to record owner
+		type OnCreate: OnCreate<Self>;
+
 		/// Find author for the current block.
 		type FindAuthor: FindAuthor<H160>;
 
@@ -160,6 +164,7 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		/// Withdraw balance from EVM into currency/balances pallet.
+		#[pallet::call_index(0)]
 		#[pallet::weight(0)]
 		pub fn withdraw(
 			origin: OriginFor<T>,
@@ -180,6 +185,7 @@ pub mod pallet {
 		}
 
 		/// Issue an EVM call operation. This is similar to a message call transaction in Ethereum.
+		#[pallet::call_index(1)]
 		#[pallet::weight({
 			let without_base_extrinsic_weight = true;
 			T::GasWeightMapping::gas_to_weight(*gas_limit, without_base_extrinsic_weight)
@@ -246,6 +252,7 @@ pub mod pallet {
 
 		/// Issue an EVM create operation. This is similar to a contract creation transaction in
 		/// Ethereum.
+		#[pallet::call_index(2)]
 		#[pallet::weight({
 			let without_base_extrinsic_weight = true;
 			T::GasWeightMapping::gas_to_weight(*gas_limit, without_base_extrinsic_weight)
@@ -321,6 +328,7 @@ pub mod pallet {
 		}
 
 		/// Issue an EVM create2 operation.
+		#[pallet::call_index(3)]
 		#[pallet::weight({
 			let without_base_extrinsic_weight = true;
 			T::GasWeightMapping::gas_to_weight(*gas_limit, without_base_extrinsic_weight)
@@ -435,6 +443,8 @@ pub mod pallet {
 		Undefined,
 		/// EVM reentrancy
 		Reentrancy,
+		/// EIP-3607,
+		TransactionMustComeFromEOA,
 	}
 
 	impl<T> From<InvalidEvmTransactionError> for Error<T> {
@@ -694,7 +704,7 @@ impl<T: Config> Pallet<T> {
 			return;
 		}
 
-		if !<AccountCodes<T>>::contains_key(&address) {
+		if !<AccountCodes<T>>::contains_key(address) {
 			let account_id = T::AddressMapping::into_account_id(address);
 			let _ = frame_system::Pallet::<T>::inc_sufficients(&account_id);
 		}
@@ -884,5 +894,22 @@ U256: UniqueSaturatedInto<BalanceOf<T>>,
 
 	fn pay_priority_fee(tip: Self::LiquidityInfo) {
 		<EVMCurrencyAdapter::<<T as Config>::Currency, ()> as OnChargeEVMTransaction<T>>::pay_priority_fee(tip);
+	}
+}
+
+pub trait OnCreate<T> {
+	fn on_create(owner: H160, contract: H160);
+}
+
+impl<T> OnCreate<T> for () {
+	fn on_create(_owner: H160, _contract: H160) {}
+}
+
+#[impl_for_tuples(1, 12)]
+impl<T> OnCreate<T> for Tuple {
+	fn on_create(owner: H160, contract: H160) {
+		for_tuples!(#(
+			Tuple::on_create(owner, contract);
+		)*)
 	}
 }

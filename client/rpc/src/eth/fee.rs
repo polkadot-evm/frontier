@@ -26,7 +26,7 @@ use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{
 	generic::BlockId,
-	traits::{BlakeTwo256, Block as BlockT, Header as HeaderT, UniqueSaturatedInto},
+	traits::{BlakeTwo256, Block as BlockT, UniqueSaturatedInto},
 };
 // Frontier
 use fc_rpc_core::types::*;
@@ -34,7 +34,7 @@ use fp_rpc::EthereumRuntimeRPCApi;
 
 use crate::{eth::Eth, frontier_backend_client, internal_err};
 
-impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi> Eth<B, C, P, CT, BE, H, A>
+impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi, EGA> Eth<B, C, P, CT, BE, H, A, EGA>
 where
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
@@ -66,27 +66,15 @@ where
 			block_count.as_u64()
 		};
 
-		if let Ok(Some(id)) = frontier_backend_client::native_block_id::<B, C>(
+		if let Some(id) = frontier_backend_client::native_block_id::<B, C>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
 			Some(newest_block),
 		)
-		.await
+		.await?
 		{
-			let header = match self.client.header(id) {
-				Ok(Some(h)) => h,
-				_ => {
-					return Err(internal_err(format!("Failed to retrieve header at {}", id)));
-				}
-			};
-			let number = match self.client.number(header.hash()) {
-				Ok(Some(n)) => n,
-				_ => {
-					return Err(internal_err(format!(
-						"Failed to retrieve block number at {}",
-						id
-					)));
-				}
+			let Ok(number) = self.client.expect_block_number_from_id(&id) else {
+				return Err(internal_err(format!("Failed to retrieve block number at {id}")));
 			};
 			// Highest and lowest block number within the requested range.
 			let highest = UniqueSaturatedInto::<u64>::unique_saturated_into(number);
@@ -206,7 +194,7 @@ where
 		if let Ok(fee_history_cache) = &self.fee_history_cache.lock() {
 			for n in lowest..highest + 1 {
 				if let Some(block) = fee_history_cache.get(&n) {
-					let reward = if let Some(r) = block.rewards.get(index as usize) {
+					let reward = if let Some(r) = block.rewards.get(index) {
 						U256::from(*r)
 					} else {
 						U256::zero()

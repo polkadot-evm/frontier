@@ -17,7 +17,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Decode, Encode};
+use scale_codec::{Decode, Encode};
 
 use ethereum_types::{H160, H256, U256};
 use sp_api::BlockId;
@@ -86,8 +86,6 @@ pub trait StorageOverride<Block: BlockT> {
 		&self,
 		block: &BlockId<Block>,
 	) -> Option<Vec<fp_rpc::TransactionStatus>>;
-	/// Return the base fee at the given height.
-	fn base_fee(&self, block: &BlockId<Block>) -> Option<U256>;
 	/// Return the base fee at the given height.
 	fn elasticity(&self, block: &BlockId<Block>) -> Option<Permill>;
 	/// Return `true` if the request BlockId is post-eip1559.

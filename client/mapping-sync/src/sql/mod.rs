@@ -68,10 +68,8 @@ where
 		let mut resume_at: Option<H256> = None;
 		if let Some(hash) = known_hashes.last() {
 			// If there is at least one know hash in the db, set a resume checkpoint
-			if let Ok(Some(number)) = client.number(*hash) {
-				if let Ok(Some(header)) = client.header(BlockId::Number(number)) {
-					resume_at = Some(*header.parent_hash())
-				}
+			if let Ok(Some(header)) = client.header(*hash) {
+				resume_at = Some(*header.parent_hash())
 			}
 		} else {
 			// If there is no data in the db, sync genesis.
@@ -160,7 +158,7 @@ where
 			{
 				break;
 			}
-			if let Ok(Some(header)) = blockchain_backend.header(BlockId::Hash(leaf)) {
+			if let Ok(Some(header)) = blockchain_backend.header(leaf) {
 				let parent_hash = header.parent_hash();
 				leaves.push(*parent_hash);
 			}

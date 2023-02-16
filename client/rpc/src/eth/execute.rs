@@ -27,7 +27,7 @@ use sc_network_common::ExHashT;
 use sc_transaction_pool::ChainApi;
 use sp_api::{ApiExt, ProvideRuntimeApi};
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
-use sp_blockchain::{BlockStatus, HeaderBackend};
+use sp_blockchain::HeaderBackend;
 use sp_runtime::{
 	generic::BlockId,
 	traits::{BlakeTwo256, Block as BlockT},
@@ -114,7 +114,9 @@ where
 			}
 		};
 
-		if let Ok(BlockStatus::Unknown) = self.client.status(id) {
+		if let Err(sp_blockchain::Error::UnknownBlock(_)) =
+			self.client.expect_block_hash_from_id(&id)
+		{
 			return Err(crate::err(JSON_RPC_ERROR_DEFAULT, "header not found", None));
 		}
 
@@ -153,7 +155,12 @@ where
 				}
 				amount
 			}
-			None => max_gas_limit,
+			// If gas limit is not specified in the request we either use the multiplier if supported
+			// or fallback to the block gas limit.
+			None => match api.gas_limit_multiplier_support(&id) {
+				Ok(_) => max_gas_limit,
+				_ => block_gas_limit,
+			},
 		};
 
 		let data = data.map(|d| d.0).unwrap_or_default();
@@ -369,6 +376,8 @@ where
 
 		let max_gas_limit = block_gas_limit * self.execute_gas_limit_multiplier;
 
+		let api = client.runtime_api();
+
 		// Determine the highest possible gas limits
 		let mut highest = match request.gas {
 			Some(amount) => {
@@ -380,10 +389,13 @@ where
 				}
 				amount
 			}
-			None => max_gas_limit,
+			// If gas limit is not specified in the request we either use the multiplier if supported
+			// or fallback to the block gas limit.
+			None => match api.gas_limit_multiplier_support(&BlockId::Hash(best_hash)) {
+				Ok(_) => max_gas_limit,
+				_ => block_gas_limit,
+			},
 		};
-
-		let api = client.runtime_api();
 
 		// Recap the highest gas allowance with account's balance.
 		if let Some(from) = request.from {
@@ -591,7 +603,7 @@ where
 
 		// Verify that the transaction succeed with highest capacity
 		let cap = highest;
-		let estimate_mode = !cfg!(feature = "rpc_binary_search_estimate");
+		let estimate_mode = !cfg!(feature = "rpc-binary-search-estimate");
 		let ExecutableResult {
 			data,
 			exit_reason,
@@ -648,11 +660,11 @@ where
 			other => error_on_execution_failure(&other, &data)?,
 		};
 
-		#[cfg(not(feature = "rpc_binary_search_estimate"))]
+		#[cfg(not(feature = "rpc-binary-search-estimate"))]
 		{
 			Ok(used_gas)
 		}
-		#[cfg(feature = "rpc_binary_search_estimate")]
+		#[cfg(feature = "rpc-binary-search-estimate")]
 		{
 			// On binary search, evm estimate mode is disabled
 			let estimate_mode = false;

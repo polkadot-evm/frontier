@@ -79,7 +79,7 @@ pub struct Eth<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi, EGA = ()> {
 	_marker: PhantomData<(B, BE, EGA)>,
 }
 
-impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> Eth<B, C, P, CT, BE, H, A> {
+impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> Eth<B, C, P, CT, BE, H, A, ()> {
 	pub fn new(
 		client: Arc<C>,
 		pool: Arc<P>,
@@ -114,8 +114,48 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> Eth<B, C, P, CT, BE, H, A
 	}
 }
 
+impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi, EGA> Eth<B, C, P, CT, BE, H, A, EGA> {
+	pub fn with_estimate_gas_adapter<EGA2: EstimateGasAdapter>(
+		self,
+	) -> Eth<B, C, P, CT, BE, H, A, EGA2> {
+		let Self {
+			client,
+			pool,
+			graph,
+			convert_transaction,
+			network,
+			is_authority,
+			signers,
+			overrides,
+			backend,
+			block_data_cache,
+			fee_history_cache,
+			fee_history_cache_limit,
+			execute_gas_limit_multiplier,
+			_marker: _,
+		} = self;
+
+		Eth {
+			client,
+			pool,
+			graph,
+			convert_transaction,
+			network,
+			is_authority,
+			signers,
+			overrides,
+			backend,
+			block_data_cache,
+			fee_history_cache,
+			fee_history_cache_limit,
+			execute_gas_limit_multiplier,
+			_marker: PhantomData,
+		}
+	}
+}
+
 #[async_trait]
-impl<B, C, P, CT, BE, H: ExHashT, A> EthApiServer for Eth<B, C, P, CT, BE, H, A>
+impl<B, C, P, CT, BE, H: ExHashT, A, EGA> EthApiServer for Eth<B, C, P, CT, BE, H, A, EGA>
 where
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
@@ -126,6 +166,7 @@ where
 	BE: Backend<B> + 'static,
 	BE::State: StateBackend<BlakeTwo256>,
 	A: ChainApi<Block = B> + 'static,
+	EGA: EstimateGasAdapter + Send + Sync + 'static,
 {
 	// ########################################################################
 	// Client
@@ -481,7 +522,8 @@ where
 {
 	// In case of Pending, we need an overlayed state to query over.
 	let api = client.runtime_api();
-	let best = BlockId::Hash(client.info().best_hash);
+	let best_hash = client.info().best_hash;
+	let best = BlockId::Hash(best_hash);
 	// Get all transactions in the ready queue.
 	let xts: Vec<<B as BlockT>::Extrinsic> = graph
 		.validated_pool()
@@ -489,7 +531,7 @@ where
 		.map(|in_pool_tx| in_pool_tx.data().clone())
 		.collect::<Vec<<B as BlockT>::Extrinsic>>();
 	// Manually initialize the overlay.
-	if let Ok(Some(header)) = client.header(best) {
+	if let Ok(Some(header)) = client.header(best_hash) {
 		let parent_hash = BlockId::Hash(*header.parent_hash());
 		api.initialize_block(&parent_hash, &header)
 			.map_err(|e| internal_err(format!("Runtime api access error: {:?}", e)))?;

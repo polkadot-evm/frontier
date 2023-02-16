@@ -80,7 +80,7 @@ pub struct Transaction {
 
 impl From<TransactionV2> for Transaction {
 	fn from(transaction: TransactionV2) -> Self {
-		let serialized = rlp::encode(&transaction);
+		let serialized = ethereum::EnvelopedEncodable::encode(&transaction);
 		let hash = transaction.hash();
 		let raw = Bytes(serialized.to_vec());
 		match transaction {

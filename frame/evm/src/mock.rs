@@ -17,6 +17,7 @@
 
 //! Test mock for unit tests and benchmarking
 
+use fp_evm::Precompile;
 use frame_support::{
 	parameter_types,
 	traits::{ConstU32, FindAuthor},
@@ -30,7 +31,10 @@ use sp_runtime::{
 };
 use sp_std::{boxed::Box, prelude::*, str::FromStr};
 
-use crate::{EnsureAddressNever, EnsureAddressRoot, FeeCalculator, IdentityAddressMapping};
+use crate::{
+	EnsureAddressNever, EnsureAddressRoot, FeeCalculator, IdentityAddressMapping, PrecompileHandle,
+	PrecompileResult, PrecompileSet,
+};
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -125,6 +129,7 @@ impl FindAuthor<H160> for FindAuthorTruncated {
 parameter_types! {
 	pub BlockGasLimit: U256 = U256::max_value();
 	pub WeightPerGas: Weight = Weight::from_ref_time(20_000);
+	pub MockPrecompiles: MockPrecompileSet = MockPrecompileSet;
 }
 impl crate::Config for Test {
 	type FeeCalculator = FixedGasPrice;
@@ -139,11 +144,36 @@ impl crate::Config for Test {
 	type Currency = Balances;
 
 	type RuntimeEvent = RuntimeEvent;
-	type PrecompilesType = ();
-	type PrecompilesValue = ();
+	type PrecompilesType = MockPrecompileSet;
+	type PrecompilesValue = MockPrecompiles;
 	type ChainId = ();
 	type BlockGasLimit = BlockGasLimit;
 	type Runner = crate::runner::stack::Runner<Self>;
 	type OnChargeTransaction = ();
+	type OnCreate = ();
 	type FindAuthor = FindAuthorTruncated;
+}
+
+/// Exemple PrecompileSet with only Identity precompile.
+pub struct MockPrecompileSet;
+
+impl PrecompileSet for MockPrecompileSet {
+	/// Tries to execute a precompile in the precompile set.
+	/// If the provided address is not a precompile, returns None.
+	fn execute(&self, handle: &mut impl PrecompileHandle) -> Option<PrecompileResult> {
+		let address = handle.code_address();
+
+		if address == H160::from_low_u64_be(1) {
+			return Some(pallet_evm_precompile_simple::Identity::execute(handle));
+		}
+
+		None
+	}
+
+	/// Check if the given address is a precompile. Should only be called to
+	/// perform the check while not executing the precompile afterward, since
+	/// `execute` already performs a check internally.
+	fn is_precompile(&self, address: H160) -> bool {
+		address == H160::from_low_u64_be(1)
+	}
 }

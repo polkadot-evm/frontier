@@ -72,7 +72,7 @@ where
 	let mut db_config = kvdb_rocksdb::DatabaseConfig::with_columns(super::columns::NUM_COLUMNS);
 	db_config.create_if_missing = create;
 
-	let db = kvdb_rocksdb::Database::open(&db_config, &path).map_err(|err| format!("{}", err))?;
+	let db = kvdb_rocksdb::Database::open(&db_config, path).map_err(|err| format!("{}", err))?;
 	// write database version only after the database is succesfully opened
 	#[cfg(not(test))]
 	super::upgrade::update_version(path).map_err(|_| "Cannot update db version".to_string())?;

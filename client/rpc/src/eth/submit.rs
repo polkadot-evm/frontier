@@ -41,7 +41,7 @@ use crate::{
 	internal_err,
 };
 
-impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi> Eth<B, C, P, CT, BE, H, A>
+impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi, EGA> Eth<B, C, P, CT, BE, H, A, EGA>
 where
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
@@ -214,24 +214,10 @@ where
 		if slice.is_empty() {
 			return Err(internal_err("transaction data is empty"));
 		}
-		let first = slice.first().unwrap();
-		let transaction = if first > &0x7f {
-			// Legacy transaction. Decode and wrap in envelope.
-			match rlp::decode::<ethereum::TransactionV0>(slice) {
-				Ok(transaction) => ethereum::TransactionV2::Legacy(transaction),
-				Err(_) => return Err(internal_err("decode transaction failed")),
-			}
-		} else {
-			// Typed Transaction.
-			// `ethereum` crate decode implementation for `TransactionV2` expects a valid rlp input,
-			// and EIP-1559 breaks that assumption by prepending a version byte.
-			// We re-encode the payload input to get a valid rlp, and the decode implementation will strip
-			// them to check the transaction version byte.
-			let extend = rlp::encode(&slice);
-			match rlp::decode::<ethereum::TransactionV2>(&extend[..]) {
-				Ok(transaction) => transaction,
-				Err(_) => return Err(internal_err("decode transaction failed")),
-			}
+		let transaction: ethereum::TransactionV2 = match ethereum::EnvelopedDecodable::decode(slice)
+		{
+			Ok(transaction) => transaction,
+			Err(_) => return Err(internal_err("decode transaction failed")),
 		};
 
 		let transaction_hash = transaction.hash();

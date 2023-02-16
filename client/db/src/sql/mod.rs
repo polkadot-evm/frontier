@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use codec::{Decode, Encode};
+use scale_codec::{Decode, Encode};
 use fp_consensus::FindLogError;
 use fp_rpc::EthereumRuntimeRPCApi;
 use fp_storage::{EthereumStorageSchema, OverrideHandle, PALLET_ETHEREUM_SCHEMA};
@@ -112,7 +112,10 @@ where
 		BE::State: StateBackend<BlakeTwo256>,
 	{
 		let id = BlockId::Number(Zero::zero());
-		if let Ok(Some(genesis_header)) = client.header(id) {
+		let substrate_hash = client
+			.expect_block_hash_from_id(&id)
+			.map_err(|_| Error::Protocol("Cannot resolve genesis hash".to_string()))?;
+		if let Ok(Some(genesis_header)) = client.header(substrate_hash) {
 			let has_api = client
 				.runtime_api()
 				.has_api::<dyn EthereumRuntimeRPCApi<Block>>(&id)
@@ -129,7 +132,7 @@ where
 
 				let ethereum_block_hash = ethereum_block.header.hash().as_bytes().to_owned();
 				let substrate_block_hash = genesis_header.hash().as_bytes().to_owned();
-				let schema = Self::onchain_storage_schema(client.as_ref(), id).encode();
+				let schema = Self::onchain_storage_schema(client.as_ref(), substrate_hash).encode();
 
 				let _ = sqlx::query!(
 					"INSERT OR IGNORE INTO blocks(
@@ -162,15 +165,14 @@ where
 
 		// TODO move header retrieval to the blocking thread? depending on the batch size its likely to be necessary
 		for &hash in hashes.iter() {
-			if let Ok(Some(header)) = client.header(BlockId::Hash(hash)) {
+			if let Ok(Some(header)) = client.header(hash) {
 				match fp_consensus::find_log(header.digest()) {
 					Ok(log) => {
 						let post_hashes = log.into_hashes();
 						let ethereum_block_hash = post_hashes.block_hash.as_bytes().to_owned();
 						let substrate_block_hash = header.hash().as_bytes().to_owned();
 
-						let id = BlockId::Hash(header.hash());
-						let schema = Self::onchain_storage_schema(client.as_ref(), id).encode();
+						let schema = Self::onchain_storage_schema(client.as_ref(), header.hash()).encode();
 
 						let _ = sqlx::query!(
 							"INSERT OR IGNORE INTO blocks(
@@ -341,7 +343,7 @@ where
 					0i32
 				};
 			let id = BlockId::Hash(*substrate_block_hash);
-			let schema = Self::onchain_storage_schema(client.as_ref(), id);
+			let schema = Self::onchain_storage_schema(client.as_ref(), *substrate_block_hash);
 			let handler = overrides
 				.schemas
 				.get(&schema)
@@ -396,7 +398,7 @@ where
 
 	fn onchain_storage_schema<Client, BE>(
 		client: &Client,
-		at: BlockId<Block>,
+		at: Block::Hash,
 	) -> EthereumStorageSchema
 	where
 		Client: StorageProvider<Block, BE> + HeaderBackend<Block> + Send + Sync + 'static,
@@ -404,7 +406,7 @@ where
 		BE::State: StateBackend<BlakeTwo256>,
 	{
 		match client.storage(
-			&at,
+			at,
 			&sp_storage::StorageKey(PALLET_ETHEREUM_SCHEMA.to_vec()),
 		) {
 			Ok(Some(bytes)) => Decode::decode(&mut &bytes.0[..])

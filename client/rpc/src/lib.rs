@@ -51,15 +51,15 @@ pub use fc_rpc_core::{
 pub mod frontier_backend_client {
 	use super::internal_err;
 
-	use codec::Decode;
 	use ethereum_types::H256;
 	use jsonrpsee::core::RpcResult;
+	use scale_codec::Decode;
 	// Substrate
 	use sc_client_api::backend::{Backend, StateBackend, StorageProvider};
 	use sp_blockchain::HeaderBackend;
 	use sp_runtime::{
 		generic::BlockId,
-		traits::{BlakeTwo256, Block as BlockT, Header as HeaderT, UniqueSaturatedInto, Zero},
+		traits::{BlakeTwo256, Block as BlockT, UniqueSaturatedInto, Zero},
 	};
 	use sp_storage::StorageKey;
 	// Frontier
@@ -118,15 +118,19 @@ pub mod frontier_backend_client {
 	) -> EthereumStorageSchema
 	where
 		B: BlockT<Hash = H256> + Send + Sync + 'static,
-		C: StorageProvider<B, BE> + Send + Sync + 'static,
+		C: StorageProvider<B, BE> + HeaderBackend<B> + Send + Sync + 'static,
 		BE: Backend<B> + 'static,
 		BE::State: StateBackend<BlakeTwo256>,
 	{
-		match client.storage(&at, &StorageKey(PALLET_ETHEREUM_SCHEMA.to_vec())) {
-			Ok(Some(bytes)) => Decode::decode(&mut &bytes.0[..])
-				.ok()
-				.unwrap_or(EthereumStorageSchema::Undefined),
-			_ => EthereumStorageSchema::Undefined,
+		if let Ok(Some(hash)) = client.block_hash_from_id(&at) {
+			match client.storage(hash, &StorageKey(PALLET_ETHEREUM_SCHEMA.to_vec())) {
+				Ok(Some(bytes)) => Decode::decode(&mut &bytes.0[..])
+					.ok()
+					.unwrap_or(EthereumStorageSchema::Undefined),
+				_ => EthereumStorageSchema::Undefined,
+			}
+		} else {
+			EthereumStorageSchema::Undefined
 		}
 	}
 
@@ -136,8 +140,8 @@ pub mod frontier_backend_client {
 		C: HeaderBackend<B> + Send + Sync + 'static,
 	{
 		if let Ok(Some(number)) = client.number(target_hash) {
-			if let Ok(Some(header)) = client.header(BlockId::Number(number)) {
-				return header.hash() == target_hash;
+			if let Ok(Some(hash)) = client.hash(number) {
+				return hash == target_hash;
 			}
 		}
 		false

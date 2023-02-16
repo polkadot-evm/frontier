@@ -25,6 +25,7 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
+use alloc::format;
 use core::marker::PhantomData;
 use fp_evm::{
 	ExitError, ExitSucceed, Precompile, PrecompileFailure, PrecompileHandle, PrecompileOutput,
@@ -94,8 +95,10 @@ where
 					output: Default::default(),
 				})
 			}
-			Err(_) => Err(PrecompileFailure::Error {
-				exit_status: ExitError::Other("dispatch execution failed".into()),
+			Err(e) => Err(PrecompileFailure::Error {
+				exit_status: ExitError::Other(
+					format!("dispatch execution failed: {}", <&'static str>::from(e)).into(),
+				),
 			}),
 		}
 	}

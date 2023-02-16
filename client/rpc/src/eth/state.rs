@@ -16,9 +16,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use codec::Encode;
 use ethereum_types::{H160, H256, U256};
 use jsonrpsee::core::RpcResult as Result;
+use scale_codec::Encode;
 // Substrate
 use sc_client_api::backend::{Backend, StateBackend, StorageProvider};
 use sc_network_common::ExHashT;
@@ -40,7 +40,7 @@ use crate::{
 	frontier_backend_client, internal_err,
 };
 
-impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi> Eth<B, C, P, CT, BE, H, A>
+impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi, EGA> Eth<B, C, P, CT, BE, H, A, EGA>
 where
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,

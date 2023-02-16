@@ -39,17 +39,6 @@ pub struct UncheckedExtrinsic<Address, Call, Signature, Extra: SignedExtension>(
 	pub sp_runtime::generic::UncheckedExtrinsic<Address, Call, Signature, Extra>,
 );
 
-#[cfg(feature = "std")]
-impl<Address, Call, Signature, Extra> parity_util_mem::MallocSizeOf
-	for UncheckedExtrinsic<Address, Call, Signature, Extra>
-where
-	Extra: SignedExtension,
-{
-	fn size_of(&self, ops: &mut parity_util_mem::MallocSizeOfOps) -> usize {
-		self.0.size_of(ops)
-	}
-}
-
 impl<Address, Call, Signature, Extra: SignedExtension>
 	UncheckedExtrinsic<Address, Call, Signature, Extra>
 {
@@ -119,6 +108,38 @@ where
 			})
 		} else {
 			let checked = Checkable::<Lookup>::check(self.0, lookup)?;
+			Ok(CheckedExtrinsic {
+				signed: match checked.signed {
+					Some((id, extra)) => CheckedSignature::Signed(id, extra),
+					None => CheckedSignature::Unsigned,
+				},
+				function: checked.function,
+			})
+		}
+	}
+
+	#[cfg(feature = "try-runtime")]
+	fn unchecked_into_checked_i_know_what_i_am_doing(
+		self,
+		lookup: &Lookup,
+	) -> Result<Self::Checked, TransactionValidityError> {
+		if self.0.function.is_self_contained() {
+			match self.0.function.check_self_contained() {
+				Some(signed_info) => Ok(CheckedExtrinsic {
+					signed: match signed_info {
+						Ok(info) => CheckedSignature::SelfContained(info),
+						_ => CheckedSignature::Unsigned,
+					},
+					function: self.0.function,
+				}),
+				None => Ok(CheckedExtrinsic {
+					signed: CheckedSignature::Unsigned,
+					function: self.0.function,
+				}),
+			}
+		} else {
+			let checked =
+				Checkable::<Lookup>::unchecked_into_checked_i_know_what_i_am_doing(self.0, lookup)?;
 			Ok(CheckedExtrinsic {
 				signed: match checked.signed {
 					Some((id, extra)) => CheckedSignature::Signed(id, extra),

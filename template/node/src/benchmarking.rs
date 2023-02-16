@@ -21,7 +21,7 @@
 
 use std::{sync::Arc, time::Duration};
 
-use codec::Encode;
+use scale_codec::Encode;
 // Substrate
 use sc_cli::Result;
 use sc_client_api::BlockBackend;
@@ -32,18 +32,18 @@ use sp_runtime::{generic::Era, AccountId32, OpaqueExtrinsic, SaturatedConversion
 // Frontier
 use frontier_template_runtime::{self as runtime, AccountId, Balance, BalancesCall, SystemCall};
 
-use crate::service::FullClient;
+use crate::client::Client;
 
 /// Generates extrinsics for the `benchmark overhead` command.
 ///
 /// Note: Should only be used for benchmarking.
 pub struct RemarkBuilder {
-	client: Arc<FullClient>,
+	client: Arc<Client>,
 }
 
 impl RemarkBuilder {
 	/// Creates a new [`Self`] from the given client.
-	pub fn new(client: Arc<FullClient>) -> Self {
+	pub fn new(client: Arc<Client>) -> Self {
 		Self { client }
 	}
 }
@@ -75,14 +75,14 @@ impl frame_benchmarking_cli::ExtrinsicBuilder for RemarkBuilder {
 ///
 /// Note: Should only be used for benchmarking.
 pub struct TransferKeepAliveBuilder {
-	client: Arc<FullClient>,
+	client: Arc<Client>,
 	dest: AccountId,
 	value: Balance,
 }
 
 impl TransferKeepAliveBuilder {
 	/// Creates a new [`Self`] from the given client.
-	pub fn new(client: Arc<FullClient>, dest: AccountId, value: Balance) -> Self {
+	pub fn new(client: Arc<Client>, dest: AccountId, value: Balance) -> Self {
 		Self {
 			client,
 			dest,
@@ -122,7 +122,7 @@ impl frame_benchmarking_cli::ExtrinsicBuilder for TransferKeepAliveBuilder {
 ///
 /// Note: Should only be used for benchmarking.
 pub fn create_benchmark_extrinsic(
-	client: &FullClient,
+	client: &Client,
 	sender: sr25519::Pair,
 	call: runtime::RuntimeCall,
 	nonce: u32,
@@ -185,8 +185,7 @@ pub fn inherent_benchmark_data() -> Result<InherentData> {
 	let d = Duration::from_millis(0);
 	let timestamp = sp_timestamp::InherentDataProvider::new(d.into());
 
-	timestamp
-		.provide_inherent_data(&mut inherent_data)
+	futures::executor::block_on(timestamp.provide_inherent_data(&mut inherent_data))
 		.map_err(|e| format!("creating inherent data: {:?}", e))?;
 	Ok(inherent_data)
 }

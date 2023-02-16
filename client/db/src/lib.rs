@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use codec::{Decode, Encode};
+use scale_codec::{Decode, Encode};
 use sp_core::H256;
 use sp_runtime::traits::Block as BlockT;
 

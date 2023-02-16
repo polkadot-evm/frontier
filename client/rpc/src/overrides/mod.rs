@@ -146,15 +146,6 @@ where
 			.ok()?
 	}
 
-	/// Return the base fee at the given post-eip1559 height.
-	fn base_fee(&self, block: &BlockId<Block>) -> Option<U256> {
-		if self.is_eip1559(block) {
-			self.client.runtime_api().gas_price(block).ok()
-		} else {
-			None
-		}
-	}
-
 	/// Return the elasticity multiplier at the give post-eip1559 height.
 	fn elasticity(&self, block: &BlockId<Block>) -> Option<Permill> {
 		if self.is_eip1559(block) {
