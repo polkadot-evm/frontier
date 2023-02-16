@@ -254,10 +254,37 @@ mod test {
 	use substrate_test_runtime_client::{
 		prelude::*, DefaultTestClientBuilderExt, TestClientBuilder, TestClientBuilderExt,
 	};
+	use sp_runtime::generic::Digest;
 	use tempfile::tempdir;
 
 	fn storage_prefix_build(module: &[u8], storage: &[u8]) -> Vec<u8> {
 		[twox_128(module), twox_128(storage)].concat().to_vec()
+	}
+
+	fn ethereum_digest() -> Digest {
+		let partial_header = ethereum::PartialHeader {
+			parent_hash: H256::default(),
+			beneficiary: H160::default(),
+			state_root: H256::default(),
+			receipts_root: H256::default(),
+			logs_bloom: ethereum_types::Bloom::default(),
+			difficulty: U256::zero(),
+			number: U256::zero(),
+			gas_limit: U256::zero(),
+			gas_used: U256::zero(),
+			timestamp: 0u64,
+			extra_data: Vec::new(),
+			mix_hash: H256::default(),
+			nonce: ethereum_types::H64::default(),
+		};
+		let ethereum_transactions: Vec<ethereum::TransactionV2> = vec![];
+		let ethereum_block = ethereum::Block::new(partial_header, ethereum_transactions, vec![]);
+		Digest {
+			logs: vec![sp_runtime::generic::DigestItem::Consensus(
+				fp_consensus::FRONTIER_ENGINE_ID,
+				fp_consensus::PostLog::Hashes(fp_consensus::Hashes::from_block(ethereum_block)).encode(),
+			)]
+		}
 	}
 
 	#[tokio::test]
@@ -304,9 +331,10 @@ mod test {
 		let pool = indexer_backend.pool().clone();
 
 		// Create 10 blocks, 2 receipts each, 1 log per receipt
-		let mut logs: Vec<fc_db::sql::Log> = vec![];
+		let mut logs: Vec<(i32, fc_db::sql::Log)> = vec![];
 		for block_number in 1..11 {
-			let mut builder = client.new_block(Default::default()).unwrap();
+			// New block including pallet ethereum block digest
+			let mut builder = client.new_block(ethereum_digest()).unwrap();
 			// Addresses
 			let address_1 = H160::random();
 			let address_2 = H160::random();
@@ -349,8 +377,7 @@ mod test {
 			let block = builder.build().unwrap().block;
 			let block_hash = block.header.hash();
 			executor::block_on(client.import(BlockOrigin::Own, block)).unwrap();
-			logs.push(fc_db::sql::Log {
-				block_number: block_number as i32,
+			logs.push((block_number as i32, fc_db::sql::Log {
 				address: address_1.as_bytes().to_owned(),
 				topic_1: topics_1_1.as_bytes().to_owned(),
 				topic_2: topics_1_2.as_bytes().to_owned(),
@@ -359,9 +386,8 @@ mod test {
 				log_index: 0i32,
 				transaction_index: 0i32,
 				substrate_block_hash: block_hash.as_bytes().to_owned(),
-			});
-			logs.push(fc_db::sql::Log {
-				block_number: block_number as i32,
+			}));
+			logs.push((block_number as i32, fc_db::sql::Log {
 				address: address_2.as_bytes().to_owned(),
 				topic_1: topics_2_1.as_bytes().to_owned(),
 				topic_2: topics_2_2.as_bytes().to_owned(),
@@ -370,7 +396,7 @@ mod test {
 				log_index: 0i32,
 				transaction_index: 1i32,
 				substrate_block_hash: block_hash.as_bytes().to_owned(),
-			});
+			}));
 		}
 
 		// Spawn worker after creating the blocks will resolve the interval future.
@@ -394,7 +420,7 @@ mod test {
 		// Query db
 		let db_logs = sqlx::query(
 			"SELECT
-					block_number,
+					b.block_number,
 					address,
 					topic_1,
 					topic_2,
@@ -402,8 +428,9 @@ mod test {
 					topic_4,
 					log_index,
 					transaction_index,
-					substrate_block_hash
-				FROM logs ORDER BY block_number ASC, log_index ASC, transaction_index ASC",
+					a.substrate_block_hash
+				FROM logs AS a INNER JOIN blocks AS b ON a.substrate_block_hash = b.substrate_block_hash
+				ORDER BY b.block_number ASC, log_index ASC, transaction_index ASC",
 		)
 		.fetch_all(&pool)
 		.await
@@ -419,8 +446,7 @@ mod test {
 			let log_index = row.get::<i32, _>(6);
 			let transaction_index = row.get::<i32, _>(7);
 			let substrate_block_hash = row.get::<Vec<u8>, _>(8);
-			fc_db::sql::Log {
-				block_number,
+			(block_number, fc_db::sql::Log {
 				address,
 				topic_1,
 				topic_2,
@@ -429,9 +455,9 @@ mod test {
 				log_index,
 				transaction_index,
 				substrate_block_hash,
-			}
+			})
 		})
-		.collect::<Vec<fc_db::sql::Log>>();
+		.collect::<Vec<(i32, fc_db::sql::Log)>>();
 
 		// Expect the db to contain 20 rows. 10 blocks, 2 logs each.
 		// Db data is sorted ASC by block_number, log_index and transaction_index.
@@ -500,9 +526,10 @@ mod test {
 			.await
 		});
 		// Create 10 blocks, 2 receipts each, 1 log per receipt
-		let mut logs: Vec<fc_db::sql::Log> = vec![];
+		let mut logs: Vec<(i32, fc_db::sql::Log)> = vec![];
 		for block_number in 1..11 {
-			let mut builder = client.new_block(Default::default()).unwrap();
+			// New block including pallet ethereum block digest
+			let mut builder = client.new_block(ethereum_digest()).unwrap();
 			// Addresses
 			let address_1 = H160::random();
 			let address_2 = H160::random();
@@ -545,8 +572,7 @@ mod test {
 			let block = builder.build().unwrap().block;
 			let block_hash = block.header.hash();
 			executor::block_on(client.import(BlockOrigin::Own, block)).unwrap();
-			logs.push(fc_db::sql::Log {
-				block_number: block_number as i32,
+			logs.push((block_number as i32, fc_db::sql::Log {
 				address: address_1.as_bytes().to_owned(),
 				topic_1: topics_1_1.as_bytes().to_owned(),
 				topic_2: topics_1_2.as_bytes().to_owned(),
@@ -555,9 +581,8 @@ mod test {
 				log_index: 0i32,
 				transaction_index: 0i32,
 				substrate_block_hash: block_hash.as_bytes().to_owned(),
-			});
-			logs.push(fc_db::sql::Log {
-				block_number: block_number as i32,
+			}));
+			logs.push((block_number as i32, fc_db::sql::Log {
 				address: address_2.as_bytes().to_owned(),
 				topic_1: topics_2_1.as_bytes().to_owned(),
 				topic_2: topics_2_2.as_bytes().to_owned(),
@@ -566,7 +591,7 @@ mod test {
 				log_index: 0i32,
 				transaction_index: 1i32,
 				substrate_block_hash: block_hash.as_bytes().to_owned(),
-			});
+			}));
 		}
 
 		// Some time for the notification stream to be consumed
@@ -575,7 +600,7 @@ mod test {
 		// Query db
 		let db_logs = sqlx::query(
 			"SELECT
-					block_number,
+					b.block_number,
 					address,
 					topic_1,
 					topic_2,
@@ -583,8 +608,9 @@ mod test {
 					topic_4,
 					log_index,
 					transaction_index,
-					substrate_block_hash
-				FROM logs ORDER BY block_number ASC, log_index ASC, transaction_index ASC",
+					a.substrate_block_hash
+				FROM logs AS a INNER JOIN blocks AS b ON a.substrate_block_hash = b.substrate_block_hash
+				ORDER BY b.block_number ASC, log_index ASC, transaction_index ASC",
 		)
 		.fetch_all(&pool)
 		.await
@@ -600,8 +626,7 @@ mod test {
 			let log_index = row.get::<i32, _>(6);
 			let transaction_index = row.get::<i32, _>(7);
 			let substrate_block_hash = row.get::<Vec<u8>, _>(8);
-			fc_db::sql::Log {
-				block_number,
+			(block_number, fc_db::sql::Log {
 				address,
 				topic_1,
 				topic_2,
@@ -610,9 +635,9 @@ mod test {
 				log_index,
 				transaction_index,
 				substrate_block_hash,
-			}
+			})
 		})
-		.collect::<Vec<fc_db::sql::Log>>();
+		.collect::<Vec<(i32, fc_db::sql::Log)>>();
 
 		// Expect the db to contain 20 rows. 10 blocks, 2 logs each.
 		// Db data is sorted ASC by block_number, log_index and transaction_index.
