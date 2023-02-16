@@ -313,10 +313,9 @@ where
 			.get_first_missing_block(indexer_backend.pool())
 			.await
 		{
-			if let Ok(Some(header)) =
-				client.header(BlockId::Number(block_number.unique_saturated_into()))
+			if let Ok(Some(block_hash)) =
+				client.hash(block_number.unique_saturated_into())
 			{
-				let block_hash = header.hash();
 				log::debug!(
 					target: "frontier-sql",
 					"Indexing past blocks from #{} {:?}",
@@ -489,7 +488,7 @@ where
 
 #[cfg(test)]
 mod test {
-	use codec::Encode;
+	use scale_codec::Encode;
 	use fc_rpc::{SchemaV3Override, StorageOverride};
 	use fp_storage::{
 		EthereumStorageSchema, OverrideHandle, ETHEREUM_CURRENT_RECEIPTS, PALLET_ETHEREUM,
@@ -497,7 +496,7 @@ mod test {
 	};
 	use futures::executor;
 	use sc_block_builder::BlockBuilderProvider;
-	use sc_client_api::BlockchainEvents;
+	use sc_client_api::{BlockchainEvents, HeaderBackend};
 	use sp_consensus::BlockOrigin;
 	use sp_core::{H160, H256, U256};
 	use sp_io::hashing::twox_128;
@@ -972,10 +971,9 @@ mod test {
 
 		// Create 10 blocks saving the common ancestor for branching.
 		let mut parent_hash = client
-			.header(&BlockId::Number(sp_runtime::traits::Zero::zero()))
+			.hash(sp_runtime::traits::Zero::zero())
 			.unwrap()
-			.expect("genesis header")
-			.hash();
+			.expect("genesis hash");
 		let mut common_ancestor = parent_hash;
 		let mut hashes_to_be_orphaned: Vec<H256> = vec![];
 		for block_number in 1..11 {
@@ -1109,10 +1107,9 @@ mod test {
 
 		// Create 10 blocks saving the common ancestor for branching.
 		let mut parent_hash = client
-			.header(&BlockId::Number(sp_runtime::traits::Zero::zero()))
+			.hash(sp_runtime::traits::Zero::zero())
 			.unwrap()
-			.expect("genesis header")
-			.hash();
+			.expect("genesis hash");
 		let mut common_ancestor = parent_hash;
 		let mut hashes_to_be_orphaned: Vec<H256> = vec![];
 		for block_number in 1..11 {
@@ -1257,10 +1254,9 @@ mod test {
 
 		// Create 10 blocks saving the common ancestor for branching.
 		let mut parent_hash = client
-			.header(&BlockId::Number(sp_runtime::traits::Zero::zero()))
+			.hash(sp_runtime::traits::Zero::zero())
 			.unwrap()
-			.expect("genesis header")
-			.hash();
+			.expect("genesis hash");
 		let mut common_ancestor = parent_hash;
 		let mut hashes_to_be_orphaned: Vec<H256> = vec![];
 		for block_number in 1..11 {

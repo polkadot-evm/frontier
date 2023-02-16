@@ -38,7 +38,7 @@ fp-storage = { workspace = true, features = ["std"] }
 fp-consensus = { workspace = true, features = ["std"] }
 # Substrate
 sp-beefy = { git = "https://github.com/paritytech/substrate", branch = "master" }
-ethereum-types = { version = "0.13.1" }
+ethereum-types = { workspace = true }
 fc-rpc = { workspace = true }
 frontier-template-runtime = { workspace = true }
 sc-block-builder = { workspace = true }

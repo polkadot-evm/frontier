@@ -939,7 +939,7 @@ mod test {
 	use super::FilteredLog;
 
 	use crate::BackendReader;
-	use codec::Encode;
+	use scale_codec::Encode;
 	use fc_rpc::{SchemaV3Override, StorageOverride};
 	use fp_storage::{EthereumStorageSchema, OverrideHandle, PALLET_ETHEREUM_SCHEMA};
 	use maplit::hashset;

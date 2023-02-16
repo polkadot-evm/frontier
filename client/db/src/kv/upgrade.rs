@@ -525,7 +525,7 @@ mod tests {
 		);
 		let client = Arc::new(client);
 
-		let setting = crate::DatabaseSettings {
+		let setting = crate::kv::DatabaseSettings {
 			source: sc_client_db::DatabaseSource::RocksDb {
 				path: tmp.path().to_owned(),
 				cache_size: 0,
@@ -535,7 +535,7 @@ mod tests {
 		let _ = super::upgrade_db::<OpaqueBlock, _>(client.clone(), &path, &setting.source);
 
 		let mut file =
-			std::fs::File::open(crate::upgrade::version_file_path(&path)).expect("file exist");
+			std::fs::File::open(crate::kv::upgrade::version_file_path(&path)).expect("file exist");
 
 		let mut s = String::new();
 		file.read_to_string(&mut s).expect("read file contents");

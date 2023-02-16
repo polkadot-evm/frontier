@@ -20,13 +20,14 @@
 mod tests {
 	use std::{collections::HashMap, path::PathBuf, str::FromStr, sync::Arc};
 
-	use codec::Encode;
+	use scale_codec::Encode;
 	use ethereum_types::H256;
 	use futures::executor;
 	use serde::Serialize;
 	use tempfile::tempdir;
 	// Substrate
 	use sc_block_builder::BlockBuilderProvider;
+	use sc_cli::DatabasePruningMode;
 	use sp_consensus::BlockOrigin;
 	use sp_io::hashing::twox_128;
 	use sp_runtime::{
@@ -99,8 +100,8 @@ mod tests {
 				detailed_log_output: false,
 			},
 			pruning_params: sc_cli::PruningParams {
-				state_pruning: None,
-				blocks_pruning: None,
+				state_pruning: Some(DatabasePruningMode::Archive),
+				blocks_pruning: DatabasePruningMode::Archive,
 			},
 		}
 	}
