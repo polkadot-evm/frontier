@@ -880,29 +880,6 @@
 <a href="#880" id="880">880</a>
 <a href="#881" id="881">881</a>
 <a href="#882" id="882">882</a>
-<a href="#883" id="883">883</a>
-<a href="#884" id="884">884</a>
-<a href="#885" id="885">885</a>
-<a href="#886" id="886">886</a>
-<a href="#887" id="887">887</a>
-<a href="#888" id="888">888</a>
-<a href="#889" id="889">889</a>
-<a href="#890" id="890">890</a>
-<a href="#891" id="891">891</a>
-<a href="#892" id="892">892</a>
-<a href="#893" id="893">893</a>
-<a href="#894" id="894">894</a>
-<a href="#895" id="895">895</a>
-<a href="#896" id="896">896</a>
-<a href="#897" id="897">897</a>
-<a href="#898" id="898">898</a>
-<a href="#899" id="899">899</a>
-<a href="#900" id="900">900</a>
-<a href="#901" id="901">901</a>
-<a href="#902" id="902">902</a>
-<a href="#903" id="903">903</a>
-<a href="#904" id="904">904</a>
-<a href="#905" id="905">905</a>
 </pre><pre class="rust"><code><span class="doccomment">//! The Substrate Node Template runtime. This can be compiled with `#[no_std]`, ready for Wasm.
 
 </span><span class="attr">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
@@ -947,7 +924,8 @@
 };
 <span class="kw">use </span>pallet_transaction_payment::CurrencyAdapter;
 <span class="comment">// Frontier
-</span><span class="kw">use </span>fp_rpc::TransactionStatus;
+</span><span class="kw">use </span>fp_evm::weight_per_gas;
+<span class="kw">use </span>fp_rpc::TransactionStatus;
 <span class="kw">use </span>pallet_ethereum::{Call::transact, Transaction <span class="kw">as </span>EthereumTransaction};
 <span class="kw">use </span>pallet_evm::{
 	Account <span class="kw">as </span>EVMAccount, EnsureAddressTruncated, FeeCalculator, HashedAddressMapping, Runner,
@@ -1218,30 +1196,6 @@
 		}
 		<span class="prelude-val">None
 	</span>}
-}
-
-<span class="doccomment">/// `WeightPerGas` is an approximate ratio of the amount of Weight per Gas.
-/// u64 works for approximations because Weight is a very small unit compared to gas.
-///
-/// `GAS_PER_MILLIS * WEIGHT_MILLIS_PER_BLOCK * TXN_RATIO ~= BLOCK_GAS_LIMIT`
-/// `WEIGHT_PER_GAS = WEIGHT_REF_TIME_PER_MILLIS / GAS_PER_MILLIS
-///                 = WEIGHT_REF_TIME_PER_MILLIS / (BLOCK_GAS_LIMIT / TXN_RATIO / WEIGHT_MILLIS_PER_BLOCK)
-///                 = TXN_RATIO * (WEIGHT_REF_TIME_PER_MILLIS * WEIGHT_MILLIS_PER_BLOCK) / BLOCK_GAS_LIMIT`
-///
-/// For example, given the 2000ms Weight, from which 75% only are used for transactions,
-/// the total EVM execution gas limit is `GAS_PER_MILLIS * 2000 * 75% = BLOCK_GAS_LIMIT`.
-</span><span class="kw">pub fn </span>weight_per_gas(
-	block_gas_limit: u64,
-	txn_ratio: Perbill,
-	weight_millis_per_block: u64,
-) -&gt; u64 {
-	<span class="kw">let </span>weight_per_block = WEIGHT_REF_TIME_PER_MILLIS.saturating_mul(weight_millis_per_block);
-	<span class="kw">let </span>weight_per_gas = (txn_ratio * weight_per_block).saturating_div(block_gas_limit);
-	<span class="macro">assert!</span>(
-		weight_per_gas &gt;= <span class="number">1</span>,
-		<span class="string">&quot;WeightPerGas must greater than or equal with 1&quot;
-	</span>);
-	weight_per_gas
 }
 
 <span class="kw">const </span>BLOCK_GAS_LIMIT: u64 = <span class="number">75_000_000</span>;

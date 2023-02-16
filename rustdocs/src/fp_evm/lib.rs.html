@@ -98,6 +98,52 @@
 <a href="#98" id="98">98</a>
 <a href="#99" id="99">99</a>
 <a href="#100" id="100">100</a>
+<a href="#101" id="101">101</a>
+<a href="#102" id="102">102</a>
+<a href="#103" id="103">103</a>
+<a href="#104" id="104">104</a>
+<a href="#105" id="105">105</a>
+<a href="#106" id="106">106</a>
+<a href="#107" id="107">107</a>
+<a href="#108" id="108">108</a>
+<a href="#109" id="109">109</a>
+<a href="#110" id="110">110</a>
+<a href="#111" id="111">111</a>
+<a href="#112" id="112">112</a>
+<a href="#113" id="113">113</a>
+<a href="#114" id="114">114</a>
+<a href="#115" id="115">115</a>
+<a href="#116" id="116">116</a>
+<a href="#117" id="117">117</a>
+<a href="#118" id="118">118</a>
+<a href="#119" id="119">119</a>
+<a href="#120" id="120">120</a>
+<a href="#121" id="121">121</a>
+<a href="#122" id="122">122</a>
+<a href="#123" id="123">123</a>
+<a href="#124" id="124">124</a>
+<a href="#125" id="125">125</a>
+<a href="#126" id="126">126</a>
+<a href="#127" id="127">127</a>
+<a href="#128" id="128">128</a>
+<a href="#129" id="129">129</a>
+<a href="#130" id="130">130</a>
+<a href="#131" id="131">131</a>
+<a href="#132" id="132">132</a>
+<a href="#133" id="133">133</a>
+<a href="#134" id="134">134</a>
+<a href="#135" id="135">135</a>
+<a href="#136" id="136">136</a>
+<a href="#137" id="137">137</a>
+<a href="#138" id="138">138</a>
+<a href="#139" id="139">139</a>
+<a href="#140" id="140">140</a>
+<a href="#141" id="141">141</a>
+<a href="#142" id="142">142</a>
+<a href="#143" id="143">143</a>
+<a href="#144" id="144">144</a>
+<a href="#145" id="145">145</a>
+<a href="#146" id="146">146</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
@@ -120,11 +166,12 @@
 </span><span class="kw">mod </span>precompile;
 <span class="kw">mod </span>validation;
 
-<span class="kw">use </span>frame_support::weights::Weight;
+<span class="kw">use </span>frame_support::weights::{constants::WEIGHT_REF_TIME_PER_MILLIS, Weight};
 <span class="kw">use </span>scale_codec::{Decode, Encode};
 <span class="attr">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
 </span><span class="kw">use </span>serde::{Deserialize, Serialize};
 <span class="kw">use </span>sp_core::{H160, U256};
+<span class="kw">use </span>sp_runtime::Perbill;
 <span class="kw">use </span>sp_std::vec::Vec;
 
 <span class="kw">pub use </span>evm::{
@@ -196,6 +243,51 @@
 <span class="kw">impl </span>FeeCalculator <span class="kw">for </span>() {
 	<span class="kw">fn </span>min_gas_price() -&gt; (U256, Weight) {
 		(U256::zero(), Weight::zero())
+	}
+}
+
+<span class="doccomment">/// `WeightPerGas` is an approximate ratio of the amount of Weight per Gas.
+/// u64 works for approximations because Weight is a very small unit compared to gas.
+///
+/// `GAS_PER_MILLIS * WEIGHT_MILLIS_PER_BLOCK * TXN_RATIO ~= BLOCK_GAS_LIMIT`
+/// `WEIGHT_PER_GAS = WEIGHT_REF_TIME_PER_MILLIS / GAS_PER_MILLIS
+///                 = WEIGHT_REF_TIME_PER_MILLIS / (BLOCK_GAS_LIMIT / TXN_RATIO / WEIGHT_MILLIS_PER_BLOCK)
+///                 = TXN_RATIO * (WEIGHT_REF_TIME_PER_MILLIS * WEIGHT_MILLIS_PER_BLOCK) / BLOCK_GAS_LIMIT`
+///
+/// For example, given the 2000ms Weight, from which 75% only are used for transactions,
+/// the total EVM execution gas limit is `GAS_PER_MILLIS * 2000 * 75% = BLOCK_GAS_LIMIT`.
+</span><span class="kw">pub fn </span>weight_per_gas(
+	block_gas_limit: u64,
+	txn_ratio: Perbill,
+	weight_millis_per_block: u64,
+) -&gt; u64 {
+	<span class="kw">let </span>weight_per_block = WEIGHT_REF_TIME_PER_MILLIS.saturating_mul(weight_millis_per_block);
+	<span class="kw">let </span>weight_per_gas = (txn_ratio * weight_per_block).saturating_div(block_gas_limit);
+	<span class="macro">assert!</span>(
+		weight_per_gas &gt;= <span class="number">1</span>,
+		<span class="string">&quot;WeightPerGas must greater than or equal with 1&quot;
+	</span>);
+	weight_per_gas
+}
+
+<span class="attr">#[cfg(test)]
+</span><span class="kw">mod </span>tests {
+	<span class="kw">use super</span>::<span class="kw-2">*</span>;
+
+	<span class="attr">#[test]
+	</span><span class="kw">fn </span>test_weight_per_gas() {
+		<span class="macro">assert_eq!</span>(
+			weight_per_gas(<span class="number">15_000_000</span>, Perbill::from_percent(<span class="number">75</span>), <span class="number">500</span>),
+			<span class="number">25_000
+		</span>);
+		<span class="macro">assert_eq!</span>(
+			weight_per_gas(<span class="number">75_000_000</span>, Perbill::from_percent(<span class="number">75</span>), <span class="number">2_000</span>),
+			<span class="number">20_000
+		</span>);
+		<span class="macro">assert_eq!</span>(
+			weight_per_gas(<span class="number">1_500_000_000_000</span>, Perbill::from_percent(<span class="number">75</span>), <span class="number">2_000</span>),
+			<span class="number">1
+		</span>);
 	}
 }
 </code></pre></div>
