@@ -22,10 +22,7 @@ use sc_client_api::backend::{Backend as BackendT, StateBackend, StorageProvider}
 use sp_api::{HeaderT, ProvideRuntimeApi};
 use sp_blockchain::{Backend, HeaderBackend};
 use sp_core::H256;
-use sp_runtime::{
-	generic::BlockId,
-	traits::{BlakeTwo256, Block as BlockT, UniqueSaturatedInto},
-};
+use sp_runtime::traits::{BlakeTwo256, Block as BlockT, UniqueSaturatedInto};
 use sqlx::{Row, SqlitePool};
 use std::{collections::VecDeque, sync::Arc, time::Duration};
 
@@ -137,7 +134,7 @@ impl IndexedBlocks {
 			}
 		}
 
-		return None;
+		None
 	}
 }
 
@@ -221,7 +218,7 @@ where
 
 					// Index any missing past blocks
 					worker
-					.try_index_past_missing_blocks(client.clone(), indexer_backend.clone(), &backend)
+					.try_index_past_missing_blocks(client.clone(), indexer_backend.clone(), backend)
 					.await;
 
 					let leaves = backend.leaves();
@@ -264,7 +261,7 @@ where
 						// On first notification try create indexes
 						if try_create_indexes {
 							try_create_indexes = false;
-							if let Ok(_)  = indexer_backend.create_indexes().await {
+							if (indexer_backend.create_indexes().await).is_ok() {
 								log::debug!(
 									target: "frontier-sql",
 									"✅  Database indexes created"
@@ -313,9 +310,7 @@ where
 			.get_first_missing_block(indexer_backend.pool())
 			.await
 		{
-			if let Ok(Some(block_hash)) =
-				client.hash(block_number.unique_saturated_into())
-			{
+			if let Ok(Some(block_hash)) = client.hash(block_number.unique_saturated_into()) {
 				log::debug!(
 					target: "frontier-sql",
 					"Indexing past blocks from #{} {:?}",
@@ -474,7 +469,7 @@ where
 			.map(|hash_and_number| hash_and_number.hash)
 			.collect::<Vec<_>>();
 
-		if let Err(_) = indexer_backend.canonicalize(&retracted, &enacted).await {
+		if (indexer_backend.canonicalize(&retracted, &enacted).await).is_err() {
 			log::error!(
 				target: "frontier-sql",
 				"❌  Canonicalization failed for common ancestor {}, potentially corrupted db. Retracted: {:?}, Enacted: {:?}",
@@ -488,7 +483,6 @@ where
 
 #[cfg(test)]
 mod test {
-	use scale_codec::Encode;
 	use fc_rpc::{SchemaV3Override, StorageOverride};
 	use fp_storage::{
 		EthereumStorageSchema, OverrideHandle, ETHEREUM_CURRENT_RECEIPTS, PALLET_ETHEREUM,
@@ -497,6 +491,7 @@ mod test {
 	use futures::executor;
 	use sc_block_builder::BlockBuilderProvider;
 	use sc_client_api::{BlockchainEvents, HeaderBackend};
+	use scale_codec::Encode;
 	use sp_consensus::BlockOrigin;
 	use sp_core::{H160, H256, U256};
 	use sp_io::hashing::twox_128;

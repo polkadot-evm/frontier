@@ -1,6 +1,6 @@
 //! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 
-use std::{cell::RefCell, sync::Arc, time::Duration, path::Path};
+use std::{cell::RefCell, path::Path, sync::Arc, time::Duration};
 
 use futures::{channel::mpsc, prelude::*};
 // Substrate
@@ -22,8 +22,8 @@ use crate::{
 	cli::Sealing,
 	client::{BaseRuntimeApiCollection, FullBackend, FullClient, RuntimeApiCollection},
 	eth::{
-		new_frontier_partial, spawn_frontier_tasks, FrontierBackend, FrontierBlockImport,
-		FrontierPartialComponents, BackendType, EthCompatRuntimeApiCollection,
+		new_frontier_partial, spawn_frontier_tasks, BackendType, EthCompatRuntimeApiCollection,
+		FrontierBackend, FrontierBlockImport, FrontierPartialComponents,
 	},
 };
 pub use crate::{
@@ -56,7 +56,7 @@ pub fn new_partial<RuntimeApi, Executor, BIQ>(
 			BoxBlockImport<FullClient<RuntimeApi, Executor>>,
 			GrandpaLinkHalf<FullClient<RuntimeApi, Executor>>,
 			FrontierBackend,
-			Arc<fp_storage::OverrideHandle<Block>>
+			Arc<fp_storage::OverrideHandle<Block>>,
 		),
 	>,
 	ServiceError,
@@ -64,9 +64,8 @@ pub fn new_partial<RuntimeApi, Executor, BIQ>(
 where
 	RuntimeApi: ConstructRuntimeApi<Block, FullClient<RuntimeApi, Executor>>,
 	RuntimeApi: Send + Sync + 'static,
-	RuntimeApi::RuntimeApi:
-		BaseRuntimeApiCollection<StateBackend = StateBackendFor<FullBackend, Block>> + 
-		EthCompatRuntimeApiCollection<StateBackend = StateBackendFor<FullBackend, Block>>,
+	RuntimeApi::RuntimeApi: BaseRuntimeApiCollection<StateBackend = StateBackendFor<FullBackend, Block>>
+		+ EthCompatRuntimeApiCollection<StateBackend = StateBackendFor<FullBackend, Block>>,
 	Executor: NativeExecutionDispatch + 'static,
 	BIQ: FnOnce(
 		Arc<FullClient<RuntimeApi, Executor>>,
@@ -178,7 +177,13 @@ where
 		select_chain,
 		import_queue,
 		transaction_pool,
-		other: (telemetry, block_import, grandpa_link, frontier_backend, overrides,),
+		other: (
+			telemetry,
+			block_import,
+			grandpa_link,
+			frontier_backend,
+			overrides,
+		),
 	})
 }
 
@@ -204,10 +209,8 @@ where
 		RuntimeApiCollection<StateBackend = StateBackendFor<FullBackend, Block>>,
 	Executor: NativeExecutionDispatch + 'static,
 {
-	let frontier_block_import = FrontierBlockImport::new(
-		grandpa_block_import.clone(),
-		client.clone(),
-	);
+	let frontier_block_import =
+		FrontierBlockImport::new(grandpa_block_import.clone(), client.clone());
 
 	let slot_duration = sc_consensus_aura::slot_duration(&*client)?;
 	let target_gas_price = eth_config.target_gas_price;
@@ -656,7 +659,8 @@ pub async fn build_full(
 ) -> Result<TaskManager, ServiceError> {
 	new_full::<frontier_template_runtime::RuntimeApi, TemplateRuntimeExecutor>(
 		config, eth_config, sealing,
-	).await
+	)
+	.await
 }
 
 pub fn new_chain_ops(

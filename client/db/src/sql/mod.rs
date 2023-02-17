@@ -16,12 +16,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use scale_codec::{Decode, Encode};
 use fp_consensus::FindLogError;
 use fp_rpc::EthereumRuntimeRPCApi;
 use fp_storage::{EthereumStorageSchema, OverrideHandle, PALLET_ETHEREUM_SCHEMA};
 use futures::TryStreamExt;
 use sc_client_api::backend::{Backend as BackendT, StateBackend, StorageProvider};
+use scale_codec::{Decode, Encode};
 use sp_api::{ApiExt, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
 use sp_core::{H160, H256};
@@ -37,7 +37,7 @@ use sqlx::{
 	ConnectOptions, Error, Execute, QueryBuilder, Row, Sqlite,
 };
 
-use std::{collections::HashSet, str::FromStr, sync::Arc};
+use std::{cmp::Ordering, collections::HashSet, str::FromStr, sync::Arc};
 
 use crate::FilteredLog;
 
@@ -192,7 +192,8 @@ where
 		let substrate_genesis_hash = client
 			.expect_block_hash_from_id(&id)
 			.map_err(|_| Error::Protocol("Cannot resolve genesis hash".to_string()))?;
-		let maybe_substrate_hash: Option<H256> = if let Ok(Some(_)) = client.header(substrate_genesis_hash)
+		let maybe_substrate_hash: Option<H256> = if let Ok(Some(_)) =
+			client.header(substrate_genesis_hash)
 		{
 			let has_api = client
 				.runtime_api()
@@ -215,7 +216,8 @@ where
 					.expect("runtime api reachable")
 					.expect("ethereum genesis block");
 
-				let schema = Self::onchain_storage_schema(client.as_ref(), substrate_genesis_hash).encode();
+				let schema =
+					Self::onchain_storage_schema(client.as_ref(), substrate_genesis_hash).encode();
 				let ethereum_block_hash = ethereum_block.header.hash().as_bytes().to_owned();
 				let substrate_block_hash = substrate_genesis_hash.as_bytes();
 				let block_number = 0i32;
@@ -583,19 +585,13 @@ where
 		logs
 	}
 
-	fn onchain_storage_schema<Client, BE>(
-		client: &Client,
-		at: Block::Hash,
-	) -> EthereumStorageSchema
+	fn onchain_storage_schema<Client, BE>(client: &Client, at: Block::Hash) -> EthereumStorageSchema
 	where
 		Client: StorageProvider<Block, BE> + HeaderBackend<Block> + Send + Sync + 'static,
 		BE: BackendT<Block> + 'static,
 		BE::State: StateBackend<BlakeTwo256>,
 	{
-		match client.storage(
-			at,
-			&sp_storage::StorageKey(PALLET_ETHEREUM_SCHEMA.to_vec()),
-		) {
+		match client.storage(at, &sp_storage::StorageKey(PALLET_ETHEREUM_SCHEMA.to_vec())) {
 			Ok(Some(bytes)) => Decode::decode(&mut &bytes.0[..])
 				.ok()
 				.unwrap_or(EthereumStorageSchema::Undefined),
@@ -730,7 +726,7 @@ impl<Block: BlockT<Hash = H256>> crate::BackendReader<Block> for Backend<Block> 
 		.bind(ethereum_transaction_hash)
 		.fetch_all(&self.pool)
 		.await
-		.unwrap_or(vec![])
+		.unwrap_or_default()
 		.iter()
 		.map(|row| {
 			let substrate_block_hash =
@@ -905,23 +901,44 @@ ON (b.block_number BETWEEN ",
 	}
 
 	for (i, topic_options) in topics.iter().enumerate() {
-		if topic_options.len() == 1 {
-			qb.push(format!(" AND l.topic_{} = ", i + 1)).push_bind(
-				topic_options
-					.iter()
-					.next()
-					.expect("length is 1, must exist; qed")
-					.as_bytes()
-					.to_owned(),
-			);
-		} else if topic_options.len() > 1 {
-			qb.push(format!(" AND l.topic_{} IN (", i + 1));
-			let mut qb_topic = qb.separated(", ");
-			topic_options.iter().for_each(|t| {
-				qb_topic.push_bind(t.as_bytes().to_owned());
-			});
-			qb_topic.push_unseparated(")");
+		match topic_options.len().cmp(&1) {
+			Ordering::Greater => {
+				qb.push(format!(" AND l.topic_{} IN (", i + 1));
+				let mut qb_topic = qb.separated(", ");
+				topic_options.iter().for_each(|t| {
+					qb_topic.push_bind(t.as_bytes().to_owned());
+				});
+				qb_topic.push_unseparated(")");
+			}
+			Ordering::Equal => {
+				qb.push(format!(" AND l.topic_{} = ", i + 1)).push_bind(
+					topic_options
+						.iter()
+						.next()
+						.expect("length is 1, must exist; qed")
+						.as_bytes()
+						.to_owned(),
+				);
+			}
+			Ordering::Less => {}
 		}
+		// if topic_options.len() == 1 {
+		// 	qb.push(format!(" AND l.topic_{} = ", i + 1)).push_bind(
+		// 		topic_options
+		// 			.iter()
+		// 			.next()
+		// 			.expect("length is 1, must exist; qed")
+		// 			.as_bytes()
+		// 			.to_owned(),
+		// 	);
+		// } else if topic_options.len() > 1 {
+		// 	qb.push(format!(" AND l.topic_{} IN (", i + 1));
+		// 	let mut qb_topic = qb.separated(", ");
+		// 	topic_options.iter().for_each(|t| {
+		// 		qb_topic.push_bind(t.as_bytes().to_owned());
+		// 	});
+		// 	qb_topic.push_unseparated(")");
+		// }
 	}
 
 	qb.push(
@@ -939,10 +956,10 @@ mod test {
 	use super::FilteredLog;
 
 	use crate::BackendReader;
-	use scale_codec::Encode;
 	use fc_rpc::{SchemaV3Override, StorageOverride};
 	use fp_storage::{EthereumStorageSchema, OverrideHandle, PALLET_ETHEREUM_SCHEMA};
 	use maplit::hashset;
+	use scale_codec::Encode;
 	use sp_core::{H160, H256};
 	use sp_runtime::{
 		generic::{Block, Header},

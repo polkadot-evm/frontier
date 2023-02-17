@@ -12,14 +12,14 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 ethereum = { workspace = true }
-serde = { workspace = true,  optional = true }
+serde = { workspace = true, optional = true }
 
 # Frontier
 fp-rpc = { workspace = true }
 
 # Parity
-scale-codec = { package = "parity-scale-codec", workspace = true }
 ethereum-types = { workspace = true }
+scale-codec = { package = "parity-scale-codec", workspace = true }
 
 # Substrate
 sp-api = { workspace = true }

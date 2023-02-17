@@ -25,7 +25,7 @@ use std::{
 
 use scale_codec::{Decode, Encode};
 use sp_core::H256;
-use sp_runtime::traits::{Block as BlockT, Header};
+use sp_runtime::traits::Block as BlockT;
 
 use crate::kv::DatabaseSource;
 

@@ -21,9 +21,9 @@ sqlx = { features = ["runtime-tokio-native-tls", "sqlite", "offline"], git = "ht
 tokio = { version = "1.19", features = ["macros", "sync"] }
 
 # Parity
-scale-codec = { package = "parity-scale-codec", workspace = true }
 kvdb-rocksdb = { workspace = true, optional = true }
 parity-db = { workspace = true, optional = true }
+scale-codec = { package = "parity-scale-codec", workspace = true }
 
 # Substrate
 sc-client-api = { workspace = true }
@@ -36,17 +36,17 @@ sp-runtime = { workspace = true }
 sp-storage = { workspace = true }
 
 # Frontier
-fp-consensus = { workspace = true, features = ["std"]  }
-fp-rpc = { workspace = true, features = ["std"]  }
+fp-consensus = { workspace = true, features = ["std"] }
+fp-rpc = { workspace = true, features = ["std"] }
 fp-storage = { workspace = true, features = ["std"] }
 
 [features]
 default = ["kvdb-rocksdb", "parity-db"]
 
 [dev-dependencies]
-maplit = "1.0.2"
-tempfile = "3.3.0"
 fc-rpc = { workspace = true }
+maplit = "1.0.2"
 sc-block-builder = { workspace = true }
 sp-consensus = { workspace = true }
 substrate-test-runtime-client = { workspace = true }
+tempfile = "3.3.0"
