@@ -25,10 +25,14 @@ use jsonrpsee::core::RpcResult as Result;
 use sc_client_api::backend::{Backend, StorageProvider};
 use sc_network_common::ExHashT;
 use sc_transaction_pool::ChainApi;
-use sp_api::{ApiExt, ProvideRuntimeApi};
+use sp_api::{ApiExt, CallApiAt, ProvideRuntimeApi};
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
 use sp_blockchain::HeaderBackend;
-use sp_runtime::{traits::Block as BlockT, SaturatedConversion};
+use sp_runtime::{
+	generic::BlockId,
+	traits::{BlakeTwo256, Block as BlockT},
+	SaturatedConversion,
+};
 // Frontier
 use fc_rpc_core::types::*;
 use fp_rpc::EthereumRuntimeRPCApi;
@@ -156,6 +160,32 @@ where
 				_ => block_gas_limit,
 			},
 		};
+
+		let encoded_params = sp_api::Encode::encode(&(
+			&from,
+			&to,
+			&data.clone().map(|d| d.into_vec()),
+			&value,
+			&gas_limit,
+			&gas_price,
+			&nonce,
+			&false,
+		));
+		let mut overlayed_changes = std::cell::RefCell::<sp_api::OverlayedChanges>::default();
+		let mut storage_transaction_cache =
+			std::cell::RefCell::<sp_api::StorageTransactionCache<B, C::StateBackend>>::default();
+		let params = sp_api::CallApiAtParams {
+			at: &id,
+			function: "EthereumRuntimeRPCApi_call",
+			arguments: encoded_params,
+			overlayed_changes: &overlayed_changes,
+			storage_transaction_cache: &storage_transaction_cache,
+			context: sp_api::ExecutionContext::OffchainCall(None),
+			recorder: &None,
+		};
+		self.client.call_api_at(params);
+
+		log::info!("VER {api_version}");
 
 		let data = data.map(|d| d.0).unwrap_or_default();
 		match to {
