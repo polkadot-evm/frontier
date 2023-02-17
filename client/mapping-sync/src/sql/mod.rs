@@ -664,7 +664,7 @@ mod test {
 				backend.clone(),
 				Arc::new(indexer_backend),
 				client.clone().import_notification_stream(),
-				10,								// batch size
+				10,                                // batch size
 				std::time::Duration::from_secs(1), // interval duration
 			)
 			.await
@@ -782,7 +782,7 @@ mod test {
 				backend.clone(),
 				Arc::new(indexer_backend),
 				notification_stream,
-				10,								// batch size
+				10,                                // batch size
 				std::time::Duration::from_secs(1), // interval duration
 			)
 			.await
@@ -996,7 +996,7 @@ mod test {
 				backend.clone(),
 				Arc::new(indexer_backend),
 				notification_stream,
-				10,								// batch size
+				10,                                // batch size
 				std::time::Duration::from_secs(1), // interval duration
 			)
 			.await
@@ -1142,7 +1142,7 @@ mod test {
 				backend.clone(),
 				Arc::new(indexer_backend),
 				client.clone().import_notification_stream(),
-				10,								// batch size
+				10,                                // batch size
 				std::time::Duration::from_secs(1), // interval duration
 			)
 			.await
@@ -1241,7 +1241,7 @@ mod test {
 				backend.clone(),
 				Arc::new(indexer_backend),
 				notification_stream,
-				10,								// batch size
+				10,                                // batch size
 				std::time::Duration::from_secs(1), // interval duration
 			)
 			.await

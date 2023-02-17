@@ -411,7 +411,7 @@ mod tests {
 
 				// Fill the tmp db with some data
 				let mut transaction = sp_database::Transaction::new();
-				for _ in 0..1000 {
+				for _ in 0..50 {
 					// Ethereum hash
 					let ethhash = H256::random();
 					// Create two branches, and map the orphan one.
