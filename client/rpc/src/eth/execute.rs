@@ -161,30 +161,6 @@ where
 			},
 		};
 
-		let encoded_params = sp_api::Encode::encode(&(
-			&from,
-			&to,
-			&data.clone().map(|d| d.into_vec()),
-			&value,
-			&gas_limit,
-			&gas_price,
-			&nonce,
-			&false,
-		));
-		let mut overlayed_changes = std::cell::RefCell::<sp_api::OverlayedChanges>::default();
-		let mut storage_transaction_cache =
-			std::cell::RefCell::<sp_api::StorageTransactionCache<B, C::StateBackend>>::default();
-		let params = sp_api::CallApiAtParams {
-			at: &id,
-			function: "EthereumRuntimeRPCApi_call",
-			arguments: encoded_params,
-			overlayed_changes: &overlayed_changes,
-			storage_transaction_cache: &storage_transaction_cache,
-			context: sp_api::ExecutionContext::OffchainCall(None),
-			recorder: &None,
-		};
-		self.client.call_api_at(params);
-
 		log::info!("VER {api_version}");
 
 		let data = data.map(|d| d.0).unwrap_or_default();
@@ -231,29 +207,65 @@ where
 					Ok(Bytes(info.value))
 				} else if api_version == 4 {
 					// Post-london + access list support
-					let access_list = access_list.unwrap_or_default();
-					let info = api
-						.call(
-							substrate_hash,
-							from.unwrap_or_default(),
-							to,
-							data,
-							value.unwrap_or_default(),
-							gas_limit,
-							max_fee_per_gas,
-							max_priority_fee_per_gas,
-							nonce,
-							false,
-							Some(
-								access_list
-									.into_iter()
-									.map(|item| (item.address, item.storage_keys))
-									.collect(),
-							),
-						)
+					let encoded_params = sp_api::Encode::encode(&(
+						&from.unwrap_or_default(),
+						&to,
+						&data,
+						&value.unwrap_or_default(),
+						&gas_limit,
+						&max_fee_per_gas,
+						&max_priority_fee_per_gas,
+						&nonce,
+						&false,
+						&Some(
+							access_list
+								.unwrap_or_default()
+								.into_iter()
+								.map(|item| (item.address, item.storage_keys))
+								.collect::<Vec<(sp_core::H160, Vec<H256>)>>(),
+						),
+					));
+
+					// set custom storage override
+					let mut overlayed_changes = sp_api::OverlayedChanges::default();
+					let key = b"Balances".encode();
+
+					overlayed_changes.set_storage(
+						key,
+						Some(H256::repeat_byte(0x01).as_bytes().to_owned()),
+					);
+
+					let storage_transaction_cache = std::cell::RefCell::<
+						sp_api::StorageTransactionCache<B, C::StateBackend>,
+					>::default();
+					let params = sp_api::CallApiAtParams {
+						at: &id,
+						function: "EthereumRuntimeRPCApi_call",
+						arguments: encoded_params,
+						overlayed_changes: &std::cell::RefCell::new(overlayed_changes),
+						storage_transaction_cache: &storage_transaction_cache,
+						context: sp_api::ExecutionContext::OffchainCall(None),
+						recorder: &None,
+					};
+					let info = self
+						.client
+						.call_api_at(params)
+						.and_then(|r| {
+							std::result::Result::map_err(
+									<std::result::Result<
+										fp_evm::CallInfo,
+										sp_runtime::DispatchError,
+									> as sp_api::Decode>::decode(&mut &r[..]),
+									|error| sp_api::ApiError::FailedToDecodeReturnValue {
+										function: "EthereumRuntimeRPCApi_call",
+										error,
+									},
+								)
+						})
 						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
 						.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
 
+					log::info!("2 {:?}", info);
 					error_on_execution_failure(&info.exit_reason, &info.value)?;
 					Ok(Bytes(info.value))
 				} else {

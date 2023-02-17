@@ -47,6 +47,7 @@ fc-db = { workspace = true }
 fc-rpc-core = { workspace = true }
 fc-storage = { workspace = true }
 fp-ethereum = { workspace = true, features = ["default"] }
+fp-evm = { workspace = true }
 fp-rpc = { workspace = true, features = ["default"] }
 fp-storage = { workspace = true, features = ["default"] }
 

@@ -1970,6 +1970,7 @@ dependencies = [
  "fc-rpc-core",
  "fc-storage",
  "fp-ethereum",
+ "fp-evm",
  "fp-rpc",
  "fp-storage",
  "futures",
