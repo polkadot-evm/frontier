@@ -39,16 +39,16 @@ impl IndexedBlocks {
 	/// Retrieves and populates the cache with upto N last indexed blocks, where N is the `cache_size`.
 	pub async fn populate_cache(&mut self, pool: &SqlitePool) -> Result<(), sqlx::Error> {
 		sqlx::query(&format!(
-            "SELECT substrate_block_hash FROM sync_status WHERE status = 1 ORDER BY id DESC LIMIT {}",
-            self.cache_size
-        ))
-        .fetch_all(pool)
-        .await?
-        .iter()
-        .for_each(|any_row| {
-            let hash = H256::from_slice(&any_row.try_get::<Vec<u8>, _>(0).unwrap_or_default()[..]);
-            self.cache.push_back(hash);
-        });
+			"SELECT substrate_block_hash FROM sync_status WHERE status = 1 ORDER BY id DESC LIMIT {}",
+			self.cache_size
+		))
+		.fetch_all(pool)
+		.await?
+		.iter()
+		.for_each(|any_row| {
+			let hash = H256::from_slice(&any_row.try_get::<Vec<u8>, _>(0).unwrap_or_default()[..]);
+			self.cache.push_back(hash);
+		});
 		Ok(())
 	}
 
@@ -664,7 +664,7 @@ mod test {
 				backend.clone(),
 				Arc::new(indexer_backend),
 				client.clone().import_notification_stream(),
-				10,                                // batch size
+				10,								// batch size
 				std::time::Duration::from_secs(1), // interval duration
 			)
 			.await
@@ -782,7 +782,7 @@ mod test {
 				backend.clone(),
 				Arc::new(indexer_backend),
 				notification_stream,
-				10,                                // batch size
+				10,								// batch size
 				std::time::Duration::from_secs(1), // interval duration
 			)
 			.await
@@ -996,7 +996,7 @@ mod test {
 				backend.clone(),
 				Arc::new(indexer_backend),
 				notification_stream,
-				10,                                // batch size
+				10,								// batch size
 				std::time::Duration::from_secs(1), // interval duration
 			)
 			.await
@@ -1142,7 +1142,7 @@ mod test {
 				backend.clone(),
 				Arc::new(indexer_backend),
 				client.clone().import_notification_stream(),
-				10,                                // batch size
+				10,								// batch size
 				std::time::Duration::from_secs(1), // interval duration
 			)
 			.await
@@ -1241,7 +1241,7 @@ mod test {
 				backend.clone(),
 				Arc::new(indexer_backend),
 				notification_stream,
-				10,                                // batch size
+				10,								// batch size
 				std::time::Duration::from_secs(1), // interval duration
 			)
 			.await
