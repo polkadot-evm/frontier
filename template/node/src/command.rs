@@ -15,7 +15,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use clap::Parser;
 use futures::TryFutureExt;
 // Substrate
 use sc_cli::{ChainSpec, RuntimeVersion, SubstrateCli};
@@ -74,7 +73,7 @@ impl SubstrateCli for Cli {
 
 /// Parse and run command line arguments
 pub fn run() -> sc_cli::Result<()> {
-	let cli = Cli::parse();
+	let cli = Cli::from_args();
 
 	match &cli.subcommand {
 		Some(Subcommand::Key(cmd)) => cmd.run(&cli),
