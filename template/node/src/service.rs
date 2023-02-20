@@ -143,7 +143,7 @@ where
 					thread_count: eth_config.frontier_sql_backend_thread_count,
 					cache_size: eth_config.frontier_sql_backend_cache_size,
 				}),
-				100, // pool size
+				eth_config.frontier_sql_backend_pool_size,
 				eth_config.frontier_sql_backend_num_ops_timeout,
 				overrides.clone(),
 			))

@@ -85,6 +85,10 @@ pub struct EthConfiguration {
 	#[arg(long, value_enum, ignore_case = true, default_value_t = BackendType::default())]
 	pub frontier_backend_type: BackendType,
 
+	// Sets the SQL backend's pool size.
+	#[arg(long, default_value = "100")]
+	pub frontier_sql_backend_pool_size: u32,
+
 	/// Sets the SQL backend's query timeout in number of VM ops.
 	#[arg(long, default_value = "10000000")]
 	pub frontier_sql_backend_num_ops_timeout: u32,
