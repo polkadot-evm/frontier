@@ -131,7 +131,7 @@ where
 					// https://www.sqlite.org/pragma.html#pragma_analysis_limit
 					.pragma("analysis_limit", "1000")
 					// https://www.sqlite.org/pragma.html#pragma_threads
-					// .pragma("threads", config.thread_count.to_string())
+					.pragma("threads", config.thread_count.to_string())
 					// https://www.sqlite.org/pragma.html#pragma_threads
 					.pragma("temp_store", "memory")
 					// https://www.sqlite.org/wal.html
