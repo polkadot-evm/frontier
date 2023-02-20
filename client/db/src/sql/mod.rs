@@ -1067,11 +1067,11 @@ mod test {
 					.to_str()
 					.unwrap(),
 				create_if_missing: true,
-				cache_size: 204800,
+				cache_size: 20480,
 				thread_count: 4,
 			}),
-			100,
-			0,
+			1,
+			10_000,
 			overrides.clone(),
 		)
 		.await
