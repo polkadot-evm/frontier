@@ -131,7 +131,8 @@ where
 			&db_config_dir(config),
 		)?),
 		BackendType::Sql => {
-			let db_path = &db_config_dir(config);
+			let db_path = db_config_dir(config).join("sql");
+			std::fs::create_dir_all(&db_path).expect("failed creating sql db directory");
 			let backend = futures::executor::block_on(fc_db::sql::Backend::new(
 				fc_db::sql::BackendConfig::Sqlite(fc_db::sql::SqliteBackendConfig {
 					path: Path::new("sqlite:///")
