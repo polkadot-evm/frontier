@@ -36,6 +36,7 @@ fp-evm = { workspace = true }
 # Substrate
 pallet-balances = { workspace = true, features = ["std"] }
 pallet-evm-precompile-simple = { workspace = true }
+pallet-evmless-precompile-fungibles = { workspace = true }
 
 [features]
 default = ["std"]

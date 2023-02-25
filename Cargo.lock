@@ -2473,6 +2473,7 @@ dependencies = [
  "pallet-evm-precompile-sha3fips",
  "pallet-evm-precompile-simple",
  "pallet-evmless",
+ "pallet-evmless-precompile-fungibles",
  "pallet-grandpa",
  "pallet-hotfix-sufficients",
  "pallet-sudo",
@@ -4869,9 +4870,29 @@ dependencies = [
  "log",
  "pallet-balances",
  "pallet-evm-precompile-simple",
+ "pallet-evmless-precompile-fungibles",
  "pallet-timestamp",
  "parity-scale-codec",
  "rlp",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-evmless-precompile-fungibles"
+version = "2.0.0-dev"
+dependencies = [
+ "fp-evm",
+ "frame-support",
+ "frame-system",
+ "pallet-balances",
+ "pallet-evmless",
+ "pallet-timestamp",
+ "pallet-utility",
+ "parity-scale-codec",
  "scale-info",
  "sp-core",
  "sp-io",
