@@ -28,7 +28,7 @@ pub mod weights;
 pub use weights::WeightInfo;
 
 use frame_support::dispatch::PostDispatchInfo;
-pub use pallet_evm::AddressMapping;
+pub use pallet_evmless::AddressMapping;
 use sp_core::H160;
 use sp_runtime::traits::Zero;
 use sp_std::vec::Vec;

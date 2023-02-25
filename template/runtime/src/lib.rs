@@ -45,7 +45,7 @@ use pallet_transaction_payment::CurrencyAdapter;
 use fp_evm::weight_per_gas;
 use fp_rpc::TransactionStatus;
 use pallet_ethereum::{Call::transact, Transaction as EthereumTransaction};
-use pallet_evm::{
+use pallet_evmless::{
 	Account as EVMAccount, EnsureAddressTruncated, FeeCalculator, HashedAddressMapping, Runner,
 };
 
@@ -324,9 +324,9 @@ parameter_types! {
 	pub WeightPerGas: Weight = Weight::from_ref_time(weight_per_gas(BLOCK_GAS_LIMIT, NORMAL_DISPATCH_RATIO, WEIGHT_MILLISECS_PER_BLOCK));
 }
 
-impl pallet_evm::Config for Runtime {
+impl pallet_evmless::Config for Runtime {
 	type FeeCalculator = BaseFee;
-	type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
+	type GasWeightMapping = pallet_evmless::FixedGasWeightMapping<Self>;
 	type WeightPerGas = WeightPerGas;
 	type BlockHashMapping = pallet_ethereum::EthereumBlockHashMapping<Self>;
 	type CallOrigin = EnsureAddressTruncated;
@@ -338,7 +338,7 @@ impl pallet_evm::Config for Runtime {
 	type PrecompilesValue = PrecompilesValue;
 	type ChainId = EVMChainId;
 	type BlockGasLimit = BlockGasLimit;
-	type Runner = pallet_evm::runner::stack::Runner<Self>;
+	type Runner = pallet_evmless::runner::stack::Runner<Self>;
 	type OnChargeTransaction = ();
 	type OnCreate = ();
 	type FindAuthor = FindAuthorTruncated<Aura>;
@@ -402,7 +402,7 @@ construct_runtime!(
 		TransactionPayment: pallet_transaction_payment,
 		Sudo: pallet_sudo,
 		Ethereum: pallet_ethereum,
-		EVM: pallet_evm,
+		Evmless: pallet_evmless,
 		EVMChainId: pallet_evm_chain_id,
 		DynamicFee: pallet_dynamic_fee,
 		BaseFee: pallet_base_fee,
@@ -537,7 +537,7 @@ extern crate frame_benchmarking;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benches {
-	define_benchmarks!([pallet_evm, EVM]);
+	define_benchmarks!([pallet_evmless, EVM]);
 }
 
 impl_runtime_apis! {
@@ -616,31 +616,31 @@ impl_runtime_apis! {
 
 	impl fp_rpc::EthereumRuntimeRPCApi<Block> for Runtime {
 		fn chain_id() -> u64 {
-			<Runtime as pallet_evm::Config>::ChainId::get()
+			<Runtime as pallet_evmless::Config>::ChainId::get()
 		}
 
 		fn account_basic(address: H160) -> EVMAccount {
-			let (account, _) = EVM::account_basic(&address);
+			let (account, _) = Evmless::account_basic(&address);
 			account
 		}
 
 		fn gas_price() -> U256 {
-			let (gas_price, _) = <Runtime as pallet_evm::Config>::FeeCalculator::min_gas_price();
+			let (gas_price, _) = <Runtime as pallet_evmless::Config>::FeeCalculator::min_gas_price();
 			gas_price
 		}
 
 		fn account_code_at(address: H160) -> Vec<u8> {
-			EVM::account_codes(address)
+			Evmless::account_codes(address)
 		}
 
 		fn author() -> H160 {
-			<pallet_evm::Pallet<Runtime>>::find_author()
+			<pallet_evmless::Pallet<Runtime>>::find_author()
 		}
 
 		fn storage_at(address: H160, index: U256) -> H256 {
 			let mut tmp = [0u8; 32];
 			index.to_big_endian(&mut tmp);
-			EVM::account_storages(address, H256::from_slice(&tmp[..]))
+			Evmless::account_storages(address, H256::from_slice(&tmp[..]))
 		}
 
 		fn call(
@@ -654,9 +654,9 @@ impl_runtime_apis! {
 			nonce: Option<U256>,
 			estimate: bool,
 			access_list: Option<Vec<(H160, Vec<H256>)>>,
-		) -> Result<pallet_evm::CallInfo, sp_runtime::DispatchError> {
+		) -> Result<pallet_evmless::CallInfo, sp_runtime::DispatchError> {
 			let config = if estimate {
-				let mut config = <Runtime as pallet_evm::Config>::config().clone();
+				let mut config = <Runtime as pallet_evmless::Config>::config().clone();
 				config.estimate = true;
 				Some(config)
 			} else {
@@ -665,8 +665,8 @@ impl_runtime_apis! {
 
 			let is_transactional = false;
 			let validate = true;
-			let evm_config = config.as_ref().unwrap_or(<Runtime as pallet_evm::Config>::config());
-			<Runtime as pallet_evm::Config>::Runner::call(
+			let evm_config = config.as_ref().unwrap_or(<Runtime as pallet_evmless::Config>::config());
+			<Runtime as pallet_evmless::Config>::Runner::call(
 				from,
 				to,
 				data,
@@ -692,9 +692,9 @@ impl_runtime_apis! {
 			nonce: Option<U256>,
 			estimate: bool,
 			access_list: Option<Vec<(H160, Vec<H256>)>>,
-		) -> Result<pallet_evm::CreateInfo, sp_runtime::DispatchError> {
+		) -> Result<pallet_evmless::CreateInfo, sp_runtime::DispatchError> {
 			let config = if estimate {
-				let mut config = <Runtime as pallet_evm::Config>::config().clone();
+				let mut config = <Runtime as pallet_evmless::Config>::config().clone();
 				config.estimate = true;
 				Some(config)
 			} else {
@@ -703,8 +703,8 @@ impl_runtime_apis! {
 
 			let is_transactional = false;
 			let validate = true;
-			let evm_config = config.as_ref().unwrap_or(<Runtime as pallet_evm::Config>::config());
-			<Runtime as pallet_evm::Config>::Runner::create(
+			let evm_config = config.as_ref().unwrap_or(<Runtime as pallet_evmless::Config>::config());
+			<Runtime as pallet_evmless::Config>::Runner::create(
 				from,
 				data,
 				value,
@@ -850,7 +850,7 @@ impl_runtime_apis! {
 			config: frame_benchmarking::BenchmarkConfig
 		) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
 			use frame_benchmarking::{Benchmarking, BenchmarkBatch, add_benchmark, TrackedStorageKey};
-			use pallet_evm::Pallet as PalletEvmBench;
+			use pallet_evmless::Pallet as PalletEvmBench;
 			use pallet_hotfix_sufficients::Pallet as PalletHotfixSufficients;
 			impl frame_system_benchmarking::Config for Runtime {}
 
@@ -859,7 +859,7 @@ impl_runtime_apis! {
 			let mut batches = Vec::<BenchmarkBatch>::new();
 			let params = (&config, &whitelist);
 
-			add_benchmark!(params, batches, pallet_evm, PalletEvmBench::<Runtime>);
+			add_benchmark!(params, batches, pallet_evmless, PalletEvmBench::<Runtime>);
 			add_benchmark!(params, batches, pallet_hotfix_sufficients, PalletHotfixSufficients::<Runtime>);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }

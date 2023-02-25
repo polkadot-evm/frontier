@@ -167,7 +167,7 @@ fn testnet_genesis(
 	chain_id: u64,
 ) -> GenesisConfig {
 	use frontier_template_runtime::{
-		AuraConfig, BalancesConfig, EVMChainIdConfig, EVMConfig, GrandpaConfig, SudoConfig,
+		AuraConfig, BalancesConfig, EVMChainIdConfig, EvmlessConfig, GrandpaConfig, SudoConfig,
 		SystemConfig,
 	};
 
@@ -206,7 +206,7 @@ fn testnet_genesis(
 
 		// EVM compatibility
 		evm_chain_id: EVMChainIdConfig { chain_id },
-		evm: EVMConfig {
+		evmless: EvmlessConfig {
 			accounts: {
 				let mut map = BTreeMap::new();
 				map.insert(

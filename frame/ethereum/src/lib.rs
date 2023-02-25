@@ -47,7 +47,7 @@ use frame_support::{
 	weights::Weight,
 };
 use frame_system::{pallet_prelude::OriginFor, CheckWeight, WeightInfo};
-use pallet_evm::{BlockHashMapping, FeeCalculator, GasWeightMapping, Runner};
+use pallet_evmless::{BlockHashMapping, FeeCalculator, GasWeightMapping, Runner};
 use sp_runtime::{
 	generic::DigestItem,
 	traits::{DispatchInfoOf, Dispatchable, One, Saturating, UniqueSaturatedInto, Zero},
@@ -180,7 +180,7 @@ pub mod pallet {
 	pub type Origin = RawOrigin;
 
 	#[pallet::config]
-	pub trait Config: frame_system::Config + pallet_timestamp::Config + pallet_evm::Config {
+	pub trait Config: frame_system::Config + pallet_timestamp::Config + pallet_evmless::Config {
 		/// The overarching event type.
 		type RuntimeEvent: From<Event> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// How Ethereum state root is calculated.
@@ -259,7 +259,7 @@ pub mod pallet {
 		#[pallet::call_index(0)]
 		#[pallet::weight({
 			let without_base_extrinsic_weight = true;
-			<T as pallet_evm::Config>::GasWeightMapping::gas_to_weight({
+			<T as pallet_evmless::Config>::GasWeightMapping::gas_to_weight({
 				let transaction_data: TransactionData = transaction.into();
 				transaction_data.gas_limit.unique_saturated_into()
 			}, without_base_extrinsic_weight)
@@ -404,7 +404,7 @@ impl<T: Config> Pallet<T> {
 			} else {
 				H256::default()
 			},
-			beneficiary: pallet_evm::Pallet::<T>::find_author(),
+			beneficiary: pallet_evmless::Pallet::<T>::find_author(),
 			state_root: T::StateRoot::get(),
 			receipts_root,
 			logs_bloom,
@@ -455,7 +455,7 @@ impl<T: Config> Pallet<T> {
 		let transaction_nonce = transaction_data.nonce;
 
 		let (base_fee, _) = T::FeeCalculator::min_gas_price();
-		let (who, _) = pallet_evm::Pallet::<T>::account_basic(&origin);
+		let (who, _) = pallet_evmless::Pallet::<T>::account_basic(&origin);
 
 		let _ = CheckEvmTransaction::<InvalidTransactionWrapper>::new(
 			CheckEvmTransactionConfig {
@@ -764,7 +764,7 @@ impl<T: Config> Pallet<T> {
 		let transaction_data: TransactionData = transaction.into();
 
 		let (base_fee, _) = T::FeeCalculator::min_gas_price();
-		let (who, _) = pallet_evm::Pallet::<T>::account_basic(&origin);
+		let (who, _) = pallet_evmless::Pallet::<T>::account_basic(&origin);
 
 		let _ = CheckEvmTransaction::<InvalidTransactionWrapper>::new(
 			CheckEvmTransactionConfig {

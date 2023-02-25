@@ -1,4 +1,4 @@
-use pallet_evm::{Precompile, PrecompileHandle, PrecompileResult, PrecompileSet};
+use pallet_evmless::{Precompile, PrecompileHandle, PrecompileResult, PrecompileSet};
 use sp_core::H160;
 use sp_std::marker::PhantomData;
 
@@ -10,7 +10,7 @@ pub struct FrontierPrecompiles<R>(PhantomData<R>);
 
 impl<R> FrontierPrecompiles<R>
 where
-	R: pallet_evm::Config,
+	R: pallet_evmless::Config,
 {
 	pub fn new() -> Self {
 		Self(Default::default())
@@ -29,7 +29,7 @@ where
 }
 impl<R> PrecompileSet for FrontierPrecompiles<R>
 where
-	R: pallet_evm::Config,
+	R: pallet_evmless::Config,
 {
 	fn execute(&self, handle: &mut impl PrecompileHandle) -> Option<PrecompileResult> {
 		match handle.code_address() {

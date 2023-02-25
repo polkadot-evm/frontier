@@ -1,8 +1,9 @@
 [package]
-name = "pallet-ethereum"
-version = "4.0.0-dev"
+name = "pallet-evmless"
+version = "6.0.0-dev"
 license = "Apache-2.0"
-description = "Ethereum compatibility full block processing emulation pallet for Substrate."
+readme = "README.md"
+description = "FRAME pallet that routes EVM calls to Substrate via precompiles"
 authors = { workspace = true }
 edition = { workspace = true }
 repository = { workspace = true }
@@ -11,77 +12,63 @@ repository = { workspace = true }
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-ethereum = { workspace = true, features = ["with-codec"] }
-ethereum-types = { workspace = true }
+environmental = { workspace = true, optional = true }
 evm = { workspace = true, features = ["with-codec"] }
+hex = { version = "0.4.3", default-features = false, features = ["alloc"] }
+impl-trait-for-tuples = "0.2.2"
+log = { version = "0.4.17", default-features = false }
 rlp = { workspace = true }
 scale-codec = { package = "parity-scale-codec", workspace = true }
 scale-info = { workspace = true }
-
 # Substrate
+frame-benchmarking = { workspace = true, optional = true }
 frame-support = { workspace = true }
 frame-system = { workspace = true }
 pallet-timestamp = { workspace = true }
+sp-core = { workspace = true }
 sp-io = { workspace = true }
 sp-runtime = { workspace = true }
 sp-std = { workspace = true }
-
 # Frontier
-fp-consensus = { workspace = true }
-fp-ethereum = { workspace = true }
 fp-evm = { workspace = true }
-fp-rpc = { workspace = true }
-fp-self-contained = { workspace = true }
-fp-storage = { workspace = true }
-#pallet-evm = { workspace = true }
-pallet-evmless = { workspace = true }
 
 [dev-dependencies]
-hex = "0.4.3"
-libsecp256k1 = { workspace = true, features = ["static-context", "hmac"] }
 # Substrate
 pallet-balances = { workspace = true, features = ["std"] }
-sp-core = { workspace = true }
+pallet-evm-precompile-simple = { workspace = true }
 
 [features]
 default = ["std"]
 std = [
-	"ethereum/std",
+	"environmental?/std",
 	"evm/std",
-	"ethereum-types/std",
+	"evm/with-serde",
+	"hex/std",
+	"log/std",
 	"rlp/std",
 	"scale-codec/std",
 	"scale-info/std",
 	# Substrate
+	"frame-benchmarking/std",
 	"frame-support/std",
 	"frame-system/std",
 	"pallet-timestamp/std",
+	"sp-core/std",
 	"sp-io/std",
 	"sp-runtime/std",
 	"sp-std/std",
 	# Frontier
-	"fp-consensus/std",
-	"fp-ethereum/std",
 	"fp-evm/std",
-	"fp-rpc/std",
-	"fp-self-contained/std",
-	"fp-storage/std",
-	#"pallet-evm/std",
-	"pallet-evmless/std",
 ]
 runtime-benchmarks = [
+	"frame-benchmarking/runtime-benchmarks",
 	"frame-support/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
-	#"pallet-evm/runtime-benchmarks",
-	"pallet-evmless/runtime-benchmarks",
 ]
 try-runtime = [
 	"frame-support/try-runtime",
 	"frame-system/try-runtime",
 	"pallet-timestamp/try-runtime",
-	#"pallet-evm/try-runtime",
-	"pallet-evmless/try-runtime",
 ]
-#forbid-evm-reentrancy = ["pallet-evm/forbid-evm-reentrancy"]
-forbid-evm-reentrancy = ["pallet-evmless/forbid-evm-reentrancy"]
+forbid-evm-reentrancy = ["dep:environmental"]

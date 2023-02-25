@@ -79,6 +79,6 @@ impl frame_system::Config for Test {
 }
 
 impl Config for Test {
-	type AddressMapping = pallet_evm::IdentityAddressMapping;
+	type AddressMapping = pallet_evmless::IdentityAddressMapping;
 	type WeightInfo = ();
 }

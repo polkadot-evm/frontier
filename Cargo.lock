@@ -2468,11 +2468,11 @@ dependencies = [
  "pallet-base-fee",
  "pallet-dynamic-fee",
  "pallet-ethereum",
- "pallet-evm",
  "pallet-evm-chain-id",
  "pallet-evm-precompile-modexp",
  "pallet-evm-precompile-sha3fips",
  "pallet-evm-precompile-simple",
+ "pallet-evmless",
  "pallet-grandpa",
  "pallet-hotfix-sufficients",
  "pallet-sudo",
@@ -4740,32 +4740,7 @@ dependencies = [
  "hex",
  "libsecp256k1",
  "pallet-balances",
- "pallet-evm",
- "pallet-timestamp",
- "parity-scale-codec",
- "rlp",
- "scale-info",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
-name = "pallet-evm"
-version = "6.0.0-dev"
-dependencies = [
- "environmental",
- "evm",
- "fp-evm",
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "hex",
- "impl-trait-for-tuples",
- "log",
- "pallet-balances",
- "pallet-evm-precompile-simple",
+ "pallet-evmless",
  "pallet-timestamp",
  "parity-scale-codec",
  "rlp",
@@ -4820,7 +4795,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "pallet-balances",
- "pallet-evm",
+ "pallet-evmless",
  "pallet-timestamp",
  "pallet-utility",
  "parity-scale-codec",
@@ -4880,6 +4855,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-evmless"
+version = "6.0.0-dev"
+dependencies = [
+ "environmental",
+ "evm",
+ "fp-evm",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "hex",
+ "impl-trait-for-tuples",
+ "log",
+ "pallet-balances",
+ "pallet-evm-precompile-simple",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "rlp",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-grandpa"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=master#946507ba9ef13e263534176b7b74e26fc56efbd4"
@@ -4909,7 +4909,7 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
- "pallet-evm",
+ "pallet-evmless",
  "parity-scale-codec",
  "scale-info",
  "sp-core",
