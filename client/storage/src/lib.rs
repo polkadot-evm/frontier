@@ -19,14 +19,45 @@
 mod overrides;
 pub use self::overrides::*;
 
+use std::{collections::BTreeMap, sync::Arc};
+
 use scale_codec::Decode;
 // Substrate
 use sc_client_api::{backend::Backend, StorageProvider};
+use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 use sp_storage::StorageKey;
 // Frontier
 use fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA};
+
+pub fn overrides_handle<B, C, BE>(client: Arc<C>) -> Arc<OverrideHandle<B>>
+where
+	B: BlockT,
+	C: ProvideRuntimeApi<B>,
+	C::Api: fp_rpc::EthereumRuntimeRPCApi<B>,
+	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
+	BE: Backend<B> + 'static,
+{
+	let mut overrides_map = BTreeMap::new();
+	overrides_map.insert(
+		EthereumStorageSchema::V1,
+		Box::new(SchemaV1Override::new(client.clone())) as Box<dyn StorageOverride<_>>,
+	);
+	overrides_map.insert(
+		EthereumStorageSchema::V2,
+		Box::new(SchemaV2Override::new(client.clone())) as Box<dyn StorageOverride<_>>,
+	);
+	overrides_map.insert(
+		EthereumStorageSchema::V3,
+		Box::new(SchemaV3Override::new(client.clone())) as Box<dyn StorageOverride<_>>,
+	);
+
+	Arc::new(OverrideHandle {
+		schemas: overrides_map,
+		fallback: Box::new(RuntimeApiStorageOverride::<B, C>::new(client)),
+	})
+}
 
 pub fn onchain_storage_schema<B: BlockT, C, BE>(client: &C, at: BlockId<B>) -> EthereumStorageSchema
 where
