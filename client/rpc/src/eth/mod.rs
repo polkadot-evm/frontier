@@ -49,9 +49,10 @@ use sp_runtime::{
 };
 // Frontier
 use fc_rpc_core::{types::*, EthApiServer};
+use fc_storage::OverrideHandle;
 use fp_rpc::{ConvertTransactionRuntimeApi, EthereumRuntimeRPCApi, TransactionStatus};
 
-use crate::{internal_err, overrides::OverrideHandle, public_key, signer::EthSigner};
+use crate::{internal_err, public_key, signer::EthSigner};
 
 pub use self::{
 	cache::{EthBlockDataCacheTask, EthTask},

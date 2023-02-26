@@ -28,7 +28,6 @@
 mod eth;
 mod eth_pubsub;
 mod net;
-mod overrides;
 mod signer;
 mod web3;
 
@@ -36,16 +35,16 @@ pub use self::{
 	eth::{format, EstimateGasAdapter, Eth, EthBlockDataCacheTask, EthFilter, EthTask},
 	eth_pubsub::{EthPubSub, EthereumSubIdProvider},
 	net::Net,
-	overrides::{
-		OverrideHandle, RuntimeApiStorageOverride, SchemaV1Override, SchemaV2Override,
-		SchemaV3Override, StorageOverride,
-	},
 	signer::{EthDevSigner, EthSigner},
 	web3::Web3,
 };
 pub use ethereum::TransactionV2 as EthereumTransaction;
 pub use fc_rpc_core::{
 	EthApiServer, EthFilterApiServer, EthPubSubApiServer, NetApiServer, Web3ApiServer,
+};
+pub use fc_storage::{
+	OverrideHandle, RuntimeApiStorageOverride, SchemaV1Override, SchemaV2Override,
+	SchemaV3Override, StorageOverride,
 };
 
 pub mod frontier_backend_client {

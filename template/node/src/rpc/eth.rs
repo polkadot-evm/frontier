@@ -80,30 +80,26 @@ impl<C, P, A: ChainApi, CT: Clone, B: BlockT> Clone for EthDeps<C, P, A, CT, B> 
 	}
 }
 
-pub fn overrides_handle<C, BE, B>(client: Arc<C>) -> Arc<OverrideHandle<B>>
+pub fn overrides_handle<B, C, BE>(client: Arc<C>) -> Arc<OverrideHandle<B>>
 where
+	B: BlockT,
 	C: ProvideRuntimeApi<B> + StorageProvider<B, BE> + AuxStore,
 	C: HeaderBackend<B> + HeaderMetadata<B, Error = BlockChainError> + 'static,
 	C::Api: fp_rpc::EthereumRuntimeRPCApi<B>,
 	BE: Backend<B> + 'static,
-	BE::State: StateBackend<BlakeTwo256>,
-	B: BlockT<Hash = H256>,
 {
 	let mut overrides_map = BTreeMap::new();
 	overrides_map.insert(
 		EthereumStorageSchema::V1,
-		Box::new(SchemaV1Override::new(client.clone()))
-			as Box<dyn StorageOverride<_> + Send + Sync>,
+		Box::new(SchemaV1Override::new(client.clone())) as Box<dyn StorageOverride<_>>,
 	);
 	overrides_map.insert(
 		EthereumStorageSchema::V2,
-		Box::new(SchemaV2Override::new(client.clone()))
-			as Box<dyn StorageOverride<_> + Send + Sync>,
+		Box::new(SchemaV2Override::new(client.clone())) as Box<dyn StorageOverride<_>>,
 	);
 	overrides_map.insert(
 		EthereumStorageSchema::V3,
-		Box::new(SchemaV3Override::new(client.clone()))
-			as Box<dyn StorageOverride<_> + Send + Sync>,
+		Box::new(SchemaV3Override::new(client.clone())) as Box<dyn StorageOverride<_>>,
 	);
 
 	Arc::new(OverrideHandle {
