@@ -92,10 +92,7 @@ where
 			self.backend.as_ref(),
 			Some(number),
 		) {
-			let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(
-				self.client.as_ref(),
-				id,
-			);
+			let schema = fc_storage::onchain_storage_schema::<B, C, BE>(self.client.as_ref(), id);
 			Ok(self
 				.overrides
 				.schemas
@@ -165,10 +162,7 @@ where
 			self.backend.as_ref(),
 			Some(number),
 		) {
-			let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(
-				self.client.as_ref(),
-				id,
-			);
+			let schema = fc_storage::onchain_storage_schema::<B, C, BE>(self.client.as_ref(), id);
 
 			Ok(self
 				.overrides

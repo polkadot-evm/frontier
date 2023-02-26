@@ -47,7 +47,6 @@ use fp_rpc::{EthereumRuntimeRPCApi, TransactionStatus};
 use fp_storage::EthereumStorageSchema;
 
 use self::lru_cache::LRUCacheByteLimited;
-use crate::frontier_backend_client;
 
 type WaitList<Hash, T> = HashMap<Hash, Vec<oneshot::Sender<Option<T>>>>;
 
@@ -319,7 +318,7 @@ where
 		) {
 			let id = BlockId::Hash(hash);
 			let schema =
-				frontier_backend_client::onchain_storage_schema::<B, C, BE>(client.as_ref(), id);
+				fc_storage::onchain_storage_schema::<B, C, BE>(client.as_ref(), id);
 			let handler = overrides
 				.schemas
 				.get(&schema)

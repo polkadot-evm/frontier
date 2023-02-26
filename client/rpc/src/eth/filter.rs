@@ -247,10 +247,8 @@ where
 						internal_err(format!("Expect block number from id: {}", id))
 					})?;
 
-					let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(
-						client.as_ref(),
-						id,
-					);
+					let schema =
+						fc_storage::onchain_storage_schema::<B, C, BE>(client.as_ref(), id);
 
 					let block = block_data_cache.current_block(schema, substrate_hash).await;
 					if let Some(block) = block {
@@ -380,8 +378,7 @@ where
 				.expect_block_hash_from_id(&id)
 				.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
 
-			let schema =
-				frontier_backend_client::onchain_storage_schema::<B, C, BE>(client.as_ref(), id);
+			let schema = fc_storage::onchain_storage_schema::<B, C, BE>(client.as_ref(), id);
 
 			let block = block_data_cache.current_block(schema, substrate_hash).await;
 			let statuses = block_data_cache
@@ -462,7 +459,7 @@ where
 			.expect_block_hash_from_id(&id)
 			.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
 
-		let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(client, id);
+		let schema = fc_storage::onchain_storage_schema::<B, C, BE>(client, id);
 
 		let block = block_data_cache.current_block(schema, substrate_hash).await;
 

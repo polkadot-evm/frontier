@@ -363,7 +363,7 @@ where
 		let block_gas_limit = {
 			let substrate_hash = client.info().best_hash;
 			let id = BlockId::Hash(substrate_hash);
-			let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(&client, id);
+			let schema = fc_storage::onchain_storage_schema::<B, C, BE>(&client, id);
 			let block = block_data_cache.current_block(schema, substrate_hash).await;
 
 			block

@@ -17,5 +17,31 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 mod overrides;
-
 pub use self::overrides::*;
+
+use scale_codec::Decode;
+// Substrate
+use sc_client_api::{backend::Backend, StorageProvider};
+use sp_blockchain::HeaderBackend;
+use sp_runtime::{generic::BlockId, traits::Block as BlockT};
+use sp_storage::StorageKey;
+// Frontier
+use fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA};
+
+pub fn onchain_storage_schema<B: BlockT, C, BE>(client: &C, at: BlockId<B>) -> EthereumStorageSchema
+where
+	B: BlockT,
+	C: StorageProvider<B, BE> + HeaderBackend<B> + 'static,
+	BE: Backend<B>,
+{
+	if let Ok(Some(hash)) = client.block_hash_from_id(&at) {
+		match client.storage(hash, &StorageKey(PALLET_ETHEREUM_SCHEMA.to_vec())) {
+			Ok(Some(bytes)) => Decode::decode(&mut &bytes.0[..])
+				.ok()
+				.unwrap_or(EthereumStorageSchema::Undefined),
+			_ => EthereumStorageSchema::Undefined,
+		}
+	} else {
+		EthereumStorageSchema::Undefined
+	}
+}

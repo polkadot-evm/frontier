@@ -131,10 +131,8 @@ where
 					response.gas_used_ratio.last(),
 					response.base_fee_per_gas.last(),
 				) {
-					let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(
-						self.client.as_ref(),
-						id,
-					);
+					let schema =
+						fc_storage::onchain_storage_schema::<B, C, BE>(self.client.as_ref(), id);
 					let handler = self
 						.overrides
 						.schemas

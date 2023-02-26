@@ -33,7 +33,7 @@ use sp_runtime::{
 use fc_rpc_core::types::*;
 use fp_rpc::EthereumRuntimeRPCApi;
 
-use crate::{eth::Eth, frontier_backend_client, internal_err};
+use crate::{eth::Eth, internal_err};
 
 impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi, EGA> Eth<B, C, P, CT, BE, H, A, EGA>
 where
@@ -70,10 +70,7 @@ where
 
 	pub fn author(&self) -> Result<H160> {
 		let block = BlockId::Hash(self.client.info().best_hash);
-		let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(
-			self.client.as_ref(),
-			block,
-		);
+		let schema = fc_storage::onchain_storage_schema::<B, C, BE>(self.client.as_ref(), block);
 
 		Ok(self
 			.overrides
