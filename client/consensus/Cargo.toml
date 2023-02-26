@@ -17,11 +17,11 @@ thiserror = "1.0"
 sc-client-api = { workspace = true }
 sc-consensus = { workspace = true }
 sp-api = { workspace = true }
-sp-block-builder = { workspace = true, features = ["std"] }
+sp-block-builder = { workspace = true, features = ["default"] }
 sp-blockchain = { workspace = true }
 sp-consensus = { workspace = true }
 sp-runtime = { workspace = true }
 # Frontier
 fc-db = { workspace = true }
-fp-consensus = { workspace = true, features = ["std"] }
-fp-rpc = { workspace = true, features = ["std"] }
+fp-consensus = { workspace = true, features = ["default"] }
+fp-rpc = { workspace = true, features = ["default"] }
