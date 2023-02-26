@@ -31,7 +31,7 @@ use fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA};
 pub fn onchain_storage_schema<B: BlockT, C, BE>(client: &C, at: BlockId<B>) -> EthereumStorageSchema
 where
 	B: BlockT,
-	C: StorageProvider<B, BE> + HeaderBackend<B> + 'static,
+	C: StorageProvider<B, BE> + HeaderBackend<B>,
 	BE: Backend<B>,
 {
 	if let Ok(Some(hash)) = client.block_hash_from_id(&at) {
