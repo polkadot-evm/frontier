@@ -174,7 +174,7 @@ pub async fn spawn_frontier_tasks<RuntimeApi, Executor>(
 			);
 		}
 		fc_db::Backend::Sql(b) => {
-			task_manager.spawn_essential_handle().spawn(
+			task_manager.spawn_essential_handle().spawn_blocking(
 				"frontier-mapping-sync-worker",
 				None,
 				fc_mapping_sync::sql::SyncWorker::run(

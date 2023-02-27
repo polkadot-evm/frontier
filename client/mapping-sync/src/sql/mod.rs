@@ -36,6 +36,14 @@ pub struct IndexedBlocks {
 }
 
 impl IndexedBlocks {
+	/// Create a new instance with a fixed cache size.
+	pub fn new(cache_size: usize) -> Self {
+		IndexedBlocks {
+			cache: Default::default(),
+			cache_size,
+		}
+	}
+
 	/// Retrieves and populates the cache with upto N last indexed blocks, where N is the `cache_size`.
 	pub async fn populate_cache(&mut self, pool: &SqlitePool) -> Result<(), sqlx::Error> {
 		sqlx::query(&format!(
@@ -176,30 +184,38 @@ where
 			worker.indexed_blocks.last_indexed(),
 		);
 
-		// If there is no data in the db, sync genesis.
-		if worker.indexed_blocks.last_indexed().is_none() {
-			log::info!(
-				target: "frontier-sql",
-				"import genesis",
-			);
-			if let Ok(Some(substrate_genesis_hash)) = indexer_backend
-				.insert_genesis_block_metadata(client.clone())
-				.await
-				.map_err(|e| {
-					log::error!(
-						target: "frontier-sql",
-						"💔  Cannot sync genesis block: {}",
-						e,
-					)
-				}) {
-				log::debug!(
+		// Attempt to resume from last indexed block. If there is no data in the db, sync genesis.
+		let mut maybe_resume_at = match worker.indexed_blocks.last_indexed() {
+			Some(last_block_hash) => client
+				.header(*last_block_hash)
+				.ok()
+				.flatten()
+				.map(|header| header.parent_hash().clone()),
+			None => {
+				log::info!(
 					target: "frontier-sql",
-					"Imported genesis block {:?}",
-					substrate_genesis_hash,
+					"import genesis",
 				);
-				worker.indexed_blocks.insert(substrate_genesis_hash);
+				if let Ok(Some(substrate_genesis_hash)) = indexer_backend
+					.insert_genesis_block_metadata(client.clone())
+					.await
+					.map_err(|e| {
+						log::error!(
+							target: "frontier-sql",
+							"💔  Cannot sync genesis block: {}",
+							e,
+						)
+					}) {
+					log::debug!(
+						target: "frontier-sql",
+						"Imported genesis block {:?}",
+						substrate_genesis_hash,
+					);
+					worker.indexed_blocks.insert(substrate_genesis_hash);
+				}
+				None
 			}
-		}
+		};
 
 		// Try firing the interval future first, this isn't guaranteed but is usually desirable.
 		let import_interval = futures_timer::Delay::new(Duration::from_nanos(1));
@@ -207,7 +223,6 @@ where
 		let notifications = import_notifications.fuse();
 		futures::pin_mut!(import_interval, notifications);
 
-		let mut try_create_indexes = true;
 		loop {
 			futures::select! {
 				_ = (&mut import_interval).fuse() => {
@@ -218,16 +233,22 @@ where
 
 					// Index any missing past blocks
 					worker
-					.try_index_past_missing_blocks(client.clone(), indexer_backend.clone(), backend)
-					.await;
+						.try_index_past_missing_blocks(client.clone(), indexer_backend.clone(), backend)
+						.await;
 
 					let leaves = backend.leaves();
 					if let Ok(mut leaves) = leaves {
+						// Attempt to resume from a previous checkpoint
+						if let Some(resume_at) = maybe_resume_at.take() {
+							leaves.push(resume_at);
+						}
+
 						// If a known leaf is still present when kicking an interval
 						// means the chain is slow or stall.
 						// If this is the case we want to remove it to move to
 						// its potential siblings.
 						leaves.retain(|leaf| !worker.indexed_blocks.contains_cached(leaf));
+
 						worker.index_blocks(
 							client.clone(),
 							indexer_backend.clone(),
@@ -258,21 +279,6 @@ where
 							);
 							Self::canonicalize(Arc::clone(&indexer_backend), tree_route).await;
 						}
-						// On first notification try create indexes
-						if try_create_indexes {
-							try_create_indexes = false;
-							if (indexer_backend.create_indexes().await).is_ok() {
-								log::debug!(
-									target: "frontier-sql",
-									"✅  Database indexes created"
-								);
-							} else {
-								log::error!(
-									target: "frontier-sql",
-									"❌  Indexes creation failed"
-								);
-							}
-						}
 						worker.index_blocks(
 							client.clone(),
 							indexer_backend.clone(),
@@ -290,7 +296,7 @@ where
 	fn new(batch_size: usize) -> Self {
 		SyncWorker {
 			_phantom: Default::default(),
-			indexed_blocks: Default::default(),
+			indexed_blocks: IndexedBlocks::new(batch_size),
 			current_batch: Default::default(),
 			batch_size,
 		}
@@ -446,7 +452,7 @@ where
 		);
 		indexer_backend
 			.index_pending_block_logs(client.clone(), self.batch_size)
-			.await; // Spawn actual logs task
+			.await;
 		self.indexed_blocks
 			.append(self.current_batch.iter().cloned());
 		self.current_batch.clear();
@@ -483,6 +489,7 @@ where
 
 #[cfg(test)]
 mod test {
+	use super::*;
 	use fc_rpc::{SchemaV3Override, StorageOverride};
 	use fp_storage::{
 		EthereumStorageSchema, OverrideHandle, ETHEREUM_CURRENT_RECEIPTS, PALLET_ETHEREUM,
@@ -1334,5 +1341,126 @@ mod test {
 			.collect::<Vec<H256>>();
 		assert_eq!(not_canon.len(), hashes_to_be_orphaned.len());
 		assert!(not_canon.iter().all(|h| hashes_to_be_orphaned.contains(h)));
+	}
+
+	#[tokio::test]
+	async fn resuming_from_last_indexed_block_works_with_interval_indexing() {
+		let tmp = tempdir().expect("create a temporary directory");
+		// Initialize storage with schema V3
+		let builder = TestClientBuilder::new().add_extra_storage(
+			PALLET_ETHEREUM_SCHEMA.to_vec(),
+			Encode::encode(&EthereumStorageSchema::V3),
+		);
+		// Backend
+		let backend = builder.backend();
+		// Client
+		let (client, _) =
+			builder.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(None);
+		let mut client = Arc::new(client);
+		// Overrides
+		let mut overrides_map = BTreeMap::new();
+		overrides_map.insert(
+			EthereumStorageSchema::V3,
+			Box::new(SchemaV3Override::new(client.clone()))
+				as Box<dyn StorageOverride<_> + Send + Sync>,
+		);
+		let overrides = Arc::new(OverrideHandle {
+			schemas: overrides_map,
+			fallback: Box::new(SchemaV3Override::new(client.clone())),
+		});
+		// Indexer backend
+		let indexer_backend = fc_db::sql::Backend::new(
+			fc_db::sql::BackendConfig::Sqlite(fc_db::sql::SqliteBackendConfig {
+				path: Path::new("sqlite:///")
+					.join(tmp.path())
+					.join("test.db3")
+					.to_str()
+					.unwrap(),
+				create_if_missing: true,
+				cache_size: 204800,
+				thread_count: 4,
+			}),
+			100,
+			0,
+			overrides.clone(),
+		)
+		.await
+		.expect("indexer pool to be created");
+
+		// Pool
+		let pool = indexer_backend.pool().clone();
+
+		// Create 5 blocks, storing them newest first.
+		let mut parent_hash = client
+			.hash(sp_runtime::traits::Zero::zero())
+			.unwrap()
+			.expect("genesis hash");
+		let mut block_hashes: Vec<H256> = vec![];
+		for _block_number in 1..=5 {
+			let builder = client
+				.new_block_at(&BlockId::Hash(parent_hash), ethereum_digest(), false)
+				.unwrap();
+			let block = builder.build().unwrap().block;
+			let block_hash = block.header.hash();
+			executor::block_on(client.import(BlockOrigin::Own, block)).unwrap();
+			block_hashes.insert(0, block_hash.clone());
+			parent_hash = block_hash;
+		}
+
+		// resume from the newest block hash (assuming it was indexed)
+		let block_resume_at = block_hashes[0];
+		sqlx::query("INSERT INTO sync_status(substrate_block_hash, status) VALUES (?, 1)")
+			.bind(block_resume_at.as_bytes())
+			.execute(&pool)
+			.await
+			.expect("sql query must succeed");
+
+		// Spawn indexer task
+		let client_inner = client.clone();
+		tokio::task::spawn(async move {
+			crate::sql::SyncWorker::run(
+				client_inner,
+				backend.clone(),
+				Arc::new(indexer_backend),
+				client.clone().import_notification_stream(),
+				4,                                 // batch size
+				std::time::Duration::from_secs(1), // interval duration
+			)
+			.await
+		});
+		// Enough time for interval to run
+		futures_timer::Delay::new(std::time::Duration::from_millis(2500)).await;
+
+		// Test the reorged chain is correctly indexed.
+		let actual_imported_blocks =
+			sqlx::query("SELECT substrate_block_hash, is_canon, block_number FROM blocks")
+				.fetch_all(&pool)
+				.await
+				.expect("test query result")
+				.iter()
+				.map(|row| H256::from_slice(&row.get::<Vec<u8>, _>(0)[..]))
+				.collect::<Vec<H256>>();
+		let expected_imported_blocks = block_hashes.clone().into_iter().skip(1).collect::<Vec<_>>();
+		assert_eq!(expected_imported_blocks, actual_imported_blocks);
+	}
+
+	fn test_new_sync_worker_sets_batch_size_for_indexed_block_cache() {
+		use sp_runtime::generic::{Block as GenericBlock, Header};
+		use substrate_test_runtime_client::{
+			client::{Client, LocalCallExecutor},
+			runtime::Extrinsic,
+			Backend,
+		};
+
+		type Block = GenericBlock<Header<u64, BlakeTwo256>, Extrinsic>;
+		type TestClient = Client<
+			Backend,
+			LocalCallExecutor<Block, Backend, NativeElseWasmExecutor<LocalExecutorDispatch>>,
+			Block,
+			frontier_template_runtime::RuntimeApi,
+		>;
+
+		let worker: SyncWorker<Block, Backend, TestClient> = SyncWorker::new(100);
+		assert_eq!(worker.batch_size, worker.indexed_blocks.cache_size);
 	}
 }

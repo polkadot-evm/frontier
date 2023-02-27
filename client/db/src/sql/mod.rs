@@ -106,7 +106,8 @@ where
 					.disable_statement_logging()
 					.clone(),
 			);
-		let _ = Self::create_if_not_exists(&any_pool).await?;
+		let _ = Self::create_database_if_not_exists(&any_pool).await?;
+		let _ = Self::create_indexes_if_not_exist(&any_pool).await?;
 		Ok(Self {
 			pool: any_pool,
 			overrides,
@@ -599,7 +600,7 @@ where
 		}
 	}
 
-	async fn create_if_not_exists(pool: &SqlitePool) -> Result<SqliteQueryResult, Error> {
+	async fn create_database_if_not_exists(pool: &SqlitePool) -> Result<SqliteQueryResult, Error> {
 		sqlx::query(
 			"BEGIN;
 			CREATE TABLE IF NOT EXISTS logs (
@@ -655,7 +656,7 @@ where
 		.await
 	}
 
-	pub async fn create_indexes(&self) -> Result<SqliteQueryResult, Error> {
+	async fn create_indexes_if_not_exist(pool: &SqlitePool) -> Result<SqliteQueryResult, Error> {
 		sqlx::query(
 			"BEGIN;
 			CREATE INDEX IF NOT EXISTS logs_main_idx ON logs (
@@ -686,7 +687,7 @@ where
 			);
 			COMMIT;",
 		)
-		.execute(self.pool())
+		.execute(pool)
 		.await
 	}
 }
