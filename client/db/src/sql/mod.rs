@@ -36,6 +36,7 @@ use sqlx::{
 	},
 	ConnectOptions, Error, Execute, QueryBuilder, Row, Sqlite,
 };
+use std::num::NonZeroU32;
 
 use std::{cmp::Ordering, collections::HashSet, str::FromStr, sync::Arc};
 
@@ -85,18 +86,26 @@ pub enum BackendConfig<'a> {
 
 #[derive(Clone)]
 pub struct Backend<Block: BlockT> {
+	/// The Sqlite connection.
 	pool: SqlitePool,
+
+	/// The additional overrides for the logs handler.
 	overrides: Arc<OverrideHandle<Block>>,
+
+	/// The number of allowed operations for the Sqlite filter call.
+	/// A value of `0` disables the timeout.
 	num_ops_timeout: i32,
 }
+
 impl<Block: BlockT> Backend<Block>
 where
 	Block: BlockT<Hash = H256> + Send + Sync,
 {
+	/// Creates a new instance of the SQL backend.
 	pub async fn new(
 		config: BackendConfig<'_>,
 		pool_size: u32,
-		num_ops_timeout: u32,
+		num_ops_timeout: Option<NonZeroU32>,
 		overrides: Arc<OverrideHandle<Block>>,
 	) -> Result<Self, Error> {
 		let any_pool = SqlitePoolOptions::new()
@@ -111,7 +120,11 @@ where
 		Ok(Self {
 			pool: any_pool,
 			overrides,
-			num_ops_timeout: num_ops_timeout.try_into().unwrap_or(i32::MAX),
+			num_ops_timeout: num_ops_timeout
+				.map(|n| n.get())
+				.unwrap_or(0)
+				.try_into()
+				.unwrap_or(i32::MAX),
 		})
 	}
 
@@ -148,6 +161,8 @@ where
 		&self.pool
 	}
 
+	/// Canonicalize the indexed blocks, marking/demarking them as canon based on the
+	/// provided `retracted` and `enacted` values.
 	pub async fn canonicalize(&self, retracted: &[H256], enacted: &[H256]) -> Result<(), Error> {
 		let mut tx = self.pool().begin().await?;
 
@@ -178,6 +193,7 @@ where
 		tx.commit().await
 	}
 
+	/// Index the block metadata for the genesis block.
 	pub async fn insert_genesis_block_metadata<Client, BE>(
 		&self,
 		client: Arc<Client>,
@@ -323,6 +339,7 @@ where
 		Ok(out)
 	}
 
+	/// Insert the block metadata for the provided block hashes.
 	pub async fn insert_block_metadata<Client, BE>(
 		&self,
 		client: Arc<Client>,
@@ -413,6 +430,7 @@ where
 		tx.commit().await
 	}
 
+	/// Index the logs for the newly indexed blocks upto a `max_pending_blocks` value.
 	pub async fn index_pending_block_logs<Client, BE>(
 		&self,
 		client: Arc<Client>,
@@ -600,6 +618,7 @@ where
 		}
 	}
 
+	/// Create the Sqlite database if it does not already exist.
 	async fn create_database_if_not_exists(pool: &SqlitePool) -> Result<SqliteQueryResult, Error> {
 		sqlx::query(
 			"BEGIN;
@@ -656,6 +675,7 @@ where
 		.await
 	}
 
+	/// Create the Sqlite database indices if it does not already exist.
 	async fn create_indexes_if_not_exist(pool: &SqlitePool) -> Result<SqliteQueryResult, Error> {
 		sqlx::query(
 			"BEGIN;
@@ -1072,7 +1092,7 @@ mod test {
 				thread_count: 4,
 			}),
 			1,
-			0,
+			None,
 			overrides.clone(),
 		)
 		.await

@@ -145,7 +145,7 @@ where
 					cache_size: eth_config.frontier_sql_backend_cache_size,
 				}),
 				eth_config.frontier_sql_backend_pool_size,
-				eth_config.frontier_sql_backend_num_ops_timeout,
+				std::num::NonZeroU32::new(eth_config.frontier_sql_backend_num_ops_timeout),
 				overrides.clone(),
 			))
 			.unwrap_or_else(|err| panic!("failed creating sql backend: {:?}", err));

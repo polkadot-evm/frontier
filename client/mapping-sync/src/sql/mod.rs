@@ -579,7 +579,7 @@ mod test {
 				thread_count: 4,
 			}),
 			100,
-			0,
+			None,
 			overrides.clone(),
 		)
 		.await
@@ -770,7 +770,7 @@ mod test {
 				thread_count: 4,
 			}),
 			100,
-			0,
+			None,
 			overrides.clone(),
 		)
 		.await
@@ -962,7 +962,7 @@ mod test {
 				thread_count: 4,
 			}),
 			100,
-			0,
+			None,
 			overrides.clone(),
 		)
 		.await
@@ -1098,7 +1098,7 @@ mod test {
 				thread_count: 4,
 			}),
 			100,
-			0,
+			None,
 			overrides.clone(),
 		)
 		.await
@@ -1230,7 +1230,7 @@ mod test {
 				thread_count: 4,
 			}),
 			100,
-			0,
+			None,
 			overrides.clone(),
 		)
 		.await
@@ -1381,7 +1381,7 @@ mod test {
 				thread_count: 4,
 			}),
 			100,
-			0,
+			None,
 			overrides.clone(),
 		)
 		.await
