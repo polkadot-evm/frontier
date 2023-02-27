@@ -35,6 +35,7 @@ frame-system = { workspace = true }
 frame-system-benchmarking = { workspace = true, optional = true }
 frame-system-rpc-runtime-api = { workspace = true }
 pallet-aura = { workspace = true }
+pallet-assets = { workspace = true }
 pallet-balances = { workspace = true }
 pallet-grandpa = { workspace = true }
 pallet-sudo = { workspace = true }
@@ -90,6 +91,7 @@ std = [
 	"frame-system-rpc-runtime-api/std",
 	"frame-system-benchmarking/std",
 	"pallet-aura/std",
+	"pallet-assets/std",
 	"pallet-balances/std",
 	"pallet-grandpa/std",
 	"pallet-sudo/std",
