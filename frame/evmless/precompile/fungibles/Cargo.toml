@@ -15,6 +15,9 @@ frame-support = { workspace = true }
 fp-evm = { workspace = true }
 pallet-evmless = { workspace = true }
 
+# Precompile Utils
+precompile-utils = { workspace = true }
+
 [dev-dependencies]
 scale-codec = { package = "parity-scale-codec", workspace = true }
 scale-info = { workspace = true }

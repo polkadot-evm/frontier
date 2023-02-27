@@ -146,3 +146,6 @@ pallet-evm-test-vector-support = { version = "1.0.0-dev", path = "frame/evmless/
 pallet-hotfix-sufficients = { version = "1.0.0", path = "frame/hotfix-sufficients", default-features = false }
 # Frontier Template
 frontier-template-runtime = { path = "template/runtime", default-features = false }
+
+# Precompile Utils
+precompile-utils = { path = "precompile-utils", default-features = false }
