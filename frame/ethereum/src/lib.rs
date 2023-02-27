@@ -180,7 +180,9 @@ pub mod pallet {
 	pub type Origin = RawOrigin;
 
 	#[pallet::config]
-	pub trait Config: frame_system::Config + pallet_timestamp::Config + pallet_evmless::Config {
+	pub trait Config:
+		frame_system::Config + pallet_timestamp::Config + pallet_evmless::Config
+	{
 		/// The overarching event type.
 		type RuntimeEvent: From<Event> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// How Ethereum state root is calculated.

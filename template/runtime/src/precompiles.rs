@@ -2,7 +2,7 @@ use pallet_evmless::{Precompile, PrecompileHandle, PrecompileResult, PrecompileS
 use sp_core::H160;
 use sp_std::marker::PhantomData;
 
-use pallet_evmless_precompile_fungibles::{Fungibles, AssetIdOf};
+use pallet_evmless_precompile_fungibles::{AssetIdOf, Fungibles};
 
 pub struct FrontierPrecompiles<R>(PhantomData<R>);
 
@@ -16,7 +16,6 @@ where
 	pub fn used_addresses() -> [H160; 1] {
 		[
 			hash(0), // Fungibles precompile
-			// hash(1), // NonFungibles precompile
 		]
 	}
 }

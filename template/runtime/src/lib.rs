@@ -34,7 +34,10 @@ use frame_support::weights::constants::ParityDbWeight as RuntimeDbWeight;
 use frame_support::weights::constants::RocksDbWeight as RuntimeDbWeight;
 use frame_support::{
 	construct_runtime, parameter_types,
-	traits::{AsEnsureOriginWithArg, ConstU32, ConstU64, ConstU128, ConstU8, FindAuthor, KeyOwnerProofSystem, OnTimestampSet},
+	traits::{
+		AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU64, ConstU8, FindAuthor,
+		KeyOwnerProofSystem, OnTimestampSet,
+	},
 	weights::{constants::WEIGHT_REF_TIME_PER_MILLIS, ConstantMultiplier, IdentityFee, Weight},
 };
 use frame_system::EnsureSigned;
@@ -237,7 +240,7 @@ impl pallet_grandpa::Config for Runtime {
 
 	type WeightInfo = ();
 	type MaxAuthorities = ConstU32<32>;
-    type MaxSetIdSessionEntries = ConstU64<0>;
+	type MaxSetIdSessionEntries = ConstU64<0>;
 }
 
 parameter_types! {
@@ -814,7 +817,7 @@ impl_runtime_apis! {
 			TransactionPayment::query_fee_details(uxt, len)
 		}
 
-        fn query_weight_to_fee(weight: Weight) -> Balance {
+		fn query_weight_to_fee(weight: Weight) -> Balance {
 			TransactionPayment::weight_to_fee(weight)
 		}
 
