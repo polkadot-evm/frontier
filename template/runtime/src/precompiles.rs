@@ -2,7 +2,7 @@ use pallet_evmless::{Precompile, PrecompileHandle, PrecompileResult, PrecompileS
 use sp_core::H160;
 use sp_std::marker::PhantomData;
 
-use pallet_evmless_precompile_fungibles::Fungibles;
+use pallet_evmless_precompile_fungibles::{Fungibles, AssetIdOf};
 
 pub struct FrontierPrecompiles<R>(PhantomData<R>);
 
@@ -23,6 +23,7 @@ where
 impl<R> PrecompileSet for FrontierPrecompiles<R>
 where
 	R: pallet_evmless::Config,
+	AssetIdOf<R>: From<u32>,
 {
 	fn execute(&self, handle: &mut impl PrecompileHandle) -> Option<PrecompileResult> {
 		match handle.code_address() {

@@ -9,6 +9,7 @@ repository = { workspace = true }
 
 [dependencies]
 # Substrate
+frame-system = { workspace = true }
 frame-support = { workspace = true }
 # Frontier
 fp-evm = { workspace = true }

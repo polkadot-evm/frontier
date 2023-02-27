@@ -27,6 +27,10 @@ mod tests;
 
 use core::marker::PhantomData;
 use fp_evm::{ExitSucceed, Precompile, PrecompileHandle, PrecompileOutput, PrecompileResult};
+use frame_support::traits::tokens::fungibles::Inspect;
+
+pub type AssetIdOf<T> =
+		<<T as pallet_evmless::Config>::Fungibles as Inspect<<T as frame_system::Config>::AccountId>>::AssetId;
 
 pub struct Fungibles<T> {
     _marker: PhantomData<T>
@@ -34,8 +38,12 @@ pub struct Fungibles<T> {
 
 impl<T> Precompile for Fungibles<T>
 where
-    T: pallet_evmless::Config {
+    T: pallet_evmless::Config,
+    AssetIdOf<T>: From<u32>,
+{
 	fn execute(_handle: &mut impl PrecompileHandle) -> PrecompileResult {
+        let a: AssetIdOf<T> = 0u32.into();
+        let _b = T::Fungibles::minimum_balance(a);
 		Ok(PrecompileOutput {
 			exit_status: ExitSucceed::Stopped,
 			output: Default::default(),
