@@ -26,27 +26,83 @@ mod mock;
 mod tests;
 
 use core::marker::PhantomData;
-use fp_evm::{ExitSucceed, Precompile, PrecompileHandle, PrecompileOutput, PrecompileResult};
+use fp_evm::{PrecompileHandle, Precompile, PrecompileResult, ExitSucceed};
 use frame_support::traits::tokens::fungibles::Inspect;
+use precompile_utils::prelude::*;
 
-pub type AssetIdOf<T> =
-		<<T as pallet_evmless::Config>::Fungibles as Inspect<<T as frame_system::Config>::AccountId>>::AssetId;
-
-pub struct Fungibles<T> {
-    _marker: PhantomData<T>
+#[precompile_utils::generate_function_selector]
+#[derive(Debug, PartialEq)]
+pub enum ERC20Methods {
+    TotalSupply = "totalSupply()",
+	BalanceOf = "balanceOf(address)",
+	Allowance = "allowance(address,address)",
+	Transfer = "transfer(address,uint256)",
+	Approve = "approve(address,uint256)",
+	TransferFrom = "transferFrom(address,address,uint256)",
+	Name = "name()",
+	Symbol = "symbol()",
+	Decimals = "decimals()",
 }
 
-impl<T> Precompile for Fungibles<T>
+pub struct Fungibles<R>(PhantomData<R>);
+
+impl<R> Precompile for Fungibles<R>
 where
-    T: pallet_evmless::Config,
-    AssetIdOf<T>: From<u32>,
+    R: pallet_evmless::Config,
+    AssetIdOf<R>: From<u32>,
+    BalanceOf<R>: EvmData,
 {
-	fn execute(_handle: &mut impl PrecompileHandle) -> PrecompileResult {
-        let a: AssetIdOf<T> = 0u32.into();
-        let _b = T::Fungibles::minimum_balance(a);
-		Ok(PrecompileOutput {
-			exit_status: ExitSucceed::Stopped,
-			output: Default::default(),
-		})
-	}
+    fn execute(handle: &mut impl PrecompileHandle) -> PrecompileResult {
+        // todo: check address
+        //let address = handle.code_address();
+
+        let selector = match handle.read_selector() {
+            Ok(selector) => selector,
+            Err(e) => return Err(e.into()),
+        };
+
+        if let Err(err) = handle.check_function_modifier(match selector {
+            ERC20Methods::Approve | ERC20Methods::Transfer | ERC20Methods::TransferFrom => FunctionModifier::NonPayable,
+            _ => FunctionModifier::View,
+        }) {
+            return Err(err.into());
+        }
+
+        // todo: change to appropriate method implementations
+        match selector {
+            ERC20Methods::TotalSupply => Self::total_supply(handle),
+            ERC20Methods::BalanceOf => Self::total_supply(handle),
+            ERC20Methods::Allowance => Self::total_supply(handle),
+            ERC20Methods::Transfer => Self::total_supply(handle),
+            ERC20Methods::Approve => Self::total_supply(handle),
+            ERC20Methods::TransferFrom => Self::total_supply(handle),
+            ERC20Methods::Name => Self::total_supply(handle),
+            ERC20Methods::Symbol => Self::total_supply(handle),
+            ERC20Methods::Decimals => Self::total_supply(handle),
+        }
+    }
+}
+
+pub type AssetIdOf<R> =
+        <<R as pallet_evmless::Config>::Fungibles as Inspect<<R as frame_system::Config>::AccountId>>::AssetId;
+
+pub type BalanceOf<R> =
+        <<R as pallet_evmless::Config>::Fungibles as Inspect<<R as frame_system::Config>::AccountId>>::Balance;
+
+impl<R> Fungibles<R>
+where
+    R: pallet_evmless::Config,
+    AssetIdOf<R>: From<u32>,
+    BalanceOf<R>: EvmData,
+{
+    fn total_supply(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
+        handle.record_cost(RuntimeHelper::<R>::db_read_gas_cost())?;
+
+        let t = R::Fungibles::total_issuance(0u32.into());
+
+        Ok(PrecompileOutput {
+            exit_status: ExitSucceed::Returned,
+            output: EvmDataWriter::new().write(t).build()
+        })
+    }
 }

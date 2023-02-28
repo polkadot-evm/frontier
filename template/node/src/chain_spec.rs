@@ -255,9 +255,27 @@ fn testnet_genesis(
 		dynamic_fee: Default::default(),
 		base_fee: Default::default(),
 		assets: AssetsConfig {
-			assets: vec![],
-			accounts: vec![],
-			metadata: vec![],
+			assets: vec![
+				// id, owner, is_sufficient, min_balance
+				(
+					0,
+					get_account_id_from_seed::<sr25519::Public>("Alice"),
+					false,
+					1,
+				),
+			],
+			accounts: vec![
+				// id, account_id, balance
+				(
+					0,
+					get_account_id_from_seed::<sr25519::Public>("Alice"),
+					1337,
+				),
+			],
+			metadata: vec![
+				// id, name, symbol, decimals
+				(0, "Test".into(), "TEST".into(), 12),
+			],
 		},
 	}
 }

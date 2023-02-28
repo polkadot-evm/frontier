@@ -60,6 +60,9 @@ pallet-evm-precompile-sha3fips = { workspace = true }
 pallet-evm-precompile-simple = { workspace = true }
 pallet-hotfix-sufficients = { workspace = true }
 
+# Precompile Utils
+precompile-utils = { workspace = true }
+
 [build-dependencies]
 substrate-wasm-builder = { workspace = true, optional = true }
 

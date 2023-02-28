@@ -2,7 +2,12 @@ use pallet_evmless::{Precompile, PrecompileHandle, PrecompileResult, PrecompileS
 use sp_core::H160;
 use sp_std::marker::PhantomData;
 
-use pallet_evmless_precompile_fungibles::{AssetIdOf, Fungibles};
+use pallet_evm_precompile_modexp::Modexp;
+use pallet_evm_precompile_sha3fips::Sha3FIPS256;
+use pallet_evm_precompile_simple::{ECRecover, ECRecoverPublicKey, Identity, Ripemd160, Sha256};
+use pallet_evmless_precompile_fungibles::{AssetIdOf, BalanceOf, Fungibles};
+
+use precompile_utils::EvmData;
 
 pub struct FrontierPrecompiles<R>(PhantomData<R>);
 
@@ -13,9 +18,16 @@ where
 	pub fn new() -> Self {
 		Self(Default::default())
 	}
-	pub fn used_addresses() -> [H160; 1] {
+	pub fn used_addresses() -> [H160; 8] {
 		[
-			hash(0), // Fungibles precompile
+			hash(1),
+			hash(2),
+			hash(3),
+			hash(4),
+			hash(5),
+			hash(1024),
+			hash(1025),
+			hash(1337),
 		]
 	}
 }
@@ -23,12 +35,22 @@ impl<R> PrecompileSet for FrontierPrecompiles<R>
 where
 	R: pallet_evmless::Config,
 	AssetIdOf<R>: From<u32>,
+	BalanceOf<R>: EvmData,
 {
 	fn execute(&self, handle: &mut impl PrecompileHandle) -> Option<PrecompileResult> {
 		match handle.code_address() {
 			// Ethereum precompiles :
-			a if a == hash(0) => Some(Fungibles::<R>::execute(handle)),
-			//a if a == hash(1) => Some(Sha256::execute(handle)),
+			a if a == hash(1) => Some(ECRecover::execute(handle)),
+			a if a == hash(2) => Some(Sha256::execute(handle)),
+			a if a == hash(3) => Some(Ripemd160::execute(handle)),
+			a if a == hash(4) => Some(Identity::execute(handle)),
+			a if a == hash(5) => Some(Modexp::execute(handle)),
+			// Non-Frontier specific nor Ethereum precompiles :
+			a if a == hash(1024) => Some(Sha3FIPS256::execute(handle)),
+			a if a == hash(1025) => Some(ECRecoverPublicKey::execute(handle)),
+			// EVMless
+			a if a == hash(1337) => Some(Fungibles::<R>::execute(handle)),
+
 			_ => None,
 		}
 	}
