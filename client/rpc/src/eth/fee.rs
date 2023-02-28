@@ -135,10 +135,8 @@ where
 						self.client.expect_block_hash_from_id(&id).map_err(|_| {
 							internal_err(format!("Expect block number from id: {}", id))
 						})?;
-					let schema = fc_storage::onchain_storage_schema::<B, C, BE>(
-						self.client.as_ref(),
-						substrate_hash,
-					);
+					let schema =
+						fc_storage::onchain_storage_schema(self.client.as_ref(), substrate_hash);
 					let handler = self
 						.overrides
 						.schemas

@@ -230,7 +230,7 @@ where
 							if notification.is_new_best {
 								let substrate_hash = notification.hash;
 
-								let schema = fc_storage::onchain_storage_schema::<B, C, BE>(
+								let schema = fc_storage::onchain_storage_schema(
 									client.as_ref(),
 									substrate_hash,
 								);
@@ -267,7 +267,7 @@ where
 						.import_notification_stream()
 						.filter_map(move |notification| {
 							if notification.is_new_best {
-								let schema = fc_storage::onchain_storage_schema::<B, C, BE>(
+								let schema = fc_storage::onchain_storage_schema(
 									client.as_ref(),
 									notification.hash,
 								);

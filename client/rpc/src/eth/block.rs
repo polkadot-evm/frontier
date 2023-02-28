@@ -65,8 +65,7 @@ where
 			_ => return Ok(None),
 		};
 
-		let schema =
-			fc_storage::onchain_storage_schema::<B, C, BE>(client.as_ref(), substrate_hash);
+		let schema = fc_storage::onchain_storage_schema(client.as_ref(), substrate_hash);
 
 		let block = block_data_cache.current_block(schema, substrate_hash).await;
 		let statuses = block_data_cache
@@ -111,8 +110,7 @@ where
 			.expect_block_hash_from_id(&id)
 			.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
 
-		let schema =
-			fc_storage::onchain_storage_schema::<B, C, BE>(client.as_ref(), substrate_hash);
+		let schema = fc_storage::onchain_storage_schema(client.as_ref(), substrate_hash);
 
 		let block = block_data_cache.current_block(schema, substrate_hash).await;
 		let statuses = block_data_cache
@@ -148,8 +146,7 @@ where
 			Some(hash) => hash,
 			_ => return Ok(None),
 		};
-		let schema =
-			fc_storage::onchain_storage_schema::<B, C, BE>(self.client.as_ref(), substrate_hash);
+		let schema = fc_storage::onchain_storage_schema(self.client.as_ref(), substrate_hash);
 		let block = self
 			.overrides
 			.schemas
@@ -183,8 +180,7 @@ where
 			.client
 			.expect_block_hash_from_id(&id)
 			.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
-		let schema =
-			fc_storage::onchain_storage_schema::<B, C, BE>(self.client.as_ref(), substrate_hash);
+		let schema = fc_storage::onchain_storage_schema(self.client.as_ref(), substrate_hash);
 		let block = self
 			.overrides
 			.schemas

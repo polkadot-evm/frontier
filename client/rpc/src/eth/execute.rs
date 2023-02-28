@@ -362,7 +362,7 @@ where
 		};
 
 		let block_gas_limit = {
-			let schema = fc_storage::onchain_storage_schema::<B, C, BE>(&client, substrate_hash);
+			let schema = fc_storage::onchain_storage_schema(client.as_ref(), substrate_hash);
 			let block = block_data_cache.current_block(schema, substrate_hash).await;
 			block
 				.ok_or_else(|| internal_err("block unavailable, cannot query gas limit"))?

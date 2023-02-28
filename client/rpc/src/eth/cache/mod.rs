@@ -315,8 +315,7 @@ where
 			FeeHistoryCacheItem,
 			Option<u64>
 		) {
-			let schema =
-				fc_storage::onchain_storage_schema::<B, C, BE>(client.as_ref(), hash);
+			let schema = fc_storage::onchain_storage_schema(client.as_ref(), hash);
 			let handler = overrides
 				.schemas
 				.get(&schema)

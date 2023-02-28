@@ -70,7 +70,7 @@ where
 
 	pub fn author(&self) -> Result<H160> {
 		let hash = self.client.info().best_hash;
-		let schema = fc_storage::onchain_storage_schema::<B, C, BE>(self.client.as_ref(), hash);
+		let schema = fc_storage::onchain_storage_schema(self.client.as_ref(), hash);
 
 		Ok(self
 			.overrides
