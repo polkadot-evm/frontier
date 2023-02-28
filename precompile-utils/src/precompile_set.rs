@@ -817,7 +817,9 @@ pub struct PrecompileSetBuilder<R, P> {
 	_phantom: PhantomData<R>,
 }
 
-impl<R: pallet_evmless::Config, P: PrecompileSetFragment> PrecompileSet for PrecompileSetBuilder<R, P> {
+impl<R: pallet_evmless::Config, P: PrecompileSetFragment> PrecompileSet
+	for PrecompileSetBuilder<R, P>
+{
 	fn execute(&self, handle: &mut impl PrecompileHandle) -> Option<PrecompileResult> {
 		self.inner.execute::<R>(handle)
 	}
