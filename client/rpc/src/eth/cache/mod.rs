@@ -42,14 +42,11 @@ use sp_runtime::{
 };
 // Frontier
 use fc_rpc_core::types::*;
+use fc_storage::{OverrideHandle, StorageOverride};
 use fp_rpc::{EthereumRuntimeRPCApi, TransactionStatus};
 use fp_storage::EthereumStorageSchema;
 
 use self::lru_cache::LRUCacheByteLimited;
-use crate::{
-	frontier_backend_client,
-	overrides::{OverrideHandle, StorageOverride},
-};
 
 type WaitList<Hash, T> = HashMap<Hash, Vec<oneshot::Sender<Option<T>>>>;
 
@@ -198,7 +195,7 @@ impl<B: BlockT> EthBlockDataCacheTask<B> {
 		handler_call: F,
 	) where
 		T: Clone + scale_codec::Encode,
-		F: FnOnce(&Box<dyn StorageOverride<B> + Send + Sync>) -> EthBlockDataCacheMessage<B>,
+		F: FnOnce(&Box<dyn StorageOverride<B>>) -> EthBlockDataCacheMessage<B>,
 		F: Send + 'static,
 	{
 		// Data is cached, we respond immediately.
@@ -318,8 +315,7 @@ where
 			FeeHistoryCacheItem,
 			Option<u64>
 		) {
-			let schema =
-				frontier_backend_client::onchain_storage_schema::<B, C, BE>(client.as_ref(), hash);
+			let schema = fc_storage::onchain_storage_schema(client.as_ref(), hash);
 			let handler = overrides
 				.schemas
 				.get(&schema)

@@ -32,13 +32,14 @@ mod schema_v1_override;
 mod schema_v2_override;
 mod schema_v3_override;
 
-pub use schema_v1_override::SchemaV1Override;
-pub use schema_v2_override::SchemaV2Override;
-pub use schema_v3_override::SchemaV3Override;
+pub use self::{
+	schema_v1_override::SchemaV1Override, schema_v2_override::SchemaV2Override,
+	schema_v3_override::SchemaV3Override,
+};
 
 pub struct OverrideHandle<Block: BlockT> {
-	pub schemas: BTreeMap<EthereumStorageSchema, Box<dyn StorageOverride<Block> + Send + Sync>>,
-	pub fallback: Box<dyn StorageOverride<Block> + Send + Sync>,
+	pub schemas: BTreeMap<EthereumStorageSchema, Box<dyn StorageOverride<Block>>>,
+	pub fallback: Box<dyn StorageOverride<Block>>,
 }
 
 /// Something that can fetch Ethereum-related data. This trait is quite similar to the runtime API,
@@ -46,7 +47,7 @@ pub struct OverrideHandle<Block: BlockT> {
 /// Having this trait is useful because it allows optimized implementations that fetch data from a
 /// State Backend with some assumptions about pallet-ethereum's storage schema. Using such an
 /// optimized implementation avoids spawning a runtime and the overhead associated with it.
-pub trait StorageOverride<Block: BlockT> {
+pub trait StorageOverride<Block: BlockT>: Send + Sync {
 	/// For a given account address, returns pallet_evm::AccountCodes.
 	fn account_code_at(&self, block_hash: Block::Hash, address: H160) -> Option<Vec<u8>>;
 	/// For a given account address and index, returns pallet_evm::AccountStorages.
@@ -94,8 +95,8 @@ impl<B: BlockT, C> RuntimeApiStorageOverride<B, C> {
 
 impl<Block, C> StorageOverride<Block> for RuntimeApiStorageOverride<Block, C>
 where
-	Block: BlockT<Hash = H256> + Send + Sync + 'static,
-	C: ProvideRuntimeApi<Block> + Send + Sync + 'static,
+	Block: BlockT,
+	C: ProvideRuntimeApi<Block> + Send + Sync,
 	C::Api: EthereumRuntimeRPCApi<Block>,
 {
 	/// For a given account address, returns pallet_evm::AccountCodes.

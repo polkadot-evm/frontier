@@ -21,12 +21,9 @@ use std::{marker::PhantomData, sync::Arc};
 use ethereum_types::{H160, H256, U256};
 use scale_codec::Decode;
 // Substrate
-use sc_client_api::backend::{Backend, StateBackend, StorageProvider};
+use sc_client_api::backend::{Backend, StorageProvider};
 use sp_blockchain::HeaderBackend;
-use sp_runtime::{
-	traits::{BlakeTwo256, Block as BlockT},
-	Permill,
-};
+use sp_runtime::{traits::Block as BlockT, Permill};
 use sp_storage::StorageKey;
 // Frontier
 use fp_rpc::TransactionStatus;
@@ -51,10 +48,9 @@ impl<B: BlockT, C, BE> SchemaV1Override<B, C, BE> {
 
 impl<B, C, BE> SchemaV1Override<B, C, BE>
 where
-	B: BlockT<Hash = H256> + Send + Sync + 'static,
+	B: BlockT,
 	C: StorageProvider<B, BE> + HeaderBackend<B> + Send + Sync + 'static,
 	BE: Backend<B> + 'static,
-	BE::State: StateBackend<BlakeTwo256>,
 {
 	fn query_storage<T: Decode>(&self, block_hash: B::Hash, key: &StorageKey) -> Option<T> {
 		if let Ok(Some(data)) = self.client.storage(block_hash, key) {
@@ -68,10 +64,9 @@ where
 
 impl<B, C, BE> StorageOverride<B> for SchemaV1Override<B, C, BE>
 where
-	B: BlockT<Hash = H256> + Send + Sync + 'static,
+	B: BlockT,
 	C: StorageProvider<B, BE> + HeaderBackend<B> + Send + Sync + 'static,
 	BE: Backend<B> + 'static,
-	BE::State: StateBackend<BlakeTwo256>,
 {
 	/// For a given account address, returns pallet_evm::AccountCodes.
 	fn account_code_at(&self, block_hash: B::Hash, address: H160) -> Option<Vec<u8>> {

@@ -28,7 +28,6 @@
 mod eth;
 mod eth_pubsub;
 mod net;
-mod overrides;
 mod signer;
 mod web3;
 
@@ -36,10 +35,6 @@ pub use self::{
 	eth::{format, EstimateGasAdapter, Eth, EthBlockDataCacheTask, EthFilter, EthTask},
 	eth_pubsub::{EthPubSub, EthereumSubIdProvider},
 	net::Net,
-	overrides::{
-		OverrideHandle, RuntimeApiStorageOverride, SchemaV1Override, SchemaV2Override,
-		SchemaV3Override, StorageOverride,
-	},
 	signer::{EthDevSigner, EthSigner},
 	web3::Web3,
 };
@@ -47,24 +42,25 @@ pub use ethereum::TransactionV2 as EthereumTransaction;
 pub use fc_rpc_core::{
 	EthApiServer, EthFilterApiServer, EthPubSubApiServer, NetApiServer, Web3ApiServer,
 };
+pub use fc_storage::{
+	OverrideHandle, RuntimeApiStorageOverride, SchemaV1Override, SchemaV2Override,
+	SchemaV3Override, StorageOverride,
+};
 
 pub mod frontier_backend_client {
 	use super::internal_err;
 
 	use ethereum_types::H256;
 	use jsonrpsee::core::RpcResult;
-	use scale_codec::Decode;
 	// Substrate
-	use sc_client_api::backend::{Backend, StateBackend, StorageProvider};
 	use sp_blockchain::HeaderBackend;
 	use sp_runtime::{
 		generic::BlockId,
-		traits::{BlakeTwo256, Block as BlockT, UniqueSaturatedInto, Zero},
+		traits::{Block as BlockT, UniqueSaturatedInto, Zero},
 	};
-	use sp_storage::StorageKey;
 	// Frontier
 	use fc_rpc_core::types::BlockNumber;
-	use fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA};
+	use fp_storage::EthereumStorageSchema;
 
 	pub fn native_block_id<B: BlockT, C>(
 		client: &C,
@@ -143,24 +139,6 @@ pub mod frontier_backend_client {
 			.write_ethereum_schema(new_cache)
 			.map_err(|err| internal_err(format!("write backend failed: {:?}", err)))?;
 		Ok(())
-	}
-
-	pub fn onchain_storage_schema<B: BlockT, C, BE>(
-		client: &C,
-		hash: B::Hash,
-	) -> EthereumStorageSchema
-	where
-		B: BlockT<Hash = H256> + Send + Sync + 'static,
-		C: StorageProvider<B, BE> + HeaderBackend<B> + Send + Sync + 'static,
-		BE: Backend<B> + 'static,
-		BE::State: StateBackend<BlakeTwo256>,
-	{
-		match client.storage(hash, &StorageKey(PALLET_ETHEREUM_SCHEMA.to_vec())) {
-			Ok(Some(bytes)) => Decode::decode(&mut &bytes.0[..])
-				.ok()
-				.unwrap_or(EthereumStorageSchema::Undefined),
-			_ => EthereumStorageSchema::Undefined,
-		}
 	}
 
 	pub fn is_canon<B: BlockT, C>(client: &C, target_hash: H256) -> bool

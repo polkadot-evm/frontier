@@ -44,9 +44,8 @@ use fc_rpc_core::{
 	},
 	EthPubSubApiServer,
 };
+use fc_storage::OverrideHandle;
 use fp_rpc::EthereumRuntimeRPCApi;
-
-use crate::{frontier_backend_client, overrides::OverrideHandle};
 
 #[derive(Debug)]
 pub struct EthereumSubIdProvider;
@@ -231,11 +230,10 @@ where
 							if notification.is_new_best {
 								let substrate_hash = notification.hash;
 
-								let schema = frontier_backend_client::onchain_storage_schema::<
-									B,
-									C,
-									BE,
-								>(client.as_ref(), notification.hash);
+								let schema = fc_storage::onchain_storage_schema(
+									client.as_ref(),
+									substrate_hash,
+								);
 								let handler = overrides
 									.schemas
 									.get(&schema)
@@ -269,11 +267,10 @@ where
 						.import_notification_stream()
 						.filter_map(move |notification| {
 							if notification.is_new_best {
-								let schema = frontier_backend_client::onchain_storage_schema::<
-									B,
-									C,
-									BE,
-								>(client.as_ref(), notification.hash);
+								let schema = fc_storage::onchain_storage_schema(
+									client.as_ref(),
+									notification.hash,
+								);
 								let handler = overrides
 									.schemas
 									.get(&schema)
