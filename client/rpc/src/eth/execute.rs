@@ -18,21 +18,17 @@
 
 use std::sync::Arc;
 
-use ethereum_types::{H256, U256};
+use ethereum_types::U256;
 use evm::{ExitError, ExitReason};
 use jsonrpsee::core::RpcResult as Result;
 // Substrate
-use sc_client_api::backend::{Backend, StateBackend, StorageProvider};
+use sc_client_api::backend::{Backend, StorageProvider};
 use sc_network_common::ExHashT;
 use sc_transaction_pool::ChainApi;
 use sp_api::{ApiExt, ProvideRuntimeApi};
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
 use sp_blockchain::HeaderBackend;
-use sp_runtime::{
-	generic::BlockId,
-	traits::{BlakeTwo256, Block as BlockT},
-	SaturatedConversion,
-};
+use sp_runtime::{generic::BlockId, traits::Block as BlockT, SaturatedConversion};
 // Frontier
 use fc_rpc_core::types::*;
 use fp_rpc::EthereumRuntimeRPCApi;
@@ -65,12 +61,11 @@ impl EstimateGasAdapter for () {
 
 impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi, EGA> Eth<B, C, P, CT, BE, H, A, EGA>
 where
-	B: BlockT<Hash = H256> + Send + Sync + 'static,
-	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
-	C: HeaderBackend<B> + Send + Sync + 'static,
+	B: BlockT,
+	C: ProvideRuntimeApi<B>,
 	C::Api: BlockBuilderApi<B> + EthereumRuntimeRPCApi<B>,
+	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
 	BE: Backend<B> + 'static,
-	BE::State: StateBackend<BlakeTwo256>,
 	A: ChainApi<Block = B> + 'static,
 	EGA: EstimateGasAdapter,
 {

@@ -42,7 +42,6 @@ sp-consensus = { workspace = true }
 sp-core = { workspace = true }
 sp-io = { workspace = true }
 sp-runtime = { workspace = true }
-sp-storage = { workspace = true }
 # Frontier
 fc-db = { workspace = true }
 fc-rpc-core = { workspace = true }

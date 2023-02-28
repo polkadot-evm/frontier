@@ -22,17 +22,14 @@ use ethereum::TransactionV2 as EthereumTransaction;
 use ethereum_types::{H256, U256, U64};
 use jsonrpsee::core::RpcResult as Result;
 // Substrate
-use sc_client_api::backend::{Backend, StateBackend, StorageProvider};
+use sc_client_api::backend::{Backend, StorageProvider};
 use sc_network_common::ExHashT;
 use sc_transaction_pool::ChainApi;
 use sc_transaction_pool_api::InPoolTransaction;
 use sp_api::{ApiExt, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
 use sp_core::hashing::keccak_256;
-use sp_runtime::{
-	generic::BlockId,
-	traits::{BlakeTwo256, Block as BlockT},
-};
+use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 // Frontier
 use fc_rpc_core::types::*;
 use fp_rpc::EthereumRuntimeRPCApi;
@@ -44,11 +41,11 @@ use crate::{
 
 impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi, EGA> Eth<B, C, P, CT, BE, H, A, EGA>
 where
-	B: BlockT<Hash = H256> + Send + Sync + 'static,
-	C: ProvideRuntimeApi<B> + StorageProvider<B, BE> + HeaderBackend<B> + Send + Sync + 'static,
+	B: BlockT,
+	C: ProvideRuntimeApi<B>,
 	C::Api: EthereumRuntimeRPCApi<B>,
+	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
 	BE: Backend<B> + 'static,
-	BE::State: StateBackend<BlakeTwo256>,
 	A: ChainApi<Block = B> + 'static,
 {
 	pub async fn transaction_by_hash(&self, hash: H256) -> Result<Option<Transaction>> {

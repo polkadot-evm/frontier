@@ -21,16 +21,13 @@ use std::sync::Arc;
 use ethereum_types::{H256, U256};
 use jsonrpsee::core::RpcResult as Result;
 // Substrate
-use sc_client_api::backend::{Backend, StateBackend, StorageProvider};
+use sc_client_api::backend::{Backend, StorageProvider};
 use sc_network_common::ExHashT;
 use sc_transaction_pool::ChainApi;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_core::hashing::keccak_256;
-use sp_runtime::{
-	generic::BlockId,
-	traits::{BlakeTwo256, Block as BlockT},
-};
+use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 // Frontier
 use fc_rpc_core::types::*;
 use fp_rpc::EthereumRuntimeRPCApi;
@@ -42,12 +39,11 @@ use crate::{
 
 impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi, EGA> Eth<B, C, P, CT, BE, H, A, EGA>
 where
-	B: BlockT<Hash = H256> + Send + Sync + 'static,
-	C: StorageProvider<B, BE> + HeaderBackend<B> + Send + Sync + 'static,
+	B: BlockT,
 	C: ProvideRuntimeApi<B>,
 	C::Api: EthereumRuntimeRPCApi<B>,
-	BE: Backend<B> + 'static,
-	BE::State: StateBackend<BlakeTwo256>,
+	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
+	BE: Backend<B>,
 {
 	pub async fn block_by_hash(&self, hash: H256, full: bool) -> Result<Option<RichBlock>> {
 		let client = Arc::clone(&self.client);

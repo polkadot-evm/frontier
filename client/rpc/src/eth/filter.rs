@@ -22,13 +22,13 @@ use ethereum::BlockV2 as EthereumBlock;
 use ethereum_types::{H256, U256};
 use jsonrpsee::core::{async_trait, RpcResult as Result};
 // Substrate
-use sc_client_api::backend::{Backend, StateBackend, StorageProvider};
+use sc_client_api::backend::{Backend, StorageProvider};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_core::hashing::keccak_256;
 use sp_runtime::{
 	generic::BlockId,
-	traits::{BlakeTwo256, Block as BlockT, NumberFor, One, Saturating, UniqueSaturatedInto},
+	traits::{Block as BlockT, NumberFor, One, Saturating, UniqueSaturatedInto},
 };
 // Frontier
 use fc_rpc_core::{types::*, EthFilterApiServer};
@@ -69,8 +69,8 @@ impl<B: BlockT, C, BE> EthFilter<B, C, BE> {
 
 impl<B, C, BE> EthFilter<B, C, BE>
 where
-	B: BlockT<Hash = H256> + Send + Sync + 'static,
-	C: HeaderBackend<B> + Send + Sync + 'static,
+	B: BlockT,
+	C: HeaderBackend<B>,
 {
 	fn create_filter(&self, filter_type: FilterType) -> Result<U256> {
 		let block_number =
@@ -111,12 +111,11 @@ where
 #[async_trait]
 impl<B, C, BE> EthFilterApiServer for EthFilter<B, C, BE>
 where
-	B: BlockT<Hash = H256> + Send + Sync + 'static,
-	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
-	C: HeaderBackend<B> + Send + Sync + 'static,
+	B: BlockT,
+	C: ProvideRuntimeApi<B>,
 	C::Api: EthereumRuntimeRPCApi<B>,
+	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
 	BE: Backend<B> + 'static,
-	BE::State: StateBackend<BlakeTwo256>,
 {
 	fn new_filter(&self, filter: Filter) -> Result<U256> {
 		self.create_filter(FilterType::Log(filter))
@@ -426,12 +425,11 @@ async fn filter_range_logs<B: BlockT, C, BE>(
 	to: NumberFor<B>,
 ) -> Result<()>
 where
-	B: BlockT<Hash = H256> + Send + Sync + 'static,
-	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
-	C: HeaderBackend<B> + Send + Sync + 'static,
+	B: BlockT,
+	C: ProvideRuntimeApi<B>,
 	C::Api: EthereumRuntimeRPCApi<B>,
+	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
 	BE: Backend<B> + 'static,
-	BE::State: StateBackend<BlakeTwo256>,
 {
 	// Max request duration of 10 seconds.
 	let max_duration = time::Duration::from_secs(10);
