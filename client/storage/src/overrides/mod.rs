@@ -49,22 +49,22 @@ pub struct OverrideHandle<Block: BlockT> {
 /// optimized implementation avoids spawning a runtime and the overhead associated with it.
 pub trait StorageOverride<Block: BlockT>: Send + Sync {
 	/// For a given account address, returns pallet_evm::AccountCodes.
-	fn account_code_at(&self, block: &BlockId<Block>, address: H160) -> Option<Vec<u8>>;
+	fn account_code_at(&self, block_hash: Block::Hash, address: H160) -> Option<Vec<u8>>;
 	/// For a given account address and index, returns pallet_evm::AccountStorages.
-	fn storage_at(&self, block: &BlockId<Block>, address: H160, index: U256) -> Option<H256>;
+	fn storage_at(&self, block_hash: Block::Hash, address: H160, index: U256) -> Option<H256>;
 	/// Return the current block.
-	fn current_block(&self, block: &BlockId<Block>) -> Option<EthereumBlock>;
+	fn current_block(&self, block_hash: Block::Hash) -> Option<EthereumBlock>;
 	/// Return the current receipt.
-	fn current_receipts(&self, block: &BlockId<Block>) -> Option<Vec<ethereum::ReceiptV3>>;
+	fn current_receipts(&self, block_hash: Block::Hash) -> Option<Vec<ethereum::ReceiptV3>>;
 	/// Return the current transaction status.
 	fn current_transaction_statuses(
 		&self,
-		block: &BlockId<Block>,
+		block_hash: Block::Hash,
 	) -> Option<Vec<TransactionStatus>>;
 	/// Return the base fee at the given height.
-	fn elasticity(&self, block: &BlockId<Block>) -> Option<Permill>;
+	fn elasticity(&self, block_hash: Block::Hash) -> Option<Permill>;
 	/// Return `true` if the request BlockId is post-eip1559.
-	fn is_eip1559(&self, block: &BlockId<Block>) -> bool;
+	fn is_eip1559(&self, block_hash: Block::Hash) -> bool;
 }
 
 fn storage_prefix_build(module: &[u8], storage: &[u8]) -> Vec<u8> {
@@ -100,27 +100,27 @@ where
 	C::Api: EthereumRuntimeRPCApi<Block>,
 {
 	/// For a given account address, returns pallet_evm::AccountCodes.
-	fn account_code_at(&self, block: &BlockId<Block>, address: H160) -> Option<Vec<u8>> {
+	fn account_code_at(&self, block_hash: Block::Hash, address: H160) -> Option<Vec<u8>> {
 		self.client
 			.runtime_api()
-			.account_code_at(block, address)
+			.account_code_at(&BlockId::Hash(block_hash), address)
 			.ok()
 	}
 
 	/// For a given account address and index, returns pallet_evm::AccountStorages.
-	fn storage_at(&self, block: &BlockId<Block>, address: H160, index: U256) -> Option<H256> {
+	fn storage_at(&self, block_hash: Block::Hash, address: H160, index: U256) -> Option<H256> {
 		self.client
 			.runtime_api()
-			.storage_at(block, address, index)
+			.storage_at(&BlockId::Hash(block_hash), address, index)
 			.ok()
 	}
 
 	/// Return the current block.
-	fn current_block(&self, block: &BlockId<Block>) -> Option<ethereum::BlockV2> {
+	fn current_block(&self, block_hash: Block::Hash) -> Option<ethereum::BlockV2> {
 		let api = self.client.runtime_api();
 
 		let api_version = if let Ok(Some(api_version)) =
-			api.api_version::<dyn EthereumRuntimeRPCApi<Block>>(block)
+			api.api_version::<dyn EthereumRuntimeRPCApi<Block>>(&BlockId::Hash(block_hash))
 		{
 			api_version
 		} else {
@@ -128,19 +128,21 @@ where
 		};
 		if api_version == 1 {
 			#[allow(deprecated)]
-			let old_block = api.current_block_before_version_2(block).ok()?;
+			let old_block = api
+				.current_block_before_version_2(&BlockId::Hash(block_hash))
+				.ok()?;
 			old_block.map(|block| block.into())
 		} else {
-			api.current_block(block).ok()?
+			api.current_block(&BlockId::Hash(block_hash)).ok()?
 		}
 	}
 
 	/// Return the current receipt.
-	fn current_receipts(&self, block: &BlockId<Block>) -> Option<Vec<ethereum::ReceiptV3>> {
+	fn current_receipts(&self, block_hash: Block::Hash) -> Option<Vec<ethereum::ReceiptV3>> {
 		let api = self.client.runtime_api();
 
 		let api_version = if let Ok(Some(api_version)) =
-			api.api_version::<dyn EthereumRuntimeRPCApi<Block>>(block)
+			api.api_version::<dyn EthereumRuntimeRPCApi<Block>>(&BlockId::Hash(block_hash))
 		{
 			api_version
 		} else {
@@ -148,7 +150,9 @@ where
 		};
 		if api_version < 4 {
 			#[allow(deprecated)]
-			let old_receipts = api.current_receipts_before_version_4(block).ok()?;
+			let old_receipts = api
+				.current_receipts_before_version_4(&BlockId::Hash(block_hash))
+				.ok()?;
 			old_receipts.map(|receipts| {
 				receipts
 					.into_iter()
@@ -163,35 +167,41 @@ where
 					.collect()
 			})
 		} else {
-			self.client.runtime_api().current_receipts(block).ok()?
+			self.client
+				.runtime_api()
+				.current_receipts(&BlockId::Hash(block_hash))
+				.ok()?
 		}
 	}
 
 	/// Return the current transaction status.
 	fn current_transaction_statuses(
 		&self,
-		block: &BlockId<Block>,
+		block_hash: Block::Hash,
 	) -> Option<Vec<TransactionStatus>> {
 		self.client
 			.runtime_api()
-			.current_transaction_statuses(block)
+			.current_transaction_statuses(&BlockId::Hash(block_hash))
 			.ok()?
 	}
 
 	/// Return the elasticity multiplier at the give post-eip1559 height.
-	fn elasticity(&self, block: &BlockId<Block>) -> Option<Permill> {
-		if self.is_eip1559(block) {
-			self.client.runtime_api().elasticity(block).ok()?
+	fn elasticity(&self, block_hash: Block::Hash) -> Option<Permill> {
+		if self.is_eip1559(block_hash) {
+			self.client
+				.runtime_api()
+				.elasticity(&BlockId::Hash(block_hash))
+				.ok()?
 		} else {
 			None
 		}
 	}
 
-	fn is_eip1559(&self, block: &BlockId<Block>) -> bool {
+	fn is_eip1559(&self, block_hash: Block::Hash) -> bool {
 		if let Ok(Some(api_version)) = self
 			.client
 			.runtime_api()
-			.api_version::<dyn EthereumRuntimeRPCApi<Block>>(block)
+			.api_version::<dyn EthereumRuntimeRPCApi<Block>>(&BlockId::Hash(block_hash))
 		{
 			return api_version >= 2;
 		}

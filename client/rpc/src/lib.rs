@@ -73,7 +73,11 @@ pub mod frontier_backend_client {
 	{
 		Ok(match number.unwrap_or(BlockNumber::Latest) {
 			BlockNumber::Hash { hash, .. } => {
-				load_hash::<B, C>(client, backend, hash).unwrap_or(None)
+				if let Ok(Some(hash)) = load_hash::<B, C>(client, backend, hash) {
+					Some(BlockId::Hash(hash))
+				} else {
+					None
+				}
 			}
 			BlockNumber::Num(number) => Some(BlockId::Number(number.unique_saturated_into())),
 			BlockNumber::Latest => Some(BlockId::Hash(client.info().best_hash)),
@@ -88,7 +92,7 @@ pub mod frontier_backend_client {
 		client: &C,
 		backend: &fc_db::Backend<B>,
 		hash: H256,
-	) -> RpcResult<Option<BlockId<B>>>
+	) -> RpcResult<Option<B::Hash>>
 	where
 		B: BlockT<Hash = H256> + Send + Sync + 'static,
 		C: HeaderBackend<B> + Send + Sync + 'static,
@@ -101,7 +105,7 @@ pub mod frontier_backend_client {
 		if let Some(substrate_hashes) = substrate_hashes {
 			for substrate_hash in substrate_hashes {
 				if is_canon::<B, C>(client, substrate_hash) {
-					return Ok(Some(BlockId::Hash(substrate_hash)));
+					return Ok(Some(substrate_hash));
 				}
 			}
 		}
@@ -321,7 +325,7 @@ mod tests {
 			)
 			.unwrap()
 			.unwrap(),
-			BlockId::Hash(b1_hash),
+			b1_hash,
 		);
 
 		// A1 -> B2
@@ -350,7 +354,7 @@ mod tests {
 			)
 			.unwrap()
 			.unwrap(),
-			BlockId::Hash(b1_hash),
+			b1_hash,
 		);
 
 		// B2 -> C1. B2 branch is now canon.
@@ -370,7 +374,7 @@ mod tests {
 			)
 			.unwrap()
 			.unwrap(),
-			BlockId::Hash(b2_hash),
+			b2_hash,
 		);
 	}
 }

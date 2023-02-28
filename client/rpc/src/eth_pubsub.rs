@@ -228,19 +228,19 @@ where
 						.import_notification_stream()
 						.filter_map(move |notification| {
 							if notification.is_new_best {
-								let id = BlockId::Hash(notification.hash);
+								let substrate_hash = notification.hash;
 
 								let schema = fc_storage::onchain_storage_schema::<B, C, BE>(
 									client.as_ref(),
-									id,
+									substrate_hash,
 								);
 								let handler = overrides
 									.schemas
 									.get(&schema)
 									.unwrap_or(&overrides.fallback);
 
-								let block = handler.current_block(&id);
-								let receipts = handler.current_receipts(&id);
+								let block = handler.current_block(substrate_hash);
+								let receipts = handler.current_receipts(substrate_hash);
 
 								match (receipts, block) {
 									(Some(receipts), Some(block)) => {
@@ -267,18 +267,16 @@ where
 						.import_notification_stream()
 						.filter_map(move |notification| {
 							if notification.is_new_best {
-								let id = BlockId::Hash(notification.hash);
-
 								let schema = fc_storage::onchain_storage_schema::<B, C, BE>(
 									client.as_ref(),
-									id,
+									notification.hash,
 								);
 								let handler = overrides
 									.schemas
 									.get(&schema)
 									.unwrap_or(&overrides.fallback);
 
-								let block = handler.current_block(&id);
+								let block = handler.current_block(notification.hash);
 								futures::future::ready(block)
 							} else {
 								futures::future::ready(None)

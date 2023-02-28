@@ -27,7 +27,10 @@ use sc_transaction_pool::ChainApi;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_core::hashing::keccak_256;
-use sp_runtime::traits::{BlakeTwo256, Block as BlockT};
+use sp_runtime::{
+	generic::BlockId,
+	traits::{BlakeTwo256, Block as BlockT},
+};
 // Frontier
 use fc_rpc_core::types::*;
 use fp_rpc::EthereumRuntimeRPCApi;
@@ -51,7 +54,7 @@ where
 		let block_data_cache = Arc::clone(&self.block_data_cache);
 		let backend = Arc::clone(&self.backend);
 
-		let id = match frontier_backend_client::load_hash::<B, C>(
+		let substrate_hash = match frontier_backend_client::load_hash::<B, C>(
 			client.as_ref(),
 			backend.as_ref(),
 			hash,
@@ -61,18 +64,19 @@ where
 			Some(hash) => hash,
 			_ => return Ok(None),
 		};
-		let substrate_hash = client
-			.expect_block_hash_from_id(&id)
-			.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
 
-		let schema = fc_storage::onchain_storage_schema::<B, C, BE>(client.as_ref(), id);
+		let schema =
+			fc_storage::onchain_storage_schema::<B, C, BE>(client.as_ref(), substrate_hash);
 
 		let block = block_data_cache.current_block(schema, substrate_hash).await;
 		let statuses = block_data_cache
 			.current_transaction_statuses(schema, substrate_hash)
 			.await;
 
-		let base_fee = client.runtime_api().gas_price(&id).unwrap_or_default();
+		let base_fee = client
+			.runtime_api()
+			.gas_price(&BlockId::Hash(substrate_hash))
+			.unwrap_or_default();
 
 		match (block, statuses) {
 			(Some(block), Some(statuses)) => Ok(Some(rich_block_build(
@@ -107,7 +111,8 @@ where
 			.expect_block_hash_from_id(&id)
 			.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
 
-		let schema = fc_storage::onchain_storage_schema::<B, C, BE>(client.as_ref(), id);
+		let schema =
+			fc_storage::onchain_storage_schema::<B, C, BE>(client.as_ref(), substrate_hash);
 
 		let block = block_data_cache.current_block(schema, substrate_hash).await;
 		let statuses = block_data_cache
@@ -133,7 +138,7 @@ where
 	}
 
 	pub fn block_transaction_count_by_hash(&self, hash: H256) -> Result<Option<U256>> {
-		let id = match frontier_backend_client::load_hash::<B, C>(
+		let substrate_hash = match frontier_backend_client::load_hash::<B, C>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
 			hash,
@@ -143,13 +148,14 @@ where
 			Some(hash) => hash,
 			_ => return Ok(None),
 		};
-		let schema = fc_storage::onchain_storage_schema::<B, C, BE>(self.client.as_ref(), id);
+		let schema =
+			fc_storage::onchain_storage_schema::<B, C, BE>(self.client.as_ref(), substrate_hash);
 		let block = self
 			.overrides
 			.schemas
 			.get(&schema)
 			.unwrap_or(&self.overrides.fallback)
-			.current_block(&id);
+			.current_block(substrate_hash);
 
 		match block {
 			Some(block) => Ok(Some(U256::from(block.transactions.len()))),
@@ -173,13 +179,18 @@ where
 			Some(id) => id,
 			None => return Ok(None),
 		};
-		let schema = fc_storage::onchain_storage_schema::<B, C, BE>(self.client.as_ref(), id);
+		let substrate_hash = self
+			.client
+			.expect_block_hash_from_id(&id)
+			.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
+		let schema =
+			fc_storage::onchain_storage_schema::<B, C, BE>(self.client.as_ref(), substrate_hash);
 		let block = self
 			.overrides
 			.schemas
 			.get(&schema)
 			.unwrap_or(&self.overrides.fallback)
-			.current_block(&id);
+			.current_block(substrate_hash);
 
 		match block {
 			Some(block) => Ok(Some(U256::from(block.transactions.len()))),
