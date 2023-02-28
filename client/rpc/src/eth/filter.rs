@@ -247,10 +247,8 @@ where
 						internal_err(format!("Expect block number from id: {}", id))
 					})?;
 
-					let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(
-						client.as_ref(),
-						id,
-					);
+					let schema =
+						fc_storage::onchain_storage_schema(client.as_ref(), substrate_hash);
 
 					let block = block_data_cache.current_block(schema, substrate_hash).await;
 					if let Some(block) = block {
@@ -366,7 +364,7 @@ where
 
 		let mut ret: Vec<Log> = Vec::new();
 		if let Some(hash) = filter.block_hash {
-			let id = match frontier_backend_client::load_hash::<B, C>(
+			let substrate_hash = match frontier_backend_client::load_hash::<B, C>(
 				client.as_ref(),
 				backend.as_ref(),
 				hash,
@@ -376,12 +374,7 @@ where
 				Some(hash) => hash,
 				_ => return Ok(Vec::new()),
 			};
-			let substrate_hash = client
-				.expect_block_hash_from_id(&id)
-				.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
-
-			let schema =
-				frontier_backend_client::onchain_storage_schema::<B, C, BE>(client.as_ref(), id);
+			let schema = fc_storage::onchain_storage_schema(client.as_ref(), substrate_hash);
 
 			let block = block_data_cache.current_block(schema, substrate_hash).await;
 			let statuses = block_data_cache
@@ -462,7 +455,7 @@ where
 			.expect_block_hash_from_id(&id)
 			.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
 
-		let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(client, id);
+		let schema = fc_storage::onchain_storage_schema(client, substrate_hash);
 
 		let block = block_data_cache.current_block(schema, substrate_hash).await;
 

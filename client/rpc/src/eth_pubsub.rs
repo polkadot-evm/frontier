@@ -44,9 +44,8 @@ use fc_rpc_core::{
 	},
 	EthPubSubApiServer,
 };
+use fc_storage::OverrideHandle;
 use fp_rpc::EthereumRuntimeRPCApi;
-
-use crate::{frontier_backend_client, overrides::OverrideHandle};
 
 #[derive(Debug)]
 pub struct EthereumSubIdProvider;
@@ -229,20 +228,19 @@ where
 						.import_notification_stream()
 						.filter_map(move |notification| {
 							if notification.is_new_best {
-								let id = BlockId::Hash(notification.hash);
+								let substrate_hash = notification.hash;
 
-								let schema = frontier_backend_client::onchain_storage_schema::<
-									B,
-									C,
-									BE,
-								>(client.as_ref(), id);
+								let schema = fc_storage::onchain_storage_schema(
+									client.as_ref(),
+									substrate_hash,
+								);
 								let handler = overrides
 									.schemas
 									.get(&schema)
 									.unwrap_or(&overrides.fallback);
 
-								let block = handler.current_block(&id);
-								let receipts = handler.current_receipts(&id);
+								let block = handler.current_block(substrate_hash);
+								let receipts = handler.current_receipts(substrate_hash);
 
 								match (receipts, block) {
 									(Some(receipts), Some(block)) => {
@@ -269,19 +267,16 @@ where
 						.import_notification_stream()
 						.filter_map(move |notification| {
 							if notification.is_new_best {
-								let id = BlockId::Hash(notification.hash);
-
-								let schema = frontier_backend_client::onchain_storage_schema::<
-									B,
-									C,
-									BE,
-								>(client.as_ref(), id);
+								let schema = fc_storage::onchain_storage_schema(
+									client.as_ref(),
+									notification.hash,
+								);
 								let handler = overrides
 									.schemas
 									.get(&schema)
 									.unwrap_or(&overrides.fallback);
 
-								let block = handler.current_block(&id);
+								let block = handler.current_block(notification.hash);
 								futures::future::ready(block)
 							} else {
 								futures::future::ready(None)

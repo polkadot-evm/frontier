@@ -18,6 +18,7 @@ members = [
 	"client/rpc-core",
 	"client/rpc",
 	"client/db",
+	"client/storage",
 	"client/mapping-sync",
 	"primitives/consensus",
 	"primitives/dynamic-fee",
@@ -121,6 +122,7 @@ fc-db = { version = "2.0.0-dev", path = "client/db" }
 fc-mapping-sync = { version = "2.0.0-dev", path = "client/mapping-sync" }
 fc-rpc = { version = "2.0.0-dev", path = "client/rpc" }
 fc-rpc-core = { version = "1.1.0-dev", path = "client/rpc-core" }
+fc-storage = { version = "1.0.0-dev", path = "client/storage" }
 # Frontier Primitive
 fp-consensus = { version = "2.0.0-dev", path = "primitives/consensus", default-features = false }
 fp-dynamic-fee = { version = "1.0.0", path = "primitives/dynamic-fee", default-features = false }

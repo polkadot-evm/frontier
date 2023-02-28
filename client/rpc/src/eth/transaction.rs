@@ -126,7 +126,7 @@ where
 			}
 		};
 
-		let id = match frontier_backend_client::load_hash::<B, C>(
+		let substrate_hash = match frontier_backend_client::load_hash::<B, C>(
 			client.as_ref(),
 			backend.as_ref(),
 			hash,
@@ -136,19 +136,18 @@ where
 			Some(hash) => hash,
 			_ => return Ok(None),
 		};
-		let substrate_hash = client
-			.expect_block_hash_from_id(&id)
-			.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
 
-		let schema =
-			frontier_backend_client::onchain_storage_schema::<B, C, BE>(client.as_ref(), id);
+		let schema = fc_storage::onchain_storage_schema(client.as_ref(), substrate_hash);
 
 		let block = block_data_cache.current_block(schema, substrate_hash).await;
 		let statuses = block_data_cache
 			.current_transaction_statuses(schema, substrate_hash)
 			.await;
 
-		let base_fee = client.runtime_api().gas_price(&id).unwrap_or_default();
+		let base_fee = client
+			.runtime_api()
+			.gas_price(&BlockId::Hash(substrate_hash))
+			.unwrap_or_default();
 
 		match (block, statuses) {
 			(Some(block), Some(statuses)) => Ok(Some(transaction_build(
@@ -170,7 +169,7 @@ where
 		let block_data_cache = Arc::clone(&self.block_data_cache);
 		let backend = Arc::clone(&self.backend);
 
-		let id = match frontier_backend_client::load_hash::<B, C>(
+		let substrate_hash = match frontier_backend_client::load_hash::<B, C>(
 			client.as_ref(),
 			backend.as_ref(),
 			hash,
@@ -180,21 +179,20 @@ where
 			Some(hash) => hash,
 			_ => return Ok(None),
 		};
-		let substrate_hash = client
-			.expect_block_hash_from_id(&id)
-			.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
 
 		let index = index.value();
 
-		let schema =
-			frontier_backend_client::onchain_storage_schema::<B, C, BE>(client.as_ref(), id);
+		let schema = fc_storage::onchain_storage_schema(client.as_ref(), substrate_hash);
 
 		let block = block_data_cache.current_block(schema, substrate_hash).await;
 		let statuses = block_data_cache
 			.current_transaction_statuses(schema, substrate_hash)
 			.await;
 
-		let base_fee = client.runtime_api().gas_price(&id).unwrap_or_default();
+		let base_fee = client
+			.runtime_api()
+			.gas_price(&BlockId::Hash(substrate_hash))
+			.unwrap_or_default();
 
 		match (block, statuses) {
 			(Some(block), Some(statuses)) => {
@@ -237,8 +235,7 @@ where
 			.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
 
 		let index = index.value();
-		let schema =
-			frontier_backend_client::onchain_storage_schema::<B, C, BE>(client.as_ref(), id);
+		let schema = fc_storage::onchain_storage_schema(client.as_ref(), substrate_hash);
 
 		let block = block_data_cache.current_block(schema, substrate_hash).await;
 		let statuses = block_data_cache
@@ -284,7 +281,7 @@ where
 			None => return Ok(None),
 		};
 
-		let id = match frontier_backend_client::load_hash::<B, C>(
+		let substrate_hash = match frontier_backend_client::load_hash::<B, C>(
 			client.as_ref(),
 			backend.as_ref(),
 			hash,
@@ -294,12 +291,8 @@ where
 			Some(hash) => hash,
 			_ => return Ok(None),
 		};
-		let substrate_hash = client
-			.expect_block_hash_from_id(&id)
-			.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
 
-		let schema =
-			frontier_backend_client::onchain_storage_schema::<B, C, BE>(client.as_ref(), id);
+		let schema = fc_storage::onchain_storage_schema(client.as_ref(), substrate_hash);
 		let handler = overrides
 			.schemas
 			.get(&schema)
@@ -309,8 +302,9 @@ where
 		let statuses = block_data_cache
 			.current_transaction_statuses(schema, substrate_hash)
 			.await;
-		let receipts = handler.current_receipts(&id);
-		let is_eip1559 = handler.is_eip1559(&id);
+
+		let receipts = handler.current_receipts(substrate_hash);
+		let is_eip1559 = handler.is_eip1559(substrate_hash);
 
 		match (block, statuses, receipts) {
 			(Some(block), Some(statuses), Some(receipts)) => {
@@ -385,7 +379,7 @@ where
 					EthereumTransaction::EIP2930(t) => t.gas_price,
 					EthereumTransaction::EIP1559(t) => client
 						.runtime_api()
-						.gas_price(&id)
+						.gas_price(&BlockId::Hash(substrate_hash))
 						.unwrap_or_default()
 						.checked_add(t.max_priority_fee_per_gas)
 						.unwrap_or_else(U256::max_value)

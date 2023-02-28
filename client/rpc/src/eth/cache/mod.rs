@@ -42,14 +42,11 @@ use sp_runtime::{
 };
 // Frontier
 use fc_rpc_core::types::*;
+use fc_storage::{OverrideHandle, StorageOverride};
 use fp_rpc::{EthereumRuntimeRPCApi, TransactionStatus};
 use fp_storage::EthereumStorageSchema;
 
 use self::lru_cache::LRUCacheByteLimited;
-use crate::{
-	frontier_backend_client,
-	overrides::{OverrideHandle, StorageOverride},
-};
 
 type WaitList<Hash, T> = HashMap<Hash, Vec<oneshot::Sender<Option<T>>>>;
 
@@ -132,7 +129,7 @@ impl<B: BlockT> EthBlockDataCacheTask<B> {
 						task_tx.clone(),
 						move |handler| FetchedCurrentBlock {
 							block_hash,
-							block: handler.current_block(&BlockId::Hash(block_hash)),
+							block: handler.current_block(block_hash),
 						},
 					),
 					FetchedCurrentBlock { block_hash, block } => {
@@ -162,8 +159,7 @@ impl<B: BlockT> EthBlockDataCacheTask<B> {
 						task_tx.clone(),
 						move |handler| FetchedCurrentTransactionStatuses {
 							block_hash,
-							statuses: handler
-								.current_transaction_statuses(&BlockId::Hash(block_hash)),
+							statuses: handler.current_transaction_statuses(block_hash),
 						},
 					),
 					FetchedCurrentTransactionStatuses {
@@ -199,7 +195,7 @@ impl<B: BlockT> EthBlockDataCacheTask<B> {
 		handler_call: F,
 	) where
 		T: Clone + scale_codec::Encode,
-		F: FnOnce(&Box<dyn StorageOverride<B> + Send + Sync>) -> EthBlockDataCacheMessage<B>,
+		F: FnOnce(&Box<dyn StorageOverride<B>>) -> EthBlockDataCacheMessage<B>,
 		F: Send + 'static,
 	{
 		// Data is cached, we respond immediately.
@@ -319,9 +315,7 @@ where
 			FeeHistoryCacheItem,
 			Option<u64>
 		) {
-			let id = BlockId::Hash(hash);
-			let schema =
-				frontier_backend_client::onchain_storage_schema::<B, C, BE>(client.as_ref(), id);
+			let schema = fc_storage::onchain_storage_schema(client.as_ref(), hash);
 			let handler = overrides
 				.schemas
 				.get(&schema)
@@ -343,10 +337,10 @@ where
 					.collect()
 			};
 
-			let block = handler.current_block(&id);
+			let block = handler.current_block(hash);
 			let mut block_number: Option<u64> = None;
-			let base_fee = client.runtime_api().gas_price(&id).unwrap_or_default();
-			let receipts = handler.current_receipts(&id);
+			let base_fee = client.runtime_api().gas_price(&BlockId::Hash(hash)).unwrap_or_default();
+			let receipts = handler.current_receipts(hash);
 			let mut result = FeeHistoryCacheItem {
 				base_fee: if base_fee > U256::from(u64::MAX) { u64::MAX } else { base_fee.low_u64() },
 				gas_used_ratio: 0f64,

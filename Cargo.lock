@@ -1949,6 +1949,7 @@ dependencies = [
  "evm",
  "fc-db",
  "fc-rpc-core",
+ "fc-storage",
  "fp-ethereum",
  "fp-rpc",
  "fp-storage",
@@ -1995,6 +1996,23 @@ dependencies = [
  "rustc-hex",
  "serde",
  "serde_json",
+]
+
+[[package]]
+name = "fc-storage"
+version = "1.0.0-dev"
+dependencies = [
+ "ethereum",
+ "ethereum-types",
+ "fp-rpc",
+ "fp-storage",
+ "parity-scale-codec",
+ "sc-client-api",
+ "sp-api",
+ "sp-blockchain",
+ "sp-io",
+ "sp-runtime",
+ "sp-storage",
 ]
 
 [[package]]
@@ -2424,10 +2442,10 @@ dependencies = [
  "fc-mapping-sync",
  "fc-rpc",
  "fc-rpc-core",
+ "fc-storage",
  "fp-dynamic-fee",
  "fp-evm",
  "fp-rpc",
- "fp-storage",
  "frame-benchmarking",
  "frame-benchmarking-cli",
  "frame-system",
