@@ -131,9 +131,13 @@ where
 					response.gas_used_ratio.last(),
 					response.base_fee_per_gas.last(),
 				) {
+					let substrate_hash =
+						self.client.expect_block_hash_from_id(&id).map_err(|_| {
+							internal_err(format!("Expect block number from id: {}", id))
+						})?;
 					let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(
 						self.client.as_ref(),
-						id,
+						substrate_hash,
 					);
 					let handler = self
 						.overrides
@@ -142,7 +146,7 @@ where
 						.unwrap_or(&self.overrides.fallback);
 					let default_elasticity = sp_runtime::Permill::from_parts(125_000);
 					let elasticity = handler
-						.elasticity(&id)
+						.elasticity(substrate_hash)
 						.unwrap_or(default_elasticity)
 						.deconstruct();
 					let elasticity = elasticity as f64 / 1_000_000f64;

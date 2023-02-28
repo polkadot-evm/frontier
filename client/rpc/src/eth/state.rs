@@ -92,16 +92,20 @@ where
 			self.backend.as_ref(),
 			Some(number),
 		) {
+			let substrate_hash = self
+				.client
+				.expect_block_hash_from_id(&id)
+				.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
 			let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(
 				self.client.as_ref(),
-				id,
+				substrate_hash,
 			);
 			Ok(self
 				.overrides
 				.schemas
 				.get(&schema)
 				.unwrap_or(&self.overrides.fallback)
-				.storage_at(&id, address, index)
+				.storage_at(substrate_hash, address, index)
 				.unwrap_or_default())
 		} else {
 			Ok(H256::default())
@@ -165,9 +169,13 @@ where
 			self.backend.as_ref(),
 			Some(number),
 		) {
+			let substrate_hash = self
+				.client
+				.expect_block_hash_from_id(&id)
+				.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
 			let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(
 				self.client.as_ref(),
-				id,
+				substrate_hash,
 			);
 
 			Ok(self
@@ -175,7 +183,7 @@ where
 				.schemas
 				.get(&schema)
 				.unwrap_or(&self.overrides.fallback)
-				.account_code_at(&id, address)
+				.account_code_at(substrate_hash, address)
 				.unwrap_or_default()
 				.into())
 		} else {
