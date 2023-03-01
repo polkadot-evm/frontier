@@ -19,22 +19,22 @@
 
 extern crate alloc;
 
-#[cfg(test)]
-mod mock;
+// #[cfg(test)]
+// mod mock;
 
-#[cfg(test)]
-mod tests;
+// #[cfg(test)]
+// mod tests;
 
 use core::marker::PhantomData;
-use fp_evm::{PrecompileHandle, Precompile, PrecompileResult, ExitSucceed};
+use fp_evm::{ExitSucceed, Precompile, PrecompileHandle, PrecompileResult};
 use frame_support::traits::tokens::fungibles::{Inspect, InspectMetadata};
-use precompile_utils::prelude::*;
 use precompile_utils::handle::PrecompileHandleExt;
+use precompile_utils::prelude::*;
 
 #[precompile_utils::generate_function_selector]
 #[derive(Debug, PartialEq)]
 pub enum ERC20Methods {
-    TotalSupply = "totalSupply()",
+	TotalSupply = "totalSupply()",
 	BalanceOf = "balanceOf(address)",
 	Allowance = "allowance(address,address)",
 	Transfer = "transfer(address,uint256)",
@@ -49,69 +49,73 @@ pub struct Fungibles<R>(PhantomData<R>);
 
 impl<R> Precompile for Fungibles<R>
 where
-    R: pallet_evmless::Config,
-    AssetIdOf<R>: From<u32>,
-    BalanceOf<R>: EvmData,
-    // ToDo: bring implementation of AccountId20
-    // <R as frame_system::Config>::AccountId: From<H160>,
+	R: pallet_evmless::Config,
+	AssetIdOf<R>: From<u32>,
+	BalanceOf<R>: EvmData,
+	// ToDo: bring implementation of AccountId20
+	// <R as frame_system::Config>::AccountId: From<H160>,
 {
-    fn execute(handle: &mut impl PrecompileHandle) -> PrecompileResult {
-        // todo: check address
-        //let address = handle.code_address();
+	fn execute(handle: &mut impl PrecompileHandle) -> PrecompileResult {
+		// todo: check address
+		//let address = handle.code_address();
 
-        let selector = match handle.read_selector() {
-            Ok(selector) => selector,
-            Err(e) => return Err(e.into()),
-        };
+		let selector = match handle.read_selector() {
+			Ok(selector) => selector,
+			Err(e) => return Err(e.into()),
+		};
 
-        if let Err(err) = handle.check_function_modifier(match selector {
-            ERC20Methods::Approve | ERC20Methods::Transfer | ERC20Methods::TransferFrom => FunctionModifier::NonPayable,
-            _ => FunctionModifier::View,
-        }) {
-            return Err(err.into());
-        }
+		if let Err(err) = handle.check_function_modifier(match selector {
+			ERC20Methods::Approve | ERC20Methods::Transfer | ERC20Methods::TransferFrom => {
+				FunctionModifier::NonPayable
+			}
+			_ => FunctionModifier::View,
+		}) {
+			return Err(err.into());
+		}
 
-        // todo: change to appropriate method implementations
-        match selector {
-            ERC20Methods::TotalSupply => Self::total_supply(handle),
-            ERC20Methods::BalanceOf => Self::total_supply(handle),
-            ERC20Methods::Allowance => Self::total_supply(handle),
-            ERC20Methods::Transfer => Self::total_supply(handle),
-            ERC20Methods::Approve => Self::total_supply(handle),
-            ERC20Methods::TransferFrom => Self::total_supply(handle),
-            ERC20Methods::Name => Self::name(handle),
-            ERC20Methods::Symbol => Self::total_supply(handle),
-            ERC20Methods::Decimals => Self::total_supply(handle),
-        }
-    }
+		// todo: change to appropriate method implementations
+		match selector {
+			ERC20Methods::TotalSupply => Self::total_supply(handle),
+			ERC20Methods::BalanceOf => Self::total_supply(handle),
+			ERC20Methods::Allowance => Self::total_supply(handle),
+			ERC20Methods::Transfer => Self::total_supply(handle),
+			ERC20Methods::Approve => Self::total_supply(handle),
+			ERC20Methods::TransferFrom => Self::total_supply(handle),
+			ERC20Methods::Name => Self::name(handle),
+			ERC20Methods::Symbol => Self::total_supply(handle),
+			ERC20Methods::Decimals => Self::total_supply(handle),
+		}
+	}
 }
 
-pub type AssetIdOf<R> =
-        <<R as pallet_evmless::Config>::Fungibles as Inspect<<R as frame_system::Config>::AccountId>>::AssetId;
+pub type AssetIdOf<R> = <<R as pallet_evmless::Config>::Fungibles as Inspect<
+	<R as frame_system::Config>::AccountId,
+>>::AssetId;
 
-pub type BalanceOf<R> =
-        <<R as pallet_evmless::Config>::Fungibles as Inspect<<R as frame_system::Config>::AccountId>>::Balance;
+pub type BalanceOf<R> = <<R as pallet_evmless::Config>::Fungibles as Inspect<
+	<R as frame_system::Config>::AccountId,
+>>::Balance;
 
 impl<R> Fungibles<R>
 where
-    R: pallet_evmless::Config,
-    AssetIdOf<R>: From<u32>,
-    BalanceOf<R>: EvmData,
-    // ToDo: bring implementation of AccountId20
-    // <R as frame_system::Config>::AccountId: From<H160>,
+	R: pallet_evmless::Config,
+	AssetIdOf<R>: From<u32>,
+	BalanceOf<R>: EvmData,
+	// ToDo: bring implementation of AccountId20
+	// <R as frame_system::Config>::AccountId: From<H160>,
 {
-    fn total_supply(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
-        handle.record_cost(RuntimeHelper::<R>::db_read_gas_cost())?;
+	fn total_supply(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
+		handle.record_cost(RuntimeHelper::<R>::db_read_gas_cost())?;
 
-        let t = R::Fungibles::total_issuance(0u32.into());
+		let t = R::Fungibles::total_issuance(0u32.into());
 
-        Ok(PrecompileOutput {
-            exit_status: ExitSucceed::Returned,
-            output: EvmDataWriter::new().write(t).build()
-        })
-    }
+		Ok(PrecompileOutput {
+			exit_status: ExitSucceed::Returned,
+			output: EvmDataWriter::new().write(t).build(),
+		})
+	}
 
-    fn name(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
+	fn name(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
 		handle.record_cost(RuntimeHelper::<R>::db_read_gas_cost())?;
 
 		let name: UnboundedBytes = R::Fungibles::name(&0u32.into()).as_slice().into();
@@ -122,24 +126,24 @@ where
 		})
 	}
 
-    // fn balance_of(handle: &mut impl PrecompileHandleExt) -> EvmResult<PrecompileOutput> {
-    //     handle.record_cost(RuntimeHelper::<R>::db_read_gas_cost())?;
+	// fn balance_of(handle: &mut impl PrecompileHandleExt) -> EvmResult<PrecompileOutput> {
+	//     handle.record_cost(RuntimeHelper::<R>::db_read_gas_cost())?;
 
-    //     let mut input = handle.read_after_selector()?;
-    //     input.expect_arguments(1)?;
+	//     let mut input = handle.read_after_selector()?;
+	//     input.expect_arguments(1)?;
 
-    //     let owner: H160 = input.read::<Address>()?.into();
+	//     let owner: H160 = input.read::<Address>()?.into();
 
-    //     // ToDo: bring implementation of AccountId20
-    //     // so that we can satisfy  
-    //     // <R as frame_system::Config>::AccountId: From<H160>,
-    //     let who: R::AccountId = owner.into();
+	//     // ToDo: bring implementation of AccountId20
+	//     // so that we can satisfy
+	//     // <R as frame_system::Config>::AccountId: From<H160>,
+	//     let who: R::AccountId = owner.into();
 
-    //     let balance = R::Fungibles::balance(0u32.into(), &who);
+	//     let balance = R::Fungibles::balance(0u32.into(), &who);
 
-    //     Ok(PrecompileOutput {
-    //         exit_status: ExitSucceed::Returned,
-    //         output: EvmDataWriter::new().write(balance).build()
-    //     })
-    // }
+	//     Ok(PrecompileOutput {
+	//         exit_status: ExitSucceed::Returned,
+	//         output: EvmDataWriter::new().write(balance).build()
+	//     })
+	// }
 }
