@@ -25,10 +25,13 @@
 #![allow(clippy::comparison_chain, clippy::large_enum_variant)]
 #![deny(unused_crate_dependencies)]
 
+mod catch_exec_info;
 #[cfg(all(feature = "std", test))]
 mod mock;
 #[cfg(all(feature = "std", test))]
 mod tests;
+
+pub use catch_exec_info::catch_exec_info;
 
 use ethereum_types::{Bloom, BloomInput, H160, H256, H64, U256};
 use evm::ExitReason;
@@ -560,6 +563,8 @@ impl<T: Config> Pallet<T> {
 		transaction: Transaction,
 	) -> DispatchResultWithPostInfo {
 		let (to, _, info) = Self::execute(source, &transaction, None)?;
+
+		catch_exec_info::fill_exec_info(&info);
 
 		let pending = Pending::<T>::get();
 		let transaction_hash = transaction.hash();
