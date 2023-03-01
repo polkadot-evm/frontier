@@ -39,7 +39,7 @@ pallet-evm = { workspace = true }
 hex = "0.4.3"
 libsecp256k1 = { workspace = true, features = ["static-context", "hmac"] }
 # Substrate
-pallet-balances = { workspace = true, features = ["std"] }
+pallet-balances = { workspace = true, features = ["default"] }
 sp-core = { workspace = true }
 
 [features]

@@ -19,7 +19,7 @@ scale-codec = { package = "parity-scale-codec", workspace = true }
 scale-info = { workspace = true }
 # Substrate
 frame-system = { workspace = true }
-pallet-balances = { workspace = true, features = ["std"] }
+pallet-balances = { workspace = true, features = ["default"] }
 pallet-timestamp = { workspace = true }
 pallet-utility = { workspace = true }
 sp-core = { workspace = true }

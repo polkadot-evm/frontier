@@ -15,4 +15,4 @@ serde_json = { workspace = true }
 # Substrate
 sp-core = { workspace = true }
 # Frontier
-fp-evm = { workspace = true, features = ["std"] }
+fp-evm = { workspace = true, features = ["default"] }

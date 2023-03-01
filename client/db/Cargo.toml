@@ -24,7 +24,7 @@ sp-core = { workspace = true }
 sp-database = { workspace = true }
 sp-runtime = { workspace = true }
 # Frontier
-fp-storage = { workspace = true, features = ["std"] }
+fp-storage = { workspace = true, features = ["default"] }
 
 [features]
 default = ["kvdb-rocksdb", "parity-db"]

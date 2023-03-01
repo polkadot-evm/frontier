@@ -46,9 +46,9 @@ sp-runtime = { workspace = true }
 fc-db = { workspace = true }
 fc-rpc-core = { workspace = true }
 fc-storage = { workspace = true }
-fp-ethereum = { workspace = true, features = ["std"] }
-fp-rpc = { workspace = true, features = ["std"] }
-fp-storage = { workspace = true, features = ["std"] }
+fp-ethereum = { workspace = true, features = ["default"] }
+fp-rpc = { workspace = true, features = ["default"] }
+fp-storage = { workspace = true, features = ["default"] }
 
 [dev-dependencies]
 tempfile = "3.3.0"
