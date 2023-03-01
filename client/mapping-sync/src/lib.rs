@@ -28,10 +28,7 @@ use std::sync::Arc;
 use sc_client_api::backend::{Backend, StorageProvider};
 use sp_api::{ApiExt, ProvideRuntimeApi};
 use sp_blockchain::{Backend as _, HeaderBackend};
-use sp_runtime::{
-	generic::BlockId,
-	traits::{Block as BlockT, Header as HeaderT, Zero},
-};
+use sp_runtime::traits::{Block as BlockT, Header as HeaderT, Zero};
 // Frontier
 use fc_storage::OverrideHandle;
 use fp_consensus::{FindLogError, Hashes, Log, PostLog, PreLog};
@@ -44,7 +41,7 @@ pub fn sync_block<Block: BlockT, C, BE>(
 	header: &Block::Header,
 ) -> Result<(), String>
 where
-	C: StorageProvider<Block, BE> + HeaderBackend<Block>,
+	C: HeaderBackend<Block> + StorageProvider<Block, BE>,
 	BE: Backend<Block>,
 {
 	let substrate_block_hash = header.hash();
@@ -118,23 +115,23 @@ where
 	C: ProvideRuntimeApi<Block>,
 	C::Api: EthereumRuntimeRPCApi<Block>,
 {
-	let id = BlockId::Hash(header.hash());
+	let substrate_block_hash = header.hash();
 
 	if let Some(api_version) = client
 		.runtime_api()
-		.api_version::<dyn EthereumRuntimeRPCApi<Block>>(&id)
+		.api_version::<dyn EthereumRuntimeRPCApi<Block>>(substrate_block_hash)
 		.map_err(|e| format!("{:?}", e))?
 	{
 		let block = if api_version > 1 {
 			client
 				.runtime_api()
-				.current_block(&id)
+				.current_block(substrate_block_hash)
 				.map_err(|e| format!("{:?}", e))?
 		} else {
 			#[allow(deprecated)]
 			let legacy_block = client
 				.runtime_api()
-				.current_block_before_version_2(&id)
+				.current_block_before_version_2(substrate_block_hash)
 				.map_err(|e| format!("{:?}", e))?;
 			legacy_block.map(|block| block.into())
 		};
@@ -143,13 +140,13 @@ where
 			.header
 			.hash();
 		let mapping_commitment = fc_db::MappingCommitment::<Block> {
-			block_hash: header.hash(),
+			block_hash: substrate_block_hash,
 			ethereum_block_hash: block_hash,
 			ethereum_transaction_hashes: Vec::new(),
 		};
 		backend.mapping().write_hashes(mapping_commitment)?;
 	} else {
-		backend.mapping().write_none(header.hash())?;
+		backend.mapping().write_none(substrate_block_hash)?;
 	};
 
 	Ok(())
