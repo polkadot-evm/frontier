@@ -112,6 +112,7 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config: frame_system::Config + pallet_timestamp::Config {
 		type Fungibles: fungibles::Inspect<Self::AccountId>
+			+ fungibles::InspectMetadata<Self::AccountId>
 			+ fungibles::Mutate<Self::AccountId>
 			+ fungibles::Transfer<Self::AccountId>;
 		/// Calculator for current gas price.

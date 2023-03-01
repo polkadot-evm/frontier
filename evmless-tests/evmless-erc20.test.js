@@ -7,6 +7,7 @@ chai.use(solidity);
 
 describe('tests', function () {
   const initialSupply = new ethers.BigNumber.from("1337");
+  const name = "Test";
   const evmlessErc20Address = "0x0000000000000000000000000000000000000539";
   const evmlessErc20Abi = [
     "function name() public view returns (string)",
@@ -27,5 +28,9 @@ describe('tests', function () {
 
   it('correct initial supply', async function () {
     expect(await this.evmlessErc20Contract.totalSupply()).to.equal(initialSupply);
+  });
+
+  it('correct name', async function () {
+    expect(await this.evmlessErc20Contract.name()).to.equal(name);
   });
 });

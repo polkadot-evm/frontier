@@ -27,7 +27,7 @@ mod tests;
 
 use core::marker::PhantomData;
 use fp_evm::{PrecompileHandle, Precompile, PrecompileResult, ExitSucceed};
-use frame_support::traits::tokens::fungibles::Inspect;
+use frame_support::traits::tokens::fungibles::{Inspect, InspectMetadata};
 use precompile_utils::prelude::*;
 use precompile_utils::handle::PrecompileHandleExt;
 
@@ -79,7 +79,7 @@ where
             ERC20Methods::Transfer => Self::total_supply(handle),
             ERC20Methods::Approve => Self::total_supply(handle),
             ERC20Methods::TransferFrom => Self::total_supply(handle),
-            ERC20Methods::Name => Self::total_supply(handle),
+            ERC20Methods::Name => Self::name(handle),
             ERC20Methods::Symbol => Self::total_supply(handle),
             ERC20Methods::Decimals => Self::total_supply(handle),
         }
@@ -110,6 +110,17 @@ where
             output: EvmDataWriter::new().write(t).build()
         })
     }
+
+    fn name(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
+		handle.record_cost(RuntimeHelper::<R>::db_read_gas_cost())?;
+
+		let name: UnboundedBytes = R::Fungibles::name(&0u32.into()).as_slice().into();
+
+		Ok(PrecompileOutput {
+			exit_status: ExitSucceed::Returned,
+			output: EvmDataWriter::new().write(name).build(),
+		})
+	}
 
     // fn balance_of(handle: &mut impl PrecompileHandleExt) -> EvmResult<PrecompileOutput> {
     //     handle.record_cost(RuntimeHelper::<R>::db_read_gas_cost())?;
