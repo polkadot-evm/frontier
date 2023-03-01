@@ -14,7 +14,6 @@ targets = ["x86_64-unknown-linux-gnu"]
 async-trait = "0.1"
 thiserror = "1.0"
 # Substrate
-sc-client-api = { workspace = true }
 sc-consensus = { workspace = true }
 sp-api = { workspace = true }
 sp-block-builder = { workspace = true, features = ["std"] }

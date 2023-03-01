@@ -29,13 +29,14 @@ use sp_blockchain::HeaderBackend;
 use sp_runtime::traits::Block as BlockT;
 use sp_storage::StorageKey;
 // Frontier
+use fp_rpc::EthereumRuntimeRPCApi;
 use fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA};
 
 pub fn overrides_handle<B, C, BE>(client: Arc<C>) -> Arc<OverrideHandle<B>>
 where
 	B: BlockT,
 	C: ProvideRuntimeApi<B>,
-	C::Api: fp_rpc::EthereumRuntimeRPCApi<B>,
+	C::Api: EthereumRuntimeRPCApi<B>,
 	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
 	BE: Backend<B> + 'static,
 {
@@ -62,7 +63,7 @@ where
 pub fn onchain_storage_schema<B: BlockT, C, BE>(client: &C, hash: B::Hash) -> EthereumStorageSchema
 where
 	B: BlockT,
-	C: StorageProvider<B, BE> + HeaderBackend<B>,
+	C: HeaderBackend<B> + StorageProvider<B, BE>,
 	BE: Backend<B>,
 {
 	match client.storage(hash, &StorageKey(PALLET_ETHEREUM_SCHEMA.to_vec())) {

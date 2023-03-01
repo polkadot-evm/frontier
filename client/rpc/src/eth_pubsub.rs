@@ -24,7 +24,7 @@ use futures::{FutureExt as _, StreamExt as _};
 use jsonrpsee::{types::SubscriptionResult, SubscriptionSink};
 // Substrate
 use sc_client_api::{
-	backend::{Backend, StateBackend, StorageProvider},
+	backend::{Backend, StorageProvider},
 	client::BlockchainEvents,
 };
 use sc_network::{NetworkService, NetworkStatusProvider};
@@ -35,7 +35,7 @@ use sp_api::{ApiExt, BlockId, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
 use sp_consensus::SyncOracle;
 use sp_core::hashing::keccak_256;
-use sp_runtime::traits::{BlakeTwo256, Block as BlockT, UniqueSaturatedInto};
+use sp_runtime::traits::{Block as BlockT, UniqueSaturatedInto};
 // Frontier
 use fc_rpc_core::{
 	types::{
@@ -69,7 +69,7 @@ pub struct EthPubSub<B: BlockT, P, C, BE, H: ExHashT> {
 
 impl<B: BlockT, P, C, BE, H: ExHashT> EthPubSub<B, P, C, BE, H>
 where
-	C: HeaderBackend<B> + Send + Sync + 'static,
+	C: HeaderBackend<B>,
 {
 	pub fn new(
 		pool: Arc<P>,
@@ -195,13 +195,13 @@ impl EthSubscriptionResult {
 
 impl<B: BlockT, P, C, BE, H: ExHashT> EthPubSubApiServer for EthPubSub<B, P, C, BE, H>
 where
-	B: BlockT<Hash = H256> + Send + Sync + 'static,
-	P: TransactionPool<Block = B> + Send + Sync + 'static,
-	C: ProvideRuntimeApi<B> + StorageProvider<B, BE> + BlockchainEvents<B>,
-	C: HeaderBackend<B> + Send + Sync + 'static,
+	B: BlockT,
+	P: TransactionPool<Block = B> + 'static,
+	C: ProvideRuntimeApi<B>,
 	C::Api: EthereumRuntimeRPCApi<B>,
+	C: BlockchainEvents<B> + 'static,
+	C: HeaderBackend<B> + StorageProvider<B, BE>,
 	BE: Backend<B> + 'static,
-	BE::State: StateBackend<BlakeTwo256>,
 {
 	fn subscribe(
 		&self,

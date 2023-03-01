@@ -18,7 +18,6 @@
 
 use std::sync::Arc;
 
-use ethereum_types::H256;
 use jsonrpsee::core::RpcResult as Result;
 // Substrate
 use sc_network::NetworkService;
@@ -55,9 +54,10 @@ impl<B: BlockT, C, H: ExHashT> Net<B, C, H> {
 
 impl<B, C, H: ExHashT> NetApiServer for Net<B, C, H>
 where
-	B: BlockT<Hash = H256> + Send + Sync + 'static,
-	C: HeaderBackend<B> + ProvideRuntimeApi<B> + Send + Sync + 'static,
+	B: BlockT,
+	C: ProvideRuntimeApi<B>,
 	C::Api: EthereumRuntimeRPCApi<B>,
+	C: HeaderBackend<B> + 'static,
 {
 	fn version(&self) -> Result<String> {
 		let hash = self.client.info().best_hash;

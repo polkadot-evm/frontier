@@ -68,8 +68,8 @@ pub mod frontier_backend_client {
 		number: Option<BlockNumber>,
 	) -> RpcResult<Option<BlockId<B>>>
 	where
-		B: BlockT<Hash = H256> + Send + Sync + 'static,
-		C: HeaderBackend<B> + Send + Sync + 'static,
+		B: BlockT,
+		C: HeaderBackend<B> + 'static,
 	{
 		Ok(match number.unwrap_or(BlockNumber::Latest) {
 			BlockNumber::Hash { hash, .. } => {
@@ -94,8 +94,8 @@ pub mod frontier_backend_client {
 		hash: H256,
 	) -> RpcResult<Option<B::Hash>>
 	where
-		B: BlockT<Hash = H256> + Send + Sync + 'static,
-		C: HeaderBackend<B> + Send + Sync + 'static,
+		B: BlockT,
+		C: HeaderBackend<B> + 'static,
 	{
 		let substrate_hashes = backend
 			.mapping()
@@ -116,8 +116,8 @@ pub mod frontier_backend_client {
 		backend: &fc_db::Backend<B>,
 	) -> RpcResult<Option<Vec<(EthereumStorageSchema, H256)>>>
 	where
-		B: BlockT<Hash = H256> + Send + Sync + 'static,
-		C: HeaderBackend<B> + Send + Sync + 'static,
+		B: BlockT,
+		C: HeaderBackend<B> + 'static,
 	{
 		let cache = backend
 			.meta()
@@ -131,8 +131,8 @@ pub mod frontier_backend_client {
 		new_cache: Vec<(EthereumStorageSchema, H256)>,
 	) -> RpcResult<()>
 	where
-		B: BlockT<Hash = H256> + Send + Sync + 'static,
-		C: HeaderBackend<B> + Send + Sync + 'static,
+		B: BlockT,
+		C: HeaderBackend<B> + 'static,
 	{
 		backend
 			.meta()
@@ -141,10 +141,10 @@ pub mod frontier_backend_client {
 		Ok(())
 	}
 
-	pub fn is_canon<B: BlockT, C>(client: &C, target_hash: H256) -> bool
+	pub fn is_canon<B: BlockT, C>(client: &C, target_hash: B::Hash) -> bool
 	where
-		B: BlockT<Hash = H256> + Send + Sync + 'static,
-		C: HeaderBackend<B> + Send + Sync + 'static,
+		B: BlockT,
+		C: HeaderBackend<B> + 'static,
 	{
 		if let Ok(Some(number)) = client.number(target_hash) {
 			if let Ok(Some(hash)) = client.hash(number) {
@@ -161,8 +161,8 @@ pub mod frontier_backend_client {
 		only_canonical: bool,
 	) -> RpcResult<Option<(H256, u32)>>
 	where
-		B: BlockT<Hash = H256> + Send + Sync + 'static,
-		C: HeaderBackend<B> + Send + Sync + 'static,
+		B: BlockT,
+		C: HeaderBackend<B> + 'static,
 	{
 		let transaction_metadata = backend
 			.mapping()
@@ -245,10 +245,11 @@ mod tests {
 
 	use futures::executor;
 	use sc_block_builder::BlockBuilderProvider;
+	use sp_blockchain::HeaderBackend;
 	use sp_consensus::BlockOrigin;
 	use sp_runtime::{
 		generic::{Block, BlockId, Header},
-		traits::BlakeTwo256,
+		traits::{BlakeTwo256, Block as BlockT},
 	};
 	use substrate_test_runtime_client::{
 		prelude::*, DefaultTestClientBuilderExt, TestClientBuilder,
@@ -258,14 +259,11 @@ mod tests {
 	type OpaqueBlock =
 		Block<Header<u64, BlakeTwo256>, substrate_test_runtime_client::runtime::Extrinsic>;
 
-	fn open_frontier_backend<C>(
+	fn open_frontier_backend<Block: BlockT, C: HeaderBackend<Block>>(
 		client: Arc<C>,
 		path: PathBuf,
-	) -> Result<Arc<fc_db::Backend<OpaqueBlock>>, String>
-	where
-		C: sp_blockchain::HeaderBackend<OpaqueBlock>,
-	{
-		Ok(Arc::new(fc_db::Backend::<OpaqueBlock>::new(
+	) -> Result<Arc<fc_db::Backend<Block>>, String> {
+		Ok(Arc::new(fc_db::Backend::<Block>::new(
 			client,
 			&fc_db::DatabaseSettings {
 				source: sc_client_db::DatabaseSource::RocksDb {
@@ -287,7 +285,8 @@ mod tests {
 		let mut client = Arc::new(client);
 
 		// Create a temporary frontier secondary DB.
-		let frontier_backend = open_frontier_backend(client.clone(), tmp.into_path()).unwrap();
+		let backend = open_frontier_backend::<OpaqueBlock, _>(client.clone(), tmp.into_path())
+			.expect("a temporary db was created");
 
 		// A random ethereum block hash to use
 		let ethereum_block_hash = sp_core::H256::random();
@@ -314,13 +313,13 @@ mod tests {
 			ethereum_block_hash,
 			ethereum_transaction_hashes: vec![],
 		};
-		let _ = frontier_backend.mapping().write_hashes(commitment);
+		let _ = backend.mapping().write_hashes(commitment);
 
 		// Expect B1 to be canon
 		assert_eq!(
 			super::frontier_backend_client::load_hash(
 				client.as_ref(),
-				frontier_backend.as_ref(),
+				backend.as_ref(),
 				ethereum_block_hash
 			)
 			.unwrap()
@@ -343,13 +342,13 @@ mod tests {
 			ethereum_block_hash,
 			ethereum_transaction_hashes: vec![],
 		};
-		let _ = frontier_backend.mapping().write_hashes(commitment);
+		let _ = backend.mapping().write_hashes(commitment);
 
 		// Still expect B1 to be canon
 		assert_eq!(
 			super::frontier_backend_client::load_hash(
 				client.as_ref(),
-				frontier_backend.as_ref(),
+				backend.as_ref(),
 				ethereum_block_hash
 			)
 			.unwrap()
@@ -369,7 +368,7 @@ mod tests {
 		assert_eq!(
 			super::frontier_backend_client::load_hash(
 				client.as_ref(),
-				frontier_backend.as_ref(),
+				backend.as_ref(),
 				ethereum_block_hash
 			)
 			.unwrap()

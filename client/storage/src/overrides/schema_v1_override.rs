@@ -49,7 +49,7 @@ impl<B: BlockT, C, BE> SchemaV1Override<B, C, BE> {
 impl<B, C, BE> SchemaV1Override<B, C, BE>
 where
 	B: BlockT,
-	C: StorageProvider<B, BE> + HeaderBackend<B> + Send + Sync + 'static,
+	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
 	BE: Backend<B> + 'static,
 {
 	fn query_storage<T: Decode>(&self, block_hash: B::Hash, key: &StorageKey) -> Option<T> {
@@ -65,7 +65,7 @@ where
 impl<B, C, BE> StorageOverride<B> for SchemaV1Override<B, C, BE>
 where
 	B: BlockT,
-	C: StorageProvider<B, BE> + HeaderBackend<B> + Send + Sync + 'static,
+	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
 	BE: Backend<B> + 'static,
 {
 	/// For a given account address, returns pallet_evm::AccountCodes.

@@ -25,12 +25,12 @@ use std::{
 };
 
 use ethereum::BlockV2 as EthereumBlock;
-use ethereum_types::{H256, U256};
+use ethereum_types::U256;
 use futures::StreamExt;
 use tokio::sync::{mpsc, oneshot};
 // Substrate
 use sc_client_api::{
-	backend::{Backend, StateBackend, StorageProvider},
+	backend::{Backend, StorageProvider},
 	client::BlockchainEvents,
 };
 use sc_service::SpawnTaskHandle;
@@ -38,7 +38,7 @@ use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{
 	generic::BlockId,
-	traits::{BlakeTwo256, Block as BlockT, Header as HeaderT, UniqueSaturatedInto},
+	traits::{Block as BlockT, Header as HeaderT, UniqueSaturatedInto},
 };
 // Frontier
 use fc_rpc_core::types::*;
@@ -274,12 +274,12 @@ pub struct EthTask<B, C, BE>(PhantomData<(B, C, BE)>);
 
 impl<B, C, BE> EthTask<B, C, BE>
 where
-	B: BlockT<Hash = H256>,
-	C: ProvideRuntimeApi<B> + StorageProvider<B, BE> + BlockchainEvents<B>,
-	C: HeaderBackend<B> + Send + Sync + 'static,
+	B: BlockT,
+	C: ProvideRuntimeApi<B>,
 	C::Api: EthereumRuntimeRPCApi<B>,
+	C: BlockchainEvents<B> + 'static,
+	C: HeaderBackend<B> + StorageProvider<B, BE>,
 	BE: Backend<B> + 'static,
-	BE::State: StateBackend<BlakeTwo256>,
 {
 	pub async fn filter_pool_task(
 		client: Arc<C>,
@@ -311,7 +311,7 @@ where
 		}
 		// Calculates the cache for a single block
 		#[rustfmt::skip]
-			let fee_history_cache_item = |hash: H256| -> (
+			let fee_history_cache_item = |hash: B::Hash| -> (
 			FeeHistoryCacheItem,
 			Option<u64>
 		) {
