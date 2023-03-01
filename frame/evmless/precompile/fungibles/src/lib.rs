@@ -82,7 +82,7 @@ where
 			ERC20Methods::Approve => Self::total_supply(handle),
 			ERC20Methods::TransferFrom => Self::total_supply(handle),
 			ERC20Methods::Name => Self::name(handle),
-			ERC20Methods::Symbol => Self::total_supply(handle),
+			ERC20Methods::Symbol => Self::symbol(handle),
 			ERC20Methods::Decimals => Self::total_supply(handle),
 		}
 	}
@@ -123,6 +123,17 @@ where
 		Ok(PrecompileOutput {
 			exit_status: ExitSucceed::Returned,
 			output: EvmDataWriter::new().write(name).build(),
+		})
+	}
+
+	fn symbol(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
+		handle.record_cost(RuntimeHelper::<R>::db_read_gas_cost())?;
+
+		let symbol: UnboundedBytes = R::Fungibles::symbol(&0u32.into()).as_slice().into();
+
+		Ok(PrecompileOutput {
+			exit_status: ExitSucceed::Returned,
+			output: EvmDataWriter::new().write(symbol).build(),
 		})
 	}
 
