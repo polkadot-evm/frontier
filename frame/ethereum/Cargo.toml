@@ -11,6 +11,7 @@ repository = { workspace = true }
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
+environmental = { workspace = true }
 ethereum = { workspace = true, features = ["with-codec"] }
 ethereum-types = { workspace = true }
 evm = { workspace = true, features = ["with-codec"] }
@@ -43,6 +44,7 @@ fp-self-contained = { workspace = true, features = ["default"] }
 [features]
 default = ["std"]
 std = [
+	"environmental/std",
 	"ethereum/std",
 	"evm/std",
 	"ethereum-types/std",
