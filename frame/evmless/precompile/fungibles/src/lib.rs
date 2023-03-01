@@ -29,6 +29,7 @@ use core::marker::PhantomData;
 use fp_evm::{PrecompileHandle, Precompile, PrecompileResult, ExitSucceed};
 use frame_support::traits::tokens::fungibles::Inspect;
 use precompile_utils::prelude::*;
+use precompile_utils::handle::PrecompileHandleExt;
 
 #[precompile_utils::generate_function_selector]
 #[derive(Debug, PartialEq)]
@@ -51,6 +52,8 @@ where
     R: pallet_evmless::Config,
     AssetIdOf<R>: From<u32>,
     BalanceOf<R>: EvmData,
+    // ToDo: bring implementation of AccountId20
+    // <R as frame_system::Config>::AccountId: From<H160>,
 {
     fn execute(handle: &mut impl PrecompileHandle) -> PrecompileResult {
         // todo: check address
@@ -94,6 +97,8 @@ where
     R: pallet_evmless::Config,
     AssetIdOf<R>: From<u32>,
     BalanceOf<R>: EvmData,
+    // ToDo: bring implementation of AccountId20
+    // <R as frame_system::Config>::AccountId: From<H160>,
 {
     fn total_supply(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
         handle.record_cost(RuntimeHelper::<R>::db_read_gas_cost())?;
@@ -105,4 +110,25 @@ where
             output: EvmDataWriter::new().write(t).build()
         })
     }
+
+    // fn balance_of(handle: &mut impl PrecompileHandleExt) -> EvmResult<PrecompileOutput> {
+    //     handle.record_cost(RuntimeHelper::<R>::db_read_gas_cost())?;
+
+    //     let mut input = handle.read_after_selector()?;
+    //     input.expect_arguments(1)?;
+
+    //     let owner: H160 = input.read::<Address>()?.into();
+
+    //     // ToDo: bring implementation of AccountId20
+    //     // so that we can satisfy  
+    //     // <R as frame_system::Config>::AccountId: From<H160>,
+    //     let who: R::AccountId = owner.into();
+
+    //     let balance = R::Fungibles::balance(0u32.into(), &who);
+
+    //     Ok(PrecompileOutput {
+    //         exit_status: ExitSucceed::Returned,
+    //         output: EvmDataWriter::new().write(balance).build()
+    //     })
+    // }
 }
