@@ -9,6 +9,7 @@ describe('tests', function () {
   const initialSupply = new ethers.BigNumber.from("1337");
   const name = "Test";
   const symbol = "TEST";
+  const decimals = 12;
   const evmlessErc20Address = "0x0000000000000000000000000000000000000539";
   const evmlessErc20Abi = [
     "function name() public view returns (string)",
@@ -39,4 +40,7 @@ describe('tests', function () {
     expect(await this.evmlessErc20Contract.symbol()).to.equal(symbol);
   });
 
+  it('correct decimals', async function () {
+    expect(await this.evmlessErc20Contract.decimals()).to.equal(decimals);
+  });
 });

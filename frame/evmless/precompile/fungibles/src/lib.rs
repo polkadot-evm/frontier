@@ -83,7 +83,7 @@ where
 			ERC20Methods::TransferFrom => Self::total_supply(handle),
 			ERC20Methods::Name => Self::name(handle),
 			ERC20Methods::Symbol => Self::symbol(handle),
-			ERC20Methods::Decimals => Self::total_supply(handle),
+			ERC20Methods::Decimals => Self::decimals(handle),
 		}
 	}
 }
@@ -134,6 +134,17 @@ where
 		Ok(PrecompileOutput {
 			exit_status: ExitSucceed::Returned,
 			output: EvmDataWriter::new().write(symbol).build(),
+		})
+	}
+
+	fn decimals(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
+		handle.record_cost(RuntimeHelper::<R>::db_read_gas_cost())?;
+
+		let d = R::Fungibles::decimals(&0u32.into());
+
+		Ok(PrecompileOutput {
+			exit_status: ExitSucceed::Returned,
+			output: EvmDataWriter::new().write(d).build(),
 		})
 	}
 
