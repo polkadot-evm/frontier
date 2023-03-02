@@ -266,11 +266,7 @@ fn testnet_genesis(
 			],
 			accounts: vec![
 				// id, account_id, balance
-				(
-					0,
-					get_account_id_from_seed::<ecdsa::Public>("Alice"),
-					1337,
-				),
+				(0, get_account_id_from_seed::<ecdsa::Public>("Alice"), 1337),
 			],
 			metadata: vec![
 				// id, name, symbol, decimals
