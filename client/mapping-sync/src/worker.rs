@@ -25,11 +25,15 @@ use futures::{
 use futures_timer::Delay;
 use log::debug;
 // Substrate
-use sc_client_api::{backend::Backend, client::ImportNotifications};
+use sc_client_api::{
+	backend::{Backend, StorageProvider},
+	client::ImportNotifications,
+};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
 // Frontier
+use fc_storage::OverrideHandle;
 use fp_rpc::EthereumRuntimeRPCApi;
 
 #[derive(Copy, Clone, Eq, PartialEq)]
@@ -45,6 +49,7 @@ pub struct MappingSyncWorker<Block: BlockT, C, BE> {
 
 	client: Arc<C>,
 	substrate_backend: Arc<BE>,
+	overrides: Arc<OverrideHandle<Block>>,
 	frontier_backend: Arc<fc_db::Backend<Block>>,
 
 	have_next: bool,
@@ -61,6 +66,7 @@ impl<Block: BlockT, C, BE> MappingSyncWorker<Block, C, BE> {
 		timeout: Duration,
 		client: Arc<C>,
 		substrate_backend: Arc<BE>,
+		overrides: Arc<OverrideHandle<Block>>,
 		frontier_backend: Arc<fc_db::Backend<Block>>,
 		retry_times: usize,
 		sync_from: <Block::Header as HeaderT>::Number,
@@ -73,6 +79,7 @@ impl<Block: BlockT, C, BE> MappingSyncWorker<Block, C, BE> {
 
 			client,
 			substrate_backend,
+			overrides,
 			frontier_backend,
 
 			have_next: true,
@@ -87,7 +94,7 @@ impl<Block: BlockT, C, BE> Stream for MappingSyncWorker<Block, C, BE>
 where
 	C: ProvideRuntimeApi<Block>,
 	C::Api: EthereumRuntimeRPCApi<Block>,
-	C: HeaderBackend<Block>,
+	C: HeaderBackend<Block> + StorageProvider<Block, BE>,
 	BE: Backend<Block>,
 {
 	type Item = ();
@@ -125,6 +132,7 @@ where
 			match crate::sync_blocks(
 				self.client.as_ref(),
 				self.substrate_backend.as_ref(),
+				self.overrides.clone(),
 				self.frontier_backend.as_ref(),
 				self.retry_times,
 				self.sync_from,

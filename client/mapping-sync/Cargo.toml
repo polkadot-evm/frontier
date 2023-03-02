@@ -21,5 +21,6 @@ sp-blockchain = { workspace = true }
 sp-runtime = { workspace = true }
 # Frontier
 fc-db = { workspace = true }
+fc-storage = { workspace = true }
 fp-consensus = { workspace = true, features = ["default"] }
 fp-rpc = { workspace = true, features = ["default"] }
