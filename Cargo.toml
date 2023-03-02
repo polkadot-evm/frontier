@@ -84,6 +84,7 @@ sp-io = { version = "7.0.0", git = "https://github.com/paritytech/substrate", br
 sp-keyring = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.38" }
 sp-offchain = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.38", default-features = false }
 sp-runtime = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.38", default-features = false }
+sp-runtime-interface = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.38", default-features = false }
 sp-session = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.38", default-features = false }
 sp-state-machine = { version = "0.13.0", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.38", default-features = false }
 sp-std = { version = "5.0.0", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.38", default-features = false }
@@ -124,6 +125,7 @@ fc-mapping-sync = { version = "2.0.0-dev", path = "client/mapping-sync" }
 fc-rpc = { version = "2.0.0-dev", path = "client/rpc" }
 fc-rpc-core = { version = "1.1.0-dev", path = "client/rpc-core" }
 # Frontier Primitive
+fp-account = { version = "0.1.1", path = "primitives/account", default-features = false }
 fp-consensus = { version = "2.0.0-dev", path = "primitives/consensus", default-features = false }
 fp-dynamic-fee = { version = "1.0.0", path = "primitives/dynamic-fee", default-features = false }
 fp-ethereum = { version = "1.0.0-dev", path = "primitives/ethereum", default-features = false }
