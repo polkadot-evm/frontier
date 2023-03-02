@@ -10,13 +10,16 @@ describe('tests', function () {
   const name = "Test";
   const symbol = "TEST";
   const decimals = 12;
+
+  const alice_addr = ethers.utils.getAddress("0xe04cc55ebee1cbce552f250e85c57b70b2e2625b");
+
   const evmlessErc20Address = "0x0000000000000000000000000000000000000539";
   const evmlessErc20Abi = [
     "function name() public view returns (string)",
     "function symbol() public view returns (string)",
     "function decimals() public view returns (uint8)",
     "function totalSupply() public view returns (uint256)",
-    // "function balanceOf(address _owner) public view returns (uint256 balance)",
+    "function balanceOf(address _owner) public view returns (uint256 balance)",
     // "function transfer(address _to, uint256 _value) public returns (bool success)",
     // "function transferFrom(address _from, address _to, uint256 _value) public returns (bool success)",
     // "function approve(address _spender, uint256 _value) public returns (bool success)",
@@ -42,5 +45,9 @@ describe('tests', function () {
 
   it('correct decimals', async function () {
     expect(await this.evmlessErc20Contract.decimals()).to.equal(decimals);
+  });
+
+  it('correct alice balance', async function () {
+    expect(await this.evmlessErc20Contract.balanceOf(alice_addr)).to.equal(initialSupply);
   });
 });

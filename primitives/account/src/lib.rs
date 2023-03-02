@@ -232,4 +232,12 @@ mod tests {
 		let new = AccountId20(H160::from_slice(&Keccak256::digest(&m).as_slice()[12..32]).0);
 		assert_eq!(new, old);
 	}
+	#[test]
+	fn test_print_alice() {
+		let public_key = ecdsa::Pair::from_string("//Alice", None)
+			.expect("static values are valid; qed")
+			.public();
+		let account: EthereumSigner = public_key.into();
+		println!("alice account: {}", account);
+	}
 }
