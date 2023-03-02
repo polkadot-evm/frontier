@@ -78,6 +78,13 @@ pub struct SqliteBackendConfig<'a> {
 	pub cache_size: u64,
 }
 
+/// Represents the indexed status of a block and if it's canon or not.
+#[derive(Debug, Default)]
+pub struct BlockIndexedStatus {
+	pub indexed: bool,
+	pub canon: bool,
+}
+
 /// Represents the backend configurations.
 #[derive(Debug)]
 pub enum BackendConfig<'a> {
@@ -214,7 +221,7 @@ where
 		{
 			let has_api = client
 				.runtime_api()
-				.has_api::<dyn EthereumRuntimeRPCApi<Block>>(&id)
+				.has_api_with::<dyn EthereumRuntimeRPCApi<Block>, _>(&id, |version| version >= 1)
 				.expect("runtime api reachable");
 
 			log::debug!(
@@ -266,8 +273,8 @@ where
 
 	fn insert_block_metadata_inner<Client, BE>(
 		client: Arc<Client>,
-		hashes: &Vec<H256>,
-	) -> Result<Vec<BlockMetadata>, Error>
+		hash: H256,
+	) -> Result<BlockMetadata, Error>
 	where
 		Client: StorageProvider<Block, BE> + HeaderBackend<Block> + Send + Sync + 'static,
 		BE: BackendT<Block> + 'static,
@@ -275,19 +282,17 @@ where
 	{
 		log::trace!(
 			target: "frontier-sql",
-			"🛠️  [Metadata] Retrieving digest data for {:?} block hashes: {:?}",
-			hashes.len(),
-			hashes,
+			"🛠️  [Metadata] Retrieving digest data for block {:?}",
+			hash,
 		);
-		let mut out = Vec::new();
-		for &hash in hashes.iter() {
-			if let Ok(Some(header)) = client.header(hash) {
-				match fp_consensus::find_log(header.digest()) {
-					Ok(log) => {
-						let header_number = *header.number();
-						let block_number =
-							UniqueSaturatedInto::<u32>::unique_saturated_into(header_number) as i32;
-						let is_canon = match client.hash(header_number) {
+		if let Ok(Some(header)) = client.header(hash) {
+			match fp_consensus::find_log(header.digest()) {
+				Ok(log) => {
+					let header_number = *header.number();
+					let block_number =
+						UniqueSaturatedInto::<u32>::unique_saturated_into(header_number) as i32;
+					let is_canon =
+						match client.hash(header_number) {
 							Ok(Some(inner_hash)) => (inner_hash == hash) as i32,
 							Ok(None) => {
 								log::debug!(
@@ -299,51 +304,55 @@ where
 							}
 							Err(err) => {
 								log::debug!(
-									"[Metadata] Failed to retrieve header for block #{} ({:?}): {:?}",
-									block_number, hash, err,
-								);
+								"[Metadata] Failed to retrieve header for block #{} ({:?}): {:?}",
+								block_number, hash, err,
+							);
 								0
 							}
 						};
 
-						let schema = Self::onchain_storage_schema(client.as_ref(), hash);
-						log::trace!(
-							target: "frontier-sql",
-							"🛠️  [Metadata] Prepared block metadata for #{} ({:?}) canon={}",
-							block_number,
-							hash,
-							is_canon,
-						);
-						out.push(BlockMetadata {
-							substrate_block_hash: hash,
-							block_number,
-							post_hashes: log.into_hashes(),
-							schema,
-							is_canon,
-						});
-					}
-					Err(FindLogError::NotFound) => {}
-					Err(FindLogError::MultipleLogs) => {
-						return Err(Error::Protocol(format!(
-							"[Metadata] Multiple logs found for hash {:?}",
-							hash
-						)))
-					}
+					let schema = Self::onchain_storage_schema(client.as_ref(), hash);
+					log::trace!(
+						target: "frontier-sql",
+						"[Metadata] Prepared block metadata for #{} ({:?}) canon={}",
+						block_number,
+						hash,
+						is_canon,
+					);
+					return Ok(BlockMetadata {
+						substrate_block_hash: hash,
+						block_number,
+						post_hashes: log.into_hashes(),
+						schema,
+						is_canon,
+					});
+				}
+				Err(FindLogError::NotFound) => {
+					return Err(Error::Protocol(format!(
+						"[Metadata] No logs found for hash {:?}",
+						hash
+					)))
+				}
+				Err(FindLogError::MultipleLogs) => {
+					return Err(Error::Protocol(format!(
+						"[Metadata] Multiple logs found for hash {:?}",
+						hash
+					)))
 				}
 			}
+		} else {
+			return Err(Error::Protocol(format!(
+				"[Metadata] Failed retrieving header for hash {:?}",
+				hash
+			)));
 		}
-		log::debug!(
-			target: "frontier-sql",
-			"🛠️  [Metadata] Retrieved digest data",
-		);
-		Ok(out)
 	}
 
 	/// Insert the block metadata for the provided block hashes.
 	pub async fn insert_block_metadata<Client, BE>(
 		&self,
 		client: Arc<Client>,
-		hashes: &Vec<H256>,
+		hash: H256,
 	) -> Result<(), Error>
 	where
 		Client: StorageProvider<Block, BE> + HeaderBackend<Block> + Send + Sync + 'static,
@@ -351,9 +360,8 @@ where
 		BE::State: StateBackend<BlakeTwo256>,
 	{
 		// Spawn a blocking task to get block metadata from substrate backend.
-		let hashes_inner = hashes.clone();
-		let block_metadata = tokio::task::spawn_blocking(move || {
-			Self::insert_block_metadata_inner(client.clone(), &hashes_inner)
+		let metadata = tokio::task::spawn_blocking(move || {
+			Self::insert_block_metadata_inner(client.clone(), hash)
 		})
 		.await
 		.map_err(|_| Error::Protocol("tokio blocking metadata task failed".to_string()))??;
@@ -364,78 +372,169 @@ where
 			target: "frontier-sql",
 			"🛠️  [Metadata] Starting execution of statements on db transaction"
 		);
-		for metadata in block_metadata.into_iter() {
-			let post_hashes = metadata.post_hashes;
-			let ethereum_block_hash = post_hashes.block_hash.as_bytes();
-			let substrate_block_hash = metadata.substrate_block_hash.as_bytes();
-			let schema = metadata.schema.encode();
-			let block_number = metadata.block_number;
-			let is_canon = metadata.is_canon;
+		let post_hashes = metadata.post_hashes;
+		let ethereum_block_hash = post_hashes.block_hash.as_bytes();
+		let substrate_block_hash = metadata.substrate_block_hash.as_bytes();
+		let schema = metadata.schema.encode();
+		let block_number = metadata.block_number;
+		let is_canon = metadata.is_canon;
 
-			let _ = sqlx::query!(
-				"INSERT OR IGNORE INTO blocks(
+		let _ = sqlx::query!(
+			"INSERT OR IGNORE INTO blocks(
 					ethereum_block_hash,
 					substrate_block_hash,
 					block_number,
 					ethereum_storage_schema,
 					is_canon)
 				VALUES (?, ?, ?, ?, ?)",
-				ethereum_block_hash,
-				substrate_block_hash,
+			ethereum_block_hash,
+			substrate_block_hash,
+			block_number,
+			schema,
+			is_canon,
+		)
+		.execute(&mut tx)
+		.await?;
+		for (i, &transaction_hash) in post_hashes.transaction_hashes.iter().enumerate() {
+			let ethereum_transaction_hash = transaction_hash.as_bytes();
+			let ethereum_transaction_index = i as i32;
+			log::trace!(
+				target: "frontier-sql",
+				"[Metadata] Inserting TX for block #{} - {:?} index {}",
 				block_number,
-				schema,
-				is_canon,
-			)
-			.execute(&mut tx)
-			.await?;
-			for (i, &transaction_hash) in post_hashes.transaction_hashes.iter().enumerate() {
-				let ethereum_transaction_hash = transaction_hash.as_bytes();
-				let ethereum_transaction_index = i as i32;
-				log::trace!(
-					target: "frontier-sql",
-					"🛠️  [Metadata] Inserting TX for block #{} - {:?} index {}",
-					block_number,
-					transaction_hash,
-					ethereum_transaction_index,
-				);
-				let _ = sqlx::query!(
-					"INSERT OR IGNORE INTO transactions(
+				transaction_hash,
+				ethereum_transaction_index,
+			);
+			let _ = sqlx::query!(
+				"INSERT OR IGNORE INTO transactions(
 						ethereum_transaction_hash,
 						substrate_block_hash,
 						ethereum_block_hash,
 						ethereum_transaction_index)
 					VALUES (?, ?, ?, ?)",
-					ethereum_transaction_hash,
-					substrate_block_hash,
-					ethereum_block_hash,
-					ethereum_transaction_index,
-				)
-				.execute(&mut tx)
-				.await?;
-			}
+				ethereum_transaction_hash,
+				substrate_block_hash,
+				ethereum_block_hash,
+				ethereum_transaction_index,
+			)
+			.execute(&mut tx)
+			.await?;
 		}
 
-		let mut builder: QueryBuilder<Sqlite> =
-			QueryBuilder::new("INSERT INTO sync_status(substrate_block_hash) ");
-		builder.push_values(hashes, |mut b, hash| {
-			b.push_bind(hash.as_bytes());
-		});
-		let query = builder.build();
-		query.execute(&mut tx).await?;
+		sqlx::query("INSERT INTO sync_status(substrate_block_hash) VALUES (?)")
+			.bind(hash.as_bytes())
+			.execute(&mut tx)
+			.await?;
 
 		log::debug!(
 			target: "frontier-sql",
-			"🛠️  [Metadata] Ready to commit",
+			"[Metadata] Ready to commit",
 		);
 		tx.commit().await
 	}
 
 	/// Index the logs for the newly indexed blocks upto a `max_pending_blocks` value.
-	pub async fn index_pending_block_logs<Client, BE>(
-		&self,
-		client: Arc<Client>,
-		max_pending_blocks: usize,
-	) where
+	// pub async fn index_pending_block_logs<Client, BE>(
+	// 	&self,
+	// 	client: Arc<Client>,
+	// 	max_pending_blocks: usize,
+	// ) where
+	// 	Client: StorageProvider<Block, BE> + HeaderBackend<Block> + Send + Sync + 'static,
+	// 	BE: BackendT<Block> + 'static,
+	// 	BE::State: StateBackend<BlakeTwo256>,
+	// {
+	// 	let pool = self.pool().clone();
+	// 	let overrides = self.overrides.clone();
+	// 	let _ = async {
+	// 		// The overarching db transaction for the task.
+	// 		// Due to the async nature of this task, the same work is likely to happen
+	// 		// more than once. For example when a new batch is scheduled when the previous one
+	// 		// didn't finished yet and the new batch happens to select the same substrate
+	// 		// block hashes for the update.
+	// 		// That is expected, we are exchanging extra work for *acid*ity.
+	// 		// There is no case of unique constrain violation or race condition as already
+	// 		// existing entries are ignored.
+	// 		let mut tx = pool.begin().await?;
+	// 		// Update statement returning the substrate block hashes for this batch.
+	// 		let q = format!(
+	// 			"UPDATE sync_status
+	// 			SET status = 1
+	// 			WHERE substrate_block_hash IN
+	// 				(SELECT substrate_block_hash
+	// 				FROM sync_status
+	// 				WHERE status = 0
+	// 				LIMIT {}) RETURNING substrate_block_hash",
+	// 			max_pending_blocks
+	// 		);
+	// 		match sqlx::query(&q).fetch_all(&mut tx).await {
+	// 			Ok(result) => {
+	// 				let mut block_hashes: Vec<H256> = vec![];
+	// 				for row in result.iter() {
+	// 					if let Ok(bytes) = row.try_get::<Vec<u8>, _>(0) {
+	// 						block_hashes.push(H256::from_slice(&bytes[..]));
+	// 					} else {
+	// 						log::error!(
+	// 							target: "frontier-sql",
+	// 							"unable to decode row value"
+	// 						);
+	// 					}
+	// 				}
+	// 				// Spawn a blocking task to get log data from substrate backend.
+	// 				let logs = tokio::task::spawn_blocking(move || {
+	// 					Self::get_logs(client.clone(), overrides, &block_hashes)
+	// 				})
+	// 				.await
+	// 				.map_err(|_| Error::Protocol("tokio blocking task failed".to_string()))?;
+
+	// 				// TODO VERIFY statements limit per transaction in sqlite if any
+	// 				for log in logs.iter() {
+	// 					let _ = sqlx::query!(
+	// 						"INSERT OR IGNORE INTO logs(
+	// 							address,
+	// 							topic_1,
+	// 							topic_2,
+	// 							topic_3,
+	// 							topic_4,
+	// 							log_index,
+	// 							transaction_index,
+	// 							substrate_block_hash)
+	// 						VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+	// 						log.address,
+	// 						log.topic_1,
+	// 						log.topic_2,
+	// 						log.topic_3,
+	// 						log.topic_4,
+	// 						log.log_index,
+	// 						log.transaction_index,
+	// 						log.substrate_block_hash,
+	// 					)
+	// 					.execute(&mut tx)
+	// 					.await?;
+	// 				}
+	// 				Ok(tx.commit().await?)
+	// 			}
+	// 			Err(e) => Err(e),
+	// 		}
+	// 	}
+	// 	.await
+	// 	.map_err(|e| {
+	// 		log::error!(
+	// 			target: "frontier-sql",
+	// 			"{}",
+	// 			e
+	// 		)
+	// 	});
+	// 	// https://www.sqlite.org/pragma.html#pragma_optimize
+	// 	let _ = sqlx::query("PRAGMA optimize").execute(&pool).await;
+	// 	log::debug!(
+	// 		target: "frontier-sql",
+	// 		"🛠️  Batch commited"
+	// 	);
+	// }
+
+	/// Index the logs for the newly indexed blocks upto a `max_pending_blocks` value.
+	pub async fn index_block_logs<Client, BE>(&self, client: Arc<Client>, block_hash: Block::Hash)
+	where
 		Client: StorageProvider<Block, BE> + HeaderBackend<Block> + Send + Sync + 'static,
 		BE: BackendT<Block> + 'static,
 		BE::State: StateBackend<BlakeTwo256>,
@@ -453,58 +552,47 @@ where
 			// existing entries are ignored.
 			let mut tx = pool.begin().await?;
 			// Update statement returning the substrate block hashes for this batch.
-			let q = format!(
+			match sqlx::query(
 				"UPDATE sync_status
-				SET status = 1
-				WHERE substrate_block_hash IN
-					(SELECT substrate_block_hash
-					FROM sync_status
-					WHERE status = 0
-					LIMIT {}) RETURNING substrate_block_hash",
-				max_pending_blocks
-			);
-			match sqlx::query(&q).fetch_all(&mut tx).await {
-				Ok(result) => {
-					let mut block_hashes: Vec<H256> = vec![];
-					for row in result.iter() {
-						if let Ok(bytes) = row.try_get::<Vec<u8>, _>(0) {
-							block_hashes.push(H256::from_slice(&bytes[..]));
-						} else {
-							log::error!(
-								target: "frontier-sql",
-								"unable to decode row value"
-							);
-						}
-					}
+			SET status = 1
+			WHERE substrate_block_hash IN
+				(SELECT substrate_block_hash
+				FROM sync_status
+				WHERE status = 0 AND substrate_block_hash = ?) RETURNING substrate_block_hash",
+			)
+			.bind(block_hash.as_bytes())
+			.fetch_one(&mut tx)
+			.await
+			{
+				Ok(_) => {
 					// Spawn a blocking task to get log data from substrate backend.
 					let logs = tokio::task::spawn_blocking(move || {
-						Self::get_logs(client.clone(), overrides, &block_hashes)
+						Self::get_logs(client.clone(), overrides, block_hash)
 					})
 					.await
 					.map_err(|_| Error::Protocol("tokio blocking task failed".to_string()))?;
 
-					// TODO VERIFY statements limit per transaction in sqlite if any
-					for log in logs.iter() {
-						let _ = sqlx::query!(
+					for log in logs {
+						let _ = sqlx::query(
 							"INSERT OR IGNORE INTO logs(
-								address,
-								topic_1,
-								topic_2,
-								topic_3,
-								topic_4,
-								log_index,
-								transaction_index,
-								substrate_block_hash)
-							VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-							log.address,
-							log.topic_1,
-							log.topic_2,
-							log.topic_3,
-							log.topic_4,
-							log.log_index,
-							log.transaction_index,
-							log.substrate_block_hash,
+						address,
+						topic_1,
+						topic_2,
+						topic_3,
+						topic_4,
+						log_index,
+						transaction_index,
+						substrate_block_hash)
+					VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
 						)
+						.bind(log.address)
+						.bind(log.topic_1)
+						.bind(log.topic_2)
+						.bind(log.topic_3)
+						.bind(log.topic_4)
+						.bind(log.log_index)
+						.bind(log.transaction_index)
+						.bind(log.substrate_block_hash)
 						.execute(&mut tx)
 						.await?;
 					}
@@ -525,14 +613,14 @@ where
 		let _ = sqlx::query("PRAGMA optimize").execute(&pool).await;
 		log::debug!(
 			target: "frontier-sql",
-			"🛠️  Batch commited"
+			"Batch commited"
 		);
 	}
 
 	fn get_logs<Client, BE>(
 		client: Arc<Client>,
 		overrides: Arc<OverrideHandle<Block>>,
-		substrate_block_hashes: &[H256],
+		substrate_block_hash: H256,
 	) -> Vec<Log>
 	where
 		Client: StorageProvider<Block, BE> + HeaderBackend<Block> + Send + Sync + 'static,
@@ -542,62 +630,60 @@ where
 		let mut logs: Vec<Log> = vec![];
 		let mut transaction_count: usize = 0;
 		let mut log_count: usize = 0;
-		for substrate_block_hash in substrate_block_hashes.iter() {
-			let id = BlockId::Hash(*substrate_block_hash);
-			let schema = Self::onchain_storage_schema(client.as_ref(), *substrate_block_hash);
-			let handler = overrides
-				.schemas
-				.get(&schema)
-				.unwrap_or(&overrides.fallback);
+		let id = BlockId::Hash(substrate_block_hash);
+		let schema = Self::onchain_storage_schema(client.as_ref(), substrate_block_hash);
+		let handler = overrides
+			.schemas
+			.get(&schema)
+			.unwrap_or(&overrides.fallback);
 
-			let receipts = handler.current_receipts(&id).unwrap_or_default();
+		let receipts = handler.current_receipts(&id).unwrap_or_default();
 
-			transaction_count += receipts.len();
-			for (transaction_index, receipt) in receipts.iter().enumerate() {
-				let receipt_logs = match receipt {
-					ethereum::ReceiptV3::Legacy(d)
-					| ethereum::ReceiptV3::EIP2930(d)
-					| ethereum::ReceiptV3::EIP1559(d) => &d.logs,
-				};
-				let transaction_index = transaction_index as i32;
-				log_count += receipt_logs.len();
-				for (log_index, log) in receipt_logs.iter().enumerate() {
-					logs.push(Log {
-						address: log.address.as_bytes().to_owned(),
-						topic_1: log
-							.topics
-							.get(0)
-							.unwrap_or(&H256::zero())
-							.as_bytes()
-							.to_owned(),
-						topic_2: log
-							.topics
-							.get(1)
-							.unwrap_or(&H256::zero())
-							.as_bytes()
-							.to_owned(),
-						topic_3: log
-							.topics
-							.get(2)
-							.unwrap_or(&H256::zero())
-							.as_bytes()
-							.to_owned(),
-						topic_4: log
-							.topics
-							.get(3)
-							.unwrap_or(&H256::zero())
-							.as_bytes()
-							.to_owned(),
-						log_index: log_index as i32,
-						transaction_index,
-						substrate_block_hash: substrate_block_hash.as_bytes().to_owned(),
-					});
-				}
+		transaction_count += receipts.len();
+		for (transaction_index, receipt) in receipts.iter().enumerate() {
+			let receipt_logs = match receipt {
+				ethereum::ReceiptV3::Legacy(d)
+				| ethereum::ReceiptV3::EIP2930(d)
+				| ethereum::ReceiptV3::EIP1559(d) => &d.logs,
+			};
+			let transaction_index = transaction_index as i32;
+			log_count += receipt_logs.len();
+			for (log_index, log) in receipt_logs.iter().enumerate() {
+				logs.push(Log {
+					address: log.address.as_bytes().to_owned(),
+					topic_1: log
+						.topics
+						.get(0)
+						.unwrap_or(&H256::zero())
+						.as_bytes()
+						.to_owned(),
+					topic_2: log
+						.topics
+						.get(1)
+						.unwrap_or(&H256::zero())
+						.as_bytes()
+						.to_owned(),
+					topic_3: log
+						.topics
+						.get(2)
+						.unwrap_or(&H256::zero())
+						.as_bytes()
+						.to_owned(),
+					topic_4: log
+						.topics
+						.get(3)
+						.unwrap_or(&H256::zero())
+						.as_bytes()
+						.to_owned(),
+					log_index: log_index as i32,
+					transaction_index,
+					substrate_block_hash: substrate_block_hash.as_bytes().to_owned(),
+				});
 			}
 		}
 		log::debug!(
 			target: "frontier-sql",
-			"🛠️  Ready to commit {} logs from {} transactions",
+			"Ready to commit {} logs from {} transactions",
 			log_count,
 			transaction_count
 		);
@@ -616,6 +702,97 @@ where
 				.unwrap_or(EthereumStorageSchema::Undefined),
 			_ => EthereumStorageSchema::Undefined,
 		}
+	}
+
+	pub async fn is_block_indexed(&self, block_hash: Block::Hash) -> bool {
+		sqlx::query("SELECT substrate_block_hash FROM sync_status WHERE substrate_block_hash = ?")
+			.bind(block_hash.as_bytes().to_owned())
+			.fetch_optional(self.pool())
+			.await
+			.map(|r| r.is_some())
+			.unwrap_or(false)
+	}
+
+	pub async fn block_indexed_and_canon_status(
+		&self,
+		block_hash: Block::Hash,
+	) -> BlockIndexedStatus {
+		sqlx::query(
+			"SELECT b.is_canon FROM sync_status AS s
+			INNER JOIN blocks AS b
+			ON s.substrate_block_hash = b.substrate_block_hash
+			WHERE s.substrate_block_hash = ?",
+		)
+		.bind(block_hash.as_bytes().to_owned())
+		.fetch_optional(self.pool())
+		.await
+		.map(|result| {
+			result
+				.map(|row| {
+					let is_canon: i32 = row.get(0);
+					BlockIndexedStatus {
+						indexed: true,
+						canon: if is_canon == 0 { false } else { true },
+					}
+				})
+				.unwrap_or_default()
+		})
+		.unwrap_or_default()
+	}
+
+	/// Sets the provided block as canon. Returns true on success
+	pub async fn set_block_as_canon(&self, block_hash: H256) -> Result<SqliteQueryResult, Error> {
+		sqlx::query("UPDATE blocks SET is_canon = 0 WHERE substrate_block_hash = ?")
+			.bind(block_hash.as_bytes())
+			.execute(self.pool())
+			.await
+	}
+
+	/// Retrieves the first missing canonical block number in decreasing order that hasn't been indexed yet.
+	/// If no unindexed block exists or the table or the rows do not exist, then the function
+	/// returns `None`.
+	pub async fn get_first_missing_canon_block(&self) -> Option<u32> {
+		match sqlx::query(
+			"SELECT b1.block_number-1
+			FROM blocks as b1
+			WHERE b1.block_number > 0 AND b1.is_canon=1 AND NOT EXISTS (
+				SELECT 1 FROM blocks AS b2
+				WHERE b2.block_number = b1.block_number-1
+				AND b1.is_canon=1
+				AND b2.is_canon=1
+			)
+			ORDER BY block_number LIMIT 1",
+		)
+		.fetch_optional(self.pool())
+		.await
+		{
+			Ok(result) => {
+				if let Some(row) = result {
+					let block_number: u32 = row.get(0);
+					return Some(block_number);
+				}
+			}
+			Err(err) => {
+				log::debug!(
+					target: "frontier-sql",
+					"Failed retrieving missing block {:?}",
+					err
+				);
+			}
+		}
+
+		None
+	}
+
+	pub async fn get_last_indexed_canon_block(&self) -> Result<H256, Error> {
+		let row = sqlx::query(
+			"SELECT b.substrate_block_hash FROM blocks AS b INNER JOIN sync_status AS s ON s.substrate_block_hash = b.substrate_block_hash WHERE b.is_canon=1 AND s.status = 1 ORDER BY b.id DESC LIMIT 1",
+		)
+		.fetch_one(self.pool())
+		.await?;
+		Ok(H256::from_slice(
+			&row.try_get::<Vec<u8>, _>(0).unwrap_or_default()[..],
+		))
 	}
 
 	/// Create the Sqlite database if it does not already exist.

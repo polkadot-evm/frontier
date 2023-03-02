@@ -16,5 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+#![feature(async_closure)]
+
 pub mod kv;
 pub mod sql;
