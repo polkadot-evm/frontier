@@ -543,8 +543,10 @@ where
 		// check missing blocks every 20 seconds
 		let tx2 = tx.clone();
 		tokio::task::spawn(async move {
-			futures_timer::Delay::new(Duration::from_secs(20)).await;
-			tx2.send(WorkerCommand::CheckMissingBlocks).await.ok();
+			loop {
+				futures_timer::Delay::new(Duration::from_secs(20)).await;
+				tx2.send(WorkerCommand::CheckMissingBlocks).await.ok();
+			}
 		});
 
 		// check notifications

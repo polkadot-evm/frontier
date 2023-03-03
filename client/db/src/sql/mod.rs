@@ -742,7 +742,7 @@ where
 
 	/// Sets the provided block as canon. Returns true on success
 	pub async fn set_block_as_canon(&self, block_hash: H256) -> Result<SqliteQueryResult, Error> {
-		sqlx::query("UPDATE blocks SET is_canon = 0 WHERE substrate_block_hash = ?")
+		sqlx::query("UPDATE blocks SET is_canon = 1 WHERE substrate_block_hash = ?")
 			.bind(block_hash.as_bytes())
 			.execute(self.pool())
 			.await
