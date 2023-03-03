@@ -164,6 +164,7 @@ where
 		}
 	}
 
+	/// Get the underlying Sqlite pool.
 	pub fn pool(&self) -> &SqlitePool {
 		&self.pool
 	}
@@ -434,105 +435,6 @@ where
 	}
 
 	/// Index the logs for the newly indexed blocks upto a `max_pending_blocks` value.
-	// pub async fn index_pending_block_logs<Client, BE>(
-	// 	&self,
-	// 	client: Arc<Client>,
-	// 	max_pending_blocks: usize,
-	// ) where
-	// 	Client: StorageProvider<Block, BE> + HeaderBackend<Block> + Send + Sync + 'static,
-	// 	BE: BackendT<Block> + 'static,
-	// 	BE::State: StateBackend<BlakeTwo256>,
-	// {
-	// 	let pool = self.pool().clone();
-	// 	let overrides = self.overrides.clone();
-	// 	let _ = async {
-	// 		// The overarching db transaction for the task.
-	// 		// Due to the async nature of this task, the same work is likely to happen
-	// 		// more than once. For example when a new batch is scheduled when the previous one
-	// 		// didn't finished yet and the new batch happens to select the same substrate
-	// 		// block hashes for the update.
-	// 		// That is expected, we are exchanging extra work for *acid*ity.
-	// 		// There is no case of unique constrain violation or race condition as already
-	// 		// existing entries are ignored.
-	// 		let mut tx = pool.begin().await?;
-	// 		// Update statement returning the substrate block hashes for this batch.
-	// 		let q = format!(
-	// 			"UPDATE sync_status
-	// 			SET status = 1
-	// 			WHERE substrate_block_hash IN
-	// 				(SELECT substrate_block_hash
-	// 				FROM sync_status
-	// 				WHERE status = 0
-	// 				LIMIT {}) RETURNING substrate_block_hash",
-	// 			max_pending_blocks
-	// 		);
-	// 		match sqlx::query(&q).fetch_all(&mut tx).await {
-	// 			Ok(result) => {
-	// 				let mut block_hashes: Vec<H256> = vec![];
-	// 				for row in result.iter() {
-	// 					if let Ok(bytes) = row.try_get::<Vec<u8>, _>(0) {
-	// 						block_hashes.push(H256::from_slice(&bytes[..]));
-	// 					} else {
-	// 						log::error!(
-	// 							target: "frontier-sql",
-	// 							"unable to decode row value"
-	// 						);
-	// 					}
-	// 				}
-	// 				// Spawn a blocking task to get log data from substrate backend.
-	// 				let logs = tokio::task::spawn_blocking(move || {
-	// 					Self::get_logs(client.clone(), overrides, &block_hashes)
-	// 				})
-	// 				.await
-	// 				.map_err(|_| Error::Protocol("tokio blocking task failed".to_string()))?;
-
-	// 				// TODO VERIFY statements limit per transaction in sqlite if any
-	// 				for log in logs.iter() {
-	// 					let _ = sqlx::query!(
-	// 						"INSERT OR IGNORE INTO logs(
-	// 							address,
-	// 							topic_1,
-	// 							topic_2,
-	// 							topic_3,
-	// 							topic_4,
-	// 							log_index,
-	// 							transaction_index,
-	// 							substrate_block_hash)
-	// 						VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-	// 						log.address,
-	// 						log.topic_1,
-	// 						log.topic_2,
-	// 						log.topic_3,
-	// 						log.topic_4,
-	// 						log.log_index,
-	// 						log.transaction_index,
-	// 						log.substrate_block_hash,
-	// 					)
-	// 					.execute(&mut tx)
-	// 					.await?;
-	// 				}
-	// 				Ok(tx.commit().await?)
-	// 			}
-	// 			Err(e) => Err(e),
-	// 		}
-	// 	}
-	// 	.await
-	// 	.map_err(|e| {
-	// 		log::error!(
-	// 			target: "frontier-sql",
-	// 			"{}",
-	// 			e
-	// 		)
-	// 	});
-	// 	// https://www.sqlite.org/pragma.html#pragma_optimize
-	// 	let _ = sqlx::query("PRAGMA optimize").execute(&pool).await;
-	// 	log::debug!(
-	// 		target: "frontier-sql",
-	// 		"🛠️  Batch commited"
-	// 	);
-	// }
-
-	/// Index the logs for the newly indexed blocks upto a `max_pending_blocks` value.
 	pub async fn index_block_logs<Client, BE>(&self, client: Arc<Client>, block_hash: Block::Hash)
 	where
 		Client: StorageProvider<Block, BE> + HeaderBackend<Block> + Send + Sync + 'static,
@@ -704,6 +606,7 @@ where
 		}
 	}
 
+	/// Retrieves the status if a block has been already indexed.
 	pub async fn is_block_indexed(&self, block_hash: Block::Hash) -> bool {
 		sqlx::query("SELECT substrate_block_hash FROM sync_status WHERE substrate_block_hash = ?")
 			.bind(block_hash.as_bytes().to_owned())
@@ -713,6 +616,7 @@ where
 			.unwrap_or(false)
 	}
 
+	/// Retrieves the status if a block is indexed and if also marked as canon.
 	pub async fn block_indexed_and_canon_status(
 		&self,
 		block_hash: Block::Hash,
@@ -740,7 +644,7 @@ where
 		.unwrap_or_default()
 	}
 
-	/// Sets the provided block as canon. Returns true on success
+	/// Sets the provided block as canon.
 	pub async fn set_block_as_canon(&self, block_hash: H256) -> Result<SqliteQueryResult, Error> {
 		sqlx::query("UPDATE blocks SET is_canon = 1 WHERE substrate_block_hash = ?")
 			.bind(block_hash.as_bytes())
@@ -784,6 +688,7 @@ where
 		None
 	}
 
+	/// Retrieve the block hash for the last indexed canon block.
 	pub async fn get_last_indexed_canon_block(&self) -> Result<H256, Error> {
 		let row = sqlx::query(
 			"SELECT b.substrate_block_hash FROM blocks AS b INNER JOIN sync_status AS s ON s.substrate_block_hash = b.substrate_block_hash WHERE b.is_canon=1 AND s.status = 1 ORDER BY b.id DESC LIMIT 1",

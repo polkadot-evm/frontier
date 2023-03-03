@@ -23,135 +23,206 @@ use sp_api::{HeaderT, ProvideRuntimeApi};
 use sp_blockchain::{Backend, HeaderBackend};
 use sp_core::H256;
 use sp_runtime::traits::{BlakeTwo256, Block as BlockT, UniqueSaturatedInto};
-use sqlx::{Row, SqlitePool};
-use std::{collections::VecDeque, sync::Arc, time::Duration};
+use std::{sync::Arc, time::Duration};
 
-/// Represents known indexed block hashes. The structure uses a bounded
-/// cache containing upto `cache_size` latest entries, with a passthrough
-/// to the underlying database, if needed.
-#[derive(Debug, Default)]
-pub struct IndexedBlocks {
-	cache: VecDeque<H256>,
-	cache_size: usize,
-}
-
-impl IndexedBlocks {
-	/// Create a new instance with a fixed cache size.
-	pub fn new(cache_size: usize) -> Self {
-		IndexedBlocks {
-			cache: Default::default(),
-			cache_size,
-		}
-	}
-
-	/// Retrieves and populates the cache with upto N last indexed blocks, where N is the `cache_size`.
-	pub async fn populate_cache(&mut self, pool: &SqlitePool) -> Result<(), sqlx::Error> {
-		sqlx::query(&format!(
-			"SELECT substrate_block_hash FROM sync_status WHERE status = 1 ORDER BY id DESC LIMIT {}",
-			self.cache_size
-		))
-		.fetch_all(pool)
-		.await?
-		.iter()
-		.for_each(|any_row| {
-			let hash = H256::from_slice(&any_row.try_get::<Vec<u8>, _>(0).unwrap_or_default()[..]);
-			self.cache.push_back(hash);
-		});
-		Ok(())
-	}
-
-	/// Inserts a block hash.
-	pub fn insert(&mut self, value: H256) -> Option<H256> {
-		let maybe_popped = if self.cache.len() == self.cache_size {
-			self.cache.pop_back()
-		} else {
-			None
-		};
-
-		self.cache.push_front(value);
-		maybe_popped
-	}
-
-	/// Appends another iterator to the current one.
-	pub fn append(&mut self, other: impl Iterator<Item = H256>) {
-		other.into_iter().for_each(|item| {
-			self.insert(item);
-		});
-	}
-
-	/// Tests the cache to see if the block exists.
-	pub fn contains_cached(&self, value: &H256) -> bool {
-		self.cache.contains(value)
-	}
-
-	/// Tests the cache to see if the block exists. If the item does not exist in
-	/// the cache, then the SQL database is queried.
-	pub async fn contains(&self, value: &H256, pool: &SqlitePool) -> bool {
-		if self.contains_cached(value) {
-			return true;
-		}
-
-		if let Ok(result) = sqlx::query(
-			"SELECT substrate_block_hash FROM sync_status WHERE substrate_block_hash = ?",
-		)
-		.bind(value.as_bytes().to_owned())
-		.fetch_optional(pool)
-		.await
-		{
-			result.is_some()
-		} else {
-			false
-		}
-	}
-
-	/// Retrieves the most recent indexed block.
-	pub fn last_indexed(&self) -> Option<&H256> {
-		self.cache.front()
-	}
-
-	/// Retrieves the first missing block number in decreasing order that hasn't been indexed yet.
-	/// If no unindexed block exists or the table or the rows do not exist, then the function
-	/// returns `None`.
-	pub async fn get_first_missing_block(&self, pool: &SqlitePool) -> Option<u32> {
-		match sqlx::query(
-			"SELECT b1.block_number-1
-			FROM blocks as b1
-			WHERE b1.block_number > 0 AND b1.is_canon=1 AND NOT EXISTS (
-				SELECT 1 FROM blocks AS b2
-				WHERE b2.block_number = b1.block_number-1
-				AND b1.is_canon=1
-				AND b2.is_canon=1
-			)
-			ORDER BY block_number LIMIT 1",
-		)
-		.fetch_optional(pool)
-		.await
-		{
-			Ok(result) => {
-				if let Some(row) = result {
-					let block_number: u32 = row.get(0);
-					return Some(block_number);
-				}
-			}
-			Err(err) => {
-				log::debug!(
-					target: "frontier-sql",
-					"Failed retrieving missing block {:?}",
-					err
-				);
-			}
-		}
-
-		None
-	}
+/// Defines the commands for the sync worker.
+#[derive(Debug)]
+pub enum WorkerCommand {
+	/// Resume indexing from the last indexed canon block.
+	ResumeSync,
+	/// Index leaves.
+	IndexLeaves(Vec<H256>),
+	/// Index the best block known so far via import notifications.
+	IndexBestBlock(H256),
+	/// Canonicalize the enacted and retracted blocks reported via import notifications.
+	Canonicalize {
+		common: H256,
+		enacted: Vec<H256>,
+		retracted: Vec<H256>,
+	},
+	/// Check for any missing parent blocks from the latest canon block.
+	CheckMissingBlocks,
 }
 
 /// Implements an indexer that imports blocks and their transactions.
 pub struct SyncWorker<Block, Backend, Client> {
 	_phantom: std::marker::PhantomData<(Block, Backend, Client)>,
-	// indexed_blocks: IndexedBlocks,
-	// current_batch: Vec<H256>,
-	// batch_size: usize,
+}
+
+impl<Block: BlockT, Backend, Client> SyncWorker<Block, Backend, Client>
+where
+	Block: BlockT<Hash = H256> + Send + Sync,
+	Client: StorageProvider<Block, Backend> + HeaderBackend<Block> + Send + Sync + 'static,
+	Client: ProvideRuntimeApi<Block>,
+	Client::Api: EthereumRuntimeRPCApi<Block>,
+	Backend: BackendT<Block> + 'static,
+	Backend::State: StateBackend<BlakeTwo256>,
+{
+	/// Spawn the indexing worker. The worker can be given commands via the sender channel.
+	/// Once the buffer is full, attempts to send new messages will wait until a message is read from the channel.
+	pub async fn spawn_worker(
+		client: Arc<Client>,
+		substrate_backend: Arc<Backend>,
+		indexer_backend: Arc<fc_db::sql::Backend<Block>>,
+	) -> tokio::sync::mpsc::Sender<WorkerCommand> {
+		let (tx, mut rx) = tokio::sync::mpsc::channel(100);
+		tokio::task::spawn(async move {
+			while let Some(cmd) = rx.recv().await {
+				log::debug!(
+					target: "frontier-sql",
+					"💬 Recv Worker Command {:?}",
+					cmd,
+				);
+				match cmd {
+					WorkerCommand::ResumeSync => {
+						// Attempt to resume from last indexed block. If there is no data in the db, sync genesis.
+						match indexer_backend.get_last_indexed_canon_block().await.ok() {
+							Some(last_block_hash) => {
+								log::debug!(
+									target: "frontier-sql",
+									"Resume from last block {:?}",
+									last_block_hash,
+								);
+								if let Some(parent_hash) = client
+									.header(last_block_hash)
+									.ok()
+									.flatten()
+									.map(|header| *header.parent_hash())
+								{
+									index_canonical_block_and_ancestors(
+										client.clone(),
+										substrate_backend.clone(),
+										indexer_backend.clone(),
+										parent_hash,
+									)
+									.await;
+								}
+							}
+							None => {
+								index_genesis_block(client.clone(), indexer_backend.clone()).await;
+							}
+						};
+					}
+					WorkerCommand::IndexLeaves(leaves) => {
+						for leaf in leaves {
+							index_block_and_ancestors(
+								client.clone(),
+								substrate_backend.clone(),
+								indexer_backend.clone(),
+								leaf,
+							)
+							.await;
+						}
+					}
+					WorkerCommand::IndexBestBlock(block_hash) => {
+						index_canonical_block_and_ancestors(
+							client.clone(),
+							substrate_backend.clone(),
+							indexer_backend.clone(),
+							block_hash,
+						)
+						.await;
+					}
+					WorkerCommand::Canonicalize {
+						common,
+						enacted,
+						retracted,
+					} => {
+						canonicalize_blocks(indexer_backend.clone(), common, enacted, retracted)
+							.await;
+					}
+					WorkerCommand::CheckMissingBlocks => {
+						index_missing_blocks(
+							client.clone(),
+							substrate_backend.clone(),
+							indexer_backend.clone(),
+						)
+						.await;
+					}
+				}
+			}
+		});
+
+		tx
+	}
+
+	/// Start the worker.
+	pub async fn run(
+		client: Arc<Client>,
+		substrate_backend: Arc<Backend>,
+		indexer_backend: Arc<fc_db::sql::Backend<Block>>,
+		import_notifications: sc_client_api::ImportNotifications<Block>,
+	) {
+		let tx = Self::spawn_worker(
+			client.clone(),
+			substrate_backend.clone(),
+			indexer_backend.clone(),
+		)
+		.await;
+
+		// Resume sync from the last indexed block until we reach an already indexed parent
+		log::info!(target: "frontier-sql", "ResumeSend: {:?}", tx.send(WorkerCommand::ResumeSync).await);
+
+		// check missing blocks every 20 seconds
+		let tx2 = tx.clone();
+		tokio::task::spawn(async move {
+			loop {
+				futures_timer::Delay::new(Duration::from_secs(20)).await;
+				tx2.send(WorkerCommand::CheckMissingBlocks).await.ok();
+			}
+		});
+
+		// check notifications
+		let mut notifications = import_notifications.fuse();
+		loop {
+			let mut timeout = futures_timer::Delay::new(Duration::from_secs(10)).fuse();
+			futures::select! {
+				_ = timeout => {
+					if let Ok(leaves) = substrate_backend.blockchain().leaves() {
+						tx.send(WorkerCommand::IndexLeaves(leaves)).await.ok();
+					}
+				},
+				notification = notifications.next() => if let Some(notification) = notification {
+					log::debug!(
+						target: "frontier-sql",
+						"📣  New notification: #{} {:?} (parent {}), best = {}",
+						notification.header.number(),
+						notification.hash,
+						notification.header.parent_hash(),
+						notification.is_new_best,
+					);
+					if notification.is_new_best {
+						if let Some(tree_route) = notification.tree_route {
+							log::debug!(
+								target: "frontier-sql",
+								"🔀  Re-org happened at new best {}, proceeding to canonicalize db",
+								notification.hash
+							);
+							let retracted = tree_route
+								.retracted()
+								.iter()
+								.map(|hash_and_number| hash_and_number.hash)
+								.collect::<Vec<_>>();
+							let enacted = tree_route
+								.enacted()
+								.iter()
+								.map(|hash_and_number| hash_and_number.hash)
+								.collect::<Vec<_>>();
+
+							let common = tree_route.common_block().hash;
+							tx.send(WorkerCommand::Canonicalize {
+								common,
+								enacted,
+								retracted,
+							}).await.ok();
+						}
+
+						tx.send(WorkerCommand::IndexBestBlock(notification.hash)).await.ok();
+					}
+				}
+			}
+		}
+	}
 }
 
 /// Index the provided blocks. The function loops over the ancestors of the provided nodes
@@ -412,529 +483,6 @@ async fn index_genesis_block<Block, Client, Backend>(
 			substrate_genesis_hash,
 		);
 	}
-}
-
-#[derive(Debug)]
-pub enum WorkerCommand {
-	ResumeSync,
-	IndexLeaves(Vec<H256>),
-	IndexBestBlock(H256),
-	Canonicalize {
-		common: H256,
-		enacted: Vec<H256>,
-		retracted: Vec<H256>,
-	},
-	CheckMissingBlocks,
-}
-
-impl<Block: BlockT, Backend, Client> SyncWorker<Block, Backend, Client>
-where
-	Block: BlockT<Hash = H256> + Send + Sync,
-	Client: StorageProvider<Block, Backend> + HeaderBackend<Block> + Send + Sync + 'static,
-	Client: ProvideRuntimeApi<Block>,
-	Client::Api: EthereumRuntimeRPCApi<Block>,
-	Backend: BackendT<Block> + 'static,
-	Backend::State: StateBackend<BlakeTwo256>,
-{
-	pub async fn spawn_worker(
-		client: Arc<Client>,
-		substrate_backend: Arc<Backend>,
-		indexer_backend: Arc<fc_db::sql::Backend<Block>>,
-	) -> tokio::sync::mpsc::Sender<WorkerCommand> {
-		let (tx, mut rx) = tokio::sync::mpsc::channel(100);
-		tokio::task::spawn(async move {
-			while let Some(cmd) = rx.recv().await {
-				log::debug!(
-					target: "frontier-sql",
-					"💬 Recv Worker Command {:?}",
-					cmd,
-				);
-				match cmd {
-					WorkerCommand::ResumeSync => {
-						// Attempt to resume from last indexed block. If there is no data in the db, sync genesis.
-						match indexer_backend.get_last_indexed_canon_block().await.ok() {
-							Some(last_block_hash) => {
-								log::debug!(
-									target: "frontier-sql",
-									"Resume from last block {:?}",
-									last_block_hash,
-								);
-								if let Some(parent_hash) = client
-									.header(last_block_hash)
-									.ok()
-									.flatten()
-									.map(|header| *header.parent_hash())
-								{
-									index_canonical_block_and_ancestors(
-										client.clone(),
-										substrate_backend.clone(),
-										indexer_backend.clone(),
-										parent_hash,
-									)
-									.await;
-								}
-							}
-							None => {
-								index_genesis_block(client.clone(), indexer_backend.clone()).await;
-							}
-						};
-					}
-					WorkerCommand::IndexLeaves(leaves) => {
-						for leaf in leaves {
-							index_block_and_ancestors(
-								client.clone(),
-								substrate_backend.clone(),
-								indexer_backend.clone(),
-								leaf,
-							)
-							.await;
-						}
-					}
-					WorkerCommand::IndexBestBlock(block_hash) => {
-						index_canonical_block_and_ancestors(
-							client.clone(),
-							substrate_backend.clone(),
-							indexer_backend.clone(),
-							block_hash,
-						)
-						.await;
-					}
-					WorkerCommand::Canonicalize {
-						common,
-						enacted,
-						retracted,
-					} => {
-						canonicalize_blocks(indexer_backend.clone(), common, enacted, retracted)
-							.await;
-					}
-					WorkerCommand::CheckMissingBlocks => {
-						index_missing_blocks(
-							client.clone(),
-							substrate_backend.clone(),
-							indexer_backend.clone(),
-						)
-						.await;
-					}
-				}
-			}
-		});
-
-		tx
-	}
-
-	pub async fn run(
-		client: Arc<Client>,
-		substrate_backend: Arc<Backend>,
-		indexer_backend: Arc<fc_db::sql::Backend<Block>>,
-		import_notifications: sc_client_api::ImportNotifications<Block>,
-		_batch_size: usize,
-		_interval: Duration,
-	) {
-		let tx = Self::spawn_worker(
-			client.clone(),
-			substrate_backend.clone(),
-			indexer_backend.clone(),
-		)
-		.await;
-
-		// Resume sync from the last indexed block until we reach an already indexed parent
-		log::info!(target: "frontier-sql", "ResumeSend: {:?}", tx.send(WorkerCommand::ResumeSync).await);
-
-		// check missing blocks every 20 seconds
-		let tx2 = tx.clone();
-		tokio::task::spawn(async move {
-			loop {
-				futures_timer::Delay::new(Duration::from_secs(20)).await;
-				tx2.send(WorkerCommand::CheckMissingBlocks).await.ok();
-			}
-		});
-
-		// check notifications
-		let mut notifications = import_notifications.fuse();
-		loop {
-			let mut timeout = futures_timer::Delay::new(Duration::from_secs(10)).fuse();
-			futures::select! {
-				_ = timeout => {
-					if let Ok(leaves) = substrate_backend.blockchain().leaves() {
-						tx.send(WorkerCommand::IndexLeaves(leaves)).await.ok();
-					}
-				},
-				notification = notifications.next() => if let Some(notification) = notification {
-					log::debug!(
-						target: "frontier-sql",
-						"📣  New notification: #{} {:?} (parent {}), best = {}",
-						notification.header.number(),
-						notification.hash,
-						notification.header.parent_hash(),
-						notification.is_new_best,
-					);
-					if notification.is_new_best {
-						if let Some(tree_route) = notification.tree_route {
-							log::debug!(
-								target: "frontier-sql",
-								"🔀  Re-org happened at new best {}, proceeding to canonicalize db",
-								notification.hash
-							);
-							let retracted = tree_route
-								.retracted()
-								.iter()
-								.map(|hash_and_number| hash_and_number.hash)
-								.collect::<Vec<_>>();
-							let enacted = tree_route
-								.enacted()
-								.iter()
-								.map(|hash_and_number| hash_and_number.hash)
-								.collect::<Vec<_>>();
-
-							let common = tree_route.common_block().hash;
-							tx.send(WorkerCommand::Canonicalize {
-								common,
-								enacted,
-								retracted,
-							}).await.ok();
-						}
-
-						tx.send(WorkerCommand::IndexBestBlock(notification.hash)).await.ok();
-					}
-				}
-			}
-		}
-		// let mut worker = Self::new(batch_size);
-		// worker
-		// 	.indexed_blocks
-		// 	.populate_cache(indexer_backend.pool())
-		// 	.await
-		// 	.expect("query `sync_status` table");
-
-		// log::debug!(
-		// 	target: "frontier-sql",
-		// 	"Last indexed block {:?}",
-		// 	worker.indexed_blocks.last_indexed(),
-		// );
-
-		// // Attempt to resume from last indexed block. If there is no data in the db, sync genesis.
-		// let mut maybe_resume_at = match worker.indexed_blocks.last_indexed() {
-		// 	Some(last_block_hash) => client
-		// 		.header(*last_block_hash)
-		// 		.ok()
-		// 		.flatten()
-		// 		.map(|header| *header.parent_hash()),
-		// 	None => {
-		// 		log::info!(
-		// 			target: "frontier-sql",
-		// 			"import genesis",
-		// 		);
-		// 		if let Ok(Some(substrate_genesis_hash)) = indexer_backend
-		// 			.insert_genesis_block_metadata(client.clone())
-		// 			.await
-		// 			.map_err(|e| {
-		// 				log::error!(
-		// 					target: "frontier-sql",
-		// 					"💔  Cannot sync genesis block: {}",
-		// 					e,
-		// 				)
-		// 			}) {
-		// 			log::debug!(
-		// 				target: "frontier-sql",
-		// 				"Imported genesis block {:?}",
-		// 				substrate_genesis_hash,
-		// 			);
-		// 			worker.indexed_blocks.insert(substrate_genesis_hash);
-		// 		}
-		// 		None
-		// 	}
-		// };
-
-		// // Try firing the interval future first, this isn't guaranteed but is usually desirable.
-		// let import_interval = futures_timer::Delay::new(Duration::from_nanos(1));
-		// let backend = substrate_backend.blockchain();
-		// let notifications = import_notifications.fuse();
-		// futures::pin_mut!(import_interval, notifications);
-
-		// loop {
-		// 	futures::select! {
-		// 		_ = (&mut import_interval).fuse() => {
-		// 			log::debug!(
-		// 				target: "frontier-sql",
-		// 				"🕐  New interval"
-		// 			);
-
-		// 			// Index any missing past blocks
-		// 			worker
-		// 				.try_index_past_missing_blocks(client.clone(), indexer_backend.clone(), backend)
-		// 				.await;
-
-		// 			let leaves = backend.leaves();
-		// 			if let Ok(mut leaves) = leaves {
-		// 				// Attempt to resume from a previous checkpoint
-		// 				if let Some(resume_at) = maybe_resume_at.take() {
-		// 					leaves.push(resume_at);
-		// 				}
-
-		// 				// If a known leaf is still present when kicking an interval
-		// 				// means the chain is slow or stall.
-		// 				// If this is the case we want to remove it to move to
-		// 				// its potential siblings.
-		// 				leaves.retain(|leaf| !worker.indexed_blocks.contains_cached(leaf));
-
-		// 				worker.index_blocks(
-		// 					client.clone(),
-		// 					indexer_backend.clone(),
-		// 					backend,
-		// 					&mut leaves,
-		// 					false
-		// 				).await;
-		// 			}
-
-		// 			// Reset the interval to user-defined Duration
-		// 			import_interval.reset(interval);
-		// 		},
-		// 		notification = notifications.next() => if let Some(notification) = notification {
-		// 			log::debug!(
-		// 				target: "frontier-sql",
-		// 				"📣  New notification: #{} {:?} (parent {}), best = {}",
-		// 				notification.header.number(),
-		// 				notification.hash,
-		// 				notification.header.parent_hash(),
-		// 				notification.is_new_best,
-		// 			);
-		// 			if notification.is_new_best {
-		// 				if let Some(tree_route) = notification.tree_route {
-		// 					log::debug!(
-		// 						target: "frontier-sql",
-		// 						"🔀  Re-org happened at new best {}, proceeding to canonicalize db",
-		// 						notification.hash
-		// 					);
-		// 					Self::canonicalize(Arc::clone(&indexer_backend), tree_route).await;
-		// 				}
-		// 				worker.index_blocks(
-		// 					client.clone(),
-		// 					indexer_backend.clone(),
-		// 					backend,
-		// 					&mut vec![notification.hash],
-		// 					true
-		// 				).await;
-		// 			}
-		// 		}
-		// 	}
-		// }
-	}
-
-	/// Creates a new instance of the worker.
-	fn _new(_batch_size: usize) -> Self {
-		SyncWorker {
-			_phantom: Default::default(),
-			// indexed_blocks: IndexedBlocks::new(batch_size),
-			// current_batch: Default::default(),
-			// batch_size,
-		}
-	}
-
-	// /// Attempts to index any missing blocks that are in the past. This fixes any gaps that may
-	// /// be present in the indexing strategy, since the indexer only walks the parent hashes until
-	// /// it finds the first ancestor that has already been indexed.
-	// async fn try_index_past_missing_blocks(
-	// 	&mut self,
-	// 	client: Arc<Client>,
-	// 	indexer_backend: Arc<fc_db::sql::Backend<Block>>,
-	// 	blockchain_backend: &Backend::Blockchain,
-	// ) {
-	// 	if let Some(block_number) = self
-	// 		.indexed_blocks
-	// 		.get_first_missing_block(indexer_backend.pool())
-	// 		.await
-	// 	{
-	// 		if block_number == 0 {
-	// 			log::info!(
-	// 				target: "frontier-sql",
-	// 				"import genesis",
-	// 			);
-	// 			if let Ok(Some(substrate_genesis_hash)) = indexer_backend
-	// 				.insert_genesis_block_metadata(client.clone())
-	// 				.await
-	// 				.map_err(|e| {
-	// 					log::error!(
-	// 						target: "frontier-sql",
-	// 						"💔  Cannot sync genesis block: {}",
-	// 						e,
-	// 					)
-	// 				}) {
-	// 				log::debug!(
-	// 					target: "frontier-sql",
-	// 					"Imported genesis block {:?}",
-	// 					substrate_genesis_hash,
-	// 				);
-	// 				self.indexed_blocks.insert(substrate_genesis_hash);
-	// 			}
-	// 		} else if let Ok(Some(block_hash)) = client.hash(block_number.unique_saturated_into()) {
-	// 			log::debug!(
-	// 				target: "frontier-sql",
-	// 				"Indexing past blocks from #{} {:?}",
-	// 				block_number,
-	// 				block_hash,
-	// 			);
-	// 			self.index_blocks(
-	// 				client.clone(),
-	// 				indexer_backend.clone(),
-	// 				blockchain_backend,
-	// 				&mut vec![block_hash],
-	// 				false,
-	// 			)
-	// 			.await;
-	// 		} else {
-	// 			log::debug!(
-	// 				target: "frontier-sql",
-	// 				"Failed retrieving hash for block #{}",
-	// 				block_number,
-	// 			);
-	// 		}
-	// 	}
-	// }
-
-	// /// Index the provided blocks. The function loops over the ancestors of the provided nodes
-	// /// until it encounters the genesis block, or a block that has already been imported, or
-	// /// is already in the active set. The `hashes` parameter is populated with any parent blocks
-	// /// that is scheduled to be indexed.
-	// async fn index_blocks(
-	// 	&mut self,
-	// 	client: Arc<Client>,
-	// 	indexer_backend: Arc<fc_db::sql::Backend<Block>>,
-	// 	blockchain_backend: &Backend::Blockchain,
-	// 	hashes: &mut Vec<Block::Hash>,
-	// 	force_sync: bool,
-	// ) {
-	// 	while let Some(hash) = hashes.pop() {
-	// 		// exit if genesis block is reached
-	// 		if hash == H256::default() {
-	// 			break;
-	// 		}
-
-	// 		// exit if block is already imported
-	// 		if self
-	// 			.indexed_blocks
-	// 			.contains(&hash, indexer_backend.pool())
-	// 			.await
-	// 		{
-	// 			log::debug!(
-	// 				target: "frontier-sql",
-	// 				"🔴 Block {:?} already imported",
-	// 				hash,
-	// 			);
-	// 			break;
-	// 		}
-
-	// 		log::debug!(
-	// 			target: "frontier-sql",
-	// 			"🟡 {} sync {:?}",
-	// 			["Normal", "Force"][force_sync as usize],
-	// 			hash,
-	// 		);
-	// 		if !self
-	// 			.index_block(client.clone(), indexer_backend.clone(), hash, force_sync)
-	// 			.await
-	// 		{
-	// 			break;
-	// 		}
-
-	// 		if let Ok(Some(header)) = blockchain_backend.header(hash) {
-	// 			let parent_hash = header.parent_hash();
-	// 			hashes.push(*parent_hash);
-	// 		}
-	// 	}
-	// }
-
-	// /// Indexes a specific block. The blocks are batched until it meets the specified size or the
-	// /// parameter `force_sync` is set to `true`. If either of the previous conditions are met, then
-	// /// then entire batch of blocks is indexed.
-	// async fn index_block(
-	// 	&mut self,
-	// 	client: Arc<Client>,
-	// 	indexer_backend: Arc<fc_db::sql::Backend<Block>>,
-	// 	hash: Block::Hash,
-	// 	force_sync: bool,
-	// ) -> bool {
-	// 	if !self.current_batch.contains(&hash) {
-	// 		log::debug!(
-	// 			target: "frontier-sql",
-	// 			"⤵️  Queued for index {:?}, (batch {}/{}) force={}",
-	// 			hash,
-	// 			self.current_batch.len()+1,
-	// 			self.batch_size,
-	// 			force_sync,
-	// 		);
-	// 		self.current_batch.push(hash);
-	// 	} else if !force_sync {
-	// 		return false;
-	// 	}
-
-	// 	if force_sync || self.current_batch.len() == self.batch_size {
-	// 		self.index_current_batch(client, indexer_backend).await;
-	// 	}
-
-	// 	true
-	// }
-
-	// /// Indexes the current batch of blocks. This includes populating the SQL tables with the
-	// /// block metadata and any transactions or logs associated with those blocks.
-	// async fn index_current_batch(
-	// 	&mut self,
-	// 	client: Arc<Client>,
-	// 	indexer_backend: Arc<fc_db::sql::Backend<Block>>,
-	// ) {
-	// 	log::debug!(
-	// 		target: "frontier-sql",
-	// 		"🛠️  Processing batch starting at {:?}",
-	// 		self.current_batch.first()
-	// 	);
-	// 	let _ = indexer_backend
-	// 		.insert_block_metadata(client.clone(), &self.current_batch)
-	// 		.await
-	// 		.map_err(|e| {
-	// 			log::error!(
-	// 				target: "frontier-sql",
-	// 				"{}",
-	// 				e,
-	// 			);
-	// 		});
-	// 	log::debug!(
-	// 		target: "frontier-sql",
-	// 		"🛠️  Inserted block metadata"
-	// 	);
-	// 	indexer_backend
-	// 		.index_pending_block_logs(client.clone(), self.batch_size)
-	// 		.await;
-	// 	self.indexed_blocks
-	// 		.append(self.current_batch.iter().cloned());
-	// 	self.current_batch.clear();
-	// }
-
-	// /// Canonicalizes the database by setting the `is_canon` field for the retracted blocks to `0`,
-	// /// and `1` if they are enacted.
-	// async fn canonicalize(
-	// 	indexer_backend: Arc<fc_db::sql::Backend<Block>>,
-	// 	tree_route: Arc<sp_blockchain::TreeRoute<Block>>,
-	// ) {
-	// 	let retracted = tree_route
-	// 		.retracted()
-	// 		.iter()
-	// 		.map(|hash_and_number| hash_and_number.hash)
-	// 		.collect::<Vec<_>>();
-	// 	let enacted = tree_route
-	// 		.enacted()
-	// 		.iter()
-	// 		.map(|hash_and_number| hash_and_number.hash)
-	// 		.collect::<Vec<_>>();
-
-	// 	if (indexer_backend.canonicalize(&retracted, &enacted).await).is_err() {
-	// 		log::error!(
-	// 			target: "frontier-sql",
-	// 			"❌  Canonicalization failed for common ancestor {}, potentially corrupted db. Retracted: {:?}, Enacted: {:?}",
-	// 			tree_route.common_block().hash,
-	// 			retracted,
-	// 			enacted,
-	// 		);
-	// 	}
-	// }
 }
 
 #[cfg(test)]

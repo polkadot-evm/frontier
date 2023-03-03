@@ -182,8 +182,6 @@ pub async fn spawn_frontier_tasks<RuntimeApi, Executor>(
 					backend,
 					Arc::new(b),
 					client.import_notification_stream(),
-					1000,                              // batch size
-					std::time::Duration::from_secs(1), // interval duration
 				),
 			);
 		}
