@@ -1025,28 +1025,10 @@ ON (b.block_number BETWEEN ",
 			}
 			Ordering::Less => {}
 		}
-		// if topic_options.len() == 1 {
-		// 	qb.push(format!(" AND l.topic_{} = ", i + 1)).push_bind(
-		// 		topic_options
-		// 			.iter()
-		// 			.next()
-		// 			.expect("length is 1, must exist; qed")
-		// 			.as_bytes()
-		// 			.to_owned(),
-		// 	);
-		// } else if topic_options.len() > 1 {
-		// 	qb.push(format!(" AND l.topic_{} IN (", i + 1));
-		// 	let mut qb_topic = qb.separated(", ");
-		// 	topic_options.iter().for_each(|t| {
-		// 		qb_topic.push_bind(t.as_bytes().to_owned());
-		// 	});
-		// 	qb_topic.push_unseparated(")");
-		// }
 	}
 
 	qb.push(
 		"
-GROUP BY l.substrate_block_hash, l.transaction_index, l.log_index
 ORDER BY b.block_number ASC, l.transaction_index ASC, l.log_index ASC
 LIMIT 10001",
 	);
