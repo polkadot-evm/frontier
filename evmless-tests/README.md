@@ -13,5 +13,5 @@ $ ./target/release/frontier-template-node --dev
 ```
 $ cd evmless-tests
 $ npm install
-$ mocha evmless-erc20.test.js
+$ mocha evmless-erc20.test.js --timeout 10000
 ```

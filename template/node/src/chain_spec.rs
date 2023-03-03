@@ -9,6 +9,7 @@ use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::traits::{IdentifyAccount, Verify};
 use sp_state_machine::BasicExternalities;
 // Frontier
+use fp_account::EthereumSigner;
 use frontier_template_runtime::{
 	AccountId, EnableManualSeal, GenesisConfig, Signature, WASM_BINARY,
 };
@@ -67,6 +68,15 @@ pub fn authority_keys_from_seed(s: &str) -> (AuraId, GrandpaId) {
 pub fn development_config(enable_manual_seal: Option<bool>) -> DevChainSpec {
 	let wasm_binary = WASM_BINARY.expect("WASM not available");
 
+	// endowed accounts
+	let secret_key =
+	hex::decode("0f02ba4d7f83e59eaa32eae9c3c4d99b68ce76decade21cdab7ecce8f4aef81a")
+		.unwrap();
+	let public_key = ecdsa::Pair::from_seed_slice(&secret_key).unwrap().public();
+
+	let signer: EthereumSigner = public_key.into();
+	let account: AccountId = signer.into_account();
+
 	DevChainSpec::from_genesis(
 		// Name
 		"Development",
@@ -80,12 +90,7 @@ pub fn development_config(enable_manual_seal: Option<bool>) -> DevChainSpec {
 					// Sudo account
 					get_account_id_from_seed::<ecdsa::Public>("Alice"),
 					// Pre-funded accounts
-					vec![
-						get_account_id_from_seed::<ecdsa::Public>("Alice"),
-						get_account_id_from_seed::<ecdsa::Public>("Bob"),
-						get_account_id_from_seed::<ecdsa::Public>("Alice//stash"),
-						get_account_id_from_seed::<ecdsa::Public>("Bob//stash"),
-					],
+					vec![account],
 					// Initial PoA authorities
 					vec![authority_keys_from_seed("Alice")],
 					42,
@@ -259,14 +264,14 @@ fn testnet_genesis(
 				// id, owner, is_sufficient, min_balance
 				(
 					0,
-					get_account_id_from_seed::<ecdsa::Public>("Alice"),
-					false,
+					endowed_accounts[0],
+					true,
 					1,
 				),
 			],
 			accounts: vec![
 				// id, account_id, balance
-				(0, get_account_id_from_seed::<ecdsa::Public>("Alice"), 1337),
+				(0, endowed_accounts[0], 1337),
 			],
 			metadata: vec![
 				// id, name, symbol, decimals

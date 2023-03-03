@@ -26,8 +26,10 @@ extern crate alloc;
 // mod tests;
 
 use core::marker::PhantomData;
-use fp_evm::{ExitSucceed, Precompile, PrecompileHandle, PrecompileResult};
-use frame_support::traits::tokens::fungibles::{Inspect, InspectMetadata};
+use fp_evm::{
+	ExitRevert, ExitSucceed, Precompile, PrecompileFailure, PrecompileHandle, PrecompileResult,
+};
+use frame_support::traits::tokens::fungibles::{Inspect, InspectMetadata, Transfer};
 use precompile_utils::handle::PrecompileHandleExt;
 use precompile_utils::prelude::*;
 use sp_core::H160;
@@ -78,7 +80,7 @@ where
 			ERC20Methods::TotalSupply => Self::total_supply(handle),
 			ERC20Methods::BalanceOf => Self::balance_of(handle),
 			ERC20Methods::Allowance => Self::total_supply(handle),
-			ERC20Methods::Transfer => Self::total_supply(handle),
+			ERC20Methods::Transfer => Self::transfer(handle),
 			ERC20Methods::Approve => Self::total_supply(handle),
 			ERC20Methods::TransferFrom => Self::total_supply(handle),
 			ERC20Methods::Name => Self::name(handle),
@@ -160,6 +162,36 @@ where
 		Ok(PrecompileOutput {
 			exit_status: ExitSucceed::Returned,
 			output: EvmDataWriter::new().write(balance).build(),
+		})
+	}
+
+	fn transfer(handle: &mut impl PrecompileHandleExt) -> EvmResult<PrecompileOutput> {
+		handle.record_log_costs_manual(3, 32)?;
+
+		let mut input = handle.read_after_selector()?;
+		input.expect_arguments(2)?;
+
+		let origin: H160 = handle.context().caller;
+		let to: H160 = input.read::<Address>()?.into();
+
+		let amount = input.read::<BalanceOf<R>>()?;
+
+		// keep_alive is set to false, so this might kill origin
+		R::Fungibles::transfer(
+			0u32.into(),
+			&origin.into(),
+			&to.into(),
+			amount.try_into().ok().unwrap(),
+			false,
+		)
+		.map_err(|e| PrecompileFailure::Revert {
+			exit_status: ExitRevert::Reverted,
+			output: Into::<&str>::into(e).as_bytes().to_vec(),
+		})?;
+
+		Ok(PrecompileOutput {
+			exit_status: ExitSucceed::Returned,
+			output: EvmDataWriter::new().write(true).build(),
 		})
 	}
 }
