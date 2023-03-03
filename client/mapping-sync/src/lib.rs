@@ -22,8 +22,10 @@ mod worker;
 
 pub use worker::{MappingSyncWorker, SyncStrategy};
 
+use std::sync::Arc;
+
 // Substrate
-use sc_client_api::backend::Backend;
+use sc_client_api::backend::{Backend, StorageProvider};
 use sp_api::{ApiExt, ProvideRuntimeApi};
 use sp_blockchain::{Backend as _, HeaderBackend};
 use sp_runtime::{
@@ -31,31 +33,78 @@ use sp_runtime::{
 	traits::{Block as BlockT, Header as HeaderT, Zero},
 };
 // Frontier
-use fp_consensus::FindLogError;
+use fc_storage::OverrideHandle;
+use fp_consensus::{FindLogError, Hashes, Log, PostLog, PreLog};
 use fp_rpc::EthereumRuntimeRPCApi;
 
-pub fn sync_block<Block: BlockT>(
+pub fn sync_block<Block: BlockT, C, BE>(
+	client: &C,
+	overrides: Arc<OverrideHandle<Block>>,
 	backend: &fc_db::Backend<Block>,
 	header: &Block::Header,
-) -> Result<(), String> {
+) -> Result<(), String>
+where
+	C: StorageProvider<Block, BE> + HeaderBackend<Block>,
+	BE: Backend<Block>,
+{
+	let substrate_block_hash = header.hash();
 	match fp_consensus::find_log(header.digest()) {
 		Ok(log) => {
-			let post_hashes = log.into_hashes();
-
-			let mapping_commitment = fc_db::MappingCommitment {
-				block_hash: header.hash(),
-				ethereum_block_hash: post_hashes.block_hash,
-				ethereum_transaction_hashes: post_hashes.transaction_hashes,
+			let gen_from_hashes = |hashes: Hashes| -> fc_db::MappingCommitment<Block> {
+				fc_db::MappingCommitment {
+					block_hash: substrate_block_hash,
+					ethereum_block_hash: hashes.block_hash,
+					ethereum_transaction_hashes: hashes.transaction_hashes,
+				}
 			};
-			backend.mapping().write_hashes(mapping_commitment)?;
+			let gen_from_block = |block| -> fc_db::MappingCommitment<Block> {
+				let hashes = Hashes::from_block(block);
+				gen_from_hashes(hashes)
+			};
 
-			Ok(())
+			match log {
+				Log::Pre(PreLog::Block(block)) => {
+					let mapping_commitment = gen_from_block(block);
+					backend.mapping().write_hashes(mapping_commitment)
+				}
+				Log::Post(post_log) => match post_log {
+					PostLog::Hashes(hashes) => {
+						let mapping_commitment = gen_from_hashes(hashes);
+						backend.mapping().write_hashes(mapping_commitment)
+					}
+					PostLog::Block(block) => {
+						let mapping_commitment = gen_from_block(block);
+						backend.mapping().write_hashes(mapping_commitment)
+					}
+					PostLog::BlockHash(expect_eth_block_hash) => {
+						let schema =
+							fc_storage::onchain_storage_schema(client, substrate_block_hash);
+						let ethereum_block = overrides
+							.schemas
+							.get(&schema)
+							.unwrap_or(&overrides.fallback)
+							.current_block(substrate_block_hash);
+						match ethereum_block {
+							Some(block) => {
+								let got_eth_block_hash = block.header.hash();
+								if got_eth_block_hash != expect_eth_block_hash {
+									Err(format!(
+										"Ethereum block hash mismatch: \
+										frontier consensus digest ({expect_eth_block_hash:?}), \
+										db state ({got_eth_block_hash:?})"
+									))
+								} else {
+									let mapping_commitment = gen_from_block(block);
+									backend.mapping().write_hashes(mapping_commitment)
+								}
+							}
+							None => backend.mapping().write_none(substrate_block_hash),
+						}
+					}
+				},
+			}
 		}
-		Err(FindLogError::NotFound) => {
-			backend.mapping().write_none(header.hash())?;
-
-			Ok(())
-		}
+		Err(FindLogError::NotFound) => backend.mapping().write_none(substrate_block_hash),
 		Err(FindLogError::MultipleLogs) => Err("Multiple logs found".to_string()),
 	}
 }
@@ -109,6 +158,7 @@ where
 pub fn sync_one_block<Block: BlockT, C, BE>(
 	client: &C,
 	substrate_backend: &BE,
+	overrides: Arc<OverrideHandle<Block>>,
 	frontier_backend: &fc_db::Backend<Block>,
 	sync_from: <Block::Header as HeaderT>::Number,
 	strategy: SyncStrategy,
@@ -116,7 +166,7 @@ pub fn sync_one_block<Block: BlockT, C, BE>(
 where
 	C: ProvideRuntimeApi<Block>,
 	C::Api: EthereumRuntimeRPCApi<Block>,
-	C: HeaderBackend<Block>,
+	C: HeaderBackend<Block> + StorageProvider<Block, BE>,
 	BE: Backend<Block>,
 {
 	let mut current_syncing_tips = frontier_backend.meta().current_syncing_tips()?;
@@ -167,7 +217,7 @@ where
 		{
 			return Ok(false);
 		}
-		sync_block(frontier_backend, &operating_header)?;
+		sync_block(client, overrides, frontier_backend, &operating_header)?;
 
 		current_syncing_tips.push(*operating_header.parent_hash());
 		frontier_backend
@@ -180,6 +230,7 @@ where
 pub fn sync_blocks<Block: BlockT, C, BE>(
 	client: &C,
 	substrate_backend: &BE,
+	overrides: Arc<OverrideHandle<Block>>,
 	frontier_backend: &fc_db::Backend<Block>,
 	limit: usize,
 	sync_from: <Block::Header as HeaderT>::Number,
@@ -188,7 +239,7 @@ pub fn sync_blocks<Block: BlockT, C, BE>(
 where
 	C: ProvideRuntimeApi<Block>,
 	C::Api: EthereumRuntimeRPCApi<Block>,
-	C: HeaderBackend<Block>,
+	C: HeaderBackend<Block> + StorageProvider<Block, BE>,
 	BE: Backend<Block>,
 {
 	let mut synced_any = false;
@@ -198,6 +249,7 @@ where
 			|| sync_one_block(
 				client,
 				substrate_backend,
+				overrides.clone(),
 				frontier_backend,
 				sync_from,
 				strategy,

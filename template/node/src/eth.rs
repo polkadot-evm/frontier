@@ -128,6 +128,7 @@ pub fn spawn_frontier_tasks<RuntimeApi, Executor>(
 			Duration::new(6, 0),
 			client.clone(),
 			backend,
+			overrides.clone(),
 			frontier_backend,
 			3,
 			0,
