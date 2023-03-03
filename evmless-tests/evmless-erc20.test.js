@@ -35,27 +35,27 @@ describe('tests', function () {
     this.bob = new ethers.Wallet("502f97299c472b88754accd412b7c9a6062ef3186fba0c0388365e1edec24875", this.Provider);
   });
 
-  it('correct initial supply', async function () {
+  it('totalSupply works', async function () {
     expect(await this.evmlessErc20Contract.totalSupply()).to.equal(initialSupply);
   });
 
-  it('correct name', async function () {
+  it('name works', async function () {
     expect(await this.evmlessErc20Contract.name()).to.equal(name);
   });
 
-  it('correct symbol', async function () {
+  it('symbol works', async function () {
     expect(await this.evmlessErc20Contract.symbol()).to.equal(symbol);
   });
 
-  it('correct decimals', async function () {
+  it('decimals works', async function () {
     expect(await this.evmlessErc20Contract.decimals()).to.equal(decimals);
   });
 
-  it('correct alice balance', async function () {
+  it('balanceOf works', async function () {
     expect(await this.evmlessErc20Contract.balanceOf(this.alice.address)).to.equal(initialSupply);
   });
 
-  it('transfer method works', async function () {
+  it('transfer works', async function () {
     var txAmount = 10;
     var tx = await this.evmlessErc20Contract.connect(this.alice).transfer(this.bob.address, txAmount, { from: this.alice.address });
     await tx.wait();
