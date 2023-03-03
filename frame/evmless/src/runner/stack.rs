@@ -784,7 +784,7 @@ where
 		let source = T::AddressMapping::into_account_id(transfer.source);
 		let target = T::AddressMapping::into_account_id(transfer.target);
 
-		T::Currency::transfer(
+		<T as crate::pallet::Config>::Currency::transfer(
 			&source,
 			&target,
 			transfer

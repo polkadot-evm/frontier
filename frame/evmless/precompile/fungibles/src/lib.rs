@@ -27,12 +27,15 @@ extern crate alloc;
 
 use core::marker::PhantomData;
 use fp_evm::{
-	ExitRevert, ExitSucceed, Precompile, PrecompileFailure, PrecompileHandle, PrecompileResult,
+	ExitSucceed, Precompile, PrecompileHandle, PrecompileResult,
 };
-use frame_support::traits::tokens::fungibles::{Inspect, InspectMetadata, Transfer};
+use frame_support::traits::tokens::fungibles::{Inspect, InspectMetadata};
+use frame_support::{sp_runtime::traits::StaticLookup, dispatch::{Dispatchable, PostDispatchInfo, GetDispatchInfo}};
 use precompile_utils::handle::PrecompileHandleExt;
 use precompile_utils::prelude::*;
 use sp_core::H160;
+
+use pallet_evmless::AddressMapping;
 
 #[precompile_utils::generate_function_selector]
 #[derive(Debug, PartialEq)]
@@ -52,10 +55,15 @@ pub struct Fungibles<R>(PhantomData<R>);
 
 impl<R> Precompile for Fungibles<R>
 where
-	R: pallet_evmless::Config,
+	R: pallet_evmless::Config + pallet_assets::Config,
+	AssetIdParameterOf<R>: From<u32>,
 	AssetIdOf<R>: From<u32>,
 	BalanceOf<R>: EvmData,
 	<R as frame_system::Config>::AccountId: From<H160>,
+	//<<R as frame_system::Config>::Lookup as StaticLookup>::Source: From<H160>,
+	R::RuntimeCall: Dispatchable<PostInfo = PostDispatchInfo> + GetDispatchInfo,
+	R::RuntimeCall: From<pallet_assets::Call<R>>,
+	<R::RuntimeCall as Dispatchable>::RuntimeOrigin: From<Option<R::AccountId>>,
 {
 	fn execute(handle: &mut impl PrecompileHandle) -> PrecompileResult {
 		// todo: check address
@@ -90,25 +98,25 @@ where
 	}
 }
 
-pub type AssetIdOf<R> = <<R as pallet_evmless::Config>::Fungibles as Inspect<
-	<R as frame_system::Config>::AccountId,
->>::AssetId;
-
-pub type BalanceOf<R> = <<R as pallet_evmless::Config>::Fungibles as Inspect<
-	<R as frame_system::Config>::AccountId,
->>::Balance;
+pub type AssetIdOf<R> = <R as pallet_assets::Config>::AssetId;
+pub type AssetIdParameterOf<R> = <R as pallet_assets::Config>::AssetIdParameter;
+pub type BalanceOf<R> = <R as pallet_assets::Config>::Balance;
 
 impl<R> Fungibles<R>
 where
-	R: pallet_evmless::Config,
+	R: pallet_evmless::Config + pallet_assets::Config,
+	AssetIdParameterOf<R>: From<u32>,
 	AssetIdOf<R>: From<u32>,
 	BalanceOf<R>: EvmData,
 	<R as frame_system::Config>::AccountId: From<H160>,
+	R::RuntimeCall: Dispatchable<PostInfo = PostDispatchInfo> + GetDispatchInfo,
+	R::RuntimeCall: From<pallet_assets::Call<R>>,
+	<R::RuntimeCall as Dispatchable>::RuntimeOrigin: From<Option<R::AccountId>>,
 {
 	fn total_supply(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
 		handle.record_cost(RuntimeHelper::<R>::db_read_gas_cost())?;
 
-		let t = R::Fungibles::total_issuance(0u32.into());
+		let t = pallet_assets::Pallet::<R>::total_issuance(0u32.into());
 
 		Ok(PrecompileOutput {
 			exit_status: ExitSucceed::Returned,
@@ -119,7 +127,7 @@ where
 	fn name(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
 		handle.record_cost(RuntimeHelper::<R>::db_read_gas_cost())?;
 
-		let name: UnboundedBytes = R::Fungibles::name(&0u32.into()).as_slice().into();
+		let name: UnboundedBytes = pallet_assets::Pallet::<R>::name(&0u32.into()).as_slice().into();
 
 		Ok(PrecompileOutput {
 			exit_status: ExitSucceed::Returned,
@@ -130,7 +138,7 @@ where
 	fn symbol(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
 		handle.record_cost(RuntimeHelper::<R>::db_read_gas_cost())?;
 
-		let symbol: UnboundedBytes = R::Fungibles::symbol(&0u32.into()).as_slice().into();
+		let symbol: UnboundedBytes = pallet_assets::Pallet::<R>::symbol(&0u32.into()).as_slice().into();
 
 		Ok(PrecompileOutput {
 			exit_status: ExitSucceed::Returned,
@@ -141,7 +149,7 @@ where
 	fn decimals(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
 		handle.record_cost(RuntimeHelper::<R>::db_read_gas_cost())?;
 
-		let d = R::Fungibles::decimals(&0u32.into());
+		let d = pallet_assets::Pallet::<R>::decimals(&0u32.into());
 
 		Ok(PrecompileOutput {
 			exit_status: ExitSucceed::Returned,
@@ -157,7 +165,7 @@ where
 
 		let owner: H160 = input.read::<Address>()?.into();
 		let who: R::AccountId = owner.into();
-		let balance = R::Fungibles::balance(0u32.into(), &who);
+		let balance = pallet_assets::Pallet::<R>::balance(0u32.into(), &who);
 
 		Ok(PrecompileOutput {
 			exit_status: ExitSucceed::Returned,
@@ -171,23 +179,20 @@ where
 		let mut input = handle.read_after_selector()?;
 		input.expect_arguments(2)?;
 
-		let origin: H160 = handle.context().caller;
+		let origin = R::AddressMapping::into_account_id(handle.context().caller);
 		let to: H160 = input.read::<Address>()?.into();
 
 		let amount = input.read::<BalanceOf<R>>()?;
 
-		// keep_alive is set to false, so this might kill origin
-		R::Fungibles::transfer(
-			0u32.into(),
-			&origin.into(),
-			&to.into(),
-			amount.try_into().ok().unwrap(),
-			false,
-		)
-		.map_err(|e| PrecompileFailure::Revert {
-			exit_status: ExitRevert::Reverted,
-			output: Into::<&str>::into(e).as_bytes().to_vec(),
-		})?;
+		RuntimeHelper::<R>::try_dispatch(
+			handle,
+			Some(origin).into(),
+			pallet_assets::Call::<R>::transfer {
+				id: 0u32.into(),
+				target: R::Lookup::unlookup(to.into()),
+				amount: amount.try_into().ok().unwrap(),
+			},
+		)?;
 
 		Ok(PrecompileOutput {
 			exit_status: ExitSucceed::Returned,

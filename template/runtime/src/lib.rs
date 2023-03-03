@@ -332,7 +332,6 @@ parameter_types! {
 }
 
 impl pallet_evmless::Config for Runtime {
-	type Fungibles = Assets;
 	type FeeCalculator = BaseFee;
 	type GasWeightMapping = pallet_evmless::FixedGasWeightMapping<Self>;
 	type WeightPerGas = WeightPerGas;

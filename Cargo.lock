@@ -5081,6 +5081,7 @@ dependencies = [
  "hex",
  "impl-trait-for-tuples",
  "log",
+ "pallet-assets",
  "pallet-balances",
  "pallet-evm-precompile-simple",
  "pallet-evmless-precompile-fungibles",
