@@ -20,8 +20,8 @@ describe('tests', function () {
     "function balanceOf(address _owner) public view returns (uint256 balance)",
     "function transfer(address _to, uint256 _value) public returns (bool success)",
     // "function transferFrom(address _from, address _to, uint256 _value) public returns (bool success)",
-    // "function approve(address _spender, uint256 _value) public returns (bool success)",
-    // "function allowance(address _owner, address _spender) public view returns (uint256 remaining)",
+    "function approve(address _spender, uint256 _value) public returns (bool success)",
+    "function allowance(address _owner, address _spender) public view returns (uint256 remaining)",
   ];
 
   before(async function () {
@@ -61,5 +61,19 @@ describe('tests', function () {
     await tx.wait();
 
     expect(await this.evmlessErc20Contract.balanceOf(this.bob.address)).to.equal(txAmount);
+  });
+
+  it('approve and allowance work', async function () {
+    var approvalAount = 10;
+    var tx = await this.evmlessErc20Contract.connect(this.alice).approve(this.bob.address, approvalAount);
+    await tx.wait();
+
+    expect(await this.evmlessErc20Contract.allowance(this.alice.address, this.bob.address)).to.equal(approvalAount);
+
+    var newApprovalAount = 20;
+    var tx = await this.evmlessErc20Contract.connect(this.alice).approve(this.bob.address, newApprovalAount);
+    await tx.wait();
+
+    expect(await this.evmlessErc20Contract.allowance(this.alice.address, this.bob.address)).to.equal(newApprovalAount);
   });
 });

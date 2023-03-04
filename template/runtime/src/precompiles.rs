@@ -1,5 +1,5 @@
 use pallet_evmless::{Precompile, PrecompileHandle, PrecompileResult, PrecompileSet};
-use sp_core::H160;
+use sp_core::{H160, U256};
 use sp_std::marker::PhantomData;
 use sp_runtime::traits::Dispatchable;
 use frame_support::dispatch::{PostDispatchInfo, GetDispatchInfo};
@@ -38,7 +38,7 @@ where
 	R: pallet_evmless::Config  + pallet_assets::Config,
 	AssetIdParameterOf<R>: From<u32>,
 	AssetIdOf<R>: From<u32>,
-	BalanceOf<R>: EvmData,
+	BalanceOf<R>: EvmData + Into<U256>,
 	<R as frame_system::Config>::AccountId: From<H160>,
 	//<<R as frame_system::Config>::Lookup as StaticLookup>::Source: From<H160>,
 	R::RuntimeCall: Dispatchable<PostInfo = PostDispatchInfo> + GetDispatchInfo,

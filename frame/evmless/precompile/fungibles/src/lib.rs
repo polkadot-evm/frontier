@@ -29,11 +29,11 @@ use core::marker::PhantomData;
 use fp_evm::{
 	ExitSucceed, Precompile, PrecompileHandle, PrecompileResult,
 };
-use frame_support::traits::tokens::fungibles::{Inspect, InspectMetadata};
+use frame_support::traits::tokens::fungibles::{Inspect, InspectMetadata, approvals::Inspect as ApprovalInspect};
 use frame_support::{sp_runtime::traits::StaticLookup, dispatch::{Dispatchable, PostDispatchInfo, GetDispatchInfo}};
 use precompile_utils::handle::PrecompileHandleExt;
 use precompile_utils::prelude::*;
-use sp_core::H160;
+use sp_core::{H160, U256};
 
 use pallet_evmless::AddressMapping;
 
@@ -58,7 +58,7 @@ where
 	R: pallet_evmless::Config + pallet_assets::Config,
 	AssetIdParameterOf<R>: From<u32>,
 	AssetIdOf<R>: From<u32>,
-	BalanceOf<R>: EvmData,
+	BalanceOf<R>: EvmData + Into<U256>,
 	<R as frame_system::Config>::AccountId: From<H160>,
 	//<<R as frame_system::Config>::Lookup as StaticLookup>::Source: From<H160>,
 	R::RuntimeCall: Dispatchable<PostInfo = PostDispatchInfo> + GetDispatchInfo,
@@ -87,9 +87,9 @@ where
 		match selector {
 			ERC20Methods::TotalSupply => Self::total_supply(handle),
 			ERC20Methods::BalanceOf => Self::balance_of(handle),
-			ERC20Methods::Allowance => Self::total_supply(handle),
+			ERC20Methods::Allowance => Self::allowance(handle),
 			ERC20Methods::Transfer => Self::transfer(handle),
-			ERC20Methods::Approve => Self::total_supply(handle),
+			ERC20Methods::Approve => Self::approve(handle),
 			ERC20Methods::TransferFrom => Self::total_supply(handle),
 			ERC20Methods::Name => Self::name(handle),
 			ERC20Methods::Symbol => Self::symbol(handle),
@@ -107,7 +107,7 @@ where
 	R: pallet_evmless::Config + pallet_assets::Config,
 	AssetIdParameterOf<R>: From<u32>,
 	AssetIdOf<R>: From<u32>,
-	BalanceOf<R>: EvmData,
+	BalanceOf<R>: EvmData + Into<U256>,
 	<R as frame_system::Config>::AccountId: From<H160>,
 	R::RuntimeCall: Dispatchable<PostInfo = PostDispatchInfo> + GetDispatchInfo,
 	R::RuntimeCall: From<pallet_assets::Call<R>>,
@@ -197,6 +197,67 @@ where
 		Ok(PrecompileOutput {
 			exit_status: ExitSucceed::Returned,
 			output: EvmDataWriter::new().write(true).build(),
+		})
+	}
+
+	fn approve(handle: &mut impl PrecompileHandleExt) -> EvmResult<PrecompileOutput> {
+		handle.record_log_costs_manual(3, 32)?;
+
+		let mut input = handle.read_after_selector()?;
+		input.expect_arguments(2)?;
+
+		let origin = R::AddressMapping::into_account_id(handle.context().caller);
+		let spender: H160 = input.read::<Address>()?.into();
+
+		let amount = input.read::<BalanceOf<R>>()?;
+
+		// if previous approval exists, we need to clean it
+		if pallet_assets::Pallet::<R>::allowance(0u32.into(), &origin, &R::AddressMapping::into_account_id(spender)) != 0u32.into() {
+			RuntimeHelper::<R>::try_dispatch(
+				handle,
+				Some(origin.clone()).into(),
+				pallet_assets::Call::<R>::cancel_approval {
+					id: 0u32.into(),
+					delegate: R::Lookup::unlookup(spender.into()),
+				},
+			)?;
+		}
+
+		RuntimeHelper::<R>::try_dispatch(
+			handle,
+			Some(origin).into(),
+			pallet_assets::Call::<R>::approve_transfer {
+				id: 0u32.into(),
+				delegate: R::Lookup::unlookup(spender.into()),
+				amount: amount.try_into().ok().unwrap(),
+			},
+		)?;
+
+		Ok(PrecompileOutput {
+			exit_status: ExitSucceed::Returned,
+			output: EvmDataWriter::new().write(true).build(),
+		})
+	}
+
+	fn allowance(handle: &mut impl PrecompileHandleExt) -> EvmResult<PrecompileOutput> {
+		handle.record_cost(RuntimeHelper::<R>::db_read_gas_cost())?;
+
+		let mut input = handle.read_after_selector()?;
+		input.expect_arguments(2)?;
+
+		let owner: H160 = input.read::<Address>()?.into();
+		let spender: H160 = input.read::<Address>()?.into();
+
+		let amount: U256 = {
+			let owner: R::AccountId = R::AddressMapping::into_account_id(owner);
+			let spender: R::AccountId = R::AddressMapping::into_account_id(spender);
+
+			pallet_assets::Pallet::<R>::allowance(0u32.into(), &owner, &spender).into()
+		};
+
+		Ok(PrecompileOutput {
+			exit_status: ExitSucceed::Returned,
+			output: EvmDataWriter::new().write(amount).build(),
 		})
 	}
 }
