@@ -67,25 +67,25 @@ describe('tests', function () {
   });
 
   it('approve and allowance work', async function () {
-    var approvalAount = 10;
-    var tx = await this.evmlessErc20Contract.connect(this.alice).approve(this.bob.address, approvalAount);
+    var approvalAmount = 10;
+    var tx = await this.evmlessErc20Contract.connect(this.alice).approve(this.bob.address, approvalAmount);
     await tx.wait();
 
-    expect(await this.evmlessErc20Contract.allowance(this.alice.address, this.bob.address)).to.equal(approvalAount);
+    expect(await this.evmlessErc20Contract.allowance(this.alice.address, this.bob.address)).to.equal(approvalAmount);
 
-    var newApprovalAount = 20;
-    var tx = await this.evmlessErc20Contract.connect(this.alice).approve(this.bob.address, newApprovalAount);
+    var newapprovalAmount = 20;
+    var tx = await this.evmlessErc20Contract.connect(this.alice).approve(this.bob.address, newapprovalAmount);
     await tx.wait();
 
-    expect(await this.evmlessErc20Contract.allowance(this.alice.address, this.bob.address)).to.equal(newApprovalAount);
+    expect(await this.evmlessErc20Contract.allowance(this.alice.address, this.bob.address)).to.equal(newapprovalAmount);
   });
 
   it('transferFrom works', async function () {
-    var approvalAount = 10;
-    var tx = await this.evmlessErc20Contract.connect(this.alice).approve(this.bob.address, approvalAount);
+    var approvalAmount = 10;
+    var tx = await this.evmlessErc20Contract.connect(this.alice).approve(this.bob.address, approvalAmount);
     await tx.wait();
 
-    var txAmount = approvalAount;
+    var txAmount = approvalAmount;
     tx = await this.evmlessErc20Contract.connect(this.bob).transferFrom(this.alice.address, this.charlie.address, txAmount);
     await tx.wait();
 
