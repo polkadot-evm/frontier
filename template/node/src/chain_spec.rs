@@ -68,14 +68,27 @@ pub fn authority_keys_from_seed(s: &str) -> (AuraId, GrandpaId) {
 pub fn development_config(enable_manual_seal: Option<bool>) -> DevChainSpec {
 	let wasm_binary = WASM_BINARY.expect("WASM not available");
 
-	// endowed accounts
-	let secret_key =
-	hex::decode("0f02ba4d7f83e59eaa32eae9c3c4d99b68ce76decade21cdab7ecce8f4aef81a")
-		.unwrap();
-	let public_key = ecdsa::Pair::from_seed_slice(&secret_key).unwrap().public();
+	// endowed accounts with known private keys
+	let accounts = {
+		let alice_sk =
+		hex::decode("0f02ba4d7f83e59eaa32eae9c3c4d99b68ce76decade21cdab7ecce8f4aef81a")
+			.unwrap();
+		let alice_pk = ecdsa::Pair::from_seed_slice(&alice_sk).unwrap().public();
 
-	let signer: EthereumSigner = public_key.into();
-	let account: AccountId = signer.into_account();
+		let alice_signer: EthereumSigner = alice_pk.into();
+		let alice: AccountId = alice_signer.into_account();
+
+		let bob_sk =
+		hex::decode("502f97299c472b88754accd412b7c9a6062ef3186fba0c0388365e1edec24875")
+			.unwrap();
+		let bob_pk = ecdsa::Pair::from_seed_slice(&bob_sk).unwrap().public();
+
+		let bob_signer: EthereumSigner = bob_pk.into();
+		let bob: AccountId = bob_signer.into_account();
+
+		vec![alice, bob]
+	};
+
 
 	DevChainSpec::from_genesis(
 		// Name
@@ -90,7 +103,7 @@ pub fn development_config(enable_manual_seal: Option<bool>) -> DevChainSpec {
 					// Sudo account
 					get_account_id_from_seed::<ecdsa::Public>("Alice"),
 					// Pre-funded accounts
-					vec![account],
+					accounts.clone(),
 					// Initial PoA authorities
 					vec![authority_keys_from_seed("Alice")],
 					42,

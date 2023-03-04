@@ -19,7 +19,7 @@ describe('tests', function () {
     "function totalSupply() public view returns (uint256)",
     "function balanceOf(address _owner) public view returns (uint256 balance)",
     "function transfer(address _to, uint256 _value) public returns (bool success)",
-    // "function transferFrom(address _from, address _to, uint256 _value) public returns (bool success)",
+    "function transferFrom(address _from, address _to, uint256 _value) public returns (bool success)",
     "function approve(address _spender, uint256 _value) public returns (bool success)",
     "function allowance(address _owner, address _spender) public view returns (uint256 remaining)",
   ];
@@ -33,6 +33,9 @@ describe('tests', function () {
 
     // 0x976f8456E4e2034179B284A23C0e0c8f6d3da50c
     this.bob = new ethers.Wallet("502f97299c472b88754accd412b7c9a6062ef3186fba0c0388365e1edec24875", this.Provider);
+
+    // 0x9cce34f7ab185c7aba1b7c8140d620b4bda941d6
+    this.charlie = new ethers.Wallet("c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470", this.Provider);
   });
 
   it('totalSupply works', async function () {
@@ -75,5 +78,19 @@ describe('tests', function () {
     await tx.wait();
 
     expect(await this.evmlessErc20Contract.allowance(this.alice.address, this.bob.address)).to.equal(newApprovalAount);
+  });
+
+  it('transferFrom works', async function () {
+    var approvalAount = 10;
+    var tx = await this.evmlessErc20Contract.connect(this.alice).approve(this.bob.address, approvalAount);
+    await tx.wait();
+
+    var txAmount = approvalAount;
+    tx = await this.evmlessErc20Contract.connect(this.bob).transferFrom(this.alice.address, this.charlie.address, txAmount);
+    await tx.wait();
+
+    expect(await this.evmlessErc20Contract.balanceOf(this.charlie.address)).to.equal(txAmount);
+
+    expect(await this.evmlessErc20Contract.allowance(this.alice.address, this.bob.address)).to.equal(0);
   });
 });

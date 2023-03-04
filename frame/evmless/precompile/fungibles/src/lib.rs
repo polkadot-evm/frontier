@@ -90,7 +90,7 @@ where
 			ERC20Methods::Allowance => Self::allowance(handle),
 			ERC20Methods::Transfer => Self::transfer(handle),
 			ERC20Methods::Approve => Self::approve(handle),
-			ERC20Methods::TransferFrom => Self::total_supply(handle),
+			ERC20Methods::TransferFrom => Self::transfer_from(handle),
 			ERC20Methods::Name => Self::name(handle),
 			ERC20Methods::Symbol => Self::symbol(handle),
 			ERC20Methods::Decimals => Self::decimals(handle),
@@ -258,6 +258,51 @@ where
 		Ok(PrecompileOutput {
 			exit_status: ExitSucceed::Returned,
 			output: EvmDataWriter::new().write(amount).build(),
+		})
+	}
+
+	fn transfer_from(handle: &mut impl PrecompileHandleExt) -> EvmResult<PrecompileOutput> {
+		handle.record_log_costs_manual(3, 32)?;
+
+		let mut input = handle.read_after_selector()?;
+		input.expect_arguments(3)?;
+
+		let from: H160 = input.read::<Address>()?.into();
+		let to: H160 = input.read::<Address>()?.into();
+		let amount = input.read::<BalanceOf<R>>()?;
+
+		{
+			let origin = R::AddressMapping::into_account_id(handle.context().caller);
+			let from = R::AddressMapping::into_account_id(from);
+			let to = R::AddressMapping::into_account_id(to);
+
+			if origin != from {
+				RuntimeHelper::<R>::try_dispatch(
+					handle,
+					Some(origin).into(),
+					pallet_assets::Call::<R>::transfer_approved {
+						id: 0u32.into(),
+						owner: R::Lookup::unlookup(from),
+						destination: R::Lookup::unlookup(to),
+						amount: amount.try_into().ok().unwrap(),
+					},
+				)?;
+			} else {
+				RuntimeHelper::<R>::try_dispatch(
+					handle,
+					Some(origin).into(),
+					pallet_assets::Call::<R>::transfer {
+						id: 0u32.into(),
+						target: R::Lookup::unlookup(to),
+						amount: amount.try_into().ok().unwrap(),
+					},
+				)?;
+			}
+		}
+
+		Ok(PrecompileOutput {
+			exit_status: ExitSucceed::Returned,
+			output: EvmDataWriter::new().write(true).build(),
 		})
 	}
 }
