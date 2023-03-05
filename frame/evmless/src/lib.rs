@@ -67,9 +67,8 @@ mod tests;
 use frame_support::{
 	dispatch::{DispatchResultWithPostInfo, Pays, PostDispatchInfo},
 	traits::{
-		tokens::{fungible::Inspect},
-		Currency, ExistenceRequirement, FindAuthor, Get, Imbalance, OnUnbalanced, SignedImbalance,
-		WithdrawReasons,
+		tokens::fungible::Inspect, Currency, ExistenceRequirement, FindAuthor, Get, Imbalance,
+		OnUnbalanced, SignedImbalance, WithdrawReasons,
 	},
 	weights::Weight,
 };
@@ -110,7 +109,9 @@ pub mod pallet {
 	pub struct Pallet<T>(PhantomData<T>);
 
 	#[pallet::config]
-	pub trait Config: frame_system::Config + pallet_timestamp::Config + pallet_assets::Config {
+	pub trait Config:
+		frame_system::Config + pallet_timestamp::Config + pallet_assets::Config
+	{
 		/// Calculator for current gas price.
 		type FeeCalculator: FeeCalculator;
 
@@ -490,7 +491,10 @@ pub mod pallet {
 					frame_system::Pallet::<T>::inc_account_nonce(&account_id);
 				}
 
-				<T as pallet::Config>::Currency::deposit_creating(&account_id, account.balance.unique_saturated_into());
+				<T as pallet::Config>::Currency::deposit_creating(
+					&account_id,
+					account.balance.unique_saturated_into(),
+				);
 
 				Pallet::<T>::create_account(*address, account.code.clone());
 

@@ -71,16 +71,16 @@ pub fn development_config(enable_manual_seal: Option<bool>) -> DevChainSpec {
 	// endowed accounts with known private keys
 	let accounts = {
 		let alice_sk =
-		hex::decode("0f02ba4d7f83e59eaa32eae9c3c4d99b68ce76decade21cdab7ecce8f4aef81a")
-			.unwrap();
+			hex::decode("0f02ba4d7f83e59eaa32eae9c3c4d99b68ce76decade21cdab7ecce8f4aef81a")
+				.unwrap();
 		let alice_pk = ecdsa::Pair::from_seed_slice(&alice_sk).unwrap().public();
 
 		let alice_signer: EthereumSigner = alice_pk.into();
 		let alice: AccountId = alice_signer.into_account();
 
 		let bob_sk =
-		hex::decode("502f97299c472b88754accd412b7c9a6062ef3186fba0c0388365e1edec24875")
-			.unwrap();
+			hex::decode("502f97299c472b88754accd412b7c9a6062ef3186fba0c0388365e1edec24875")
+				.unwrap();
 		let bob_pk = ecdsa::Pair::from_seed_slice(&bob_sk).unwrap().public();
 
 		let bob_signer: EthereumSigner = bob_pk.into();
@@ -88,7 +88,6 @@ pub fn development_config(enable_manual_seal: Option<bool>) -> DevChainSpec {
 
 		vec![alice, bob]
 	};
-
 
 	DevChainSpec::from_genesis(
 		// Name
@@ -275,12 +274,7 @@ fn testnet_genesis(
 		assets: AssetsConfig {
 			assets: vec![
 				// id, owner, is_sufficient, min_balance
-				(
-					0,
-					endowed_accounts[0],
-					true,
-					1,
-				),
+				(0, endowed_accounts[0], true, 1),
 			],
 			accounts: vec![
 				// id, account_id, balance

@@ -26,11 +26,14 @@ extern crate alloc;
 // mod tests;
 
 use core::marker::PhantomData;
-use fp_evm::{
-	ExitSucceed, Precompile, PrecompileHandle, PrecompileResult,
+use fp_evm::{ExitSucceed, Precompile, PrecompileHandle, PrecompileResult};
+use frame_support::traits::tokens::fungibles::{
+	approvals::Inspect as ApprovalInspect, Inspect, InspectMetadata,
 };
-use frame_support::traits::tokens::fungibles::{Inspect, InspectMetadata, approvals::Inspect as ApprovalInspect};
-use frame_support::{sp_runtime::traits::StaticLookup, dispatch::{Dispatchable, PostDispatchInfo, GetDispatchInfo}};
+use frame_support::{
+	dispatch::{Dispatchable, GetDispatchInfo, PostDispatchInfo},
+	sp_runtime::traits::StaticLookup,
+};
 use precompile_utils::handle::PrecompileHandleExt;
 use precompile_utils::prelude::*;
 use sp_core::{H160, U256};
@@ -127,7 +130,9 @@ where
 	fn name(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
 		handle.record_cost(RuntimeHelper::<R>::db_read_gas_cost())?;
 
-		let name: UnboundedBytes = pallet_assets::Pallet::<R>::name(&0u32.into()).as_slice().into();
+		let name: UnboundedBytes = pallet_assets::Pallet::<R>::name(&0u32.into())
+			.as_slice()
+			.into();
 
 		Ok(PrecompileOutput {
 			exit_status: ExitSucceed::Returned,
@@ -138,7 +143,9 @@ where
 	fn symbol(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
 		handle.record_cost(RuntimeHelper::<R>::db_read_gas_cost())?;
 
-		let symbol: UnboundedBytes = pallet_assets::Pallet::<R>::symbol(&0u32.into()).as_slice().into();
+		let symbol: UnboundedBytes = pallet_assets::Pallet::<R>::symbol(&0u32.into())
+			.as_slice()
+			.into();
 
 		Ok(PrecompileOutput {
 			exit_status: ExitSucceed::Returned,
@@ -212,7 +219,12 @@ where
 		let amount = input.read::<BalanceOf<R>>()?;
 
 		// if previous approval exists, we need to clean it
-		if pallet_assets::Pallet::<R>::allowance(0u32.into(), &origin, &R::AddressMapping::into_account_id(spender)) != 0u32.into() {
+		if pallet_assets::Pallet::<R>::allowance(
+			0u32.into(),
+			&origin,
+			&R::AddressMapping::into_account_id(spender),
+		) != 0u32.into()
+		{
 			RuntimeHelper::<R>::try_dispatch(
 				handle,
 				Some(origin.clone()).into(),
