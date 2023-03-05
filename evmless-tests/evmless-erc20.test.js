@@ -29,13 +29,13 @@ describe('tests', function () {
     this.evmlessErc20Contract = new ethers.Contract(evmlessErc20Address, evmlessErc20Abi, this.Provider);
 
     // 0x420e9F260B40aF7E49440ceAd3069f8e82A5230f
-    this.alice = new ethers.Wallet("0f02ba4d7f83e59eaa32eae9c3c4d99b68ce76decade21cdab7ecce8f4aef81a", this.Provider);
+    this.alith = new ethers.Wallet("0f02ba4d7f83e59eaa32eae9c3c4d99b68ce76decade21cdab7ecce8f4aef81a", this.Provider);
 
     // 0x976f8456E4e2034179B284A23C0e0c8f6d3da50c
-    this.bob = new ethers.Wallet("502f97299c472b88754accd412b7c9a6062ef3186fba0c0388365e1edec24875", this.Provider);
+    this.baltathar = new ethers.Wallet("502f97299c472b88754accd412b7c9a6062ef3186fba0c0388365e1edec24875", this.Provider);
 
     // 0x9cce34f7ab185c7aba1b7c8140d620b4bda941d6
-    this.charlie = new ethers.Wallet("c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470", this.Provider);
+    this.charleth = new ethers.Wallet("c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470", this.Provider);
   });
 
   it('totalSupply works', async function () {
@@ -55,42 +55,42 @@ describe('tests', function () {
   });
 
   it('balanceOf works', async function () {
-    expect(await this.evmlessErc20Contract.balanceOf(this.alice.address)).to.equal(initialSupply);
+    expect(await this.evmlessErc20Contract.balanceOf(this.alith.address)).to.equal(initialSupply);
   });
 
   it('transfer works', async function () {
     var txAmount = 10;
-    var tx = await this.evmlessErc20Contract.connect(this.alice).transfer(this.bob.address, txAmount, { from: this.alice.address });
+    var tx = await this.evmlessErc20Contract.connect(this.alith).transfer(this.baltathar.address, txAmount, { from: this.alith.address });
     await tx.wait();
 
-    expect(await this.evmlessErc20Contract.balanceOf(this.bob.address)).to.equal(txAmount);
+    expect(await this.evmlessErc20Contract.balanceOf(this.baltathar.address)).to.equal(txAmount);
   });
 
   it('approve and allowance work', async function () {
     var approvalAmount = 10;
-    var tx = await this.evmlessErc20Contract.connect(this.alice).approve(this.bob.address, approvalAmount);
+    var tx = await this.evmlessErc20Contract.connect(this.alith).approve(this.baltathar.address, approvalAmount);
     await tx.wait();
 
-    expect(await this.evmlessErc20Contract.allowance(this.alice.address, this.bob.address)).to.equal(approvalAmount);
+    expect(await this.evmlessErc20Contract.allowance(this.alith.address, this.baltathar.address)).to.equal(approvalAmount);
 
-    var newapprovalAmount = 20;
-    var tx = await this.evmlessErc20Contract.connect(this.alice).approve(this.bob.address, newapprovalAmount);
+    var newApprovalAmount = 20;
+    var tx = await this.evmlessErc20Contract.connect(this.alith).approve(this.baltathar.address, newApprovalAmount);
     await tx.wait();
 
-    expect(await this.evmlessErc20Contract.allowance(this.alice.address, this.bob.address)).to.equal(newapprovalAmount);
+    expect(await this.evmlessErc20Contract.allowance(this.alith.address, this.baltathar.address)).to.equal(newApprovalAmount);
   });
 
   it('transferFrom works', async function () {
     var approvalAmount = 10;
-    var tx = await this.evmlessErc20Contract.connect(this.alice).approve(this.bob.address, approvalAmount);
+    var tx = await this.evmlessErc20Contract.connect(this.alith).approve(this.charleth.address, approvalAmount);
     await tx.wait();
 
     var txAmount = approvalAmount;
-    tx = await this.evmlessErc20Contract.connect(this.bob).transferFrom(this.alice.address, this.charlie.address, txAmount);
+    tx = await this.evmlessErc20Contract.connect(this.charleth).transferFrom(this.alith.address, this.charleth.address, txAmount);
     await tx.wait();
 
-    expect(await this.evmlessErc20Contract.balanceOf(this.charlie.address)).to.equal(txAmount);
+    expect(await this.evmlessErc20Contract.balanceOf(this.charleth.address)).to.equal(txAmount);
 
-    expect(await this.evmlessErc20Contract.allowance(this.alice.address, this.bob.address)).to.equal(0);
+    expect(await this.evmlessErc20Contract.allowance(this.alith.address, this.charleth.address)).to.equal(0);
   });
 });
