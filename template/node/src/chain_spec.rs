@@ -86,7 +86,15 @@ pub fn development_config(enable_manual_seal: Option<bool>) -> DevChainSpec {
 		let bob_signer: EthereumSigner = bob_pk.into();
 		let bob: AccountId = bob_signer.into_account();
 
-		vec![alice, bob]
+		let charlie_sk =
+			hex::decode("c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470")
+				.unwrap();
+		let charlie_pk = ecdsa::Pair::from_seed_slice(&charlie_sk).unwrap().public();
+
+		let charlie_signer: EthereumSigner = charlie_pk.into();
+		let charlie: AccountId = charlie_signer.into_account();
+
+		vec![alice, bob, charlie]
 	};
 
 	DevChainSpec::from_genesis(
