@@ -1,13 +1,11 @@
-use frame_support::dispatch::{GetDispatchInfo, PostDispatchInfo};
 use pallet_evmless::{Precompile, PrecompileHandle, PrecompileResult, PrecompileSet};
 use sp_core::{H160, U256};
-use sp_runtime::traits::Dispatchable;
 use sp_std::marker::PhantomData;
 
 use pallet_evm_precompile_modexp::Modexp;
 use pallet_evm_precompile_sha3fips::Sha3FIPS256;
 use pallet_evm_precompile_simple::{ECRecover, ECRecoverPublicKey, Identity, Ripemd160, Sha256};
-use pallet_evmless_precompile_fungibles::{AssetIdOf, AssetIdParameterOf, BalanceOf, Fungibles};
+use pallet_evmless_precompile_fungibles::{AssetIdOf, BalanceOf, Fungibles};
 
 use precompile_utils::EvmData;
 
@@ -35,15 +33,10 @@ where
 }
 impl<R> PrecompileSet for FrontierPrecompiles<R>
 where
-	R: pallet_evmless::Config + pallet_assets::Config,
-	AssetIdParameterOf<R>: From<u32>,
+	R: pallet_evmless::Config,
 	AssetIdOf<R>: From<u32>,
 	BalanceOf<R>: EvmData + Into<U256>,
 	<R as frame_system::Config>::AccountId: From<H160>,
-	//<<R as frame_system::Config>::Lookup as StaticLookup>::Source: From<H160>,
-	R::RuntimeCall: Dispatchable<PostInfo = PostDispatchInfo> + GetDispatchInfo,
-	R::RuntimeCall: From<pallet_assets::Call<R>>,
-	<R::RuntimeCall as Dispatchable>::RuntimeOrigin: From<Option<R::AccountId>>,
 {
 	fn execute(&self, handle: &mut impl PrecompileHandle) -> Option<PrecompileResult> {
 		match handle.code_address() {

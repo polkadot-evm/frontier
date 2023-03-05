@@ -26,13 +26,15 @@ extern crate alloc;
 // mod tests;
 
 use core::marker::PhantomData;
-use fp_evm::{ExitSucceed, Precompile, PrecompileHandle, PrecompileResult};
-use frame_support::traits::tokens::fungibles::{
-	approvals::Inspect as ApprovalInspect, Inspect, InspectMetadata,
+use fp_evm::{
+	ExitRevert, ExitSucceed, Precompile, PrecompileFailure, PrecompileHandle, PrecompileResult,
 };
 use frame_support::{
-	dispatch::{Dispatchable, GetDispatchInfo, PostDispatchInfo},
-	sp_runtime::traits::StaticLookup,
+	sp_runtime::Saturating,
+	traits::tokens::fungibles::{
+		approvals::{Inspect as ApprovalInspect, Mutate},
+		Inspect, InspectMetadata, Transfer,
+	},
 };
 use precompile_utils::handle::PrecompileHandleExt;
 use precompile_utils::prelude::*;
@@ -58,15 +60,10 @@ pub struct Fungibles<R>(PhantomData<R>);
 
 impl<R> Precompile for Fungibles<R>
 where
-	R: pallet_evmless::Config + pallet_assets::Config,
-	AssetIdParameterOf<R>: From<u32>,
+	R: pallet_evmless::Config,
 	AssetIdOf<R>: From<u32>,
 	BalanceOf<R>: EvmData + Into<U256>,
 	<R as frame_system::Config>::AccountId: From<H160>,
-	//<<R as frame_system::Config>::Lookup as StaticLookup>::Source: From<H160>,
-	R::RuntimeCall: Dispatchable<PostInfo = PostDispatchInfo> + GetDispatchInfo,
-	R::RuntimeCall: From<pallet_assets::Call<R>>,
-	<R::RuntimeCall as Dispatchable>::RuntimeOrigin: From<Option<R::AccountId>>,
 {
 	fn execute(handle: &mut impl PrecompileHandle) -> PrecompileResult {
 		// todo: check address
@@ -101,25 +98,25 @@ where
 	}
 }
 
-pub type AssetIdOf<R> = <R as pallet_assets::Config>::AssetId;
-pub type AssetIdParameterOf<R> = <R as pallet_assets::Config>::AssetIdParameter;
-pub type BalanceOf<R> = <R as pallet_assets::Config>::Balance;
+pub type AssetIdOf<R> = <<R as pallet_evmless::Config>::Fungibles as Inspect<
+	<R as frame_system::Config>::AccountId,
+>>::AssetId;
+
+pub type BalanceOf<R> = <<R as pallet_evmless::Config>::Fungibles as Inspect<
+	<R as frame_system::Config>::AccountId,
+>>::Balance;
 
 impl<R> Fungibles<R>
 where
-	R: pallet_evmless::Config + pallet_assets::Config,
-	AssetIdParameterOf<R>: From<u32>,
+	R: pallet_evmless::Config,
 	AssetIdOf<R>: From<u32>,
 	BalanceOf<R>: EvmData + Into<U256>,
 	<R as frame_system::Config>::AccountId: From<H160>,
-	R::RuntimeCall: Dispatchable<PostInfo = PostDispatchInfo> + GetDispatchInfo,
-	R::RuntimeCall: From<pallet_assets::Call<R>>,
-	<R::RuntimeCall as Dispatchable>::RuntimeOrigin: From<Option<R::AccountId>>,
 {
 	fn total_supply(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
 		handle.record_cost(RuntimeHelper::<R>::db_read_gas_cost())?;
 
-		let t = pallet_assets::Pallet::<R>::total_issuance(0u32.into());
+		let t = R::Fungibles::total_issuance(0u32.into());
 
 		Ok(PrecompileOutput {
 			exit_status: ExitSucceed::Returned,
@@ -130,9 +127,7 @@ where
 	fn name(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
 		handle.record_cost(RuntimeHelper::<R>::db_read_gas_cost())?;
 
-		let name: UnboundedBytes = pallet_assets::Pallet::<R>::name(&0u32.into())
-			.as_slice()
-			.into();
+		let name: UnboundedBytes = R::Fungibles::name(&0u32.into()).as_slice().into();
 
 		Ok(PrecompileOutput {
 			exit_status: ExitSucceed::Returned,
@@ -143,9 +138,7 @@ where
 	fn symbol(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
 		handle.record_cost(RuntimeHelper::<R>::db_read_gas_cost())?;
 
-		let symbol: UnboundedBytes = pallet_assets::Pallet::<R>::symbol(&0u32.into())
-			.as_slice()
-			.into();
+		let symbol: UnboundedBytes = R::Fungibles::symbol(&0u32.into()).as_slice().into();
 
 		Ok(PrecompileOutput {
 			exit_status: ExitSucceed::Returned,
@@ -156,7 +149,7 @@ where
 	fn decimals(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
 		handle.record_cost(RuntimeHelper::<R>::db_read_gas_cost())?;
 
-		let d = pallet_assets::Pallet::<R>::decimals(&0u32.into());
+		let d = R::Fungibles::decimals(&0u32.into());
 
 		Ok(PrecompileOutput {
 			exit_status: ExitSucceed::Returned,
@@ -172,7 +165,7 @@ where
 
 		let owner: H160 = input.read::<Address>()?.into();
 		let who: R::AccountId = owner.into();
-		let balance = pallet_assets::Pallet::<R>::balance(0u32.into(), &who);
+		let balance = R::Fungibles::balance(0u32.into(), &who);
 
 		Ok(PrecompileOutput {
 			exit_status: ExitSucceed::Returned,
@@ -186,20 +179,23 @@ where
 		let mut input = handle.read_after_selector()?;
 		input.expect_arguments(2)?;
 
-		let origin = R::AddressMapping::into_account_id(handle.context().caller);
+		let origin: H160 = handle.context().caller;
 		let to: H160 = input.read::<Address>()?.into();
 
 		let amount = input.read::<BalanceOf<R>>()?;
 
-		RuntimeHelper::<R>::try_dispatch(
-			handle,
-			Some(origin).into(),
-			pallet_assets::Call::<R>::transfer {
-				id: 0u32.into(),
-				target: R::Lookup::unlookup(to.into()),
-				amount: amount.try_into().ok().unwrap(),
-			},
-		)?;
+		// keep_alive is set to false, so this might kill origin
+		R::Fungibles::transfer(
+			0u32.into(),
+			&origin.into(),
+			&to.into(),
+			amount.try_into().ok().unwrap(),
+			false,
+		)
+		.map_err(|e| PrecompileFailure::Revert {
+			exit_status: ExitRevert::Reverted,
+			output: Into::<&str>::into(e).as_bytes().to_vec(),
+		})?;
 
 		Ok(PrecompileOutput {
 			exit_status: ExitSucceed::Returned,
@@ -219,29 +215,23 @@ where
 		let amount = input.read::<BalanceOf<R>>()?;
 
 		// if previous approval exists, we need to clean it
-		if pallet_assets::Pallet::<R>::allowance(
-			0u32.into(),
-			&origin,
-			&R::AddressMapping::into_account_id(spender),
-		) != 0u32.into()
-		{
-			RuntimeHelper::<R>::try_dispatch(
-				handle,
-				Some(origin.clone()).into(),
-				pallet_assets::Call::<R>::cancel_approval {
-					id: 0u32.into(),
-					delegate: R::Lookup::unlookup(spender.into()),
-				},
-			)?;
+		if R::Fungibles::allowance(0u32.into(), &origin, &spender.into()) != 0u32.into() {
+			R::Fungibles::approve(
+				0u32.into(),
+				&origin.clone().into(),
+				&spender.into(),
+				0u32.into(),
+			)
+			.map_err(|e| PrecompileFailure::Revert {
+				exit_status: ExitRevert::Reverted,
+				output: Into::<&str>::into(e).as_bytes().to_vec(),
+			})?;
 		}
 
-		RuntimeHelper::<R>::try_dispatch(
-			handle,
-			Some(origin).into(),
-			pallet_assets::Call::<R>::approve_transfer {
-				id: 0u32.into(),
-				delegate: R::Lookup::unlookup(spender.into()),
-				amount: amount.try_into().ok().unwrap(),
+		R::Fungibles::approve(0u32.into(), &origin.into(), &spender.into(), amount).map_err(
+			|e| PrecompileFailure::Revert {
+				exit_status: ExitRevert::Reverted,
+				output: Into::<&str>::into(e).as_bytes().to_vec(),
 			},
 		)?;
 
@@ -264,7 +254,7 @@ where
 			let owner: R::AccountId = R::AddressMapping::into_account_id(owner);
 			let spender: R::AccountId = R::AddressMapping::into_account_id(spender);
 
-			pallet_assets::Pallet::<R>::allowance(0u32.into(), &owner, &spender).into()
+			R::Fungibles::allowance(0u32.into(), &owner, &spender).into()
 		};
 
 		Ok(PrecompileOutput {
@@ -279,37 +269,50 @@ where
 		let mut input = handle.read_after_selector()?;
 		input.expect_arguments(3)?;
 
+		let origin = R::AddressMapping::into_account_id(handle.context().caller);
+
 		let from: H160 = input.read::<Address>()?.into();
 		let to: H160 = input.read::<Address>()?.into();
 		let amount = input.read::<BalanceOf<R>>()?;
 
-		{
-			let origin = R::AddressMapping::into_account_id(handle.context().caller);
-			let from = R::AddressMapping::into_account_id(from);
-			let to = R::AddressMapping::into_account_id(to);
+		// spender is not caller
+		if origin != from.into() {
+			let allowance_before = R::Fungibles::allowance(0u32.into(), &from.into(), &origin);
 
-			if origin != from {
-				RuntimeHelper::<R>::try_dispatch(
-					handle,
-					Some(origin).into(),
-					pallet_assets::Call::<R>::transfer_approved {
-						id: 0u32.into(),
-						owner: R::Lookup::unlookup(from),
-						destination: R::Lookup::unlookup(to),
-						amount: amount.try_into().ok().unwrap(),
-					},
-				)?;
-			} else {
-				RuntimeHelper::<R>::try_dispatch(
-					handle,
-					Some(origin).into(),
-					pallet_assets::Call::<R>::transfer {
-						id: 0u32.into(),
-						target: R::Lookup::unlookup(to),
-						amount: amount.try_into().ok().unwrap(),
-					},
-				)?;
-			}
+			R::Fungibles::transfer_from(
+				0u32.into(),
+				&from.into(),
+				&origin.clone().into(),
+				&to.into(),
+				amount,
+			)
+			.map_err(|e| PrecompileFailure::Revert {
+				exit_status: ExitRevert::Reverted,
+				output: Into::<&str>::into(e).as_bytes().to_vec(),
+			})?;
+
+			R::Fungibles::approve(
+				0u32.into(),
+				&from.into(),
+				&origin.into(),
+				allowance_before.saturating_sub(amount),
+			)
+			.map_err(|e| PrecompileFailure::Revert {
+				exit_status: ExitRevert::Reverted,
+				output: Into::<&str>::into(e).as_bytes().to_vec(),
+			})?;
+		} else {
+			R::Fungibles::transfer(
+				0u32.into(),
+				&origin.into(),
+				&to.into(),
+				amount.try_into().ok().unwrap(),
+				false,
+			)
+			.map_err(|e| PrecompileFailure::Revert {
+				exit_status: ExitRevert::Reverted,
+				output: Into::<&str>::into(e).as_bytes().to_vec(),
+			})?;
 		}
 
 		Ok(PrecompileOutput {

@@ -73,11 +73,11 @@ describe('tests', function () {
 
     expect(await this.evmlessErc20Contract.allowance(this.alith.address, this.baltathar.address)).to.equal(approvalAmount);
 
-    var newApprovalAmount = 20;
-    var tx = await this.evmlessErc20Contract.connect(this.alith).approve(this.baltathar.address, newApprovalAmount);
+    var incApprovalAmount = 20;
+    var tx = await this.evmlessErc20Contract.connect(this.alith).approve(this.baltathar.address, incApprovalAmount);
     await tx.wait();
 
-    expect(await this.evmlessErc20Contract.allowance(this.alith.address, this.baltathar.address)).to.equal(newApprovalAmount);
+    expect(await this.evmlessErc20Contract.allowance(this.alith.address, this.baltathar.address)).to.equal(approvalAmount + incApprovalAmount);
   });
 
   it('transferFrom works', async function () {

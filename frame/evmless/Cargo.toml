@@ -59,7 +59,6 @@ std = [
 	"sp-io/std",
 	"sp-runtime/std",
 	"sp-std/std",
-	"pallet-assets/std",
 	# Frontier
 	"fp-evm/std",
 ]

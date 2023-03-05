@@ -15,8 +15,6 @@ frame-system = { workspace = true }
 frame-support = { workspace = true }
 sp-std = { workspace = true }
 sp-core = { workspace = true }
-pallet-assets = { workspace = true }
-
 
 # Frontier
 fp-evm = { workspace = true }
@@ -47,5 +45,4 @@ std = [
 	# Frontier
 	"fp-evm/std",
 	"pallet-evmless/std",
-	"pallet-assets/std"
 ]

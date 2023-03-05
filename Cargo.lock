@@ -5103,7 +5103,6 @@ dependencies = [
  "frame-support",
  "frame-system",
  "num_enum",
- "pallet-assets",
  "pallet-balances",
  "pallet-evmless",
  "pallet-timestamp",

@@ -67,8 +67,9 @@ mod tests;
 use frame_support::{
 	dispatch::{DispatchResultWithPostInfo, Pays, PostDispatchInfo},
 	traits::{
-		tokens::fungible::Inspect, Currency, ExistenceRequirement, FindAuthor, Get, Imbalance,
-		OnUnbalanced, SignedImbalance, WithdrawReasons,
+		tokens::{fungible::Inspect, fungibles},
+		Currency, ExistenceRequirement, FindAuthor, Get, Imbalance, OnUnbalanced, SignedImbalance,
+		WithdrawReasons,
 	},
 	weights::Weight,
 };
@@ -109,9 +110,14 @@ pub mod pallet {
 	pub struct Pallet<T>(PhantomData<T>);
 
 	#[pallet::config]
-	pub trait Config:
-		frame_system::Config + pallet_timestamp::Config + pallet_assets::Config
-	{
+	pub trait Config: frame_system::Config + pallet_timestamp::Config {
+		type Fungibles: fungibles::Inspect<Self::AccountId>
+			+ fungibles::InspectMetadata<Self::AccountId>
+			+ fungibles::Mutate<Self::AccountId>
+			+ fungibles::Transfer<Self::AccountId>
+			+ fungibles::approvals::Inspect<Self::AccountId>
+			+ fungibles::approvals::Mutate<Self::AccountId>;
+
 		/// Calculator for current gas price.
 		type FeeCalculator: FeeCalculator;
 
@@ -176,7 +182,7 @@ pub mod pallet {
 			let destination = T::WithdrawOrigin::ensure_address_origin(&address, origin)?;
 			let address_account_id = T::AddressMapping::into_account_id(address);
 
-			<T as pallet::Config>::Currency::transfer(
+			T::Currency::transfer(
 				&address_account_id,
 				&destination,
 				value,
@@ -491,10 +497,7 @@ pub mod pallet {
 					frame_system::Pallet::<T>::inc_account_nonce(&account_id);
 				}
 
-				<T as pallet::Config>::Currency::deposit_creating(
-					&account_id,
-					account.balance.unique_saturated_into(),
-				);
+				T::Currency::deposit_creating(&account_id, account.balance.unique_saturated_into());
 
 				Pallet::<T>::create_account(*address, account.code.clone());
 
@@ -733,7 +736,7 @@ impl<T: Config> Pallet<T> {
 
 		let nonce = frame_system::Pallet::<T>::account_nonce(&account_id);
 		// keepalive `true` takes into account ExistentialDeposit as part of what's considered liquid balance.
-		let balance = <T as pallet::Config>::Currency::reducible_balance(&account_id, true);
+		let balance = T::Currency::reducible_balance(&account_id, true);
 
 		(
 			Account {
@@ -881,15 +884,15 @@ where
 impl<T> OnChargeEVMTransaction<T> for ()
 	where
 	T: Config,
-	<<T as pallet::Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::PositiveImbalance:
-		Imbalance<<<T as pallet::Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance, Opposite = <<T as pallet::Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::NegativeImbalance>,
-	<<T as pallet::Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::NegativeImbalance:
-Imbalance<<<T as pallet::Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance, Opposite = <<T as pallet::Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::PositiveImbalance>,
+	<T::Currency as Currency<<T as frame_system::Config>::AccountId>>::PositiveImbalance:
+		Imbalance<<T::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance, Opposite = <T::Currency as Currency<<T as frame_system::Config>::AccountId>>::NegativeImbalance>,
+	<T::Currency as Currency<<T as frame_system::Config>::AccountId>>::NegativeImbalance:
+Imbalance<<T::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance, Opposite = <T::Currency as Currency<<T as frame_system::Config>::AccountId>>::PositiveImbalance>,
 U256: UniqueSaturatedInto<BalanceOf<T>>,
 
 {
 	// Kept type as Option to satisfy bound of Default
-	type LiquidityInfo = Option<NegativeImbalanceOf<<T as pallet::Config>::Currency, T>>;
+	type LiquidityInfo = Option<NegativeImbalanceOf<T::Currency, T>>;
 
 	fn withdraw_fee(
 		who: &H160,
