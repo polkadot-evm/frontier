@@ -65,37 +65,36 @@ pub fn authority_keys_from_seed(s: &str) -> (AuraId, GrandpaId) {
 	(get_from_seed::<AuraId>(s), get_from_seed::<GrandpaId>(s))
 }
 
+pub fn eth_account(seed: &[u8]) -> AccountId {
+	let pk = ecdsa::Pair::from_seed_slice(seed).unwrap().public();
+	let signer: EthereumSigner = pk.into();
+	signer.into_account()
+}
+
+/// endowed accounts from known private keys
+pub fn endowed_eth_accounts() -> Vec<AccountId> {
+	let alith_seed =
+	hex::decode("0f02ba4d7f83e59eaa32eae9c3c4d99b68ce76decade21cdab7ecce8f4aef81a")
+		.unwrap();
+	let alith = eth_account(&alith_seed);
+	
+	let baltathar_seed =
+		hex::decode("502f97299c472b88754accd412b7c9a6062ef3186fba0c0388365e1edec24875")
+			.unwrap();
+	let baltathar = eth_account(&baltathar_seed);
+
+	let charleth_seed =
+		hex::decode("c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470")
+			.unwrap();
+	let charleth = eth_account(&charleth_seed);
+
+	vec![alith, baltathar, charleth]
+}
+
 pub fn development_config(enable_manual_seal: Option<bool>) -> DevChainSpec {
 	let wasm_binary = WASM_BINARY.expect("WASM not available");
-
-	// endowed accounts with known private keys
-	let accounts = {
-		let alice_sk =
-			hex::decode("0f02ba4d7f83e59eaa32eae9c3c4d99b68ce76decade21cdab7ecce8f4aef81a")
-				.unwrap();
-		let alice_pk = ecdsa::Pair::from_seed_slice(&alice_sk).unwrap().public();
-
-		let alice_signer: EthereumSigner = alice_pk.into();
-		let alice: AccountId = alice_signer.into_account();
-
-		let bob_sk =
-			hex::decode("502f97299c472b88754accd412b7c9a6062ef3186fba0c0388365e1edec24875")
-				.unwrap();
-		let bob_pk = ecdsa::Pair::from_seed_slice(&bob_sk).unwrap().public();
-
-		let bob_signer: EthereumSigner = bob_pk.into();
-		let bob: AccountId = bob_signer.into_account();
-
-		let charlie_sk =
-			hex::decode("c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470")
-				.unwrap();
-		let charlie_pk = ecdsa::Pair::from_seed_slice(&charlie_sk).unwrap().public();
-
-		let charlie_signer: EthereumSigner = charlie_pk.into();
-		let charlie: AccountId = charlie_signer.into_account();
-
-		vec![alice, bob, charlie]
-	};
+	
+	let accounts = endowed_eth_accounts();
 
 	DevChainSpec::from_genesis(
 		// Name
