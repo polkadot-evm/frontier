@@ -66,9 +66,6 @@ where
 	<R as frame_system::Config>::AccountId: From<H160>,
 {
 	fn execute(handle: &mut impl PrecompileHandle) -> PrecompileResult {
-		// todo: check address
-		//let address = handle.code_address();
-
 		let selector = match handle.read_selector() {
 			Ok(selector) => selector,
 			Err(e) => return Err(e.into()),
