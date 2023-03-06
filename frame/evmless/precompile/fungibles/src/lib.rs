@@ -80,7 +80,6 @@ where
 			return Err(err.into());
 		}
 
-		// todo: change to appropriate method implementations
 		match selector {
 			ERC20Methods::TotalSupply => Self::total_supply(handle),
 			ERC20Methods::BalanceOf => Self::balance_of(handle),
