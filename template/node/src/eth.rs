@@ -182,6 +182,10 @@ pub async fn spawn_frontier_tasks<RuntimeApi, Executor>(
 					backend,
 					Arc::new(b),
 					client.import_notification_stream(),
+					fc_mapping_sync::sql::SyncWorkerConfig {
+						read_notification_timeout: Duration::from_secs(10),
+						check_indexed_blocks_interval: Duration::from_secs(60),
+					},
 				),
 			);
 		}

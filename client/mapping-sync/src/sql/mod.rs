@@ -46,6 +46,12 @@ pub enum WorkerCommand {
 	CheckIndexedBlocks,
 }
 
+/// Config parameters for the SyncWorker.
+pub struct SyncWorkerConfig {
+	pub check_indexed_blocks_interval: Duration,
+	pub read_notification_timeout: Duration,
+}
+
 /// Implements an indexer that imports blocks and their transactions.
 pub struct SyncWorker<Block, Backend, Client> {
 	_phantom: std::marker::PhantomData<(Block, Backend, Client)>,
@@ -75,6 +81,7 @@ where
 					"💬 Recv Worker Command {:?}",
 					cmd,
 				);
+				println!("💬 Recv Worker Command {:?}", cmd,);
 				match cmd {
 					WorkerCommand::ResumeSync => {
 						// Attempt to resume from last indexed block. If there is no data in the db, sync genesis.
@@ -169,6 +176,7 @@ where
 		substrate_backend: Arc<Backend>,
 		indexer_backend: Arc<fc_db::sql::Backend<Block>>,
 		import_notifications: sc_client_api::ImportNotifications<Block>,
+		worker_config: SyncWorkerConfig,
 	) {
 		let tx = Self::spawn_worker(
 			client.clone(),
@@ -178,13 +186,13 @@ where
 		.await;
 
 		// Resume sync from the last indexed block until we reach an already indexed parent
-		log::info!(target: "frontier-sql", "ResumeSend: {:?}", tx.send(WorkerCommand::ResumeSync).await);
+		tx.send(WorkerCommand::ResumeSync).await.ok();
 
-		// check missing blocks every minute
+		// check missing blocks every interval
 		let tx2 = tx.clone();
 		tokio::task::spawn(async move {
 			loop {
-				futures_timer::Delay::new(Duration::from_secs(60)).await;
+				futures_timer::Delay::new(worker_config.check_indexed_blocks_interval).await;
 				tx2.send(WorkerCommand::CheckIndexedBlocks).await.ok();
 			}
 		});
@@ -192,7 +200,8 @@ where
 		// check notifications
 		let mut notifications = import_notifications.fuse();
 		loop {
-			let mut timeout = futures_timer::Delay::new(Duration::from_secs(10)).fuse();
+			let mut timeout =
+				futures_timer::Delay::new(worker_config.read_notification_timeout).fuse();
 			futures::select! {
 				_ = timeout => {
 					if let Ok(leaves) = substrate_backend.blockchain().leaves() {
@@ -653,10 +662,10 @@ mod test {
 				block_number as i32,
 				fc_db::sql::Log {
 					address: address_1.as_bytes().to_owned(),
-					topic_1: topics_1_1.as_bytes().to_owned(),
-					topic_2: topics_1_2.as_bytes().to_owned(),
-					topic_3: H256::default().as_bytes().to_owned(),
-					topic_4: H256::default().as_bytes().to_owned(),
+					topic_1: Some(topics_1_1.as_bytes().to_owned()),
+					topic_2: Some(topics_1_2.as_bytes().to_owned()),
+					topic_3: None,
+					topic_4: None,
 					log_index: 0i32,
 					transaction_index: 0i32,
 					substrate_block_hash: block_hash.as_bytes().to_owned(),
@@ -666,10 +675,10 @@ mod test {
 				block_number as i32,
 				fc_db::sql::Log {
 					address: address_2.as_bytes().to_owned(),
-					topic_1: topics_2_1.as_bytes().to_owned(),
-					topic_2: topics_2_2.as_bytes().to_owned(),
-					topic_3: topics_2_3.as_bytes().to_owned(),
-					topic_4: topics_2_4.as_bytes().to_owned(),
+					topic_1: Some(topics_2_1.as_bytes().to_owned()),
+					topic_2: Some(topics_2_2.as_bytes().to_owned()),
+					topic_3: Some(topics_2_3.as_bytes().to_owned()),
+					topic_4: Some(topics_2_4.as_bytes().to_owned()),
 					log_index: 0i32,
 					transaction_index: 1i32,
 					substrate_block_hash: block_hash.as_bytes().to_owned(),
@@ -686,14 +695,16 @@ mod test {
 				backend.clone(),
 				Arc::new(indexer_backend),
 				client.clone().import_notification_stream(),
-				10,                                // batch size
-				std::time::Duration::from_secs(1), // interval duration
+				SyncWorkerConfig {
+					read_notification_timeout: Duration::from_secs(1),
+					check_indexed_blocks_interval: Duration::from_secs(60),
+				},
 			)
 			.await
 		});
 
 		// Enough time for interval to run
-		futures_timer::Delay::new(std::time::Duration::from_millis(1100)).await;
+		futures_timer::Delay::new(std::time::Duration::from_millis(1500)).await;
 
 		// Query db
 		let db_logs = sqlx::query(
@@ -717,10 +728,10 @@ mod test {
 		.map(|row| {
 			let block_number = row.get::<i32, _>(0);
 			let address = row.get::<Vec<u8>, _>(1);
-			let topic_1 = row.get::<Vec<u8>, _>(2);
-			let topic_2 = row.get::<Vec<u8>, _>(3);
-			let topic_3 = row.get::<Vec<u8>, _>(4);
-			let topic_4 = row.get::<Vec<u8>, _>(5);
+			let topic_1 = row.get::<Option<Vec<u8>>, _>(2);
+			let topic_2 = row.get::<Option<Vec<u8>>, _>(3);
+			let topic_3 = row.get::<Option<Vec<u8>>, _>(4);
+			let topic_4 = row.get::<Option<Vec<u8>>, _>(5);
 			let log_index = row.get::<i32, _>(6);
 			let transaction_index = row.get::<i32, _>(7);
 			let substrate_block_hash = row.get::<Vec<u8>, _>(8);
@@ -804,8 +815,10 @@ mod test {
 				backend.clone(),
 				Arc::new(indexer_backend),
 				notification_stream,
-				10,                                // batch size
-				std::time::Duration::from_secs(1), // interval duration
+				SyncWorkerConfig {
+					read_notification_timeout: Duration::from_secs(10),
+					check_indexed_blocks_interval: Duration::from_secs(60),
+				},
 			)
 			.await
 		});
@@ -861,10 +874,10 @@ mod test {
 				block_number as i32,
 				fc_db::sql::Log {
 					address: address_1.as_bytes().to_owned(),
-					topic_1: topics_1_1.as_bytes().to_owned(),
-					topic_2: topics_1_2.as_bytes().to_owned(),
-					topic_3: H256::default().as_bytes().to_owned(),
-					topic_4: H256::default().as_bytes().to_owned(),
+					topic_1: Some(topics_1_1.as_bytes().to_owned()),
+					topic_2: Some(topics_1_2.as_bytes().to_owned()),
+					topic_3: None,
+					topic_4: None,
 					log_index: 0i32,
 					transaction_index: 0i32,
 					substrate_block_hash: block_hash.as_bytes().to_owned(),
@@ -874,10 +887,10 @@ mod test {
 				block_number as i32,
 				fc_db::sql::Log {
 					address: address_2.as_bytes().to_owned(),
-					topic_1: topics_2_1.as_bytes().to_owned(),
-					topic_2: topics_2_2.as_bytes().to_owned(),
-					topic_3: topics_2_3.as_bytes().to_owned(),
-					topic_4: topics_2_4.as_bytes().to_owned(),
+					topic_1: Some(topics_2_1.as_bytes().to_owned()),
+					topic_2: Some(topics_2_2.as_bytes().to_owned()),
+					topic_3: Some(topics_2_3.as_bytes().to_owned()),
+					topic_4: Some(topics_2_4.as_bytes().to_owned()),
 					log_index: 0i32,
 					transaction_index: 1i32,
 					substrate_block_hash: block_hash.as_bytes().to_owned(),
@@ -909,10 +922,10 @@ mod test {
 		.map(|row| {
 			let block_number = row.get::<i32, _>(0);
 			let address = row.get::<Vec<u8>, _>(1);
-			let topic_1 = row.get::<Vec<u8>, _>(2);
-			let topic_2 = row.get::<Vec<u8>, _>(3);
-			let topic_3 = row.get::<Vec<u8>, _>(4);
-			let topic_4 = row.get::<Vec<u8>, _>(5);
+			let topic_1 = row.get::<Option<Vec<u8>>, _>(2);
+			let topic_2 = row.get::<Option<Vec<u8>>, _>(3);
+			let topic_3 = row.get::<Option<Vec<u8>>, _>(4);
+			let topic_4 = row.get::<Option<Vec<u8>>, _>(5);
 			let log_index = row.get::<i32, _>(6);
 			let transaction_index = row.get::<i32, _>(7);
 			let substrate_block_hash = row.get::<Vec<u8>, _>(8);
@@ -940,275 +953,7 @@ mod test {
 	}
 
 	#[tokio::test]
-	async fn canonicalize_with_interval_notification_mix_works() {
-		let tmp = tempdir().expect("create a temporary directory");
-		// Initialize storage with schema V3
-		let builder = TestClientBuilder::new().add_extra_storage(
-			PALLET_ETHEREUM_SCHEMA.to_vec(),
-			Encode::encode(&EthereumStorageSchema::V3),
-		);
-		// Backend
-		let backend = builder.backend();
-		// Client
-		let (client, _) =
-			builder.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(None);
-		let mut client = Arc::new(client);
-		// Overrides
-		let mut overrides_map = BTreeMap::new();
-		overrides_map.insert(
-			EthereumStorageSchema::V3,
-			Box::new(SchemaV3Override::new(client.clone()))
-				as Box<dyn StorageOverride<_> + Send + Sync>,
-		);
-		let overrides = Arc::new(OverrideHandle {
-			schemas: overrides_map,
-			fallback: Box::new(SchemaV3Override::new(client.clone())),
-		});
-		// Indexer backend
-		let indexer_backend = fc_db::sql::Backend::new(
-			fc_db::sql::BackendConfig::Sqlite(fc_db::sql::SqliteBackendConfig {
-				path: Path::new("sqlite:///")
-					.join(tmp.path())
-					.join("test.db3")
-					.to_str()
-					.unwrap(),
-				create_if_missing: true,
-				cache_size: 204800,
-				thread_count: 4,
-			}),
-			100,
-			None,
-			overrides.clone(),
-		)
-		.await
-		.expect("indexer pool to be created");
-
-		// Pool
-		let pool = indexer_backend.pool().clone();
-
-		// Create 10 blocks saving the common ancestor for branching.
-		let mut parent_hash = client
-			.hash(sp_runtime::traits::Zero::zero())
-			.unwrap()
-			.expect("genesis hash");
-		let mut common_ancestor = parent_hash;
-		let mut hashes_to_be_orphaned: Vec<H256> = vec![];
-		for block_number in 1..11 {
-			let builder = client
-				.new_block_at(&BlockId::Hash(parent_hash), ethereum_digest(), false)
-				.unwrap();
-			let block = builder.build().unwrap().block;
-			let block_hash = block.header.hash();
-			executor::block_on(client.import(BlockOrigin::Own, block)).unwrap();
-			if block_number == 8 {
-				common_ancestor = block_hash;
-			}
-			if block_number == 9 || block_number == 10 {
-				hashes_to_be_orphaned.push(block_hash);
-			}
-			parent_hash = block_hash;
-		}
-
-		// Spawn indexer task
-		let notification_stream = client.clone().import_notification_stream();
-		let client_inner = client.clone();
-		tokio::task::spawn(async move {
-			crate::sql::SyncWorker::run(
-				client_inner,
-				backend.clone(),
-				Arc::new(indexer_backend),
-				notification_stream,
-				10,                                // batch size
-				std::time::Duration::from_secs(1), // interval duration
-			)
-			.await
-		});
-
-		// Enough time for interval to run
-		futures_timer::Delay::new(std::time::Duration::from_millis(1100)).await;
-
-		// Create the new longest chain, 10 more blocks on top of the common ancestor.
-		parent_hash = common_ancestor;
-		for _ in 1..11 {
-			let builder = client
-				.new_block_at(&BlockId::Hash(parent_hash), ethereum_digest(), false)
-				.unwrap();
-			let block = builder.build().unwrap().block;
-			let block_hash = block.header.hash();
-			executor::block_on(client.import(BlockOrigin::Own, block)).unwrap();
-			parent_hash = block_hash;
-			futures_timer::Delay::new(std::time::Duration::from_millis(100)).await;
-		}
-
-		// Test the reorged chain is correctly indexed.
-		let res = sqlx::query("SELECT substrate_block_hash, is_canon, block_number FROM blocks")
-			.fetch_all(&pool)
-			.await
-			.expect("test query result")
-			.iter()
-			.map(|row| {
-				let substrate_block_hash = H256::from_slice(&row.get::<Vec<u8>, _>(0)[..]);
-				let is_canon = row.get::<i32, _>(1);
-				let block_number = row.get::<i32, _>(2);
-				(substrate_block_hash, is_canon, block_number)
-			})
-			.collect::<Vec<(H256, i32, i32)>>();
-
-		// 20 blocks in total
-		assert_eq!(res.len(), 20);
-
-		// 18 of which are canon
-		let canon = res
-			.clone()
-			.into_iter()
-			.filter_map(|it| if it.1 == 1 { Some(it) } else { None })
-			.collect::<Vec<(H256, i32, i32)>>();
-		assert_eq!(canon.len(), 18);
-
-		// and 2 of which are the originally tracked as orphaned
-		let not_canon = res
-			.clone()
-			.into_iter()
-			.filter_map(|it| if it.1 == 0 { Some(it.0) } else { None })
-			.collect::<Vec<H256>>();
-		assert_eq!(not_canon.len(), hashes_to_be_orphaned.len());
-		assert!(not_canon.iter().all(|h| hashes_to_be_orphaned.contains(h)));
-	}
-
-	#[tokio::test]
-	async fn canonicalize_with_interval_works() {
-		let tmp = tempdir().expect("create a temporary directory");
-		// Initialize storage with schema V3
-		let builder = TestClientBuilder::new().add_extra_storage(
-			PALLET_ETHEREUM_SCHEMA.to_vec(),
-			Encode::encode(&EthereumStorageSchema::V3),
-		);
-		// Backend
-		let backend = builder.backend();
-		// Client
-		let (client, _) =
-			builder.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(None);
-		let mut client = Arc::new(client);
-		// Overrides
-		let mut overrides_map = BTreeMap::new();
-		overrides_map.insert(
-			EthereumStorageSchema::V3,
-			Box::new(SchemaV3Override::new(client.clone()))
-				as Box<dyn StorageOverride<_> + Send + Sync>,
-		);
-		let overrides = Arc::new(OverrideHandle {
-			schemas: overrides_map,
-			fallback: Box::new(SchemaV3Override::new(client.clone())),
-		});
-		// Indexer backend
-		let indexer_backend = fc_db::sql::Backend::new(
-			fc_db::sql::BackendConfig::Sqlite(fc_db::sql::SqliteBackendConfig {
-				path: Path::new("sqlite:///")
-					.join(tmp.path())
-					.join("test.db3")
-					.to_str()
-					.unwrap(),
-				create_if_missing: true,
-				cache_size: 204800,
-				thread_count: 4,
-			}),
-			100,
-			None,
-			overrides.clone(),
-		)
-		.await
-		.expect("indexer pool to be created");
-
-		// Pool
-		let pool = indexer_backend.pool().clone();
-
-		// Create 10 blocks saving the common ancestor for branching.
-		let mut parent_hash = client
-			.hash(sp_runtime::traits::Zero::zero())
-			.unwrap()
-			.expect("genesis hash");
-		let mut common_ancestor = parent_hash;
-		let mut hashes_to_be_orphaned: Vec<H256> = vec![];
-		for block_number in 1..11 {
-			let builder = client
-				.new_block_at(&BlockId::Hash(parent_hash), ethereum_digest(), false)
-				.unwrap();
-			let block = builder.build().unwrap().block;
-			let block_hash = block.header.hash();
-			executor::block_on(client.import(BlockOrigin::Own, block)).unwrap();
-			if block_number == 8 {
-				common_ancestor = block_hash;
-			}
-			if block_number == 9 || block_number == 10 {
-				hashes_to_be_orphaned.push(block_hash);
-			}
-			parent_hash = block_hash;
-		}
-
-		// Create the new longest chain, 10 more blocks on top of the common ancestor.
-		parent_hash = common_ancestor;
-		for _ in 1..11 {
-			let builder = client
-				.new_block_at(&BlockId::Hash(parent_hash), ethereum_digest(), false)
-				.unwrap();
-			let block = builder.build().unwrap().block;
-			let block_hash = block.header.hash();
-			executor::block_on(client.import(BlockOrigin::Own, block)).unwrap();
-			parent_hash = block_hash;
-		}
-
-		// Spawn indexer task
-		tokio::task::spawn(async move {
-			crate::sql::SyncWorker::run(
-				client.clone(),
-				backend.clone(),
-				Arc::new(indexer_backend),
-				client.clone().import_notification_stream(),
-				10,                                    // batch size
-				std::time::Duration::from_millis(300), // interval duration
-			)
-			.await
-		});
-		// Enough time for interval to run
-		futures_timer::Delay::new(std::time::Duration::from_millis(2500)).await;
-
-		// Test the reorged chain is correctly indexed.
-		let res = sqlx::query("SELECT substrate_block_hash, is_canon, block_number FROM blocks")
-			.fetch_all(&pool)
-			.await
-			.expect("test query result")
-			.iter()
-			.map(|row| {
-				let substrate_block_hash = H256::from_slice(&row.get::<Vec<u8>, _>(0)[..]);
-				let is_canon = row.get::<i32, _>(1);
-				let block_number = row.get::<i32, _>(2);
-				(substrate_block_hash, is_canon, block_number)
-			})
-			.collect::<Vec<(H256, i32, i32)>>();
-
-		// 20 blocks in total
-		assert_eq!(res.len(), 20);
-
-		// 18 of which are canon
-		let canon = res
-			.clone()
-			.into_iter()
-			.filter_map(|it| if it.1 == 1 { Some(it) } else { None })
-			.collect::<Vec<(H256, i32, i32)>>();
-		assert_eq!(canon.len(), 18);
-
-		// and 2 of which are the originally tracked as orphaned
-		let not_canon = res
-			.clone()
-			.into_iter()
-			.filter_map(|it| if it.1 == 0 { Some(it.0) } else { None })
-			.collect::<Vec<H256>>();
-		assert_eq!(not_canon.len(), hashes_to_be_orphaned.len());
-		assert!(not_canon.iter().all(|h| hashes_to_be_orphaned.contains(h)));
-	}
-
-	#[tokio::test]
-	async fn canonicalize_with_notification_works() {
+	async fn canonicalize_works() {
 		let tmp = tempdir().expect("create a temporary directory");
 		// Initialize storage with schema V3
 		let builder = TestClientBuilder::new().add_extra_storage(
@@ -1263,8 +1008,10 @@ mod test {
 				backend.clone(),
 				Arc::new(indexer_backend),
 				notification_stream,
-				10,                                // batch size
-				std::time::Duration::from_secs(1), // interval duration
+				SyncWorkerConfig {
+					read_notification_timeout: Duration::from_secs(10),
+					check_indexed_blocks_interval: Duration::from_secs(60),
+				},
 			)
 			.await
 		});
@@ -1359,7 +1106,7 @@ mod test {
 	}
 
 	#[tokio::test]
-	async fn resuming_from_last_indexed_block_works_with_interval_indexing() {
+	async fn resuming_from_last_indexed_block_works() {
 		let tmp = tempdir().expect("create a temporary directory");
 		// Initialize storage with schema V3
 		let builder = TestClientBuilder::new().add_extra_storage(
@@ -1422,8 +1169,15 @@ mod test {
 			parent_hash = block_hash;
 		}
 
-		// resume from the newest block hash (assuming it was indexed)
+		// Mark the block as canon and indexed
 		let block_resume_at = block_hashes[0];
+		sqlx::query("INSERT INTO blocks(substrate_block_hash, ethereum_block_hash, ethereum_storage_schema, block_number, is_canon) VALUES (?, ?, ?, 5, 1)")
+			.bind(block_resume_at.as_bytes())
+			.bind(H256::zero().as_bytes())
+			.bind(H256::zero().as_bytes())
+			.execute(&pool)
+			.await
+			.expect("sql query must succeed");
 		sqlx::query("INSERT INTO sync_status(substrate_block_hash, status) VALUES (?, 1)")
 			.bind(block_resume_at.as_bytes())
 			.execute(&pool)
@@ -1438,13 +1192,15 @@ mod test {
 				backend.clone(),
 				Arc::new(indexer_backend),
 				client.clone().import_notification_stream(),
-				4,                                 // batch size
-				std::time::Duration::from_secs(1), // interval duration
+				SyncWorkerConfig {
+					read_notification_timeout: Duration::from_secs(10),
+					check_indexed_blocks_interval: Duration::from_secs(60),
+				},
 			)
 			.await
 		});
-		// Enough time for interval to run
-		futures_timer::Delay::new(std::time::Duration::from_millis(2500)).await;
+		// Enough time for indexing
+		futures_timer::Delay::new(std::time::Duration::from_millis(1500)).await;
 
 		// Test the reorged chain is correctly indexed.
 		let actual_imported_blocks =
@@ -1455,27 +1211,7 @@ mod test {
 				.iter()
 				.map(|row| H256::from_slice(&row.get::<Vec<u8>, _>(0)[..]))
 				.collect::<Vec<H256>>();
-		let expected_imported_blocks = block_hashes.clone().into_iter().skip(1).collect::<Vec<_>>();
+		let expected_imported_blocks = block_hashes.clone();
 		assert_eq!(expected_imported_blocks, actual_imported_blocks);
-	}
-
-	fn test_new_sync_worker_sets_batch_size_for_indexed_block_cache() {
-		use sp_runtime::generic::{Block as GenericBlock, Header};
-		use substrate_test_runtime_client::{
-			client::{Client, LocalCallExecutor},
-			runtime::Extrinsic,
-			Backend,
-		};
-
-		type Block = GenericBlock<Header<u64, BlakeTwo256>, Extrinsic>;
-		type TestClient = Client<
-			Backend,
-			LocalCallExecutor<Block, Backend, NativeElseWasmExecutor<LocalExecutorDispatch>>,
-			Block,
-			frontier_template_runtime::RuntimeApi,
-		>;
-
-		let worker: SyncWorker<Block, Backend, TestClient> = SyncWorker::new(100);
-		assert_eq!(worker.batch_size, worker.indexed_blocks.cache_size);
 	}
 }

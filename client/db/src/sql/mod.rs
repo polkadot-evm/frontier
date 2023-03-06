@@ -1862,7 +1862,6 @@ FROM logs AS l
 INNER JOIN blocks AS b
 ON (b.block_number BETWEEN ? AND ?) AND b.substrate_block_hash = l.substrate_block_hash AND b.is_canon = 1
 WHERE 1 AND l.address IN (?, ?, ?) AND l.topic_1 IN (?, ?, ?) AND l.topic_2 IN (?, ?) AND l.topic_4 = ?
-GROUP BY l.substrate_block_hash, l.transaction_index, l.log_index
 ORDER BY b.block_number ASC, l.transaction_index ASC, l.log_index ASC
 LIMIT 10001";
 
