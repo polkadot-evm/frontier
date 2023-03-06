@@ -49,10 +49,10 @@ const MAX_TOPIC_COUNT: u16 = 4;
 #[derive(Debug, Eq, PartialEq)]
 pub struct Log {
 	pub address: Vec<u8>,
-	pub topic_1: Vec<u8>,
-	pub topic_2: Vec<u8>,
-	pub topic_3: Vec<u8>,
-	pub topic_4: Vec<u8>,
+	pub topic_1: Option<Vec<u8>>,
+	pub topic_2: Option<Vec<u8>>,
+	pub topic_3: Option<Vec<u8>>,
+	pub topic_4: Option<Vec<u8>>,
 	pub log_index: i32,
 	pub transaction_index: i32,
 	pub substrate_block_hash: Vec<u8>,
@@ -553,30 +553,10 @@ where
 			for (log_index, log) in receipt_logs.iter().enumerate() {
 				logs.push(Log {
 					address: log.address.as_bytes().to_owned(),
-					topic_1: log
-						.topics
-						.get(0)
-						.unwrap_or(&H256::zero())
-						.as_bytes()
-						.to_owned(),
-					topic_2: log
-						.topics
-						.get(1)
-						.unwrap_or(&H256::zero())
-						.as_bytes()
-						.to_owned(),
-					topic_3: log
-						.topics
-						.get(2)
-						.unwrap_or(&H256::zero())
-						.as_bytes()
-						.to_owned(),
-					topic_4: log
-						.topics
-						.get(3)
-						.unwrap_or(&H256::zero())
-						.as_bytes()
-						.to_owned(),
+					topic_1: log.topics.get(0).map(|l| l.as_bytes().to_owned()),
+					topic_2: log.topics.get(1).map(|l| l.as_bytes().to_owned()),
+					topic_3: log.topics.get(2).map(|l| l.as_bytes().to_owned()),
+					topic_4: log.topics.get(3).map(|l| l.as_bytes().to_owned()),
 					log_index: log_index as i32,
 					transaction_index,
 					substrate_block_hash: substrate_block_hash.as_bytes().to_owned(),
@@ -688,10 +668,47 @@ where
 		None
 	}
 
+	/// Retrieves the first pending canonical block hash in decreasing order that hasn't had
+	// its logs indexed yet. If no unindexed block exists or the table or the rows do not exist,
+	/// then the function returns `None`.
+	pub async fn get_first_pending_canon_block(&self) -> Option<H256> {
+		match sqlx::query(
+			"SELECT s.substrate_block_hash FROM sync_status AS s
+			INNER JOIN blocks as b
+			ON s.substrate_block_hash = b.substrate_block_hash
+			WHERE b.is_canon = 1 AND s.status = 0
+			ORDER BY b.block_number LIMIT 1",
+		)
+		.fetch_optional(self.pool())
+		.await
+		{
+			Ok(result) => {
+				if let Some(row) = result {
+					let block_hash_bytes: Vec<u8> = row.get(0);
+					let block_hash = H256::from_slice(&block_hash_bytes[..]);
+					return Some(block_hash);
+				}
+			}
+			Err(err) => {
+				log::debug!(
+					target: "frontier-sql",
+					"Failed retrieving missing block {:?}",
+					err
+				);
+			}
+		}
+
+		None
+	}
+
 	/// Retrieve the block hash for the last indexed canon block.
 	pub async fn get_last_indexed_canon_block(&self) -> Result<H256, Error> {
 		let row = sqlx::query(
-			"SELECT b.substrate_block_hash FROM blocks AS b INNER JOIN sync_status AS s ON s.substrate_block_hash = b.substrate_block_hash WHERE b.is_canon=1 AND s.status = 1 ORDER BY b.id DESC LIMIT 1",
+			"SELECT b.substrate_block_hash FROM blocks AS b
+			INNER JOIN sync_status AS s
+			ON s.substrate_block_hash = b.substrate_block_hash
+			WHERE b.is_canon=1 AND s.status = 1
+			ORDER BY b.id DESC LIMIT 1",
 		)
 		.fetch_one(self.pool())
 		.await?;
@@ -707,10 +724,10 @@ where
 			CREATE TABLE IF NOT EXISTS logs (
 				id INTEGER PRIMARY KEY,
 				address BLOB NOT NULL,
-				topic_1 BLOB NOT NULL,
-				topic_2 BLOB NOT NULL,
-				topic_3 BLOB NOT NULL,
-				topic_4 BLOB NOT NULL,
+				topic_1 BLOB,
+				topic_2 BLOB,
+				topic_3 BLOB,
+				topic_4 BLOB,
 				log_index INTEGER NOT NULL,
 				transaction_index INTEGER NOT NULL,
 				substrate_block_hash BLOB NOT NULL,

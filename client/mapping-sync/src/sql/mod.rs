@@ -40,8 +40,10 @@ pub enum WorkerCommand {
 		enacted: Vec<H256>,
 		retracted: Vec<H256>,
 	},
+	/// Verify indexed blocks' consistency.
+	/// Check for any canon blocks that haven't had their logs indexed.
 	/// Check for any missing parent blocks from the latest canon block.
-	CheckMissingBlocks,
+	CheckIndexedBlocks,
 }
 
 /// Implements an indexer that imports blocks and their transactions.
@@ -131,7 +133,22 @@ where
 						canonicalize_blocks(indexer_backend.clone(), common, enacted, retracted)
 							.await;
 					}
-					WorkerCommand::CheckMissingBlocks => {
+					WorkerCommand::CheckIndexedBlocks => {
+						// Fix any indexed blocks that did not have their logs indexed
+						if let Some(block_hash) =
+							indexer_backend.get_first_pending_canon_block().await
+						{
+							log::debug!(
+								target: "frontier-sql",
+								"Indexing pending canonical block {:?}",
+								block_hash,
+							);
+							indexer_backend
+								.index_block_logs(client.clone(), block_hash)
+								.await;
+						}
+
+						// Fix any missing blocks
 						index_missing_blocks(
 							client.clone(),
 							substrate_backend.clone(),
@@ -163,12 +180,12 @@ where
 		// Resume sync from the last indexed block until we reach an already indexed parent
 		log::info!(target: "frontier-sql", "ResumeSend: {:?}", tx.send(WorkerCommand::ResumeSync).await);
 
-		// check missing blocks every 20 seconds
+		// check missing blocks every minute
 		let tx2 = tx.clone();
 		tokio::task::spawn(async move {
 			loop {
-				futures_timer::Delay::new(Duration::from_secs(20)).await;
-				tx2.send(WorkerCommand::CheckMissingBlocks).await.ok();
+				futures_timer::Delay::new(Duration::from_secs(60)).await;
+				tx2.send(WorkerCommand::CheckIndexedBlocks).await.ok();
 			}
 		});
 
