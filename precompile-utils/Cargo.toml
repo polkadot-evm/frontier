@@ -33,7 +33,7 @@ sp-std = { workspace = true }
 # Frontier
 evm = { workspace = true, default-features = false, features = [ "with-codec" ] }
 fp-evm = { workspace = true }
-pallet-evmless = { workspace = true, features = [ "forbid-evm-reentrancy" ] }
+pallet-evmless = { workspace = true }
 
 [dev-dependencies]
 hex-literal = "0.3.1"

@@ -65,7 +65,7 @@ pub mod runner;
 mod tests;
 
 use frame_support::{
-	dispatch::{DispatchResultWithPostInfo, Pays, PostDispatchInfo},
+	dispatch::{DispatchErrorWithPostInfo, PostDispatchInfo},
 	traits::{
 		tokens::{fungible::Inspect, fungibles},
 		Currency, ExistenceRequirement, FindAuthor, Get, Imbalance, OnUnbalanced, SignedImbalance,
@@ -73,12 +73,12 @@ use frame_support::{
 	},
 	weights::Weight,
 };
-use frame_system::RawOrigin;
+use frame_system::{pallet_prelude::OriginFor, RawOrigin};
 use impl_trait_for_tuples::impl_for_tuples;
 use sp_core::{Hasher, H160, H256, U256};
 use sp_runtime::{
 	traits::{BadOrigin, Saturating, UniqueSaturatedInto, Zero},
-	AccountId32, DispatchErrorWithPostInfo,
+	AccountId32,
 };
 use sp_std::{cmp::min, vec::Vec};
 
@@ -88,9 +88,9 @@ pub use evm::{
 #[cfg(feature = "std")]
 use fp_evm::GenesisAccount;
 pub use fp_evm::{
-	Account, CallInfo, CreateInfo, ExecutionInfo, FeeCalculator, InvalidEvmTransactionError,
-	LinearCostPrecompile, Log, Precompile, PrecompileFailure, PrecompileHandle, PrecompileOutput,
-	PrecompileResult, PrecompileSet, Vicinity,
+	Account, CallInfo, CreateInfo, ExecutionInfo, FeeCalculator, InvalidEvmTransactionError, Log,
+	Precompile, PrecompileFailure, PrecompileHandle, PrecompileOutput, PrecompileResult,
+	PrecompileSet, Vicinity,
 };
 
 pub use self::{
@@ -102,7 +102,6 @@ pub use self::{
 pub mod pallet {
 	use super::*;
 	use frame_support::pallet_prelude::*;
-	use frame_system::pallet_prelude::*;
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
@@ -171,33 +170,12 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		/// Withdraw balance from EVM into currency/balances pallet.
-		#[pallet::call_index(0)]
-		#[pallet::weight(0)]
-		pub fn withdraw(
-			origin: OriginFor<T>,
-			address: H160,
-			value: BalanceOf<T>,
-		) -> DispatchResult {
-			let destination = T::WithdrawOrigin::ensure_address_origin(&address, origin)?;
-			let address_account_id = T::AddressMapping::into_account_id(address);
-
-			T::Currency::transfer(
-				&address_account_id,
-				&destination,
-				value,
-				ExistenceRequirement::AllowDeath,
-			)?;
-
-			Ok(())
-		}
-
 		/// Issue an EVM call operation. This is similar to a message call transaction in Ethereum.
 		#[pallet::call_index(1)]
 		#[pallet::weight({
-			let without_base_extrinsic_weight = true;
-			T::GasWeightMapping::gas_to_weight(*gas_limit, without_base_extrinsic_weight)
-		})]
+					let without_base_extrinsic_weight = true;
+					T::GasWeightMapping::gas_to_weight(*gas_limit, without_base_extrinsic_weight)
+				})]
 		pub fn call(
 			origin: OriginFor<T>,
 			source: H160,
@@ -257,161 +235,6 @@ pub mod pallet {
 				pays_fee: Pays::No,
 			})
 		}
-
-		/// Issue an EVM create operation. This is similar to a contract creation transaction in
-		/// Ethereum.
-		#[pallet::call_index(2)]
-		#[pallet::weight({
-			let without_base_extrinsic_weight = true;
-			T::GasWeightMapping::gas_to_weight(*gas_limit, without_base_extrinsic_weight)
-		})]
-		pub fn create(
-			origin: OriginFor<T>,
-			source: H160,
-			init: Vec<u8>,
-			value: U256,
-			gas_limit: u64,
-			max_fee_per_gas: U256,
-			max_priority_fee_per_gas: Option<U256>,
-			nonce: Option<U256>,
-			access_list: Vec<(H160, Vec<H256>)>,
-		) -> DispatchResultWithPostInfo {
-			T::CallOrigin::ensure_address_origin(&source, origin)?;
-
-			let is_transactional = true;
-			let validate = true;
-			let info = match T::Runner::create(
-				source,
-				init,
-				value,
-				gas_limit,
-				Some(max_fee_per_gas),
-				max_priority_fee_per_gas,
-				nonce,
-				access_list,
-				is_transactional,
-				validate,
-				T::config(),
-			) {
-				Ok(info) => info,
-				Err(e) => {
-					return Err(DispatchErrorWithPostInfo {
-						post_info: PostDispatchInfo {
-							actual_weight: Some(e.weight),
-							pays_fee: Pays::Yes,
-						},
-						error: e.error.into(),
-					})
-				}
-			};
-
-			match info {
-				CreateInfo {
-					exit_reason: ExitReason::Succeed(_),
-					value: create_address,
-					..
-				} => {
-					Pallet::<T>::deposit_event(Event::<T>::Created {
-						address: create_address,
-					});
-				}
-				CreateInfo {
-					exit_reason: _,
-					value: create_address,
-					..
-				} => {
-					Pallet::<T>::deposit_event(Event::<T>::CreatedFailed {
-						address: create_address,
-					});
-				}
-			}
-
-			Ok(PostDispatchInfo {
-				actual_weight: Some(T::GasWeightMapping::gas_to_weight(
-					info.used_gas.unique_saturated_into(),
-					true,
-				)),
-				pays_fee: Pays::No,
-			})
-		}
-
-		/// Issue an EVM create2 operation.
-		#[pallet::call_index(3)]
-		#[pallet::weight({
-			let without_base_extrinsic_weight = true;
-			T::GasWeightMapping::gas_to_weight(*gas_limit, without_base_extrinsic_weight)
-		})]
-		pub fn create2(
-			origin: OriginFor<T>,
-			source: H160,
-			init: Vec<u8>,
-			salt: H256,
-			value: U256,
-			gas_limit: u64,
-			max_fee_per_gas: U256,
-			max_priority_fee_per_gas: Option<U256>,
-			nonce: Option<U256>,
-			access_list: Vec<(H160, Vec<H256>)>,
-		) -> DispatchResultWithPostInfo {
-			T::CallOrigin::ensure_address_origin(&source, origin)?;
-
-			let is_transactional = true;
-			let validate = true;
-			let info = match T::Runner::create2(
-				source,
-				init,
-				salt,
-				value,
-				gas_limit,
-				Some(max_fee_per_gas),
-				max_priority_fee_per_gas,
-				nonce,
-				access_list,
-				is_transactional,
-				validate,
-				T::config(),
-			) {
-				Ok(info) => info,
-				Err(e) => {
-					return Err(DispatchErrorWithPostInfo {
-						post_info: PostDispatchInfo {
-							actual_weight: Some(e.weight),
-							pays_fee: Pays::Yes,
-						},
-						error: e.error.into(),
-					})
-				}
-			};
-
-			match info {
-				CreateInfo {
-					exit_reason: ExitReason::Succeed(_),
-					value: create_address,
-					..
-				} => {
-					Pallet::<T>::deposit_event(Event::<T>::Created {
-						address: create_address,
-					});
-				}
-				CreateInfo {
-					exit_reason: _,
-					value: create_address,
-					..
-				} => {
-					Pallet::<T>::deposit_event(Event::<T>::CreatedFailed {
-						address: create_address,
-					});
-				}
-			}
-
-			Ok(PostDispatchInfo {
-				actual_weight: Some(T::GasWeightMapping::gas_to_weight(
-					info.used_gas.unique_saturated_into(),
-					true,
-				)),
-				pays_fee: Pays::No,
-			})
-		}
 	}
 
 	#[pallet::event]
@@ -453,6 +276,8 @@ pub mod pallet {
 		Reentrancy,
 		/// EIP-3607,
 		TransactionMustComeFromEOA,
+		/// Not allowed on EVMless,
+		NotAllowedEVMless,
 	}
 
 	impl<T> From<InvalidEvmTransactionError> for Error<T> {

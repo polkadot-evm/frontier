@@ -17,10 +17,10 @@
 
 //! Test mock for unit tests and benchmarking
 
-use fp_evm::Precompile;
+// use fp_evm::Precompile;
 use frame_support::{
 	parameter_types,
-	traits::{ConstU32, FindAuthor},
+	traits::{AsEnsureOriginWithArg, ConstU32, ConstU64, FindAuthor},
 	weights::Weight,
 };
 use sp_core::{H160, H256, U256};
@@ -47,8 +47,9 @@ frame_support::construct_runtime! {
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
+		Assets: pallet_assets::{Pallet, Call, Storage, Config<T>, Event<T>},
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage},
-		EVM: crate::{Pallet, Call, Storage, Config, Event<T>},
+		EVMless: crate::{Pallet, Call, Storage, Config, Event<T>},
 	}
 }
 
@@ -99,6 +100,27 @@ impl pallet_balances::Config for Test {
 	type ReserveIdentifier = ();
 }
 
+impl pallet_assets::Config for Test {
+	type RuntimeEvent = RuntimeEvent;
+	type Balance = u64;
+	type AssetId = u32;
+	type AssetIdParameter = u32;
+	type Currency = Balances;
+	type CreateOrigin = AsEnsureOriginWithArg<frame_system::EnsureSigned<H160>>;
+	type ForceOrigin = frame_system::EnsureRoot<H160>;
+	type AssetDeposit = ConstU64<1>;
+	type AssetAccountDeposit = ConstU64<10>;
+	type MetadataDepositBase = ConstU64<1>;
+	type MetadataDepositPerByte = ConstU64<1>;
+	type ApprovalDeposit = ConstU64<1>;
+	type StringLimit = ConstU32<50>;
+	type Freezer = ();
+	type WeightInfo = ();
+	type Extra = ();
+	type RemoveItemsLimit = ConstU32<5>;
+	type CallbackHandle = ();
+}
+
 parameter_types! {
 	pub const MinimumPeriod: u64 = 1000;
 }
@@ -132,6 +154,7 @@ parameter_types! {
 	pub MockPrecompiles: MockPrecompileSet = MockPrecompileSet;
 }
 impl crate::Config for Test {
+	type Fungibles = Assets;
 	type FeeCalculator = FixedGasPrice;
 	type GasWeightMapping = crate::FixedGasWeightMapping<Self>;
 	type WeightPerGas = WeightPerGas;
@@ -154,7 +177,7 @@ impl crate::Config for Test {
 	type FindAuthor = FindAuthorTruncated;
 }
 
-/// Exemple PrecompileSet with only Identity precompile.
+/// Exemple PrecompileSet
 pub struct MockPrecompileSet;
 
 impl PrecompileSet for MockPrecompileSet {
@@ -164,7 +187,7 @@ impl PrecompileSet for MockPrecompileSet {
 		let address = handle.code_address();
 
 		if address == H160::from_low_u64_be(1) {
-			return Some(pallet_evm_precompile_simple::Identity::execute(handle));
+			// return Some(pallet_evmless_precompile_fungibles::Fungibles::<Test>::execute(handle));
 		}
 
 		None

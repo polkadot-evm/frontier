@@ -3,18 +3,10 @@ members = [
 	"frame/base-fee",
 	"frame/dynamic-fee",
 	"frame/ethereum",
-  "frame/evmless",
+ 	"frame/evmless",
 	"frame/evm-chain-id",
 	"frame/hotfix-sufficients",
 	"frame/evmless/precompile/fungibles",
-	"frame/evmless/precompile/sha3fips",
-	"frame/evmless/precompile/simple",
-	"frame/evmless/precompile/modexp",
-	"frame/evmless/precompile/ed25519",
-	"frame/evmless/precompile/bn128",
-	"frame/evmless/precompile/blake2",
-	"frame/evmless/precompile/dispatch",
-	"frame/evmless/precompile/curve25519",
 	"client/consensus",
 	"client/rpc-core",
 	"client/rpc",
@@ -141,10 +133,6 @@ pallet-ethereum = { version = "4.0.0-dev", path = "frame/ethereum", default-feat
 pallet-evmless = { version = "6.0.0-dev", path = "frame/evmless", default-features = false }
 pallet-evm-chain-id = { version = "1.0.0-dev", path = "frame/evm-chain-id", default-features = false }
 pallet-evmless-precompile-fungibles = { version = "2.0.0-dev", path = "frame/evmless/precompile/fungibles", default-features = false }
-pallet-evm-precompile-modexp = { version = "2.0.0-dev", path = "frame/evmless/precompile/modexp", default-features = false }
-pallet-evm-precompile-sha3fips = { version = "2.0.0-dev", path = "frame/evmless/precompile/sha3fips", default-features = false }
-pallet-evm-precompile-simple = { version = "2.0.0-dev", path = "frame/evmless/precompile/simple", default-features = false }
-pallet-evm-test-vector-support = { version = "1.0.0-dev", path = "frame/evmless/test-vector-support" }
 pallet-hotfix-sufficients = { version = "1.0.0", path = "frame/hotfix-sufficients", default-features = false }
 # Frontier Template
 frontier-template-runtime = { path = "template/runtime", default-features = false }

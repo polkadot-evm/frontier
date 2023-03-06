@@ -29,14 +29,13 @@ sp-core = { workspace = true }
 sp-io = { workspace = true }
 sp-runtime = { workspace = true }
 sp-std = { workspace = true }
-pallet-assets = { workspace = true }
 # Frontier
 fp-evm = { workspace = true }
 
 [dev-dependencies]
 # Substrate
+pallet-assets = { workspace = true, features = ["std"]  }
 pallet-balances = { workspace = true, features = ["std"] }
-pallet-evm-precompile-simple = { workspace = true }
 pallet-evmless-precompile-fungibles = { workspace = true }
 
 [features]

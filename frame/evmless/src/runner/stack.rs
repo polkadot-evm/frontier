@@ -19,8 +19,8 @@
 
 use crate::{
 	runner::Runner as RunnerT, AccountCodes, AccountStorages, AddressMapping, BalanceOf,
-	BlockHashMapping, Config, Error, Event, FeeCalculator, OnChargeEVMTransaction, OnCreate,
-	Pallet, RunnerError,
+	BlockHashMapping, Config, Error, Event, FeeCalculator, OnChargeEVMTransaction, Pallet,
+	RunnerError, Weight,
 };
 use evm::{
 	backend::Backend as BackendT,
@@ -306,6 +306,8 @@ where
 		let (source_account, inner_weight) = Pallet::<T>::account_basic(&source);
 		weight = weight.saturating_add(inner_weight);
 
+		// todo: check if target is evmless precompile
+
 		let _ = fp_evm::CheckEvmTransaction::<Self::Error>::new(
 			fp_evm::CheckEvmTransactionConfig {
 				evm_config,
@@ -378,105 +380,42 @@ where
 	}
 
 	fn create(
-		source: H160,
-		init: Vec<u8>,
-		value: U256,
-		gas_limit: u64,
-		max_fee_per_gas: Option<U256>,
-		max_priority_fee_per_gas: Option<U256>,
-		nonce: Option<U256>,
-		access_list: Vec<(H160, Vec<H256>)>,
-		is_transactional: bool,
-		validate: bool,
-		config: &evm::Config,
+		_source: H160,
+		_init: Vec<u8>,
+		_value: U256,
+		_gas_limit: u64,
+		_max_fee_per_gas: Option<U256>,
+		_max_priority_fee_per_gas: Option<U256>,
+		_nonce: Option<U256>,
+		_access_list: Vec<(H160, Vec<H256>)>,
+		_is_transactional: bool,
+		_validate: bool,
+		_config: &evm::Config,
 	) -> Result<CreateInfo, RunnerError<Self::Error>> {
-		if validate {
-			Self::validate(
-				source,
-				None,
-				init.clone(),
-				value,
-				gas_limit,
-				max_fee_per_gas,
-				max_priority_fee_per_gas,
-				nonce,
-				access_list.clone(),
-				is_transactional,
-				config,
-			)?;
-		}
-		let precompiles = T::PrecompilesValue::get();
-		Self::execute(
-			source,
-			value,
-			gas_limit,
-			max_fee_per_gas,
-			max_priority_fee_per_gas,
-			config,
-			&precompiles,
-			is_transactional,
-			|executor| {
-				let address = executor.create_address(evm::CreateScheme::Legacy { caller: source });
-				T::OnCreate::on_create(source, address);
-				let (reason, _) =
-					executor.transact_create(source, value, init, gas_limit, access_list);
-				(reason, address)
-			},
-		)
+		Err(RunnerError {
+			error: Error::<T>::NotAllowedEVMless,
+			weight: Weight::default(),
+		})
 	}
 
 	fn create2(
-		source: H160,
-		init: Vec<u8>,
-		salt: H256,
-		value: U256,
-		gas_limit: u64,
-		max_fee_per_gas: Option<U256>,
-		max_priority_fee_per_gas: Option<U256>,
-		nonce: Option<U256>,
-		access_list: Vec<(H160, Vec<H256>)>,
-		is_transactional: bool,
-		validate: bool,
-		config: &evm::Config,
+		_source: H160,
+		_init: Vec<u8>,
+		_salt: H256,
+		_value: U256,
+		_gas_limit: u64,
+		_max_fee_per_gas: Option<U256>,
+		_max_priority_fee_per_gas: Option<U256>,
+		_nonce: Option<U256>,
+		_access_list: Vec<(H160, Vec<H256>)>,
+		_is_transactional: bool,
+		_validate: bool,
+		_config: &evm::Config,
 	) -> Result<CreateInfo, RunnerError<Self::Error>> {
-		if validate {
-			Self::validate(
-				source,
-				None,
-				init.clone(),
-				value,
-				gas_limit,
-				max_fee_per_gas,
-				max_priority_fee_per_gas,
-				nonce,
-				access_list.clone(),
-				is_transactional,
-				config,
-			)?;
-		}
-		let precompiles = T::PrecompilesValue::get();
-		let code_hash = H256::from(sp_io::hashing::keccak_256(&init));
-		Self::execute(
-			source,
-			value,
-			gas_limit,
-			max_fee_per_gas,
-			max_priority_fee_per_gas,
-			config,
-			&precompiles,
-			is_transactional,
-			|executor| {
-				let address = executor.create_address(evm::CreateScheme::Create2 {
-					caller: source,
-					code_hash,
-					salt,
-				});
-				T::OnCreate::on_create(source, address);
-				let (reason, _) =
-					executor.transact_create2(source, value, init, salt, gas_limit, access_list);
-				(reason, address)
-			},
-		)
+		Err(RunnerError {
+			error: Error::<T>::NotAllowedEVMless,
+			weight: Weight::default(),
+		})
 	}
 }
 

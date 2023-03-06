@@ -52,13 +52,9 @@ fp-self-contained = { workspace = true }
 pallet-base-fee = { workspace = true }
 pallet-dynamic-fee = { workspace = true }
 pallet-ethereum = { workspace = true }
-#pallet-evm = { workspace = true }
 pallet-evmless = { workspace = true }
 pallet-evm-chain-id = { workspace = true }
 pallet-evmless-precompile-fungibles = { workspace = true }
-pallet-evm-precompile-modexp = { workspace = true }
-pallet-evm-precompile-sha3fips = { workspace = true }
-pallet-evm-precompile-simple = { workspace = true }
 pallet-hotfix-sufficients = { workspace = true }
 
 # Precompile Utils
@@ -110,13 +106,9 @@ std = [
 	"pallet-base-fee/std",
 	"pallet-dynamic-fee/std",
 	"pallet-ethereum/std",
-	#"pallet-evm/std",
 	"pallet-evmless/std",
 	"pallet-evm-chain-id/std",
 	"pallet-evmless-precompile-fungibles/std",
-	"pallet-evm-precompile-modexp/std",
-	"pallet-evm-precompile-sha3fips/std",
-	"pallet-evm-precompile-simple/std",
 	"pallet-hotfix-sufficients/std",
 ]
 runtime-benchmarks = [
@@ -127,7 +119,6 @@ runtime-benchmarks = [
 	"pallet-grandpa/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
 	"pallet-ethereum/runtime-benchmarks",
-	#"pallet-evm/runtime-benchmarks",
 	"pallet-evmless/runtime-benchmarks",
 	"pallet-hotfix-sufficients/runtime-benchmarks",
 ]
