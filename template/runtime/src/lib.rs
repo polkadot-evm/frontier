@@ -348,6 +348,7 @@ impl pallet_evm::Config for Runtime {
 impl pallet_ethereum::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type StateRoot = pallet_ethereum::IntermediateStateRoot<Self>;
+	type PostLogContent = pallet_ethereum::PostBlockAndTxnHashes;
 }
 
 parameter_types! {
