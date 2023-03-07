@@ -72,9 +72,10 @@ where
 		};
 
 		if let Err(err) = handle.check_function_modifier(match selector {
-			ERC20Methods::Approve | ERC20Methods::Transfer | ERC20Methods::TransferFrom => {
-				FunctionModifier::NonPayable
-			}
+			ERC20Methods::Approve
+			| ERC20Methods::Transfer
+			| ERC20Methods::TransferFrom
+			| ERC20Methods::Allowance => FunctionModifier::NonPayable,
 			_ => FunctionModifier::View,
 		}) {
 			return Err(err.into());
