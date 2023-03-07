@@ -248,7 +248,7 @@ mod tests {
 	use sp_blockchain::HeaderBackend;
 	use sp_consensus::BlockOrigin;
 	use sp_runtime::{
-		generic::{Block, BlockId, Header},
+		generic::{Block, Header},
 		traits::{BlakeTwo256, Block as BlockT},
 	};
 	use substrate_test_runtime_client::{
@@ -300,7 +300,7 @@ mod tests {
 
 		// A1 -> B1
 		let mut builder = client
-			.new_block_at(&BlockId::Hash(a1_hash), Default::default(), false)
+			.new_block_at(a1_hash, Default::default(), false)
 			.unwrap();
 		builder.push_storage_change(vec![1], None).unwrap();
 		let b1 = builder.build().unwrap().block;
@@ -329,7 +329,7 @@ mod tests {
 
 		// A1 -> B2
 		let mut builder = client
-			.new_block_at(&BlockId::Hash(a1_hash), Default::default(), false)
+			.new_block_at(a1_hash, Default::default(), false)
 			.unwrap();
 		builder.push_storage_change(vec![2], None).unwrap();
 		let b2 = builder.build().unwrap().block;
@@ -358,7 +358,7 @@ mod tests {
 
 		// B2 -> C1. B2 branch is now canon.
 		let mut builder = client
-			.new_block_at(&BlockId::Hash(b2_hash), Default::default(), false)
+			.new_block_at(b2_hash, Default::default(), false)
 			.unwrap();
 		builder.push_storage_change(vec![1], None).unwrap();
 		let c1 = builder.build().unwrap().block;

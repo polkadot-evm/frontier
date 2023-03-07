@@ -31,7 +31,7 @@ use sc_network::{NetworkService, NetworkStatusProvider};
 use sc_network_common::ExHashT;
 use sc_rpc::SubscriptionTaskExecutor;
 use sc_transaction_pool_api::TransactionPool;
-use sp_api::{ApiExt, BlockId, ProvideRuntimeApi};
+use sp_api::{ApiExt, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
 use sp_consensus::SyncOracle;
 use sp_core::hashing::keccak_256;
@@ -292,12 +292,12 @@ where
 						.import_notification_stream()
 						.filter_map(move |txhash| {
 							if let Some(xt) = pool.ready_transaction(&txhash) {
-								let best_block: BlockId<B> = BlockId::Hash(client.info().best_hash);
+								let best_block = client.info().best_hash;
 
 								let api = client.runtime_api();
 
 								let api_version = if let Ok(Some(api_version)) =
-									api.api_version::<dyn EthereumRuntimeRPCApi<B>>(&best_block)
+									api.api_version::<dyn EthereumRuntimeRPCApi<B>>(best_block)
 								{
 									api_version
 								} else {
@@ -307,11 +307,11 @@ where
 								let xts = vec![xt.data().clone()];
 
 								let txs: Option<Vec<EthereumTransaction>> = if api_version > 1 {
-									api.extrinsic_filter(&best_block, xts).ok()
+									api.extrinsic_filter(best_block, xts).ok()
 								} else {
 									#[allow(deprecated)]
 									if let Ok(legacy) =
-										api.extrinsic_filter_before_version_2(&best_block, xts)
+										api.extrinsic_filter_before_version_2(best_block, xts)
 									{
 										Some(legacy.into_iter().map(|tx| tx.into()).collect())
 									} else {

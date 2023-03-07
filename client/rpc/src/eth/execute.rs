@@ -28,7 +28,7 @@ use sc_transaction_pool::ChainApi;
 use sp_api::{ApiExt, ProvideRuntimeApi};
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
 use sp_blockchain::HeaderBackend;
-use sp_runtime::{generic::BlockId, traits::Block as BlockT, SaturatedConversion};
+use sp_runtime::{traits::Block as BlockT, SaturatedConversion};
 // Frontier
 use fc_rpc_core::types::*;
 use fp_rpc::EthereumRuntimeRPCApi;
@@ -93,40 +93,41 @@ where
 			)
 		};
 
-		let (id, api) = match frontier_backend_client::native_block_id::<B, C>(
+		let (substrate_hash, api) = match frontier_backend_client::native_block_id::<B, C>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
 			number,
 		)? {
-			Some(id) => (id, self.client.runtime_api()),
+			Some(id) => {
+				let hash = self
+					.client
+					.expect_block_hash_from_id(&id)
+					.map_err(|_| crate::err(JSON_RPC_ERROR_DEFAULT, "header not found", None))?;
+				(hash, self.client.runtime_api())
+			}
 			None => {
 				// Not mapped in the db, assume pending.
-				let id = BlockId::Hash(self.client.info().best_hash);
+				let hash = self.client.info().best_hash;
 				let api = pending_runtime_api(self.client.as_ref(), self.graph.as_ref())?;
-				(id, api)
+				(hash, api)
 			}
 		};
 
-		if let Err(sp_blockchain::Error::UnknownBlock(_)) =
-			self.client.expect_block_hash_from_id(&id)
+		let api_version = if let Ok(Some(api_version)) =
+			api.api_version::<dyn EthereumRuntimeRPCApi<B>>(substrate_hash)
 		{
-			return Err(crate::err(JSON_RPC_ERROR_DEFAULT, "header not found", None));
-		}
-
-		let api_version =
-			if let Ok(Some(api_version)) = api.api_version::<dyn EthereumRuntimeRPCApi<B>>(&id) {
-				api_version
-			} else {
-				return Err(internal_err("failed to retrieve Runtime Api version"));
-			};
+			api_version
+		} else {
+			return Err(internal_err("failed to retrieve Runtime Api version"));
+		};
 
 		let block = if api_version > 1 {
-			api.current_block(&id)
+			api.current_block(substrate_hash)
 				.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
 		} else {
 			#[allow(deprecated)]
 			let legacy_block = api
-				.current_block_before_version_2(&id)
+				.current_block_before_version_2(substrate_hash)
 				.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?;
 			legacy_block.map(|block| block.into())
 		};
@@ -150,7 +151,7 @@ where
 			}
 			// If gas limit is not specified in the request we either use the multiplier if supported
 			// or fallback to the block gas limit.
-			None => match api.gas_limit_multiplier_support(&id) {
+			None => match api.gas_limit_multiplier_support(substrate_hash) {
 				Ok(_) => max_gas_limit,
 				_ => block_gas_limit,
 			},
@@ -163,7 +164,7 @@ where
 					// Legacy pre-london
 					#[allow(deprecated)]
 					let info = api.call_before_version_2(
-						&id,
+						substrate_hash,
 						from.unwrap_or_default(),
 						to,
 						data,
@@ -182,7 +183,7 @@ where
 					// Post-london
 					#[allow(deprecated)]
 					let info = api.call_before_version_4(
-						&id,
+						substrate_hash,
 						from.unwrap_or_default(),
 						to,
 						data,
@@ -203,7 +204,7 @@ where
 					let access_list = access_list.unwrap_or_default();
 					let info = api
 						.call(
-							&id,
+							substrate_hash,
 							from.unwrap_or_default(),
 							to,
 							data,
@@ -234,7 +235,7 @@ where
 					// Legacy pre-london
 					#[allow(deprecated)]
 					let info = api.create_before_version_2(
-						&id,
+						substrate_hash,
 						from.unwrap_or_default(),
 						data,
 						value.unwrap_or_default(),
@@ -249,14 +250,14 @@ where
 					error_on_execution_failure(&info.exit_reason, &[])?;
 
 					let code = api
-						.account_code_at(&id, info.value)
+						.account_code_at(substrate_hash, info.value)
 						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?;
 					Ok(Bytes(code))
 				} else if api_version >= 2 && api_version < 4 {
 					// Post-london
 					#[allow(deprecated)]
 					let info = api.create_before_version_4(
-						&id,
+						substrate_hash,
 						from.unwrap_or_default(),
 						data,
 						value.unwrap_or_default(),
@@ -272,7 +273,7 @@ where
 					error_on_execution_failure(&info.exit_reason, &[])?;
 
 					let code = api
-						.account_code_at(&id, info.value)
+						.account_code_at(substrate_hash, info.value)
 						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?;
 					Ok(Bytes(code))
 				} else if api_version == 4 {
@@ -280,7 +281,7 @@ where
 					let access_list = access_list.unwrap_or_default();
 					let info = api
 						.create(
-							&id,
+							substrate_hash,
 							from.unwrap_or_default(),
 							data,
 							value.unwrap_or_default(),
@@ -302,7 +303,7 @@ where
 					error_on_execution_failure(&info.exit_reason, &[])?;
 
 					let code = api
-						.account_code_at(&id, info.value)
+						.account_code_at(substrate_hash, info.value)
 						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?;
 					Ok(Bytes(code))
 				} else {
@@ -321,7 +322,6 @@ where
 
 		// Get best hash (TODO missing support for estimating gas historically)
 		let substrate_hash = client.info().best_hash;
-		let id = BlockId::Hash(substrate_hash);
 
 		// Adapt request for gas estimation.
 		let request = EGA::adapt_request(request);
@@ -335,7 +335,7 @@ where
 			if let Some(to) = request.to {
 				let to_code = client
 					.runtime_api()
-					.account_code_at(&id, to)
+					.account_code_at(substrate_hash, to)
 					.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?;
 				if to_code.is_empty() {
 					return Ok(MIN_GAS_PER_TX);
@@ -382,7 +382,7 @@ where
 			}
 			// If gas limit is not specified in the request we either use the multiplier if supported
 			// or fallback to the block gas limit.
-			None => match api.gas_limit_multiplier_support(&id) {
+			None => match api.gas_limit_multiplier_support(substrate_hash) {
 				Ok(_) => max_gas_limit,
 				_ => block_gas_limit,
 			},
@@ -393,7 +393,7 @@ where
 			let gas_price = gas_price.unwrap_or_default();
 			if gas_price > U256::zero() {
 				let balance = api
-					.account_basic(&id, from)
+					.account_basic(substrate_hash, from)
 					.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
 					.balance;
 				let mut available = balance;
@@ -461,7 +461,7 @@ where
 							// Legacy pre-london
 							#[allow(deprecated)]
 							api.call_before_version_2(
-								&id,
+								substrate_hash,
 								from.unwrap_or_default(),
 								to,
 								data,
@@ -477,7 +477,7 @@ where
 							// Post-london
 							#[allow(deprecated)]
 							api.call_before_version_4(
-								&id,
+								substrate_hash,
 								from.unwrap_or_default(),
 								to,
 								data,
@@ -494,7 +494,7 @@ where
 							// Post-london + access list support
 							let access_list = access_list.unwrap_or_default();
 							api.call(
-								&id,
+								substrate_hash,
 								from.unwrap_or_default(),
 								to,
 								data,
@@ -522,7 +522,7 @@ where
 							// Legacy pre-london
 							#[allow(deprecated)]
 							api.create_before_version_2(
-								&id,
+								substrate_hash,
 								from.unwrap_or_default(),
 								data,
 								value.unwrap_or_default(),
@@ -537,7 +537,7 @@ where
 							// Post-london
 							#[allow(deprecated)]
 							api.create_before_version_4(
-								&id,
+								substrate_hash,
 								from.unwrap_or_default(),
 								data,
 								value.unwrap_or_default(),
@@ -553,7 +553,7 @@ where
 							// Post-london + access list support
 							let access_list = access_list.unwrap_or_default();
 							api.create(
-								&id,
+								substrate_hash,
 								from.unwrap_or_default(),
 								data,
 								value.unwrap_or_default(),
@@ -585,7 +585,7 @@ where
 		let api_version = if let Ok(Some(api_version)) =
 			client
 				.runtime_api()
-				.api_version::<dyn EthereumRuntimeRPCApi<B>>(&id)
+				.api_version::<dyn EthereumRuntimeRPCApi<B>>(substrate_hash)
 		{
 			api_version
 		} else {

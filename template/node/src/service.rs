@@ -8,6 +8,7 @@ use prometheus_endpoint::Registry;
 use sc_client_api::{BlockBackend, StateBackendFor};
 use sc_consensus::BasicQueue;
 use sc_executor::{NativeElseWasmExecutor, NativeExecutionDispatch};
+use sc_network_common::sync::warp::WarpSyncParams;
 use sc_service::{error::Error as ServiceError, Configuration, PartialComponents, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker};
 use sp_api::{ConstructRuntimeApi, TransactionFor};
@@ -293,24 +294,23 @@ where
 		&config.chain_spec,
 	);
 
-	let warp_sync: Option<Arc<dyn sc_network::config::WarpSyncProvider<Block>>> =
-		if sealing.is_some() {
-			None
-		} else {
-			config
-				.network
-				.extra_sets
-				.push(sc_finality_grandpa::grandpa_peers_set_config(
-					grandpa_protocol_name.clone(),
-				));
-			Some(Arc::new(
-				sc_finality_grandpa::warp_proof::NetworkProvider::new(
-					backend.clone(),
-					grandpa_link.shared_authority_set().clone(),
-					Vec::default(),
-				),
-			))
-		};
+	let warp_sync_params = if sealing.is_some() {
+		None
+	} else {
+		config
+			.network
+			.extra_sets
+			.push(sc_finality_grandpa::grandpa_peers_set_config(
+				grandpa_protocol_name.clone(),
+			));
+		let warp_sync: Arc<dyn sc_network::config::WarpSyncProvider<Block>> =
+			Arc::new(sc_finality_grandpa::warp_proof::NetworkProvider::new(
+				backend.clone(),
+				grandpa_link.shared_authority_set().clone(),
+				Vec::default(),
+			));
+		Some(WarpSyncParams::WithProvider(warp_sync))
+	};
 
 	let (network, system_rpc_tx, tx_handler_controller, network_starter) =
 		sc_service::build_network(sc_service::BuildNetworkParams {
@@ -320,7 +320,7 @@ where
 			spawn_handle: task_manager.spawn_handle(),
 			import_queue,
 			block_announce_validator_builder: None,
-			warp_sync,
+			warp_sync_params,
 		})?;
 
 	if config.offchain_worker.enabled {

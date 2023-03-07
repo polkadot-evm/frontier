@@ -32,6 +32,7 @@ sc-consensus-manual-seal = { workspace = true }
 sc-executor = { workspace = true }
 sc-finality-grandpa = { workspace = true }
 sc-network = { workspace = true }
+sc-network-common = { workspace = true }
 sc-rpc = { workspace = true }
 sc-rpc-api = { workspace = true }
 sc-service = { workspace = true }

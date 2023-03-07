@@ -16,11 +16,11 @@
 // limitations under the License.
 
 use frame_support::{
-	codec::{Decode, Encode},
 	dispatch::{DispatchInfo, GetDispatchInfo},
-	scale_info::TypeInfo,
 	traits::ExtrinsicCall,
 };
+use scale_codec::{Decode, Encode};
+use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::{
 		self, Checkable, Extrinsic, ExtrinsicMetadata, IdentifyAccount, MaybeDisplay, Member,

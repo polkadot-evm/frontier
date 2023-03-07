@@ -24,7 +24,7 @@ use sc_network::NetworkService;
 use sc_network_common::{service::NetworkPeers, ExHashT};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
-use sp_runtime::{generic::BlockId, traits::Block as BlockT};
+use sp_runtime::traits::Block as BlockT;
 // Frontier
 use fc_rpc_core::{types::PeerCount, NetApiServer};
 use fp_rpc::EthereumRuntimeRPCApi;
@@ -64,7 +64,7 @@ where
 		Ok(self
 			.client
 			.runtime_api()
-			.chain_id(&BlockId::Hash(hash))
+			.chain_id(hash)
 			.map_err(|_| internal_err("fetch runtime chain id failed"))?
 			.to_string())
 	}
