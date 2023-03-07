@@ -163,6 +163,13 @@ where
 	}
 }
 
+#[derive(Copy, Clone, Eq, PartialEq, Default)]
+pub enum PostLogContent {
+	#[default]
+	BlockAndTxnHashes,
+	OnlyBlockHash,
+}
+
 pub use self::pallet::*;
 
 #[frame_support::pallet]
@@ -185,13 +192,18 @@ pub mod pallet {
 		type RuntimeEvent: From<Event> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// How Ethereum state root is calculated.
 		type StateRoot: Get<H256>;
+		/// What's included in the PostLog.
+		type PostLogContent: Get<PostLogContent>;
 	}
 
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn on_finalize(n: T::BlockNumber) {
 			<Pallet<T>>::store_block(
-				fp_consensus::find_pre_log(&frame_system::Pallet::<T>::digest()).is_err(),
+				match fp_consensus::find_pre_log(&frame_system::Pallet::<T>::digest()) {
+					Ok(_) => None,
+					Err(_) => Some(T::PostLogContent::get()),
+				},
 				U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(
 					frame_system::Pallet::<T>::block_number(),
 				)),
@@ -332,7 +344,7 @@ pub mod pallet {
 	#[pallet::genesis_build]
 	impl<T: Config> GenesisBuild<T> for GenesisConfig {
 		fn build(&self) {
-			<Pallet<T>>::store_block(false, U256::zero());
+			<Pallet<T>>::store_block(None, U256::zero());
 			frame_support::storage::unhashed::put::<EthereumStorageSchema>(
 				PALLET_ETHEREUM_SCHEMA,
 				&EthereumStorageSchema::V3,
@@ -375,7 +387,7 @@ impl<T: Config> Pallet<T> {
 		Some(H160::from(H256::from(sp_io::hashing::keccak_256(&pubkey))))
 	}
 
-	fn store_block(post_log: bool, block_number: U256) {
+	fn store_block(post_log: Option<PostLogContent>, block_number: U256) {
 		let mut transactions = Vec::new();
 		let mut statuses = Vec::new();
 		let mut receipts = Vec::new();
@@ -426,12 +438,22 @@ impl<T: Config> Pallet<T> {
 		CurrentTransactionStatuses::<T>::put(statuses.clone());
 		BlockHash::<T>::insert(block_number, block.header.hash());
 
-		if post_log {
-			let digest = DigestItem::Consensus(
-				FRONTIER_ENGINE_ID,
-				PostLog::Hashes(fp_consensus::Hashes::from_block(block)).encode(),
-			);
-			frame_system::Pallet::<T>::deposit_log(digest);
+		match post_log {
+			Some(PostLogContent::BlockAndTxnHashes) => {
+				let digest = DigestItem::Consensus(
+					FRONTIER_ENGINE_ID,
+					PostLog::Hashes(fp_consensus::Hashes::from_block(block)).encode(),
+				);
+				frame_system::Pallet::<T>::deposit_log(digest);
+			}
+			Some(PostLogContent::OnlyBlockHash) => {
+				let digest = DigestItem::Consensus(
+					FRONTIER_ENGINE_ID,
+					PostLog::BlockHash(block.header.hash()).encode(),
+				);
+				frame_system::Pallet::<T>::deposit_log(digest);
+			}
+			None => { /* do nothing*/ }
 		}
 	}
 

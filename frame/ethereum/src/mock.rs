@@ -143,7 +143,6 @@ parameter_types! {
 }
 
 pub struct HashedAddressMapping;
-
 impl AddressMapping<AccountId32> for HashedAddressMapping {
 	fn into_account_id(address: H160) -> AccountId32 {
 		let mut data = [0u8; 32];
@@ -172,9 +171,14 @@ impl pallet_evm::Config for Test {
 	type FindAuthor = FindAuthorTruncated;
 }
 
+parameter_types! {
+	pub const PostBlockAndTxnHashes: PostLogContent = PostLogContent::BlockAndTxnHashes;
+}
+
 impl Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type StateRoot = IntermediateStateRoot<Self>;
+	type PostLogContent = PostBlockAndTxnHashes;
 }
 
 impl fp_self_contained::SelfContainedCall for RuntimeCall {
