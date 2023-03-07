@@ -46,9 +46,9 @@ use sp_core::hashing::keccak_256;
 use sp_runtime::traits::{Block as BlockT, UniqueSaturatedInto};
 // Frontier
 use fc_rpc_core::{types::*, EthApiServer};
-use fc_storage::OverrideHandle;
 use fp_rpc::{
-	ConvertTransaction, ConvertTransactionRuntimeApi, EthereumRuntimeRPCApi, TransactionStatus,
+	ConvertTransactionRuntimeApi, EthereumRuntimeRPCApi, EthereumRuntimeStorageOverride,
+	TransactionStatus,
 };
 
 use crate::{internal_err, public_key, signer::EthSigner};
@@ -76,6 +76,7 @@ pub struct Eth<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi, EGA = ()> {
 	/// When using eth_call/eth_estimateGas, the maximum allowed gas limit will be
 	/// block.gas_limit * execute_gas_limit_multiplier
 	execute_gas_limit_multiplier: u64,
+	runtime_state_override: Option<Arc<dyn EthereumRuntimeStorageOverride<B, C>>>,
 	_marker: PhantomData<(B, BE, EGA)>,
 }
 
@@ -94,6 +95,7 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> Eth<B, C, P, CT, BE, H, A
 		fee_history_cache: FeeHistoryCache,
 		fee_history_cache_limit: FeeHistoryCacheLimit,
 		execute_gas_limit_multiplier: u64,
+		runtime_state_override: Option<Arc<dyn EthereumRuntimeStorageOverride<B, C>>>,
 	) -> Self {
 		Self {
 			client,
@@ -109,6 +111,7 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> Eth<B, C, P, CT, BE, H, A
 			fee_history_cache,
 			fee_history_cache_limit,
 			execute_gas_limit_multiplier,
+			runtime_state_override,
 			_marker: PhantomData,
 		}
 	}
@@ -132,6 +135,7 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi, EGA> Eth<B, C, P, CT, BE,
 			fee_history_cache,
 			fee_history_cache_limit,
 			execute_gas_limit_multiplier,
+			runtime_state_override,
 			_marker: _,
 		} = self;
 
@@ -149,6 +153,7 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi, EGA> Eth<B, C, P, CT, BE,
 			fee_history_cache,
 			fee_history_cache_limit,
 			execute_gas_limit_multiplier,
+			runtime_state_override,
 			_marker: PhantomData,
 		}
 	}
@@ -289,6 +294,7 @@ where
 	// ########################################################################
 
 	fn call(&self, request: CallRequest, number: Option<BlockNumber>) -> Result<Bytes> {
+		log::info!("CALL");
 		self.call(request, number)
 	}
 

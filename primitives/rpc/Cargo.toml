@@ -17,6 +17,7 @@ scale-codec = { package = "parity-scale-codec", workspace = true }
 scale-info = { workspace = true }
 # Substrate
 sp-api = { workspace = true }
+sp-state-machine = { workspace = true }
 sp-core = { workspace = true }
 sp-runtime = { workspace = true }
 sp-std = { workspace = true }
@@ -32,6 +33,7 @@ std = [
 	"scale-info/std",
 	# Substrate
 	"sp-api/std",
+	"sp-state-machine/std",
 	"sp-core/std",
 	"sp-runtime/std",
 	"sp-std/std",

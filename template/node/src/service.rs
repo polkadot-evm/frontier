@@ -366,6 +366,9 @@ where
 		fee_history_cache: fee_history_cache.clone(),
 		fee_history_cache_limit,
 		execute_gas_limit_multiplier: eth_config.execute_gas_limit_multiplier,
+		runtime_storage_override: Some(Arc::new(
+			fc_rpc::frontier_backend_client::DefaultEthereumRuntimeStorageOverride,
+		)),
 	};
 
 	let rpc_builder = {

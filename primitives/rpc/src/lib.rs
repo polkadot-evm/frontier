@@ -25,6 +25,7 @@ use scale_info::TypeInfo;
 // Substrate
 use sp_core::{H160, H256, U256};
 use sp_runtime::{traits::Block as BlockT, Permill, RuntimeDebug};
+use sp_state_machine::OverlayedChanges;
 use sp_std::vec::Vec;
 
 #[derive(Clone, Eq, PartialEq, Default, RuntimeDebug, Encode, Decode, TypeInfo)]
@@ -36,6 +37,22 @@ pub struct TransactionStatus {
 	pub contract_address: Option<H160>,
 	pub logs: Vec<Log>,
 	pub logs_bloom: Bloom,
+}
+
+pub trait EthereumRuntimeStorageOverride<B, C>: Send + Sync
+where
+	B: BlockT,
+{
+	fn set_overlayed_changes(
+		&self,
+		client: &C,
+		overlayed_changes: &mut OverlayedChanges,
+		block: B::Hash,
+		version: u32,
+		address: H160,
+		balance: Option<U256>,
+		nonce: Option<U256>,
+	);
 }
 
 sp_api::decl_runtime_apis! {

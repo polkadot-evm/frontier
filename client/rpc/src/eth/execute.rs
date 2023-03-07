@@ -28,6 +28,7 @@ use sc_transaction_pool::ChainApi;
 use sp_api::{ApiExt, CallApiAt, ProvideRuntimeApi};
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
 use sp_blockchain::HeaderBackend;
+use sp_io::hashing::{blake2_128, twox_128};
 use sp_runtime::{
 	generic::BlockId,
 	traits::{BlakeTwo256, Block as BlockT},
@@ -36,6 +37,7 @@ use sp_runtime::{
 // Frontier
 use fc_rpc_core::types::*;
 use fp_rpc::EthereumRuntimeRPCApi;
+use fp_storage::{EVM_ACCOUNT_CODES, PALLET_EVM};
 
 use crate::{
 	eth::{pending_runtime_api, Eth},
@@ -85,6 +87,7 @@ where
 			data,
 			nonce,
 			access_list,
+			state_override,
 			..
 		} = request;
 
@@ -228,12 +231,51 @@ where
 
 					// set custom storage override
 					let mut overlayed_changes = sp_api::OverlayedChanges::default();
-					let key = b"Balances".encode();
+					if let Some(state_override) = state_override {
+						let address = from.unwrap_or_default();
+						if let Some(runtime_state_override) = self.runtime_state_override.as_ref() {
+							let hash =
+								self.client.expect_block_hash_from_id(&id).map_err(|err| {
+									internal_err(format!("failed retrieving block hash: {:?}", err))
+								})?;
 
-					overlayed_changes.set_storage(
-						key,
-						Some(H256::repeat_byte(0x01).as_bytes().to_owned()),
-					);
+							runtime_state_override.set_overlayed_changes(
+								self.client.as_ref(),
+								&mut overlayed_changes,
+								hash,
+								api_version,
+								address,
+								state_override.balance,
+								state_override.nonce,
+							);
+						}
+
+						if let Some(code) = &state_override.code {
+							let mut key = [twox_128(PALLET_EVM), twox_128(EVM_ACCOUNT_CODES)]
+								.concat()
+								.to_vec();
+							key.extend(blake2_128(address.as_bytes()));
+							key.extend(address.as_bytes());
+							overlayed_changes.set_storage(key, Some(code.clone().into_vec()));
+						}
+
+						// Prioritize `state_diff` over `state`
+						if let Some(state_diff) = &state_override.state_diff {
+							for (k, v) in state_diff {
+								overlayed_changes.set_storage(
+									k.as_bytes().to_owned(),
+									Some(v.as_bytes().to_owned()),
+								);
+							}
+						} else if let Some(state) = &state_override.state {
+							for (k, v) in state {
+								overlayed_changes.set_storage(
+									k.as_bytes().to_owned(),
+									Some(v.as_bytes().to_owned()),
+								);
+							}
+						}
+					}
 
 					let storage_transaction_cache = std::cell::RefCell::<
 						sp_api::StorageTransactionCache<B, C::StateBackend>,
