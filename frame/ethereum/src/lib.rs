@@ -202,7 +202,7 @@ pub mod pallet {
 			<Pallet<T>>::store_block(
 				match fp_consensus::find_pre_log(&frame_system::Pallet::<T>::digest()) {
 					Ok(_) => None,
-					Err(_) => Some(PostLogContent::BlockAndTxnHashes),
+					Err(_) => Some(T::PostLogContent::get()),
 				},
 				U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(
 					frame_system::Pallet::<T>::block_number(),
