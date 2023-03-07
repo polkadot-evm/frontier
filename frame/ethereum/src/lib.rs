@@ -894,20 +894,6 @@ impl<T: Config> Get<H256> for IntermediateStateRoot<T> {
 	}
 }
 
-pub struct PostBlockAndTxnHashes;
-impl Get<PostLogContent> for PostBlockAndTxnHashes {
-	fn get() -> PostLogContent {
-		PostLogContent::BlockAndTxnHashes
-	}
-}
-
-pub struct OnlyPostBlockHash;
-impl Get<PostLogContent> for OnlyPostBlockHash {
-	fn get() -> PostLogContent {
-		PostLogContent::OnlyBlockHash
-	}
-}
-
 /// Returns the Ethereum block hash by number.
 pub struct EthereumBlockHashMapping<T>(PhantomData<T>);
 impl<T: Config> BlockHashMapping for EthereumBlockHashMapping<T> {
