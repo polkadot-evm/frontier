@@ -19,8 +19,8 @@
 
 use crate::{
 	runner::Runner as RunnerT, AccountCodes, AccountStorages, AddressMapping, BalanceOf,
-	BlockHashMapping, Config, Error, Event, FeeCalculator, OnChargeEVMTransaction, Pallet,
-	RunnerError, Weight,
+	BlockHashMapping, Config, Error, Event, EvmlessFungiblesPrecompiles, FeeCalculator,
+	OnChargeEVMTransaction, Pallet, RunnerError, Weight,
 };
 use evm::{
 	backend::Backend as BackendT,
@@ -306,7 +306,18 @@ where
 		let (source_account, inner_weight) = Pallet::<T>::account_basic(&source);
 		weight = weight.saturating_add(inner_weight);
 
-		// todo: check if target is evmless precompile
+		// check if this is a call to some EVMless precompile
+		match target {
+			Some(t) => {
+				if <EvmlessFungiblesPrecompiles<T>>::get(t).is_none() {
+					return Err(RunnerError {
+						error: Error::<T>::NotAllowedEVMless,
+						weight: Weight::default(),
+					});
+				}
+			}
+			None => {} // todo: check if simple ETH balance transfer?
+		}
 
 		let _ = fp_evm::CheckEvmTransaction::<Self::Error>::new(
 			fp_evm::CheckEvmTransactionConfig {

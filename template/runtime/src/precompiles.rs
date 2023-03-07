@@ -2,6 +2,7 @@ use pallet_evmless::{Precompile, PrecompileHandle, PrecompileResult, PrecompileS
 use sp_core::{H160, U256};
 use sp_std::marker::PhantomData;
 
+use pallet_evmless::EvmlessFungiblesPrecompiles;
 use pallet_evmless_precompile_fungibles::{AssetIdOf, BalanceOf, Fungibles};
 
 use precompile_utils::EvmData;
@@ -15,12 +16,6 @@ where
 	pub fn new() -> Self {
 		Self(Default::default())
 	}
-	pub fn used_addresses() -> [H160; 1] {
-		[
-			hash(1337),
-			// ...
-		]
-	}
 }
 impl<R> PrecompileSet for FrontierPrecompiles<R>
 where
@@ -32,16 +27,14 @@ where
 	fn execute(&self, handle: &mut impl PrecompileHandle) -> Option<PrecompileResult> {
 		match handle.code_address() {
 			// EVMless
-			a if a == hash(1337) => Some(Fungibles::<R>::execute(handle)),
+			address if EvmlessFungiblesPrecompiles::<R>::contains_key(address) => {
+				Some(Fungibles::<R>::execute(handle))
+			}
 			_ => None,
 		}
 	}
 
 	fn is_precompile(&self, address: H160) -> bool {
-		Self::used_addresses().contains(&address)
+		EvmlessFungiblesPrecompiles::<R>::contains_key(address)
 	}
-}
-
-fn hash(a: u64) -> H160 {
-	H160::from_low_u64_be(a)
 }

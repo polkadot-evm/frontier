@@ -76,7 +76,14 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	}
 	.assimilate_storage(&mut t)
 	.expect("Pallet balances storage can be assimilated");
-	GenesisBuild::<Test>::assimilate_storage(&crate::GenesisConfig { accounts }, &mut t).unwrap();
+	GenesisBuild::<Test>::assimilate_storage(
+		&crate::GenesisConfig {
+			accounts,
+			evmless_fungibles_precompiles: vec![],
+		},
+		&mut t,
+	)
+	.unwrap();
 	t.into()
 }
 
@@ -609,5 +616,17 @@ fn eip3607_transaction_from_precompile_should_fail() {
 			}) => (),
 			_ => panic!("Should have failed"),
 		}
+	});
+}
+
+#[test]
+fn test_evmless_precompile_storage() {
+	new_test_ext().execute_with(|| {
+		let h160 = H160::from_low_u64_be(1337);
+		assert_eq!(EVMless::evmless_fungibles_precompiles(h160), None);
+
+		EVMless::add_evmless_precompile(h160);
+
+		assert_eq!(EVMless::evmless_fungibles_precompiles(h160), Some(()));
 	});
 }

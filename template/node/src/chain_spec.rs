@@ -74,18 +74,15 @@ pub fn eth_account(seed: &[u8]) -> AccountId {
 /// endowed accounts from known private keys
 pub fn endowed_eth_accounts() -> Vec<AccountId> {
 	let alith_seed =
-	hex::decode("0f02ba4d7f83e59eaa32eae9c3c4d99b68ce76decade21cdab7ecce8f4aef81a")
-		.unwrap();
+		hex::decode("0f02ba4d7f83e59eaa32eae9c3c4d99b68ce76decade21cdab7ecce8f4aef81a").unwrap();
 	let alith = eth_account(&alith_seed);
-	
+
 	let baltathar_seed =
-		hex::decode("502f97299c472b88754accd412b7c9a6062ef3186fba0c0388365e1edec24875")
-			.unwrap();
+		hex::decode("502f97299c472b88754accd412b7c9a6062ef3186fba0c0388365e1edec24875").unwrap();
 	let baltathar = eth_account(&baltathar_seed);
 
 	let charleth_seed =
-		hex::decode("c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470")
-			.unwrap();
+		hex::decode("c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470").unwrap();
 	let charleth = eth_account(&charleth_seed);
 
 	vec![alith, baltathar, charleth]
@@ -93,7 +90,7 @@ pub fn endowed_eth_accounts() -> Vec<AccountId> {
 
 pub fn development_config(enable_manual_seal: Option<bool>) -> DevChainSpec {
 	let wasm_binary = WASM_BINARY.expect("WASM not available");
-	
+
 	let accounts = endowed_eth_accounts();
 
 	DevChainSpec::from_genesis(
@@ -231,15 +228,12 @@ fn testnet_genesis(
 		// EVM compatibility
 		evm_chain_id: EVMChainIdConfig { chain_id },
 		evmless: EvmlessConfig {
+			evmless_fungibles_precompiles: vec![H160::from_low_u64_be(1337)],
 			accounts: {
 				let mut map = BTreeMap::new();
 				map.insert(
-					// H160 address of Alice dev account
-					// Derived from SS58 (42 prefix) address
-					// SS58: 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY
-					// hex: 0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d
-					// Using the full hex key, truncating to the first 20 bytes (the first 40 hex chars)
-					H160::from_str("d43593c715fdd31c61141abd04a99fd6822c8558")
+					// H160 address of Alith dev account
+					H160::from_str("420e9F260B40aF7E49440ceAd3069f8e82A5230f")
 						.expect("internal H160 is valid; qed"),
 					fp_evm::GenesisAccount {
 						balance: U256::from_str("0xffffffffffffffffffffffffffffffff")

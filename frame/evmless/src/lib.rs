@@ -101,7 +101,7 @@ pub use self::{
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use frame_support::pallet_prelude::*;
+	use frame_support::{pallet_prelude::*, Blake2_128Concat};
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
@@ -300,6 +300,7 @@ pub mod pallet {
 	#[cfg_attr(feature = "std", derive(Default))]
 	pub struct GenesisConfig {
 		pub accounts: std::collections::BTreeMap<H160, GenesisAccount>,
+		pub evmless_fungibles_precompiles: Vec<H160>,
 	}
 
 	#[pallet::genesis_build]
@@ -330,6 +331,10 @@ pub mod pallet {
 					<AccountStorages<T>>::insert(address, index, value);
 				}
 			}
+
+			for p in &self.evmless_fungibles_precompiles {
+				Pallet::<T>::add_evmless_precompile(p.clone());
+			}
 		}
 	}
 
@@ -341,6 +346,16 @@ pub mod pallet {
 	#[pallet::getter(fn account_storages)]
 	pub type AccountStorages<T: Config> =
 		StorageDoubleMap<_, Blake2_128Concat, H160, Blake2_128Concat, H256, H256, ValueQuery>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn evmless_fungibles_precompiles)]
+	pub type EvmlessFungiblesPrecompiles<T: Config> =
+		StorageMap<_, Blake2_128Concat, H160, (), OptionQuery>;
+
+	// todo
+	// #[pallet::storage]
+	// #[pallet::getter(fn evmless_non_fungibles_precompiles)]
+	// pub type EvmlessNonFungiblesPrecompiles<T: Config> = StorageMap<_, Blake2_128Concat, H160, (), OptionQuery>;
 }
 
 /// Type alias for currency balance.
@@ -514,6 +529,16 @@ impl<T: Config> GasWeightMapping for FixedGasWeightMapping<T> {
 static LONDON_CONFIG: EvmConfig = EvmConfig::london();
 
 impl<T: Config> Pallet<T> {
+	/// Add an EVMless precompile
+	pub fn add_evmless_precompile(h160: H160) {
+		EvmlessFungiblesPrecompiles::<T>::set(h160, Some(()));
+	}
+
+	/// Remove an EVMless precompile
+	pub fn remove_evmless_precompile(h160: H160) {
+		EvmlessFungiblesPrecompiles::<T>::remove(h160);
+	}
+
 	/// Check whether an account is empty.
 	pub fn is_account_empty(address: &H160) -> bool {
 		let (account, _) = Self::account_basic(address);
