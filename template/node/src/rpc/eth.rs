@@ -96,8 +96,8 @@ where
 	CT: ConvertTransaction<<B as BlockT>::Extrinsic> + Send + Sync + 'static,
 {
 	use fc_rpc::{
-		Eth, EthApiServer, EthDevSigner, EthFilter, EthFilterApiServer, EthPubSub,
-		EthPubSubApiServer, EthSigner, Net, NetApiServer, Web3, Web3ApiServer,
+		Debug, DebugApiServer, Eth, EthApiServer, EthDevSigner, EthFilter, EthFilterApiServer,
+		EthPubSub, EthPubSubApiServer, EthSigner, Net, NetApiServer, Web3, Web3ApiServer,
 	};
 
 	let EthDeps {
@@ -146,11 +146,11 @@ where
 		io.merge(
 			EthFilter::new(
 				client.clone(),
-				frontier_backend,
+				frontier_backend.clone(),
 				filter_pool,
 				500_usize, // max stored filters
 				max_past_logs,
-				block_data_cache,
+				block_data_cache.clone(),
 			)
 			.into_rpc(),
 		)?;
@@ -177,7 +177,9 @@ where
 		.into_rpc(),
 	)?;
 
-	io.merge(Web3::new(client).into_rpc())?;
+	io.merge(Web3::new(client.clone()).into_rpc())?;
+
+	io.merge(Debug::new(client, frontier_backend, block_data_cache).into_rpc())?;
 
 	Ok(io)
 }

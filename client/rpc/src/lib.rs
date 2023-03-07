@@ -25,6 +25,8 @@
 	clippy::new_without_default
 )]
 
+mod cache;
+mod debug;
 mod eth;
 mod eth_pubsub;
 mod net;
@@ -32,7 +34,9 @@ mod signer;
 mod web3;
 
 pub use self::{
-	eth::{format, EstimateGasAdapter, Eth, EthBlockDataCacheTask, EthFilter, EthTask},
+	cache::{EthBlockDataCacheTask, EthTask},
+	debug::Debug,
+	eth::{format, EstimateGasAdapter, Eth, EthFilter},
 	eth_pubsub::{EthPubSub, EthereumSubIdProvider},
 	net::Net,
 	signer::{EthDevSigner, EthSigner},
@@ -40,7 +44,8 @@ pub use self::{
 };
 pub use ethereum::TransactionV2 as EthereumTransaction;
 pub use fc_rpc_core::{
-	EthApiServer, EthFilterApiServer, EthPubSubApiServer, NetApiServer, Web3ApiServer,
+	DebugApiServer, EthApiServer, EthFilterApiServer, EthPubSubApiServer, NetApiServer,
+	Web3ApiServer,
 };
 pub use fc_storage::{
 	OverrideHandle, RuntimeApiStorageOverride, SchemaV1Override, SchemaV2Override,

@@ -18,12 +18,14 @@
 
 pub mod types;
 
+mod debug;
 mod eth;
 mod eth_pubsub;
 mod net;
 mod web3;
 
 pub use self::{
+	debug::DebugApiServer,
 	eth::{EthApiServer, EthFilterApiServer},
 	eth_pubsub::EthPubSubApiServer,
 	net::NetApiServer,

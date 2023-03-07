@@ -17,7 +17,6 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 mod block;
-mod cache;
 mod client;
 mod execute;
 mod fee;
@@ -51,13 +50,9 @@ use fp_rpc::{
 	ConvertTransaction, ConvertTransactionRuntimeApi, EthereumRuntimeRPCApi, TransactionStatus,
 };
 
-use crate::{internal_err, public_key, signer::EthSigner};
+use crate::{cache::EthBlockDataCacheTask, internal_err, public_key, signer::EthSigner};
 
-pub use self::{
-	cache::{EthBlockDataCacheTask, EthTask},
-	execute::EstimateGasAdapter,
-	filter::EthFilter,
-};
+pub use self::{execute::EstimateGasAdapter, filter::EthFilter};
 
 /// Eth API implementation.
 pub struct Eth<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi, EGA = ()> {
