@@ -250,6 +250,17 @@ fn testnet_genesis(
 				);
 				map
 			},
+			precompiles: vec![
+				// Ethereum precompiles :
+				(b"ECRecover".to_vec(), H160::from_low_u64_be(1)),
+				(b"Sha256".to_vec(), H160::from_low_u64_be(2)),
+				(b"Ripemd160".to_vec(), H160::from_low_u64_be(3)),
+				(b"Identity".to_vec(), H160::from_low_u64_be(4)),
+				(b"Modexp".to_vec(), H160::from_low_u64_be(5)),
+				// Non-Frontier specific nor Ethereum precompiles :
+				(b"Sha3FIPS256".to_vec(), H160::from_low_u64_be(1024)),
+				(b"Sha3FIPS256".to_vec(), H160::from_low_u64_be(1025)),
+			],
 		},
 		ethereum: Default::default(),
 		dynamic_fee: Default::default(),

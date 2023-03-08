@@ -467,6 +467,7 @@ pub mod pallet {
 	#[cfg_attr(feature = "std", derive(Default))]
 	pub struct GenesisConfig {
 		pub accounts: std::collections::BTreeMap<H160, GenesisAccount>,
+		pub precompiles: Vec<(Vec<u8>, H160)>,
 	}
 
 	#[pallet::genesis_build]
@@ -497,6 +498,10 @@ pub mod pallet {
 					<AccountStorages<T>>::insert(address, index, value);
 				}
 			}
+
+			for (label, address) in &self.precompiles {
+				Pallet::<T>::add_precompile(label, address);
+			}
 		}
 	}
 
@@ -508,6 +513,17 @@ pub mod pallet {
 	#[pallet::getter(fn account_storages)]
 	pub type AccountStorages<T: Config> =
 		StorageDoubleMap<_, Blake2_128Concat, H160, Blake2_128Concat, H256, H256, ValueQuery>;
+
+	/// Allows for precompiles to have arbitrary addresses, potentially more than one.
+	/// `k1`: precompile label, e.g.: `b"Sha3FIPS256".to_vec()`
+	/// `k2`: precompile address
+	///
+	/// Please note that adding a new precompile label here is not enough to guarantee its execution
+	/// It is also required to list the new label on the implementation of `PrecompileSet::execute()`
+	#[pallet::storage]
+	#[pallet::getter(fn precompiles)]
+	pub type Precompiles<T: Config> =
+		StorageDoubleMap<_, Blake2_128Concat, Vec<u8>, Blake2_128Concat, H160, (), OptionQuery>;
 }
 
 /// Type alias for currency balance.
@@ -671,6 +687,16 @@ impl<T: Config> GasWeightMapping for FixedGasWeightMapping<T> {
 static LONDON_CONFIG: EvmConfig = EvmConfig::london();
 
 impl<T: Config> Pallet<T> {
+	/// Add a precompile to storage
+	pub fn add_precompile(label: &Vec<u8>, address: &H160) {
+		Precompiles::<T>::set(label, address, Some(()));
+	}
+
+	/// Remove a precompile from storage
+	pub fn remove_precompile(label: &Vec<u8>, address: &H160) {
+		Precompiles::<T>::remove(label, address);
+	}
+
 	/// Check whether an account is empty.
 	pub fn is_account_empty(address: &H160) -> bool {
 		let (account, _) = Self::account_basic(address);
