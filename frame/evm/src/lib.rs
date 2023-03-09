@@ -428,13 +428,13 @@ pub mod pallet {
 		/// Remove a precompile from storage
 		#[pallet::call_index(5)]
 		#[pallet::weight(T::DbWeight::get().reads_writes(0, 1))]
-		pub fn remove_precompile(
-			origin: OriginFor<T>,
-			address: H160,
-		) -> DispatchResult {
+		pub fn remove_precompile(origin: OriginFor<T>, address: H160) -> DispatchResult {
 			T::PrecompileModifierOrigin::ensure_origin(origin)?;
 
-			ensure!(Precompiles::<T>::contains_key(address), Error::<T>::PrecompileDoesNotExist);
+			ensure!(
+				Precompiles::<T>::contains_key(address),
+				Error::<T>::PrecompileDoesNotExist
+			);
 
 			Self::do_remove_precompile(&address);
 
