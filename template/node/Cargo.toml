@@ -66,7 +66,6 @@ frame-system = { workspace = true }
 pallet-transaction-payment = { workspace = true }
 
 # Frontier
-pallet-evm = { workspace = true }
 fc-cli = { workspace = true }
 fc-consensus = { workspace = true }
 fc-db = { workspace = true }
@@ -78,6 +77,7 @@ fp-dynamic-fee = { workspace = true, features = ["default"] }
 fp-evm = { workspace = true, features = ["default"] }
 fp-rpc = { workspace = true, features = ["default"] }
 frontier-template-runtime = { workspace = true, features = ["default"] }
+pallet-evm = { workspace = true }
 
 [build-dependencies]
 substrate-build-script-utils = { workspace = true }
