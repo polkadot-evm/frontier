@@ -620,3 +620,28 @@ fn eip3607_transaction_from_precompile_should_fail() {
 		}
 	});
 }
+
+#[test]
+fn precompile_storage_works() {
+	new_test_ext().execute_with(|| {
+		let origin = RuntimeOrigin::root();
+		let address = H160::from_low_u64_be(1);
+
+		let mut read_precompile = EVM::precompiles(address);
+		assert_eq!(read_precompile, PrecompileLabel::default());
+
+		let label = PrecompileLabel {
+			label: b"ECRecover".to_vec(),
+		};
+
+		assert_ok!(EVM::add_precompile(origin.clone(), address, label.clone()));
+
+		read_precompile = EVM::precompiles(address);
+		assert_eq!(read_precompile, label);
+
+		assert_ok!(EVM::remove_precompile(origin, address));
+
+		read_precompile = EVM::precompiles(address);
+		assert_eq!(read_precompile, PrecompileLabel::default());
+	});
+}

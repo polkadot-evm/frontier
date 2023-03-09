@@ -12,6 +12,7 @@ repository = { workspace = true }
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
+serde = { workspace = true, default-features = false }
 environmental = { workspace = true, optional = true }
 evm = { workspace = true, features = ["with-codec"] }
 hex = { version = "0.4.3", default-features = false, features = ["alloc"] }
@@ -40,6 +41,7 @@ pallet-evm-precompile-simple = { workspace = true }
 [features]
 default = ["std"]
 std = [
+	"serde/std",
 	"environmental?/std",
 	"evm/std",
 	"evm/with-serde",

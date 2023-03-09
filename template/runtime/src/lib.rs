@@ -343,6 +343,7 @@ impl pallet_evm::Config for Runtime {
 	type OnChargeTransaction = ();
 	type OnCreate = ();
 	type FindAuthor = FindAuthorTruncated<Aura>;
+	type PrecompileModifierOrigin = frame_system::EnsureRoot<Self::AccountId>;
 }
 
 parameter_types! {

@@ -13,6 +13,8 @@ use frontier_template_runtime::{
 	AccountId, EnableManualSeal, GenesisConfig, Signature, WASM_BINARY,
 };
 
+use pallet_evm::PrecompileLabel;
+
 // The URL for the telemetry server.
 // const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
 
@@ -252,14 +254,49 @@ fn testnet_genesis(
 			},
 			precompiles: vec![
 				// Ethereum precompiles :
-				(b"ECRecover".to_vec(), H160::from_low_u64_be(1)),
-				(b"Sha256".to_vec(), H160::from_low_u64_be(2)),
-				(b"Ripemd160".to_vec(), H160::from_low_u64_be(3)),
-				(b"Identity".to_vec(), H160::from_low_u64_be(4)),
-				(b"Modexp".to_vec(), H160::from_low_u64_be(5)),
+				(
+					H160::from_low_u64_be(1),
+					PrecompileLabel {
+						label: b"ECRecover".to_vec(),
+					},
+				),
+				(
+					H160::from_low_u64_be(2),
+					PrecompileLabel {
+						label: b"Sha256".to_vec(),
+					},
+				),
+				(
+					H160::from_low_u64_be(3),
+					PrecompileLabel {
+						label: b"Ripemd160".to_vec(),
+					},
+				),
+				(
+					H160::from_low_u64_be(4),
+					PrecompileLabel {
+						label: b"Identity".to_vec(),
+					},
+				),
+				(
+					H160::from_low_u64_be(5),
+					PrecompileLabel {
+						label: b"Modexp".to_vec(),
+					},
+				),
 				// Non-Frontier specific nor Ethereum precompiles :
-				(b"Sha3FIPS256".to_vec(), H160::from_low_u64_be(1024)),
-				(b"Sha3FIPS256".to_vec(), H160::from_low_u64_be(1025)),
+				(
+					H160::from_low_u64_be(1024),
+					PrecompileLabel {
+						label: b"Sha3FIPS256".to_vec(),
+					},
+				),
+				(
+					H160::from_low_u64_be(1025),
+					PrecompileLabel {
+						label: b"Sha3FIPS256".to_vec(),
+					},
+				),
 			],
 		},
 		ethereum: Default::default(),

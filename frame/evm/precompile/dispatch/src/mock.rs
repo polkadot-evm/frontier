@@ -159,6 +159,7 @@ impl pallet_evm::Config for Test {
 	type OnChargeTransaction = ();
 	type OnCreate = ();
 	type FindAuthor = FindAuthorTruncated;
+	type PrecompileModifierOrigin = frame_system::EnsureRoot<Self::AccountId>;
 }
 
 pub(crate) struct MockHandle {
