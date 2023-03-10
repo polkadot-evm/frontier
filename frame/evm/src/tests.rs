@@ -630,9 +630,7 @@ fn precompile_storage_works() {
 		let mut read_precompile = EVM::precompiles(address);
 		assert_eq!(read_precompile, PrecompileLabel::default());
 
-		let label = PrecompileLabel {
-			label: b"ECRecover".to_vec(),
-		};
+		let label = PrecompileLabel::new(b"ECRecover".to_vec());
 
 		assert_ok!(EVM::add_precompile(origin.clone(), address, label.clone()));
 
