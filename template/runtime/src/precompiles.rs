@@ -24,22 +24,16 @@ where
 	fn execute(&self, handle: &mut impl PrecompileHandle) -> Option<PrecompileResult> {
 		match handle.code_address() {
 			// Ethereum precompiles :
-			a if *Precompiles::<R>::get(a) == b"ECRecover".to_vec() => {
-				Some(ECRecover::execute(handle))
-			}
-			a if *Precompiles::<R>::get(a) == b"Sha256".to_vec() => Some(Sha256::execute(handle)),
-			a if *Precompiles::<R>::get(a) == b"Ripemd160".to_vec() => {
-				Some(Ripemd160::execute(handle))
-			}
-			a if *Precompiles::<R>::get(a) == b"Identity".to_vec() => {
-				Some(Identity::execute(handle))
-			}
-			a if *Precompiles::<R>::get(a) == b"Modexp".to_vec() => Some(Modexp::execute(handle)),
+			a if &Precompiles::<R>::get(a)[..] == b"ECRecover" => Some(ECRecover::execute(handle)),
+			a if &Precompiles::<R>::get(a)[..] == b"Sha256" => Some(Sha256::execute(handle)),
+			a if &Precompiles::<R>::get(a)[..] == b"Ripemd160" => Some(Ripemd160::execute(handle)),
+			a if &Precompiles::<R>::get(a)[..] == b"Identity" => Some(Identity::execute(handle)),
+			a if &Precompiles::<R>::get(a)[..] == b"Modexp" => Some(Modexp::execute(handle)),
 			// Non-Frontier specific nor Ethereum precompiles :
-			a if *Precompiles::<R>::get(a) == b"Sha3FIPS256".to_vec() => {
+			a if &Precompiles::<R>::get(a)[..] == b"Sha3FIPS256" => {
 				Some(Sha3FIPS256::execute(handle))
 			}
-			a if *Precompiles::<R>::get(a) == b"ECRecoverPublicKey".to_vec() => {
+			a if &Precompiles::<R>::get(a)[..] == b"ECRecoverPublicKey" => {
 				Some(ECRecoverPublicKey::execute(handle))
 			}
 			_ => None,
@@ -48,13 +42,13 @@ where
 
 	fn is_precompile(&self, address: H160) -> bool {
 		match address {
-			a if *Precompiles::<R>::get(a) == b"ECRecover".to_vec() => true,
-			a if *Precompiles::<R>::get(a) == b"Sha256".to_vec() => true,
-			a if *Precompiles::<R>::get(a) == b"Ripemd160".to_vec() => true,
-			a if *Precompiles::<R>::get(a) == b"Identity".to_vec() => true,
-			a if *Precompiles::<R>::get(a) == b"Modexp".to_vec() => true,
-			a if *Precompiles::<R>::get(a) == b"Sha3FIPS256".to_vec() => true,
-			a if *Precompiles::<R>::get(a) == b"ECRecoverPublicKey".to_vec() => true,
+			a if &Precompiles::<R>::get(a)[..] == b"ECRecover" => true,
+			a if &Precompiles::<R>::get(a)[..] == b"Sha256" => true,
+			a if &Precompiles::<R>::get(a)[..] == b"Ripemd160" => true,
+			a if &Precompiles::<R>::get(a)[..] == b"Identity" => true,
+			a if &Precompiles::<R>::get(a)[..] == b"Modexp" => true,
+			a if &Precompiles::<R>::get(a)[..] == b"Sha3FIPS256" => true,
+			a if &Precompiles::<R>::get(a)[..] == b"ECRecoverPublicKey" => true,
 			_ => false,
 		}
 	}
