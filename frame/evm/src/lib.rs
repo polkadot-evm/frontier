@@ -81,7 +81,7 @@ use sp_runtime::{
 	traits::{BadOrigin, Saturating, UniqueSaturatedInto, Zero},
 	AccountId32, DispatchErrorWithPostInfo,
 };
-use sp_std::{cmp::min, vec::Vec};
+use sp_std::{cmp::min, ops::Deref, vec::Vec};
 
 pub use evm::{
 	Config as EvmConfig, Context, ExitError, ExitFatal, ExitReason, ExitRevert, ExitSucceed,
@@ -416,7 +416,7 @@ pub mod pallet {
 		pub fn add_precompile(
 			origin: OriginFor<T>,
 			address: H160,
-			label: PrecompileLabel,
+			label: PrecompileLabel<Vec<u8>>,
 		) -> DispatchResult {
 			T::PrecompileModifierOrigin::ensure_origin(origin)?;
 
@@ -505,7 +505,7 @@ pub mod pallet {
 	#[cfg_attr(feature = "std", derive(Default))]
 	pub struct GenesisConfig {
 		pub accounts: std::collections::BTreeMap<H160, GenesisAccount>,
-		pub precompiles: Vec<(H160, PrecompileLabel)>,
+		pub precompiles: Vec<(H160, PrecompileLabel<Vec<u8>>)>,
 	}
 
 	#[pallet::genesis_build]
@@ -561,13 +561,25 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn precompiles)]
 	pub type Precompiles<T: Config> =
-		StorageMap<_, Blake2_128Concat, H160, PrecompileLabel, ValueQuery>;
+		StorageMap<_, Blake2_128Concat, H160, PrecompileLabel<Vec<u8>>, ValueQuery>;
 }
 
 #[derive(Decode, Encode, Default, TypeInfo, Clone, PartialEq, Debug)]
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
-pub struct PrecompileLabel {
-	pub label: Vec<u8>,
+pub struct PrecompileLabel<T>(T);
+
+impl<T> PrecompileLabel<T> {
+	pub fn new(l: T) -> PrecompileLabel<T> {
+		PrecompileLabel(l)
+	}
+}
+
+impl<T> Deref for PrecompileLabel<T> {
+	type Target = T;
+
+	fn deref(&self) -> &Self::Target {
+		&self.0
+	}
 }
 
 /// Type alias for currency balance.
@@ -732,7 +744,7 @@ static LONDON_CONFIG: EvmConfig = EvmConfig::london();
 
 impl<T: Config> Pallet<T> {
 	/// Add a precompile to storage
-	pub fn do_add_precompile(address: &H160, label: PrecompileLabel) {
+	pub fn do_add_precompile(address: &H160, label: PrecompileLabel<Vec<u8>>) {
 		Precompiles::<T>::set(address, label);
 	}
 

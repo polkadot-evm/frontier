@@ -256,46 +256,32 @@ fn testnet_genesis(
 				// Ethereum precompiles :
 				(
 					H160::from_low_u64_be(1),
-					PrecompileLabel {
-						label: b"ECRecover".to_vec(),
-					},
+					PrecompileLabel::new(b"ECRecover".to_vec()),
 				),
 				(
 					H160::from_low_u64_be(2),
-					PrecompileLabel {
-						label: b"Sha256".to_vec(),
-					},
+					PrecompileLabel::new(b"Sha256".to_vec()),
 				),
 				(
 					H160::from_low_u64_be(3),
-					PrecompileLabel {
-						label: b"Ripemd160".to_vec(),
-					},
+					PrecompileLabel::new(b"Ripemd160".to_vec()),
 				),
 				(
 					H160::from_low_u64_be(4),
-					PrecompileLabel {
-						label: b"Identity".to_vec(),
-					},
+					PrecompileLabel::new(b"Identity".to_vec()),
 				),
 				(
 					H160::from_low_u64_be(5),
-					PrecompileLabel {
-						label: b"Modexp".to_vec(),
-					},
+					PrecompileLabel::new(b"Modexp".to_vec()),
 				),
 				// Non-Frontier specific nor Ethereum precompiles :
 				(
 					H160::from_low_u64_be(1024),
-					PrecompileLabel {
-						label: b"Sha3FIPS256".to_vec(),
-					},
+					PrecompileLabel::new(b"Sha3FIPS256".to_vec()),
 				),
 				(
 					H160::from_low_u64_be(1025),
-					PrecompileLabel {
-						label: b"Sha3FIPS256".to_vec(),
-					},
+					PrecompileLabel::new(b"Sha3FIPS256".to_vec()),
 				),
 			],
 		},
