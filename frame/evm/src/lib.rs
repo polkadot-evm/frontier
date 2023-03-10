@@ -416,7 +416,7 @@ pub mod pallet {
 		pub fn add_precompile(
 			origin: OriginFor<T>,
 			address: H160,
-			label: PrecompileLabel<Vec<u8>>,
+			label: PrecompileLabel,
 		) -> DispatchResult {
 			T::PrecompileModifierOrigin::ensure_origin(origin)?;
 
@@ -505,7 +505,7 @@ pub mod pallet {
 	#[cfg_attr(feature = "std", derive(Default))]
 	pub struct GenesisConfig {
 		pub accounts: std::collections::BTreeMap<H160, GenesisAccount>,
-		pub precompiles: Vec<(H160, PrecompileLabel<Vec<u8>>)>,
+		pub precompiles: Vec<(H160, PrecompileLabel)>,
 	}
 
 	#[pallet::genesis_build]
@@ -561,21 +561,21 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn precompiles)]
 	pub type Precompiles<T: Config> =
-		StorageMap<_, Blake2_128Concat, H160, PrecompileLabel<Vec<u8>>, ValueQuery>;
+		StorageMap<_, Blake2_128Concat, H160, PrecompileLabel, ValueQuery>;
 }
 
 #[derive(Decode, Encode, Default, TypeInfo, Clone, PartialEq, Debug)]
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
-pub struct PrecompileLabel<T>(T);
+pub struct PrecompileLabel(Vec<u8>);
 
-impl<T> PrecompileLabel<T> {
-	pub fn new(l: T) -> PrecompileLabel<T> {
+impl PrecompileLabel {
+	pub fn new(l: Vec<u8>) -> PrecompileLabel {
 		PrecompileLabel(l)
 	}
 }
 
-impl<T> Deref for PrecompileLabel<T> {
-	type Target = T;
+impl Deref for PrecompileLabel {
+	type Target = Vec<u8>;
 
 	fn deref(&self) -> &Self::Target {
 		&self.0
@@ -744,7 +744,7 @@ static LONDON_CONFIG: EvmConfig = EvmConfig::london();
 
 impl<T: Config> Pallet<T> {
 	/// Add a precompile to storage
-	pub fn do_add_precompile(address: &H160, label: PrecompileLabel<Vec<u8>>) {
+	pub fn do_add_precompile(address: &H160, label: PrecompileLabel) {
 		Precompiles::<T>::set(address, label);
 	}
 
