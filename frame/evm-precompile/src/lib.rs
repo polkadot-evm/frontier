@@ -28,6 +28,9 @@ mod tests;
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
+pub mod weights;
+pub use weights::*;
+
 use pallet_evm::{Precompile, PrecompileHandle, PrecompileResult, PrecompileSet};
 use pallet_evm_precompile_modexp::Modexp;
 use pallet_evm_precompile_sha3fips::Sha3FIPS256;
@@ -105,9 +108,9 @@ where
 
 #[frame_support::pallet]
 pub mod pallet {
-	use crate::PrecompileLabel;
+	use crate::{PrecompileLabel, WeightInfo};
 	use frame_support::pallet_prelude::*;
-	use frame_system::pallet_prelude::*;
+	use frame_system::{pallet_prelude::*};
 	use sp_core::H160;
 
 	#[pallet::pallet]
@@ -121,6 +124,9 @@ pub mod pallet {
 
 		/// Origin allowed to modify Precompiles
 		type PrecompileModifierOrigin: EnsureOrigin<Self::RuntimeOrigin>;
+
+		// WeightInfo type
+		type WeightInfo: WeightInfo;
 	}
 
 	#[pallet::genesis_config]
@@ -164,7 +170,7 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {
 		/// Add a precompile to storage
 		#[pallet::call_index(0)]
-		#[pallet::weight(0)]
+		#[pallet::weight(T::WeightInfo::add_precompile())]
 		pub fn add_precompile(
 			origin: OriginFor<T>,
 			address: H160,
@@ -181,7 +187,7 @@ pub mod pallet {
 
 		/// Remove a precompile from storage
 		#[pallet::call_index(1)]
-		#[pallet::weight(0)]
+		#[pallet::weight(T::WeightInfo::remove_precompile())]
 		pub fn remove_precompile(origin: OriginFor<T>, address: H160) -> DispatchResult {
 			T::PrecompileModifierOrigin::ensure_origin(origin)?;
 

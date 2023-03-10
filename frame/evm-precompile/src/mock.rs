@@ -118,6 +118,7 @@ impl FeeCalculator for FixedGasPrice {
 impl crate::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type PrecompileModifierOrigin = frame_system::EnsureRoot<Self::AccountId>;
+	type WeightInfo = crate::weights::SubstrateWeight<Test>;
 }
 
 pub struct FindAuthorTruncated;
