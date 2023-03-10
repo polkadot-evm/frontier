@@ -152,7 +152,6 @@ impl crate::Config for Test {
 	type OnChargeTransaction = ();
 	type OnCreate = ();
 	type FindAuthor = FindAuthorTruncated;
-	type PrecompileModifierOrigin = frame_system::EnsureRoot<Self::AccountId>;
 }
 
 /// Exemple PrecompileSet with only Identity precompile.

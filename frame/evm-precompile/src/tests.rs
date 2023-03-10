@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
-// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.
+// Copyright (c) 2020-2023 Parity Technologies (UK) Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,10 +20,9 @@
 use super::*;
 use crate::mock::*;
 
-use fp_evm::{Context, GenesisAccount};
+use fp_evm::GenesisAccount;
 use frame_support::{assert_ok, traits::GenesisBuild};
-use scale_codec::Encode;
-use sp_core::{H160, U256};
+use sp_core::U256;
 use std::{collections::BTreeMap, str::FromStr};
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
@@ -79,59 +78,33 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 }
 
 #[test]
-fn decode_limit_too_high() {
+fn precompile_storage_works() {
 	new_test_ext().execute_with(|| {
-		let mut nested_call =
-			RuntimeCall::System(frame_system::Call::remark { remark: Vec::new() });
+		let origin = RuntimeOrigin::root();
+		let address = H160::from_low_u64_be(1);
 
-		// More than 8 depth
-		for _ in 0..9 {
-			nested_call = RuntimeCall::Utility(pallet_utility::Call::as_derivative {
-				index: 0,
-				call: Box::new(nested_call),
-			});
-		}
+		let mut read_precompile = Pallet::<Test>::precompiles(address);
+		assert_eq!(read_precompile, PrecompileLabel::default(),);
 
-		let mut handle = MockHandle {
-			input: nested_call.encode(),
-			context: Context {
-				address: H160::default(),
-				caller: H160::default(),
-				apparent_value: U256::default(),
-			},
-		};
-
-		assert_eq!(
-			Dispatch::<Test>::execute(&mut handle),
-			Err(PrecompileFailure::Error {
-				exit_status: ExitError::Other("decode failed".into())
-			})
+		let label = PrecompileLabel::new(
+			b"ECRecover"
+				.to_vec()
+				.try_into()
+				.expect("less than 32 chars; qed"),
 		);
-	});
-}
 
-#[test]
-fn decode_limit_ok() {
-	new_test_ext().execute_with(|| {
-		let mut nested_call =
-			RuntimeCall::System(frame_system::Call::remark { remark: Vec::new() });
+		assert_ok!(Pallet::<Test>::add_precompile(
+			origin.clone(),
+			address,
+			label.clone(),
+		));
 
-		for _ in 0..8 {
-			nested_call = RuntimeCall::Utility(pallet_utility::Call::as_derivative {
-				index: 0,
-				call: Box::new(nested_call),
-			});
-		}
+		read_precompile = Pallet::<Test>::precompiles(address);
+		assert_eq!(read_precompile, label);
 
-		let mut handle = MockHandle {
-			input: nested_call.encode(),
-			context: Context {
-				address: H160::default(),
-				caller: H160::default(),
-				apparent_value: U256::default(),
-			},
-		};
+		assert_ok!(Pallet::<Test>::remove_precompile(origin, address));
 
-		assert_ok!(Dispatch::<Test>::execute(&mut handle));
+		read_precompile = Pallet::<Test>::precompiles(address);
+		assert_eq!(read_precompile, PrecompileLabel::default());
 	});
 }

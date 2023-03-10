@@ -67,8 +67,6 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 		},
 	);
 
-	let precompiles = vec![];
-
 	pallet_balances::GenesisConfig::<Test> {
 		// Create the block author account with some balance.
 		balances: vec![(
@@ -78,14 +76,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	}
 	.assimilate_storage(&mut t)
 	.expect("Pallet balances storage can be assimilated");
-	GenesisBuild::<Test>::assimilate_storage(
-		&crate::GenesisConfig {
-			accounts,
-			precompiles,
-		},
-		&mut t,
-	)
-	.unwrap();
+	GenesisBuild::<Test>::assimilate_storage(&crate::GenesisConfig { accounts }, &mut t).unwrap();
 	t.into()
 }
 
@@ -618,28 +609,5 @@ fn eip3607_transaction_from_precompile_should_fail() {
 			}) => (),
 			_ => panic!("Should have failed"),
 		}
-	});
-}
-
-#[test]
-fn precompile_storage_works() {
-	new_test_ext().execute_with(|| {
-		let origin = RuntimeOrigin::root();
-		let address = H160::from_low_u64_be(1);
-
-		let mut read_precompile = EVM::precompiles(address);
-		assert_eq!(read_precompile, PrecompileLabel::default());
-
-		let label = PrecompileLabel::new(b"ECRecover".to_vec());
-
-		assert_ok!(EVM::add_precompile(origin.clone(), address, label.clone()));
-
-		read_precompile = EVM::precompiles(address);
-		assert_eq!(read_precompile, label);
-
-		assert_ok!(EVM::remove_precompile(origin, address));
-
-		read_precompile = EVM::precompiles(address);
-		assert_eq!(read_precompile, PrecompileLabel::default());
 	});
 }

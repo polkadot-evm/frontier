@@ -13,8 +13,6 @@ use frontier_template_runtime::{
 	AccountId, EnableManualSeal, GenesisConfig, Signature, WASM_BINARY,
 };
 
-use pallet_evm::PrecompileLabel;
-
 // The URL for the telemetry server.
 // const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
 
@@ -252,38 +250,6 @@ fn testnet_genesis(
 				);
 				map
 			},
-			precompiles: vec![
-				// Ethereum precompiles :
-				(
-					H160::from_low_u64_be(1),
-					PrecompileLabel::new(b"ECRecover".to_vec()),
-				),
-				(
-					H160::from_low_u64_be(2),
-					PrecompileLabel::new(b"Sha256".to_vec()),
-				),
-				(
-					H160::from_low_u64_be(3),
-					PrecompileLabel::new(b"Ripemd160".to_vec()),
-				),
-				(
-					H160::from_low_u64_be(4),
-					PrecompileLabel::new(b"Identity".to_vec()),
-				),
-				(
-					H160::from_low_u64_be(5),
-					PrecompileLabel::new(b"Modexp".to_vec()),
-				),
-				// Non-Frontier specific nor Ethereum precompiles :
-				(
-					H160::from_low_u64_be(1024),
-					PrecompileLabel::new(b"Sha3FIPS256".to_vec()),
-				),
-				(
-					H160::from_low_u64_be(1025),
-					PrecompileLabel::new(b"Sha3FIPS256".to_vec()),
-				),
-			],
 		},
 		ethereum: Default::default(),
 		dynamic_fee: Default::default(),

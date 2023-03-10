@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
-// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.
+// Copyright (c) 2020-2023 Parity Technologies (UK) Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,23 +18,20 @@
 //! Test mock for unit tests and benchmarking
 
 use frame_support::{
+	pallet_prelude::PhantomData,
 	parameter_types,
 	traits::{ConstU32, FindAuthor},
 	weights::Weight,
-	ConsensusEngineId,
 };
 use sp_core::{H160, H256, U256};
 use sp_runtime::{
 	generic,
 	traits::{BlakeTwo256, IdentityLookup},
+	ConsensusEngineId,
 };
 use sp_std::{boxed::Box, prelude::*, str::FromStr};
 
-use fp_evm::{ExitError, ExitReason, Transfer};
-use pallet_evm::{
-	Context, EnsureAddressNever, EnsureAddressRoot, FeeCalculator, IdentityAddressMapping,
-	PrecompileHandle,
-};
+use pallet_evm::{EnsureAddressNever, EnsureAddressRoot, FeeCalculator, IdentityAddressMapping};
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -49,7 +46,7 @@ frame_support::construct_runtime! {
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage},
 		EVM: pallet_evm::{Pallet, Call, Storage, Config, Event<T>},
-		Utility: pallet_utility::{Pallet, Call, Event},
+		EVMPrecompile: crate::{Pallet, Call, Storage, Config, Event<T>},
 	}
 }
 
@@ -85,13 +82,6 @@ impl frame_system::Config for Test {
 	type MaxConsumers = ConstU32<16>;
 }
 
-impl pallet_utility::Config for Test {
-	type RuntimeEvent = RuntimeEvent;
-	type RuntimeCall = RuntimeCall;
-	type PalletsOrigin = OriginCaller;
-	type WeightInfo = pallet_utility::weights::SubstrateWeight<Test>;
-}
-
 parameter_types! {
 	pub const ExistentialDeposit: u64 = 0;
 }
@@ -125,6 +115,11 @@ impl FeeCalculator for FixedGasPrice {
 	}
 }
 
+impl crate::Config for Test {
+	type RuntimeEvent = RuntimeEvent;
+	type PrecompileModifierOrigin = frame_system::EnsureRoot<Self::AccountId>;
+}
+
 pub struct FindAuthorTruncated;
 impl FindAuthor<H160> for FindAuthorTruncated {
 	fn find_author<'a, I>(_digests: I) -> Option<H160>
@@ -137,6 +132,7 @@ impl FindAuthor<H160> for FindAuthorTruncated {
 parameter_types! {
 	pub BlockGasLimit: U256 = U256::max_value();
 	pub WeightPerGas: Weight = Weight::from_ref_time(20_000);
+	pub MockPrecompiles: crate::OnChainPrecompiles<Test> = crate::OnChainPrecompiles(PhantomData::<Test>);
 }
 impl pallet_evm::Config for Test {
 	type FeeCalculator = FixedGasPrice;
@@ -151,63 +147,12 @@ impl pallet_evm::Config for Test {
 	type Currency = Balances;
 
 	type RuntimeEvent = RuntimeEvent;
-	type PrecompilesType = ();
-	type PrecompilesValue = ();
+	type PrecompilesType = crate::OnChainPrecompiles<Test>;
+	type PrecompilesValue = MockPrecompiles;
 	type ChainId = ();
 	type BlockGasLimit = BlockGasLimit;
 	type Runner = pallet_evm::runner::stack::Runner<Self>;
 	type OnChargeTransaction = ();
 	type OnCreate = ();
 	type FindAuthor = FindAuthorTruncated;
-}
-
-pub(crate) struct MockHandle {
-	pub input: Vec<u8>,
-	pub context: Context,
-}
-
-impl PrecompileHandle for MockHandle {
-	fn call(
-		&mut self,
-		_: H160,
-		_: Option<Transfer>,
-		_: Vec<u8>,
-		_: Option<u64>,
-		_: bool,
-		_: &Context,
-	) -> (ExitReason, Vec<u8>) {
-		unimplemented!()
-	}
-
-	fn record_cost(&mut self, _: u64) -> Result<(), ExitError> {
-		Ok(())
-	}
-
-	fn remaining_gas(&self) -> u64 {
-		unimplemented!()
-	}
-
-	fn log(&mut self, _: H160, _: Vec<H256>, _: Vec<u8>) -> Result<(), ExitError> {
-		unimplemented!()
-	}
-
-	fn code_address(&self) -> H160 {
-		unimplemented!()
-	}
-
-	fn input(&self) -> &[u8] {
-		&self.input
-	}
-
-	fn context(&self) -> &Context {
-		&self.context
-	}
-
-	fn is_static(&self) -> bool {
-		unimplemented!()
-	}
-
-	fn gas_limit(&self) -> Option<u64> {
-		None
-	}
 }

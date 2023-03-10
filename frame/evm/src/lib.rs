@@ -74,14 +74,12 @@ use frame_support::{
 };
 use frame_system::RawOrigin;
 use impl_trait_for_tuples::impl_for_tuples;
-use scale_codec::{Decode, Encode};
-use scale_info::TypeInfo;
 use sp_core::{Hasher, H160, H256, U256};
 use sp_runtime::{
 	traits::{BadOrigin, Saturating, UniqueSaturatedInto, Zero},
 	AccountId32, DispatchErrorWithPostInfo,
 };
-use sp_std::{cmp::min, ops::Deref, vec::Vec};
+use sp_std::{cmp::min, vec::Vec};
 
 pub use evm::{
 	Config as EvmConfig, Context, ExitError, ExitFatal, ExitReason, ExitRevert, ExitSucceed,
@@ -156,9 +154,6 @@ pub mod pallet {
 
 		/// Find author for the current block.
 		type FindAuthor: FindAuthor<H160>;
-
-		/// Origin allowed to modify Precompiles
-		type PrecompileModifierOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 
 		/// EVM config used in the module.
 		fn config() -> &'static EvmConfig {
@@ -409,37 +404,6 @@ pub mod pallet {
 				pays_fee: Pays::No,
 			})
 		}
-
-		/// Add a precompile to storage
-		#[pallet::call_index(4)]
-		#[pallet::weight(T::DbWeight::get().reads_writes(0, 1))]
-		pub fn add_precompile(
-			origin: OriginFor<T>,
-			address: H160,
-			label: PrecompileLabel,
-		) -> DispatchResult {
-			T::PrecompileModifierOrigin::ensure_origin(origin)?;
-
-			Self::do_add_precompile(&address, label);
-
-			Ok(())
-		}
-
-		/// Remove a precompile from storage
-		#[pallet::call_index(5)]
-		#[pallet::weight(T::DbWeight::get().reads_writes(0, 1))]
-		pub fn remove_precompile(origin: OriginFor<T>, address: H160) -> DispatchResult {
-			T::PrecompileModifierOrigin::ensure_origin(origin)?;
-
-			ensure!(
-				Precompiles::<T>::contains_key(address),
-				Error::<T>::PrecompileDoesNotExist
-			);
-
-			Self::do_remove_precompile(&address);
-
-			Ok(())
-		}
 	}
 
 	#[pallet::event]
@@ -481,8 +445,6 @@ pub mod pallet {
 		Reentrancy,
 		/// EIP-3607,
 		TransactionMustComeFromEOA,
-		/// Precompile does not exist in storage
-		PrecompileDoesNotExist,
 	}
 
 	impl<T> From<InvalidEvmTransactionError> for Error<T> {
@@ -505,7 +467,6 @@ pub mod pallet {
 	#[cfg_attr(feature = "std", derive(Default))]
 	pub struct GenesisConfig {
 		pub accounts: std::collections::BTreeMap<H160, GenesisAccount>,
-		pub precompiles: Vec<(H160, PrecompileLabel)>,
 	}
 
 	#[pallet::genesis_build]
@@ -536,10 +497,6 @@ pub mod pallet {
 					<AccountStorages<T>>::insert(address, index, value);
 				}
 			}
-
-			for (address, label) in &self.precompiles {
-				Pallet::<T>::do_add_precompile(address, label.clone());
-			}
 		}
 	}
 
@@ -551,35 +508,6 @@ pub mod pallet {
 	#[pallet::getter(fn account_storages)]
 	pub type AccountStorages<T: Config> =
 		StorageDoubleMap<_, Blake2_128Concat, H160, Blake2_128Concat, H256, H256, ValueQuery>;
-
-	/// Allows for precompiles to have arbitrary addresses, potentially more than one.
-	/// `key`: precompile `H160` address
-	/// `value`: precompile label, e.g.: `PrecompileLabel { label: b"Sha3FIPS256".to_vec() }`
-
-	/// Please note that adding a new precompile label here is not enough to guarantee its execution
-	/// It is also required to list new labels on the implementation of `PrecompileSet::execute()`
-	#[pallet::storage]
-	#[pallet::getter(fn precompiles)]
-	pub type Precompiles<T: Config> =
-		StorageMap<_, Blake2_128Concat, H160, PrecompileLabel, ValueQuery>;
-}
-
-#[derive(Decode, Encode, Default, TypeInfo, Clone, PartialEq, Debug)]
-#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
-pub struct PrecompileLabel(Vec<u8>);
-
-impl PrecompileLabel {
-	pub fn new(l: Vec<u8>) -> PrecompileLabel {
-		PrecompileLabel(l)
-	}
-}
-
-impl Deref for PrecompileLabel {
-	type Target = Vec<u8>;
-
-	fn deref(&self) -> &Self::Target {
-		&self.0
-	}
 }
 
 /// Type alias for currency balance.
@@ -743,16 +671,6 @@ impl<T: Config> GasWeightMapping for FixedGasWeightMapping<T> {
 static LONDON_CONFIG: EvmConfig = EvmConfig::london();
 
 impl<T: Config> Pallet<T> {
-	/// Add a precompile to storage
-	pub fn do_add_precompile(address: &H160, label: PrecompileLabel) {
-		Precompiles::<T>::set(address, label);
-	}
-
-	/// Remove a precompile from storage
-	pub fn do_remove_precompile(address: &H160) {
-		Precompiles::<T>::remove(address);
-	}
-
 	/// Check whether an account is empty.
 	pub fn is_account_empty(address: &H160) -> bool {
 		let (account, _) = Self::account_basic(address);
