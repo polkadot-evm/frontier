@@ -31,6 +31,7 @@ mod benchmarking;
 pub mod weights;
 pub use weights::*;
 
+use frame_support::BoundedVec;
 use pallet_evm::{Precompile, PrecompileHandle, PrecompileResult, PrecompileSet};
 use pallet_evm_precompile_modexp::Modexp;
 use pallet_evm_precompile_sha3fips::Sha3FIPS256;
@@ -39,7 +40,6 @@ use scale_codec::{Decode, Encode};
 use scale_info::{prelude::marker::PhantomData, TypeInfo};
 use sp_core::{ConstU32, MaxEncodedLen, H160};
 use sp_std::ops::Deref;
-use frame_support::BoundedVec;
 
 #[derive(Decode, Encode, Default, TypeInfo, Clone, PartialEq, Debug, MaxEncodedLen)]
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
@@ -110,7 +110,7 @@ where
 pub mod pallet {
 	use crate::{PrecompileLabel, WeightInfo};
 	use frame_support::pallet_prelude::*;
-	use frame_system::{pallet_prelude::*};
+	use frame_system::pallet_prelude::*;
 	use sp_core::H160;
 
 	#[pallet::pallet]
