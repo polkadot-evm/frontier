@@ -518,6 +518,6 @@ mod tests {
 
 		let _ = Modexp::execute(&mut handle).expect("Modexp::execute() returned error");
 
-		assert_eq!(handle.gas_used, 7104); // gas used when ran in geth
+		assert_eq!(handle.gas_used, 7104 * 20); // gas used when ran in geth (x20)
 	}
 }
