@@ -24,10 +24,13 @@ use sc_transaction_pool::ChainApi;
 use sp_runtime::traits::Block as BlockT;
 // Frontier
 use fc_rpc_core::types::*;
+use fp_rpc::EthereumRuntimeAddressMapping;
 
 use crate::eth::Eth;
 
-impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi, EGA> Eth<B, C, P, CT, BE, H, A, EGA> {
+impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi, M: EthereumRuntimeAddressMapping, EGA>
+	Eth<B, C, P, CT, BE, H, A, M, EGA>
+{
 	pub fn is_mining(&self) -> Result<bool> {
 		Ok(self.is_authority)
 	}

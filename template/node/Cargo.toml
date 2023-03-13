@@ -58,6 +58,7 @@ sp-trie = { workspace = true, features = ["default"] }
 frame-system-rpc-runtime-api = { workspace = true }
 pallet-transaction-payment-rpc = { workspace = true }
 pallet-transaction-payment-rpc-runtime-api = { workspace = true }
+pallet-evm = { workspace = true }
 substrate-frame-rpc-system = { workspace = true }
 # These dependencies are used for runtime benchmarking
 frame-benchmarking = { workspace = true, optional = true }

@@ -32,14 +32,15 @@ use sp_core::hashing::keccak_256;
 use sp_runtime::traits::Block as BlockT;
 // Frontier
 use fc_rpc_core::types::*;
-use fp_rpc::EthereumRuntimeRPCApi;
+use fp_rpc::{EthereumRuntimeAddressMapping, EthereumRuntimeRPCApi};
 
 use crate::{
 	eth::{transaction_build, Eth},
 	frontier_backend_client, internal_err,
 };
 
-impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi, EGA> Eth<B, C, P, CT, BE, H, A, EGA>
+impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi, M: EthereumRuntimeAddressMapping, EGA>
+	Eth<B, C, P, CT, BE, H, A, M, EGA>
 where
 	B: BlockT,
 	C: ProvideRuntimeApi<B>,

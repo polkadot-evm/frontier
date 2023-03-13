@@ -39,10 +39,16 @@ pub struct TransactionStatus {
 	pub logs_bloom: Bloom,
 }
 
+pub trait EthereumRuntimeAddressMapper {
+	fn into_account_id_bytes(address: H160) -> Vec<u8>;
+}
+
 pub trait EthereumRuntimeStorageOverride<B, C>: Send + Sync
 where
 	B: BlockT,
 {
+	type AddressMapping: EthereumRuntimeAddressMapper;
+
 	fn set_overlayed_changes(
 		&self,
 		client: &C,

@@ -16,11 +16,16 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use std::sync::Arc;
+use std::{collections::BTreeMap, sync::Arc};
 
+<<<<<<< HEAD
 use ethereum_types::U256;
+=======
+use ethereum_types::{H160, H256, U256};
+>>>>>>> fe80b431b (allow overriding state in eth_call)
 use evm::{ExitError, ExitReason};
 use jsonrpsee::core::RpcResult as Result;
+use scale_codec::Encode;
 // Substrate
 use sc_client_api::backend::{Backend, StorageProvider};
 use sc_network_common::ExHashT;
@@ -36,7 +41,7 @@ use sp_runtime::{
 };
 // Frontier
 use fc_rpc_core::types::*;
-use fp_rpc::EthereumRuntimeRPCApi;
+use fp_rpc::{EthereumRuntimeAddressMapping, EthereumRuntimeRPCApi};
 use fp_storage::{EVM_ACCOUNT_CODES, PALLET_EVM};
 
 use crate::{
@@ -65,7 +70,8 @@ impl EstimateGasAdapter for () {
 	}
 }
 
-impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi, EGA> Eth<B, C, P, CT, BE, H, A, EGA>
+impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi, M: EthereumRuntimeAddressMapping, EGA>
+	Eth<B, C, P, CT, BE, H, A, M, EGA>
 where
 	B: BlockT,
 	C: ProvideRuntimeApi<B>,
@@ -164,8 +170,6 @@ where
 			},
 		};
 
-		log::info!("VER {api_version}");
-
 		let data = data.map(|d| d.0).unwrap_or_default();
 		match to {
 			Some(to) => {
@@ -229,56 +233,11 @@ where
 						),
 					));
 
-					// set custom storage override
-					let mut overlayed_changes = sp_api::OverlayedChanges::default();
-					if let Some(state_overrides) = state_overrides {
-						let address = from.unwrap_or_default();
-						for (address, state_override) in state_overrides {
-							if let Some(runtime_state_override) = self.runtime_state_override.as_ref() {
-								let hash =
-									self.client.expect_block_hash_from_id(&id).map_err(|err| {
-										internal_err(format!("failed retrieving block hash: {:?}", err))
-									})?;
-
-								runtime_state_override.set_overlayed_changes(
-									self.client.as_ref(),
-									&mut overlayed_changes,
-									hash,
-									api_version,
-									address,
-									state_override.balance,
-									state_override.nonce,
-								);
-							}
-
-							if let Some(code) = &state_override.code {
-								let mut key = [twox_128(PALLET_EVM), twox_128(EVM_ACCOUNT_CODES)]
-									.concat()
-									.to_vec();
-								key.extend(blake2_128(address.as_bytes()));
-								key.extend(address.as_bytes());
-								overlayed_changes.set_storage(key, Some(code.clone().into_vec()));
-							}
-
-							// Prioritize `state_diff` over `state`
-							if let Some(state_diff) = &state_override.state_diff {
-								for (k, v) in state_diff {
-									overlayed_changes.set_storage(
-										k.as_bytes().to_owned(),
-										Some(v.as_bytes().to_owned()),
-									);
-								}
-							} else if let Some(state) = &state_override.state {
-								for (k, v) in state {
-									overlayed_changes.set_storage(
-										k.as_bytes().to_owned(),
-										Some(v.as_bytes().to_owned()),
-									);
-								}
-							}
-						}
-					}
-
+					let block_hash = self.client.expect_block_hash_from_id(&id).map_err(|err| {
+						internal_err(format!("failed retrieving block hash: {:?}", err))
+					})?;
+					let overlayed_changes =
+						self.create_overrides_overlay(block_hash, api_version, state_overrides);
 					let storage_transaction_cache = std::cell::RefCell::<
 						sp_api::StorageTransactionCache<B, C::StateBackend>,
 					>::default();
@@ -309,7 +268,6 @@ where
 						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
 						.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
 
-					log::info!("2 {:?}", info);
 					error_on_execution_failure(&info.exit_reason, &info.value)?;
 					Ok(Bytes(info.value))
 				} else {
@@ -787,6 +745,84 @@ where
 
 			Ok(highest)
 		}
+	}
+
+	/// Given an address mapped `CallStateOverride`, creates `OverlayedChanges` to be used for
+	/// `CallApiAt` eth_call.
+	fn create_overrides_overlay(
+		&self,
+		block_hash: B::Hash,
+		api_version: u32,
+		state_overrides: Option<BTreeMap<H160, CallStateOverride>>,
+	) -> sp_api::OverlayedChanges {
+		let mut overlayed_changes = sp_api::OverlayedChanges::default();
+		if let Some(state_overrides) = state_overrides {
+			for (address, state_override) in state_overrides {
+				if let Some(runtime_state_override) = self.runtime_state_override.as_ref() {
+					runtime_state_override.set_overlayed_changes(
+						self.client.as_ref(),
+						&mut overlayed_changes,
+						block_hash,
+						api_version,
+						address,
+						state_override.balance,
+						state_override.nonce,
+					);
+				}
+
+				if let Some(code) = &state_override.code {
+					let mut key = [twox_128(PALLET_EVM), twox_128(EVM_ACCOUNT_CODES)]
+						.concat()
+						.to_vec();
+					key.extend(blake2_128(address.as_bytes()));
+					key.extend(address.as_bytes());
+					let encoded_code = code.clone().into_vec().encode();
+					overlayed_changes.set_storage(key.clone(), Some(encoded_code));
+				}
+
+				let mut account_storage_key = [
+					twox_128(PALLET_EVM),
+					twox_128(fp_storage::EVM_ACCOUNT_STORAGES),
+				]
+				.concat()
+				.to_vec();
+				account_storage_key.extend(blake2_128(address.as_bytes()));
+				account_storage_key.extend(address.as_bytes());
+
+				// Use `state` first. If `stateDiff` is also present, it resolves consistently
+				if let Some(state) = &state_override.state {
+					// clear all storage
+					if let Ok(all_keys) = self.client.storage_keys(
+						block_hash,
+						&sp_storage::StorageKey(account_storage_key.clone()),
+					) {
+						for key in all_keys {
+							overlayed_changes.set_storage(key.0, None);
+						}
+					}
+					// set provided storage
+					for (k, v) in state {
+						let mut slot_key = account_storage_key.clone();
+						slot_key.extend(blake2_128(k.as_bytes()));
+						slot_key.extend(k.as_bytes());
+
+						overlayed_changes.set_storage(slot_key, Some(v.as_bytes().to_owned()));
+					}
+				}
+
+				if let Some(state_diff) = &state_override.state_diff {
+					for (k, v) in state_diff {
+						let mut slot_key = account_storage_key.clone();
+						slot_key.extend(blake2_128(k.as_bytes()));
+						slot_key.extend(k.as_bytes());
+
+						overlayed_changes.set_storage(slot_key, Some(v.as_bytes().to_owned()));
+					}
+				}
+			}
+		}
+
+		overlayed_changes
 	}
 }
 

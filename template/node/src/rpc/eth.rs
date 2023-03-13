@@ -18,11 +18,11 @@ use sp_runtime::traits::Block as BlockT;
 use fc_db::Backend as FrontierBackend;
 pub use fc_rpc::{EthBlockDataCacheTask, OverrideHandle, StorageOverride};
 pub use fc_rpc_core::types::{FeeHistoryCache, FeeHistoryCacheLimit, FilterPool};
-use fp_rpc::EthereumRuntimeStorageOverride;
+use fp_rpc::{EthereumRuntimeAddressMapper, EthereumRuntimeStorageOverride};
 use fp_storage::EthereumStorageSchema;
 
 /// Extra dependencies for Ethereum compatibility.
-pub struct EthDeps<C, P, A: ChainApi, CT, B: BlockT> {
+pub struct EthDeps<C, P, A: ChainApi, CT, B: BlockT, M: EthereumRuntimeAddressMapper> {
 	/// The client instance to use.
 	pub client: Arc<C>,
 	/// Transaction pool instance.
@@ -55,10 +55,13 @@ pub struct EthDeps<C, P, A: ChainApi, CT, B: BlockT> {
 	/// using eth_call/eth_estimateGas.
 	pub execute_gas_limit_multiplier: u64,
 	/// Ethereum runtime storage overrider impl.
-	pub runtime_storage_override: Option<Arc<dyn EthereumRuntimeStorageOverride<B, C>>>,
+	pub runtime_storage_override:
+		Option<Arc<dyn EthereumRuntimeStorageOverride<B, C, AddressMapping = M>>>,
 }
 
-impl<C, P, A: ChainApi, CT: Clone, B: BlockT> Clone for EthDeps<C, P, A, CT, B> {
+impl<C, P, A: ChainApi, CT: Clone, B: BlockT, M: EthereumRuntimeAddressMapper> Clone
+	for EthDeps<C, P, A, CT, B, M>
+{
 	fn clone(&self) -> Self {
 		Self {
 			client: self.client.clone(),
@@ -82,9 +85,9 @@ impl<C, P, A: ChainApi, CT: Clone, B: BlockT> Clone for EthDeps<C, P, A, CT, B> 
 }
 
 /// Instantiate Ethereum-compatible RPC extensions.
-pub fn create_eth<C, BE, P, A, CT, B>(
+pub fn create_eth<C, BE, P, A, CT, B, M: fp_rpc::EthereumRuntimeAddressMapper + 'static>(
 	mut io: RpcModule<()>,
-	deps: EthDeps<C, P, A, CT, B>,
+	deps: EthDeps<C, P, A, CT, B, M>,
 	subscription_task_executor: SubscriptionTaskExecutor,
 ) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
 where

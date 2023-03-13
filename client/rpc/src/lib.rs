@@ -67,18 +67,22 @@ pub mod frontier_backend_client {
 	/// Implements a default runtime storage override.
 	/// It assumes that the balances and nonces are stored in pallet `system.account`, and
 	/// have `nonce: Index` = `u32` for  and `free: Balance` = `u128`.
-	pub struct DefaultEthereumRuntimeStorageOverride;
-	impl<B, C> fp_rpc::EthereumRuntimeStorageOverride<B, C> for DefaultEthereumRuntimeStorageOverride
+	pub struct DefaultEthereumRuntimeStorageOverride<M>(pub std::marker::PhantomData<M>);
+	impl<M, B, C> fp_rpc::EthereumRuntimeStorageOverride<B, C>
+		for DefaultEthereumRuntimeStorageOverride<M>
 	where
+		M: fp_rpc::EthereumRuntimeAddressMapping + Sync + Send,
 		B: BlockT,
 		C: StorageProvider<B, sc_service::TFullBackend<B>>,
 	{
+		type AddressMapping = M;
+
 		fn set_overlayed_changes(
 			&self,
 			client: &C,
 			overlayed_changes: &mut sp_state_machine::OverlayedChanges,
 			block: B::Hash,
-			version: u32,
+			_version: u32,
 			address: H160,
 			balance: Option<U256>,
 			nonce: Option<U256>,
@@ -86,8 +90,9 @@ pub mod frontier_backend_client {
 			let mut key = [twox_128(b"System"), twox_128(b"Account")]
 				.concat()
 				.to_vec();
-			key.extend(blake2_128(address.as_bytes()));
-			key.extend(address.as_bytes());
+			let account_id = Self::AddressMapping::into_account_id_bytes(address);
+			key.extend(blake2_128(&account_id));
+			key.extend(&account_id);
 
 			if let Ok(Some(item)) = client.storage(block, &StorageKey(key.clone())) {
 				let mut new_item = item.0;
