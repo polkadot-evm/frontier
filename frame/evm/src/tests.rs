@@ -559,9 +559,33 @@ fn runner_max_fee_per_gas_gte_max_priority_fee_per_gas() {
 }
 
 #[test]
-fn eip3607_transaction_from_contract_should_fail() {
+fn eip3607_transaction_from_contract() {
 	new_test_ext().execute_with(|| {
+		// external transaction
 		match <Test as Config>::Runner::call(
+			// Contract address.
+			H160::from_str("1000000000000000000000000000000000000001").unwrap(),
+			H160::from_str("1000000000000000000000000000000000000001").unwrap(),
+			Vec::new(),
+			U256::from(1u32),
+			1000000,
+			None,
+			None,
+			None,
+			Vec::new(),
+			true,  // transactional
+			false, // not sure be validated
+			&<Test as Config>::config().clone(),
+		) {
+			Err(RunnerError {
+				error: Error::TransactionMustComeFromEOA,
+				..
+			}) => (),
+			_ => panic!("Should have failed"),
+		}
+
+		// internal call
+		assert!(<Test as Config>::Runner::call(
 			// Contract address.
 			H160::from_str("1000000000000000000000000000000000000001").unwrap(),
 			H160::from_str("1000000000000000000000000000000000000001").unwrap(),
@@ -575,6 +599,29 @@ fn eip3607_transaction_from_contract_should_fail() {
 			false, // non-transactional
 			true,  // must be validated
 			&<Test as Config>::config().clone(),
+		)
+		.is_ok());
+	});
+}
+
+#[test]
+fn eip3607_transaction_from_precompile() {
+	new_test_ext().execute_with(|| {
+		// external transaction
+		match <Test as Config>::Runner::call(
+			// Precompile address.
+			H160::from_str("0000000000000000000000000000000000000001").unwrap(),
+			H160::from_str("1000000000000000000000000000000000000001").unwrap(),
+			Vec::new(),
+			U256::from(1u32),
+			1000000,
+			None,
+			None,
+			None,
+			Vec::new(),
+			true,  // transactional
+			false, // not sure be validated
+			&<Test as Config>::config().clone(),
 		) {
 			Err(RunnerError {
 				error: Error::TransactionMustComeFromEOA,
@@ -582,14 +629,10 @@ fn eip3607_transaction_from_contract_should_fail() {
 			}) => (),
 			_ => panic!("Should have failed"),
 		}
-	});
-}
 
-#[test]
-fn eip3607_transaction_from_precompile_should_fail() {
-	new_test_ext().execute_with(|| {
-		match <Test as Config>::Runner::call(
-			// Precompile address.
+		// internal call
+		assert!(<Test as Config>::Runner::call(
+			// Contract address.
 			H160::from_str("0000000000000000000000000000000000000001").unwrap(),
 			H160::from_str("1000000000000000000000000000000000000001").unwrap(),
 			Vec::new(),
@@ -602,12 +645,7 @@ fn eip3607_transaction_from_precompile_should_fail() {
 			false, // non-transactional
 			true,  // must be validated
 			&<Test as Config>::config().clone(),
-		) {
-			Err(RunnerError {
-				error: Error::TransactionMustComeFromEOA,
-				..
-			}) => (),
-			_ => panic!("Should have failed"),
-		}
+		)
+		.is_ok());
 	});
 }
