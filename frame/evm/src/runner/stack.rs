@@ -130,18 +130,23 @@ where
 			>,
 		) -> (ExitReason, R),
 	{
-		// EIP-3607: https://eips.ethereum.org/EIPS/eip-3607
-		// Do not allow transactions for which `tx.sender` has any code deployed.
-		//
-		// We extend the principle of this EIP to also prevent `tx.sender` to be the address
-		// of a precompile. While mainnet Ethereum currently only has stateless precompiles,
-		// projects using Frontier can have stateful precompiles that can manage funds or
-		// which calls other contracts that expects this precompile address to be trustworthy.
-		if !<AccountCodes<T>>::get(source).is_empty() || precompiles.is_precompile(source) {
-			return Err(RunnerError {
-				error: Error::<T>::TransactionMustComeFromEOA,
-				weight,
-			});
+		// Only check the restrictions of EIP-3607 if the source of the EVM operation is from an external transaction.
+		// If the source of this EVM operation is from an internal call, like from `eth_call` or `eth_estimateGas` RPC,
+		// we will skip the checks for the EIP-3607.
+		if is_transactional {
+			// EIP-3607: https://eips.ethereum.org/EIPS/eip-3607
+			// Do not allow transactions for which `tx.sender` has any code deployed.
+			//
+			// We extend the principle of this EIP to also prevent `tx.sender` to be the address
+			// of a precompile. While mainnet Ethereum currently only has stateless precompiles,
+			// projects using Frontier can have stateful precompiles that can manage funds or
+			// which calls other contracts that expects this precompile address to be trustworthy.
+			if !<AccountCodes<T>>::get(source).is_empty() || precompiles.is_precompile(source) {
+				return Err(RunnerError {
+					error: Error::<T>::TransactionMustComeFromEOA,
+					weight,
+				});
+			}
 		}
 
 		let (total_fee_per_gas, _actual_priority_fee_per_gas) =
