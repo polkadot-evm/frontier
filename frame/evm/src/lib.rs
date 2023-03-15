@@ -629,17 +629,7 @@ pub trait AddressMapping<A> {
 /// Identity address mapping.
 pub struct IdentityAddressMapping;
 
-impl AddressMapping<H160> for IdentityAddressMapping {
-	fn into_account_id(address: H160) -> H160 {
-		address
-	}
-}
-
-/// This is basically identical to IdentityAddressMapping,
-/// but it works for any type that is `Into<H160>` (e.g.: `AccountId20`).
-pub struct IntoAddressMapping;
-
-impl<T: From<H160>> AddressMapping<T> for IntoAddressMapping {
+impl<T: From<H160>> AddressMapping<T> for IdentityAddressMapping {
 	fn into_account_id(address: H160) -> T {
 		address.into()
 	}

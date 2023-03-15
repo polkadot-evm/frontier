@@ -47,7 +47,7 @@ use fp_evm::weight_per_gas;
 use fp_rpc::TransactionStatus;
 use pallet_ethereum::{Call::transact, PostLogContent, Transaction as EthereumTransaction};
 use pallet_evm::{
-	Account as EVMAccount, EnsureAccountId20, FeeCalculator, IntoAddressMapping, Runner,
+	Account as EVMAccount, EnsureAccountId20, FeeCalculator, IdentityAddressMapping, Runner,
 };
 
 // A few exports that help ease life for downstream crates.
@@ -333,7 +333,7 @@ impl pallet_evm::Config for Runtime {
 	type BlockHashMapping = pallet_ethereum::EthereumBlockHashMapping<Self>;
 	type CallOrigin = EnsureAccountId20;
 	type WithdrawOrigin = EnsureAccountId20;
-	type AddressMapping = IntoAddressMapping;
+	type AddressMapping = IdentityAddressMapping;
 	type Currency = Balances;
 	type RuntimeEvent = RuntimeEvent;
 	type PrecompilesType = FrontierPrecompiles<Self>;
@@ -390,7 +390,7 @@ impl pallet_base_fee::Config for Runtime {
 }
 
 impl pallet_hotfix_sufficients::Config for Runtime {
-	type AddressMapping = IntoAddressMapping;
+	type AddressMapping = IdentityAddressMapping;
 	type WeightInfo = pallet_hotfix_sufficients::weights::SubstrateWeight<Runtime>;
 }
 
