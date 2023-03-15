@@ -48,7 +48,7 @@ impl_serde::impl_fixed_hash_serde!(AccountId20, 20);
 impl std::fmt::Display for AccountId20 {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		let address = hex::encode(self.0).trim_start_matches("0x").to_lowercase();
-		let address_hash = hex::encode(Keccak256::digest(&address.as_bytes()));
+		let address_hash = hex::encode(Keccak256::digest(address.as_bytes()));
 
 		let checksum: String =
 			address
@@ -77,9 +77,9 @@ impl From<[u8; 20]> for AccountId20 {
 	}
 }
 
-impl Into<[u8; 20]> for AccountId20 {
-	fn into(self) -> [u8; 20] {
-		self.0
+impl From<AccountId20> for [u8; 20] {
+	fn from(val: AccountId20) -> Self {
+		val.0
 	}
 }
 
@@ -89,9 +89,9 @@ impl From<H160> for AccountId20 {
 	}
 }
 
-impl Into<H160> for AccountId20 {
-	fn into(self) -> H160 {
-		H160(self.0)
+impl From<AccountId20> for H160 {
+	fn from(val: AccountId20) -> Self {
+		H160(val.0)
 	}
 }
 
@@ -105,7 +105,7 @@ impl From<ecdsa::Public> for AccountId20 {
 		.serialize();
 		let mut m = [0u8; 64];
 		m.copy_from_slice(&decompressed[1..65]);
-		let account = H160::from_slice(&Keccak256::digest(&m).as_slice()[12..32]);
+		let account = H160::from_slice(&Keccak256::digest(m).as_slice()[12..32]);
 		AccountId20(account.into())
 	}
 }
@@ -121,7 +121,7 @@ impl sp_runtime::traits::Verify for EthereumSignature {
 		m.copy_from_slice(Keccak256::digest(msg.get()).as_slice());
 		match sp_io::crypto::secp256k1_ecdsa_recover(self.0.as_ref(), &m) {
 			Ok(pubkey) => {
-				AccountId20(H160::from_slice(&Keccak256::digest(&pubkey).as_slice()[12..32]).0)
+				AccountId20(H160::from_slice(&Keccak256::digest(pubkey).as_slice()[12..32]).0)
 					== *signer
 			}
 			Err(sp_io::EcdsaVerifyError::BadRS) => {
@@ -178,7 +178,7 @@ impl From<ecdsa::Public> for EthereumSigner {
 		.serialize();
 		let mut m = [0u8; 64];
 		m.copy_from_slice(&decompressed[1..65]);
-		let account = H160::from_slice(&Keccak256::digest(&m).as_slice()[12..32]);
+		let account = H160::from_slice(&Keccak256::digest(m).as_slice()[12..32]);
 		EthereumSigner(account.into())
 	}
 }
