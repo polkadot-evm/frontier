@@ -23,6 +23,7 @@ use fc_db::frontier_database_dir;
 
 use crate::{
 	chain_spec,
+	chain_spec::get_account_id_from_seed,
 	cli::{Cli, Subcommand},
 	service::{self, db_config_dir},
 };
@@ -187,7 +188,7 @@ pub fn run() -> sc_cli::Result<()> {
 						Box::new(RemarkBuilder::new(client.clone())),
 						Box::new(TransferKeepAliveBuilder::new(
 							client.clone(),
-							sp_keyring::Sr25519Keyring::Alice.to_account_id(),
+							get_account_id_from_seed::<sp_core::ecdsa::Public>("Alice"),
 							ExistentialDeposit::get(),
 						)),
 					]);
