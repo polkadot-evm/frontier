@@ -18,7 +18,6 @@ frame-support = { workspace = true }
 frame-system = { workspace = true }
 sp-core = { workspace = true }
 sp-inherents = { workspace = true }
-sp-runtime = { workspace = true }
 sp-std = { workspace = true }
 # Frontier
 fp-dynamic-fee = { workspace = true }
@@ -26,8 +25,9 @@ fp-evm = { workspace = true }
 
 [dev-dependencies]
 # Substrate
-pallet-timestamp = { workspace = true }
-sp-io = { workspace = true }
+pallet-timestamp = { workspace = true, features = ["default"] }
+sp-io = { workspace = true, features = ["default"] }
+sp-runtime = { workspace = true, features = ["default"] }
 
 [features]
 default = ["std"]
@@ -37,7 +37,6 @@ std = [
 	# Substrate
 	"sp-core/std",
 	"sp-inherents/std",
-	"sp-runtime/std",
 	"sp-std/std",
 	# Substrate
 	"frame-system/std",
