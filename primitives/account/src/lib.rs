@@ -22,9 +22,6 @@ use scale_info::TypeInfo;
 use sp_core::{ecdsa, H160, H256};
 use sp_io::hashing::keccak_256;
 
-#[cfg(feature = "std")]
-pub use serde::{de::DeserializeOwned, Deserialize, Serialize};
-
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Default)]
 #[derive(Encode, Decode, MaxEncodedLen, TypeInfo)]
 pub struct AccountId20(pub [u8; 20]);
