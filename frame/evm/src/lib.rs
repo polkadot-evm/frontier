@@ -52,8 +52,9 @@
 
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
-#![allow(clippy::too_many_arguments)]
 #![cfg_attr(test, feature(assert_matches))]
+#![allow(clippy::too_many_arguments)]
+#![deny(unused_crate_dependencies)]
 
 #[cfg(feature = "runtime-benchmarks")]
 pub mod benchmarking;

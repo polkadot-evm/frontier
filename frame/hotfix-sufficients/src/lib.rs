@@ -16,6 +16,7 @@
 // limitations under the License.
 
 #![cfg_attr(not(feature = "std"), no_std)]
+#![deny(unused_crate_dependencies)]
 
 #[cfg(feature = "runtime-benchmarks")]
 pub mod benchmarking;
