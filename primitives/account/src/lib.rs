@@ -97,16 +97,13 @@ impl From<AccountId20> for H160 {
 
 impl From<ecdsa::Public> for AccountId20 {
 	fn from(pk: ecdsa::Public) -> Self {
-		let decompressed = libsecp256k1::PublicKey::parse_slice(
-			&pk.0,
-			Some(libsecp256k1::PublicKeyFormat::Compressed),
-		)
-		.expect("bad compressed pk")
-		.serialize();
+		let decompressed = libsecp256k1::PublicKey::parse_compressed(&pk.0)
+			.expect("Wrong compressed public key provided")
+			.serialize();
 		let mut m = [0u8; 64];
 		m.copy_from_slice(&decompressed[1..65]);
-		let account = H160::from_slice(&Keccak256::digest(m).as_slice()[12..32]);
-		AccountId20(account.into())
+		let account = H160::from(H256::from(keccak_256(&m)));
+		Self(account.into())
 	}
 }
 
