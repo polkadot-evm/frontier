@@ -17,6 +17,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 #![allow(clippy::too_many_arguments)]
+#![deny(unused_crate_dependencies)]
 
 mod worker;
 
