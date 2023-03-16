@@ -37,7 +37,7 @@ impl_serde::impl_fixed_hash_serde!(AccountId20, 20);
 impl std::fmt::Display for AccountId20 {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		let address = hex::encode(self.0).trim_start_matches("0x").to_lowercase();
-		let address_hash = hex::encode(Keccak256::digest(address.as_bytes()));
+		let address_hash = hex::encode(keccak_256(address.as_bytes()));
 
 		let checksum: String =
 			address
