@@ -39,9 +39,9 @@ libsecp256k1 = { workspace = true, features = ["static-context", "hmac"] }
 rlp = { workspace = true }
 # Substrate
 pallet-balances = { workspace = true, features = ["default"] }
-sp-core = { workspace = true }
+sp-core = { workspace = true, features = ["default"] }
 # Frontier
-fp-self-contained = { workspace = true }
+fp-self-contained = { workspace = true, features = ["default"] }
 
 [features]
 default = ["std"]

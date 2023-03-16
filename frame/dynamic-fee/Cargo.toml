@@ -25,9 +25,9 @@ fp-evm = { workspace = true }
 
 [dev-dependencies]
 # Substrate
-pallet-timestamp = { workspace = true }
-sp-io = { workspace = true }
-sp-runtime = { workspace = true }
+pallet-timestamp = { workspace = true, features = ["default"] }
+sp-io = { workspace = true, features = ["default"] }
+sp-runtime = { workspace = true, features = ["default"] }
 
 [features]
 default = ["std"]
