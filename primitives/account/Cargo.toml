@@ -29,7 +29,6 @@ std = [
 	"hex/std",
 	"libsecp256k1/std",
 	"log/std",
-	"sha3/std",
 	"serde/std",
 	# Substrate
 	"sp-io/std",
