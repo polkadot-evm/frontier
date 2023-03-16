@@ -66,7 +66,7 @@ pub use ethereum::{
 pub use fp_rpc::TransactionStatus;
 
 #[derive(Clone, Eq, PartialEq, RuntimeDebug)]
-#[dervive(Encode, Decode, MaxEncodedLen, TypeInfo)]
+#[derive(Encode, Decode, MaxEncodedLen, TypeInfo)]
 pub enum RawOrigin {
 	EthereumTransaction(H160),
 }
