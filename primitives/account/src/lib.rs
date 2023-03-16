@@ -20,7 +20,8 @@
 use scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sha3::{Digest, Keccak256};
-use sp_core::{ecdsa, H160};
+use sp_core::{ecdsa, H160, H256};
+use sp_io::hashing::keccak_256;
 
 #[cfg(feature = "std")]
 pub use serde::{de::DeserializeOwned, Deserialize, Serialize};
