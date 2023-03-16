@@ -25,20 +25,8 @@ use sp_core::{ecdsa, H160};
 #[cfg(feature = "std")]
 pub use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
-#[derive(
-	Debug,
-	Eq,
-	PartialEq,
-	Copy,
-	Clone,
-	Encode,
-	Decode,
-	TypeInfo,
-	MaxEncodedLen,
-	Default,
-	PartialOrd,
-	Ord,
-)]
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Debug, Default)]
+#[derive(Encode, Decode, MaxEncodedLen, TypeInfo)]
 pub struct AccountId20(pub [u8; 20]);
 
 #[cfg(feature = "std")]
