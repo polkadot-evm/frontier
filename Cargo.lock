@@ -2162,7 +2162,6 @@ dependencies = [
  "parity-scale-codec",
  "scale-info",
  "serde",
- "sha3",
  "sp-core",
  "sp-io",
  "sp-runtime",
