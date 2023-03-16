@@ -26,7 +26,7 @@ use sp_io::hashing::keccak_256;
 #[cfg(feature = "std")]
 pub use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
-#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Debug, Default)]
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Default)]
 #[derive(Encode, Decode, MaxEncodedLen, TypeInfo)]
 pub struct AccountId20(pub [u8; 20]);
 
@@ -58,6 +58,12 @@ impl std::fmt::Display for AccountId20 {
 				});
 		write!(f, "{}", checksum)
 	}
+}
+
+impl sp_std::fmt::Debug for AccountId20 {
+    fn fmt(&self, f: &mut sp_std::fmt::Formatter<'_>) -> sp_std::fmt::Result {
+        write!(f, "{:?}", H160(self.0))
+    }
 }
 
 impl From<[u8; 20]> for AccountId20 {
