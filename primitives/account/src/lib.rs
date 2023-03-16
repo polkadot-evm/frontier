@@ -61,9 +61,9 @@ impl std::fmt::Display for AccountId20 {
 }
 
 impl sp_std::fmt::Debug for AccountId20 {
-    fn fmt(&self, f: &mut sp_std::fmt::Formatter<'_>) -> sp_std::fmt::Result {
-        write!(f, "{:?}", H160(self.0))
-    }
+	fn fmt(&self, f: &mut sp_std::fmt::Formatter<'_>) -> sp_std::fmt::Result {
+		write!(f, "{:?}", H160(self.0))
+	}
 }
 
 impl From<[u8; 20]> for AccountId20 {
