@@ -193,8 +193,8 @@ mod tests {
 	fn test_from_h160() {
 		let m = hex::decode("28490327ff4e60d44b8aadf5478266422ed01232cc712c2d617e5c650ca15b85")
 			.unwrap();
-		let old = AccountId20(H160::from(H256::from_slice(Keccak256::digest(&m).as_slice())).0);
-		let new = AccountId20(H160::from_slice(&Keccak256::digest(&m).as_slice()[12..32]).0);
+		let old: AccountId20 = H160::from(H256::from(keccak_256(&m))).into();
+		let new: AccountId20 = H160::from_slice(&keccak_256(&m)[12..32]).into();
 		assert_eq!(new, old);
 	}
 
