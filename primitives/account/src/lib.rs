@@ -152,7 +152,7 @@ impl sp_runtime::traits::IdentifyAccount for EthereumSigner {
 #[cfg(feature = "std")]
 impl std::fmt::Display for EthereumSigner {
 	fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
-		write!(fmt, "{:?}", H160::from_slice(&self.0))
+		write!(fmt, "{:?}", H160::from(self.0))
 	}
 }
 
