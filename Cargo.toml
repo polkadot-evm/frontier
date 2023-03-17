@@ -20,6 +20,7 @@ members = [
 	"client/db",
 	"client/storage",
 	"client/mapping-sync",
+	"primitives/account",
 	"primitives/consensus",
 	"primitives/dynamic-fee",
 	"primitives/evm",
@@ -41,9 +42,11 @@ environmental = { version = "1.1.3", default-features = false }
 ethereum = { version = "0.14.0", default-features = false }
 ethereum-types = { version = "0.14.1", default-features = false }
 evm = { version = "0.37.0", default-features = false }
+impl-serde = { version = "0.3.1", default-features = false }
 jsonrpsee = "0.16.2"
 kvdb-rocksdb = "0.17.0"
-libsecp256k1 = "0.7.1"
+libsecp256k1 = { version = "0.7.1", default-features = false }
+log = { version = "0.4.17", default-features = false }
 parity-db = "0.4.2"
 rlp = { version = "0.5", default-features = false }
 scale-codec = { package = "parity-scale-codec", version = "3.2.1", default-features = false, features = ["derive"] }
@@ -124,6 +127,7 @@ fc-rpc = { version = "2.0.0-dev", path = "client/rpc" }
 fc-rpc-core = { version = "1.1.0-dev", path = "client/rpc-core" }
 fc-storage = { version = "1.0.0-dev", path = "client/storage" }
 # Frontier Primitive
+fp-account = { version = "1.0.0-dev", path = "primitives/account", default-features = false }
 fp-consensus = { version = "2.0.0-dev", path = "primitives/consensus", default-features = false }
 fp-dynamic-fee = { version = "1.0.0", path = "primitives/dynamic-fee", default-features = false }
 fp-ethereum = { version = "1.0.0-dev", path = "primitives/ethereum", default-features = false }

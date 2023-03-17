@@ -46,7 +46,6 @@ sp-consensus-aura = { workspace = true, features = ["default"] }
 sp-core = { workspace = true, features = ["default"] }
 sp-finality-grandpa = { workspace = true, features = ["default"] }
 sp-inherents = { workspace = true, features = ["default"] }
-sp-keyring = { workspace = true }
 sp-offchain = { workspace = true, features = ["default"] }
 sp-runtime = { workspace = true, features = ["default"] }
 sp-session = { workspace = true, features = ["default"] }
@@ -73,6 +72,7 @@ fc-mapping-sync = { workspace = true }
 fc-rpc = { workspace = true }
 fc-rpc-core = { workspace = true }
 fc-storage = { workspace = true }
+fp-account = { workspace = true }
 fp-dynamic-fee = { workspace = true, features = ["default"] }
 fp-evm = { workspace = true, features = ["default"] }
 fp-rpc = { workspace = true, features = ["default"] }

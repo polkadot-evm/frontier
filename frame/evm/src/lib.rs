@@ -85,6 +85,7 @@ use sp_std::{cmp::min, vec::Vec};
 pub use evm::{
 	Config as EvmConfig, Context, ExitError, ExitFatal, ExitReason, ExitRevert, ExitSucceed,
 };
+use fp_account::AccountId20;
 #[cfg(feature = "std")]
 use fp_evm::GenesisAccount;
 pub use fp_evm::{
@@ -604,6 +605,24 @@ where
 	}
 }
 
+/// Ensure that the address is AccountId20.
+pub struct EnsureAccountId20;
+
+impl<OuterOrigin> EnsureAddressOrigin<OuterOrigin> for EnsureAccountId20
+where
+	OuterOrigin: Into<Result<RawOrigin<AccountId20>, OuterOrigin>> + From<RawOrigin<AccountId20>>,
+{
+	type Success = AccountId20;
+
+	fn try_address_origin(address: &H160, origin: OuterOrigin) -> Result<AccountId20, OuterOrigin> {
+		let acc: AccountId20 = AccountId20::from(*address);
+		origin.into().and_then(|o| match o {
+			RawOrigin::Signed(who) if who == acc => Ok(who),
+			r => Err(OuterOrigin::from(r)),
+		})
+	}
+}
+
 pub trait AddressMapping<A> {
 	fn into_account_id(address: H160) -> A;
 }
@@ -611,9 +630,9 @@ pub trait AddressMapping<A> {
 /// Identity address mapping.
 pub struct IdentityAddressMapping;
 
-impl AddressMapping<H160> for IdentityAddressMapping {
-	fn into_account_id(address: H160) -> H160 {
-		address
+impl<T: From<H160>> AddressMapping<T> for IdentityAddressMapping {
+	fn into_account_id(address: H160) -> T {
+		address.into()
 	}
 }
 

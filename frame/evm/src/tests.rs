@@ -414,8 +414,10 @@ fn handle_sufficient_reference() {
 	new_test_ext().execute_with(|| {
 		let addr = H160::from_str("1230000000000000000000000000000000000001").unwrap();
 		let addr_2 = H160::from_str("1234000000000000000000000000000000000001").unwrap();
-		let substrate_addr = <Test as Config>::AddressMapping::into_account_id(addr);
-		let substrate_addr_2 = <Test as Config>::AddressMapping::into_account_id(addr_2);
+		let substrate_addr: <Test as frame_system::Config>::AccountId =
+			<Test as Config>::AddressMapping::into_account_id(addr);
+		let substrate_addr_2: <Test as frame_system::Config>::AccountId =
+			<Test as Config>::AddressMapping::into_account_id(addr_2);
 
 		// Sufficients should increase when creating EVM accounts.
 		let _ = <crate::AccountCodes<Test>>::insert(addr, &vec![0]);

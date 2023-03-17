@@ -27,6 +27,9 @@ use crate::{
 	service::{self, db_config_dir},
 };
 
+#[cfg(feature = "runtime-benchmarks")]
+use crate::chain_spec::get_account_id_from_seed;
+
 impl SubstrateCli for Cli {
 	fn impl_name() -> String {
 		"Frontier Node".into()
@@ -187,7 +190,7 @@ pub fn run() -> sc_cli::Result<()> {
 						Box::new(RemarkBuilder::new(client.clone())),
 						Box::new(TransferKeepAliveBuilder::new(
 							client.clone(),
-							sp_keyring::Sr25519Keyring::Alice.to_account_id(),
+							get_account_id_from_seed::<sp_core::ecdsa::Public>("Alice"),
 							ExistentialDeposit::get(),
 						)),
 					]);
