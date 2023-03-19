@@ -2,7 +2,7 @@ use std::{collections::BTreeMap, str::FromStr};
 
 use serde::{Deserialize, Serialize};
 // Substrate
-use sc_service::ChainType;
+use sc_chain_spec::{ChainType, Properties};
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::{ecdsa, storage::Storage, Pair, Public, H160, U256};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
@@ -10,7 +10,7 @@ use sp_runtime::traits::{IdentifyAccount, Verify};
 use sp_state_machine::BasicExternalities;
 // Frontier
 use frontier_template_runtime::{
-	AccountId, EnableManualSeal, GenesisConfig, Signature, WASM_BINARY,
+	AccountId, EnableManualSeal, GenesisConfig, SS58Prefix, Signature, WASM_BINARY,
 };
 
 // The URL for the telemetry server.
@@ -64,6 +64,13 @@ pub fn authority_keys_from_seed(s: &str) -> (AuraId, GrandpaId) {
 	(get_from_seed::<AuraId>(s), get_from_seed::<GrandpaId>(s))
 }
 
+fn properties() -> Properties {
+	let mut properties = Properties::new();
+	properties.insert("tokenDecimals".into(), 18.into());
+	properties.insert("ss58Format".into(), SS58Prefix::get().into());
+	properties
+}
+
 pub fn development_config(enable_manual_seal: Option<bool>) -> DevChainSpec {
 	let wasm_binary = WASM_BINARY.expect("WASM not available");
 
@@ -88,7 +95,8 @@ pub fn development_config(enable_manual_seal: Option<bool>) -> DevChainSpec {
 					],
 					// Initial PoA authorities
 					vec![authority_keys_from_seed("Alice")],
-					42,
+					// Ethereum chain ID
+					SS58Prefix::get() as u64,
 				),
 				enable_manual_seal,
 			}
@@ -99,9 +107,10 @@ pub fn development_config(enable_manual_seal: Option<bool>) -> DevChainSpec {
 		None,
 		// Protocol ID
 		None,
+		// Fork ID
 		None,
 		// Properties
-		None,
+		Some(properties()),
 		// Extensions
 		None,
 	)
