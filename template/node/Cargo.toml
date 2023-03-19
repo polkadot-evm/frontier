@@ -25,6 +25,7 @@ serde = { workspace = true }
 prometheus-endpoint = { package = "substrate-prometheus-endpoint", workspace = true }
 sc-basic-authorship = { workspace = true }
 sc-cli = { workspace = true }
+sc-chain-spec = { workspace = true }
 sc-client-api = { workspace = true }
 sc-consensus = { workspace = true }
 sc-consensus-aura = { workspace = true }
