@@ -5,6 +5,7 @@ use std::sync::Arc;
 use futures::channel::mpsc;
 use jsonrpsee::RpcModule;
 // Substrate
+use pallet_evm::AddressMapping;
 use sc_client_api::{
 	backend::{Backend, StorageProvider},
 	client::BlockchainEvents,
@@ -16,16 +17,23 @@ use sc_service::TransactionPool;
 use sc_transaction_pool::ChainApi;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
-use sp_runtime::traits::Block as BlockT;
+use sp_core::ByteArray;
+use sp_runtime::traits::{BlakeTwo256, Block as BlockT};
 // Runtime
-use fp_rpc::EthereumRuntimeAddressMapper;
 use frontier_template_runtime::{opaque::Block, AccountId, Balance, Hash, Index};
 
 mod eth;
 pub use self::eth::{create_eth, overrides_handle, EthDeps};
 
+pub struct AccountId32AddressMapping;
+impl fp_rpc::EthereumRuntimeAddressMapping for AccountId32AddressMapping {
+	fn into_account_id_bytes(address: sp_core::H160) -> Vec<u8> {
+		pallet_evm::HashedAddressMapping::<BlakeTwo256>::into_account_id(address).to_raw_vec()
+	}
+}
+
 /// Full client dependencies.
-pub struct FullDeps<C, P, A: ChainApi, CT, M: EthereumRuntimeAddressMapper> {
+pub struct FullDeps<C, P, A: ChainApi, CT> {
 	/// The client instance to use.
 	pub client: Arc<C>,
 	/// Transaction pool instance.
@@ -35,12 +43,12 @@ pub struct FullDeps<C, P, A: ChainApi, CT, M: EthereumRuntimeAddressMapper> {
 	/// Manual seal command sink
 	pub command_sink: Option<mpsc::Sender<EngineCommand<Hash>>>,
 	/// Ethereum-compatibility specific dependencies.
-	pub eth: EthDeps<C, P, A, CT, Block, M>,
+	pub eth: EthDeps<C, P, A, CT, Block>,
 }
 
 /// Instantiate all Full RPC extensions.
-pub fn create_full<C, P, BE, A, CT, M: EthereumRuntimeAddressMapper + 'static>(
-	deps: FullDeps<C, P, A, CT, M>,
+pub fn create_full<C, P, BE, A, CT>(
+	deps: FullDeps<C, P, A, CT>,
 	subscription_task_executor: SubscriptionTaskExecutor,
 ) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
 where
@@ -84,7 +92,7 @@ where
 	}
 
 	// Ethereum compatibility RPCs
-	let io = create_eth::<_, _, _, _, _, _, _>(io, eth, subscription_task_executor)?;
+	let io = create_eth::<_, _, _, _, _, _>(io, eth, subscription_task_executor)?;
 
 	Ok(io)
 }

@@ -4,7 +4,6 @@ use std::{cell::RefCell, sync::Arc, time::Duration};
 
 use futures::{channel::mpsc, prelude::*};
 // Substrate
-use pallet_evm::AddressMapping;
 use prometheus_endpoint::Registry;
 use sc_client_api::{BlockBackend, StateBackendFor};
 use sc_consensus::BasicQueue;
@@ -14,7 +13,7 @@ use sc_service::{error::Error as ServiceError, Configuration, PartialComponents,
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker};
 use sp_api::{ConstructRuntimeApi, TransactionFor};
 use sp_consensus_aura::sr25519::AuthorityPair as AuraPair;
-use sp_core::{ByteArray, H160, U256};
+use sp_core::U256;
 use sp_runtime::traits::BlakeTwo256;
 use sp_trie::PrefixedMemoryDB;
 // Runtime
@@ -254,13 +253,6 @@ where
 	))
 }
 
-struct AccountId32AddressMapping;
-impl fp_rpc::EthereumRuntimeAddressMapper for AccountId32AddressMapping {
-	fn into_account_id_bytes(address: H160) -> Vec<u8> {
-		pallet_evm::HashedAddressMapping::<BlakeTwo256>::into_account_id(address).to_raw_vec()
-	}
-}
-
 /// Builds a new service for a full client.
 pub fn new_full<RuntimeApi, Executor>(
 	mut config: Configuration,
@@ -376,7 +368,7 @@ where
 		execute_gas_limit_multiplier: eth_config.execute_gas_limit_multiplier,
 		runtime_storage_override: Some(Arc::new(
 			fc_rpc::frontier_backend_client::DefaultEthereumRuntimeStorageOverride(
-				std::marker::PhantomData::<AccountId32AddressMapping>::default(),
+				std::marker::PhantomData::<crate::rpc::AccountId32AddressMapping>::default(),
 			),
 		)),
 	};
