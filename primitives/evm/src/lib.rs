@@ -101,6 +101,21 @@ impl FeeCalculator for () {
 	}
 }
 
+pub trait EvmFreeCall {
+	fn can_send_free_call(source: &H160, target: &H160, input: &[u8]) -> bool;
+	fn on_sent_free_call(source: &H160);
+}
+
+impl EvmFreeCall for () {
+	fn can_send_free_call(_source: &H160, _target: &H160, _input: &[u8]) -> bool {
+		false
+	}
+
+	fn on_sent_free_call(_source: &H160) {
+
+	}
+}
+
 /// `WeightPerGas` is an approximate ratio of the amount of Weight per Gas.
 /// u64 works for approximations because Weight is a very small unit compared to gas.
 ///
