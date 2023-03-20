@@ -345,6 +345,7 @@ impl pallet_evm::Config for Runtime {
 	type OnChargeTransaction = ();
 	type OnCreate = ();
 	type FindAuthor = FindAuthorTruncated<Aura>;
+	type FreeCalls = ();
 }
 
 parameter_types! {
@@ -686,6 +687,7 @@ impl_runtime_apis! {
 				access_list.unwrap_or_default(),
 				is_transactional,
 				validate,
+				false,
 				evm_config,
 			).map_err(|err| err.error.into())
 		}

@@ -306,9 +306,13 @@ where
 		nonce: Option<U256>,
 		access_list: Vec<(H160, Vec<H256>)>,
 		is_transactional: bool,
+		is_free: bool,
 		evm_config: &evm::Config,
 	) -> Result<(), RunnerError<Self::Error>> {
-		let (base_fee, mut weight) = T::FeeCalculator::min_gas_price();
+		let (mut base_fee, mut weight) = T::FeeCalculator::min_gas_price();
+		if is_free {
+			base_fee = U256::zero();
+		}
 		let (source_account, inner_weight) = Pallet::<T>::account_basic(&source);
 		weight = weight.saturating_add(inner_weight);
 
@@ -352,6 +356,7 @@ where
 		access_list: Vec<(H160, Vec<H256>)>,
 		is_transactional: bool,
 		validate: bool,
+		is_free: bool,
 		config: &evm::Config,
 	) -> Result<CallInfo, RunnerError<Self::Error>> {
 		if validate {
@@ -366,6 +371,7 @@ where
 				nonce,
 				access_list.clone(),
 				is_transactional,
+				is_free,
 				config,
 			)?;
 		}
@@ -408,6 +414,7 @@ where
 				nonce,
 				access_list.clone(),
 				is_transactional,
+				false,
 				config,
 			)?;
 		}
@@ -457,6 +464,7 @@ where
 				nonce,
 				access_list.clone(),
 				is_transactional,
+				false,
 				config,
 			)?;
 		}

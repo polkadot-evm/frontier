@@ -152,6 +152,7 @@ impl crate::Config for Test {
 	type OnChargeTransaction = ();
 	type OnCreate = ();
 	type FindAuthor = FindAuthorTruncated;
+	type FreeCalls = ();
 }
 
 /// Exemple PrecompileSet with only Identity precompile.

@@ -37,7 +37,8 @@ use fp_ethereum::{
 	TransactionData, TransactionValidationError, ValidatedTransaction as ValidatedTransactionT,
 };
 use fp_evm::{
-	CallOrCreateInfo, CheckEvmTransaction, CheckEvmTransactionConfig, InvalidEvmTransactionError,
+	CallOrCreateInfo, CheckEvmTransaction, CheckEvmTransactionConfig, EvmFreeCall,
+	InvalidEvmTransactionError,
 };
 use fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA};
 use frame_support::{
@@ -478,7 +479,12 @@ impl<T: Config> Pallet<T> {
 		let transaction_data: TransactionData = transaction.into();
 		let transaction_nonce = transaction_data.nonce;
 
-		let (base_fee, _) = T::FeeCalculator::min_gas_price();
+		let (mut base_fee, _) = T::FeeCalculator::min_gas_price();
+		// Set base fee to zero to pass validation of transaction in pool. @Horacio
+		if Self::is_free_call(&origin, &transaction) {
+			base_fee = U256::zero();
+		}
+
 		let (who, _) = pallet_evm::Pallet::<T>::account_basic(&origin);
 
 		let _ = CheckEvmTransaction::<InvalidTransactionWrapper>::new(
@@ -544,6 +550,7 @@ impl<T: Config> Pallet<T> {
 		let pending = Pending::<T>::get();
 		let transaction_hash = transaction.hash();
 		let transaction_index = pending.len() as u32;
+		let is_free = Self::is_free_call(&source, &transaction);
 
 		let (reason, status, used_gas, dest) = match info {
 			CallOrCreateInfo::Call(info) => (
@@ -631,6 +638,10 @@ impl<T: Config> Pallet<T> {
 			exit_reason: reason,
 		});
 
+		if is_free {
+			<T as pallet_evm::Config>::FreeCalls::on_sent_free_call(&source);
+		}
+
 		Ok(PostDispatchInfo {
 			actual_weight: Some(T::GasWeightMapping::gas_to_weight(
 				used_gas.unique_saturated_into(),
@@ -716,6 +727,7 @@ impl<T: Config> Pallet<T> {
 
 		let is_transactional = true;
 		let validate = false;
+		let is_free = false;
 		match action {
 			ethereum::TransactionAction::Call(target) => {
 				let res = match T::Runner::call(
@@ -730,6 +742,7 @@ impl<T: Config> Pallet<T> {
 					access_list,
 					is_transactional,
 					validate,
+					is_free,
 					config.as_ref().unwrap_or_else(|| T::config()),
 				) {
 					Ok(res) => res,
@@ -787,7 +800,11 @@ impl<T: Config> Pallet<T> {
 	) -> Result<(), TransactionValidityError> {
 		let transaction_data: TransactionData = transaction.into();
 
-		let (base_fee, _) = T::FeeCalculator::min_gas_price();
+		let (mut base_fee, _) = T::FeeCalculator::min_gas_price();
+		// Set base fee to zero to pass validation of transaction in block. @Horacio
+		if Self::is_free_call(&origin, &transaction) {
+			base_fee = U256::zero();
+		}
 		let (who, _) = pallet_evm::Pallet::<T>::account_basic(&origin);
 
 		let _ = CheckEvmTransaction::<InvalidTransactionWrapper>::new(
@@ -831,6 +848,34 @@ impl<T: Config> Pallet<T> {
 		weight
 	}
 
+	pub fn is_free_call(source: &H160, transaction: &Transaction) -> bool {
+		if let Some(target) = Self::try_get_contract_address(transaction) {
+			let input = Self::get_input(transaction);
+			return <T as pallet_evm::Config>::FreeCalls::can_send_free_call(source, &target, input);
+		}
+		false
+	}
+
+	pub fn try_get_contract_address(transaction: &Transaction) -> Option<H160> {
+		let action = match transaction {
+			Transaction::Legacy(t) => t.action,
+			Transaction::EIP1559(t) => t.action,
+			Transaction::EIP2930(t) => t.action,
+		};
+		match action {
+			TransactionAction::Call(addr) => Some(addr),
+			_ => None
+		}
+	}
+
+	pub fn get_input(transaction: &Transaction) -> &[u8] {
+		match transaction {
+			Transaction::Legacy(t) => &t.input,
+			Transaction::EIP1559(t) => &t.input,
+			Transaction::EIP2930(t) => &t.input,
+		}
+	}
+	
 	#[cfg(feature = "try-runtime")]
 	pub fn pre_migrate_block_v2() -> Result<Vec<u8>, &'static str> {
 		let item = b"CurrentBlock";
