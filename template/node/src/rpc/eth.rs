@@ -10,7 +10,7 @@ use sc_network::NetworkService;
 use sc_rpc::SubscriptionTaskExecutor;
 use sc_transaction_pool::{ChainApi, Pool};
 use sc_transaction_pool_api::TransactionPool;
-use sp_api::ProvideRuntimeApi;
+use sp_api::{CallApiAt, ProvideRuntimeApi};
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 use sp_runtime::traits::Block as BlockT;
@@ -19,8 +19,11 @@ use crate::rpc::AccountId32AddressMapping;
 use fc_db::Backend as FrontierBackend;
 pub use fc_rpc::{EthBlockDataCacheTask, OverrideHandle, StorageOverride};
 pub use fc_rpc_core::types::{FeeHistoryCache, FeeHistoryCacheLimit, FilterPool};
-use fp_rpc::EthereumRuntimeStorageOverride;
-use fp_storage::EthereumStorageSchema;
+pub use fc_storage::overrides_handle;
+use fp_rpc::{
+	ConvertTransaction, ConvertTransactionRuntimeApi, EthereumRuntimeRPCApi,
+	EthereumRuntimeStorageOverride,
+};
 
 /// Extra dependencies for Ethereum compatibility.
 pub struct EthDeps<C, P, A: ChainApi, CT, B: BlockT> {
@@ -95,7 +98,10 @@ where
 	C: ProvideRuntimeApi<B>,
 	C::Api: BlockBuilderApi<B> + EthereumRuntimeRPCApi<B> + ConvertTransactionRuntimeApi<B>,
 	C: BlockchainEvents<B> + 'static,
-	C: HeaderBackend<B> + HeaderMetadata<B, Error = BlockChainError> + StorageProvider<B, BE>,
+	C: HeaderBackend<B>
+		+ CallApiAt<B>
+		+ HeaderMetadata<B, Error = BlockChainError>
+		+ StorageProvider<B, BE>,
 	BE: Backend<B> + 'static,
 	P: TransactionPool<Block = B> + 'static,
 	A: ChainApi<Block = B> + 'static,

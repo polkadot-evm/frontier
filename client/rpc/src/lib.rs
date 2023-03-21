@@ -52,8 +52,9 @@ pub mod frontier_backend_client {
 
 	use ethereum_types::{H160, H256, U256};
 	use jsonrpsee::core::RpcResult;
-	use scale_codec::{Decode, Encode};
+	use scale_codec::Encode;
 	// Substrate
+	use sc_client_api::{StorageKey, StorageProvider};
 	use sp_blockchain::HeaderBackend;
 	use sp_io::hashing::{blake2_128, twox_128};
 	use sp_runtime::{

@@ -30,11 +30,7 @@ use sp_api::{ApiExt, CallApiAt, ProvideRuntimeApi};
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
 use sp_blockchain::HeaderBackend;
 use sp_io::hashing::{blake2_128, twox_128};
-use sp_runtime::{
-	generic::BlockId,
-	traits::{BlakeTwo256, Block as BlockT},
-	SaturatedConversion,
-};
+use sp_runtime::{traits::Block as BlockT, SaturatedConversion};
 // Frontier
 use fc_rpc_core::types::*;
 use fp_rpc::{EthereumRuntimeAddressMapping, EthereumRuntimeRPCApi};
@@ -72,12 +68,17 @@ where
 	B: BlockT,
 	C: ProvideRuntimeApi<B>,
 	C::Api: BlockBuilderApi<B> + EthereumRuntimeRPCApi<B>,
-	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
+	C: HeaderBackend<B> + CallApiAt<B> + StorageProvider<B, BE> + 'static,
 	BE: Backend<B> + 'static,
 	A: ChainApi<Block = B> + 'static,
 	EGA: EstimateGasAdapter,
 {
-	pub fn call(&self, request: CallRequest, number: Option<BlockNumber>) -> Result<Bytes> {
+	pub fn call(
+		&self,
+		request: CallRequest,
+		number: Option<BlockNumber>,
+		state_overrides: Option<BTreeMap<H160, CallStateOverride>>,
+	) -> Result<Bytes> {
 		let CallRequest {
 			from,
 			to,
@@ -89,7 +90,6 @@ where
 			data,
 			nonce,
 			access_list,
-			state_overrides,
 			..
 		} = request;
 
@@ -229,16 +229,13 @@ where
 						),
 					));
 
-					let block_hash = self.client.expect_block_hash_from_id(&id).map_err(|err| {
-						internal_err(format!("failed retrieving block hash: {:?}", err))
-					})?;
 					let overlayed_changes =
-						self.create_overrides_overlay(block_hash, api_version, state_overrides);
+						self.create_overrides_overlay(substrate_hash, api_version, state_overrides);
 					let storage_transaction_cache = std::cell::RefCell::<
 						sp_api::StorageTransactionCache<B, C::StateBackend>,
 					>::default();
 					let params = sp_api::CallApiAtParams {
-						at: &id,
+						at: substrate_hash,
 						function: "EthereumRuntimeRPCApi_call",
 						arguments: encoded_params,
 						overlayed_changes: &std::cell::RefCell::new(overlayed_changes),
@@ -790,7 +787,8 @@ where
 					// clear all storage
 					if let Ok(all_keys) = self.client.storage_keys(
 						block_hash,
-						&sp_storage::StorageKey(account_storage_key.clone()),
+						Some(&sp_storage::StorageKey(account_storage_key.clone())),
+						None,
 					) {
 						for key in all_keys {
 							overlayed_changes.set_storage(key.0, None);

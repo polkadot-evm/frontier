@@ -39,16 +39,17 @@ use sc_network::NetworkService;
 use sc_network_common::ExHashT;
 use sc_transaction_pool::{ChainApi, Pool};
 use sc_transaction_pool_api::{InPoolTransaction, TransactionPool};
-use sp_api::{Core, HeaderT, ProvideRuntimeApi};
+use sp_api::{CallApiAt, Core, HeaderT, ProvideRuntimeApi};
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
 use sp_blockchain::HeaderBackend;
 use sp_core::hashing::keccak_256;
 use sp_runtime::traits::{Block as BlockT, UniqueSaturatedInto};
 // Frontier
 use fc_rpc_core::{types::*, EthApiServer};
+use fc_storage::OverrideHandle;
 use fp_rpc::{
-	ConvertTransactionRuntimeApi, EthereumRuntimeAddressMapping, EthereumRuntimeRPCApi,
-	EthereumRuntimeStorageOverride, TransactionStatus,
+	ConvertTransaction, ConvertTransactionRuntimeApi, EthereumRuntimeAddressMapping,
+	EthereumRuntimeRPCApi, EthereumRuntimeStorageOverride, TransactionStatus,
 };
 
 use crate::{internal_err, public_key, signer::EthSigner};
@@ -182,7 +183,7 @@ where
 	B: BlockT,
 	C: ProvideRuntimeApi<B>,
 	C::Api: BlockBuilderApi<B> + ConvertTransactionRuntimeApi<B> + EthereumRuntimeRPCApi<B>,
-	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
+	C: HeaderBackend<B> + CallApiAt<B> + StorageProvider<B, BE> + 'static,
 	BE: Backend<B> + 'static,
 	P: TransactionPool<Block = B> + 'static,
 	CT: ConvertTransaction<<B as BlockT>::Extrinsic> + Send + Sync + 'static,
@@ -311,8 +312,13 @@ where
 	// Execute
 	// ########################################################################
 
-	fn call(&self, request: CallRequest, number: Option<BlockNumber>) -> Result<Bytes> {
-		self.call(request, number)
+	fn call(
+		&self,
+		request: CallRequest,
+		number: Option<BlockNumber>,
+		state_overrides: Option<BTreeMap<H160, CallStateOverride>>,
+	) -> Result<Bytes> {
+		self.call(request, number, state_overrides)
 	}
 
 	async fn estimate_gas(

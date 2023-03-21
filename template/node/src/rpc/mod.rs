@@ -15,7 +15,7 @@ use sc_rpc::SubscriptionTaskExecutor;
 use sc_rpc_api::DenyUnsafe;
 use sc_service::TransactionPool;
 use sc_transaction_pool::ChainApi;
-use sp_api::ProvideRuntimeApi;
+use sp_api::{CallApiAt, ProvideRuntimeApi};
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 use sp_core::ByteArray;
 use sp_runtime::traits::{BlakeTwo256, Block as BlockT};
@@ -60,6 +60,7 @@ where
 	C::Api: fp_rpc::EthereumRuntimeRPCApi<Block>,
 	C: BlockchainEvents<Block> + 'static,
 	C: HeaderBackend<Block>
+		+ CallApiAt<Block>
 		+ HeaderMetadata<Block, Error = BlockChainError>
 		+ StorageProvider<Block, BE>,
 	BE: Backend<Block> + 'static,
