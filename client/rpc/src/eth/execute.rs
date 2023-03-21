@@ -18,11 +18,7 @@
 
 use std::{collections::BTreeMap, sync::Arc};
 
-<<<<<<< HEAD
-use ethereum_types::U256;
-=======
 use ethereum_types::{H160, H256, U256};
->>>>>>> fe80b431b (allow overriding state in eth_call)
 use evm::{ExitError, ExitReason};
 use jsonrpsee::core::RpcResult as Result;
 use scale_codec::Encode;
