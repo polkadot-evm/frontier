@@ -19,7 +19,6 @@
 use ethereum_types::{H256, H64, U256};
 use jsonrpsee::core::RpcResult as Result;
 // Substrate
-use sc_network_common::ExHashT;
 use sc_transaction_pool::ChainApi;
 use sp_runtime::traits::Block as BlockT;
 // Frontier
@@ -27,7 +26,7 @@ use fc_rpc_core::types::*;
 
 use crate::eth::Eth;
 
-impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi, EGA> Eth<B, C, P, CT, BE, H, A, EGA> {
+impl<B: BlockT, C, P, CT, BE, A: ChainApi, EGA> Eth<B, C, P, CT, BE, A, EGA> {
 	pub fn is_mining(&self) -> Result<bool> {
 		Ok(self.is_authority)
 	}

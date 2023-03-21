@@ -20,7 +20,6 @@ use ethereum_types::{H160, U256, U64};
 use jsonrpsee::core::RpcResult as Result;
 // Substrate
 use sc_client_api::backend::{Backend, StorageProvider};
-use sc_network_common::ExHashT;
 use sc_transaction_pool::ChainApi;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
@@ -32,7 +31,7 @@ use fp_rpc::EthereumRuntimeRPCApi;
 
 use crate::{eth::Eth, internal_err};
 
-impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi, EGA> Eth<B, C, P, CT, BE, H, A, EGA>
+impl<B, C, P, CT, BE, A: ChainApi, EGA> Eth<B, C, P, CT, BE, A, EGA>
 where
 	B: BlockT,
 	C: ProvideRuntimeApi<B>,
@@ -45,7 +44,7 @@ where
 	}
 
 	pub fn syncing(&self) -> Result<SyncStatus> {
-		if self.network.is_major_syncing() {
+		if self.sync.is_major_syncing() {
 			let block_number = U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(
 				self.client.info().best_number,
 			));

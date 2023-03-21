@@ -35,8 +35,7 @@ use ethereum_types::{H160, H256, H512, H64, U256, U64};
 use jsonrpsee::core::{async_trait, RpcResult as Result};
 // Substrate
 use sc_client_api::backend::{Backend, StorageProvider};
-use sc_network::NetworkService;
-use sc_network_common::ExHashT;
+use sc_network_sync::SyncingService;
 use sc_transaction_pool::{ChainApi, Pool};
 use sc_transaction_pool_api::{InPoolTransaction, TransactionPool};
 use sp_api::{Core, HeaderT, ProvideRuntimeApi};
@@ -60,12 +59,12 @@ pub use self::{
 };
 
 /// Eth API implementation.
-pub struct Eth<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi, EGA = ()> {
+pub struct Eth<B: BlockT, C, P, CT, BE, A: ChainApi, EGA = ()> {
 	pool: Arc<P>,
 	graph: Arc<Pool<A>>,
 	client: Arc<C>,
 	convert_transaction: Option<CT>,
-	network: Arc<NetworkService<B, H>>,
+	sync: Arc<SyncingService<B>>,
 	is_authority: bool,
 	signers: Vec<Box<dyn EthSigner>>,
 	overrides: Arc<OverrideHandle<B>>,
@@ -79,13 +78,13 @@ pub struct Eth<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi, EGA = ()> {
 	_marker: PhantomData<(B, BE, EGA)>,
 }
 
-impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> Eth<B, C, P, CT, BE, H, A, ()> {
+impl<B: BlockT, C, P, CT, BE, A: ChainApi> Eth<B, C, P, CT, BE, A, ()> {
 	pub fn new(
 		client: Arc<C>,
 		pool: Arc<P>,
 		graph: Arc<Pool<A>>,
 		convert_transaction: Option<CT>,
-		network: Arc<NetworkService<B, H>>,
+		sync: Arc<SyncingService<B>>,
 		signers: Vec<Box<dyn EthSigner>>,
 		overrides: Arc<OverrideHandle<B>>,
 		backend: Arc<fc_db::Backend<B>>,
@@ -100,7 +99,7 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> Eth<B, C, P, CT, BE, H, A
 			pool,
 			graph,
 			convert_transaction,
-			network,
+			sync,
 			is_authority,
 			signers,
 			overrides,
@@ -114,16 +113,16 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> Eth<B, C, P, CT, BE, H, A
 	}
 }
 
-impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi, EGA> Eth<B, C, P, CT, BE, H, A, EGA> {
+impl<B: BlockT, C, P, CT, BE, A: ChainApi, EGA> Eth<B, C, P, CT, BE, A, EGA> {
 	pub fn with_estimate_gas_adapter<EGA2: EstimateGasAdapter>(
 		self,
-	) -> Eth<B, C, P, CT, BE, H, A, EGA2> {
+	) -> Eth<B, C, P, CT, BE, A, EGA2> {
 		let Self {
 			client,
 			pool,
 			graph,
 			convert_transaction,
-			network,
+			sync,
 			is_authority,
 			signers,
 			overrides,
@@ -140,7 +139,7 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi, EGA> Eth<B, C, P, CT, BE,
 			pool,
 			graph,
 			convert_transaction,
-			network,
+			sync,
 			is_authority,
 			signers,
 			overrides,
@@ -155,7 +154,7 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi, EGA> Eth<B, C, P, CT, BE,
 }
 
 #[async_trait]
-impl<B, C, P, CT, BE, H: ExHashT, A, EGA> EthApiServer for Eth<B, C, P, CT, BE, H, A, EGA>
+impl<B, C, P, CT, BE, A, EGA> EthApiServer for Eth<B, C, P, CT, BE, A, EGA>
 where
 	B: BlockT,
 	C: ProvideRuntimeApi<B>,

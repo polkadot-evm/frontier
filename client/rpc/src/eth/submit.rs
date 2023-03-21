@@ -21,7 +21,6 @@ use futures::future::TryFutureExt;
 use jsonrpsee::core::RpcResult as Result;
 // Substrate
 use sc_client_api::backend::{Backend, StorageProvider};
-use sc_network_common::ExHashT;
 use sc_transaction_pool::ChainApi;
 use sc_transaction_pool_api::TransactionPool;
 use sp_api::{ApiExt, ProvideRuntimeApi};
@@ -39,7 +38,7 @@ use crate::{
 	internal_err,
 };
 
-impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi, EGA> Eth<B, C, P, CT, BE, H, A, EGA>
+impl<B, C, P, CT, BE, A: ChainApi, EGA> Eth<B, C, P, CT, BE, A, EGA>
 where
 	B: BlockT,
 	C: ProvideRuntimeApi<B>,

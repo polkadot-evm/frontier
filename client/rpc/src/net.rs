@@ -20,8 +20,8 @@ use std::sync::Arc;
 
 use jsonrpsee::core::RpcResult as Result;
 // Substrate
-use sc_network::NetworkService;
-use sc_network_common::{service::NetworkPeers, ExHashT};
+use sc_network::{NetworkPeers, NetworkService};
+use sc_network_common::ExHashT;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::traits::Block as BlockT;
