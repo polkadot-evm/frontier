@@ -19,6 +19,7 @@
 
 use scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
+// Substrate
 use sp_core::{ecdsa, H160, H256};
 use sp_io::hashing::keccak_256;
 
@@ -31,6 +32,17 @@ pub struct AccountId20(pub [u8; 20]);
 
 #[cfg(feature = "std")]
 impl_serde::impl_fixed_hash_serde!(AccountId20, 20);
+
+#[cfg(feature = "std")]
+impl std::str::FromStr for AccountId20 {
+	type Err = &'static str;
+
+	fn from_str(s: &str) -> Result<Self, Self::Err> {
+		H160::from_str(s)
+			.map(Into::into)
+			.map_err(|_| "invalid hex address.")
+	}
+}
 
 #[cfg(feature = "std")]
 impl std::fmt::Display for AccountId20 {
