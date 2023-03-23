@@ -91,16 +91,28 @@ pub mod frontier_backend_client {
 			let mut key = [twox_128(b"System"), twox_128(b"Account")]
 				.concat()
 				.to_vec();
+			let system_account = key.clone();
 			let account_id = Self::AddressMapping::into_account_id_bytes(address);
 			key.extend(blake2_128(&account_id));
 			key.extend(&account_id);
 
-			log::info!("override key {:x?}", key);
+			log::info!("override key {}", hex::encode(&key));
+			if let Ok(keys) = client.storage_keys(block, Some(&StorageKey(system_account)), None) {
+				for key in keys {
+					log::info!("key {}", hex::encode(&key));
+					log::info!(
+						"    val {}",
+						hex::encode(&client.storage(block, &key).ok().flatten().unwrap().0)
+					);
+				}
+			} else {
+				log::info!("no keys");
+			}
 
 			if let Ok(Some(item)) = client.storage(block, &StorageKey(key.clone())) {
 				let mut new_item = item.0;
 
-				log::info!("old {:x?}", new_item);
+				log::info!("old {}", hex::encode(&new_item));
 
 				if let Some(nonce) = nonce {
 					new_item.splice(0..4, nonce.low_u32().encode());
@@ -111,9 +123,11 @@ pub mod frontier_backend_client {
 					new_item.splice(16..32, balance.low_u128().encode());
 				}
 
-				log::info!("new {:x?}", new_item);
+				log::info!("new {}", hex::encode(&new_item));
 
 				overlayed_changes.set_storage(key, Some(new_item));
+			} else {
+				log::info!("no value");
 			}
 		}
 	}

@@ -74,7 +74,7 @@ describeWithFrontier("Frontier RPC (StateOverride)", (context) => {
 		expect(balance.gten(1000), "balance was not above 1000 tether").to.be.true;
 	});
 
-	it("should have a sender balance of 150 with state override", async function () {
+	it("should have a sender balance of 4500 with state override", async function () {
 		const { result } = await customRequest(context.web3, "eth_call", [
 			{
 				from: GENESIS_ACCOUNT,
