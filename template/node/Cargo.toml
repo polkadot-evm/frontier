@@ -56,9 +56,9 @@ sp-transaction-pool = { workspace = true, features = ["default"] }
 sp-trie = { workspace = true, features = ["default"] }
 # These dependencies are used for RPC
 frame-system-rpc-runtime-api = { workspace = true }
+pallet-evm = { workspace = true }
 pallet-transaction-payment-rpc = { workspace = true }
 pallet-transaction-payment-rpc-runtime-api = { workspace = true }
-pallet-evm = { workspace = true }
 substrate-frame-rpc-system = { workspace = true }
 # These dependencies are used for runtime benchmarking
 frame-benchmarking = { workspace = true, optional = true }

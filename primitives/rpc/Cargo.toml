@@ -17,9 +17,9 @@ scale-codec = { package = "parity-scale-codec", workspace = true }
 scale-info = { workspace = true }
 # Substrate
 sp-api = { workspace = true }
-sp-state-machine = { workspace = true }
 sp-core = { workspace = true }
 sp-runtime = { workspace = true }
+sp-state-machine = { workspace = true }
 sp-std = { workspace = true }
 # Frontier
 fp-evm = { workspace = true }
