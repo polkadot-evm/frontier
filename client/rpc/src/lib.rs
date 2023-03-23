@@ -95,16 +95,23 @@ pub mod frontier_backend_client {
 			key.extend(blake2_128(&account_id));
 			key.extend(&account_id);
 
+			log::info!("override key {:x?}", key);
+
 			if let Ok(Some(item)) = client.storage(block, &StorageKey(key.clone())) {
 				let mut new_item = item.0;
+
+				log::info!("old {:x?}", new_item);
 
 				if let Some(nonce) = nonce {
 					new_item.splice(0..4, nonce.low_u32().encode());
 				}
 
+				log::info!("balance {:?}", balance);
 				if let Some(balance) = balance {
 					new_item.splice(16..32, balance.low_u128().encode());
 				}
+
+				log::info!("new {:x?}", new_item);
 
 				overlayed_changes.set_storage(key, Some(new_item));
 			}

@@ -93,6 +93,8 @@ where
 			..
 		} = request;
 
+		log::info!("overrides {:?}", state_overrides);
+
 		let (gas_price, max_fee_per_gas, max_priority_fee_per_gas) = {
 			let details = fee_details(gas_price, max_fee_per_gas, max_priority_fee_per_gas)?;
 			(
@@ -751,7 +753,9 @@ where
 		let mut overlayed_changes = sp_api::OverlayedChanges::default();
 		if let Some(state_overrides) = state_overrides {
 			for (address, state_override) in state_overrides {
+				log::info!("runtime_override: {}", self.runtime_state_override.is_some());
 				if let Some(runtime_state_override) = self.runtime_state_override.as_ref() {
+					log::info!("set changes");
 					runtime_state_override.set_overlayed_changes(
 						self.client.as_ref(),
 						&mut overlayed_changes,
