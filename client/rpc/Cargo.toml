@@ -35,6 +35,7 @@ sc-rpc = { workspace = true }
 sc-service = { workspace = true }
 sc-transaction-pool = { workspace = true }
 sc-transaction-pool-api = { workspace = true }
+sc-utils = { workspace = true }
 sp-api = { workspace = true }
 sp-block-builder = { workspace = true }
 sp-blockchain = { workspace = true }
@@ -44,6 +45,7 @@ sp-io = { workspace = true }
 sp-runtime = { workspace = true }
 # Frontier
 fc-db = { workspace = true }
+fc-mapping-sync = { workspace = true }
 fc-rpc-core = { workspace = true }
 fc-storage = { workspace = true }
 fp-ethereum = { workspace = true, features = ["default"] }

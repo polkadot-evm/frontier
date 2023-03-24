@@ -14,6 +14,7 @@ targets = ["x86_64-unknown-linux-gnu"]
 futures = "0.3.25"
 futures-timer = "3.0.1"
 log = "0.4.17"
+parking_lot = "0.12.1"
 # Substrate
 sc-client-api = { workspace = true }
 sp-api = { workspace = true }
@@ -24,3 +25,19 @@ fc-db = { workspace = true }
 fc-storage = { workspace = true }
 fp-consensus = { workspace = true, features = ["default"] }
 fp-rpc = { workspace = true, features = ["default"] }
+sc-utils = { workspace = true }
+
+[dev-dependencies]
+ethereum = { workspace = true, features = ["with-codec"] }
+ethereum-types = { workspace = true }
+tempfile = "3.3.0"
+tokio = { version = "1.24", features = ["sync"] }
+#Frontier
+fp-storage = { workspace = true, features = ["default"] }
+frontier-template-runtime = { workspace = true, features = ["default"] }
+# Substrate
+sc-block-builder = { workspace = true }
+sp-core = { workspace = true, features = ["default"] }
+sp-consensus = { workspace = true, features = ["default"] }
+sc-client-db = { workspace = true }
+substrate-test-runtime-client = { workspace = true }

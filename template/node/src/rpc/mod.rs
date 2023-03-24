@@ -41,6 +41,11 @@ pub struct FullDeps<C, P, A: ChainApi, CT> {
 pub fn create_full<C, P, BE, A, CT>(
 	deps: FullDeps<C, P, A, CT>,
 	subscription_task_executor: SubscriptionTaskExecutor,
+	pubsub_notification_sinks: Arc<
+		fc_mapping_sync::EthereumBlockNotificationSinks<
+			fc_mapping_sync::EthereumBlockNotification<Block>,
+		>,
+	>,
 ) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
 where
 	C: ProvideRuntimeApi<Block>,
@@ -83,7 +88,12 @@ where
 	}
 
 	// Ethereum compatibility RPCs
-	let io = create_eth::<_, _, _, _, _, _>(io, eth, subscription_task_executor)?;
+	let io = create_eth::<_, _, _, _, _, _>(
+		io,
+		eth,
+		subscription_task_executor,
+		pubsub_notification_sinks.clone(),
+	)?;
 
 	Ok(io)
 }
