@@ -107,7 +107,6 @@ pub mod frontier_backend_client {
 					new_item.splice(16..32, balance.low_u128().encode());
 				}
 
-
 				overlayed_changes.set_storage(key, Some(new_item));
 			}
 		}
