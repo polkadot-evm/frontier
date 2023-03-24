@@ -91,7 +91,6 @@ pub mod frontier_backend_client {
 			let mut key = [twox_128(b"System"), twox_128(b"Account")]
 				.concat()
 				.to_vec();
-			let system_account = key.clone();
 			let account_id = Self::AddressMapping::into_account_id_bytes(address);
 			key.extend(blake2_128(&account_id));
 			key.extend(&account_id);

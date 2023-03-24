@@ -17,8 +17,7 @@ use sc_service::TransactionPool;
 use sc_transaction_pool::ChainApi;
 use sp_api::{CallApiAt, ProvideRuntimeApi};
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
-use sp_core::ByteArray;
-use sp_runtime::traits::{BlakeTwo256, Block as BlockT};
+use sp_runtime::traits::Block as BlockT;
 // Runtime
 use frontier_template_runtime::{opaque::Block, AccountId, Balance, Hash, Index};
 
@@ -28,7 +27,9 @@ pub use self::eth::{create_eth, overrides_handle, EthDeps};
 pub struct AccountId32AddressMapping;
 impl fp_rpc::EthereumRuntimeAddressMapping for AccountId32AddressMapping {
 	fn into_account_id_bytes(address: sp_core::H160) -> Vec<u8> {
-		pallet_evm::IdentityAddressMapping::<BlakeTwo256>::into_account_id(address).to_raw_vec()
+		pallet_evm::IdentityAddressMapping::into_account_id(address)
+			.as_bytes()
+			.to_owned()
 	}
 }
 
