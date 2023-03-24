@@ -28,7 +28,7 @@ pub use self::eth::{create_eth, overrides_handle, EthDeps};
 pub struct AccountId32AddressMapping;
 impl fp_rpc::EthereumRuntimeAddressMapping for AccountId32AddressMapping {
 	fn into_account_id_bytes(address: sp_core::H160) -> Vec<u8> {
-		pallet_evm::HashedAddressMapping::<BlakeTwo256>::into_account_id(address).to_raw_vec()
+		pallet_evm::IdentityAddressMapping::<BlakeTwo256>::into_account_id(address).to_raw_vec()
 	}
 }
 
