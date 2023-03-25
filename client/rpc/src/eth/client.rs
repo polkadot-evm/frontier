@@ -28,11 +28,11 @@ use sp_consensus::SyncOracle;
 use sp_runtime::traits::{Block as BlockT, UniqueSaturatedInto};
 // Frontier
 use fc_rpc_core::types::*;
-use fp_rpc::{EthereumRuntimeAddressMapping, EthereumRuntimeRPCApi};
+use fp_rpc::{EthereumRuntimeRPCApi, EvmRuntimeAddressMapping};
 
 use crate::{eth::Eth, internal_err};
 
-impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi, M: EthereumRuntimeAddressMapping, EGA>
+impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi, M: EvmRuntimeAddressMapping, EGA>
 	Eth<B, C, P, CT, BE, H, A, M, EGA>
 where
 	B: BlockT,

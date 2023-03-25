@@ -367,7 +367,7 @@ where
 		fee_history_cache_limit,
 		execute_gas_limit_multiplier: eth_config.execute_gas_limit_multiplier,
 		runtime_storage_override: Some(Arc::new(
-			fc_rpc::frontier_backend_client::DefaultEthereumRuntimeStorageOverride(
+			fc_rpc::frontier_backend_client::DefaultEvmRuntimeStorageOverride(
 				std::marker::PhantomData::<crate::rpc::DefaultAddressMapping>::default(),
 			),
 		)),

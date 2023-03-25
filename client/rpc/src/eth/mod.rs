@@ -48,8 +48,8 @@ use sp_runtime::traits::{Block as BlockT, UniqueSaturatedInto};
 use fc_rpc_core::{types::*, EthApiServer};
 use fc_storage::OverrideHandle;
 use fp_rpc::{
-	ConvertTransaction, ConvertTransactionRuntimeApi, EthereumRuntimeAddressMapping,
-	EthereumRuntimeRPCApi, EthereumRuntimeStorageOverride, TransactionStatus,
+	ConvertTransaction, ConvertTransactionRuntimeApi, EthereumRuntimeRPCApi,
+	EvmRuntimeAddressMapping, EvmRuntimeStorageOverride, TransactionStatus,
 };
 
 use crate::{internal_err, public_key, signer::EthSigner};
@@ -69,7 +69,7 @@ pub struct Eth<
 	BE,
 	H: ExHashT,
 	A: ChainApi,
-	M: EthereumRuntimeAddressMapping,
+	M: EvmRuntimeAddressMapping,
 	EGA = (),
 > {
 	pool: Arc<P>,
@@ -87,12 +87,11 @@ pub struct Eth<
 	/// When using eth_call/eth_estimateGas, the maximum allowed gas limit will be
 	/// block.gas_limit * execute_gas_limit_multiplier
 	execute_gas_limit_multiplier: u64,
-	runtime_state_override:
-		Option<Arc<dyn EthereumRuntimeStorageOverride<B, C, AddressMapping = M>>>,
+	runtime_state_override: Option<Arc<dyn EvmRuntimeStorageOverride<B, C, AddressMapping = M>>>,
 	_marker: PhantomData<(B, BE, EGA)>,
 }
 
-impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi, M: EthereumRuntimeAddressMapping>
+impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi, M: EvmRuntimeAddressMapping>
 	Eth<B, C, P, CT, BE, H, A, M, ()>
 {
 	pub fn new(
@@ -110,7 +109,7 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi, M: EthereumRuntimeAddress
 		fee_history_cache_limit: FeeHistoryCacheLimit,
 		execute_gas_limit_multiplier: u64,
 		runtime_state_override: Option<
-			Arc<dyn EthereumRuntimeStorageOverride<B, C, AddressMapping = M>>,
+			Arc<dyn EvmRuntimeStorageOverride<B, C, AddressMapping = M>>,
 		>,
 	) -> Self {
 		Self {
@@ -133,7 +132,7 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi, M: EthereumRuntimeAddress
 	}
 }
 
-impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi, M: EthereumRuntimeAddressMapping, EGA>
+impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi, M: EvmRuntimeAddressMapping, EGA>
 	Eth<B, C, P, CT, BE, H, A, M, EGA>
 {
 	pub fn with_estimate_gas_adapter<EGA2: EstimateGasAdapter>(
@@ -188,7 +187,7 @@ where
 	P: TransactionPool<Block = B> + 'static,
 	CT: ConvertTransaction<<B as BlockT>::Extrinsic> + Send + Sync + 'static,
 	A: ChainApi<Block = B> + 'static,
-	M: EthereumRuntimeAddressMapping + 'static,
+	M: EvmRuntimeAddressMapping + 'static,
 	EGA: EstimateGasAdapter + Send + Sync + 'static,
 {
 	// ########################################################################

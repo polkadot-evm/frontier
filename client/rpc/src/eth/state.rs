@@ -30,14 +30,14 @@ use sp_blockchain::HeaderBackend;
 use sp_runtime::traits::Block as BlockT;
 // Frontier
 use fc_rpc_core::types::*;
-use fp_rpc::{EthereumRuntimeAddressMapping, EthereumRuntimeRPCApi};
+use fp_rpc::{EthereumRuntimeRPCApi, EvmRuntimeAddressMapping};
 
 use crate::{
 	eth::{pending_runtime_api, Eth},
 	frontier_backend_client, internal_err,
 };
 
-impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi, M: EthereumRuntimeAddressMapping, EGA>
+impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi, M: EvmRuntimeAddressMapping, EGA>
 	Eth<B, C, P, CT, BE, H, A, M, EGA>
 where
 	B: BlockT,

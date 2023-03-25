@@ -33,7 +33,7 @@ use sp_io::hashing::{blake2_128, twox_128};
 use sp_runtime::{traits::Block as BlockT, SaturatedConversion};
 // Frontier
 use fc_rpc_core::types::*;
-use fp_rpc::{EthereumRuntimeAddressMapping, EthereumRuntimeRPCApi};
+use fp_rpc::{EthereumRuntimeRPCApi, EvmRuntimeAddressMapping};
 use fp_storage::{EVM_ACCOUNT_CODES, PALLET_EVM};
 
 use crate::{
@@ -62,7 +62,7 @@ impl EstimateGasAdapter for () {
 	}
 }
 
-impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi, M: EthereumRuntimeAddressMapping, EGA>
+impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi, M: EvmRuntimeAddressMapping, EGA>
 	Eth<B, C, P, CT, BE, H, A, M, EGA>
 where
 	B: BlockT,

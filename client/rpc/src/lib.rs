@@ -68,11 +68,10 @@ pub mod frontier_backend_client {
 	/// Implements a default runtime storage override.
 	/// It assumes that the balances and nonces are stored in pallet `system.account`, and
 	/// have `nonce: Index` = `u32` for  and `free: Balance` = `u128`.
-	pub struct DefaultEthereumRuntimeStorageOverride<M>(pub std::marker::PhantomData<M>);
-	impl<M, B, C> fp_rpc::EthereumRuntimeStorageOverride<B, C>
-		for DefaultEthereumRuntimeStorageOverride<M>
+	pub struct DefaultEvmRuntimeStorageOverride<M>(pub std::marker::PhantomData<M>);
+	impl<M, B, C> fp_rpc::EvmRuntimeStorageOverride<B, C> for DefaultEvmRuntimeStorageOverride<M>
 	where
-		M: fp_rpc::EthereumRuntimeAddressMapping + Sync + Send,
+		M: fp_rpc::EvmRuntimeAddressMapping + Sync + Send,
 		B: BlockT,
 		C: StorageProvider<B, sc_service::TFullBackend<B>>,
 	{

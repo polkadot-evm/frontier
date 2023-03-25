@@ -33,8 +33,8 @@ use sp_runtime::{
 // Frontier
 use fc_rpc_core::types::*;
 use fp_rpc::{
-	ConvertTransaction, ConvertTransactionRuntimeApi, EthereumRuntimeAddressMapping,
-	EthereumRuntimeRPCApi,
+	ConvertTransaction, ConvertTransactionRuntimeApi, EthereumRuntimeRPCApi,
+	EvmRuntimeAddressMapping,
 };
 
 use crate::{
@@ -42,7 +42,7 @@ use crate::{
 	internal_err,
 };
 
-impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi, M: EthereumRuntimeAddressMapping, EGA>
+impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi, M: EvmRuntimeAddressMapping, EGA>
 	Eth<B, C, P, CT, BE, H, A, M, EGA>
 where
 	B: BlockT,

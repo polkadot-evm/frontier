@@ -22,7 +22,7 @@ pub use fc_rpc_core::types::{FeeHistoryCache, FeeHistoryCacheLimit, FilterPool};
 pub use fc_storage::overrides_handle;
 use fp_rpc::{
 	ConvertTransaction, ConvertTransactionRuntimeApi, EthereumRuntimeRPCApi,
-	EthereumRuntimeStorageOverride,
+	EvmRuntimeStorageOverride,
 };
 
 /// Extra dependencies for Ethereum compatibility.
@@ -59,9 +59,8 @@ pub struct EthDeps<C, P, A: ChainApi, CT, B: BlockT> {
 	/// using eth_call/eth_estimateGas.
 	pub execute_gas_limit_multiplier: u64,
 	/// Ethereum runtime storage overrider impl.
-	pub runtime_storage_override: Option<
-		Arc<dyn EthereumRuntimeStorageOverride<B, C, AddressMapping = DefaultAddressMapping>>,
-	>,
+	pub runtime_storage_override:
+		Option<Arc<dyn EvmRuntimeStorageOverride<B, C, AddressMapping = DefaultAddressMapping>>>,
 }
 
 impl<C, P, A: ChainApi, CT: Clone, B: BlockT> Clone for EthDeps<C, P, A, CT, B> {

@@ -25,7 +25,7 @@ mod eth;
 pub use self::eth::{create_eth, overrides_handle, EthDeps};
 
 pub struct DefaultAddressMapping;
-impl fp_rpc::EthereumRuntimeAddressMapping for DefaultAddressMapping {
+impl fp_rpc::EvmRuntimeAddressMapping for DefaultAddressMapping {
 	fn into_account_id_bytes(address: sp_core::H160) -> Vec<u8> {
 		let account_id: sp_core::H160 =
 			pallet_evm::IdentityAddressMapping::into_account_id(address);
