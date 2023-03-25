@@ -23,6 +23,7 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::comparison_chain, clippy::large_enum_variant)]
+#![deny(unused_crate_dependencies)]
 
 #[cfg(all(feature = "std", test))]
 mod mock;
@@ -64,7 +65,8 @@ pub use ethereum::{
 };
 pub use fp_rpc::TransactionStatus;
 
-#[derive(Clone, Eq, PartialEq, RuntimeDebug, Encode, Decode, MaxEncodedLen, TypeInfo)]
+#[derive(Clone, Eq, PartialEq, RuntimeDebug)]
+#[derive(Encode, Decode, MaxEncodedLen, TypeInfo)]
 pub enum RawOrigin {
 	EthereumTransaction(H160),
 }

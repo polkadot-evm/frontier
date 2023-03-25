@@ -23,7 +23,7 @@ fp-evm = { workspace = true }
 
 [dev-dependencies]
 # Substrate
-sp-io = { workspace = true }
+sp-io = { workspace = true, features = ["default"] }
 
 [features]
 default = ["std"]

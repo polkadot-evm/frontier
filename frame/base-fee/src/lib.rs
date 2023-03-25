@@ -17,6 +17,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::comparison_chain)]
+#![deny(unused_crate_dependencies)]
 
 #[cfg(test)]
 mod tests;

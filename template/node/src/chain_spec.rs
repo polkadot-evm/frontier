@@ -2,15 +2,15 @@ use std::{collections::BTreeMap, str::FromStr};
 
 use serde::{Deserialize, Serialize};
 // Substrate
-use sc_service::ChainType;
+use sc_chain_spec::{ChainType, Properties};
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_core::{sr25519, storage::Storage, Pair, Public, H160, U256};
+use sp_core::{ecdsa, storage::Storage, Pair, Public, H160, U256};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::traits::{IdentifyAccount, Verify};
 use sp_state_machine::BasicExternalities;
 // Frontier
 use frontier_template_runtime::{
-	AccountId, EnableManualSeal, GenesisConfig, Signature, WASM_BINARY,
+	AccountId, EnableManualSeal, GenesisConfig, SS58Prefix, Signature, WASM_BINARY,
 };
 
 // The URL for the telemetry server.
@@ -64,6 +64,13 @@ pub fn authority_keys_from_seed(s: &str) -> (AuraId, GrandpaId) {
 	(get_from_seed::<AuraId>(s), get_from_seed::<GrandpaId>(s))
 }
 
+fn properties() -> Properties {
+	let mut properties = Properties::new();
+	properties.insert("tokenDecimals".into(), 18.into());
+	properties.insert("ss58Format".into(), SS58Prefix::get().into());
+	properties
+}
+
 pub fn development_config(enable_manual_seal: Option<bool>) -> DevChainSpec {
 	let wasm_binary = WASM_BINARY.expect("WASM not available");
 
@@ -78,17 +85,18 @@ pub fn development_config(enable_manual_seal: Option<bool>) -> DevChainSpec {
 				genesis_config: testnet_genesis(
 					wasm_binary,
 					// Sudo account
-					get_account_id_from_seed::<sr25519::Public>("Alice"),
+					get_account_id_from_seed::<ecdsa::Public>("Alice"),
 					// Pre-funded accounts
 					vec![
-						get_account_id_from_seed::<sr25519::Public>("Alice"),
-						get_account_id_from_seed::<sr25519::Public>("Bob"),
-						get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-						get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+						get_account_id_from_seed::<ecdsa::Public>("Alice"),
+						get_account_id_from_seed::<ecdsa::Public>("Bob"),
+						get_account_id_from_seed::<ecdsa::Public>("Alice//stash"),
+						get_account_id_from_seed::<ecdsa::Public>("Bob//stash"),
 					],
 					// Initial PoA authorities
 					vec![authority_keys_from_seed("Alice")],
-					42,
+					// Ethereum chain ID
+					SS58Prefix::get() as u64,
 				),
 				enable_manual_seal,
 			}
@@ -99,9 +107,10 @@ pub fn development_config(enable_manual_seal: Option<bool>) -> DevChainSpec {
 		None,
 		// Protocol ID
 		None,
+		// Fork ID
 		None,
 		// Properties
-		None,
+		Some(properties()),
 		// Extensions
 		None,
 	)
@@ -121,21 +130,21 @@ pub fn local_testnet_config() -> ChainSpec {
 				wasm_binary,
 				// Initial PoA authorities
 				// Sudo account
-				get_account_id_from_seed::<sr25519::Public>("Alice"),
+				get_account_id_from_seed::<ecdsa::Public>("Alice"),
 				// Pre-funded accounts
 				vec![
-					get_account_id_from_seed::<sr25519::Public>("Alice"),
-					get_account_id_from_seed::<sr25519::Public>("Bob"),
-					get_account_id_from_seed::<sr25519::Public>("Charlie"),
-					get_account_id_from_seed::<sr25519::Public>("Dave"),
-					get_account_id_from_seed::<sr25519::Public>("Eve"),
-					get_account_id_from_seed::<sr25519::Public>("Ferdie"),
-					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
+					get_account_id_from_seed::<ecdsa::Public>("Alice"),
+					get_account_id_from_seed::<ecdsa::Public>("Bob"),
+					get_account_id_from_seed::<ecdsa::Public>("Charlie"),
+					get_account_id_from_seed::<ecdsa::Public>("Dave"),
+					get_account_id_from_seed::<ecdsa::Public>("Eve"),
+					get_account_id_from_seed::<ecdsa::Public>("Ferdie"),
+					get_account_id_from_seed::<ecdsa::Public>("Alice//stash"),
+					get_account_id_from_seed::<ecdsa::Public>("Bob//stash"),
+					get_account_id_from_seed::<ecdsa::Public>("Charlie//stash"),
+					get_account_id_from_seed::<ecdsa::Public>("Dave//stash"),
+					get_account_id_from_seed::<ecdsa::Public>("Eve//stash"),
+					get_account_id_from_seed::<ecdsa::Public>("Ferdie//stash"),
 				],
 				vec![
 					authority_keys_from_seed("Alice"),

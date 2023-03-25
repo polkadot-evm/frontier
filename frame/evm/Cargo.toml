@@ -16,7 +16,7 @@ environmental = { workspace = true, optional = true }
 evm = { workspace = true, features = ["with-codec"] }
 hex = { version = "0.4.3", default-features = false, features = ["alloc"] }
 impl-trait-for-tuples = "0.2.2"
-log = { version = "0.4.17", default-features = false }
+log = { workspace = true }
 rlp = { workspace = true }
 scale-codec = { package = "parity-scale-codec", workspace = true }
 scale-info = { workspace = true }
@@ -30,12 +30,13 @@ sp-io = { workspace = true }
 sp-runtime = { workspace = true }
 sp-std = { workspace = true }
 # Frontier
+fp-account = { workspace = true }
 fp-evm = { workspace = true }
 
 [dev-dependencies]
 # Substrate
 pallet-balances = { workspace = true, features = ["default"] }
-pallet-evm-precompile-simple = { workspace = true }
+pallet-evm-precompile-simple = { workspace = true, features = ["default"] }
 
 [features]
 default = ["std"]
@@ -58,6 +59,7 @@ std = [
 	"sp-runtime/std",
 	"sp-std/std",
 	# Frontier
+	"fp-account/std",
 	"fp-evm/std",
 ]
 runtime-benchmarks = [

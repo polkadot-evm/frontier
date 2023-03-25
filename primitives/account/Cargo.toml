@@ -1,0 +1,42 @@
+[package]
+name = "fp-account"
+version = "1.0.0-dev"
+license = "Apache-2.0"
+description = "Primitives for Frontier AccountId20."
+authors = { workspace = true }
+edition = { workspace = true }
+repository = { workspace = true }
+
+[dependencies]
+hex = { version = "0.4.3", default-features = false }
+impl-serde = { workspace = true, optional = true }
+libsecp256k1 = { workspace = true }
+log = { workspace = true }
+scale-codec = { package = "parity-scale-codec", workspace = true }
+scale-info = { workspace = true }
+serde = { workspace = true, optional = true }
+
+# Substrate
+sp-core = { workspace = true }
+sp-io = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
+
+[dev-dependencies]
+
+[features]
+default = ["std"]
+std = [
+	"hex/std",
+	"impl-serde/std",
+	"libsecp256k1/std",
+	"log/std",
+	"scale-codec/std",
+	"scale-info/std",
+	"serde",
+	# Substrate
+	"sp-core/std",
+	"sp-io/std",
+	"sp-runtime/std",
+	"sp-std/std",
+]

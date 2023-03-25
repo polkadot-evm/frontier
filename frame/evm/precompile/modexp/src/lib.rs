@@ -17,13 +17,14 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::comparison_chain)]
+#![deny(unused_crate_dependencies)]
 
 extern crate alloc;
 
 use alloc::{vec, vec::Vec};
 use core::cmp::max;
 
-use num::{BigUint, FromPrimitive, One, ToPrimitive, Zero};
+use num::{BigUint, FromPrimitive, Integer, One, ToPrimitive, Zero};
 
 use fp_evm::{
 	ExitError, ExitSucceed, Precompile, PrecompileFailure, PrecompileHandle, PrecompileOutput,
@@ -41,6 +42,7 @@ fn calculate_gas_cost(
 	mod_length: u64,
 	exponent: &BigUint,
 	exponent_bytes: &[u8],
+	mod_is_even: bool,
 ) -> u64 {
 	fn calculate_multiplication_complexity(base_length: u64, mod_length: u64) -> u64 {
 		let max_length = max(base_length, mod_length);
@@ -91,6 +93,7 @@ fn calculate_gas_cost(
 		MIN_GAS_COST,
 		multiplication_complexity * iteration_count / 3,
 	)
+	.saturating_mul(if mod_is_even { 20 } else { 1 })
 }
 
 /// Copy bytes from input to target.
@@ -196,7 +199,13 @@ impl Precompile for Modexp {
 			let modulus = BigUint::from_bytes_be(&mod_buf);
 
 			// do our gas accounting
-			let gas_cost = calculate_gas_cost(base_len as u64, mod_len as u64, &exponent, &exp_buf);
+			let gas_cost = calculate_gas_cost(
+				base_len as u64,
+				mod_len as u64,
+				&exponent,
+				&exp_buf,
+				modulus.is_even(),
+			);
 
 			handle.record_cost(gas_cost)?;
 
@@ -510,6 +519,6 @@ mod tests {
 
 		let _ = Modexp::execute(&mut handle).expect("Modexp::execute() returned error");
 
-		assert_eq!(handle.gas_used, 7104); // gas used when ran in geth
+		assert_eq!(handle.gas_used, 7104 * 20); // gas used when ran in geth (x20)
 	}
 }

@@ -2155,6 +2155,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "fp-account"
+version = "1.0.0-dev"
+dependencies = [
+ "hex",
+ "impl-serde",
+ "libsecp256k1",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "fp-consensus"
 version = "2.0.0-dev"
 dependencies = [
@@ -2465,6 +2482,7 @@ dependencies = [
  "fc-rpc",
  "fc-rpc-core",
  "fc-storage",
+ "fp-account",
  "fp-dynamic-fee",
  "fp-evm",
  "fp-rpc",
@@ -2482,6 +2500,7 @@ dependencies = [
  "pallet-transaction-payment-rpc-runtime-api",
  "parity-scale-codec",
  "sc-basic-authorship",
+ "sc-chain-spec",
  "sc-cli",
  "sc-client-api",
  "sc-consensus",
@@ -2505,7 +2524,6 @@ dependencies = [
  "sp-core",
  "sp-finality-grandpa",
  "sp-inherents",
- "sp-keyring",
  "sp-offchain",
  "sp-runtime",
  "sp-session",
@@ -2522,6 +2540,7 @@ dependencies = [
 name = "frontier-template-runtime"
 version = "0.0.0"
 dependencies = [
+ "fp-account",
  "fp-evm",
  "fp-rpc",
  "fp-self-contained",
@@ -4874,6 +4893,7 @@ version = "6.0.0-dev"
 dependencies = [
  "environmental",
  "evm",
+ "fp-account",
  "fp-evm",
  "frame-benchmarking",
  "frame-support",
@@ -5154,6 +5174,7 @@ name = "pallet-utility"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=master#1837f423b494254e1d27834b1c9da34b2c0c2375"
 dependencies = [
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "parity-scale-codec",
