@@ -24,12 +24,12 @@ use frontier_template_runtime::{opaque::Block, AccountId, Balance, Hash, Index};
 mod eth;
 pub use self::eth::{create_eth, overrides_handle, EthDeps};
 
-pub struct AccountId32AddressMapping;
-impl fp_rpc::EthereumRuntimeAddressMapping for AccountId32AddressMapping {
+pub struct DefaultAddressMapping;
+impl fp_rpc::EthereumRuntimeAddressMapping for DefaultAddressMapping {
 	fn into_account_id_bytes(address: sp_core::H160) -> Vec<u8> {
-		pallet_evm::IdentityAddressMapping::into_account_id(address)
-			.as_bytes()
-			.to_owned()
+		let account_id: sp_core::H160 =
+			pallet_evm::IdentityAddressMapping::into_account_id(address);
+		account_id.as_bytes().to_owned()
 	}
 }
 

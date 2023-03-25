@@ -15,7 +15,7 @@ use sp_block_builder::BlockBuilder as BlockBuilderApi;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 use sp_runtime::traits::Block as BlockT;
 // Frontier
-use crate::rpc::AccountId32AddressMapping;
+use crate::rpc::DefaultAddressMapping;
 use fc_db::Backend as FrontierBackend;
 pub use fc_rpc::{EthBlockDataCacheTask, OverrideHandle, StorageOverride};
 pub use fc_rpc_core::types::{FeeHistoryCache, FeeHistoryCacheLimit, FilterPool};
@@ -60,7 +60,7 @@ pub struct EthDeps<C, P, A: ChainApi, CT, B: BlockT> {
 	pub execute_gas_limit_multiplier: u64,
 	/// Ethereum runtime storage overrider impl.
 	pub runtime_storage_override: Option<
-		Arc<dyn EthereumRuntimeStorageOverride<B, C, AddressMapping = AccountId32AddressMapping>>,
+		Arc<dyn EthereumRuntimeStorageOverride<B, C, AddressMapping = DefaultAddressMapping>>,
 	>,
 }
 
