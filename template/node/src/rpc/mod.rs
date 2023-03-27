@@ -92,7 +92,7 @@ where
 		io,
 		eth,
 		subscription_task_executor,
-		pubsub_notification_sinks.clone(),
+		pubsub_notification_sinks,
 	)?;
 
 	Ok(io)

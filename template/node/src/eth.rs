@@ -138,7 +138,7 @@ pub fn spawn_frontier_tasks<RuntimeApi, Executor>(
 			3,
 			0,
 			SyncStrategy::Normal,
-			pubsub_notification_sinks.clone(),
+			pubsub_notification_sinks,
 		)
 		.for_each(|()| future::ready(())),
 	);

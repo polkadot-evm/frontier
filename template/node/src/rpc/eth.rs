@@ -168,7 +168,7 @@ where
 			network.clone(),
 			subscription_task_executor,
 			overrides,
-			pubsub_notification_sinks.clone(),
+			pubsub_notification_sinks,
 		)
 		.into_rpc(),
 	)?;
