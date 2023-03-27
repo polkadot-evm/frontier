@@ -16,15 +16,17 @@
 // limitations under the License.
 
 #![cfg_attr(not(feature = "std"), no_std)]
+#![deny(unused_crate_dependencies)]
 
 mod precompile;
 mod validation;
 
-use codec::{Decode, Encode};
-use frame_support::weights::Weight;
+use frame_support::weights::{constants::WEIGHT_REF_TIME_PER_MILLIS, Weight};
+use scale_codec::{Decode, Encode};
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_core::{H160, U256};
+use sp_runtime::Perbill;
 use sp_std::vec::Vec;
 
 pub use evm::{
@@ -96,5 +98,50 @@ pub trait FeeCalculator {
 impl FeeCalculator for () {
 	fn min_gas_price() -> (U256, Weight) {
 		(U256::zero(), Weight::zero())
+	}
+}
+
+/// `WeightPerGas` is an approximate ratio of the amount of Weight per Gas.
+/// u64 works for approximations because Weight is a very small unit compared to gas.
+///
+/// `GAS_PER_MILLIS * WEIGHT_MILLIS_PER_BLOCK * TXN_RATIO ~= BLOCK_GAS_LIMIT`
+/// `WEIGHT_PER_GAS = WEIGHT_REF_TIME_PER_MILLIS / GAS_PER_MILLIS
+///                 = WEIGHT_REF_TIME_PER_MILLIS / (BLOCK_GAS_LIMIT / TXN_RATIO / WEIGHT_MILLIS_PER_BLOCK)
+///                 = TXN_RATIO * (WEIGHT_REF_TIME_PER_MILLIS * WEIGHT_MILLIS_PER_BLOCK) / BLOCK_GAS_LIMIT`
+///
+/// For example, given the 2000ms Weight, from which 75% only are used for transactions,
+/// the total EVM execution gas limit is `GAS_PER_MILLIS * 2000 * 75% = BLOCK_GAS_LIMIT`.
+pub fn weight_per_gas(
+	block_gas_limit: u64,
+	txn_ratio: Perbill,
+	weight_millis_per_block: u64,
+) -> u64 {
+	let weight_per_block = WEIGHT_REF_TIME_PER_MILLIS.saturating_mul(weight_millis_per_block);
+	let weight_per_gas = (txn_ratio * weight_per_block).saturating_div(block_gas_limit);
+	assert!(
+		weight_per_gas >= 1,
+		"WeightPerGas must greater than or equal with 1"
+	);
+	weight_per_gas
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn test_weight_per_gas() {
+		assert_eq!(
+			weight_per_gas(15_000_000, Perbill::from_percent(75), 500),
+			25_000
+		);
+		assert_eq!(
+			weight_per_gas(75_000_000, Perbill::from_percent(75), 2_000),
+			20_000
+		);
+		assert_eq!(
+			weight_per_gas(1_500_000_000_000, Perbill::from_percent(75), 2_000),
+			1
+		);
 	}
 }

@@ -1,38 +1,33 @@
 [package]
 name = "fp-self-contained"
 version = "1.0.0-dev"
-authors = ["Parity Technologies <admin@parity.io>"]
-edition = "2021"
 license = "Apache-2.0"
 description = "Primitive Ethereum abstractions for Substrate."
-repository = "https://github.com/paritytech/frontier/"
+authors = { workspace = true }
+edition = { workspace = true }
+repository = { workspace = true }
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-ethereum = { version = "0.14.0", default-features = false, features = ["with-codec"] }
-serde = { version = "1.0", features = ["derive"], optional = true }
-
-# Parity
-codec = { package = "parity-scale-codec", version = "3.2.1", default-features = false }
-scale-info = { version = "2.3.0", default-features = false, features = ["derive"] }
-
+scale-codec = { package = "parity-scale-codec", workspace = true }
+scale-info = { workspace = true }
+serde = { workspace = true, optional = true }
 # Substrate
-sp-runtime = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-# Substrate FRAME
-frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+frame-support = { workspace = true }
+sp-runtime = { workspace = true }
 
 [features]
 default = ["std"]
 std = [
-	"ethereum/std",
-	"serde",
-	# Parity
-	"codec/std",
+	"scale-codec/std",
 	"scale-info/std",
+	"serde",
 	# Substrate
-	"sp-runtime/std",
-	# Substrate FRAME
 	"frame-support/std",
+	"sp-runtime/std",
+]
+try-runtime = [
+	"sp-runtime/try-runtime",
 ]

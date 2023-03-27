@@ -34,7 +34,7 @@ use ethereum::{BlockV2 as EthereumBlock, TransactionV2 as EthereumTransaction};
 use ethereum_types::{H160, H256, H512, H64, U256, U64};
 use jsonrpsee::core::{async_trait, RpcResult as Result};
 // Substrate
-use sc_client_api::backend::{Backend, StateBackend, StorageProvider};
+use sc_client_api::backend::{Backend, StorageProvider};
 use sc_network::NetworkService;
 use sc_network_common::ExHashT;
 use sc_transaction_pool::{ChainApi, Pool};
@@ -43,15 +43,15 @@ use sp_api::{Core, HeaderT, ProvideRuntimeApi};
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
 use sp_blockchain::HeaderBackend;
 use sp_core::hashing::keccak_256;
-use sp_runtime::{
-	generic::BlockId,
-	traits::{BlakeTwo256, Block as BlockT, UniqueSaturatedInto},
-};
+use sp_runtime::traits::{Block as BlockT, UniqueSaturatedInto};
 // Frontier
 use fc_rpc_core::{types::*, EthApiServer};
-use fp_rpc::{ConvertTransactionRuntimeApi, EthereumRuntimeRPCApi, TransactionStatus};
+use fc_storage::OverrideHandle;
+use fp_rpc::{
+	ConvertTransaction, ConvertTransactionRuntimeApi, EthereumRuntimeRPCApi, TransactionStatus,
+};
 
-use crate::{internal_err, overrides::OverrideHandle, public_key, signer::EthSigner};
+use crate::{internal_err, public_key, signer::EthSigner};
 
 pub use self::{
 	cache::{EthBlockDataCacheTask, EthTask},
@@ -79,7 +79,7 @@ pub struct Eth<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi, EGA = ()> {
 	_marker: PhantomData<(B, BE, EGA)>,
 }
 
-impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> Eth<B, C, P, CT, BE, H, A> {
+impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> Eth<B, C, P, CT, BE, H, A, ()> {
 	pub fn new(
 		client: Arc<C>,
 		pool: Arc<P>,
@@ -114,18 +114,58 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> Eth<B, C, P, CT, BE, H, A
 	}
 }
 
+impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi, EGA> Eth<B, C, P, CT, BE, H, A, EGA> {
+	pub fn with_estimate_gas_adapter<EGA2: EstimateGasAdapter>(
+		self,
+	) -> Eth<B, C, P, CT, BE, H, A, EGA2> {
+		let Self {
+			client,
+			pool,
+			graph,
+			convert_transaction,
+			network,
+			is_authority,
+			signers,
+			overrides,
+			backend,
+			block_data_cache,
+			fee_history_cache,
+			fee_history_cache_limit,
+			execute_gas_limit_multiplier,
+			_marker: _,
+		} = self;
+
+		Eth {
+			client,
+			pool,
+			graph,
+			convert_transaction,
+			network,
+			is_authority,
+			signers,
+			overrides,
+			backend,
+			block_data_cache,
+			fee_history_cache,
+			fee_history_cache_limit,
+			execute_gas_limit_multiplier,
+			_marker: PhantomData,
+		}
+	}
+}
+
 #[async_trait]
-impl<B, C, P, CT, BE, H: ExHashT, A> EthApiServer for Eth<B, C, P, CT, BE, H, A>
+impl<B, C, P, CT, BE, H: ExHashT, A, EGA> EthApiServer for Eth<B, C, P, CT, BE, H, A, EGA>
 where
-	B: BlockT<Hash = H256> + Send + Sync + 'static,
-	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
-	C: HeaderBackend<B> + Send + Sync + 'static,
+	B: BlockT,
+	C: ProvideRuntimeApi<B>,
 	C::Api: BlockBuilderApi<B> + ConvertTransactionRuntimeApi<B> + EthereumRuntimeRPCApi<B>,
-	P: TransactionPool<Block = B> + Send + Sync + 'static,
-	CT: fp_rpc::ConvertTransaction<<B as BlockT>::Extrinsic> + Send + Sync + 'static,
+	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
 	BE: Backend<B> + 'static,
-	BE::State: StateBackend<BlakeTwo256>,
+	P: TransactionPool<Block = B> + 'static,
+	CT: ConvertTransaction<<B as BlockT>::Extrinsic> + Send + Sync + 'static,
 	A: ChainApi<Block = B> + 'static,
+	EGA: EstimateGasAdapter + Send + Sync + 'static,
 {
 	// ########################################################################
 	// Client
@@ -465,17 +505,16 @@ fn pending_runtime_api<'a, B: BlockT, C, BE, A: ChainApi>(
 	graph: &'a Pool<A>,
 ) -> Result<sp_api::ApiRef<'a, C::Api>>
 where
-	B: BlockT<Hash = H256> + Send + Sync + 'static,
-	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
-	C: HeaderBackend<B> + Send + Sync + 'static,
+	B: BlockT,
+	C: ProvideRuntimeApi<B>,
 	C::Api: BlockBuilderApi<B> + EthereumRuntimeRPCApi<B>,
-	BE: Backend<B> + 'static,
-	BE::State: StateBackend<BlakeTwo256>,
+	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
+	BE: Backend<B>,
 	A: ChainApi<Block = B> + 'static,
 {
 	// In case of Pending, we need an overlayed state to query over.
 	let api = client.runtime_api();
-	let best = BlockId::Hash(client.info().best_hash);
+	let best_hash = client.info().best_hash;
 	// Get all transactions in the ready queue.
 	let xts: Vec<<B as BlockT>::Extrinsic> = graph
 		.validated_pool()
@@ -483,19 +522,19 @@ where
 		.map(|in_pool_tx| in_pool_tx.data().clone())
 		.collect::<Vec<<B as BlockT>::Extrinsic>>();
 	// Manually initialize the overlay.
-	if let Ok(Some(header)) = client.header(best) {
-		let parent_hash = BlockId::Hash(*header.parent_hash());
-		api.initialize_block(&parent_hash, &header)
+	if let Ok(Some(header)) = client.header(best_hash) {
+		let parent_hash = *header.parent_hash();
+		api.initialize_block(parent_hash, &header)
 			.map_err(|e| internal_err(format!("Runtime api access error: {:?}", e)))?;
 		// Apply the ready queue to the best block's state.
 		for xt in xts {
-			let _ = api.apply_extrinsic(&best, xt);
+			let _ = api.apply_extrinsic(best_hash, xt);
 		}
 		Ok(api)
 	} else {
 		Err(internal_err(format!(
 			"Cannot get header for block {:?}",
-			best
+			best_hash
 		)))
 	}
 }

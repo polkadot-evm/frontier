@@ -9,10 +9,10 @@ It is written in typescript, using Mocha/Chai as Test framework.
 Tests are separated depending on their genesis requirements.
 Each group will start a `frontier test node` with a given `spec` before executing the tests.
 
-## Build the manual seal node for tests
+## Build the node for tests
 
 ```bash
-cargo build --release --no-default-features --features manual-seal,rpc_binary_search_estimate
+cargo build --release --features rpc-binary-search-estimate
 ```
 
 ## Installation

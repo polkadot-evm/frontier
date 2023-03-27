@@ -29,8 +29,6 @@ jobs:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
     - name: Run tests
       run: cargo test --locked --verbose --all
-    - name: Ensure runtime-benchmarks and try-runtime features compiles
-      run: cargo check --release --features=runtime-benchmarks,try-runtime
 
   integration:
     name: 'Run integration tests'
@@ -48,10 +46,10 @@ jobs:
       uses: arduino/setup-protoc@v1
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
-    - name: Build manual seal client
+    - name: Build client
       run: |
         cd template/node
-        cargo build --release --locked --verbose --no-default-features --features manual-seal,rpc_binary_search_estimate
+        cargo build --release --locked --verbose --features rpc-binary-search-estimate
     - name: Use Node.js 18
       uses: actions/setup-node@v3
       with:

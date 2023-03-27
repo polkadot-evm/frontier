@@ -24,7 +24,7 @@ use jsonrpsee::core::RpcResult as Result;
 use sp_api::{Core, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
 use sp_core::keccak_256;
-use sp_runtime::{generic::BlockId, traits::Block as BlockT};
+use sp_runtime::traits::Block as BlockT;
 // Frontier
 use fc_rpc_core::{types::Bytes, Web3ApiServer};
 use fp_rpc::EthereumRuntimeRPCApi;
@@ -48,16 +48,17 @@ impl<B, C> Web3<B, C> {
 
 impl<B, C> Web3ApiServer for Web3<B, C>
 where
-	B: BlockT<Hash = H256> + Send + Sync + 'static,
-	C: HeaderBackend<B> + ProvideRuntimeApi<B> + Send + Sync + 'static,
+	B: BlockT,
+	C: ProvideRuntimeApi<B>,
 	C::Api: EthereumRuntimeRPCApi<B>,
+	C: HeaderBackend<B> + 'static,
 {
 	fn client_version(&self) -> Result<String> {
 		let hash = self.client.info().best_hash;
 		let version = self
 			.client
 			.runtime_api()
-			.version(&BlockId::Hash(hash))
+			.version(hash)
 			.map_err(|err| internal_err(format!("fetch runtime version failed: {:?}", err)))?;
 		Ok(format!(
 			"{spec_name}/v{spec_version}.{impl_version}/{pkg_name}-{pkg_version}",

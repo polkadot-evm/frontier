@@ -16,11 +16,11 @@
 // limitations under the License.
 
 use frame_support::{
-	codec::{Decode, Encode},
 	dispatch::{DispatchInfo, GetDispatchInfo},
-	scale_info::TypeInfo,
 	traits::ExtrinsicCall,
 };
+use scale_codec::{Decode, Encode};
+use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::{
 		self, Checkable, Extrinsic, ExtrinsicMetadata, IdentifyAccount, MaybeDisplay, Member,
@@ -108,6 +108,38 @@ where
 			})
 		} else {
 			let checked = Checkable::<Lookup>::check(self.0, lookup)?;
+			Ok(CheckedExtrinsic {
+				signed: match checked.signed {
+					Some((id, extra)) => CheckedSignature::Signed(id, extra),
+					None => CheckedSignature::Unsigned,
+				},
+				function: checked.function,
+			})
+		}
+	}
+
+	#[cfg(feature = "try-runtime")]
+	fn unchecked_into_checked_i_know_what_i_am_doing(
+		self,
+		lookup: &Lookup,
+	) -> Result<Self::Checked, TransactionValidityError> {
+		if self.0.function.is_self_contained() {
+			match self.0.function.check_self_contained() {
+				Some(signed_info) => Ok(CheckedExtrinsic {
+					signed: match signed_info {
+						Ok(info) => CheckedSignature::SelfContained(info),
+						_ => CheckedSignature::Unsigned,
+					},
+					function: self.0.function,
+				}),
+				None => Ok(CheckedExtrinsic {
+					signed: CheckedSignature::Unsigned,
+					function: self.0.function,
+				}),
+			}
+		} else {
+			let checked =
+				Checkable::<Lookup>::unchecked_into_checked_i_know_what_i_am_doing(self.0, lookup)?;
 			Ok(CheckedExtrinsic {
 				signed: match checked.signed {
 					Some((id, extra)) => CheckedSignature::Signed(id, extra),

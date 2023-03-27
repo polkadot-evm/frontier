@@ -25,11 +25,15 @@ use futures::{
 use futures_timer::Delay;
 use log::debug;
 // Substrate
-use sc_client_api::{BlockOf, ImportNotifications};
+use sc_client_api::{
+	backend::{Backend, StorageProvider},
+	client::ImportNotifications,
+};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
 // Frontier
+use fc_storage::OverrideHandle;
 use fp_rpc::EthereumRuntimeRPCApi;
 
 #[derive(Copy, Clone, Eq, PartialEq)]
@@ -38,13 +42,14 @@ pub enum SyncStrategy {
 	Parachain,
 }
 
-pub struct MappingSyncWorker<Block: BlockT, C, B> {
+pub struct MappingSyncWorker<Block: BlockT, C, BE> {
 	import_notifications: ImportNotifications<Block>,
 	timeout: Duration,
 	inner_delay: Option<Delay>,
 
 	client: Arc<C>,
-	substrate_backend: Arc<B>,
+	substrate_backend: Arc<BE>,
+	overrides: Arc<OverrideHandle<Block>>,
 	frontier_backend: Arc<fc_db::Backend<Block>>,
 
 	have_next: bool,
@@ -53,14 +58,15 @@ pub struct MappingSyncWorker<Block: BlockT, C, B> {
 	strategy: SyncStrategy,
 }
 
-impl<Block: BlockT, C, B> Unpin for MappingSyncWorker<Block, C, B> {}
+impl<Block: BlockT, C, BE> Unpin for MappingSyncWorker<Block, C, BE> {}
 
-impl<Block: BlockT, C, B> MappingSyncWorker<Block, C, B> {
+impl<Block: BlockT, C, BE> MappingSyncWorker<Block, C, BE> {
 	pub fn new(
 		import_notifications: ImportNotifications<Block>,
 		timeout: Duration,
 		client: Arc<C>,
-		substrate_backend: Arc<B>,
+		substrate_backend: Arc<BE>,
+		overrides: Arc<OverrideHandle<Block>>,
 		frontier_backend: Arc<fc_db::Backend<Block>>,
 		retry_times: usize,
 		sync_from: <Block::Header as HeaderT>::Number,
@@ -73,6 +79,7 @@ impl<Block: BlockT, C, B> MappingSyncWorker<Block, C, B> {
 
 			client,
 			substrate_backend,
+			overrides,
 			frontier_backend,
 
 			have_next: true,
@@ -83,11 +90,12 @@ impl<Block: BlockT, C, B> MappingSyncWorker<Block, C, B> {
 	}
 }
 
-impl<Block: BlockT, C, B> Stream for MappingSyncWorker<Block, C, B>
+impl<Block: BlockT, C, BE> Stream for MappingSyncWorker<Block, C, BE>
 where
-	C: ProvideRuntimeApi<Block> + Send + Sync + HeaderBackend<Block> + BlockOf,
+	C: ProvideRuntimeApi<Block>,
 	C::Api: EthereumRuntimeRPCApi<Block>,
-	B: sc_client_api::Backend<Block>,
+	C: HeaderBackend<Block> + StorageProvider<Block, BE>,
+	BE: Backend<Block>,
 {
 	type Item = ();
 
@@ -123,7 +131,8 @@ where
 
 			match crate::sync_blocks(
 				self.client.as_ref(),
-				self.substrate_backend.blockchain(),
+				self.substrate_backend.as_ref(),
+				self.overrides.clone(),
 				self.frontier_backend.as_ref(),
 				self.retry_times,
 				self.sync_from,

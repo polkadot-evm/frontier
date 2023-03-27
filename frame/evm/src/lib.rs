@@ -52,8 +52,9 @@
 
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
-#![allow(clippy::too_many_arguments)]
 #![cfg_attr(test, feature(assert_matches))]
+#![cfg_attr(feature = "runtime-benchmarks", deny(unused_crate_dependencies))]
+#![allow(clippy::too_many_arguments)]
 
 #[cfg(feature = "runtime-benchmarks")]
 pub mod benchmarking;
@@ -73,6 +74,7 @@ use frame_support::{
 	weights::Weight,
 };
 use frame_system::RawOrigin;
+use impl_trait_for_tuples::impl_for_tuples;
 use scale_info::TypeInfo;
 use sp_core::{Decode, Encode, Hasher, H160, H256, U256};
 use sp_runtime::{
@@ -84,6 +86,7 @@ use sp_std::{cmp::min, vec::Vec};
 pub use evm::{
 	Config as EvmConfig, Context, ExitError, ExitFatal, ExitReason, ExitRevert, ExitSucceed,
 };
+use fp_account::AccountId20;
 #[cfg(feature = "std")]
 use fp_evm::GenesisAccount;
 pub use fp_evm::{
@@ -148,6 +151,9 @@ pub mod pallet {
 		/// where the chain implementing `pallet_ethereum` should be able to configure what happens to the fees
 		/// Similar to `OnChargeTransaction` of `pallet_transaction_payment`
 		type OnChargeTransaction: OnChargeEVMTransaction<Self>;
+
+		/// Called on create calls, used to record owner
+		type OnCreate: OnCreate<Self>;
 
 		/// Find author for the current block.
 		type FindAuthor: FindAuthor<H160>;
@@ -611,6 +617,24 @@ where
 	}
 }
 
+/// Ensure that the address is AccountId20.
+pub struct EnsureAccountId20;
+
+impl<OuterOrigin> EnsureAddressOrigin<OuterOrigin> for EnsureAccountId20
+where
+	OuterOrigin: Into<Result<RawOrigin<AccountId20>, OuterOrigin>> + From<RawOrigin<AccountId20>>,
+{
+	type Success = AccountId20;
+
+	fn try_address_origin(address: &H160, origin: OuterOrigin) -> Result<AccountId20, OuterOrigin> {
+		let acc: AccountId20 = AccountId20::from(*address);
+		origin.into().and_then(|o| match o {
+			RawOrigin::Signed(who) if who == acc => Ok(who),
+			r => Err(OuterOrigin::from(r)),
+		})
+	}
+}
+
 pub trait AddressMapping<A> {
 	fn into_account_id(address: H160) -> A;
 }
@@ -618,9 +642,9 @@ pub trait AddressMapping<A> {
 /// Identity address mapping.
 pub struct IdentityAddressMapping;
 
-impl AddressMapping<H160> for IdentityAddressMapping {
-	fn into_account_id(address: H160) -> H160 {
-		address
+impl<T: From<H160>> AddressMapping<T> for IdentityAddressMapping {
+	fn into_account_id(address: H160) -> T {
+		address.into()
 	}
 }
 
@@ -927,5 +951,22 @@ U256: UniqueSaturatedInto<BalanceOf<T>>,
 
 	fn pay_priority_fee(tip: Self::LiquidityInfo) {
 		<EVMCurrencyAdapter::<<T as Config>::Currency, ()> as OnChargeEVMTransaction<T>>::pay_priority_fee(tip);
+	}
+}
+
+pub trait OnCreate<T> {
+	fn on_create(owner: H160, contract: H160);
+}
+
+impl<T> OnCreate<T> for () {
+	fn on_create(_owner: H160, _contract: H160) {}
+}
+
+#[impl_for_tuples(1, 12)]
+impl<T> OnCreate<T> for Tuple {
+	fn on_create(owner: H160, contract: H160) {
+		for_tuples!(#(
+			Tuple::on_create(owner, contract);
+		)*)
 	}
 }

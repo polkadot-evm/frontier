@@ -16,19 +16,19 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use codec::{Decode, Encode};
-use sp_runtime::traits::{Block as BlockT, Header};
-
-use sp_core::H256;
-
-use crate::DatabaseSource;
-
 use std::{
 	fmt, fs,
 	io::{self, ErrorKind, Read, Write},
 	path::{Path, PathBuf},
 	sync::Arc,
 };
+
+use scale_codec::{Decode, Encode};
+// Substrate
+use sc_client_db::DatabaseSource;
+use sp_blockchain::HeaderBackend;
+use sp_core::H256;
+use sp_runtime::traits::Block as BlockT;
 
 /// Version file name.
 const VERSION_FILE_NAME: &str = "db_version";
@@ -91,14 +91,11 @@ impl fmt::Display for UpgradeError {
 }
 
 /// Upgrade database to current version.
-pub(crate) fn upgrade_db<Block: BlockT, C>(
+pub(crate) fn upgrade_db<Block: BlockT, C: HeaderBackend<Block>>(
 	client: Arc<C>,
 	db_path: &Path,
 	source: &DatabaseSource,
-) -> UpgradeResult<()>
-where
-	C: sp_blockchain::HeaderBackend<Block> + Send + Sync,
-{
+) -> UpgradeResult<()> {
 	let db_version = current_version(db_path)?;
 	match db_version {
 		0 => return Err(UpgradeError::UnsupportedVersion(db_version)),
@@ -168,13 +165,10 @@ fn version_file_path(path: &Path) -> PathBuf {
 /// Migration from version1 to version2:
 /// - The format of the Ethereum<>Substrate block mapping changed to support equivocation.
 /// - Migrating schema from One-to-one to One-to-many (EthHash: Vec<SubstrateHash>) relationship.
-pub(crate) fn migrate_1_to_2_rocks_db<Block: BlockT, C>(
+pub(crate) fn migrate_1_to_2_rocks_db<Block: BlockT, C: HeaderBackend<Block>>(
 	client: Arc<C>,
 	db_path: &Path,
-) -> UpgradeResult<UpgradeVersion1To2Summary>
-where
-	C: sp_blockchain::HeaderBackend<Block> + Send + Sync,
-{
+) -> UpgradeResult<UpgradeVersion1To2Summary> {
 	log::info!("🔨 Running Frontier DB migration from version 1 to version 2. Please wait.");
 	let mut res = UpgradeVersion1To2Summary {
 		success: 0,
@@ -195,11 +189,11 @@ where
 				if decoded.is_err() || decoded.unwrap().is_empty() {
 					// Verify the substrate hash is part of the canonical chain.
 					if let Ok(Some(number)) = client.number(Block::Hash::decode(&mut &substrate_hash[..]).unwrap()) {
-						if let Ok(Some(header)) = client.header(sp_runtime::generic::BlockId::Number(number)) {
+						if let Ok(Some(hash)) = client.hash(number) {
 							transaction.put_vec(
 								crate::columns::BLOCK_MAPPING,
 								ethereum_hash,
-								vec![header.hash()].encode(),
+								vec![hash].encode(),
 							);
 							res.success += 1;
 							maybe_error = false;
@@ -252,13 +246,10 @@ where
 	Ok(res)
 }
 
-pub(crate) fn migrate_1_to_2_parity_db<Block: BlockT, C>(
+pub(crate) fn migrate_1_to_2_parity_db<Block: BlockT, C: HeaderBackend<Block>>(
 	client: Arc<C>,
 	db_path: &Path,
-) -> UpgradeResult<UpgradeVersion1To2Summary>
-where
-	C: sp_blockchain::HeaderBackend<Block> + Send + Sync,
-{
+) -> UpgradeResult<UpgradeVersion1To2Summary> {
 	log::info!("🔨 Running Frontier DB migration from version 1 to version 2. Please wait.");
 	let mut res = UpgradeVersion1To2Summary {
 		success: 0,
@@ -281,11 +272,11 @@ where
 				if decoded.is_err() || decoded.unwrap().is_empty() {
 					// Verify the substrate hash is part of the canonical chain.
 					if let Ok(Some(number)) = client.number(Block::Hash::decode(&mut &substrate_hash[..]).unwrap()) {
-						if let Ok(Some(header)) = client.header(sp_runtime::generic::BlockId::Number(number)) {
+						if let Ok(Some(hash)) = client.hash(number) {
 							transaction.push((
 								crate::columns::BLOCK_MAPPING as u8,
 								ethereum_hash,
-								Some(vec![header.hash()].encode()),
+								Some(vec![hash].encode()),
 							));
 							res.success += 1;
 							maybe_error = false;
@@ -342,27 +333,23 @@ mod tests {
 		sync::Arc,
 	};
 
-	use codec::Encode;
+	use scale_codec::Encode;
+	use sp_blockchain::HeaderBackend;
 	use sp_core::H256;
 	use sp_runtime::{
-		generic::{Block, BlockId, Header},
-		traits::BlakeTwo256,
+		generic::{Block, Header},
+		traits::{BlakeTwo256, Block as BlockT},
 	};
 	use tempfile::tempdir;
 
 	type OpaqueBlock =
 		Block<Header<u64, BlakeTwo256>, substrate_test_runtime_client::runtime::Extrinsic>;
 
-	pub fn open_frontier_backend<C>(
+	pub fn open_frontier_backend<Block: BlockT, C: HeaderBackend<Block>>(
 		client: Arc<C>,
 		setting: &crate::DatabaseSettings,
-	) -> Result<Arc<crate::Backend<OpaqueBlock>>, String>
-	where
-		C: sp_blockchain::HeaderBackend<OpaqueBlock>,
-	{
-		Ok(Arc::new(crate::Backend::<OpaqueBlock>::new(
-			client, setting,
-		)?))
+	) -> Result<Arc<crate::Backend<Block>>, String> {
+		Ok(Arc::new(crate::Backend::<Block>::new(client, setting)?))
 	}
 
 	#[test]
@@ -407,7 +394,7 @@ mod tests {
 			let mut transaction_hashes = vec![];
 			{
 				// Create a temporary frontier secondary DB.
-				let backend = open_frontier_backend(client.clone(), &setting)
+				let backend = open_frontier_backend::<OpaqueBlock, _>(client.clone(), &setting)
 					.expect("a temporary db was created");
 
 				// Fill the tmp db with some data
@@ -419,11 +406,7 @@ mod tests {
 					// Keep track of the canon hash to later verify the migration replaced it.
 					// A1
 					let mut builder = client
-						.new_block_at(
-							&BlockId::Hash(previous_canon_block_hash),
-							Default::default(),
-							false,
-						)
+						.new_block_at(previous_canon_block_hash, Default::default(), false)
 						.unwrap();
 					builder.push_storage_change(vec![1], None).unwrap();
 					let block = builder.build().unwrap().block;
@@ -431,11 +414,7 @@ mod tests {
 					executor::block_on(client.import(BlockOrigin::Own, block)).unwrap();
 					// A2
 					let mut builder = client
-						.new_block_at(
-							&BlockId::Hash(previous_canon_block_hash),
-							Default::default(),
-							false,
-						)
+						.new_block_at(previous_canon_block_hash, Default::default(), false)
 						.unwrap();
 					builder.push_storage_change(vec![2], None).unwrap();
 					let block = builder.build().unwrap().block;
@@ -488,8 +467,8 @@ mod tests {
 			let _ = super::upgrade_db::<OpaqueBlock, _>(client.clone(), &path, &setting.source);
 
 			// Check data after migration
-			let backend =
-				open_frontier_backend(client, &setting).expect("a temporary db was created");
+			let backend = open_frontier_backend::<OpaqueBlock, _>(client, &setting)
+				.expect("a temporary db was created");
 			for (i, original_ethereum_hash) in ethereum_hashes.iter().enumerate() {
 				let canon_substrate_block_hash = substrate_hashes.get(i).expect("Block hash");
 				let mapped_block = backend

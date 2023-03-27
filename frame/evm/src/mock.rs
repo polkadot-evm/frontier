@@ -150,6 +150,7 @@ impl crate::Config for Test {
 	type BlockGasLimit = BlockGasLimit;
 	type Runner = crate::runner::stack::Runner<Self>;
 	type OnChargeTransaction = ();
+	type OnCreate = ();
 	type FindAuthor = FindAuthorTruncated;
 }
 

@@ -16,6 +16,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+#![deny(unused_crate_dependencies)]
+
 #[cfg(feature = "parity-db")]
 mod parity_db_adapter;
 mod upgrade;
@@ -27,10 +29,11 @@ use std::{
 	sync::Arc,
 };
 
-use codec::{Decode, Encode};
 use parking_lot::Mutex;
+use scale_codec::{Decode, Encode};
 // Substrate
 pub use sc_client_db::DatabaseSource;
+use sp_blockchain::HeaderBackend;
 use sp_core::H256;
 pub use sp_database::Database;
 use sp_runtime::traits::Block as BlockT;
@@ -71,7 +74,7 @@ pub fn frontier_database_dir(db_config_dir: &Path, db_path: &str) -> PathBuf {
 }
 
 impl<Block: BlockT> Backend<Block> {
-	pub fn open<C: sp_blockchain::HeaderBackend<Block>>(
+	pub fn open<C: HeaderBackend<Block>>(
 		client: Arc<C>,
 		database: &DatabaseSource,
 		db_config_dir: &Path,
@@ -102,7 +105,7 @@ impl<Block: BlockT> Backend<Block> {
 		)
 	}
 
-	pub fn new<C: sp_blockchain::HeaderBackend<Block>>(
+	pub fn new<C: HeaderBackend<Block>>(
 		client: Arc<C>,
 		config: &DatabaseSettings,
 	) -> Result<Self, String> {

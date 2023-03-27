@@ -19,8 +19,8 @@
 
 use crate::{
 	runner::Runner as RunnerT, AccountCodes, AccountStorages, AddressMapping, BalanceOf,
-	BlockHashMapping, Config, Error, Event, FeeCalculator, OnChargeEVMTransaction, Pallet,
-	RunnerError,
+	BlockHashMapping, Config, Error, Event, FeeCalculator, OnChargeEVMTransaction, OnCreate,
+	Pallet, RunnerError,
 };
 use evm::{
 	backend::Backend as BackendT,
@@ -130,6 +130,10 @@ where
 			>,
 		) -> (ExitReason, R),
 	{
+		// Only check the restrictions of EIP-3607 if the source of the EVM operation is from an external transaction.
+		// If the source of this EVM operation is from an internal call, like from `eth_call` or `eth_estimateGas` RPC,
+		// we will skip the checks for the EIP-3607.
+		//
 		// EIP-3607: https://eips.ethereum.org/EIPS/eip-3607
 		// Do not allow transactions for which `tx.sender` has any code deployed.
 		//
@@ -137,7 +141,9 @@ where
 		// of a precompile. While mainnet Ethereum currently only has stateless precompiles,
 		// projects using Frontier can have stateful precompiles that can manage funds or
 		// which calls other contracts that expects this precompile address to be trustworthy.
-		if !<AccountCodes<T>>::get(source).is_empty() || precompiles.is_precompile(source) {
+		if is_transactional
+			&& (!<AccountCodes<T>>::get(source).is_empty() || precompiles.is_precompile(source))
+		{
 			return Err(RunnerError {
 				error: Error::<T>::TransactionMustComeFromEOA,
 				weight,
@@ -417,6 +423,7 @@ where
 			is_transactional,
 			|executor| {
 				let address = executor.create_address(evm::CreateScheme::Legacy { caller: source });
+				T::OnCreate::on_create(source, address);
 				let (reason, _) =
 					executor.transact_create(source, value, init, gas_limit, access_list);
 				(reason, address)
@@ -470,6 +477,7 @@ where
 					code_hash,
 					salt,
 				});
+				T::OnCreate::on_create(source, address);
 				let (reason, _) =
 					executor.transact_create2(source, value, init, salt, gas_limit, access_list);
 				(reason, address)
