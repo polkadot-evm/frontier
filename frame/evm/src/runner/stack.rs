@@ -27,7 +27,7 @@ use evm::{
 	executor::stack::{Accessed, StackExecutor, StackState as StackStateT, StackSubstateMetadata},
 	ExitError, ExitReason, Transfer,
 };
-use fp_evm::{CallInfo, CreateInfo, ExecutionInfo, Log, Vicinity};
+use fp_evm::{CallInfo, CreateInfo, ExecutionInfo, Log, PrecompileSet, Vicinity};
 use frame_support::traits::{Currency, ExistenceRequirement, Get};
 use sp_core::{H160, H256, U256};
 use sp_runtime::traits::UniqueSaturatedInto;
@@ -130,6 +130,20 @@ where
 			>,
 		) -> (ExitReason, R),
 	{
+		// EIP-3607: https://eips.ethereum.org/EIPS/eip-3607
+		// Do not allow transactions for which `tx.sender` has any code deployed.
+		//
+		// We extend the principle of this EIP to also prevent `tx.sender` to be the address
+		// of a precompile. While mainnet Ethereum currently only has stateless precompiles,
+		// projects using Frontier can have stateful precompiles that can manage funds or
+		// which calls other contracts that expects this precompile address to be trustworthy.
+		if !<AccountCodes<T>>::get(source).is_empty() || precompiles.is_precompile(source) {
+			return Err(RunnerError {
+				error: Error::<T>::TransactionMustComeFromEOA,
+				weight,
+			});
+		}
+
 		let (total_fee_per_gas, _actual_priority_fee_per_gas) =
 			match (max_fee_per_gas, max_priority_fee_per_gas, is_transactional) {
 				// Zero max_fee_per_gas for validated transactional calls exist in XCM -> EVM
@@ -642,7 +656,7 @@ impl<'vicinity, 'config, T: Config> BackendT for SubstrateStackState<'vicinity, 
 	}
 
 	fn code(&self, address: H160) -> Vec<u8> {
-		<AccountCodes<T>>::get(&address)
+		<AccountCodes<T>>::get(address)
 	}
 
 	fn storage(&self, address: H160, index: H256) -> H256 {

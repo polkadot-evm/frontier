@@ -11,20 +11,20 @@ repository = "https://github.com/paritytech/frontier/"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-ethereum = { version = "0.12.0", default-features = false, features = ["with-codec"] }
-evm = { version = "0.36.0", default-features = false, features = ["with-codec"] }
-serde = { version = "1.0.144", optional = true }
+ethereum = { version = "0.14.0", default-features = false, features = ["with-codec"] }
+evm = { version = "0.37.0", default-features = false, features = ["with-codec"] }
+serde = { version = "1.0", optional = true }
 
 # Parity
 codec = { package = "parity-scale-codec", version = "3.2.1", default-features = false }
-ethereum-types = { version = "0.13.1", default-features = false }
+ethereum-types = { version = "0.14.1", default-features = false }
 rlp = { version = "0.5", default-features = false }
 scale-info = { version = "2.3.0", default-features = false, features = ["derive"] }
 
 # Substrate
-sp-io = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-runtime = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-std = { version = "4.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-io = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-runtime = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-std = { version = "5.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 # Substrate FRAME
 frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
@@ -44,7 +44,7 @@ hex = "0.4.3"
 # Parity
 libsecp256k1 = { version = "0.7", features = ["static-context", "hmac"] }
 # Substrate
-sp-core = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-core = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
 # Substrate FRAME
 pallet-balances = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 
@@ -82,5 +82,10 @@ runtime-benchmarks = [
 	"pallet-timestamp/runtime-benchmarks",
 	"pallet-evm/runtime-benchmarks",
 ]
-try-runtime = ["frame-support/try-runtime"]
+try-runtime = [
+	"frame-support/try-runtime",
+	"frame-system/try-runtime",
+	"pallet-timestamp/try-runtime",
+	"pallet-evm/try-runtime",
+]
 forbid-evm-reentrancy = ["pallet-evm/forbid-evm-reentrancy"]

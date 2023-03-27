@@ -161,6 +161,7 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		/// Withdraw balance from EVM into currency/balances pallet.
+		#[pallet::call_index(0)]
 		#[pallet::weight(0)]
 		pub fn withdraw(
 			origin: OriginFor<T>,
@@ -181,6 +182,7 @@ pub mod pallet {
 		}
 
 		/// Issue an EVM call operation. This is similar to a message call transaction in Ethereum.
+		#[pallet::call_index(1)]
 		#[pallet::weight({
 			let without_base_extrinsic_weight = true;
 			T::GasWeightMapping::gas_to_weight(*gas_limit, without_base_extrinsic_weight)
@@ -247,6 +249,7 @@ pub mod pallet {
 
 		/// Issue an EVM create operation. This is similar to a contract creation transaction in
 		/// Ethereum.
+		#[pallet::call_index(2)]
 		#[pallet::weight({
 			let without_base_extrinsic_weight = true;
 			T::GasWeightMapping::gas_to_weight(*gas_limit, without_base_extrinsic_weight)
@@ -322,6 +325,7 @@ pub mod pallet {
 		}
 
 		/// Issue an EVM create2 operation.
+		#[pallet::call_index(3)]
 		#[pallet::weight({
 			let without_base_extrinsic_weight = true;
 			T::GasWeightMapping::gas_to_weight(*gas_limit, without_base_extrinsic_weight)
@@ -436,6 +440,8 @@ pub mod pallet {
 		Undefined,
 		/// EVM reentrancy
 		Reentrancy,
+		/// EIP-3607,
+		TransactionMustComeFromEOA,
 	}
 
 	impl<T> From<InvalidEvmTransactionError> for Error<T> {
@@ -707,7 +713,7 @@ impl<T: Config> Pallet<T> {
 			return;
 		}
 
-		if !<AccountCodes<T>>::contains_key(&address) {
+		if !<AccountCodes<T>>::contains_key(address) {
 			let account_id = T::AddressMapping::into_account_id(address);
 			let _ = frame_system::Pallet::<T>::inc_sufficients(&account_id);
 		}

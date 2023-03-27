@@ -11,9 +11,9 @@ repository = "https://github.com/paritytech/frontier/"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-ethereum = { version = "0.12.0", features = ["with-codec"] }
-evm = "0.36.0"
-futures = "0.3.24"
+ethereum = { version = "0.14.0", features = ["with-codec"] }
+evm = "0.37.0"
+futures = "0.3.25"
 hex = "0.4.3"
 log = "0.4.17"
 lru = "0.8.1"
@@ -23,8 +23,8 @@ tokio = { version = "1.19", features = ["sync"] }
 
 # Parity
 codec = { package = "parity-scale-codec", version = "3.2.1" }
-ethereum-types = "0.13.1"
-jsonrpsee = { version = "0.15.1", features = ["server", "macros"] }
+ethereum-types = "0.14.1"
+jsonrpsee = { version = "0.16.2", features = ["server", "macros"] }
 libsecp256k1 = "0.7"
 rlp = "0.5"
 
@@ -41,10 +41,10 @@ sp-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate
 sp-block-builder = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-blockchain = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-consensus = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-core = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-io = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-runtime = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-storage = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-core = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-io = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-runtime = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-storage = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Frontier
 fc-db = { version = "2.0.0-dev", path = "../db" }
@@ -57,9 +57,9 @@ fp-storage = { version = "2.0.0-dev", path = "../../primitives/storage" }
 [dev-dependencies]
 tempfile = "3.3.0"
 # Substrate
-beefy-primitives = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-block-builder = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-client-db = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-beefy = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-consensus = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 substrate-test-runtime-client = { version = "2.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
 

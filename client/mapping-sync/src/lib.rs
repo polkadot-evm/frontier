@@ -71,16 +71,24 @@ where
 {
 	let id = BlockId::Hash(header.hash());
 
-	let has_api = client
+	if let Some(api_version) = client
 		.runtime_api()
-		.has_api::<dyn EthereumRuntimeRPCApi<Block>>(&id)
-		.map_err(|e| format!("{:?}", e))?;
-
-	if has_api {
-		let block = client
-			.runtime_api()
-			.current_block(&id)
-			.map_err(|e| format!("{:?}", e))?;
+		.api_version::<dyn EthereumRuntimeRPCApi<Block>>(&id)
+		.map_err(|e| format!("{:?}", e))?
+	{
+		let block = if api_version > 1 {
+			client
+				.runtime_api()
+				.current_block(&id)
+				.map_err(|e| format!("{:?}", e))?
+		} else {
+			#[allow(deprecated)]
+			let legacy_block = client
+				.runtime_api()
+				.current_block_before_version_2(&id)
+				.map_err(|e| format!("{:?}", e))?;
+			legacy_block.map(|block| block.into())
+		};
 		let block_hash = block
 			.ok_or_else(|| "Ethereum genesis block not found".to_string())?
 			.header
@@ -93,7 +101,7 @@ where
 		backend.mapping().write_hashes(mapping_commitment)?;
 	} else {
 		backend.mapping().write_none(header.hash())?;
-	}
+	};
 
 	Ok(())
 }

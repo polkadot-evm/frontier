@@ -18,6 +18,6 @@
   },
   "homepage": "https://github.com/paritytech/frontier",
   "dependencies": {
-    "web3": "^1.2.8"
+    "web3": "^1.8.0"
   }
 }

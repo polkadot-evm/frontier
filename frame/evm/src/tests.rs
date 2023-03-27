@@ -557,3 +557,57 @@ fn runner_max_fee_per_gas_gte_max_priority_fee_per_gas() {
 		assert!(res.is_err());
 	});
 }
+
+#[test]
+fn eip3607_transaction_from_contract_should_fail() {
+	new_test_ext().execute_with(|| {
+		match <Test as Config>::Runner::call(
+			// Contract address.
+			H160::from_str("1000000000000000000000000000000000000001").unwrap(),
+			H160::from_str("1000000000000000000000000000000000000001").unwrap(),
+			Vec::new(),
+			U256::from(1u32),
+			1000000,
+			None,
+			None,
+			None,
+			Vec::new(),
+			false, // non-transactional
+			true,  // must be validated
+			&<Test as Config>::config().clone(),
+		) {
+			Err(RunnerError {
+				error: Error::TransactionMustComeFromEOA,
+				..
+			}) => (),
+			_ => panic!("Should have failed"),
+		}
+	});
+}
+
+#[test]
+fn eip3607_transaction_from_precompile_should_fail() {
+	new_test_ext().execute_with(|| {
+		match <Test as Config>::Runner::call(
+			// Precompile address.
+			H160::from_str("0000000000000000000000000000000000000001").unwrap(),
+			H160::from_str("1000000000000000000000000000000000000001").unwrap(),
+			Vec::new(),
+			U256::from(1u32),
+			1000000,
+			None,
+			None,
+			None,
+			Vec::new(),
+			false, // non-transactional
+			true,  // must be validated
+			&<Test as Config>::config().clone(),
+		) {
+			Err(RunnerError {
+				error: Error::TransactionMustComeFromEOA,
+				..
+			}) => (),
+			_ => panic!("Should have failed"),
+		}
+	});
+}
