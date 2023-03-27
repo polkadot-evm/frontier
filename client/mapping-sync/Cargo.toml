@@ -19,6 +19,7 @@ parking_lot = "0.12.1"
 sc-client-api = { workspace = true }
 sp-api = { workspace = true }
 sp-blockchain = { workspace = true }
+sp-consensus = { workspace = true, features = ["default"] }
 sp-runtime = { workspace = true }
 # Frontier
 fc-db = { workspace = true }
@@ -38,6 +39,5 @@ frontier-template-runtime = { workspace = true, features = ["default"] }
 # Substrate
 sc-block-builder = { workspace = true }
 sc-client-db = { workspace = true }
-sp-consensus = { workspace = true, features = ["default"] }
 sp-core = { workspace = true, features = ["default"] }
 substrate-test-runtime-client = { workspace = true }

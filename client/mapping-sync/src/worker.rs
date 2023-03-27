@@ -31,6 +31,7 @@ use sc_client_api::{
 };
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
+use sp_consensus::SyncOracle;
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
 // Frontier
 use fc_storage::OverrideHandle;
@@ -57,6 +58,7 @@ pub struct MappingSyncWorker<Block: BlockT, C, BE> {
 	sync_from: <Block::Header as HeaderT>::Number,
 	strategy: SyncStrategy,
 
+	sync_oracle: Arc<dyn SyncOracle + Send + Sync + 'static>,
 	pubsub_notification_sinks:
 		Arc<crate::EthereumBlockNotificationSinks<crate::EthereumBlockNotification<Block>>>,
 }
@@ -74,6 +76,7 @@ impl<Block: BlockT, C, BE> MappingSyncWorker<Block, C, BE> {
 		retry_times: usize,
 		sync_from: <Block::Header as HeaderT>::Number,
 		strategy: SyncStrategy,
+		sync_oracle: Arc<dyn SyncOracle + Send + Sync + 'static>,
 		pubsub_notification_sinks: Arc<
 			crate::EthereumBlockNotificationSinks<crate::EthereumBlockNotification<Block>>,
 		>,
@@ -93,6 +96,7 @@ impl<Block: BlockT, C, BE> MappingSyncWorker<Block, C, BE> {
 			sync_from,
 			strategy,
 
+			sync_oracle,
 			pubsub_notification_sinks,
 		}
 	}
@@ -145,6 +149,7 @@ where
 				self.retry_times,
 				self.sync_from,
 				self.strategy,
+				self.sync_oracle.clone(),
 				self.pubsub_notification_sinks.clone(),
 			) {
 				Ok(have_next) => {
@@ -213,6 +218,26 @@ mod tests {
 		}
 	}
 
+	struct TestSyncOracleNotSyncing;
+	impl sp_consensus::SyncOracle for TestSyncOracleNotSyncing {
+		fn is_major_syncing(&self) -> bool {
+			false
+		}
+		fn is_offline(&self) -> bool {
+			false
+		}
+	}
+
+	struct TestSyncOracleSyncing;
+	impl sp_consensus::SyncOracle for TestSyncOracleSyncing {
+		fn is_major_syncing(&self) -> bool {
+			true
+		}
+		fn is_offline(&self) -> bool {
+			false
+		}
+	}
+
 	#[tokio::test]
 	async fn block_import_notification_works() {
 		let tmp = tempdir().expect("create a temporary directory");
@@ -220,6 +245,7 @@ mod tests {
 			PALLET_ETHEREUM_SCHEMA.to_vec(),
 			Encode::encode(&EthereumStorageSchema::V3),
 		);
+		let test_sync_oracle = TestSyncOracleNotSyncing {};
 		// Backend
 		let backend = builder.backend();
 		// Client
@@ -271,6 +297,7 @@ mod tests {
 				3,
 				0,
 				SyncStrategy::Normal,
+				Arc::new(test_sync_oracle),
 				pubsub_notification_sinks_inner,
 			)
 			.for_each(|()| future::ready(()))
@@ -346,6 +373,102 @@ mod tests {
 			// So we expect the pool to hold one sink only after cleanup
 			let sinks = &mut pubsub_notification_sinks.lock();
 			assert_eq!(sinks.len(), 1);
+		}
+	}
+
+	#[tokio::test]
+	async fn sink_removal_when_syncing_works() {
+		let tmp = tempdir().expect("create a temporary directory");
+		let builder = TestClientBuilder::new().add_extra_storage(
+			PALLET_ETHEREUM_SCHEMA.to_vec(),
+			Encode::encode(&EthereumStorageSchema::V3),
+		);
+		let test_sync_oracle = TestSyncOracleSyncing {};
+		// Backend
+		let backend = builder.backend();
+		// Client
+		let (client, _) =
+			builder.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(None);
+		let mut client = Arc::new(client);
+		// Overrides
+		let mut overrides_map = BTreeMap::new();
+		overrides_map.insert(
+			EthereumStorageSchema::V3,
+			Box::new(SchemaV3Override::new(client.clone())) as Box<dyn StorageOverride<_>>,
+		);
+		let overrides = Arc::new(OverrideHandle {
+			schemas: overrides_map,
+			fallback: Box::new(SchemaV3Override::new(client.clone())),
+		});
+
+		let frontier_backend = Arc::new(
+			fc_db::Backend::<OpaqueBlock>::new(
+				client.clone(),
+				&fc_db::DatabaseSettings {
+					source: sc_client_db::DatabaseSource::RocksDb {
+						path: tmp.path().to_path_buf(),
+						cache_size: 0,
+					},
+				},
+			)
+			.expect("frontier backend"),
+		);
+
+		let notification_stream = client.clone().import_notification_stream();
+		let client_inner = client.clone();
+
+		let pubsub_notification_sinks: EthereumBlockNotificationSinks<
+			EthereumBlockNotification<OpaqueBlock>,
+		> = Default::default();
+		let pubsub_notification_sinks = Arc::new(pubsub_notification_sinks);
+
+		let pubsub_notification_sinks_inner = pubsub_notification_sinks.clone();
+
+		tokio::task::spawn(async move {
+			MappingSyncWorker::new(
+				notification_stream,
+				Duration::new(6, 0),
+				client_inner,
+				backend,
+				overrides.clone(),
+				frontier_backend,
+				3,
+				0,
+				SyncStrategy::Normal,
+				Arc::new(test_sync_oracle),
+				pubsub_notification_sinks_inner,
+			)
+			.for_each(|()| future::ready(()))
+			.await
+		});
+
+		{
+			// A new mpsc channel
+			let (inner_sink, mut block_notification_stream) =
+				sc_utils::mpsc::tracing_unbounded("pubsub_notification_stream", 100_000);
+
+			{
+				// This scope represents a call to eth_subscribe, where it briefly locks the pool
+				// to push the new sink.
+				let sinks = &mut pubsub_notification_sinks.lock();
+				// Push to sink pool
+				sinks.push(inner_sink);
+			}
+
+			// Let's produce a block, which we expect to trigger a channel message
+			let mut builder = client.new_block(ethereum_digest()).unwrap();
+			let block = builder.build().unwrap().block;
+			let block_hash = block.header.hash();
+			client.import(BlockOrigin::Own, block).await;
+
+			// Not received, channel closed because major syncing
+			assert!(block_notification_stream.next().await.is_none());
+		}
+
+		{
+			// Assert sink was removed from pool on major syncing
+			let sinks = pubsub_notification_sinks.lock();
+			assert_eq!(sinks.len(), 0);
 		}
 	}
 }
