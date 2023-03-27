@@ -532,6 +532,17 @@ pub struct CodeMetadata {
 	pub hash: H256,
 }
 
+impl CodeMetadata {
+	fn from_code(code: &[u8]) -> Self {
+		use sha3::Digest;
+
+		let size = code.len() as u64;
+		let hash = H256::from_slice(sha3::Keccak256::digest(&code).as_slice());
+
+		Self { size, hash }
+	}
+}
+
 pub trait EnsureAddressOrigin<OuterOrigin> {
 	/// Success return type.
 	type Success;
@@ -745,27 +756,21 @@ impl<T: Config> Pallet<T> {
 		<AccountCodes<T>>::insert(address, code);
 
 		// Update metadata.
-		let _ = Self::account_code_metadata(address);
+		let meta = CodeMetadata::from_code(&code);
+		<AccountCodesMetadata<T>>::insert(address, meta.clone());
 	}
 
 	/// Get the account metadata (hash and size) from storage if it exists,
 	/// or compute it from code and store it if it doesn't exist.
 	pub fn account_code_metadata(address: H160) -> CodeMetadata {
-		use sha3::Digest;
-
 		if let Some(meta) = <AccountCodesMetadata<T>>::get(&address) {
 			return meta;
 		}
 
 		let code = <AccountCodes<T>>::get(&address);
-
-		let size = code.len() as u64;
-		let hash = H256::from_slice(sha3::Keccak256::digest(&code).as_slice());
-
-		let meta = CodeMetadata { size, hash };
+		let meta = CodeMetadata::from_code(&code);
 
 		<AccountCodesMetadata<T>>::insert(address, meta.clone());
-
 		meta
 	}
 
