@@ -16,8 +16,6 @@ use sp_consensus_aura::sr25519::AuthorityPair as AuraPair;
 use sp_core::U256;
 use sp_runtime::traits::BlakeTwo256;
 use sp_trie::PrefixedMemoryDB;
-// Frontier
-use fp_evm::AddressMapping;
 // Runtime
 use frontier_template_runtime::{opaque::Block, Hash, TransactionConverter};
 
@@ -255,23 +253,6 @@ where
 	))
 }
 
-pub struct DefaultAddressMapping;
-impl fp_rpc::RuntimeAddressMapping for DefaultAddressMapping {
-	fn into_account_id_bytes(address: sp_core::H160) -> Vec<u8> {
-		let account_id: sp_core::H160 =
-			pallet_evm::IdentityAddressMapping::into_account_id(address);
-		account_id.as_bytes().to_owned()
-	}
-}
-
-// #[derive(Clone)]
-// pub struct DefaultEthConfig;
-
-// impl<C: sc_client_api::StorageProvider<Block, sc_service::TFullBackend<Block>> + Send + Sync> fc_rpc::EthConfig<Block, C> for DefaultEthConfig {
-// 	type EstimateGasAdapter = ();
-// 	type RuntimeStorageOverride = fc_rpc::frontier_backend_client::DefaultRuntimeStorageOverride<Block, C>;
-// }
-
 /// Builds a new service for a full client.
 pub fn new_full<RuntimeApi, Executor>(
 	mut config: Configuration,
@@ -385,14 +366,6 @@ where
 		fee_history_cache: fee_history_cache.clone(),
 		fee_history_cache_limit,
 		execute_gas_limit_multiplier: eth_config.execute_gas_limit_multiplier,
-		// eth_config: DefaultEthConfig,
-		// runtime_storage_override: Some(Arc::new(
-		// 	fc_rpc::frontier_backend_client::DefaultRuntimeStorageOverride(
-		// 		std::marker::PhantomData::<
-		// 			<DefaultEthConfig as fc_rpc::EthConfig>::RuntimeAddressMapping,
-		// 		>::default(),
-		// 	),
-		// )),
 	};
 
 	let rpc_builder = {

@@ -23,15 +23,6 @@ use frontier_template_runtime::{opaque::Block, AccountId, Balance, Hash, Index};
 mod eth;
 pub use self::eth::{create_eth, overrides_handle, EthDeps};
 
-// pub struct DefaultAddressMapping;
-// impl fp_rpc::RuntimeAddressMapping for DefaultAddressMapping {
-// 	fn into_account_id_bytes(address: sp_core::H160) -> Vec<u8> {
-// 		let account_id: sp_core::H160 =
-// 			pallet_evm::IdentityAddressMapping::into_account_id(address);
-// 		account_id.as_bytes().to_owned()
-// 	}
-// }
-
 /// Full client dependencies.
 pub struct FullDeps<C, P, A: ChainApi, CT> {
 	/// The client instance to use.
@@ -55,7 +46,7 @@ where
 {
 	type EstimateGasAdapter = ();
 	type RuntimeStorageOverride =
-		fc_rpc::frontier_backend_client::DefaultRuntimeStorageOverride<Block, C, BE>;
+		fc_rpc::frontier_backend_client::SystemAccountId20StorageOverride<Block, C, BE>;
 }
 
 /// Instantiate all Full RPC extensions.
