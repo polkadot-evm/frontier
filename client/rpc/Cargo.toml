@@ -27,6 +27,7 @@ scale-codec = { package = "parity-scale-codec", workspace = true }
 tokio = { version = "1.24", features = ["sync"] }
 
 # Substrate
+pallet-evm = { workspace = true }
 prometheus-endpoint = { workspace = true }
 sc-client-api = { workspace = true }
 sc-network = { workspace = true }
@@ -44,7 +45,6 @@ sp-io = { workspace = true }
 sp-runtime = { workspace = true }
 sp-state-machine = { workspace = true }
 sp-storage = { workspace = true }
-pallet-evm = { workspace = true }
 # Frontier
 fc-db = { workspace = true }
 fc-rpc-core = { workspace = true }
