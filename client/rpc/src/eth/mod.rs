@@ -49,7 +49,7 @@ use fc_rpc_core::{types::*, EthApiServer};
 use fc_storage::OverrideHandle;
 use fp_rpc::{
 	ConvertTransaction, ConvertTransactionRuntimeApi, EthereumRuntimeRPCApi,
-	EvmRuntimeAddressMapping, EvmRuntimeStorageOverride, TransactionStatus,
+	RuntimeStorageOverride, TransactionStatus,
 };
 
 use crate::{internal_err, public_key, signer::EthSigner};
@@ -60,18 +60,19 @@ pub use self::{
 	filter::EthFilter,
 };
 
+// Configuration trait for RPC configuration.
+pub trait EthConfig<B: BlockT, C>: Send + Sync + 'static {
+	type EstimateGasAdapter: EstimateGasAdapter + Send + Sync;
+	type RuntimeStorageOverride: RuntimeStorageOverride<B, C>;
+}
+
+impl<B: BlockT, C> EthConfig<B, C> for () {
+	type EstimateGasAdapter = ();
+	type RuntimeStorageOverride = ();
+}
+
 /// Eth API implementation.
-pub struct Eth<
-	B: BlockT,
-	C,
-	P,
-	CT,
-	BE,
-	H: ExHashT,
-	A: ChainApi,
-	M: EvmRuntimeAddressMapping,
-	EGA = (),
-> {
+pub struct Eth<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi, EC: EthConfig<B, C>> {
 	pool: Arc<P>,
 	graph: Arc<Pool<A>>,
 	client: Arc<C>,
@@ -87,13 +88,10 @@ pub struct Eth<
 	/// When using eth_call/eth_estimateGas, the maximum allowed gas limit will be
 	/// block.gas_limit * execute_gas_limit_multiplier
 	execute_gas_limit_multiplier: u64,
-	runtime_state_override: Option<Arc<dyn EvmRuntimeStorageOverride<B, C, AddressMapping = M>>>,
-	_marker: PhantomData<(B, BE, EGA)>,
+	_marker: PhantomData<(B, BE, EC)>,
 }
 
-impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi, M: EvmRuntimeAddressMapping>
-	Eth<B, C, P, CT, BE, H, A, M, ()>
-{
+impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> Eth<B, C, P, CT, BE, H, A, ()> {
 	pub fn new(
 		client: Arc<C>,
 		pool: Arc<P>,
@@ -108,9 +106,6 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi, M: EvmRuntimeAddressMappi
 		fee_history_cache: FeeHistoryCache,
 		fee_history_cache_limit: FeeHistoryCacheLimit,
 		execute_gas_limit_multiplier: u64,
-		runtime_state_override: Option<
-			Arc<dyn EvmRuntimeStorageOverride<B, C, AddressMapping = M>>,
-		>,
 	) -> Self {
 		Self {
 			client,
@@ -126,18 +121,15 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi, M: EvmRuntimeAddressMappi
 			fee_history_cache,
 			fee_history_cache_limit,
 			execute_gas_limit_multiplier,
-			runtime_state_override,
 			_marker: PhantomData,
 		}
 	}
 }
 
-impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi, M: EvmRuntimeAddressMapping, EGA>
-	Eth<B, C, P, CT, BE, H, A, M, EGA>
+impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi, EC: EthConfig<B, C>>
+	Eth<B, C, P, CT, BE, H, A, EC>
 {
-	pub fn with_estimate_gas_adapter<EGA2: EstimateGasAdapter>(
-		self,
-	) -> Eth<B, C, P, CT, BE, H, A, M, EGA2> {
+	pub fn with_eth_config<EC2: EthConfig<B, C>>(self) -> Eth<B, C, P, CT, BE, H, A, EC2> {
 		let Self {
 			client,
 			pool,
@@ -152,7 +144,6 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi, M: EvmRuntimeAddressMappi
 			fee_history_cache,
 			fee_history_cache_limit,
 			execute_gas_limit_multiplier,
-			runtime_state_override,
 			_marker: _,
 		} = self;
 
@@ -170,14 +161,13 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi, M: EvmRuntimeAddressMappi
 			fee_history_cache,
 			fee_history_cache_limit,
 			execute_gas_limit_multiplier,
-			runtime_state_override,
 			_marker: PhantomData,
 		}
 	}
 }
 
 #[async_trait]
-impl<B, C, P, CT, BE, H: ExHashT, A, M, EGA> EthApiServer for Eth<B, C, P, CT, BE, H, A, M, EGA>
+impl<B, C, P, CT, BE, H: ExHashT, A, EC> EthApiServer for Eth<B, C, P, CT, BE, H, A, EC>
 where
 	B: BlockT,
 	C: ProvideRuntimeApi<B>,
@@ -187,8 +177,7 @@ where
 	P: TransactionPool<Block = B> + 'static,
 	CT: ConvertTransaction<<B as BlockT>::Extrinsic> + Send + Sync + 'static,
 	A: ChainApi<Block = B> + 'static,
-	M: EvmRuntimeAddressMapping + 'static,
-	EGA: EstimateGasAdapter + Send + Sync + 'static,
+	EC: EthConfig<B, C> + Send + Sync + 'static,
 {
 	// ########################################################################
 	// Client

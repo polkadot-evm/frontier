@@ -28,8 +28,8 @@ mod tests;
 pub mod weights;
 pub use weights::WeightInfo;
 
+pub use fp_evm::AddressMapping;
 use frame_support::dispatch::PostDispatchInfo;
-pub use pallet_evm::AddressMapping;
 use sp_core::H160;
 use sp_runtime::traits::Zero;
 use sp_std::vec::Vec;

@@ -1979,6 +1979,7 @@ dependencies = [
  "libsecp256k1",
  "log",
  "lru",
+ "pallet-evm",
  "parity-scale-codec",
  "prometheus",
  "rand 0.8.5",
@@ -5043,6 +5044,7 @@ dependencies = [
 name = "pallet-hotfix-sufficients"
 version = "1.0.0"
 dependencies = [
+ "fp-evm",
  "frame-benchmarking",
  "frame-support",
  "frame-system",

@@ -29,15 +29,15 @@ mod tests;
 use alloc::format;
 use core::marker::PhantomData;
 use fp_evm::{
-	ExitError, ExitSucceed, Precompile, PrecompileFailure, PrecompileHandle, PrecompileOutput,
-	PrecompileResult,
+	AddressMapping, ExitError, ExitSucceed, Precompile, PrecompileFailure, PrecompileHandle,
+	PrecompileOutput, PrecompileResult,
 };
 use frame_support::{
 	codec::{Decode, DecodeLimit as _},
 	dispatch::{DispatchClass, Dispatchable, GetDispatchInfo, Pays, PostDispatchInfo},
 	traits::{ConstU32, Get},
 };
-use pallet_evm::{AddressMapping, GasWeightMapping};
+use pallet_evm::GasWeightMapping;
 
 // `DecodeLimit` specifies the max depth a call can use when decoding, as unbounded depth
 // can be used to overflow the stack.

@@ -22,6 +22,7 @@ sp-core = { workspace = true }
 sp-runtime = { workspace = true }
 sp-std = { workspace = true }
 # Frontier
+fp-evm = { workspace = true }
 pallet-evm = { workspace = true }
 
 [dev-dependencies]

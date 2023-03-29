@@ -18,6 +18,7 @@ scale-info = { workspace = true }
 # Substrate
 sp-api = { workspace = true }
 sp-core = { workspace = true }
+# sc-client-api = { workspace = true }
 sp-runtime = { workspace = true }
 sp-state-machine = { workspace = true }
 sp-std = { workspace = true }

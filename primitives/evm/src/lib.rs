@@ -46,6 +46,19 @@ pub use self::{
 	},
 };
 
+/// Trait to be implemented for evm address mapping.
+// use sp_std::borrow::ToOwned;
+// pub trait AddressMapping<A: AsRef<[u8]>> {
+// 	fn into_account_id(address: H160) -> A;
+
+// 	fn into_account_id_bytes(address: H160) -> Vec<u8> {
+// 		Self::into_account_id(address).as_ref().to_owned()
+// 	}
+// }
+pub trait AddressMapping<A> {
+	fn into_account_id(address: H160) -> A;
+}
+
 #[derive(Clone, Eq, PartialEq, Default, Encode, Decode)]
 #[cfg_attr(feature = "std", derive(Debug, Serialize, Deserialize))]
 /// External input from the transaction.

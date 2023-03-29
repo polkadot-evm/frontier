@@ -5,7 +5,6 @@ use std::sync::Arc;
 use futures::channel::mpsc;
 use jsonrpsee::RpcModule;
 // Substrate
-use pallet_evm::AddressMapping;
 use sc_client_api::{
 	backend::{Backend, StorageProvider},
 	client::BlockchainEvents,
@@ -24,14 +23,14 @@ use frontier_template_runtime::{opaque::Block, AccountId, Balance, Hash, Index};
 mod eth;
 pub use self::eth::{create_eth, overrides_handle, EthDeps};
 
-pub struct DefaultAddressMapping;
-impl fp_rpc::EvmRuntimeAddressMapping for DefaultAddressMapping {
-	fn into_account_id_bytes(address: sp_core::H160) -> Vec<u8> {
-		let account_id: sp_core::H160 =
-			pallet_evm::IdentityAddressMapping::into_account_id(address);
-		account_id.as_bytes().to_owned()
-	}
-}
+// pub struct DefaultAddressMapping;
+// impl fp_rpc::RuntimeAddressMapping for DefaultAddressMapping {
+// 	fn into_account_id_bytes(address: sp_core::H160) -> Vec<u8> {
+// 		let account_id: sp_core::H160 =
+// 			pallet_evm::IdentityAddressMapping::into_account_id(address);
+// 		account_id.as_bytes().to_owned()
+// 	}
+// }
 
 /// Full client dependencies.
 pub struct FullDeps<C, P, A: ChainApi, CT> {
@@ -45,6 +44,18 @@ pub struct FullDeps<C, P, A: ChainApi, CT> {
 	pub command_sink: Option<mpsc::Sender<EngineCommand<Hash>>>,
 	/// Ethereum-compatibility specific dependencies.
 	pub eth: EthDeps<C, P, A, CT, Block>,
+}
+
+pub struct DefaultEthConfig<C, BE>(std::marker::PhantomData<(C, BE)>);
+
+impl<C, BE> fc_rpc::EthConfig<Block, C> for DefaultEthConfig<C, BE>
+where
+	C: sc_client_api::StorageProvider<Block, BE> + Sync + Send + 'static,
+	BE: Backend<Block> + 'static,
+{
+	type EstimateGasAdapter = ();
+	type RuntimeStorageOverride =
+		fc_rpc::frontier_backend_client::DefaultRuntimeStorageOverride<Block, C, BE>;
 }
 
 /// Instantiate all Full RPC extensions.
@@ -94,7 +105,11 @@ where
 	}
 
 	// Ethereum compatibility RPCs
-	let io = create_eth::<_, _, _, _, _, _>(io, eth, subscription_task_executor)?;
+	let io = create_eth::<_, _, _, _, _, _, DefaultEthConfig<C, BE>>(
+		io,
+		eth,
+		subscription_task_executor,
+	)?;
 
 	Ok(io)
 }

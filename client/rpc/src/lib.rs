@@ -33,7 +33,7 @@ mod signer;
 mod web3;
 
 pub use self::{
-	eth::{format, EstimateGasAdapter, Eth, EthBlockDataCacheTask, EthFilter, EthTask},
+	eth::{format, EstimateGasAdapter, Eth, EthBlockDataCacheTask, EthConfig, EthFilter, EthTask},
 	eth_pubsub::{EthPubSub, EthereumSubIdProvider},
 	net::Net,
 	signer::{EthDevSigner, EthSigner},
@@ -69,17 +69,18 @@ pub mod frontier_backend_client {
 	/// Implements a default runtime storage override.
 	/// It assumes that the balances and nonces are stored in pallet `system.account`, and
 	/// have `nonce: Index` = `u32` for  and `free: Balance` = `u128`.
-	pub struct DefaultEvmRuntimeStorageOverride<M>(pub std::marker::PhantomData<M>);
-	impl<M, B, C> fp_rpc::EvmRuntimeStorageOverride<B, C> for DefaultEvmRuntimeStorageOverride<M>
+	pub struct DefaultRuntimeStorageOverride<B, C, BE>(pub std::marker::PhantomData<(B, C, BE)>);
+	impl<B, C, BE> fp_rpc::RuntimeStorageOverride<B, C> for DefaultRuntimeStorageOverride<B, C, BE>
 	where
-		M: fp_rpc::EvmRuntimeAddressMapping + Sync + Send,
 		B: BlockT,
-		C: StorageProvider<B, sc_service::TFullBackend<B>>,
+		C: StorageProvider<B, BE> + Send + Sync,
+		BE: sc_client_api::Backend<B> + Send + Sync,
 	{
-		type AddressMapping = M;
+		fn is_enabled() -> bool {
+			true
+		}
 
 		fn set_overlayed_changes(
-			&self,
 			client: &C,
 			overlayed_changes: &mut sp_state_machine::OverlayedChanges,
 			block: B::Hash,
@@ -91,7 +92,7 @@ pub mod frontier_backend_client {
 			let mut key = [twox_128(b"System"), twox_128(b"Account")]
 				.concat()
 				.to_vec();
-			let account_id = Self::AddressMapping::into_account_id_bytes(address);
+			let account_id = Self::into_account_id_bytes(address);
 			key.extend(blake2_128(&account_id));
 			key.extend(&account_id);
 
@@ -108,6 +109,12 @@ pub mod frontier_backend_client {
 
 				overlayed_changes.set_storage(key, Some(new_item));
 			}
+		}
+
+		fn into_account_id_bytes(address: H160) -> Vec<u8> {
+			use fp_evm::AddressMapping;
+			let address: H160 = pallet_evm::IdentityAddressMapping::into_account_id(address);
+			address.as_ref().to_owned()
 		}
 	}
 
