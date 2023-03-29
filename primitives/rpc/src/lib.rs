@@ -40,10 +40,6 @@ pub struct TransactionStatus {
 	pub logs_bloom: Bloom,
 }
 
-pub trait RuntimeAddressMapping {
-	fn into_account_id_bytes(address: H160) -> Vec<u8>;
-}
-
 pub trait RuntimeStorageOverride<B: BlockT, C>: Send + Sync {
 	fn is_enabled() -> bool;
 
@@ -60,44 +56,11 @@ pub trait RuntimeStorageOverride<B: BlockT, C>: Send + Sync {
 	fn into_account_id_bytes(address: H160) -> Vec<u8>;
 }
 
-// pub trait RuntimeStorageOverride: Send + Sync {
-// 	fn is_enabled() -> bool;
-
-// 	fn set_overlayed_changes<B: BlockT, C>(
-// 		client: &C,
-// 		overlayed_changes: &mut OverlayedChanges,
-// 		block: B::Hash,
-// 		version: u32,
-// 		address: H160,
-// 		balance: Option<U256>,
-// 		nonce: Option<U256>,
-// 	);
-
-// 	fn into_account_id_bytes(address: H160) -> Vec<u8>;
-// }
-
-// pub trait RuntimeStorageOverride: Send + Sync {
-// 	fn is_enabled() -> bool;
-
-// 	fn set_overlayed_changes<B: BlockT, C: sc_client_api::StorageProvider<B, BE>, BE: sc_client_api::backend::Backend<B>>(
-// 		client: &C,
-// 		overlayed_changes: &mut OverlayedChanges,
-// 		block: B::Hash,
-// 		version: u32,
-// 		address: H160,
-// 		balance: Option<U256>,
-// 		nonce: Option<U256>,
-// 	);
-
-// 	fn into_account_id_bytes(address: H160) -> Vec<u8>;
-// }
-
 impl<B: BlockT, C> RuntimeStorageOverride<B, C> for () {
 	fn is_enabled() -> bool {
 		false
 	}
 
-	// fn set_overlayed_changes<B: BlockT, C, BE>(
 	fn set_overlayed_changes(
 		_client: &C,
 		_overlayed_changes: &mut OverlayedChanges,

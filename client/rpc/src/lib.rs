@@ -113,7 +113,7 @@ pub mod frontier_backend_client {
 		}
 
 		fn into_account_id_bytes(address: H160) -> Vec<u8> {
-			use fp_evm::AddressMapping;
+			use pallet_evm::AddressMapping;
 			let address: H160 = pallet_evm::IdentityAddressMapping::into_account_id(address);
 			address.as_ref().to_owned()
 		}
@@ -166,7 +166,7 @@ pub mod frontier_backend_client {
 		}
 
 		fn into_account_id_bytes(address: H160) -> Vec<u8> {
-			use fp_evm::AddressMapping;
+			use pallet_evm::AddressMapping;
 			use sp_core::crypto::ByteArray;
 			use sp_runtime::traits::BlakeTwo256;
 

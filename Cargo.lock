@@ -5044,7 +5044,6 @@ dependencies = [
 name = "pallet-hotfix-sufficients"
 version = "1.0.0"
 dependencies = [
- "fp-evm",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
